@@ -1,0 +1,26 @@
+# https://github.com/marketplace/actions/labeler
+
+kalix-runtime:
+  - '**/*'
+
+java-sdk-protobuf:
+  - sdk/java-sdk-protobuf/**/*
+  - sdk/java-sdk-protobuf-testkit/**/*
+  - maven-java/**/*
+  - codegen/java-gen/**/*
+
+scala-sdk-protobuf:
+  - sdk/scala-sdk-protobuf/**/*
+  - sdk/scala-sdk-protobuf-testkit/**/*
+  - sbt-plugin/**/*
+  - codegen/scala-gen/**/*
+
+java-sdk:
+  - sdk/java-sdk-spring/**/*
+  - sdk/java-sdk-spring-testkit/**/*
+  - sdk/spring-boot-starter/**/*
+  - sdk/spring-boot-starter-test/**/*
+
+Documentation:
+  - docs/**/*
+  - samples/**/*

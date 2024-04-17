@@ -1,0 +1,6 @@
+name: ""
+version: master
+
+nav:
+  - modules/java/nav.adoc
+  - modules/java-protobuf/nav.adoc

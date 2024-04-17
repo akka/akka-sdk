@@ -1,0 +1,7 @@
+extends: existence
+message: "'%s' should have one or two spaces."
+level: error
+nonword: true
+tokens:
+  - '[a-z][.?!] {3,}[A-Z]'
+  - '[a-z][.?!][A-Z]'

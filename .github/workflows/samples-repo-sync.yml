@@ -1,0 +1,52 @@
+name: Update Samples in Kalix.io Repo
+
+on:
+  workflow_dispatch: # Manually triggered workflow
+
+jobs:
+  open-pr-update-sample:
+    runs-on: ubuntu-22.04
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { sample: java-protobuf-shopping-cart-quickstart, public-repo: user-registry-choreography-saga }
+
+    steps:
+      - name: Checkout JVM SDK
+        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
+        with:
+          path: kalix-jvm-sdk
+          sparse-checkout: |
+            samples/${{ matrix.sample }}
+
+      - name: Fork the repo
+        run: |
+          echo "n" | gh repo fork kalix-io/${{ matrix.public-repo }} --remote --default-branch-only
+        env:
+          GITHUB_TOKEN: ${{ secrets.KALIX_BOT_ACCESS_TOKEN }}
+
+      - name: Checkout sample in kalix.io
+        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
+        with:
+          repository: kalix-io/${{ matrix.public-repo }}
+          path: ${{ matrix.public-repo }}/
+
+      - name: Copy example
+        run: |
+          rsync -r --delete kalix-jvm-sdk/samples/${{ matrix.sample }}/* ${{ matrix.public-repo }}
+
+      - name: Create Pull Request - ${{ matrix.public-repo }}
+        uses: peter-evans/create-pull-request@153407881ec5c347639a548ade7d8ad1d6740e38
+        with:
+          path: ${{ matrix.public-repo }}
+          title: Changes from JVM SDK repo
+          branch-suffix: short-commit-hash
+          body: Please review
+          push-to-fork: kalix-bot/${{ matrix.public-repo }}
+          delete-branch: true
+          commit-message: "Changes from the Kalix JVM SDK repo"
+          author: "Kalix Bot <noreply@github.com>"
+          committer: "Kalix Bot <noreply@github.com>"
+          token: ${{ secrets.KALIX_BOT_ACCESS_TOKEN }}

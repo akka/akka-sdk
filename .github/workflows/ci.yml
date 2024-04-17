@@ -1,0 +1,783 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+    tags-ignore:
+      - v*
+
+permissions:
+  contents: read
+
+concurrency:
+  # Only run once for latest commit per ref and cancel other (previous) runs.
+  group: samples-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Basic checks
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        # v3.1.0
+        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
+
+      - name: Checkout GitHub merge
+        if: github.event.pull_request
+        run: |-
+          git fetch origin pull/${{ github.event.pull_request.number }}/merge:scratch
+          git checkout scratch
+
+      - name: Restore Coursier cache
+        # https://github.com/actions/cache/releases
+        # v3.3.1
+        uses: actions/cache/restore@88522ab9f39a2ea568f7027eddc7d8d8bc9d59c8
+        with:
+          path: |
+            ~/.cache/coursier
+            ~/.sbt
+            ~/.ivy2/cache
+          key: coursier-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-${{ hashFiles('build.sbt', 'project/**.scala', 'project/**.sbt') }}
+          restore-keys: |
+            coursier-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-${{ hashFiles('build.sbt', 'project/**.scala', 'project/**.sbt') }}
+            coursier-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-
+            coursier-
+
+      - name: Set up JDK 17
+        # https://github.com/coursier/setup-action/releases
+        # v1.3.0
+        uses: coursier/setup-action@70323223454ac2a9eb2de46f389b4d045cbcdea5
+        with:
+          jvm: temurin:1.17
+
+      - name: Run javafmt checks
+        run: |
+          sbt --client javafmtCheckAll || \
+            { echo "[error] Code not formatted prior to commit. Run 'sbt javafmtAll' then commit the reformatted code."; false; }
+
+      - name: Run header checks
+        run: |
+          sbt --client headerCheckAll || \
+            { echo "[error] Code missing headers prior to commit. Run 'sbt headerCreateAll' then commit the updated code."; false; }
+
+      - name: Run scalafmt checks
+        run: |
+          sbt --client "scalafmtCheckAll; scalafmtSbtCheck" || \
+            { echo "[error] Code not formatted prior to commit. Run 'sbt scalafmtAll scalafmtSbt' then commit the reformatted code."; false; }
+
+      - name: sbt shutdown
+        run: |
+          sbt --client shutdown
+
+  publish-local:
+    name: Build and publish artifacts and plugins locally
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        # v3.1.0
+        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
+
+      - name: Checkout GitHub merge
+        if: github.event.pull_request
+        run: |-
+          git fetch origin pull/${{ github.event.pull_request.number }}/merge:scratch
+          git checkout scratch
+
+      - name: Cache Coursier cache
+        # https://github.com/actions/cache/releases
+        # v3.3.1
+        uses: actions/cache@88522ab9f39a2ea568f7027eddc7d8d8bc9d59c8
+        with:
+          path: |
+            ~/.cache/coursier
+            ~/.sbt
+            ~/.ivy2/cache
+          key: coursier-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-${{ hashFiles('build.sbt', 'project/**.scala', 'project/**.sbt') }}
+          restore-keys: |
+            coursier-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-${{ hashFiles('build.sbt', 'project/**.scala', 'project/**.sbt') }}
+            coursier-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-
+            coursier-
+
+      - name: Set up JDK 17
+        # https://github.com/coursier/setup-action/releases
+        # v1.3.0
+        uses: coursier/setup-action@70323223454ac2a9eb2de46f389b4d045cbcdea5
+        with:
+          jvm: temurin:1.17
+
+      - name: Cache Maven repository
+        # https://github.com/actions/cache/releases
+        # v3.3.1
+        uses: actions/cache@88522ab9f39a2ea568f7027eddc7d8d8bc9d59c8
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('maven-java/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: Build and publish artifacts and plugins
+        id: build_sdk
+        run: |-
+          sbt -Ddisable.apidocs=true publishM2 publishLocal
+          # the SDK_VERSION is later used to run the maven tests (see below)
+          echo "Extracting version from sbt build"
+          sbt "print javaSdkProtobuf/version" > version.txt
+          cat version.txt
+          echo 'sdk_version='$(cat version.txt | tail -n 2 | head -n 1) >> $GITHUB_OUTPUT
+
+      - name: Build maven-java
+        env:
+          SDK_VERSION: ${{ steps.build_sdk.outputs.sdk_version }}
+        run: |-
+          cd maven-java
+          echo "Running maven-java with SDK version: '${SDK_VERSION}'"
+          mvn versions:set -DnewVersion=${SDK_VERSION}
+          mvn verify install --no-transfer-progress
+          echo $SDK_VERSION > ~/kalix-sdk-version.txt
+
+      - name: Package io.kalix dependencies
+        run: |-
+          cd
+          tar -czf dependencies.tar.gz .m2/repository/io/kalix/ .ivy2/local/io.kalix/ kalix-sdk-version.txt
+
+      - name: Upload io.kalix dependencies
+        # https://github.com/actions/upload-artifact/releases
+        # v3.1.2
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce
+        with:
+          name: m2-cache
+          path: ~/dependencies.tar.gz
+          if-no-files-found: error
+          retention-days: 1
+
+  sbt-test:
+    name: Run sbt test
+    needs: [checks, publish-local]
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout
+        # v3.1.0
+        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
+
+      - name: Checkout GitHub merge
+        if: github.event.pull_request
+        run: |-
+          git fetch origin pull/${{ github.event.pull_request.number }}/merge:scratch
+          git checkout scratch
+
+      - name: Restore Coursier cache
+        # https://github.com/actions/cache/releases
+        # v3.3.1
+        uses: actions/cache/restore@88522ab9f39a2ea568f7027eddc7d8d8bc9d59c8
+        with:
+          path: |
+            ~/.cache/coursier
+            ~/.sbt
+            ~/.ivy2/cache
+          key: coursier-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-${{ hashFiles('build.sbt', 'project/**.scala', 'project/**.sbt') }}
+          restore-keys: |
+            coursier-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-${{ hashFiles('build.sbt', 'project/**.scala', 'project/**.sbt') }}
+            coursier-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-
+            coursier-
+
+      - name: Set up JDK 17
+        # https://github.com/coursier/setup-action/releases
+        # v1.3.0
+        uses: coursier/setup-action@70323223454ac2a9eb2de46f389b4d045cbcdea5
+        with:
+          jvm: temurin:1.17
+
+      - name: Download io.kalix dependencies
+        # https://github.com/actions/download-artifact/releases
+        # v3.0.2
+        uses: actions/download-artifact@d2278a10efbd646909370fd49fb454cb04e368e3
+        with:
+          name: m2-cache
+          path: ~/
+
+      - name: Unpack io.kalix dependencies
+        run: |-
+          cd
+          tar -xf dependencies.tar.gz
+
+      - name: sbt test
+        run: sbt test
+
+  sbt-scripted:
+    name: Run sbt scripted
+    needs: [checks, publish-local]
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout
+        # v3.1.0
+        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
+
+      - name: Checkout GitHub merge
+        if: github.event.pull_request
+        run: |-
+          git fetch origin pull/${{ github.event.pull_request.number }}/merge:scratch
+          git checkout scratch
+
+      - name: Restore Coursier cache
+        # https://github.com/actions/cache/releases
+        # v3.3.1
+        uses: actions/cache/restore@88522ab9f39a2ea568f7027eddc7d8d8bc9d59c8
+        with:
+          path: |
+            ~/.cache/coursier
+            ~/.sbt
+            ~/.ivy2/cache
+          key: coursier-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-${{ hashFiles('build.sbt', 'project/**.scala', 'project/**.sbt') }}
+          restore-keys: |
+            coursier-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-${{ hashFiles('build.sbt', 'project/**.scala', 'project/**.sbt') }}
+            coursier-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-
+            coursier-
+
+      - name: Set up JDK 17
+        # https://github.com/coursier/setup-action/releases
+        # v1.3.0
+        uses: coursier/setup-action@70323223454ac2a9eb2de46f389b4d045cbcdea5
+        with:
+          jvm: temurin:1.17
+
+      - name: Download io.kalix dependencies
+        # https://github.com/actions/download-artifact/releases
+        # v3.0.2
+        uses: actions/download-artifact@d2278a10efbd646909370fd49fb454cb04e368e3
+        with:
+          name: m2-cache
+          path: ~/
+
+      - name: Unpack io.kalix dependencies
+        run: |-
+          cd
+          tar -xf dependencies.tar.gz
+
+      - name: sbt scripted
+        run: sbt scripted
+
+  maven-java-tests:
+    name: "Maven Java (plugin and archetype tests)"
+    needs: [checks, publish-local]
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout
+        # v3.1.0
+        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
+
+      - name: Checkout GitHub merge
+        if: github.event.pull_request
+        run: |-
+          git fetch origin pull/${{ github.event.pull_request.number }}/merge:scratch
+          git checkout scratch
+
+      - name: Set up JDK 17
+        # https://github.com/actions/setup-java/releases/
+        # v3.11.0
+        uses: actions/setup-java@5ffc13f4174014e2d4d4572b3d74c3fa61aeb2c2
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Cache Maven repository
+        # https://github.com/actions/cache/releases
+        # v3.3.1
+        uses: actions/cache@88522ab9f39a2ea568f7027eddc7d8d8bc9d59c8
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('maven-java/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: Download io.kalix dependencies
+        # https://github.com/actions/download-artifact/releases
+        # v3.0.2
+        uses: actions/download-artifact@d2278a10efbd646909370fd49fb454cb04e368e3
+        with:
+          name: m2-cache
+          path: ~/
+
+      - name: Unpack io.kalix dependencies
+        run: |-
+          cd
+          tar -xf dependencies.tar.gz
+
+      - name: Value Entity Archetype
+        run: |-
+          export SDK_VERSION=$(cat ~/kalix-sdk-version.txt)
+          cd maven-java
+          mvn -B archetype:generate -DgroupId=com.example -DartifactId=counter-value-entity -DarchetypeGroupId=io.kalix -DarchetypeArtifactId=kalix-maven-archetype -DarchetypeVersion=$SDK_VERSION
+          cd counter-value-entity
+          mvn -B compile
+          cd ..
+
+      - name: Event Sourced Entity Archetype
+        run: |-
+          mvn -B archetype:generate  -DgroupId=com.example -DartifactId=counter-event-sourced-entity -DarchetypeGroupId=io.kalix -DarchetypeArtifactId=kalix-maven-archetype-event-sourced-entity -DarchetypeVersion=$SDK_VERSION
+          cd counter-event-sourced-entity
+          mvn -B compile
+          cd ..
+
+  java-sdk-integration-tests:
+    name: "Java SDK integration tests"
+    needs: [checks, publish-local]
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout
+        # v3.1.0
+        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
+
+      - name: Checkout GitHub merge
+        if: github.event.pull_request
+        run: |-
+          git fetch origin pull/${{ github.event.pull_request.number }}/merge:scratch
+          git checkout scratch
+
+      - name: Restore Coursier cache
+        # https://github.com/actions/cache/releases
+        # v3.3.1
+        uses: actions/cache/restore@88522ab9f39a2ea568f7027eddc7d8d8bc9d59c8
+        with:
+          path: |
+            ~/.cache/coursier
+            ~/.sbt
+            ~/.ivy2/cache
+          key: coursier-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-${{ hashFiles('build.sbt', 'project/**.scala', 'project/**.sbt') }}
+          restore-keys: |
+            coursier-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-${{ hashFiles('build.sbt', 'project/**.scala', 'project/**.sbt') }}
+            coursier-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-
+            coursier-
+
+      - name: Set up JDK 17
+        # https://github.com/coursier/setup-action/releases
+        # v1.3.0
+        uses: coursier/setup-action@70323223454ac2a9eb2de46f389b4d045cbcdea5
+        with:
+          jvm: temurin:1.17
+
+      - name: Download io.kalix dependencies
+        # https://github.com/actions/download-artifact/releases
+        # v3.0.2
+        uses: actions/download-artifact@d2278a10efbd646909370fd49fb454cb04e368e3
+        with:
+          name: m2-cache
+          path: ~/
+
+      - name: Unpack io.kalix dependencies
+        run: |-
+          cd
+          tar -xf dependencies.tar.gz
+
+      - name: "Java SDK with Spring - Integration Test"
+        run: sbt javaSdkSpring/IntegrationTest/test
+
+  codegen-samples:
+    name: Codegen Examples
+    needs: [checks, publish-local]
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout
+        # v3.1.0
+        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
+
+      - name: Checkout GitHub merge
+        if: github.event.pull_request
+        run: |-
+          git fetch origin pull/${{ github.event.pull_request.number }}/merge:scratch
+          git checkout scratch
+
+      - name: Restore Coursier cache
+        # https://github.com/actions/cache/releases
+        # v3.3.1
+        uses: actions/cache/restore@88522ab9f39a2ea568f7027eddc7d8d8bc9d59c8
+        with:
+          path: |
+            ~/.cache/coursier
+            ~/.sbt
+            ~/.ivy2/cache
+          key: coursier-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-${{ hashFiles('build.sbt', 'project/**.scala', 'project/**.sbt') }}
+          restore-keys: |
+            coursier-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-${{ hashFiles('build.sbt', 'project/**.scala', 'project/**.sbt') }}
+            coursier-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-
+            coursier-
+
+      - name: Set up JDK 17
+        # https://github.com/coursier/setup-action/releases
+        # v1.3.0
+        uses: coursier/setup-action@70323223454ac2a9eb2de46f389b4d045cbcdea5
+        with:
+          jvm: temurin:1.17
+
+      - name: Download io.kalix dependencies
+        # https://github.com/actions/download-artifact/releases
+        # v3.0.2
+        uses: actions/download-artifact@d2278a10efbd646909370fd49fb454cb04e368e3
+        with:
+          name: m2-cache
+          path: ~/
+
+      - name: Unpack io.kalix dependencies
+        run: |-
+          cd
+          tar -xf dependencies.tar.gz
+
+      - name: Compile test projects from ExampleSuite (Java)
+        run: sbt -Dexample.suite.java.enabled codegenJavaCompilationExampleSuite/compile
+
+      - name: Compile test projects from ExampleSuite (Scala)
+        run: sbt -Dexample.suite.scala.enabled codegenScalaCompilationExampleSuite/compile
+
+      - name: Check Protoc version in samples
+        # part of the publish-local pipeline as it requires sbt
+        run: ./bin/check-sample-protoc-version.sh
+
+  check-sample-sdk-versions:
+    name: "Check all samples have the same SDK version"
+    needs: [checks, publish-local] # not really, but deferring until more important stuff
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        # v3.1.0
+        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
+
+      - name: Checkout GitHub merge
+        if: github.event.pull_request
+        run: |-
+          git fetch origin pull/${{ github.event.pull_request.number }}/merge:scratch
+          git checkout scratch
+
+      - name: Ensure all sample projects are listed
+        run: .github/ci-check-samples.sh
+
+      - name: Scala Samples
+        run: |-
+          if [ $(find ./samples -name plugins.sbt | xargs grep -h "kalix-sdk.version" | uniq | wc -l) -ne 1 ]; then
+            echo "Not all Scala samples have the same SDK version:"
+            find ./samples -name plugins.sbt | xargs grep "kalix-sdk.version"
+            false
+          fi
+
+      - name: Java Samples
+        run: |-
+          if [ $(find ./samples -name pom.xml | xargs grep -h "<kalix-sdk.version>" | tr -s [:space:] | uniq | wc -l) -ne 1 ]; then
+            echo "Not all Java samples have the same SDK version:"
+            find ./samples -name pom.xml | xargs grep "<kalix-sdk.version>"
+            false
+          fi
+
+  tck-tests:
+    name: "TCK tests"
+    needs: check-sample-sdk-versions
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout
+        # v3.1.0
+        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
+
+      - name: Checkout GitHub merge
+        if: github.event.pull_request
+        run: |-
+          git fetch origin pull/${{ github.event.pull_request.number }}/merge:scratch
+          git checkout scratch
+
+      - name: Restore Coursier cache
+        # https://github.com/actions/cache/releases
+        # v3.3.1
+        uses: actions/cache/restore@88522ab9f39a2ea568f7027eddc7d8d8bc9d59c8
+        with:
+          path: |
+            ~/.cache/coursier
+            ~/.sbt
+            ~/.ivy2/cache
+          key: coursier-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-${{ hashFiles('build.sbt', 'project/**.scala', 'project/**.sbt') }}
+          restore-keys: |
+            coursier-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-${{ hashFiles('build.sbt', 'project/**.scala', 'project/**.sbt') }}
+            coursier-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-
+            coursier-
+
+      - name: Set up JDK 17
+        # https://github.com/coursier/setup-action/releases
+        # v1.3.0
+        uses: coursier/setup-action@70323223454ac2a9eb2de46f389b4d045cbcdea5
+        with:
+          jvm: temurin:1.17
+
+      - name: Download io.kalix dependencies
+        # https://github.com/actions/download-artifact/releases
+        # v3.0.2
+        uses: actions/download-artifact@d2278a10efbd646909370fd49fb454cb04e368e3
+        with:
+          name: m2-cache
+          path: ~/
+
+      - name: Unpack io.kalix dependencies
+        run: |-
+          cd
+          tar -xf dependencies.tar.gz
+
+      - name: Run Java TCK tests
+        run: sbt javaTck/Test/run
+
+      - name: Run Scala TCK tests
+        run: sbt scalaTck/Test/run
+
+  maven-samples:
+    name: Maven samples
+    needs: check-sample-sdk-versions
+    runs-on: ubuntu-22.04
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { sample: java-protobuf-shopping-cart-quickstart, it: true }
+          - { sample: java-protobuf-customer-registry-quickstart, it: true }
+          - { sample: java-protobuf-customer-registry-kafka-quickstart, pre_cmd: 'docker compose -f ../../.circleci/kafka.yml up -d', it: true }
+          - { sample: java-protobuf-customer-registry-views-quickstart, it: true }
+
+          - { sample: java-spring-shopping-cart-quickstart, it: true }
+          - { sample: java-spring-customer-registry-quickstart, it: true }
+          - { sample: java-spring-customer-registry-views-quickstart, it: true }
+          - { sample: java-spring-choreography-saga-quickstart, it: true }
+
+          - { sample: java-protobuf-fibonacci-action, it: false }
+          - { sample: java-protobuf-doc-snippets, it: false }
+          - { sample: java-protobuf-first-service, it: false }
+          - { sample: java-protobuf-valueentity-customer-registry, it: false }
+          - { sample: java-protobuf-view-store, it: true }
+
+          - { sample: java-spring-fibonacci-action, it: true }
+          - { sample: java-spring-doc-snippets, it: false }
+          - { sample: java-spring-view-store, it: true }
+
+          - { sample: java-protobuf-eventsourced-customer-registry, it: true }
+          - { sample: java-protobuf-eventsourced-customer-registry-subscriber, it: true, pre_cmd: 'mvn -Dkalix-sdk.version=${SDK_VERSION} -f ../java-protobuf-eventsourced-customer-registry/pom.xml package docker:build --no-transfer-progress' }
+          - { sample: java-protobuf-eventsourced-counter, it: true }
+          - { sample: java-protobuf-eventsourced-shopping-cart, it: true }
+
+          - { sample: java-spring-eventsourced-customer-registry, it: true }
+          - { sample: java-spring-eventsourced-customer-registry-subscriber, it: true, pre_cmd: 'mvn -Dkalix-sdk.version=${SDK_VERSION} -f ../java-spring-eventsourced-customer-registry/pom.xml package docker:build --no-transfer-progress' }
+          - { sample: java-spring-eventsourced-shopping-cart, it: true }
+
+          - { sample: java-protobuf-valueentity-counter, it: true }
+          - { sample: java-protobuf-valueentity-counter-spring-client, verify: true, it: false }
+          - { sample: java-protobuf-valueentity-shopping-cart, it: true }
+
+          - { sample: java-spring-valueentity-counter, it: true }
+          - { sample: java-spring-valueentity-shopping-cart, it: true }
+          - { sample: java-spring-valueentity-customer-registry, it: true }
+
+          - { sample: java-spring-eventsourced-counter, pre_cmd: 'docker compose -f ../../.circleci/google-pubsub-emulator-docker-compose.yml up -d', it: true }
+
+          - { sample: java-protobuf-replicatedentity-shopping-cart, it: true }
+          - { sample: java-protobuf-replicatedentity-examples, it: true }
+
+          - { sample: java-protobuf-tracing, it: false }
+
+          - { sample: java-protobuf-web-resources, it: false }
+
+          - { sample: java-protobuf-reliable-timers, it: false }
+          - { sample: java-spring-reliable-timers, it: true }
+
+          - { sample: java-spring-transfer-workflow, it: true }
+          - { sample: java-spring-transfer-workflow-compensation, it: true }
+
+          - { sample: java-protobuf-transfer-workflow, it: true }
+          - { sample: java-protobuf-transfer-workflow-compensation, it: true }
+
+    steps:
+      - name: Checkout
+        # v3.1.0
+        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
+
+      - name: Checkout GitHub merge
+        if: github.event.pull_request
+        run: |-
+          git fetch origin pull/${{ github.event.pull_request.number }}/merge:scratch
+          git checkout scratch
+
+      - name: Set up JDK 17
+        # https://github.com/coursier/setup-action/releases
+        # v1.3.0
+        uses: coursier/setup-action@70323223454ac2a9eb2de46f389b4d045cbcdea5
+        with:
+          jvm: temurin:1.17
+
+      - name: Cache Maven repository
+        # https://github.com/actions/cache/releases
+        # v3.3.1
+        uses: actions/cache@88522ab9f39a2ea568f7027eddc7d8d8bc9d59c8
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('maven-java/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: Download io.kalix dependencies
+        # https://github.com/actions/download-artifact/releases
+        # v3.0.2
+        uses: actions/download-artifact@d2278a10efbd646909370fd49fb454cb04e368e3
+        with:
+          name: m2-cache
+          path: ~/
+
+      - name: Unpack io.kalix dependencies
+        run: |-
+          cd
+          tar -xf dependencies.tar.gz
+
+      - name: ${{ matrix.sample }} test-compile
+        env:
+          DIR: ${{ matrix.sample }}
+        run: |-
+          export SDK_VERSION=$(cat ~/kalix-sdk-version.txt)
+          cd samples/${DIR}
+          echo "Running mvn on ${DIR} with SDK version: '${SDK_VERSION}'"
+          # must also compile without the profile!
+          mvn -Dkalix-sdk.version=${SDK_VERSION} test-compile --no-transfer-progress
+
+      - name: ${{ matrix.sample }} verify
+        if: matrix.verify || matrix.it
+        env:
+          DIR: ${{ matrix.sample }}
+          PRE_CMD: ${{ matrix.pre_cmd }}
+        run: |-
+          export SDK_VERSION=$(cat ~/kalix-sdk-version.txt)
+          cd samples/${DIR}
+          if [ true == '${{matrix.verify}}' ]; then
+            mvn -Dkalix-sdk.version=${SDK_VERSION} verify --no-transfer-progress
+          fi
+          if [ true == '${{matrix.it}}' ]; then
+            ${PRE_CMD}
+            KALIX_TESTKIT_DEBUG=true mvn -Dkalix-sdk.version=${SDK_VERSION} verify -Pit --no-transfer-progress
+          fi
+
+      - name: ${{ matrix.sample }} rm & test-compile
+        env:
+          DIR: ${{ matrix.sample }}
+        run: |-
+          export SDK_VERSION=$(cat ~/kalix-sdk-version.txt)
+          cd samples/${DIR}
+          echo "==== Verifying that generated unmanaged sources compile ===="
+          rm -rf src/main/java src/test/java src/it/java
+          mvn -Dkalix-sdk.version=${SDK_VERSION} test-compile --no-transfer-progress
+
+  sbt-samples:
+    name: sbt
+    needs: check-sample-sdk-versions
+    runs-on: ubuntu-22.04
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { sample: scala-protobuf-customer-registry-quickstart, test: true }
+
+          - { sample: scala-protobuf-fibonacci-action, test: true }
+          - { sample: scala-protobuf-first-service, test: false }
+          - { sample: scala-protobuf-doc-snippets, test: true }
+          - { sample: scala-protobuf-valueentity-customer-registry, test: true }
+          - { sample: scala-protobuf-view-store, test: true }
+
+          - { sample: scala-protobuf-eventsourced-customer-registry, test: true }
+          - { sample: scala-protobuf-eventsourced-customer-registry-subscriber, pre_cmd: './build-customer-service-image.sh', test: true }
+          - { sample: scala-protobuf-eventsourced-counter, pre_cmd: 'docker compose -f ../../.circleci/google-pubsub-emulator-docker-compose.yml up -d', test: true }
+          - { sample: scala-protobuf-eventsourced-shopping-cart, test: true }
+
+          - { sample: scala-protobuf-valueentity-counter, test: true }
+          - { sample: scala-protobuf-valueentity-shopping-cart, test: true }
+
+          - { sample: scala-protobuf-replicatedentity-shopping-cart, test: true }
+          - { sample: scala-protobuf-replicatedentity-examples, test: true }
+
+          - { sample: scala-protobuf-reliable-timers, test: true }
+
+          - { sample: scala-protobuf-web-resources, test: true }
+
+          - { sample: scala-protobuf-transfer-workflow, test: true }
+          - { sample: scala-protobuf-transfer-workflow-compensation, test: true }
+
+    steps:
+      - name: Checkout
+        # v3.1.0
+        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
+
+      - name: Checkout GitHub merge
+        if: github.event.pull_request
+        run: |-
+          git fetch origin pull/${{ github.event.pull_request.number }}/merge:scratch
+          git checkout scratch
+
+      - name: Restore Coursier cache
+        # https://github.com/actions/cache/releases
+        # v3.3.1
+        uses: actions/cache/restore@88522ab9f39a2ea568f7027eddc7d8d8bc9d59c8
+        with:
+          path: |
+            ~/.cache/coursier
+            ~/.sbt
+            ~/.ivy2/cache
+          key: coursier-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-${{ hashFiles('build.sbt', 'project/**.scala', 'project/**.sbt') }}
+          restore-keys: |
+            coursier-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-${{ hashFiles('build.sbt', 'project/**.scala', 'project/**.sbt') }}
+            coursier-${{ hashFiles('project/plugins.sbt', 'project/build.properties') }}-
+            coursier-
+
+      - name: Set up JDK 17
+        # https://github.com/coursier/setup-action/releases
+        # v1.3.0
+        uses: coursier/setup-action@70323223454ac2a9eb2de46f389b4d045cbcdea5
+        with:
+          jvm: temurin:1.17
+
+      - name: Download io.kalix dependencies
+        # https://github.com/actions/download-artifact/releases
+        # v3.0.2
+        uses: actions/download-artifact@d2278a10efbd646909370fd49fb454cb04e368e3
+        with:
+          name: m2-cache
+          path: ~/
+
+      - name: Unpack io.kalix dependencies
+        run: |-
+          cd
+          tar -xf dependencies.tar.gz
+
+      - name: sbt Test/compile
+        env:
+          DIR: ${{ matrix.sample }}
+        run: |-
+          export SDK_VERSION=$(cat ~/kalix-sdk-version.txt)
+          cd samples/${DIR}
+          echo "Running sbt on ${DIR} with SDK version: '$SDK_VERSION'"
+          sbt --client -Dkalix-sdk.version=$SDK_VERSION Test/compile
+
+      - name: sbt test
+        if: matrix.test
+        env:
+          DIR: ${{ matrix.sample }}
+          PRE_CMD: ${{ matrix.pre_cmd }}
+        run: |-
+          export SDK_VERSION=$(cat ~/kalix-sdk-version.txt)
+          cd samples/${DIR}
+          ${PRE_CMD}
+          sbt  --client -Dkalix-sdk.version=$SDK_VERSION test
+
+      - name: rm & sbt Test/compile
+        env:
+          DIR: ${{ matrix.sample }}
+        run: |-
+          export SDK_VERSION=$(cat ~/kalix-sdk-version.txt)
+          cd samples/${DIR}
+          echo "==== Verifying that generated unmanaged sources compile ===="
+          rm -rf src/main/scala src/test/scala src/it/scala
+          sbt  --client -Dkalix-sdk.version=$SDK_VERSION Test/compile
