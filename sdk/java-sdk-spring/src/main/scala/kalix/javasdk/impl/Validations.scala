@@ -10,14 +10,11 @@ import java.lang.reflect.Modifier
 import java.lang.reflect.ParameterizedType
 
 import scala.reflect.ClassTag
-
-import kalix.javasdk.action.Action
 import kalix.javasdk.annotations.EventHandler
 import kalix.javasdk.annotations.Publish
 import kalix.javasdk.annotations.Query
 import kalix.javasdk.annotations.Subscribe
 import kalix.javasdk.annotations.Table
-import kalix.javasdk.eventsourcedentity.EventSourcedEntity
 import kalix.javasdk.impl.ComponentDescriptorFactory.eventSourcedEntitySubscription
 import kalix.javasdk.impl.ComponentDescriptorFactory.findEventSourcedEntityClass
 import kalix.javasdk.impl.ComponentDescriptorFactory.findEventSourcedEntityType
@@ -44,6 +41,8 @@ import kalix.javasdk.impl.reflection.Reflect
 import kalix.javasdk.impl.reflection.IdExtractor
 import kalix.javasdk.impl.reflection.RestServiceIntrospector
 import kalix.javasdk.impl.reflection.ServiceMethod
+import kalix.javasdk.action.Action
+import kalix.javasdk.eventsourcedentity.EventSourcedEntity
 import kalix.javasdk.valueentity.ValueEntity
 import kalix.javasdk.view.View
 import kalix.javasdk.workflow.Workflow

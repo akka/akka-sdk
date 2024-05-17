@@ -6,6 +6,7 @@ package kalix.javasdk.workflow;
 
 import kalix.javasdk.annotations.Id;
 import kalix.javasdk.annotations.TypeId;
+import kalix.javasdk.workflow.Workflow;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 

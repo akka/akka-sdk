@@ -16,8 +16,8 @@ import akka.actor.ExtensionIdProvider
 import akka.annotation.InternalApi
 import kalix.devtools.impl.DevModeSettings
 import kalix.devtools.impl.HostAndPort
-import kalix.javasdk.JsonSupport
 import kalix.javasdk.impl.ProxyInfoHolder
+import kalix.javasdk.JsonSupport
 import kalix.spring.WebClientProvider
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType

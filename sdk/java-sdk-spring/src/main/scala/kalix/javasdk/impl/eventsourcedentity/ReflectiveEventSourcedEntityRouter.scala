@@ -6,15 +6,16 @@ package kalix.javasdk.impl.eventsourcedentity
 
 import com.google.protobuf.any.{ Any => ScalaPbAny }
 import com.google.protobuf.{ Any => JavaPbAny }
-import kalix.javasdk.JsonSupport
-import kalix.javasdk.eventsourcedentity.CommandContext
-import kalix.javasdk.eventsourcedentity.EventSourcedEntity
 import kalix.javasdk.impl.CommandHandler
 import kalix.javasdk.impl.InvocationContext
 import kalix.javasdk.impl.JsonMessageCodec
 import kalix.javasdk.impl.MethodInvoker
-
 import java.lang.reflect.ParameterizedType
+
+import kalix.javasdk.JsonSupport
+import kalix.javasdk.eventsourcedentity.CommandContext
+import kalix.javasdk.eventsourcedentity.EventSourcedEntity
+import kalix.javasdk.impl.eventsourcedentity.EventSourcedEntityRouter
 
 class ReflectiveEventSourcedEntityRouter[S, E, ES <: EventSourcedEntity[S, E]](
     override protected val entity: ES,

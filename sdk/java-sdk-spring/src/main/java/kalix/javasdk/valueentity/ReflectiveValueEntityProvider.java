@@ -12,6 +12,10 @@ import kalix.javasdk.impl.JsonMessageCodec;
 import kalix.javasdk.impl.MessageCodec;
 import kalix.javasdk.impl.valueentity.ReflectiveValueEntityRouter;
 import kalix.javasdk.impl.valueentity.ValueEntityRouter;
+import kalix.javasdk.valueentity.ValueEntity;
+import kalix.javasdk.valueentity.ValueEntityContext;
+import kalix.javasdk.valueentity.ValueEntityOptions;
+import kalix.javasdk.valueentity.ValueEntityProvider;
 
 import java.util.Optional;
 import java.util.function.Function;

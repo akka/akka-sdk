@@ -11,11 +11,7 @@ import java.util
 import scala.jdk.CollectionConverters._
 import akka.http.scaladsl.model.HttpMethods
 import com.google.protobuf.any.Any
-import kalix.javasdk.DeferredCall
-import kalix.javasdk.Metadata
-import kalix.javasdk.action.Action
 import kalix.javasdk.annotations.TypeId
-import kalix.javasdk.eventsourcedentity.EventSourcedEntity
 import kalix.javasdk.impl.client.MethodRefResolver
 import kalix.javasdk.impl.reflection.IdExtractor
 import kalix.javasdk.impl.reflection.RestServiceIntrospector
@@ -25,8 +21,6 @@ import kalix.javasdk.impl.reflection.RestServiceIntrospector.QueryParamParameter
 import kalix.javasdk.impl.reflection.RestServiceIntrospector.RestService
 import kalix.javasdk.impl.reflection.SyntheticRequestServiceMethod
 import kalix.javasdk.impl.telemetry.Telemetry
-import kalix.javasdk.valueentity.ValueEntity
-import kalix.javasdk.workflow.Workflow
 import kalix.spring.impl.KalixClient
 import kalix.spring.impl.RestKalixClientImpl
 import org.springframework.web.bind.annotation.RequestMethod
@@ -35,6 +29,12 @@ import reactor.core.publisher.Flux
 import scala.jdk.OptionConverters._
 
 import java.util.Optional
+import kalix.javasdk.DeferredCall
+import kalix.javasdk.Metadata
+import kalix.javasdk.action.Action
+import kalix.javasdk.eventsourcedentity.EventSourcedEntity
+import kalix.javasdk.valueentity.ValueEntity
+import kalix.javasdk.workflow.Workflow
 
 final class ComponentCall[A1, R](
     kalixClient: KalixClient,

@@ -4,6 +4,8 @@
 
 package kalix.javasdk.impl.eventsourcedentity
 
+import scala.util.control.NonFatal
+
 import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.stream.scaladsl.Flow
@@ -35,8 +37,6 @@ import kalix.protocol.event_sourced_entity.EventSourcedStreamOut.Message.{ Reply
 import kalix.protocol.event_sourced_entity.EventSourcedStreamOut.Message.{ SnapshotReply => OutSnapshotReply }
 import kalix.protocol.event_sourced_entity._
 import org.slf4j.LoggerFactory
-
-import scala.util.control.NonFatal
 
 final class EventSourcedEntityService(
     val factory: EventSourcedEntityFactory,

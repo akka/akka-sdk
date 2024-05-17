@@ -5,9 +5,8 @@
 package kalix.javasdk.impl.client
 
 import java.lang.reflect.Method
-
-import kalix.javasdk.action.Action
 import kalix.javasdk.annotations.Query
+import kalix.javasdk.action.Action
 import kalix.javasdk.eventsourcedentity.EventSourcedEntity
 import kalix.javasdk.valueentity.ValueEntity
 import kalix.javasdk.workflow.Workflow

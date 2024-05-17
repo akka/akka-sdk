@@ -16,6 +16,8 @@ import com.google.protobuf.any.{ Any => ScalaPbAny }
 import com.google.protobuf.{ Any => JavaPbAny }
 import kalix.javasdk.DeferredCall
 import kalix.javasdk.JsonSupport
+import kalix.javasdk.impl.AnySupport
+import kalix.javasdk.impl.RestDeferredCall
 import kalix.spring.impl.RestKalixClientImpl
 import kalix.spring.testmodels.Message
 import kalix.spring.testmodels.action.ActionsTestModels.GetClassLevel

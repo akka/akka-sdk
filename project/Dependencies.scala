@@ -150,22 +150,22 @@ object Dependencies {
     "jakarta.websocket" % "jakarta.websocket-api" % "2.0.0")
 
   val javaSdkSpring = deps ++= sdkDeps ++ springDeps ++ Seq(
-    "net.aichler" % "jupiter-interface" % JupiterKeys.jupiterVersion.value % IntegrationTest,
     "net.aichler" % "jupiter-interface" % JupiterKeys.jupiterVersion.value % Test,
-    "org.springframework.boot" % "spring-boot-starter-test" % SpringBootVersion % IntegrationTest,
     "org.scala-lang.modules" %% "scala-parser-combinators" % "2.3.0",
-    junit5 % IntegrationTest,
     junit5 % Test,
-    "org.assertj" % "assertj-core" % "3.24.2" % IntegrationTest,
-    "org.assertj" % "assertj-core" % "3.24.2" % Test,
-    "org.awaitility" % "awaitility" % "4.2.0" % IntegrationTest)
+    "org.assertj" % "assertj-core" % "3.24.2" % Test)
 
   val javaSdkSpringTestKit =
     deps ++= springDeps ++
     Seq(
       junit5 % Test,
+      junit5 % IntegrationTest,
       "net.aichler" % "jupiter-interface" % JupiterKeys.jupiterVersion.value % Test,
-      "org.springframework.boot" % "spring-boot-starter-test" % SpringBootVersion)
+      "net.aichler" % "jupiter-interface" % JupiterKeys.jupiterVersion.value % IntegrationTest,
+      "org.springframework.boot" % "spring-boot-starter-test" % SpringBootVersion,
+      "org.springframework.boot" % "spring-boot-starter-test" % SpringBootVersion % IntegrationTest,
+      "org.assertj" % "assertj-core" % "3.24.2" % IntegrationTest,
+      "org.awaitility" % "awaitility" % "4.2.0" % IntegrationTest)
 
   // FIXME
   val scalaSdk = deps ++= sdkDeps ++ Seq(jacksonScala)

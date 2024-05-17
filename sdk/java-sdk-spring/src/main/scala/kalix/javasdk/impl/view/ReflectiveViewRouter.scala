@@ -10,11 +10,14 @@ import java.util.{ Map => JMap }
 import scala.jdk.CollectionConverters._
 
 import com.google.protobuf.any.{ Any => ScalaPbAny }
-import kalix.javasdk.JsonSupport
 import kalix.javasdk.impl.AnySupport.ProtobufEmptyTypeUrl
 import kalix.javasdk.impl.CommandHandler
 import kalix.javasdk.impl.ComponentDescriptorFactory
 import kalix.javasdk.impl.InvocationContext
+import kalix.javasdk.JsonSupport
+import kalix.javasdk.impl.view.ViewMultiTableRouter
+import kalix.javasdk.impl.view.ViewRouter
+import kalix.javasdk.impl.view.ViewUpdateEffectImpl
 import kalix.javasdk.view.View
 
 class ReflectiveViewRouter[S, V <: View[S]](

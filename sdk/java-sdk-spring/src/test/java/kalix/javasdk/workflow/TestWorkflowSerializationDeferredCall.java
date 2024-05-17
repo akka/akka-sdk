@@ -9,6 +9,7 @@ import kalix.javasdk.annotations.Id;
 import kalix.javasdk.annotations.TypeId;
 import kalix.javasdk.impl.MetadataImpl;
 import kalix.javasdk.impl.RestDeferredCall;
+import kalix.javasdk.workflow.Workflow;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import scala.Function1;

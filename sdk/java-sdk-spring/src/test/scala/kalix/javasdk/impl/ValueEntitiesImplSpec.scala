@@ -6,13 +6,13 @@ package kalix.javasdk.impl
 
 import com.google.protobuf.ByteString._
 import com.google.protobuf.any.{ Any => ScalaPbAny }
-import kalix.javasdk.impl.valueentity.TestValueService
 import kalix.javasdk.valueentity.ReflectiveValueEntityProvider
 import kalix.javasdk.valueentity.TestVEState0
 import kalix.javasdk.valueentity.TestVEState1
 import kalix.javasdk.valueentity.TestVEState2
 import kalix.javasdk.valueentity.TestValueEntity
 import kalix.javasdk.valueentity.TestValueEntityMigration
+import kalix.javasdk.impl.valueentity.TestValueService
 import kalix.testkit.TestProtocol
 import kalix.testkit.valueentity.ValueEntityMessages
 import org.scalatest.BeforeAndAfterAll

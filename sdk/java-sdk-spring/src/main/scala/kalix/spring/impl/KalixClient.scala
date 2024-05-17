@@ -35,7 +35,7 @@ trait KalixClient {
    * @tparam R
    *   type returned as response from the target endpoint
    * @return
-   *   a [[kalix.javasdk.DeferredCall]] to be used in forwards and timers or to be executed in place
+   *   a [[DeferredCall]] to be used in forwards and timers or to be executed in place
    */
   def get[R](uri: String, returnType: Class[R]): DeferredCall[Any, R]
 
@@ -63,7 +63,7 @@ trait KalixClient {
    * @tparam R
    *   Type returned as response from the target endpoint
    * @return
-   *   a [[kalix.javasdk.DeferredCall]] to be used in forwards and timers or to be executed in place
+   *   a [[DeferredCall]] to be used in forwards and timers or to be executed in place
    */
   def post[P, R](uri: String, body: P, returnType: Class[R]): DeferredCall[Any, R]
 
@@ -87,7 +87,7 @@ trait KalixClient {
    * @tparam R
    *   Type returned as response from the target endpoint
    * @return
-   *   a [[kalix.javasdk.DeferredCall]] to be used in forwards and timers or to be executed in place
+   *   a [[DeferredCall]] to be used in forwards and timers or to be executed in place
    */
   def post[R](uri: String, returnType: Class[R]): DeferredCall[Any, R]
 
@@ -115,7 +115,7 @@ trait KalixClient {
    * @tparam R
    *   Type returned as response from the target endpoint
    * @return
-   *   a [[kalix.javasdk.DeferredCall]] to be used in forwards and timers or to be executed in place
+   *   a [[DeferredCall]] to be used in forwards and timers or to be executed in place
    */
   def put[P, R](uri: String, body: P, returnType: Class[R]): DeferredCall[Any, R]
 
@@ -139,7 +139,7 @@ trait KalixClient {
    * @tparam R
    *   Type returned as response from the target endpoint
    * @return
-   *   a [[kalix.javasdk.DeferredCall]] to be used in forwards and timers or to be executed in place
+   *   a [[DeferredCall]] to be used in forwards and timers or to be executed in place
    */
   def put[R](uri: String, returnType: Class[R]): DeferredCall[Any, R]
 
@@ -167,7 +167,7 @@ trait KalixClient {
    * @tparam R
    *   Type returned as response from the target endpoint
    * @return
-   *   a [[kalix.javasdk.DeferredCall]] to be used in forwards and timers or to be executed in place
+   *   a [[DeferredCall]] to be used in forwards and timers or to be executed in place
    */
   def patch[P, R](uri: String, body: P, returnType: Class[R]): DeferredCall[Any, R]
 
@@ -191,7 +191,7 @@ trait KalixClient {
    * @tparam R
    *   Type returned as response from the target endpoint
    * @return
-   *   a [[kalix.javasdk.DeferredCall]] to be used in forwards and timers or to be executed in place
+   *   a [[DeferredCall]] to be used in forwards and timers or to be executed in place
    */
   def patch[R](uri: String, returnType: Class[R]): DeferredCall[Any, R]
 
@@ -215,7 +215,7 @@ trait KalixClient {
    * @tparam R
    *   Type returned as response from the target endpoint
    * @return
-   *   a [[kalix.javasdk.DeferredCall]] to be used in forwards and timers or to be executed in place
+   *   a [[DeferredCall]] to be used in forwards and timers or to be executed in place
    */
   def delete[R](uri: String, returnType: Class[R]): DeferredCall[Any, R]
 }

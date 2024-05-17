@@ -5,9 +5,9 @@
 package kalix.spring.boot
 
 import com.typesafe.config.Config
-import kalix.javasdk.JsonSupport
 import kalix.javasdk.impl.JsonMessageCodec
 import kalix.javasdk.testkit.KalixTestKit
+import kalix.javasdk.JsonSupport
 import kalix.spring.impl.KalixSpringApplication
 import kalix.spring.impl.WebClientProviderHolder
 import org.slf4j.LoggerFactory

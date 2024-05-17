@@ -8,9 +8,7 @@ import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import akka.actor.typed.scaladsl.adapter._
 import com.google.protobuf.any.Any.toJavaProto
 import com.google.protobuf.any.{ Any => ScalaPbAny }
-import kalix.javasdk.JsonSupport
 import kalix.javasdk.JsonSupport.decodeJson
-import kalix.javasdk.action.ActionCreationContext
 import kalix.javasdk.action.ReflectiveActionProvider
 import kalix.javasdk.action.TestESSubscriptionAction
 import kalix.javasdk.action.TestTracingAction
@@ -20,6 +18,11 @@ import kalix.javasdk.eventsourcedentity.OldTestESEvent.OldEvent3
 import kalix.javasdk.eventsourcedentity.TestESEvent.Event4
 import kalix.javasdk.impl.action.ActionService
 import kalix.javasdk.impl.action.ActionsImpl
+import kalix.javasdk.JsonSupport
+import kalix.javasdk.action.ActionCreationContext
+import kalix.javasdk.impl.ActionFactory
+import kalix.javasdk.impl.MessageCodec
+import kalix.javasdk.impl.ProxyInfoHolder
 import kalix.protocol.action.ActionCommand
 import kalix.protocol.action.ActionResponse
 import kalix.protocol.action.Actions

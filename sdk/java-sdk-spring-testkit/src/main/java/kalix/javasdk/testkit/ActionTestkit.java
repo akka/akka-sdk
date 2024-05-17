@@ -7,6 +7,8 @@ package kalix.javasdk.testkit;
 import kalix.javasdk.Metadata;
 import kalix.javasdk.action.Action;
 import kalix.javasdk.action.ActionCreationContext;
+import kalix.javasdk.testkit.ActionResult;
+import kalix.javasdk.testkit.MockRegistry;
 import kalix.javasdk.testkit.impl.ActionResultImpl;
 import kalix.javasdk.testkit.impl.TestKitActionContext;
 // TODO: abstract away reactor dependency

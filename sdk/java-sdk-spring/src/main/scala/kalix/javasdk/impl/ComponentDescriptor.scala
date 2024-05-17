@@ -27,7 +27,6 @@ import com.google.protobuf.Descriptors
 import com.google.protobuf.Descriptors.FileDescriptor
 import com.google.protobuf.Empty
 import com.google.protobuf.{ Any => JavaPbAny }
-import kalix.javasdk.HttpResponse
 import kalix.javasdk.impl.AnySupport.ProtobufEmptyTypeUrl
 import kalix.javasdk.impl.reflection.AnyJsonRequestServiceMethod
 import kalix.javasdk.impl.reflection.CombinedSubscriptionServiceMethod
@@ -50,6 +49,8 @@ import kalix.javasdk.impl.reflection.ServiceMethod
 import kalix.javasdk.impl.reflection.SubscriptionServiceMethod
 import kalix.javasdk.impl.reflection.SyntheticRequestServiceMethod
 import kalix.javasdk.impl.reflection.VirtualServiceMethod
+import kalix.javasdk.HttpResponse
+import kalix.javasdk.impl.AnySupport
 // TODO: abstract away spring dependency
 import org.springframework.web.bind.annotation.RequestMethod
 

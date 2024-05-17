@@ -6,6 +6,7 @@ package kalix.spring.testmodels.eventsourcedentity;
 
 import kalix.javasdk.JsonMigration;
 import kalix.javasdk.annotations.*;
+import kalix.javasdk.annotations.Migration;
 import kalix.javasdk.eventsourcedentity.EventSourcedEntity;
 import org.springframework.web.bind.annotation.*;
 

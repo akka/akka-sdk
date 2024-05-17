@@ -4,14 +4,15 @@
 
 package kalix.javasdk.testkit;
 
+import kalix.javasdk.impl.JsonMessageCodec;
+import kalix.javasdk.impl.MethodInvoker;
+import kalix.javasdk.impl.eventsourcedentity.EventSourcedHandlersExtractor;
 import kalix.javasdk.Metadata;
 import kalix.javasdk.eventsourcedentity.EventSourcedEntity;
 import kalix.javasdk.eventsourcedentity.EventSourcedEntityContext;
-import kalix.javasdk.impl.MethodInvoker;
+import kalix.javasdk.testkit.EventSourcedResult;
 import kalix.javasdk.testkit.impl.EventSourcedEntityEffectsRunner;
 import kalix.javasdk.testkit.impl.TestKitEventSourcedEntityContext;
-import kalix.javasdk.impl.JsonMessageCodec;
-import kalix.javasdk.impl.eventsourcedentity.EventSourcedHandlersExtractor;
 import scala.collection.immutable.Map;
 
 import java.lang.reflect.InvocationTargetException;

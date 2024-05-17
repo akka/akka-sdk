@@ -2,13 +2,12 @@
  * Copyright (C) 2021-2024 Lightbend Inc. <https://www.lightbend.com>
  */
 
-package kalix.javasdk.testmodels.eventsourced;
+package spring.testmodels.eventsourced;
 
 import kalix.javasdk.Metadata;
 import kalix.javasdk.testkit.EventSourcedResult;
 import kalix.javasdk.testkit.EventSourcedTestKit;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 

@@ -12,6 +12,10 @@ import kalix.javasdk.impl.ComponentDescriptor;
 import kalix.javasdk.impl.ComponentDescriptorFactory;
 import kalix.javasdk.impl.JsonMessageCodec;
 import kalix.javasdk.impl.view.ReflectiveViewRouter;
+import kalix.javasdk.view.View;
+import kalix.javasdk.view.ViewCreationContext;
+import kalix.javasdk.view.ViewOptions;
+import kalix.javasdk.view.ViewProvider;
 
 import java.util.Optional;
 import java.util.function.Function;

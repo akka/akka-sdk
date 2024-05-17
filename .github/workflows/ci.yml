@@ -381,7 +381,7 @@ jobs:
           tar -xf dependencies.tar.gz
 
       - name: "Java SDK with Spring - Integration Test"
-        run: sbt javaSdkSpring/IntegrationTest/test
+        run: sbt javaSdkSpringTestKit/IntegrationTest/test
 
   codegen-samples:
     name: Codegen Examples

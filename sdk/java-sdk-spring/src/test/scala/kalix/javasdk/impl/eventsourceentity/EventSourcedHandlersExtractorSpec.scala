@@ -4,9 +4,9 @@
 
 package kalix.javasdk.impl.eventsourceentity
 
-import kalix.javasdk.JsonSupport
 import kalix.javasdk.impl.JsonMessageCodec
 import kalix.javasdk.impl.eventsourcedentity.EventSourcedHandlersExtractor
+import kalix.javasdk.JsonSupport
 import kalix.spring.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.CounterEventSourcedEntity
 import kalix.spring.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.EmployeeEntity
 import org.scalatest.matchers.should.Matchers

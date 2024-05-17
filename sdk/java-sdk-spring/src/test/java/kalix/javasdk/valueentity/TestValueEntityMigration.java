@@ -6,6 +6,7 @@ package kalix.javasdk.valueentity;
 
 import kalix.javasdk.annotations.Id;
 import kalix.javasdk.annotations.TypeId;
+import kalix.javasdk.valueentity.ValueEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 

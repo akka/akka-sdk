@@ -2,11 +2,10 @@
  * Copyright (C) 2021-2024 Lightbend Inc. <https://www.lightbend.com>
  */
 
-package kalix.javasdk.testmodels.eventsourced;
+package spring.testmodels.eventsourced;
 
 import kalix.javasdk.eventsourcedentity.EventSourcedEntity;
 import kalix.javasdk.annotations.EventHandler;
-
 import java.util.List;
 
 public class CounterEventSourcedEntity extends EventSourcedEntity<Integer, Increased> {

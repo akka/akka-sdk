@@ -13,6 +13,7 @@ permissions:
 jobs:
   make-docs:
     runs-on: ubuntu-22.04
+    if: github.event.repository.fork == false && github.repository != 'lightbend/kalix-jvm-sdk-private'
     steps:
       - name: Checkout
         # https://github.com/actions/checkout/releases

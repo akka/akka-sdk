@@ -17,12 +17,14 @@ import com.google.protobuf.ByteString
 import com.google.protobuf.BytesValue
 import com.google.protobuf.any.{ Any => ScalaPbAny }
 import com.google.protobuf.{ Any => JavaPbAny }
-import kalix.javasdk.HttpResponse
 import kalix.javasdk.HttpResponse.STATUS_CODE_EXTENSION_TYPE_URL
-import kalix.javasdk.JsonSupport
-import kalix.javasdk.annotations.Migration
 import kalix.javasdk.annotations.TypeName
 import kalix.javasdk.impl.AnySupport.BytesPrimitive
+import kalix.javasdk.HttpResponse
+import kalix.javasdk.JsonSupport
+import kalix.javasdk.annotations.Migration
+import kalix.javasdk.impl.MessageCodec
+import kalix.javasdk.impl.NullSerializationException
 
 private[kalix] class JsonMessageCodec extends MessageCodec {
 

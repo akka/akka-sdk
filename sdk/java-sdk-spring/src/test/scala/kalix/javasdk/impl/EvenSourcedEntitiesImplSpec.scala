@@ -6,7 +6,6 @@ package kalix.javasdk.impl
 
 import com.google.protobuf.ByteString._
 import com.google.protobuf.any.{ Any => ScalaPbAny }
-import kalix.javasdk.JsonSupport
 import kalix.javasdk.eventsourced.ReflectiveEventSourcedEntityProvider
 import kalix.javasdk.eventsourcedentity.OldTestESEvent.OldEvent1
 import kalix.javasdk.eventsourcedentity.OldTestESEvent.OldEvent2
@@ -15,6 +14,7 @@ import kalix.javasdk.eventsourcedentity.TestESEvent
 import kalix.javasdk.eventsourcedentity.TestESEvent.Event4
 import kalix.javasdk.eventsourcedentity.TestESState
 import kalix.javasdk.eventsourcedentity.TestEventSourcedEntity
+import kalix.javasdk.JsonSupport
 import kalix.javasdk.impl.eventsourcedentity.TestEventSourcedService
 import kalix.testkit.TestProtocol
 import org.scalatest.BeforeAndAfterAll

@@ -7,6 +7,7 @@ package kalix.javasdk.action;
 import kalix.javasdk.annotations.Subscribe;
 import kalix.javasdk.eventsourcedentity.TestESEvent;
 import kalix.javasdk.eventsourcedentity.TestEventSourcedEntity;
+import kalix.javasdk.action.Action;
 
 @Subscribe.EventSourcedEntity(value = TestEventSourcedEntity.class, ignoreUnknown = true)
 public class TestESSubscriptionAction extends Action {

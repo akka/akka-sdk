@@ -1,0 +1,56 @@
+// Copyright (C) 2021-2024 Lightbend Inc. <https://www.lightbend.com>
+
+syntax = "proto3";
+
+package shoppingcart;
+option java_package = "kalix.javasdk.shoppingcart";
+option java_outer_classname = "ShoppingCartViewModel";
+
+import "kalix/annotations.proto";
+import "shoppingcart/shopping_cart_domain.proto";
+import "google/api/annotations.proto";
+
+service ShoppingCartViewService {
+  rpc ProcessAdded(ItemAdded) returns (CartViewState) {
+    option (kalix.method).eventing.in = {
+      event_sourced_entity: "eventsourced-shopping-cart"
+    };
+    option (kalix.method).view.update = {
+      table: "carts"
+    };
+  }
+  rpc ProcessRemoved(ItemRemoved) returns (CartViewState) {
+    option (kalix.method).eventing.in = {
+      event_sourced_entity: "eventsourced-shopping-cart"
+    };
+    option (kalix.method).view.update = {
+      table: "carts"
+    };
+  }
+  rpc ProcessCheckedOut(CheckedOut) returns (CartViewState) {
+    option (kalix.method).eventing.in = {
+      event_sourced_entity: "eventsourced-shopping-cart"
+    };
+    option (kalix.method).view.update = {
+      table: "carts"
+    };
+  }
+  rpc GetCheckedOutCarts(GetCheckedOutCartsRequest) returns (stream CartViewState) {
+    option (kalix.method).view.query = {
+      query: "select * from carts where checked_out_timestamp >= :timestamp"
+    };
+    option (google.api.http) = {
+      get: "/carts"
+    };
+  }
+}
+
+message CartViewState {
+  string user_id = 1;
+  int32 number_of_items = 2;
+  int64 checked_out_timestamp = 3;
+}
+
+message GetCheckedOutCartsRequest {
+  int64 timestamp = 1;
+}

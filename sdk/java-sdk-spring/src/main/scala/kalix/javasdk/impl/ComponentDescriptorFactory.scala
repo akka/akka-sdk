@@ -17,17 +17,17 @@ import kalix.MethodOptions
 import kalix.ServiceEventing
 import kalix.ServiceEventingOut
 import kalix.ServiceOptions
-import kalix.javasdk.action.Action
 import kalix.javasdk.annotations.Acl
 import kalix.javasdk.annotations.Publish
 import kalix.javasdk.annotations.Subscribe
 import kalix.javasdk.annotations.Table
 import kalix.javasdk.annotations.TypeId
 import kalix.javasdk.annotations.ViewId
-import kalix.javasdk.eventsourcedentity.EventSourcedEntity
 import kalix.javasdk.impl.reflection.CombinedSubscriptionServiceMethod
 import kalix.javasdk.impl.reflection.KalixMethod
 import kalix.javasdk.impl.reflection.NameGenerator
+import kalix.javasdk.action.Action
+import kalix.javasdk.eventsourcedentity.EventSourcedEntity
 import kalix.javasdk.valueentity.ValueEntity
 import kalix.javasdk.view.View
 // TODO: abstract away spring dependency

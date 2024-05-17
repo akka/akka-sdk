@@ -5,6 +5,7 @@
 package kalix.javasdk.action;
 
 
+import kalix.javasdk.action.Action;
 import org.springframework.web.bind.annotation.GetMapping;
 
 public class TestTracingAction extends Action {
