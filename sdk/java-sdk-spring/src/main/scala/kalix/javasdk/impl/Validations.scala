@@ -221,7 +221,6 @@ object Validations {
 
   private def validateEventSourcedEntity(component: Class[_]): Validation = {
     when[EventSourcedEntity[_, _]](component) {
-      validateCompoundIdsOrder(component) ++
       validateEventHandlers(component)
     }
   }

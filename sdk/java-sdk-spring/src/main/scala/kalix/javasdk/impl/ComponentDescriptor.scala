@@ -27,9 +27,12 @@ import com.google.protobuf.Descriptors
 import com.google.protobuf.Descriptors.FileDescriptor
 import com.google.protobuf.Empty
 import com.google.protobuf.{ Any => JavaPbAny }
+import kalix.javasdk.HttpResponse
+import kalix.javasdk.annotations.TypeId
 import kalix.javasdk.impl.AnySupport.ProtobufEmptyTypeUrl
 import kalix.javasdk.impl.reflection.AnyJsonRequestServiceMethod
 import kalix.javasdk.impl.reflection.CombinedSubscriptionServiceMethod
+import kalix.javasdk.impl.reflection.CommandHandlerMethod
 import kalix.javasdk.impl.reflection.DeleteServiceMethod
 import kalix.javasdk.impl.reflection.DynamicMessageContext
 import kalix.javasdk.impl.reflection.ExtractorCreator
@@ -49,8 +52,6 @@ import kalix.javasdk.impl.reflection.ServiceMethod
 import kalix.javasdk.impl.reflection.SubscriptionServiceMethod
 import kalix.javasdk.impl.reflection.SyntheticRequestServiceMethod
 import kalix.javasdk.impl.reflection.VirtualServiceMethod
-import kalix.javasdk.HttpResponse
-import kalix.javasdk.impl.AnySupport
 // TODO: abstract away spring dependency
 import org.springframework.web.bind.annotation.RequestMethod
 
@@ -97,6 +98,11 @@ private[kalix] object ComponentDescriptor {
           case serviceMethod: SyntheticRequestServiceMethod =>
             val (inputProto, extractors) =
               buildSyntheticMessageAndExtractors(nameGenerator, serviceMethod, kalixMethod.entityIds)
+            (inputProto.getName, extractors, Some(inputProto))
+
+          case serviceMethod: CommandHandlerMethod =>
+            val (inputProto, extractors) =
+              buildCommandHandlerMessageAndExtractors(nameGenerator, serviceMethod)
             (inputProto.getName, extractors, Some(inputProto))
 
           case anyJson: AnyJsonRequestServiceMethod =>
@@ -182,6 +188,14 @@ private[kalix] object ComponentDescriptor {
           httpRuleBuilder.setBody("json_body")
         }
         methodOptions.setExtension(AnnotationsProto.http, httpRuleBuilder.build())
+
+      case commandHandlerMethod: CommandHandlerMethod =>
+        val httpRuleBuilder = buildHttpRule(commandHandlerMethod)
+
+        if (commandHandlerMethod.hasInputType) httpRuleBuilder.setBody("json_body")
+
+        methodOptions.setExtension(AnnotationsProto.http, httpRuleBuilder.build())
+
       case _ => //ignore
     }
 
@@ -204,8 +218,8 @@ private[kalix] object ComponentDescriptor {
     def toCommandHandler(fileDescriptor: FileDescriptor): CommandHandler = {
       serviceMethod match {
         case method: SyntheticRequestServiceMethod =>
-          val syntheticMessageDescriptor = fileDescriptor.findMessageTypeByName(inputMessageName)
-          if (syntheticMessageDescriptor == null)
+          val messageDescriptor = fileDescriptor.findMessageTypeByName(inputMessageName)
+          if (messageDescriptor == null)
             throw new RuntimeException(
               "Unknown message type [" + inputMessageName + "], known are [" + fileDescriptor.getMessageTypes.asScala
                 .map(_.getName) + "]")
@@ -214,7 +228,7 @@ private[kalix] object ComponentDescriptor {
             if (method.callable) {
               method.params.zipWithIndex.map { case (param, idx) =>
                 extractorCreators.find(_._1 == idx) match {
-                  case Some((_, creator)) => creator(syntheticMessageDescriptor)
+                  case Some((_, creator)) => creator(messageDescriptor)
                   case None               =>
                     // Yet to resolve this parameter, resolve now
                     param match {
@@ -233,16 +247,39 @@ private[kalix] object ComponentDescriptor {
             } else Array.empty
 
           // synthetic request always have proto messages as input,
-          // their type url will are prefixed by DefaultTypeUrlPrefix
+          // their type url are prefixed by DefaultTypeUrlPrefix
           // It's possible for a user to configure another prefix, but this is done through the Kalix instance
           // and the Java SDK doesn't expose it.
-          val typeUrl = AnySupport.DefaultTypeUrlPrefix + "/" + syntheticMessageDescriptor.getFullName
+          val typeUrl = AnySupport.DefaultTypeUrlPrefix + "/" + messageDescriptor.getFullName
 
           CommandHandler(
             grpcMethodName,
             messageCodec,
-            syntheticMessageDescriptor,
+            messageDescriptor,
             Map(typeUrl -> MethodInvoker(method.javaMethod, parameterExtractors)))
+
+        case method: CommandHandlerMethod =>
+          val messageDescriptor = fileDescriptor.findMessageTypeByName(inputMessageName)
+          // CommandHandler request always have proto messages as input,
+          // their type url are prefixed by DefaultTypeUrlPrefix
+          // It's possible for a user to configure another prefix, but this is done through the Kalix instance
+          // and the Java SDK doesn't expose it.
+          val typeUrl = AnySupport.DefaultTypeUrlPrefix + "/" + messageDescriptor.getFullName
+          val methodInvokers =
+            serviceMethod.javaMethodOpt
+              .map { meth =>
+                val parameterExtractors: ParameterExtractorsArray =
+                  if (meth.getParameterTypes.length == 1)
+                    Array(
+                      new ParameterExtractors.BodyExtractor(messageDescriptor.findFieldByNumber(1), method.inputType))
+                  else
+                    Array.empty // parameterless method, not extractor needed
+
+                Map(typeUrl -> MethodInvoker(meth, parameterExtractors))
+              }
+              .getOrElse(Map.empty)
+
+          CommandHandler(grpcMethodName, messageCodec, messageDescriptor, methodInvokers)
 
         case method: CombinedSubscriptionServiceMethod =>
           val methodInvokers =
@@ -285,6 +322,47 @@ private[kalix] object ComponentDescriptor {
     }
   }
 
+  private def buildCommandHandlerMessageAndExtractors(
+      nameGenerator: NameGenerator,
+      commandHandlerMethod: CommandHandlerMethod): (DescriptorProto, Map[Int, ExtractorCreator]) = {
+
+    val inputMessageName = nameGenerator.getName(commandHandlerMethod.methodName.capitalize + "KalixSyntheticRequest")
+
+    val inputMessageDescriptor = DescriptorProto.newBuilder()
+    inputMessageDescriptor.setName(inputMessageName)
+
+    if (commandHandlerMethod.hasInputType) {
+      val bodyFieldDesc = FieldDescriptorProto
+        .newBuilder()
+        // todo ensure this is unique among field names
+        .setName("json_body")
+        // Always put the body at position 1 - even if there's no body, leave position 1 free. This keeps the body
+        // parameter stable in case the user adds a body.
+        .setNumber(1)
+        .setType(FieldDescriptorProto.Type.TYPE_MESSAGE)
+        .setTypeName("google.protobuf.Any")
+        .build()
+
+      inputMessageDescriptor.addField(bodyFieldDesc)
+    }
+
+    val idFieldDesc = FieldDescriptorProto
+      .newBuilder()
+      .setName("id")
+      // id always go on position 2 after the body
+      .setNumber(2)
+      .setType(FieldDescriptorProto.Type.TYPE_STRING)
+      .setOptions {
+        DescriptorProtos.FieldOptions
+          .newBuilder()
+          .setExtension(kalix.Annotations.field, kalix.FieldOptions.newBuilder().setId(true).build())
+          .build()
+      }
+      .build()
+
+    inputMessageDescriptor.addField(idFieldDesc)
+    (inputMessageDescriptor.build(), Map.empty)
+  }
   private def buildSyntheticMessageAndExtractors(
       nameGenerator: NameGenerator,
       serviceMethod: SyntheticRequestServiceMethod,
@@ -562,6 +640,18 @@ private[kalix] object ComponentDescriptor {
   private def isCollection(javaType: Type): Boolean = javaType.isInstanceOf[ParameterizedType] &&
     classOf[util.Collection[_]]
       .isAssignableFrom(javaType.asInstanceOf[ParameterizedType].getRawType.asInstanceOf[Class[_]])
+
+  private def buildHttpRule(commandHandlerMethod: CommandHandlerMethod): HttpRule.Builder = {
+    val httpRule = HttpRule.newBuilder()
+    val typeId = commandHandlerMethod.component.getAnnotation(classOf[TypeId]).value()
+    // TODO: shall we prefix the URLs with a version?
+    val urlTemplate = commandHandlerMethod.urlTemplate.templateUrl(typeId, commandHandlerMethod.method.getName)
+    if (commandHandlerMethod.hasInputType)
+      httpRule.setPost(urlTemplate)
+    else
+      httpRule.setGet(urlTemplate)
+
+  }
 
   private def buildHttpRule(serviceMethod: SyntheticRequestServiceMethod) = {
     val httpRule = HttpRule.newBuilder()

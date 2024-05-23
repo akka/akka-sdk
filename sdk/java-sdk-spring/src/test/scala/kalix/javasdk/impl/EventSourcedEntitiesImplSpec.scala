@@ -4,8 +4,9 @@
 
 package kalix.javasdk.impl
 
-import com.google.protobuf.ByteString._
+import com.google.protobuf.ByteString
 import com.google.protobuf.any.{ Any => ScalaPbAny }
+import kalix.javasdk.JsonSupport
 import kalix.javasdk.eventsourced.ReflectiveEventSourcedEntityProvider
 import kalix.javasdk.eventsourcedentity.OldTestESEvent.OldEvent1
 import kalix.javasdk.eventsourcedentity.OldTestESEvent.OldEvent2
@@ -14,22 +15,22 @@ import kalix.javasdk.eventsourcedentity.TestESEvent
 import kalix.javasdk.eventsourcedentity.TestESEvent.Event4
 import kalix.javasdk.eventsourcedentity.TestESState
 import kalix.javasdk.eventsourcedentity.TestEventSourcedEntity
-import kalix.javasdk.JsonSupport
 import kalix.javasdk.impl.eventsourcedentity.TestEventSourcedService
 import kalix.testkit.TestProtocol
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
-class EvenSourcedEntitiesImplSpec extends AnyWordSpec with Matchers with BeforeAndAfterAll {
+class EventSourcedEntitiesImplSpec extends AnyWordSpec with Matchers with BeforeAndAfterAll {
 
   import kalix.testkit.eventsourcedentity.EventSourcedMessages._
+
+  val jsonMessageCodec = new JsonMessageCodec()
 
   "EventSourcedEntityImpl" should {
 
     "recover es state based on old events version" in {
       val entityId = "1"
-      val jsonMessageCodec = new JsonMessageCodec()
       val service = new TestEventSourcedService(
         ReflectiveEventSourcedEntityProvider
           .of[TestESState, TestESEvent, TestEventSourcedEntity](
@@ -47,7 +48,7 @@ class EvenSourcedEntitiesImplSpec extends AnyWordSpec with Matchers with BeforeA
         event(4, JsonSupport.encodeJson(new Event4("value"), classOf[Event4].getName + "#1"))
       ) //current version is 2
 
-      entity.send(command(1, entityId, "Get", emptySyntheticRequest("Get")))
+      entity.send(command(1, entityId, "Get", syntheticRequest()))
       //321 because of Event2Migration
       entity.expect(reply(1, jsonMessageCodec.encodeJava(new TestESState("state", 321, true, "value-v2"))))
       protocol.terminate()
@@ -55,7 +56,7 @@ class EvenSourcedEntitiesImplSpec extends AnyWordSpec with Matchers with BeforeA
     }
   }
 
-  private def emptySyntheticRequest(methodName: String) = {
-    ScalaPbAny(s"type.googleapis.com/kalix.javasdk.eventsourcedentity.${methodName}KalixSyntheticRequest", EMPTY)
+  private def syntheticRequest() = {
+    ScalaPbAny(s"type.googleapis.com/kalix.javasdk.eventsourcedentity.GetKalixSyntheticRequest", ByteString.EMPTY)
   }
 }

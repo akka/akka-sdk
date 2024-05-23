@@ -50,18 +50,8 @@ public class ComponentClientImpl implements ComponentClient {
   }
 
   @Override
-  public EventSourcedEntityCallBuilder forEventSourcedEntity() {
-    return new EventSourcedEntityCallBuilder(kalixClient, callMetadata);
-  }
-
-  @Override
-  public EventSourcedEntityCallBuilder forEventSourcedEntity(String eventSourcedEntityId) {
-    return new EventSourcedEntityCallBuilder(kalixClient, callMetadata, eventSourcedEntityId);
-  }
-
-  @Override
-  public EventSourcedEntityCallBuilder forEventSourcedEntity(String... eventSourcedEntityIds) {
-    return new EventSourcedEntityCallBuilder(kalixClient, callMetadata, List.of(eventSourcedEntityIds));
+  public EventSourcedEntityClient forEventSourcedEntity(String eventSourcedEntityId) {
+    return new EventSourcedEntityClient(kalixClient, callMetadata, eventSourcedEntityId);
   }
 
   @Override

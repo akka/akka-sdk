@@ -5,6 +5,11 @@
 package com.example.wiring;
 
 import com.example.Main;
+import com.example.wiring.eventsourcedentities.counter.CounterEntity;
+import com.google.protobuf.any.Any;
+import kalix.javasdk.DeferredCall;
+import kalix.javasdk.client.ComponentClient;
+import kalix.javasdk.client.EventSourcedEntityClient;
 import kalix.spring.KalixConfigurationTest;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Assertions;
@@ -12,15 +17,12 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
-import reactor.core.publisher.Mono;
 
 import java.time.Duration;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -32,148 +34,113 @@ import static org.junit.jupiter.api.Assertions.fail;
 @TestPropertySource(properties = "spring.main.allow-bean-definition-overriding=true")
 public class EventSourcedEntityIntegrationTest {
 
-  @Autowired
-  private WebClient webClient;
+    @Autowired
+    private ComponentClient componentClient;
 
-  private Duration timeout = Duration.of(10, SECONDS);
+    private Duration timeout = Duration.of(10, SECONDS);
 
-  @Test
-  public void verifyCounterEventSourcedWiring() {
+    @Test
+    public void verifyCounterEventSourcedWiring() {
 
-    var counterId = "hello";
+        var counterId = "hello";
+        var client = componentClient.forEventSourcedEntity(counterId);
 
-    Integer counterIncrease = increaseCounter(counterId, 10);
-    Assertions.assertEquals(10, counterIncrease);
+        Integer counterIncrease = increaseCounter(client, 10);
+        Assertions.assertEquals(10, counterIncrease);
 
-    Integer counterMultiply = multiplyCounter(counterId, 20);
-    Assertions.assertEquals(200, counterMultiply);
+        Integer counterMultiply = multiplyCounter(client, 20);
+        Assertions.assertEquals(200, counterMultiply);
 
-    int counterGet = getCounter(counterId);
-    Assertions.assertEquals(200, counterGet);
-  }
-
-  @Test
-  public void verifyCounterEventSourcedAfterRestart() {
-
-    var counterId = "helloRestart";
-
-    increaseCounter(counterId, 15);
-    multiplyCounter(counterId, 2);
-    int counterGet = getCounter(counterId);
-    Assertions.assertEquals(30, counterGet);
-
-    // force restart of counter entity
-    restartCounterEntity(counterId);
-
-    // events should be replayed successfully and
-    // counter value should be the same as previously
-    int counterGet2 = getCounter(counterId);
-    Assertions.assertEquals(30, counterGet2);
-  }
-
-  @Test
-  public void verifyCounterEventSourcedAfterRestartFromSnapshot() {
-
-    // snapshotting with kalix.event-sourced-entity.snapshot-every = 10
-    var counterId = "restartFromSnapshot";
-
-    // force the entity to snapshot
-    for (int i = 0; i < 10; i++) {
-      increaseCounter(counterId, 1);
+        int counterGet = getCounter(client);
+        Assertions.assertEquals(200, counterGet);
     }
-    Assertions.assertEquals(10, getCounter(counterId));
 
-    // force restart of counter entity
-    restartCounterEntity(counterId);
+    @Test
+    public void verifyCounterEventSourcedAfterRestart() {
 
-    // current state is based on snapshot and should be the same as previously
-    await()
-      .ignoreExceptions()
-      .atMost(20, TimeUnit.of(SECONDS))
-      .until(
-        () -> getCounter(counterId),
-        new IsEqual(10));
-  }
+        var counterId = "helloRestart";
+        var client = componentClient.forEventSourcedEntity(counterId);
 
-  @Test
-  public void verifyRequestWithDefaultProtoValuesWithEntity() {
-    var counterId = "some-counter";
+        increaseCounter(client, 15);
+        multiplyCounter(client, 2);
+        int counterGet = getCounter(client);
+        Assertions.assertEquals(30, counterGet);
 
-    increaseCounter(counterId, 2);
-    Integer result = webClient
-      .post()
-      .uri("/counter/" + counterId + "/set/" + 0)
-      .retrieve()
-      .bodyToMono(Integer.class)
-      .block(timeout);
+        // force restart of counter entity
+        restartCounterEntity(client);
 
-    assertThat(result).isEqualTo(0);
-  }
+        // events should be replayed successfully and
+        // counter value should be the same as previously
+        int counterGet2 = getCounter(client);
+        Assertions.assertEquals(30, counterGet2);
+    }
 
-  @Test
-  public void verifyRequestWithDefaultProtoValuesWithEntityByReqParams() {
-    var counterId = "some-counter";
+    @Test
+    public void verifyCounterEventSourcedAfterRestartFromSnapshot() {
 
-    increaseCounter(counterId, 2);
-    Integer result = webClient
-      .post()
-      .uri("/counter/" + counterId + "/set?value=" + 0)
-      .retrieve()
-      .bodyToMono(Integer.class)
-      .block(timeout);
+        // snapshotting with kalix.event-sourced-entity.snapshot-every = 10
+        var counterId = "restartFromSnapshot";
+        var client = componentClient.forEventSourcedEntity(counterId);
 
-    assertThat(result).isEqualTo(0);
-  }
+        // force the entity to snapshot
+        for (int i = 0; i < 10; i++) {
+            increaseCounter(client, 1);
+        }
+        Assertions.assertEquals(10, getCounter(client));
 
-  @Test
-  public void failRequestWhenReqParamsIsNotPresent() {
-    var counterId = "some-counter";
+        // force restart of counter entity
+        restartCounterEntity(client);
 
-    increaseCounter(counterId, 2);
-    ResponseEntity<String> result = webClient
-      .post()
-      .uri("/counter/" + counterId + "/set")
-      .retrieve()
-      .toEntity(String.class)
-      .onErrorResume(WebClientResponseException.class, error -> Mono.just(ResponseEntity.status(error.getStatusCode()).body(error.getResponseBodyAsString())))
-      .block(timeout);
+        // current state is based on snapshot and should be the same as previously
+        await()
+            .ignoreExceptions()
+            .atMost(20, TimeUnit.of(SECONDS))
+            .until(
+                () -> getCounter(client),
+                new IsEqual(10));
+    }
 
-    assertThat(result.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-    assertThat(result.getBody()).isEqualTo("Required request parameter is missing: value");
-  }
+    @Test
+    public void verifyRequestWithDefaultProtoValuesWithEntity() {
+        var client = componentClient.forEventSourcedEntity("some-counter");
+        increaseCounter(client, 2);
+        Integer result = execute(client.call(CounterEntity::set).params(0));
+        assertThat(result).isEqualTo(0);
+    }
 
-  private Integer increaseCounter(String name, int value) {
-    return webClient
-      .post()
-      .uri("/counter/" + name + "/increase/" + value)
-        .retrieve()
-        .bodyToMono(Integer.class)
-        .block(timeout);
-  }
 
-  private Integer multiplyCounter(String name, int value) {
-    return webClient
-        .post()
-        .uri("/counter/"+ name +"/multiply/" + value)
-        .retrieve()
-        .bodyToMono(Integer.class)
-        .block(timeout);
-  }
+    private Integer increaseCounter(EventSourcedEntityClient client, int value)  {
+        return execute(client
+            .call(CounterEntity::increase)
+            .params(value));
+    }
 
-  private void restartCounterEntity(String name) {
-    try {
-      webClient
-          .post()
-          .uri("/counter/" + name +"/restart")
-          .retrieve()
-          .bodyToMono(Integer.class)
-          .block(timeout);
-      fail("This should not be reached");
-    } catch (Exception ignored) { }
-  }
 
-  private Integer getCounter(String name) {
-    var result = webClient.get().uri("/counter/" + name).retrieve().bodyToMono(String.class).block(timeout);
-    return Integer.valueOf(result.replaceAll("\"","")); // transforming ""1"" -> "1" -> 1
-  }
+    private Integer multiplyCounter(EventSourcedEntityClient client, int value) {
+        return execute(client
+            .call(CounterEntity::times)
+            .params(value));
+    }
+
+    private void restartCounterEntity(EventSourcedEntityClient client) {
+        try {
+            execute(client
+                .call(CounterEntity::restart));
+            fail("This should not be reached");
+        } catch (Exception ignored) {
+        }
+    }
+
+    private Integer getCounter(EventSourcedEntityClient client) {
+        return execute(client
+            .call(CounterEntity::get));
+    }
+
+    protected <T> T execute(DeferredCall<Any, T> deferredCall) {
+        try {
+            return deferredCall.execute().toCompletableFuture().get(timeout.toMillis(), TimeUnit.MILLISECONDS);
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

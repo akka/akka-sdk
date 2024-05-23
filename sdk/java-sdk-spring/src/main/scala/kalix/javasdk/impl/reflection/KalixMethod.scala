@@ -54,6 +54,33 @@ sealed trait AnyJsonRequestServiceMethod extends ServiceMethod {
   def inputType: Class[_]
 }
 
+sealed trait UrlTemplate {
+  def templateUrl(typeId: String, methodName: String): String
+}
+object EntityUrlTemplate extends UrlTemplate {
+  override def templateUrl(typeId: String, methodName: String): String = {
+    s"/entity/${typeId}/{id}/${methodName}"
+  }
+}
+object Workflow extends UrlTemplate {
+  override def templateUrl(componentTypeId: String, methodName: String): String =
+    s"/workflow/${componentTypeId}/{id}/${methodName}"
+}
+
+/**
+ * Build from command handler methods on Entities and Workflows
+ */
+case class CommandHandlerMethod(component: Class[_], method: Method, urlTemplate: UrlTemplate)
+    extends AnyJsonRequestServiceMethod {
+
+  override def methodName: String = method.getName
+  override def javaMethodOpt: Option[Method] = Some(method)
+  val hasInputType: Boolean = method.getParameterTypes.headOption.isDefined
+  val inputType: Class[_] = method.getParameterTypes.headOption.getOrElse(classOf[Unit])
+  val streamIn: Boolean = false
+  val streamOut: Boolean = false
+}
+
 /**
  * Build from methods annotated with @Subscription at type level.
  *
@@ -91,7 +118,7 @@ case class CombinedSubscriptionServiceMethod(
 case class SubscriptionServiceMethod(javaMethod: Method) extends AnyJsonRequestServiceMethod {
 
   val methodName: String = javaMethod.getName
-  val inputType: Class[_] = javaMethod.getParameterTypes()(0)
+  val inputType: Class[_] = javaMethod.getParameterTypes.head
 
   override def javaMethodOpt: Option[Method] = Some(javaMethod)
 

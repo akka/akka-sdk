@@ -36,7 +36,7 @@ import kalix.javasdk.HttpResponse;
 import kalix.javasdk.Metadata;
 import kalix.javasdk.StatusCode;
 import kalix.javasdk.client.ComponentClient;
-import kalix.javasdk.client.EventSourcedEntityCallBuilder;
+import kalix.javasdk.client.EventSourcedEntityClient;
 import kalix.spring.KalixConfigurationTest;
 import org.hamcrest.core.IsEqual;
 import org.hamcrest.core.IsNull;
@@ -79,6 +79,7 @@ public class SpringSdkIntegrationTest {
 
   @Autowired
   private WebClient webClient;
+
   @Autowired
   private ComponentClient componentClient;
 
@@ -352,7 +353,7 @@ public class SpringSdkIntegrationTest {
             .block(timeout);
     Assertions.assertEquals(StatusCode.Success.ACCEPTED.value(), response.statusCode().value());
   }
-  
+
 
   @Test
   public void verifyEchoActionRequestParamWithTypedForward() {
@@ -425,10 +426,10 @@ public class SpringSdkIntegrationTest {
   @Test
   public void verifyActionIsNotSubscribedToMultiplyAndRouterIgnores() {
     var entityId = "counterId2";
-    EventSourcedEntityCallBuilder callBuilder = componentClient.forEventSourcedEntity(entityId);
-    execute(callBuilder.call(CounterEntity::increase).params(1));
-    execute(callBuilder.call(CounterEntity::times).params(2));
-    Integer lastKnownValue = execute(callBuilder.call(CounterEntity::increase).params(1234));
+    EventSourcedEntityClient counterClient = componentClient.forEventSourcedEntity(entityId);
+    execute(counterClient.call(CounterEntity::increase).params(1));
+    execute(counterClient.call(CounterEntity::times).params(2));
+    Integer lastKnownValue = execute(counterClient.call(CounterEntity::increase).params(1234));
 
     assertThat(lastKnownValue).isEqualTo(1 * 2 + 1234);
 
@@ -447,10 +448,10 @@ public class SpringSdkIntegrationTest {
   public void verifyViewIsNotSubscribedToMultiplyAndRouterIgnores() {
 
     var entityId = "counterId4";
-    EventSourcedEntityCallBuilder callBuilder = componentClient.forEventSourcedEntity(entityId);
-    execute(callBuilder.call(CounterEntity::increase).params(1));
-    execute(callBuilder.call(CounterEntity::times).params(2));
-    Integer counterGet = execute(callBuilder.call(CounterEntity::increase).params(1));
+    EventSourcedEntityClient counterClient = componentClient.forEventSourcedEntity(entityId);
+    execute(counterClient.call(CounterEntity::increase).params(1));
+    execute(counterClient.call(CounterEntity::times).params(2));
+    Integer counterGet = execute(counterClient.call(CounterEntity::increase).params(1));
 
     assertThat(counterGet).isEqualTo(1 * 2 + 1);
 

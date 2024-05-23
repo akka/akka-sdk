@@ -4,10 +4,6 @@
 
 package kalix.javasdk.client;
 
-import kalix.spring.impl.KalixClient;
-
-import java.util.List;
-
 /**
  * Utility to send requests to other Kalix components by composing a DeferredCall. To compose a
  * call:
@@ -56,23 +52,9 @@ public interface ComponentClient {
   /**
    * Select EventSourcedEntity as a call target component.
    *
-   * <p>For calling methods annotated with @{@link kalix.javasdk.annotations.GenerateId}
-   */
-  EventSourcedEntityCallBuilder forEventSourcedEntity();
-
-  /**
-   * Select EventSourcedEntity as a call target component.
-   *
    * @param eventSourcedEntityId - event sourced entity id used to create a call.
    */
-  EventSourcedEntityCallBuilder forEventSourcedEntity(String eventSourcedEntityId);
-
-  /**
-   * Select EventSourcedEntity as a call target component.
-   *
-   * @param eventSourcedEntityIds - compound entity ids used to create a call.
-   */
-  EventSourcedEntityCallBuilder forEventSourcedEntity(String... eventSourcedEntityIds);
+  EventSourcedEntityClient forEventSourcedEntity(String eventSourcedEntityId);
 
   /**
    * Select Workflow as a call target component.

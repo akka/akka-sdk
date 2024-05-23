@@ -57,7 +57,11 @@ public class TracingIntegrationTest extends DockerIntegrationTest {
     }
 
     private Integer callTCounter(String counterId, Integer increase) {
-        return webClient.post().uri("/tcounter/" + counterId + "/increase/" + increase).retrieve().bodyToMono(Integer.class).block(timeout);
+        return webClient.post()
+            .uri("/entity/tcounter/" + counterId + "/increase/")
+            .bodyValue(increase)
+            .retrieve()
+            .bodyToMono(Integer.class).block(timeout);
     }
     public Traces selectTraces(){
         Traces traces = WebClient.create("http://0.0.0.0:3200/api/search").get().retrieve().bodyToMono(Traces.class).block(timeout);

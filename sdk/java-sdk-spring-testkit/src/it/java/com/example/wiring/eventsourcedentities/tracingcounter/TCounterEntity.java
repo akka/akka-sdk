@@ -6,19 +6,13 @@ package com.example.wiring.eventsourcedentities.tracingcounter;
 
 
 import kalix.javasdk.annotations.EventHandler;
-import kalix.javasdk.annotations.Id;
 import kalix.javasdk.annotations.TypeId;
 import kalix.javasdk.eventsourcedentity.EventSourcedEntity;
 import kalix.javasdk.eventsourcedentity.EventSourcedEntityContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
 
-@Id("id")
-@TypeId("tcounter-entity")
-@RequestMapping("/tcounter/{id}")
+@TypeId("tcounter")
 public class TCounterEntity extends EventSourcedEntity<TCounter, TCounterEvent> {
 
     Logger log = LoggerFactory.getLogger(TCounterEntity.class);
@@ -34,8 +28,7 @@ public class TCounterEntity extends EventSourcedEntity<TCounter, TCounterEvent> 
         return new TCounter(0);
     }
 
-    @PostMapping("/increase/{value}")
-    public Effect<Integer> increase(@PathVariable Integer value){
+    public Effect<Integer> increase(Integer value){
         log.info("increasing [{}].", value);
         return effects().emitEvent(new TCounterEvent.ValueIncreased(value)).thenReply(c -> c.count());
     }

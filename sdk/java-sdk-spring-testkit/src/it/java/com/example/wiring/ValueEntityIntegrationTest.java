@@ -5,7 +5,6 @@
 package com.example.wiring;
 
 import com.example.Main;
-import com.example.wiring.eventsourcedentities.counter.CounterEntity;
 import com.example.wiring.valueentities.user.User;
 import kalix.spring.KalixConfigurationTest;
 import org.junit.jupiter.api.Assertions;

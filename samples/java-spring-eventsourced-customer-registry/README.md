@@ -37,7 +37,7 @@ With both the Kalix Runtime and your service running, any defined endpoints shou
 * Create a customer with:
 
 ```shell
-curl localhost:9000/customer/one/create \
+curl localhost:9000/entity/customer/one/create \
   --header "Content-Type: application/json" \
   -XPOST \
   --data '{"email":"test@example.com","name":"Test Testsson","address":{"street":"Teststreet 25","city":"Testcity"}}'
@@ -46,7 +46,7 @@ curl localhost:9000/customer/one/create \
 * Retrieve the customer:
 
 ```shell
-curl localhost:9000/customer/one
+curl localhost:9000/entity/customer/one/getCustomer
 ```
 
 * Query by email:
@@ -64,13 +64,13 @@ curl localhost:9000/customer/by_name/Test%20Testsson
 * Change name:
 
 ```shell
-curl localhost:9000/customer/one/changeName/Jan%20Banan -XPOST
+curl  -XPOST --header "Content-Type: application/json"  localhost:9000/entity/customer/one/changeName -d '"Jan Banan"'
 ```
 
 * Change address:
 
 ```shell
-curl localhost:9000/customer/one/changeAddress \
+curl localhost:9000/entity/customer/one/changeAddress \
   --header "Content-Type: application/json" \
   -XPOST \
   --data '{"street":"Newstreet 25","city":"Newcity"}'

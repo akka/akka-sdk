@@ -5,23 +5,18 @@
 package kalix.javasdk.eventsourcedentity;
 
 import kalix.javasdk.annotations.EventHandler;
-import kalix.javasdk.annotations.Id;
 import kalix.javasdk.annotations.TypeId;
-import kalix.javasdk.eventsourcedentity.EventSourcedEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
 
-@Id("id")
 @TypeId("es")
-@RequestMapping("/es")
 public class TestEventSourcedEntity extends EventSourcedEntity<TestESState, TestESEvent> {
+
 
   @Override
   public TestESState emptyState() {
     return new TestESState("", 0, false, "");
   }
 
-  @GetMapping
+  // TODO: support parameterless methods
   public Effect<TestESState> get() {
     return effects().reply(currentState());
   }

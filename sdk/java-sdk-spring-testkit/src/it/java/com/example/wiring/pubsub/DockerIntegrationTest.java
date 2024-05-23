@@ -7,6 +7,8 @@ package com.example.wiring.pubsub;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import kalix.javasdk.JsonSupport;
+import kalix.javasdk.client.ComponentClient;
+import kalix.javasdk.impl.client.ComponentClientImpl;
 import kalix.spring.impl.KalixSpringApplication;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.AfterAll;
@@ -32,6 +34,7 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.awaitility.Awaitility.await;
 
 public abstract class DockerIntegrationTest {
+
   protected WebClient webClient;
   protected Duration timeout = Duration.of(5, SECONDS);
 
@@ -48,15 +51,17 @@ public abstract class DockerIntegrationTest {
     return ConfigFactory.parseMap(confMap);
   }
 
-
-  public DockerIntegrationTest(ApplicationContext applicationContext) {
-    Config config = defaultConfig().withFallback(ConfigFactory.load());
-    kalixSpringApplication = new KalixSpringApplication(applicationContext, config);
-  }
-
   public DockerIntegrationTest(ApplicationContext applicationContext, Config config){
     Config finalConfig = defaultConfig().withFallback(config).withFallback(ConfigFactory.load());
     kalixSpringApplication = new KalixSpringApplication(applicationContext, finalConfig);
+  }
+
+  // FIXME: this test is not properly setup.
+  //  Injecting ComponentClient doesn't work as it holds a Future that is never completed
+  public ComponentClient componentClient() {
+    var kalixClient = kalixSpringApplication.kalixClient();
+    kalixClient.setWebClient(webClient);
+    return new ComponentClientImpl(kalixClient);
   }
 
   @BeforeAll
