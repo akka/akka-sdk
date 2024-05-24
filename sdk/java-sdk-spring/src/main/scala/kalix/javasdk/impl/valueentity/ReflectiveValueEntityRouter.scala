@@ -7,9 +7,10 @@ package kalix.javasdk.impl.valueentity
 import java.lang.reflect.ParameterizedType
 
 import com.google.protobuf.any.{ Any => ScalaPbAny }
-import kalix.javasdk.JsonSupport
 import kalix.javasdk.impl.CommandHandler
 import kalix.javasdk.impl.InvocationContext
+import kalix.javasdk.JsonSupport
+import kalix.javasdk.impl.valueentity.ValueEntityRouter
 import kalix.javasdk.valueentity.CommandContext
 import kalix.javasdk.valueentity.ValueEntity
 

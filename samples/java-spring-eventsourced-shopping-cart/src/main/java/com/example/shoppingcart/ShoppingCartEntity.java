@@ -5,17 +5,13 @@ import com.example.shoppingcart.domain.ShoppingCart.LineItem;
 import com.example.shoppingcart.domain.ShoppingCartEvent;
 import kalix.javasdk.eventsourcedentity.EventSourcedEntity;
 import kalix.javasdk.eventsourcedentity.EventSourcedEntityContext;
-import kalix.javasdk.annotations.Id;
 import kalix.javasdk.annotations.TypeId;
 import kalix.javasdk.annotations.EventHandler;
-import org.springframework.web.bind.annotation.*;
 
 import java.util.Collections;
 
 // tag::class[]
-@Id("cartId") // <2>
-@TypeId("shopping-cart") // <3>
-@RequestMapping("/cart/{cartId}") // <4>
+@TypeId("shopping-cart") // <2>
 public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCart, ShoppingCartEvent> { // <1>
   // end::class[]
 
@@ -33,14 +29,12 @@ public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCart, Shoppin
 
   // end::getCart[]
 
-  @PostMapping("/create")
   public Effect<String> create() {
     return effects().reply("OK");
   }
 
   // tag::addItem[]
-  @PostMapping("/add")
-  public Effect<String> addItem(@RequestBody LineItem item) {
+  public Effect<String> addItem(LineItem item) {
     if (currentState().checkedOut())
       return effects().error("Cart is already checked out.");
     if (item.quantity() <= 0) { // <1>
@@ -56,8 +50,7 @@ public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCart, Shoppin
 
   // end::addItem[]
 
-  @PostMapping("/items/{productId}/remove")
-  public Effect<String> removeItem(@PathVariable String productId) {
+  public Effect<String> removeItem(String productId) {
     if (currentState().checkedOut())
       return effects().error("Cart is already checked out.");
     if (currentState().findItemByProductId(productId).isEmpty()) {
@@ -72,17 +65,15 @@ public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCart, Shoppin
   }
 
   // tag::getCart[]
-  @GetMapping() // <3>
   public Effect<ShoppingCart> getCart() {
-    return effects().reply(currentState()); // <4>
+    return effects().reply(currentState()); // <3>
   }
   // end::getCart[]
 
   // tag::checkout[]
-  @PostMapping("/checkout")
   public Effect<String> checkout() {
     if (currentState().checkedOut())
-      return effects().error("Cart is already checked out.");
+      return effects().reply("OK");
 
     return effects()
         .emitEvent(new ShoppingCartEvent.CheckedOut()) // <1>

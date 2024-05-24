@@ -5,6 +5,7 @@
 package kalix.javasdk.testkit;
 
 import kalix.javasdk.Metadata;
+import kalix.javasdk.testkit.ValueEntityResult;
 import kalix.javasdk.testkit.impl.TestKitValueEntityCommandContext;
 import kalix.javasdk.testkit.impl.TestKitValueEntityContext;
 import kalix.javasdk.testkit.impl.ValueEntityResultImpl;

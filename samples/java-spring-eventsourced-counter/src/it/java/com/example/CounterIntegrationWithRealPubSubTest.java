@@ -31,8 +31,6 @@ public class CounterIntegrationWithRealPubSubTest extends KalixIntegrationTestKi
 
     private Duration timeout = Duration.of(10, SECONDS);
 
-    @Autowired
-    private WebClient webClient;
 
     @Test
     public void verifyCounterEventSourcedConsumesFromPubSub() {
@@ -54,17 +52,18 @@ public class CounterIntegrationWithRealPubSubTest extends KalixIntegrationTestKi
             .toBodilessEntity().block();
         assertTrue(injectMsgResult.getStatusCode().is2xxSuccessful());
 
+
+        var counterClient = componentClient.forEventSourcedEntity(counterId);
+        var getCounterState =
+            counterClient
+                .call(Counter::get);
+
         await()
             .ignoreExceptions()
             .atMost(20, TimeUnit.SECONDS)
-            .until(() ->
-                    webClient.get()
-                        .uri("/counter/" + counterId)
-                        .retrieve()
-                        .bodyToMono(String.class)
-                        .block(timeout),
-                new IsEqual("\"20\"")
-            );
+            .until(
+                () -> getCounterState.execute().toCompletableFuture().get(1, TimeUnit.SECONDS),
+                new IsEqual("\"20\""));
     }
     // end::test-topic[]
 

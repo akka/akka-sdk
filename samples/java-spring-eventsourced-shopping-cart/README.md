@@ -37,20 +37,20 @@ With both the Kalix Runtime and your service running, any defined endpoints shou
 - Add items to shopping cart
 
 ```shell
-curl -i -XPOST -H "Content-Type: application/json" localhost:9000/cart/123/add -d '{"productId":"kalix-tshirt", "name":"Akka Tshirt", "quantity": 10}'
-curl -i -XPOST -H "Content-Type: application/json" localhost:9000/cart/123/add -d '{"productId":"scala-tshirt", "name":"Scala Tshirt", "quantity": 20}'
+curl -i -XPOST -H "Content-Type: application/json" localhost:9000/entity/shopping-cart/123/addItem -d '{"productId":"kalix-tshirt", "name":"Akka Tshirt", "quantity": 10}'
+curl -i -XPOST -H "Content-Type: application/json" localhost:9000/entity/shopping-cart/123/addItem -d '{"productId":"scala-tshirt", "name":"Scala Tshirt", "quantity": 20}'
 ```
 
 - See current status of the shopping cart
 
 ```shell
-curl -i -XGET -H "Content-Type: application/json" localhost:9000/cart/123
+curl -i -XGET localhost:9000/entity/shopping-cart/123/getCart
 ```
 
 - Remove an item from the cart
 
 ```shell
-curl -XPOST -H "Content-Type: application/json" localhost:9000/cart/123/items/kalix-tshirt/remove
+curl -XPOST -H "Content-Type: application/json" localhost:9000/entity/shopping-cart/123/removeItem -d '"kalix-tshirt"'
 ```
 
 ## Deploying

@@ -2,7 +2,7 @@
  * Copyright (C) 2021-2024 Lightbend Inc. <https://www.lightbend.com>
  */
 
-package kalix.javasdk.testmodels.eventsourced;
+package spring.testmodels.eventsourced;
 
 public class Increased {
 

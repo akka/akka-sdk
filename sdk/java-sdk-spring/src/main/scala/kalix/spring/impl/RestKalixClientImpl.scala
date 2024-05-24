@@ -21,11 +21,7 @@ import akka.http.scaladsl.model.Uri
 import com.google.protobuf.Descriptors
 import com.google.protobuf.DynamicMessage
 import com.google.protobuf.any.Any
-import kalix.javasdk.DeferredCall
 import kalix.javasdk.DeferredCallResponseException
-import kalix.javasdk.HttpResponse
-import kalix.javasdk.Metadata
-import kalix.javasdk.StatusCode
 import kalix.javasdk.StatusCode.ErrorCode
 import kalix.javasdk.impl.AnySupport
 import kalix.javasdk.impl.JsonMessageCodec
@@ -33,6 +29,10 @@ import kalix.javasdk.impl.MetadataImpl
 import kalix.javasdk.impl.RestDeferredCall
 import kalix.javasdk.impl.http.HttpEndpointMethodDefinition
 import kalix.javasdk.impl.http.HttpEndpointMethodDefinition.ANY_METHOD
+import kalix.javasdk.DeferredCall
+import kalix.javasdk.HttpResponse
+import kalix.javasdk.Metadata
+import kalix.javasdk.StatusCode
 import org.springframework.http.ResponseEntity
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.WebClient.RequestHeadersSpec

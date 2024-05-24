@@ -12,6 +12,10 @@ import kalix.javasdk.impl.ComponentDescriptor;
 import kalix.javasdk.impl.JsonMessageCodec;
 import kalix.javasdk.impl.StrictJsonMessageCodec;
 import kalix.javasdk.impl.workflow.ReflectiveWorkflowRouter;
+import kalix.javasdk.workflow.Workflow;
+import kalix.javasdk.workflow.WorkflowContext;
+import kalix.javasdk.workflow.WorkflowOptions;
+import kalix.javasdk.workflow.WorkflowProvider;
 
 import java.util.Optional;
 import java.util.function.Function;

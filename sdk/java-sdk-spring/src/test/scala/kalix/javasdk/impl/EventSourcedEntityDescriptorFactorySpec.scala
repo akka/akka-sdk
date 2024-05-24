@@ -6,26 +6,17 @@ package kalix.javasdk.impl
 
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 
-import com.google.protobuf.Descriptors.FieldDescriptor.JavaType
 import kalix.JwtMethodOptions.JwtMethodMode
 import kalix.JwtServiceOptions.JwtServiceMode
-import kalix.KeyGeneratorMethodOptions.Generator
-import kalix.javasdk.impl.reflection.ServiceIntrospectionException
 import kalix.spring.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.CounterEventSourcedEntity
-import kalix.spring.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.CounterEventSourcedEntityWithIdGenerator
-import kalix.spring.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.CounterEventSourcedEntityWithIdMethodOverride
-import kalix.spring.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.CounterEventSourcedEntityWithIdOnMethod
 import kalix.spring.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.CounterEventSourcedEntityWithMethodLevelJWT
 import kalix.spring.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.CounterEventSourcedEntityWithServiceLevelJWT
-import kalix.spring.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.ESEntityCompoundIdIncorrectOrder
 import kalix.spring.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.EmployeeEntityWithMissingHandler
 import kalix.spring.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.EmployeeEntityWithMixedHandlers
 import kalix.spring.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.ErrorDuplicatedEventsEntity
 import kalix.spring.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.ErrorWrongSignaturesEntity
 import kalix.spring.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.EventSourcedEntityWithMethodLevelAcl
 import kalix.spring.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.EventSourcedEntityWithServiceLevelAcl
-import kalix.spring.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.IllDefinedEntityWithIdGeneratorAndId
-import kalix.spring.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.IllDefinedEntityWithoutIdGeneratorNorId
 import org.scalatest.wordspec.AnyWordSpec
 
 class EventSourcedEntityDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuite {
@@ -39,66 +30,23 @@ class EventSourcedEntityDescriptorFactorySpec extends AnyWordSpec with Component
         "NotPublicEventSourced is not marked with `public` modifier. Components must be public.")
     }
 
-    "generate mappings for a Event Sourced with entity ids in path" in {
+    "generate mappings for an Event Sourced" in {
       assertDescriptor[CounterEventSourcedEntity] { desc =>
         val method = desc.commandHandlers("GetInteger")
-        assertRequestFieldJavaType(method, "id", JavaType.STRING)
-        assertEntityIdField(method, "id")
-        assertRequestFieldJavaType(method, "number", JavaType.INT)
+        val getIntegerUrl = findHttpRule(desc, method.grpcMethodName).getGet
+        getIntegerUrl shouldBe "/entity/counter-entity/{id}/getInteger"
 
         val postMethod = desc.commandHandlers("ChangeInteger")
-        assertRequestFieldJavaType(postMethod, "id", JavaType.STRING)
-        assertEntityIdField(postMethod, "id")
-        assertRequestFieldJavaType(postMethod, "number", JavaType.INT)
+        val changeIntegerUrl = findHttpRule(desc, postMethod.grpcMethodName).getPost
+        changeIntegerUrl shouldBe "/entity/counter-entity/{id}/changeInteger"
       }
     }
 
-    "generate mappings for a Event Sourced with entity ids in path and EntityKey on method" in {
-      assertDescriptor[CounterEventSourcedEntityWithIdOnMethod] { desc =>
-        val method = desc.commandHandlers("GetInteger")
-        assertRequestFieldJavaType(method, "id", JavaType.STRING)
-        assertEntityIdField(method, "id")
-        assertRequestFieldJavaType(method, "number", JavaType.INT)
-      }
-    }
-
-    "generate mappings for a Event Sourced with Id on method overrides EntityKey on type" in {
-      assertDescriptor[CounterEventSourcedEntityWithIdMethodOverride] { desc =>
-        val method = desc.commandHandlers("GetInteger")
-        assertRequestFieldJavaType(method, "counter_id", JavaType.STRING)
-        assertEntityIdField(method, "counter_id")
-        assertRequestFieldJavaType(method, "number", JavaType.INT)
-      }
-    }
-
-    "fail if mix EntityKey and GenerateId on method" in {
-      intercept[ServiceIntrospectionException] {
-        descriptorFor[IllDefinedEntityWithIdGeneratorAndId]
-      }.getMessage should include("Invalid annotation usage. Found both @Id and @GenerateId annotations.")
-    }
-
-    "fail if no EntityKey nor GenerateId is defined" in {
-      intercept[ServiceIntrospectionException] {
-        descriptorFor[IllDefinedEntityWithoutIdGeneratorNorId]
-      }.getMessage should include("Invalid command method. No @Id nor @GenerateId annotations found.")
-    }
-
-    "generate mappings for a Event Sourced with GenerateId" in {
-      assertDescriptor[CounterEventSourcedEntityWithIdGenerator] { desc =>
-        val method = desc.commandHandlers("GetInteger")
-        assertRequestFieldJavaType(method, "number", JavaType.INT)
-
-        val generator = findKalixMethodOptions(desc, method.grpcMethodName).getIdGenerator.getAlgorithm
-        generator shouldBe Generator.VERSION_4_UUID
-      }
-    }
-
-    "generate mappings for a Event Sourced with entity ids in path and method level JWT annotation" in {
+    "generate mappings for a Event Sourced with method level JWT annotation" in {
       assertDescriptor[CounterEventSourcedEntityWithMethodLevelJWT] { desc =>
         val method = desc.commandHandlers("GetInteger")
-        assertRequestFieldJavaType(method, "id", JavaType.STRING)
-        assertEntityIdField(method, "id")
-        assertRequestFieldJavaType(method, "number", JavaType.INT)
+        val getIntegerUrl = findHttpRule(desc, method.grpcMethodName).getGet
+        getIntegerUrl shouldBe "/entity/counter/{id}/getInteger"
 
         val jwtOption = findKalixMethodOptions(desc, method.grpcMethodName).getJwt
         jwtOption.getBearerTokenIssuer(0) shouldBe "a"
@@ -106,9 +54,8 @@ class EventSourcedEntityDescriptorFactorySpec extends AnyWordSpec with Component
         jwtOption.getValidate(0) shouldBe JwtMethodMode.BEARER_TOKEN
 
         val postMethod = desc.commandHandlers("ChangeInteger")
-        assertRequestFieldJavaType(postMethod, "id", JavaType.STRING)
-        assertEntityIdField(postMethod, "id")
-        assertRequestFieldJavaType(postMethod, "number", JavaType.INT)
+        val changeIntegerUrl = findHttpRule(desc, postMethod.grpcMethodName).getPost
+        changeIntegerUrl shouldBe "/entity/counter/{id}/changeInteger"
 
         val jwtOption2 = findKalixMethodOptions(desc, postMethod.grpcMethodName).getJwt
         jwtOption2.getBearerTokenIssuer(0) shouldBe "c"
@@ -153,14 +100,6 @@ class EventSourcedEntityDescriptorFactorySpec extends AnyWordSpec with Component
         val service = extension.getAcl.getAllow(0).getService
         service shouldBe "test"
       }
-    }
-
-    "not allow different order of entity ids in the path" in {
-      // it should be annotated either on type or on method level
-      intercept[InvalidComponentException] {
-        Validations.validate(classOf[ESEntityCompoundIdIncorrectOrder]).failIfInvalid
-      }.getMessage should include(
-        "Ids in the path '/{id2}/eventsourced/{id}/int/{number}' are in a different order than specified in the @Id annotation [id, id2]. This could lead to unexpected bugs when calling the component.")
     }
 
     "not allow handlers with duplicates signatures (receiving the same event type)" in {

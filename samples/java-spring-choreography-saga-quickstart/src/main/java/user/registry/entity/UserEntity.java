@@ -6,7 +6,6 @@ import kalix.javasdk.annotations.*;
 import kalix.javasdk.eventsourcedentity.EventSourcedEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.web.bind.annotation.*;
 import user.registry.common.Done;
 import user.registry.domain.*;
 
@@ -25,17 +24,14 @@ import user.registry.domain.*;
  * This entity is protected from outside access. It can only be accessed from within this service (see the ACL annotation).
  * External access is gated and should go through the ApplicationController.
  */
-@Id("id")
 @TypeId("user")
-@RequestMapping("/users/{id}")
 @Acl(allow = @Acl.Matcher(service = "*"))
 public class UserEntity extends EventSourcedEntity<User, User.UserEvent> {
 
   private final Logger logger = LoggerFactory.getLogger(getClass());
 
 
-  @PostMapping
-  public Effect<Done> createUser(@RequestBody User.Create cmd) {
+  public Effect<Done> createUser(User.Create cmd) {
 
     // since the user creation depends on the email address reservation, a better place to valid an incoming command
     // would be in the ApplicationController where we coordinate the two operations.
@@ -56,8 +52,7 @@ public class UserEntity extends EventSourcedEntity<User, User.UserEvent> {
       .thenReply(__ -> Done.done());
   }
 
-  @PutMapping("/change-email")
-  public Effect<Done> changeEmail(@RequestBody User.ChangeEmail cmd) {
+  public Effect<Done> changeEmail(User.ChangeEmail cmd) {
     if (currentState() == null) {
       return effects().error("User not found", StatusCode.ErrorCode.NOT_FOUND);
     }
@@ -66,8 +61,6 @@ public class UserEntity extends EventSourcedEntity<User, User.UserEvent> {
       .thenReply(__ -> Done.done());
   }
 
-
-  @GetMapping
   public Effect<User> getState() {
     if (currentState() == null) {
       return effects().error("User not found", StatusCode.ErrorCode.NOT_FOUND);

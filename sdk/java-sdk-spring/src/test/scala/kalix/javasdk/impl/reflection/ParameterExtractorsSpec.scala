@@ -10,11 +10,11 @@ import com.google.protobuf.ByteString
 import com.google.protobuf.DynamicMessage
 import com.google.protobuf.any.{ Any => ScalaPbAny }
 import com.google.protobuf.{ Any => JavaPbAny }
-import kalix.javasdk.JsonSupport
 import kalix.javasdk.impl.ComponentDescriptor
 import kalix.javasdk.impl.InvocationContext
 import kalix.javasdk.impl.JsonMessageCodec
 import kalix.javasdk.impl.reflection.ParameterExtractors.BodyExtractor
+import kalix.javasdk.JsonSupport
 import kalix.spring.testmodels.Message
 import kalix.spring.testmodels.action.EchoAction
 import org.scalatest.matchers.should.Matchers

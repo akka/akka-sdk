@@ -17,47 +17,31 @@
 package com.example;
 
 import kalix.javasdk.eventsourcedentity.EventSourcedEntity;
-import kalix.javasdk.annotations.Id;
 import kalix.javasdk.annotations.TypeId;
 import kalix.javasdk.annotations.EventHandler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-
-import java.util.List;
 
 import static com.example.CounterEvent.ValueIncreased;
 import static com.example.CounterEvent.ValueMultiplied;
 
-@Id("id")
 @TypeId("counter")
-@RequestMapping("/counter/{id}")
 public class Counter extends EventSourcedEntity<Integer, CounterEvent> {
-
-    private Logger logger = LoggerFactory.getLogger(getClass());
 
     @Override
     public Integer emptyState() {
         return 0;
     }
 
-    @PostMapping("/increase/{value}")
-    public Effect<String> increase(@PathVariable Integer value) {
+    public Effect<String> increase(Integer value) {
         return effects()
                 .emitEvent(new ValueIncreased(value))
                 .thenReply(Object::toString);
     }
 
-    @GetMapping
     public Effect<String> get() {
         return effects().reply(currentState().toString());
     }
 
-    @PostMapping("/multiply/{value}")
-    public Effect<String> multiply(@PathVariable Integer value) {
+    public Effect<String> multiply(Integer value) {
         return effects()
                 .emitEvent(new ValueMultiplied(value))
                 .thenReply(Object::toString);

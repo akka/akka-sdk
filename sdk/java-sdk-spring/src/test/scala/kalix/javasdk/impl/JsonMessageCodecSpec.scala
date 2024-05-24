@@ -13,14 +13,14 @@ import com.fasterxml.jackson.databind.node.IntNode
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.google.protobuf.any.{ Any => ScalaPbAny }
 import com.google.protobuf.{ Any => JavaPbAny }
-import kalix.javasdk.JsonMigration
-import kalix.javasdk.JsonSupport
-import kalix.javasdk.annotations.Migration
 import kalix.javasdk.annotations.TypeName
 import kalix.javasdk.impl.JsonMessageCodecSpec.Cat
 import kalix.javasdk.impl.JsonMessageCodecSpec.Dog
 import kalix.javasdk.impl.JsonMessageCodecSpec.SimpleClass
 import kalix.javasdk.impl.JsonMessageCodecSpec.SimpleClassUpdated
+import kalix.javasdk.JsonMigration
+import kalix.javasdk.JsonSupport
+import kalix.javasdk.annotations.Migration
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 

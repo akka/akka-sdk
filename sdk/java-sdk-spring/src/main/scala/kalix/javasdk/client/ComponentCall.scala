@@ -9,13 +9,10 @@ import java.lang.reflect.ParameterizedType
 import java.util
 
 import scala.jdk.CollectionConverters._
+
 import akka.http.scaladsl.model.HttpMethods
 import com.google.protobuf.any.Any
-import kalix.javasdk.DeferredCall
-import kalix.javasdk.Metadata
-import kalix.javasdk.action.Action
 import kalix.javasdk.annotations.TypeId
-import kalix.javasdk.eventsourcedentity.EventSourcedEntity
 import kalix.javasdk.impl.client.MethodRefResolver
 import kalix.javasdk.impl.reflection.IdExtractor
 import kalix.javasdk.impl.reflection.RestServiceIntrospector
@@ -25,16 +22,20 @@ import kalix.javasdk.impl.reflection.RestServiceIntrospector.QueryParamParameter
 import kalix.javasdk.impl.reflection.RestServiceIntrospector.RestService
 import kalix.javasdk.impl.reflection.SyntheticRequestServiceMethod
 import kalix.javasdk.impl.telemetry.Telemetry
-import kalix.javasdk.valueentity.ValueEntity
-import kalix.javasdk.workflow.Workflow
 import kalix.spring.impl.KalixClient
 import kalix.spring.impl.RestKalixClientImpl
 import org.springframework.web.bind.annotation.RequestMethod
 import reactor.core.publisher.Flux
-
 import scala.jdk.OptionConverters._
-
 import java.util.Optional
+
+import kalix.javasdk.DeferredCall
+import kalix.javasdk.Metadata
+import kalix.javasdk.action.Action
+import kalix.javasdk.eventsourcedentity.EventSourcedEntity
+import kalix.javasdk.impl.reflection.EntityUrlTemplate
+import kalix.javasdk.valueentity.ValueEntity
+import kalix.javasdk.workflow.Workflow
 
 final class ComponentCall[A1, R](
     kalixClient: KalixClient,
@@ -99,50 +100,69 @@ object ComponentCall {
       method: Method,
       ids: List[String]): DeferredCall[Any, R] = {
 
+    val kalixClientImpl = kalixClient.asInstanceOf[RestKalixClientImpl]
     val declaringClass = method.getDeclaringClass
-
     val returnType: Class[R] = getReturnType(declaringClass, method)
 
-    val restService: RestService = RestServiceIntrospector.inspectService(declaringClass)
-    val restMethod: SyntheticRequestServiceMethod =
-      restService.methods.find(_.javaMethod.getName == method.getName) match {
-        case Some(method) => method
-        case None => throw new IllegalStateException(s"Method [${method.getName}] is not annotated as a REST endpoint.")
+    if (classOf[EventSourcedEntity[_, _]].isAssignableFrom(declaringClass)) {
+
+      val typeId = declaringClass.getAnnotation(classOf[TypeId]).value()
+      val template = EntityUrlTemplate.templateUrl(typeId, method.getName)
+      val pathParameter = Map("id" -> ids.head) // always only a single id
+      if (params.nonEmpty) {
+        val body = params.headOption.map {
+          // little hack to accept POST body as raw string
+          // json raw string must be wrapped with quotes, like in "my-string"
+          // so users would need to pass "\"my-string\"", this hack let user pass a String without needing to quote it
+          case str: String if !str.startsWith("\"") && !str.endsWith("\"") => s"\"$str\""
+          case any                                                         => any
+        }
+        kalixClientImpl.runWithBody(HttpMethods.POST, template, pathParameter, Map.empty, body, returnType)
+      } else {
+        kalixClientImpl.runWithoutBody(HttpMethods.GET, template, pathParameter, Map.empty, returnType)
       }
 
-    val requestMethod: RequestMethod = restMethod.requestMethod
+    } else {
 
-    val queryParams: Map[String, util.List[scala.Any]] = restMethod.params
-      .collect { case p: QueryParamParameter => p }
-      .map(p => (p.name, getQueryParam(params, p.param.getParameterIndex)))
-      .toMap
+      val restService: RestService = RestServiceIntrospector.inspectService(declaringClass)
+      val restMethod: SyntheticRequestServiceMethod =
+        restService.methods.find(_.javaMethod.getName == method.getName) match {
+          case Some(method) => method
+          case None =>
+            throw new IllegalStateException(s"Method [${method.getName}] is not annotated as a REST endpoint.")
+        }
 
-    val pathVariables: Map[String, ?] = restMethod.params
-      .collect { case p: PathParameter => p }
-      .map(p => (p.name, getPathParam(params, p.param.getParameterIndex, p.name)))
-      .toMap ++ idVariables(ids, method)
+      val requestMethod: RequestMethod = restMethod.requestMethod
 
-    val bodyIndex = restMethod.params.collect { case p: BodyParameter => p }.map(_.param.getParameterIndex).headOption
-    val body = bodyIndex.map(params(_))
+      val queryParams: Map[String, util.List[scala.Any]] = restMethod.params
+        .collect { case p: QueryParamParameter => p }
+        .map(p => (p.name, getQueryParam(params, p.param.getParameterIndex)))
+        .toMap
 
-    val kalixClientImpl = kalixClient.asInstanceOf[RestKalixClientImpl]
+      val pathVariables: Map[String, ?] = restMethod.params
+        .collect { case p: PathParameter => p }
+        .map(p => (p.name, getPathParam(params, p.param.getParameterIndex, p.name)))
+        .toMap ++ idVariables(ids, method)
 
-    val pathTemplate = restMethod.parsedPath.path
+      val bodyIndex = restMethod.params.collect { case p: BodyParameter => p }.map(_.param.getParameterIndex).headOption
+      val body = bodyIndex.map(params(_))
+      val pathTemplate = restMethod.parsedPath.path
 
-    requestMethod match {
-      case RequestMethod.GET =>
-        kalixClientImpl.runWithoutBody(HttpMethods.GET, pathTemplate, pathVariables, queryParams, returnType)
-      case RequestMethod.HEAD => notSupported(requestMethod, pathTemplate)
-      case RequestMethod.POST =>
-        kalixClientImpl.runWithBody(HttpMethods.POST, pathTemplate, pathVariables, queryParams, body, returnType)
-      case RequestMethod.PUT =>
-        kalixClientImpl.runWithBody(HttpMethods.PUT, pathTemplate, pathVariables, queryParams, body, returnType)
-      case RequestMethod.PATCH =>
-        kalixClientImpl.runWithBody(HttpMethods.PATCH, pathTemplate, pathVariables, queryParams, body, returnType)
-      case RequestMethod.DELETE =>
-        kalixClientImpl.runWithoutBody(HttpMethods.DELETE, pathTemplate, pathVariables, queryParams, returnType)
-      case RequestMethod.OPTIONS => notSupported(requestMethod, pathTemplate)
-      case RequestMethod.TRACE   => notSupported(requestMethod, pathTemplate)
+      requestMethod match {
+        case RequestMethod.GET =>
+          kalixClientImpl.runWithoutBody(HttpMethods.GET, pathTemplate, pathVariables, queryParams, returnType)
+        case RequestMethod.HEAD => notSupported(requestMethod, pathTemplate)
+        case RequestMethod.POST =>
+          kalixClientImpl.runWithBody(HttpMethods.POST, pathTemplate, pathVariables, queryParams, body, returnType)
+        case RequestMethod.PUT =>
+          kalixClientImpl.runWithBody(HttpMethods.PUT, pathTemplate, pathVariables, queryParams, body, returnType)
+        case RequestMethod.PATCH =>
+          kalixClientImpl.runWithBody(HttpMethods.PATCH, pathTemplate, pathVariables, queryParams, body, returnType)
+        case RequestMethod.DELETE =>
+          kalixClientImpl.runWithoutBody(HttpMethods.DELETE, pathTemplate, pathVariables, queryParams, returnType)
+        case RequestMethod.OPTIONS => notSupported(requestMethod, pathTemplate)
+        case RequestMethod.TRACE   => notSupported(requestMethod, pathTemplate)
+      }
     }
   }
 

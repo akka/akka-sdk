@@ -1,26 +1,22 @@
 package com.example;
 
 import com.example.shoppingcart.Main;
+import com.example.shoppingcart.ShoppingCartEntity;
 import com.example.shoppingcart.domain.ShoppingCart;
 import com.example.shoppingcart.domain.ShoppingCart.LineItem;
-// tag::sample-it[]
+import com.google.protobuf.any.Any;
+import kalix.javasdk.DeferredCall;
 import kalix.spring.testkit.KalixIntegrationTestKitSupport;
-// ...
-
-// end::sample-it[]
-
-
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.reactive.function.client.WebClient;
 
 import java.time.Duration;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
 /**
@@ -36,72 +32,69 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @SpringBootTest(classes = Main.class)
 public class IntegrationTest extends KalixIntegrationTestKitSupport { // <1>
 
-  @Autowired
-  private WebClient webClient; // <2>
-
   private Duration timeout = Duration.of(5, SECONDS);
 
   @Test
   public void createAndManageCart() {
 
     String cartId = "card-abc";
-    ResponseEntity<String> created =
-      webClient.post() // <3>
-        .uri("/cart/" + cartId + "/create")
-        .retrieve()
-        .toEntity(String.class)
-        .block(timeout);
-    assertEquals(HttpStatus.OK, created.getStatusCode());
-
     var item1 = new LineItem("tv", "Super TV 55'", 1);
-    ResponseEntity<String> itemOne =
-      webClient.post() // <4>
-        .uri("/cart/" + cartId + "/add")
-        .bodyValue(item1)
-        .retrieve()
-        .toEntity(String.class)
-        .block(timeout);
-    assertEquals(HttpStatus.OK, itemOne.getStatusCode());
-
+    var response1  = execute(
+        componentClient
+            .forEventSourcedEntity(cartId)
+            .call(ShoppingCartEntity::addItem)
+            .params(item1)
+    );
+    Assertions.assertNotNull(response1);
     // end::sample-it[]
 
     var item2 = new LineItem("tv-table", "Table for TV", 1);
-    ResponseEntity<String> itemTwo =
-      webClient.post()
-        .uri("/cart/" + cartId + "/add")
-        .bodyValue(item2)
-        .retrieve()
-        .toEntity(String.class)
-        .block(timeout);
-    assertEquals(HttpStatus.OK, itemTwo.getStatusCode());
+    var response2  = execute(
+        componentClient
+            .forEventSourcedEntity(cartId)
+            .call(ShoppingCartEntity::addItem)
+            .params(item2)
+    );
+    Assertions.assertNotNull(response2);
 
-    ShoppingCart cartInfo =
-      webClient.get()
-        .uri("/cart/" + cartId)
-        .retrieve()
-        .bodyToMono(ShoppingCart.class)
-        .block(timeout);
-    assertEquals(2, cartInfo.items().size());
+    ShoppingCart cartInfo = execute(
+        componentClient
+            .forEventSourcedEntity(cartId)
+            .call(ShoppingCartEntity::getCart)
+    );
+    Assertions.assertEquals(2, cartInfo.items().size());
+
 
 
     // removing one of the items
-    ResponseEntity<String> removingItemOne =
-      webClient.post()
-        .uri("/cart/" + cartId + "/items/" + item1.productId() + "/remove")
-        .retrieve()
-        .toEntity(String.class)
-        .block(timeout);
+    var response3 =
+        execute(
+            componentClient
+                .forEventSourcedEntity(cartId)
+                .call(ShoppingCartEntity::removeItem)
+                .params(item1.productId())
+        );
+
+    Assertions.assertNotNull(response3);
 
     // confirming only one product remains
     // tag::sample-it[]
-    ShoppingCart cartUpdated =
-      webClient.get() // <5>
-        .uri("/cart/" + cartId)
-        .retrieve()
-        .bodyToMono(ShoppingCart.class)
-        .block(timeout);
-    assertEquals(1, cartUpdated.items().size());
-    assertEquals(item2, cartUpdated.items().get(0));
+    // confirming only one product remains
+    ShoppingCart cartUpdated =execute(
+        componentClient
+            .forEventSourcedEntity(cartId)
+            .call(ShoppingCartEntity::getCart)
+    );
+    Assertions.assertEquals(1, cartUpdated.items().size());
+    Assertions.assertEquals(item2, cartUpdated.items().get(0));
+  }
+
+  protected <T> T execute(DeferredCall<Any, T> deferredCall) {
+    try {
+      return deferredCall.execute().toCompletableFuture().get(timeout.toMillis(), TimeUnit.MILLISECONDS);
+    } catch (InterruptedException | ExecutionException | TimeoutException e) {
+      throw new RuntimeException(e);
+    }
   }
 }
 // end::sample-it[]

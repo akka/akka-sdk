@@ -7,11 +7,11 @@ package kalix.javasdk.impl
 import com.google.protobuf.Descriptors
 import com.google.protobuf.DynamicMessage
 import com.google.protobuf.any.{ Any => ScalaPbAny }
-import kalix.javasdk.JsonSupport
-import kalix.javasdk.Metadata
 import kalix.javasdk.impl.AnySupport.BytesPrimitive
 import kalix.javasdk.impl.reflection.DynamicMessageContext
 import kalix.javasdk.impl.reflection.MetadataContext
+import kalix.javasdk.JsonSupport
+import kalix.javasdk.Metadata
 
 object InvocationContext {
 

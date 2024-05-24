@@ -39,19 +39,19 @@ With both the Kalix Runtime and your service running, once you have defined endp
 - increase (or create) a counter named `hello` with value `10`
 
 ```shell
-curl -XPOST localhost:9000/counter/hello/increase/10
+curl -XPOST  --header "Content-Type: application/json"  localhost:9000/entity/counter/hello/increase -d "10"
 ```
 
 - retrieve the value of a counter named `hello`
 
 ```shell
-curl -XGET localhost:9000/counter/hello
+curl -XGET localhost:9000/entity/counter/hello/get
 ```
 
 - multiply existing counter named `hello` by value `5`
 
 ```shell
-curl -XPOST localhost:9000/counter/hello/multiply/5
+curl -XPOST --header "Content-Type: application/json" localhost:9000/entity/counter/hello/multiply -d 5
 ```
 
 ### Deploy

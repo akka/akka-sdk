@@ -9,8 +9,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import kalix.javasdk.JsonMigration;
 
-import java.util.List;
-
 public class Event4Migration extends JsonMigration {
   @Override
   public int currentVersion() {

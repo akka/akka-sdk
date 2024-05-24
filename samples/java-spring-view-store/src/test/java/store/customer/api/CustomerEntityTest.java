@@ -1,14 +1,14 @@
 package store.customer.api;
 
-import store.customer.domain.Address;
-import store.customer.domain.Customer;
 import kalix.javasdk.testkit.EventSourcedResult;
 import kalix.javasdk.testkit.EventSourcedTestKit;
 import org.junit.jupiter.api.Test;
+import store.customer.domain.Address;
+import store.customer.domain.Customer;
 import store.customer.domain.CustomerEvent;
 
-import static store.customer.domain.CustomerEvent.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static store.customer.domain.CustomerEvent.*;
 
 public class CustomerEntityTest {
 

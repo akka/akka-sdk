@@ -6,12 +6,16 @@ package kalix.javasdk.action;
 
 import com.google.protobuf.Descriptors;
 import kalix.javasdk.common.ForwardHeadersExtractor;
-import kalix.javasdk.impl.MessageCodec;
-import kalix.javasdk.impl.action.ActionRouter;
 import kalix.javasdk.impl.ComponentDescriptor;
 import kalix.javasdk.impl.ComponentDescriptorFactory;
 import kalix.javasdk.impl.JsonMessageCodec;
 import kalix.javasdk.impl.action.ReflectiveActionRouter;
+import kalix.javasdk.action.Action;
+import kalix.javasdk.action.ActionCreationContext;
+import kalix.javasdk.action.ActionOptions;
+import kalix.javasdk.action.ActionProvider;
+import kalix.javasdk.impl.MessageCodec;
+import kalix.javasdk.impl.action.ActionRouter;
 
 import java.util.Optional;
 import java.util.function.Function;

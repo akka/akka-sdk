@@ -26,7 +26,6 @@ public class NotPublicComponents {
     }
   }
 
-  @Id("counter_id")
   @TypeId("counter")
   static class NotPublicEventSourced extends EventSourcedEntity<Integer, Object> {
     @GetMapping("/eventsourced/{counter_id}")

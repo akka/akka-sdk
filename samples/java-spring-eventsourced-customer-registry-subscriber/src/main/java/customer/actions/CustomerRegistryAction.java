@@ -32,7 +32,7 @@ public class CustomerRegistryAction extends Action {
     // make call on customer-registry service
     var res =
       webClient.post()
-        .uri("/customer/{customerId}/create", customerId)
+        .uri("/entity/customer/{customerId}/create", customerId)
         .bodyValue(customer)
         .retrieve()
         .bodyToMono(Confirm.class)

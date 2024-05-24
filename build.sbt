@@ -151,10 +151,9 @@ lazy val javaSdkProtobufTestKit = project
 
 lazy val javaSdkSpring = project
   .in(file("sdk/java-sdk-spring"))
-  .dependsOn(javaSdkProtobuf % "compile->compile;test->test")
-  .dependsOn(devTools % IntegrationTest)
-  .dependsOn(javaSdkProtobufTestKit % IntegrationTest)
-  .enablePlugins(AkkaGrpcPlugin, BuildInfoPlugin, Publish, IntegrationTests)
+  .dependsOn(coreSdk)
+  .dependsOn(devTools)
+  .enablePlugins(AkkaGrpcPlugin, BuildInfoPlugin, Publish)
   .settings(commonCompilerSettings)
   .settings(disciplinedScalacSettings)
   .settings(
@@ -165,6 +164,8 @@ lazy val javaSdkSpring = project
     buildInfoKeys := Seq[BuildInfoKey](
       name,
       version,
+      "runtimeImage" -> Kalix.RuntimeImage,
+      "runtimeVersion" -> Kalix.RuntimeVersion,
       "protocolMajorVersion" -> Kalix.ProtocolVersionMajor,
       "protocolMinorVersion" -> Kalix.ProtocolVersionMinor,
       "scalaVersion" -> scalaVersion.value,
@@ -173,7 +174,6 @@ lazy val javaSdkSpring = project
     Compile / akkaGrpcGeneratedSources := Seq(AkkaGrpc.Server),
     Compile / akkaGrpcGeneratedLanguages := Seq(AkkaGrpc.Scala),
     Test / javacOptions ++= Seq("-parameters"), // for Jackson
-    IntegrationTest / javacOptions += "-parameters", // for Jackson
     // Generate javadocs by just including non generated Java sources
     Compile / doc / sources := {
       val javaSourceDir = (Compile / javaSource).value.getAbsolutePath
@@ -190,15 +190,20 @@ lazy val javaSdkSpring = project
       "-doctitle",
       "Kalix Java SDK for Spring",
       "-noqualifier",
-      "java.lang"))
-  .settings(inConfig(IntegrationTest)(JupiterPlugin.scopedSettings): _*)
+      "java.lang"),
+    Compile / akkaGrpcGeneratedSources := Seq(AkkaGrpc.Server, AkkaGrpc.Client),
+    Compile / akkaGrpcGeneratedLanguages := Seq(AkkaGrpc.Scala),
+    Compile / PB.targets += PB.gens.java -> crossTarget.value / "akka-grpc" / "main",
+    Test / akkaGrpcGeneratedSources := Seq(AkkaGrpc.Client),
+    Test / PB.protoSources ++= (Compile / PB.protoSources).value,
+    Test / PB.targets += PB.gens.java -> crossTarget.value / "akka-grpc" / "test")
+  .settings(Dependencies.javaSdk)
   .settings(Dependencies.javaSdkSpring)
 
 lazy val javaSdkSpringTestKit = project
   .in(file("sdk/java-sdk-spring-testkit"))
   .dependsOn(javaSdkSpring)
-  .dependsOn(javaSdkProtobufTestKit)
-  .enablePlugins(BuildInfoPlugin, Publish)
+  .enablePlugins(AkkaGrpcPlugin, BuildInfoPlugin, Publish, IntegrationTests)
   .settings(commonCompilerSettings)
   .settings(disciplinedScalacSettings)
   .settings(
@@ -213,6 +218,8 @@ lazy val javaSdkSpringTestKit = project
       "runtimeVersion" -> Kalix.RuntimeVersion,
       "scalaVersion" -> scalaVersion.value),
     buildInfoPackage := "kalix.spring.testkit",
+    Test / javacOptions ++= Seq("-parameters"), // for Jackson
+    IntegrationTest / javacOptions += "-parameters", // for Jackson
     // Generate javadocs by just including non generated Java sources
     Compile / doc / sources := {
       val javaSourceDir = (Compile / javaSource).value.getAbsolutePath
@@ -230,6 +237,8 @@ lazy val javaSdkSpringTestKit = project
       "Kalix Java SDK Testkit for Spring",
       "-noqualifier",
       "java.lang"))
+  .settings(inConfig(IntegrationTest)(JupiterPlugin.scopedSettings): _*)
+  .settings(Dependencies.javaSdkTestKit)
   .settings(Dependencies.javaSdkSpringTestKit)
 
 lazy val springBootStarter = project

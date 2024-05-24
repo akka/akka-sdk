@@ -10,10 +10,10 @@ import com.google.protobuf.ByteString
 import com.google.protobuf.Descriptors
 import com.google.protobuf.DynamicMessage
 import com.google.protobuf.{ Any => JavaPbAny }
-import kalix.javasdk.JsonSupport
-import kalix.javasdk.Metadata
 import kalix.javasdk.impl.AnySupport
 import kalix.javasdk.impl.ErrorHandling.BadRequestException
+import kalix.javasdk.JsonSupport
+import kalix.javasdk.Metadata
 
 /**
  * Extracts method parameters from an invocation context for the purpose of passing them to a reflective invocation call
