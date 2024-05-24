@@ -11,11 +11,8 @@ import kalix.javasdk.eventsourcedentity.EventSourcedEntity;
 import kalix.javasdk.eventsourcedentity.EventSourcedEntityContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.web.bind.annotation.*;
 
-@Id("userId")
 @TypeId("user")
-@RequestMapping("/user/{userId}")
 @ForwardHeaders("traceparent")
 public class UserEntity extends EventSourcedEntity<User, UserEvent> {
 
@@ -39,7 +36,6 @@ public class UserEntity extends EventSourcedEntity<User, UserEvent> {
     return new User(entityId, "", "", "");
   }
 
-  @GetMapping
   public Effect<User> get() {
     if (currentState().equals(emptyState()))
       return effects().error("User does not exist", StatusCode.ErrorCode.NOT_FOUND);
@@ -47,8 +43,7 @@ public class UserEntity extends EventSourcedEntity<User, UserEvent> {
     return effects().reply(currentState());
   }
 
-  @PostMapping("/add")
-  public Effect<String> add(@RequestBody UserCmd.CreateCmd create) {
+  public Effect<String> add(UserCmd.CreateCmd create) {
     log.info("Current context: {}, empty {}", currentState(), emptyState());
     if (!currentState().equals(emptyState())) {
       return effects().error("User already exists", StatusCode.ErrorCode.BAD_REQUEST);
@@ -61,8 +56,7 @@ public class UserEntity extends EventSourcedEntity<User, UserEvent> {
         .thenReply(newState -> "OK");
   }
 
-  @PutMapping("/name")
-  public Effect<String> updateName(@RequestBody UserCmd.UpdateNameCmd updateNameCmd) {
+  public Effect<String> updateName(UserCmd.UpdateNameCmd updateNameCmd) {
     if (currentState().equals(emptyState())) {
       return effects().error("User does not exist");
     }
@@ -74,13 +68,12 @@ public class UserEntity extends EventSourcedEntity<User, UserEvent> {
         .thenReply(newState -> "OK");
   }
 
-  @PutMapping("/photo")
-  public Effect<String> updatePhoto(@RequestParam String url) {
+  public Effect<String> updatePhoto(UserCmd.UpdatePhotoCmd updatePhotoCmd) {
     if (currentState().equals(emptyState())) {
       return effects().error("User does not exist");
     }
 
-    var updated = new UserEvent.UserPhotoUpdated(url);
+    var updated = new UserEvent.UserPhotoUpdated(updatePhotoCmd.url);
     return effects()
         .emitEvent(updated)
         .thenReply(newState -> "OK");

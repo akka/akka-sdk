@@ -40,11 +40,11 @@ public class GetRandomPhotoAction extends Action {
       );
 
       return WebClient.create("http://localhost:9000")
-          .put()
+          .post()
           .uri(uriBuilder -> uriBuilder
-              .path("/user/{userId}/photo")
-              .queryParam("url", randomPhotoUrl)
+              .path("/entity/user/{userId}/updatePhoto")
               .build(actionContext().eventSubject().get()))
+          .bodyValue(new UserEntity.UserCmd.UpdatePhotoCmd(randomPhotoUrl))
           .headers(h -> tracingMap.forEach(h::set))
           .retrieve()
           .bodyToMono(String.class)
