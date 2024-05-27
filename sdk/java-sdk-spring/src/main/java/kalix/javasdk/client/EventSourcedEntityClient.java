@@ -33,8 +33,7 @@ public class EventSourcedEntityClient {
    * Pass in an Event Sourced Entity method reference, e.g. <code>UserEntity::create</code>
    */
   public <T, R> DeferredCall<Any, R> call(Function<T, EventSourcedEntity.Effect<R>> methodRef) {
-    DeferredCall<Any, R> result = ComponentCall.noParams(kalixClient, methodRef, List.of(entityId));
-    return result.withMetadata(ComponentCall.addTracing(result.metadata(), callMetadata));
+    return ComponentCall.noParams(kalixClient, methodRef, List.of(entityId), callMetadata);
   }
   /**
    * Pass in an Event Sourced Entity method reference, e.g. <code>UserEntity::create</code>
