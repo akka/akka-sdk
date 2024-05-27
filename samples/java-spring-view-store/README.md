@@ -21,7 +21,7 @@ With both the Kalix Runtime and your service running, once you have defined endp
 Create some products:
 
 ```shell
-curl localhost:9000/entity/product/P123/create \
+curl localhost:9000/akka/v1.0/entity/product/P123/create \
   -XPOST \
   --header "Content-Type: application/json" \
   --data '{
@@ -31,7 +31,7 @@ curl localhost:9000/entity/product/P123/create \
 ```
 
 ```shell
-curl localhost:9000/entity/product/P987/create \
+curl localhost:9000/akka/v1.0/entity/product/P987/create \
   -XPOST \
   --header "Content-Type: application/json" \
   --data '{
@@ -43,13 +43,13 @@ curl localhost:9000/entity/product/P987/create \
 Retrieve a product by id:
 
 ```shell
-curl localhost:9000/entity/product/P123/get
+curl localhost:9000/akka/v1.0/entity/product/P123/get
 ```
 
 Create a customer:
 
 ```shell
-curl localhost:9000/entity/customer/C001/create \
+curl localhost:9000/akka/v1.0/entity/customer/C001/create \
   -XPOST \
   --header "Content-Type: application/json" \
   --data '{
@@ -62,7 +62,7 @@ curl localhost:9000/entity/customer/C001/create \
 Retrieve a customer by id:
 
 ```shell
-curl localhost:9000/entity/customer/C001/get
+curl localhost:9000/akka/v1.0/entity/customer/C001/get
 ```
 
 Create customer orders for the products:

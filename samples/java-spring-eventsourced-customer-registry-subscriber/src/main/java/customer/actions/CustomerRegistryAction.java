@@ -32,7 +32,7 @@ public class CustomerRegistryAction extends Action {
     // make call on customer-registry service
     var res =
       webClient.post()
-        .uri("/entity/customer/{customerId}/create", customerId)
+        .uri("/akka/v1.0/entity/customer/{customerId}/create", customerId)
         .bodyValue(customer)
         .retrieve()
         .bodyToMono(Confirm.class)

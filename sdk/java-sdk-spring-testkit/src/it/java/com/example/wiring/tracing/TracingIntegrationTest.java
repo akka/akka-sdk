@@ -58,7 +58,7 @@ public class TracingIntegrationTest extends DockerIntegrationTest {
 
     private Integer callTCounter(String counterId, Integer increase) {
         return webClient.post()
-            .uri("/entity/tcounter/" + counterId + "/increase/")
+            .uri("/akka/v1.0/entity/tcounter/" + counterId + "/increase/")
             .bodyValue(increase)
             .retrieve()
             .bodyToMono(Integer.class).block(timeout);

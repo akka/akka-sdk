@@ -34,11 +34,11 @@ class EventSourcedEntityDescriptorFactorySpec extends AnyWordSpec with Component
       assertDescriptor[CounterEventSourcedEntity] { desc =>
         val method = desc.commandHandlers("GetInteger")
         val getIntegerUrl = findHttpRule(desc, method.grpcMethodName).getGet
-        getIntegerUrl shouldBe "/entity/counter-entity/{id}/getInteger"
+        getIntegerUrl shouldBe "/akka/v1.0/entity/counter-entity/{id}/getInteger"
 
         val postMethod = desc.commandHandlers("ChangeInteger")
         val changeIntegerUrl = findHttpRule(desc, postMethod.grpcMethodName).getPost
-        changeIntegerUrl shouldBe "/entity/counter-entity/{id}/changeInteger"
+        changeIntegerUrl shouldBe "/akka/v1.0/entity/counter-entity/{id}/changeInteger"
       }
     }
 
@@ -46,7 +46,7 @@ class EventSourcedEntityDescriptorFactorySpec extends AnyWordSpec with Component
       assertDescriptor[CounterEventSourcedEntityWithMethodLevelJWT] { desc =>
         val method = desc.commandHandlers("GetInteger")
         val getIntegerUrl = findHttpRule(desc, method.grpcMethodName).getGet
-        getIntegerUrl shouldBe "/entity/counter/{id}/getInteger"
+        getIntegerUrl shouldBe "/akka/v1.0/entity/counter/{id}/getInteger"
 
         val jwtOption = findKalixMethodOptions(desc, method.grpcMethodName).getJwt
         jwtOption.getBearerTokenIssuer(0) shouldBe "a"
@@ -55,7 +55,7 @@ class EventSourcedEntityDescriptorFactorySpec extends AnyWordSpec with Component
 
         val postMethod = desc.commandHandlers("ChangeInteger")
         val changeIntegerUrl = findHttpRule(desc, postMethod.grpcMethodName).getPost
-        changeIntegerUrl shouldBe "/entity/counter/{id}/changeInteger"
+        changeIntegerUrl shouldBe "/akka/v1.0/entity/counter/{id}/changeInteger"
 
         val jwtOption2 = findKalixMethodOptions(desc, postMethod.grpcMethodName).getJwt
         jwtOption2.getBearerTokenIssuer(0) shouldBe "c"

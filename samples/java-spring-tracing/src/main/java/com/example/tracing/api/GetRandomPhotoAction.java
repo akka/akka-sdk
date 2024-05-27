@@ -42,7 +42,7 @@ public class GetRandomPhotoAction extends Action {
       return WebClient.create("http://localhost:9000")
           .post()
           .uri(uriBuilder -> uriBuilder
-              .path("/entity/user/{userId}/updatePhoto")
+              .path("/akka/v1.0/entity/user/{userId}/updatePhoto")
               .build(actionContext().eventSubject().get()))
           .bodyValue(new UserEntity.UserCmd.UpdatePhotoCmd(randomPhotoUrl))
           .headers(h -> tracingMap.forEach(h::set))

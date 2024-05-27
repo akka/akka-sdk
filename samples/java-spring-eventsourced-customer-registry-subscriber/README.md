@@ -46,7 +46,7 @@ The subscriber service will receive updates from customer-registry via service-t
 ### Change name
 
 ```shell
-curl  -XPOST --header "Content-Type: application/json"  localhost:9000/entity/customer/one/changeName -d '"Jan Banan"'
+curl  -XPOST --header "Content-Type: application/json"  localhost:9000/akka/v1.0/entity/customer/one/changeName -d '"Jan Banan"'
 ```
 
 This call is performed on the customer-registry directly.

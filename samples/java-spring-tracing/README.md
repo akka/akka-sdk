@@ -38,7 +38,7 @@ With both the Kalix Runtime and your service running, any defined endpoints shou
 - Add a new user
 
 ```shell
- curl -i -XPOST -H "Content-Type: application/json" localhost:9000/entity/user/1/add -d '{"email":"john@doe.com"}'
+ curl -i -XPOST -H "Content-Type: application/json" localhost:9000/akka/v1.0/entity/user/1/add -d '{"email":"john@doe.com"}'
 ```
 
 - Now you can see the trace in Jaeger UI at http://localhost:16686

@@ -59,12 +59,12 @@ sealed trait UrlTemplate {
 }
 object EntityUrlTemplate extends UrlTemplate {
   override def templateUrl(typeId: String, methodName: String): String = {
-    s"/entity/${typeId}/{id}/${methodName}"
+    s"/akka/v1.0/entity/${typeId}/{id}/${methodName}"
   }
 }
 object Workflow extends UrlTemplate {
   override def templateUrl(componentTypeId: String, methodName: String): String =
-    s"/workflow/${componentTypeId}/{id}/${methodName}"
+    s"/akka/v1.0/workflow/${componentTypeId}/{id}/${methodName}"
 }
 
 /**
