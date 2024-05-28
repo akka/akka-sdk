@@ -13,7 +13,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class NestedCustomerOrdersViewIntegrationTest extends StoreViewIntegrationTest {
 
-  @Autowired private WebClient webClient;
+  @Autowired
+  private WebClient webClient;
 
   @Test
   public void getCustomerOrders() {
@@ -25,7 +26,7 @@ public class NestedCustomerOrdersViewIntegrationTest extends StoreViewIntegratio
 
     {
       CustomerOrders customerOrders =
-          awaitCustomerOrders("C001", customer -> customer.orders().size() >= 2);
+        awaitCustomerOrders("C001", customer -> customer.orders().size() >= 2);
 
       assertEquals(2, customerOrders.orders().size());
 
@@ -61,7 +62,7 @@ public class NestedCustomerOrdersViewIntegrationTest extends StoreViewIntegratio
 
     {
       CustomerOrders customerOrders =
-          awaitCustomerOrders("C001", customer -> newCustomerName.equals(customer.name()));
+        awaitCustomerOrders("C001", customer -> newCustomerName.equals(customer.name()));
 
       assertEquals("Some Name", customerOrders.name());
     }
@@ -71,8 +72,8 @@ public class NestedCustomerOrdersViewIntegrationTest extends StoreViewIntegratio
 
     {
       CustomerOrders customerOrders =
-          awaitCustomerOrders(
-              "C001", customer -> newProductName.equals(customer.orders().get(0).productName()));
+        awaitCustomerOrders(
+          "C001", customer -> newProductName.equals(customer.orders().get(0).productName()));
 
       CustomerOrder customerOrder1 = customerOrders.orders().get(0);
       assertEquals("O1234", customerOrder1.orderId());
@@ -86,19 +87,19 @@ public class NestedCustomerOrdersViewIntegrationTest extends StoreViewIntegratio
 
   private CustomerOrders getCustomerOrders(String customerId) {
     return webClient
-        .get()
-        .uri("/nested-customer-orders/" + customerId)
-        .retrieve()
-        .bodyToMono(CustomerOrders.class)
-        .block();
+      .get()
+      .uri("/nested-customer-orders/" + customerId)
+      .retrieve()
+      .bodyToMono(CustomerOrders.class)
+      .block();
   }
 
   private CustomerOrders awaitCustomerOrders(
-      String customerId, Function<CustomerOrders, Boolean> condition) {
+    String customerId, Function<CustomerOrders, Boolean> condition) {
     await()
-        .ignoreExceptions()
-        .atMost(20, TimeUnit.SECONDS)
-        .until(() -> condition.apply(getCustomerOrders(customerId)));
+      .ignoreExceptions()
+      .atMost(20, TimeUnit.SECONDS)
+      .until(() -> condition.apply(getCustomerOrders(customerId)));
     return getCustomerOrders(customerId);
   }
 }

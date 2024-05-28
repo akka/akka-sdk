@@ -106,12 +106,12 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
       .until(() ->
           webClient.get()
             .uri("/customer/by_name/Foo")
-                    .retrieve()
-                    .bodyToMono(CustomerView.class)
-                    .block(timeout)
-                    .name(),
-            new IsEqual("Foo")
-        );
+            .retrieve()
+            .bodyToMono(CustomerView.class)
+            .block(timeout)
+            .name(),
+        new IsEqual("Foo")
+      );
   }
 
   @Test

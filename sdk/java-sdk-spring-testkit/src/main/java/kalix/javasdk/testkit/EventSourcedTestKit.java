@@ -4,20 +4,13 @@
 
 package kalix.javasdk.testkit;
 
-import kalix.javasdk.impl.JsonMessageCodec;
-import kalix.javasdk.impl.MethodInvoker;
-import kalix.javasdk.impl.eventsourcedentity.EventSourcedHandlersExtractor;
 import kalix.javasdk.Metadata;
 import kalix.javasdk.eventsourcedentity.EventSourcedEntity;
 import kalix.javasdk.eventsourcedentity.EventSourcedEntityContext;
-import kalix.javasdk.testkit.EventSourcedResult;
+import kalix.javasdk.impl.JsonMessageCodec;
 import kalix.javasdk.testkit.impl.EventSourcedEntityEffectsRunner;
 import kalix.javasdk.testkit.impl.TestKitEventSourcedEntityContext;
-import scala.collection.immutable.Map;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.NoSuchElementException;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -34,7 +27,6 @@ public class EventSourcedTestKit<S, E, ES extends EventSourcedEntity<S, E>>
     extends EventSourcedEntityEffectsRunner<S, E> {
 
   private final ES entity;
-  private final Map<String, MethodInvoker> eventHandlers;
 
   private final JsonMessageCodec messageCodec;
 
@@ -42,7 +34,6 @@ public class EventSourcedTestKit<S, E, ES extends EventSourcedEntity<S, E>>
     super(entity);
     this.entity = entity;
     this.messageCodec = new JsonMessageCodec();
-    eventHandlers = EventSourcedHandlersExtractor.handlersFrom(entity.getClass(), messageCodec);
   }
 
   /**
@@ -113,16 +104,6 @@ public class EventSourcedTestKit<S, E, ES extends EventSourcedEntity<S, E>>
 
   @Override
   protected final S handleEvent(S state, E event) {
-    try {
-      Method method = eventHandlers.apply(messageCodec.removeVersion(messageCodec.typeUrlFor(event.getClass()))).method();
-      return (S) method.invoke(entity, event);
-    } catch (NoSuchElementException e) {
-      throw new RuntimeException(
-          "Couldn't find a valid event handler for event type '"
-              + event.getClass().getName()
-              + "'");
-    } catch (IllegalAccessException | InvocationTargetException e) {
-      throw new RuntimeException(e);
-    }
+    return entity.applyEvent(event);
   }
 }

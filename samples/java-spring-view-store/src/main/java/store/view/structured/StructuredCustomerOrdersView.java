@@ -1,10 +1,10 @@
 package store.view.structured;
 
-import kalix.javasdk.view.View;
 import kalix.javasdk.annotations.Query;
 import kalix.javasdk.annotations.Subscribe;
 import kalix.javasdk.annotations.Table;
 import kalix.javasdk.annotations.ViewId;
+import kalix.javasdk.view.View;
 import org.springframework.web.bind.annotation.GetMapping;
 import store.customer.api.CustomerEntity;
 import store.customer.domain.CustomerEvent;
@@ -21,7 +21,7 @@ public class StructuredCustomerOrdersView {
   // tag::query[]
   @GetMapping("/structured-customer-orders/{customerId}")
   @Query( // <1>
-      """
+    """
       SELECT
        customers.customerId AS id,
        (name,
@@ -51,7 +51,7 @@ public class StructuredCustomerOrdersView {
     public UpdateEffect<Customer> onEvent(CustomerEvent.CustomerCreated created) {
       String id = updateContext().eventSubject().orElse("");
       return effects()
-          .updateState(new Customer(id, created.email(), created.name(), created.address()));
+        .updateState(new Customer(id, created.email(), created.name(), created.address()));
     }
 
     public UpdateEffect<Customer> onEvent(CustomerEvent.CustomerNameChanged event) {
@@ -82,5 +82,6 @@ public class StructuredCustomerOrdersView {
 
   @Table("orders")
   @Subscribe.ValueEntity(OrderEntity.class)
-  public static class Orders extends View<Order> {}
+  public static class Orders extends View<Order> {
+  }
 }

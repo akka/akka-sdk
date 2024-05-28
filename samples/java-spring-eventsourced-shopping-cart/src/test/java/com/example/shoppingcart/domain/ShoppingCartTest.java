@@ -1,13 +1,12 @@
 package com.example.shoppingcart.domain;
 
 import com.example.shoppingcart.ShoppingCartEntity;
-import kalix.javasdk.testkit.EventSourcedResult;
 import kalix.javasdk.testkit.EventSourcedTestKit;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static com.example.shoppingcart.domain.ShoppingCartEvent.*;
+import static com.example.shoppingcart.domain.ShoppingCartEvent.ItemAdded;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ShoppingCartTest {
@@ -30,7 +29,7 @@ public class ShoppingCartTest {
 
     // actually we want more akka tshirts
     {
-      var result = testKit.call(e -> e.addItem( akkaTshirt.withQuantity(5))); // <5>
+      var result = testKit.call(e -> e.addItem(akkaTshirt.withQuantity(5))); // <5>
       assertEquals("OK", result.getReply());
 
       var itemAdded = result.getNextEventOfType(ItemAdded.class);

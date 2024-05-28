@@ -1,7 +1,9 @@
 package com.example.tracing.api;
 
 import com.example.tracing.domain.UserEvent;
-import io.opentelemetry.api.trace.*;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanKind;
+import io.opentelemetry.api.trace.StatusCode;
 import kalix.javasdk.action.Action;
 import kalix.javasdk.annotations.Subscribe;
 import kalix.javasdk.client.ComponentClient;
@@ -29,11 +31,11 @@ public class GetRandomNameAction extends Action {
   public Effect<String> handleAdd(UserEvent.UserAdded userAdded) {
     if (actionContext().eventSubject().isPresent()) {
       var randomNameFut = getRandomNameAsync().thenCompose(name ->
-          componentClient
-            .forEventSourcedEntity(actionContext().eventSubject().get())
-            .call(UserEntity::updateName)
-            .params(new UserEntity.UserCmd.UpdateNameCmd(name))
-            .execute());
+        componentClient
+          .forEventSourcedEntity(actionContext().eventSubject().get())
+          .call(UserEntity::updateName)
+          .params(new UserEntity.UserCmd.UpdateNameCmd(name))
+          .execute());
 
       return effects().asyncReply(randomNameFut);
     } else {
@@ -45,24 +47,24 @@ public class GetRandomNameAction extends Action {
   private CompletableFuture<String> getRandomNameAsync() {
     var otelCurrentContext = actionContext().metadata().traceContext().asOpenTelemetryContext();
     Span span = actionContext().getTracer()
-        .spanBuilder("random-name-async")
-        .setParent(otelCurrentContext)
-        .setSpanKind(SpanKind.CLIENT)
-        .startSpan()
-        .setAttribute("user.id", actionContext().eventSubject().orElse("unknown"));
+      .spanBuilder("random-name-async")
+      .setParent(otelCurrentContext)
+      .setSpanKind(SpanKind.CLIENT)
+      .startSpan()
+      .setAttribute("user.id", actionContext().eventSubject().orElse("unknown"));
 
     CompletableFuture<RandomUserApi.Name> result = webClient.get()
-        .retrieve()
-        .bodyToMono(RandomUserApi.Name.class)
-        .toFuture()
-        .whenComplete((name, ex) -> {
-          if (ex != null) {
-            span.setStatus(StatusCode.ERROR, ex.getMessage());
-          } else {
-            span.setAttribute("random.name", name.name());
-          }
-          span.end();
-        });
+      .retrieve()
+      .bodyToMono(RandomUserApi.Name.class)
+      .toFuture()
+      .whenComplete((name, ex) -> {
+        if (ex != null) {
+          span.setStatus(StatusCode.ERROR, ex.getMessage());
+        } else {
+          span.setAttribute("random.name", name.name());
+        }
+        span.end();
+      });
 
     return result.thenApply(RandomUserApi.Name::name);
   }

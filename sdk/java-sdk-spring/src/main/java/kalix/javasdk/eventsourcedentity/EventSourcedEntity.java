@@ -34,10 +34,30 @@ import java.util.function.Function;
  *   <li>instruct Kalix to delete the entity
  * </ul>
  *
- * <p>Each event is handled by an event handler method and should return an updated state for the entity.
+ * <p>Each event is handled by the {@link #applyEvent(E)} method.
+ * Events are required to inherit from a common sealed interface, and it's recommend to implement the {@link #applyEvent(E)} method using a switch statement.
+ * As such, the compiler can check if all existing events are being handled.
+ *
+ *<pre>
+ * {@code
+ * // example of sealed event interface with concrete events implementing it
+ * public sealed interface Event {
+ *   public record UserCreated(String name, String email) implements Event {};
+ *   public record EmailUpdated(String newEmail) implements Event {};
+ * }
+ *
+ * // example of applyEvent implementation
+ * public User applyEvent(Event event) {
+ *    return switch (event) {
+ *      case UserCreated userCreated -> new User(userCreated.name, userCreated.email);
+ *      case EmailUpdated emailUpdated -> this.copy(email = emailUpdated.newEmail);
+ *    }
+ * }
+ * }
+ *</pre>
  *
  * @param <S> The type of the state for this entity.
- * @param <E> The parent type of the event hierarchy for this entity.
+ * @param <E> The parent type of the event hierarchy for this entity. Required to be a sealed interface.
  */
 public abstract class EventSourcedEntity<S, E> {
 
@@ -47,8 +67,9 @@ public abstract class EventSourcedEntity<S, E> {
   private boolean handlingCommands = false;
 
   /**
-   * Implement by returning the initial empty state object. This object will be passed into the
-   * command and event handlers, until a new state replaces it.
+   * Implement by returning the initial empty state object. This object will be made available
+   * through the {@link #currentState()} method. This method is only called when the entity is initializing and
+   * there isn't yet a known state.
    *
    * <p>Also known as "zero state" or "neutral state".
    *
@@ -62,7 +83,7 @@ public abstract class EventSourcedEntity<S, E> {
   /**
    * Additional context and metadata for a command handler.
    *
-   * <p>It will throw an exception if accessed from constructor or event handler.
+   * <p>It will throw an exception if accessed from constructor or inside the {@link #applyEvent(E)} method.
    */
   protected final CommandContext commandContext() {
     return commandContext.orElseThrow(
@@ -76,7 +97,7 @@ public abstract class EventSourcedEntity<S, E> {
   }
 
   /**
-   * Additional context and metadata for an event handler.
+   * Additional context and metadata when handling an event in the {@link #applyEvent(E)} method.
    *
    * <p>It will throw an exception if accessed from constructor or command handler.
    */
@@ -97,10 +118,48 @@ public abstract class EventSourcedEntity<S, E> {
   }
 
   /**
+   * This is the main event handler method. Whenever an event is emitted, this handler will be called.
+   * It should return the new state of the entity.
+   *
+   * Note that this method is called in two situations:
+   * <ul>
+   *     <li>when one or more events are emitted by the command handler, this method is called to produce
+   *     the new state of the entity.
+   *     <li>when instantiating an entity from the event journal, this method is called to restore the state of the entity.
+   * </ul>
+   *
+   * It's important to keep the event handler side effect free. This means that it should only apply the event
+   * on the current state and return the updated state. This is because the event handler is called during recovery.
+   *
+   * Events are required to inherit from a common sealed interface, and it's recommend to implement this method using a switch statement.
+   * As such, the compiler can check if all existing events are being handled.
+   *
+   *<pre>
+   * {@code
+   * // example of sealed event interface with concrete events implementing it
+   * public sealed interface Event {
+   *   public record UserCreated(String name, String email) implements Event {};
+   *   public record EmailUpdated(String newEmail) implements Event {};
+   * }
+   *
+   * // example of applyEvent implementation
+   * public User applyEvent(Event event) {
+   *    return switch (event) {
+   *      case UserCreated userCreated -> new User(userCreated.name, userCreated.email);
+   *      case EmailUpdated emailUpdated -> this.copy(email = emailUpdated.newEmail);
+   *    }
+   * }
+   * }
+   *</pre>
+   *
+   */
+  public abstract S applyEvent(E event);
+
+  /**
    * Returns the state as currently stored by Kalix.
    *
-   * <p>Note that modifying the state directly will not update it in storage. To save the state, one
-   * must call {{@code effects().updateState()}}.
+   * <p>Note that modifying the state directly will not update it in storage.
+   * The state can only be updated through the {@link #applyEvent(E)} method.
    *
    * <p>This method can only be called when handling a command or an event. Calling it outside a
    * method (eg: in the constructor) will raise a IllegalStateException exception.

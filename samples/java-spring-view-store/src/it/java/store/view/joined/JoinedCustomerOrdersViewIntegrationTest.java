@@ -15,7 +15,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class JoinedCustomerOrdersViewIntegrationTest extends StoreViewIntegrationTest {
 
-  @Autowired private WebClient webClient;
+  @Autowired
+  private WebClient webClient;
 
   @Test
   public void getCustomerOrders() {
@@ -27,7 +28,7 @@ public class JoinedCustomerOrdersViewIntegrationTest extends StoreViewIntegratio
 
     {
       List<CustomerOrder> customerOrders =
-          awaitCustomerOrders("C001", orders -> orders.size() >= 2);
+        awaitCustomerOrders("C001", orders -> orders.size() >= 2);
 
       assertEquals(2, customerOrders.size());
 
@@ -65,7 +66,7 @@ public class JoinedCustomerOrdersViewIntegrationTest extends StoreViewIntegratio
 
     {
       List<CustomerOrder> customerOrders =
-          awaitCustomerOrders("C001", orders -> newCustomerName.equals(orders.get(0).name()));
+        awaitCustomerOrders("C001", orders -> newCustomerName.equals(orders.get(0).name()));
 
       CustomerOrder customerOrder1 = customerOrders.get(0);
       assertEquals("O1234", customerOrder1.orderId());
@@ -81,7 +82,7 @@ public class JoinedCustomerOrdersViewIntegrationTest extends StoreViewIntegratio
 
     {
       List<CustomerOrder> customerOrders =
-          awaitCustomerOrders("C001", orders -> newProductName.equals(orders.get(0).productName()));
+        awaitCustomerOrders("C001", orders -> newProductName.equals(orders.get(0).productName()));
 
       CustomerOrder customerOrder1 = customerOrders.get(0);
       assertEquals("O1234", customerOrder1.orderId());
@@ -95,20 +96,20 @@ public class JoinedCustomerOrdersViewIntegrationTest extends StoreViewIntegratio
 
   private List<CustomerOrder> getCustomerOrders(String customerId) {
     return webClient
-        .get()
-        .uri("/joined-customer-orders/" + customerId)
-        .retrieve()
-        .bodyToFlux(CustomerOrder.class)
-        .toStream()
-        .collect(Collectors.toList());
+      .get()
+      .uri("/joined-customer-orders/" + customerId)
+      .retrieve()
+      .bodyToFlux(CustomerOrder.class)
+      .toStream()
+      .collect(Collectors.toList());
   }
 
   private List<CustomerOrder> awaitCustomerOrders(
-      String customerId, Function<List<CustomerOrder>, Boolean> condition) {
+    String customerId, Function<List<CustomerOrder>, Boolean> condition) {
     await()
-        .ignoreExceptions()
-        .atMost(20, TimeUnit.SECONDS)
-        .until(() -> condition.apply(getCustomerOrders(customerId)));
+      .ignoreExceptions()
+      .atMost(20, TimeUnit.SECONDS)
+      .until(() -> condition.apply(getCustomerOrders(customerId)));
     return getCustomerOrders(customerId);
   }
 }

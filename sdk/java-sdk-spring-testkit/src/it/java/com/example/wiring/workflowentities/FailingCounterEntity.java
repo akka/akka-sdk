@@ -6,12 +6,8 @@ package com.example.wiring.workflowentities;
 
 import com.example.wiring.eventsourcedentities.counter.Counter;
 import com.example.wiring.eventsourcedentities.counter.CounterEvent;
-import kalix.javasdk.annotations.EventHandler;
 import kalix.javasdk.annotations.TypeId;
 import kalix.javasdk.eventsourcedentity.EventSourcedEntity;
-import kalix.javasdk.eventsourcedentity.EventSourcedEntityContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @TypeId("failing-counter")
 public class FailingCounterEntity extends EventSourcedEntity<Counter, CounterEvent> {
@@ -20,6 +16,8 @@ public class FailingCounterEntity extends EventSourcedEntity<Counter, CounterEve
   public Counter emptyState() {
     return new Counter(0);
   }
+
+
 
   public Effect<Integer> increase(Integer value) {
     if (value % 3 != 0) {
@@ -35,18 +33,12 @@ public class FailingCounterEntity extends EventSourcedEntity<Counter, CounterEve
     return effects().reply(currentState().value());
   }
 
-  @EventHandler
-  public Counter handleIncrease(CounterEvent.ValueIncreased increased) {
-    return currentState().onValueIncreased(increased);
-  }
-
-  @EventHandler
-  public Counter handleMultiply(CounterEvent.ValueMultiplied multiplied) {
-    return currentState().onValueMultiplied(multiplied);
-  }
-
-  @EventHandler
-  public Counter handleSet(CounterEvent.ValueSet valueSet) {
-    return currentState().onValueSet(valueSet);
+  @Override
+  public Counter applyEvent(CounterEvent event) {
+    return switch (event) {
+      case CounterEvent.ValueIncreased increased-> currentState().onValueIncreased(increased);
+      case CounterEvent.ValueMultiplied multiplied -> currentState().onValueMultiplied(multiplied);
+      case CounterEvent.ValueSet valueSet -> currentState().onValueSet(valueSet);
+    };
   }
 }

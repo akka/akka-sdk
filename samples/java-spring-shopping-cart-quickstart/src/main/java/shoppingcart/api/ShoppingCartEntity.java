@@ -4,7 +4,6 @@ package shoppingcart.api;
 // tag::class[]
 
 import kalix.javasdk.annotations.TypeId;
-import kalix.javasdk.annotations.EventHandler;
 import kalix.javasdk.eventsourcedentity.EventSourcedEntity;
 import kalix.javasdk.eventsourcedentity.EventSourcedEntityContext;
 import shoppingcart.domain.ShoppingCart;
@@ -28,6 +27,7 @@ public class ShoppingCartEntity
   public ShoppingCart emptyState() { // <5>
     return new ShoppingCart(cartId, new ArrayList<>(), false);
   }
+
 
   public Effect<String> addItem(ShoppingCart.LineItem item) {
     if (currentState().checkedOut())
@@ -67,19 +67,14 @@ public class ShoppingCartEntity
     return effects().reply(currentState());
   }
 
-  @EventHandler // <7>
-  public ShoppingCart itemAdded(ItemAdded itemAdded) {
-    return currentState().addItem(itemAdded.item());
-  }
 
-  @EventHandler // <7>
-  public ShoppingCart itemRemoved(ItemRemoved itemRemoved) {
-    return currentState().removeItem(itemRemoved.productId());
-  }
-
-  @EventHandler // <7>
-  public ShoppingCart checkedOut(CheckedOut checkedOut) {
-    return currentState().checkOut();
+  @Override
+  public ShoppingCart applyEvent(ShoppingCart.Event event) { // <7>
+    return switch (event) {
+      case ItemAdded evt -> currentState().addItem(evt.item());
+      case ItemRemoved evt -> currentState().removeItem(evt.productId());
+      case CheckedOut evt -> currentState().checkOut();
+    };
   }
 }
 // end::class[]

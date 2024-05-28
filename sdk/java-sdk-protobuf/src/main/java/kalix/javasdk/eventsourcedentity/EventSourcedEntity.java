@@ -100,8 +100,8 @@ public abstract class EventSourcedEntity<S, E> {
   /**
    * Returns the state as currently stored by Kalix.
    *
-   * <p>Note that modifying the state directly will not update it in storage. To save the state, one
-   * must call {{@code effects().updateState()}}.
+   * <p>Note that modifying the state directly will not update it in storage.
+   * The state can only be updated through the event handler methods.
    *
    * <p>This method can only be called when handling a command or an event. Calling it outside a
    * method (eg: in the constructor) will raise a IllegalStateException exception.

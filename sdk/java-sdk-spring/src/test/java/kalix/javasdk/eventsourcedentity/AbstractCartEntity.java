@@ -32,4 +32,10 @@ public abstract class AbstractCartEntity extends EventSourcedEntity<ShoppingCart
 
   public abstract ShoppingCartDomain.Cart itemRemoved(
       ShoppingCartDomain.Cart currentState, ShoppingCartDomain.ItemRemoved event);
+
+  @Override
+  public ShoppingCartDomain.Cart applyEvent(Object event) {
+    return null;
+  }
+
 }

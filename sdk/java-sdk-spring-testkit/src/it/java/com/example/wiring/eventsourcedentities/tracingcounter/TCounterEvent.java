@@ -6,7 +6,7 @@ package com.example.wiring.eventsourcedentities.tracingcounter;
 
 import kalix.javasdk.annotations.TypeName;
 
-public interface TCounterEvent {
+sealed public interface TCounterEvent {
 
     @TypeName("tincreased")
     record ValueIncreased(Integer value) implements TCounterEvent{}

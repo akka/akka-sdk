@@ -2,14 +2,13 @@ package customer.view;
 
 import customer.api.CustomerEntity;
 import customer.domain.CustomerEvent;
-import kalix.javasdk.view.View;
 import kalix.javasdk.annotations.Query;
 import kalix.javasdk.annotations.Subscribe;
 import kalix.javasdk.annotations.Table;
 import kalix.javasdk.annotations.ViewId;
-import reactor.core.publisher.Flux;
-
+import kalix.javasdk.view.View;
 import org.springframework.web.bind.annotation.GetMapping;
+import reactor.core.publisher.Flux;
 
 @ViewId("view_customers_by_email")
 @Table("customers_by_email")

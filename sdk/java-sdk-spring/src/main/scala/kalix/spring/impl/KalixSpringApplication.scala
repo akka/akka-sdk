@@ -6,7 +6,6 @@ package kalix.spring.impl
 
 import java.lang.reflect.Constructor
 import java.lang.reflect.Modifier
-import java.lang.reflect.ParameterizedType
 
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters.CollectionHasAsScala
@@ -16,36 +15,37 @@ import scala.jdk.OptionConverters.RichOption
 import akka.Done
 import com.typesafe.config.Config
 import io.opentelemetry.api.trace.Tracer
+import kalix.javasdk.Context
+import kalix.javasdk.Kalix
+import kalix.javasdk.action.Action
+import kalix.javasdk.action.ActionCreationContext
+import kalix.javasdk.action.ActionProvider
 import kalix.javasdk.action.ReflectiveActionProvider
 import kalix.javasdk.annotations.ViewId
 import kalix.javasdk.client.ComponentClient
-import kalix.javasdk.impl.client.ComponentClientImpl
 import kalix.javasdk.eventsourced.ReflectiveEventSourcedEntityProvider
+import kalix.javasdk.eventsourcedentity.EventSourcedEntity
+import kalix.javasdk.eventsourcedentity.EventSourcedEntityContext
+import kalix.javasdk.eventsourcedentity.EventSourcedEntityProvider
 import kalix.javasdk.impl.AclDescriptorFactory
 import kalix.javasdk.impl.JsonMessageCodec
 import kalix.javasdk.impl.Validations
 import kalix.javasdk.impl.Validations.Invalid
 import kalix.javasdk.impl.Validations.Valid
 import kalix.javasdk.impl.Validations.Validation
+import kalix.javasdk.impl.client.ComponentClientImpl
+import kalix.javasdk.impl.reflection.Reflect
 import kalix.javasdk.valueentity.ReflectiveValueEntityProvider
-import kalix.javasdk.view.ReflectiveMultiTableViewProvider
-import kalix.javasdk.view.ReflectiveViewProvider
-import kalix.javasdk.workflow.ReflectiveWorkflowProvider
-import kalix.javasdk.Context
-import kalix.javasdk.Kalix
-import kalix.javasdk.action.Action
-import kalix.javasdk.action.ActionCreationContext
-import kalix.javasdk.action.ActionProvider
-import kalix.javasdk.eventsourcedentity.EventSourcedEntity
-import kalix.javasdk.eventsourcedentity.EventSourcedEntityContext
-import kalix.javasdk.eventsourcedentity.EventSourcedEntityProvider
 import kalix.javasdk.valueentity.ValueEntity
 import kalix.javasdk.valueentity.ValueEntityContext
 import kalix.javasdk.valueentity.ValueEntityProvider
+import kalix.javasdk.view.ReflectiveMultiTableViewProvider
+import kalix.javasdk.view.ReflectiveViewProvider
 import kalix.javasdk.view.View
 import kalix.javasdk.view.ViewCreationContext
 import kalix.javasdk.view.ViewProvider
 import kalix.javasdk.workflow.AbstractWorkflow
+import kalix.javasdk.workflow.ReflectiveWorkflowProvider
 import kalix.javasdk.workflow.Workflow
 import kalix.javasdk.workflow.WorkflowContext
 import kalix.javasdk.workflow.WorkflowProvider
@@ -378,16 +378,7 @@ case class KalixSpringApplication(applicationContext: ApplicationContext, config
             case p if p == classOf[ComponentClient]   => componentClient(context)
             case p if p == classOf[WebClientProvider] => webClientProvider(context)
           }
-
-        val workflowStateType: Class[S] =
-          workflow.getClass.getGenericSuperclass
-            .asInstanceOf[ParameterizedType]
-            .getActualTypeArguments
-            .head
-            .asInstanceOf[Class[S]]
-
-        messageCodec.registerTypeHints(workflowStateType)
-
+        messageCodec.registerTypeHints(Reflect.workflowStateType[S, W](workflow))
         workflow
           .definition()
           .getSteps

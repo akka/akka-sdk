@@ -4,10 +4,8 @@
 
 package com.example.wiring.eventsourcedentities.counter;
 
-import kalix.javasdk.annotations.EventHandler;
 import kalix.javasdk.annotations.TypeId;
 import kalix.javasdk.eventsourcedentity.EventSourcedEntity;
-import kalix.javasdk.eventsourcedentity.EventSourcedEntityContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,8 +64,9 @@ public class CounterEntity extends EventSourcedEntity<Counter, CounterEvent> {
     throw new RuntimeException("Forceful restarting entity!");
   }
 
-  @EventHandler
-  public Counter handle(CounterEvent counterEvent) {
-    return currentState().apply(counterEvent);
+  @Override
+  public Counter applyEvent(CounterEvent event) {
+    return currentState().apply(event);
   }
+
 }

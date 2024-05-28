@@ -9,9 +9,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Base64;
 import java.util.Optional;
 
-import static customer.domain.schemaevolution.CustomerEvent.AddressChanged;
-import static customer.domain.schemaevolution.CustomerEvent.CustomerCreated;
-import static customer.domain.schemaevolution.CustomerEvent.NameChanged;
+import static customer.domain.schemaevolution.CustomerEvent.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class CustomerEventSerializationTest {
@@ -70,7 +68,7 @@ class CustomerEventSerializationTest {
     Any serializedAny = Any.parseFrom(ByteString.copyFrom(bytes)); // <2>
 
     CustomerEvent.CustomerCreated deserialized = JsonSupport.decodeJson(CustomerEvent.CustomerCreated.class,
-        serializedAny); // <3>
+      serializedAny); // <3>
 
     assertEquals("Wall Street", deserialized.address().street());
     assertEquals("New York", deserialized.address().city());

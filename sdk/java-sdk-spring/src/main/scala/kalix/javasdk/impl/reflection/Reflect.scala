@@ -8,13 +8,16 @@ import java.lang.annotation.Annotation
 import java.lang.reflect.AnnotatedElement
 import java.lang.reflect.Method
 import java.lang.reflect.Modifier
+import java.lang.reflect.ParameterizedType
 import java.util
 
 import scala.annotation.tailrec
 import scala.reflect.ClassTag
 
 import kalix.javasdk.client.ComponentClient
+import kalix.javasdk.eventsourcedentity.EventSourcedEntity
 import kalix.javasdk.impl.client.ComponentClientImpl
+import kalix.javasdk.workflow.Workflow
 
 /**
  * Class extension to facilitate some reflection common usages.
@@ -43,6 +46,22 @@ object Reflect {
     }
 
   }
+
+  def allKnownEventTypes[S, E, ES <: EventSourcedEntity[S, E]](entity: ES): Seq[Class[_]] = {
+    val eventType = entity.getClass.getGenericSuperclass
+      .asInstanceOf[ParameterizedType]
+      .getActualTypeArguments()(1)
+      .asInstanceOf[Class[E]]
+
+    eventType.getPermittedSubclasses.toSeq
+  }
+
+  def workflowStateType[S, W <: Workflow[S]](workflow: W): Class[S] =
+    workflow.getClass.getGenericSuperclass
+      .asInstanceOf[ParameterizedType]
+      .getActualTypeArguments
+      .head
+      .asInstanceOf[Class[S]]
 
   private implicit val stringArrayOrdering: Ordering[Array[String]] =
     Ordering.fromLessThan(util.Arrays.compare[String](_, _) < 0)

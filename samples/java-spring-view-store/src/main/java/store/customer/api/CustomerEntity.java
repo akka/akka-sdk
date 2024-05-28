@@ -1,10 +1,9 @@
 package store.customer.api;
 
+import kalix.javasdk.annotations.TypeId;
+import kalix.javasdk.eventsourcedentity.EventSourcedEntity;
 import store.customer.domain.Address;
 import store.customer.domain.Customer;
-import kalix.javasdk.eventsourcedentity.EventSourcedEntity;
-import kalix.javasdk.annotations.TypeId;
-import kalix.javasdk.annotations.EventHandler;
 import store.customer.domain.CustomerEvent;
 
 import static store.customer.domain.CustomerEvent.*;
@@ -18,30 +17,26 @@ public class CustomerEntity extends EventSourcedEntity<Customer, CustomerEvent> 
 
   public Effect<String> create(Customer customer) {
     return effects()
-        .emitEvent(new CustomerCreated(customer.email(), customer.name(), customer.address()))
-        .thenReply(__ -> "OK");
-  }
-
-  @EventHandler
-  public Customer onEvent(CustomerCreated created) {
-    return new Customer(created.email(), created.name(), created.address());
+      .emitEvent(new CustomerCreated(customer.email(), customer.name(), customer.address()))
+      .thenReply(__ -> "OK");
   }
 
   public Effect<String> changeName(String newName) {
     return effects().emitEvent(new CustomerNameChanged(newName)).thenReply(__ -> "OK");
   }
 
-  @EventHandler
-  public Customer onEvent(CustomerNameChanged customerNameChanged) {
-    return currentState().withName(customerNameChanged.newName());
-  }
 
   public Effect<String> changeAddress(Address newAddress) {
     return effects().emitEvent(new CustomerAddressChanged(newAddress)).thenReply(__ -> "OK");
   }
 
-  @EventHandler
-  public Customer onEvent(CustomerAddressChanged customerAddressChanged) {
-    return currentState().withAddress(customerAddressChanged.newAddress());
+
+  @Override
+  public Customer applyEvent(CustomerEvent event) {
+    return switch (event) {
+      case CustomerCreated evt -> new Customer(evt.email(), evt.name(), evt.address());
+      case CustomerNameChanged evt -> currentState().withName(evt.newName());
+      case CustomerAddressChanged evt -> currentState().withAddress(evt.newAddress());
+    };
   }
 }

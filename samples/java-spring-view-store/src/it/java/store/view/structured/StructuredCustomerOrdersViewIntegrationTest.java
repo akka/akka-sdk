@@ -13,7 +13,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class StructuredCustomerOrdersViewIntegrationTest extends StoreViewIntegrationTest {
 
-  @Autowired private WebClient webClient;
+  @Autowired
+  private WebClient webClient;
 
   @Test
   public void getCustomerOrders() {
@@ -25,7 +26,7 @@ public class StructuredCustomerOrdersViewIntegrationTest extends StoreViewIntegr
 
     {
       CustomerOrders customerOrders =
-          awaitCustomerOrders("C001", customer -> customer.orders().size() >= 2);
+        awaitCustomerOrders("C001", customer -> customer.orders().size() >= 2);
 
       assertEquals(2, customerOrders.orders().size());
 
@@ -59,7 +60,7 @@ public class StructuredCustomerOrdersViewIntegrationTest extends StoreViewIntegr
 
     {
       CustomerOrders customerOrders =
-          awaitCustomerOrders("C001", customer -> newCustomerName.equals(customer.shipping().name()));
+        awaitCustomerOrders("C001", customer -> newCustomerName.equals(customer.shipping().name()));
 
       assertEquals("Some Name", customerOrders.shipping().name());
     }
@@ -69,8 +70,8 @@ public class StructuredCustomerOrdersViewIntegrationTest extends StoreViewIntegr
 
     {
       CustomerOrders customerOrders =
-          awaitCustomerOrders(
-              "C001", customer -> newProductName.equals(customer.orders().get(0).name()));
+        awaitCustomerOrders(
+          "C001", customer -> newProductName.equals(customer.orders().get(0).name()));
 
       ProductOrder productOrder1 = customerOrders.orders().get(0);
       assertEquals("O1234", productOrder1.orderId());
@@ -84,19 +85,19 @@ public class StructuredCustomerOrdersViewIntegrationTest extends StoreViewIntegr
 
   private CustomerOrders getCustomerOrders(String customerId) {
     return webClient
-        .get()
-        .uri("/structured-customer-orders/" + customerId)
-        .retrieve()
-        .bodyToMono(CustomerOrders.class)
-        .block();
+      .get()
+      .uri("/structured-customer-orders/" + customerId)
+      .retrieve()
+      .bodyToMono(CustomerOrders.class)
+      .block();
   }
 
   private CustomerOrders awaitCustomerOrders(
-      String customerId, Function<CustomerOrders, Boolean> condition) {
+    String customerId, Function<CustomerOrders, Boolean> condition) {
     await()
-        .ignoreExceptions()
-        .atMost(20, TimeUnit.SECONDS)
-        .until(() -> condition.apply(getCustomerOrders(customerId)));
+      .ignoreExceptions()
+      .atMost(20, TimeUnit.SECONDS)
+      .until(() -> condition.apply(getCustomerOrders(customerId)));
     return getCustomerOrders(customerId);
   }
 }

@@ -26,6 +26,7 @@ public class CartEntity extends AbstractCartEntity {
     return ShoppingCartDomain.Cart.getDefaultInstance();
   }
 
+
   @Override
   public Effect<Empty> addItem(
       ShoppingCartDomain.Cart currentState, ShoppingCartApi.AddLineItem command) {

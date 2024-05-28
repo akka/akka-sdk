@@ -17,8 +17,11 @@ public interface RandomUserApi {
   }
 
   record Photo(List<Result> results) {
-    public record Result(ResultPicture picture) { }
-    public record ResultPicture(String large) {}
+    public record Result(ResultPicture picture) {
+    }
+
+    public record ResultPicture(String large) {
+    }
 
     public String url() {
       // We only expect one result

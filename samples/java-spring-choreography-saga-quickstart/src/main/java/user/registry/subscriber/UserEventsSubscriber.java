@@ -18,7 +18,7 @@ import user.registry.entity.UserEntity;
  * UniqueEmailEntity accordingly. Either by confirming or un-reserving the email address.
  */
 @Subscribe.EventSourcedEntity(value = UserEntity.class)
-public class UserEventsSubscriber extends Action  {
+public class UserEventsSubscriber extends Action {
 
   private final ComponentClient client;
   private final Logger logger = LoggerFactory.getLogger(getClass());

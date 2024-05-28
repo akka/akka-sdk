@@ -6,15 +6,16 @@ package kalix.javasdk.impl
 
 import java.lang.reflect.AnnotatedElement
 import java.lang.reflect.Method
-import java.lang.reflect.Modifier
 import java.lang.reflect.ParameterizedType
 
 import scala.reflect.ClassTag
-import kalix.javasdk.annotations.EventHandler
+
+import kalix.javasdk.action.Action
 import kalix.javasdk.annotations.Publish
 import kalix.javasdk.annotations.Query
 import kalix.javasdk.annotations.Subscribe
 import kalix.javasdk.annotations.Table
+import kalix.javasdk.eventsourcedentity.EventSourcedEntity
 import kalix.javasdk.impl.ComponentDescriptorFactory.eventSourcedEntitySubscription
 import kalix.javasdk.impl.ComponentDescriptorFactory.findEventSourcedEntityClass
 import kalix.javasdk.impl.ComponentDescriptorFactory.findEventSourcedEntityType
@@ -36,13 +37,11 @@ import kalix.javasdk.impl.ComponentDescriptorFactory.hasUpdateEffectOutput
 import kalix.javasdk.impl.ComponentDescriptorFactory.hasValueEntitySubscription
 import kalix.javasdk.impl.ComponentDescriptorFactory.streamSubscription
 import kalix.javasdk.impl.ComponentDescriptorFactory.topicSubscription
-import kalix.javasdk.impl.reflection.Reflect.Syntax._
-import kalix.javasdk.impl.reflection.Reflect
 import kalix.javasdk.impl.reflection.IdExtractor
+import kalix.javasdk.impl.reflection.Reflect
+import kalix.javasdk.impl.reflection.Reflect.Syntax._
 import kalix.javasdk.impl.reflection.RestServiceIntrospector
 import kalix.javasdk.impl.reflection.ServiceMethod
-import kalix.javasdk.action.Action
-import kalix.javasdk.eventsourcedentity.EventSourcedEntity
 import kalix.javasdk.valueentity.ValueEntity
 import kalix.javasdk.view.View
 import kalix.javasdk.workflow.Workflow
@@ -138,38 +137,20 @@ object Validations {
     validateEventSourcedEntity(component) ++
     validateWorkflow(component)
 
-  private def validateEventHandlers(entityClass: Class[_]): Validation = {
+  private def validateEventSourcedEntity(component: Class[_]) =
+    when[EventSourcedEntity[_, _]](component) {
 
-    val annotatedHandlers = entityClass.getDeclaredMethods
-      .filter(_.getAnnotation(classOf[EventHandler]) != null)
-      .toList
+      val eventType =
+        component.getGenericSuperclass
+          .asInstanceOf[ParameterizedType]
+          .getActualTypeArguments()(1)
+          .asInstanceOf[Class[_]]
 
-    val genericTypeArguments = entityClass.getGenericSuperclass
-      .asInstanceOf[ParameterizedType]
-      .getActualTypeArguments
-
-    // the state type parameter from the ES entity defines the return type of each event handler
-    val stateType = genericTypeArguments.head
-      .asInstanceOf[Class[_]]
-
-    val eventType = genericTypeArguments(1).asInstanceOf[Class[_]]
-
-    val (invalidHandlers, validSignatureHandlers) = annotatedHandlers.partition((m: Method) =>
-      m.getParameterCount != 1 || !Modifier.isPublic(m.getModifiers) || (stateType != m.getReturnType))
-
-    val signatureValidation = Validation(
-      invalidHandlers
-        .sortBy(_.getName) //for tests
-        .map(method =>
-          errorMessage(
-            entityClass,
-            s"event handler [${method.getName}] must be public, with exactly one parameter and return type '${stateType.getTypeName}'.")))
-
-    val missingHandlerInputParams = validSignatureHandlers.sortBy(_.getName).map(_.getParameterTypes.head)
-
-    signatureValidation ++ ambiguousHandlersErrors(validSignatureHandlers, entityClass) ++
-    missingEventHandler(missingHandlerInputParams, eventType, entityClass)
-  }
+      when(!eventType.isSealed) {
+        Invalid(
+          s"The event type of an EventSourcedEntity is required to be a sealed interface. Event '${eventType.getName}' in '${component.getName}' is not sealed.")
+      }
+    }
 
   private def componentMustBePublic(component: Class[_]): Validation = {
     if (component.isPublic) {
@@ -216,12 +197,6 @@ object Validations {
   private def validateValueEntity(component: Class[_]): Validation = {
     when[ValueEntity[_]](component) {
       validateCompoundIdsOrder(component)
-    }
-  }
-
-  private def validateEventSourcedEntity(component: Class[_]): Validation = {
-    when[EventSourcedEntity[_, _]](component) {
-      validateEventHandlers(component)
     }
   }
 

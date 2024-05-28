@@ -2,7 +2,6 @@ package com.example;
 
 import com.example.tracing.Main;
 import kalix.spring.testkit.KalixIntegrationTestKitSupport;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 

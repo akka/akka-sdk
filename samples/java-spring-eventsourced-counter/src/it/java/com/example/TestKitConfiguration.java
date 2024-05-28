@@ -17,16 +17,16 @@ public class TestKitConfiguration {
   @Bean
   public KalixTestKit.Settings settings() {
     return KalixTestKit.Settings.DEFAULT
-        // end::eventing-config[]
-        .withAclEnabled() // <1>
-        // end::acls[]
-        // tag::eventing-config[]
-        .withTopicIncomingMessages("counter-commands") // <1>
-        .withTopicOutgoingMessages("counter-events") // <2>
-        // end::eventing-config[]
-        .withTopicOutgoingMessages("counter-events-with-meta");
+      // end::eventing-config[]
+      .withAclEnabled() // <1>
+      // end::acls[]
+      // tag::eventing-config[]
+      .withTopicIncomingMessages("counter-commands") // <1>
+      .withTopicOutgoingMessages("counter-events") // <2>
+      // end::eventing-config[]
+      .withTopicOutgoingMessages("counter-events-with-meta");
     // tag::eventing-config[]
-        // tag::acls[]
+    // tag::acls[]
   }
   // end::eventing-config[]
   // end::acls[]
@@ -36,7 +36,7 @@ public class TestKitConfiguration {
   @Bean
   public KalixTestKit.Settings settingsWithPubSub() {
     return KalixTestKit.Settings.DEFAULT.withAclEnabled()
-        .withEventingSupport(EventingSupport.GOOGLE_PUBSUB);
+      .withEventingSupport(EventingSupport.GOOGLE_PUBSUB);
   }
   // end::pubsub[]
 

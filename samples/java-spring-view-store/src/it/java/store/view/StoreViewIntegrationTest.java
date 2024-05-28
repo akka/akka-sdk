@@ -31,71 +31,71 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @DirtiesContext // fresh testkit and proxy for each integration test
 public abstract class StoreViewIntegrationTest extends KalixIntegrationTestKitSupport {
 
-    protected final Duration timeout = Duration.of(5, ChronoUnit.SECONDS);
-    @Autowired
-    private ComponentClient componentClient;
+  protected final Duration timeout = Duration.of(5, ChronoUnit.SECONDS);
+  @Autowired
+  private ComponentClient componentClient;
 
-    protected void createProduct(String id, String name, String currency, long units, int cents) {
-        Product product = new Product(name, new Money(currency, units, cents));
-        var response =
-            execute(
-                componentClient
-                    .forEventSourcedEntity(id)
-                    .call(ProductEntity::create)
-                    .params(product));
-        assertNotNull(response);
-    }
+  protected void createProduct(String id, String name, String currency, long units, int cents) {
+    Product product = new Product(name, new Money(currency, units, cents));
+    var response =
+      execute(
+        componentClient
+          .forEventSourcedEntity(id)
+          .call(ProductEntity::create)
+          .params(product));
+    assertNotNull(response);
+  }
 
-    protected void changeProductName(String id, String newName) {
-        var response =
-            execute(
-                componentClient
-                    .forEventSourcedEntity(id)
-                    .call(ProductEntity::changeName)
-                    .params(newName));
-        assertNotNull(response);
-    }
+  protected void changeProductName(String id, String newName) {
+    var response =
+      execute(
+        componentClient
+          .forEventSourcedEntity(id)
+          .call(ProductEntity::changeName)
+          .params(newName));
+    assertNotNull(response);
+  }
 
-    protected void createCustomer(String id, String email, String name, String street, String city) {
-        Customer customer = new Customer(email, name, new Address(street, city));
-        var response =
-            execute(
-                componentClient
-                    .forEventSourcedEntity(id)
-                    .call(CustomerEntity::create)
-                    .params(customer)
-            );
-        assertNotNull(response);
-    }
+  protected void createCustomer(String id, String email, String name, String street, String city) {
+    Customer customer = new Customer(email, name, new Address(street, city));
+    var response =
+      execute(
+        componentClient
+          .forEventSourcedEntity(id)
+          .call(CustomerEntity::create)
+          .params(customer)
+      );
+    assertNotNull(response);
+  }
 
-    protected void changeCustomerName(String id, String newName) {
-        var response =
-            execute(
-                componentClient
-                    .forEventSourcedEntity(id)
-                    .call(CustomerEntity::changeName)
-                    .params(newName)
-            );
-        assertNotNull(response);
-    }
+  protected void changeCustomerName(String id, String newName) {
+    var response =
+      execute(
+        componentClient
+          .forEventSourcedEntity(id)
+          .call(CustomerEntity::changeName)
+          .params(newName)
+      );
+    assertNotNull(response);
+  }
 
-    protected void createOrder(String id, String productId, String customerId, int quantity) {
-        CreateOrder createOrder = new CreateOrder(productId, customerId, quantity);
-        var response =
-            execute(
-                componentClient
-                    .forValueEntity(id)
-                    .call(OrderEntity::create)
-                    .params(createOrder)
-            );
-        assertNotNull(response);
-    }
+  protected void createOrder(String id, String productId, String customerId, int quantity) {
+    CreateOrder createOrder = new CreateOrder(productId, customerId, quantity);
+    var response =
+      execute(
+        componentClient
+          .forValueEntity(id)
+          .call(OrderEntity::create)
+          .params(createOrder)
+      );
+    assertNotNull(response);
+  }
 
-    protected <T> T execute(DeferredCall<Any, T> deferredCall) {
-        try {
-            return deferredCall.execute().toCompletableFuture().get(timeout.toMillis(), TimeUnit.MILLISECONDS);
-        } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            throw new RuntimeException(e);
-        }
+  protected <T> T execute(DeferredCall<Any, T> deferredCall) {
+    try {
+      return deferredCall.execute().toCompletableFuture().get(timeout.toMillis(), TimeUnit.MILLISECONDS);
+    } catch (InterruptedException | ExecutionException | TimeoutException e) {
+      throw new RuntimeException(e);
     }
+  }
 }

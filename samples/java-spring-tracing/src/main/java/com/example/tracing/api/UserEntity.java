@@ -3,9 +3,7 @@ package com.example.tracing.api;
 import com.example.tracing.domain.User;
 import com.example.tracing.domain.UserEvent;
 import kalix.javasdk.StatusCode;
-import kalix.javasdk.annotations.EventHandler;
 import kalix.javasdk.annotations.ForwardHeaders;
-import kalix.javasdk.annotations.Id;
 import kalix.javasdk.annotations.TypeId;
 import kalix.javasdk.eventsourcedentity.EventSourcedEntity;
 import kalix.javasdk.eventsourcedentity.EventSourcedEntityContext;
@@ -21,9 +19,14 @@ public class UserEntity extends EventSourcedEntity<User, UserEvent> {
   private final String entityId;
 
   public sealed interface UserCmd {
-    record CreateCmd(String email) implements UserCmd { }
-    record UpdateNameCmd(String name) implements UserCmd { }
-    record UpdatePhotoCmd(String url) implements UserCmd { }
+    record CreateCmd(String email) implements UserCmd {
+    }
+
+    record UpdateNameCmd(String name) implements UserCmd {
+    }
+
+    record UpdatePhotoCmd(String url) implements UserCmd {
+    }
   }
 
 
@@ -52,8 +55,8 @@ public class UserEntity extends EventSourcedEntity<User, UserEvent> {
     var created = new UserEvent.UserAdded(create.email);
 
     return effects()
-        .emitEvent(created)
-        .thenReply(newState -> "OK");
+      .emitEvent(created)
+      .thenReply(newState -> "OK");
   }
 
   public Effect<String> updateName(UserCmd.UpdateNameCmd updateNameCmd) {
@@ -64,8 +67,8 @@ public class UserEntity extends EventSourcedEntity<User, UserEvent> {
     var updated = new UserEvent.UserNameUpdated(updateNameCmd.name);
 
     return effects()
-        .emitEvent(updated)
-        .thenReply(newState -> "OK");
+      .emitEvent(updated)
+      .thenReply(newState -> "OK");
   }
 
   public Effect<String> updatePhoto(UserCmd.UpdatePhotoCmd updatePhotoCmd) {
@@ -75,26 +78,26 @@ public class UserEntity extends EventSourcedEntity<User, UserEvent> {
 
     var updated = new UserEvent.UserPhotoUpdated(updatePhotoCmd.url);
     return effects()
-        .emitEvent(updated)
-        .thenReply(newState -> "OK");
+      .emitEvent(updated)
+      .thenReply(newState -> "OK");
   }
 
-  @EventHandler
-  public User handleEvent(UserEvent event) {
-      return switch (event) {
-          case UserEvent.UserAdded userAdded -> {
-              log.info("User added: {}", userAdded.email());
-              yield new User(entityId, "", userAdded.email(), "");
-          }
-          case UserEvent.UserNameUpdated nameUpdated -> {
-              log.info("User name updated: {}", nameUpdated.name());
-              yield currentState().withName(nameUpdated.name());
-          }
-          case UserEvent.UserPhotoUpdated photoUpdated -> {
-              log.info("User photo updated: {}", photoUpdated.url());
-              yield currentState().withPhoto(photoUpdated.url());
-          }
-      };
+  @Override
+  public User applyEvent(UserEvent event) {
+    return switch (event) {
+      case UserEvent.UserAdded userAdded -> {
+        log.info("User added: {}", userAdded.email());
+        yield new User(entityId, "", userAdded.email(), "");
+      }
+      case UserEvent.UserNameUpdated nameUpdated -> {
+        log.info("User name updated: {}", nameUpdated.name());
+        yield currentState().withName(nameUpdated.name());
+      }
+      case UserEvent.UserPhotoUpdated photoUpdated -> {
+        log.info("User photo updated: {}", photoUpdated.url());
+        yield currentState().withPhoto(photoUpdated.url());
+      }
+    };
   }
 
 }

@@ -14,11 +14,9 @@ import kalix.javasdk.impl.ComponentDescriptor;
 import kalix.javasdk.impl.ComponentDescriptorFactory$;
 import kalix.javasdk.impl.JsonMessageCodec;
 import kalix.javasdk.impl.MessageCodec;
-import kalix.javasdk.impl.MethodInvoker;
 import kalix.javasdk.impl.eventsourcedentity.EventSourcedEntityRouter;
-import kalix.javasdk.impl.eventsourcedentity.EventSourcedHandlersExtractor;
 import kalix.javasdk.impl.eventsourcedentity.ReflectiveEventSourcedEntityRouter;
-import scala.collection.immutable.Map;
+import kalix.javasdk.impl.reflection.Reflect;
 
 import java.util.Optional;
 import java.util.function.Function;
@@ -34,8 +32,6 @@ public class ReflectiveEventSourcedEntityProvider<S, E, ES extends EventSourcedE
   private final ComponentDescriptor componentDescriptor;
 
   private final JsonMessageCodec messageCodec;
-
-  private final Map<String, MethodInvoker> eventHandlers;
 
   public static <S, E, ES extends EventSourcedEntity<S, E>> ReflectiveEventSourcedEntityProvider<S, E, ES> of(
       Class<ES> cls,
@@ -56,7 +52,6 @@ public class ReflectiveEventSourcedEntityProvider<S, E, ES extends EventSourcedE
       throw new IllegalArgumentException(
           "Event Sourced Entity [" + entityClass.getName() + "] is missing '@TypeId' annotation");
 
-    this.eventHandlers = EventSourcedHandlersExtractor.handlersFrom(entityClass, messageCodec);
     this.typeId = typeId;
     this.factory = factory;
     this.options = options.withForwardHeaders(ForwardHeadersExtractor.extractFrom(entityClass));
@@ -64,6 +59,7 @@ public class ReflectiveEventSourcedEntityProvider<S, E, ES extends EventSourcedE
     this.componentDescriptor = ComponentDescriptor.descriptorFor(entityClass, messageCodec);
     this.fileDescriptor = componentDescriptor.fileDescriptor();
     this.serviceDescriptor = componentDescriptor.serviceDescriptor();
+
   }
 
   @Override
@@ -84,8 +80,7 @@ public class ReflectiveEventSourcedEntityProvider<S, E, ES extends EventSourcedE
   @Override
   public EventSourcedEntityRouter<S, E, ES> newRouter(EventSourcedEntityContext context) {
     ES entity = factory.apply(context);
-    return new ReflectiveEventSourcedEntityRouter<>(
-        entity, componentDescriptor.commandHandlers(), eventHandlers, messageCodec);
+    return new ReflectiveEventSourcedEntityRouter<>(entity, componentDescriptor.commandHandlers(), messageCodec);
   }
 
   @Override

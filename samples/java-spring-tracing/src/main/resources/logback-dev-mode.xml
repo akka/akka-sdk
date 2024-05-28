@@ -10,8 +10,8 @@
     </appender>
 
     <logger name="akka" level="WARN"/>
-    <logger name="kalix.javasdk.impl.telemetry" level="DEBUG" />
-    <logger name="com.example.tracing" level="DEBUG" />
+    <logger name="kalix.javasdk.impl.telemetry" level="DEBUG"/>
+    <logger name="com.example.tracing" level="DEBUG"/>
 
 
     <!-- Silence some details from Akka, should not be important to user/SDK dev mode -->

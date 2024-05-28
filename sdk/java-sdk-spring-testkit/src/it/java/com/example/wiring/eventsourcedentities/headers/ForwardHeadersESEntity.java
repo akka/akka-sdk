@@ -13,10 +13,19 @@ import static com.example.wiring.actions.headers.ForwardHeadersAction.SOME_HEADE
 
 @TypeId("forward-headers-es")
 @ForwardHeaders(SOME_HEADER)
-public class ForwardHeadersESEntity extends EventSourcedEntity<String, Object> {
+public class ForwardHeadersESEntity extends EventSourcedEntity<String, ForwardHeadersESEntity.Event> {
+
+  sealed interface Event {
+    public record Created() implements Event {}
+  }
 
   public Effect<Message> createUser() {
     String headerValue = commandContext().metadata().get(SOME_HEADER).orElse("");
     return effects().reply(new Message(headerValue));
+  }
+
+  @Override
+  public String applyEvent(Event event) {
+    return currentState();
   }
 }

@@ -16,7 +16,7 @@ public class CustomerEntityTest {
   public void testCustomerNameChange() {
 
     EventSourcedTestKit<Customer, CustomerEvent, CustomerEntity> testKit =
-        EventSourcedTestKit.of(CustomerEntity::new);
+      EventSourcedTestKit.of(CustomerEntity::new);
 
     {
       String name = "Some Customer";
@@ -41,7 +41,7 @@ public class CustomerEntityTest {
   public void testCustomerAddressChange() {
 
     EventSourcedTestKit<Customer, CustomerEvent, CustomerEntity> testKit =
-        EventSourcedTestKit.of(CustomerEntity::new);
+      EventSourcedTestKit.of(CustomerEntity::new);
 
     {
       Address address = new Address("123 Some Street", "Some City");

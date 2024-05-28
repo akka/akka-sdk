@@ -3,10 +3,9 @@ package com.example.shoppingcart;
 import com.example.shoppingcart.domain.ShoppingCart;
 import com.example.shoppingcart.domain.ShoppingCart.LineItem;
 import com.example.shoppingcart.domain.ShoppingCartEvent;
+import kalix.javasdk.annotations.TypeId;
 import kalix.javasdk.eventsourcedentity.EventSourcedEntity;
 import kalix.javasdk.eventsourcedentity.EventSourcedEntityContext;
-import kalix.javasdk.annotations.TypeId;
-import kalix.javasdk.annotations.EventHandler;
 
 import java.util.Collections;
 
@@ -15,7 +14,7 @@ import java.util.Collections;
 public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCart, ShoppingCartEvent> { // <1>
   // end::class[]
 
-// tag::getCart[]
+  // tag::getCart[]
   private final String entityId;
 
   public ShoppingCartEntity(EventSourcedEntityContext context) {
@@ -26,6 +25,7 @@ public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCart, Shoppin
   public ShoppingCart emptyState() { // <2>
     return new ShoppingCart(entityId, Collections.emptyList(), false);
   }
+
 
   // end::getCart[]
 
@@ -44,8 +44,8 @@ public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCart, Shoppin
     var event = new ShoppingCartEvent.ItemAdded(item); // <2>
 
     return effects()
-        .emitEvent(event) // <3>
-        .thenReply(newState -> "OK"); // <4>
+      .emitEvent(event) // <3>
+      .thenReply(newState -> "OK"); // <4>
   }
 
   // end::addItem[]
@@ -60,8 +60,8 @@ public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCart, Shoppin
     var event = new ShoppingCartEvent.ItemRemoved(productId);
 
     return effects()
-        .emitEvent(event)
-        .thenReply(newState -> "OK");
+      .emitEvent(event)
+      .thenReply(newState -> "OK");
   }
 
   // tag::getCart[]
@@ -76,31 +76,20 @@ public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCart, Shoppin
       return effects().reply("OK");
 
     return effects()
-        .emitEvent(new ShoppingCartEvent.CheckedOut()) // <1>
-        .deleteEntity() // <2>
-        .thenReply(newState -> "OK"); // <4>
+      .emitEvent(new ShoppingCartEvent.CheckedOut()) // <1>
+      .deleteEntity() // <2>
+      .thenReply(newState -> "OK"); // <4>
   }
-
   // end::checkout[]
 
-  // tag::addItem[]
-  @EventHandler // <5>
-  public ShoppingCart itemAdded(ShoppingCartEvent.ItemAdded itemAdded) {
-    return currentState().onItemAdded(itemAdded); // <6>
+
+  @Override
+  public ShoppingCart applyEvent(ShoppingCartEvent event) {
+    return switch (event) {
+      case ShoppingCartEvent.ItemAdded evt -> currentState().onItemAdded(evt);
+      case ShoppingCartEvent.ItemRemoved evt -> currentState().onItemRemoved(evt);
+      case ShoppingCartEvent.CheckedOut evt -> currentState().onCheckedOut();
+    };
   }
-
-  // end::addItem[]
-
-  @EventHandler
-  public ShoppingCart itemRemoved(ShoppingCartEvent.ItemRemoved itemRemoved) {
-    return currentState().onItemRemoved(itemRemoved);
-  }
-
-  @EventHandler
-  public ShoppingCart checkedOut(ShoppingCartEvent.CheckedOut checkedOut) {
-    return currentState().onCheckedOut();
-  }
-// tag::class[]
-
 }
 // end::class[]

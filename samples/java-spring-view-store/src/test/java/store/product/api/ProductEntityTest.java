@@ -15,7 +15,7 @@ public class ProductEntityTest {
   public void testProductNameChange() {
 
     EventSourcedTestKit<Product, ProductEvent, ProductEntity> testKit =
-        EventSourcedTestKit.of(ProductEntity::new);
+      EventSourcedTestKit.of(ProductEntity::new);
 
     {
       String name = "Super Duper Thingamajig";
@@ -39,7 +39,7 @@ public class ProductEntityTest {
   public void testProductPriceChange() {
 
     EventSourcedTestKit<Product, ProductEvent, ProductEntity> testKit =
-        EventSourcedTestKit.of(ProductEntity::new);
+      EventSourcedTestKit.of(ProductEntity::new);
 
     {
       Money price = new Money("USD", 123, 45);

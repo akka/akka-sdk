@@ -6,7 +6,6 @@ package kalix.spring.testmodels.eventsourcedentity;
 
 import kalix.javasdk.JsonMigration;
 import kalix.javasdk.annotations.TypeId;
-import kalix.javasdk.annotations.EventHandler;
 import kalix.javasdk.annotations.Migration;
 import kalix.javasdk.annotations.Acl;
 import kalix.javasdk.annotations.JWT;
@@ -15,6 +14,13 @@ import kalix.javasdk.eventsourcedentity.EventSourcedEntity;
 import java.util.List;
 
 public class EventSourcedEntitiesTestModels {
+
+    public sealed interface CounterEvent {
+        record IncrementCounter(int value) implements CounterEvent {
+        }
+        record DecrementCounter(int value) implements CounterEvent {
+        }
+    }
 
     @TypeId("employee")
     public static class EmployeeEntity extends EventSourcedEntity<Employee, EmployeeEvent> {
@@ -25,15 +31,14 @@ public class EventSourcedEntitiesTestModels {
                 .thenReply(__ -> "ok");
         }
 
-        @EventHandler
-        public Employee onEvent(EmployeeEvent event) {
+        public Employee applyEvent(EmployeeEvent event) {
             EmployeeEvent.EmployeeCreated create = (EmployeeEvent.EmployeeCreated) event;
             return new Employee(create.firstName, create.lastName, create.email);
         }
     }
 
     @TypeId("counter-entity")
-    public static class CounterEventSourcedEntity extends EventSourcedEntity<Integer, Object> {
+    public static class CounterEventSourcedEntity extends EventSourcedEntity<Integer, CounterEvent> {
 
         @Migration(EventMigration.class)
         public record Event(String s) {
@@ -63,21 +68,8 @@ public class EventSourcedEntitiesTestModels {
             return effects().reply(number);
         }
 
-        @EventHandler
-        public Integer receiveStringEvent(Event event) {
-            return 0;
-        }
-
-        @EventHandler
-        public Integer receivedIntegerEvent(Integer event) {
-            return 0;
-        }
-
-        public Integer publicMethodSimilarSignature(Integer event) {
-            return 0;
-        }
-
-        private Integer privateMethodSimilarSignature(Integer event) {
+        @Override
+        public Integer applyEvent(CounterEvent event) {
             return 0;
         }
     }
@@ -85,7 +77,7 @@ public class EventSourcedEntitiesTestModels {
 
 
     @TypeId("counter")
-    public static class CounterEventSourcedEntityWithMethodLevelJWT extends EventSourcedEntity<Integer, Object> {
+    public static class CounterEventSourcedEntityWithMethodLevelJWT extends EventSourcedEntity<Integer, CounterEvent> {
 
         @JWT(
             validate = JWT.JwtMethodMode.BEARER_TOKEN,
@@ -104,6 +96,11 @@ public class EventSourcedEntitiesTestModels {
         public Effect<Integer> changeInteger(Integer number) {
             return effects().reply(number);
         }
+
+        @Override
+        public Integer applyEvent(CounterEvent event) {
+            return 0;
+        }
     }
 
     @TypeId("counter")
@@ -114,7 +111,7 @@ public class EventSourcedEntitiesTestModels {
             @JWT.StaticClaim(claim = "role", value = "admin"),
             @JWT.StaticClaim(claim = "aud", value = "${ENV}.kalix.io")
         })
-    public static class CounterEventSourcedEntityWithServiceLevelJWT extends EventSourcedEntity<Integer, Object> {
+    public static class CounterEventSourcedEntityWithServiceLevelJWT extends EventSourcedEntity<Integer, CounterEvent> {
 
         public Effect<Integer> getInteger() {
             return effects().reply(currentState());
@@ -123,95 +120,40 @@ public class EventSourcedEntitiesTestModels {
         public Effect<Integer> changeInteger(Integer number) {
             return effects().reply(number);
         }
-    }
 
-    @TypeId("counter")
-    public static class ErrorDuplicatedEventsEntity extends EventSourcedEntity<Integer, Object> {
-
-        @EventHandler
-        public Integer receiveStringEvent(String event) {
-            return 0;
-        }
-
-        @EventHandler
-        public Integer receivedIntegerEvent(Integer event) {
-            return 0;
-        }
-
-        @EventHandler
-        public Integer receivedIntegerEventDup(Integer event) {
+        @Override
+        public Integer applyEvent(CounterEvent event) {
             return 0;
         }
     }
 
-    @TypeId("counter")
-    public static class ErrorWrongSignaturesEntity extends EventSourcedEntity<Integer, Object> {
 
-        @EventHandler
-        public String receivedIntegerEvent(Integer event) {
-            return "0";
-        }
-
-        @EventHandler
-        public Integer receivedIntegerEventAndString(Integer event, String s1) {
-            return 0;
-        }
-    }
-
-    @TypeId("employee")
-    public static class EmployeeEntityWithMissingHandler extends EventSourcedEntity<Employee, EmployeeEvent> {
-
-        public Effect<String> createUser(CreateEmployee create) {
-            return effects()
-                .emitEvent(new EmployeeEvent.EmployeeCreated(create.firstName, create.lastName, create.email))
-                .thenReply(__ -> "ok");
-        }
-
-        @EventHandler
-        public Employee onEvent(EmployeeEvent.EmployeeCreated created) {
-            return new Employee(created.firstName, created.lastName, created.email);
-        }
-    }
-
-    @TypeId("employee")
-    public static class EmployeeEntityWithMixedHandlers extends EventSourcedEntity<Employee, EmployeeEvent> {
-
-        public Effect<String> createUser(CreateEmployee create) {
-            return effects()
-                .emitEvent(new EmployeeEvent.EmployeeCreated(create.firstName, create.lastName, create.email))
-                .thenReply(__ -> "ok");
-        }
-
-        @EventHandler
-        public Employee onEvent(EmployeeEvent event) {
-            if (event instanceof EmployeeEvent.EmployeeCreated) {
-                EmployeeEvent.EmployeeCreated created = (EmployeeEvent.EmployeeCreated) event;
-                return new Employee(created.firstName, created.lastName, created.email);
-            } else {
-                return currentState();
-            }
-        }
-
-        @EventHandler
-        public Employee onEmployeeCreated(EmployeeEvent.EmployeeCreated created) {
-            return new Employee(created.firstName, created.lastName, created.email);
-        }
-    }
 
     @TypeId("counter")
     @Acl(allow = @Acl.Matcher(service = "test"))
-    public static class EventSourcedEntityWithServiceLevelAcl extends EventSourcedEntity<Integer, Object> {
+    public static class EventSourcedEntityWithServiceLevelAcl extends EventSourcedEntity<Employee, EmployeeEvent> {
 
+
+        @Override
+        public Employee applyEvent(EmployeeEvent event) {
+            return null;
+        }
     }
 
 
     @TypeId("counter")
-    public static class EventSourcedEntityWithMethodLevelAcl extends EventSourcedEntity<Integer, Object> {
+    public static class EventSourcedEntityWithMethodLevelAcl extends EventSourcedEntity<Employee, EmployeeEvent> {
+
         @Acl(allow = @Acl.Matcher(service = "test"))
         public Effect<String> createUser(CreateEmployee create) {
             return effects()
                 .emitEvent(new EmployeeEvent.EmployeeCreated(create.firstName, create.lastName, create.email))
                 .thenReply(__ -> "ok");
+        }
+
+        @Override
+        public Employee applyEvent(EmployeeEvent event) {
+            return null;
         }
     }
 }

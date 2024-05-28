@@ -16,9 +16,8 @@
 
 package com.example;
 
-import kalix.javasdk.eventsourcedentity.EventSourcedEntity;
 import kalix.javasdk.annotations.TypeId;
-import kalix.javasdk.annotations.EventHandler;
+import kalix.javasdk.eventsourcedentity.EventSourcedEntity;
 
 import static com.example.CounterEvent.ValueIncreased;
 import static com.example.CounterEvent.ValueMultiplied;
@@ -26,35 +25,34 @@ import static com.example.CounterEvent.ValueMultiplied;
 @TypeId("counter")
 public class Counter extends EventSourcedEntity<Integer, CounterEvent> {
 
-    @Override
-    public Integer emptyState() {
-        return 0;
-    }
+  @Override
+  public Integer emptyState() {
+    return 0;
+  }
 
-    public Effect<String> increase(Integer value) {
-        return effects()
-                .emitEvent(new ValueIncreased(value))
-                .thenReply(Object::toString);
-    }
 
-    public Effect<String> get() {
-        return effects().reply(currentState().toString());
-    }
+  public Effect<String> increase(Integer value) {
+    return effects()
+      .emitEvent(new ValueIncreased(value))
+      .thenReply(Object::toString);
+  }
 
-    public Effect<String> multiply(Integer value) {
-        return effects()
-                .emitEvent(new ValueMultiplied(value))
-                .thenReply(Object::toString);
-    }
+  public Effect<String> get() {
+    return effects().reply(currentState().toString());
+  }
 
-    @EventHandler
-    public Integer handleIncrease(ValueIncreased value) {
-        return currentState() + value.value();
-    }
+  public Effect<String> multiply(Integer value) {
+    return effects()
+      .emitEvent(new ValueMultiplied(value))
+      .thenReply(Object::toString);
+  }
 
-    @EventHandler
-    public Integer handleMultiply(ValueMultiplied value) {
-        return currentState() * value.value();
-    }
+  @Override
+  public Integer applyEvent(CounterEvent event) {
+    return switch (event) {
+      case ValueIncreased evt -> currentState() + evt.value();
+      case ValueMultiplied evt -> currentState() * evt.value();
+    };
+  }
 }
 

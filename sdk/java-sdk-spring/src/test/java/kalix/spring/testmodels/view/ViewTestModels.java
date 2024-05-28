@@ -721,7 +721,7 @@ public class ViewTestModels {
 
     public UpdateEffect<Employee> onEmailUpdate(EmployeeEvent.EmployeeEmailUpdated eeu) {
       var employee = viewState();
-      return effects().updateState(new Employee(employee.firstName, employee.lastName, eeu.email));
+      return effects().updateState(new Employee(employee.firstName(), employee.lastName(), eeu.email));
     }
 
     @Query("SELECT * FROM employees_view WHERE email = :email")
@@ -743,7 +743,7 @@ public class ViewTestModels {
     @Subscribe.Topic(value = "source", consumerGroup = "cg")
     public UpdateEffect<Employee> onEmailUpdate(EmployeeEvent.EmployeeEmailUpdated eeu) {
       var employee = viewState();
-      return effects().updateState(new Employee(employee.firstName, employee.lastName, eeu.email));
+      return effects().updateState(new Employee(employee.firstName(), employee.lastName(), eeu.email));
     }
 
     @Query("SELECT * FROM employees_view WHERE email = :email")

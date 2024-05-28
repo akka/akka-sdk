@@ -7,7 +7,7 @@ package kalix.javasdk.eventsourcedentity;
 import kalix.javasdk.annotations.Migration;
 import kalix.javasdk.annotations.TypeName;
 
-public interface TestESEvent {
+public sealed interface TestESEvent {
 
   @Migration(Event1Migration.class)
   record Event1(String s) implements TestESEvent {
@@ -18,10 +18,10 @@ public interface TestESEvent {
   }
 
   @TypeName("old-event-3")
-  record Event3(boolean b) implements OldTestESEvent {
+  record Event3(boolean b) implements OldTestESEvent, TestESEvent{
   }
 
   @Migration(Event4Migration.class)
-  record Event4(String anotherString) implements OldTestESEvent {
+  record Event4(String anotherString) implements OldTestESEvent, TestESEvent {
   }
 }

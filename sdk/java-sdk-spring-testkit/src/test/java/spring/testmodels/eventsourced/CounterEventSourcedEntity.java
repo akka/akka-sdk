@@ -5,7 +5,7 @@
 package spring.testmodels.eventsourced;
 
 import kalix.javasdk.eventsourcedentity.EventSourcedEntity;
-import kalix.javasdk.annotations.EventHandler;
+
 import java.util.List;
 
 public class CounterEventSourcedEntity extends EventSourcedEntity<Integer, Increased> {
@@ -27,8 +27,8 @@ public class CounterEventSourcedEntity extends EventSourcedEntity<Integer, Incre
     }
   }
 
-  @EventHandler
-  public Integer onEvent(Increased increased) {
+  @Override
+  public Integer applyEvent(Increased increased) {
     if (currentState() == null) return increased.value;
     else return currentState() + increased.value;
   }

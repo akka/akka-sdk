@@ -1,10 +1,10 @@
 package store.view.nested;
 
-import kalix.javasdk.view.View;
 import kalix.javasdk.annotations.Query;
 import kalix.javasdk.annotations.Subscribe;
 import kalix.javasdk.annotations.Table;
 import kalix.javasdk.annotations.ViewId;
+import kalix.javasdk.view.View;
 import org.springframework.web.bind.annotation.GetMapping;
 import store.customer.api.CustomerEntity;
 import store.customer.domain.CustomerEvent;
@@ -21,7 +21,7 @@ public class NestedCustomerOrdersView {
   // tag::query[]
   @GetMapping("/nested-customer-orders/{customerId}")
   @Query( // <1>
-      """
+    """
       SELECT customers.*, (orders.*, products.*) AS orders
       FROM customers
       JOIN orders ON customers.customerId = orders.customerId
@@ -40,7 +40,7 @@ public class NestedCustomerOrdersView {
     public UpdateEffect<Customer> onEvent(CustomerEvent.CustomerCreated created) {
       String id = updateContext().eventSubject().orElse("");
       return effects()
-          .updateState(new Customer(id, created.email(), created.name(), created.address()));
+        .updateState(new Customer(id, created.email(), created.name(), created.address()));
     }
 
     public UpdateEffect<Customer> onEvent(CustomerEvent.CustomerNameChanged event) {
@@ -71,5 +71,6 @@ public class NestedCustomerOrdersView {
 
   @Table("orders")
   @Subscribe.ValueEntity(OrderEntity.class)
-  public static class Orders extends View<Order> {}
+  public static class Orders extends View<Order> {
+  }
 }

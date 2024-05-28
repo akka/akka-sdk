@@ -2,12 +2,13 @@ package user.registry.entity;
 
 
 import kalix.javasdk.StatusCode;
-import kalix.javasdk.annotations.*;
+import kalix.javasdk.annotations.Acl;
+import kalix.javasdk.annotations.TypeId;
 import kalix.javasdk.eventsourcedentity.EventSourcedEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import user.registry.common.Done;
-import user.registry.domain.*;
+import user.registry.domain.User;
 
 /**
  * Entity wrapping a User.
@@ -68,20 +69,13 @@ public class UserEntity extends EventSourcedEntity<User, User.UserEvent> {
     return effects().reply(currentState());
   }
 
-  @EventHandler
-  public User onEvent(User.UserWasCreated evt) {
-    return User.onEvent(evt);
+
+  @Override
+  public User applyEvent(User.UserEvent event) {
+    return switch (event) {
+      case User.UserWasCreated evt -> User.onEvent(evt);
+      case User.EmailAssigned evt -> currentState().onEvent(evt);
+      case User.EmailUnassigned evt -> currentState();
+    };
   }
-
-  @EventHandler
-  public User onEvent(User.EmailAssigned evt) {
-    return currentState().onEvent(evt);
-  }
-
-
-  @EventHandler
-  public User onEvent(User.EmailUnassigned evt) {
-    return currentState();
-  }
-
 }

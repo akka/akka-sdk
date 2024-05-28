@@ -17,6 +17,7 @@ import kalix.spring.testmodels.Message2;
 import kalix.spring.testmodels.eventsourcedentity.Employee;
 import kalix.spring.testmodels.eventsourcedentity.EmployeeEvent.EmployeeCreated;
 import kalix.spring.testmodels.eventsourcedentity.EmployeeEvent.EmployeeEmailUpdated;
+import kalix.spring.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels;
 import kalix.spring.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.CounterEventSourcedEntity;
 import kalix.spring.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.EmployeeEntity;
 import kalix.spring.testmodels.valueentity.AssignedCounter;
@@ -32,7 +33,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   public static class SubscribeToValueEntityAction extends Action {
 
     @Subscribe.ValueEntity(Counter.class)
-    public Action.Effect<CounterState> onUpdate(CounterState message) {
+    public Effect<CounterState> onUpdate(CounterState message) {
       return effects().reply(message);
     }
   }
@@ -40,7 +41,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   @Subscribe.ValueEntity(Counter.class)
   public static class SubscribeToValueEntityTypeLevelAction extends Action {
 
-    public Action.Effect<CounterState> onUpdate(CounterState message) {
+    public Effect<CounterState> onUpdate(CounterState message) {
       return effects().reply(message);
     }
   }
@@ -48,7 +49,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   public static class SubscribeToValueEntityWithRestAction extends Action {
 
     @Subscribe.ValueEntity(Counter.class)
-    public Action.Effect<CounterState> onUpdate(CounterState message) {
+    public Effect<CounterState> onUpdate(CounterState message) {
       return effects().reply(message);
     }
 
@@ -61,7 +62,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   @Subscribe.ValueEntity(Counter.class)
   public static class TypeLevelSubscribeToValueEntityWithRestAction extends Action {
 
-    public Action.Effect<CounterState> onUpdate(CounterState message) {
+    public Effect<CounterState> onUpdate(CounterState message) {
       return effects().reply(message);
     }
 
@@ -74,12 +75,12 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   public static class SubscribeToValueEntityWithDeletesAction extends Action {
 
     @Subscribe.ValueEntity(Counter.class)
-    public Action.Effect<CounterState> onUpdate(CounterState message) {
+    public Effect<CounterState> onUpdate(CounterState message) {
       return effects().reply(message);
     }
 
     @Subscribe.ValueEntity(value = Counter.class, handleDeletes = true)
-    public Action.Effect<CounterState> onDelete() {
+    public Effect<CounterState> onDelete() {
       return effects().ignore();
     }
   }
@@ -99,33 +100,33 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   public static class SubscribeToEventSourcedEntityAction extends Action {
 
     @Subscribe.EventSourcedEntity(CounterEventSourcedEntity.class)
-    public Action.Effect<Integer> methodOne(Integer message) {
-      return effects().reply(message);
+    public Effect<Integer> methodOne(EventSourcedEntitiesTestModels.CounterEvent.IncrementCounter evt) {
+      return effects().reply(evt.value());
     }
 
     @Subscribe.EventSourcedEntity(CounterEventSourcedEntity.class)
-    public Action.Effect<String> methodTwo(String message) {
-      return effects().reply(message);
+    public Effect<Integer> methodTwo(EventSourcedEntitiesTestModels.CounterEvent.DecrementCounter evt) {
+      return effects().reply(evt.value());
     }
   }
 
   @Subscribe.Topic(value = "topicAAA", consumerGroup = "aa")
   public static class SubscribeToTopicActionTypeLevelMethodLevel extends Action {
 
-    public Action.Effect<Message> messageOne(Message message) {return effects().reply(message);}
+    public Effect<Message> messageOne(Message message) {return effects().reply(message);}
 
     @Subscribe.Topic(value = "topicXYZ")
-    public Action.Effect<Message2> messageTwo(Message2 message) {return effects().reply(message);}
+    public Effect<Message2> messageTwo(Message2 message) {return effects().reply(message);}
   }
 
   @Subscribe.Topic(value = "topicXYZ", ignoreUnknown = true)
   public static class SubscribeToTopicsActionTypeLevel extends Action {
 
-    public Action.Effect<Message> methodOne(Message message) {
+    public Effect<Message> methodOne(Message message) {
       return effects().reply(message);
     }
 
-    public Action.Effect<Message2> methodTwo(Message2 message) {
+    public Effect<Message2> methodTwo(Message2 message) {
       return effects().reply(message);
     }
   }
@@ -133,7 +134,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   public static class RestAnnotatedSubscribeToEventSourcedEntityAction extends Action {
     @PostMapping("/changeInt/{number}")
     @Subscribe.EventSourcedEntity(CounterEventSourcedEntity.class)
-    public Action.Effect<Integer> methodTwo(Integer number) {
+    public Effect<Integer> methodTwo(Integer number) {
       return effects().reply(number);
     }
   }
@@ -141,7 +142,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   @Subscribe.EventSourcedEntity(value = CounterEventSourcedEntity.class, ignoreUnknown = true)
   public static class SubscribeOnlyOneToEventSourcedEntityActionTypeLevel extends Action {
 
-    public Action.Effect<Integer> methodOne(Integer message) {
+    public Effect<Integer> methodOne(Integer message) {
       return effects().reply(message);
     }
   }
@@ -149,12 +150,12 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   @Subscribe.EventSourcedEntity(value = CounterEventSourcedEntity.class, ignoreUnknown = true)
   public static class InvalidSubscribeToEventSourcedEntityAction extends Action {
 
-    public Action.Effect<Integer> methodOne(Integer message) {
+    public Effect<Integer> methodOne(Integer message) {
       return effects().reply(message);
     }
 
     @Subscribe.EventSourcedEntity(EmployeeEntity.class)
-    public Action.Effect<String> methodTwo(String message) {
+    public Effect<String> methodTwo(String message) {
       return effects().reply(message);
     }
   }
@@ -165,7 +166,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   @Subscribe.Stream(id = "source", service = "abc")
   public static class MultipleTypeLevelSubscriptionsInAction extends Action {
 
-    public Action.Effect<Integer> methodOne(Integer message) {
+    public Effect<Integer> methodOne(Integer message) {
       return effects().reply(message);
     }
 
@@ -174,11 +175,11 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   @Subscribe.ValueEntity(Counter.class)
   public static class MultipleUpdateMethodsForVETypeLevelSubscriptionInAction extends Action {
 
-    public Action.Effect<Integer> methodOne(Integer message) {
+    public Effect<Integer> methodOne(Integer message) {
       return effects().reply(message);
     }
 
-    public Action.Effect<String> methodTwo(String message) {
+    public Effect<String> methodTwo(String message) {
       return effects().reply(message);
     }
   }
@@ -186,17 +187,17 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   public static class AmbiguousHandlersVESubscriptionInAction extends Action {
 
     @Subscribe.ValueEntity(Counter.class)
-    public Action.Effect<Integer> methodOne(Integer message) {
+    public Effect<Integer> methodOne(Integer message) {
       return effects().reply(message);
     }
 
     @Subscribe.ValueEntity(Counter.class)
-    public Action.Effect<Integer> methodTwo(Integer message) {
+    public Effect<Integer> methodTwo(Integer message) {
       return effects().reply(message);
     }
 
     @Subscribe.ValueEntity(AssignedCounter.class)
-    public Action.Effect<Integer> methodThree(Integer message) {
+    public Effect<Integer> methodThree(Integer message) {
       return effects().reply(message);
     }
   }
@@ -204,17 +205,17 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   public static class AmbiguousDeleteHandlersVESubscriptionInAction extends Action {
 
     @Subscribe.ValueEntity(value = Counter.class, handleDeletes = true)
-    public Action.Effect<Integer> methodOne() {
+    public Effect<Integer> methodOne() {
       return effects().ignore();
     }
 
     @Subscribe.ValueEntity(value = Counter.class, handleDeletes = true)
-    public Action.Effect<Integer> methodTwo() {
+    public Effect<Integer> methodTwo() {
       return effects().ignore();
     }
 
     @Subscribe.ValueEntity(value = AssignedCounter.class, handleDeletes = true)
-    public Action.Effect<Integer> methodThree() {
+    public Effect<Integer> methodThree() {
       return effects().ignore();
     }
   }
@@ -222,11 +223,11 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   @Subscribe.ValueEntity(Counter.class)
   public static class AmbiguousHandlersVETypeLevelSubscriptionInAction extends Action {
 
-    public Action.Effect<Integer> methodOne(Integer message) {
+    public Effect<Integer> methodOne(Integer message) {
       return effects().reply(message);
     }
 
-    public Action.Effect<Integer> methodTwo(Integer message) {
+    public Effect<Integer> methodTwo(Integer message) {
       return effects().reply(message);
     }
   }
@@ -234,17 +235,17 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   public static class AmbiguousHandlersESSubscriptionInAction extends Action {
 
     @Subscribe.EventSourcedEntity(EmployeeEntity.class)
-    public Action.Effect<Integer> methodOne(Integer message) {
+    public Effect<Integer> methodOne(Integer message) {
       return effects().reply(message);
     }
 
     @Subscribe.EventSourcedEntity(EmployeeEntity.class)
-    public Action.Effect<Integer> methodTwo(Integer message) {
+    public Effect<Integer> methodTwo(Integer message) {
       return effects().reply(message);
     }
 
     @Subscribe.EventSourcedEntity(CounterEventSourcedEntity.class)
-    public Action.Effect<Integer> methodThree(Integer message) {
+    public Effect<Integer> methodThree(Integer message) {
       return effects().reply(message);
     }
   }
@@ -252,11 +253,11 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   @Subscribe.EventSourcedEntity(EmployeeEntity.class)
   public static class AmbiguousHandlersESTypeLevelSubscriptionInAction extends Action {
 
-    public Action.Effect<Integer> methodOne(Integer message) {
+    public Effect<Integer> methodOne(Integer message) {
       return effects().reply(message);
     }
 
-    public Action.Effect<Integer> methodTwo(Integer message) {
+    public Effect<Integer> methodTwo(Integer message) {
       return effects().reply(message);
     }
   }
@@ -264,11 +265,11 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   @Subscribe.Stream(id = "source", service = "a")
   public static class AmbiguousHandlersStreamTypeLevelSubscriptionInAction extends Action {
 
-    public Action.Effect<Integer> methodOne(Integer message) {
+    public Effect<Integer> methodOne(Integer message) {
       return effects().reply(message);
     }
 
-    public Action.Effect<Integer> methodTwo(Integer message) {
+    public Effect<Integer> methodTwo(Integer message) {
       return effects().reply(message);
     }
   }
@@ -276,17 +277,17 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   public static class AmbiguousHandlersTopiSubscriptionInAction extends Action {
 
     @Subscribe.Topic("source")
-    public Action.Effect<Integer> methodOne(Integer message) {
+    public Effect<Integer> methodOne(Integer message) {
       return effects().reply(message);
     }
 
     @Subscribe.Topic("source")
-    public Action.Effect<Integer> methodTwo(Integer message) {
+    public Effect<Integer> methodTwo(Integer message) {
       return effects().reply(message);
     }
 
     @Subscribe.Topic("source-2")
-    public Action.Effect<Integer> methodThree(Integer message) {
+    public Effect<Integer> methodThree(Integer message) {
       return effects().reply(message);
     }
   }
@@ -294,11 +295,11 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   @Subscribe.Topic("source")
   public static class AmbiguousHandlersTopicTypeLevelSubscriptionInAction extends Action {
 
-    public Action.Effect<Integer> methodOne(Integer message) {
+    public Effect<Integer> methodOne(Integer message) {
       return effects().reply(message);
     }
 
-    public Action.Effect<Integer> methodTwo(Integer message) {
+    public Effect<Integer> methodTwo(Integer message) {
       return effects().reply(message);
     }
   }
@@ -306,7 +307,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   public static class MissingSourceForTopicPublishing extends Action {
 
     @Publish.Topic("test")
-    public Action.Effect<String> methodOne(String message) {
+    public Effect<String> methodOne(String message) {
       return effects().reply(message);
     }
   }
@@ -315,12 +316,12 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
 
     @Subscribe.ValueEntity(Counter.class)
     @Publish.Topic("test")
-    public Action.Effect<String> methodOne(String message) {
+    public Effect<String> methodOne(String message) {
       return effects().reply(message);
     }
 
     @Subscribe.ValueEntity(value = Counter.class, handleDeletes = true)
-    public Action.Effect<String> methodTwo() {
+    public Effect<String> methodTwo() {
       return effects().ignore();
     }
   }
@@ -329,12 +330,12 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
 
     @Subscribe.EventSourcedEntity(EmployeeEntity.class)
     @Publish.Topic("test")
-    public Action.Effect<String> methodOne(String message) {
+    public Effect<String> methodOne(String message) {
       return effects().reply(message);
     }
 
     @Subscribe.EventSourcedEntity(EmployeeEntity.class)
-    public Action.Effect<String> methodTwo(Integer message) {
+    public Effect<String> methodTwo(Integer message) {
       return effects().ignore();
     }
   }
@@ -343,11 +344,11 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   public static class MissingTopicForTypeLevelESSubscription extends Action {
 
     @Publish.Topic("test")
-    public Action.Effect<String> methodOne(String message) {
+    public Effect<String> methodOne(String message) {
       return effects().reply(message);
     }
 
-    public Action.Effect<String> methodTwo(Integer message) {
+    public Effect<String> methodTwo(Integer message) {
       return effects().ignore();
     }
   }
@@ -356,12 +357,12 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
 
     @Subscribe.Topic("source")
     @Publish.Topic("test")
-    public Action.Effect<String> methodOne(String message) {
+    public Effect<String> methodOne(String message) {
       return effects().reply(message);
     }
 
     @Subscribe.Topic("source")
-    public Action.Effect<String> methodTwo(Integer message) {
+    public Effect<String> methodTwo(Integer message) {
       return effects().ignore();
     }
   }
@@ -370,11 +371,11 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   public static class MissingTopicForTopicTypeLevelSubscription extends Action {
 
     @Publish.Topic("test")
-    public Action.Effect<String> methodOne(String message) {
+    public Effect<String> methodOne(String message) {
       return effects().reply(message);
     }
 
-    public Action.Effect<String> methodTwo(Integer message) {
+    public Effect<String> methodTwo(Integer message) {
       return effects().ignore();
     }
   }
@@ -383,11 +384,11 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   public static class MissingTopicForStreamSubscription extends Action {
 
     @Publish.Topic("test")
-    public Action.Effect<String> methodOne(String message) {
+    public Effect<String> methodOne(String message) {
       return effects().reply(message);
     }
 
-    public Action.Effect<String> methodTwo(Integer message) {
+    public Effect<String> methodTwo(Integer message) {
       return effects().ignore();
     }
   }
@@ -396,13 +397,13 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
 
     @Subscribe.ValueEntity(Counter.class)
     @Publish.Topic("test")
-    public Action.Effect<String> methodOne(String message) {
+    public Effect<String> methodOne(String message) {
       return effects().reply(message);
     }
 
     @Subscribe.ValueEntity(value = Counter.class, handleDeletes = true)
     @Publish.Topic("another-topic")
-    public Action.Effect<String> methodTwo() {
+    public Effect<String> methodTwo() {
       return effects().ignore();
     }
   }
@@ -411,13 +412,13 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
 
     @Subscribe.EventSourcedEntity(EmployeeEntity.class)
     @Publish.Topic("test")
-    public Action.Effect<String> methodOne(String message) {
+    public Effect<String> methodOne(String message) {
       return effects().reply(message);
     }
 
     @Subscribe.EventSourcedEntity(EmployeeEntity.class)
     @Publish.Topic("another-topic")
-    public Action.Effect<String> methodTwo(Integer message) {
+    public Effect<String> methodTwo(Integer message) {
       return effects().ignore();
     }
   }
@@ -426,12 +427,12 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   public static class DifferentTopicForESTypeLevelSubscription extends Action {
 
     @Publish.Topic("test")
-    public Action.Effect<String> methodOne(String message) {
+    public Effect<String> methodOne(String message) {
       return effects().reply(message);
     }
 
     @Publish.Topic("another-topic")
-    public Action.Effect<String> methodTwo(Integer message) {
+    public Effect<String> methodTwo(Integer message) {
       return effects().ignore();
     }
   }
@@ -440,13 +441,13 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
 
     @Subscribe.Topic("source")
     @Publish.Topic("test")
-    public Action.Effect<String> methodOne(String message) {
+    public Effect<String> methodOne(String message) {
       return effects().reply(message);
     }
 
     @Subscribe.Topic("source")
     @Publish.Topic("another-topic")
-    public Action.Effect<String> methodTwo(Integer message) {
+    public Effect<String> methodTwo(Integer message) {
       return effects().ignore();
     }
   }
@@ -455,12 +456,12 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   public static class DifferentTopicForTopicTypeLevelSubscription extends Action {
 
     @Publish.Topic("test")
-    public Action.Effect<String> methodOne(String message) {
+    public Effect<String> methodOne(String message) {
       return effects().reply(message);
     }
 
     @Publish.Topic("another-topic")
-    public Action.Effect<String> methodTwo(Integer message) {
+    public Effect<String> methodTwo(Integer message) {
       return effects().ignore();
     }
   }
@@ -469,12 +470,12 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   public static class DifferentTopicForStreamSubscription extends Action {
 
     @Publish.Topic("test")
-    public Action.Effect<String> methodOne(String message) {
+    public Effect<String> methodOne(String message) {
       return effects().reply(message);
     }
 
     @Publish.Topic("another-topic")
-    public Action.Effect<String> methodTwo(Integer message) {
+    public Effect<String> methodTwo(Integer message) {
       return effects().ignore();
     }
   }
@@ -482,23 +483,23 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   @Subscribe.EventSourcedEntity(value = EmployeeEntity.class)
   public static class MissingHandlersWhenSubscribeToEventSourcedEntityAction extends Action {
 
-    public Action.Effect<Integer> methodOne(Integer message) {
+    public Effect<Integer> methodOne(Integer message) {
       return effects().reply(message);
     }
 
-    public Action.Effect<String> onEvent(EmployeeCreated message) {
+    public Effect<String> onEvent(EmployeeCreated message) {
       return effects().reply(message.toString());
     }
   }
 
   public static class MissingHandlersWhenSubscribeToEventSourcedOnMethodLevelEntityAction extends Action {
 
-    public Action.Effect<Integer> methodOne(Integer message) {
+    public Effect<Integer> methodOne(Integer message) {
       return effects().reply(message);
     }
 
     @Subscribe.EventSourcedEntity(value = EmployeeEntity.class)
-    public Action.Effect<String> onEvent(EmployeeCreated message) {
+    public Effect<String> onEvent(EmployeeCreated message) {
       return effects().reply(message.toString());
     }
   }
@@ -506,7 +507,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   public static class SubscribeToTopicAction extends Action {
 
     @Subscribe.Topic(value = "topicXYZ", consumerGroup = "cg")
-    public Action.Effect<Message> messageOne(Message message) {
+    public Effect<Message> messageOne(Message message) {
       return effects().reply(message);
     }
   }
@@ -514,7 +515,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   @Subscribe.Topic(value = "topicXYZ", consumerGroup = "cg")
   public static class SubscribeToTopicTypeLevelAction extends Action {
 
-    public Action.Effect<Message> messageOne(Message message) {
+    public Effect<Message> messageOne(Message message) {
       return effects().reply(message);
     }
   }
@@ -522,11 +523,11 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   @Subscribe.Topic(value = "topicXYZ", consumerGroup = "cg", ignoreUnknown = true)
   public static class SubscribeToTopicTypeLevelCombinedAction extends Action {
 
-    public Action.Effect<Message> messageOne(Message message) {
+    public Effect<Message> messageOne(Message message) {
       return effects().reply(message);
     }
 
-    public Action.Effect<String> messageTwo(String message) {
+    public Effect<String> messageTwo(String message) {
       return effects().reply(message);
     }
   }
@@ -534,12 +535,12 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   public static class SubscribeToTopicCombinedAction extends Action {
 
     @Subscribe.Topic(value = "topicXYZ", consumerGroup = "cg")
-    public Action.Effect<Message> messageOne(Message message) {
+    public Effect<Message> messageOne(Message message) {
       return effects().reply(message);
     }
 
     @Subscribe.Topic(value = "topicXYZ", consumerGroup = "cg")
-    public Action.Effect<String> messageTwo(String message) {
+    public Effect<String> messageTwo(String message) {
       return effects().reply(message);
     }
   }
@@ -547,12 +548,12 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   public static class InvalidConsumerGroupsWhenSubscribingToTopicAction extends Action {
 
     @Subscribe.Topic(value = "topicXYZ", consumerGroup = "cg")
-    public Action.Effect<Message> messageOne(Message message) {
+    public Effect<Message> messageOne(Message message) {
       return effects().reply(message);
     }
 
     @Subscribe.Topic(value = "topicXYZ", consumerGroup = "cg2")
-    public Action.Effect<String> messageTwo(String message) {
+    public Effect<String> messageTwo(String message) {
       return effects().reply(message);
     }
   }
@@ -561,7 +562,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   public static class InvalidSubscribeToTopicAction extends Action {
 
     @Subscribe.Topic(value = "topicXYZ", consumerGroup = "cg")
-    public Action.Effect<Message> messageOne(Message message) {
+    public Effect<Message> messageOne(Message message) {
       return effects().reply(message);
     }
   }
@@ -569,17 +570,17 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   public static class SubscribeToTwoTopicsAction extends Action {
 
     @Subscribe.Topic("topicXYZ")
-    public Action.Effect<Message> methodOne(Message message) {
+    public Effect<Message> methodOne(Message message) {
       return effects().reply(message);
     }
 
     @Subscribe.Topic("topicXYZ")
-    public Action.Effect<Message2> methodTwo(Message2 message) {
+    public Effect<Message2> methodTwo(Message2 message) {
       return effects().reply(message);
     }
 
     @Subscribe.Topic("topicXYZ")
-    public Action.Effect<Integer> methodThree(Integer message) {
+    public Effect<Integer> methodThree(Integer message) {
       return effects().reply(message);
     }
   }
@@ -686,7 +687,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
     // this should fail as not allowed
     @Subscribe.ValueEntity(Counter.class)
     @PostMapping("/message/one")
-    public Action.Effect<Message> messageOne(@RequestBody Message message) {
+    public Effect<Message> messageOne(@RequestBody Message message) {
       return effects().reply(message);
     }
   }
@@ -700,7 +701,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   public static class ActionWithMethodLevelAcl extends Action {
     @Acl(allow = @Acl.Matcher(service = "test"))
     @PostMapping("/message/one")
-    public Action.Effect<Message> messageOne(@RequestBody Message message) {
+    public Effect<Message> messageOne(@RequestBody Message message) {
       return effects().reply(message);
     }
   }
@@ -708,7 +709,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   public static class ActionWithMethodLevelAclAndSubscription extends Action {
     @Acl(allow = @Acl.Matcher(service = "test"))
     @Subscribe.ValueEntity(Counter.class)
-    public Action.Effect<Message> messageOne(@RequestBody Message message) {
+    public Effect<Message> messageOne(@RequestBody Message message) {
       return effects().reply(message);
     }
   }
@@ -724,7 +725,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
 
     public UpdateEffect<Employee> onEmailUpdate(EmployeeEmailUpdated eeu) {
       var employee = viewState();
-      return effects().updateState(new Employee(employee.firstName, employee.lastName, eeu.email));
+      return effects().updateState(new Employee(employee.firstName(), employee.lastName(), eeu.email));
     }
 
     @Query("SELECT * FROM employees_view WHERE email = :email")
@@ -772,7 +773,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
 
     public UpdateEffect<Employee> onEmailUpdate(EmployeeEmailUpdated eeu) {
       var employee = viewState();
-      return effects().updateState(new Employee(employee.firstName, employee.lastName, eeu.email));
+      return effects().updateState(new Employee(employee.firstName(), employee.lastName(), eeu.email));
     }
 
     @Query("SELECT * FROM employees_view WHERE email = :email")

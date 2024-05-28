@@ -17,14 +17,12 @@ import com.google.protobuf.ByteString
 import com.google.protobuf.BytesValue
 import com.google.protobuf.any.{ Any => ScalaPbAny }
 import com.google.protobuf.{ Any => JavaPbAny }
-import kalix.javasdk.HttpResponse.STATUS_CODE_EXTENSION_TYPE_URL
-import kalix.javasdk.annotations.TypeName
-import kalix.javasdk.impl.AnySupport.BytesPrimitive
 import kalix.javasdk.HttpResponse
+import kalix.javasdk.HttpResponse.STATUS_CODE_EXTENSION_TYPE_URL
 import kalix.javasdk.JsonSupport
 import kalix.javasdk.annotations.Migration
-import kalix.javasdk.impl.MessageCodec
-import kalix.javasdk.impl.NullSerializationException
+import kalix.javasdk.annotations.TypeName
+import kalix.javasdk.impl.AnySupport.BytesPrimitive
 
 private[kalix] class JsonMessageCodec extends MessageCodec {
 
@@ -32,6 +30,8 @@ private[kalix] class JsonMessageCodec extends MessageCodec {
 
   private val typeHints: ConcurrentMap[Class[_], TypeHint] = new ConcurrentHashMap()
   private[kalix] val reversedTypeHints: ConcurrentMap[String, Class[_]] = new ConcurrentHashMap()
+
+  override def toString: String = s"JsonMessageCodec: ${typeHints.keySet().size()} registered types"
 
   /**
    * In the Java SDK, output data are encoded to Json.
@@ -186,6 +186,7 @@ private[kalix] class JsonMessageCodec extends MessageCodec {
  */
 private[kalix] class StrictJsonMessageCodec(delegate: JsonMessageCodec) extends MessageCodec {
 
+  override def toString: String = s"StrictJsonMessageCodec -> $delegate"
   override def decodeMessage(value: ScalaPbAny): Any =
     if (value.typeUrl.startsWith(JsonSupport.KALIX_JSON)) {
       val any = ScalaPbAny.toJavaProto(value)

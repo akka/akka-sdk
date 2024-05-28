@@ -35,20 +35,20 @@ public class GetRandomPhotoAction extends Action {
       // in this case we are using WebClient directly instead, only for demonstration purposes but if you're doing a local call
       // you should use the component client instead
       var tracingMap = Map.of(
-          "traceparent", actionContext().metadata().traceContext().traceParent().orElse(""),
-          "tracestate", actionContext().metadata().traceContext().traceState().orElse("")
+        "traceparent", actionContext().metadata().traceContext().traceParent().orElse(""),
+        "tracestate", actionContext().metadata().traceContext().traceState().orElse("")
       );
 
       return WebClient.create("http://localhost:9000")
-          .post()
-          .uri(uriBuilder -> uriBuilder
-              .path("/akka/v1.0/entity/user/{userId}/updatePhoto")
-              .build(actionContext().eventSubject().get()))
-          .bodyValue(new UserEntity.UserCmd.UpdatePhotoCmd(randomPhotoUrl))
-          .headers(h -> tracingMap.forEach(h::set))
-          .retrieve()
-          .bodyToMono(String.class)
-          .toFuture();
+        .post()
+        .uri(uriBuilder -> uriBuilder
+          .path("/akka/v1.0/entity/user/{userId}/updatePhoto")
+          .build(actionContext().eventSubject().get()))
+        .bodyValue(new UserEntity.UserCmd.UpdatePhotoCmd(randomPhotoUrl))
+        .headers(h -> tracingMap.forEach(h::set))
+        .retrieve()
+        .bodyToMono(String.class)
+        .toFuture();
     });
 
     return effects().asyncReply(updatePhoto);
@@ -58,24 +58,24 @@ public class GetRandomPhotoAction extends Action {
   private CompletableFuture<String> getRandomPhotoAsync() {
     var otelCurrentContext = actionContext().metadata().traceContext().asOpenTelemetryContext();
     Span span = tracer
-        .spanBuilder("random-photo-async")
-        .setParent(otelCurrentContext)
-        .setSpanKind(SpanKind.CLIENT)
-        .startSpan()
-        .setAttribute("user.id", actionContext().eventSubject().orElse("unknown"));
+      .spanBuilder("random-photo-async")
+      .setParent(otelCurrentContext)
+      .setSpanKind(SpanKind.CLIENT)
+      .startSpan()
+      .setAttribute("user.id", actionContext().eventSubject().orElse("unknown"));
 
     return webClient
-        .get()
-        .retrieve()
-        .bodyToMono(RandomUserApi.Photo.class)
-        .map(photoResult -> {
-          span.setAttribute("random.photo", photoResult.url());
-          span.end();
-          return photoResult.url();
-        }).doOnError(throwable -> {
-          span.setStatus(StatusCode.ERROR, "Failed to fetch name: " + throwable.getMessage());
-          span.end();
-        }).toFuture();
+      .get()
+      .retrieve()
+      .bodyToMono(RandomUserApi.Photo.class)
+      .map(photoResult -> {
+        span.setAttribute("random.photo", photoResult.url());
+        span.end();
+        return photoResult.url();
+      }).doOnError(throwable -> {
+        span.setStatus(StatusCode.ERROR, "Failed to fetch name: " + throwable.getMessage());
+        span.end();
+      }).toFuture();
   }
 
 }

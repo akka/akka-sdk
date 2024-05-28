@@ -178,8 +178,8 @@ lazy val javaSdkSpring = project
   .settings(
     name := "kalix-java-sdk-spring",
     crossPaths := false,
-    Compile / javacOptions ++= Seq("--release", "17"),
-    Compile / scalacOptions ++= Seq("-release", "17"),
+    Compile / javacOptions ++= Seq("--release", "21"),
+    Compile / scalacOptions ++= Seq("-release", "21"),
     scalaVersion := Dependencies.ScalaVersion,
     buildInfoKeys := Seq[BuildInfoKey](
       name,
@@ -229,8 +229,8 @@ lazy val javaSdkSpringTestKit = project
   .settings(
     name := "kalix-java-sdk-spring-testkit",
     crossPaths := false,
-    Compile / javacOptions ++= Seq("--release", "17"),
-    Compile / scalacOptions ++= Seq("-release", "17"),
+    Compile / javacOptions ++= Seq("--release", "21"),
+    Compile / scalacOptions ++= Seq("-release", "21"),
     buildInfoKeys := Seq[BuildInfoKey](
       name,
       version,
@@ -270,8 +270,8 @@ lazy val springBootStarter = project
   .settings(
     name := "kalix-spring-boot-starter",
     crossPaths := false,
-    Compile / javacOptions ++= Seq("--release", "17"),
-    Compile / scalacOptions ++= Seq("-release", "17"),
+    Compile / javacOptions ++= Seq("--release", "21"),
+    Compile / scalacOptions ++= Seq("-release", "21"),
     buildInfoKeys := Seq[BuildInfoKey](
       name,
       version,
@@ -307,8 +307,8 @@ lazy val springBootStarterTest = project
   .settings(
     name := "kalix-spring-boot-starter-test",
     crossPaths := false,
-    Compile / javacOptions ++= Seq("--release", "17"),
-    Compile / scalacOptions ++= Seq("-release", "17"),
+    Compile / javacOptions ++= Seq("--release", "21"),
+    Compile / scalacOptions ++= Seq("-release", "21"),
     buildInfoKeys := Seq[BuildInfoKey](
       name,
       version,

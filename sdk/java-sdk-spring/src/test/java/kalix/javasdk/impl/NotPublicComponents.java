@@ -10,6 +10,7 @@ import kalix.javasdk.eventsourcedentity.EventSourcedEntity;
 import kalix.javasdk.valueentity.ValueEntity;
 import kalix.javasdk.view.View;
 import kalix.javasdk.workflow.Workflow;
+import kalix.spring.badwiring.eventsourced.IllDefinedEventSourcedEntity;
 import kalix.spring.testmodels.Message;
 import kalix.spring.testmodels.valueentity.User;
 import kalix.spring.testmodels.valueentity.UserEntity;
@@ -27,9 +28,19 @@ public class NotPublicComponents {
   }
 
   @TypeId("counter")
-  static class NotPublicEventSourced extends EventSourcedEntity<Integer, Object> {
+  static class NotPublicEventSourced extends EventSourcedEntity<Integer, NotPublicEventSourced.Event> {
+
+    public sealed interface Event {
+      public record Created()implements Event {};
+    }
+
     @GetMapping("/eventsourced/{counter_id}")
     public Integer test() {
+      return 0;
+    }
+
+    @Override
+    public Integer applyEvent(Event event) {
       return 0;
     }
   }

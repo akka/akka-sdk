@@ -570,7 +570,6 @@ jobs:
           - { sample: java-spring-valueentity-shopping-cart, it: true }
           - { sample: java-spring-valueentity-customer-registry, it: true }
 
-
           - { sample: java-protobuf-replicatedentity-shopping-cart, it: true }
           - { sample: java-protobuf-replicatedentity-examples, it: true }
 

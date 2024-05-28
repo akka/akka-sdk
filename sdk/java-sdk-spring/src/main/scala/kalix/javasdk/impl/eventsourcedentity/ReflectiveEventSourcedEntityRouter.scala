@@ -4,56 +4,49 @@
 
 package kalix.javasdk.impl.eventsourcedentity
 
-import com.google.protobuf.any.{ Any => ScalaPbAny }
-import com.google.protobuf.{ Any => JavaPbAny }
-import kalix.javasdk.impl.CommandHandler
-import kalix.javasdk.impl.InvocationContext
-import kalix.javasdk.impl.JsonMessageCodec
-import kalix.javasdk.impl.MethodInvoker
 import java.lang.reflect.ParameterizedType
 
+import com.google.protobuf.any.{ Any => ScalaPbAny }
 import kalix.javasdk.JsonSupport
 import kalix.javasdk.eventsourcedentity.CommandContext
 import kalix.javasdk.eventsourcedentity.EventSourcedEntity
-import kalix.javasdk.impl.eventsourcedentity.EventSourcedEntityRouter
+import kalix.javasdk.impl.CommandHandler
+import kalix.javasdk.impl.InvocationContext
+import kalix.javasdk.impl.JsonMessageCodec
+import kalix.javasdk.impl.StrictJsonMessageCodec
+import kalix.javasdk.impl.reflection.Reflect
 
 class ReflectiveEventSourcedEntityRouter[S, E, ES <: EventSourcedEntity[S, E]](
     override protected val entity: ES,
     commandHandlers: Map[String, CommandHandler],
-    eventHandlerMethods: Map[String, MethodInvoker],
-    messageCodec: JsonMessageCodec)
+    messageCode: JsonMessageCodec)
     extends EventSourcedEntityRouter[S, E, ES](entity) {
+
+  private val strictCodec = new StrictJsonMessageCodec(messageCode)
+
+  // similar to workflow, we preemptively register the events type to the message codec
+  Reflect.allKnownEventTypes[S, E, ES](entity).foreach(messageCode.registerTypeHints)
 
   private def commandHandlerLookup(commandName: String) =
     commandHandlers.getOrElse(
       commandName,
       throw new HandlerNotFoundException("command", commandName, commandHandlers.keySet))
 
-  private def eventHandlerLookup(eventName: String) = {
-    eventHandlerMethods.getOrElse(
-      messageCodec.removeVersion(eventName),
-      throw new HandlerNotFoundException("event", eventName, eventHandlerMethods.keySet))
-  }
-
   override def handleEvent(state: S, event: E): S = {
 
     _extractAndSetCurrentState(state)
 
     event match {
-      case s: ScalaPbAny => // replaying event coming from proxy
-        val invocationContext = InvocationContext(s, JavaPbAny.getDescriptor)
-
-        eventHandlerLookup(s.typeUrl)
-          .invoke(entity, invocationContext)
-          .asInstanceOf[S]
+      case anyPb: ScalaPbAny => // replaying event coming from proxy
+        val deserEvent = strictCodec.decodeMessage(anyPb)
+        val casted = deserEvent.asInstanceOf[event.type]
+        entity.applyEvent(casted)
 
       case _ => // processing runtime event coming from memory
-        val typeName = messageCodec.typeUrlFor(event.getClass)
+        entity.applyEvent(event.asInstanceOf[event.type])
 
-        eventHandlerLookup(typeName).method
-          .invoke(entity, event.asInstanceOf[event.type])
-          .asInstanceOf[S]
     }
+
   }
 
   override def handleCommand(
