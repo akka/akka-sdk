@@ -13,9 +13,6 @@ import kalix.javasdk.JsonSupport;
 import kalix.javasdk.Metadata;
 import kalix.javasdk.impl.*;
 import kalix.javasdk.impl.client.ComponentClientImpl;
-import kalix.javasdk.impl.AnySupport;
-import kalix.javasdk.impl.MetadataImpl;
-import kalix.javasdk.impl.RestDeferredCall;
 import kalix.javasdk.impl.telemetry.Telemetry;
 import kalix.spring.impl.RestKalixClientImpl;
 import kalix.spring.testmodels.Message;
@@ -84,8 +81,8 @@ class ComponentClientTest {
 
     //when
     RestDeferredCall<Any, Message> call = (RestDeferredCall<Any, Message>) componentClient.forAction()
-        .call(GetWithOneParam::message)
-        .params(param);
+      .call(GetWithOneParam::message)
+      .params(param);
 
     //then
     assertThat(call.fullServiceName()).isEqualTo(targetMethod.getService().getFullName());
@@ -104,8 +101,8 @@ class ComponentClientTest {
 
     //when
     RestDeferredCall<Any, Message> call = (RestDeferredCall<Any, Message>) componentClient.forAction()
-        .call(GetClassLevel::message)
-        .params(param, param2);
+      .call(GetClassLevel::message)
+      .params(param, param2);
 
     //then
     assertThat(call.fullServiceName()).isEqualTo(targetMethod.getService().getFullName());
@@ -126,8 +123,8 @@ class ComponentClientTest {
 
     //when
     RestDeferredCall<Any, Message> call = (RestDeferredCall<Any, Message>) componentClient.forAction()
-        .call(GetClassLevel::message2)
-        .params(param, param2, param3, param4);
+      .call(GetClassLevel::message2)
+      .params(param, param2, param3, param4);
 
     //then
     assertThat(call.fullServiceName()).isEqualTo(targetMethod.getService().getFullName());
@@ -148,8 +145,8 @@ class ComponentClientTest {
 
     //when
     RestDeferredCall<Any, Message> call = (RestDeferredCall<Any, Message>) componentClient.forAction()
-        .call(GetClassLevel::message3)
-        .params(param, param2, param3, param4);
+      .call(GetClassLevel::message3)
+      .params(param, param2, param3, param4);
 
     //then
     assertThat(call.fullServiceName()).isEqualTo(targetMethod.getService().getFullName());
@@ -186,8 +183,8 @@ class ComponentClientTest {
 
     //when
     RestDeferredCall<Any, Message> call = (RestDeferredCall<Any, Message>) componentClient.forAction()
-        .call(PostWithTwoParam::message)
-        .params(param, param2, body);
+      .call(PostWithTwoParam::message)
+      .params(param, param2, body);
 
     //then
     assertThat(call.fullServiceName()).isEqualTo(targetMethod.getService().getFullName());
@@ -226,8 +223,8 @@ class ComponentClientTest {
 
     //when
     RestDeferredCall<Any, Message> call = (RestDeferredCall<Any, Message>) componentClient.forAction()
-        .call(PostWithOneQueryParam::message)
-        .params(param, body);
+      .call(PostWithOneQueryParam::message)
+      .params(param, body);
 
     //then
     assertThat(call.fullServiceName()).isEqualTo(targetMethod.getService().getFullName());
@@ -237,7 +234,7 @@ class ComponentClientTest {
   }
 
   @Test
-  public void shouldReturnDefferedCallWithTraceparent() {
+  public void shouldReturnDeferredCallWithTraceParent() {
     //given
     var action = descriptorFor(PostWithOneQueryParam.class, messageCodec);
     restKalixClient.registerComponent(action.serviceDescriptor());
@@ -254,22 +251,24 @@ class ComponentClientTest {
   }
 
   @Test
-  public void shouldReturnDeferredCallForVEWithRandomId() throws InvalidProtocolBufferException {
+  public void shouldReturnDeferredCallForValueEntity() throws InvalidProtocolBufferException {
     //given
     var counterVE = descriptorFor(Counter.class, messageCodec);
     restKalixClient.registerComponent(counterVE.serviceDescriptor());
     var targetMethod = counterVE.serviceDescriptor().findMethodByName("RandomIncrease");
     Integer param = 10;
 
+    var id = "abc123";
     //when
-    RestDeferredCall<Any, Number> call = (RestDeferredCall<Any, Number>) componentClient.forValueEntity()
-      .call(Counter::randomIncrease)
-      .params(param);
+    RestDeferredCall<Any, Number> call = (RestDeferredCall<Any, Number>)
+      componentClient.forValueEntity(id)
+        .call(Counter::randomIncrease)
+        .params(param);
 
     //then
     assertThat(call.fullServiceName()).isEqualTo(targetMethod.getService().getFullName());
     assertThat(call.methodName()).isEqualTo(targetMethod.getName());
-    assertMethodParamsMatch(targetMethod, call.message(), param);
+    assertMethodParamsMatch(targetMethod, call.message(), id);
   }
 
   @Test
@@ -312,9 +311,9 @@ class ComponentClientTest {
     var dynamicMessage = DynamicMessage.parseFrom(targetMethod.getInputType(), message.value());
     var body = (DynamicMessage) targetMethod.getInputType()
       .getFields().stream()
-        .filter(f -> f.getName().equals("json_body"))
-        .map(dynamicMessage::getField)
-        .findFirst().orElseThrow();
+      .filter(f -> f.getName().equals("json_body"))
+      .map(dynamicMessage::getField)
+      .findFirst().orElseThrow();
 
     return decodeJson(body, clazz);
   }

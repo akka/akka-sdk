@@ -3,6 +3,7 @@ package store.view;
 import com.google.protobuf.any.Any;
 import kalix.javasdk.DeferredCall;
 import kalix.javasdk.client.ComponentClient;
+import static kalix.javasdk.testkit.DeferredCallSupport.execute;
 import kalix.spring.testkit.KalixIntegrationTestKitSupport;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -18,12 +19,6 @@ import store.product.api.ProductEntity;
 import store.product.domain.Money;
 import store.product.domain.Product;
 
-import java.time.Duration;
-import java.time.temporal.ChronoUnit;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Import(TestKitConfig.class)
@@ -31,7 +26,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @DirtiesContext // fresh testkit and proxy for each integration test
 public abstract class StoreViewIntegrationTest extends KalixIntegrationTestKitSupport {
 
-  protected final Duration timeout = Duration.of(5, ChronoUnit.SECONDS);
   @Autowired
   private ComponentClient componentClient;
 
@@ -91,11 +85,4 @@ public abstract class StoreViewIntegrationTest extends KalixIntegrationTestKitSu
     assertNotNull(response);
   }
 
-  protected <T> T execute(DeferredCall<Any, T> deferredCall) {
-    try {
-      return deferredCall.execute().toCompletableFuture().get(timeout.toMillis(), TimeUnit.MILLISECONDS);
-    } catch (InterruptedException | ExecutionException | TimeoutException e) {
-      throw new RuntimeException(e);
-    }
-  }
 }

@@ -101,7 +101,8 @@ object ComponentCall {
     val returnType: Class[R] = getReturnType(declaringClass, method)
 
     val deferredCall =
-      if (classOf[EventSourcedEntity[_, _]].isAssignableFrom(declaringClass)) {
+      if (classOf[EventSourcedEntity[_, _]].isAssignableFrom(declaringClass) ||
+        classOf[ValueEntity[_]].isAssignableFrom(declaringClass)) {
 
         val typeId = declaringClass.getAnnotation(classOf[TypeId]).value()
         val template = EntityUrlTemplate.templateUrl(typeId, method.getName)

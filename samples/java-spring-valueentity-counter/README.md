@@ -35,11 +35,11 @@ This command will start your Kalix service and a companion Kalix Runtime as conf
 With both the Kalix Runtime and your service running, any defined endpoints should be available at `http://localhost:9000`, the proxy local address.
 
 ```shell
-curl -XPOST -H "Content-Type: application/json" localhost:9000/counter/foo/increase -d '{ "value": 10 }'
+curl -XPOST -H "Content-Type: application/json" localhost:9000/akka/v1.0/entity/counter/foo/increaseBy -d '{ "value": 10 }'
 ```
 
 ```shell
-curl localhost:9000/counter/foo
+curl localhost:9000/akka/v1.0/entity/counter/foo/get
 ```
 
 ## Deploying

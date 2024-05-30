@@ -1,5 +1,9 @@
 package com.example;
 
+import com.google.protobuf.any.Any;
+import kalix.javasdk.DeferredCall;
+import kalix.javasdk.client.ComponentClient;
+import static kalix.javasdk.testkit.DeferredCallSupport.execute;
 import kalix.spring.testkit.KalixIntegrationTestKitSupport;
 
 import org.junit.jupiter.api.Assertions;
@@ -7,10 +11,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.web.reactive.function.client.WebClient;
-
-import java.time.Duration;
-
-import static java.time.temporal.ChronoUnit.SECONDS;
 
 
 /**
@@ -28,22 +28,21 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 public class CounterIntegrationTest extends KalixIntegrationTestKitSupport { // <1>
 
   @Autowired
+  private ComponentClient componentClient;
+  @Autowired
   private WebClient webClient; // <2>
-
-  private Duration timeout = Duration.of(10, SECONDS);
 
   // end::sample-it[]
   @Test
   public void verifyCounterIncrease() {
 
-    Number counterIncrease =
-        webClient
-            .post()
-            .uri("/counter/foo/increase")
-            .bodyValue(new Number(10))
-            .retrieve()
-            .bodyToMono(Number.class)
-            .block(timeout);
+    var counterIncrease =
+      execute(
+        componentClient
+          .forValueEntity("foo")
+          .call(CounterEntity::increaseBy)
+          .params(new Number(10))
+      );
 
     Assertions.assertEquals(10, counterIncrease.value());
   }
@@ -53,32 +52,29 @@ public class CounterIntegrationTest extends KalixIntegrationTestKitSupport { // 
   public void verifyCounterSetAndIncrease() {
 
     Number counterGet = // <3>
-        webClient
-            .get()
-            .uri("/counter/bar")
-            .retrieve()
-            .bodyToMono(Number.class)
-            .block(timeout);
+      execute(
+        componentClient
+          .forValueEntity("bar")
+          .call(CounterEntity::get)
+      );
     Assertions.assertEquals(0, counterGet.value());
 
     Number counterPlusOne = // <4>
-        webClient
-            .post()
-            .uri("/counter/bar/plusone")
-            .retrieve()
-            .bodyToMono(Number.class)
-            .block(timeout);
-
+      execute(
+        componentClient
+          .forValueEntity("bar")
+          .call(CounterEntity::plusOne)
+      );
     Assertions.assertEquals(1, counterPlusOne.value());
 
     Number counterGetAfter = // <5>
-        webClient
-            .get()
-            .uri("/counter/bar")
-            .retrieve()
-            .bodyToMono(Number.class)
-            .block(timeout);
+      execute(
+        componentClient
+          .forValueEntity("bar")
+          .call(CounterEntity::get)
+      );
     Assertions.assertEquals(1, counterGetAfter.value());
   }
+
 }
 // end::sample-it[]

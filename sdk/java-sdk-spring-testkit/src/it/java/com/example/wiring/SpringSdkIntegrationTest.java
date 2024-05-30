@@ -16,7 +16,6 @@ import com.example.wiring.eventsourcedentities.headers.ForwardHeadersESEntity;
 import com.example.wiring.valueentities.customer.CustomerEntity;
 import com.example.wiring.valueentities.headers.ForwardHeadersValueEntity;
 import com.example.wiring.valueentities.user.AssignedCounterEntity;
-import com.example.wiring.valueentities.user.CompoundIdCounterEntity;
 import com.example.wiring.valueentities.user.User;
 import com.example.wiring.valueentities.user.UserEntity;
 import com.example.wiring.valueentities.user.UserSideEffect;
@@ -28,10 +27,8 @@ import com.example.wiring.views.UserCounters;
 import com.example.wiring.views.UserCountersView;
 import com.example.wiring.views.UserWithVersion;
 import com.example.wiring.views.UserWithVersionView;
-import com.example.wiring.views.UsersView;
 import com.example.wiring.views.UsersByEmailAndName;
-import com.google.protobuf.any.Any;
-import kalix.javasdk.DeferredCall;
+import com.example.wiring.views.UsersView;
 import kalix.javasdk.HttpResponse;
 import kalix.javasdk.Metadata;
 import kalix.javasdk.StatusCode;
@@ -60,16 +57,14 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
+import static kalix.javasdk.testkit.DeferredCallSupport.execute;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static kalix.javasdk.StatusCode.Success.CREATED;
 import static kalix.javasdk.StatusCode.Success.OK;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
 
 @SpringBootTest(classes = Main.class)
@@ -136,12 +131,12 @@ public class SpringSdkIntegrationTest {
   public void shouldReturnTextBody() {
 
     ResponseEntity<String> response =
-        webClient
-            .get()
-            .uri("/text-body")
-            .retrieve()
-            .toEntity(String.class)
-            .block(timeout);
+      webClient
+        .get()
+        .uri("/text-body")
+        .retrieve()
+        .toEntity(String.class)
+        .block(timeout);
 
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     assertThat(response.getHeaders().get("Content-Type")).contains("text/plain");
@@ -162,12 +157,12 @@ public class SpringSdkIntegrationTest {
   public void shouldReturnEmptyCreatedMethod() {
 
     ResponseEntity<String> response =
-        webClient
-            .get()
-            .uri("/empty-text-body")
-            .retrieve()
-            .toEntity(String.class)
-            .block(timeout);
+      webClient
+        .get()
+        .uri("/empty-text-body")
+        .retrieve()
+        .toEntity(String.class)
+        .block(timeout);
 
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
     assertThat(response.getHeaders().get("Content-Type")).contains("application/octet-stream");
@@ -188,12 +183,12 @@ public class SpringSdkIntegrationTest {
   public void shouldReturnJsonString() {
 
     ResponseEntity<Message> response =
-        webClient
-            .get()
-            .uri("/json-string-body")
-            .retrieve()
-            .toEntity(Message.class)
-            .block(timeout);
+      webClient
+        .get()
+        .uri("/json-string-body")
+        .retrieve()
+        .toEntity(Message.class)
+        .block(timeout);
 
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     assertThat(response.getHeaders().get("Content-Type")).contains("application/json");
@@ -215,12 +210,12 @@ public class SpringSdkIntegrationTest {
   public void shouldReturnEmptyBody() {
 
     ResponseEntity<String> response =
-        webClient
-            .get()
-            .uri("/empty-text-body")
-            .retrieve()
-            .toEntity(String.class)
-            .block(timeout);
+      webClient
+        .get()
+        .uri("/empty-text-body")
+        .retrieve()
+        .toEntity(String.class)
+        .block(timeout);
 
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
     assertThat(response.getHeaders().get("Content-Type")).contains("application/octet-stream");
@@ -346,11 +341,11 @@ public class SpringSdkIntegrationTest {
   @Test
   public void verifyEchoActionWithCustomCode() {
     ClientResponse response =
-        webClient
-            .post()
-            .uri("/echo/message/customCode/hello")
-            .exchangeToMono(Mono::just)
-            .block(timeout);
+      webClient
+        .post()
+        .uri("/echo/message/customCode/hello")
+        .exchangeToMono(Mono::just)
+        .block(timeout);
     Assertions.assertEquals(StatusCode.Success.ACCEPTED.value(), response.statusCode().value());
   }
 
@@ -370,13 +365,13 @@ public class SpringSdkIntegrationTest {
   public void verifyStreamActions() {
 
     List<Message> messageList =
-        webClient
-            .get()
-            .uri("/echo/repeat/abc/times/3")
-            .retrieve()
-            .bodyToFlux(Message.class)
-            .toStream()
-            .collect(Collectors.toList());
+      webClient
+        .get()
+        .uri("/echo/repeat/abc/times/3")
+        .retrieve()
+        .bodyToFlux(Message.class)
+        .toStream()
+        .collect(Collectors.toList());
 
     assertThat(messageList).hasSize(3);
   }
@@ -387,8 +382,8 @@ public class SpringSdkIntegrationTest {
     // WHEN the CounterEntity is requested to increase 42\
     String entityId = "hello1";
     execute(componentClient.forEventSourcedEntity(entityId)
-        .call(CounterEntity::increase)
-        .params(42));
+      .call(CounterEntity::increase)
+      .params(42));
 
     // THEN IncreaseAction receives the event 42 and increases the counter 1 more
     await()
@@ -511,21 +506,6 @@ public class SpringSdkIntegrationTest {
         new IsEqual<>(2));
   }
 
-  @Test
-  public void failRequestWithMissingEntityId() {
-
-    ResponseEntity<String> response =
-        webClient
-            .get()
-            .uri("/user/") // missing id path param
-            .retrieve()
-            .toEntity(String.class)
-            .onErrorResume(WebClientResponseException.class, error -> Mono.just(ResponseEntity.status(error.getStatusCode()).body(error.getResponseBodyAsString())))
-            .block(timeout);
-
-    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
-    assertThat(response.getBody()).isEqualTo("Could not find path: /user/");
-  }
 
   @Test
   public void verifyTransformedUserViewWiring() throws InterruptedException {
@@ -562,7 +542,7 @@ public class SpringSdkIntegrationTest {
       .ignoreExceptions()
       .atMost(15, TimeUnit.of(SECONDS))
       .until(() -> UserSideEffect.getUsers().get(user.id),
-        new IsEqual(new User(user.email, user.name)));
+        new IsEqual(new User(user.name, user.email)));
 
     deleteUser(user);
 
@@ -656,14 +636,14 @@ public class SpringSdkIntegrationTest {
 
     // the view is eventually updated
     await()
-        .ignoreExceptions()
-        .atMost(10, TimeUnit.SECONDS)
-        .untilAsserted(
-            () -> {
-              var byEmail = execute(componentClient.forView().call(UsersByEmailAndName::getUsers).params(user.email, user.name));
-              assertThat(byEmail.email).isEqualTo(user.email);
-              assertThat(byEmail.name).isEqualTo(user.name);
-            });
+      .ignoreExceptions()
+      .atMost(10, TimeUnit.SECONDS)
+      .untilAsserted(
+        () -> {
+          var byEmail = execute(componentClient.forView().call(UsersByEmailAndName::getUsers).params(user.email, user.name));
+          assertThat(byEmail.email).isEqualTo(user.email);
+          assertThat(byEmail.name).isEqualTo(user.name);
+        });
   }
 
   @Test
@@ -682,34 +662,6 @@ public class SpringSdkIntegrationTest {
         new IsEqual(2));
   }
 
-  @Test
-  public void shouldInvokeValueEntityWithCompoundKey() {
-    //given
-    execute(componentClient.forValueEntity("1", "2")
-        .call(CompoundIdCounterEntity::set).params(10));
-
-    //when
-    Integer result = execute(componentClient.forValueEntity("1", "2")
-        .call(CompoundIdCounterEntity::get));
-
-    //then
-    assertThat(result).isEqualTo(10);
-  }
-
-  @Test
-  public void shouldFailInvokeValueEntityWithWrongCompoundKey() {
-    assertThatThrownBy(() -> {
-      execute(componentClient.forValueEntity("1")
-          .call(CompoundIdCounterEntity::set).params(10));
-    }).isInstanceOf(IllegalStateException.class)
-        .hasMessageContaining("Expecting 2 instead of 1 when calling [set] method. Provide values for [id_part_1, id_part_2] ids.");
-
-    assertThatThrownBy(() -> {
-      execute(componentClient.forValueEntity("1", "1", "3")
-          .call(CompoundIdCounterEntity::set).params(10));
-    }).isInstanceOf(IllegalStateException.class)
-        .hasMessageContaining("Expecting 2 instead of 3 when calling [set] method. Provide values for [id_part_1, id_part_2] ids.");
-  }
 
   @Test
   public void verifyMultiTableViewForUserCounters() {
@@ -797,22 +749,22 @@ public class SpringSdkIntegrationTest {
     String value = "someValue";
 
     String headerInResponse =
-        webClient
-          .get()
-          .uri("/reply-meta/myKey/" + value)
-          .exchangeToMono(response -> Mono.just(Objects.requireNonNull(
-              response.headers().asHttpHeaders().getFirst("myKey"))))
-          .block();
+      webClient
+        .get()
+        .uri("/reply-meta/myKey/" + value)
+        .exchangeToMono(response -> Mono.just(Objects.requireNonNull(
+          response.headers().asHttpHeaders().getFirst("myKey"))))
+        .block();
 
     assertThat(value).isEqualTo(headerInResponse);
 
     String headerInAyncResponse =
-        webClient
-            .get()
-            .uri("/reply-async-meta/myKey/" + value)
-            .exchangeToMono(response -> Mono.just(Objects.requireNonNull(
-                response.headers().asHttpHeaders().getFirst("myKey"))))
-            .block();
+      webClient
+        .get()
+        .uri("/reply-async-meta/myKey/" + value)
+        .exchangeToMono(response -> Mono.just(Objects.requireNonNull(
+          response.headers().asHttpHeaders().getFirst("myKey"))))
+        .block();
 
     assertThat(value).isEqualTo(headerInAyncResponse);
   }
@@ -854,27 +806,31 @@ public class SpringSdkIntegrationTest {
   }
 
   private void updateUser(TestUser user) {
-    String userUpdate = execute(componentClient.forValueEntity(user.id)
+    Ok userUpdate = execute(componentClient.forValueEntity(user.id)
       .call(UserEntity::createOrUpdateUser)
-      .params(user.email, user.name));
-    assertThat(userUpdate).isEqualTo("\"Ok\"");
+      .params(new UserEntity.CreatedUser(user.name, user.email)));
+    assertThat(userUpdate).isEqualTo(Ok.instance);
   }
 
   private void createUser(TestUser user) {
-    String userCreation = execute(componentClient.forValueEntity(user.id)
-      .call(UserEntity::createOrUpdateUser)
-      .params(user.email, user.name));
-    assertThat(userCreation).isEqualTo("\"Ok\"");
+    Ok userCreation =
+      execute(
+        componentClient.forValueEntity(user.id)
+          .call(UserEntity::createOrUpdateUser)
+          .params(new UserEntity.CreatedUser(user.name, user.email)));
+    assertThat(userCreation).isEqualTo(Ok.instance);
   }
 
 
   private void createCustomer(CustomerEntity.Customer customer) {
 
-    String created = execute(componentClient.forValueEntity(customer.name())
-      .call(CustomerEntity::create)
-      .params(customer));
+    Ok created = execute(
+      componentClient
+        .forValueEntity(customer.name())
+        .call(CustomerEntity::create)
+        .params(customer));
 
-    assertThat(created).isEqualTo("\"Ok\"");
+    assertThat(created).isEqualTo(Ok.instance);
   }
 
 
@@ -887,9 +843,13 @@ public class SpringSdkIntegrationTest {
 
 
   private void deleteUser(TestUser user) {
-    String deleteUser = execute(componentClient.forValueEntity(user.id)
-      .call(UserEntity::deleteUser));
-    assertThat(deleteUser).isEqualTo("\"Ok from delete\"");
+    Ok userDeleted =
+      execute(
+        componentClient
+          .forValueEntity(user.id)
+          .call(UserEntity::deleteUser)
+          .params(new UserEntity.Delete()));
+    assertThat(userDeleted).isEqualTo(Ok.instance);
   }
 
   private void increaseCounter(String id, int value) {
@@ -912,14 +872,6 @@ public class SpringSdkIntegrationTest {
 
   private UserCounters getUserCounters(String userId) {
     return execute(componentClient.forView().call(UserCountersView::get).params(userId));
-  }
-
-  private <T> T execute(DeferredCall<Any, T> deferredCall) {
-    try {
-      return deferredCall.execute().toCompletableFuture().get(timeout.toMillis(), TimeUnit.MILLISECONDS);
-    } catch (InterruptedException | ExecutionException | TimeoutException e) {
-      throw new RuntimeException(e);
-    }
   }
 }
 

@@ -5,13 +5,12 @@ import kalix.javasdk.annotations.Id;
 import kalix.javasdk.annotations.TypeId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.web.bind.annotation.*;
 
 // tag::wallet[]
-@Id("id")
 @TypeId("wallet")
-@RequestMapping("/wallet/{id}")
 public class WalletEntity extends ValueEntity<WalletEntity.Wallet> {
+
+
 
   public record Wallet(String id, int balance) {
     public Wallet withdraw(int amount) {
@@ -26,13 +25,12 @@ public class WalletEntity extends ValueEntity<WalletEntity.Wallet> {
 
   private static final Logger logger = LoggerFactory.getLogger(WalletEntity.class);
   // tag::wallet[]
-  @PostMapping("/create/{initBalance}") // <1>
-  public Effect<String> create(@PathVariable String id, @PathVariable int initBalance) {
-    return effects().updateState(new Wallet(id, initBalance)).thenReply("Ok");
+  public Effect<Ok> create(int initBalance) {
+    var id = commandContext().entityId();
+    return effects().updateState(new Wallet(id, initBalance)).thenReply(Ok.instance);
   }
 
-  @PatchMapping("/withdraw/{amount}") // <2>
-  public Effect<String> withdraw(@PathVariable int amount) {
+  public Effect<Ok> withdraw(int amount) {
     Wallet updatedWallet = currentState().withdraw(amount);
     if (updatedWallet.balance < 0) {
       return effects().error("Insufficient balance");
@@ -40,20 +38,18 @@ public class WalletEntity extends ValueEntity<WalletEntity.Wallet> {
       // end::wallet[]
       logger.info("Withdraw walletId: [{}] amount -{} balance after {}", currentState().id(), amount, updatedWallet.balance());
       // tag::wallet[]
-      return effects().updateState(updatedWallet).thenReply("Ok");
+      return effects().updateState(updatedWallet).thenReply(Ok.instance);
     }
   }
 
-  @PatchMapping("/deposit/{amount}") // <3>
-  public Effect<String> deposit(@PathVariable int amount) {
+  public Effect<Ok> deposit(int amount) {
     Wallet updatedWallet = currentState().deposit(amount);
     // end::wallet[]
     logger.info("Deposit walletId: [{}] amount +{} balance after {}", currentState().id(), amount, updatedWallet.balance());
     // tag::wallet[]
-    return effects().updateState(updatedWallet).thenReply("Ok");
+    return effects().updateState(updatedWallet).thenReply(Ok.instance);
   }
 
-  @GetMapping // <4>
   public Effect<Integer> get() {
     return effects().reply(currentState().balance());
   }

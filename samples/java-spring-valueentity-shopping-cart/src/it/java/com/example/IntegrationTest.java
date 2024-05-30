@@ -2,7 +2,13 @@ package com.example;
 
 import com.example.api.ShoppingCartDTO;
 import com.example.api.ShoppingCartDTO.LineItemDTO;
+import com.example.api.ShoppingCartEntity;
 import com.example.domain.ShoppingCart;
+import com.google.protobuf.any.Any;
+import kalix.javasdk.DeferredCall;
+import kalix.javasdk.Metadata;
+import kalix.javasdk.client.ComponentClient;
+import static kalix.javasdk.testkit.DeferredCallSupport.execute;
 import kalix.spring.testkit.KalixIntegrationTestKitSupport;
 
 import org.junit.jupiter.api.Test;
@@ -31,43 +37,46 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class IntegrationTest extends KalixIntegrationTestKitSupport {
 
   @Autowired
+  private ComponentClient componentClient;
+  @Autowired
   private WebClient webClient;
 
   private Duration timeout = Duration.of(5, SECONDS);
 
   ShoppingCartDTO getCart(String cartId) {
-    return
-      webClient.get()
-        .uri("/cart/" + cartId)
-        .retrieve()
-        .bodyToMono(ShoppingCartDTO.class)
-        .block(timeout);
+    return execute(
+      componentClient
+        .forValueEntity(cartId)
+        .call(ShoppingCartEntity::getCart)
+    );
   }
 
   void addItem(String cartId, String productId, String name, int quantity) throws Exception {
-    webClient.post()
-      .uri("/cart/" + cartId + "/items/add")
-      .bodyValue(new LineItemDTO(productId, name, quantity))
-      .retrieve()
-      .bodyToMono(ShoppingCartDTO.class)
-      .block(timeout);
+    execute(
+      componentClient
+        .forValueEntity(cartId)
+        .call(ShoppingCartEntity::addItem)
+        .params(new LineItemDTO(productId, name, quantity))
+    );
   }
 
   void removeItem(String cartId, String productId) throws Exception {
-    webClient.post()
-      .uri("/cart/" + cartId + "/items/" + productId + "/remove")
-      .retrieve()
-      .bodyToMono(ShoppingCartDTO.class)
-      .block(timeout);
+
+    execute(
+      componentClient
+        .forValueEntity(cartId)
+        .call(ShoppingCartEntity::removeItem)
+        .params(productId)
+    );
   }
 
   void removeCart(String cartId, String userRole) throws Exception {
-    webClient.delete()
-      .uri("/carts/" + cartId)
-      .header("UserRole", userRole)
-      .retrieve()
-      .bodyToMono(String.class)
-      .block(timeout);
+    var metadata = Metadata.EMPTY.add("Role", userRole);
+    execute(
+      componentClient
+        .forValueEntity(cartId)
+        .call(ShoppingCartEntity::removeCart).withMetadata(metadata)
+    );
   }
 
   LineItemDTO item(String productId, String name, int quantity) {
@@ -174,4 +183,6 @@ public class IntegrationTest extends KalixIntegrationTestKitSupport {
     var cart = getCart(cartId);
     assertEquals(1, cart.items().size());
   }
+
+
 }

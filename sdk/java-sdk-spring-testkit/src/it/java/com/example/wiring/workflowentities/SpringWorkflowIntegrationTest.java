@@ -6,8 +6,6 @@ package com.example.wiring.workflowentities;
 
 import com.example.wiring.TestkitConfig;
 import com.example.wiring.actions.echo.Message;
-import com.google.protobuf.any.Any;
-import kalix.javasdk.DeferredCall;
 import kalix.javasdk.client.ComponentClient;
 import kalix.spring.KalixConfigurationTest;
 import org.junit.jupiter.api.Test;
@@ -24,10 +22,9 @@ import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
+import static kalix.javasdk.testkit.DeferredCallSupport.execute;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -467,17 +464,6 @@ public class SpringWorkflowIntegrationTest {
         });
   }
 
-  private <T> T execute(DeferredCall<Any, T> deferredCall) {
-    return execute(deferredCall, timeout);
-  }
-
-  private <T> T execute(DeferredCall<Any, T> deferredCall, Duration timeout) {
-    try {
-      return deferredCall.execute().toCompletableFuture().get(timeout.toMillis(), TimeUnit.MILLISECONDS);
-    } catch (InterruptedException | ExecutionException | TimeoutException e) {
-      throw new RuntimeException(e);
-    }
-  }
 
   private String randomTransferId() {
     return randomId();

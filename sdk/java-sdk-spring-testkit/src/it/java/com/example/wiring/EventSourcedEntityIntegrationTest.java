@@ -6,8 +6,6 @@ package com.example.wiring;
 
 import com.example.Main;
 import com.example.wiring.eventsourcedentities.counter.CounterEntity;
-import com.google.protobuf.any.Any;
-import kalix.javasdk.DeferredCall;
 import kalix.javasdk.client.ComponentClient;
 import kalix.javasdk.client.EventSourcedEntityClient;
 import kalix.spring.KalixConfigurationTest;
@@ -19,11 +17,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.TestPropertySource;
 
-import java.time.Duration;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
+import static kalix.javasdk.testkit.DeferredCallSupport.execute;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -36,8 +32,6 @@ public class EventSourcedEntityIntegrationTest {
 
     @Autowired
     private ComponentClient componentClient;
-
-    private Duration timeout = Duration.of(10, SECONDS);
 
     @Test
     public void verifyCounterEventSourcedWiring() {
@@ -136,11 +130,4 @@ public class EventSourcedEntityIntegrationTest {
             .call(CounterEntity::get));
     }
 
-    protected <T> T execute(DeferredCall<Any, T> deferredCall) {
-        try {
-            return deferredCall.execute().toCompletableFuture().get(timeout.toMillis(), TimeUnit.MILLISECONDS);
-        } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            throw new RuntimeException(e);
-        }
-    }
 }

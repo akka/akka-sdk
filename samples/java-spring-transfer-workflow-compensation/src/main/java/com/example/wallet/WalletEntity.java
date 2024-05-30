@@ -11,12 +11,9 @@ import kalix.javasdk.annotations.Id;
 import kalix.javasdk.annotations.TypeId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.web.bind.annotation.*;
 
 // tag::wallet[]
-@Id("id")
 @TypeId("wallet")
-@RequestMapping("/wallet/{id}")
 public class WalletEntity extends ValueEntity<WalletEntity.Wallet> {
 
   public record Wallet(String id, int balance) {
@@ -58,13 +55,12 @@ public class WalletEntity extends ValueEntity<WalletEntity.Wallet> {
   private static final Logger logger = LoggerFactory.getLogger(WalletEntity.class);
 
   // tag::wallet[]
-  @PostMapping("/create/{initBalance}")
-  public Effect<String> create(@PathVariable String id, @PathVariable int initBalance) {
+  public Effect<String> create(int initBalance) {
+    var id = commandContext().entityId();
     return effects().updateState(new Wallet(id, initBalance)).thenReply("Ok");
   }
 
-  @PatchMapping("/withdraw/{amount}")
-  public Effect<WithdrawResult> withdraw(@PathVariable int amount) {
+  public Effect<WithdrawResult> withdraw(int amount) {
     Wallet updatedWallet = currentState().withdraw(amount);
     if (updatedWallet.balance < 0) {
       return effects().reply(new WithdrawFailed("Insufficient balance"));
@@ -76,8 +72,7 @@ public class WalletEntity extends ValueEntity<WalletEntity.Wallet> {
     }
   }
 
-  @PatchMapping("/deposit/{amount}") // <3>
-  public Effect<DepositResult> deposit(@PathVariable int amount) {
+  public Effect<DepositResult> deposit(int amount) {
     if (currentState() == null) {
       return effects().reply(new DepositFailed("Wallet [" + commandContext().entityId() + "] not exists"));
     } else {
@@ -89,7 +84,6 @@ public class WalletEntity extends ValueEntity<WalletEntity.Wallet> {
     }
   }
 
-  @GetMapping // <4>
   public Effect<Integer> get() {
     return effects().reply(currentState().balance());
   }

@@ -2,6 +2,12 @@ package com.example.transfer;
 
 import com.example.Main;
 import com.example.transfer.TransferState.Transfer;
+import com.example.wallet.Ok;
+import com.example.wallet.WalletEntity;
+import com.google.protobuf.any.Any;
+import kalix.javasdk.DeferredCall;
+import kalix.javasdk.client.ComponentClient;
+import static kalix.javasdk.testkit.DeferredCallSupport.execute;
 import kalix.spring.testkit.KalixIntegrationTestKitSupport;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,10 +23,14 @@ import java.util.concurrent.TimeUnit;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
 @SpringBootTest(classes = Main.class)
 public class TransferWorkflowIntegrationTest extends KalixIntegrationTestKitSupport {
+
+  @Autowired
+  private ComponentClient componentClient;
 
   @Autowired
   private WebClient webClient;
@@ -63,27 +73,23 @@ public class TransferWorkflowIntegrationTest extends KalixIntegrationTestKitSupp
   }
 
   private void createWallet(String walletId, int amount) {
-    ResponseEntity<Void> response = webClient.post().uri("/wallet/" + walletId + "/create/" + amount)
-      .retrieve()
-      .toBodilessEntity()
-      .block(timeout);
+    var res =
+      execute(
+        componentClient
+          .forValueEntity(walletId)
+          .call(WalletEntity::create)
+          .params(amount)
+      );
 
-    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    assertEquals(Ok.instance, res);
   }
 
   private int getWalletBalance(String walletId) {
-    Integer response = webClient.get().uri("/wallet/" + walletId)
-      .retrieve()
-      .bodyToMono(Integer.class)
-      .block(timeout);
-
-    return response;
+    return execute(
+        componentClient
+            .forValueEntity(walletId)
+            .call(WalletEntity::get)
+    );
   }
 
-  private TransferState getTransferState(String url) {
-    return webClient.get().uri(url)
-      .retrieve()
-      .bodyToMono(TransferState.class)
-      .block(timeout);
-  }
 }

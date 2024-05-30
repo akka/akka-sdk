@@ -24,24 +24,19 @@ import kalix.javasdk.StatusCode;
 import kalix.javasdk.valueentity.ValueEntity;
 import kalix.javasdk.annotations.Id;
 import kalix.javasdk.annotations.TypeId;
-import org.springframework.web.bind.annotation.*;
 
 @TypeId("customer") // <1>
-@Id("customer_id") // <2>
-@RequestMapping("/customer/{customer_id}") // <3>
 public class CustomerEntity extends ValueEntity<Customer> { // <4>
 
-  @PostMapping("/create") // <5>
-  public Effect<String> create(@RequestBody Customer customer) {
+  public Effect<Ok> create(Customer customer) {
     if (currentState() == null)
       return effects()
         .updateState(customer) // <6>
-        .thenReply("OK");  // <7>
+        .thenReply(Ok.instance);  // <7>
     else
       return effects().error("Customer exists already");
   }
 
-  @GetMapping()
   public Effect<Customer> getCustomer() {
     if (currentState() == null)
       return effects().error(
@@ -50,18 +45,16 @@ public class CustomerEntity extends ValueEntity<Customer> { // <4>
       return effects().reply(currentState());
   }
 
-  @PostMapping("/changeName/{newName}")
-  public Effect<String> changeName(@PathVariable String newName) {
+  public Effect<Ok> changeName(String newName) {
     Customer updatedCustomer = currentState().withName(newName);
     return effects()
             .updateState(updatedCustomer)
-            .thenReply("OK");
+            .thenReply(Ok.instance);
   }
 
-  @PostMapping("/changeAddress")
-  public Effect<String> changeAddress(@RequestBody Address newAddress) {
+  public Effect<Ok> changeAddress(Address newAddress) {
     Customer updatedCustomer = currentState().withAddress(newAddress);
-    return effects().updateState(updatedCustomer).thenReply("OK");
+    return effects().updateState(updatedCustomer).thenReply(Ok.instance);
   }
 
 }

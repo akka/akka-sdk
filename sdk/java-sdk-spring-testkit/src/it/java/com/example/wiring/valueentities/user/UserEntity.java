@@ -4,31 +4,24 @@
 
 package com.example.wiring.valueentities.user;
 
-import kalix.javasdk.Metadata;
+import com.example.wiring.Ok;
 import kalix.javasdk.StatusCode;
-import kalix.javasdk.eventsourcedentity.EventSourcedEntity;
-import kalix.javasdk.valueentity.ValueEntity;
-import kalix.javasdk.valueentity.ValueEntityContext;
-import kalix.javasdk.annotations.Id;
 import kalix.javasdk.annotations.TypeId;
+import kalix.javasdk.valueentity.ValueEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.web.bind.annotation.*;
 
-@Id("id")
 @TypeId("user")
-@RequestMapping("/user/{id}")
 public class UserEntity extends ValueEntity<User> {
 
   private Logger logger = LoggerFactory.getLogger(getClass());
 
-  private final ValueEntityContext context;
+  public record CreatedUser(String name, String email) {};
+  public record UpdateEmail(String newEmail) {};
+  public record Delete() {};
+  public record Restart() {};
 
-  public UserEntity(ValueEntityContext context) {
-    this.context = context;
-  }
 
-  @GetMapping
   public Effect<User> getUser() {
     if (currentState() == null)
       return effects().error("User not found", StatusCode.ErrorCode.NOT_FOUND);
@@ -36,34 +29,23 @@ public class UserEntity extends ValueEntity<User> {
     return effects().reply(currentState());
   }
 
-  @PostMapping("/{email}/{name}")
-  public Effect<String> createOrUpdateUser(@PathVariable String email, @PathVariable String name) {
-    return effects().updateState(new User(email, name)).thenReply("Ok",
-        Metadata.EMPTY.withStatusCode(StatusCode.Success.CREATED));
+  public Effect<Ok> createOrUpdateUser(CreatedUser createdUser) {
+    return effects().updateState(new User(createdUser.name, createdUser.email)).thenReply(Ok.instance);
   }
 
-  @PutMapping("/{email}/{name}")
-  public Effect<String> createUser(@PathVariable String email, @PathVariable String name) {
-    return effects().updateState(new User(email, name)).thenReply("Ok from put");
+  public Effect<Ok> createUser(CreatedUser createdUser) {
+    return effects().updateState(new User(createdUser.name, createdUser.email)).thenReply(Ok.instance);
   }
 
-  @PatchMapping("/email/{email}")
-  public Effect<String> updateEmail(@PathVariable String email) {
-    return effects().updateState(new User(email, currentState().name)).thenReply("Ok from patch");
+  public Effect<Ok> updateEmail(UpdateEmail cmd) {
+    return effects().updateState(new User(currentState().name, cmd.newEmail)).thenReply(Ok.instance);
   }
 
-  @PatchMapping("/email")
-  public Effect<String> updateEmailFromReqParam(@RequestParam String email) {
-    return effects().updateState(new User(email, currentState().name)).thenReply("Ok from patch");
+  public Effect<Ok> deleteUser(Delete cmd) {
+    return effects().deleteEntity().thenReply(Ok.instance);
   }
 
-  @DeleteMapping
-  public Effect<String> deleteUser() {
-    return effects().deleteEntity().thenReply("Ok from delete");
-  }
-
-  @PostMapping("/restart")
-  public EventSourcedEntity.Effect<Integer> restart() { // force entity restart, useful for testing
+  public Effect<Integer> restart(Restart cmd) { // force entity restart, useful for testing
     logger.info(
         "Restarting counter with commandId={} commandName={} current={}",
         commandContext().commandId(),

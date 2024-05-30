@@ -14,7 +14,7 @@ public class User {
   public String name;
 
   @JsonCreator
-  public User(@JsonProperty("email") String email, @JsonProperty("name") String name) {
+  public User(@JsonProperty("name") String name, @JsonProperty("email") String email) {
     this.email = email;
     this.name = name;
   }

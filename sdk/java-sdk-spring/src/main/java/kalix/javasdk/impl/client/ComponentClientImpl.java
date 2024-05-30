@@ -34,19 +34,10 @@ public class ComponentClientImpl implements ComponentClient {
     return new ActionCallBuilder(kalixClient, callMetadata);
   }
 
-  @Override
-  public ValueEntityCallBuilder forValueEntity() {
-    return new ValueEntityCallBuilder(kalixClient, callMetadata);
-  }
 
   @Override
-  public ValueEntityCallBuilder forValueEntity(String valueEntityId) {
-    return new ValueEntityCallBuilder(kalixClient, callMetadata, valueEntityId);
-  }
-
-  @Override
-  public ValueEntityCallBuilder forValueEntity(String... valueEntityIds) {
-    return new ValueEntityCallBuilder(kalixClient, callMetadata, List.of(valueEntityIds));
+  public ValueEntityClient forValueEntity(String valueEntityId) {
+    return new ValueEntityClient(kalixClient, callMetadata, valueEntityId);
   }
 
   @Override

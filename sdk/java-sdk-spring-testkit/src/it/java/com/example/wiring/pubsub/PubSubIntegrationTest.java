@@ -6,27 +6,23 @@ package com.example.wiring.pubsub;
 
 import com.example.Main;
 import com.example.wiring.eventsourcedentities.counter.CounterEntity;
+import com.example.wiring.valueentities.customer.CustomerEntity;
 import com.example.wiring.valueentities.customer.CustomerEntity.Customer;
-import com.google.protobuf.any.Any;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
-import kalix.javasdk.DeferredCall;
-import kalix.javasdk.client.ComponentClient;
 import kalix.javasdk.client.EventSourcedEntityClient;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 
 import java.time.Instant;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
+import static kalix.javasdk.testkit.DeferredCallSupport.execute;
 import static com.example.wiring.pubsub.PublishBytesToTopic.CUSTOMERS_BYTES_TOPIC;
 import static com.example.wiring.pubsub.PublishTopicToTopic.CUSTOMERS_2_TOPIC;
 import static com.example.wiring.pubsub.PublishVEToTopic.CUSTOMERS_TOPIC;
@@ -39,8 +35,6 @@ import static org.awaitility.Awaitility.await;
 @TestPropertySource(properties = "spring.main.allow-bean-definition-overriding=true")
 @ActiveProfiles("docker-it-test")
 public class PubSubIntegrationTest extends DockerIntegrationTest {
-
-
 
   static Config config = ConfigFactory.parseString("""
                 kalix.telemetry.tracing.collector-endpoint = "http://fake:1234"
@@ -171,15 +165,12 @@ public class PubSubIntegrationTest extends DockerIntegrationTest {
   }
 
   private void createCustomer(Customer customer) {
-    String created =
-      webClient
-        .put()
-        .uri("/customers/" + customer.name())
-        .bodyValue(customer)
-        .retrieve()
-        .bodyToMono(String.class)
-        .block(timeout);
-    assertThat(created).isEqualTo("\"Ok\"");
+    execute(
+      componentClient()
+        .forValueEntity(customer.name())
+        .call(CustomerEntity::create)
+        .params(customer)
+    );
   }
 
   private Integer increaseCounter(EventSourcedEntityClient client, int value)  {
@@ -195,11 +186,4 @@ public class PubSubIntegrationTest extends DockerIntegrationTest {
         .params(value));
   }
 
-  protected <T> T execute(DeferredCall<Any, T> deferredCall) {
-    try {
-      return deferredCall.execute().toCompletableFuture().get(timeout.toMillis(), TimeUnit.MILLISECONDS);
-    } catch (InterruptedException | ExecutionException | TimeoutException e) {
-      throw new RuntimeException(e);
-    }
-  }
 }

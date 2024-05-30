@@ -3,6 +3,7 @@ package shoppingcart.cart;
 import com.google.protobuf.any.Any;
 import kalix.javasdk.DeferredCall;
 import kalix.javasdk.client.ComponentClient;
+import static kalix.javasdk.testkit.DeferredCallSupport.execute;
 import kalix.spring.testkit.KalixIntegrationTestKitSupport;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -12,13 +13,6 @@ import shoppingcart.Main;
 import shoppingcart.api.ShoppingCartEntity;
 import shoppingcart.domain.ShoppingCart;
 import shoppingcart.domain.ShoppingCart.LineItem;
-
-import java.time.Duration;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-
-import static java.time.temporal.ChronoUnit.SECONDS;
 
 
 /**
@@ -34,7 +28,6 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 public class IntegrationTest extends KalixIntegrationTestKitSupport {
 
 
-  private Duration timeout = Duration.of(5, SECONDS);
   @Autowired
   private ComponentClient componentClient;
 
@@ -94,12 +87,5 @@ public class IntegrationTest extends KalixIntegrationTestKitSupport {
     Assertions.assertEquals(item2, cartUpdated.items().get(0));
   }
 
-  protected <T> T execute(DeferredCall<Any, T> deferredCall) {
-    try {
-      return deferredCall.execute().toCompletableFuture().get(timeout.toMillis(), TimeUnit.MILLISECONDS);
-    } catch (InterruptedException | ExecutionException | TimeoutException e) {
-      throw new RuntimeException(e);
-    }
-  }
 
 }

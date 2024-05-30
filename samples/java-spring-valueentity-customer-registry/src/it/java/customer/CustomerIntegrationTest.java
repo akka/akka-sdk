@@ -1,8 +1,14 @@
 package customer;
 
 
+import com.google.protobuf.any.Any;
+import customer.api.CustomerEntity;
+import customer.api.Ok;
 import customer.domain.Address;
 import customer.domain.Customer;
+import kalix.javasdk.DeferredCall;
+import kalix.javasdk.client.ComponentClient;
+import static kalix.javasdk.testkit.DeferredCallSupport.execute;
 import kalix.spring.testkit.KalixIntegrationTestKitSupport;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -27,6 +33,9 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
   public record CustomersResponse(Collection<Customer> customers) { }
 
   @Autowired
+  private ComponentClient componentClient;
+
+  @Autowired
   private WebClient webClient;
 
   private Duration timeout = Duration.of(10, SECONDS);
@@ -41,12 +50,11 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
   }
 
   private Customer getCustomerById(String customerId) {
-    return webClient
-        .get()
-        .uri("/customer/" + customerId)
-        .retrieve()
-        .bodyToMono(Customer.class)
-        .block(timeout);
+    return execute(
+      componentClient
+        .forValueEntity(customerId)
+        .call(CustomerEntity::getCustomer)
+    );
   }
 
   @Test
@@ -75,15 +83,14 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
   }
 
   private void addCustomer(Customer customer) {
-    ResponseEntity<String> response =
-        webClient.post()
-            .uri("/customer/" + customer.customerId() + "/create")
-            .bodyValue(customer)
-            .retrieve()
-            .toEntity(String.class)
-            .block(timeout);
 
-    Assertions.assertEquals(HttpStatus.OK, response.getStatusCode());
+    var res =
+      execute(
+        componentClient
+          .forValueEntity(customer.customerId())
+          .call(CustomerEntity::create)
+          .params(customer)
+      );
+    Assertions.assertEquals(Ok.instance, res);
   }
-
 }

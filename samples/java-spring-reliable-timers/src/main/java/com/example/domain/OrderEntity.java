@@ -7,12 +7,9 @@ import kalix.javasdk.annotations.Id;
 import kalix.javasdk.annotations.TypeId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.web.bind.annotation.*;
 
 // tag::order[]
-@Id("id")
 @TypeId("order")
-@RequestMapping("/order/{id}")
 public class OrderEntity extends ValueEntity<Order> {
 
   private static final Logger logger = LoggerFactory.getLogger(OrderEntity.class);
@@ -28,8 +25,7 @@ public class OrderEntity extends ValueEntity<Order> {
     return new Order(entityId, false, false, "", 0);
   }
 
-  @PutMapping("/place")
-  public Effect<Order> placeOrder(@RequestBody OrderRequest orderRequest) { // <1>
+  public Effect<Order> placeOrder(OrderRequest orderRequest) { // <1>
     var orderId = commandContext().entityId();
     logger.info("Placing orderId={} request={}", orderId, orderRequest);
     var newOrder = new Order(
@@ -43,7 +39,6 @@ public class OrderEntity extends ValueEntity<Order> {
         .thenReply(newOrder);
   }
 
-  @PostMapping("/confirm")
   public Effect<String> confirm() {
     var orderId = commandContext().entityId();
     logger.info("Confirming orderId={}", orderId);
@@ -58,7 +53,6 @@ public class OrderEntity extends ValueEntity<Order> {
     }
   }
 
-  @PostMapping("/cancel")
   public Effect<String> cancel() {
     var orderId = commandContext().entityId();
     logger.info("Cancelling orderId={} currentState={}", orderId, currentState());
@@ -77,8 +71,8 @@ public class OrderEntity extends ValueEntity<Order> {
   }
   // end::order[]
 
-  @GetMapping
-  public Effect<OrderStatus> status(@PathVariable String id) {
+  public Effect<OrderStatus> status() {
+    var id = currentState().id();
     if (currentState().placed()) {
       var orderStatus = new OrderStatus(id, currentState().item(), currentState().quantity(), currentState().confirmed());
       return effects().reply(orderStatus);

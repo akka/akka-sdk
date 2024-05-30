@@ -22,7 +22,6 @@ import kalix.javasdk.valueentity.ValueEntity;
 import kalix.javasdk.valueentity.ValueEntityContext;
 import kalix.javasdk.annotations.Id;
 import kalix.javasdk.annotations.TypeId;
-import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
 
@@ -30,9 +29,7 @@ import java.time.Instant;
  * A value entity.
  */
 // tag::summary[]
-@Id("cartId")
 @TypeId("shopping-cart")
-@RequestMapping("/cart/{cartId}") // <1>
 // end::summary[]
 @ForwardHeaders("Role")
 // tag::summary[]
@@ -53,7 +50,6 @@ public class ShoppingCartEntity extends ValueEntity<ShoppingCart> {
   // tag::create[]
   // tag::summary[]
 
-  @PostMapping("/create") // <2>
   public ValueEntity.Effect<ShoppingCartDTO> create() {
     //...
     // end::summary[]
@@ -71,8 +67,7 @@ public class ShoppingCartEntity extends ValueEntity<ShoppingCart> {
   // tag::add-item[]
   // tag::summary[]
 
-  @PostMapping("/items/add") // <3>
-  public ValueEntity.Effect<ShoppingCartDTO> addItem(@RequestBody LineItemDTO addLineItem) {
+  public ValueEntity.Effect<ShoppingCartDTO> addItem(LineItemDTO addLineItem) {
     //...
     // end::summary[]
     if (addLineItem.quantity() <= 0) {
@@ -87,8 +82,7 @@ public class ShoppingCartEntity extends ValueEntity<ShoppingCart> {
   }
 
   // end::add-item[]
-  @PostMapping("/items/{productId}/remove")
-  public ValueEntity.Effect<ShoppingCartDTO> removeItem(@PathVariable String productId) {
+  public ValueEntity.Effect<ShoppingCartDTO> removeItem(String productId) {
     var lineItemOpt = currentState().findItemByProductId(productId);
 
     if (lineItemOpt.isEmpty()) {
@@ -105,7 +99,6 @@ public class ShoppingCartEntity extends ValueEntity<ShoppingCart> {
   // tag::get-cart[]
   // tag::summary[]
 
-  @GetMapping // <4>
   public ValueEntity.Effect<ShoppingCartDTO> getCart() {
     //...
     // end::summary[]
@@ -113,7 +106,6 @@ public class ShoppingCartEntity extends ValueEntity<ShoppingCart> {
   }
   // end::get-cart[]
 
-  @PostMapping("/remove")
   public ValueEntity.Effect<String> removeCart() {
     var userRole = commandContext().metadata().get("Role").get();
     if (userRole.equals("Admin")) {

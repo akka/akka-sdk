@@ -8,6 +8,7 @@ import customer.domain.Address;
 import customer.domain.Customer;
 import customer.view.CustomerView;
 import kalix.javasdk.DeferredCall;
+import static kalix.javasdk.testkit.DeferredCallSupport.execute;
 import kalix.spring.testkit.KalixIntegrationTestKitSupport;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Assertions;
@@ -18,9 +19,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import java.time.Duration;
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.awaitility.Awaitility.await;
@@ -142,14 +141,6 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
   private Customer getCustomerById(String customerId) {
     return execute(componentClient.forEventSourcedEntity(customerId)
       .call(CustomerEntity::getCustomer));
-  }
-
-  protected <T> T execute(DeferredCall<Any, T> deferredCall) {
-    try {
-      return deferredCall.execute().toCompletableFuture().get(timeout.toMillis(), TimeUnit.MILLISECONDS);
-    } catch (InterruptedException | ExecutionException | TimeoutException e) {
-      throw new RuntimeException(e);
-    }
   }
 
 }

@@ -4,12 +4,6 @@
             <pattern>%date{ISO8601} %-5level %logger - %msg%n</pattern>
         </encoder>
     </appender>
-
-    <logger name="akka" level="INFO"/>
-    <logger name="kalix" level="DEBUG"/>
-    <logger name="io.grpc" level="INFO"/>
-    <logger name="org.testcontainers" level="INFO"/>
-
     <!--
     Logging from tests are silenced by this appender. When there is a test failure
     the captured logging events are flushed to the appenders defined for the
@@ -25,6 +19,11 @@
     <logger name="akka.actor.testkit.typed.internal.CapturingAppenderDelegate" >
         <appender-ref ref="STDOUT"/>
     </logger>
+
+    <logger name="akka" level="INFO"/>
+    <logger name="kalix" level="DEBUG"/>
+    <logger name="io.grpc" level="INFO"/>
+    <logger name="org.testcontainers" level="INFO"/>
 
     <root level="DEBUG">
         <appender-ref ref="CapturingAppender"/>

@@ -4,22 +4,15 @@
 
 package kalix.spring.testmodels.valueentity;
 
-import kalix.javasdk.valueentity.ValueEntity;
-import kalix.javasdk.annotations.Id;
 import kalix.javasdk.annotations.TypeId;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
+import kalix.javasdk.valueentity.ValueEntity;
 
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
-@Id("timerId")
 @TypeId("timer")
-@RequestMapping("/timer/{timerId}")
 public class TimeTrackerEntity extends ValueEntity<TimeTrackerEntity.TimerState> {
-
 
 
   public static class TimerState {
@@ -34,6 +27,7 @@ public class TimeTrackerEntity extends ValueEntity<TimeTrackerEntity.TimerState>
       this.entries = entries;
     }
   }
+
   public static class TimerEntry {
     final public Instant started;
     final public Instant stopped = Instant.MAX;
@@ -43,8 +37,7 @@ public class TimeTrackerEntity extends ValueEntity<TimeTrackerEntity.TimerState>
     }
   }
 
-  @PostMapping()
-  public Effect<String> start(@PathVariable String timerId) {
+  public Effect<String> start(String timerId) {
     if (currentState() == null)
       return effects().updateState(new TimerState(timerId, Instant.now(), new ArrayList<>())).thenReply("Created");
     else

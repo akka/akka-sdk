@@ -8,7 +8,6 @@ import kalix.javasdk.valueentity.ValueEntity;
 import kalix.javasdk.valueentity.ValueEntityContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.web.bind.annotation.*;
 import user.registry.common.Done;
 import user.registry.domain.UniqueEmail;
 
@@ -28,9 +27,7 @@ import java.util.Optional;
  * <p>
  * If, while creating a user, the email address is already reserved, the user creation fails.
  */
-@Id("id")
 @TypeId("unique-address")
-@RequestMapping("/unique-emails/{id}")
 // Only allow access to this entity from inside the service (i.e. from the ApplicationController)
 @Acl(allow = @Acl.Matcher(service = "*"))
 public class UniqueEmailEntity extends ValueEntity<UniqueEmail> {
@@ -75,8 +72,7 @@ public class UniqueEmailEntity extends ValueEntity<UniqueEmail> {
    * <p>
    * If the email address is not in use at all, the call will succeed and the email address will be reserved for the given user.
    */
-  @PostMapping("/reserve")
-  public Effect<Done> reserve(@RequestBody UniqueEmail.ReserveEmail cmd) {
+  public Effect<Done> reserve(UniqueEmail.ReserveEmail cmd) {
     if (currentState().isInUse() && currentState().notSameOwner(cmd.ownerId())) {
       return effects().error("Email address is already reserved");
     }
@@ -95,7 +91,6 @@ public class UniqueEmailEntity extends ValueEntity<UniqueEmail> {
    * This method is called when the email address is confirmed.
    * This happens when UserEventsSubscriber sees a UserWasCreated event or an EmailAssigned event.
    */
-  @PostMapping("/confirm")
   public Effect<Done> confirm() {
     if (currentState().isReserved()) {
       logger.info("Confirming email address '{}'", currentState().address());
@@ -116,7 +111,6 @@ public class UniqueEmailEntity extends ValueEntity<UniqueEmail> {
    * When the timer fires, it cancels the reservation but only if it is not confirmed.
    * If it's already confirm or if in the meantime the email is not in use anymore, the call has no effect.
    */
-  @PostMapping()
   public Effect<Done> cancelReservation() {
     if (currentState().isReserved()) {
       logger.info("Cancelling email address reservation'{}'", currentState().address());
@@ -139,7 +133,6 @@ public class UniqueEmailEntity extends ValueEntity<UniqueEmail> {
    * is still in RESERVED state. The ordering of events is guaranteed, so first the UserWasCreated event will be processed
    * confirming the email, then later an EmailUnassigned event might be emitted and this method will be called.
    */
-  @DeleteMapping()
   public Effect<Done> delete() {
     logger.info("Deleting email address '{}'", currentState().address());
     return effects()
@@ -148,7 +141,6 @@ public class UniqueEmailEntity extends ValueEntity<UniqueEmail> {
   }
 
 
-  @GetMapping
   public Effect<UniqueEmail> getState() {
     return effects().reply(currentState());
   }

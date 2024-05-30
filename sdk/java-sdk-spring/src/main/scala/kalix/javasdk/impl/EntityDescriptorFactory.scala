@@ -7,17 +7,17 @@ package kalix.javasdk.impl
 import java.lang.reflect.Method
 
 import scala.reflect.ClassTag
-
 import kalix.KeyGeneratorMethodOptions.Generator
 import kalix.javasdk.eventsourcedentity.EventSourcedEntity
-import kalix.javasdk.impl.JwtDescriptorFactory.buildJWTOptions
 import kalix.javasdk.impl.ComponentDescriptorFactory.mergeServiceOptions
+import kalix.javasdk.impl.JwtDescriptorFactory.buildJWTOptions
 import kalix.javasdk.impl.reflection.CommandHandlerMethod
 import kalix.javasdk.impl.reflection.EntityUrlTemplate
 import kalix.javasdk.impl.reflection.IdExtractor.extractIds
 import kalix.javasdk.impl.reflection.KalixMethod
 import kalix.javasdk.impl.reflection.NameGenerator
 import kalix.javasdk.impl.reflection.RestServiceIntrospector
+import kalix.javasdk.valueentity.ValueEntity
 
 private[impl] object EntityDescriptorFactory extends ComponentDescriptorFactory {
 
@@ -36,6 +36,14 @@ private[impl] object EntityDescriptorFactory extends ComponentDescriptorFactory 
       if (classOf[EventSourcedEntity[_, _]].isAssignableFrom(component)) {
         component.getDeclaredMethods.collect {
           case method if isCommandHandlerCandidate[EventSourcedEntity.Effect[_]](method) =>
+            val servMethod = CommandHandlerMethod(component, method, EntityUrlTemplate)
+            KalixMethod(servMethod, entityIds = Seq("entity-id"))
+              .withKalixOptions(buildJWTOptions(method))
+        }.toSeq
+
+      } else if (classOf[ValueEntity[_]].isAssignableFrom(component)) {
+        component.getDeclaredMethods.collect {
+          case method if isCommandHandlerCandidate[ValueEntity.Effect[_]](method) =>
             val servMethod = CommandHandlerMethod(component, method, EntityUrlTemplate)
             KalixMethod(servMethod, entityIds = Seq("entity-id"))
               .withKalixOptions(buildJWTOptions(method))

@@ -37,7 +37,7 @@ With both the Kalix Runtime and your service running, once you have defined endp
 * Adding a new item:
 
 ```shell
-curl -XPOST -H "Content-Type: application/json" localhost:9000/cart/cart1/items/add -d '{"productId": "kalix-tshirt", "name": "Kalix t-shirt", "quantity": 3}' 
+curl -XPOST -H "Content-Type: application/json" localhost:9000/akka/v1.0/entity/cart/cart1/addItem -d '{"productId": "kalix-tshirt", "name": "Kalix t-shirt", "quantity": 3}' 
 ```
 
 * Remove a shopping cart:
@@ -50,13 +50,13 @@ curl localhost:9000/cart/cart1
 * Removing a new item:
 
 ```shell
-curl -XPOST -H "Content-Type: application/json" localhost:9000/cart/cart1/items/add -d '{"productId": "kalix-tshirt", "name": "Kalix t-shirt", "quantity": 3}' 
+curl -XPOST -H "Content-Type: application/json" localhost:9000/akka/v1.0/entity/cart/cart1/addItem -d '{"productId": "kalix-tshirt", "name": "Kalix t-shirt", "quantity": 3}' 
 ```
 
 * Remove a shopping cart:
 
 ```shell
-curl -XDELETE -H "UserRole: Admin" localhost:9000/carts/cart1
+curl -XGET -H "UserRole: Admin" localhost:9000/akka/v1.0/entity/carts/cart1/removeCart
 ```
 
 ## Deploying

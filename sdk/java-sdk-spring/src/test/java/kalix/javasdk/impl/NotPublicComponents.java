@@ -34,7 +34,6 @@ public class NotPublicComponents {
       public record Created()implements Event {};
     }
 
-    @GetMapping("/eventsourced/{counter_id}")
     public Integer test() {
       return 0;
     }
@@ -45,12 +44,8 @@ public class NotPublicComponents {
     }
   }
 
-  @Id("id")
   @TypeId("user")
-  @RequestMapping("/user/{id}")
   static class NotPublicValueEntity extends ValueEntity<User> {
-
-    @GetMapping
     public ValueEntity.Effect<String> ok() {
       return effects().reply("ok");
     }
@@ -81,4 +76,5 @@ public class NotPublicComponents {
     }
   }
 }
+
 

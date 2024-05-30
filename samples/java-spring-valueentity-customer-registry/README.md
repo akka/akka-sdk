@@ -37,7 +37,7 @@ With both the Kalix Runtime and your service running, once you have defined endp
 * Create a customer with:
 
 ```shell
-curl localhost:9000/customer/one/create \
+curl localhost:9000/akka/v1.0/entity/customer/one/create \
   --header "Content-Type: application/json" \
   -XPOST \
   --data '{"customerId":"one","email":"test@example.com","name":"Test Testsson","address":{"street":"Teststreet 25","city":"Testcity"}}'
@@ -46,7 +46,7 @@ curl localhost:9000/customer/one/create \
 * Retrieve the customer:
 
 ```shell
-curl localhost:9000/customer/one
+curl localhost:9000/akka/v1.0/entity/customer/one/getCustomer
 ```
 
 * Query by name with a wrapped result:

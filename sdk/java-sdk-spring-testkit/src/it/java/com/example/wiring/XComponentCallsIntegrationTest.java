@@ -7,6 +7,8 @@ package com.example.wiring;
 import com.example.Main;
 import com.example.wiring.actions.echo.Message;
 import com.example.wiring.valueentities.user.User;
+import com.example.wiring.valueentities.user.UserEntity;
+import kalix.javasdk.client.ComponentClient;
 import kalix.spring.KalixConfigurationTest;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -15,10 +17,11 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 
+import static kalix.javasdk.testkit.DeferredCallSupport.execute;
+import static kalix.javasdk.testkit.DeferredCallSupport.failedExec;
 import static java.time.temporal.ChronoUnit.SECONDS;
 
 @SpringBootTest(classes = Main.class)
@@ -26,7 +29,10 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 @TestPropertySource(properties = "spring.main.allow-bean-definition-overriding=true")
 public class XComponentCallsIntegrationTest {
 
-  @Autowired private WebClient webClient;
+  @Autowired
+  private WebClient webClient;
+  @Autowired
+  private ComponentClient componentClient;
 
   private Duration timeout = Duration.of(10, SECONDS);
 
@@ -34,12 +40,12 @@ public class XComponentCallsIntegrationTest {
   public void verifyEchoActionXComponentCall() {
 
     Message response =
-        webClient
-            .get()
-            .uri("/echo/message/{msg}/short", "message to be shortened")
-            .retrieve()
-            .bodyToMono(Message.class)
-            .block(timeout);
+      webClient
+        .get()
+        .uri("/echo/message/{msg}/short", "message to be shortened")
+        .retrieve()
+        .bodyToMono(Message.class)
+        .block(timeout);
 
     Assertions.assertNotNull(response);
     Assertions.assertEquals("Parrot says: 'mssg t b shrtnd'", response.text());
@@ -49,14 +55,14 @@ public class XComponentCallsIntegrationTest {
   public void verifyEchoActionXComponentCallUsingRequestParam() {
 
     Message usingGetResponse =
-            webClient
-                    .get()
-                    .uri(builder -> builder.path("/echo/message-short")
-                            .queryParam("msg", "message to be shortened")
-                            .build())
-                    .retrieve()
-                    .bodyToMono(Message.class)
-                    .block(timeout);
+      webClient
+        .get()
+        .uri(builder -> builder.path("/echo/message-short")
+          .queryParam("msg", "message to be shortened")
+          .build())
+        .retrieve()
+        .bodyToMono(Message.class)
+        .block(timeout);
 
     Assertions.assertNotNull(usingGetResponse);
     Assertions.assertEquals("Parrot says: 'm3ss4g3 t b3 shrt3n3d'", usingGetResponse.text());
@@ -67,24 +73,24 @@ public class XComponentCallsIntegrationTest {
   public void verifyEchoActionXComponentCallUsingForward() {
 
     Message usingGetResponse =
-            webClient
-                    .get()
-                    .uri("/echo/message/{msg}/leetshort", "message to be shortened")
-                    .retrieve()
-                    .bodyToMono(Message.class)
-                    .block(timeout);
+      webClient
+        .get()
+        .uri("/echo/message/{msg}/leetshort", "message to be shortened")
+        .retrieve()
+        .bodyToMono(Message.class)
+        .block(timeout);
 
     Assertions.assertNotNull(usingGetResponse);
     Assertions.assertEquals("Parrot says: 'm3ss4g3 t b3 shrt3n3d'", usingGetResponse.text());
 
     Message usingPostResponse =
-            webClient
-                    .post()
-                    .uri("/echo/message/leetshort")
-                    .bodyValue(new Message("message to be shortened"))
-                    .retrieve()
-                    .bodyToMono(Message.class)
-                    .block(timeout);
+      webClient
+        .post()
+        .uri("/echo/message/leetshort")
+        .bodyValue(new Message("message to be shortened"))
+        .retrieve()
+        .bodyToMono(Message.class)
+        .block(timeout);
 
     Assertions.assertNotNull(usingPostResponse);
     Assertions.assertEquals("Parrot says: 'm3ss4g3 t b3 shrt3n3d'", usingPostResponse.text());
@@ -93,86 +99,89 @@ public class XComponentCallsIntegrationTest {
   @Test
   public void verifyKalixClientUsingPutMethod() {
 
-    User u1 = new User("mary@pops.com", "MayPops");
-    String userCreation =
-        webClient
-            .put()
-            .uri("/validuser/MaryPops/" + u1.email + "/" + u1.name)
-            .retrieve()
-            .bodyToMono(String.class)
-            .block(timeout);
-    Assertions.assertEquals("\"Ok from put\"", userCreation);
+    User u1 = new User("MayPops", "mary@pops.com");
+    Ok userCreation =
+      webClient
+        .put()
+        .uri("/validuser/MaryPops/" + u1.email + "/" + u1.name)
+        .retrieve()
+        .bodyToMono(Ok.class)
+        .block(timeout);
+    Assertions.assertEquals(Ok.instance, userCreation);
   }
 
   @Test
   public void verifyKalixClientUsingPatchMethod() {
 
-    User u1 = new User("mary@patch.com", "MayPatch");
-    String userCreation =
-        webClient
-            .put()
-            .uri("/validuser/MayPatch/" + u1.email + "/" + u1.name)
-            .retrieve()
-            .bodyToMono(String.class)
-            .block(timeout);
-    Assertions.assertEquals("\"Ok from put\"", userCreation);
+    User u1 = new User("MayPops", "mary@pops.com");
+    Ok userCreation =
+      webClient
+        .put()
+        .uri("/validuser/MayPatch/" + u1.email + "/" + u1.name)
+        .retrieve()
+        .bodyToMono(Ok.class)
+        .block(timeout);
+    Assertions.assertEquals(Ok.instance, userCreation);
 
-    String userUpdate =
-        webClient
-            .patch()
-            .uri("/validuser/MayPatch/email/" + "new"+u1.email)
-            .retrieve()
-            .bodyToMono(String.class)
-            .block(timeout);
-    Assertions.assertEquals("\"Ok from patch\"", userUpdate);
+    Ok userUpdate =
+      webClient
+        .patch()
+        .uri("/validuser/MayPatch/email/" + "new" + u1.email)
+        .retrieve()
+        .bodyToMono(Ok.class)
+        .block(timeout);
+    Assertions.assertEquals(Ok.instance, userUpdate);
 
     User userGetResponse =
-        webClient
-            .get()
-            .uri("/user/MayPatch")
-            .retrieve()
-            .bodyToMono(User.class)
-            .block(timeout);
-    Assertions.assertEquals("new"+u1.email, userGetResponse.email);
+      execute(
+        componentClient
+          .forValueEntity("MayPatch")
+          .call(UserEntity::getUser)
+      );
+    Assertions.assertEquals("new" + u1.email, userGetResponse.email);
   }
 
   @Test
   public void verifyKalixClientUsingDeleteMethod() {
 
     User u1 = new User("mary@delete.com", "MayDelete");
-    String userCreation =
-        webClient
-            .put()
-            .uri("/validuser/MayDelete/" + u1.email + "/" + u1.name)
-            .retrieve()
-            .bodyToMono(String.class)
-            .block(timeout);
-    Assertions.assertEquals("\"Ok from put\"", userCreation);
+    Ok userCreation =
+      webClient
+        .put()
+        .uri("/validuser/MayDelete/" + u1.email + "/" + u1.name)
+        .retrieve()
+        .bodyToMono(Ok.class)
+        .block(timeout);
+    Assertions.assertEquals(Ok.instance, userCreation);
 
-    User userGetResponse =
-        webClient
-            .get()
-            .uri("/user/MayDelete")
-            .retrieve()
-            .bodyToMono(User.class)
-            .block(timeout);
+    var userGetResponse =
+      execute(
+        componentClient
+          .forValueEntity("MayDelete")
+          .call(UserEntity::getUser)
+      );
+
     Assertions.assertEquals(u1.email, userGetResponse.email);
 
-    String userDelete =
-        webClient
-            .delete()
-            .uri("/validuser/MayDelete")
-            .retrieve()
-            .bodyToMono(String.class)
-            .block(timeout);
-    Assertions.assertEquals("\"Ok from delete\"", userDelete);
+    Ok userDelete =
+      webClient
+        .delete()
+        .uri("/validuser/MayDelete")
+        .retrieve()
+        .bodyToMono(Ok.class)
+        .block(timeout);
+    Assertions.assertEquals(Ok.instance, userDelete);
 
-    var userGetResponse2 =
-        webClient
-            .get()
-            .uri("/user/MayDelete")
-            .exchangeToMono(clientResponse -> Mono.just(clientResponse.statusCode()))
-            .block(timeout);
-    Assertions.assertEquals(404, userGetResponse2.value());
+    var getDeletedUser =
+      failedExec(
+        componentClient
+          .forValueEntity("MayDelete")
+          .call(UserEntity::getUser)
+      );
+
+    // FIXME: currently code is sending 404, but it doesn't make sense of an entity to speak http status codes
+    // fix endpoints components should return only string messages and ultimately
+    // for the record, this message comes from Spring WebClient
+    Assertions.assertTrue(getDeletedUser.getMessage().contains("404 Not Found from GET"));
   }
 }

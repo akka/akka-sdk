@@ -31,23 +31,9 @@ public interface ComponentClient {
   /**
    * Select ValueEntity as a call target component.
    *
-   * <p>For calling methods annotated with @{@link kalix.javasdk.annotations.GenerateId}
-   */
-  ValueEntityCallBuilder forValueEntity();
-
-  /**
-   * Select ValueEntity as a call target component.
-   *
    * @param valueEntityId - value entity id used to create a call.
    */
-  ValueEntityCallBuilder forValueEntity(String valueEntityId);
-
-  /**
-   * Select ValueEntity as a call target component.
-   *
-   * @param valueEntityIds - compound entity ids used to create a call.
-   */
-  ValueEntityCallBuilder forValueEntity(String... valueEntityIds);
+  ValueEntityClient forValueEntity(String valueEntityId);
 
   /**
    * Select EventSourcedEntity as a call target component.

@@ -5,6 +5,7 @@ import com.example.transfer.TransferState.Transfer;
 import com.example.wallet.WalletEntity;
 import com.google.protobuf.any.Any;
 import kalix.javasdk.DeferredCall;
+import static kalix.javasdk.testkit.DeferredCallSupport.execute;
 import kalix.spring.testkit.KalixIntegrationTestKitSupport;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,11 +14,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import java.time.Duration;
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import static com.example.transfer.TransferState.TransferStatus.COMPENSATION_COMPLETED;
 import static com.example.transfer.TransferState.TransferStatus.REQUIRES_MANUAL_INTERVENTION;
@@ -29,8 +27,6 @@ import static org.awaitility.Awaitility.await;
 
 @SpringBootTest(classes = Main.class)
 public class TransferWorkflowIntegrationTest extends KalixIntegrationTestKitSupport {
-
-  private Duration timeout = Duration.of(10, SECONDS);
 
   @Test
   public void shouldTransferMoney() {
@@ -187,7 +183,7 @@ public class TransferWorkflowIntegrationTest extends KalixIntegrationTestKitSupp
     String response = execute(componentClient
       .forValueEntity(walletId)
       .call(WalletEntity::create)
-      .params(walletId, amount));
+      .params(amount));
 
     assertThat(response).contains("Ok");
   }
@@ -204,11 +200,4 @@ public class TransferWorkflowIntegrationTest extends KalixIntegrationTestKitSupp
       .call(TransferWorkflow::getTransferState));
   }
 
-  private <T> T execute(DeferredCall<Any, T> deferredCall) {
-    try {
-      return deferredCall.execute().toCompletableFuture().get(timeout.toMillis(), TimeUnit.MILLISECONDS);
-    } catch (InterruptedException | ExecutionException | TimeoutException e) {
-      throw new RuntimeException(e);
-    }
-  }
 }

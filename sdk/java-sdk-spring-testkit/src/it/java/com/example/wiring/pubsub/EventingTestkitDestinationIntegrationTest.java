@@ -63,16 +63,19 @@ public class EventingTestkitDestinationIntegrationTest {
     Customer customer = new Customer("andre", Instant.now());
 
     //when
-    componentClient.forValueEntity(subject).call(CustomerEntity::create).params(customer)
-        .execute().toCompletableFuture().get(5, TimeUnit.SECONDS);
+    componentClient
+      .forValueEntity(subject)
+      .call(CustomerEntity::create)
+      .params(customer)
+      .execute().toCompletableFuture().get(5, TimeUnit.SECONDS);
 
     //then
     await()
-        .ignoreExceptions()
-        .atMost(20, TimeUnit.of(SECONDS))
-        .untilAsserted(() -> {
-          Customer publishedCustomer = destination.expectOneTyped(Customer.class).getPayload();
-          assertThat(publishedCustomer).isEqualTo(customer);
-        });
+      .ignoreExceptions()
+      .atMost(20, TimeUnit.of(SECONDS))
+      .untilAsserted(() -> {
+        Customer publishedCustomer = destination.expectOneTyped(Customer.class).getPayload();
+        assertThat(publishedCustomer).isEqualTo(customer);
+      });
   }
 }

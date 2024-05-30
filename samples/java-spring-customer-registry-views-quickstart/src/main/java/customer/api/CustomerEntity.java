@@ -21,34 +21,31 @@ import customer.domain.Customer;
 import kalix.javasdk.valueentity.ValueEntity;
 import kalix.javasdk.annotations.Id;
 import kalix.javasdk.annotations.TypeId;
-import org.springframework.web.bind.annotation.*;
 
-@Id("id")
 @TypeId("customer")
-@RequestMapping("/customer/{id}")
 public class CustomerEntity extends ValueEntity<Customer> {
 
 
-  @PostMapping("/create")
-  public ValueEntity.Effect<String> create(@RequestBody Customer customer) {
-    return effects().updateState(customer).thenReply("OK");
+  public record Ok() {
+    public static final Ok instance = new Ok();
   }
 
-  @GetMapping()
+  public ValueEntity.Effect<Ok> create(Customer customer) {
+    return effects().updateState(customer).thenReply(Ok.instance);
+  }
+
   public ValueEntity.Effect<Customer> getCustomer() {
     return effects().reply(currentState());
   }
 
-  @PostMapping("/changeName/{newName}")
-  public Effect<String> changeName(@PathVariable String newName) {
+  public Effect<Ok> changeName(String newName) {
     Customer updatedCustomer = currentState().withName(newName);
-    return effects().updateState(updatedCustomer).thenReply("OK");
+    return effects().updateState(updatedCustomer).thenReply(Ok.instance);
   }
 
-  @PostMapping("/changeAddress")
-  public Effect<String> changeAddress(@RequestBody Address newAddress) {
+  public Effect<Ok> changeAddress(Address newAddress) {
     Customer updatedCustomer = currentState().withAddress(newAddress);
-    return effects().updateState(updatedCustomer).thenReply("OK");
+    return effects().updateState(updatedCustomer).thenReply(Ok.instance);
   }
 
 }

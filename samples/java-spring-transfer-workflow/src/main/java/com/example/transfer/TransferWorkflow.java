@@ -1,6 +1,7 @@
 package com.example.transfer;
 
 import com.example.transfer.TransferState.Transfer;
+import com.example.wallet.Ok;
 import com.example.wallet.WalletEntity;
 import kalix.javasdk.client.ComponentClient;
 import kalix.javasdk.workflow.Workflow;
@@ -53,7 +54,7 @@ public class TransferWorkflow extends Workflow<TransferState> { // <1>
             .call(WalletEntity::withdraw)
             .params(cmd.amount);
         }) // <2>
-        .andThen(String.class, __ -> {
+        .andThen(Ok.class, __ -> {
           Deposit depositInput = new Deposit(currentState().transfer().to(), currentState().transfer().amount());
           return effects()
             .updateState(currentState().withStatus(WITHDRAW_SUCCEED))
@@ -67,7 +68,7 @@ public class TransferWorkflow extends Workflow<TransferState> { // <1>
             .call(WalletEntity::deposit)
             .params(cmd.amount);
         }) // <4>
-        .andThen(String.class, __ -> {
+        .andThen(Ok.class, __ -> {
           return effects()
             .updateState(currentState().withStatus(COMPLETED))
             .end(); // <5>

@@ -1,10 +1,14 @@
 package customer.api;
 
 
+import com.google.protobuf.any.Any;
 import customer.Main;
 import customer.domain.Address;
 import customer.domain.Customer;
 import customer.view.CustomersByNameView;
+import kalix.javasdk.DeferredCall;
+import kalix.javasdk.client.ComponentClient;
+import static kalix.javasdk.testkit.DeferredCallSupport.execute;
 import kalix.spring.testkit.KalixIntegrationTestKitSupport;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Assertions;
@@ -26,9 +30,11 @@ import static org.awaitility.Awaitility.await;
 @SpringBootTest(classes = Main.class)
 public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
 
-
   @Autowired
   private WebClient webClient;
+
+  @Autowired
+  private ComponentClient componentClient;
 
   private Duration timeout = Duration.of(5, SECONDS);
 
@@ -37,15 +43,15 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
     String id = UUID.randomUUID().toString();
     Customer customer = new Customer(id, "foo@example.com", "Johanna", null);
 
-    ResponseEntity<String> response =
-        webClient.post()
-            .uri("/customer/" + id + "/create")
-            .bodyValue(customer)
-            .retrieve()
-            .toEntity(String.class)
-            .block(timeout);
 
-    Assertions.assertEquals(HttpStatus.OK, response.getStatusCode());
+    var res =
+      execute(
+        componentClient
+          .forValueEntity(id)
+          .call(CustomerEntity::create)
+          .params(customer)
+      );
+    Assertions.assertEquals(CustomerEntity.Ok.instance, res);
     Assertions.assertEquals("Johanna", getCustomerById(id).name());
   }
 
@@ -54,25 +60,24 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
     String id = UUID.randomUUID().toString();
     Customer customer = new Customer(id, "foo@example.com", "Johanna", null);
 
-    ResponseEntity<String> resCreation =
-        webClient.post()
-            .uri("/customer/" + id + "/create")
-            .body(Mono.just(customer), Customer.class)
-            .retrieve()
-            .toEntity(String.class)
-            .block(timeout);
+    var resCreation =
+      execute(
+        componentClient
+          .forValueEntity(id)
+          .call(CustomerEntity::create)
+          .params(customer)
+      );
+    Assertions.assertEquals(CustomerEntity.Ok.instance, resCreation);
 
-    Assertions.assertEquals(HttpStatus.OK, resCreation.getStatusCode());
+    var resUpdate =
+      execute(
+        componentClient
+          .forValueEntity(id)
+          .call(CustomerEntity::changeName)
+          .params("Katarina")
+      );
 
-    ResponseEntity<String> resUpdate =
-        webClient.post()
-            .uri("/customer/" + id + "/changeName/" + "Katarina")
-            .retrieve()
-            .toEntity(String.class)
-            .block(timeout);
-
-
-    Assertions.assertEquals(HttpStatus.OK, resUpdate.getStatusCode());
+    Assertions.assertEquals(CustomerEntity.Ok.instance, resUpdate);
     Assertions.assertEquals("Katarina", getCustomerById(id).name());
   }
 
@@ -81,27 +86,26 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
     String id = UUID.randomUUID().toString();
     Customer customer = new Customer(id, "foo@example.com", "Johanna", null);
 
-    ResponseEntity<String> resCreation =
-        webClient.post()
-            .uri("/customer/" + id + "/create")
-            .body(Mono.just(customer), Customer.class)
-            .retrieve()
-            .toEntity(String.class)
-            .block(timeout);
+    var resCreation =
+      execute(
+        componentClient
+          .forValueEntity(id)
+          .call(CustomerEntity::create)
+          .params(customer)
+      );
 
-    Assertions.assertEquals(HttpStatus.OK, resCreation.getStatusCode());
-
+    Assertions.assertEquals(CustomerEntity.Ok.instance, resCreation);
     Address address = new Address("Elm st. 5", "New Orleans");
-    ResponseEntity<String> resUpdate =
-        webClient.post()
-            .uri("/customer/" + id + "/changeAddress")
-            .body(Mono.just(address), Address.class)
-            .retrieve()
-            .toEntity(String.class)
-            .block(timeout);
 
+    var res =
+      execute(
+        componentClient
+          .forValueEntity(id)
+          .call(CustomerEntity::changeAddress)
+          .params(address)
+      );
 
-    Assertions.assertEquals(HttpStatus.OK, resUpdate.getStatusCode());
+    Assertions.assertEquals(CustomerEntity.Ok.instance, res);
     Assertions.assertEquals("Elm st. 5", getCustomerById(id).address().street());
   }
 
@@ -110,15 +114,15 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
   public void findByName() throws Exception {
     String id = UUID.randomUUID().toString();
     Customer customer = new Customer(id, "foo@example.com", "Foo", null);
-    ResponseEntity<String> response =
-        webClient.post()
-            .uri("/customer/" + id + "/create")
-            .bodyValue(customer)
-            .retrieve()
-            .toEntity(String.class)
-            .block(timeout);
 
-    Assertions.assertEquals(HttpStatus.OK, response.getStatusCode());
+    var resCreation =
+      execute(
+        componentClient
+          .forValueEntity(id)
+          .call(CustomerEntity::create)
+          .params(customer)
+      );
+    Assertions.assertEquals(CustomerEntity.Ok.instance, resCreation);
 
 
     // the view is eventually updated
@@ -140,15 +144,15 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
   public void findByEmail() throws Exception {
     String id = UUID.randomUUID().toString();
     Customer customer = new Customer(id, "bar@example.com", "Bar", null);
-    ResponseEntity<String> response =
-        webClient.post()
-            .uri("/customer/" + id + "/create")
-            .bodyValue(customer)
-            .retrieve()
-            .toEntity(String.class)
-            .block(timeout);
 
-    Assertions.assertEquals(HttpStatus.OK, response.getStatusCode());
+    var resCreation =
+      execute(
+        componentClient
+          .forValueEntity(id)
+          .call(CustomerEntity::create)
+          .params(customer)
+      );
+    Assertions.assertEquals(CustomerEntity.Ok.instance, resCreation);
 
     // the view is eventually updated
     await()
@@ -166,12 +170,11 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
   }
 
   private Customer getCustomerById(String customerId) {
-    return webClient
-        .get()
-        .uri("/customer/" + customerId)
-        .retrieve()
-        .bodyToMono(Customer.class)
-        .block(timeout);
+    return execute(
+      componentClient
+        .forValueEntity(customerId)
+        .call(CustomerEntity::getCustomer)
+    );
   }
 
 }
