@@ -24,7 +24,7 @@ public class FailingCounterEntity extends EventSourcedEntity<Counter, CounterEve
       return effects().error("wrong value: " + value);
     } else {
       return effects()
-          .emitEvent(new CounterEvent.ValueIncreased(value))
+          .persist(new CounterEvent.ValueIncreased(value))
           .thenReply(Counter::value);
     }
   }

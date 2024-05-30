@@ -27,7 +27,7 @@ public class EventSourcedEntitiesTestModels {
 
         public Effect<String> createUser(CreateEmployee create) {
             return effects()
-                .emitEvent(new EmployeeEvent.EmployeeCreated(create.firstName, create.lastName, create.email))
+                .persist(new EmployeeEvent.EmployeeCreated(create.firstName, create.lastName, create.email))
                 .thenReply(__ -> "ok");
         }
 
@@ -147,7 +147,7 @@ public class EventSourcedEntitiesTestModels {
         @Acl(allow = @Acl.Matcher(service = "test"))
         public Effect<String> createUser(CreateEmployee create) {
             return effects()
-                .emitEvent(new EmployeeEvent.EmployeeCreated(create.firstName, create.lastName, create.email))
+                .persist(new EmployeeEvent.EmployeeCreated(create.firstName, create.lastName, create.email))
                 .thenReply(__ -> "ok");
         }
 

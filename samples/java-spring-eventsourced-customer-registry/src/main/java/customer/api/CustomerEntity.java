@@ -26,21 +26,21 @@ public class CustomerEntity extends EventSourcedEntity<Customer, CustomerEvent> 
   public Effect<Confirm> create(Customer customer) {
     logger.info("Creating {}", customer);
     return effects()
-      .emitEvent(new CustomerCreated(customer.email(), customer.name(), customer.address()))
+      .persist(new CustomerCreated(customer.email(), customer.name(), customer.address()))
       .thenReply(__ -> Confirm.done);
   }
 
   public Effect<Confirm> changeName(String newName) {
 
     return effects()
-      .emitEvent(new NameChanged(newName))
+      .persist(new NameChanged(newName))
       .thenReply(__ -> Confirm.done);
   }
 
 
   public Effect<Confirm> changeAddress(Address newAddress) {
     return effects()
-      .emitEvent(new AddressChanged(newAddress))
+      .persist(new AddressChanged(newAddress))
       .thenReply(__ -> Confirm.done);
   }
 

@@ -55,7 +55,7 @@ public class UserEntity extends EventSourcedEntity<User, UserEvent> {
     var created = new UserEvent.UserAdded(create.email);
 
     return effects()
-      .emitEvent(created)
+      .persist(created)
       .thenReply(newState -> "OK");
   }
 
@@ -67,7 +67,7 @@ public class UserEntity extends EventSourcedEntity<User, UserEvent> {
     var updated = new UserEvent.UserNameUpdated(updateNameCmd.name);
 
     return effects()
-      .emitEvent(updated)
+      .persist(updated)
       .thenReply(newState -> "OK");
   }
 
@@ -78,7 +78,7 @@ public class UserEntity extends EventSourcedEntity<User, UserEvent> {
 
     var updated = new UserEvent.UserPhotoUpdated(updatePhotoCmd.url);
     return effects()
-      .emitEvent(updated)
+      .persist(updated)
       .thenReply(newState -> "OK");
   }
 

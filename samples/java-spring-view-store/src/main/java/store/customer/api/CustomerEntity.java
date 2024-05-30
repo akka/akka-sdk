@@ -17,17 +17,17 @@ public class CustomerEntity extends EventSourcedEntity<Customer, CustomerEvent> 
 
   public Effect<String> create(Customer customer) {
     return effects()
-      .emitEvent(new CustomerCreated(customer.email(), customer.name(), customer.address()))
+      .persist(new CustomerCreated(customer.email(), customer.name(), customer.address()))
       .thenReply(__ -> "OK");
   }
 
   public Effect<String> changeName(String newName) {
-    return effects().emitEvent(new CustomerNameChanged(newName)).thenReply(__ -> "OK");
+    return effects().persist(new CustomerNameChanged(newName)).thenReply(__ -> "OK");
   }
 
 
   public Effect<String> changeAddress(Address newAddress) {
-    return effects().emitEvent(new CustomerAddressChanged(newAddress)).thenReply(__ -> "OK");
+    return effects().persist(new CustomerAddressChanged(newAddress)).thenReply(__ -> "OK");
   }
 
 

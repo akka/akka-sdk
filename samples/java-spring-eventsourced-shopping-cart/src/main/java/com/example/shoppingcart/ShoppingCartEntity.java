@@ -44,7 +44,7 @@ public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCart, Shoppin
     var event = new ShoppingCartEvent.ItemAdded(item); // <2>
 
     return effects()
-      .emitEvent(event) // <3>
+      .persist(event) // <3>
       .thenReply(newState -> "OK"); // <4>
   }
 
@@ -60,7 +60,7 @@ public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCart, Shoppin
     var event = new ShoppingCartEvent.ItemRemoved(productId);
 
     return effects()
-      .emitEvent(event)
+      .persist(event)
       .thenReply(newState -> "OK");
   }
 
@@ -76,7 +76,7 @@ public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCart, Shoppin
       return effects().reply("OK");
 
     return effects()
-      .emitEvent(new ShoppingCartEvent.CheckedOut()) // <1>
+      .persist(new ShoppingCartEvent.CheckedOut()) // <1>
       .deleteEntity() // <2>
       .thenReply(newState -> "OK"); // <4>
   }

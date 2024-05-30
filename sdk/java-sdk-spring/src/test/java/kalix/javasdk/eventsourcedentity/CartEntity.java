@@ -37,7 +37,7 @@ public class CartEntity extends AbstractCartEntity {
               INVALID_ARGUMENT);
     } else {
       return effects()
-          .emitEvent(createItemAddedEvent(command))
+          .persist(createItemAddedEvent(command))
           .thenReply(newState -> Empty.getDefaultInstance());
     }
   }
@@ -72,7 +72,7 @@ public class CartEntity extends AbstractCartEntity {
           command.getItemsList().stream()
               .map(this::createItemAddedEvent)
               .collect(Collectors.toList());
-      return effects().emitEvents(events).thenReply(newState -> Empty.getDefaultInstance());
+      return effects().persistAll(events).thenReply(newState -> Empty.getDefaultInstance());
     }
   }
 

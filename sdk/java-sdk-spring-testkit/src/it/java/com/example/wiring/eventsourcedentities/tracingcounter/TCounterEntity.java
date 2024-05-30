@@ -29,6 +29,6 @@ public class TCounterEntity extends EventSourcedEntity<TCounter, TCounterEvent> 
 
     public Effect<Integer> increase(Integer value) {
         log.info("increasing [{}].", value);
-        return effects().emitEvent(new TCounterEvent.ValueIncreased(value)).thenReply(c -> c.count());
+        return effects().persist(new TCounterEvent.ValueIncreased(value)).thenReply(c -> c.count());
     }
 }

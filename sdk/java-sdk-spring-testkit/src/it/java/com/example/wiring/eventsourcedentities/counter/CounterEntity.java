@@ -28,12 +28,12 @@ public class CounterEntity extends EventSourcedEntity<Counter, CounterEvent> {
       commandContext().sequenceNumber(),
       currentState(),
       value);
-    return effects().emitEvent(new CounterEvent.ValueIncreased(value)).thenReply(Counter::value);
+    return effects().persist(new CounterEvent.ValueIncreased(value)).thenReply(Counter::value);
   }
 
 
   public Effect<Integer> set(Integer value) {
-    return effects().emitEvent(new CounterEvent.ValueSet(value)).thenReply(Counter::value);
+    return effects().persist(new CounterEvent.ValueSet(value)).thenReply(Counter::value);
   }
 
   public Effect<Integer> get() {
@@ -50,7 +50,7 @@ public class CounterEntity extends EventSourcedEntity<Counter, CounterEvent> {
         currentState(),
         value);
 
-    return effects().emitEvent(new CounterEvent.ValueMultiplied(value)).thenReply(Counter::value);
+    return effects().persist(new CounterEvent.ValueMultiplied(value)).thenReply(Counter::value);
   }
 
   public Effect<Integer> restart() { // force entity restart, useful for testing

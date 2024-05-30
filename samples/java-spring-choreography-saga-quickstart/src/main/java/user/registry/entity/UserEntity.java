@@ -49,7 +49,7 @@ public class UserEntity extends EventSourcedEntity<User, User.UserEvent> {
 
     logger.info("Creating user {}", cmd);
     return effects()
-      .emitEvent(User.onCommand(cmd))
+      .persist(User.onCommand(cmd))
       .thenReply(__ -> Done.done());
   }
 
@@ -58,7 +58,7 @@ public class UserEntity extends EventSourcedEntity<User, User.UserEvent> {
       return effects().error("User not found", StatusCode.ErrorCode.NOT_FOUND);
     }
     return effects()
-      .emitEvents(currentState().onCommand(cmd))
+      .persistAll(currentState().onCommand(cmd))
       .thenReply(__ -> Done.done());
   }
 

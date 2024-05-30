@@ -48,7 +48,7 @@ public interface EventSourcedResult<R> {
   Status.Code getErrorStatusCode();
 
   /**
-   * @return The updated state. If the state was not updated (no events emitted) an exeption is
+   * @return The updated state. If the state was not updated (no events emitted) an exception is
    *     thrown
    */
   Object getUpdatedState();

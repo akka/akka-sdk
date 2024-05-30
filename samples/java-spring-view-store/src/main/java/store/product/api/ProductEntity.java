@@ -18,16 +18,16 @@ public class ProductEntity extends EventSourcedEntity<Product, ProductEvent> {
 
   public Effect<String> create(Product product) {
     return effects()
-      .emitEvent(new ProductCreated(product.name(), product.price()))
+      .persist(new ProductCreated(product.name(), product.price()))
       .thenReply(__ -> "OK");
   }
 
   public Effect<String> changeName(String newName) {
-    return effects().emitEvent(new ProductNameChanged(newName)).thenReply(__ -> "OK");
+    return effects().persist(new ProductNameChanged(newName)).thenReply(__ -> "OK");
   }
 
   public Effect<String> changePrice(Money newPrice) {
-    return effects().emitEvent(new ProductPriceChanged(newPrice)).thenReply(__ -> "OK");
+    return effects().persist(new ProductPriceChanged(newPrice)).thenReply(__ -> "OK");
   }
 
   @Override

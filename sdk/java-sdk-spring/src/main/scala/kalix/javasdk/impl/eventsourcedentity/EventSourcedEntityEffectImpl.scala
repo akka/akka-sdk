@@ -52,18 +52,22 @@ class EventSourcedEntityEffectImpl[S, E] extends Builder[S, E] with OnSuccessBui
     secondary
   }
 
-  override def emitEvent(event: E): EventSourcedEntityEffectImpl[S, E] = {
-    if (event.isInstanceOf[Iterable[_]] || event.isInstanceOf[java.lang.Iterable[_]]) {
-      throw new IllegalStateException(
-        s"You are trying to emit collection (${event.getClass}) of events. Use `emitEvents` method instead.")
-    } else {
-      _primaryEffect = EmitEvents(Vector(event))
-      this
-    }
+  override def persist(event: E): EventSourcedEntityEffectImpl[S, E] =
+    persistAll(Vector(event))
+
+  override def persist(event1: E, event2: E, events: E*): OnSuccessBuilder[S] = {
+    val builder = Vector.newBuilder[E]
+    builder += event1
+    builder += event2
+    builder ++= events
+    persistAll(builder.result())
   }
 
-  override def emitEvents(events: util.List[_ <: E]): EventSourcedEntityEffectImpl[S, E] = {
-    _primaryEffect = EmitEvents(events.asScala)
+  override def persistAll(events: util.List[_ <: E]): EventSourcedEntityEffectImpl[S, E] =
+    persistAll(events.asScala)
+
+  private def persistAll(events: Iterable[_ <: E]): EventSourcedEntityEffectImpl[S, E] = {
+    _primaryEffect = EmitEvents(events)
     this
   }
 
@@ -132,4 +136,5 @@ class EventSourcedEntityEffectImpl[S, E] extends Builder[S, E] with OnSuccessBui
     _secondaryEffect = _secondaryEffect.addSideEffects(sideEffects)
     this
   }
+
 }

@@ -40,7 +40,7 @@ public class ShoppingCartEntity
     var event = new ItemAdded(item);
 
     return effects()
-      .emitEvent(event) // <6>
+      .persist(event) // <6>
       .thenReply(newState -> "OK");
   }
 
@@ -50,7 +50,7 @@ public class ShoppingCartEntity
       return effects().error("Cart is already checked out.");
 
     return effects()
-      .emitEvent(new ItemRemoved(productId)) // <7>
+      .persist(new ItemRemoved(productId)) // <7>
       .thenReply(newState -> "OK");
   }
 
@@ -59,7 +59,7 @@ public class ShoppingCartEntity
       return effects().reply("OK");
 
     return effects()
-      .emitEvent(new CheckedOut()) // <7>
+      .persist(new CheckedOut()) // <7>
       .thenReply(newState -> "OK");
   }
 

@@ -33,7 +33,7 @@ public class Counter extends EventSourcedEntity<Integer, CounterEvent> {
 
   public Effect<String> increase(Integer value) {
     return effects()
-      .emitEvent(new ValueIncreased(value))
+      .persist(new ValueIncreased(value))
       .thenReply(Object::toString);
   }
 
@@ -43,7 +43,7 @@ public class Counter extends EventSourcedEntity<Integer, CounterEvent> {
 
   public Effect<String> multiply(Integer value) {
     return effects()
-      .emitEvent(new ValueMultiplied(value))
+      .persist(new ValueMultiplied(value))
       .thenReply(Object::toString);
   }
 
