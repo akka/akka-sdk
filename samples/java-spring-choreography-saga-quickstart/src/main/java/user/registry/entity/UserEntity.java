@@ -40,7 +40,7 @@ public class UserEntity extends EventSourcedEntity<User, User.UserEvent> {
     // As such, we can simulate the situation where an email address is reserved, but we fail to create the user.
     // When that happens the timer defined by the UniqueEmailSubscriber will fire and cancel the email address reservation.
     if (cmd.name() == null) {
-      return effects().error("Name is empty", StatusCode.ErrorCode.BAD_REQUEST);
+      return effects().error("Name is empty");
     }
 
     if (currentState() != null) {
@@ -55,7 +55,7 @@ public class UserEntity extends EventSourcedEntity<User, User.UserEvent> {
 
   public Effect<Done> changeEmail(User.ChangeEmail cmd) {
     if (currentState() == null) {
-      return effects().error("User not found", StatusCode.ErrorCode.NOT_FOUND);
+      return effects().error("User not found");
     }
     return effects()
       .persistAll(currentState().onCommand(cmd))
@@ -64,7 +64,7 @@ public class UserEntity extends EventSourcedEntity<User, User.UserEvent> {
 
   public Effect<User> getState() {
     if (currentState() == null) {
-      return effects().error("User not found", StatusCode.ErrorCode.NOT_FOUND);
+      return effects().error("User not found");
     }
     return effects().reply(currentState());
   }

@@ -10,6 +10,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.OptionConverters._
 import scala.util.control.NonFatal
+import scala.language.existentials
 
 import akka.NotUsed
 import akka.actor.ActorSystem
@@ -199,7 +200,7 @@ final class WorkflowImpl(system: ActorSystem, val services: Map[String, Workflow
       case None => // no initial state
     }
 
-    def toProtoEffect(effect: AbstractWorkflow.Effect[_], commandId: Long) = {
+    def toProtoEffect(effect: AbstractWorkflow.Effect[_], commandId: Long, errorCode: Option[Status.Code]) = {
 
       def effectMessage[R](persistence: Persistence[_], transition: WorkflowEffectImpl.Transition, reply: Reply[R]) = {
 
@@ -242,7 +243,8 @@ final class WorkflowImpl(system: ActorSystem, val services: Map[String, Workflow
 
       effect match {
         case error: ErrorEffectImpl[_] =>
-          val statusCode = error.status.map(_.value()).getOrElse(Status.Code.UNKNOWN.value())
+          val finalCode = error.status.orElse(errorCode).getOrElse(Status.Code.UNKNOWN)
+          val statusCode = finalCode.value()
           val failure = component.Failure(commandId, error.description, statusCode)
           val failureClientAction = WorkflowClientAction.defaultInstance.withFailure(failure)
           val noTransition = WorkflowEffect.Transition.NoTransition(ProtoNoTransition.defaultInstance)
@@ -286,12 +288,12 @@ final class WorkflowImpl(system: ActorSystem, val services: Map[String, Workflow
             service.messageCodec.decodeMessage(
               command.payload.getOrElse(throw ProtocolException(command, "No command payload")))
 
-          val CommandResult(effect) =
+          val (CommandResult(effect), errorCode) =
             try {
-              router._internalHandleCommand(command.name, cmd, context, timerScheduler)
+              (router._internalHandleCommand(command.name, cmd, context, timerScheduler), None)
             } catch {
               case BadRequestException(msg) =>
-                CommandResult(WorkflowEffectImpl[Any]().error(msg, Status.Code.INVALID_ARGUMENT))
+                (CommandResult(WorkflowEffectImpl[Any]().error(msg)), Some(Status.Code.INVALID_ARGUMENT))
               case e: WorkflowException => throw e
               case NonFatal(error) =>
                 throw WorkflowException(command, s"Unexpected failure: $error", Some(error))
@@ -299,7 +301,7 @@ final class WorkflowImpl(system: ActorSystem, val services: Map[String, Workflow
               context.deactivate() // Very important!
             }
 
-          Future.successful(toProtoEffect(effect, command.id))
+          Future.successful(toProtoEffect(effect, command.id, errorCode))
 
         case Step(executeStep) =>
           val context =
@@ -343,7 +345,7 @@ final class WorkflowImpl(system: ActorSystem, val services: Map[String, Workflow
                   Some(ex))
             }
 
-          Future.successful(toProtoEffect(effect, cmd.commandId))
+          Future.successful(toProtoEffect(effect, cmd.commandId, None))
 
         case Init(_) =>
           throw ProtocolException(init, "Workflow already initiated")

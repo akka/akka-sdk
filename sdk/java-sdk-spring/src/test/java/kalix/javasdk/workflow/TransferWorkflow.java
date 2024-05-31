@@ -87,7 +87,7 @@ public class TransferWorkflow extends ProtoWorkflow<MoneyTransferApi.State> {
   public Effect<Empty> start(MoneyTransferApi.Transfer transfer) {
 
     if (transfer.getAmount() <= 0.0)
-      return effects().error("Transfer amount cannot be negative.", INVALID_ARGUMENT);
+      return effects().error("Transfer amount cannot be negative.");
     else {
 
       var newState =

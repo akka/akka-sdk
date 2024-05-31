@@ -4,24 +4,22 @@
 
 package kalix.javasdk.impl.eventsourcedentity
 
-import io.grpc.Status
-import kalix.javasdk.StatusCode.ErrorCode
+import java.util
+import java.util.function.{ Function => JFunction }
+
+import scala.jdk.CollectionConverters._
+
+import kalix.javasdk.DeferredCall
+import kalix.javasdk.Metadata
+import kalix.javasdk.SideEffect
 import kalix.javasdk.eventsourcedentity.EventSourcedEntity.Effect
 import kalix.javasdk.eventsourcedentity.EventSourcedEntity.Effect.Builder
 import kalix.javasdk.eventsourcedentity.EventSourcedEntity.Effect.OnSuccessBuilder
-import kalix.javasdk.impl.StatusCodeConverter
 import kalix.javasdk.impl.effect.ErrorReplyImpl
 import kalix.javasdk.impl.effect.ForwardReplyImpl
 import kalix.javasdk.impl.effect.MessageReplyImpl
 import kalix.javasdk.impl.effect.NoSecondaryEffectImpl
 import kalix.javasdk.impl.effect.SecondaryEffectImpl
-
-import java.util
-import java.util.function.{ Function => JFunction }
-import scala.jdk.CollectionConverters._
-import kalix.javasdk.DeferredCall
-import kalix.javasdk.Metadata
-import kalix.javasdk.SideEffect
 
 object EventSourcedEntityEffectImpl {
   sealed trait PrimaryEffectImpl
@@ -94,18 +92,6 @@ class EventSourcedEntityEffectImpl[S, E] extends Builder[S, E] with OnSuccessBui
 
   override def error[T](description: String): EventSourcedEntityEffectImpl[T, E] = {
     _secondaryEffect = ErrorReplyImpl(description, None, _secondaryEffect.sideEffects)
-    this.asInstanceOf[EventSourcedEntityEffectImpl[T, E]]
-  }
-
-  override def error[T](description: String, grpcErrorCode: Status.Code): EventSourcedEntityEffectImpl[T, E] = {
-    if (grpcErrorCode.toStatus.isOk) throw new IllegalArgumentException("Cannot fail with a success status")
-    _secondaryEffect = ErrorReplyImpl(description, Some(grpcErrorCode), _secondaryEffect.sideEffects)
-    this.asInstanceOf[EventSourcedEntityEffectImpl[T, E]]
-  }
-
-  override def error[T](description: String, httpErrorCode: ErrorCode): EventSourcedEntityEffectImpl[T, E] = {
-    _secondaryEffect =
-      ErrorReplyImpl(description, Some(StatusCodeConverter.toGrpcCode(httpErrorCode)), _secondaryEffect.sideEffects)
     this.asInstanceOf[EventSourcedEntityEffectImpl[T, E]]
   }
 

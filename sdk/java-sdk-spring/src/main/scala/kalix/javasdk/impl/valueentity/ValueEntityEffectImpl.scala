@@ -8,6 +8,9 @@ import java.util
 
 import scala.jdk.CollectionConverters._
 
+import kalix.javasdk.DeferredCall
+import kalix.javasdk.Metadata
+import kalix.javasdk.SideEffect
 import kalix.javasdk.impl.effect.ErrorReplyImpl
 import kalix.javasdk.impl.effect.ForwardReplyImpl
 import kalix.javasdk.impl.effect.MessageReplyImpl
@@ -16,12 +19,6 @@ import kalix.javasdk.impl.effect.SecondaryEffectImpl
 import kalix.javasdk.valueentity.ValueEntity.Effect
 import kalix.javasdk.valueentity.ValueEntity.Effect.Builder
 import kalix.javasdk.valueentity.ValueEntity.Effect.OnSuccessBuilder
-import kalix.javasdk.StatusCode.ErrorCode
-import io.grpc.Status
-import kalix.javasdk.impl.StatusCodeConverter
-import kalix.javasdk.DeferredCall
-import kalix.javasdk.Metadata
-import kalix.javasdk.SideEffect
 
 object ValueEntityEffectImpl {
   sealed trait PrimaryEffectImpl[+S]
@@ -68,18 +65,6 @@ class ValueEntityEffectImpl[S] extends Builder[S] with OnSuccessBuilder[S] with 
 
   override def error[T](description: String): ValueEntityEffectImpl[T] = {
     _secondaryEffect = ErrorReplyImpl(description, None, _secondaryEffect.sideEffects)
-    this.asInstanceOf[ValueEntityEffectImpl[T]]
-  }
-
-  override def error[T](description: String, grpcErrorCode: Status.Code): ValueEntityEffectImpl[T] = {
-    if (grpcErrorCode.toStatus.isOk) throw new IllegalArgumentException("Cannot fail with a success status")
-    _secondaryEffect = ErrorReplyImpl(description, Some(grpcErrorCode), _secondaryEffect.sideEffects)
-    this.asInstanceOf[ValueEntityEffectImpl[T]]
-  }
-
-  override def error[T](description: String, httpErrorCode: ErrorCode): ValueEntityEffectImpl[T] = {
-    _secondaryEffect =
-      ErrorReplyImpl(description, Some(StatusCodeConverter.toGrpcCode(httpErrorCode)), _secondaryEffect.sideEffects)
     this.asInstanceOf[ValueEntityEffectImpl[T]]
   }
 

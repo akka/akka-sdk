@@ -36,8 +36,7 @@ public class CartEntity extends AbstractCartEntity {
     if (addLineItem.getQuantity() <= 0) {
       return effects()
           .error(
-              "Quantity for item " + addLineItem.getProductId() + " must be greater than zero.",
-              INVALID_ARGUMENT);
+              "Quantity for item " + addLineItem.getProductId() + " must be greater than zero.");
     }
 
     ShoppingCartDomain.LineItem lineItem = updateItem(addLineItem, currentState);

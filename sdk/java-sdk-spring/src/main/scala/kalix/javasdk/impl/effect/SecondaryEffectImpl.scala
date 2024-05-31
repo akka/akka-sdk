@@ -6,29 +6,37 @@ package kalix.javasdk.impl.effect
 
 import com.google.protobuf.{ Any => JavaPbAny }
 import io.grpc.Status
-import kalix.javasdk.impl.MessageCodec
-import kalix.javasdk.impl.effect
 import kalix.javasdk.DeferredCall
 import kalix.javasdk.Metadata
 import kalix.javasdk.SideEffect
+import kalix.javasdk.impl.MessageCodec
+import kalix.javasdk.impl.effect
 import kalix.protocol.component.ClientAction
 
 sealed trait SecondaryEffectImpl {
   def sideEffects: Vector[SideEffect]
   def addSideEffects(sideEffects: Iterable[SideEffect]): SecondaryEffectImpl
 
-  final def replyToClientAction(messageCodec: MessageCodec, commandId: Long): Option[ClientAction] = {
+  final def replyToClientAction(
+      messageCodec: MessageCodec,
+      commandId: Long,
+      errorCode: Option[Status.Code]): Option[ClientAction] = {
     this match {
       case message: effect.MessageReplyImpl[JavaPbAny] @unchecked =>
         Some(ClientAction(ClientAction.Action.Reply(EffectSupport.asProtocol(message))))
       case forward: effect.ForwardReplyImpl[JavaPbAny] @unchecked =>
         Some(ClientAction(ClientAction.Action.Forward(EffectSupport.asProtocol(messageCodec, forward))))
       case failure: effect.ErrorReplyImpl[JavaPbAny] @unchecked =>
+        val finalErrorCode =
+          failure.status
+            .orElse(errorCode)
+            .getOrElse(Status.Code.UNKNOWN)
+
         Some(
           ClientAction(
             ClientAction.Action
               .Failure(kalix.protocol.component
-                .Failure(commandId, failure.description, grpcStatusCode = failure.status.map(_.value()).getOrElse(0)))))
+                .Failure(commandId, failure.description, grpcStatusCode = finalErrorCode.value()))))
       case NoSecondaryEffectImpl(_) =>
         throw new RuntimeException("No reply or forward returned by command handler!")
     }

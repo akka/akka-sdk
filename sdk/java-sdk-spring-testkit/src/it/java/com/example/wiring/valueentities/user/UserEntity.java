@@ -24,7 +24,7 @@ public class UserEntity extends ValueEntity<User> {
 
   public Effect<User> getUser() {
     if (currentState() == null)
-      return effects().error("User not found", StatusCode.ErrorCode.NOT_FOUND);
+      return effects().error("User not found");
 
     return effects().reply(currentState());
   }

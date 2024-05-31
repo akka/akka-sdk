@@ -101,7 +101,7 @@ public class TransferWorkflowWithoutInputs extends Workflow<TransferState> {
 
   private Effect<Message> start(Transfer transfer, String withdrawStepName) {
     if (transfer.amount <= 0.0) {
-      return effects().error("Transfer amount should be greater than zero", Status.Code.INVALID_ARGUMENT);
+      return effects().error("Transfer amount should be greater than zero");
     } else {
       if (currentState() == null) {
         return effects()

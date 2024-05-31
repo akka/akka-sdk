@@ -172,16 +172,16 @@ public class XComponentCallsIntegrationTest {
         .block(timeout);
     Assertions.assertEquals(Ok.instance, userDelete);
 
-    var getDeletedUser =
+    var deletedUserException =
       failedExec(
         componentClient
           .forValueEntity("MayDelete")
           .call(UserEntity::getUser)
       );
 
-    // FIXME: currently code is sending 404, but it doesn't make sense of an entity to speak http status codes
-    // fix endpoints components should return only string messages and ultimately
+    // FIXME: currently code is sending 500, but it doesn't make sense of an entity to speak http status codes
+    // fix endpoints components should return only string messages
     // for the record, this message comes from Spring WebClient
-    Assertions.assertTrue(getDeletedUser.getMessage().contains("404 Not Found from GET"));
+    Assertions.assertTrue(deletedUserException.getMessage().contains("500 Internal Server Error from GET"));
   }
 }

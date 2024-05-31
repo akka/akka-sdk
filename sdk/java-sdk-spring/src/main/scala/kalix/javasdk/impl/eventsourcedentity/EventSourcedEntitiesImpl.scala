@@ -215,7 +215,11 @@ final class EventSourcedEntitiesImpl(
               case other => other
             }
 
-            val clientAction = serializedSecondaryEffect.replyToClientAction(service.messageCodec, command.id)
+            val clientAction = serializedSecondaryEffect.replyToClientAction(
+              service.messageCodec,
+              command.id,
+              None // None because we can use the one inside the SecondaryEffect
+            )
 
             serializedSecondaryEffect match {
               case _: ErrorReplyImpl[_] => // error

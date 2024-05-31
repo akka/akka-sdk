@@ -219,25 +219,6 @@ public abstract class AbstractWorkflow<S> {
        */
       <R> ErrorEffect<R> error(String description);
 
-      /**
-       * Create an error reply with a gRPC status code.
-       *
-       * @param description The description of the error.
-       * @param statusCode  A custom gRPC status code.
-       * @param <R>         The type of the message that must be returned by this call.
-       * @return An error reply.
-       */
-      <R> ErrorEffect<R> error(String description, Status.Code statusCode);
-
-      /**
-       * Create an error reply with an HTTP status code.
-       *
-       * @param description   The description of the error.
-       * @param httpErrorCode A custom Kalix status code to represent the error.
-       * @param <R>           The type of the message that must be returned by this call.
-       * @return An error reply.
-       */
-      <R> ErrorEffect<R> error(String description, StatusCode.ErrorCode httpErrorCode);
     }
 
     interface ErrorEffect<T> extends Effect<T> {

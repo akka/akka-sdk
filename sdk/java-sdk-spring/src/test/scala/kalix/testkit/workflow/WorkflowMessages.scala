@@ -82,6 +82,9 @@ object WorkflowMessages extends EntityMessages {
     InMessage.Transition(nextStep)
   }
 
+  def actionFailure(id: Long, description: String): OutMessage =
+    actionFailure(id, description, Status.Code.UNKNOWN)
+
   def actionFailure(id: Long, description: String, statusCode: Status.Code): OutMessage = {
     val failure = component.Failure(id, description, statusCode.value())
     val failureClientAction = WorkflowClientAction.defaultInstance.withFailure(failure)

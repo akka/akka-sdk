@@ -6,18 +6,17 @@ package kalix.javasdk.impl.workflow
 
 import com.example.workflow.transfer.MoneyTransferApi
 import com.google.protobuf.Empty
-import io.grpc.Status.Code.INVALID_ARGUMENT
+import com.google.protobuf.any.{ Any => ScalaPbAny }
 import kalix.javasdk.impl.AnySupport
-import WorkflowImplSpec.MoneyTransfer
+import kalix.javasdk.impl.workflow.WorkflowImplSpec.MoneyTransfer
+import kalix.javasdk.workflow.TransferWorkflow
+import kalix.javasdk.workflow.TransferWorkflowProvider
 import kalix.protocol.workflow_entity.WorkflowStreamIn
 import kalix.testkit.TestProtocol
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.OptionValues
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-import com.google.protobuf.any.{ Any => ScalaPbAny }
-import kalix.javasdk.workflow.TransferWorkflow
-import kalix.javasdk.workflow.TransferWorkflowProvider
 
 class WorkflowImplSpec extends AnyWordSpec with Matchers with BeforeAndAfterAll with OptionValues {
   import kalix.testkit.workflow.WorkflowMessages._
@@ -114,7 +113,7 @@ class WorkflowImplSpec extends AnyWordSpec with Matchers with BeforeAndAfterAll 
       workflow.send(init(MoneyTransfer.Name, "transfer"))
       workflow.expect(config())
       workflow.send(command(1, "transfer", "Start", MoneyTransfer.transfer("transfer", "foo", "bar", -1)))
-      workflow.expect(actionFailure(1, "Transfer amount cannot be negative.", INVALID_ARGUMENT))
+      workflow.expect(actionFailure(1, "Transfer amount cannot be negative."))
 
       // TODO: check update-then-fail doesn't change workflow state
       // to properly tests it, we need to put the workflow in a waiting state

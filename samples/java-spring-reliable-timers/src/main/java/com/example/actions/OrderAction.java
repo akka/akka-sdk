@@ -4,8 +4,6 @@ import akka.Done;
 import com.example.domain.OrderEntity;
 import com.example.domain.OrderRequest;
 import com.example.domain.Order;
-import kalix.javasdk.DeferredCallResponseException;
-import kalix.javasdk.StatusCode.ErrorCode;
 import kalix.javasdk.action.Action;
 import kalix.javasdk.action.ActionCreationContext;
 import kalix.javasdk.client.ComponentClient;
@@ -14,7 +12,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 
@@ -80,18 +77,12 @@ public class OrderAction extends Action {
     CompletionStage<String> reply =
         cancelRequest
             .execute() // <1>
-            .thenApply(cancelled -> "Ok") // <2>
-            .exceptionally(e -> { // <3>
-                  if (e.getCause() instanceof DeferredCallResponseException dcre &&
-                      Set.of(ErrorCode.NOT_FOUND, ErrorCode.BAD_REQUEST).contains(dcre.errorCode())) {
-                    // if NotFound or InvalidArgument, we don't need to re-try, and we can move on
-                    // other kind of failures are not recovered and will trigger a re-try
-                    return "Ok";
-                  } else {
-                    throw new RuntimeException(e);
-                  }
-                }
-            );
+            .thenApply(result -> {
+              // Entity can return Ok, NotFound or Invalid.
+              // Those are valid response and should not trigger a re-try.
+              // In case of exceptions, this method call will fail.
+              return "Ok";
+            });
     return effects().asyncReply(reply);
   }
   // end::expire-order[]
@@ -106,7 +97,7 @@ public class OrderAction extends Action {
     CompletionStage<String> reply =
       componentClient.forValueEntity(orderId).call(OrderEntity::confirm) // <1>
         .execute()
-            .thenCompose(req -> timers().cancel(timerName(orderId))) // <2>
+            .thenCompose(result -> timers().cancel(timerName(orderId))) // <2>
             .thenApply(done -> "Ok");
 
     return effects().asyncReply(reply);

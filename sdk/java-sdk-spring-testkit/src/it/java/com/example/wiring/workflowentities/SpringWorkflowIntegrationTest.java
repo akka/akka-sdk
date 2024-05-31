@@ -53,16 +53,13 @@ public class SpringWorkflowIntegrationTest {
     var transferUrl = "/transfer/" + transferId;
     var transfer = new Transfer(walletId1, walletId2, -10);
 
-    ResponseEntity<Void> response = webClient.put().uri(transferUrl)
+    ResponseEntity<Message> response = webClient.put().uri(transferUrl)
         .bodyValue(transfer)
         .retrieve()
-        .onStatus(HttpStatusCode::is4xxClientError, clientResponse ->
-            Mono.empty()
-        )
-        .toBodilessEntity()
+        .toEntity(Message.class)
         .block(timeout);
 
-    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    assertThat(response.getBody().text()).isEqualTo("Transfer amount should be greater than zero");
   }
 
   @Test

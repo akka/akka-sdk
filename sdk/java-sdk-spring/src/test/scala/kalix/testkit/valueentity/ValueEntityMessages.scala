@@ -117,7 +117,7 @@ object ValueEntityMessages extends EntityMessages {
     OutMessage.Reply(ValueEntityReply(id, action, effects.sideEffects, effects.valueEntityAction))
 
   def actionFailure(id: Long, description: String): OutMessage =
-    OutMessage.Reply(ValueEntityReply(id, clientActionFailure(id, description)))
+    actionFailure(id, description, Status.Code.UNKNOWN)
 
   def actionFailure(id: Long, description: String, statusCode: Status.Code): OutMessage =
     OutMessage.Reply(ValueEntityReply(id, clientActionFailure(id, description, statusCode.value())))

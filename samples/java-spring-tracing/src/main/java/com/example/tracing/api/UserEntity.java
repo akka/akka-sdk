@@ -41,7 +41,7 @@ public class UserEntity extends EventSourcedEntity<User, UserEvent> {
 
   public Effect<User> get() {
     if (currentState().equals(emptyState()))
-      return effects().error("User does not exist", StatusCode.ErrorCode.NOT_FOUND);
+      return effects().error("User does not exist");
 
     return effects().reply(currentState());
   }
@@ -49,7 +49,7 @@ public class UserEntity extends EventSourcedEntity<User, UserEvent> {
   public Effect<String> add(UserCmd.CreateCmd create) {
     log.info("Current context: {}, empty {}", currentState(), emptyState());
     if (!currentState().equals(emptyState())) {
-      return effects().error("User already exists", StatusCode.ErrorCode.BAD_REQUEST);
+      return effects().error("User already exists");
     }
 
     var created = new UserEvent.UserAdded(create.email);

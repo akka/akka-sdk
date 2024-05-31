@@ -8,6 +8,7 @@ import kalix.protocol.component._
 import com.google.protobuf.any.{ Any => ScalaPbAny }
 import com.google.protobuf.empty.{ Empty => ScalaPbEmpty }
 import com.google.protobuf.{ Any => JavaPbAny, Empty => JavaPbEmpty, Message => JavaPbMessage, StringValue }
+import io.grpc.Status
 import scalapb.{ GeneratedMessage => ScalaPbMessage }
 
 object EntityMessages extends EntityMessages
@@ -23,10 +24,10 @@ trait EntityMessages {
     Some(ClientAction(ClientAction.Action.Forward(Forward(service, command, payload))))
 
   def clientActionFailure(description: String): Option[ClientAction] =
-    clientActionFailure(id = 0, description, statusCode = 0)
+    clientActionFailure(id = 0, description)
 
   def clientActionFailure(id: Long, description: String): Option[ClientAction] =
-    clientActionFailure(id, description, statusCode = 0)
+    clientActionFailure(id, description, Status.Code.UNKNOWN.value())
 
   def clientActionFailure(id: Long, description: String, statusCode: Int): Option[ClientAction] =
     Some(ClientAction(ClientAction.Action.Failure(Failure(id, description, statusCode))))

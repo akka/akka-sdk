@@ -5,7 +5,7 @@
 package kalix.javasdk.impl.valueentity
 
 import scala.util.control.NonFatal
-
+import scala.language.existentials
 import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.stream.scaladsl.Flow
@@ -160,12 +160,12 @@ final class ValueEntitiesImpl(
             val context =
               new CommandContextImpl(thisEntityId, command.name, command.id, metadata, system)
 
-            val CommandResult(effect: ValueEntityEffectImpl[_]) =
+            val (CommandResult(effect: ValueEntityEffectImpl[_]), errorCode) =
               try {
-                router._internalHandleCommand(command.name, cmd, context)
+                (router._internalHandleCommand(command.name, cmd, context), None)
               } catch {
                 case BadRequestException(msg) =>
-                  CommandResult(new ValueEntityEffectImpl[Any].error(msg, Status.Code.INVALID_ARGUMENT))
+                  (CommandResult(new ValueEntityEffectImpl[Any].error(msg)), Some(Status.Code.INVALID_ARGUMENT))
                 case e: EntityException => throw e
                 case NonFatal(error) =>
                   throw EntityException(command, s"Unexpected failure: $error", Some(error))
@@ -180,7 +180,11 @@ final class ValueEntitiesImpl(
             }
 
             val clientAction =
-              serializedSecondaryEffect.replyToClientAction(service.messageCodec, command.id)
+              serializedSecondaryEffect.replyToClientAction(
+                service.messageCodec,
+                command.id,
+                errorCode // error code from BadRequest
+              )
 
             serializedSecondaryEffect match {
               case _: ErrorReplyImpl[_] =>
