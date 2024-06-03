@@ -1,24 +1,19 @@
 package customer.api;
 
 
-import com.google.protobuf.any.Any;
 import customer.Main;
 import customer.domain.Address;
 import customer.domain.Customer;
 import customer.view.CustomersByNameView;
-import kalix.javasdk.DeferredCall;
 import kalix.javasdk.client.ComponentClient;
-import static kalix.javasdk.testkit.DeferredCallSupport.execute;
+import static kalix.javasdk.testkit.DeferredCallSupport.invokeAndAwait;
 import kalix.spring.testkit.KalixIntegrationTestKitSupport;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 import java.util.UUID;
@@ -45,11 +40,11 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
 
 
     var res =
-      execute(
+      invokeAndAwait(
         componentClient
           .forValueEntity(id)
-          .call(CustomerEntity::create)
-          .params(customer)
+          .methodRef(CustomerEntity::create)
+          .deferred(customer)
       );
     Assertions.assertEquals(CustomerEntity.Ok.instance, res);
     Assertions.assertEquals("Johanna", getCustomerById(id).name());
@@ -61,20 +56,20 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
     Customer customer = new Customer(id, "foo@example.com", "Johanna", null);
 
     var resCreation =
-      execute(
+      invokeAndAwait(
         componentClient
           .forValueEntity(id)
-          .call(CustomerEntity::create)
-          .params(customer)
+          .methodRef(CustomerEntity::create)
+          .deferred(customer)
       );
     Assertions.assertEquals(CustomerEntity.Ok.instance, resCreation);
 
     var resUpdate =
-      execute(
+      invokeAndAwait(
         componentClient
           .forValueEntity(id)
-          .call(CustomerEntity::changeName)
-          .params("Katarina")
+          .methodRef(CustomerEntity::changeName)
+          .deferred("Katarina")
       );
 
     Assertions.assertEquals(CustomerEntity.Ok.instance, resUpdate);
@@ -87,22 +82,22 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
     Customer customer = new Customer(id, "foo@example.com", "Johanna", null);
 
     var resCreation =
-      execute(
+      invokeAndAwait(
         componentClient
           .forValueEntity(id)
-          .call(CustomerEntity::create)
-          .params(customer)
+          .methodRef(CustomerEntity::create)
+          .deferred(customer)
       );
 
     Assertions.assertEquals(CustomerEntity.Ok.instance, resCreation);
     Address address = new Address("Elm st. 5", "New Orleans");
 
     var res =
-      execute(
+      invokeAndAwait(
         componentClient
           .forValueEntity(id)
-          .call(CustomerEntity::changeAddress)
-          .params(address)
+          .methodRef(CustomerEntity::changeAddress)
+          .deferred(address)
       );
 
     Assertions.assertEquals(CustomerEntity.Ok.instance, res);
@@ -116,11 +111,11 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
     Customer customer = new Customer(id, "foo@example.com", "Foo", null);
 
     var resCreation =
-      execute(
+      invokeAndAwait(
         componentClient
           .forValueEntity(id)
-          .call(CustomerEntity::create)
-          .params(customer)
+          .methodRef(CustomerEntity::create)
+          .deferred(customer)
       );
     Assertions.assertEquals(CustomerEntity.Ok.instance, resCreation);
 
@@ -146,11 +141,11 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
     Customer customer = new Customer(id, "bar@example.com", "Bar", null);
 
     var resCreation =
-      execute(
+      invokeAndAwait(
         componentClient
           .forValueEntity(id)
-          .call(CustomerEntity::create)
-          .params(customer)
+          .methodRef(CustomerEntity::create)
+          .deferred(customer)
       );
     Assertions.assertEquals(CustomerEntity.Ok.instance, resCreation);
 
@@ -170,10 +165,11 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
   }
 
   private Customer getCustomerById(String customerId) {
-    return execute(
+    return invokeAndAwait(
       componentClient
         .forValueEntity(customerId)
-        .call(CustomerEntity::getCustomer)
+        .methodRef(CustomerEntity::getCustomer)
+        .deferred()
     );
   }
 

@@ -1,14 +1,11 @@
 package customer.api;
 
 
-import com.google.protobuf.any.Any;
 import customer.Main;
 import customer.api.CustomerEntity.Confirm;
 import customer.domain.Address;
 import customer.domain.Customer;
 import customer.view.CustomerView;
-import kalix.javasdk.DeferredCall;
-import static kalix.javasdk.testkit.DeferredCallSupport.execute;
 import kalix.spring.testkit.KalixIntegrationTestKitSupport;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Assertions;
@@ -22,6 +19,7 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
+import static kalix.javasdk.testkit.DeferredCallSupport.invokeAndAwait;
 import static org.awaitility.Awaitility.await;
 
 
@@ -38,9 +36,10 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
     String id = UUID.randomUUID().toString();
     Customer customer = new Customer("foo@example.com", "Johanna", null);
 
-    Confirm response = execute(componentClient.forEventSourcedEntity(id)
-      .call(CustomerEntity::create)
-      .params(customer));
+    Confirm response = invokeAndAwait(
+      componentClient.forEventSourcedEntity(id)
+        .methodRef(CustomerEntity::create)
+        .deferred(customer));
 
     Assertions.assertEquals(Confirm.done, response);
     Assertions.assertEquals("Johanna", getCustomerById(id).name());
@@ -51,15 +50,15 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
     String id = UUID.randomUUID().toString();
     Customer customer = new Customer("foo@example.com", "Johanna", null);
 
-    Confirm response = execute(componentClient.forEventSourcedEntity(id)
-      .call(CustomerEntity::create)
-      .params(customer));
+    Confirm response = invokeAndAwait(componentClient.forEventSourcedEntity(id)
+      .methodRef(CustomerEntity::create)
+      .deferred(customer));
 
     Assertions.assertEquals(Confirm.done, response);
 
-    Confirm resUpdate = execute(componentClient.forEventSourcedEntity(id)
-      .call(CustomerEntity::changeName)
-      .params("Katarina"));
+    Confirm resUpdate = invokeAndAwait(componentClient.forEventSourcedEntity(id)
+      .methodRef(CustomerEntity::changeName)
+      .deferred("Katarina"));
 
 
     Assertions.assertEquals(Confirm.done, resUpdate);
@@ -71,17 +70,17 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
     String id = UUID.randomUUID().toString();
     Customer customer = new Customer("foo@example.com", "Johanna", null);
 
-    Confirm response = execute(componentClient.forEventSourcedEntity(id)
-      .call(CustomerEntity::create)
-      .params(customer));
+    Confirm response = invokeAndAwait(componentClient.forEventSourcedEntity(id)
+      .methodRef(CustomerEntity::create)
+      .deferred(customer));
 
     Assertions.assertEquals(Confirm.done, response);
 
     Address address = new Address("Elm st. 5", "New Orleans");
 
-    Confirm resUpdate = execute(componentClient.forEventSourcedEntity(id)
-      .call(CustomerEntity::changeAddress)
-      .params(address));
+    Confirm resUpdate = invokeAndAwait(componentClient.forEventSourcedEntity(id)
+      .methodRef(CustomerEntity::changeAddress)
+      .deferred(address));
 
     Assertions.assertEquals(Confirm.done, resUpdate);
     Assertions.assertEquals("Elm st. 5", getCustomerById(id).address().street());
@@ -92,9 +91,9 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
   public void findByName() {
     String id = UUID.randomUUID().toString();
     Customer customer = new Customer("foo@example.com", "Foo", null);
-    Confirm response = execute(componentClient.forEventSourcedEntity(id)
-      .call(CustomerEntity::create)
-      .params(customer));
+    Confirm response = invokeAndAwait(componentClient.forEventSourcedEntity(id)
+      .methodRef(CustomerEntity::create)
+      .deferred(customer));
 
     Assertions.assertEquals(Confirm.done, response);
 
@@ -117,9 +116,9 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
   public void findByEmail() {
     String id = UUID.randomUUID().toString();
     Customer customer = new Customer("bar@example.com", "Bar", null);
-    Confirm response = execute(componentClient.forEventSourcedEntity(id)
-      .call(CustomerEntity::create)
-      .params(customer));
+    Confirm response = invokeAndAwait(componentClient.forEventSourcedEntity(id)
+      .methodRef(CustomerEntity::create)
+      .deferred(customer));
 
     Assertions.assertEquals(Confirm.done, response);
 
@@ -139,8 +138,10 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
   }
 
   private Customer getCustomerById(String customerId) {
-    return execute(componentClient.forEventSourcedEntity(customerId)
-      .call(CustomerEntity::getCustomer));
+    return invokeAndAwait(
+      componentClient.forEventSourcedEntity(customerId)
+        .methodRef(CustomerEntity::getCustomer)
+        .deferred());
   }
 
 }

@@ -33,9 +33,8 @@ public class GetRandomNameAction extends Action {
       var randomNameFut = getRandomNameAsync().thenCompose(name ->
         componentClient
           .forEventSourcedEntity(actionContext().eventSubject().get())
-          .call(UserEntity::updateName)
-          .params(new UserEntity.UserCmd.UpdateNameCmd(name))
-          .execute());
+          .methodRef(UserEntity::updateName)
+          .invokeAsync(new UserEntity.UserCmd.UpdateNameCmd(name)));
 
       return effects().asyncReply(randomNameFut);
     } else {

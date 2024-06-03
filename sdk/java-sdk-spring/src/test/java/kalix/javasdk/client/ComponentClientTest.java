@@ -45,13 +45,13 @@ class ComponentClientTest {
 
   @Test
   public void shouldNotReturnDeferredCallMethodNotAnnotatedAsRESTEndpoint() {
-    assertThatThrownBy(() -> componentClient.forAction().call(GetWithoutParam::missingRestAnnotation))
+    assertThatThrownBy(() -> componentClient.forAction().methodRef(GetWithoutParam::missingRestAnnotation))
       .hasMessage("Method [missingRestAnnotation] is not annotated as a REST endpoint.");
   }
 
   @Test
   public void shouldFailWhenCallingOtherComponentFromViewCallBuilder() {
-    assertThatThrownBy(() -> componentClient.forView().call(GetWithoutParam::missingRestAnnotation))
+    assertThatThrownBy(() -> componentClient.forView().methodRef(GetWithoutParam::missingRestAnnotation))
       .hasMessage("Use dedicated builder for calling Action component method GetWithoutParam::missingRestAnnotation. This builder is meant for View component calls.");
   }
 
@@ -63,7 +63,7 @@ class ComponentClientTest {
     var targetMethod = action.serviceDescriptor().findMethodByName("Message");
 
     //when
-    RestDeferredCall<Any, Message> call = (RestDeferredCall<Any, Message>) componentClient.forAction().call(GetWithoutParam::message);
+    RestDeferredCall<Any, Message> call = (RestDeferredCall<Any, Message>) componentClient.forAction().methodRef(GetWithoutParam::message);
 
     //then
     assertThat(call.fullServiceName()).isEqualTo(targetMethod.getService().getFullName());
@@ -81,8 +81,8 @@ class ComponentClientTest {
 
     //when
     RestDeferredCall<Any, Message> call = (RestDeferredCall<Any, Message>) componentClient.forAction()
-      .call(GetWithOneParam::message)
-      .params(param);
+      .methodRef(GetWithOneParam::message)
+      .deferred(param);
 
     //then
     assertThat(call.fullServiceName()).isEqualTo(targetMethod.getService().getFullName());
@@ -101,8 +101,8 @@ class ComponentClientTest {
 
     //when
     RestDeferredCall<Any, Message> call = (RestDeferredCall<Any, Message>) componentClient.forAction()
-      .call(GetClassLevel::message)
-      .params(param, param2);
+      .methodRef(GetClassLevel::message)
+      .deferred(param, param2);
 
     //then
     assertThat(call.fullServiceName()).isEqualTo(targetMethod.getService().getFullName());
@@ -123,8 +123,8 @@ class ComponentClientTest {
 
     //when
     RestDeferredCall<Any, Message> call = (RestDeferredCall<Any, Message>) componentClient.forAction()
-      .call(GetClassLevel::message2)
-      .params(param, param2, param3, param4);
+      .methodRef(GetClassLevel::message2)
+      .deferred(param, param2, param3, param4);
 
     //then
     assertThat(call.fullServiceName()).isEqualTo(targetMethod.getService().getFullName());
@@ -145,8 +145,8 @@ class ComponentClientTest {
 
     //when
     RestDeferredCall<Any, Message> call = (RestDeferredCall<Any, Message>) componentClient.forAction()
-      .call(GetClassLevel::message3)
-      .params(param, param2, param3, param4);
+      .methodRef(GetClassLevel::message3)
+      .deferred(param, param2, param3, param4);
 
     //then
     assertThat(call.fullServiceName()).isEqualTo(targetMethod.getService().getFullName());
@@ -163,7 +163,7 @@ class ComponentClientTest {
     Message body = new Message("hello world");
 
     //when
-    RestDeferredCall<Any, Message> call = (RestDeferredCall<Any, Message>) componentClient.forAction().call(PostWithoutParam::message).params(body);
+    RestDeferredCall<Any, Message> call = (RestDeferredCall<Any, Message>) componentClient.forAction().methodRef(PostWithoutParam::message).deferred(body);
 
     //then
     assertThat(call.fullServiceName()).isEqualTo(targetMethod.getService().getFullName());
@@ -183,8 +183,8 @@ class ComponentClientTest {
 
     //when
     RestDeferredCall<Any, Message> call = (RestDeferredCall<Any, Message>) componentClient.forAction()
-      .call(PostWithTwoParam::message)
-      .params(param, param2, body);
+      .methodRef(PostWithTwoParam::message)
+      .deferred(param, param2, body);
 
     //then
     assertThat(call.fullServiceName()).isEqualTo(targetMethod.getService().getFullName());
@@ -204,7 +204,7 @@ class ComponentClientTest {
     Message body = new Message("hello world");
 
     //when
-    RestDeferredCall<Any, Message> call = (RestDeferredCall<Any, Message>) componentClient.forAction().call(PostWithoutParam::message).params(body);
+    RestDeferredCall<Any, Message> call = (RestDeferredCall<Any, Message>) componentClient.forAction().methodRef(PostWithoutParam::message).deferred(body);
 
     //then
     assertThat(call.fullServiceName()).isEqualTo(targetMethod.getService().getFullName());
@@ -223,8 +223,8 @@ class ComponentClientTest {
 
     //when
     RestDeferredCall<Any, Message> call = (RestDeferredCall<Any, Message>) componentClient.forAction()
-      .call(PostWithOneQueryParam::message)
-      .params(param, body);
+      .methodRef(PostWithOneQueryParam::message)
+      .deferred(param, body);
 
     //then
     assertThat(call.fullServiceName()).isEqualTo(targetMethod.getService().getFullName());
@@ -244,7 +244,7 @@ class ComponentClientTest {
     Metadata metadata = MetadataImpl.Empty().set(Telemetry.TRACE_PARENT_KEY(), traceparent);
     componentClient.setCallMetadata(metadata);
     //when
-    RestDeferredCall<Any, Message> call = (RestDeferredCall<Any, Message>) componentClient.forAction().call(PostWithOneQueryParam::message).params(param, body);
+    RestDeferredCall<Any, Message> call = (RestDeferredCall<Any, Message>) componentClient.forAction().methodRef(PostWithOneQueryParam::message).deferred(param, body);
 
     //then
     assertThat(call.metadata().get(Telemetry.TRACE_PARENT_KEY()).get()).isEqualTo(traceparent);
@@ -262,8 +262,8 @@ class ComponentClientTest {
     //when
     RestDeferredCall<Any, Number> call = (RestDeferredCall<Any, Number>)
       componentClient.forValueEntity(id)
-        .call(Counter::randomIncrease)
-        .params(param);
+        .methodRef(Counter::randomIncrease)
+        .deferred(param);
 
     //then
     assertThat(call.fullServiceName()).isEqualTo(targetMethod.getService().getFullName());
@@ -273,13 +273,13 @@ class ComponentClientTest {
 
   @Test
   public void shouldFailWhenCallingViewWithNotAnnotatedParams() {
-    assertThatThrownBy(() -> componentClient.forView().call(UserByEmailWithGetWithoutAnnotation::getUser))
+    assertThatThrownBy(() -> componentClient.forView().methodRef(UserByEmailWithGetWithoutAnnotation::getUser))
       .hasMessage("When using ComponentClient each [getUser] View query method parameter should be annotated with @PathVariable, @RequestParam or @RequestBody annotations. Missing annotations for params with types: [String]");
   }
 
   @Test
   public void shouldFailWhenCallingViewMethodWithoutQueryAnnotation() {
-    assertThatThrownBy(() -> componentClient.forView().call(UserByEmailWithGetWithoutAnnotation::getUserWithoutQuery))
+    assertThatThrownBy(() -> componentClient.forView().methodRef(UserByEmailWithGetWithoutAnnotation::getUserWithoutQuery))
       .hasMessage("A View query method [getUserWithoutQuery] should be annotated with @Query annotation.");
   }
 
@@ -293,8 +293,8 @@ class ComponentClientTest {
 
     //when
     RestDeferredCall<Any, User> call = (RestDeferredCall<Any, User>) componentClient.forView()
-      .call(UserByEmailWithGet::getUser)
-      .params(email);
+      .methodRef(UserByEmailWithGet::getUser)
+      .deferred(email);
 
     //then
     assertThat(call.fullServiceName()).isEqualTo(targetMethod.getService().getFullName());

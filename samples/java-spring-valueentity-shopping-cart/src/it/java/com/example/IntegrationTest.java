@@ -3,14 +3,9 @@ package com.example;
 import com.example.api.ShoppingCartDTO;
 import com.example.api.ShoppingCartDTO.LineItemDTO;
 import com.example.api.ShoppingCartEntity;
-import com.example.domain.ShoppingCart;
-import com.google.protobuf.any.Any;
-import kalix.javasdk.DeferredCall;
 import kalix.javasdk.Metadata;
 import kalix.javasdk.client.ComponentClient;
-import static kalix.javasdk.testkit.DeferredCallSupport.execute;
 import kalix.spring.testkit.KalixIntegrationTestKitSupport;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -20,8 +15,9 @@ import java.time.Duration;
 import java.util.List;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static kalix.javasdk.testkit.DeferredCallSupport.invokeAndAwait;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 
 /**
@@ -44,38 +40,38 @@ public class IntegrationTest extends KalixIntegrationTestKitSupport {
   private Duration timeout = Duration.of(5, SECONDS);
 
   ShoppingCartDTO getCart(String cartId) {
-    return execute(
+    return invokeAndAwait(
       componentClient
         .forValueEntity(cartId)
-        .call(ShoppingCartEntity::getCart)
+        .methodRef(ShoppingCartEntity::getCart).deferred()
     );
   }
 
   void addItem(String cartId, String productId, String name, int quantity) throws Exception {
-    execute(
+    invokeAndAwait(
       componentClient
         .forValueEntity(cartId)
-        .call(ShoppingCartEntity::addItem)
-        .params(new LineItemDTO(productId, name, quantity))
+        .methodRef(ShoppingCartEntity::addItem)
+        .deferred(new LineItemDTO(productId, name, quantity))
     );
   }
 
   void removeItem(String cartId, String productId) throws Exception {
 
-    execute(
+    invokeAndAwait(
       componentClient
         .forValueEntity(cartId)
-        .call(ShoppingCartEntity::removeItem)
-        .params(productId)
+        .methodRef(ShoppingCartEntity::removeItem)
+        .deferred(productId)
     );
   }
 
   void removeCart(String cartId, String userRole) throws Exception {
     var metadata = Metadata.EMPTY.add("Role", userRole);
-    execute(
+    invokeAndAwait(
       componentClient
         .forValueEntity(cartId)
-        .call(ShoppingCartEntity::removeCart).withMetadata(metadata)
+        .methodRef(ShoppingCartEntity::removeCart).deferred().withMetadata(metadata)
     );
   }
 

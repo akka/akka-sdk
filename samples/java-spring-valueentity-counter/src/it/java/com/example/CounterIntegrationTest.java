@@ -1,16 +1,13 @@
 package com.example;
 
-import com.google.protobuf.any.Any;
-import kalix.javasdk.DeferredCall;
 import kalix.javasdk.client.ComponentClient;
-import static kalix.javasdk.testkit.DeferredCallSupport.execute;
 import kalix.spring.testkit.KalixIntegrationTestKitSupport;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.web.reactive.function.client.WebClient;
+
+import static kalix.javasdk.testkit.DeferredCallSupport.invokeAndAwait;
 
 
 /**
@@ -29,19 +26,17 @@ public class CounterIntegrationTest extends KalixIntegrationTestKitSupport { // 
 
   @Autowired
   private ComponentClient componentClient;
-  @Autowired
-  private WebClient webClient; // <2>
 
   // end::sample-it[]
   @Test
   public void verifyCounterIncrease() {
 
     var counterIncrease =
-      execute(
+      invokeAndAwait(
         componentClient
           .forValueEntity("foo")
-          .call(CounterEntity::increaseBy)
-          .params(new Number(10))
+          .methodRef(CounterEntity::increaseBy)
+          .deferred(new Number(10))
       );
 
     Assertions.assertEquals(10, counterIncrease.value());
@@ -52,26 +47,26 @@ public class CounterIntegrationTest extends KalixIntegrationTestKitSupport { // 
   public void verifyCounterSetAndIncrease() {
 
     Number counterGet = // <3>
-      execute(
+      invokeAndAwait(
         componentClient
           .forValueEntity("bar")
-          .call(CounterEntity::get)
+          .methodRef(CounterEntity::get).deferred()
       );
     Assertions.assertEquals(0, counterGet.value());
 
     Number counterPlusOne = // <4>
-      execute(
+      invokeAndAwait(
         componentClient
           .forValueEntity("bar")
-          .call(CounterEntity::plusOne)
+          .methodRef(CounterEntity::plusOne).deferred()
       );
     Assertions.assertEquals(1, counterPlusOne.value());
 
     Number counterGetAfter = // <5>
-      execute(
+      invokeAndAwait(
         componentClient
           .forValueEntity("bar")
-          .call(CounterEntity::get)
+          .methodRef(CounterEntity::get).deferred()
       );
     Assertions.assertEquals(1, counterGetAfter.value());
   }

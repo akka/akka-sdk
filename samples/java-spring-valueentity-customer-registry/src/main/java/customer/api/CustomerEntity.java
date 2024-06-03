@@ -20,10 +20,8 @@ package customer.api;
 
 import customer.domain.Address;
 import customer.domain.Customer;
-import kalix.javasdk.StatusCode;
-import kalix.javasdk.valueentity.ValueEntity;
-import kalix.javasdk.annotations.Id;
 import kalix.javasdk.annotations.TypeId;
+import kalix.javasdk.valueentity.ValueEntity;
 
 @TypeId("customer") // <1>
 public class CustomerEntity extends ValueEntity<Customer> { // <4>

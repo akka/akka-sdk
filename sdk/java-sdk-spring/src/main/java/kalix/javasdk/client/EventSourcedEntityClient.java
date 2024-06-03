@@ -6,10 +6,7 @@ package kalix.javasdk.client;
 
 import akka.japi.function.Function;
 import akka.japi.function.Function2;
-import com.google.protobuf.any.Any;
-import kalix.javasdk.DeferredCall;
 import kalix.javasdk.Metadata;
-import kalix.javasdk.action.Action;
 import kalix.javasdk.eventsourcedentity.EventSourcedEntity;
 import kalix.spring.impl.KalixClient;
 
@@ -29,17 +26,15 @@ public class EventSourcedEntityClient {
     this.entityId = entityId;
   }
 
-  /**
-   * Pass in an Event Sourced Entity method reference, e.g. <code>UserEntity::create</code>
-   */
-  public <T, R> DeferredCall<Any, R> call(Function<T, EventSourcedEntity.Effect<R>> methodRef) {
-    return ComponentCall.noParams(kalixClient, methodRef, List.of(entityId), callMetadata);
+  public <T, R> ComponentMethodRef<R> methodRef(Function<T, EventSourcedEntity.Effect<R>> methodRef) {
+    return new ComponentMethodRef<>(kalixClient, methodRef, entityId, callMetadata);
   }
+
   /**
    * Pass in an Event Sourced Entity method reference, e.g. <code>UserEntity::create</code>
    */
-  public <T, A1, R> ComponentCall<A1, R> call(Function2<T, A1, EventSourcedEntity.Effect<R>> methodRef) {
-    return new ComponentCall<>(kalixClient, methodRef, List.of(entityId), callMetadata);
+  public <T, A1, R> ComponentMethodRef1<A1, R> methodRef(Function2<T, A1, EventSourcedEntity.Effect<R>> methodRef) {
+    return new ComponentMethodRef1<>(kalixClient, methodRef, List.of(entityId), callMetadata);
   }
 
 

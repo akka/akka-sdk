@@ -18,7 +18,8 @@ final case class RestDeferredCall[I, O](
     methodName: String,
     asyncCall: Metadata => CompletionStage[O])
     extends DeferredCall[I, O] {
-  override def execute(): CompletionStage[O] = asyncCall(metadata)
+
+  override def invokeAsync(): CompletionStage[O] = asyncCall(metadata)
 
   override def withMetadata(metadata: Metadata): RestDeferredCall[I, O] = {
     this.copy(metadata = metadata.asInstanceOf[MetadataImpl])

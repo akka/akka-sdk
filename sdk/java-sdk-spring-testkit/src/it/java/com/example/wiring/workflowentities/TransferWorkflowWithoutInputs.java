@@ -5,7 +5,6 @@
 package com.example.wiring.workflowentities;
 
 import com.example.wiring.actions.echo.Message;
-import io.grpc.Status;
 import kalix.javasdk.HttpResponse;
 import kalix.javasdk.client.ComponentClient;
 import kalix.javasdk.annotations.Id;
@@ -37,7 +36,7 @@ public class TransferWorkflowWithoutInputs extends Workflow<TransferState> {
         step(withdrawStepName)
             .call(() -> {
               var transfer = currentState().transfer;
-              return componentClient.forValueEntity(transfer.from).call(WalletEntity::withdraw).params(transfer.amount);
+              return componentClient.forValueEntity(transfer.from).methodRef(WalletEntity::withdraw).deferred(transfer.amount);
             })
             .andThen(HttpResponse.class, response -> {
               var state = currentState().withLastStep("withdrawn").accepted();
@@ -50,7 +49,7 @@ public class TransferWorkflowWithoutInputs extends Workflow<TransferState> {
         step(withdrawAsyncStepName)
             .asyncCall(() -> {
               var transfer = currentState().transfer;
-              return componentClient.forValueEntity(transfer.from).call(WalletEntity::withdraw).params(transfer.amount).execute();
+              return componentClient.forValueEntity(transfer.from).methodRef(WalletEntity::withdraw).deferred(transfer.amount).invokeAsync();
             })
             .andThen(HttpResponse.class, response -> {
               var state = currentState().withLastStep("withdrawn").accepted();
@@ -64,7 +63,7 @@ public class TransferWorkflowWithoutInputs extends Workflow<TransferState> {
         step(depositStepName)
             .call(() -> {
               var transfer = currentState().transfer;
-              return componentClient.forValueEntity(transfer.to).call(WalletEntity::deposit).params(transfer.amount);
+              return componentClient.forValueEntity(transfer.to).methodRef(WalletEntity::deposit).deferred(transfer.amount);
             })
             .andThen(String.class, __ -> {
               var state = currentState().withLastStep("deposited").finished();
@@ -75,7 +74,7 @@ public class TransferWorkflowWithoutInputs extends Workflow<TransferState> {
         step(depositAsyncStepName)
             .asyncCall(() -> {
               var transfer = currentState().transfer;
-              return componentClient.forValueEntity(transfer.to).call(WalletEntity::deposit).params(transfer.amount).execute();
+              return componentClient.forValueEntity(transfer.to).methodRef(WalletEntity::deposit).deferred(transfer.amount).invokeAsync();
             })
             .andThen(String.class, __ -> {
               var state = currentState().withLastStep("deposited").finished();

@@ -654,4 +654,11 @@ lazy val sbtPlugin = Project(id = "sbt-kalix", base = file("sbt-plugin"))
     scriptedBufferLog := false)
   .dependsOn(codegenScala, devToolsInternal)
 
+lazy val samplesCompilationProject: CompositeProject =
+  SamplesCompilationProject.compilationProject { sampleProject =>
+    sampleProject
+      .dependsOn(javaSdkSpring)
+      .dependsOn(javaSdkSpringTestKit % "compile->test")
+  }
+
 addCommandAlias("formatAll", "scalafmtAll; javafmtAll")

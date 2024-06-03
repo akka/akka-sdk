@@ -34,7 +34,7 @@ public class TransferWorkflow extends Workflow<TransferState> {
   public WorkflowDef<TransferState> definition() {
     var withdraw =
         step(withdrawStepName)
-            .call(Withdraw.class, cmd -> componentClient.forValueEntity(cmd.from).call(WalletEntity::withdraw).params(cmd.amount))
+            .call(Withdraw.class, cmd -> componentClient.forValueEntity(cmd.from).methodRef(WalletEntity::withdraw).deferred(cmd.amount))
             .andThen(HttpResponse.class, __ -> {
               var state = currentState().withLastStep("withdrawn").accepted();
 
@@ -47,7 +47,7 @@ public class TransferWorkflow extends Workflow<TransferState> {
 
     var deposit =
         step(depositStepName)
-            .call(Deposit.class, cmd -> componentClient.forValueEntity(cmd.to).call(WalletEntity::deposit).params(cmd.amount)
+            .call(Deposit.class, cmd -> componentClient.forValueEntity(cmd.to).methodRef(WalletEntity::deposit).deferred(cmd.amount)
             ).andThen(String.class, __ -> {
               var state = currentState().withLastStep("deposited").finished();
               return effects().updateState(state).end();

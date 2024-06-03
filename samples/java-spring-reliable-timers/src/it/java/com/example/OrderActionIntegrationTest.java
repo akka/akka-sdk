@@ -4,10 +4,8 @@ import com.example.domain.Order;
 import com.example.domain.OrderEntity;
 import com.example.domain.OrderRequest;
 import com.example.domain.OrderStatus;
-import com.google.protobuf.any.Any;
-import kalix.javasdk.DeferredCall;
 import kalix.javasdk.client.ComponentClient;
-import static kalix.javasdk.testkit.DeferredCallSupport.execute;
+import static kalix.javasdk.testkit.DeferredCallSupport.invokeAndAwait;
 import kalix.spring.testkit.KalixIntegrationTestKitSupport;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -74,14 +72,14 @@ public class OrderActionIntegrationTest extends KalixIntegrationTestKitSupport {
     var deferredCall =
         componentClient
             .forValueEntity(orderId)
-            .call(OrderEntity::status);
+            .methodRef(OrderEntity::status).deferred();
 
     // After the default timeout, status changed to not placed as order is reverted
     await()
       .ignoreExceptions()
       .atMost(20, TimeUnit.of(SECONDS))
       .until(
-        () -> execute(deferredCall),
+        () -> invokeAndAwait(deferredCall),
         status -> !status.confirmed());
   }
 
@@ -137,10 +135,10 @@ public class OrderActionIntegrationTest extends KalixIntegrationTestKitSupport {
   }
 
   private OrderStatus getOrderStatus(String orderId) {
-    return execute(
+    return invokeAndAwait(
       componentClient
         .forValueEntity(orderId)
-        .call(OrderEntity::status)
+        .methodRef(OrderEntity::status).deferred()
     );
 
   }

@@ -53,7 +53,7 @@ public class EchoAction extends Action {
 
   @PostMapping("/echo/message/forward")
   public Effect<Message> stringMessageFromParamFwTyped(@RequestParam String msg) {
-    var result = componentClient.forAction().call(EchoAction::stringMessageFromParam).params(msg);
+    var result = componentClient.forAction().methodRef(EchoAction::stringMessageFromParam).deferred(msg);
     return effects().forward(result);
   }
 

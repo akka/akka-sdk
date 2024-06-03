@@ -3,11 +3,11 @@ package customer.view;
 import customer.api.CustomerEntity;
 import customer.api.CustomersResponse;
 import customer.domain.Customer;
-import kalix.javasdk.view.View;
 import kalix.javasdk.annotations.Query;
 import kalix.javasdk.annotations.Subscribe;
 import kalix.javasdk.annotations.Table;
 import kalix.javasdk.annotations.ViewId;
+import kalix.javasdk.view.View;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 

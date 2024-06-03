@@ -38,8 +38,8 @@ public class WorkflowWithTimer extends Workflow<FailingCounterState> {
               var pingWorkflow =
                   componentClient
                       .forWorkflow(workflowContext.workflowId())
-                      .call(WorkflowWithTimer::pingWorkflow)
-                      .params(new CounterScheduledValue(12));
+                      .methodRef(WorkflowWithTimer::pingWorkflow)
+                      .deferred(new CounterScheduledValue(12));
 
               return timers().startSingleTimer("ping", Duration.ofSeconds(2), pingWorkflow);
             })

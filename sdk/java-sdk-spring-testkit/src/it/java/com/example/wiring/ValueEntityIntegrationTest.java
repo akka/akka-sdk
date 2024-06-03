@@ -8,6 +8,7 @@ import com.example.Main;
 import com.example.wiring.valueentities.user.User;
 import com.example.wiring.valueentities.user.UserEntity;
 import kalix.javasdk.client.ComponentClient;
+import kalix.javasdk.testkit.DeferredCallSupport;
 import kalix.spring.KalixConfigurationTest;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -18,7 +19,6 @@ import org.springframework.test.context.TestPropertySource;
 
 import java.util.concurrent.TimeUnit;
 
-import static kalix.javasdk.testkit.DeferredCallSupport.execute;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 @SpringBootTest(classes = Main.class)
 @Import(KalixConfigurationTest.class)
 @TestPropertySource(properties = "spring.main.allow-bean-definition-overriding=true")
-public class ValueEntityIntegrationTest  {
+public class ValueEntityIntegrationTest {
 
 
   @Autowired
@@ -68,35 +68,36 @@ public class ValueEntityIntegrationTest  {
   }
 
   private void createUser(TestUser user) {
-    execute(
+    DeferredCallSupport.invokeAndAwait(
       componentClient
         .forValueEntity(user.id)
-        .call(UserEntity::createUser)
-        .params(new UserEntity.CreatedUser(user.name, user.email)));
+        .methodRef(UserEntity::createUser)
+        .deferred(new UserEntity.CreatedUser(user.name, user.email)));
   }
 
   private void changeEmail(TestUser user) {
-    execute(
-    componentClient
-      .forValueEntity(user.id)
-      .call(UserEntity::updateEmail)
-      .params(new UserEntity.UpdateEmail(user.email)));
+    DeferredCallSupport.invokeAndAwait(
+      componentClient
+        .forValueEntity(user.id)
+        .methodRef(UserEntity::updateEmail)
+        .deferred(new UserEntity.UpdateEmail(user.email)));
   }
 
   private User getUser(TestUser user) {
-    return execute(
+    return DeferredCallSupport.invokeAndAwait(
       componentClient
         .forValueEntity(user.id)
-        .call(UserEntity::getUser));
+        .methodRef(UserEntity::getUser)
+        .deferred());
   }
 
   private void restartUserEntity(TestUser user) {
     try {
-      execute(
+      DeferredCallSupport.invokeAndAwait(
         componentClient
           .forValueEntity(user.id)
-          .call(UserEntity::restart)
-          .params(new UserEntity.Restart()));
+          .methodRef(UserEntity::restart)
+          .deferred(new UserEntity.Restart()));
 
       fail("This should not be reached");
     } catch (Exception ignored) {

@@ -8,6 +8,7 @@ import com.example.Main;
 import com.example.wiring.eventsourcedentities.counter.CounterEntity;
 import kalix.javasdk.client.ComponentClient;
 import kalix.javasdk.client.EventSourcedEntityClient;
+import kalix.javasdk.testkit.DeferredCallSupport;
 import kalix.spring.KalixConfigurationTest;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Assertions;
@@ -19,7 +20,7 @@ import org.springframework.test.context.TestPropertySource;
 
 import java.util.concurrent.TimeUnit;
 
-import static kalix.javasdk.testkit.DeferredCallSupport.execute;
+import static kalix.javasdk.testkit.DeferredCallSupport.invokeAndAwait;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -98,36 +99,35 @@ public class EventSourcedEntityIntegrationTest {
     public void verifyRequestWithDefaultProtoValuesWithEntity() {
         var client = componentClient.forEventSourcedEntity("some-counter");
         increaseCounter(client, 2);
-        Integer result = execute(client.call(CounterEntity::set).params(0));
+        Integer result = DeferredCallSupport.invokeAndAwait(client.methodRef(CounterEntity::set).deferred(0));
         assertThat(result).isEqualTo(0);
     }
 
 
     private Integer increaseCounter(EventSourcedEntityClient client, int value)  {
-        return execute(client
-            .call(CounterEntity::increase)
-            .params(value));
+        return DeferredCallSupport.invokeAndAwait(client
+            .methodRef(CounterEntity::increase)
+            .deferred(value));
     }
 
 
     private Integer multiplyCounter(EventSourcedEntityClient client, int value) {
-        return execute(client
-            .call(CounterEntity::times)
-            .params(value));
+        return DeferredCallSupport.invokeAndAwait(client
+            .methodRef(CounterEntity::times)
+            .deferred(value));
     }
 
     private void restartCounterEntity(EventSourcedEntityClient client) {
         try {
-            execute(client
-                .call(CounterEntity::restart));
+            DeferredCallSupport.invokeAndAwait(client
+                .methodRef(CounterEntity::restart).deferred());
             fail("This should not be reached");
         } catch (Exception ignored) {
         }
     }
 
     private Integer getCounter(EventSourcedEntityClient client) {
-        return execute(client
-            .call(CounterEntity::get));
+        return DeferredCallSupport.invokeAndAwait(client.methodRef(CounterEntity::get).deferred());
     }
 
 }

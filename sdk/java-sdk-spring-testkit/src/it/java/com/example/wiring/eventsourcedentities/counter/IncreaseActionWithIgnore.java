@@ -27,7 +27,7 @@ public class IncreaseActionWithIgnore extends Action {
         String entityId = this.actionContext().metadata().asCloudEvent().subject().get();
         if (event.value() == 1234) {
             CompletionStage<Integer> res =
-                componentClient.forEventSourcedEntity(entityId).call(CounterEntity::increase).params(1).execute();
+                componentClient.forEventSourcedEntity(entityId).methodRef(CounterEntity::increase).deferred(1).invokeAsync();
             return effects().asyncReply(res);
         }
         return effects().reply(event.value());

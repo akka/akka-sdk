@@ -4,16 +4,11 @@ import com.example.Main;
 import com.example.transfer.TransferState.Transfer;
 import com.example.wallet.Ok;
 import com.example.wallet.WalletEntity;
-import com.google.protobuf.any.Any;
-import kalix.javasdk.DeferredCall;
 import kalix.javasdk.client.ComponentClient;
-import static kalix.javasdk.testkit.DeferredCallSupport.execute;
 import kalix.spring.testkit.KalixIntegrationTestKitSupport;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.time.Duration;
@@ -21,6 +16,7 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
+import static kalix.javasdk.testkit.DeferredCallSupport.invokeAndAwait;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -74,21 +70,21 @@ public class TransferWorkflowIntegrationTest extends KalixIntegrationTestKitSupp
 
   private void createWallet(String walletId, int amount) {
     var res =
-      execute(
+      invokeAndAwait(
         componentClient
           .forValueEntity(walletId)
-          .call(WalletEntity::create)
-          .params(amount)
+          .methodRef(WalletEntity::create)
+          .deferred(amount)
       );
 
     assertEquals(Ok.instance, res);
   }
 
   private int getWalletBalance(String walletId) {
-    return execute(
+    return invokeAndAwait(
         componentClient
             .forValueEntity(walletId)
-            .call(WalletEntity::get)
+            .methodRef(WalletEntity::get).deferred()
     );
   }
 

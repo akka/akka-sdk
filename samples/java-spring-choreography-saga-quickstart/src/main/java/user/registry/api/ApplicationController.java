@@ -66,16 +66,15 @@ public class ApplicationController extends Action {
     var emailReserved =
       client
         .forValueEntity(cmd.email())
-        .call(UniqueEmailEntity::reserve)
-        .params(createUniqueEmail)
-        .execute(); // eager, executing it now
+        .methodRef(UniqueEmailEntity::reserve)
+        .invokeAsync(createUniqueEmail); // eager, executing it now
 
     // this call is lazy and will be executed only if the email reservation succeeds
     var callToUser =
       client
         .forEventSourcedEntity(userId)
-        .call(UserEntity::createUser)
-        .params(cmd);
+        .methodRef(UserEntity::createUser)
+        .deferred(cmd);
 
 
     var userCreated =
@@ -83,7 +82,7 @@ public class ApplicationController extends Action {
         .thenApply(__ -> {
           // on successful email reservation, we create the user and return the result
           logger.info("Creating user '{}'", userId);
-          return effects().asyncReply(callToUser.execute());
+          return effects().asyncReply(callToUser.invokeAsync());
         })
         .exceptionally(e -> {
           // in case of exception `callToUser` is not executed,
@@ -101,7 +100,6 @@ public class ApplicationController extends Action {
 
     var createUniqueEmail = new UniqueEmail.ReserveEmail(cmd.newEmail(), userId);
 
-
     logger.info("Reserving new address '{}'", cmd.newEmail());
     // eagerly, reserving the email address
     // we want to execute this call in other to check its result
@@ -109,16 +107,15 @@ public class ApplicationController extends Action {
     var emailReserved =
       client
         .forValueEntity(cmd.newEmail())
-        .call(UniqueEmailEntity::reserve)
-        .params(createUniqueEmail)
-        .execute(); // eager, executing it now
+        .methodRef(UniqueEmailEntity::reserve)
+        .invokeAsync(createUniqueEmail); // eager, executing it now
 
     // this call is lazy and will be executed only if the email reservation succeeds
     var callToUser =
       client
         .forEventSourcedEntity(userId)
-        .call(UserEntity::changeEmail)
-        .params(cmd);
+        .methodRef(UserEntity::changeEmail)
+        .deferred(cmd);
 
 
     var userCreated =
@@ -126,7 +123,7 @@ public class ApplicationController extends Action {
         .thenApply(__ -> {
           // on successful email reservation, we change the user's email addreess
           logger.info("Changing user's address '{}'", userId);
-          return effects().asyncReply(callToUser.execute());
+          return effects().asyncReply(callToUser.invokeAsync());
         })
         .exceptionally(e -> {
           // in case of exception `callToUser` is not executed,
@@ -148,8 +145,8 @@ public class ApplicationController extends Action {
 
     var res =
       client.forEventSourcedEntity(userId)
-        .call(UserEntity::getState)
-        .execute()
+        .methodRef(UserEntity::getState)
+        .invokeAsync()
         .thenApply(user -> {
           var userInfo =
             new UserInfo(
@@ -173,8 +170,7 @@ public class ApplicationController extends Action {
   public Effect<EmailInfo> getEmailInfo(@PathVariable String address) {
     var res =
       client.forValueEntity(address)
-        .call(UniqueEmailEntity::getState)
-        .execute()
+        .methodRef(UniqueEmailEntity::getState).invokeAsync()
         .thenApply(email -> {
           var emailInfo =
             new EmailInfo(

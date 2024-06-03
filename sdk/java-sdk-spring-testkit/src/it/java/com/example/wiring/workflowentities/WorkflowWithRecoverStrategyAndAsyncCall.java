@@ -41,9 +41,9 @@ public class WorkflowWithRecoverStrategyAndAsyncCall extends Workflow<FailingCou
               var nextValue = currentState().value() + 1;
               return componentClient
                   .forEventSourcedEntity(currentState().counterId())
-                  .call(FailingCounterEntity::increase)
-                  .params(nextValue)
-                  .execute();
+                  .methodRef(FailingCounterEntity::increase)
+                  .deferred(nextValue)
+                  .invokeAsync();
             })
             .andThen(Integer.class, __ -> effects()
                 .updateState(currentState().asFinished())

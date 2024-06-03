@@ -28,10 +28,10 @@ public class JwtIntegrationTest extends KalixIntegrationTestKitSupport {
 
     var msg = "Hello from integration test";
     var response = componentClient
-        .forAction().call(JWTAction::messageWithClaimValidation).params(msg)
+        .forAction().methodRef(JWTAction::messageWithClaimValidation).deferred(msg)
         .withMetadata( // <2>
             Metadata.EMPTY.add("Authorization", "Bearer " + bearerToken))
-        .execute()
+        .invokeAsync()
         .toCompletableFuture()
         .get();
 

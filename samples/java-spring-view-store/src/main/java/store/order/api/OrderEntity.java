@@ -1,6 +1,5 @@
 package store.order.api;
 
-import kalix.javasdk.annotations.Id;
 import kalix.javasdk.annotations.TypeId;
 import kalix.javasdk.valueentity.ValueEntity;
 import store.order.domain.Order;

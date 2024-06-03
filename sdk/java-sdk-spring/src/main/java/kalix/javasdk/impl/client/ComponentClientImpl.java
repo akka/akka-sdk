@@ -30,8 +30,8 @@ public class ComponentClientImpl implements ComponentClient {
   }
 
   @Override
-  public ActionCallBuilder forAction() {
-    return new ActionCallBuilder(kalixClient, callMetadata);
+  public ActionClient forAction() {
+    return new ActionClient(kalixClient, callMetadata);
   }
 
 
@@ -46,23 +46,23 @@ public class ComponentClientImpl implements ComponentClient {
   }
 
   @Override
-  public WorkflowCallBuilder forWorkflow() {
-    return new WorkflowCallBuilder(kalixClient);
+  public WorkflowClient forWorkflow() {
+    return new WorkflowClient(kalixClient);
   }
 
   @Override
-  public WorkflowCallBuilder forWorkflow(String workflowId) {
-    return new WorkflowCallBuilder(kalixClient, workflowId);
+  public WorkflowClient forWorkflow(String workflowId) {
+    return new WorkflowClient(kalixClient, workflowId);
   }
 
   @Override
-  public WorkflowCallBuilder forWorkflow(String... workflowIds) {
-    return new WorkflowCallBuilder(kalixClient, List.of(workflowIds));
+  public WorkflowClient forWorkflow(String... workflowIds) {
+    return new WorkflowClient(kalixClient, List.of(workflowIds));
   }
 
   @Override
-  public ViewCallBuilder forView() {
-    return new ViewCallBuilder(kalixClient, callMetadata);
+  public ViewClient forView() {
+    return new ViewClient(kalixClient, callMetadata);
   }
 
 }

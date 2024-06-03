@@ -39,10 +39,10 @@ public class IncreaseAction extends Action {
   public Effect<Integer> printIncrease(CounterEvent.ValueIncreased event) {
     String entityId = this.actionContext().metadata().asCloudEvent().subject().get();
     if (event.value() == 42) {
-      CompletionStage<Integer> res = componentClient.forEventSourcedEntity(entityId).call(CounterEntity::increase).params(1).execute();
+      CompletionStage<Integer> res = componentClient.forEventSourcedEntity(entityId).methodRef(CounterEntity::increase).deferred(1).invokeAsync();
       return effects().asyncReply(res);
     } else if (event.value() == 4422) {
-      DeferredCall<Any, Integer> inc = componentClient.forEventSourcedEntity(entityId).call(CounterEntity::increase).params(1);
+      DeferredCall<Any, Integer> inc = componentClient.forEventSourcedEntity(entityId).methodRef(CounterEntity::increase).deferred(1);
       return effects().reply(event.value())
           .addSideEffect(SideEffect.of(inc));
     }

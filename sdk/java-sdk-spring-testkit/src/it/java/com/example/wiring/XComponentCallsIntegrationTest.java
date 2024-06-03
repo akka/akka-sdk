@@ -9,6 +9,7 @@ import com.example.wiring.actions.echo.Message;
 import com.example.wiring.valueentities.user.User;
 import com.example.wiring.valueentities.user.UserEntity;
 import kalix.javasdk.client.ComponentClient;
+import kalix.javasdk.testkit.DeferredCallSupport;
 import kalix.spring.KalixConfigurationTest;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -20,8 +21,8 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import java.time.Duration;
 
-import static kalix.javasdk.testkit.DeferredCallSupport.execute;
-import static kalix.javasdk.testkit.DeferredCallSupport.failedExec;
+import static kalix.javasdk.testkit.DeferredCallSupport.invokeAndAwait;
+import static kalix.javasdk.testkit.DeferredCallSupport.failed;
 import static java.time.temporal.ChronoUnit.SECONDS;
 
 @SpringBootTest(classes = Main.class)
@@ -133,10 +134,11 @@ public class XComponentCallsIntegrationTest {
     Assertions.assertEquals(Ok.instance, userUpdate);
 
     User userGetResponse =
-      execute(
+      DeferredCallSupport.invokeAndAwait(
         componentClient
           .forValueEntity("MayPatch")
-          .call(UserEntity::getUser)
+          .methodRef(UserEntity::getUser)
+          .deferred()
       );
     Assertions.assertEquals("new" + u1.email, userGetResponse.email);
   }
@@ -155,10 +157,11 @@ public class XComponentCallsIntegrationTest {
     Assertions.assertEquals(Ok.instance, userCreation);
 
     var userGetResponse =
-      execute(
+      DeferredCallSupport.invokeAndAwait(
         componentClient
           .forValueEntity("MayDelete")
-          .call(UserEntity::getUser)
+          .methodRef(UserEntity::getUser)
+          .deferred()
       );
 
     Assertions.assertEquals(u1.email, userGetResponse.email);
@@ -173,10 +176,11 @@ public class XComponentCallsIntegrationTest {
     Assertions.assertEquals(Ok.instance, userDelete);
 
     var deletedUserException =
-      failedExec(
+      failed(
         componentClient
           .forValueEntity("MayDelete")
-          .call(UserEntity::getUser)
+          .methodRef(UserEntity::getUser)
+          .deferred()
       );
 
     // FIXME: currently code is sending 500, but it doesn't make sense of an entity to speak http status codes

@@ -4,13 +4,12 @@ import com.example.shoppingcart.Main;
 import com.example.shoppingcart.ShoppingCartEntity;
 import com.example.shoppingcart.domain.ShoppingCart;
 import com.example.shoppingcart.domain.ShoppingCart.LineItem;
-import com.google.protobuf.any.Any;
-import kalix.javasdk.DeferredCall;
-import static kalix.javasdk.testkit.DeferredCallSupport.execute;
 import kalix.spring.testkit.KalixIntegrationTestKitSupport;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+
+import static kalix.javasdk.testkit.DeferredCallSupport.invokeAndAwait;
 
 
 /**
@@ -31,39 +30,40 @@ public class IntegrationTest extends KalixIntegrationTestKitSupport { // <1>
 
     String cartId = "card-abc";
     var item1 = new LineItem("tv", "Super TV 55'", 1);
-    var response1 = execute(
+    var response1 = invokeAndAwait(
       componentClient
         .forEventSourcedEntity(cartId)
-        .call(ShoppingCartEntity::addItem)
-        .params(item1)
+        .methodRef(ShoppingCartEntity::addItem)
+        .deferred(item1)
     );
     Assertions.assertNotNull(response1);
     // end::sample-it[]
 
     var item2 = new LineItem("tv-table", "Table for TV", 1);
-    var response2 = execute(
+    var response2 = invokeAndAwait(
       componentClient
         .forEventSourcedEntity(cartId)
-        .call(ShoppingCartEntity::addItem)
-        .params(item2)
+        .methodRef(ShoppingCartEntity::addItem)
+        .deferred(item2)
     );
     Assertions.assertNotNull(response2);
 
-    ShoppingCart cartInfo = execute(
+    ShoppingCart cartInfo = invokeAndAwait(
       componentClient
         .forEventSourcedEntity(cartId)
-        .call(ShoppingCartEntity::getCart)
+        .methodRef(ShoppingCartEntity::getCart)
+        .deferred()
     );
     Assertions.assertEquals(2, cartInfo.items().size());
 
 
     // removing one of the items
     var response3 =
-      execute(
+      invokeAndAwait(
         componentClient
           .forEventSourcedEntity(cartId)
-          .call(ShoppingCartEntity::removeItem)
-          .params(item1.productId())
+          .methodRef(ShoppingCartEntity::removeItem)
+          .deferred(item1.productId())
       );
 
     Assertions.assertNotNull(response3);
@@ -71,10 +71,11 @@ public class IntegrationTest extends KalixIntegrationTestKitSupport { // <1>
     // confirming only one product remains
     // tag::sample-it[]
     // confirming only one product remains
-    ShoppingCart cartUpdated = execute(
+    ShoppingCart cartUpdated = invokeAndAwait(
       componentClient
         .forEventSourcedEntity(cartId)
-        .call(ShoppingCartEntity::getCart)
+        .methodRef(ShoppingCartEntity::getCart)
+        .deferred()
     );
     Assertions.assertEquals(1, cartUpdated.items().size());
     Assertions.assertEquals(item2, cartUpdated.items().get(0));

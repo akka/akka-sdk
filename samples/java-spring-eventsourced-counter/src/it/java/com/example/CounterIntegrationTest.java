@@ -31,8 +31,6 @@ public class CounterIntegrationTest extends KalixIntegrationTestKitSupport { // 
 
 // end::class[]
 
-  private Duration timeout = Duration.of(10, SECONDS);
-
   // tag::test-topic[]
   @Autowired
   private KalixTestKit kalixTestKit; // <2>
@@ -73,33 +71,31 @@ public class CounterIntegrationTest extends KalixIntegrationTestKitSupport { // 
 
     // increase counter (from 0 to 10)
     counterClient
-      .call(Counter::increase)
-      .params(10)
-      .execute();
+      .methodRef(Counter::increase)
+      .invokeAsync(10);
 
     var getCounterState =
       counterClient
-        .call(Counter::get);
+        .methodRef(Counter::get);
     await()
       .ignoreExceptions()
       .atMost(20, TimeUnit.SECONDS)
       // check state until returns 10
       .until(
-        () -> getCounterState.execute().toCompletableFuture().get(1, TimeUnit.SECONDS),
+        () -> getCounterState.invokeAsync().toCompletableFuture().get(1, TimeUnit.SECONDS),
         new IsEqual("\"10\""));
 
     // multiply by 20 (from 10 to 200
     counterClient
-      .call(Counter::multiply)
-      .params(20)
-      .execute();
+      .methodRef(Counter::multiply)
+      .invokeAsync(20);
 
     await()
       .ignoreExceptions()
       .atMost(20, TimeUnit.SECONDS)
       // check state until returns 200
       .until(
-        () -> getCounterState.execute().toCompletableFuture().get(1, TimeUnit.SECONDS),
+        () -> getCounterState.invokeAsync().toCompletableFuture().get(1, TimeUnit.SECONDS),
         new IsEqual("\"200\""));
   }
 

@@ -1,21 +1,16 @@
 package customer;
 
 
-import com.google.protobuf.any.Any;
 import customer.api.CustomerEntity;
 import customer.api.Ok;
 import customer.domain.Address;
 import customer.domain.Customer;
-import kalix.javasdk.DeferredCall;
 import kalix.javasdk.client.ComponentClient;
-import static kalix.javasdk.testkit.DeferredCallSupport.execute;
 import kalix.spring.testkit.KalixIntegrationTestKitSupport;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.time.Duration;
@@ -24,6 +19,7 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
+import static kalix.javasdk.testkit.DeferredCallSupport.invokeAndAwait;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
@@ -50,10 +46,10 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
   }
 
   private Customer getCustomerById(String customerId) {
-    return execute(
+    return invokeAndAwait(
       componentClient
         .forValueEntity(customerId)
-        .call(CustomerEntity::getCustomer)
+        .methodRef(CustomerEntity::getCustomer).deferred()
     );
   }
 
@@ -85,11 +81,11 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
   private void addCustomer(Customer customer) {
 
     var res =
-      execute(
+      invokeAndAwait(
         componentClient
           .forValueEntity(customer.customerId())
-          .call(CustomerEntity::create)
-          .params(customer)
+          .methodRef(CustomerEntity::create)
+          .deferred(customer)
       );
     Assertions.assertEquals(Ok.instance, res);
   }

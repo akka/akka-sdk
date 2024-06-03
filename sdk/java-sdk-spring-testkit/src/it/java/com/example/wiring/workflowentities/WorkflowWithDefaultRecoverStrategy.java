@@ -40,8 +40,8 @@ public class WorkflowWithDefaultRecoverStrategy extends Workflow<FailingCounterS
               var nextValue = currentState().value() + 1;
               return componentClient
                   .forEventSourcedEntity(currentState().counterId())
-                  .call(FailingCounterEntity::increase)
-                  .params(nextValue);
+                  .methodRef(FailingCounterEntity::increase)
+                  .deferred(nextValue);
             })
             .andThen(Integer.class, __ -> effects()
                 .updateState(currentState().asFinished())

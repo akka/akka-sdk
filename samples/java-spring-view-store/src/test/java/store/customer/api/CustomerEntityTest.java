@@ -8,7 +8,9 @@ import store.customer.domain.Customer;
 import store.customer.domain.CustomerEvent;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static store.customer.domain.CustomerEvent.*;
+import static store.customer.domain.CustomerEvent.CustomerAddressChanged;
+import static store.customer.domain.CustomerEvent.CustomerCreated;
+import static store.customer.domain.CustomerEvent.CustomerNameChanged;
 
 public class CustomerEntityTest {
 

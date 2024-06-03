@@ -34,10 +34,10 @@ public class UserCreationIntegrationTest extends KalixIntegrationTestKitSupport 
   public void testSuccessfulUserCreation() throws Exception {
     var callGetEmailInfo =
       componentClient.forAction()
-        .call(ApplicationController::getEmailInfo)
-        .params("doe@acme.com");
+        .methodRef(ApplicationController::getEmailInfo)
+        .deferred("doe@acme.com");
 
-    assertThat(callGetEmailInfo.execute())
+    assertThat(callGetEmailInfo.invokeAsync())
       .succeedsWithin(timeout)
       .satisfies(res -> {
         assertThat(res.ownerId()).isEmpty();
@@ -46,17 +46,17 @@ public class UserCreationIntegrationTest extends KalixIntegrationTestKitSupport 
 
     var callCreateUser =
       componentClient.forAction()
-        .call(ApplicationController::createUser)
-        .params("001", new User.Create("John Doe", "US", "doe@acme.com"));
+        .methodRef(ApplicationController::createUser)
+        .deferred("001", new User.Create("John Doe", "US", "doe@acme.com"));
 
-    assertThat(callCreateUser.execute()).succeedsWithin(timeout);
+    assertThat(callCreateUser.invokeAsync()).succeedsWithin(timeout);
 
     // get email once more and check it's now confirmed
     await()
       .ignoreExceptions()
       .atMost(timeout)
       .untilAsserted(() -> {
-        assertThat(callGetEmailInfo.execute())
+        assertThat(callGetEmailInfo.invokeAsync())
           .succeedsWithin(timeout)
           .satisfies(res -> {
             assertThat(res.ownerId()).isNotEmpty();
@@ -75,10 +75,10 @@ public class UserCreationIntegrationTest extends KalixIntegrationTestKitSupport 
   public void testUserCreationFailureDueToInvalidInput() throws Exception {
     var callGetEmailInfo =
       componentClient.forAction()
-        .call(ApplicationController::getEmailInfo)
-        .params("invalid@acme.com");
+        .methodRef(ApplicationController::getEmailInfo)
+        .deferred("invalid@acme.com");
 
-    assertThat(callGetEmailInfo.execute())
+    assertThat(callGetEmailInfo.invokeAsync())
       .succeedsWithin(timeout)
       .satisfies(res -> {
         assertThat(res.ownerId()).isEmpty();
@@ -87,18 +87,18 @@ public class UserCreationIntegrationTest extends KalixIntegrationTestKitSupport 
 
     var callCreateUser =
       componentClient.forAction()
-        .call(ApplicationController::createUser)
+        .methodRef(ApplicationController::createUser)
         // this user creation will fail because user's name is not provided
-        .params("002", new User.Create(null, "US", "invalid@acme.com"));
+        .deferred("002", new User.Create(null, "US", "invalid@acme.com"));
 
-    assertThat(callCreateUser.execute()).failsWithin(timeout);
+    assertThat(callCreateUser.invokeAsync()).failsWithin(timeout);
 
     // email will be reserved for a while, then it will be released
     await()
       .ignoreExceptions()
       .atMost(timeout)
       .untilAsserted(() -> {
-        assertThat(callGetEmailInfo.execute())
+        assertThat(callGetEmailInfo.invokeAsync())
           .succeedsWithin(timeout)
           .satisfies(res -> {
             assertThat(res.ownerId()).isNotEmpty();
@@ -110,7 +110,7 @@ public class UserCreationIntegrationTest extends KalixIntegrationTestKitSupport 
       .ignoreExceptions()
       .timeout(Duration.ofSeconds(10)) //3 seconds for the projection lag + 3 seconds for the timer to fire
       .untilAsserted(() -> {
-        assertThat(callGetEmailInfo.execute())
+        assertThat(callGetEmailInfo.invokeAsync())
           .succeedsWithin(timeout)
           .satisfies(res -> {
             assertThat(res.ownerId()).isEmpty();

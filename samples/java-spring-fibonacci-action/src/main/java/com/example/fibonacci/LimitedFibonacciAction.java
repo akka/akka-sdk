@@ -4,7 +4,6 @@ import com.google.protobuf.any.Any;
 import io.grpc.Status;
 import kalix.javasdk.DeferredCall;
 import kalix.javasdk.action.Action;
-import kalix.javasdk.action.ActionCreationContext;
 import kalix.javasdk.client.ComponentClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,8 +29,8 @@ public class LimitedFibonacciAction extends Action {
             logger.info("Executing GET call to real /fibonacci = " + number);
             // tag::component-client[]
             DeferredCall<Any, Number> deferredCall = componentClient.forAction() // <1>
-              .call(FibonacciAction::getNumber) // <2>
-              .params(number); // <3>
+              .methodRef(FibonacciAction::getNumber) // <2>
+              .deferred(number); // <3>
 
             return effects().forward(deferredCall);
             // end::component-client[]
@@ -44,7 +43,10 @@ public class LimitedFibonacciAction extends Action {
             return effects().error("Only numbers between 0 and 10k are allowed", Status.Code.INVALID_ARGUMENT);
         } else {
             logger.info("Executing POST call to real /fibonacci = " + number.value());
-            var serviceCall = componentClient.forAction().call(FibonacciAction::nextNumber).params(number);
+            var serviceCall =
+              componentClient.forAction()
+                .methodRef(FibonacciAction::nextNumber)
+                .deferred(number);
 
             return effects().forward(serviceCall);
         }

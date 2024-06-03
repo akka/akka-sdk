@@ -3,16 +3,9 @@ package com.example.transfer;
 import com.example.Main;
 import com.example.transfer.TransferState.Transfer;
 import com.example.wallet.WalletEntity;
-import com.google.protobuf.any.Any;
-import kalix.javasdk.DeferredCall;
-import static kalix.javasdk.testkit.DeferredCallSupport.execute;
 import kalix.spring.testkit.KalixIntegrationTestKitSupport;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -21,6 +14,7 @@ import static com.example.transfer.TransferState.TransferStatus.COMPENSATION_COM
 import static com.example.transfer.TransferState.TransferStatus.REQUIRES_MANUAL_INTERVENTION;
 import static com.example.transfer.TransferState.TransferStatus.TRANSFER_ACCEPTATION_TIMED_OUT;
 import static java.time.temporal.ChronoUnit.SECONDS;
+import static kalix.javasdk.testkit.DeferredCallSupport.invokeAndAwait;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
@@ -37,10 +31,10 @@ public class TransferWorkflowIntegrationTest extends KalixIntegrationTestKitSupp
     var transferId = randomId();
     var transfer = new Transfer(walletId1, walletId2, 10);
 
-    String response = execute(componentClient
+    String response = invokeAndAwait(componentClient
       .forWorkflow(transferId)
-      .call(TransferWorkflow::startTransfer)
-      .params(transfer))
+      .methodRef(TransferWorkflow::startTransfer)
+      .deferred(transfer))
       .value();
 
     assertThat(response).isEqualTo("transfer started");
@@ -65,17 +59,17 @@ public class TransferWorkflowIntegrationTest extends KalixIntegrationTestKitSupp
     var transferId = randomId();
     var transfer = new Transfer(walletId1, walletId2, 1001);
 
-    String response = execute(componentClient
+    String response = invokeAndAwait(componentClient
       .forWorkflow(transferId)
-      .call(TransferWorkflow::startTransfer)
-      .params(transfer))
+      .methodRef(TransferWorkflow::startTransfer)
+      .deferred(transfer))
       .value();
 
     assertThat(response).isEqualTo("transfer started, waiting for acceptation");
 
-    String acceptationResponse = execute(componentClient
+    String acceptationResponse = invokeAndAwait(componentClient
       .forWorkflow(transferId)
-      .call(TransferWorkflow::accept))
+      .methodRef(TransferWorkflow::accept))
       .value();
 
     assertThat(acceptationResponse).isEqualTo("transfer accepted");
@@ -100,16 +94,16 @@ public class TransferWorkflowIntegrationTest extends KalixIntegrationTestKitSupp
     var transferId = randomId();
     var transfer = new Transfer(walletId1, walletId2, 1001);
 
-    String response = execute(componentClient
+    String response = invokeAndAwait(componentClient
       .forWorkflow(transferId)
-      .call(TransferWorkflow::startTransfer)
-      .params(transfer))
+      .methodRef(TransferWorkflow::startTransfer)
+      .deferred(transfer))
       .value();
     assertThat(response).isEqualTo("transfer started, waiting for acceptation");
 
-    String acceptationResponse = execute(componentClient
+    String acceptationResponse = invokeAndAwait(componentClient
       .forWorkflow(transferId)
-      .call(TransferWorkflow::acceptationTimeout));
+      .methodRef(TransferWorkflow::acceptationTimeout));
     assertThat(acceptationResponse).contains("timed out");
 
     var balance1 = getWalletBalance(walletId1);
@@ -129,10 +123,10 @@ public class TransferWorkflowIntegrationTest extends KalixIntegrationTestKitSupp
     var transferId = randomId();
     var transfer = new Transfer(walletId1, walletId2, 10); //walletId2 not exists
 
-    String response = execute(componentClient
+    String response = invokeAndAwait(componentClient
       .forWorkflow(transferId)
-      .call(TransferWorkflow::startTransfer)
-      .params(transfer))
+      .methodRef(TransferWorkflow::startTransfer)
+      .deferred(transfer))
       .value();
 
     assertThat(response).isEqualTo("transfer started");
@@ -157,10 +151,10 @@ public class TransferWorkflowIntegrationTest extends KalixIntegrationTestKitSupp
     var transferId = randomId();
     var transfer = new Transfer(walletId1, walletId2, 10); //both not exists
 
-    String response = execute(componentClient
+    String response = invokeAndAwait(componentClient
       .forWorkflow(transferId)
-      .call(TransferWorkflow::startTransfer)
-      .params(transfer))
+      .methodRef(TransferWorkflow::startTransfer)
+      .deferred(transfer))
       .value();
 
     assertThat(response).isEqualTo("transfer started");
@@ -180,24 +174,28 @@ public class TransferWorkflowIntegrationTest extends KalixIntegrationTestKitSupp
   }
 
   private void createWallet(String walletId, int amount) {
-    String response = execute(componentClient
-      .forValueEntity(walletId)
-      .call(WalletEntity::create)
-      .params(amount));
+    String response = invokeAndAwait(
+      componentClient
+        .forValueEntity(walletId)
+        .methodRef(WalletEntity::create)
+        .deferred(amount));
 
     assertThat(response).contains("Ok");
   }
 
   private int getWalletBalance(String walletId) {
-    return execute(componentClient
-      .forValueEntity(walletId)
-      .call(WalletEntity::get));
+    return invokeAndAwait(
+      componentClient
+        .forValueEntity(walletId)
+        .methodRef(WalletEntity::get)
+        .deferred());
   }
 
   private TransferState getTransferState(String transferId) {
-    return execute(componentClient
-      .forWorkflow(transferId)
-      .call(TransferWorkflow::getTransferState));
+    return invokeAndAwait(
+      componentClient
+        .forWorkflow(transferId)
+        .methodRef(TransferWorkflow::getTransferState));
   }
 
 }

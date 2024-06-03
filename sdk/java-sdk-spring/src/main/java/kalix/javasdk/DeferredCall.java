@@ -30,7 +30,7 @@ public interface DeferredCall<I, O> {
    * create an async reply in an {@link Action} with {@code effects().asyncReply} and {@code
    * effects().asyncEffect}
    */
-  CompletionStage<O> execute();
+  CompletionStage<O> invokeAsync();
 
   /** @return DeferredCall with updated metadata */
   DeferredCall<I, O> withMetadata(Metadata metadata);

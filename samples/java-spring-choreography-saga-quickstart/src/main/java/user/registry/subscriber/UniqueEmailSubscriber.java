@@ -55,7 +55,7 @@ public class UniqueEmailSubscriber extends Action {
       var callToUnReserve =
         client
           .forValueEntity(email.address())
-          .call(UniqueEmailEntity::cancelReservation);
+          .methodRef(UniqueEmailEntity::cancelReservation).deferred();
 
       var timer = timers().startSingleTimer(
         timerId,

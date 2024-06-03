@@ -1,9 +1,6 @@
 package store.view;
 
-import com.google.protobuf.any.Any;
-import kalix.javasdk.DeferredCall;
 import kalix.javasdk.client.ComponentClient;
-import static kalix.javasdk.testkit.DeferredCallSupport.execute;
 import kalix.spring.testkit.KalixIntegrationTestKitSupport;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -19,6 +16,7 @@ import store.product.api.ProductEntity;
 import store.product.domain.Money;
 import store.product.domain.Product;
 
+import static kalix.javasdk.testkit.DeferredCallSupport.invokeAndAwait;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Import(TestKitConfig.class)
@@ -32,43 +30,43 @@ public abstract class StoreViewIntegrationTest extends KalixIntegrationTestKitSu
   protected void createProduct(String id, String name, String currency, long units, int cents) {
     Product product = new Product(name, new Money(currency, units, cents));
     var response =
-      execute(
+      invokeAndAwait(
         componentClient
           .forEventSourcedEntity(id)
-          .call(ProductEntity::create)
-          .params(product));
+          .methodRef(ProductEntity::create)
+          .deferred(product));
     assertNotNull(response);
   }
 
   protected void changeProductName(String id, String newName) {
     var response =
-      execute(
+      invokeAndAwait(
         componentClient
           .forEventSourcedEntity(id)
-          .call(ProductEntity::changeName)
-          .params(newName));
+          .methodRef(ProductEntity::changeName)
+          .deferred(newName));
     assertNotNull(response);
   }
 
   protected void createCustomer(String id, String email, String name, String street, String city) {
     Customer customer = new Customer(email, name, new Address(street, city));
     var response =
-      execute(
+      invokeAndAwait(
         componentClient
           .forEventSourcedEntity(id)
-          .call(CustomerEntity::create)
-          .params(customer)
+          .methodRef(CustomerEntity::create)
+          .deferred(customer)
       );
     assertNotNull(response);
   }
 
   protected void changeCustomerName(String id, String newName) {
     var response =
-      execute(
+      invokeAndAwait(
         componentClient
           .forEventSourcedEntity(id)
-          .call(CustomerEntity::changeName)
-          .params(newName)
+          .methodRef(CustomerEntity::changeName)
+          .deferred(newName)
       );
     assertNotNull(response);
   }
@@ -76,11 +74,11 @@ public abstract class StoreViewIntegrationTest extends KalixIntegrationTestKitSu
   protected void createOrder(String id, String productId, String customerId, int quantity) {
     CreateOrder createOrder = new CreateOrder(productId, customerId, quantity);
     var response =
-      execute(
+      invokeAndAwait(
         componentClient
           .forValueEntity(id)
-          .call(OrderEntity::create)
-          .params(createOrder)
+          .methodRef(OrderEntity::create)
+          .deferred(createOrder)
       );
     assertNotNull(response);
   }

@@ -11,6 +11,7 @@ import com.example.wiring.valueentities.customer.CustomerEntity.Customer;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import kalix.javasdk.client.EventSourcedEntityClient;
+import kalix.javasdk.testkit.DeferredCallSupport;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -22,7 +23,6 @@ import org.springframework.test.context.TestPropertySource;
 import java.time.Instant;
 import java.util.concurrent.TimeUnit;
 
-import static kalix.javasdk.testkit.DeferredCallSupport.execute;
 import static com.example.wiring.pubsub.PublishBytesToTopic.CUSTOMERS_BYTES_TOPIC;
 import static com.example.wiring.pubsub.PublishTopicToTopic.CUSTOMERS_2_TOPIC;
 import static com.example.wiring.pubsub.PublishVEToTopic.CUSTOMERS_TOPIC;
@@ -37,10 +37,10 @@ import static org.awaitility.Awaitility.await;
 public class PubSubIntegrationTest extends DockerIntegrationTest {
 
   static Config config = ConfigFactory.parseString("""
-                kalix.telemetry.tracing.collector-endpoint = "http://fake:1234"
-                """);
+    kalix.telemetry.tracing.collector-endpoint = "http://fake:1234"
+    """);
 
-      ;
+  ;
   //FIXME there is not mechanism ATM in the integration tests to emulate the discovery call that disables tracing. More info in Telemetry.traceInstrumentation implementation.
 
   public PubSubIntegrationTest(ApplicationContext applicationContext) {
@@ -78,11 +78,11 @@ public class PubSubIntegrationTest extends DockerIntegrationTest {
     var counterClient2 = componentClient().forEventSourcedEntity(counterId2);
 
     //when
-    Assertions.assertEquals(2,increaseCounter(counterClient1, 2));
-    Assertions.assertEquals(4,increaseCounter(counterClient1, 2));
+    Assertions.assertEquals(2, increaseCounter(counterClient1, 2));
+    Assertions.assertEquals(4, increaseCounter(counterClient1, 2));
     Assertions.assertEquals(40, multiplyCounter(counterClient1, 10));
 
-    Assertions.assertEquals(2,increaseCounter(counterClient2, 2));
+    Assertions.assertEquals(2, increaseCounter(counterClient2, 2));
     Assertions.assertEquals(20, multiplyCounter(counterClient2, 10));
 
     //then
@@ -165,25 +165,27 @@ public class PubSubIntegrationTest extends DockerIntegrationTest {
   }
 
   private void createCustomer(Customer customer) {
-    execute(
+    DeferredCallSupport.invokeAndAwait(
       componentClient()
         .forValueEntity(customer.name())
-        .call(CustomerEntity::create)
-        .params(customer)
+        .methodRef(CustomerEntity::create)
+        .deferred(customer)
     );
   }
 
-  private Integer increaseCounter(EventSourcedEntityClient client, int value)  {
-    return execute(client
-        .call(CounterEntity::increase)
-        .params(value));
+  private Integer increaseCounter(EventSourcedEntityClient client, int value) {
+    return DeferredCallSupport.invokeAndAwait(
+      client
+        .methodRef(CounterEntity::increase)
+        .deferred(value));
   }
 
 
   private Integer multiplyCounter(EventSourcedEntityClient client, int value) {
-    return execute(client
-        .call(CounterEntity::times)
-        .params(value));
+    return DeferredCallSupport.invokeAndAwait(
+      client
+        .methodRef(CounterEntity::times)
+        .deferred(value));
   }
 
 }

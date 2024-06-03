@@ -63,8 +63,8 @@ public class TransferWorkflow extends Workflow<TransferState> {
           // cancelling the timer in case it was scheduled
           return timers().cancel("acceptationTimout-" + currentState().transferId()).thenCompose(__ ->
             componentClient.forValueEntity(cmd.from)
-              .call(WalletEntity::withdraw)
-              .params(cmd.amount).execute());
+              .methodRef(WalletEntity::withdraw)
+              .invokeAsync(cmd.amount));
         })
         .andThen(WithdrawResult.class, withdrawResult -> {
           if (withdrawResult instanceof WithdrawSucceed) {
@@ -90,8 +90,8 @@ public class TransferWorkflow extends Workflow<TransferState> {
           logger.info("Running: " + cmd);
           // tag::compensation[]
           return componentClient.forValueEntity(cmd.to)
-            .call(WalletEntity::deposit)
-            .params(cmd.amount);
+            .methodRef(WalletEntity::deposit)
+            .deferred(cmd.amount);
         })
         .andThen(DepositResult.class, depositResult -> { // <1>
           if (depositResult instanceof DepositSucceed) {
@@ -118,8 +118,8 @@ public class TransferWorkflow extends Workflow<TransferState> {
           // tag::compensation[]
           var transfer = currentState().transfer();
           return componentClient.forValueEntity(transfer.from())
-            .call(WalletEntity::deposit)
-            .params(transfer.amount());
+            .methodRef(WalletEntity::deposit)
+            .deferred(transfer.amount());
         })
         .andThen(DepositResult.class, depositResult -> {
           if (depositResult instanceof DepositSucceed) {
@@ -156,7 +156,7 @@ public class TransferWorkflow extends Workflow<TransferState> {
             "acceptationTimout-" + transferId,
             ofHours(8),
             componentClient.forWorkflow(transferId)
-              .call(TransferWorkflow::acceptationTimeout)); // <1>
+              .methodRef(TransferWorkflow::acceptationTimeout)); // <1>
         })
         .andThen(Done.class, __ ->
           effects().pause()); // <2>

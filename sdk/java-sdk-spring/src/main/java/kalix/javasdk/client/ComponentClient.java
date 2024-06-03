@@ -26,7 +26,7 @@ package kalix.javasdk.client;
  */
 public interface ComponentClient {
   /** Select Action as a call target component. */
-  ActionCallBuilder forAction();
+  ActionClient forAction();
 
   /**
    * Select ValueEntity as a call target component.
@@ -47,22 +47,22 @@ public interface ComponentClient {
    *
    * <p>For calling methods annotated with @{@link kalix.javasdk.annotations.GenerateId}
    */
-  WorkflowCallBuilder forWorkflow();
+  WorkflowClient forWorkflow();
 
   /**
    * Select Workflow as a call target component.
    *
    * @param workflowId - workflow id used to create a call.
    */
-  WorkflowCallBuilder forWorkflow(String workflowId);
+  WorkflowClient forWorkflow(String workflowId);
 
   /**
    * Select Workflow as a call target component.
    *
    * @param workflowIds - compound workflow ids used to create a call.
    */
-  WorkflowCallBuilder forWorkflow(String... workflowIds);
+  WorkflowClient forWorkflow(String... workflowIds);
 
   /** Select View as a call target component. */
-  ViewCallBuilder forView();
+  ViewClient forView();
 }

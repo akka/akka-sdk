@@ -18,10 +18,9 @@ package com.example.api;
 import com.example.api.ShoppingCartDTO.LineItemDTO;
 import com.example.domain.ShoppingCart;
 import kalix.javasdk.annotations.ForwardHeaders;
+import kalix.javasdk.annotations.TypeId;
 import kalix.javasdk.valueentity.ValueEntity;
 import kalix.javasdk.valueentity.ValueEntityContext;
-import kalix.javasdk.annotations.Id;
-import kalix.javasdk.annotations.TypeId;
 
 import java.time.Instant;
 
