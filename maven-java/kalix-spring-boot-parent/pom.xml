@@ -7,13 +7,13 @@
     <parent>
         <groupId>io.kalix</groupId>
         <artifactId>kalix-maven-java</artifactId>
-        <version>1.4.1</version>
+        <version>1.5.0</version>
     </parent>
     
     <!-- it has spring-boot-starter as parent, but groupId remains io.kalix -->
     <groupId>io.kalix</groupId>
     <artifactId>kalix-spring-boot-parent</artifactId>
-    <version>1.4.1</version>
+    <version>1.5.0</version>
     <packaging>pom</packaging>
 
 
@@ -38,7 +38,7 @@
         <java.version>21</java.version>
         <maven.compiler.release>${java.version}</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <kalix-sdk.version>1.4.1</kalix-sdk.version>
+        <kalix-sdk.version>1.5.0</kalix-sdk.version>
         <skip.docker>false</skip.docker>
 
 
@@ -62,12 +62,6 @@
             <id>akka-repository</id>
             <url>https://repo.akka.io/maven</url>
         </pluginRepository>
-
-        <!-- remove snapshots before final release -->
-        <pluginRepository>
-            <id>akka-repository-snapshots</id>
-            <url>https://repo.akka.io/snapshots</url>
-        </pluginRepository>
     </pluginRepositories>
 
     <repositories>
@@ -75,12 +69,6 @@
             <id>akka-repository</id>
             <name>Akka library repository</name>
             <url>https://repo.akka.io/maven</url>
-        </repository>
-
-        <!-- remove snapshots before final release -->
-        <repository>
-            <id>akka-repository-snapshots</id>
-            <url>https://repo.akka.io/snapshots</url>
         </repository>
     </repositories>
 
@@ -122,14 +110,14 @@
                     </configuration>
                     <dependencies>
                         <dependency>
-                        <groupId>org.springframework.boot</groupId>
-                        <artifactId>spring-boot-maven-plugin</artifactId>
-                        <version>${spring-boot.version}</version>
+                            <groupId>org.springframework.boot</groupId>
+                            <artifactId>spring-boot-maven-plugin</artifactId>
+                            <version>${spring-boot.version}</version>
                         </dependency>
                     </dependencies>
                     <executions>
                         <execution>
-                            <phase>package</phase>
+                            <phase>repackage</phase>
                             <goals>
                                 <goal>shade</goal>
                             </goals>
@@ -404,23 +392,37 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
+                <groupId>io.kalix</groupId>
+                <artifactId>kalix-spring-boot-starter</artifactId>
+                <version>${kalix-sdk.version}</version>
+                <scope>compile</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.kalix</groupId>
+                <artifactId>kalix-spring-boot-starter-test</artifactId>
+                <version>${kalix-sdk.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>
                 <version>${spring-boot.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-            <dependency>
-                <groupId>io.kalix</groupId>
-                <artifactId>kalix-spring-boot-starter</artifactId>
-                <version>${kalix-sdk.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.kalix</groupId>
-                <artifactId>kalix-spring-boot-starter-test</artifactId>
-                <version>${kalix-sdk.version}</version>
-            </dependency>
         </dependencies>
-   </dependencyManagement>
+    </dependencyManagement>
 
+    <dependencies>
+        <dependency>
+            <groupId>io.kalix</groupId>
+            <artifactId>kalix-spring-boot-starter</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.kalix</groupId>
+            <artifactId>kalix-spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 </project>
