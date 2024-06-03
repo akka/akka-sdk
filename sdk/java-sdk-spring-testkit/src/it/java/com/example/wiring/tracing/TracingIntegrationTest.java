@@ -8,6 +8,7 @@ import com.example.Main;
 import com.example.wiring.pubsub.DockerIntegrationTest;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.TestInstance;
 import org.slf4j.Logger;
@@ -21,7 +22,6 @@ import java.util.concurrent.TimeUnit;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
 
 @SpringBootTest(classes = Main.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -42,7 +42,7 @@ public class TracingIntegrationTest extends DockerIntegrationTest {
         String counterId = "some-counter";
         callTCounter(counterId, 10);
 
-        await().ignoreExceptions().atMost(60, TimeUnit.of(SECONDS)).untilAsserted(() -> {
+      Awaitility.await().ignoreExceptions().atMost(60, TimeUnit.of(SECONDS)).untilAsserted(() -> {
            Traces traces = selectTraces();
            assertThat(traces.traces().isEmpty()).isFalse();
            Batches batches = selectBatches(traces.traces().get(0).traceID());

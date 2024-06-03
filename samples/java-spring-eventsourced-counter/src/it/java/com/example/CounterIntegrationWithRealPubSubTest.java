@@ -2,6 +2,7 @@ package com.example;
 
 import com.example.actions.CounterCommandFromTopicAction;
 import kalix.spring.testkit.KalixIntegrationTestKitSupport;
+import org.awaitility.Awaitility;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -11,12 +12,9 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import java.time.Duration;
 import java.util.Base64;
 import java.util.concurrent.TimeUnit;
 
-import static java.time.temporal.ChronoUnit.SECONDS;
-import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 // tag::class[]
@@ -54,7 +52,7 @@ public class CounterIntegrationWithRealPubSubTest extends KalixIntegrationTestKi
       counterClient
         .methodRef(Counter::get);
 
-    await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(20, TimeUnit.SECONDS)
       .until(

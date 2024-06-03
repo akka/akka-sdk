@@ -13,7 +13,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.UUID;
 
-import static kalix.javasdk.testkit.DeferredCallSupport.invokeAndAwait;
 
 @SpringBootTest(classes = Main.class)
 public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
@@ -23,42 +22,42 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
   private ComponentClient componentClient;
 
   @Test
-  public void create() throws InterruptedException {
+  public void create() {
     String id = UUID.randomUUID().toString();
     Customer customer = new Customer("foo@example.com", "Johanna", null);
 
     var res =
-      invokeAndAwait(
+      await(
         componentClient
           .forValueEntity(id)
           .methodRef(CustomerEntity::create)
-          .deferred(customer)
+          .invokeAsync(customer)
       );
     Assertions.assertEquals(CustomerEntity.Ok.instance, res);
     Assertions.assertEquals("Johanna", getCustomerById(id).name());
   }
 
   @Test
-  public void changeName() throws InterruptedException {
+  public void changeName() {
     String id = UUID.randomUUID().toString();
     Customer customer = new Customer("foo@example.com", "Johanna", null);
 
     var resCreation =
-      invokeAndAwait(
+      await(
         componentClient
           .forValueEntity(id)
           .methodRef(CustomerEntity::create)
-          .deferred(customer)
+          .invokeAsync(customer)
       );
     Assertions.assertEquals(CustomerEntity.Ok.instance, resCreation);
 
 
     var resUpdate =
-      invokeAndAwait(
+      await(
         componentClient
           .forValueEntity(id)
           .methodRef(CustomerEntity::changeName)
-          .deferred("Katarina")
+          .invokeAsync("Katarina")
       );
 
     Assertions.assertEquals(CustomerEntity.Ok.instance, resUpdate);
@@ -66,28 +65,28 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
   }
 
   @Test
-  public void changeAddress() throws InterruptedException {
+  public void changeAddress() {
     String id = UUID.randomUUID().toString();
     Customer customer = new Customer("foo@example.com", "Johanna", null);
 
     var resCreation =
-      invokeAndAwait(
+      await(
         componentClient
           .forValueEntity(id)
-            .methodRef(CustomerEntity::create)
-              .deferred(customer)
-        );
+          .methodRef(CustomerEntity::create)
+          .invokeAsync(customer)
+      );
 
     Assertions.assertEquals(CustomerEntity.Ok.instance, resCreation);
 
     Address address = new Address("Elm st. 5", "New Orleans");
 
     var res =
-      invokeAndAwait(
+      await(
         componentClient
           .forValueEntity(id)
           .methodRef(CustomerEntity::changeAddress)
-          .deferred(address)
+          .invokeAsync(address)
       );
 
     Assertions.assertEquals(CustomerEntity.Ok.instance, res);
@@ -95,10 +94,11 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
   }
 
   private Customer getCustomerById(String customerId) {
-    return invokeAndAwait(
+    return await(
       componentClient
         .forValueEntity(customerId)
-        .methodRef(CustomerEntity::getCustomer).deferred()
+        .methodRef(CustomerEntity::getCustomer)
+        .invokeAsync()
     );
   }
 

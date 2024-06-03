@@ -5,6 +5,7 @@ import kalix.javasdk.CloudEvent;
 import kalix.javasdk.testkit.EventingTestKit;
 import kalix.javasdk.testkit.KalixTestKit;
 import kalix.spring.testkit.KalixIntegrationTestKitSupport;
+import org.awaitility.Awaitility;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,12 +16,8 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.net.URI;
-import java.time.Duration;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
-import static java.time.temporal.ChronoUnit.SECONDS;
-import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @ActiveProfiles("with-mocked-eventing")
@@ -65,7 +62,7 @@ public class CounterIntegrationTest extends KalixIntegrationTestKitSupport { // 
 
 
   @Test
-  public void verifyCounterEventSourcedWiring() throws ExecutionException, InterruptedException {
+  public void verifyCounterEventSourcedWiring() {
 
     var counterClient = componentClient.forEventSourcedEntity("001");
 
@@ -77,7 +74,7 @@ public class CounterIntegrationTest extends KalixIntegrationTestKitSupport { // 
     var getCounterState =
       counterClient
         .methodRef(Counter::get);
-    await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(20, TimeUnit.SECONDS)
       // check state until returns 10
@@ -90,7 +87,7 @@ public class CounterIntegrationTest extends KalixIntegrationTestKitSupport { // 
       .methodRef(Counter::multiply)
       .invokeAsync(20);
 
-    await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(20, TimeUnit.SECONDS)
       // check state until returns 200
@@ -102,7 +99,7 @@ public class CounterIntegrationTest extends KalixIntegrationTestKitSupport { // 
   // tag::test-topic[]
 
   @Test
-  public void verifyCounterEventSourcedPublishToTopic() throws InterruptedException {
+  public void verifyCounterEventSourcedPublishToTopic()  {
     var counterId = "test-topic";
     var increaseCmd = new CounterCommandFromTopicAction.IncreaseCounter(counterId, 3);
     var multipleCmd = new CounterCommandFromTopicAction.MultiplyCounter(counterId, 4);

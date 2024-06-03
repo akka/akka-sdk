@@ -2,30 +2,29 @@
  * Copyright (C) 2021-2024 Lightbend Inc. <https://www.lightbend.com>
  */
 
- package kalix.javasdk.testkit;
- 
-import com.google.protobuf.any.Any;
+package kalix.spring.testkit;
+
 import kalix.javasdk.DeferredCall;
 
 import java.time.Duration;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
 
-public class DeferredCallSupport {
+public abstract class AsyncCallsSupport {
 
+  private final Duration defaultTimeout = Duration.of(10, SECONDS);
 
-  static private final Duration defaultTimeout = Duration.of(10, SECONDS);
-
-  static public  <I, O> O invokeAndAwait(DeferredCall<I, O> deferredCall) {
-    return invokeAndAwait(deferredCall, defaultTimeout);
+  public <I, O> O await(CompletionStage<O> deferredCall) {
+    return await(deferredCall, defaultTimeout);
   }
 
-  static public  <I, O> O invokeAndAwait(DeferredCall<I, O> deferredCall, Duration timeout) {
+  public <I, O> O await(CompletionStage<O> stage, Duration timeout) {
     try {
-      return deferredCall.invokeAsync().toCompletableFuture().get(timeout.toMillis(), TimeUnit.MILLISECONDS);
+      return stage.toCompletableFuture().get(timeout.toMillis(), TimeUnit.MILLISECONDS);
     } catch (InterruptedException | ExecutionException | TimeoutException e) {
       throw new RuntimeException(e);
     }
@@ -33,16 +32,14 @@ public class DeferredCallSupport {
 
 
   /**
-   * Invoke the deferred call expecting it to fail.
    * If completed with an exception, returns the exception. If completed successfully, fail with runtime exception.
    */
-  static public <O>  Exception failed(DeferredCall<?, O> deferredCall) {
+  public <O> Exception failed(CompletionStage<O> stage) {
     try {
-      deferredCall.invokeAsync().toCompletableFuture().get(defaultTimeout.toMillis(), TimeUnit.MILLISECONDS);
+      stage .toCompletableFuture().get(defaultTimeout.toMillis(), TimeUnit.MILLISECONDS);
       throw new RuntimeException("Expected call to fail but it succeeded");
     } catch (InterruptedException | ExecutionException | TimeoutException e) {
       return e;
     }
   }
-
 }

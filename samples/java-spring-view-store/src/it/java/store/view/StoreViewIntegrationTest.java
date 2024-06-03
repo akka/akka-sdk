@@ -16,7 +16,7 @@ import store.product.api.ProductEntity;
 import store.product.domain.Money;
 import store.product.domain.Product;
 
-import static kalix.javasdk.testkit.DeferredCallSupport.invokeAndAwait;
+
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Import(TestKitConfig.class)
@@ -30,43 +30,43 @@ public abstract class StoreViewIntegrationTest extends KalixIntegrationTestKitSu
   protected void createProduct(String id, String name, String currency, long units, int cents) {
     Product product = new Product(name, new Money(currency, units, cents));
     var response =
-      invokeAndAwait(
+      await(
         componentClient
           .forEventSourcedEntity(id)
           .methodRef(ProductEntity::create)
-          .deferred(product));
+          .invokeAsync(product));
     assertNotNull(response);
   }
 
   protected void changeProductName(String id, String newName) {
     var response =
-      invokeAndAwait(
+      await(
         componentClient
           .forEventSourcedEntity(id)
           .methodRef(ProductEntity::changeName)
-          .deferred(newName));
+          .invokeAsync(newName));
     assertNotNull(response);
   }
 
   protected void createCustomer(String id, String email, String name, String street, String city) {
     Customer customer = new Customer(email, name, new Address(street, city));
     var response =
-      invokeAndAwait(
+      await(
         componentClient
           .forEventSourcedEntity(id)
           .methodRef(CustomerEntity::create)
-          .deferred(customer)
+          .invokeAsync(customer)
       );
     assertNotNull(response);
   }
 
   protected void changeCustomerName(String id, String newName) {
     var response =
-      invokeAndAwait(
+      await(
         componentClient
           .forEventSourcedEntity(id)
           .methodRef(CustomerEntity::changeName)
-          .deferred(newName)
+          .invokeAsync(newName)
       );
     assertNotNull(response);
   }
@@ -74,11 +74,11 @@ public abstract class StoreViewIntegrationTest extends KalixIntegrationTestKitSu
   protected void createOrder(String id, String productId, String customerId, int quantity) {
     CreateOrder createOrder = new CreateOrder(productId, customerId, quantity);
     var response =
-      invokeAndAwait(
+      await(
         componentClient
           .forValueEntity(id)
           .methodRef(OrderEntity::create)
-          .deferred(createOrder)
+          .invokeAsync(createOrder)
       );
     assertNotNull(response);
   }

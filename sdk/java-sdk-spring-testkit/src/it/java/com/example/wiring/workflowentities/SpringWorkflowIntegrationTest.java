@@ -7,8 +7,9 @@ package com.example.wiring.workflowentities;
 import com.example.wiring.TestkitConfig;
 import com.example.wiring.actions.echo.Message;
 import kalix.javasdk.client.ComponentClient;
-import kalix.javasdk.testkit.DeferredCallSupport;
 import kalix.spring.KalixConfigurationTest;
+import kalix.spring.testkit.AsyncCallsSupport;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -26,12 +27,11 @@ import java.util.concurrent.TimeUnit;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
 
 @SpringBootTest(classes = Main.class)
 @Import({KalixConfigurationTest.class, TestkitConfig.class})
 @TestPropertySource(properties = "spring.main.allow-bean-definition-overriding=true")
-public class SpringWorkflowIntegrationTest {
+public class SpringWorkflowIntegrationTest extends AsyncCallsSupport {
 
   @Autowired
   private WebClient webClient;
@@ -70,13 +70,13 @@ public class SpringWorkflowIntegrationTest {
     var transferId = randomTransferId();
     var transfer = new Transfer(walletId1, walletId2, 10);
 
-    Message response = DeferredCallSupport.invokeAndAwait(componentClient.forWorkflow(transferId)
+    Message response = await(componentClient.forWorkflow(transferId)
       .methodRef(TransferWorkflow::startTransfer)
-      .deferred(transfer));
+      .invokeAsync(transfer));
 
     assertThat(response.text()).isEqualTo("transfer started");
 
-    await()
+    Awaitility.await()
       .atMost(10, TimeUnit.of(SECONDS))
       .untilAsserted(() -> {
         var balance1 = getWalletBalance(walletId1);
@@ -97,13 +97,14 @@ public class SpringWorkflowIntegrationTest {
     var transferId = randomTransferId();
     var transfer = new Transfer(walletId1, walletId2, 10);
 
-    Message response = DeferredCallSupport.invokeAndAwait(componentClient.forWorkflow(transferId)
-      .methodRef(TransferWorkflowWithoutInputs::startTransfer)
-      .deferred(transfer));
+    Message response = await(
+      componentClient.forWorkflow(transferId)
+        .methodRef(TransferWorkflowWithoutInputs::startTransfer)
+        .invokeAsync(transfer));
 
     assertThat(response.text()).isEqualTo("transfer started");
 
-    await()
+    Awaitility.await()
       .atMost(10, TimeUnit.of(SECONDS))
       .untilAsserted(() -> {
         var balance1 = getWalletBalance(walletId1);
@@ -123,13 +124,14 @@ public class SpringWorkflowIntegrationTest {
     var transferId = randomTransferId();
     var transfer = new Transfer(walletId1, walletId2, 10);
 
-    Message response = DeferredCallSupport.invokeAndAwait(componentClient.forWorkflow(transferId)
-      .methodRef(TransferWorkflowWithoutInputs::startTransferAsync)
-      .deferred(transfer));
+    Message response = await(
+      componentClient.forWorkflow(transferId)
+        .methodRef(TransferWorkflowWithoutInputs::startTransferAsync)
+        .invokeAsync(transfer));
 
     assertThat(response.text()).isEqualTo("transfer started");
 
-    await()
+    Awaitility.await()
       .atMost(10, TimeUnit.of(SECONDS))
       .untilAsserted(() -> {
         var balance1 = getWalletBalance(walletId1);
@@ -150,13 +152,14 @@ public class SpringWorkflowIntegrationTest {
     var transferId = randomTransferId();
     var transfer = new Transfer(walletId1, walletId2, 10);
 
-    Message response = DeferredCallSupport.invokeAndAwait(componentClient.forWorkflow(transferId)
-      .methodRef(TransferWorkflowWithFraudDetection::startTransfer)
-      .deferred(transfer));
+    Message response = await(
+      componentClient.forWorkflow(transferId)
+        .methodRef(TransferWorkflowWithFraudDetection::startTransfer)
+        .invokeAsync(transfer));
 
     assertThat(response.text()).isEqualTo("transfer started");
 
-    await()
+    Awaitility.await()
       .atMost(10, TimeUnit.of(SECONDS))
       .untilAsserted(() -> {
         var balance1 = getWalletBalance(walletId1);
@@ -176,29 +179,36 @@ public class SpringWorkflowIntegrationTest {
     var transferId = randomTransferId();
     var transfer = new Transfer(walletId1, walletId2, 1000);
 
-    Message response = DeferredCallSupport.invokeAndAwait(componentClient.forWorkflow(transferId)
-      .methodRef(TransferWorkflowWithFraudDetection::startTransfer)
-      .deferred(transfer));
+    Message response = await(
+      componentClient.forWorkflow(transferId)
+        .methodRef(TransferWorkflowWithFraudDetection::startTransfer)
+        .invokeAsync(transfer));
 
     assertThat(response.text()).isEqualTo("transfer started");
 
-    await()
+    Awaitility.await()
       .atMost(10, TimeUnit.of(SECONDS))
       .untilAsserted(() -> {
 
-        var transferState = DeferredCallSupport.invokeAndAwait(componentClient.forWorkflow(transferId).methodRef(TransferWorkflowWithFraudDetection::getTransferState));
+        var transferState = await(
+          componentClient.forWorkflow(transferId)
+            .methodRef(TransferWorkflowWithFraudDetection::getTransferState)
+            .invokeAsync());
+
         assertThat(transferState.finished).isFalse();
         assertThat(transferState.accepted).isFalse();
         assertThat(transferState.lastStep).isEqualTo("fraud-detection");
       });
 
-    Message acceptedResponse = DeferredCallSupport.invokeAndAwait(componentClient.forWorkflow(transferId)
-      .methodRef(TransferWorkflowWithFraudDetection::acceptTransfer));
+    Message acceptedResponse = await(
+      componentClient.forWorkflow(transferId)
+        .methodRef(TransferWorkflowWithFraudDetection::acceptTransfer)
+        .invokeAsync());
 
     assertThat(acceptedResponse.text()).isEqualTo("transfer accepted");
 
 
-    await()
+    Awaitility.await()
       .atMost(10, TimeUnit.of(SECONDS))
       .untilAsserted(() -> {
         var balance1 = getWalletBalance(walletId1);
@@ -218,13 +228,14 @@ public class SpringWorkflowIntegrationTest {
     var transferId = randomTransferId();
     var transfer = new Transfer(walletId1, walletId2, 1000000);
 
-    Message response = DeferredCallSupport.invokeAndAwait(componentClient.forWorkflow(transferId)
-      .methodRef(TransferWorkflowWithFraudDetection::startTransfer)
-      .deferred(transfer));
+    Message response = await(
+      componentClient.forWorkflow(transferId)
+        .methodRef(TransferWorkflowWithFraudDetection::startTransfer)
+        .invokeAsync(transfer));
 
     assertThat(response.text()).isEqualTo("transfer started");
 
-    await()
+    Awaitility.await()
       .atMost(10, TimeUnit.of(SECONDS))
       .untilAsserted(() -> {
         var balance1 = getWalletBalance(walletId1);
@@ -233,7 +244,11 @@ public class SpringWorkflowIntegrationTest {
         assertThat(balance1).isEqualTo(100);
         assertThat(balance2).isEqualTo(100);
 
-        var transferState = DeferredCallSupport.invokeAndAwait(componentClient.forWorkflow(transferId).methodRef(TransferWorkflowWithFraudDetection::getTransferState));
+        var transferState = await(
+          componentClient.forWorkflow(transferId)
+            .methodRef(TransferWorkflowWithFraudDetection::getTransferState)
+            .invokeAsync());
+
         assertThat(transferState.finished).isTrue();
         assertThat(transferState.accepted).isFalse();
         assertThat(transferState.lastStep).isEqualTo("fraud-detection");
@@ -247,24 +262,29 @@ public class SpringWorkflowIntegrationTest {
     var workflowId = randomId();
 
     //when
-    Message response = DeferredCallSupport.invokeAndAwait(componentClient.forWorkflow(workflowId)
-      .methodRef(WorkflowWithDefaultRecoverStrategy::startFailingCounter)
-      .deferred(counterId));
+    Message response = await(
+      componentClient.forWorkflow(workflowId)
+        .methodRef(WorkflowWithDefaultRecoverStrategy::startFailingCounter)
+        .invokeAsync(counterId));
 
     assertThat(response.text()).isEqualTo("workflow started");
 
     //then
-    await()
+    Awaitility.await()
       .atMost(10, TimeUnit.of(SECONDS))
       .untilAsserted(() -> {
         Integer counterValue = getFailingCounterValue(counterId);
         assertThat(counterValue).isEqualTo(3);
       });
 
-    await()
+    Awaitility.await()
       .atMost(10, TimeUnit.of(SECONDS))
       .untilAsserted(() -> {
-        var state = DeferredCallSupport.invokeAndAwait(componentClient.forWorkflow(workflowId).methodRef(WorkflowWithDefaultRecoverStrategy::get));
+        var state = await(
+          componentClient.forWorkflow(workflowId)
+            .methodRef(WorkflowWithDefaultRecoverStrategy::get)
+            .invokeAsync());
+
         assertThat(state.finished()).isTrue();
       });
   }
@@ -276,24 +296,29 @@ public class SpringWorkflowIntegrationTest {
     var workflowId = randomId();
 
     //when
-    Message response = DeferredCallSupport.invokeAndAwait(componentClient.forWorkflow(workflowId)
-      .methodRef(WorkflowWithRecoverStrategy::startFailingCounter)
-      .deferred(counterId));
+    Message response = await(
+      componentClient.forWorkflow(workflowId)
+        .methodRef(WorkflowWithRecoverStrategy::startFailingCounter)
+        .invokeAsync(counterId));
 
     assertThat(response.text()).isEqualTo("workflow started");
 
     //then
-    await()
+    Awaitility.await()
       .atMost(10, TimeUnit.of(SECONDS))
       .untilAsserted(() -> {
         Integer counterValue = getFailingCounterValue(counterId);
         assertThat(counterValue).isEqualTo(3);
       });
 
-    await()
+    Awaitility.await()
       .atMost(10, TimeUnit.of(SECONDS))
       .untilAsserted(() -> {
-        var state = DeferredCallSupport.invokeAndAwait(componentClient.forWorkflow(workflowId).methodRef(WorkflowWithRecoverStrategy::get));
+        var state = await(
+          componentClient.forWorkflow(workflowId)
+            .methodRef(WorkflowWithRecoverStrategy::get)
+            .invokeAsync());
+
         assertThat(state.finished()).isTrue();
       });
   }
@@ -305,14 +330,15 @@ public class SpringWorkflowIntegrationTest {
     var workflowId = randomId();
 
     //when
-    Message response = DeferredCallSupport.invokeAndAwait(componentClient.forWorkflow(workflowId)
-      .methodRef(WorkflowWithRecoverStrategyAndAsyncCall::startFailingCounter)
-      .deferred(counterId));
+    Message response = await(
+      componentClient.forWorkflow(workflowId)
+        .methodRef(WorkflowWithRecoverStrategyAndAsyncCall::startFailingCounter)
+        .invokeAsync(counterId));
 
     assertThat(response.text()).isEqualTo("workflow started");
 
     //then
-    await()
+    Awaitility.await()
       .atMost(10, TimeUnit.of(SECONDS))
       .ignoreExceptions()
       .untilAsserted(() -> {
@@ -320,11 +346,14 @@ public class SpringWorkflowIntegrationTest {
         assertThat(counterValue).isEqualTo(3);
       });
 
-    await()
+    Awaitility.await()
       .atMost(10, TimeUnit.of(SECONDS))
       .ignoreExceptions()
       .untilAsserted(() -> {
-        var state = DeferredCallSupport.invokeAndAwait(componentClient.forWorkflow(workflowId).methodRef(WorkflowWithRecoverStrategyAndAsyncCall::get));
+        var state = await(
+          componentClient.forWorkflow(workflowId)
+            .methodRef(WorkflowWithRecoverStrategyAndAsyncCall::get)
+            .invokeAsync());
         assertThat(state.finished()).isTrue();
       });
   }
@@ -336,24 +365,28 @@ public class SpringWorkflowIntegrationTest {
     var workflowId = randomId();
 
     //when
-    Message response = DeferredCallSupport.invokeAndAwait(componentClient.forWorkflow(workflowId)
-      .methodRef(WorkflowWithTimeout::startFailingCounter)
-      .deferred(counterId));
+    Message response = await(
+      componentClient.forWorkflow(workflowId)
+        .methodRef(WorkflowWithTimeout::startFailingCounter)
+        .invokeAsync(counterId));
 
     assertThat(response.text()).isEqualTo("workflow started");
 
     //then
-    await()
+    Awaitility.await()
       .atMost(15, TimeUnit.of(SECONDS))
       .untilAsserted(() -> {
         Integer counterValue = getFailingCounterValue(counterId);
         assertThat(counterValue).isEqualTo(3);
       });
 
-    await()
+    Awaitility.await()
       .atMost(10, TimeUnit.of(SECONDS))
       .untilAsserted(() -> {
-        var state = DeferredCallSupport.invokeAndAwait(componentClient.forWorkflow(workflowId).methodRef(WorkflowWithTimeout::get));
+        var state = await(
+          componentClient.forWorkflow(workflowId)
+            .methodRef(WorkflowWithTimeout::get)
+            .invokeAsync());
         assertThat(state.finished()).isTrue();
       });
   }
@@ -365,18 +398,23 @@ public class SpringWorkflowIntegrationTest {
     var workflowId = randomId();
 
     //when
-    Message response = DeferredCallSupport.invokeAndAwait(componentClient.forWorkflow(workflowId)
-      .methodRef(WorkflowWithStepTimeout::startFailingCounter)
-      .deferred(counterId));
+    Message response = await(
+      componentClient.forWorkflow(workflowId)
+        .methodRef(WorkflowWithStepTimeout::startFailingCounter)
+        .invokeAsync(counterId));
 
     assertThat(response.text()).isEqualTo("workflow started");
 
     //then
-    await()
+    Awaitility.await()
       .atMost(10, TimeUnit.of(SECONDS))
       .ignoreExceptions()
       .untilAsserted(() -> {
-        var state = DeferredCallSupport.invokeAndAwait(componentClient.forWorkflow(workflowId).methodRef(WorkflowWithStepTimeout::get));
+        var state = await(
+          componentClient.forWorkflow(workflowId)
+            .methodRef(WorkflowWithStepTimeout::get)
+            .invokeAsync());
+
         assertThat(state.value()).isEqualTo(2);
         assertThat(state.finished()).isTrue();
       });
@@ -389,17 +427,22 @@ public class SpringWorkflowIntegrationTest {
     var workflowId = randomId();
 
     //when
-    Message response = DeferredCallSupport.invokeAndAwait(componentClient.forWorkflow(workflowId)
-      .methodRef(WorkflowWithTimer::startFailingCounter)
-      .deferred(counterId));
+    Message response = await(
+      componentClient.forWorkflow(workflowId)
+        .methodRef(WorkflowWithTimer::startFailingCounter)
+        .invokeAsync(counterId));
 
     assertThat(response.text()).isEqualTo("workflow started");
 
     //then
-    await()
+    Awaitility.await()
       .atMost(10, TimeUnit.of(SECONDS))
       .untilAsserted(() -> {
-        var state = DeferredCallSupport.invokeAndAwait(componentClient.forWorkflow(workflowId).methodRef(WorkflowWithTimer::get));
+        var state = await(
+          componentClient.forWorkflow(workflowId)
+            .methodRef(WorkflowWithTimer::get)
+            .invokeAsync());
+
         assertThat(state.finished()).isTrue();
         assertThat(state.value()).isEqualTo(12);
       });
@@ -426,18 +469,28 @@ public class SpringWorkflowIntegrationTest {
   public void shouldNotUpdateWorkflowStateAfterEndTransition() {
     //given
     var workflowId = randomId();
-    DeferredCallSupport.invokeAndAwait(componentClient.forWorkflow(workflowId).methodRef(DummyWorkflow::startAndFinish));
-    assertThat(DeferredCallSupport.invokeAndAwait(componentClient.forWorkflow(workflowId).methodRef(DummyWorkflow::get))).isEqualTo(10);
+    await(
+      componentClient.forWorkflow(workflowId)
+        .methodRef(DummyWorkflow::startAndFinish)
+        .invokeAsync()
+    );
+    assertThat(await(
+      componentClient.forWorkflow(workflowId)
+        .methodRef(DummyWorkflow::get).invokeAsync())).isEqualTo(10);
 
     //when
     try {
-      DeferredCallSupport.invokeAndAwait(componentClient.forWorkflow(workflowId).methodRef(DummyWorkflow::update));
+      await(
+        componentClient.forWorkflow(workflowId)
+          .methodRef(DummyWorkflow::update).invokeAsync());
     } catch (RuntimeException exception) {
       // ignore "500 Internal Server Error" exception from the proxy
     }
 
     //then
-    assertThat(DeferredCallSupport.invokeAndAwait(componentClient.forWorkflow(workflowId).methodRef(DummyWorkflow::get))).isEqualTo(10);
+    assertThat(await(
+      componentClient.forWorkflow(workflowId)
+        .methodRef(DummyWorkflow::get).invokeAsync())).isEqualTo(10);
   }
 
   @Test
@@ -446,16 +499,16 @@ public class SpringWorkflowIntegrationTest {
     var workflowId = randomId();
 
     //when
-    String response = DeferredCallSupport.invokeAndAwait(componentClient.forWorkflow(workflowId)
-      .methodRef(WorkflowWithoutInitialState::start));
+    String response = await(componentClient.forWorkflow(workflowId)
+      .methodRef(WorkflowWithoutInitialState::start).invokeAsync());
 
     assertThat(response).contains("ok");
 
     //then
-    await()
+    Awaitility.await()
       .atMost(10, TimeUnit.of(SECONDS))
       .untilAsserted(() -> {
-        var state = DeferredCallSupport.invokeAndAwait(componentClient.forWorkflow(workflowId).methodRef(WorkflowWithoutInitialState::get));
+        var state = await(componentClient.forWorkflow(workflowId).methodRef(WorkflowWithoutInitialState::get).invokeAsync());
         assertThat(state).contains("success");
       });
   }
@@ -470,25 +523,25 @@ public class SpringWorkflowIntegrationTest {
   }
 
   private Integer getFailingCounterValue(String counterId) {
-    return DeferredCallSupport.invokeAndAwait(
+    return await(
       componentClient
         .forEventSourcedEntity(counterId)
-        .methodRef(FailingCounterEntity::get).deferred(),
+        .methodRef(FailingCounterEntity::get).invokeAsync(),
       Duration.ofSeconds(20));
   }
 
   private void createWallet(String walletId, int amount) {
-    DeferredCallSupport.invokeAndAwait(
+    await(
       componentClient.forValueEntity(walletId)
         .methodRef(WalletEntity::create)
-        .deferred(amount));
+        .invokeAsync(amount));
   }
 
   private int getWalletBalance(String walletId) {
-    return DeferredCallSupport.invokeAndAwait(
+    return await(
       componentClient.forValueEntity(walletId)
         .methodRef(WalletEntity::get)
-        .deferred()
+        .invokeAsync()
     ).value;
   }
 }

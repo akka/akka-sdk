@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
-import static kalix.javasdk.testkit.DeferredCallSupport.invokeAndAwait;
+
 
 
 /**
@@ -32,11 +32,11 @@ public class CounterIntegrationTest extends KalixIntegrationTestKitSupport { // 
   public void verifyCounterIncrease() {
 
     var counterIncrease =
-      invokeAndAwait(
+      await(
         componentClient
           .forValueEntity("foo")
           .methodRef(CounterEntity::increaseBy)
-          .deferred(new Number(10))
+          .invokeAsync(new Number(10))
       );
 
     Assertions.assertEquals(10, counterIncrease.value());
@@ -47,26 +47,26 @@ public class CounterIntegrationTest extends KalixIntegrationTestKitSupport { // 
   public void verifyCounterSetAndIncrease() {
 
     Number counterGet = // <3>
-      invokeAndAwait(
+      await(
         componentClient
           .forValueEntity("bar")
-          .methodRef(CounterEntity::get).deferred()
+          .methodRef(CounterEntity::get).invokeAsync()
       );
     Assertions.assertEquals(0, counterGet.value());
 
     Number counterPlusOne = // <4>
-      invokeAndAwait(
+      await(
         componentClient
           .forValueEntity("bar")
-          .methodRef(CounterEntity::plusOne).deferred()
+          .methodRef(CounterEntity::plusOne).invokeAsync()
       );
     Assertions.assertEquals(1, counterPlusOne.value());
 
     Number counterGetAfter = // <5>
-      invokeAndAwait(
+      await(
         componentClient
           .forValueEntity("bar")
-          .methodRef(CounterEntity::get).deferred()
+          .methodRef(CounterEntity::get).invokeAsync()
       );
     Assertions.assertEquals(1, counterGetAfter.value());
   }

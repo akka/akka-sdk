@@ -10,7 +10,7 @@ import org.springframework.test.annotation.DirtiesContext;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
-import static kalix.javasdk.testkit.DeferredCallSupport.invokeAndAwait;
+
 
 @DirtiesContext
 // tag::testing-action[]
@@ -21,10 +21,10 @@ public class FibonacciActionComponentClientIntegrationTest extends KalixIntegrat
   public void calculateNextNumber() throws ExecutionException, InterruptedException, TimeoutException {
 
     Number response =
-      invokeAndAwait(
+      await(
         componentClient.forAction()
           .methodRef(FibonacciAction::nextNumber)
-          .deferred(new Number(5)));
+          .invokeAsync(new Number(5)));
 
     Assertions.assertEquals(8, response.value());
   }
@@ -34,10 +34,10 @@ public class FibonacciActionComponentClientIntegrationTest extends KalixIntegrat
   public void calculateNextNumberWithLimitedFibo() throws ExecutionException, InterruptedException, TimeoutException {
 
     Number response =
-      invokeAndAwait(
+      await(
         componentClient.forAction()
           .methodRef(LimitedFibonacciAction::nextNumber)
-          .deferred(new Number(5)));
+          .invokeAsync(new Number(5)));
 
     Assertions.assertEquals(8, response.value());
   }

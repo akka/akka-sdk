@@ -8,6 +8,7 @@ import kalix.javasdk.client.ComponentClient;
 import kalix.javasdk.testkit.EventingTestKit.IncomingMessages;
 import kalix.javasdk.testkit.KalixTestKit;
 import kalix.spring.testkit.KalixIntegrationTestKitSupport;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -20,9 +21,7 @@ import org.springframework.test.context.ActiveProfiles;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static kalix.javasdk.testkit.DeferredCallSupport.invokeAndAwait;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
 
 // tag::view-test[]
 @Configuration
@@ -62,16 +61,16 @@ class CustomersResponseByCityIntegrationTest extends KalixIntegrationTestKitSupp
     customerEvents.publish(bob, "2");
     customerEvents.publish(alice, "3");
 
-    await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(10, TimeUnit.SECONDS)
       .untilAsserted(() -> {
 
           CustomersResponse customersResponse =
-            invokeAndAwait(
+            await(
               componentClient.forView()
                 .methodRef(CustomersResponseByCity::getCustomers) // <4>
-                .deferred(List.of("Porto", "London"))
+                .invokeAsync(List.of("Porto", "London"))
             );
 
           assertThat(customersResponse.customers()).containsOnly(johanna, bob);

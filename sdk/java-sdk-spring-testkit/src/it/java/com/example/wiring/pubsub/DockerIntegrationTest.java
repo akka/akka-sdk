@@ -10,6 +10,8 @@ import kalix.javasdk.JsonSupport;
 import kalix.javasdk.client.ComponentClient;
 import kalix.javasdk.impl.client.ComponentClientImpl;
 import kalix.spring.impl.KalixSpringApplication;
+import kalix.spring.testkit.AsyncCallsSupport;
+import org.awaitility.Awaitility;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -33,7 +35,7 @@ import java.util.concurrent.TimeUnit;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.awaitility.Awaitility.await;
 
-public abstract class DockerIntegrationTest {
+public abstract class DockerIntegrationTest extends AsyncCallsSupport {
 
   protected WebClient webClient;
   protected Duration timeout = Duration.of(5, SECONDS);
@@ -51,7 +53,7 @@ public abstract class DockerIntegrationTest {
     return ConfigFactory.parseMap(confMap);
   }
 
-  public DockerIntegrationTest(ApplicationContext applicationContext, Config config){
+  public DockerIntegrationTest(ApplicationContext applicationContext, Config config) {
     Config finalConfig = defaultConfig().withFallback(config).withFallback(ConfigFactory.load());
     kalixSpringApplication = new KalixSpringApplication(applicationContext, finalConfig);
   }
@@ -72,9 +74,9 @@ public abstract class DockerIntegrationTest {
 
   @AfterAll
   public void afterAll() throws ExecutionException, InterruptedException {
-      new FutureConverters.FutureOps<>(kalixSpringApplication.stop())
-        .asJava()
-        .toCompletableFuture().get();
+    new FutureConverters.FutureOps<>(kalixSpringApplication.stop())
+      .asJava()
+      .toCompletableFuture().get();
   }
 
   private HttpStatusCode assertSourceServiceIsUp(WebClient webClient) {
@@ -109,7 +111,7 @@ public abstract class DockerIntegrationTest {
         .build();
 
     // wait until customer service is up
-    await()
+    Awaitility.await()
       .ignoreExceptions()
       .pollInterval(5, TimeUnit.SECONDS)
       .atMost(120, TimeUnit.SECONDS)

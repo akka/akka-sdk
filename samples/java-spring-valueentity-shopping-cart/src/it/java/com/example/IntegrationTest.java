@@ -15,7 +15,7 @@ import java.time.Duration;
 import java.util.List;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
-import static kalix.javasdk.testkit.DeferredCallSupport.invokeAndAwait;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -40,38 +40,39 @@ public class IntegrationTest extends KalixIntegrationTestKitSupport {
   private Duration timeout = Duration.of(5, SECONDS);
 
   ShoppingCartDTO getCart(String cartId) {
-    return invokeAndAwait(
+    return await(
       componentClient
         .forValueEntity(cartId)
-        .methodRef(ShoppingCartEntity::getCart).deferred()
+        .methodRef(ShoppingCartEntity::getCart).invokeAsync()
     );
   }
 
   void addItem(String cartId, String productId, String name, int quantity) throws Exception {
-    invokeAndAwait(
+    await(
       componentClient
         .forValueEntity(cartId)
         .methodRef(ShoppingCartEntity::addItem)
-        .deferred(new LineItemDTO(productId, name, quantity))
+        .invokeAsync(new LineItemDTO(productId, name, quantity))
     );
   }
 
   void removeItem(String cartId, String productId) throws Exception {
 
-    invokeAndAwait(
+    await(
       componentClient
         .forValueEntity(cartId)
         .methodRef(ShoppingCartEntity::removeItem)
-        .deferred(productId)
+        .invokeAsync(productId)
     );
   }
 
   void removeCart(String cartId, String userRole) throws Exception {
     var metadata = Metadata.EMPTY.add("Role", userRole);
-    invokeAndAwait(
+    await(
       componentClient
         .forValueEntity(cartId)
-        .methodRef(ShoppingCartEntity::removeCart).deferred().withMetadata(metadata)
+        .methodRef(ShoppingCartEntity::removeCart).deferred().withMetadata(metadata).invokeAsync()
+
     );
   }
 

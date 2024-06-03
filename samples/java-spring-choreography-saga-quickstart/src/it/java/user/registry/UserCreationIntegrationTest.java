@@ -1,6 +1,7 @@
 package user.registry;
 
 import kalix.spring.testkit.KalixIntegrationTestKitSupport;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import user.registry.api.ApplicationController;
@@ -9,7 +10,6 @@ import user.registry.domain.User;
 import java.time.Duration;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
 
 /**
  * This is a skeleton for implementing integration tests for a Kalix application built with the Java SDK.
@@ -52,7 +52,7 @@ public class UserCreationIntegrationTest extends KalixIntegrationTestKitSupport 
     assertThat(callCreateUser.invokeAsync()).succeedsWithin(timeout);
 
     // get email once more and check it's now confirmed
-    await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(timeout)
       .untilAsserted(() -> {
@@ -94,7 +94,7 @@ public class UserCreationIntegrationTest extends KalixIntegrationTestKitSupport 
     assertThat(callCreateUser.invokeAsync()).failsWithin(timeout);
 
     // email will be reserved for a while, then it will be released
-    await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(timeout)
       .untilAsserted(() -> {
@@ -106,7 +106,7 @@ public class UserCreationIntegrationTest extends KalixIntegrationTestKitSupport 
           });
       });
 
-    await()
+    Awaitility.await()
       .ignoreExceptions()
       .timeout(Duration.ofSeconds(10)) //3 seconds for the projection lag + 3 seconds for the timer to fire
       .untilAsserted(() -> {

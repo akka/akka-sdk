@@ -9,8 +9,8 @@ import com.example.wiring.actions.echo.Message;
 import com.example.wiring.valueentities.user.User;
 import com.example.wiring.valueentities.user.UserEntity;
 import kalix.javasdk.client.ComponentClient;
-import kalix.javasdk.testkit.DeferredCallSupport;
 import kalix.spring.KalixConfigurationTest;
+import kalix.spring.testkit.AsyncCallsSupport;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,14 +21,12 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import java.time.Duration;
 
-import static kalix.javasdk.testkit.DeferredCallSupport.invokeAndAwait;
-import static kalix.javasdk.testkit.DeferredCallSupport.failed;
 import static java.time.temporal.ChronoUnit.SECONDS;
 
 @SpringBootTest(classes = Main.class)
 @Import(KalixConfigurationTest.class)
 @TestPropertySource(properties = "spring.main.allow-bean-definition-overriding=true")
-public class XComponentCallsIntegrationTest {
+public class XComponentCallsIntegrationTest extends AsyncCallsSupport {
 
   @Autowired
   private WebClient webClient;
@@ -134,11 +132,11 @@ public class XComponentCallsIntegrationTest {
     Assertions.assertEquals(Ok.instance, userUpdate);
 
     User userGetResponse =
-      DeferredCallSupport.invokeAndAwait(
+      await(
         componentClient
           .forValueEntity("MayPatch")
           .methodRef(UserEntity::getUser)
-          .deferred()
+          .invokeAsync()
       );
     Assertions.assertEquals("new" + u1.email, userGetResponse.email);
   }
@@ -157,11 +155,11 @@ public class XComponentCallsIntegrationTest {
     Assertions.assertEquals(Ok.instance, userCreation);
 
     var userGetResponse =
-      DeferredCallSupport.invokeAndAwait(
+      await(
         componentClient
           .forValueEntity("MayDelete")
           .methodRef(UserEntity::getUser)
-          .deferred()
+          .invokeAsync()
       );
 
     Assertions.assertEquals(u1.email, userGetResponse.email);
@@ -180,7 +178,7 @@ public class XComponentCallsIntegrationTest {
         componentClient
           .forValueEntity("MayDelete")
           .methodRef(UserEntity::getUser)
-          .deferred()
+          .invokeAsync()
       );
 
     // FIXME: currently code is sending 500, but it doesn't make sense of an entity to speak http status codes

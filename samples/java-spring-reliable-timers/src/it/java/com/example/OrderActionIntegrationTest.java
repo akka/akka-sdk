@@ -5,8 +5,9 @@ import com.example.domain.OrderEntity;
 import com.example.domain.OrderRequest;
 import com.example.domain.OrderStatus;
 import kalix.javasdk.client.ComponentClient;
-import static kalix.javasdk.testkit.DeferredCallSupport.invokeAndAwait;
+
 import kalix.spring.testkit.KalixIntegrationTestKitSupport;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,7 +18,6 @@ import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
-import static org.awaitility.Awaitility.await;
 
 @SpringBootTest(classes = Main.class)
 public class OrderActionIntegrationTest extends KalixIntegrationTestKitSupport {
@@ -41,7 +41,7 @@ public class OrderActionIntegrationTest extends KalixIntegrationTestKitSupport {
     Assertions.assertNotNull(orderId);
     Assertions.assertFalse(orderId.isEmpty());
 
-    await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(20, TimeUnit.of(SECONDS))
       .until(
@@ -51,7 +51,7 @@ public class OrderActionIntegrationTest extends KalixIntegrationTestKitSupport {
     var confirmResp = confirmOrder(orderId);
     Assertions.assertEquals("\"Ok\"", confirmResp);
 
-    await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(20, TimeUnit.of(SECONDS))
       .until(
@@ -69,17 +69,17 @@ public class OrderActionIntegrationTest extends KalixIntegrationTestKitSupport {
     Assertions.assertNotNull(orderId);
     Assertions.assertFalse(orderId.isEmpty());
 
-    var deferredCall =
+    var methodRef =
         componentClient
             .forValueEntity(orderId)
-            .methodRef(OrderEntity::status).deferred();
+            .methodRef(OrderEntity::status);
 
     // After the default timeout, status changed to not placed as order is reverted
-    await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(20, TimeUnit.of(SECONDS))
       .until(
-        () -> invokeAndAwait(deferredCall),
+        () -> await(methodRef.invokeAsync()),
         status -> !status.confirmed());
   }
 
@@ -135,10 +135,10 @@ public class OrderActionIntegrationTest extends KalixIntegrationTestKitSupport {
   }
 
   private OrderStatus getOrderStatus(String orderId) {
-    return invokeAndAwait(
+    return await(
       componentClient
         .forValueEntity(orderId)
-        .methodRef(OrderEntity::status).deferred()
+        .methodRef(OrderEntity::status).invokeAsync()
     );
 
   }

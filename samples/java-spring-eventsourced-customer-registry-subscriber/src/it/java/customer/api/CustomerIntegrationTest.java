@@ -125,7 +125,7 @@ public class CustomerIntegrationTest {
    * This test relies on a source Kalix service to which it subscribes. Such service should be running on :9000
    */
   @Test
-  public void create() throws InterruptedException {
+  public void create()  {
 
     createClient("http://localhost:9000");
     WebClient localWebClient = createClient("http://localhost:9001");

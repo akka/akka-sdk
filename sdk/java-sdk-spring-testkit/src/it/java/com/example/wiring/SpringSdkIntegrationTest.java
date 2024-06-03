@@ -34,8 +34,9 @@ import kalix.javasdk.Metadata;
 import kalix.javasdk.StatusCode;
 import kalix.javasdk.client.ComponentClient;
 import kalix.javasdk.client.EventSourcedEntityClient;
-import kalix.javasdk.testkit.DeferredCallSupport;
 import kalix.spring.KalixConfigurationTest;
+import kalix.spring.testkit.AsyncCallsSupport;
+import org.awaitility.Awaitility;
 import org.hamcrest.core.IsEqual;
 import org.hamcrest.core.IsNull;
 import org.jetbrains.annotations.NotNull;
@@ -65,12 +66,11 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 import static kalix.javasdk.StatusCode.Success.CREATED;
 import static kalix.javasdk.StatusCode.Success.OK;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
 
 @SpringBootTest(classes = Main.class)
 @Import({KalixConfigurationTest.class, TestkitConfig.class})
 @TestPropertySource(properties = "spring.main.allow-bean-definition-overriding=true")
-public class SpringSdkIntegrationTest {
+public class SpringSdkIntegrationTest extends AsyncCallsSupport {
 
   @Autowired
   private WebClient webClient;
@@ -146,7 +146,7 @@ public class SpringSdkIntegrationTest {
   @Test
   public void shouldReturnTextBodyWithComponentClient() {
 
-    HttpResponse response = DeferredCallSupport.invokeAndAwait(componentClient.forAction().methodRef(ActionWithHttpResponse::textBody));
+    HttpResponse response = await(componentClient.forAction().methodRef(ActionWithHttpResponse::textBody).invokeAsync());
 
     assertThat(response.getStatusCode()).isEqualTo(OK);
     assertThat(response.getContentType()).contains("text/plain");
@@ -172,7 +172,7 @@ public class SpringSdkIntegrationTest {
   @Test
   public void shouldReturnEmptyCreatedWithComponentClient() {
 
-    HttpResponse response = DeferredCallSupport.invokeAndAwait(componentClient.forAction().methodRef(ActionWithHttpResponse::emptyCreated));
+    HttpResponse response = await(componentClient.forAction().methodRef(ActionWithHttpResponse::emptyCreated).invokeAsync());
 
     assertThat(response.getStatusCode()).isEqualTo(CREATED);
     assertThat(response.getContentType()).isEqualTo("application/octet-stream");
@@ -198,7 +198,7 @@ public class SpringSdkIntegrationTest {
   @Test
   public void shouldReturnJsonStringWithComponentClient() {
 
-    HttpResponse response = DeferredCallSupport.invokeAndAwait(componentClient.forAction().methodRef(ActionWithHttpResponse::jsonStringBody));
+    HttpResponse response = await(componentClient.forAction().methodRef(ActionWithHttpResponse::jsonStringBody).invokeAsync());
 
     assertThat(response.getStatusCode()).isEqualTo(OK);
     assertThat(response.getContentType()).contains("application/json");
@@ -277,10 +277,10 @@ public class SpringSdkIntegrationTest {
   @Test
   public void verifyEchoActionWiring() {
 
-    Message response = DeferredCallSupport.invokeAndAwait(
+    Message response = await(
       componentClient.forAction()
-      .methodRef(EchoAction::stringMessage)
-      .deferred("abc"));
+        .methodRef(EchoAction::stringMessage)
+        .invokeAsync("abc"));
 
     assertThat(response.text()).isEqualTo("Parrot says: 'abc'");
   }
@@ -289,10 +289,10 @@ public class SpringSdkIntegrationTest {
   @Test
   public void verifyEchoActionRequestParam() {
 
-    Message response = DeferredCallSupport.invokeAndAwait(
+    Message response = await(
       componentClient.forAction()
-      .methodRef(EchoAction::stringMessageFromParam)
-      .deferred("queryParam"));
+        .methodRef(EchoAction::stringMessageFromParam)
+        .invokeAsync("queryParam"));
 
     assertThat(response.text()).isEqualTo("Parrot says: 'queryParam'");
 
@@ -318,10 +318,10 @@ public class SpringSdkIntegrationTest {
   public void verifyEchoActionConcatBody() {
 
     var message = List.of(new Message("foo"), new Message("bar"));
-    Message response = DeferredCallSupport.invokeAndAwait(
+    Message response = await(
       componentClient.forAction()
         .methodRef(EchoAction::stringMessageConcatRequestBody)
-        .deferred(message)
+        .invokeAsync(message)
     );
 
     assertThat(response.text()).isEqualTo("foo|bar");
@@ -331,10 +331,10 @@ public class SpringSdkIntegrationTest {
   public void verifyEchoActionConcatBodyWithSeparator() {
 
     var message = List.of(new Message("foo"), new Message("bar"));
-    Message response = DeferredCallSupport.invokeAndAwait(
+    Message response = await(
       componentClient.forAction()
         .methodRef(EchoAction::stringMessageConcatRequestBodyWithSeparator)
-        .deferred("/", message)
+        .deferred("/", message).invokeAsync()
     );
 
     assertThat(response.text()).isEqualTo("foo/bar");
@@ -356,10 +356,10 @@ public class SpringSdkIntegrationTest {
   public void verifyEchoActionRequestParamWithTypedForward() {
 
     String reqParam = "a b&c@d";
-    Message response = DeferredCallSupport.invokeAndAwait(
+    Message response = await(
       componentClient.forAction()
         .methodRef(EchoAction::stringMessageFromParamFwTyped)
-        .deferred(reqParam));
+        .invokeAsync(reqParam));
 
     assertThat(response.text()).isEqualTo("Parrot says: '" + reqParam + "'");
   }
@@ -384,19 +384,19 @@ public class SpringSdkIntegrationTest {
     // GIVEN IncreaseAction is subscribed to CounterEntity events
     // WHEN the CounterEntity is requested to increase 42\
     String entityId = "hello1";
-    DeferredCallSupport.invokeAndAwait(
+    await(
       componentClient.forEventSourcedEntity(entityId)
-      .methodRef(CounterEntity::increase)
-      .deferred(42));
+        .methodRef(CounterEntity::increase)
+        .invokeAsync(42));
 
     // THEN IncreaseAction receives the event 42 and increases the counter 1 more
-    await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(10, TimeUnit.of(SECONDS))
       .untilAsserted(() -> {
-        Integer result = DeferredCallSupport.invokeAndAwait(
+        Integer result = await(
           componentClient.forEventSourcedEntity(entityId)
-          .methodRef(CounterEntity::get).deferred());
+            .methodRef(CounterEntity::get).invokeAsync());
 
         assertThat(result).isEqualTo(43); //42 +1
       });
@@ -407,19 +407,19 @@ public class SpringSdkIntegrationTest {
     // GIVEN IncreaseAction is subscribed to CounterEntity events
     // WHEN the CounterEntity is requested to increase 4422
     String entityId = "hello4422";
-    DeferredCallSupport.invokeAndAwait(
+    await(
       componentClient.forEventSourcedEntity(entityId)
-      .methodRef(CounterEntity::increase)
-      .deferred(4422));
+        .methodRef(CounterEntity::increase)
+        .invokeAsync(4422));
 
     // THEN IncreaseAction receives the event 4422 and increases the counter 1 more
-    await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(10, TimeUnit.of(SECONDS))
       .untilAsserted(() -> {
-        Integer result = DeferredCallSupport.invokeAndAwait(
+        Integer result = await(
           componentClient.forEventSourcedEntity(entityId)
-          .methodRef(CounterEntity::get).deferred());
+            .methodRef(CounterEntity::get).invokeAsync());
 
         assertThat(result).isEqualTo(4423);
       });
@@ -429,18 +429,19 @@ public class SpringSdkIntegrationTest {
   public void verifyActionIsNotSubscribedToMultiplyAndRouterIgnores() {
     var entityId = "counterId2";
     EventSourcedEntityClient counterClient = componentClient.forEventSourcedEntity(entityId);
-    DeferredCallSupport.invokeAndAwait(counterClient.methodRef(CounterEntity::increase).deferred(1));
-    DeferredCallSupport.invokeAndAwait(counterClient.methodRef(CounterEntity::times).deferred(2));
-    Integer lastKnownValue = DeferredCallSupport.invokeAndAwait(counterClient.methodRef(CounterEntity::increase).deferred(1234));
+    await(counterClient.methodRef(CounterEntity::increase).invokeAsync(1));
+    await(counterClient.methodRef(CounterEntity::times).invokeAsync(2));
+    Integer lastKnownValue = await(counterClient.methodRef(CounterEntity::increase).invokeAsync(1234));
 
     assertThat(lastKnownValue).isEqualTo(1 * 2 + 1234);
 
     //Once the action IncreaseActionWithIgnore processes event 1234 it adds 1 more to the counter
-    await()
+    Awaitility.await()
       .atMost(10, TimeUnit.SECONDS)
       .untilAsserted(() -> {
-        Integer result = DeferredCallSupport.invokeAndAwait(componentClient.forEventSourcedEntity(entityId)
-          .methodRef(CounterEntity::get).deferred());
+        Integer result = await(
+          componentClient.forEventSourcedEntity(entityId)
+            .methodRef(CounterEntity::get).invokeAsync());
 
         assertThat(result).isEqualTo(1 * 2 + 1234 + 1);
       });
@@ -451,18 +452,22 @@ public class SpringSdkIntegrationTest {
 
     var entityId = "counterId4";
     EventSourcedEntityClient counterClient = componentClient.forEventSourcedEntity(entityId);
-    DeferredCallSupport.invokeAndAwait(counterClient.methodRef(CounterEntity::increase).deferred(1));
-    DeferredCallSupport.invokeAndAwait(counterClient.methodRef(CounterEntity::times).deferred(2));
-    Integer counterGet = DeferredCallSupport.invokeAndAwait(counterClient.methodRef(CounterEntity::increase).deferred(1));
+    await(counterClient.methodRef(CounterEntity::increase).invokeAsync(1));
+    await(counterClient.methodRef(CounterEntity::times).invokeAsync(2));
+    Integer counterGet = await(counterClient.methodRef(CounterEntity::increase).invokeAsync(1));
 
     assertThat(counterGet).isEqualTo(1 * 2 + 1);
 
-    await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(10, TimeUnit.SECONDS)
       .untilAsserted(
         () -> {
-          var byValue = DeferredCallSupport.invokeAndAwait(componentClient.forView().methodRef(CountersByValueWithIgnore::getCounterByValue).deferred(2));
+          var byValue = await(
+            componentClient.forView()
+              .methodRef(CountersByValueWithIgnore::getCounterByValue)
+              .invokeAsync(2));
+
           assertThat(byValue.value()).isEqualTo(1 + 1);
         });
   }
@@ -470,34 +475,41 @@ public class SpringSdkIntegrationTest {
   @Test
   public void verifyFindCounterByValue() {
 
-    DeferredCallSupport.invokeAndAwait(componentClient.forEventSourcedEntity("abc")
-      .methodRef(CounterEntity::increase)
-      .deferred(10));
+    await(
+      componentClient.forEventSourcedEntity("abc")
+        .methodRef(CounterEntity::increase)
+        .invokeAsync(10));
 
 
     // the view is eventually updated
-    await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(15, TimeUnit.of(SECONDS))
       .untilAsserted(
         () -> {
-          var byValue = DeferredCallSupport.invokeAndAwait(componentClient.forView().methodRef(CountersByValue::getCounterByValue).deferred(10));
+          var byValue = await(
+            componentClient.forView()
+              .methodRef(CountersByValue::getCounterByValue)
+              .invokeAsync(10));
+
           assertThat(byValue.value()).isEqualTo(10);
         });
   }
 
   @Test
-  public void verifyCounterViewMultipleSubscriptions() throws InterruptedException {
+  public void verifyCounterViewMultipleSubscriptions() {
 
-    DeferredCallSupport.invokeAndAwait(componentClient.forEventSourcedEntity("hello2")
-      .methodRef(CounterEntity::increase)
-      .deferred(1));
+    await(
+      componentClient.forEventSourcedEntity("hello2")
+        .methodRef(CounterEntity::increase)
+        .invokeAsync(1));
 
-    DeferredCallSupport.invokeAndAwait(componentClient.forEventSourcedEntity("hello3")
-      .methodRef(CounterEntity::increase)
-      .deferred(1));
+    await(
+      componentClient.forEventSourcedEntity("hello3")
+        .methodRef(CounterEntity::increase)
+        .invokeAsync(1));
 
-    await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(20, TimeUnit.SECONDS)
       .until(
@@ -515,14 +527,14 @@ public class SpringSdkIntegrationTest {
 
 
   @Test
-  public void verifyTransformedUserViewWiring() throws InterruptedException {
+  public void verifyTransformedUserViewWiring() {
 
     TestUser user = new TestUser("123", "john@doe.com", "JohnDoe");
 
     createUser(user);
 
     // the view is eventually updated
-    await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(15, TimeUnit.of(SECONDS))
       .until(() -> getUserByEmail(user.email).version,
@@ -531,7 +543,7 @@ public class SpringSdkIntegrationTest {
     updateUser(user.withName("JohnDoeJr"));
 
     // the view is eventually updated
-    await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(15, TimeUnit.of(SECONDS))
       .until(() -> getUserByEmail(user.email).version,
@@ -539,13 +551,13 @@ public class SpringSdkIntegrationTest {
   }
 
   @Test
-  public void verifyUserSubscriptionAction() throws InterruptedException {
+  public void verifyUserSubscriptionAction() {
 
     TestUser user = new TestUser("123", "john@doe.com", "JohnDoe");
 
     createUser(user);
 
-    await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(15, TimeUnit.of(SECONDS))
       .until(() -> UserSideEffect.getUsers().get(user.id),
@@ -553,7 +565,7 @@ public class SpringSdkIntegrationTest {
 
     deleteUser(user);
 
-    await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(15, TimeUnit.of(SECONDS))
       .until(() -> UserSideEffect.getUsers().get(user.id),
@@ -567,13 +579,13 @@ public class SpringSdkIntegrationTest {
     TestUser user = new TestUser("userId", "john2@doe.com", "Bob");
     createUser(user);
 
-    await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(15, TimeUnit.of(SECONDS))
       .until(() -> getUserByEmail(user.email).version,
         new IsEqual(1));
 
-    await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(15, TimeUnit.of(SECONDS))
       .until(() -> getUsersByName(user.name).size(),
@@ -581,7 +593,7 @@ public class SpringSdkIntegrationTest {
 
     deleteUser(user);
 
-    await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(15, TimeUnit.of(SECONDS))
       .until(
@@ -594,7 +606,7 @@ public class SpringSdkIntegrationTest {
             .value(),
         new IsEqual(404));
 
-    await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(15, TimeUnit.of(SECONDS))
       .until(() -> getUsersByName(user.name).size(),
@@ -608,12 +620,16 @@ public class SpringSdkIntegrationTest {
     createUser(user);
 
     // the view is eventually updated
-    await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(10, TimeUnit.SECONDS)
       .untilAsserted(
         () -> {
-          var byEmail = DeferredCallSupport.invokeAndAwait(componentClient.forView().methodRef(UsersView::getUsersEmail).deferred(user.email));
+          var byEmail = await(
+            componentClient.forView()
+              .methodRef(UsersView::getUsersEmail)
+              .invokeAsync(user.email));
+
           assertThat(byEmail.email).isEqualTo(user.email);
         });
   }
@@ -625,12 +641,15 @@ public class SpringSdkIntegrationTest {
     createUser(user);
 
     // the view is eventually updated
-    await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(10, TimeUnit.SECONDS)
       .untilAsserted(
         () -> {
-          var byName = DeferredCallSupport.invokeAndAwait(componentClient.forView().methodRef(UsersView::getUsersByName).deferred(user.name));
+          var byName = await(
+            componentClient.forView()
+              .methodRef(UsersView::getUsersByName)
+              .invokeAsync(user.name));
           assertThat(byName.name).isEqualTo(user.name);
         });
   }
@@ -642,12 +661,14 @@ public class SpringSdkIntegrationTest {
     createUser(user);
 
     // the view is eventually updated
-    await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(10, TimeUnit.SECONDS)
       .untilAsserted(
         () -> {
-          var byEmail = DeferredCallSupport.invokeAndAwait(componentClient.forView().methodRef(UsersByEmailAndName::getUsers).deferred(user.email, user.name));
+          var byEmail = await(
+            componentClient.forView()
+              .methodRef(UsersByEmailAndName::getUsers).deferred(user.email, user.name).invokeAsync());
           assertThat(byEmail.email).isEqualTo(user.email);
           assertThat(byEmail.name).isEqualTo(user.name);
         });
@@ -662,7 +683,7 @@ public class SpringSdkIntegrationTest {
     createUser(joe2);
 
     // the view is eventually updated
-    await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(20, TimeUnit.SECONDS)
       .until(() -> getUsersByName("joe").size(),
@@ -691,12 +712,12 @@ public class SpringSdkIntegrationTest {
 
     // the view is eventually updated
 
-    await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(20, TimeUnit.SECONDS)
       .until(() -> getUserCounters(alice.id).counters.size(), new IsEqual<>(2));
 
-    await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(20, TimeUnit.SECONDS)
       .until(() -> getUserCounters(bob.id).counters.size(), new IsEqual<>(2));
@@ -723,28 +744,31 @@ public class SpringSdkIntegrationTest {
     String esHeaderValue = "es-value";
 
     Message actionResponse =
-      DeferredCallSupport.invokeAndAwait(
+      await(
         componentClient.forAction()
           .methodRef(ForwardHeadersAction::stringMessage)
           .withMetadata(Metadata.EMPTY.add(ForwardHeadersAction.SOME_HEADER, actionHeaderValue))
+          .invokeAsync()
       );
 
     assertThat(actionResponse.text()).isEqualTo(actionHeaderValue);
 
     Message veResponse =
-      DeferredCallSupport.invokeAndAwait(
+      await(
         componentClient.forValueEntity("1")
           .methodRef(ForwardHeadersValueEntity::createUser).deferred()
           .withMetadata(Metadata.EMPTY.add(ForwardHeadersAction.SOME_HEADER, veHeaderValue))
+          .invokeAsync()
       );
 
     assertThat(veResponse.text()).isEqualTo(veHeaderValue);
 
     Message esResponse =
-      DeferredCallSupport.invokeAndAwait(
+      await(
         componentClient.forEventSourcedEntity("1")
           .methodRef(ForwardHeadersESEntity::createUser).deferred()
           .withMetadata(Metadata.EMPTY.add(ForwardHeadersAction.SOME_HEADER, esHeaderValue))
+          .invokeAsync()
       );
 
     assertThat(esResponse.text()).isEqualTo(esHeaderValue);
@@ -755,11 +779,11 @@ public class SpringSdkIntegrationTest {
     String value = "someValue";
 
     Message actionResponse =
-      DeferredCallSupport.invokeAndAwait(
+      await(
         componentClient
           .forAction()
           .methodRef(ActionWithMetadata::actionWithMeta)
-          .deferred("myKey", value)
+          .deferred("myKey", value).invokeAsync()
       );
 
     assertThat(actionResponse.text()).isEqualTo(value);
@@ -797,13 +821,13 @@ public class SpringSdkIntegrationTest {
     createCustomer(new CustomerEntity.Customer("customer1", now));
 
     // the view is eventually updated
-    await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(20, TimeUnit.SECONDS)
       .until(() -> getCustomersByCreationDate(now).size(), new IsEqual(1));
 
     var later = now.plusSeconds(60 * 5);
-    await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(20, TimeUnit.SECONDS)
       .until(() -> getCustomersByCreationDate(later).size(), new IsEqual(0));
@@ -823,25 +847,25 @@ public class SpringSdkIntegrationTest {
 
   @Nullable
   private UserWithVersion getUserByEmail(String email) {
-    return DeferredCallSupport.invokeAndAwait(componentClient.forView().methodRef(UserWithVersionView::getUser).deferred(email));
+    return await(componentClient.forView().methodRef(UserWithVersionView::getUser).invokeAsync(email));
   }
 
   private void updateUser(TestUser user) {
     Ok userUpdate =
-      DeferredCallSupport.invokeAndAwait(
+      await(
         componentClient.forValueEntity(user.id)
           .methodRef(UserEntity::createOrUpdateUser)
-          .deferred(new UserEntity.CreatedUser(user.name, user.email)));
+          .invokeAsync(new UserEntity.CreatedUser(user.name, user.email)));
 
     assertThat(userUpdate).isEqualTo(Ok.instance);
   }
 
   private void createUser(TestUser user) {
     Ok userCreation =
-      DeferredCallSupport.invokeAndAwait(
+      await(
         componentClient.forValueEntity(user.id)
           .methodRef(UserEntity::createOrUpdateUser)
-          .deferred(new UserEntity.CreatedUser(user.name, user.email)));
+          .invokeAsync(new UserEntity.CreatedUser(user.name, user.email)));
     assertThat(userCreation).isEqualTo(Ok.instance);
   }
 
@@ -849,11 +873,11 @@ public class SpringSdkIntegrationTest {
   private void createCustomer(CustomerEntity.Customer customer) {
 
     Ok created =
-      DeferredCallSupport.invokeAndAwait(
+      await(
         componentClient
           .forValueEntity(customer.name())
           .methodRef(CustomerEntity::create)
-          .deferred(customer));
+          .invokeAsync(customer));
 
     assertThat(created).isEqualTo(Ok.instance);
   }
@@ -861,49 +885,49 @@ public class SpringSdkIntegrationTest {
 
   @NotNull
   private List<CustomerEntity.Customer> getCustomersByCreationDate(Instant createdOn) {
-    return DeferredCallSupport.invokeAndAwait(
-        componentClient.forView()
-          .methodRef(CustomerByCreationTime::getCustomerByTime)
-          .deferred(new CustomerByCreationTime.ByTimeRequest(createdOn)))
+    return await(
+      componentClient.forView()
+        .methodRef(CustomerByCreationTime::getCustomerByTime)
+        .invokeAsync(new CustomerByCreationTime.ByTimeRequest(createdOn)))
       .customers();
   }
 
 
   private void deleteUser(TestUser user) {
     Ok userDeleted =
-      DeferredCallSupport.invokeAndAwait(
+      await(
         componentClient
           .forValueEntity(user.id)
           .methodRef(UserEntity::deleteUser)
-          .deferred(new UserEntity.Delete()));
+          .invokeAsync(new UserEntity.Delete()));
     assertThat(userDeleted).isEqualTo(Ok.instance);
   }
 
   private void increaseCounter(String id, int value) {
-    DeferredCallSupport.invokeAndAwait(
+    await(
       componentClient.forEventSourcedEntity(id)
         .methodRef(CounterEntity::increase)
-        .deferred(value));
+        .invokeAsync(value));
   }
 
   private void multiplyCounter(String id, int value) {
-    DeferredCallSupport.invokeAndAwait(
+    await(
       componentClient.forEventSourcedEntity(id)
         .methodRef(CounterEntity::times)
-        .deferred(value));
+        .invokeAsync(value));
   }
 
   private void assignCounter(String id, String assignee) {
-    DeferredCallSupport.invokeAndAwait(
+    await(
       componentClient.forValueEntity(id)
         .methodRef(AssignedCounterEntity::assign)
-        .deferred(assignee));
+        .invokeAsync(assignee));
   }
 
   private UserCounters getUserCounters(String userId) {
-    return DeferredCallSupport.invokeAndAwait(
+    return await(
       componentClient.forView().methodRef(UserCountersView::get)
-        .deferred(userId));
+        .invokeAsync(userId));
   }
 }
 

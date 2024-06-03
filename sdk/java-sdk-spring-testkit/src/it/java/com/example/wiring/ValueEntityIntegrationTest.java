@@ -8,8 +8,8 @@ import com.example.Main;
 import com.example.wiring.valueentities.user.User;
 import com.example.wiring.valueentities.user.UserEntity;
 import kalix.javasdk.client.ComponentClient;
-import kalix.javasdk.testkit.DeferredCallSupport;
 import kalix.spring.KalixConfigurationTest;
+import kalix.spring.testkit.AsyncCallsSupport;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,13 +20,13 @@ import org.springframework.test.context.TestPropertySource;
 import java.util.concurrent.TimeUnit;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
-import static org.awaitility.Awaitility.await;
+import org.awaitility.Awaitility;
 import static org.junit.jupiter.api.Assertions.fail;
 
 @SpringBootTest(classes = Main.class)
 @Import(KalixConfigurationTest.class)
 @TestPropertySource(properties = "spring.main.allow-bean-definition-overriding=true")
-public class ValueEntityIntegrationTest {
+public class ValueEntityIntegrationTest extends AsyncCallsSupport {
 
 
   @Autowired
@@ -56,7 +56,7 @@ public class ValueEntityIntegrationTest {
 
     var newEmail = joe2.email + "2";
 
-    await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(10, TimeUnit.of(SECONDS))
       .untilAsserted(() -> {
@@ -68,36 +68,36 @@ public class ValueEntityIntegrationTest {
   }
 
   private void createUser(TestUser user) {
-    DeferredCallSupport.invokeAndAwait(
+    await(
       componentClient
         .forValueEntity(user.id)
         .methodRef(UserEntity::createUser)
-        .deferred(new UserEntity.CreatedUser(user.name, user.email)));
+        .invokeAsync(new UserEntity.CreatedUser(user.name, user.email)));
   }
 
   private void changeEmail(TestUser user) {
-    DeferredCallSupport.invokeAndAwait(
+    await(
       componentClient
         .forValueEntity(user.id)
         .methodRef(UserEntity::updateEmail)
-        .deferred(new UserEntity.UpdateEmail(user.email)));
+        .invokeAsync(new UserEntity.UpdateEmail(user.email)));
   }
 
   private User getUser(TestUser user) {
-    return DeferredCallSupport.invokeAndAwait(
+    return await(
       componentClient
         .forValueEntity(user.id)
         .methodRef(UserEntity::getUser)
-        .deferred());
+        .invokeAsync());
   }
 
   private void restartUserEntity(TestUser user) {
     try {
-      DeferredCallSupport.invokeAndAwait(
+      await(
         componentClient
           .forValueEntity(user.id)
           .methodRef(UserEntity::restart)
-          .deferred(new UserEntity.Restart()));
+          .invokeAsync(new UserEntity.Restart()));
 
       fail("This should not be reached");
     } catch (Exception ignored) {

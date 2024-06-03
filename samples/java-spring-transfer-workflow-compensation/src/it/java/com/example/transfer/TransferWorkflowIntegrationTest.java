@@ -4,6 +4,7 @@ import com.example.Main;
 import com.example.transfer.TransferState.Transfer;
 import com.example.wallet.WalletEntity;
 import kalix.spring.testkit.KalixIntegrationTestKitSupport;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -14,9 +15,7 @@ import static com.example.transfer.TransferState.TransferStatus.COMPENSATION_COM
 import static com.example.transfer.TransferState.TransferStatus.REQUIRES_MANUAL_INTERVENTION;
 import static com.example.transfer.TransferState.TransferStatus.TRANSFER_ACCEPTATION_TIMED_OUT;
 import static java.time.temporal.ChronoUnit.SECONDS;
-import static kalix.javasdk.testkit.DeferredCallSupport.invokeAndAwait;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
 
 
 @SpringBootTest(classes = Main.class)
@@ -31,15 +30,15 @@ public class TransferWorkflowIntegrationTest extends KalixIntegrationTestKitSupp
     var transferId = randomId();
     var transfer = new Transfer(walletId1, walletId2, 10);
 
-    String response = invokeAndAwait(componentClient
+    String response = await(componentClient
       .forWorkflow(transferId)
       .methodRef(TransferWorkflow::startTransfer)
-      .deferred(transfer))
+      .invokeAsync(transfer))
       .value();
 
     assertThat(response).isEqualTo("transfer started");
 
-    await()
+    Awaitility.await()
       .atMost(10, TimeUnit.of(SECONDS))
       .untilAsserted(() -> {
         var balance1 = getWalletBalance(walletId1);
@@ -59,22 +58,22 @@ public class TransferWorkflowIntegrationTest extends KalixIntegrationTestKitSupp
     var transferId = randomId();
     var transfer = new Transfer(walletId1, walletId2, 1001);
 
-    String response = invokeAndAwait(componentClient
+    String response = await(componentClient
       .forWorkflow(transferId)
       .methodRef(TransferWorkflow::startTransfer)
-      .deferred(transfer))
+      .invokeAsync(transfer))
       .value();
 
     assertThat(response).isEqualTo("transfer started, waiting for acceptation");
 
-    String acceptationResponse = invokeAndAwait(componentClient
+    String acceptationResponse = await(componentClient
       .forWorkflow(transferId)
-      .methodRef(TransferWorkflow::accept))
+      .methodRef(TransferWorkflow::accept).invokeAsync())
       .value();
 
     assertThat(acceptationResponse).isEqualTo("transfer accepted");
 
-    await()
+    Awaitility.await()
       .atMost(10, TimeUnit.of(SECONDS))
       .untilAsserted(() -> {
         var balance1 = getWalletBalance(walletId1);
@@ -94,16 +93,16 @@ public class TransferWorkflowIntegrationTest extends KalixIntegrationTestKitSupp
     var transferId = randomId();
     var transfer = new Transfer(walletId1, walletId2, 1001);
 
-    String response = invokeAndAwait(componentClient
+    String response = await(componentClient
       .forWorkflow(transferId)
       .methodRef(TransferWorkflow::startTransfer)
-      .deferred(transfer))
+      .invokeAsync(transfer))
       .value();
     assertThat(response).isEqualTo("transfer started, waiting for acceptation");
 
-    String acceptationResponse = invokeAndAwait(componentClient
+    String acceptationResponse = await(componentClient
       .forWorkflow(transferId)
-      .methodRef(TransferWorkflow::acceptationTimeout));
+      .methodRef(TransferWorkflow::acceptationTimeout).invokeAsync());
     assertThat(acceptationResponse).contains("timed out");
 
     var balance1 = getWalletBalance(walletId1);
@@ -123,15 +122,15 @@ public class TransferWorkflowIntegrationTest extends KalixIntegrationTestKitSupp
     var transferId = randomId();
     var transfer = new Transfer(walletId1, walletId2, 10); //walletId2 not exists
 
-    String response = invokeAndAwait(componentClient
+    String response = await(componentClient
       .forWorkflow(transferId)
       .methodRef(TransferWorkflow::startTransfer)
-      .deferred(transfer))
+      .invokeAsync(transfer))
       .value();
 
     assertThat(response).isEqualTo("transfer started");
 
-    await()
+    Awaitility.await()
       .atMost(10, TimeUnit.of(SECONDS))
       .ignoreExceptions()
       .untilAsserted(() -> {
@@ -151,15 +150,15 @@ public class TransferWorkflowIntegrationTest extends KalixIntegrationTestKitSupp
     var transferId = randomId();
     var transfer = new Transfer(walletId1, walletId2, 10); //both not exists
 
-    String response = invokeAndAwait(componentClient
+    String response = await(componentClient
       .forWorkflow(transferId)
       .methodRef(TransferWorkflow::startTransfer)
-      .deferred(transfer))
+      .invokeAsync(transfer))
       .value();
 
     assertThat(response).isEqualTo("transfer started");
 
-    await()
+    Awaitility.await()
       .atMost(10, TimeUnit.of(SECONDS))
       .ignoreExceptions()
       .untilAsserted(() -> {
@@ -174,28 +173,29 @@ public class TransferWorkflowIntegrationTest extends KalixIntegrationTestKitSupp
   }
 
   private void createWallet(String walletId, int amount) {
-    String response = invokeAndAwait(
+    String response = await(
       componentClient
         .forValueEntity(walletId)
         .methodRef(WalletEntity::create)
-        .deferred(amount));
+        .invokeAsync(amount));
 
     assertThat(response).contains("Ok");
   }
 
   private int getWalletBalance(String walletId) {
-    return invokeAndAwait(
+    return await(
       componentClient
         .forValueEntity(walletId)
         .methodRef(WalletEntity::get)
-        .deferred());
+        .invokeAsync());
   }
 
   private TransferState getTransferState(String transferId) {
-    return invokeAndAwait(
+    return await(
       componentClient
         .forWorkflow(transferId)
-        .methodRef(TransferWorkflow::getTransferState));
+        .methodRef(TransferWorkflow::getTransferState)
+        .invokeAsync());
   }
 
 }

@@ -4,6 +4,7 @@
 
 package kalix.spring.testkit;
 
+import kalix.javasdk.DeferredCall;
 import kalix.javasdk.client.ComponentClient;
 import kalix.javasdk.testkit.KalixTestKit;
 import org.junit.jupiter.api.AfterAll;
@@ -13,6 +14,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.Duration;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
 
@@ -31,7 +35,7 @@ import static java.time.temporal.ChronoUnit.SECONDS;
  * <p>On test teardown, the Kalix application and the Kalix Runtime (docker container) will be stopped.
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public abstract class KalixIntegrationTestKitSupport {
+public abstract class KalixIntegrationTestKitSupport extends AsyncCallsSupport {
 
   private Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -48,4 +52,6 @@ public abstract class KalixIntegrationTestKitSupport {
     logger.info("Stopping Kalix TestKit...");
     kalixTestKit.stop();
   }
+
+
 }

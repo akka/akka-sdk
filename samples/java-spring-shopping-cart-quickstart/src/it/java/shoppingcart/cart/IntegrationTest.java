@@ -11,7 +11,7 @@ import shoppingcart.api.ShoppingCartEntity;
 import shoppingcart.domain.ShoppingCart;
 import shoppingcart.domain.ShoppingCart.LineItem;
 
-import static kalix.javasdk.testkit.DeferredCallSupport.invokeAndAwait;
+
 
 
 /**
@@ -38,50 +38,50 @@ public class IntegrationTest extends KalixIntegrationTestKitSupport {
 
     var item1 = new LineItem("tv", "Super TV 55'", 1);
 
-    var response1 = invokeAndAwait(
+    var response1 = await(
       componentClient
         .forEventSourcedEntity(cartId)
         .methodRef(ShoppingCartEntity::addItem)
-        .deferred(item1)
+        .invokeAsync(item1)
     );
     Assertions.assertNotNull(response1);
 
     var item2 = new LineItem("tv-table", "Table for TV", 1);
 
-    var response2 = invokeAndAwait(
+    var response2 = await(
       componentClient
         .forEventSourcedEntity(cartId)
         .methodRef(ShoppingCartEntity::addItem)
-        .deferred(item2)
+        .invokeAsync(item2)
     );
     Assertions.assertNotNull(response2);
 
 
-    ShoppingCart cartInfo = invokeAndAwait(
+    ShoppingCart cartInfo = await(
       componentClient
         .forEventSourcedEntity(cartId)
         .methodRef(ShoppingCartEntity::getCart)
-        .deferred()
+        .invokeAsync()
     );
     Assertions.assertEquals(2, cartInfo.items().size());
 
 
     // removing one of the items
     var response3 =
-      invokeAndAwait(
+      await(
         componentClient
           .forEventSourcedEntity(cartId)
           .methodRef(ShoppingCartEntity::removeItem)
-          .deferred(item1.productId())
+          .invokeAsync(item1.productId())
       );
 
     Assertions.assertNotNull(response3);
 
     // confirming only one product remains
-    ShoppingCart cartUpdated = invokeAndAwait(
+    ShoppingCart cartUpdated = await(
       componentClient
         .forEventSourcedEntity(cartId)
-        .methodRef(ShoppingCartEntity::getCart).deferred()
+        .methodRef(ShoppingCartEntity::getCart).invokeAsync()
     );
     Assertions.assertEquals(1, cartUpdated.items().size());
     Assertions.assertEquals(item2, cartUpdated.items().get(0));

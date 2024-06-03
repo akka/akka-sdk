@@ -1,5 +1,6 @@
 package store.view.joined;
 
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -10,7 +11,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class JoinedCustomerOrdersViewIntegrationTest extends StoreViewIntegrationTest {
@@ -106,7 +106,7 @@ public class JoinedCustomerOrdersViewIntegrationTest extends StoreViewIntegratio
 
   private List<CustomerOrder> awaitCustomerOrders(
     String customerId, Function<List<CustomerOrder>, Boolean> condition) {
-    await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(20, TimeUnit.SECONDS)
       .until(() -> condition.apply(getCustomerOrders(customerId)));

@@ -6,6 +6,7 @@ import customer.views.CustomerPublicEvent.Created;
 import kalix.javasdk.testkit.EventingTestKit.IncomingMessages;
 import kalix.javasdk.testkit.KalixTestKit;
 import kalix.spring.testkit.KalixIntegrationTestKitSupport;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -15,7 +16,6 @@ import org.springframework.web.reactive.function.client.WebClient;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
 
 @SpringBootTest(classes = Main.class)
 @Import(TestKitConfig.class)
@@ -37,7 +37,7 @@ public class CustomersByNameViewIntegrationTest extends KalixIntegrationTestKitS
     customerEvents.publish(created1, "b");
     customerEvents.publish(created2, "a");
 
-    await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(20, TimeUnit.SECONDS)
       .pollInterval(1, TimeUnit.SECONDS)

@@ -7,6 +7,7 @@ import customer.domain.Address;
 import customer.domain.Customer;
 import kalix.javasdk.client.ComponentClient;
 import kalix.spring.testkit.KalixIntegrationTestKitSupport;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,9 +20,8 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
-import static kalix.javasdk.testkit.DeferredCallSupport.invokeAndAwait;
+
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
 
 @SpringBootTest(classes = Main.class)
 public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
@@ -37,7 +37,7 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
   private Duration timeout = Duration.of(10, SECONDS);
 
   @Test
-  public void create() throws InterruptedException {
+  public void create()  {
     String id = UUID.randomUUID().toString();
     Customer customer = new Customer(id, "foo@example.com", "Johanna", null);
 
@@ -46,10 +46,10 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
   }
 
   private Customer getCustomerById(String customerId) {
-    return invokeAndAwait(
+    return await(
       componentClient
         .forValueEntity(customerId)
-        .methodRef(CustomerEntity::getCustomer).deferred()
+        .methodRef(CustomerEntity::getCustomer).invokeAsync()
     );
   }
 
@@ -63,7 +63,7 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
     addCustomer(joe);
     addCustomer(jane);
 
-    await()
+    Awaitility.await()
         .ignoreExceptions()
         .atMost(10, TimeUnit.of(SECONDS))
         .untilAsserted(() -> {
@@ -81,11 +81,11 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
   private void addCustomer(Customer customer) {
 
     var res =
-      invokeAndAwait(
+      await(
         componentClient
           .forValueEntity(customer.customerId())
           .methodRef(CustomerEntity::create)
-          .deferred(customer)
+          .invokeAsync(customer)
       );
     Assertions.assertEquals(Ok.instance, res);
   }

@@ -11,7 +11,7 @@ import com.example.wiring.valueentities.customer.CustomerEntity.Customer;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import kalix.javasdk.client.EventSourcedEntityClient;
-import kalix.javasdk.testkit.DeferredCallSupport;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -28,7 +28,6 @@ import static com.example.wiring.pubsub.PublishTopicToTopic.CUSTOMERS_2_TOPIC;
 import static com.example.wiring.pubsub.PublishVEToTopic.CUSTOMERS_TOPIC;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
 
 @SpringBootTest(classes = Main.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -59,7 +58,7 @@ public class PubSubIntegrationTest extends DockerIntegrationTest {
     Assertions.assertEquals(40, multiplyCounter(client, 10));
 
     //then
-    await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(20, TimeUnit.of(SECONDS))
       .untilAsserted(() -> {
@@ -86,7 +85,7 @@ public class PubSubIntegrationTest extends DockerIntegrationTest {
     Assertions.assertEquals(20, multiplyCounter(counterClient2, 10));
 
     //then
-    await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(20, TimeUnit.of(SECONDS))
       .untilAsserted(() -> {
@@ -115,7 +114,7 @@ public class PubSubIntegrationTest extends DockerIntegrationTest {
     createCustomer(customer2);
 
     //then
-    await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(20, TimeUnit.of(SECONDS))
       .untilAsserted(() -> {
@@ -133,7 +132,7 @@ public class PubSubIntegrationTest extends DockerIntegrationTest {
     createCustomer(customer1);
 
     //then
-    await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(20, TimeUnit.of(SECONDS))
       .untilAsserted(() -> {
@@ -155,7 +154,7 @@ public class PubSubIntegrationTest extends DockerIntegrationTest {
     createCustomer(customer2);
 
     //then
-    await()
+    Awaitility.await()
       .ignoreExceptions()
       .atMost(20, TimeUnit.of(SECONDS))
       .untilAsserted(() -> {
@@ -165,27 +164,27 @@ public class PubSubIntegrationTest extends DockerIntegrationTest {
   }
 
   private void createCustomer(Customer customer) {
-    DeferredCallSupport.invokeAndAwait(
+    await(
       componentClient()
         .forValueEntity(customer.name())
         .methodRef(CustomerEntity::create)
-        .deferred(customer)
+        .invokeAsync(customer)
     );
   }
 
   private Integer increaseCounter(EventSourcedEntityClient client, int value) {
-    return DeferredCallSupport.invokeAndAwait(
+    return await(
       client
         .methodRef(CounterEntity::increase)
-        .deferred(value));
+        .invokeAsync(value));
   }
 
 
   private Integer multiplyCounter(EventSourcedEntityClient client, int value) {
-    return DeferredCallSupport.invokeAndAwait(
+    return await(
       client
         .methodRef(CounterEntity::times)
-        .deferred(value));
+        .invokeAsync(value));
   }
 
 }
