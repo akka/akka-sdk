@@ -11,7 +11,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { sample: java-protobuf-shopping-cart-quickstart, public-repo: user-registry-choreography-saga }
+          - { sample: java-spring-choreography-saga-quickstart, public-repo: user-registry-choreography-saga }
 
     steps:
       - name: Checkout JVM SDK
@@ -40,9 +40,21 @@ jobs:
       - name: Copy example
         run: |
           rsync -r --delete kalix-jvm-sdk/samples/${{ matrix.sample }}/* ${{ matrix.public-repo }}
+          # copy .env but continue if it didn't exist 
+          cp kalix-jvm-sdk/samples/${{ matrix.sample }}/.env ${{ matrix.public-repo }} || :
+
+      - name: Explicitly add the .env file
+        run: |
+          cd ${{ matrix.public-repo }}
+          git config user.name 'Kalix Bot'
+          git config user.email 'noreply@github.com'
+          git add .env
+          git commit -m "Keep .env"
 
       - name: Create Pull Request - ${{ matrix.public-repo }}
-        uses: peter-evans/create-pull-request@153407881ec5c347639a548ade7d8ad1d6740e38
+        # https://github.com/peter-evans/create-pull-request
+        # v6.0.5
+        uses: peter-evans/create-pull-request@6d6857d36972b65feb161a90e484f2984215f83e
         with:
           path: ${{ matrix.public-repo }}
           title: Changes from JVM SDK repo

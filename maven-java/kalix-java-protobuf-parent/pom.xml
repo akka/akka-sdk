@@ -7,12 +7,12 @@
     <parent>
         <groupId>io.kalix</groupId>
         <artifactId>kalix-maven-java</artifactId>
-        <version>1.4.1</version>
+        <version>1.5.0</version>
     </parent>
     
     <groupId>io.kalix</groupId>
     <artifactId>kalix-java-sdk-protobuf-parent</artifactId>
-    <version>1.4.1</version>
+    <version>1.5.0</version>
     <packaging>pom</packaging>
 
 
@@ -39,7 +39,7 @@
         <maven.compiler.release>${java.version}</maven.compiler.release>
     
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <kalix-sdk.version>1.4.1</kalix-sdk.version>
+        <kalix-sdk.version>1.5.0</kalix-sdk.version>
         <akka-grpc.version>2.1.6</akka-grpc.version>
 
         <!-- plugin versions -->
@@ -60,12 +60,6 @@
             <id>akka-repository</id>
             <url>https://repo.akka.io/maven</url>
         </pluginRepository>
-
-        <!-- remove snapshots before final release -->
-        <pluginRepository>
-            <id>akka-repository-snapshots</id>
-            <url>https://repo.akka.io/snapshots</url>
-        </pluginRepository>
     </pluginRepositories>
 
     <repositories>
@@ -73,12 +67,6 @@
             <id>akka-repository</id>
             <name>Akka library repository</name>
             <url>https://repo.akka.io/maven</url>
-        </repository>
-
-        <!-- remove snapshots before final release -->
-        <repository>
-            <id>akka-repository-snapshots</id>
-            <url>https://repo.akka.io/snapshots</url>
         </repository>
     </repositories>
 
@@ -109,22 +97,22 @@
                     <artifactId>maven-shade-plugin</artifactId>
                     <version>${maven-shade-plugin.version}</version>
                     <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                        <goal>shade</goal>
-                        </goals>
-                        <configuration>
-                        <transformers>
-                            <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
-                                <resource>reference.conf</resource>
-                            </transformer>
-                            <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                <mainClass>${mainClass}</mainClass>
-                            </transformer>
-                        </transformers>
-                        </configuration>
-                    </execution>
+                        <execution>
+                            <phase>package</phase>
+                            <goals>
+                                <goal>shade</goal>
+                            </goals>
+                            <configuration>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                                    <resource>reference.conf</resource>
+                                </transformer>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>${mainClass}</mainClass>
+                                </transformer>
+                            </transformers>
+                            </configuration>
+                        </execution>
                     </executions>
                 </plugin>
 
@@ -389,12 +377,27 @@
                 <groupId>io.kalix</groupId>
                 <artifactId>kalix-java-sdk-protobuf</artifactId>
                 <version>${kalix-sdk.version}</version>
+                <scope>compile</scope>
             </dependency>
             <dependency>
                 <groupId>io.kalix</groupId>
                 <artifactId>kalix-java-sdk-protobuf-testkit</artifactId>
                 <version>${kalix-sdk.version}</version>
+                <scope>test</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.kalix</groupId>
+            <artifactId>kalix-java-sdk-protobuf</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.kalix</groupId>
+            <artifactId>kalix-java-sdk-protobuf-testkit</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 </project>

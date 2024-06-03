@@ -1,4 +1,5 @@
 import Dependencies.Kalix
+import com.jsuereth.sbtpgp.PgpKeys.publishSignedConfiguration
 
 lazy val `kalix-jvm-sdk` = project
   .in(file("."))
@@ -22,6 +23,14 @@ lazy val `kalix-jvm-sdk` = project
     // codegenScala,
     // codegenScalaCompilationTest,
     sbtPlugin)
+  .settings(
+    (publish / skip) := true,
+    // https://github.com/sbt/sbt/issues/3465
+    // Libs and plugins must share a version. The root project must use that
+    // version (and set the crossScalaVersions as empty list) so each sub-project
+    // can then decide which scalaVersion and crossScalaVersions they use.
+    crossScalaVersions := Nil,
+    scalaVersion := Dependencies.ScalaVersion)
 
 def commonCompilerSettings: Seq[Setting[_]] =
   Seq(
@@ -60,6 +69,7 @@ def disciplinedScalacSettings: Seq[Setting[_]] = {
 lazy val coreSdk = project
   .in(file("sdk/core"))
   .enablePlugins(Publish)
+  .disablePlugins(CiReleasePlugin) // we use publishSigned, but use a pgp utility from CiReleasePlugin
   .dependsOn(devTools)
   .settings(commonCompilerSettings)
   .settings(disciplinedScalacSettings)
@@ -81,6 +91,7 @@ lazy val coreSdk = project
 //   .in(file("sdk/java-sdk-protobuf"))
 //   .dependsOn(coreSdk)
 //   .enablePlugins(AkkaGrpcPlugin, BuildInfoPlugin, Publish)
+//   .disablePlugins(CiReleasePlugin) // we use publishSigned, but use a pgp utility from CiReleasePlugin
 //   .settings(commonCompilerSettings)
 //   .settings(disciplinedScalacSettings)
 //   .settings(
@@ -130,49 +141,51 @@ lazy val coreSdk = project
 //   .settings(Dependencies.javaSdk)
 
 // lazy val javaSdkProtobufTestKit = project
-// .in(file("sdk/java-sdk-protobuf-testkit"))
-// .dependsOn(javaSdkProtobuf)
-// .enablePlugins(AkkaGrpcPlugin, BuildInfoPlugin, Publish)
-// .settings(commonCompilerSettings)
-// .settings(
-//   name := "kalix-java-sdk-protobuf-testkit",
-//   // only packages that are to be released with scala 3 should have the _3 appended
-//   // i.e. java sdk package names should remain without suffix
-//   crossPaths := scalaVersion.value.startsWith("3."),
-//   Compile / javacOptions ++= Seq("--release", "11"),
-//   Compile / scalacOptions ++= Seq("-release", "11"),
-//   buildInfoKeys := Seq[BuildInfoKey](
-//     name,
-//     version,
-//     "runtimeImage" -> Kalix.RuntimeImage,
-//     "runtimeVersion" -> Kalix.RuntimeVersion,
-//     "scalaVersion" -> scalaVersion.value),
-//   buildInfoPackage := "kalix.javasdk.testkit",
-//   crossScalaVersions := Dependencies.CrossScalaVersions,
-//   // Generate javadocs by just including non generated Java sources
-//   Compile / doc / sources := {
-//     val javaSourceDir = (Compile / javaSource).value.getAbsolutePath
-//     (Compile / doc / sources).value.filter(_.getAbsolutePath.startsWith(javaSourceDir))
-//   },
-//   // javadoc (I think java 9 onwards) refuses to compile javadocs if it can't compile the entire source path.
-//   // but since we have java files depending on Scala files, we need to include ourselves on the classpath.
-//   Compile / doc / dependencyClasspath := (Compile / fullClasspath).value,
-//   Compile / doc / javacOptions ++= Seq(
-//     "-Xdoclint:none",
-//     "-overview",
-//     ((Compile / javaSource).value / "overview.html").getAbsolutePath,
-//     "-notimestamp",
-//     "-doctitle",
-//     "Kalix Java Protobuf SDK Testkit",
-//     "-noqualifier",
-//     "java.lang"))
-// .settings(Dependencies.javaSdkTestKit)
+//   .in(file("sdk/java-sdk-protobuf-testkit"))
+//   .dependsOn(javaSdkProtobuf)
+//   .enablePlugins(AkkaGrpcPlugin, BuildInfoPlugin, Publish)
+//   .disablePlugins(CiReleasePlugin) // we use publishSigned, but use a pgp utility from CiReleasePlugin
+//   .settings(commonCompilerSettings)
+//   .settings(
+//     name := "kalix-java-sdk-protobuf-testkit",
+//     // only packages that are to be released with scala 3 should have the _3 appended
+//     // i.e. java sdk package names should remain without suffix
+//     crossPaths := scalaVersion.value.startsWith("3."),
+//     Compile / javacOptions ++= Seq("--release", "11"),
+//     Compile / scalacOptions ++= Seq("-release", "11"),
+//     buildInfoKeys := Seq[BuildInfoKey](
+//       name,
+//       version,
+//       "runtimeImage" -> Kalix.RuntimeImage,
+//       "runtimeVersion" -> Kalix.RuntimeVersion,
+//       "scalaVersion" -> scalaVersion.value),
+//     buildInfoPackage := "kalix.javasdk.testkit",
+//     crossScalaVersions := Dependencies.CrossScalaVersions,
+//     // Generate javadocs by just including non generated Java sources
+//     Compile / doc / sources := {
+//       val javaSourceDir = (Compile / javaSource).value.getAbsolutePath
+//       (Compile / doc / sources).value.filter(_.getAbsolutePath.startsWith(javaSourceDir))
+//     },
+//     // javadoc (I think java 9 onwards) refuses to compile javadocs if it can't compile the entire source path.
+//     // but since we have java files depending on Scala files, we need to include ourselves on the classpath.
+//     Compile / doc / dependencyClasspath := (Compile / fullClasspath).value,
+//     Compile / doc / javacOptions ++= Seq(
+//       "-Xdoclint:none",
+//       "-overview",
+//       ((Compile / javaSource).value / "overview.html").getAbsolutePath,
+//       "-notimestamp",
+//       "-doctitle",
+//       "Kalix Java Protobuf SDK Testkit",
+//       "-noqualifier",
+//       "java.lang"))
+//   .settings(Dependencies.javaSdkTestKit)
 
 lazy val javaSdkSpring = project
   .in(file("sdk/java-sdk-spring"))
   .dependsOn(coreSdk)
   .dependsOn(devTools)
   .enablePlugins(AkkaGrpcPlugin, BuildInfoPlugin, Publish)
+  .disablePlugins(CiReleasePlugin) // we use publishSigned, but use a pgp utility from CiReleasePlugin
   .settings(commonCompilerSettings)
   .settings(disciplinedScalacSettings)
   .settings(
@@ -224,6 +237,7 @@ lazy val javaSdkSpringTestKit = project
   .in(file("sdk/java-sdk-spring-testkit"))
   .dependsOn(javaSdkSpring)
   .enablePlugins(AkkaGrpcPlugin, BuildInfoPlugin, Publish, IntegrationTests)
+  .disablePlugins(CiReleasePlugin) // we use publishSigned, but use a pgp utility from CiReleasePlugin
   .settings(commonCompilerSettings)
   .settings(disciplinedScalacSettings)
   .settings(
@@ -265,6 +279,7 @@ lazy val springBootStarter = project
   .in(file("sdk/spring-boot-starter"))
   .dependsOn(javaSdkSpring)
   .enablePlugins(BuildInfoPlugin, Publish)
+  .disablePlugins(CiReleasePlugin) // we use publishSigned, but use a pgp utility from CiReleasePlugin
   .settings(commonCompilerSettings)
   .settings(disciplinedScalacSettings)
   .settings(
@@ -302,6 +317,7 @@ lazy val springBootStarterTest = project
   .dependsOn(javaSdkSpring)
   .dependsOn(javaSdkSpringTestKit)
   .enablePlugins(BuildInfoPlugin, Publish)
+  .disablePlugins(CiReleasePlugin) // we use publishSigned, but use a pgp utility from CiReleasePlugin
   .settings(commonCompilerSettings)
   .settings(disciplinedScalacSettings)
   .settings(
@@ -338,6 +354,7 @@ lazy val springBootStarterTest = project
 //   .in(file("sdk/scala-sdk-protobuf"))
 //   .dependsOn(javaSdkProtobuf)
 //   .enablePlugins(AkkaGrpcPlugin, BuildInfoPlugin, Publish)
+//   .disablePlugins(CiReleasePlugin) // we use publishSigned, but use a pgp utility from CiReleasePlugin
 //   .settings(commonCompilerSettings)
 //   .settings(disciplinedScalacSettings)
 //   .settings(
@@ -366,31 +383,32 @@ lazy val springBootStarterTest = project
 //   .settings(Dependencies.scalaSdk)
 
 // lazy val scalaSdkProtobufTestKit = project
-// .in(file("sdk/scala-sdk-protobuf-testkit"))
-// .dependsOn(scalaSdkProtobuf)
-// .dependsOn(javaSdkProtobufTestKit)
-// .enablePlugins(BuildInfoPlugin, Publish)
-// .settings(commonCompilerSettings)
-// .settings(disciplinedScalacSettings)
-// .settings(
-//   name := "kalix-scala-sdk-protobuf-testkit",
-//   Compile / javacOptions ++= Seq("--release", "11"),
-//   Compile / scalacOptions ++= Seq("-release", "11"),
-//   buildInfoKeys := Seq[BuildInfoKey](
-//     name,
-//     version,
-//     "protocolMajorVersion" -> Kalix.ProtocolVersionMajor,
-//     "protocolMinorVersion" -> Kalix.ProtocolVersionMinor,
-//     "scalaVersion" -> scalaVersion.value),
-//   crossScalaVersions := Dependencies.CrossScalaVersions,
-//   buildInfoPackage := "kalix.scalasdk.testkit",
-//   inTask(doc)(
-//     Seq(
-//       Compile / scalacOptions ++= scaladocOptions(
-//         "Kalix Scala Protobuf SDK TestKit",
-//         version.value,
-//         (ThisBuild / baseDirectory).value))))
-// .settings(Dependencies.scalaSdkTestKit)
+//   .in(file("sdk/scala-sdk-protobuf-testkit"))
+//   .dependsOn(scalaSdkProtobuf)
+//   .dependsOn(javaSdkProtobufTestKit)
+//   .enablePlugins(BuildInfoPlugin, Publish)
+//   .disablePlugins(CiReleasePlugin) // we use publishSigned, but use a pgp utility from CiReleasePlugin
+//   .settings(commonCompilerSettings)
+//   .settings(disciplinedScalacSettings)
+//   .settings(
+//     name := "kalix-scala-sdk-protobuf-testkit",
+//     Compile / javacOptions ++= Seq("--release", "11"),
+//     Compile / scalacOptions ++= Seq("-release", "11"),
+//     buildInfoKeys := Seq[BuildInfoKey](
+//       name,
+//       version,
+//       "protocolMajorVersion" -> Kalix.ProtocolVersionMajor,
+//       "protocolMinorVersion" -> Kalix.ProtocolVersionMinor,
+//       "scalaVersion" -> scalaVersion.value),
+//     crossScalaVersions := Dependencies.CrossScalaVersions,
+//     buildInfoPackage := "kalix.scalasdk.testkit",
+//     inTask(doc)(
+//       Seq(
+//         Compile / scalacOptions ++= scaladocOptions(
+//           "Kalix Scala Protobuf SDK TestKit",
+//           version.value,
+//           (ThisBuild / baseDirectory).value))))
+//   .settings(Dependencies.scalaSdkTestKit)
 
 def scaladocOptions(title: String, ver: String, base: File): List[String] = {
   val urlString = githubUrl(ver) + "/€{FILE_PATH_EXT}#L€{FILE_LINE}"
@@ -443,6 +461,7 @@ lazy val devToolsInternal =
 def devToolsCommon(project: Project): Project =
   project
     .enablePlugins(BuildInfoPlugin, Publish)
+    .disablePlugins(CiReleasePlugin) // we use publishSigned, but use a pgp utility from CiReleasePlugin
     .settings(commonCompilerSettings)
     // TODO: need fix in KalixPlugin
     // .settings(disciplinedScalacSettings)
@@ -493,28 +512,29 @@ def devToolsCommon(project: Project): Project =
 //   .settings(Dependencies.tck)
 
 // lazy val scalaTck = project
-// .in(file("tck/scala-tck"))
-// .dependsOn(scalaSdkProtobuf, scalaSdkProtobufTestKit)
-// .enablePlugins(AkkaGrpcPlugin, PublicDockerImage, ReflectiveCodeGen)
-// .settings(commonCompilerSettings)
-// .settings(disciplinedScalacSettings)
-// .settings(
-//   name := "kalix-tck-scala-sdk",
-//   Compile / javacOptions ++= Seq("--release", "11"),
-//   Compile / scalacOptions ++= Seq("-release", "11"),
-//   crossScalaVersions := Dependencies.CrossScalaVersions,
-//   akkaGrpcGeneratedLanguages := Seq(AkkaGrpc.Scala),
-//   libraryDependencies ++= Seq(Dependencies.kalixSdkProtocol % "protobuf-src"),
-//   ReflectiveCodeGen.copyUnmanagedSources := true,
-//   Compile / mainClass := Some("kalix.scalasdk.tck.ScalaSdkTck"),
-//   dockerEnvVars += "HOST" -> "0.0.0.0",
-//   dockerExposedPorts += 8080)
-// .settings(Dependencies.tck)
+//   .in(file("tck/scala-tck"))
+//   .dependsOn(scalaSdkProtobuf, scalaSdkProtobufTestKit)
+//   .enablePlugins(AkkaGrpcPlugin, PublicDockerImage, ReflectiveCodeGen)
+//   .settings(commonCompilerSettings)
+//   .settings(disciplinedScalacSettings)
+//   .settings(
+//     name := "kalix-tck-scala-sdk",
+//     Compile / javacOptions ++= Seq("--release", "11"),
+//     Compile / scalacOptions ++= Seq("-release", "11"),
+//     crossScalaVersions := Dependencies.CrossScalaVersions,
+//     akkaGrpcGeneratedLanguages := Seq(AkkaGrpc.Scala),
+//     libraryDependencies ++= Seq(Dependencies.kalixSdkProtocol % "protobuf-src"),
+//     ReflectiveCodeGen.copyUnmanagedSources := true,
+//     Compile / mainClass := Some("kalix.scalasdk.tck.ScalaSdkTck"),
+//     dockerEnvVars += "HOST" -> "0.0.0.0",
+//     dockerExposedPorts += 8080)
+//   .settings(Dependencies.tck)
 
 lazy val codegenCore =
   project
     .in(file("codegen/core"))
     .enablePlugins(sbtprotoc.ProtocPlugin, Publish)
+    .disablePlugins(CiReleasePlugin) // we use publishSigned, but use a pgp utility from CiReleasePlugin
     .settings(commonCompilerSettings)
     .settings(disciplinedScalacSettings)
     .settings(
@@ -526,6 +546,7 @@ lazy val codegenCore =
       Compile / javacOptions ++= Seq("--release", "11"),
       Compile / scalacOptions ++= Seq("-release", "11"),
       scalaVersion := Dependencies.ScalaVersionForTooling,
+      crossScalaVersions := Seq(Dependencies.ScalaVersionForTooling),
       Compile / PB.targets := Seq(PB.gens.java -> (Compile / sourceManaged).value))
 
 lazy val codegenJava =
@@ -534,6 +555,7 @@ lazy val codegenJava =
     .configs(IntegrationTest)
     .dependsOn(codegenCore % "compile->compile;test->test")
     .enablePlugins(Publish)
+    .disablePlugins(CiReleasePlugin) // we use publishSigned, but use a pgp utility from CiReleasePlugin
     .settings(
       Test / fork := false, // needed to pass -D properties to ExampleSuite
       // to provide access to protoc to tests
@@ -553,7 +575,8 @@ lazy val codegenJava =
     .settings(
       Compile / javacOptions ++= Seq("--release", "11"),
       Compile / scalacOptions ++= Seq("-release", "11"),
-      scalaVersion := Dependencies.ScalaVersionForTooling)
+      scalaVersion := Dependencies.ScalaVersionForTooling,
+      crossScalaVersions := Seq(Dependencies.ScalaVersionForTooling))
 
 // lazy val codegenJavaCompilationTest = project
 //   .in(file("codegen/java-gen-compilation-tests"))
@@ -579,6 +602,7 @@ lazy val codegenScala =
     .in(file("codegen/scala-gen"))
     .enablePlugins(BuildInfoPlugin)
     .enablePlugins(Publish)
+    .disablePlugins(CiReleasePlugin) // we use publishSigned, but use a pgp utility from CiReleasePlugin
     .settings(Dependencies.codegenScala)
     .settings(commonCompilerSettings)
     .settings(disciplinedScalacSettings)
@@ -587,6 +611,7 @@ lazy val codegenScala =
       Compile / javacOptions ++= Seq("--release", "11"),
       Compile / scalacOptions ++= Seq("-release", "11"),
       scalaVersion := Dependencies.ScalaVersionForTooling,
+      crossScalaVersions := Seq(Dependencies.ScalaVersionForTooling),
       Test / fork := false, // needed to pass -D properties to ExampleSuite
       buildInfoKeys := Seq[BuildInfoKey](
         name,
@@ -641,12 +666,17 @@ lazy val codegenScala =
 lazy val sbtPlugin = Project(id = "sbt-kalix", base = file("sbt-plugin"))
   .enablePlugins(SbtPlugin)
   .enablePlugins(Publish)
+  .disablePlugins(CiReleasePlugin) // we use publishSigned, but use a pgp utility from CiReleasePlugin
   .settings(Dependencies.sbtPlugin)
   .settings(commonCompilerSettings)
   .settings(
     Compile / javacOptions ++= Seq("--release", "11"),
     Compile / scalacOptions ++= Seq("-release", "11"),
     scalaVersion := Dependencies.ScalaVersionForTooling,
+    crossScalaVersions := Seq(Dependencies.ScalaVersionForTooling),
+    publishSignedConfiguration := publishSignedConfiguration.value.withArtifacts(
+      // avoid publishing the plugin jar twice
+      publishSignedConfiguration.value.artifacts.filter(!_._1.name.contains("2.12_1.0"))),
     scriptedLaunchOpts := {
       scriptedLaunchOpts.value ++
       Seq("-Xmx1024M", "-Dplugin.version=" + version.value)

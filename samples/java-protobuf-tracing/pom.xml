@@ -4,7 +4,7 @@
   <parent>
     <groupId>io.kalix</groupId>
     <artifactId>kalix-java-sdk-protobuf-parent</artifactId>
-    <version>1.4.1</version>
+    <version>1.5.0</version>
   </parent>
 
   <groupId>com.example</groupId>
@@ -21,15 +21,6 @@
   </properties>
 
   <dependencies>
-    <dependency>
-      <groupId>io.kalix</groupId>
-      <artifactId>kalix-java-sdk-protobuf</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.kalix</groupId>
-      <artifactId>kalix-java-sdk-protobuf-testkit</artifactId>
-      <scope>test</scope>
-    </dependency>
     <dependency>
       <groupId>org.apache.httpcomponents</groupId>
       <artifactId>httpclient</artifactId>

@@ -10,7 +10,7 @@ You can see the Kalix Runtime version on prod [on grafana](https://grafana.sre.k
 
 ### Cutting the release 
 
-- [ ] Update the "Change date" on [the license](/LICENSE) to release date plus three years
+- [ ] Update the "Change date" on [the license](../blob/main/LICENSE#L9) to release date plus three years
 - [ ] Use the "Generate release notes" button to create [a new release](https://github.com/lightbend/kalix-jvm-sdk/releases/new) with the appropriate tag.
     - Review the generated notes and "Publish release"
     - CI will automatically publish to the repository based on the tag
@@ -19,7 +19,7 @@ You can see the Kalix Runtime version on prod [on grafana](https://grafana.sre.k
 ### Check availability
 
 - [ ] Check that [`docs/kalix-current`](https://github.com/lightbend/kalix-jvm-sdk/commits/docs/kalix-current) has been updated
-- [ ] Check the release on [Maven Central](https://repo1.maven.org/maven2/io/kalix/kalix-jvm-core-sdk/)
+- [ ] Check the release on [Maven Central](https://repo1.maven.org/maven2/io/kalix/kalix-java-sdk-protobuf-parent/)
 
 ### Fix and publish docs
 
