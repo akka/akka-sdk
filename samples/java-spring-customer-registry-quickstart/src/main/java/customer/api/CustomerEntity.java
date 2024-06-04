@@ -18,9 +18,7 @@ package customer.api;
 
 // tag::customer[]
 import kalix.javasdk.valueentity.ValueEntity;
-import kalix.javasdk.annotations.Id;
 import kalix.javasdk.annotations.TypeId;
-import io.grpc.Status;
 import customer.domain.Address;
 import customer.domain.Customer;
 

@@ -5,7 +5,6 @@
 package kalix.spring.badwiring.valueentity;
 
 import kalix.javasdk.valueentity.ValueEntity;
-import kalix.javasdk.annotations.Id;
 import kalix.javasdk.annotations.TypeId;
 import org.springframework.stereotype.Component;
 

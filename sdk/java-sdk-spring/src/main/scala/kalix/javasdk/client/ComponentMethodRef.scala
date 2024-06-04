@@ -22,7 +22,6 @@ import kalix.javasdk.annotations.TypeId
 import kalix.javasdk.eventsourcedentity.EventSourcedEntity
 import kalix.javasdk.impl.client.MethodRefResolver
 import kalix.javasdk.impl.reflection.EntityUrlTemplate
-import kalix.javasdk.impl.reflection.IdExtractor
 import kalix.javasdk.impl.reflection.RestServiceIntrospector
 import kalix.javasdk.impl.reflection.RestServiceIntrospector.BodyParameter
 import kalix.javasdk.impl.reflection.RestServiceIntrospector.PathParameter
@@ -114,7 +113,7 @@ object ComponentMethodRef {
         val pathVariables: Map[String, ?] = restMethod.params
           .collect { case p: PathParameter => p }
           .map(p => (p.name, getPathParam(params, p.param.getParameterIndex, p.name)))
-          .toMap ++ idVariables(ids, method)
+          .toMap
 
         val bodyIndex =
           restMethod.params.collect { case p: BodyParameter => p }.map(_.param.getParameterIndex).headOption
@@ -184,29 +183,6 @@ object ComponentMethodRef {
     throw new IllegalStateException(s"HTTP $requestMethod not supported when calling $pathTemplate")
   }
 
-  private def idVariables(ids: List[String], method: Method): Map[String, String] = {
-
-    val declaringClass = method.getDeclaringClass
-    if (declaringClass.getAnnotation(classOf[TypeId]) == null) {
-      //not an entity or workflows
-      Map.empty
-    } else if (IdExtractor.shouldGenerateId(method)) {
-      Map.empty
-    } else {
-      val idNames = IdExtractor.extractIds(declaringClass, method)
-      if (ids.isEmpty) {
-        throw new IllegalStateException(s"Id is missing when calling [${method.getName}] method")
-      } else if (ids.size != idNames.size) {
-        throw new IllegalStateException(
-          s"Expecting ${idNames.size} instead of ${ids.size} when calling [${method.getName}] method. Provide values for [${idNames
-            .mkString(", ")}] ids.")
-      } else if (idNames.size == 1) { //single key
-        Map(idNames.head -> ids.head)
-      } else { //compound key
-        idNames.zip(ids).toMap
-      }
-    }
-  }
 }
 
 // TODO: this and all ComponentMethodRef variants deserve javadoc explaining what it really is

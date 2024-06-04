@@ -19,7 +19,6 @@ package customer.api;
 import customer.domain.Address;
 import customer.domain.Customer;
 import kalix.javasdk.valueentity.ValueEntity;
-import kalix.javasdk.annotations.Id;
 import kalix.javasdk.annotations.TypeId;
 
 @TypeId("customer")

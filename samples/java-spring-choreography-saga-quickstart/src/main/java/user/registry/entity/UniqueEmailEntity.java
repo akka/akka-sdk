@@ -2,7 +2,6 @@ package user.registry.entity;
 
 
 import kalix.javasdk.annotations.Acl;
-import kalix.javasdk.annotations.Id;
 import kalix.javasdk.annotations.TypeId;
 import kalix.javasdk.valueentity.ValueEntity;
 import kalix.javasdk.valueentity.ValueEntityContext;

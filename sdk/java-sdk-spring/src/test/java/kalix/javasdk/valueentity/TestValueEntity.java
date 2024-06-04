@@ -4,15 +4,9 @@
 
 package kalix.javasdk.valueentity;
 
-import kalix.javasdk.annotations.Id;
 import kalix.javasdk.annotations.TypeId;
-import kalix.javasdk.valueentity.ValueEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
 
-@Id("id")
 @TypeId("ve")
-@RequestMapping("/ve")
 public class TestValueEntity extends ValueEntity<TestVEState1> {
 
   @Override
@@ -20,7 +14,6 @@ public class TestValueEntity extends ValueEntity<TestVEState1> {
     return new TestVEState1("empty", 1);
   }
 
-  @GetMapping
   public Effect<TestVEState1> get() {
     return effects().reply(currentState());
   }

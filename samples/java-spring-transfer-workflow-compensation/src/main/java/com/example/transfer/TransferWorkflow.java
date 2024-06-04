@@ -9,17 +9,11 @@ import com.example.wallet.WalletEntity.DepositResult.DepositSucceed;
 import com.example.wallet.WalletEntity.WithdrawResult;
 import com.example.wallet.WalletEntity.WithdrawResult.WithdrawFailed;
 import com.example.wallet.WalletEntity.WithdrawResult.WithdrawSucceed;
-import kalix.javasdk.annotations.Id;
 import kalix.javasdk.annotations.TypeId;
 import kalix.javasdk.client.ComponentClient;
 import kalix.javasdk.workflow.Workflow;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -35,8 +29,6 @@ import static java.time.Duration.ofHours;
 import static java.time.Duration.ofSeconds;
 
 @TypeId("transfer")
-@Id("transferId")
-@RequestMapping("/transfer/{transferId}")
 public class TransferWorkflow extends Workflow<TransferState> {
 
   public record Withdraw(String from, int amount) {
@@ -182,8 +174,7 @@ public class TransferWorkflow extends Workflow<TransferState> {
       .addStep(failoverHandler);
   }
 
-  @PutMapping
-  public Effect<Message> startTransfer(@RequestBody Transfer transfer) {
+  public Effect<Message> startTransfer(Transfer transfer) {
     if (currentState() != null) {
       return effects().error("transfer already started");
     } else if (transfer.amount() <= 0) {
@@ -207,7 +198,6 @@ public class TransferWorkflow extends Workflow<TransferState> {
     }
   }
 
-  @PatchMapping("/acceptation-timeout")
   public Effect<String> acceptationTimeout() {
     if (currentState() == null) {
       return effects().error("transfer not started");
@@ -223,7 +213,6 @@ public class TransferWorkflow extends Workflow<TransferState> {
   }
 
   // tag::resuming[]
-  @PatchMapping("/accept")
   public Effect<Message> accept() {
     if (currentState() == null) {
       return effects().error("transfer not started");
@@ -242,7 +231,6 @@ public class TransferWorkflow extends Workflow<TransferState> {
   }
   // end::resuming[]
 
-  @GetMapping
   public Effect<TransferState> getTransferState() {
     if (currentState() == null) {
       return effects().error("transfer not started");

@@ -5,7 +5,6 @@
 package kalix.spring.testmodels.workflow;
 
 import kalix.javasdk.annotations.Acl;
-import kalix.javasdk.annotations.Id;
 import kalix.javasdk.annotations.JWT;
 import kalix.javasdk.annotations.TypeId;
 import kalix.javasdk.workflow.Workflow;
@@ -67,7 +66,6 @@ public class WorkflowTestModels {
   }
 
   @TypeId("transfer-workflow")
-  @Id("transferId")
   @Acl(allow = @Acl.Matcher(service = "test"))
   public static class WorkflowWithAcl extends Workflow<WorkflowState> {
 

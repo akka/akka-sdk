@@ -1,7 +1,6 @@
 package com.example;
 
 import kalix.javasdk.valueentity.ValueEntity;
-import kalix.javasdk.annotations.Id;
 import kalix.javasdk.annotations.TypeId;
 
 
