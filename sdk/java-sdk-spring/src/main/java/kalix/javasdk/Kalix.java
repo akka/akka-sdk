@@ -578,4 +578,12 @@ public final class Kalix {
     return new AnySupport(allDescriptors.toArray(new Descriptors.FileDescriptor[0]), classLoader, typeUrlPrefix, prefer);
   }
 
+  /**
+   * INTERNAL API
+   */
+  @InternalApi
+  public Map<String, Function<ActorSystem, Service>> internalGetServices() {
+    return services;
+  }
+
 }

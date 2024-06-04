@@ -7,17 +7,16 @@ package kalix.javasdk
 import java.lang.management.ManagementFactory
 import java.time.Duration
 import java.util.concurrent.CompletionStage
-
 import scala.compat.java8.FutureConverters
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
 import scala.util.Failure
 import scala.util.Success
-
 import akka.Done
 import akka.actor.ActorSystem
 import akka.actor.CoordinatedShutdown
 import akka.actor.CoordinatedShutdown.Reason
+import akka.actor.typed
 import akka.http.scaladsl._
 import akka.http.scaladsl.model._
 import com.google.protobuf.DescriptorProtos.FileDescriptorProto
@@ -26,6 +25,7 @@ import com.typesafe.config.ConfigFactory
 import kalix.devtools.impl.DevModeSettings
 import kalix.devtools.impl.DockerComposeUtils
 import kalix.javasdk.impl.DiscoveryImpl
+import kalix.javasdk.impl.KalixJavaSdkSettings
 import kalix.javasdk.impl.Service
 import kalix.javasdk.impl.action.ActionService
 import kalix.javasdk.impl.action.ActionsImpl
@@ -37,11 +37,19 @@ import kalix.javasdk.impl.view.ViewService
 import kalix.javasdk.impl.view.ViewsImpl
 import kalix.javasdk.impl.workflow.WorkflowImpl
 import kalix.javasdk.impl.workflow.WorkflowService
+import kalix.javasdk.spi.SpiEndpoints
+import kalix.protocol.action.Actions
 import kalix.protocol.action.ActionsHandler
+import kalix.protocol.discovery.Discovery
 import kalix.protocol.discovery.DiscoveryHandler
+import kalix.protocol.event_sourced_entity.EventSourcedEntities
 import kalix.protocol.event_sourced_entity.EventSourcedEntitiesHandler
+import kalix.protocol.replicated_entity.ReplicatedEntities
+import kalix.protocol.value_entity.ValueEntities
 import kalix.protocol.value_entity.ValueEntitiesHandler
+import kalix.protocol.view.Views
 import kalix.protocol.view.ViewsHandler
+import kalix.protocol.workflow_entity.WorkflowEntities
 import kalix.protocol.workflow_entity.WorkflowEntitiesHandler
 import org.slf4j.LoggerFactory
 
@@ -101,7 +109,7 @@ final class KalixRunner private[javasdk] (
   // The effective Akka Config instance as it maybe be tweaked for dev-mode (see KalixRunner.prepareConfig)
   private[kalix] val finalConfig: Config = system.settings.config
   private[kalix] final val configuration =
-    new KalixRunner.Configuration(finalConfig.getConfig("kalix"))
+    new KalixJavaSdkSettings(finalConfig.getConfig("kalix"))
 
   private val services = serviceFactories.toSeq.map { case (serviceName, factory) =>
     serviceName -> factory(system)
@@ -183,6 +191,56 @@ final class KalixRunner private[javasdk] (
     val discovery = DiscoveryHandler.partial(new DiscoveryImpl(system, services, aclDescriptor, sdkName))
 
     serviceRoutes.orElse(discovery).orElse { case _ => Future.successful(HttpResponse(StatusCodes.NotFound)) }
+  }
+
+  private[kalix] lazy val spiEndpoints: SpiEndpoints = {
+
+    var actionsEndpoint: Option[Actions] = None
+    var eventSourcedEntitiesEndpoint: Option[EventSourcedEntities] = None
+    var valueEntitiesEndpoint: Option[ValueEntities] = None
+    var viewsEndpoint: Option[Views] = None
+    var workflowEntitiesEndpoint: Option[WorkflowEntities] = None
+    val replicatedEntitiesEndpoint: Option[ReplicatedEntities] = None
+
+    services.groupBy(_._2.getClass).foreach {
+
+      case (serviceClass, eventSourcedServices: Map[String, EventSourcedEntityService] @unchecked)
+          if serviceClass == classOf[EventSourcedEntityService] =>
+        val eventSourcedImpl = new EventSourcedEntitiesImpl(system, eventSourcedServices, configuration)
+        eventSourcedEntitiesEndpoint = Some(eventSourcedImpl)
+
+      case (serviceClass, entityServices: Map[String, ValueEntityService] @unchecked)
+          if serviceClass == classOf[ValueEntityService] =>
+        valueEntitiesEndpoint = Some(new ValueEntitiesImpl(system, entityServices, configuration))
+
+      case (serviceClass, workflowServices: Map[String, WorkflowService] @unchecked)
+          if serviceClass == classOf[WorkflowService] =>
+        workflowEntitiesEndpoint = Some(new WorkflowImpl(system, workflowServices))
+
+      case (serviceClass, actionServices: Map[String, ActionService] @unchecked)
+          if serviceClass == classOf[ActionService] =>
+        actionsEndpoint = Some(new ActionsImpl(system, actionServices))
+
+      case (serviceClass, viewServices: Map[String, ViewService] @unchecked) if serviceClass == classOf[ViewService] =>
+        viewsEndpoint = Some(new ViewsImpl(system, viewServices))
+
+      case (serviceClass, _) =>
+        sys.error(s"Unknown service type: $serviceClass")
+    }
+
+    val discoveryEndpoint = new DiscoveryImpl(system, services, aclDescriptor, sdkName)
+
+    new SpiEndpoints {
+      override def preStart(system: typed.ActorSystem[_]): Future[Done] = Future.successful(Done)
+      override def onStart(system: typed.ActorSystem[_]): Future[Done] = Future.successful(Done)
+      override def discovery: Discovery = discoveryEndpoint
+      override def actions: Option[Actions] = actionsEndpoint
+      override def eventSourcedEntities: Option[EventSourcedEntities] = eventSourcedEntitiesEndpoint
+      override def valueEntities: Option[ValueEntities] = valueEntitiesEndpoint
+      override def views: Option[Views] = viewsEndpoint
+      override def workflowEntities: Option[WorkflowEntities] = workflowEntitiesEndpoint
+      override def replicatedEntities: Option[ReplicatedEntities] = replicatedEntitiesEndpoint
+    }
   }
 
   /**

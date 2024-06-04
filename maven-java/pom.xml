@@ -119,6 +119,7 @@
 
   <modules>
     <module>kalix-maven-plugin</module>
+    <module>kalix-java-sdk-annotation-processor</module>
 
     <!-- 
     <module>kalix-java-protobuf-parent</module>

@@ -4,27 +4,25 @@
 
 package kalix.javasdk.impl
 
-import java.util
-import java.util.UUID
-import java.util.concurrent.atomic.AtomicReference
-
-import scala.concurrent.Future
-import scala.concurrent.Promise
-import scala.io.Source
-import scala.jdk.CollectionConverters._
-import scala.util.control.NonFatal
-
 import akka.Done
 import akka.actor.ActorSystem
 import akka.actor.CoordinatedShutdown
 import com.google.protobuf.DescriptorProtos
 import com.google.protobuf.DescriptorProtos.FileDescriptorProto
 import com.google.protobuf.empty.Empty
-import kalix.spring.BuildInfo
 import kalix.protocol.action.Actions
 import kalix.protocol.discovery._
+import kalix.spring.BuildInfo
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+
+import java.util
+import java.util.UUID
+import java.util.concurrent.atomic.AtomicReference
+import scala.concurrent.Future
+import scala.concurrent.Promise
+import scala.io.Source
+import scala.jdk.CollectionConverters._
 
 class DiscoveryImpl(
     system: ActorSystem,
@@ -240,7 +238,7 @@ object DiscoveryImpl {
 
   private[impl] def fileDescriptorSetBuilder(services: Iterable[Service], userDescPath: String, log: Logger) = {
 
-    val descriptors = loadFileDescriptors(userDescPath, log)
+    val descriptors = Map.empty[String, DescriptorProtos.FileDescriptorProto]
 
     val allDescriptors =
       AnySupport.flattenDescriptors(services.flatMap(s => s.descriptor.getFile +: s.additionalDescriptors).toSeq)
@@ -267,47 +265,4 @@ object DiscoveryImpl {
     builder
   }
 
-  private[impl] def loadFileDescriptors(path: String, log: Logger): Map[String, DescriptorProtos.FileDescriptorProto] =
-    // Special case for disabled, this allows the user to disable attempting to load the descriptor, which means
-    // they won't get the great big warning below if it doesn't exist.
-    if (path == "disabled") {
-      Map.empty
-    } else {
-      val stream = getClass.getResourceAsStream(path)
-      if (stream == null) {
-        log.warn(
-          s"Source info descriptor [$path] not found on classpath. Reporting descriptor errors against " +
-          "source locations will be disabled. To fix this, ensure that the following configuration applied to the " +
-          "protobuf maven plugin: \n" +
-          s"""
-             |<writeDescriptorSet>true</writeDescriptorSet>
-             |<includeSourceInfoInDescriptorSet>true</includeSourceInfoInDescriptorSet>
-             |<descriptorSetFileName>${path.split("/").last}</descriptorSetFileName>
-             |
-             |and also that the generated resources directory is included in the classpath:
-             |
-             |  <build>
-             |    <resources>
-             |      <resource>
-             |        <directory>$${project.build.directory}/generated-resources</directory>
-             |      </resource>
-             |    </resources>
-             |    ...
-             |""".stripMargin)
-        Map.empty
-      } else {
-        try {
-          DescriptorProtos.FileDescriptorSet
-            .parseFrom(stream)
-            .getFileList
-            .asScala
-            .map { case file => file.getName -> file }
-            .toMap
-        } catch {
-          case NonFatal(e) =>
-            log.error("Error parsing descriptor file [{}] from classpath, source mapping will be disabled", path, e)
-            Map.empty
-        }
-      }
-    }
 }

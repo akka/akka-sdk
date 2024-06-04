@@ -7,10 +7,11 @@ object Dependencies {
     val ProtocolVersionMajor = 1
     val ProtocolVersionMinor = 1
     val RuntimeImage = "gcr.io/kalix-public/kalix-runtime"
+    // Remember to bump kalix-runtime.version in maven-java/kalix-spring-boot-parent if bumping this
     val RuntimeVersion = System.getProperty(
       "kalix-runtime.version",
       // temporarily accept the old system property name
-      System.getProperty("kalix-proxy.version", "1.1.36"))
+      System.getProperty("kalix-proxy.version", "1.1.36-0b5ba7a"))
   }
 
   // changing the Scala version of the Java SDK affects end users
@@ -46,6 +47,7 @@ object Dependencies {
   val kalixSdkProtocol = "io.kalix" % "kalix-sdk-protocol" % Kalix.RuntimeVersion
   val kalixTckProtocol = "io.kalix" % "kalix-tck-protocol" % Kalix.RuntimeVersion
   val kalixTestkitProtocol = "io.kalix" % "kalix-testkit-protocol" % Kalix.RuntimeVersion
+  val kalixSdkSpi = "io.kalix" %% "kalix-sdk-spi" % Kalix.RuntimeVersion
 
   val commonsIo = "commons-io" % "commons-io" % CommonsIoVersion
   val logback = "ch.qos.logback" % "logback-classic" % LogbackVersion
@@ -152,6 +154,8 @@ object Dependencies {
     "jakarta.websocket" % "jakarta.websocket-api" % "2.0.0")
 
   val javaSdkSpring = deps ++= sdkDeps ++ springDeps ++ Seq(
+    kalixSdkSpi,
+    akkaDependency("akka-actor-typed") % Provided,
     "net.aichler" % "jupiter-interface" % JupiterKeys.jupiterVersion.value % Test,
     "org.scala-lang.modules" %% "scala-parser-combinators" % "2.3.0",
     junit5 % Test,

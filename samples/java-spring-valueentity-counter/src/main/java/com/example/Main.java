@@ -1,12 +1,14 @@
 package com.example;
 
 import kalix.javasdk.annotations.Acl;
+import kalix.javasdk.annotations.KalixService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 // tag::main[]
+@KalixService
 @SpringBootApplication // <1>
 // end::main[]
 // Allow all other Kalix services deployed in the same project to access the components of this

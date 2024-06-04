@@ -11,7 +11,6 @@ import akka.actor.ActorSystem
 import akka.stream.scaladsl.Flow
 import akka.stream.scaladsl.Source
 import io.grpc.Status
-import kalix.javasdk.KalixRunner.Configuration
 import kalix.javasdk.impl.ErrorHandling
 import kalix.javasdk.impl.ErrorHandling.BadRequestException
 import kalix.javasdk.impl.effect.EffectSupport
@@ -75,7 +74,7 @@ final class ValueEntityService(
 final class ValueEntitiesImpl(
     system: ActorSystem,
     val services: Map[String, ValueEntityService],
-    configuration: Configuration)
+    configuration: KalixJavaSdkSettings)
     extends ValueEntities {
 
   import EntityExceptions._

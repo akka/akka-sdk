@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
+// @KalixService (only one per service)
 @SpringBootApplication
 // Allow all other Kalix services deployed in the same project to access the components of this
 // Kalix service, but disallow access from the internet. This can be overridden explicitly

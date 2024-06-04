@@ -6,14 +6,10 @@ package kalix.javasdk.view;
 
 import com.google.protobuf.Descriptors;
 import kalix.javasdk.annotations.ViewId;
+import kalix.javasdk.impl.ComponentReflection;
 import kalix.javasdk.impl.MessageCodec;
 import kalix.javasdk.impl.view.ViewMultiTableRouter;
 import kalix.javasdk.impl.ComponentDescriptor;
-import kalix.javasdk.view.View;
-import kalix.javasdk.view.ViewCreationContext;
-import kalix.javasdk.view.ViewOptions;
-import kalix.javasdk.view.ViewProvider;
-import kalix.spring.impl.KalixSpringApplication;
 import kalix.javasdk.impl.JsonMessageCodec;
 import kalix.javasdk.impl.view.ReflectiveViewMultiTableRouter;
 
@@ -78,7 +74,7 @@ public class ReflectiveMultiTableViewProvider<V> implements ViewProvider {
   public ViewMultiTableRouter newRouter(ViewCreationContext context) {
     Map<Class<View<?>>, View<?>> viewTables = new HashMap<>();
     for (Class<?> innerClass : viewClass.getDeclaredClasses()) {
-      if (KalixSpringApplication.isNestedViewTable(innerClass)) {
+      if (ComponentReflection.isNestedViewTable(innerClass)) {
         @SuppressWarnings("unchecked")
         Class<View<?>> viewTableClass = (Class<View<?>>) innerClass;
         viewTables.put(viewTableClass, factory.apply(viewTableClass, context));

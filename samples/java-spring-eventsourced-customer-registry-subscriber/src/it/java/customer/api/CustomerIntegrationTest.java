@@ -7,7 +7,6 @@ import customer.Main;
 import customer.actions.CustomerRegistryAction;
 import customer.views.Customer;
 import kalix.javasdk.JsonSupport;
-import kalix.spring.impl.KalixSpringApplication;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.*;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -50,7 +49,8 @@ public class CustomerIntegrationTest {
 
   final private Duration timeout = Duration.of(5, SECONDS);
 
-  private KalixSpringApplication kalixSpringApplication;
+  // FIXME integration test support
+  //  private KalixSpringApplication kalixSpringApplication;
 
   public CustomerIntegrationTest(ApplicationContext applicationContext) {
     Map<String, Object> confMap = new HashMap<>();
@@ -61,20 +61,21 @@ public class CustomerIntegrationTest {
 
     Config config = ConfigFactory.parseMap(confMap).withFallback(ConfigFactory.load());
 
-    kalixSpringApplication = new KalixSpringApplication(applicationContext, config);
+    // kalixSpringApplication = new KalixSpringApplication(applicationContext, config);
   }
 
   @BeforeAll
   public void beforeAll() {
-    kalixSpringApplication.start();
+
+    //kalixSpringApplication.start();
   }
 
   @AfterAll
   public void afterAll() throws ExecutionException, InterruptedException {
-      new FutureConverters.FutureOps<>(kalixSpringApplication.stop())
+      /* new FutureConverters.FutureOps<>(kalixSpringApplication.stop())
         .asJava()
         .toCompletableFuture()
-        .get();
+        .get(); */
   }
 
   private HttpStatusCode assertSourceServiceIsUp(WebClient webClient) {

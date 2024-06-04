@@ -638,5 +638,4 @@ public final class Kalix {
   public MessageCodec getMessageCodec() {
     return new AnySupport(allDescriptors.toArray(new Descriptors.FileDescriptor[0]), classLoader, typeUrlPrefix, prefer);
   }
-
 }

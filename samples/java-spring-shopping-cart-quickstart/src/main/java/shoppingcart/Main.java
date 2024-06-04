@@ -1,11 +1,13 @@
 package shoppingcart;
 
 import kalix.javasdk.annotations.Acl;
+import kalix.javasdk.annotations.KalixService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
+@KalixService
 @SpringBootApplication
 // NOTE: This default ACL settings is very permissive as it allows any traffic from the internet.
 // Our samples default to this permissive configuration to allow users to easily try it out.

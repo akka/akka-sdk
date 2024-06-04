@@ -13,7 +13,6 @@ import akka.stream.scaladsl.Source
 import com.google.protobuf.Descriptors
 import com.google.protobuf.any.{ Any => ScalaPbAny }
 import io.grpc.Status
-import kalix.javasdk.KalixRunner.Configuration
 import kalix.javasdk.Metadata
 import kalix.javasdk.eventsourcedentity.CommandContext
 import kalix.javasdk.eventsourcedentity.EventContext
@@ -91,7 +90,7 @@ final class EventSourcedEntityService(
 final class EventSourcedEntitiesImpl(
     system: ActorSystem,
     _services: Map[String, EventSourcedEntityService],
-    configuration: Configuration)
+    configuration: KalixJavaSdkSettings)
     extends EventSourcedEntities {
   import kalix.javasdk.impl.EntityExceptions._
 

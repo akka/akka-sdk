@@ -1,11 +1,13 @@
 package com.example.acl;
 
 import kalix.javasdk.annotations.Acl;
+import kalix.javasdk.annotations.KalixService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
+@KalixService
 @SpringBootApplication
 // Allow all other Kalix services deployed in the same project to access the components of this
 // Kalix service, but disallow access from the internet. This can be overridden explicitly

@@ -41,7 +41,6 @@ import kalix.javasdk.impl.reflection.Reflect
 import kalix.javasdk.impl.reflection.Reflect.Syntax._
 import kalix.javasdk.impl.reflection.ServiceMethod
 import kalix.javasdk.view.View
-import kalix.spring.impl.KalixSpringApplication
 
 // TODO: abstract away spring and reactor dependencies
 import org.springframework.web.bind.annotation.RequestBody
@@ -180,15 +179,15 @@ object Validations {
     when[View[_]](component) {
       validateSingleView(component)
     } ++
-    when(KalixSpringApplication.isMultiTableView(component)) {
+    when(ComponentReflection.isMultiTableView(component)) {
       viewMustHaveAtLeastOneQueryMethod(component)
-      val viewClasses = component.getDeclaredClasses.toSeq.filter(KalixSpringApplication.isNestedViewTable)
+      val viewClasses = component.getDeclaredClasses.toSeq.filter(ComponentReflection.isNestedViewTable)
       viewClasses.map(validateSingleView).reduce(_ ++ _)
     }
   }
 
   private def validateSingleView(component: Class[_]): Validation = {
-    when(!KalixSpringApplication.isNestedViewTable(component)) {
+    when(!ComponentReflection.isNestedViewTable(component)) {
       viewMustHaveAtLeastOneQueryMethod(component)
     } ++
     commonValidation(component) ++
