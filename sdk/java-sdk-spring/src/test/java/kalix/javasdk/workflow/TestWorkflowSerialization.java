@@ -4,17 +4,11 @@
 
 package kalix.javasdk.workflow;
 
-import kalix.javasdk.annotations.Id;
 import kalix.javasdk.annotations.TypeId;
-import kalix.javasdk.workflow.Workflow;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.util.concurrent.CompletableFuture;
 
-@Id("id")
 @TypeId("workflow")
-@RequestMapping("/workflow")
 public class TestWorkflowSerialization extends Workflow<String> {
 
   @Override
@@ -26,7 +20,6 @@ public class TestWorkflowSerialization extends Workflow<String> {
     return workflow().addStep(testStep);
   }
 
-  @GetMapping
   public Effect<String> start() {
     return effects()
         .updateState("empty")
@@ -34,7 +27,6 @@ public class TestWorkflowSerialization extends Workflow<String> {
         .thenReply("ok");
   }
 
-  @GetMapping
   public Effect<String> get() {
     return effects().reply(currentState());
   }

@@ -4,24 +4,17 @@
 
 package kalix.javasdk.impl
 
+import scala.jdk.CollectionConverters.CollectionHasAsScala
+
 import com.google.protobuf.Descriptors.FieldDescriptor.JavaType
 import kalix.JwtMethodOptions.JwtMethodMode
 import kalix.JwtServiceOptions.JwtServiceMode
-import kalix.KeyGeneratorMethodOptions.Generator
-import kalix.javasdk.impl.reflection.ServiceIntrospectionException
+import kalix.spring.testmodels.workflow.WorkflowTestModels.TransferWorkflow
 import kalix.spring.testmodels.workflow.WorkflowTestModels.WorkflowWithAcl
-import kalix.spring.testmodels.workflow.WorkflowTestModels.WorkflowWithIdGenerator
-import kalix.spring.testmodels.workflow.WorkflowTestModels.WorkflowWithIllDefinedIdGenerator
-import kalix.spring.testmodels.workflow.WorkflowTestModels.WorkflowWithKeyOverridden
 import kalix.spring.testmodels.workflow.WorkflowTestModels.WorkflowWithMethodLevelAcl
 import kalix.spring.testmodels.workflow.WorkflowTestModels.WorkflowWithMethodLevelJWT
-import kalix.spring.testmodels.workflow.WorkflowTestModels.WorkflowWithMethodLevelKey
 import kalix.spring.testmodels.workflow.WorkflowTestModels.WorkflowWithServiceLevelJWT
-import kalix.spring.testmodels.workflow.WorkflowTestModels.WorkflowWithTypeLevelKey
-import kalix.spring.testmodels.workflow.WorkflowTestModels.WorkflowWithoutIdGeneratorAndId
 import org.scalatest.wordspec.AnyWordSpec
-
-import scala.jdk.CollectionConverters.CollectionHasAsScala
 
 class WorkflowEntityDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuite {
 
@@ -33,61 +26,26 @@ class WorkflowEntityDescriptorFactorySpec extends AnyWordSpec with ComponentDesc
     }
 
     "generate mappings for a Workflow with entity ids in path" in {
-      assertDescriptor[WorkflowWithTypeLevelKey] { desc =>
-        val method = desc.commandHandlers("StartTransfer")
-        val fieldKey = "transferId"
-        assertRequestFieldJavaType(method, fieldKey, JavaType.STRING)
-        assertEntityIdField(method, fieldKey)
-        assertRequestFieldJavaType(method, "json_body", JavaType.MESSAGE)
-      }
-    }
+      assertDescriptor[TransferWorkflow] { desc =>
+        val startTransferMethod = desc.commandHandlers("StartTransfer")
+        val startTransferUrl = findHttpRule(desc, startTransferMethod.grpcMethodName).getPost
+        startTransferUrl shouldBe "/akka/v1.0/workflow/transfer-workflow/{id}/startTransfer"
 
-    "generate mappings for a Workflow with keys in path and EntityKey on method" in {
-      assertDescriptor[WorkflowWithMethodLevelKey] { desc =>
-        val method = desc.commandHandlers("StartTransfer")
-        val fieldKey = "transferId"
-        assertRequestFieldJavaType(method, fieldKey, JavaType.STRING)
-        assertEntityIdField(method, fieldKey)
-        assertRequestFieldJavaType(method, "json_body", JavaType.MESSAGE)
-      }
-    }
+        val fieldKey = "id"
+        assertRequestFieldJavaType(startTransferMethod, fieldKey, JavaType.STRING)
+        assertEntityIdField(startTransferMethod, fieldKey)
+        assertRequestFieldJavaType(startTransferMethod, "json_body", JavaType.MESSAGE)
 
-    "generate mappings for a Workflow with Id on method overrides EntityKey on type" in {
-      assertDescriptor[WorkflowWithKeyOverridden] { desc =>
-        val method = desc.commandHandlers("StartTransfer")
-        val fieldKey = "transferId"
-        assertRequestFieldJavaType(method, fieldKey, JavaType.STRING)
-        assertEntityIdField(method, fieldKey)
-        assertRequestFieldJavaType(method, "json_body", JavaType.MESSAGE)
-      }
-    }
-
-    "fail if mix Id and GenerateId on method" in {
-      intercept[ServiceIntrospectionException] {
-        descriptorFor[WorkflowWithIllDefinedIdGenerator]
-      }.getMessage should include("Invalid annotation usage. Found both @Id and @GenerateId annotations.")
-    }
-
-    "fail if no Id nor GenerateId is defined" in {
-      intercept[ServiceIntrospectionException] {
-        descriptorFor[WorkflowWithoutIdGeneratorAndId]
-      }.getMessage should include("Invalid command method. No @Id nor @GenerateId annotations found.")
-    }
-
-    "generate mappings for a Workflow with GenerateId" in {
-      assertDescriptor[WorkflowWithIdGenerator] { desc =>
-        val method = desc.commandHandlers("StartTransfer")
-        assertRequestFieldJavaType(method, "json_body", JavaType.MESSAGE)
-
-        val generator = findKalixMethodOptions(desc, method.grpcMethodName).getIdGenerator.getAlgorithm
-        generator shouldBe Generator.VERSION_4_UUID
+        val getStateMethod = desc.commandHandlers("GetState")
+        val getStateUrl = findHttpRule(desc, getStateMethod.grpcMethodName).getGet
+        getStateUrl shouldBe "/akka/v1.0/workflow/transfer-workflow/{id}/getState"
       }
     }
 
     "generate mappings for a Workflow with workflow keys in path and method level JWT annotation" in {
       assertDescriptor[WorkflowWithMethodLevelJWT] { desc =>
         val method = desc.commandHandlers("StartTransfer")
-        val fieldKey = "transferId"
+        val fieldKey = "id"
         assertRequestFieldJavaType(method, fieldKey, JavaType.STRING)
         assertEntityIdField(method, fieldKey)
         assertRequestFieldJavaType(method, "json_body", JavaType.MESSAGE)

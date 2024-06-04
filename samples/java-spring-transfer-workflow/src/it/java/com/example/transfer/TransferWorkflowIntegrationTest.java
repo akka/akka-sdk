@@ -27,11 +27,6 @@ public class TransferWorkflowIntegrationTest extends KalixIntegrationTestKitSupp
   @Autowired
   private ComponentClient componentClient;
 
-  @Autowired
-  private WebClient webClient;
-
-  private Duration timeout = Duration.of(10, SECONDS);
-
   @Test
   public void shouldTransferMoney() {
     var walletId1 = "1";
@@ -39,15 +34,15 @@ public class TransferWorkflowIntegrationTest extends KalixIntegrationTestKitSupp
     createWallet(walletId1, 100);
     createWallet(walletId2, 100);
     var transferId = randomTransferId();
-    var transferUrl = "/transfer/" + transferId;
     var transfer = new Transfer(walletId1, walletId2, 10);
 
-    String response = webClient.put().uri(transferUrl)
-      .bodyValue(transfer)
-      .retrieve()
-      .bodyToMono(Message.class)
-      .map(Message::value)
-      .block(timeout);
+    String response =
+      await(
+        componentClient
+          .forWorkflow(transferId)
+          .methodRef(TransferWorkflow::startTransfer)
+          .invokeAsync(transfer)
+      ).value();
 
     assertThat(response).isEqualTo("transfer started");
 

@@ -30,7 +30,8 @@ public class TransferWorkflowIntegrationTest extends KalixIntegrationTestKitSupp
     var transferId = randomId();
     var transfer = new Transfer(walletId1, walletId2, 10);
 
-    String response = await(componentClient
+    String response = await(
+      componentClient
       .forWorkflow(transferId)
       .methodRef(TransferWorkflow::startTransfer)
       .invokeAsync(transfer))
@@ -66,7 +67,8 @@ public class TransferWorkflowIntegrationTest extends KalixIntegrationTestKitSupp
 
     assertThat(response).isEqualTo("transfer started, waiting for acceptation");
 
-    String acceptationResponse = await(componentClient
+    String acceptationResponse = await(
+      componentClient
       .forWorkflow(transferId)
       .methodRef(TransferWorkflow::accept).invokeAsync())
       .value();

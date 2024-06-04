@@ -5,20 +5,14 @@
 package kalix.javasdk.workflow;
 
 import kalix.javasdk.Metadata;
-import kalix.javasdk.annotations.Id;
 import kalix.javasdk.annotations.TypeId;
 import kalix.javasdk.impl.MetadataImpl;
 import kalix.javasdk.impl.RestDeferredCall;
-import kalix.javasdk.workflow.Workflow;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
 import scala.Function1;
 
 import java.util.concurrent.CompletionStage;
 
-@Id("id")
 @TypeId("workflow")
-@RequestMapping("/workflow")
 public class TestWorkflowSerializationDeferredCall extends Workflow<String> {
 
   @Override
@@ -31,7 +25,6 @@ public class TestWorkflowSerializationDeferredCall extends Workflow<String> {
     return workflow().addStep(testStep);
   }
 
-  @GetMapping
   public Effect<String> start() {
     return effects()
         .updateState("empty")
@@ -39,7 +32,6 @@ public class TestWorkflowSerializationDeferredCall extends Workflow<String> {
         .thenReply("ok");
   }
 
-  @GetMapping
   public Effect<String> get() {
     return effects().reply(currentState());
   }

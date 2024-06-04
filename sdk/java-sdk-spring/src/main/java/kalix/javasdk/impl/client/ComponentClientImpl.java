@@ -5,10 +5,14 @@
 package kalix.javasdk.impl.client;
 
 import kalix.javasdk.Metadata;
-import kalix.javasdk.client.*;
+import kalix.javasdk.client.ActionClient;
+import kalix.javasdk.client.ComponentClient;
+import kalix.javasdk.client.EventSourcedEntityClient;
+import kalix.javasdk.client.ValueEntityClient;
+import kalix.javasdk.client.ViewClient;
+import kalix.javasdk.client.WorkflowClient;
 import kalix.spring.impl.KalixClient;
 
-import java.util.List;
 import java.util.Optional;
 
 public class ComponentClientImpl implements ComponentClient {
@@ -45,20 +49,12 @@ public class ComponentClientImpl implements ComponentClient {
     return new EventSourcedEntityClient(kalixClient, callMetadata, eventSourcedEntityId);
   }
 
-  @Override
-  public WorkflowClient forWorkflow() {
-    return new WorkflowClient(kalixClient);
-  }
 
   @Override
   public WorkflowClient forWorkflow(String workflowId) {
     return new WorkflowClient(kalixClient, workflowId);
   }
 
-  @Override
-  public WorkflowClient forWorkflow(String... workflowIds) {
-    return new WorkflowClient(kalixClient, List.of(workflowIds));
-  }
 
   @Override
   public ViewClient forView() {

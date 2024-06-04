@@ -3,24 +3,17 @@ package com.example.transfer;
 import com.example.transfer.TransferState.Transfer;
 import com.example.wallet.Ok;
 import com.example.wallet.WalletEntity;
+import kalix.javasdk.annotations.TypeId;
 import kalix.javasdk.client.ComponentClient;
 import kalix.javasdk.workflow.Workflow;
-import kalix.javasdk.annotations.Id;
-import kalix.javasdk.annotations.TypeId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 
 import static com.example.transfer.TransferState.TransferStatus.COMPLETED;
 import static com.example.transfer.TransferState.TransferStatus.WITHDRAW_SUCCEED;
 
 // tag::class[]
-@TypeId("transfer") // <2>
-@Id("transferId") // <3>
-@RequestMapping("/transfer/{transferId}") // <4>
+@TypeId("transfer")
 public class TransferWorkflow extends Workflow<TransferState> { // <1>
   // end::class[]
 
@@ -81,8 +74,7 @@ public class TransferWorkflow extends Workflow<TransferState> { // <1>
   // end::definition[]
 
   // tag::start[]
-  @PutMapping
-  public Effect<Message> startTransfer(@RequestBody Transfer transfer) {
+  public Effect<Message> startTransfer(Transfer transfer) {
     if (transfer.amount() <= 0) {
       return effects().error("transfer amount should be greater than zero"); // <1>
     } else if (currentState() != null) {
@@ -102,7 +94,6 @@ public class TransferWorkflow extends Workflow<TransferState> { // <1>
   // end::start[]
 
   // tag::get-transfer[]
-  @GetMapping // <1>
   public Effect<TransferState> getTransferState() {
     if (currentState() == null) {
       return effects().error("transfer not started");

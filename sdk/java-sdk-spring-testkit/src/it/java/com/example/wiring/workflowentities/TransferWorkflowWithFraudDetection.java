@@ -9,24 +9,15 @@ import com.example.wiring.workflowentities.FraudDetectionResult.TransferRejected
 import com.example.wiring.workflowentities.FraudDetectionResult.TransferRequiresManualAcceptation;
 import com.example.wiring.workflowentities.FraudDetectionResult.TransferVerified;
 import kalix.javasdk.HttpResponse;
-import kalix.javasdk.client.ComponentClient;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import kalix.javasdk.annotations.Id;
 import kalix.javasdk.annotations.TypeId;
+import kalix.javasdk.client.ComponentClient;
 import kalix.javasdk.workflow.Workflow;
-
 
 import java.util.concurrent.CompletionStage;
 
 import static java.util.concurrent.CompletableFuture.completedFuture;
 
-@Id("transferId")
 @TypeId("transfer-workflow-with-fraud-detection")
-@RequestMapping("/transfer-with-fraud-detection/{transferId}")
 public class TransferWorkflowWithFraudDetection extends Workflow<TransferState> {
 
   private final String fraudDetectionStepName = "fraud-detection";
@@ -63,8 +54,7 @@ public class TransferWorkflowWithFraudDetection extends Workflow<TransferState> 
         .addStep(deposit);
   }
 
-  @PutMapping
-  public Effect<Message> startTransfer(@RequestBody Transfer transfer) {
+  public Effect<Message> startTransfer(Transfer transfer) {
     if (transfer.amount <= 0) {
       return effects().error("Transfer amount should be greater than zero");
     } else {
@@ -79,7 +69,6 @@ public class TransferWorkflowWithFraudDetection extends Workflow<TransferState> 
     }
   }
 
-  @PatchMapping("/accept")
   public Effect<Message> acceptTransfer() {
     if (currentState() == null) {
       return effects().reply(new Message("transfer not started"));
@@ -94,7 +83,6 @@ public class TransferWorkflowWithFraudDetection extends Workflow<TransferState> 
     }
   }
 
-  @GetMapping
   public Effect<TransferState> getTransferState() {
     if (currentState() == null) {
       return effects().error("transfer not started");

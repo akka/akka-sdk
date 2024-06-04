@@ -156,7 +156,7 @@ public class TransferWorkflow extends Workflow<TransferState> {
             "acceptationTimout-" + transferId,
             ofHours(8),
             componentClient.forWorkflow(transferId)
-              .methodRef(TransferWorkflow::acceptationTimeout)); // <1>
+              .methodRef(TransferWorkflow::acceptationTimeout).deferred()); // <1>
         })
         .andThen(Done.class, __ ->
           effects().pause()); // <2>

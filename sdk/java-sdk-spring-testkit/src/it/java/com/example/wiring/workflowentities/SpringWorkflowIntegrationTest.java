@@ -14,12 +14,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
-import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 import java.util.UUID;
@@ -34,13 +31,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class SpringWorkflowIntegrationTest extends AsyncCallsSupport {
 
   @Autowired
-  private WebClient webClient;
-
-  @Autowired
   private ComponentClient componentClient;
-
-  private Duration timeout = Duration.of(10, SECONDS);
-
 
   @Test
   public void shouldNotStartTransferForWithNegativeAmount() {
@@ -52,13 +43,13 @@ public class SpringWorkflowIntegrationTest extends AsyncCallsSupport {
     var transferUrl = "/transfer/" + transferId;
     var transfer = new Transfer(walletId1, walletId2, -10);
 
-    ResponseEntity<Message> response = webClient.put().uri(transferUrl)
-      .bodyValue(transfer)
-      .retrieve()
-      .toEntity(Message.class)
-      .block(timeout);
+    Message message =
+      await(
+        componentClient.forWorkflow(transferId)
+          .methodRef(TransferWorkflow::startTransfer)
+          .invokeAsync(transfer));
 
-    assertThat(response.getBody().text()).isEqualTo("Transfer amount should be greater than zero");
+    assertThat(message.text()).isEqualTo("Transfer amount should be greater than zero");
   }
 
   @Test
@@ -448,22 +439,6 @@ public class SpringWorkflowIntegrationTest extends AsyncCallsSupport {
       });
   }
 
-  @Test
-  public void failRequestWhenReqParamsIsNotPresent() {
-    //given
-    var workflowId = randomId();
-    String path = "/workflow-with-timer/" + workflowId;
-
-    //when
-    ResponseEntity<String> response = webClient.put().uri(path)
-      .retrieve()
-      .toEntity(String.class)
-      .onErrorResume(WebClientResponseException.class, error -> Mono.just(ResponseEntity.status(error.getStatusCode()).body(error.getResponseBodyAsString())))
-      .block(timeout);
-
-    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-    assertThat(response.getBody()).isEqualTo("Required request parameter is missing: counterId");
-  }
 
   @Test
   public void shouldNotUpdateWorkflowStateAfterEndTransition() {

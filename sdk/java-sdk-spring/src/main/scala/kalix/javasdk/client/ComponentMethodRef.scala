@@ -29,7 +29,9 @@ import kalix.javasdk.impl.reflection.RestServiceIntrospector.PathParameter
 import kalix.javasdk.impl.reflection.RestServiceIntrospector.QueryParamParameter
 import kalix.javasdk.impl.reflection.RestServiceIntrospector.RestService
 import kalix.javasdk.impl.reflection.SyntheticRequestServiceMethod
+import kalix.javasdk.impl.reflection.WorkflowUrlTemplate
 import kalix.javasdk.valueentity.ValueEntity
+import kalix.javasdk.workflow.AbstractWorkflow
 import kalix.javasdk.workflow.Workflow
 import kalix.spring.impl.KalixClient
 import kalix.spring.impl.RestKalixClientImpl
@@ -67,10 +69,17 @@ object ComponentMethodRef {
 
     val deferredCall =
       if (classOf[EventSourcedEntity[_, _]].isAssignableFrom(declaringClass) ||
-        classOf[ValueEntity[_]].isAssignableFrom(declaringClass)) {
+        classOf[ValueEntity[_]].isAssignableFrom(declaringClass) ||
+        classOf[AbstractWorkflow[_]].isAssignableFrom(declaringClass)) {
 
         val typeId = declaringClass.getAnnotation(classOf[TypeId]).value()
-        val template = EntityUrlTemplate.templateUrl(typeId, method.getName)
+
+        val template =
+          if (classOf[AbstractWorkflow[_]].isAssignableFrom(declaringClass))
+            WorkflowUrlTemplate.templateUrl(typeId, method.getName)
+          else
+            EntityUrlTemplate.templateUrl(typeId, method.getName)
+
         val pathParameter = Map("id" -> ids.head) // always only a single id
         if (params.nonEmpty) {
           val body = params.headOption.map {

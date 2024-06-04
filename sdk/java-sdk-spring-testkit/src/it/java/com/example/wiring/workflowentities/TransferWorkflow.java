@@ -6,19 +6,13 @@ package com.example.wiring.workflowentities;
 
 import com.example.wiring.actions.echo.Message;
 import kalix.javasdk.HttpResponse;
-import kalix.javasdk.annotations.Id;
 import kalix.javasdk.annotations.TypeId;
 import kalix.javasdk.client.ComponentClient;
 import kalix.javasdk.workflow.Workflow;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.time.Duration;
 
-@Id("transferId")
 @TypeId("transfer-workflow")
-@RequestMapping("/transfer/{transferId}")
 public class TransferWorkflow extends Workflow<TransferState> {
 
   private final String withdrawStepName = "withdraw";
@@ -59,8 +53,7 @@ public class TransferWorkflow extends Workflow<TransferState> {
         .addStep(deposit);
   }
 
-  @PutMapping()
-  public Effect<Message> startTransfer(@RequestBody Transfer transfer) {
+  public Effect<Message> startTransfer(Transfer transfer) {
     if (transfer.amount <= 0.0) {
       return effects().reply(new Message("Transfer amount should be greater than zero"));
     } else {

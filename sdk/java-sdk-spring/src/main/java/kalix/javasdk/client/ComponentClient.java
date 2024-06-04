@@ -45,23 +45,9 @@ public interface ComponentClient {
   /**
    * Select Workflow as a call target component.
    *
-   * <p>For calling methods annotated with @{@link kalix.javasdk.annotations.GenerateId}
-   */
-  WorkflowClient forWorkflow();
-
-  /**
-   * Select Workflow as a call target component.
-   *
    * @param workflowId - workflow id used to create a call.
    */
   WorkflowClient forWorkflow(String workflowId);
-
-  /**
-   * Select Workflow as a call target component.
-   *
-   * @param workflowIds - compound workflow ids used to create a call.
-   */
-  WorkflowClient forWorkflow(String... workflowIds);
 
   /** Select View as a call target component. */
   ViewClient forView();

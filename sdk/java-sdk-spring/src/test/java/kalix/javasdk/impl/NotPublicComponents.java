@@ -5,18 +5,21 @@
 package kalix.javasdk.impl;
 
 import kalix.javasdk.action.Action;
-import kalix.javasdk.annotations.*;
+import kalix.javasdk.annotations.Query;
+import kalix.javasdk.annotations.Subscribe;
+import kalix.javasdk.annotations.Table;
+import kalix.javasdk.annotations.TypeId;
 import kalix.javasdk.eventsourcedentity.EventSourcedEntity;
 import kalix.javasdk.valueentity.ValueEntity;
 import kalix.javasdk.view.View;
 import kalix.javasdk.workflow.Workflow;
-import kalix.spring.badwiring.eventsourced.IllDefinedEventSourcedEntity;
 import kalix.spring.testmodels.Message;
 import kalix.spring.testmodels.valueentity.User;
 import kalix.spring.testmodels.valueentity.UserEntity;
 import kalix.spring.testmodels.workflow.StartWorkflow;
 import kalix.spring.testmodels.workflow.WorkflowState;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 
 // below components are not public and thus need to be in the same package as the corresponding test
 public class NotPublicComponents {
@@ -62,16 +65,13 @@ public class NotPublicComponents {
   }
 
   @TypeId("transfer-workflow")
-  @Id("transferId")
-  @RequestMapping("/transfer/{transferId}")
   static class NotPublicWorkflow extends Workflow<WorkflowState> {
     @Override
     public WorkflowDef<WorkflowState> definition() {
       return null;
     }
 
-    @PutMapping
-    public Effect<String> startTransfer(@RequestBody StartWorkflow startWorkflow) {
+    public Effect<String> startTransfer(StartWorkflow startWorkflow) {
       return null;
     }
   }

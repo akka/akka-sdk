@@ -5,7 +5,9 @@
 package kalix.javasdk.impl.reflection
 
 import java.lang.reflect.Method
+
 import scala.annotation.tailrec
+
 import com.google.protobuf.Descriptors
 import com.google.protobuf.any.{ Any => ScalaPbAny }
 import kalix.javasdk.impl.AclDescriptorFactory
@@ -62,7 +64,8 @@ object EntityUrlTemplate extends UrlTemplate {
     s"/akka/v1.0/entity/${typeId}/{id}/${methodName}"
   }
 }
-object Workflow extends UrlTemplate {
+
+object WorkflowUrlTemplate extends UrlTemplate {
   override def templateUrl(componentTypeId: String, methodName: String): String =
     s"/akka/v1.0/workflow/${componentTypeId}/{id}/${methodName}"
 }
