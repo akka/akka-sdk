@@ -33,7 +33,7 @@ public abstract class StoreViewIntegrationTest extends KalixIntegrationTestKitSu
       await(
         componentClient
           .forEventSourcedEntity(id)
-          .methodRef(ProductEntity::create)
+          .method(ProductEntity::create)
           .invokeAsync(product));
     assertNotNull(response);
   }
@@ -43,7 +43,7 @@ public abstract class StoreViewIntegrationTest extends KalixIntegrationTestKitSu
       await(
         componentClient
           .forEventSourcedEntity(id)
-          .methodRef(ProductEntity::changeName)
+          .method(ProductEntity::changeName)
           .invokeAsync(newName));
     assertNotNull(response);
   }
@@ -54,7 +54,7 @@ public abstract class StoreViewIntegrationTest extends KalixIntegrationTestKitSu
       await(
         componentClient
           .forEventSourcedEntity(id)
-          .methodRef(CustomerEntity::create)
+          .method(CustomerEntity::create)
           .invokeAsync(customer)
       );
     assertNotNull(response);
@@ -65,7 +65,7 @@ public abstract class StoreViewIntegrationTest extends KalixIntegrationTestKitSu
       await(
         componentClient
           .forEventSourcedEntity(id)
-          .methodRef(CustomerEntity::changeName)
+          .method(CustomerEntity::changeName)
           .invokeAsync(newName)
       );
     assertNotNull(response);
@@ -77,7 +77,7 @@ public abstract class StoreViewIntegrationTest extends KalixIntegrationTestKitSu
       await(
         componentClient
           .forValueEntity(id)
-          .methodRef(OrderEntity::create)
+          .method(OrderEntity::create)
           .invokeAsync(createOrder)
       );
     assertNotNull(response);

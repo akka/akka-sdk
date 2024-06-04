@@ -28,7 +28,7 @@ public class CounterCommandFromTopicAction extends Action {
     logger.info("Received increase command: " + increase.toString());
     var deferredCall =
       componentClient.forEventSourcedEntity(increase.counterId)
-        .methodRef(Counter::increase).deferred(increase.value);
+        .method(Counter::increase).deferred(increase.value);
     return effects().forward(deferredCall);
   }
 
@@ -36,7 +36,7 @@ public class CounterCommandFromTopicAction extends Action {
     logger.info("Received increase command: " + increase.toString());
     var deferredCall =
       componentClient.forEventSourcedEntity(increase.counterId)
-        .methodRef(Counter::multiply).deferred(increase.value);
+        .method(Counter::multiply).deferred(increase.value);
     return effects().forward(deferredCall);
   }
 }

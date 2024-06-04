@@ -167,7 +167,7 @@ public class PubSubIntegrationTest extends DockerIntegrationTest {
     await(
       componentClient()
         .forValueEntity(customer.name())
-        .methodRef(CustomerEntity::create)
+        .method(CustomerEntity::create)
         .invokeAsync(customer)
     );
   }
@@ -175,7 +175,7 @@ public class PubSubIntegrationTest extends DockerIntegrationTest {
   private Integer increaseCounter(EventSourcedEntityClient client, int value) {
     return await(
       client
-        .methodRef(CounterEntity::increase)
+        .method(CounterEntity::increase)
         .invokeAsync(value));
   }
 
@@ -183,7 +183,7 @@ public class PubSubIntegrationTest extends DockerIntegrationTest {
   private Integer multiplyCounter(EventSourcedEntityClient client, int value) {
     return await(
       client
-        .methodRef(CounterEntity::times)
+        .method(CounterEntity::times)
         .invokeAsync(value));
   }
 

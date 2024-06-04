@@ -23,7 +23,7 @@ public class FibonacciActionComponentClientIntegrationTest extends KalixIntegrat
     Number response =
       await(
         componentClient.forAction()
-          .methodRef(FibonacciAction::nextNumber)
+          .method(FibonacciAction::nextNumber)
           .invokeAsync(new Number(5)));
 
     Assertions.assertEquals(8, response.value());
@@ -36,7 +36,7 @@ public class FibonacciActionComponentClientIntegrationTest extends KalixIntegrat
     Number response =
       await(
         componentClient.forAction()
-          .methodRef(LimitedFibonacciAction::nextNumber)
+          .method(LimitedFibonacciAction::nextNumber)
           .invokeAsync(new Number(5)));
 
     Assertions.assertEquals(8, response.value());

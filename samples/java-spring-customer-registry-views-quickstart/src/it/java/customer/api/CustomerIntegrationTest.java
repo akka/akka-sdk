@@ -42,7 +42,7 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
       await(
         componentClient
           .forValueEntity(id)
-          .methodRef(CustomerEntity::create)
+          .method(CustomerEntity::create)
           .invokeAsync(customer)
       );
     Assertions.assertEquals(CustomerEntity.Ok.instance, res);
@@ -58,7 +58,7 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
       await(
         componentClient
           .forValueEntity(id)
-          .methodRef(CustomerEntity::create)
+          .method(CustomerEntity::create)
           .invokeAsync(customer)
       );
     Assertions.assertEquals(CustomerEntity.Ok.instance, resCreation);
@@ -67,7 +67,7 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
       await(
         componentClient
           .forValueEntity(id)
-          .methodRef(CustomerEntity::changeName)
+          .method(CustomerEntity::changeName)
           .invokeAsync("Katarina")
       );
 
@@ -84,7 +84,7 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
       await(
         componentClient
           .forValueEntity(id)
-          .methodRef(CustomerEntity::create)
+          .method(CustomerEntity::create)
           .invokeAsync(customer)
       );
 
@@ -95,7 +95,7 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
       await(
         componentClient
           .forValueEntity(id)
-          .methodRef(CustomerEntity::changeAddress)
+          .method(CustomerEntity::changeAddress)
           .invokeAsync(address)
       );
 
@@ -113,7 +113,7 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
       await(
         componentClient
           .forValueEntity(id)
-          .methodRef(CustomerEntity::create)
+          .method(CustomerEntity::create)
           .invokeAsync(customer)
       );
     Assertions.assertEquals(CustomerEntity.Ok.instance, resCreation);
@@ -143,7 +143,7 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
       await(
         componentClient
           .forValueEntity(id)
-          .methodRef(CustomerEntity::create)
+          .method(CustomerEntity::create)
           .invokeAsync(customer)
       );
     Assertions.assertEquals(CustomerEntity.Ok.instance, resCreation);
@@ -167,7 +167,7 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
     return await(
       componentClient
         .forValueEntity(customerId)
-        .methodRef(CustomerEntity::getCustomer)
+        .method(CustomerEntity::getCustomer)
         .invokeAsync()
     );
   }

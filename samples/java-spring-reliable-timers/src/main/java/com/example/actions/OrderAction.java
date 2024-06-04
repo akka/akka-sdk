@@ -44,7 +44,7 @@ public class OrderAction extends Action {
       timers().startSingleTimer(
         timerName(orderId), // <3>
         Duration.ofSeconds(10), // <4>
-        componentClient.forAction().methodRef(OrderAction::expire).deferred(orderId) // <5>
+        componentClient.forAction().method(OrderAction::expire).deferred(orderId) // <5>
       );
 
     // end::place-order[]
@@ -57,7 +57,7 @@ public class OrderAction extends Action {
 
     var request =
       componentClient.forValueEntity(orderId)
-        .methodRef(OrderEntity::placeOrder).deferred(orderRequest); // <6>
+        .method(OrderEntity::placeOrder).deferred(orderRequest); // <6>
 
     return effects().asyncReply( // <7>
       timerRegistration
@@ -75,7 +75,7 @@ public class OrderAction extends Action {
     logger.info("Expiring order '{}'", orderId);
     CompletionStage<String> reply =
       componentClient.forValueEntity(orderId)
-        .methodRef(OrderEntity::cancel).invokeAsync() // <1>
+        .method(OrderEntity::cancel).invokeAsync() // <1>
         .thenApply(result -> {
           // Entity can return Ok, NotFound or Invalid.
           // Those are valid response and should not trigger a re-try.
@@ -95,7 +95,7 @@ public class OrderAction extends Action {
 
     CompletionStage<String> reply =
       componentClient.forValueEntity(orderId)
-        .methodRef(OrderEntity::confirm).invokeAsync() // <1>
+        .method(OrderEntity::confirm).invokeAsync() // <1>
         .thenCompose(result -> timers().cancel(timerName(orderId))) // <2>
         .thenApply(done -> "Ok");
 
@@ -108,7 +108,7 @@ public class OrderAction extends Action {
 
     CompletionStage<String> reply =
       componentClient.forValueEntity(orderId)
-        .methodRef(OrderEntity::cancel).invokeAsync()
+        .method(OrderEntity::cancel).invokeAsync()
         .thenCompose(req -> timers().cancel(timerName(orderId)))
         .thenApply(done -> "Ok");
 

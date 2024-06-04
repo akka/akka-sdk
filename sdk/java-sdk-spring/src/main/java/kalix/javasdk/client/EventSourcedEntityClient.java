@@ -26,14 +26,14 @@ public class EventSourcedEntityClient {
     this.entityId = entityId;
   }
 
-  public <T, R> ComponentMethodRef<R> methodRef(Function<T, EventSourcedEntity.Effect<R>> methodRef) {
+  public <T, R> ComponentMethodRef<R> method(Function<T, EventSourcedEntity.Effect<R>> methodRef) {
     return new ComponentMethodRef<>(kalixClient, methodRef, entityId, callMetadata);
   }
 
   /**
    * Pass in an Event Sourced Entity method reference, e.g. <code>UserEntity::create</code>
    */
-  public <T, A1, R> ComponentMethodRef1<A1, R> methodRef(Function2<T, A1, EventSourcedEntity.Effect<R>> methodRef) {
+  public <T, A1, R> ComponentMethodRef1<A1, R> method(Function2<T, A1, EventSourcedEntity.Effect<R>> methodRef) {
     return new ComponentMethodRef1<>(kalixClient, methodRef, List.of(entityId), callMetadata);
   }
 

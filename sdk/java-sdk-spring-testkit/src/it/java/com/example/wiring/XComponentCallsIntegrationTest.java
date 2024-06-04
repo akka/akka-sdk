@@ -135,7 +135,7 @@ public class XComponentCallsIntegrationTest extends AsyncCallsSupport {
       await(
         componentClient
           .forValueEntity("MayPatch")
-          .methodRef(UserEntity::getUser)
+          .method(UserEntity::getUser)
           .invokeAsync()
       );
     Assertions.assertEquals("new" + u1.email, userGetResponse.email);
@@ -158,7 +158,7 @@ public class XComponentCallsIntegrationTest extends AsyncCallsSupport {
       await(
         componentClient
           .forValueEntity("MayDelete")
-          .methodRef(UserEntity::getUser)
+          .method(UserEntity::getUser)
           .invokeAsync()
       );
 
@@ -177,7 +177,7 @@ public class XComponentCallsIntegrationTest extends AsyncCallsSupport {
       failed(
         componentClient
           .forValueEntity("MayDelete")
-          .methodRef(UserEntity::getUser)
+          .method(UserEntity::getUser)
           .invokeAsync()
       );
 

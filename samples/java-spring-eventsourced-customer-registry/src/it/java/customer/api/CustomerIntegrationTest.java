@@ -37,7 +37,7 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
 
     Confirm response = await(
       componentClient.forEventSourcedEntity(id)
-        .methodRef(CustomerEntity::create)
+        .method(CustomerEntity::create)
         .invokeAsync(customer));
 
     Assertions.assertEquals(Confirm.done, response);
@@ -51,14 +51,14 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
 
     Confirm response = await(
       componentClient.forEventSourcedEntity(id)
-        .methodRef(CustomerEntity::create)
+        .method(CustomerEntity::create)
         .invokeAsync(customer));
 
     Assertions.assertEquals(Confirm.done, response);
 
     Confirm resUpdate = await(
       componentClient.forEventSourcedEntity(id)
-        .methodRef(CustomerEntity::changeName)
+        .method(CustomerEntity::changeName)
         .invokeAsync("Katarina"));
 
 
@@ -73,7 +73,7 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
 
     Confirm response = await(
       componentClient.forEventSourcedEntity(id)
-        .methodRef(CustomerEntity::create)
+        .method(CustomerEntity::create)
         .invokeAsync(customer));
 
     Assertions.assertEquals(Confirm.done, response);
@@ -82,7 +82,7 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
 
     Confirm resUpdate = await(
       componentClient.forEventSourcedEntity(id)
-        .methodRef(CustomerEntity::changeAddress)
+        .method(CustomerEntity::changeAddress)
         .invokeAsync(address));
 
     Assertions.assertEquals(Confirm.done, resUpdate);
@@ -96,7 +96,7 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
     Customer customer = new Customer("foo@example.com", "Foo", null);
     Confirm response = await(
       componentClient.forEventSourcedEntity(id)
-        .methodRef(CustomerEntity::create)
+        .method(CustomerEntity::create)
         .invokeAsync(customer));
 
     Assertions.assertEquals(Confirm.done, response);
@@ -122,7 +122,7 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
     Customer customer = new Customer("bar@example.com", "Bar", null);
     Confirm response = await(
       componentClient.forEventSourcedEntity(id)
-        .methodRef(CustomerEntity::create)
+        .method(CustomerEntity::create)
         .invokeAsync(customer));
 
     Assertions.assertEquals(Confirm.done, response);
@@ -145,7 +145,7 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
   private Customer getCustomerById(String customerId) {
     return await(
       componentClient.forEventSourcedEntity(customerId)
-        .methodRef(CustomerEntity::getCustomer)
+        .method(CustomerEntity::getCustomer)
         .invokeAsync());
   }
 

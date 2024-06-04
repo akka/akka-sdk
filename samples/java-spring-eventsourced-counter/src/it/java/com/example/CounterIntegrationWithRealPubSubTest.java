@@ -50,7 +50,7 @@ public class CounterIntegrationWithRealPubSubTest extends KalixIntegrationTestKi
     var counterClient = componentClient.forEventSourcedEntity(counterId);
     var getCounterState =
       counterClient
-        .methodRef(Counter::get);
+        .method(Counter::get);
 
     Awaitility.await()
       .ignoreExceptions()

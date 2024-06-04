@@ -30,7 +30,7 @@ public class TransferWorkflowWithoutInputs extends Workflow<TransferState> {
       step(withdrawStepName)
         .call(() -> {
           var transfer = currentState().transfer;
-          return componentClient.forValueEntity(transfer.from).methodRef(WalletEntity::withdraw).deferred(transfer.amount);
+          return componentClient.forValueEntity(transfer.from).method(WalletEntity::withdraw).deferred(transfer.amount);
         })
         .andThen(HttpResponse.class, response -> {
           var state = currentState().withLastStep("withdrawn").accepted();
@@ -43,7 +43,7 @@ public class TransferWorkflowWithoutInputs extends Workflow<TransferState> {
       step(withdrawAsyncStepName)
         .asyncCall(() -> {
           var transfer = currentState().transfer;
-          return componentClient.forValueEntity(transfer.from).methodRef(WalletEntity::withdraw).deferred(transfer.amount).invokeAsync();
+          return componentClient.forValueEntity(transfer.from).method(WalletEntity::withdraw).deferred(transfer.amount).invokeAsync();
         })
         .andThen(HttpResponse.class, response -> {
           var state = currentState().withLastStep("withdrawn").accepted();
@@ -57,7 +57,7 @@ public class TransferWorkflowWithoutInputs extends Workflow<TransferState> {
       step(depositStepName)
         .call(() -> {
           var transfer = currentState().transfer;
-          return componentClient.forValueEntity(transfer.to).methodRef(WalletEntity::deposit).deferred(transfer.amount);
+          return componentClient.forValueEntity(transfer.to).method(WalletEntity::deposit).deferred(transfer.amount);
         })
         .andThen(String.class, __ -> {
           var state = currentState().withLastStep("deposited").finished();
@@ -68,7 +68,7 @@ public class TransferWorkflowWithoutInputs extends Workflow<TransferState> {
       step(depositAsyncStepName)
         .asyncCall(() -> {
           var transfer = currentState().transfer;
-          return componentClient.forValueEntity(transfer.to).methodRef(WalletEntity::deposit).deferred(transfer.amount).invokeAsync();
+          return componentClient.forValueEntity(transfer.to).method(WalletEntity::deposit).deferred(transfer.amount).invokeAsync();
         })
         .andThen(String.class, __ -> {
           var state = currentState().withLastStep("deposited").finished();

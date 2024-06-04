@@ -29,14 +29,14 @@ public class ValueEntityClient {
   /**
    * Pass in a Value Entity method reference annotated as a REST endpoint, e.g. <code>UserEntity::create</code>
    */
-  public <T, R> ComponentMethodRef<R> methodRef(Function<T, ValueEntity.Effect<R>> methodRef) {
+  public <T, R> ComponentMethodRef<R> method(Function<T, ValueEntity.Effect<R>> methodRef) {
     return new ComponentMethodRef<>(kalixClient, methodRef, entityId, callMetadata);
   }
 
   /**
    * Pass in a Value Entity method reference annotated as a REST endpoint, e.g. <code>UserEntity::create</code>
    */
-  public <T, A1, R> ComponentMethodRef1<A1, R> methodRef(Function2<T, A1, ValueEntity.Effect<R>> methodRef) {
+  public <T, A1, R> ComponentMethodRef1<A1, R> method(Function2<T, A1, ValueEntity.Effect<R>> methodRef) {
     return new ComponentMethodRef1<>(kalixClient, methodRef, List.of(entityId), callMetadata);
   }
 

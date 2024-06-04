@@ -34,7 +34,7 @@ public class WorkflowWithRecoverStrategy extends Workflow<FailingCounterState> {
               var nextValue = currentState().value() + 1;
               return componentClient
                   .forEventSourcedEntity(currentState().counterId())
-                  .methodRef(FailingCounterEntity::increase)
+                  .method(FailingCounterEntity::increase)
                   .deferred(nextValue);
             })
             .andThen(Integer.class, __ -> effects()

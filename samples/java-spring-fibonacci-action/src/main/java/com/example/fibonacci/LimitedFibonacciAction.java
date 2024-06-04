@@ -29,7 +29,7 @@ public class LimitedFibonacciAction extends Action {
             logger.info("Executing GET call to real /fibonacci = " + number);
             // tag::component-client[]
             DeferredCall<Any, Number> deferredCall = componentClient.forAction() // <1>
-              .methodRef(FibonacciAction::getNumber) // <2>
+              .method(FibonacciAction::getNumber) // <2>
               .deferred(number); // <3>
 
             return effects().forward(deferredCall);
@@ -45,7 +45,7 @@ public class LimitedFibonacciAction extends Action {
             logger.info("Executing POST call to real /fibonacci = " + number.value());
             var serviceCall =
               componentClient.forAction()
-                .methodRef(FibonacciAction::nextNumber)
+                .method(FibonacciAction::nextNumber)
                 .deferred(number);
 
             return effects().forward(serviceCall);

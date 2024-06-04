@@ -34,7 +34,7 @@ public class UserCreationIntegrationTest extends KalixIntegrationTestKitSupport 
   public void testSuccessfulUserCreation() throws Exception {
     var callGetEmailInfo =
       componentClient.forAction()
-        .methodRef(ApplicationController::getEmailInfo)
+        .method(ApplicationController::getEmailInfo)
         .deferred("doe@acme.com");
 
     assertThat(callGetEmailInfo.invokeAsync())
@@ -46,7 +46,7 @@ public class UserCreationIntegrationTest extends KalixIntegrationTestKitSupport 
 
     var callCreateUser =
       componentClient.forAction()
-        .methodRef(ApplicationController::createUser)
+        .method(ApplicationController::createUser)
         .deferred("001", new User.Create("John Doe", "US", "doe@acme.com"));
 
     assertThat(callCreateUser.invokeAsync()).succeedsWithin(timeout);
@@ -75,7 +75,7 @@ public class UserCreationIntegrationTest extends KalixIntegrationTestKitSupport 
   public void testUserCreationFailureDueToInvalidInput() throws Exception {
     var callGetEmailInfo =
       componentClient.forAction()
-        .methodRef(ApplicationController::getEmailInfo)
+        .method(ApplicationController::getEmailInfo)
         .deferred("invalid@acme.com");
 
     assertThat(callGetEmailInfo.invokeAsync())
@@ -87,7 +87,7 @@ public class UserCreationIntegrationTest extends KalixIntegrationTestKitSupport 
 
     var callCreateUser =
       componentClient.forAction()
-        .methodRef(ApplicationController::createUser)
+        .method(ApplicationController::createUser)
         // this user creation will fail because user's name is not provided
         .deferred("002", new User.Create(null, "US", "invalid@acme.com"));
 

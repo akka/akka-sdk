@@ -72,7 +72,7 @@ public class OrderActionIntegrationTest extends KalixIntegrationTestKitSupport {
     var methodRef =
         componentClient
             .forValueEntity(orderId)
-            .methodRef(OrderEntity::status);
+            .method(OrderEntity::status);
 
     // After the default timeout, status changed to not placed as order is reverted
     Awaitility.await()
@@ -138,7 +138,7 @@ public class OrderActionIntegrationTest extends KalixIntegrationTestKitSupport {
     return await(
       componentClient
         .forValueEntity(orderId)
-        .methodRef(OrderEntity::status).invokeAsync()
+        .method(OrderEntity::status).invokeAsync()
     );
 
   }

@@ -65,7 +65,7 @@ public class EventingTestkitDestinationIntegrationTest {
     //when
     componentClient
       .forValueEntity(subject)
-      .methodRef(CustomerEntity::create)
+      .method(CustomerEntity::create)
       .deferred(customer)
       .invokeAsync().toCompletableFuture().get(5, TimeUnit.SECONDS);
 

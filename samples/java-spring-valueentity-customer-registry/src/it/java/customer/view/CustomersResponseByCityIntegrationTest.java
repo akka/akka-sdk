@@ -69,7 +69,7 @@ class CustomersResponseByCityIntegrationTest extends KalixIntegrationTestKitSupp
           CustomersResponse customersResponse =
             await(
               componentClient.forView()
-                .methodRef(CustomersResponseByCity::getCustomers) // <4>
+                .method(CustomersResponseByCity::getCustomers) // <4>
                 .invokeAsync(List.of("Porto", "London"))
             );
 

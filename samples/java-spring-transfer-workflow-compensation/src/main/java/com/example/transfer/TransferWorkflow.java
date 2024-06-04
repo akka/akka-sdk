@@ -63,7 +63,7 @@ public class TransferWorkflow extends Workflow<TransferState> {
           // cancelling the timer in case it was scheduled
           return timers().cancel("acceptationTimout-" + currentState().transferId()).thenCompose(__ ->
             componentClient.forValueEntity(cmd.from)
-              .methodRef(WalletEntity::withdraw)
+              .method(WalletEntity::withdraw)
               .invokeAsync(cmd.amount));
         })
         .andThen(WithdrawResult.class, withdrawResult -> {
@@ -90,7 +90,7 @@ public class TransferWorkflow extends Workflow<TransferState> {
           logger.info("Running: " + cmd);
           // tag::compensation[]
           return componentClient.forValueEntity(cmd.to)
-            .methodRef(WalletEntity::deposit)
+            .method(WalletEntity::deposit)
             .deferred(cmd.amount);
         })
         .andThen(DepositResult.class, depositResult -> { // <1>
@@ -118,7 +118,7 @@ public class TransferWorkflow extends Workflow<TransferState> {
           // tag::compensation[]
           var transfer = currentState().transfer();
           return componentClient.forValueEntity(transfer.from())
-            .methodRef(WalletEntity::deposit)
+            .method(WalletEntity::deposit)
             .deferred(transfer.amount());
         })
         .andThen(DepositResult.class, depositResult -> {
@@ -156,7 +156,7 @@ public class TransferWorkflow extends Workflow<TransferState> {
             "acceptationTimout-" + transferId,
             ofHours(8),
             componentClient.forWorkflow(transferId)
-              .methodRef(TransferWorkflow::acceptationTimeout).deferred()); // <1>
+              .method(TransferWorkflow::acceptationTimeout).deferred()); // <1>
         })
         .andThen(Done.class, __ ->
           effects().pause()); // <2>

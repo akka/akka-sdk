@@ -46,7 +46,7 @@ public class SpringWorkflowIntegrationTest extends AsyncCallsSupport {
     Message message =
       await(
         componentClient.forWorkflow(transferId)
-          .methodRef(TransferWorkflow::startTransfer)
+          .method(TransferWorkflow::startTransfer)
           .invokeAsync(transfer));
 
     assertThat(message.text()).isEqualTo("Transfer amount should be greater than zero");
@@ -62,7 +62,7 @@ public class SpringWorkflowIntegrationTest extends AsyncCallsSupport {
     var transfer = new Transfer(walletId1, walletId2, 10);
 
     Message response = await(componentClient.forWorkflow(transferId)
-      .methodRef(TransferWorkflow::startTransfer)
+      .method(TransferWorkflow::startTransfer)
       .invokeAsync(transfer));
 
     assertThat(response.text()).isEqualTo("transfer started");
@@ -90,7 +90,7 @@ public class SpringWorkflowIntegrationTest extends AsyncCallsSupport {
 
     Message response = await(
       componentClient.forWorkflow(transferId)
-        .methodRef(TransferWorkflowWithoutInputs::startTransfer)
+        .method(TransferWorkflowWithoutInputs::startTransfer)
         .invokeAsync(transfer));
 
     assertThat(response.text()).isEqualTo("transfer started");
@@ -117,7 +117,7 @@ public class SpringWorkflowIntegrationTest extends AsyncCallsSupport {
 
     Message response = await(
       componentClient.forWorkflow(transferId)
-        .methodRef(TransferWorkflowWithoutInputs::startTransferAsync)
+        .method(TransferWorkflowWithoutInputs::startTransferAsync)
         .invokeAsync(transfer));
 
     assertThat(response.text()).isEqualTo("transfer started");
@@ -145,7 +145,7 @@ public class SpringWorkflowIntegrationTest extends AsyncCallsSupport {
 
     Message response = await(
       componentClient.forWorkflow(transferId)
-        .methodRef(TransferWorkflowWithFraudDetection::startTransfer)
+        .method(TransferWorkflowWithFraudDetection::startTransfer)
         .invokeAsync(transfer));
 
     assertThat(response.text()).isEqualTo("transfer started");
@@ -172,7 +172,7 @@ public class SpringWorkflowIntegrationTest extends AsyncCallsSupport {
 
     Message response = await(
       componentClient.forWorkflow(transferId)
-        .methodRef(TransferWorkflowWithFraudDetection::startTransfer)
+        .method(TransferWorkflowWithFraudDetection::startTransfer)
         .invokeAsync(transfer));
 
     assertThat(response.text()).isEqualTo("transfer started");
@@ -183,7 +183,7 @@ public class SpringWorkflowIntegrationTest extends AsyncCallsSupport {
 
         var transferState = await(
           componentClient.forWorkflow(transferId)
-            .methodRef(TransferWorkflowWithFraudDetection::getTransferState)
+            .method(TransferWorkflowWithFraudDetection::getTransferState)
             .invokeAsync());
 
         assertThat(transferState.finished).isFalse();
@@ -193,7 +193,7 @@ public class SpringWorkflowIntegrationTest extends AsyncCallsSupport {
 
     Message acceptedResponse = await(
       componentClient.forWorkflow(transferId)
-        .methodRef(TransferWorkflowWithFraudDetection::acceptTransfer)
+        .method(TransferWorkflowWithFraudDetection::acceptTransfer)
         .invokeAsync());
 
     assertThat(acceptedResponse.text()).isEqualTo("transfer accepted");
@@ -221,7 +221,7 @@ public class SpringWorkflowIntegrationTest extends AsyncCallsSupport {
 
     Message response = await(
       componentClient.forWorkflow(transferId)
-        .methodRef(TransferWorkflowWithFraudDetection::startTransfer)
+        .method(TransferWorkflowWithFraudDetection::startTransfer)
         .invokeAsync(transfer));
 
     assertThat(response.text()).isEqualTo("transfer started");
@@ -237,7 +237,7 @@ public class SpringWorkflowIntegrationTest extends AsyncCallsSupport {
 
         var transferState = await(
           componentClient.forWorkflow(transferId)
-            .methodRef(TransferWorkflowWithFraudDetection::getTransferState)
+            .method(TransferWorkflowWithFraudDetection::getTransferState)
             .invokeAsync());
 
         assertThat(transferState.finished).isTrue();
@@ -255,7 +255,7 @@ public class SpringWorkflowIntegrationTest extends AsyncCallsSupport {
     //when
     Message response = await(
       componentClient.forWorkflow(workflowId)
-        .methodRef(WorkflowWithDefaultRecoverStrategy::startFailingCounter)
+        .method(WorkflowWithDefaultRecoverStrategy::startFailingCounter)
         .invokeAsync(counterId));
 
     assertThat(response.text()).isEqualTo("workflow started");
@@ -273,7 +273,7 @@ public class SpringWorkflowIntegrationTest extends AsyncCallsSupport {
       .untilAsserted(() -> {
         var state = await(
           componentClient.forWorkflow(workflowId)
-            .methodRef(WorkflowWithDefaultRecoverStrategy::get)
+            .method(WorkflowWithDefaultRecoverStrategy::get)
             .invokeAsync());
 
         assertThat(state.finished()).isTrue();
@@ -289,7 +289,7 @@ public class SpringWorkflowIntegrationTest extends AsyncCallsSupport {
     //when
     Message response = await(
       componentClient.forWorkflow(workflowId)
-        .methodRef(WorkflowWithRecoverStrategy::startFailingCounter)
+        .method(WorkflowWithRecoverStrategy::startFailingCounter)
         .invokeAsync(counterId));
 
     assertThat(response.text()).isEqualTo("workflow started");
@@ -307,7 +307,7 @@ public class SpringWorkflowIntegrationTest extends AsyncCallsSupport {
       .untilAsserted(() -> {
         var state = await(
           componentClient.forWorkflow(workflowId)
-            .methodRef(WorkflowWithRecoverStrategy::get)
+            .method(WorkflowWithRecoverStrategy::get)
             .invokeAsync());
 
         assertThat(state.finished()).isTrue();
@@ -323,7 +323,7 @@ public class SpringWorkflowIntegrationTest extends AsyncCallsSupport {
     //when
     Message response = await(
       componentClient.forWorkflow(workflowId)
-        .methodRef(WorkflowWithRecoverStrategyAndAsyncCall::startFailingCounter)
+        .method(WorkflowWithRecoverStrategyAndAsyncCall::startFailingCounter)
         .invokeAsync(counterId));
 
     assertThat(response.text()).isEqualTo("workflow started");
@@ -343,7 +343,7 @@ public class SpringWorkflowIntegrationTest extends AsyncCallsSupport {
       .untilAsserted(() -> {
         var state = await(
           componentClient.forWorkflow(workflowId)
-            .methodRef(WorkflowWithRecoverStrategyAndAsyncCall::get)
+            .method(WorkflowWithRecoverStrategyAndAsyncCall::get)
             .invokeAsync());
         assertThat(state.finished()).isTrue();
       });
@@ -358,7 +358,7 @@ public class SpringWorkflowIntegrationTest extends AsyncCallsSupport {
     //when
     Message response = await(
       componentClient.forWorkflow(workflowId)
-        .methodRef(WorkflowWithTimeout::startFailingCounter)
+        .method(WorkflowWithTimeout::startFailingCounter)
         .invokeAsync(counterId));
 
     assertThat(response.text()).isEqualTo("workflow started");
@@ -376,7 +376,7 @@ public class SpringWorkflowIntegrationTest extends AsyncCallsSupport {
       .untilAsserted(() -> {
         var state = await(
           componentClient.forWorkflow(workflowId)
-            .methodRef(WorkflowWithTimeout::get)
+            .method(WorkflowWithTimeout::get)
             .invokeAsync());
         assertThat(state.finished()).isTrue();
       });
@@ -391,7 +391,7 @@ public class SpringWorkflowIntegrationTest extends AsyncCallsSupport {
     //when
     Message response = await(
       componentClient.forWorkflow(workflowId)
-        .methodRef(WorkflowWithStepTimeout::startFailingCounter)
+        .method(WorkflowWithStepTimeout::startFailingCounter)
         .invokeAsync(counterId));
 
     assertThat(response.text()).isEqualTo("workflow started");
@@ -403,7 +403,7 @@ public class SpringWorkflowIntegrationTest extends AsyncCallsSupport {
       .untilAsserted(() -> {
         var state = await(
           componentClient.forWorkflow(workflowId)
-            .methodRef(WorkflowWithStepTimeout::get)
+            .method(WorkflowWithStepTimeout::get)
             .invokeAsync());
 
         assertThat(state.value()).isEqualTo(2);
@@ -420,7 +420,7 @@ public class SpringWorkflowIntegrationTest extends AsyncCallsSupport {
     //when
     Message response = await(
       componentClient.forWorkflow(workflowId)
-        .methodRef(WorkflowWithTimer::startFailingCounter)
+        .method(WorkflowWithTimer::startFailingCounter)
         .invokeAsync(counterId));
 
     assertThat(response.text()).isEqualTo("workflow started");
@@ -431,7 +431,7 @@ public class SpringWorkflowIntegrationTest extends AsyncCallsSupport {
       .untilAsserted(() -> {
         var state = await(
           componentClient.forWorkflow(workflowId)
-            .methodRef(WorkflowWithTimer::get)
+            .method(WorkflowWithTimer::get)
             .invokeAsync());
 
         assertThat(state.finished()).isTrue();
@@ -446,18 +446,18 @@ public class SpringWorkflowIntegrationTest extends AsyncCallsSupport {
     var workflowId = randomId();
     await(
       componentClient.forWorkflow(workflowId)
-        .methodRef(DummyWorkflow::startAndFinish)
+        .method(DummyWorkflow::startAndFinish)
         .invokeAsync()
     );
     assertThat(await(
       componentClient.forWorkflow(workflowId)
-        .methodRef(DummyWorkflow::get).invokeAsync())).isEqualTo(10);
+        .method(DummyWorkflow::get).invokeAsync())).isEqualTo(10);
 
     //when
     try {
       await(
         componentClient.forWorkflow(workflowId)
-          .methodRef(DummyWorkflow::update).invokeAsync());
+          .method(DummyWorkflow::update).invokeAsync());
     } catch (RuntimeException exception) {
       // ignore "500 Internal Server Error" exception from the proxy
     }
@@ -465,7 +465,7 @@ public class SpringWorkflowIntegrationTest extends AsyncCallsSupport {
     //then
     assertThat(await(
       componentClient.forWorkflow(workflowId)
-        .methodRef(DummyWorkflow::get).invokeAsync())).isEqualTo(10);
+        .method(DummyWorkflow::get).invokeAsync())).isEqualTo(10);
   }
 
   @Test
@@ -475,7 +475,7 @@ public class SpringWorkflowIntegrationTest extends AsyncCallsSupport {
 
     //when
     String response = await(componentClient.forWorkflow(workflowId)
-      .methodRef(WorkflowWithoutInitialState::start).invokeAsync());
+      .method(WorkflowWithoutInitialState::start).invokeAsync());
 
     assertThat(response).contains("ok");
 
@@ -483,7 +483,7 @@ public class SpringWorkflowIntegrationTest extends AsyncCallsSupport {
     Awaitility.await()
       .atMost(10, TimeUnit.of(SECONDS))
       .untilAsserted(() -> {
-        var state = await(componentClient.forWorkflow(workflowId).methodRef(WorkflowWithoutInitialState::get).invokeAsync());
+        var state = await(componentClient.forWorkflow(workflowId).method(WorkflowWithoutInitialState::get).invokeAsync());
         assertThat(state).contains("success");
       });
   }
@@ -501,21 +501,21 @@ public class SpringWorkflowIntegrationTest extends AsyncCallsSupport {
     return await(
       componentClient
         .forEventSourcedEntity(counterId)
-        .methodRef(FailingCounterEntity::get).invokeAsync(),
+        .method(FailingCounterEntity::get).invokeAsync(),
       Duration.ofSeconds(20));
   }
 
   private void createWallet(String walletId, int amount) {
     await(
       componentClient.forValueEntity(walletId)
-        .methodRef(WalletEntity::create)
+        .method(WalletEntity::create)
         .invokeAsync(amount));
   }
 
   private int getWalletBalance(String walletId) {
     return await(
       componentClient.forValueEntity(walletId)
-        .methodRef(WalletEntity::get)
+        .method(WalletEntity::get)
         .invokeAsync()
     ).value;
   }

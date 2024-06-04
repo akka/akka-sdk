@@ -43,7 +43,7 @@ public class IntegrationTest extends KalixIntegrationTestKitSupport {
     return await(
       componentClient
         .forValueEntity(cartId)
-        .methodRef(ShoppingCartEntity::getCart).invokeAsync()
+        .method(ShoppingCartEntity::getCart).invokeAsync()
     );
   }
 
@@ -51,7 +51,7 @@ public class IntegrationTest extends KalixIntegrationTestKitSupport {
     await(
       componentClient
         .forValueEntity(cartId)
-        .methodRef(ShoppingCartEntity::addItem)
+        .method(ShoppingCartEntity::addItem)
         .invokeAsync(new LineItemDTO(productId, name, quantity))
     );
   }
@@ -61,7 +61,7 @@ public class IntegrationTest extends KalixIntegrationTestKitSupport {
     await(
       componentClient
         .forValueEntity(cartId)
-        .methodRef(ShoppingCartEntity::removeItem)
+        .method(ShoppingCartEntity::removeItem)
         .invokeAsync(productId)
     );
   }
@@ -71,7 +71,7 @@ public class IntegrationTest extends KalixIntegrationTestKitSupport {
     await(
       componentClient
         .forValueEntity(cartId)
-        .methodRef(ShoppingCartEntity::removeCart).withMetadata(metadata)
+        .method(ShoppingCartEntity::removeCart).withMetadata(metadata)
         .invokeAsync()
 
     );

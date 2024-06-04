@@ -35,7 +35,7 @@ public class UserEventsSubscriber extends Action {
     logger.info("User got a new email address assigned: {}, confirming new address address", emailAddress);
     var confirmation =
       client.forValueEntity(emailAddress)
-        .methodRef(UniqueEmailEntity::confirm)
+        .method(UniqueEmailEntity::confirm)
         .deferred();
 
     return effects().forward(confirmation);
@@ -56,7 +56,7 @@ public class UserEventsSubscriber extends Action {
     logger.info("Old email address unassigned: {}, deleting unique email address record", evt);
     var unreserved =
       client.forValueEntity(evt.oldEmail())
-        .methodRef(UniqueEmailEntity::delete)
+        .method(UniqueEmailEntity::delete)
         .deferred();
 
     return effects().forward(unreserved);

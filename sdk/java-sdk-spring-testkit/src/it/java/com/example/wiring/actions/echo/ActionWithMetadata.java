@@ -22,11 +22,13 @@ public class ActionWithMetadata extends Action {
 
   @GetMapping("/action-with-meta/{key}/{value}")
   public Effect<Message> actionWithMeta(@PathVariable String key, @PathVariable String value) {
-    var methodRef =
+    var deferredCall =
       componentClient.forAction()
-        .methodRef(ActionWithMetadata::returnMeta).withMetadata(Metadata.EMPTY.add(key, value));
+        .method(ActionWithMetadata::returnMeta)
+        .withMetadata(Metadata.EMPTY.add(key, value))
+        .deferred(key);
 
-    return effects().forward(methodRef.deferred(key));
+    return effects().forward(deferredCall);
   }
 
   @GetMapping("/return-meta/{key}")

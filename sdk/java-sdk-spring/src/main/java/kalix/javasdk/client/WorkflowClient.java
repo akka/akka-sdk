@@ -26,14 +26,14 @@ public class WorkflowClient {
   /**
    * Pass in a Workflow method reference annotated as a REST endpoint, e.g. <code>MyWorkflow::start</code>
    */
-  public <T, R> ComponentMethodRef<R> methodRef(Function<T, Workflow.Effect<R>> methodRef) {
+  public <T, R> ComponentMethodRef<R> method(Function<T, Workflow.Effect<R>> methodRef) {
     return new ComponentMethodRef<>(kalixClient, methodRef, workflowId, Optional.empty());
   }
 
   /**
    * Pass in a Workflow method reference annotated as a REST endpoint, e.g. <code>MyWorkflow::start</code>
    */
-  public <T, A1, R> ComponentMethodRef1<A1, R> methodRef(Function2<T, A1, Workflow.Effect<R>> methodRef) {
+  public <T, A1, R> ComponentMethodRef1<A1, R> method(Function2<T, A1, Workflow.Effect<R>> methodRef) {
     return new ComponentMethodRef1<>(kalixClient, methodRef, List.of(workflowId), Optional.empty());
   }
 

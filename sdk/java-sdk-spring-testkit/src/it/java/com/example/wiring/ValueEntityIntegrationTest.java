@@ -71,7 +71,7 @@ public class ValueEntityIntegrationTest extends AsyncCallsSupport {
     await(
       componentClient
         .forValueEntity(user.id)
-        .methodRef(UserEntity::createUser)
+        .method(UserEntity::createUser)
         .invokeAsync(new UserEntity.CreatedUser(user.name, user.email)));
   }
 
@@ -79,7 +79,7 @@ public class ValueEntityIntegrationTest extends AsyncCallsSupport {
     await(
       componentClient
         .forValueEntity(user.id)
-        .methodRef(UserEntity::updateEmail)
+        .method(UserEntity::updateEmail)
         .invokeAsync(new UserEntity.UpdateEmail(user.email)));
   }
 
@@ -87,7 +87,7 @@ public class ValueEntityIntegrationTest extends AsyncCallsSupport {
     return await(
       componentClient
         .forValueEntity(user.id)
-        .methodRef(UserEntity::getUser)
+        .method(UserEntity::getUser)
         .invokeAsync());
   }
 
@@ -96,7 +96,7 @@ public class ValueEntityIntegrationTest extends AsyncCallsSupport {
       await(
         componentClient
           .forValueEntity(user.id)
-          .methodRef(UserEntity::restart)
+          .method(UserEntity::restart)
           .invokeAsync(new UserEntity.Restart()));
 
       fail("This should not be reached");

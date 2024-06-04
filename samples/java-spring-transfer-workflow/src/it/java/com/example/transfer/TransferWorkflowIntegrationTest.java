@@ -40,7 +40,7 @@ public class TransferWorkflowIntegrationTest extends KalixIntegrationTestKitSupp
       await(
         componentClient
           .forWorkflow(transferId)
-          .methodRef(TransferWorkflow::startTransfer)
+          .method(TransferWorkflow::startTransfer)
           .invokeAsync(transfer)
       ).value();
 
@@ -67,7 +67,7 @@ public class TransferWorkflowIntegrationTest extends KalixIntegrationTestKitSupp
       await(
         componentClient
           .forValueEntity(walletId)
-          .methodRef(WalletEntity::create)
+          .method(WalletEntity::create)
           .invokeAsync(amount)
       );
 
@@ -78,7 +78,7 @@ public class TransferWorkflowIntegrationTest extends KalixIntegrationTestKitSupp
     return await(
       componentClient
         .forValueEntity(walletId)
-        .methodRef(WalletEntity::get).invokeAsync()
+        .method(WalletEntity::get).invokeAsync()
     );
   }
 

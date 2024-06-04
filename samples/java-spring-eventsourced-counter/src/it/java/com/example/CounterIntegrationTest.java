@@ -68,12 +68,12 @@ public class CounterIntegrationTest extends KalixIntegrationTestKitSupport { // 
 
     // increase counter (from 0 to 10)
     counterClient
-      .methodRef(Counter::increase)
+      .method(Counter::increase)
       .invokeAsync(10);
 
     var getCounterState =
       counterClient
-        .methodRef(Counter::get);
+        .method(Counter::get);
     Awaitility.await()
       .ignoreExceptions()
       .atMost(20, TimeUnit.SECONDS)
@@ -84,7 +84,7 @@ public class CounterIntegrationTest extends KalixIntegrationTestKitSupport { // 
 
     // multiply by 20 (from 10 to 200
     counterClient
-      .methodRef(Counter::multiply)
+      .method(Counter::multiply)
       .invokeAsync(20);
 
     Awaitility.await()

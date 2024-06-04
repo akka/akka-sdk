@@ -39,7 +39,7 @@ public class ShoppingCartController extends Action {
     final String cartId = UUID.randomUUID().toString(); // <1>
     CompletionStage<ShoppingCartDTO> shoppingCartCreated =
       componentClient.forValueEntity(cartId)
-        .methodRef(ShoppingCartEntity::create) // <2>
+        .method(ShoppingCartEntity::create) // <2>
         .invokeAsync(); // <3>
 
 
@@ -65,7 +65,7 @@ public class ShoppingCartController extends Action {
       return effects().error("Carrots no longer for sale"); // <4>
     } else {
       var deferredCall = componentClient.forValueEntity(cartId)
-        .methodRef(ShoppingCartEntity::addItem)
+        .method(ShoppingCartEntity::addItem)
         .deferred(addLineItem); // <5>
       return effects().forward(deferredCall); // <6>
     }
@@ -78,14 +78,14 @@ public class ShoppingCartController extends Action {
   public Action.Effect<String> createPrePopulated() {
     final String cartId = UUID.randomUUID().toString();
     CompletionStage<ShoppingCartDTO> shoppingCartCreated =
-      componentClient.forValueEntity(cartId).methodRef(ShoppingCartEntity::create).invokeAsync();
+      componentClient.forValueEntity(cartId).method(ShoppingCartEntity::create).invokeAsync();
 
     CompletionStage<ShoppingCartDTO> cartPopulated =
       shoppingCartCreated.thenCompose(empty -> { // <1>
         var initialItem = new LineItemDTO("e", "eggplant", 1);
 
         return componentClient.forValueEntity(cartId)
-          .methodRef(ShoppingCartEntity::addItem)
+          .method(ShoppingCartEntity::addItem)
           .invokeAsync(initialItem); // <2>
       });
 
@@ -102,7 +102,7 @@ public class ShoppingCartController extends Action {
                                                 @RequestBody LineItemDTO addLineItem) {
     // NOTE: This is an example of an anti-pattern, do not copy this
     CompletionStage<ShoppingCartDTO> cartReply =
-      componentClient.forValueEntity(cartId).methodRef(ShoppingCartEntity::getCart).invokeAsync(); // <1>
+      componentClient.forValueEntity(cartId).method(ShoppingCartEntity::getCart).invokeAsync(); // <1>
 
     CompletionStage<Action.Effect<String>> effect = cartReply.thenApply(cart -> {
       int totalCount = cart.items().stream()
@@ -114,7 +114,7 @@ public class ShoppingCartController extends Action {
       } else {
         CompletionStage<String> addItemReply =
           componentClient.forValueEntity(cartId)
-            .methodRef(ShoppingCartEntity::addItem).invokeAsync(addLineItem)
+            .method(ShoppingCartEntity::addItem).invokeAsync(addLineItem)
             .thenApply(ShoppingCartDTO::cartId);
         return effects()
           .asyncReply(addItemReply); // <2>
@@ -136,7 +136,7 @@ public class ShoppingCartController extends Action {
     Metadata metadata = Metadata.EMPTY.add("Role", userRole);
     return effects().forward(
       componentClient.forValueEntity(cartId)
-        .methodRef(ShoppingCartEntity::removeCart)
+        .method(ShoppingCartEntity::removeCart)
         .withMetadata(metadata)
         .deferred()); // <4>
   }

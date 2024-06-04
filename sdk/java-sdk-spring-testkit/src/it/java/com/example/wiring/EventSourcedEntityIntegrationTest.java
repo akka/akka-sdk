@@ -98,35 +98,35 @@ public class EventSourcedEntityIntegrationTest extends AsyncCallsSupport {
   public void verifyRequestWithDefaultProtoValuesWithEntity() {
     var client = componentClient.forEventSourcedEntity("some-counter");
     increaseCounter(client, 2);
-    Integer result = await(client.methodRef(CounterEntity::set).invokeAsync(0));
+    Integer result = await(client.method(CounterEntity::set).invokeAsync(0));
     assertThat(result).isEqualTo(0);
   }
 
 
   private Integer increaseCounter(EventSourcedEntityClient client, int value) {
     return await(client
-      .methodRef(CounterEntity::increase)
+      .method(CounterEntity::increase)
       .invokeAsync(value));
   }
 
 
   private Integer multiplyCounter(EventSourcedEntityClient client, int value) {
     return await(client
-      .methodRef(CounterEntity::times)
+      .method(CounterEntity::times)
       .invokeAsync(value));
   }
 
   private void restartCounterEntity(EventSourcedEntityClient client) {
     try {
       await(client
-        .methodRef(CounterEntity::restart).invokeAsync());
+        .method(CounterEntity::restart).invokeAsync());
       fail("This should not be reached");
     } catch (Exception ignored) {
     }
   }
 
   private Integer getCounter(EventSourcedEntityClient client) {
-    return await(client.methodRef(CounterEntity::get).invokeAsync());
+    return await(client.method(CounterEntity::get).invokeAsync());
   }
 
 }

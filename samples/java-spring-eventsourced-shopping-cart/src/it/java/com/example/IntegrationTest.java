@@ -33,7 +33,7 @@ public class IntegrationTest extends KalixIntegrationTestKitSupport { // <1>
     var response1 = await(
       componentClient
         .forEventSourcedEntity(cartId)
-        .methodRef(ShoppingCartEntity::addItem)
+        .method(ShoppingCartEntity::addItem)
         .invokeAsync(item1)
     );
     Assertions.assertNotNull(response1);
@@ -43,7 +43,7 @@ public class IntegrationTest extends KalixIntegrationTestKitSupport { // <1>
     var response2 = await(
       componentClient
         .forEventSourcedEntity(cartId)
-        .methodRef(ShoppingCartEntity::addItem)
+        .method(ShoppingCartEntity::addItem)
         .invokeAsync(item2)
     );
     Assertions.assertNotNull(response2);
@@ -51,7 +51,7 @@ public class IntegrationTest extends KalixIntegrationTestKitSupport { // <1>
     ShoppingCart cartInfo = await(
       componentClient
         .forEventSourcedEntity(cartId)
-        .methodRef(ShoppingCartEntity::getCart)
+        .method(ShoppingCartEntity::getCart)
         .invokeAsync()
     );
     Assertions.assertEquals(2, cartInfo.items().size());
@@ -62,7 +62,7 @@ public class IntegrationTest extends KalixIntegrationTestKitSupport { // <1>
       await(
         componentClient
           .forEventSourcedEntity(cartId)
-          .methodRef(ShoppingCartEntity::removeItem)
+          .method(ShoppingCartEntity::removeItem)
           .invokeAsync(item1.productId())
       );
 
@@ -74,7 +74,7 @@ public class IntegrationTest extends KalixIntegrationTestKitSupport { // <1>
     ShoppingCart cartUpdated = await(
       componentClient
         .forEventSourcedEntity(cartId)
-        .methodRef(ShoppingCartEntity::getCart)
+        .method(ShoppingCartEntity::getCart)
         .invokeAsync()
     );
     Assertions.assertEquals(1, cartUpdated.items().size());

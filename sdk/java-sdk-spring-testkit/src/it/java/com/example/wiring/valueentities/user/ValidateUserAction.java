@@ -34,7 +34,7 @@ public class ValidateUserAction extends Action {
     var defCall =
       componentClient
         .forValueEntity(user)
-        .methodRef(UserEntity::createUser)
+        .method(UserEntity::createUser)
         .deferred(new UserEntity.CreatedUser(name, email));
     return effects().forward(defCall);
   }
@@ -47,7 +47,7 @@ public class ValidateUserAction extends Action {
     var defCall =
       componentClient
         .forValueEntity(user)
-        .methodRef(UserEntity::updateEmail)
+        .method(UserEntity::updateEmail)
         .deferred(new UserEntity.UpdateEmail(email));
     return effects().forward(defCall);
   }
@@ -57,7 +57,7 @@ public class ValidateUserAction extends Action {
     var defCall =
       componentClient
         .forValueEntity(user)
-        .methodRef(UserEntity::deleteUser)
+        .method(UserEntity::deleteUser)
         .deferred(new UserEntity.Delete());
     return effects().forward(defCall);
   }

@@ -66,14 +66,14 @@ public class ApplicationController extends Action {
     var emailReserved =
       client
         .forValueEntity(cmd.email())
-        .methodRef(UniqueEmailEntity::reserve)
+        .method(UniqueEmailEntity::reserve)
         .invokeAsync(createUniqueEmail); // eager, executing it now
 
     // this call is lazy and will be executed only if the email reservation succeeds
     var callToUser =
       client
         .forEventSourcedEntity(userId)
-        .methodRef(UserEntity::createUser)
+        .method(UserEntity::createUser)
         .deferred(cmd);
 
 
@@ -107,14 +107,14 @@ public class ApplicationController extends Action {
     var emailReserved =
       client
         .forValueEntity(cmd.newEmail())
-        .methodRef(UniqueEmailEntity::reserve)
+        .method(UniqueEmailEntity::reserve)
         .invokeAsync(createUniqueEmail); // eager, executing it now
 
     // this call is lazy and will be executed only if the email reservation succeeds
     var callToUser =
       client
         .forEventSourcedEntity(userId)
-        .methodRef(UserEntity::changeEmail)
+        .method(UserEntity::changeEmail)
         .deferred(cmd);
 
 
@@ -145,7 +145,7 @@ public class ApplicationController extends Action {
 
     var res =
       client.forEventSourcedEntity(userId)
-        .methodRef(UserEntity::getState)
+        .method(UserEntity::getState)
         .invokeAsync()
         .thenApply(user -> {
           var userInfo =
@@ -170,7 +170,7 @@ public class ApplicationController extends Action {
   public Effect<EmailInfo> getEmailInfo(@PathVariable String address) {
     var res =
       client.forValueEntity(address)
-        .methodRef(UniqueEmailEntity::getState).invokeAsync()
+        .method(UniqueEmailEntity::getState).invokeAsync()
         .thenApply(email -> {
           var emailInfo =
             new EmailInfo(

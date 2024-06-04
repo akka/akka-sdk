@@ -22,7 +22,7 @@ public class DoubleCounterAction extends Action {
     var counterId = actionContext().eventSubject().get(); // <1>
     var doubleIncrease = increase * 2; // <2>
     var deferredCall = componentClient.forValueEntity(counterId)
-      .methodRef(CounterEntity::increaseBy)
+      .method(CounterEntity::increaseBy)
       .deferred(new Number(doubleIncrease));
     return effects().reply(Confirmed.instance).addSideEffect(SideEffect.of(deferredCall));  // <3>
   }

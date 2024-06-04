@@ -33,7 +33,7 @@ public class TransferWorkflowIntegrationTest extends KalixIntegrationTestKitSupp
     String response = await(
       componentClient
       .forWorkflow(transferId)
-      .methodRef(TransferWorkflow::startTransfer)
+      .method(TransferWorkflow::startTransfer)
       .invokeAsync(transfer))
       .value();
 
@@ -61,7 +61,7 @@ public class TransferWorkflowIntegrationTest extends KalixIntegrationTestKitSupp
 
     String response = await(componentClient
       .forWorkflow(transferId)
-      .methodRef(TransferWorkflow::startTransfer)
+      .method(TransferWorkflow::startTransfer)
       .invokeAsync(transfer))
       .value();
 
@@ -70,7 +70,7 @@ public class TransferWorkflowIntegrationTest extends KalixIntegrationTestKitSupp
     String acceptationResponse = await(
       componentClient
       .forWorkflow(transferId)
-      .methodRef(TransferWorkflow::accept).invokeAsync())
+      .method(TransferWorkflow::accept).invokeAsync())
       .value();
 
     assertThat(acceptationResponse).isEqualTo("transfer accepted");
@@ -97,14 +97,14 @@ public class TransferWorkflowIntegrationTest extends KalixIntegrationTestKitSupp
 
     String response = await(componentClient
       .forWorkflow(transferId)
-      .methodRef(TransferWorkflow::startTransfer)
+      .method(TransferWorkflow::startTransfer)
       .invokeAsync(transfer))
       .value();
     assertThat(response).isEqualTo("transfer started, waiting for acceptation");
 
     String acceptationResponse = await(componentClient
       .forWorkflow(transferId)
-      .methodRef(TransferWorkflow::acceptationTimeout).invokeAsync());
+      .method(TransferWorkflow::acceptationTimeout).invokeAsync());
     assertThat(acceptationResponse).contains("timed out");
 
     var balance1 = getWalletBalance(walletId1);
@@ -126,7 +126,7 @@ public class TransferWorkflowIntegrationTest extends KalixIntegrationTestKitSupp
 
     String response = await(componentClient
       .forWorkflow(transferId)
-      .methodRef(TransferWorkflow::startTransfer)
+      .method(TransferWorkflow::startTransfer)
       .invokeAsync(transfer))
       .value();
 
@@ -154,7 +154,7 @@ public class TransferWorkflowIntegrationTest extends KalixIntegrationTestKitSupp
 
     String response = await(componentClient
       .forWorkflow(transferId)
-      .methodRef(TransferWorkflow::startTransfer)
+      .method(TransferWorkflow::startTransfer)
       .invokeAsync(transfer))
       .value();
 
@@ -178,7 +178,7 @@ public class TransferWorkflowIntegrationTest extends KalixIntegrationTestKitSupp
     String response = await(
       componentClient
         .forValueEntity(walletId)
-        .methodRef(WalletEntity::create)
+        .method(WalletEntity::create)
         .invokeAsync(amount));
 
     assertThat(response).contains("Ok");
@@ -188,7 +188,7 @@ public class TransferWorkflowIntegrationTest extends KalixIntegrationTestKitSupp
     return await(
       componentClient
         .forValueEntity(walletId)
-        .methodRef(WalletEntity::get)
+        .method(WalletEntity::get)
         .invokeAsync());
   }
 
@@ -196,7 +196,7 @@ public class TransferWorkflowIntegrationTest extends KalixIntegrationTestKitSupp
     return await(
       componentClient
         .forWorkflow(transferId)
-        .methodRef(TransferWorkflow::getTransferState)
+        .method(TransferWorkflow::getTransferState)
         .invokeAsync());
   }
 
