@@ -71,7 +71,8 @@ public class IntegrationTest extends KalixIntegrationTestKitSupport {
     await(
       componentClient
         .forValueEntity(cartId)
-        .methodRef(ShoppingCartEntity::removeCart).deferred().withMetadata(metadata).invokeAsync()
+        .methodRef(ShoppingCartEntity::removeCart).withMetadata(metadata)
+        .invokeAsync()
 
     );
   }

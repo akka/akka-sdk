@@ -136,8 +136,9 @@ public class ShoppingCartController extends Action {
     Metadata metadata = Metadata.EMPTY.add("Role", userRole);
     return effects().forward(
       componentClient.forValueEntity(cartId)
-        .methodRef(ShoppingCartEntity::removeCart).deferred()
-        .withMetadata(metadata)); // <4>
+        .methodRef(ShoppingCartEntity::removeCart)
+        .withMetadata(metadata)
+        .deferred()); // <4>
   }
 }
 // end::forward-headers[]

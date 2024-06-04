@@ -249,6 +249,11 @@ private[kalix] class MetadataImpl private (val entries: Seq[MetadataEntry]) exte
       case MetadataEntry(key, MetadataEntry.Value.StringValue(value), _) if key == prefixedName => value
     }
   }
+
+  override def merge(other: Metadata): Metadata = {
+    val otherImpl = other.asInstanceOf[MetadataImpl]
+    MetadataImpl.of(entries ++ otherImpl.entries)
+  }
 }
 
 object MetadataImpl {

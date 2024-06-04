@@ -251,6 +251,14 @@ public interface Metadata extends Iterable<Metadata.MetadataEntry> {
    */
   Metadata withStatusCode(StatusCode.Redirect httpStatusCode);
 
+  /**
+   * Merge the given Metadata entries with this Metadata. If the same key is present in both, both values will be kept.
+   *
+   * @param other The Metadata to merge with this Metadata.
+   * @return a copy of this Metadata with the other Metadata merged in.
+   */
+  Metadata merge(Metadata other);
+
   /** A metadata entry. */
   interface MetadataEntry {
     /**

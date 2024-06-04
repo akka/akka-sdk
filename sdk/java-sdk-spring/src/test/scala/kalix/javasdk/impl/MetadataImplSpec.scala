@@ -146,7 +146,7 @@ class MetadataImplSpec extends AnyWordSpec with Matchers with OptionValues {
       mdRedirect.get("_kalix-http-code").toScala.value shouldBe "301"
     }
 
-    "support creationg with CloudEvents prefixed with ce_" in {
+    "support creating with CloudEvents prefixed with ce_" in {
       val md = metadata("ce_id" -> "id", "ce_source" -> "source", "ce_specversion" -> "1.0", "ce_type" -> "foo")
       md.isCloudEvent shouldBe true
       val ce = md.asCloudEvent()
@@ -154,6 +154,17 @@ class MetadataImplSpec extends AnyWordSpec with Matchers with OptionValues {
       ce.source().toString shouldBe "source"
       ce.specversion() shouldBe "1.0"
       ce.`type`() shouldBe "foo"
+    }
+
+    "metadata should be mergeable" in {
+      val md1 = metadata("foo" -> "bar", "foobar" -> "raboof")
+      val md2 = metadata("baz" -> "qux", "foobar" -> "foobar")
+      val merged = md1.merge(md2)
+      merged.get("foo").toScala.value shouldBe "bar"
+      merged.get("baz").toScala.value shouldBe "qux"
+
+      val expectedEntries = "foobar" :: "raboof" :: Nil
+      merged.getAll("foobar").asScala should contain theSameElementsAs expectedEntries
     }
   }
 

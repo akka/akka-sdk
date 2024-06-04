@@ -756,7 +756,7 @@ public class SpringSdkIntegrationTest extends AsyncCallsSupport {
     Message veResponse =
       await(
         componentClient.forValueEntity("1")
-          .methodRef(ForwardHeadersValueEntity::createUser).deferred()
+          .methodRef(ForwardHeadersValueEntity::createUser)
           .withMetadata(Metadata.EMPTY.add(ForwardHeadersAction.SOME_HEADER, veHeaderValue))
           .invokeAsync()
       );
@@ -766,7 +766,7 @@ public class SpringSdkIntegrationTest extends AsyncCallsSupport {
     Message esResponse =
       await(
         componentClient.forEventSourcedEntity("1")
-          .methodRef(ForwardHeadersESEntity::createUser).deferred()
+          .methodRef(ForwardHeadersESEntity::createUser)
           .withMetadata(Metadata.EMPTY.add(ForwardHeadersAction.SOME_HEADER, esHeaderValue))
           .invokeAsync()
       );

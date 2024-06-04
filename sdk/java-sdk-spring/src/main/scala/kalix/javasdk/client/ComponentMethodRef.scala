@@ -7,13 +7,21 @@ package kalix.javasdk.client
 import java.lang.reflect.Method
 import java.lang.reflect.ParameterizedType
 import java.util
+import java.util.Optional
+import java.util.concurrent.CompletionStage
 
 import scala.jdk.CollectionConverters._
+import scala.jdk.OptionConverters._
 
 import akka.http.scaladsl.model.HttpMethods
 import com.google.protobuf.any.Any
+import kalix.javasdk.DeferredCall
+import kalix.javasdk.Metadata
+import kalix.javasdk.action.Action
 import kalix.javasdk.annotations.TypeId
+import kalix.javasdk.eventsourcedentity.EventSourcedEntity
 import kalix.javasdk.impl.client.MethodRefResolver
+import kalix.javasdk.impl.reflection.EntityUrlTemplate
 import kalix.javasdk.impl.reflection.IdExtractor
 import kalix.javasdk.impl.reflection.RestServiceIntrospector
 import kalix.javasdk.impl.reflection.RestServiceIntrospector.BodyParameter
@@ -21,22 +29,12 @@ import kalix.javasdk.impl.reflection.RestServiceIntrospector.PathParameter
 import kalix.javasdk.impl.reflection.RestServiceIntrospector.QueryParamParameter
 import kalix.javasdk.impl.reflection.RestServiceIntrospector.RestService
 import kalix.javasdk.impl.reflection.SyntheticRequestServiceMethod
-import kalix.javasdk.impl.telemetry.Telemetry
+import kalix.javasdk.valueentity.ValueEntity
+import kalix.javasdk.workflow.Workflow
 import kalix.spring.impl.KalixClient
 import kalix.spring.impl.RestKalixClientImpl
 import org.springframework.web.bind.annotation.RequestMethod
 import reactor.core.publisher.Flux
-import scala.jdk.OptionConverters._
-import java.util.Optional
-import java.util.concurrent.CompletionStage
-
-import kalix.javasdk.DeferredCall
-import kalix.javasdk.Metadata
-import kalix.javasdk.action.Action
-import kalix.javasdk.eventsourcedentity.EventSourcedEntity
-import kalix.javasdk.impl.reflection.EntityUrlTemplate
-import kalix.javasdk.valueentity.ValueEntity
-import kalix.javasdk.workflow.Workflow
 
 object ComponentMethodRef {
 
@@ -54,21 +52,6 @@ object ComponentMethodRef {
       ids: util.List[String],
       callMetadata: Optional[Metadata]): DeferredCall[Any, R] = {
     deferred(Seq.empty, kalixClient, method, ids.asScala.toList, callMetadata)
-  }
-
-  private[client] def addTracing(metadata: Metadata, context: Optional[Metadata]): Metadata = {
-    var currMetadata = metadata
-    context.toScala match {
-      case Some(metadata) =>
-        metadata.get(Telemetry.TRACE_PARENT_KEY).toScala.foreach { traceParent =>
-          currMetadata = currMetadata.add(Telemetry.TRACE_PARENT_KEY, traceParent)
-        }
-        metadata.get(Telemetry.TRACE_STATE_KEY).toScala.foreach { traceState =>
-          currMetadata = currMetadata.add(Telemetry.TRACE_STATE_KEY, traceState)
-        }
-      case None =>
-    }
-    currMetadata
   }
 
   private[client] def deferred[R](
@@ -147,7 +130,8 @@ object ComponentMethodRef {
 
       }
 
-    deferredCall.withMetadata(ComponentMethodRef.addTracing(deferredCall.metadata, callMetadata))
+    if (callMetadata.isEmpty) deferredCall
+    else deferredCall.withMetadata(callMetadata.get)
   }
 
   private def getReturnType[R](declaringClass: Class[_], method: Method): Class[R] = {
@@ -223,10 +207,14 @@ final class ComponentMethodRef[R](
     id: String,
     metadataOpt: Optional[Metadata]) {
 
-  // TODO: add withMetadata(metadata: Metadata) at ComponentMethodRef
+  /** @return ComponentMethodRef with updated metadata */
+  def withMetadata(metadata: Metadata): ComponentMethodRef[R] = {
+    val merged = metadataOpt.toScala.map(m => m.merge(metadata)).getOrElse(metadata)
+    new ComponentMethodRef[R](this.kalixClient, this.method, this.id, Optional.of(merged))
+  }
 
-  def this(kalixClient: KalixClient, lambda: scala.Any, ids: String, metadataOpt: Optional[Metadata]) = {
-    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), ids, metadataOpt)
+  def this(kalixClient: KalixClient, lambda: scala.Any, id: String, metadataOpt: Optional[Metadata]) = {
+    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), id, metadataOpt)
   }
 
   // TODO: this and all deferred variants deserve javadoc explaining what it really is and when it should be used
@@ -250,6 +238,12 @@ final class ComponentMethodRef1[A1, R](
 
   def this(kalixClient: KalixClient, lambda: scala.Any, ids: util.List[String], metadataOpt: Optional[Metadata]) = {
     this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), ids, metadataOpt)
+  }
+
+  /** @return ComponentMethodRef1 with updated metadata */
+  def withMetadata(metadata: Metadata): ComponentMethodRef1[A1, R] = {
+    val merged = metadataOpt.toScala.map(m => m.merge(metadata)).getOrElse(metadata)
+    new ComponentMethodRef1[A1, R](this.kalixClient, this.method, this.ids, Optional.of(merged))
   }
 
   def deferred(a1: A1): DeferredCall[Any, R] = {
