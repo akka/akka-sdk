@@ -3,11 +3,9 @@ package com.example.jwt;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import kalix.javasdk.Metadata;
-import kalix.javasdk.client.ComponentClient;
 import kalix.spring.testkit.KalixIntegrationTestKitSupport;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.Base64;
 import java.util.Map;
@@ -16,9 +14,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 
 public class JwtIntegrationTest extends KalixIntegrationTestKitSupport {
-
-  @Autowired
-  private ComponentClient componentClient;
 
   // tag::bearer-token-claims-test[]
   @Test

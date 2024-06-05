@@ -5,41 +5,45 @@
 package kalix.javasdk.testkit;
 
 import akka.actor.ActorSystem;
+import akka.actor.ExtendedActorSystem;
 import akka.annotation.InternalApi;
 import akka.http.javadsl.Http;
 import akka.http.javadsl.model.HttpRequest;
 import akka.pattern.Patterns;
 import akka.stream.Materializer;
 import akka.stream.SystemMaterializer;
+import akka.testkit.javadsl.TestKit;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import kalix.javasdk.Kalix;
 import kalix.javasdk.KalixRunner;
 import kalix.javasdk.Principal;
-import kalix.javasdk.impl.GrpcClients;
-import kalix.javasdk.impl.MessageCodec;
-import kalix.javasdk.impl.ProxyInfoHolder;
+import kalix.javasdk.client.ComponentClient;
+import kalix.javasdk.impl.*;
+import kalix.javasdk.impl.client.ComponentClientImpl;
 import kalix.javasdk.testkit.EventingTestKit.IncomingMessages;
 import kalix.javasdk.testkit.impl.KalixRuntimeContainer;
+import kalix.runtime.KalixRuntimeMain;
+import kalix.spring.impl.KalixClient;
+import kalix.spring.impl.RestKalixClientImpl;
+import kalix.spring.impl.WebClientProviderHolder;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import scala.Tuple2;
+import scala.concurrent.Await;
+import scala.concurrent.Promise;
+import scala.concurrent.duration.FiniteDuration;
 
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.time.Duration;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
-import static kalix.javasdk.testkit.KalixTestKit.Settings.EventingSupport.GOOGLE_PUBSUB;
 import static kalix.javasdk.testkit.KalixTestKit.Settings.EventingSupport.TEST_BROKER;
-import static kalix.javasdk.testkit.impl.KalixRuntimeContainer.DEFAULT_GOOGLE_PUBSUB_PORT;
-import static kalix.javasdk.testkit.impl.KalixRuntimeContainer.DEFAULT_KAFKA_PORT;
 
 /**
  * Testkit for running Kalix services locally.
@@ -412,49 +416,33 @@ public class KalixTestKit {
 
   private static final Logger log = LoggerFactory.getLogger(KalixTestKit.class);
 
-  private final Kalix kalix;
-  private final MessageCodec messageCodec;
-  private final EventingTestKit.MessageBuilder messageBuilder;
   private final Settings settings;
 
+  private Kalix kalix;
+  private EventingTestKit.MessageBuilder messageBuilder;
+  private MessageCodec messageCodec;
   private boolean started = false;
   private String proxyHost;
   private int proxyPort;
-  private Optional<KalixRuntimeContainer> runtimeContainer = Optional.empty();
-  private KalixRunner runner;
   private ActorSystem testSystem;
   private EventingTestKit eventingTestKit;
+  private ActorSystem runtimeActorSystem;
+  private ComponentClient componentClient;
+  private int eventingTestKitPort = -1;
 
   /**
-   * Create a new testkit for a Kalix service descriptor.
-   *
-   * @param kalix Kalix service descriptor
+   * Create a new testkit for a Kalix service descriptor with the default settings.
    */
-  public KalixTestKit(final Kalix kalix) {
-    this(kalix, kalix.getMessageCodec(), Settings.DEFAULT);
+  public KalixTestKit() {
+    this(Settings.DEFAULT);
   }
 
   /**
    * Create a new testkit for a Kalix service descriptor with custom settings.
    *
-   * @param kalix    Kalix service descriptor
-   * @param settings custom testkit settings
-   */
-  public KalixTestKit(final Kalix kalix, final Settings settings) {
-    this(kalix, kalix.getMessageCodec(), settings);
-  }
-
-  /**
-   * Create a new testkit for a Kalix service descriptor with custom settings.
-   *
-   * @param kalix        Kalix service descriptor
-   * @param messageCodec message codec
    * @param settings     custom testkit settings
    */
-  public KalixTestKit(final Kalix kalix, final MessageCodec messageCodec, final Settings settings) {
-    this.kalix = kalix;
-    this.messageCodec = messageCodec;
-    this.messageBuilder = new EventingTestKit.MessageBuilder(messageCodec);
+  public KalixTestKit(final Settings settings) {
     this.settings = settings;
   }
 
@@ -477,24 +465,20 @@ public class KalixTestKit {
     if (started)
       throw new IllegalStateException("KalixTestkit already started");
 
-    Boolean useTestContainers = Optional.ofNullable(System.getenv("KALIX_TESTKIT_USE_TEST_CONTAINERS")).map(Boolean::valueOf).orElse(true);
-    int port = userServicePort(useTestContainers);
-    Map<String, Object> conf = new HashMap<>();
-    conf.put("kalix.user-function-port", port);
+    // FIXME is this still needed?
     // don't kill the test JVM when terminating the KalixRunner
-    conf.put("kalix.system.akka.coordinated-shutdown.exit-jvm", "off");
+    // conf.put("kalix.system.akka.coordinated-shutdown.exit-jvm", "off");
+    // FIXME external dependencies through docker compose?
     // integration tests runs the proxy with Testcontainers and therefore
     // we shouldn't load DockerComposeUtils
-    conf.put("kalix.dev-mode.docker-compose-file", "none");
-    Config testConfig = ConfigFactory.parseMap(conf);
+    // conf.put("kalix.dev-mode.docker-compose-file", "none");
 
-    runner = kalix.createRunner(testConfig.withFallback(config));
-    runner.run();
 
+    // FIXME just the one system for both test and runtime should be enough
     testSystem = ActorSystem.create("KalixTestkit", ConfigFactory.parseString("akka.http.server.preview.enable-http2 = true"));
 
-    int eventingBackendPort = startEventingTestkit(useTestContainers);
-    runProxy(useTestContainers, port, eventingBackendPort);
+    int eventingBackendPort = startEventingTestkit();
+    startRuntime(eventingBackendPort);
 
     started = true;
 
@@ -504,79 +488,81 @@ public class KalixTestKit {
     return this;
   }
 
-  private int startEventingTestkit(Boolean useTestContainers) {
-    var port = eventingTestKitPort(useTestContainers);
+  private int startEventingTestkit() {
+    eventingTestKitPort = availableLocalPort();
     if (settings.eventingSupport == TEST_BROKER || settings.mockedEventing.hasConfig()) {
-      log.info("Eventing TestKit booting up on port: " + port);
-      eventingTestKit = EventingTestKit.start(testSystem, "0.0.0.0", port, messageCodec);
+      log.info("Eventing TestKit booting up on port: " + eventingTestKitPort);
+      // FIXME actual message codec instance not available until runtime/sdk started
+      eventingTestKit = EventingTestKit.start(testSystem, "0.0.0.0", eventingTestKitPort, new JsonMessageCodec());
     }
-    return port;
+    return eventingTestKitPort;
   }
 
-  private int eventingTestKitPort(Boolean useTestContainers) {
-    if (useTestContainers) {
-      return availableLocalPort();
-    } else {
-      return 8999;
-    }
-  }
 
-  private void runProxy(Boolean useTestContainers, int port, int grpcEventingBackendPort) {
 
-    if (useTestContainers) {
-      var runtimeContainer = new KalixRuntimeContainer(settings.eventingSupport, port, grpcEventingBackendPort);
-      this.runtimeContainer = Optional.of(runtimeContainer);
-      runtimeContainer.addEnv("SERVICE_NAME", settings.serviceName);
-      runtimeContainer.addEnv("ACL_ENABLED", Boolean.toString(settings.aclEnabled));
-      runtimeContainer.addEnv("VIEW_FEATURES_ALL", Boolean.toString(settings.advancedViews));
-
-      List<String> javaOptions = new ArrayList<>();
-      javaOptions.add("-Dlogback.configurationFile=logback-dev-mode.xml");
-
-      //always passing grpc params, in the case of e.g. testing pubsub with mocked incoming messages
+  private void startRuntime(int grpcEventingBackendPort)  {
+    try {
+      final Map<String, Object> runtimeOptions = new HashMap<>();
+      runtimeOptions.put("kalix.proxy.acl.local-dev.self-deployment-name", settings.serviceName);
+      runtimeOptions.put("kalix.proxy.acl.enabled", settings.aclEnabled);
+      runtimeOptions.put("kalix.proxy.view.features.all", settings.advancedViews);
+      runtimeOptions.put("kalix.proxy.version-check-on-startup", false);
       if (settings.mockedEventing.hasConfig()) {
-        javaOptions.add("-Dkalix.proxy.eventing.grpc-backend.host=host.testcontainers.internal");
-        javaOptions.add("-Dkalix.proxy.eventing.grpc-backend.port=" + grpcEventingBackendPort);
+        runtimeOptions.put("kalix.proxy.eventing.grpc-backend.host", "localhost");
+        runtimeOptions.put("kalix.proxy.eventing.grpc-backend.port", grpcEventingBackendPort);
       }
-
       if (settings.eventingSupport == TEST_BROKER) {
-        javaOptions.add("-Dkalix.proxy.eventing.support=grpc-backend");
+        runtimeOptions.put("kalix.proxy.eventing.support", "grpc-backend");
       } else if (settings.eventingSupport == Settings.EventingSupport.KAFKA) {
-        javaOptions.add("-Dkalix.proxy.eventing.support=kafka");
-        javaOptions.add("-Dkalix.proxy.eventing.kafka.bootstrap-servers=host.testcontainers.internal:" + DEFAULT_KAFKA_PORT);
-      } else if (settings.eventingSupport == GOOGLE_PUBSUB) {
-        javaOptions.add("-Dkalix.proxy.eventing.support=google-pubsub-emulator");
-        javaOptions.add("-Dkalix.proxy.eventing.google-pubsub-emulator-defaults.host=host.testcontainers.internal");
-        javaOptions.add("-Dkalix.proxy.eventing.google-pubsub-emulator-defaults.port=" + DEFAULT_GOOGLE_PUBSUB_PORT);
+        runtimeOptions.put("kalix.proxy.eventing.support", "kafka");
+        runtimeOptions.put("kalix.proxy.eventing.kafka.bootstrap-servers=host.testcontainers.internal", KalixRuntimeContainer.DEFAULT_KAFKA_PORT);
+      } else if (settings.eventingSupport == Settings.EventingSupport.GOOGLE_PUBSUB) {
+        runtimeOptions.put("kalix.proxy.eventing.support", "google-pubsub-emulator");
+        runtimeOptions.put("kalix.proxy.eventing.google-pubsub-emulator-defaults.host", "host.testcontainers.internal");
+        runtimeOptions.put("kalix.proxy.eventing.google-pubsub-emulator-defaults.port", KalixRuntimeContainer.DEFAULT_GOOGLE_PUBSUB_PORT);
       }
       if (settings.mockedEventing.hasIncomingConfig()) {
-        javaOptions.add("-Dkalix.proxy.eventing.override.sources=" + settings.mockedEventing.toIncomingFlowConfig());
+        runtimeOptions.put("kalix.proxy.eventing.override.sources", settings.mockedEventing.toIncomingFlowConfig());
       }
       if (settings.mockedEventing.hasOutgoingConfig()) {
-        javaOptions.add("-Dkalix.proxy.eventing.override.destinations=" + settings.mockedEventing.toOutgoingFlowConfig());
+        runtimeOptions.put("kalix.proxy.eventing.override.destinations", settings.mockedEventing.toOutgoingFlowConfig());
       }
-      settings.servicePortMappings.forEach((serviceName, hostPort) -> {
-        javaOptions.add("-Dkalix.dev-mode.service-port-mappings." + serviceName + "=" + hostPort);
-      });
+      settings.servicePortMappings.forEach((serviceName, hostPort) ->
+        runtimeOptions.put("kalix.dev-mode.service-port-mappings." + serviceName, hostPort)
+      );
+      settings.workflowTickInterval.ifPresent(tickInterval -> runtimeOptions.put("kalix.proxy.workflow-entity.tick-interval", tickInterval.toMillis() + " ms"));
 
-      log.debug("Running container with javaOptions=" + javaOptions);
-      runtimeContainer.addEnv("JAVA_TOOL_OPTIONS", String.join(" ", javaOptions));
-      settings.workflowTickInterval.ifPresent(tickInterval -> runtimeContainer.addEnv("WORKFLOW_TICK_INTERVAL", tickInterval.toMillis() + ".millis"));
 
-      runtimeContainer.start();
+      log.debug("Config for runtime: {}", runtimeOptions);
+      // rationale: we want to override things with the runtime options, then use dev mode for everything the runtime
+      //            needs but then allow user to specify their own settings that are found (Note that users cannot override
+      //            runtime config with an application.conf)
+      var runtimeConfig = ConfigFactory.parseMap(runtimeOptions)
+              .withFallback(ConfigFactory.load("dev-mode.conf"))
+              .withFallback(ConfigFactory.load("application.conf"));
 
-      proxyPort = runtimeContainer.getProxyPort();
-      proxyHost = runtimeContainer.getHost();
-
-    } else {
       proxyPort = 9000;
       proxyHost = "localhost";
 
+      Promise<Tuple2<Kalix, KalixClient>> startedKalix = Promise.apply();
+      if (!NextGenKalixJavaApplication.onNextStartCallback().compareAndSet(null, startedKalix)) {
+        throw new RuntimeException("Found another integration test run waiting for Kalix to start, multiple tests must not run in parallel");
+      }
+      // FIXME this can't possibly work, we have already done logging, logback-test should be picked up?
+      System.setProperty("logback.configurationFile", "logback-dev-mode.xml");
+
+      runtimeActorSystem = KalixRuntimeMain.start(runtimeConfig);
+      // wait for SDK to get on start callback (or fail starting), we need it to set up the component client
+      var tuple = Await.result(startedKalix.future(), scala.concurrent.duration.Duration.create("20s"));
+      kalix = tuple._1();
+      var kalixClient = tuple._2;
+
       Http http = Http.get(testSystem);
       log.info("Checking kalix-runtime status");
-      CompletionStage<String> checkingProxyStatus = Patterns.retry(() -> http.singleRequest(HttpRequest.GET("http://localhost:8558/ready")).thenCompose(response -> {
+      // FIXME we need a stable runtime endpoint location that would reply 200 in dev mode, the regular management endpoint is not available
+      CompletionStage<String> checkingProxyStatus = Patterns.retry(() -> http.singleRequest(HttpRequest.GET("http://localhost:" + proxyPort + "/")).thenCompose(response -> {
         int responseCode = response.status().intValue();
-        if (responseCode == 200) {
+        if (responseCode == 404) {
           log.info("Kalix-runtime started");
           return CompletableFuture.completedStage("Ok");
         } else {
@@ -591,21 +577,25 @@ public class KalixTestKit {
         log.error("Failed to connect to Kalix Runtime with:", e);
         throw new RuntimeException(e);
       }
-    }
-    // the proxy will announce its host and default port, but to communicate with it,
-    // we need to use the port and host that testcontainers will expose
-    // therefore, we set a port override in ProxyInfoHolder to allow for inter-component communication
-    ProxyInfoHolder holder = ProxyInfoHolder.get(runner.system());
-    holder.overridePort(proxyPort);
-    holder.overrideProxyHost(proxyHost);
-    holder.overrideTracingCollectorEndpoint(""); //emulating ProxyInfo with disabled tracing.
-  }
 
-  private int userServicePort(Boolean useTestContainers) {
-    if (useTestContainers) {
-      return availableLocalPort();
-    } else {
-      return KalixRuntimeContainer.DEFAULT_USER_SERVICE_PORT;
+      // FIXME what of this is still needed
+      // the proxy will announce its host and default port, but to communicate with it,
+      // we need to use the port and host that testcontainers will expose
+      // therefore, we set a port override in ProxyInfoHolder to allow for inter-component communication
+      ProxyInfoHolder holder = ProxyInfoHolder.get(testSystem);
+      holder.overridePort(proxyPort);
+      holder.overrideProxyHost(proxyHost);
+      holder.overrideTracingCollectorEndpoint(""); //emulating ProxyInfo with disabled tracing.
+
+      // once runtime is started
+      var webClientProviderHolder = new WebClientProviderHolder((ExtendedActorSystem) runtimeActorSystem);
+      ((RestKalixClientImpl)kalixClient).setWebClient(webClientProviderHolder.webClientProvider().localWebClient());
+      componentClient = new ComponentClientImpl(kalixClient);
+
+      this.messageBuilder = new EventingTestKit.MessageBuilder(kalix.getMessageCodec());
+
+    } catch (Exception ex) {
+      throw new RuntimeException("Error while starting Kalix testkit", ex);
     }
   }
 
@@ -690,7 +680,12 @@ public class KalixTestKit {
     return testSystem;
   }
 
-
+  /**
+   * Get an {@link ActorSystem} for interacting "internally" with the components of a service.
+   */
+  public ComponentClient getComponentClient() {
+    return componentClient;
+  }
 
   /**
    * Get incoming messages for ValueEntity.
@@ -763,26 +758,17 @@ public class KalixTestKit {
    */
   public void stop() {
     try {
-      runtimeContainer.ifPresent(container -> container.stop());
-    } catch (Exception e) {
-      log.error("KalixTestkit proxy container failed to stop", e);
-    }
-    try {
-      testSystem.terminate();
-      testSystem
-          .getWhenTerminated()
-          .toCompletableFuture()
-          .get(settings.stopTimeout.toMillis(), TimeUnit.MILLISECONDS);
+      // FIXME no java duration timeout in Akka java api
+      TestKit.shutdownActorSystem(testSystem, FiniteDuration.create(settings.stopTimeout.toMillis(), "ms"), true);
     } catch (Exception e) {
       log.error("KalixTestkit ActorSystem failed to terminate", e);
     }
     try {
-      runner
-          .terminate()
-          .toCompletableFuture()
-          .get(settings.stopTimeout.toMillis(), TimeUnit.MILLISECONDS);
+      if (runtimeActorSystem != null) {
+        TestKit.shutdownActorSystem(runtimeActorSystem, FiniteDuration.create(settings.stopTimeout.toMillis(), "ms"), true);
+      }
     } catch (Exception e) {
-      log.error("KalixTestkit KalixRunner failed to terminate", e);
+      log.error("KalixTestkit Kalix runtime failed to terminate", e);
     }
     started = false;
   }
@@ -807,15 +793,7 @@ public class KalixTestKit {
   public MessageCodec getMessageCodec() {
     return messageCodec;
   }
-
-  /**
-   * INTERNAL API
-   */
-  @InternalApi
-  public KalixRunner getRunner() {
-    return runner;
-  }
-
+  
   /**
    * Returns {@link kalix.javasdk.testkit.EventingTestKit.MessageBuilder} utility
    * to create {@link kalix.javasdk.testkit.EventingTestKit.Message}s for the eventing testkit.

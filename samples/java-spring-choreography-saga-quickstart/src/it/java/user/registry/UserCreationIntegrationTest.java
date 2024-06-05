@@ -3,7 +3,6 @@ package user.registry;
 import kalix.spring.testkit.KalixIntegrationTestKitSupport;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 import user.registry.api.ApplicationController;
 import user.registry.domain.User;
 
@@ -20,9 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Since this is an integration tests, it interacts with the application using a WebClient
  * (already configured and provided automatically through injection).
  */
-@SpringBootTest(classes = Main.class)
 public class UserCreationIntegrationTest extends KalixIntegrationTestKitSupport {
-
 
   private final Duration timeout = Duration.ofSeconds(3);
 

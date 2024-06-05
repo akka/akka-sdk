@@ -50,7 +50,7 @@ public class PubSubIntegrationTest extends DockerIntegrationTest {
   public void shouldVerifyActionSubscribingToCounterEventsTopic() {
     //given
     String counterId = "some-counter";
-    var client = componentClient().forEventSourcedEntity(counterId);
+    var client = componentClient.forEventSourcedEntity(counterId);
 
     //when
     Assertions.assertEquals(2, increaseCounter(client, 2));
@@ -72,9 +72,9 @@ public class PubSubIntegrationTest extends DockerIntegrationTest {
   public void shouldVerifyViewSubscribingToCounterEventsTopic() {
     //given
     String counterId1 = "some-counter-1";
-    var counterClient1 = componentClient().forEventSourcedEntity(counterId1);
+    var counterClient1 = componentClient.forEventSourcedEntity(counterId1);
     String counterId2 = "some-counter-2";
-    var counterClient2 = componentClient().forEventSourcedEntity(counterId2);
+    var counterClient2 = componentClient.forEventSourcedEntity(counterId2);
 
     //when
     Assertions.assertEquals(2, increaseCounter(counterClient1, 2));
@@ -165,7 +165,7 @@ public class PubSubIntegrationTest extends DockerIntegrationTest {
 
   private void createCustomer(Customer customer) {
     await(
-      componentClient()
+      componentClient
         .forValueEntity(customer.name())
         .method(CustomerEntity::create)
         .invokeAsync(customer)

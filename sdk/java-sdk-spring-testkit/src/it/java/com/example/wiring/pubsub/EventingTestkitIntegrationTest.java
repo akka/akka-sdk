@@ -4,65 +4,36 @@
 
 package com.example.wiring.pubsub;
 
-import com.example.Main;
 import com.example.wiring.eventsourcedentities.counter.CounterEvent.ValueIncreased;
 import com.example.wiring.valueentities.user.User;
 import com.example.wiring.valueentities.user.UserSideEffect;
-import kalix.javasdk.testkit.EventingTestKit;
 import kalix.javasdk.testkit.EventingTestKit.IncomingMessages;
 import kalix.javasdk.testkit.EventingTestKit.Message;
-import kalix.javasdk.testkit.KalixTestKit;
-import kalix.spring.KalixConfigurationTest;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
-import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.TestPropertySource;
-import org.springframework.web.reactive.function.client.WebClient;
+import kalix.spring.testkit.KalixIntegrationTestKitSupport;
+import org.awaitility.Awaitility;
+import org.junit.jupiter.api.*;
 
 import java.util.concurrent.TimeUnit;
 
 import static com.example.wiring.pubsub.PublishESToTopic.COUNTER_EVENTS_TOPIC;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
 
-@ActiveProfiles("eventing-testkit-subscription")
-@SpringBootTest(classes = Main.class)
-@Import({KalixConfigurationTest.class, TestkitConfigEventing.class})
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-@TestPropertySource(properties = "spring.main.allow-bean-definition-overriding=true")
-@DirtiesContext
-public class EventingTestkitIntegrationTest {
+public class EventingTestkitIntegrationTest extends KalixIntegrationTestKitSupport {
 
-  @Autowired
-  private KalixTestKit kalixTestKit;
   private IncomingMessages topicSubscription;
-  @Autowired
-  private WebClient webClient;
 
   @BeforeAll
   public void beforeAll() {
-    topicSubscription = kalixTestKit.getTopicIncomingMessages(COUNTER_EVENTS_TOPIC);
+      super.beforeAll();
+      topicSubscription = kalixTestKit.getTopicIncomingMessages(COUNTER_EVENTS_TOPIC);
   }
 
   @BeforeEach
   public void beforeEach() {
     DummyCounterEventStore.clear();
   }
-
-
-  @AfterAll
-  public void afterAll() {
-    kalixTestKit.stop();
-  }
-
 
   @Test
   public void shouldPublishEventWithTypeNameViaSubscriptionEventingTestkit() {
@@ -77,7 +48,7 @@ public class EventingTestkitIntegrationTest {
     topicSubscription.publish(event2, subject);
 
     //then
-    await()
+      Awaitility.await()
         .ignoreExceptions()
         .atMost(10, TimeUnit.of(SECONDS))
         .untilAsserted(() -> {
@@ -107,7 +78,7 @@ public class EventingTestkitIntegrationTest {
     incomingMessages.publish(user, subject);
 
     //then
-    await()
+      Awaitility.await()
         .ignoreExceptions()
         .atMost(10, TimeUnit.of(SECONDS))
         .untilAsserted(() -> {
@@ -119,7 +90,7 @@ public class EventingTestkitIntegrationTest {
     incomingMessages.publishDelete(subject);
 
     //then
-    await()
+    Awaitility.await()
         .ignoreExceptions()
         .atMost(10, TimeUnit.of(SECONDS))
         .untilAsserted(() -> {

@@ -1,13 +1,11 @@
 package com.example;
 
-import com.example.shoppingcart.Main;
 import com.example.shoppingcart.ShoppingCartEntity;
 import com.example.shoppingcart.domain.ShoppingCart;
 import com.example.shoppingcart.domain.ShoppingCart.LineItem;
 import kalix.spring.testkit.KalixIntegrationTestKitSupport;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 
 
 
@@ -22,7 +20,6 @@ import org.springframework.boot.test.context.SpringBootTest;
  * (already configured and provided automatically through injection).
  */
 // tag::sample-it[]
-@SpringBootTest(classes = Main.class)
 public class IntegrationTest extends KalixIntegrationTestKitSupport { // <1>
 
   @Test

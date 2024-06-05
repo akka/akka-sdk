@@ -1,29 +1,19 @@
 package com.example.fibonacci;
 
-import com.example.Main;
 import kalix.spring.testkit.KalixIntegrationTestKitSupport;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
 
-@DirtiesContext
 // tag::testing-action[]
-@SpringBootTest(classes = Main.class) // <1>
 public class FibonacciActionIntegrationTest extends KalixIntegrationTestKitSupport { // <2>
-
-  @Autowired
-  private WebClient webClient;
 
   private Duration timeout = Duration.of(5, SECONDS);
 

@@ -4,34 +4,18 @@
 
 package com.example.wiring;
 
-import com.example.Main;
 import com.example.wiring.actions.echo.Message;
 import com.example.wiring.valueentities.user.User;
 import com.example.wiring.valueentities.user.UserEntity;
-import kalix.javasdk.client.ComponentClient;
-import kalix.spring.KalixConfigurationTest;
-import kalix.spring.testkit.AsyncCallsSupport;
+import kalix.spring.testkit.KalixIntegrationTestKitSupport;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
-import org.springframework.test.context.TestPropertySource;
-import org.springframework.web.reactive.function.client.WebClient;
 
 import java.time.Duration;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
 
-@SpringBootTest(classes = Main.class)
-@Import(KalixConfigurationTest.class)
-@TestPropertySource(properties = "spring.main.allow-bean-definition-overriding=true")
-public class XComponentCallsIntegrationTest extends AsyncCallsSupport {
-
-  @Autowired
-  private WebClient webClient;
-  @Autowired
-  private ComponentClient componentClient;
+public class XComponentCallsIntegrationTest extends KalixIntegrationTestKitSupport  {
 
   private Duration timeout = Duration.of(10, SECONDS);
 

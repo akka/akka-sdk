@@ -11,6 +11,7 @@ import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.TypeKind;
 import javax.tools.*;
 import java.io.*;
 import java.nio.file.NoSuchFileException;
@@ -26,7 +27,11 @@ import java.util.stream.Collectors;
                 "kalix.javasdk.annotations.ViewId",
                 // actions (RequestMapping will be removed once we make unified urls for actions)
                 "org.springframework.web.bind.annotation.RequestMapping",
-                "kalix.javasdk.annotations.Subscribe",
+                // actions or views
+                "kalix.javasdk.annotations.Subscribe.ValueEntity",
+                "kalix.javasdk.annotations.Subscribe.EventSourcedEntity",
+                "kalix.javasdk.annotations.Subscribe.Topic",
+                "kalix.javasdk.annotations.Subscribe.Stream",
                 // central config/lifecycle class
                 "kalix.javasdk.annotations.KalixService"
         })
@@ -80,7 +85,7 @@ public class ComponentAnnotationProcessor extends AbstractProcessor {
                         // the same component might have multiple annotations, deduplication happens when creating config later
                         classNames.addAll(componentTypeToConcreteComponents.get(componentType));
                     }
-                    debug("Found "  + classNames.size() + " components of type " + componentType);
+                    debug("Found "  + classNames.size() + " components of type " + componentType + " annotated with " + annotation + ": " + String.join(", ", classNames));
                     componentTypeToConcreteComponents.put(componentType, classNames);
                 });
             }
@@ -100,10 +105,29 @@ public class ComponentAnnotationProcessor extends AbstractProcessor {
                 if (actions.isEmpty()) componentTypeToConcreteComponents.remove(ACTION_KEY);
             }
 
+            var views = componentTypeToConcreteComponents.get(VIEW_KEY);
+            if (views != null) {
+                var foundNestedViews = new HashSet<String>();
+                views.forEach(viewClass -> {
+                    // For multi table views each table is an inner class to a view,
+                    // we'll find both the parent wrapping class and the nested, but, we want list
+                    // only the wrapping class as a component.
+                    if(views.stream().anyMatch(otherViewClass ->
+                            !otherViewClass.equals(viewClass) && viewClass.startsWith(otherViewClass) && viewClass.length() > otherViewClass.length()))
+                        foundNestedViews.add(viewClass);
+                });
+                views.removeAll(foundNestedViews);
+                if (views.isEmpty()) componentTypeToConcreteComponents.remove(VIEW_KEY);
+            }
+
+
+
             var service = componentTypeToConcreteComponents.get(KALIX_SERVICE_KEY);
             if (service != null && service.size() > 1) {
                 error("More than one class annotated with @KalixService, only one is allowed. Annotated classes: " + String.join(", ", service));
             }
+
+            // nested tables will occur together with the wrapping class, list only the wrapping class
 
             try {
                 if (!componentTypeToConcreteComponents.isEmpty()) {
@@ -132,8 +156,20 @@ public class ComponentAnnotationProcessor extends AbstractProcessor {
             case "kalix.javasdk.annotations.Subscribe" -> ACTION_KEY;
             case "kalix.javasdk.annotations.KalixService" -> KALIX_SERVICE_KEY;
             case "kalix.javasdk.annotations.TypeId" -> entityComponentType(annotatedClass);
+            case String s when s.startsWith("kalix.javasdk.annotations.Subscribe") ->
+                    actionOrView(annotatedClass);
             default -> throw new IllegalArgumentException("Unknown annotation type: " + annotation.getQualifiedName());
         };
+    }
+
+    private String actionOrView(Element annotatedClass) {
+        var superClassMirror = ((TypeElement) annotatedClass).getSuperclass();
+        if (superClassMirror.getKind() != TypeKind.NONE && superClassMirror.toString().equals("kalix.javasdk.action.Action")) {
+            return ACTION_KEY;
+        } else {
+            // no superclass, or superclass but that is not Action
+            return VIEW_KEY;
+        }
     }
 
     /**

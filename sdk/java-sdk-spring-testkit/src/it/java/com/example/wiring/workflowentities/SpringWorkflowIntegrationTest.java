@@ -4,36 +4,29 @@
 
 package com.example.wiring.workflowentities;
 
-import com.example.wiring.TestkitConfig;
 import com.example.wiring.actions.echo.Message;
-import kalix.javasdk.client.ComponentClient;
-import kalix.spring.KalixConfigurationTest;
-import kalix.spring.testkit.AsyncCallsSupport;
+import kalix.javasdk.testkit.KalixTestKit;
+import kalix.spring.testkit.KalixIntegrationTestKitSupport;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
-import org.springframework.http.ResponseEntity;
-import org.springframework.test.context.TestPropertySource;
-import org.springframework.web.reactive.function.client.WebClient;
 
 import java.time.Duration;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import static java.time.Duration.ofMillis;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest(classes = Main.class)
-@Import({KalixConfigurationTest.class, TestkitConfig.class})
-@TestPropertySource(properties = "spring.main.allow-bean-definition-overriding=true")
-public class SpringWorkflowIntegrationTest extends AsyncCallsSupport {
+public class SpringWorkflowIntegrationTest extends KalixIntegrationTestKitSupport {
 
-  @Autowired
-  private ComponentClient componentClient;
+    @Override
+    protected KalixTestKit.Settings kalixTestKitSettings() {
+        return KalixTestKit.Settings.DEFAULT
+                .withWorkflowTickInterval(ofMillis(500));
+    }
 
-  @Test
+    @Test
   public void shouldNotStartTransferForWithNegativeAmount() {
     var walletId1 = "1";
     var walletId2 = "2";

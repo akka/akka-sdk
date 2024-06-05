@@ -3,26 +3,26 @@ package customer.api;
 
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
-import customer.Main;
 import customer.actions.CustomerRegistryAction;
 import customer.views.Customer;
 import kalix.javasdk.JsonSupport;
 import org.hamcrest.core.IsEqual;
-import org.junit.jupiter.api.*;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.springframework.context.ApplicationContext;
-import org.springframework.http.*;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.http.MediaType;
 import org.springframework.http.codec.json.Jackson2JsonEncoder;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientRequestException;
 import reactor.core.publisher.Mono;
-import scala.jdk.FutureConverters;
 
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
@@ -43,14 +43,12 @@ import static org.awaitility.Awaitility.await;
  * - resolution of service port mappings from docker-compose file allows for cross service calls (eg: create customer from subscriber service)
  * - resolution of service port mappings passed to kalix-runtime allows for service to service streaming (eg: customer view is updated in subscriber service)
  */
-@SpringBootTest(classes = Main.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class CustomerIntegrationTest {
 
   final private Duration timeout = Duration.of(5, SECONDS);
 
-  // FIXME integration test support
-  //  private KalixSpringApplication kalixSpringApplication;
+  // FIXME integration test support for starting another service as a prerequisite - would still be docker?
 
   public CustomerIntegrationTest(ApplicationContext applicationContext) {
     Map<String, Object> confMap = new HashMap<>();
@@ -64,19 +62,6 @@ public class CustomerIntegrationTest {
     // kalixSpringApplication = new KalixSpringApplication(applicationContext, config);
   }
 
-  @BeforeAll
-  public void beforeAll() {
-
-    //kalixSpringApplication.start();
-  }
-
-  @AfterAll
-  public void afterAll() throws ExecutionException, InterruptedException {
-      /* new FutureConverters.FutureOps<>(kalixSpringApplication.stop())
-        .asJava()
-        .toCompletableFuture()
-        .get(); */
-  }
 
   private HttpStatusCode assertSourceServiceIsUp(WebClient webClient) {
     try {

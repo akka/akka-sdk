@@ -1,25 +1,14 @@
 package customer.api;
 
-
-import customer.Main;
 import customer.domain.Address;
 import customer.domain.Customer;
-import kalix.javasdk.client.ComponentClient;
 import kalix.spring.testkit.KalixIntegrationTestKitSupport;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.UUID;
 
-
-@SpringBootTest(classes = Main.class)
 public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
-
-
-  @Autowired
-  private ComponentClient componentClient;
 
   @Test
   public void create() {

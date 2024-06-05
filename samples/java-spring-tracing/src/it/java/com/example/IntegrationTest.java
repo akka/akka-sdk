@@ -1,9 +1,7 @@
 package com.example;
 
-import com.example.tracing.Main;
 import kalix.spring.testkit.KalixIntegrationTestKitSupport;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 
 import java.time.Duration;
 
@@ -19,7 +17,6 @@ import static java.time.temporal.ChronoUnit.SECONDS;
  * Since this is an integration tests, it interacts with the application using a WebClient
  * (already configured and provided automatically through injection).
  */
-@SpringBootTest(classes = Main.class)
 public class IntegrationTest extends KalixIntegrationTestKitSupport {
 
   private Duration timeout = Duration.of(5, SECONDS);

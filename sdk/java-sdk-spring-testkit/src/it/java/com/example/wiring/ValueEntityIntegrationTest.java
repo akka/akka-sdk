@@ -4,34 +4,19 @@
 
 package com.example.wiring;
 
-import com.example.Main;
 import com.example.wiring.valueentities.user.User;
 import com.example.wiring.valueentities.user.UserEntity;
-import kalix.javasdk.client.ComponentClient;
-import kalix.spring.KalixConfigurationTest;
-import kalix.spring.testkit.AsyncCallsSupport;
+import kalix.spring.testkit.KalixIntegrationTestKitSupport;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
-import org.springframework.test.context.TestPropertySource;
 
 import java.util.concurrent.TimeUnit;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
-import org.awaitility.Awaitility;
 import static org.junit.jupiter.api.Assertions.fail;
 
-@SpringBootTest(classes = Main.class)
-@Import(KalixConfigurationTest.class)
-@TestPropertySource(properties = "spring.main.allow-bean-definition-overriding=true")
-public class ValueEntityIntegrationTest extends AsyncCallsSupport {
-
-
-  @Autowired
-  private ComponentClient componentClient;
-
+public class ValueEntityIntegrationTest extends KalixIntegrationTestKitSupport {
 
   @Test
   public void verifyValueEntityCurrentState() {

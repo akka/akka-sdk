@@ -28,10 +28,8 @@ import org.junit.rules.ExternalResource;
  *
  * public class MyKalixIntegrationTest {
  *
- *   private static final Kalix MY_KALIX = new Kalix(); // with registered services
- *
  *   &#64;ClassRule
- *   public static final KalixTestKitResource testKit = new KalixTestKitResource(MY_KALIX);
+ *   public static final KalixTestKitResource testKit = new KalixTestKitResource();
  *
  *   private final MyServiceClient client; // generated Akka gRPC client
  *
@@ -50,16 +48,12 @@ public final class KalixTestKitResource extends ExternalResource {
 
   private final KalixTestKit testKit;
 
-  public KalixTestKitResource(Kalix kalix) {
-    this(kalix, kalix.getMessageCodec(), KalixTestKit.Settings.DEFAULT);
+  public KalixTestKitResource(KalixTestKit.Settings settings) {
+    this.testKit = new KalixTestKit(settings);
   }
 
-  public KalixTestKitResource(Kalix kalix, KalixTestKit.Settings settings) {
-    this(kalix, kalix.getMessageCodec(), settings);
-  }
-
-  public KalixTestKitResource(Kalix kalix, MessageCodec messageCodec, KalixTestKit.Settings settings) {
-    this.testKit = new KalixTestKit(kalix, messageCodec, settings);
+  public KalixTestKitResource() {
+    this.testKit = new KalixTestKit();
   }
 
 

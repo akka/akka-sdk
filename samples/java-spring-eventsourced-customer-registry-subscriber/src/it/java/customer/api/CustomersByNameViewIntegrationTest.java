@@ -1,6 +1,5 @@
 package customer.api;
 
-import customer.Main;
 import customer.views.Customer;
 import customer.views.CustomerPublicEvent.Created;
 import kalix.javasdk.testkit.EventingTestKit.IncomingMessages;
@@ -8,23 +7,18 @@ import kalix.javasdk.testkit.KalixTestKit;
 import kalix.spring.testkit.KalixIntegrationTestKitSupport;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
-import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest(classes = Main.class)
-@Import(TestKitConfig.class)
 public class CustomersByNameViewIntegrationTest extends KalixIntegrationTestKitSupport {
 
-  @Autowired
-  private KalixTestKit kalixTestKit;
-  @Autowired
-  private WebClient webClient;
+  @Override
+  protected KalixTestKit.Settings kalixTestKitSettings() {
+      return KalixTestKit.Settings.DEFAULT.withAclEnabled()
+              .withStreamIncomingMessages("customer-registry", "customer_events");
+  }
 
   @Test
   public void shouldReturnCustomersFromViews() {

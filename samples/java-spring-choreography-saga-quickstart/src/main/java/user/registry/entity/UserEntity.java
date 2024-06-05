@@ -1,7 +1,6 @@
 package user.registry.entity;
 
 
-import kalix.javasdk.StatusCode;
 import kalix.javasdk.annotations.Acl;
 import kalix.javasdk.annotations.TypeId;
 import kalix.javasdk.eventsourcedentity.EventSourcedEntity;

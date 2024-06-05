@@ -1,12 +1,10 @@
 package com.example.transfer;
 
-import com.example.Main;
 import com.example.transfer.TransferState.Transfer;
 import com.example.wallet.WalletEntity;
 import kalix.spring.testkit.KalixIntegrationTestKitSupport;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -18,7 +16,6 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 
 
-@SpringBootTest(classes = Main.class)
 public class TransferWorkflowIntegrationTest extends KalixIntegrationTestKitSupport {
 
   @Test

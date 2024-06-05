@@ -4,16 +4,13 @@
 
 package com.example.wiring.workflowentities;
 
-import kalix.spring.boot.KalixConfiguration;
 import kalix.javasdk.annotations.Acl;
+import kalix.javasdk.annotations.KalixService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.annotation.Import;
 
-@SpringBootApplication
-@Import(KalixConfiguration.class)
+@KalixService
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.ALL))
 public class Main {
 

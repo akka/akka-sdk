@@ -4,34 +4,20 @@ import com.example.domain.Order;
 import com.example.domain.OrderEntity;
 import com.example.domain.OrderRequest;
 import com.example.domain.OrderStatus;
-import kalix.javasdk.client.ComponentClient;
 
 import kalix.spring.testkit.KalixIntegrationTestKitSupport;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.web.reactive.function.client.WebClient;
 
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
 
-@SpringBootTest(classes = Main.class)
 public class OrderActionIntegrationTest extends KalixIntegrationTestKitSupport {
 
   private Duration timeout = Duration.of(20, SECONDS);
-
-
-
-  @Autowired
-  private WebClient webClient;
-
-  @Autowired
-  private ComponentClient componentClient;
-
 
   @Test
   public void placeOrder() {

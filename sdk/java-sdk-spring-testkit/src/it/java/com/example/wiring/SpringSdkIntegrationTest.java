@@ -4,7 +4,6 @@
 
 package com.example.wiring;
 
-import com.example.Main;
 import com.example.wiring.actions.echo.ActionWithHttpResponse;
 import com.example.wiring.actions.echo.ActionWithMetadata;
 import com.example.wiring.actions.echo.EchoAction;
@@ -19,23 +18,13 @@ import com.example.wiring.valueentities.user.AssignedCounterEntity;
 import com.example.wiring.valueentities.user.User;
 import com.example.wiring.valueentities.user.UserEntity;
 import com.example.wiring.valueentities.user.UserSideEffect;
-import com.example.wiring.views.CountersByValue;
-import com.example.wiring.views.CountersByValueWithIgnore;
-import com.example.wiring.views.CustomerByCreationTime;
-import com.example.wiring.views.UserCounter;
-import com.example.wiring.views.UserCounters;
-import com.example.wiring.views.UserCountersView;
-import com.example.wiring.views.UserWithVersion;
-import com.example.wiring.views.UserWithVersionView;
-import com.example.wiring.views.UsersByEmailAndName;
-import com.example.wiring.views.UsersView;
+import com.example.wiring.views.*;
 import kalix.javasdk.HttpResponse;
 import kalix.javasdk.Metadata;
 import kalix.javasdk.StatusCode;
-import kalix.javasdk.client.ComponentClient;
 import kalix.javasdk.client.EventSourcedEntityClient;
-import kalix.spring.KalixConfigurationTest;
-import kalix.spring.testkit.AsyncCallsSupport;
+import kalix.javasdk.testkit.KalixTestKit;
+import kalix.spring.testkit.KalixIntegrationTestKitSupport;
 import org.awaitility.Awaitility;
 import org.hamcrest.core.IsEqual;
 import org.hamcrest.core.IsNull;
@@ -43,14 +32,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.web.reactive.function.client.ClientResponse;
-import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
 
@@ -62,23 +46,24 @@ import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import static java.time.Duration.ofMillis;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static kalix.javasdk.StatusCode.Success.CREATED;
 import static kalix.javasdk.StatusCode.Success.OK;
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest(classes = Main.class)
-@Import({KalixConfigurationTest.class, TestkitConfig.class})
-@TestPropertySource(properties = "spring.main.allow-bean-definition-overriding=true")
-public class SpringSdkIntegrationTest extends AsyncCallsSupport {
-
-  @Autowired
-  private WebClient webClient;
-
-  @Autowired
-  private ComponentClient componentClient;
+public class SpringSdkIntegrationTest extends KalixIntegrationTestKitSupport {
 
   private Duration timeout = Duration.of(10, SECONDS);
+
+  @Override
+  protected KalixTestKit.Settings kalixTestKitSettings() {
+    // here only to show how to set different `Settings` in a test.
+    return KalixTestKit.Settings.DEFAULT
+            .withAclEnabled()
+            .withAdvancedViews()
+            .withWorkflowTickInterval(ofMillis(500));
+  }
 
   @Test
   public void failRequestWithRequiredQueryParam() {

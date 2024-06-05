@@ -60,6 +60,7 @@ import kalix.protocol.view.Views
 import kalix.protocol.workflow_entity.WorkflowEntities
 import kalix.spring.BuildInfo
 import kalix.spring.WebClientProvider
+import kalix.spring.impl.KalixClient
 import kalix.spring.impl.RestKalixClientImpl
 import kalix.spring.impl.WebClientProviderHolder
 import org.slf4j.LoggerFactory
@@ -68,7 +69,9 @@ import java.lang.reflect.Constructor
 import java.lang.reflect.Modifier
 import java.lang.reflect.ParameterizedType
 import java.time.Duration
+import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.Future
+import scala.concurrent.Promise
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 import scala.jdk.CollectionConverters.MapHasAsScala
 import scala.jdk.OptionConverters.RichOption
@@ -107,6 +110,12 @@ final class NextGenComponentAutoDetectRunner extends kalix.javasdk.spi.Runner {
       case NonFatal(ex) =>
         println("Unexpected exception while setting up service")
         ex.printStackTrace()
+        NextGenKalixJavaApplication.onNextStartCallback.getAndSet(null) match {
+          case null =>
+          case f    =>
+            // Integration test mode
+            f.failure(ex)
+        }
         throw ex
     }
   }
@@ -185,6 +194,10 @@ private[kalix] object ComponentReflection {
     Modifier.isStatic(component.getModifiers) &&
     (component.getDeclaringClass.getAnnotation(classOf[ViewId]) ne null)
   }
+}
+
+private final object NextGenKalixJavaApplication {
+  val onNextStartCallback: AtomicReference[Promise[(Kalix, KalixClient)]] = new AtomicReference(null)
 }
 
 private final class NextGenKalixJavaApplication(system: ActorSystem[_]) {
@@ -317,13 +330,21 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_]) {
         Future.successful(Done)
       }
 
-      override def onStart(system: ActorSystem[_]): Future[Done] =
+      override def onStart(system: ActorSystem[_]): Future[Done] = {
+        // For integration test runner
+        NextGenKalixJavaApplication.onNextStartCallback.getAndSet(null) match {
+          case null =>
+          case f    =>
+            // Running inside the test runner
+            f.success((kalix, kalixClient))
+        }
         lifecycleHooks match {
           case None => Future.successful(Done)
           case Some(hooks) =>
             hooks.onStartup()
             Future.successful(Done)
         }
+      }
 
       override def discovery: Discovery = discoveryEndpoint
       override def actions: Option[Actions] = actionsEndpoint

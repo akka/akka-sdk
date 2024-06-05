@@ -1,15 +1,13 @@
 package com.example;
 
 import com.example.actions.CounterCommandFromTopicAction;
+import kalix.javasdk.testkit.KalixTestKit;
 import kalix.spring.testkit.KalixIntegrationTestKitSupport;
 import org.awaitility.Awaitility;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.Base64;
@@ -18,13 +16,16 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 // tag::class[]
-@SpringBootTest(classes = Main.class)
-@Import(TestKitConfiguration.class)
-@ActiveProfiles("with-pubsub")
 public class CounterIntegrationWithRealPubSubTest extends KalixIntegrationTestKitSupport { // <1>
 
 // end::class[]
 
+
+  @Override
+  protected KalixTestKit.Settings kalixTestKitSettings() {
+    return KalixTestKit.Settings.DEFAULT.withAclEnabled()
+      .withEventingSupport(KalixTestKit.Settings.EventingSupport.GOOGLE_PUBSUB);
+  }
 
   @Test
   public void verifyCounterEventSourcedConsumesFromPubSub() {

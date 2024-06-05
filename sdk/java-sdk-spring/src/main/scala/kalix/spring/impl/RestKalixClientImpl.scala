@@ -45,7 +45,8 @@ import org.springframework.web.util.UriBuilder
  */
 final class RestKalixClientImpl(messageCodec: JsonMessageCodec) extends KalixClient {
 
-  private var services: Seq[HttpEndpointMethodDefinition] = Seq.empty
+  // FIXME better if this was a val that doesn't need any memory guards
+  @volatile private var services: Seq[HttpEndpointMethodDefinition] = Seq.empty
 
   // At the time of creation, Proxy Discovery has not happened yet
   // and we need the ProxyInfo to build the WebClient, so we need a Promise[WebClient]

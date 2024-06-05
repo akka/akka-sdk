@@ -2,8 +2,6 @@ package store.view.joined;
 
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.reactive.function.client.WebClient;
 import store.view.StoreViewIntegrationTest;
 
 import java.util.List;
@@ -14,9 +12,6 @@ import java.util.stream.Collectors;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class JoinedCustomerOrdersViewIntegrationTest extends StoreViewIntegrationTest {
-
-  @Autowired
-  private WebClient webClient;
 
   @Test
   public void getCustomerOrders() {

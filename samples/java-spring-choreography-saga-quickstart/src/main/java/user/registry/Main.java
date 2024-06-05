@@ -8,14 +8,5 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import kalix.javasdk.annotations.KalixService;
 
 @KalixService
-@SpringBootApplication
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
-public class Main {
-
-  private static final Logger logger = LoggerFactory.getLogger(Main.class);
-
-  public static void main(String[] args) {
-    logger.info("Starting Kalix Application");
-    SpringApplication.run(Main.class, args);
-  }
-}
+public class Main { }

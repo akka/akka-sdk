@@ -7,14 +7,9 @@ package com.example.wiring.pubsub;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import kalix.javasdk.JsonSupport;
-import kalix.javasdk.client.ComponentClient;
-import kalix.javasdk.impl.client.ComponentClientImpl;
-import kalix.spring.impl.KalixSpringApplication;
-import kalix.spring.testkit.AsyncCallsSupport;
+import kalix.spring.testkit.KalixIntegrationTestKitSupport;
 import org.awaitility.Awaitility;
 import org.hamcrest.core.IsEqual;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -24,25 +19,17 @@ import org.springframework.http.codec.json.Jackson2JsonEncoder;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientRequestException;
 import reactor.core.publisher.Mono;
-import scala.jdk.FutureConverters;
 
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
-import static org.awaitility.Awaitility.await;
 
-public abstract class DockerIntegrationTest extends AsyncCallsSupport {
+public abstract class DockerIntegrationTest extends KalixIntegrationTestKitSupport {
 
-  protected WebClient webClient;
   protected Duration timeout = Duration.of(5, SECONDS);
-
-
-  private KalixSpringApplication kalixSpringApplication;
-
 
   public Config defaultConfig() {
     Map<String, Object> confMap = new HashMap<>();
@@ -55,29 +42,8 @@ public abstract class DockerIntegrationTest extends AsyncCallsSupport {
 
   public DockerIntegrationTest(ApplicationContext applicationContext, Config config) {
     Config finalConfig = defaultConfig().withFallback(config).withFallback(ConfigFactory.load());
-    kalixSpringApplication = new KalixSpringApplication(applicationContext, finalConfig);
   }
 
-  // FIXME: this test is not properly setup.
-  //  Injecting ComponentClient doesn't work as it holds a Future that is never completed
-  public ComponentClient componentClient() {
-    var kalixClient = kalixSpringApplication.kalixClient();
-    kalixClient.setWebClient(webClient);
-    return new ComponentClientImpl(kalixClient);
-  }
-
-  @BeforeAll
-  public void beforeAll() {
-    kalixSpringApplication.start();
-    webClient = createClient("http://localhost:9000");
-  }
-
-  @AfterAll
-  public void afterAll() throws ExecutionException, InterruptedException {
-    new FutureConverters.FutureOps<>(kalixSpringApplication.stop())
-      .asJava()
-      .toCompletableFuture().get();
-  }
 
   private HttpStatusCode assertSourceServiceIsUp(WebClient webClient) {
     try {

@@ -5,14 +5,10 @@ import customer.api.CustomerEntity;
 import customer.api.Ok;
 import customer.domain.Address;
 import customer.domain.Customer;
-import kalix.javasdk.client.ComponentClient;
 import kalix.spring.testkit.KalixIntegrationTestKitSupport;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.web.reactive.function.client.WebClient;
 
 import java.time.Duration;
 import java.util.Collection;
@@ -23,16 +19,9 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest(classes = Main.class)
 public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
 
   public record CustomersResponse(Collection<Customer> customers) { }
-
-  @Autowired
-  private ComponentClient componentClient;
-
-  @Autowired
-  private WebClient webClient;
 
   private Duration timeout = Duration.of(10, SECONDS);
 

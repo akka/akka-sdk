@@ -49,18 +49,14 @@ public final class KalixTestKitExtension implements BeforeAllCallback, AfterAllC
 
   private final KalixTestKit testKit;
 
-  public KalixTestKitExtension(Kalix kalix) {
-    this(kalix, kalix.getMessageCodec(), KalixTestKit.Settings.DEFAULT);
+  public KalixTestKitExtension() {
+    this.testKit = new KalixTestKit();
   }
 
-  public KalixTestKitExtension(Kalix kalix, KalixTestKit.Settings settings) {
-    this(kalix, kalix.getMessageCodec(), settings);
-  }
 
-  public KalixTestKitExtension(Kalix kalix, MessageCodec messageCodec, KalixTestKit.Settings settings) {
-    this.testKit = new KalixTestKit(kalix, messageCodec, settings);
+  public KalixTestKitExtension(KalixTestKit.Settings settings) {
+    this.testKit = new KalixTestKit(settings);
   }
-
 
   /**
    * JUnit5 support - extension based

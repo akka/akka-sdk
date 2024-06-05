@@ -10,27 +10,36 @@ import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
-import org.springframework.test.context.ActiveProfiles;
 
 import java.net.URI;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@ActiveProfiles("with-mocked-eventing")
+// // FIXME test profiles @ActiveProfiles("with-mocked-eventing")
 // tag::class[]
-@SpringBootTest(classes = Main.class)
-@Import(TestKitConfiguration.class)
 public class CounterIntegrationTest extends KalixIntegrationTestKitSupport { // <1>
 
 // end::class[]
 
+  // tag::acls[]
+  // tag::eventing-config[]
+  @Override
+  protected KalixTestKit.Settings kalixTestKitSettings() {
+    return KalixTestKit.Settings.DEFAULT
+            // end::eventing-config[]
+            .withAclEnabled() // <1>
+            // end::acls[]
+            // tag::eventing-config[]
+            .withTopicIncomingMessages("counter-commands") // <1>
+            .withTopicOutgoingMessages("counter-events") // <2>
+            // end::eventing-config[]
+            .withTopicOutgoingMessages("counter-events-with-meta");
+    // tag::eventing-config[]
+    // tag::acls[]
+  }
+
   // tag::test-topic[]
-  @Autowired
-  private KalixTestKit kalixTestKit; // <2>
   private EventingTestKit.IncomingMessages commandsTopic;
   private EventingTestKit.OutgoingMessages eventsTopic;
   // end::test-topic[]
@@ -41,6 +50,7 @@ public class CounterIntegrationTest extends KalixIntegrationTestKitSupport { // 
 
   @BeforeAll
   public void beforeAll() {
+    // <2>
     commandsTopic = kalixTestKit.getTopicIncomingMessages("counter-commands"); // <3>
     eventsTopic = kalixTestKit.getTopicOutgoingMessages("counter-events");
     // end::test-topic[]

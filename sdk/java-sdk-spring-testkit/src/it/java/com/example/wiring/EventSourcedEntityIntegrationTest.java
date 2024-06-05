@@ -4,20 +4,15 @@
 
 package com.example.wiring;
 
-import com.example.Main;
 import com.example.wiring.eventsourcedentities.counter.CounterEntity;
 import kalix.javasdk.client.ComponentClient;
 import kalix.javasdk.client.EventSourcedEntityClient;
-import kalix.spring.KalixConfigurationTest;
-import kalix.spring.testkit.AsyncCallsSupport;
+import kalix.spring.testkit.KalixIntegrationTestKitSupport;
 import org.awaitility.Awaitility;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
-import org.springframework.test.context.TestPropertySource;
 
 import java.util.concurrent.TimeUnit;
 
@@ -25,10 +20,7 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
 
-@SpringBootTest(classes = Main.class)
-@Import(KalixConfigurationTest.class)
-@TestPropertySource(properties = "spring.main.allow-bean-definition-overriding=true")
-public class EventSourcedEntityIntegrationTest extends AsyncCallsSupport {
+public class EventSourcedEntityIntegrationTest extends KalixIntegrationTestKitSupport {
 
   @Autowired
   private ComponentClient componentClient;

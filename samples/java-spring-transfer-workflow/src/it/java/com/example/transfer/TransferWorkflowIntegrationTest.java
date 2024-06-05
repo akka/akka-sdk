@@ -1,18 +1,12 @@
 package com.example.transfer;
 
-import com.example.Main;
 import com.example.transfer.TransferState.Transfer;
 import com.example.wallet.Ok;
 import com.example.wallet.WalletEntity;
-import kalix.javasdk.client.ComponentClient;
 import kalix.spring.testkit.KalixIntegrationTestKitSupport;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.web.reactive.function.client.WebClient;
 
-import java.time.Duration;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -21,11 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
-@SpringBootTest(classes = Main.class)
 public class TransferWorkflowIntegrationTest extends KalixIntegrationTestKitSupport {
-
-  @Autowired
-  private ComponentClient componentClient;
 
   @Test
   public void shouldTransferMoney() {

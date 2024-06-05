@@ -1,22 +1,13 @@
 package customer.view;
 
-import customer.Main;
 import customer.api.CustomersResponse;
 import customer.domain.Address;
 import customer.domain.Customer;
-import kalix.javasdk.client.ComponentClient;
 import kalix.javasdk.testkit.EventingTestKit.IncomingMessages;
 import kalix.javasdk.testkit.KalixTestKit;
 import kalix.spring.testkit.KalixIntegrationTestKitSupport;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
-import org.springframework.context.annotation.Profile;
-import org.springframework.test.context.ActiveProfiles;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -24,26 +15,14 @@ import java.util.concurrent.TimeUnit;
 import static org.assertj.core.api.Assertions.assertThat;
 
 // tag::view-test[]
-@Configuration
-class TestKitConfig {
 
-  @Bean
-  @Profile("view-it-test")
-  public KalixTestKit.Settings settings() {
-    return KalixTestKit.Settings.DEFAULT
-      .withValueEntityIncomingMessages("customer"); // <1>
-  }
-}
-
-@SpringBootTest(classes = Main.class)
-@Import(TestKitConfig.class)
-@ActiveProfiles("view-it-test")
 class CustomersResponseByCityIntegrationTest extends KalixIntegrationTestKitSupport {
 
-  @Autowired
-  private KalixTestKit kalixTestKit;
-  @Autowired
-  private ComponentClient componentClient;
+  @Override
+  protected KalixTestKit.Settings kalixTestKitSettings() {
+    return KalixTestKit.Settings.DEFAULT
+            .withValueEntityIncomingMessages("customer"); // <1>
+  }
 
   @Test
   public void shouldGetCustomerByCity() {

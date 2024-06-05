@@ -1,13 +1,8 @@
 package com.example;
 
-import kalix.javasdk.client.ComponentClient;
 import kalix.spring.testkit.KalixIntegrationTestKitSupport;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-
-
 
 
 /**
@@ -21,11 +16,7 @@ import org.springframework.boot.test.context.SpringBootTest;
  */
 
 // tag::sample-it[]
-@SpringBootTest(classes = Main.class)
 public class CounterIntegrationTest extends KalixIntegrationTestKitSupport { // <1>
-
-  @Autowired
-  private ComponentClient componentClient;
 
   // end::sample-it[]
   @Test

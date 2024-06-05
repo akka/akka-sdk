@@ -1,7 +1,5 @@
 package customer.api;
 
-
-import customer.Main;
 import customer.api.CustomerEntity.Confirm;
 import customer.domain.Address;
 import customer.domain.Customer;
@@ -11,9 +9,6 @@ import org.awaitility.Awaitility;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.web.reactive.function.client.WebClient;
 
 import java.time.Duration;
 import java.util.UUID;
@@ -22,11 +17,7 @@ import java.util.concurrent.TimeUnit;
 import static java.time.temporal.ChronoUnit.SECONDS;
 
 
-@SpringBootTest(classes = Main.class)
 public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
-
-  @Autowired
-  private WebClient webClient;
 
   private Duration timeout = Duration.of(5, SECONDS);
 

@@ -49,6 +49,9 @@ object Dependencies {
   val kalixTestkitProtocol = "io.kalix" % "kalix-testkit-protocol" % Kalix.RuntimeVersion
   val kalixSdkSpi = "io.kalix" %% "kalix-sdk-spi" % Kalix.RuntimeVersion
 
+  // Note: this should never be on the compile classpath, only test and or runtime
+  val kalixDevRuntime = "io.kalix" %% "kalix-dev-runtime" % Kalix.RuntimeVersion
+
   val commonsIo = "commons-io" % "commons-io" % CommonsIoVersion
   val logback = "ch.qos.logback" % "logback-classic" % LogbackVersion
   val logbackJson = "ch.qos.logback.contrib" % "logback-json-classic" % LogbackContribVersion
@@ -139,6 +142,7 @@ object Dependencies {
     scalaTest % Test,
     kalixTestkitProtocol % "protobuf-src",
     scalapbCompilerPlugin,
+    kalixDevRuntime,
     akkaDependency("akka-testkit"),
     akkaDependency("akka-actor-testkit-typed") % Test)
 
