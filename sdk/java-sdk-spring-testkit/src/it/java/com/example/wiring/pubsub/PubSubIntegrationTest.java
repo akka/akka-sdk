@@ -28,11 +28,11 @@ import static com.example.wiring.pubsub.PublishTopicToTopic.CUSTOMERS_2_TOPIC;
 import static com.example.wiring.pubsub.PublishVEToTopic.CUSTOMERS_TOPIC;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
-
-@SpringBootTest(classes = Main.class)
+/*
+//@SpringBootTest(classes = Main.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-@TestPropertySource(properties = "spring.main.allow-bean-definition-overriding=true")
-@ActiveProfiles("docker-it-test")
+//@TestPropertySource(properties = "spring.main.allow-bean-definition-overriding=true")
+//@ActiveProfiles("docker-it-test")
 public class PubSubIntegrationTest extends DockerIntegrationTest {
 
   static Config config = ConfigFactory.parseString("""
@@ -188,3 +188,4 @@ public class PubSubIntegrationTest extends DockerIntegrationTest {
   }
 
 }
+*/

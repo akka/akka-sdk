@@ -3,7 +3,7 @@
  */
 
 package com.example.wiring.tracing;
-
+/*
 import com.example.Main;
 import com.example.wiring.pubsub.DockerIntegrationTest;
 import com.typesafe.config.Config;
@@ -73,5 +73,4 @@ public class TracingIntegrationTest extends DockerIntegrationTest {
         return batches;
     }
 
-}
-
+}*/

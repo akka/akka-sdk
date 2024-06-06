@@ -380,9 +380,26 @@ jobs:
           cd
           tar -xf dependencies.tar.gz
 
-      - name: "Java SDK with Spring - Integration Test"
-        # TODO: re-enable integration tests, only compiling for now
-        run: sbt javaSdkSpringTestKit/IntegrationTest/compile
+      # for now, splitting this into multiple testOnly
+      # this is due to the fact that the tests are a bit flaky when running all together due to
+      # failing in binding or error about running multiple tests at the same time
+      - name: "Integration Test only SpringSdkIntegrationTest"
+        run: sbt 'javaSdkSpringTestKit/IntegrationTest/testOnly *SpringSdkIntegrationTest'
+
+      - name: "Integration Test only ValueEntityIntegrationTest"
+        run: sbt 'javaSdkSpringTestKit/IntegrationTest/testOnly *ValueEntityIntegrationTest'
+
+      - name: "Integration Test only EventSourcedEntityIntegrationTest"
+        run: sbt 'javaSdkSpringTestKit/IntegrationTest/testOnly *EventSourcedEntityIntegrationTest'
+
+      - name: "Integration Test only SpringWorkflowIntegrationTest"
+        run: sbt 'javaSdkSpringTestKit/IntegrationTest/testOnly *SpringWorkflowIntegrationTest'
+
+      - name: "Integration Test only EventingTestkitDestinationIntegrationTest"
+        run: sbt 'javaSdkSpringTestKit/IntegrationTest/testOnly *EventingTestkitDestinationIntegrationTest'
+
+      - name: "Integration Test only EndpointsIntegrationTest"
+        run: sbt 'javaSdkSpringTestKit/IntegrationTest/testOnly *EndpointsIntegrationTest'
 
   # codegen-samples:
   #   name: Codegen Examples

@@ -4,9 +4,6 @@
 
 package com.example.wiring.actions.echo;
 
-import org.springframework.stereotype.Component;
-
-@Component
 public class Parrot {
 
   public String repeat(String word) {

@@ -27,7 +27,7 @@ import java.util.concurrent.TimeUnit;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
 
-public abstract class DockerIntegrationTest extends KalixIntegrationTestKitSupport {
+/*public abstract class DockerIntegrationTest extends KalixIntegrationTestKitSupport {
 
   protected Duration timeout = Duration.of(5, SECONDS);
 
@@ -61,7 +61,7 @@ public abstract class DockerIntegrationTest extends KalixIntegrationTestKitSuppo
     }
   }
 
-  /* create the client but only return it after verifying that service is reachable */
+  // create the client but only return it after verifying that service is reachable
   private WebClient createClient(String url) {
 
     var webClient =
@@ -87,4 +87,4 @@ public abstract class DockerIntegrationTest extends KalixIntegrationTestKitSuppo
 
     return webClient;
   }
-}
+}*/

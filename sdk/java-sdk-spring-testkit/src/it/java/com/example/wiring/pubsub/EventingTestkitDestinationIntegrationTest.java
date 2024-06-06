@@ -7,6 +7,7 @@ package com.example.wiring.pubsub;
 import com.example.wiring.valueentities.customer.CustomerEntity;
 import com.example.wiring.valueentities.customer.CustomerEntity.Customer;
 import kalix.javasdk.testkit.EventingTestKit;
+import kalix.javasdk.testkit.KalixTestKit;
 import kalix.spring.testkit.KalixIntegrationTestKitSupport;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.BeforeAll;
@@ -19,6 +20,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static com.example.wiring.pubsub.PublishVEToTopic.CUSTOMERS_TOPIC;
+import static java.time.Duration.ofMillis;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -26,6 +28,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class EventingTestkitDestinationIntegrationTest extends KalixIntegrationTestKitSupport {
 
   private EventingTestKit.OutgoingMessages destination;
+
+  public KalixTestKit.Settings kalixTestKitSettings() {
+    return KalixTestKit.Settings.DEFAULT
+        .withAclEnabled()
+        .withAdvancedViews()
+        .withWorkflowTickInterval(ofMillis(500))
+        .withTopicOutgoingMessages(CUSTOMERS_TOPIC);
+  }
 
   @BeforeAll
   public void beforeAll() {

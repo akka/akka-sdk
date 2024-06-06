@@ -15,7 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Profile;
 
-@Profile("docker-it-test")
+//@Profile("docker-it-test")
 @Subscribe.ValueEntity(CustomerEntity.class)
 public class PublishBytesToTopic extends Action {
 

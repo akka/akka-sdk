@@ -27,8 +27,8 @@ public class EchoAction extends Action {
   private ActionCreationContext ctx;
   private final ComponentClient componentClient;
 
-  public EchoAction(Parrot parrot, ActionCreationContext ctx,  ComponentClient componentClient) {
-    this.parrot = parrot;
+  public EchoAction(ActionCreationContext ctx,  ComponentClient componentClient) {
+    this.parrot = new Parrot();
     this.ctx = ctx;
     this.componentClient = componentClient;
   }

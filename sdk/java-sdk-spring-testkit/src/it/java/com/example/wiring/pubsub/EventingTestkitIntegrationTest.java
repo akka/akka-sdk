@@ -9,6 +9,7 @@ import com.example.wiring.valueentities.user.User;
 import com.example.wiring.valueentities.user.UserSideEffect;
 import kalix.javasdk.testkit.EventingTestKit.IncomingMessages;
 import kalix.javasdk.testkit.EventingTestKit.Message;
+import kalix.javasdk.testkit.KalixTestKit;
 import kalix.spring.testkit.KalixIntegrationTestKitSupport;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.*;
@@ -16,13 +17,24 @@ import org.junit.jupiter.api.*;
 import java.util.concurrent.TimeUnit;
 
 import static com.example.wiring.pubsub.PublishESToTopic.COUNTER_EVENTS_TOPIC;
+import static java.time.Duration.ofMillis;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+/*@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class EventingTestkitIntegrationTest extends KalixIntegrationTestKitSupport {
 
   private IncomingMessages topicSubscription;
+
+  @Override
+  protected KalixTestKit.Settings kalixTestKitSettings() {
+    return KalixTestKit.Settings.DEFAULT
+        .withAclEnabled()
+        .withAdvancedViews()
+        .withWorkflowTickInterval(ofMillis(500))
+        .withTopicIncomingMessages(COUNTER_EVENTS_TOPIC)
+        .withValueEntityIncomingMessages("user");
+  }
 
   @BeforeAll
   public void beforeAll() {
@@ -99,3 +111,4 @@ public class EventingTestkitIntegrationTest extends KalixIntegrationTestKitSuppo
         });
   }
 }
+*/

@@ -22,9 +22,6 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 public class EventSourcedEntityIntegrationTest extends KalixIntegrationTestKitSupport {
 
-  @Autowired
-  private ComponentClient componentClient;
-
   @Test
   public void verifyCounterEventSourcedWiring() {
 
