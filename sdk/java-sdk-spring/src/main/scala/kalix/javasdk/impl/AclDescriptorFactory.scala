@@ -71,40 +71,41 @@ object AclDescriptorFactory {
     aclBuilder.build()
   }
 
-  def defaultAclFileDescriptor(cls: Class[_]): Option[DescriptorProtos.FileDescriptorProto] = {
+  def defaultAclFileDescriptor(cls: Class[_]): DescriptorProtos.FileDescriptorProto = {
+    // do we need to recurse into the dependencies of the dependencies? Probably not, just top level imports.
+    val dependencies: Array[Descriptors.FileDescriptor] = Array(KalixAnnotations.getDescriptor)
 
-    Option.when(cls.getAnnotation(classOf[Acl]) != null) {
-      // do we need to recurse into the dependencies of the dependencies? Probably not, just top level imports.
-      val dependencies: Array[Descriptors.FileDescriptor] = Array(KalixAnnotations.getDescriptor)
+    val policyFile = "kalix_policy.proto"
 
-      val policyFile = "kalix_policy.proto"
+    val protoBuilder =
+      DescriptorProtos.FileDescriptorProto.newBuilder
+        .setName(policyFile)
+        .setSyntax("proto3")
+        .setPackage("kalix.javasdk")
 
-      val protoBuilder =
-        DescriptorProtos.FileDescriptorProto.newBuilder
-          .setName(policyFile)
-          .setSyntax("proto3")
-          .setPackage("kalix.javasdk")
+    val kalixFileOptions = kalix.FileOptions.newBuilder
 
-      val kalixFileOptions = kalix.FileOptions.newBuilder
-      kalixFileOptions.setAcl(deriveProtoAnnotation(cls.getAnnotation(classOf[Acl])))
-
-      val options =
-        DescriptorProtos.FileOptions
-          .newBuilder()
-          .setExtension(kalix.Annotations.file, kalixFileOptions.build())
-          .build()
-
-      protoBuilder.setOptions(options)
-      val fdProto = protoBuilder.build
-      val fd = Descriptors.FileDescriptor.buildFrom(fdProto, dependencies)
-      if (logger.isDebugEnabled) {
-        logger.debug(
-          "Generated file descriptor for service [{}]: \n{}",
-          policyFile,
-          ProtoDescriptorRenderer.toString(fd))
-      }
-      fd.toProto
+    val acl = if (cls.getAnnotation(classOf[Acl]) != null) {
+      deriveProtoAnnotation(cls.getAnnotation(classOf[Acl]))
+    } else {
+      // deny all by default
+      ProtoAcl.newBuilder().addDeny(PrincipalMatcher.newBuilder().setPrincipal(PrincipalMatcher.Principal.ALL)).build()
     }
+    kalixFileOptions.setAcl(acl)
+
+    val options =
+      DescriptorProtos.FileOptions
+        .newBuilder()
+        .setExtension(kalix.Annotations.file, kalixFileOptions.build())
+        .build()
+
+    protoBuilder.setOptions(options)
+    val fdProto = protoBuilder.build
+    val fd = Descriptors.FileDescriptor.buildFrom(fdProto, dependencies)
+    if (logger.isDebugEnabled) {
+      logger.debug("Generated file descriptor for service [{}]: \n{}", policyFile, ProtoDescriptorRenderer.toString(fd))
+    }
+    fd.toProto
   }
 
   def serviceLevelAclAnnotation(component: Class[_]): Option[kalix.ServiceOptions] = {

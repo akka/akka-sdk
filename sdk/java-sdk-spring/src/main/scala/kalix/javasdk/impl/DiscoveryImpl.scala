@@ -27,7 +27,7 @@ import scala.jdk.CollectionConverters._
 class DiscoveryImpl(
     system: ActorSystem,
     services: Map[String, Service],
-    aclDescriptor: Option[FileDescriptorProto],
+    aclDescriptor: FileDescriptorProto,
     sdkName: String)
     extends Discovery {
   import DiscoveryImpl._
@@ -152,7 +152,7 @@ class DiscoveryImpl(
         log)
 
       // For the SpringSDK, the ACL default descriptor is provided programmatically
-      aclDescriptor.foreach(file => fileDescriptorsBuilder.addFile(file))
+      fileDescriptorsBuilder.addFile(aclDescriptor)
 
       val fileDescriptors = fileDescriptorsBuilder.build()
       Future.successful(Spec(fileDescriptors.toByteString, components, Some(serviceInfo)))

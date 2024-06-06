@@ -98,7 +98,7 @@ object KalixRunner {
 final class KalixRunner private[javasdk] (
     _system: ActorSystem,
     serviceFactories: Map[String, java.util.function.Function[ActorSystem, Service]],
-    aclDescriptor: Option[FileDescriptorProto],
+    aclDescriptor: FileDescriptorProto,
     sdkName: String) {
 
   private[kalix] implicit val system: ActorSystem = _system
@@ -118,13 +118,9 @@ final class KalixRunner private[javasdk] (
   /**
    * Creates a KalixRunner from the given services. Use the default config to create the internal ActorSystem.
    */
-  def this(services: java.util.Map[String, java.util.function.Function[ActorSystem, Service]], sdkName: String) = {
-    this(ActorSystem("kalix", KalixRunner.loadPreparedConfig()), services.asScala.toMap, aclDescriptor = None, sdkName)
-  }
-
   def this(
       services: java.util.Map[String, java.util.function.Function[ActorSystem, Service]],
-      aclDescriptor: Option[FileDescriptorProto],
+      aclDescriptor: FileDescriptorProto,
       sdkName: String) =
     this(
       ActorSystem("kalix", KalixRunner.loadPreparedConfig()),
@@ -140,13 +136,7 @@ final class KalixRunner private[javasdk] (
   def this(
       services: java.util.Map[String, java.util.function.Function[ActorSystem, Service]],
       config: Config,
-      sdkName: String) =
-    this(ActorSystem("kalix", KalixRunner.prepareConfig(config)), services.asScala.toMap, aclDescriptor = None, sdkName)
-
-  def this(
-      services: java.util.Map[String, java.util.function.Function[ActorSystem, Service]],
-      config: Config,
-      aclDescriptor: Option[FileDescriptorProto],
+      aclDescriptor: FileDescriptorProto,
       sdkName: String) =
     this(
       ActorSystem("kalix", KalixRunner.prepareConfig(config)),

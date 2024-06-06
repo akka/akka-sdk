@@ -59,7 +59,7 @@ public final class Kalix {
 
   private Set<Descriptors.FileDescriptor> allDescriptors = new HashSet<>();
 
-  private Optional<DescriptorProtos.FileDescriptorProto> aclDescriptor = Optional.empty();
+  private DescriptorProtos.FileDescriptorProto aclDescriptor;
 
   private class LowLevelRegistration {
     /**
@@ -363,7 +363,7 @@ public final class Kalix {
    * @param aclDescriptor - the default ACL file descriptor
    * @return This Kalix instance.
    */
-  public Kalix withDefaultAclFileDescriptor(Optional<DescriptorProtos.FileDescriptorProto> aclDescriptor) {
+  public Kalix withDefaultAclFileDescriptor(DescriptorProtos.FileDescriptorProto aclDescriptor) {
     this.aclDescriptor = aclDescriptor;
     return this;
   }
@@ -544,7 +544,7 @@ public final class Kalix {
   public KalixRunner createRunner() {
     return new KalixRunner(
       services,
-      OptionConverters.toScala(aclDescriptor),
+      aclDescriptor,
       sdkName);
   }
 
@@ -559,7 +559,7 @@ public final class Kalix {
     return new KalixRunner(
       services,
       config,
-      OptionConverters.toScala(aclDescriptor),
+      aclDescriptor,
       sdkName);
   }
 

@@ -16,11 +16,13 @@ class DiscoverySpec extends AnyWordSpec with Matchers with ScalaFutures {
 
   "Discovery" should {
 
+    val emptyAcl = AclDescriptorFactory.defaultAclFileDescriptor(classOf[Nothing])
+
     "pass along env by default" in {
       var system: ActorSystem[Nothing] = null
       try {
         system = ActorSystem[Nothing](Behaviors.empty[Nothing], "DiscoverySpec1")
-        val discovery = new DiscoveryImpl(system.classicSystem, Map.empty, None, "test")
+        val discovery = new DiscoveryImpl(system.classicSystem, Map.empty, emptyAcl, "test")
         val result = discovery.discover(ProxyInfo()).futureValue
         result.getServiceInfo.env should not be empty
       } finally {
@@ -35,7 +37,7 @@ class DiscoverySpec extends AnyWordSpec with Matchers with ScalaFutures {
           Behaviors.empty[Nothing],
           "DiscoverySpec2",
           ConfigFactory.parseString("""kalix.discovery.pass-along-env-allow = ["HOME"]"""))
-        val discovery = new DiscoveryImpl(system.classicSystem, Map.empty, None, "test")
+        val discovery = new DiscoveryImpl(system.classicSystem, Map.empty, emptyAcl, "test")
         val result = discovery.discover(ProxyInfo()).futureValue
         result.getServiceInfo.env should have size 1
       } finally {
@@ -50,7 +52,7 @@ class DiscoverySpec extends AnyWordSpec with Matchers with ScalaFutures {
           Behaviors.empty[Nothing],
           "DiscoverySpec2",
           ConfigFactory.parseString("""kalix.discovery.pass-along-env-allow = []"""))
-        val discovery = new DiscoveryImpl(system.classicSystem, Map.empty, None, "test")
+        val discovery = new DiscoveryImpl(system.classicSystem, Map.empty, emptyAcl, "test")
         val result = discovery.discover(ProxyInfo()).futureValue
         result.getServiceInfo.env should be(empty)
       } finally {
