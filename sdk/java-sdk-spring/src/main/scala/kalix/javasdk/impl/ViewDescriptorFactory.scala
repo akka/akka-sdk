@@ -129,7 +129,7 @@ private[impl] object ViewDescriptorFactory extends ComponentDescriptorFactory {
 
     val serviceLevelOptions =
       mergeServiceOptions(
-        AclDescriptorFactory.serviceLevelAclAnnotation(component),
+        AclDescriptorFactory.serviceLevelAclAnnotation(component, default = Some(AclDescriptorFactory.denyAll)),
         JwtDescriptorFactory.serviceLevelJwtAnnotation(component),
         eventingInForEventSourcedEntityServiceLevel(component),
         eventingInForTopicServiceLevel(component),

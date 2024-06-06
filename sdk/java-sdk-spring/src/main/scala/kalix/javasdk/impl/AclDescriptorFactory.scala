@@ -5,7 +5,6 @@
 package kalix.javasdk.impl
 
 import java.lang.reflect.Method
-
 import com.google.protobuf.DescriptorProtos
 import com.google.protobuf.Descriptors
 import kalix.PrincipalMatcher
@@ -13,6 +12,9 @@ import kalix.javasdk.annotations.Acl
 import kalix.{ Acl => ProtoAcl }
 import kalix.{ Annotations => KalixAnnotations }
 import org.slf4j.LoggerFactory
+
+import java.util.Collections
+import scala.PartialFunction.condOpt
 
 object AclDescriptorFactory {
 
@@ -26,6 +28,9 @@ object AclDescriptorFactory {
     if (matcher.principal() != Acl.Principal.UNSPECIFIED && matcher.service().nonEmpty)
       throw new IllegalArgumentException(invalidAnnotationUsage)
   }
+
+  val denyAll: ProtoAcl =
+    ProtoAcl.newBuilder().addAllAllow(Collections.emptyList()).build()
 
   private def deriveProtoAnnotation(aclJavaAnnotation: Acl): ProtoAcl = {
 
@@ -71,7 +76,16 @@ object AclDescriptorFactory {
     aclBuilder.build()
   }
 
-  def defaultAclFileDescriptor(cls: Class[_]): DescriptorProtos.FileDescriptorProto = {
+  def defaultAclFileDescriptor: DescriptorProtos.FileDescriptorProto =
+    buildAclFileDescriptor(denyAll) // deny all by default
+
+  def buildAclFileDescriptor(cls: Class[_]): DescriptorProtos.FileDescriptorProto =
+    if (cls.getAnnotation(classOf[Acl]) != null)
+      buildAclFileDescriptor(deriveProtoAnnotation(cls.getAnnotation(classOf[Acl])))
+    else
+      defaultAclFileDescriptor
+
+  private def buildAclFileDescriptor(acl: ProtoAcl): DescriptorProtos.FileDescriptorProto = {
     // do we need to recurse into the dependencies of the dependencies? Probably not, just top level imports.
     val dependencies: Array[Descriptors.FileDescriptor] = Array(KalixAnnotations.getDescriptor)
 
@@ -84,13 +98,6 @@ object AclDescriptorFactory {
         .setPackage("kalix.javasdk")
 
     val kalixFileOptions = kalix.FileOptions.newBuilder
-
-    val acl = if (cls.getAnnotation(classOf[Acl]) != null) {
-      deriveProtoAnnotation(cls.getAnnotation(classOf[Acl]))
-    } else {
-      // deny all by default
-      ProtoAcl.newBuilder().addDeny(PrincipalMatcher.newBuilder().setPrincipal(PrincipalMatcher.Principal.ALL)).build()
-    }
     kalixFileOptions.setAcl(acl)
 
     val options =
@@ -108,14 +115,20 @@ object AclDescriptorFactory {
     fd.toProto
   }
 
-  def serviceLevelAclAnnotation(component: Class[_]): Option[kalix.ServiceOptions] = {
+  def serviceLevelAclAnnotation(component: Class[_], default: Option[ProtoAcl] = None): Option[kalix.ServiceOptions] = {
 
     val javaAclAnnotation = component.getAnnotation(classOf[Acl])
 
-    Option.when(javaAclAnnotation != null) {
-      val kalixServiceOptions = kalix.ServiceOptions.newBuilder()
-      kalixServiceOptions.setAcl(deriveProtoAnnotation(javaAclAnnotation))
-      kalixServiceOptions.build()
+    def buildServiceOpts(acl: ProtoAcl): kalix.ServiceOptions = {
+      kalix.ServiceOptions
+        .newBuilder()
+        .setAcl(acl)
+        .build()
+    }
+
+    condOpt(javaAclAnnotation, default) {
+      case (aclAnnotation, _) if aclAnnotation != null => buildServiceOpts(deriveProtoAnnotation(aclAnnotation))
+      case (null, Some(acl))                           => buildServiceOpts(acl)
     }
   }
 
@@ -124,9 +137,9 @@ object AclDescriptorFactory {
     val javaAclAnnotation = method.getAnnotation(classOf[Acl])
 
     Option.when(javaAclAnnotation != null) {
-      val kalixServiceOptions = kalix.MethodOptions.newBuilder()
-      kalixServiceOptions.setAcl(deriveProtoAnnotation(javaAclAnnotation))
-      kalixServiceOptions.build()
+      val kalixMethodOptions = kalix.MethodOptions.newBuilder()
+      kalixMethodOptions.setAcl(deriveProtoAnnotation(javaAclAnnotation))
+      kalixMethodOptions.build()
     }
   }
 

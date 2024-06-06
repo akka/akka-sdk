@@ -4,6 +4,19 @@
 
 package kalix.javasdk.impl
 
+import java.lang.reflect.Constructor
+import java.lang.reflect.Modifier
+import java.lang.reflect.ParameterizedType
+import java.time.Duration
+import java.util.concurrent.atomic.AtomicReference
+
+import scala.concurrent.Future
+import scala.concurrent.Promise
+import scala.jdk.CollectionConverters.CollectionHasAsScala
+import scala.jdk.CollectionConverters.MapHasAsScala
+import scala.reflect.ClassTag
+import scala.util.control.NonFatal
+
 import akka.Done
 import akka.actor.typed.ActorSystem
 import com.typesafe.config.Config
@@ -64,19 +77,6 @@ import kalix.spring.impl.KalixClient
 import kalix.spring.impl.RestKalixClientImpl
 import kalix.spring.impl.WebClientProviderHolder
 import org.slf4j.LoggerFactory
-
-import java.lang.reflect.Constructor
-import java.lang.reflect.Modifier
-import java.lang.reflect.ParameterizedType
-import java.time.Duration
-import java.util.concurrent.atomic.AtomicReference
-import scala.concurrent.Future
-import scala.concurrent.Promise
-import scala.jdk.CollectionConverters.CollectionHasAsScala
-import scala.jdk.CollectionConverters.MapHasAsScala
-import scala.jdk.OptionConverters.RichOption
-import scala.reflect.ClassTag
-import scala.util.control.NonFatal
 
 final case class KalixJavaSdkSettings(
     userFunctionInterface: String,
@@ -220,10 +220,12 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_]) {
 
   // register them if all valid
   val aclDescriptor =
-    maybeServiceClass.flatMap(serviceClass => AclDescriptorFactory.defaultAclFileDescriptor(serviceClass))
+    maybeServiceClass
+      .map(serviceClass => AclDescriptorFactory.buildAclFileDescriptor(serviceClass))
+      .getOrElse(AclDescriptorFactory.defaultAclFileDescriptor)
 
   // FIXME why is acl descriptor needed both here and in discovery?
-  private val kalix = new Kalix().withDefaultAclFileDescriptor(aclDescriptor.toJava)
+  private val kalix = new Kalix().withDefaultAclFileDescriptor(aclDescriptor)
   componentClasses
     .foreach { clz =>
       if (classOf[Action].isAssignableFrom(clz)) {

@@ -5,9 +5,7 @@
 package kalix.javasdk.impl
 
 import java.lang.reflect.Method
-
 import scala.reflect.ClassTag
-
 import kalix.javasdk.eventsourcedentity.EventSourcedEntity
 import kalix.javasdk.impl.ComponentDescriptorFactory.mergeServiceOptions
 import kalix.javasdk.impl.JwtDescriptorFactory.buildJWTOptions
@@ -70,7 +68,7 @@ private[impl] object EntityDescriptorFactory extends ComponentDescriptorFactory 
       messageCodec,
       serviceName,
       serviceOptions = mergeServiceOptions(
-        AclDescriptorFactory.serviceLevelAclAnnotation(component),
+        AclDescriptorFactory.serviceLevelAclAnnotation(component, default = Some(AclDescriptorFactory.denyAll)),
         JwtDescriptorFactory.serviceLevelJwtAnnotation(component)),
       component.getPackageName,
       kalixMethods)

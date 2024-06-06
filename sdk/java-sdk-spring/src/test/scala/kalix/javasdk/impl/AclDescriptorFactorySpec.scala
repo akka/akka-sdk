@@ -28,7 +28,7 @@ class AclDescriptorFactorySpec extends AnyWordSpec with Matchers {
 
   def lookupExtension[T: ClassTag]: FileOptions =
     AclDescriptorFactory
-      .defaultAclFileDescriptor(implicitly[ClassTag[T]].runtimeClass)
+      .buildAclFileDescriptor(implicitly[ClassTag[T]].runtimeClass)
       .getOptions
       .getExtension(kalix.Annotations.file)
 
@@ -36,8 +36,8 @@ class AclDescriptorFactorySpec extends AnyWordSpec with Matchers {
 
     "generate an empty descriptor if no ACL annotation is found" in {
       val extension = lookupExtension[MainWithoutAnnotation]
-      val principal = extension.getAcl.getDeny(0).getPrincipal
-      principal shouldBe PrincipalMatcher.Principal.ALL
+      val principals = extension.getAcl.getAllowList
+      principals shouldBe empty
     }
 
     "generate a default ACL file descriptor with deny code" in {

@@ -16,7 +16,7 @@ class DiscoverySpec extends AnyWordSpec with Matchers with ScalaFutures {
 
   "Discovery" should {
 
-    val emptyAcl = AclDescriptorFactory.defaultAclFileDescriptor(classOf[Nothing])
+    val emptyAcl = AclDescriptorFactory.buildAclFileDescriptor(classOf[Nothing])
 
     "pass along env by default" in {
       var system: ActorSystem[Nothing] = null
