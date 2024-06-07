@@ -141,13 +141,6 @@ public abstract class ValueEntity<S> {
        */
       OnSuccessBuilder<S> deleteEntity();
 
-      /**
-       * Delete the entity. No additional updates are allowed afterwards.
-       *
-       * @deprecated Renamed to deleteEntity
-       */
-      @Deprecated(since = "1.1.5", forRemoval = true)
-      OnSuccessBuilder<S> deleteState();
 
       /**
        * Create a message reply.
@@ -167,15 +160,6 @@ public abstract class ValueEntity<S> {
        * @return A message reply.
        */
       <T> Effect<T> reply(T message, Metadata metadata);
-
-      /**
-       * Create a forward reply.
-       *
-       * @param serviceCall The service call representing the forward.
-       * @param <T> The type of the message that must be returned by this call.
-       * @return A forward reply.
-       */
-      <T> Effect<T> forward(DeferredCall<? extends Object, T> serviceCall);
 
       /**
        * Create an error reply.
@@ -209,30 +193,7 @@ public abstract class ValueEntity<S> {
        */
       <T> Effect<T> thenReply(T message, Metadata metadata);
 
-      /**
-       * Create a forward reply after for example <code>updateState</code>.
-       *
-       * @param serviceCall The service call representing the forward.
-       * @param <T> The type of the message that must be returned by this call.
-       * @return A forward reply.
-       */
-      <T> Effect<T> thenForward(DeferredCall<? extends Object, T> serviceCall);
     }
 
-    /**
-     * Attach the given side effects to this reply.
-     *
-     * @param sideEffects The effects to attach.
-     * @return A new reply with the attached effects.
-     */
-    Effect<T> addSideEffects(Collection<SideEffect> sideEffects);
-
-    /**
-     * Attach the given effects to this reply.
-     *
-     * @param effects The effects to attach.
-     * @return A new reply with the attached effects.
-     */
-    Effect<T> addSideEffects(SideEffect... effects);
   }
 }

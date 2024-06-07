@@ -4,15 +4,8 @@
 
 package kalix.javasdk.impl.valueentity
 
-import java.util
-
-import scala.jdk.CollectionConverters._
-
-import kalix.javasdk.DeferredCall
 import kalix.javasdk.Metadata
-import kalix.javasdk.SideEffect
 import kalix.javasdk.impl.effect.ErrorReplyImpl
-import kalix.javasdk.impl.effect.ForwardReplyImpl
 import kalix.javasdk.impl.effect.MessageReplyImpl
 import kalix.javasdk.impl.effect.NoSecondaryEffectImpl
 import kalix.javasdk.impl.effect.SecondaryEffectImpl
@@ -47,19 +40,11 @@ class ValueEntityEffectImpl[S] extends Builder[S] with OnSuccessBuilder[S] with 
     this
   }
 
-  override def deleteState(): ValueEntityEffectImpl[S] =
-    deleteEntity()
-
   override def reply[T](message: T): ValueEntityEffectImpl[T] =
     reply(message, Metadata.EMPTY)
 
   override def reply[T](message: T, metadata: Metadata): ValueEntityEffectImpl[T] = {
     _secondaryEffect = MessageReplyImpl(message, metadata, _secondaryEffect.sideEffects)
-    this.asInstanceOf[ValueEntityEffectImpl[T]]
-  }
-
-  override def forward[T](serviceCall: DeferredCall[_, T]): ValueEntityEffectImpl[T] = {
-    _secondaryEffect = ForwardReplyImpl(serviceCall, _secondaryEffect.sideEffects)
     this.asInstanceOf[ValueEntityEffectImpl[T]]
   }
 
@@ -79,18 +64,4 @@ class ValueEntityEffectImpl[S] extends Builder[S] with OnSuccessBuilder[S] with 
     this.asInstanceOf[ValueEntityEffectImpl[T]]
   }
 
-  override def thenForward[T](serviceCall: DeferredCall[_, T]): ValueEntityEffectImpl[T] = {
-    _secondaryEffect = ForwardReplyImpl(serviceCall, _secondaryEffect.sideEffects)
-    this.asInstanceOf[ValueEntityEffectImpl[T]]
-  }
-
-  override def addSideEffects(sideEffects: util.Collection[SideEffect]): ValueEntityEffectImpl[S] = {
-    _secondaryEffect = _secondaryEffect.addSideEffects(sideEffects.asScala)
-    this
-  }
-
-  override def addSideEffects(sideEffects: SideEffect*): ValueEntityEffectImpl[S] = {
-    _secondaryEffect = _secondaryEffect.addSideEffects(sideEffects)
-    this
-  }
 }

@@ -5,14 +5,9 @@
 package kalix.javasdk.eventsourcedentity;
 
 import akka.annotation.ApiMayChange;
-import kalix.javasdk.StatusCode;
-import kalix.javasdk.impl.eventsourcedentity.EventSourcedEntityEffectImpl;
 import kalix.javasdk.Metadata;
-import kalix.javasdk.DeferredCall;
-import kalix.javasdk.SideEffect;
-import io.grpc.Status;
+import kalix.javasdk.impl.eventsourcedentity.EventSourcedEntityEffectImpl;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -249,15 +244,6 @@ public abstract class EventSourcedEntity<S, E> {
       <T> Effect<T> reply(T message, Metadata metadata);
 
       /**
-       * Create a forward reply.
-       *
-       * @param serviceCall The service call representing the forward.
-       * @return A forward reply.
-       * @param <T> The type of the message that must be returned by this call.
-       */
-      <T> Effect<T> forward(DeferredCall<? extends Object, T> serviceCall);
-
-      /**
        * Create an error reply.
        *
        * @param description The description of the error.
@@ -294,38 +280,7 @@ public abstract class EventSourcedEntity<S, E> {
        */
       <T> Effect<T> thenReply(Function<S, T> replyMessage, Metadata metadata);
 
-      /**
-       * Create a forward reply after for example <code>emitEvent</code>.
-       *
-       * @param serviceCall The service call representing the forward.
-       * @return A forward reply.
-       * @param <T> The type of the message that must be returned by this call.
-       */
-      <T> Effect<T> thenForward(Function<S, DeferredCall<? extends Object, T>> serviceCall);
-
-      /**
-       * Attach the given side effect to this reply from the new state.
-       *
-       * @param sideEffect The effect to attach.
-       * @return A new reply with the attached effect.
-       */
-      OnSuccessBuilder<S> thenAddSideEffect(Function<S, SideEffect> sideEffect);
     }
 
-    /**
-     * Attach the given side effects to this reply.
-     *
-     * @param sideEffects The effects to attach.
-     * @return A new reply with the attached effects.
-     */
-    Effect<T> addSideEffects(Collection<SideEffect> sideEffects);
-
-    /**
-     * Attach the given effects to this reply.
-     *
-     * @param effects The effects to attach.
-     * @return A new reply with the attached effects.
-     */
-    Effect<T> addSideEffects(SideEffect... effects);
   }
 }
