@@ -2,6 +2,8 @@ package customer.api;
 
 import customer.views.Customer;
 import customer.views.CustomerPublicEvent.Created;
+import customer.views.CustomersByEmailView;
+import customer.views.CustomersByNameView;
 import kalix.javasdk.testkit.EventingTestKit.IncomingMessages;
 import kalix.javasdk.testkit.KalixTestKit;
 import kalix.spring.testkit.KalixIntegrationTestKitSupport;
@@ -36,21 +38,25 @@ public class CustomersByNameViewIntegrationTest extends KalixIntegrationTestKitS
       .atMost(20, TimeUnit.SECONDS)
       .pollInterval(1, TimeUnit.SECONDS)
       .untilAsserted(() -> {
-          Customer customer = webClient.get()
-            .uri("/customers/by_name/" + bob)
-            .retrieve()
-            .bodyToFlux(Customer.class)
-            .blockFirst(timeout);
 
-          assertThat(customer).isEqualTo(new Customer("b", created1.email(), created1.name()));
+        Customer customer =
+          await(
+            componentClient.forView()
+              .method(CustomersByNameView::findByName)
+              .invokeAsync(new CustomersByNameView.QueryParameters(created1.name()))
+          ).customers().stream().findFirst().get();
 
-          Customer customer2 = webClient.get()
-            .uri("/customers/by_email/" + created2.email())
-            .retrieve()
-            .bodyToFlux(Customer.class)
-            .blockFirst(timeout);
+        assertThat(customer).isEqualTo(new Customer("b", created1.email(), created1.name()));
 
-          assertThat(customer2).isEqualTo(new Customer("a", created2.email(), created2.name()));
+        Customer customer2 =
+          await(
+            componentClient.forView()
+              .method(CustomersByEmailView::findByEmail)
+              .invokeAsync(new CustomersByEmailView.QueryParameters(created2.email()))
+          ).customers().stream().findFirst().get();
+
+        assertThat(customer2).isEqualTo(new Customer("a", created2.email(), created2.name()));
+
         }
       );
   }

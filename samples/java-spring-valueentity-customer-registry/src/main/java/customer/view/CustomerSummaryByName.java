@@ -8,33 +8,27 @@ import kalix.javasdk.annotations.Subscribe;
 import kalix.javasdk.annotations.Table;
 import kalix.javasdk.annotations.ViewId;
 import kalix.javasdk.view.View;
-import org.springframework.web.bind.annotation.GetMapping;
 
-@ViewId("view_summary_customer_by_name")
-// tag::class[]
+@ViewId("summary_customer_by_name")
 @Table("customers")
-public class CustomerSummaryByName extends View<CustomerSummary> { // <1>
+public class CustomerSummaryByName extends View<CustomerSummary> {
 
-  @Subscribe.ValueEntity(CustomerEntity.class) // <2>
-  public UpdateEffect<CustomerSummary> onChange(Customer customer) { // <3>
-    return effects()
-        .updateState(new CustomerSummary(customer.email(), customer.name())); // <4>
-  }
-  // end::class[]
+  public record QueryParameters(String name) { }
 
-  // tag::delete[]
-  @Subscribe.ValueEntity(value = CustomerEntity.class, handleDeletes = true) // <1>
-  public UpdateEffect<CustomerSummary> onDelete() { // <2>
-    return effects()
-        .deleteState(); // <3>
-  }
-  // end::delete[]
-
-  // tag::class[]
-  @GetMapping("/summary/by_name/{customerName}")   // <5>
-  @Query("SELECT * FROM customers WHERE name = :customerName") // <6>
-  public CustomerSummary getCustomer() { // <7>
+  @Query("SELECT * FROM customers WHERE name = :name")
+  public CustomerSummary getCustomer(QueryParameters params) {
     return null;
   }
+  @Subscribe.ValueEntity(CustomerEntity.class)
+  public UpdateEffect<CustomerSummary> onChange(Customer customer) {
+    return effects()
+        .updateState(new CustomerSummary(customer.email(), customer.name()));
+  }
+
+  @Subscribe.ValueEntity(value = CustomerEntity.class, handleDeletes = true)
+  public UpdateEffect<CustomerSummary> onDelete() {
+    return effects()
+        .deleteState();
+  }
+
 }
-// end::class[]

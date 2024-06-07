@@ -5,14 +5,13 @@ import kalix.javasdk.annotations.Subscribe;
 import kalix.javasdk.annotations.Table;
 import kalix.javasdk.annotations.ViewId;
 import kalix.javasdk.view.View;
-import org.springframework.web.bind.annotation.GetMapping;
-import reactor.core.publisher.Flux;
 import store.customer.api.CustomerEntity;
 import store.customer.domain.CustomerEvent;
 import store.order.api.OrderEntity;
 import store.order.domain.Order;
 import store.product.api.ProductEntity;
 import store.product.domain.ProductEvent;
+import store.view.QueryParameters;
 import store.view.model.Customer;
 import store.view.model.Product;
 
@@ -20,17 +19,16 @@ import store.view.model.Product;
 @ViewId("joined-customer-orders") // <1>
 public class JoinedCustomerOrdersView {
 
-  @GetMapping("/joined-customer-orders/{customerId}")
   @Query( // <2>
     """
-      SELECT *
+      SELECT * AS orders
       FROM customers
       JOIN orders ON customers.customerId = orders.customerId
       JOIN products ON products.productId = orders.productId
       WHERE customers.customerId = :customerId
       ORDER BY orders.createdTimestamp
       """)
-  public Flux<CustomerOrder> get(String customerId) { // <3>
+  public CustomerOrders get(QueryParameters params) { // <3>
     return null;
   }
 

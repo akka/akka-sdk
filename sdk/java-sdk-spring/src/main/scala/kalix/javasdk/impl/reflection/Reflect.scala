@@ -17,6 +17,9 @@ import scala.reflect.ClassTag
 import kalix.javasdk.client.ComponentClient
 import kalix.javasdk.eventsourcedentity.EventSourcedEntity
 import kalix.javasdk.impl.client.ComponentClientImpl
+import kalix.javasdk.valueentity.ValueEntity
+import kalix.javasdk.view.View
+import kalix.javasdk.workflow.AbstractWorkflow
 import kalix.javasdk.workflow.Workflow
 
 /**
@@ -46,6 +49,37 @@ object Reflect {
     }
 
   }
+
+  def isFixedEndpointComponent(cls: Class[_]): Boolean = {
+    classOf[EventSourcedEntity[_, _]].isAssignableFrom(cls) ||
+    classOf[ValueEntity[_]].isAssignableFrom(cls) ||
+    isWorkflow(cls) ||
+    isView(cls)
+  }
+
+  def isWorkflow(cls: Class[_]): Boolean =
+    classOf[AbstractWorkflow[_]].isAssignableFrom(cls)
+
+  def isView(cls: Class[_]): Boolean = isMultiTableView(cls) || extendsView(cls)
+
+  /**
+   * A multi-table view doesn't extend View itself, but contains at least one View class.
+   */
+  def isMultiTableView(component: Class[_]): Boolean = {
+    !extendsView(component) && component.getDeclaredClasses.exists(extendsView)
+  }
+
+  /**
+   * A view table component is a View which is a nested class (static member class) of a multi-table view.
+   */
+  def isNestedViewTable(component: Class[_]): Boolean = {
+    extendsView(component) &&
+    (component.getDeclaringClass ne null) &&
+    Modifier.isStatic(component.getModifiers)
+  }
+
+  private def extendsView(component: Class[_]): Boolean =
+    classOf[View[_]].isAssignableFrom(component)
 
   def allKnownEventTypes[S, E, ES <: EventSourcedEntity[S, E]](entity: ES): Seq[Class[_]] = {
     val eventType = entity.getClass.getGenericSuperclass

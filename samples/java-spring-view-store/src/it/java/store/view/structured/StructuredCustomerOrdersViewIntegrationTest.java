@@ -2,6 +2,7 @@ package store.view.structured;
 
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
+import store.view.QueryParameters;
 import store.view.StoreViewIntegrationTest;
 
 import java.util.concurrent.TimeUnit;
@@ -79,12 +80,11 @@ public class StructuredCustomerOrdersViewIntegrationTest extends StoreViewIntegr
   }
 
   private CustomerOrders getCustomerOrders(String customerId) {
-    return webClient
-      .get()
-      .uri("/structured-customer-orders/" + customerId)
-      .retrieve()
-      .bodyToMono(CustomerOrders.class)
-      .block();
+    return await(
+      componentClient.forView()
+        .method(StructuredCustomerOrdersView::get)
+        .invokeAsync(new QueryParameters(customerId))
+    );
   }
 
   private CustomerOrders awaitCustomerOrders(

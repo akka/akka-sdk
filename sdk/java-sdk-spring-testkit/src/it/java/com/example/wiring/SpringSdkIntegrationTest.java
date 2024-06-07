@@ -258,7 +258,7 @@ public class SpringSdkIntegrationTest extends KalixIntegrationTestKitSupport {
           var byValue = await(
             componentClient.forView()
               .method(CountersByValueWithIgnore::getCounterByValue)
-              .invokeAsync(2));
+              .invokeAsync(CountersByValueWithIgnore.queryParam(2)));
 
           assertThat(byValue.value()).isEqualTo(1 + 1);
         });
@@ -282,7 +282,7 @@ public class SpringSdkIntegrationTest extends KalixIntegrationTestKitSupport {
           var byValue = await(
             componentClient.forView()
               .method(CountersByValue::getCounterByValue)
-              .invokeAsync(10));
+              .invokeAsync(CountersByValue.queryParam(10)));
 
           assertThat(byValue.value()).isEqualTo(10);
         });
@@ -420,7 +420,7 @@ public class SpringSdkIntegrationTest extends KalixIntegrationTestKitSupport {
           var byEmail = await(
             componentClient.forView()
               .method(UsersView::getUsersEmail)
-              .invokeAsync(user.email));
+              .invokeAsync(UsersView.byEmailParam(user.email)));
 
           assertThat(byEmail.email).isEqualTo(user.email);
         });
@@ -441,7 +441,7 @@ public class SpringSdkIntegrationTest extends KalixIntegrationTestKitSupport {
           var byName = await(
             componentClient.forView()
               .method(UsersView::getUsersByName)
-              .invokeAsync(user.name));
+              .invokeAsync(UsersView.byNameParam(user.name)));
           assertThat(byName.name).isEqualTo(user.name);
         });
   }
@@ -458,9 +458,14 @@ public class SpringSdkIntegrationTest extends KalixIntegrationTestKitSupport {
       .atMost(10, TimeUnit.SECONDS)
       .untilAsserted(
         () -> {
-          var byEmail = await(
+          var request = new UsersByEmailAndName.QueryParameters(user.email, user.name);
+
+          var byEmail =
+            await(
             componentClient.forView()
-              .method(UsersByEmailAndName::getUsers).deferred(user.email, user.name).invokeAsync());
+              .method(UsersByEmailAndName::getUsers)
+              .invokeAsync(request));
+
           assertThat(byEmail.email).isEqualTo(user.email);
           assertThat(byEmail.name).isEqualTo(user.name);
         });
@@ -639,7 +644,10 @@ public class SpringSdkIntegrationTest extends KalixIntegrationTestKitSupport {
 
   @Nullable
   private UserWithVersion getUserByEmail(String email) {
-    return await(componentClient.forView().method(UserWithVersionView::getUser).invokeAsync(email));
+    return await(
+      componentClient.forView()
+        .method(UserWithVersionView::getUser)
+        .invokeAsync(UserWithVersionView.queryParam(email)));
   }
 
   private void updateUser(TestUser user) {
@@ -680,7 +688,7 @@ public class SpringSdkIntegrationTest extends KalixIntegrationTestKitSupport {
     return await(
       componentClient.forView()
         .method(CustomerByCreationTime::getCustomerByTime)
-        .invokeAsync(new CustomerByCreationTime.ByTimeRequest(createdOn)))
+        .invokeAsync(new CustomerByCreationTime.QueryParameters(createdOn)))
       .customers();
   }
 
@@ -719,7 +727,7 @@ public class SpringSdkIntegrationTest extends KalixIntegrationTestKitSupport {
   private UserCounters getUserCounters(String userId) {
     return await(
       componentClient.forView().method(UserCountersView::get)
-        .invokeAsync(userId));
+        .invokeAsync(UserCountersView.queryParam(userId)));
   }
 }
 

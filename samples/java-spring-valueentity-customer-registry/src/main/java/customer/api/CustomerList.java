@@ -5,5 +5,5 @@ import customer.domain.Customer;
 import java.util.Collection;
 
 // tag::record[]
-public record CustomersResponse(Collection<Customer> customers) { }
+public record CustomerList(Collection<Customer> customers) { }
 // end::record[]

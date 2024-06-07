@@ -10,7 +10,6 @@ import kalix.javasdk.Metadata;
 import kalix.javasdk.valueentity.ValueEntity;
 import kalix.spring.impl.KalixClient;
 
-import java.util.List;
 import java.util.Optional;
 
 public class ValueEntityClient {
@@ -30,14 +29,14 @@ public class ValueEntityClient {
    * Pass in a Value Entity method reference annotated as a REST endpoint, e.g. <code>UserEntity::create</code>
    */
   public <T, R> ComponentMethodRef<R> method(Function<T, ValueEntity.Effect<R>> methodRef) {
-    return new ComponentMethodRef<>(kalixClient, methodRef, entityId, callMetadata);
+    return new ComponentMethodRef<>(kalixClient, methodRef, Optional.of(entityId), callMetadata);
   }
 
   /**
    * Pass in a Value Entity method reference annotated as a REST endpoint, e.g. <code>UserEntity::create</code>
    */
   public <T, A1, R> ComponentMethodRef1<A1, R> method(Function2<T, A1, ValueEntity.Effect<R>> methodRef) {
-    return new ComponentMethodRef1<>(kalixClient, methodRef, List.of(entityId), callMetadata);
+    return new ComponentMethodRef1<>(kalixClient, methodRef, Optional.of(entityId), callMetadata);
   }
 
 }

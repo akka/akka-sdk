@@ -38,7 +38,10 @@ This call is made on the subscriber service and will be forwarded to the `java-s
 ### Run a view query from this project
 
 ```shell
-curl localhost:9001/customers/by_name/Testsson
+curl localhost:9001/akka/v1.0/view/customers_by_name/findByName \
+  --header "Content-Type: application/json" \
+  -XPOST \
+  --data '{ "name": "Testsson" }'
 ```
 
 The subscriber service will receive updates from customer-registry via service-to-service stream and update the view.

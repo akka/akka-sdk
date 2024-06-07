@@ -57,17 +57,22 @@ sealed trait AnyJsonRequestServiceMethod extends ServiceMethod {
 }
 
 sealed trait UrlTemplate {
-  def templateUrl(typeId: String, methodName: String): String
+  def templateUrl(componentTypeId: String, methodName: String): String
 }
 object EntityUrlTemplate extends UrlTemplate {
-  override def templateUrl(typeId: String, methodName: String): String = {
-    s"/akka/v1.0/entity/${typeId}/{id}/${methodName}"
+  override def templateUrl(componentTypeId: String, methodName: String): String = {
+    s"/akka/v1.0/entity/${componentTypeId}/{id}/${methodName}"
   }
 }
 
 object WorkflowUrlTemplate extends UrlTemplate {
   override def templateUrl(componentTypeId: String, methodName: String): String =
     s"/akka/v1.0/workflow/${componentTypeId}/{id}/${methodName}"
+}
+
+object ViewUrlTemplate extends UrlTemplate {
+  override def templateUrl(componentTypeId: String, methodName: String): String =
+    s"/akka/v1.0/view/${componentTypeId}/${methodName}"
 }
 
 /**

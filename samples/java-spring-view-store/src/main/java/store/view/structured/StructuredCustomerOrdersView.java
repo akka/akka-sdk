@@ -5,13 +5,13 @@ import kalix.javasdk.annotations.Subscribe;
 import kalix.javasdk.annotations.Table;
 import kalix.javasdk.annotations.ViewId;
 import kalix.javasdk.view.View;
-import org.springframework.web.bind.annotation.GetMapping;
 import store.customer.api.CustomerEntity;
 import store.customer.domain.CustomerEvent;
 import store.order.api.OrderEntity;
 import store.order.domain.Order;
 import store.product.api.ProductEntity;
 import store.product.domain.ProductEvent;
+import store.view.QueryParameters;
 import store.view.model.Customer;
 import store.view.model.Product;
 
@@ -19,7 +19,6 @@ import store.view.model.Product;
 public class StructuredCustomerOrdersView {
 
   // tag::query[]
-  @GetMapping("/structured-customer-orders/{customerId}")
   @Query( // <1>
     """
       SELECT
@@ -40,7 +39,7 @@ public class StructuredCustomerOrdersView {
       WHERE customers.customerId = :customerId
       ORDER BY orders.createdTimestamp
       """)
-  public CustomerOrders get(String customerId) {
+  public CustomerOrders get(QueryParameters params) {
     return null;
   }
   // end::query[]

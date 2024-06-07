@@ -1,6 +1,6 @@
 package customer.view;
 
-import customer.api.CustomersResponse;
+import customer.api.CustomerList;
 import customer.domain.Address;
 import customer.domain.Customer;
 import kalix.javasdk.testkit.EventingTestKit.IncomingMessages;
@@ -8,10 +8,7 @@ import kalix.javasdk.testkit.KalixTestKit;
 import kalix.spring.testkit.KalixIntegrationTestKitSupport;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
-
-import java.util.List;
 import java.util.concurrent.TimeUnit;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 // tag::view-test[]
@@ -45,11 +42,11 @@ class CustomersResponseByCityIntegrationTest extends KalixIntegrationTestKitSupp
       .atMost(10, TimeUnit.SECONDS)
       .untilAsserted(() -> {
 
-          CustomersResponse customersResponse =
+          CustomerList customersResponse =
             await(
               componentClient.forView()
-                .method(CustomersResponseByCity::getCustomers) // <4>
-                .invokeAsync(List.of("Porto", "London"))
+                .method(CustomersByCity::getCustomers) // <4>
+                .invokeAsync(CustomersByCity.QueryParameters.of("Porto", "London"))
             );
 
           assertThat(customersResponse.customers()).containsOnly(johanna, bob);

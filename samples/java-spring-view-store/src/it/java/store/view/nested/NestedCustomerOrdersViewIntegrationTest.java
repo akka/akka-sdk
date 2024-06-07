@@ -2,6 +2,7 @@ package store.view.nested;
 
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
+import store.view.QueryParameters;
 import store.view.StoreViewIntegrationTest;
 
 import java.util.concurrent.TimeUnit;
@@ -10,6 +11,7 @@ import java.util.function.Function;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class NestedCustomerOrdersViewIntegrationTest extends StoreViewIntegrationTest {
+
 
   @Test
   public void getCustomerOrders() {
@@ -81,12 +83,10 @@ public class NestedCustomerOrdersViewIntegrationTest extends StoreViewIntegratio
   }
 
   private CustomerOrders getCustomerOrders(String customerId) {
-    return webClient
-      .get()
-      .uri("/nested-customer-orders/" + customerId)
-      .retrieve()
-      .bodyToMono(CustomerOrders.class)
-      .block();
+    return await(
+      componentClient.forView()
+        .method(NestedCustomerOrdersView::get)
+        .invokeAsync(new QueryParameters(customerId)));
   }
 
   private CustomerOrders awaitCustomerOrders(

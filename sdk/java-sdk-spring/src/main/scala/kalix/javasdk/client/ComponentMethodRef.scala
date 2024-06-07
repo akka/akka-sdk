@@ -10,7 +10,6 @@ import java.util
 import java.util.Optional
 import java.util.concurrent.CompletionStage
 
-import scala.jdk.CollectionConverters._
 import scala.jdk.OptionConverters._
 
 import akka.http.scaladsl.model.HttpMethods
@@ -19,47 +18,40 @@ import kalix.javasdk.DeferredCall
 import kalix.javasdk.Metadata
 import kalix.javasdk.action.Action
 import kalix.javasdk.annotations.TypeId
+import kalix.javasdk.annotations.ViewId
 import kalix.javasdk.eventsourcedentity.EventSourcedEntity
 import kalix.javasdk.impl.client.MethodRefResolver
 import kalix.javasdk.impl.reflection.EntityUrlTemplate
+import kalix.javasdk.impl.reflection.Reflect
 import kalix.javasdk.impl.reflection.RestServiceIntrospector
 import kalix.javasdk.impl.reflection.RestServiceIntrospector.BodyParameter
 import kalix.javasdk.impl.reflection.RestServiceIntrospector.PathParameter
 import kalix.javasdk.impl.reflection.RestServiceIntrospector.QueryParamParameter
 import kalix.javasdk.impl.reflection.RestServiceIntrospector.RestService
 import kalix.javasdk.impl.reflection.SyntheticRequestServiceMethod
+import kalix.javasdk.impl.reflection.ViewUrlTemplate
 import kalix.javasdk.impl.reflection.WorkflowUrlTemplate
 import kalix.javasdk.valueentity.ValueEntity
-import kalix.javasdk.workflow.AbstractWorkflow
 import kalix.javasdk.workflow.Workflow
 import kalix.spring.impl.KalixClient
 import kalix.spring.impl.RestKalixClientImpl
 import org.springframework.web.bind.annotation.RequestMethod
-import reactor.core.publisher.Flux
 
 object ComponentMethodRef {
 
   def noParams[R](
       kalixClient: KalixClient,
-      lambda: scala.Any,
-      ids: util.List[String],
-      callMetadata: Optional[Metadata]): DeferredCall[Any, R] = {
-    deferred(Seq.empty, kalixClient, MethodRefResolver.resolveMethodRef(lambda), ids.asScala.toList, callMetadata)
-  }
-
-  def noParams[R](
-      kalixClient: KalixClient,
       method: Method,
-      ids: util.List[String],
+      optionalId: Optional[String],
       callMetadata: Optional[Metadata]): DeferredCall[Any, R] = {
-    deferred(Seq.empty, kalixClient, method, ids.asScala.toList, callMetadata)
+    deferred(Seq.empty, kalixClient, method, optionalId.toScala, callMetadata)
   }
 
   private[client] def deferred[R](
       params: Seq[scala.Any],
       kalixClient: KalixClient,
       method: Method,
-      ids: List[String],
+      optionalId: Option[String],
       callMetadata: Optional[Metadata]): DeferredCall[Any, R] = {
 
     val kalixClientImpl = kalixClient.asInstanceOf[RestKalixClientImpl]
@@ -67,19 +59,23 @@ object ComponentMethodRef {
     val returnType: Class[R] = getReturnType(declaringClass, method)
 
     val deferredCall =
-      if (classOf[EventSourcedEntity[_, _]].isAssignableFrom(declaringClass) ||
-        classOf[ValueEntity[_]].isAssignableFrom(declaringClass) ||
-        classOf[AbstractWorkflow[_]].isAssignableFrom(declaringClass)) {
-
-        val typeId = declaringClass.getAnnotation(classOf[TypeId]).value()
+      if (Reflect.isFixedEndpointComponent(declaringClass)) {
 
         val template =
-          if (classOf[AbstractWorkflow[_]].isAssignableFrom(declaringClass))
-            WorkflowUrlTemplate.templateUrl(typeId, method.getName)
-          else
-            EntityUrlTemplate.templateUrl(typeId, method.getName)
+          if (Reflect.isView(declaringClass)) {
+            val viewId = declaringClass.getAnnotation(classOf[ViewId]).value()
+            ViewUrlTemplate.templateUrl(viewId, method.getName)
+          } else {
+            val typeId = declaringClass.getAnnotation(classOf[TypeId]).value()
+            if (Reflect.isWorkflow(declaringClass))
+              WorkflowUrlTemplate.templateUrl(typeId, method.getName)
+            else
+              EntityUrlTemplate.templateUrl(typeId, method.getName)
+          }
 
-        val pathParameter = Map("id" -> ids.head) // always only a single id
+        // we either have a single id in the path (Entities and Workflow) or none (Action and Views)
+        val pathParameter = optionalId.map(id => "id" -> id).toMap
+
         if (params.nonEmpty) {
           val body = params.headOption.map {
             // little hack to accept POST body as raw string
@@ -151,12 +147,7 @@ object ComponentMethodRef {
       method.getGenericReturnType.asInstanceOf[ParameterizedType].getActualTypeArguments.head.asInstanceOf[Class[R]]
     } else {
       // in other cases we expect a View query method, but declaring class may not extend View[_] class for join views
-      val viewReturnType = method.getReturnType
-      if (classOf[Flux[_]].isAssignableFrom(viewReturnType)) {
-        throw new IllegalStateException("Deferred call with a Flux<?> response type are currently not supported.")
-      } else {
-        viewReturnType.asInstanceOf[Class[R]]
-      }
+      method.getReturnType.asInstanceOf[Class[R]]
     }
   }
 
@@ -189,22 +180,26 @@ object ComponentMethodRef {
 final class ComponentMethodRef[R](
     kalixClient: KalixClient,
     method: Method,
-    id: String,
+    optionalId: Optional[String],
     metadataOpt: Optional[Metadata]) {
+
+  def this(
+      kalixClient: KalixClient,
+      lambda: scala.Any,
+      optionalId: Optional[String],
+      metadataOpt: Optional[Metadata]) = {
+    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), optionalId, metadataOpt)
+  }
 
   /** @return ComponentMethodRef with updated metadata */
   def withMetadata(metadata: Metadata): ComponentMethodRef[R] = {
     val merged = metadataOpt.toScala.map(m => m.merge(metadata)).getOrElse(metadata)
-    new ComponentMethodRef[R](this.kalixClient, this.method, this.id, Optional.of(merged))
-  }
-
-  def this(kalixClient: KalixClient, lambda: scala.Any, id: String, metadataOpt: Optional[Metadata]) = {
-    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), id, metadataOpt)
+    new ComponentMethodRef[R](this.kalixClient, this.method, this.optionalId, Optional.of(merged))
   }
 
   // TODO: this and all deferred variants deserve javadoc explaining what it really is and when it should be used
   def deferred(): DeferredCall[Any, R] =
-    ComponentMethodRef.noParams(kalixClient, method, util.List.of(id), metadataOpt)
+    ComponentMethodRef.noParams(kalixClient, method, optionalId, metadataOpt)
 
   // TODO: this and all invokeAsync variants deserve javadoc explaining what it really is and when it should be used
   def invokeAsync(): CompletionStage[R] =
@@ -214,40 +209,39 @@ final class ComponentMethodRef[R](
 final class ComponentMethodRef1[A1, R](
     kalixClient: KalixClient,
     method: Method,
-    ids: util.List[String],
+    optionalId: Optional[String],
     metadataOpt: Optional[Metadata]) {
 
-  def this(kalixClient: KalixClient, lambda: scala.Any, ids: util.List[String]) = {
-    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), ids, Optional.empty[Metadata])
-  }
-
-  def this(kalixClient: KalixClient, lambda: scala.Any, ids: util.List[String], metadataOpt: Optional[Metadata]) = {
-    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), ids, metadataOpt)
+  def this(
+      kalixClient: KalixClient,
+      lambda: scala.Any,
+      optionalId: Optional[String],
+      metadataOpt: Optional[Metadata]) = {
+    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), optionalId, metadataOpt)
   }
 
   /** @return ComponentMethodRef1 with updated metadata */
   def withMetadata(metadata: Metadata): ComponentMethodRef1[A1, R] = {
     val merged = metadataOpt.toScala.map(m => m.merge(metadata)).getOrElse(metadata)
-    new ComponentMethodRef1[A1, R](this.kalixClient, this.method, this.ids, Optional.of(merged))
+    new ComponentMethodRef1[A1, R](this.kalixClient, this.method, this.optionalId, Optional.of(merged))
   }
 
-  def deferred(a1: A1): DeferredCall[Any, R] = {
-    ComponentMethodRef.deferred(Seq(a1), kalixClient, method, ids.asScala.toList, metadataOpt)
-  }
+  def deferred(a1: A1): DeferredCall[Any, R] =
+    ComponentMethodRef.deferred(Seq(a1), kalixClient, method, optionalId.toScala, metadataOpt)
 
   def invokeAsync(a1: A1): CompletionStage[R] =
     deferred(a1).invokeAsync()
 }
 
 // format: off
-final class ComponentMethodRef2[A1, A2, R](kalixClient: KalixClient, lambda: Method, ids: util.List[String], metadataOpt: Optional[Metadata]) {
+final class ComponentMethodRef2[A1, A2, R](kalixClient: KalixClient, lambda: Method, metadataOpt: Optional[Metadata]) {
 
-  def this(kalixClient: KalixClient, lambda: scala.Any, ids: util.List[String]) = {
-    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), ids, Optional.empty[Metadata]())
+  def this(kalixClient: KalixClient, lambda: scala.Any) = {
+    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), Optional.empty[Metadata]())
   }
 
-  def this(kalixClient: KalixClient, lambda: scala.Any, ids: util.List[String], metadataOpt: Optional[Metadata]) = {
-    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), ids, metadataOpt)
+  def this(kalixClient: KalixClient, lambda: scala.Any, metadataOpt: Optional[Metadata]) = {
+    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), metadataOpt)
   }
 
   /**
@@ -257,17 +251,18 @@ final class ComponentMethodRef2[A1, A2, R](kalixClient: KalixClient, lambda: Met
    * used to build this DeferredCall.
    */
   def deferred(a1: A1, a2: A2): DeferredCall[Any, R] = {
-    ComponentMethodRef.deferred(Seq(a1, a2), kalixClient, lambda, ids.asScala.toList, metadataOpt)
+    ComponentMethodRef.deferred(Seq(a1, a2), kalixClient, lambda, None, metadataOpt)
   }
 }
-final class ComponentMethodRef3[A1, A2, A3, R](kalixClient: KalixClient, lambda: Method, ids: util.List[String], metadataOpt: Optional[Metadata]) {
 
-  def this(kalixClient: KalixClient, lambda: scala.Any, ids: util.List[String]) = {
-    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), ids, Optional.empty[Metadata]())
+final class ComponentMethodRef3[A1, A2, A3, R](kalixClient: KalixClient, lambda: Method, metadataOpt: Optional[Metadata]) {
+
+  def this(kalixClient: KalixClient, lambda: scala.Any) = {
+    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), Optional.empty[Metadata]())
   }
 
-  def this(kalixClient: KalixClient, lambda: scala.Any, ids: util.List[String], metadataOpt: Optional[Metadata]) = {
-    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), ids, metadataOpt)
+  def this(kalixClient: KalixClient, lambda: scala.Any, metadataOpt: Optional[Metadata]) = {
+    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), metadataOpt)
   }
 
   /**
@@ -277,18 +272,19 @@ final class ComponentMethodRef3[A1, A2, A3, R](kalixClient: KalixClient, lambda:
    * used to build this DeferredCall.
    */
   def deferred(a1: A1, a2: A2, a3: A3): DeferredCall[Any, R] = {
-    ComponentMethodRef.deferred(Seq(a1, a2, a3), kalixClient, lambda, ids.asScala.toList, metadataOpt)
+    ComponentMethodRef.deferred(Seq(a1, a2, a3), kalixClient, lambda, None, metadataOpt)
   }
 }
-final class ComponentMethodRef4[A1, A2, A3, A4, R](kalixClient: KalixClient, lambda: Method, ids: util.List[String], metadataOpt: Optional[Metadata]) {
+
+final class ComponentMethodRef4[A1, A2, A3, A4, R](kalixClient: KalixClient, lambda: Method, metadataOpt: Optional[Metadata]) {
 
 
-  def this(kalixClient: KalixClient, lambda: scala.Any, ids: util.List[String]) = {
-    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), ids, Optional.empty[Metadata]())
+  def this(kalixClient: KalixClient, lambda: scala.Any) = {
+    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), Optional.empty[Metadata]())
   }
 
-  def this(kalixClient: KalixClient, lambda: scala.Any, ids: util.List[String], metadataOpt: Optional[Metadata]) = {
-    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), ids, metadataOpt)
+  def this(kalixClient: KalixClient, lambda: scala.Any, metadataOpt: Optional[Metadata]) = {
+    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), metadataOpt)
   }
 
   /**
@@ -298,17 +294,18 @@ final class ComponentMethodRef4[A1, A2, A3, A4, R](kalixClient: KalixClient, lam
    * used to build this DeferredCall.
    */
   def deferred(a1: A1, a2: A2, a3: A3, a4: A4): DeferredCall[Any, R] = {
-    ComponentMethodRef.deferred(Seq(a1, a2, a3, a4), kalixClient, lambda, ids.asScala.toList,metadataOpt)
+    ComponentMethodRef.deferred(Seq(a1, a2, a3, a4), kalixClient, lambda, None, metadataOpt)
   }
 }
-final class ComponentMethodRef5[A1, A2, A3, A4, A5, R](kalixClient: KalixClient, lambda: Method, ids: util.List[String], metadataOpt: Optional[Metadata]) {
 
-  def this(kalixClient: KalixClient, lambda: scala.Any, ids: util.List[String]) = {
-    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), ids, Optional.empty[Metadata]())
+final class ComponentMethodRef5[A1, A2, A3, A4, A5, R](kalixClient: KalixClient, lambda: Method, metadataOpt: Optional[Metadata]) {
+
+  def this(kalixClient: KalixClient, lambda: scala.Any) = {
+    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), Optional.empty[Metadata]())
   }
 
-  def this(kalixClient: KalixClient, lambda: scala.Any, ids: util.List[String], metadataOpt: Optional[Metadata]) = {
-    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), ids, metadataOpt)
+  def this(kalixClient: KalixClient, lambda: scala.Any, metadataOpt: Optional[Metadata]) = {
+    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), metadataOpt)
   }
 
   /**
@@ -318,18 +315,19 @@ final class ComponentMethodRef5[A1, A2, A3, A4, A5, R](kalixClient: KalixClient,
    * used to build this DeferredCall.
    */
   def deferred(a1: A1, a2: A2, a3: A3, a4: A4, a5: A5): DeferredCall[Any, R] = {
-    ComponentMethodRef.deferred(Seq(a1, a2, a3, a4, a5), kalixClient, lambda, ids.asScala.toList, metadataOpt)
+    ComponentMethodRef.deferred(Seq(a1, a2, a3, a4, a5), kalixClient, lambda, None, metadataOpt)
   }
 }
-final class ComponentMethodRef6[A1, A2, A3, A4, A5, A6, R](kalixClient: KalixClient, lambda: Method, ids: util.List[String], metadataOpt: Optional[Metadata]) {
+
+final class ComponentMethodRef6[A1, A2, A3, A4, A5, A6, R](kalixClient: KalixClient, lambda: Method, metadataOpt: Optional[Metadata]) {
 
 
-  def this(kalixClient: KalixClient, lambda: scala.Any, ids: util.List[String]) = {
-    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), ids, Optional.empty[Metadata]())
+  def this(kalixClient: KalixClient, lambda: scala.Any) = {
+    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), Optional.empty[Metadata]())
   }
 
-  def this(kalixClient: KalixClient, lambda: scala.Any, ids: util.List[String], metadataOpt: Optional[Metadata]) = {
-    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), ids, metadataOpt)
+  def this(kalixClient: KalixClient, lambda: scala.Any, metadataOpt: Optional[Metadata]) = {
+    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), metadataOpt)
   }
 
   /**
@@ -339,17 +337,18 @@ final class ComponentMethodRef6[A1, A2, A3, A4, A5, A6, R](kalixClient: KalixCli
    * used to build this DeferredCall.
    */
   def deferred(a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6): DeferredCall[Any, R] = {
-    ComponentMethodRef.deferred(Seq(a1, a2, a3, a4, a5, a6), kalixClient, lambda, ids.asScala.toList, metadataOpt)
+    ComponentMethodRef.deferred(Seq(a1, a2, a3, a4, a5, a6), kalixClient, lambda, None, metadataOpt)
   }
 }
-final class ComponentMethodRef7[A1, A2, A3, A4, A5, A6, A7, R](kalixClient: KalixClient, lambda: Method, ids: util.List[String], metadataOpt: Optional[Metadata]) {
 
-  def this(kalixClient: KalixClient, lambda: scala.Any, ids: util.List[String]) = {
-    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), ids, Optional.empty[Metadata]())
+final class ComponentMethodRef7[A1, A2, A3, A4, A5, A6, A7, R](kalixClient: KalixClient, lambda: Method, metadataOpt: Optional[Metadata]) {
+
+  def this(kalixClient: KalixClient, lambda: scala.Any) = {
+    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), Optional.empty[Metadata]())
   }
 
-  def this(kalixClient: KalixClient, lambda: scala.Any, ids: util.List[String], metadataOpt: Optional[Metadata]) = {
-    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), ids, metadataOpt)
+  def this(kalixClient: KalixClient, lambda: scala.Any, metadataOpt: Optional[Metadata]) = {
+    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), metadataOpt)
   }
 
   /**
@@ -359,17 +358,18 @@ final class ComponentMethodRef7[A1, A2, A3, A4, A5, A6, A7, R](kalixClient: Kali
    * used to build this DeferredCall.
    */
   def deferred(a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7): DeferredCall[Any, R] = {
-    ComponentMethodRef.deferred(Seq(a1, a2, a3, a4, a5, a6, a7), kalixClient, lambda, ids.asScala.toList, metadataOpt)
+    ComponentMethodRef.deferred(Seq(a1, a2, a3, a4, a5, a6, a7), kalixClient, lambda, None, metadataOpt)
   }
 }
-final class ComponentMethodRef8[A1, A2, A3, A4, A5, A6, A7, A8, R](kalixClient: KalixClient, lambda: Method, ids: util.List[String], metadataOpt: Optional[Metadata]) {
 
-  def this(kalixClient: KalixClient, lambda: scala.Any, ids: util.List[String]) = {
-    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), ids, Optional.empty[Metadata]())
+final class ComponentMethodRef8[A1, A2, A3, A4, A5, A6, A7, A8, R](kalixClient: KalixClient, lambda: Method, metadataOpt: Optional[Metadata]) {
+
+  def this(kalixClient: KalixClient, lambda: scala.Any) = {
+    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), Optional.empty[Metadata]())
   }
 
-  def this(kalixClient: KalixClient, lambda: scala.Any, ids: util.List[String], metadataOpt: Optional[Metadata]) = {
-    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), ids, metadataOpt)
+  def this(kalixClient: KalixClient, lambda: scala.Any, metadataOpt: Optional[Metadata]) = {
+    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), metadataOpt)
   }
 
   /**
@@ -379,17 +379,18 @@ final class ComponentMethodRef8[A1, A2, A3, A4, A5, A6, A7, A8, R](kalixClient: 
    * used to build this DeferredCall.
    */
   def deferred(a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7, a8: A8): DeferredCall[Any, R] = {
-    ComponentMethodRef.deferred(Seq(a1, a2, a3, a4, a5, a6, a7, a8), kalixClient, lambda, ids.asScala.toList, metadataOpt)
+    ComponentMethodRef.deferred(Seq(a1, a2, a3, a4, a5, a6, a7, a8), kalixClient, lambda, None, metadataOpt)
   }
 }
-final class ComponentMethodRef9[A1, A2, A3, A4, A5, A6, A7, A8, A9, R](kalixClient: KalixClient, lambda: Method, ids: util.List[String], metadataOpt: Optional[Metadata]) {
 
-  def this(kalixClient: KalixClient, lambda: scala.Any, ids: util.List[String]) = {
-    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), ids, Optional.empty[Metadata]())
+final class ComponentMethodRef9[A1, A2, A3, A4, A5, A6, A7, A8, A9, R](kalixClient: KalixClient, lambda: Method, metadataOpt: Optional[Metadata]) {
+
+  def this(kalixClient: KalixClient, lambda: scala.Any) = {
+    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), Optional.empty[Metadata]())
   }
 
-  def this(kalixClient: KalixClient, lambda: scala.Any, ids: util.List[String], metadataOpt: Optional[Metadata]) = {
-    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), ids, metadataOpt)
+  def this(kalixClient: KalixClient, lambda: scala.Any, metadataOpt: Optional[Metadata]) = {
+    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), metadataOpt)
   }
 
   /**
@@ -399,17 +400,18 @@ final class ComponentMethodRef9[A1, A2, A3, A4, A5, A6, A7, A8, A9, R](kalixClie
    * used to build this DeferredCall.
    */
   def deferred(a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7, a8: A8, a9: A9): DeferredCall[Any, R] = {
-    ComponentMethodRef.deferred(Seq(a1, a2, a3, a4, a5, a6, a7, a8, a9), kalixClient, lambda, ids.asScala.toList, metadataOpt)
+    ComponentMethodRef.deferred(Seq(a1, a2, a3, a4, a5, a6, a7, a8, a9), kalixClient, lambda, None, metadataOpt)
   }
 }
-final class ComponentMethodRef10[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, R](kalixClient: KalixClient, lambda: Method, ids: util.List[String], metadataOpt: Optional[Metadata]) {
 
-  def this(kalixClient: KalixClient, lambda: scala.Any, ids: util.List[String]) = {
-    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), ids, Optional.empty[Metadata]())
+final class ComponentMethodRef10[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, R](kalixClient: KalixClient, lambda: Method, metadataOpt: Optional[Metadata]) {
+
+  def this(kalixClient: KalixClient, lambda: scala.Any) = {
+    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), Optional.empty[Metadata]())
   }
 
-  def this(kalixClient: KalixClient, lambda: scala.Any, ids: util.List[String], metadataOpt: Optional[Metadata]) = {
-    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), ids, metadataOpt)
+  def this(kalixClient: KalixClient, lambda: scala.Any, metadataOpt: Optional[Metadata]) = {
+    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), metadataOpt)
   }
 
   /**
@@ -419,17 +421,18 @@ final class ComponentMethodRef10[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, R](kal
    * used to build this DeferredCall.
    */
   def deferred(a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7, a8: A8, a9: A9, a10: A10): DeferredCall[Any, R] = {
-    ComponentMethodRef.deferred(Seq(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10), kalixClient, lambda, ids.asScala.toList, metadataOpt)
+    ComponentMethodRef.deferred(Seq(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10), kalixClient, lambda, None, metadataOpt)
   }
 }
-final class ComponentMethodRef11[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, R](kalixClient: KalixClient, lambda: Method, ids: util.List[String], metadataOpt: Optional[Metadata]) {
 
-  def this(kalixClient: KalixClient, lambda: scala.Any, ids: util.List[String]) = {
-    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), ids, Optional.empty[Metadata]())
+final class ComponentMethodRef11[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, R](kalixClient: KalixClient, lambda: Method, metadataOpt: Optional[Metadata]) {
+
+  def this(kalixClient: KalixClient, lambda: scala.Any) = {
+    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), Optional.empty[Metadata]())
   }
 
-  def this(kalixClient: KalixClient, lambda: scala.Any, ids: util.List[String], metadataOpt: Optional[Metadata]) = {
-    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), ids, metadataOpt)
+  def this(kalixClient: KalixClient, lambda: scala.Any, metadataOpt: Optional[Metadata]) = {
+    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), metadataOpt)
   }
 
   /**
@@ -439,17 +442,18 @@ final class ComponentMethodRef11[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, R
    * used to build this DeferredCall.
    */
   def deferred(a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7, a8: A8, a9: A9, a10: A10, a11: A11): DeferredCall[Any, R] = {
-    ComponentMethodRef.deferred(Seq(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11), kalixClient, lambda, ids.asScala.toList, metadataOpt)
+    ComponentMethodRef.deferred(Seq(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11), kalixClient, lambda, None, metadataOpt)
   }
 }
-final class ComponentMethodRef12[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, R](kalixClient: KalixClient, lambda: Method, ids: util.List[String], metadataOpt: Optional[Metadata]) {
 
-  def this(kalixClient: KalixClient, lambda: scala.Any, ids: util.List[String]) = {
-    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), ids, Optional.empty[Metadata]())
+final class ComponentMethodRef12[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, R](kalixClient: KalixClient, lambda: Method, metadataOpt: Optional[Metadata]) {
+
+  def this(kalixClient: KalixClient, lambda: scala.Any) = {
+    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), Optional.empty[Metadata]())
   }
 
-  def this(kalixClient: KalixClient, lambda: scala.Any, ids: util.List[String], metadataOpt: Optional[Metadata]) = {
-    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), ids, metadataOpt)
+  def this(kalixClient: KalixClient, lambda: scala.Any, metadataOpt: Optional[Metadata]) = {
+    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), metadataOpt)
   }
 
   /**
@@ -459,17 +463,18 @@ final class ComponentMethodRef12[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A
    * used to build this DeferredCall.
    */
   def deferred(a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7, a8: A8, a9: A9, a10: A10, a11: A11, a12: A12): DeferredCall[Any, R] = {
-    ComponentMethodRef.deferred(Seq(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12), kalixClient, lambda, ids.asScala.toList, metadataOpt)
+    ComponentMethodRef.deferred(Seq(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12), kalixClient, lambda, None, metadataOpt)
   }
 }
-final class ComponentMethodRef13[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, R](kalixClient: KalixClient, lambda: Method, ids: util.List[String], metadataOpt: Optional[Metadata]) {
 
-  def this(kalixClient: KalixClient, lambda: scala.Any, ids: util.List[String]) = {
-    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), ids, Optional.empty[Metadata]())
+final class ComponentMethodRef13[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, R](kalixClient: KalixClient, lambda: Method, metadataOpt: Optional[Metadata]) {
+
+  def this(kalixClient: KalixClient, lambda: scala.Any) = {
+    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), Optional.empty[Metadata]())
   }
 
-  def this(kalixClient: KalixClient, lambda: scala.Any, ids: util.List[String], metadataOpt: Optional[Metadata]) = {
-    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), ids, metadataOpt)
+  def this(kalixClient: KalixClient, lambda: scala.Any, metadataOpt: Optional[Metadata]) = {
+    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), metadataOpt)
   }
 
   /**
@@ -479,17 +484,18 @@ final class ComponentMethodRef13[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A
    * used to build this DeferredCall.
    */
   def deferred(a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7, a8: A8, a9: A9, a10: A10, a11: A11, a12: A12, a13: A13): DeferredCall[Any, R] = {
-    ComponentMethodRef.deferred(Seq(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13), kalixClient, lambda, ids.asScala.toList, metadataOpt)
+    ComponentMethodRef.deferred(Seq(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13), kalixClient, lambda, None, metadataOpt)
   }
 }
-final class ComponentMethodRef14[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, R](kalixClient: KalixClient, lambda: Method, ids: util.List[String], metadataOpt: Optional[Metadata]) {
 
-  def this(kalixClient: KalixClient, lambda: scala.Any, ids: util.List[String]) = {
-    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), ids, Optional.empty[Metadata]())
+final class ComponentMethodRef14[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, R](kalixClient: KalixClient, lambda: Method, metadataOpt: Optional[Metadata]) {
+
+  def this(kalixClient: KalixClient, lambda: scala.Any) = {
+    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), Optional.empty[Metadata]())
   }
 
-  def this(kalixClient: KalixClient, lambda: scala.Any, ids: util.List[String], metadataOpt: Optional[Metadata]) = {
-    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), ids, metadataOpt)
+  def this(kalixClient: KalixClient, lambda: scala.Any, metadataOpt: Optional[Metadata]) = {
+    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), metadataOpt)
   }
 
   /**
@@ -499,17 +505,18 @@ final class ComponentMethodRef14[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A
    * used to build this DeferredCall.
    */
   def deferred(a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7, a8: A8, a9: A9, a10: A10, a11: A11, a12: A12, a13: A13, a14: A14): DeferredCall[Any, R] = {
-    ComponentMethodRef.deferred(Seq(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14), kalixClient, lambda, ids.asScala.toList, metadataOpt)
+    ComponentMethodRef.deferred(Seq(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14), kalixClient, lambda, None, metadataOpt)
   }
 }
-final class ComponentMethodRef15[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, R](kalixClient: KalixClient, lambda: Method, ids: util.List[String], metadataOpt: Optional[Metadata]) {
 
-  def this(kalixClient: KalixClient, lambda: scala.Any, ids: util.List[String]) = {
-    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), ids, Optional.empty[Metadata]())
+final class ComponentMethodRef15[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, R](kalixClient: KalixClient, lambda: Method, metadataOpt: Optional[Metadata]) {
+
+  def this(kalixClient: KalixClient, lambda: scala.Any) = {
+    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), Optional.empty[Metadata]())
   }
 
-  def this(kalixClient: KalixClient, lambda: scala.Any, ids: util.List[String], metadataOpt: Optional[Metadata]) = {
-    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), ids, metadataOpt)
+  def this(kalixClient: KalixClient, lambda: scala.Any, metadataOpt: Optional[Metadata]) = {
+    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), metadataOpt)
   }
 
 
@@ -521,17 +528,18 @@ final class ComponentMethodRef15[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A
    * used to build this DeferredCall.
    */
   def deferred(a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7, a8: A8, a9: A9, a10: A10, a11: A11, a12: A12, a13: A13, a14: A14, a15: A15): DeferredCall[Any, R] = {
-    ComponentMethodRef.deferred(Seq(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15), kalixClient, lambda, ids.asScala.toList, metadataOpt)
+    ComponentMethodRef.deferred(Seq(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15), kalixClient, lambda, None, metadataOpt)
   }
 }
-final class ComponentMethodRef16[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, R](kalixClient: KalixClient, lambda: Method, ids: util.List[String], metadataOpt: Optional[Metadata]) {
 
-  def this(kalixClient: KalixClient, lambda: scala.Any, ids: util.List[String]) = {
-    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), ids, Optional.empty[Metadata]())
+final class ComponentMethodRef16[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, R](kalixClient: KalixClient, lambda: Method, metadataOpt: Optional[Metadata]) {
+
+  def this(kalixClient: KalixClient, lambda: scala.Any) = {
+    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), Optional.empty[Metadata]())
   }
 
-  def this(kalixClient: KalixClient, lambda: scala.Any, ids: util.List[String], metadataOpt: Optional[Metadata]) = {
-    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), ids, metadataOpt)
+  def this(kalixClient: KalixClient, lambda: scala.Any, metadataOpt: Optional[Metadata]) = {
+    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), metadataOpt)
   }
 
   /**
@@ -541,17 +549,18 @@ final class ComponentMethodRef16[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A
    * used to build this DeferredCall.
    */
   def deferred(a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7, a8: A8, a9: A9, a10: A10, a11: A11, a12: A12, a13: A13, a14: A14, a15: A15, a16: A16): DeferredCall[Any, R] = {
-    ComponentMethodRef.deferred(Seq(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16), kalixClient, lambda, ids.asScala.toList, metadataOpt)
+    ComponentMethodRef.deferred(Seq(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16), kalixClient, lambda, None, metadataOpt)
   }
 }
-final class ComponentMethodRef17[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, R](kalixClient: KalixClient, lambda: Method, ids: util.List[String], metadataOpt: Optional[Metadata]) {
 
-  def this(kalixClient: KalixClient, lambda: scala.Any, ids: util.List[String]) = {
-    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), ids, Optional.empty[Metadata]())
+final class ComponentMethodRef17[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, R](kalixClient: KalixClient, lambda: Method, metadataOpt: Optional[Metadata]) {
+
+  def this(kalixClient: KalixClient, lambda: scala.Any) = {
+    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), Optional.empty[Metadata]())
   }
 
-  def this(kalixClient: KalixClient, lambda: scala.Any, ids: util.List[String], metadataOpt: Optional[Metadata]) = {
-    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), ids, metadataOpt)
+  def this(kalixClient: KalixClient, lambda: scala.Any, metadataOpt: Optional[Metadata]) = {
+    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), metadataOpt)
   }
 
   /**
@@ -561,17 +570,18 @@ final class ComponentMethodRef17[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A
    * used to build this DeferredCall.
    */
   def deferred(a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7, a8: A8, a9: A9, a10: A10, a11: A11, a12: A12, a13: A13, a14: A14, a15: A15, a16: A16, a17: A17): DeferredCall[Any, R] = {
-    ComponentMethodRef.deferred(Seq(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17), kalixClient, lambda, ids.asScala.toList, metadataOpt)
+    ComponentMethodRef.deferred(Seq(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17), kalixClient, lambda, None, metadataOpt)
   }
 }
-final class ComponentMethodRef18[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18, R](kalixClient: KalixClient, lambda: Method, ids: util.List[String], metadataOpt: Optional[Metadata]) {
 
-  def this(kalixClient: KalixClient, lambda: scala.Any, ids: util.List[String]) = {
-    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), ids, Optional.empty[Metadata]())
+final class ComponentMethodRef18[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18, R](kalixClient: KalixClient, lambda: Method, metadataOpt: Optional[Metadata]) {
+
+  def this(kalixClient: KalixClient, lambda: scala.Any) = {
+    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), Optional.empty[Metadata]())
   }
 
-  def this(kalixClient: KalixClient, lambda: scala.Any, ids: util.List[String], metadataOpt: Optional[Metadata]) = {
-    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), ids, metadataOpt)
+  def this(kalixClient: KalixClient, lambda: scala.Any, metadataOpt: Optional[Metadata]) = {
+    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), metadataOpt)
   }
 
   /**
@@ -581,17 +591,18 @@ final class ComponentMethodRef18[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A
    * used to build this DeferredCall.
    */
   def deferred(a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7, a8: A8, a9: A9, a10: A10, a11: A11, a12: A12, a13: A13, a14: A14, a15: A15, a16: A16, a17: A17, a18: A18): DeferredCall[Any, R] = {
-    ComponentMethodRef.deferred(Seq(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18), kalixClient, lambda, ids.asScala.toList, metadataOpt)
+    ComponentMethodRef.deferred(Seq(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18), kalixClient, lambda, None, metadataOpt)
   }
 }
-final class ComponentMethodRef19[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18, A19, R](kalixClient: KalixClient, lambda: Method, ids: util.List[String], metadataOpt: Optional[Metadata]) {
 
-  def this(kalixClient: KalixClient, lambda: scala.Any, ids: util.List[String]) = {
-    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), ids, Optional.empty[Metadata]())
+final class ComponentMethodRef19[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18, A19, R](kalixClient: KalixClient, lambda: Method, metadataOpt: Optional[Metadata]) {
+
+  def this(kalixClient: KalixClient, lambda: scala.Any) = {
+    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), Optional.empty[Metadata]())
   }
 
-  def this(kalixClient: KalixClient, lambda: scala.Any, ids: util.List[String], metadataOpt: Optional[Metadata]) = {
-    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), ids, metadataOpt)
+  def this(kalixClient: KalixClient, lambda: scala.Any, metadataOpt: Optional[Metadata]) = {
+    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), metadataOpt)
   }
 
   /**
@@ -601,17 +612,18 @@ final class ComponentMethodRef19[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A
    * used to build this DeferredCall.
    */
   def deferred(a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7, a8: A8, a9: A9, a10: A10, a11: A11, a12: A12, a13: A13, a14: A14, a15: A15, a16: A16, a17: A17, a18: A18, a19: A19): DeferredCall[Any, R] = {
-    ComponentMethodRef.deferred(Seq(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19), kalixClient, lambda, ids.asScala.toList, metadataOpt)
+    ComponentMethodRef.deferred(Seq(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19), kalixClient, lambda, None, metadataOpt)
   }
 }
-final class ComponentMethodRef20[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18, A19, A20, R](kalixClient: KalixClient, lambda: Method, ids: util.List[String], metadataOpt: Optional[Metadata]) {
 
-  def this(kalixClient: KalixClient, lambda: scala.Any, ids: util.List[String]) = {
-    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), ids, Optional.empty[Metadata]())
+final class ComponentMethodRef20[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18, A19, A20, R](kalixClient: KalixClient, lambda: Method, metadataOpt: Optional[Metadata]) {
+
+  def this(kalixClient: KalixClient, lambda: scala.Any) = {
+    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), Optional.empty[Metadata]())
   }
 
-  def this(kalixClient: KalixClient, lambda: scala.Any, ids: util.List[String], metadataOpt: Optional[Metadata]) = {
-    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), ids, metadataOpt)
+  def this(kalixClient: KalixClient, lambda: scala.Any, metadataOpt: Optional[Metadata]) = {
+    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), metadataOpt)
   }
 
   /**
@@ -621,17 +633,18 @@ final class ComponentMethodRef20[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A
    * used to build this DeferredCall.
    */
   def deferred(a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7, a8: A8, a9: A9, a10: A10, a11: A11, a12: A12, a13: A13, a14: A14, a15: A15, a16: A16, a17: A17, a18: A18, a19: A19, a20: A20): DeferredCall[Any, R] = {
-    ComponentMethodRef.deferred(Seq(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20), kalixClient, lambda, ids.asScala.toList, metadataOpt)
+    ComponentMethodRef.deferred(Seq(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20), kalixClient, lambda, None, metadataOpt)
   }
 }
-final class ComponentMethodRef21[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18, A19, A20, A21, R](kalixClient: KalixClient, lambda: Method, ids: util.List[String], metadataOpt: Optional[Metadata]) {
 
-  def this(kalixClient: KalixClient, lambda: scala.Any, ids: util.List[String]) = {
-    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), ids, Optional.empty[Metadata]())
+final class ComponentMethodRef21[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18, A19, A20, A21, R](kalixClient: KalixClient, lambda: Method, metadataOpt: Optional[Metadata]) {
+
+  def this(kalixClient: KalixClient, lambda: scala.Any) = {
+    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), Optional.empty[Metadata]())
   }
 
-  def this(kalixClient: KalixClient, lambda: scala.Any, ids: util.List[String], metadataOpt: Optional[Metadata]) = {
-    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), ids, metadataOpt)
+  def this(kalixClient: KalixClient, lambda: scala.Any, metadataOpt: Optional[Metadata]) = {
+    this(kalixClient, MethodRefResolver.resolveMethodRef(lambda), metadataOpt)
   }
 
   /**
@@ -641,7 +654,7 @@ final class ComponentMethodRef21[A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A
    * used to build this DeferredCall.
    */
   def deferred(a1: A1, a2: A2, a3: A3, a4: A4, a5: A5, a6: A6, a7: A7, a8: A8, a9: A9, a10: A10, a11: A11, a12: A12, a13: A13, a14: A14, a15: A15, a16: A16, a17: A17, a18: A18, a19: A19, a20: A20, a21: A21): DeferredCall[Any, R] = {
-    ComponentMethodRef.deferred(Seq(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21), kalixClient, lambda, ids.asScala.toList, metadataOpt)
+    ComponentMethodRef.deferred(Seq(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21), kalixClient, lambda, None, metadataOpt)
   }
 }
 // format: on

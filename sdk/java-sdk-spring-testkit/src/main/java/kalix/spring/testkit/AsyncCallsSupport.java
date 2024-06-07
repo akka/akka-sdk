@@ -4,8 +4,6 @@
 
 package kalix.spring.testkit;
 
-import kalix.javasdk.DeferredCall;
-
 import java.time.Duration;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
@@ -18,8 +16,8 @@ public abstract class AsyncCallsSupport {
 
   private final Duration defaultTimeout = Duration.of(10, SECONDS);
 
-  public <I, O> O await(CompletionStage<O> deferredCall) {
-    return await(deferredCall, defaultTimeout);
+  public <I, O> O await(CompletionStage<O> stage) {
+    return await(stage, defaultTimeout);
   }
 
   public <I, O> O await(CompletionStage<O> stage, Duration timeout) {

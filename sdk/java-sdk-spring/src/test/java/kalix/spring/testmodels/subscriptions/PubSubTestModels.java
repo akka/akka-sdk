@@ -10,6 +10,7 @@ import kalix.javasdk.annotations.Publish;
 import kalix.javasdk.annotations.Query;
 import kalix.javasdk.annotations.Subscribe;
 import kalix.javasdk.annotations.Table;
+import kalix.javasdk.annotations.ViewId;
 import kalix.javasdk.view.View;
 import kalix.spring.testmodels.Done;
 import kalix.spring.testmodels.Message;
@@ -714,7 +715,12 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
     }
   }
 
-  @Table(value = "employee_table")
+
+  // common query parameter for views in this file
+  public record ByEmail(String email) {}
+
+  @ViewId("employee_view")
+  @Table("employee_table")
   @Subscribe.EventSourcedEntity(value = EmployeeEntity.class, ignoreUnknown = true)
   public static class SubscribeOnTypeToEventSourcedEvents extends View<Employee> {
 
@@ -729,8 +735,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
     }
 
     @Query("SELECT * FROM employees_view WHERE email = :email")
-    @PostMapping("/employees/by-email/{email}")
-    public Employee getEmployeeByEmail(@PathVariable String email) {
+    public Employee getEmployeeByEmail(ByEmail byEmail) {
       return null;
     }
   }
@@ -762,7 +767,8 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
     }
   }
 
-  @Table(value = "employee_table")
+  @ViewId("employee_view")
+  @Table("employee_table")
   @Subscribe.Stream(service = "employee_service", id = "employee_events")
   public static class EventStreamSubscriptionView extends View<Employee> {
 
@@ -777,8 +783,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
     }
 
     @Query("SELECT * FROM employees_view WHERE email = :email")
-    @PostMapping("/employees/by-email/{email}")
-    public Employee getEmployeeByEmail(@PathVariable String email) {
+    public Employee getEmployeeByEmail(ByEmail byEmail) {
       return null;
     }
   }

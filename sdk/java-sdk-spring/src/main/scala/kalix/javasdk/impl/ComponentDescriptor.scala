@@ -29,6 +29,7 @@ import com.google.protobuf.Empty
 import com.google.protobuf.{ Any => JavaPbAny }
 import kalix.javasdk.HttpResponse
 import kalix.javasdk.annotations.TypeId
+import kalix.javasdk.annotations.ViewId
 import kalix.javasdk.impl.AnySupport.ProtobufEmptyTypeUrl
 import kalix.javasdk.impl.reflection.AnyJsonRequestServiceMethod
 import kalix.javasdk.impl.reflection.CombinedSubscriptionServiceMethod
@@ -41,6 +42,7 @@ import kalix.javasdk.impl.reflection.NameGenerator
 import kalix.javasdk.impl.reflection.ParameterExtractor
 import kalix.javasdk.impl.reflection.ParameterExtractors
 import kalix.javasdk.impl.reflection.ParameterExtractors.HeaderExtractor
+import kalix.javasdk.impl.reflection.Reflect
 import kalix.javasdk.impl.reflection.RestServiceIntrospector
 import kalix.javasdk.impl.reflection.RestServiceIntrospector.BodyParameter
 import kalix.javasdk.impl.reflection.RestServiceIntrospector.HeaderParameter
@@ -643,9 +645,15 @@ private[kalix] object ComponentDescriptor {
 
   private def buildHttpRule(commandHandlerMethod: CommandHandlerMethod): HttpRule.Builder = {
     val httpRule = HttpRule.newBuilder()
-    val typeId = commandHandlerMethod.component.getAnnotation(classOf[TypeId]).value()
-    // TODO: shall we prefix the URLs with a version?
-    val urlTemplate = commandHandlerMethod.urlTemplate.templateUrl(typeId, commandHandlerMethod.method.getName)
+
+    val componentTypeId =
+      if (Reflect.isView(commandHandlerMethod.component)) {
+        commandHandlerMethod.component.getAnnotation(classOf[ViewId]).value()
+      } else {
+        commandHandlerMethod.component.getAnnotation(classOf[TypeId]).value()
+      }
+
+    val urlTemplate = commandHandlerMethod.urlTemplate.templateUrl(componentTypeId, commandHandlerMethod.method.getName)
     if (commandHandlerMethod.hasInputType)
       httpRule.setPost(urlTemplate)
     else

@@ -34,31 +34,69 @@ This command will start your Kalix service and a companion Kalix Runtime as conf
 
 With both the Kalix Runtime and your service running, once you have defined endpoints they should be available at `http://localhost:9000`.
 
-* Create a customer with:
+* Create customers with:
 
 ```shell
-curl localhost:9000/akka/v1.0/entity/customer/one/create \
+curl localhost:9000/akka/v1.0/entity/customer/001/create \
   --header "Content-Type: application/json" \
   -XPOST \
-  --data '{"customerId":"one","email":"test@example.com","name":"Test Testsson","address":{"street":"Teststreet 25","city":"Testcity"}}'
+  --data '{"customerId":"001","email":"test@example.com","name":"Test Testsson","address":{"street":"Teststreet 25", 
+  "city":"City Test"}}'
 ```
 
-* Retrieve the customer:
+```shell
+curl localhost:9000/akka/v1.0/entity/customer/002/create \
+  --header "Content-Type: application/json" \
+  -XPOST \
+  --data '{"customerId":"002","email":"test@example.com","name":"Test Testsson II","address":{"street":"Teststreet 25", "city":"New City Test"}}'
+```
+
 
 ```shell
-curl localhost:9000/akka/v1.0/entity/customer/one/getCustomer
+curl localhost:9000/akka/v1.0/entity/customer/003/create \
+  --header "Content-Type: application/json" \
+  -XPOST \
+  --data '{"customerId":"003","email":"test@example.com","name":"Test Testsson III","address":{"street":"Teststreet 25", "city":"New York City Test"}}'
+```
+
+* Retrieve the customers:
+
+```shell
+curl localhost:9000/akka/v1.0/entity/customer/001/getCustomer 
+```
+
+```shell
+curl localhost:9000/akka/v1.0/entity/customer/002/getCustomer
+```
+
+```shell
+curl localhost:9000/akka/v1.0/entity/customer/003/getCustomer
 ```
 
 * Query by name with a wrapped result:
 
 ```shell
-curl localhost:9000/wrapped/by_name/Test%20Testsson
+curl localhost:9000/akka/v1.0/view/customers_by_name/getCustomers \
+  --header "Content-Type: application/json" \
+  -XPOST \
+  --data '{"name":"Test Testsson"}'
 ```
 
 * Query by name with a response using a summary:
 
 ```shell
-curl localhost:9000/summary/by_name/Test%20Testsson
+curl localhost:9000/akka/v1.0/view/summary_customer_by_name/getCustomer \
+  --header "Content-Type: application/json" \
+  -XPOST \
+  --data '{"name":"Test Testsson"}'
+```
+
+* Query by cities
+```shell
+curl localhost:9000/akka/v1.0/view/customers_by_city/getCustomers \
+  --header "Content-Type: application/json" \
+  -XPOST  \
+  --data '{ "cities": ["City Test", "New City Test"]}'
 ```
 
 ## Deploying

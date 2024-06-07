@@ -1,17 +1,16 @@
 package customer.views;
 
-import kalix.javasdk.view.View;
 import kalix.javasdk.annotations.Acl;
 import kalix.javasdk.annotations.Query;
 import kalix.javasdk.annotations.Subscribe;
 import kalix.javasdk.annotations.Table;
+import kalix.javasdk.annotations.ViewId;
+import kalix.javasdk.view.View;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import reactor.core.publisher.Flux;
 
 // tag::view[]
+@ViewId("customers_by_name")
 @Table("customers_by_name")
 @Subscribe.Stream( // <1>
     service = "customer-registry", // <2>
@@ -42,10 +41,12 @@ public class CustomersByNameView extends View<Customer> {
     return effects().updateState(updated);
   }
 
-  @GetMapping("/customers/by_name/{name}")
-  @Query("SELECT * FROM customers_by_name WHERE name = :name")
+  public record QueryParameters(String name) {
+  }
+  
+  @Query("SELECT * as customers FROM customers_by_name WHERE name = :name")
   @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
-  public Flux<Customer> findByName(@PathVariable String name) {
+  public CustomersList findByName(QueryParameters params) {
     return null;
   }
 

@@ -4,6 +4,8 @@
 
 package kalix.javasdk.impl
 
+import scala.jdk.CollectionConverters.CollectionHasAsScala
+
 import com.google.protobuf.Descriptors.FieldDescriptor
 import com.google.protobuf.Descriptors.FieldDescriptor.JavaType
 import com.google.protobuf.timestamp.Timestamp
@@ -11,15 +13,19 @@ import kalix.JwtMethodOptions.JwtMethodMode
 import kalix.JwtServiceOptions.JwtServiceMode
 import kalix.spring.testmodels.subscriptions.PubSubTestModels.EventStreamSubscriptionView
 import kalix.spring.testmodels.subscriptions.PubSubTestModels.SubscribeOnTypeToEventSourcedEvents
-import kalix.spring.testmodels.view.ViewTestModels.IllDefineUserByEmailWithStreamUpdates
 import kalix.spring.testmodels.view.ViewTestModels.MultiTableViewValidation
 import kalix.spring.testmodels.view.ViewTestModels.MultiTableViewWithDuplicatedESSubscriptions
 import kalix.spring.testmodels.view.ViewTestModels.MultiTableViewWithDuplicatedVESubscriptions
+import kalix.spring.testmodels.view.ViewTestModels.MultiTableViewWithEmptyViewId
 import kalix.spring.testmodels.view.ViewTestModels.MultiTableViewWithJoinQuery
 import kalix.spring.testmodels.view.ViewTestModels.MultiTableViewWithMultipleQueries
+import kalix.spring.testmodels.view.ViewTestModels.MultiTableViewWithTableName
+import kalix.spring.testmodels.view.ViewTestModels.MultiTableViewWithViewIdInInnerView
 import kalix.spring.testmodels.view.ViewTestModels.MultiTableViewWithoutQuery
+import kalix.spring.testmodels.view.ViewTestModels.MultiTableViewWithoutViewId
 import kalix.spring.testmodels.view.ViewTestModels.SubscribeToEventSourcedEvents
 import kalix.spring.testmodels.view.ViewTestModels.SubscribeToEventSourcedEventsWithMethodWithState
+import kalix.spring.testmodels.view.ViewTestModels.SubscribeToEventSourcedWithMissingHandlerState
 import kalix.spring.testmodels.view.ViewTestModels.TimeTrackerView
 import kalix.spring.testmodels.view.ViewTestModels.TopicSubscriptionView
 import kalix.spring.testmodels.view.ViewTestModels.TopicTypeLevelSubscriptionView
@@ -30,16 +36,12 @@ import kalix.spring.testmodels.view.ViewTestModels.TransformedUserViewWithMethod
 import kalix.spring.testmodels.view.ViewTestModels.TransformedViewWithoutSubscriptionOnMethodLevel
 import kalix.spring.testmodels.view.ViewTestModels.TypeLevelSubscribeToEventSourcedEventsWithState
 import kalix.spring.testmodels.view.ViewTestModels.UserByEmailWithCollectionReturn
-import kalix.spring.testmodels.view.ViewTestModels.UserByEmailWithGet
-import kalix.spring.testmodels.view.ViewTestModels.UserByEmailWithPost
-import kalix.spring.testmodels.view.ViewTestModels.UserByEmailWithPostRequestBodyOnly
-import kalix.spring.testmodels.view.ViewTestModels.UserByEmailWithStreamUpdates
-import kalix.spring.testmodels.view.ViewTestModels.UserByNameEmailWithPost
-import kalix.spring.testmodels.view.ViewTestModels.UserByNameStreamed
 import kalix.spring.testmodels.view.ViewTestModels.ViewDuplicatedESSubscriptions
 import kalix.spring.testmodels.view.ViewTestModels.ViewDuplicatedHandleDeletesAnnotations
 import kalix.spring.testmodels.view.ViewTestModels.ViewDuplicatedVESubscriptions
 import kalix.spring.testmodels.view.ViewTestModels.ViewHandleDeletesWithParam
+import kalix.spring.testmodels.view.ViewTestModels.ViewWithEmptyTableAnnotation
+import kalix.spring.testmodels.view.ViewTestModels.ViewWithEmptyViewIdAnnotation
 import kalix.spring.testmodels.view.ViewTestModels.ViewWithHandleDeletesFalseOnMethodLevel
 import kalix.spring.testmodels.view.ViewTestModels.ViewWithMethodLevelAcl
 import kalix.spring.testmodels.view.ViewTestModels.ViewWithNoQuery
@@ -48,13 +50,10 @@ import kalix.spring.testmodels.view.ViewTestModels.ViewWithServiceLevelJWT
 import kalix.spring.testmodels.view.ViewTestModels.ViewWithSubscriptionsInMixedLevels
 import kalix.spring.testmodels.view.ViewTestModels.ViewWithSubscriptionsInMixedLevelsHandleDelete
 import kalix.spring.testmodels.view.ViewTestModels.ViewWithTwoQueries
-import kalix.spring.testmodels.view.ViewTestModels.ViewWithoutEmptyTableAnnotation
 import kalix.spring.testmodels.view.ViewTestModels.ViewWithoutSubscriptionButWithHandleDelete
 import kalix.spring.testmodels.view.ViewTestModels.ViewWithoutTableAnnotation
+import kalix.spring.testmodels.view.ViewTestModels.ViewWithoutViewIdAnnotation
 import org.scalatest.wordspec.AnyWordSpec
-import scala.jdk.CollectionConverters.CollectionHasAsScala
-
-import kalix.spring.testmodels.view.ViewTestModels.SubscribeToEventSourcedWithMissingHandlerState
 
 class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuite {
 
@@ -82,19 +81,6 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
       }
     }
 
-    "generate query with stream updates enabled" in {
-      assertDescriptor[UserByEmailWithStreamUpdates] { desc =>
-        val queryMethodOptions = this.findKalixMethodOptions(desc, "GetUser")
-        queryMethodOptions.getView.getQuery.getQuery shouldBe "SELECT * FROM users_view WHERE email = :email"
-        queryMethodOptions.getView.getJsonSchema.getOutput shouldBe "User"
-        queryMethodOptions.getView.getJsonSchema.getJsonBodyInputField shouldBe "json_body"
-        queryMethodOptions.getView.getJsonSchema.getInput shouldBe "ByEmail"
-
-        val streamUpdates = queryMethodOptions.getView.getQuery.getStreamUpdates
-        streamUpdates shouldBe true
-      }
-    }
-
     "generate query with collection return type" in {
       assertDescriptor[UserByEmailWithCollectionReturn] { desc =>
         val queryMethodOptions = this.findKalixMethodOptions(desc, "GetUser")
@@ -106,11 +92,6 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
       }
     }
 
-    "fail when using stream updates in unary methods" in {
-      intercept[InvalidComponentException] {
-        Validations.validate(classOf[IllDefineUserByEmailWithStreamUpdates]).failIfInvalid
-      }.getMessage should include("@Query.streamUpdates can only be enabled in stream methods returning Flux")
-    }
   }
 
   "View descriptor factory (for Value Entity)" should {
@@ -123,8 +104,20 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
 
     "not allow View with empty Table name" in {
       intercept[InvalidComponentException] {
-        Validations.validate(classOf[ViewWithoutEmptyTableAnnotation]).failIfInvalid
+        Validations.validate(classOf[ViewWithEmptyTableAnnotation]).failIfInvalid
       }.getMessage should include("@Table name is empty, must be a non-empty string.")
+    }
+
+    "not allow View without ViewId annotation" in {
+      intercept[InvalidComponentException] {
+        Validations.validate(classOf[ViewWithoutViewIdAnnotation]).failIfInvalid
+      }.getMessage should include("A View should be annotated with @ViewId.")
+    }
+
+    "not allow View with empty ViewId" in {
+      intercept[InvalidComponentException] {
+        Validations.validate(classOf[ViewWithEmptyViewIdAnnotation]).failIfInvalid
+      }.getMessage should include("@ViewId name is empty, must be a non-empty string.")
     }
 
     "not allow @Subscribe annotations in mixed levels" in {
@@ -182,7 +175,7 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
         "Ambiguous handlers for kalix.spring.testmodels.valueentity.User, methods: [onChange, onChange2] consume the same type.")
     }
 
-    "generate proto for a View using POST request with explicit update method" in {
+    "generate proto for a View with explicit update method" in {
       assertDescriptor[TransformedUserView] { desc =>
 
         val methodOptions = this.findKalixMethodOptions(desc, "OnChange")
@@ -205,7 +198,7 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
         tableMessageDescriptor should not be null
 
         val rule = findHttpRule(desc, "GetUser")
-        rule.getPost shouldBe "/users/by-email"
+        rule.getPost shouldBe "/akka/v1.0/view/users_view/getUser"
       }
 
     }
@@ -241,7 +234,7 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
       }
     }
 
-    "generate proto for a View using POST request with explicit update method and method level JWT annotation" in {
+    "generate proto for a View with explicit update method and method level JWT annotation" in {
       assertDescriptor[TransformedUserViewWithMethodLevelJWT] { desc =>
 
         val methodOptions = this.findKalixMethodOptions(desc, "OnChange")
@@ -262,7 +255,7 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
         tableMessageDescriptor should not be null
 
         val rule = findHttpRule(desc, "GetUser")
-        rule.getPost shouldBe "/users/by-email"
+        rule.getPost shouldBe "/akka/v1.0/view/users_view/getUser"
 
         val method = desc.commandHandlers("GetUser")
         val jwtOption = findKalixMethodOptions(desc, method.grpcMethodName).getJwt
@@ -295,7 +288,7 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
       }
     }
 
-    "generate proto for a View using POST request with explicit update method that also receives the current state" in {
+    "generate proto for a View request with explicit update method that also receives the current state" in {
       assertDescriptor[TransformedUserViewUsingState] { desc =>
         val methodOptions = this.findKalixMethodOptions(desc, "OnChange")
         val entityType = methodOptions.getEventing.getIn.getValueEntity
@@ -315,150 +308,10 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
         tableMessageDescriptor should not be null
 
         val rule = findHttpRule(desc, "GetUser")
-        rule.getPost shouldBe "/users/by-email"
+        rule.getPost shouldBe "/akka/v1.0/view/users_view/getUser"
 
         val javaMethod = desc.commandHandlers("OnChange").methodInvokers.values.head
         javaMethod.parameterExtractors.length shouldBe 1
-      }
-    }
-
-    "generate proto for a View using POST request" in {
-      assertDescriptor[UserByEmailWithPost] { desc =>
-        val methodOptions = this.findKalixMethodOptions(desc, "OnChange")
-        val entityType = methodOptions.getEventing.getIn.getValueEntity
-        entityType shouldBe "user"
-
-        methodOptions.getView.getUpdate.getTable shouldBe "users_view"
-        methodOptions.getView.getUpdate.getTransformUpdates shouldBe false
-        // check json input schema:  ByEmail
-        methodOptions.getView.getJsonSchema.getOutput shouldBe "User"
-
-        val queryMethodOptions = this.findKalixMethodOptions(desc, "GetUser")
-        queryMethodOptions.getView.getQuery.getQuery shouldBe "SELECT * FROM users_view WHERE email = :email"
-        queryMethodOptions.getView.getJsonSchema.getOutput shouldBe "User"
-        queryMethodOptions.getView.getJsonSchema.getJsonBodyInputField shouldBe "json_body"
-        queryMethodOptions.getView.getJsonSchema.getInput shouldBe "ByEmail"
-
-        val tableMessageDescriptor = desc.fileDescriptor.findMessageTypeByName("User")
-        tableMessageDescriptor should not be null
-
-        val rule = findHttpRule(desc, "GetUser")
-        rule.getPost shouldBe "/users/by-email"
-      }
-    }
-
-    "generate proto for a View using POST request with path param " in {
-      assertDescriptor[UserByNameEmailWithPost] { desc =>
-        val methodOptions = this.findKalixMethodOptions(desc, "OnChange")
-        methodOptions.getEventing.getIn.getValueEntity shouldBe "user"
-        methodOptions.getEventing.getIn.getHandleDeletes shouldBe false
-
-        val deleteMethodOptions = this.findKalixMethodOptions(desc, "OnDelete")
-        deleteMethodOptions.getEventing.getIn.getValueEntity shouldBe "user"
-        deleteMethodOptions.getEventing.getIn.getHandleDeletes shouldBe true
-
-        methodOptions.getView.getUpdate.getTable shouldBe "users_view"
-        methodOptions.getView.getUpdate.getTransformUpdates shouldBe false
-        methodOptions.getView.getJsonSchema.getOutput shouldBe "User"
-        // check json input schema:  ByEmail
-
-        val queryMethodOptions = this.findKalixMethodOptions(desc, "GetUser")
-        queryMethodOptions.getView.getQuery.getQuery shouldBe "SELECT * FROM users_view WHERE email = :email"
-        queryMethodOptions.getView.getJsonSchema.getOutput shouldBe "User"
-        queryMethodOptions.getView.getJsonSchema.getJsonBodyInputField shouldBe "json_body"
-        queryMethodOptions.getView.getJsonSchema.getInput shouldBe "ByEmail"
-
-        desc.fileDescriptor.findMessageTypeByName("User") should not be null
-        desc.fileDescriptor.findMessageTypeByName("ByEmail") should not be null
-
-        val rule = findHttpRule(desc, "GetUser")
-        rule.getPost shouldBe "/users/{name}/by-email"
-      }
-    }
-
-    "generate proto for a View using GET request with path param" in {
-      assertDescriptor[UserByEmailWithGet] { desc =>
-        val methodOptions = this.findKalixMethodOptions(desc, "OnChange")
-        val entityType = methodOptions.getEventing.getIn.getValueEntity
-        entityType shouldBe "user"
-
-        methodOptions.getView.getUpdate.getTable shouldBe "users_view"
-        methodOptions.getView.getUpdate.getTransformUpdates shouldBe false
-        methodOptions.getView.getJsonSchema.getOutput shouldBe "User"
-
-        val getUserMethod = desc.commandHandlers("GetUser")
-        assertRequestFieldNumberAndJavaType(getUserMethod, "email", 2, JavaType.STRING)
-
-        val queryMethodOptions = this.findKalixMethodOptions(desc, "GetUser")
-        queryMethodOptions.getView.getQuery.getQuery shouldBe "SELECT * FROM users_view WHERE email = :email"
-        queryMethodOptions.getView.getJsonSchema.getOutput shouldBe "User"
-        // not defined when query body not used
-        queryMethodOptions.getView.getJsonSchema.getJsonBodyInputField shouldBe ""
-        queryMethodOptions.getView.getJsonSchema.getInput shouldBe ""
-
-        val tableMessageDescriptor =
-          desc.fileDescriptor.findMessageTypeByName("User")
-        tableMessageDescriptor should not be null
-
-        val rule = findHttpRule(desc, "GetUser")
-        rule.getGet shouldBe "/users/{email}"
-      }
-    }
-
-    "generate proto for a View using POST request with only request body" in {
-      assertDescriptor[UserByEmailWithPostRequestBodyOnly] { desc =>
-        val methodOptions = this.findKalixMethodOptions(desc, "OnChange")
-        val entityType = methodOptions.getEventing.getIn.getValueEntity
-        entityType shouldBe "user"
-
-        methodOptions.getView.getUpdate.getTable shouldBe "users_view"
-        methodOptions.getView.getUpdate.getTransformUpdates shouldBe false
-        // check json input schema:  ByEmail
-        methodOptions.getView.getJsonSchema.getOutput shouldBe "User"
-
-        val queryMethodOptions = this.findKalixMethodOptions(desc, "GetUser")
-        queryMethodOptions.getView.getQuery.getQuery shouldBe "SELECT * FROM users_view WHERE email = :email"
-        queryMethodOptions.getView.getJsonSchema.getOutput shouldBe "User"
-        queryMethodOptions.getView.getJsonSchema.getJsonBodyInputField shouldBe "json_body"
-        // based on the body parameter type class name
-        queryMethodOptions.getView.getJsonSchema.getInput shouldBe "ByEmail"
-
-        val tableMessageDescriptor =
-          desc.fileDescriptor.findMessageTypeByName("User")
-        tableMessageDescriptor should not be null
-
-        val rule = findHttpRule(desc, "GetUser")
-        rule.getPost shouldBe "/users/by-email"
-      }
-    }
-
-    "generate proto for a View using GET request with path param and returning stream" in {
-      assertDescriptor[UserByNameStreamed] { desc =>
-        val methodOptions = this.findKalixMethodOptions(desc, "OnChange")
-        val entityType = methodOptions.getEventing.getIn.getValueEntity
-        entityType shouldBe "user"
-
-        methodOptions.getView.getUpdate.getTable shouldBe "users_view"
-        methodOptions.getView.getUpdate.getTransformUpdates shouldBe false
-        methodOptions.getView.getJsonSchema.getOutput shouldBe "User"
-
-        val methodDescriptor = desc.serviceDescriptor.findMethodByName("GetUser")
-        methodDescriptor.isServerStreaming shouldBe true
-
-        val queryMethodOptions = this.findKalixMethodOptions(desc, "GetUser")
-        queryMethodOptions.getView.getQuery.getQuery shouldBe "SELECT * FROM users_view WHERE name = :name"
-        queryMethodOptions.getView.getJsonSchema.getOutput shouldBe "User"
-        // not defined when query body not used
-        queryMethodOptions.getView.getJsonSchema.getJsonBodyInputField shouldBe ""
-        queryMethodOptions.getView.getJsonSchema.getInput shouldBe ""
-
-        val tableMessageDescriptor =
-          desc.fileDescriptor.findMessageTypeByName("User")
-        tableMessageDescriptor should not be null
-
-        val rule = findHttpRule(desc, "GetUser")
-        rule.getGet shouldBe "/users/{name}"
-
       }
     }
 
@@ -475,7 +328,7 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
 
   "View descriptor factory (for Event Sourced Entity)" should {
 
-    "generate proto for a View using POST request" in {
+    "generate proto for a View" in {
       assertDescriptor[SubscribeToEventSourcedEvents] { desc =>
 
         val methodOptions = this.findKalixMethodOptions(desc, "KalixSyntheticMethodOnESEmployee")
@@ -489,18 +342,17 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
         queryMethodOptions.getView.getQuery.getQuery shouldBe "SELECT * FROM employees_view WHERE email = :email"
         queryMethodOptions.getView.getJsonSchema.getOutput shouldBe "Employee"
         // not defined when query body not used
-        queryMethodOptions.getView.getJsonSchema.getJsonBodyInputField shouldBe ""
-        queryMethodOptions.getView.getJsonSchema.getInput shouldBe ""
+        queryMethodOptions.getView.getJsonSchema.getInput shouldBe "ByEmail"
 
         val tableMessageDescriptor = desc.fileDescriptor.findMessageTypeByName("Employee")
         tableMessageDescriptor should not be null
 
         val rule = findHttpRule(desc, "GetEmployeeByEmail")
-        rule.getPost shouldBe "/employees/by-email/{email}"
+        rule.getPost shouldBe "/akka/v1.0/view/users_view/getEmployeeByEmail"
       }
     }
 
-    "generate proto for a View using POST request with subscription method accepting state" in {
+    "generate proto for a View with subscription method accepting state" in {
       assertDescriptor[SubscribeToEventSourcedEventsWithMethodWithState] { desc =>
 
         val methodOptions = this.findKalixMethodOptions(desc, "KalixSyntheticMethodOnESEmployee")
@@ -515,14 +367,13 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
         queryMethodOptions.getView.getQuery.getQuery shouldBe "SELECT * FROM employees_view WHERE email = :email"
         queryMethodOptions.getView.getJsonSchema.getOutput shouldBe "Employee"
         // not defined when query body not used
-        queryMethodOptions.getView.getJsonSchema.getJsonBodyInputField shouldBe ""
-        queryMethodOptions.getView.getJsonSchema.getInput shouldBe ""
+        queryMethodOptions.getView.getJsonSchema.getInput shouldBe "ByEmail"
 
         val tableMessageDescriptor = desc.fileDescriptor.findMessageTypeByName("Employee")
         tableMessageDescriptor should not be null
 
         val rule = findHttpRule(desc, "GetEmployeeByEmail")
-        rule.getPost shouldBe "/employees/by-email/{email}"
+        rule.getPost shouldBe "/akka/v1.0/view/users_view/getEmployeeByEmail"
       }
     }
 
@@ -578,6 +429,30 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
       }.getMessage should include("@Table name is empty, must be a non-empty string.")
     }
 
+    "not allow MultiTable View without ViewId annotation" in {
+      intercept[InvalidComponentException] {
+        Validations.validate(classOf[MultiTableViewWithoutViewId]).failIfInvalid
+      }.getMessage should include("A View should be annotated with @ViewId.")
+    }
+
+    "not allow MultiTable View with empty ViewId" in {
+      intercept[InvalidComponentException] {
+        Validations.validate(classOf[MultiTableViewWithEmptyViewId]).failIfInvalid
+      }.getMessage should include("@ViewId name is empty, must be a non-empty string.")
+    }
+
+    "not allow MultiTable View with inner views with ViewId annotation" in {
+      intercept[InvalidComponentException] {
+        Validations.validate(classOf[MultiTableViewWithViewIdInInnerView]).failIfInvalid
+      }.getMessage should include("A nested View should not be annotated with @ViewId.")
+    }
+
+    "not allow MultiTable View with Table annotation" in {
+      intercept[InvalidComponentException] {
+        Validations.validate(classOf[MultiTableViewWithTableName]).failIfInvalid
+      }.getMessage should include("A multi-table View should not be annotated with @Table.")
+    }
+
     "not allow @Subscribe annotations in mixed levels on a ViewTable" in {
       intercept[InvalidComponentException] {
         Validations.validate(classOf[MultiTableViewValidation.ViewTableWithMixedLevelSubscriptions]).failIfInvalid
@@ -619,11 +494,11 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
             |""".stripMargin)
         queryMethodOptions.getView.getJsonSchema.getOutput shouldBe "EmployeeCounters"
         // not defined when query body not used
-        queryMethodOptions.getView.getJsonSchema.getJsonBodyInputField shouldBe ""
-        queryMethodOptions.getView.getJsonSchema.getInput shouldBe ""
+//        queryMethodOptions.getView.getJsonSchema.getJsonBodyInputField shouldBe ""
+        queryMethodOptions.getView.getJsonSchema.getInput shouldBe "ByEmail"
 
         val queryHttpRule = findHttpRule(desc, "Get")
-        queryHttpRule.getGet shouldBe "/employee-counters-by-email/{email}"
+        queryHttpRule.getPost shouldBe "/akka/v1.0/view/multi-table-view-with-join-query/get"
 
         val employeeCountersMessage = desc.fileDescriptor.findMessageTypeByName("EmployeeCounters")
         employeeCountersMessage should not be null

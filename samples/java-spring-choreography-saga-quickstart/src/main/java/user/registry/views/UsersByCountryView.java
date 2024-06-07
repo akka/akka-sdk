@@ -7,8 +7,6 @@ import kalix.javasdk.annotations.ViewId;
 import kalix.javasdk.view.View;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import user.registry.domain.User;
 import user.registry.entity.UserEntity;
 
@@ -33,9 +31,11 @@ public class UsersByCountryView extends View<UsersByCountryView.UserView> {
   public record UserList(List<UserView> users) {
   }
 
-  @GetMapping("/users/by-country/{country}")
+  public record QueryParameters(String country) {
+  }
+
   @Query("SELECT * AS users FROM users_by_country WHERE country = :country")
-  public UserList getUserByCountry(@PathVariable String country) {
+  public UserList getUserByCountry(QueryParameters params) {
     return null;
   }
 

@@ -10,6 +10,7 @@
     </appender>
 
     <logger name="akka" level="WARN"/>
+    <logger name="kalix.javasdk.impl.ProtoDescriptorGenerator" level="DEBUG"/>
 
     <!-- Silence some details from Akka, should not be important to user/SDK dev mode -->
     <root level="INFO">

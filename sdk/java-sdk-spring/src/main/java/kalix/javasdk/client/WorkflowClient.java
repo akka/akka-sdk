@@ -9,7 +9,6 @@ import akka.japi.function.Function2;
 import kalix.javasdk.workflow.Workflow;
 import kalix.spring.impl.KalixClient;
 
-import java.util.List;
 import java.util.Optional;
 
 public class WorkflowClient {
@@ -22,19 +21,18 @@ public class WorkflowClient {
     this.workflowId = workflowId;
   }
 
-
   /**
    * Pass in a Workflow method reference annotated as a REST endpoint, e.g. <code>MyWorkflow::start</code>
    */
   public <T, R> ComponentMethodRef<R> method(Function<T, Workflow.Effect<R>> methodRef) {
-    return new ComponentMethodRef<>(kalixClient, methodRef, workflowId, Optional.empty());
+    return new ComponentMethodRef<>(kalixClient, methodRef, Optional.of(workflowId), Optional.empty());
   }
 
   /**
    * Pass in a Workflow method reference annotated as a REST endpoint, e.g. <code>MyWorkflow::start</code>
    */
   public <T, A1, R> ComponentMethodRef1<A1, R> method(Function2<T, A1, Workflow.Effect<R>> methodRef) {
-    return new ComponentMethodRef1<>(kalixClient, methodRef, List.of(workflowId), Optional.empty());
+    return new ComponentMethodRef1<>(kalixClient, methodRef, Optional.of(workflowId), Optional.empty());
   }
 
 

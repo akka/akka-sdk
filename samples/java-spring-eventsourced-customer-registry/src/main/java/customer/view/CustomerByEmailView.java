@@ -7,16 +7,16 @@ import kalix.javasdk.annotations.Subscribe;
 import kalix.javasdk.annotations.Table;
 import kalix.javasdk.annotations.ViewId;
 import kalix.javasdk.view.View;
-import org.springframework.web.bind.annotation.GetMapping;
-import reactor.core.publisher.Flux;
 
 @ViewId("view_customers_by_email")
 @Table("customers_by_email")
 public class CustomerByEmailView extends View<CustomerView> {
 
-  @GetMapping("/customer/by_email/{email}")
-  @Query("SELECT * FROM customers_by_email WHERE email = :email")
-  public Flux<CustomerView> getCustomer(String email) {
+  public record QueryParameters(String email) {
+  }
+
+  @Query("SELECT * as customers FROM customers_by_email WHERE email = :email")
+  public CustomersList getCustomer(QueryParameters params) {
     return null;
   }
 

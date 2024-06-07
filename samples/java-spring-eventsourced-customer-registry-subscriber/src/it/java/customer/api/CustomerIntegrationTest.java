@@ -4,8 +4,11 @@ package customer.api;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import customer.actions.CustomerRegistryAction;
-import customer.views.Customer;
+import customer.views.CustomersByNameView;
 import kalix.javasdk.JsonSupport;
+import kalix.javasdk.client.ComponentClient;
+import kalix.spring.testkit.AsyncCallsSupport;
+import org.awaitility.Awaitility;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -26,7 +29,6 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
-import static org.awaitility.Awaitility.await;
 
 /**
  * This test exercises the integration between the current service (customer-registry-subscriber) and the customer-registry service.
@@ -44,11 +46,12 @@ import static org.awaitility.Awaitility.await;
  * - resolution of service port mappings passed to kalix-runtime allows for service to service streaming (eg: customer view is updated in subscriber service)
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class CustomerIntegrationTest {
+public class CustomerIntegrationTest extends AsyncCallsSupport {
 
   final private Duration timeout = Duration.of(5, SECONDS);
 
   // FIXME integration test support for starting another service as a prerequisite - would still be docker?
+  private ComponentClient componentClient;
 
   public CustomerIntegrationTest(ApplicationContext applicationContext) {
     Map<String, Object> confMap = new HashMap<>();
@@ -95,7 +98,7 @@ public class CustomerIntegrationTest {
         .build();
 
     // wait until customer service is up
-    await()
+    Awaitility.await()
       .ignoreExceptions()
       .pollInterval(5, TimeUnit.SECONDS)
       .atMost(5, TimeUnit.MINUTES)
@@ -114,41 +117,38 @@ public class CustomerIntegrationTest {
   public void create()  {
 
     createClient("http://localhost:9000");
-    WebClient localWebClient = createClient("http://localhost:9001");
 
     // start the real test now  
     String id = UUID.randomUUID().toString();
     CustomerRegistryAction.Customer customer = new CustomerRegistryAction.Customer("foo@example.com", "Johanna", new CustomerRegistryAction.Address("street", "city"));
 
         // try until it succeeds
-    await()
+    Awaitility.await()
       .ignoreExceptions()
       .pollInterval(5, TimeUnit.SECONDS)
       .atMost(60, TimeUnit.SECONDS)
       .until(() ->
-        localWebClient.post()
-        .uri("/customer/" + id + "/create")
-        .bodyValue(customer)
-        .retrieve()
-        .bodyToMono(CustomerRegistryAction.Confirm.class)
-        .block(timeout).msg(),
+        await(
+          componentClient.forAction()
+            .method(CustomerRegistryAction::create)
+            .deferred(id, customer).invokeAsync()
+        ).msg(),
         new IsEqual<>("done")
       );
 
 
     // the view is eventually updated
     // on this service (updated via s2s streaming)
-    await()
+    Awaitility.await()
       .ignoreExceptions()
       .pollInterval(5, TimeUnit.SECONDS)
       .atMost(60, TimeUnit.SECONDS)
       .until(() ->
-          localWebClient.get()
-            .uri("/customers/by_name/Johanna")
-            .retrieve()
-            .bodyToFlux(Customer.class)
-            .blockFirst()
-            .name(),
+          await(
+            componentClient.forView()
+              .method(CustomersByNameView::findByName)
+              .invokeAsync(new CustomersByNameView.QueryParameters("Johanna"))
+          ).customers().stream().findFirst().get().name(),
         new IsEqual("Johanna")
       );
   }

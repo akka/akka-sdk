@@ -14,9 +14,8 @@ import kalix.javasdk.view.View;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Profile;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import reactor.core.publisher.Flux;
+
+import java.util.List;
 
 import static com.example.wiring.pubsub.PublishESToTopic.COUNTER_EVENTS_TOPIC;
 import static kalix.javasdk.impl.MetadataImpl.CeSubject;
@@ -30,14 +29,16 @@ public class ViewFromCounterEventsTopic extends View<CounterView> {
 
   private Logger logger = LoggerFactory.getLogger(getClass());
 
+  public record QueryParameters(int counterValue) {}
+  public record CounterViewList(List<CounterView> counters) {}
+
   @Override
   public CounterView emptyState() {
     return new CounterView("", 0);
   }
 
-  @GetMapping("/counter-view-topic-sub/less-then/{counterValue}")
-  @Query("SELECT * FROM counter_view_topic_sub WHERE value < :counterValue")
-  public Flux<CounterView> getCounter(@PathVariable int counterValue) {
+  @Query("SELECT * AS counters FROM counter_view_topic_sub WHERE value < :counterValue")
+  public CounterViewList getCounter(QueryParameters params) {
     return null;
   }
 

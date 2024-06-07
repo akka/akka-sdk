@@ -9,6 +9,7 @@ import kalix.javasdk.annotations.Query;
 import kalix.javasdk.annotations.Subscribe;
 import kalix.javasdk.annotations.Table;
 import kalix.javasdk.annotations.TypeId;
+import kalix.javasdk.annotations.ViewId;
 import kalix.javasdk.eventsourcedentity.EventSourcedEntity;
 import kalix.javasdk.valueentity.ValueEntity;
 import kalix.javasdk.view.View;
@@ -54,12 +55,15 @@ public class NotPublicComponents {
     }
   }
 
+  @ViewId("users_view")
   @Table(value = "users_view")
   @Subscribe.ValueEntity(UserEntity.class)
   static class NotPublicView extends View<User> {
+
+    public record QueryParameters(String email) {}
+
     @Query("SELECT * FROM users_view WHERE email = :email")
-    @GetMapping("/users/{email}")
-    public User getUser(@PathVariable String email) {
+    public User getUser(QueryParameters email) {
       return null;
     }
   }

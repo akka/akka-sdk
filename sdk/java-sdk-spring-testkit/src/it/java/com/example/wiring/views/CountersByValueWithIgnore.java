@@ -4,26 +4,33 @@
 
 package com.example.wiring.views;
 
-import com.example.wiring.eventsourcedentities.counter.*;
-import kalix.javasdk.view.View;
+import com.example.wiring.eventsourcedentities.counter.Counter;
+import com.example.wiring.eventsourcedentities.counter.CounterEntity;
+import com.example.wiring.eventsourcedentities.counter.CounterEvent;
 import kalix.javasdk.annotations.Query;
 import kalix.javasdk.annotations.Subscribe;
 import kalix.javasdk.annotations.Table;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
+import kalix.javasdk.annotations.ViewId;
+import kalix.javasdk.view.View;
 
+@ViewId("counters_by_value_with_ignore")
 @Table("counters_by_value_with_ignore")
 @Subscribe.EventSourcedEntity(value = CounterEntity.class, ignoreUnknown = true)
 public class CountersByValueWithIgnore extends View<Counter> {
+
+  public record QueryParameters(Integer value) {}
+
+  public static QueryParameters queryParam(Integer value) {
+    return new QueryParameters(value);
+  }
 
   @Override
   public Counter emptyState() {
     return new Counter(0);
   }
 
-  @GetMapping("/counters-ignore/by-value-with-ignore/{value}")
   @Query("SELECT * FROM counters_by_value_with_ignore WHERE value = :value")
-  public Counter getCounterByValue(@PathVariable Integer value) {
+  public Counter getCounterByValue(QueryParameters params) {
     return null;
   }
 

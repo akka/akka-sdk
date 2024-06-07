@@ -10,7 +10,6 @@ import kalix.javasdk.Metadata;
 import kalix.javasdk.eventsourcedentity.EventSourcedEntity;
 import kalix.spring.impl.KalixClient;
 
-import java.util.List;
 import java.util.Optional;
 
 public class EventSourcedEntityClient {
@@ -27,14 +26,14 @@ public class EventSourcedEntityClient {
   }
 
   public <T, R> ComponentMethodRef<R> method(Function<T, EventSourcedEntity.Effect<R>> methodRef) {
-    return new ComponentMethodRef<>(kalixClient, methodRef, entityId, callMetadata);
+    return new ComponentMethodRef<>(kalixClient, methodRef, Optional.of(entityId), callMetadata);
   }
 
   /**
    * Pass in an Event Sourced Entity method reference, e.g. <code>UserEntity::create</code>
    */
   public <T, A1, R> ComponentMethodRef1<A1, R> method(Function2<T, A1, EventSourcedEntity.Effect<R>> methodRef) {
-    return new ComponentMethodRef1<>(kalixClient, methodRef, List.of(entityId), callMetadata);
+    return new ComponentMethodRef1<>(kalixClient, methodRef, Optional.of(entityId), callMetadata);
   }
 
 

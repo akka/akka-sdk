@@ -6,15 +6,26 @@ package com.example.wiring.views;
 
 import com.example.wiring.valueentities.user.User;
 import com.example.wiring.valueentities.user.UserEntity;
-import kalix.javasdk.view.View;
 import kalix.javasdk.annotations.Query;
 import kalix.javasdk.annotations.Subscribe;
 import kalix.javasdk.annotations.Table;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
+import kalix.javasdk.annotations.ViewId;
+import kalix.javasdk.view.View;
 
+@ViewId("user_view")
 @Table("user_view")
 public class UserWithVersionView extends View<UserWithVersion> {
+
+  public record QueryParameters(String email) {}
+
+  public static QueryParameters queryParam(String email) {
+    return new QueryParameters(email);
+  }
+
+  @Query("SELECT * FROM user_view WHERE email = :email")
+  public UserWithVersion getUser(QueryParameters params) {
+    return null;
+  }
 
   @Subscribe.ValueEntity(UserEntity.class)
   public UpdateEffect<UserWithVersion> onChange(User user) {
@@ -27,9 +38,4 @@ public class UserWithVersionView extends View<UserWithVersion> {
     return effects().deleteState();
   }
 
-  @Query("SELECT * FROM user_view WHERE email = :email")
-  @GetMapping("/users/by-email/{email}")
-  public UserWithVersion getUser(@PathVariable String email) {
-    return null;
-  }
 }

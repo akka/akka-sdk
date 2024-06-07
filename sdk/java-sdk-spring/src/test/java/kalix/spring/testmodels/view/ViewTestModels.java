@@ -4,92 +4,86 @@
 
 package kalix.spring.testmodels.view;
 
-import kalix.javasdk.annotations.*;
+import kalix.javasdk.annotations.Acl;
+import kalix.javasdk.annotations.JWT;
+import kalix.javasdk.annotations.Query;
+import kalix.javasdk.annotations.Subscribe;
+import kalix.javasdk.annotations.Table;
+import kalix.javasdk.annotations.ViewId;
 import kalix.javasdk.view.View;
 import kalix.spring.testmodels.eventsourcedentity.Employee;
 import kalix.spring.testmodels.eventsourcedentity.EmployeeEvent;
 import kalix.spring.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.EmployeeEntity;
-import kalix.spring.testmodels.valueentity.*;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import reactor.core.publisher.Flux;
+import kalix.spring.testmodels.valueentity.AssignedCounter;
+import kalix.spring.testmodels.valueentity.AssignedCounterState;
+import kalix.spring.testmodels.valueentity.Counter;
+import kalix.spring.testmodels.valueentity.CounterState;
+import kalix.spring.testmodels.valueentity.TimeTrackerEntity;
+import kalix.spring.testmodels.valueentity.User;
+import kalix.spring.testmodels.valueentity.UserEntity;
 
 public class ViewTestModels {
 
-  @Table(value = "users_view")
+  // common query parameter for views in this file
+  public record ByEmail(String email) {
+  }
+
+
+  @ViewId("users_view")
+  @Table("users_view")
   @Subscribe.ValueEntity(UserEntity.class) // when types are annotated, it's implicitly a transform = false
   public static class UserByEmailWithGet extends View<User> {
 
     @Query("SELECT * FROM users_view WHERE email = :email")
-    @GetMapping("/users/{email}")
-    public User getUser(@PathVariable String email) {
+    public User getUser(ByEmail byEmail) {
       return null; // TODO: user should not implement this. we need to find a nice API for this
     }
   }
-
-  @Table(value = "users_view")
-  @Subscribe.ValueEntity(UserEntity.class) // when types are annotated, it's implicitly a transform = false
-  public static class UserByEmailWithGetWithoutAnnotation extends View<User> {
-
-    @Query("SELECT * FROM users_view WHERE email = :email")
-    @GetMapping("/users/{email}")
-    public User getUser(String email) {
-      return null;
-    }
-
-    @GetMapping("/users/{email}")
-    public User getUserWithoutQuery(String email) {
-      return null;
-    }
-  }
-
-
+  @ViewId("users_view")
   @Subscribe.ValueEntity(UserEntity.class)
   public static class ViewWithoutTableAnnotation extends View<User> {
 
     @Query("SELECT * FROM users_view WHERE email = :email")
-    @GetMapping("/users/{email}")
-    public User getUser(String email) {
+    public User getUser(ByEmail byEmail) {
       return null; // TODO: user should not implement this. we need to find a nice API for this
     }
   }
 
+  @ViewId("users_view")
   @Table(" ")
   @Subscribe.ValueEntity(UserEntity.class)
-  public static class ViewWithoutEmptyTableAnnotation extends View<User> {
+  public static class ViewWithEmptyTableAnnotation extends View<User> {
 
     @Query("SELECT * FROM users_view WHERE email = :email")
-    @GetMapping("/users/{email}")
+    public User getUser(ByEmail byEmail) {
+      return null; // TODO: user should not implement this. we need to find a nice API for this
+    }
+  }
+
+  @Table("users_view")
+  @Subscribe.ValueEntity(UserEntity.class)
+  public static class ViewWithoutViewIdAnnotation extends View<User> {
+
+
+    @Query("SELECT * FROM users_view WHERE email = :email")
+    public User getUser(ByEmail byEmail) {
+      return null; // TODO: user should not implement this. we need to find a nice API for this
+    }
+  }
+
+  @ViewId(" ")
+  @Table("users_view")
+  @Subscribe.ValueEntity(UserEntity.class)
+  public static class ViewWithEmptyViewIdAnnotation extends View<User> {
+
+    @Query("SELECT * FROM users_view WHERE email = :email")
     public User getUser(String email) {
       return null; // TODO: user should not implement this. we need to find a nice API for this
     }
   }
 
-  @Table(value = "users_view")
-  @Subscribe.ValueEntity(UserEntity.class)
-  public static class UserByEmailWithPost extends View<User> {
 
-    @Query("SELECT * FROM users_view WHERE email = :email")
-    @PostMapping("/users/by-email")
-    public User getUser(@RequestBody ByEmail byEmail) {
-      return null;
-    }
-  }
-
-  @Table(value = "users_view")
-  @Subscribe.ValueEntity(value = UserEntity.class, handleDeletes = true)
-  public static class UserByNameEmailWithPost extends View<User> {
-
-    // mixing request body and path variable
-    @Query("SELECT * FROM users_view WHERE email = :email")
-    @PostMapping("/users/{name}/by-email")
-    public User getUser(@PathVariable String name, @RequestBody ByEmail byEmail) {
-      return null;
-    }
-  }
-
+  @ViewId("users_view")
   @Table("users_view")
   public static class TransformedUserView extends View<TransformedUser> {
 
@@ -101,12 +95,12 @@ public class ViewTestModels {
     }
 
     @Query("SELECT * FROM users_view WHERE email = :email")
-    @PostMapping("/users/by-email")
-    public TransformedUser getUser(@RequestBody ByEmail byEmail) {
+    public TransformedUser getUser(ByEmail byEmail) {
       return null;
     }
   }
 
+  @ViewId("users_view")
   @Table("users_view")
   public static class TransformedUserViewWithDeletes extends View<TransformedUser> {
 
@@ -122,12 +116,12 @@ public class ViewTestModels {
     }
 
     @Query("SELECT * FROM users_view WHERE email = :email")
-    @PostMapping("/users/by-email")
-    public TransformedUser getUser(@RequestBody ByEmail byEmail) {
+    public TransformedUser getUser(ByEmail byEmail) {
       return null;
     }
   }
 
+  @ViewId("users_view")
   @Table("users_view")
   public static class TransformedUserViewWithMethodLevelJWT extends View<TransformedUser> {
 
@@ -139,7 +133,6 @@ public class ViewTestModels {
     }
 
     @Query("SELECT * FROM users_view WHERE email = :email")
-    @PostMapping("/users/by-email")
     @JWT(
         validate = JWT.JwtMethodMode.BEARER_TOKEN,
         bearerTokenIssuer = {"a", "b"},
@@ -147,11 +140,12 @@ public class ViewTestModels {
             @JWT.StaticClaim(claim = "role", value = "admin"),
             @JWT.StaticClaim(claim = "aud", value = "${ENV}.kalix.io")
         })
-    public TransformedUser getUser(@RequestBody ByEmail byEmail) {
+    public TransformedUser getUser(ByEmail byEmail) {
       return null;
     }
   }
 
+  @ViewId("users_view")
   @Table("users_view")
   @JWT(
     validate = JWT.JwtMethodMode.BEARER_TOKEN,
@@ -162,13 +156,13 @@ public class ViewTestModels {
     })
   public static class ViewWithServiceLevelJWT extends View<User> {
     @Query("SELECT * FROM users_view WHERE email = :email")
-    @PostMapping("/users/by-email")
-    public User getUser(@RequestBody ByEmail byEmail) {
+    public User getUser(ByEmail byEmail) {
       return null;
     }
   }
 
 
+  @ViewId("users_view")
   @Table("users_view")
   public static class TransformedUserViewUsingState extends View<TransformedUser> {
 
@@ -180,8 +174,7 @@ public class ViewTestModels {
     }
 
     @Query("SELECT * FROM users_view WHERE email = :email")
-    @PostMapping("/users/by-email")
-    public TransformedUser getUser(@RequestBody ByEmail byEmail) {
+    public TransformedUser getUser(ByEmail byEmail) {
       return null;
     }
   }
@@ -190,6 +183,7 @@ public class ViewTestModels {
    * This should be illegal. Either we subscribe at type level, and it's a transform = false. Or we
    * subscribe at method level, and it's a transform = true.
    */
+  @ViewId("users_view")
   @Table("users_view")
   @Subscribe.ValueEntity(UserEntity.class)
   public static class ViewWithSubscriptionsInMixedLevels extends View<TransformedUser> {
@@ -202,12 +196,12 @@ public class ViewTestModels {
     }
 
     @Query("SELECT * FROM users_view WHERE email = :email")
-    @PostMapping("/users/by-email")
-    public TransformedUser getUser(@RequestBody ByEmail byEmail) {
+    public TransformedUser getUser(ByEmail byEmail) {
       return null;
     }
   }
 
+  @ViewId("users_view")
   @Table("users_view")
   @Subscribe.ValueEntity(UserEntity.class) //it's implicitly a transform = false
   public static class TransformedViewWithoutSubscriptionOnMethodLevel extends View<TransformedUser> {
@@ -218,12 +212,12 @@ public class ViewTestModels {
     }
 
     @Query("SELECT * FROM users_view WHERE email = :email")
-    @PostMapping("/users/by-email")
-    public TransformedUser getUser(@RequestBody ByEmail byEmail) {
+    public TransformedUser getUser(ByEmail byEmail) {
       return null;
     }
   }
 
+  @ViewId("users_view")
   @Table("users_view")
   @Subscribe.ValueEntity(UserEntity.class)
   public static class ViewWithSubscriptionsInMixedLevelsHandleDelete extends View<User> {
@@ -234,12 +228,12 @@ public class ViewTestModels {
     }
 
     @Query("SELECT * FROM users_view WHERE email = :email")
-    @PostMapping("/users/by-email")
-    public User getUser(@RequestBody ByEmail byEmail) {
+    public User getUser(ByEmail byEmail) {
       return null;
     }
   }
 
+  @ViewId("users_view")
   @Table("users_view")
   public static class ViewWithoutSubscriptionButWithHandleDelete extends View<TransformedUser> {
 
@@ -249,12 +243,12 @@ public class ViewTestModels {
     }
 
     @Query("SELECT * FROM users_view WHERE email = :email")
-    @PostMapping("/users/by-email")
-    public TransformedUser getUser(@RequestBody ByEmail byEmail) {
+    public TransformedUser getUser(ByEmail byEmail) {
       return null;
     }
   }
 
+  @ViewId("users_view")
   @Table("users_view")
   public static class ViewDuplicatedHandleDeletesAnnotations extends View<TransformedUser> {
 
@@ -275,12 +269,12 @@ public class ViewTestModels {
     }
 
     @Query("SELECT * FROM users_view WHERE email = :email")
-    @PostMapping("/users/by-email")
-    public TransformedUser getUser(@RequestBody ByEmail byEmail) {
+    public TransformedUser getUser(ByEmail byEmail) {
       return null;
     }
   }
 
+  @ViewId("users_view")
   @Table("users_view")
   public static class ViewHandleDeletesWithParam extends View<TransformedUser> {
 
@@ -296,12 +290,12 @@ public class ViewTestModels {
     }
 
     @Query("SELECT * FROM users_view WHERE email = :email")
-    @PostMapping("/users/by-email")
-    public TransformedUser getUser(@RequestBody ByEmail byEmail) {
+    public TransformedUser getUser(ByEmail byEmail) {
       return null;
     }
   }
 
+  @ViewId("users_view")
   @Table("users_view")
   public static class ViewWithHandleDeletesFalseOnMethodLevel extends View<TransformedUser> {
 
@@ -317,12 +311,12 @@ public class ViewTestModels {
     }
 
     @Query("SELECT * FROM users_view WHERE email = :email")
-    @PostMapping("/users/by-email")
-    public TransformedUser getUser(@RequestBody ByEmail byEmail) {
+    public TransformedUser getUser(ByEmail byEmail) {
       return null;
     }
   }
 
+  @ViewId("users_view")
   @Table("users_view")
   public static class ViewDuplicatedVESubscriptions extends View<TransformedUser> {
 
@@ -344,12 +338,12 @@ public class ViewTestModels {
     }
 
     @Query("SELECT * FROM users_view WHERE email = :email")
-    @PostMapping("/users/by-email")
-    public TransformedUser getUser(@RequestBody ByEmail byEmail) {
+    public TransformedUser getUser(ByEmail byEmail) {
       return null;
     }
   }
 
+  @ViewId("users_view")
   @Table("users_view")
   public static class ViewDuplicatedESSubscriptions extends View<TransformedUser> {
 
@@ -371,57 +365,35 @@ public class ViewTestModels {
     }
 
     @Query("SELECT * FROM users_view WHERE email = :email")
-    @PostMapping("/users/by-email")
-    public TransformedUser getUser(@RequestBody ByEmail byEmail) {
+    public TransformedUser getUser(ByEmail byEmail) {
       return null;
     }
   }
 
+  @ViewId("users_view")
   @Table("users_view")
   @Subscribe.ValueEntity(UserEntity.class)
   public static class ViewWithNoQuery extends View<TransformedUser> {}
 
+  @ViewId("users_view")
   @Table("users_view")
   @Subscribe.ValueEntity(UserEntity.class)
   public static class ViewWithTwoQueries extends View<User> {
 
     @Query("SELECT * FROM users_view WHERE email = :email")
-    @PostMapping("/users/by-email")
-    public User getUserByEmail(@RequestBody ByEmail byEmail) {
+    public User getUserByEmail(ByEmail byEmail) {
       return null;
     }
 
     @Query("SELECT * FROM users_view WHERE email = :email AND name = :name")
-    @PostMapping("/users/{name}/by-name")
-    public User getUserByNameAndEmail(
-        @PathVariable String name, @RequestBody ByEmail byEmail) {
+    public User getUserByNameAndEmail(ByNameAndEmail byEmail) {
       return null;
     }
   }
 
-  @Table(value = "users_view")
-  @Subscribe.ValueEntity(UserEntity.class)
-  public static class UserByEmailWithPostRequestBodyOnly extends View<User> {
 
-    // not path variables, only request body
-    @Query("SELECT * FROM users_view WHERE email = :email")
-    @PostMapping("/users/by-email")
-    public User getUser(@RequestBody ByEmail byEmail) {
-      return null;
-    }
-  }
 
-  @Table(value = "users_view")
-  @Subscribe.ValueEntity(UserEntity.class)
-  public static class UserByNameStreamed extends View<User> {
-
-    @Query("SELECT * FROM users_view WHERE name = :name")
-    @GetMapping("/users/{name}")
-    public Flux<User> getUser(@PathVariable String name) {
-      return null;
-    }
-  }
-
+  @ViewId("users_view")
   @Table(value = "employees_view")
   public static class SubscribeToEventSourcedEvents extends View<Employee> {
 
@@ -437,12 +409,12 @@ public class ViewTestModels {
     }
 
     @Query("SELECT * FROM employees_view WHERE email = :email")
-    @PostMapping("/employees/by-email/{email}")
-    public Employee getEmployeeByEmail(@PathVariable String email) {
+    public Employee getEmployeeByEmail(ByEmail byEmail) {
       return null;
     }
   }
 
+  @ViewId("users_view")
   @Table(value = "employees_view")
   public static class SubscribeToEventSourcedWithMissingHandlerState extends View<Employee> {
 
@@ -453,12 +425,12 @@ public class ViewTestModels {
     }
 
     @Query("SELECT * FROM employees_view WHERE email = :email")
-    @PostMapping("/employees/by-email/{email}")
-    public Employee getEmployeeByEmail(@PathVariable String email) {
+    public Employee getEmployeeByEmail(ByEmail byEmail) {
       return null;
     }
   }
 
+  @ViewId("users_view")
   @Table(value = "employees_view")
   public static class SubscribeToEventSourcedEventsWithMethodWithState extends View<Employee> {
 
@@ -474,12 +446,12 @@ public class ViewTestModels {
     }
 
     @Query("SELECT * FROM employees_view WHERE email = :email")
-    @PostMapping("/employees/by-email/{email}")
-    public Employee getEmployeeByEmail(@PathVariable String email) {
+    public Employee getEmployeeByEmail(ByEmail byEmail) {
       return null;
     }
   }
 
+  @ViewId("users_view")
   @Table(value = "employees_view")
   @Subscribe.EventSourcedEntity(value = EmployeeEntity.class, ignoreUnknown = false)
   public static class TypeLevelSubscribeToEventSourcedEventsWithState extends View<Employee> {
@@ -490,65 +462,47 @@ public class ViewTestModels {
     }
 
     @Query("SELECT * FROM employees_view WHERE email = :email")
-    @PostMapping("/employees/by-email/{email}")
-    public Employee getEmployeeByEmail(@PathVariable String email) {
+    public Employee getEmployeeByEmail(ByEmail byEmail) {
       return null;
     }
   }
 
+  @ViewId("users_view")
   @Table(value = "employees_view")
   @Acl(allow = @Acl.Matcher(service = "test"))
   public static class ViewWithServiceLevelAcl extends View<Employee> {
+
     @Query("SELECT * FROM employees_view WHERE email = :email")
-    @PostMapping("/employees/by-email/{email}")
-    public Employee getEmployeeByEmail(@PathVariable String email) {
+    public Employee getEmployeeByEmail(ByEmail byEmail) {
       return null;
     }
   }
 
+  @ViewId("users_view")
   @Table(value = "employees_view")
   public static class ViewWithMethodLevelAcl extends View<Employee> {
+
     @Query("SELECT * FROM employees_view WHERE email = :email")
-    @PostMapping("/employees/by-email/{email}")
     @Acl(allow = @Acl.Matcher(service = "test"))
-    public Employee getEmployeeByEmail(@PathVariable String email) {
+    public Employee getEmployeeByEmail(ByEmail byEmail) {
       return null;
     }
   }
 
-  @Table(value = "users_view")
-  @Subscribe.ValueEntity(UserEntity.class)
-  public static class UserByEmailWithStreamUpdates extends View<User> {
 
-    @Query(value = "SELECT * FROM users_view WHERE email = :email", streamUpdates = true)
-    @PostMapping("/users/by-email")
-    public Flux<User> getUser(@RequestBody ByEmail byEmail) {
-      return null;
-    }
-  }
-
+  @ViewId("users_view")
   @Table(value = "users_view_collection")
   @Subscribe.ValueEntity(UserEntity.class)
   public static class UserByEmailWithCollectionReturn extends View<User> {
 
     @Query(value = "SELECT * AS users FROM users_view WHERE name = :name")
-    @PostMapping("/users/by-name/{name}")
-    public UserCollection getUser() {
+    public UserCollection getUser(ByEmail name) {
       return null;
     }
   }
 
-  @Table(value = "users_view")
-  @Subscribe.ValueEntity(UserEntity.class)
-  public static class IllDefineUserByEmailWithStreamUpdates extends View<User> {
 
-    @Query(value = "SELECT * FROM users_view WHERE email = :email", streamUpdates = true)
-    @PostMapping("/users/by-email")
-    public User getUser(@RequestBody ByEmail byEmail) {
-      return null;
-    }
-  }
-
+  @ViewId("users_view")
   public static class MultiTableViewValidation {
     @Subscribe.ValueEntity(UserEntity.class)
     public static class ViewTableWithoutTableAnnotation extends View<User> {}
@@ -570,19 +524,67 @@ public class ViewTestModels {
 
   @ViewId("multi-table-view-without-query")
   public static class MultiTableViewWithoutQuery {
+    @Table("users_view")
     public static class Users extends View<User> {}
+  }
+
+  public static class MultiTableViewWithoutViewId {
+
+    @Table("users_view")
+    public static class Users extends View<User> {}
+
+    @Query("SELECT * FROM users_view")
+    public User query1() {
+      return null;
+    }
+  }
+
+  @ViewId(" ")
+  public static class MultiTableViewWithEmptyViewId {
+
+    @Table("users_view")
+    public static class Users extends View<User> {}
+
+    @Query("SELECT * FROM users_view")
+    public User query1() {
+      return null;
+    }
+  }
+
+  @ViewId("users_multi_view")
+  public static class MultiTableViewWithViewIdInInnerView {
+
+    @ViewId("users_view")
+    @Table("users_view")
+    public static class Users extends View<User> {}
+
+    @Query("SELECT * FROM users_view")
+    public User query1() {
+      return null;
+    }
+  }
+
+  @ViewId("users_multi_view")
+  @Table("users_multi_view")
+  public static class MultiTableViewWithTableName {
+
+    @Table("users_view")
+    public static class Users extends View<User> {}
+
+    @Query("SELECT * FROM users_view")
+    public User query1() {
+      return null;
+    }
   }
 
   @ViewId("multi-table-view-with-multiple-queries")
   public static class MultiTableViewWithMultipleQueries {
     @Query("SELECT * FROM users_view")
-    @PostMapping("/users/query1")
     public User query1() {
       return null;
     }
 
     @Query("SELECT * FROM users_view")
-    @PostMapping("/users/query2")
     public User query2() {
       return null;
     }
@@ -593,7 +595,7 @@ public class ViewTestModels {
 
   @ViewId("multi-table-view-with-join-query")
   public static class MultiTableViewWithJoinQuery {
-    @GetMapping("/employee-counters-by-email/{email}")
+
     @Query("""
       SELECT employees.*, counters.* as counters
       FROM employees
@@ -601,7 +603,7 @@ public class ViewTestModels {
       JOIN counters ON assigned.counterId = counters.id
       WHERE employees.email = :email
       """)
-    public EmployeeCounters get(String email) {
+    public EmployeeCounters get(ByEmail byEmail) {
       return null;
     }
 
@@ -629,9 +631,9 @@ public class ViewTestModels {
 
   @ViewId("multi-table-view-with-join-query")
   public static class MultiTableViewWithDuplicatedVESubscriptions {
+
     @Query("SELECT * FROM users_view")
-    @PostMapping("/users/query1")
-    public EmployeeCounters get(String email) {
+    public EmployeeCounters get(ByEmail byEmail) {
       return null;
     }
 
@@ -664,9 +666,9 @@ public class ViewTestModels {
 
   @ViewId("multi-table-view-with-join-query")
   public static class MultiTableViewWithDuplicatedESSubscriptions {
+
     @Query("SELECT * FROM users_view")
-    @PostMapping("/users/query1")
-    public EmployeeCounters get(String email) {
+    public EmployeeCounters get(ByEmail byEmail) {
       return null;
     }
 
@@ -703,13 +705,13 @@ public class ViewTestModels {
   public static class TimeTrackerView extends View<TimeTrackerEntity.TimerState> {
 
     @Query(value = "SELECT * FROM time-tracker-view WHERE name = :name")
-    @PostMapping("/timer/query2")
     public TimeTrackerEntity.TimerState query2() {
       return null;
     }
   }
 
 
+  @ViewId("employee_view")
   @Table(value = "employee_table")
   @Subscribe.Topic(value = "source", consumerGroup = "cg")
   public static class TopicTypeLevelSubscriptionView extends View<Employee> {
@@ -725,12 +727,12 @@ public class ViewTestModels {
     }
 
     @Query("SELECT * FROM employees_view WHERE email = :email")
-    @PostMapping("/employees/by-email/{email}")
-    public Employee getEmployeeByEmail(@PathVariable String email) {
+    public Employee getEmployeeByEmail(ByEmail byEmail) {
       return null;
     }
   }
 
+  @ViewId("employee_view")
   @Table(value = "employee_table")
   public static class TopicSubscriptionView extends View<Employee> {
 
@@ -747,8 +749,7 @@ public class ViewTestModels {
     }
 
     @Query("SELECT * FROM employees_view WHERE email = :email")
-    @PostMapping("/employees/by-email/{email}")
-    public Employee getEmployeeByEmail(@PathVariable String email) {
+    public Employee getEmployeeByEmail(ByEmail byEmail) {
       return null;
     }
   }

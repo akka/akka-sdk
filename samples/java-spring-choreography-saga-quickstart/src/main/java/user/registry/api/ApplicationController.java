@@ -6,12 +6,18 @@ import kalix.javasdk.action.Action;
 import kalix.javasdk.client.ComponentClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import user.registry.common.Done;
 import user.registry.domain.UniqueEmail;
 import user.registry.domain.User;
 import user.registry.entity.UniqueEmailEntity;
 import user.registry.entity.UserEntity;
+import user.registry.views.UsersByCountryView;
 
 import java.util.Optional;
 
@@ -185,4 +191,13 @@ public class ApplicationController extends Action {
     return effects().asyncReply(res);
   }
 
+  @GetMapping("/users/by-country/{country}")
+  public Effect<UsersByCountryView.UserList> getUsersByCountry(@PathVariable String country) {
+    var deferredCall =
+      client.forView()
+        .method(UsersByCountryView::getUserByCountry)
+        .deferred(new UsersByCountryView.QueryParameters(country));
+
+    return effects().forward(deferredCall);
+  }
 }

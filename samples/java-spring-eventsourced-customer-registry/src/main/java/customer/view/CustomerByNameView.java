@@ -9,16 +9,16 @@ import kalix.javasdk.annotations.Subscribe;
 import kalix.javasdk.annotations.Table;
 import kalix.javasdk.annotations.ViewId;
 import kalix.javasdk.view.View;
-import org.springframework.web.bind.annotation.GetMapping;
-import reactor.core.publisher.Flux;
 
 @ViewId("view_customers_by_name") // <1>
 @Table("customers_by_name")
 public class CustomerByNameView extends View<CustomerView> {
 
-  @GetMapping("/customer/by_name/{customer_name}")
-  @Query("SELECT * FROM customers_by_name WHERE name = :customer_name")
-  public Flux<CustomerView> getCustomer(String name) {
+  public record QueryParameters(String name) {
+  }
+
+  @Query("SELECT * as customers FROM customers_by_name WHERE name = :name")
+  public CustomersList getCustomer(QueryParameters params) {
     return null;
   }
 

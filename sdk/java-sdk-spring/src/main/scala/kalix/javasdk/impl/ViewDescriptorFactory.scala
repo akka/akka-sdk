@@ -33,17 +33,16 @@ import kalix.javasdk.impl.ComponentDescriptorFactory.hasValueEntitySubscription
 import kalix.javasdk.impl.ComponentDescriptorFactory.mergeServiceOptions
 import kalix.javasdk.impl.ComponentDescriptorFactory.subscribeToEventStream
 import kalix.javasdk.impl.JwtDescriptorFactory.buildJWTOptions
+import kalix.javasdk.impl.reflection.CommandHandlerMethod
 import kalix.javasdk.impl.reflection.HandleDeletesServiceMethod
 import kalix.javasdk.impl.reflection.KalixMethod
 import kalix.javasdk.impl.reflection.NameGenerator
 import kalix.javasdk.impl.reflection.Reflect
-import kalix.javasdk.impl.reflection.RestServiceIntrospector
-import kalix.javasdk.impl.reflection.RestServiceIntrospector.BodyParameter
 import kalix.javasdk.impl.reflection.SubscriptionServiceMethod
+import kalix.javasdk.impl.reflection.ViewUrlTemplate
 import kalix.javasdk.impl.reflection.VirtualDeleteServiceMethod
 import kalix.javasdk.impl.reflection.VirtualServiceMethod
 // TODO: abstract away reactor dependency
-import reactor.core.publisher.Flux
 
 private[impl] object ViewDescriptorFactory extends ComponentDescriptorFactory {
 
@@ -52,10 +51,10 @@ private[impl] object ViewDescriptorFactory extends ComponentDescriptorFactory {
       messageCodec: JsonMessageCodec,
       nameGenerator: NameGenerator): ComponentDescriptor = {
 
-    val isMultiTable = ComponentReflection.isMultiTableView(component)
+    val isMultiTable = Reflect.isMultiTableView(component)
 
     val tableComponents =
-      if (isMultiTable) component.getDeclaredClasses.toSeq.filter(ComponentReflection.isNestedViewTable)
+      if (isMultiTable) component.getDeclaredClasses.toSeq.filter(Reflect.isNestedViewTable)
       else Seq(component)
 
     val (tableTypeDescriptors, updateMethods) = {
@@ -152,38 +151,28 @@ private[impl] object ViewDescriptorFactory extends ComponentDescriptorFactory {
 
   private def queryMethods(component: Class[_]): Seq[QueryMethod] = {
     // we only take methods with Query annotations and Spring REST annotations
-    val annotatedQueryMethods = RestServiceIntrospector
-      .inspectService(component)
-      .methods
-      .filter(_.javaMethod.getAnnotation(classOf[Query]) != null)
+    val annotatedQueryMethods =
+      component.getDeclaredMethods.toIndexedSeq
+        .filter(_.getAnnotation(classOf[Query]) != null)
 
     annotatedQueryMethods.map { queryMethod =>
-      val queryOutputType = {
-        val returnType = queryMethod.javaMethod.getReturnType
-        if (returnType == classOf[Flux[_]]) {
-          queryMethod.javaMethod.getGenericReturnType
-            .asInstanceOf[ParameterizedType] // Flux will be a ParameterizedType
-            .getActualTypeArguments
-            .head // only one type parameter, safe to pick the head
-            .asInstanceOf[Class[_]]
-        } else returnType
-      }
+      val queryOutputType = queryMethod.getReturnType
 
       val queryOutputSchemaDescriptor =
         ProtoMessageDescriptors.generateMessageDescriptors(queryOutputType)
 
-      val queryInputSchemaDescriptor =
-        queryMethod.params.collectFirst { case BodyParameter(param, _) =>
-          ProtoMessageDescriptors.generateMessageDescriptors(param.getParameterType)
+      // TODO: it should be possible to have fixed queries and use a GET method
+      val QueryParametersSchemaDescriptor =
+        queryMethod.getParameterTypes.headOption.map { param =>
+          ProtoMessageDescriptors.generateMessageDescriptors(param)
         }
 
-      val queryAnnotation = queryMethod.javaMethod.getAnnotation(classOf[Query])
+      val queryAnnotation = queryMethod.getAnnotation(classOf[Query])
       val queryStr = queryAnnotation.value()
 
       val query = kalix.View.Query
         .newBuilder()
         .setQuery(queryStr)
-        .setStreamUpdates(queryAnnotation.streamUpdates())
         .build()
 
       val jsonSchema = {
@@ -191,11 +180,10 @@ private[impl] object ViewDescriptorFactory extends ComponentDescriptorFactory {
           .newBuilder()
           .setOutput(queryOutputSchemaDescriptor.mainMessageDescriptor.getName)
 
-        queryInputSchemaDescriptor.foreach { inputSchema =>
+        QueryParametersSchemaDescriptor.foreach { inputSchema =>
           builder
             .setInput(inputSchema.mainMessageDescriptor.getName)
             .setJsonBodyInputField("json_body")
-
         }
         builder.build()
       }
@@ -212,10 +200,13 @@ private[impl] object ViewDescriptorFactory extends ComponentDescriptorFactory {
 
       // since it is a query, we don't actually ever want to handle any request in the SDK
       // the proxy does the work for us, mark the method as non-callable
-      val kalixQueryMethod = KalixMethod(queryMethod.copy(callable = false), methodOptions = Some(methodOptions))
-        .withKalixOptions(buildJWTOptions(queryMethod.javaMethod))
+      // TODO: this new variant can be marked as non-callable - check what is the impact of it
+      val servMethod = CommandHandlerMethod(component, queryMethod, ViewUrlTemplate)
+      val kalixQueryMethod =
+        KalixMethod(servMethod, methodOptions = Some(methodOptions))
+          .withKalixOptions(buildJWTOptions(queryMethod))
 
-      QueryMethod(kalixQueryMethod, queryInputSchemaDescriptor, queryOutputSchemaDescriptor)
+      QueryMethod(kalixQueryMethod, QueryParametersSchemaDescriptor, queryOutputSchemaDescriptor)
     }
   }
 

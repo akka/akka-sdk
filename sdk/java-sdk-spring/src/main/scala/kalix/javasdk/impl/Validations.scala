@@ -15,6 +15,7 @@ import kalix.javasdk.annotations.Publish
 import kalix.javasdk.annotations.Query
 import kalix.javasdk.annotations.Subscribe
 import kalix.javasdk.annotations.Table
+import kalix.javasdk.annotations.ViewId
 import kalix.javasdk.eventsourcedentity.EventSourcedEntity
 import kalix.javasdk.impl.ComponentDescriptorFactory.eventSourcedEntitySubscription
 import kalix.javasdk.impl.ComponentDescriptorFactory.findEventSourcedEntityClass
@@ -39,12 +40,11 @@ import kalix.javasdk.impl.ComponentDescriptorFactory.streamSubscription
 import kalix.javasdk.impl.ComponentDescriptorFactory.topicSubscription
 import kalix.javasdk.impl.reflection.Reflect
 import kalix.javasdk.impl.reflection.Reflect.Syntax._
-import kalix.javasdk.impl.reflection.ServiceMethod
 import kalix.javasdk.view.View
+import reactor.core.publisher.Flux
 
 // TODO: abstract away spring and reactor dependencies
 import org.springframework.web.bind.annotation.RequestBody
-import reactor.core.publisher.Flux
 
 object Validations {
 
@@ -177,24 +177,30 @@ object Validations {
 
   private def validateView(component: Class[_]): Validation = {
     when[View[_]](component) {
-      validateSingleView(component)
+      validateSingleView(component) ++
+      viewMustHaveViewId(component) // ViewId mandatory for single view
     } ++
-    when(ComponentReflection.isMultiTableView(component)) {
-      viewMustHaveAtLeastOneQueryMethod(component)
-      val viewClasses = component.getDeclaredClasses.toSeq.filter(ComponentReflection.isNestedViewTable)
-      viewClasses.map(validateSingleView).reduce(_ ++ _)
+    when(Reflect.isMultiTableView(component)) {
+      val nestedViewClasses = component.getDeclaredClasses.toSeq.filter(Reflect.isNestedViewTable)
+      val nestedValidations =
+        nestedViewClasses.map(validateSingleView) ++ nestedViewClasses.map(viewMustNotHaveViewId)
+
+      nestedValidations.reduce(_ ++ _) ++
+      viewMustNotHaveTableName(component) ++
+      viewMustHaveAtLeastOneQueryMethod(component) ++
+      viewMustHaveViewId(component) // ViewId mandatory for multi-table on the outer level class
     }
+
   }
 
   private def validateSingleView(component: Class[_]): Validation = {
-    when(!ComponentReflection.isNestedViewTable(component)) {
+    when(!Reflect.isNestedViewTable(component)) {
       viewMustHaveAtLeastOneQueryMethod(component)
     } ++
     commonValidation(component) ++
     commonSubscriptionValidation(component, hasUpdateEffectOutput) ++
     viewMustHaveTableName(component) ++
-    viewMustHaveMethodLevelSubscriptionWhenTransformingUpdates(component) ++
-    streamUpdatesQueryMustReturnFlux(component)
+    viewMustHaveMethodLevelSubscriptionWhenTransformingUpdates(component)
   }
 
   private def errorMessage(element: AnnotatedElement, message: String): String = {
@@ -523,6 +529,30 @@ object Validations {
     Validation(messages)
   }
 
+  private def viewMustNotHaveViewId(component: Class[_]): Validation = {
+    val ann = component.getAnnotation(classOf[ViewId])
+    when(ann != null) {
+      Invalid(errorMessage(component, "A nested View should not be annotated with @ViewId."))
+    }
+  }
+  private def viewMustHaveViewId(component: Class[_]): Validation = {
+    val ann = component.getAnnotation(classOf[ViewId])
+    if (ann == null) {
+      Invalid(errorMessage(component, "A View should be annotated with @ViewId."))
+    } else {
+      val viewId: String = ann.value()
+      if (viewId == null || viewId.trim.isEmpty) {
+        Invalid(errorMessage(component, "@ViewId name is empty, must be a non-empty string."))
+      } else Valid
+    }
+  }
+
+  private def viewMustNotHaveTableName(component: Class[_]): Validation = {
+    val ann = component.getAnnotation(classOf[Table])
+    when(ann != null) {
+      Invalid(errorMessage(component, "A multi-table View should not be annotated with @Table."))
+    }
+  }
   private def viewMustHaveTableName(component: Class[_]): Validation = {
     val ann = component.getAnnotation(classOf[Table])
     if (ann == null) {
@@ -559,31 +589,13 @@ object Validations {
 
   private def viewMustHaveAtLeastOneQueryMethod(component: Class[_]): Validation = {
     val hasAtLeastOneQuery =
-      component.getMethods
-        .exists(method => method.hasAnnotation[Query] && hasRestAnnotation(method))
+      component.getMethods.exists(method => method.hasAnnotation[Query])
     if (!hasAtLeastOneQuery)
       Invalid(
         errorMessage(
           component,
-          "No valid query method found. Views should have at least one method annotated with @Query and exposed by a REST annotation."))
+          "No valid query method found. Views should have at least one method annotated with @Query."))
     else Valid
-  }
-
-  private def streamUpdatesQueryMustReturnFlux(component: Class[_]): Validation = {
-
-    val offendingMethods =
-      component.getMethods
-        .filter(hasRestAnnotation)
-        .filter(_.hasAnnotation[Query])
-        .filter { method =>
-          method.getAnnotation(classOf[Query]).streamUpdates() && !ServiceMethod.isStreamOut(method)
-        }
-
-    val messages = offendingMethods.map { method =>
-      errorMessage(method, "@Query.streamUpdates can only be enabled in stream methods returning Flux")
-    }
-
-    Validation(messages)
   }
 
   private def subscriptionMethodMustHaveOneParameter(component: Class[_]): Validation = {

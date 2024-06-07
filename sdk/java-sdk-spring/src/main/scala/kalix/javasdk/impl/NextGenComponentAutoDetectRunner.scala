@@ -5,7 +5,6 @@
 package kalix.javasdk.impl
 
 import java.lang.reflect.Constructor
-import java.lang.reflect.Modifier
 import java.lang.reflect.ParameterizedType
 import java.time.Duration
 import java.util.concurrent.atomic.AtomicReference
@@ -29,7 +28,6 @@ import kalix.javasdk.action.Action
 import kalix.javasdk.action.ActionCreationContext
 import kalix.javasdk.action.ActionProvider
 import kalix.javasdk.action.ReflectiveActionProvider
-import kalix.javasdk.annotations.ViewId
 import kalix.javasdk.client.ComponentClient
 import kalix.javasdk.eventsourced.ReflectiveEventSourcedEntityProvider
 import kalix.javasdk.eventsourcedentity.EventSourcedEntity
@@ -43,6 +41,7 @@ import kalix.javasdk.impl.action.ActionsImpl
 import kalix.javasdk.impl.client.ComponentClientImpl
 import kalix.javasdk.impl.eventsourcedentity.EventSourcedEntitiesImpl
 import kalix.javasdk.impl.eventsourcedentity.EventSourcedEntityService
+import kalix.javasdk.impl.reflection.Reflect
 import kalix.javasdk.impl.valueentity.ValueEntitiesImpl
 import kalix.javasdk.impl.valueentity.ValueEntityService
 import kalix.javasdk.impl.view.ViewService
@@ -174,28 +173,6 @@ private object ComponentLocator {
   }
 }
 
-private[kalix] object ComponentReflection {
-
-  /**
-   * A multi-table view has a ViewId annotation, doesn't extend View itself, but contains at least one View class.
-   */
-  def isMultiTableView(component: Class[_]): Boolean = {
-    (component.getAnnotation(classOf[ViewId]) ne null) &&
-    !classOf[View[_]].isAssignableFrom(component) &&
-    component.getDeclaredClasses.exists(classOf[View[_]].isAssignableFrom)
-  }
-
-  /**
-   * A view table component is a View which is a nested class (static member class) of a multi-table view.
-   */
-  def isNestedViewTable(component: Class[_]): Boolean = {
-    classOf[View[_]].isAssignableFrom(component) &&
-    (component.getDeclaringClass ne null) &&
-    Modifier.isStatic(component.getModifiers) &&
-    (component.getDeclaringClass.getAnnotation(classOf[ViewId]) ne null)
-  }
-}
-
 private final object NextGenKalixJavaApplication {
   val onNextStartCallback: AtomicReference[Promise[(Kalix, KalixClient)]] = new AtomicReference(null)
 }
@@ -256,14 +233,14 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_]) {
         kalixClient.registerComponent(valueEntity.serviceDescriptor())
       }
 
-      if (classOf[View[_]].isAssignableFrom(clz) && !ComponentReflection.isNestedViewTable(clz)) {
+      if (classOf[View[_]].isAssignableFrom(clz) && !Reflect.isNestedViewTable(clz)) {
         logger.info(s"Registering View provider for [${clz.getName}]")
         val view = viewProvider(clz.asInstanceOf[Class[View[Nothing]]])
         kalix.register(view)
         kalixClient.registerComponent(view.serviceDescriptor())
       }
 
-      if (ComponentReflection.isMultiTableView(clz)) {
+      if (Reflect.isMultiTableView(clz)) {
         logger.info(s"Registering multi-table View provider for [${clz.getName}]")
         val view = multiTableViewProvider(clz)
         kalix.register(view)

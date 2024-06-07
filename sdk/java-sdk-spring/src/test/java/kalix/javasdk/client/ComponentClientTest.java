@@ -11,17 +11,27 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.any.Any;
 import kalix.javasdk.JsonSupport;
 import kalix.javasdk.Metadata;
-import kalix.javasdk.impl.*;
+import kalix.javasdk.impl.AnySupport;
+import kalix.javasdk.impl.ComponentDescriptor;
+import kalix.javasdk.impl.JsonMessageCodec;
+import kalix.javasdk.impl.MetadataImpl;
+import kalix.javasdk.impl.RestDeferredCall;
+import kalix.javasdk.impl.Validations;
 import kalix.javasdk.impl.client.ComponentClientImpl;
 import kalix.javasdk.impl.telemetry.Telemetry;
 import kalix.spring.impl.RestKalixClientImpl;
 import kalix.spring.testmodels.Message;
 import kalix.spring.testmodels.Number;
-import kalix.spring.testmodels.action.ActionsTestModels.*;
+import kalix.spring.testmodels.action.ActionsTestModels.GetClassLevel;
+import kalix.spring.testmodels.action.ActionsTestModels.GetWithOneParam;
+import kalix.spring.testmodels.action.ActionsTestModels.GetWithoutParam;
+import kalix.spring.testmodels.action.ActionsTestModels.PostWithOneQueryParam;
+import kalix.spring.testmodels.action.ActionsTestModels.PostWithTwoParam;
+import kalix.spring.testmodels.action.ActionsTestModels.PostWithoutParam;
 import kalix.spring.testmodels.valueentity.Counter;
 import kalix.spring.testmodels.valueentity.User;
+import kalix.spring.testmodels.view.ViewTestModels;
 import kalix.spring.testmodels.view.ViewTestModels.UserByEmailWithGet;
-import kalix.spring.testmodels.view.ViewTestModels.UserByEmailWithGetWithoutAnnotation;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -45,15 +55,10 @@ class ComponentClientTest {
 
   @Test
   public void shouldNotReturnDeferredCallMethodNotAnnotatedAsRESTEndpoint() {
-    assertThatThrownBy(() -> componentClient.forAction().method(GetWithoutParam::missingRestAnnotation))
+    assertThatThrownBy(() -> componentClient.forAction().method(GetWithoutParam::missingRestAnnotation).deferred())
       .hasMessage("Method [missingRestAnnotation] is not annotated as a REST endpoint.");
   }
 
-  @Test
-  public void shouldFailWhenCallingOtherComponentFromViewCallBuilder() {
-    assertThatThrownBy(() -> componentClient.forView().method(GetWithoutParam::missingRestAnnotation))
-      .hasMessage("Use dedicated builder for calling Action component method GetWithoutParam::missingRestAnnotation. This builder is meant for View component calls.");
-  }
 
   @Test
   public void shouldReturnDeferredCallForSimpleGETRequest() throws InvalidProtocolBufferException {
@@ -63,7 +68,10 @@ class ComponentClientTest {
     var targetMethod = action.serviceDescriptor().findMethodByName("Message");
 
     //when
-    RestDeferredCall<Any, Message> call = (RestDeferredCall<Any, Message>) componentClient.forAction().method(GetWithoutParam::message);
+    RestDeferredCall<Any, Message> call = (RestDeferredCall<Any, Message>)
+      componentClient.forAction()
+        .method(GetWithoutParam::message)
+        .deferred();
 
     //then
     assertThat(call.fullServiceName()).isEqualTo(targetMethod.getService().getFullName());
@@ -80,7 +88,8 @@ class ComponentClientTest {
     String param = "a b&c@d";
 
     //when
-    RestDeferredCall<Any, Message> call = (RestDeferredCall<Any, Message>) componentClient.forAction()
+    RestDeferredCall<Any, Message> call = (RestDeferredCall<Any, Message>)
+      componentClient.forAction()
       .method(GetWithOneParam::message)
       .deferred(param);
 
@@ -100,7 +109,8 @@ class ComponentClientTest {
     Long param2 = 2L;
 
     //when
-    RestDeferredCall<Any, Message> call = (RestDeferredCall<Any, Message>) componentClient.forAction()
+    RestDeferredCall<Any, Message> call = (RestDeferredCall<Any, Message>)
+      componentClient.forAction()
       .method(GetClassLevel::message)
       .deferred(param, param2);
 
@@ -122,7 +132,8 @@ class ComponentClientTest {
     int param4 = 4;
 
     //when
-    RestDeferredCall<Any, Message> call = (RestDeferredCall<Any, Message>) componentClient.forAction()
+    RestDeferredCall<Any, Message> call = (RestDeferredCall<Any, Message>)
+      componentClient.forAction()
       .method(GetClassLevel::message2)
       .deferred(param, param2, param3, param4);
 
@@ -144,7 +155,8 @@ class ComponentClientTest {
     List<String> param4 = List.of("1", "2");
 
     //when
-    RestDeferredCall<Any, Message> call = (RestDeferredCall<Any, Message>) componentClient.forAction()
+    RestDeferredCall<Any, Message> call = (RestDeferredCall<Any, Message>)
+      componentClient.forAction()
       .method(GetClassLevel::message3)
       .deferred(param, param2, param3, param4);
 
@@ -163,7 +175,10 @@ class ComponentClientTest {
     Message body = new Message("hello world");
 
     //when
-    RestDeferredCall<Any, Message> call = (RestDeferredCall<Any, Message>) componentClient.forAction().method(PostWithoutParam::message).deferred(body);
+    RestDeferredCall<Any, Message> call = (RestDeferredCall<Any, Message>)
+      componentClient.forAction()
+        .method(PostWithoutParam::message)
+        .deferred(body);
 
     //then
     assertThat(call.fullServiceName()).isEqualTo(targetMethod.getService().getFullName());
@@ -182,7 +197,8 @@ class ComponentClientTest {
     Message body = new Message("hello world");
 
     //when
-    RestDeferredCall<Any, Message> call = (RestDeferredCall<Any, Message>) componentClient.forAction()
+    RestDeferredCall<Any, Message> call = (RestDeferredCall<Any, Message>)
+      componentClient.forAction()
       .method(PostWithTwoParam::message)
       .deferred(param, param2, body);
 
@@ -204,7 +220,10 @@ class ComponentClientTest {
     Message body = new Message("hello world");
 
     //when
-    RestDeferredCall<Any, Message> call = (RestDeferredCall<Any, Message>) componentClient.forAction().method(PostWithoutParam::message).deferred(body);
+    RestDeferredCall<Any, Message> call = (RestDeferredCall<Any, Message>)
+      componentClient.forAction()
+        .method(PostWithoutParam::message)
+        .deferred(body);
 
     //then
     assertThat(call.fullServiceName()).isEqualTo(targetMethod.getService().getFullName());
@@ -222,7 +241,8 @@ class ComponentClientTest {
     Message body = new Message("hello world");
 
     //when
-    RestDeferredCall<Any, Message> call = (RestDeferredCall<Any, Message>) componentClient.forAction()
+    RestDeferredCall<Any, Message> call = (RestDeferredCall<Any, Message>)
+      componentClient.forAction()
       .method(PostWithOneQueryParam::message)
       .deferred(param, body);
 
@@ -244,7 +264,10 @@ class ComponentClientTest {
     Metadata metadata = MetadataImpl.Empty().set(Telemetry.TRACE_PARENT_KEY(), traceparent);
     componentClient.setCallMetadata(metadata);
     //when
-    RestDeferredCall<Any, Message> call = (RestDeferredCall<Any, Message>) componentClient.forAction().method(PostWithOneQueryParam::message).deferred(param, body);
+    RestDeferredCall<Any, Message> call = (RestDeferredCall<Any, Message>)
+      componentClient.forAction()
+        .method(PostWithOneQueryParam::message)
+        .deferred(param, body);
 
     //then
     assertThat(call.metadata().get(Telemetry.TRACE_PARENT_KEY()).get()).isEqualTo(traceparent);
@@ -271,17 +294,7 @@ class ComponentClientTest {
     assertMethodParamsMatch(targetMethod, call.message(), id);
   }
 
-  @Test
-  public void shouldFailWhenCallingViewWithNotAnnotatedParams() {
-    assertThatThrownBy(() -> componentClient.forView().method(UserByEmailWithGetWithoutAnnotation::getUser))
-      .hasMessage("When using ComponentClient each [getUser] View query method parameter should be annotated with @PathVariable, @RequestParam or @RequestBody annotations. Missing annotations for params with types: [String]");
-  }
 
-  @Test
-  public void shouldFailWhenCallingViewMethodWithoutQueryAnnotation() {
-    assertThatThrownBy(() -> componentClient.forView().method(UserByEmailWithGetWithoutAnnotation::getUserWithoutQuery))
-      .hasMessage("A View query method [getUserWithoutQuery] should be annotated with @Query annotation.");
-  }
 
   @Test
   public void shouldReturnDeferredCallForViewRequest() throws InvalidProtocolBufferException {
@@ -291,15 +304,18 @@ class ComponentClientTest {
     var targetMethod = view.serviceDescriptor().findMethodByName("GetUser");
     String email = "email@example.com";
 
+    ViewTestModels.ByEmail body = new ViewTestModels.ByEmail(email);
     //when
-    RestDeferredCall<Any, User> call = (RestDeferredCall<Any, User>) componentClient.forView()
+    RestDeferredCall<Any, User> call = (RestDeferredCall<Any, User>)
+      componentClient.forView()
       .method(UserByEmailWithGet::getUser)
-      .deferred(email);
+      .deferred(body);
 
     //then
     assertThat(call.fullServiceName()).isEqualTo(targetMethod.getService().getFullName());
     assertThat(call.methodName()).isEqualTo(targetMethod.getName());
-    assertMethodParamsMatch(targetMethod, call.message(), email);
+
+    assertThat(getBody(targetMethod, call.message(), ViewTestModels.ByEmail.class)).isEqualTo(body);
   }
 
   private ComponentDescriptor descriptorFor(Class<?> clazz, JsonMessageCodec messageCodec) {

@@ -3,7 +3,8 @@ package customer.api;
 import customer.api.CustomerEntity.Confirm;
 import customer.domain.Address;
 import customer.domain.Customer;
-import customer.view.CustomerView;
+import customer.view.CustomerByEmailView;
+import customer.view.CustomerByNameView;
 import kalix.spring.testkit.KalixIntegrationTestKitSupport;
 import org.awaitility.Awaitility;
 import org.hamcrest.core.IsEqual;
@@ -97,12 +98,11 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
       .ignoreExceptions()
       .atMost(20, TimeUnit.SECONDS)
       .until(() ->
-          webClient.get()
-            .uri("/customer/by_name/Foo")
-            .retrieve()
-            .bodyToMono(CustomerView.class)
-            .block(timeout)
-            .name(),
+        await(
+          componentClient.forView()
+            .method(CustomerByNameView::getCustomer)
+            .invokeAsync(new CustomerByNameView.QueryParameters("Foo"))
+        ).customers().stream().findFirst().get().name(),
         new IsEqual("Foo")
       );
   }
@@ -123,12 +123,11 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
       .ignoreExceptions()
       .atMost(20, TimeUnit.SECONDS)
       .until(() ->
-          webClient.get()
-            .uri("/customer/by_email/bar@example.com")
-            .retrieve()
-            .bodyToMono(CustomerView.class)
-            .block(timeout)
-            .name(),
+          await(
+            componentClient.forView()
+              .method(CustomerByEmailView::getCustomer)
+              .invokeAsync(new CustomerByEmailView.QueryParameters("bar@example.com"))
+          ).customers().stream().findFirst().get().name(),
         new IsEqual("Bar")
       );
   }

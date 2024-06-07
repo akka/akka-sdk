@@ -2,12 +2,12 @@ package store.view.joined;
 
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
+import store.view.QueryParameters;
 import store.view.StoreViewIntegrationTest;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -90,13 +90,12 @@ public class JoinedCustomerOrdersViewIntegrationTest extends StoreViewIntegratio
   }
 
   private List<CustomerOrder> getCustomerOrders(String customerId) {
-    return webClient
-      .get()
-      .uri("/joined-customer-orders/" + customerId)
-      .retrieve()
-      .bodyToFlux(CustomerOrder.class)
-      .toStream()
-      .collect(Collectors.toList());
+    return await(
+      componentClient.forView()
+        .method(JoinedCustomerOrdersView::get)
+        .invokeAsync(new QueryParameters(customerId))
+    ).orders();
+
   }
 
   private List<CustomerOrder> awaitCustomerOrders(

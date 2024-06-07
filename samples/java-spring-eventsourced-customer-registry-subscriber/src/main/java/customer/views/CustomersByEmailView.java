@@ -4,14 +4,14 @@ import kalix.javasdk.annotations.Acl;
 import kalix.javasdk.annotations.Query;
 import kalix.javasdk.annotations.Subscribe;
 import kalix.javasdk.annotations.Table;
+import kalix.javasdk.annotations.ViewId;
 import kalix.javasdk.view.View;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import reactor.core.publisher.Flux;
 
 // tag::view[]
+
+@ViewId("customers_by_email")
 @Table("customers_by_email")
 @Subscribe.Stream( // <1>
   service = "customer-registry", // <2>
@@ -23,8 +23,7 @@ public class CustomersByEmailView extends View<Customer> {
   private static final Logger logger = LoggerFactory.getLogger(CustomersByEmailView.class);
   // tag::view[]
 
-  public UpdateEffect<Customer> onEvent( // <4>
-                                         CustomerPublicEvent.Created created) {
+  public UpdateEffect<Customer> onEvent(CustomerPublicEvent.Created created) {
     // end::view[]
     logger.info("Received: {}", created);
     // tag::view[]
@@ -33,8 +32,7 @@ public class CustomersByEmailView extends View<Customer> {
       new Customer(id, created.email(), created.name()));
   }
 
-  public UpdateEffect<Customer> onEvent(
-    CustomerPublicEvent.NameChanged nameChanged) {
+  public UpdateEffect<Customer> onEvent(CustomerPublicEvent.NameChanged nameChanged) {
     // end::view[]
     logger.info("Received: {}", nameChanged);
     // tag::view[]
@@ -42,10 +40,12 @@ public class CustomersByEmailView extends View<Customer> {
     return effects().updateState(updated);
   }
 
-  @GetMapping("/customers/by_email/{email}")
-  @Query("SELECT * FROM customers_by_email WHERE email = :email")
+  public record QueryParameters(String email) {
+  }
+
+  @Query("SELECT * AS customers FROM customers_by_email WHERE email = :email")
   @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
-  public Flux<Customer> findByName(@PathVariable String email) {
+  public CustomersList findByEmail(QueryParameters params) {
     return null;
   }
 

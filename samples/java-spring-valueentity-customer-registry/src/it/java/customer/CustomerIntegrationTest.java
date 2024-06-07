@@ -2,28 +2,24 @@ package customer;
 
 
 import customer.api.CustomerEntity;
+import customer.api.CustomerList;
 import customer.api.Ok;
 import customer.domain.Address;
 import customer.domain.Customer;
+import customer.view.CustomersByCity;
 import kalix.spring.testkit.KalixIntegrationTestKitSupport;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.time.Duration;
 import java.util.Collection;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
-
-  public record CustomersResponse(Collection<Customer> customers) { }
-
-  private Duration timeout = Duration.of(10, SECONDS);
 
   @Test
   public void create()  {
@@ -56,19 +52,18 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
         .ignoreExceptions()
         .atMost(10, TimeUnit.of(SECONDS))
         .untilAsserted(() -> {
-          CustomersResponse response = webClient
-              .get()
-              .uri("/wrapped/by_city?cities=Nazare&cities=Lisbon")
-              .retrieve()
-              .bodyToMono(CustomersResponse.class)
-              .block(timeout);
-
-          assertThat(response.customers).containsOnly(johanna, joe);
+          CustomerList response =
+            await(
+              componentClient
+                .forView()
+                .method(CustomersByCity::getCustomers)
+                .invokeAsync(CustomersByCity.QueryParameters.of("Nazare", "Lisbon"))
+            );
+          assertThat(response.customers()).containsOnly(johanna, joe);
         });
   }
 
   private void addCustomer(Customer customer) {
-
     var res =
       await(
         componentClient

@@ -39,7 +39,7 @@ FIXME update for spring
 * Create a customer with:
 
 ```shell
-curl localhost:9000/customer/one/create \
+curl localhost:9000/akka/v1.0/entity/customer/one/create \
   --header "Content-Type: application/json" \
   -XPOST \
   --data '{"customerId":"one","email":"test@example.com","name":"Test Testsson","address":{"street":"Teststreet 25","city":"Testcity"}}'
@@ -48,31 +48,48 @@ curl localhost:9000/customer/one/create \
 * Retrieve the customer:
 
 ```shell
-curl localhost:9000/customer/one
+curl localhost:9000/akka/v1.0/entity/customer/one/getCustomer
 ```
 
 * Query by email:
 
 ```shell
-curl localhost:9000/customer/by_email/test%40example.com
+curl localhost:9000/akka/v1.0/view/view_customers_by_email/getCustomer \
+  --header "Content-Type: application/json" \
+  -XPOST \
+  --data '{"email":"test@example.com"}'
 ```
 
 * Query by name:
 
 ```shell
-curl localhost:9000/customer/by_name/Test%20Testsson
+curl localhost:9000/akka/v1.0/view/view_customers_by_name/getCustomers \
+  --header "Content-Type: application/json" \
+  -XPOST  \
+  --data '{"name":"Test Testsson"}'
 ```
 
 * Change name:
 
 ```shell
-curl localhost:9000/customer/one/changeName/Jan%20Banan -XPOST
+curl localhost:9000/akka/v1.0/entity/customer/one/changeName \
+  --header "Content-Type: application/json" \
+  -XPOST \
+  --data '"Jan Janssen"'
+```
+
+* Query by name again
+```shell
+curl localhost:9000/akka/v1.0/view/view_customers_by_name/getCustomers \
+  --header "Content-Type: application/json" \
+  -XPOST  \
+  --data '{"name":"Jan Janssen"}'
 ```
 
 * Change address:
 
 ```shell
-curl localhost:9000/customer/one/changeAddress \
+curl localhost:9000/akka/v1.0/entity/customer/one/changeAddress \
   --header "Content-Type: application/json" \
   -XPOST \
   --data '{"street":"Newstreet 25","city":"Newcity"}'
