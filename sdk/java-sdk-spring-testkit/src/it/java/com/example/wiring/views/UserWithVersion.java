@@ -17,4 +17,12 @@ public class UserWithVersion {
     this.email = email;
     this.version = version;
   }
+
+  @Override
+  public String toString() {
+    return "UserWithVersion{" +
+        "email='" + email + '\'' +
+        ", version=" + version +
+        '}';
+  }
 }

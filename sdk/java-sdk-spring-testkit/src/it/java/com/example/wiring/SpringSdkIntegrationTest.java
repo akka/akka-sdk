@@ -4,12 +4,10 @@
 
 package com.example.wiring;
 
-import com.example.wiring.actions.echo.ActionWithHttpResponse;
 import com.example.wiring.actions.echo.ActionWithMetadata;
 import com.example.wiring.actions.echo.EchoAction;
 import com.example.wiring.actions.echo.Message;
 import com.example.wiring.actions.headers.ForwardHeadersAction;
-import com.example.wiring.eventsourcedentities.counter.Counter;
 import com.example.wiring.eventsourcedentities.counter.CounterEntity;
 import com.example.wiring.eventsourcedentities.headers.ForwardHeadersESEntity;
 import com.example.wiring.valueentities.customer.CustomerEntity;
@@ -19,7 +17,6 @@ import com.example.wiring.valueentities.user.User;
 import com.example.wiring.valueentities.user.UserEntity;
 import com.example.wiring.valueentities.user.UserSideEffect;
 import com.example.wiring.views.*;
-import kalix.javasdk.HttpResponse;
 import kalix.javasdk.Metadata;
 import kalix.javasdk.StatusCode;
 import kalix.javasdk.client.EventSourcedEntityClient;
@@ -38,7 +35,6 @@ import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
 
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -46,10 +42,9 @@ import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import static com.example.wiring.pubsub.PublishVEToTopic.CUSTOMERS_TOPIC;
 import static java.time.Duration.ofMillis;
 import static java.time.temporal.ChronoUnit.SECONDS;
-import static kalix.javasdk.StatusCode.Success.CREATED;
-import static kalix.javasdk.StatusCode.Success.OK;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class SpringSdkIntegrationTest extends KalixIntegrationTestKitSupport {
@@ -62,7 +57,8 @@ public class SpringSdkIntegrationTest extends KalixIntegrationTestKitSupport {
     return KalixTestKit.Settings.DEFAULT
             .withAclEnabled()
             .withAdvancedViews()
-            .withWorkflowTickInterval(ofMillis(500));
+            .withWorkflowTickInterval(ofMillis(500))
+            .withTopicOutgoingMessages(CUSTOMERS_TOPIC);
   }
 
 
@@ -288,7 +284,7 @@ public class SpringSdkIntegrationTest extends KalixIntegrationTestKitSupport {
         });
   }
 
-  /*@Test
+  @Test
   public void verifyCounterViewMultipleSubscriptions() {
 
     await(
@@ -306,17 +302,12 @@ public class SpringSdkIntegrationTest extends KalixIntegrationTestKitSupport {
       .atMost(20, TimeUnit.SECONDS)
       .until(
         () ->
-          webClient
-            .get()
-            .uri("/counters-ms/by-value/1")
-            .retrieve()
-            .bodyToFlux(Counter.class)
-            .toStream()
-            .toList()
-            .size(),
+            await(componentClient.forView()
+                .method(CountersByValueSubscriptions::getCounterByValue)
+                .invokeAsync(new CountersByValueSubscriptions.QueryParameters(1)))
+              .counters().size(),
         new IsEqual<>(2));
   }
-*/
 
   @Test
   public void verifyTransformedUserViewWiring() {
@@ -365,7 +356,7 @@ public class SpringSdkIntegrationTest extends KalixIntegrationTestKitSupport {
   }
 
 
-  /*@Test
+  @Test
   public void shouldDeleteValueEntityAndDeleteViewsState() {
 
     TestUser user = new TestUser("userId", "john2@doe.com", "Bob");
@@ -386,24 +377,24 @@ public class SpringSdkIntegrationTest extends KalixIntegrationTestKitSupport {
     deleteUser(user);
 
     Awaitility.await()
-      .ignoreExceptions()
       .atMost(15, TimeUnit.of(SECONDS))
-      .until(
-        () ->
-          webClient
-            .get()
-            .uri("/users/by-email/" + user.email)
-            .exchangeToMono(clientResponse -> Mono.just(clientResponse.statusCode()))
-            .block(timeout)
-            .value(),
-        new IsEqual(404));
+      .ignoreExceptions()
+      .untilAsserted(
+        () -> {
+          var ex =
+              failed(
+                  componentClient.forView()
+              .method(UserWithVersionView::getUser)
+              .invokeAsync(UserWithVersionView.queryParam(user.email)));
+          Assertions.assertTrue(ex.getMessage().contains("404"));
+        });
 
     Awaitility.await()
       .ignoreExceptions()
       .atMost(15, TimeUnit.of(SECONDS))
       .until(() -> getUsersByName(user.name).size(),
         new IsEqual(0));
-  }*/
+  }
 
   @Test
   public void verifyFindUsersByEmail() {
@@ -419,7 +410,7 @@ public class SpringSdkIntegrationTest extends KalixIntegrationTestKitSupport {
         () -> {
           var byEmail = await(
             componentClient.forView()
-              .method(UsersView::getUsersEmail)
+              .method(UsersView::getUserByEmail)
               .invokeAsync(UsersView.byEmailParam(user.email)));
 
           assertThat(byEmail.email).isEqualTo(user.email);
@@ -438,10 +429,7 @@ public class SpringSdkIntegrationTest extends KalixIntegrationTestKitSupport {
       .atMost(10, TimeUnit.SECONDS)
       .untilAsserted(
         () -> {
-          var byName = await(
-            componentClient.forView()
-              .method(UsersView::getUsersByName)
-              .invokeAsync(UsersView.byNameParam(user.name)));
+          var byName = getUsersByName(user.name).getFirst();
           assertThat(byName.name).isEqualTo(user.name);
         });
   }
@@ -470,23 +458,6 @@ public class SpringSdkIntegrationTest extends KalixIntegrationTestKitSupport {
           assertThat(byEmail.name).isEqualTo(user.name);
         });
   }
-
-  /*@Test
-  public void verifyFindUsersByNameStreaming() {
-
-    TestUser joe1 = new TestUser("user1", "john@doe.com", "joe");
-    TestUser joe2 = new TestUser("user2", "john@doe.com", "joe");
-    createUser(joe1);
-    createUser(joe2);
-
-    // the view is eventually updated
-    Awaitility.await()
-      .ignoreExceptions()
-      .atMost(20, TimeUnit.SECONDS)
-      .until(() -> getUsersByName("joe").size(),
-        new IsEqual(2));
-  }*/
-
 
   @Test
   public void verifyMultiTableViewForUserCounters() {
@@ -633,13 +604,11 @@ public class SpringSdkIntegrationTest extends KalixIntegrationTestKitSupport {
 
   @NotNull
   private List<User> getUsersByName(String name) {
-    return webClient
-      .get()
-      .uri("/users/by-name/" + name)
-      .retrieve()
-      .bodyToFlux(User.class)
-      .toStream()
-      .collect(Collectors.toList());
+    return await(
+        componentClient.forView()
+            .method(UsersByName::getUsers)
+            .invokeAsync(new UsersByName.QueryParameters(name)))
+        .users();
   }
 
   @Nullable

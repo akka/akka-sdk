@@ -42,6 +42,11 @@ public class UserEntity extends ValueEntity<User> {
   }
 
   public Effect<Ok> deleteUser(Delete cmd) {
+    logger.info(
+        "Deleting user with commandId={} commandName={} current={}",
+        commandContext().commandId(),
+        commandContext().commandName(),
+        currentState());
     return effects().deleteEntity().thenReply(Ok.instance);
   }
 

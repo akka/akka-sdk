@@ -27,8 +27,17 @@ public class User {
     return Objects.equals(email, user.email) && Objects.equals(name, user.name);
   }
 
+
   @Override
   public int hashCode() {
     return Objects.hash(email, name);
+  }
+
+  @Override
+  public String toString() {
+    return "User{" +
+        "email='" + email + '\'' +
+        ", name='" + name + '\'' +
+        '}';
   }
 }

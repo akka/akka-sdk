@@ -29,12 +29,12 @@ public class UsersView extends View<User> {
   public record QueryByNameParam(String name) {}
 
   @Query("SELECT * FROM users WHERE email = :email")
-  public User getUsersEmail(QueryByEmailParam param) {
+  public User getUserByEmail(QueryByEmailParam param) {
     return null;
   }
 
   @Query("SELECT * FROM users WHERE name = :name")
-  public User getUsersByName(QueryByNameParam param) {
+  public User getUserByName(QueryByNameParam param) {
     return null;
   }
 }
