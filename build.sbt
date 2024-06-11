@@ -1,3 +1,5 @@
+import scala.collection.immutable.Seq
+
 import Dependencies.Kalix
 import com.jsuereth.sbtpgp.PgpKeys.publishSignedConfiguration
 
@@ -6,6 +8,7 @@ lazy val `kalix-jvm-sdk` = project
   .aggregate(
     devTools,
     devToolsInternal,
+    annotationProcessor,
     coreSdk,
     // javaSdkProtobuf,
     // javaSdkProtobufTestKit,
@@ -689,6 +692,28 @@ lazy val samplesCompilationProject: CompositeProject =
     sampleProject
       .dependsOn(javaSdkSpring)
       .dependsOn(javaSdkSpringTestKit % "compile->test")
+  }
+
+lazy val annotationProcessor =
+  Project(id = "annotation-processor", base = file("annotation-processor"))
+    .enablePlugins(Publish)
+    .disablePlugins(CiReleasePlugin) // we use publishSigned, but use a pgp utility from CiReleasePlugin
+    .settings(commonCompilerSettings)
+    .settings(
+      name := "kalix-java-sdk-annotation-processor",
+      crossPaths := false,
+      Compile / javacOptions ++= Seq("--release", "21"))
+    .settings(libraryDependencies += Dependencies.typesafeConfig)
+
+lazy val annotationProcessorTestProject: CompositeProject =
+  AnnotationProcessorTestProject.compilationProject { sampleProject =>
+    sampleProject
+      .dependsOn(javaSdkSpring)
+      .dependsOn(annotationProcessor)
+      .settings(libraryDependencies += Dependencies.scalaTest % Test)
+      .settings(
+        libraryDependencies += Dependencies.scalaTest % Test,
+        Compile / javacOptions ++= Seq("-processor", "kalix.javasdk.tooling.processor.ComponentAnnotationProcessor"))
   }
 
 addCommandAlias("formatAll", "scalafmtAll; javafmtAll")

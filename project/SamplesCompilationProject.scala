@@ -24,7 +24,7 @@ object SamplesCompilationProject {
       lazy val innerProjects =
         findSamples
           .map { dir =>
-            Project(dir.getName, dir)
+            Project("sample-" + dir.getName, dir)
               .disablePlugins(HeaderPlugin)
               .settings(Test / unmanagedSourceDirectories += baseDirectory.value / "src" / "it" / "java")
 

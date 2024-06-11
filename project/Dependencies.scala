@@ -94,6 +94,7 @@ object Dependencies {
 
   val akkaGrpc = "com.lightbend.akka.grpc" % "sbt-akka-grpc" % akka.grpc.gen.BuildInfo.version
   val scalaCollectionCompat = "org.scala-lang.modules" %% "scala-collection-compat" % "2.10.0"
+  val typesafeConfig = "com.typesafe" % "config" % "1.4.2"
 
   private val deps = libraryDependencies
 
@@ -130,7 +131,7 @@ object Dependencies {
     jacksonJsr310,
     jacksonParameterNames)
 
-  val devTools = deps ++= Seq(scalaCollectionCompat, "com.typesafe" % "config" % "1.4.2", scalaTest % Test)
+  val devTools = deps ++= Seq(scalaCollectionCompat, typesafeConfig, scalaTest % Test)
 
   val javaSdk = deps ++= sdkDeps
 
