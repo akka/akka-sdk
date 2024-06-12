@@ -12,6 +12,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.net.URI;
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -50,6 +51,7 @@ public class CounterIntegrationTest extends KalixIntegrationTestKitSupport { // 
 
   @BeforeAll
   public void beforeAll() {
+    super.beforeAll();
     // <2>
     commandsTopic = kalixTestKit.getTopicIncomingMessages("counter-commands"); // <3>
     eventsTopic = kalixTestKit.getTopicOutgoingMessages("counter-events");
@@ -117,7 +119,7 @@ public class CounterIntegrationTest extends KalixIntegrationTestKitSupport { // 
     commandsTopic.publish(increaseCmd, counterId); // <4>
     commandsTopic.publish(multipleCmd, counterId);
 
-    var eventIncreased = eventsTopic.expectOneTyped(CounterEvent.ValueIncreased.class); // <5>
+    var eventIncreased = eventsTopic.expectOneTyped(CounterEvent.ValueIncreased.class, Duration.ofSeconds(10)); // <5>
     var eventMultiplied = eventsTopic.expectOneTyped(CounterEvent.ValueMultiplied.class);
 
     assertEquals(increaseCmd.value(), eventIncreased.getPayload().value()); // <6>

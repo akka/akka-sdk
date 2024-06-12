@@ -47,10 +47,8 @@ public class CounterIntegrationWithRealPubSubTest extends KalixIntegrationTestKi
       .toBodilessEntity().block();
     assertTrue(injectMsgResult.getStatusCode().is2xxSuccessful());
 
-
-    var counterClient = componentClient.forEventSourcedEntity(counterId);
     var getCounterState =
-      counterClient
+      componentClient.forEventSourcedEntity(counterId)
         .method(Counter::get);
 
     Awaitility.await()

@@ -632,12 +632,11 @@ jobs:
           # - { sample: java-protobuf-eventsourced-shopping-cart, it: true }
 
           - { sample: java-spring-eventsourced-customer-registry, it: true }
+          - { sample: java-spring-eventsourced-counter, pre_cmd: 'docker compose up gcloud-pubsub-emulator -d', it: true }
           # TODO: re-enable integration tests for the two following projects. Note, they are still run, but only compiled
           # - { sample: java-spring-eventsourced-customer-registry-subscriber, it: true, pre_cmd: 'mvn -f ../java-spring-eventsourced-customer-registry/pom.xml package docker:build --no-transfer-progress' }
-          # - { sample: java-spring-eventsourced-counter, pre_cmd: 'docker compose up gcloud-pubsub-emulator -d', it: true }
           - { sample: java-spring-eventsourced-customer-registry-subscriber, it: false }
-          - { sample: java-spring-eventsourced-counter, it: false }
-          
+
           - { sample: java-spring-eventsourced-shopping-cart, it: true }
 
           # - { sample: java-protobuf-valueentity-counter, it: true }

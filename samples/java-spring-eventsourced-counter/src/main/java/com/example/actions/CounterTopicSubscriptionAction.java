@@ -6,7 +6,9 @@ import kalix.javasdk.action.Action;
 import kalix.javasdk.annotations.Subscribe;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.web.bind.annotation.RequestMapping;
 
+@RequestMapping
 public class CounterTopicSubscriptionAction extends Action {
 
   private Logger logger = LoggerFactory.getLogger(CounterTopicSubscriptionAction.class);

@@ -4,10 +4,14 @@ import com.example.Counter;
 import com.example.CounterEvent;
 import com.example.CounterEvent.ValueIncreased;
 import com.example.CounterEvent.ValueMultiplied;
+
+// tag::class[]
 import kalix.javasdk.action.Action;
 import kalix.javasdk.annotations.Publish;
 import kalix.javasdk.annotations.Subscribe;
+import org.springframework.web.bind.annotation.RequestMapping;
 
+@RequestMapping
 public class CounterJournalToTopicAction extends Action {
 
   @Subscribe.EventSourcedEntity(value = Counter.class) // <1>
