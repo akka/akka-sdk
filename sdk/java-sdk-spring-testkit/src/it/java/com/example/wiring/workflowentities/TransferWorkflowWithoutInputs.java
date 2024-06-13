@@ -28,9 +28,9 @@ public class TransferWorkflowWithoutInputs extends Workflow<TransferState> {
   public WorkflowDef<TransferState> definition() {
     var withdraw =
       step(withdrawStepName)
-        .call(() -> {
+        .asyncCall(() -> {
           var transfer = currentState().transfer;
-          return componentClient.forValueEntity(transfer.from).method(WalletEntity::withdraw).deferred(transfer.amount);
+          return componentClient.forValueEntity(transfer.from).method(WalletEntity::withdraw).invokeAsync(transfer.amount);
         })
         .andThen(HttpResponse.class, response -> {
           var state = currentState().withLastStep("withdrawn").accepted();
@@ -55,9 +55,9 @@ public class TransferWorkflowWithoutInputs extends Workflow<TransferState> {
 
     var deposit =
       step(depositStepName)
-        .call(() -> {
+        .asyncCall(() -> {
           var transfer = currentState().transfer;
-          return componentClient.forValueEntity(transfer.to).method(WalletEntity::deposit).deferred(transfer.amount);
+          return componentClient.forValueEntity(transfer.to).method(WalletEntity::deposit).invokeAsync(transfer.amount);
         })
         .andThen(String.class, __ -> {
           var state = currentState().withLastStep("deposited").finished();

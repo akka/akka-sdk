@@ -42,7 +42,7 @@ public class WorkflowWithTimeout extends Workflow<FailingCounterState> {
 
     var counterIncFailover =
       step(counterFailoverStepName)
-        .call(Integer.class, value -> componentClient.forEventSourcedEntity(currentState().counterId()).method(FailingCounterEntity::increase).deferred(value))
+        .asyncCall(Integer.class, value -> componentClient.forEventSourcedEntity(currentState().counterId()).method(FailingCounterEntity::increase).invokeAsync(value))
         .andThen(Integer.class, __ ->
           effects()
             .updateState(currentState().asFinished())

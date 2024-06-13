@@ -77,13 +77,13 @@ public class TransferWorkflow extends Workflow<TransferState> {
     // tag::compensation[]
     Step deposit =
       step("deposit")
-        .call(Deposit.class, cmd -> {
+        .asyncCall(Deposit.class, cmd -> {
           // end::compensation[]
           logger.info("Running: " + cmd);
           // tag::compensation[]
           return componentClient.forValueEntity(cmd.to)
             .method(WalletEntity::deposit)
-            .deferred(cmd.amount);
+            .invokeAsync(cmd.amount);
         })
         .andThen(DepositResult.class, depositResult -> { // <1>
           if (depositResult instanceof DepositSucceed) {
@@ -104,14 +104,14 @@ public class TransferWorkflow extends Workflow<TransferState> {
 
     Step compensateWithdraw =
       step("compensate-withdraw") // <4>
-        .call(() -> {
+        .asyncCall(() -> {
           // end::compensation[]
           logger.info("Running withdraw compensation");
           // tag::compensation[]
           var transfer = currentState().transfer();
           return componentClient.forValueEntity(transfer.from())
             .method(WalletEntity::deposit)
-            .deferred(transfer.amount());
+            .invokeAsync(transfer.amount());
         })
         .andThen(DepositResult.class, depositResult -> {
           if (depositResult instanceof DepositSucceed) {

@@ -9,7 +9,6 @@ import com.google.protobuf.any.{ Any => ScalaPbAny }
 import kalix.javasdk.workflow.ReflectiveWorkflowProvider
 import kalix.javasdk.workflow.Result
 import kalix.javasdk.workflow.TestWorkflowSerialization
-import kalix.javasdk.workflow.TestWorkflowSerializationDeferredCall
 import kalix.javasdk.impl.workflow.TestWorkflow
 import kalix.testkit.TestProtocol
 import org.scalatest.BeforeAndAfterAll
@@ -56,43 +55,6 @@ class WorkflowImplSpec extends AnyWordSpec with Matchers with BeforeAndAfterAll 
       service.terminate()
     }
 
-    "deserialize response from deferred call" in {
-      val entityId = "1"
-      val messageCodec = new JsonMessageCodec()
-      val service = new TestWorkflow(
-        ReflectiveWorkflowProvider
-          .of[String, TestWorkflowSerializationDeferredCall](
-            classOf[TestWorkflowSerializationDeferredCall],
-            messageCodec,
-            _ => new TestWorkflowSerializationDeferredCall()))
-      val protocol = TestProtocol(service.port)
-      val workflow = protocol.workflow.connect()
-
-      workflow.send(init(classOf[TestWorkflowSerializationDeferredCall].getName, entityId))
-
-      workflow.expect(config())
-
-      val emptyState = messageCodec.encodeScala("empty")
-      //simulating the response from a different node with separate JsonMessageCodec
-      val stepResult = new JsonMessageCodec().encodeScala(new Result.Succeed())
-      //on the calling node, the uber type is registered during the application startup
-      messageCodec.registerTypeHints(classOf[Result])
-
-      workflow.send(command(1, entityId, "Start", emptySyntheticRequest("Start")))
-      workflow.expect(reply(1, messageCodec.encodeScala("ok"), emptyState, stepTransition("test")))
-
-      workflow.send(executeStep(2, "test", emptyState))
-      workflow.expect(stepDeferredCall(2, "test", "some-service", "some-method", messageCodec.encodeScala("payload")))
-
-      workflow.send(getNextStep(3, "test", stepResult))
-      workflow.expect(end(3, messageCodec.encodeScala("success")))
-
-      workflow.send(command(1, entityId, "Get", emptySyntheticRequest("Get")))
-      workflow.expect(reply(1, messageCodec.encodeScala("success")))
-
-      protocol.terminate()
-      service.terminate()
-    }
   }
 
   private def emptySyntheticRequest(methodName: String) = {

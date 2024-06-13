@@ -29,12 +29,12 @@ public class WorkflowWithDefaultRecoverStrategy extends Workflow<FailingCounterS
   public WorkflowDef<FailingCounterState> definition() {
     var counterInc =
         step(counterStepName)
-            .call(() -> {
+            .asyncCall(() -> {
               var nextValue = currentState().value() + 1;
               return componentClient
                   .forEventSourcedEntity(currentState().counterId())
                   .method(FailingCounterEntity::increase)
-                  .deferred(nextValue);
+                  .invokeAsync(nextValue);
             })
             .andThen(Integer.class, __ -> effects()
                 .updateState(currentState().asFinished())

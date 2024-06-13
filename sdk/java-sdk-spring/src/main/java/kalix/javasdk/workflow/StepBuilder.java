@@ -24,46 +24,6 @@ public class StepBuilder {
   }
 
   /**
-   * Build a step action with a call to an existing Kalix component via {@link DeferredCall}.
-   * <p>
-   * The {@link Function} passed to this method should return a {@link DeferredCall}.
-   * The {@link DeferredCall} is then executed by Kalix and its result, if successful, is made available to this workflow via the {@code andThen} method.
-   * In the {@code andThen} method, we can use the result to update the workflow state and transition to the next step.
-   * <p>
-   * On failure, the step will be retried according to the default retry strategy or the one defined in the step configuration.
-   *
-   * @param callInputClass  Input class for call factory.
-   * @param callFactory     Factory method for creating deferred call.
-   * @param <Input>         Input for deferred call factory, provided by transition method.
-   * @param <DefCallInput>  Input for deferred call.
-   * @param <DefCallOutput> Output of deferred call.
-   * @return Step builder.
-   */
-  @ApiMayChange
-  public <Input, DefCallInput, DefCallOutput> CallStepBuilder<Input, DefCallInput, DefCallOutput> call(Class<Input> callInputClass, Function<Input, DeferredCall<DefCallInput, DefCallOutput>> callFactory) {
-    return new CallStepBuilder<>(name, callInputClass, callFactory);
-  }
-
-  /**
-   * Build a step action with a call to an existing Kalix component via {@link DeferredCall}.
-   * <p>
-   * The {@link Supplier} function passed to this method should return a {@link DeferredCall}.
-   * The {@link DeferredCall} is then executed by Kalix and its result, if successful, is made available to this workflow via the {@code andThen} method.
-   * In the {@code andThen} method, we can use the result to update the workflow state and transition to the next step.
-   * <p>
-   * On failure, the step will be retried according to the default retry strategy or the one defined in the step configuration.
-   *
-   * @param callSupplier    Factory method for creating deferred call.
-   * @param <DefCallInput>  Input for deferred call.
-   * @param <DefCallOutput> Output of deferred call.
-   * @return Step builder.
-   */
-  @ApiMayChange
-  public <DefCallInput, DefCallOutput> CallStepBuilder<Void, DefCallInput, DefCallOutput> call(Supplier<DeferredCall<DefCallInput, DefCallOutput>> callSupplier) {
-    return new CallStepBuilder<>(name, Void.class, (Void v) -> callSupplier.get());
-  }
-
-  /**
    * Build a step action with an async call.
    * <p>
    * The {@link Function} passed to this method should return a {@link CompletionStage}.
