@@ -26,7 +26,7 @@ public class JwtIntegrationTest extends KalixIntegrationTestKitSupport {
         .forAction().method(JWTAction::messageWithClaimValidation)
         .withMetadata( // <2>
             Metadata.EMPTY.add("Authorization", "Bearer " + bearerToken))
-        .deferred(msg).invokeAsync()
+        .invokeAsync(msg)
         .toCompletableFuture()
         .get();
 

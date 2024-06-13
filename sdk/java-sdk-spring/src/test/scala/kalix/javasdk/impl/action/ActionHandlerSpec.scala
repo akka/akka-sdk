@@ -22,11 +22,7 @@ import kalix.javasdk.action.Action
 import kalix.javasdk.action.MessageEnvelope
 import kalix.javasdk.impl.ActionFactory
 import kalix.javasdk.impl.AnySupport
-import kalix.javasdk.impl.GrpcDeferredCall
-import kalix.javasdk.impl.MetadataImpl
 import kalix.javasdk.impl.ProxyInfoHolder
-import kalix.javasdk.impl.ResolvedServiceMethod
-import kalix.javasdk.impl.effect.SideEffectImpl
 import kalix.protocol.action.ActionCommand
 import kalix.protocol.action.ActionResponse
 import kalix.protocol.action.Actions
@@ -230,68 +226,11 @@ class ActionHandlerSpec
       }
     }
 
-    "pass over side effects from an outer async effect to the inner one" in {
-      val dummyResolvedMethod = ResolvedServiceMethod(
-        serviceDescriptor.getMethods.get(0),
-        anySupport.resolveTypeDescriptor(serviceDescriptor.getMethods.get(0).getInputType),
-        anySupport.resolveTypeDescriptor(serviceDescriptor.getMethods.get(0).getOutputType))
-
-      val service = create(new AbstractHandler {
-
-        override def handleUnary(commandName: String, message: MessageEnvelope[Any]): Action.Effect[Any] = {
-          createAsyncReplyEffect(Future {
-            createReplyEffect("reply").addSideEffect(
-              SideEffectImpl(
-                // Note that this is never constructed manually/dynamically in actual use
-                // but only by code generated based on the descriptors
-                GrpcDeferredCall(
-                  message.payload(),
-                  MetadataImpl.Empty,
-                  serviceName,
-                  dummyResolvedMethod.method().getName,
-                  _ => ???),
-                false))
-          }).addSideEffect(
-            SideEffectImpl(
-              GrpcDeferredCall(
-                message.payload(),
-                MetadataImpl.Empty,
-                serviceName,
-                dummyResolvedMethod.descriptor.getName,
-                _ => ???),
-              true))
-        }
-      })
-
-      val reply =
-        Await.result(service.handleUnary(ActionCommand(serviceName, "Unary", createInPayload("in"))), 10.seconds)
-
-      reply match {
-        case ActionResponse(_, sideEffects, _) =>
-          sideEffects should have size 2
-      }
-
-    }
-
     "allow async ignore" in {
-      val dummyResolvedMethod = ResolvedServiceMethod(
-        serviceDescriptor.getMethods.get(0),
-        anySupport.resolveTypeDescriptor(serviceDescriptor.getMethods.get(0).getInputType),
-        anySupport.resolveTypeDescriptor(serviceDescriptor.getMethods.get(0).getOutputType))
-
       val service = create(new AbstractHandler {
 
         override def handleUnary(commandName: String, message: MessageEnvelope[Any]): Action.Effect[Any] = {
-          createAsyncReplyEffect(Future.successful(createIgnoreEffect())).addSideEffect(
-            // will be ignored
-            SideEffectImpl(
-              GrpcDeferredCall(
-                message.payload(),
-                MetadataImpl.Empty,
-                serviceName,
-                dummyResolvedMethod.descriptor.getName,
-                _ => ???),
-              true))
+          createAsyncReplyEffect(Future.successful(createIgnoreEffect()))
         }
       })
 
@@ -299,9 +238,8 @@ class ActionHandlerSpec
         Await.result(service.handleUnary(ActionCommand(serviceName, "Unary", createInPayload("in"))), 10.seconds)
 
       reply match {
-        case ActionResponse(ActionResponse.Response.Empty, sideEffects, _) =>
-          sideEffects should have size 0
-        case e => fail(s"Unexpected response: $e")
+        case ActionResponse(ActionResponse.Response.Empty, _, _) =>
+        case e                                                   => fail(s"Unexpected response: $e")
       }
     }
 
@@ -327,13 +265,13 @@ class ActionHandlerSpec
     ActionspecApi.Out.newBuilder().setField(field).build()
 
   private def createReplyEffect(field: String): Action.Effect[Any] =
-    ActionEffectImpl.ReplyEffect(createOutAny(field), None, Nil)
+    ActionEffectImpl.ReplyEffect(createOutAny(field), None)
 
   private def createIgnoreEffect(): Action.Effect[Any] =
     ActionEffectImpl.IgnoreEffect()
 
   private def createAsyncReplyEffect(future: Future[Action.Effect[Any]]): Action.Effect[Any] =
-    ActionEffectImpl.AsyncEffect(future, Nil)
+    ActionEffectImpl.AsyncEffect(future)
 
   private def extractInField(message: MessageEnvelope[Any]) =
     message.payload().asInstanceOf[ActionspecApi.In].getField

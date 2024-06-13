@@ -28,16 +28,16 @@ class EventSourcedEntityEffectImpl[S, E] extends Builder[S, E] with OnSuccessBui
   import EventSourcedEntityEffectImpl._
 
   private var _primaryEffect: PrimaryEffectImpl = NoPrimaryEffect
-  private var _secondaryEffect: SecondaryEffectImpl = NoSecondaryEffectImpl()
+  private var _secondaryEffect: SecondaryEffectImpl = NoSecondaryEffectImpl
 
-  private var _functionSecondaryEffect: Function[S, SecondaryEffectImpl] = _ => NoSecondaryEffectImpl()
+  private var _functionSecondaryEffect: Function[S, SecondaryEffectImpl] = _ => NoSecondaryEffectImpl
 
   def primaryEffect: PrimaryEffectImpl = _primaryEffect
 
   def secondaryEffect(state: S): SecondaryEffectImpl =
     _functionSecondaryEffect(state) match {
-      case NoSecondaryEffectImpl(_) => _secondaryEffect
-      case newSecondary             => newSecondary.addSideEffects(_secondaryEffect.sideEffects)
+      case NoSecondaryEffectImpl => _secondaryEffect
+      case newSecondary          => newSecondary
     }
 
   override def persist(event: E): EventSourcedEntityEffectImpl[S, E] =
@@ -71,12 +71,12 @@ class EventSourcedEntityEffectImpl[S, E] extends Builder[S, E] with OnSuccessBui
     reply(message, Metadata.EMPTY)
 
   override def reply[T](message: T, metadata: Metadata): EventSourcedEntityEffectImpl[T, E] = {
-    _secondaryEffect = MessageReplyImpl(message, metadata, _secondaryEffect.sideEffects)
+    _secondaryEffect = MessageReplyImpl(message, metadata)
     this.asInstanceOf[EventSourcedEntityEffectImpl[T, E]]
   }
 
   override def error[T](description: String): EventSourcedEntityEffectImpl[T, E] = {
-    _secondaryEffect = ErrorReplyImpl(description, None, _secondaryEffect.sideEffects)
+    _secondaryEffect = ErrorReplyImpl(description, None)
     this.asInstanceOf[EventSourcedEntityEffectImpl[T, E]]
   }
 
@@ -84,7 +84,7 @@ class EventSourcedEntityEffectImpl[S, E] extends Builder[S, E] with OnSuccessBui
     thenReply(replyMessage, Metadata.EMPTY)
 
   override def thenReply[T](replyMessage: JFunction[S, T], metadata: Metadata): EventSourcedEntityEffectImpl[T, E] = {
-    _functionSecondaryEffect = state => MessageReplyImpl(replyMessage.apply(state), metadata, Vector.empty)
+    _functionSecondaryEffect = state => MessageReplyImpl(replyMessage.apply(state), metadata)
     this.asInstanceOf[EventSourcedEntityEffectImpl[T, E]]
   }
 

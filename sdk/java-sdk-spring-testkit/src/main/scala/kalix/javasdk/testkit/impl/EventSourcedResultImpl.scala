@@ -10,18 +10,14 @@ import java.util.{ List => JList }
 import scala.jdk.CollectionConverters._
 
 import io.grpc.Status
-import kalix.javasdk.SideEffect
 import kalix.javasdk.eventsourcedentity.EventSourcedEntity
-import kalix.javasdk.impl.GrpcDeferredCall
 import kalix.javasdk.impl.effect.ErrorReplyImpl
-import kalix.javasdk.impl.effect.ForwardReplyImpl
 import kalix.javasdk.impl.effect.MessageReplyImpl
 import kalix.javasdk.impl.effect.NoSecondaryEffectImpl
 import kalix.javasdk.impl.effect.SecondaryEffectImpl
 import kalix.javasdk.impl.eventsourcedentity.EventSourcedEntityEffectImpl
 import kalix.javasdk.impl.eventsourcedentity.EventSourcedEntityEffectImpl.EmitEvents
 import kalix.javasdk.impl.eventsourcedentity.EventSourcedEntityEffectImpl.NoPrimaryEffect
-import kalix.javasdk.testkit.DeferredCallDetails
 import kalix.javasdk.testkit.EventSourcedResult
 
 /**
@@ -45,16 +41,6 @@ private[kalix] object EventSourcedResultImpl {
     }
   }
 
-  private def toDeferredCallDetails(sideEffects: Vector[SideEffect]): JList[DeferredCallDetails[_, _]] = {
-    sideEffects
-      .map { sideEffect =>
-        TestKitDeferredCall(sideEffect.call.asInstanceOf[GrpcDeferredCall[_, _]])
-          .asInstanceOf[DeferredCallDetails[_, _]] // java List is invariant in type
-      }
-      .toList
-      .asJava
-  }
-
 }
 
 /**
@@ -73,10 +59,9 @@ private[kalix] final class EventSourcedResultImpl[R, S, E](
   private lazy val eventsIterator = getAllEvents().iterator
 
   private def secondaryEffectName: String = secondaryEffect match {
-    case _: MessageReplyImpl[_]   => "reply"
-    case _: ForwardReplyImpl[_]   => "forward"
-    case _: ErrorReplyImpl[_]     => "error"
-    case _: NoSecondaryEffectImpl => "no effect" // this should never happen
+    case _: MessageReplyImpl[_] => "reply"
+    case _: ErrorReplyImpl[_]   => "error"
+    case NoSecondaryEffectImpl  => "no effect" // this should never happen
   }
 
   /** All emitted events. */
@@ -85,27 +70,19 @@ private[kalix] final class EventSourcedResultImpl[R, S, E](
   override def isReply: Boolean = secondaryEffect.isInstanceOf[MessageReplyImpl[_]]
 
   def getReply: R = secondaryEffect match {
-    case MessageReplyImpl(reply, _, _) => reply.asInstanceOf[R]
+    case MessageReplyImpl(reply, _) => reply.asInstanceOf[R]
     case _ => throw new IllegalStateException(s"The effect was not a reply but [$secondaryEffectName]")
-  }
-
-  override def isForward: Boolean = secondaryEffect.isInstanceOf[ForwardReplyImpl[_]]
-
-  override def getForward: DeferredCallDetails[_, R] = secondaryEffect match {
-    case ForwardReplyImpl(deferredCall: GrpcDeferredCall[_, _], _) =>
-      TestKitDeferredCall(deferredCall.asInstanceOf[GrpcDeferredCall[_, R]])
-    case _ => throw new IllegalStateException(s"The effect was not a forward but [$secondaryEffectName]")
   }
 
   override def isError: Boolean = secondaryEffect.isInstanceOf[ErrorReplyImpl[_]]
 
   override def getError: String = secondaryEffect match {
-    case ErrorReplyImpl(description, _, _) => description
+    case ErrorReplyImpl(description, _) => description
     case _ => throw new IllegalStateException(s"The effect was not an error but [$secondaryEffectName]")
   }
 
   override def getErrorStatusCode: Status.Code = secondaryEffect match {
-    case ErrorReplyImpl(_, status, _) => status.getOrElse(Status.Code.UNKNOWN)
+    case ErrorReplyImpl(_, status) => status.getOrElse(Status.Code.UNKNOWN)
     case _ => throw new IllegalStateException(s"The effect was not an error but [$secondaryEffectName]")
   }
 
@@ -122,8 +99,4 @@ private[kalix] final class EventSourcedResultImpl[R, S, E](
         throw new NoSuchElementException(
           "expected event type [" + expectedClass.getName + "] but found [" + next.getClass.getName + "]")
     }
-
-  override def getSideEffects(): JList[DeferredCallDetails[_, _]] =
-    toDeferredCallDetails(secondaryEffect.sideEffects)
-
 }

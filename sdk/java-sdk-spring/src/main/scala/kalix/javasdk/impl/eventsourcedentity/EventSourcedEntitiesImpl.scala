@@ -23,7 +23,6 @@ import kalix.javasdk.impl.ErrorHandling
 import kalix.javasdk.impl.ErrorHandling.BadRequestException
 import kalix.javasdk.impl.EventSourcedEntityFactory
 import kalix.javasdk.impl._
-import kalix.javasdk.impl.effect.EffectSupport
 import kalix.javasdk.impl.effect.ErrorReplyImpl
 import kalix.javasdk.impl.effect.MessageReplyImpl
 import kalix.javasdk.impl.effect.SecondaryEffectImpl
@@ -198,7 +197,7 @@ final class EventSourcedEntitiesImpl(
                   seqNr => new EventContextImpl(thisEntityId, seqNr))
               } catch {
                 case BadRequestException(msg) =>
-                  val errorReply = ErrorReplyImpl(msg, Some(Status.Code.INVALID_ARGUMENT), Vector.empty)
+                  val errorReply = ErrorReplyImpl(msg, Some(Status.Code.INVALID_ARGUMENT))
                   CommandResult(Vector.empty, errorReply, None, context.sequenceNumber, false)
                 case e: EntityException =>
                   throw e
@@ -209,8 +208,8 @@ final class EventSourcedEntitiesImpl(
               }
 
             val serializedSecondaryEffect = secondaryEffect match {
-              case MessageReplyImpl(message, metadata, sideEffects) =>
-                MessageReplyImpl(service.messageCodec.encodeJava(message), metadata, sideEffects)
+              case MessageReplyImpl(message, metadata) =>
+                MessageReplyImpl(service.messageCodec.encodeJava(message), metadata)
               case other => other
             }
 
@@ -238,7 +237,7 @@ final class EventSourcedEntitiesImpl(
                       EventSourcedReply(
                         command.id,
                         clientAction,
-                        EffectSupport.sideEffectsFrom(service.messageCodec, serializedSecondaryEffect),
+                        Seq.empty,
                         serializedEvents,
                         serializedSnapshot,
                         delete))))

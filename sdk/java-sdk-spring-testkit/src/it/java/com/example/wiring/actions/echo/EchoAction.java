@@ -51,12 +51,6 @@ public class EchoAction extends Action {
     return stringMessage(msg);
   }
 
-  @PostMapping("/echo/message/forward")
-  public Effect<Message> stringMessageFromParamFwTyped(@RequestParam String msg) {
-    var result = componentClient.forAction().method(EchoAction::stringMessageFromParam).deferred(msg);
-    return effects().forward(result);
-  }
-
   @PostMapping("/echo/message/concat")
   public Effect<Message> stringMessageConcatRequestBody(@RequestBody List<Message> messages) {
     var allMessages = messages.stream().map(m -> m.text()).collect(Collectors.joining("|"));

@@ -53,8 +53,8 @@ public class EventingTestkitDestinationIntegrationTest extends KalixIntegrationT
     componentClient
       .forValueEntity(subject)
       .method(CustomerEntity::create)
-      .deferred(customer)
-      .invokeAsync().toCompletableFuture().get(5, TimeUnit.SECONDS);
+      .invokeAsync(customer)
+      .toCompletableFuture().get(5, TimeUnit.SECONDS);
 
     //then
     Awaitility.await()

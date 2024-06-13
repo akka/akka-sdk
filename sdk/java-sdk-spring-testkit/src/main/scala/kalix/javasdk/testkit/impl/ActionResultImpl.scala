@@ -4,37 +4,20 @@
 
 package kalix.javasdk.testkit.impl
 
-import kalix.javasdk.SideEffect
 import kalix.javasdk.action.Action
-import kalix.javasdk.impl.GrpcDeferredCall
 import kalix.javasdk.impl.action.ActionEffectImpl
 import kalix.javasdk.testkit.ActionResult
-import kalix.javasdk.testkit.DeferredCallDetails
 import java.util.concurrent.CompletionStage
-import java.util.{ List => JList }
 
 import io.grpc.Status
 
 import scala.compat.java8.FutureConverters._
 import scala.concurrent.ExecutionContext
-import scala.jdk.CollectionConverters._
-
-/**
- * INTERNAL API
- */
-private[kalix] object ActionResultImpl {
-
-  private def toDeferredCallDetails(sideEffects: Seq[SideEffect]): JList[DeferredCallDetails[_, _]] =
-    sideEffects
-      .map(s => TestKitDeferredCall(s.call.asInstanceOf[GrpcDeferredCall[_, _]]): DeferredCallDetails[_, _])
-      .asJava
-}
 
 /**
  * INTERNAL API
  */
 final class ActionResultImpl[T](effect: ActionEffectImpl.PrimaryEffect[T]) extends ActionResult[T] {
-  import ActionResultImpl._
 
   def this(effect: Action.Effect[T]) = this(effect.asInstanceOf[ActionEffectImpl.PrimaryEffect[T]])
 
@@ -49,18 +32,6 @@ final class ActionResultImpl[T](effect: ActionEffectImpl.PrimaryEffect[T]) exten
   }
 
   //TODO add metadata??
-
-  /** @return true if the call was forwarded, false if not */
-  override def isForward(): Boolean = effect.isInstanceOf[ActionEffectImpl.ForwardEffect[T]]
-
-  override def getForward(): DeferredCallDetails[Any, T] =
-    effect match {
-      case ActionEffectImpl.ForwardEffect(serviceCall: GrpcDeferredCall[Any @unchecked, T @unchecked], _) =>
-        TestKitDeferredCall(serviceCall)
-      case _ =>
-        throw new IllegalStateException(
-          "expected effect type [ActionEffectImpl.ForwardEffect] but found [" + effect.getClass.getName + "]")
-    }
 
   // TODO rewrite
   /** @return true if the call was async, false if not */
@@ -98,8 +69,5 @@ final class ActionResultImpl[T](effect: ActionEffectImpl.PrimaryEffect[T]) exten
       throw new NoSuchElementException(
         "expected effect type [" + expectedClass.getName + "] but found [" + effect.getClass.getName + "]")
   }
-
-  override def getSideEffects(): JList[DeferredCallDetails[_, _]] =
-    toDeferredCallDetails(effect.internalSideEffects())
 
 }

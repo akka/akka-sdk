@@ -26,17 +26,19 @@ public class CounterCommandFromTopicAction extends Action {
 
   public Effect<String> onValueIncreased(IncreaseCounter increase) {
     logger.info("Received increase command: " + increase.toString());
-    var deferredCall =
+    var increaseReply =
       componentClient.forEventSourcedEntity(increase.counterId)
-        .method(Counter::increase).deferred(increase.value);
-    return effects().forward(deferredCall);
+        .method(Counter::increase)
+        .invokeAsync(increase.value);
+    return effects().asyncReply(increaseReply);
   }
 
   public Effect<String> onValueMultiplied(MultiplyCounter increase) {
     logger.info("Received increase command: " + increase.toString());
-    var deferredCall =
+    var increaseReply =
       componentClient.forEventSourcedEntity(increase.counterId)
-        .method(Counter::multiply).deferred(increase.value);
-    return effects().forward(deferredCall);
+        .method(Counter::multiply)
+        .invokeAsync(increase.value);
+    return effects().asyncReply(increaseReply);
   }
 }

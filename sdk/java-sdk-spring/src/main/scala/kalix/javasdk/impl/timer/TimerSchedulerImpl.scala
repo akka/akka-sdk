@@ -19,7 +19,6 @@ import com.google.protobuf.wrappers.StringValue
 import kalix.javasdk.DeferredCall
 import kalix.javasdk.Metadata
 import kalix.javasdk.impl.GrpcClients
-import kalix.javasdk.impl.GrpcDeferredCall
 import kalix.javasdk.impl.MessageCodec
 import kalix.javasdk.impl.RestDeferredCall
 import kalix.javasdk.timer.TimerScheduler
@@ -50,19 +49,14 @@ private[kalix] final class TimerSchedulerImpl(
       GrpcClients(system).getProxyGrpcClient(classOf[TimerService]).asInstanceOf[TimerServiceClient]
 
     val call = deferredCall match {
-      case grpcDeferredCall: GrpcDeferredCall[I, O] =>
-        Call(
-          grpcDeferredCall.fullServiceName,
-          grpcDeferredCall.methodName,
-          Some(messageCodec.encodeScala(grpcDeferredCall.message)))
       case restDeferredCall: RestDeferredCall[I, O] =>
         Call(
           restDeferredCall.fullServiceName,
           restDeferredCall.methodName,
           Some(restDeferredCall.message.asInstanceOf[ScalaPbAny]))
-      case _ =>
+      case unknown =>
         // should never happen, but needs to make compiler happy
-        throw new IllegalStateException("Unknown DeferredCall implementation")
+        throw new IllegalStateException(s"Unknown DeferredCall implementation: $unknown")
     }
 
     val singleTimer = SingleTimer(name, Some(call), Some(ProtoDuration(delay)), maxRetries)

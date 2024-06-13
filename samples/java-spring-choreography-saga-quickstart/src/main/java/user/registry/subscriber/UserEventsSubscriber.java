@@ -36,9 +36,9 @@ public class UserEventsSubscriber extends Action {
     var confirmation =
       client.forValueEntity(emailAddress)
         .method(UniqueEmailEntity::confirm)
-        .deferred();
+        .invokeAsync();
 
-    return effects().forward(confirmation);
+    return effects().asyncReply(confirmation);
   }
 
   public Effect<Done> onEvent(User.UserWasCreated evt) {
@@ -57,8 +57,8 @@ public class UserEventsSubscriber extends Action {
     var unreserved =
       client.forValueEntity(evt.oldEmail())
         .method(UniqueEmailEntity::delete)
-        .deferred();
+        .invokeAsync();
 
-    return effects().forward(unreserved);
+    return effects().asyncReply(unreserved);
   }
 }

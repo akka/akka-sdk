@@ -22,7 +22,6 @@ import kalix.javasdk.HttpResponse
 import kalix.javasdk.HttpResponse.STATUS_CODE_EXTENSION_TYPE_URL
 import kalix.javasdk.JsonSupport
 import kalix.javasdk.StatusCode
-import kalix.javasdk.impl.GrpcDeferredCall
 import kalix.javasdk.impl.MessageCodec
 import kalix.javasdk.impl.MetadataImpl
 import kalix.javasdk.impl.RestDeferredCall
@@ -173,8 +172,6 @@ abstract class WorkflowRouter[S, W <: AbstractWorkflow[S]](protected val workflo
 
         val (commandName, serviceName) =
           defCall match {
-            case grpcDefCall: GrpcDeferredCall[_, _] =>
-              (grpcDefCall.methodName, grpcDefCall.fullServiceName)
             case restDefCall: RestDeferredCall[_, _] =>
               (restDefCall.methodName, restDefCall.fullServiceName)
             case _ =>

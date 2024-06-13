@@ -26,15 +26,6 @@ public interface ValueEntityResult<R> {
    */
   R getReply();
 
-  /** @return true if the call was forwarded, false if not */
-  boolean isForward();
-
-  /**
-   * @return An object with details about the forward. If the result was not a forward an exception
-   *     is thrown.
-   */
-  DeferredCallDetails<?, R> getForward();
-
   /** @return true if the call was an error, false if not */
   boolean isError();
 
@@ -55,6 +46,4 @@ public interface ValueEntityResult<R> {
   /** @return true if the call deleted the entity */
   boolean stateWasDeleted();
 
-  /** @return The list of side effects */
-  List<DeferredCallDetails<?, ?>> getSideEffects();
 }

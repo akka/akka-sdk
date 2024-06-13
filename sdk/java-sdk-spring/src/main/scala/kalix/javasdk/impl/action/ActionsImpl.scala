@@ -8,7 +8,6 @@ import java.util.Optional
 
 import scala.compat.java8.OptionConverters.RichOptionForJava8
 import scala.concurrent.Future
-import scala.jdk.CollectionConverters.SeqHasAsJava
 import scala.util.control.NonFatal
 
 import akka.NotUsed
@@ -16,14 +15,12 @@ import akka.actor.ActorSystem
 import akka.stream.scaladsl.Sink
 import akka.stream.scaladsl.Source
 import com.google.protobuf.Descriptors
-import com.google.protobuf.any.Any
 import io.grpc.Status
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.SpanContext
 import io.opentelemetry.api.trace.Tracer
 import kalix.javasdk.Metadata
-import kalix.javasdk.SideEffect
 import kalix.javasdk.action.Action
 import kalix.javasdk.action.ActionContext
 import kalix.javasdk.action.ActionCreationContext
@@ -33,13 +30,10 @@ import kalix.javasdk.impl.ActionFactory
 import kalix.javasdk.impl.ComponentOptions
 import kalix.javasdk.impl.ErrorHandling
 import kalix.javasdk.impl.ErrorHandling.BadRequestException
-import kalix.javasdk.impl.GrpcDeferredCall
 import kalix.javasdk.impl.MessageCodec
 import kalix.javasdk.impl.MetadataImpl
-import kalix.javasdk.impl.RestDeferredCall
 import kalix.javasdk.impl.Service
 import kalix.javasdk.impl._
-import kalix.javasdk.impl.effect.EffectSupport.asProtocol
 import kalix.javasdk.impl.telemetry.TraceInstrumentation.TRACE_PARENT_KEY
 import kalix.javasdk.impl.telemetry.TraceInstrumentation.TRACE_STATE_KEY
 import kalix.javasdk.impl.telemetry.ActionCategory
@@ -139,58 +133,27 @@ private[kalix] final class ActionsImpl(_system: ActorSystem, services: Map[Strin
       messageCodec: MessageCodec): Future[ActionResponse] = {
     import ActionEffectImpl._
     effect match {
-      case ReplyEffect(message, metadata, sideEffects) =>
+      case ReplyEffect(message, metadata) =>
         val response =
           component.Reply(Some(messageCodec.encodeScala(message)), metadata.flatMap(MetadataImpl.toProtocol))
-        Future.successful(
-          ActionResponse(ActionResponse.Response.Reply(response), toProtocol(messageCodec, sideEffects)))
-      case ForwardEffect(forward: GrpcDeferredCall[_, _], sideEffects) =>
-        val response = component.Forward(
-          forward.fullServiceName,
-          forward.methodName,
-          Some(messageCodec.encodeScala(forward.message)),
-          MetadataImpl.toProtocol(forward.metadata))
-        Future.successful(
-          ActionResponse(ActionResponse.Response.Forward(response), toProtocol(messageCodec, sideEffects)))
-      case ForwardEffect(forward: RestDeferredCall[Any @unchecked, _], sideEffects) =>
-        val response = component.Forward(
-          forward.fullServiceName,
-          forward.methodName,
-          Some(forward.message),
-          MetadataImpl.toProtocol(forward.metadata))
-        Future.successful(
-          ActionResponse(ActionResponse.Response.Forward(response), toProtocol(messageCodec, sideEffects)))
-      case AsyncEffect(futureEffect, sideEffects) =>
+        Future.successful(ActionResponse(ActionResponse.Response.Reply(response)))
+      case AsyncEffect(futureEffect) =>
         futureEffect
-          .flatMap { effect =>
-            val withSurroundingSideEffects =
-              if (sideEffects.isEmpty) effect
-              else if (!effect.canHaveSideEffects) {
-                log.warn(
-                  "Side effects added to asyncEffect, but the inner effect [{}] does not support side effects, side effects dropped",
-                  effect.getClass.getName)
-                effect
-              } else effect.addSideEffects(sideEffects.asJava)
-            effectToResponse(service, command, withSurroundingSideEffects, messageCodec)
-          }
+          .flatMap { effect => effectToResponse(service, command, effect, messageCodec) }
           .recover { case NonFatal(ex) =>
             handleUnexpectedException(service, command, ex)
           }
-      case ErrorEffect(description, status, sideEffects) =>
+      case ErrorEffect(description, status) =>
         Future.successful(
           ActionResponse(
             ActionResponse.Response.Failure(
-              Failure(description = description, grpcStatusCode = status.map(_.value()).getOrElse(0))),
-            toProtocol(messageCodec, sideEffects)))
+              Failure(description = description, grpcStatusCode = status.map(_.value()).getOrElse(0)))))
       case IgnoreEffect =>
-        Future.successful(ActionResponse(ActionResponse.Response.Empty, toProtocol(messageCodec, Nil)))
+        Future.successful(ActionResponse(ActionResponse.Response.Empty))
       case unknown =>
         throw new IllegalArgumentException(s"Unknown Action.Effect type ${unknown.getClass}")
     }
   }
-
-  private def toProtocol(messageCodec: MessageCodec, sideEffects: Seq[SideEffect]): Seq[component.SideEffect] =
-    sideEffects.map(asProtocol(messageCodec, _))
 
   /**
    * Handle a unary command. The input command will contain the service name, command name, request metadata and the
@@ -273,9 +236,9 @@ private[kalix] final class ActionsImpl(_system: ActorSystem, services: Map[Strin
   /**
    * Handle a streamed out command. The input command will contain the service name, command name, request metadata and
    * the command payload. Zero or more replies may be sent, each containing either a direct reply, a forward or a
-   * failure, and each may contain many side effects. The stream to the client will be closed when the this stream is
-   * closed, with the same status as this stream is closed with. Either the client or the server may cancel the stream
-   * at any time, cancellation is indicated through an HTTP2 stream RST message.
+   * failure. The stream to the client will be closed when the this stream is closed, with the same status as this
+   * stream is closed with. Either the client or the server may cancel the stream at any time, cancellation is indicated
+   * through an HTTP2 stream RST message.
    */
   override def handleStreamedOut(in: ActionCommand): Source[ActionResponse, NotUsed] =
     services.get(in.serviceName) match {
@@ -307,13 +270,13 @@ private[kalix] final class ActionsImpl(_system: ActorSystem, services: Map[Strin
    * Handle a full duplex streamed command. The first message in will contain the request metadata, including the
    * service name and command name. It will not have an associated payload set. This will be followed by zero to many
    * messages in with a payload, but no service name or command name set. Zero or more replies may be sent, each
-   * containing either a direct reply, a forward or a failure, and each may contain many side effects. The semantics of
-   * stream closure in this protocol map 1:1 with the semantics of gRPC stream closure, that is, when the client closes
-   * the stream, the stream is considered half closed, and the server should eventually, but not necessarily
-   * immediately, close the stream with a status code and trailers. If however the server closes the stream with a
-   * status code and trailers, the stream is immediately considered completely closed, and no further messages sent by
-   * the client will be handled by the server. Either the client or the server may cancel the stream at any time,
-   * cancellation is indicated through an HTTP2 stream RST message.
+   * containing either a direct reply, a forward or a failure. The semantics of stream closure in this protocol map 1:1
+   * with the semantics of gRPC stream closure, that is, when the client closes the stream, the stream is considered
+   * half closed, and the server should eventually, but not necessarily immediately, close the stream with a status code
+   * and trailers. If however the server closes the stream with a status code and trailers, the stream is immediately
+   * considered completely closed, and no further messages sent by the client will be handled by the server. Either the
+   * client or the server may cancel the stream at any time, cancellation is indicated through an HTTP2 stream RST
+   * message.
    */
   override def handleStreamed(in: Source[ActionCommand, NotUsed]): Source[ActionResponse, NotUsed] =
     in.prefixAndTail(1)

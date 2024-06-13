@@ -28,6 +28,7 @@ import org.hamcrest.core.IsNull;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -139,19 +140,6 @@ public class SpringSdkIntegrationTest extends KalixIntegrationTestKitSupport {
     Assertions.assertEquals(StatusCode.Success.ACCEPTED.value(), response.statusCode().value());
   }
 
-
-  @Test
-  public void verifyEchoActionRequestParamWithTypedForward() {
-
-    String reqParam = "a b&c@d";
-    Message response = await(
-      componentClient.forAction()
-        .method(EchoAction::stringMessageFromParamFwTyped)
-        .invokeAsync(reqParam));
-
-    assertThat(response.text()).isEqualTo("Parrot says: '" + reqParam + "'");
-  }
-
   @Test
   public void verifyStreamActions() {
 
@@ -187,29 +175,6 @@ public class SpringSdkIntegrationTest extends KalixIntegrationTestKitSupport {
             .method(CounterEntity::get).invokeAsync());
 
         assertThat(result).isEqualTo(43); //42 +1
-      });
-  }
-
-  @Test
-  public void verifySideEffects() {
-    // GIVEN IncreaseAction is subscribed to CounterEntity events
-    // WHEN the CounterEntity is requested to increase 4422
-    String entityId = "hello4422";
-    await(
-      componentClient.forEventSourcedEntity(entityId)
-        .method(CounterEntity::increase)
-        .invokeAsync(4422));
-
-    // THEN IncreaseAction receives the event 4422 and increases the counter 1 more
-    Awaitility.await()
-      .ignoreExceptions()
-      .atMost(10, TimeUnit.of(SECONDS))
-      .untilAsserted(() -> {
-        Integer result = await(
-          componentClient.forEventSourcedEntity(entityId)
-            .method(CounterEntity::get).invokeAsync());
-
-        assertThat(result).isEqualTo(4423);
       });
   }
 
@@ -543,7 +508,7 @@ public class SpringSdkIntegrationTest extends KalixIntegrationTestKitSupport {
   }
 
   @Test
-  public void shouldPropagateMetadataWithHttpDeferredCall() {
+  public void shouldPropagateMetadataWithHttpAsyncCall() {
     String value = "someValue";
 
     Message actionResponse =
@@ -551,6 +516,7 @@ public class SpringSdkIntegrationTest extends KalixIntegrationTestKitSupport {
         componentClient
           .forAction()
           .method(ActionWithMetadata::actionWithMeta)
+          // Note that myKey is explicitly enabled for header-forward on action
           .deferred("myKey", value).invokeAsync()
       );
 

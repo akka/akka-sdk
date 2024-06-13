@@ -13,7 +13,6 @@ import akka.stream.scaladsl.Source
 import io.grpc.Status
 import kalix.javasdk.impl.ErrorHandling
 import kalix.javasdk.impl.ErrorHandling.BadRequestException
-import kalix.javasdk.impl.effect.EffectSupport
 import kalix.javasdk.impl.effect.ErrorReplyImpl
 import kalix.javasdk.impl.telemetry.Instrumentation
 import kalix.javasdk.impl.telemetry.Telemetry
@@ -173,8 +172,8 @@ final class ValueEntitiesImpl(
               }
 
             val serializedSecondaryEffect = effect.secondaryEffect match {
-              case MessageReplyImpl(message, metadata, sideEffects) =>
-                MessageReplyImpl(service.messageCodec.encodeJava(message), metadata, sideEffects)
+              case MessageReplyImpl(message, metadata) =>
+                MessageReplyImpl(service.messageCodec.encodeJava(message), metadata)
               case other => other
             }
 
@@ -200,13 +199,7 @@ final class ValueEntitiesImpl(
                     None
                 }
 
-                ValueEntityStreamOut(
-                  OutReply(
-                    ValueEntityReply(
-                      command.id,
-                      clientAction,
-                      EffectSupport.sideEffectsFrom(service.messageCodec, serializedSecondaryEffect),
-                      action)))
+                ValueEntityStreamOut(OutReply(ValueEntityReply(command.id, clientAction, Seq.empty, action)))
             }
           } finally {
             span.foreach(_.end())

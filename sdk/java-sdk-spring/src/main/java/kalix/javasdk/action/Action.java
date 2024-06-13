@@ -5,9 +5,7 @@
 package kalix.javasdk.action;
 
 import io.grpc.Status;
-import kalix.javasdk.DeferredCall;
 import kalix.javasdk.Metadata;
-import kalix.javasdk.SideEffect;
 import kalix.javasdk.StatusCode;
 import kalix.javasdk.impl.action.ActionContextImpl;
 import kalix.javasdk.impl.action.ActionEffectImpl;
@@ -141,15 +139,6 @@ public abstract class Action {
       <S> Effect<S> reply(S message, Metadata metadata);
 
       /**
-       * Create a forward reply.
-       *
-       * @param serviceCall The service call representing the forward.
-       * @param <S>         The type of the message that must be returned by this call.
-       * @return A forward reply.
-       */
-      <S> Effect<S> forward(DeferredCall<? extends Object, S> serviceCall);
-
-      /**
        * Create an error reply.
        *
        * @param description The description of the error.
@@ -218,26 +207,5 @@ public abstract class Action {
        */
       <S> Effect<S> ignore();
     }
-
-    /**
-     * Attach the given side effects to this reply.
-     *
-     * @param sideEffects The effects to attach.
-     * @return A new reply with the attached effects.
-     */
-    Effect<T> addSideEffect(SideEffect... sideEffects);
-
-    /**
-     * Attach the given side effects to this reply.
-     *
-     * @param sideEffects The effects to attach.
-     * @return A new reply with the attached effects.
-     */
-    Effect<T> addSideEffects(Collection<SideEffect> sideEffects);
-
-    /**
-     * @return true if this effect supports attaching side effects, if returning false addSideEffects will throw an exception.
-     */
-    boolean canHaveSideEffects();
   }
 }

@@ -27,14 +27,6 @@ public interface ActionResult<T> {
    */
   T getReply();
 
-  /** @return true if the call was forwarded, false if not */
-  boolean isForward();
-
-  /**
-   * @return An object with details about the forward. If the result was not a forward an exception
-   *     is thrown.
-   */
-  DeferredCallDetails<?, T> getForward();
 
   /** @return true if the call was async, false if not */
   boolean isAsync();
@@ -62,6 +54,4 @@ public interface ActionResult<T> {
    */
   Status.Code getErrorStatusCode();
 
-  /** @return The list of side effects */
-  List<DeferredCallDetails<?, ?>> getSideEffects();
 }

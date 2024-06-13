@@ -22,15 +22,15 @@ public class ShortenedEchoAction extends Action {
   @GetMapping("/echo/message/{msg}/short")
   public Effect<Message> stringMessage(@PathVariable String msg) {
     var shortenedMsg = msg.replaceAll("[AEIOUaeiou]", "");
-    var result = componentClient.forAction().method(EchoAction::stringMessage).deferred(shortenedMsg).invokeAsync();
+    var result = componentClient.forAction().method(EchoAction::stringMessage).invokeAsync(shortenedMsg);
     return effects().asyncReply(result);
   }
 
   @GetMapping("/echo/message-short")
   public Effect<Message> leetShortUsingFwd(@RequestParam String msg) {
     var shortenedMsg = leetShort(msg);
-    var result = componentClient.forAction().method(EchoAction::stringMessageFromParam).deferred(shortenedMsg);
-    return effects().forward(result);
+    var result = componentClient.forAction().method(EchoAction::stringMessageFromParam).invokeAsync(shortenedMsg);
+    return effects().asyncReply(result);
   }
 
   @GetMapping("/echo/message/{msg}/leetshort")
@@ -41,8 +41,8 @@ public class ShortenedEchoAction extends Action {
   @PostMapping("/echo/message/leetshort")
   public Effect<Message> leetMessageWithFwdPost(@RequestBody Message msg) {
     var shortenedMsg = leetShort(msg.text());
-    var result = componentClient.forAction().method(EchoAction::stringMessage).deferred(shortenedMsg);
-    return effects().forward(result);
+    var result = componentClient.forAction().method(EchoAction::stringMessage).invokeAsync(shortenedMsg);
+    return effects().asyncReply(result);
   }
 
   private String leetShort(String msg) {

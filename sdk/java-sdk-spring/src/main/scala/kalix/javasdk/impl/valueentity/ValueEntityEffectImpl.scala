@@ -24,7 +24,7 @@ class ValueEntityEffectImpl[S] extends Builder[S] with OnSuccessBuilder[S] with 
   import ValueEntityEffectImpl._
 
   private var _primaryEffect: PrimaryEffectImpl[S] = NoPrimaryEffect
-  private var _secondaryEffect: SecondaryEffectImpl = NoSecondaryEffectImpl()
+  private var _secondaryEffect: SecondaryEffectImpl = NoSecondaryEffectImpl
 
   def primaryEffect: PrimaryEffectImpl[S] = _primaryEffect
 
@@ -44,12 +44,12 @@ class ValueEntityEffectImpl[S] extends Builder[S] with OnSuccessBuilder[S] with 
     reply(message, Metadata.EMPTY)
 
   override def reply[T](message: T, metadata: Metadata): ValueEntityEffectImpl[T] = {
-    _secondaryEffect = MessageReplyImpl(message, metadata, _secondaryEffect.sideEffects)
+    _secondaryEffect = MessageReplyImpl(message, metadata)
     this.asInstanceOf[ValueEntityEffectImpl[T]]
   }
 
   override def error[T](description: String): ValueEntityEffectImpl[T] = {
-    _secondaryEffect = ErrorReplyImpl(description, None, _secondaryEffect.sideEffects)
+    _secondaryEffect = ErrorReplyImpl(description, None)
     this.asInstanceOf[ValueEntityEffectImpl[T]]
   }
 
@@ -60,7 +60,7 @@ class ValueEntityEffectImpl[S] extends Builder[S] with OnSuccessBuilder[S] with 
     thenReply(message, Metadata.EMPTY)
 
   override def thenReply[T](message: T, metadata: Metadata): ValueEntityEffectImpl[T] = {
-    _secondaryEffect = MessageReplyImpl(message, metadata, _secondaryEffect.sideEffects)
+    _secondaryEffect = MessageReplyImpl(message, metadata)
     this.asInstanceOf[ValueEntityEffectImpl[T]]
   }
 

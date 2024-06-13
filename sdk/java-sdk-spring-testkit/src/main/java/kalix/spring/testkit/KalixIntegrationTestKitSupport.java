@@ -5,18 +5,8 @@
 package kalix.spring.testkit;
 
 import akka.actor.ExtendedActorSystem;
-import akka.testkit.javadsl.TestKit;
-import com.typesafe.config.ConfigFactory;
-import kalix.javasdk.Kalix;
-import kalix.javasdk.DeferredCall;
 import kalix.javasdk.client.ComponentClient;
-import kalix.javasdk.impl.JsonMessageCodec;
-import kalix.javasdk.impl.NextGenComponentAutoDetectRunner;
-import kalix.javasdk.impl.NextGenKalixJavaApplication;
-import kalix.javasdk.impl.client.ComponentClientImpl;
 import kalix.javasdk.testkit.KalixTestKit;
-import kalix.spring.impl.KalixClient;
-import kalix.spring.impl.RestKalixClientImpl;
 import kalix.spring.impl.WebClientProviderImpl;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -24,14 +14,8 @@ import org.junit.jupiter.api.TestInstance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.reactive.function.client.WebClient;
-import scala.concurrent.Await;
-import scala.concurrent.Promise;
-import scala.runtime.BoxedUnit;
 
 import java.time.Duration;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
 

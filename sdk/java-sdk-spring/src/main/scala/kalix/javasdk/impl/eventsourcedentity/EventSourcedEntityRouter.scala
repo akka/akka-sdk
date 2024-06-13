@@ -125,7 +125,7 @@ abstract class EventSourcedEntityRouter[S, E, ES <: EventSourcedEntity[S, E]](pr
           else None
 
         try {
-          // side effect callbacks may want to access context or components which is valid
+          // secondary effect callbacks may want to access context or components which is valid
           entity._internalSetCommandContext(Optional.of(context))
           CommandResult(
             events.toVector,
@@ -138,7 +138,7 @@ abstract class EventSourcedEntityRouter[S, E, ES <: EventSourcedEntity[S, E]](pr
         }
       case NoPrimaryEffect =>
         try {
-          // side effect callbacks may want to access context or components which is valid
+          // secondary effect callbacks may want to access context or components which is valid
           entity._internalSetCommandContext(Optional.of(context))
           CommandResult(
             Vector.empty,

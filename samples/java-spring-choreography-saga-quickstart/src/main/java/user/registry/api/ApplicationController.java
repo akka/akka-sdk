@@ -193,11 +193,11 @@ public class ApplicationController extends Action {
 
   @GetMapping("/users/by-country/{country}")
   public Effect<UsersByCountryView.UserList> getUsersByCountry(@PathVariable String country) {
-    var deferredCall =
+    var queryReply =
       client.forView()
         .method(UsersByCountryView::getUserByCountry)
-        .deferred(new UsersByCountryView.QueryParameters(country));
+        .invokeAsync(new UsersByCountryView.QueryParameters(country));
 
-    return effects().forward(deferredCall);
+    return effects().asyncReply(queryReply);
   }
 }

@@ -64,10 +64,10 @@ public class ShoppingCartController extends Action {
     if (addLineItem.name().equalsIgnoreCase("carrot")) { // <3>
       return effects().error("Carrots no longer for sale"); // <4>
     } else {
-      var deferredCall = componentClient.forValueEntity(cartId)
+      var addItemResult = componentClient.forValueEntity(cartId)
         .method(ShoppingCartEntity::addItem)
-        .deferred(addLineItem); // <5>
-      return effects().forward(deferredCall); // <6>
+        .invokeAsync(addLineItem); // <5>
+      return effects().asyncReply(addItemResult); // <6> FIXME no longer forward as documented
     }
   }
   // end::forward[]
@@ -134,11 +134,12 @@ public class ShoppingCartController extends Action {
     var userRoleFromMeta = actionContext().metadata().get("UserRole").get(); // <3>
 
     Metadata metadata = Metadata.EMPTY.add("Role", userRole);
-    return effects().forward(
+    return effects().asyncReply(
       componentClient.forValueEntity(cartId)
         .method(ShoppingCartEntity::removeCart)
         .withMetadata(metadata)
-        .deferred()); // <4>
+        // FIXME no longer forward as documented
+        .invokeAsync()); // <4>
   }
 }
 // end::forward-headers[]

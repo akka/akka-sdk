@@ -27,15 +27,6 @@ public interface EventSourcedResult<R> {
    */
   R getReply();
 
-  /** @return true if the call was forwarded, false if not */
-  boolean isForward();
-
-  /**
-   * An object with details about the forward. If the result was not a forward an exception is
-   * thrown
-   */
-  DeferredCallDetails<?, R> getForward();
-
   /** @return true if the call was an error, false if not */
   boolean isError();
 
@@ -67,6 +58,4 @@ public interface EventSourcedResult<R> {
    */
   <E> E getNextEventOfType(Class<E> expectedClass);
 
-  /** @return The list of side effects */
-  List<DeferredCallDetails<?, ?>> getSideEffects();
 }

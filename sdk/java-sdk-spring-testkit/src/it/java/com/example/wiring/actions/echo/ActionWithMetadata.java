@@ -6,12 +6,17 @@ package com.example.wiring.actions.echo;
 
 import kalix.javasdk.Metadata;
 import kalix.javasdk.action.Action;
+import kalix.javasdk.annotations.ForwardHeaders;
 import kalix.javasdk.client.ComponentClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.concurrent.CompletableFuture;
 
+// FIXME used in SpringSdkIntegrationTest, since component client is currently going over the rest endpoint
+//       all headers expected to be forwarded must be opt-in. Once we switch to "native" component client
+//       we will forward all metadata and this won't be needed
+@ForwardHeaders({"myKey"})
 public class ActionWithMetadata extends Action {
 
   private ComponentClient componentClient;
@@ -28,7 +33,7 @@ public class ActionWithMetadata extends Action {
         .withMetadata(Metadata.EMPTY.add(key, value))
         .deferred(key);
 
-    return effects().forward(deferredCall);
+    return effects().asyncReply(deferredCall.invokeAsync());
   }
 
   @GetMapping("/return-meta/{key}")

@@ -5,12 +5,8 @@
 package kalix.javasdk.valueentity;
 
 import akka.annotation.ApiMayChange;
-import kalix.javasdk.DeferredCall;
 import kalix.javasdk.Metadata;
-import kalix.javasdk.SideEffect;
-import kalix.javasdk.StatusCode;
 import kalix.javasdk.impl.valueentity.ValueEntityEffectImpl;
-import io.grpc.Status;
 
 import java.util.Collection;
 import java.util.Optional;

@@ -9,6 +9,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.concurrent.CompletionStage;
+
 @RequestMapping("/limitedfibonacci")
 public class LimitedFibonacciAction extends Action {
 
@@ -28,11 +30,11 @@ public class LimitedFibonacciAction extends Action {
         } else {
             logger.info("Executing GET call to real /fibonacci = " + number);
             // tag::component-client[]
-            DeferredCall<Any, Number> deferredCall = componentClient.forAction() // <1>
+            CompletionStage<Number> numberResult = componentClient.forAction() // <1>
               .method(FibonacciAction::getNumber) // <2>
-              .deferred(number); // <3>
-
-            return effects().forward(deferredCall);
+            // FIXME no longer forward as documented
+              .invokeAsync(number); // <3>
+            return effects().asyncReply(numberResult);
             // end::component-client[]
         }
     }
@@ -43,12 +45,13 @@ public class LimitedFibonacciAction extends Action {
             return effects().error("Only numbers between 0 and 10k are allowed", Status.Code.INVALID_ARGUMENT);
         } else {
             logger.info("Executing POST call to real /fibonacci = " + number.value());
-            var serviceCall =
+            var nextNumberReply =
               componentClient.forAction()
                 .method(FibonacciAction::nextNumber)
-                .deferred(number);
+                .deferred(number)
+                .invokeAsync();
 
-            return effects().forward(serviceCall);
+            return effects().asyncReply(nextNumberReply);
         }
     }
 }

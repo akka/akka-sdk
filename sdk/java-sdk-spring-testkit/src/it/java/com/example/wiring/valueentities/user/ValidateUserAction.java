@@ -31,12 +31,12 @@ public class ValidateUserAction extends Action {
     if (email.isEmpty() || name.isEmpty())
       return effects().error("No field can be empty", StatusCode.ErrorCode.BAD_REQUEST);
 
-    var defCall =
+    var reply =
       componentClient
         .forValueEntity(user)
         .method(UserEntity::createUser)
-        .deferred(new UserEntity.CreatedUser(name, email));
-    return effects().forward(defCall);
+        .invokeAsync(new UserEntity.CreatedUser(name, email));
+    return effects().asyncReply(reply);
   }
 
   @PatchMapping("/email/{email}")
@@ -44,21 +44,21 @@ public class ValidateUserAction extends Action {
     if (email.isEmpty())
       return effects().error("No field can be empty", StatusCode.ErrorCode.BAD_REQUEST);
 
-    var defCall =
+    var reply =
       componentClient
         .forValueEntity(user)
         .method(UserEntity::updateEmail)
-        .deferred(new UserEntity.UpdateEmail(email));
-    return effects().forward(defCall);
+        .invokeAsync(new UserEntity.UpdateEmail(email));
+    return effects().asyncReply(reply);
   }
 
   @DeleteMapping
   public Action.Effect<Ok> delete(@PathVariable String user) {
-    var defCall =
+    var reply =
       componentClient
         .forValueEntity(user)
         .method(UserEntity::deleteUser)
-        .deferred(new UserEntity.Delete());
-    return effects().forward(defCall);
+        .invokeAsync(new UserEntity.Delete());
+    return effects().asyncReply(reply);
   }
 }
