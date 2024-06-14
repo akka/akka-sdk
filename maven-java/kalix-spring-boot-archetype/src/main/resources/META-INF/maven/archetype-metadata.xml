@@ -6,7 +6,7 @@
                 <include>**/*</include>
             </includes>
         </fileSet>
-        <fileSet filtered="false">
+        <fileSet filtered="true">
             <directory>src/main/resources</directory>
             <includes>
                 <include>**/*</include>

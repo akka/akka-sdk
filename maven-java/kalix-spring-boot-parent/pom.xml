@@ -283,6 +283,10 @@
                                 <key>config.resource</key>
                                 <value>dev-mode.conf</value>
                             </systemProperty>
+                            <systemProperty>
+                                <key>logback.configurationFile</key>
+                                <value>logback-runtime-dev-mode.xml</value>
+                            </systemProperty>
                         </systemProperties>
                     </configuration>
                 </plugin>
