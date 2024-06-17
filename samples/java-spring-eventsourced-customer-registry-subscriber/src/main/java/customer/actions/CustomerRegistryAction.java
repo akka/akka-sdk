@@ -2,6 +2,8 @@ package customer.actions;
 
 import kalix.javasdk.action.Action;
 import kalix.spring.WebClientProvider;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -10,6 +12,8 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 @RequestMapping("/customer/{customerId}")
 public class CustomerRegistryAction extends Action {
+
+  private Logger log = LoggerFactory.getLogger(getClass());
 
   public record Address(String street, String city) {
   }
@@ -29,6 +33,7 @@ public class CustomerRegistryAction extends Action {
 
   @PostMapping("/create")
   public Effect<Confirm> create(@PathVariable String customerId, @RequestBody Customer customer) {
+    log.debug("Creating {} with id: {}", customer, customerId);
     // make call on customer-registry service
     var res =
       webClient.post()

@@ -6,7 +6,6 @@ import customer.views.CustomersByEmailView;
 import customer.views.CustomersByNameView;
 import kalix.javasdk.testkit.EventingTestKit.IncomingMessages;
 import kalix.javasdk.testkit.KalixTestKit;
-import kalix.spring.testkit.KalixIntegrationTestKitSupport;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 
@@ -14,7 +13,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class CustomersByNameViewIntegrationTest extends KalixIntegrationTestKitSupport {
+public class CustomersByNameViewIntegrationTest extends CustomerRegistryIntegrationTest {
 
   @Override
   protected KalixTestKit.Settings kalixTestKitSettings() {

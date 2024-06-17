@@ -424,7 +424,6 @@ public class KalixTestKit {
   private boolean started = false;
   private String proxyHost;
   private int proxyPort;
-  private ActorSystem testSystem;
   private EventingTestKit eventingTestKit;
   private ActorSystem runtimeActorSystem;
   private ComponentClient componentClient;
@@ -452,7 +451,7 @@ public class KalixTestKit {
    * @return this KalixTestkit
    */
   public KalixTestKit start() {
-    return start(ConfigFactory.load());
+    return start(ConfigFactory.empty());
   }
 
   /**
@@ -465,21 +464,8 @@ public class KalixTestKit {
     if (started)
       throw new IllegalStateException("KalixTestkit already started");
 
-    // FIXME is this still needed?
-    // don't kill the test JVM when terminating the KalixRunner
-    // conf.put("kalix.system.akka.coordinated-shutdown.exit-jvm", "off");
-    // FIXME external dependencies through docker compose?
-    // integration tests runs the proxy with Testcontainers and therefore
-    // we shouldn't load DockerComposeUtils
-    // conf.put("kalix.dev-mode.docker-compose-file", "none");
-
-
-    // FIXME just the one system for both test and runtime should be enough
-    testSystem = ActorSystem.create("KalixTestkit", ConfigFactory.parseString("akka.http.server.preview.enable-http2 = true"));
-
-    int eventingBackendPort = startEventingTestkit();
-    startRuntime(eventingBackendPort);
-
+    eventingTestKitPort = availableLocalPort();
+    startRuntime(config);
     started = true;
 
     if (log.isDebugEnabled())
@@ -488,19 +474,15 @@ public class KalixTestKit {
     return this;
   }
 
-  private int startEventingTestkit() {
-    eventingTestKitPort = availableLocalPort();
+  private void startEventingTestkit() {
     if (settings.eventingSupport == TEST_BROKER || settings.mockedEventing.hasConfig()) {
       log.info("Eventing TestKit booting up on port: " + eventingTestKitPort);
-      // FIXME actual message codec instance not available until runtime/sdk started
-      eventingTestKit = EventingTestKit.start(testSystem, "0.0.0.0", eventingTestKitPort, new JsonMessageCodec());
+      // actual message codec instance not available until runtime/sdk started, thus this is called after discovery happens
+      eventingTestKit = EventingTestKit.start(runtimeActorSystem, "0.0.0.0", eventingTestKitPort, new JsonMessageCodec());
     }
-    return eventingTestKitPort;
   }
 
-
-
-  private void startRuntime(int grpcEventingBackendPort)  {
+  private void startRuntime(final Config config)  {
     try {
       final Map<String, Object> runtimeOptions = new HashMap<>();
       runtimeOptions.put("kalix.proxy.acl.local-dev.self-deployment-name", settings.serviceName);
@@ -509,7 +491,7 @@ public class KalixTestKit {
       runtimeOptions.put("kalix.proxy.version-check-on-startup", false);
       if (settings.mockedEventing.hasConfig()) {
         runtimeOptions.put("kalix.proxy.eventing.grpc-backend.host", "localhost");
-        runtimeOptions.put("kalix.proxy.eventing.grpc-backend.port", grpcEventingBackendPort);
+        runtimeOptions.put("kalix.proxy.eventing.grpc-backend.port", eventingTestKitPort);
       }
       if (settings.eventingSupport == TEST_BROKER) {
         runtimeOptions.put("kalix.proxy.eventing.support", "grpc-backend");
@@ -534,14 +516,16 @@ public class KalixTestKit {
 
 
       log.debug("Config for runtime: {}", runtimeOptions);
+      log.debug("Config from user: {}", config);
       // rationale: we want to override things with the runtime options, then use dev mode for everything the runtime
       //            needs but then allow user to specify their own settings that are found (Note that users cannot override
       //            runtime config with an application.conf)
       var runtimeConfig = ConfigFactory.parseMap(runtimeOptions)
+              .withFallback(config)
               .withFallback(ConfigFactory.load("dev-mode.conf"))
               .withFallback(ConfigFactory.load("application.conf"));
 
-      proxyPort = 9000;
+      proxyPort = runtimeConfig.getInt("kalix.proxy.http-port");
       proxyHost = "localhost";
 
       Promise<Tuple2<Kalix, KalixClient>> startedKalix = Promise.apply();
@@ -557,7 +541,9 @@ public class KalixTestKit {
       kalix = tuple._1();
       var kalixClient = tuple._2;
 
-      Http http = Http.get(testSystem);
+      startEventingTestkit();
+
+      Http http = Http.get(runtimeActorSystem);
       log.info("Checking kalix-runtime status");
       // FIXME we need a stable runtime endpoint location that would reply 200 in dev mode, the regular management endpoint is not available
       CompletionStage<String> checkingProxyStatus = Patterns.retry(() -> http.singleRequest(HttpRequest.GET("http://localhost:" + proxyPort + "/")).thenCompose(response -> {
@@ -569,7 +555,7 @@ public class KalixTestKit {
           log.info("Waiting for kalix-runtime, current response code is {}", responseCode);
           return CompletableFuture.failedFuture(new IllegalStateException("Kalix Runtime not started."));
         }
-      }), 10, Duration.ofSeconds(1), testSystem);
+      }), 10, Duration.ofSeconds(1), runtimeActorSystem);
 
       try {
         checkingProxyStatus.toCompletableFuture().get();
@@ -582,7 +568,7 @@ public class KalixTestKit {
       // the proxy will announce its host and default port, but to communicate with it,
       // we need to use the port and host that testcontainers will expose
       // therefore, we set a port override in ProxyInfoHolder to allow for inter-component communication
-      ProxyInfoHolder holder = ProxyInfoHolder.get(testSystem);
+      ProxyInfoHolder holder = ProxyInfoHolder.get(runtimeActorSystem);
       holder.overridePort(proxyPort);
       holder.overrideProxyHost(proxyHost);
       holder.overrideTracingCollectorEndpoint(""); //emulating ProxyInfo with disabled tracing.
@@ -677,7 +663,7 @@ public class KalixTestKit {
   public ActorSystem getActorSystem() {
     if (!started)
       throw new IllegalStateException("Need to start KalixTestkit before accessing actor system");
-    return testSystem;
+    return runtimeActorSystem;
   }
 
   /**
@@ -757,12 +743,6 @@ public class KalixTestKit {
    * Stop the testkit and local Kalix.
    */
   public void stop() {
-    try {
-      // FIXME no java duration timeout in Akka java api
-      TestKit.shutdownActorSystem(testSystem, FiniteDuration.create(settings.stopTimeout.toMillis(), "ms"), true);
-    } catch (Exception e) {
-      log.error("KalixTestkit ActorSystem failed to terminate", e);
-    }
     try {
       if (runtimeActorSystem != null) {
         TestKit.shutdownActorSystem(runtimeActorSystem, FiniteDuration.create(settings.stopTimeout.toMillis(), "ms"), true);

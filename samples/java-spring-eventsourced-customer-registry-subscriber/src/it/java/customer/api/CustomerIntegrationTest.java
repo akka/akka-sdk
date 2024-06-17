@@ -1,30 +1,15 @@
 package customer.api;
 
 
-import com.typesafe.config.Config;
-import com.typesafe.config.ConfigFactory;
 import customer.actions.CustomerRegistryAction;
 import customer.views.CustomersByNameView;
-import kalix.javasdk.JsonSupport;
-import kalix.javasdk.client.ComponentClient;
-import kalix.spring.testkit.AsyncCallsSupport;
 import org.awaitility.Awaitility;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
-import org.springframework.context.ApplicationContext;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
-import org.springframework.http.MediaType;
-import org.springframework.http.codec.json.Jackson2JsonEncoder;
-import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.client.WebClientRequestException;
-import reactor.core.publisher.Mono;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -45,79 +30,15 @@ import static java.time.temporal.ChronoUnit.SECONDS;
  * - resolution of service port mappings from docker-compose file allows for cross service calls (eg: create customer from subscriber service)
  * - resolution of service port mappings passed to kalix-runtime allows for service to service streaming (eg: customer view is updated in subscriber service)
  */
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class CustomerIntegrationTest extends AsyncCallsSupport {
+public class CustomerIntegrationTest extends CustomerRegistryIntegrationTest {
 
   final private Duration timeout = Duration.of(5, SECONDS);
-
-  // FIXME integration test support for starting another service as a prerequisite - would still be docker?
-  private ComponentClient componentClient;
-
-  public CustomerIntegrationTest(ApplicationContext applicationContext) {
-    Map<String, Object> confMap = new HashMap<>();
-    // don't kill the test JVM when terminating the KalixRunner
-    confMap.put("kalix.system.akka.coordinated-shutdown.exit-jvm", "off");
-    confMap.put("kalix.dev-mode.docker-compose-file", "docker-compose-integration.yml");
-    confMap.put("kalix.user-function-interface", "0.0.0.0");
-
-    Config config = ConfigFactory.parseMap(confMap).withFallback(ConfigFactory.load());
-
-    // kalixSpringApplication = new KalixSpringApplication(applicationContext, config);
-  }
+  private Logger logger = LoggerFactory.getLogger(getClass());
 
 
-  private HttpStatusCode assertSourceServiceIsUp(WebClient webClient) {
-    try {
-      return webClient.get()
-        .retrieve()
-        .onStatus(HttpStatusCode::is4xxClientError, clientResponse ->
-          Mono.empty()
-        )
-        .toBodilessEntity()
-        .block(timeout)
-        .getStatusCode();
-
-    } catch (WebClientRequestException ex) {
-      throw new RuntimeException("This test requires an external kalix service to be running on localhost:9000 but was not able to reach it.");
-    }
-  }
-
-  /* create the client but only return it after verifying that service is reachable */
-  private WebClient createClient(String url) {
-
-    var webClient =
-      WebClient
-        .builder()
-        .baseUrl(url)
-        .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-        .codecs(configurer ->
-          configurer.defaultCodecs().jackson2JsonEncoder(
-            new Jackson2JsonEncoder(JsonSupport.getObjectMapper(), MediaType.APPLICATION_JSON)
-          )
-        )
-        .build();
-
-    // wait until customer service is up
-    Awaitility.await()
-      .ignoreExceptions()
-      .pollInterval(5, TimeUnit.SECONDS)
-      .atMost(5, TimeUnit.MINUTES)
-      .until(() -> assertSourceServiceIsUp(webClient),
-        new IsEqual(HttpStatus.NOT_FOUND)  // NOT_FOUND is a sign that the customer registry service is there
-      );
-
-    return webClient;
-  }
-
-
-  /**
-   * This test relies on a source Kalix service to which it subscribes. Such service should be running on :9000
-   */
+  // this test relies on a source Kalix service to which it subscribes. Such service should be running on :9000
   @Test
   public void create()  {
-
-    createClient("http://localhost:9000");
-
     // start the real test now  
     String id = UUID.randomUUID().toString();
     CustomerRegistryAction.Customer customer = new CustomerRegistryAction.Customer("foo@example.com", "Johanna", new CustomerRegistryAction.Address("street", "city"));
@@ -126,7 +47,7 @@ public class CustomerIntegrationTest extends AsyncCallsSupport {
     Awaitility.await()
       .ignoreExceptions()
       .pollInterval(5, TimeUnit.SECONDS)
-      .atMost(60, TimeUnit.SECONDS)
+      .atMost(10, TimeUnit.SECONDS)
       .until(() ->
         await(
           componentClient.forAction()
