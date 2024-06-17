@@ -29,7 +29,7 @@ public class TransferWorkflow extends Workflow<TransferState> {
     var withdraw =
         step(withdrawStepName)
             .asyncCall(Withdraw.class, cmd -> componentClient.forValueEntity(cmd.from).method(WalletEntity::withdraw).invokeAsync(cmd.amount))
-            .andThen(HttpResponse.class, __ -> {
+            .andThen(String.class, __ -> {
               var state = currentState().withLastStep("withdrawn").accepted();
 
               var depositInput = new Deposit(currentState().transfer.to, currentState().transfer.amount);

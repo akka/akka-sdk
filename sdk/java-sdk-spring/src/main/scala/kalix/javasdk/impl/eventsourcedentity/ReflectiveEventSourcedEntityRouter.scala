@@ -5,7 +5,6 @@
 package kalix.javasdk.impl.eventsourcedentity
 
 import java.lang.reflect.ParameterizedType
-
 import com.google.protobuf.any.{ Any => ScalaPbAny }
 import kalix.javasdk.JsonSupport
 import kalix.javasdk.eventsourcedentity.CommandContext
@@ -16,16 +15,18 @@ import kalix.javasdk.impl.JsonMessageCodec
 import kalix.javasdk.impl.StrictJsonMessageCodec
 import kalix.javasdk.impl.reflection.Reflect
 
+import scala.util.control.NonFatal
+
 class ReflectiveEventSourcedEntityRouter[S, E, ES <: EventSourcedEntity[S, E]](
     override protected val entity: ES,
     commandHandlers: Map[String, CommandHandler],
-    messageCode: JsonMessageCodec)
+    messageCodec: JsonMessageCodec)
     extends EventSourcedEntityRouter[S, E, ES](entity) {
 
-  private val strictCodec = new StrictJsonMessageCodec(messageCode)
+  private val strictCodec = new StrictJsonMessageCodec(messageCodec)
 
   // similar to workflow, we preemptively register the events type to the message codec
-  Reflect.allKnownEventTypes[S, E, ES](entity).foreach(messageCode.registerTypeHints)
+  Reflect.allKnownEventTypes[S, E, ES](entity).foreach(messageCodec.registerTypeHints)
 
   private def commandHandlerLookup(commandName: String) =
     commandHandlers.getOrElse(
@@ -58,19 +59,45 @@ class ReflectiveEventSourcedEntityRouter[S, E, ES <: EventSourcedEntity[S, E]](
     _extractAndSetCurrentState(state)
 
     val commandHandler = commandHandlerLookup(commandName)
-    val invocationContext =
-      InvocationContext(
-        command.asInstanceOf[ScalaPbAny],
-        commandHandler.requestMessageDescriptor,
-        commandContext.metadata())
 
-    val inputTypeUrl = command.asInstanceOf[ScalaPbAny].typeUrl
-    val methodInvoker = commandHandler
-      .getInvoker(inputTypeUrl)
+    val scalaPbAnyCommand = command.asInstanceOf[ScalaPbAny]
+    if (scalaPbAnyCommand.typeUrl.startsWith(JsonSupport.KALIX_JSON)) {
+      // special cased component client calls, lets json commands trough all the way
+      val methodInvoker = commandHandler.getSingleNameInvoker()
+      val parameterTypes = methodInvoker.method.getParameterTypes
+      val result =
+        if (parameterTypes.isEmpty) methodInvoker.invoke(entity)
+        else if (parameterTypes.size > 1)
+          throw new IllegalArgumentException(
+            s"Command handler for [${entity.getClass}.$commandName] expects more than one parameter, not supported (parameter types: [${parameterTypes.mkString}]")
+        else {
+          // we used to dispatch based on the type, since that is how it works in protobuf for eventing
+          // but here we have a concrete command name, and can pick up the expected serialized type from there
+          val decodedParameter =
+            try {
+              JsonSupport.decodeJson(parameterTypes(0), scalaPbAnyCommand)
+            } catch {
+              case NonFatal(ex) =>
+                throw new IllegalArgumentException(
+                  s"Could not deserialize message for ${entity.getClass}.${commandName}",
+                  ex)
+            }
+          methodInvoker.invokeDirectly(entity, decodedParameter.asInstanceOf[AnyRef])
+        }
+      result.asInstanceOf[EventSourcedEntity.Effect[_]]
+    } else {
+      // this is the old path, needed until we remove the http-grpc-handling of the static es endpoints
+      val invocationContext =
+        InvocationContext(scalaPbAnyCommand, commandHandler.requestMessageDescriptor, commandContext.metadata())
 
-    methodInvoker
-      .invoke(entity, invocationContext)
-      .asInstanceOf[EventSourcedEntity.Effect[_]]
+      val inputTypeUrl = command.asInstanceOf[ScalaPbAny].typeUrl
+      val methodInvoker = commandHandler
+        .getInvoker(inputTypeUrl)
+
+      methodInvoker
+        .invoke(entity, invocationContext)
+        .asInstanceOf[EventSourcedEntity.Effect[_]]
+    }
   }
 
   private def _extractAndSetCurrentState(state: S): Unit = {

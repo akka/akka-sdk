@@ -6,6 +6,10 @@ package kalix.spring.impl
 
 import com.google.protobuf.any.Any
 import kalix.javasdk.DeferredCall
+import kalix.javasdk.impl.JsonMessageCodec
+import kalix.javasdk.spi.ComponentClients
+
+import scala.concurrent.ExecutionContext
 
 /**
  * INTERNAL API
@@ -14,6 +18,11 @@ import kalix.javasdk.DeferredCall
  * belong to a service on the same project.
  */
 trait KalixClient {
+
+  // FIXME some other way to pass along these, maybe once the RESTy stuff away these _are_ the KalixClient?
+  implicit def executionContext: ExecutionContext
+  def runtimeComponentClients: ComponentClients
+  def messageCodec: JsonMessageCodec
 
   /**
    * Provides utility to do a GET HTTP request to a target endpoint belonging to a Kalix component. Such endpoint is
@@ -218,4 +227,5 @@ trait KalixClient {
    *   a [[DeferredCall]] to be used in forwards and timers or to be executed in place
    */
   def delete[R](uri: String, returnType: Class[R]): DeferredCall[Any, R]
+
 }

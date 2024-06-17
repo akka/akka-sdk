@@ -165,9 +165,7 @@ public class XComponentCallsIntegrationTest extends KalixIntegrationTestKitSuppo
           .invokeAsync()
       );
 
-    // FIXME: currently code is sending 500, but it doesn't make sense of an entity to speak http status codes
-    // fix endpoints components should return only string messages
-    // for the record, this message comes from Spring WebClient
-    Assertions.assertTrue(deletedUserException.getMessage().contains("500 Internal Server Error from GET"));
+    // FIXME: should be a SPI specific exception or something
+    Assertions.assertEquals(deletedUserException.getMessage(), "java.lang.RuntimeException: User not found");
   }
 }

@@ -18,7 +18,12 @@ import kalix.javasdk.impl.MetadataImpl;
 import kalix.javasdk.impl.RestDeferredCall;
 import kalix.javasdk.impl.Validations;
 import kalix.javasdk.impl.client.ComponentClientImpl;
+import kalix.javasdk.impl.client.EmbeddedDeferredCall;
+import kalix.javasdk.impl.client.EmbeddedDeferredCall$;
 import kalix.javasdk.impl.telemetry.Telemetry;
+import kalix.javasdk.spi.ComponentClients;
+import kalix.javasdk.spi.EntityClient;
+import kalix.javasdk.spi.TimerClient;
 import kalix.spring.impl.RestKalixClientImpl;
 import kalix.spring.testmodels.Message;
 import kalix.spring.testmodels.Number;
@@ -33,12 +38,15 @@ import kalix.spring.testmodels.valueentity.User;
 import kalix.spring.testmodels.view.ViewTestModels;
 import kalix.spring.testmodels.view.ViewTestModels.UserByEmailWithGet;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import scala.concurrent.ExecutionContext;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
 class ComponentClientTest {
@@ -49,7 +57,26 @@ class ComponentClientTest {
 
   @BeforeEach
   public void initEach() {
-    restKalixClient = new RestKalixClientImpl(messageCodec);
+    // FIXME what are we actually testing here?
+    var dummyComponentClients = new ComponentClients() {
+
+      @Override
+      public EntityClient eventSourcedEntityClient() {
+        return null;
+      }
+
+      @Override
+      public EntityClient valueEntityClient() {
+        return null;
+      }
+
+      @Override
+      public EntityClient workFlowClient() { return null; }
+
+      @Override
+      public TimerClient timerClient() { return null; }
+    };
+    restKalixClient = new RestKalixClientImpl(messageCodec, dummyComponentClients, ExecutionContext.global());
     componentClient = new ComponentClientImpl(restKalixClient);
   }
 
@@ -283,7 +310,7 @@ class ComponentClientTest {
 
     var id = "abc123";
     //when
-    RestDeferredCall<Any, Number> call = (RestDeferredCall<Any, Number>)
+    EmbeddedDeferredCall<Integer, Number> call = (EmbeddedDeferredCall<Integer, Number>)
       componentClient.forValueEntity(id)
         .method(Counter::randomIncrease)
         .deferred(param);
@@ -291,7 +318,7 @@ class ComponentClientTest {
     //then
     assertThat(call.fullServiceName()).isEqualTo(targetMethod.getService().getFullName());
     assertThat(call.methodName()).isEqualTo(targetMethod.getName());
-    assertMethodParamsMatch(targetMethod, call.message(), id);
+    assertEquals(10, call.message());
   }
 
 

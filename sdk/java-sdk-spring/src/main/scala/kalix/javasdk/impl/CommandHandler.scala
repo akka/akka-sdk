@@ -46,8 +46,13 @@ case class CommandHandler(
   def getInvoker(inputTypeUrl: String): MethodInvoker =
     lookupInvoker(inputTypeUrl).getOrElse {
       throw new NoSuchElementException(
-        s"Couldn't find any entry for typeUrl [$inputTypeUrl] in [${methodInvokers.view.mapValues(_.method.getName)}].")
+        s"Couldn't find any entry for typeUrl [$inputTypeUrl] in [${methodInvokers.view.mapValues(_.method.getName).mkString}].")
     }
+
+  // for embedded SDK we expect components to be either zero or one arity
+  def getSingleNameInvoker(): MethodInvoker =
+    if (methodInvokers.size != 1) throw new IllegalStateException(s"More than one method defined for $grpcMethodName")
+    else methodInvokers.head._2
 }
 
 object MethodInvoker {
@@ -70,4 +75,10 @@ case class MethodInvoker(method: Method, parameterExtractors: Array[ParameterExt
    */
   def invoke(componentInstance: AnyRef): AnyRef =
     method.invoke(componentInstance)
+
+  /**
+   * To invoke a methods with a deserialized payload
+   */
+  def invokeDirectly(componentInstance: AnyRef, payload: AnyRef): AnyRef =
+    method.invoke(componentInstance, payload)
 }

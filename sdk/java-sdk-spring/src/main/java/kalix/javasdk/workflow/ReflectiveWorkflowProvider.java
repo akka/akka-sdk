@@ -39,7 +39,7 @@ public class ReflectiveWorkflowProvider<S, W extends Workflow<S>> implements Wor
     }
 
     this.workflowClass = workflowClass;
-    this.messageCodec = new StrictJsonMessageCodec(messageCodec);
+    this.messageCodec = messageCodec; // new StrictJsonMessageCodec(messageCodec);
     this.factory = factory;
     this.options = options;
     this.typeId = annotation.value();

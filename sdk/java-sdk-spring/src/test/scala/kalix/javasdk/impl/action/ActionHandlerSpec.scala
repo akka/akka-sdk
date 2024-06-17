@@ -4,10 +4,11 @@
 
 package kalix.javasdk.impl.action
 
+import akka.Done
+
 import scala.concurrent.Await
 import scala.concurrent.Future
 import scala.concurrent.duration._
-
 import akka.NotUsed
 import akka.actor.testkit.typed.scaladsl.LogCapturing
 import akka.actor.testkit.typed.scaladsl.LoggingTestKit
@@ -23,6 +24,8 @@ import kalix.javasdk.action.MessageEnvelope
 import kalix.javasdk.impl.ActionFactory
 import kalix.javasdk.impl.AnySupport
 import kalix.javasdk.impl.ProxyInfoHolder
+import kalix.javasdk.spi.DeferredRequest
+import kalix.javasdk.spi.TimerClient
 import kalix.protocol.action.ActionCommand
 import kalix.protocol.action.ActionResponse
 import kalix.protocol.action.Actions
@@ -59,7 +62,18 @@ class ActionHandlerSpec
     //setting tracing as disabled, emulating that is discovered from the proxy.
     ProxyInfoHolder(system).overrideTracingCollectorEndpoint("")
 
-    new ActionsImpl(classicSystem, services)
+    new ActionsImpl(
+      classicSystem,
+      services,
+      new TimerClient {
+        // Not exercised here
+        override def startSingleTimer(
+            name: String,
+            delay: FiniteDuration,
+            maxRetries: Int,
+            deferredRequest: DeferredRequest): Future[Done] = ???
+        override def removeTimer(name: String): Future[Done] = ???
+      })
   }
 
   "The action service" should {

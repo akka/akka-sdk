@@ -47,6 +47,12 @@ private[kalix] class JsonMessageCodec extends MessageCodec {
     }
   }
 
+  def encodeJavaToBytes(value: Any): akka.util.ByteString = {
+    if (value == null) throw NullSerializationException
+    val buf = JsonSupport.encodeToBytes(value, lookupTypeHintWithVersion(value)).asReadOnlyByteBuffer()
+    akka.util.ByteString.fromByteBuffer(buf)
+  }
+
   override def encodeJava(value: Any): JavaPbAny = {
     if (value == null) throw NullSerializationException
     value match {
@@ -174,6 +180,11 @@ private[kalix] class JsonMessageCodec extends MessageCodec {
     value
   }
 
+  def decodeMessage[T](expectedType: Class[T], bytes: akka.util.ByteString): T = {
+    // FIXME could we avoid the copy?
+    JsonSupport.parseBytes(bytes.toArrayUnsafe(), expectedType)
+  }
+
   private[kalix] def removeVersion(typeName: String) = {
     typeName.split("#").head
   }
@@ -189,13 +200,12 @@ private[kalix] class StrictJsonMessageCodec(delegate: JsonMessageCodec) extends 
   override def toString: String = s"StrictJsonMessageCodec -> $delegate"
   override def decodeMessage(value: ScalaPbAny): Any =
     if (value.typeUrl.startsWith(JsonSupport.KALIX_JSON)) {
-      val any = ScalaPbAny.toJavaProto(value)
       val typeName = delegate.removeVersion(value.typeUrl.replace(JsonSupport.KALIX_JSON, ""))
       val typeClass = delegate.reversedTypeHints.get(typeName)
       if (typeClass == null) {
         throw new IllegalStateException(s"Cannot decode ${value.typeUrl} message type. Class mapping not found.")
       } else {
-        JsonSupport.decodeJson(typeClass, any)
+        JsonSupport.decodeJson(typeClass, value)
       }
     } else {
       value

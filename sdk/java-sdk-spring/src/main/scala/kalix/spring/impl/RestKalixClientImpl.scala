@@ -9,12 +9,10 @@ import java.util
 import java.util.concurrent.CompletionStage
 import java.util.function.Function
 import scala.language.existentials
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.Promise
 import scala.jdk.CollectionConverters._
 import scala.jdk.FutureConverters._
-
 import akka.http.scaladsl.model.HttpMethod
 import akka.http.scaladsl.model.HttpMethods
 import akka.http.scaladsl.model.Uri
@@ -33,6 +31,7 @@ import kalix.javasdk.DeferredCall
 import kalix.javasdk.HttpResponse
 import kalix.javasdk.Metadata
 import kalix.javasdk.StatusCode
+import kalix.javasdk.spi.ComponentClients
 import org.springframework.http.ResponseEntity
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.WebClient.RequestHeadersSpec
@@ -40,10 +39,14 @@ import org.springframework.web.reactive.function.client.WebClient.RequestHeaders
 import org.springframework.web.reactive.function.client.WebClientResponseException
 import org.springframework.web.util.UriBuilder
 
+import scala.concurrent.ExecutionContext
+
 /**
  * INTERNAL API
  */
-final class RestKalixClientImpl(messageCodec: JsonMessageCodec) extends KalixClient {
+final class RestKalixClientImpl(val messageCodec: JsonMessageCodec, val runtimeComponentClients: ComponentClients)(
+    implicit val executionContext: ExecutionContext)
+    extends KalixClient {
 
   // FIXME better if this was a val that doesn't need any memory guards
   @volatile private var services: Seq[HttpEndpointMethodDefinition] = Seq.empty

@@ -41,7 +41,7 @@ public class TransferWorkflowWithFraudDetection extends Workflow<TransferState> 
         step(withdrawStepName)
             .asyncCall(Withdraw.class, cmd ->
                 componentClient.forValueEntity(cmd.from).method(WalletEntity::withdraw).invokeAsync(cmd.amount))
-            .andThen(HttpResponse.class, this::moveToDeposit);
+            .andThen(String.class, this::moveToDeposit);
 
     var deposit =
         step(depositStepName)
@@ -96,7 +96,7 @@ public class TransferWorkflowWithFraudDetection extends Workflow<TransferState> 
     return effects().updateState(state).end();
   }
 
-  private Effect.TransitionalEffect<Void> moveToDeposit(HttpResponse response) {
+  private Effect.TransitionalEffect<Void> moveToDeposit(String response) {
     var state = currentState().withLastStep(withdrawStepName);
 
     var depositInput = new Deposit(currentState().transfer.to, currentState().transfer.amount);

@@ -8,16 +8,16 @@ import java.lang.reflect.Constructor
 import java.lang.reflect.ParameterizedType
 import java.time.Duration
 import java.util.concurrent.atomic.AtomicReference
-
 import scala.concurrent.Future
 import scala.concurrent.Promise
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 import scala.jdk.CollectionConverters.MapHasAsScala
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
-
 import akka.Done
 import akka.actor.typed.ActorSystem
+import akka.http.scaladsl.model.HttpRequest
+import akka.http.scaladsl.model.HttpResponse
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import io.opentelemetry.api.trace.Tracer
@@ -48,6 +48,7 @@ import kalix.javasdk.impl.view.ViewService
 import kalix.javasdk.impl.view.ViewsImpl
 import kalix.javasdk.impl.workflow.WorkflowImpl
 import kalix.javasdk.impl.workflow.WorkflowService
+import kalix.javasdk.spi.ComponentClients
 import kalix.javasdk.spi.SpiEndpoints
 import kalix.javasdk.valueentity.ReflectiveValueEntityProvider
 import kalix.javasdk.valueentity.ValueEntity
@@ -101,9 +102,9 @@ final case class KalixJavaSdkSettings(
 
 final class NextGenComponentAutoDetectRunner extends kalix.javasdk.spi.Runner {
 
-  override def start(system: ActorSystem[_]): Future[SpiEndpoints] = {
+  override def start(system: ActorSystem[_], runtimeComponentClients: ComponentClients): Future[SpiEndpoints] = {
     try {
-      val app = new NextGenKalixJavaApplication(system)
+      val app = new NextGenKalixJavaApplication(system, runtimeComponentClients)
       Future.successful(app.spiEndpoints)
     } catch {
       case NonFatal(ex) =>
@@ -177,10 +178,10 @@ private final object NextGenKalixJavaApplication {
   val onNextStartCallback: AtomicReference[Promise[(Kalix, KalixClient)]] = new AtomicReference(null)
 }
 
-private final class NextGenKalixJavaApplication(system: ActorSystem[_]) {
+private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeComponentClients: ComponentClients) {
   private val logger = LoggerFactory.getLogger(getClass)
   private val messageCodec = new JsonMessageCodec
-  private val kalixClient = new RestKalixClientImpl(messageCodec)
+  private val kalixClient = new RestKalixClientImpl(messageCodec, runtimeComponentClients)(system.executionContext)
   private val ComponentLocator.LocatedClasses(componentClasses, maybeServiceClass) =
     ComponentLocator.locateUserComponents(system)
 
@@ -202,6 +203,7 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_]) {
       .getOrElse(AclDescriptorFactory.defaultAclFileDescriptor)
 
   // FIXME why is acl descriptor needed both here and in discovery?
+  // FIXME drop the Kalix class and pull all logic in here
   private val kalix = new Kalix().withDefaultAclFileDescriptor(aclDescriptor)
   componentClasses
     .foreach { clz =>
@@ -216,21 +218,18 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_]) {
         logger.info(s"Registering EventSourcedEntity provider for [${clz.getName}]")
         val esEntity = eventSourcedEntityProvider(clz.asInstanceOf[Class[EventSourcedEntity[Nothing, Nothing]]])
         kalix.register(esEntity)
-        kalixClient.registerComponent(esEntity.serviceDescriptor())
       }
 
       if (classOf[Workflow[_]].isAssignableFrom(clz)) {
         logger.info(s"Registering Workflow provider for [${clz.getName}]")
         val workflow = workflowProvider(clz.asInstanceOf[Class[Workflow[Nothing]]])
         kalix.register(workflow)
-        kalixClient.registerComponent(workflow.serviceDescriptor())
       }
 
       if (classOf[ValueEntity[_]].isAssignableFrom(clz)) {
         logger.info(s"Registering ValueEntity provider for [${clz.getName}]")
         val valueEntity = valueEntityProvider(clz.asInstanceOf[Class[ValueEntity[Nothing]]])
         kalix.register(valueEntity)
-        kalixClient.registerComponent(valueEntity.serviceDescriptor())
       }
 
       if (classOf[View[_]].isAssignableFrom(clz) && !Reflect.isNestedViewTable(clz)) {
@@ -279,11 +278,12 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_]) {
 
       case (serviceClass, workflowServices: Map[String, WorkflowService] @unchecked)
           if serviceClass == classOf[WorkflowService] =>
-        workflowEntitiesEndpoint = Some(new WorkflowImpl(classicSystem, workflowServices))
+        workflowEntitiesEndpoint =
+          Some(new WorkflowImpl(classicSystem, workflowServices, runtimeComponentClients.timerClient))
 
       case (serviceClass, actionServices: Map[String, ActionService] @unchecked)
           if serviceClass == classOf[ActionService] =>
-        actionsEndpoint = Some(new ActionsImpl(classicSystem, actionServices))
+        actionsEndpoint = Some(new ActionsImpl(classicSystem, actionServices, runtimeComponentClients.timerClient))
 
       case (serviceClass, viewServices: Map[String, ViewService] @unchecked) if serviceClass == classOf[ViewService] =>
         viewsEndpoint = Some(new ViewsImpl(classicSystem, viewServices))
@@ -325,6 +325,7 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_]) {
         }
       }
 
+      override def endpoints: PartialFunction[HttpRequest, Future[HttpResponse]] = PartialFunction.empty
       override def discovery: Discovery = discoveryEndpoint
       override def actions: Option[Actions] = actionsEndpoint
       override def eventSourcedEntities: Option[EventSourcedEntities] = eventSourcedEntitiesEndpoint

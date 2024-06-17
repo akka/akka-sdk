@@ -4,29 +4,6 @@
 
 package com.example.wiring.pubsub;
 
-import com.example.Main;
-import com.example.wiring.eventsourcedentities.counter.CounterEntity;
-import com.example.wiring.valueentities.customer.CustomerEntity;
-import com.example.wiring.valueentities.customer.CustomerEntity.Customer;
-import com.typesafe.config.Config;
-import com.typesafe.config.ConfigFactory;
-import kalix.javasdk.client.EventSourcedEntityClient;
-import org.awaitility.Awaitility;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.ApplicationContext;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.TestPropertySource;
-
-import java.time.Instant;
-import java.util.concurrent.TimeUnit;
-
-import static com.example.wiring.pubsub.PublishBytesToTopic.CUSTOMERS_BYTES_TOPIC;
-import static com.example.wiring.pubsub.PublishTopicToTopic.CUSTOMERS_2_TOPIC;
-import static com.example.wiring.pubsub.PublishVEToTopic.CUSTOMERS_TOPIC;
-import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 /*
 //@SpringBootTest(classes = Main.class)

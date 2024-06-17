@@ -39,7 +39,7 @@
         <maven.compiler.release>${java.version}</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <kalix-sdk.version>1.5.0</kalix-sdk.version>
-        <kalix-runtime.version>1.1.36-0b5ba7a</kalix-runtime.version>
+        <kalix-runtime.version>1.1.36-1960ed9</kalix-runtime.version>
         <skip.docker>false</skip.docker>
 
 

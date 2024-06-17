@@ -4,6 +4,7 @@
 
 package kalix.javasdk.impl
 
+import akka.Done
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import akka.actor.typed.scaladsl.adapter._
 import com.google.protobuf.any.Any.toJavaProto
@@ -20,6 +21,8 @@ import kalix.javasdk.eventsourcedentity.OldTestESEvent.OldEvent3
 import kalix.javasdk.eventsourcedentity.TestESEvent.Event4
 import kalix.javasdk.impl.action.ActionService
 import kalix.javasdk.impl.action.ActionsImpl
+import kalix.javasdk.spi.DeferredRequest
+import kalix.javasdk.spi.TimerClient
 import kalix.protocol.action.ActionCommand
 import kalix.protocol.action.ActionResponse
 import kalix.protocol.action.Actions
@@ -32,6 +35,9 @@ import org.scalatest.OptionValues
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
+
+import scala.concurrent.Future
+import scala.concurrent.duration.FiniteDuration
 
 class ActionsImplSpec
     extends ScalaTestWithActorTestKit
@@ -56,7 +62,18 @@ class ActionsImplSpec
     //setting tracing as disabled, emulating that is discovered from the proxy.
     ProxyInfoHolder(system).overrideTracingCollectorEndpoint(tracingCollector)
 
-    new ActionsImpl(classicSystem, services)
+    new ActionsImpl(
+      classicSystem,
+      services,
+      new TimerClient {
+        // Not exercised here
+        override def startSingleTimer(
+            name: String,
+            delay: FiniteDuration,
+            maxRetries: Int,
+            deferredRequest: DeferredRequest): Future[Done] = ???
+        override def removeTimer(name: String): Future[Done] = ???
+      })
   }
 
   "The action service" should {

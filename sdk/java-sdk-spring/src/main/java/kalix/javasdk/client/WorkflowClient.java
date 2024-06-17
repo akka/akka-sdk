@@ -7,33 +7,17 @@ package kalix.javasdk.client;
 import akka.japi.function.Function;
 import akka.japi.function.Function2;
 import kalix.javasdk.workflow.Workflow;
-import kalix.spring.impl.KalixClient;
 
-import java.util.Optional;
-
-public class WorkflowClient {
-
-  private final KalixClient kalixClient;
-  private final String workflowId;
-
-  public WorkflowClient(KalixClient kalixClient, String workflowId) {
-    this.kalixClient = kalixClient;
-    this.workflowId = workflowId;
-  }
+public interface WorkflowClient {
 
   /**
    * Pass in a Workflow method reference annotated as a REST endpoint, e.g. <code>MyWorkflow::start</code>
    */
-  public <T, R> ComponentMethodRef<R> method(Function<T, Workflow.Effect<R>> methodRef) {
-    return new ComponentMethodRef<>(kalixClient, methodRef, Optional.of(workflowId), Optional.empty());
-  }
+  <T, R> NativeComponentMethodRef<R> method(Function<T, Workflow.Effect<R>> methodRef);
 
   /**
    * Pass in a Workflow method reference annotated as a REST endpoint, e.g. <code>MyWorkflow::start</code>
    */
-  public <T, A1, R> ComponentMethodRef1<A1, R> method(Function2<T, A1, Workflow.Effect<R>> methodRef) {
-    return new ComponentMethodRef1<>(kalixClient, methodRef, Optional.of(workflowId), Optional.empty());
-  }
-
+  <T, A1, R> NativeComponentMethodRef1<A1, R> method(Function2<T, A1, Workflow.Effect<R>> methodRef);
 
 }

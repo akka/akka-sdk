@@ -5,14 +5,12 @@
 package com.example.wiring;
 
 import com.example.wiring.eventsourcedentities.counter.CounterEntity;
-import kalix.javasdk.client.ComponentClient;
 import kalix.javasdk.client.EventSourcedEntityClient;
 import kalix.spring.testkit.KalixIntegrationTestKitSupport;
 import org.awaitility.Awaitility;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.concurrent.TimeUnit;
 

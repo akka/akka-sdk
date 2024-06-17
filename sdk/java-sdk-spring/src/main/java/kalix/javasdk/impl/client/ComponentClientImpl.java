@@ -41,18 +41,18 @@ public class ComponentClientImpl implements ComponentClient {
 
   @Override
   public ValueEntityClient forValueEntity(String valueEntityId) {
-    return new ValueEntityClient(kalixClient, callMetadata, valueEntityId);
+    return new ValueEntityClientImpl(kalixClient.runtimeComponentClients().valueEntityClient(), callMetadata, valueEntityId, kalixClient.executionContext());
   }
 
   @Override
   public EventSourcedEntityClient forEventSourcedEntity(String eventSourcedEntityId) {
-    return new EventSourcedEntityClient(kalixClient, callMetadata, eventSourcedEntityId);
+    return new EventSourcedEntityClientImpl(kalixClient.runtimeComponentClients().eventSourcedEntityClient(), callMetadata, eventSourcedEntityId, kalixClient.executionContext());
   }
 
 
   @Override
   public WorkflowClient forWorkflow(String workflowId) {
-    return new WorkflowClient(kalixClient, workflowId);
+    return new WorkflowClientImpl(kalixClient.runtimeComponentClients().workFlowClient(), callMetadata, workflowId, kalixClient.executionContext());
   }
 
 

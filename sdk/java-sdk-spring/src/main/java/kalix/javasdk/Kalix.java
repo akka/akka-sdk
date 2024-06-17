@@ -517,52 +517,6 @@ public final class Kalix {
             provider.additionalDescriptors()));
   }
 
-  /**
-   * Starts a server with the configured entities.
-   *
-   * @return a CompletionStage which will be completed when the server has shut down.
-   */
-  public CompletionStage<Done> start() {
-    return createRunner().run();
-  }
-
-  /**
-   * Starts a server with the configured entities, using the supplied configuration.
-   *
-   * @return a CompletionStage which will be completed when the server has shut down.
-   */
-  public CompletionStage<Done> start(Config config) {
-    return createRunner(config).run();
-  }
-
-  /**
-   * Creates a KalixRunner using the currently configured services. In order to start the server,
-   * `run()` must be invoked on the returned KalixRunner.
-   *
-   * @return a KalixRunner
-   */
-  public KalixRunner createRunner() {
-    return new KalixRunner(
-      services,
-      aclDescriptor,
-      sdkName);
-  }
-
-  /**
-   * Creates a KalixRunner using the currently configured services, using the supplied
-   * configuration. In order to start the server, `run()` must be invoked on the returned
-   * KalixRunner.
-   *
-   * @return a KalixRunner
-   */
-  public KalixRunner createRunner(Config config) {
-    return new KalixRunner(
-      services,
-      config,
-      aclDescriptor,
-      sdkName);
-  }
-
   private AnySupport newAnySupport(Descriptors.FileDescriptor[] descriptors) {
     // we are interested in accumulating all descriptors from all registered components for later use in eventing testkit
     allDescriptors.addAll(Arrays.asList(descriptors));

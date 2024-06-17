@@ -16,7 +16,6 @@ import akka.testkit.javadsl.TestKit;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import kalix.javasdk.Kalix;
-import kalix.javasdk.KalixRunner;
 import kalix.javasdk.Principal;
 import kalix.javasdk.client.ComponentClient;
 import kalix.javasdk.impl.*;
@@ -30,6 +29,7 @@ import kalix.spring.impl.WebClientProviderHolder;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import scala.Some;
 import scala.Tuple2;
 import scala.concurrent.Await;
 import scala.concurrent.Promise;
@@ -535,7 +535,7 @@ public class KalixTestKit {
       // FIXME this can't possibly work, we have already done logging, logback-test should be picked up?
       System.setProperty("logback.configurationFile", "logback-dev-mode.xml");
 
-      runtimeActorSystem = KalixRuntimeMain.start(runtimeConfig);
+      runtimeActorSystem = KalixRuntimeMain.start(Some.apply(runtimeConfig)).classicSystem();
       // wait for SDK to get on start callback (or fail starting), we need it to set up the component client
       var tuple = Await.result(startedKalix.future(), scala.concurrent.duration.Duration.create("20s"));
       kalix = tuple._1();

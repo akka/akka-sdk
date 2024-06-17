@@ -4,18 +4,19 @@
 
 package kalix.javasdk.impl.reflection
 
+import kalix.javasdk.action.Action
+
 import java.lang.annotation.Annotation
 import java.lang.reflect.AnnotatedElement
 import java.lang.reflect.Method
 import java.lang.reflect.Modifier
 import java.lang.reflect.ParameterizedType
 import java.util
-
 import scala.annotation.tailrec
 import scala.reflect.ClassTag
-
 import kalix.javasdk.client.ComponentClient
 import kalix.javasdk.eventsourcedentity.EventSourcedEntity
+import kalix.javasdk.impl.ComponentDescriptorFactory
 import kalix.javasdk.impl.client.ComponentClientImpl
 import kalix.javasdk.valueentity.ValueEntity
 import kalix.javasdk.view.View
@@ -76,6 +77,26 @@ object Reflect {
     extendsView(component) &&
     (component.getDeclaringClass ne null) &&
     Modifier.isStatic(component.getModifiers)
+  }
+
+  def getReturnType[R](declaringClass: Class[_], method: Method): Class[R] = {
+    if (classOf[Action].isAssignableFrom(declaringClass)
+      || classOf[ValueEntity[_]].isAssignableFrom(declaringClass)
+      || classOf[EventSourcedEntity[_, _]].isAssignableFrom(declaringClass)
+      || classOf[Workflow[_]].isAssignableFrom(declaringClass)) {
+      // here we are expecting a wrapper in the form of an Effect
+      method.getGenericReturnType.asInstanceOf[ParameterizedType].getActualTypeArguments.head.asInstanceOf[Class[R]]
+    } else {
+      // in other cases we expect a View query method, but declaring class may not extend View[_] class for join views
+      method.getReturnType.asInstanceOf[Class[R]]
+    }
+  }
+
+  def entityTypeOf(entityClass: Class[_]): String = {
+    val typeId = ComponentDescriptorFactory.readTypeIdValue(entityClass)
+    if (typeId == null)
+      throw new IllegalArgumentException("Entity [" + entityClass.getName + "] is missing '@TypeId' annotation")
+    else typeId
   }
 
   private def extendsView(component: Class[_]): Boolean =

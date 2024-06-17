@@ -4,15 +4,15 @@
 
 package kalix.javasdk.impl.valueentity
 
-import java.lang.reflect.ParameterizedType
-
 import com.google.protobuf.any.{ Any => ScalaPbAny }
+import kalix.javasdk.JsonSupport
 import kalix.javasdk.impl.CommandHandler
 import kalix.javasdk.impl.InvocationContext
-import kalix.javasdk.JsonSupport
-import kalix.javasdk.impl.valueentity.ValueEntityRouter
 import kalix.javasdk.valueentity.CommandContext
 import kalix.javasdk.valueentity.ValueEntity
+
+import java.lang.reflect.ParameterizedType
+import scala.util.control.NonFatal
 
 class ReflectiveValueEntityRouter[S, E <: ValueEntity[S]](
     override protected val entity: E,
@@ -31,18 +31,43 @@ class ReflectiveValueEntityRouter[S, E <: ValueEntity[S]](
     _extractAndSetCurrentState(state)
 
     val commandHandler = commandHandlerLookup(commandName)
-    val invocationContext =
-      InvocationContext(
-        command.asInstanceOf[ScalaPbAny],
-        commandHandler.requestMessageDescriptor,
-        commandContext.metadata())
+    val scalaPbAnyCommand = command.asInstanceOf[ScalaPbAny]
 
-    val inputTypeUrl = command.asInstanceOf[ScalaPbAny].typeUrl
+    if (scalaPbAnyCommand.typeUrl.startsWith(JsonSupport.KALIX_JSON)) {
+      // special cased component client calls, lets json commands trough all the way
+      val methodInvoker = commandHandler.getSingleNameInvoker()
+      val parameterTypes = methodInvoker.method.getParameterTypes
+      val result =
+        if (parameterTypes.isEmpty) methodInvoker.invoke(entity)
+        else if (parameterTypes.size > 1)
+          throw new IllegalArgumentException(
+            s"Command handler for [${entity.getClass}.$commandName] expects more than one parameter, not supported (parameter types: [${parameterTypes.mkString}]")
+        else {
+          // we used to dispatch based on the type, since that is how it works in protobuf for eventing
+          // but here we have a concrete command name, and can pick up the expected serialized type from there
+          val decodedParameter =
+            try {
+              JsonSupport.decodeJson(parameterTypes(0), scalaPbAnyCommand)
+            } catch {
+              case NonFatal(ex) =>
+                throw new IllegalArgumentException(
+                  s"Could not deserialize message for ${entity.getClass}.${commandName}",
+                  ex)
+            }
+          methodInvoker.invokeDirectly(entity, decodedParameter.asInstanceOf[AnyRef])
+        }
+      result.asInstanceOf[ValueEntity.Effect[_]]
+    } else {
+      val invocationContext =
+        InvocationContext(scalaPbAnyCommand, commandHandler.requestMessageDescriptor, commandContext.metadata())
 
-    commandHandler
-      .getInvoker(inputTypeUrl)
-      .invoke(entity, invocationContext)
-      .asInstanceOf[ValueEntity.Effect[_]]
+      val inputTypeUrl = command.asInstanceOf[ScalaPbAny].typeUrl
+
+      commandHandler
+        .getInvoker(inputTypeUrl)
+        .invoke(entity, invocationContext)
+        .asInstanceOf[ValueEntity.Effect[_]]
+    }
   }
 
   private def _extractAndSetCurrentState(state: S): Unit = {

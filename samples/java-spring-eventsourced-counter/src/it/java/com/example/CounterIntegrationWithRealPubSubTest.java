@@ -56,7 +56,7 @@ public class CounterIntegrationWithRealPubSubTest extends KalixIntegrationTestKi
       .atMost(20, TimeUnit.SECONDS)
       .until(
         () -> getCounterState.invokeAsync().toCompletableFuture().get(1, TimeUnit.SECONDS),
-        new IsEqual("\"20\""));
+        new IsEqual("20"));
   }
   // end::test-topic[]
 

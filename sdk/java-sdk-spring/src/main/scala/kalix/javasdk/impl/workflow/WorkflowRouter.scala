@@ -123,9 +123,8 @@ abstract class WorkflowRouter[S, W <: AbstractWorkflow[S]](protected val workflo
   // in same cases, the Proxy may send a message with typeUrl set to object.
   // if that's the case, we need to patch the message using the typeUrl from the expected input class
   private def decodeInput(messageCodec: MessageCodec, result: ScalaPbAny, expectedInputClass: Class[_]) = {
-    if (result.typeUrl == JsonSupport.KALIX_JSON + "object") {
-      val typeUrl = messageCodec.typeUrlFor(expectedInputClass)
-      messageCodec.decodeMessage(result.copy(typeUrl = typeUrl))
+    if (result.typeUrl == JsonSupport.KALIX_JSON + "object" || result.typeUrl == JsonSupport.KALIX_JSON) {
+      JsonSupport.decodeJson(expectedInputClass, result)
     } else if (result.typeUrl == "type.googleapis.com/google.api.HttpBody") {
       val httpBody = HttpBody.parseFrom(result.value.newCodedInput())
       //HttpBodyStatusCodeExtensionTypeUrl constant from java-sdk-spring

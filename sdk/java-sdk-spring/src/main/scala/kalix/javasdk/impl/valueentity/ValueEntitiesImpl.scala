@@ -10,7 +10,10 @@ import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.stream.scaladsl.Flow
 import akka.stream.scaladsl.Source
+import com.google.protobuf.ByteString
+import com.google.protobuf.any.{ Any => ScalaPbAny }
 import io.grpc.Status
+import kalix.javasdk.JsonSupport
 import kalix.javasdk.impl.ErrorHandling
 import kalix.javasdk.impl.ErrorHandling.BadRequestException
 import kalix.javasdk.impl.effect.ErrorReplyImpl
@@ -142,9 +145,6 @@ final class ValueEntitiesImpl(
         case InCommand(command) if thisEntityId != command.entityId =>
           throw ProtocolException(command, "Receiving Value entity is not the intended recipient of command")
 
-        case InCommand(command) if command.payload.isEmpty =>
-          throw ProtocolException(command, "No command payload for Value entity")
-
         case InCommand(command) =>
           val metadata = MetadataImpl.of(command.metadata.map(_.entries.toVector).getOrElse(Nil))
 
@@ -154,7 +154,9 @@ final class ValueEntitiesImpl(
           try {
             val cmd =
               service.messageCodec.decodeMessage(
-                command.payload.getOrElse(throw ProtocolException(command, "No command payload")))
+                command.payload.getOrElse(
+                  // FIXME smuggling 0 arity method called from component client through here
+                  ScalaPbAny.defaultInstance.withTypeUrl(JsonSupport.KALIX_JSON).withValue(ByteString.empty())))
             val context =
               new CommandContextImpl(thisEntityId, command.name, command.id, metadata, system)
 

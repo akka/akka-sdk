@@ -5,20 +5,20 @@
 package kalix.javasdk.impl.workflow
 
 import java.util.Optional
-
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.OptionConverters._
 import scala.util.control.NonFatal
 import scala.language.existentials
-
 import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.stream.scaladsl.Flow
 import akka.stream.scaladsl.Source
+import com.google.protobuf.ByteString
 import com.google.protobuf.duration
 import com.google.protobuf.duration.Duration
 import io.grpc.Status
+import kalix.javasdk.JsonSupport
 import kalix.javasdk.impl.AbstractContext
 import kalix.javasdk.impl.ActivatableContext
 import kalix.javasdk.impl.ComponentOptions
@@ -75,6 +75,10 @@ import kalix.protocol.workflow_entity.{ NoTransition => ProtoNoTransition }
 import kalix.protocol.workflow_entity.{ Pause => ProtoPause }
 import kalix.protocol.workflow_entity.{ StepTransition => ProtoStepTransition }
 import org.slf4j.LoggerFactory
+import com.google.protobuf.any.{ Any => ScalaPbAny }
+import kalix.javasdk.impl.JsonMessageCodec
+import kalix.javasdk.impl.StrictJsonMessageCodec
+import kalix.javasdk.spi.TimerClient
 // FIXME these don't seem to be 'public API', more internals?
 import scala.jdk.CollectionConverters._
 
@@ -85,7 +89,7 @@ final class WorkflowService(
     val factory: WorkflowFactory,
     override val descriptor: Descriptors.ServiceDescriptor,
     override val additionalDescriptors: Array[Descriptors.FileDescriptor],
-    val messageCodec: MessageCodec,
+    val messageCodec: JsonMessageCodec,
     override val serviceName: String,
     val workflowOptions: Option[WorkflowOptions])
     extends Service {
@@ -97,7 +101,16 @@ final class WorkflowService(
       messageCodec: MessageCodec,
       workflowName: String,
       workflowOptions: WorkflowOptions) =
-    this(factory, descriptor, additionalDescriptors, messageCodec, workflowName, Some(workflowOptions))
+    this(
+      factory,
+      descriptor,
+      additionalDescriptors,
+      // FIXME ugh
+      messageCodec.asInstanceOf[JsonMessageCodec],
+      workflowName,
+      Some(workflowOptions))
+
+  val strictMessageCodec = new StrictJsonMessageCodec(new JsonMessageCodec)
 
   override def resolvedMethods: Option[Map[String, ResolvedServiceMethod[_, _]]] =
     factory match {
@@ -110,7 +123,7 @@ final class WorkflowService(
   override def componentOptions: Option[ComponentOptions] = workflowOptions
 }
 
-final class WorkflowImpl(system: ActorSystem, val services: Map[String, WorkflowService])
+final class WorkflowImpl(system: ActorSystem, val services: Map[String, WorkflowService], timerClient: TimerClient)
     extends kalix.protocol.workflow_entity.WorkflowEntities {
 
   private implicit val ec: ExecutionContext = system.dispatcher
@@ -191,11 +204,11 @@ final class WorkflowImpl(system: ActorSystem, val services: Map[String, Workflow
 
     val workflowConfig =
       WorkflowStreamOut(
-        WorkflowStreamOut.Message.Config(toWorkflowConfig(router._getWorkflowDefinition(), service.messageCodec)))
+        WorkflowStreamOut.Message.Config(toWorkflowConfig(router._getWorkflowDefinition(), service.strictMessageCodec)))
 
     init.userState match {
       case Some(state) =>
-        val decoded = service.messageCodec.decodeMessage(state)
+        val decoded = service.strictMessageCodec.decodeMessage(state)
         router._internalSetInitState(decoded, init.finished)
       case None => // no initial state
     }
@@ -208,7 +221,7 @@ final class WorkflowImpl(system: ActorSystem, val services: Map[String, Workflow
           persistence match {
             case UpdateState(newState) =>
               router._internalSetInitState(newState, transition.isInstanceOf[End.type])
-              WorkflowEffect.defaultInstance.withUserState(service.messageCodec.encodeScala(newState))
+              WorkflowEffect.defaultInstance.withUserState(service.strictMessageCodec.encodeScala(newState))
             // TODO: persistence should be optional, but we must ensure that we don't save it back to null
             // and preferably we should not even send it over the wire.
             case NoPersistence => WorkflowEffect.defaultInstance
@@ -219,7 +232,7 @@ final class WorkflowImpl(system: ActorSystem, val services: Map[String, Workflow
           transition match {
             case StepTransition(stepName, input) =>
               WorkflowEffect.Transition.StepTransition(
-                ProtoStepTransition(stepName, input.map(service.messageCodec.encodeScala)))
+                ProtoStepTransition(stepName, input.map(service.strictMessageCodec.encodeScala)))
             case Pause        => WorkflowEffect.Transition.Pause(ProtoPause.defaultInstance)
             case NoTransition => WorkflowEffect.Transition.NoTransition(ProtoNoTransition.defaultInstance)
             case End          => WorkflowEffect.Transition.EndTransition(ProtoEndTransition.defaultInstance)
@@ -230,7 +243,7 @@ final class WorkflowImpl(system: ActorSystem, val services: Map[String, Workflow
             reply match {
               case ReplyValue(value, metadata) =>
                 ProtoReply(
-                  payload = Some(service.messageCodec.encodeScala(value)),
+                  payload = Some(service.strictMessageCodec.encodeScala(value)),
                   metadata = MetadataImpl.toProtocol(metadata))
               case NoReply => ProtoReply.defaultInstance
             }
@@ -275,18 +288,18 @@ final class WorkflowImpl(system: ActorSystem, val services: Map[String, Workflow
         case InCommand(command) if workflowId != command.entityId =>
           Future.failed(ProtocolException(command, "Receiving Workflow is not the intended recipient of command"))
 
-        case InCommand(command) if command.payload.isEmpty =>
-          Future.failed(ProtocolException(command, "No command payload for Workflow"))
-
         case InCommand(command) =>
           val metadata = MetadataImpl.of(command.metadata.map(_.entries.toVector).getOrElse(Nil))
 
           val context = new CommandContextImpl(workflowId, command.name, command.id, metadata, system)
-          val timerScheduler = new TimerSchedulerImpl(service.messageCodec, system, context.componentCallMetadata)
+          val timerScheduler =
+            new TimerSchedulerImpl(service.strictMessageCodec, system, timerClient, context.componentCallMetadata)
 
           val cmd =
             service.messageCodec.decodeMessage(
-              command.payload.getOrElse(throw ProtocolException(command, "No command payload")))
+              command.payload.getOrElse(
+                // FIXME smuggling 0 arity method called from component client through here
+                ScalaPbAny.defaultInstance.withTypeUrl(JsonSupport.KALIX_JSON).withValue(ByteString.empty())))
 
           val (CommandResult(effect), errorCode) =
             try {
@@ -306,18 +319,19 @@ final class WorkflowImpl(system: ActorSystem, val services: Map[String, Workflow
         case Step(executeStep) =>
           val context =
             new CommandContextImpl(workflowId, executeStep.stepName, executeStep.commandId, Metadata.EMPTY, system)
-          val timerScheduler = new TimerSchedulerImpl(service.messageCodec, system, context.componentCallMetadata)
+          val timerScheduler =
+            new TimerSchedulerImpl(service.strictMessageCodec, system, timerClient, context.componentCallMetadata)
           val stepResponse =
             try {
               executeStep.userState.foreach { state =>
-                val decoded = service.messageCodec.decodeMessage(state)
+                val decoded = service.strictMessageCodec.decodeMessage(state)
                 router._internalSetInitState(decoded, finished = false) // here we know that workflow is still running
               }
               router._internalHandleStep(
                 executeStep.commandId,
                 executeStep.input,
                 executeStep.stepName,
-                service.messageCodec,
+                service.strictMessageCodec,
                 timerScheduler,
                 context,
                 system.dispatcher)
@@ -336,7 +350,7 @@ final class WorkflowImpl(system: ActorSystem, val services: Map[String, Workflow
         case Transition(cmd) =>
           val CommandResult(effect) =
             try {
-              router._internalGetNextStep(cmd.stepName, cmd.result.get, service.messageCodec)
+              router._internalGetNextStep(cmd.stepName, cmd.result.get, service.strictMessageCodec)
             } catch {
               case e: WorkflowException => throw e
               case NonFatal(ex) =>

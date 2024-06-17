@@ -32,7 +32,7 @@ public class TransferWorkflowWithoutInputs extends Workflow<TransferState> {
           var transfer = currentState().transfer;
           return componentClient.forValueEntity(transfer.from).method(WalletEntity::withdraw).invokeAsync(transfer.amount);
         })
-        .andThen(HttpResponse.class, response -> {
+        .andThen(String.class, response -> {
           var state = currentState().withLastStep("withdrawn").accepted();
           return effects()
             .updateState(state)
@@ -45,7 +45,7 @@ public class TransferWorkflowWithoutInputs extends Workflow<TransferState> {
           var transfer = currentState().transfer;
           return componentClient.forValueEntity(transfer.from).method(WalletEntity::withdraw).invokeAsync(transfer.amount);
         })
-        .andThen(HttpResponse.class, response -> {
+        .andThen(String.class, response -> {
           var state = currentState().withLastStep("withdrawn").accepted();
           return effects()
             .updateState(state)

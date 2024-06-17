@@ -5,14 +5,15 @@
 package kalix.javasdk.impl.eventsourcedentity
 
 import scala.util.control.NonFatal
-
 import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.stream.scaladsl.Flow
 import akka.stream.scaladsl.Source
+import com.google.protobuf.ByteString
 import com.google.protobuf.Descriptors
 import com.google.protobuf.any.{ Any => ScalaPbAny }
 import io.grpc.Status
+import kalix.javasdk.JsonSupport
 import kalix.javasdk.Metadata
 import kalix.javasdk.eventsourcedentity.CommandContext
 import kalix.javasdk.eventsourcedentity.EventContext
@@ -177,7 +178,9 @@ final class EventSourcedEntitiesImpl(
           try {
             val cmd =
               service.messageCodec.decodeMessage(
-                command.payload.getOrElse(throw ProtocolException(command, "No command payload")))
+                command.payload.getOrElse(
+                  // FIXME smuggling 0 arity method called from component client through here
+                  ScalaPbAny.defaultInstance.withTypeUrl(JsonSupport.KALIX_JSON).withValue(ByteString.empty())))
             val metadata = MetadataImpl.of(command.metadata.map(_.entries.toVector).getOrElse(Nil))
             val context =
               new CommandContextImpl(thisEntityId, sequence, command.name, command.id, metadata)

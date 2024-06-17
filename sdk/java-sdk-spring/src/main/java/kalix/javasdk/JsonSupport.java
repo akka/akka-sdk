@@ -5,6 +5,7 @@
 package kalix.javasdk;
 
 import akka.Done;
+import akka.annotation.InternalApi;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
@@ -119,6 +120,10 @@ public final class JsonSupport {
   public static <T> ByteString encodeToBytes(T value) throws JsonProcessingException {
     return UnsafeByteOperations.unsafeWrap(
         objectMapper.writerFor(value.getClass()).writeValueAsBytes(value));
+  }
+
+  public static <T> akka.util.ByteString encodeToAkkaByteString(T value) throws JsonProcessingException {
+    return akka.util.ByteString.fromArrayUnsafe(objectMapper.writerFor(value.getClass()).writeValueAsBytes(value));
   }
 
   /**
@@ -247,6 +252,15 @@ public final class JsonSupport {
     } else {
       return Optional.empty();
     }
+  }
+
+  /**
+   * INTERNAL API
+   */
+  @InternalApi
+  public static <T> T decodeJson(Class<T> valueClass, com.google.protobuf.any.Any scalaPbAny) {
+    var javaAny = com.google.protobuf.any.Any.toJavaProto(scalaPbAny);
+    return JsonSupport.decodeJson(valueClass, javaAny);
   }
 }
 

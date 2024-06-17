@@ -5,11 +5,9 @@
 package kalix.javasdk.impl.action
 
 import java.util.Optional
-
 import scala.compat.java8.OptionConverters.RichOptionForJava8
 import scala.concurrent.Future
 import scala.util.control.NonFatal
-
 import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.stream.scaladsl.Sink
@@ -40,6 +38,9 @@ import kalix.javasdk.impl.telemetry.ActionCategory
 import kalix.javasdk.impl.telemetry.Instrumentation
 import kalix.javasdk.impl.telemetry.Telemetry
 import kalix.javasdk.impl.telemetry.TraceInstrumentation
+import kalix.javasdk.impl.timer.TimerSchedulerImpl
+import kalix.javasdk.spi.TimerClient
+import kalix.javasdk.timer.TimerScheduler
 import kalix.protocol.action.ActionCommand
 import kalix.protocol.action.ActionResponse
 import kalix.protocol.action.Actions
@@ -116,7 +117,11 @@ private[javasdk] object ActionsImpl {
 
 }
 
-private[kalix] final class ActionsImpl(_system: ActorSystem, services: Map[String, ActionService]) extends Actions {
+private[kalix] final class ActionsImpl(
+    _system: ActorSystem,
+    services: Map[String, ActionService],
+    timerClient: TimerClient)
+    extends Actions {
 
   import ActionsImpl._
   import _system.dispatcher
@@ -328,7 +333,7 @@ private[kalix] final class ActionsImpl(_system: ActorSystem, services: Map[Strin
       serviceName: String): ActionContext = {
     val metadata = MetadataImpl.of(in.metadata.map(_.entries.toVector).getOrElse(Nil))
     val updatedMetadata = spanContext.map(metadataWithTracing(metadata, _)).getOrElse(metadata)
-    new ActionContextImpl(updatedMetadata, messageCodec, system, telemetries(serviceName))
+    new ActionContextImpl(updatedMetadata, messageCodec, system, timerClient, telemetries(serviceName))
   }
 
   private def metadataWithTracing(metadata: MetadataImpl, spanContext: SpanContext): Metadata = {
@@ -357,6 +362,7 @@ class ActionContextImpl(
     override val metadata: Metadata,
     val messageCodec: MessageCodec,
     val system: ActorSystem,
+    timerClient: TimerClient,
     instrumentation: Instrumentation)
     extends AbstractContext(system)
     with ActionContext {
@@ -387,5 +393,8 @@ class ActionContextImpl(
 
   override def getTracer: Tracer =
     instrumentation.getTracer
+
+  val timers: TimerScheduler =
+    new TimerSchedulerImpl(messageCodec, system, timerClient, componentCallMetadata);
 
 }

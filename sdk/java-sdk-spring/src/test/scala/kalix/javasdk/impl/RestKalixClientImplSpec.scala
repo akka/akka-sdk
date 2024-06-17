@@ -6,9 +6,7 @@ package kalix.javasdk.impl
 
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
-
 import scala.jdk.CollectionConverters.CollectionHasAsScala
-
 import com.google.protobuf.ByteString
 import com.google.protobuf.Descriptors
 import com.google.protobuf.DynamicMessage
@@ -32,13 +30,15 @@ import org.scalatest.BeforeAndAfterEach
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
+import scala.concurrent.ExecutionContext
+
 class RestKalixClientImplSpec extends AnyWordSpec with Matchers with BeforeAndAfterEach with ComponentDescriptorSuite {
 
   var restKalixClient: RestKalixClientImpl = _
   val messageCodec = new JsonMessageCodec
 
   override def beforeEach(): Unit =
-    restKalixClient = new RestKalixClientImpl(new JsonMessageCodec)
+    restKalixClient = new RestKalixClientImpl(new JsonMessageCodec, null)(ExecutionContext.global)
 
   "The Rest Kalix Client" should {
     "return a DeferredCall for a simple GET request" in {

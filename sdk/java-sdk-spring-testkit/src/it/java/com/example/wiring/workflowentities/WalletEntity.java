@@ -19,12 +19,12 @@ public class WalletEntity extends ValueEntity<Wallet> {
     return effects().updateState(new Wallet(commandContext().entityId(), amount)).thenReply("Ok");
   }
 
-  public Effect<HttpResponse> withdraw(int amount) {
+  public Effect<String> withdraw(int amount) {
     logger.info("Withdraw from {} amount -{}", currentState().id, amount);
     if (amount > currentState().balance) {
       return effects().error("not sufficient funds");
     } else {
-      return effects().updateState(currentState().withdraw(amount)).thenReply(HttpResponse.ok("ok"));
+      return effects().updateState(currentState().withdraw(amount)).thenReply("ok");
     }
   }
 

@@ -4,22 +4,12 @@
 
 package kalix.javasdk.client
 
-import java.lang.reflect.Method
-import java.lang.reflect.ParameterizedType
-import java.util
-import java.util.Optional
-import java.util.concurrent.CompletionStage
-
-import scala.jdk.OptionConverters._
-
 import akka.http.scaladsl.model.HttpMethods
 import com.google.protobuf.any.Any
 import kalix.javasdk.DeferredCall
 import kalix.javasdk.Metadata
-import kalix.javasdk.action.Action
 import kalix.javasdk.annotations.TypeId
 import kalix.javasdk.annotations.ViewId
-import kalix.javasdk.eventsourcedentity.EventSourcedEntity
 import kalix.javasdk.impl.client.MethodRefResolver
 import kalix.javasdk.impl.reflection.EntityUrlTemplate
 import kalix.javasdk.impl.reflection.Reflect
@@ -31,11 +21,15 @@ import kalix.javasdk.impl.reflection.RestServiceIntrospector.RestService
 import kalix.javasdk.impl.reflection.SyntheticRequestServiceMethod
 import kalix.javasdk.impl.reflection.ViewUrlTemplate
 import kalix.javasdk.impl.reflection.WorkflowUrlTemplate
-import kalix.javasdk.valueentity.ValueEntity
-import kalix.javasdk.workflow.Workflow
 import kalix.spring.impl.KalixClient
 import kalix.spring.impl.RestKalixClientImpl
 import org.springframework.web.bind.annotation.RequestMethod
+
+import java.lang.reflect.Method
+import java.util
+import java.util.Optional
+import java.util.concurrent.CompletionStage
+import scala.jdk.OptionConverters._
 
 object ComponentMethodRef {
 
@@ -56,7 +50,7 @@ object ComponentMethodRef {
 
     val kalixClientImpl = kalixClient.asInstanceOf[RestKalixClientImpl]
     val declaringClass = method.getDeclaringClass
-    val returnType: Class[R] = getReturnType(declaringClass, method)
+    val returnType: Class[R] = Reflect.getReturnType(declaringClass, method)
 
     val deferredCall =
       if (Reflect.isFixedEndpointComponent(declaringClass)) {
@@ -136,19 +130,6 @@ object ComponentMethodRef {
 
     if (callMetadata.isEmpty) deferredCall
     else deferredCall.withMetadata(callMetadata.get)
-  }
-
-  private def getReturnType[R](declaringClass: Class[_], method: Method): Class[R] = {
-    if (classOf[Action].isAssignableFrom(declaringClass)
-      || classOf[ValueEntity[_]].isAssignableFrom(declaringClass)
-      || classOf[EventSourcedEntity[_, _]].isAssignableFrom(declaringClass)
-      || classOf[Workflow[_]].isAssignableFrom(declaringClass)) {
-      // here we are expecting a wrapper in the form of an Effect
-      method.getGenericReturnType.asInstanceOf[ParameterizedType].getActualTypeArguments.head.asInstanceOf[Class[R]]
-    } else {
-      // in other cases we expect a View query method, but declaring class may not extend View[_] class for join views
-      method.getReturnType.asInstanceOf[Class[R]]
-    }
   }
 
   private def getQueryParam(params: Seq[scala.Any], parameterIndex: Int): util.List[scala.Any] = {

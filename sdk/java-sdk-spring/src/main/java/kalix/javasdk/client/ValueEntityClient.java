@@ -4,39 +4,26 @@
 
 package kalix.javasdk.client;
 
+import akka.annotation.DoNotInherit;
 import akka.japi.function.Function;
 import akka.japi.function.Function2;
-import kalix.javasdk.Metadata;
 import kalix.javasdk.valueentity.ValueEntity;
-import kalix.spring.impl.KalixClient;
 
-import java.util.Optional;
-
-public class ValueEntityClient {
-
-  private final KalixClient kalixClient;
-  private final Optional<Metadata> callMetadata;
-  private final String entityId;
-
-
-  public ValueEntityClient(KalixClient kalixClient, Optional<Metadata> callMetadata, String entityId) {
-    this.kalixClient = kalixClient;
-    this.callMetadata = callMetadata;
-    this.entityId = entityId;
-  }
+/**
+ * Not for user extension
+ */
+@DoNotInherit
+public interface ValueEntityClient {
 
   /**
-   * Pass in a Value Entity method reference annotated as a REST endpoint, e.g. <code>UserEntity::create</code>
+   * Pass in an Event Sourced Entity method reference, e.g. <code>UserEntity::create</code>
    */
-  public <T, R> ComponentMethodRef<R> method(Function<T, ValueEntity.Effect<R>> methodRef) {
-    return new ComponentMethodRef<>(kalixClient, methodRef, Optional.of(entityId), callMetadata);
-  }
+  <T, R> NativeComponentMethodRef<R> method(Function<T, ValueEntity.Effect<R>> methodRef);
 
   /**
-   * Pass in a Value Entity method reference annotated as a REST endpoint, e.g. <code>UserEntity::create</code>
+   * Pass in an Event Sourced Entity method reference, e.g. <code>UserEntity::update</code>
    */
-  public <T, A1, R> ComponentMethodRef1<A1, R> method(Function2<T, A1, ValueEntity.Effect<R>> methodRef) {
-    return new ComponentMethodRef1<>(kalixClient, methodRef, Optional.of(entityId), callMetadata);
-  }
+  <T, A1, R> NativeComponentMethodRef1<A1, R> method(Function2<T, A1, ValueEntity.Effect<R>> methodRef);
+
 
 }
