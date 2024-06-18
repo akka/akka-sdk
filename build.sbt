@@ -61,11 +61,13 @@ lazy val scala3Options = sharedScalacOptions ++ Seq("-Wunused:imports,privates,l
 
 def disciplinedScalacSettings: Seq[Setting[_]] = {
   if (sys.props.get("kalix.no-discipline").isEmpty) {
-    Seq(Compile / scalacOptions ++= {
-      if (scalaVersion.value.startsWith("3.")) scala3Options
-      else if (scalaVersion.value.startsWith("2.13")) scala213Options
-      else scala212Options
-    })
+    Seq(
+      Compile / scalacOptions ++= {
+        if (scalaVersion.value.startsWith("3.")) scala3Options
+        else if (scalaVersion.value.startsWith("2.13")) scala213Options
+        else scala212Options
+      },
+      Compile / doc / scalacOptions := (Compile / doc / scalacOptions).value.filterNot(_ == "-Xfatal-warnings"))
   } else Seq.empty
 }
 
