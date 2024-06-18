@@ -1,32 +1,30 @@
 package com.example.fibonacci;
 
-import com.google.protobuf.any.Any;
-import io.grpc.Status;
-import kalix.javasdk.DeferredCall;
-import kalix.javasdk.action.Action;
+import kalix.javasdk.annotations.http.Endpoint;
+import kalix.javasdk.annotations.http.Get;
+import kalix.javasdk.annotations.http.Post;
 import kalix.javasdk.client.ComponentClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.web.bind.annotation.*;
 
 import java.util.concurrent.CompletionStage;
 
-@RequestMapping("/limitedfibonacci")
-public class LimitedFibonacciAction extends Action {
+@Endpoint("/limitedfibonacci")
+public class FibonacciEndpoint {
 
-    private static final Logger logger = LoggerFactory.getLogger(LimitedFibonacciAction.class);
+    private static final Logger logger = LoggerFactory.getLogger(FibonacciEndpoint.class);
     // tag::injecting-component-client[]
     private ComponentClient componentClient; // <1>
 
-    public LimitedFibonacciAction(ComponentClient componentClient) { // <2>
+    public FibonacciEndpoint(ComponentClient componentClient) { // <2>
         this.componentClient = componentClient; // <3>
     }
     // end::injecting-component-client[]
 
-    @GetMapping("/{number}/next")
-    public Effect<Number> nextNumberPath(@PathVariable Long number) {
+    @Get("/{number}/next")
+    public CompletionStage<Number> nextNumberPath(Long number) {
         if (number < 0 || number > 10000) {
-            return effects().error("Only numbers between 0 and 10k are allowed", Status.Code.INVALID_ARGUMENT);
+            throw new IllegalArgumentException("Only numbers between 0 and 10k are allowed");
         } else {
             logger.info("Executing GET call to real /fibonacci = " + number);
             // tag::component-client[]
@@ -34,24 +32,23 @@ public class LimitedFibonacciAction extends Action {
               .method(FibonacciAction::getNumber) // <2>
             // FIXME no longer forward as documented
               .invokeAsync(number); // <3>
-            return effects().asyncReply(numberResult);
+            return numberResult;
             // end::component-client[]
         }
     }
 
-    @PostMapping("/next")
-    public Effect<Number> nextNumber(@RequestBody Number number) {
+    @Post("/next")
+    public CompletionStage<Number> nextNumber(Number number) {
         if (number.value() < 0 || number.value() > 10000) {
-            return effects().error("Only numbers between 0 and 10k are allowed", Status.Code.INVALID_ARGUMENT);
+            throw new IllegalArgumentException("Only numbers between 0 and 10k are allowed");
         } else {
             logger.info("Executing POST call to real /fibonacci = " + number.value());
             var nextNumberReply =
               componentClient.forAction()
                 .method(FibonacciAction::nextNumber)
-                .deferred(number)
-                .invokeAsync();
+                .invokeAsync(number);
 
-            return effects().asyncReply(nextNumberReply);
+            return nextNumberReply;
         }
     }
 }

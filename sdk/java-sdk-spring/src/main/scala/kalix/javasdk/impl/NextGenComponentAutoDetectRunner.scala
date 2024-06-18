@@ -8,16 +8,21 @@ import java.lang.reflect.Constructor
 import java.lang.reflect.ParameterizedType
 import java.time.Duration
 import java.util.concurrent.atomic.AtomicReference
+
 import scala.concurrent.Future
 import scala.concurrent.Promise
+import scala.concurrent.duration.DurationInt
+import scala.concurrent.duration.FiniteDuration
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 import scala.jdk.CollectionConverters.MapHasAsScala
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
+
 import akka.Done
 import akka.actor.typed.ActorSystem
 import akka.http.scaladsl.model.HttpRequest
 import akka.http.scaladsl.model.HttpResponse
+import akka.stream.Materializer
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import io.opentelemetry.api.trace.Tracer
@@ -41,6 +46,7 @@ import kalix.javasdk.impl.action.ActionsImpl
 import kalix.javasdk.impl.client.ComponentClientImpl
 import kalix.javasdk.impl.eventsourcedentity.EventSourcedEntitiesImpl
 import kalix.javasdk.impl.eventsourcedentity.EventSourcedEntityService
+import kalix.javasdk.impl.http.HttpEndpointMethodRouter
 import kalix.javasdk.impl.reflection.Reflect
 import kalix.javasdk.impl.valueentity.ValueEntitiesImpl
 import kalix.javasdk.impl.valueentity.ValueEntityService
@@ -119,7 +125,6 @@ final class NextGenComponentAutoDetectRunner extends kalix.javasdk.spi.Runner {
         throw ex
     }
   }
-
 }
 
 private object ComponentLocator {
@@ -136,6 +141,7 @@ private object ComponentLocator {
   def locateUserComponents(system: ActorSystem[_]): LocatedClasses = {
     val kalixComponentTypeAndBaseClasses: Map[String, Class[_]] =
       Map(
+        "endpoint" -> classOf[AnyRef],
         "action" -> classOf[Action],
         "event-sourced-entity" -> classOf[EventSourcedEntity[_, _]],
         "workflow" -> classOf[Workflow[_]],
@@ -184,6 +190,13 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
   private val kalixClient = new RestKalixClientImpl(messageCodec, runtimeComponentClients)(system.executionContext)
   private val ComponentLocator.LocatedClasses(componentClasses, maybeServiceClass) =
     ComponentLocator.locateUserComponents(system)
+
+  private val endpointTimeout: FiniteDuration = {
+    val reqTimeout = system.settings.config.getDuration("akka.http.server.request-timeout")
+    scala.concurrent.duration.Duration
+      .fromNanos(reqTimeout.toNanos)
+      .plus(10.seconds) // 10s higher then configured timeout, so configured timeout always win
+  }
 
   // validate service classes before instantiating
   private val validation = componentClasses.foldLeft(Valid: Validation) { case (validations, cls) =>
@@ -245,6 +258,23 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
         kalix.register(view)
         kalixClient.registerComponent(view.serviceDescriptor())
       }
+    }
+
+  // FIXME: all Contexts provide access to Materializer that gives access to the ActorSystem, should we remove it?
+  private val endpointContext = new Context {
+    override def materializer(): Materializer = Materializer.matFromSystem(system)
+  }
+
+  // collect all Endpoints and compose them to build a larger router
+  private val endpointsRouter = componentClasses
+    .filter(Reflect.isRestEndpoint)
+    .foldLeft(HttpEndpointMethodRouter.empty) { case (router, cls) =>
+      router ++ HttpEndpointMethodRouter(
+        cls,
+        () =>
+          wiredInstance(cls) {
+            case p if p == classOf[ComponentClient] => componentClient(endpointContext)
+          })
     }
 
   // FIXME mixing runtime config with sdk with user project config is tricky
@@ -325,7 +355,6 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
         }
       }
 
-      override def endpoints: PartialFunction[HttpRequest, Future[HttpResponse]] = PartialFunction.empty
       override def discovery: Discovery = discoveryEndpoint
       override def actions: Option[Actions] = actionsEndpoint
       override def eventSourcedEntities: Option[EventSourcedEntities] = eventSourcedEntitiesEndpoint
@@ -333,6 +362,10 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
       override def views: Option[Views] = viewsEndpoint
       override def workflowEntities: Option[WorkflowEntities] = workflowEntitiesEndpoint
       override def replicatedEntities: Option[ReplicatedEntities] = None
+
+      override def endpoints: PartialFunction[HttpRequest, Future[HttpResponse]] = {
+        endpointsRouter.route(endpointTimeout)(system.classicSystem)
+      }
     }
   }
 

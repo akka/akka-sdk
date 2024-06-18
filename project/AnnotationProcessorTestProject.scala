@@ -30,7 +30,7 @@ object AnnotationProcessorTestProject {
       def findProjects: Seq[File] = {
         file(pathToTests)
           .listFiles()
-          .filter { file => file.isDirectory }
+          .filter { file => file.isDirectory && file.getName.endsWith("descriptors") }
       }
     }
   }

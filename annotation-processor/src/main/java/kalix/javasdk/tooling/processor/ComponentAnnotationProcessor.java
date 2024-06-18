@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 
 @SupportedAnnotationTypes(
         {
+                "kalix.javasdk.annotations.http.Endpoint",
                 // all entities will have this
                 "kalix.javasdk.annotations.TypeId",
                 // views
@@ -49,6 +50,7 @@ public class ComponentAnnotationProcessor extends AbstractProcessor {
     private static final String DESCRIPTOR_COMPONENT_ENTRY_BASE_PATH = DESCRIPTOR_ENTRY_BASE_PATH + "components.";
 
     // key of each component type under that parent path, containing a string list of concrete component classes
+    private static final String ENDPOINT_KEY = "endpoint";
     private static final String EVENT_SOURCED_ENTITY_KEY = "event-sourced-entity";
     private static final String VALUE_ENTITY_KEY = "value-entity";
     private static final String ACTION_KEY = "action";
@@ -155,6 +157,7 @@ public class ComponentAnnotationProcessor extends AbstractProcessor {
 
     private String componentTypeFor(Element annotatedClass, TypeElement annotation) {
         return switch (annotation.getQualifiedName().toString()) {
+            case "kalix.javasdk.annotations.http.Endpoint" -> ENDPOINT_KEY;
             case "kalix.javasdk.annotations.ViewId" -> VIEW_KEY;
             case "org.springframework.web.bind.annotation.RequestMapping" -> ACTION_KEY;
             case "kalix.javasdk.annotations.Subscribe" -> ACTION_KEY;

@@ -14,6 +14,8 @@ import java.lang.reflect.ParameterizedType
 import java.util
 import scala.annotation.tailrec
 import scala.reflect.ClassTag
+
+import kalix.javasdk.annotations.http.Endpoint
 import kalix.javasdk.client.ComponentClient
 import kalix.javasdk.eventsourcedentity.EventSourcedEntity
 import kalix.javasdk.impl.ComponentDescriptorFactory
@@ -37,8 +39,8 @@ object Reflect {
           Option(clazz.getAnnotation(ev.runtimeClass.asInstanceOf[Class[A]]))
         else
           None
-
     }
+
     implicit class MethodOps(javaMethod: Method) {
       def isPublic: Boolean = Modifier.isPublic(javaMethod.getModifiers)
     }
@@ -50,6 +52,9 @@ object Reflect {
     }
 
   }
+
+  def isRestEndpoint(cls: Class[_]): Boolean =
+    cls.getAnnotation(classOf[Endpoint]) != null
 
   def isFixedEndpointComponent(cls: Class[_]): Boolean = {
     classOf[EventSourcedEntity[_, _]].isAssignableFrom(cls) ||

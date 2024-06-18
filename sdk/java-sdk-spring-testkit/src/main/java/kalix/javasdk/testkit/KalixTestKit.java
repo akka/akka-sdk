@@ -18,7 +18,11 @@ import com.typesafe.config.ConfigFactory;
 import kalix.javasdk.Kalix;
 import kalix.javasdk.Principal;
 import kalix.javasdk.client.ComponentClient;
-import kalix.javasdk.impl.*;
+import kalix.javasdk.impl.GrpcClients;
+import kalix.javasdk.impl.JsonMessageCodec;
+import kalix.javasdk.impl.MessageCodec;
+import kalix.javasdk.impl.NextGenKalixJavaApplication;
+import kalix.javasdk.impl.ProxyInfoHolder;
 import kalix.javasdk.impl.client.ComponentClientImpl;
 import kalix.javasdk.testkit.EventingTestKit.IncomingMessages;
 import kalix.javasdk.testkit.impl.KalixRuntimeContainer;
@@ -38,8 +42,15 @@ import scala.concurrent.duration.FiniteDuration;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.time.Duration;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutionException;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
@@ -545,8 +556,8 @@ public class KalixTestKit {
 
       Http http = Http.get(runtimeActorSystem);
       log.info("Checking kalix-runtime status");
-      // FIXME we need a stable runtime endpoint location that would reply 200 in dev mode, the regular management endpoint is not available
-      CompletionStage<String> checkingProxyStatus = Patterns.retry(() -> http.singleRequest(HttpRequest.GET("http://localhost:" + proxyPort + "/")).thenCompose(response -> {
+      CompletionStage<String> checkingProxyStatus = Patterns.retry(() ->
+        http.singleRequest(HttpRequest.GET("http://localhost:" + proxyPort + "/akka/dev-mode/health-check")).thenCompose(response -> {
         int responseCode = response.status().intValue();
         if (responseCode == 404) {
           log.info("Kalix-runtime started");
