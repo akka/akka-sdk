@@ -34,9 +34,5 @@
   </dependencyManagement>
 
   <dependencies>
-    <dependency>
-      <groupId>io.kalix</groupId>
-      <artifactId>kalix-dev-runtime_2.13</artifactId>
-    </dependency>
   </dependencies>
 </project>

@@ -97,7 +97,7 @@
                     <version>${maven-shade-plugin.version}</version>
                     <executions>
                         <execution>
-                            <phase>repackage</phase>
+                            <phase>package</phase>
                             <goals>
                                 <goal>shade</goal>
                             </goals>
@@ -388,13 +388,9 @@
                 <version>${kalix-sdk.version}</version>
             </dependency>
             <dependency>
-                <!-- this cannot be dependencies here, needs listing in each project, as the shading config here
-                      (for the user projects) is also applied to this parent pom project, and that excludes runtime dependencies
-                      so loses a dev runtime dependency. -->
                 <groupId>io.kalix</groupId>
                 <artifactId>kalix-dev-runtime_2.13</artifactId>
                 <version>${kalix-runtime.version}</version>
-                <scope>runtime</scope>
             </dependency>
         </dependencies>
    </dependencyManagement>
@@ -409,6 +405,11 @@
             <groupId>io.kalix</groupId>
             <artifactId>kalix-spring-boot-starter-test</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.kalix</groupId>
+            <artifactId>kalix-dev-runtime_2.13</artifactId>
+            <scope>runtime</scope>
         </dependency>
     </dependencies>
 </project>

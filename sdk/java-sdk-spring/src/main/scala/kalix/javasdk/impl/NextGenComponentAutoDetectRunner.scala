@@ -85,24 +85,14 @@ import kalix.spring.impl.WebClientProviderHolder
 import org.slf4j.LoggerFactory
 
 final case class KalixJavaSdkSettings(
-    userFunctionInterface: String,
-    userFunctionPort: Int,
     snapshotEvery: Int,
     cleanupDeletedEventSourcedEntityAfter: Duration,
     cleanupDeletedValueEntityAfter: Duration) {
-  validate()
   def this(config: Config) = {
     this(
-      userFunctionInterface = config.getString("user-function-interface"),
-      userFunctionPort = config.getInt("user-function-port"),
       snapshotEvery = config.getInt("event-sourced-entity.snapshot-every"),
       cleanupDeletedEventSourcedEntityAfter = config.getDuration("event-sourced-entity.cleanup-deleted-after"),
       cleanupDeletedValueEntityAfter = config.getDuration("value-entity.cleanup-deleted-after"))
-  }
-
-  private def validate(): Unit = {
-    require(userFunctionInterface.nonEmpty, s"user-function-interface must not be empty")
-    require(userFunctionPort > 0, s"user-function-port must be greater than 0")
   }
 }
 

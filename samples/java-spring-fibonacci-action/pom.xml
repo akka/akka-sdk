@@ -5,7 +5,7 @@
   <parent>
     <groupId>io.kalix</groupId>
     <artifactId>kalix-spring-boot-parent</artifactId>
-    <version>1.5.0</version>
+    <version>0.0.0-2117-ce2ded80-dev</version>
   </parent>
 
   <groupId>com.example</groupId>
@@ -22,9 +22,5 @@
   </properties>
 
   <dependencies>
-    <dependency>
-      <groupId>io.kalix</groupId>
-      <artifactId>kalix-dev-runtime_2.13</artifactId>
-    </dependency>
   </dependencies>
 </project>
