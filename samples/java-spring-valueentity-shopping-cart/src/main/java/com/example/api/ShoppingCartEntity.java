@@ -17,6 +17,7 @@ package com.example.api;
 
 import com.example.api.ShoppingCartDTO.LineItemDTO;
 import com.example.domain.ShoppingCart;
+import kalix.javasdk.annotations.Acl;
 import kalix.javasdk.annotations.ForwardHeaders;
 import kalix.javasdk.annotations.TypeId;
 import kalix.javasdk.valueentity.ValueEntity;
@@ -32,6 +33,7 @@ import java.time.Instant;
 // end::summary[]
 @ForwardHeaders("Role")
 // tag::summary[]
+@Acl(allow = @Acl.Matcher(principal = Acl.Principal.ALL))
 public class ShoppingCartEntity extends ValueEntity<ShoppingCart> {
   // end::summary[]
   @SuppressWarnings("unused")

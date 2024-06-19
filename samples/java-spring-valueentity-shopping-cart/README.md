@@ -25,7 +25,7 @@ When running a Kalix service locally, we need to have its companion Kalix Runtim
 To start your service locally, run:
 
 ```shell
-mvn kalix:runAll
+mvn compile exec:java
 ```
 
 This command will start your Kalix service and a companion Kalix Runtime as configured in [docker-compose.yml](./docker-compose.yml) file.
@@ -34,29 +34,44 @@ This command will start your Kalix service and a companion Kalix Runtime as conf
 
 With both the Kalix Runtime and your service running, once you have defined endpoints they should be available at `http://localhost:9000`.
 
-* Adding a new item:
-
+Send a request to the controller:
 ```shell
-curl -XPOST -H "Content-Type: application/json" localhost:9000/akka/v1.0/entity/cart/cart1/addItem -d '{"productId": "kalix-tshirt", "name": "Kalix t-shirt", "quantity": 3}' 
+curl -v -XPOST -H "Content-Type: application/json" localhost:9000/carts/create
 ```
 
-* Remove a shopping cart:
-
+or
 ```shell
-curl localhost:9000/cart/cart1
+curl -v -XPOST -H "Content-Type: application/json" localhost:9000/carts/prepopulated
 ```
 
-
-* Removing a new item:
-
+Send a request directly to the shopping-cart entity:
 ```shell
-curl -XPOST -H "Content-Type: application/json" localhost:9000/akka/v1.0/entity/cart/cart1/addItem -d '{"productId": "kalix-tshirt", "name": "Kalix t-shirt", "quantity": 3}' 
+curl -v -H "Content-Type: application/json" localhost:9000/akka/v1.0/entity/shopping-cart/cart2/create
 ```
 
-* Remove a shopping cart:
+* Add a new item:
 
 ```shell
-curl -XGET -H "UserRole: Admin" localhost:9000/akka/v1.0/entity/carts/cart1/removeCart
+curl -v -XPOST -H "Content-Type: application/json" localhost:9000/akka/v1.0/entity/shopping-cart/cart1/addItem -d '{"productId": "kalix-tshirt", "name": "Kalix t-shirt", "quantity": 3}' 
+```
+
+* Remove an item:
+
+```shell
+curl -XPOST -v -H "Content-Type: application/json" localhost:9000/akka/v1.0/entity/shopping-cart/cart1/removeItem -d '"kalix-tshirt"' 
+```
+
+* Remove a shopping cart via controller:
+
+FIXME API support for header extraction yet
+```shell
+curl -v -XDELETE -H "UserRole: Admin" localhost:9000/carts/cart1
+```
+
+* Remove a shopping cart directly to the entity:
+
+```shell
+curl -XGET -v -H "Role: Admin" localhost:9000/akka/v1.0/entity/shopping-cart/cart2/removeCart
 ```
 
 ## Deploying

@@ -1,5 +1,6 @@
 package com.example;
 
+import kalix.javasdk.ServiceLifecycle;
 import kalix.javasdk.annotations.Acl;
 import kalix.javasdk.annotations.KalixService;
 
