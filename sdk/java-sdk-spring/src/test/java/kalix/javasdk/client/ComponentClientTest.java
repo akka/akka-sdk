@@ -21,9 +21,11 @@ import kalix.javasdk.impl.client.ComponentClientImpl;
 import kalix.javasdk.impl.client.EmbeddedDeferredCall;
 import kalix.javasdk.impl.client.EmbeddedDeferredCall$;
 import kalix.javasdk.impl.telemetry.Telemetry;
+import kalix.javasdk.spi.ActionClient;
 import kalix.javasdk.spi.ComponentClients;
 import kalix.javasdk.spi.EntityClient;
 import kalix.javasdk.spi.TimerClient;
+import kalix.javasdk.spi.ViewClient;
 import kalix.spring.impl.RestKalixClientImpl;
 import kalix.spring.testmodels.Message;
 import kalix.spring.testmodels.Number;
@@ -75,6 +77,16 @@ class ComponentClientTest {
 
       @Override
       public TimerClient timerClient() { return null; }
+
+      @Override
+      public ViewClient viewClient() {
+        return null;
+      }
+
+      @Override
+      public ActionClient actionClient() {
+        return null;
+      }
     };
     restKalixClient = new RestKalixClientImpl(messageCodec, dummyComponentClients, ExecutionContext.global());
     componentClient = new ComponentClientImpl(restKalixClient);

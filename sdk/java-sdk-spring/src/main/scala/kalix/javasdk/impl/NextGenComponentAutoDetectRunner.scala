@@ -8,7 +8,6 @@ import java.lang.reflect.Constructor
 import java.lang.reflect.ParameterizedType
 import java.time.Duration
 import java.util.concurrent.atomic.AtomicReference
-
 import scala.concurrent.Future
 import scala.concurrent.Promise
 import scala.concurrent.duration.DurationInt
@@ -17,7 +16,6 @@ import scala.jdk.CollectionConverters.CollectionHasAsScala
 import scala.jdk.CollectionConverters.MapHasAsScala
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
-
 import akka.Done
 import akka.actor.typed.ActorSystem
 import akka.http.scaladsl.model.HttpRequest
@@ -55,6 +53,8 @@ import kalix.javasdk.impl.view.ViewsImpl
 import kalix.javasdk.impl.workflow.WorkflowImpl
 import kalix.javasdk.impl.workflow.WorkflowService
 import kalix.javasdk.spi.ComponentClients
+import kalix.javasdk.spi.EndpointDescriptor
+import kalix.javasdk.spi.HttpEndpointDescriptor
 import kalix.javasdk.spi.SpiEndpoints
 import kalix.javasdk.valueentity.ReflectiveValueEntityProvider
 import kalix.javasdk.valueentity.ValueEntity
@@ -353,9 +353,12 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
       override def workflowEntities: Option[WorkflowEntities] = workflowEntitiesEndpoint
       override def replicatedEntities: Option[ReplicatedEntities] = None
 
-      override def endpoints: PartialFunction[HttpRequest, Future[HttpResponse]] = {
+      override def endpoints: PartialFunction[HttpRequest, Future[HttpResponse]] =
         endpointsRouter.route(endpointTimeout)(system.classicSystem)
-      }
+
+      override val endpointDescriptors: Seq[EndpointDescriptor] =
+        endpointsRouter.methodInvokers.map(httpInvoker =>
+          HttpEndpointDescriptor(httpInvoker.httpMethod, httpInvoker.pathMatch.annotationPath.toString()))
     }
   }
 
