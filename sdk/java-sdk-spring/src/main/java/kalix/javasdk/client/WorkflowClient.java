@@ -4,10 +4,15 @@
 
 package kalix.javasdk.client;
 
+import akka.annotation.DoNotInherit;
 import akka.japi.function.Function;
 import akka.japi.function.Function2;
 import kalix.javasdk.workflow.Workflow;
 
+/**
+ * Not for user extension
+ */
+@DoNotInherit
 public interface WorkflowClient {
 
   /**

@@ -16,12 +16,12 @@ import kalix.javasdk.valueentity.ValueEntity;
 public interface ValueEntityClient {
 
   /**
-   * Pass in an Event Sourced Entity method reference, e.g. <code>UserEntity::create</code>
+   * Pass in a Value Entity command handler method reference, e.g. <code>UserEntity::create</code>
    */
   <T, R> NativeComponentMethodRef<R> method(Function<T, ValueEntity.Effect<R>> methodRef);
 
   /**
-   * Pass in an Event Sourced Entity method reference, e.g. <code>UserEntity::update</code>
+   * Pass in a Value Entity command handler method reference, e.g. <code>UserEntity::update</code>
    */
   <T, A1, R> NativeComponentMethodRef1<A1, R> method(Function2<T, A1, ValueEntity.Effect<R>> methodRef);
 

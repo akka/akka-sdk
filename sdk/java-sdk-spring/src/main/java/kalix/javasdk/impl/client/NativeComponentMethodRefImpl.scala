@@ -8,6 +8,8 @@ import akka.NotUsed
 import akka.annotation.InternalApi
 import kalix.javasdk.DeferredCall
 import kalix.javasdk.Metadata
+import kalix.javasdk.client.NativeComponentInvokeOnlyMethodRef
+import kalix.javasdk.client.NativeComponentInvokeOnlyMethodRef1
 import kalix.javasdk.client.NativeComponentMethodRef
 import kalix.javasdk.client.NativeComponentMethodRef1
 
@@ -23,25 +25,34 @@ import java.util.concurrent.CompletionStage
 final case class NativeComponentMethodRefImpl[A1, R](
     optionalId: Option[String],
     metadataOpt: Option[Metadata],
-    createDeferred: (Option[Metadata], Option[A1]) => DeferredCall[A1, R])
+    createDeferred: (Option[Metadata], Option[A1]) => DeferredCall[A1, R],
+    canBeDeferred: Boolean = true)
     extends NativeComponentMethodRef[R]
-    with NativeComponentMethodRef1[A1, R] {
+    with NativeComponentMethodRef1[A1, R]
+    with NativeComponentInvokeOnlyMethodRef[R]
+    with NativeComponentInvokeOnlyMethodRef1[A1, R] {
 
   override def withMetadata(metadata: Metadata): NativeComponentMethodRefImpl[A1, R] = {
     val merged = metadataOpt.map[Metadata](m => m.merge(metadata)).getOrElse(metadata)
     copy(metadataOpt = Some(merged))
   }
 
-  def deferred(): DeferredCall[NotUsed, R] =
+  def deferred(): DeferredCall[NotUsed, R] = {
+    // extra protection against type cast since the same backing impl for non deferrable and deferrable
+    if (!canBeDeferred) throw new IllegalStateException("Call to this method cannot be deferred")
     createDeferred(metadataOpt, None).asInstanceOf[DeferredCall[NotUsed, R]]
+  }
 
   def invokeAsync(): CompletionStage[R] =
-    deferred().invokeAsync()
+    createDeferred(metadataOpt, None).asInstanceOf[DeferredCall[NotUsed, R]].invokeAsync()
 
-  def deferred(arg: A1): DeferredCall[A1, R] =
+  def deferred(arg: A1): DeferredCall[A1, R] = {
+    // extra protection against type cast since the same backing impl for non deferrable and deferrable
+    if (!canBeDeferred) throw new IllegalStateException("Call to this method cannot be deferred")
     createDeferred(metadataOpt, Some(arg))
+  }
 
   def invokeAsync(arg: A1): CompletionStage[R] =
-    deferred(arg).invokeAsync()
+    createDeferred(metadataOpt, Some(arg)).invokeAsync()
 
 }

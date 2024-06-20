@@ -58,7 +58,7 @@ public class ComponentClientImpl implements ComponentClient {
 
   @Override
   public ViewClient forView() {
-    return new ViewClient(kalixClient, callMetadata);
+    return new ViewClientImpl(kalixClient.runtimeComponentClients().viewClient(), callMetadata, kalixClient.executionContext());
   }
 
 }

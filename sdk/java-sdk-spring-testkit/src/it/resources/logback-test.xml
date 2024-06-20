@@ -25,11 +25,12 @@
         <appender-ref ref="JSON-STDOUT"/>
     </appender>
 
-    <logger name="akka" level="INFO"/>
+    <logger name="akka" level="WARN"/>
     <logger name="kalix.springsdk" level="INFO"/>
+    <logger name="kalix.runtime.views" level="INFO"/>
     <logger name="org.springframework.web" level="INFO"/>
-    <logger name="akka.http" level="INFO"/>
-    <logger name="io.grpc" level="INFO"/>
+    <logger name="akka.http" level="WARN"/>
+    <logger name="io.grpc" level="WARN"/>
     <logger name="kalix.springsdk.impl" level="INFO" />
     <logger name="kalix.javasdk.testkit" level="DEBUG" />
     <logger name="kalix.javasdk.impl.ProtoDescriptorGenerator$" level="INFO" />

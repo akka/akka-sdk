@@ -34,7 +34,7 @@ public abstract class AsyncCallsSupport {
    */
   public <O> Exception failed(CompletionStage<O> stage) {
     try {
-      stage .toCompletableFuture().get(defaultTimeout.toMillis(), TimeUnit.MILLISECONDS);
+      stage.toCompletableFuture().get(defaultTimeout.toMillis(), TimeUnit.MILLISECONDS);
       throw new RuntimeException("Expected call to fail but it succeeded");
     } catch (InterruptedException | ExecutionException | TimeoutException e) {
       return e;

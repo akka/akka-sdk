@@ -4,6 +4,8 @@
 
 package kalix.javasdk.client;
 
+import akka.annotation.DoNotInherit;
+
 /**
  * Utility to send requests to other Kalix components by composing a DeferredCall. To compose a
  * call:
@@ -11,7 +13,7 @@ package kalix.javasdk.client;
  * <ol>
  *   <li>select component type (and pass id if necessary)
  *   <li>select component method, by using Java method reference operator (::)
- *   <li>provide parameters (if required)
+ *   <li>provide a request parameter (if required)
  * </ol>
  *
  * <p>Example of use on a cross-component call:
@@ -19,11 +21,17 @@ package kalix.javasdk.client;
  * <pre>{@code
  * public Effect<String> createUser(String userId, String email, String name) {
  *   //validation here
- *   var defCall = componentClient.forValueEntity(userId).call(UserEntity::createUser).params(email, name);
+ *   var defCall =
+ *     componentClient.forValueEntity(userId)
+ *       .method(UserEntity::createUser)
+ *       .deferred(new CreateRequest(email, name));
  *   return effects().forward(defCall);
  * }
  * }</pre>
+ *
+ * Not for user extension, implementation provided by the SDK.
  */
+@DoNotInherit
 public interface ComponentClient {
   /** Select Action as a call target component. */
   ActionClient forAction();

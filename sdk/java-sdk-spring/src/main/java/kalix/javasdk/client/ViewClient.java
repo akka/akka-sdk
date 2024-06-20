@@ -4,6 +4,7 @@
 
 package kalix.javasdk.client;
 
+import akka.annotation.DoNotInherit;
 import akka.japi.function.Function;
 import akka.japi.function.Function10;
 import akka.japi.function.Function11;
@@ -37,33 +38,20 @@ import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Optional;
 
-public class ViewClient {
-
-  private final KalixClient kalixClient;
-  private final Optional<Metadata> callMetadata;
-
-  public ViewClient(KalixClient kalixClient, Optional<Metadata> callMetadata) {
-    this.kalixClient = kalixClient;
-    this.callMetadata = callMetadata;
-  }
-
+/** Not for user extension */
+@DoNotInherit
+public interface ViewClient {
 
   /**
-   * Pass in a View method reference annotated as a REST endpoint, e.g. <code>UserByCity::find</code>
+   * Pass in a View query method reference, e.g. <code>UserByCity::find</code> If no result is
+   * found, the result of the request will be a {@link NoEntryFoundException}
    */
-  public <T, R> ComponentMethodRef< R> method(Function<T, R> methodRef) {
-      Method method = MethodRefResolver.resolveMethodRef(methodRef);
-      ViewCallValidator.validate(method);
-      return new ComponentMethodRef<>(kalixClient, method, Optional.empty(), callMetadata);
-  }
+  <T, R> NativeComponentInvokeOnlyMethodRef<R> method(Function<T, R> methodRef);
 
   /**
-   * Pass in a View method reference annotated as a REST endpoint, e.g. <code>UserByCity::find</code>
+   * Pass in a View query method reference, e.g. <code>UserByCity::find</code
+   *
+   * If no result is found, the result of the request will be a {@link NoEntryFoundException}
    */
-  public <T, A1, R> ComponentMethodRef1<A1, R> method(Function2<T, A1, R> methodRef) {
-    Method method = MethodRefResolver.resolveMethodRef(methodRef);
-    ViewCallValidator.validate(method);
-    return new ComponentMethodRef1<>(kalixClient, method, Optional.empty(), callMetadata);
-  }
-
+  <T, A1, R> NativeComponentInvokeOnlyMethodRef1<A1, R> method(Function2<T, A1, R> methodRef);
 }

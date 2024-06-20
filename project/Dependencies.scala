@@ -8,10 +8,7 @@ object Dependencies {
     val ProtocolVersionMinor = 1
     val RuntimeImage = "gcr.io/kalix-public/kalix-runtime"
     // Remember to bump kalix-runtime.version in maven-java/kalix-spring-boot-parent if bumping this
-    val RuntimeVersion = System.getProperty(
-      "kalix-runtime.version",
-      // temporarily accept the old system property name
-      System.getProperty("kalix-proxy.version", "1.1.36-bea16c7"))
+    val RuntimeVersion = sys.props.getOrElse("kalix-runtime.version", "1.1.36-bea16c7")
   }
 
   // changing the Scala version of the Java SDK affects end users

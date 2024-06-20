@@ -20,6 +20,7 @@ import com.example.wiring.views.*;
 import kalix.javasdk.Metadata;
 import kalix.javasdk.StatusCode;
 import kalix.javasdk.client.EventSourcedEntityClient;
+import kalix.javasdk.client.NoEntryFoundException;
 import kalix.javasdk.testkit.KalixTestKit;
 import kalix.spring.testkit.KalixIntegrationTestKitSupport;
 import org.awaitility.Awaitility;
@@ -350,7 +351,8 @@ public class SpringSdkIntegrationTest extends KalixIntegrationTestKitSupport {
                   componentClient.forView()
               .method(UserWithVersionView::getUser)
               .invokeAsync(UserWithVersionView.queryParam(user.email)));
-          Assertions.assertTrue(ex.getMessage().contains("404"));
+          // FIXME why is the root ex java.util.concurrent.ExecutionException and not our exception
+          Assertions.assertTrue(ex.getCause() instanceof NoEntryFoundException);
         });
 
     Awaitility.await()

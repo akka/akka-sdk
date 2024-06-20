@@ -11,20 +11,27 @@ import akka.util.ByteString
 import kalix.javasdk.JsonSupport
 import kalix.javasdk.Metadata
 import kalix.javasdk.client.EventSourcedEntityClient
+import kalix.javasdk.client.NativeComponentInvokeOnlyMethodRef
+import kalix.javasdk.client.NativeComponentInvokeOnlyMethodRef1
 import kalix.javasdk.client.NativeComponentMethodRef
 import kalix.javasdk.client.NativeComponentMethodRef1
+import kalix.javasdk.client.NoEntryFoundException
 import kalix.javasdk.client.ValueEntityClient
+import kalix.javasdk.client.ViewClient
 import kalix.javasdk.eventsourcedentity.EventSourcedEntity
 import kalix.javasdk.impl.MetadataImpl
 import kalix.javasdk.impl.MetadataImpl.toProtocol
 import kalix.javasdk.impl.reflection.Reflect
 import kalix.javasdk.spi.EntityRequest
 import kalix.javasdk.spi.{ EntityClient => RuntimeEntityClient }
+import kalix.javasdk.spi.{ ViewClient => RuntimeViewClient }
 import kalix.javasdk.valueentity.ValueEntity
 import kalix.javasdk.client.WorkflowClient
 import kalix.javasdk.spi.ComponentType
 import kalix.javasdk.spi.EventSourcedEntityType
 import kalix.javasdk.spi.ValueEntityType
+import kalix.javasdk.spi.ViewRequest
+import kalix.javasdk.spi.ViewType
 import kalix.javasdk.spi.WorkflowType
 import kalix.javasdk.workflow.AbstractWorkflow
 
@@ -32,6 +39,9 @@ import java.util.Optional
 import scala.concurrent.ExecutionContext
 import scala.jdk.FutureConverters.FutureOps
 import scala.jdk.OptionConverters.RichOptional
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
 
 /**
  * INTERNAL API
@@ -176,4 +186,78 @@ private[javasdk] final case class WorkflowClientImpl(
   override def method[T, A1, R](
       methodRef: function.Function2[T, A1, AbstractWorkflow.Effect[R]]): NativeComponentMethodRef1[A1, R] =
     createMethodRef2(methodRef)
+}
+
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[javasdk] final case class ViewClientImpl(viewClient: RuntimeViewClient, callMetadata: Option[Metadata])(implicit
+    val executionContext: ExecutionContext)
+    extends ViewClient {
+
+  def this(viewClient: RuntimeViewClient, callMetadata: Optional[Metadata])(implicit
+      executionContext: ExecutionContext) = this(viewClient, callMetadata.toScala)
+
+  override def method[T, R](methodRef: function.Function[T, R]): NativeComponentInvokeOnlyMethodRef[R] =
+    createMethodRefForEitherArity(methodRef)
+
+  override def method[T, A1, R](methodRef: function.Function2[T, A1, R]): NativeComponentInvokeOnlyMethodRef1[A1, R] =
+    createMethodRefForEitherArity(methodRef)
+
+  private def createMethodRefForEitherArity[A1, R](lambda: AnyRef): NativeComponentMethodRefImpl[A1, R] = {
+    val method = MethodRefResolver.resolveMethodRef(lambda)
+    ViewCallValidator.validate(method)
+    // extract view id
+    val declaringClass = method.getDeclaringClass
+    // FIXME Surprising that this isn' the view id declaringClass.getAnnotation(classOf[ViewId]).value()
+    val serviceName = declaringClass.getName
+    val methodName = method.getName.capitalize
+
+    new NativeComponentMethodRefImpl[AnyRef, R](
+      None,
+      callMetadata,
+      { (maybeMetadata, maybeArg) =>
+        // Note: same path for 0 and 1 arg calls
+        val serializedPayload = maybeArg match {
+          case Some(arg) =>
+            // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
+            JsonSupport.encodeToAkkaByteString(arg)
+          case None => ByteString.emptyByteString
+        }
+
+        EmbeddedDeferredCall(
+          maybeArg.orNull,
+          maybeMetadata.getOrElse(Metadata.EMPTY).asInstanceOf[MetadataImpl],
+          ViewType,
+          serviceName,
+          methodName,
+          None,
+          { metadata =>
+            viewClient
+              .query(
+                ViewRequest(
+                  serviceName,
+                  methodName,
+                  ContentTypes.`application/json`,
+                  serializedPayload,
+                  toProtocol(metadata.asInstanceOf[MetadataImpl]).getOrElse(
+                    kalix.protocol.component.Metadata.defaultInstance)))
+              .transform {
+                case Success(reply) =>
+                  // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
+                  val returnType = Reflect.getReturnType(declaringClass, method)
+                  // FIXME include some useful details in the exception
+                  if (reply.payload.isEmpty) Failure(new NoEntryFoundException())
+                  else Try(JsonSupport.parseBytes[R](reply.payload.toArrayUnsafe(), returnType.asInstanceOf[Class[R]]))
+                case Failure(ex) => Failure(ex)
+              }
+              .asJava
+
+          })
+      },
+      canBeDeferred = false).asInstanceOf[NativeComponentMethodRefImpl[A1, R]]
+
+  }
+
 }

@@ -239,7 +239,6 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
         logger.info(s"Registering View provider for [${clz.getName}]")
         val view = viewProvider(clz.asInstanceOf[Class[View[Nothing]]])
         kalix.register(view)
-        kalixClient.registerComponent(view.serviceDescriptor())
       }
 
       if (Reflect.isMultiTableView(clz)) {

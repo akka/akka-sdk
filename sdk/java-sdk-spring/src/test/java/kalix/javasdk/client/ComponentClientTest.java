@@ -336,7 +336,7 @@ class ComponentClientTest {
 
 
   @Test
-  public void shouldReturnDeferredCallForViewRequest() throws InvalidProtocolBufferException {
+  public void shouldReturnNonDeferrableCallForViewRequest() throws InvalidProtocolBufferException {
     //given
     var view = descriptorFor(UserByEmailWithGet.class, messageCodec);
     restKalixClient.registerComponent(view.serviceDescriptor());
@@ -345,16 +345,12 @@ class ComponentClientTest {
 
     ViewTestModels.ByEmail body = new ViewTestModels.ByEmail(email);
     //when
-    RestDeferredCall<Any, User> call = (RestDeferredCall<Any, User>)
+    NativeComponentInvokeOnlyMethodRef1<ViewTestModels.ByEmail, User> call =
       componentClient.forView()
-      .method(UserByEmailWithGet::getUser)
-      .deferred(body);
+      .method(UserByEmailWithGet::getUser);
 
-    //then
-    assertThat(call.fullServiceName()).isEqualTo(targetMethod.getService().getFullName());
-    assertThat(call.methodName()).isEqualTo(targetMethod.getName());
+    // not much to assert here
 
-    assertThat(getBody(targetMethod, call.message(), ViewTestModels.ByEmail.class)).isEqualTo(body);
   }
 
   private ComponentDescriptor descriptorFor(Class<?> clazz, JsonMessageCodec messageCodec) {
