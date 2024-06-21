@@ -260,7 +260,7 @@
                         <mainClass>${mainClass}</mainClass>
                     </configuration>
                 </plugin>
-                
+
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-deploy-plugin</artifactId>
@@ -274,7 +274,7 @@
                     <!-- Config for running the service locally in dev mode -->
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>exec-maven-plugin</artifactId>
-                    <version>3.2.0</version>
+                    <version>3.3.0</version>
                     <configuration>
                         <mainClass>kalix.runtime.KalixRuntimeMain</mainClass>
                         <systemProperties>
@@ -287,6 +287,8 @@
                                 <value>logback-runtime-dev-mode.xml</value>
                             </systemProperty>
                         </systemProperties>
+                        <!-- Setting this as compile makes it include "compile", "provided", and "system" scopes. Thus, the dev runtime dep gets included. -->
+                        <classpathScope>compile</classpathScope>
                     </configuration>
                 </plugin>
             </plugins>
@@ -323,18 +325,19 @@
                 <artifactId>docker-maven-plugin</artifactId>
                 <configuration>
                     <skip>${skip.docker}</skip>
-                </configuration>    
+                </configuration>
             </plugin>
 
             <plugin>
                 <groupId>io.kalix</groupId>
                 <artifactId>kalix-maven-plugin</artifactId>
             </plugin>
-            
+
         </plugins>
     </build>
 
     <profiles>
+
         <profile>
             <!-- run Integration Tests in src/it/java with `mvn verify -Pit`-->
             <id>it</id>
@@ -392,7 +395,7 @@
                 <version>${kalix-runtime.version}</version>
             </dependency>
         </dependencies>
-   </dependencyManagement>
+    </dependencyManagement>
 
     <dependencies>
         <dependency>
@@ -408,7 +411,7 @@
         <dependency>
             <groupId>io.kalix</groupId>
             <artifactId>kalix-dev-runtime_2.13</artifactId>
-            <scope>runtime</scope>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 </project>
