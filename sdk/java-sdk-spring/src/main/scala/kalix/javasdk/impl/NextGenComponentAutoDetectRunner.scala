@@ -8,14 +8,17 @@ import java.lang.reflect.Constructor
 import java.lang.reflect.ParameterizedType
 import java.time.Duration
 import java.util.concurrent.atomic.AtomicReference
+
 import scala.concurrent.Future
 import scala.concurrent.Promise
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.duration.FiniteDuration
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 import scala.jdk.CollectionConverters.MapHasAsScala
+import scala.jdk.DurationConverters.JavaDurationOps
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
+
 import akka.Done
 import akka.actor.typed.ActorSystem
 import akka.http.scaladsl.model.HttpRequest
@@ -181,12 +184,11 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
   private val ComponentLocator.LocatedClasses(componentClasses, maybeServiceClass) =
     ComponentLocator.locateUserComponents(system)
 
-  private val endpointTimeout: FiniteDuration = {
-    val reqTimeout = system.settings.config.getDuration("akka.http.server.request-timeout")
-    scala.concurrent.duration.Duration
-      .fromNanos(reqTimeout.toNanos)
+  private val endpointTimeout: FiniteDuration =
+    system.settings.config
+      .getDuration("akka.http.server.request-timeout")
+      .toScala
       .plus(10.seconds) // 10s higher then configured timeout, so configured timeout always win
-  }
 
   // validate service classes before instantiating
   private val validation = componentClasses.foldLeft(Valid: Validation) { case (validations, cls) =>
