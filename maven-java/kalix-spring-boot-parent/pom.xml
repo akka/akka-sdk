@@ -163,18 +163,17 @@
                                         <!-- tag for generated image -->
                                         <tag>${dockerTag}</tag>
                                     </tags>
-                                    <ports>
-                                        <!-- expose port in Docker container -->
-                                        <port>8080</port>
-                                    </ports>
+                                    <labels>
+                                        <io.kalix.container-type>init</io.kalix.container-type>
+                                    </labels>
                                     <assembly>
                                         <!-- NOTE: (optional) switch to "artifact-with-dependencies" to show dependencies library-->
                                         <descriptorRef>artifact</descriptorRef>
                                     </assembly>
                                     <entryPoint>
-                                        <arg>java</arg>
-                                        <arg>-jar</arg>
+                                        <arg>cp</arg>
                                         <arg>/maven/${project.build.finalName}.jar</arg>
+                                        <arg>/opt/local-lib/</arg>
                                     </entryPoint>
                                 </build>
                             </image>
