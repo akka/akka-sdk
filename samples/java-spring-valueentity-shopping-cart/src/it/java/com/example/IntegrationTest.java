@@ -67,14 +67,6 @@ public class IntegrationTest extends KalixIntegrationTestKitSupport {
     return new LineItemDTO(productId, name, quantity);
   }
 
-  ShoppingCartDTO initializeCart() throws Exception {
-    return
-      webClient.post()
-        .uri("/carts/create")
-        .retrieve()
-        .bodyToMono(ShoppingCartDTO.class)
-        .block(timeout);
-  }
 
   String createPrePopulated() throws Exception {
     return
@@ -147,8 +139,7 @@ public class IntegrationTest extends KalixIntegrationTestKitSupport {
 
   @Test
   public void createNewPrePopulatedCart() throws Exception {
-    String cartId = createPrePopulated();
-    var cart = getCart(cartId.substring(1, cartId.length() - 1)); // removing quotes
+    var cart = getCart(createPrePopulated());
     assertEquals(1, cart.items().size());
   }
 

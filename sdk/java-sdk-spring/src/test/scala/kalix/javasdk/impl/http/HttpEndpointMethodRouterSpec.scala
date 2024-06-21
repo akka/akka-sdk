@@ -15,11 +15,13 @@ import akka.http.scaladsl.model.HttpMethods.POST
 import akka.http.scaladsl.model.HttpMethods.PUT
 import akka.http.scaladsl.model.HttpRequest
 import akka.http.scaladsl.model.MediaTypes
+import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model.Uri.Path
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.util.ByteString
+import kalix.javasdk.JsonSupport
 import kalix.spring.testmodels.EndpointsTestModels
 import kalix.spring.testmodels.EndpointsTestModels.DeleteHelloEndpoint
 import kalix.spring.testmodels.EndpointsTestModels.GetHelloEndpoint
@@ -27,10 +29,17 @@ import kalix.spring.testmodels.EndpointsTestModels.PatchHelloEndpoint
 import kalix.spring.testmodels.EndpointsTestModels.PostHelloEndpoint
 import kalix.spring.testmodels.EndpointsTestModels.PutHelloEndpoint
 import org.scalatest.OptionValues
+import org.scalatest.concurrent.Futures
+import org.scalatest.concurrent.ScalaFutures.convertScalaFuture
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
-class HttpEndpointMethodRouterSpec extends AnyWordSpec with Matchers with OptionValues with ScalatestRouteTest {
+class HttpEndpointMethodRouterSpec
+    extends AnyWordSpec
+    with Matchers
+    with Futures
+    with OptionValues
+    with ScalatestRouteTest {
 
   val methodRouter =
     HttpEndpointMethodRouter(classOf[GetHelloEndpoint], () => new GetHelloEndpoint) ++
@@ -50,7 +59,7 @@ class HttpEndpointMethodRouterSpec extends AnyWordSpec with Matchers with Option
       val reqPath = "/hello/Joe"
       val (method, params) = methodRouter.findMethod(GET, Path(reqPath)).value
       method.javaMethod.getName shouldBe "name"
-      method.invoke(params) shouldBe "Joe"
+      method.invoke(params) shouldBe new EndpointsTestModels.Name("Joe")
     }
 
     "generate method invokers for a GET with two path variables" in {
@@ -118,21 +127,39 @@ class HttpEndpointMethodRouterSpec extends AnyWordSpec with Matchers with Option
       }
     }
 
-    "invoke java method for GET request with path variable" in {
+    "invoke java method for GET request with path variable and Json return" in {
       Get("/hello/Joe") ~> route ~> check {
-        responseAs[String] shouldEqual "\"Joe\""
+        val body = response.entity.toStrict(3.seconds).futureValue.data.utf8String
+
+        response.status shouldBe StatusCodes.OK
+        val nameResponse = JsonSupport.getObjectMapper.readValue(body, classOf[EndpointsTestModels.Name])
+        nameResponse.value() shouldEqual "Joe"
       }
     }
 
     "invoke java method for GET request with two path variables" in {
       Get("/hello/Joe/20") ~> route ~> check {
-        responseAs[String] shouldEqual "\"name: Joe, age: 20\""
+        responseAs[String] shouldEqual "name: Joe, age: 20"
+      }
+    }
+
+    "invoke java method for GET request with two path variables and HttpRequest return" in {
+      Get("/hello/Joe/20/http-response") ~> route ~> check {
+        val body = response.entity.toStrict(3.seconds).futureValue.data.utf8String
+        body shouldEqual "http => name: Joe, age: 20"
       }
     }
 
     "invoke java method for GET request with two path variables and async return" in {
       Get("/hello/Joe/20/async") ~> route ~> check {
-        responseAs[String] shouldEqual "\"async => name: Joe, age: 20\""
+        responseAs[String] shouldEqual "async => name: Joe, age: 20"
+      }
+    }
+
+    "invoke java method for GET request with two path variables and async HttpRequest return" in {
+      Get("/hello/Joe/20/async/http-response") ~> route ~> check {
+        val body = response.entity.toStrict(3.seconds).futureValue.data.utf8String
+        body shouldEqual "async http => name: Joe, age: 20"
       }
     }
 
@@ -150,7 +177,7 @@ class HttpEndpointMethodRouterSpec extends AnyWordSpec with Matchers with Option
         entity = HttpEntity(MediaTypes.`application/json`, jsonRequest))
 
       request ~> Route.seal(route) ~> check {
-        responseAs[String] shouldEqual "\"name: Joe, age: 20\""
+        responseAs[String] shouldEqual "name: Joe, age: 20"
       }
     }
 
@@ -168,7 +195,7 @@ class HttpEndpointMethodRouterSpec extends AnyWordSpec with Matchers with Option
         entity = HttpEntity(MediaTypes.`application/json`, jsonRequest))
 
       request ~> Route.seal(route) ~> check {
-        responseAs[String] shouldEqual "\"async => name: Joe, age: 20\""
+        responseAs[String] shouldEqual "async => name: Joe, age: 20"
       }
     }
 

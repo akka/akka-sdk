@@ -34,8 +34,8 @@ import kalix.javasdk.annotations.http.Get
 import kalix.javasdk.annotations.http.Patch
 import kalix.javasdk.annotations.http.Post
 import kalix.javasdk.annotations.http.Put
-import kalix.javasdk.impl.http.HttpEndpointMethodRouter.HttpMethodInvoker
 import kalix.javasdk.impl.http.DynPathMatcher.MatchedResult
+import kalix.javasdk.impl.http.HttpEndpointMethodRouter.HttpMethodInvoker
 
 /**
  * INTERNAL API
@@ -146,20 +146,21 @@ case class HttpEndpointMethodRouter(methodInvokers: Seq[HttpMethodInvoker]) {
       implicit val dispatcher: ExecutionContextExecutor = sys.classicSystem.dispatcher
       implicit val mat = Materializer.matFromSystem(sys)
 
-      // TODO: what about headers? how to pass it to endpoint method, some request model?
-
-      def handleResponse(response: Any): Future[HttpResponse] = {
-        response match {
-          case resFut: CompletionStage[_] =>
-            resFut.asScala.map { res =>
-              val bytes = JsonSupport.getObjectMapper.writerFor(res.getClass).writeValueAsBytes(res)
-              HttpResponse(entity = HttpEntity(ContentTypes.`application/json`, bytes))
-            }
+      def toHttpResponse(res: Any): HttpResponse =
+        res match {
+          case httpRes: HttpResponse => httpRes
+          case str: String           => HttpResponse(entity = HttpEntity(ContentTypes.`text/plain(UTF-8)`, str))
           case res =>
             val bytes = JsonSupport.getObjectMapper.writerFor(res.getClass).writeValueAsBytes(res)
-            Future.successful(HttpResponse(entity = HttpEntity(ContentTypes.`application/json`, bytes)))
+            HttpResponse(entity = HttpEntity(ContentTypes.`application/json`, bytes))
         }
-      }
+
+      // FIXME: what about headers? how to pass it to endpoint method, some request model?
+      def handleResponse(response: Any): Future[HttpResponse] =
+        response match {
+          case resFut: CompletionStage[_] => resFut.asScala.map(toHttpResponse)
+          case res                        => Future.successful(toHttpResponse(res))
+        }
 
       methodInvoker.bodyType match {
         case Some(bodyType) =>
