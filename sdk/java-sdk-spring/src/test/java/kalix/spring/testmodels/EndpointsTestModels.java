@@ -56,7 +56,7 @@ public class EndpointsTestModels {
      */
     @Get("/{name}/{age}/http-response")
     public HttpResponse fixedNameAndAgeHttp(String name, int age) {
-      return HttpResponses.Ok("http => name: " + name + ", age: " + age);
+      return HttpResponses.ok("http => name: " + name + ", age: " + age);
     }
 
     @Get("/name/{age}")
@@ -77,7 +77,7 @@ public class EndpointsTestModels {
      */
     @Get("/{name}/{age}/async/http-response")
     public CompletionStage<HttpResponse> nameAndAgeAsyncHttp(String name, int age) {
-      return CompletableFuture.completedStage(HttpResponses.Ok("async http => name: " + name + ", age: " + age));
+      return CompletableFuture.completedStage(HttpResponses.ok("async http => name: " + name + ", age: " + age));
     }
 
   }

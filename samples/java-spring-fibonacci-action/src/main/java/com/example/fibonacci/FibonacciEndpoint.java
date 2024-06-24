@@ -27,14 +27,14 @@ public class FibonacciEndpoint {
     public CompletionStage<HttpResponse> nextNumberPath(Long number) {
         if (number < 0 || number > 10000) {
             return CompletableFuture.completedStage(
-              HttpResponses.BadRequest("Only numbers between 0 and 10k are allowed"));
+              HttpResponses.badRequest("Only numbers between 0 and 10k are allowed"));
         } else {
             logger.info("Executing GET call to real /fibonacci = " + number);
             CompletionStage<Number> numberResult = componentClient.forAction()
               .method(FibonacciAction::getNumber)
             // FIXME no longer forward as documented
               .invokeAsync(number);
-            return numberResult.thenApply(HttpResponses::Ok);
+            return numberResult.thenApply(HttpResponses::ok);
         }
     }
 
@@ -43,7 +43,7 @@ public class FibonacciEndpoint {
 
         if (number.value() < 0 || number.value() > 10000) {
             return CompletableFuture.completedStage(
-              HttpResponses.BadRequest("Only numbers between 0 and 10k are allowed"));
+              HttpResponses.badRequest("Only numbers between 0 and 10k are allowed"));
         } else {
             logger.info("Executing POST call to real /fibonacci = " + number.value());
 
@@ -52,7 +52,7 @@ public class FibonacciEndpoint {
                 .method(FibonacciAction::nextNumber)
                 .invokeAsync(number);
 
-            return nextNumberReply.thenApply(HttpResponses::Ok);
+            return nextNumberReply.thenApply(HttpResponses::ok);
         }
     }
 }
