@@ -1,8 +1,10 @@
 package com.example.fibonacci;
 
 // tag::testing-action[]
+import kalix.javasdk.http.HttpResponses;
 import kalix.javasdk.testkit.ActionResult;
 import kalix.javasdk.testkit.ActionTestkit;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 // end::testing-action[]
@@ -28,5 +30,7 @@ public class FibonacciActionTest {
     assertTrue(result.isError());
     assertTrue(result.getError().startsWith("Input number is not a Fibonacci number"));
   }
+
+
 }
 // end::testing-action[]

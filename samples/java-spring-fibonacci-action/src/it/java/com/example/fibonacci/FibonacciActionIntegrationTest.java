@@ -1,64 +1,42 @@
 package com.example.fibonacci;
 
+import akka.http.javadsl.model.StatusCodes;
 import kalix.spring.testkit.KalixIntegrationTestKitSupport;
+import kalix.javasdk.http.StrictResponse;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
-import org.springframework.http.ResponseEntity;
-import reactor.core.publisher.Mono;
 
-import java.time.Duration;
-
-import static java.time.temporal.ChronoUnit.SECONDS;
-
-// tag::testing-action[]
-public class FibonacciActionIntegrationTest extends KalixIntegrationTestKitSupport { // <2>
-
-  private Duration timeout = Duration.of(5, SECONDS);
+public class FibonacciActionIntegrationTest extends KalixIntegrationTestKitSupport {
 
   @Test
   public void calculateNextNumber() {
+    StrictResponse<Number> res = await(
+      httpClient.GET("/fibonacci/5/next").responseBodyAs(Number.class).invokeAsync()
+    );
 
-    ResponseEntity<Number> response = webClient.get()
-      .uri("/fibonacci/5/next")
-      .retrieve()
-      .toEntity(Number.class)
-      .block(timeout); // <3>
-
-    Assertions.assertEquals(HttpStatus.OK, response.getStatusCode());
-    Assertions.assertEquals(8, response.getBody().value());
+    Assertions.assertEquals(200, res.httpResponse().status().intValue());
+    Assertions.assertEquals(8, res.body().value());
   }
 
-  // end::testing-action[]
   @Test
   public void calculateNextNumberWithLimitedFibo() {
 
-    ResponseEntity<Number> response = webClient.get()
-      .uri("/limitedfibonacci/5/next")
-      .retrieve()
-      .toEntity(Number.class)
-      .block(timeout);
+    StrictResponse<Number> res = await(
+      httpClient.GET("/fibonacci/5/next").responseBodyAs(Number.class).invokeAsync()
+    );
 
-    Assertions.assertEquals(HttpStatus.OK, response.getStatusCode());
-    Assertions.assertEquals(8, response.getBody().value());
+    Assertions.assertEquals(200, res.httpResponse().status().intValue());
+    Assertions.assertEquals(8, res.body().value());
   }
 
   @Test
   public void wrongNumberReturnsError() {
 
-    Mono<ResponseEntity<Void>> response = webClient.get()
-      .uri("/fibonacci/7/next")
-      .retrieve()
-      .onStatus(HttpStatusCode::is4xxClientError, clientResponse ->
-        clientResponse.bodyToMono(String.class)
-          .flatMap(error -> Mono.error(new RuntimeException(error)))
-      )
-      .toBodilessEntity();
+    StrictResponse<String> res = await(
+      httpClient.GET("/fibonacci/7/next").parseResponseBody(String::new).invokeAsync()
+    );
 
-    RuntimeException exception = Assertions.assertThrows(RuntimeException.class, () -> response.block(timeout));
-    Assertions.assertEquals("Input number is not a Fibonacci number, received '7'", exception.getMessage());
+    Assertions.assertEquals("Input number is not a Fibonacci number, received '7'", res.body());
+    Assertions.assertEquals(StatusCodes.BAD_REQUEST, res.httpResponse().status());
   }
-  // tag::testing-action[]
 }
-// end::testing-action[]

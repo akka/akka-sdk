@@ -188,7 +188,7 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
     system.settings.config
       .getDuration("akka.http.server.request-timeout")
       .toScala
-      .plus(10.seconds) // 10s higher then configured timeout, so configured timeout always win
+      .plus(10.seconds) // 10s higher than configured timeout, so configured timeout always win
 
   // validate service classes before instantiating
   private val validation = componentClasses.foldLeft(Valid: Validation) { case (validations, cls) =>

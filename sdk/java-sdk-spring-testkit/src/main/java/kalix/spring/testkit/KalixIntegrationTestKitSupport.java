@@ -6,6 +6,7 @@ package kalix.spring.testkit;
 
 import akka.actor.ExtendedActorSystem;
 import kalix.javasdk.client.ComponentClient;
+import kalix.javasdk.http.HttpClient;
 import kalix.javasdk.testkit.KalixTestKit;
 import kalix.spring.impl.WebClientProviderImpl;
 import org.junit.jupiter.api.AfterAll;
@@ -44,6 +45,9 @@ public abstract class KalixIntegrationTestKitSupport extends AsyncCallsSupport {
 
   protected Duration timeout = Duration.of(10, SECONDS);
 
+  protected HttpClient httpClient;
+
+
   /**
    * Override this to use custom settings for an integration test
    */
@@ -58,6 +62,9 @@ public abstract class KalixIntegrationTestKitSupport extends AsyncCallsSupport {
       componentClient = kalixTestKit.getComponentClient();
       webClient = new WebClientProviderImpl((ExtendedActorSystem)kalixTestKit.getActorSystem())
               .localWebClient();
+
+      var baseUrl = "http://localhost:" + kalixTestKit.getPort();
+      httpClient = new HttpClient(kalixTestKit.getActorSystem(), baseUrl);
     } catch (Exception ex) {
       logger.error("Failed to startup Kalix service", ex);
       throw ex;
@@ -71,6 +78,7 @@ public abstract class KalixIntegrationTestKitSupport extends AsyncCallsSupport {
       kalixTestKit.stop();
     }
   }
+
 
 
 }
