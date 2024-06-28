@@ -24,12 +24,9 @@ import kalix.javasdk.impl.MessageCodec;
 import kalix.javasdk.impl.NextGenKalixJavaApplication;
 import kalix.javasdk.impl.ProxyInfoHolder;
 import kalix.javasdk.impl.client.ComponentClientImpl;
+import kalix.javasdk.spi.ComponentClients;
 import kalix.javasdk.testkit.EventingTestKit.IncomingMessages;
-import kalix.javasdk.testkit.impl.KalixRuntimeContainer;
 import kalix.runtime.KalixRuntimeMain;
-import kalix.spring.impl.KalixClient;
-import kalix.spring.impl.RestKalixClientImpl;
-import kalix.spring.impl.WebClientProviderHolder;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -427,6 +424,11 @@ public class KalixTestKit {
 
   private static final Logger log = LoggerFactory.getLogger(KalixTestKit.class);
 
+  /** Default local port where the Google Pub/Sub emulator is available (8085). */
+  public static final int DEFAULT_GOOGLE_PUBSUB_PORT = 8085;
+
+  public static final int DEFAULT_KAFKA_PORT = 9092;
+
   private final Settings settings;
 
   private Kalix kalix;
@@ -508,11 +510,11 @@ public class KalixTestKit {
         runtimeOptions.put("kalix.proxy.eventing.support", "grpc-backend");
       } else if (settings.eventingSupport == Settings.EventingSupport.KAFKA) {
         runtimeOptions.put("kalix.proxy.eventing.support", "kafka");
-        runtimeOptions.put("kalix.proxy.eventing.kafka.bootstrap-servers=host.testcontainers.internal", KalixRuntimeContainer.DEFAULT_KAFKA_PORT);
+        runtimeOptions.put("kalix.proxy.eventing.kafka.bootstrap-servers=host.testcontainers.internal", DEFAULT_KAFKA_PORT);
       } else if (settings.eventingSupport == Settings.EventingSupport.GOOGLE_PUBSUB) {
         runtimeOptions.put("kalix.proxy.eventing.support", "google-pubsub-emulator");
         runtimeOptions.put("kalix.proxy.eventing.google-pubsub-emulator-defaults.host", "host.testcontainers.internal");
-        runtimeOptions.put("kalix.proxy.eventing.google-pubsub-emulator-defaults.port", KalixRuntimeContainer.DEFAULT_GOOGLE_PUBSUB_PORT);
+        runtimeOptions.put("kalix.proxy.eventing.google-pubsub-emulator-defaults.port", DEFAULT_GOOGLE_PUBSUB_PORT);
       }
       if (settings.mockedEventing.hasIncomingConfig()) {
         runtimeOptions.put("kalix.proxy.eventing.override.sources", settings.mockedEventing.toIncomingFlowConfig());
@@ -539,7 +541,7 @@ public class KalixTestKit {
       proxyPort = runtimeConfig.getInt("kalix.proxy.http-port");
       proxyHost = "localhost";
 
-      Promise<Tuple2<Kalix, KalixClient>> startedKalix = Promise.apply();
+      Promise<Tuple2<Kalix, ComponentClients>> startedKalix = Promise.apply();
       if (!NextGenKalixJavaApplication.onNextStartCallback().compareAndSet(null, startedKalix)) {
         throw new RuntimeException("Found another integration test run waiting for Kalix to start, multiple tests must not run in parallel");
       }
@@ -550,7 +552,7 @@ public class KalixTestKit {
       // wait for SDK to get on start callback (or fail starting), we need it to set up the component client
       var tuple = Await.result(startedKalix.future(), scala.concurrent.duration.Duration.create("20s"));
       kalix = tuple._1();
-      var kalixClient = tuple._2;
+      var componentClients = tuple._2;
 
       startEventingTestkit();
 
@@ -585,10 +587,7 @@ public class KalixTestKit {
       holder.overrideTracingCollectorEndpoint(""); //emulating ProxyInfo with disabled tracing.
 
       // once runtime is started
-      var webClientProviderHolder = new WebClientProviderHolder((ExtendedActorSystem) runtimeActorSystem);
-      ((RestKalixClientImpl)kalixClient).setWebClient(webClientProviderHolder.webClientProvider().localWebClient());
-      componentClient = new ComponentClientImpl(kalixClient);
-
+      componentClient = new ComponentClientImpl(componentClients, runtimeActorSystem.dispatcher());
       this.messageBuilder = new EventingTestKit.MessageBuilder(kalix.getMessageCodec());
 
     } catch (Exception ex) {

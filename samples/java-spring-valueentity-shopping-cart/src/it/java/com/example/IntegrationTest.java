@@ -7,6 +7,8 @@ import kalix.javasdk.Metadata;
 import kalix.spring.testkit.KalixIntegrationTestKitSupport;
 import org.junit.jupiter.api.Test;
 
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
 
@@ -33,7 +35,7 @@ public class IntegrationTest extends KalixIntegrationTestKitSupport {
     );
   }
 
-  void addItem(String cartId, String productId, String name, int quantity) throws Exception {
+  void addItem(String cartId, String productId, String name, int quantity) {
     await(
       componentClient
         .forValueEntity(cartId)
@@ -42,7 +44,7 @@ public class IntegrationTest extends KalixIntegrationTestKitSupport {
     );
   }
 
-  void removeItem(String cartId, String productId) throws Exception {
+  void removeItem(String cartId, String productId) {
 
     await(
       componentClient
@@ -52,7 +54,7 @@ public class IntegrationTest extends KalixIntegrationTestKitSupport {
     );
   }
 
-  void removeCart(String cartId, String userRole) throws Exception {
+  void removeCart(String cartId, String userRole) {
     var metadata = Metadata.EMPTY.add("Role", userRole);
     await(
       componentClient
@@ -68,32 +70,30 @@ public class IntegrationTest extends KalixIntegrationTestKitSupport {
   }
 
 
-  String createPrePopulated() throws Exception {
+  String createPrePopulated() {
     return
-      webClient.post()
-        .uri("/carts/prepopulated")
-        .retrieve()
-        .bodyToMono(String.class)
-        .block(timeout);
+      await(httpClient.POST("/carts/prepopulated")
+        // FIXME clunky when done like this, but Jackson doesn't parse the reply as string
+        .parseResponseBody(bytes -> new String(bytes, StandardCharsets.UTF_8))
+        .invokeAsync(), timeout)
+              .body();
   }
 
-  ShoppingCartDTO verifiedAddItem(String cartId, LineItemDTO in) throws Exception {
-    return
-      webClient.post()
-        .uri("/carts/" + cartId + "/items/add")
-        .bodyValue(in)
-        .retrieve()
-        .bodyToMono(ShoppingCartDTO.class)
-        .block(timeout);
+  ShoppingCartDTO verifiedAddItem(String cartId, LineItemDTO in) {
+    return await(httpClient.POST("/carts/" + cartId + "/items/add")
+              .withRequestBody(in)
+              .responseBodyAs(ShoppingCartDTO.class)
+              .invokeAsync(), timeout)
+              .body();
   }
 
   @Test
-  public void emptyCartByDefault() throws Exception {
+  public void emptyCartByDefault() {
     assertEquals(0, getCart("user1").items().size(), "shopping cart should be empty");
   }
 
   @Test
-  public void addItemsToCart() throws Exception {
+  public void addItemsToCart() {
     addItem("cart2", "a", "Apple", 1);
     addItem("cart2", "b", "Banana", 2);
     addItem("cart2", "c", "Cantaloupe", 3);

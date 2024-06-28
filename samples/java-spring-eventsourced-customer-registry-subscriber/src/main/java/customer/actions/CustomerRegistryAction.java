@@ -1,19 +1,19 @@
 package customer.actions;
 
 import kalix.javasdk.action.Action;
-import kalix.spring.WebClientProvider;
+import kalix.javasdk.annotations.ActionId;
+import kalix.javasdk.http.HttpClient;
+import kalix.javasdk.http.HttpClientProvider;
+
+import kalix.javasdk.http.StrictResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.reactive.function.client.WebClient;
 
-@RequestMapping("/customer/{customerId}")
+@ActionId("customer-registry")
 public class CustomerRegistryAction extends Action {
 
   private Logger log = LoggerFactory.getLogger(getClass());
+  private final HttpClient httpClient;
 
   public record Address(String street, String city) {
   }
@@ -24,24 +24,22 @@ public class CustomerRegistryAction extends Action {
   public record Confirm(String msg) {
   }
 
-  private final WebClient webClient;
+  public record CreateRequest(String customerId, Customer customer) {}
 
-  public CustomerRegistryAction(WebClientProvider webClientProvider) {
-    this.webClient = webClientProvider.webClientFor("customer-registry");
+
+  public CustomerRegistryAction(HttpClientProvider webClientProvider) {
+    this.httpClient = webClientProvider.httpClientFor("customer-registry");
   }
 
-
-  @PostMapping("/create")
-  public Effect<Confirm> create(@PathVariable String customerId, @RequestBody Customer customer) {
-    log.debug("Creating {} with id: {}", customer, customerId);
+  public Effect<Confirm> create(CreateRequest createRequest) {
+    log.debug("Creating {} with id: {}", createRequest.customer, createRequest.customerId);
     // make call on customer-registry service
     var res =
-      webClient.post()
-        .uri("/akka/v1.0/entity/customer/{customerId}/create", customerId)
-        .bodyValue(customer)
-        .retrieve()
-        .bodyToMono(Confirm.class)
-        .toFuture();
+      httpClient.POST("/akka/v1.0/entity/customer/" + createRequest.customerId + "/create")
+        .withRequestBody(createRequest.customer)
+        .responseBodyAs(Confirm.class)
+        .invokeAsync()
+        .thenApply(StrictResponse::body);
 
     return effects().asyncReply(res);
   }

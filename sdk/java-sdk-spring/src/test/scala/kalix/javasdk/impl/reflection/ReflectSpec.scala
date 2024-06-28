@@ -9,6 +9,8 @@ import kalix.javasdk.impl.client.ComponentClientImpl
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
+import scala.concurrent.ExecutionContext
+
 class SomeClass {
   def a(): Unit = {}
   def b(): Unit = {}
@@ -43,8 +45,8 @@ class ReflectSpec extends AnyWordSpec with Matchers {
       class Bar(val anotherComponentClient: ComponentClient, val parentComponentClient: ComponentClient)
           extends Foo(parentComponentClient)
 
-      val c1 = new ComponentClientImpl(null)
-      val c2 = new ComponentClientImpl(null)
+      val c1 = new ComponentClientImpl(null)(ExecutionContext.global)
+      val c2 = new ComponentClientImpl(null)(ExecutionContext.global)
       val bar = new Bar(c1, c2)
 
       Reflect.lookupComponentClientFields(bar) should have size 2

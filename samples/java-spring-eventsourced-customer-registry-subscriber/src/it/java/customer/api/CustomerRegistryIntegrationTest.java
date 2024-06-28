@@ -1,35 +1,22 @@
 package customer.api;
 
-import akka.actor.ExtendedActorSystem;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
-import kalix.javasdk.JsonSupport;
 import kalix.javasdk.testkit.KalixTestKit;
-import kalix.spring.impl.WebClientProviderImpl;
 import kalix.spring.testkit.KalixIntegrationTestKitSupport;
-import org.awaitility.Awaitility;
-import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.BeforeAll;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
-import org.springframework.http.MediaType;
-import org.springframework.http.codec.json.Jackson2JsonEncoder;
-import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.client.WebClientRequestException;
-import reactor.core.publisher.Mono;
 
+import java.net.http.HttpClient;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 public abstract class CustomerRegistryIntegrationTest extends KalixIntegrationTestKitSupport {
 
   private Logger logger = LoggerFactory.getLogger(getClass());
+
+  private HttpClient httpClient;
 
   @BeforeAll
   public void beforeAll() {
@@ -46,17 +33,15 @@ public abstract class CustomerRegistryIntegrationTest extends KalixIntegrationTe
     try {
       kalixTestKit = (new KalixTestKit(kalixTestKitSettings())).start(config);
       componentClient = kalixTestKit.getComponentClient();
-      webClient = new WebClientProviderImpl((ExtendedActorSystem)kalixTestKit.getActorSystem())
-          .localWebClient();
     } catch (Exception ex) {
       logger.error("Failed to startup Kalix service", ex);
       throw ex;
     }
 
-    createClient("http://localhost:9000");
+    // createClient("http://localhost:9000");
   }
 
-
+/* FIXME non spring webclient
   protected HttpStatusCode assertSourceServiceIsUp(WebClient webClient) {
     try {
       return webClient.get()
@@ -99,5 +84,7 @@ public abstract class CustomerRegistryIntegrationTest extends KalixIntegrationTe
 
     return webClient;
   }
+
+ */
 
 }

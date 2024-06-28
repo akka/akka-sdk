@@ -6,13 +6,11 @@ package kalix.javasdk.impl.http
 
 import java.lang.reflect.Method
 import java.util.concurrent.CompletionStage
-
 import scala.annotation.tailrec
 import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 import scala.jdk.FutureConverters.CompletionStageOps
-
 import akka.actor.ClassicActorSystemProvider
 import akka.annotation.InternalApi
 import akka.http.scaladsl.model.ContentTypes
@@ -25,6 +23,7 @@ import akka.http.scaladsl.model.HttpMethods.{ POST => HttpPost }
 import akka.http.scaladsl.model.HttpMethods.{ PUT => HttpPut }
 import akka.http.scaladsl.model.HttpRequest
 import akka.http.scaladsl.model.HttpResponse
+import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model.Uri.Path
 import akka.stream.Materializer
 import kalix.javasdk.JsonSupport
@@ -36,12 +35,22 @@ import kalix.javasdk.annotations.http.Post
 import kalix.javasdk.annotations.http.Put
 import kalix.javasdk.impl.http.DynPathMatcher.MatchedResult
 import kalix.javasdk.impl.http.HttpEndpointMethodRouter.HttpMethodInvoker
+import org.slf4j.LoggerFactory
+import org.slf4j.MDC
+
+import java.lang.reflect.InvocationTargetException
+import java.util.UUID
+import java.util.concurrent.CompletionException
+import scala.util.control.NonFatal
 
 /**
  * INTERNAL API
  */
 @InternalApi
 object HttpEndpointMethodRouter {
+
+  // FIXME error logging with a logger for the component class?
+  private val logger = LoggerFactory.getLogger(getClass)
 
   case class HttpMethodInvoker(
       instanceFactory: () => Any,
@@ -98,6 +107,32 @@ object HttpEndpointMethodRouter {
   }
 
   val empty: HttpEndpointMethodRouter = HttpEndpointMethodRouter(Seq.empty)
+
+  private val CorrelationIdMdcKey = "correlationID"
+  private val defaultErrorHandling: PartialFunction[Throwable, HttpResponse] = {
+    case ex: InvocationTargetException if ex.getCause != null =>
+      // Unfold invocation target exception so we get the actual user exception
+      defaultErrorHandling(ex.getCause)
+    case ex: CompletionException if ex.getCause != null =>
+      // Unfold nested Java CS exception so we get the actual user exception
+      defaultErrorHandling(ex.getCause)
+    case ex: IllegalArgumentException =>
+      if (ex.getMessage != null) logger.debug("Bad request: {}", ex.getMessage)
+      HttpResponse(
+        StatusCodes.BadRequest,
+        entity = if (ex.getMessage != null) HttpEntity(ex.getMessage) else HttpEntity.Empty)
+    case NonFatal(ex) =>
+      // Note: the default is to not pass along potentially secret internal error details to clients but to
+      // log in the service and pass a correlation id to the client that they can then hand to the
+      // owner of the service for debugging
+      // FIXME know that we are in test/dev mode and return the full error description in response, and only use correlation
+      //       id in "prod" mode for faster local turnaround
+      val correlationId = UUID.randomUUID().toString
+      MDC.put(CorrelationIdMdcKey, correlationId)
+      logger.warn(s"Endpoint error [correlation id $correlationId]", ex)
+      MDC.remove(CorrelationIdMdcKey)
+      HttpResponse(StatusCodes.InternalServerError, entity = HttpEntity(s"Unexpected error [$correlationId]"))
+  }
 }
 
 /**
@@ -162,15 +197,24 @@ case class HttpEndpointMethodRouter(methodInvokers: Seq[HttpMethodInvoker]) {
           case res                        => Future.successful(toHttpResponse(res))
         }
 
-      methodInvoker.bodyType match {
+      (methodInvoker.bodyType match {
         case Some(bodyType) =>
           req.entity.toStrict(timeout).flatMap { body =>
-            val deserBody = JsonSupport.parseBytes(body.data.toArrayUnsafe(), bodyType)
+            val deserBody =
+              try {
+                JsonSupport.parseBytes(body.data.toArrayUnsafe(), bodyType)
+              } catch {
+                case ex: com.fasterxml.jackson.core.JacksonException =>
+                  // Jackson stacktrace does not contain anything very useful, but we know it was that it was
+                  // not possible to parse the input
+                  throw new IllegalArgumentException("Error parsing request json: " + ex.getMessage)
+              }
             handleResponse(methodInvoker.invoke(params, deserBody))
           }
         case None =>
-          handleResponse(methodInvoker.invoke(params))
-      }
+          // FIXME we must always consume, but should we also fail if there is a request payload for a no-body method?
+          req.entity.discardBytes().future().flatMap(_ => handleResponse(methodInvoker.invoke(params)))
+      }).recover(HttpEndpointMethodRouter.defaultErrorHandling)
   }
 
 }

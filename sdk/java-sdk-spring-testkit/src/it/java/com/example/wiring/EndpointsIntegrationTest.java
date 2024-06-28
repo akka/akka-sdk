@@ -4,25 +4,11 @@
 
 package com.example.wiring;
 
-import com.example.wiring.actions.echo.ActionWithHttpResponse;
-import com.example.wiring.actions.echo.Message;
-import kalix.javasdk.HttpResponse;
-import kalix.javasdk.testkit.KalixTestKit;
 import kalix.spring.testkit.KalixIntegrationTestKitSupport;
-import org.junit.jupiter.api.Test;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
-import reactor.core.publisher.Mono;
 
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 
-import static java.time.Duration.ofMillis;
 import static java.time.temporal.ChronoUnit.SECONDS;
-import static kalix.javasdk.StatusCode.Success.CREATED;
-import static kalix.javasdk.StatusCode.Success.OK;
-import static org.assertj.core.api.Assertions.assertThat;
 
 
 // These are mainly about API specification and validation.
@@ -30,15 +16,8 @@ public class EndpointsIntegrationTest extends KalixIntegrationTestKitSupport {
 
   private Duration timeout = Duration.of(10, SECONDS);
 
-  @Override
-  protected KalixTestKit.Settings kalixTestKitSettings() {
-    // here only to show how to set different `Settings` in a test.
-    return KalixTestKit.Settings.DEFAULT
-            .withAclEnabled()
-            .withAdvancedViews()
-            .withWorkflowTickInterval(ofMillis(500));
-  }
-
+  /*
+   * FIXME work these through for the new endpoint component and see what should be covered
 
   @Test
   public void failRequestWithRequiredQueryParam() {
@@ -104,16 +83,6 @@ public class EndpointsIntegrationTest extends KalixIntegrationTestKitSupport {
   }
 
   @Test
-  public void shouldReturnTextBodyWithComponentClient() {
-
-    HttpResponse response = await(componentClient.forAction().method(ActionWithHttpResponse::textBody).invokeAsync());
-
-    assertThat(response.getStatusCode()).isEqualTo(OK);
-    assertThat(response.getContentType()).contains("text/plain");
-    assertThat(response.getBody()).contains("test".getBytes(StandardCharsets.UTF_8));
-  }
-
-  @Test
   public void shouldReturnEmptyCreatedMethod() {
 
     ResponseEntity<String> response =
@@ -130,16 +99,6 @@ public class EndpointsIntegrationTest extends KalixIntegrationTestKitSupport {
   }
 
   @Test
-  public void shouldReturnEmptyCreatedWithComponentClient() {
-
-    HttpResponse response = await(componentClient.forAction().method(ActionWithHttpResponse::emptyCreated).invokeAsync());
-
-    assertThat(response.getStatusCode()).isEqualTo(CREATED);
-    assertThat(response.getContentType()).isEqualTo("application/octet-stream");
-    assertThat(response.getBody()).isEmpty();
-  }
-
-  @Test
   public void shouldReturnJsonString() {
 
     ResponseEntity<Message> response =
@@ -153,17 +112,6 @@ public class EndpointsIntegrationTest extends KalixIntegrationTestKitSupport {
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     assertThat(response.getHeaders().get("Content-Type")).contains("application/json");
     assertThat(response.getBody()).isEqualTo(new Message("123"));
-  }
-
-  @Test
-  public void shouldReturnJsonStringWithComponentClient() {
-
-    HttpResponse response = await(componentClient.forAction().method(ActionWithHttpResponse::jsonStringBody).invokeAsync());
-
-    assertThat(response.getStatusCode()).isEqualTo(OK);
-    assertThat(response.getContentType()).contains("application/json");
-    assertThat(response.getBody()).contains("{\"text\": \"123\"}".getBytes());
-    assertThat(response.bodyAsJson(Message.class)).isEqualTo(new Message("123"));
   }
 
   @Test
@@ -233,6 +181,6 @@ public class EndpointsIntegrationTest extends KalixIntegrationTestKitSupport {
 
     assertThat(responseCollections.text()).isEqualTo("1,0,2");
   }
-
+*/
 }
 

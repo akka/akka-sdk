@@ -1,26 +1,32 @@
 package com.example;
 
+import akka.http.javadsl.model.ContentTypes;
+import akka.http.javadsl.model.StatusCodes;
 import com.example.actions.CounterCommandFromTopicAction;
 import kalix.javasdk.testkit.KalixTestKit;
 import kalix.spring.testkit.KalixIntegrationTestKitSupport;
-import org.awaitility.Awaitility;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Test;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.web.reactive.function.client.WebClient;
+import org.awaitility.Awaitility;
 
+
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Base64;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 // tag::class[]
 public class CounterIntegrationWithRealPubSubTest extends KalixIntegrationTestKitSupport { // <1>
 
 // end::class[]
-
-
+    
   @Override
   protected KalixTestKit.Settings kalixTestKitSettings() {
     return KalixTestKit.Settings.DEFAULT.withAclEnabled()
@@ -29,27 +35,22 @@ public class CounterIntegrationWithRealPubSubTest extends KalixIntegrationTestKi
 
   @Test
   public void verifyCounterEventSourcedConsumesFromPubSub() {
-    WebClient pubsubClient = WebClient.builder()
-      .baseUrl("http://localhost:8085")
-      .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-      .build();
-
     var counterId = "testRealPubSub";
     var messageBody = buildMessageBody(
       "{\"counterId\":\"" + counterId + "\",\"value\":20}",
       CounterCommandFromTopicAction.IncreaseCounter.class.getName());
 
     var projectId = "test";
-    var injectMsgResult = pubsubClient.post()
-      .uri("/v1/projects/{projectId}/topics/counter-commands:publish", projectId)
-      .bodyValue(messageBody)
-      .retrieve()
-      .toBodilessEntity().block();
-    assertTrue(injectMsgResult.getStatusCode().is2xxSuccessful());
+    var pubSubClient = new kalix.javasdk.http.HttpClient(kalixTestKit.getActorSystem(), "http://localhost:8085");
+    var response = pubSubClient.POST("/v1/projects/" + projectId + "/topics/counter-commands:publish")
+            .withRequestBody(ContentTypes.APPLICATION_JSON, messageBody.getBytes(StandardCharsets.UTF_8))
+            .invokeAsync();
+    assertEquals(StatusCodes.OK, await(response, Duration.ofSeconds(3)).httpResponse().status());
 
     var getCounterState =
       componentClient.forEventSourcedEntity(counterId)
         .method(Counter::get);
+
 
     Awaitility.await()
       .ignoreExceptions()

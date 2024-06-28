@@ -1,17 +1,13 @@
 package user.registry.api;
 
 
-import kalix.javasdk.StatusCode;
-import kalix.javasdk.action.Action;
+import kalix.javasdk.annotations.http.Endpoint;
+import kalix.javasdk.annotations.http.Get;
+import kalix.javasdk.annotations.http.Post;
+import kalix.javasdk.annotations.http.Put;
 import kalix.javasdk.client.ComponentClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 import user.registry.common.Done;
 import user.registry.domain.UniqueEmail;
 import user.registry.domain.User;
@@ -20,6 +16,7 @@ import user.registry.entity.UserEntity;
 import user.registry.views.UsersByCountryView;
 
 import java.util.Optional;
+import java.util.concurrent.CompletionStage;
 
 /**
  * Controller for the user registry application.
@@ -29,8 +26,8 @@ import java.util.Optional;
  * The UniqueEmailEntity and the UserEntity are protected from external access. They can only be accessed through
  * this controller.
  */
-@RequestMapping("/api")
-public class ApplicationController extends Action {
+@Endpoint("/api")
+public class ApplicationController {
 
   private final Logger logger = LoggerFactory.getLogger(getClass());
   private final ComponentClient client;
@@ -60,8 +57,8 @@ public class ApplicationController extends Action {
    * <p>
    * If we succeed in reserving the email address, we move forward and create the user.
    */
-  @PostMapping("/users/{userId}")
-  public Effect<Done> createUser(@PathVariable String userId, @RequestBody User.Create cmd) {
+  @Post("/users/{userId}")
+  public CompletionStage<Done> createUser(String userId, User.Create cmd) {
 
     var createUniqueEmail = new UniqueEmail.ReserveEmail(cmd.email(), userId);
 
@@ -85,24 +82,24 @@ public class ApplicationController extends Action {
 
     var userCreated =
       emailReserved
-        .thenApply(__ -> {
+        .thenCompose(__ -> {
           // on successful email reservation, we create the user and return the result
           logger.info("Creating user '{}'", userId);
-          return effects().asyncReply(callToUser.invokeAsync());
+          return callToUser.invokeAsync();
         })
         .exceptionally(e -> {
           // in case of exception `callToUser` is not executed,
           // and we return an error to the caller of this method
           logger.info("Email is already reserved '{}'", cmd.email());
-          return effects().error("Email is already reserved '" + cmd.email() + "'", StatusCode.ErrorCode.BAD_REQUEST);
+          throw new IllegalArgumentException("Email is already reserved '" + cmd.email() + "'");
         });
 
-    return effects().asyncEffect(userCreated);
+    return userCreated;
   }
 
 
-  @PutMapping("/users/{userId}/change-email")
-  public Effect<Done> changeEmail(@PathVariable String userId, @RequestBody User.ChangeEmail cmd) {
+  @Put("/users/{userId}/change-email")
+  public CompletionStage<Done> changeEmail(String userId, User.ChangeEmail cmd) {
 
     var createUniqueEmail = new UniqueEmail.ReserveEmail(cmd.newEmail(), userId);
 
@@ -126,19 +123,19 @@ public class ApplicationController extends Action {
 
     var userCreated =
       emailReserved
-        .thenApply(__ -> {
+        .thenCompose(__ -> {
           // on successful email reservation, we change the user's email addreess
           logger.info("Changing user's address '{}'", userId);
-          return effects().asyncReply(callToUser.invokeAsync());
+          return callToUser.invokeAsync();
         })
         .exceptionally(e -> {
           // in case of exception `callToUser` is not executed,
           // and we return an error to the caller of this method
           logger.info("Email already reserved '{}'", e.getMessage());
-          return effects().error(e.getMessage(), StatusCode.ErrorCode.BAD_REQUEST);
+          throw new IllegalArgumentException("Email already reserved");
         });
 
-    return effects().asyncEffect(userCreated);
+    return userCreated;
 
   }
 
@@ -146,10 +143,9 @@ public class ApplicationController extends Action {
   /**
    * This is gives access to the user state.
    */
-  @GetMapping("/users/{userId}")
-  public Effect<UserInfo> getUserInfo(@PathVariable String userId) {
-
-    var res =
+  @Get("/users/{userId}")
+  public CompletionStage<UserInfo> getUserInfo(String userId) {
+    return
       client.forEventSourcedEntity(userId)
         .method(UserEntity::getState)
         .invokeAsync()
@@ -164,17 +160,15 @@ public class ApplicationController extends Action {
           logger.info("Getting user info: {}", userInfo);
           return userInfo;
         });
-
-    return effects().asyncReply(res);
   }
 
 
   /**
    * This is gives access to the email state.
    */
-  @GetMapping("/emails/{address}")
-  public Effect<EmailInfo> getEmailInfo(@PathVariable String address) {
-    var res =
+  @Get("/emails/{address}")
+  public CompletionStage<EmailInfo> getEmailInfo(String address) {
+    return
       client.forValueEntity(address)
         .method(UniqueEmailEntity::getState).invokeAsync()
         .thenApply(email -> {
@@ -187,17 +181,13 @@ public class ApplicationController extends Action {
           logger.info("Getting email info: {}", emailInfo);
           return emailInfo;
         });
-
-    return effects().asyncReply(res);
   }
 
-  @GetMapping("/users/by-country/{country}")
-  public Effect<UsersByCountryView.UserList> getUsersByCountry(@PathVariable String country) {
-    var queryReply =
+  @Get("/users/by-country/{country}")
+  public CompletionStage<UsersByCountryView.UserList> getUsersByCountry(String country) {
+    return
       client.forView()
         .method(UsersByCountryView::getUserByCountry)
         .invokeAsync(new UsersByCountryView.QueryParameters(country));
-
-    return effects().asyncReply(queryReply);
   }
 }

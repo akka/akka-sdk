@@ -34,7 +34,14 @@ public class FibonacciEndpoint {
               .method(FibonacciAction::getNumber)
             // FIXME no longer forward as documented
               .invokeAsync(number);
-            return numberResult.thenApply(HttpResponses::ok);
+            return numberResult.thenApply(HttpResponses::ok)
+                    // FIXME right now any error code from the component error effect becomes a runtime exception
+                    //       before handing it back to us, we should see that here more easily.
+                    //       (and be able to choose if we want to propagate that maybe, but whose responsibility is it
+                    //       to validate input, and is it really safe and makes sense to propagate it right back,
+                    //       the invalid input could be crafted here and caller has no idea)
+                    //       For now just turn any error message to bad request.
+                    .exceptionally(ex -> HttpResponses.badRequest(ex.getMessage()));
         }
     }
 

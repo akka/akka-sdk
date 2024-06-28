@@ -5,13 +5,11 @@
 package com.example;
 
 import kalix.javasdk.action.Action;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
+import kalix.javasdk.annotations.ActionId;
 
-@RequestMapping("/hello")
+@ActionId("hello")
 public class HelloAction extends Action {
 
-  @GetMapping
   public Effect<String> hello() {
     return effects().reply("Hello, World!");
   }

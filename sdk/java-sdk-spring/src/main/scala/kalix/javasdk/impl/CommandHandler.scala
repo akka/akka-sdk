@@ -38,6 +38,8 @@ case class CommandHandler(
     }
   }
 
+  def isSingleNameInvoker: Boolean = methodInvokers.size == 1
+
   def lookupInvoker(inputTypeUrl: String): Option[MethodInvoker] =
     methodInvokers
       .get(messageCodec.removeVersion(inputTypeUrl))

@@ -30,8 +30,8 @@ import java.util.stream.Collectors;
                 "kalix.javasdk.annotations.TypeId",
                 // views
                 "kalix.javasdk.annotations.ViewId",
-                // actions (RequestMapping will be removed once we make unified urls for actions)
-                "org.springframework.web.bind.annotation.RequestMapping",
+                // actions
+                "kalix.javasdk.annotations.ActionId",
                 // actions or views
                 "kalix.javasdk.annotations.Subscribe.ValueEntity",
                 "kalix.javasdk.annotations.Subscribe.EventSourcedEntity",
@@ -159,7 +159,7 @@ public class ComponentAnnotationProcessor extends AbstractProcessor {
         return switch (annotation.getQualifiedName().toString()) {
             case "kalix.javasdk.annotations.http.Endpoint" -> ENDPOINT_KEY;
             case "kalix.javasdk.annotations.ViewId" -> VIEW_KEY;
-            case "org.springframework.web.bind.annotation.RequestMapping" -> ACTION_KEY;
+            case "kalix.javasdk.annotations.ActionId" -> ACTION_KEY;
             case "kalix.javasdk.annotations.Subscribe" -> ACTION_KEY;
             case "kalix.javasdk.annotations.KalixService" -> KALIX_SERVICE_KEY;
             case "kalix.javasdk.annotations.TypeId" -> entityComponentType(annotatedClass);

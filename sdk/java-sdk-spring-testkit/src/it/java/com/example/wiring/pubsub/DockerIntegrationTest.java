@@ -10,15 +10,6 @@ import kalix.javasdk.JsonSupport;
 import kalix.spring.testkit.KalixIntegrationTestKitSupport;
 import org.awaitility.Awaitility;
 import org.hamcrest.core.IsEqual;
-import org.springframework.context.ApplicationContext;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
-import org.springframework.http.MediaType;
-import org.springframework.http.codec.json.Jackson2JsonEncoder;
-import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.client.WebClientRequestException;
-import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 import java.util.HashMap;

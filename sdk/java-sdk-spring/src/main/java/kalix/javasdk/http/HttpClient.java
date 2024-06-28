@@ -5,7 +5,9 @@
 package kalix.javasdk.http;
 
 import akka.actor.ActorSystem;
+import akka.annotation.InternalApi;
 import akka.http.javadsl.Http;
+import akka.http.javadsl.model.ContentType;
 import akka.http.javadsl.model.ContentTypes;
 import akka.http.javadsl.model.HttpHeader;
 import akka.http.javadsl.model.HttpMethod;
@@ -17,10 +19,13 @@ import akka.stream.Materializer;
 import akka.stream.SystemMaterializer;
 import akka.util.ByteString;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import io.grpc.Internal;
 import kalix.javasdk.JsonSupport;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletionStage;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -31,6 +36,7 @@ public class HttpClient {
   private final String baseUrl;
   private final Materializer materializer;
   private final Duration timeout;
+  private final List<HttpHeader> defaultHeaders;
 
   public HttpClient(ActorSystem system, String baseUrl) {
     this.http = Http.get(system);
@@ -39,6 +45,15 @@ public class HttpClient {
       .getDuration("akka.http.server.request-timeout")
       .plusSeconds(10); // 10s higher than configured timeout, so configured timeout always win
     this.baseUrl = baseUrl;
+    this.defaultHeaders = new ArrayList<>();
+  }
+
+  private HttpClient(Http http, String baseUrl, Materializer materializer, Duration timeout, List<HttpHeader> defaultHeaders) {
+    this.http = http;
+    this.materializer = materializer;
+    this.timeout = timeout;
+    this.baseUrl = baseUrl;
+    this.defaultHeaders = defaultHeaders;
   }
 
   public RequestBuilder<ByteString> GET(String uri) {
@@ -61,9 +76,17 @@ public class HttpClient {
     return forMethod(uri, HttpMethods.DELETE);
   }
 
+  /**
+   * INTERNAL API
+   */
+  @InternalApi
+  public HttpClient withDefaultHeaders(List<HttpHeader> headers) {
+    return new HttpClient(http, baseUrl, materializer, timeout, headers);
+  }
+
   private RequestBuilder<ByteString> forMethod(String uri, HttpMethod method) {
     HttpRequest req = HttpRequest.create(baseUrl + uri).withMethod(method);
-    return new RequestBuilder<>(http, materializer, timeout, req, StrictResponse::new);
+    return new RequestBuilder<>(http, materializer, timeout, req, StrictResponse::new).withHeaders(defaultHeaders);
   }
 
   public record RequestBuilder<R>(Http http,
@@ -137,6 +160,14 @@ public class HttpClient {
       return withRequest(requestWithBody);
     }
 
+    /**
+     * Prepare for sending an HTTP request with an arbitrary payload encoded as described by the content type
+     */
+    public RequestBuilder<R> withRequestBody(ContentType type, byte[] bytes) {
+      var requestWithBody = request.withEntity(type, bytes);
+      return withRequest(requestWithBody);
+    }
+
     public CompletionStage<StrictResponse<R>> invokeAsync() {
       return http.singleRequest(request)
         .thenCompose(response ->
@@ -158,6 +189,16 @@ public class HttpClient {
     public <T> RequestBuilder<T> responseBodyAs(Class<T> type) {
       return new RequestBuilder<>(http, materializer, timeout, request, (res, bytes) -> {
         try {
+          if (res.status().isFailure()) {
+            // FIXME should we have a better way to deal with failure?
+            // FIXME what about error responses with a body, now we can't expect/parse those
+            var errorString = "HTTP request for [" + request.getUri() + "] failed with " + res.status();
+            if (res.entity().getContentType().binary()) {
+              throw new RuntimeException(errorString);
+            } else {
+              throw new RuntimeException(errorString + ": " + bytes.utf8String());
+            }
+          }
           return new StrictResponse<>(res, JsonSupport.parseBytes(bytes.toArrayUnsafe(), type));
         } catch (IOException e) {
           throw new RuntimeException(e);

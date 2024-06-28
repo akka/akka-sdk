@@ -29,7 +29,6 @@ import kalix.javasdk.impl.ComponentDescriptorFactory.hasAcl
 import kalix.javasdk.impl.ComponentDescriptorFactory.hasActionOutput
 import kalix.javasdk.impl.ComponentDescriptorFactory.hasEventSourcedEntitySubscription
 import kalix.javasdk.impl.ComponentDescriptorFactory.hasHandleDeletes
-import kalix.javasdk.impl.ComponentDescriptorFactory.hasRestAnnotation
 import kalix.javasdk.impl.ComponentDescriptorFactory.hasStreamSubscription
 import kalix.javasdk.impl.ComponentDescriptorFactory.hasSubscription
 import kalix.javasdk.impl.ComponentDescriptorFactory.hasTopicPublication
@@ -41,10 +40,6 @@ import kalix.javasdk.impl.ComponentDescriptorFactory.topicSubscription
 import kalix.javasdk.impl.reflection.Reflect
 import kalix.javasdk.impl.reflection.Reflect.Syntax._
 import kalix.javasdk.view.View
-import reactor.core.publisher.Flux
-
-// TODO: abstract away spring and reactor dependencies
-import org.springframework.web.bind.annotation.RequestBody
 
 object Validations {
 
@@ -105,7 +100,7 @@ object Validations {
     implicitly[ClassTag[T]].runtimeClass.asInstanceOf[Class[T]].isAssignableFrom(component)
 
   private def commonValidation(component: Class[_]): Validation = {
-    noRestStreamIn(component)
+    Valid
   }
 
   private def commonSubscriptionValidation(
@@ -120,7 +115,6 @@ object Validations {
     topicPublicationValidations(component, updateMethodPredicate) ++
     publishStreamIdMustBeFilled(component) ++
     noSubscriptionMethodWithAcl(component) ++
-    noSubscriptionWithRestAnnotations(component) ++
     subscriptionMethodMustHaveOneParameter(component)
   }
 
@@ -165,14 +159,8 @@ object Validations {
   }
 
   private def actionValidation(component: Class[_]): Validation = {
-    val anySubscription = hasSubscription(component) || component.getMethods.toIndexedSeq.exists(hasSubscription)
-    val restMethods = component.getMethods.toIndexedSeq.filter(hasRestAnnotation)
-    when(anySubscription && restMethods.nonEmpty) {
-      Invalid(
-        errorMessage(
-          component,
-          s"An Action that subscribes should not be mixed with REST annotations, please move methods [${restMethods.map(_.getName).mkString(", ")}] to a separate Action component."))
-    }
+    // Nothing here right now
+    Valid
   }
 
   private def validateView(component: Class[_]): Validation = {
@@ -395,7 +383,7 @@ object Validations {
     } else {
       val messages = methods
         .filter(hasTopicPublication)
-        .filterNot(method => hasSubscription(method) || hasRestAnnotation(method))
+        .filterNot(method => hasSubscription(method))
         .map { method =>
           errorMessage(
             method,
@@ -488,42 +476,6 @@ object Validations {
         errorMessage(
           method,
           "Methods annotated with Kalix @Subscription annotations are for internal use only and cannot be annotated with ACL annotations.")
-      }
-
-    Validation(messages)
-  }
-
-  private def noSubscriptionWithRestAnnotations(component: Class[_]): Validation = {
-
-    val hasSubscriptionAndRest = (method: Method) => hasRestAnnotation(method) && hasSubscription(method)
-
-    val messages =
-      component.getMethods.toIndexedSeq.filter(hasSubscriptionAndRest).map { method =>
-        errorMessage(
-          method,
-          "Methods annotated with Kalix @Subscription annotations are for internal use only and cannot be annotated with REST annotations.")
-      }
-
-    Validation(messages)
-  }
-
-  private def noRestStreamIn(component: Class[_]): Validation = {
-
-    // this is more for early validation. We don't support stream-in over http,
-    // we block it before deploying anything
-    def isStreamIn(method: Method): Boolean = {
-      val paramWithRequestBody =
-        method.getParameters.collect {
-          case param if param.getAnnotation(classOf[RequestBody]) != null => param
-        }
-      paramWithRequestBody.exists(_.getType == classOf[Flux[_]])
-    }
-
-    val hasRestWithStreamIn = (method: Method) => hasRestAnnotation(method) && isStreamIn(method)
-
-    val messages =
-      component.getMethods.filter(hasRestWithStreamIn).map { method =>
-        errorMessage(method, "Stream in calls are not supported.")
       }
 
     Validation(messages)

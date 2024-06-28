@@ -15,7 +15,6 @@ import kalix.javasdk.impl.InvocationContext
 import kalix.javasdk.impl.JsonMessageCodec
 import kalix.javasdk.impl.reflection.ParameterExtractors.BodyExtractor
 import kalix.javasdk.JsonSupport
-import kalix.spring.testmodels.Message
 import kalix.spring.testmodels.action.EchoAction
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -29,16 +28,14 @@ class ParameterExtractorsSpec extends AnyWordSpec with Matchers {
 
     "extract json payload from Any" in {
       val componentDescriptor = descriptorFor[EchoAction]
-      val method = componentDescriptor.commandHandlers("MessageBody")
+      val method = componentDescriptor.commandHandlers("StringMessage")
 
-      val jsonBody = JsonSupport.encodeJson(new Message("test"))
+      val jsonBody = JsonSupport.encodeJson("test")
 
       val field = method.requestMessageDescriptor.findFieldByNumber(1)
-      val field2 = method.requestMessageDescriptor.findFieldByNumber(2)
       val message = DynamicMessage
         .newBuilder(method.requestMessageDescriptor)
         .setField(field, jsonBody)
-        .setField(field2, "param")
         .build()
 
       val wrappedMessage = ScalaPbAny().withValue(message.toByteString)
@@ -55,7 +52,7 @@ class ParameterExtractorsSpec extends AnyWordSpec with Matchers {
     "reject non json payload" in {
       val componentDescriptor = descriptorFor[EchoAction]
 
-      val method = componentDescriptor.commandHandlers("MessageBody")
+      val method = componentDescriptor.commandHandlers("StringMessage")
 
       val nonJsonBody =
         JavaPbAny
@@ -65,11 +62,9 @@ class ParameterExtractorsSpec extends AnyWordSpec with Matchers {
           .build()
 
       val field = method.requestMessageDescriptor.findFieldByNumber(1)
-      val field2 = method.requestMessageDescriptor.findFieldByNumber(2)
       val message = DynamicMessage
         .newBuilder(method.requestMessageDescriptor)
         .setField(field, nonJsonBody)
-        .setField(field2, "param")
         .build()
 
       val wrappedMessage = ScalaPbAny().withValue(message.toByteString)

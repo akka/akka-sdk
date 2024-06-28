@@ -8,33 +8,9 @@ import com.google.protobuf.BytesValue
 import com.google.protobuf.Descriptors.FieldDescriptor.JavaType
 import com.google.protobuf.empty.Empty
 import com.google.protobuf.{ Any => JavaPbAny }
-import kalix.JwtMethodOptions.JwtMethodMode
 import kalix.javasdk.impl.ProtoDescriptorGenerator.fileDescriptorName
-import kalix.javasdk.impl.reflection.ServiceIntrospectionException
-import kalix.JwtServiceOptions.JwtServiceMode
-import kalix.TriggerOptions
-import kalix.spring.testmodels.action.ActionsTestModels.ActionWithMethodLevelJWT
-import kalix.spring.testmodels.action.ActionsTestModels.ActionWithServiceLevelJWT
-import kalix.spring.testmodels.action.ActionsTestModels.DeleteWithOneParam
-import kalix.spring.testmodels.action.ActionsTestModels.GetClassLevel
-import kalix.spring.testmodels.action.ActionsTestModels.GetWithOneOptionalPathParam
-import kalix.spring.testmodels.action.ActionsTestModels.GetWithOneOptionalQueryParam
-import kalix.spring.testmodels.action.ActionsTestModels.GetWithOneParam
-import kalix.spring.testmodels.action.ActionsTestModels.GetWithOnePathVariableAndQueryParam
-import kalix.spring.testmodels.action.ActionsTestModels.GetWithOneQueryParam
-import kalix.spring.testmodels.action.ActionsTestModels.GetWithoutParam
-import kalix.spring.testmodels.action.ActionsTestModels.OnStartupHookAction
-import kalix.spring.testmodels.action.ActionsTestModels.PatchWithOneParam
-import kalix.spring.testmodels.action.ActionsTestModels.PatchWithoutParam
-import kalix.spring.testmodels.action.ActionsTestModels.PostWithOneParam
-import kalix.spring.testmodels.action.ActionsTestModels.PostWithTwoMethods
-import kalix.spring.testmodels.action.ActionsTestModels.PostWithTwoParam
-import kalix.spring.testmodels.action.ActionsTestModels.PostWithoutParam
-import kalix.spring.testmodels.action.ActionsTestModels.PutWithOneParam
-import kalix.spring.testmodels.action.ActionsTestModels.PutWithoutParam
-import kalix.spring.testmodels.action.ActionsTestModels.StreamInAction
-import kalix.spring.testmodels.action.ActionsTestModels.StreamInOutAction
-import kalix.spring.testmodels.action.ActionsTestModels.StreamOutAction
+import kalix.spring.testmodels.action.ActionsTestModels.ActionWithOneParam
+import kalix.spring.testmodels.action.ActionsTestModels.ActionWithoutParam
 import kalix.spring.testmodels.subscriptions.PubSubTestModels.ActionWithMethodLevelAcl
 import kalix.spring.testmodels.subscriptions.PubSubTestModels.ActionWithMethodLevelAclAndSubscription
 import kalix.spring.testmodels.subscriptions.PubSubTestModels.ActionWithServiceLevelAcl
@@ -70,9 +46,6 @@ import kalix.spring.testmodels.subscriptions.PubSubTestModels.MissingTopicForVES
 import kalix.spring.testmodels.subscriptions.PubSubTestModels.MultipleTypeLevelSubscriptionsInAction
 import kalix.spring.testmodels.subscriptions.PubSubTestModels.MultipleUpdateMethodsForVETypeLevelSubscriptionInAction
 import kalix.spring.testmodels.subscriptions.PubSubTestModels.PublishBytesToTopicAction
-import kalix.spring.testmodels.subscriptions.PubSubTestModels.RestAnnotatedSubscribeToEventSourcedEntityAction
-import kalix.spring.testmodels.subscriptions.PubSubTestModels.RestAnnotatedSubscribeToValueEntityAction
-import kalix.spring.testmodels.subscriptions.PubSubTestModels.RestWithPublishToTopicAction
 import kalix.spring.testmodels.subscriptions.PubSubTestModels.StreamSubscriptionWithPublishToTopicAction
 import kalix.spring.testmodels.subscriptions.PubSubTestModels.SubscribeOnlyOneToEventSourcedEntityActionTypeLevel
 import kalix.spring.testmodels.subscriptions.PubSubTestModels.SubscribeToBytesFromTopicAction
@@ -86,17 +59,11 @@ import kalix.spring.testmodels.subscriptions.PubSubTestModels.SubscribeToTwoTopi
 import kalix.spring.testmodels.subscriptions.PubSubTestModels.SubscribeToValueEntityAction
 import kalix.spring.testmodels.subscriptions.PubSubTestModels.SubscribeToValueEntityTypeLevelAction
 import kalix.spring.testmodels.subscriptions.PubSubTestModels.SubscribeToValueEntityWithDeletesAction
-import kalix.spring.testmodels.subscriptions.PubSubTestModels.SubscribeToValueEntityWithRestAction
 import kalix.spring.testmodels.subscriptions.PubSubTestModels.TypeLevelESWithPublishToTopicAction
-import kalix.spring.testmodels.subscriptions.PubSubTestModels.TypeLevelSubscribeToValueEntityWithRestAction
 import kalix.spring.testmodels.subscriptions.PubSubTestModels.TypeLevelTopicSubscriptionWithPublishToTopicAction
 import kalix.spring.testmodels.subscriptions.PubSubTestModels.VEWithPublishToTopicAction
 import kalix.spring.testmodels.valueentity.CounterState
 import org.scalatest.wordspec.AnyWordSpec
-import scala.jdk.CollectionConverters.CollectionHasAsScala
-
-import com.google.api.HttpBody
-import kalix.spring.testmodels.action.ActionsTestModels.ActionWithHttpResponse
 
 class ActionDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuite {
 
@@ -108,10 +75,10 @@ class ActionDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSu
       }.getMessage should include("NotPublicAction is not marked with `public` modifier. Components must be public.")
     }
 
-    "generate mappings for an Action with GET without path param" in {
-      assertDescriptor[GetWithoutParam] { desc =>
+    "generate mappings for an Action with method without path param" in {
+      assertDescriptor[ActionWithoutParam] { desc =>
 
-        val clazz = classOf[GetWithoutParam]
+        val clazz = classOf[ActionWithoutParam]
         desc.fileDescriptor.getName shouldBe fileDescriptorName(clazz.getPackageName, clazz.getSimpleName)
 
         val methodDescriptor = desc.serviceDescriptor.findMethodByName("Message")
@@ -123,87 +90,8 @@ class ActionDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSu
       }
     }
 
-    "generate mappings for an Action with GET and one path param" in {
-      assertDescriptor[GetWithOneParam] { desc =>
-
-        val methodDescriptor = desc.serviceDescriptor.findMethodByName("Message")
-        methodDescriptor.isServerStreaming shouldBe false
-        methodDescriptor.isClientStreaming shouldBe false
-
-        val method = desc.commandHandlers("Message")
-        assertRequestFieldJavaType(method, "one_param", JavaType.STRING)
-        assertFieldIsProto3Optional(method, "one_param");
-      }
-    }
-
-    "fail to generate mappings for an Action with GET and one optional path param" in {
-      intercept[ServiceIntrospectionException] {
-        descriptorFor[GetWithOneOptionalPathParam]
-      }.getMessage should include("Currently all @PathVariables must be defined as required.")
-    }
-
-    "generate mappings for an Action with GET and one query param" in {
-      assertDescriptor[GetWithOneQueryParam] { desc =>
-
-        val methodDescriptor = desc.serviceDescriptor.findMethodByName("Message")
-        methodDescriptor.isServerStreaming shouldBe false
-        methodDescriptor.isClientStreaming shouldBe false
-
-        val method = desc.commandHandlers("Message")
-        assertRequestFieldJavaType(method, "one", JavaType.STRING)
-        assertFieldIsProto3Optional(method, "one")
-      }
-    }
-
-    "generate mappings for an Action with HttpBody output" in {
-      assertDescriptor[ActionWithHttpResponse] { desc =>
-
-        val methodDescriptor = desc.serviceDescriptor.findMethodByName("Message")
-        methodDescriptor.isServerStreaming shouldBe false
-        methodDescriptor.isClientStreaming shouldBe false
-
-        methodDescriptor.getOutputType.getFullName shouldBe HttpBody.getDescriptor.getFullName
-      }
-    }
-
-    "generate mappings for an Action with GET and one path variable and query param" in {
-      assertDescriptor[GetWithOnePathVariableAndQueryParam] { desc =>
-
-        val methodDescriptor = desc.serviceDescriptor.findMethodByName("Message")
-        methodDescriptor.isServerStreaming shouldBe false
-        methodDescriptor.isClientStreaming shouldBe false
-
-        val method = desc.commandHandlers("Message")
-        assertRequestFieldJavaType(method, "one", JavaType.STRING)
-        assertFieldIsProto3Optional(method, "one")
-
-        assertRequestFieldJavaType(method, "two", JavaType.STRING)
-        assertFieldIsProto3Optional(method, "two")
-      }
-    }
-
-    "generate mappings for an Action with GET and one optional query param" in {
-      assertDescriptor[GetWithOneOptionalQueryParam] { desc =>
-        val method = desc.commandHandlers("Message")
-        assertRequestFieldRequested(method, "one", isRequired = false)
-      }
-    }
-
-    "generate mappings for an Action with class level Request mapping" in {
-      assertDescriptor[GetClassLevel] { desc =>
-
-        val methodDescriptor = desc.serviceDescriptor.findMethodByName("Message")
-        methodDescriptor.isServerStreaming shouldBe false
-        methodDescriptor.isClientStreaming shouldBe false
-
-        val method = desc.commandHandlers("Message")
-        assertRequestFieldJavaType(method, "one", JavaType.STRING)
-        assertRequestFieldJavaType(method, "two", JavaType.LONG)
-      }
-    }
-
-    "generate mappings for an Action with POST without path param" in {
-      assertDescriptor[PostWithoutParam] { desc =>
+    "generate mappings for an Action with method with one param" in {
+      assertDescriptor[ActionWithOneParam] { desc =>
 
         val methodDescriptor = desc.serviceDescriptor.findMethodByName("Message")
         methodDescriptor.isServerStreaming shouldBe false
@@ -214,6 +102,7 @@ class ActionDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSu
       }
     }
 
+    /* FIXME these should work for endpoints
     "generate mappings for an Action with method level JWT" in {
       assertDescriptor[ActionWithMethodLevelJWT] { desc =>
         val methodDescriptor = findMethodByName(desc, "Message")
@@ -255,109 +144,7 @@ class ActionDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSu
       }
     }
 
-    "generate mappings for an Action with POST and one path param" in {
-      assertDescriptor[PostWithOneParam] { desc =>
-
-        val methodDescriptor = desc.serviceDescriptor.findMethodByName("Message")
-        methodDescriptor.isServerStreaming shouldBe false
-        methodDescriptor.isClientStreaming shouldBe false
-
-        val method = desc.commandHandlers("Message")
-        assertRequestFieldJavaType(method, "one", JavaType.STRING)
-        assertRequestFieldJavaType(method, "json_body", JavaType.MESSAGE)
-      }
-    }
-
-    "generate mappings for an Action with POST and two path param" in {
-      assertDescriptor[PostWithTwoParam] { desc =>
-
-        val methodDescriptor = desc.serviceDescriptor.findMethodByName("Message")
-        methodDescriptor.isServerStreaming shouldBe false
-        methodDescriptor.isClientStreaming shouldBe false
-
-        val method = desc.commandHandlers("Message")
-        assertRequestFieldJavaType(method, "one", JavaType.STRING)
-        assertRequestFieldJavaType(method, "two", JavaType.LONG)
-        assertRequestFieldJavaType(method, "json_body", JavaType.MESSAGE)
-      }
-    }
-
-    "generate mappings for an Action with POST and two methods" in {
-      assertDescriptor[PostWithTwoMethods] { desc =>
-
-        val methodDescriptor = desc.serviceDescriptor.findMethodByName("Message")
-        methodDescriptor.isServerStreaming shouldBe false
-        methodDescriptor.isClientStreaming shouldBe false
-
-        val firstMethod = desc.commandHandlers("Message")
-        assertRequestFieldJavaType(firstMethod, "num", JavaType.LONG)
-        assertRequestFieldJavaType(firstMethod, "json_body", JavaType.MESSAGE)
-
-        val methodDescriptor1 = desc.serviceDescriptor.findMethodByName("Message1")
-        methodDescriptor1.isServerStreaming shouldBe false
-        methodDescriptor1.isClientStreaming shouldBe false
-
-        val secondMethod = desc.commandHandlers("Message1")
-        assertRequestFieldJavaType(secondMethod, "text", JavaType.STRING)
-        assertRequestFieldJavaType(secondMethod, "json_body", JavaType.MESSAGE)
-      }
-    }
-
-    "generate mappings for an Action with PUT without path param" in {
-      assertDescriptor[PutWithoutParam] { desc =>
-        val methodDescriptor = desc.serviceDescriptor.findMethodByName("Message")
-        methodDescriptor.isServerStreaming shouldBe false
-        methodDescriptor.isClientStreaming shouldBe false
-
-        val method = desc.commandHandlers("Message")
-        assertRequestFieldJavaType(method, "json_body", JavaType.MESSAGE)
-      }
-    }
-
-    "generate mappings for an Action with PUT and one path param" in {
-      assertDescriptor[PutWithOneParam] { desc =>
-        val methodDescriptor = desc.serviceDescriptor.findMethodByName("Message")
-        methodDescriptor.isServerStreaming shouldBe false
-        methodDescriptor.isClientStreaming shouldBe false
-
-        val method = desc.commandHandlers("Message")
-        assertRequestFieldJavaType(method, "one", JavaType.STRING)
-      }
-    }
-
-    "generate mappings for an Action with PATCH without path param" in {
-      assertDescriptor[PatchWithoutParam] { desc =>
-        val methodDescriptor = desc.serviceDescriptor.findMethodByName("Message")
-        methodDescriptor.isServerStreaming shouldBe false
-        methodDescriptor.isClientStreaming shouldBe false
-
-        val method = desc.commandHandlers("Message")
-        assertRequestFieldJavaType(method, "json_body", JavaType.MESSAGE)
-      }
-    }
-
-    "generate mappings for an Action with PATCH and one path param" in {
-      assertDescriptor[PatchWithOneParam] { desc =>
-        val methodDescriptor = desc.serviceDescriptor.findMethodByName("Message")
-        methodDescriptor.isServerStreaming shouldBe false
-        methodDescriptor.isClientStreaming shouldBe false
-
-        val method = desc.commandHandlers("Message")
-        assertRequestFieldJavaType(method, "one", JavaType.STRING)
-      }
-    }
-
-    "generate mappings for an Action with DELETE and one path param" in {
-      assertDescriptor[DeleteWithOneParam] { desc =>
-
-        val methodDescriptor = desc.serviceDescriptor.findMethodByName("Message")
-        methodDescriptor.isServerStreaming shouldBe false
-        methodDescriptor.isClientStreaming shouldBe false
-
-        val method = desc.commandHandlers("Message")
-        assertRequestFieldJavaType(method, "one", JavaType.STRING)
-      }
-    }
+     */
 
     "generate mapping with Event Sourced Subscription annotations" in {
       assertDescriptor[SubscribeToEventSourcedEmployee] { desc =>
@@ -390,15 +177,6 @@ class ActionDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSu
         val eventSourceOne = findKalixMethodOptions(methodDescriptor).getEventing.getIn
         eventSourceOne.getEventSourcedEntity shouldBe "counter-entity"
       }
-    }
-
-    "fail if has both Event Sourced Entity Subscription and REST annotations" in {
-      intercept[InvalidComponentException] {
-        Validations
-          .validate(classOf[RestAnnotatedSubscribeToEventSourcedEntityAction])
-          .failIfInvalid
-      }.getMessage should include(
-        "Methods annotated with Kalix @Subscription annotations are for internal use only and cannot be annotated with REST annotations.")
     }
 
     "generate mapping with Value Entity Subscription annotations" in {
@@ -474,39 +252,6 @@ class ActionDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSu
         deleteEventing.getValueEntity shouldBe "ve-counter"
         deleteEventing.getHandleDeletes shouldBe true
       }
-    }
-
-    "fail if has both Value Entity Subscription and REST annotations" in {
-      intercept[InvalidComponentException] {
-        Validations
-          .validate(classOf[RestAnnotatedSubscribeToValueEntityAction])
-          .failIfInvalid
-      }.getMessage should include(
-        "Methods annotated with Kalix @Subscription annotations are for internal use only and cannot be annotated with REST annotations.")
-    }
-
-    "generate stream out methods" in {
-      assertDescriptor[StreamOutAction] { desc =>
-        val methodDescriptor = desc.serviceDescriptor.findMethodByName("Message")
-        methodDescriptor.isServerStreaming shouldBe true
-        methodDescriptor.isClientStreaming shouldBe false
-      }
-    }
-
-    "generate stream in methods" in {
-      intercept[InvalidComponentException] {
-        Validations
-          .validate(classOf[StreamInAction])
-          .failIfInvalid
-      }.getMessage should include("Stream in calls are not supported.")
-    }
-
-    "generate stream in/out methods" in {
-      intercept[InvalidComponentException] {
-        Validations
-          .validate(classOf[StreamInOutAction])
-          .failIfInvalid
-      }.getMessage should include("Stream in calls are not supported.")
     }
 
     "generate mapping for an Action with a subscription to a topic" in {
@@ -797,39 +542,6 @@ class ActionDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSu
         "All subscription methods to topic [topicXYZ] must have the same consumer group, but found different consumer groups [cg, cg2].")
     }
 
-    "validates action should not mix subscription and rest methods" in {
-      intercept[InvalidComponentException] {
-        Validations.validate(classOf[SubscribeToValueEntityWithRestAction]).failIfInvalid
-      }.getMessage should include(
-        "An Action that subscribes should not be mixed with REST annotations, please move methods [get] to a separate Action component.")
-    }
-
-    "validates action should not mix subscription and rest methods (type level)" in {
-      intercept[InvalidComponentException] {
-        Validations.validate(classOf[TypeLevelSubscribeToValueEntityWithRestAction]).failIfInvalid
-      }.getMessage should include(
-        "An Action that subscribes should not be mixed with REST annotations, please move methods [get] to a separate Action component.")
-    }
-
-    "generate mapping for an Action with a Rest endpoint and publication to a topic" in {
-      assertDescriptor[RestWithPublishToTopicAction] { desc =>
-        val methodOne = desc.commandHandlers("MessageOne")
-        methodOne.requestMessageDescriptor.getFullName shouldBe "kalix.spring.testmodels.subscriptions.MessageOneKalixSyntheticRequest"
-
-        val eventDestinationOne = findKalixMethodOptions(desc, "MessageOne").getEventing.getOut
-        eventDestinationOne.getTopic shouldBe "foobar"
-        val rule = findHttpRule(desc, "MessageOne")
-
-        rule.getPost shouldBe
-        "/message/{msg}"
-
-        // should have a default extractor for any payload
-        val javaMethod = methodOne.methodInvokers.values.head
-        javaMethod.parameterExtractors.length shouldBe 1
-      }
-
-    }
-
     "generate mapping for an Action with a VE subscription and publication to a topic" in {
       assertDescriptor[VEWithPublishToTopicAction] { desc =>
         val methodOne = desc.commandHandlers("MessageOne")
@@ -998,14 +710,6 @@ class ActionDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSu
         val methodDescriptor = findMethodByName(desc, "KalixSyntheticMethodOnStreamEmployeeevents")
         methodDescriptor.isServerStreaming shouldBe false
         methodDescriptor.isClientStreaming shouldBe false
-      }
-    }
-
-    "generate trigger options for onstartup hook in Action" in {
-      assertDescriptor[OnStartupHookAction] { desc =>
-        val methodOptions = findKalixMethodOptions(desc, "Init")
-        methodOptions.getTrigger.getOn shouldBe TriggerOptions.TriggerEvent.STARTUP
-        methodOptions.getTrigger.getMaxRetries shouldBe 2
       }
     }
   }

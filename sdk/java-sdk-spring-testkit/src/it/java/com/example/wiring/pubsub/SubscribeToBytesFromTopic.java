@@ -12,13 +12,11 @@ import kalix.javasdk.action.Action;
 import kalix.javasdk.annotations.Subscribe;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.annotation.Profile;
 
 import java.io.IOException;
 
 import static com.example.wiring.pubsub.PublishBytesToTopic.CUSTOMERS_BYTES_TOPIC;
 
-@Profile("docker-it-test")
 @Subscribe.Topic(CUSTOMERS_BYTES_TOPIC)
 public class SubscribeToBytesFromTopic extends Action {
 

@@ -9,7 +9,6 @@ import kalix.javasdk.action.Action;
 import kalix.javasdk.action.ActionCreationContext;
 import kalix.javasdk.testkit.impl.ActionResultImpl;
 import kalix.javasdk.testkit.impl.TestKitActionContext;
-import reactor.core.publisher.Flux;
 
 import java.util.Optional;
 import java.util.function.Function;
@@ -75,18 +74,4 @@ public class ActionTestkit<A extends Action> {
     return new ActionResultImpl<>(func.apply(createAction(context)));
   }
 
-  /**
-   * The {@code streamedCall} method can be used to simulate a streamed call to the Action. The passed java lambda should
-   * return a {@code Flux<Action.Effect>}. The {@code Flux<Action.Effect>} is interpreted into an {@code Flux<ActionResult>} that can be used in
-   * test assertions.
-   *
-   * @param func A function from {@code Flux<Action.Effect>} to a {@code Flux<ActionResult<R>>}
-   * @return a {@code Flux<ActionResult<R>>}
-   * @param <R> The type of reply that is expected from invoking a command handler
-   */
-  public <R> Flux<ActionResult<R>> streamedCall(Function<A, Flux<Action.Effect<R>>> func){
-    TestKitActionContext var2 = new TestKitActionContext(Metadata.EMPTY, MockRegistry.EMPTY);
-    Flux<Action.Effect<R>> res =  func.apply(this.createAction(var2));
-    return res.map( i -> new ActionResultImpl<R>(i));
-  }
 }

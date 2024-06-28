@@ -5,17 +5,9 @@
 package kalix.javasdk.impl
 
 import java.lang.reflect.ParameterizedType
-import java.lang.reflect.Type
-import java.util
-
-import scala.annotation.tailrec
-import scala.jdk.CollectionConverters._
-
 import com.google.api.AnnotationsProto
-import com.google.api.CustomHttpPattern
 import com.google.api.HttpBody
 import com.google.api.HttpRule
-import com.google.protobuf.ByteString
 import com.google.protobuf.BytesValue
 import com.google.protobuf.DescriptorProtos
 import com.google.protobuf.DescriptorProtos.DescriptorProto
@@ -28,34 +20,24 @@ import com.google.protobuf.Descriptors.FileDescriptor
 import com.google.protobuf.Empty
 import com.google.protobuf.{ Any => JavaPbAny }
 import kalix.javasdk.HttpResponse
+import kalix.javasdk.annotations.ActionId
 import kalix.javasdk.annotations.TypeId
 import kalix.javasdk.annotations.ViewId
 import kalix.javasdk.impl.AnySupport.ProtobufEmptyTypeUrl
+import kalix.javasdk.impl.reflection.ActionHandlerMethod
 import kalix.javasdk.impl.reflection.AnyJsonRequestServiceMethod
 import kalix.javasdk.impl.reflection.CombinedSubscriptionServiceMethod
 import kalix.javasdk.impl.reflection.CommandHandlerMethod
 import kalix.javasdk.impl.reflection.DeleteServiceMethod
-import kalix.javasdk.impl.reflection.DynamicMessageContext
 import kalix.javasdk.impl.reflection.ExtractorCreator
 import kalix.javasdk.impl.reflection.KalixMethod
 import kalix.javasdk.impl.reflection.NameGenerator
 import kalix.javasdk.impl.reflection.ParameterExtractor
 import kalix.javasdk.impl.reflection.ParameterExtractors
-import kalix.javasdk.impl.reflection.ParameterExtractors.HeaderExtractor
 import kalix.javasdk.impl.reflection.Reflect
-import kalix.javasdk.impl.reflection.RestServiceIntrospector
-import kalix.javasdk.impl.reflection.RestServiceIntrospector.BodyParameter
-import kalix.javasdk.impl.reflection.RestServiceIntrospector.HeaderParameter
-import kalix.javasdk.impl.reflection.RestServiceIntrospector.PathParameter
-import kalix.javasdk.impl.reflection.RestServiceIntrospector.QueryParamParameter
-import kalix.javasdk.impl.reflection.RestServiceIntrospector.RestNamedMethodParameter
-import kalix.javasdk.impl.reflection.RestServiceIntrospector.UnhandledParameter
 import kalix.javasdk.impl.reflection.ServiceMethod
 import kalix.javasdk.impl.reflection.SubscriptionServiceMethod
-import kalix.javasdk.impl.reflection.SyntheticRequestServiceMethod
 import kalix.javasdk.impl.reflection.VirtualServiceMethod
-// TODO: abstract away spring dependency
-import org.springframework.web.bind.annotation.RequestMethod
 
 /**
  * The component descriptor is both used for generating the protobuf service descriptor to communicate the service type
@@ -97,14 +79,14 @@ private[kalix] object ComponentDescriptor {
 
       val (inputMessageName: String, extractors: Map[Int, ExtractorCreator], inputProto: Option[DescriptorProto]) =
         kalixMethod.serviceMethod match {
-          case serviceMethod: SyntheticRequestServiceMethod =>
-            val (inputProto, extractors) =
-              buildSyntheticMessageAndExtractors(nameGenerator, serviceMethod, kalixMethod.entityIds)
-            (inputProto.getName, extractors, Some(inputProto))
-
           case serviceMethod: CommandHandlerMethod =>
             val (inputProto, extractors) =
               buildCommandHandlerMessageAndExtractors(nameGenerator, serviceMethod)
+            (inputProto.getName, extractors, Some(inputProto))
+
+          case actionHandlerMethod: ActionHandlerMethod =>
+            val (inputProto, extractors) =
+              buildActionHandlerMessageAndExtractors(nameGenerator, actionHandlerMethod)
             (inputProto.getName, extractors, Some(inputProto))
 
           case anyJson: AnyJsonRequestServiceMethod =>
@@ -184,13 +166,6 @@ private[kalix] object ComponentDescriptor {
     val methodOptions = MethodOptions.newBuilder()
 
     kalixMethod.serviceMethod match {
-      case syntheticRequestServiceMethod: SyntheticRequestServiceMethod =>
-        val httpRuleBuilder = buildHttpRule(syntheticRequestServiceMethod)
-        syntheticRequestServiceMethod.params.collectFirst { case BodyParameter(_, _) =>
-          httpRuleBuilder.setBody("json_body")
-        }
-        methodOptions.setExtension(AnnotationsProto.http, httpRuleBuilder.build())
-
       case commandHandlerMethod: CommandHandlerMethod =>
         val httpRuleBuilder = buildHttpRule(commandHandlerMethod)
 
@@ -219,47 +194,6 @@ private[kalix] object ComponentDescriptor {
 
     def toCommandHandler(fileDescriptor: FileDescriptor): CommandHandler = {
       serviceMethod match {
-        case method: SyntheticRequestServiceMethod =>
-          val messageDescriptor = fileDescriptor.findMessageTypeByName(inputMessageName)
-          if (messageDescriptor == null)
-            throw new RuntimeException(
-              "Unknown message type [" + inputMessageName + "], known are [" + fileDescriptor.getMessageTypes.asScala
-                .map(_.getName) + "]")
-
-          val parameterExtractors: ParameterExtractorsArray =
-            if (method.callable) {
-              method.params.zipWithIndex.map { case (param, idx) =>
-                extractorCreators.find(_._1 == idx) match {
-                  case Some((_, creator)) => creator(messageDescriptor)
-                  case None               =>
-                    // Yet to resolve this parameter, resolve now
-                    param match {
-                      case hp: HeaderParameter =>
-                        new HeaderExtractor[AnyRef](hp.name, identity)
-                      case UnhandledParameter(p) =>
-                        throw new RuntimeException(
-                          s"Unhandled parameter for [${serviceMethod.methodName}]: [$p], message type: " + inputMessageName)
-                      case _ =>
-                        // FIXME not handled: BodyParameter(_, _), PathParameter(_, _), QueryParamParameter(_, _)
-                        // not even clear yet if that's even possible
-                        throw new RuntimeException("not implement")
-                    }
-                }
-              }.toArray
-            } else Array.empty
-
-          // synthetic request always have proto messages as input,
-          // their type url are prefixed by DefaultTypeUrlPrefix
-          // It's possible for a user to configure another prefix, but this is done through the Kalix instance
-          // and the Java SDK doesn't expose it.
-          val typeUrl = AnySupport.DefaultTypeUrlPrefix + "/" + messageDescriptor.getFullName
-
-          CommandHandler(
-            grpcMethodName,
-            messageCodec,
-            messageDescriptor,
-            Map(typeUrl -> MethodInvoker(method.javaMethod, parameterExtractors)))
-
         case method: CommandHandlerMethod =>
           val messageDescriptor = fileDescriptor.findMessageTypeByName(inputMessageName)
           // CommandHandler request always have proto messages as input,
@@ -319,9 +253,57 @@ private[kalix] object ComponentDescriptor {
           }.toMap
 
           CommandHandler(grpcMethodName, messageCodec, Empty.getDescriptor, methodInvokers)
+
+        case method: ActionHandlerMethod =>
+          val messageDescriptor = fileDescriptor.findMessageTypeByName(inputMessageName)
+          // Action handler request always have proto messages as input,
+          // their type url are prefixed by DefaultTypeUrlPrefix
+          // It's possible for a user to configure another prefix, but this is done through the Kalix instance
+          // and the Java SDK doesn't expose it.
+          val typeUrl = AnySupport.DefaultTypeUrlPrefix + "/" + messageDescriptor.getFullName
+          val methodInvokers =
+            serviceMethod.javaMethodOpt
+              .map { meth =>
+                val parameterExtractors: ParameterExtractorsArray =
+                  if (meth.getParameterTypes.length == 1)
+                    Array(
+                      new ParameterExtractors.BodyExtractor(messageDescriptor.findFieldByNumber(1), method.inputType))
+                  else
+                    Array.empty // parameterless method, not extractor needed
+
+                Map(typeUrl -> MethodInvoker(meth, parameterExtractors))
+              }
+              .getOrElse(Map.empty)
+
+          CommandHandler(grpcMethodName, messageCodec, messageDescriptor, methodInvokers)
       }
 
     }
+  }
+
+  private def buildActionHandlerMessageAndExtractors(
+      nameGenerator: NameGenerator,
+      actionHandlerMethod: ActionHandlerMethod): (DescriptorProto, Map[Int, ExtractorCreator]) = {
+    val inputMessageName = nameGenerator.getName(actionHandlerMethod.methodName.capitalize + "KalixSyntheticRequest")
+
+    val inputMessageDescriptor = DescriptorProto.newBuilder()
+    inputMessageDescriptor.setName(inputMessageName)
+
+    if (actionHandlerMethod.hasInputType) {
+      val bodyFieldDesc = FieldDescriptorProto
+        .newBuilder()
+        // todo ensure this is unique among field names
+        .setName("json_body")
+        // Always put the body at position 1 - even if there's no body, leave position 1 free. This keeps the body
+        // parameter stable in case the user adds a body.
+        .setNumber(1)
+        .setType(FieldDescriptorProto.Type.TYPE_MESSAGE)
+        .setTypeName("google.protobuf.Any")
+        .build()
+
+      inputMessageDescriptor.addField(bodyFieldDesc)
+    }
+    (inputMessageDescriptor.build(), Map.empty)
   }
 
   private def buildCommandHandlerMessageAndExtractors(
@@ -365,283 +347,6 @@ private[kalix] object ComponentDescriptor {
     inputMessageDescriptor.addField(idFieldDesc)
     (inputMessageDescriptor.build(), Map.empty)
   }
-  private def buildSyntheticMessageAndExtractors(
-      nameGenerator: NameGenerator,
-      serviceMethod: SyntheticRequestServiceMethod,
-      entityIds: Seq[String]): (DescriptorProto, Map[Int, ExtractorCreator]) = {
-
-    val inputMessageName = nameGenerator.getName(serviceMethod.methodName.capitalize + "KalixSyntheticRequest")
-
-    val inputMessageDescriptor = DescriptorProto.newBuilder()
-    inputMessageDescriptor.setName(inputMessageName)
-
-    val indexedParams = serviceMethod.params.zipWithIndex
-
-    val bodyFieldDescs = bodyFieldDescriptors(indexedParams)
-    val pathParamOffset = 2 //1 is reserved for json_body
-    val pathParamFieldDescs = pathParamFieldDescriptors(serviceMethod, indexedParams, entityIds, pathParamOffset)
-    val queryFieldsOffset = pathParamFieldDescs.size + pathParamOffset
-    val queryFieldDescs = queryParamFieldDescriptors(indexedParams, queryFieldsOffset, entityIds, pathParamOffset)
-
-    inputMessageDescriptor.addAllField((bodyFieldDescs ++ pathParamFieldDescs ++ queryFieldDescs).asJava)
-
-    val oneofDescriptorProtos = (pathParamFieldDescs ++ queryFieldDescs).filter(_.getProto3Optional).map { field =>
-      val oneofFieldName = "_" + field.getName //convention from proto messages with proto3 optional label
-      DescriptorProtos.OneofDescriptorProto.newBuilder().setName(oneofFieldName).build()
-    }
-    inputMessageDescriptor.addAllOneofDecl(oneofDescriptorProtos.asJava)
-
-    val bodyField: Option[(Int, ExtractorCreator)] = {
-
-      // first we need to find the index of the parameter receiving the BodyRequest
-      val paramIndex = indexedParams.collectFirst { case (_: BodyParameter, idx) => idx }
-      paramIndex.flatMap { idx =>
-        val bodyParam = serviceMethod.javaMethod.getGenericParameterTypes()(idx)
-        bodyParam match {
-          case paramType: ParameterizedType
-              // note: we only take RequestBody that are Collections
-              if classOf[util.Collection[_]].isAssignableFrom(paramType.getRawType.asInstanceOf[Class[_]]) =>
-            Some(idx -> collectionBodyFieldExtractors(paramType))
-          case _ =>
-            bodyFieldExtractors(indexedParams)
-        }
-      }
-    }
-
-    val pathParamFieldsExtractors = pathParamExtractors(indexedParams, pathParamFieldDescs)
-    val queryFieldExtractors = queryParamExtractors(indexedParams, queryFieldDescs)
-
-    val inputProto = inputMessageDescriptor.build()
-    val extractors = (bodyField ++ pathParamFieldsExtractors ++ queryFieldExtractors).toMap
-    (inputProto, extractors)
-  }
-
-  private def queryParamExtractors(
-      indexedParams: Seq[(RestServiceIntrospector.RestMethodParameter, Int)],
-      queryFieldDescs: Seq[FieldDescriptorProto]): Seq[(Int, ExtractorCreator)] = {
-    indexedParams
-      .collect { case (qp: QueryParamParameter, idx) =>
-        idx -> qp
-      }
-      .map { case (paramIdx, param) =>
-        paramIdx -> toExtractor(param, queryFieldDescs, param.annotation.required())
-      }
-  }
-
-  private def toExtractor(
-      methodParameter: RestNamedMethodParameter,
-      queryFieldDescs: Seq[FieldDescriptorProto],
-      required: Boolean): ExtractorCreator = {
-    val typeName = methodParameter.param.getGenericParameterType.getTypeName
-    if (typeName == "short") {
-      new ExtractorCreator {
-        override def apply(descriptor: Descriptors.Descriptor): ParameterExtractor[DynamicMessageContext, AnyRef] = {
-          new ParameterExtractors.FieldExtractor[java.lang.Short](
-            descriptor.findFieldByNumber(fieldNumber(methodParameter.name, queryFieldDescs)),
-            required,
-            _.asInstanceOf[java.lang.Integer].toShort)
-        }
-      }
-    } else if (typeName == "byte") {
-      new ExtractorCreator {
-        override def apply(descriptor: Descriptors.Descriptor): ParameterExtractor[DynamicMessageContext, AnyRef] = {
-          new ParameterExtractors.FieldExtractor[java.lang.Byte](
-            descriptor.findFieldByNumber(fieldNumber(methodParameter.name, queryFieldDescs)),
-            required,
-            _.asInstanceOf[java.lang.Integer].byteValue())
-        }
-      }
-    } else if (typeName == "char") {
-      new ExtractorCreator {
-        override def apply(descriptor: Descriptors.Descriptor): ParameterExtractor[DynamicMessageContext, AnyRef] = {
-          new ParameterExtractors.FieldExtractor[java.lang.Character](
-            descriptor.findFieldByNumber(fieldNumber(methodParameter.name, queryFieldDescs)),
-            required,
-            Int.unbox(_).toChar)
-        }
-      }
-    } else {
-      new ExtractorCreator {
-        override def apply(descriptor: Descriptors.Descriptor): ParameterExtractor[DynamicMessageContext, AnyRef] = {
-          new ParameterExtractors.FieldExtractor[AnyRef](
-            descriptor.findFieldByNumber(fieldNumber(methodParameter.name, queryFieldDescs)),
-            required,
-            identity)
-        }
-      }
-    }
-  }
-
-  private def queryParamFieldDescriptors(
-      indexedParams: Seq[(RestServiceIntrospector.RestMethodParameter, Int)],
-      queryFieldsOffset: Int,
-      entityIds: Seq[String],
-      fieldNumberOffset: Int): Seq[FieldDescriptorProto] = {
-    indexedParams
-      .collect { case (qp: QueryParamParameter, idx) =>
-        idx -> qp
-      }
-      .sortBy(_._2.name)
-      .zipWithIndex
-      .map { case ((_, param), fieldIdx) =>
-        val fieldNumber = fieldIdx + queryFieldsOffset
-        buildField(entityIds, param.name, fieldNumber, param.param.getGenericParameterType, fieldNumberOffset)
-      }
-  }
-
-  private def pathParamExtractors(
-      indexedParams: Seq[(RestServiceIntrospector.RestMethodParameter, Int)],
-      pathParamFieldDescs: Seq[FieldDescriptorProto]): Seq[(Int, ExtractorCreator)] = {
-    indexedParams
-      .collect { case (p: PathParameter, idx) =>
-        idx -> p
-      }
-      .map { case (idx, p) =>
-        idx -> toExtractor(p, pathParamFieldDescs, p.annotation.required())
-      }
-  }
-
-  private def pathParamFieldDescriptors(
-      serviceMethod: SyntheticRequestServiceMethod,
-      indexedParams: Seq[(RestServiceIntrospector.RestMethodParameter, Int)],
-      entityIds: Seq[String],
-      pathParamOffset: Int): Seq[FieldDescriptorProto] = {
-    serviceMethod.parsedPath.fields.zipWithIndex.map { case (paramName, fieldIdx) =>
-      val fieldNumber = fieldIdx + pathParamOffset
-      val paramType = paramDetails(indexedParams, paramName)
-      buildField(entityIds, paramName, fieldNumber, paramType, pathParamOffset)
-    }
-  }
-
-  private def buildField(
-      entityIds: Seq[String],
-      name: String,
-      fieldNumber: Int,
-      paramType: Type,
-      fieldNumberOffset: Int): FieldDescriptorProto = {
-    val builder = FieldDescriptorProto
-      .newBuilder()
-      .setName(name)
-      .setNumber(fieldNumber)
-      .setType(mapJavaTypeToProtobuf(paramType))
-      .setLabel(mapJavaWrapperToLabel(paramType))
-      .setOptions(addEntityKeyIfNeeded(entityIds, name))
-
-    if (!entityIds.contains(name)) {
-      builder
-        .setProto3Optional(true)
-        //setting optional flag is not enough to have the knowledge if the field was set or
-        //indexing starts from 0, so we must subtract the offset
-        //there won't be any gaps, since we are marking all path and query params as optional
-        .setOneofIndex(fieldNumber - fieldNumberOffset - entityIds.size)
-    }
-
-    builder.build()
-  }
-
-  private def addEntityKeyIfNeeded(entityIds: Seq[String], paramName: String): DescriptorProtos.FieldOptions =
-    if (entityIds.contains(paramName)) {
-      val fieldOptions = kalix.FieldOptions.newBuilder().setId(true).build()
-      DescriptorProtos.FieldOptions
-        .newBuilder()
-        .setExtension(kalix.Annotations.field, fieldOptions)
-        .build()
-    } else {
-      DescriptorProtos.FieldOptions.getDefaultInstance
-    }
-
-  private def paramDetails(
-      indexedParams: Seq[(RestServiceIntrospector.RestMethodParameter, Int)],
-      paramName: String): Type = {
-    indexedParams
-      .collectFirst {
-        case (p: PathParameter, _) if p.name == paramName => p.param.getGenericParameterType
-      }
-      .getOrElse(classOf[String])
-  }
-
-  private def fieldNumber(fieldName: String, pathParamFieldsDesc: Seq[FieldDescriptorProto]): Int = {
-    pathParamFieldsDesc
-      .find(_.getName == fieldName)
-      .map(_.getNumber)
-      .getOrElse(throw new IllegalStateException(s"Missing field descriptor for field name: $fieldName"))
-  }
-
-  private def bodyFieldDescriptors(
-      indexedParams: Seq[(RestServiceIntrospector.RestMethodParameter, Int)]): Seq[FieldDescriptorProto] = {
-    indexedParams.collectFirst { case (BodyParameter(_, _), _) =>
-      FieldDescriptorProto
-        .newBuilder()
-        // todo ensure this is unique among field names
-        .setName("json_body")
-        // Always put the body at position 1 - even if there's no body, leave position 1 free. This keeps the body
-        // parameter stable in case the user adds a body.
-        .setNumber(1)
-        .setType(FieldDescriptorProto.Type.TYPE_MESSAGE)
-        .setTypeName("google.protobuf.Any")
-        .build()
-    }.toSeq
-  }
-
-  private def bodyFieldExtractors(
-      indexedParams: Seq[(RestServiceIntrospector.RestMethodParameter, Int)]): Option[(Int, ExtractorCreator)] = {
-    indexedParams.collectFirst { case (BodyParameter(param, _), idx) =>
-      idx -> new ExtractorCreator {
-        override def apply(descriptor: Descriptors.Descriptor): ParameterExtractor[DynamicMessageContext, AnyRef] = {
-          // json_body field is always on position 1 in the synthetic request
-          new ParameterExtractors.BodyExtractor(descriptor.findFieldByNumber(1), param.getParameterType)
-        }
-      }
-    }
-  }
-
-  private def collectionBodyFieldExtractors[T](paramType: ParameterizedType): ExtractorCreator =
-    new ExtractorCreator {
-      override def apply(descriptor: Descriptors.Descriptor): ParameterExtractor[DynamicMessageContext, AnyRef] = {
-        // since we only support collections, there is only one type param at idx 0
-        val cls = paramType.getActualTypeArguments()(0).asInstanceOf[Class[T]]
-        val collectionClass = paramType.getRawType.asInstanceOf[Class[java.util.Collection[T]]]
-        // json_body field is always on position 1 in the synthetic request
-        new ParameterExtractors.CollectionBodyExtractor(descriptor.findFieldByNumber(1), cls, collectionClass)
-      }
-    }
-
-  @tailrec
-  private def mapJavaTypeToProtobuf(javaType: Type): FieldDescriptorProto.Type = {
-    // todo make this smarter, eg, customizable parameter deserializers, UUIDs, byte arrays, enums etc
-    if (javaType == classOf[String]) {
-      FieldDescriptorProto.Type.TYPE_STRING
-    } else if (javaType == classOf[java.lang.Long] || javaType.getTypeName == "long") {
-      FieldDescriptorProto.Type.TYPE_INT64
-    } else if (javaType == classOf[java.lang.Integer] || javaType.getTypeName == "int"
-      || javaType.getTypeName == "short"
-      || javaType.getTypeName == "byte"
-      || javaType.getTypeName == "char") {
-      FieldDescriptorProto.Type.TYPE_INT32
-    } else if (javaType == classOf[java.lang.Double] || javaType.getTypeName == "double") {
-      FieldDescriptorProto.Type.TYPE_DOUBLE
-    } else if (javaType == classOf[java.lang.Float] || javaType.getTypeName == "float") {
-      FieldDescriptorProto.Type.TYPE_FLOAT
-    } else if (javaType == classOf[java.lang.Boolean] || javaType.getTypeName == "boolean") {
-      FieldDescriptorProto.Type.TYPE_BOOL
-    } else if (javaType == classOf[ByteString]) {
-      FieldDescriptorProto.Type.TYPE_BYTES
-    } else if (isCollection(javaType)) {
-      mapJavaTypeToProtobuf(javaType.asInstanceOf[ParameterizedType].getActualTypeArguments.head)
-    } else {
-      throw new RuntimeException("Don't know how to extract type " + javaType + " from path.")
-    }
-  }
-
-  private def mapJavaWrapperToLabel(javaType: Type): FieldDescriptorProto.Label =
-    if (isCollection(javaType))
-      FieldDescriptorProto.Label.LABEL_REPEATED
-    else
-      FieldDescriptorProto.Label.LABEL_OPTIONAL
-
-  private def isCollection(javaType: Type): Boolean = javaType.isInstanceOf[ParameterizedType] &&
-    classOf[util.Collection[_]]
-      .isAssignableFrom(javaType.asInstanceOf[ParameterizedType].getRawType.asInstanceOf[Class[_]])
 
   private def buildHttpRule(commandHandlerMethod: CommandHandlerMethod): HttpRule.Builder = {
     val httpRule = HttpRule.newBuilder()
@@ -649,6 +354,11 @@ private[kalix] object ComponentDescriptor {
     val componentTypeId =
       if (Reflect.isView(commandHandlerMethod.component)) {
         commandHandlerMethod.component.getAnnotation(classOf[ViewId]).value()
+      } else if (Reflect.isAction(commandHandlerMethod.component)) {
+        val annotation = commandHandlerMethod.component.getAnnotation(classOf[ActionId])
+        // don't require id on actions (subscriptions etc)
+        if (annotation == null) commandHandlerMethod.getClass.getName
+        else annotation.value()
       } else {
         commandHandlerMethod.component.getAnnotation(classOf[TypeId]).value()
       }
@@ -659,30 +369,6 @@ private[kalix] object ComponentDescriptor {
     else
       httpRule.setGet(urlTemplate)
 
-  }
-
-  private def buildHttpRule(serviceMethod: SyntheticRequestServiceMethod) = {
-    val httpRule = HttpRule.newBuilder()
-    val pathTemplate = serviceMethod.pathTemplate
-    serviceMethod.requestMethod match {
-      case RequestMethod.GET =>
-        httpRule.setGet(pathTemplate)
-      case RequestMethod.POST =>
-        httpRule.setPost(pathTemplate)
-      case RequestMethod.PUT =>
-        httpRule.setPut(pathTemplate)
-      case RequestMethod.PATCH =>
-        httpRule.setPatch(pathTemplate)
-      case RequestMethod.DELETE =>
-        httpRule.setDelete(pathTemplate)
-      case other =>
-        httpRule.setCustom(
-          CustomHttpPattern
-            .newBuilder()
-            .setKind(other.name())
-            .setPath(pathTemplate))
-    }
-    httpRule
   }
 
   private def buildGrpcMethod(

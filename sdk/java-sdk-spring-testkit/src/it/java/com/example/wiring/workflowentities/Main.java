@@ -4,20 +4,21 @@
 
 package com.example.wiring.workflowentities;
 
+import kalix.javasdk.ServiceLifecycle;
 import kalix.javasdk.annotations.Acl;
 import kalix.javasdk.annotations.KalixService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.SpringApplication;
 
 @KalixService
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.ALL))
-public class Main {
+public class Main implements ServiceLifecycle {
 
   private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
-  public static void main(String[] args) {
+  @Override
+  public void onStartup() {
     logger.info("Starting Kalix - Spring Workflows Tests");
-    SpringApplication.run(Main.class, args);
   }
+
 }

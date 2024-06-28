@@ -4,11 +4,14 @@
 
 package kalix.javasdk.action;
 
+import kalix.javasdk.annotations.ActionId;
 import kalix.javasdk.annotations.Subscribe;
+import kalix.javasdk.annotations.TypeId;
 import kalix.javasdk.eventsourcedentity.TestESEvent;
 import kalix.javasdk.eventsourcedentity.TestEventSourcedEntity;
 import kalix.javasdk.action.Action;
 
+@ActionId("es-sub-action")
 @Subscribe.EventSourcedEntity(value = TestEventSourcedEntity.class, ignoreUnknown = true)
 public class TestESSubscriptionAction extends Action {
 

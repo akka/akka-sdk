@@ -25,7 +25,7 @@ public class CounterCommandFromTopicAction extends Action {
   private Logger logger = LoggerFactory.getLogger(CounterCommandFromTopicAction.class);
 
   public Effect<String> onValueIncreased(IncreaseCounter increase) {
-    logger.info("Received increase command: " + increase.toString());
+    logger.info("Received increase event: {}", increase.toString());
     var increaseReply =
       componentClient.forEventSourcedEntity(increase.counterId)
         .method(Counter::increase)
@@ -33,12 +33,12 @@ public class CounterCommandFromTopicAction extends Action {
     return effects().asyncReply(increaseReply);
   }
 
-  public Effect<String> onValueMultiplied(MultiplyCounter increase) {
-    logger.info("Received increase command: " + increase.toString());
+  public Effect<String> onValueMultiplied(MultiplyCounter multiply) {
+    logger.info("Received multiply event: {}", multiply.toString());
     var increaseReply =
-      componentClient.forEventSourcedEntity(increase.counterId)
+      componentClient.forEventSourcedEntity(multiply.counterId)
         .method(Counter::multiply)
-        .invokeAsync(increase.value);
+        .invokeAsync(multiply.value);
     return effects().asyncReply(increaseReply);
   }
 }

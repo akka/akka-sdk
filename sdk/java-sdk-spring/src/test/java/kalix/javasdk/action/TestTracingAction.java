@@ -4,13 +4,11 @@
 
 package kalix.javasdk.action;
 
+import kalix.javasdk.annotations.ActionId;
 
-import kalix.javasdk.action.Action;
-import org.springframework.web.bind.annotation.GetMapping;
-
+@ActionId("tracing-action")
 public class TestTracingAction extends Action {
 
-  @GetMapping("/tracing/traceparent")
   public Effect<String> endpoint() {
     return effects().reply(
         actionContext().metadata().traceContext().traceParent().orElse("not-found"));

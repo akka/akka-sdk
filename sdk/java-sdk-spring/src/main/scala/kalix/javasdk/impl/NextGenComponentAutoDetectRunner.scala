@@ -4,30 +4,14 @@
 
 package kalix.javasdk.impl
 
-import java.lang.reflect.Constructor
-import java.lang.reflect.ParameterizedType
-import java.time.Duration
-import java.util.concurrent.atomic.AtomicReference
-
-import scala.concurrent.Future
-import scala.concurrent.Promise
-import scala.concurrent.duration.DurationInt
-import scala.concurrent.duration.FiniteDuration
-import scala.jdk.CollectionConverters.CollectionHasAsScala
-import scala.jdk.CollectionConverters.MapHasAsScala
-import scala.jdk.DurationConverters.JavaDurationOps
-import scala.reflect.ClassTag
-import scala.util.control.NonFatal
-
 import akka.Done
 import akka.actor.typed.ActorSystem
+import akka.annotation.InternalApi
 import akka.http.scaladsl.model.HttpRequest
 import akka.http.scaladsl.model.HttpResponse
-import akka.stream.Materializer
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import io.opentelemetry.api.trace.Tracer
-import kalix.javasdk.Context
 import kalix.javasdk.Kalix
 import kalix.javasdk.ServiceLifecycle
 import kalix.javasdk.action.Action
@@ -39,6 +23,7 @@ import kalix.javasdk.eventsourced.ReflectiveEventSourcedEntityProvider
 import kalix.javasdk.eventsourcedentity.EventSourcedEntity
 import kalix.javasdk.eventsourcedentity.EventSourcedEntityContext
 import kalix.javasdk.eventsourcedentity.EventSourcedEntityProvider
+import kalix.javasdk.http.HttpClientProvider
 import kalix.javasdk.impl.Validations.Invalid
 import kalix.javasdk.impl.Validations.Valid
 import kalix.javasdk.impl.Validations.Validation
@@ -47,6 +32,7 @@ import kalix.javasdk.impl.action.ActionsImpl
 import kalix.javasdk.impl.client.ComponentClientImpl
 import kalix.javasdk.impl.eventsourcedentity.EventSourcedEntitiesImpl
 import kalix.javasdk.impl.eventsourcedentity.EventSourcedEntityService
+import kalix.javasdk.impl.http.HttpClientProviderExtension
 import kalix.javasdk.impl.http.HttpEndpointMethodRouter
 import kalix.javasdk.impl.reflection.Reflect
 import kalix.javasdk.impl.valueentity.ValueEntitiesImpl
@@ -81,12 +67,26 @@ import kalix.protocol.value_entity.ValueEntities
 import kalix.protocol.view.Views
 import kalix.protocol.workflow_entity.WorkflowEntities
 import kalix.spring.BuildInfo
-import kalix.spring.WebClientProvider
-import kalix.spring.impl.KalixClient
-import kalix.spring.impl.RestKalixClientImpl
-import kalix.spring.impl.WebClientProviderHolder
 import org.slf4j.LoggerFactory
 
+import java.lang.reflect.Constructor
+import java.lang.reflect.ParameterizedType
+import java.time.Duration
+import java.util.concurrent.atomic.AtomicReference
+import scala.concurrent.Future
+import scala.concurrent.Promise
+import scala.concurrent.duration.DurationInt
+import scala.concurrent.duration.FiniteDuration
+import scala.jdk.CollectionConverters.CollectionHasAsScala
+import scala.jdk.CollectionConverters.MapHasAsScala
+import scala.jdk.DurationConverters.JavaDurationOps
+import scala.reflect.ClassTag
+import scala.util.control.NonFatal
+
+/**
+ * INTERNAL API
+ */
+@InternalApi
 final case class KalixJavaSdkSettings(
     snapshotEvery: Int,
     cleanupDeletedEventSourcedEntityAfter: Duration,
@@ -99,6 +99,10 @@ final case class KalixJavaSdkSettings(
   }
 }
 
+/**
+ * INTERNAL API
+ */
+@InternalApi
 final class NextGenComponentAutoDetectRunner extends kalix.javasdk.spi.Runner {
 
   override def start(system: ActorSystem[_], runtimeComponentClients: ComponentClients): Future[SpiEndpoints] = {
@@ -173,14 +177,17 @@ private object ComponentLocator {
   }
 }
 
-private final object NextGenKalixJavaApplication {
-  val onNextStartCallback: AtomicReference[Promise[(Kalix, KalixClient)]] = new AtomicReference(null)
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[javasdk] final object NextGenKalixJavaApplication {
+  val onNextStartCallback: AtomicReference[Promise[(Kalix, ComponentClients)]] = new AtomicReference(null)
 }
 
 private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeComponentClients: ComponentClients) {
   private val logger = LoggerFactory.getLogger(getClass)
   private val messageCodec = new JsonMessageCodec
-  private val kalixClient = new RestKalixClientImpl(messageCodec, runtimeComponentClients)(system.executionContext)
   private val ComponentLocator.LocatedClasses(componentClasses, maybeServiceClass) =
     ComponentLocator.locateUserComponents(system)
 
@@ -216,7 +223,6 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
         logger.info(s"Registering Action provider for [${clz.getName}]")
         val action = actionProvider(clz.asInstanceOf[Class[Action]])
         kalix.register(action)
-        kalixClient.registerComponent(action.serviceDescriptor())
       }
 
       if (classOf[EventSourcedEntity[_, _]].isAssignableFrom(clz)) {
@@ -247,14 +253,8 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
         logger.info(s"Registering multi-table View provider for [${clz.getName}]")
         val view = multiTableViewProvider(clz)
         kalix.register(view)
-        kalixClient.registerComponent(view.serviceDescriptor())
       }
     }
-
-  // FIXME: all Contexts provide access to Materializer that gives access to the ActorSystem, should we remove it?
-  private val endpointContext = new Context {
-    override def materializer(): Materializer = Materializer.matFromSystem(system)
-  }
 
   // collect all Endpoints and compose them to build a larger router
   private val endpointsRouter = componentClasses
@@ -264,7 +264,8 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
         cls,
         () =>
           wiredInstance(cls) {
-            case p if p == classOf[ComponentClient] => componentClient(endpointContext)
+            case p if p == classOf[ComponentClient]    => componentClient()
+            case h if h == classOf[HttpClientProvider] => httpClientProvider()
           })
     }
 
@@ -336,7 +337,7 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
           case null =>
           case f    =>
             // Running inside the test runner
-            f.success((kalix, kalixClient))
+            f.success((kalix, runtimeComponentClients))
         }
         lifecycleHooks match {
           case None => Future.successful(Done)
@@ -370,8 +371,8 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
       context =>
         wiredInstance(clz) {
           case p if p == classOf[ActionCreationContext] => context
-          case p if p == classOf[ComponentClient]       => componentClient(context)
-          case p if p == classOf[WebClientProvider]     => webClientProvider(context)
+          case p if p == classOf[ComponentClient]       => componentClient()
+          case h if h == classOf[HttpClientProvider]    => httpClientProvider()
           case p if p == classOf[Tracer]                => context.getTracer
         })
 
@@ -383,9 +384,9 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
 
         val workflow =
           wiredInstance(clz) {
-            case p if p == classOf[WorkflowContext]   => context
-            case p if p == classOf[ComponentClient]   => componentClient(context)
-            case p if p == classOf[WebClientProvider] => webClientProvider(context)
+            case p if p == classOf[WorkflowContext]    => context
+            case p if p == classOf[ComponentClient]    => componentClient()
+            case h if h == classOf[HttpClientProvider] => httpClientProvider()
           }
 
         val workflowStateType: Class[S] =
@@ -489,16 +490,10 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
     constructor.newInstance(params: _*)
   }
 
-  private def webClientProvider(context: Context) = {
-    val webClientProviderHolder = WebClientProviderHolder(context.materializer().system)
-    webClientProviderHolder.webClientProvider
+  private def componentClient(): ComponentClient = {
+    ComponentClientImpl(runtimeComponentClients)(system.executionContext)
   }
 
-  private def componentClient(context: Context): ComponentClient = {
-    kalixClient.setWebClient(webClientProvider(context).localWebClient)
-    // Important!
-    // always new ComponentClient instance because we need to set the call context each time
-    // and we should not share state between call
-    new ComponentClientImpl(kalixClient)
-  }
+  private def httpClientProvider(): HttpClientProvider =
+    HttpClientProviderExtension(system)
 }

@@ -18,12 +18,12 @@ public interface EventSourcedEntityClient {
   /**
    * Pass in an Event Sourced Entity command handler method reference, e.g. <code>UserEntity::create</code>
    */
-  <T, R> NativeComponentMethodRef<R> method(Function<T, EventSourcedEntity.Effect<R>> methodRef);
+  <T, R> ComponentMethodRef<R> method(Function<T, EventSourcedEntity.Effect<R>> methodRef);
 
   /**
    * Pass in an Event Sourced Entity command handler method reference, e.g. <code>UserEntity::update</code>
    */
-  <T, A1, R> NativeComponentMethodRef1<A1, R> method(Function2<T, A1, EventSourcedEntity.Effect<R>> methodRef);
+  <T, A1, R> ComponentMethodRef1<A1, R> method(Function2<T, A1, EventSourcedEntity.Effect<R>> methodRef);
 
 
 }

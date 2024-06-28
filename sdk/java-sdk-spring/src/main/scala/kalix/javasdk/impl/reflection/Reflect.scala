@@ -153,4 +153,6 @@ object Reflect {
 
     collectAll(instance.getClass, List.empty)
   }
+
+  def isAction(clazz: Class[_]) = classOf[Action].isAssignableFrom(clazz)
 }

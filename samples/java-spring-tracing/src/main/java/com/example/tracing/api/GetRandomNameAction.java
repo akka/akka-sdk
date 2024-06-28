@@ -4,13 +4,17 @@ import com.example.tracing.domain.UserEvent;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.StatusCode;
+import kalix.javasdk.JsonSupport;
 import kalix.javasdk.action.Action;
 import kalix.javasdk.annotations.Subscribe;
 import kalix.javasdk.client.ComponentClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.web.reactive.function.client.WebClient;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.concurrent.CompletableFuture;
 
 
@@ -21,11 +25,8 @@ public class GetRandomNameAction extends Action {
 
   private final ComponentClient componentClient;
 
-  private final WebClient webClient;
-
   public GetRandomNameAction(ComponentClient componentClient) {
     this.componentClient = componentClient;
-    this.webClient = WebClient.create("https://randomuser.me/api/?inc=name&noinfo");
   }
 
   public Effect<String> handleAdd(UserEvent.UserAdded userAdded) {
@@ -52,17 +53,27 @@ public class GetRandomNameAction extends Action {
       .startSpan()
       .setAttribute("user.id", actionContext().eventSubject().orElse("unknown"));
 
-    CompletableFuture<RandomUserApi.Name> result = webClient.get()
-      .retrieve()
-      .bodyToMono(RandomUserApi.Name.class)
-      .toFuture()
-      .whenComplete((name, ex) -> {
+    var client = HttpClient.newHttpClient();
+    var request = HttpRequest.newBuilder().uri(URI.create("https://randomuser.me/api/?inc=name&noinfo")).GET().build();
+    var response = client.sendAsync(request, HttpResponse.BodyHandlers.ofString());
+
+    CompletableFuture<RandomUserApi.Name> result = response
+      .handle((httpResponse, ex) -> {
         if (ex != null) {
           span.setStatus(StatusCode.ERROR, ex.getMessage());
+          throw new RuntimeException(ex);
         } else {
-          span.setAttribute("random.name", name.name());
+          // FIXME messy stdlib http client + jackson
+          try {
+            RandomUserApi.Name name = JsonSupport.getObjectMapper().readerFor(RandomUserApi.Name.class).readValue(httpResponse.body());
+            span.setAttribute("random.name", name.name());
+            return name;
+          } catch (Exception e) {
+            throw new RuntimeException(e);
+          } finally {
+            span.end();
+          }
         }
-        span.end();
       });
 
     return result.thenApply(RandomUserApi.Name::name);

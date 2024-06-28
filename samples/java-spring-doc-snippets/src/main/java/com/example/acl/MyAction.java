@@ -5,18 +5,15 @@ import kalix.javasdk.action.Action;
 import kalix.javasdk.valueentity.ValueEntity;
 import kalix.javasdk.annotations.Acl;
 import kalix.javasdk.annotations.Subscribe;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 
-
+// FIXME should it rather be an endpoint?
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
 public class MyAction extends Action {
 
     // tag::allow-deny[]
-    @PostMapping
     @Acl(allow = @Acl.Matcher(service = "*"),
             deny = @Acl.Matcher(service = "service-b"))
-    public Effect<String> createUser(@RequestBody CreateUser create) {
+    public Effect<String> createUser(CreateUser create) {
         //...
         // end::allow-deny[]
         return null;
@@ -50,21 +47,19 @@ public class MyAction extends Action {
     }
 
     // tag::deny-code[]
-    @PostMapping
+    // end::deny-code[]
     @Acl(allow = @Acl.Matcher(service = "*"), denyCode = Acl.DenyStatusCode.NOT_FOUND)
-    public Effect<String> updateUser(@RequestBody CreateUser create) {
+    public Effect<String> updateUser(CreateUser create) {
         //...
         // end::deny-code[]
         return null;
         // tag::deny-code[]
     }
-    // end::deny-code[]
 
     // tag::open-subscription-acl[]
     @Subscribe.ValueEntity(Counter.class)
-    @PostMapping("/counter")
-    @Acl(allow = @Acl.Matcher(service = "*")) 
-    public Effect<Done> changes(@RequestBody CounterState counterState) {
+    @Acl(allow = @Acl.Matcher(service = "*"))
+    public Effect<Done> changes(CounterState counterState) {
      //...
         // end::open-subscription-acl[]
         return null;

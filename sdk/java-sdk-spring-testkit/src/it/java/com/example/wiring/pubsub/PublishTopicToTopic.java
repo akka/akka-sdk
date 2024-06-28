@@ -11,12 +11,10 @@ import kalix.javasdk.annotations.Publish;
 import kalix.javasdk.annotations.Subscribe;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.annotation.Profile;
 
 import static com.example.wiring.pubsub.PublishVEToTopic.CUSTOMERS_TOPIC;
 import static kalix.javasdk.impl.MetadataImpl.CeSubject;
 
-@Profile("docker-it-test")
 @Subscribe.Topic(CUSTOMERS_TOPIC)
 public class PublishTopicToTopic extends Action {
 

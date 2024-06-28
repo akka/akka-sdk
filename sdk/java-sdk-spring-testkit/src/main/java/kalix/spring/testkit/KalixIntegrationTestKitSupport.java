@@ -8,13 +8,11 @@ import akka.actor.ExtendedActorSystem;
 import kalix.javasdk.client.ComponentClient;
 import kalix.javasdk.http.HttpClient;
 import kalix.javasdk.testkit.KalixTestKit;
-import kalix.spring.impl.WebClientProviderImpl;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.web.reactive.function.client.WebClient;
 
 import java.time.Duration;
 
@@ -26,8 +24,7 @@ import static java.time.temporal.ChronoUnit.SECONDS;
  *
  * <p>This class wires-up a local Kalix application using the user's defined Kalix components.
  *
- * <p>Users can interact with their components public endpoints using the {@link
- * org.springframework.web.reactive.function.client.WebClient} that is available through {{{webClient}}} or
+ * <p>Users can interact with their components via their publis endpoint via a FIXME HTTP client or
  * internally through the {{componentClient}}.
  *
  * <p>On test teardown, the Kalix application and the Kalix Runtime will be stopped.
@@ -40,8 +37,6 @@ public abstract class KalixIntegrationTestKitSupport extends AsyncCallsSupport {
   protected KalixTestKit kalixTestKit;
 
   protected ComponentClient componentClient;
-
-  protected WebClient webClient;
 
   protected Duration timeout = Duration.of(10, SECONDS);
 
@@ -60,9 +55,6 @@ public abstract class KalixIntegrationTestKitSupport extends AsyncCallsSupport {
     try {
       kalixTestKit = (new KalixTestKit(kalixTestKitSettings())).start();
       componentClient = kalixTestKit.getComponentClient();
-      webClient = new WebClientProviderImpl((ExtendedActorSystem)kalixTestKit.getActorSystem())
-              .localWebClient();
-
       var baseUrl = "http://localhost:" + kalixTestKit.getPort();
       httpClient = new HttpClient(kalixTestKit.getActorSystem(), baseUrl);
     } catch (Exception ex) {

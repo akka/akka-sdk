@@ -18,7 +18,6 @@ import com.example.wiring.valueentities.user.UserEntity;
 import com.example.wiring.valueentities.user.UserSideEffect;
 import com.example.wiring.views.*;
 import kalix.javasdk.Metadata;
-import kalix.javasdk.StatusCode;
 import kalix.javasdk.client.EventSourcedEntityClient;
 import kalix.javasdk.client.NoEntryFoundException;
 import kalix.javasdk.testkit.KalixTestKit;
@@ -30,16 +29,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.reactive.function.client.ClientResponse;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
-import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -72,87 +65,6 @@ public class SpringSdkIntegrationTest extends KalixIntegrationTestKitSupport {
         .invokeAsync("abc"));
 
     assertThat(response.text()).isEqualTo("Parrot says: 'abc'");
-  }
-
-
-  @Test
-  public void verifyEchoActionRequestParam() {
-
-    Message response = await(
-      componentClient.forAction()
-        .method(EchoAction::stringMessageFromParam)
-        .invokeAsync("queryParam"));
-
-    assertThat(response.text()).isEqualTo("Parrot says: 'queryParam'");
-
-    var failedReq =
-      webClient
-        .get()
-        .uri("/echo/message")
-        .retrieve()
-        .toEntity(String.class)
-        .onErrorResume(WebClientResponseException.class, error -> {
-          if (error.getStatusCode().is4xxClientError()) {
-            return Mono.just(ResponseEntity.status(error.getStatusCode()).body(error.getResponseBodyAsString()));
-          } else {
-            return Mono.error(error);
-          }
-        })
-        .block(timeout);
-    assertThat(failedReq.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-    assertThat(failedReq.getBody()).contains("Required request parameter is missing: msg");
-  }
-
-  @Test
-  public void verifyEchoActionConcatBody() {
-
-    var message = List.of(new Message("foo"), new Message("bar"));
-    Message response = await(
-      componentClient.forAction()
-        .method(EchoAction::stringMessageConcatRequestBody)
-        .invokeAsync(message)
-    );
-
-    assertThat(response.text()).isEqualTo("foo|bar");
-  }
-
-  @Test
-  public void verifyEchoActionConcatBodyWithSeparator() {
-
-    var message = List.of(new Message("foo"), new Message("bar"));
-    Message response = await(
-      componentClient.forAction()
-        .method(EchoAction::stringMessageConcatRequestBodyWithSeparator)
-        .deferred("/", message).invokeAsync()
-    );
-
-    assertThat(response.text()).isEqualTo("foo/bar");
-  }
-
-  @Test
-  public void verifyEchoActionWithCustomCode() {
-    ClientResponse response =
-      webClient
-        .post()
-        .uri("/echo/message/customCode/hello")
-        .exchangeToMono(Mono::just)
-        .block(timeout);
-    Assertions.assertEquals(StatusCode.Success.ACCEPTED.value(), response.statusCode().value());
-  }
-
-  @Test
-  public void verifyStreamActions() {
-
-    List<Message> messageList =
-      webClient
-        .get()
-        .uri("/echo/repeat/abc/times/3")
-        .retrieve()
-        .bodyToFlux(Message.class)
-        .toStream()
-        .collect(Collectors.toList());
-
-    assertThat(messageList).hasSize(3);
   }
 
   @Test
@@ -518,35 +430,10 @@ public class SpringSdkIntegrationTest extends KalixIntegrationTestKitSupport {
           .forAction()
           .method(ActionWithMetadata::actionWithMeta)
           // Note that myKey is explicitly enabled for header-forward on action
-          .deferred("myKey", value).invokeAsync()
+          .deferred(new ActionWithMetadata.KeyValue("myKey", value)).invokeAsync()
       );
 
     assertThat(actionResponse.text()).isEqualTo(value);
-  }
-
-  @Test
-  public void shouldSupportMetadataInReplies() {
-    String value = "someValue";
-
-    String headerInResponse =
-      webClient
-        .get()
-        .uri("/reply-meta/myKey/" + value)
-        .exchangeToMono(response -> Mono.just(Objects.requireNonNull(
-          response.headers().asHttpHeaders().getFirst("myKey"))))
-        .block();
-
-    assertThat(value).isEqualTo(headerInResponse);
-
-    String headerInAyncResponse =
-      webClient
-        .get()
-        .uri("/reply-async-meta/myKey/" + value)
-        .exchangeToMono(response -> Mono.just(Objects.requireNonNull(
-          response.headers().asHttpHeaders().getFirst("myKey"))))
-        .block();
-
-    assertThat(value).isEqualTo(headerInAyncResponse);
   }
 
   @Test

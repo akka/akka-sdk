@@ -7,6 +7,7 @@ package kalix.javasdk.impl.action
 import akka.NotUsed
 import akka.stream.javadsl.Source
 import com.google.protobuf.any.{ Any => ScalaPbAny }
+import kalix.javasdk.JsonSupport
 import kalix.javasdk.action.Action
 import kalix.javasdk.action.MessageEnvelope
 import kalix.javasdk.impl.AnySupport.ProtobufEmptyTypeUrl
@@ -14,8 +15,7 @@ import kalix.javasdk.impl.CommandHandler
 import kalix.javasdk.impl.InvocationContext
 import kalix.javasdk.impl.reflection.Reflect
 
-// TODO: abstract away reactor dependency
-import reactor.core.publisher.Flux
+import scala.util.control.NonFatal
 
 class ReflectiveActionRouter[A <: Action](
     action: A,
@@ -24,83 +24,85 @@ class ReflectiveActionRouter[A <: Action](
     extends ActionRouter[A](action) {
 
   private def commandHandlerLookup(commandName: String) =
-    commandHandlers.getOrElse(commandName, throw new RuntimeException(s"no matching method for '$commandName'"))
+    commandHandlers.getOrElse(
+      commandName,
+      throw new RuntimeException(
+        s"no matching method for '$commandName' on [${action.getClass}], existing are [${commandHandlers.keySet
+          .mkString(", ")}]"))
 
   override def handleUnary(commandName: String, message: MessageEnvelope[Any]): Action.Effect[_] = {
 
     val commandHandler = commandHandlerLookup(commandName)
 
-    val invocationContext =
-      InvocationContext(
-        message.payload().asInstanceOf[ScalaPbAny],
-        commandHandler.requestMessageDescriptor,
-        message.metadata())
-
     val inputTypeUrl = message.payload().asInstanceOf[ScalaPbAny].typeUrl
-    val methodInvoker = commandHandler.lookupInvoker(inputTypeUrl)
-
-    // lookup ComponentClient
-    val componentClients = Reflect.lookupComponentClientFields(action)
-
-    componentClients.foreach(_.setCallMetadata(message.metadata()))
-
-    methodInvoker match {
-      case Some(invoker) =>
-        inputTypeUrl match {
-          case ProtobufEmptyTypeUrl =>
-            invoker
-              .invoke(action)
-              .asInstanceOf[Action.Effect[_]]
-          case _ =>
-            invoker
-              .invoke(action, invocationContext)
-              .asInstanceOf[Action.Effect[_]]
+    val scalaPbAnyCommand = message.payload().asInstanceOf[ScalaPbAny]
+    if ((scalaPbAnyCommand.typeUrl.startsWith(
+        JsonSupport.KALIX_JSON) || scalaPbAnyCommand.value.isEmpty) && commandHandler.isSingleNameInvoker) {
+      // special cased component client calls, lets json commands trough all the way
+      val methodInvoker = commandHandler.getSingleNameInvoker()
+      val parameterTypes = methodInvoker.method.getParameterTypes
+      val result =
+        if (parameterTypes.isEmpty) methodInvoker.invoke(action)
+        else if (parameterTypes.size > 1)
+          throw new IllegalArgumentException(
+            s"Handler for [${action.getClass}.$commandName] expects more than one parameter, not supported (parameter types: [${parameterTypes.mkString}]")
+        else {
+          // we used to dispatch based on the type, since that is how it works in protobuf for eventing
+          // but here we have a concrete command name, and can pick up the expected serialized type from there
+          val decodedParameter =
+            try {
+              JsonSupport.decodeJson(parameterTypes(0), scalaPbAnyCommand)
+            } catch {
+              case NonFatal(ex) =>
+                throw new IllegalArgumentException(
+                  s"Could not deserialize message for ${action.getClass}.${commandName}",
+                  ex)
+            }
+          methodInvoker.invokeDirectly(action, decodedParameter.asInstanceOf[AnyRef])
         }
-      case None if ignoreUnknown => ActionEffectImpl.Builder.ignore()
-      case None =>
-        throw new NoSuchElementException(
-          s"Couldn't find any method with input type [$inputTypeUrl] in Action [$action].")
+      result.asInstanceOf[Action.Effect[_]]
+    } else {
+
+      val invocationContext =
+        InvocationContext(scalaPbAnyCommand, commandHandler.requestMessageDescriptor, message.metadata())
+
+      // lookup ComponentClient
+      val componentClients = Reflect.lookupComponentClientFields(action)
+
+      componentClients.foreach(_.callMetadata = Some(message.metadata()))
+
+      val methodInvoker = commandHandler.lookupInvoker(inputTypeUrl)
+      methodInvoker match {
+        case Some(invoker) =>
+          inputTypeUrl match {
+            case ProtobufEmptyTypeUrl =>
+              invoker
+                .invoke(action)
+                .asInstanceOf[Action.Effect[_]]
+            case _ =>
+              invoker
+                .invoke(action, invocationContext)
+                .asInstanceOf[Action.Effect[_]]
+          }
+        case None if ignoreUnknown => ActionEffectImpl.Builder.ignore()
+        case None =>
+          throw new NoSuchElementException(
+            s"Couldn't find any method with input type [$inputTypeUrl] in Action [$action].")
+      }
     }
   }
 
   override def handleStreamedOut(
       commandName: String,
       message: MessageEnvelope[Any]): Source[Action.Effect[_], NotUsed] = {
-
-    val componentMethod = commandHandlerLookup(commandName)
-
-    // lookup ComponentClient
-    val componentClients = Reflect.lookupComponentClientFields(action)
-
-    try {
-      componentClients.foreach(_.setCallMetadata(message.metadata()))
-      val context =
-        InvocationContext(
-          message.payload().asInstanceOf[ScalaPbAny],
-          componentMethod.requestMessageDescriptor,
-          message.metadata())
-
-      val inputTypeUrl = message.payload().asInstanceOf[ScalaPbAny].typeUrl
-      componentMethod.lookupInvoker(inputTypeUrl) match {
-        case Some(methodInvoker) =>
-          val response = methodInvoker.invoke(action, context).asInstanceOf[Flux[Action.Effect[_]]]
-          Source.fromPublisher(response)
-        case None if ignoreUnknown => Source.empty()
-        case None =>
-          throw new NoSuchElementException(
-            s"Couldn't find any method with input type [$inputTypeUrl] in Action [$action].")
-      }
-    } finally {
-      componentClients.foreach(_.clearCallMetadata())
-    }
+    throw new UnsupportedOperationException("Stream out not supported")
   }
 
   override def handleStreamedIn(commandName: String, stream: Source[MessageEnvelope[Any], NotUsed]): Action.Effect[_] =
-    throw new IllegalArgumentException("Stream in calls are not supported")
+    throw new UnsupportedOperationException("Stream in calls are not supported")
 
-  // TODO: to implement
   override def handleStreamed(
       commandName: String,
       stream: Source[MessageEnvelope[Any], NotUsed]): Source[Action.Effect[_], NotUsed] =
-    throw new IllegalArgumentException("Stream in calls are not supported")
+    throw new UnsupportedOperationException("Stream in calls are not supported")
 }

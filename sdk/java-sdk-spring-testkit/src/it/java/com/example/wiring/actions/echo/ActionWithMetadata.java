@@ -6,16 +6,16 @@ package com.example.wiring.actions.echo;
 
 import kalix.javasdk.Metadata;
 import kalix.javasdk.action.Action;
+import kalix.javasdk.annotations.ActionId;
 import kalix.javasdk.annotations.ForwardHeaders;
 import kalix.javasdk.client.ComponentClient;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.concurrent.CompletableFuture;
 
 // FIXME used in SpringSdkIntegrationTest, since component client is currently going over the rest endpoint
 //       all headers expected to be forwarded must be opt-in. Once we switch to "native" component client
 //       we will forward all metadata and this won't be needed
+@ActionId("with-metadata")
 @ForwardHeaders({"myKey"})
 public class ActionWithMetadata extends Action {
 
@@ -25,32 +25,30 @@ public class ActionWithMetadata extends Action {
     this.componentClient = componentClient;
   }
 
-  @GetMapping("/action-with-meta/{key}/{value}")
-  public Effect<Message> actionWithMeta(@PathVariable String key, @PathVariable String value) {
+  public record KeyValue(String key, String value) {}
+
+  public Effect<Message> actionWithMeta(KeyValue keyValue) {
     var deferredCall =
       componentClient.forAction()
         .method(ActionWithMetadata::returnMeta)
-        .withMetadata(Metadata.EMPTY.add(key, value))
-        .deferred(key);
+        .withMetadata(Metadata.EMPTY.add(keyValue.key, keyValue.value))
+        .deferred(keyValue.key);
 
     return effects().asyncReply(deferredCall.invokeAsync());
   }
 
-  @GetMapping("/return-meta/{key}")
-  public Effect<Message> returnMeta(@PathVariable String key) {
+  public Effect<Message> returnMeta(String key) {
     var metaValue = actionContext().metadata().get(key).get();
     return effects().reply(new Message(metaValue));
   }
 
-  @GetMapping("/reply-meta/{key}/{value}")
-  public Effect<Message> returnAsMeta(@PathVariable String key, @PathVariable String value) {
-    var md = Metadata.EMPTY.add(key, value);
-    return effects().reply(new Message(value), md);
+  public Effect<Message> returnAsMeta(KeyValue keyValue) {
+    var md = Metadata.EMPTY.add(keyValue.key, keyValue.value);
+    return effects().reply(new Message(keyValue.value), md);
   }
 
-  @GetMapping("/reply-async-meta/{key}/{value}")
-  public Effect<Message> returnAsMetaAsync(@PathVariable String key, @PathVariable String value) {
-    var md = Metadata.EMPTY.add(key, value);
-    return effects().asyncReply(CompletableFuture.completedFuture(new Message(value)), md);
+  public Effect<Message> returnAsMetaAsync(KeyValue keyValue) {
+    var md = Metadata.EMPTY.add(keyValue.key, keyValue.value);
+    return effects().asyncReply(CompletableFuture.completedFuture(new Message(keyValue.value)), md);
   }
 }

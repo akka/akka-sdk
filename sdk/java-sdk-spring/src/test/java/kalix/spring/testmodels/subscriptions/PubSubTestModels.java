@@ -24,10 +24,6 @@ import kalix.spring.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels
 import kalix.spring.testmodels.valueentity.AssignedCounter;
 import kalix.spring.testmodels.valueentity.Counter;
 import kalix.spring.testmodels.valueentity.CounterState;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 
 public class PubSubTestModels {//TODO shall we remove this class and move things to ActionTestModels and ViewTestModels
 
@@ -44,32 +40,6 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
 
     public Effect<CounterState> onUpdate(CounterState message) {
       return effects().reply(message);
-    }
-  }
-
-  public static class SubscribeToValueEntityWithRestAction extends Action {
-
-    @Subscribe.ValueEntity(Counter.class)
-    public Effect<CounterState> onUpdate(CounterState message) {
-      return effects().reply(message);
-    }
-
-    @GetMapping("/test")
-    public Effect<String> get() {
-      return effects().reply("test");
-    }
-  }
-
-  @Subscribe.ValueEntity(Counter.class)
-  public static class TypeLevelSubscribeToValueEntityWithRestAction extends Action {
-
-    public Effect<CounterState> onUpdate(CounterState message) {
-      return effects().reply(message);
-    }
-
-    @GetMapping("/test")
-    public Effect<String> get() {
-      return effects().reply("test");
     }
   }
 
@@ -129,14 +99,6 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
 
     public Effect<Message2> methodTwo(Message2 message) {
       return effects().reply(message);
-    }
-  }
-
-  public static class RestAnnotatedSubscribeToEventSourcedEntityAction extends Action {
-    @PostMapping("/changeInt/{number}")
-    @Subscribe.EventSourcedEntity(CounterEventSourcedEntity.class)
-    public Effect<Integer> methodTwo(Integer number) {
-      return effects().reply(number);
     }
   }
 
@@ -586,15 +548,6 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
     }
   }
 
-  public static class RestWithPublishToTopicAction extends Action {
-
-    @PostMapping("/message/{msg}")
-    @Publish.Topic("foobar")
-    public Effect<Message> messageOne(@PathVariable String msg) {
-      return effects().reply(new Message(msg));
-    }
-  }
-
   @Subscribe.ValueEntity(Counter.class)
   public static class PublishBytesToTopicAction extends Action {
 
@@ -684,16 +637,6 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
     }
   }
 
-  public static class RestAnnotatedSubscribeToValueEntityAction extends Action {
-    // this should fail as not allowed
-    @Subscribe.ValueEntity(Counter.class)
-    @PostMapping("/message/one")
-    public Effect<Message> messageOne(@RequestBody Message message) {
-      return effects().reply(message);
-    }
-  }
-
-
   @Acl(allow = @Acl.Matcher(service = "test"))
   public static class ActionWithServiceLevelAcl extends Action {
   }
@@ -701,8 +644,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
 
   public static class ActionWithMethodLevelAcl extends Action {
     @Acl(allow = @Acl.Matcher(service = "test"))
-    @PostMapping("/message/one")
-    public Effect<Message> messageOne(@RequestBody Message message) {
+    public Effect<Message> messageOne(Message message) {
       return effects().reply(message);
     }
   }
@@ -710,7 +652,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   public static class ActionWithMethodLevelAclAndSubscription extends Action {
     @Acl(allow = @Acl.Matcher(service = "test"))
     @Subscribe.ValueEntity(Counter.class)
-    public Effect<Message> messageOne(@RequestBody Message message) {
+    public Effect<Message> messageOne(Message message) {
       return effects().reply(message);
     }
   }

@@ -32,14 +32,8 @@ import kalix.javasdk.valueentity.ValueEntity
 import kalix.javasdk.view.View
 // TODO: abstract away spring dependency
 import kalix.javasdk.impl.reflection.Reflect.Syntax._
-import org.springframework.core.annotation.AnnotatedElementUtils
-import org.springframework.web.bind.annotation.RequestMapping
-private[impl] object ComponentDescriptorFactory {
 
-  def hasRestAnnotation(javaMethod: Method): Boolean = {
-    val restAnnotation = AnnotatedElementUtils.findMergedAnnotation(javaMethod, classOf[RequestMapping])
-    javaMethod.isPublic && restAnnotation != null
-  }
+private[impl] object ComponentDescriptorFactory {
 
   def hasAcl(javaMethod: Method): Boolean =
     javaMethod.isPublic && javaMethod.hasAnnotation[Acl]

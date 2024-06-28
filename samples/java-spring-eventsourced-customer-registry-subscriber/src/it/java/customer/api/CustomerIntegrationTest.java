@@ -39,11 +39,11 @@ public class CustomerIntegrationTest extends CustomerRegistryIntegrationTest {
   // this test relies on a source Kalix service to which it subscribes. Such service should be running on :9000
   @Test
   public void create()  {
-    // start the real test now  
+    // start the real test now
     String id = UUID.randomUUID().toString();
     CustomerRegistryAction.Customer customer = new CustomerRegistryAction.Customer("foo@example.com", "Johanna", new CustomerRegistryAction.Address("street", "city"));
 
-        // try until it succeeds
+    // try until it succeeds
     Awaitility.await()
       .ignoreExceptions()
       .pollInterval(5, TimeUnit.SECONDS)
@@ -52,7 +52,7 @@ public class CustomerIntegrationTest extends CustomerRegistryIntegrationTest {
         await(
           componentClient.forAction()
             .method(CustomerRegistryAction::create)
-            .deferred(id, customer).invokeAsync()
+            .deferred(new CustomerRegistryAction.CreateRequest(id, customer)).invokeAsync()
         ).msg(),
         new IsEqual<>("done")
       );

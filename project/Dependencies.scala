@@ -32,9 +32,6 @@ object Dependencies {
   val JUnitVersion = "4.13.2"
   val JUnitInterfaceVersion = "0.11"
   val JUnitJupiterVersion = "5.10.1"
-  val SpringFrameworkVersion = "6.1.5"
-  // make sure to sync spring-boot-starter-parent version in samples and archetype to this version
-  val SpringBootVersion = "3.2.4"
   val OpenTelemetryVersion = "1.28.0"
 
   val CommonsIoVersion = "2.11.0"
@@ -133,7 +130,6 @@ object Dependencies {
   val javaSdk = deps ++= sdkDeps
 
   val javaSdkTestKit = deps ++= Seq(
-    testContainers,
     junit4,
     junit5,
     junit5Vintage,
@@ -144,36 +140,34 @@ object Dependencies {
     akkaDependency("akka-testkit"),
     akkaDependency("akka-actor-testkit-typed") % Test)
 
-  val springDeps = Seq(
-    jacksonDataFormatProto,
-    "org.springframework" % "spring-web" % SpringFrameworkVersion,
-    "org.springframework" % "spring-webflux" % SpringFrameworkVersion,
-    "org.springframework" % "spring-webmvc" % SpringFrameworkVersion,
-    "org.springframework.boot" % "spring-boot" % SpringBootVersion,
-    "org.springframework.boot" % "spring-boot-starter" % SpringBootVersion,
-    "org.springframework.boot" % "spring-boot-starter-json" % SpringBootVersion,
-    "org.springframework.boot" % "spring-boot-starter-reactor-netty" % SpringBootVersion,
-    "jakarta.websocket" % "jakarta.websocket-api" % "2.0.0")
+  val springDeps = Seq(jacksonDataFormatProto)
 
   val javaSdkSpring = deps ++= sdkDeps ++ springDeps ++ Seq(
     kalixSdkSpi,
     akkaDependency("akka-actor-typed") % Provided,
-    "net.aichler" % "jupiter-interface" % JupiterKeys.jupiterVersion.value % Test,
     "org.scala-lang.modules" %% "scala-parser-combinators" % "2.3.0",
+    "net.aichler" % "jupiter-interface" % JupiterKeys.jupiterVersion.value % Test,
     junit5 % Test,
     "org.assertj" % "assertj-core" % "3.24.2" % Test)
 
   val javaSdkSpringTestKit =
     deps ++= springDeps ++
     Seq(
-      junit5 % Test,
-      junit5 % IntegrationTest,
-      "net.aichler" % "jupiter-interface" % JupiterKeys.jupiterVersion.value % Test,
-      "net.aichler" % "jupiter-interface" % JupiterKeys.jupiterVersion.value % IntegrationTest,
-      "org.springframework.boot" % "spring-boot-starter-test" % SpringBootVersion,
-      "org.springframework.boot" % "spring-boot-starter-test" % SpringBootVersion % IntegrationTest,
-      "org.assertj" % "assertj-core" % "3.24.2" % IntegrationTest,
-      "org.awaitility" % "awaitility" % "4.2.0" % IntegrationTest)
+      // These two are for the eventing testkit
+      akkaDependency("akka-actor-testkit-typed"),
+      kalixTestkitProtocol % "protobuf-src",
+      // user will interface with these
+      junit5,
+      // convenience-transitive dependencies for user assertions and async interactions
+      "org.awaitility" % "awaitility" % "4.2.1",
+      "org.assertj" % "assertj-core" % "3.24.2",
+      // FIXME used in the tests of the testkit itself but should not be on user test classpath
+      //       should possibly be provided or runtime here and added for the test runner in project parent pom
+      kalixDevRuntime,
+      // These are for the test of the testkit
+      // FIXME move integration tests into test config
+      "net.aichler" % "jupiter-interface" % JupiterKeys.jupiterVersion.value % s"$Test, $IntegrationTest",
+      scalaTest % Test)
 
   // FIXME
   val scalaSdk = deps ++= sdkDeps ++ Seq(jacksonScala)

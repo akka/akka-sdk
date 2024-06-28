@@ -1,31 +1,35 @@
 package com.example.callanotherservice;
 
-import kalix.javasdk.action.Action;
-import kalix.spring.WebClientProvider;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.reactive.function.client.WebClient;
+import kalix.javasdk.annotations.http.Endpoint;
+import kalix.javasdk.annotations.http.Post;
+import kalix.javasdk.client.ComponentClient;
+
+import java.util.concurrent.CompletionStage;
 
 // tag::delegating-action[]
-public class DelegatingServiceAction extends Action {
+@Endpoint
+public class DelegatingServiceAction {
 
-  final private WebClient webClient;
+  private final ComponentClient componentClient;
 
-  public DelegatingServiceAction(WebClientProvider webClientProvider) { // <1>
-    this.webClient = webClientProvider.webClientFor("counter"); // <2>
+  public DelegatingServiceAction(ComponentClient componentClient) { // <1>
+    this.componentClient = componentClient;
   }
 
-  @PostMapping("/delegate/counter/{counter_id}/increase")
-  public Effect<Number> addAndReturn(@PathVariable String counterId, @RequestBody Number increaseBy) {
+  @Post("/delegate/counter/{counter_id}/increase")
+  public CompletionStage<Number> addAndReturn(String counterId, Number increaseBy) {
+    throw new UnsupportedOperationException("FIXME");
+    // FIXME Not sure what component this was intended to call
+    /*
     var result =
-        webClient
+        componentClient. ???
             .post().uri("/counter/" + counterId + "/increase") // <3>
             .bodyValue(increaseBy)
             .retrieve()
             .bodyToMono(Number.class).toFuture();
 
-    return effects().asyncReply(result);  // <4>
+    return result;  // <4>
+     */
   }
 }
 // end::delegating-action[]

@@ -13,7 +13,6 @@ import kalix.javasdk.annotations.ViewId;
 import kalix.javasdk.view.View;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.annotation.Profile;
 
 import java.util.List;
 
@@ -21,7 +20,6 @@ import static com.example.wiring.pubsub.PublishESToTopic.COUNTER_EVENTS_TOPIC;
 import static kalix.javasdk.impl.MetadataImpl.CeSubject;
 
 
-//@Profile({"docker-it-test", "eventing-testkit-subscription"})
 @ViewId("counter_view_topic_sub")
 @Table("counter_view_topic_sub")
 @Subscribe.Topic(COUNTER_EVENTS_TOPIC)

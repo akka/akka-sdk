@@ -16,14 +16,19 @@
 
 package com.example;
 
+import com.example.actions.CounterCommandFromTopicAction;
 import kalix.javasdk.annotations.TypeId;
 import kalix.javasdk.eventsourcedentity.EventSourcedEntity;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static com.example.CounterEvent.ValueIncreased;
 import static com.example.CounterEvent.ValueMultiplied;
 
 @TypeId("counter")
 public class Counter extends EventSourcedEntity<Integer, CounterEvent> {
+
+  private Logger logger = LoggerFactory.getLogger(Counter.class);
 
   @Override
   public Integer emptyState() {
@@ -32,6 +37,7 @@ public class Counter extends EventSourcedEntity<Integer, CounterEvent> {
 
 
   public Effect<String> increase(Integer value) {
+    logger.info("Counter {} increased by {}", this.commandContext().entityId(), value);
     return effects()
       .persist(new ValueIncreased(value))
       .thenReply(Object::toString);
@@ -42,6 +48,7 @@ public class Counter extends EventSourcedEntity<Integer, CounterEvent> {
   }
 
   public Effect<String> multiply(Integer value) {
+    logger.info("Counter {} multiplied by {}", this.commandContext().entityId(), value);
     return effects()
       .persist(new ValueMultiplied(value))
       .thenReply(Object::toString);

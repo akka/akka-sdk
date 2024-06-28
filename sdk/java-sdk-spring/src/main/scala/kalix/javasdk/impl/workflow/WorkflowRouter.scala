@@ -17,14 +17,11 @@ import scala.jdk.OptionConverters.RichOptional
 
 import com.google.api.HttpBody
 import com.google.protobuf.any.{ Any => ScalaPbAny }
-import kalix.javasdk.DeferredCall
 import kalix.javasdk.HttpResponse
 import kalix.javasdk.HttpResponse.STATUS_CODE_EXTENSION_TYPE_URL
 import kalix.javasdk.JsonSupport
 import kalix.javasdk.StatusCode
 import kalix.javasdk.impl.MessageCodec
-import kalix.javasdk.impl.MetadataImpl
-import kalix.javasdk.impl.RestDeferredCall
 import kalix.javasdk.impl.WorkflowExceptions.WorkflowException
 import kalix.javasdk.impl.workflow.WorkflowRouter.CommandHandlerNotFound
 import kalix.javasdk.impl.workflow.WorkflowRouter.CommandResult
@@ -37,7 +34,6 @@ import kalix.javasdk.workflow.AbstractWorkflow.CallStep
 import kalix.javasdk.workflow.AbstractWorkflow.Effect
 import kalix.javasdk.workflow.AbstractWorkflow.WorkflowDef
 import kalix.javasdk.workflow.CommandContext
-import kalix.protocol.workflow_entity.StepDeferredCall
 import kalix.protocol.workflow_entity.StepExecuted
 import kalix.protocol.workflow_entity.StepExecutionFailed
 import kalix.protocol.workflow_entity.StepResponse
@@ -160,34 +156,7 @@ abstract class WorkflowRouter[S, W <: AbstractWorkflow[S]](protected val workflo
 
     workflowDef.findByName(stepName).toScala match {
       case Some(call: CallStep[_, _, _, _]) =>
-        val decodedInput = input match {
-          case Some(inputValue) => decodeInput(messageCodec, inputValue, call.callInputClass)
-          case None             => null // to meet a signature of supplier expressed as a function
-        }
-
-        val defCall = call.callFunc
-          .asInstanceOf[JFunc[Any, DeferredCall[Any, Any]]]
-          .apply(decodedInput)
-
-        val (commandName, serviceName) =
-          defCall match {
-            case restDefCall: RestDeferredCall[_, _] =>
-              (restDefCall.methodName, restDefCall.fullServiceName)
-            case _ =>
-              // should never happen, but needs to make compiler happy
-              throw new IllegalStateException("Unknown DeferredCall implementation")
-          }
-
-        val stepDefCall =
-          StepDeferredCall(
-            serviceName,
-            commandName,
-            payload = Some(messageCodec.encodeScala(defCall.message())),
-            metadata = MetadataImpl.toProtocol(defCall.metadata()))
-
-        Future.successful {
-          StepResponse(commandId, stepName, StepResponse.Response.DeferredCall(stepDefCall))
-        }
+        throw new IllegalStateException(s"DeferredCall not supported for workflows: [$call]")
 
       case Some(call: AsyncCallStep[_, _, _]) =>
         val decodedInput = input match {

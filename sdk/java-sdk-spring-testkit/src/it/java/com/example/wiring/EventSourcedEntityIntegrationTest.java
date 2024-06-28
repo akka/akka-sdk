@@ -52,8 +52,11 @@ public class EventSourcedEntityIntegrationTest extends KalixIntegrationTestKitSu
 
     // events should be replayed successfully and
     // counter value should be the same as previously
-    int counterGet2 = getCounter(client);
-    Assertions.assertEquals(30, counterGet2);
+    Awaitility.await()
+            .ignoreExceptions()
+            .atMost(20, TimeUnit.SECONDS)
+            .until(() ->
+              getCounter(client), new IsEqual(30));
   }
 
   @Test

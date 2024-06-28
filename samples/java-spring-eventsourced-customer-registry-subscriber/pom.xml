@@ -5,7 +5,7 @@
   <parent>
     <groupId>io.kalix</groupId>
     <artifactId>kalix-spring-boot-parent</artifactId>
-    <version>1.5.0</version>
+    <version>0.0.0-2123-d20485dc-dev</version>
   </parent>
 
   <groupId>customer</groupId>

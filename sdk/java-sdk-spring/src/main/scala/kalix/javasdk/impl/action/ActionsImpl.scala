@@ -367,6 +367,8 @@ class ActionContextImpl(
     extends AbstractContext(system)
     with ActionContext {
 
+  val timers: TimerScheduler = new TimerSchedulerImpl(messageCodec, system, timerClient, componentCallMetadata)
+
   override def eventSubject(): Optional[String] =
     if (metadata.isCloudEvent)
       metadata.asCloudEvent().subject()
@@ -393,8 +395,5 @@ class ActionContextImpl(
 
   override def getTracer: Tracer =
     instrumentation.getTracer
-
-  val timers: TimerScheduler =
-    new TimerSchedulerImpl(messageCodec, system, timerClient, componentCallMetadata);
 
 }

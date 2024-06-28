@@ -13,7 +13,7 @@ public class SubscribeTypeLevelAction extends Action {
   private Logger logger = LoggerFactory.getLogger(SubscribeTypeLevelAction.class);
 
   public Action.Effect<Confirmed> onIncrease(ValueIncreased event) { // <2>
-    logger.info("Received increased event: " + event.toString());
+    logger.info("Received increased event: {} (msg ce id {})", event.toString(), actionContext().metadata().asCloudEvent().id());
     return effects().reply(Confirmed.instance); // <3>
   }
 }

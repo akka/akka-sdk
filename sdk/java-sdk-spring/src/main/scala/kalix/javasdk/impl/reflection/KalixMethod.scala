@@ -11,38 +11,13 @@ import scala.annotation.tailrec
 import com.google.protobuf.Descriptors
 import com.google.protobuf.any.{ Any => ScalaPbAny }
 import kalix.javasdk.impl.AclDescriptorFactory
-import kalix.javasdk.impl.path.PathPattern
-import kalix.javasdk.impl.path.PathPatternParser
-import kalix.javasdk.impl.reflection.RestServiceIntrospector.PathParameter
-import kalix.javasdk.impl.reflection.RestServiceIntrospector.RestMethodParameter
-import kalix.javasdk.impl.reflection.RestServiceIntrospector.isEmpty
-import kalix.javasdk.impl.reflection.RestServiceIntrospector.validateRequestMapping
-import org.springframework.web.bind.annotation.PathVariable
-// TODO: abstract away spring dependency
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RequestMethod
-// TODO: abstract away reactor dependency
-import reactor.core.publisher.Flux
 
 object ServiceMethod {
-  def isStreamOut(method: Method): Boolean =
-    method.getReturnType == classOf[Flux[_]]
+  def isStreamOut(method: Method): Boolean = false
 
-  // this is more for early validation. We don't support stream-in over http,
+  // this is more for early validation. We don't support stream-in right now
   // we block it before deploying anything
-  def isStreamIn(method: Method): Boolean = {
-    // TODO: remove this once is validations completely moved to Validations object
-    val paramWithRequestBody =
-      method.getParameters.collect {
-        case param if param.getAnnotation(classOf[RequestBody]) != null => param
-      }
-
-    if (paramWithRequestBody.exists(_.getType == classOf[Flux[_]]))
-      throw new IllegalArgumentException("Stream in calls are not supported")
-    else
-      false
-  }
+  def isStreamIn(method: Method): Boolean = false
 }
 sealed trait ServiceMethod {
   def methodName: String
@@ -75,12 +50,29 @@ object ViewUrlTemplate extends UrlTemplate {
     s"/akka/v1.0/view/${componentTypeId}/${methodName}"
 }
 
+object ActionUrlTemplate extends UrlTemplate {
+  override def templateUrl(componentTypeId: String, methodName: String): String =
+    s"/akka/v1.0/action/${componentTypeId}/${methodName}"
+}
+
 /**
  * Build from command handler methods on Entities and Workflows
  */
 case class CommandHandlerMethod(component: Class[_], method: Method, urlTemplate: UrlTemplate)
     extends AnyJsonRequestServiceMethod {
 
+  override def methodName: String = method.getName
+  override def javaMethodOpt: Option[Method] = Some(method)
+  val hasInputType: Boolean = method.getParameterTypes.headOption.isDefined
+  val inputType: Class[_] = method.getParameterTypes.headOption.getOrElse(classOf[Unit])
+  val streamIn: Boolean = false
+  val streamOut: Boolean = false
+}
+
+/**
+ * Build from command handler methods on actions
+ */
+case class ActionHandlerMethod(component: Class[_], method: Method) extends AnyJsonRequestServiceMethod {
   override def methodName: String = method.getName
   override def javaMethodOpt: Option[Method] = Some(method)
   val hasInputType: Boolean = method.getParameterTypes.headOption.isDefined
@@ -163,88 +155,6 @@ case class VirtualDeleteServiceMethod(component: Class[_], methodName: String) e
   override def streamIn: Boolean = false
 
   override def streamOut: Boolean = false
-}
-
-/**
- * Build from Spring annotations
- *
- * @param callable
- *   Is this actually a method that will ever be called or just there for metadata annotations?
- */
-case class SyntheticRequestServiceMethod(
-    classMapping: Option[RequestMapping],
-    mapping: RequestMapping,
-    javaMethod: Method,
-    params: Seq[RestMethodParameter],
-    callable: Boolean = true)
-    extends ServiceMethod {
-
-  override def javaMethodOpt: Option[Method] = Some(javaMethod)
-  override def methodName: String = javaMethod.getName
-
-  val streamIn: Boolean = ServiceMethod.isStreamIn(javaMethod)
-  val streamOut: Boolean = ServiceMethod.isStreamOut(javaMethod)
-
-  // First fail on unsupported mapping values. Should all default to empty arrays, but let's not trust that
-  validateRequestMapping(javaMethod, mapping)
-  if (!isEmpty(mapping.method()) && classMapping.exists(cm => !isEmpty(cm.method()))) {
-    throw ServiceIntrospectionException(
-      javaMethod,
-      "Invalid request method mapping. A request method mapping may only be defined on the class, or on the method, but not both.")
-  }
-  if (isEmpty(mapping.path()) && classMapping.forall(cm => isEmpty(cm.path()))) {
-    throw ServiceIntrospectionException(
-      javaMethod,
-      "Missing path mapping. Kalix Java SDK methods must have a path defined.")
-  }
-  if (isEmpty(mapping.method()) && classMapping.forall(cm => isEmpty(cm.method()))) {
-    throw ServiceIntrospectionException(
-      javaMethod,
-      "Missing request method mapping. Kalix Java SDK methods must have a request method defined.")
-  }
-
-  if (javaMethod.getParameterAnnotations.toSet.flatten
-      .collect { case (p: PathVariable) => p }
-      .exists(_.required() == false)) {
-
-    throw ServiceIntrospectionException(javaMethod, "Currently all @PathVariables must be defined as required.")
-  }
-
-  private val pathFromAnnotation: String = {
-    val classPath = classMapping match {
-      case Some(cm) if !isEmpty(cm.path) =>
-        cm.path().head
-      case _ => ""
-    }
-    classPath + (mapping.path match {
-      case Array(path) => path
-      case _           => ""
-    })
-  }
-
-  val parsedPath: PathPattern = PathPatternParser.parse(pathFromAnnotation)
-
-  val pathTemplate: String = parsedPath.toGrpcTranscodingPattern
-
-  val pathParameters: Seq[PathParameter] = params.collect { case p: PathParameter => p }
-
-  // Validate all the path parameters exist
-  pathParameters.foreach { param =>
-    if (!parsedPath.fields.contains(param.name)) {
-      throw ServiceIntrospectionException(
-        param.param.getAnnotatedElement,
-        s"There is no parameter named ${param.name} in the path pattern for this method.")
-    }
-  }
-
-  val requestMethod: RequestMethod = {
-    mapping.method match {
-      case Array(method) => method
-      case _             =>
-        // This has already been validated so can't fail
-        classMapping.get.method.head
-    }
-  }
 }
 
 object KalixMethod {

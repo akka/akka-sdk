@@ -21,7 +21,7 @@ import java.util.concurrent.CompletionStage
  * INTERNAL API
  */
 @InternalApi
-final case class EmbeddedDeferredCall[I, O](
+final case class DeferredCallImpl[I, O](
     message: I,
     metadata: MetadataImpl,
     componentType: ComponentType,
@@ -33,7 +33,7 @@ final case class EmbeddedDeferredCall[I, O](
 
   override def invokeAsync(): CompletionStage[O] = asyncCall(metadata)
 
-  override def withMetadata(metadata: Metadata): EmbeddedDeferredCall[I, O] = {
+  override def withMetadata(metadata: Metadata): DeferredCallImpl[I, O] = {
     this.copy(metadata = metadata.asInstanceOf[MetadataImpl])
   }
 

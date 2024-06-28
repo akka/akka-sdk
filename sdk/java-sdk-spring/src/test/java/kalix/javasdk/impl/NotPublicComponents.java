@@ -5,6 +5,7 @@
 package kalix.javasdk.impl;
 
 import kalix.javasdk.action.Action;
+import kalix.javasdk.annotations.ActionId;
 import kalix.javasdk.annotations.Query;
 import kalix.javasdk.annotations.Subscribe;
 import kalix.javasdk.annotations.Table;
@@ -19,13 +20,11 @@ import kalix.spring.testmodels.valueentity.User;
 import kalix.spring.testmodels.valueentity.UserEntity;
 import kalix.spring.testmodels.workflow.StartWorkflow;
 import kalix.spring.testmodels.workflow.WorkflowState;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 
 // below components are not public and thus need to be in the same package as the corresponding test
 public class NotPublicComponents {
+  @ActionId("not-public")
   static class NotPublicAction extends Action {
-    @GetMapping("/message")
     public Action.Effect<Message> message() {
       return effects().ignore();
     }

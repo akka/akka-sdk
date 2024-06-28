@@ -33,7 +33,6 @@ import kalix.javasdk.impl.WorkflowExceptions.ProtocolException
 import kalix.javasdk.impl.WorkflowExceptions.WorkflowException
 import kalix.javasdk.impl.WorkflowExceptions.failureMessageForLog
 import kalix.javasdk.impl.WorkflowFactory
-import kalix.javasdk.impl.timer.TimerSchedulerImpl
 import kalix.javasdk.impl.workflow.WorkflowEffectImpl.DeleteState
 import kalix.javasdk.impl.workflow.WorkflowEffectImpl.End
 import kalix.javasdk.impl.workflow.WorkflowEffectImpl.ErrorEffectImpl
@@ -78,6 +77,7 @@ import org.slf4j.LoggerFactory
 import com.google.protobuf.any.{ Any => ScalaPbAny }
 import kalix.javasdk.impl.JsonMessageCodec
 import kalix.javasdk.impl.StrictJsonMessageCodec
+import kalix.javasdk.impl.timer.TimerSchedulerImpl
 import kalix.javasdk.spi.TimerClient
 // FIXME these don't seem to be 'public API', more internals?
 import scala.jdk.CollectionConverters._

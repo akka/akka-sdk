@@ -9,13 +9,7 @@ import kalix.javasdk.StatusCode;
 import kalix.javasdk.action.Action;
 import kalix.javasdk.action.ActionCreationContext;
 import kalix.javasdk.client.ComponentClient;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
 
-@RequestMapping("/validuser/{user}")
 public class ValidateUserAction extends Action {
 
   private ActionCreationContext ctx;
@@ -26,34 +20,33 @@ public class ValidateUserAction extends Action {
     this.componentClient = componentClient;
   }
 
-  @PutMapping("/{email}/{name}")
-  public Action.Effect<Ok> createOrUpdateUser(@PathVariable String user, @PathVariable String email, @PathVariable String name) {
-    if (email.isEmpty() || name.isEmpty())
+  public record CreateUser(String user, String email, String name){}
+  public Action.Effect<Ok> createOrUpdateUser(CreateUser createUser) {
+    if (createUser.email.isEmpty() || createUser.name.isEmpty())
       return effects().error("No field can be empty", StatusCode.ErrorCode.BAD_REQUEST);
 
     var reply =
       componentClient
-        .forValueEntity(user)
+        .forValueEntity(createUser.user)
         .method(UserEntity::createUser)
-        .invokeAsync(new UserEntity.CreatedUser(name, email));
+        .invokeAsync(new UserEntity.CreatedUser(createUser.name, createUser.email));
     return effects().asyncReply(reply);
   }
 
-  @PatchMapping("/email/{email}")
-  public Action.Effect<Ok> updateEmail(@PathVariable String user, @PathVariable String email) {
-    if (email.isEmpty())
+  public record UpdateEmail(String user, String email){}
+  public Action.Effect<Ok> updateEmail(UpdateEmail updateEmail) {
+    if (updateEmail.email.isEmpty())
       return effects().error("No field can be empty", StatusCode.ErrorCode.BAD_REQUEST);
 
     var reply =
       componentClient
-        .forValueEntity(user)
+        .forValueEntity(updateEmail.user)
         .method(UserEntity::updateEmail)
-        .invokeAsync(new UserEntity.UpdateEmail(email));
+        .invokeAsync(new UserEntity.UpdateEmail(updateEmail.email));
     return effects().asyncReply(reply);
   }
 
-  @DeleteMapping
-  public Action.Effect<Ok> delete(@PathVariable String user) {
+  public Action.Effect<Ok> delete(String user) {
     var reply =
       componentClient
         .forValueEntity(user)

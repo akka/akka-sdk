@@ -6,9 +6,10 @@ package com.example.wiring.actions.echo;
 
 import kalix.javasdk.action.Action;
 import kalix.javasdk.action.ActionCreationContext;
+import kalix.javasdk.annotations.ActionId;
 import kalix.javasdk.client.ComponentClient;
-import org.springframework.web.bind.annotation.*;
 
+@ActionId("shortened-echo")
 public class ShortenedEchoAction extends Action {
 
   private ActionCreationContext ctx;
@@ -19,27 +20,24 @@ public class ShortenedEchoAction extends Action {
     this.componentClient = componentClient;
   }
 
-  @GetMapping("/echo/message/{msg}/short")
-  public Effect<Message> stringMessage(@PathVariable String msg) {
+  public Effect<Message> stringMessage(String msg) {
     var shortenedMsg = msg.replaceAll("[AEIOUaeiou]", "");
     var result = componentClient.forAction().method(EchoAction::stringMessage).invokeAsync(shortenedMsg);
     return effects().asyncReply(result);
   }
 
-  @GetMapping("/echo/message-short")
-  public Effect<Message> leetShortUsingFwd(@RequestParam String msg) {
+  public Effect<Message> leetShortUsingFwd(String msg) {
     var shortenedMsg = leetShort(msg);
-    var result = componentClient.forAction().method(EchoAction::stringMessageFromParam).invokeAsync(shortenedMsg);
+    var result = componentClient.forAction().method(EchoAction::stringMessage).invokeAsync(shortenedMsg);
     return effects().asyncReply(result);
   }
 
-  @GetMapping("/echo/message/{msg}/leetshort")
-  public Effect<Message> leetMessageFromPathUsingFwd(@PathVariable String msg) {
+  public Effect<Message> leetMessageFromPathUsingFwd(String msg) {
     return leetShortUsingFwd(msg);
   }
 
-  @PostMapping("/echo/message/leetshort")
-  public Effect<Message> leetMessageWithFwdPost(@RequestBody Message msg) {
+
+  public Effect<Message> leetMessageWithFwdPost(Message msg) {
     var shortenedMsg = leetShort(msg.text());
     var result = componentClient.forAction().method(EchoAction::stringMessage).invokeAsync(shortenedMsg);
     return effects().asyncReply(result);

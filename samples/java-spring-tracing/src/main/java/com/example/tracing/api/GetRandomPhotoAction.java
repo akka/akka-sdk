@@ -5,14 +5,20 @@ import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.api.trace.Tracer;
+import kalix.javasdk.JsonSupport;
 import kalix.javasdk.action.Action;
 import kalix.javasdk.annotations.Subscribe;
+import kalix.javasdk.client.ComponentClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.web.reactive.function.client.WebClient;
 
-import java.util.Map;
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 
 @Subscribe.EventSourcedEntity(value = UserEntity.class, ignoreUnknown = true)
@@ -20,14 +26,17 @@ public class GetRandomPhotoAction extends Action {
   private static final Logger log = LoggerFactory.getLogger(GetRandomPhotoAction.class);
 
   private final Tracer tracer;
-  private final WebClient webClient;
+  private final ComponentClient componentClient;
 
-  public GetRandomPhotoAction(Tracer tracer) {
+  public GetRandomPhotoAction(Tracer tracer, ComponentClient componentClient) {
     this.tracer = tracer;
-    this.webClient = WebClient.create("https://randomuser.me/api/?inc=picture&noinfo");
+    this.componentClient = componentClient;
   }
 
-  public Effect<String> handleAdd(UserEvent.UserAdded userAdded) {
+  public CompletionStage<String> handleAdd(UserEvent.UserAdded userAdded) {
+    // FIXME not sure what we should show here, I guess cross-Kalix-service tracing?
+    throw new UnsupportedOperationException("FIXME");
+    /*
     var photoReply = getRandomPhotoAsync();
     var updatePhoto = photoReply.thenCompose(randomPhotoUrl -> {
       // Example for manually injecting headers for tracing context propagation
@@ -39,19 +48,27 @@ public class GetRandomPhotoAction extends Action {
         "tracestate", actionContext().metadata().traceContext().traceState().orElse("")
       );
 
-      return WebClient.create("http://localhost:9000")
+      var metadata = Metadata.EMPTY;
+      tracingMap.forEach((key, value) -> metadata = metadata.add(key, value));
+
+      return componentClient.forEventSourcedEntity(actionContext().eventSubject().get())
+              .method(UserEntity::updatePhoto)
+              .withMetadata()
+              .invokeAsync(new UserEntity.UserCmd.UpdatePhotoCmd(randomPhotoUrl))
         .post()
         .uri(uriBuilder -> uriBuilder
           .path("/akka/v1.0/entity/user/{userId}/updatePhoto")
           .build(actionContext().eventSubject().get()))
-        .bodyValue(new UserEntity.UserCmd.UpdatePhotoCmd(randomPhotoUrl))
+        .bodyValue(n)
         .headers(h -> tracingMap.forEach(h::set))
         .retrieve()
         .bodyToMono(String.class)
         .toFuture();
+
     });
 
-    return effects().asyncReply(updatePhoto);
+    return updatePhoto;
+   */
   }
 
   // gets random name from external API using an asynchronous call and traces that call
@@ -64,18 +81,31 @@ public class GetRandomPhotoAction extends Action {
       .startSpan()
       .setAttribute("user.id", actionContext().eventSubject().orElse("unknown"));
 
-    return webClient
-      .get()
-      .retrieve()
-      .bodyToMono(RandomUserApi.Photo.class)
-      .map(photoResult -> {
-        span.setAttribute("random.photo", photoResult.url());
-        span.end();
-        return photoResult.url();
-      }).doOnError(throwable -> {
-        span.setStatus(StatusCode.ERROR, "Failed to fetch name: " + throwable.getMessage());
-        span.end();
-      }).toFuture();
+    var httpClient = HttpClient.newHttpClient();
+    var request = HttpRequest.newBuilder()
+            .uri(URI.create("https://randomuser.me/api/?inc=picture&noinfo"))
+            .GET()
+            .build();
+
+    return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+            .handleAsync((httpResponse, error) -> {
+              if (error == null) {
+                try {
+                  RandomUserApi.Photo photoResult = JsonSupport.getObjectMapper().readerFor(RandomUserApi.Photo.class).readValue(httpResponse.body());
+                  span.setAttribute("random.photo", photoResult.url());
+                  span.end();
+                  return photoResult.url();
+                } catch (IOException e) {
+                  span.setStatus(StatusCode.ERROR, "Failed to fetch name: " + error.getMessage());
+                  span.end();
+                  throw new RuntimeException(e);
+                }
+              } else {
+                span.setStatus(StatusCode.ERROR, "Failed to fetch name: " + error.getMessage());
+                span.end();
+                throw new RuntimeException(error);
+              }
+      });
   }
 
 }

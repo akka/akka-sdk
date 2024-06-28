@@ -10,35 +10,38 @@ import akka.japi.function
 import akka.util.ByteString
 import kalix.javasdk.JsonSupport
 import kalix.javasdk.Metadata
+import kalix.javasdk.action.Action
+import kalix.javasdk.client.ActionClient
+import kalix.javasdk.client.ComponentInvokeOnlyMethodRef
+import kalix.javasdk.client.ComponentInvokeOnlyMethodRef1
+import kalix.javasdk.client.ComponentMethodRef
+import kalix.javasdk.client.ComponentMethodRef1
 import kalix.javasdk.client.EventSourcedEntityClient
-import kalix.javasdk.client.NativeComponentInvokeOnlyMethodRef
-import kalix.javasdk.client.NativeComponentInvokeOnlyMethodRef1
-import kalix.javasdk.client.NativeComponentMethodRef
-import kalix.javasdk.client.NativeComponentMethodRef1
 import kalix.javasdk.client.NoEntryFoundException
 import kalix.javasdk.client.ValueEntityClient
 import kalix.javasdk.client.ViewClient
+import kalix.javasdk.client.WorkflowClient
 import kalix.javasdk.eventsourcedentity.EventSourcedEntity
 import kalix.javasdk.impl.MetadataImpl
 import kalix.javasdk.impl.MetadataImpl.toProtocol
 import kalix.javasdk.impl.reflection.Reflect
-import kalix.javasdk.spi.EntityRequest
-import kalix.javasdk.spi.{ EntityClient => RuntimeEntityClient }
-import kalix.javasdk.spi.{ ViewClient => RuntimeViewClient }
-import kalix.javasdk.valueentity.ValueEntity
-import kalix.javasdk.client.WorkflowClient
+import kalix.javasdk.spi.ActionRequest
+import kalix.javasdk.spi.ActionType
 import kalix.javasdk.spi.ComponentType
+import kalix.javasdk.spi.EntityRequest
 import kalix.javasdk.spi.EventSourcedEntityType
 import kalix.javasdk.spi.ValueEntityType
 import kalix.javasdk.spi.ViewRequest
 import kalix.javasdk.spi.ViewType
 import kalix.javasdk.spi.WorkflowType
+import kalix.javasdk.spi.{ ActionClient => RuntimeActionClient }
+import kalix.javasdk.spi.{ EntityClient => RuntimeEntityClient }
+import kalix.javasdk.spi.{ ViewClient => RuntimeViewClient }
+import kalix.javasdk.valueentity.ValueEntity
 import kalix.javasdk.workflow.AbstractWorkflow
 
-import java.util.Optional
 import scala.concurrent.ExecutionContext
 import scala.jdk.FutureConverters.FutureOps
-import scala.jdk.OptionConverters.RichOptional
 import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
@@ -54,23 +57,14 @@ private[javasdk] sealed abstract class EntityClientImpl(
     callMetadata: Option[Metadata],
     entityId: String)(implicit executionContext: ExecutionContext) {
 
-  def this(
-      expectedComponentSuperclass: Class[_],
-      componentType: ComponentType,
-      entityClient: RuntimeEntityClient,
-      callMetadata: Optional[Metadata],
-      entityId: String)(implicit executionContext: ExecutionContext) =
-    this(expectedComponentSuperclass, componentType, entityClient, callMetadata.toScala, entityId)(executionContext)
-
   // commands for methods that take a state as a first parameter and then the command
-  protected def createMethodRef2[A1, R](
-      lambda: akka.japi.function.Function2[_, _, _]): NativeComponentMethodRef1[A1, R] =
+  protected def createMethodRef2[A1, R](lambda: akka.japi.function.Function2[_, _, _]): ComponentMethodRef1[A1, R] =
     createMethodRefForEitherArity(lambda)
 
-  protected def createMethodRef[R](lambda: akka.japi.function.Function[_, _]): NativeComponentMethodRef[R] =
+  protected def createMethodRef[R](lambda: akka.japi.function.Function[_, _]): ComponentMethodRef[R] =
     createMethodRefForEitherArity[Nothing, R](lambda)
 
-  private def createMethodRefForEitherArity[A1, R](lambda: AnyRef): NativeComponentMethodRefImpl[A1, R] = {
+  private def createMethodRefForEitherArity[A1, R](lambda: AnyRef): ComponentMethodRefImpl[A1, R] = {
     val method = MethodRefResolver.resolveMethodRef(lambda)
     val declaringClass = method.getDeclaringClass
     if (!expectedComponentSuperclass.isAssignableFrom(declaringClass)) {
@@ -83,7 +77,7 @@ private[javasdk] sealed abstract class EntityClientImpl(
 
     // FIXME push some of this logic into the NativeomponentMethodRef
     //       will be easier to follow to do that instead of creating a lambda here and injecting into that
-    new NativeComponentMethodRefImpl[AnyRef, R](
+    new ComponentMethodRefImpl[AnyRef, R](
       Some(entityId),
       callMetadata,
       { (maybeMetadata, maybeArg) =>
@@ -95,7 +89,7 @@ private[javasdk] sealed abstract class EntityClientImpl(
           case None => ByteString.emptyByteString
         }
 
-        EmbeddedDeferredCall(
+        DeferredCallImpl(
           maybeArg.orNull,
           maybeMetadata.getOrElse(Metadata.EMPTY).asInstanceOf[MetadataImpl],
           componentType,
@@ -120,7 +114,7 @@ private[javasdk] sealed abstract class EntityClientImpl(
               }
               .asJava
           })
-      }).asInstanceOf[NativeComponentMethodRefImpl[A1, R]]
+      }).asInstanceOf[ComponentMethodRefImpl[A1, R]]
 
   }
 }
@@ -131,16 +125,16 @@ private[javasdk] sealed abstract class EntityClientImpl(
 @InternalApi
 private[javasdk] final class ValueEntityClientImpl(
     entityClient: RuntimeEntityClient,
-    callMetadata: Optional[Metadata],
+    callMetadata: Option[Metadata],
     entityId: String)(implicit val executionContext: ExecutionContext)
     extends EntityClientImpl(classOf[ValueEntity[_]], ValueEntityType, entityClient, callMetadata, entityId)
     with ValueEntityClient {
 
-  override def method[T, R](methodRef: function.Function[T, ValueEntity.Effect[R]]): NativeComponentMethodRef[R] =
+  override def method[T, R](methodRef: function.Function[T, ValueEntity.Effect[R]]): ComponentMethodRef[R] =
     createMethodRef[R](methodRef)
 
   override def method[T, A1, R](
-      methodRef: function.Function2[T, A1, ValueEntity.Effect[R]]): NativeComponentMethodRef1[A1, R] =
+      methodRef: function.Function2[T, A1, ValueEntity.Effect[R]]): ComponentMethodRef1[A1, R] =
     createMethodRef2(methodRef)
 }
 
@@ -150,7 +144,7 @@ private[javasdk] final class ValueEntityClientImpl(
 @InternalApi
 private[javasdk] final case class EventSourcedEntityClientImpl(
     entityClient: RuntimeEntityClient,
-    callMetadata: Optional[Metadata],
+    callMetadata: Option[Metadata],
     entityId: String)(implicit val executionContext: ExecutionContext)
     extends EntityClientImpl(
       classOf[EventSourcedEntity[_, _]],
@@ -160,12 +154,11 @@ private[javasdk] final case class EventSourcedEntityClientImpl(
       entityId)
     with EventSourcedEntityClient {
 
-  override def method[T, R](
-      methodRef: function.Function[T, EventSourcedEntity.Effect[R]]): NativeComponentMethodRef[R] =
+  override def method[T, R](methodRef: function.Function[T, EventSourcedEntity.Effect[R]]): ComponentMethodRef[R] =
     createMethodRef(methodRef)
 
   override def method[T, A1, R](
-      methodRef: function.Function2[T, A1, EventSourcedEntity.Effect[R]]): NativeComponentMethodRef1[A1, R] =
+      methodRef: function.Function2[T, A1, EventSourcedEntity.Effect[R]]): ComponentMethodRef1[A1, R] =
     createMethodRef2(methodRef)
 }
 
@@ -175,16 +168,16 @@ private[javasdk] final case class EventSourcedEntityClientImpl(
 @InternalApi
 private[javasdk] final case class WorkflowClientImpl(
     entityClient: RuntimeEntityClient,
-    callMetadata: Optional[Metadata],
+    callMetadata: Option[Metadata],
     entityId: String)(implicit val executionContext: ExecutionContext)
     extends EntityClientImpl(classOf[AbstractWorkflow[_]], WorkflowType, entityClient, callMetadata, entityId)
     with WorkflowClient {
 
-  override def method[T, R](methodRef: function.Function[T, AbstractWorkflow.Effect[R]]): NativeComponentMethodRef[R] =
+  override def method[T, R](methodRef: function.Function[T, AbstractWorkflow.Effect[R]]): ComponentMethodRef[R] =
     createMethodRef(methodRef)
 
   override def method[T, A1, R](
-      methodRef: function.Function2[T, A1, AbstractWorkflow.Effect[R]]): NativeComponentMethodRef1[A1, R] =
+      methodRef: function.Function2[T, A1, AbstractWorkflow.Effect[R]]): ComponentMethodRef1[A1, R] =
     createMethodRef2(methodRef)
 }
 
@@ -196,16 +189,13 @@ private[javasdk] final case class ViewClientImpl(viewClient: RuntimeViewClient, 
     val executionContext: ExecutionContext)
     extends ViewClient {
 
-  def this(viewClient: RuntimeViewClient, callMetadata: Optional[Metadata])(implicit
-      executionContext: ExecutionContext) = this(viewClient, callMetadata.toScala)
-
-  override def method[T, R](methodRef: function.Function[T, R]): NativeComponentInvokeOnlyMethodRef[R] =
+  override def method[T, R](methodRef: function.Function[T, R]): ComponentInvokeOnlyMethodRef[R] =
     createMethodRefForEitherArity(methodRef)
 
-  override def method[T, A1, R](methodRef: function.Function2[T, A1, R]): NativeComponentInvokeOnlyMethodRef1[A1, R] =
+  override def method[T, A1, R](methodRef: function.Function2[T, A1, R]): ComponentInvokeOnlyMethodRef1[A1, R] =
     createMethodRefForEitherArity(methodRef)
 
-  private def createMethodRefForEitherArity[A1, R](lambda: AnyRef): NativeComponentMethodRefImpl[A1, R] = {
+  private def createMethodRefForEitherArity[A1, R](lambda: AnyRef): ComponentMethodRefImpl[A1, R] = {
     val method = MethodRefResolver.resolveMethodRef(lambda)
     ViewCallValidator.validate(method)
     // extract view id
@@ -214,7 +204,7 @@ private[javasdk] final case class ViewClientImpl(viewClient: RuntimeViewClient, 
     val serviceName = declaringClass.getName
     val methodName = method.getName.capitalize
 
-    new NativeComponentMethodRefImpl[AnyRef, R](
+    new ComponentMethodRefImpl[AnyRef, R](
       None,
       callMetadata,
       { (maybeMetadata, maybeArg) =>
@@ -226,7 +216,7 @@ private[javasdk] final case class ViewClientImpl(viewClient: RuntimeViewClient, 
           case None => ByteString.emptyByteString
         }
 
-        EmbeddedDeferredCall(
+        DeferredCallImpl(
           maybeArg.orNull,
           maybeMetadata.getOrElse(Metadata.EMPTY).asInstanceOf[MetadataImpl],
           ViewType,
@@ -247,8 +237,10 @@ private[javasdk] final case class ViewClientImpl(viewClient: RuntimeViewClient, 
                 case Success(reply) =>
                   // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
                   val returnType = Reflect.getReturnType(declaringClass, method)
-                  // FIXME include some useful details in the exception
-                  if (reply.payload.isEmpty) Failure(new NoEntryFoundException())
+                  if (reply.payload.isEmpty)
+                    Failure(
+                      new NoEntryFoundException(
+                        s"No matching entry found when calling $declaringClass.${method.getName}"))
                   else Try(JsonSupport.parseBytes[R](reply.payload.toArrayUnsafe(), returnType.asInstanceOf[Class[R]]))
                 case Failure(ex) => Failure(ex)
               }
@@ -256,8 +248,75 @@ private[javasdk] final case class ViewClientImpl(viewClient: RuntimeViewClient, 
 
           })
       },
-      canBeDeferred = false).asInstanceOf[NativeComponentMethodRefImpl[A1, R]]
+      canBeDeferred = false).asInstanceOf[ComponentMethodRefImpl[A1, R]]
 
   }
+}
 
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[javasdk] final case class ActionClientImpl(actionClient: RuntimeActionClient, callMetadata: Option[Metadata])(
+    implicit val executionContext: ExecutionContext)
+    extends ActionClient {
+  override def method[T, R](methodRef: function.Function[T, Action.Effect[R]]): ComponentMethodRef[R] =
+    createMethodRefForEitherArity(methodRef)
+
+  override def method[T, A1, R](methodRef: function.Function2[T, A1, Action.Effect[R]]): ComponentMethodRef1[A1, R] =
+    createMethodRefForEitherArity(methodRef)
+
+  private def createMethodRefForEitherArity[A1, R](lambda: AnyRef): ComponentMethodRefImpl[A1, R] = {
+    val method = MethodRefResolver.resolveMethodRef(lambda)
+    val declaringClass = method.getDeclaringClass
+    if (!Reflect.isAction(declaringClass))
+      throw new IllegalArgumentException(
+        "Use dedicated builder for calling " + declaringClass.getSuperclass.getSimpleName
+        + " component method " + declaringClass.getSimpleName + "::" + method.getName + ". This builder is meant for Action component calls.")
+
+    // FIXME Surprising that this isn' the view id declaringClass.getAnnotation(classOf[ViewId]).value()
+    val serviceName = declaringClass.getName
+    val methodName = method.getName.capitalize
+
+    new ComponentMethodRefImpl[AnyRef, R](
+      None,
+      callMetadata,
+      { (maybeMetadata: Option[Metadata], maybeArg: Option[AnyRef]) =>
+        // Note: same path for 0 and 1 arg calls
+        val serializedPayload = maybeArg match {
+          case Some(arg) =>
+            // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
+            JsonSupport.encodeToAkkaByteString(arg)
+          case None => ByteString.emptyByteString
+        }
+
+        DeferredCallImpl(
+          maybeArg.orNull,
+          maybeMetadata.getOrElse(Metadata.EMPTY).asInstanceOf[MetadataImpl],
+          ActionType,
+          serviceName,
+          methodName,
+          None,
+          { metadata =>
+            actionClient
+              .call(
+                ActionRequest(
+                  serviceName,
+                  methodName,
+                  ContentTypes.`application/json`,
+                  serializedPayload,
+                  toProtocol(metadata.asInstanceOf[MetadataImpl]).getOrElse(
+                    kalix.protocol.component.Metadata.defaultInstance)))
+              .transform {
+                case Success(reply) =>
+                  // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
+                  val returnType = Reflect.getReturnType(declaringClass, method)
+                  if (reply.payload.isEmpty) Success(null.asInstanceOf[R])
+                  else Try(JsonSupport.parseBytes[R](reply.payload.toArrayUnsafe(), returnType.asInstanceOf[Class[R]]))
+                case Failure(ex) => Failure(ex)
+              }
+              .asJava
+          })
+      }).asInstanceOf[ComponentMethodRefImpl[A1, R]]
+  }
 }

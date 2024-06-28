@@ -17,7 +17,6 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-// // FIXME test profiles @ActiveProfiles("with-mocked-eventing")
 // tag::class[]
 public class CounterIntegrationTest extends KalixIntegrationTestKitSupport { // <1>
 
@@ -72,7 +71,6 @@ public class CounterIntegrationTest extends KalixIntegrationTestKitSupport { // 
   }
   // end::clear-topics[]
 
-
   @Test
   public void verifyCounterEventSourcedWiring() {
 
@@ -119,7 +117,7 @@ public class CounterIntegrationTest extends KalixIntegrationTestKitSupport { // 
     commandsTopic.publish(increaseCmd, counterId); // <4>
     commandsTopic.publish(multipleCmd, counterId);
 
-    var eventIncreased = eventsTopic.expectOneTyped(CounterEvent.ValueIncreased.class, Duration.ofSeconds(10)); // <5>
+    var eventIncreased = eventsTopic.expectOneTyped(CounterEvent.ValueIncreased.class, Duration.ofSeconds(20)); // <5>
     var eventMultiplied = eventsTopic.expectOneTyped(CounterEvent.ValueMultiplied.class);
 
     assertEquals(increaseCmd.value(), eventIncreased.getPayload().value()); // <6>

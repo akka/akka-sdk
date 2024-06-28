@@ -2,10 +2,6 @@ package com.example;
 
 import kalix.javasdk.annotations.Acl;
 import kalix.javasdk.annotations.KalixService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @KalixService
 // NOTE: This default ACL settings is very permissive as it allows any traffic from the internet.

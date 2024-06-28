@@ -1,5 +1,6 @@
 package user.registry;
 
+import akka.http.javadsl.model.StatusCodes;
 import kalix.spring.testkit.KalixIntegrationTestKitSupport;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
@@ -21,45 +22,48 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 public class UserCreationIntegrationTest extends KalixIntegrationTestKitSupport {
 
-  private final Duration timeout = Duration.ofSeconds(3);
+  private final Duration timeout = Duration.ofSeconds(6);
 
   /**
    * This is a test for a successful user creation.
    * User is correctly created and email is marked as confirmed.
    */
+
   @Test
-  public void testSuccessfulUserCreation() throws Exception {
-    var callGetEmailInfo =
-      componentClient.forAction()
-        .method(ApplicationController::getEmailInfo)
-        .deferred("doe@acme.com");
+  public void testSuccessfulUserCreation() {
+    var emailInfoResponse = httpClient.GET("/api/emails/doe@acme.com")
+            .responseBodyAs(ApplicationController.EmailInfo.class)
+            .invokeAsync();
 
-    assertThat(callGetEmailInfo.invokeAsync())
-      .succeedsWithin(timeout)
-      .satisfies(res -> {
-        assertThat(res.ownerId()).isEmpty();
-        assertThat(res.status()).isEqualTo("NOT_USED");
-      });
+    assertThat(emailInfoResponse)
+            .succeedsWithin(timeout)
+            .satisfies(res -> {
+              assertThat(res.body().ownerId()).isEmpty();
+              assertThat(res.body().status()).isEqualTo("NOT_USED");
+            });
 
-    var callCreateUser =
-      componentClient.forAction()
-        .method(ApplicationController::createUser)
-        .deferred("001", new User.Create("John Doe", "US", "doe@acme.com"));
+    var createUserResponse =
+            httpClient.POST("/api/users/001")
+                    .withRequestBody(new User.Create("John Doe", "US", "doe@acme.com"))
+                    .invokeAsync();
 
-    assertThat(callCreateUser.invokeAsync()).succeedsWithin(timeout);
+    assertThat(createUserResponse).succeedsWithin(timeout);
 
-    // get email once more and check it's now confirmed
+    // get email again and check it's eventually confirmed
     Awaitility.await()
-      .ignoreExceptions()
-      .atMost(timeout)
-      .untilAsserted(() -> {
-        assertThat(callGetEmailInfo.invokeAsync())
-          .succeedsWithin(timeout)
-          .satisfies(res -> {
-            assertThat(res.ownerId()).isNotEmpty();
-            assertThat(res.status()).isEqualTo("CONFIRMED");
-          });
-      });
+            .ignoreExceptions()
+            .atMost(timeout)
+            .untilAsserted(() -> {
+                var emailInfoResponseAfter = httpClient.GET("/api/emails/doe@acme.com")
+                        .responseBodyAs(ApplicationController.EmailInfo.class)
+                        .invokeAsync();
+                assertThat(emailInfoResponseAfter)
+                      .succeedsWithin(timeout)
+                      .satisfies(res -> {
+                        assertThat(res.body().ownerId()).isNotEmpty();
+                        assertThat(res.body().status()).isEqualTo("CONFIRMED");
+                      });
+            });
 
   }
 
@@ -70,50 +74,56 @@ public class UserCreationIntegrationTest extends KalixIntegrationTestKitSupport 
    */
   @Test
   public void testUserCreationFailureDueToInvalidInput() throws Exception {
-    var callGetEmailInfo =
-      componentClient.forAction()
-        .method(ApplicationController::getEmailInfo)
-        .deferred("invalid@acme.com");
+    var emailInfoResponse = httpClient.GET("/api/emails/invalid@acme.com")
+            .responseBodyAs(ApplicationController.EmailInfo.class)
+            .invokeAsync();
+    assertThat(emailInfoResponse)
+            .succeedsWithin(timeout)
+            .satisfies(res -> {
+              assertThat(res.body().ownerId()).isEmpty();
+              assertThat(res.body().status()).isEqualTo("NOT_USED");
+            });
 
-    assertThat(callGetEmailInfo.invokeAsync())
-      .succeedsWithin(timeout)
-      .satisfies(res -> {
-        assertThat(res.ownerId()).isEmpty();
-        assertThat(res.status()).isEqualTo("NOT_USED");
-      });
+    var createUserResponse =
+            httpClient.POST("/api/users/002")
+                    // this user creation will fail because user's name is not provided
+                    .withRequestBody(new User.Create(null, "US", "invalid@acme.com"))
+                    .invokeAsync();
 
-    var callCreateUser =
-      componentClient.forAction()
-        .method(ApplicationController::createUser)
-        // this user creation will fail because user's name is not provided
-        .deferred("002", new User.Create(null, "US", "invalid@acme.com"));
-
-    assertThat(callCreateUser.invokeAsync()).failsWithin(timeout);
+    assertThat(createUserResponse).succeedsWithin(timeout)
+            .satisfies(response -> assertThat(response.httpResponse().status()).isEqualTo(StatusCodes.BAD_REQUEST));
 
     // email will be reserved for a while, then it will be released
     Awaitility.await()
-      .ignoreExceptions()
-      .atMost(timeout)
-      .untilAsserted(() -> {
-        assertThat(callGetEmailInfo.invokeAsync())
-          .succeedsWithin(timeout)
-          .satisfies(res -> {
-            assertThat(res.ownerId()).isNotEmpty();
-            assertThat(res.status()).isEqualTo("RESERVED");
-          });
-      });
+            .ignoreExceptions()
+            .atMost(timeout)
+            .untilAsserted(() -> {
+              var emailInfoResponseAfter = httpClient.GET("/api/emails/invalid@acme.com")
+                      .responseBodyAs(ApplicationController.EmailInfo.class)
+                      .invokeAsync();
+              assertThat(emailInfoResponseAfter)
+                      .succeedsWithin(timeout)
+                      .satisfies(res -> {
+                        assertThat(res.body().ownerId()).isNotEmpty();
+                        assertThat(res.body().status()).isEqualTo("RESERVED");
+                      });
+            });
 
     Awaitility.await()
-      .ignoreExceptions()
-      .timeout(Duration.ofSeconds(10)) //3 seconds for the projection lag + 3 seconds for the timer to fire
-      .untilAsserted(() -> {
-        assertThat(callGetEmailInfo.invokeAsync())
-          .succeedsWithin(timeout)
-          .satisfies(res -> {
-            assertThat(res.ownerId()).isEmpty();
-            assertThat(res.status()).isEqualTo("NOT_USED");
-          });
-      });
+            .ignoreExceptions()
+            .timeout(Duration.ofSeconds(10)) //3 seconds for the projection lag + 3 seconds for the timer to fire
+            .untilAsserted(() -> {
+              var emailInfoResponseAfter = httpClient.GET("/api/emails/invalid@acme.com")
+                      .responseBodyAs(ApplicationController.EmailInfo.class)
+                      .invokeAsync();
+              assertThat(emailInfoResponseAfter)
+                      .succeedsWithin(timeout)
+                      .satisfies(res -> {
+                        assertThat(res.body().ownerId()).isEmpty();
+                        assertThat(res.body().status()).isEqualTo("NOT_USED");
+                      });
+            });
 
   }
+
 }

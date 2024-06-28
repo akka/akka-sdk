@@ -6,16 +6,15 @@ package com.example.wiring.actions.headers;
 
 import com.example.wiring.actions.echo.Message;
 import kalix.javasdk.action.Action;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
+import kalix.javasdk.annotations.ActionId;
 
 /**
  * Action with the same name in a different package.
  */
+@ActionId("echo2")
 public class EchoAction extends Action {
 
-  @GetMapping("/echo2/message/{msg}")
-  public Effect<Message> stringMessage(@PathVariable String msg) {
+  public Effect<Message> stringMessage(String msg) {
     return effects().reply(new Message(msg));
   }
 }

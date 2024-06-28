@@ -44,7 +44,6 @@
 
 
         <!-- plugin versions -->
-        <spring-boot.version>3.2.5</spring-boot.version>
         <maven-shade-plugin.version>3.5.3</maven-shade-plugin.version>
         <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
         <protobuf-maven-plugin.version>0.6.1</protobuf-maven-plugin.version>
@@ -373,20 +372,13 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-dependencies</artifactId>
-                <version>${spring-boot.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-            <dependency>
                 <groupId>io.kalix</groupId>
-                <artifactId>kalix-spring-boot-starter</artifactId>
+                <artifactId>kalix-java-sdk-spring</artifactId>
                 <version>${kalix-sdk.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.kalix</groupId>
-                <artifactId>kalix-spring-boot-starter-test</artifactId>
+                <artifactId>kalix-java-sdk-spring-testkit</artifactId>
                 <version>${kalix-sdk.version}</version>
             </dependency>
             <dependency>
@@ -400,12 +392,12 @@
     <dependencies>
         <dependency>
             <groupId>io.kalix</groupId>
-            <artifactId>kalix-spring-boot-starter</artifactId>
+            <artifactId>kalix-java-sdk-spring</artifactId>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>io.kalix</groupId>
-            <artifactId>kalix-spring-boot-starter-test</artifactId>
+            <artifactId>kalix-java-sdk-spring-testkit</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

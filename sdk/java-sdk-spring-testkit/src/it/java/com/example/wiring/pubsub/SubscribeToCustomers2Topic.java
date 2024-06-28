@@ -10,11 +10,9 @@ import kalix.javasdk.action.Action;
 import kalix.javasdk.annotations.Subscribe;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.annotation.Profile;
 
 import static com.example.wiring.pubsub.PublishTopicToTopic.CUSTOMERS_2_TOPIC;
 
-@Profile("docker-it-test")
 @Subscribe.Topic(CUSTOMERS_2_TOPIC)
 public class SubscribeToCustomers2Topic extends Action {
 

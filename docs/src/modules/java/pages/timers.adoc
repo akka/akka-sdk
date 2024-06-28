@@ -25,7 +25,7 @@ include::example$java-spring-reliable-timers/src/main/java/com/example/domain/Or
 
 == Order Action and Timers
 
-As said before, the `OrderAction` will act as a controller ahead of the Order Entity, receiving incoming messages, running some logic and then calling the Order Entity as needed.
+As said before, the `OrderEndpoint` will act as a controller ahead of the Order Entity, receiving incoming messages, running some logic and then calling the Order Entity as needed.
 
 === Scheduling a timer
 
@@ -59,7 +59,7 @@ Let's have a look at the `OrderAction.expire` method implementation.
 ----
 include::example$java-spring-reliable-timers/src/main/java/com/example/actions/OrderAction.java[tags=timers;expire-order]
 ----
-<1> When the `OrderAction` receives the expiration call, it immediately tries to cancel the Order. You use the `execute()` method to run it and this method returns a `CompletionStage`.
+<1> When the `OrderEndpoint` receives the expiration call, it immediately tries to cancel the Order. You use the `execute()` method to run it and this method returns a `CompletionStage`.
 <2> If the `CompletionStage` completes successfully, it's all good and can simply return `Ok`. Since this method is returning normally, the timer will be considered as executed and will be removed from Kalix.
 <3> On the other hand, if the `CompletionStage` completes with a failure, you must decide if you will recover the call or not. If you recover it, the timer will be considered as completed. If you let the call fail, the timer will be re-scheduled.
 
