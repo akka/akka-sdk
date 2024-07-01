@@ -53,4 +53,14 @@ public class ValueEntitiesTestModels {
       return effects().reply(Done.instance);
     }
   }
+
+  @TypeId("user")
+  public static class InvalidValueEntityWithOverloadedCommandHandler extends ValueEntity<User> {
+    public ValueEntity.Effect<Done> createEntity(CreateUser createUser) {
+      return effects().reply(Done.instance);
+    }
+    public ValueEntity.Effect<Done> createEntity(String user) {
+      return effects().reply(Done.instance);
+    }
+  }
 }

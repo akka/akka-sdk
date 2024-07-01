@@ -5,10 +5,10 @@
 package kalix.javasdk.impl
 
 import scala.jdk.CollectionConverters.CollectionHasAsScala
-
 import kalix.JwtMethodOptions.JwtMethodMode
 import kalix.JwtServiceOptions.JwtServiceMode
 import kalix.spring.testmodels.valueentity.Counter
+import kalix.spring.testmodels.valueentity.ValueEntitiesTestModels.InvalidValueEntityWithOverloadedCommandHandler
 import kalix.spring.testmodels.valueentity.ValueEntitiesTestModels.ValueEntityWithMethodLevelAcl
 import kalix.spring.testmodels.valueentity.ValueEntitiesTestModels.ValueEntityWithMethodLevelJwt
 import kalix.spring.testmodels.valueentity.ValueEntitiesTestModels.ValueEntityWithServiceLevelAcl
@@ -85,6 +85,13 @@ class ValueEntityDescriptorFactorySpec extends AnyWordSpec with ComponentDescrip
         claim2.getClaim shouldBe "aud"
         claim2.getValue(0) shouldBe "${ENV}"
       }
+    }
+
+    "not allow overloaded command handlers" in {
+      intercept[InvalidComponentException] {
+        Validations.validate(classOf[InvalidValueEntityWithOverloadedCommandHandler]).failIfInvalid
+      }.getMessage should include(
+        "InvalidValueEntityWithOverloadedCommandHandler has 2 command handler methods named 'createEntity'. Command handlers must have unique names.")
     }
 
   }

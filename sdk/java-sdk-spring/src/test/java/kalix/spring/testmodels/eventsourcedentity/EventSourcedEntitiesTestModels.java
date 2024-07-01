@@ -156,4 +156,25 @@ public class EventSourcedEntitiesTestModels {
             return null;
         }
     }
+
+    @TypeId("counter")
+    public static class InvalidEventSourcedEntityWithOverloadedCommandHandler extends EventSourcedEntity<Employee, EmployeeEvent> {
+
+        public Effect<String> createUser(CreateEmployee create) {
+            return effects()
+                    .persist(new EmployeeEvent.EmployeeCreated(create.firstName, create.lastName, create.email))
+                    .thenReply(__ -> "ok");
+        }
+
+        public Effect<String> createUser(String email) {
+            return effects()
+                    .persist(new EmployeeEvent.EmployeeCreated("John", "Doe", email))
+                    .thenReply(__ -> "ok");
+        }
+
+        @Override
+        public Employee applyEvent(EmployeeEvent event) {
+            return null;
+        }
+    }
 }

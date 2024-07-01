@@ -5,7 +5,6 @@
 package kalix.javasdk.impl
 
 import scala.jdk.CollectionConverters.CollectionHasAsScala
-
 import kalix.JwtMethodOptions.JwtMethodMode
 import kalix.JwtServiceOptions.JwtServiceMode
 import kalix.spring.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.CounterEventSourcedEntity
@@ -13,6 +12,7 @@ import kalix.spring.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels
 import kalix.spring.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.CounterEventSourcedEntityWithServiceLevelJWT
 import kalix.spring.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.EventSourcedEntityWithMethodLevelAcl
 import kalix.spring.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.EventSourcedEntityWithServiceLevelAcl
+import kalix.spring.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.InvalidEventSourcedEntityWithOverloadedCommandHandler
 import org.scalatest.wordspec.AnyWordSpec
 
 class EventSourcedEntityDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuite {
@@ -96,6 +96,13 @@ class EventSourcedEntityDescriptorFactorySpec extends AnyWordSpec with Component
         val service = extension.getAcl.getAllow(0).getService
         service shouldBe "test"
       }
+    }
+
+    "not allow overloaded command handlers" in {
+      intercept[InvalidComponentException] {
+        Validations.validate(classOf[InvalidEventSourcedEntityWithOverloadedCommandHandler]).failIfInvalid
+      }.getMessage should include(
+        "InvalidEventSourcedEntityWithOverloadedCommandHandler has 2 command handler methods named 'createUser'. Command handlers must have unique names.")
     }
 
   }

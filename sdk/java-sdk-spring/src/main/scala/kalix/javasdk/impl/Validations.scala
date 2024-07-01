@@ -7,9 +7,7 @@ package kalix.javasdk.impl
 import java.lang.reflect.AnnotatedElement
 import java.lang.reflect.Method
 import java.lang.reflect.ParameterizedType
-
 import scala.reflect.ClassTag
-
 import kalix.javasdk.action.Action
 import kalix.javasdk.annotations.Publish
 import kalix.javasdk.annotations.Query
@@ -39,6 +37,7 @@ import kalix.javasdk.impl.ComponentDescriptorFactory.streamSubscription
 import kalix.javasdk.impl.ComponentDescriptorFactory.topicSubscription
 import kalix.javasdk.impl.reflection.Reflect
 import kalix.javasdk.impl.reflection.Reflect.Syntax._
+import kalix.javasdk.valueentity.ValueEntity
 import kalix.javasdk.view.View
 
 object Validations {
@@ -122,22 +121,60 @@ object Validations {
     componentMustBePublic(component) ++
     validateAction(component) ++
     validateView(component) ++
-    validateEventSourcedEntity(component)
+    validateEventSourcedEntity(component) ++
+    validateValueEntity(component)
 
   private def validateEventSourcedEntity(component: Class[_]) =
     when[EventSourcedEntity[_, _]](component) {
-
-      val eventType =
-        component.getGenericSuperclass
-          .asInstanceOf[ParameterizedType]
-          .getActualTypeArguments()(1)
-          .asInstanceOf[Class[_]]
-
-      when(!eventType.isSealed) {
-        Invalid(
-          s"The event type of an EventSourcedEntity is required to be a sealed interface. Event '${eventType.getName}' in '${component.getName}' is not sealed.")
-      }
+      eventSourcedEntityEventMustBeSealed(component) ++
+      eventSourcedCommandHandlersMustBeUnique(component)
     }
+
+  private def eventSourcedEntityEventMustBeSealed(component: Class[_]): Validation = {
+    val eventType =
+      component.getGenericSuperclass
+        .asInstanceOf[ParameterizedType]
+        .getActualTypeArguments()(1)
+        .asInstanceOf[Class[_]]
+
+    when(!eventType.isSealed) {
+      Invalid(
+        s"The event type of an EventSourcedEntity is required to be a sealed interface. Event '${eventType.getName}' in '${component.getName}' is not sealed.")
+    }
+  }
+
+  private def eventSourcedCommandHandlersMustBeUnique(component: Class[_]): Validation = {
+    val commandHandlers = component.getMethods
+      .filter(_.getReturnType == classOf[EventSourcedEntity.Effect[_]])
+    commandHandlersMustBeUnique(component, commandHandlers)
+  }
+
+  def validateValueEntity(component: Class[_]): Validation = when[ValueEntity[_]](component) {
+    valueEntityCommandHandlersMustBeUnique(component)
+  }
+
+  def valueEntityCommandHandlersMustBeUnique(component: Class[_]): Validation = {
+    val commandHandlers = component.getMethods
+      .filter(_.getReturnType == classOf[ValueEntity.Effect[_]])
+    commandHandlersMustBeUnique(component, commandHandlers)
+  }
+
+  def commandHandlersMustBeUnique(component: Class[_], commandHandlers: Array[Method]): Validation = {
+    val nonUnique = commandHandlers
+      .groupBy(_.getName)
+      .filter(_._2.length > 1)
+
+    when(nonUnique.nonEmpty) {
+      val nonUniqueWarnings =
+        nonUnique
+          .map { case (name, methods) => s"${methods.length} command handler methods named '$name'" }
+          .mkString(", ")
+      Invalid(
+        errorMessage(
+          component,
+          s"${component.getSimpleName} has $nonUniqueWarnings. Command handlers must have unique names."))
+    }
+  }
 
   private def componentMustBePublic(component: Class[_]): Validation = {
     if (component.isPublic) {
