@@ -141,7 +141,7 @@ include::example$java-spring-eventsourced-customer-registry/src/main/java/custom
 <1> Setting view ID.
 <2> Updating the state of the view with the new name.
 
-An Event Sourced entity can emit many types of events. You need to define a method for each event type. They return an `UpdateEffect`, which describes next processing actions, such as updating the view state.
+An Event Sourced entity can emit many types of events. You need to define a method for each event type. They return an `Effect`, which describes next processing actions, such as updating the view state.
 
 See <<#query>> for more examples of valid query syntax.
 

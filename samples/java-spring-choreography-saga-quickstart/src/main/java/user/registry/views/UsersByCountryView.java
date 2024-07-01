@@ -39,13 +39,13 @@ public class UsersByCountryView extends View<UsersByCountryView.UserView> {
     return null;
   }
 
-  public UpdateEffect<UserView> onEvent(User.UserWasCreated evt) {
+  public Effect<UserView> onEvent(User.UserWasCreated evt) {
     logger.info("User was created: {}", evt);
     var currentId = updateContext().eventSubject().orElseThrow();
     return effects().updateState(new UserView(currentId, evt.name(), evt.country(), evt.email()));
   }
 
-  public UpdateEffect<UserView> onEvent(User.EmailAssigned evt) {
+  public Effect<UserView> onEvent(User.EmailAssigned evt) {
     logger.info("User address changed: {}", evt);
     var updatedView = viewState().withEmail(evt.newEmail());
     return effects().updateState(updatedView);

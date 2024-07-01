@@ -32,13 +32,13 @@ public class UserWithVersionView extends View<UserWithVersion> {
   }
 
   @Subscribe.ValueEntity(UserEntity.class)
-  public UpdateEffect<UserWithVersion> onChange(User user) {
+  public Effect<UserWithVersion> onChange(User user) {
     if (viewState() == null) return effects().updateState(new UserWithVersion(user.email, 1));
     else return effects().updateState(new UserWithVersion(user.email, viewState().version + 1));
   }
 
   @Subscribe.ValueEntity(value = UserEntity.class, handleDeletes = true)
-  public UpdateEffect<UserWithVersion> onDelete() {
+  public Effect<UserWithVersion> onDelete() {
     logger.info("Deleting user with email={}", viewState().email);
     return effects().deleteState();
   }

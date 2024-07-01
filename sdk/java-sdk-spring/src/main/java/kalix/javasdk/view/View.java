@@ -5,7 +5,7 @@
 package kalix.javasdk.view;
 
 import akka.annotation.ApiMayChange;
-import kalix.javasdk.impl.view.ViewUpdateEffectImpl;
+import kalix.javasdk.impl.view.ViewEffectImpl;
 
 import java.util.Optional;
 
@@ -23,7 +23,7 @@ import java.util.Optional;
  * Views are updated in response to Event Sourced Entity events, Value Entity state changes or messages from a Topic.
  * <p>
  * Each incoming change is handled by a command handler. Command handlers are methods returning an
- * {@link UpdateEffect}. The command handler is responsible for updating the View state.
+ * {@link Effect}. The command handler is responsible for updating the View state.
  *
  *  @param <S> The type of the state for this view.
  */
@@ -79,8 +79,8 @@ public abstract class View<S> {
       throw new IllegalStateException("Current state is only available when handling updates.");
   }
 
-  protected final UpdateEffect.Builder<S> effects() {
-    return ViewUpdateEffectImpl.builder();
+  protected final Effect.Builder<S> effects() {
+    return ViewEffectImpl.builder();
   }
 
   /**
@@ -115,25 +115,16 @@ public abstract class View<S> {
    *
    * @param <S> The type of the state for this entity.
    */
-  public interface UpdateEffect<S> {
+  public interface Effect<S> {
 
     interface Builder<S> {
 
-      UpdateEffect<S> updateState(S newState);
+      Effect<S> updateState(S newState);
 
-      UpdateEffect<S> deleteState();
+      Effect<S> deleteState();
 
       /** Ignore this event (and continue to process the next). */
-      UpdateEffect<S> ignore();
-
-      /**
-       * Trigger an error for the event. Returning this effect is equivalent to throwing an
-       * exception from the handler and will lead to retrying processing of the same event until it
-       * is handled successfully.
-       *
-       * @param description The description of the error.
-       */
-      UpdateEffect<S> error(String description);
+      Effect<S> ignore();
     }
   }
 }

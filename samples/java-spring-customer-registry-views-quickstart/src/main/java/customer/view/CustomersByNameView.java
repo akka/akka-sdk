@@ -30,7 +30,7 @@ public class CustomersByNameView
   }
 
   @Subscribe.ValueEntity(CustomerEntity.class) // <4>
-  public UpdateEffect<CustomerSummary> onUpdate(Customer customer) {
+  public Effect<CustomerSummary> onUpdate(Customer customer) {
     return effects()
       .updateState(new CustomerSummary(customer.name(), customer.email()));
   }

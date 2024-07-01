@@ -89,7 +89,7 @@ public class ViewTestModels {
 
     // when methods are annotated, it's implicitly a transform = true
     @Subscribe.ValueEntity(UserEntity.class)
-    public UpdateEffect<TransformedUser> onChange(User user) {
+    public Effect<TransformedUser> onChange(User user) {
       return effects()
           .updateState(new TransformedUser(user.lastName + ", " + user.firstName, user.email));
     }
@@ -105,13 +105,13 @@ public class ViewTestModels {
   public static class TransformedUserViewWithDeletes extends View<TransformedUser> {
 
     @Subscribe.ValueEntity(UserEntity.class)
-    public UpdateEffect<TransformedUser> onChange(User user) {
+    public Effect<TransformedUser> onChange(User user) {
       return effects()
           .updateState(new TransformedUser(user.lastName + ", " + user.firstName, user.email));
     }
 
     @Subscribe.ValueEntity(value = UserEntity.class, handleDeletes = true)
-    public UpdateEffect<TransformedUser> onDelete() {
+    public Effect<TransformedUser> onDelete() {
       return effects().deleteState();
     }
 
@@ -127,7 +127,7 @@ public class ViewTestModels {
 
     // when methods are annotated, it's implicitly a transform = true
     @Subscribe.ValueEntity(UserEntity.class)
-    public UpdateEffect<TransformedUser> onChange(User user) {
+    public Effect<TransformedUser> onChange(User user) {
       return effects()
           .updateState(new TransformedUser(user.lastName + ", " + user.firstName, user.email));
     }
@@ -168,7 +168,7 @@ public class ViewTestModels {
 
     // when methods are annotated, it's implicitly a transform = true
     @Subscribe.ValueEntity(UserEntity.class)
-    public UpdateEffect<TransformedUser> onChange(TransformedUser userView, User user) {
+    public Effect<TransformedUser> onChange(TransformedUser userView, User user) {
       return effects()
           .updateState(new TransformedUser(user.lastName + ", " + user.firstName, user.email));
     }
@@ -190,7 +190,7 @@ public class ViewTestModels {
 
     // when methods are annotated, it's implicitly a transform = true
     @Subscribe.ValueEntity(UserEntity.class)
-    public UpdateEffect<TransformedUser> onChange(User user) {
+    public Effect<TransformedUser> onChange(User user) {
       return effects()
           .updateState(new TransformedUser(user.lastName + ", " + user.firstName, user.email));
     }
@@ -206,7 +206,7 @@ public class ViewTestModels {
   @Subscribe.ValueEntity(UserEntity.class) //it's implicitly a transform = false
   public static class TransformedViewWithoutSubscriptionOnMethodLevel extends View<TransformedUser> {
 
-    public UpdateEffect<TransformedUser> onChange(User user) {
+    public Effect<TransformedUser> onChange(User user) {
       return effects()
           .updateState(new TransformedUser(user.lastName + ", " + user.firstName, user.email));
     }
@@ -223,7 +223,7 @@ public class ViewTestModels {
   public static class ViewWithSubscriptionsInMixedLevelsHandleDelete extends View<User> {
 
     @Subscribe.ValueEntity(value = UserEntity.class, handleDeletes = true)
-    public UpdateEffect<User> onDelete() {
+    public Effect<User> onDelete() {
       return effects().deleteState();
     }
 
@@ -238,7 +238,7 @@ public class ViewTestModels {
   public static class ViewWithoutSubscriptionButWithHandleDelete extends View<TransformedUser> {
 
     @Subscribe.ValueEntity(value = UserEntity.class, handleDeletes = true)
-    public UpdateEffect<TransformedUser> onDelete() {
+    public Effect<TransformedUser> onDelete() {
       return effects().deleteState();
     }
 
@@ -253,18 +253,18 @@ public class ViewTestModels {
   public static class ViewDuplicatedHandleDeletesAnnotations extends View<TransformedUser> {
 
     @Subscribe.ValueEntity(UserEntity.class)
-    public UpdateEffect<TransformedUser> onChange(User user) {
+    public Effect<TransformedUser> onChange(User user) {
       return effects()
           .updateState(new TransformedUser(user.lastName + ", " + user.firstName, user.email));
     }
 
     @Subscribe.ValueEntity(value = UserEntity.class, handleDeletes = true)
-    public UpdateEffect<TransformedUser> onDelete() {
+    public Effect<TransformedUser> onDelete() {
       return effects().deleteState();
     }
 
     @Subscribe.ValueEntity(value = UserEntity.class, handleDeletes = true)
-    public UpdateEffect<TransformedUser> onDelete2() {
+    public Effect<TransformedUser> onDelete2() {
       return effects().deleteState();
     }
 
@@ -279,13 +279,13 @@ public class ViewTestModels {
   public static class ViewHandleDeletesWithParam extends View<TransformedUser> {
 
     @Subscribe.ValueEntity(UserEntity.class)
-    public UpdateEffect<TransformedUser> onChange(User user) {
+    public Effect<TransformedUser> onChange(User user) {
       return effects()
           .updateState(new TransformedUser(user.lastName + ", " + user.firstName, user.email));
     }
 
     @Subscribe.ValueEntity(value = UserEntity.class, handleDeletes = true)
-    public UpdateEffect<TransformedUser> onDelete(User user) {
+    public Effect<TransformedUser> onDelete(User user) {
       return effects().deleteState();
     }
 
@@ -300,13 +300,13 @@ public class ViewTestModels {
   public static class ViewWithHandleDeletesFalseOnMethodLevel extends View<TransformedUser> {
 
     @Subscribe.ValueEntity(UserEntity.class)
-    public UpdateEffect<TransformedUser> onChange(User user) {
+    public Effect<TransformedUser> onChange(User user) {
       return effects()
           .updateState(new TransformedUser(user.lastName + ", " + user.firstName, user.email));
     }
 
     @Subscribe.ValueEntity(value = UserEntity.class, handleDeletes = false)
-    public UpdateEffect<TransformedUser> onDelete() {
+    public Effect<TransformedUser> onDelete() {
       return effects().deleteState();
     }
 
@@ -321,19 +321,19 @@ public class ViewTestModels {
   public static class ViewDuplicatedVESubscriptions extends View<TransformedUser> {
 
     @Subscribe.ValueEntity(UserEntity.class)
-    public UpdateEffect<TransformedUser> onChange(User user) {
+    public Effect<TransformedUser> onChange(User user) {
       return effects()
         .updateState(new TransformedUser(user.lastName + ", " + user.firstName, user.email));
     }
 
     @Subscribe.ValueEntity(UserEntity.class)
-    public UpdateEffect<TransformedUser> onChange2(User user) {
+    public Effect<TransformedUser> onChange2(User user) {
       return effects()
           .updateState(new TransformedUser(user.lastName + ", " + user.firstName, user.email));
     }
 
     @Subscribe.ValueEntity(value = UserEntity.class, handleDeletes = true)
-    public UpdateEffect<TransformedUser> onDelete() {
+    public Effect<TransformedUser> onDelete() {
       return effects().deleteState();
     }
 
@@ -348,19 +348,19 @@ public class ViewTestModels {
   public static class ViewDuplicatedESSubscriptions extends View<TransformedUser> {
 
     @Subscribe.EventSourcedEntity(EmployeeEntity.class)
-    public UpdateEffect<TransformedUser> onChange(User user) {
+    public Effect<TransformedUser> onChange(User user) {
       return effects()
         .updateState(new TransformedUser(user.lastName + ", " + user.firstName, user.email));
     }
 
     @Subscribe.EventSourcedEntity(EmployeeEntity.class)
-    public UpdateEffect<TransformedUser> onChange2(User user) {
+    public Effect<TransformedUser> onChange2(User user) {
       return effects()
         .updateState(new TransformedUser(user.lastName + ", " + user.firstName, user.email));
     }
 
     @Subscribe.ValueEntity(value = UserEntity.class, handleDeletes = true)
-    public UpdateEffect<TransformedUser> onDelete() {
+    public Effect<TransformedUser> onDelete() {
       return effects().deleteState();
     }
 
@@ -398,13 +398,13 @@ public class ViewTestModels {
   public static class SubscribeToEventSourcedEvents extends View<Employee> {
 
     @Subscribe.EventSourcedEntity(EmployeeEntity.class)
-    public UpdateEffect<Employee> onCreated(EmployeeEvent.EmployeeCreated created) {
+    public Effect<Employee> onCreated(EmployeeEvent.EmployeeCreated created) {
       return effects()
           .updateState(new Employee(created.firstName, created.lastName, created.email));
     }
 
     @Subscribe.EventSourcedEntity(EmployeeEntity.class)
-    public UpdateEffect<Employee> onUpdated(EmployeeEvent.EmployeeEmailUpdated updated) {
+    public Effect<Employee> onUpdated(EmployeeEvent.EmployeeEmailUpdated updated) {
       return effects().ignore();
     }
 
@@ -419,7 +419,7 @@ public class ViewTestModels {
   public static class SubscribeToEventSourcedWithMissingHandlerState extends View<Employee> {
 
     @Subscribe.EventSourcedEntity(EmployeeEntity.class)
-    public UpdateEffect<Employee> onCreated(Employee employee, EmployeeEvent.EmployeeCreated created) {
+    public Effect<Employee> onCreated(Employee employee, EmployeeEvent.EmployeeCreated created) {
       return effects()
           .updateState(new Employee(created.firstName, created.lastName, created.email));
     }
@@ -435,13 +435,13 @@ public class ViewTestModels {
   public static class SubscribeToEventSourcedEventsWithMethodWithState extends View<Employee> {
 
     @Subscribe.EventSourcedEntity(EmployeeEntity.class)
-    public UpdateEffect<Employee> onCreated(Employee employee, EmployeeEvent.EmployeeCreated created) {
+    public Effect<Employee> onCreated(Employee employee, EmployeeEvent.EmployeeCreated created) {
       return effects()
           .updateState(new Employee(created.firstName, created.lastName, created.email));
     }
 
     @Subscribe.EventSourcedEntity(EmployeeEntity.class)
-    public UpdateEffect<Employee> onUpdated(EmployeeEvent.EmployeeEmailUpdated updated) {
+    public Effect<Employee> onUpdated(EmployeeEvent.EmployeeEmailUpdated updated) {
       return effects().ignore();
     }
 
@@ -456,7 +456,7 @@ public class ViewTestModels {
   @Subscribe.EventSourcedEntity(value = EmployeeEntity.class, ignoreUnknown = false)
   public static class TypeLevelSubscribeToEventSourcedEventsWithState extends View<Employee> {
 
-    public UpdateEffect<Employee> onEvent(Employee employee, EmployeeEvent.EmployeeCreated created) {
+    public Effect<Employee> onEvent(Employee employee, EmployeeEvent.EmployeeCreated created) {
       return effects()
           .updateState(new Employee(created.firstName, created.lastName, created.email));
     }
@@ -515,7 +515,7 @@ public class ViewTestModels {
     @Subscribe.ValueEntity(UserEntity.class)
     public static class ViewTableWithMixedLevelSubscriptions extends View<TransformedUser> {
       @Subscribe.ValueEntity(UserEntity.class)
-      public UpdateEffect<TransformedUser> onChange(User user) {
+      public Effect<TransformedUser> onChange(User user) {
         return effects()
             .updateState(new TransformedUser(user.lastName + ", " + user.firstName, user.email));
       }
@@ -610,12 +610,12 @@ public class ViewTestModels {
     @Table("employees")
     @Subscribe.EventSourcedEntity(EmployeeEntity.class)
     public static class Employees extends View<Employee> {
-      public UpdateEffect<Employee> onCreated(EmployeeEvent.EmployeeCreated created) {
+      public Effect<Employee> onCreated(EmployeeEvent.EmployeeCreated created) {
         return effects()
             .updateState(new Employee(created.firstName, created.lastName, created.email));
       }
 
-      public UpdateEffect<Employee> onUpdated(EmployeeEvent.EmployeeEmailUpdated updated) {
+      public Effect<Employee> onUpdated(EmployeeEvent.EmployeeEmailUpdated updated) {
         return effects().ignore();
       }
     }
@@ -640,7 +640,7 @@ public class ViewTestModels {
     @Table("employees")
     @Subscribe.EventSourcedEntity(EmployeeEntity.class)
     public static class Employees extends View<Employee> {
-      public UpdateEffect<Employee> onEvent(EmployeeEvent.EmployeeCreated created) {
+      public Effect<Employee> onEvent(EmployeeEvent.EmployeeCreated created) {
         return effects()
           .updateState(new Employee(created.firstName, created.lastName, created.email));
       }
@@ -653,12 +653,12 @@ public class ViewTestModels {
     @Table("assigned")
     public static class Assigned extends View<CounterState> {
       @Subscribe.ValueEntity(Counter.class)
-      public UpdateEffect<CounterState> onEvent(CounterState counterState) {
+      public Effect<CounterState> onEvent(CounterState counterState) {
         return effects().ignore();
       }
 
       @Subscribe.ValueEntity(Counter.class)
-      public UpdateEffect<CounterState> onEvent2(CounterState counterState) {
+      public Effect<CounterState> onEvent2(CounterState counterState) {
         return effects().ignore();
       }
     }
@@ -675,7 +675,7 @@ public class ViewTestModels {
     @Table("employees")
     @Subscribe.EventSourcedEntity(EmployeeEntity.class)
     public static class Employees extends View<Employee> {
-      public UpdateEffect<Employee> onEvent(EmployeeEvent.EmployeeCreated created) {
+      public Effect<Employee> onEvent(EmployeeEvent.EmployeeCreated created) {
         return effects()
           .updateState(new Employee(created.firstName, created.lastName, created.email));
       }
@@ -688,12 +688,12 @@ public class ViewTestModels {
     @Table("assigned")
     public static class Assigned extends View<Employee> {
       @Subscribe.EventSourcedEntity(EmployeeEntity.class)
-      public UpdateEffect<Employee> onEvent(CounterState counterState) {
+      public Effect<Employee> onEvent(CounterState counterState) {
         return effects().ignore();
       }
 
       @Subscribe.EventSourcedEntity(EmployeeEntity.class)
-      public UpdateEffect<Employee> onEvent2(CounterState counterState) {
+      public Effect<Employee> onEvent2(CounterState counterState) {
         return effects().ignore();
       }
     }
@@ -716,12 +716,12 @@ public class ViewTestModels {
   @Subscribe.Topic(value = "source", consumerGroup = "cg")
   public static class TopicTypeLevelSubscriptionView extends View<Employee> {
 
-    public UpdateEffect<Employee> onCreate(EmployeeEvent.EmployeeCreated evt) {
+    public Effect<Employee> onCreate(EmployeeEvent.EmployeeCreated evt) {
       return effects()
         .updateState(new Employee(evt.firstName, evt.lastName, evt.email));
     }
 
-    public UpdateEffect<Employee> onEmailUpdate(EmployeeEvent.EmployeeEmailUpdated eeu) {
+    public Effect<Employee> onEmailUpdate(EmployeeEvent.EmployeeEmailUpdated eeu) {
       var employee = viewState();
       return effects().updateState(new Employee(employee.firstName(), employee.lastName(), eeu.email));
     }
@@ -737,13 +737,13 @@ public class ViewTestModels {
   public static class TopicSubscriptionView extends View<Employee> {
 
     @Subscribe.Topic(value = "source", consumerGroup = "cg")
-    public UpdateEffect<Employee> onCreate(EmployeeEvent.EmployeeCreated evt) {
+    public Effect<Employee> onCreate(EmployeeEvent.EmployeeCreated evt) {
       return effects()
         .updateState(new Employee(evt.firstName, evt.lastName, evt.email));
     }
 
     @Subscribe.Topic(value = "source", consumerGroup = "cg")
-    public UpdateEffect<Employee> onEmailUpdate(EmployeeEvent.EmployeeEmailUpdated eeu) {
+    public Effect<Employee> onEmailUpdate(EmployeeEvent.EmployeeEmailUpdated eeu) {
       var employee = viewState();
       return effects().updateState(new Employee(employee.firstName(), employee.lastName(), eeu.email));
     }

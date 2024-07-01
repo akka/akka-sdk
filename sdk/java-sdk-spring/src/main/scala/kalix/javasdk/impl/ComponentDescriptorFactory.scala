@@ -7,7 +7,6 @@ package kalix.javasdk.impl
 import java.lang.reflect.AnnotatedElement
 import java.lang.reflect.Method
 import java.lang.reflect.ParameterizedType
-
 import kalix.DirectDestination
 import kalix.DirectSource
 import kalix.EventDestination
@@ -29,7 +28,7 @@ import kalix.javasdk.impl.reflection.NameGenerator
 import kalix.javasdk.action.Action
 import kalix.javasdk.eventsourcedentity.EventSourcedEntity
 import kalix.javasdk.valueentity.ValueEntity
-import kalix.javasdk.view.View
+import kalix.javasdk.view.View.Effect
 // TODO: abstract away spring dependency
 import kalix.javasdk.impl.reflection.Reflect.Syntax._
 
@@ -89,7 +88,7 @@ private[impl] object ComponentDescriptorFactory {
   def hasUpdateEffectOutput(javaMethod: Method): Boolean = {
     if (javaMethod.isPublic) {
       javaMethod.getGenericReturnType match {
-        case p: ParameterizedType => p.getRawType.equals(classOf[View.UpdateEffect[_]])
+        case p: ParameterizedType => p.getRawType.equals(classOf[Effect[_]])
         case _                    => false
       }
     } else {

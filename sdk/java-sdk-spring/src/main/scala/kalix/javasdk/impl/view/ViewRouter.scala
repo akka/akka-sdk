@@ -7,18 +7,16 @@ package kalix.javasdk.impl.view
 import java.util.Optional
 import kalix.javasdk.view.UpdateContext
 import kalix.javasdk.view.View
+import kalix.javasdk.view.View.Effect
 
 abstract class ViewUpdateRouter {
-  def _internalHandleUpdate(state: Option[Any], event: Any, context: UpdateContext): View.UpdateEffect[_]
+  def _internalHandleUpdate(state: Option[Any], event: Any, context: UpdateContext): Effect[_]
 }
 
 abstract class ViewRouter[S, V <: View[S]](protected val view: V) extends ViewUpdateRouter {
 
   /** INTERNAL API */
-  override final def _internalHandleUpdate(
-      state: Option[Any],
-      event: Any,
-      context: UpdateContext): View.UpdateEffect[_] = {
+  override final def _internalHandleUpdate(state: Option[Any], event: Any, context: UpdateContext): Effect[_] = {
     val stateOrEmpty: S = state match {
       case Some(preExisting) => preExisting.asInstanceOf[S]
       case None              => view.emptyState()
@@ -38,17 +36,14 @@ abstract class ViewRouter[S, V <: View[S]](protected val view: V) extends ViewUp
     }
   }
 
-  def handleUpdate(commandName: String, state: S, event: Any): View.UpdateEffect[S]
+  def handleUpdate(commandName: String, state: S, event: Any): Effect[S]
 
 }
 
 abstract class ViewMultiTableRouter extends ViewUpdateRouter {
 
   /** INTERNAL API */
-  override final def _internalHandleUpdate(
-      state: Option[Any],
-      event: Any,
-      context: UpdateContext): View.UpdateEffect[_] = {
+  override final def _internalHandleUpdate(state: Option[Any], event: Any, context: UpdateContext): Effect[_] = {
     viewRouter(context.eventName())._internalHandleUpdate(state, event, context)
   }
 

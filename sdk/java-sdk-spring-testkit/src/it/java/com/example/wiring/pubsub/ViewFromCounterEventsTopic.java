@@ -40,13 +40,13 @@ public class ViewFromCounterEventsTopic extends View<CounterView> {
     return null;
   }
 
-  public UpdateEffect<CounterView> handleIncrease(CounterEvent.ValueIncreased increased) {
+  public Effect<CounterView> handleIncrease(CounterEvent.ValueIncreased increased) {
     String entityId = updateContext().metadata().get(CeSubject()).orElseThrow();
     logger.info("Consuming: " + increased + " from " + entityId);
     return effects().updateState(new CounterView(entityId, viewState().value() + increased.value()));
   }
 
-  public UpdateEffect<CounterView> handleMultiply(CounterEvent.ValueMultiplied multiplied) {
+  public Effect<CounterView> handleMultiply(CounterEvent.ValueMultiplied multiplied) {
     String entityId = updateContext().metadata().get(CeSubject()).orElseThrow();
     logger.info("Consuming: " + multiplied + " from " + entityId);
     return effects().updateState(new CounterView(entityId, viewState().value() * multiplied.value()));

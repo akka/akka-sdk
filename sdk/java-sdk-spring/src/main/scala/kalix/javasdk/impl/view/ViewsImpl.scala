@@ -114,24 +114,22 @@ final class ViewsImpl(system: ActorSystem, _services: Map[String, ViewService]) 
                 }
 
               effect match {
-                case ViewUpdateEffectImpl.Update(newState) =>
+                case ViewEffectImpl.Update(newState) =>
                   if (newState == null)
                     throw ViewException(context, "updateState with null state is not allowed.", None)
                   val serializedState = ScalaPbAny.fromJavaProto(service.messageCodec.encodeJava(newState))
                   val upsert = pv.Upsert(Some(pv.Row(value = Some(serializedState))))
                   val out = pv.ViewStreamOut(pv.ViewStreamOut.Message.Upsert(upsert))
                   Source.single(out)
-                case ViewUpdateEffectImpl.Delete =>
+                case ViewEffectImpl.Delete =>
                   val delete = pv.Delete()
                   val out = pv.ViewStreamOut(pv.ViewStreamOut.Message.Delete(delete))
                   Source.single(out)
-                case ViewUpdateEffectImpl.Ignore =>
+                case ViewEffectImpl.Ignore =>
                   // ignore incoming event
                   val upsert = pv.Upsert(None)
                   val out = pv.ViewStreamOut(pv.ViewStreamOut.Message.Upsert(upsert))
                   Source.single(out)
-                case ViewUpdateEffectImpl.Error(e) =>
-                  Source.failed(new RuntimeException(e))
               }
 
             case None =>

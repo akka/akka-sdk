@@ -41,7 +41,7 @@ public class UserCountersView {
   @Table("users")
   public static class Users extends View<UserWithId> {
     @Subscribe.ValueEntity(UserEntity.class)
-    public UpdateEffect<UserWithId> onChange(User user) {
+    public Effect<UserWithId> onChange(User user) {
       return effects()
           .updateState(
               new UserWithId(updateContext().eventSubject().orElse(""), user.email, user.name));
@@ -56,15 +56,15 @@ public class UserCountersView {
         .orElseGet(() -> new UserCounter(updateContext().eventSubject().orElse(""), 0));
     }
 
-    public UpdateEffect<UserCounter> onEvent(CounterEvent.ValueIncreased event) {
+    public Effect<UserCounter> onEvent(CounterEvent.ValueIncreased event) {
       return effects().updateState(counterState().onValueIncreased(event));
     }
 
-    public UpdateEffect<UserCounter> onEvent(CounterEvent.ValueMultiplied event) {
+    public Effect<UserCounter> onEvent(CounterEvent.ValueMultiplied event) {
       return effects().updateState(counterState().onValueMultiplied(event));
     }
 
-    public UpdateEffect<UserCounter> onEvent(CounterEvent.ValueSet event) {
+    public Effect<UserCounter> onEvent(CounterEvent.ValueSet event) {
       return effects().updateState(counterState().onValueSet(event));
     }
   }

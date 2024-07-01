@@ -36,17 +36,17 @@ public class NestedCustomerOrdersView {
   @Table("customers")
   @Subscribe.EventSourcedEntity(CustomerEntity.class)
   public static class Customers extends View<Customer> {
-    public UpdateEffect<Customer> onEvent(CustomerEvent.CustomerCreated created) {
+    public Effect<Customer> onEvent(CustomerEvent.CustomerCreated created) {
       String id = updateContext().eventSubject().orElse("");
       return effects()
         .updateState(new Customer(id, created.email(), created.name(), created.address()));
     }
 
-    public UpdateEffect<Customer> onEvent(CustomerEvent.CustomerNameChanged event) {
+    public Effect<Customer> onEvent(CustomerEvent.CustomerNameChanged event) {
       return effects().updateState(viewState().withName(event.newName()));
     }
 
-    public UpdateEffect<Customer> onEvent(CustomerEvent.CustomerAddressChanged event) {
+    public Effect<Customer> onEvent(CustomerEvent.CustomerAddressChanged event) {
       return effects().updateState(viewState().withAddress(event.newAddress()));
     }
   }
@@ -54,16 +54,16 @@ public class NestedCustomerOrdersView {
   @Table("products")
   @Subscribe.EventSourcedEntity(ProductEntity.class)
   public static class Products extends View<Product> {
-    public UpdateEffect<Product> onEvent(ProductEvent.ProductCreated created) {
+    public Effect<Product> onEvent(ProductEvent.ProductCreated created) {
       String id = updateContext().eventSubject().orElse("");
       return effects().updateState(new Product(id, created.name(), created.price()));
     }
 
-    public UpdateEffect<Product> onEvent(ProductEvent.ProductNameChanged event) {
+    public Effect<Product> onEvent(ProductEvent.ProductNameChanged event) {
       return effects().updateState(viewState().withProductName(event.newName()));
     }
 
-    public UpdateEffect<Product> onEvent(ProductEvent.ProductPriceChanged event) {
+    public Effect<Product> onEvent(ProductEvent.ProductPriceChanged event) {
       return effects().updateState(viewState().withPrice(event.newPrice()));
     }
   }

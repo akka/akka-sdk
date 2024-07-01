@@ -239,7 +239,7 @@ Next, you need to define how to transforms events to state that can be used in t
 
 The code-generation will generate an implementation class with an initial empty implementation which we'll discuss below.
 
-View update handlers are implemented in the `CustomerByNameView` class as methods that override abstract methods from `AbstractCustomerByNameView`. The methods take the current view state as the first parameter and the event as the second parameter. They return an `UpdateEffect`, which describes next processing actions, such as updating the view state.
+View update handlers are implemented in the `CustomerByNameView` class as methods that override abstract methods from `AbstractCustomerByNameView`. The methods take the current view state as the first parameter and the event as the second parameter. They return an `Effect`, which describes next processing actions, such as updating the view state.
 
 When adding or changing the `rpc` definitions, including name, parameter and return messages, in the `.proto` files the corresponding methods are regenerated in the abstract class (`AbstractCustomerByNameView`). This means that the compiler will assist you with such changes. The IDE can typically fill in missing method signatures and such.
 

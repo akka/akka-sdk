@@ -23,7 +23,7 @@ public class CustomersByEmailView extends View<Customer> {
   private static final Logger logger = LoggerFactory.getLogger(CustomersByEmailView.class);
   // tag::view[]
 
-  public UpdateEffect<Customer> onEvent(CustomerPublicEvent.Created created) {
+  public Effect<Customer> onEvent(CustomerPublicEvent.Created created) {
     // end::view[]
     logger.info("Received: {}", created);
     // tag::view[]
@@ -32,7 +32,7 @@ public class CustomersByEmailView extends View<Customer> {
       new Customer(id, created.email(), created.name()));
   }
 
-  public UpdateEffect<Customer> onEvent(CustomerPublicEvent.NameChanged nameChanged) {
+  public Effect<Customer> onEvent(CustomerPublicEvent.NameChanged nameChanged) {
     // end::view[]
     logger.info("Received: {}", nameChanged);
     // tag::view[]

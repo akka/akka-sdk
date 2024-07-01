@@ -4,21 +4,19 @@
 
 package kalix.javasdk.impl.view
 
-import kalix.javasdk.view.View
+import kalix.javasdk.view.View.Effect
 
-object ViewUpdateEffectImpl {
-  sealed trait PrimaryUpdateEffect[S] extends View.UpdateEffect[S]
-  case class Update[S](state: S) extends PrimaryUpdateEffect[S]
-  case object Delete extends PrimaryUpdateEffect[Any]
-  case object Ignore extends PrimaryUpdateEffect[Any]
-  case class Error[T](description: String) extends PrimaryUpdateEffect[T]
+object ViewEffectImpl {
+  sealed trait PrimaryEffect[S] extends Effect[S]
+  case class Update[S](state: S) extends PrimaryEffect[S]
+  case object Delete extends PrimaryEffect[Any]
+  case object Ignore extends PrimaryEffect[Any]
 
-  private val _builder = new View.UpdateEffect.Builder[Any] {
-    override def updateState(newState: Any): View.UpdateEffect[Any] = Update(newState)
-    override def deleteState(): View.UpdateEffect[Any] = Delete.asInstanceOf[PrimaryUpdateEffect[Any]]
-    override def ignore(): View.UpdateEffect[Any] = Ignore.asInstanceOf[PrimaryUpdateEffect[Any]]
-    override def error(description: String): View.UpdateEffect[Any] = Error(description)
+  private val _builder = new Effect.Builder[Any] {
+    override def updateState(newState: Any): Effect[Any] = Update(newState)
+    override def deleteState(): Effect[Any] = Delete.asInstanceOf[PrimaryEffect[Any]]
+    override def ignore(): Effect[Any] = Ignore.asInstanceOf[PrimaryEffect[Any]]
   }
-  def builder[S](): View.UpdateEffect.Builder[S] =
-    _builder.asInstanceOf[View.UpdateEffect.Builder[S]]
+  def builder[S](): Effect.Builder[S] =
+    _builder.asInstanceOf[Effect.Builder[S]]
 }

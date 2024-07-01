@@ -666,12 +666,12 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   @Subscribe.EventSourcedEntity(value = EmployeeEntity.class, ignoreUnknown = true)
   public static class SubscribeOnTypeToEventSourcedEvents extends View<Employee> {
 
-    public UpdateEffect<Employee> onCreate(EmployeeCreated evt) {
+    public Effect<Employee> onCreate(EmployeeCreated evt) {
       return effects()
         .updateState(new Employee(evt.firstName, evt.lastName, evt.email));
     }
 
-    public UpdateEffect<Employee> onEmailUpdate(EmployeeEmailUpdated eeu) {
+    public Effect<Employee> onEmailUpdate(EmployeeEmailUpdated eeu) {
       var employee = viewState();
       return effects().updateState(new Employee(employee.firstName(), employee.lastName(), eeu.email));
     }
@@ -714,12 +714,12 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   @Subscribe.Stream(service = "employee_service", id = "employee_events")
   public static class EventStreamSubscriptionView extends View<Employee> {
 
-    public UpdateEffect<Employee> onCreate(EmployeeCreated evt) {
+    public Effect<Employee> onCreate(EmployeeCreated evt) {
       return effects()
         .updateState(new Employee(evt.firstName, evt.lastName, evt.email));
     }
 
-    public UpdateEffect<Employee> onEmailUpdate(EmployeeEmailUpdated eeu) {
+    public Effect<Employee> onEmailUpdate(EmployeeEmailUpdated eeu) {
       var employee = viewState();
       return effects().updateState(new Employee(employee.firstName(), employee.lastName(), eeu.email));
     }

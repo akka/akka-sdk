@@ -22,8 +22,8 @@ public class CustomersByNameView extends View<Customer> {
   private static final Logger logger = LoggerFactory.getLogger(CustomersByNameView.class);
   // tag::view[]
 
-  public UpdateEffect<Customer> onEvent( // <4>
-      CustomerPublicEvent.Created created) {
+  public Effect<Customer> onEvent( // <4>
+                                   CustomerPublicEvent.Created created) {
     // end::view[]
     logger.info("Received: {}", created);
     // tag::view[]
@@ -32,7 +32,7 @@ public class CustomersByNameView extends View<Customer> {
         new Customer(id, created.email(), created.name()));
   }
 
-  public UpdateEffect<Customer> onEvent(
+  public Effect<Customer> onEvent(
       CustomerPublicEvent.NameChanged nameChanged) {
     // end::view[]
     logger.info("Received: {}", nameChanged);

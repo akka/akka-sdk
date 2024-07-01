@@ -6,9 +6,7 @@ package kalix.javasdk.impl.view
 
 import java.lang.reflect.ParameterizedType
 import java.util.{ Map => JMap }
-
 import scala.jdk.CollectionConverters._
-
 import com.google.protobuf.any.{ Any => ScalaPbAny }
 import kalix.javasdk.impl.AnySupport.ProtobufEmptyTypeUrl
 import kalix.javasdk.impl.CommandHandler
@@ -17,8 +15,9 @@ import kalix.javasdk.impl.InvocationContext
 import kalix.javasdk.JsonSupport
 import kalix.javasdk.impl.view.ViewMultiTableRouter
 import kalix.javasdk.impl.view.ViewRouter
-import kalix.javasdk.impl.view.ViewUpdateEffectImpl
+import kalix.javasdk.impl.view.ViewEffectImpl
 import kalix.javasdk.view.View
+import kalix.javasdk.view.View.Effect
 
 class ReflectiveViewRouter[S, V <: View[S]](
     view: V,
@@ -29,7 +28,7 @@ class ReflectiveViewRouter[S, V <: View[S]](
   private def commandHandlerLookup(commandName: String) =
     commandHandlers.getOrElse(commandName, throw new RuntimeException(s"no matching method for '$commandName'"))
 
-  override def handleUpdate(commandName: String, state: S, event: Any): View.UpdateEffect[S] = {
+  override def handleUpdate(commandName: String, state: S, event: Any): Effect[S] = {
 
     val viewStateType: Class[S] =
       this.view.getClass.getGenericSuperclass
@@ -63,15 +62,15 @@ class ReflectiveViewRouter[S, V <: View[S]](
           case ProtobufEmptyTypeUrl =>
             invoker
               .invoke(view)
-              .asInstanceOf[View.UpdateEffect[S]]
+              .asInstanceOf[Effect[S]]
           case _ =>
             val context =
               InvocationContext(anyEvent, commandHandler.requestMessageDescriptor)
             invoker
               .invoke(view, context)
-              .asInstanceOf[View.UpdateEffect[S]]
+              .asInstanceOf[Effect[S]]
         }
-      case None if ignoreUnknown => ViewUpdateEffectImpl.builder().ignore()
+      case None if ignoreUnknown => ViewEffectImpl.builder().ignore()
       case None =>
         throw new NoSuchElementException(s"Couldn't find any method with input type [$inputTypeUrl] in View [$view].")
     }

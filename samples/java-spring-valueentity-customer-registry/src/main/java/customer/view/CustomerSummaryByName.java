@@ -20,13 +20,13 @@ public class CustomerSummaryByName extends View<CustomerSummary> {
     return null;
   }
   @Subscribe.ValueEntity(CustomerEntity.class)
-  public UpdateEffect<CustomerSummary> onChange(Customer customer) {
+  public Effect<CustomerSummary> onChange(Customer customer) {
     return effects()
         .updateState(new CustomerSummary(customer.email(), customer.name()));
   }
 
   @Subscribe.ValueEntity(value = CustomerEntity.class, handleDeletes = true)
-  public UpdateEffect<CustomerSummary> onDelete() {
+  public Effect<CustomerSummary> onDelete() {
     return effects()
         .deleteState();
   }
