@@ -35,6 +35,7 @@ import kalix.javasdk.impl.eventsourcedentity.EventSourcedEntityService
 import kalix.javasdk.impl.http.HttpClientProviderExtension
 import kalix.javasdk.impl.http.HttpEndpointMethodRouter
 import kalix.javasdk.impl.reflection.Reflect
+import kalix.javasdk.impl.timer.TimerSchedulerImpl
 import kalix.javasdk.impl.valueentity.ValueEntitiesImpl
 import kalix.javasdk.impl.valueentity.ValueEntityService
 import kalix.javasdk.impl.view.ViewService
@@ -45,6 +46,7 @@ import kalix.javasdk.spi.ComponentClients
 import kalix.javasdk.spi.EndpointDescriptor
 import kalix.javasdk.spi.HttpEndpointDescriptor
 import kalix.javasdk.spi.SpiEndpoints
+import kalix.javasdk.timer.TimerScheduler
 import kalix.javasdk.valueentity.ReflectiveValueEntityProvider
 import kalix.javasdk.valueentity.ValueEntity
 import kalix.javasdk.valueentity.ValueEntityContext
@@ -107,6 +109,7 @@ final class NextGenComponentAutoDetectRunner extends kalix.javasdk.spi.Runner {
 
   override def start(system: ActorSystem[_], runtimeComponentClients: ComponentClients): Future[SpiEndpoints] = {
     try {
+
       val app = new NextGenKalixJavaApplication(system, runtimeComponentClients)
       Future.successful(app.spiEndpoints)
     } catch {
@@ -316,18 +319,24 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
 
     val lifecycleHooks: Option[ServiceLifecycle] = maybeServiceClass match {
       case Some(serviceClass) if classOf[ServiceLifecycle].isAssignableFrom(serviceClass) =>
-        Some(
-          system.dynamicAccess
-            .createInstanceFor[ServiceLifecycle](serviceClass, Seq.empty)
-            .getOrElse(throw new RuntimeException(
-              s"Service lifecycle class [$serviceClass] does not have a zero argument public constructor")))
+        // FIXME: HttpClient is tricky because auth headers waiting for discovery, we could maybe sort that
+        //        by passing more runtime metadata as parameters to the start call?
+        Some(wiredInstance[ServiceLifecycle](serviceClass.asInstanceOf[Class[ServiceLifecycle]]) {
+          case p if p == classOf[ComponentClient] => componentClient()
+          case t if t == classOf[TimerScheduler] =>
+            new TimerSchedulerImpl(
+              messageCodec,
+              system.classicSystem,
+              runtimeComponentClients.timerClient,
+              MetadataImpl.Empty)
+        })
       case _ => None
     }
     val discoveryEndpoint = new DiscoveryImpl(classicSystem, services, aclDescriptor, BuildInfo.name)
 
     new SpiEndpoints {
       override def preStart(system: ActorSystem[_]): Future[Done] = {
-        // FIXME hook up docker compose starting for dev mode here
+        // FIXME this might turn out to not be needed
         Future.successful(Done)
       }
 
@@ -496,4 +505,5 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
 
   private def httpClientProvider(): HttpClientProvider =
     HttpClientProviderExtension(system)
+
 }

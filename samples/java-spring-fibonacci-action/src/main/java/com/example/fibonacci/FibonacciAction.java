@@ -6,6 +6,8 @@ import java.util.function.Predicate;
 // tag::implementing-action[]
 import kalix.javasdk.action.Action;
 import kalix.javasdk.annotations.ActionId;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 // end::implementing-action[]
 
@@ -15,6 +17,8 @@ import static io.grpc.Status.Code.INVALID_ARGUMENT;
 // tag::implementing-action[]
 @ActionId("fibonacci")
 public class FibonacciAction extends Action {
+
+  private final Logger logger = LoggerFactory.getLogger(FibonacciAction.class);
 
   private boolean isFibonacci(long num) {  // <1>
     Predicate<Long> isPerfectSquare = (n) -> {
@@ -29,10 +33,12 @@ public class FibonacciAction extends Action {
   }
 
   public Effect<Number> getNumber(Long number) { // <3>
+    logger.info("Request for getNumber {}", number);
     return nextNumber(new Number(number));
   }
 
   public Effect<Number> nextNumber(Number number) {
+    logger.info("Request for nextNumber {}", number);
     long num =  number.value();
     if (isFibonacci(num)) {                                     // <4>
       return effects().reply(new Number(nextFib(num)));
