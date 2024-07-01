@@ -5,8 +5,8 @@
 package kalix.javasdk.impl.client
 
 import akka.NotUsed
-import akka.annotation.InternalApi
 import kalix.javasdk.DeferredCall
+import akka.annotation.InternalApi
 import kalix.javasdk.Metadata
 import kalix.javasdk.client.ComponentInvokeOnlyMethodRef
 import kalix.javasdk.client.ComponentInvokeOnlyMethodRef1

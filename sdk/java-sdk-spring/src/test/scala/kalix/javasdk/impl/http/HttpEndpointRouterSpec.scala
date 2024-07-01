@@ -23,8 +23,8 @@ import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.util.ByteString
 import kalix.javasdk.JsonSupport
 import kalix.spring.testmodels.EndpointsTestModels
-import kalix.spring.testmodels.EndpointsTestModels.DeleteHelloEndpoint
 import kalix.spring.testmodels.EndpointsTestModels.GetHelloEndpoint
+import kalix.spring.testmodels.EndpointsTestModels.DeleteHelloEndpoint
 import kalix.spring.testmodels.EndpointsTestModels.PatchHelloEndpoint
 import kalix.spring.testmodels.EndpointsTestModels.PostHelloEndpoint
 import kalix.spring.testmodels.EndpointsTestModels.PutHelloEndpoint
@@ -34,82 +34,77 @@ import org.scalatest.concurrent.ScalaFutures.convertScalaFuture
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
-class HttpEndpointMethodRouterSpec
-    extends AnyWordSpec
-    with Matchers
-    with Futures
-    with OptionValues
-    with ScalatestRouteTest {
+class HttpEndpointRouterSpec extends AnyWordSpec with Matchers with Futures with OptionValues with ScalatestRouteTest {
 
-  val methodRouter =
-    HttpEndpointMethodRouter(classOf[GetHelloEndpoint], () => new GetHelloEndpoint) ++
-    HttpEndpointMethodRouter(classOf[PostHelloEndpoint], () => new PostHelloEndpoint) ++
-    HttpEndpointMethodRouter(classOf[PutHelloEndpoint], () => new PutHelloEndpoint) ++
-    HttpEndpointMethodRouter(classOf[PatchHelloEndpoint], () => new PatchHelloEndpoint) ++
-    HttpEndpointMethodRouter(classOf[DeleteHelloEndpoint], () => new DeleteHelloEndpoint)
+  val methodRouter = {
+    HttpEndpointOpenRouter(classOf[GetHelloEndpoint], () => new GetHelloEndpoint) ++
+    HttpEndpointOpenRouter(classOf[PostHelloEndpoint], () => new PostHelloEndpoint) ++
+    HttpEndpointOpenRouter(classOf[PutHelloEndpoint], () => new PutHelloEndpoint) ++
+    HttpEndpointOpenRouter(classOf[PatchHelloEndpoint], () => new PatchHelloEndpoint) ++
+    HttpEndpointOpenRouter(classOf[DeleteHelloEndpoint], () => new DeleteHelloEndpoint)
+  }.seal
 
   "HttpEndpointMethodRouter" should {
 
     "return None for non-existent path" in {
       // no matching method
-      methodRouter.findMethod(GET, Path("/foo/bar/baz/qux")) shouldBe empty
+      methodRouter.invokerFor(GET, Path("/foo/bar/baz/qux")) shouldBe empty
     }
 
     "generate method invokers for a GET with path variable" in {
       val reqPath = "/hello/Joe"
-      val (method, params) = methodRouter.findMethod(GET, Path(reqPath)).value
+      val method = methodRouter.invokerFor(GET, Path(reqPath)).value
       method.javaMethod.getName shouldBe "name"
-      method.invoke(params) shouldBe new EndpointsTestModels.Name("Joe")
+      method.invoke() shouldBe new EndpointsTestModels.Name("Joe")
     }
 
     "generate method invokers for a GET with two path variables" in {
       val reqPath = "/hello/Joe/20"
-      val (method, params) = methodRouter.findMethod(GET, Path(reqPath)).value
+      val method = methodRouter.invokerFor(GET, Path(reqPath)).value
       method.javaMethod.getName shouldBe "nameAndAge"
-      method.invoke(params) shouldBe "name: Joe, age: 20"
+      method.invoke() shouldBe "name: Joe, age: 20"
     }
 
     "generate method invokers for a GET with path variables - fixed path gets precedence" in {
-      pending // FIXME needs a tree structure, won't work with sorting based on toString
       val reqPath = "/hello/name/20"
-      val (method, params) = methodRouter.findMethod(GET, Path(reqPath)).value
+      val method = methodRouter.invokerFor(GET, Path(reqPath)).value
       method.javaMethod.getName shouldBe "fixedNameAndAge"
-      method.invoke(params) shouldBe "name: fixed, age: 20"
+      method.invoke() shouldBe "name: fixed, age: 20"
     }
 
     "generate method invokers for a POST with body" in {
       val reqPath = "/hello"
-      val (method, params) = methodRouter.findMethod(POST, Path(reqPath)).value
+      val method = methodRouter.invokerFor(POST, Path(reqPath)).value
       method.javaMethod.getName shouldBe "namePost"
-      method.invoke(params, new EndpointsTestModels.Name("Joe")) shouldBe "name: Joe"
+      method.invoke(new EndpointsTestModels.Name("Joe")) shouldBe "name: Joe"
     }
 
     "generate method invokers for a POST with path variable and body" in {
       val reqPath = "/hello/20"
-      val (method, params) = methodRouter.findMethod(POST, Path(reqPath)).value
+      val method = methodRouter.invokerFor(POST, Path(reqPath)).value
       method.javaMethod.getName shouldBe "nameAndAgePost"
-      method.invoke(params, new EndpointsTestModels.Name("Joe")) shouldBe "name: Joe, age: 20"
+      method.invoke(new EndpointsTestModels.Name("Joe")) shouldBe "name: Joe, age: 20"
     }
 
     "generate method invokers for a PUT with body" in {
       val reqPath = "/hello"
-      val (method, params) = methodRouter.findMethod(PUT, Path(reqPath)).value
+      val method = methodRouter.invokerFor(PUT, Path(reqPath)).value
       method.javaMethod.getName shouldBe "helloPut"
-      method.invoke(params, new EndpointsTestModels.Name("Joe")) shouldBe "name: Joe"
+      method.invoke(new EndpointsTestModels.Name("Joe")) shouldBe "name: Joe"
     }
 
     "generate method invokers for a PATCH with body" in {
       val reqPath = "/hello"
-      val (method, params) = methodRouter.findMethod(PATCH, Path(reqPath)).value
+      val method = methodRouter.invokerFor(PATCH, Path(reqPath)).value
       method.javaMethod.getName shouldBe "helloPatch"
-      method.invoke(params, new EndpointsTestModels.Name("Joe")) shouldBe "name: Joe"
+      method.invoke(new EndpointsTestModels.Name("Joe")) shouldBe "name: Joe"
     }
 
     "generate method invokers for a DELETE with body" in {
       val reqPath = "/hello"
-      val (method, params) = methodRouter.findMethod(DELETE, Path(reqPath)).value
+      val method = methodRouter.invokerFor(DELETE, Path(reqPath)).value
       method.javaMethod.getName shouldBe "helloDelete"
-      method.invoke(params).asInstanceOf[AnyRef] shouldBe null
+      method.invoke().asInstanceOf[AnyRef] shouldBe null
     }
 
   }

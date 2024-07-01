@@ -7,6 +7,7 @@ package kalix.javasdk.impl
 import akka.Done
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
+import akka.http.scaladsl.model.HttpMethods
 import akka.http.scaladsl.model.HttpRequest
 import akka.http.scaladsl.model.HttpResponse
 import com.typesafe.config.Config
@@ -33,7 +34,7 @@ import kalix.javasdk.impl.client.ComponentClientImpl
 import kalix.javasdk.impl.eventsourcedentity.EventSourcedEntitiesImpl
 import kalix.javasdk.impl.eventsourcedentity.EventSourcedEntityService
 import kalix.javasdk.impl.http.HttpClientProviderExtension
-import kalix.javasdk.impl.http.HttpEndpointMethodRouter
+import kalix.javasdk.impl.http.HttpEndpointOpenRouter
 import kalix.javasdk.impl.reflection.Reflect
 import kalix.javasdk.impl.timer.TimerSchedulerImpl
 import kalix.javasdk.impl.valueentity.ValueEntitiesImpl
@@ -262,8 +263,8 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
   // collect all Endpoints and compose them to build a larger router
   private val endpointsRouter = componentClasses
     .filter(Reflect.isRestEndpoint)
-    .foldLeft(HttpEndpointMethodRouter.empty) { case (router, cls) =>
-      router ++ HttpEndpointMethodRouter(
+    .foldLeft(HttpEndpointOpenRouter.empty) { case (router, cls) =>
+      router ++ HttpEndpointOpenRouter(
         cls,
         () =>
           wiredInstance(cls) {
@@ -271,6 +272,7 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
             case h if h == classOf[HttpClientProvider] => httpClientProvider()
           })
     }
+    .seal
 
   // FIXME mixing runtime config with sdk with user project config is tricky
   def spiEndpoints: SpiEndpoints = {
@@ -368,8 +370,21 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
         endpointsRouter.route(endpointTimeout)(system.classicSystem)
 
       override val endpointDescriptors: Seq[EndpointDescriptor] =
-        endpointsRouter.methodInvokers.map(httpInvoker =>
-          HttpEndpointDescriptor(httpInvoker.httpMethod, httpInvoker.pathMatch.annotationPath.toString()))
+        endpointsRouter.getTree.allFullPaths.map { path =>
+          HttpEndpointDescriptor(HttpMethods.GET, path)
+        } ++
+        endpointsRouter.postTree.allFullPaths.map { path =>
+          HttpEndpointDescriptor(HttpMethods.POST, path)
+        } ++
+        endpointsRouter.putTree.allFullPaths.map { path =>
+          HttpEndpointDescriptor(HttpMethods.PUT, path)
+        } ++
+        endpointsRouter.patchTree.allFullPaths.map { path =>
+          HttpEndpointDescriptor(HttpMethods.PATCH, path)
+        } ++
+        endpointsRouter.deleteTree.allFullPaths.map { path =>
+          HttpEndpointDescriptor(HttpMethods.DELETE, path)
+        }
     }
   }
 
