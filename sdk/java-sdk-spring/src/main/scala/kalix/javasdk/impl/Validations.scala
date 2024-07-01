@@ -591,11 +591,13 @@ object Validations {
     val offendingMethods = component.getMethods
       .filter(hasValueEntitySubscription)
       .filterNot(hasHandleDeletes)
-      .filter(_.getParameterTypes.isEmpty) //maybe a delete handler
+      .filterNot(_.getParameterTypes.length == 1)
 
     val messages =
       offendingMethods.map { method =>
-        errorMessage(method, "Subscription method must have one parameter, unless it's marked as handleDeletes.")
+        errorMessage(
+          method,
+          "Subscription method must have exactly one parameter, unless it's marked as handleDeletes.")
       }
 
     Validation(messages)

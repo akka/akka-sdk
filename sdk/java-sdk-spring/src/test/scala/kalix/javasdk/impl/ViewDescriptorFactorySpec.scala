@@ -24,7 +24,6 @@ import kalix.spring.testmodels.view.ViewTestModels.MultiTableViewWithViewIdInInn
 import kalix.spring.testmodels.view.ViewTestModels.MultiTableViewWithoutQuery
 import kalix.spring.testmodels.view.ViewTestModels.MultiTableViewWithoutViewId
 import kalix.spring.testmodels.view.ViewTestModels.SubscribeToEventSourcedEvents
-import kalix.spring.testmodels.view.ViewTestModels.SubscribeToEventSourcedEventsWithMethodWithState
 import kalix.spring.testmodels.view.ViewTestModels.SubscribeToEventSourcedWithMissingHandlerState
 import kalix.spring.testmodels.view.ViewTestModels.TimeTrackerView
 import kalix.spring.testmodels.view.ViewTestModels.TopicSubscriptionView
@@ -164,7 +163,8 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
       // on method level only true is acceptable
       intercept[InvalidComponentException] {
         Validations.validate(classOf[ViewWithHandleDeletesFalseOnMethodLevel]).failIfInvalid
-      }.getMessage should include("Subscription method must have one parameter, unless it's marked as handleDeletes.")
+      }.getMessage should include(
+        "Subscription method must have exactly one parameter, unless it's marked as handleDeletes.")
     }
 
     "not allow duplicated subscriptions methods" in {
@@ -288,30 +288,9 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
       }
     }
 
-    "generate proto for a View request with explicit update method that also receives the current state" in {
-      assertDescriptor[TransformedUserViewUsingState] { desc =>
-        val methodOptions = this.findKalixMethodOptions(desc, "OnChange")
-        val entityType = methodOptions.getEventing.getIn.getValueEntity
-        entityType shouldBe "user"
-
-        methodOptions.getView.getUpdate.getTable shouldBe "users_view"
-        methodOptions.getView.getUpdate.getTransformUpdates shouldBe true
-        methodOptions.getView.getJsonSchema.getOutput shouldBe "TransformedUser"
-
-        val queryMethodOptions = this.findKalixMethodOptions(desc, "GetUser")
-        queryMethodOptions.getView.getQuery.getQuery shouldBe "SELECT * FROM users_view WHERE email = :email"
-        queryMethodOptions.getView.getJsonSchema.getJsonBodyInputField shouldBe "json_body"
-        queryMethodOptions.getView.getJsonSchema.getInput shouldBe "ByEmail"
-        queryMethodOptions.getView.getJsonSchema.getOutput shouldBe "TransformedUser"
-
-        val tableMessageDescriptor = desc.fileDescriptor.findMessageTypeByName("TransformedUser")
-        tableMessageDescriptor should not be null
-
-        val rule = findHttpRule(desc, "GetUser")
-        rule.getPost shouldBe "/akka/v1.0/view/users_view/getUser"
-
-        val javaMethod = desc.commandHandlers("OnChange").methodInvokers.values.head
-        javaMethod.parameterExtractors.length shouldBe 1
+    "fail for update method that also expects the current state as parameter" in {
+      intercept[InvalidComponentException] {
+        Validations.validate(classOf[TransformedUserViewUsingState]).failIfInvalid
       }
     }
 
@@ -333,31 +312,6 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
 
         val methodOptions = this.findKalixMethodOptions(desc, "KalixSyntheticMethodOnESEmployee")
         methodOptions.getEventing.getIn.getEventSourcedEntity shouldBe "employee"
-
-        methodOptions.getView.getUpdate.getTable shouldBe "employees_view"
-        methodOptions.getView.getUpdate.getTransformUpdates shouldBe true
-        methodOptions.getView.getJsonSchema.getOutput shouldBe "Employee"
-
-        val queryMethodOptions = this.findKalixMethodOptions(desc, "GetEmployeeByEmail")
-        queryMethodOptions.getView.getQuery.getQuery shouldBe "SELECT * FROM employees_view WHERE email = :email"
-        queryMethodOptions.getView.getJsonSchema.getOutput shouldBe "Employee"
-        // not defined when query body not used
-        queryMethodOptions.getView.getJsonSchema.getInput shouldBe "ByEmail"
-
-        val tableMessageDescriptor = desc.fileDescriptor.findMessageTypeByName("Employee")
-        tableMessageDescriptor should not be null
-
-        val rule = findHttpRule(desc, "GetEmployeeByEmail")
-        rule.getPost shouldBe "/akka/v1.0/view/users_view/getEmployeeByEmail"
-      }
-    }
-
-    "generate proto for a View with subscription method accepting state" in {
-      assertDescriptor[SubscribeToEventSourcedEventsWithMethodWithState] { desc =>
-
-        val methodOptions = this.findKalixMethodOptions(desc, "KalixSyntheticMethodOnESEmployee")
-        val entityType = methodOptions.getEventing.getIn.getEventSourcedEntity
-        entityType shouldBe "employee"
 
         methodOptions.getView.getUpdate.getTable shouldBe "employees_view"
         methodOptions.getView.getUpdate.getTransformUpdates shouldBe true

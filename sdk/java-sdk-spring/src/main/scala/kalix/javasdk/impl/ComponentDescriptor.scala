@@ -204,13 +204,19 @@ private[kalix] object ComponentDescriptor {
           val methodInvokers =
             serviceMethod.javaMethodOpt
               .map { meth =>
-                val parameterExtractors: ParameterExtractorsArray =
-                  if (meth.getParameterTypes.length == 1)
-                    Array(
-                      new ParameterExtractors.BodyExtractor(messageDescriptor.findFieldByNumber(1), method.inputType))
-                  else
-                    Array.empty // parameterless method, not extractor needed
-
+                val parameterExtractors: ParameterExtractorsArray = {
+                  meth.getParameterTypes.length match {
+                    case 1 =>
+                      Array(
+                        new ParameterExtractors.BodyExtractor(messageDescriptor.findFieldByNumber(1), method.inputType))
+                    case 0 =>
+                      // parameterless method, not extractor needed
+                      Array.empty
+                    case n =>
+                      throw new IllegalStateException(
+                        s"Command handler ${method} is expecting $n parameters, should be 0 or 1")
+                  }
+                }
                 Map(typeUrl -> MethodInvoker(meth, parameterExtractors))
               }
               .getOrElse(Map.empty)
@@ -220,8 +226,15 @@ private[kalix] object ComponentDescriptor {
         case method: CombinedSubscriptionServiceMethod =>
           val methodInvokers =
             method.methodsMap.map { case (typeUrl, meth) =>
-              val parameterExtractors: ParameterExtractorsArray =
-                meth.getParameterTypes.map(param => ParameterExtractors.AnyBodyExtractor[AnyRef](param))
+              val parameterExtractors: ParameterExtractorsArray = {
+                meth.getParameterTypes.length match {
+                  case 1 =>
+                    Array(new ParameterExtractors.AnyBodyExtractor[AnyRef](meth.getParameterTypes.head))
+                  case n =>
+                    throw new IllegalStateException(
+                      s"Update handler ${method} is expecting $n parameters, should be 1, the update")
+                }
+              }
 
               (typeUrl, MethodInvoker(meth, parameterExtractors))
             }
