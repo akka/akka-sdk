@@ -1,9 +1,17 @@
 package customer.api;
 
+import customer.views.Customer;
 import customer.views.CustomerPublicEvent.Created;
+import customer.views.CustomersByEmailView;
+import customer.views.CustomersByNameView;
 import kalix.javasdk.testkit.EventingTestKit.IncomingMessages;
 import kalix.javasdk.testkit.KalixTestKit;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
+
+import java.util.concurrent.TimeUnit;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class CustomersByNameViewIntegrationTest extends CustomerRegistryIntegrationTest {
 
@@ -23,7 +31,7 @@ public class CustomersByNameViewIntegrationTest extends CustomerRegistryIntegrat
 
     customerEvents.publish(created1, "b");
     customerEvents.publish(created2, "a");
-/* FIXME
+
     Awaitility.await()
       .ignoreExceptions()
       .atMost(20, TimeUnit.SECONDS)
@@ -50,7 +58,5 @@ public class CustomersByNameViewIntegrationTest extends CustomerRegistryIntegrat
 
         }
       );
-
- */
   }
 }

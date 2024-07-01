@@ -98,10 +98,6 @@ object Validations {
   private def assignable[T: ClassTag](component: Class[_]): Boolean =
     implicitly[ClassTag[T]].runtimeClass.asInstanceOf[Class[T]].isAssignableFrom(component)
 
-  private def commonValidation(component: Class[_]): Validation = {
-    Valid
-  }
-
   private def commonSubscriptionValidation(
       component: Class[_],
       updateMethodPredicate: Method => Boolean): Validation = {
@@ -189,7 +185,6 @@ object Validations {
 
   private def validateAction(component: Class[_]): Validation = {
     when[Action](component) {
-      commonValidation(component) ++
       commonSubscriptionValidation(component, hasActionOutput) ++
       actionValidation(component)
     }
@@ -222,7 +217,6 @@ object Validations {
     when(!Reflect.isNestedViewTable(component)) {
       viewMustHaveAtLeastOneQueryMethod(component)
     } ++
-    commonValidation(component) ++
     commonSubscriptionValidation(component, hasUpdateEffectOutput) ++
     viewMustHaveTableName(component) ++
     viewMustHaveMethodLevelSubscriptionWhenTransformingUpdates(component)

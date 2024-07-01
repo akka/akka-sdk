@@ -23,6 +23,7 @@ import io.grpc.Internal;
 import kalix.javasdk.JsonSupport;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -192,14 +193,21 @@ public class HttpClient {
           if (res.status().isFailure()) {
             // FIXME should we have a better way to deal with failure?
             // FIXME what about error responses with a body, now we can't expect/parse those
-            var errorString = "HTTP request for [" + request.getUri() + "] failed with " + res.status();
+            var errorString = "HTTP request for [" + request.getUri() + "] failed with HTTP status " + res.status();
             if (res.entity().getContentType().binary()) {
               throw new RuntimeException(errorString);
             } else {
               throw new RuntimeException(errorString + ": " + bytes.utf8String());
             }
+          } else {
+            if (res.entity().getContentType().equals(ContentTypes.APPLICATION_JSON)) {
+              return new StrictResponse(res, JsonSupport.parseBytes(bytes.toArrayUnsafe(), type));
+            } else if (!res.entity().getContentType().binary() && type == String.class) {
+              return new StrictResponse(res, new String(bytes.toArrayUnsafe(), res.entity().getContentType().getCharsetOption().map(c -> c.nioCharset()).orElse(StandardCharsets.UTF_8)));
+            } else {
+              throw new RuntimeException("Expected to parse the response for " + request.getUri() + " to " + type + " but response content type is " + res.entity().getContentType());
+            }
           }
-          return new StrictResponse<>(res, JsonSupport.parseBytes(bytes.toArrayUnsafe(), type));
         } catch (IOException e) {
           throw new RuntimeException(e);
         }

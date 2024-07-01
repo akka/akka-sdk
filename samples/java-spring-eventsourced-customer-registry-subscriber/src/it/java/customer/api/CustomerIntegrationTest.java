@@ -52,7 +52,7 @@ public class CustomerIntegrationTest extends CustomerRegistryIntegrationTest {
         await(
           componentClient.forAction()
             .method(CustomerRegistryAction::create)
-            .deferred(new CustomerRegistryAction.CreateRequest(id, customer)).invokeAsync()
+            .invokeAsync(new CustomerRegistryAction.CreateRequest(id, customer))
         ).msg(),
         new IsEqual<>("done")
       );

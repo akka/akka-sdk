@@ -49,9 +49,6 @@ import scala.util.control.NonFatal
 @InternalApi
 object HttpEndpointMethodRouter {
 
-  // FIXME error logging with a logger for the component class?
-  private val logger = LoggerFactory.getLogger(getClass)
-
   case class HttpMethodInvoker(
       instanceFactory: () => Any,
       httpMethod: HttpMethod,
@@ -109,30 +106,6 @@ object HttpEndpointMethodRouter {
   val empty: HttpEndpointMethodRouter = HttpEndpointMethodRouter(Seq.empty)
 
   private val CorrelationIdMdcKey = "correlationID"
-  private val defaultErrorHandling: PartialFunction[Throwable, HttpResponse] = {
-    case ex: InvocationTargetException if ex.getCause != null =>
-      // Unfold invocation target exception so we get the actual user exception
-      defaultErrorHandling(ex.getCause)
-    case ex: CompletionException if ex.getCause != null =>
-      // Unfold nested Java CS exception so we get the actual user exception
-      defaultErrorHandling(ex.getCause)
-    case ex: IllegalArgumentException =>
-      if (ex.getMessage != null) logger.debug("Bad request: {}", ex.getMessage)
-      HttpResponse(
-        StatusCodes.BadRequest,
-        entity = if (ex.getMessage != null) HttpEntity(ex.getMessage) else HttpEntity.Empty)
-    case NonFatal(ex) =>
-      // Note: the default is to not pass along potentially secret internal error details to clients but to
-      // log in the service and pass a correlation id to the client that they can then hand to the
-      // owner of the service for debugging
-      // FIXME know that we are in test/dev mode and return the full error description in response, and only use correlation
-      //       id in "prod" mode for faster local turnaround
-      val correlationId = UUID.randomUUID().toString
-      MDC.put(CorrelationIdMdcKey, correlationId)
-      logger.warn(s"Endpoint error [correlation id $correlationId]", ex)
-      MDC.remove(CorrelationIdMdcKey)
-      HttpResponse(StatusCodes.InternalServerError, entity = HttpEntity(s"Unexpected error [$correlationId]"))
-  }
 }
 
 /**
@@ -215,7 +188,39 @@ case class HttpEndpointMethodRouter(methodInvokers: Seq[HttpMethodInvoker]) {
         case None =>
           // FIXME we must always consume, but should we also fail if there is a request payload for a no-body method?
           req.entity.discardBytes().future().flatMap(_ => handleResponse(methodInvoker.invoke(params)))
-      }).recover(HttpEndpointMethodRouter.defaultErrorHandling)
+      }).recover(defaultErrorHandling(methodInvoker))
+  }
+
+  private def defaultErrorHandling(methodInvoker: HttpMethodInvoker): PartialFunction[Throwable, HttpResponse] = {
+    def loggerForEndpoint = LoggerFactory.getLogger(methodInvoker.javaMethod.getDeclaringClass)
+
+    {
+      case ex: InvocationTargetException if ex.getCause != null =>
+        // Unfold invocation target exception so we get the actual user exception
+        defaultErrorHandling(methodInvoker)(ex.getCause)
+      case ex: CompletionException if ex.getCause != null =>
+        // Unfold nested Java CS exception so we get the actual user exception
+        defaultErrorHandling(methodInvoker)(ex.getCause)
+      case ex: IllegalArgumentException =>
+        if (ex.getMessage != null) {
+          loggerForEndpoint.debug("Bad request: {}", ex.getMessage)
+        }
+        HttpResponse(
+          StatusCodes.BadRequest,
+          entity = if (ex.getMessage != null) HttpEntity(ex.getMessage) else HttpEntity.Empty)
+      case NonFatal(ex) =>
+        // Note: the default is to not pass along potentially secret internal error details to clients but to
+        // log in the service and pass a correlation id to the client that they can then hand to the
+        // owner of the service for debugging
+        // FIXME know that we are in test/dev mode and return the full error description in response, and only use correlation
+        //       id in "prod" mode for faster local turnaround
+        val correlationId = UUID.randomUUID().toString
+        MDC.put(HttpEndpointMethodRouter.CorrelationIdMdcKey, correlationId)
+        // FIXME include what endpoint path it was
+        loggerForEndpoint.warn(s"Endpoint error [correlation id $correlationId]", ex)
+        MDC.remove(HttpEndpointMethodRouter.CorrelationIdMdcKey)
+        HttpResponse(StatusCodes.InternalServerError, entity = HttpEntity(s"Unexpected error [$correlationId]"))
+    }
   }
 
 }

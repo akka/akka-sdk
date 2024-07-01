@@ -1,16 +1,21 @@
 package customer.api;
 
+import akka.http.javadsl.model.StatusCode;
+import akka.http.javadsl.model.StatusCodes;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import kalix.javasdk.http.HttpClient;
 import kalix.javasdk.testkit.KalixTestKit;
 import kalix.spring.testkit.KalixIntegrationTestKitSupport;
+import org.awaitility.Awaitility;
+import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.BeforeAll;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.http.HttpClient;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 public abstract class CustomerRegistryIntegrationTest extends KalixIntegrationTestKitSupport {
 
@@ -38,53 +43,37 @@ public abstract class CustomerRegistryIntegrationTest extends KalixIntegrationTe
       throw ex;
     }
 
-    // createClient("http://localhost:9000");
+    createClient("http://localhost:9000");
   }
 
-/* FIXME non spring webclient
-  protected HttpStatusCode assertSourceServiceIsUp(WebClient webClient) {
-    try {
-      return webClient.get()
-          .retrieve()
-          .onStatus(HttpStatusCode::is4xxClientError, clientResponse ->
-              Mono.empty()
-          )
-          .toBodilessEntity()
-          .block(timeout)
-          .getStatusCode();
 
-    } catch (WebClientRequestException ex) {
-      throw new RuntimeException("This test requires an external kalix service to be running on localhost:9000 but was not able to reach it.");
+  protected StatusCode assertSourceServiceIsUp(HttpClient httpClient) {
+    try {
+      return await(httpClient.GET("")
+          .invokeAsync()
+      ).httpResponse().status();
+    } catch (Exception ex) {
+      throw new RuntimeException("This test requires an external kalix service to be running on localhost:9000 but was not able to reach it.", ex);
     }
   }
 
   // create the client but only return it after verifying that service is reachable
-  protected WebClient createClient(String url) {
+  protected HttpClient createClient(String url) {
 
-    var webClient =
-        WebClient
-            .builder()
-            .baseUrl(url)
-            .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-            .codecs(configurer ->
-                configurer.defaultCodecs().jackson2JsonEncoder(
-                    new Jackson2JsonEncoder(JsonSupport.getObjectMapper(), MediaType.APPLICATION_JSON)
-                )
-            )
-            .build();
+    var httpClient = new kalix.javasdk.http.HttpClient(kalixTestKit.getActorSystem(), url);
 
     // wait until customer service is up
     Awaitility.await()
         .ignoreExceptions()
         .pollInterval(5, TimeUnit.SECONDS)
         .atMost(5, TimeUnit.MINUTES)
-        .until(() -> assertSourceServiceIsUp(webClient),
-            new IsEqual(HttpStatus.NOT_FOUND)  // NOT_FOUND is a sign that the customer registry service is there
+        .until(() -> assertSourceServiceIsUp(httpClient),
+            new IsEqual(StatusCodes.NOT_FOUND)  // NOT_FOUND is a sign that the customer registry service is there
         );
 
-    return webClient;
+    return httpClient;
   }
 
- */
+
 
 }

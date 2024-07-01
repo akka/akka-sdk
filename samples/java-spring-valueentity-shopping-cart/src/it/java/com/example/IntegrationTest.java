@@ -73,8 +73,7 @@ public class IntegrationTest extends KalixIntegrationTestKitSupport {
   String createPrePopulated() {
     return
       await(httpClient.POST("/carts/prepopulated")
-        // FIXME clunky when done like this, but Jackson doesn't parse the reply as string
-        .parseResponseBody(bytes -> new String(bytes, StandardCharsets.UTF_8))
+        .responseBodyAs(String.class)
         .invokeAsync(), timeout)
               .body();
   }
