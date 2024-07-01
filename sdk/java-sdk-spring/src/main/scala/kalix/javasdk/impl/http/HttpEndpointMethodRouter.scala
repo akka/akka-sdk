@@ -183,6 +183,7 @@ case class HttpEndpointMethodRouter(methodInvokers: Seq[HttpMethodInvoker]) {
 
       def toHttpResponse(res: Any): HttpResponse =
         res match {
+          case null                  => HttpResponse(entity = HttpEntity.Empty)
           case httpRes: HttpResponse => httpRes
           case str: String           => HttpResponse(entity = HttpEntity(ContentTypes.`text/plain(UTF-8)`, str))
           case res =>

@@ -199,5 +199,21 @@ class HttpEndpointMethodRouterSpec
       }
     }
 
+    "return empty response for void method" in {
+      val request = HttpRequest(HttpMethods.DELETE, uri = "/hello")
+
+      request ~> Route.seal(route) ~> check {
+        response.entity shouldEqual HttpEntity.Empty
+      }
+    }
+
+    "return empty response for null return" in {
+      val request = HttpRequest(HttpMethods.DELETE, uri = "/hello/name")
+
+      request ~> Route.seal(route) ~> check {
+        response.entity shouldEqual HttpEntity.Empty
+      }
+    }
+
   }
 }

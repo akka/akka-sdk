@@ -124,7 +124,13 @@ public class EndpointsTestModels {
 
     @Delete
     public void helloDelete() {
+      // test coverage for return void
+    }
 
+    @Delete("/{name}/")
+    public String helloDelete(String name) {
+      // test coverage for return null
+      return null;
     }
   }
 
