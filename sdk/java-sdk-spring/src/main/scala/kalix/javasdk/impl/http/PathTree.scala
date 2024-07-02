@@ -15,11 +15,10 @@ import akka.http.scaladsl.model.Uri.Path
 import akka.http.scaladsl.server.PathMatcher
 import akka.http.scaladsl.server.PathMatcher.Matched
 import akka.http.scaladsl.server.PathMatchers
+import kalix.javasdk.impl.http.Matchers.ConstMatcher
+import kalix.javasdk.impl.http.Matchers.MatchersOrdering
 import kalix.javasdk.impl.http.PathTree.ParameterizedMethodInvoker
 import kalix.javasdk.impl.http.PathTree.PathNode
-import kalix.javasdk.impl.http.Matchers.MatchersOrdering
-import kalix.javasdk.impl.http.Matchers.ConstMatcher
-
 import org.slf4j.LoggerFactory
 
 /**
@@ -150,7 +149,7 @@ object PathTree {
             traverse(tail, parent + "/" + head, pathNode +: acc)
           }
 
-        case Path.Segment(head, tail) => // those are constant path, using Neutral to extract nothing
+        case Path.Segment(head, tail) => // those are constant paths, using ConstMatcher
           if (tail.isEmpty) {
             val pathNode = new PathNode(parent, head, ConstMatcher(head), ListBuffer.empty, Some(methodInvoker))
             pathNode +: acc
@@ -162,7 +161,16 @@ object PathTree {
       }
     }
 
-    val nodes = traverse(Path(pathPattern), "", List.empty)
+    // paths like /a/b/c/ or /a/b/c/// need to be sanitized to /a/b/c
+    @tailrec
+    def sanitize(original: Path, sanitized: Path): Path =
+      original match {
+        case Path.Slash(tail)         => sanitize(tail, sanitized)
+        case Path.Segment(head, tail) => sanitize(tail, sanitized / head)
+        case Path.Empty               => sanitized
+      }
+
+    val nodes = traverse(sanitize(Path(pathPattern), Path.Empty), "", List.empty)
     nodes.reverse
   }
 

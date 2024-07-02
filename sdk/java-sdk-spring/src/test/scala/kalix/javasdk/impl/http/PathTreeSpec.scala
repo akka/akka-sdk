@@ -16,6 +16,7 @@ import kalix.spring.testmodels.EndpointsTestModels
 import kalix.spring.testmodels.EndpointsTestModels.FooBar
 import kalix.spring.testmodels.EndpointsTestModels.FooBarBaz
 import kalix.spring.testmodels.EndpointsTestModels.FooBarBazWithInt
+import kalix.spring.testmodels.EndpointsTestModels.FooTrailingSlashes
 import kalix.spring.testmodels.EndpointsTestModels.FooWithDoubleMapping1
 import kalix.spring.testmodels.EndpointsTestModels.FooWithDoubleMapping2
 import kalix.spring.testmodels.EndpointsTestModels.TestBoolean
@@ -60,7 +61,7 @@ class PathTreeSpec extends AnyWordSpec with Matchers with LogCapturing with Opti
 
   "PathTreeSpec" should {
 
-    "return no match for look on a partial path" in {
+    "return no match for look up on a partial path" in {
       // returns a no match because invoker is on /foo/bar/baz and /foo/bar has no invoker
       val pathTree = pathTreeFor[EndpointsTestModels.Foo]
       pathTree.invokerFor(Path("/foo/bar")) shouldBe empty
@@ -70,6 +71,16 @@ class PathTreeSpec extends AnyWordSpec with Matchers with LogCapturing with Opti
       val pathTree = pathTreeFor[FooBarBaz]
       val result = pathTree.invokerFor(Path("/foo/bar/baz")).value
       result.javaMethod.getName shouldBe "doBazThings"
+    }
+
+    "return a match for look up on a complete path with trailing slashes" in {
+      val pathTree = pathTreeFor[FooTrailingSlashes]
+
+      val resultFoo = pathTree.invokerFor(Path("/foo")).value
+      resultFoo.javaMethod.getName shouldBe "foo"
+
+      val resultFooBar = pathTree.invokerFor(Path("/foo/bar")).value
+      resultFooBar.javaMethod.getName shouldBe "fooBar"
     }
 
     "return a match for node in middle of the tree path" in {

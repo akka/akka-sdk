@@ -135,10 +135,17 @@ public class EndpointsTestModels {
     }
   }
 
-
   public static class Foo {
     @Get("/foo")
     public void doFooThings() {}
+  }
+
+  public static class FooTrailingSlashes {
+    @Get("/foo/")
+    public void foo() {}
+
+    @Get("/foo/bar/////")
+    public void fooBar() {}
   }
 
   public static class FooBar {
