@@ -32,7 +32,8 @@ object Dependencies {
   val JUnitVersion = "4.13.2"
   val JUnitInterfaceVersion = "0.11"
   val JUnitJupiterVersion = "5.10.1"
-  val OpenTelemetryVersion = "1.28.0"
+  val OpenTelemetryVersion = "1.39.0"
+  val OpenTelemetrySemConv = "1.25.0-alpha"
 
   val CommonsIoVersion = "2.11.0"
   val MunitVersion = "0.7.29"
@@ -80,7 +81,7 @@ object Dependencies {
   val opentelemetrySdk = "io.opentelemetry" % "opentelemetry-sdk" % OpenTelemetryVersion
   val opentelemetryExporterOtlp = "io.opentelemetry" % "opentelemetry-exporter-otlp" % OpenTelemetryVersion
   val opentelemetryContext = "io.opentelemetry" % "opentelemetry-context" % OpenTelemetryVersion
-  val opentelemetrySemConv = "io.opentelemetry" % "opentelemetry-semconv" % (OpenTelemetryVersion + "-alpha")
+  val opentelemetrySemConv = "io.opentelemetry.semconv" % "opentelemetry-semconv" % OpenTelemetrySemConv
 
   val scalapbCompilerPlugin = "com.thesamet.scalapb" %% "compilerplugin" % scalapb.compiler.Version.scalapbVersion
   val scalaPbValidateCore = "com.thesamet.scalapb" %% "scalapb-validate-core" % "0.3.4"
