@@ -87,7 +87,6 @@ object Dependencies {
   val scalaPbValidateCore = "com.thesamet.scalapb" %% "scalapb-validate-core" % "0.3.4"
   val sbtProtoc = "com.thesamet" % "sbt-protoc" % "1.0.0"
 
-  val akkaGrpc = "com.lightbend.akka.grpc" % "sbt-akka-grpc" % akka.grpc.gen.BuildInfo.version
   val scalaCollectionCompat = "org.scala-lang.modules" %% "scala-collection-compat" % "2.10.0"
   val typesafeConfig = "com.typesafe" % "config" % "1.4.2"
 
@@ -170,11 +169,6 @@ object Dependencies {
       "net.aichler" % "jupiter-interface" % JupiterKeys.jupiterVersion.value % s"$Test, $IntegrationTest",
       scalaTest % Test)
 
-  // FIXME
-  val scalaSdk = deps ++= sdkDeps ++ Seq(jacksonScala)
-
-  val scalaSdkTestKit = deps ++= Seq(testContainers, logback % "test;provided", scalaTest % Test)
-
   val tck = deps ++= Seq(
     // FIXME: For now TCK protos have been copied and adapted into this project.
     //        Running the TCK is still meaningful as it runs the TCK check against the defined framework version.
@@ -183,25 +177,6 @@ object Dependencies {
     //  kalixTckProtocol % "protobuf-src",
     //  "io.kalix" % "kalix-tck-protocol" % Kalix.RuntimeVersion % "protobuf-src",
     logback)
-
-  val codegenCore = deps ++= Seq(
-    protobufJava,
-    scalaCollectionCompat,
-    "com.thesamet.scalapb" %% "scalapb-runtime" % scalapb.compiler.Version.scalapbVersion % "protobuf",
-    "com.google.guava" % "guava" % "30.1-jre",
-    kalixSdkProtocol % "compile;protobuf-src",
-    logback % Test,
-    munit % Test,
-    munitScalaCheck % Test)
-
-  val codegenJava = deps ++= Seq(commonsIo, logback % Test, munit % Test, munitScalaCheck % Test)
-
-  val codegenScala = deps ++= Seq(scalapbCompilerPlugin, munit % Test)
-
-  val sbtPlugin = Seq(
-    // we depend on it in the settings of the plugin since we set keys of the sbt-protoc plugin
-    addSbtPlugin(sbtProtoc),
-    addSbtPlugin(akkaGrpc))
 
   lazy val excludeTheseDependencies: Seq[ExclusionRule] = Seq(
     // exclusion rules can be added here

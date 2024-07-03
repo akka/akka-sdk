@@ -1,9 +1,0 @@
-// Copyright (C) 2021-2024 Lightbend Inc. <https://www.lightbend.com>
-
-syntax = "proto3";
-
-package com.example.state_in_different_proto.state;
-
-message UserState {
-  string name = 1;
-}
