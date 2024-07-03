@@ -49,6 +49,7 @@ import kalix.protocol.component.Failure
 import kalix.protocol.component.MetadataEntry
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.slf4j.MDC
 
 final class ActionService(
     val factory: ActionFactory,
@@ -170,6 +171,7 @@ private[kalix] final class ActionsImpl(
       case Some(service) =>
         val span = telemetries(service.serviceName).buildSpan(service, in)
 
+        span.foreach(s => MDC.put(Telemetry.TRACE_ID, s.getSpanContext.getTraceId))
         val fut =
           try {
             val context = createContext(in, service.messageCodec, span.map(_.getSpanContext), service.serviceName)
@@ -183,9 +185,13 @@ private[kalix] final class ActionsImpl(
             case NonFatal(ex) =>
               // command handler threw an "unexpected" error
               Future.successful(handleUnexpectedException(service, in, ex))
+          } finally {
+            MDC.remove(Telemetry.TRACE_ID)
           }
         fut.andThen { case _ =>
-          span.foreach(_.end())
+          span.foreach { s =>
+            s.end()
+          }
         }
       case None =>
         Future.successful(

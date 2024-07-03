@@ -26,6 +26,7 @@ import kalix.javasdk.valueentity.ValueEntityContext
 import kalix.javasdk.valueentity.ValueEntityOptions
 import kalix.protocol.component.Failure
 import org.slf4j.LoggerFactory
+import org.slf4j.MDC
 
 // FIXME these don't seem to be 'public API', more internals?
 import com.google.protobuf.Descriptors
@@ -151,6 +152,7 @@ final class ValueEntitiesImpl(
           if (log.isTraceEnabled) log.trace("Metadata entries [{}].", metadata.entries)
           val span = instrumentations(service.serviceName).buildSpan(service, command)
 
+          span.foreach(s => MDC.put(Telemetry.TRACE_ID, s.getSpanContext.getTraceId))
           try {
             val cmd =
               service.messageCodec.decodeMessage(
@@ -204,7 +206,10 @@ final class ValueEntitiesImpl(
                 ValueEntityStreamOut(OutReply(ValueEntityReply(command.id, clientAction, Seq.empty, action)))
             }
           } finally {
-            span.foreach(_.end())
+            span.foreach { s =>
+              MDC.remove(Telemetry.TRACE_ID)
+              s.end()
+            }
           }
 
         case InInit(_) =>
