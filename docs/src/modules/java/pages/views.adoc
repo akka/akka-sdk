@@ -82,7 +82,7 @@ In this scenario, the view state should be of type `CustomerSummary` and you wil
 include::example$java-spring-valueentity-customer-registry/src/main/java/customer/view/CustomerSummaryByName.java[tag=class]
 ----
 <1> View is of type `CustomerSummary`.
-<2> `@Subscribe` annotation is at method level rather than at class level.
+<2> `@Consume` annotation is at method level rather than at class level.
 <3> Annotated method needs to handle the state changes of the entity being subscribed to.
 <4> Transform `Customer` into `CustomerSummary`.
 <5> Define route to this view.
@@ -101,11 +101,11 @@ Value Entities can be xref:value-entity#deleting_state[deleted]. We can update o
 ----
 include::example$java-spring-valueentity-customer-registry/src/main/java/customer/view/CustomerSummaryByName.java[tag=delete]
 ----
-<1> `@Subscribe` annotation with `handleDeletes=true`.
+<1> `@Consume` annotation with `handleDeletes=true`.
 <2> Dedicated (parameter-less) handler for deletion.
 <3> An effect to delete the view state `effects().deleteState()`. It could be also an update of a special column, to mark view state as deleted.
 
-NOTE: When using @Subscribe on a class level, `handleDeletes=true` will also work. Kalix will automatically delete the View state.
+NOTE: When using @Consume on a class level, `handleDeletes=true` will also work. Kalix will automatically delete the View state.
 
 [#event-sourced-entity]
 == Creating a View from an Event Sourced Entity
@@ -165,7 +165,7 @@ To delete from the View you can use the `deleteState()` effect from an event tra
 [#topic-view]
 == Creating a View from a topic
 
-The source of a View can be a topic. It works the same way as shown in <<event-sourced-entity>> or <<value-entity>>, but you define it with `@Subscribe.Topic` instead. Note that, on your producer side you must manually pass the `ce-subject` metadata, required by the View component. See the example below for how to pass such metadata.
+The source of a View can be a topic. It works the same way as shown in <<event-sourced-entity>> or <<value-entity>>, but you define it with `@Consume.FromTopic` instead. Note that, on your producer side you must manually pass the `ce-subject` metadata, required by the View component. See the example below for how to pass such metadata.
 
 [source,java]
 .com/example/actions/CounterJournalToTopicWithMetaAction.java

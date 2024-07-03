@@ -9,18 +9,18 @@ import com.example.wiring.valueentities.customer.CustomerEntity;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import kalix.javasdk.JsonSupport;
 import kalix.javasdk.action.Action;
-import kalix.javasdk.annotations.Publish;
-import kalix.javasdk.annotations.Subscribe;
+import kalix.javasdk.annotations.Produce;
+import kalix.javasdk.annotations.Consume;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Subscribe.ValueEntity(CustomerEntity.class)
+@Consume.FromValueEntity(CustomerEntity.class)
 public class PublishBytesToTopic extends Action {
 
   public static final String CUSTOMERS_BYTES_TOPIC = "customers_bytes";
   private Logger logger = LoggerFactory.getLogger(getClass());
 
-  @Publish.Topic(CUSTOMERS_BYTES_TOPIC)
+  @Produce.ToTopic(CUSTOMERS_BYTES_TOPIC)
   public Action.Effect<byte[]> handleChange(CustomerEntity.Customer customer) {
     try {
       var payload = JsonSupport.getObjectMapper().writerFor(CustomerEntity.Customer.class).writeValueAsBytes(customer);

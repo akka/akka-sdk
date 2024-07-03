@@ -8,14 +8,14 @@ import com.example.wiring.eventsourcedentities.counter.Counter;
 import com.example.wiring.eventsourcedentities.counter.CounterEntity;
 import com.example.wiring.eventsourcedentities.counter.CounterEvent;
 import kalix.javasdk.annotations.Query;
-import kalix.javasdk.annotations.Subscribe;
+import kalix.javasdk.annotations.Consume;
 import kalix.javasdk.annotations.Table;
 import kalix.javasdk.annotations.ViewId;
 import kalix.javasdk.view.View;
 
 @ViewId("counters_by_value_with_ignore")
 @Table("counters_by_value_with_ignore")
-@Subscribe.EventSourcedEntity(value = CounterEntity.class, ignoreUnknown = true)
+@Consume.FromEventSourcedEntity(value = CounterEntity.class, ignoreUnknown = true)
 public class CountersByValueWithIgnore extends View<Counter> {
 
   public record QueryParameters(Integer value) {}

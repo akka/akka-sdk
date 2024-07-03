@@ -2,12 +2,12 @@ package com.example.actions;
 
 import com.example.Counter;
 import kalix.javasdk.action.Action;
-import kalix.javasdk.annotations.Subscribe;
+import kalix.javasdk.annotations.Consume;
 import kalix.javasdk.client.ComponentClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Subscribe.Topic(value = "counter-commands", ignoreUnknown = true)
+@Consume.FromTopic(value = "counter-commands", ignoreUnknown = true)
 public class CounterCommandFromTopicAction extends Action {
 
   public record IncreaseCounter(String counterId, int value) {

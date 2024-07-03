@@ -120,24 +120,24 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
       }.getMessage should include("@ViewId name is empty, must be a non-empty string.")
     }
 
-    "not allow @Subscribe annotations in mixed levels" in {
+    "not allow @Consume annotations in mixed levels" in {
       // it should be annotated either on type or on method level
       intercept[InvalidComponentException] {
         Validations.validate(classOf[ViewWithSubscriptionsInMixedLevels]).failIfInvalid
-      }.getMessage should include("You cannot use @Subscribe.ValueEntity annotation in both methods and class.")
+      }.getMessage should include("You cannot use @Consume.FormValueEntity annotation in both methods and class.")
     }
 
-    "not allow @Subscribe annotations on type level with transformation" in {
+    "not allow @Consume annotations on type level with transformation" in {
       // it should be annotated either on type or on method level
       intercept[InvalidComponentException] {
         Validations.validate(classOf[TransformedViewWithoutSubscriptionOnMethodLevel]).failIfInvalid
-      }.getMessage should include("and move the @Subscribe.ValueEntity to it")
+      }.getMessage should include("and move the @Consume.FormValueEntity to it")
     }
 
     "not allow method level handle deletes with type level subscription" in {
       intercept[InvalidComponentException] {
         Validations.validate(classOf[ViewWithSubscriptionsInMixedLevelsHandleDelete]).failIfInvalid
-      }.getMessage should include("You cannot use @Subscribe.ValueEntity annotation in both methods and class.")
+      }.getMessage should include("You cannot use @Consume.FormValueEntity annotation in both methods and class.")
     }
 
     "not allow method level handle deletes without method level subscription" in {
@@ -150,14 +150,14 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
       intercept[InvalidComponentException] {
         Validations.validate(classOf[ViewDuplicatedHandleDeletesAnnotations]).failIfInvalid
       }.getMessage should include(
-        "Multiple methods annotated with @Subscription.ValueEntity(handleDeletes=true) is not allowed.")
+        "Multiple methods annotated with @Consume.FromValueEntity(handleDeletes=true) is not allowed.")
     }
 
     "not allow handle deletes method with param" in {
       intercept[InvalidComponentException] {
         Validations.validate(classOf[ViewHandleDeletesWithParam]).failIfInvalid
       }.getMessage should include(
-        "Method annotated with '@Subscribe.ValueEntity' and handleDeletes=true must not have parameters.")
+        "Method annotated with '@Consume.FormValueEntity' and handleDeletes=true must not have parameters.")
     }
 
     "not allow handle deletes false on method level" in {
@@ -435,10 +435,10 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
       }.getMessage should include("A multi-table View should not be annotated with @Table.")
     }
 
-    "not allow @Subscribe annotations in mixed levels on a ViewTable" in {
+    "not allow @Consume annotations in mixed levels on a ViewTable" in {
       intercept[InvalidComponentException] {
         Validations.validate(classOf[MultiTableViewValidation.ViewTableWithMixedLevelSubscriptions]).failIfInvalid
-      }.getMessage should include("You cannot use @Subscribe.ValueEntity annotation in both methods and class.")
+      }.getMessage should include("You cannot use @Consume.FormValueEntity annotation in both methods and class.")
     }
 
     "fail if no query method found" in {

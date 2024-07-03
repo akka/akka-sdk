@@ -33,10 +33,10 @@ import java.util.stream.Collectors;
                 // actions
                 "kalix.javasdk.annotations.ActionId",
                 // actions or views
-                "kalix.javasdk.annotations.Subscribe.ValueEntity",
-                "kalix.javasdk.annotations.Subscribe.EventSourcedEntity",
-                "kalix.javasdk.annotations.Subscribe.Topic",
-                "kalix.javasdk.annotations.Subscribe.Stream",
+                "kalix.javasdk.annotations.Consume.FromValueEntity",
+                "kalix.javasdk.annotations.Consume.FromEventSourcedEntity",
+                "kalix.javasdk.annotations.Consume.FromTopic",
+                "kalix.javasdk.annotations.Consume.FromServiceStream",
                 // central config/lifecycle class
                 "kalix.javasdk.annotations.KalixService"
         })
@@ -160,10 +160,10 @@ public class ComponentAnnotationProcessor extends AbstractProcessor {
             case "kalix.javasdk.annotations.http.Endpoint" -> ENDPOINT_KEY;
             case "kalix.javasdk.annotations.ViewId" -> VIEW_KEY;
             case "kalix.javasdk.annotations.ActionId" -> ACTION_KEY;
-            case "kalix.javasdk.annotations.Subscribe" -> ACTION_KEY;
+            case "kalix.javasdk.annotations.Consume" -> ACTION_KEY;
             case "kalix.javasdk.annotations.KalixService" -> KALIX_SERVICE_KEY;
             case "kalix.javasdk.annotations.TypeId" -> entityComponentType(annotatedClass);
-            case String s when s.startsWith("kalix.javasdk.annotations.Subscribe") ->
+            case String s when s.startsWith("kalix.javasdk.annotations.Consume") ->
                     actionOrView(annotatedClass);
             default -> throw new IllegalArgumentException("Unknown annotation type: " + annotation.getQualifiedName());
         };

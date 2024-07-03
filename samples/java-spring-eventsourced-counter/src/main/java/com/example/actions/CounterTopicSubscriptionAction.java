@@ -3,11 +3,11 @@ package com.example.actions;
 import com.example.CounterEvent.ValueIncreased;
 import com.example.CounterEvent.ValueMultiplied;
 import kalix.javasdk.action.Action;
-import kalix.javasdk.annotations.Subscribe;
+import kalix.javasdk.annotations.Consume;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Subscribe.Topic(value = "counter-events") // <1>
+@Consume.FromTopic(value = "counter-events") // <1>
 public class CounterTopicSubscriptionAction extends Action {
 
   private Logger logger = LoggerFactory.getLogger(CounterTopicSubscriptionAction.class);

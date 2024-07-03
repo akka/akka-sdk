@@ -1,7 +1,7 @@
 package store.view.joined;
 
 import kalix.javasdk.annotations.Query;
-import kalix.javasdk.annotations.Subscribe;
+import kalix.javasdk.annotations.Consume;
 import kalix.javasdk.annotations.Table;
 import kalix.javasdk.annotations.ViewId;
 import kalix.javasdk.view.View;
@@ -33,7 +33,7 @@ public class JoinedCustomerOrdersView {
   }
 
   @Table("customers") // <4>
-  @Subscribe.EventSourcedEntity(CustomerEntity.class)
+  @Consume.FromEventSourcedEntity(CustomerEntity.class)
   public static class Customers extends View<Customer> {
     public Effect<Customer> onEvent(CustomerEvent event) {
       return switch (event) {
@@ -53,7 +53,7 @@ public class JoinedCustomerOrdersView {
   }
 
   @Table("products") // <4>
-  @Subscribe.EventSourcedEntity(ProductEntity.class)
+  @Consume.FromEventSourcedEntity(ProductEntity.class)
   public static class Products extends View<Product> {
     public Effect<Product> onEvent(ProductEvent event) {
       return switch (event) {
@@ -72,7 +72,7 @@ public class JoinedCustomerOrdersView {
   }
 
   @Table("orders") // <4>
-  @Subscribe.ValueEntity(OrderEntity.class)
+  @Consume.FromValueEntity(OrderEntity.class)
   public static class Orders extends View<Order> {
   }
 }

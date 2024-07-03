@@ -5,9 +5,9 @@
 package com.example;
 
 import kalix.javasdk.action.Action;
-import kalix.javasdk.annotations.Subscribe;
+import kalix.javasdk.annotations.Consume;
 
-@Subscribe.Topic("topic")
+@Consume.FromTopic("topic")
 public class ActionSubscriber extends Action {
 
 

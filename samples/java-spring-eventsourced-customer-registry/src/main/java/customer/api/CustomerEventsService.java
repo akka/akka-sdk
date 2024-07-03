@@ -5,12 +5,12 @@ import customer.domain.CustomerEvent.CustomerCreated;
 import customer.domain.CustomerEvent.NameChanged;
 import kalix.javasdk.action.Action;
 import kalix.javasdk.annotations.Acl;
-import kalix.javasdk.annotations.Publish;
-import kalix.javasdk.annotations.Subscribe;
+import kalix.javasdk.annotations.Produce;
+import kalix.javasdk.annotations.Consume;
 
 // tag::producer[]
-@Subscribe.EventSourcedEntity(value = CustomerEntity.class) // <1>
-@Publish.Stream(id = "customer_events") // <2>
+@Consume.FromEventSourcedEntity(value = CustomerEntity.class) // <1>
+@Produce.ServiceStream(id = "customer_events") // <2>
 @Acl(allow = @Acl.Matcher(service = "*")) // <3>
 public class CustomerEventsService extends Action {
 

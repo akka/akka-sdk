@@ -3,11 +3,11 @@ package com.example.action;
 import com.example.CounterEntity;
 import com.example.Number;
 import kalix.javasdk.action.Action;
-import kalix.javasdk.annotations.Subscribe;
+import kalix.javasdk.annotations.Consume;
 import kalix.javasdk.client.ComponentClient;
 
 
-@Subscribe.ValueEntity(CounterEntity.class)
+@Consume.FromValueEntity(CounterEntity.class)
 public class DoubleCounterAction extends Action {
 
   final private ComponentClient componentClient;

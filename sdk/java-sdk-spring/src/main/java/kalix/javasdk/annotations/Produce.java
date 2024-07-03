@@ -6,8 +6,8 @@ package kalix.javasdk.annotations;
 
 import java.lang.annotation.*;
 
-/** Annotation for aggregating ways of publishing outgoing information. */
-public @interface Publish {
+/** Annotation for aggregating ways of producing outgoing information. */
+public @interface Produce {
 
   /**
    * Annotation for marking a method as producing information to be published on a PubSub or Kafka
@@ -16,19 +16,19 @@ public @interface Publish {
   @Target(ElementType.METHOD)
   @Retention(RetentionPolicy.RUNTIME)
   @Documented
-  @interface Topic {
+  @interface ToTopic {
     /** Assign the name of the topic to be used for eventing out. */
     String value();
   }
 
 
   /**
-   * Annotation to configure the component to publish an event stream to other Kalix services.
+   * Annotation to configure the component to produce an event stream that can be consumed by another Kalix services.
    */
   @Target(ElementType.TYPE)
   @Retention(RetentionPolicy.RUNTIME)
   @Documented
-  @interface Stream {
+  @interface ServiceStream {
     /**
      * Identifier for the event stream. Must be unique inside the same Kalix service.
      */

@@ -3,7 +3,7 @@ package user.registry.subscriber;
 
 import com.typesafe.config.Config;
 import kalix.javasdk.action.Action;
-import kalix.javasdk.annotations.Subscribe;
+import kalix.javasdk.annotations.Consume;
 import kalix.javasdk.client.ComponentClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,7 +28,7 @@ import java.time.Duration;
  * Also, strictly speaking, we don't need to delete the timer when the email address is confirmed. If we don't delete it and the timer fires,
  * the UniqueEmailEntity will just ignore the message. But it is a good practice to clean up obsolete times and save resources.
  */
-@Subscribe.ValueEntity(UniqueEmailEntity.class)
+@Consume.FromValueEntity(UniqueEmailEntity.class)
 public class UniqueEmailSubscriber extends Action {
 
   private Logger logger = LoggerFactory.getLogger(getClass());

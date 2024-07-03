@@ -1,7 +1,7 @@
 package store.view.nested;
 
 import kalix.javasdk.annotations.Query;
-import kalix.javasdk.annotations.Subscribe;
+import kalix.javasdk.annotations.Consume;
 import kalix.javasdk.annotations.Table;
 import kalix.javasdk.annotations.ViewId;
 import kalix.javasdk.view.View;
@@ -34,7 +34,7 @@ public class NestedCustomerOrdersView {
   // end::query[]
 
   @Table("customers")
-  @Subscribe.EventSourcedEntity(CustomerEntity.class)
+  @Consume.FromEventSourcedEntity(CustomerEntity.class)
   public static class Customers extends View<Customer> {
     public Effect<Customer> onEvent(CustomerEvent event) {
       return switch (event) {
@@ -54,7 +54,7 @@ public class NestedCustomerOrdersView {
   }
 
   @Table("products")
-  @Subscribe.EventSourcedEntity(ProductEntity.class)
+  @Consume.FromEventSourcedEntity(ProductEntity.class)
   public static class Products extends View<Product> {
     public Effect<Product> onEvent(ProductEvent event) {
       return switch (event) {
@@ -73,7 +73,7 @@ public class NestedCustomerOrdersView {
   }
 
   @Table("orders")
-  @Subscribe.ValueEntity(OrderEntity.class)
+  @Consume.FromValueEntity(OrderEntity.class)
   public static class Orders extends View<Order> {
   }
 }

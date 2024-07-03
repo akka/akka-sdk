@@ -7,6 +7,7 @@ package kalix.javasdk.impl
 import java.lang.reflect.AnnotatedElement
 import java.lang.reflect.Method
 import java.lang.reflect.ParameterizedType
+
 import kalix.DirectDestination
 import kalix.DirectSource
 import kalix.EventDestination
@@ -18,8 +19,6 @@ import kalix.ServiceEventingOut
 import kalix.ServiceOptions
 import kalix.javasdk.action.Action
 import kalix.javasdk.annotations.Acl
-import kalix.javasdk.annotations.Publish
-import kalix.javasdk.annotations.Subscribe
 import kalix.javasdk.annotations.Table
 import kalix.javasdk.annotations.TypeId
 import kalix.javasdk.annotations.ViewId
@@ -27,6 +26,12 @@ import kalix.javasdk.eventsourcedentity.EventSourcedEntity
 import kalix.javasdk.impl.reflection.CombinedSubscriptionServiceMethod
 import kalix.javasdk.impl.reflection.KalixMethod
 import kalix.javasdk.impl.reflection.NameGenerator
+import kalix.javasdk.annotations.Consume.FromEventSourcedEntity
+import kalix.javasdk.annotations.Consume.FromServiceStream
+import kalix.javasdk.annotations.Consume.FromTopic
+import kalix.javasdk.annotations.Consume.FromValueEntity
+import kalix.javasdk.annotations.Produce.ServiceStream
+import kalix.javasdk.annotations.Produce.ToTopic
 import kalix.javasdk.valueentity.ValueEntity
 import kalix.javasdk.view.View.Effect
 // TODO: abstract away spring dependency
@@ -38,19 +43,19 @@ private[impl] object ComponentDescriptorFactory {
     javaMethod.isPublic && javaMethod.hasAnnotation[Acl]
 
   def hasValueEntitySubscription(clazz: Class[_]): Boolean =
-    clazz.isPublic && clazz.hasAnnotation[Subscribe.ValueEntity]
+    clazz.isPublic && clazz.hasAnnotation[FromValueEntity]
 
   def hasValueEntitySubscription(javaMethod: Method): Boolean =
-    javaMethod.isPublic && javaMethod.hasAnnotation[Subscribe.ValueEntity]
+    javaMethod.isPublic && javaMethod.hasAnnotation[FromValueEntity]
 
   def hasEventSourcedEntitySubscription(javaMethod: Method): Boolean =
-    javaMethod.isPublic && javaMethod.hasAnnotation[Subscribe.EventSourcedEntity]
+    javaMethod.isPublic && javaMethod.hasAnnotation[FromEventSourcedEntity]
 
   def hasEventSourcedEntitySubscription(clazz: Class[_]): Boolean =
-    clazz.isPublic && clazz.hasAnnotation[Subscribe.EventSourcedEntity]
+    clazz.isPublic && clazz.hasAnnotation[FromEventSourcedEntity]
 
-  def streamSubscription(clazz: Class[_]): Option[Subscribe.Stream] =
-    clazz.getAnnotationOption[Subscribe.Stream]
+  def streamSubscription(clazz: Class[_]): Option[FromServiceStream] =
+    clazz.getAnnotationOption[FromServiceStream]
 
   def hasSubscription(javaMethod: Method): Boolean = {
     hasValueEntitySubscription(javaMethod) ||
@@ -65,14 +70,14 @@ private[impl] object ComponentDescriptorFactory {
     hasStreamSubscription(clazz)
   }
 
-  private def valueEntitySubscription(clazz: Class[_]): Option[Subscribe.ValueEntity] =
-    clazz.getAnnotationOption[Subscribe.ValueEntity]
+  private def valueEntitySubscription(clazz: Class[_]): Option[FromValueEntity] =
+    clazz.getAnnotationOption[FromValueEntity]
 
-  def eventSourcedEntitySubscription(clazz: Class[_]): Option[Subscribe.EventSourcedEntity] =
-    clazz.getAnnotationOption[Subscribe.EventSourcedEntity]
+  def eventSourcedEntitySubscription(clazz: Class[_]): Option[FromEventSourcedEntity] =
+    clazz.getAnnotationOption[FromEventSourcedEntity]
 
-  def topicSubscription(clazz: Class[_]): Option[Subscribe.Topic] =
-    clazz.getAnnotationOption[Subscribe.Topic]
+  def topicSubscription(clazz: Class[_]): Option[FromTopic] =
+    clazz.getAnnotationOption[FromTopic]
 
   def hasActionOutput(javaMethod: Method): Boolean = {
     if (javaMethod.isPublic) {
@@ -97,37 +102,37 @@ private[impl] object ComponentDescriptorFactory {
   }
 
   def hasTopicSubscription(javaMethod: Method): Boolean =
-    javaMethod.isPublic && javaMethod.hasAnnotation[Subscribe.Topic]
+    javaMethod.isPublic && javaMethod.hasAnnotation[FromTopic]
 
   def hasHandleDeletes(javaMethod: Method): Boolean = {
-    val ann = javaMethod.getAnnotation(classOf[Subscribe.ValueEntity])
+    val ann = javaMethod.getAnnotation(classOf[FromValueEntity])
     javaMethod.isPublic && ann != null && ann.handleDeletes()
   }
 
   def hasTopicSubscription(clazz: Class[_]): Boolean =
-    clazz.isPublic && clazz.hasAnnotation[Subscribe.Topic]
+    clazz.isPublic && clazz.hasAnnotation[FromTopic]
 
   def hasStreamSubscription(clazz: Class[_]): Boolean =
-    clazz.isPublic && clazz.hasAnnotation[Subscribe.Stream]
+    clazz.isPublic && clazz.hasAnnotation[FromServiceStream]
 
   def hasTopicPublication(javaMethod: Method): Boolean =
-    javaMethod.isPublic && javaMethod.hasAnnotation[Publish.Topic]
+    javaMethod.isPublic && javaMethod.hasAnnotation[ToTopic]
 
   def readTypeIdValue(annotated: AnnotatedElement): String =
     annotated.getAnnotation(classOf[TypeId]).value()
 
   def findEventSourcedEntityType(javaMethod: Method): String = {
-    val ann = javaMethod.getAnnotation(classOf[Subscribe.EventSourcedEntity])
+    val ann = javaMethod.getAnnotation(classOf[FromEventSourcedEntity])
     readTypeIdValue(ann.value())
   }
 
   def findEventSourcedEntityClass(javaMethod: Method): Class[_ <: EventSourcedEntity[_, _]] = {
-    val ann = javaMethod.getAnnotation(classOf[Subscribe.EventSourcedEntity])
+    val ann = javaMethod.getAnnotation(classOf[FromEventSourcedEntity])
     ann.value()
   }
 
   private def findValueEntityClass(javaMethod: Method): Class[_ <: ValueEntity[_]] = {
-    val ann = javaMethod.getAnnotation(classOf[Subscribe.ValueEntity])
+    val ann = javaMethod.getAnnotation(classOf[FromValueEntity])
     ann.value()
   }
 
@@ -144,62 +149,62 @@ private[impl] object ComponentDescriptorFactory {
   }
 
   def findEventSourcedEntityType(clazz: Class[_]): String = {
-    val ann = clazz.getAnnotation(classOf[Subscribe.EventSourcedEntity])
+    val ann = clazz.getAnnotation(classOf[FromEventSourcedEntity])
     readTypeIdValue(ann.value())
   }
 
   def findValueEntityType(javaMethod: Method): String = {
-    val ann = javaMethod.getAnnotation(classOf[Subscribe.ValueEntity])
+    val ann = javaMethod.getAnnotation(classOf[FromValueEntity])
     readTypeIdValue(ann.value())
   }
 
   def findValueEntityType(component: Class[_]): String = {
-    val ann = component.getAnnotation(classOf[Subscribe.ValueEntity])
+    val ann = component.getAnnotation(classOf[FromValueEntity])
     readTypeIdValue(ann.value())
   }
 
   def findHandleDeletes(javaMethod: Method): Boolean = {
-    val ann = javaMethod.getAnnotation(classOf[Subscribe.ValueEntity])
+    val ann = javaMethod.getAnnotation(classOf[FromValueEntity])
     ann.handleDeletes()
   }
 
   def findHandleDeletes(component: Class[_]): Boolean = {
-    val ann = component.getAnnotation(classOf[Subscribe.ValueEntity])
+    val ann = component.getAnnotation(classOf[FromValueEntity])
     ann.handleDeletes()
   }
 
   def findSubscriptionTopicName(javaMethod: Method): String = {
-    val ann = javaMethod.getAnnotation(classOf[Subscribe.Topic])
+    val ann = javaMethod.getAnnotation(classOf[FromTopic])
     ann.value()
   }
 
   def findSubscriptionTopicName(clazz: Class[_]): String = {
-    val ann = clazz.getAnnotation(classOf[Subscribe.Topic])
+    val ann = clazz.getAnnotation(classOf[FromTopic])
     ann.value()
   }
 
   def findSubscriptionConsumerGroup(javaMethod: Method): String = {
-    val ann = javaMethod.getAnnotation(classOf[Subscribe.Topic])
+    val ann = javaMethod.getAnnotation(classOf[FromTopic])
     ann.consumerGroup()
   }
 
   private def findSubscriptionConsumerGroup(clazz: Class[_]): String = {
-    val ann = clazz.getAnnotation(classOf[Subscribe.Topic])
+    val ann = clazz.getAnnotation(classOf[FromTopic])
     ann.consumerGroup()
   }
 
   def findPublicationTopicName(javaMethod: Method): String = {
-    val ann = javaMethod.getAnnotation(classOf[Publish.Topic])
+    val ann = javaMethod.getAnnotation(classOf[ToTopic])
     ann.value()
   }
 
   def hasIgnoreForTopic(clazz: Class[_]): Boolean = {
-    val ann = clazz.getAnnotation(classOf[Subscribe.Topic])
+    val ann = clazz.getAnnotation(classOf[FromTopic])
     ann.ignoreUnknown()
   }
 
   def hasIgnoreForEventSourcedEntity(clazz: Class[_]): Boolean = {
-    val ann = clazz.getAnnotation(classOf[Subscribe.EventSourcedEntity])
+    val ann = clazz.getAnnotation(classOf[FromEventSourcedEntity])
     ann.ignoreUnknown()
   }
 
@@ -309,7 +314,7 @@ private[impl] object ComponentDescriptorFactory {
   }
 
   def subscribeToEventStream(component: Class[_]): Option[kalix.ServiceOptions] = {
-    Option(component.getAnnotation(classOf[Subscribe.Stream])).map { streamAnn =>
+    Option(component.getAnnotation(classOf[FromServiceStream])).map { streamAnn =>
       val direct = DirectSource
         .newBuilder()
         .setEventStreamId(streamAnn.id())
@@ -333,7 +338,7 @@ private[impl] object ComponentDescriptorFactory {
   }
 
   def publishToEventStream(component: Class[_]): Option[kalix.ServiceOptions] = {
-    Option(component.getAnnotation(classOf[Publish.Stream])).map { streamAnn =>
+    Option(component.getAnnotation(classOf[ServiceStream])).map { streamAnn =>
 
       val direct = DirectDestination
         .newBuilder()
@@ -357,7 +362,7 @@ private[impl] object ComponentDescriptorFactory {
 
   // TODO: add more validations here
   // we should let users know if components are missing required annotations,
-  // eg: Workflow and Entities require @TypeId, View requires @Table and @Subscription
+  // eg: Workflow and Entities require @TypeId, View requires @Table and @Consume
   def getFactoryFor(component: Class[_]): ComponentDescriptorFactory = {
     if (component.getAnnotation(classOf[TypeId]) != null)
       EntityDescriptorFactory

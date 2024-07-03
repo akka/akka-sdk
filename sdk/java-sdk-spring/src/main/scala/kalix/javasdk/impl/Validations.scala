@@ -7,11 +7,13 @@ package kalix.javasdk.impl
 import java.lang.reflect.AnnotatedElement
 import java.lang.reflect.Method
 import java.lang.reflect.ParameterizedType
+
 import scala.reflect.ClassTag
+
 import kalix.javasdk.action.Action
-import kalix.javasdk.annotations.Publish
+import kalix.javasdk.annotations.Consume.FromValueEntity
+import kalix.javasdk.annotations.Produce.ServiceStream
 import kalix.javasdk.annotations.Query
-import kalix.javasdk.annotations.Subscribe
 import kalix.javasdk.annotations.Table
 import kalix.javasdk.annotations.ViewId
 import kalix.javasdk.eventsourcedentity.EventSourcedEntity
@@ -253,7 +255,7 @@ object Validations {
       val messages = methods.filter(hasEventSourcedEntitySubscription).map { method =>
         errorMessage(
           method,
-          "You cannot use @Subscribe.EventSourcedEntity annotation in both methods and class. You can do either one or the other.")
+          "You cannot use @Consume.FromEventSourcedEntity annotation in both methods and class. You can do either one or the other.")
       }
       Validation(messages)
     }
@@ -382,7 +384,7 @@ object Validations {
       val messages = methods.filter(hasTopicSubscription).map { method =>
         errorMessage(
           method,
-          "You cannot use @Subscribe.Topic annotation in both methods and class. You can do either one or the other.")
+          "You cannot use @Consume.FormTopic annotation in both methods and class. You can do either one or the other.")
       }
       Validation(messages)
     }
@@ -418,7 +420,7 @@ object Validations {
         .map { method =>
           errorMessage(
             method,
-            "You must select a source for @Publish.Topic. Annotate this methods with one of @Subscribe or REST annotations.")
+            "You must select a source for @Produce.ToTopic. Annotate this methods with one a @Consume annotation.")
         }
       Validation(messages)
     }
@@ -437,12 +439,12 @@ object Validations {
         if (topicNames.nonEmpty && topicNames.length != methods.size) {
           Validation(errorMessage(
             component,
-            s"Add @Publish.Topic annotation to all subscription methods from $sourceName \"$entityType\". Or remove it from all methods."))
+            s"Add @Produce.ToTopic annotation to all subscription methods from $sourceName \"$entityType\". Or remove it from all methods."))
         } else if (topicNames.toSet.size > 1) {
           Validation(
             errorMessage(
               component,
-              s"All @Publish.Topic annotation for the same subscription source $sourceName \"$entityType\" should point to the same topic name. " +
+              s"All @Produce.ToTopic annotation for the same subscription source $sourceName \"$entityType\" should point to the same topic name. " +
               s"Create a separate Action if you want to split messages to different topics from the same source."))
         } else {
           Valid
@@ -489,10 +491,10 @@ object Validations {
   }
 
   private def publishStreamIdMustBeFilled(component: Class[_]): Validation = {
-    Option(component.getAnnotation(classOf[Publish.Stream]))
+    Option(component.getAnnotation(classOf[ServiceStream]))
       .map { ann =>
         when(ann.id().trim.isEmpty) {
-          Validation(Seq("@Publish.Stream id can not be an empty string"))
+          Validation(Seq("@Produce.ServiceStream id can not be an empty string"))
         }
       }
       .getOrElse(Valid)
@@ -506,7 +508,7 @@ object Validations {
       component.getMethods.toIndexedSeq.filter(hasSubscriptionAndAcl).map { method =>
         errorMessage(
           method,
-          "Methods annotated with Kalix @Subscription annotations are for internal use only and cannot be annotated with ACL annotations.")
+          "Methods annotated with Kalix @Consume annotations are for internal use only and cannot be annotated with ACL annotations.")
       }
 
     Validation(messages)
@@ -552,7 +554,7 @@ object Validations {
     if (hasValueEntitySubscription(component)) {
       val tableType: Class[_] = tableTypeOf(component)
       val valueEntityClass: Class[_] =
-        component.getAnnotation(classOf[Subscribe.ValueEntity]).value().asInstanceOf[Class[_]]
+        component.getAnnotation(classOf[FromValueEntity]).value().asInstanceOf[Class[_]]
       val entityStateClass = valueEntityStateClassOf(valueEntityClass)
 
       when(entityStateClass != tableType) {
@@ -561,7 +563,7 @@ object Validations {
           s"to match the ValueEntity type [${entityStateClass.getName}]. " +
           s"If your intention is to transform the type, you should instead add a method like " +
           s"`UpdateEffect<${tableType.getName}> onChange(${entityStateClass.getName} state)`" +
-          " and move the @Subscribe.ValueEntity to it."
+          " and move the @Consume.FormValueEntity to it."
 
         Validation(Seq(errorMessage(component, message)))
       }
@@ -617,7 +619,7 @@ object Validations {
         val messages = subscriptionMethods.map { method =>
           errorMessage(
             method,
-            "You cannot use @Subscribe.ValueEntity annotation in both methods and class. You can do either one or the other.")
+            "You cannot use @Consume.FormValueEntity annotation in both methods and class. You can do either one or the other.")
         }
         Validation(messages)
       }
@@ -628,7 +630,7 @@ object Validations {
           val numParams = method.getParameters.length
           errorMessage(
             method,
-            s"Method annotated with '@Subscribe.ValueEntity' and handleDeletes=true must not have parameters. Found $numParams method parameters.")
+            s"Method annotated with '@Consume.FormValueEntity' and handleDeletes=true must not have parameters. Found $numParams method parameters.")
         }
 
       Validation(messages)
@@ -651,7 +653,7 @@ object Validations {
           offendingMethods.map { method =>
             errorMessage(
               method,
-              "Multiple methods annotated with @Subscription.ValueEntity(handleDeletes=true) is not allowed.")
+              "Multiple methods annotated with @Consume.FromValueEntity(handleDeletes=true) is not allowed.")
           }
         Validation(messages)
       } else Valid

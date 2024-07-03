@@ -6,7 +6,7 @@ package com.example.wiring.eventsourcedentities.tracingcounter;
 
 import kalix.javasdk.action.Action;
 import kalix.javasdk.action.ActionCreationContext;
-import kalix.javasdk.annotations.Subscribe;
+import kalix.javasdk.annotations.Consume;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,7 +21,7 @@ public class TIncreaseAction extends Action {
         this.actionCreationContext = actionCreationContext;
     }
 
-    @Subscribe.EventSourcedEntity(value = TCounterEntity.class)
+    @Consume.FromEventSourcedEntity(value = TCounterEntity.class)
     public Effect<Integer> printIncrease(TCounterEvent.ValueIncreased increase){
         log.info("increasing [{}].", increase);
         return effects().reply(increase.value());

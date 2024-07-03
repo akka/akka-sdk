@@ -12,7 +12,7 @@ import com.example.wiring.eventsourcedentities.counter.*;
 import kalix.javasdk.annotations.ViewId;
 import kalix.javasdk.view.View;
 import kalix.javasdk.annotations.Query;
-import kalix.javasdk.annotations.Subscribe;
+import kalix.javasdk.annotations.Consume;
 import kalix.javasdk.annotations.Table;
 
 @ViewId("counters_by_value")
@@ -35,19 +35,19 @@ public class CountersByValue extends View<Counter> {
     return null;
   }
 
-  @Subscribe.EventSourcedEntity(CounterEntity.class)
+  @Consume.FromEventSourcedEntity(CounterEntity.class)
   public Effect<Counter> onEvent(CounterEvent.ValueIncreased event) {
     Counter counter = viewState();
     return effects().updateState(counter.onValueIncreased(event));
   }
 
-  @Subscribe.EventSourcedEntity(CounterEntity.class)
+  @Consume.FromEventSourcedEntity(CounterEntity.class)
   public Effect<Counter> onEvent(CounterEvent.ValueMultiplied event) {
     Counter counter = viewState();
     return effects().updateState(counter.onValueMultiplied(event));
   }
 
-  @Subscribe.EventSourcedEntity(CounterEntity.class)
+  @Consume.FromEventSourcedEntity(CounterEntity.class)
   public Effect<Counter> onEvent(CounterEvent.ValueSet event) {
     Counter counter = viewState();
     return effects().updateState(counter.onValueSet(event));

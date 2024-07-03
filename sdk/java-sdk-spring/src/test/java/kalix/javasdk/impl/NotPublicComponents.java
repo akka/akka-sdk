@@ -7,7 +7,7 @@ package kalix.javasdk.impl;
 import kalix.javasdk.action.Action;
 import kalix.javasdk.annotations.ActionId;
 import kalix.javasdk.annotations.Query;
-import kalix.javasdk.annotations.Subscribe;
+import kalix.javasdk.annotations.Consume;
 import kalix.javasdk.annotations.Table;
 import kalix.javasdk.annotations.TypeId;
 import kalix.javasdk.annotations.ViewId;
@@ -56,7 +56,7 @@ public class NotPublicComponents {
 
   @ViewId("users_view")
   @Table(value = "users_view")
-  @Subscribe.ValueEntity(UserEntity.class)
+  @Consume.FromValueEntity(UserEntity.class)
   static class NotPublicView extends View<User> {
 
     public record QueryParameters(String email) {}

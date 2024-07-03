@@ -3,11 +3,11 @@ package com.example.actions;
 import com.example.Counter;
 import com.example.CounterEvent.ValueIncreased;
 import kalix.javasdk.action.Action;
-import kalix.javasdk.annotations.Subscribe;
+import kalix.javasdk.annotations.Consume;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Subscribe.EventSourcedEntity(value = Counter.class, ignoreUnknown = true) // <1>
+@Consume.FromEventSourcedEntity(value = Counter.class, ignoreUnknown = true) // <1>
 public class SubscribeTypeLevelAction extends Action {
 
   private Logger logger = LoggerFactory.getLogger(SubscribeTypeLevelAction.class);

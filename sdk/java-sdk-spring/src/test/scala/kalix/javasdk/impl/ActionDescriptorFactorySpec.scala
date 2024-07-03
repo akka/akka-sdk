@@ -354,7 +354,8 @@ class ActionDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSu
     "validates it is forbidden Entity Subscription at annotation type level and method level at the same time" in {
       intercept[InvalidComponentException] {
         Validations.validate(classOf[InvalidSubscribeToEventSourcedEntityAction]).failIfInvalid
-      }.getMessage should include("You cannot use @Subscribe.EventSourcedEntity annotation in both methods and class.")
+      }.getMessage should include(
+        "You cannot use @Consume.FromEventSourcedEntity annotation in both methods and class.")
     }
 
     "validates that ambiguous handler VE" in {
@@ -428,91 +429,91 @@ class ActionDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSu
       intercept[InvalidComponentException] {
         Validations.validate(classOf[MissingSourceForTopicPublishing]).failIfInvalid
       }.getMessage should include(
-        "You must select a source for @Publish.Topic. Annotate this methods with one of @Subscribe or REST annotations.")
+        "You must select a source for @Produce.ToTopic. Annotate this methods with one a @Consume annotation.")
     }
 
     "validates that topic is missing for VE subscription" in {
       intercept[InvalidComponentException] {
         Validations.validate(classOf[MissingTopicForVESubscription]).failIfInvalid
       }.getMessage should include(
-        "Add @Publish.Topic annotation to all subscription methods from ValueEntity \"ve-counter\". Or remove it from all methods.")
+        "Add @Produce.ToTopic annotation to all subscription methods from ValueEntity \"ve-counter\". Or remove it from all methods.")
     }
 
     "validates that topic is missing for ES subscription" in {
       intercept[InvalidComponentException] {
         Validations.validate(classOf[MissingTopicForESSubscription]).failIfInvalid
       }.getMessage should include(
-        "Add @Publish.Topic annotation to all subscription methods from EventSourcedEntity \"employee\". Or remove it from all methods.")
+        "Add @Produce.ToTopic annotation to all subscription methods from EventSourcedEntity \"employee\". Or remove it from all methods.")
     }
 
     "validates that topic is missing for ES subscription (type level)" in {
       intercept[InvalidComponentException] {
         Validations.validate(classOf[MissingTopicForTypeLevelESSubscription]).failIfInvalid
       }.getMessage should include(
-        "Add @Publish.Topic annotation to all subscription methods from EventSourcedEntity \"employee\". Or remove it from all methods.")
+        "Add @Produce.ToTopic annotation to all subscription methods from EventSourcedEntity \"employee\". Or remove it from all methods.")
     }
 
     "validates that topic is missing for Topic subscription" in {
       intercept[InvalidComponentException] {
         Validations.validate(classOf[MissingTopicForTopicSubscription]).failIfInvalid
       }.getMessage should include(
-        "Add @Publish.Topic annotation to all subscription methods from Topic \"source\". Or remove it from all methods.")
+        "Add @Produce.ToTopic annotation to all subscription methods from Topic \"source\". Or remove it from all methods.")
     }
 
     "validates that topic is missing for Topic subscription (type level)" in {
       intercept[InvalidComponentException] {
         Validations.validate(classOf[MissingTopicForTopicTypeLevelSubscription]).failIfInvalid
       }.getMessage should include(
-        "Add @Publish.Topic annotation to all subscription methods from Topic \"source\". Or remove it from all methods.")
+        "Add @Produce.ToTopic annotation to all subscription methods from Topic \"source\". Or remove it from all methods.")
     }
 
     "validates that topic is missing for Stream subscription" in {
       intercept[InvalidComponentException] {
         Validations.validate(classOf[MissingTopicForStreamSubscription]).failIfInvalid
       }.getMessage should include(
-        "Add @Publish.Topic annotation to all subscription methods from Stream \"source\". Or remove it from all methods.")
+        "Add @Produce.ToTopic annotation to all subscription methods from Stream \"source\". Or remove it from all methods.")
     }
 
     "validates that topic names are the same for VE subscription" in {
       intercept[InvalidComponentException] {
         Validations.validate(classOf[DifferentTopicForVESubscription]).failIfInvalid
       }.getMessage should include(
-        "All @Publish.Topic annotation for the same subscription source ValueEntity \"ve-counter\" should point to the same topic name. Create a separate Action if you want to split messages to different topics from the same source.")
+        "All @Produce.ToTopic annotation for the same subscription source ValueEntity \"ve-counter\" should point to the same topic name. Create a separate Action if you want to split messages to different topics from the same source.")
     }
 
     "validates that topic names are the same for ES subscription" in {
       intercept[InvalidComponentException] {
         Validations.validate(classOf[DifferentTopicForESSubscription]).failIfInvalid
       }.getMessage should include(
-        "All @Publish.Topic annotation for the same subscription source EventSourcedEntity \"employee\" should point to the same topic name. Create a separate Action if you want to split messages to different topics from the same source.")
+        "All @Produce.ToTopic annotation for the same subscription source EventSourcedEntity \"employee\" should point to the same topic name. Create a separate Action if you want to split messages to different topics from the same source.")
     }
 
     "validates that topic names are the same for ES subscription (type level)" in {
       intercept[InvalidComponentException] {
         Validations.validate(classOf[DifferentTopicForESTypeLevelSubscription]).failIfInvalid
       }.getMessage should include(
-        "All @Publish.Topic annotation for the same subscription source EventSourcedEntity \"employee\" should point to the same topic name. Create a separate Action if you want to split messages to different topics from the same source.")
+        "All @Produce.ToTopic annotation for the same subscription source EventSourcedEntity \"employee\" should point to the same topic name. Create a separate Action if you want to split messages to different topics from the same source.")
     }
 
     "validates that topic names are the same for Topic subscription" in {
       intercept[InvalidComponentException] {
         Validations.validate(classOf[DifferentTopicForTopicSubscription]).failIfInvalid
       }.getMessage should include(
-        "All @Publish.Topic annotation for the same subscription source Topic \"source\" should point to the same topic name. Create a separate Action if you want to split messages to different topics from the same source.")
+        "All @Produce.ToTopic annotation for the same subscription source Topic \"source\" should point to the same topic name. Create a separate Action if you want to split messages to different topics from the same source.")
     }
 
     "validates that topic names are the same for Topic subscription (type level)" in {
       intercept[InvalidComponentException] {
         Validations.validate(classOf[DifferentTopicForTopicTypeLevelSubscription]).failIfInvalid
       }.getMessage should include(
-        "All @Publish.Topic annotation for the same subscription source Topic \"source\" should point to the same topic name. Create a separate Action if you want to split messages to different topics from the same source.")
+        "All @Produce.ToTopic annotation for the same subscription source Topic \"source\" should point to the same topic name. Create a separate Action if you want to split messages to different topics from the same source.")
     }
 
     "validates that topic names are the same for Stream subscription" in {
       intercept[InvalidComponentException] {
         Validations.validate(classOf[DifferentTopicForStreamSubscription]).failIfInvalid
       }.getMessage should include(
-        "All @Publish.Topic annotation for the same subscription source Stream \"source\" should point to the same topic name. Create a separate Action if you want to split messages to different topics from the same source.")
+        "All @Produce.ToTopic annotation for the same subscription source Stream \"source\" should point to the same topic name. Create a separate Action if you want to split messages to different topics from the same source.")
     }
 
     "validates if there are missing event handlers for event sourced Entity Subscription at type level" in {
@@ -532,7 +533,7 @@ class ActionDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSu
     "validates it is forbidden Topic Subscription at annotation type level and method level at the same time" in {
       intercept[InvalidComponentException] {
         Validations.validate(classOf[InvalidSubscribeToTopicAction]).failIfInvalid
-      }.getMessage should include("You cannot use @Subscribe.Topic annotation in both methods and class.")
+      }.getMessage should include("You cannot use @Consume.FormTopic annotation in both methods and class.")
     }
 
     "validates consumer group must be the same per topic" in {
@@ -670,7 +671,7 @@ class ActionDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSu
       intercept[InvalidComponentException] {
         Validations.validate(classOf[ActionWithMethodLevelAclAndSubscription]).failIfInvalid
       }.getMessage should include(
-        "Methods annotated with Kalix @Subscription annotations are for internal use only and cannot be annotated with ACL annotations.")
+        "Methods annotated with Kalix @Consume annotations are for internal use only and cannot be annotated with ACL annotations.")
     }
 
     "generate mappings for service to service publishing " in {

@@ -1,7 +1,7 @@
 package user.registry.views;
 
 import kalix.javasdk.annotations.Query;
-import kalix.javasdk.annotations.Subscribe;
+import kalix.javasdk.annotations.Consume;
 import kalix.javasdk.annotations.Table;
 import kalix.javasdk.annotations.ViewId;
 import kalix.javasdk.view.View;
@@ -19,7 +19,7 @@ import java.util.List;
  */
 @ViewId("view-users-by-newCountry")
 @Table("users_by_country")
-@Subscribe.EventSourcedEntity(value = UserEntity.class)
+@Consume.FromEventSourcedEntity(value = UserEntity.class)
 public class UsersByCountryView extends View<UsersByCountryView.UserView> {
 
   private Logger logger = LoggerFactory.getLogger(getClass());

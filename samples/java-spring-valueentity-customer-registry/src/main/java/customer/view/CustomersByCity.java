@@ -4,7 +4,7 @@ import customer.api.CustomerEntity;
 import customer.api.CustomerList;
 import customer.domain.Customer;
 import kalix.javasdk.annotations.Query;
-import kalix.javasdk.annotations.Subscribe;
+import kalix.javasdk.annotations.Consume;
 import kalix.javasdk.annotations.Table;
 import kalix.javasdk.annotations.ViewId;
 import kalix.javasdk.view.View;
@@ -14,7 +14,7 @@ import java.util.List;
 @ViewId("customers_by_city")
 @Table("customers_by_city")
 // tag::view-test[]
-@Subscribe.ValueEntity(CustomerEntity.class)
+@Consume.FromValueEntity(CustomerEntity.class)
 public class CustomersByCity extends View<Customer> {
 
   public record QueryParameters(List<String> cities) {

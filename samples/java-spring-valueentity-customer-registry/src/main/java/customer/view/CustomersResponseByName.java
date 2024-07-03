@@ -4,7 +4,7 @@ import customer.api.CustomerEntity;
 import customer.api.CustomerList;
 import customer.domain.Customer;
 import kalix.javasdk.annotations.Query;
-import kalix.javasdk.annotations.Subscribe;
+import kalix.javasdk.annotations.Consume;
 import kalix.javasdk.annotations.Table;
 import kalix.javasdk.annotations.ViewId;
 import kalix.javasdk.view.View;
@@ -12,7 +12,7 @@ import kalix.javasdk.view.View;
 @ViewId("customers_by_name")
 @Table("customers_by_name")
 // tag::class[]
-@Subscribe.ValueEntity(CustomerEntity.class)
+@Consume.FromValueEntity(CustomerEntity.class)
 public class CustomersResponseByName extends View<Customer> {
 
   public record QueryParameters(String name) { }

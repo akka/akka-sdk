@@ -7,7 +7,7 @@ package com.example.wiring.pubsub;
 
 import com.example.wiring.eventsourcedentities.counter.CounterEvent;
 import kalix.javasdk.annotations.Query;
-import kalix.javasdk.annotations.Subscribe;
+import kalix.javasdk.annotations.Consume;
 import kalix.javasdk.annotations.Table;
 import kalix.javasdk.annotations.ViewId;
 import kalix.javasdk.view.View;
@@ -22,7 +22,7 @@ import static kalix.javasdk.impl.MetadataImpl.CeSubject;
 
 @ViewId("counter_view_topic_sub")
 @Table("counter_view_topic_sub")
-@Subscribe.Topic(COUNTER_EVENTS_TOPIC)
+@Consume.FromTopic(COUNTER_EVENTS_TOPIC)
 public class ViewFromCounterEventsTopic extends View<CounterView> {
 
   private Logger logger = LoggerFactory.getLogger(getClass());

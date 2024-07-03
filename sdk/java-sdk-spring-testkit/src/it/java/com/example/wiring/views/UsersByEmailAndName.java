@@ -7,14 +7,14 @@ package com.example.wiring.views;
 import com.example.wiring.valueentities.user.User;
 import com.example.wiring.valueentities.user.UserEntity;
 import kalix.javasdk.annotations.Query;
-import kalix.javasdk.annotations.Subscribe;
+import kalix.javasdk.annotations.Consume;
 import kalix.javasdk.annotations.Table;
 import kalix.javasdk.annotations.ViewId;
 import kalix.javasdk.view.View;
 
 @ViewId("users_by_email_and_name")
 @Table("users_by_email_and_name")
-@Subscribe.ValueEntity(UserEntity.class)
+@Consume.FromValueEntity(UserEntity.class)
 public class UsersByEmailAndName extends View<User> {
 
   public record QueryParameters(String email, String name) {}

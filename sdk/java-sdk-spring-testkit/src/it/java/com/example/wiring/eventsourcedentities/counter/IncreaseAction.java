@@ -4,10 +4,9 @@
 
 package com.example.wiring.eventsourcedentities.counter;
 
-import com.google.protobuf.any.Any;
 import kalix.javasdk.action.Action;
 import kalix.javasdk.action.ActionCreationContext;
-import kalix.javasdk.annotations.Subscribe;
+import kalix.javasdk.annotations.Consume;
 import kalix.javasdk.client.ComponentClient;
 
 import java.util.concurrent.CompletionStage;
@@ -23,17 +22,17 @@ public class IncreaseAction extends Action {
     this.context = context;
   }
 
-  @Subscribe.EventSourcedEntity(value = CounterEntity.class)
+  @Consume.FromEventSourcedEntity(value = CounterEntity.class)
   public Effect<CounterEvent.ValueMultiplied> printMultiply(CounterEvent.ValueMultiplied event) {
     return effects().reply(event);
   }
 
-  @Subscribe.EventSourcedEntity(value = CounterEntity.class)
+  @Consume.FromEventSourcedEntity(value = CounterEntity.class)
   public Effect<CounterEvent.ValueSet> printSet(CounterEvent.ValueSet event) {
     return effects().reply(event);
   }
 
-  @Subscribe.EventSourcedEntity(value = CounterEntity.class)
+  @Consume.FromEventSourcedEntity(value = CounterEntity.class)
   public Effect<Integer> printIncrease(CounterEvent.ValueIncreased event) {
     String entityId = this.actionContext().metadata().asCloudEvent().subject().get();
     if (event.value() == 42) {

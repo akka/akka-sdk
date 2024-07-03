@@ -9,8 +9,8 @@ import java.lang.reflect.ParameterizedType
 
 import kalix.Eventing
 import kalix.MethodOptions
+import kalix.javasdk.annotations.Consume.FromServiceStream
 import kalix.javasdk.annotations.Query
-import kalix.javasdk.annotations.Subscribe
 import kalix.javasdk.annotations.Table
 import kalix.javasdk.impl.ComponentDescriptorFactory.combineBy
 import kalix.javasdk.impl.ComponentDescriptorFactory.combineByES
@@ -215,7 +215,7 @@ private[impl] object ViewDescriptorFactory extends ComponentDescriptorFactory {
       tableName: String,
       tableProtoMessageName: String): Map[String, Seq[KalixMethod]] = {
     val methods = eligibleSubscriptionMethods(component, tableName, tableProtoMessageName, None).toIndexedSeq
-    val ann = component.getAnnotation(classOf[Subscribe.Stream])
+    val ann = component.getAnnotation(classOf[FromServiceStream])
     val key = ann.id().capitalize
     Map(key -> methods)
   }

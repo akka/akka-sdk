@@ -2,7 +2,7 @@ package customer.views;
 
 import kalix.javasdk.annotations.Acl;
 import kalix.javasdk.annotations.Query;
-import kalix.javasdk.annotations.Subscribe;
+import kalix.javasdk.annotations.Consume;
 import kalix.javasdk.annotations.Table;
 import kalix.javasdk.annotations.ViewId;
 import kalix.javasdk.view.View;
@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory;
 
 @ViewId("customers_by_email")
 @Table("customers_by_email")
-@Subscribe.Stream( // <1>
+@Consume.FromServiceStream( // <1>
   service = "customer-registry", // <2>
   id = "customer_events", // <3>
   consumerGroup = "customer-by-email-view" // <4>

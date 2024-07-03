@@ -6,7 +6,7 @@ import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.StatusCode;
 import kalix.javasdk.JsonSupport;
 import kalix.javasdk.action.Action;
-import kalix.javasdk.annotations.Subscribe;
+import kalix.javasdk.annotations.Consume;
 import kalix.javasdk.client.ComponentClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,7 +18,7 @@ import java.net.http.HttpResponse;
 import java.util.concurrent.CompletableFuture;
 
 
-@Subscribe.EventSourcedEntity(value = UserEntity.class, ignoreUnknown = true)
+@Consume.FromEventSourcedEntity(value = UserEntity.class, ignoreUnknown = true)
 public class GetRandomNameAction extends Action {
 
   private static final Logger log = LoggerFactory.getLogger(GetRandomNameAction.class);

@@ -10,25 +10,25 @@ import com.example.wiring.eventsourcedentities.counter.CounterEvent.ValueIncreas
 import com.example.wiring.eventsourcedentities.counter.CounterEvent.ValueMultiplied;
 import kalix.javasdk.Metadata;
 import kalix.javasdk.action.Action;
-import kalix.javasdk.annotations.Publish;
-import kalix.javasdk.annotations.Subscribe;
+import kalix.javasdk.annotations.Produce;
+import kalix.javasdk.annotations.Consume;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static kalix.javasdk.impl.MetadataImpl.CeSubject;
 
-@Subscribe.EventSourcedEntity(value = CounterEntity.class, ignoreUnknown = true)
+@Consume.FromEventSourcedEntity(value = CounterEntity.class, ignoreUnknown = true)
 public class PublishESToTopic extends Action {
 
   public static final String COUNTER_EVENTS_TOPIC = "counter-events";
   private Logger logger = LoggerFactory.getLogger(getClass());
 
-  @Publish.Topic(COUNTER_EVENTS_TOPIC)
+  @Produce.ToTopic(COUNTER_EVENTS_TOPIC)
   public Effect<CounterEvent> handleIncrease(ValueIncreased increased) {
     return publish(increased);
   }
 
-  @Publish.Topic(COUNTER_EVENTS_TOPIC)
+  @Produce.ToTopic(COUNTER_EVENTS_TOPIC)
   public Effect<CounterEvent> handleMultiply(ValueMultiplied multiplied) {
     return publish(multiplied);
   }

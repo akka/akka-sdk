@@ -5,13 +5,13 @@ import customer.domain.Customer;
 import customer.api.CustomerEntity;
 import kalix.javasdk.view.View;
 import kalix.javasdk.annotations.Query;
-import kalix.javasdk.annotations.Subscribe;
+import kalix.javasdk.annotations.Consume;
 import kalix.javasdk.annotations.Table;
 import kalix.javasdk.annotations.ViewId;
 
 @ViewId("view_customers_by_email") // <1>
 @Table("customers_by_email") // <2>
-@Subscribe.ValueEntity(CustomerEntity.class)// <3>
+@Consume.FromValueEntity(CustomerEntity.class)// <3>
 public class CustomerByEmailView extends View<Customer> { //  <4>
 
   public record QueryParameters(String email) {

@@ -7,13 +7,13 @@ package com.example.wiring.pubsub;
 import com.example.wiring.eventsourcedentities.counter.CounterEvent;
 import com.example.wiring.valueentities.customer.CustomerEntity;
 import kalix.javasdk.action.Action;
-import kalix.javasdk.annotations.Subscribe;
+import kalix.javasdk.annotations.Consume;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static com.example.wiring.pubsub.PublishVEToTopic.CUSTOMERS_TOPIC;
 
-@Subscribe.Topic(CUSTOMERS_TOPIC)
+@Consume.FromTopic(CUSTOMERS_TOPIC)
 public class SubscribeToCustomersTopic extends Action {
 
   private Logger logger = LoggerFactory.getLogger(getClass());

@@ -4,7 +4,7 @@ package customer.view;
 import customer.api.CustomerEntity;
 import customer.domain.Customer;
 import kalix.javasdk.annotations.Query;
-import kalix.javasdk.annotations.Subscribe;
+import kalix.javasdk.annotations.Consume;
 import kalix.javasdk.annotations.Table;
 import kalix.javasdk.annotations.ViewId;
 import kalix.javasdk.view.View;
@@ -29,7 +29,7 @@ public class CustomersByNameView
     return null;
   }
 
-  @Subscribe.ValueEntity(CustomerEntity.class) // <4>
+  @Consume.FromValueEntity(CustomerEntity.class) // <4>
   public Effect<CustomerSummary> onUpdate(Customer customer) {
     return effects()
       .updateState(new CustomerSummary(customer.name(), customer.email()));

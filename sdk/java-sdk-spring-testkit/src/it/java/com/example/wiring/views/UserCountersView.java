@@ -12,7 +12,7 @@ import com.example.wiring.valueentities.user.User;
 import com.example.wiring.valueentities.user.UserEntity;
 import kalix.javasdk.view.View;
 import kalix.javasdk.annotations.Query;
-import kalix.javasdk.annotations.Subscribe;
+import kalix.javasdk.annotations.Consume;
 import kalix.javasdk.annotations.Table;
 import kalix.javasdk.annotations.ViewId;
 
@@ -40,7 +40,7 @@ public class UserCountersView {
 
   @Table("users")
   public static class Users extends View<UserWithId> {
-    @Subscribe.ValueEntity(UserEntity.class)
+    @Consume.FromValueEntity(UserEntity.class)
     public Effect<UserWithId> onChange(User user) {
       return effects()
           .updateState(
@@ -49,7 +49,7 @@ public class UserCountersView {
   }
 
   @Table("counters")
-  @Subscribe.EventSourcedEntity(CounterEntity.class)
+  @Consume.FromEventSourcedEntity(CounterEntity.class)
   public static class Counters extends View<UserCounter> {
     private UserCounter counterState() {
       return Optional.ofNullable(viewState())
@@ -70,6 +70,6 @@ public class UserCountersView {
   }
 
   @Table("assigned")
-  @Subscribe.ValueEntity(AssignedCounterEntity.class)
+  @Consume.FromValueEntity(AssignedCounterEntity.class)
   public static class Assigned extends View<AssignedCounter> {}
 }

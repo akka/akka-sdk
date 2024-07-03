@@ -4,7 +4,7 @@ import akka.Done;
 import kalix.javasdk.action.Action;
 import kalix.javasdk.valueentity.ValueEntity;
 import kalix.javasdk.annotations.Acl;
-import kalix.javasdk.annotations.Subscribe;
+import kalix.javasdk.annotations.Consume;
 
 // FIXME should it rather be an endpoint?
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
@@ -57,7 +57,7 @@ public class MyAction extends Action {
     }
 
     // tag::open-subscription-acl[]
-    @Subscribe.ValueEntity(Counter.class)
+    @Consume.FromValueEntity(Counter.class)
     @Acl(allow = @Acl.Matcher(service = "*"))
     public Effect<Done> changes(CounterState counterState) {
      //...

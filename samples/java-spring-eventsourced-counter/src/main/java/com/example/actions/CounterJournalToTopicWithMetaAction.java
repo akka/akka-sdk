@@ -4,8 +4,8 @@ import com.example.Counter;
 import com.example.CounterEvent;
 import kalix.javasdk.Metadata;
 import kalix.javasdk.action.Action;
-import kalix.javasdk.annotations.Publish;
-import kalix.javasdk.annotations.Subscribe;
+import kalix.javasdk.annotations.Produce;
+import kalix.javasdk.annotations.Consume;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,8 +14,8 @@ public class CounterJournalToTopicWithMetaAction extends Action {
 
   private Logger logger = LoggerFactory.getLogger(CounterJournalToTopicWithMetaAction.class);
 
-  @Subscribe.EventSourcedEntity(value = Counter.class)
-  @Publish.Topic("counter-events-with-meta")
+  @Consume.FromEventSourcedEntity(value = Counter.class)
+  @Produce.ToTopic("counter-events-with-meta")
   public Effect<CounterEvent> onValueIncreased(CounterEvent event) {
     String counterId = actionContext().metadata().get("ce-subject").orElseThrow(); // <1>
     Metadata metadata = Metadata.EMPTY.add("ce-subject", counterId);

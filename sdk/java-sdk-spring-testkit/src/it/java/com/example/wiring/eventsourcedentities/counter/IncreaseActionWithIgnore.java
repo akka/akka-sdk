@@ -6,12 +6,12 @@ package com.example.wiring.eventsourcedentities.counter;
 
 import kalix.javasdk.action.Action;
 import kalix.javasdk.action.ActionCreationContext;
-import kalix.javasdk.annotations.Subscribe;
+import kalix.javasdk.annotations.Consume;
 import kalix.javasdk.client.ComponentClient;
 
 import java.util.concurrent.CompletionStage;
 
-@Subscribe.EventSourcedEntity(value = CounterEntity.class, ignoreUnknown = true)
+@Consume.FromEventSourcedEntity(value = CounterEntity.class, ignoreUnknown = true)
 public class IncreaseActionWithIgnore extends Action {
 
     private ComponentClient componentClient;

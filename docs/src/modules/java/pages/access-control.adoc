@@ -102,7 +102,7 @@ include::example$java-spring-doc-snippets/src/main/java/com/example/acl/UserActi
 == ACLs on eventing methods
 
 
-Any method with an `@Subscribe` annotation on it will not automatically inherit either the default or its component's ACL, rather, all outside communication will be blocked, since it's assumed that a method that subscribes to an event stream must only be intended to be invoked in response to events on that stream. This can be overridden by explicitly defining an ACL on that method:
+Any method with an `@Consume` annotation on it will not automatically inherit either the default or its component's ACL, rather, all outside communication will be blocked, since it's assumed that a method that subscribes to an event stream must only be intended to be invoked in response to events on that stream. This can be overridden by explicitly defining an ACL on that method:
 
 [source, java, indent=0]
 ----

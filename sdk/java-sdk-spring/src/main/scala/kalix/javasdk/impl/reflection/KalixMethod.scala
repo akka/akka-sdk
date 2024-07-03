@@ -82,7 +82,7 @@ case class ActionHandlerMethod(component: Class[_], method: Method) extends AnyJ
 }
 
 /**
- * Build from methods annotated with @Subscription at type level.
+ * Build from methods annotated with @Consume at type level.
  *
  * It's used as a 'virtual' method because there is no Java method backing it. It will exist only in the gRPC descriptor
  * and will be used for view updates with transform = false
@@ -112,8 +112,8 @@ case class CombinedSubscriptionServiceMethod(
 }
 
 /**
- * Build from methods annotated with @Subscription. Those methods are not annotated with Spring REST annotations and are
- * only used internally (between proxy and user function).
+ * Build from methods annotated with @Consume. Those methods are not annotated with Spring REST annotations and are only
+ * used internally (between proxy and user function).
  */
 case class SubscriptionServiceMethod(javaMethod: Method) extends AnyJsonRequestServiceMethod {
 

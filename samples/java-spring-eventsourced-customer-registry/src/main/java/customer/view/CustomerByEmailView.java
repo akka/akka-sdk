@@ -3,7 +3,7 @@ package customer.view;
 import customer.api.CustomerEntity;
 import customer.domain.CustomerEvent;
 import kalix.javasdk.annotations.Query;
-import kalix.javasdk.annotations.Subscribe;
+import kalix.javasdk.annotations.Consume;
 import kalix.javasdk.annotations.Table;
 import kalix.javasdk.annotations.ViewId;
 import kalix.javasdk.view.View;
@@ -20,7 +20,7 @@ public class CustomerByEmailView extends View<CustomerView> {
     return null;
   }
 
-  @Subscribe.EventSourcedEntity(CustomerEntity.class)
+  @Consume.FromEventSourcedEntity(CustomerEntity.class)
   public Effect<CustomerView> onEvent(CustomerEvent event) {
     return switch (event) {
       case CustomerEvent.CustomerCreated created ->

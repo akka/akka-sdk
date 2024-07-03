@@ -96,7 +96,7 @@ private[impl] object ActionDescriptorFactory extends ComponentDescriptorFactory 
         .toIndexedSeq
     }
 
-    // methods annotated with @Subscribe.EventSourcedEntity
+    // methods annotated with @Consume.FromEventSourcedEntity
     val subscriptionEventSourcedEntityMethods: IndexedSeq[KalixMethod] = component.getMethods
       .filter(hasEventSourcedEntitySubscription)
       .sorted // make sure we get the methods in deterministic order
@@ -144,7 +144,7 @@ private[impl] object ActionDescriptorFactory extends ComponentDescriptorFactory 
         .getOrElse(Map.empty)
     }
 
-    // methods annotated with @Subscribe.Topic
+    // methods annotated with @Consume.FormTopic
     val subscriptionTopicMethods: IndexedSeq[KalixMethod] = component.getMethods
       .filter(hasTopicSubscription)
       .sorted // make sure we get the methods in deterministic order
@@ -156,7 +156,7 @@ private[impl] object ActionDescriptorFactory extends ComponentDescriptorFactory 
       }
       .toIndexedSeq
 
-    // type level @Subscribe.Topic, methods eligible for subscription
+    // type level @Consume.FormTopic, methods eligible for subscription
     val subscriptionTopicClass: Map[String, Seq[KalixMethod]] =
       if (hasTopicSubscription(component)) {
         val kalixMethods = component.getMethods

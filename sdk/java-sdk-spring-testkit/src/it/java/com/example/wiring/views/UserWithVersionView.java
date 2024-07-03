@@ -7,7 +7,7 @@ package com.example.wiring.views;
 import com.example.wiring.valueentities.user.User;
 import com.example.wiring.valueentities.user.UserEntity;
 import kalix.javasdk.annotations.Query;
-import kalix.javasdk.annotations.Subscribe;
+import kalix.javasdk.annotations.Consume;
 import kalix.javasdk.annotations.Table;
 import kalix.javasdk.annotations.ViewId;
 import kalix.javasdk.view.View;
@@ -31,13 +31,13 @@ public class UserWithVersionView extends View<UserWithVersion> {
     return null;
   }
 
-  @Subscribe.ValueEntity(UserEntity.class)
+  @Consume.FromValueEntity(UserEntity.class)
   public Effect<UserWithVersion> onChange(User user) {
     if (viewState() == null) return effects().updateState(new UserWithVersion(user.email, 1));
     else return effects().updateState(new UserWithVersion(user.email, viewState().version + 1));
   }
 
-  @Subscribe.ValueEntity(value = UserEntity.class, handleDeletes = true)
+  @Consume.FromValueEntity(value = UserEntity.class, handleDeletes = true)
   public Effect<UserWithVersion> onDelete() {
     logger.info("Deleting user with email={}", viewState().email);
     return effects().deleteState();

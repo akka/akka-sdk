@@ -2,7 +2,7 @@ package user.registry.subscriber;
 
 
 import kalix.javasdk.action.Action;
-import kalix.javasdk.annotations.Subscribe;
+import kalix.javasdk.annotations.Consume;
 import kalix.javasdk.client.ComponentClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,7 +20,7 @@ import user.registry.entity.UserEntity;
  * In the choreography, this subscriber will react to events (facts) produced by the UserEntity and modify the
  * UniqueEmailEntity accordingly. Either by confirming or un-reserving the email address.
  */
-@Subscribe.EventSourcedEntity(value = UserEntity.class)
+@Consume.FromEventSourcedEntity(value = UserEntity.class)
 public class UserEventsSubscriber extends Action {
 
   private final ComponentClient client;
