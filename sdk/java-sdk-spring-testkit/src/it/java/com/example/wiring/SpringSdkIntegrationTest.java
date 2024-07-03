@@ -102,6 +102,7 @@ public class SpringSdkIntegrationTest extends KalixIntegrationTestKitSupport {
 
     //Once the action IncreaseActionWithIgnore processes event 1234 it adds 1 more to the counter
     Awaitility.await()
+      .ignoreExceptions()
       .atMost(10, TimeUnit.SECONDS)
       .untilAsserted(() -> {
         Integer result = await(

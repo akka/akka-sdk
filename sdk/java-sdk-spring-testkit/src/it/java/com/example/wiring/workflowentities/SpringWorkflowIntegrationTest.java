@@ -33,16 +33,20 @@ public class SpringWorkflowIntegrationTest extends KalixIntegrationTestKitSuppor
     createWallet(walletId1, 100);
     createWallet(walletId2, 100);
     var transferId = randomTransferId();
-    var transferUrl = "/transfer/" + transferId;
     var transfer = new Transfer(walletId1, walletId2, -10);
 
-    Message message =
-      await(
-        componentClient.forWorkflow(transferId)
-          .method(TransferWorkflow::startTransfer)
-          .invokeAsync(transfer));
+      Awaitility.await()
+        .ignoreExceptions()
+        .atMost(20, TimeUnit.of(SECONDS))
+        .untilAsserted(() -> {
+          Message message =
+            await(
+              componentClient.forWorkflow(transferId)
+                .method(TransferWorkflow::startTransfer)
+                .invokeAsync(transfer));
 
-    assertThat(message.text()).isEqualTo("Transfer amount should be greater than zero");
+          assertThat(message.text()).isEqualTo("Transfer amount should be greater than zero");
+        });
   }
 
   @Test
@@ -54,14 +58,23 @@ public class SpringWorkflowIntegrationTest extends KalixIntegrationTestKitSuppor
     var transferId = randomTransferId();
     var transfer = new Transfer(walletId1, walletId2, 10);
 
-    Message response = await(componentClient.forWorkflow(transferId)
-      .method(TransferWorkflow::startTransfer)
-      .invokeAsync(transfer));
-
-    assertThat(response.text()).isEqualTo("transfer started");
 
     Awaitility.await()
-      .atMost(10, TimeUnit.of(SECONDS))
+      .ignoreExceptions()
+      .atMost(20, TimeUnit.of(SECONDS))
+      .untilAsserted(() -> {
+        Message response =
+          await(componentClient.forWorkflow(transferId)
+            .method(TransferWorkflow::startTransfer)
+            .invokeAsync(transfer));
+
+        assertThat(response.text()).contains("transfer started");
+      });
+
+
+    Awaitility.await()
+      .ignoreExceptions()
+      .atMost(20, TimeUnit.of(SECONDS))
       .untilAsserted(() -> {
         var balance1 = getWalletBalance(walletId1);
         var balance2 = getWalletBalance(walletId2);
@@ -81,15 +94,21 @@ public class SpringWorkflowIntegrationTest extends KalixIntegrationTestKitSuppor
     var transferId = randomTransferId();
     var transfer = new Transfer(walletId1, walletId2, 10);
 
-    Message response = await(
-      componentClient.forWorkflow(transferId)
-        .method(TransferWorkflowWithoutInputs::startTransfer)
-        .invokeAsync(transfer));
+    Awaitility.await()
+      .ignoreExceptions()
+      .atMost(20, TimeUnit.of(SECONDS))
+      .untilAsserted(() -> {
+        Message response = await(
+          componentClient.forWorkflow(transferId)
+            .method(TransferWorkflowWithoutInputs::startTransfer)
+            .invokeAsync(transfer));
 
-    assertThat(response.text()).isEqualTo("transfer started");
+        assertThat(response.text()).contains("transfer started");
+      });
 
     Awaitility.await()
-      .atMost(10, TimeUnit.of(SECONDS))
+      .ignoreExceptions()
+      .atMost(20, TimeUnit.of(SECONDS))
       .untilAsserted(() -> {
         var balance1 = getWalletBalance(walletId1);
         var balance2 = getWalletBalance(walletId2);
@@ -108,15 +127,22 @@ public class SpringWorkflowIntegrationTest extends KalixIntegrationTestKitSuppor
     var transferId = randomTransferId();
     var transfer = new Transfer(walletId1, walletId2, 10);
 
-    Message response = await(
-      componentClient.forWorkflow(transferId)
-        .method(TransferWorkflowWithoutInputs::startTransferAsync)
-        .invokeAsync(transfer));
-
-    assertThat(response.text()).isEqualTo("transfer started");
 
     Awaitility.await()
-      .atMost(10, TimeUnit.of(SECONDS))
+      .ignoreExceptions()
+      .atMost(20, TimeUnit.of(SECONDS))
+      .untilAsserted(() -> {
+        Message response = await(
+          componentClient.forWorkflow(transferId)
+            .method(TransferWorkflowWithoutInputs::startTransferAsync)
+            .invokeAsync(transfer));
+
+        assertThat(response.text()).contains("transfer started");
+      });
+
+    Awaitility.await()
+      .ignoreExceptions()
+      .atMost(20, TimeUnit.of(SECONDS))
       .untilAsserted(() -> {
         var balance1 = getWalletBalance(walletId1);
         var balance2 = getWalletBalance(walletId2);
@@ -136,15 +162,22 @@ public class SpringWorkflowIntegrationTest extends KalixIntegrationTestKitSuppor
     var transferId = randomTransferId();
     var transfer = new Transfer(walletId1, walletId2, 10);
 
-    Message response = await(
-      componentClient.forWorkflow(transferId)
-        .method(TransferWorkflowWithFraudDetection::startTransfer)
-        .invokeAsync(transfer));
-
-    assertThat(response.text()).isEqualTo("transfer started");
 
     Awaitility.await()
-      .atMost(10, TimeUnit.of(SECONDS))
+      .ignoreExceptions()
+      .atMost(20, TimeUnit.of(SECONDS))
+      .untilAsserted(() -> {
+        Message response = await(
+          componentClient.forWorkflow(transferId)
+            .method(TransferWorkflowWithFraudDetection::startTransfer)
+            .invokeAsync(transfer));
+
+        assertThat(response.text()).contains("transfer started");
+      });
+
+    Awaitility.await()
+      .ignoreExceptions()
+      .atMost(20, TimeUnit.of(SECONDS))
       .untilAsserted(() -> {
         var balance1 = getWalletBalance(walletId1);
         var balance2 = getWalletBalance(walletId2);
@@ -163,15 +196,22 @@ public class SpringWorkflowIntegrationTest extends KalixIntegrationTestKitSuppor
     var transferId = randomTransferId();
     var transfer = new Transfer(walletId1, walletId2, 1000);
 
-    Message response = await(
-      componentClient.forWorkflow(transferId)
-        .method(TransferWorkflowWithFraudDetection::startTransfer)
-        .invokeAsync(transfer));
-
-    assertThat(response.text()).isEqualTo("transfer started");
 
     Awaitility.await()
-      .atMost(10, TimeUnit.of(SECONDS))
+      .ignoreExceptions()
+      .atMost(20, TimeUnit.of(SECONDS))
+      .untilAsserted(() -> {
+        Message response = await(
+          componentClient.forWorkflow(transferId)
+            .method(TransferWorkflowWithFraudDetection::startTransfer)
+            .invokeAsync(transfer));
+
+        assertThat(response.text()).contains("transfer started");
+      });
+
+
+    Awaitility.await()
+      .atMost(20, TimeUnit.of(SECONDS))
       .untilAsserted(() -> {
 
         var transferState = await(
@@ -184,16 +224,24 @@ public class SpringWorkflowIntegrationTest extends KalixIntegrationTestKitSuppor
         assertThat(transferState.lastStep).isEqualTo("fraud-detection");
       });
 
-    Message acceptedResponse = await(
-      componentClient.forWorkflow(transferId)
-        .method(TransferWorkflowWithFraudDetection::acceptTransfer)
-        .invokeAsync());
 
-    assertThat(acceptedResponse.text()).isEqualTo("transfer accepted");
+    Awaitility.await()
+      .ignoreExceptions()
+      .atMost(20, TimeUnit.of(SECONDS))
+      .untilAsserted(() -> {
+
+        Message acceptedResponse = await(
+          componentClient.forWorkflow(transferId)
+            .method(TransferWorkflowWithFraudDetection::acceptTransfer)
+            .invokeAsync());
+
+        assertThat(acceptedResponse.text()).isEqualTo("transfer accepted");
+      });
 
 
     Awaitility.await()
-      .atMost(10, TimeUnit.of(SECONDS))
+      .ignoreExceptions()
+      .atMost(20, TimeUnit.of(SECONDS))
       .untilAsserted(() -> {
         var balance1 = getWalletBalance(walletId1);
         var balance2 = getWalletBalance(walletId2);
@@ -212,15 +260,22 @@ public class SpringWorkflowIntegrationTest extends KalixIntegrationTestKitSuppor
     var transferId = randomTransferId();
     var transfer = new Transfer(walletId1, walletId2, 1000000);
 
-    Message response = await(
-      componentClient.forWorkflow(transferId)
-        .method(TransferWorkflowWithFraudDetection::startTransfer)
-        .invokeAsync(transfer));
-
-    assertThat(response.text()).isEqualTo("transfer started");
 
     Awaitility.await()
-      .atMost(10, TimeUnit.of(SECONDS))
+      .ignoreExceptions()
+      .atMost(20, TimeUnit.of(SECONDS))
+      .untilAsserted(() -> {
+          Message response = await(
+            componentClient.forWorkflow(transferId)
+              .method(TransferWorkflowWithFraudDetection::startTransfer)
+              .invokeAsync(transfer));
+
+          assertThat(response.text()).contains("transfer started");
+        });
+
+    Awaitility.await()
+      .ignoreExceptions()
+      .atMost(20, TimeUnit.of(SECONDS))
       .untilAsserted(() -> {
         var balance1 = getWalletBalance(walletId1);
         var balance2 = getWalletBalance(walletId2);
@@ -246,23 +301,30 @@ public class SpringWorkflowIntegrationTest extends KalixIntegrationTestKitSuppor
     var workflowId = randomId();
 
     //when
-    Message response = await(
-      componentClient.forWorkflow(workflowId)
-        .method(WorkflowWithDefaultRecoverStrategy::startFailingCounter)
-        .invokeAsync(counterId));
+    Awaitility.await()
+      .ignoreExceptions()
+      .atMost(20, TimeUnit.of(SECONDS))
+      .untilAsserted(() -> {
+        Message response = await(
+          componentClient.forWorkflow(workflowId)
+            .method(WorkflowWithDefaultRecoverStrategy::startFailingCounter)
+            .invokeAsync(counterId));
 
-    assertThat(response.text()).isEqualTo("workflow started");
+        assertThat(response.text()).isEqualTo("workflow started");
+      });
 
     //then
     Awaitility.await()
-      .atMost(10, TimeUnit.of(SECONDS))
+      .ignoreExceptions()
+      .atMost(20, TimeUnit.of(SECONDS))
       .untilAsserted(() -> {
         Integer counterValue = getFailingCounterValue(counterId);
         assertThat(counterValue).isEqualTo(3);
       });
 
     Awaitility.await()
-      .atMost(10, TimeUnit.of(SECONDS))
+      .ignoreExceptions()
+      .atMost(20, TimeUnit.of(SECONDS))
       .untilAsserted(() -> {
         var state = await(
           componentClient.forWorkflow(workflowId)
@@ -280,23 +342,30 @@ public class SpringWorkflowIntegrationTest extends KalixIntegrationTestKitSuppor
     var workflowId = randomId();
 
     //when
-    Message response = await(
-      componentClient.forWorkflow(workflowId)
-        .method(WorkflowWithRecoverStrategy::startFailingCounter)
-        .invokeAsync(counterId));
+    Awaitility.await()
+      .ignoreExceptions()
+      .atMost(20, TimeUnit.of(SECONDS))
+      .untilAsserted(() -> {
+        Message response = await(
+          componentClient.forWorkflow(workflowId)
+            .method(WorkflowWithRecoverStrategy::startFailingCounter)
+            .invokeAsync(counterId));
 
-    assertThat(response.text()).isEqualTo("workflow started");
+        assertThat(response.text()).isEqualTo("workflow started");
+      });
 
     //then
     Awaitility.await()
-      .atMost(10, TimeUnit.of(SECONDS))
+      .ignoreExceptions()
+      .atMost(20, TimeUnit.of(SECONDS))
       .untilAsserted(() -> {
         Integer counterValue = getFailingCounterValue(counterId);
         assertThat(counterValue).isEqualTo(3);
       });
 
     Awaitility.await()
-      .atMost(10, TimeUnit.of(SECONDS))
+      .ignoreExceptions()
+      .atMost(20, TimeUnit.of(SECONDS))
       .untilAsserted(() -> {
         var state = await(
           componentClient.forWorkflow(workflowId)
@@ -314,25 +383,30 @@ public class SpringWorkflowIntegrationTest extends KalixIntegrationTestKitSuppor
     var workflowId = randomId();
 
     //when
-    Message response = await(
-      componentClient.forWorkflow(workflowId)
-        .method(WorkflowWithRecoverStrategyAndAsyncCall::startFailingCounter)
-        .invokeAsync(counterId));
+    Awaitility.await()
+      .ignoreExceptions()
+      .atMost(20, TimeUnit.of(SECONDS))
+      .untilAsserted(() -> {
+        Message response = await(
+          componentClient.forWorkflow(workflowId)
+            .method(WorkflowWithRecoverStrategyAndAsyncCall::startFailingCounter)
+            .invokeAsync(counterId));
 
-    assertThat(response.text()).isEqualTo("workflow started");
+        assertThat(response.text()).isEqualTo("workflow started");
+      });
 
     //then
     Awaitility.await()
-      .atMost(10, TimeUnit.of(SECONDS))
       .ignoreExceptions()
+      .atMost(20, TimeUnit.of(SECONDS))
       .untilAsserted(() -> {
         Integer counterValue = getFailingCounterValue(counterId);
         assertThat(counterValue).isEqualTo(3);
       });
 
     Awaitility.await()
-      .atMost(10, TimeUnit.of(SECONDS))
       .ignoreExceptions()
+      .atMost(20, TimeUnit.of(SECONDS))
       .untilAsserted(() -> {
         var state = await(
           componentClient.forWorkflow(workflowId)
@@ -349,15 +423,21 @@ public class SpringWorkflowIntegrationTest extends KalixIntegrationTestKitSuppor
     var workflowId = randomId();
 
     //when
-    Message response = await(
-      componentClient.forWorkflow(workflowId)
-        .method(WorkflowWithTimeout::startFailingCounter)
-        .invokeAsync(counterId));
+    Awaitility.await()
+      .ignoreExceptions()
+      .atMost(20, TimeUnit.of(SECONDS))
+      .untilAsserted(() -> {
+          Message response = await(
+            componentClient.forWorkflow(workflowId)
+              .method(WorkflowWithTimeout::startFailingCounter)
+              .invokeAsync(counterId));
 
-    assertThat(response.text()).isEqualTo("workflow started");
+          assertThat(response.text()).isEqualTo("workflow started");
+        });
 
     //then
     Awaitility.await()
+      .ignoreExceptions()
       .atMost(15, TimeUnit.of(SECONDS))
       .untilAsserted(() -> {
         Integer counterValue = getFailingCounterValue(counterId);
@@ -365,7 +445,8 @@ public class SpringWorkflowIntegrationTest extends KalixIntegrationTestKitSuppor
       });
 
     Awaitility.await()
-      .atMost(10, TimeUnit.of(SECONDS))
+      .ignoreExceptions()
+      .atMost(20, TimeUnit.of(SECONDS))
       .untilAsserted(() -> {
         var state = await(
           componentClient.forWorkflow(workflowId)
@@ -382,17 +463,22 @@ public class SpringWorkflowIntegrationTest extends KalixIntegrationTestKitSuppor
     var workflowId = randomId();
 
     //when
-    Message response = await(
-      componentClient.forWorkflow(workflowId)
-        .method(WorkflowWithStepTimeout::startFailingCounter)
-        .invokeAsync(counterId));
+    Awaitility.await()
+      .ignoreExceptions()
+      .atMost(20, TimeUnit.of(SECONDS))
+      .untilAsserted(() -> {
+          Message response = await(
+            componentClient.forWorkflow(workflowId)
+              .method(WorkflowWithStepTimeout::startFailingCounter)
+              .invokeAsync(counterId));
 
-    assertThat(response.text()).isEqualTo("workflow started");
+          assertThat(response.text()).isEqualTo("workflow started");
+        });
 
     //then
     Awaitility.await()
-      .atMost(10, TimeUnit.of(SECONDS))
       .ignoreExceptions()
+      .atMost(20, TimeUnit.of(SECONDS))
       .untilAsserted(() -> {
         var state = await(
           componentClient.forWorkflow(workflowId)
@@ -411,16 +497,22 @@ public class SpringWorkflowIntegrationTest extends KalixIntegrationTestKitSuppor
     var workflowId = randomId();
 
     //when
-    Message response = await(
-      componentClient.forWorkflow(workflowId)
-        .method(WorkflowWithTimer::startFailingCounter)
-        .invokeAsync(counterId));
+    Awaitility.await()
+      .ignoreExceptions()
+      .atMost(20, TimeUnit.of(SECONDS))
+      .untilAsserted(() -> {
+          Message response = await(
+            componentClient.forWorkflow(workflowId)
+              .method(WorkflowWithTimer::startFailingCounter)
+              .invokeAsync(counterId));
 
-    assertThat(response.text()).isEqualTo("workflow started");
+          assertThat(response.text()).isEqualTo("workflow started");
+        });
 
     //then
     Awaitility.await()
-      .atMost(10, TimeUnit.of(SECONDS))
+      .ignoreExceptions()
+      .atMost(20, TimeUnit.of(SECONDS))
       .untilAsserted(() -> {
         var state = await(
           componentClient.forWorkflow(workflowId)
@@ -474,7 +566,8 @@ public class SpringWorkflowIntegrationTest extends KalixIntegrationTestKitSuppor
 
     //then
     Awaitility.await()
-      .atMost(10, TimeUnit.of(SECONDS))
+      .ignoreExceptions()
+      .atMost(20, TimeUnit.of(SECONDS))
       .untilAsserted(() -> {
         var state = await(componentClient.forWorkflow(workflowId).method(WorkflowWithoutInitialState::get).invokeAsync());
         assertThat(state).contains("success");

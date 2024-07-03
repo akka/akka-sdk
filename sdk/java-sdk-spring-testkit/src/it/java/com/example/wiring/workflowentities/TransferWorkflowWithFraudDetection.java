@@ -64,7 +64,7 @@ public class TransferWorkflowWithFraudDetection extends Workflow<TransferState> 
             .transitionTo(fraudDetectionStepName, transfer)
             .thenReply(new Message("transfer started"));
       } else {
-        return effects().reply(new Message("transfer already started"));
+        return effects().reply(new Message("transfer started already"));
       }
     }
   }

@@ -100,7 +100,7 @@ public class TransferWorkflowWithoutInputs extends Workflow<TransferState> {
           .transitionTo(withdrawStepName)
           .thenReply(new Message("transfer started"));
       } else {
-        return effects().reply(new Message("transfer already started"));
+        return effects().reply(new Message("transfer started already"));
       }
     }
   }

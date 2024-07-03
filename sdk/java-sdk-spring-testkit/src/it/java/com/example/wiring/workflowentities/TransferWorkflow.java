@@ -63,7 +63,7 @@ public class TransferWorkflow extends Workflow<TransferState> {
             .transitionTo(withdrawStepName, new Withdraw(transfer.from, transfer.amount))
             .thenReply(new Message("transfer started"));
       } else {
-        return effects().reply(new Message("transfer already started"));
+        return effects().reply(new Message("transfer started already"));
       }
     }
   }

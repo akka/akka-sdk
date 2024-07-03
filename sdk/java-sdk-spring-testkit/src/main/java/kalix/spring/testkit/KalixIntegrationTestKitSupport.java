@@ -4,7 +4,6 @@
 
 package kalix.spring.testkit;
 
-import akka.actor.ExtendedActorSystem;
 import kalix.javasdk.client.ComponentClient;
 import kalix.javasdk.http.HttpClient;
 import kalix.javasdk.testkit.KalixTestKit;
@@ -24,7 +23,7 @@ import static java.time.temporal.ChronoUnit.SECONDS;
  *
  * <p>This class wires-up a local Kalix application using the user's defined Kalix components.
  *
- * <p>Users can interact with their components via their publis endpoint via a FIXME HTTP client or
+ * <p>Users can interact with their components via their public endpoint via an HTTP client or
  * internally through the {{componentClient}}.
  *
  * <p>On test teardown, the Kalix application and the Kalix Runtime will be stopped.
