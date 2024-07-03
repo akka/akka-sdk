@@ -162,22 +162,6 @@ public class ViewTestModels {
   }
 
 
-  @ViewId("users_view")
-  @Table("users_view")
-  public static class TransformedUserViewUsingState extends View<TransformedUser> {
-
-    // when methods are annotated, it's implicitly a transform = true
-    @Subscribe.ValueEntity(UserEntity.class)
-    public Effect<TransformedUser> onChange(TransformedUser userView, User user) {
-      return effects()
-          .updateState(new TransformedUser(user.lastName + ", " + user.firstName, user.email));
-    }
-
-    @Query("SELECT * FROM users_view WHERE email = :email")
-    public TransformedUser getUser(ByEmail byEmail) {
-      return null;
-    }
-  }
 
   /**
    * This should be illegal. Either we subscribe at type level, and it's a transform = false. Or we
@@ -416,12 +400,17 @@ public class ViewTestModels {
 
   @ViewId("users_view")
   @Table(value = "employees_view")
-  public static class SubscribeToEventSourcedWithMissingHandlerState extends View<Employee> {
+  public static class SubscribeToSealedEventSourcedEvents extends View<Employee> {
 
     @Subscribe.EventSourcedEntity(EmployeeEntity.class)
-    public Effect<Employee> onCreated(Employee employee, EmployeeEvent.EmployeeCreated created) {
-      return effects()
-          .updateState(new Employee(created.firstName, created.lastName, created.email));
+    public Effect<Employee> handle(EmployeeEvent event) {
+      return switch (event) {
+        case EmployeeEvent.EmployeeCreated created ->
+           effects()
+              .updateState(new Employee(created.firstName, created.lastName, created.email));
+        case EmployeeEvent.EmployeeEmailUpdated updated ->
+           effects().ignore();
+      };
     }
 
     @Query("SELECT * FROM employees_view WHERE email = :email")
@@ -432,17 +421,12 @@ public class ViewTestModels {
 
   @ViewId("users_view")
   @Table(value = "employees_view")
-  public static class SubscribeToEventSourcedEventsWithMethodWithState extends View<Employee> {
+  public static class SubscribeToEventSourcedWithMissingHandler extends View<Employee> {
 
     @Subscribe.EventSourcedEntity(EmployeeEntity.class)
-    public Effect<Employee> onCreated(Employee employee, EmployeeEvent.EmployeeCreated created) {
+    public Effect<Employee> onCreated(EmployeeEvent.EmployeeCreated created) {
       return effects()
           .updateState(new Employee(created.firstName, created.lastName, created.email));
-    }
-
-    @Subscribe.EventSourcedEntity(EmployeeEntity.class)
-    public Effect<Employee> onUpdated(EmployeeEvent.EmployeeEmailUpdated updated) {
-      return effects().ignore();
     }
 
     @Query("SELECT * FROM employees_view WHERE email = :email")
@@ -450,13 +434,14 @@ public class ViewTestModels {
       return null;
     }
   }
+
 
   @ViewId("users_view")
   @Table(value = "employees_view")
   @Subscribe.EventSourcedEntity(value = EmployeeEntity.class, ignoreUnknown = false)
-  public static class TypeLevelSubscribeToEventSourcedEventsWithState extends View<Employee> {
+  public static class TypeLevelSubscribeToEventSourcedEventsWithMissingHandler extends View<Employee> {
 
-    public Effect<Employee> onEvent(Employee employee, EmployeeEvent.EmployeeCreated created) {
+    public Effect<Employee> onEvent(EmployeeEvent.EmployeeCreated created) {
       return effects()
           .updateState(new Employee(created.firstName, created.lastName, created.email));
     }

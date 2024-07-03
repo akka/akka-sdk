@@ -7,7 +7,10 @@ import kalix.javasdk.client.ComponentClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import user.registry.common.Done;
-import user.registry.domain.User;
+import user.registry.domain.UserEvent;
+import user.registry.domain.UserEvent.EmailAssigned;
+import user.registry.domain.UserEvent.EmailUnassigned;
+import user.registry.domain.UserEvent.UserWasCreated;
 import user.registry.entity.UniqueEmailEntity;
 import user.registry.entity.UserEntity;
 
@@ -27,6 +30,28 @@ public class UserEventsSubscriber extends Action {
     this.client = client;
   }
 
+  public Effect<Done> onEvent(UserEvent evt) {
+    return switch (evt) {
+      case UserWasCreated created -> confirmEmail(created.email());
+      case EmailAssigned assigned -> confirmEmail(assigned.newEmail());
+      case EmailUnassigned unassigned -> markAsNotUsed(evt, unassigned);
+    };
+
+  }
+
+  /**
+   * When a user stops to use an email address, this method gets called and un-reserves the email address.
+   */
+  private Effect<Done> markAsNotUsed(UserEvent evt, EmailUnassigned unassigned) {
+    logger.info("Old email address unassigned: {}, deleting unique email address record", evt);
+    var unreserved =
+      client.forValueEntity(unassigned.oldEmail())
+        .method(UniqueEmailEntity::markAsNotUsed)
+        .invokeAsync();
+
+    return effects().asyncReply(unreserved);
+  }
+
   /**
    * This method is called and a user is created or when a new email address is assigned to a user.
    * It will hit the UniqueEmailEntity to confirm the email address.
@@ -39,26 +64,5 @@ public class UserEventsSubscriber extends Action {
         .invokeAsync();
 
     return effects().asyncReply(confirmation);
-  }
-
-  public Effect<Done> onEvent(User.UserWasCreated evt) {
-    return confirmEmail(evt.email());
-  }
-
-  public Effect<Done> onEvent(User.EmailAssigned evt) {
-    return confirmEmail(evt.newEmail());
-  }
-
-  /**
-   * When a user stops to use an email address, this method gets called and un-reserves the email address.
-   */
-  public Effect<Done> onEvent(User.EmailUnassigned evt) {
-    logger.info("Old email address unassigned: {}, deleting unique email address record", evt);
-    var unreserved =
-      client.forValueEntity(evt.oldEmail())
-        .method(UniqueEmailEntity::delete)
-        .invokeAsync();
-
-    return effects().asyncReply(unreserved);
   }
 }

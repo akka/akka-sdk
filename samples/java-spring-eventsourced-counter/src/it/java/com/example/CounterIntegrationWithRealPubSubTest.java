@@ -1,23 +1,19 @@
 package com.example;
 
 import akka.http.javadsl.model.ContentTypes;
+import akka.http.javadsl.model.StatusCode;
 import akka.http.javadsl.model.StatusCodes;
 import com.example.actions.CounterCommandFromTopicAction;
 import kalix.javasdk.testkit.KalixTestKit;
 import kalix.spring.testkit.KalixIntegrationTestKitSupport;
+import org.awaitility.Awaitility;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Test;
-import org.awaitility.Awaitility;
 
-
-import java.io.IOException;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Base64;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -35,29 +31,31 @@ public class CounterIntegrationWithRealPubSubTest extends KalixIntegrationTestKi
 
   @Test
   public void verifyCounterEventSourcedConsumesFromPubSub() {
-    var counterId = "testRealPubSub";
-    var messageBody = buildMessageBody(
-      "{\"counterId\":\"" + counterId + "\",\"value\":20}",
-      CounterCommandFromTopicAction.IncreaseCounter.class.getName());
+    // using random id to ensure isolation when running tests locally
+    // with a pubsub container since the container preserves state
+    var counterId = UUID.randomUUID().toString();
 
-    var projectId = "test";
+    var msg = """
+        { "counterId": "%s", "value":20 }
+      """.formatted(counterId);
+
+    var messageBody = buildMessageBody(msg, CounterCommandFromTopicAction.IncreaseCounter.class.getName());
+
     var pubSubClient = new kalix.javasdk.http.HttpClient(kalixTestKit.getActorSystem(), "http://localhost:8085");
-    var response = pubSubClient.POST("/v1/projects/" + projectId + "/topics/counter-commands:publish")
+    var response = pubSubClient.POST("/v1/projects/test/topics/counter-commands:publish")
             .withRequestBody(ContentTypes.APPLICATION_JSON, messageBody.getBytes(StandardCharsets.UTF_8))
             .invokeAsync();
-    assertEquals(StatusCodes.OK, await(response, Duration.ofSeconds(3)).httpResponse().status());
+
+    assertEquals(StatusCodes.OK, await(response).httpResponse().status());
 
     var getCounterState =
-      componentClient.forEventSourcedEntity(counterId)
-        .method(Counter::get);
+      componentClient.forEventSourcedEntity(counterId).method(Counter::get);
 
 
     Awaitility.await()
       .ignoreExceptions()
-      .atMost(20, TimeUnit.SECONDS)
-      .until(
-        () -> getCounterState.invokeAsync().toCompletableFuture().get(1, TimeUnit.SECONDS),
-        new IsEqual("20"));
+      .atMost(30, TimeUnit.SECONDS)
+      .until(() -> await(getCounterState.invokeAsync(), Duration.ofSeconds(3)), new IsEqual<>(20));
   }
   // end::test-topic[]
 

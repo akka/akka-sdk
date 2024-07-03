@@ -87,10 +87,10 @@ that one Kalix service can publish more than one of the entity types it contains
 include::example$java-spring-eventsourced-customer-registry/src/main/java/customer/api/CustomerEventsService.java[tag=producer]
 ----
 <1> Identifying which event sourced entity to publish events for.
-<2> Ignore any event types not handled by a method and move on with the event stream, rather than fail which is the default.
-<3> Public identifier for consumers of this stream.
-<4> Allowing access from other Kalix services, but not the public internet.
-<5> All methods on the service are transformer methods for turning internal event message types into public API message types for other services to consume.
+<2> Public identifier for consumers of this stream.
+<3> Allowing access from other Kalix services, but not the public internet.
+<4> All methods on the service are transformer methods for turning internal event message types into public API message types for other services to consume.
+<5> Ignore any event type without public representation.
 
 === Event Consumer
 

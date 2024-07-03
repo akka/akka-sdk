@@ -3,6 +3,7 @@ package user.registry.entity;
 import kalix.javasdk.testkit.EventSourcedTestKit;
 import org.junit.jupiter.api.Test;
 import user.registry.domain.User;
+import user.registry.domain.UserEvent;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
@@ -14,12 +15,12 @@ public class UserEntityTest {
 
     var creationRes = userTestKit.call(userEntity -> userEntity.createUser(new User.Create("John", "Belgium", "john@acme.com")));
 
-    var created = creationRes.getNextEventOfType(User.UserWasCreated.class);
+    var created = creationRes.getNextEventOfType(UserEvent.UserWasCreated.class);
     assertThat(created.name()).isEqualTo("John");
     assertThat(created.email()).isEqualTo("john@acme.com");
 
     var updateRes = userTestKit.call(userEntity -> userEntity.changeEmail(new User.ChangeEmail("john.doe@acme.com")));
-    var emailChanged = updateRes.getNextEventOfType(User.EmailAssigned.class);
+    var emailChanged = updateRes.getNextEventOfType(UserEvent.EmailAssigned.class);
     assertThat(emailChanged.newEmail()).isEqualTo("john.doe@acme.com");
   }
 

@@ -1,6 +1,8 @@
 package user.registry.domain;
 
-import kalix.javasdk.annotations.TypeName;
+import user.registry.domain.UserEvent.EmailAssigned;
+import user.registry.domain.UserEvent.EmailUnassigned;
+import user.registry.domain.UserEvent.UserWasCreated;
 
 import java.util.List;
 
@@ -13,27 +15,6 @@ public record User(String name, String country, String email) {
   public record ChangeEmail(String newEmail) {
   }
 
-  // user events
-
-  /**
-   * It's recommended to seal the event interface.
-   * As such, Kalix can detect that there are event handlers defined for each event.
-   */
-  public sealed interface UserEvent {
-  }
-
-  @TypeName("user-created")
-  public record UserWasCreated(String name, String country, String email) implements UserEvent {
-  }
-
-  @TypeName("email-assigned")
-  public record EmailAssigned(String newEmail) implements UserEvent {
-  }
-
-  @TypeName("email-unassigned")
-  public record EmailUnassigned(String oldEmail) implements UserEvent {
-  }
-
   /**
    * Handle a command to create a new user.
    * Emits a UserWasCreated event.
@@ -43,7 +24,7 @@ public record User(String name, String country, String email) {
   }
 
   static public User onEvent(UserWasCreated evt) {
-    return new User(evt.name, evt.country, evt.email);
+    return new User(evt.name(), evt.country(), evt.email());
   }
 
   /**
@@ -67,7 +48,7 @@ public record User(String name, String country, String email) {
   }
 
   public User onEvent(EmailAssigned evt) {
-    return new User(name, country, evt.newEmail);
+    return new User(name, country, evt.newEmail());
   }
 
 }

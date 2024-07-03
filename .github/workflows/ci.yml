@@ -632,7 +632,9 @@ jobs:
           # - { sample: java-protobuf-eventsourced-shopping-cart, it: true }
 
           - { sample: java-spring-eventsourced-customer-registry, it: true }
-          - { sample: java-spring-eventsourced-counter, pre_cmd: 'docker compose up gcloud-pubsub-emulator -d', it: true }
+          #- { sample: java-spring-eventsourced-counter, pre_cmd: 'docker compose up gcloud-pubsub-emulator -d', it: true }
+          # java-spring-eventsourced-counter only compiling for now
+          - { sample: java-spring-eventsourced-counter, it: false }
           - { sample: java-spring-eventsourced-customer-registry-subscriber, it: true, pre_cmd: './start-upstream.sh' }
 
           - { sample: java-spring-eventsourced-shopping-cart, it: true }

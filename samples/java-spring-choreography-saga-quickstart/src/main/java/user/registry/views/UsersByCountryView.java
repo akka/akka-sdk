@@ -7,7 +7,9 @@ import kalix.javasdk.annotations.ViewId;
 import kalix.javasdk.view.View;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import user.registry.domain.User;
+import user.registry.domain.UserEvent;
+import user.registry.domain.UserEvent.EmailAssigned;
+import user.registry.domain.UserEvent.UserWasCreated;
 import user.registry.entity.UserEntity;
 
 import java.util.List;
@@ -17,7 +19,7 @@ import java.util.List;
  */
 @ViewId("view-users-by-newCountry")
 @Table("users_by_country")
-@Subscribe.EventSourcedEntity(value = UserEntity.class, ignoreUnknown = true)
+@Subscribe.EventSourcedEntity(value = UserEntity.class)
 public class UsersByCountryView extends View<UsersByCountryView.UserView> {
 
   private Logger logger = LoggerFactory.getLogger(getClass());
@@ -39,15 +41,20 @@ public class UsersByCountryView extends View<UsersByCountryView.UserView> {
     return null;
   }
 
-  public Effect<UserView> onEvent(User.UserWasCreated evt) {
-    logger.info("User was created: {}", evt);
-    var currentId = updateContext().eventSubject().orElseThrow();
-    return effects().updateState(new UserView(currentId, evt.name(), evt.country(), evt.email()));
-  }
-
-  public Effect<UserView> onEvent(User.EmailAssigned evt) {
-    logger.info("User address changed: {}", evt);
-    var updatedView = viewState().withEmail(evt.newEmail());
-    return effects().updateState(updatedView);
+  public Effect<UserView> onEvent(UserEvent evt) {
+    return switch (evt) {
+      case UserWasCreated created -> {
+        logger.info("User was created: {}", created);
+        var currentId = updateContext().eventSubject().orElseThrow();
+        yield effects().updateState(new UserView(currentId, created.name(), created.country(), created.email()));
+      }
+      case EmailAssigned emailAssigned -> {
+        logger.info("User address changed: {}", emailAssigned);
+        var updatedView = viewState().withEmail(emailAssigned.newEmail());
+        yield effects().updateState(updatedView);
+      }
+      default ->
+        effects().ignore();
+    };
   }
 }

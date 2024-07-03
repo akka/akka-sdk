@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import user.registry.common.Done;
 import user.registry.domain.User;
+import user.registry.domain.UserEvent;
 
 /**
  * Entity wrapping a User.
@@ -26,7 +27,7 @@ import user.registry.domain.User;
  */
 @TypeId("user")
 @Acl(allow = @Acl.Matcher(service = "*"))
-public class UserEntity extends EventSourcedEntity<User, User.UserEvent> {
+public class UserEntity extends EventSourcedEntity<User, UserEvent> {
 
   private final Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -70,11 +71,11 @@ public class UserEntity extends EventSourcedEntity<User, User.UserEvent> {
 
 
   @Override
-  public User applyEvent(User.UserEvent event) {
+  public User applyEvent(UserEvent event) {
     return switch (event) {
-      case User.UserWasCreated evt -> User.onEvent(evt);
-      case User.EmailAssigned evt -> currentState().onEvent(evt);
-      case User.EmailUnassigned evt -> currentState();
+      case UserEvent.UserWasCreated evt -> User.onEvent(evt);
+      case UserEvent.EmailAssigned evt -> currentState().onEvent(evt);
+      case UserEvent.EmailUnassigned evt -> currentState();
     };
   }
 }

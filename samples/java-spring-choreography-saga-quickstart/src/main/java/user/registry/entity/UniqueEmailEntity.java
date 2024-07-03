@@ -132,8 +132,8 @@ public class UniqueEmailEntity extends ValueEntity<UniqueEmail> {
    * is still in RESERVED state. The ordering of events is guaranteed, so first the UserWasCreated event will be processed
    * confirming the email, then later an EmailUnassigned event might be emitted and this method will be called.
    */
-  public Effect<Done> delete() {
-    logger.info("Deleting email address '{}'", currentState().address());
+  public Effect<Done> markAsNotUsed() {
+    logger.info("Marking as not used email address '{}'", currentState().address());
     return effects()
       .updateState(notInUse())
       .thenReply(Done.done());

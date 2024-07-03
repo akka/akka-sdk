@@ -11,6 +11,7 @@ import com.google.protobuf.Descriptors.FieldDescriptor.JavaType
 import com.google.protobuf.timestamp.Timestamp
 import kalix.JwtMethodOptions.JwtMethodMode
 import kalix.JwtServiceOptions.JwtServiceMode
+import com.google.protobuf.{ Any => JavaPbAny }
 import kalix.spring.testmodels.subscriptions.PubSubTestModels.EventStreamSubscriptionView
 import kalix.spring.testmodels.subscriptions.PubSubTestModels.SubscribeOnTypeToEventSourcedEvents
 import kalix.spring.testmodels.view.ViewTestModels.MultiTableViewValidation
@@ -24,16 +25,16 @@ import kalix.spring.testmodels.view.ViewTestModels.MultiTableViewWithViewIdInInn
 import kalix.spring.testmodels.view.ViewTestModels.MultiTableViewWithoutQuery
 import kalix.spring.testmodels.view.ViewTestModels.MultiTableViewWithoutViewId
 import kalix.spring.testmodels.view.ViewTestModels.SubscribeToEventSourcedEvents
-import kalix.spring.testmodels.view.ViewTestModels.SubscribeToEventSourcedWithMissingHandlerState
+import kalix.spring.testmodels.view.ViewTestModels.SubscribeToEventSourcedWithMissingHandler
+import kalix.spring.testmodels.view.ViewTestModels.SubscribeToSealedEventSourcedEvents
 import kalix.spring.testmodels.view.ViewTestModels.TimeTrackerView
 import kalix.spring.testmodels.view.ViewTestModels.TopicSubscriptionView
 import kalix.spring.testmodels.view.ViewTestModels.TopicTypeLevelSubscriptionView
 import kalix.spring.testmodels.view.ViewTestModels.TransformedUserView
-import kalix.spring.testmodels.view.ViewTestModels.TransformedUserViewUsingState
 import kalix.spring.testmodels.view.ViewTestModels.TransformedUserViewWithDeletes
 import kalix.spring.testmodels.view.ViewTestModels.TransformedUserViewWithMethodLevelJWT
 import kalix.spring.testmodels.view.ViewTestModels.TransformedViewWithoutSubscriptionOnMethodLevel
-import kalix.spring.testmodels.view.ViewTestModels.TypeLevelSubscribeToEventSourcedEventsWithState
+import kalix.spring.testmodels.view.ViewTestModels.TypeLevelSubscribeToEventSourcedEventsWithMissingHandler
 import kalix.spring.testmodels.view.ViewTestModels.UserByEmailWithCollectionReturn
 import kalix.spring.testmodels.view.ViewTestModels.ViewDuplicatedESSubscriptions
 import kalix.spring.testmodels.view.ViewTestModels.ViewDuplicatedHandleDeletesAnnotations
@@ -288,12 +289,6 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
       }
     }
 
-    "fail for update method that also expects the current state as parameter" in {
-      intercept[InvalidComponentException] {
-        Validations.validate(classOf[TransformedUserViewUsingState]).failIfInvalid
-      }
-    }
-
     "fail if no query method found" in {
       intercept[InvalidComponentException] {
         Validations.validate(classOf[ViewWithNoQuery]).failIfInvalid
@@ -331,6 +326,39 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
       }
     }
 
+    "generate proto for a View when subscribing to sealed interface" in {
+      assertDescriptor[SubscribeToSealedEventSourcedEvents] { desc =>
+
+        val methodOptions = this.findKalixMethodOptions(desc, "KalixSyntheticMethodOnESEmployee")
+        methodOptions.getEventing.getIn.getEventSourcedEntity shouldBe "employee"
+
+        methodOptions.getView.getUpdate.getTable shouldBe "employees_view"
+        methodOptions.getView.getUpdate.getTransformUpdates shouldBe true
+        methodOptions.getView.getJsonSchema.getOutput shouldBe "Employee"
+
+        val queryMethodOptions = this.findKalixMethodOptions(desc, "GetEmployeeByEmail")
+        queryMethodOptions.getView.getQuery.getQuery shouldBe "SELECT * FROM employees_view WHERE email = :email"
+        queryMethodOptions.getView.getJsonSchema.getOutput shouldBe "Employee"
+        // not defined when query body not used
+        queryMethodOptions.getView.getJsonSchema.getInput shouldBe "ByEmail"
+
+        val tableMessageDescriptor = desc.fileDescriptor.findMessageTypeByName("Employee")
+        tableMessageDescriptor should not be null
+
+        val rule = findHttpRule(desc, "GetEmployeeByEmail")
+        rule.getPost shouldBe "/akka/v1.0/view/users_view/getEmployeeByEmail"
+
+        val onUpdateMethod = desc.commandHandlers("KalixSyntheticMethodOnESEmployee")
+        onUpdateMethod.requestMessageDescriptor.getFullName shouldBe JavaPbAny.getDescriptor.getFullName
+
+        val eventing = findKalixMethodOptions(desc, "KalixSyntheticMethodOnESEmployee").getEventing.getIn
+        eventing.getEventSourcedEntity shouldBe "employee"
+
+        onUpdateMethod.methodInvokers.view.mapValues(_.method.getName).toMap should
+        contain only ("json.kalix.io/created" -> "handle", "json.kalix.io/old-created" -> "handle", "json.kalix.io/emailUpdated" -> "handle")
+      }
+    }
+
     "generate proto for a View with multiple methods to handle different events" in {
       assertDescriptor[SubscribeOnTypeToEventSourcedEvents] { desc =>
 
@@ -348,16 +376,16 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
 
     "validate missing handlers for method level subscription" in {
       intercept[InvalidComponentException] {
-        Validations.validate(classOf[SubscribeToEventSourcedWithMissingHandlerState]).failIfInvalid
+        Validations.validate(classOf[SubscribeToEventSourcedWithMissingHandler]).failIfInvalid
       }.getMessage shouldBe
-      "On 'kalix.spring.testmodels.view.ViewTestModels$SubscribeToEventSourcedWithMissingHandlerState': missing an event handler for 'kalix.spring.testmodels.eventsourcedentity.EmployeeEvent$EmployeeEmailUpdated'."
+      "On 'kalix.spring.testmodels.view.ViewTestModels$SubscribeToEventSourcedWithMissingHandler': missing an event handler for 'kalix.spring.testmodels.eventsourcedentity.EmployeeEvent$EmployeeEmailUpdated'."
     }
 
     "validate missing handlers for type level subscription" in {
       intercept[InvalidComponentException] {
-        Validations.validate(classOf[TypeLevelSubscribeToEventSourcedEventsWithState]).failIfInvalid
+        Validations.validate(classOf[TypeLevelSubscribeToEventSourcedEventsWithMissingHandler]).failIfInvalid
       }.getMessage shouldBe
-      "On 'kalix.spring.testmodels.view.ViewTestModels$TypeLevelSubscribeToEventSourcedEventsWithState': missing an event handler for 'kalix.spring.testmodels.eventsourcedentity.EmployeeEvent$EmployeeEmailUpdated'."
+      "On 'kalix.spring.testmodels.view.ViewTestModels$TypeLevelSubscribeToEventSourcedEventsWithMissingHandler': missing an event handler for 'kalix.spring.testmodels.eventsourcedentity.EmployeeEvent$EmployeeEmailUpdated'."
     }
 
     "not allow duplicated ES subscriptions methods" in {

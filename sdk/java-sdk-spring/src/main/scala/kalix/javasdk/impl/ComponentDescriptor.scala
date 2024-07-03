@@ -229,7 +229,7 @@ private[kalix] object ComponentDescriptor {
               val parameterExtractors: ParameterExtractorsArray = {
                 meth.getParameterTypes.length match {
                   case 1 =>
-                    Array(new ParameterExtractors.AnyBodyExtractor[AnyRef](meth.getParameterTypes.head))
+                    Array(new ParameterExtractors.AnyBodyExtractor[AnyRef](meth.getParameterTypes.head, messageCodec))
                   case n =>
                     throw new IllegalStateException(
                       s"Update handler ${method} is expecting $n parameters, should be 1, the update")
@@ -247,7 +247,7 @@ private[kalix] object ComponentDescriptor {
               .map { meth =>
 
                 val parameterExtractors: ParameterExtractorsArray =
-                  Array(ParameterExtractors.AnyBodyExtractor(method.inputType))
+                  Array(ParameterExtractors.AnyBodyExtractor(method.inputType, messageCodec))
 
                 val typeUrls = messageCodec.typeUrlsFor(method.inputType)
                 typeUrls.map(_ -> MethodInvoker(meth, parameterExtractors)).toMap

@@ -688,9 +688,11 @@ class ActionDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSu
         val entityType = eventingIn.getEventSourcedEntity
         entityType shouldBe "employee"
 
-        val methodOne = desc.commandHandlers("KalixSyntheticMethodOnESEmployee")
-        methodOne.requestMessageDescriptor.getFullName shouldBe JavaPbAny.getDescriptor.getFullName
+        val onUpdateMethod = desc.commandHandlers("KalixSyntheticMethodOnESEmployee")
+        onUpdateMethod.requestMessageDescriptor.getFullName shouldBe JavaPbAny.getDescriptor.getFullName
 
+        onUpdateMethod.methodInvokers.view.mapValues(_.method.getName).toMap should
+        contain only ("json.kalix.io/created" -> "transform", "json.kalix.io/old-created" -> "transform", "json.kalix.io/emailUpdated" -> "transform")
       }
     }
 

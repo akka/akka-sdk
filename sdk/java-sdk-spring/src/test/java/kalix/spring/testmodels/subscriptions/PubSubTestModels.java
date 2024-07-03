@@ -16,6 +16,7 @@ import kalix.spring.testmodels.Done;
 import kalix.spring.testmodels.Message;
 import kalix.spring.testmodels.Message2;
 import kalix.spring.testmodels.eventsourcedentity.Employee;
+import kalix.spring.testmodels.eventsourcedentity.EmployeeEvent;
 import kalix.spring.testmodels.eventsourcedentity.EmployeeEvent.EmployeeCreated;
 import kalix.spring.testmodels.eventsourcedentity.EmployeeEvent.EmployeeEmailUpdated;
 import kalix.spring.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels;
@@ -687,12 +688,13 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   @Publish.Stream(id = "employee_events")
   public static class EventStreamPublishingAction extends Action {
 
-    public Effect<String> transform(EmployeeCreated created) {
-      return effects().reply(created.toString());
-    }
-
-    public Effect<String> transform(EmployeeEmailUpdated emailUpdated) {
-      return effects().reply(emailUpdated.toString());
+    public Effect<String> transform(EmployeeEvent event) {
+      return switch (event){
+        case EmployeeCreated created ->
+          effects().reply(created.toString());
+        case EmployeeEmailUpdated emailUpdated ->
+          effects().reply(emailUpdated.toString());
+      };
     }
 
   }

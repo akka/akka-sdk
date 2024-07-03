@@ -88,9 +88,7 @@ public class CounterIntegrationTest extends KalixIntegrationTestKitSupport { // 
       .ignoreExceptions()
       .atMost(20, TimeUnit.SECONDS)
       // check state until returns 10
-      .until(
-        () -> getCounterState.invokeAsync().toCompletableFuture().get(1, TimeUnit.SECONDS),
-        new IsEqual("10"));
+      .until(() -> await(getCounterState.invokeAsync()), new IsEqual<>(10));
 
     // multiply by 20 (from 10 to 200
     counterClient
@@ -101,9 +99,7 @@ public class CounterIntegrationTest extends KalixIntegrationTestKitSupport { // 
       .ignoreExceptions()
       .atMost(20, TimeUnit.SECONDS)
       // check state until returns 200
-      .until(
-        () -> getCounterState.invokeAsync().toCompletableFuture().get(1, TimeUnit.SECONDS),
-        new IsEqual("200"));
+      .until(() -> await(getCounterState.invokeAsync()), new IsEqual<>(200));
   }
 
   // tag::test-topic[]

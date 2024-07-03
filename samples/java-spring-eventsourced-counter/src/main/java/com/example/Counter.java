@@ -16,7 +16,6 @@
 
 package com.example;
 
-import com.example.actions.CounterCommandFromTopicAction;
 import kalix.javasdk.annotations.TypeId;
 import kalix.javasdk.eventsourcedentity.EventSourcedEntity;
 import org.slf4j.Logger;
@@ -43,8 +42,8 @@ public class Counter extends EventSourcedEntity<Integer, CounterEvent> {
       .thenReply(Object::toString);
   }
 
-  public Effect<String> get() {
-    return effects().reply(currentState().toString());
+  public Effect<Integer> get() {
+    return effects().reply(currentState());
   }
 
   public Effect<String> multiply(Integer value) {

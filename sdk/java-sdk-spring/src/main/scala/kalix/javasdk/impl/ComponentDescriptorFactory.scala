@@ -16,17 +16,17 @@ import kalix.MethodOptions
 import kalix.ServiceEventing
 import kalix.ServiceEventingOut
 import kalix.ServiceOptions
+import kalix.javasdk.action.Action
 import kalix.javasdk.annotations.Acl
 import kalix.javasdk.annotations.Publish
 import kalix.javasdk.annotations.Subscribe
 import kalix.javasdk.annotations.Table
 import kalix.javasdk.annotations.TypeId
 import kalix.javasdk.annotations.ViewId
+import kalix.javasdk.eventsourcedentity.EventSourcedEntity
 import kalix.javasdk.impl.reflection.CombinedSubscriptionServiceMethod
 import kalix.javasdk.impl.reflection.KalixMethod
 import kalix.javasdk.impl.reflection.NameGenerator
-import kalix.javasdk.action.Action
-import kalix.javasdk.eventsourcedentity.EventSourcedEntity
 import kalix.javasdk.valueentity.ValueEntity
 import kalix.javasdk.view.View.Effect
 // TODO: abstract away spring dependency
@@ -422,7 +422,22 @@ private[impl] object ComponentDescriptorFactory {
             methodsMap))
           .withKalixOptions(kMethods.head.methodOptions)
 
-      case (_, kMethod +: Nil) => kMethod
+      case (source, kMethod +: Nil) =>
+        //only here it makes sense to check if the input is sealed, since kMethod size is 1
+        if (kMethod.serviceMethod.javaMethodOpt.exists(_.getParameterTypes.last.isSealed)) {
+          val javaMethod = kMethod.serviceMethod.javaMethodOpt.get
+          val methodsMap = javaMethod.getParameterTypes.last.getPermittedSubclasses.toList.flatMap { subClass =>
+            messageCodec.typeUrlsFor(subClass).map(typeUrl => (typeUrl, javaMethod))
+          }.toMap
+          KalixMethod(
+            CombinedSubscriptionServiceMethod(
+              component.getName,
+              "KalixSyntheticMethodOn" + sourceName + escapeMethodName(source.capitalize),
+              methodsMap))
+            .withKalixOptions(kMethod.methodOptions)
+        } else {
+          kMethod
+        }
     }.toSeq
   }
 

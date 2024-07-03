@@ -43,7 +43,7 @@ public class UniqueEmailEntityTest {
   public void testReserveAndDeleting() {
     var emailTestKit = ValueEntityTestKit.of(UniqueEmailEntity::new);
     reserveEmail(emailTestKit, "joe@acme.com", "1");
-    deleteEmail(emailTestKit);
+    markAsNotUsedEmail(emailTestKit);
   }
 
   @Test
@@ -51,7 +51,7 @@ public class UniqueEmailEntityTest {
     var emailTestKit = ValueEntityTestKit.of(UniqueEmailEntity::new);
     reserveEmail(emailTestKit, "joe@acme.com", "1");
     confirmEmail(emailTestKit);
-    deleteEmail(emailTestKit);
+    markAsNotUsedEmail(emailTestKit);
   }
 
   private static void confirmEmail(ValueEntityTestKit<UniqueEmail, UniqueEmailEntity> emailTestKit) {
@@ -72,8 +72,8 @@ public class UniqueEmailEntityTest {
     assertThat(state.isReserved()).isTrue();
   }
 
-  private static void deleteEmail(ValueEntityTestKit<UniqueEmail, UniqueEmailEntity> emailTestKit) {
-    var reservedRes = emailTestKit.call(UniqueEmailEntity::delete);
+  private static void markAsNotUsedEmail(ValueEntityTestKit<UniqueEmail, UniqueEmailEntity> emailTestKit) {
+    var reservedRes = emailTestKit.call(UniqueEmailEntity::markAsNotUsed);
     assertThat(reservedRes.isReply()).isTrue();
     assertThat(reservedRes.stateWasUpdated()).isTrue();
 

@@ -35,35 +35,39 @@ public class JoinedCustomerOrdersView {
   @Table("customers") // <4>
   @Subscribe.EventSourcedEntity(CustomerEntity.class)
   public static class Customers extends View<Customer> {
-    public Effect<Customer> onEvent(CustomerEvent.CustomerCreated created) {
-      String id = updateContext().eventSubject().orElse("");
-      return effects()
-        .updateState(new Customer(id, created.email(), created.name(), created.address()));
-    }
+    public Effect<Customer> onEvent(CustomerEvent event) {
+      return switch (event) {
+        case CustomerEvent.CustomerCreated created -> {
+          String id = updateContext().eventSubject().orElse("");
+          yield effects()
+            .updateState(new Customer(id, created.email(), created.name(), created.address()));
+        }
 
-    public Effect<Customer> onEvent(CustomerEvent.CustomerNameChanged event) {
-      return effects().updateState(viewState().withName(event.newName()));
-    }
+        case CustomerEvent.CustomerNameChanged nameChanged ->
+          effects().updateState(viewState().withName(nameChanged.newName()));
 
-    public Effect<Customer> onEvent(CustomerEvent.CustomerAddressChanged event) {
-      return effects().updateState(viewState().withAddress(event.newAddress()));
+        case CustomerEvent.CustomerAddressChanged addressChanged ->
+          effects().updateState(viewState().withAddress(addressChanged.newAddress()));
+      };
     }
   }
 
   @Table("products") // <4>
   @Subscribe.EventSourcedEntity(ProductEntity.class)
   public static class Products extends View<Product> {
-    public Effect<Product> onEvent(ProductEvent.ProductCreated created) {
-      String id = updateContext().eventSubject().orElse("");
-      return effects().updateState(new Product(id, created.name(), created.price()));
-    }
+    public Effect<Product> onEvent(ProductEvent event) {
+      return switch (event) {
+        case ProductEvent.ProductCreated created -> {
+          String id = updateContext().eventSubject().orElse("");
+          yield effects().updateState(new Product(id, created.name(), created.price()));
+        }
 
-    public Effect<Product> onEvent(ProductEvent.ProductNameChanged event) {
-      return effects().updateState(viewState().withProductName(event.newName()));
-    }
+        case ProductEvent.ProductNameChanged nameChanged ->
+          effects().updateState(viewState().withProductName(nameChanged.newName()));
 
-    public Effect<Product> onEvent(ProductEvent.ProductPriceChanged event) {
-      return effects().updateState(viewState().withPrice(event.newPrice()));
+        case ProductEvent.ProductPriceChanged priceChanged ->
+          effects().updateState(viewState().withPrice(priceChanged.newPrice()));
+      };
     }
   }
 
