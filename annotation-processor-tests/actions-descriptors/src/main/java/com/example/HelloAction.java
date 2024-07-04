@@ -4,8 +4,8 @@
 
 package com.example;
 
-import kalix.javasdk.action.Action;
-import kalix.javasdk.annotations.ActionId;
+import akka.platform.javasdk.action.Action;
+import akka.platform.javasdk.annotations.ActionId;
 
 @ActionId("hello")
 public class HelloAction extends Action {

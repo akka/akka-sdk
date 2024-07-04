@@ -4,7 +4,7 @@
 
 package com.example;
 
-import kalix.javasdk.annotations.KalixService;
+import akka.platform.javasdk.annotations.KalixService;
 
 @KalixService
 public class Main { }

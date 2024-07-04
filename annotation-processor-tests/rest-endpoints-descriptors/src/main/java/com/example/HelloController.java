@@ -4,8 +4,8 @@
 
 package com.example;
 
-import kalix.javasdk.annotations.http.Endpoint;
-import kalix.javasdk.annotations.http.Get;
+import akka.platform.javasdk.annotations.http.Endpoint;
+import akka.platform.javasdk.annotations.http.Get;
 
 @Endpoint("/hello")
 public class HelloController {

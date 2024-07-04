@@ -4,8 +4,8 @@
 
 package com.example;
 
-import kalix.javasdk.annotations.http.Endpoint;
-import kalix.javasdk.annotations.http.Post;
+import akka.platform.javasdk.annotations.http.Endpoint;
+import akka.platform.javasdk.annotations.http.Post;
 
 @Endpoint("/user")
 public class UserRegistryController {

@@ -42,12 +42,12 @@ Java::
 ----
 <dependencies>
     <dependency>
-        <groupId>io.kalix</groupId>
+        <groupId>io.akka</groupId>
         <artifactId>kalix-java-sdk-protobuf</artifactId>
         <version>{kalix-jvm-sdk-version}</version>
     </dependency>
     <dependency>
-        <groupId>io.kalix</groupId>
+        <groupId>io.akka</groupId>
         <artifactId>kalix-java-sdk-protobuf-testkit</artifactId>
         <version>{kalix-jvm-sdk-version}</version>
         <scope>test</scope>

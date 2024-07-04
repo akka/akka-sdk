@@ -4,8 +4,8 @@
 
 package com.example;
 
-import kalix.javasdk.action.Action;
-import kalix.javasdk.annotations.Consume;
+import akka.platform.javasdk.action.Action;
+import akka.platform.javasdk.annotations.Consume;
 
 @Consume.FromTopic("topic")
 public class ActionSubscriber extends Action {

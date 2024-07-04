@@ -14,12 +14,12 @@ Thus, in your `pom.xml`, instead of:
 
 ```xml
     <dependency>
-      <groupId>io.kalix</groupId>
+      <groupId>io.akka</groupId>
       <artifactId>kalix-java-sdk</artifactId>
       <version>${kalix-sdk.version}</version>
     </dependency>
     <dependency>
-      <groupId>io.kalix</groupId>
+      <groupId>io.akka</groupId>
       <artifactId>kalix-java-sdk-testkit</artifactId>
       <version>${kalix-sdk.version}</version>
       <scope>test</scope>
@@ -29,12 +29,12 @@ Thus, in your `pom.xml`, instead of:
 Use:
 ```xml
     <dependency>
-      <groupId>io.kalix</groupId>
+      <groupId>io.akka</groupId>
       <artifactId>kalix-java-sdk-protobuf</artifactId>
       <version>${kalix-sdk.version}</version>
     </dependency>
     <dependency>
-      <groupId>io.kalix</groupId>
+      <groupId>io.akka</groupId>
       <artifactId>kalix-java-sdk-protobuf-testkit</artifactId>
       <version>${kalix-sdk.version}</version>
       <scope>test</scope>
@@ -60,12 +60,12 @@ The package dependencies were updated:
 In the `pom.xml`, where previously there was:
 ```xml
     <dependency>
-      <groupId>io.kalix</groupId>
+      <groupId>io.akka</groupId>
       <artifactId>kalix-spring-sdk</artifactId>
       <version>${kalix-sdk.version}</version>
     </dependency>
     <dependency>
-      <groupId>io.kalix</groupId>
+      <groupId>io.akka</groupId>
       <artifactId>kalix-spring-sdk-testkit</artifactId>
       <version>${kalix-sdk.version}</version>
       <scope>test</scope>
@@ -81,12 +81,12 @@ In the `pom.xml`, where previously there was:
 There should now be:
 ```xml
     <dependency>
-      <groupId>io.kalix</groupId>
+      <groupId>io.akka</groupId>
       <artifactId>kalix-spring-boot-starter</artifactId>
       <version>${kalix-sdk.version}</version>
     </dependency>
     <dependency>
-      <groupId>io.kalix</groupId>
+      <groupId>io.akka</groupId>
       <artifactId>kalix-spring-boot-starter-test</artifactId>
       <version>${kalix-sdk.version}</version>
       <scope>test</scope>
@@ -134,18 +134,18 @@ All Kalix annotations moved from `kalix.springsdk.annotations.*` to `kalix.javas
 
 Thus, when importing them, where before there was for instance:
 ```java
-import kalix.springsdk.annotations.EntityKey;
-import kalix.springsdk.annotations.EntityType;
-import kalix.springsdk.annotations.EventHandler;
-import kalix.springsdk.annotations.GenerateEntityKey;
+import akka.platform.springsdk.annotations.EntityKey;
+import akka.platform.springsdk.annotations.EntityType;
+import akka.platform.springsdk.annotations.EventHandler;
+import akka.platform.springsdk.annotations.GenerateEntityKey;
 ```
 
 It should now be:
 ```java
-import kalix.javasdk.annotations.EntityKey;
-import kalix.javasdk.annotations.EntityType;
-import kalix.javasdk.annotations.EventHandler;
-import kalix.javasdk.annotations.GenerateEntityKey;
+import akka.platform.javasdk.annotations.EntityKey;
+import akka.platform.javasdk.annotations.EntityType;
+import akka.platform.javasdk.annotations.EventHandler;
+import akka.platform.javasdk.annotations.GenerateEntityKey;
 ```
 
 Note these are only a few example of the existing annotations but all of them were moved.
@@ -156,24 +156,24 @@ The Entity-specific test kits moved from `kalix.springsdk.testkit.*` to `kalix.j
 
 Thus, you will need to replace these:
 ```java
-import kalix.springsdk.testkit.ActionTestkit;
-import kalix.springsdk.testkit.EventSourcedTestKit;
-import kalix.springsdk.testkit.ValueEntityTestKit;
+import akka.platform.springsdk.testkit.ActionTestkit;
+import akka.platform.springsdk.testkit.EventSourcedTestKit;
+import akka.platform.springsdk.testkit.ValueEntityTestKit;
 ```
 
 With:
 
 ```java
-import kalix.javasdk.testkit.ActionTestkit;
-import kalix.javasdk.testkit.EventSourcedTestKit;
-import kalix.javasdk.testkit.ValueEntityTestKit;
+import akka.platform.javasdk.testkit.ActionTestkit;
+import akka.platform.javasdk.testkit.EventSourcedTestKit;
+import akka.platform.javasdk.testkit.ValueEntityTestKit;
 ```
 
 Lastly, `KalixIntegrationTestKitSupport` was also moved, so you will need to replace:
 ```java
-import kalix.springsdk.testkit.KalixIntegrationTestKitSupport;
+import akka.platform.springsdk.testkit.KalixIntegrationTestKitSupport;
 ```
 With:
 ```java
-import kalix.spring.testkit.KalixIntegrationTestKitSupport;
+import akka.platform.spring.testkit.KalixIntegrationTestKitSupport;
 ```

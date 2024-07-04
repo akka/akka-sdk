@@ -15,14 +15,14 @@ object AnnotationProcessorTestProject {
       def componentProjects: Seq[Project] = innerProjects :+ root
 
       lazy val root =
-        Project(id = s"javaSdkAnnotationProcessorTests", base = file(pathToTests))
+        Project(id = s"annotation-processor-tests", base = file(pathToTests))
           .disablePlugins(Publish)
           .aggregate(innerProjects.map(p => p: ProjectReference): _*)
 
       lazy val innerProjects =
         findProjects
           .map { dir =>
-            Project("test-ann-proc-" + dir.getName, dir)
+            Project("annotation-processor-tests-" + dir.getName, dir)
               .disablePlugins(Publish)
           }
           .map(configureFunc)

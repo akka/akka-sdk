@@ -126,23 +126,23 @@ jobs:
           sbt -Ddisable.apidocs=true publishM2 +publishLocal
           # the SDK_VERSION is later used to run the maven tests (see below)
           .github/determine-sdk-version.sh
-          SDK_VERSION="$(cat ~/kalix-sdk-version.txt)"
+          SDK_VERSION="$(cat ~/akka-platform-sdk-version.txt)"
           echo "SDK version: '${SDK_VERSION}'"
 
       - name: Build maven-java
         run: |-
-          export SDK_VERSION=$(cat ~/kalix-sdk-version.txt)
+          export SDK_VERSION=$(cat ~/akka-platform-sdk-version.txt)
           cd maven-java
           echo "Running maven-java with SDK version: '${SDK_VERSION}'"
           ../.github/patch-maven-versions.sh
           mvn verify install --no-transfer-progress -Dskip.docker=true
 
-      - name: Package io.kalix dependencies
+      - name: Package io.akka dependencies
         run: |-
           cd
-          tar -czf dependencies.tar.gz .m2/repository/io/kalix/ .ivy2/local/io.kalix/ kalix-sdk-version.txt
+          tar -czf dependencies.tar.gz .m2/repository/io/akka/ .ivy2/local/io.akka/ akka-platform-sdk-version.txt
 
-      - name: Upload io.kalix dependencies
+      - name: Upload io.akka dependencies
         # https://github.com/actions/upload-artifact/releases
         # v4.3.2
         uses: actions/upload-artifact@1746f4ab65b179e0ea60a494b83293b640dd5bba
@@ -191,7 +191,7 @@ jobs:
         with:
           jvm: temurin:1.21
 
-      - name: Download io.kalix dependencies
+      - name: Download io.akka dependencies
         # https://github.com/actions/download-artifact/releases
         # v4.1.5
         uses: actions/download-artifact@8caf195ad4b1dee92908e23f56eeb0696f1dd42d
@@ -199,7 +199,7 @@ jobs:
           name: m2-cache
           path: ~/
 
-      - name: Unpack io.kalix dependencies
+      - name: Unpack io.akka dependencies
         run: |-
           cd
           tar -xf dependencies.tar.gz
@@ -246,7 +246,7 @@ jobs:
         with:
           jvm: temurin:1.21
 
-      - name: Download io.kalix dependencies
+      - name: Download io.akka dependencies
         # https://github.com/actions/download-artifact/releases
         # v4.1.5
         uses: actions/download-artifact@8caf195ad4b1dee92908e23f56eeb0696f1dd42d
@@ -254,7 +254,7 @@ jobs:
           name: m2-cache
           path: ~/
 
-      - name: Unpack io.kalix dependencies
+      - name: Unpack io.akka dependencies
         run: |-
           cd
           tar -xf dependencies.tar.gz
@@ -263,22 +263,22 @@ jobs:
       # this is due to the fact that the tests are a bit flaky when running all together due to
       # failing in binding or error about running multiple tests at the same time
       - name: "Integration Test only SpringSdkIntegrationTest"
-        run: sbt 'javaSdkSpringTestKit/IntegrationTest/testOnly *SpringSdkIntegrationTest'
+        run: sbt 'java-sdk-testkit/IntegrationTest/testOnly *SpringSdkIntegrationTest'
 
       - name: "Integration Test only ValueEntityIntegrationTest"
-        run: sbt 'javaSdkSpringTestKit/IntegrationTest/testOnly *ValueEntityIntegrationTest'
+        run: sbt 'java-sdk-testkit/IntegrationTest/testOnly *ValueEntityIntegrationTest'
 
       - name: "Integration Test only EventSourcedEntityIntegrationTest"
-        run: sbt 'javaSdkSpringTestKit/IntegrationTest/testOnly *EventSourcedEntityIntegrationTest'
+        run: sbt 'java-sdk-testkit/IntegrationTest/testOnly *EventSourcedEntityIntegrationTest'
 
       - name: "Integration Test only SpringWorkflowIntegrationTest"
-        run: sbt 'javaSdkSpringTestKit/IntegrationTest/testOnly *SpringWorkflowIntegrationTest'
+        run: sbt 'java-sdk-testkit/IntegrationTest/testOnly *SpringWorkflowIntegrationTest'
 
       - name: "Integration Test only EventingTestkitDestinationIntegrationTest"
-        run: sbt 'javaSdkSpringTestKit/IntegrationTest/testOnly *EventingTestkitDestinationIntegrationTest'
+        run: sbt 'java-sdk-testkit/IntegrationTest/testOnly *EventingTestkitDestinationIntegrationTest'
 
       - name: "Integration Test only EndpointsIntegrationTest"
-        run: sbt 'javaSdkSpringTestKit/IntegrationTest/testOnly *EndpointsIntegrationTest'
+        run: sbt 'java-sdk-testkit/IntegrationTest/testOnly *EndpointsIntegrationTest'
 
   java-sdk-annotation-processor-test:
     name: Run annotation processor tests
@@ -319,7 +319,7 @@ jobs:
         with:
           jvm: temurin:1.21
 
-      - name: Download io.kalix dependencies
+      - name: Download io.akka dependencies
         # https://github.com/actions/download-artifact/releases
         # v4.1.5
         uses: actions/download-artifact@8caf195ad4b1dee92908e23f56eeb0696f1dd42d
@@ -327,13 +327,13 @@ jobs:
           name: m2-cache
           path: ~/
 
-      - name: Unpack io.kalix dependencies
+      - name: Unpack io.akka dependencies
         run: |-
           cd
           tar -xf dependencies.tar.gz
 
-      - name: Compile and Run javaSdkAnnotationProcessorTests
-        run: sbt "javaSdkAnnotationProcessorTests/compile;javaSdkAnnotationProcessorTests/test;"
+      - name: Compile and Run annotation-processor-tests
+        run: sbt "annotation-processor-tests/compile;annotation-processor-tests/test"
 
   maven-samples:
     name: Maven samples
@@ -345,32 +345,32 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { sample: java-spring-shopping-cart-quickstart, it: true }
+          - { sample: java-shopping-cart-quickstart, it: true }
 
-          - { sample: java-spring-customer-registry-quickstart, it: true }
-          - { sample: java-spring-customer-registry-views-quickstart, it: true }
+          - { sample: java-customer-registry-quickstart, it: true }
+          - { sample: java-customer-registry-views-quickstart, it: true }
 
-          - { sample: java-spring-choreography-saga-quickstart, it: true }
-          - { sample: java-spring-fibonacci-action, it: true }
-          - { sample: java-spring-doc-snippets, it: false }
-          - { sample: java-spring-view-store, it: true }
+          - { sample: java-choreography-saga-quickstart, it: true }
+          - { sample: java-fibonacci-action, it: true }
+          - { sample: java-doc-snippets, it: false }
+          - { sample: java-view-store, it: true }
 
-          - { sample: java-spring-eventsourced-customer-registry, it: true }
-          #- { sample: java-spring-eventsourced-counter, pre_cmd: 'docker compose up gcloud-pubsub-emulator -d', it: true }
-          # java-spring-eventsourced-counter only compiling for now
-          - { sample: java-spring-eventsourced-counter, it: false }
-          - { sample: java-spring-eventsourced-customer-registry-subscriber, it: true, pre_cmd: './start-upstream.sh' }
-          - { sample: java-spring-eventsourced-shopping-cart, it: true }
+          - { sample: java-eventsourced-customer-registry, it: true }
+          #- { sample: java-eventsourced-counter, pre_cmd: 'docker compose up gcloud-pubsub-emulator -d', it: true }
+          # java-eventsourced-counter only compiling for now
+          - { sample: java-eventsourced-counter, it: false }
+          - { sample: java-eventsourced-customer-registry-subscriber, it: true, pre_cmd: './start-upstream.sh' }
+          - { sample: java-eventsourced-shopping-cart, it: true }
 
-          - { sample: java-spring-valueentity-counter, it: true }
-          - { sample: java-spring-valueentity-shopping-cart, it: true }
-          - { sample: java-spring-valueentity-customer-registry, it: true }
+          - { sample: java-valueentity-counter, it: true }
+          - { sample: java-valueentity-shopping-cart, it: true }
+          - { sample: java-valueentity-customer-registry, it: true }
 
-          - { sample: java-spring-tracing, it: false }
-          - { sample: java-spring-reliable-timers, it: true }
+          - { sample: java-tracing, it: false }
+          - { sample: java-reliable-timers, it: true }
 
-          - { sample: java-spring-transfer-workflow, it: true }
-          - { sample: java-spring-transfer-workflow-compensation, it: true }
+          - { sample: java-transfer-workflow, it: true }
+          - { sample: java-transfer-workflow-compensation, it: true }
 
     steps:
       - name: Checkout
@@ -401,7 +401,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
 
-      - name: Download io.kalix dependencies
+      - name: Download io.akka dependencies
         # https://github.com/actions/download-artifact/releases
         # v4.1.5
         uses: actions/download-artifact@8caf195ad4b1dee92908e23f56eeb0696f1dd42d
@@ -409,21 +409,21 @@ jobs:
           name: m2-cache
           path: ~/
 
-      - name: Unpack io.kalix dependencies
+      - name: Unpack io.akka dependencies
         run: |-
           cd
           tar -xf dependencies.tar.gz
 
       - name: Update sdk version in samples
         run: |-
-          export SDK_VERSION=$(cat ~/kalix-sdk-version.txt)
+          export SDK_VERSION=$(cat ~/akka-platform-sdk-version.txt)
           ./updateSdkVersions.sh java samples/
 
       - name: ${{ matrix.sample }} test-compile
         env:
           DIR: ${{ matrix.sample }}
         run: |-
-          export SDK_VERSION=$(cat ~/kalix-sdk-version.txt)
+          export SDK_VERSION=$(cat ~/akka-platform-sdk-version.txt)
           cd samples/${DIR}
           echo "Running mvn on ${DIR} with SDK version: '${SDK_VERSION}'"
           # must also compile without the profile!
@@ -435,7 +435,7 @@ jobs:
           DIR: ${{ matrix.sample }}
           PRE_CMD: ${{ matrix.pre_cmd }}
         run: |-
-          export SDK_VERSION=$(cat ~/kalix-sdk-version.txt)
+          export SDK_VERSION=$(cat ~/akka-platform-sdk-version.txt)
           ./updateSdkVersions.sh java samples/${DIR}
           cd samples/${DIR}
           if [ true == '${{matrix.verify}}' ]; then
@@ -450,7 +450,7 @@ jobs:
         env:
           DIR: ${{ matrix.sample }}
         run: |-
-          export SDK_VERSION=$(cat ~/kalix-sdk-version.txt)
+          export SDK_VERSION=$(cat ~/akka-platform-sdk-version.txt)
           cd samples/${DIR}
           echo "==== Verifying that generated unmanaged sources compile ===="
           rm -rf src/main/java src/test/java src/it/java

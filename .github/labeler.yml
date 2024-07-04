@@ -4,8 +4,8 @@ kalix-runtime:
   - '**/*'
 
 java-sdk:
-  - sdk/java-sdk-spring/**/*
-  - sdk/java-sdk-spring-testkit/**/*
+  - sdk/java-sdk/**/*
+  - sdk/java-sdk-testkit/**/*
 
 Documentation:
   - docs/**/*

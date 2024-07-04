@@ -15,30 +15,35 @@ object CommonSettings extends AutoPlugin {
 
   override def globalSettings =
     Seq(
-      organization := "io.kalix",
+      organization := "io.akka",
       organizationName := "Lightbend Inc.",
       organizationHomepage := Some(url("https://lightbend.com")),
-      homepage := Some(url("https://kalix.io")),
-      description := "Java and Scala SDKs for Kalix",
+      homepage := Some(url("https://akka.io")),
+      description := "Java SDK for Akka Platform",
       resolvers += "Akka library repository".at("https://repo.akka.io/maven"),
       developers := List(
         Developer(
-          id = "kalix-team",
-          name = "Kalix Team",
+          id = "akka-team",
+          name = "Akka Team",
           email = "info@lightbend.com",
           url = url("https://lightbend.com"))),
       scmInfo := Some(
-        ScmInfo(url("https://github.com/lightbend/kalix-jvm-sdk"), "scm:git@github.com:lightbend/kalix-jvm-sdk.git")),
+        ScmInfo(
+          url("https://github.com/lightbend/akka-platform-jvm-sdk"),
+          "scm:git@github.com:lightbend/akka-platform-jvm-sdk.git")),
       releaseNotesURL := (
         if ((ThisBuild / isSnapshot).value) None
-        else Some(url(s"https://github.com/lightbend/kalix-jvm-sdk/releases/tag/v${version.value}"))
+        else Some(url(s"https://github.com/lightbend/akka-platform-jvm-sdk/releases/tag/v${version.value}"))
       ),
       startYear := Some(2021),
       licenses := {
         val tagOrBranch =
           if (version.value.endsWith("SNAPSHOT")) "main"
           else "v" + version.value
-        Seq(("BUSL-1.1", url(s"https://raw.githubusercontent.com/lightbend/kalix-jvm-sdk/${tagOrBranch}/LICENSE")))
+        Seq(
+          (
+            "BUSL-1.1",
+            url(s"https://raw.githubusercontent.com/lightbend/akka-platform-jvm-sdk/${tagOrBranch}/LICENSE")))
       },
       scalafmtOnCompile := !insideCI.value,
       javafmtOnCompile := !insideCI.value,

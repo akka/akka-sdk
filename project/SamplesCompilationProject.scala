@@ -18,7 +18,7 @@ object SamplesCompilationProject {
       def componentProjects: Seq[Project] = innerProjects :+ root
 
       lazy val root =
-        Project(id = s"javaSdkSamplesCompilation", base = file(pathToSample))
+        Project(id = s"samples-compilation", base = file(pathToSample))
           .aggregate(innerProjects.map(p => p: ProjectReference): _*)
 
       lazy val innerProjects =
@@ -27,7 +27,6 @@ object SamplesCompilationProject {
             Project("sample-" + dir.getName, dir)
               .disablePlugins(HeaderPlugin)
               .settings(Test / unmanagedSourceDirectories += baseDirectory.value / "src" / "it" / "java")
-
           }
           .map(configureFunc)
 
@@ -35,7 +34,7 @@ object SamplesCompilationProject {
         file(pathToSample)
           .listFiles()
           .filter { file =>
-            file.isDirectory && file.getName.startsWith("java-spring")
+            file.isDirectory && file.getName.startsWith("java-")
           }
       }
     }

@@ -12,7 +12,7 @@ jobs:
   push-documentation:
     name: Push documentation to docs/kalix-current
     runs-on: ubuntu-22.04
-    if: github.event.repository.fork == false && github.repository != 'lightbend/kalix-jvm-sdk-private'
+    if: github.event.repository.fork == false && github.repository != 'lightbend/akka-platform-jvm-sdk'
     steps:
       - name: Checkout
         # https://github.com/actions/checkout/releases

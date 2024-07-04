@@ -3,13 +3,13 @@
                       http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>io.kalix</groupId>
-  <artifactId>kalix-maven-java</artifactId>
+  <groupId>io.akka</groupId>
+  <artifactId>akka-platform-maven-java</artifactId>
   <version>1.5.0</version>
   <packaging>pom</packaging>
 
-  <name>Kalix Java Maven parent pom</name>
-  <description>This is the parent pom for the Kalix Maven plugin and archetypes</description>
+  <name>Akka Platform Maven Java</name>
+  <description>This is the parent pom for the Akka Platform mavne projects</description>
   <licenses>
     <license>
       <name>Apache-2.0</name>
@@ -18,9 +18,9 @@
     </license>
   </licenses>
 
-  <url>https://www.lightbend.com/kalix</url>
+  <url>https://www.akka.io</url>
   <scm>
-    <url>https://github.com/lightbend/kalix-jvm-sdk</url>
+    <url>https://github.com/lightbend/akka-platform-jvm-sdk</url>
   </scm>
 
   <developers>
@@ -118,8 +118,8 @@
   </profiles>
 
   <modules>
-    <module>kalix-spring-boot-parent</module>
-    <module>kalix-spring-boot-archetype</module>
-    <module>kalix-spring-boot-kotlin-archetype</module>
+    <module>akka-platform-parent</module>
+    <module>akka-platform-archetype</module>
+    <module>akka-platform-kotlin-archetype</module>
   </modules>
 </project>
