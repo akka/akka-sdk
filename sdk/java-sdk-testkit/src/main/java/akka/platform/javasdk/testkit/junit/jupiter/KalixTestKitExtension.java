@@ -6,8 +6,6 @@ package akka.platform.javasdk.testkit.junit.jupiter;
 
 import akka.actor.ActorSystem;
 import akka.stream.Materializer;
-import akka.platform.javasdk.Kalix;
-import akka.platform.javasdk.impl.MessageCodec;
 import akka.platform.javasdk.testkit.EventingTestKit;
 import akka.platform.javasdk.testkit.EventingTestKit.IncomingMessages;
 import akka.platform.javasdk.testkit.EventingTestKit.OutgoingMessages;
@@ -81,7 +79,7 @@ public final class KalixTestKitExtension implements BeforeAllCallback, AfterAllC
    * @param typeId @TypeId or entity_type of the ValueEntity (depending on the used SDK)
    */
   public IncomingMessages getValueEntityIncomingMessages(String typeId) {
-    return testKit.getValueEntityIncomingMessages(typeId);
+    return testKit.getKeyValueEntityIncomingMessages(typeId);
   }
 
   /**

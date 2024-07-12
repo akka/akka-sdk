@@ -28,6 +28,6 @@ public class TestkitConfigEventing {
         .withAdvancedViews()
         .withWorkflowTickInterval(ofMillis(500))
         .withTopicIncomingMessages(COUNTER_EVENTS_TOPIC)
-        .withValueEntityIncomingMessages("user");
+        .withKeyValueEntityIncomingMessages("user");
   }
 }

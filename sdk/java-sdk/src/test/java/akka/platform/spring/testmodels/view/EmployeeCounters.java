@@ -5,7 +5,7 @@
 package akka.platform.spring.testmodels.view;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import akka.platform.spring.testmodels.valueentity.CounterState;
+import akka.platform.spring.testmodels.keyvalueentity.CounterState;
 
 import java.util.Collection;
 

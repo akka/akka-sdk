@@ -13,8 +13,8 @@ class KalixTestKitSpec extends AnyWordSpec with Matchers {
   "MockedSubscriptions" should {
     "create config" in {
       val config = MockedEventing.EMPTY
-        .withValueEntityIncomingMessages("a")
-        .withValueEntityIncomingMessages("b")
+        .withKeyValueEntityIncomingMessages("a")
+        .withKeyValueEntityIncomingMessages("b")
         .withEventSourcedIncomingMessages("c")
         .withEventSourcedIncomingMessages("d")
         .withStreamIncomingMessages("s1", "e")
@@ -24,7 +24,7 @@ class KalixTestKitSpec extends AnyWordSpec with Matchers {
         .withTopicOutgoingMessages("aa")
         .withTopicOutgoingMessages("bb")
 
-      config.toIncomingFlowConfig shouldBe "event-sourced-entity,c;event-sourced-entity,d;stream,s1/e;stream,s2/f;topic,g;topic,h;value-entity,a;value-entity,b"
+      config.toIncomingFlowConfig shouldBe "event-sourced-entity,c;event-sourced-entity,d;key-value-entity,a;key-value-entity,b;stream,s1/e;stream,s2/f;topic,g;topic,h"
       config.toOutgoingFlowConfig shouldBe "topic,aa;topic,bb"
     }
 

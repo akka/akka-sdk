@@ -33,7 +33,7 @@ If you’re just looking to get started, we advise you to start with the Java SD
    * `maven-java` Maven tooling
      * `kalix-maven-plugin` Maven plugin to trigger code generation.
      * `kalix-maven-archetype-event-sourced-entity` Maven archetype to create a project with an Event-sourced Entity.
-     * `kalix-maven-archetype-value-entity` Maven archetype to create a project with a Value Entity.
+     * `kalix-maven-archetype-value-entity` Maven archetype to create a project with a Key Value Entity.
    * `sbt-plugin` sbt plugin for code generation.
    * `sbt new` (gitter8) templates:
      * [lightbend/kalix-value-entity.g8](https://github.com/lightbend/kalix-value-entity.g8) 

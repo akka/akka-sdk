@@ -18,7 +18,7 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
     var res =
       await(
         componentClient
-          .forValueEntity(id)
+          .forKeyValueEntity(id)
           .method(CustomerEntity::create)
           .invokeAsync(customer)
       );
@@ -34,7 +34,7 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
     var resCreation =
       await(
         componentClient
-          .forValueEntity(id)
+          .forKeyValueEntity(id)
           .method(CustomerEntity::create)
           .invokeAsync(customer)
       );
@@ -44,7 +44,7 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
     var resUpdate =
       await(
         componentClient
-          .forValueEntity(id)
+          .forKeyValueEntity(id)
           .method(CustomerEntity::changeName)
           .invokeAsync("Katarina")
       );
@@ -61,7 +61,7 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
     var resCreation =
       await(
         componentClient
-          .forValueEntity(id)
+          .forKeyValueEntity(id)
           .method(CustomerEntity::create)
           .invokeAsync(customer)
       );
@@ -73,7 +73,7 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
     var res =
       await(
         componentClient
-          .forValueEntity(id)
+          .forKeyValueEntity(id)
           .method(CustomerEntity::changeAddress)
           .invokeAsync(address)
       );
@@ -85,7 +85,7 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
   private Customer getCustomerById(String customerId) {
     return await(
       componentClient
-        .forValueEntity(customerId)
+        .forKeyValueEntity(customerId)
         .method(CustomerEntity::getCustomer)
         .invokeAsync()
     );

@@ -21,7 +21,6 @@ import akka.platform.javasdk.action.ActionCreationContext
 import akka.platform.javasdk.action.ActionProvider
 import akka.platform.javasdk.action.ReflectiveActionProvider
 import akka.platform.javasdk.client.ComponentClient
-import akka.platform.javasdk.eventsourced.ReflectiveEventSourcedEntityProvider
 import akka.platform.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.platform.javasdk.eventsourcedentity.EventSourcedEntityContext
 import akka.platform.javasdk.eventsourcedentity.EventSourcedEntityProvider
@@ -38,8 +37,8 @@ import akka.platform.javasdk.impl.http.HttpClientProviderExtension
 import akka.platform.javasdk.impl.http.HttpEndpointOpenRouter
 import akka.platform.javasdk.impl.reflection.Reflect
 import akka.platform.javasdk.impl.timer.TimerSchedulerImpl
-import akka.platform.javasdk.impl.valueentity.ValueEntitiesImpl
-import akka.platform.javasdk.impl.valueentity.ValueEntityService
+import akka.platform.javasdk.impl.keyvalueentity.KeyValueEntitiesImpl
+import akka.platform.javasdk.impl.keyvalueentity.KeyValueEntityService
 import akka.platform.javasdk.impl.view.ViewService
 import akka.platform.javasdk.impl.view.ViewsImpl
 import akka.platform.javasdk.impl.workflow.WorkflowImpl
@@ -49,10 +48,6 @@ import kalix.javasdk.spi.EndpointDescriptor
 import kalix.javasdk.spi.HttpEndpointDescriptor
 import kalix.javasdk.spi.SpiEndpoints
 import akka.platform.javasdk.timer.TimerScheduler
-import akka.platform.javasdk.valueentity.ReflectiveValueEntityProvider
-import akka.platform.javasdk.valueentity.ValueEntity
-import akka.platform.javasdk.valueentity.ValueEntityContext
-import akka.platform.javasdk.valueentity.ValueEntityProvider
 import akka.platform.javasdk.view.ReflectiveMultiTableViewProvider
 import akka.platform.javasdk.view.ReflectiveViewProvider
 import akka.platform.javasdk.view.View
@@ -85,6 +80,11 @@ import scala.jdk.CollectionConverters.MapHasAsScala
 import scala.jdk.DurationConverters.JavaDurationOps
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
+import akka.platform.javasdk.eventsourcedentity.ReflectiveEventSourcedEntityProvider
+import akka.platform.javasdk.keyvalueentity.KeyValueEntity
+import akka.platform.javasdk.keyvalueentity.KeyValueEntityContext
+import akka.platform.javasdk.keyvalueentity.KeyValueEntityProvider
+import akka.platform.javasdk.keyvalueentity.ReflectiveKeyValueEntityProvider
 
 /**
  * INTERNAL API
@@ -146,7 +146,7 @@ private object ComponentLocator {
         "action" -> classOf[Action],
         "event-sourced-entity" -> classOf[EventSourcedEntity[_, _]],
         "workflow" -> classOf[Workflow[_]],
-        "value-entity" -> classOf[ValueEntity[_]],
+        "key-value-entity" -> classOf[KeyValueEntity[_]],
         "view" -> classOf[AnyRef])
 
     // Alternative to but inspired by the stdlib SPI style of registering in META-INF/services
@@ -241,9 +241,9 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
         kalix.register(workflow)
       }
 
-      if (classOf[ValueEntity[_]].isAssignableFrom(clz)) {
-        logger.info(s"Registering ValueEntity provider for [${clz.getName}]")
-        val valueEntity = valueEntityProvider(clz.asInstanceOf[Class[ValueEntity[Nothing]]])
+      if (classOf[KeyValueEntity[_]].isAssignableFrom(clz)) {
+        logger.info(s"Registering KeyValueEntity provider for [${clz.getName}]")
+        val valueEntity = valueEntityProvider(clz.asInstanceOf[Class[KeyValueEntity[Nothing]]])
         kalix.register(valueEntity)
       }
 
@@ -299,9 +299,9 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
         val eventSourcedImpl = new EventSourcedEntitiesImpl(classicSystem, eventSourcedServices, configuration)
         eventSourcedEntitiesEndpoint = Some(eventSourcedImpl)
 
-      case (serviceClass, entityServices: Map[String, ValueEntityService] @unchecked)
-          if serviceClass == classOf[ValueEntityService] =>
-        valueEntitiesEndpoint = Some(new ValueEntitiesImpl(classicSystem, entityServices, configuration))
+      case (serviceClass, entityServices: Map[String, KeyValueEntityService] @unchecked)
+          if serviceClass == classOf[KeyValueEntityService] =>
+        valueEntitiesEndpoint = Some(new KeyValueEntitiesImpl(classicSystem, entityServices, configuration))
 
       case (serviceClass, workflowServices: Map[String, WorkflowService] @unchecked)
           if serviceClass == classOf[WorkflowService] =>
@@ -448,13 +448,13 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
           case p if p == classOf[EventSourcedEntityContext] => context
         })
 
-  private def valueEntityProvider[S, VE <: ValueEntity[S]](clz: Class[VE]): ValueEntityProvider[S, VE] =
-    ReflectiveValueEntityProvider.of(
+  private def valueEntityProvider[S, VE <: KeyValueEntity[S]](clz: Class[VE]): KeyValueEntityProvider[S, VE] =
+    ReflectiveKeyValueEntityProvider.of(
       clz,
       messageCodec,
       context =>
         wiredInstance(clz) {
-          case p if p == classOf[ValueEntityContext] => context
+          case p if p == classOf[KeyValueEntityContext] => context
         })
 
   private def viewProvider[S, V <: View[S]](clz: Class[V]): ViewProvider =

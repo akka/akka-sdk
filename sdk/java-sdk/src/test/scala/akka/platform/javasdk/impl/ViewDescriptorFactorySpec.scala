@@ -94,7 +94,7 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
 
   }
 
-  "View descriptor factory (for Value Entity)" should {
+  "View descriptor factory (for Key Value Entity)" should {
 
     "not allow View without Table annotation" in {
       intercept[InvalidComponentException] {
@@ -124,20 +124,20 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
       // it should be annotated either on type or on method level
       intercept[InvalidComponentException] {
         Validations.validate(classOf[ViewWithSubscriptionsInMixedLevels]).failIfInvalid
-      }.getMessage should include("You cannot use @Consume.FormValueEntity annotation in both methods and class.")
+      }.getMessage should include("You cannot use @Consume.FromKeyValueEntity annotation in both methods and class.")
     }
 
     "not allow @Consume annotations on type level with transformation" in {
       // it should be annotated either on type or on method level
       intercept[InvalidComponentException] {
         Validations.validate(classOf[TransformedViewWithoutSubscriptionOnMethodLevel]).failIfInvalid
-      }.getMessage should include("and move the @Consume.FormValueEntity to it")
+      }.getMessage should include("and move the @Consume.FromKeyValueEntity to it")
     }
 
     "not allow method level handle deletes with type level subscription" in {
       intercept[InvalidComponentException] {
         Validations.validate(classOf[ViewWithSubscriptionsInMixedLevelsHandleDelete]).failIfInvalid
-      }.getMessage should include("You cannot use @Consume.FormValueEntity annotation in both methods and class.")
+      }.getMessage should include("You cannot use @Consume.FromKeyValueEntity annotation in both methods and class.")
     }
 
     "not allow method level handle deletes without method level subscription" in {
@@ -150,14 +150,14 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
       intercept[InvalidComponentException] {
         Validations.validate(classOf[ViewDuplicatedHandleDeletesAnnotations]).failIfInvalid
       }.getMessage should include(
-        "Multiple methods annotated with @Consume.FromValueEntity(handleDeletes=true) is not allowed.")
+        "Multiple methods annotated with @Consume.FromKeyValueEntity(handleDeletes=true) is not allowed.")
     }
 
     "not allow handle deletes method with param" in {
       intercept[InvalidComponentException] {
         Validations.validate(classOf[ViewHandleDeletesWithParam]).failIfInvalid
       }.getMessage should include(
-        "Method annotated with '@Consume.FormValueEntity' and handleDeletes=true must not have parameters.")
+        "Method annotated with '@Consume.FromKeyValueEntity' and handleDeletes=true must not have parameters.")
     }
 
     "not allow handle deletes false on method level" in {
@@ -173,7 +173,7 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
       intercept[InvalidComponentException] {
         Validations.validate(classOf[ViewDuplicatedVESubscriptions]).failIfInvalid
       }.getMessage should include(
-        "Ambiguous handlers for akka.platform.spring.testmodels.valueentity.User, methods: [onChange, onChange2] consume the same type.")
+        "Ambiguous handlers for akka.platform.spring.testmodels.keyvalueentity.User, methods: [onChange, onChange2] consume the same type.")
     }
 
     "generate proto for a View with explicit update method" in {
@@ -393,7 +393,7 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
       intercept[InvalidComponentException] {
         Validations.validate(classOf[ViewDuplicatedESSubscriptions]).failIfInvalid
       }.getMessage should include(
-        "Ambiguous handlers for akka.platform.spring.testmodels.valueentity.User, methods: [onChange, onChange2] consume the same type.")
+        "Ambiguous handlers for akka.platform.spring.testmodels.keyvalueentity.User, methods: [onChange, onChange2] consume the same type.")
     }
   }
 
@@ -438,7 +438,7 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
     "not allow @Consume annotations in mixed levels on a ViewTable" in {
       intercept[InvalidComponentException] {
         Validations.validate(classOf[MultiTableViewValidation.ViewTableWithMixedLevelSubscriptions]).failIfInvalid
-      }.getMessage should include("You cannot use @Consume.FormValueEntity annotation in both methods and class.")
+      }.getMessage should include("You cannot use @Consume.FromKeyValueEntity annotation in both methods and class.")
     }
 
     "fail if no query method found" in {
@@ -455,14 +455,14 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
       intercept[InvalidComponentException] {
         Validations.validate(classOf[MultiTableViewWithDuplicatedVESubscriptions]).failIfInvalid
       }.getMessage should include(
-        "Ambiguous handlers for akka.platform.spring.testmodels.valueentity.CounterState, methods: [onEvent, onEvent2] consume the same type.")
+        "Ambiguous handlers for akka.platform.spring.testmodels.keyvalueentity.CounterState, methods: [onEvent, onEvent2] consume the same type.")
     }
 
     "not allow duplicated ES subscriptions methods in multi table view" in {
       intercept[InvalidComponentException] {
         Validations.validate(classOf[MultiTableViewWithDuplicatedESSubscriptions]).failIfInvalid
       }.getMessage should include(
-        "Ambiguous handlers for akka.platform.spring.testmodels.valueentity.CounterState, methods: [onEvent, onEvent2] consume the same type.")
+        "Ambiguous handlers for akka.platform.spring.testmodels.keyvalueentity.CounterState, methods: [onEvent, onEvent2] consume the same type.")
     }
 
     "generate proto for multi-table view with join query" in {

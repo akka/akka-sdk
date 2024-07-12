@@ -8,7 +8,7 @@ import java.lang.reflect.Method
 import akka.platform.javasdk.annotations.Query
 import akka.platform.javasdk.action.Action
 import akka.platform.javasdk.eventsourcedentity.EventSourcedEntity
-import akka.platform.javasdk.valueentity.ValueEntity
+import akka.platform.javasdk.keyvalueentity.KeyValueEntity
 import akka.platform.javasdk.workflow.Workflow
 
 object ViewCallValidator {
@@ -16,7 +16,7 @@ object ViewCallValidator {
   def validate(method: Method): Unit = {
     val declaringClass = method.getDeclaringClass
     if (classOf[Action].isAssignableFrom(declaringClass)
-      || classOf[ValueEntity[_]].isAssignableFrom(declaringClass)
+      || classOf[KeyValueEntity[_]].isAssignableFrom(declaringClass)
       || classOf[EventSourcedEntity[_, _]].isAssignableFrom(declaringClass)
       || classOf[Workflow[_]].isAssignableFrom(declaringClass)) {
       throw new IllegalStateException(

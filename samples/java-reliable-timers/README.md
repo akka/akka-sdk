@@ -1,4 +1,4 @@
-# Implementing an Order Service as a Value Entity in combination with Timers
+# Implementing an Order Service as a Key Value Entity in combination with Timers
 
 This project provides an example for how to take advantage of the timers API using the Java SDK.
 
@@ -8,7 +8,7 @@ To understand the Kalix concepts that are the basis for this example, see [Desig
 
 ## Developing
 
-This project demonstrates the use of Value Entity and View components.
+This project demonstrates the use of Key Value Entity and View components.
 To understand more about these components, see [Developing services](https://docs.kalix.io/services/)
 and in particular the [Java section](https://docs.kalix.io/java/)
 

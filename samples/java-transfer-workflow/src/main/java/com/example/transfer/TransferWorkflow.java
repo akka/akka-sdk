@@ -43,7 +43,7 @@ public class TransferWorkflow extends Workflow<TransferState> { // <1>
     Step withdraw =
       step("withdraw") // <1>
         .asyncCall(Withdraw.class, cmd ->
-          componentClient.forValueEntity(cmd.from)
+          componentClient.forKeyValueEntity(cmd.from)
             .method(WalletEntity::withdraw)
             .invokeAsync(cmd.amount)) // <2>
         .andThen(Ok.class, __ -> {
@@ -56,7 +56,7 @@ public class TransferWorkflow extends Workflow<TransferState> { // <1>
     Step deposit =
       step("deposit") // <1>
         .asyncCall(Deposit.class, cmd ->
-          componentClient.forValueEntity(cmd.to)
+          componentClient.forKeyValueEntity(cmd.to)
             .method(WalletEntity::deposit)
             .invokeAsync(cmd.amount)) // <4>
         .andThen(Ok.class, __ -> {

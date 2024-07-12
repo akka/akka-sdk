@@ -7,7 +7,7 @@ Actions are stateless functions that can be used to implement different uses cas
 - as a face or controller to fan out to multiple calls to different components.
 - publish messages to a Topic.
 - subscribe to events from an Event Sourced Entity.
-- subscribe to state changes from a Value Entity.
+- subscribe to state changes from a Key Value Entity.
 - schedule and cancel Timers.
 
 Actions can be triggered in multiple ways. For example, by:
@@ -18,5 +18,5 @@ Actions can be triggered in multiple ways. For example, by:
 - a scheduled call from a Timer.
 - an incoming message from a Topic.
 - an incoming event from an Event Sourced Entity, from within the same service or from a different service. 
-- state changes notification from a Value Entity on the same service.
+- state changes notification from a Key Value Entity on the same service.
 - a service life-cycle event (e.g. on startup).

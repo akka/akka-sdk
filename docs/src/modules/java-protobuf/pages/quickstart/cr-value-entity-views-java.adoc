@@ -86,7 +86,7 @@ include::example$java-protobuf-customer-registry-views-quickstart/src/main/proto
 <1> The Protobuf `service` for the View.
 <2> The option that the Maven plugin will use to generate the `CustomerByEmail` View.
 <3> The `UpdateCustomer` method defines how Kalix will update the view.
-<4> The source of the View is the `"customers"` Value Entity. This identifier is defined in the `type_id: "customers"` property of the `(kalix.codegen).value_entity` option in the `customer_api.proto` file.
+<4> The source of the View is the `"customers"` Key Value Entity. This identifier is defined in the `type_id: "customers"` property of the `(kalix.codegen).value_entity` option in the `customer_api.proto` file.
 <5> The `(kalix.method).view.update` annotation defines that this method is used for updating the View. You must define the `table` attribute for the table to be used in the query. Pick any name and use it in the query `SELECT` statement.
 <6> The `GetCustomers` method defines the query to retrieve a customer by email.
 <7> The `(kalix.method).view.query` annotation defines that this method is used as a query of the View.
@@ -212,10 +212,10 @@ Again, this will result in a compilation error in the `Main` class. That is expe
 include::example$java-protobuf-customer-registry-views-quickstart/src/main/java/customer/view/CustomerByNameView.java[tag=view]
 ----
 <1> Empty state that will be used if no previous state has been stored for the View.
-<2> From the incoming `CustomerDomain.CustomerState` that represents the change from the Value Entity create a `CustomerViewModel.CustomerViewState`.
+<2> From the incoming `CustomerDomain.CustomerState` that represents the change from the Key Value Entity create a `CustomerViewModel.CustomerViewState`.
 <3> Return `effects().updateState` with the new state for the View.
 +
-NOTE: The state of the View is still per Entity. The `CustomerDomain.CustomerState customerState` parameter represents the changed state of a specific Value Entity. The `state` parameter is the existing state, if any, of the View for the Entity, i.e. the state that was previously returned via `effects().updateState`. If no previous state has been stored the `emptyState()` is used.
+NOTE: The state of the View is still per Entity. The `CustomerDomain.CustomerState customerState` parameter represents the changed state of a specific Key Value Entity. The `state` parameter is the existing state, if any, of the View for the Entity, i.e. the state that was previously returned via `effects().updateState`. If no previous state has been stored the `emptyState()` is used.
 
 == Deploy the updated service
 

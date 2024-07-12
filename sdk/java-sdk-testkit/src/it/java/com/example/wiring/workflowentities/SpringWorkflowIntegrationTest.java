@@ -593,14 +593,14 @@ public class SpringWorkflowIntegrationTest extends KalixIntegrationTestKitSuppor
 
   private void createWallet(String walletId, int amount) {
     await(
-      componentClient.forValueEntity(walletId)
+      componentClient.forKeyValueEntity(walletId)
         .method(WalletEntity::create)
         .invokeAsync(amount));
   }
 
   private int getWalletBalance(String walletId) {
     return await(
-      componentClient.forValueEntity(walletId)
+      componentClient.forKeyValueEntity(walletId)
         .method(WalletEntity::get)
         .invokeAsync()
     ).value;

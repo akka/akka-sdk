@@ -10,7 +10,7 @@ Select your preferred language (Java/Scala) above.
 
 The Kalix code generation tools help you to get started quickly. They include:
 
-* A [.group-java]#*Maven archetype*# [.group-scala]#*giter8 template*# that generates the recommended project structure, a simple Counter service containing a Value Entity, and unit tests. A `README.md` explains what was created and how to work with the newly created service.
+* A [.group-java]#*Maven archetype*# [.group-scala]#*giter8 template*# that generates the recommended project structure, a simple Counter service containing a Key Value Entity, and unit tests. A `README.md` explains what was created and how to work with the newly created service.
 
 * [.group-java]#A *Maven plugin*# [.group-scala]#An *sbt plugin*# that runs the gRPC compiler and generates code stubs. You can modify the `.proto` and source files, and the Kalix plugin will not overwrite your work but will generate code stubs for the elements you changed or added.
 
@@ -91,10 +91,10 @@ The template created the source files outlined in xref:developing:development-pr
 
 === Descriptors for the service interface and domain model
 
-Kalix uses gRPC Protocol Buffers language to describe the service interface and the entity domain model. The archetype generates a `CounterService` API implemented as a https://docs.kalix.io/reference/glossary.html#value_entity[Value Entity]. The entity descriptors include:
+Kalix uses gRPC Protocol Buffers language to describe the service interface and the entity domain model. The archetype generates a `CounterService` API implemented as a https://docs.kalix.io/reference/glossary.html#value_entity[Key Value Entity]. The entity descriptors include:
 
 - `src/main/proto/com/example/counter_api.proto` the service API to be used by clients
-- `src/main/proto/com/example/counter_domain.proto` the domain model of the Value Entity's state
+- `src/main/proto/com/example/counter_domain.proto` the domain model of the Key Value Entity's state
 
 [.tabset]
 Default API protobuf file::
@@ -124,7 +124,7 @@ For the default service description in the template, the plugin creates an abstr
 
 IMPORTANT: Do not modify the base class as it is regenerated on each invocation of [.group-java]#`mvn compile`# [.group-scala]#`compile`#
 
-On the first build, the plugin creates a Value Entity implementation class where you implement the business logic for command handlers (e.g., `Counter`) .
+On the first build, the plugin creates a Key Value Entity implementation class where you implement the business logic for command handlers (e.g., `Counter`) .
 
 [.tabset]
 Java::
@@ -205,7 +205,7 @@ sbt -DonlyUnitTest test
 ----
 By default the integration and unit test are both invoked by `sbt test`. To only run unit tests run `sbt -DonlyUnitTest test`, or `sbt -DonlyUnitTest=true test`, or set up that value to `true` in the sbt session by `set onlyUnitTest := true` and then run `test`
 
-For more details, see xref:java-protobuf:value-entity.adoc#_testing_the_entity[Testing a Value Entity].
+For more details, see xref:java-protobuf:value-entity.adoc#_testing_the_entity[Testing a Key Value Entity].
 xref:java-protobuf:event-sourced-entities.adoc#_testing_the_entity[Testing an Event Sourced Entity].
 xref:java-protobuf:actions.adoc#_testing_the_action[Testing an Action].
 

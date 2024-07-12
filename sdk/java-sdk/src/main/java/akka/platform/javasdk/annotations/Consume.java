@@ -4,6 +4,8 @@
 
 package akka.platform.javasdk.annotations;
 
+import akka.platform.javasdk.keyvalueentity.KeyValueEntity;
+
 import java.lang.annotation.*;
 
 /**
@@ -13,31 +15,31 @@ import java.lang.annotation.*;
 public @interface Consume {
 
   /**
-   * Annotation for consuming state updates from a Value Entity. It can be used both at type and
+   * Annotation for consuming state updates from a Key Value Entity. It can be used both at type and
    * method levels. When used at type level, it means the `View` or `Action` will not be transforming state.
    * When used at method level, it gives the ability to transform the updates into a different state.
    */
   @Target({ElementType.TYPE, ElementType.METHOD})
   @Retention(RetentionPolicy.RUNTIME)
   @Documented
-  @interface FromValueEntity {
+  @interface FromKeyValueEntity {
     /**
      * Assign the class type of the entity one intends to consume from, which must extend
-     *  {@link akka.platform.javasdk.valueentity.ValueEntity ValueEntity}.
+     *  {@link KeyValueEntity}.
      */
-    Class<? extends akka.platform.javasdk.valueentity.ValueEntity<?>> value();
+    Class<? extends KeyValueEntity<?>> value();
 
     /**
-     * When true at type level of the `View`, it will automatically delete the view state based on ValueEntity deletion fact.
+     * When true at type level of the `View`, it will automatically delete the view state based on KeyValueEntity deletion fact.
      * When true at method level it allows to create a special handler for deletes (must be declared to receive zero parameters):
      * <pre>{@code
-     * @Consume.FromValueEntity(MyValueEntity.class)
-     * public UpdateEffect<MyView> onChange(ValueEntity valueEntity) {
+     * @Consume.FromKeyValueEntity(MyKeyValueEntity.class)
+     * public Effect<MyView> onChange(KeyValueEntityState valueEntity) {
      *   return effects().updateState(...);
      * }
      *
-     * @Consume.FromValueEntity(value = MyValueEntity.class, handleDeletes = true)
-     * public UpdateEffect<MyView> onDelete() {
+     * @Consume.FromKeyValueEntity(value = MyKeyValueEntity.class, handleDeletes = true)
+     * public Effect<MyView> onDelete() {
      *   return effects().deleteState();
      * }
      * </pre>

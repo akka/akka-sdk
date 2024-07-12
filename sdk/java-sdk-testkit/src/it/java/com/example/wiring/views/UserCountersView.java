@@ -6,10 +6,10 @@ package com.example.wiring.views;
 
 import com.example.wiring.eventsourcedentities.counter.CounterEntity;
 import com.example.wiring.eventsourcedentities.counter.CounterEvent;
-import com.example.wiring.valueentities.user.AssignedCounter;
-import com.example.wiring.valueentities.user.AssignedCounterEntity;
-import com.example.wiring.valueentities.user.User;
-import com.example.wiring.valueentities.user.UserEntity;
+import com.example.wiring.keyvalueentities.user.AssignedCounter;
+import com.example.wiring.keyvalueentities.user.AssignedCounterEntity;
+import com.example.wiring.keyvalueentities.user.User;
+import com.example.wiring.keyvalueentities.user.UserEntity;
 import akka.platform.javasdk.view.View;
 import akka.platform.javasdk.annotations.Query;
 import akka.platform.javasdk.annotations.Consume;
@@ -40,7 +40,7 @@ public class UserCountersView {
 
   @Table("users")
   public static class Users extends View<UserWithId> {
-    @Consume.FromValueEntity(UserEntity.class)
+    @Consume.FromKeyValueEntity(UserEntity.class)
     public Effect<UserWithId> onChange(User user) {
       return effects()
           .updateState(
@@ -70,6 +70,6 @@ public class UserCountersView {
   }
 
   @Table("assigned")
-  @Consume.FromValueEntity(AssignedCounterEntity.class)
+  @Consume.FromKeyValueEntity(AssignedCounterEntity.class)
   public static class Assigned extends View<AssignedCounter> {}
 }

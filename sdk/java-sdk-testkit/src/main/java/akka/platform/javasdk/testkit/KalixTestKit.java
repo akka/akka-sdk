@@ -5,7 +5,6 @@
 package akka.platform.javasdk.testkit;
 
 import akka.actor.ActorSystem;
-import akka.actor.ExtendedActorSystem;
 import akka.annotation.InternalApi;
 import akka.http.javadsl.Http;
 import akka.http.javadsl.model.HttpRequest;
@@ -65,7 +64,7 @@ import static akka.platform.javasdk.testkit.KalixTestKit.Settings.EventingSuppor
 public class KalixTestKit {
 
   public static class MockedEventing {
-    public static final String VALUE_ENTITY = "value-entity";
+    public static final String KEY_VALUE_ENTITY = "key-value-entity";
     public static final String EVENT_SOURCED_ENTITY = "event-sourced-entity";
     public static final String STREAM = "stream";
     public static final String TOPIC = "topic";
@@ -83,9 +82,9 @@ public class KalixTestKit {
 
     public static MockedEventing EMPTY = new MockedEventing();
 
-    public MockedEventing withValueEntityIncomingMessages(String typeId) {
+    public MockedEventing withKeyValueEntityIncomingMessages(String typeId) {
       Map<String, Set<String>> copy = new HashMap<>(mockedIncomingEvents);
-      copy.compute(VALUE_ENTITY, updateValues(typeId));
+      copy.compute(KEY_VALUE_ENTITY, updateValues(typeId));
       return new MockedEventing(copy, new HashMap<>(mockedOutgoingEvents));
     }
 
@@ -164,8 +163,8 @@ public class KalixTestKit {
           }).collect(Collectors.joining(";"));
     }
 
-    boolean hasValueEntitySubscription(String typeId) {
-      return checkExistence(VALUE_ENTITY, typeId);
+    boolean hasKeyValueEntitySubscription(String typeId) {
+      return checkExistence(KEY_VALUE_ENTITY, typeId);
     }
 
     boolean hasEventSourcedEntitySubscription(String typeId) {
@@ -349,11 +348,11 @@ public class KalixTestKit {
     }
 
     /**
-     * Mock the incoming messages flow from a ValueEntity.
+     * Mock the incoming messages flow from a KeyValueEntity.
      */
-    public Settings withValueEntityIncomingMessages(String typeId) {
+    public Settings withKeyValueEntityIncomingMessages(String typeId) {
       return new Settings(stopTimeout, serviceName, aclEnabled, true, workflowTickInterval, servicePortMappings, eventingSupport,
-          mockedEventing.withValueEntityIncomingMessages(typeId));
+          mockedEventing.withKeyValueEntityIncomingMessages(typeId));
     }
 
     /**
@@ -684,15 +683,15 @@ public class KalixTestKit {
   }
 
   /**
-   * Get incoming messages for ValueEntity.
+   * Get incoming messages for KeyValueEntity.
    *
-   * @param typeId @TypeId or entity_type of the ValueEntity (depending on the used SDK)
+   * @param typeId @TypeId or entity_type of the KeyValueEntity (depending on the used SDK)
    */
-  public IncomingMessages getValueEntityIncomingMessages(String typeId) {
-    if (!settings.mockedEventing.hasValueEntitySubscription(typeId)) {
-      throwMissingConfigurationException("ValueEntity " + typeId);
+  public IncomingMessages getKeyValueEntityIncomingMessages(String typeId) {
+    if (!settings.mockedEventing.hasKeyValueEntitySubscription(typeId)) {
+      throwMissingConfigurationException("KeyValueEntity " + typeId);
     }
-    return eventingTestKit.getValueEntityIncomingMessages(typeId);
+    return eventingTestKit.getKeyValueEntityIncomingMessages(typeId);
   }
 
   /**

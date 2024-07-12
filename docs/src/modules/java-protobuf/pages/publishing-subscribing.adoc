@@ -5,12 +5,12 @@ include::ROOT:partial$include.adoc[]
 :page-aliases: java-protobuf:service-to-service.adoc, java-protobuf:serialization.adoc, java-protobuf:actions-publishing-subscribing.adoc
 
 
-A very common use case when building Microservices is to publish and subscribe to a stream of events. The source of events can be the journal of an event sourced entity, the value entity state changes, a https://cloud.google.com/pubsub/docs/overview[Google Cloud Pub/Sub] or Apache Kafka topic for asynchronous messaging between services.
+A very common use case when building Microservices is to publish and subscribe to a stream of events. The source of events can be the journal of an event sourced entity, the key value entity state changes, a https://cloud.google.com/pubsub/docs/overview[Google Cloud Pub/Sub] or Apache Kafka topic for asynchronous messaging between services.
 
 In this section, we will explore how you can use an Action to:
 
 - Subscribe to events emitted by an event sourced entity within the same service.
-- Subscribe to state changes emitted by a value entity within the same service.
+- Subscribe to state changes emitted by a key value entity within the same service.
 - Subscribe to events from Event Sourced Entities published as service to service eventing.
 - Subscribe to external events from https://cloud.google.com/pubsub/docs/overview[Google Cloud Pub/Sub] or Apache Kafka.
 - Publish events to a Google Cloud Pub/Sub or Apache Kafka topic.
@@ -74,9 +74,9 @@ include::example$scala-protobuf-eventsourced-counter/src/main/scala/com/example/
 
 In this example we have published Protobuf messages to the topic which is convenient if the consuming end is also a Kalix service. For an external consumer Protobuf may not be a supported format, for details on publishing other formats see xref:java-protobuf:serialization.adoc[Handling Serialization].
 
-== Subscribing to state changes from a Value Entity
+== Subscribing to state changes from a Key Value Entity
 
-Similar to subscribing to events from an Event Sourced Entity, you can also subscribe to state changes from a Value Entity.
+Similar to subscribing to events from an Event Sourced Entity, you can also subscribe to state changes from a Key Value Entity.
 
 [.tabset]
 Java::
@@ -86,10 +86,10 @@ Java::
 ----
 include::example$java-protobuf-valueentity-counter/src/main/proto/com/example/actions/counter_states_sub.proto[tag=state-subscription]
 ----
-<1> Import the Counter Domain from the Value Entity example (see xref:java-protobuf:value-entity.adoc[Implementing Value Entities]).
+<1> Import the Counter Domain from the Key Value Entity example (see xref:java-protobuf:value-entity.adoc[Implementing Key Value Entities]).
 <2> The protobuf option (kalix.codegen) is specific to code-generation as provided by the Kalix Maven plugin. This annotation indicates to the code-generation that an Action must be generated.
-<3> The `(kalix.method).eventing.in` annotation indicates that state changes from the value entity type id `counter` should be delivered to this method.
-<4> The second `(kalix.method).eventing.in` annotation with `handle_deletes: true` and (required) `google.protobuf.Empty` as a parameter defines that this method is used for handling value entity deletes.
+<3> The `(kalix.method).eventing.in` annotation indicates that state changes from the key value entity type id `counter` should be delivered to this method.
+<4> The second `(kalix.method).eventing.in` annotation with `handle_deletes: true` and (required) `google.protobuf.Empty` as a parameter defines that this method is used for handling key value entity deletes.
 
 Scala::
 +
@@ -98,10 +98,10 @@ Scala::
 ----
 include::example$scala-protobuf-valueentity-counter/src/main/proto/com/example/actions/counter_states_sub.proto[tag=state-subscription]
 ----
-<1> Import the Counter Domain from the Value Entity example (see xref:java-protobuf:value-entity.adoc[Implementing Value Entities]).
+<1> Import the Counter Domain from the Key Value Entity example (see xref:java-protobuf:value-entity.adoc[Implementing Key Value Entities]).
 <2> The protobuf option (kalix.codegen) is specific to code-generation as provided by the Kalix sbt plugin. This annotation indicates to the code-generation that an Action must be generated.
-<3> The `(kalix.method).eventing.in` annotation indicates that state changes from the value entity type id `counter` should be delivered to this method.
-<4> The second `(kalix.method).eventing.in` annotation with `handle_deletes: true` and (required) `google.protobuf.Empty` as a parameter defines that this method is used for handling value entity deletes.
+<3> The `(kalix.method).eventing.in` annotation indicates that state changes from the key value entity type id `counter` should be delivered to this method.
+<4> The second `(kalix.method).eventing.in` annotation with `handle_deletes: true` and (required) `google.protobuf.Empty` as a parameter defines that this method is used for handling key value entity deletes.
 
 == Subscribing and acting upon
 

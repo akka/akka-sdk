@@ -6,7 +6,7 @@ package akka.platform.spring.testmodels.view;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import akka.platform.spring.testmodels.valueentity.User;
+import akka.platform.spring.testmodels.keyvalueentity.User;
 
 import java.util.Collection;
 

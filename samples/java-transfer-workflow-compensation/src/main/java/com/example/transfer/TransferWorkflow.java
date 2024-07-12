@@ -54,7 +54,7 @@ public class TransferWorkflow extends Workflow<TransferState> {
           logger.info("Running: " + cmd);
           // cancelling the timer in case it was scheduled
           return timers().cancel("acceptationTimout-" + currentState().transferId()).thenCompose(__ ->
-            componentClient.forValueEntity(cmd.from)
+            componentClient.forKeyValueEntity(cmd.from)
               .method(WalletEntity::withdraw)
               .invokeAsync(cmd.amount));
         })
@@ -81,7 +81,7 @@ public class TransferWorkflow extends Workflow<TransferState> {
           // end::compensation[]
           logger.info("Running: " + cmd);
           // tag::compensation[]
-          return componentClient.forValueEntity(cmd.to)
+          return componentClient.forKeyValueEntity(cmd.to)
             .method(WalletEntity::deposit)
             .invokeAsync(cmd.amount);
         })
@@ -109,7 +109,7 @@ public class TransferWorkflow extends Workflow<TransferState> {
           logger.info("Running withdraw compensation");
           // tag::compensation[]
           var transfer = currentState().transfer();
-          return componentClient.forValueEntity(transfer.from())
+          return componentClient.forKeyValueEntity(transfer.from())
             .method(WalletEntity::deposit)
             .invokeAsync(transfer.amount());
         })

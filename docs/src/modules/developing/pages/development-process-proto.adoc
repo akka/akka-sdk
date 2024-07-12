@@ -32,7 +32,7 @@ include::java-protobuf:partial$effects-api.adoc[]
 [#_implement_components]
 == Implement components
 
-Stateful services can implement https://docs.kalix.io/reference/glossary.html#value_entity[Value Entity] or https://docs.kalix.io/reference/glossary.html#event_sourced_entity[Event Sourced Entity] and https://docs.kalix.io/reference/glossary.html#view[View] components. Stateless services implement https://docs.kalix.io/reference/glossary.html#action[Actions]. Typically, a stateful service should only have one Entity type, but can also include Actions and Views.
+Stateful services can implement https://docs.kalix.io/reference/glossary.html#value_entity[Key Value Entity] or https://docs.kalix.io/reference/glossary.html#event_sourced_entity[Event Sourced Entity] and https://docs.kalix.io/reference/glossary.html#view[View] components. Stateless services implement https://docs.kalix.io/reference/glossary.html#action[Actions]. Typically, a stateful service should only have one Entity type, but can also include Actions and Views.
 
 
 === Actions
@@ -40,10 +40,10 @@ Stateful services can implement https://docs.kalix.io/reference/glossary.html#va
 Actions are stateless functions that can be triggered by gRPC or HTTP calls. They can also subscribe to published events, and they can send commands to other services based on the events they receive. For more information about writing actions see xref:java-protobuf:actions.adoc[Implementing Actions].
 
 === Entities
-Stateful services encapsulate business logic in Value Entities or Event Sourced Entities. At runtime, command messages invoke operations on Entities. A command may only act on one Entity at a time. 
+Stateful services encapsulate business logic in Key Value Entities or Event Sourced Entities. At runtime, command messages invoke operations on Entities. A command may only act on one Entity at a time.
 
 
-TIP: To learn more about Kalix entities see xref:java-protobuf:value-entity.adoc[Implementing Value Entities], xref:java-protobuf:event-sourced-entities.adoc[Implementing Event Sourced Entities], and xref:java-protobuf:replicated-entity.adoc[Implementing Replicated Entities].
+TIP: To learn more about Kalix entities see xref:java-protobuf:value-entity.adoc[Implementing Key Value Entities], xref:java-protobuf:event-sourced-entities.adoc[Implementing Event Sourced Entities], and xref:java-protobuf:replicated-entity.adoc[Implementing Replicated Entities].
 
 If you would like to update multiple Entities from a single command, you can use forwarding and side effects. 
 
@@ -53,11 +53,11 @@ Services can interact asynchronously with other services and with external syste
 
 === Views
 
-A View provides a way to retrieve state from multiple Entities based on a query. You can create views from Value Entity state, Event Sourced Entity events, and by subscribing to topics. For more information about writing views see xref:java-protobuf:views.adoc[Implementing Views].
+A View provides a way to retrieve state from multiple Entities based on a query. You can create views from Key Value Entity state, Event Sourced Entity events, and by subscribing to topics. For more information about writing views see xref:java-protobuf:views.adoc[Implementing Views].
 
 For more details and examples take a look at the following topics:
 
-* xref:java-protobuf:value-entity.adoc[Value Entities]
+* xref:java-protobuf:value-entity.adoc[Key Value Entities]
 * xref:java-protobuf:event-sourced-entities.adoc[Event Sourced Entities]
 * xref:java-protobuf:replicated-entity.adoc[Replicated Entities]
 * xref:java-protobuf:actions.adoc[Actions]

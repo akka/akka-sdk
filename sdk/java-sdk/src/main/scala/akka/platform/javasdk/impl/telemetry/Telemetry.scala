@@ -48,8 +48,8 @@ case object EventSourcedEntityCategory extends ComponentCategory {
   def name = "Event Sourced Entity"
 }
 
-case object ValueEntityCategory extends ComponentCategory {
-  def name = "Value Entity"
+case object KeyValueEntityCategory extends ComponentCategory {
+  def name = "Key Value Entity"
 }
 
 final class Telemetry(system: ActorSystem) extends Extension {

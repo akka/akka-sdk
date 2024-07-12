@@ -4,7 +4,7 @@
 *** xref:running-locally.adoc[Running locally]
 *** xref:project-template.adoc[]
 *** xref:writing-grpc-descriptors-protobuf.adoc[]
-*** xref:value-entity.adoc[Value Entities]
+*** xref:value-entity.adoc[Key Value Entities]
 *** xref:event-sourced-entities.adoc[Event Sourced Entities]
 *** xref:workflows.adoc[Workflows]
 *** xref:replicated-entity.adoc[Replicated Entities]

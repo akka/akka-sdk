@@ -28,7 +28,7 @@ You can start a new Kalix service using our xref:java:getting-started.adoc[Getti
 On the other hand, if you would rather spend some time exploring our documentation, here are some main features you will find in this section:
 
 * xref:java:actions.adoc[Actions]
-* xref:java:value-entity.adoc[Value Entities]
+* xref:java:value-entity.adoc[Key Value Entities]
 * xref:java:event-sourced-entities.adoc[Event Sourced Entities]
 * xref:java:views.adoc[Views]
 * xref:java:actions-publishing-subscribing.adoc[Publishing and Subscribing]
@@ -71,7 +71,7 @@ Spring developers are used to build Spring Data Repositories to store and retrie
 
 In Kalix, data storage and retrieval follows the https://developer.lightbend.com/docs/akka-platform-guide/concepts/cqrs.html[Command Query Responsibility Segregation (CQRS)] pattern. In CQRS, we work with two models. One that is designed for writes, often called the command-model, and one that is optimized for reads, also known as the query-model.
 
-The persistent Kalix entities (xref:java:event-sourced-entities.adoc[Event Sourced Entity] and xref:java:value-entity.adoc[Value Entity]) represent the command-model in the CQRS pattern. They receive `Commands` and mutate data in their own transaction.
+The persistent Kalix entities (xref:java:event-sourced-entities.adoc[Event Sourced Entity] and xref:java:value-entity.adoc[Key Value Entity]) represent the command-model in the CQRS pattern. They receive `Commands` and mutate data in their own transaction.
 
 Data produced by entities can be propagated to xref:java:views.adoc[Views] in order to generate query-models, also known as view-models. Views are indexed representations of your model. You can query your data using different fields, while Entities are only accessible by their entity id.
 

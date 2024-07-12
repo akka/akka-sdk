@@ -17,13 +17,13 @@
 package customer.api;
 
 // tag::customer[]
-import akka.platform.javasdk.valueentity.ValueEntity;
+import akka.platform.javasdk.keyvalueentity.KeyValueEntity;
 import akka.platform.javasdk.annotations.TypeId;
 import customer.domain.Address;
 import customer.domain.Customer;
 
 @TypeId("customer") // <1>
-public class CustomerEntity extends ValueEntity<Customer> { // <4>
+public class CustomerEntity extends KeyValueEntity<Customer> { // <4>
 
   public record Ok() {
     public static final Ok instance = new Ok();

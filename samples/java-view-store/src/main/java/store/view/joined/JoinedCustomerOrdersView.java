@@ -72,7 +72,7 @@ public class JoinedCustomerOrdersView {
   }
 
   @Table("orders") // <4>
-  @Consume.FromValueEntity(OrderEntity.class)
+  @Consume.FromKeyValueEntity(OrderEntity.class)
   public static class Orders extends View<Order> {
   }
 }

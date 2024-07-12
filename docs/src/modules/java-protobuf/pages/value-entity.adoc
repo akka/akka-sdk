@@ -1,14 +1,14 @@
-= Implementing Value Entities
+= Implementing Key Value Entities
 :page-supergroup-java-scala: Language
 include::ROOT:partial$include.adoc[]
 
-https://docs.kalix.io/reference/glossary.html#value_entity[Value Entities] persist state on every change and Kalix needs to serialize that data to send it to the underlying data store, this is done with Protocol Buffers using `protobuf` types.
+https://docs.kalix.io/reference/glossary.html#value_entity[Key Value Entities] persist state on every change and Kalix needs to serialize that data to send it to the underlying data store, this is done with Protocol Buffers using `protobuf` types.
 
-NOTE: Kalix _Value Entities_ have nothing in common with the domain-driven design concept of _Value Objects_. The _Value_ in the name refers to directly modifying a value for the entity's state - in contrast to https://docs.kalix.io/reference/glossary.html#event_sourced_entity[Event-sourced Entities] that persist events and the entity state is derived from them.
+NOTE: Kalix _Key Value Entities_ have nothing in common with the domain-driven design concept of _Value Objects_. The _Value_ in the name refers to directly modifying a value for the entity's state - in contrast to https://docs.kalix.io/reference/glossary.html#event_sourced_entity[Event-sourced Entities] that persist events and the entity state is derived from them.
 
 While Protocol Buffers are the recommended format for persisting state, we recommend that you do not persist your service's public `protobuf` messages. This may introduce some overhead to convert from one type to the other but allows the service public interface logic to evolve independently of the data storage format, which should be private.
 
-The steps necessary to implement a Value Entity include:
+The steps necessary to implement a Key Value Entity include:
 
 . Defining the API and domain objects in `.proto` files.
 . Implementing behavior in command handlers.
@@ -19,7 +19,7 @@ The sections on this page walk through these steps using a counter service as an
 
 == Defining the `proto` files
 
-NOTE: Our Value Entity example starts with the "Counter" service as included in the xref:project-template.adoc[project template].
+NOTE: Our Key Value Entity example starts with the "Counter" service as included in the xref:project-template.adoc[project template].
 
 The following `counter_domain.proto` file defines state the Entity will hold. The entity stores an integer value as represented in the message `CounterState`. Real-world entities store much more data - often structured data - they represent an _Entity_ in the https://en.wikipedia.org/wiki/Domain-driven_design[domain-driven design] sense of the term.
 
@@ -67,10 +67,10 @@ include::example$java-protobuf-valueentity-counter/src/main/proto/com/example/co
 <6> Messages describe the return value for our API. For methods that don't have return values, we use `google.protobuf.Empty`.
 <7> The service descriptor shows the API of the entity. It lists the methods a client can use to issue Commands to the entity.
 <8> The protobuf option `(kalix.codegen)`  is specific to code-generation as provided by the Kalix Maven plugin.
-<9> `value_entity` indicates that we want the codegen to generate a Value Entity for this service.
-<10> `name` denotes the base name for the Value Entity, the code-generation will create initial sources `Counter`, `CounterTest` and `CounterIntegrationTest`. Once these files exist, they are not overwritten, so you can freely add logic to them.
+<9> `value_entity` indicates that we want the codegen to generate a Key Value Entity for this service.
+<10> `name` denotes the base name for the Key Value Entity, the code-generation will create initial sources `Counter`, `CounterTest` and `CounterIntegrationTest`. Once these files exist, they are not overwritten, so you can freely add logic to them.
 <11> `entity_type` is a unique identifier of the "state storage." The entity name may be changed even after data has been created, the `entity_type` can't.
-<12> `state` points to the protobuf message representing the Value Entity's state which is kept by Kalix. Note, the package and name follow the definition in the domain.proto file.
+<12> `state` points to the protobuf message representing the Key Value Entity's state which is kept by Kalix. Note, the package and name follow the definition in the domain.proto file.
 
 Scala::
 +
@@ -86,10 +86,10 @@ include::example$scala-protobuf-valueentity-counter/src/main/proto/com/example/c
 <5> Messages describe the return value for our API. For methods that don't have return values, we use `google.protobuf.Empty`.
 <6> The service descriptor shows the API of the entity. It lists the methods a client can use to issue Commands to the entity.
 <7> The protobuf option `(kalix.codegen)`  is specific to code-generation as provided by the Kalix Maven plugin.
-<8> `value_entity` indicates that we want the codegen to generate a Value Entity for this service.
-<9> `name` denotes the base name for the Value Entity, the code-generation will create initial sources `Counter`, `CounterTest` and `CounterIntegrationTest`. Once these files exist, they are not overwritten, so you can freely add logic to them.
+<8> `value_entity` indicates that we want the codegen to generate a Key Value Entity for this service.
+<9> `name` denotes the base name for the Key Value Entity, the code-generation will create initial sources `Counter`, `CounterTest` and `CounterIntegrationTest`. Once these files exist, they are not overwritten, so you can freely add logic to them.
 <10> `entity_type` is a unique identifier of the "state storage." The entity name may be changed even after data has been created, the `entity_type` can't.
-<11> `state` points to the protobuf message representing the Value Entity's state which is kept by Kalix. Note, the package and name follow the definition in the domain.proto file.
+<11> `state` points to the protobuf message representing the Key Value Entity's state which is kept by Kalix. Note, the package and name follow the definition in the domain.proto file.
 
 include::partial$effects-value-entity.adoc[]
 
@@ -97,7 +97,7 @@ See also xref:developing:development-process-proto.adoc#_effects_api[Understandi
 
 == Implementing behavior
 
-A Value Entity implementation is a class where you define how each command is handled. The class `Counter` gets generated for us based on the `counter_api.proto` and `counter_domain.proto` definitions. Once the generated file exists, it is not overwritten, so you can freely add logic to it. `Counter` extends the generated class `AbstractCounter` which we're not supposed to change as it gets regenerated in case we update the protobuf descriptors. `AbstractCounter` contains all method signatures corresponding to the API of the service. If you change the API you will see compilation errors in the `Counter` class and you have to implement the methods required by `AbstractCounter`.
+A Key Value Entity implementation is a class where you define how each command is handled. The class `Counter` gets generated for us based on the `counter_api.proto` and `counter_domain.proto` definitions. Once the generated file exists, it is not overwritten, so you can freely add logic to it. `Counter` extends the generated class `AbstractCounter` which we're not supposed to change as it gets regenerated in case we update the protobuf descriptors. `AbstractCounter` contains all method signatures corresponding to the API of the service. If you change the API you will see compilation errors in the `Counter` class and you have to implement the methods required by `AbstractCounter`.
 
 
 [.tabset]
@@ -121,7 +121,7 @@ include::java-protobuf:example$scala-protobuf-valueentity-counter/src/main/scala
 <1> Extends the generated `AbstractCounter`, which extends link:{attachmentsdir}/api/kalix/scalasdk/valueentity/ValueEntity.html[`ValueEntity` {tab-icon}, window="new"].
 <2> Defines the initial, empty, state that is used before any updates.
 
-We need to implement all methods our Value Entity offers as https://docs.kalix.io/reference/glossary.html#command_handler[_command handlers_].
+We need to implement all methods our Key Value Entity offers as https://docs.kalix.io/reference/glossary.html#command_handler[_command handlers_].
 
 The code-generation will generate an implementation class with an initial empty implementation which we'll discuss below.
 
@@ -133,7 +133,7 @@ When adding or changing the `rpc` definitions, including name, parameter, and re
 
 In the example below, the `increase` service call uses the value from the request message `IncreaseValue`. It returns an `Effect` to update the entity state and send a reply.
 
-NOTE: For Value Entities, modify the state and then trigger a save of that state in the returned `Effect`. The Java/Protobuf SDK has an `effects().updateState(newState)` method for this purpose. If you change the state but do not call `updateState` in the returned `Effect`, that state change is lost.
+NOTE: For Key Value Entities, modify the state and then trigger a save of that state in the returned `Effect`. The Java/Protobuf SDK has an `effects().updateState(newState)` method for this purpose. If you change the state but do not call `updateState` in the returned `Effect`, that state change is lost.
 
 
 [.tabset]
@@ -189,7 +189,7 @@ include::java-protobuf:example$scala-protobuf-valueentity-counter/src/main/scala
 
 == Registering the Entity
 
-To make Kalix aware of the Value Entity, we need to register it with the service.
+To make Kalix aware of the Key Value Entity, we need to register it with the service.
 
 From the code-generation, the registration gets automatically inserted in the generated `KalixFactory.withComponents` method from the `Main` class.
 
@@ -210,13 +210,13 @@ Scala::
 include::java-protobuf:example$scala-protobuf-valueentity-counter/src/main/scala/com/example/Main.scala[tag=registration-value-entity]
 ----
 
-By default, the generated constructor has a `ValueEntityContext` parameter, but you can change this to accept other parameters. If you change the constructor of the `Counter` class you will see a compilation error here, and you have to adjust the factory function that is passed to `KalixFactory.withComponents`.
+By default, the generated constructor has a `KeyValueEntityContext` parameter, but you can change this to accept other parameters. If you change the constructor of the `Counter` class you will see a compilation error here, and you have to adjust the factory function that is passed to `KalixFactory.withComponents`.
 
 When more components are added the `KalixFactory` is regenerated, and you have to adjust the registration from the `Main` class.
 
 === Deleting state
 
-The next example shows how to delete a Value Entity state by returning special `deleteEntity()` effect.
+The next example shows how to delete a Key Value Entity state by returning special `deleteEntity()` effect.
 
 [.tabset]
 Java::
@@ -259,7 +259,7 @@ include::java-protobuf:partial$testing-entity.adoc[]
 
 === Unit tests
 
-To unit test the Entity a test kit class to use is generated as well as an example unit test class to start from. Test cases use the test kit to execute commands in the entity, get a `ValueEntityResult` back and assert the effects that the command led to, both the reply itself and the update to the state of the Entity.
+To unit test the Entity a test kit class to use is generated as well as an example unit test class to start from. Test cases use the test kit to execute commands in the entity, get a `KeyValueEntityResult` back and assert the effects that the command led to, both the reply itself and the update to the state of the Entity.
 
 [.tabset]
 Java::

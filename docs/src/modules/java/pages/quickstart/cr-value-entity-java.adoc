@@ -28,7 +28,7 @@ include::partial$maven-archetype.adoc[]
 
 == Customer Registry Service
 
-The service contains only one Value Entity that exposes the operation to mutate a Customer model. The entity itself exposes service endpoints and eventually encapsulates some basic validation. The incoming commands/request are then applied to the model and the entity instructs Kalix, through the `Effect` API what needs to be done next.
+The service contains only one Key Value Entity that exposes the operation to mutate a Customer model. The entity itself exposes service endpoints and eventually encapsulates some basic validation. The incoming commands/request are then applied to the model and the entity instructs Kalix, through the `Effect` API what needs to be done next.
 
 === Define the domain model
 
@@ -82,5 +82,5 @@ curl https://<generated hostname>/customer/abc123
 
 == Next steps
 
-* You can learn more about xref:java:value-entity.adoc[Value Entities].
+* You can learn more about xref:java:value-entity.adoc[Key Value Entities].
 * Continue this example by xref:java:quickstart/cr-value-entity-views-java.adoc[adding Views], which makes it possible to query the customer registry.

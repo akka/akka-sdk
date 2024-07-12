@@ -14,13 +14,13 @@ import akka.platform.javasdk.view.View;
 import akka.platform.spring.testmodels.eventsourcedentity.Employee;
 import akka.platform.spring.testmodels.eventsourcedentity.EmployeeEvent;
 import akka.platform.spring.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.EmployeeEntity;
-import akka.platform.spring.testmodels.valueentity.AssignedCounter;
-import akka.platform.spring.testmodels.valueentity.AssignedCounterState;
-import akka.platform.spring.testmodels.valueentity.Counter;
-import akka.platform.spring.testmodels.valueentity.CounterState;
-import akka.platform.spring.testmodels.valueentity.TimeTrackerEntity;
-import akka.platform.spring.testmodels.valueentity.User;
-import akka.platform.spring.testmodels.valueentity.UserEntity;
+import akka.platform.spring.testmodels.keyvalueentity.AssignedCounter;
+import akka.platform.spring.testmodels.keyvalueentity.AssignedCounterState;
+import akka.platform.spring.testmodels.keyvalueentity.Counter;
+import akka.platform.spring.testmodels.keyvalueentity.CounterState;
+import akka.platform.spring.testmodels.keyvalueentity.TimeTrackerEntity;
+import akka.platform.spring.testmodels.keyvalueentity.User;
+import akka.platform.spring.testmodels.keyvalueentity.UserEntity;
 
 public class ViewTestModels {
 
@@ -31,7 +31,7 @@ public class ViewTestModels {
 
   @ViewId("users_view")
   @Table("users_view")
-  @Consume.FromValueEntity(UserEntity.class) // when types are annotated, it's implicitly a transform = false
+  @Consume.FromKeyValueEntity(UserEntity.class) // when types are annotated, it's implicitly a transform = false
   public static class UserByEmailWithGet extends View<User> {
 
     @Query("SELECT * FROM users_view WHERE email = :email")
@@ -40,7 +40,7 @@ public class ViewTestModels {
     }
   }
   @ViewId("users_view")
-  @Consume.FromValueEntity(UserEntity.class)
+  @Consume.FromKeyValueEntity(UserEntity.class)
   public static class ViewWithoutTableAnnotation extends View<User> {
 
     @Query("SELECT * FROM users_view WHERE email = :email")
@@ -51,7 +51,7 @@ public class ViewTestModels {
 
   @ViewId("users_view")
   @Table(" ")
-  @Consume.FromValueEntity(UserEntity.class)
+  @Consume.FromKeyValueEntity(UserEntity.class)
   public static class ViewWithEmptyTableAnnotation extends View<User> {
 
     @Query("SELECT * FROM users_view WHERE email = :email")
@@ -61,7 +61,7 @@ public class ViewTestModels {
   }
 
   @Table("users_view")
-  @Consume.FromValueEntity(UserEntity.class)
+  @Consume.FromKeyValueEntity(UserEntity.class)
   public static class ViewWithoutViewIdAnnotation extends View<User> {
 
 
@@ -73,7 +73,7 @@ public class ViewTestModels {
 
   @ViewId(" ")
   @Table("users_view")
-  @Consume.FromValueEntity(UserEntity.class)
+  @Consume.FromKeyValueEntity(UserEntity.class)
   public static class ViewWithEmptyViewIdAnnotation extends View<User> {
 
     @Query("SELECT * FROM users_view WHERE email = :email")
@@ -88,7 +88,7 @@ public class ViewTestModels {
   public static class TransformedUserView extends View<TransformedUser> {
 
     // when methods are annotated, it's implicitly a transform = true
-    @Consume.FromValueEntity(UserEntity.class)
+    @Consume.FromKeyValueEntity(UserEntity.class)
     public Effect<TransformedUser> onChange(User user) {
       return effects()
           .updateState(new TransformedUser(user.lastName + ", " + user.firstName, user.email));
@@ -104,13 +104,13 @@ public class ViewTestModels {
   @Table("users_view")
   public static class TransformedUserViewWithDeletes extends View<TransformedUser> {
 
-    @Consume.FromValueEntity(UserEntity.class)
+    @Consume.FromKeyValueEntity(UserEntity.class)
     public Effect<TransformedUser> onChange(User user) {
       return effects()
           .updateState(new TransformedUser(user.lastName + ", " + user.firstName, user.email));
     }
 
-    @Consume.FromValueEntity(value = UserEntity.class, handleDeletes = true)
+    @Consume.FromKeyValueEntity(value = UserEntity.class, handleDeletes = true)
     public Effect<TransformedUser> onDelete() {
       return effects().deleteState();
     }
@@ -126,7 +126,7 @@ public class ViewTestModels {
   public static class TransformedUserViewWithMethodLevelJWT extends View<TransformedUser> {
 
     // when methods are annotated, it's implicitly a transform = true
-    @Consume.FromValueEntity(UserEntity.class)
+    @Consume.FromKeyValueEntity(UserEntity.class)
     public Effect<TransformedUser> onChange(User user) {
       return effects()
           .updateState(new TransformedUser(user.lastName + ", " + user.firstName, user.email));
@@ -169,11 +169,11 @@ public class ViewTestModels {
    */
   @ViewId("users_view")
   @Table("users_view")
-  @Consume.FromValueEntity(UserEntity.class)
+  @Consume.FromKeyValueEntity(UserEntity.class)
   public static class ViewWithSubscriptionsInMixedLevels extends View<TransformedUser> {
 
     // when methods are annotated, it's implicitly a transform = true
-    @Consume.FromValueEntity(UserEntity.class)
+    @Consume.FromKeyValueEntity(UserEntity.class)
     public Effect<TransformedUser> onChange(User user) {
       return effects()
           .updateState(new TransformedUser(user.lastName + ", " + user.firstName, user.email));
@@ -187,7 +187,7 @@ public class ViewTestModels {
 
   @ViewId("users_view")
   @Table("users_view")
-  @Consume.FromValueEntity(UserEntity.class) //it's implicitly a transform = false
+  @Consume.FromKeyValueEntity(UserEntity.class) //it's implicitly a transform = false
   public static class TransformedViewWithoutSubscriptionOnMethodLevel extends View<TransformedUser> {
 
     public Effect<TransformedUser> onChange(User user) {
@@ -203,10 +203,10 @@ public class ViewTestModels {
 
   @ViewId("users_view")
   @Table("users_view")
-  @Consume.FromValueEntity(UserEntity.class)
+  @Consume.FromKeyValueEntity(UserEntity.class)
   public static class ViewWithSubscriptionsInMixedLevelsHandleDelete extends View<User> {
 
-    @Consume.FromValueEntity(value = UserEntity.class, handleDeletes = true)
+    @Consume.FromKeyValueEntity(value = UserEntity.class, handleDeletes = true)
     public Effect<User> onDelete() {
       return effects().deleteState();
     }
@@ -221,7 +221,7 @@ public class ViewTestModels {
   @Table("users_view")
   public static class ViewWithoutSubscriptionButWithHandleDelete extends View<TransformedUser> {
 
-    @Consume.FromValueEntity(value = UserEntity.class, handleDeletes = true)
+    @Consume.FromKeyValueEntity(value = UserEntity.class, handleDeletes = true)
     public Effect<TransformedUser> onDelete() {
       return effects().deleteState();
     }
@@ -236,18 +236,18 @@ public class ViewTestModels {
   @Table("users_view")
   public static class ViewDuplicatedHandleDeletesAnnotations extends View<TransformedUser> {
 
-    @Consume.FromValueEntity(UserEntity.class)
+    @Consume.FromKeyValueEntity(UserEntity.class)
     public Effect<TransformedUser> onChange(User user) {
       return effects()
           .updateState(new TransformedUser(user.lastName + ", " + user.firstName, user.email));
     }
 
-    @Consume.FromValueEntity(value = UserEntity.class, handleDeletes = true)
+    @Consume.FromKeyValueEntity(value = UserEntity.class, handleDeletes = true)
     public Effect<TransformedUser> onDelete() {
       return effects().deleteState();
     }
 
-    @Consume.FromValueEntity(value = UserEntity.class, handleDeletes = true)
+    @Consume.FromKeyValueEntity(value = UserEntity.class, handleDeletes = true)
     public Effect<TransformedUser> onDelete2() {
       return effects().deleteState();
     }
@@ -262,13 +262,13 @@ public class ViewTestModels {
   @Table("users_view")
   public static class ViewHandleDeletesWithParam extends View<TransformedUser> {
 
-    @Consume.FromValueEntity(UserEntity.class)
+    @Consume.FromKeyValueEntity(UserEntity.class)
     public Effect<TransformedUser> onChange(User user) {
       return effects()
           .updateState(new TransformedUser(user.lastName + ", " + user.firstName, user.email));
     }
 
-    @Consume.FromValueEntity(value = UserEntity.class, handleDeletes = true)
+    @Consume.FromKeyValueEntity(value = UserEntity.class, handleDeletes = true)
     public Effect<TransformedUser> onDelete(User user) {
       return effects().deleteState();
     }
@@ -283,13 +283,13 @@ public class ViewTestModels {
   @Table("users_view")
   public static class ViewWithHandleDeletesFalseOnMethodLevel extends View<TransformedUser> {
 
-    @Consume.FromValueEntity(UserEntity.class)
+    @Consume.FromKeyValueEntity(UserEntity.class)
     public Effect<TransformedUser> onChange(User user) {
       return effects()
           .updateState(new TransformedUser(user.lastName + ", " + user.firstName, user.email));
     }
 
-    @Consume.FromValueEntity(value = UserEntity.class, handleDeletes = false)
+    @Consume.FromKeyValueEntity(value = UserEntity.class, handleDeletes = false)
     public Effect<TransformedUser> onDelete() {
       return effects().deleteState();
     }
@@ -304,19 +304,19 @@ public class ViewTestModels {
   @Table("users_view")
   public static class ViewDuplicatedVESubscriptions extends View<TransformedUser> {
 
-    @Consume.FromValueEntity(UserEntity.class)
+    @Consume.FromKeyValueEntity(UserEntity.class)
     public Effect<TransformedUser> onChange(User user) {
       return effects()
         .updateState(new TransformedUser(user.lastName + ", " + user.firstName, user.email));
     }
 
-    @Consume.FromValueEntity(UserEntity.class)
+    @Consume.FromKeyValueEntity(UserEntity.class)
     public Effect<TransformedUser> onChange2(User user) {
       return effects()
           .updateState(new TransformedUser(user.lastName + ", " + user.firstName, user.email));
     }
 
-    @Consume.FromValueEntity(value = UserEntity.class, handleDeletes = true)
+    @Consume.FromKeyValueEntity(value = UserEntity.class, handleDeletes = true)
     public Effect<TransformedUser> onDelete() {
       return effects().deleteState();
     }
@@ -343,7 +343,7 @@ public class ViewTestModels {
         .updateState(new TransformedUser(user.lastName + ", " + user.firstName, user.email));
     }
 
-    @Consume.FromValueEntity(value = UserEntity.class, handleDeletes = true)
+    @Consume.FromKeyValueEntity(value = UserEntity.class, handleDeletes = true)
     public Effect<TransformedUser> onDelete() {
       return effects().deleteState();
     }
@@ -356,12 +356,12 @@ public class ViewTestModels {
 
   @ViewId("users_view")
   @Table("users_view")
-  @Consume.FromValueEntity(UserEntity.class)
+  @Consume.FromKeyValueEntity(UserEntity.class)
   public static class ViewWithNoQuery extends View<TransformedUser> {}
 
   @ViewId("users_view")
   @Table("users_view")
-  @Consume.FromValueEntity(UserEntity.class)
+  @Consume.FromKeyValueEntity(UserEntity.class)
   public static class ViewWithTwoQueries extends View<User> {
 
     @Query("SELECT * FROM users_view WHERE email = :email")
@@ -477,7 +477,7 @@ public class ViewTestModels {
 
   @ViewId("users_view")
   @Table(value = "users_view_collection")
-  @Consume.FromValueEntity(UserEntity.class)
+  @Consume.FromKeyValueEntity(UserEntity.class)
   public static class UserByEmailWithCollectionReturn extends View<User> {
 
     @Query(value = "SELECT * AS users FROM users_view WHERE name = :name")
@@ -489,17 +489,17 @@ public class ViewTestModels {
 
   @ViewId("users_view")
   public static class MultiTableViewValidation {
-    @Consume.FromValueEntity(UserEntity.class)
+    @Consume.FromKeyValueEntity(UserEntity.class)
     public static class ViewTableWithoutTableAnnotation extends View<User> {}
 
     @Table(" ")
-    @Consume.FromValueEntity(UserEntity.class)
+    @Consume.FromKeyValueEntity(UserEntity.class)
     public static class ViewTableWithEmptyTableAnnotation extends View<User> {}
 
     @Table("users_view")
-    @Consume.FromValueEntity(UserEntity.class)
+    @Consume.FromKeyValueEntity(UserEntity.class)
     public static class ViewTableWithMixedLevelSubscriptions extends View<TransformedUser> {
-      @Consume.FromValueEntity(UserEntity.class)
+      @Consume.FromKeyValueEntity(UserEntity.class)
       public Effect<TransformedUser> onChange(User user) {
         return effects()
             .updateState(new TransformedUser(user.lastName + ", " + user.firstName, user.email));
@@ -606,11 +606,11 @@ public class ViewTestModels {
     }
 
     @Table("counters")
-    @Consume.FromValueEntity(Counter.class)
+    @Consume.FromKeyValueEntity(Counter.class)
     public static class Counters extends View<CounterState> {}
 
     @Table("assigned")
-    @Consume.FromValueEntity(AssignedCounter.class)
+    @Consume.FromKeyValueEntity(AssignedCounter.class)
     public static class Assigned extends View<AssignedCounterState> {}
   }
 
@@ -632,17 +632,17 @@ public class ViewTestModels {
     }
 
     @Table("counters")
-    @Consume.FromValueEntity(Counter.class)
+    @Consume.FromKeyValueEntity(Counter.class)
     public static class Counters extends View<CounterState> {}
 
     @Table("assigned")
     public static class Assigned extends View<CounterState> {
-      @Consume.FromValueEntity(Counter.class)
+      @Consume.FromKeyValueEntity(Counter.class)
       public Effect<CounterState> onEvent(CounterState counterState) {
         return effects().ignore();
       }
 
-      @Consume.FromValueEntity(Counter.class)
+      @Consume.FromKeyValueEntity(Counter.class)
       public Effect<CounterState> onEvent2(CounterState counterState) {
         return effects().ignore();
       }
@@ -667,7 +667,7 @@ public class ViewTestModels {
     }
 
     @Table("counters")
-    @Consume.FromValueEntity(Counter.class)
+    @Consume.FromKeyValueEntity(Counter.class)
     public static class Counters extends View<CounterState> {}
 
     @Table("assigned")
@@ -686,7 +686,7 @@ public class ViewTestModels {
 
   @ViewId("time-tracker-view")
   @Table("time-tracker-view")
-  @Consume.FromValueEntity(TimeTrackerEntity.class)
+  @Consume.FromKeyValueEntity(TimeTrackerEntity.class)
   public static class TimeTrackerView extends View<TimeTrackerEntity.TimerState> {
 
     @Query(value = "SELECT * FROM time-tracker-view WHERE name = :name")

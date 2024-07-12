@@ -73,7 +73,7 @@ public class NestedCustomerOrdersView {
   }
 
   @Table("orders")
-  @Consume.FromValueEntity(OrderEntity.class)
+  @Consume.FromKeyValueEntity(OrderEntity.class)
   public static class Orders extends View<Order> {
   }
 }

@@ -1,7 +1,6 @@
 package com.example;
 
-import akka.platform.javasdk.testkit.ValueEntityResult;
-import akka.platform.javasdk.testkit.ValueEntityTestKit;
+import akka.platform.javasdk.testkit.KeyValueEntityTestKit;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -11,7 +10,7 @@ public class CounterTest {
 
   @Test
   public void testIncrease() {
-    var testKit = ValueEntityTestKit.of(CounterEntity::new);
+    var testKit = KeyValueEntityTestKit.of(CounterEntity::new);
     var result = testKit.call(e -> e.increaseBy(new Number(10)));
 
     assertTrue(result.isReply());
@@ -22,7 +21,7 @@ public class CounterTest {
   // tag::example[]
   @Test
   public void testSetAndIncrease() {
-    var testKit = ValueEntityTestKit.of(CounterEntity::new); // <1>
+    var testKit = KeyValueEntityTestKit.of(CounterEntity::new); // <1>
 
     var resultSet = testKit.call(e -> e.set(new Number(10))); // <2>
     assertTrue(resultSet.isReply());
@@ -38,7 +37,7 @@ public class CounterTest {
 
   @Test
   public void testDelete() {
-    var testKit = ValueEntityTestKit.of(CounterEntity::new);
+    var testKit = KeyValueEntityTestKit.of(CounterEntity::new);
     testKit.call(e -> e.increaseBy(new Number(10)));
 
     testKit.call(e -> e.delete());

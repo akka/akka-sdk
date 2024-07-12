@@ -2,7 +2,7 @@
 
 This sample demonstrates how to implement a Choreography Saga in Kalix.
 
-This project explores the usage of [Event Sourced Entities](https://docs.kalix.io/java/event-sourced-entities.html), [Value Entities](https://docs.kalix.io/java/value-entity.html), [Actions](https://docs.kalix.io/java/actions.html) and [Timers](https://docs.kalix.io/java/timers.html).  
+This project explores the usage of [Event Sourced Entities](https://docs.kalix.io/java/event-sourced-entities.html), [Key Value Entities](https://docs.kalix.io/java/value-entity.html), [Actions](https://docs.kalix.io/java/actions.html) and [Timers](https://docs.kalix.io/java/timers.html).  
 
 Actions are used in two different contexts in this sample:
 
@@ -31,7 +31,7 @@ each of which publishes an event or state change notification that triggers the 
 If an operation fails because it violates a business rule, then the saga can execute a series of compensating transactions
 that undo the changes made by the previous operations.
 
-In Kalix, in addition to events from Event Sourced Entities, you can also subscribe to state changes from Value Entities.
+In Kalix, in addition to events from Event Sourced Entities, you can also subscribe to state changes from Key Value Entities.
 To subscribe to events or state changes, we can use Kalix Actions with the appropriate subscription annotations.
 
 You can create a Choreography Saga to manage transactions across multiple entities in a single service, or across multiple services.

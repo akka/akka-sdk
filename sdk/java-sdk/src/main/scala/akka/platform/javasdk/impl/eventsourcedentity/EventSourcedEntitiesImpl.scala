@@ -219,7 +219,6 @@ final class EventSourcedEntitiesImpl(
             }
 
             val clientAction = serializedSecondaryEffect.replyToClientAction(
-              service.messageCodec,
               command.id,
               None // None because we can use the one inside the SecondaryEffect
             )

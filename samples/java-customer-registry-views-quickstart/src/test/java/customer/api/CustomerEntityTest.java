@@ -2,10 +2,8 @@ package customer.api;
 
 import customer.domain.Address;
 import customer.domain.Customer;
-import akka.platform.javasdk.testkit.ValueEntityResult;
-import akka.platform.javasdk.valueentity.ValueEntity;
-import akka.platform.javasdk.testkit.ValueEntityTestKit;
-import org.junit.jupiter.api.Assertions;
+import akka.platform.javasdk.testkit.KeyValueEntityResult;
+import akka.platform.javasdk.testkit.KeyValueEntityTestKit;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -18,14 +16,14 @@ public class CustomerEntityTest {
   @Test
   public void testCustomerNameChange() {
 
-    ValueEntityTestKit<Customer, CustomerEntity> testKit = ValueEntityTestKit.of(CustomerEntity::new);
+    KeyValueEntityTestKit<Customer, CustomerEntity> testKit = KeyValueEntityTestKit.of(CustomerEntity::new);
     {
-      ValueEntityResult<CustomerEntity.Ok> result = testKit.call(e -> e.create(customer));
+      KeyValueEntityResult<CustomerEntity.Ok> result = testKit.call(e -> e.create(customer));
       assertEquals(CustomerEntity.Ok.instance, result.getReply());
     }
 
     {
-      ValueEntityResult<CustomerEntity.Ok> result = testKit.call(e -> e.changeName("FooBar"));
+      KeyValueEntityResult<CustomerEntity.Ok> result = testKit.call(e -> e.changeName("FooBar"));
       assertEquals(CustomerEntity.Ok.instance, result.getReply());
       assertEquals("FooBar", testKit.getState().name());
     }
@@ -35,15 +33,15 @@ public class CustomerEntityTest {
   @Test
   public void testCustomerAddressChange() {
 
-    ValueEntityTestKit<Customer, CustomerEntity> testKit = ValueEntityTestKit.of(CustomerEntity::new);
+    KeyValueEntityTestKit<Customer, CustomerEntity> testKit = KeyValueEntityTestKit.of(CustomerEntity::new);
     {
-      ValueEntityResult<CustomerEntity.Ok> result = testKit.call(e -> e.create(customer));
+      KeyValueEntityResult<CustomerEntity.Ok> result = testKit.call(e -> e.create(customer));
       assertEquals(CustomerEntity.Ok.instance, result.getReply());
     }
 
     {
       Address newAddress = new Address("Sesame Street", "Sesame City");
-      ValueEntityResult<CustomerEntity.Ok> result = testKit.call(e -> e.changeAddress(newAddress));
+      KeyValueEntityResult<CustomerEntity.Ok> result = testKit.call(e -> e.changeAddress(newAddress));
       assertEquals(CustomerEntity.Ok.instance, result.getReply());
       assertEquals("Sesame Street", testKit.getState().address().street());
       assertEquals("Sesame City", testKit.getState().address().city());

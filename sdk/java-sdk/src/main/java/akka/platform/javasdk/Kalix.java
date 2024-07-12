@@ -4,13 +4,10 @@
 
 package akka.platform.javasdk;
 
-import akka.Done;
 import akka.actor.ActorSystem;
 import akka.annotation.InternalApi;
 import com.google.protobuf.DescriptorProtos;
 import com.google.protobuf.Descriptors;
-import com.typesafe.config.Config;
-import akka.platform.javasdk.BuildInfo$;
 import akka.platform.javasdk.action.Action;
 import akka.platform.javasdk.action.ActionOptions;
 import akka.platform.javasdk.action.ActionProvider;
@@ -22,14 +19,14 @@ import akka.platform.javasdk.impl.action.ActionService;
 import akka.platform.javasdk.impl.action.ResolvedActionFactory;
 import akka.platform.javasdk.impl.eventsourcedentity.EventSourcedEntityService;
 import akka.platform.javasdk.impl.eventsourcedentity.ResolvedEventSourcedEntityFactory;
-import akka.platform.javasdk.impl.valueentity.ResolvedValueEntityFactory;
-import akka.platform.javasdk.impl.valueentity.ValueEntityService;
+import akka.platform.javasdk.impl.keyvalueentity.ResolvedKeyValueEntityFactory;
+import akka.platform.javasdk.impl.keyvalueentity.KeyValueEntityService;
 import akka.platform.javasdk.impl.view.ViewService;
 import akka.platform.javasdk.impl.workflow.ResolvedWorkflowFactory;
 import akka.platform.javasdk.impl.workflow.WorkflowService;
-import akka.platform.javasdk.valueentity.ValueEntity;
-import akka.platform.javasdk.valueentity.ValueEntityOptions;
-import akka.platform.javasdk.valueentity.ValueEntityProvider;
+import akka.platform.javasdk.keyvalueentity.KeyValueEntity;
+import akka.platform.javasdk.keyvalueentity.KeyValueEntityOptions;
+import akka.platform.javasdk.keyvalueentity.KeyValueEntityProvider;
 import akka.platform.javasdk.view.ViewOptions;
 import akka.platform.javasdk.view.ViewProvider;
 import akka.platform.javasdk.workflow.AbstractWorkflow;
@@ -37,10 +34,8 @@ import akka.platform.javasdk.workflow.WorkflowOptions;
 import akka.platform.javasdk.workflow.WorkflowProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scala.jdk.javaapi.OptionConverters;
 
 import java.util.*;
-import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
 
 /**
@@ -215,18 +210,18 @@ public final class Kalix {
      * @param entityOptions The options for this entity.
      * @return This stateful service builder.
      */
-    public Kalix registerValueEntity(
-      ValueEntityFactory factory,
+    public Kalix registerKeyValueEntity(
+      KeyValueEntityFactory factory,
       Descriptors.ServiceDescriptor descriptor,
       String typeId,
-      ValueEntityOptions entityOptions,
+      KeyValueEntityOptions entityOptions,
       Descriptors.FileDescriptor... additionalDescriptors) {
 
       AnySupport anySupport = newAnySupport(additionalDescriptors);
-      ValueEntityFactory resolvedFactory =
-        new ResolvedValueEntityFactory(factory, anySupport.resolveServiceDescriptor(descriptor));
+      KeyValueEntityFactory resolvedFactory =
+        new ResolvedKeyValueEntityFactory(factory, anySupport.resolveServiceDescriptor(descriptor));
 
-      return registerValueEntity(
+      return registerKeyValueEntity(
         resolvedFactory,
         anySupport,
         descriptor,
@@ -235,16 +230,16 @@ public final class Kalix {
         additionalDescriptors);
     }
 
-    public Kalix registerValueEntity(
-      ValueEntityFactory factory,
+    public Kalix registerKeyValueEntity(
+      KeyValueEntityFactory factory,
       MessageCodec messageCodec,
       Descriptors.ServiceDescriptor descriptor,
       String entityType,
-      ValueEntityOptions entityOptions,
+      KeyValueEntityOptions entityOptions,
       Descriptors.FileDescriptor... additionalDescriptors) {
 
-      ValueEntityService service =
-        new ValueEntityService(
+      KeyValueEntityService service =
+        new KeyValueEntityService(
           factory, descriptor, additionalDescriptors, messageCodec, entityType, entityOptions);
 
       services.put(descriptor.getFullName(), system -> service);
@@ -371,20 +366,20 @@ public final class Kalix {
 
 
   /**
-   * Register a value based entity using a {{@link ValueEntityProvider}}. The concrete <code>
-   * ValueEntityProvider</code> is generated for the specific entities defined in Protobuf, for
+   * Register a value based entity using a {{@link KeyValueEntityProvider}}. The concrete <code>
+   * KeyValueEntityProvider</code> is generated for the specific entities defined in Protobuf, for
    * example <code>CustomerEntityProvider</code>.
    *
-   * <p>{{@link ValueEntityOptions}} can be defined by in the <code>ValueEntityProvider</code>.
+   * <p>{{@link KeyValueEntityOptions}} can be defined by in the <code>ValueEntityProvider</code>.
    *
    * @return This stateful service builder.
    */
-  public <S, E extends ValueEntity<S>> Kalix register(ValueEntityProvider<S, E> provider) {
+  public <S, E extends KeyValueEntity<S>> Kalix register(KeyValueEntityProvider<S, E> provider) {
     return provider
       .alternativeCodec()
       .map(
         codec ->
-          lowLevel.registerValueEntity(
+          lowLevel.registerKeyValueEntity(
             provider::newRouter,
             codec,
             provider.serviceDescriptor(),
@@ -393,7 +388,7 @@ public final class Kalix {
             provider.additionalDescriptors()))
       .orElseGet(
         () ->
-          lowLevel.registerValueEntity(
+          lowLevel.registerKeyValueEntity(
             provider::newRouter,
             provider.serviceDescriptor(),
             provider.typeId(),

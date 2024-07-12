@@ -29,7 +29,7 @@ public class CustomersByNameView
     return null;
   }
 
-  @Consume.FromValueEntity(CustomerEntity.class) // <4>
+  @Consume.FromKeyValueEntity(CustomerEntity.class) // <4>
   public Effect<CustomerSummary> onUpdate(Customer customer) {
     return effects()
       .updateState(new CustomerSummary(customer.name(), customer.email()));

@@ -10,7 +10,7 @@ import org.scalatest.wordspec.AnyWordSpec
 
 class EndpointsDescriptorSpec extends AnyWordSpec with Matchers {
 
-  "kalix-components.conf" should {
+  "akka-platform-components.conf" should {
     "contain endpoints components" in {
       val config = ConfigFactory.load("META-INF/akka-platform-components.conf")
 

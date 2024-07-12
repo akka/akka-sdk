@@ -41,7 +41,7 @@ NOTE: Calling endpoints that return a stream response like `Flux` is not support
 
 Calling other Kalix services in the same project from an Action is done by invoking them using a https://docs.spring.io/spring-framework/docs/5.0.13.RELEASE/spring-framework-reference/web-reactive.html#webflux-client[`Spring WebFlux WebClient`]. The service is identified by the name it has been deployed. Kalix takes care of routing requests to the service and keeping the data safe by encrypting the connection for you.
 
-In this sample we will make an action that does a call to the xref:value-entity.adoc[Value Entity Counter] service, deployed with the service name `counter`.
+In this sample we will make an action that does a call to the xref:value-entity.adoc[Key Value Entity Counter] service, deployed with the service name `counter`.
 
 The Kalix Java SDK provides a utility class `WebClientProvider` that can provide previously configured `WebClient`s to reach other Kalix services deployed on the same Kalix project.
 

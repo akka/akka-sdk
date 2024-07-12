@@ -34,7 +34,7 @@ public class ShoppingCartController {
   public CompletionStage<String> initializeCart() {
     final String cartId = UUID.randomUUID().toString(); // <1>
     CompletionStage<ShoppingCartDTO> shoppingCartCreated =
-      componentClient.forValueEntity(cartId)
+      componentClient.forKeyValueEntity(cartId)
         .method(ShoppingCartEntity::create) // <2>
         .invokeAsync(); // <3>
 
@@ -60,7 +60,7 @@ public class ShoppingCartController {
     if (addLineItem.name().equalsIgnoreCase("carrot")) { // <3>
       throw new RuntimeException("Carrots no longer for sale"); // <4>
     } else {
-      var addItemResult = componentClient.forValueEntity(cartId)
+      var addItemResult = componentClient.forKeyValueEntity(cartId)
         .method(ShoppingCartEntity::addItem)
         .invokeAsync(addLineItem); // <5>
       return addItemResult; // <6>
@@ -74,13 +74,13 @@ public class ShoppingCartController {
   public CompletionStage<String> createPrePopulated() {
     final String cartId = UUID.randomUUID().toString();
     CompletionStage<ShoppingCartDTO> shoppingCartCreated =
-      componentClient.forValueEntity(cartId).method(ShoppingCartEntity::create).invokeAsync();
+      componentClient.forKeyValueEntity(cartId).method(ShoppingCartEntity::create).invokeAsync();
 
     CompletionStage<ShoppingCartDTO> cartPopulated =
       shoppingCartCreated.thenCompose(empty -> { // <1>
         var initialItem = new LineItemDTO("e", "eggplant", 1);
 
-        return componentClient.forValueEntity(cartId)
+        return componentClient.forKeyValueEntity(cartId)
           .method(ShoppingCartEntity::addItem)
           .invokeAsync(initialItem); // <2>
       });
@@ -97,7 +97,7 @@ public class ShoppingCartController {
                                                   LineItemDTO addLineItem) {
     // NOTE: This is an example of an anti-pattern, do not copy this
     CompletionStage<ShoppingCartDTO> cartReply =
-      componentClient.forValueEntity(cartId).method(ShoppingCartEntity::getCart).invokeAsync(); // <1>
+      componentClient.forKeyValueEntity(cartId).method(ShoppingCartEntity::getCart).invokeAsync(); // <1>
 
     CompletionStage<String> response = cartReply.thenCompose(cart -> {
       int totalCount = cart.items().stream()
@@ -108,7 +108,7 @@ public class ShoppingCartController {
         throw new IllegalArgumentException("Max 10 items in a cart");
       } else {
         CompletionStage<String> addItemReply =
-          componentClient.forValueEntity(cartId)
+          componentClient.forKeyValueEntity(cartId)
             .method(ShoppingCartEntity::addItem)
             .invokeAsync(addLineItem)
             .thenApply(ShoppingCartDTO::cartId);
@@ -127,7 +127,7 @@ public class ShoppingCartController {
     var userRole = "Admin";
     var metadata = Metadata.EMPTY.add("Role", userRole);
     return
-      componentClient.forValueEntity(cartId)
+      componentClient.forKeyValueEntity(cartId)
         .method(ShoppingCartEntity::removeCart)
         .withMetadata(metadata)
         .invokeAsync(); // <4>

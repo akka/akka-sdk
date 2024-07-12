@@ -12,12 +12,12 @@ import akka.platform.javasdk.annotations.Table;
 import akka.platform.javasdk.annotations.TypeId;
 import akka.platform.javasdk.annotations.ViewId;
 import akka.platform.javasdk.eventsourcedentity.EventSourcedEntity;
-import akka.platform.javasdk.valueentity.ValueEntity;
+import akka.platform.javasdk.keyvalueentity.KeyValueEntity;
 import akka.platform.javasdk.view.View;
 import akka.platform.javasdk.workflow.Workflow;
 import akka.platform.spring.testmodels.Message;
-import akka.platform.spring.testmodels.valueentity.User;
-import akka.platform.spring.testmodels.valueentity.UserEntity;
+import akka.platform.spring.testmodels.keyvalueentity.User;
+import akka.platform.spring.testmodels.keyvalueentity.UserEntity;
 import akka.platform.spring.testmodels.workflow.StartWorkflow;
 import akka.platform.spring.testmodels.workflow.WorkflowState;
 
@@ -48,15 +48,15 @@ public class NotPublicComponents {
   }
 
   @TypeId("user")
-  static class NotPublicValueEntity extends ValueEntity<User> {
-    public ValueEntity.Effect<String> ok() {
+  static class NotPublicValueEntity extends KeyValueEntity<User> {
+    public KeyValueEntity.Effect<String> ok() {
       return effects().reply("ok");
     }
   }
 
   @ViewId("users_view")
   @Table(value = "users_view")
-  @Consume.FromValueEntity(UserEntity.class)
+  @Consume.FromKeyValueEntity(UserEntity.class)
   static class NotPublicView extends View<User> {
 
     public record QueryParameters(String email) {}

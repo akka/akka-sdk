@@ -18,22 +18,22 @@ package customer.api;
 
 import customer.domain.Address;
 import customer.domain.Customer;
-import akka.platform.javasdk.valueentity.ValueEntity;
+import akka.platform.javasdk.keyvalueentity.KeyValueEntity;
 import akka.platform.javasdk.annotations.TypeId;
 
 @TypeId("customer")
-public class CustomerEntity extends ValueEntity<Customer> {
+public class CustomerEntity extends KeyValueEntity<Customer> {
 
 
   public record Ok() {
     public static final Ok instance = new Ok();
   }
 
-  public ValueEntity.Effect<Ok> create(Customer customer) {
+  public KeyValueEntity.Effect<Ok> create(Customer customer) {
     return effects().updateState(customer).thenReply(Ok.instance);
   }
 
-  public ValueEntity.Effect<Customer> getCustomer() {
+  public KeyValueEntity.Effect<Customer> getCustomer() {
     return effects().reply(currentState());
   }
 

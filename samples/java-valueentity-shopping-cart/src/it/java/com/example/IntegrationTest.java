@@ -7,8 +7,6 @@ import akka.platform.javasdk.Metadata;
 import akka.platform.spring.testkit.KalixIntegrationTestKitSupport;
 import org.junit.jupiter.api.Test;
 
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
 
@@ -30,7 +28,7 @@ public class IntegrationTest extends KalixIntegrationTestKitSupport {
   ShoppingCartDTO getCart(String cartId) {
     return await(
       componentClient
-        .forValueEntity(cartId)
+        .forKeyValueEntity(cartId)
         .method(ShoppingCartEntity::getCart).invokeAsync()
     );
   }
@@ -38,7 +36,7 @@ public class IntegrationTest extends KalixIntegrationTestKitSupport {
   void addItem(String cartId, String productId, String name, int quantity) {
     await(
       componentClient
-        .forValueEntity(cartId)
+        .forKeyValueEntity(cartId)
         .method(ShoppingCartEntity::addItem)
         .invokeAsync(new LineItemDTO(productId, name, quantity))
     );
@@ -48,7 +46,7 @@ public class IntegrationTest extends KalixIntegrationTestKitSupport {
 
     await(
       componentClient
-        .forValueEntity(cartId)
+        .forKeyValueEntity(cartId)
         .method(ShoppingCartEntity::removeItem)
         .invokeAsync(productId)
     );
@@ -58,7 +56,7 @@ public class IntegrationTest extends KalixIntegrationTestKitSupport {
     var metadata = Metadata.EMPTY.add("Role", userRole);
     await(
       componentClient
-        .forValueEntity(cartId)
+        .forKeyValueEntity(cartId)
         .method(ShoppingCartEntity::removeCart).withMetadata(metadata)
         .invokeAsync()
 

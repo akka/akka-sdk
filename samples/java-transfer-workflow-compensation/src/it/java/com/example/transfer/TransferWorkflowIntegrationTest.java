@@ -174,7 +174,7 @@ public class TransferWorkflowIntegrationTest extends KalixIntegrationTestKitSupp
   private void createWallet(String walletId, int amount) {
     String response = await(
       componentClient
-        .forValueEntity(walletId)
+        .forKeyValueEntity(walletId)
         .method(WalletEntity::create)
         .invokeAsync(amount));
 
@@ -184,7 +184,7 @@ public class TransferWorkflowIntegrationTest extends KalixIntegrationTestKitSupp
   private int getWalletBalance(String walletId) {
     return await(
       componentClient
-        .forValueEntity(walletId)
+        .forKeyValueEntity(walletId)
         .method(WalletEntity::get)
         .invokeAsync());
   }

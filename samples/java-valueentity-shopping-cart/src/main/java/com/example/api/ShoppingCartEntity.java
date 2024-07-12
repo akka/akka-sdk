@@ -20,13 +20,13 @@ import com.example.domain.ShoppingCart;
 import akka.platform.javasdk.annotations.Acl;
 import akka.platform.javasdk.annotations.ForwardHeaders;
 import akka.platform.javasdk.annotations.TypeId;
-import akka.platform.javasdk.valueentity.ValueEntity;
-import akka.platform.javasdk.valueentity.ValueEntityContext;
+import akka.platform.javasdk.keyvalueentity.KeyValueEntity;
+import akka.platform.javasdk.keyvalueentity.KeyValueEntityContext;
 
 import java.time.Instant;
 
 /**
- * A value entity.
+ * A key value entity.
  */
 // tag::summary[]
 @TypeId("shopping-cart")
@@ -34,12 +34,12 @@ import java.time.Instant;
 @ForwardHeaders("Role")
 // tag::summary[]
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.ALL))
-public class ShoppingCartEntity extends ValueEntity<ShoppingCart> {
+public class ShoppingCartEntity extends KeyValueEntity<ShoppingCart> {
   // end::summary[]
   @SuppressWarnings("unused")
   private final String entityId;
 
-  public ShoppingCartEntity(ValueEntityContext context) {
+  public ShoppingCartEntity(KeyValueEntityContext context) {
     this.entityId = context.entityId();
   }
 
@@ -51,7 +51,7 @@ public class ShoppingCartEntity extends ValueEntity<ShoppingCart> {
   // tag::create[]
   // tag::summary[]
 
-  public ValueEntity.Effect<ShoppingCartDTO> create() {
+  public KeyValueEntity.Effect<ShoppingCartDTO> create() {
     //...
     // end::summary[]
     if (currentState().creationTimestamp() > 0L) {
@@ -68,7 +68,7 @@ public class ShoppingCartEntity extends ValueEntity<ShoppingCart> {
   // tag::add-item[]
   // tag::summary[]
 
-  public ValueEntity.Effect<ShoppingCartDTO> addItem(LineItemDTO addLineItem) {
+  public KeyValueEntity.Effect<ShoppingCartDTO> addItem(LineItemDTO addLineItem) {
     //...
     // end::summary[]
     if (addLineItem.quantity() <= 0) {
@@ -83,7 +83,7 @@ public class ShoppingCartEntity extends ValueEntity<ShoppingCart> {
   }
 
   // end::add-item[]
-  public ValueEntity.Effect<ShoppingCartDTO> removeItem(String productId) {
+  public KeyValueEntity.Effect<ShoppingCartDTO> removeItem(String productId) {
     var lineItemOpt = currentState().findItemByProductId(productId);
 
     if (lineItemOpt.isEmpty()) {
@@ -100,14 +100,14 @@ public class ShoppingCartEntity extends ValueEntity<ShoppingCart> {
   // tag::get-cart[]
   // tag::summary[]
 
-  public ValueEntity.Effect<ShoppingCartDTO> getCart() {
+  public KeyValueEntity.Effect<ShoppingCartDTO> getCart() {
     //...
     // end::summary[]
     return effects().reply(ShoppingCartDTO.of(currentState()));
   }
   // end::get-cart[]
 
-  public ValueEntity.Effect<String> removeCart() {
+  public KeyValueEntity.Effect<String> removeCart() {
     var userRole = commandContext().metadata().get("Role").get();
     if (userRole.equals("Admin")) {
       return effects().deleteEntity().thenReply("OK");

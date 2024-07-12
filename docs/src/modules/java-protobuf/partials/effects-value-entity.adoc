@@ -1,8 +1,8 @@
-== Value Entity's Effect API
+== Key Value Entity's Effect API
 
-The Value Entity's Effect defines the operations that Kalix should perform when an incoming command is handled by a Value Entity.
+The Key Value Entity's Effect defines the operations that Kalix should perform when an incoming command is handled by a Key Value Entity.
 
-A Value Entity Effect can either:
+A Key Value Entity Effect can either:
 
 * update the entity state and send a reply to the caller
 * directly reply to the caller if the command is not requesting any state change

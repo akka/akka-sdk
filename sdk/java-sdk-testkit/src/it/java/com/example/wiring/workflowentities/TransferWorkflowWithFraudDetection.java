@@ -8,7 +8,6 @@ import com.example.wiring.actions.echo.Message;
 import com.example.wiring.workflowentities.FraudDetectionResult.TransferRejected;
 import com.example.wiring.workflowentities.FraudDetectionResult.TransferRequiresManualAcceptation;
 import com.example.wiring.workflowentities.FraudDetectionResult.TransferVerified;
-import akka.platform.javasdk.HttpResponse;
 import akka.platform.javasdk.annotations.TypeId;
 import akka.platform.javasdk.client.ComponentClient;
 import akka.platform.javasdk.workflow.Workflow;
@@ -40,12 +39,12 @@ public class TransferWorkflowWithFraudDetection extends Workflow<TransferState> 
     var withdraw =
         step(withdrawStepName)
             .asyncCall(Withdraw.class, cmd ->
-                componentClient.forValueEntity(cmd.from).method(WalletEntity::withdraw).invokeAsync(cmd.amount))
+                componentClient.forKeyValueEntity(cmd.from).method(WalletEntity::withdraw).invokeAsync(cmd.amount))
             .andThen(String.class, this::moveToDeposit);
 
     var deposit =
         step(depositStepName)
-            .asyncCall(Deposit.class, cmd -> componentClient.forValueEntity(cmd.to).method(WalletEntity::deposit).invokeAsync(cmd.amount))
+            .asyncCall(Deposit.class, cmd -> componentClient.forKeyValueEntity(cmd.to).method(WalletEntity::deposit).invokeAsync(cmd.amount))
             .andThen(String.class, this::finishWithSuccess);
 
     return workflow()

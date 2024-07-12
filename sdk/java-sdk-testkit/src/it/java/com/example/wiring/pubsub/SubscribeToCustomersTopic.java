@@ -5,7 +5,7 @@
 package com.example.wiring.pubsub;
 
 import com.example.wiring.eventsourcedentities.counter.CounterEvent;
-import com.example.wiring.valueentities.customer.CustomerEntity;
+import com.example.wiring.keyvalueentities.customer.CustomerEntity;
 import akka.platform.javasdk.action.Action;
 import akka.platform.javasdk.annotations.Consume;
 import org.slf4j.Logger;

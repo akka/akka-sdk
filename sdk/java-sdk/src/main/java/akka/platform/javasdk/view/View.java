@@ -20,7 +20,7 @@ import java.util.Optional;
  * <p>
  * The query is executed by the Kalix when a request is made to the View.
  * <p>
- * Views are updated in response to Event Sourced Entity events, Value Entity state changes or messages from a Topic.
+ * Views are updated in response to Event Sourced Entity events, Key Value Entity state changes or messages from a Topic.
  * <p>
  * Each incoming change is handled by a command handler. Command handlers are methods returning an
  * {@link Effect}. The command handler is responsible for updating the View state.

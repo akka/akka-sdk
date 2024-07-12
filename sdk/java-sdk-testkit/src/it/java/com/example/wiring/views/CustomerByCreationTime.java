@@ -4,7 +4,7 @@
 
 package com.example.wiring.views;
 
-import com.example.wiring.valueentities.customer.CustomerEntity;
+import com.example.wiring.keyvalueentities.customer.CustomerEntity;
 import akka.platform.javasdk.annotations.Query;
 import akka.platform.javasdk.annotations.Consume;
 import akka.platform.javasdk.annotations.Table;
@@ -17,7 +17,7 @@ import java.util.List;
 
 @ViewId("view_customers_by_creation_time")
 @Table("customers_by_creation_time")
-@Consume.FromValueEntity(CustomerEntity.class)
+@Consume.FromKeyValueEntity(CustomerEntity.class)
 public class CustomerByCreationTime extends View<CustomerEntity.Customer> {
 
   public record CustomerList(List<CustomerEntity.Customer> customers){}

@@ -4,14 +4,13 @@
 
 package com.example.wiring.workflowentities;
 
-import akka.platform.javasdk.HttpResponse;
 import akka.platform.javasdk.annotations.TypeId;
-import akka.platform.javasdk.valueentity.ValueEntity;
+import akka.platform.javasdk.keyvalueentity.KeyValueEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @TypeId("wallet")
-public class WalletEntity extends ValueEntity<Wallet> {
+public class WalletEntity extends KeyValueEntity<Wallet> {
 
   private static final Logger logger = LoggerFactory.getLogger(WalletEntity.class);
 

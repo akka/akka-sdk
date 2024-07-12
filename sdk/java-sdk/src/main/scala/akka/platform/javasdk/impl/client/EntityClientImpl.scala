@@ -18,7 +18,6 @@ import akka.platform.javasdk.client.ComponentMethodRef
 import akka.platform.javasdk.client.ComponentMethodRef1
 import akka.platform.javasdk.client.EventSourcedEntityClient
 import akka.platform.javasdk.client.NoEntryFoundException
-import akka.platform.javasdk.client.ValueEntityClient
 import akka.platform.javasdk.client.ViewClient
 import akka.platform.javasdk.client.WorkflowClient
 import akka.platform.javasdk.eventsourcedentity.EventSourcedEntity
@@ -37,7 +36,6 @@ import kalix.javasdk.spi.WorkflowType
 import kalix.javasdk.spi.{ ActionClient => RuntimeActionClient }
 import kalix.javasdk.spi.{ EntityClient => RuntimeEntityClient }
 import kalix.javasdk.spi.{ ViewClient => RuntimeViewClient }
-import akka.platform.javasdk.valueentity.ValueEntity
 import akka.platform.javasdk.workflow.AbstractWorkflow
 
 import scala.concurrent.ExecutionContext
@@ -45,6 +43,8 @@ import scala.jdk.FutureConverters.FutureOps
 import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
+import akka.platform.javasdk.client.KeyValueEntityClient
+import akka.platform.javasdk.keyvalueentity.KeyValueEntity
 
 /**
  * INTERNAL API
@@ -123,18 +123,18 @@ private[javasdk] sealed abstract class EntityClientImpl(
  * INTERNAL API
  */
 @InternalApi
-private[javasdk] final class ValueEntityClientImpl(
+private[javasdk] final class KeyValueEntityClientImpl(
     entityClient: RuntimeEntityClient,
     callMetadata: Option[Metadata],
     entityId: String)(implicit val executionContext: ExecutionContext)
-    extends EntityClientImpl(classOf[ValueEntity[_]], ValueEntityType, entityClient, callMetadata, entityId)
-    with ValueEntityClient {
+    extends EntityClientImpl(classOf[KeyValueEntity[_]], ValueEntityType, entityClient, callMetadata, entityId)
+    with KeyValueEntityClient {
 
-  override def method[T, R](methodRef: function.Function[T, ValueEntity.Effect[R]]): ComponentMethodRef[R] =
+  override def method[T, R](methodRef: function.Function[T, KeyValueEntity.Effect[R]]): ComponentMethodRef[R] =
     createMethodRef[R](methodRef)
 
   override def method[T, A1, R](
-      methodRef: function.Function2[T, A1, ValueEntity.Effect[R]]): ComponentMethodRef1[A1, R] =
+      methodRef: function.Function2[T, A1, KeyValueEntity.Effect[R]]): ComponentMethodRef1[A1, R] =
     createMethodRef2(methodRef)
 }
 

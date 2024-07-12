@@ -10,7 +10,7 @@ import org.scalatest.wordspec.AnyWordSpec
 
 class ActionDescriptorSpec extends AnyWordSpec with Matchers {
 
-  "kalix-components.conf" should {
+  "akka-platform-components.conf" should {
     "have correct configuration" in {
       val config = ConfigFactory.load("META-INF/akka-platform-components.conf")
 

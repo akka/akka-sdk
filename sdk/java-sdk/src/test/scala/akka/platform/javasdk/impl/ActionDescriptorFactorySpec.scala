@@ -62,7 +62,7 @@ import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.SubscribeT
 import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.TypeLevelESWithPublishToTopicAction
 import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.TypeLevelTopicSubscriptionWithPublishToTopicAction
 import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.VEWithPublishToTopicAction
-import akka.platform.spring.testmodels.valueentity.CounterState
+import akka.platform.spring.testmodels.keyvalueentity.CounterState
 import org.scalatest.wordspec.AnyWordSpec
 
 class ActionDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuite {
@@ -179,7 +179,7 @@ class ActionDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSu
       }
     }
 
-    "generate mapping with Value Entity Subscription annotations" in {
+    "generate mapping with Key Value Entity Subscription annotations" in {
       assertDescriptor[SubscribeToValueEntityAction] { desc =>
 
         val onUpdateMethodDescriptor = findMethodByName(desc, "OnUpdate")
@@ -203,7 +203,7 @@ class ActionDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSu
       }
     }
 
-    "generate mapping with Value Entity Subscription annotations (type level)" in {
+    "generate mapping with Key Value Entity Subscription annotations (type level)" in {
       assertDescriptor[SubscribeToValueEntityTypeLevelAction] { desc =>
 
         val onUpdateMethodDescriptor = findMethodByName(desc, "OnUpdate")
@@ -227,7 +227,7 @@ class ActionDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSu
       }
     }
 
-    "generate mapping with Value Entity and delete handler" in {
+    "generate mapping with Key Value Entity and delete handler" in {
       assertDescriptor[SubscribeToValueEntityWithDeletesAction] { desc =>
 
         val onUpdateMethodDescriptor = findMethodByName(desc, "OnUpdate")
@@ -381,7 +381,7 @@ class ActionDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSu
     "validates that only single update handler is present for VE sub (type level)" in {
       intercept[InvalidComponentException] {
         Validations.validate(classOf[MultipleUpdateMethodsForVETypeLevelSubscriptionInAction]).failIfInvalid
-      }.getMessage should include("Duplicated update methods [methodOne, methodTwo]for ValueEntity subscription.")
+      }.getMessage should include("Duplicated update methods [methodOne, methodTwo]for KeyValueEntity subscription.")
     }
 
     "validates that only type level subscription is valid" in {

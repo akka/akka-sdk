@@ -2,7 +2,7 @@ package com.example.acl;
 
 import akka.Done;
 import akka.platform.javasdk.action.Action;
-import akka.platform.javasdk.valueentity.ValueEntity;
+import akka.platform.javasdk.keyvalueentity.KeyValueEntity;
 import akka.platform.javasdk.annotations.Acl;
 import akka.platform.javasdk.annotations.Consume;
 
@@ -57,7 +57,7 @@ public class MyAction extends Action {
     }
 
     // tag::open-subscription-acl[]
-    @Consume.FromValueEntity(Counter.class)
+    @Consume.FromKeyValueEntity(Counter.class)
     @Acl(allow = @Acl.Matcher(service = "*"))
     public Effect<Done> changes(CounterState counterState) {
      //...
@@ -71,5 +71,5 @@ public class MyAction extends Action {
 }
 
 class CreateUser{}
-class Counter extends ValueEntity<Integer> {}
+class Counter extends KeyValueEntity<Integer> {}
 class CounterState{}

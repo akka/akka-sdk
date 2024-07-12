@@ -22,7 +22,7 @@ import akka.annotation.DoNotInherit;
  * public Effect<String> createUser(String userId, String email, String name) {
  *   //validation here
  *   var defCall =
- *     componentClient.forValueEntity(userId)
+ *     componentClient.forKeyValueEntity(userId)
  *       .method(UserEntity::createUser)
  *       .deferred(new CreateRequest(email, name));
  *   return effects().forward(defCall);
@@ -37,11 +37,11 @@ public interface ComponentClient {
   ActionClient forAction();
 
   /**
-   * Select ValueEntity as a call target component.
+   * Select KeyValueEntity as a call target component.
    *
-   * @param valueEntityId - value entity id used to create a call.
+   * @param keyValueEntityId - key value entity id used to create a call.
    */
-  ValueEntityClient forValueEntity(String valueEntityId);
+  KeyValueEntityClient forKeyValueEntity(String keyValueEntityId);
 
   /**
    * Select EventSourcedEntity as a call target component.

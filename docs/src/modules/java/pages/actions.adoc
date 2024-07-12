@@ -48,11 +48,11 @@ Actions can be used to implement link:https://en.wikipedia.org/wiki/Model%E2%80%
 acting as the external interface of a service, receiving requests, operating over the requests values and forwarding the call
 to other components in the same service.
 
-To illustrate how you can use an Action as a Controller, we will build on top of a Value Entity used to implement a Shopping Cart example, adding a new Action to the existing shopping cart service.
+To illustrate how you can use an Action as a Controller, we will build on top of a Key Value Entity used to implement a Shopping Cart example, adding a new Action to the existing shopping cart service.
 
-TIP: If you are hearing about `ValueEntity` for the first time, be sure to visit xref:value-entity.adoc[] before continuing.
+TIP: If you are hearing about `KeyValueEntity` for the first time, be sure to visit xref:value-entity.adoc[] before continuing.
 
-Below you can find a summary of the shopping cart value entity we will use in this chapter: it contains only the signatures of the available endpoints for brevity:
+Below you can find a summary of the shopping cart key value entity we will use in this chapter: it contains only the signatures of the available endpoints for brevity:
 
 .src/main/java/com/example/api/ShoppingCartEntity.java
 [source,java]
@@ -218,7 +218,7 @@ You might want to run side effects to notify interested parties of a change in s
 
 === Emitting a side effect
 
-To illustrate how you can emit a side effect, you can build on top of the xref:java:actions-as-controller.adoc[Action as a Controller] example. In that previous example, you  build a controller around the xref:value-entity.adoc[Value Entity Counter] and forwarded the incoming request
+To illustrate how you can emit a side effect, you can build on top of the xref:java:actions-as-controller.adoc[Action as a Controller] example. In that previous example, you  build a controller around the xref:value-entity.adoc[Key Value Entity Counter] and forwarded the incoming request
 after modifying it.
 
 This time, instead of using a `forward`, you will call the entity using a side effect.

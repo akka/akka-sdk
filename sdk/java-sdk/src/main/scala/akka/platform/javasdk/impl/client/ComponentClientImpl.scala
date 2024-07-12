@@ -8,13 +8,13 @@ import akka.annotation.InternalApi
 import akka.platform.javasdk.Metadata
 import akka.platform.javasdk.client.ComponentClient
 import akka.platform.javasdk.client.EventSourcedEntityClient
-import akka.platform.javasdk.client.ValueEntityClient
 import akka.platform.javasdk.client.WorkflowClient
 import akka.platform.javasdk.client.ActionClient
 import akka.platform.javasdk.client.ViewClient
 import kalix.javasdk.spi.{ ComponentClients => RuntimeComponentClients }
 
 import scala.concurrent.ExecutionContext
+import akka.platform.javasdk.client.KeyValueEntityClient
 
 /**
  * Note: new instance per call since it includes call metadata
@@ -31,8 +31,8 @@ private[javasdk] final case class ComponentClientImpl(runtimeComponentClients: R
 
   override def forAction(): ActionClient = ActionClientImpl(runtimeComponentClients.actionClient, callMetadata)
 
-  override def forValueEntity(valueEntityId: String): ValueEntityClient =
-    new ValueEntityClientImpl(runtimeComponentClients.valueEntityClient, callMetadata, valueEntityId)
+  override def forKeyValueEntity(valueEntityId: String): KeyValueEntityClient =
+    new KeyValueEntityClientImpl(runtimeComponentClients.valueEntityClient, callMetadata, valueEntityId)
 
   override def forEventSourcedEntity(eventSourcedEntityId: String): EventSourcedEntityClient =
     EventSourcedEntityClientImpl(runtimeComponentClients.eventSourcedEntityClient, callMetadata, eventSourcedEntityId)

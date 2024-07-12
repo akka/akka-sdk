@@ -5,7 +5,7 @@
 package com.example.wiring.pubsub;
 
 
-import com.example.wiring.valueentities.customer.CustomerEntity;
+import com.example.wiring.keyvalueentities.customer.CustomerEntity;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import akka.platform.javasdk.JsonSupport;
 import akka.platform.javasdk.action.Action;
@@ -14,7 +14,7 @@ import akka.platform.javasdk.annotations.Consume;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Consume.FromValueEntity(CustomerEntity.class)
+@Consume.FromKeyValueEntity(CustomerEntity.class)
 public class PublishBytesToTopic extends Action {
 
   public static final String CUSTOMERS_BYTES_TOPIC = "customers_bytes";

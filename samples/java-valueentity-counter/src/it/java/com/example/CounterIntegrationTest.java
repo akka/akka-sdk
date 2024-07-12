@@ -25,7 +25,7 @@ public class CounterIntegrationTest extends KalixIntegrationTestKitSupport { // 
     var counterIncrease =
       await(
         componentClient
-          .forValueEntity("foo")
+          .forKeyValueEntity("foo")
           .method(CounterEntity::increaseBy)
           .invokeAsync(new Number(10))
       );
@@ -40,7 +40,7 @@ public class CounterIntegrationTest extends KalixIntegrationTestKitSupport { // 
     Number counterGet = // <3>
       await(
         componentClient
-          .forValueEntity("bar")
+          .forKeyValueEntity("bar")
           .method(CounterEntity::get).invokeAsync()
       );
     Assertions.assertEquals(0, counterGet.value());
@@ -48,7 +48,7 @@ public class CounterIntegrationTest extends KalixIntegrationTestKitSupport { // 
     Number counterPlusOne = // <4>
       await(
         componentClient
-          .forValueEntity("bar")
+          .forKeyValueEntity("bar")
           .method(CounterEntity::plusOne).invokeAsync()
       );
     Assertions.assertEquals(1, counterPlusOne.value());
@@ -56,7 +56,7 @@ public class CounterIntegrationTest extends KalixIntegrationTestKitSupport { // 
     Number counterGetAfter = // <5>
       await(
         componentClient
-          .forValueEntity("bar")
+          .forKeyValueEntity("bar")
           .method(CounterEntity::get).invokeAsync()
       );
     Assertions.assertEquals(1, counterGetAfter.value());

@@ -3,8 +3,8 @@ package user.registry.entity;
 
 import akka.platform.javasdk.annotations.Acl;
 import akka.platform.javasdk.annotations.TypeId;
-import akka.platform.javasdk.valueentity.ValueEntity;
-import akka.platform.javasdk.valueentity.ValueEntityContext;
+import akka.platform.javasdk.keyvalueentity.KeyValueEntity;
+import akka.platform.javasdk.keyvalueentity.KeyValueEntityContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import user.registry.common.Done;
@@ -29,12 +29,12 @@ import java.util.Optional;
 @TypeId("unique-address")
 // Only allow access to this entity from inside the service (i.e. from the ApplicationController)
 @Acl(allow = @Acl.Matcher(service = "*"))
-public class UniqueEmailEntity extends ValueEntity<UniqueEmail> {
+public class UniqueEmailEntity extends KeyValueEntity<UniqueEmail> {
 
   private final String address;
   private final Logger logger = LoggerFactory.getLogger(getClass());
 
-  public UniqueEmailEntity(ValueEntityContext context) {
+  public UniqueEmailEntity(KeyValueEntityContext context) {
     this.address = context.entityId();
   }
 

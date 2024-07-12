@@ -1,12 +1,12 @@
 package com.example;
 
-import akka.platform.javasdk.valueentity.ValueEntity;
+import akka.platform.javasdk.keyvalueentity.KeyValueEntity;
 import akka.platform.javasdk.annotations.TypeId;
 
 
 // tag::declarations[]
 @TypeId("counter") // <1>
-public class CounterEntity extends ValueEntity<Integer> { // <3>
+public class CounterEntity extends KeyValueEntity<Integer> { // <3>
 
   @Override
   public Integer emptyState() { return 0; } // <4>

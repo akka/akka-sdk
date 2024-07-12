@@ -4,8 +4,8 @@
 
 package com.example.wiring.views;
 
-import com.example.wiring.valueentities.user.User;
-import com.example.wiring.valueentities.user.UserEntity;
+import com.example.wiring.keyvalueentities.user.User;
+import com.example.wiring.keyvalueentities.user.UserEntity;
 import akka.platform.javasdk.annotations.Query;
 import akka.platform.javasdk.annotations.Consume;
 import akka.platform.javasdk.annotations.Table;
@@ -16,7 +16,7 @@ import java.util.List;
 
 @ViewId("users_by_name")
 @Table("users_by_name")
-@Consume.FromValueEntity(value = UserEntity.class, handleDeletes = true)
+@Consume.FromKeyValueEntity(value = UserEntity.class, handleDeletes = true)
 public class UsersByName extends View<User> {
 
   public record QueryParameters(String name) {}

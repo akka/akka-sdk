@@ -11,7 +11,7 @@ import akka.platform.javasdk.annotations.ViewId;
 
 @ViewId("view_customers_by_email") // <1>
 @Table("customers_by_email") // <2>
-@Consume.FromValueEntity(CustomerEntity.class)// <3>
+@Consume.FromKeyValueEntity(CustomerEntity.class)// <3>
 public class CustomerByEmailView extends View<Customer> { //  <4>
 
   public record QueryParameters(String email) {

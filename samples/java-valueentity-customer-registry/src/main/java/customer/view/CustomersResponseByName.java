@@ -12,7 +12,7 @@ import akka.platform.javasdk.view.View;
 @ViewId("customers_by_name")
 @Table("customers_by_name")
 // tag::class[]
-@Consume.FromValueEntity(CustomerEntity.class)
+@Consume.FromKeyValueEntity(CustomerEntity.class)
 public class CustomersResponseByName extends View<Customer> {
 
   public record QueryParameters(String name) { }

@@ -19,13 +19,13 @@ public class CustomerSummaryByName extends View<CustomerSummary> {
   public CustomerSummary getCustomer(QueryParameters params) {
     return null;
   }
-  @Consume.FromValueEntity(CustomerEntity.class)
+  @Consume.FromKeyValueEntity(CustomerEntity.class)
   public Effect<CustomerSummary> onChange(Customer customer) {
     return effects()
         .updateState(new CustomerSummary(customer.email(), customer.name()));
   }
 
-  @Consume.FromValueEntity(value = CustomerEntity.class, handleDeletes = true)
+  @Consume.FromKeyValueEntity(value = CustomerEntity.class, handleDeletes = true)
   public Effect<CustomerSummary> onDelete() {
     return effects()
         .deleteState();

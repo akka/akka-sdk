@@ -4,7 +4,7 @@
 
 package com.example.wiring.pubsub;
 
-import com.example.wiring.valueentities.customer.CustomerEntity.Customer;
+import com.example.wiring.keyvalueentities.customer.CustomerEntity.Customer;
 
 import java.util.concurrent.ConcurrentHashMap;
 

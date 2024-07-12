@@ -22,21 +22,21 @@ import akka.platform.spring.testmodels.eventsourcedentity.EmployeeEvent.Employee
 import akka.platform.spring.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels;
 import akka.platform.spring.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.CounterEventSourcedEntity;
 import akka.platform.spring.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.EmployeeEntity;
-import akka.platform.spring.testmodels.valueentity.AssignedCounter;
-import akka.platform.spring.testmodels.valueentity.Counter;
-import akka.platform.spring.testmodels.valueentity.CounterState;
+import akka.platform.spring.testmodels.keyvalueentity.AssignedCounter;
+import akka.platform.spring.testmodels.keyvalueentity.Counter;
+import akka.platform.spring.testmodels.keyvalueentity.CounterState;
 
 public class PubSubTestModels {//TODO shall we remove this class and move things to ActionTestModels and ViewTestModels
 
   public static class SubscribeToValueEntityAction extends Action {
 
-    @Consume.FromValueEntity(Counter.class)
+    @Consume.FromKeyValueEntity(Counter.class)
     public Effect<CounterState> onUpdate(CounterState message) {
       return effects().reply(message);
     }
   }
 
-  @Consume.FromValueEntity(Counter.class)
+  @Consume.FromKeyValueEntity(Counter.class)
   public static class SubscribeToValueEntityTypeLevelAction extends Action {
 
     public Effect<CounterState> onUpdate(CounterState message) {
@@ -46,12 +46,12 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
 
   public static class SubscribeToValueEntityWithDeletesAction extends Action {
 
-    @Consume.FromValueEntity(Counter.class)
+    @Consume.FromKeyValueEntity(Counter.class)
     public Effect<CounterState> onUpdate(CounterState message) {
       return effects().reply(message);
     }
 
-    @Consume.FromValueEntity(value = Counter.class, handleDeletes = true)
+    @Consume.FromKeyValueEntity(value = Counter.class, handleDeletes = true)
     public Effect<CounterState> onDelete() {
       return effects().ignore();
     }
@@ -124,7 +124,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
     }
   }
 
-  @Consume.FromValueEntity(Counter.class)
+  @Consume.FromKeyValueEntity(Counter.class)
   @Consume.FromEventSourcedEntity(EmployeeEntity.class)
   @Consume.FromTopic("topic")
   @Consume.FromServiceStream(id = "source", service = "abc")
@@ -136,7 +136,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
 
   }
 
-  @Consume.FromValueEntity(Counter.class)
+  @Consume.FromKeyValueEntity(Counter.class)
   public static class MultipleUpdateMethodsForVETypeLevelSubscriptionInAction extends Action {
 
     public Effect<Integer> methodOne(Integer message) {
@@ -150,17 +150,17 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
 
   public static class AmbiguousHandlersVESubscriptionInAction extends Action {
 
-    @Consume.FromValueEntity(Counter.class)
+    @Consume.FromKeyValueEntity(Counter.class)
     public Effect<Integer> methodOne(Integer message) {
       return effects().reply(message);
     }
 
-    @Consume.FromValueEntity(Counter.class)
+    @Consume.FromKeyValueEntity(Counter.class)
     public Effect<Integer> methodTwo(Integer message) {
       return effects().reply(message);
     }
 
-    @Consume.FromValueEntity(AssignedCounter.class)
+    @Consume.FromKeyValueEntity(AssignedCounter.class)
     public Effect<Integer> methodThree(Integer message) {
       return effects().reply(message);
     }
@@ -168,23 +168,23 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
 
   public static class AmbiguousDeleteHandlersVESubscriptionInAction extends Action {
 
-    @Consume.FromValueEntity(value = Counter.class, handleDeletes = true)
+    @Consume.FromKeyValueEntity(value = Counter.class, handleDeletes = true)
     public Effect<Integer> methodOne() {
       return effects().ignore();
     }
 
-    @Consume.FromValueEntity(value = Counter.class, handleDeletes = true)
+    @Consume.FromKeyValueEntity(value = Counter.class, handleDeletes = true)
     public Effect<Integer> methodTwo() {
       return effects().ignore();
     }
 
-    @Consume.FromValueEntity(value = AssignedCounter.class, handleDeletes = true)
+    @Consume.FromKeyValueEntity(value = AssignedCounter.class, handleDeletes = true)
     public Effect<Integer> methodThree() {
       return effects().ignore();
     }
   }
 
-  @Consume.FromValueEntity(Counter.class)
+  @Consume.FromKeyValueEntity(Counter.class)
   public static class AmbiguousHandlersVETypeLevelSubscriptionInAction extends Action {
 
     public Effect<Integer> methodOne(Integer message) {
@@ -278,13 +278,13 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
 
   public static class MissingTopicForVESubscription extends Action {
 
-    @Consume.FromValueEntity(Counter.class)
+    @Consume.FromKeyValueEntity(Counter.class)
     @Produce.ToTopic("test")
     public Effect<String> methodOne(String message) {
       return effects().reply(message);
     }
 
-    @Consume.FromValueEntity(value = Counter.class, handleDeletes = true)
+    @Consume.FromKeyValueEntity(value = Counter.class, handleDeletes = true)
     public Effect<String> methodTwo() {
       return effects().ignore();
     }
@@ -359,13 +359,13 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
 
   public static class DifferentTopicForVESubscription extends Action {
 
-    @Consume.FromValueEntity(Counter.class)
+    @Consume.FromKeyValueEntity(Counter.class)
     @Produce.ToTopic("test")
     public Effect<String> methodOne(String message) {
       return effects().reply(message);
     }
 
-    @Consume.FromValueEntity(value = Counter.class, handleDeletes = true)
+    @Consume.FromKeyValueEntity(value = Counter.class, handleDeletes = true)
     @Produce.ToTopic("another-topic")
     public Effect<String> methodTwo() {
       return effects().ignore();
@@ -549,7 +549,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
     }
   }
 
-  @Consume.FromValueEntity(Counter.class)
+  @Consume.FromKeyValueEntity(Counter.class)
   public static class PublishBytesToTopicAction extends Action {
 
     @Produce.ToTopic("foobar")
@@ -568,13 +568,13 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
 
   public static class VEWithPublishToTopicAction extends Action {
 
-    @Consume.FromValueEntity(Counter.class)
+    @Consume.FromKeyValueEntity(Counter.class)
     @Produce.ToTopic("foobar")
     public Effect<Message> messageOne(String msg) {
       return effects().reply(new Message(msg));
     }
 
-    @Consume.FromValueEntity(value = Counter.class, handleDeletes = true)
+    @Consume.FromKeyValueEntity(value = Counter.class, handleDeletes = true)
     @Produce.ToTopic("foobar")
     public Effect<Message> messageTwo() {
       return effects().ignore();
@@ -652,7 +652,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
 
   public static class ActionWithMethodLevelAclAndSubscription extends Action {
     @Acl(allow = @Acl.Matcher(service = "test"))
-    @Consume.FromValueEntity(Counter.class)
+    @Consume.FromKeyValueEntity(Counter.class)
     public Effect<Message> messageOne(Message message) {
       return effects().reply(message);
     }

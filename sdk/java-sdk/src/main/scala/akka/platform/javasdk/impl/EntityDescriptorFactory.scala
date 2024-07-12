@@ -14,7 +14,7 @@ import akka.platform.javasdk.impl.reflection.EntityUrlTemplate
 import akka.platform.javasdk.impl.reflection.KalixMethod
 import akka.platform.javasdk.impl.reflection.NameGenerator
 import akka.platform.javasdk.impl.reflection.WorkflowUrlTemplate
-import akka.platform.javasdk.valueentity.ValueEntity
+import akka.platform.javasdk.keyvalueentity.KeyValueEntity
 import akka.platform.javasdk.workflow.AbstractWorkflow
 
 private[impl] object EntityDescriptorFactory extends ComponentDescriptorFactory {
@@ -42,9 +42,9 @@ private[impl] object EntityDescriptorFactory extends ComponentDescriptorFactory 
               .withKalixOptions(buildJWTOptions(method))
         }.toSeq
 
-      } else if (classOf[ValueEntity[_]].isAssignableFrom(component)) {
+      } else if (classOf[KeyValueEntity[_]].isAssignableFrom(component)) {
         component.getDeclaredMethods.collect {
-          case method if isCommandHandlerCandidate[ValueEntity.Effect[_]](method) =>
+          case method if isCommandHandlerCandidate[KeyValueEntity.Effect[_]](method) =>
             val servMethod = CommandHandlerMethod(component, method, EntityUrlTemplate)
             KalixMethod(servMethod, entityIds = Seq("entity-id"))
               .withKalixOptions(buildJWTOptions(method))

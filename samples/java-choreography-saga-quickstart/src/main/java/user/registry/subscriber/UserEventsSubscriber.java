@@ -45,7 +45,7 @@ public class UserEventsSubscriber extends Action {
   private Effect<Done> markAsNotUsed(UserEvent evt, EmailUnassigned unassigned) {
     logger.info("Old email address unassigned: {}, deleting unique email address record", evt);
     var unreserved =
-      client.forValueEntity(unassigned.oldEmail())
+      client.forKeyValueEntity(unassigned.oldEmail())
         .method(UniqueEmailEntity::markAsNotUsed)
         .invokeAsync();
 
@@ -59,7 +59,7 @@ public class UserEventsSubscriber extends Action {
   private Effect<Done> confirmEmail(String emailAddress) {
     logger.info("User got a new email address assigned: {}, confirming new address address", emailAddress);
     var confirmation =
-      client.forValueEntity(emailAddress)
+      client.forKeyValueEntity(emailAddress)
         .method(UniqueEmailEntity::confirm)
         .invokeAsync();
 

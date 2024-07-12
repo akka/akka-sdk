@@ -28,7 +28,7 @@ import java.time.Duration;
  * Also, strictly speaking, we don't need to delete the timer when the email address is confirmed. If we don't delete it and the timer fires,
  * the UniqueEmailEntity will just ignore the message. But it is a good practice to clean up obsolete times and save resources.
  */
-@Consume.FromValueEntity(UniqueEmailEntity.class)
+@Consume.FromKeyValueEntity(UniqueEmailEntity.class)
 public class UniqueEmailSubscriber extends Action {
 
   private Logger logger = LoggerFactory.getLogger(getClass());
@@ -54,7 +54,7 @@ public class UniqueEmailSubscriber extends Action {
       logger.info("Email is not confirmed, scheduling timer '{}' to fire in '{}'", timerId, delay);
       var callToUnReserve =
         client
-          .forValueEntity(email.address())
+          .forKeyValueEntity(email.address())
           .method(UniqueEmailEntity::cancelReservation).deferred();
 
       var timer = timers().startSingleTimer(

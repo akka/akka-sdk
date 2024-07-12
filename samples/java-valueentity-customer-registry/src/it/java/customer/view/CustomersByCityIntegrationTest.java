@@ -18,12 +18,12 @@ class CustomersResponseByCityIntegrationTest extends KalixIntegrationTestKitSupp
   @Override
   protected KalixTestKit.Settings kalixTestKitSettings() {
     return KalixTestKit.Settings.DEFAULT
-            .withValueEntityIncomingMessages("customer"); // <1>
+            .withKeyValueEntityIncomingMessages("customer"); // <1>
   }
 
   @Test
   public void shouldGetCustomerByCity() {
-    IncomingMessages customerEvents = kalixTestKit.getValueEntityIncomingMessages("customer"); // <2>
+    IncomingMessages customerEvents = kalixTestKit.getKeyValueEntityIncomingMessages("customer"); // <2>
 
     Customer johanna = new Customer("1", "johanna@example.com", "Johanna",
       new Address("Cool Street", "Porto"));

@@ -143,7 +143,7 @@ Actions can be used to implement link:https://en.wikipedia.org/wiki/Model%E2%80%
 acting as the external interface of a service, receiving requests, operating over the requests values and forwarding the call
 to other components in the same service.
 
-To illustrate how you can use an Action as a Controller, we will build on top of the xref:proto.adoc[Value Entity Shopping Cart] example, adding a new Action to the existing shopping cart service.
+To illustrate how you can use an Action as a Controller, we will build on top of the xref:proto.adoc[Key Value Entity Shopping Cart] example, adding a new Action to the existing shopping cart service.
 
 === Forwarding Commands
 
@@ -402,7 +402,7 @@ You might want to run side effects to notify interested parties of a change in s
 === Emitting a side effect
 
 To illustrate how you can emit a side effect, we can build on top of the xref:actions-as-controller.adoc[Action as a Controller] example.
-In that previous example, we build a controller around the xref:value-entity.adoc[Value Entity Counter] and forwarded the incoming request
+In that previous example, we build a controller around the xref:value-entity.adoc[Key Value Entity Counter] and forwarded the incoming request
 after modifying it.
 
 This time, instead of using a `forward`, we will call the entity using a side effect.

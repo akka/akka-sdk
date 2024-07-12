@@ -3,20 +3,20 @@ package com.example.domain;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import akka.platform.javasdk.annotations.TypeId;
-import akka.platform.javasdk.valueentity.ValueEntity;
-import akka.platform.javasdk.valueentity.ValueEntityContext;
+import akka.platform.javasdk.keyvalueentity.KeyValueEntity;
+import akka.platform.javasdk.keyvalueentity.KeyValueEntityContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 // tag::order[]
 @TypeId("order")
-public class OrderEntity extends ValueEntity<Order> {
+public class OrderEntity extends KeyValueEntity<Order> {
 
   private static final Logger logger = LoggerFactory.getLogger(OrderEntity.class);
 
   private final String entityId;
 
-  public OrderEntity(ValueEntityContext context) {
+  public OrderEntity(KeyValueEntityContext context) {
     this.entityId = context.entityId();
   }
 

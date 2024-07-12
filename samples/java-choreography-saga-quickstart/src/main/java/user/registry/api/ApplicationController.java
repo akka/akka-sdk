@@ -68,7 +68,7 @@ public class ApplicationController {
     // and decide if we can continue with the user creation
     var emailReserved =
       client
-        .forValueEntity(cmd.email())
+        .forKeyValueEntity(cmd.email())
         .method(UniqueEmailEntity::reserve)
         .invokeAsync(createUniqueEmail); // eager, executing it now
 
@@ -109,7 +109,7 @@ public class ApplicationController {
     // and decide if we can continue with the change the user's email address
     var emailReserved =
       client
-        .forValueEntity(cmd.newEmail())
+        .forKeyValueEntity(cmd.newEmail())
         .method(UniqueEmailEntity::reserve)
         .invokeAsync(createUniqueEmail); // eager, executing it now
 
@@ -169,7 +169,7 @@ public class ApplicationController {
   @Get("/emails/{address}")
   public CompletionStage<EmailInfo> getEmailInfo(String address) {
     return
-      client.forValueEntity(address)
+      client.forKeyValueEntity(address)
         .method(UniqueEmailEntity::getState).invokeAsync()
         .thenApply(email -> {
           var emailInfo =

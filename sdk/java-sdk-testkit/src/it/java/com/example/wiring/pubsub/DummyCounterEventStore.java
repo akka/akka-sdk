@@ -5,7 +5,6 @@
 package com.example.wiring.pubsub;
 
 import com.example.wiring.eventsourcedentities.counter.CounterEvent;
-import com.example.wiring.valueentities.customer.CustomerEntity;
 
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;

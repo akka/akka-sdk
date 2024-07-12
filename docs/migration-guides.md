@@ -166,7 +166,7 @@ With:
 ```java
 import akka.platform.javasdk.testkit.ActionTestkit;
 import akka.platform.javasdk.testkit.EventSourcedTestKit;
-import akka.platform.javasdk.testkit.ValueEntityTestKit;
+import akka.platform.javasdk.testkit.KeyValueEntityTestKit;
 ```
 
 Lastly, `KalixIntegrationTestKitSupport` was also moved, so you will need to replace:

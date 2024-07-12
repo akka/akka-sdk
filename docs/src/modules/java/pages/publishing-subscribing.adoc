@@ -3,12 +3,12 @@
 
 include::ROOT:partial$include.adoc[]
 
-A very common use case when building Microservices is to publish and subscribe to a stream of events. The source of events can be the journal of an event sourced entity, the value entity state changes, a https://cloud.google.com/pubsub/docs/overview[Google Cloud Pub/Sub] or https://kafka.apache.org/[Apache Kafka] topic for asynchronous messaging between services.
+A very common use case when building Microservices is to publish and subscribe to a stream of events. The source of events can be the journal of an event sourced entity, the key value entity state changes, a https://cloud.google.com/pubsub/docs/overview[Google Cloud Pub/Sub] or https://kafka.apache.org/[Apache Kafka] topic for asynchronous messaging between services.
 
 In this section, we will explore how you can use an Action to:
 
 - Subscribe to events emitted by an event sourced entity within the same service.
-- Subscribe to state changes emitted by a value entity within the same service.
+- Subscribe to state changes emitted by a key value entity within the same service.
 - Subscribe to events from Event Sourced Entities published as service to service eventing.
 - Subscribe to external events from topics of Google Cloud Pub/Sub or Apache Kafka.
 - Publish events to a Google Cloud Pub/Sub or Apache Kafka topic.
@@ -37,9 +37,9 @@ include::example$java-spring-eventsourced-counter/src/main/java/com/example/acti
 <4> Any return `Action.Effect` response is valid.
 
 
-== Subscribing to a Value Entity
+== Subscribing to a Key Value Entity
 
-You can subscribe an Action to events from a Value Entity. It works the same as an Event Sourced Entity except for the annotation. To receive messages from the entity, annotate a service method `@Consume.FromValueEntity` and specify the class of the entity.
+You can subscribe an Action to events from a Key Value Entity. It works the same as an Event Sourced Entity except for the annotation. To receive messages from the entity, annotate a service method `@Consume.FromKeyValueEntity` and specify the class of the entity.
 
 == Type level annotations for subscribing
 

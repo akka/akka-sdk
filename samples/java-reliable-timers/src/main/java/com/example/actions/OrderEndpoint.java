@@ -54,7 +54,7 @@ public class OrderEndpoint {
     // tag::place-order[]
 
     var request =
-      componentClient.forValueEntity(orderId)
+      componentClient.forKeyValueEntity(orderId)
         .method(OrderEntity::placeOrder).deferred(orderRequest); // <6>
 
     throw new UnsupportedOperationException("No timers in endpoints yet");
@@ -73,7 +73,7 @@ public class OrderEndpoint {
   public CompletionStage<String> expire(String orderId) {
     logger.info("Expiring order '{}'", orderId);
     CompletionStage<String> reply =
-      componentClient.forValueEntity(orderId)
+      componentClient.forKeyValueEntity(orderId)
         .method(OrderEntity::cancel).invokeAsync() // <1>
         .thenApply(result -> {
           // Entity can return Ok, NotFound or Invalid.
@@ -93,7 +93,7 @@ public class OrderEndpoint {
     logger.info("Confirming order '{}'", orderId);
 
     CompletionStage<String> reply =
-      componentClient.forValueEntity(orderId)
+      componentClient.forKeyValueEntity(orderId)
         .method(OrderEntity::confirm).invokeAsync() // <1>
         // FIXME no timer support in endpoints yet .thenCompose(result -> timers().cancel(timerName(orderId))) // <2>
         .thenApply(done -> "Ok");
@@ -106,7 +106,7 @@ public class OrderEndpoint {
     logger.info("Cancelling order '{}'", orderId);
 
     CompletionStage<String> reply =
-      componentClient.forValueEntity(orderId)
+      componentClient.forKeyValueEntity(orderId)
         .method(OrderEntity::cancel).invokeAsync()
           // FIXME no timer support in endpoints yet.thenCompose(req -> timers().cancel(timerName(orderId)))
         .thenApply(done -> "Ok");

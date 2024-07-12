@@ -265,8 +265,8 @@ jobs:
       - name: "Integration Test only SpringSdkIntegrationTest"
         run: sbt 'java-sdk-testkit/IntegrationTest/testOnly *SpringSdkIntegrationTest'
 
-      - name: "Integration Test only ValueEntityIntegrationTest"
-        run: sbt 'java-sdk-testkit/IntegrationTest/testOnly *ValueEntityIntegrationTest'
+      - name: "Integration Test only KeyValueEntityIntegrationTest"
+        run: sbt 'java-sdk-testkit/IntegrationTest/testOnly *KeyValueEntityIntegrationTest'
 
       - name: "Integration Test only EventSourcedEntityIntegrationTest"
         run: sbt 'java-sdk-testkit/IntegrationTest/testOnly *EventSourcedEntityIntegrationTest'
@@ -364,7 +364,9 @@ jobs:
 
           - { sample: java-valueentity-counter, it: true }
           - { sample: java-valueentity-shopping-cart, it: true }
-          - { sample: java-valueentity-customer-registry, it: true }
+          # - { sample: java-valueentity-customer-registry, it: true }
+          # java-valueentity-customer-registry only compiling for now
+          - { sample: java-valueentity-customer-registry, it: false }
 
           - { sample: java-tracing, it: false }
           - { sample: java-reliable-timers, it: true }

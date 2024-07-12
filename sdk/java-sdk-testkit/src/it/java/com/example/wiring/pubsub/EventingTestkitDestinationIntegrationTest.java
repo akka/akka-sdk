@@ -4,8 +4,8 @@
 
 package com.example.wiring.pubsub;
 
-import com.example.wiring.valueentities.customer.CustomerEntity;
-import com.example.wiring.valueentities.customer.CustomerEntity.Customer;
+import com.example.wiring.keyvalueentities.customer.CustomerEntity;
+import com.example.wiring.keyvalueentities.customer.CustomerEntity.Customer;
 import akka.platform.javasdk.testkit.EventingTestKit;
 import akka.platform.javasdk.testkit.KalixTestKit;
 import akka.platform.spring.testkit.KalixIntegrationTestKitSupport;
@@ -51,7 +51,7 @@ public class EventingTestkitDestinationIntegrationTest extends KalixIntegrationT
 
     //when
     componentClient
-      .forValueEntity(subject)
+      .forKeyValueEntity(subject)
       .method(CustomerEntity::create)
       .invokeAsync(customer)
       .toCompletableFuture().get(5, TimeUnit.SECONDS);

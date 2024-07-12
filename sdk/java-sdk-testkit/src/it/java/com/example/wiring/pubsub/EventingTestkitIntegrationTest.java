@@ -4,21 +4,6 @@
 
 package com.example.wiring.pubsub;
 
-import com.example.wiring.eventsourcedentities.counter.CounterEvent.ValueIncreased;
-import com.example.wiring.valueentities.user.User;
-import com.example.wiring.valueentities.user.UserSideEffect;
-import akka.platform.javasdk.testkit.EventingTestKit.IncomingMessages;
-import akka.platform.javasdk.testkit.EventingTestKit.Message;
-import akka.platform.javasdk.testkit.KalixTestKit;
-import akka.platform.spring.testkit.KalixIntegrationTestKitSupport;
-import org.awaitility.Awaitility;
-import org.junit.jupiter.api.*;
-
-import java.util.concurrent.TimeUnit;
-
-import static com.example.wiring.pubsub.PublishESToTopic.COUNTER_EVENTS_TOPIC;
-import static java.time.Duration.ofMillis;
-import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /*@TestInstance(TestInstance.Lifecycle.PER_CLASS)

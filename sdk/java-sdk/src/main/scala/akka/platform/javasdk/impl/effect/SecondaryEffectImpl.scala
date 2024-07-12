@@ -4,18 +4,14 @@
 
 package akka.platform.javasdk.impl.effect
 
+import akka.platform.javasdk.Metadata
+import akka.platform.javasdk.impl.effect
 import com.google.protobuf.{ Any => JavaPbAny }
 import io.grpc.Status
-import akka.platform.javasdk.Metadata
-import akka.platform.javasdk.impl.MessageCodec
-import akka.platform.javasdk.impl.effect
 import kalix.protocol.component.ClientAction
 
 sealed trait SecondaryEffectImpl {
-  final def replyToClientAction(
-      messageCodec: MessageCodec,
-      commandId: Long,
-      errorCode: Option[Status.Code]): Option[ClientAction] = {
+  final def replyToClientAction(commandId: Long, errorCode: Option[Status.Code]): Option[ClientAction] = {
     this match {
       case message: effect.MessageReplyImpl[JavaPbAny] @unchecked =>
         Some(ClientAction(ClientAction.Action.Reply(EffectSupport.asProtocol(message))))

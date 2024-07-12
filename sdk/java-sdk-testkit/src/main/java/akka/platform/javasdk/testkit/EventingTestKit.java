@@ -32,7 +32,7 @@ public interface EventingTestKit {
 
   IncomingMessages getTopicIncomingMessages(String topic);
 
-  IncomingMessages getValueEntityIncomingMessages(String typeId);
+  IncomingMessages getKeyValueEntityIncomingMessages(String typeId);
 
   IncomingMessages getEventSourcedEntityIncomingMessages(String typeId);
 
@@ -81,7 +81,7 @@ public interface EventingTestKit {
     void publish(List<Message<?>> messages);
 
     /**
-     * Publish a predefined delete message. Supported only in case of ValueEntity incoming message flow.
+     * Publish a predefined delete message. Supported only in case of KeyValueEntity incoming message flow.
      *
      * @param subject to identify the entity
      */

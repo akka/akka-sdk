@@ -6,7 +6,7 @@ You can access a single https://docs.kalix.io/reference/glossary.html#entity[Ent
 
 Views can be defined from any of the following:
 
-* xref:value-entity[Value Entities state changes]
+* xref:value-entity[Key Value Entities state changes]
 * xref:event-sourced-entity[Event Sourced Entity events]
 * xref:topic-view[Messages received from subscribing to topics on a broker]
 
@@ -23,9 +23,9 @@ include::java-protobuf:partial$effects-view.adoc[]
 See also xref:developing:development-process-proto.adoc#_effects_api[Understanding what an Effect is]
 
 [#value-entity]
-== Creating a View from a Value Entity
+== Creating a View from a Key Value Entity
 
-Consider an example of a Customer Registry service with a `customer` Value Entity. When `customer` state changes, the entire state is emitted as a value change. Value changes update any associated Views. To create a View that lists customers by their name:
+Consider an example of a Customer Registry service with a `customer` Key Value Entity. When `customer` state changes, the entire state is emitted as a value change. Value changes update any associated Views. To create a View that lists customers by their name:
 
 * <<_define_the_view_service_descriptor>> for a service that selects customers by name and associates a table name with the View. The table is created and used by Kalix to store the View.
 
@@ -51,7 +51,7 @@ include::example$scala-protobuf-valueentity-customer-registry/src/main/proto/cus
 ----
 
 
-As well as a Value Entity service that will produce the state changes consumed by the View:
+As well as a Key Value Entity service that will produce the state changes consumed by the View:
 
 [.tabset]
 Java::
@@ -94,9 +94,9 @@ include::example$scala-protobuf-valueentity-customer-registry/src/main/proto/cus
 
 <1> The protobuf option (kalix.codegen) is specific to code-generation as provided by the Kalix Maven plugin. This annotation indicates to the code-generation that a View must be generated.
 <2> The `UpdateCustomer` method defines how Kalix will update the view.
-<3> The source of the View is the `"customers"` Value Entity. This identifier is defined in the `type_id: "customers"` property of the `(kalix.codegen).value_entity` option in the `customer_api.proto` file.
+<3> The source of the View is the `"customers"` Key Value Entity. This identifier is defined in the `type_id: "customers"` property of the `(kalix.codegen).value_entity` option in the `customer_api.proto` file.
 <4> The `(kalix.method).view.update` annotation defines that this method is used for updating the View. You must define the `table` attribute for the table to be used in the query. Pick any name and use it in the query `SELECT` statement. When a view model is the same as the method input parameter, Kalix will optimize the processing and won't call this method. However, this behavior can be overridden with the `(kalix.method).view.update.transform_updates` flag set to `true`.
-<5> The second `(kalix.method).eventing.in` annotation with `handle_deletes: true` and (required) `google.protobuf.Empty` as a parameter defines that this method is used for handling Value Entity deletes. Similar to update methods, Kalix will optimise it and not call the method if not necessary, unless you mark it with `(kalix.method).view.update.transform_updates: true`. In this case, you indicate to Kalix that you want to provide a custom delete handler implementation.
+<5> The second `(kalix.method).eventing.in` annotation with `handle_deletes: true` and (required) `google.protobuf.Empty` as a parameter defines that this method is used for handling Key Value Entity deletes. Similar to update methods, Kalix will optimise it and not call the method if not necessary, unless you mark it with `(kalix.method).view.update.transform_updates: true`. In this case, you indicate to Kalix that you want to provide a custom delete handler implementation.
 <6> The `GetCustomers` method defines the query to retrieve a stream of customers.
 <7> The `(kalix.method).view.query` annotation defines that this method is used as a query of the View.
 
@@ -125,11 +125,11 @@ include::example$scala-protobuf-valueentity-customer-registry/src/main/proto/cus
 When no result is found, the request fails with gRPC status code `NOT_FOUND`. A streamed call completes with an empty stream when no result is found.
 
 [#ve_delete]
-=== Handling Value Entity deletes
+=== Handling Key Value Entity deletes
 
 The View state corresponding to an Entity is not automatically deleted when the Entity is deleted.
 
-When the source of the `eventing.in` is a Value Entity the `handle_deletes: true` annotation of `(kalix.method).eventing.in` defines that this method is used for handling Value Entity deletes. The method must have `google.protobuf.Empty` as a parameter. Kalix will automatically delete the View state, but you can also write your own delete handler when `(kalix.method).view.update.transform_updates` flag is `true`.
+When the source of the `eventing.in` is a Key Value Entity the `handle_deletes: true` annotation of `(kalix.method).eventing.in` defines that this method is used for handling Key Value Entity deletes. The method must have `google.protobuf.Empty` as a parameter. Kalix will automatically delete the View state, but you can also write your own delete handler when `(kalix.method).view.update.transform_updates` flag is `true`.
 
 [#register-view]
 === Registering a View
@@ -266,7 +266,7 @@ include::example$scala-protobuf-eventsourced-customer-registry/src/main/scala/cu
 <2> Defines the initial, empty, state that is used before any updates.
 <3> One method for each event.
 
-NOTE: This type of update transformation is a natural fit for Events emitted by an Event Sourced Entity, but it can also be used for Value Entities. For example, if the View representation is different from the Entity state you might want to transform it before presenting the View to the client.
+NOTE: This type of update transformation is a natural fit for Events emitted by an Event Sourced Entity, but it can also be used for Key Value Entities. For example, if the View representation is different from the Entity state you might want to transform it before presenting the View to the client.
 
 === Ignoring events
 
@@ -549,7 +549,7 @@ include::partial$query-syntax-advanced.adoc[tags=grpc]
 Testing Views is very similar to testing other xref:actions-publishing-subscribing.adoc#_testkit_mocked_incoming_messages[subscription integrations].
 
 
-For a View definition that subscribes to changes from the `customer` Value Entity.
+For a View definition that subscribes to changes from the `customer` Key Value Entity.
 
 [source,proto,indent=0]
 .src/main/proto/customer/view/customer_view.proto
@@ -566,8 +566,8 @@ Java::
 ----
 include::example$java-protobuf-valueentity-customer-registry/src/it/java/customer/view/CustomersResponseByCityViewIntegrationTest.java[tag=view-test]
 ----
-<1> Mocks incoming messages from the `customer` Value Entity.
-<2> Gets an `IncomingMessages` from the `customer` Value Entity.
+<1> Mocks incoming messages from the `customer` Key Value Entity.
+<2> Gets an `IncomingMessages` from the `customer` Key Value Entity.
 <3> Publishes test data.
 <4> Queries the view and asserts the results.
 
@@ -577,7 +577,7 @@ Scala::
 ----
 include::example$scala-protobuf-valueentity-customer-registry/src/test/scala/customer/view/CustomersResponseByCityViewIntegrationSpec.scala[tag=view-test]
 ----
-<1> Mocks incoming messages from the `customer` Value Entity.
-<2> Gets an `IncomingMessages` from the `customer` Value Entity.
+<1> Mocks incoming messages from the `customer` Key Value Entity.
+<2> Gets an `IncomingMessages` from the `customer` Key Value Entity.
 <3> Publishes test data.
 <4> Queries the view and asserts the results.

@@ -12,7 +12,6 @@ import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.util.Collection;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -33,7 +32,7 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
   private Customer getCustomerById(String customerId) {
     return await(
       componentClient
-        .forValueEntity(customerId)
+        .forKeyValueEntity(customerId)
         .method(CustomerEntity::getCustomer).invokeAsync()
     );
   }
@@ -67,7 +66,7 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
     var res =
       await(
         componentClient
-          .forValueEntity(customer.customerId())
+          .forKeyValueEntity(customer.customerId())
           .method(CustomerEntity::create)
           .invokeAsync(customer)
       );

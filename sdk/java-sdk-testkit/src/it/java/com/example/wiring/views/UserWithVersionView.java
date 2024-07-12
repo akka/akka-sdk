@@ -4,8 +4,8 @@
 
 package com.example.wiring.views;
 
-import com.example.wiring.valueentities.user.User;
-import com.example.wiring.valueentities.user.UserEntity;
+import com.example.wiring.keyvalueentities.user.User;
+import com.example.wiring.keyvalueentities.user.UserEntity;
 import akka.platform.javasdk.annotations.Query;
 import akka.platform.javasdk.annotations.Consume;
 import akka.platform.javasdk.annotations.Table;
@@ -31,13 +31,13 @@ public class UserWithVersionView extends View<UserWithVersion> {
     return null;
   }
 
-  @Consume.FromValueEntity(UserEntity.class)
+  @Consume.FromKeyValueEntity(UserEntity.class)
   public Effect<UserWithVersion> onChange(User user) {
     if (viewState() == null) return effects().updateState(new UserWithVersion(user.email, 1));
     else return effects().updateState(new UserWithVersion(user.email, viewState().version + 1));
   }
 
-  @Consume.FromValueEntity(value = UserEntity.class, handleDeletes = true)
+  @Consume.FromKeyValueEntity(value = UserEntity.class, handleDeletes = true)
   public Effect<UserWithVersion> onDelete() {
     logger.info("Deleting user with email={}", viewState().email);
     return effects().deleteState();

@@ -10,12 +10,12 @@ import com.example.wiring.actions.echo.Message;
 import com.example.wiring.actions.headers.ForwardHeadersAction;
 import com.example.wiring.eventsourcedentities.counter.CounterEntity;
 import com.example.wiring.eventsourcedentities.headers.ForwardHeadersESEntity;
-import com.example.wiring.valueentities.customer.CustomerEntity;
-import com.example.wiring.valueentities.headers.ForwardHeadersValueEntity;
-import com.example.wiring.valueentities.user.AssignedCounterEntity;
-import com.example.wiring.valueentities.user.User;
-import com.example.wiring.valueentities.user.UserEntity;
-import com.example.wiring.valueentities.user.UserSideEffect;
+import com.example.wiring.keyvalueentities.customer.CustomerEntity;
+import com.example.wiring.keyvalueentities.headers.ForwardHeadersValueEntity;
+import com.example.wiring.keyvalueentities.user.AssignedCounterEntity;
+import com.example.wiring.keyvalueentities.user.User;
+import com.example.wiring.keyvalueentities.user.UserEntity;
+import com.example.wiring.keyvalueentities.user.UserSideEffect;
 import com.example.wiring.views.*;
 import akka.platform.javasdk.Metadata;
 import akka.platform.javasdk.client.EventSourcedEntityClient;
@@ -34,7 +34,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import static com.example.wiring.pubsub.PublishVEToTopic.CUSTOMERS_TOPIC;
 import static java.time.Duration.ofMillis;
@@ -402,7 +401,7 @@ public class SpringSdkIntegrationTest extends KalixIntegrationTestKitSupport {
 
     Message veResponse =
       await(
-        componentClient.forValueEntity("1")
+        componentClient.forKeyValueEntity("1")
           .method(ForwardHeadersValueEntity::createUser)
           .withMetadata(Metadata.EMPTY.add(ForwardHeadersAction.SOME_HEADER, veHeaderValue))
           .invokeAsync()
@@ -477,7 +476,7 @@ public class SpringSdkIntegrationTest extends KalixIntegrationTestKitSupport {
   private void updateUser(TestUser user) {
     Ok userUpdate =
       await(
-        componentClient.forValueEntity(user.id)
+        componentClient.forKeyValueEntity(user.id)
           .method(UserEntity::createOrUpdateUser)
           .invokeAsync(new UserEntity.CreatedUser(user.name, user.email)));
 
@@ -487,7 +486,7 @@ public class SpringSdkIntegrationTest extends KalixIntegrationTestKitSupport {
   private void createUser(TestUser user) {
     Ok userCreation =
       await(
-        componentClient.forValueEntity(user.id)
+        componentClient.forKeyValueEntity(user.id)
           .method(UserEntity::createOrUpdateUser)
           .invokeAsync(new UserEntity.CreatedUser(user.name, user.email)));
     assertThat(userCreation).isEqualTo(Ok.instance);
@@ -499,7 +498,7 @@ public class SpringSdkIntegrationTest extends KalixIntegrationTestKitSupport {
     Ok created =
       await(
         componentClient
-          .forValueEntity(customer.name())
+          .forKeyValueEntity(customer.name())
           .method(CustomerEntity::create)
           .invokeAsync(customer));
 
@@ -521,7 +520,7 @@ public class SpringSdkIntegrationTest extends KalixIntegrationTestKitSupport {
     Ok userDeleted =
       await(
         componentClient
-          .forValueEntity(user.id)
+          .forKeyValueEntity(user.id)
           .method(UserEntity::deleteUser)
           .invokeAsync(new UserEntity.Delete()));
     assertThat(userDeleted).isEqualTo(Ok.instance);
@@ -543,7 +542,7 @@ public class SpringSdkIntegrationTest extends KalixIntegrationTestKitSupport {
 
   private void assignCounter(String id, String assignee) {
     await(
-      componentClient.forValueEntity(id)
+      componentClient.forKeyValueEntity(id)
         .method(AssignedCounterEntity::assign)
         .invokeAsync(assignee));
   }

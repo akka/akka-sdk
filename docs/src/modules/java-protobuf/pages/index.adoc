@@ -119,7 +119,7 @@ This section provides details on how to accomplish common tasks:
 
 * xref:project-template.adoc[]
 * xref:writing-grpc-descriptors-protobuf.adoc[]
-* xref:value-entity.adoc[Implementing Value Entities]
+* xref:value-entity.adoc[Implementing Key Value Entities]
 * xref:event-sourced-entities.adoc[Implementing Event Sourced Entities]
 * xref:replicated-entity.adoc[Implementing Replicated Entities]
 * xref:actions.adoc[Actions (stateless functions)]

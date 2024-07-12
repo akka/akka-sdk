@@ -9,7 +9,7 @@ import akka.grpc.GrpcClientSettings
 import akka.testkit.TestKit
 import akka.platform.testkit.eventsourcedentity.TestEventSourcedProtocol
 import akka.platform.testkit.replicatedentity.TestReplicatedEntityProtocol
-import akka.platform.testkit.valueentity.TestValueEntityProtocol
+import akka.platform.testkit.keyvalueentity.TestKeyValueEntityProtocol
 import com.typesafe.config.{ Config, ConfigFactory }
 import akka.platform.testkit.workflow.TestWorkflowProtocol
 
@@ -21,7 +21,7 @@ final class TestProtocol(host: String, port: Int) {
   val context = new TestProtocolContext(host, port)
 
   val eventSourced = new TestEventSourcedProtocol(context)
-  val valueEntity = new TestValueEntityProtocol(context)
+  val valueEntity = new TestKeyValueEntityProtocol(context)
   val replicatedEntity = new TestReplicatedEntityProtocol(context)
   val workflow = new TestWorkflowProtocol(context)
 

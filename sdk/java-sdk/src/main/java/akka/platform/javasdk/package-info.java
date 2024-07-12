@@ -20,8 +20,8 @@
  *       <td class="colLast"><a href="{@docRoot}/akka/platform/javasdk/action/package-summary.html"><code>akka.platform.javasdk.action</code></a></td>
  *     </tr>
  *     <tr class="rowColor">
- *       <th class="colFirst" scope="row">Value Entity</th>
- *       <td class="colLast"><a href="{@docRoot}/akka/platform/javasdk/valueentity/package-summary.html"><code>akka.platform.javasdk.valueentity</code></a></td>
+ *       <th class="colFirst" scope="row">Key Value Entity</th>
+ *       <td class="colLast"><a href="{@docRoot}/akka/platform/javasdk/keyvalueentity/package-summary.html"><code>akka.platform.javasdk.keyvalueentity</code></a></td>
  *     </tr>
  *     <tr class="altColor">
  *       <th class="colFirst" scope="row">Event Sourced Entity</th>

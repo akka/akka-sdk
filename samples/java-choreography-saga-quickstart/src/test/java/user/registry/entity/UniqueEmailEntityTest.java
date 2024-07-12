@@ -1,7 +1,7 @@
 package user.registry.entity;
 
 
-import akka.platform.javasdk.testkit.ValueEntityTestKit;
+import akka.platform.javasdk.testkit.KeyValueEntityTestKit;
 import org.junit.jupiter.api.Test;
 import user.registry.domain.UniqueEmail;
 
@@ -11,14 +11,14 @@ public class UniqueEmailEntityTest {
 
   @Test
   public void testReserveAndConfirm() {
-    var emailTestKit = ValueEntityTestKit.of(UniqueEmailEntity::new);
+    var emailTestKit = KeyValueEntityTestKit.of(UniqueEmailEntity::new);
     reserveEmail(emailTestKit, "joe@acme.com", "1");
     confirmEmail(emailTestKit);
   }
 
   @Test
   public void testReserveAndUnReserve() {
-    var emailTestKit = ValueEntityTestKit.of(UniqueEmailEntity::new);
+    var emailTestKit = KeyValueEntityTestKit.of(UniqueEmailEntity::new);
     reserveEmail(emailTestKit, "joe@acme.com", "1");
     unreserveEmail(emailTestKit);
 
@@ -28,7 +28,7 @@ public class UniqueEmailEntityTest {
 
   @Test
   public void testReserveConfirmAndUnReserve() {
-    var emailTestKit = ValueEntityTestKit.of(UniqueEmailEntity::new);
+    var emailTestKit = KeyValueEntityTestKit.of(UniqueEmailEntity::new);
     reserveEmail(emailTestKit, "joe@acme.com", "1");
     confirmEmail(emailTestKit);
 
@@ -41,20 +41,20 @@ public class UniqueEmailEntityTest {
 
   @Test
   public void testReserveAndDeleting() {
-    var emailTestKit = ValueEntityTestKit.of(UniqueEmailEntity::new);
+    var emailTestKit = KeyValueEntityTestKit.of(UniqueEmailEntity::new);
     reserveEmail(emailTestKit, "joe@acme.com", "1");
     markAsNotUsedEmail(emailTestKit);
   }
 
   @Test
   public void testReserveConfirmAndDeleting() {
-    var emailTestKit = ValueEntityTestKit.of(UniqueEmailEntity::new);
+    var emailTestKit = KeyValueEntityTestKit.of(UniqueEmailEntity::new);
     reserveEmail(emailTestKit, "joe@acme.com", "1");
     confirmEmail(emailTestKit);
     markAsNotUsedEmail(emailTestKit);
   }
 
-  private static void confirmEmail(ValueEntityTestKit<UniqueEmail, UniqueEmailEntity> emailTestKit) {
+  private static void confirmEmail(KeyValueEntityTestKit<UniqueEmail, UniqueEmailEntity> emailTestKit) {
     var confirmedRes = emailTestKit.call(UniqueEmailEntity::confirm);
     assertThat(confirmedRes.isReply()).isTrue();
     assertThat(confirmedRes.stateWasUpdated()).isTrue();
@@ -62,7 +62,7 @@ public class UniqueEmailEntityTest {
     assertThat(state.isConfirmed()).isTrue();
   }
 
-  private static void reserveEmail(ValueEntityTestKit<UniqueEmail, UniqueEmailEntity> emailTestKit, String email, String ownerId) {
+  private static void reserveEmail(KeyValueEntityTestKit<UniqueEmail, UniqueEmailEntity> emailTestKit, String email, String ownerId) {
     var reserveCmd = new UniqueEmail.ReserveEmail(email, ownerId);
     var reservedRes = emailTestKit.call(emailEntity -> emailEntity.reserve(reserveCmd));
     assertThat(reservedRes.isReply()).isTrue();
@@ -72,7 +72,7 @@ public class UniqueEmailEntityTest {
     assertThat(state.isReserved()).isTrue();
   }
 
-  private static void markAsNotUsedEmail(ValueEntityTestKit<UniqueEmail, UniqueEmailEntity> emailTestKit) {
+  private static void markAsNotUsedEmail(KeyValueEntityTestKit<UniqueEmail, UniqueEmailEntity> emailTestKit) {
     var reservedRes = emailTestKit.call(UniqueEmailEntity::markAsNotUsed);
     assertThat(reservedRes.isReply()).isTrue();
     assertThat(reservedRes.stateWasUpdated()).isTrue();
@@ -81,7 +81,7 @@ public class UniqueEmailEntityTest {
     assertThat(state.isNotInUse()).isTrue();
   }
 
-  private static void unreserveEmail(ValueEntityTestKit<UniqueEmail, UniqueEmailEntity> emailTestKit) {
+  private static void unreserveEmail(KeyValueEntityTestKit<UniqueEmail, UniqueEmailEntity> emailTestKit) {
     var reservedRes = emailTestKit.call(UniqueEmailEntity::cancelReservation);
     assertThat(reservedRes.isReply()).isTrue();
   }

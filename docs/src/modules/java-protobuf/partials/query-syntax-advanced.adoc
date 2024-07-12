@@ -15,7 +15,7 @@ Advanced views can subscribe to events and changes from multiple entities or eve
 * `RIGHT (OUTER) JOIN` - returns all entries in the right table, joined with any matching entries from the left table
 * `FULL (OUTER) JOIN` - returns all entries from both tables, with joined entries for matching values
 
-In these examples, the Customer Registry used for simple views is extended to be a simple Store, adding Products and Orders for Customers. Customers and Products are implemented using Event Sourced Entities, while Orders is a Value Entity.
+In these examples, the Customer Registry used for simple views is extended to be a simple Store, adding Products and Orders for Customers. Customers and Products are implemented using Event Sourced Entities, while Orders is a Key Value Entity.
 
 Each Product includes a name and a price:
 

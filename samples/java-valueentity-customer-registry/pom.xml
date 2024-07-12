@@ -5,7 +5,7 @@
   <parent>
     <groupId>io.akka</groupId>
     <artifactId>akka-platform-parent</artifactId>
-    <version>0.0.0-2123-d20485dc-dev</version>
+    <version>0.0.0-2148-c460e9bc</version>
   </parent>
 
   <groupId>com.example</groupId>

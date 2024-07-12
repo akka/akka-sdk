@@ -4,8 +4,8 @@
 
 package com.example.wiring.views;
 
-import com.example.wiring.valueentities.user.User;
-import com.example.wiring.valueentities.user.UserEntity;
+import com.example.wiring.keyvalueentities.user.User;
+import com.example.wiring.keyvalueentities.user.UserEntity;
 import akka.platform.javasdk.annotations.Query;
 import akka.platform.javasdk.annotations.Consume;
 import akka.platform.javasdk.annotations.Table;
@@ -14,7 +14,7 @@ import akka.platform.javasdk.view.View;
 
 @ViewId("users")
 @Table("users")
-@Consume.FromValueEntity(UserEntity.class)
+@Consume.FromKeyValueEntity(UserEntity.class)
 public class UsersView extends View<User> {
 
   public static QueryByEmailParam byEmailParam(String email) {

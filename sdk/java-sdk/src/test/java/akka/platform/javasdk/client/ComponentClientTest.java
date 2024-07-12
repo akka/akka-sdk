@@ -29,8 +29,8 @@ import akka.platform.spring.testmodels.Message;
 import akka.platform.spring.testmodels.Number;
 import akka.platform.spring.testmodels.action.ActionsTestModels.ActionWithOneParam;
 import akka.platform.spring.testmodels.action.ActionsTestModels.ActionWithoutParam;
-import akka.platform.spring.testmodels.valueentity.Counter;
-import akka.platform.spring.testmodels.valueentity.User;
+import akka.platform.spring.testmodels.keyvalueentity.Counter;
+import akka.platform.spring.testmodels.keyvalueentity.User;
 import akka.platform.spring.testmodels.view.ViewTestModels;
 import akka.platform.spring.testmodels.view.ViewTestModels.UserByEmailWithGet;
 import org.junit.jupiter.api.BeforeEach;
@@ -139,7 +139,7 @@ class ComponentClientTest {
     var id = "abc123";
     //when
     DeferredCallImpl<Integer, Number> call = (DeferredCallImpl<Integer, Number>)
-      componentClient.forValueEntity(id)
+      componentClient.forKeyValueEntity(id)
         .method(Counter::randomIncrease)
         .deferred(param);
 

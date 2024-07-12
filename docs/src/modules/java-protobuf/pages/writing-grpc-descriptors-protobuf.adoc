@@ -96,7 +96,7 @@ rpc CreateCart(CreateCartRequest) returns (CreateCartResponse) {
 
 This will generate a version 4 (random) UUID for the component id. Only version 4 UUIDs are currently supported for generated ids.
 
-It will often be necessary to access the generated id from inside the component code. This can be done using the context, for instance for ValueEntity, use link:{attachmentsdir}/api/kalix/javasdk/EntityContext.html#entityId()[`EntityContext.entityId` {tab-icon}, window="new"] method.
+It will often be necessary to access the generated id from inside the component code. This can be done using the context, for instance for KeyValueEntity, use link:{attachmentsdir}/api/kalix/javasdk/EntityContext.html#entityId()[`EntityContext.entityId` {tab-icon}, window="new"] method.
 
 === Service
 
@@ -112,15 +112,15 @@ Most importantly, in this file we instruct the Kalix code generation tooling (co
 include::example$java-protobuf-valueentity-shopping-cart/src/main/proto/com/example/shoppingcart/shoppingcart_api.proto[tag=proto_service]
 ----
 
-<1> Indicates to the codegen that we want to generate a Value Entity.
-<2> The package and name of our Value Entity.
+<1> Indicates to the codegen that we want to generate a Key Value Entity.
+<2> The package and name of our Key Value Entity.
 <3> Unique identifier of the "state storage" for this entity. The entity name may be changed even after data has been created, the `entity_type` can't.
 <4> The Entity state using a fully-qualified name. Note, the package and name follow the definition in the domain.proto file (see below).
 
 
 == The domain proto file
 
-The `shoppingcart_domain.proto` file specifies the state and messages for a Value Entity.
+The `shoppingcart_domain.proto` file specifies the state and messages for a Key Value Entity.
 
 .src/main/proto/com/example/shoppingcart/domain/shoppingcart_domain.proto
 [source,proto]

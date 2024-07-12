@@ -14,7 +14,7 @@ import java.util.List;
 @ViewId("customers_by_city")
 @Table("customers_by_city")
 // tag::view-test[]
-@Consume.FromValueEntity(CustomerEntity.class)
+@Consume.FromKeyValueEntity(CustomerEntity.class)
 public class CustomersByCity extends View<Customer> {
 
   public record QueryParameters(List<String> cities) {

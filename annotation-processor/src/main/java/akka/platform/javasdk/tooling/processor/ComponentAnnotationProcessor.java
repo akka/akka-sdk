@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
                 // actions
                 "akka.platform.javasdk.annotations.ActionId",
                 // actions or views
-                "akka.platform.javasdk.annotations.Consume.FromValueEntity",
+                "akka.platform.javasdk.annotations.Consume.FromKeyValueEntity",
                 "akka.platform.javasdk.annotations.Consume.FromEventSourcedEntity",
                 "akka.platform.javasdk.annotations.Consume.FromTopic",
                 "akka.platform.javasdk.annotations.Consume.FromServiceStream",
@@ -52,7 +52,7 @@ public class ComponentAnnotationProcessor extends AbstractProcessor {
     // key of each component type under that parent path, containing a string list of concrete component classes
     private static final String ENDPOINT_KEY = "endpoint";
     private static final String EVENT_SOURCED_ENTITY_KEY = "event-sourced-entity";
-    private static final String VALUE_ENTITY_KEY = "value-entity";
+    private static final String VALUE_ENTITY_KEY = "key-value-entity";
     private static final String ACTION_KEY = "action";
     private static final String VIEW_KEY = "view";
     private static final String WORKFLOW_KEY = "workflow";
@@ -195,7 +195,7 @@ public class ComponentAnnotationProcessor extends AbstractProcessor {
         debug("Determining entity component type trough supertype: " + superClassName);
         return switch (superClassName) {
             case "akka.platform.javasdk.eventsourcedentity.EventSourcedEntity" -> EVENT_SOURCED_ENTITY_KEY;
-            case "akka.platform.javasdk.valueentity.ValueEntity" -> VALUE_ENTITY_KEY;
+            case "akka.platform.javasdk.keyvalueentity.KeyValueEntity" -> VALUE_ENTITY_KEY;
             case "akka.platform.javasdk.workflow.Workflow" -> WORKFLOW_KEY;
             default -> throw new IllegalArgumentException("Unknown supertype for class [" + annotatedClass + "] annotated with @TypeId: [" + superClassName + "]");
         };

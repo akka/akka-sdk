@@ -1,13 +1,13 @@
 package store.order.api;
 
 import akka.platform.javasdk.annotations.TypeId;
-import akka.platform.javasdk.valueentity.ValueEntity;
+import akka.platform.javasdk.keyvalueentity.KeyValueEntity;
 import store.order.domain.Order;
 
 import java.time.Instant;
 
 @TypeId("order")
-public class OrderEntity extends ValueEntity<Order> {
+public class OrderEntity extends KeyValueEntity<Order> {
 
   public Effect<Order> get() {
     return effects().reply(currentState());

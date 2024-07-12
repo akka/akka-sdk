@@ -26,12 +26,12 @@ import akka.platform.javasdk.impl.reflection.CombinedSubscriptionServiceMethod
 import akka.platform.javasdk.impl.reflection.KalixMethod
 import akka.platform.javasdk.impl.reflection.NameGenerator
 import akka.platform.javasdk.annotations.Consume.FromEventSourcedEntity
+import akka.platform.javasdk.annotations.Consume.FromKeyValueEntity
 import akka.platform.javasdk.annotations.Consume.FromServiceStream
 import akka.platform.javasdk.annotations.Consume.FromTopic
-import akka.platform.javasdk.annotations.Consume.FromValueEntity
 import akka.platform.javasdk.annotations.Produce.ServiceStream
 import akka.platform.javasdk.annotations.Produce.ToTopic
-import akka.platform.javasdk.valueentity.ValueEntity
+import akka.platform.javasdk.keyvalueentity.KeyValueEntity
 import akka.platform.javasdk.view.View.Effect
 import kalix.EventSource
 // TODO: abstract away spring dependency
@@ -43,10 +43,10 @@ private[impl] object ComponentDescriptorFactory {
     javaMethod.isPublic && javaMethod.hasAnnotation[Acl]
 
   def hasValueEntitySubscription(clazz: Class[_]): Boolean =
-    clazz.isPublic && clazz.hasAnnotation[FromValueEntity]
+    clazz.isPublic && clazz.hasAnnotation[FromKeyValueEntity]
 
   def hasValueEntitySubscription(javaMethod: Method): Boolean =
-    javaMethod.isPublic && javaMethod.hasAnnotation[FromValueEntity]
+    javaMethod.isPublic && javaMethod.hasAnnotation[FromKeyValueEntity]
 
   def hasEventSourcedEntitySubscription(javaMethod: Method): Boolean =
     javaMethod.isPublic && javaMethod.hasAnnotation[FromEventSourcedEntity]
@@ -70,8 +70,8 @@ private[impl] object ComponentDescriptorFactory {
     hasStreamSubscription(clazz)
   }
 
-  private def valueEntitySubscription(clazz: Class[_]): Option[FromValueEntity] =
-    clazz.getAnnotationOption[FromValueEntity]
+  private def valueEntitySubscription(clazz: Class[_]): Option[FromKeyValueEntity] =
+    clazz.getAnnotationOption[FromKeyValueEntity]
 
   def eventSourcedEntitySubscription(clazz: Class[_]): Option[FromEventSourcedEntity] =
     clazz.getAnnotationOption[FromEventSourcedEntity]
@@ -105,7 +105,7 @@ private[impl] object ComponentDescriptorFactory {
     javaMethod.isPublic && javaMethod.hasAnnotation[FromTopic]
 
   def hasHandleDeletes(javaMethod: Method): Boolean = {
-    val ann = javaMethod.getAnnotation(classOf[FromValueEntity])
+    val ann = javaMethod.getAnnotation(classOf[FromKeyValueEntity])
     javaMethod.isPublic && ann != null && ann.handleDeletes()
   }
 
@@ -131,8 +131,8 @@ private[impl] object ComponentDescriptorFactory {
     ann.value()
   }
 
-  private def findValueEntityClass(javaMethod: Method): Class[_ <: ValueEntity[_]] = {
-    val ann = javaMethod.getAnnotation(classOf[FromValueEntity])
+  private def findValueEntityClass(javaMethod: Method): Class[_ <: KeyValueEntity[_]] = {
+    val ann = javaMethod.getAnnotation(classOf[FromKeyValueEntity])
     ann.value()
   }
 
@@ -154,22 +154,22 @@ private[impl] object ComponentDescriptorFactory {
   }
 
   def findValueEntityType(javaMethod: Method): String = {
-    val ann = javaMethod.getAnnotation(classOf[FromValueEntity])
+    val ann = javaMethod.getAnnotation(classOf[FromKeyValueEntity])
     readTypeIdValue(ann.value())
   }
 
   def findValueEntityType(component: Class[_]): String = {
-    val ann = component.getAnnotation(classOf[FromValueEntity])
+    val ann = component.getAnnotation(classOf[FromKeyValueEntity])
     readTypeIdValue(ann.value())
   }
 
   def findHandleDeletes(javaMethod: Method): Boolean = {
-    val ann = javaMethod.getAnnotation(classOf[FromValueEntity])
+    val ann = javaMethod.getAnnotation(classOf[FromKeyValueEntity])
     ann.handleDeletes()
   }
 
   def findHandleDeletes(component: Class[_]): Boolean = {
-    val ann = component.getAnnotation(classOf[FromValueEntity])
+    val ann = component.getAnnotation(classOf[FromKeyValueEntity])
     ann.handleDeletes()
   }
 

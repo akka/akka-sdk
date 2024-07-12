@@ -27,7 +27,7 @@ import java.util.concurrent.CompletionStage;
  *   <li>as a face or controller to fan out to multiple calls to different components.
  *   <li>publish messages to a Topic.
  *   <li>subscribe to events from an Event Sourced Entity.
- *   <li>subscribe to state changes from a Value Entity.
+ *   <li>subscribe to state changes from a Key Value Entity.
  *   <li>schedule and cancel Timers.
  * </ul>
  *
@@ -40,7 +40,7 @@ import java.util.concurrent.CompletionStage;
  * <li>a scheduled call from a Timer.
  * <li>an incoming message from a Topic.
  * <li>an incoming event from an Event Sourced Entity, from within the same service or from a different service. 
- * <li>state changes notification from a Value Entity on the same service.
+ * <li>state changes notification from a Key Value Entity on the same service.
  *</ul>
  *
  * An Action method should return an {@link Effect} that describes what to do next.

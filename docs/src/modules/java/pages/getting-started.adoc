@@ -50,11 +50,11 @@ Kalix have different kinds of components that you can use to implement your appl
 The list of components are:
 
 * xref:java:actions.adoc[Actions]
-* xref:java:value-entity.adoc[Value Entities]
+* xref:java:value-entity.adoc[Key Value Entities]
 * xref:java:event-sourced-entities.adoc[Event Sourced Entities]
 * xref:java:views.adoc[Views]
 
-For this *Getting started* walk-through, we will implement a Counter based on a Value Entity. It's a simple counter
+For this *Getting started* walk-through, we will implement a Counter based on a Key Value Entity. It's a simple counter
 that receives commands to increase the counter.
 
 .src/main/java/com/example/CounterEntity.java

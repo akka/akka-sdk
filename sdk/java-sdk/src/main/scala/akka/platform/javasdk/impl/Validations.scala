@@ -11,7 +11,7 @@ import java.lang.reflect.ParameterizedType
 import scala.reflect.ClassTag
 
 import akka.platform.javasdk.action.Action
-import akka.platform.javasdk.annotations.Consume.FromValueEntity
+import akka.platform.javasdk.annotations.Consume.FromKeyValueEntity
 import akka.platform.javasdk.annotations.Produce.ServiceStream
 import akka.platform.javasdk.annotations.Query
 import akka.platform.javasdk.annotations.Table
@@ -39,7 +39,7 @@ import akka.platform.javasdk.impl.ComponentDescriptorFactory.streamSubscription
 import akka.platform.javasdk.impl.ComponentDescriptorFactory.topicSubscription
 import akka.platform.javasdk.impl.reflection.Reflect
 import akka.platform.javasdk.impl.reflection.Reflect.Syntax._
-import akka.platform.javasdk.valueentity.ValueEntity
+import akka.platform.javasdk.keyvalueentity.KeyValueEntity
 import akka.platform.javasdk.view.View
 
 object Validations {
@@ -147,13 +147,13 @@ object Validations {
     commandHandlersMustBeUnique(component, commandHandlers)
   }
 
-  def validateValueEntity(component: Class[_]): Validation = when[ValueEntity[_]](component) {
+  def validateValueEntity(component: Class[_]): Validation = when[KeyValueEntity[_]](component) {
     valueEntityCommandHandlersMustBeUnique(component)
   }
 
   def valueEntityCommandHandlersMustBeUnique(component: Class[_]): Validation = {
     val commandHandlers = component.getMethods
-      .filter(_.getReturnType == classOf[ValueEntity.Effect[_]])
+      .filter(_.getReturnType == classOf[KeyValueEntity.Effect[_]])
     commandHandlersMustBeUnique(component, commandHandlers)
   }
 
@@ -554,7 +554,7 @@ object Validations {
     if (hasValueEntitySubscription(component)) {
       val tableType: Class[_] = tableTypeOf(component)
       val valueEntityClass: Class[_] =
-        component.getAnnotation(classOf[FromValueEntity]).value().asInstanceOf[Class[_]]
+        component.getAnnotation(classOf[FromKeyValueEntity]).value().asInstanceOf[Class[_]]
       val entityStateClass = valueEntityStateClassOf(valueEntityClass)
 
       when(entityStateClass != tableType) {
@@ -563,7 +563,7 @@ object Validations {
           s"to match the ValueEntity type [${entityStateClass.getName}]. " +
           s"If your intention is to transform the type, you should instead add a method like " +
           s"`UpdateEffect<${tableType.getName}> onChange(${entityStateClass.getName} state)`" +
-          " and move the @Consume.FormValueEntity to it."
+          " and move the @Consume.FromKeyValueEntity to it."
 
         Validation(Seq(errorMessage(component, message)))
       }
@@ -619,7 +619,7 @@ object Validations {
         val messages = subscriptionMethods.map { method =>
           errorMessage(
             method,
-            "You cannot use @Consume.FormValueEntity annotation in both methods and class. You can do either one or the other.")
+            "You cannot use @Consume.FromKeyValueEntity annotation in both methods and class. You can do either one or the other.")
         }
         Validation(messages)
       }
@@ -630,7 +630,7 @@ object Validations {
           val numParams = method.getParameters.length
           errorMessage(
             method,
-            s"Method annotated with '@Consume.FormValueEntity' and handleDeletes=true must not have parameters. Found $numParams method parameters.")
+            s"Method annotated with '@Consume.FromKeyValueEntity' and handleDeletes=true must not have parameters. Found $numParams method parameters.")
         }
 
       Validation(messages)
@@ -640,7 +640,7 @@ object Validations {
       if (updatedMethods.size >= 2) {
         val messages = errorMessage(
           component,
-          s"Duplicated update methods [${updatedMethods.map(_.getName).mkString(", ")}]for ValueEntity subscription.")
+          s"Duplicated update methods [${updatedMethods.map(_.getName).mkString(", ")}]for KeyValueEntity subscription.")
         Validation(messages)
       } else Valid
     }
@@ -653,7 +653,7 @@ object Validations {
           offendingMethods.map { method =>
             errorMessage(
               method,
-              "Multiple methods annotated with @Consume.FromValueEntity(handleDeletes=true) is not allowed.")
+              "Multiple methods annotated with @Consume.FromKeyValueEntity(handleDeletes=true) is not allowed.")
           }
         Validation(messages)
       } else Valid

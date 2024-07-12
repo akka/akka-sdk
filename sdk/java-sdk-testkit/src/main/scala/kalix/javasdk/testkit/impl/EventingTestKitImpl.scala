@@ -166,7 +166,7 @@ final class EventingTestServiceImpl(system: ActorSystem, val host: String, var p
   private def getTopicOutgoingMessagesImpl(topic: String): OutgoingMessagesImpl =
     topicDestinations.computeIfAbsent(topic, _ => new OutgoingMessagesImpl(TestProbe(), codec))
 
-  override def getValueEntityIncomingMessages(typeId: String): IncomingMessages = getValueEntityIncomingMessagesImpl(
+  override def getKeyValueEntityIncomingMessages(typeId: String): IncomingMessages = getValueEntityIncomingMessagesImpl(
     typeId)
 
   private def getValueEntityIncomingMessagesImpl(typeId: String): VeIncomingMessagesImpl =

@@ -5,7 +5,6 @@
 package com.example.wiring.workflowentities;
 
 import com.example.wiring.actions.echo.Message;
-import akka.platform.javasdk.HttpResponse;
 import akka.platform.javasdk.annotations.TypeId;
 import akka.platform.javasdk.client.ComponentClient;
 import akka.platform.javasdk.workflow.Workflow;
@@ -28,7 +27,7 @@ public class TransferWorkflow extends Workflow<TransferState> {
   public WorkflowDef<TransferState> definition() {
     var withdraw =
         step(withdrawStepName)
-            .asyncCall(Withdraw.class, cmd -> componentClient.forValueEntity(cmd.from).method(WalletEntity::withdraw).invokeAsync(cmd.amount))
+            .asyncCall(Withdraw.class, cmd -> componentClient.forKeyValueEntity(cmd.from).method(WalletEntity::withdraw).invokeAsync(cmd.amount))
             .andThen(String.class, __ -> {
               var state = currentState().withLastStep("withdrawn").accepted();
 
@@ -41,7 +40,7 @@ public class TransferWorkflow extends Workflow<TransferState> {
 
     var deposit =
         step(depositStepName)
-            .asyncCall(Deposit.class, cmd -> componentClient.forValueEntity(cmd.to).method(WalletEntity::deposit).invokeAsync(cmd.amount)
+            .asyncCall(Deposit.class, cmd -> componentClient.forKeyValueEntity(cmd.to).method(WalletEntity::deposit).invokeAsync(cmd.amount)
             ).andThen(String.class, __ -> {
               var state = currentState().withLastStep("deposited").finished();
               return effects().updateState(state).end();

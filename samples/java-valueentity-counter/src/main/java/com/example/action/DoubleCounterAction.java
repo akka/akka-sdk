@@ -7,7 +7,7 @@ import akka.platform.javasdk.annotations.Consume;
 import akka.platform.javasdk.client.ComponentClient;
 
 
-@Consume.FromValueEntity(CounterEntity.class)
+@Consume.FromKeyValueEntity(CounterEntity.class)
 public class DoubleCounterAction extends Action {
 
   final private ComponentClient componentClient;
@@ -21,7 +21,7 @@ public class DoubleCounterAction extends Action {
   public Action.Effect<Confirmed> increaseWithSideEffect(Integer increase) {
     var counterId = actionContext().eventSubject().get(); // <1>
     var doubleIncrease = increase * 2; // <2>
-    var increaseResult = componentClient.forValueEntity(counterId)
+    var increaseResult = componentClient.forKeyValueEntity(counterId)
       .method(CounterEntity::increaseBy)
       .invokeAsync(new Number(doubleIncrease));
     var reply = increaseResult.thenApply(__ -> Confirmed.instance);

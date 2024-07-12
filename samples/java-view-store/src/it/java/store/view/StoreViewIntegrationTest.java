@@ -69,7 +69,7 @@ public abstract class StoreViewIntegrationTest extends KalixIntegrationTestKitSu
     var response =
       await(
         componentClient
-          .forValueEntity(id)
+          .forKeyValueEntity(id)
           .method(OrderEntity::create)
           .invokeAsync(createOrder)
       );

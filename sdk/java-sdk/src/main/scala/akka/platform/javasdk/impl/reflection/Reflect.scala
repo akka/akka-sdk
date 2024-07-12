@@ -20,7 +20,7 @@ import akka.platform.javasdk.client.ComponentClient
 import akka.platform.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.platform.javasdk.impl.ComponentDescriptorFactory
 import akka.platform.javasdk.impl.client.ComponentClientImpl
-import akka.platform.javasdk.valueentity.ValueEntity
+import akka.platform.javasdk.keyvalueentity.KeyValueEntity
 import akka.platform.javasdk.view.View
 import akka.platform.javasdk.workflow.AbstractWorkflow
 import akka.platform.javasdk.workflow.Workflow
@@ -58,7 +58,7 @@ object Reflect {
 
   def isFixedEndpointComponent(cls: Class[_]): Boolean = {
     classOf[EventSourcedEntity[_, _]].isAssignableFrom(cls) ||
-    classOf[ValueEntity[_]].isAssignableFrom(cls) ||
+    classOf[KeyValueEntity[_]].isAssignableFrom(cls) ||
     isWorkflow(cls) ||
     isView(cls)
   }
@@ -86,7 +86,7 @@ object Reflect {
 
   def getReturnType[R](declaringClass: Class[_], method: Method): Class[R] = {
     if (classOf[Action].isAssignableFrom(declaringClass)
-      || classOf[ValueEntity[_]].isAssignableFrom(declaringClass)
+      || classOf[KeyValueEntity[_]].isAssignableFrom(declaringClass)
       || classOf[EventSourcedEntity[_, _]].isAssignableFrom(declaringClass)
       || classOf[Workflow[_]].isAssignableFrom(declaringClass)) {
       // here we are expecting a wrapper in the form of an Effect

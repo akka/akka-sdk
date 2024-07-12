@@ -6,7 +6,7 @@ package com.example.wiring.pubsub;
 
 
 import akka.Done;
-import com.example.wiring.valueentities.customer.CustomerEntity;
+import com.example.wiring.keyvalueentities.customer.CustomerEntity;
 import akka.platform.javasdk.JsonSupport;
 import akka.platform.javasdk.action.Action;
 import akka.platform.javasdk.annotations.Consume;
