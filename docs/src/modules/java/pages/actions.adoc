@@ -216,29 +216,6 @@ Side effects may be declared as synchronous or asynchronous. Asynchronous comman
 You might want to run side effects to notify interested parties of a change in state. For example, after a withdrawal is made from a bank account, an account entity could send a notification to the account owner's mobile phone.
 
 
-=== Emitting a side effect
-
-To illustrate how you can emit a side effect, you can build on top of the xref:java:actions-as-controller.adoc[Action as a Controller] example. In that previous example, you  build a controller around the xref:value-entity.adoc[Key Value Entity Counter] and forwarded the incoming request
-after modifying it.
-
-This time, instead of using a `forward`, you will call the entity using a side effect.
-
-=== Implementing the Action
-
-The class `DoubleCounterAction` listens to the counter state changes. When the counter value changes this action doubles it.
-
-[source,java,indent=0]
-.src/main/java/com/example/actions/DoubleCounterAction.java
-----
-include::example$java-spring-valueentity-counter/src/main/java/com/example/action/DoubleCounterAction.java[tag=controller-side-effect]
-----
-<1> Retrieving the id of the counter.
-<2> On incoming request, doubling the value of `increase`.
-<3> Building a reply using `Confirmed.getDefaultInstance()`. And attaching a side effect, i.e. calling to the `Counter` to increase double the previous amount.
-
-NOTE: the response of the side effect is ignored by the command meaning that even if the deferred call to
-the `Counter` entity fails, the `Action` reply will succeed.
-
 == Testing the Action
 
 
