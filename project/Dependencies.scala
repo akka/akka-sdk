@@ -93,13 +93,6 @@ object Dependencies {
   private val deps = libraryDependencies
 
   private val sdkDeps = Seq(
-    akkaDependency("akka-stream"),
-    akkaDependency("akka-slf4j"),
-    akkaDependency("akka-discovery"),
-    akkaHttpDependency("akka-http"),
-    akkaHttpDependency("akka-http-core"),
-    akkaHttpDependency("akka-http-spray-json"),
-    akkaHttpDependency("akka-parsing"),
     protobufJavaUtil,
     kalixProxyProtocol % "protobuf-src",
     kalixSdkProtocol % "compile;protobuf-src",

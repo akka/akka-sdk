@@ -243,23 +243,6 @@
                 </plugin>
 
                 <plugin>
-                    <groupId>io.akka</groupId>
-                    <artifactId>akka-platform-maven-plugin</artifactId>
-                    <version>${akka-platform-sdk.version}</version>
-                    <executions>
-                        <execution>
-                            <goals>
-                                <goal>deploy</goal>
-                            </goals>
-                        </execution>
-                    </executions>
-                    <configuration>
-                        <dockerImage>${dockerImage}:${dockerTag}</dockerImage>
-                        <mainClass>${mainClass}</mainClass>
-                    </configuration>
-                </plugin>
-
-                <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-deploy-plugin</artifactId>
                     <version>${maven-deploy-plugin.version}</version>
@@ -369,11 +352,25 @@
                 <groupId>io.akka</groupId>
                 <artifactId>akka-platform-java-sdk</artifactId>
                 <version>${akka-platform-sdk.version}</version>
+                <!-- FIXME, just a temporal dependency issues fix -->
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.lightbend.akka.grpc</groupId>
+                        <artifactId>akka-grpc-runtime_2.13</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>io.akka</groupId>
                 <artifactId>akka-platform-java-sdk-testkit</artifactId>
                 <version>${akka-platform-sdk.version}</version>
+                <!-- FIXME, just a temporal dependency issues fix -->
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.lightbend.akka.grpc</groupId>
+                        <artifactId>akka-grpc-runtime_2.13</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>io.kalix</groupId>
