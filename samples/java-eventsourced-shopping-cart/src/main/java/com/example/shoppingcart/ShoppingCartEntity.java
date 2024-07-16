@@ -3,14 +3,14 @@ package com.example.shoppingcart;
 import com.example.shoppingcart.domain.ShoppingCart;
 import com.example.shoppingcart.domain.ShoppingCart.LineItem;
 import com.example.shoppingcart.domain.ShoppingCartEvent;
-import akka.platform.javasdk.annotations.TypeId;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.eventsourcedentity.EventSourcedEntity;
 import akka.platform.javasdk.eventsourcedentity.EventSourcedEntityContext;
 
 import java.util.Collections;
 
 // tag::class[]
-@TypeId("shopping-cart") // <2>
+@ComponentId("shopping-cart") // <2>
 public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCart, ShoppingCartEvent> { // <1>
   // end::class[]
 

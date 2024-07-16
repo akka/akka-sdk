@@ -9,13 +9,13 @@
 package com.example.wiring.views;
 
 import com.example.wiring.eventsourcedentities.counter.*;
-import akka.platform.javasdk.annotations.ViewId;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.view.View;
 import akka.platform.javasdk.annotations.Query;
 import akka.platform.javasdk.annotations.Consume;
 import akka.platform.javasdk.annotations.Table;
 
-@ViewId("counters_by_value")
+@ComponentId("counters_by_value")
 @Table("counters_by_value")
 public class CountersByValue extends View<Counter> {
 

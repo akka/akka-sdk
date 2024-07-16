@@ -6,18 +6,18 @@ package akka.platform.spring.testmodels.keyvalueentity;
 
 import akka.platform.javasdk.annotations.Acl;
 import akka.platform.javasdk.annotations.JWT;
-import akka.platform.javasdk.annotations.TypeId;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.keyvalueentity.KeyValueEntity;
 import akka.platform.spring.testmodels.Done;
 
 public class ValueEntitiesTestModels {
 
-  @TypeId("user")
+  @ComponentId("user")
   @Acl(allow = @Acl.Matcher(service = "test"))
   public static class ValueEntityWithServiceLevelAcl extends KeyValueEntity<User> {
   }
 
-  @TypeId("user")
+  @ComponentId("user")
   public static class ValueEntityWithMethodLevelAcl extends KeyValueEntity<User> {
     @Acl(allow = @Acl.Matcher(service = "test"))
     public KeyValueEntity.Effect<Done> createEntity(CreateUser createUser) {
@@ -32,14 +32,14 @@ public class ValueEntitiesTestModels {
       @JWT.StaticClaim(claim = "role", value = "admin"),
       @JWT.StaticClaim(claim = "aud", value = "${ENV}.kalix.io")
     })
-  @TypeId("user")
+  @ComponentId("user")
   public static class ValueEntityWithServiceLevelJwt extends KeyValueEntity<User> {
     public KeyValueEntity.Effect<Done> createEntity(CreateUser createUser) {
       return effects().reply(Done.instance);
     }
   }
 
-  @TypeId("user")
+  @ComponentId("user")
   public static class ValueEntityWithMethodLevelJwt extends KeyValueEntity<User> {
 
     @JWT(
@@ -54,7 +54,7 @@ public class ValueEntitiesTestModels {
     }
   }
 
-  @TypeId("user")
+  @ComponentId("user")
   public static class InvalidValueEntityWithOverloadedCommandHandler extends KeyValueEntity<User> {
     public KeyValueEntity.Effect<Done> createEntity(CreateUser createUser) {
       return effects().reply(Done.instance);

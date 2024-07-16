@@ -4,11 +4,11 @@
 
 package akka.platform.spring.testmodels.keyvalueentity;
 
-import akka.platform.javasdk.annotations.TypeId;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.keyvalueentity.KeyValueEntity;
 import akka.platform.spring.testmodels.Done;
 
-@TypeId("assigned-counter")
+@ComponentId("assigned-counter")
 public class AssignedCounter extends KeyValueEntity<AssignedCounterState> {
 
   @Override

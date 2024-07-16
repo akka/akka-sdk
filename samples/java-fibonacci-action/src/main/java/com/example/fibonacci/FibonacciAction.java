@@ -5,7 +5,7 @@ package com.example.fibonacci;
 import java.util.function.Predicate;
 // tag::implementing-action[]
 import akka.platform.javasdk.action.Action;
-import akka.platform.javasdk.annotations.ActionId;
+import akka.platform.javasdk.annotations.ComponentId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,7 +15,7 @@ import static io.grpc.Status.Code.INVALID_ARGUMENT;
 
 
 // tag::implementing-action[]
-@ActionId("fibonacci")
+@ComponentId("fibonacci")
 public class FibonacciAction extends Action {
 
   private final Logger logger = LoggerFactory.getLogger(FibonacciAction.class);

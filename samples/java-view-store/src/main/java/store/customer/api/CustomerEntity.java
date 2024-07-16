@@ -1,6 +1,6 @@
 package store.customer.api;
 
-import akka.platform.javasdk.annotations.TypeId;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.eventsourcedentity.EventSourcedEntity;
 import store.customer.domain.Address;
 import store.customer.domain.Customer;
@@ -10,7 +10,7 @@ import static store.customer.domain.CustomerEvent.CustomerAddressChanged;
 import static store.customer.domain.CustomerEvent.CustomerCreated;
 import static store.customer.domain.CustomerEvent.CustomerNameChanged;
 
-@TypeId("customer")
+@ComponentId("customer")
 public class CustomerEntity extends EventSourcedEntity<Customer, CustomerEvent> {
 
   public Effect<Customer> get() {

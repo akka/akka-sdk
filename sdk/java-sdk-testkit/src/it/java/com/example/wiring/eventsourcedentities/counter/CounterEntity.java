@@ -4,12 +4,12 @@
 
 package com.example.wiring.eventsourcedentities.counter;
 
-import akka.platform.javasdk.annotations.TypeId;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.eventsourcedentity.EventSourcedEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@TypeId("counter-entity")
+@ComponentId("counter-entity")
 public class CounterEntity extends EventSourcedEntity<Counter, CounterEvent> {
 
 

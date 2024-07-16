@@ -7,9 +7,9 @@ import akka.platform.javasdk.view.View;
 import akka.platform.javasdk.annotations.Query;
 import akka.platform.javasdk.annotations.Consume;
 import akka.platform.javasdk.annotations.Table;
-import akka.platform.javasdk.annotations.ViewId;
+import akka.platform.javasdk.annotations.ComponentId;
 
-@ViewId("view_customers_by_email") // <1>
+@ComponentId("view_customers_by_email") // <1>
 @Table("customers_by_email") // <2>
 @Consume.FromKeyValueEntity(CustomerEntity.class)// <3>
 public class CustomerByEmailView extends View<Customer> { //  <4>

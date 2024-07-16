@@ -6,10 +6,10 @@ package com.example.wiring.actions.echo;
 
 import akka.platform.javasdk.action.Action;
 import akka.platform.javasdk.action.ActionCreationContext;
-import akka.platform.javasdk.annotations.ActionId;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.client.ComponentClient;
 
-@ActionId("shortened-echo")
+@ComponentId("shortened-echo")
 public class ShortenedEchoAction extends Action {
 
   private ActionCreationContext ctx;

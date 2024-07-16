@@ -1,11 +1,11 @@
 package com.example;
 
 import akka.platform.javasdk.keyvalueentity.KeyValueEntity;
-import akka.platform.javasdk.annotations.TypeId;
+import akka.platform.javasdk.annotations.ComponentId;
 
 
 // tag::declarations[]
-@TypeId("counter") // <1>
+@ComponentId("counter") // <1>
 public class CounterEntity extends KeyValueEntity<Integer> { // <3>
 
   @Override

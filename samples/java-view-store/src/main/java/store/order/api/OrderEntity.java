@@ -1,12 +1,12 @@
 package store.order.api;
 
-import akka.platform.javasdk.annotations.TypeId;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.keyvalueentity.KeyValueEntity;
 import store.order.domain.Order;
 
 import java.time.Instant;
 
-@TypeId("order")
+@ComponentId("order")
 public class OrderEntity extends KeyValueEntity<Order> {
 
   public Effect<Order> get() {

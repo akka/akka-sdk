@@ -3,7 +3,7 @@ package store.view.nested;
 import akka.platform.javasdk.annotations.Query;
 import akka.platform.javasdk.annotations.Consume;
 import akka.platform.javasdk.annotations.Table;
-import akka.platform.javasdk.annotations.ViewId;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.view.View;
 import store.customer.api.CustomerEntity;
 import store.customer.domain.CustomerEvent;
@@ -15,7 +15,7 @@ import store.view.QueryParameters;
 import store.view.model.Customer;
 import store.view.model.Product;
 
-@ViewId("nested-customer-orders")
+@ComponentId("nested-customer-orders")
 public class NestedCustomerOrdersView {
 
   // tag::query[]

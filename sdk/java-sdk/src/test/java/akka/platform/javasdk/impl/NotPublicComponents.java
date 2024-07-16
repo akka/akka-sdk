@@ -5,12 +5,12 @@
 package akka.platform.javasdk.impl;
 
 import akka.platform.javasdk.action.Action;
-import akka.platform.javasdk.annotations.ActionId;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.annotations.Query;
 import akka.platform.javasdk.annotations.Consume;
 import akka.platform.javasdk.annotations.Table;
-import akka.platform.javasdk.annotations.TypeId;
-import akka.platform.javasdk.annotations.ViewId;
+import akka.platform.javasdk.annotations.ComponentId;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.eventsourcedentity.EventSourcedEntity;
 import akka.platform.javasdk.keyvalueentity.KeyValueEntity;
 import akka.platform.javasdk.view.View;
@@ -23,14 +23,14 @@ import akka.platform.spring.testmodels.workflow.WorkflowState;
 
 // below components are not public and thus need to be in the same package as the corresponding test
 public class NotPublicComponents {
-  @ActionId("not-public")
+  @ComponentId("not-public")
   static class NotPublicAction extends Action {
     public Action.Effect<Message> message() {
       return effects().ignore();
     }
   }
 
-  @TypeId("counter")
+  @ComponentId("counter")
   static class NotPublicEventSourced extends EventSourcedEntity<Integer, NotPublicEventSourced.Event> {
 
     public sealed interface Event {
@@ -47,14 +47,14 @@ public class NotPublicComponents {
     }
   }
 
-  @TypeId("user")
+  @ComponentId("user")
   static class NotPublicValueEntity extends KeyValueEntity<User> {
     public KeyValueEntity.Effect<String> ok() {
       return effects().reply("ok");
     }
   }
 
-  @ViewId("users_view")
+  @ComponentId("users_view")
   @Table(value = "users_view")
   @Consume.FromKeyValueEntity(UserEntity.class)
   static class NotPublicView extends View<User> {
@@ -67,7 +67,7 @@ public class NotPublicComponents {
     }
   }
 
-  @TypeId("transfer-workflow")
+  @ComponentId("transfer-workflow")
   static class NotPublicWorkflow extends Workflow<WorkflowState> {
     @Override
     public WorkflowDef<WorkflowState> definition() {

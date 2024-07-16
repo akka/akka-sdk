@@ -2,15 +2,14 @@ package com.example.tracing.api;
 
 import com.example.tracing.domain.User;
 import com.example.tracing.domain.UserEvent;
-import akka.platform.javasdk.StatusCode;
 import akka.platform.javasdk.annotations.ForwardHeaders;
-import akka.platform.javasdk.annotations.TypeId;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.eventsourcedentity.EventSourcedEntity;
 import akka.platform.javasdk.eventsourcedentity.EventSourcedEntityContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@TypeId("user")
+@ComponentId("user")
 @ForwardHeaders("traceparent")
 public class UserEntity extends EventSourcedEntity<User, UserEvent> {
 

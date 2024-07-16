@@ -1,7 +1,7 @@
 package customer.actions;
 
 import akka.platform.javasdk.action.Action;
-import akka.platform.javasdk.annotations.ActionId;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.http.HttpClient;
 import akka.platform.javasdk.http.HttpClientProvider;
 
@@ -9,7 +9,7 @@ import akka.platform.javasdk.http.StrictResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@ActionId("customer-registry")
+@ComponentId("customer-registry")
 public class CustomerRegistryAction extends Action {
 
   private Logger log = LoggerFactory.getLogger(getClass());

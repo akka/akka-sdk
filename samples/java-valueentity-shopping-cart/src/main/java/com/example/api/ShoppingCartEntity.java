@@ -19,7 +19,7 @@ import com.example.api.ShoppingCartDTO.LineItemDTO;
 import com.example.domain.ShoppingCart;
 import akka.platform.javasdk.annotations.Acl;
 import akka.platform.javasdk.annotations.ForwardHeaders;
-import akka.platform.javasdk.annotations.TypeId;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.keyvalueentity.KeyValueEntity;
 import akka.platform.javasdk.keyvalueentity.KeyValueEntityContext;
 
@@ -29,7 +29,7 @@ import java.time.Instant;
  * A key value entity.
  */
 // tag::summary[]
-@TypeId("shopping-cart")
+@ComponentId("shopping-cart")
 // end::summary[]
 @ForwardHeaders("Role")
 // tag::summary[]

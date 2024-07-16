@@ -9,7 +9,7 @@ import com.example.wiring.eventsourcedentities.counter.CounterEvent;
 import akka.platform.javasdk.annotations.Query;
 import akka.platform.javasdk.annotations.Consume;
 import akka.platform.javasdk.annotations.Table;
-import akka.platform.javasdk.annotations.ViewId;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.view.View;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,7 +20,7 @@ import static com.example.wiring.pubsub.PublishESToTopic.COUNTER_EVENTS_TOPIC;
 import static akka.platform.javasdk.impl.MetadataImpl.CeSubject;
 
 
-@ViewId("counter_view_topic_sub")
+@ComponentId("counter_view_topic_sub")
 @Table("counter_view_topic_sub")
 @Consume.FromTopic(COUNTER_EVENTS_TOPIC)
 public class ViewFromCounterEventsTopic extends View<CounterView> {

@@ -6,13 +6,13 @@ import com.example.wallet.WalletEntity.WithdrawResult.WithdrawFailed;
 import com.example.wallet.WalletEntity.WithdrawResult.WithdrawSucceed;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import akka.platform.javasdk.annotations.TypeId;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.keyvalueentity.KeyValueEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 // tag::wallet[]
-@TypeId("wallet")
+@ComponentId("wallet")
 public class WalletEntity extends KeyValueEntity<WalletEntity.Wallet> {
 
   public record Wallet(String id, int balance) {

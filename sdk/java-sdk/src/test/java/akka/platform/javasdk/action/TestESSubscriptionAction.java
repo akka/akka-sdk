@@ -4,12 +4,12 @@
 
 package akka.platform.javasdk.action;
 
-import akka.platform.javasdk.annotations.ActionId;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.annotations.Consume;
 import akka.platform.javasdk.eventsourcedentity.TestESEvent;
 import akka.platform.javasdk.eventsourcedentity.TestEventSourcedEntity;
 
-@ActionId("es-sub-action")
+@ComponentId("es-sub-action")
 @Consume.FromEventSourcedEntity(value = TestEventSourcedEntity.class, ignoreUnknown = true)
 public class TestESSubscriptionAction extends Action {
 

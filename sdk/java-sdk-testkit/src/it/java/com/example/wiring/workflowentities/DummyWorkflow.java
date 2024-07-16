@@ -4,10 +4,10 @@
 
 package com.example.wiring.workflowentities;
 
-import akka.platform.javasdk.annotations.TypeId;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.workflow.Workflow;
 
-@TypeId("dummy-workflow")
+@ComponentId("dummy-workflow")
 public class DummyWorkflow extends Workflow<Integer> {
 
   @Override

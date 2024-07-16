@@ -6,10 +6,10 @@ import customer.domain.Customer;
 import akka.platform.javasdk.annotations.Query;
 import akka.platform.javasdk.annotations.Consume;
 import akka.platform.javasdk.annotations.Table;
-import akka.platform.javasdk.annotations.ViewId;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.view.View;
 
-@ViewId("summary_customer_by_name")
+@ComponentId("summary_customer_by_name")
 @Table("customers")
 public class CustomerSummaryByName extends View<CustomerSummary> {
 

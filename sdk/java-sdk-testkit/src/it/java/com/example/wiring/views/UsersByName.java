@@ -9,12 +9,12 @@ import com.example.wiring.keyvalueentities.user.UserEntity;
 import akka.platform.javasdk.annotations.Query;
 import akka.platform.javasdk.annotations.Consume;
 import akka.platform.javasdk.annotations.Table;
-import akka.platform.javasdk.annotations.ViewId;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.view.View;
 
 import java.util.List;
 
-@ViewId("users_by_name")
+@ComponentId("users_by_name")
 @Table("users_by_name")
 @Consume.FromKeyValueEntity(value = UserEntity.class, handleDeletes = true)
 public class UsersByName extends View<User> {

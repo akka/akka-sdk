@@ -16,22 +16,28 @@ import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeKind;
-import javax.tools.*;
-import java.io.*;
+import javax.tools.Diagnostic;
+import javax.tools.FileObject;
+import javax.tools.StandardLocation;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.IOException;
+import java.io.Writer;
 import java.nio.file.NoSuchFileException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 
 @SupportedAnnotationTypes(
         {
                 "akka.platform.javasdk.annotations.http.Endpoint",
-                // all entities will have this
-                "akka.platform.javasdk.annotations.TypeId",
-                // views
-                "akka.platform.javasdk.annotations.ViewId",
-                // actions
-                "akka.platform.javasdk.annotations.ActionId",
+                // all components will have this
+                "akka.platform.javasdk.annotations.ComponentId",
                 // actions or views
                 "akka.platform.javasdk.annotations.Consume.FromKeyValueEntity",
                 "akka.platform.javasdk.annotations.Consume.FromEventSourcedEntity",
@@ -158,11 +164,9 @@ public class ComponentAnnotationProcessor extends AbstractProcessor {
     private String componentTypeFor(Element annotatedClass, TypeElement annotation) {
         return switch (annotation.getQualifiedName().toString()) {
             case "akka.platform.javasdk.annotations.http.Endpoint" -> ENDPOINT_KEY;
-            case "akka.platform.javasdk.annotations.ViewId" -> VIEW_KEY;
-            case "akka.platform.javasdk.annotations.ActionId" -> ACTION_KEY;
             case "akka.platform.javasdk.annotations.Consume" -> ACTION_KEY;
             case "akka.platform.javasdk.annotations.KalixService" -> KALIX_SERVICE_KEY;
-            case "akka.platform.javasdk.annotations.TypeId" -> entityComponentType(annotatedClass);
+            case "akka.platform.javasdk.annotations.ComponentId" -> componentType(annotatedClass);
             case String s when s.startsWith("akka.platform.javasdk.annotations.Consume") ->
                     actionOrView(annotatedClass);
             default -> throw new IllegalArgumentException("Unknown annotation type: " + annotation.getQualifiedName());
@@ -180,24 +184,54 @@ public class ComponentAnnotationProcessor extends AbstractProcessor {
     }
 
     /**
-     * Entities share the same annotation, so we need to look at class supertype
+     * A multi-view is a regular class with nested classes implementing View.
+     * This method returns true if at least one inner class implements View
      */
-    private String entityComponentType(Element annotatedClass) {
+    private boolean isMultiView(Element annotatedClass) {
+
+        var innerClasses =
+          annotatedClass.getEnclosedElements().stream()
+            .filter(e -> e instanceof TypeElement)
+            .map(this::superClassName)
+            .toList();
+
+        // is one of the inner classes is a View, we have a MultiView
+        return innerClasses.contains("akka.platform.javasdk.view.View");
+    }
+
+    // extract the super class name of the passed Element (without the type parameter brackets)
+    private String superClassName(Element annotatedClass) {
         var superClassMirror = ((TypeElement) annotatedClass).getSuperclass();
         var superClassName = superClassMirror.toString();
 
         // cut out type params if any
         int typeParams = superClassName.indexOf("<");
         if (typeParams > -1) {
-            superClassName = superClassName.substring(0, typeParams);
+            return superClassName.substring(0, typeParams);
+        } else {
+            return superClassName;
         }
+    }
 
-        debug("Determining entity component type trough supertype: " + superClassName);
+    /**
+     * Entities share the same annotation, so we need to look at class supertype
+     */
+    private String componentType(Element annotatedClass) {
+
+        var superClassName = superClassName(annotatedClass);
+
+        debug("Determining component type trough supertype: " + superClassName);
         return switch (superClassName) {
             case "akka.platform.javasdk.eventsourcedentity.EventSourcedEntity" -> EVENT_SOURCED_ENTITY_KEY;
             case "akka.platform.javasdk.keyvalueentity.KeyValueEntity" -> VALUE_ENTITY_KEY;
             case "akka.platform.javasdk.workflow.Workflow" -> WORKFLOW_KEY;
-            default -> throw new IllegalArgumentException("Unknown supertype for class [" + annotatedClass + "] annotated with @TypeId: [" + superClassName + "]");
+            case "akka.platform.javasdk.action.Action" -> ACTION_KEY;
+            case "akka.platform.javasdk.view.View" -> VIEW_KEY;
+            default -> {
+                if (isMultiView(annotatedClass)) yield VIEW_KEY;
+                else
+                    throw new IllegalArgumentException("Unknown supertype for class [" + annotatedClass + "] annotated with @ComponentId: [" + superClassName + "]");
+            }
         };
     }
 

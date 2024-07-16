@@ -5,24 +5,9 @@
 package akka.platform.javasdk.impl
 
 import java.lang.reflect.ParameterizedType
-import com.google.api.AnnotationsProto
-import com.google.api.HttpBody
-import com.google.api.HttpRule
-import com.google.protobuf.BytesValue
-import com.google.protobuf.DescriptorProtos
-import com.google.protobuf.DescriptorProtos.DescriptorProto
-import com.google.protobuf.DescriptorProtos.FieldDescriptorProto
-import com.google.protobuf.DescriptorProtos.MethodDescriptorProto
-import com.google.protobuf.DescriptorProtos.MethodOptions
-import com.google.protobuf.DescriptorProtos.ServiceDescriptorProto
-import com.google.protobuf.Descriptors
-import com.google.protobuf.Descriptors.FileDescriptor
-import com.google.protobuf.Empty
-import com.google.protobuf.{ Any => JavaPbAny }
+
 import akka.platform.javasdk.HttpResponse
-import akka.platform.javasdk.annotations.ActionId
-import akka.platform.javasdk.annotations.TypeId
-import akka.platform.javasdk.annotations.ViewId
+import akka.platform.javasdk.annotations.ComponentId
 import akka.platform.javasdk.impl.AnySupport.ProtobufEmptyTypeUrl
 import akka.platform.javasdk.impl.reflection.ActionHandlerMethod
 import akka.platform.javasdk.impl.reflection.AnyJsonRequestServiceMethod
@@ -38,6 +23,20 @@ import akka.platform.javasdk.impl.reflection.Reflect
 import akka.platform.javasdk.impl.reflection.ServiceMethod
 import akka.platform.javasdk.impl.reflection.SubscriptionServiceMethod
 import akka.platform.javasdk.impl.reflection.VirtualServiceMethod
+import com.google.api.AnnotationsProto
+import com.google.api.HttpBody
+import com.google.api.HttpRule
+import com.google.protobuf.BytesValue
+import com.google.protobuf.DescriptorProtos
+import com.google.protobuf.DescriptorProtos.DescriptorProto
+import com.google.protobuf.DescriptorProtos.FieldDescriptorProto
+import com.google.protobuf.DescriptorProtos.MethodDescriptorProto
+import com.google.protobuf.DescriptorProtos.MethodOptions
+import com.google.protobuf.DescriptorProtos.ServiceDescriptorProto
+import com.google.protobuf.Descriptors
+import com.google.protobuf.Descriptors.FileDescriptor
+import com.google.protobuf.Empty
+import com.google.protobuf.{ Any => JavaPbAny }
 
 /**
  * The component descriptor is both used for generating the protobuf service descriptor to communicate the service type
@@ -366,14 +365,14 @@ private[akka] object ComponentDescriptor {
 
     val componentTypeId =
       if (Reflect.isView(commandHandlerMethod.component)) {
-        commandHandlerMethod.component.getAnnotation(classOf[ViewId]).value()
+        commandHandlerMethod.component.getAnnotation(classOf[ComponentId]).value()
       } else if (Reflect.isAction(commandHandlerMethod.component)) {
-        val annotation = commandHandlerMethod.component.getAnnotation(classOf[ActionId])
+        val annotation = commandHandlerMethod.component.getAnnotation(classOf[ComponentId])
         // don't require id on actions (subscriptions etc)
         if (annotation == null) commandHandlerMethod.getClass.getName
         else annotation.value()
       } else {
-        commandHandlerMethod.component.getAnnotation(classOf[TypeId]).value()
+        commandHandlerMethod.component.getAnnotation(classOf[ComponentId]).value()
       }
 
     val urlTemplate = commandHandlerMethod.urlTemplate.templateUrl(componentTypeId, commandHandlerMethod.method.getName)

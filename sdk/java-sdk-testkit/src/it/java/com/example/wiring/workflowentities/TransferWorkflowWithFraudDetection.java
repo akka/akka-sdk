@@ -8,7 +8,7 @@ import com.example.wiring.actions.echo.Message;
 import com.example.wiring.workflowentities.FraudDetectionResult.TransferRejected;
 import com.example.wiring.workflowentities.FraudDetectionResult.TransferRequiresManualAcceptation;
 import com.example.wiring.workflowentities.FraudDetectionResult.TransferVerified;
-import akka.platform.javasdk.annotations.TypeId;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.client.ComponentClient;
 import akka.platform.javasdk.workflow.Workflow;
 
@@ -16,7 +16,7 @@ import java.util.concurrent.CompletionStage;
 
 import static java.util.concurrent.CompletableFuture.completedFuture;
 
-@TypeId("transfer-workflow-with-fraud-detection")
+@ComponentId("transfer-workflow-with-fraud-detection")
 public class TransferWorkflowWithFraudDetection extends Workflow<TransferState> {
 
   private final String fraudDetectionStepName = "fraud-detection";

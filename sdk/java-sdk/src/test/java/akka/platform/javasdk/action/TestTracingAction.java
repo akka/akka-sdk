@@ -6,9 +6,9 @@ package akka.platform.javasdk.action;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import akka.platform.javasdk.annotations.ActionId;
+import akka.platform.javasdk.annotations.ComponentId;
 
-@ActionId("tracing-action")
+@ComponentId("tracing-action")
 public class TestTracingAction extends Action {
 
   Logger logger = LoggerFactory.getLogger(TestTracingAction.class);

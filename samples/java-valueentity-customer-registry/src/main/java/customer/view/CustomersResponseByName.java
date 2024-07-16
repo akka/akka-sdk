@@ -6,10 +6,10 @@ import customer.domain.Customer;
 import akka.platform.javasdk.annotations.Query;
 import akka.platform.javasdk.annotations.Consume;
 import akka.platform.javasdk.annotations.Table;
-import akka.platform.javasdk.annotations.ViewId;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.view.View;
 
-@ViewId("customers_by_name")
+@ComponentId("customers_by_name")
 @Table("customers_by_name")
 // tag::class[]
 @Consume.FromKeyValueEntity(CustomerEntity.class)

@@ -5,11 +5,11 @@
 package akka.platform.spring.testmodels.view;
 
 import akka.platform.javasdk.annotations.Acl;
+import akka.platform.javasdk.annotations.ComponentId;
+import akka.platform.javasdk.annotations.Consume;
 import akka.platform.javasdk.annotations.JWT;
 import akka.platform.javasdk.annotations.Query;
-import akka.platform.javasdk.annotations.Consume;
 import akka.platform.javasdk.annotations.Table;
-import akka.platform.javasdk.annotations.ViewId;
 import akka.platform.javasdk.view.View;
 import akka.platform.spring.testmodels.eventsourcedentity.Employee;
 import akka.platform.spring.testmodels.eventsourcedentity.EmployeeEvent;
@@ -29,7 +29,7 @@ public class ViewTestModels {
   }
 
 
-  @ViewId("users_view")
+  @ComponentId("users_view")
   @Table("users_view")
   @Consume.FromKeyValueEntity(UserEntity.class) // when types are annotated, it's implicitly a transform = false
   public static class UserByEmailWithGet extends View<User> {
@@ -39,7 +39,7 @@ public class ViewTestModels {
       return null; // TODO: user should not implement this. we need to find a nice API for this
     }
   }
-  @ViewId("users_view")
+  @ComponentId("users_view")
   @Consume.FromKeyValueEntity(UserEntity.class)
   public static class ViewWithoutTableAnnotation extends View<User> {
 
@@ -49,7 +49,7 @@ public class ViewTestModels {
     }
   }
 
-  @ViewId("users_view")
+  @ComponentId("users_view")
   @Table(" ")
   @Consume.FromKeyValueEntity(UserEntity.class)
   public static class ViewWithEmptyTableAnnotation extends View<User> {
@@ -62,7 +62,7 @@ public class ViewTestModels {
 
   @Table("users_view")
   @Consume.FromKeyValueEntity(UserEntity.class)
-  public static class ViewWithoutViewIdAnnotation extends View<User> {
+  public static class ViewWithoutComponentIdAnnotation extends View<User> {
 
 
     @Query("SELECT * FROM users_view WHERE email = :email")
@@ -71,10 +71,10 @@ public class ViewTestModels {
     }
   }
 
-  @ViewId(" ")
+  @ComponentId(" ")
   @Table("users_view")
   @Consume.FromKeyValueEntity(UserEntity.class)
-  public static class ViewWithEmptyViewIdAnnotation extends View<User> {
+  public static class ViewWithEmptyComponentIdAnnotation extends View<User> {
 
     @Query("SELECT * FROM users_view WHERE email = :email")
     public User getUser(String email) {
@@ -83,7 +83,7 @@ public class ViewTestModels {
   }
 
 
-  @ViewId("users_view")
+  @ComponentId("users_view")
   @Table("users_view")
   public static class TransformedUserView extends View<TransformedUser> {
 
@@ -100,7 +100,7 @@ public class ViewTestModels {
     }
   }
 
-  @ViewId("users_view")
+  @ComponentId("users_view")
   @Table("users_view")
   public static class TransformedUserViewWithDeletes extends View<TransformedUser> {
 
@@ -121,7 +121,7 @@ public class ViewTestModels {
     }
   }
 
-  @ViewId("users_view")
+  @ComponentId("users_view")
   @Table("users_view")
   public static class TransformedUserViewWithMethodLevelJWT extends View<TransformedUser> {
 
@@ -145,7 +145,7 @@ public class ViewTestModels {
     }
   }
 
-  @ViewId("users_view")
+  @ComponentId("users_view")
   @Table("users_view")
   @JWT(
     validate = JWT.JwtMethodMode.BEARER_TOKEN,
@@ -167,7 +167,7 @@ public class ViewTestModels {
    * This should be illegal. Either we subscribe at type level, and it's a transform = false. Or we
    * subscribe at method level, and it's a transform = true.
    */
-  @ViewId("users_view")
+  @ComponentId("users_view")
   @Table("users_view")
   @Consume.FromKeyValueEntity(UserEntity.class)
   public static class ViewWithSubscriptionsInMixedLevels extends View<TransformedUser> {
@@ -185,7 +185,7 @@ public class ViewTestModels {
     }
   }
 
-  @ViewId("users_view")
+  @ComponentId("users_view")
   @Table("users_view")
   @Consume.FromKeyValueEntity(UserEntity.class) //it's implicitly a transform = false
   public static class TransformedViewWithoutSubscriptionOnMethodLevel extends View<TransformedUser> {
@@ -201,7 +201,7 @@ public class ViewTestModels {
     }
   }
 
-  @ViewId("users_view")
+  @ComponentId("users_view")
   @Table("users_view")
   @Consume.FromKeyValueEntity(UserEntity.class)
   public static class ViewWithSubscriptionsInMixedLevelsHandleDelete extends View<User> {
@@ -217,7 +217,7 @@ public class ViewTestModels {
     }
   }
 
-  @ViewId("users_view")
+  @ComponentId("users_view")
   @Table("users_view")
   public static class ViewWithoutSubscriptionButWithHandleDelete extends View<TransformedUser> {
 
@@ -232,7 +232,7 @@ public class ViewTestModels {
     }
   }
 
-  @ViewId("users_view")
+  @ComponentId("users_view")
   @Table("users_view")
   public static class ViewDuplicatedHandleDeletesAnnotations extends View<TransformedUser> {
 
@@ -258,7 +258,7 @@ public class ViewTestModels {
     }
   }
 
-  @ViewId("users_view")
+  @ComponentId("users_view")
   @Table("users_view")
   public static class ViewHandleDeletesWithParam extends View<TransformedUser> {
 
@@ -279,7 +279,7 @@ public class ViewTestModels {
     }
   }
 
-  @ViewId("users_view")
+  @ComponentId("users_view")
   @Table("users_view")
   public static class ViewWithHandleDeletesFalseOnMethodLevel extends View<TransformedUser> {
 
@@ -300,7 +300,7 @@ public class ViewTestModels {
     }
   }
 
-  @ViewId("users_view")
+  @ComponentId("users_view")
   @Table("users_view")
   public static class ViewDuplicatedVESubscriptions extends View<TransformedUser> {
 
@@ -327,7 +327,7 @@ public class ViewTestModels {
     }
   }
 
-  @ViewId("users_view")
+  @ComponentId("users_view")
   @Table("users_view")
   public static class ViewDuplicatedESSubscriptions extends View<TransformedUser> {
 
@@ -354,12 +354,12 @@ public class ViewTestModels {
     }
   }
 
-  @ViewId("users_view")
+  @ComponentId("users_view")
   @Table("users_view")
   @Consume.FromKeyValueEntity(UserEntity.class)
   public static class ViewWithNoQuery extends View<TransformedUser> {}
 
-  @ViewId("users_view")
+  @ComponentId("users_view")
   @Table("users_view")
   @Consume.FromKeyValueEntity(UserEntity.class)
   public static class ViewWithTwoQueries extends View<User> {
@@ -377,7 +377,7 @@ public class ViewTestModels {
 
 
 
-  @ViewId("users_view")
+  @ComponentId("users_view")
   @Table(value = "employees_view")
   public static class SubscribeToEventSourcedEvents extends View<Employee> {
 
@@ -398,7 +398,7 @@ public class ViewTestModels {
     }
   }
 
-  @ViewId("users_view")
+  @ComponentId("users_view")
   @Table(value = "employees_view")
   public static class SubscribeToSealedEventSourcedEvents extends View<Employee> {
 
@@ -419,7 +419,7 @@ public class ViewTestModels {
     }
   }
 
-  @ViewId("users_view")
+  @ComponentId("users_view")
   @Table(value = "employees_view")
   public static class SubscribeToEventSourcedWithMissingHandler extends View<Employee> {
 
@@ -436,7 +436,7 @@ public class ViewTestModels {
   }
 
 
-  @ViewId("users_view")
+  @ComponentId("users_view")
   @Table(value = "employees_view")
   @Consume.FromEventSourcedEntity(value = EmployeeEntity.class, ignoreUnknown = false)
   public static class TypeLevelSubscribeToEventSourcedEventsWithMissingHandler extends View<Employee> {
@@ -452,7 +452,7 @@ public class ViewTestModels {
     }
   }
 
-  @ViewId("users_view")
+  @ComponentId("users_view")
   @Table(value = "employees_view")
   @Acl(allow = @Acl.Matcher(service = "test"))
   public static class ViewWithServiceLevelAcl extends View<Employee> {
@@ -463,7 +463,7 @@ public class ViewTestModels {
     }
   }
 
-  @ViewId("users_view")
+  @ComponentId("users_view")
   @Table(value = "employees_view")
   public static class ViewWithMethodLevelAcl extends View<Employee> {
 
@@ -475,7 +475,7 @@ public class ViewTestModels {
   }
 
 
-  @ViewId("users_view")
+  @ComponentId("users_view")
   @Table(value = "users_view_collection")
   @Consume.FromKeyValueEntity(UserEntity.class)
   public static class UserByEmailWithCollectionReturn extends View<User> {
@@ -487,7 +487,7 @@ public class ViewTestModels {
   }
 
 
-  @ViewId("users_view")
+  @ComponentId("users_view")
   public static class MultiTableViewValidation {
     @Consume.FromKeyValueEntity(UserEntity.class)
     public static class ViewTableWithoutTableAnnotation extends View<User> {}
@@ -507,13 +507,13 @@ public class ViewTestModels {
     }
   }
 
-  @ViewId("multi-table-view-without-query")
+  @ComponentId("multi-table-view-without-query")
   public static class MultiTableViewWithoutQuery {
     @Table("users_view")
     public static class Users extends View<User> {}
   }
 
-  public static class MultiTableViewWithoutViewId {
+  public static class MultiTableViewWithoutComponentId {
 
     @Table("users_view")
     public static class Users extends View<User> {}
@@ -524,8 +524,8 @@ public class ViewTestModels {
     }
   }
 
-  @ViewId(" ")
-  public static class MultiTableViewWithEmptyViewId {
+  @ComponentId(" ")
+  public static class MultiTableViewWithEmptyComponentId {
 
     @Table("users_view")
     public static class Users extends View<User> {}
@@ -536,10 +536,10 @@ public class ViewTestModels {
     }
   }
 
-  @ViewId("users_multi_view")
-  public static class MultiTableViewWithViewIdInInnerView {
+  @ComponentId("users_multi_view")
+  public static class MultiTableViewWithComponentIdInInnerView {
 
-    @ViewId("users_view")
+    @ComponentId("users_view")
     @Table("users_view")
     public static class Users extends View<User> {}
 
@@ -549,7 +549,7 @@ public class ViewTestModels {
     }
   }
 
-  @ViewId("users_multi_view")
+  @ComponentId("users_multi_view")
   @Table("users_multi_view")
   public static class MultiTableViewWithTableName {
 
@@ -562,7 +562,7 @@ public class ViewTestModels {
     }
   }
 
-  @ViewId("multi-table-view-with-multiple-queries")
+  @ComponentId("multi-table-view-with-multiple-queries")
   public static class MultiTableViewWithMultipleQueries {
     @Query("SELECT * FROM users_view")
     public User query1() {
@@ -578,7 +578,7 @@ public class ViewTestModels {
     public static class Users extends View<User> {}
   }
 
-  @ViewId("multi-table-view-with-join-query")
+  @ComponentId("multi-table-view-with-join-query")
   public static class MultiTableViewWithJoinQuery {
 
     @Query("""
@@ -614,7 +614,7 @@ public class ViewTestModels {
     public static class Assigned extends View<AssignedCounterState> {}
   }
 
-  @ViewId("multi-table-view-with-join-query")
+  @ComponentId("multi-table-view-with-join-query")
   public static class MultiTableViewWithDuplicatedVESubscriptions {
 
     @Query("SELECT * FROM users_view")
@@ -649,7 +649,7 @@ public class ViewTestModels {
     }
   }
 
-  @ViewId("multi-table-view-with-join-query")
+  @ComponentId("multi-table-view-with-join-query")
   public static class MultiTableViewWithDuplicatedESSubscriptions {
 
     @Query("SELECT * FROM users_view")
@@ -684,7 +684,7 @@ public class ViewTestModels {
     }
   }
 
-  @ViewId("time-tracker-view")
+  @ComponentId("time-tracker-view")
   @Table("time-tracker-view")
   @Consume.FromKeyValueEntity(TimeTrackerEntity.class)
   public static class TimeTrackerView extends View<TimeTrackerEntity.TimerState> {
@@ -696,7 +696,7 @@ public class ViewTestModels {
   }
 
 
-  @ViewId("employee_view")
+  @ComponentId("employee_view")
   @Table(value = "employee_table")
   @Consume.FromTopic(value = "source", consumerGroup = "cg")
   public static class TopicTypeLevelSubscriptionView extends View<Employee> {
@@ -717,7 +717,7 @@ public class ViewTestModels {
     }
   }
 
-  @ViewId("employee_view")
+  @ComponentId("employee_view")
   @Table(value = "employee_table")
   public static class TopicSubscriptionView extends View<Employee> {
 

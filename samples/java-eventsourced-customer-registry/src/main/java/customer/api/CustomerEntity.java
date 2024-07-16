@@ -3,14 +3,14 @@ package customer.api;
 import customer.domain.Address;
 import customer.domain.Customer;
 import customer.domain.CustomerEvent;
-import akka.platform.javasdk.annotations.TypeId;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.eventsourcedentity.EventSourcedEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static customer.domain.CustomerEvent.*;
 
-@TypeId("customer")
+@ComponentId("customer")
 public class CustomerEntity extends EventSourcedEntity<Customer, CustomerEvent> {
   private static final Logger logger = LoggerFactory.getLogger(CustomerEntity.class);
 

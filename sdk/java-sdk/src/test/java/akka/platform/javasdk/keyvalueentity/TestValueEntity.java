@@ -4,9 +4,9 @@
 
 package akka.platform.javasdk.keyvalueentity;
 
-import akka.platform.javasdk.annotations.TypeId;
+import akka.platform.javasdk.annotations.ComponentId;
 
-@TypeId("ve")
+@ComponentId("ve")
 public class TestValueEntity extends KeyValueEntity<TestVEState1> {
 
   @Override

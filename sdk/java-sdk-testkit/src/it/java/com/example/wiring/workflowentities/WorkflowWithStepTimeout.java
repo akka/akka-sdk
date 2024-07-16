@@ -5,7 +5,7 @@
 package com.example.wiring.workflowentities;
 
 import com.example.wiring.actions.echo.Message;
-import akka.platform.javasdk.annotations.TypeId;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.workflow.Workflow;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit;
 import static java.time.Duration.ofMillis;
 import static java.time.Duration.ofSeconds;
 
-@TypeId("workflow-with-step-timeout")
+@ComponentId("workflow-with-step-timeout")
 public class WorkflowWithStepTimeout extends Workflow<FailingCounterState> {
 
   private Logger logger = LoggerFactory.getLogger(getClass());

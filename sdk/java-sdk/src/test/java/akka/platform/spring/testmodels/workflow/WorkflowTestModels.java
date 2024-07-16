@@ -6,12 +6,12 @@ package akka.platform.spring.testmodels.workflow;
 
 import akka.platform.javasdk.annotations.Acl;
 import akka.platform.javasdk.annotations.JWT;
-import akka.platform.javasdk.annotations.TypeId;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.workflow.Workflow;
 
 public class WorkflowTestModels {
 
-  @TypeId("transfer-workflow")
+  @ComponentId("transfer-workflow")
   public static class TransferWorkflow extends Workflow<WorkflowState> {
     @Override
     public WorkflowDef<WorkflowState> definition() {
@@ -27,7 +27,7 @@ public class WorkflowTestModels {
     }
   }
 
-  @TypeId("transfer-workflow")
+  @ComponentId("transfer-workflow")
   public static class WorkflowWithMethodLevelJWT extends Workflow<WorkflowState> {
     @Override
     public WorkflowDef<WorkflowState> definition() {
@@ -46,7 +46,7 @@ public class WorkflowTestModels {
     }
   }
 
-  @TypeId("transfer-workflow")
+  @ComponentId("transfer-workflow")
   @JWT(
     validate = JWT.JwtMethodMode.BEARER_TOKEN,
     bearerTokenIssuer = {"c", "d"},
@@ -65,7 +65,7 @@ public class WorkflowTestModels {
     }
   }
 
-  @TypeId("transfer-workflow")
+  @ComponentId("transfer-workflow")
   @Acl(allow = @Acl.Matcher(service = "test"))
   public static class WorkflowWithAcl extends Workflow<WorkflowState> {
 
@@ -75,7 +75,7 @@ public class WorkflowTestModels {
     }
   }
 
-  @TypeId("transfer-workflow")
+  @ComponentId("transfer-workflow")
   public static class WorkflowWithMethodLevelAcl extends Workflow<WorkflowState> {
 
     @Override

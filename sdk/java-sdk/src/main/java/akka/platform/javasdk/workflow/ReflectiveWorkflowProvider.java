@@ -5,17 +5,12 @@
 package akka.platform.javasdk.workflow;
 
 import com.google.protobuf.Descriptors;
-import akka.platform.javasdk.annotations.TypeId;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.impl.MessageCodec;
 import akka.platform.javasdk.impl.workflow.WorkflowRouter;
 import akka.platform.javasdk.impl.ComponentDescriptor;
 import akka.platform.javasdk.impl.JsonMessageCodec;
-import akka.platform.javasdk.impl.StrictJsonMessageCodec;
 import akka.platform.javasdk.impl.workflow.ReflectiveWorkflowRouter;
-import akka.platform.javasdk.workflow.Workflow;
-import akka.platform.javasdk.workflow.WorkflowContext;
-import akka.platform.javasdk.workflow.WorkflowOptions;
-import akka.platform.javasdk.workflow.WorkflowProvider;
 
 import java.util.Optional;
 import java.util.function.Function;
@@ -32,7 +27,7 @@ public class ReflectiveWorkflowProvider<S, W extends Workflow<S>> implements Wor
   private final ComponentDescriptor componentDescriptor;
 
   public ReflectiveWorkflowProvider(Class<W> workflowClass, JsonMessageCodec messageCodec, Function<WorkflowContext, W> factory, WorkflowOptions options) {
-    TypeId annotation = workflowClass.getAnnotation(TypeId.class);
+    ComponentId annotation = workflowClass.getAnnotation(ComponentId.class);
     if (annotation == null) {
       throw new IllegalArgumentException(
           "Workflow [" + workflowClass.getName() + "] is missing '@Type' annotation");

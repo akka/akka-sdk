@@ -11,11 +11,11 @@ import java.lang.reflect.ParameterizedType
 import scala.reflect.ClassTag
 
 import akka.platform.javasdk.action.Action
+import akka.platform.javasdk.annotations.ComponentId
 import akka.platform.javasdk.annotations.Consume.FromKeyValueEntity
 import akka.platform.javasdk.annotations.Produce.ServiceStream
 import akka.platform.javasdk.annotations.Query
 import akka.platform.javasdk.annotations.Table
-import akka.platform.javasdk.annotations.ViewId
 import akka.platform.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.platform.javasdk.impl.ComponentDescriptorFactory.eventSourcedEntitySubscription
 import akka.platform.javasdk.impl.ComponentDescriptorFactory.findEventSourcedEntityClass
@@ -200,17 +200,17 @@ object Validations {
   private def validateView(component: Class[_]): Validation = {
     when[View[_]](component) {
       validateSingleView(component) ++
-      viewMustHaveViewId(component) // ViewId mandatory for single view
+      viewMustHaveComponentId(component) // ComponentId mandatory for single view
     } ++
     when(Reflect.isMultiTableView(component)) {
       val nestedViewClasses = component.getDeclaredClasses.toSeq.filter(Reflect.isNestedViewTable)
       val nestedValidations =
-        nestedViewClasses.map(validateSingleView) ++ nestedViewClasses.map(viewMustNotHaveViewId)
+        nestedViewClasses.map(validateSingleView) ++ nestedViewClasses.map(viewMustNotHaveComponentId)
 
       nestedValidations.reduce(_ ++ _) ++
       viewMustNotHaveTableName(component) ++
       viewMustHaveAtLeastOneQueryMethod(component) ++
-      viewMustHaveViewId(component) // ViewId mandatory for multi-table on the outer level class
+      viewMustHaveComponentId(component) // ComponentId mandatory for multi-table on the outer level class
     }
 
   }
@@ -463,7 +463,8 @@ object Validations {
 
     val esSubscriptions: Map[String, Seq[Method]] = eventSourcedEntitySubscription(component) match {
       case Some(esEntity) =>
-        Map(ComponentDescriptorFactory.readTypeIdValue(esEntity.value()) -> methods.filter(updateMethodPredicate))
+        Map(
+          ComponentDescriptorFactory.readComponentIdIdValue(esEntity.value()) -> methods.filter(updateMethodPredicate))
       case None =>
         methods
           .filter(hasEventSourcedEntitySubscription)
@@ -514,20 +515,20 @@ object Validations {
     Validation(messages)
   }
 
-  private def viewMustNotHaveViewId(component: Class[_]): Validation = {
-    val ann = component.getAnnotation(classOf[ViewId])
+  private def viewMustNotHaveComponentId(component: Class[_]): Validation = {
+    val ann = component.getAnnotation(classOf[ComponentId])
     when(ann != null) {
-      Invalid(errorMessage(component, "A nested View should not be annotated with @ViewId."))
+      Invalid(errorMessage(component, "A nested View should not be annotated with @ComponentId."))
     }
   }
-  private def viewMustHaveViewId(component: Class[_]): Validation = {
-    val ann = component.getAnnotation(classOf[ViewId])
+  private def viewMustHaveComponentId(component: Class[_]): Validation = {
+    val ann = component.getAnnotation(classOf[ComponentId])
     if (ann == null) {
-      Invalid(errorMessage(component, "A View should be annotated with @ViewId."))
+      Invalid(errorMessage(component, "A View should be annotated with @ComponentId."))
     } else {
       val viewId: String = ann.value()
       if (viewId == null || viewId.trim.isEmpty) {
-        Invalid(errorMessage(component, "@ViewId name is empty, must be a non-empty string."))
+        Invalid(errorMessage(component, "@ComponentId name is empty, must be a non-empty string."))
       } else Valid
     }
   }

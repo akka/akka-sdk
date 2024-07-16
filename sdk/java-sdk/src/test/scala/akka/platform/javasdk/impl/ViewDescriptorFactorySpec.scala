@@ -15,15 +15,15 @@ import com.google.protobuf.{ Any => JavaPbAny }
 import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.EventStreamSubscriptionView
 import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.SubscribeOnTypeToEventSourcedEvents
 import akka.platform.spring.testmodels.view.ViewTestModels.MultiTableViewValidation
+import akka.platform.spring.testmodels.view.ViewTestModels.MultiTableViewWithComponentIdInInnerView
 import akka.platform.spring.testmodels.view.ViewTestModels.MultiTableViewWithDuplicatedESSubscriptions
 import akka.platform.spring.testmodels.view.ViewTestModels.MultiTableViewWithDuplicatedVESubscriptions
-import akka.platform.spring.testmodels.view.ViewTestModels.MultiTableViewWithEmptyViewId
+import akka.platform.spring.testmodels.view.ViewTestModels.MultiTableViewWithEmptyComponentId
 import akka.platform.spring.testmodels.view.ViewTestModels.MultiTableViewWithJoinQuery
 import akka.platform.spring.testmodels.view.ViewTestModels.MultiTableViewWithMultipleQueries
 import akka.platform.spring.testmodels.view.ViewTestModels.MultiTableViewWithTableName
-import akka.platform.spring.testmodels.view.ViewTestModels.MultiTableViewWithViewIdInInnerView
+import akka.platform.spring.testmodels.view.ViewTestModels.MultiTableViewWithoutComponentId
 import akka.platform.spring.testmodels.view.ViewTestModels.MultiTableViewWithoutQuery
-import akka.platform.spring.testmodels.view.ViewTestModels.MultiTableViewWithoutViewId
 import akka.platform.spring.testmodels.view.ViewTestModels.SubscribeToEventSourcedEvents
 import akka.platform.spring.testmodels.view.ViewTestModels.SubscribeToEventSourcedWithMissingHandler
 import akka.platform.spring.testmodels.view.ViewTestModels.SubscribeToSealedEventSourcedEvents
@@ -40,8 +40,8 @@ import akka.platform.spring.testmodels.view.ViewTestModels.ViewDuplicatedESSubsc
 import akka.platform.spring.testmodels.view.ViewTestModels.ViewDuplicatedHandleDeletesAnnotations
 import akka.platform.spring.testmodels.view.ViewTestModels.ViewDuplicatedVESubscriptions
 import akka.platform.spring.testmodels.view.ViewTestModels.ViewHandleDeletesWithParam
+import akka.platform.spring.testmodels.view.ViewTestModels.ViewWithEmptyComponentIdAnnotation
 import akka.platform.spring.testmodels.view.ViewTestModels.ViewWithEmptyTableAnnotation
-import akka.platform.spring.testmodels.view.ViewTestModels.ViewWithEmptyViewIdAnnotation
 import akka.platform.spring.testmodels.view.ViewTestModels.ViewWithHandleDeletesFalseOnMethodLevel
 import akka.platform.spring.testmodels.view.ViewTestModels.ViewWithMethodLevelAcl
 import akka.platform.spring.testmodels.view.ViewTestModels.ViewWithNoQuery
@@ -50,9 +50,9 @@ import akka.platform.spring.testmodels.view.ViewTestModels.ViewWithServiceLevelJ
 import akka.platform.spring.testmodels.view.ViewTestModels.ViewWithSubscriptionsInMixedLevels
 import akka.platform.spring.testmodels.view.ViewTestModels.ViewWithSubscriptionsInMixedLevelsHandleDelete
 import akka.platform.spring.testmodels.view.ViewTestModels.ViewWithTwoQueries
+import akka.platform.spring.testmodels.view.ViewTestModels.ViewWithoutComponentIdAnnotation
 import akka.platform.spring.testmodels.view.ViewTestModels.ViewWithoutSubscriptionButWithHandleDelete
 import akka.platform.spring.testmodels.view.ViewTestModels.ViewWithoutTableAnnotation
-import akka.platform.spring.testmodels.view.ViewTestModels.ViewWithoutViewIdAnnotation
 import org.scalatest.wordspec.AnyWordSpec
 
 class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuite {
@@ -108,16 +108,16 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
       }.getMessage should include("@Table name is empty, must be a non-empty string.")
     }
 
-    "not allow View without ViewId annotation" in {
+    "not allow View without ComponentId annotation" in {
       intercept[InvalidComponentException] {
-        Validations.validate(classOf[ViewWithoutViewIdAnnotation]).failIfInvalid
-      }.getMessage should include("A View should be annotated with @ViewId.")
+        Validations.validate(classOf[ViewWithoutComponentIdAnnotation]).failIfInvalid
+      }.getMessage should include("A View should be annotated with @ComponentId.")
     }
 
-    "not allow View with empty ViewId" in {
+    "not allow View with empty ComponentId" in {
       intercept[InvalidComponentException] {
-        Validations.validate(classOf[ViewWithEmptyViewIdAnnotation]).failIfInvalid
-      }.getMessage should include("@ViewId name is empty, must be a non-empty string.")
+        Validations.validate(classOf[ViewWithEmptyComponentIdAnnotation]).failIfInvalid
+      }.getMessage should include("@ComponentId name is empty, must be a non-empty string.")
     }
 
     "not allow @Consume annotations in mixed levels" in {
@@ -411,22 +411,22 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
       }.getMessage should include("@Table name is empty, must be a non-empty string.")
     }
 
-    "not allow MultiTable View without ViewId annotation" in {
+    "not allow MultiTable View without ComponentId annotation" in {
       intercept[InvalidComponentException] {
-        Validations.validate(classOf[MultiTableViewWithoutViewId]).failIfInvalid
-      }.getMessage should include("A View should be annotated with @ViewId.")
+        Validations.validate(classOf[MultiTableViewWithoutComponentId]).failIfInvalid
+      }.getMessage should include("A View should be annotated with @ComponentId.")
     }
 
-    "not allow MultiTable View with empty ViewId" in {
+    "not allow MultiTable View with empty ComponentId" in {
       intercept[InvalidComponentException] {
-        Validations.validate(classOf[MultiTableViewWithEmptyViewId]).failIfInvalid
-      }.getMessage should include("@ViewId name is empty, must be a non-empty string.")
+        Validations.validate(classOf[MultiTableViewWithEmptyComponentId]).failIfInvalid
+      }.getMessage should include("@ComponentId name is empty, must be a non-empty string.")
     }
 
-    "not allow MultiTable View with inner views with ViewId annotation" in {
+    "not allow MultiTable View with inner views with ComponentId annotation" in {
       intercept[InvalidComponentException] {
-        Validations.validate(classOf[MultiTableViewWithViewIdInInnerView]).failIfInvalid
-      }.getMessage should include("A nested View should not be annotated with @ViewId.")
+        Validations.validate(classOf[MultiTableViewWithComponentIdInInnerView]).failIfInvalid
+      }.getMessage should include("A nested View should not be annotated with @ComponentId.")
     }
 
     "not allow MultiTable View with Table annotation" in {

@@ -2,7 +2,7 @@ package user.registry.entity;
 
 
 import akka.platform.javasdk.annotations.Acl;
-import akka.platform.javasdk.annotations.TypeId;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.eventsourcedentity.EventSourcedEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,7 +25,7 @@ import user.registry.domain.UserEvent;
  * This entity is protected from outside access. It can only be accessed from within this service (see the ACL annotation).
  * External access is gated and should go through the ApplicationController.
  */
-@TypeId("user")
+@ComponentId("user")
 @Acl(allow = @Acl.Matcher(service = "*"))
 public class UserEntity extends EventSourcedEntity<User, UserEvent> {
 

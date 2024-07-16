@@ -6,14 +6,14 @@ package com.example.wiring.workflowentities;
 
 import akka.Done;
 import com.example.wiring.actions.echo.Message;
-import akka.platform.javasdk.annotations.TypeId;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.client.ComponentClient;
 import akka.platform.javasdk.workflow.Workflow;
 import akka.platform.javasdk.workflow.WorkflowContext;
 
 import java.time.Duration;
 
-@TypeId("workflow-with-timer")
+@ComponentId("workflow-with-timer")
 public class WorkflowWithTimer extends Workflow<FailingCounterState> {
 
   private final String counterStepName = "counter";

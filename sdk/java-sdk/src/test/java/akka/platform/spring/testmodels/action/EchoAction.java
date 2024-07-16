@@ -5,10 +5,10 @@
 package akka.platform.spring.testmodels.action;
 
 import akka.platform.javasdk.action.Action;
-import akka.platform.javasdk.annotations.ActionId;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.spring.testmodels.Message;
 
-@ActionId("test-echo")
+@ComponentId("test-echo")
 public class EchoAction extends Action {
 
   public Effect<Message> stringMessage(String msg) {

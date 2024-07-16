@@ -8,32 +8,31 @@ import java.lang.reflect.AnnotatedElement
 import java.lang.reflect.Method
 import java.lang.reflect.ParameterizedType
 
-import kalix.DirectDestination
-import kalix.DirectSource
-import kalix.EventDestination
-import kalix.Eventing
-import kalix.MethodOptions
-import kalix.ServiceEventing
-import kalix.ServiceEventingOut
-import kalix.ServiceOptions
 import akka.platform.javasdk.action.Action
 import akka.platform.javasdk.annotations.Acl
-import akka.platform.javasdk.annotations.Table
-import akka.platform.javasdk.annotations.TypeId
-import akka.platform.javasdk.annotations.ViewId
-import akka.platform.javasdk.eventsourcedentity.EventSourcedEntity
-import akka.platform.javasdk.impl.reflection.CombinedSubscriptionServiceMethod
-import akka.platform.javasdk.impl.reflection.KalixMethod
-import akka.platform.javasdk.impl.reflection.NameGenerator
+import akka.platform.javasdk.annotations.ComponentId
 import akka.platform.javasdk.annotations.Consume.FromEventSourcedEntity
 import akka.platform.javasdk.annotations.Consume.FromKeyValueEntity
 import akka.platform.javasdk.annotations.Consume.FromServiceStream
 import akka.platform.javasdk.annotations.Consume.FromTopic
 import akka.platform.javasdk.annotations.Produce.ServiceStream
 import akka.platform.javasdk.annotations.Produce.ToTopic
+import akka.platform.javasdk.eventsourcedentity.EventSourcedEntity
+import akka.platform.javasdk.impl.reflection.CombinedSubscriptionServiceMethod
+import akka.platform.javasdk.impl.reflection.KalixMethod
+import akka.platform.javasdk.impl.reflection.NameGenerator
+import akka.platform.javasdk.impl.reflection.Reflect
 import akka.platform.javasdk.keyvalueentity.KeyValueEntity
 import akka.platform.javasdk.view.View.Effect
+import kalix.DirectDestination
+import kalix.DirectSource
+import kalix.EventDestination
 import kalix.EventSource
+import kalix.Eventing
+import kalix.MethodOptions
+import kalix.ServiceEventing
+import kalix.ServiceEventingOut
+import kalix.ServiceOptions
 // TODO: abstract away spring dependency
 import akka.platform.javasdk.impl.reflection.Reflect.Syntax._
 
@@ -118,12 +117,12 @@ private[impl] object ComponentDescriptorFactory {
   def hasTopicPublication(javaMethod: Method): Boolean =
     javaMethod.isPublic && javaMethod.hasAnnotation[ToTopic]
 
-  def readTypeIdValue(annotated: AnnotatedElement): String =
-    annotated.getAnnotation(classOf[TypeId]).value()
+  def readComponentIdIdValue(annotated: AnnotatedElement): String =
+    annotated.getAnnotation(classOf[ComponentId]).value()
 
   def findEventSourcedEntityType(javaMethod: Method): String = {
     val ann = javaMethod.getAnnotation(classOf[FromEventSourcedEntity])
-    readTypeIdValue(ann.value())
+    readComponentIdIdValue(ann.value())
   }
 
   def findEventSourcedEntityClass(javaMethod: Method): Class[_ <: EventSourcedEntity[_, _]] = {
@@ -150,17 +149,17 @@ private[impl] object ComponentDescriptorFactory {
 
   def findEventSourcedEntityType(clazz: Class[_]): String = {
     val ann = clazz.getAnnotation(classOf[FromEventSourcedEntity])
-    readTypeIdValue(ann.value())
+    readComponentIdIdValue(ann.value())
   }
 
   def findValueEntityType(javaMethod: Method): String = {
     val ann = javaMethod.getAnnotation(classOf[FromKeyValueEntity])
-    readTypeIdValue(ann.value())
+    readComponentIdIdValue(ann.value())
   }
 
   def findValueEntityType(component: Class[_]): String = {
     val ann = component.getAnnotation(classOf[FromKeyValueEntity])
-    readTypeIdValue(ann.value())
+    readComponentIdIdValue(ann.value())
   }
 
   def findHandleDeletes(javaMethod: Method): Boolean = {
@@ -364,9 +363,9 @@ private[impl] object ComponentDescriptorFactory {
   // we should let users know if components are missing required annotations,
   // eg: Workflow and Entities require @TypeId, View requires @Table and @Consume
   def getFactoryFor(component: Class[_]): ComponentDescriptorFactory = {
-    if (component.getAnnotation(classOf[TypeId]) != null)
+    if (Reflect.isEntity(component) || Reflect.isWorkflow(component))
       EntityDescriptorFactory
-    else if (component.getAnnotation(classOf[Table]) != null || component.getAnnotation(classOf[ViewId]) != null)
+    else if (Reflect.isView(component))
       ViewDescriptorFactory
     else
       ActionDescriptorFactory

@@ -4,18 +4,14 @@
 
 package akka.platform.javasdk.view;
 
-import com.google.protobuf.Descriptors;
-import akka.platform.javasdk.annotations.ViewId;
-import akka.platform.javasdk.impl.MessageCodec;
-import akka.platform.javasdk.impl.view.ViewRouter;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.impl.ComponentDescriptor;
 import akka.platform.javasdk.impl.ComponentDescriptorFactory;
 import akka.platform.javasdk.impl.JsonMessageCodec;
+import akka.platform.javasdk.impl.MessageCodec;
 import akka.platform.javasdk.impl.view.ReflectiveViewRouter;
-import akka.platform.javasdk.view.View;
-import akka.platform.javasdk.view.ViewCreationContext;
-import akka.platform.javasdk.view.ViewOptions;
-import akka.platform.javasdk.view.ViewProvider;
+import akka.platform.javasdk.impl.view.ViewRouter;
+import com.google.protobuf.Descriptors;
 
 import java.util.Optional;
 import java.util.function.Function;
@@ -36,8 +32,8 @@ public class ReflectiveViewProvider<S, V extends View<S>> implements ViewProvide
       Class<V> cls, JsonMessageCodec messageCodec, Function<ViewCreationContext, V> factory) {
 
     String viewId =
-        Optional.ofNullable(cls.getAnnotation(ViewId.class))
-            .map(ViewId::value)
+        Optional.ofNullable(cls.getAnnotation(ComponentId.class))
+            .map(ComponentId::value)
             .orElseGet(cls::getName);
 
     return new ReflectiveViewProvider<>(cls, messageCodec, viewId, factory, ViewOptions.defaults());

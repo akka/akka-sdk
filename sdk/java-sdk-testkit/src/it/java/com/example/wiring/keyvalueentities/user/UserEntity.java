@@ -5,12 +5,12 @@
 package com.example.wiring.keyvalueentities.user;
 
 import com.example.wiring.Ok;
-import akka.platform.javasdk.annotations.TypeId;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.keyvalueentity.KeyValueEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@TypeId("user")
+@ComponentId("user")
 public class UserEntity extends KeyValueEntity<User> {
 
   private Logger logger = LoggerFactory.getLogger(getClass());

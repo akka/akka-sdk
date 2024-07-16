@@ -9,12 +9,12 @@ import com.example.wiring.keyvalueentities.user.UserEntity;
 import akka.platform.javasdk.annotations.Query;
 import akka.platform.javasdk.annotations.Consume;
 import akka.platform.javasdk.annotations.Table;
-import akka.platform.javasdk.annotations.ViewId;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.view.View;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@ViewId("user_view")
+@ComponentId("user_view")
 @Table("user_view")
 public class UserWithVersionView extends View<UserWithVersion> {
 

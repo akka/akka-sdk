@@ -18,11 +18,11 @@ package customer.api;
 
 // tag::customer[]
 import akka.platform.javasdk.keyvalueentity.KeyValueEntity;
-import akka.platform.javasdk.annotations.TypeId;
+import akka.platform.javasdk.annotations.ComponentId;
 import customer.domain.Address;
 import customer.domain.Customer;
 
-@TypeId("customer") // <1>
+@ComponentId("customer") // <1>
 public class CustomerEntity extends KeyValueEntity<Customer> { // <4>
 
   public record Ok() {

@@ -4,11 +4,11 @@
 
 package akka.platform.javasdk.workflow;
 
-import akka.platform.javasdk.annotations.TypeId;
+import akka.platform.javasdk.annotations.ComponentId;
 
 import java.util.concurrent.CompletableFuture;
 
-@TypeId("workflow")
+@ComponentId("workflow")
 public class TestWorkflowSerialization extends Workflow<String> {
 
   @Override

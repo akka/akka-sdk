@@ -4,10 +4,10 @@
 
 package com.example.wiring.keyvalueentities.user;
 
-import akka.platform.javasdk.annotations.TypeId;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.keyvalueentity.KeyValueEntity;
 
-@TypeId("assigned-counter")
+@ComponentId("assigned-counter")
 public class AssignedCounterEntity extends KeyValueEntity<AssignedCounter> {
 
   @Override

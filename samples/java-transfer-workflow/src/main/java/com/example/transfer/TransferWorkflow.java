@@ -3,7 +3,7 @@ package com.example.transfer;
 import com.example.transfer.TransferState.Transfer;
 import com.example.wallet.Ok;
 import com.example.wallet.WalletEntity;
-import akka.platform.javasdk.annotations.TypeId;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.client.ComponentClient;
 import akka.platform.javasdk.workflow.Workflow;
 import org.slf4j.Logger;
@@ -13,7 +13,7 @@ import static com.example.transfer.TransferState.TransferStatus.COMPLETED;
 import static com.example.transfer.TransferState.TransferStatus.WITHDRAW_SUCCEED;
 
 // tag::class[]
-@TypeId("transfer")
+@ComponentId("transfer")
 public class TransferWorkflow extends Workflow<TransferState> { // <1>
   // end::class[]
 

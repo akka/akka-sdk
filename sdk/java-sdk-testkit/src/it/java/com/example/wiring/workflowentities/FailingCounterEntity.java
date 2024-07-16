@@ -6,10 +6,10 @@ package com.example.wiring.workflowentities;
 
 import com.example.wiring.eventsourcedentities.counter.Counter;
 import com.example.wiring.eventsourcedentities.counter.CounterEvent;
-import akka.platform.javasdk.annotations.TypeId;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.eventsourcedentity.EventSourcedEntity;
 
-@TypeId("failing-counter")
+@ComponentId("failing-counter")
 public class FailingCounterEntity extends EventSourcedEntity<Counter, CounterEvent> {
 
   @Override

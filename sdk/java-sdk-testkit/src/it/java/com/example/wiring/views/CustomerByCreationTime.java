@@ -8,14 +8,14 @@ import com.example.wiring.keyvalueentities.customer.CustomerEntity;
 import akka.platform.javasdk.annotations.Query;
 import akka.platform.javasdk.annotations.Consume;
 import akka.platform.javasdk.annotations.Table;
-import akka.platform.javasdk.annotations.ViewId;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.view.View;
 
 import java.time.Instant;
 import java.util.List;
 
 
-@ViewId("view_customers_by_creation_time")
+@ComponentId("view_customers_by_creation_time")
 @Table("customers_by_creation_time")
 @Consume.FromKeyValueEntity(CustomerEntity.class)
 public class CustomerByCreationTime extends View<CustomerEntity.Customer> {

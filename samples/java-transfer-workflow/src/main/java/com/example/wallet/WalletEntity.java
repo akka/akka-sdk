@@ -1,12 +1,12 @@
 package com.example.wallet;
 
 import akka.platform.javasdk.keyvalueentity.KeyValueEntity;
-import akka.platform.javasdk.annotations.TypeId;
+import akka.platform.javasdk.annotations.ComponentId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 // tag::wallet[]
-@TypeId("wallet")
+@ComponentId("wallet")
 public class WalletEntity extends KeyValueEntity<WalletEntity.Wallet> {
 
 

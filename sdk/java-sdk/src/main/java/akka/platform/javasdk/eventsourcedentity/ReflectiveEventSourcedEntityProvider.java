@@ -4,7 +4,6 @@
 
 package akka.platform.javasdk.eventsourcedentity;
 
-import com.google.protobuf.Descriptors;
 import akka.platform.javasdk.common.ForwardHeadersExtractor;
 import akka.platform.javasdk.impl.ComponentDescriptor;
 import akka.platform.javasdk.impl.ComponentDescriptorFactory$;
@@ -12,6 +11,7 @@ import akka.platform.javasdk.impl.JsonMessageCodec;
 import akka.platform.javasdk.impl.MessageCodec;
 import akka.platform.javasdk.impl.eventsourcedentity.EventSourcedEntityRouter;
 import akka.platform.javasdk.impl.eventsourcedentity.ReflectiveEventSourcedEntityRouter;
+import com.google.protobuf.Descriptors;
 
 import java.util.Optional;
 import java.util.function.Function;
@@ -42,7 +42,7 @@ public class ReflectiveEventSourcedEntityProvider<S, E, ES extends EventSourcedE
       Function<EventSourcedEntityContext, ES> factory,
       EventSourcedEntityOptions options) {
 
-    String typeId = ComponentDescriptorFactory$.MODULE$.readTypeIdValue(entityClass);
+    String typeId = ComponentDescriptorFactory$.MODULE$.readComponentIdIdValue(entityClass);
     if (typeId == null)
       throw new IllegalArgumentException(
           "Event Sourced Entity [" + entityClass.getName() + "] is missing '@TypeId' annotation");

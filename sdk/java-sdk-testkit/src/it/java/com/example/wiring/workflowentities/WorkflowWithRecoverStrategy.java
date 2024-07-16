@@ -5,7 +5,7 @@
 package com.example.wiring.workflowentities;
 
 import com.example.wiring.actions.echo.Message;
-import akka.platform.javasdk.annotations.TypeId;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.client.ComponentClient;
 import akka.platform.javasdk.workflow.Workflow;
 
@@ -13,7 +13,7 @@ import java.util.concurrent.CompletableFuture;
 
 import static java.time.Duration.ofSeconds;
 
-@TypeId("workflow-with-recover-strategy")
+@ComponentId("workflow-with-recover-strategy")
 public class WorkflowWithRecoverStrategy extends Workflow<FailingCounterState> {
 
   private final String counterStepName = "counter";

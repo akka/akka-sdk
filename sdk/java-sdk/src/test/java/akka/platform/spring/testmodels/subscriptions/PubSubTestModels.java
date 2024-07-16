@@ -10,7 +10,7 @@ import akka.platform.javasdk.annotations.Produce;
 import akka.platform.javasdk.annotations.Query;
 import akka.platform.javasdk.annotations.Consume;
 import akka.platform.javasdk.annotations.Table;
-import akka.platform.javasdk.annotations.ViewId;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.view.View;
 import akka.platform.spring.testmodels.Done;
 import akka.platform.spring.testmodels.Message;
@@ -662,7 +662,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   // common query parameter for views in this file
   public record ByEmail(String email) {}
 
-  @ViewId("employee_view")
+  @ComponentId("employee_view")
   @Table("employee_table")
   @Consume.FromEventSourcedEntity(value = EmployeeEntity.class, ignoreUnknown = true)
   public static class SubscribeOnTypeToEventSourcedEvents extends View<Employee> {
@@ -711,7 +711,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
     }
   }
 
-  @ViewId("employee_view")
+  @ComponentId("employee_view")
   @Table("employee_table")
   @Consume.FromServiceStream(service = "employee_service", id = "employee_events")
   public static class EventStreamSubscriptionView extends View<Employee> {

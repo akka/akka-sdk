@@ -5,7 +5,7 @@
 package com.example.wiring.workflowentities;
 
 import com.example.wiring.actions.echo.Message;
-import akka.platform.javasdk.annotations.TypeId;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.client.ComponentClient;
 import akka.platform.javasdk.workflow.Workflow;
 
@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit;
 import static java.time.Duration.ofMillis;
 import static java.time.Duration.ofSeconds;
 
-@TypeId("workflow-with-timeout")
+@ComponentId("workflow-with-timeout")
 public class WorkflowWithTimeout extends Workflow<FailingCounterState> {
 
   private final String counterStepName = "counter";

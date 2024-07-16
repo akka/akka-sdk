@@ -3,7 +3,7 @@ package user.registry.views;
 import akka.platform.javasdk.annotations.Query;
 import akka.platform.javasdk.annotations.Consume;
 import akka.platform.javasdk.annotations.Table;
-import akka.platform.javasdk.annotations.ViewId;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.view.View;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,7 +17,7 @@ import java.util.List;
 /**
  * A View to query users by country.
  */
-@ViewId("view-users-by-newCountry")
+@ComponentId("view-users-by-newCountry")
 @Table("users_by_country")
 @Consume.FromEventSourcedEntity(value = UserEntity.class)
 public class UsersByCountryView extends View<UsersByCountryView.UserView> {

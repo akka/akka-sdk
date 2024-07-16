@@ -3,7 +3,7 @@
 
 In order to interact with an Entity in Kalix, we need to assign an *type id* and one or more instance *ids*:
 
-* *type id* is a unique identifier for all entities of a given type. To define the entity type id, the entity class must be annotated with `@TypeId` and have a unique and stable identifier assigned.
+* *type id* is a unique identifier for all entities of a given type. To define the entity type id, the entity class must be annotated with `@ComponentId` and have a unique and stable identifier assigned.
 * *id*, on the other hand, is unique per instance. In most cases, the entity id is passed as a path parameter of a REST request. The exception to the rule is when we request Kalix to auto-generate a id for us. In such a case, Kalix won't try to extract the id from the endpoint path.
 
 The entity id can be defined in different ways, as detailed below.

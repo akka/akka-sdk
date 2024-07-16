@@ -66,11 +66,11 @@ include::example$java-spring-eventsourced-shopping-cart/src/main/java/com/exampl
 ----
 <1> Create a class that extends `EventSourcedEntity<S, E>`, where `S` is the state type this entity will store (i.e. `ShoppingCart`) and `E` is the top type for the events it emits (i.e. `ShoppingCartEvent`).
 <2> Annotate such class with `@Id` and pass the name of the id that will be used as the entity instance unique identifier.
-<3> Make sure to annotate such class with `@TypeId` and pass a unique identifier for this entity type.
+<3> Make sure to annotate such class with `@ComponentId` and pass a unique identifier for this entity type.
 <4> Use Spring's RequestMapping annotation to define the route to your entity.
 
 
-NOTE: The `@Id` value `cartId` must match a path parameter (i.e. `cartId`) and such value needs to be unique per entity. On the other hand, the `@TypeId` value `shopping-cart` is common for all instances of this entity but must be stable - cannot be changed after a production deploy - and unique across the different entity types.
+NOTE: The `@Id` value `cartId` must match a path parameter (i.e. `cartId`) and such value needs to be unique per entity. On the other hand, the `@ComponentId` value `shopping-cart` is common for all instances of this entity but must be stable - cannot be changed after a production deploy - and unique across the different entity types.
 
 === Updating state
 

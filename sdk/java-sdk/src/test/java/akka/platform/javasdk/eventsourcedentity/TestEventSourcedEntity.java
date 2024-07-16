@@ -4,9 +4,9 @@
 
 package akka.platform.javasdk.eventsourcedentity;
 
-import akka.platform.javasdk.annotations.TypeId;
+import akka.platform.javasdk.annotations.ComponentId;
 
-@TypeId("es")
+@ComponentId("es")
 public class TestEventSourcedEntity extends EventSourcedEntity<TestESState, TestESEvent> {
 
 

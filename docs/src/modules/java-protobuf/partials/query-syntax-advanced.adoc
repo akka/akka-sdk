@@ -135,7 +135,7 @@ include::example$scala-protobuf-view-store/src/main/proto/store/view/joined/orde
 
 A view can subscribe to the events or changes for each of the Customer, Order, and Product entities.
 
-To do this, create a class with a `ViewId` annotation, and with a nested `View` component (a static member class) for each of the view tables. Each nested view table subscribes to one of the entities.
+To do this, create a class with a `ComponentId` annotation, and with a nested `View` component (a static member class) for each of the view tables. Each nested view table subscribes to one of the entities.
 
 The view query can then JOIN across these tables, to return all orders for a specified customer, and include the customer and product details with each order.
 

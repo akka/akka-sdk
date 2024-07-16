@@ -6,12 +6,12 @@ package com.example.wiring.eventsourcedentities.headers;
 
 import com.example.wiring.actions.echo.Message;
 import akka.platform.javasdk.annotations.ForwardHeaders;
-import akka.platform.javasdk.annotations.TypeId;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.eventsourcedentity.EventSourcedEntity;
 
 import static com.example.wiring.actions.headers.ForwardHeadersAction.SOME_HEADER;
 
-@TypeId("forward-headers-es")
+@ComponentId("forward-headers-es")
 @ForwardHeaders(SOME_HEADER)
 public class ForwardHeadersESEntity extends EventSourcedEntity<String, ForwardHeadersESEntity.Event> {
 

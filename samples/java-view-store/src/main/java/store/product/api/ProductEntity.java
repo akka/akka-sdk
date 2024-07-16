@@ -1,6 +1,6 @@
 package store.product.api;
 
-import akka.platform.javasdk.annotations.TypeId;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.eventsourcedentity.EventSourcedEntity;
 import store.product.domain.Money;
 import store.product.domain.Product;
@@ -10,7 +10,7 @@ import static store.product.domain.ProductEvent.ProductCreated;
 import static store.product.domain.ProductEvent.ProductNameChanged;
 import static store.product.domain.ProductEvent.ProductPriceChanged;
 
-@TypeId("product")
+@ComponentId("product")
 public class ProductEntity extends EventSourcedEntity<Product, ProductEvent> {
 
 

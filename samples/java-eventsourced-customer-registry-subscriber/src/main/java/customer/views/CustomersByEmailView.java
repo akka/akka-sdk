@@ -4,14 +4,14 @@ import akka.platform.javasdk.annotations.Acl;
 import akka.platform.javasdk.annotations.Query;
 import akka.platform.javasdk.annotations.Consume;
 import akka.platform.javasdk.annotations.Table;
-import akka.platform.javasdk.annotations.ViewId;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.view.View;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 // tag::view[]
 
-@ViewId("customers_by_email")
+@ComponentId("customers_by_email")
 @Table("customers_by_email")
 @Consume.FromServiceStream( // <1>
   service = "customer-registry", // <2>

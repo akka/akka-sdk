@@ -2,10 +2,10 @@ package com.example.jwt;
 
 import akka.platform.javasdk.StatusCode;
 import akka.platform.javasdk.action.Action;
-import akka.platform.javasdk.annotations.ActionId;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.annotations.JWT;
 
-@ActionId("jwt-action")
+@ComponentId("jwt-action")
 public class JWTAction extends Action {
 
     // tag::bearer-token[]

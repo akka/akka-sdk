@@ -5,12 +5,12 @@
 package com.example.wiring.actions.echo;
 
 import akka.platform.javasdk.action.Action;
-import akka.platform.javasdk.annotations.ActionId;
+import akka.platform.javasdk.annotations.ComponentId;
 
 import java.util.Collection;
 import java.util.stream.Collectors;
 
-@ActionId("with-primitives")
+@ComponentId("with-primitives")
 public class ActionWithPrimitives extends Action {
 
   public Effect<Message> stringMessageWithOptionalParams(long longValue) {

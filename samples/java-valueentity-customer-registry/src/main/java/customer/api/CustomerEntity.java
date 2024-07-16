@@ -20,10 +20,10 @@ package customer.api;
 
 import customer.domain.Address;
 import customer.domain.Customer;
-import akka.platform.javasdk.annotations.TypeId;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.keyvalueentity.KeyValueEntity;
 
-@TypeId("customer") // <1>
+@ComponentId("customer") // <1>
 public class CustomerEntity extends KeyValueEntity<Customer> { // <4>
 
   public Effect<Ok> create(Customer customer) {

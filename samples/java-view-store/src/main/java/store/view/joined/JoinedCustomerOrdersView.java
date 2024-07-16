@@ -3,7 +3,7 @@ package store.view.joined;
 import akka.platform.javasdk.annotations.Query;
 import akka.platform.javasdk.annotations.Consume;
 import akka.platform.javasdk.annotations.Table;
-import akka.platform.javasdk.annotations.ViewId;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.view.View;
 import store.customer.api.CustomerEntity;
 import store.customer.domain.CustomerEvent;
@@ -16,7 +16,7 @@ import store.view.model.Customer;
 import store.view.model.Product;
 
 // tag::join[]
-@ViewId("joined-customer-orders") // <1>
+@ComponentId("joined-customer-orders") // <1>
 public class JoinedCustomerOrdersView {
 
   @Query( // <2>

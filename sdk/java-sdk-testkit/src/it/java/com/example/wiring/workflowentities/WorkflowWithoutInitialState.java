@@ -4,12 +4,12 @@
 
 package com.example.wiring.workflowentities;
 
-import akka.platform.javasdk.annotations.TypeId;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.workflow.Workflow;
 
 import java.util.concurrent.CompletableFuture;
 
-@TypeId("workflow-without-initial-state")
+@ComponentId("workflow-without-initial-state")
 public class WorkflowWithoutInitialState extends Workflow<String> {
 
 

@@ -5,9 +5,9 @@
 package com.example;
 
 import akka.platform.javasdk.action.Action;
-import akka.platform.javasdk.annotations.ActionId;
+import akka.platform.javasdk.annotations.ComponentId;
 
-@ActionId("hello")
+@ComponentId("hello")
 public class HelloAction extends Action {
 
   public Effect<String> hello() {

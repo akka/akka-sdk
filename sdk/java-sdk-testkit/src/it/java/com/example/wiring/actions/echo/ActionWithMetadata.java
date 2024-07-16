@@ -6,7 +6,7 @@ package com.example.wiring.actions.echo;
 
 import akka.platform.javasdk.Metadata;
 import akka.platform.javasdk.action.Action;
-import akka.platform.javasdk.annotations.ActionId;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.annotations.ForwardHeaders;
 import akka.platform.javasdk.client.ComponentClient;
 
@@ -15,7 +15,7 @@ import java.util.concurrent.CompletableFuture;
 // FIXME used in SpringSdkIntegrationTest, since component client is currently going over the rest endpoint
 //       all headers expected to be forwarded must be opt-in. Once we switch to "native" component client
 //       we will forward all metadata and this won't be needed
-@ActionId("with-metadata")
+@ComponentId("with-metadata")
 @ForwardHeaders({"myKey"})
 public class ActionWithMetadata extends Action {
 

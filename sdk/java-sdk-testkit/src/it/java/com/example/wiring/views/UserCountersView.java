@@ -14,11 +14,11 @@ import akka.platform.javasdk.view.View;
 import akka.platform.javasdk.annotations.Query;
 import akka.platform.javasdk.annotations.Consume;
 import akka.platform.javasdk.annotations.Table;
-import akka.platform.javasdk.annotations.ViewId;
+import akka.platform.javasdk.annotations.ComponentId;
 
 import java.util.Optional;
 
-@ViewId("user-counters")
+@ComponentId("user-counters")
 public class UserCountersView {
 
   public record QueryParameters(String userId) {}

@@ -3,7 +3,7 @@ package shoppingcart.api;
 
 // tag::class[]
 
-import akka.platform.javasdk.annotations.TypeId;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.eventsourcedentity.EventSourcedEntity;
 import akka.platform.javasdk.eventsourcedentity.EventSourcedEntityContext;
 import shoppingcart.domain.ShoppingCart;
@@ -13,7 +13,7 @@ import shoppingcart.domain.ShoppingCart.Event.ItemRemoved;
 
 import java.util.ArrayList;
 
-@TypeId("shopping-cart") // <1>
+@ComponentId("shopping-cart") // <1>
 public class ShoppingCartEntity
   extends EventSourcedEntity<ShoppingCart, ShoppingCart.Event> { // <2>
 

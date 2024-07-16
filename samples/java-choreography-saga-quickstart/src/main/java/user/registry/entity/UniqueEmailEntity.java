@@ -2,7 +2,7 @@ package user.registry.entity;
 
 
 import akka.platform.javasdk.annotations.Acl;
-import akka.platform.javasdk.annotations.TypeId;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.keyvalueentity.KeyValueEntity;
 import akka.platform.javasdk.keyvalueentity.KeyValueEntityContext;
 import org.slf4j.Logger;
@@ -26,7 +26,7 @@ import java.util.Optional;
  * <p>
  * If, while creating a user, the email address is already reserved, the user creation fails.
  */
-@TypeId("unique-address")
+@ComponentId("unique-address")
 // Only allow access to this entity from inside the service (i.e. from the ApplicationController)
 @Acl(allow = @Acl.Matcher(service = "*"))
 public class UniqueEmailEntity extends KeyValueEntity<UniqueEmail> {

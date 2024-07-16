@@ -10,13 +10,13 @@ import com.example.wiring.eventsourcedentities.counter.CounterEvent;
 import akka.platform.javasdk.annotations.Query;
 import akka.platform.javasdk.annotations.Consume;
 import akka.platform.javasdk.annotations.Table;
-import akka.platform.javasdk.annotations.ViewId;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.view.View;
 
 import java.util.List;
 
 // With Multiple Subscriptions
-@ViewId("counters_by_value_ms")
+@ComponentId("counters_by_value_ms")
 @Table("counters_by_value_ms")
 public class CountersByValueSubscriptions extends View<Counter> {
 

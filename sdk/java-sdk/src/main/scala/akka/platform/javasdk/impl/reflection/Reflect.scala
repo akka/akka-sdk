@@ -4,21 +4,20 @@
 
 package akka.platform.javasdk.impl.reflection
 
-import akka.platform.javasdk.action.Action
-
 import java.lang.annotation.Annotation
 import java.lang.reflect.AnnotatedElement
 import java.lang.reflect.Method
 import java.lang.reflect.Modifier
 import java.lang.reflect.ParameterizedType
 import java.util
+
 import scala.annotation.tailrec
 import scala.reflect.ClassTag
 
+import akka.platform.javasdk.action.Action
 import akka.platform.javasdk.annotations.http.Endpoint
 import akka.platform.javasdk.client.ComponentClient
 import akka.platform.javasdk.eventsourcedentity.EventSourcedEntity
-import akka.platform.javasdk.impl.ComponentDescriptorFactory
 import akka.platform.javasdk.impl.client.ComponentClientImpl
 import akka.platform.javasdk.keyvalueentity.KeyValueEntity
 import akka.platform.javasdk.view.View
@@ -56,17 +55,16 @@ object Reflect {
   def isRestEndpoint(cls: Class[_]): Boolean =
     cls.getAnnotation(classOf[Endpoint]) != null
 
-  def isFixedEndpointComponent(cls: Class[_]): Boolean = {
+  def isEntity(cls: Class[_]): Boolean =
     classOf[EventSourcedEntity[_, _]].isAssignableFrom(cls) ||
-    classOf[KeyValueEntity[_]].isAssignableFrom(cls) ||
-    isWorkflow(cls) ||
-    isView(cls)
-  }
+    classOf[KeyValueEntity[_]].isAssignableFrom(cls)
 
   def isWorkflow(cls: Class[_]): Boolean =
     classOf[AbstractWorkflow[_]].isAssignableFrom(cls)
 
   def isView(cls: Class[_]): Boolean = isMultiTableView(cls) || extendsView(cls)
+
+  def isAction(clazz: Class[_]): Boolean = classOf[Action].isAssignableFrom(clazz)
 
   /**
    * A multi-table view doesn't extend View itself, but contains at least one View class.
@@ -85,23 +83,13 @@ object Reflect {
   }
 
   def getReturnType[R](declaringClass: Class[_], method: Method): Class[R] = {
-    if (classOf[Action].isAssignableFrom(declaringClass)
-      || classOf[KeyValueEntity[_]].isAssignableFrom(declaringClass)
-      || classOf[EventSourcedEntity[_, _]].isAssignableFrom(declaringClass)
-      || classOf[Workflow[_]].isAssignableFrom(declaringClass)) {
+    if (isAction(declaringClass) || isEntity(declaringClass) || isWorkflow(declaringClass)) {
       // here we are expecting a wrapper in the form of an Effect
       method.getGenericReturnType.asInstanceOf[ParameterizedType].getActualTypeArguments.head.asInstanceOf[Class[R]]
     } else {
       // in other cases we expect a View query method, but declaring class may not extend View[_] class for join views
       method.getReturnType.asInstanceOf[Class[R]]
     }
-  }
-
-  def entityTypeOf(entityClass: Class[_]): String = {
-    val typeId = ComponentDescriptorFactory.readTypeIdValue(entityClass)
-    if (typeId == null)
-      throw new IllegalArgumentException("Entity [" + entityClass.getName + "] is missing '@TypeId' annotation")
-    else typeId
   }
 
   private def extendsView(component: Class[_]): Boolean =
@@ -154,5 +142,4 @@ object Reflect {
     collectAll(instance.getClass, List.empty)
   }
 
-  def isAction(clazz: Class[_]) = classOf[Action].isAssignableFrom(clazz)
 }

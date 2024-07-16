@@ -4,13 +4,13 @@
 
 package akka.platform.spring.testmodels.keyvalueentity;
 
-import akka.platform.javasdk.annotations.TypeId;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.keyvalueentity.KeyValueEntity;
 import akka.platform.spring.testmodels.Number;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@TypeId("ve-counter")
+@ComponentId("ve-counter")
 public class Counter extends KeyValueEntity<CounterState> {
 
   private final Logger logger = LoggerFactory.getLogger(getClass());

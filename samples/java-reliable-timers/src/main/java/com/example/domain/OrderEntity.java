@@ -2,14 +2,14 @@ package com.example.domain;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import akka.platform.javasdk.annotations.TypeId;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.keyvalueentity.KeyValueEntity;
 import akka.platform.javasdk.keyvalueentity.KeyValueEntityContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 // tag::order[]
-@TypeId("order")
+@ComponentId("order")
 public class OrderEntity extends KeyValueEntity<Order> {
 
   private static final Logger logger = LoggerFactory.getLogger(OrderEntity.class);

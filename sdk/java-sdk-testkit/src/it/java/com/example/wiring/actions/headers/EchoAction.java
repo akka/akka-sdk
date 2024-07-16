@@ -6,12 +6,12 @@ package com.example.wiring.actions.headers;
 
 import com.example.wiring.actions.echo.Message;
 import akka.platform.javasdk.action.Action;
-import akka.platform.javasdk.annotations.ActionId;
+import akka.platform.javasdk.annotations.ComponentId;
 
 /**
  * Action with the same name in a different package.
  */
-@ActionId("echo2")
+@ComponentId("echo2")
 public class EchoAction extends Action {
 
   public Effect<Message> stringMessage(String msg) {

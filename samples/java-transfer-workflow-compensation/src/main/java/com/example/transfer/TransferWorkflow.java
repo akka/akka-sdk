@@ -9,7 +9,7 @@ import com.example.wallet.WalletEntity.DepositResult.DepositSucceed;
 import com.example.wallet.WalletEntity.WithdrawResult;
 import com.example.wallet.WalletEntity.WithdrawResult.WithdrawFailed;
 import com.example.wallet.WalletEntity.WithdrawResult.WithdrawSucceed;
-import akka.platform.javasdk.annotations.TypeId;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.client.ComponentClient;
 import akka.platform.javasdk.workflow.Workflow;
 import org.slf4j.Logger;
@@ -28,7 +28,7 @@ import static com.example.transfer.TransferState.TransferStatus.WITHDRAW_SUCCEED
 import static java.time.Duration.ofHours;
 import static java.time.Duration.ofSeconds;
 
-@TypeId("transfer")
+@ComponentId("transfer")
 public class TransferWorkflow extends Workflow<TransferState> {
 
   public record Withdraw(String from, int amount) {

@@ -5,12 +5,12 @@
 package com.example.wiring.keyvalueentities.customer;
 
 import com.example.wiring.Ok;
-import akka.platform.javasdk.annotations.TypeId;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.keyvalueentity.KeyValueEntity;
 
 import java.time.Instant;
 
-@TypeId("customer")
+@ComponentId("customer")
 public class CustomerEntity extends KeyValueEntity<CustomerEntity.Customer> {
 
   public record Customer(String name, Instant createdOn) {

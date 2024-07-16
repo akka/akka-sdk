@@ -4,11 +4,11 @@
 
 package akka.platform.spring.testmodels.keyvalueentity;
 
-import akka.platform.javasdk.annotations.TypeId;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.keyvalueentity.KeyValueEntity;
 import akka.platform.spring.testmodels.Done;
 
-@TypeId("user")
+@ComponentId("user")
 public class UserEntity extends KeyValueEntity<User> {
   @Override
   public User emptyState() {

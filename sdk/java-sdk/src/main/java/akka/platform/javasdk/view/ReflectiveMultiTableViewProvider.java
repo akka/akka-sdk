@@ -5,7 +5,7 @@
 package akka.platform.javasdk.view;
 
 import com.google.protobuf.Descriptors;
-import akka.platform.javasdk.annotations.ViewId;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.impl.MessageCodec;
 import akka.platform.javasdk.impl.reflection.Reflect;
 import akka.platform.javasdk.impl.view.ViewMultiTableRouter;
@@ -33,8 +33,8 @@ public class ReflectiveMultiTableViewProvider<V> implements ViewProvider {
       BiFunction<Class<View<?>>, ViewCreationContext, View<?>> factory) {
 
     String viewId =
-        Optional.ofNullable(viewClass.getAnnotation(ViewId.class))
-            .map(ViewId::value)
+        Optional.ofNullable(viewClass.getAnnotation(ComponentId.class))
+            .map(ComponentId::value)
             .orElseGet(viewClass::getName);
 
     return new ReflectiveMultiTableViewProvider<>(

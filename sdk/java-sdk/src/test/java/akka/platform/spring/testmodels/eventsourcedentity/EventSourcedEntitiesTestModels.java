@@ -5,7 +5,7 @@
 package akka.platform.spring.testmodels.eventsourcedentity;
 
 import akka.platform.javasdk.JsonMigration;
-import akka.platform.javasdk.annotations.TypeId;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.annotations.Migration;
 import akka.platform.javasdk.annotations.Acl;
 import akka.platform.javasdk.annotations.JWT;
@@ -22,7 +22,7 @@ public class EventSourcedEntitiesTestModels {
         }
     }
 
-    @TypeId("employee")
+    @ComponentId("employee")
     public static class EmployeeEntity extends EventSourcedEntity<Employee, EmployeeEvent> {
 
         public Effect<String> createUser(CreateEmployee create) {
@@ -37,7 +37,7 @@ public class EventSourcedEntitiesTestModels {
         }
     }
 
-    @TypeId("counter-entity")
+    @ComponentId("counter-entity")
     public static class CounterEventSourcedEntity extends EventSourcedEntity<Integer, CounterEvent> {
 
         @Migration(EventMigration.class)
@@ -76,7 +76,7 @@ public class EventSourcedEntitiesTestModels {
 
 
 
-    @TypeId("counter")
+    @ComponentId("counter")
     public static class CounterEventSourcedEntityWithMethodLevelJWT extends EventSourcedEntity<Integer, CounterEvent> {
 
         @JWT(
@@ -103,7 +103,7 @@ public class EventSourcedEntitiesTestModels {
         }
     }
 
-    @TypeId("counter")
+    @ComponentId("counter")
     @JWT(
         validate = JWT.JwtMethodMode.BEARER_TOKEN,
         bearerTokenIssuer = {"a", "b"},
@@ -129,7 +129,7 @@ public class EventSourcedEntitiesTestModels {
 
 
 
-    @TypeId("counter")
+    @ComponentId("counter")
     @Acl(allow = @Acl.Matcher(service = "test"))
     public static class EventSourcedEntityWithServiceLevelAcl extends EventSourcedEntity<Employee, EmployeeEvent> {
 
@@ -141,7 +141,7 @@ public class EventSourcedEntitiesTestModels {
     }
 
 
-    @TypeId("counter")
+    @ComponentId("counter")
     public static class EventSourcedEntityWithMethodLevelAcl extends EventSourcedEntity<Employee, EmployeeEvent> {
 
         @Acl(allow = @Acl.Matcher(service = "test"))
@@ -157,7 +157,7 @@ public class EventSourcedEntitiesTestModels {
         }
     }
 
-    @TypeId("counter")
+    @ComponentId("counter")
     public static class InvalidEventSourcedEntityWithOverloadedCommandHandler extends EventSourcedEntity<Employee, EmployeeEvent> {
 
         public Effect<String> createUser(CreateEmployee create) {

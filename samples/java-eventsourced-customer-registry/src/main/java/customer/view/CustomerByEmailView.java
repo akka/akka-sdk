@@ -5,10 +5,10 @@ import customer.domain.CustomerEvent;
 import akka.platform.javasdk.annotations.Query;
 import akka.platform.javasdk.annotations.Consume;
 import akka.platform.javasdk.annotations.Table;
-import akka.platform.javasdk.annotations.ViewId;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.view.View;
 
-@ViewId("view_customers_by_email")
+@ComponentId("view_customers_by_email")
 @Table("customers_by_email")
 public class CustomerByEmailView extends View<CustomerView> {
 

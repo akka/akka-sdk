@@ -5,13 +5,13 @@
 package com.example.wiring.workflowentities;
 
 import com.example.wiring.actions.echo.Message;
-import akka.platform.javasdk.annotations.TypeId;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.client.ComponentClient;
 import akka.platform.javasdk.workflow.Workflow;
 
 import java.time.Duration;
 
-@TypeId("transfer-workflow")
+@ComponentId("transfer-workflow")
 public class TransferWorkflow extends Workflow<TransferState> {
 
   private final String withdrawStepName = "withdraw";

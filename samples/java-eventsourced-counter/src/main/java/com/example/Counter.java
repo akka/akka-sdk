@@ -16,7 +16,7 @@
 
 package com.example;
 
-import akka.platform.javasdk.annotations.TypeId;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.eventsourcedentity.EventSourcedEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory;
 import static com.example.CounterEvent.ValueIncreased;
 import static com.example.CounterEvent.ValueMultiplied;
 
-@TypeId("counter")
+@ComponentId("counter")
 public class Counter extends EventSourcedEntity<Integer, CounterEvent> {
 
   private Logger logger = LoggerFactory.getLogger(Counter.class);

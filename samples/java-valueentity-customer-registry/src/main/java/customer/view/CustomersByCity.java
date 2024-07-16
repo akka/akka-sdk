@@ -6,12 +6,12 @@ import customer.domain.Customer;
 import akka.platform.javasdk.annotations.Query;
 import akka.platform.javasdk.annotations.Consume;
 import akka.platform.javasdk.annotations.Table;
-import akka.platform.javasdk.annotations.ViewId;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.view.View;
 
 import java.util.List;
 
-@ViewId("customers_by_city")
+@ComponentId("customers_by_city")
 @Table("customers_by_city")
 // tag::view-test[]
 @Consume.FromKeyValueEntity(CustomerEntity.class)

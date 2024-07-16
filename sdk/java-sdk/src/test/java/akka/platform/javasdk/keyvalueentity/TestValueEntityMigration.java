@@ -4,9 +4,9 @@
 
 package akka.platform.javasdk.keyvalueentity;
 
-import akka.platform.javasdk.annotations.TypeId;
+import akka.platform.javasdk.annotations.ComponentId;
 
-@TypeId("ve")
+@ComponentId("ve")
 public class TestValueEntityMigration extends KeyValueEntity<TestVEState2> {
 
   public Effect<TestVEState2> get() {
