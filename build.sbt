@@ -62,7 +62,7 @@ lazy val javaSdk =
       name := "akka-platform-java-sdk",
       crossPaths := false,
       Compile / javacOptions ++= Seq("--release", "21"),
-      Compile / scalacOptions ++= Seq("-release", "21"),
+      Compile / scalacOptions ++= Seq("-release", "17"),
       scalaVersion := Dependencies.ScalaVersion,
       buildInfoKeys := Seq[BuildInfoKey](
         name,
@@ -91,7 +91,7 @@ lazy val javaSdk =
         ((Compile / javaSource).value / "overview.html").getAbsolutePath,
         "-notimestamp",
         "-doctitle",
-        "Kalix Java SDK for Spring",
+        "Akka Platform Java SDK",
         "-noqualifier",
         "java.lang"),
       Compile / akkaGrpcGeneratedSources := Seq(AkkaGrpc.Server, AkkaGrpc.Client),
@@ -114,7 +114,7 @@ lazy val javaSdkTestKit =
       name := "akka-platform-java-sdk-testkit",
       crossPaths := false,
       Compile / javacOptions ++= Seq("--release", "21"),
-      Compile / scalacOptions ++= Seq("-release", "21"),
+      Compile / scalacOptions ++= Seq("-release", "17"),
       buildInfoKeys := Seq[BuildInfoKey](
         name,
         version,
@@ -138,7 +138,7 @@ lazy val javaSdkTestKit =
         ((Compile / javaSource).value / "overview.html").getAbsolutePath,
         "-notimestamp",
         "-doctitle",
-        "Kalix Java SDK Testkit for Spring",
+        "Akka Platform Java SDK Testkit",
         "-noqualifier",
         "java.lang"))
     .settings(inConfig(IntegrationTest)(JupiterPlugin.scopedSettings): _*)
@@ -161,7 +161,7 @@ def scaladocOptions(title: String, ver: String, base: File): List[String] = {
 
 def githubUrl(v: String): String = {
   val branch = if (v.endsWith("SNAPSHOT")) "main" else "v" + v
-  "https://github.com/lightbend/kalix-jvm-sdk/tree/" + branch
+  "https://github.com/lightbend/akka-platform-jvm-sdk/tree/" + branch
 }
 
 lazy val devTools = devToolsCommon(
@@ -206,7 +206,7 @@ def devToolsCommon(project: Project): Project =
         ((Compile / javaSource).value / "overview.html").getAbsolutePath,
         "-notimestamp",
         "-doctitle",
-        "Kalix Dev Tools",
+        "Akka Platform Dev Tools",
         "-noqualifier",
         "java.lang"))
     .settings(Dependencies.devTools)
