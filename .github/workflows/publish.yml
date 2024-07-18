@@ -54,12 +54,14 @@ jobs:
       - name: sbt publishM2
         run: sbt --client +publishM2
 
-      - name: mvn deploy
-        run: |-
-          export SDK_VERSION="$(cat ~/akka-platform-sdk-version.txt)"
-          ./.github/publish-maven.sh
-        env:
-          PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
-          PGP_SECRET: ${{ secrets.PGP_SECRET }}
-          SONATYPE_USERNAME: ${{ secrets.KALIX_IO_SONATYPE_USER }}
-          SONATYPE_PASSWORD: ${{ secrets.KALIX_IO_SONATYPE_PASSWORD }}
+# Defer publishing Maven parts to Maven Central until we want to
+# need to check if publishing to the io.akka group ID is fully set up
+#      - name: mvn deploy
+#        run: |-
+#          export SDK_VERSION="$(cat ~/akka-platform-sdk-version.txt)"
+#          ./.github/publish-maven.sh
+#        env:
+#          PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
+#          PGP_SECRET: ${{ secrets.PGP_SECRET }}
+#          SONATYPE_USERNAME: ${{ secrets.KALIX_IO_SONATYPE_USER }}
+#          SONATYPE_PASSWORD: ${{ secrets.KALIX_IO_SONATYPE_PASSWORD }}
