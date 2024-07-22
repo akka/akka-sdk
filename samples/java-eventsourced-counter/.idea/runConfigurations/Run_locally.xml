@@ -13,6 +13,7 @@
             <list>
               <option value="compile" />
               <option value="exec:java" />
+              <option value="-Dkalix.proxy.eventing.support=google-pubsub-emulator" />
             </list>
           </option>
           <option name="multimoduleDir" />
