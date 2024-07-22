@@ -1,5 +1,6 @@
 package com.example.actions;
 
+import akka.platform.javasdk.annotations.ComponentId;
 import com.example.Counter;
 import com.example.CounterEvent;
 import akka.platform.javasdk.Metadata;
@@ -10,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 // tag::class[]
+@ComponentId("counter-journal-to-topic-with-meta")
 public class CounterJournalToTopicWithMetaAction extends Action {
 
   private Logger logger = LoggerFactory.getLogger(CounterJournalToTopicWithMetaAction.class);

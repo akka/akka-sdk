@@ -1,5 +1,6 @@
 package com.example.tracing.api;
 
+import akka.platform.javasdk.annotations.ComponentId;
 import com.example.tracing.domain.UserEvent;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanKind;
@@ -17,7 +18,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.concurrent.CompletableFuture;
 
-
+@ComponentId("get-random-name")
 @Consume.FromEventSourcedEntity(value = UserEntity.class, ignoreUnknown = true)
 public class GetRandomNameAction extends Action {
 

@@ -1,5 +1,6 @@
 package com.example.actions;
 
+import akka.platform.javasdk.annotations.ComponentId;
 import com.example.CounterEvent.ValueIncreased;
 import com.example.CounterEvent.ValueMultiplied;
 import akka.platform.javasdk.action.Action;
@@ -7,6 +8,7 @@ import akka.platform.javasdk.annotations.Consume;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@ComponentId("counter-topic-subscription")
 @Consume.FromTopic(value = "counter-events") // <1>
 public class CounterTopicSubscriptionAction extends Action {
 

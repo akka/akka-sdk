@@ -1,5 +1,6 @@
 package customer.api;
 
+import akka.platform.javasdk.annotations.ComponentId;
 import customer.domain.CustomerEvent;
 import customer.domain.CustomerEvent.CustomerCreated;
 import customer.domain.CustomerEvent.NameChanged;
@@ -9,6 +10,7 @@ import akka.platform.javasdk.annotations.Produce;
 import akka.platform.javasdk.annotations.Consume;
 
 // tag::producer[]
+@ComponentId("customer-events-service")
 @Consume.FromEventSourcedEntity(value = CustomerEntity.class) // <1>
 @Produce.ServiceStream(id = "customer_events") // <2>
 @Acl(allow = @Acl.Matcher(service = "*")) // <3>

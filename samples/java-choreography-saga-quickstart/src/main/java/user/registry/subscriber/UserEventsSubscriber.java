@@ -2,6 +2,7 @@ package user.registry.subscriber;
 
 
 import akka.platform.javasdk.action.Action;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.annotations.Consume;
 import akka.platform.javasdk.client.ComponentClient;
 import org.slf4j.Logger;
@@ -20,6 +21,7 @@ import user.registry.entity.UserEntity;
  * In the choreography, this subscriber will react to events (facts) produced by the UserEntity and modify the
  * UniqueEmailEntity accordingly. Either by confirming or un-reserving the email address.
  */
+@ComponentId("user-events-subscriber")
 @Consume.FromEventSourcedEntity(value = UserEntity.class)
 public class UserEventsSubscriber extends Action {
 

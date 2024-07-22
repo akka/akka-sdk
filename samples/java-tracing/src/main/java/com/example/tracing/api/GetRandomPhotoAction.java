@@ -1,5 +1,6 @@
 package com.example.tracing.api;
 
+import akka.platform.javasdk.annotations.ComponentId;
 import com.example.tracing.domain.UserEvent;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanKind;
@@ -20,7 +21,7 @@ import java.net.http.HttpResponse;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
-
+@ComponentId("get-random-photo")
 @Consume.FromEventSourcedEntity(value = UserEntity.class, ignoreUnknown = true)
 public class GetRandomPhotoAction extends Action {
   private static final Logger log = LoggerFactory.getLogger(GetRandomPhotoAction.class);

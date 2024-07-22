@@ -1,5 +1,6 @@
 package com.example.actions;
 
+import akka.platform.javasdk.annotations.ComponentId;
 import com.example.Counter;
 import com.example.CounterEvent;
 import akka.platform.javasdk.action.Action;
@@ -8,6 +9,7 @@ import akka.platform.javasdk.annotations.Consume;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@ComponentId("counter-journal-to-topic")
 public class CounterJournalToTopicAction extends Action {
 
   private Logger logger = LoggerFactory.getLogger(CounterJournalToTopicAction.class);

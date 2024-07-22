@@ -16,6 +16,7 @@ import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeKind;
+import javax.lang.model.util.ElementFilter;
 import javax.tools.Diagnostic;
 import javax.tools.FileObject;
 import javax.tools.StandardLocation;
@@ -38,11 +39,6 @@ import java.util.stream.Collectors;
                 "akka.platform.javasdk.annotations.http.Endpoint",
                 // all components will have this
                 "akka.platform.javasdk.annotations.ComponentId",
-                // actions or views
-                "akka.platform.javasdk.annotations.Consume.FromKeyValueEntity",
-                "akka.platform.javasdk.annotations.Consume.FromEventSourcedEntity",
-                "akka.platform.javasdk.annotations.Consume.FromTopic",
-                "akka.platform.javasdk.annotations.Consume.FromServiceStream",
                 // central config/lifecycle class
                 "akka.platform.javasdk.annotations.KalixService"
         })
@@ -83,16 +79,11 @@ public class ComponentAnnotationProcessor extends AbstractProcessor {
             Map<String, List<String>> componentTypeToConcreteComponents = new HashMap<>();
             for (TypeElement annotation : annotations) {
                 Set<? extends Element> annotatedElements = roundEnv.getElementsAnnotatedWith(annotation);
-                var elementsPerComponentType = annotatedElements.stream().filter(element -> {
-                    if (element.getKind().isClass()) return true;
-                    else {
-                        warning("Kalix annotation processor filtering out " + element.getSimpleName() +
-                                " since it is not a class (even though it has annotation " + annotation + ")");
-                        return false;
-                    }
-                }).collect(Collectors.groupingBy(element -> componentTypeFor(element, annotation)));
+                var elementsPerComponentType = ElementFilter.typesIn(annotatedElements)
+                  .stream()
+                  .collect(Collectors.groupingBy(element -> componentTypeFor(element, annotation)));
                 elementsPerComponentType.forEach((componentType, elements) -> {
-                    var classNames = new ArrayList<>(elements.stream().map(element -> ((TypeElement)element).getQualifiedName().toString()).toList());
+                    var classNames = new ArrayList<>(elements.stream().map(element -> element.getQualifiedName().toString()).toList());
                     if (componentTypeToConcreteComponents.containsKey(componentType)) {
                         // the same component might have multiple annotations, deduplication happens when creating config later
                         classNames.addAll(componentTypeToConcreteComponents.get(componentType));

@@ -1,6 +1,7 @@
 package user.registry.subscriber;
 
 
+import akka.platform.javasdk.annotations.ComponentId;
 import com.typesafe.config.Config;
 import akka.platform.javasdk.action.Action;
 import akka.platform.javasdk.annotations.Consume;
@@ -28,6 +29,7 @@ import java.time.Duration;
  * Also, strictly speaking, we don't need to delete the timer when the email address is confirmed. If we don't delete it and the timer fires,
  * the UniqueEmailEntity will just ignore the message. But it is a good practice to clean up obsolete times and save resources.
  */
+@ComponentId("unique-email-subscriber")
 @Consume.FromKeyValueEntity(UniqueEmailEntity.class)
 public class UniqueEmailSubscriber extends Action {
 

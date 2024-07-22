@@ -1,5 +1,6 @@
 package com.example.actions;
 
+import akka.platform.javasdk.annotations.ComponentId;
 import com.example.Counter;
 import akka.platform.javasdk.action.Action;
 import akka.platform.javasdk.annotations.Consume;
@@ -7,6 +8,7 @@ import akka.platform.javasdk.client.ComponentClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@ComponentId("counter-command-from-topic")
 @Consume.FromTopic(value = "counter-commands", ignoreUnknown = true)
 public class CounterCommandFromTopicAction extends Action {
 
