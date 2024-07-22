@@ -5,19 +5,13 @@
 package akka.platform.javasdk.impl.action
 
 import java.util.Optional
+
 import scala.compat.java8.OptionConverters.RichOptionForJava8
 import scala.concurrent.Future
 import scala.util.control.NonFatal
+
 import akka.NotUsed
 import akka.actor.ActorSystem
-import akka.stream.scaladsl.Sink
-import akka.stream.scaladsl.Source
-import com.google.protobuf.Descriptors
-import io.grpc.Status
-import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
-import io.opentelemetry.api.trace.Span
-import io.opentelemetry.api.trace.SpanContext
-import io.opentelemetry.api.trace.Tracer
 import akka.platform.javasdk.Metadata
 import akka.platform.javasdk.action.Action
 import akka.platform.javasdk.action.ActionContext
@@ -32,15 +26,23 @@ import akka.platform.javasdk.impl.MessageCodec
 import akka.platform.javasdk.impl.MetadataImpl
 import akka.platform.javasdk.impl.Service
 import akka.platform.javasdk.impl._
-import akka.platform.javasdk.impl.telemetry.TraceInstrumentation.TRACE_PARENT_KEY
-import akka.platform.javasdk.impl.telemetry.TraceInstrumentation.TRACE_STATE_KEY
 import akka.platform.javasdk.impl.telemetry.ActionCategory
 import akka.platform.javasdk.impl.telemetry.Instrumentation
 import akka.platform.javasdk.impl.telemetry.Telemetry
 import akka.platform.javasdk.impl.telemetry.TraceInstrumentation
+import akka.platform.javasdk.impl.telemetry.TraceInstrumentation.TRACE_PARENT_KEY
+import akka.platform.javasdk.impl.telemetry.TraceInstrumentation.TRACE_STATE_KEY
 import akka.platform.javasdk.impl.timer.TimerSchedulerImpl
-import kalix.javasdk.spi.TimerClient
+import akka.platform.javasdk.spi.TimerClient
 import akka.platform.javasdk.timer.TimerScheduler
+import akka.stream.scaladsl.Sink
+import akka.stream.scaladsl.Source
+import com.google.protobuf.Descriptors
+import io.grpc.Status
+import io.opentelemetry.api.trace.Span
+import io.opentelemetry.api.trace.SpanContext
+import io.opentelemetry.api.trace.Tracer
+import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
 import kalix.protocol.action.ActionCommand
 import kalix.protocol.action.ActionResponse
 import kalix.protocol.action.Actions

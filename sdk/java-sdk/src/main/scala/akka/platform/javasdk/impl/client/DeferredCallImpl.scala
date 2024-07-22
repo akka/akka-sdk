@@ -12,8 +12,8 @@ import akka.platform.javasdk.JsonSupport
 import akka.platform.javasdk.Metadata
 import akka.platform.javasdk.impl.MetadataImpl
 import akka.platform.javasdk.impl.MetadataImpl.toProtocol
-import kalix.javasdk.spi.ComponentType
-import kalix.javasdk.spi.DeferredRequest
+import akka.platform.javasdk.spi.ComponentType
+import akka.platform.javasdk.spi.DeferredRequest
 
 import java.util.concurrent.CompletionStage
 

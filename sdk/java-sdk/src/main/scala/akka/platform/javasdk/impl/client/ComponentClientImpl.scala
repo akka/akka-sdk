@@ -11,7 +11,7 @@ import akka.platform.javasdk.client.EventSourcedEntityClient
 import akka.platform.javasdk.client.WorkflowClient
 import akka.platform.javasdk.client.ActionClient
 import akka.platform.javasdk.client.ViewClient
-import kalix.javasdk.spi.{ ComponentClients => RuntimeComponentClients }
+import akka.platform.javasdk.spi.{ ComponentClients => RuntimeComponentClients }
 
 import scala.concurrent.ExecutionContext
 import akka.platform.javasdk.client.KeyValueEntityClient
@@ -32,7 +32,7 @@ private[javasdk] final case class ComponentClientImpl(runtimeComponentClients: R
   override def forAction(): ActionClient = ActionClientImpl(runtimeComponentClients.actionClient, callMetadata)
 
   override def forKeyValueEntity(valueEntityId: String): KeyValueEntityClient =
-    new KeyValueEntityClientImpl(runtimeComponentClients.valueEntityClient, callMetadata, valueEntityId)
+    new KeyValueEntityClientImpl(runtimeComponentClients.keyValueEntityClient, callMetadata, valueEntityId)
 
   override def forEventSourcedEntity(eventSourcedEntityId: String): EventSourcedEntityClient =
     EventSourcedEntityClientImpl(runtimeComponentClients.eventSourcedEntityClient, callMetadata, eventSourcedEntityId)

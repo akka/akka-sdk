@@ -5,34 +5,33 @@
 package akka.platform.javasdk.impl.workflow
 
 import java.util.Optional
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.OptionConverters._
-import scala.util.control.NonFatal
 import scala.language.existentials
+import scala.util.control.NonFatal
+
 import akka.NotUsed
 import akka.actor.ActorSystem
-import akka.stream.scaladsl.Flow
-import akka.stream.scaladsl.Source
-import com.google.protobuf.ByteString
-import com.google.protobuf.duration
-import com.google.protobuf.duration.Duration
-import io.grpc.Status
 import akka.platform.javasdk.JsonSupport
 import akka.platform.javasdk.impl.AbstractContext
 import akka.platform.javasdk.impl.ActivatableContext
 import akka.platform.javasdk.impl.ComponentOptions
 import akka.platform.javasdk.impl.ErrorHandling
 import akka.platform.javasdk.impl.ErrorHandling.BadRequestException
+import akka.platform.javasdk.impl.JsonMessageCodec
 import akka.platform.javasdk.impl.MessageCodec
 import akka.platform.javasdk.impl.MetadataImpl
 import akka.platform.javasdk.impl.ResolvedEntityFactory
 import akka.platform.javasdk.impl.ResolvedServiceMethod
 import akka.platform.javasdk.impl.Service
+import akka.platform.javasdk.impl.StrictJsonMessageCodec
 import akka.platform.javasdk.impl.WorkflowExceptions.ProtocolException
 import akka.platform.javasdk.impl.WorkflowExceptions.WorkflowException
 import akka.platform.javasdk.impl.WorkflowExceptions.failureMessageForLog
 import akka.platform.javasdk.impl.WorkflowFactory
+import akka.platform.javasdk.impl.timer.TimerSchedulerImpl
 import akka.platform.javasdk.impl.workflow.WorkflowEffectImpl.DeleteState
 import akka.platform.javasdk.impl.workflow.WorkflowEffectImpl.End
 import akka.platform.javasdk.impl.workflow.WorkflowEffectImpl.ErrorEffectImpl
@@ -47,11 +46,19 @@ import akka.platform.javasdk.impl.workflow.WorkflowEffectImpl.StepTransition
 import akka.platform.javasdk.impl.workflow.WorkflowEffectImpl.TransitionalEffectImpl
 import akka.platform.javasdk.impl.workflow.WorkflowEffectImpl.UpdateState
 import akka.platform.javasdk.impl.workflow.WorkflowRouter.CommandResult
+import akka.platform.javasdk.spi.TimerClient
 import akka.platform.javasdk.workflow.AbstractWorkflow
 import akka.platform.javasdk.workflow.AbstractWorkflow.WorkflowDef
 import akka.platform.javasdk.workflow.CommandContext
 import akka.platform.javasdk.workflow.WorkflowContext
 import akka.platform.javasdk.workflow.WorkflowOptions
+import akka.stream.scaladsl.Flow
+import akka.stream.scaladsl.Source
+import com.google.protobuf.ByteString
+import com.google.protobuf.any.{ Any => ScalaPbAny }
+import com.google.protobuf.duration
+import com.google.protobuf.duration.Duration
+import io.grpc.Status
 import kalix.protocol.component
 import kalix.protocol.component.{ Reply => ProtoReply }
 import kalix.protocol.workflow_entity.RecoverStrategy
@@ -74,16 +81,11 @@ import kalix.protocol.workflow_entity.{ NoTransition => ProtoNoTransition }
 import kalix.protocol.workflow_entity.{ Pause => ProtoPause }
 import kalix.protocol.workflow_entity.{ StepTransition => ProtoStepTransition }
 import org.slf4j.LoggerFactory
-import com.google.protobuf.any.{ Any => ScalaPbAny }
-import akka.platform.javasdk.impl.JsonMessageCodec
-import akka.platform.javasdk.impl.StrictJsonMessageCodec
-import akka.platform.javasdk.impl.timer.TimerSchedulerImpl
-import kalix.javasdk.spi.TimerClient
 // FIXME these don't seem to be 'public API', more internals?
 import scala.jdk.CollectionConverters._
 
-import com.google.protobuf.Descriptors
 import akka.platform.javasdk.Metadata
+import com.google.protobuf.Descriptors
 
 final class WorkflowService(
     val factory: WorkflowFactory,

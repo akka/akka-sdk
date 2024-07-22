@@ -24,27 +24,27 @@ import akka.platform.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.platform.javasdk.impl.MetadataImpl
 import akka.platform.javasdk.impl.MetadataImpl.toProtocol
 import akka.platform.javasdk.impl.reflection.Reflect
-import kalix.javasdk.spi.ActionRequest
-import kalix.javasdk.spi.ActionType
-import kalix.javasdk.spi.ComponentType
-import kalix.javasdk.spi.EntityRequest
-import kalix.javasdk.spi.EventSourcedEntityType
-import kalix.javasdk.spi.ValueEntityType
-import kalix.javasdk.spi.ViewRequest
-import kalix.javasdk.spi.ViewType
-import kalix.javasdk.spi.WorkflowType
-import kalix.javasdk.spi.{ ActionClient => RuntimeActionClient }
-import kalix.javasdk.spi.{ EntityClient => RuntimeEntityClient }
-import kalix.javasdk.spi.{ ViewClient => RuntimeViewClient }
+import akka.platform.javasdk.spi.{ ActionClient => RuntimeActionClient }
+import akka.platform.javasdk.spi.{ EntityClient => RuntimeEntityClient }
+import akka.platform.javasdk.spi.{ ViewClient => RuntimeViewClient }
 import akka.platform.javasdk.workflow.AbstractWorkflow
-
 import scala.concurrent.ExecutionContext
 import scala.jdk.FutureConverters.FutureOps
 import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
+
 import akka.platform.javasdk.client.KeyValueEntityClient
 import akka.platform.javasdk.keyvalueentity.KeyValueEntity
+import akka.platform.javasdk.spi.ActionRequest
+import akka.platform.javasdk.spi.ActionType
+import akka.platform.javasdk.spi.ComponentType
+import akka.platform.javasdk.spi.EntityRequest
+import akka.platform.javasdk.spi.EventSourcedEntityType
+import akka.platform.javasdk.spi.KeyValueEntityType
+import akka.platform.javasdk.spi.ViewRequest
+import akka.platform.javasdk.spi.ViewType
+import akka.platform.javasdk.spi.WorkflowType
 
 /**
  * INTERNAL API
@@ -127,7 +127,7 @@ private[javasdk] final class KeyValueEntityClientImpl(
     entityClient: RuntimeEntityClient,
     callMetadata: Option[Metadata],
     entityId: String)(implicit val executionContext: ExecutionContext)
-    extends EntityClientImpl(classOf[KeyValueEntity[_]], ValueEntityType, entityClient, callMetadata, entityId)
+    extends EntityClientImpl(classOf[KeyValueEntity[_]], KeyValueEntityType, entityClient, callMetadata, entityId)
     with KeyValueEntityClient {
 
   override def method[T, R](methodRef: function.Function[T, KeyValueEntity.Effect[R]]): ComponentMethodRef[R] =

@@ -8,8 +8,13 @@ object Dependencies {
     val ProtocolVersionMinor = 1
     val RuntimeImage = "gcr.io/kalix-public/kalix-runtime"
     // Remember to bump kalix-runtime.version in maven-java/kalix-spring-boot-parent if bumping this
-    val RuntimeVersion = sys.props.getOrElse("kalix-runtime.version", "1.1.36-bea16c7")
+    val RuntimeVersion = sys.props.getOrElse("kalix-runtime.version", "1.1.38")
   }
+  // NOTE: embedded SDK should have the AkkaVersion aligned, when updating RuntimeVersion, make sure to check
+  // if AkkaVersion and AkkaHttpVersion are aligned
+  // for prod code, they are marked as Provided, but testkit still requires the alignment
+  val AkkaVersion = "2.9.4"
+  val AkkaHttpVersion = "10.6.3" // Note: should at least the Akka HTTP version required by Akka gRPC
 
   // changing the Scala version of the Java SDK affects end users
   val ScalaVersion = "2.13.14"
@@ -20,8 +25,6 @@ object Dependencies {
   val ProtobufVersion = // akka.grpc.gen.BuildInfo.googleProtobufVersion
     "3.21.12" // explicitly overriding the 3.21.1 version from Akka gRPC 2.1.6 (even though its build says 3.20.1)
 
-  val AkkaVersion = "2.9.3"
-  val AkkaHttpVersion = "10.6.3" // Note: should at least the Akka HTTP version required by Akka gRPC
   val ScalaTestVersion = "3.2.14"
   // https://github.com/akka/akka/blob/main/project/Dependencies.scala#L31
   val JacksonVersion = "2.15.4"
@@ -42,7 +45,7 @@ object Dependencies {
   val kalixSdkProtocol = "io.kalix" % "kalix-sdk-protocol" % Kalix.RuntimeVersion
   val kalixTckProtocol = "io.kalix" % "kalix-tck-protocol" % Kalix.RuntimeVersion
   val kalixTestkitProtocol = "io.kalix" % "kalix-testkit-protocol" % Kalix.RuntimeVersion
-  val kalixSdkSpi = "io.kalix" %% "kalix-sdk-spi" % Kalix.RuntimeVersion
+  val kalixSdkSpi = "io.kalix" %% "akka-platform-sdk-spi" % Kalix.RuntimeVersion
 
   // Note: this should never be on the compile classpath, only test and or runtime
   val kalixDevRuntime = "io.kalix" %% "kalix-dev-runtime" % Kalix.RuntimeVersion
@@ -92,6 +95,8 @@ object Dependencies {
 
   private val deps = libraryDependencies
 
+  val devTools = deps ++= Seq(scalaCollectionCompat, typesafeConfig, scalaTest % Test)
+
   private val sdkDeps = Seq(
     protobufJavaUtil,
     kalixProxyProtocol % "protobuf-src",
@@ -102,6 +107,9 @@ object Dependencies {
     opentelemetryExporterOtlp,
     opentelemetryContext,
     opentelemetrySemConv,
+    // FIXME: akka-http is pulling akka-pki and akka-discovery v2.9.3, we need to force it to be 2.9.4
+    akkaDependency("akka-pki"),
+    akkaDependency("akka-discovery"),
     akkaDependency("akka-testkit") % Test,
     akkaDependency("akka-actor-testkit-typed") % Test,
     akkaDependency("akka-stream-testkit") % Test,
@@ -118,49 +126,34 @@ object Dependencies {
     jacksonJsr310,
     jacksonParameterNames)
 
-  val devTools = deps ++= Seq(scalaCollectionCompat, typesafeConfig, scalaTest % Test)
-
-  val javaSdk = deps ++= sdkDeps
-
-  val javaSdkTestKit = deps ++= Seq(
-    junit4,
-    junit5,
-    junit5Vintage,
-    scalaTest % Test,
-    kalixTestkitProtocol % "protobuf-src",
-    scalapbCompilerPlugin,
-    kalixDevRuntime,
-    akkaDependency("akka-testkit"),
-    akkaDependency("akka-actor-testkit-typed") % Test)
-
-  val springDeps = Seq(jacksonDataFormatProto)
-
-  val javaSdkSpring = deps ++= sdkDeps ++ springDeps ++ Seq(
+  val javaSdk = deps ++= sdkDeps ++ Seq(
     kalixSdkSpi,
+    jacksonDataFormatProto,
     akkaDependency("akka-actor-typed") % Provided,
     "org.scala-lang.modules" %% "scala-parser-combinators" % "2.3.0",
     "net.aichler" % "jupiter-interface" % JupiterKeys.jupiterVersion.value % Test,
     junit5 % Test,
     "org.assertj" % "assertj-core" % "3.24.2" % Test)
 
-  val javaSdkSpringTestKit =
-    deps ++= springDeps ++
-    Seq(
-      // These two are for the eventing testkit
-      akkaDependency("akka-actor-testkit-typed"),
-      kalixTestkitProtocol % "protobuf-src",
-      // user will interface with these
-      junit5,
-      // convenience-transitive dependencies for user assertions and async interactions
-      "org.awaitility" % "awaitility" % "4.2.1",
-      "org.assertj" % "assertj-core" % "3.24.2",
-      // FIXME used in the tests of the testkit itself but should not be on user test classpath
-      //       should possibly be provided or runtime here and added for the test runner in project parent pom
-      kalixDevRuntime,
-      // These are for the test of the testkit
-      // FIXME move integration tests into test config
-      "net.aichler" % "jupiter-interface" % JupiterKeys.jupiterVersion.value % s"$Test, $IntegrationTest",
-      scalaTest % Test)
+  val javaSdkTestKit =
+    deps ++=
+      Seq(
+        jacksonDataFormatProto,
+        // These two are for the eventing testkit
+        akkaDependency("akka-actor-testkit-typed"),
+        kalixTestkitProtocol % "protobuf-src",
+        // user will interface with these
+        junit5,
+        // convenience-transitive dependencies for user assertions and async interactions
+        "org.awaitility" % "awaitility" % "4.2.1",
+        "org.assertj" % "assertj-core" % "3.24.2",
+        // FIXME used in the tests of the testkit itself but should not be on user test classpath
+        //       should possibly be provided or runtime here and added for the test runner in project parent pom
+        kalixDevRuntime,
+        // These are for the test of the testkit
+        // FIXME move integration tests into test config
+        "net.aichler" % "jupiter-interface" % JupiterKeys.jupiterVersion.value % s"$Test, $IntegrationTest",
+        scalaTest % Test)
 
   val tck = deps ++= Seq(
     // FIXME: For now TCK protos have been copied and adapted into this project.
@@ -175,10 +168,10 @@ object Dependencies {
     // exclusion rules can be added here
   )
 
-  def akkaDependency(name: String, excludeThese: ExclusionRule*) =
+  def akkaDependency(name: String, excludeThese: ExclusionRule*): ModuleID =
     ("com.typesafe.akka" %% name % AkkaVersion).excludeAll((excludeTheseDependencies ++ excludeThese): _*)
 
-  def akkaHttpDependency(name: String, excludeThese: ExclusionRule*) =
+  def akkaHttpDependency(name: String, excludeThese: ExclusionRule*): ModuleID =
     ("com.typesafe.akka" %% name % AkkaHttpVersion).excludeAll((excludeTheseDependencies ++ excludeThese): _*)
 
 }

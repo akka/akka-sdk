@@ -24,8 +24,8 @@ import akka.platform.javasdk.action.MessageEnvelope
 import akka.platform.javasdk.impl.ActionFactory
 import akka.platform.javasdk.impl.AnySupport
 import akka.platform.javasdk.impl.ProxyInfoHolder
-import kalix.javasdk.spi.DeferredRequest
-import kalix.javasdk.spi.TimerClient
+import akka.platform.javasdk.spi.DeferredRequest
+import akka.platform.javasdk.spi.TimerClient
 import kalix.protocol.action.ActionCommand
 import kalix.protocol.action.ActionResponse
 import kalix.protocol.action.Actions

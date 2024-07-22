@@ -19,12 +19,12 @@ import akka.platform.javasdk.impl.Validations;
 import akka.platform.javasdk.impl.client.ComponentClientImpl;
 import akka.platform.javasdk.impl.client.DeferredCallImpl;
 import akka.platform.javasdk.impl.telemetry.Telemetry;
-import kalix.javasdk.spi.ActionClient;
-import kalix.javasdk.spi.ActionType$;
-import kalix.javasdk.spi.ComponentClients;
-import kalix.javasdk.spi.EntityClient;
-import kalix.javasdk.spi.TimerClient;
-import kalix.javasdk.spi.ViewClient;
+import akka.platform.javasdk.spi.ActionClient;
+import akka.platform.javasdk.spi.ActionType$;
+import akka.platform.javasdk.spi.ComponentClients;
+import akka.platform.javasdk.spi.EntityClient;
+import akka.platform.javasdk.spi.TimerClient;
+import akka.platform.javasdk.spi.ViewClient;
 import akka.platform.spring.testmodels.Message;
 import akka.platform.spring.testmodels.Number;
 import akka.platform.spring.testmodels.action.ActionsTestModels.ActionWithOneParam;
@@ -57,7 +57,7 @@ class ComponentClientTest {
       }
 
       @Override
-      public EntityClient valueEntityClient() {
+      public EntityClient keyValueEntityClient() {
         return null;
       }
 

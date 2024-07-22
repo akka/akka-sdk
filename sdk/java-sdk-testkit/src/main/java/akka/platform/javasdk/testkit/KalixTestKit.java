@@ -23,7 +23,7 @@ import akka.platform.javasdk.impl.MessageCodec;
 import akka.platform.javasdk.impl.NextGenKalixJavaApplication;
 import akka.platform.javasdk.impl.ProxyInfoHolder;
 import akka.platform.javasdk.impl.client.ComponentClientImpl;
-import kalix.javasdk.spi.ComponentClients;
+import akka.platform.javasdk.spi.ComponentClients;
 import akka.platform.javasdk.testkit.EventingTestKit.IncomingMessages;
 import kalix.runtime.KalixRuntimeMain;
 import org.jetbrains.annotations.NotNull;

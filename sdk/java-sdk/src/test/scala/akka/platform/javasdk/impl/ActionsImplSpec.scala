@@ -23,8 +23,8 @@ import akka.platform.javasdk.eventsourcedentity.TestESEvent.Event4
 import akka.platform.javasdk.impl.action.ActionService
 import akka.platform.javasdk.impl.action.ActionsImpl
 import akka.platform.javasdk.impl.telemetry.Telemetry
-import kalix.javasdk.spi.DeferredRequest
-import kalix.javasdk.spi.TimerClient
+import akka.platform.javasdk.spi.DeferredRequest
+import akka.platform.javasdk.spi.TimerClient
 import kalix.protocol.action.ActionCommand
 import kalix.protocol.action.ActionResponse
 import kalix.protocol.action.Actions

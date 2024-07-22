@@ -4,15 +4,27 @@
 
 package akka.platform.javasdk.impl
 
+import java.lang.reflect.Constructor
+import java.lang.reflect.ParameterizedType
+import java.time.Duration
+import java.util.concurrent.atomic.AtomicReference
+
+import scala.concurrent.Future
+import scala.concurrent.Promise
+import scala.concurrent.duration.DurationInt
+import scala.concurrent.duration.FiniteDuration
+import scala.jdk.CollectionConverters.CollectionHasAsScala
+import scala.jdk.CollectionConverters.MapHasAsScala
+import scala.jdk.DurationConverters.JavaDurationOps
+import scala.reflect.ClassTag
+import scala.util.control.NonFatal
+
 import akka.Done
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
 import akka.http.scaladsl.model.HttpMethods
 import akka.http.scaladsl.model.HttpRequest
 import akka.http.scaladsl.model.HttpResponse
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigFactory
-import io.opentelemetry.api.trace.Tracer
 import akka.platform.javasdk.BuildInfo
 import akka.platform.javasdk.Kalix
 import akka.platform.javasdk.ServiceLifecycle
@@ -24,6 +36,7 @@ import akka.platform.javasdk.client.ComponentClient
 import akka.platform.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.platform.javasdk.eventsourcedentity.EventSourcedEntityContext
 import akka.platform.javasdk.eventsourcedentity.EventSourcedEntityProvider
+import akka.platform.javasdk.eventsourcedentity.ReflectiveEventSourcedEntityProvider
 import akka.platform.javasdk.http.HttpClientProvider
 import akka.platform.javasdk.impl.Validations.Invalid
 import akka.platform.javasdk.impl.Validations.Valid
@@ -35,18 +48,22 @@ import akka.platform.javasdk.impl.eventsourcedentity.EventSourcedEntitiesImpl
 import akka.platform.javasdk.impl.eventsourcedentity.EventSourcedEntityService
 import akka.platform.javasdk.impl.http.HttpClientProviderExtension
 import akka.platform.javasdk.impl.http.HttpEndpointOpenRouter
-import akka.platform.javasdk.impl.reflection.Reflect
-import akka.platform.javasdk.impl.timer.TimerSchedulerImpl
 import akka.platform.javasdk.impl.keyvalueentity.KeyValueEntitiesImpl
 import akka.platform.javasdk.impl.keyvalueentity.KeyValueEntityService
+import akka.platform.javasdk.impl.reflection.Reflect
+import akka.platform.javasdk.impl.timer.TimerSchedulerImpl
 import akka.platform.javasdk.impl.view.ViewService
 import akka.platform.javasdk.impl.view.ViewsImpl
 import akka.platform.javasdk.impl.workflow.WorkflowImpl
 import akka.platform.javasdk.impl.workflow.WorkflowService
-import kalix.javasdk.spi.ComponentClients
-import kalix.javasdk.spi.EndpointDescriptor
-import kalix.javasdk.spi.HttpEndpointDescriptor
-import kalix.javasdk.spi.SpiEndpoints
+import akka.platform.javasdk.keyvalueentity.KeyValueEntity
+import akka.platform.javasdk.keyvalueentity.KeyValueEntityContext
+import akka.platform.javasdk.keyvalueentity.KeyValueEntityProvider
+import akka.platform.javasdk.keyvalueentity.ReflectiveKeyValueEntityProvider
+import akka.platform.javasdk.spi.ComponentClients
+import akka.platform.javasdk.spi.EndpointDescriptor
+import akka.platform.javasdk.spi.HttpEndpointDescriptor
+import akka.platform.javasdk.spi.SpiComponents
 import akka.platform.javasdk.timer.TimerScheduler
 import akka.platform.javasdk.view.ReflectiveMultiTableViewProvider
 import akka.platform.javasdk.view.ReflectiveViewProvider
@@ -58,6 +75,9 @@ import akka.platform.javasdk.workflow.ReflectiveWorkflowProvider
 import akka.platform.javasdk.workflow.Workflow
 import akka.platform.javasdk.workflow.WorkflowContext
 import akka.platform.javasdk.workflow.WorkflowProvider
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
+import io.opentelemetry.api.trace.Tracer
 import kalix.protocol.action.Actions
 import kalix.protocol.discovery.Discovery
 import kalix.protocol.event_sourced_entity.EventSourcedEntities
@@ -66,25 +86,6 @@ import kalix.protocol.value_entity.ValueEntities
 import kalix.protocol.view.Views
 import kalix.protocol.workflow_entity.WorkflowEntities
 import org.slf4j.LoggerFactory
-
-import java.lang.reflect.Constructor
-import java.lang.reflect.ParameterizedType
-import java.time.Duration
-import java.util.concurrent.atomic.AtomicReference
-import scala.concurrent.Future
-import scala.concurrent.Promise
-import scala.concurrent.duration.DurationInt
-import scala.concurrent.duration.FiniteDuration
-import scala.jdk.CollectionConverters.CollectionHasAsScala
-import scala.jdk.CollectionConverters.MapHasAsScala
-import scala.jdk.DurationConverters.JavaDurationOps
-import scala.reflect.ClassTag
-import scala.util.control.NonFatal
-import akka.platform.javasdk.eventsourcedentity.ReflectiveEventSourcedEntityProvider
-import akka.platform.javasdk.keyvalueentity.KeyValueEntity
-import akka.platform.javasdk.keyvalueentity.KeyValueEntityContext
-import akka.platform.javasdk.keyvalueentity.KeyValueEntityProvider
-import akka.platform.javasdk.keyvalueentity.ReflectiveKeyValueEntityProvider
 
 /**
  * INTERNAL API
@@ -106,9 +107,9 @@ final case class KalixJavaSdkSettings(
  * INTERNAL API
  */
 @InternalApi
-final class NextGenComponentAutoDetectRunner extends kalix.javasdk.spi.Runner {
+final class NextGenComponentAutoDetectRunner extends akka.platform.javasdk.spi.Runner {
 
-  override def start(system: ActorSystem[_], runtimeComponentClients: ComponentClients): Future[SpiEndpoints] = {
+  override def start(system: ActorSystem[_], runtimeComponentClients: ComponentClients): Future[SpiComponents] = {
     try {
 
       val app = new NextGenKalixJavaApplication(system, runtimeComponentClients)
@@ -275,7 +276,7 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
     .seal
 
   // FIXME mixing runtime config with sdk with user project config is tricky
-  def spiEndpoints: SpiEndpoints = {
+  def spiEndpoints: SpiComponents = {
 
     var actionsEndpoint: Option[Actions] = None
     var eventSourcedEntitiesEndpoint: Option[EventSourcedEntities] = None
@@ -336,7 +337,7 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
     }
     val discoveryEndpoint = new DiscoveryImpl(classicSystem, services, aclDescriptor, BuildInfo.name)
 
-    new SpiEndpoints {
+    new SpiComponents {
       override def preStart(system: ActorSystem[_]): Future[Done] = {
         // FIXME this might turn out to not be needed
         Future.successful(Done)

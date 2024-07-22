@@ -21,7 +21,7 @@ import scala.jdk.DurationConverters.JavaDurationOps
 private[akka] final class TimerSchedulerImpl(
     val messageCodec: MessageCodec,
     val system: ActorSystem,
-    val timerClient: kalix.javasdk.spi.TimerClient,
+    val timerClient: akka.platform.javasdk.spi.TimerClient,
     val metadata: Metadata)
     extends TimerScheduler {
 

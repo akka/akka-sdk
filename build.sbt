@@ -101,7 +101,6 @@ lazy val javaSdk =
       Test / PB.protoSources ++= (Compile / PB.protoSources).value,
       Test / PB.targets += PB.gens.java -> crossTarget.value / "akka-grpc" / "test")
     .settings(Dependencies.javaSdk)
-    .settings(Dependencies.javaSdkSpring)
 
 lazy val javaSdkTestKit =
   Project(id = "java-sdk-testkit", base = file("sdk/java-sdk-testkit"))
@@ -142,7 +141,7 @@ lazy val javaSdkTestKit =
         "-noqualifier",
         "java.lang"))
     .settings(inConfig(IntegrationTest)(JupiterPlugin.scopedSettings): _*)
-    .settings(Dependencies.javaSdkSpringTestKit)
+    .settings(Dependencies.javaSdkTestKit)
 
 def scaladocOptions(title: String, ver: String, base: File): List[String] = {
   val urlString = githubUrl(ver) + "/€{FILE_PATH_EXT}#L€{FILE_LINE}"
