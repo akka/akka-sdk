@@ -40,6 +40,8 @@
         <akka-platform-sdk.version>1.5.0</akka-platform-sdk.version>
         <kalix-runtime.version>1.1.38-8dafb2d</kalix-runtime.version>
         <skip.docker>false</skip.docker>
+        <!-- application.conf by default, but user can override it with a -D property-->
+        <config.resource>application.conf</config.resource>
 
 
         <!-- plugin versions -->
@@ -260,8 +262,13 @@
                         <mainClass>kalix.runtime.KalixRuntimeMain</mainClass>
                         <systemProperties>
                             <systemProperty>
+                                <key>akka.platform.dev-mode.enabled</key>
+                                <value>true</value>
+                            </systemProperty>
+                            <systemProperty>
+                                <!-- -Dconfig.resource is passed down to application-->
                                 <key>config.resource</key>
-                                <value>dev-mode.conf</value>
+                                <value>${config.resource}</value>
                             </systemProperty>
                             <systemProperty>
                                 <key>logback.configurationFile</key>
