@@ -5,6 +5,7 @@
 package com.example.wiring.pubsub;
 
 
+import akka.platform.javasdk.annotations.ComponentId;
 import com.example.wiring.keyvalueentities.customer.CustomerEntity;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import akka.platform.javasdk.JsonSupport;
@@ -14,6 +15,7 @@ import akka.platform.javasdk.annotations.Consume;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@ComponentId("publish-bytes-to-topic")
 @Consume.FromKeyValueEntity(CustomerEntity.class)
 public class PublishBytesToTopic extends Action {
 

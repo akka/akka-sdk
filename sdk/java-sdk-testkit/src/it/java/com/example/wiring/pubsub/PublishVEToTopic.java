@@ -4,6 +4,7 @@
 
 package com.example.wiring.pubsub;
 
+import akka.platform.javasdk.annotations.ComponentId;
 import com.example.wiring.keyvalueentities.customer.CustomerEntity;
 import akka.platform.javasdk.Metadata;
 import akka.platform.javasdk.action.Action;
@@ -15,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import static akka.platform.javasdk.impl.MetadataImpl.CeSubject;
 
 //@Profile({"docker-it-test", "eventing-testkit-destination"})
+@ComponentId("publish-ve-to-topic")
 @Consume.FromKeyValueEntity(CustomerEntity.class)
 public class PublishVEToTopic extends Action {
 

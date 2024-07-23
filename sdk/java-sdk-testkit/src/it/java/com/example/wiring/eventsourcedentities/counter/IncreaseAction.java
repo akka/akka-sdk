@@ -6,11 +6,13 @@ package com.example.wiring.eventsourcedentities.counter;
 
 import akka.platform.javasdk.action.Action;
 import akka.platform.javasdk.action.ActionCreationContext;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.annotations.Consume;
 import akka.platform.javasdk.client.ComponentClient;
 
 import java.util.concurrent.CompletionStage;
 
+@ComponentId("increase-action")
 public class IncreaseAction extends Action {
 
   private ComponentClient componentClient;

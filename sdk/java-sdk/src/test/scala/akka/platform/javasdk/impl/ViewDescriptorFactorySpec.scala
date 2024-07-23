@@ -22,7 +22,6 @@ import akka.platform.spring.testmodels.view.ViewTestModels.MultiTableViewWithEmp
 import akka.platform.spring.testmodels.view.ViewTestModels.MultiTableViewWithJoinQuery
 import akka.platform.spring.testmodels.view.ViewTestModels.MultiTableViewWithMultipleQueries
 import akka.platform.spring.testmodels.view.ViewTestModels.MultiTableViewWithTableName
-import akka.platform.spring.testmodels.view.ViewTestModels.MultiTableViewWithoutComponentId
 import akka.platform.spring.testmodels.view.ViewTestModels.MultiTableViewWithoutQuery
 import akka.platform.spring.testmodels.view.ViewTestModels.SubscribeToEventSourcedEvents
 import akka.platform.spring.testmodels.view.ViewTestModels.SubscribeToEventSourcedWithMissingHandler
@@ -50,7 +49,6 @@ import akka.platform.spring.testmodels.view.ViewTestModels.ViewWithServiceLevelJ
 import akka.platform.spring.testmodels.view.ViewTestModels.ViewWithSubscriptionsInMixedLevels
 import akka.platform.spring.testmodels.view.ViewTestModels.ViewWithSubscriptionsInMixedLevelsHandleDelete
 import akka.platform.spring.testmodels.view.ViewTestModels.ViewWithTwoQueries
-import akka.platform.spring.testmodels.view.ViewTestModels.ViewWithoutComponentIdAnnotation
 import akka.platform.spring.testmodels.view.ViewTestModels.ViewWithoutSubscriptionButWithHandleDelete
 import akka.platform.spring.testmodels.view.ViewTestModels.ViewWithoutTableAnnotation
 import org.scalatest.wordspec.AnyWordSpec
@@ -106,12 +104,6 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
       intercept[InvalidComponentException] {
         Validations.validate(classOf[ViewWithEmptyTableAnnotation]).failIfInvalid
       }.getMessage should include("@Table name is empty, must be a non-empty string.")
-    }
-
-    "not allow View without ComponentId annotation" in {
-      intercept[InvalidComponentException] {
-        Validations.validate(classOf[ViewWithoutComponentIdAnnotation]).failIfInvalid
-      }.getMessage should include("A View should be annotated with @ComponentId.")
     }
 
     "not allow View with empty ComponentId" in {
@@ -409,12 +401,6 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
       intercept[InvalidComponentException] {
         Validations.validate(classOf[MultiTableViewValidation.ViewTableWithEmptyTableAnnotation]).failIfInvalid
       }.getMessage should include("@Table name is empty, must be a non-empty string.")
-    }
-
-    "not allow MultiTable View without ComponentId annotation" in {
-      intercept[InvalidComponentException] {
-        Validations.validate(classOf[MultiTableViewWithoutComponentId]).failIfInvalid
-      }.getMessage should include("A View should be annotated with @ComponentId.")
     }
 
     "not allow MultiTable View with empty ComponentId" in {

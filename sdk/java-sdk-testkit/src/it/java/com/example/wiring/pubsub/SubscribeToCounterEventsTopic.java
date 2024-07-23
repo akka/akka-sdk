@@ -4,6 +4,7 @@
 
 package com.example.wiring.pubsub;
 
+import akka.platform.javasdk.annotations.ComponentId;
 import com.example.wiring.eventsourcedentities.counter.CounterEvent;
 import akka.platform.javasdk.action.Action;
 import akka.platform.javasdk.annotations.Consume;
@@ -12,6 +13,7 @@ import org.slf4j.LoggerFactory;
 
 import static com.example.wiring.pubsub.PublishESToTopic.COUNTER_EVENTS_TOPIC;
 
+@ComponentId("subscribe-to-counter-events-topic")
 @Consume.FromTopic(COUNTER_EVENTS_TOPIC)
 public class SubscribeToCounterEventsTopic extends Action {
 

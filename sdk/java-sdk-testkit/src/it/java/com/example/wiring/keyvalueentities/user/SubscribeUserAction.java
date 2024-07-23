@@ -5,8 +5,10 @@
 package com.example.wiring.keyvalueentities.user;
 
 import akka.platform.javasdk.action.Action;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.annotations.Consume;
 
+@ComponentId("subscribe-user-action")
 public class SubscribeUserAction extends Action {
 
   @Consume.FromKeyValueEntity(UserEntity.class)

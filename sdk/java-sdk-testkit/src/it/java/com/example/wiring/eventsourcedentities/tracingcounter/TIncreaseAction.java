@@ -6,11 +6,13 @@ package com.example.wiring.eventsourcedentities.tracingcounter;
 
 import akka.platform.javasdk.action.Action;
 import akka.platform.javasdk.action.ActionCreationContext;
+import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.annotations.Consume;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
+@ComponentId("t-increase-action")
 public class TIncreaseAction extends Action {
 
     Logger log = LoggerFactory.getLogger(TIncreaseAction.class);

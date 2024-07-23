@@ -60,6 +60,8 @@ public class ComponentAnnotationProcessor extends AbstractProcessor {
     private static final String WORKFLOW_KEY = "workflow";
     private static final String KALIX_SERVICE_KEY = "kalix-service";
 
+    private static final List<String> ALL_COMPONENT_TYPES = List.of(ENDPOINT_KEY, EVENT_SOURCED_ENTITY_KEY, VALUE_ENTITY_KEY, ACTION_KEY, VIEW_KEY, WORKFLOW_KEY, KALIX_SERVICE_KEY);
+
 
     private final boolean debugEnabled;
     private boolean alreadyRan = false;
@@ -249,18 +251,22 @@ public class ComponentAnnotationProcessor extends AbstractProcessor {
 
         final Config foundExistingConfig = existingConfig;
         final Map<String, Object> config = new HashMap<>();
-        componentTypeToConcreteComponents.forEach((componentType, foundComponentClasses) -> {
-            Set<String> components = new HashSet<>();
+        ALL_COMPONENT_TYPES.forEach(componentType -> {
+            var foundComponentClasses = componentTypeToConcreteComponents.getOrDefault(componentType, List.of());
             if (componentType.equals(KALIX_SERVICE_KEY)) {
                 // only one kalix service annotated class
                 if (!foundComponentClasses.isEmpty())
                     config.put(DESCRIPTOR_ENTRY_BASE_PATH + KALIX_SERVICE_KEY, foundComponentClasses.getFirst());
             } else {
-                // all components can be multiple
+                Set<String> components = new HashSet<>();
                 var componentTypeConfigPath = DESCRIPTOR_COMPONENT_ENTRY_BASE_PATH + componentType;
+                //add existing ones
                 if (foundExistingConfig.hasPath(componentTypeConfigPath))
                     components.addAll(foundExistingConfig.getStringList(componentTypeConfigPath));
-                if (components.addAll(foundComponentClasses)) {
+                //add new ones (could be empty)
+                components.addAll(foundComponentClasses);
+                if (!components.isEmpty()) {
+                    debug("Adding " + components.size() + " components of type " + componentType +  ": " + String.join(", ", components) + " to descriptor");
                     config.put(componentTypeConfigPath, components.stream().toList());
                 }
             }

@@ -6,6 +6,7 @@ package com.example.wiring.pubsub;
 
 
 import akka.Done;
+import akka.platform.javasdk.annotations.ComponentId;
 import com.example.wiring.keyvalueentities.customer.CustomerEntity;
 import akka.platform.javasdk.JsonSupport;
 import akka.platform.javasdk.action.Action;
@@ -17,6 +18,7 @@ import java.io.IOException;
 
 import static com.example.wiring.pubsub.PublishBytesToTopic.CUSTOMERS_BYTES_TOPIC;
 
+@ComponentId("subscribe-to-bytes-from-topic")
 @Consume.FromTopic(CUSTOMERS_BYTES_TOPIC)
 public class SubscribeToBytesFromTopic extends Action {
 

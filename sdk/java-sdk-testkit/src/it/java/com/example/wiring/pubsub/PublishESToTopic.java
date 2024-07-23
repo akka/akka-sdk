@@ -4,6 +4,7 @@
 
 package com.example.wiring.pubsub;
 
+import akka.platform.javasdk.annotations.ComponentId;
 import com.example.wiring.eventsourcedentities.counter.CounterEntity;
 import com.example.wiring.eventsourcedentities.counter.CounterEvent;
 import com.example.wiring.eventsourcedentities.counter.CounterEvent.ValueIncreased;
@@ -17,6 +18,7 @@ import org.slf4j.LoggerFactory;
 
 import static akka.platform.javasdk.impl.MetadataImpl.CeSubject;
 
+@ComponentId("publish-es-to-topic")
 @Consume.FromEventSourcedEntity(value = CounterEntity.class, ignoreUnknown = true)
 public class PublishESToTopic extends Action {
 

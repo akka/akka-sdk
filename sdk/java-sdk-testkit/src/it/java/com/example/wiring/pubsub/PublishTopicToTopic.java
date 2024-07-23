@@ -4,6 +4,7 @@
 
 package com.example.wiring.pubsub;
 
+import akka.platform.javasdk.annotations.ComponentId;
 import com.example.wiring.keyvalueentities.customer.CustomerEntity;
 import akka.platform.javasdk.Metadata;
 import akka.platform.javasdk.action.Action;
@@ -15,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import static com.example.wiring.pubsub.PublishVEToTopic.CUSTOMERS_TOPIC;
 import static akka.platform.javasdk.impl.MetadataImpl.CeSubject;
 
+@ComponentId("publish-topic-to-topic")
 @Consume.FromTopic(CUSTOMERS_TOPIC)
 public class PublishTopicToTopic extends Action {
 

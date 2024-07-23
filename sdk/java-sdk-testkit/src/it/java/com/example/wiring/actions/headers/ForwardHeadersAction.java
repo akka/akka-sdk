@@ -4,10 +4,12 @@
 
 package com.example.wiring.actions.headers;
 
+import akka.platform.javasdk.annotations.ComponentId;
 import com.example.wiring.actions.echo.Message;
 import akka.platform.javasdk.action.Action;
 import akka.platform.javasdk.annotations.ForwardHeaders;
 
+@ComponentId("forward-headers-action")
 @ForwardHeaders(ForwardHeadersAction.SOME_HEADER)
 public class ForwardHeadersAction extends Action {
 

@@ -4,6 +4,7 @@
 
 package com.example.wiring.pubsub;
 
+import akka.platform.javasdk.annotations.ComponentId;
 import com.example.wiring.eventsourcedentities.counter.CounterEvent;
 import com.example.wiring.keyvalueentities.customer.CustomerEntity;
 import akka.platform.javasdk.action.Action;
@@ -13,6 +14,7 @@ import org.slf4j.LoggerFactory;
 
 import static com.example.wiring.pubsub.PublishVEToTopic.CUSTOMERS_TOPIC;
 
+@ComponentId("subscribe-to-customers-topic")
 @Consume.FromTopic(CUSTOMERS_TOPIC)
 public class SubscribeToCustomersTopic extends Action {
 

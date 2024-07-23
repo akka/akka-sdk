@@ -125,7 +125,8 @@ object Validations {
   private def validateEventSourcedEntity(component: Class[_]) =
     when[EventSourcedEntity[_, _]](component) {
       eventSourcedEntityEventMustBeSealed(component) ++
-      eventSourcedCommandHandlersMustBeUnique(component)
+      eventSourcedCommandHandlersMustBeUnique(component) ++
+      mustHaveNonEmptyComponentId(component)
     }
 
   private def eventSourcedEntityEventMustBeSealed(component: Class[_]): Validation = {
@@ -148,7 +149,8 @@ object Validations {
   }
 
   def validateValueEntity(component: Class[_]): Validation = when[KeyValueEntity[_]](component) {
-    valueEntityCommandHandlersMustBeUnique(component)
+    valueEntityCommandHandlersMustBeUnique(component) ++
+    mustHaveNonEmptyComponentId(component)
   }
 
   def valueEntityCommandHandlersMustBeUnique(component: Class[_]): Validation = {
@@ -188,7 +190,8 @@ object Validations {
   private def validateAction(component: Class[_]): Validation = {
     when[Action](component) {
       commonSubscriptionValidation(component, hasActionOutput) ++
-      actionValidation(component)
+      actionValidation(component) ++
+      mustHaveNonEmptyComponentId(component)
     }
   }
 
@@ -200,7 +203,7 @@ object Validations {
   private def validateView(component: Class[_]): Validation = {
     when[View[_]](component) {
       validateSingleView(component) ++
-      viewMustHaveComponentId(component) // ComponentId mandatory for single view
+      mustHaveNonEmptyComponentId(component)
     } ++
     when(Reflect.isMultiTableView(component)) {
       val nestedViewClasses = component.getDeclaredClasses.toSeq.filter(Reflect.isNestedViewTable)
@@ -210,7 +213,7 @@ object Validations {
       nestedValidations.reduce(_ ++ _) ++
       viewMustNotHaveTableName(component) ++
       viewMustHaveAtLeastOneQueryMethod(component) ++
-      viewMustHaveComponentId(component) // ComponentId mandatory for multi-table on the outer level class
+      mustHaveNonEmptyComponentId(component)
     }
 
   }
@@ -521,15 +524,16 @@ object Validations {
       Invalid(errorMessage(component, "A nested View should not be annotated with @ComponentId."))
     }
   }
-  private def viewMustHaveComponentId(component: Class[_]): Validation = {
+  private def mustHaveNonEmptyComponentId(component: Class[_]): Validation = {
     val ann = component.getAnnotation(classOf[ComponentId])
-    if (ann == null) {
-      Invalid(errorMessage(component, "A View should be annotated with @ComponentId."))
-    } else {
-      val viewId: String = ann.value()
-      if (viewId == null || viewId.trim.isEmpty) {
+    if (ann != null) {
+      val componentId: String = ann.value()
+      if (componentId == null || componentId.trim.isEmpty) {
         Invalid(errorMessage(component, "@ComponentId name is empty, must be a non-empty string."))
       } else Valid
+    } else {
+      //missing annotation means that the component is disabled
+      Valid
     }
   }
 
