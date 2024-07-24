@@ -255,8 +255,15 @@ public class ComponentAnnotationProcessor extends AbstractProcessor {
             var foundComponentClasses = componentTypeToConcreteComponents.getOrDefault(componentType, List.of());
             if (componentType.equals(KALIX_SERVICE_KEY)) {
                 // only one kalix service annotated class
-                if (!foundComponentClasses.isEmpty())
-                    config.put(DESCRIPTOR_ENTRY_BASE_PATH + KALIX_SERVICE_KEY, foundComponentClasses.getFirst());
+                String serviceConfigPath = DESCRIPTOR_ENTRY_BASE_PATH + KALIX_SERVICE_KEY;
+                if (foundComponentClasses.isEmpty()) {
+                    if (foundExistingConfig.hasPath(serviceConfigPath)) {
+                        //use the old value
+                        config.put(serviceConfigPath, foundExistingConfig.getString(serviceConfigPath));
+                    }
+                } else {
+                    config.put(serviceConfigPath, foundComponentClasses.getFirst());
+                }
             } else {
                 Set<String> components = new HashSet<>();
                 var componentTypeConfigPath = DESCRIPTOR_COMPONENT_ENTRY_BASE_PATH + componentType;

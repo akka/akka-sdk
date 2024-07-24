@@ -33,6 +33,7 @@ import akka.platform.javasdk.action.ActionCreationContext
 import akka.platform.javasdk.action.ActionProvider
 import akka.platform.javasdk.action.ReflectiveActionProvider
 import akka.platform.javasdk.annotations.ComponentId
+import akka.platform.javasdk.annotations.KalixService
 import akka.platform.javasdk.client.ComponentClient
 import akka.platform.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.platform.javasdk.eventsourcedentity.EventSourcedEntityContext
@@ -176,7 +177,11 @@ private object ComponentLocator {
       // central config/lifecycle class
       val serviceClassName = descriptorConfig.getString(DescriptorServiceEntryPath)
       val serviceClass = system.dynamicAccess.getClassFor[AnyRef](serviceClassName).get
-      logger.debug("Found and loaded service class: [{}]", serviceClass)
+      if (serviceClass.hasAnnotation[KalixService]) {
+        logger.debug("Found and loaded service class: [{}]", serviceClass)
+      } else {
+        logger.warn("Ignoring service class [{}] as it does not have the the @KalixService annotation", serviceClass)
+      }
       LocatedClasses(components, Some(serviceClass))
     } else {
       LocatedClasses(components, None)
