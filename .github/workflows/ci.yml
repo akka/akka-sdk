@@ -356,17 +356,13 @@ jobs:
           - { sample: java-view-store, it: true }
 
           - { sample: java-eventsourced-customer-registry, it: true }
-          #- { sample: java-eventsourced-counter, pre_cmd: 'docker compose up gcloud-pubsub-emulator -d', it: true }
-          # java-eventsourced-counter only compiling for now
-          - { sample: java-eventsourced-counter, it: false }
+          - { sample: java-eventsourced-counter, pre_cmd: 'docker compose up gcloud-pubsub-emulator -d', it: true }
           - { sample: java-eventsourced-customer-registry-subscriber, it: true, pre_cmd: './start-upstream.sh' }
           - { sample: java-eventsourced-shopping-cart, it: true }
 
           - { sample: java-valueentity-counter, it: true }
           - { sample: java-valueentity-shopping-cart, it: true }
-          # - { sample: java-valueentity-customer-registry, it: true }
-          # java-valueentity-customer-registry only compiling for now
-          - { sample: java-valueentity-customer-registry, it: false }
+          - { sample: java-valueentity-customer-registry, it: true }
 
           - { sample: java-tracing, it: false }
           - { sample: java-reliable-timers, it: true }
