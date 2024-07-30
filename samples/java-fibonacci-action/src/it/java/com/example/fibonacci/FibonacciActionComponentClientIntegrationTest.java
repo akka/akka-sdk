@@ -27,7 +27,7 @@ public class FibonacciActionComponentClientIntegrationTest extends KalixIntegrat
   @Test
   public void calculateNextNumberWithLimitedFibo() {
     Number response = await(
-      httpClient.GET("/limitedfibonacci/5/next").responseBodyAs(Number.class).invokeAsync()
+      httpClient.GET("/fibonacci/5/next").responseBodyAs(Number.class).invokeAsync()
     ).body();
 
     Assertions.assertEquals(8, response.value());

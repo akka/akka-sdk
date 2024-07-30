@@ -11,7 +11,7 @@ public class FibonacciActionIntegrationTest extends KalixIntegrationTestKitSuppo
   @Test
   public void calculateNextNumber() {
     StrictResponse<Number> res = await(
-      httpClient.GET("/limitedfibonacci/5/next").responseBodyAs(Number.class).invokeAsync()
+      httpClient.GET("/fibonacci/5/next").responseBodyAs(Number.class).invokeAsync()
     );
 
     Assertions.assertEquals(200, res.httpResponse().status().intValue());
@@ -22,7 +22,7 @@ public class FibonacciActionIntegrationTest extends KalixIntegrationTestKitSuppo
   public void calculateNextNumberWithLimitedFibo() {
 
     StrictResponse<Number> res = await(
-      httpClient.GET("/limitedfibonacci/5/next").responseBodyAs(Number.class).invokeAsync()
+      httpClient.GET("/fibonacci/5/next").responseBodyAs(Number.class).invokeAsync()
     );
 
     Assertions.assertEquals(200, res.httpResponse().status().intValue());
@@ -33,7 +33,7 @@ public class FibonacciActionIntegrationTest extends KalixIntegrationTestKitSuppo
   public void wrongNumberReturnsError() {
 
     StrictResponse<String> res = await(
-      httpClient.GET("/limitedfibonacci/7/next").parseResponseBody(String::new).invokeAsync()
+      httpClient.GET("/fibonacci/7/next").parseResponseBody(String::new).invokeAsync()
     );
 
     Assertions.assertEquals("java.lang.RuntimeException: Input number is not a Fibonacci number, received '7'", res.body());

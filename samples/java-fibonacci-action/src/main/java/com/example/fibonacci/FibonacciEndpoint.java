@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
-@Endpoint("/limitedfibonacci")
+@Endpoint("/fibonacci")
 public class FibonacciEndpoint {
 
     private static final Logger logger = LoggerFactory.getLogger(FibonacciEndpoint.class);
