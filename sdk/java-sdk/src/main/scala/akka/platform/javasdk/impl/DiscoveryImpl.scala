@@ -28,7 +28,8 @@ class DiscoveryImpl(
     system: ActorSystem,
     services: Map[String, Service],
     aclDescriptor: FileDescriptorProto,
-    sdkName: String)
+    sdkName: String,
+    serviceName: Option[String])
     extends Discovery {
   import DiscoveryImpl._
 
@@ -93,8 +94,9 @@ class DiscoveryImpl(
     }
 
     val serviceInfo = ServiceInfo(
-      serviceRuntime = sys.props.getOrElse("java.runtime.name", "")
-        + " " + sys.props.getOrElse("java.runtime.version", ""),
+      serviceName = serviceName.getOrElse(""),
+      serviceRuntime =
+        sys.props.getOrElse("java.runtime.name", "") + " " + sys.props.getOrElse("java.runtime.version", ""),
       supportLibraryName = sdkName,
       supportLibraryVersion = configuredOrElse("akka.platform.library.version", BuildInfo.version),
       protocolMajorVersion =

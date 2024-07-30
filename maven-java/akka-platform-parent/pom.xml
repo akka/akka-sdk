@@ -262,6 +262,10 @@
                         </arguments>
                         <systemProperties>
                             <systemProperty>
+                                <key>akka.platform.dev-mode.service-name</key>
+                                <value>${project.artifactId}</value>
+                            </systemProperty>
+                            <systemProperty>
                                 <key>akka.platform.dev-mode.enabled</key>
                                 <value>true</value>
                             </systemProperty>

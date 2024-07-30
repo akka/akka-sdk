@@ -6,7 +6,6 @@ package akka.platform.javasdk.impl
 
 import java.lang.reflect.Constructor
 import java.lang.reflect.ParameterizedType
-import java.time.Duration
 import java.util.Optional
 import java.util.concurrent.atomic.AtomicReference
 
@@ -97,27 +96,10 @@ import org.slf4j.LoggerFactory
  * INTERNAL API
  */
 @InternalApi
-final case class KalixJavaSdkSettings(
-    snapshotEvery: Int,
-    cleanupDeletedEventSourcedEntityAfter: Duration,
-    cleanupDeletedValueEntityAfter: Duration) {
-  def this(config: Config) = {
-    this(
-      snapshotEvery = config.getInt("event-sourced-entity.snapshot-every"),
-      cleanupDeletedEventSourcedEntityAfter = config.getDuration("event-sourced-entity.cleanup-deleted-after"),
-      cleanupDeletedValueEntityAfter = config.getDuration("value-entity.cleanup-deleted-after"))
-  }
-}
-
-/**
- * INTERNAL API
- */
-@InternalApi
 final class NextGenComponentAutoDetectRunner extends akka.platform.javasdk.spi.Runner {
 
   override def start(system: ActorSystem[_], runtimeComponentClients: ComponentClients): Future[SpiComponents] = {
     try {
-
       val app = new NextGenKalixJavaApplication(system, runtimeComponentClients)
       Future.successful(app.spiEndpoints)
     } catch {
@@ -139,8 +121,8 @@ private object ComponentLocator {
 
   // populated by annotation processor
   private val ComponentDescriptorResourcePath = "META-INF/akka-platform-components.conf"
-  private val DescriptorComponentBasePath = s"akka.platform.jvm.sdk.components"
-  private val DescriptorServiceEntryPath = s"akka.platform.jvm.sdk.kalix-service"
+  private val DescriptorComponentBasePath = "akka.platform.jvm.sdk.components"
+  private val DescriptorServiceEntryPath = "akka.platform.jvm.sdk.kalix-service"
 
   private val logger = LoggerFactory.getLogger(getClass)
 
@@ -207,6 +189,10 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
   private val ComponentLocator.LocatedClasses(componentClasses, maybeServiceClass) =
     ComponentLocator.locateUserComponents(system)
   private var dependencyProviderOpt: Option[DependencyProvider] = None
+
+  // FIXME pick the right config up without port?
+  val sdkSettings =
+    new AkkaPlatformSdkSettings(system.settings.config.getConfig("akka.platform"))
 
   private val endpointTimeout: FiniteDuration =
     system.settings.config
@@ -310,9 +296,6 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
     var workflowEntitiesEndpoint: Option[WorkflowEntities] = None
 
     val classicSystem = system.classicSystem
-    // FIXME pick the right config up without port?
-    val configuration =
-      new KalixJavaSdkSettings(system.settings.config.getConfig("akka.platform"))
 
     val serviceFactories = kalix.internalGetServices().asScala
     val services = serviceFactories.toSeq.map { case (serviceName, factory) =>
@@ -322,12 +305,12 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
 
       case (serviceClass, eventSourcedServices: Map[String, EventSourcedEntityService] @unchecked)
           if serviceClass == classOf[EventSourcedEntityService] =>
-        val eventSourcedImpl = new EventSourcedEntitiesImpl(classicSystem, eventSourcedServices, configuration)
+        val eventSourcedImpl = new EventSourcedEntitiesImpl(classicSystem, eventSourcedServices, sdkSettings)
         eventSourcedEntitiesEndpoint = Some(eventSourcedImpl)
 
       case (serviceClass, entityServices: Map[String, KeyValueEntityService] @unchecked)
           if serviceClass == classOf[KeyValueEntityService] =>
-        valueEntitiesEndpoint = Some(new KeyValueEntitiesImpl(classicSystem, entityServices, configuration))
+        valueEntitiesEndpoint = Some(new KeyValueEntitiesImpl(classicSystem, entityServices, sdkSettings))
 
       case (serviceClass, workflowServices: Map[String, WorkflowService] @unchecked)
           if serviceClass == classOf[WorkflowService] =>
@@ -355,7 +338,10 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
         })
       case _ => None
     }
-    val discoveryEndpoint = new DiscoveryImpl(classicSystem, services, aclDescriptor, BuildInfo.name)
+
+    val devModeServiceName = sdkSettings.devModeSettings.map(_.serviceName)
+    val discoveryEndpoint =
+      new DiscoveryImpl(classicSystem, services, aclDescriptor, BuildInfo.name, devModeServiceName)
 
     new SpiComponents {
       override def preStart(system: ActorSystem[_]): Future[Done] = {

@@ -22,7 +22,7 @@ class DiscoverySpec extends AnyWordSpec with Matchers with ScalaFutures {
       var system: ActorSystem[Nothing] = null
       try {
         system = ActorSystem[Nothing](Behaviors.empty[Nothing], "DiscoverySpec1")
-        val discovery = new DiscoveryImpl(system.classicSystem, Map.empty, emptyAcl, "test")
+        val discovery = new DiscoveryImpl(system.classicSystem, Map.empty, emptyAcl, "test", None)
         val result = discovery.discover(ProxyInfo()).futureValue
         result.getServiceInfo.env should not be empty
       } finally {
@@ -39,7 +39,7 @@ class DiscoverySpec extends AnyWordSpec with Matchers with ScalaFutures {
           ConfigFactory.parseString("""
               |akka.platform.discovery.pass-along-env-all = false
               |akka.platform.discovery.pass-along-env-allow = ["HOME"]""".stripMargin))
-        val discovery = new DiscoveryImpl(system.classicSystem, Map.empty, emptyAcl, "test")
+        val discovery = new DiscoveryImpl(system.classicSystem, Map.empty, emptyAcl, "test", None)
         val result = discovery.discover(ProxyInfo()).futureValue
         result.getServiceInfo.env should have size 1
       } finally {
@@ -57,7 +57,7 @@ class DiscoverySpec extends AnyWordSpec with Matchers with ScalaFutures {
               |akka.platform.discovery.pass-along-env-all = false
               |akka.platform.discovery.pass-along-env-allow = []
               |""".stripMargin))
-        val discovery = new DiscoveryImpl(system.classicSystem, Map.empty, emptyAcl, "test")
+        val discovery = new DiscoveryImpl(system.classicSystem, Map.empty, emptyAcl, "test", None)
         val result = discovery.discover(ProxyInfo()).futureValue
         result.getServiceInfo.env should be(empty)
       } finally {

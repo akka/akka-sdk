@@ -91,7 +91,7 @@ final class EventSourcedEntityService(
 final class EventSourcedEntitiesImpl(
     system: ActorSystem,
     _services: Map[String, EventSourcedEntityService],
-    configuration: KalixJavaSdkSettings)
+    configuration: AkkaPlatformSdkSettings)
     extends EventSourcedEntities {
   import akka.platform.javasdk.impl.EntityExceptions._
 

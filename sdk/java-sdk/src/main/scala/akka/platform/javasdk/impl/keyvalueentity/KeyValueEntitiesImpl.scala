@@ -77,7 +77,7 @@ final class KeyValueEntityService(
 final class KeyValueEntitiesImpl(
     system: ActorSystem,
     val services: Map[String, KeyValueEntityService],
-    configuration: KalixJavaSdkSettings)
+    configuration: AkkaPlatformSdkSettings)
     extends ValueEntities {
 
   import EntityExceptions._
