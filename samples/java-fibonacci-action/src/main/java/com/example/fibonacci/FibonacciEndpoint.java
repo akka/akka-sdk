@@ -6,6 +6,7 @@ import akka.platform.javasdk.annotations.http.Get;
 import akka.platform.javasdk.annotations.http.Post;
 import akka.platform.javasdk.client.ComponentClient;
 import akka.platform.javasdk.http.HttpResponses;
+import com.example.MyContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,15 +18,17 @@ public class FibonacciEndpoint {
 
     private static final Logger logger = LoggerFactory.getLogger(FibonacciEndpoint.class);
     private ComponentClient componentClient;
+    private MyContext myContext;
 
-    public FibonacciEndpoint(ComponentClient componentClient) {
+    public FibonacciEndpoint(ComponentClient componentClient, MyContext myContext) {
         this.componentClient = componentClient;
+        this.myContext = myContext;
     }
     // end::injecting-component-client[]
 
     @Get("/{number}/next")
     public CompletionStage<HttpResponse> nextNumberPath(Long number) {
-        if (number < 0 || number > 10000) {
+        if (!myContext.requestValidator().isValid(number)) {
             return CompletableFuture.completedStage(
               HttpResponses.badRequest("Only numbers between 0 and 10k are allowed"));
         } else {

@@ -4,6 +4,7 @@
 
 package akka.platform.spring.testkit;
 
+import akka.platform.javasdk.DependencyProvider;
 import akka.platform.javasdk.client.ComponentClient;
 import akka.platform.javasdk.http.HttpClient;
 import akka.platform.javasdk.testkit.KalixTestKit;
@@ -14,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
+import java.util.Optional;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
 
@@ -37,6 +39,8 @@ public abstract class KalixIntegrationTestKitSupport extends AsyncCallsSupport {
 
   protected ComponentClient componentClient;
 
+  protected Optional<DependencyProvider> dependencyProvider;
+
   protected Duration timeout = Duration.of(10, SECONDS);
 
   protected HttpClient httpClient;
@@ -54,6 +58,7 @@ public abstract class KalixIntegrationTestKitSupport extends AsyncCallsSupport {
     try {
       kalixTestKit = (new KalixTestKit(kalixTestKitSettings())).start();
       componentClient = kalixTestKit.getComponentClient();
+      dependencyProvider = kalixTestKit.getDependencyContext();
       var baseUrl = "http://localhost:" + kalixTestKit.getPort();
       httpClient = new HttpClient(kalixTestKit.getActorSystem(), baseUrl);
     } catch (Exception ex) {
@@ -70,6 +75,10 @@ public abstract class KalixIntegrationTestKitSupport extends AsyncCallsSupport {
     }
   }
 
+  public <T> T getDependency(Class<T> clazz) {
+    return dependencyProvider.map(provider -> provider.getDependency(clazz))
+      .orElseThrow(() -> new IllegalStateException("DependencyProvider not available, or not yet initialized."));
+  }
 
 
 }

@@ -1,6 +1,5 @@
 package com.example;
 
-import akka.platform.javasdk.ServiceLifecycle;
 import akka.platform.javasdk.annotations.Acl;
 import akka.platform.javasdk.annotations.KalixService;
 

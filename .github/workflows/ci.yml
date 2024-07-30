@@ -354,6 +354,7 @@ jobs:
           - { sample: java-fibonacci-action, it: true }
           - { sample: java-doc-snippets, it: false }
           - { sample: java-view-store, it: true }
+          - { sample: java-spring-dependency-injection, it: true }
 
           - { sample: java-eventsourced-customer-registry, it: true }
           - { sample: java-eventsourced-counter, pre_cmd: 'docker compose up gcloud-pubsub-emulator -d', it: true }

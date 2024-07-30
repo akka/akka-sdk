@@ -9,6 +9,7 @@ import akka.annotation.InternalApi;
 import akka.http.javadsl.Http;
 import akka.http.javadsl.model.HttpRequest;
 import akka.pattern.Patterns;
+import akka.platform.javasdk.DependencyProvider;
 import akka.stream.Materializer;
 import akka.stream.SystemMaterializer;
 import akka.testkit.javadsl.TestKit;
@@ -30,7 +31,7 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.Some;
-import scala.Tuple2;
+import scala.Tuple3;
 import scala.concurrent.Await;
 import scala.concurrent.Promise;
 import scala.concurrent.duration.FiniteDuration;
@@ -439,6 +440,7 @@ public class KalixTestKit {
   private EventingTestKit eventingTestKit;
   private ActorSystem runtimeActorSystem;
   private ComponentClient componentClient;
+  private Optional<DependencyProvider> dependencyProvider;
   private int eventingTestKitPort = -1;
 
   /**
@@ -540,7 +542,7 @@ public class KalixTestKit {
       proxyPort = runtimeConfig.getInt("kalix.proxy.http-port");
       proxyHost = "localhost";
 
-      Promise<Tuple2<Kalix, ComponentClients>> startedKalix = Promise.apply();
+      Promise<Tuple3<Kalix, ComponentClients, Optional<DependencyProvider>>> startedKalix = Promise.apply();
       if (!NextGenKalixJavaApplication.onNextStartCallback().compareAndSet(null, startedKalix)) {
         throw new RuntimeException("Found another integration test run waiting for Kalix to start, multiple tests must not run in parallel");
       }
@@ -551,7 +553,8 @@ public class KalixTestKit {
       // wait for SDK to get on start callback (or fail starting), we need it to set up the component client
       var tuple = Await.result(startedKalix.future(), scala.concurrent.duration.Duration.create("20s"));
       kalix = tuple._1();
-      var componentClients = tuple._2;
+      var componentClients = tuple._2();
+      dependencyProvider = tuple._3();
 
       startEventingTestkit();
 
@@ -789,5 +792,9 @@ public class KalixTestKit {
    */
   public EventingTestKit.MessageBuilder getMessageBuilder() {
     return messageBuilder;
+  }
+
+  public Optional<DependencyProvider> getDependencyContext() {
+    return dependencyProvider;
   }
 }

@@ -20,7 +20,6 @@
     <!-- For Docker setup see https://docs.kalix.io/projects/container-registries.html -->
     <kalixContainerRegistry>kcr.us-east-1.kalix.io</kalixContainerRegistry>
     <kalixOrganization>acme</kalixOrganization>
-    <mainClass>${package}.MainKt</mainClass>
 
     <kotlin.version>1.8.0</kotlin.version>
   </properties>

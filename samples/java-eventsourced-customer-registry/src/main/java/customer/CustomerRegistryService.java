@@ -14,10 +14,10 @@ import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_NULL
 // Documentation at https://docs.kalix.io/java/access-control.html
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
 // tag::object-mapper[]
-public class Main implements ServiceLifecycle {
+public class CustomerRegistryService implements ServiceLifecycle {
   // end::object-mapper[]
 
-  private static final Logger logger = LoggerFactory.getLogger(Main.class);
+  private static final Logger logger = LoggerFactory.getLogger(CustomerRegistryService.class);
 
   // tag::object-mapper[]
 

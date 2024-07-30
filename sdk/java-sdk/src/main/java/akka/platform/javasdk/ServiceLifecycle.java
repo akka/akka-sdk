@@ -23,4 +23,9 @@ public interface ServiceLifecycle {
   // FIXME possible useful params to the hooks: actor system, config, an enum with DEV/TEST/PROD
   // (like play?)
   default void onStartup() {}
+
+  /** Invoked once when the service is starting to create a dependency provider. */
+  default DependencyProvider createDependencyProvider() {
+    return null;
+  }
 }

@@ -7,6 +7,7 @@ package akka.platform.javasdk.impl
 import java.lang.reflect.Constructor
 import java.lang.reflect.ParameterizedType
 import java.time.Duration
+import java.util.Optional
 import java.util.concurrent.atomic.AtomicReference
 
 import scala.concurrent.Future
@@ -16,6 +17,7 @@ import scala.concurrent.duration.FiniteDuration
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 import scala.jdk.CollectionConverters.MapHasAsScala
 import scala.jdk.DurationConverters.JavaDurationOps
+import scala.jdk.OptionConverters.RichOption
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
 
@@ -26,6 +28,7 @@ import akka.http.scaladsl.model.HttpMethods
 import akka.http.scaladsl.model.HttpRequest
 import akka.http.scaladsl.model.HttpResponse
 import akka.platform.javasdk.BuildInfo
+import akka.platform.javasdk.DependencyProvider
 import akka.platform.javasdk.Kalix
 import akka.platform.javasdk.ServiceLifecycle
 import akka.platform.javasdk.action.Action
@@ -194,7 +197,8 @@ private object ComponentLocator {
  */
 @InternalApi
 private[javasdk] final object NextGenKalixJavaApplication {
-  val onNextStartCallback: AtomicReference[Promise[(Kalix, ComponentClients)]] = new AtomicReference(null)
+  val onNextStartCallback: AtomicReference[Promise[(Kalix, ComponentClients, Optional[DependencyProvider])]] =
+    new AtomicReference(null)
 }
 
 private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeComponentClients: ComponentClients) {
@@ -202,6 +206,7 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
   private val messageCodec = new JsonMessageCodec
   private val ComponentLocator.LocatedClasses(componentClasses, maybeServiceClass) =
     ComponentLocator.locateUserComponents(system)
+  private var dependencyProviderOpt: Option[DependencyProvider] = None
 
   private val endpointTimeout: FiniteDuration =
     system.settings.config
@@ -340,18 +345,13 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
         sys.error(s"Unknown service type: $serviceClass")
     }
 
-    val lifecycleHooks: Option[ServiceLifecycle] = maybeServiceClass match {
+    val serviceLifecycle: Option[ServiceLifecycle] = maybeServiceClass match {
       case Some(serviceClass) if classOf[ServiceLifecycle].isAssignableFrom(serviceClass) =>
         // FIXME: HttpClient is tricky because auth headers waiting for discovery, we could maybe sort that
         //        by passing more runtime metadata as parameters to the start call?
         Some(wiredInstance[ServiceLifecycle](serviceClass.asInstanceOf[Class[ServiceLifecycle]]) {
           case p if p == classOf[ComponentClient] => componentClient()
-          case t if t == classOf[TimerScheduler] =>
-            new TimerSchedulerImpl(
-              messageCodec,
-              system.classicSystem,
-              runtimeComponentClients.timerClient,
-              MetadataImpl.Empty)
+          case t if t == classOf[TimerScheduler]  => timerScheduler()
         })
       case _ => None
     }
@@ -359,21 +359,24 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
 
     new SpiComponents {
       override def preStart(system: ActorSystem[_]): Future[Done] = {
-        // FIXME this might turn out to not be needed
-        Future.successful(Done)
+        serviceLifecycle match {
+          case None =>
+            setStartCallback(None)
+            Future.successful(Done)
+          case Some(hooks) =>
+            dependencyProviderOpt = Option(hooks.createDependencyProvider())
+            dependencyProviderOpt.foreach(_ => logger.info("Service configured with DependencyProvider"))
+            setStartCallback(dependencyProviderOpt)
+            Future.successful(Done)
+        }
       }
 
       override def onStart(system: ActorSystem[_]): Future[Done] = {
-        // For integration test runner
-        NextGenKalixJavaApplication.onNextStartCallback.getAndSet(null) match {
-          case null =>
-          case f    =>
-            // Running inside the test runner
-            f.success((kalix, runtimeComponentClients))
-        }
-        lifecycleHooks match {
+
+        serviceLifecycle match {
           case None => Future.successful(Done)
           case Some(hooks) =>
+            logger.debug("Running onStart lifecycle hook")
             hooks.onStartup()
             Future.successful(Done)
         }
@@ -409,6 +412,14 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
     }
   }
 
+  private def setStartCallback(maybeDependencyProvider: Option[DependencyProvider]) = {
+    NextGenKalixJavaApplication.onNextStartCallback.getAndSet(null) match {
+      case null =>
+      case f =>
+        f.success((kalix, runtimeComponentClients, maybeDependencyProvider.toJava))
+    }
+  }
+
   private def actionProvider[A <: Action](clz: Class[A]): ActionProvider[A] =
     ReflectiveActionProvider.of(
       clz,
@@ -419,6 +430,7 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
           case p if p == classOf[ComponentClient]       => componentClient()
           case h if h == classOf[HttpClientProvider]    => httpClientProvider()
           case p if p == classOf[Tracer]                => context.getTracer
+          case t if t == classOf[TimerScheduler]        => timerScheduler()
         })
 
   private def workflowProvider[S, W <: Workflow[S]](clz: Class[W]): WorkflowProvider[S, W] = {
@@ -523,9 +535,19 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
         // block wiring of clients into anything that is not an Action or Workflow
         // NOTE: if they are allowed, 'partial' should already have a matching case for them
         // if partial func doesn't match, try to lookup in the applicationContext
+
         case anyOther =>
-          throw new RuntimeException(
-            s"[${constructor.getDeclaringClass.getName}] are not allowed to have a dependency on ${anyOther.getName}");
+          dependencyProviderOpt match {
+            case _ if platformManagedDependency(anyOther) =>
+              //if we allow for a given dependency we should cover it in the partial function for the component
+              throw new RuntimeException(
+                s"[${constructor.getDeclaringClass.getName}] are not allowed to have a dependency on ${anyOther.getName}");
+            case Some(dependencyProvider) =>
+              dependencyProvider.getDependency(anyOther)
+            case None =>
+              throw new RuntimeException(
+                s"Could not inject dependency [${anyOther.getName}] required by [${constructor.getDeclaringClass.getName}] as no DependencyProvider was configured.");
+          }
 
       }
 
@@ -535,8 +557,24 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
     constructor.newInstance(params: _*)
   }
 
+  private def platformManagedDependency(anyOther: Class[_]) = {
+    anyOther == classOf[ComponentClient] ||
+    anyOther == classOf[TimerScheduler] ||
+    anyOther == classOf[HttpClientProvider] ||
+    anyOther == classOf[Tracer] ||
+    anyOther == classOf[Config] ||
+    anyOther == classOf[WorkflowContext] ||
+    anyOther == classOf[EventSourcedEntityContext] ||
+    anyOther == classOf[KeyValueEntityContext] ||
+    anyOther == classOf[ViewCreationContext]
+  }
+
   private def componentClient(): ComponentClient = {
     ComponentClientImpl(runtimeComponentClients)(system.executionContext)
+  }
+
+  private def timerScheduler(): TimerScheduler = {
+    new TimerSchedulerImpl(messageCodec, system.classicSystem, runtimeComponentClients.timerClient, MetadataImpl.Empty)
   }
 
   private def httpClientProvider(): HttpClientProvider =

@@ -1,11 +1,13 @@
 package com.example;
 
+import akka.platform.javasdk.DependencyProvider;
 import com.example.fibonacci.FibonacciAction;
 import akka.platform.javasdk.ServiceLifecycle;
 import akka.platform.javasdk.annotations.Acl;
 import akka.platform.javasdk.annotations.KalixService;
 import akka.platform.javasdk.client.ComponentClient;
 import akka.platform.javasdk.timer.TimerScheduler;
+import com.example.fibonacci.RequestValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,5 +45,10 @@ public class FibonacciService implements ServiceLifecycle {
                 componentClient.forAction()
                         .method(FibonacciAction::getNumber)
                         .deferred(5L));
+    }
+
+    @Override
+    public DependencyProvider createDependencyProvider() {
+        return DependencyProvider.single(new MyContext(new RequestValidator()));
     }
 }
