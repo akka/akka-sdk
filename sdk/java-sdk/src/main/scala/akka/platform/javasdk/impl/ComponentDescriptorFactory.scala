@@ -361,7 +361,7 @@ private[impl] object ComponentDescriptorFactory {
 
   // TODO: add more validations here
   // we should let users know if components are missing required annotations,
-  // eg: Workflow and Entities require @TypeId, View requires @Table and @Consume
+  // eg: Workflow and Entities require @TypeId, View requires @Consume
   def getFactoryFor(component: Class[_]): ComponentDescriptorFactory = {
     if (Reflect.isEntity(component) || Reflect.isWorkflow(component))
       EntityDescriptorFactory

@@ -10,7 +10,6 @@ import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.view.View;
 
 @ComponentId("customers_by_name")
-@Table("customers_by_name")
 // tag::class[]
 @Consume.FromKeyValueEntity(CustomerEntity.class)
 public class CustomersResponseByName extends View<Customer> {

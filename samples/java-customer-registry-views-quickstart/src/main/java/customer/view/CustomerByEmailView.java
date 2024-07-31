@@ -10,15 +10,14 @@ import akka.platform.javasdk.annotations.Table;
 import akka.platform.javasdk.annotations.ComponentId;
 
 @ComponentId("view_customers_by_email") // <1>
-@Table("customers_by_email") // <2>
-@Consume.FromKeyValueEntity(CustomerEntity.class)// <3>
-public class CustomerByEmailView extends View<Customer> { //  <4>
+@Consume.FromKeyValueEntity(CustomerEntity.class)// <2>
+public class CustomerByEmailView extends View<Customer> { //  <3>
 
   public record QueryParameters(String email) {
   }
-  @Query("SELECT * FROM customers_by_email WHERE email = :email") // <5>
+  @Query("SELECT * FROM customers_by_email WHERE email = :email") // <4>
   public Customer getCustomer(QueryParameters params) {
-    return null; // <6>
+    return null; // <5>
   }
 }
 // end::class[]

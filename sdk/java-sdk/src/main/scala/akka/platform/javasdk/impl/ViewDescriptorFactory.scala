@@ -6,7 +6,6 @@ package akka.platform.javasdk.impl
 
 import java.lang.reflect.Method
 import java.lang.reflect.ParameterizedType
-
 import kalix.Eventing
 import kalix.MethodOptions
 import akka.platform.javasdk.annotations.Consume.FromServiceStream
@@ -46,6 +45,8 @@ import akka.platform.javasdk.impl.reflection.VirtualServiceMethod
 
 private[impl] object ViewDescriptorFactory extends ComponentDescriptorFactory {
 
+  val TableNamePattern = """FROM\s+`?([A-Za-z][A-Za-z0-9_]*)""".r
+
   override def buildDescriptorFor(
       component: Class[_],
       messageCodec: JsonMessageCodec,
@@ -56,6 +57,8 @@ private[impl] object ViewDescriptorFactory extends ComponentDescriptorFactory {
     val tableComponents =
       if (isMultiTable) component.getDeclaredClasses.toSeq.filter(Reflect.isNestedViewTable)
       else Seq(component)
+
+    val allQueryMethods = queryMethods(component)
 
     val (tableTypeDescriptors, updateMethods) = {
       tableComponents
@@ -68,7 +71,21 @@ private[impl] object ViewDescriptorFactory extends ComponentDescriptorFactory {
               .head
               .asInstanceOf[Class[_]]
 
-          val tableName: String = component.getAnnotation(classOf[Table]).value()
+          val queries = allQueryMethods.map(_.queryString)
+          val tableName: String = {
+            if (isMultiTable) {
+              // explicitly annotated since queries are not on the nested view tables
+              component.getAnnotation(classOf[Table]).value()
+            } else {
+              // figure out from first query
+              val query = queries.head
+              TableNamePattern
+                .findFirstMatchIn(query)
+                .map(_.group(1))
+                .getOrElse(throw new RuntimeException(s"Could not extract table name from query [${query}]"))
+            }
+          }
+
           val tableTypeDescriptor = ProtoMessageDescriptors.generateMessageDescriptors(tableType)
 
           val tableProtoMessageName = tableTypeDescriptor.mainMessageDescriptor.getName
@@ -118,8 +135,6 @@ private[impl] object ViewDescriptorFactory extends ComponentDescriptorFactory {
         }
     }
 
-    val allQueryMethods = queryMethods(component)
-
     val kalixMethods: Seq[KalixMethod] = allQueryMethods.map(_.queryMethod) ++ updateMethods
     val serviceName = nameGenerator.getName(component.getSimpleName)
     val additionalMessages =
@@ -147,10 +162,11 @@ private[impl] object ViewDescriptorFactory extends ComponentDescriptorFactory {
   private case class QueryMethod(
       queryMethod: KalixMethod,
       queryInputSchemaDescriptor: Option[ProtoMessageDescriptors],
-      queryOutputSchemaDescriptor: ProtoMessageDescriptors)
+      queryOutputSchemaDescriptor: ProtoMessageDescriptors,
+      queryString: String)
 
   private def queryMethods(component: Class[_]): Seq[QueryMethod] = {
-    // we only take methods with Query annotations and Spring REST annotations
+    // we only take methods with Query annotations
     val annotatedQueryMethods =
       component.getDeclaredMethods.toIndexedSeq
         .filter(_.getAnnotation(classOf[Query]) != null)
@@ -206,7 +222,7 @@ private[impl] object ViewDescriptorFactory extends ComponentDescriptorFactory {
         KalixMethod(servMethod, methodOptions = Some(methodOptions))
           .withKalixOptions(buildJWTOptions(queryMethod))
 
-      QueryMethod(kalixQueryMethod, QueryParametersSchemaDescriptor, queryOutputSchemaDescriptor)
+      QueryMethod(kalixQueryMethod, QueryParametersSchemaDescriptor, queryOutputSchemaDescriptor, queryStr)
     }
   }
 

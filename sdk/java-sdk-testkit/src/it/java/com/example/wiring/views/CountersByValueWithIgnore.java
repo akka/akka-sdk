@@ -14,7 +14,6 @@ import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.view.View;
 
 @ComponentId("counters_by_value_with_ignore")
-@Table("counters_by_value_with_ignore")
 @Consume.FromEventSourcedEntity(value = CounterEntity.class, ignoreUnknown = true)
 public class CountersByValueWithIgnore extends View<Counter> {
 

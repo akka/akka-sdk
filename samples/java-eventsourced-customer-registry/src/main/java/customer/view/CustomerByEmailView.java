@@ -9,7 +9,6 @@ import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.view.View;
 
 @ComponentId("view_customers_by_email")
-@Table("customers_by_email")
 public class CustomerByEmailView extends View<CustomerView> {
 
   public record QueryParameters(String email) {

@@ -18,7 +18,6 @@ import java.util.List;
  * A View to query users by country.
  */
 @ComponentId("view-users-by-newCountry")
-@Table("users_by_country")
 @Consume.FromEventSourcedEntity(value = UserEntity.class)
 public class UsersByCountryView extends View<UsersByCountryView.UserView> {
 

@@ -7,9 +7,7 @@ package akka.platform.javasdk.impl
 import java.lang.reflect.AnnotatedElement
 import java.lang.reflect.Method
 import java.lang.reflect.ParameterizedType
-
 import scala.reflect.ClassTag
-
 import akka.platform.javasdk.action.Action
 import akka.platform.javasdk.annotations.ComponentId
 import akka.platform.javasdk.annotations.Consume.FromKeyValueEntity
@@ -39,6 +37,7 @@ import akka.platform.javasdk.impl.ComponentDescriptorFactory.streamSubscription
 import akka.platform.javasdk.impl.ComponentDescriptorFactory.topicSubscription
 import akka.platform.javasdk.impl.reflection.Reflect
 import akka.platform.javasdk.impl.reflection.Reflect.Syntax._
+import akka.platform.javasdk.impl.reflection.Reflect.isMultiTableView
 import akka.platform.javasdk.keyvalueentity.KeyValueEntity
 import akka.platform.javasdk.view.View
 
@@ -203,15 +202,16 @@ object Validations {
   private def validateView(component: Class[_]): Validation = {
     when[View[_]](component) {
       validateSingleView(component) ++
-      mustHaveNonEmptyComponentId(component)
+      mustHaveNonEmptyComponentId(component) ++
+      viewMustNotHaveTableAnnotation(component)
     } ++
     when(Reflect.isMultiTableView(component)) {
       val nestedViewClasses = component.getDeclaredClasses.toSeq.filter(Reflect.isNestedViewTable)
       val nestedValidations =
-        nestedViewClasses.map(validateSingleView) ++ nestedViewClasses.map(viewMustNotHaveComponentId)
-
+        nestedViewClasses.map(validateSingleView) ++ nestedViewClasses.map(
+          viewMustNotHaveComponentId) ++ nestedViewClasses.map(nestedViewTableMustHaveTableAnnotation)
       nestedValidations.reduce(_ ++ _) ++
-      viewMustNotHaveTableName(component) ++
+      viewMustNotHaveTableAnnotation(component) ++
       viewMustHaveAtLeastOneQueryMethod(component) ++
       mustHaveNonEmptyComponentId(component)
     }
@@ -223,7 +223,6 @@ object Validations {
       viewMustHaveAtLeastOneQueryMethod(component)
     } ++
     commonSubscriptionValidation(component, hasUpdateEffectOutput) ++
-    viewMustHaveTableName(component) ++
     viewMustHaveMethodLevelSubscriptionWhenTransformingUpdates(component)
   }
 
@@ -537,16 +536,19 @@ object Validations {
     }
   }
 
-  private def viewMustNotHaveTableName(component: Class[_]): Validation = {
+  private def viewMustNotHaveTableAnnotation(component: Class[_]): Validation = {
     val ann = component.getAnnotation(classOf[Table])
     when(ann != null) {
-      Invalid(errorMessage(component, "A multi-table View should not be annotated with @Table."))
+      if (isMultiTableView(component))
+        Invalid(errorMessage(component, "A multi-table View should not be annotated with @Table."))
+      else
+        Invalid(errorMessage(component, "A single-table View should not be annotated with @Table."))
     }
   }
-  private def viewMustHaveTableName(component: Class[_]): Validation = {
+  private def nestedViewTableMustHaveTableAnnotation(component: Class[_]): Validation = {
     val ann = component.getAnnotation(classOf[Table])
     if (ann == null) {
-      Invalid(errorMessage(component, "A View should be annotated with @Table."))
+      Invalid(errorMessage(component, "A nested View must be annotated with @Table."))
     } else {
       val tableName: String = ann.value()
       if (tableName == null || tableName.trim.isEmpty) {

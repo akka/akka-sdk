@@ -17,7 +17,6 @@ import java.util.List;
 
 // With Multiple Subscriptions
 @ComponentId("counters_by_value_ms")
-@Table("counters_by_value_ms")
 public class CountersByValueSubscriptions extends View<Counter> {
 
 

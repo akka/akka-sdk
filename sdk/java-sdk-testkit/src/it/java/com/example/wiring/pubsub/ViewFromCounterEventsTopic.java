@@ -21,7 +21,6 @@ import static akka.platform.javasdk.impl.MetadataImpl.CeSubject;
 
 
 @ComponentId("counter_view_topic_sub")
-@Table("counter_view_topic_sub")
 @Consume.FromTopic(COUNTER_EVENTS_TOPIC)
 public class ViewFromCounterEventsTopic extends View<CounterView> {
 

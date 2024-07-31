@@ -12,7 +12,6 @@ import akka.platform.javasdk.view.View;
 import java.util.Collection;
 
 @ComponentId("view_customers_by_name")
-@Table("customers_by_name")
 public class CustomersByNameView
   extends View<CustomersByNameView.CustomerSummary> {
 

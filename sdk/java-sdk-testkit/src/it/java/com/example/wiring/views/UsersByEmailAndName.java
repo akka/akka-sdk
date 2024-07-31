@@ -13,7 +13,6 @@ import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.view.View;
 
 @ComponentId("users_by_email_and_name")
-@Table("users_by_email_and_name")
 @Consume.FromKeyValueEntity(UserEntity.class)
 public class UsersByEmailAndName extends View<User> {
 

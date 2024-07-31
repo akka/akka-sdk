@@ -11,7 +11,6 @@ import org.slf4j.LoggerFactory;
 
 // tag::view[]
 @ComponentId("customers_by_name")
-@Table("customers_by_name")
 @Consume.FromServiceStream( // <1>
     service = "customer-registry", // <2>
   id = "customer_events", // <3>

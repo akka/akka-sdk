@@ -10,7 +10,6 @@ import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.view.View;
 
 @ComponentId("summary_customer_by_name")
-@Table("customers")
 public class CustomerSummaryByName extends View<CustomerSummary> {
 
   public record QueryParameters(String name) { }

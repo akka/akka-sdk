@@ -12,7 +12,6 @@ import akka.platform.javasdk.view.View;
 import java.util.List;
 
 @ComponentId("customers_by_city")
-@Table("customers_by_city")
 // tag::view-test[]
 @Consume.FromKeyValueEntity(CustomerEntity.class)
 public class CustomersByCity extends View<Customer> {

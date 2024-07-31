@@ -30,61 +30,49 @@ public class ViewTestModels {
 
 
   @ComponentId("users_view")
-  @Table("users_view")
   @Consume.FromKeyValueEntity(UserEntity.class) // when types are annotated, it's implicitly a transform = false
   public static class UserByEmailWithGet extends View<User> {
 
-    @Query("SELECT * FROM users_view WHERE email = :email")
-    public User getUser(ByEmail byEmail) {
-      return null; // TODO: user should not implement this. we need to find a nice API for this
-    }
-  }
-  @ComponentId("users_view")
-  @Consume.FromKeyValueEntity(UserEntity.class)
-  public static class ViewWithoutTableAnnotation extends View<User> {
-
-    @Query("SELECT * FROM users_view WHERE email = :email")
+    @Query("SELECT * FROM users_table WHERE email = :email")
     public User getUser(ByEmail byEmail) {
       return null; // TODO: user should not implement this. we need to find a nice API for this
     }
   }
 
-  @ComponentId("users_view")
-  @Table(" ")
-  @Consume.FromKeyValueEntity(UserEntity.class)
-  public static class ViewWithEmptyTableAnnotation extends View<User> {
-
-    @Query("SELECT * FROM users_view WHERE email = :email")
-    public User getUser(ByEmail byEmail) {
-      return null; // TODO: user should not implement this. we need to find a nice API for this
-    }
-  }
-
-  @Table("users_view")
+  @Table("users_table")
   @Consume.FromKeyValueEntity(UserEntity.class)
   public static class ViewWithoutComponentIdAnnotation extends View<User> {
 
 
-    @Query("SELECT * FROM users_view WHERE email = :email")
+    @Query("SELECT * FROM users_table WHERE email = :email")
     public User getUser(ByEmail byEmail) {
       return null; // TODO: user should not implement this. we need to find a nice API for this
     }
   }
 
   @ComponentId(" ")
-  @Table("users_view")
   @Consume.FromKeyValueEntity(UserEntity.class)
   public static class ViewWithEmptyComponentIdAnnotation extends View<User> {
 
-    @Query("SELECT * FROM users_view WHERE email = :email")
+    @Query("SELECT * FROM users_table WHERE email = :email")
     public User getUser(String email) {
       return null; // TODO: user should not implement this. we need to find a nice API for this
     }
   }
 
+  @ComponentId("users_view")
+  @Table("users_table")
+  @Consume.FromKeyValueEntity(UserEntity.class)
+  public static class ViewWithTableName extends View<User> {
+
+    @Query("SELECT * FROM users_table WHERE email = :email")
+    public User getUser(String email) {
+      return null;
+    }
+  }
+
 
   @ComponentId("users_view")
-  @Table("users_view")
   public static class TransformedUserView extends View<TransformedUser> {
 
     // when methods are annotated, it's implicitly a transform = true
@@ -94,14 +82,13 @@ public class ViewTestModels {
           .updateState(new TransformedUser(user.lastName + ", " + user.firstName, user.email));
     }
 
-    @Query("SELECT * FROM users_view WHERE email = :email")
+    @Query("SELECT * FROM users_table WHERE email = :email")
     public TransformedUser getUser(ByEmail byEmail) {
       return null;
     }
   }
 
   @ComponentId("users_view")
-  @Table("users_view")
   public static class TransformedUserViewWithDeletes extends View<TransformedUser> {
 
     @Consume.FromKeyValueEntity(UserEntity.class)
@@ -115,14 +102,13 @@ public class ViewTestModels {
       return effects().deleteState();
     }
 
-    @Query("SELECT * FROM users_view WHERE email = :email")
+    @Query("SELECT * FROM users_table WHERE email = :email")
     public TransformedUser getUser(ByEmail byEmail) {
       return null;
     }
   }
 
   @ComponentId("users_view")
-  @Table("users_view")
   public static class TransformedUserViewWithMethodLevelJWT extends View<TransformedUser> {
 
     // when methods are annotated, it's implicitly a transform = true
@@ -132,7 +118,7 @@ public class ViewTestModels {
           .updateState(new TransformedUser(user.lastName + ", " + user.firstName, user.email));
     }
 
-    @Query("SELECT * FROM users_view WHERE email = :email")
+    @Query("SELECT * FROM users_table WHERE email = :email")
     @JWT(
         validate = JWT.JwtMethodMode.BEARER_TOKEN,
         bearerTokenIssuer = {"a", "b"},
@@ -146,7 +132,6 @@ public class ViewTestModels {
   }
 
   @ComponentId("users_view")
-  @Table("users_view")
   @JWT(
     validate = JWT.JwtMethodMode.BEARER_TOKEN,
     bearerTokenIssuer = {"a", "b"},
@@ -155,7 +140,7 @@ public class ViewTestModels {
         @JWT.StaticClaim(claim = "aud", value = "${ENV}.kalix.io")
     })
   public static class ViewWithServiceLevelJWT extends View<User> {
-    @Query("SELECT * FROM users_view WHERE email = :email")
+    @Query("SELECT * FROM users_table WHERE email = :email")
     public User getUser(ByEmail byEmail) {
       return null;
     }
@@ -168,7 +153,6 @@ public class ViewTestModels {
    * subscribe at method level, and it's a transform = true.
    */
   @ComponentId("users_view")
-  @Table("users_view")
   @Consume.FromKeyValueEntity(UserEntity.class)
   public static class ViewWithSubscriptionsInMixedLevels extends View<TransformedUser> {
 
@@ -179,14 +163,13 @@ public class ViewTestModels {
           .updateState(new TransformedUser(user.lastName + ", " + user.firstName, user.email));
     }
 
-    @Query("SELECT * FROM users_view WHERE email = :email")
+    @Query("SELECT * FROM users_table WHERE email = :email")
     public TransformedUser getUser(ByEmail byEmail) {
       return null;
     }
   }
 
   @ComponentId("users_view")
-  @Table("users_view")
   @Consume.FromKeyValueEntity(UserEntity.class) //it's implicitly a transform = false
   public static class TransformedViewWithoutSubscriptionOnMethodLevel extends View<TransformedUser> {
 
@@ -195,14 +178,13 @@ public class ViewTestModels {
           .updateState(new TransformedUser(user.lastName + ", " + user.firstName, user.email));
     }
 
-    @Query("SELECT * FROM users_view WHERE email = :email")
+    @Query("SELECT * FROM users_table WHERE email = :email")
     public TransformedUser getUser(ByEmail byEmail) {
       return null;
     }
   }
 
   @ComponentId("users_view")
-  @Table("users_view")
   @Consume.FromKeyValueEntity(UserEntity.class)
   public static class ViewWithSubscriptionsInMixedLevelsHandleDelete extends View<User> {
 
@@ -211,14 +193,13 @@ public class ViewTestModels {
       return effects().deleteState();
     }
 
-    @Query("SELECT * FROM users_view WHERE email = :email")
+    @Query("SELECT * FROM users_table WHERE email = :email")
     public User getUser(ByEmail byEmail) {
       return null;
     }
   }
 
   @ComponentId("users_view")
-  @Table("users_view")
   public static class ViewWithoutSubscriptionButWithHandleDelete extends View<TransformedUser> {
 
     @Consume.FromKeyValueEntity(value = UserEntity.class, handleDeletes = true)
@@ -226,14 +207,13 @@ public class ViewTestModels {
       return effects().deleteState();
     }
 
-    @Query("SELECT * FROM users_view WHERE email = :email")
+    @Query("SELECT * FROM users_table WHERE email = :email")
     public TransformedUser getUser(ByEmail byEmail) {
       return null;
     }
   }
 
   @ComponentId("users_view")
-  @Table("users_view")
   public static class ViewDuplicatedHandleDeletesAnnotations extends View<TransformedUser> {
 
     @Consume.FromKeyValueEntity(UserEntity.class)
@@ -252,14 +232,13 @@ public class ViewTestModels {
       return effects().deleteState();
     }
 
-    @Query("SELECT * FROM users_view WHERE email = :email")
+    @Query("SELECT * FROM users_table WHERE email = :email")
     public TransformedUser getUser(ByEmail byEmail) {
       return null;
     }
   }
 
   @ComponentId("users_view")
-  @Table("users_view")
   public static class ViewHandleDeletesWithParam extends View<TransformedUser> {
 
     @Consume.FromKeyValueEntity(UserEntity.class)
@@ -273,14 +252,13 @@ public class ViewTestModels {
       return effects().deleteState();
     }
 
-    @Query("SELECT * FROM users_view WHERE email = :email")
+    @Query("SELECT * FROM users_table WHERE email = :email")
     public TransformedUser getUser(ByEmail byEmail) {
       return null;
     }
   }
 
   @ComponentId("users_view")
-  @Table("users_view")
   public static class ViewWithHandleDeletesFalseOnMethodLevel extends View<TransformedUser> {
 
     @Consume.FromKeyValueEntity(UserEntity.class)
@@ -294,14 +272,13 @@ public class ViewTestModels {
       return effects().deleteState();
     }
 
-    @Query("SELECT * FROM users_view WHERE email = :email")
+    @Query("SELECT * FROM users_table WHERE email = :email")
     public TransformedUser getUser(ByEmail byEmail) {
       return null;
     }
   }
 
   @ComponentId("users_view")
-  @Table("users_view")
   public static class ViewDuplicatedVESubscriptions extends View<TransformedUser> {
 
     @Consume.FromKeyValueEntity(UserEntity.class)
@@ -321,14 +298,13 @@ public class ViewTestModels {
       return effects().deleteState();
     }
 
-    @Query("SELECT * FROM users_view WHERE email = :email")
+    @Query("SELECT * FROM users_table WHERE email = :email")
     public TransformedUser getUser(ByEmail byEmail) {
       return null;
     }
   }
 
   @ComponentId("users_view")
-  @Table("users_view")
   public static class ViewDuplicatedESSubscriptions extends View<TransformedUser> {
 
     @Consume.FromEventSourcedEntity(EmployeeEntity.class)
@@ -348,28 +324,26 @@ public class ViewTestModels {
       return effects().deleteState();
     }
 
-    @Query("SELECT * FROM users_view WHERE email = :email")
+    @Query("SELECT * FROM users_table WHERE email = :email")
     public TransformedUser getUser(ByEmail byEmail) {
       return null;
     }
   }
 
   @ComponentId("users_view")
-  @Table("users_view")
   @Consume.FromKeyValueEntity(UserEntity.class)
   public static class ViewWithNoQuery extends View<TransformedUser> {}
 
   @ComponentId("users_view")
-  @Table("users_view")
   @Consume.FromKeyValueEntity(UserEntity.class)
   public static class ViewWithTwoQueries extends View<User> {
 
-    @Query("SELECT * FROM users_view WHERE email = :email")
+    @Query("SELECT * FROM users_table WHERE email = :email")
     public User getUserByEmail(ByEmail byEmail) {
       return null;
     }
 
-    @Query("SELECT * FROM users_view WHERE email = :email AND name = :name")
+    @Query("SELECT * FROM users_table WHERE email = :email AND name = :name")
     public User getUserByNameAndEmail(ByNameAndEmail byEmail) {
       return null;
     }
@@ -378,7 +352,6 @@ public class ViewTestModels {
 
 
   @ComponentId("users_view")
-  @Table(value = "employees_view")
   public static class SubscribeToEventSourcedEvents extends View<Employee> {
 
     @Consume.FromEventSourcedEntity(EmployeeEntity.class)
@@ -392,14 +365,13 @@ public class ViewTestModels {
       return effects().ignore();
     }
 
-    @Query("SELECT * FROM employees_view WHERE email = :email")
+    @Query("SELECT * FROM employees_table WHERE email = :email")
     public Employee getEmployeeByEmail(ByEmail byEmail) {
       return null;
     }
   }
 
   @ComponentId("users_view")
-  @Table(value = "employees_view")
   public static class SubscribeToSealedEventSourcedEvents extends View<Employee> {
 
     @Consume.FromEventSourcedEntity(EmployeeEntity.class)
@@ -413,14 +385,13 @@ public class ViewTestModels {
       };
     }
 
-    @Query("SELECT * FROM employees_view WHERE email = :email")
+    @Query("SELECT * FROM employees_table WHERE email = :email")
     public Employee getEmployeeByEmail(ByEmail byEmail) {
       return null;
     }
   }
 
   @ComponentId("users_view")
-  @Table(value = "employees_view")
   public static class SubscribeToEventSourcedWithMissingHandler extends View<Employee> {
 
     @Consume.FromEventSourcedEntity(EmployeeEntity.class)
@@ -429,7 +400,7 @@ public class ViewTestModels {
           .updateState(new Employee(created.firstName, created.lastName, created.email));
     }
 
-    @Query("SELECT * FROM employees_view WHERE email = :email")
+    @Query("SELECT * FROM employees_table WHERE email = :email")
     public Employee getEmployeeByEmail(ByEmail byEmail) {
       return null;
     }
@@ -437,7 +408,6 @@ public class ViewTestModels {
 
 
   @ComponentId("users_view")
-  @Table(value = "employees_view")
   @Consume.FromEventSourcedEntity(value = EmployeeEntity.class, ignoreUnknown = false)
   public static class TypeLevelSubscribeToEventSourcedEventsWithMissingHandler extends View<Employee> {
 
@@ -446,28 +416,26 @@ public class ViewTestModels {
           .updateState(new Employee(created.firstName, created.lastName, created.email));
     }
 
-    @Query("SELECT * FROM employees_view WHERE email = :email")
+    @Query("SELECT * FROM employees_table WHERE email = :email")
     public Employee getEmployeeByEmail(ByEmail byEmail) {
       return null;
     }
   }
 
   @ComponentId("users_view")
-  @Table(value = "employees_view")
   @Acl(allow = @Acl.Matcher(service = "test"))
   public static class ViewWithServiceLevelAcl extends View<Employee> {
 
-    @Query("SELECT * FROM employees_view WHERE email = :email")
+    @Query("SELECT * FROM employees_table WHERE email = :email")
     public Employee getEmployeeByEmail(ByEmail byEmail) {
       return null;
     }
   }
 
   @ComponentId("users_view")
-  @Table(value = "employees_view")
   public static class ViewWithMethodLevelAcl extends View<Employee> {
 
-    @Query("SELECT * FROM employees_view WHERE email = :email")
+    @Query("SELECT * FROM employees_table WHERE email = :email")
     @Acl(allow = @Acl.Matcher(service = "test"))
     public Employee getEmployeeByEmail(ByEmail byEmail) {
       return null;
@@ -476,11 +444,10 @@ public class ViewTestModels {
 
 
   @ComponentId("users_view")
-  @Table(value = "users_view_collection")
   @Consume.FromKeyValueEntity(UserEntity.class)
   public static class UserByEmailWithCollectionReturn extends View<User> {
 
-    @Query(value = "SELECT * AS users FROM users_view WHERE name = :name")
+    @Query(value = "SELECT * AS users FROM users_table WHERE name = :name")
     public UserCollection getUser(ByEmail name) {
       return null;
     }
@@ -496,7 +463,7 @@ public class ViewTestModels {
     @Consume.FromKeyValueEntity(UserEntity.class)
     public static class ViewTableWithEmptyTableAnnotation extends View<User> {}
 
-    @Table("users_view")
+    @Table("users_table")
     @Consume.FromKeyValueEntity(UserEntity.class)
     public static class ViewTableWithMixedLevelSubscriptions extends View<TransformedUser> {
       @Consume.FromKeyValueEntity(UserEntity.class)
@@ -509,16 +476,16 @@ public class ViewTestModels {
 
   @ComponentId("multi-table-view-without-query")
   public static class MultiTableViewWithoutQuery {
-    @Table("users_view")
+    @Table("users_table")
     public static class Users extends View<User> {}
   }
 
   public static class MultiTableViewWithoutComponentId {
 
-    @Table("users_view")
+    @Table("users_table")
     public static class Users extends View<User> {}
 
-    @Query("SELECT * FROM users_view")
+    @Query("SELECT * FROM users_table")
     public User query1() {
       return null;
     }
@@ -527,10 +494,10 @@ public class ViewTestModels {
   @ComponentId(" ")
   public static class MultiTableViewWithEmptyComponentId {
 
-    @Table("users_view")
+    @Table("users_table")
     public static class Users extends View<User> {}
 
-    @Query("SELECT * FROM users_view")
+    @Query("SELECT * FROM users_table")
     public User query1() {
       return null;
     }
@@ -540,23 +507,23 @@ public class ViewTestModels {
   public static class MultiTableViewWithComponentIdInInnerView {
 
     @ComponentId("users_view")
-    @Table("users_view")
+    @Table("users_table")
     public static class Users extends View<User> {}
 
-    @Query("SELECT * FROM users_view")
+    @Query("SELECT * FROM users_table")
     public User query1() {
       return null;
     }
   }
 
   @ComponentId("users_multi_view")
-  @Table("users_multi_view")
+  @Table("users_table")
   public static class MultiTableViewWithTableName {
 
-    @Table("users_view")
+    @Table("users_table")
     public static class Users extends View<User> {}
 
-    @Query("SELECT * FROM users_view")
+    @Query("SELECT * FROM users_table")
     public User query1() {
       return null;
     }
@@ -564,17 +531,17 @@ public class ViewTestModels {
 
   @ComponentId("multi-table-view-with-multiple-queries")
   public static class MultiTableViewWithMultipleQueries {
-    @Query("SELECT * FROM users_view")
+    @Query("SELECT * FROM users_table")
     public User query1() {
       return null;
     }
 
-    @Query("SELECT * FROM users_view")
+    @Query("SELECT * FROM users_table")
     public User query2() {
       return null;
     }
 
-    @Table("users_view")
+    @Table("users_table")
     public static class Users extends View<User> {}
   }
 
@@ -617,7 +584,7 @@ public class ViewTestModels {
   @ComponentId("multi-table-view-with-join-query")
   public static class MultiTableViewWithDuplicatedVESubscriptions {
 
-    @Query("SELECT * FROM users_view")
+    @Query("SELECT * FROM employees")
     public EmployeeCounters get(ByEmail byEmail) {
       return null;
     }
@@ -652,7 +619,7 @@ public class ViewTestModels {
   @ComponentId("multi-table-view-with-join-query")
   public static class MultiTableViewWithDuplicatedESSubscriptions {
 
-    @Query("SELECT * FROM users_view")
+    @Query("SELECT * FROM users_table")
     public EmployeeCounters get(ByEmail byEmail) {
       return null;
     }
@@ -685,11 +652,10 @@ public class ViewTestModels {
   }
 
   @ComponentId("time-tracker-view")
-  @Table("time-tracker-view")
   @Consume.FromKeyValueEntity(TimeTrackerEntity.class)
   public static class TimeTrackerView extends View<TimeTrackerEntity.TimerState> {
 
-    @Query(value = "SELECT * FROM time-tracker-view WHERE name = :name")
+    @Query(value = "SELECT * FROM time_tracker_table WHERE name = :name")
     public TimeTrackerEntity.TimerState query2() {
       return null;
     }
@@ -697,7 +663,6 @@ public class ViewTestModels {
 
 
   @ComponentId("employee_view")
-  @Table(value = "employee_table")
   @Consume.FromTopic(value = "source", consumerGroup = "cg")
   public static class TopicTypeLevelSubscriptionView extends View<Employee> {
 
@@ -711,14 +676,13 @@ public class ViewTestModels {
       return effects().updateState(new Employee(employee.firstName(), employee.lastName(), eeu.email));
     }
 
-    @Query("SELECT * FROM employees_view WHERE email = :email")
+    @Query("SELECT * FROM employees_table WHERE email = :email")
     public Employee getEmployeeByEmail(ByEmail byEmail) {
       return null;
     }
   }
 
   @ComponentId("employee_view")
-  @Table(value = "employee_table")
   public static class TopicSubscriptionView extends View<Employee> {
 
     @Consume.FromTopic(value = "source", consumerGroup = "cg")
@@ -733,7 +697,7 @@ public class ViewTestModels {
       return effects().updateState(new Employee(employee.firstName(), employee.lastName(), eeu.email));
     }
 
-    @Query("SELECT * FROM employees_view WHERE email = :email")
+    @Query("SELECT * FROM employees_table WHERE email = :email")
     public Employee getEmployeeByEmail(ByEmail byEmail) {
       return null;
     }

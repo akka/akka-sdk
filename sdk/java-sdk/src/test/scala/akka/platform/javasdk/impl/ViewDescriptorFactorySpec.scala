@@ -5,7 +5,6 @@
 package akka.platform.javasdk.impl
 
 import scala.jdk.CollectionConverters.CollectionHasAsScala
-
 import com.google.protobuf.Descriptors.FieldDescriptor
 import com.google.protobuf.Descriptors.FieldDescriptor.JavaType
 import com.google.protobuf.timestamp.Timestamp
@@ -14,6 +13,7 @@ import kalix.JwtServiceOptions.JwtServiceMode
 import com.google.protobuf.{ Any => JavaPbAny }
 import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.EventStreamSubscriptionView
 import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.SubscribeOnTypeToEventSourcedEvents
+import akka.platform.spring.testmodels.view.ViewTestModels
 import akka.platform.spring.testmodels.view.ViewTestModels.MultiTableViewValidation
 import akka.platform.spring.testmodels.view.ViewTestModels.MultiTableViewWithComponentIdInInnerView
 import akka.platform.spring.testmodels.view.ViewTestModels.MultiTableViewWithDuplicatedESSubscriptions
@@ -40,7 +40,6 @@ import akka.platform.spring.testmodels.view.ViewTestModels.ViewDuplicatedHandleD
 import akka.platform.spring.testmodels.view.ViewTestModels.ViewDuplicatedVESubscriptions
 import akka.platform.spring.testmodels.view.ViewTestModels.ViewHandleDeletesWithParam
 import akka.platform.spring.testmodels.view.ViewTestModels.ViewWithEmptyComponentIdAnnotation
-import akka.platform.spring.testmodels.view.ViewTestModels.ViewWithEmptyTableAnnotation
 import akka.platform.spring.testmodels.view.ViewTestModels.ViewWithHandleDeletesFalseOnMethodLevel
 import akka.platform.spring.testmodels.view.ViewTestModels.ViewWithMethodLevelAcl
 import akka.platform.spring.testmodels.view.ViewTestModels.ViewWithNoQuery
@@ -50,7 +49,6 @@ import akka.platform.spring.testmodels.view.ViewTestModels.ViewWithSubscriptions
 import akka.platform.spring.testmodels.view.ViewTestModels.ViewWithSubscriptionsInMixedLevelsHandleDelete
 import akka.platform.spring.testmodels.view.ViewTestModels.ViewWithTwoQueries
 import akka.platform.spring.testmodels.view.ViewTestModels.ViewWithoutSubscriptionButWithHandleDelete
-import akka.platform.spring.testmodels.view.ViewTestModels.ViewWithoutTableAnnotation
 import org.scalatest.wordspec.AnyWordSpec
 
 class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuite {
@@ -61,6 +59,12 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
       intercept[InvalidComponentException] {
         Validations.validate(classOf[NotPublicComponents.NotPublicView]).failIfInvalid
       }.getMessage should include("NotPublicView is not marked with `public` modifier. Components must be public.")
+    }
+
+    "not allow View with Table annotation" in {
+      intercept[InvalidComponentException] {
+        Validations.validate(classOf[ViewTestModels.ViewWithTableName]).failIfInvalid
+      }.getMessage should include("A single-table View should not be annotated with @Table.")
     }
 
     "generate ACL annotations at service level" in {
@@ -82,7 +86,7 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
     "generate query with collection return type" in {
       assertDescriptor[UserByEmailWithCollectionReturn] { desc =>
         val queryMethodOptions = this.findKalixMethodOptions(desc, "GetUser")
-        queryMethodOptions.getView.getQuery.getQuery shouldBe "SELECT * AS users FROM users_view WHERE name = :name"
+        queryMethodOptions.getView.getQuery.getQuery shouldBe "SELECT * AS users FROM users_table WHERE name = :name"
         queryMethodOptions.getView.getJsonSchema.getOutput shouldBe "UserCollection"
 
         val streamUpdates = queryMethodOptions.getView.getQuery.getStreamUpdates
@@ -90,21 +94,29 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
       }
     }
 
+    "match names out of various queries" in {
+      Seq(
+        "SELECT * FROM users_table" -> "users_table",
+        // quoted is also valid
+        "SELECT * FROM `users_table`" -> "users_table",
+        """SELECT * AS customers
+          |  FROM customers_by_name
+          |  WHERE name = :name
+          |""".stripMargin -> "customers_by_name",
+        """SELECT * AS customers, next_page_token() AS next_page_token
+          |FROM customers
+          |OFFSET page_token_offset(:page_token)
+          |LIMIT 10""".stripMargin -> "customers").foreach { case (query, expectedTableName) =>
+        ViewDescriptorFactory.TableNamePattern.findFirstMatchIn(query).map(_.group(1)) match {
+          case Some(tableName) => tableName shouldBe expectedTableName
+          case None            => fail(s"pattern does not match [$query]")
+        }
+      }
+    }
+
   }
 
   "View descriptor factory (for Key Value Entity)" should {
-
-    "not allow View without Table annotation" in {
-      intercept[InvalidComponentException] {
-        Validations.validate(classOf[ViewWithoutTableAnnotation]).failIfInvalid
-      }.getMessage should include("A View should be annotated with @Table.")
-    }
-
-    "not allow View with empty Table name" in {
-      intercept[InvalidComponentException] {
-        Validations.validate(classOf[ViewWithEmptyTableAnnotation]).failIfInvalid
-      }.getMessage should include("@Table name is empty, must be a non-empty string.")
-    }
 
     "not allow View with empty ComponentId" in {
       intercept[InvalidComponentException] {
@@ -177,12 +189,12 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
         entityType shouldBe "user"
         handleDeletes shouldBe false
 
-        methodOptions.getView.getUpdate.getTable shouldBe "users_view"
+        methodOptions.getView.getUpdate.getTable shouldBe "users_table"
         methodOptions.getView.getUpdate.getTransformUpdates shouldBe true
         methodOptions.getView.getJsonSchema.getOutput shouldBe "TransformedUser"
 
         val queryMethodOptions = this.findKalixMethodOptions(desc, "GetUser")
-        queryMethodOptions.getView.getQuery.getQuery shouldBe "SELECT * FROM users_view WHERE email = :email"
+        queryMethodOptions.getView.getQuery.getQuery shouldBe "SELECT * FROM users_table WHERE email = :email"
         queryMethodOptions.getView.getJsonSchema.getJsonBodyInputField shouldBe "json_body"
         queryMethodOptions.getView.getJsonSchema.getInput shouldBe "ByEmail"
         queryMethodOptions.getView.getJsonSchema.getOutput shouldBe "TransformedUser"
@@ -234,12 +246,12 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
         val entityType = methodOptions.getEventing.getIn.getValueEntity
         entityType shouldBe "user"
 
-        methodOptions.getView.getUpdate.getTable shouldBe "users_view"
+        methodOptions.getView.getUpdate.getTable shouldBe "users_table"
         methodOptions.getView.getUpdate.getTransformUpdates shouldBe true
         methodOptions.getView.getJsonSchema.getOutput shouldBe "TransformedUser"
 
         val queryMethodOptions = this.findKalixMethodOptions(desc, "GetUser")
-        queryMethodOptions.getView.getQuery.getQuery shouldBe "SELECT * FROM users_view WHERE email = :email"
+        queryMethodOptions.getView.getQuery.getQuery shouldBe "SELECT * FROM users_table WHERE email = :email"
         queryMethodOptions.getView.getJsonSchema.getJsonBodyInputField shouldBe "json_body"
         queryMethodOptions.getView.getJsonSchema.getInput shouldBe "ByEmail"
         queryMethodOptions.getView.getJsonSchema.getOutput shouldBe "TransformedUser"
@@ -300,12 +312,12 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
         val methodOptions = this.findKalixMethodOptions(desc, "KalixSyntheticMethodOnESEmployee")
         methodOptions.getEventing.getIn.getEventSourcedEntity shouldBe "employee"
 
-        methodOptions.getView.getUpdate.getTable shouldBe "employees_view"
+        methodOptions.getView.getUpdate.getTable shouldBe "employees_table"
         methodOptions.getView.getUpdate.getTransformUpdates shouldBe true
         methodOptions.getView.getJsonSchema.getOutput shouldBe "Employee"
 
         val queryMethodOptions = this.findKalixMethodOptions(desc, "GetEmployeeByEmail")
-        queryMethodOptions.getView.getQuery.getQuery shouldBe "SELECT * FROM employees_view WHERE email = :email"
+        queryMethodOptions.getView.getQuery.getQuery shouldBe "SELECT * FROM employees_table WHERE email = :email"
         queryMethodOptions.getView.getJsonSchema.getOutput shouldBe "Employee"
         // not defined when query body not used
         queryMethodOptions.getView.getJsonSchema.getInput shouldBe "ByEmail"
@@ -324,12 +336,12 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
         val methodOptions = this.findKalixMethodOptions(desc, "KalixSyntheticMethodOnESEmployee")
         methodOptions.getEventing.getIn.getEventSourcedEntity shouldBe "employee"
 
-        methodOptions.getView.getUpdate.getTable shouldBe "employees_view"
+        methodOptions.getView.getUpdate.getTable shouldBe "employees_table"
         methodOptions.getView.getUpdate.getTransformUpdates shouldBe true
         methodOptions.getView.getJsonSchema.getOutput shouldBe "Employee"
 
         val queryMethodOptions = this.findKalixMethodOptions(desc, "GetEmployeeByEmail")
-        queryMethodOptions.getView.getQuery.getQuery shouldBe "SELECT * FROM employees_view WHERE email = :email"
+        queryMethodOptions.getView.getQuery.getQuery shouldBe "SELECT * FROM employees_table WHERE email = :email"
         queryMethodOptions.getView.getJsonSchema.getOutput shouldBe "Employee"
         // not defined when query body not used
         queryMethodOptions.getView.getJsonSchema.getInput shouldBe "ByEmail"
@@ -359,7 +371,7 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
         eveningIn.getEventSourcedEntity shouldBe "employee"
 
         val methodOptions = this.findKalixMethodOptions(desc, "KalixSyntheticMethodOnESEmployee")
-        methodOptions.getView.getUpdate.getTable shouldBe "employee_table"
+        methodOptions.getView.getUpdate.getTable shouldBe "employees_table"
         methodOptions.getView.getUpdate.getTransformUpdates shouldBe true
         methodOptions.getView.getJsonSchema.getOutput shouldBe "Employee"
         methodOptions.getEventing.getIn.getIgnore shouldBe false // we don't set the property so the proxy won't ignore. Ignore is only internal to the SDK
@@ -393,13 +405,13 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
 
     "not allow ViewTable without Table annotation" in {
       intercept[InvalidComponentException] {
-        Validations.validate(classOf[MultiTableViewValidation.ViewTableWithoutTableAnnotation]).failIfInvalid
-      }.getMessage should include("A View should be annotated with @Table.")
+        Validations.validate(classOf[MultiTableViewValidation]).failIfInvalid
+      }.getMessage should include("A nested View must be annotated with @Table.")
     }
 
     "not allow ViewTable with empty Table name" in {
       intercept[InvalidComponentException] {
-        Validations.validate(classOf[MultiTableViewValidation.ViewTableWithEmptyTableAnnotation]).failIfInvalid
+        Validations.validate(classOf[MultiTableViewValidation]).failIfInvalid
       }.getMessage should include("@Table name is empty, must be a non-empty string.")
     }
 
@@ -547,7 +559,7 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
         val methodOptions = this.findKalixMethodOptions(desc, "KalixSyntheticMethodOnStreamEmployeeevents")
 
         methodOptions.hasEventing shouldBe false
-        methodOptions.getView.getUpdate.getTable shouldBe "employee_table"
+        methodOptions.getView.getUpdate.getTable shouldBe "employees_table"
         methodOptions.getView.getUpdate.getTransformUpdates shouldBe true
         methodOptions.getView.getJsonSchema.getOutput shouldBe "Employee"
 
@@ -567,7 +579,7 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
 
         val methodOptions = this.findKalixMethodOptions(desc, "KalixSyntheticMethodOnTopicSource")
 
-        methodOptions.getView.getUpdate.getTable shouldBe "employee_table"
+        methodOptions.getView.getUpdate.getTable shouldBe "employees_table"
         methodOptions.getView.getUpdate.getTransformUpdates shouldBe true
         methodOptions.getView.getJsonSchema.getOutput shouldBe "Employee"
       }
@@ -582,7 +594,7 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
         eventingInTopic.getTopic shouldBe "source"
         eventingInTopic.getConsumerGroup shouldBe "cg"
 
-        methodOptions.getView.getUpdate.getTable shouldBe "employee_table"
+        methodOptions.getView.getUpdate.getTable shouldBe "employees_table"
         methodOptions.getView.getUpdate.getTransformUpdates shouldBe true
         methodOptions.getView.getJsonSchema.getOutput shouldBe "Employee"
       }

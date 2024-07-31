@@ -16,7 +16,6 @@ import java.util.List;
 
 
 @ComponentId("view_customers_by_creation_time")
-@Table("customers_by_creation_time")
 @Consume.FromKeyValueEntity(CustomerEntity.class)
 public class CustomerByCreationTime extends View<CustomerEntity.Customer> {
 

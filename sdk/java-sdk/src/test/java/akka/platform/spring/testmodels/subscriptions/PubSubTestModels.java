@@ -663,7 +663,6 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   public record ByEmail(String email) {}
 
   @ComponentId("employee_view")
-  @Table("employee_table")
   @Consume.FromEventSourcedEntity(value = EmployeeEntity.class, ignoreUnknown = true)
   public static class SubscribeOnTypeToEventSourcedEvents extends View<Employee> {
 
@@ -677,7 +676,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
       return effects().updateState(new Employee(employee.firstName(), employee.lastName(), eeu.email));
     }
 
-    @Query("SELECT * FROM employees_view WHERE email = :email")
+    @Query("SELECT * FROM employees_table WHERE email = :email")
     public Employee getEmployeeByEmail(ByEmail byEmail) {
       return null;
     }
@@ -712,7 +711,6 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   }
 
   @ComponentId("employee_view")
-  @Table("employee_table")
   @Consume.FromServiceStream(service = "employee_service", id = "employee_events")
   public static class EventStreamSubscriptionView extends View<Employee> {
 
@@ -726,7 +724,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
       return effects().updateState(new Employee(employee.firstName(), employee.lastName(), eeu.email));
     }
 
-    @Query("SELECT * FROM employees_view WHERE email = :email")
+    @Query("SELECT * FROM employees_table WHERE email = :email")
     public Employee getEmployeeByEmail(ByEmail byEmail) {
       return null;
     }

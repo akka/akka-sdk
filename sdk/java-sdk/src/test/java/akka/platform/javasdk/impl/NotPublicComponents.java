@@ -55,7 +55,6 @@ public class NotPublicComponents {
   }
 
   @ComponentId("users_view")
-  @Table(value = "users_view")
   @Consume.FromKeyValueEntity(UserEntity.class)
   static class NotPublicView extends View<User> {
 

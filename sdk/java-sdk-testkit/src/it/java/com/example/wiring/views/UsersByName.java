@@ -15,7 +15,6 @@ import akka.platform.javasdk.view.View;
 import java.util.List;
 
 @ComponentId("users_by_name")
-@Table("users_by_name")
 @Consume.FromKeyValueEntity(value = UserEntity.class, handleDeletes = true)
 public class UsersByName extends View<User> {
 

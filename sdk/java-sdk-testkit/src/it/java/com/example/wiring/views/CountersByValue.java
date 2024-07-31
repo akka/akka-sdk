@@ -16,7 +16,6 @@ import akka.platform.javasdk.annotations.Consume;
 import akka.platform.javasdk.annotations.Table;
 
 @ComponentId("counters_by_value")
-@Table("counters_by_value")
 public class CountersByValue extends View<Counter> {
 
   @Override
