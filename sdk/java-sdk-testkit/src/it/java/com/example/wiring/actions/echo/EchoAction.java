@@ -5,7 +5,7 @@
 package com.example.wiring.actions.echo;
 
 import akka.platform.javasdk.action.Action;
-import akka.platform.javasdk.action.ActionCreationContext;
+import akka.platform.javasdk.action.ActionContext;
 import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.client.ComponentClient;
 
@@ -13,10 +13,10 @@ import akka.platform.javasdk.client.ComponentClient;
 public class EchoAction extends Action {
 
   private Parrot parrot;
-  private ActionCreationContext ctx;
+  private ActionContext ctx;
   private final ComponentClient componentClient;
 
-  public EchoAction(ActionCreationContext ctx,  ComponentClient componentClient) {
+  public EchoAction(ActionContext ctx, ComponentClient componentClient) {
     this.parrot = new Parrot();
     this.ctx = ctx;
     this.componentClient = componentClient;

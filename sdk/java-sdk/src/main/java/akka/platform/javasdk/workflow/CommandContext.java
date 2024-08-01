@@ -7,7 +7,7 @@ package akka.platform.javasdk.workflow;
 import akka.platform.javasdk.MetadataContext;
 
 /** A value based workflow command context. */
-public interface CommandContext extends WorkflowContext, MetadataContext {
+public interface CommandContext extends MetadataContext {
 
   /**
    * The name of the command being executed.
@@ -22,4 +22,11 @@ public interface CommandContext extends WorkflowContext, MetadataContext {
    * @return The id of the command.
    */
   long commandId();
+
+  /**
+   * The id of the workflow that this context is for.
+   *
+   * @return The workflow id.
+   */
+  String workflowId();
 }

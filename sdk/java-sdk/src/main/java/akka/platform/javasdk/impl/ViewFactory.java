@@ -6,7 +6,7 @@ package akka.platform.javasdk.impl;
 
 import akka.platform.javasdk.impl.view.ViewUpdateRouter;
 import akka.platform.javasdk.view.View;
-import akka.platform.javasdk.view.ViewCreationContext;
+import akka.platform.javasdk.view.ViewContext;
 
 /**
  * Low level interface for handling messages in views.
@@ -21,5 +21,5 @@ public interface ViewFactory {
    * @param context The context.
    * @return The handler for the given context.
    */
-  ViewUpdateRouter create(ViewCreationContext context);
+  ViewUpdateRouter create(ViewContext context);
 }

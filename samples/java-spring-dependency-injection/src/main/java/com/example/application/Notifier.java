@@ -23,7 +23,7 @@ public class Notifier extends Action {
   }
 
   public Action.Effect<Done> onIncrease(ValueIncreased event) {
-    String counterId = actionContext().eventSubject().orElseThrow();
+    String counterId = messageContext().eventSubject().orElseThrow();
     logger.info("Received increased event: {} (msg ce id {})", event.toString(), counterId);
     return effects().asyncReply(
       emailComposer.composeEmail(counterId).thenCompose(

@@ -13,6 +13,6 @@ public class EchoAction extends Action {
   }
 
   public Effect<String> echoWithMetadata(String msg) {
-    return effects().reply(actionContext().metadata().get("key").get());
+    return effects().reply(messageContext().metadata().get("key").get());
   }
 }

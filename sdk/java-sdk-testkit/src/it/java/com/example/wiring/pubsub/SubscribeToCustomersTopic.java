@@ -21,7 +21,7 @@ public class SubscribeToCustomersTopic extends Action {
   private Logger logger = LoggerFactory.getLogger(getClass());
 
   public Effect<CounterEvent> handle(CustomerEntity.Customer customer) {
-    var entityId = actionContext().metadata().get("ce-subject").orElseThrow();
+    var entityId = messageContext().metadata().get("ce-subject").orElseThrow();
     logger.info("Consuming " + customer + " from " + entityId);
     DummyCustomerStore.store(CUSTOMERS_TOPIC, entityId, customer);
     return effects().ignore();

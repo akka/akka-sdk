@@ -22,7 +22,6 @@ private[impl] trait ActivatableContext extends Context {
  * INTERNAL API
  */
 private[akka] trait InternalContext {
-  def getComponentGrpcClient[T](serviceClass: Class[T]): T
 
   /**
    * Intended to be used by component calls, initially to give to the called component access to the trace parent from
@@ -39,8 +38,5 @@ abstract class AbstractContext(system: ActorSystem) extends Context with Interna
 
   override def materializer(): Materializer =
     SystemMaterializer(system).materializer
-
-  def getComponentGrpcClient[T](serviceClass: Class[T]): T =
-    GrpcClients(system).getComponentGrpcClient(serviceClass)
 
 }

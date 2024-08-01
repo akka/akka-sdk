@@ -16,7 +16,7 @@ public class ForwardHeadersAction extends Action {
   public static final String SOME_HEADER = "some-header";
 
   public Effect<Message> stringMessage() {
-    String headerValue = actionContext().metadata().get(SOME_HEADER).orElse("");
+    String headerValue = messageContext().metadata().get(SOME_HEADER).orElse("");
     return effects().reply(new Message(headerValue));
   }
 }

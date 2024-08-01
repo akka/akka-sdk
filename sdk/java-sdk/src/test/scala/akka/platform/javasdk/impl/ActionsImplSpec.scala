@@ -12,7 +12,6 @@ import com.google.protobuf.any.Any.toJavaProto
 import com.google.protobuf.any.{ Any => ScalaPbAny }
 import akka.platform.javasdk.JsonSupport
 import akka.platform.javasdk.JsonSupport.decodeJson
-import akka.platform.javasdk.action.ActionCreationContext
 import akka.platform.javasdk.action.ReflectiveActionProvider
 import akka.platform.javasdk.action.TestESSubscriptionAction
 import akka.platform.javasdk.action.TestTracingAction
@@ -42,6 +41,7 @@ import org.slf4j.LoggerFactory
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
+import akka.platform.javasdk.action.ActionContext
 
 class ActionsImplSpec
     extends ScalaTestWithActorTestKit
@@ -86,7 +86,7 @@ class ActionsImplSpec
       val actionProvider = ReflectiveActionProvider.of(
         classOf[TestESSubscriptionAction],
         jsonMessageCodec,
-        (_: ActionCreationContext) => new TestESSubscriptionAction)
+        (_: ActionContext) => new TestESSubscriptionAction)
 
       val service = create(actionProvider, jsonMessageCodec)
       val serviceName = actionProvider.serviceDescriptor().getFullName
@@ -122,7 +122,7 @@ class ActionsImplSpec
       val actionProvider = ReflectiveActionProvider.of(
         classOf[TestTracingAction],
         jsonMessageCodec,
-        (_: ActionCreationContext) => new TestTracingAction)
+        (_: ActionContext) => new TestTracingAction)
 
       val service = create(actionProvider, jsonMessageCodec, "http://localhost:1111")
       val serviceName = actionProvider.serviceDescriptor().getFullName

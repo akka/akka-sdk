@@ -26,11 +26,9 @@ import java.util.concurrent.CompletionStage;
 public class GetRandomPhotoAction extends Action {
   private static final Logger log = LoggerFactory.getLogger(GetRandomPhotoAction.class);
 
-  private final Tracer tracer;
   private final ComponentClient componentClient;
 
-  public GetRandomPhotoAction(Tracer tracer, ComponentClient componentClient) {
-    this.tracer = tracer;
+  public GetRandomPhotoAction(ComponentClient componentClient) {
     this.componentClient = componentClient;
   }
 
@@ -74,13 +72,13 @@ public class GetRandomPhotoAction extends Action {
 
   // gets random name from external API using an asynchronous call and traces that call
   private CompletableFuture<String> getRandomPhotoAsync() {
-    var otelCurrentContext = actionContext().metadata().traceContext().asOpenTelemetryContext();
-    Span span = tracer
+    var otelCurrentContext = messageContext().metadata().traceContext().asOpenTelemetryContext();
+    Span span = messageContext().getTracer()
       .spanBuilder("random-photo-async")
       .setParent(otelCurrentContext)
       .setSpanKind(SpanKind.CLIENT)
       .startSpan()
-      .setAttribute("user.id", actionContext().eventSubject().orElse("unknown"));
+      .setAttribute("user.id", messageContext().eventSubject().orElse("unknown"));
 
     var httpClient = HttpClient.newHttpClient();
     var request = HttpRequest.newBuilder()

@@ -6,12 +6,9 @@ package akka.platform.javasdk.view;
 
 import akka.platform.javasdk.Context;
 
-/** Context for views. */
-public interface ViewContext extends Context {
-  /**
-   * The id of the view that this context is for.
-   *
-   * @return The view id.
-   */
-  String viewId();
-}
+/**
+ * Context for the {@link View} component.
+ *
+ * <p>This may be accepted as an argument to the constructor of a view.
+ */
+public interface ViewContext extends Context {}

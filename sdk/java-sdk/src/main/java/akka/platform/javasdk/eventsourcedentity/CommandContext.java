@@ -7,7 +7,7 @@ package akka.platform.javasdk.eventsourcedentity;
 import akka.platform.javasdk.MetadataContext;
 
 /** An event sourced command context. */
-public interface CommandContext extends EventSourcedEntityContext, MetadataContext {
+public interface CommandContext extends MetadataContext {
   /**
    * The current sequence number of events in this entity.
    *
@@ -28,4 +28,11 @@ public interface CommandContext extends EventSourcedEntityContext, MetadataConte
    * @return The id of the command.
    */
   long commandId();
+
+  /**
+   * The id of the entity that this context is for.
+   *
+   * @return The entity id.
+   */
+  String entityId();
 }

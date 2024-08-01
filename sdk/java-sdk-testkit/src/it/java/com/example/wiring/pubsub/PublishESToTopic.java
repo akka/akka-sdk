@@ -36,7 +36,7 @@ public class PublishESToTopic extends Action {
   }
 
   private Effect<CounterEvent> publish(CounterEvent counterEvent) {
-    String entityId = actionContext().metadata().get(CeSubject()).orElseThrow();
+    String entityId = messageContext().metadata().get(CeSubject()).orElseThrow();
     logger.info("Publishing to " + COUNTER_EVENTS_TOPIC + " event: " + counterEvent + " from " + entityId);
     return effects().reply(counterEvent, Metadata.EMPTY.add(CeSubject(), entityId));
   }

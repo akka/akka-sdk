@@ -10,7 +10,7 @@ import akka.platform.javasdk.MetadataContext;
 import java.util.Optional;
 
 /** Context for view update calls. */
-public interface UpdateContext extends ViewContext, MetadataContext {
+public interface UpdateContext extends MetadataContext {
 
   /**
    * The origin subject of the {@link CloudEvent}. For example, the entity id when the event was

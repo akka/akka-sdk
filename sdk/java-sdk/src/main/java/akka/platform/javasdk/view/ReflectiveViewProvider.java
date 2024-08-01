@@ -17,7 +17,7 @@ import java.util.Optional;
 import java.util.function.Function;
 
 public class ReflectiveViewProvider<S, V extends View<S>> implements ViewProvider {
-  private final Function<ViewCreationContext, V> factory;
+  private final Function<ViewContext, V> factory;
 
   private final String viewId;
 
@@ -29,7 +29,7 @@ public class ReflectiveViewProvider<S, V extends View<S>> implements ViewProvide
   private final JsonMessageCodec messageCodec;
 
   public static <S, V extends View<S>> ReflectiveViewProvider<S, V> of(
-      Class<V> cls, JsonMessageCodec messageCodec, Function<ViewCreationContext, V> factory) {
+      Class<V> cls, JsonMessageCodec messageCodec, Function<ViewContext, V> factory) {
 
     String viewId =
         Optional.ofNullable(cls.getAnnotation(ComponentId.class))
@@ -43,7 +43,7 @@ public class ReflectiveViewProvider<S, V extends View<S>> implements ViewProvide
       Class<V> cls,
       JsonMessageCodec messageCodec,
       String viewId,
-      Function<ViewCreationContext, V> factory,
+      Function<ViewContext, V> factory,
       ViewOptions options) {
     this.factory = factory;
     this.options = options;
@@ -72,7 +72,7 @@ public class ReflectiveViewProvider<S, V extends View<S>> implements ViewProvide
   }
 
   @Override
-  public ViewRouter<S, V> newRouter(ViewCreationContext context) {
+  public ViewRouter<S, V> newRouter(ViewContext context) {
     V view = factory.apply(context);
     return new ReflectiveViewRouter<>(view, componentDescriptor.commandHandlers(), ComponentDescriptorFactory.findIgnore(view.getClass()));
   }

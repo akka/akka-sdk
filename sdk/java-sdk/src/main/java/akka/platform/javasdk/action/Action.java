@@ -7,12 +7,10 @@ package akka.platform.javasdk.action;
 import io.grpc.Status;
 import akka.platform.javasdk.Metadata;
 import akka.platform.javasdk.StatusCode;
-import akka.platform.javasdk.impl.action.ActionContextImpl;
+import akka.platform.javasdk.impl.action.MessageContextImpl;
 import akka.platform.javasdk.impl.action.ActionEffectImpl;
 import akka.platform.javasdk.timer.TimerScheduler;
-import akka.platform.javasdk.impl.timer.TimerSchedulerImpl;
 
-import java.util.Collection;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 
@@ -47,35 +45,26 @@ import java.util.concurrent.CompletionStage;
  */
 public abstract class Action {
 
-  private volatile Optional<ActionContext> actionContext = Optional.empty();
+  private volatile Optional<MessageContext> messageContext = Optional.empty();
 
   /**
    * Additional context and metadata for a message handler.
    *
    * <p>It will throw an exception if accessed from constructor.
    */
-  protected final ActionContext actionContext() {
-    return actionContext("ActionContext is only available when handling a message.");
+  protected final MessageContext messageContext() {
+    return messageContext("ActionContext is only available when handling a message.");
   }
 
-  /**
-   * INTERNAL API
-   *
-   * <p>Same as actionContext, but if specific error message when accessing components.
-   */
-  protected final ActionContext contextForComponents() {
-    return actionContext("Components can only be accessed when handling a message.");
-  }
-
-  private ActionContext actionContext(String errorMessage) {
-    return actionContext.orElseThrow(() -> new IllegalStateException(errorMessage));
+  private MessageContext messageContext(String errorMessage) {
+    return messageContext.orElseThrow(() -> new IllegalStateException(errorMessage));
   }
 
   /**
    * INTERNAL API
    */
-  public void _internalSetActionContext(Optional<ActionContext> context) {
-    actionContext = context;
+  public void _internalSetMessageContext(Optional<MessageContext> context) {
+    messageContext = context;
   }
 
   public final Effect.Builder effects() {
@@ -86,9 +75,9 @@ public abstract class Action {
    * Returns a {@link TimerScheduler} that can be used to schedule further in time.
    */
   public final TimerScheduler timers() {
-    ActionContextImpl impl =
-      (ActionContextImpl)
-        actionContext("Timers can only be scheduled or cancelled when handling a message.");
+    MessageContextImpl impl =
+      (MessageContextImpl)
+        messageContext("Timers can only be scheduled or cancelled when handling a message.");
     return impl.timers();
   }
 

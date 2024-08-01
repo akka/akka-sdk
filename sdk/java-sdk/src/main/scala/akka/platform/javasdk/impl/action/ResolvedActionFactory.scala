@@ -4,9 +4,9 @@
 
 package akka.platform.javasdk.impl.action
 
+import akka.platform.javasdk.action.ActionContext
 import akka.platform.javasdk.impl.ResolvedEntityFactory
 import akka.platform.javasdk.impl.ResolvedServiceMethod
-import akka.platform.javasdk.action.ActionCreationContext
 import akka.platform.javasdk.impl.ActionFactory
 
 class ResolvedActionFactory(
@@ -14,7 +14,7 @@ class ResolvedActionFactory(
     override val resolvedMethods: Map[String, ResolvedServiceMethod[_, _]])
     extends ActionFactory
     with ResolvedEntityFactory {
-  override def create(context: ActionCreationContext): ActionRouter[_] =
+  override def create(context: ActionContext): ActionRouter[_] =
     delegate.create(context)
 
 }

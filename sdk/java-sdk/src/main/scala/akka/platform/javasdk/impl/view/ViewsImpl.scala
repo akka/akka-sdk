@@ -23,7 +23,6 @@ import akka.platform.javasdk.impl.MetadataImpl
 import akka.platform.javasdk.impl.ViewFactory
 import akka.platform.javasdk.view.UpdateContext
 import akka.platform.javasdk.view.ViewContext
-import akka.platform.javasdk.view.ViewCreationContext
 import akka.platform.javasdk.view.ViewOptions
 import org.slf4j.LoggerFactory
 
@@ -93,7 +92,7 @@ final class ViewsImpl(system: ActorSystem, _services: Map[String, ViewService]) 
                   "and not reach the user function")
 
               // FIXME should we really create a new handler instance per incoming command ???
-              val handler = service.factory.get.create(new ViewContextImpl(service.viewId))
+              val handler = service.factory.get.create(new ViewContextImpl)
 
               val state: Option[Any] =
                 receiveEvent.bySubjectLookupResult.flatMap(row =>
@@ -102,7 +101,7 @@ final class ViewsImpl(system: ActorSystem, _services: Map[String, ViewService]) 
               val commandName = receiveEvent.commandName
               val msg = service.messageCodec.decodeMessage(receiveEvent.payload.get)
               val metadata = MetadataImpl.of(receiveEvent.metadata.map(_.entries.toVector).getOrElse(Nil))
-              val context = new UpdateContextImpl(service.viewId, commandName, metadata)
+              val context = new UpdateContextImpl(commandName, metadata)
 
               val effect =
                 try {
@@ -110,13 +109,17 @@ final class ViewsImpl(system: ActorSystem, _services: Map[String, ViewService]) 
                 } catch {
                   case e: ViewException => throw e
                   case NonFatal(error) =>
-                    throw ViewException(context, s"View unexpected failure: ${error.getMessage}", Some(error))
+                    throw ViewException(
+                      service.viewId,
+                      context,
+                      s"View unexpected failure: ${error.getMessage}",
+                      Some(error))
                 }
 
               effect match {
                 case ViewEffectImpl.Update(newState) =>
                   if (newState == null)
-                    throw ViewException(context, "updateState with null state is not allowed.", None)
+                    throw ViewException(service.viewId, context, "updateState with null state is not allowed.", None)
                   val serializedState = ScalaPbAny.fromJavaProto(service.messageCodec.encodeJava(newState))
                   val upsert = pv.Upsert(Some(pv.Row(value = Some(serializedState))))
                   val out = pv.ViewStreamOut(pv.ViewStreamOut.Message.Upsert(upsert))
@@ -149,10 +152,7 @@ final class ViewsImpl(system: ActorSystem, _services: Map[String, ViewService]) 
       }
       .async
 
-  private final class UpdateContextImpl(
-      override val viewId: String,
-      override val eventName: String,
-      override val metadata: Metadata)
+  private final class UpdateContextImpl(override val eventName: String, override val metadata: Metadata)
       extends AbstractContext(system)
       with UpdateContext {
 
@@ -163,9 +163,6 @@ final class ViewsImpl(system: ActorSystem, _services: Map[String, ViewService]) 
         Optional.empty()
   }
 
-  private final class ViewContextImpl(override val viewId: String)
-      extends AbstractContext(system)
-      with ViewContext
-      with ViewCreationContext
+  private final class ViewContextImpl extends AbstractContext(system) with ViewContext
 
 }

@@ -21,7 +21,7 @@ import java.util.function.BiFunction;
 public class ReflectiveMultiTableViewProvider<V> implements ViewProvider {
 
   private final Class<V> viewClass;
-  private final BiFunction<Class<View<?>>, ViewCreationContext, View<?>> factory;
+  private final BiFunction<Class<View<?>>, ViewContext, View<?>> factory;
   private final String viewId;
   private final ViewOptions options;
   private final JsonMessageCodec messageCodec;
@@ -30,7 +30,7 @@ public class ReflectiveMultiTableViewProvider<V> implements ViewProvider {
   public static <V> ReflectiveMultiTableViewProvider<V> of(
       Class<V> viewClass,
       JsonMessageCodec messageCodec,
-      BiFunction<Class<View<?>>, ViewCreationContext, View<?>> factory) {
+      BiFunction<Class<View<?>>, ViewContext, View<?>> factory) {
 
     String viewId =
         Optional.ofNullable(viewClass.getAnnotation(ComponentId.class))
@@ -43,7 +43,7 @@ public class ReflectiveMultiTableViewProvider<V> implements ViewProvider {
 
   private ReflectiveMultiTableViewProvider(
       Class<V> viewClass,
-      BiFunction<Class<View<?>>, ViewCreationContext, View<?>> factory,
+      BiFunction<Class<View<?>>, ViewContext, View<?>> factory,
       String viewId,
       ViewOptions options,
       JsonMessageCodec messageCodec) {
@@ -71,7 +71,7 @@ public class ReflectiveMultiTableViewProvider<V> implements ViewProvider {
   }
 
   @Override
-  public ViewMultiTableRouter newRouter(ViewCreationContext context) {
+  public ViewMultiTableRouter newRouter(ViewContext context) {
     Map<Class<View<?>>, View<?>> viewTables = new HashMap<>();
     for (Class<?> innerClass : viewClass.getDeclaredClasses()) {
       if (Reflect.isNestedViewTable(innerClass)) {

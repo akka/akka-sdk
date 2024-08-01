@@ -42,7 +42,7 @@ public class ReflectiveKeyValueEntityProvider<S, E extends KeyValueEntity<S>>
     String annotation = ComponentDescriptorFactory$.MODULE$.readComponentIdIdValue(entityClass);
     if (annotation == null)
       throw new IllegalArgumentException(
-        "Key Value Entity [" + entityClass.getName() + "] is missing '@TypeId' annotation");
+        "Key Value Entity [" + entityClass.getName() + "] is missing '@ComponentId' annotation");
 
     this.typeId = annotation;
 

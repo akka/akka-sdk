@@ -5,7 +5,7 @@
 package com.example.wiring.eventsourcedentities.tracingcounter;
 
 import akka.platform.javasdk.action.Action;
-import akka.platform.javasdk.action.ActionCreationContext;
+import akka.platform.javasdk.action.ActionContext;
 import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.annotations.Consume;
 import org.slf4j.Logger;
@@ -17,10 +17,10 @@ public class TIncreaseAction extends Action {
 
     Logger log = LoggerFactory.getLogger(TIncreaseAction.class);
 
-    private ActionCreationContext actionCreationContext;
+    private ActionContext actionContext;
 
-    public TIncreaseAction(ActionCreationContext actionCreationContext){
-        this.actionCreationContext = actionCreationContext;
+    public TIncreaseAction(ActionContext actionContext){
+        this.actionContext = actionContext;
     }
 
     @Consume.FromEventSourcedEntity(value = TCounterEntity.class)

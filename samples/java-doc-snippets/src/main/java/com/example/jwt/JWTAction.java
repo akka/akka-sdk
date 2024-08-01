@@ -35,7 +35,7 @@ public class JWTAction extends Action {
     // tag::bearer-token-claims[]
     @JWT(validate = JWT.JwtMethodMode.BEARER_TOKEN)
     public Action.Effect<String> messageWithClaimValidation(String msg) {
-        var maybeSubject = actionContext().metadata().jwtClaims().subject();
+        var maybeSubject = messageContext().metadata().jwtClaims().subject();
         if (maybeSubject.isEmpty())
             return effects().error("No subject present", StatusCode.ErrorCode.UNAUTHORIZED);
 

@@ -25,8 +25,6 @@ final class TestKitEventSourcedEntityCommandContext(
 
   override def materializer(): Materializer = throw new UnsupportedOperationException(
     "Accessing the materializer from testkit not supported yet")
-  override def getComponentGrpcClient[T](serviceClass: Class[T]): T = throw new UnsupportedOperationException(
-    "Accessing the componentGrpcClient from testkit not supported yet")
 
 }
 

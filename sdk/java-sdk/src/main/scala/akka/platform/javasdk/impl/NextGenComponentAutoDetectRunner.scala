@@ -31,7 +31,7 @@ import akka.platform.javasdk.DependencyProvider
 import akka.platform.javasdk.Kalix
 import akka.platform.javasdk.ServiceLifecycle
 import akka.platform.javasdk.action.Action
-import akka.platform.javasdk.action.ActionCreationContext
+import akka.platform.javasdk.action.ActionContext
 import akka.platform.javasdk.action.ActionProvider
 import akka.platform.javasdk.action.ReflectiveActionProvider
 import akka.platform.javasdk.annotations.ComponentId
@@ -73,7 +73,7 @@ import akka.platform.javasdk.timer.TimerScheduler
 import akka.platform.javasdk.view.ReflectiveMultiTableViewProvider
 import akka.platform.javasdk.view.ReflectiveViewProvider
 import akka.platform.javasdk.view.View
-import akka.platform.javasdk.view.ViewCreationContext
+import akka.platform.javasdk.view.ViewContext
 import akka.platform.javasdk.view.ViewProvider
 import akka.platform.javasdk.workflow.AbstractWorkflow
 import akka.platform.javasdk.workflow.ReflectiveWorkflowProvider
@@ -412,11 +412,10 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
       messageCodec,
       context =>
         wiredInstance(clz) {
-          case p if p == classOf[ActionCreationContext] => context
-          case p if p == classOf[ComponentClient]       => componentClient()
-          case h if h == classOf[HttpClientProvider]    => httpClientProvider()
-          case p if p == classOf[Tracer]                => context.getTracer
-          case t if t == classOf[TimerScheduler]        => timerScheduler()
+          case p if p == classOf[ActionContext]      => context
+          case p if p == classOf[ComponentClient]    => componentClient()
+          case h if h == classOf[HttpClientProvider] => httpClientProvider()
+          case t if t == classOf[TimerScheduler]     => timerScheduler()
         })
 
   private def workflowProvider[S, W <: Workflow[S]](clz: Class[W]): WorkflowProvider[S, W] = {
@@ -482,7 +481,7 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
       messageCodec,
       context =>
         wiredInstance(clz) {
-          case p if p == classOf[ViewCreationContext] => context
+          case p if p == classOf[ViewContext] => context
         })
 
   private def multiTableViewProvider[V](clz: Class[V]): ViewProvider =
@@ -492,7 +491,7 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
       (viewTableClass, context) => {
         val constructor = viewTableClass.getConstructors.head.asInstanceOf[Constructor[View[_]]]
         wiredInstance(constructor) {
-          case p if p == classOf[ViewCreationContext] => context
+          case p if p == classOf[ViewContext] => context
         }
       })
 
@@ -552,7 +551,7 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
     anyOther == classOf[WorkflowContext] ||
     anyOther == classOf[EventSourcedEntityContext] ||
     anyOther == classOf[KeyValueEntityContext] ||
-    anyOther == classOf[ViewCreationContext]
+    anyOther == classOf[ViewContext]
   }
 
   private def componentClient(): ComponentClient = {

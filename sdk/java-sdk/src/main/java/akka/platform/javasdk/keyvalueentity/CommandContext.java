@@ -7,7 +7,7 @@ package akka.platform.javasdk.keyvalueentity;
 import akka.platform.javasdk.MetadataContext;
 
 /** A value based entity command context. */
-public interface CommandContext extends KeyValueEntityContext, MetadataContext {
+public interface CommandContext extends MetadataContext {
 
   /**
    * The name of the command being executed.
@@ -22,4 +22,11 @@ public interface CommandContext extends KeyValueEntityContext, MetadataContext {
    * @return The id of the command.
    */
   long commandId();
+
+  /**
+   * The id of the entity that this context is for.
+   *
+   * @return The entity id.
+   */
+  String entityId();
 }

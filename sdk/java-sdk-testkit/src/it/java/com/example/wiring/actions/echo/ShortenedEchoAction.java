@@ -5,17 +5,17 @@
 package com.example.wiring.actions.echo;
 
 import akka.platform.javasdk.action.Action;
-import akka.platform.javasdk.action.ActionCreationContext;
+import akka.platform.javasdk.action.ActionContext;
 import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.client.ComponentClient;
 
 @ComponentId("shortened-echo")
 public class ShortenedEchoAction extends Action {
 
-  private ActionCreationContext ctx;
+  private ActionContext ctx;
   private ComponentClient componentClient;
 
-  public ShortenedEchoAction(ActionCreationContext ctx, ComponentClient componentClient) {
+  public ShortenedEchoAction(ActionContext ctx, ComponentClient componentClient) {
     this.ctx = ctx;
     this.componentClient = componentClient;
   }

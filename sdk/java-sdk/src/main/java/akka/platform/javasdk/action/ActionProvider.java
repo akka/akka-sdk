@@ -22,7 +22,7 @@ public interface ActionProvider<A extends Action> {
 
   Descriptors.ServiceDescriptor serviceDescriptor();
 
-  ActionRouter<A> newRouter(ActionCreationContext context);
+  ActionRouter<A> newRouter(ActionContext context);
 
   Descriptors.FileDescriptor[] additionalDescriptors();
 

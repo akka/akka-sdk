@@ -6,9 +6,9 @@ package akka.platform.javasdk.testkit;
 
 import akka.platform.javasdk.Metadata;
 import akka.platform.javasdk.action.Action;
-import akka.platform.javasdk.action.ActionCreationContext;
+import akka.platform.javasdk.action.ActionContext;
 import akka.platform.javasdk.testkit.impl.ActionResultImpl;
-import akka.platform.javasdk.testkit.impl.TestKitActionContext;
+import akka.platform.javasdk.testkit.impl.TestKitMessageContext;
 
 import java.util.Optional;
 import java.util.function.Function;
@@ -25,14 +25,14 @@ import java.util.function.Supplier;
  */
 public class ActionTestkit<A extends Action> {
 
-  private final Function<ActionCreationContext, A> actionFactory;
+  private final Function<ActionContext, A> actionFactory;
 
-  private ActionTestkit(Function<ActionCreationContext, A> actionFactory) {
+  private ActionTestkit(Function<ActionContext, A> actionFactory) {
     this.actionFactory = actionFactory;
   }
 
   public static <A extends Action> ActionTestkit<A> of(
-      Function<ActionCreationContext, A> actionFactory) {
+      Function<ActionContext, A> actionFactory) {
     return new ActionTestkit<>(actionFactory);
   }
 
@@ -40,9 +40,9 @@ public class ActionTestkit<A extends Action> {
     return new ActionTestkit<>(ctx -> actionFactory.get());
   }
 
-  private A createAction(TestKitActionContext context) {
+  private A createAction(TestKitMessageContext context) {
     A action = actionFactory.apply(context);
-    action._internalSetActionContext(Optional.of(context));
+    action._internalSetMessageContext(Optional.of(context));
     return action;
   }
 
@@ -70,7 +70,7 @@ public class ActionTestkit<A extends Action> {
    * @return an ActionResult
    */
   public <R> ActionResult<R> call(Function<A, Action.Effect<R>> func, Metadata metadata) {
-    TestKitActionContext context = new TestKitActionContext(metadata, MockRegistry.EMPTY);
+    TestKitMessageContext context = new TestKitMessageContext(metadata, MockRegistry.EMPTY);
     return new ActionResultImpl<>(func.apply(createAction(context)));
   }
 

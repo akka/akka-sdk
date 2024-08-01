@@ -18,7 +18,7 @@ public interface ViewProvider {
 
   ViewOptions options();
 
-  ViewUpdateRouter newRouter(ViewCreationContext context);
+  ViewUpdateRouter newRouter(ViewContext context);
 
   Descriptors.FileDescriptor[] additionalDescriptors();
 

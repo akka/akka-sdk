@@ -5,7 +5,7 @@
 package akka.platform.javasdk.impl;
 
 import akka.platform.javasdk.action.Action;
-import akka.platform.javasdk.action.ActionCreationContext;
+import akka.platform.javasdk.action.ActionContext;
 import akka.platform.javasdk.impl.action.ActionRouter;
 
 /**
@@ -15,5 +15,5 @@ import akka.platform.javasdk.impl.action.ActionRouter;
  * Action} should be used.
  */
 public interface ActionFactory {
-  ActionRouter<?> create(ActionCreationContext context);
+  ActionRouter<?> create(ActionContext context);
 }

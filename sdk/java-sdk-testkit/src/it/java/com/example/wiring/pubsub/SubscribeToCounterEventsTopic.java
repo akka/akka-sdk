@@ -30,7 +30,7 @@ public class SubscribeToCounterEventsTopic extends Action {
   }
 
   private void addEvent(CounterEvent counterEvent) {
-    var entityId = actionContext().metadata().get("ce-subject").orElseThrow();
+    var entityId = messageContext().metadata().get("ce-subject").orElseThrow();
     logger.info("Consuming " + counterEvent + " from " + entityId);
     DummyCounterEventStore.store(entityId, counterEvent);
   }

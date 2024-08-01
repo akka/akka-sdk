@@ -31,10 +31,10 @@ public class GetRandomNameAction extends Action {
   }
 
   public Effect<String> handleAdd(UserEvent.UserAdded userAdded) {
-    if (actionContext().eventSubject().isPresent()) {
+    if (messageContext().eventSubject().isPresent()) {
       var randomNameFut = getRandomNameAsync().thenCompose(name ->
         componentClient
-          .forEventSourcedEntity(actionContext().eventSubject().get())
+          .forEventSourcedEntity(messageContext().eventSubject().get())
           .method(UserEntity::updateName)
           .invokeAsync(new UserEntity.UserCmd.UpdateNameCmd(name)));
 
@@ -46,13 +46,13 @@ public class GetRandomNameAction extends Action {
 
   // gets random name from external API using an asynchronous call and traces that call
   private CompletableFuture<String> getRandomNameAsync() {
-    var otelCurrentContext = actionContext().metadata().traceContext().asOpenTelemetryContext();
-    Span span = actionContext().getTracer()
+    var otelCurrentContext = messageContext().metadata().traceContext().asOpenTelemetryContext();
+    Span span = messageContext().getTracer()
       .spanBuilder("random-name-async")
       .setParent(otelCurrentContext)
       .setSpanKind(SpanKind.CLIENT)
       .startSpan()
-      .setAttribute("user.id", actionContext().eventSubject().orElse("unknown"));
+      .setAttribute("user.id", messageContext().eventSubject().orElse("unknown"));
 
     var client = HttpClient.newHttpClient();
     var request = HttpRequest.newBuilder().uri(URI.create("https://randomuser.me/api/?inc=name&noinfo")).GET().build();

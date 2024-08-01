@@ -10,7 +10,7 @@ import akka.platform.javasdk.impl.action.ActionRouter.HandlerNotFound
 
 import java.util.Optional
 import akka.platform.javasdk.action.Action
-import akka.platform.javasdk.action.ActionContext
+import akka.platform.javasdk.action.MessageContext
 import akka.platform.javasdk.action.MessageEnvelope
 
 object ActionRouter {
@@ -30,7 +30,7 @@ abstract class ActionRouter[A <: Action](protected val action: A) {
    * @return
    *   A future of the message to return.
    */
-  final def handleUnary(commandName: String, message: MessageEnvelope[Any], context: ActionContext): Action.Effect[_] =
+  final def handleUnary(commandName: String, message: MessageEnvelope[Any], context: MessageContext): Action.Effect[_] =
     callWithContext(context) { () =>
       handleUnary(commandName, message)
     }
@@ -62,7 +62,7 @@ abstract class ActionRouter[A <: Action](protected val action: A) {
   final def handleStreamedOut(
       commandName: String,
       message: MessageEnvelope[Any],
-      context: ActionContext): Source[Action.Effect[_], NotUsed] =
+      context: MessageContext): Source[Action.Effect[_], NotUsed] =
     callWithContext(context) { () =>
       handleStreamedOut(commandName, message)
     }
@@ -94,7 +94,7 @@ abstract class ActionRouter[A <: Action](protected val action: A) {
   final def handleStreamedIn(
       commandName: String,
       stream: Source[MessageEnvelope[Any], NotUsed],
-      context: ActionContext): Action.Effect[_] =
+      context: MessageContext): Action.Effect[_] =
     callWithContext(context) { () =>
       handleStreamedIn(commandName, stream)
     }
@@ -126,7 +126,7 @@ abstract class ActionRouter[A <: Action](protected val action: A) {
   final def handleStreamed(
       commandName: String,
       stream: Source[MessageEnvelope[Any], NotUsed],
-      context: ActionContext): Source[Action.Effect[_], NotUsed] =
+      context: MessageContext): Source[Action.Effect[_], NotUsed] =
     callWithContext(context) { () =>
       handleStreamed(commandName, stream)
     }
@@ -145,10 +145,10 @@ abstract class ActionRouter[A <: Action](protected val action: A) {
       commandName: String,
       stream: Source[MessageEnvelope[Any], NotUsed]): Source[Action.Effect[_], NotUsed]
 
-  private def callWithContext[T](context: ActionContext)(func: () => T) = {
+  private def callWithContext[T](context: MessageContext)(func: () => T) = {
     // only set, never cleared, to allow access from other threads in async callbacks in the action
     // the same handler and action instance is expected to only ever be invoked for a single command
-    action._internalSetActionContext(Optional.of(context))
+    action._internalSetMessageContext(Optional.of(context))
     try {
       func()
     } catch {

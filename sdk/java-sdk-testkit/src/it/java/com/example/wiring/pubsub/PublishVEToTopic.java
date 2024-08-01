@@ -25,7 +25,7 @@ public class PublishVEToTopic extends Action {
 
   @Produce.ToTopic(CUSTOMERS_TOPIC)
   public Effect<CustomerEntity.Customer> handleChange(CustomerEntity.Customer customer) {
-    String entityId = actionContext().metadata().get(CeSubject()).orElseThrow();
+    String entityId = messageContext().metadata().get(CeSubject()).orElseThrow();
     logger.info("Publishing to " + CUSTOMERS_TOPIC + " message: " + customer + " from " + entityId);
     return effects().reply(customer, Metadata.EMPTY.add(CeSubject(), entityId));
   }

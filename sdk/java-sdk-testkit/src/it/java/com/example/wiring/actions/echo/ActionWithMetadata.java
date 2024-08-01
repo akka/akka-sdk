@@ -38,7 +38,7 @@ public class ActionWithMetadata extends Action {
   }
 
   public Effect<Message> returnMeta(String key) {
-    var metaValue = actionContext().metadata().get(key).get();
+    var metaValue = messageContext().metadata().get(key).get();
     return effects().reply(new Message(metaValue));
   }
 

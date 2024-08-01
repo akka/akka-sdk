@@ -16,6 +16,6 @@ public class TestTracingAction extends Action {
   public Effect<String> endpoint() {
     logger.info("registering a logging event");
     return effects().reply(
-        actionContext().metadata().traceContext().traceParent().orElse("not-found"));
+        messageContext().metadata().traceContext().traceParent().orElse("not-found"));
   }
 }

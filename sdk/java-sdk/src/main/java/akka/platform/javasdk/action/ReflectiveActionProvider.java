@@ -10,10 +10,6 @@ import akka.platform.javasdk.impl.ComponentDescriptor;
 import akka.platform.javasdk.impl.ComponentDescriptorFactory;
 import akka.platform.javasdk.impl.JsonMessageCodec;
 import akka.platform.javasdk.impl.action.ReflectiveActionRouter;
-import akka.platform.javasdk.action.Action;
-import akka.platform.javasdk.action.ActionCreationContext;
-import akka.platform.javasdk.action.ActionOptions;
-import akka.platform.javasdk.action.ActionProvider;
 import akka.platform.javasdk.impl.MessageCodec;
 import akka.platform.javasdk.impl.action.ActionRouter;
 
@@ -22,7 +18,7 @@ import java.util.function.Function;
 
 public class ReflectiveActionProvider<A extends Action> implements ActionProvider<A> {
 
-  private final Function<ActionCreationContext, A> factory;
+  private final Function<ActionContext, A> factory;
 
   private final ActionOptions options;
   private final Descriptors.FileDescriptor fileDescriptor;
@@ -33,14 +29,14 @@ public class ReflectiveActionProvider<A extends Action> implements ActionProvide
   public static <A extends Action> ReflectiveActionProvider<A> of(
       Class<A> cls,
       JsonMessageCodec messageCodec,
-      Function<ActionCreationContext, A> factory) {
+      Function<ActionContext, A> factory) {
     return new ReflectiveActionProvider<>(cls, messageCodec, factory, ActionOptions.defaults());
   }
 
   private ReflectiveActionProvider(
       Class<A> cls,
       JsonMessageCodec messageCodec,
-      Function<ActionCreationContext, A> factory,
+      Function<ActionContext, A> factory,
       ActionOptions options) {
 
     this.factory = factory;
@@ -64,7 +60,7 @@ public class ReflectiveActionProvider<A extends Action> implements ActionProvide
   }
 
   @Override
-  public ActionRouter<A> newRouter(ActionCreationContext context) {
+  public ActionRouter<A> newRouter(ActionContext context) {
     A action = factory.apply(context);
     return new ReflectiveActionRouter<>(action, componentDescriptor.commandHandlers(), ComponentDescriptorFactory.findIgnore(action.getClass()));
   }

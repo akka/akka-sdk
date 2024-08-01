@@ -24,13 +24,6 @@ abstract class ViewRouter[S, V <: View[S]](protected val view: V) extends ViewUp
     try {
       view._internalSetUpdateContext(Optional.of(context))
       handleUpdate(context.eventName(), stateOrEmpty, event)
-    } catch {
-      case missing: UpdateHandlerNotFound =>
-        throw new ViewException(
-          context.viewId,
-          missing.eventName,
-          "No update handler found for event [" + missing.eventName + "] on " + view.getClass.toString,
-          Option.empty)
     } finally {
       view._internalSetUpdateContext(Optional.empty())
     }
