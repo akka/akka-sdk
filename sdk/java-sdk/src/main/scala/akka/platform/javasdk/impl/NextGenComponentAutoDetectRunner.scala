@@ -29,13 +29,13 @@ import akka.http.scaladsl.model.HttpResponse
 import akka.platform.javasdk.BuildInfo
 import akka.platform.javasdk.DependencyProvider
 import akka.platform.javasdk.Kalix
-import akka.platform.javasdk.ServiceLifecycle
+import akka.platform.javasdk.ServiceSetup
 import akka.platform.javasdk.action.Action
 import akka.platform.javasdk.action.ActionContext
 import akka.platform.javasdk.action.ActionProvider
 import akka.platform.javasdk.action.ReflectiveActionProvider
 import akka.platform.javasdk.annotations.ComponentId
-import akka.platform.javasdk.annotations.KalixService
+import akka.platform.javasdk.annotations.PlatformServiceSetup
 import akka.platform.javasdk.client.ComponentClient
 import akka.platform.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.platform.javasdk.eventsourcedentity.EventSourcedEntityContext
@@ -122,7 +122,7 @@ private object ComponentLocator {
   // populated by annotation processor
   private val ComponentDescriptorResourcePath = "META-INF/akka-platform-components.conf"
   private val DescriptorComponentBasePath = "akka.platform.jvm.sdk.components"
-  private val DescriptorServiceEntryPath = "akka.platform.jvm.sdk.kalix-service"
+  private val DescriptorServiceSetupEntryPath = "akka.platform.jvm.sdk.service-setup"
 
   private val logger = LoggerFactory.getLogger(getClass)
 
@@ -158,16 +158,18 @@ private object ComponentLocator {
         Seq.empty
     }.toSeq
 
-    if (descriptorConfig.hasPath(DescriptorServiceEntryPath)) {
+    if (descriptorConfig.hasPath(DescriptorServiceSetupEntryPath)) {
       // central config/lifecycle class
-      val serviceClassName = descriptorConfig.getString(DescriptorServiceEntryPath)
-      val serviceClass = system.dynamicAccess.getClassFor[AnyRef](serviceClassName).get
-      if (serviceClass.hasAnnotation[KalixService]) {
-        logger.debug("Found and loaded service class: [{}]", serviceClass)
+      val serviceSetupClassName = descriptorConfig.getString(DescriptorServiceSetupEntryPath)
+      val serviceSetup = system.dynamicAccess.getClassFor[AnyRef](serviceSetupClassName).get
+      if (serviceSetup.hasAnnotation[PlatformServiceSetup]) {
+        logger.debug("Found and loaded service class setup: [{}]", serviceSetup)
       } else {
-        logger.warn("Ignoring service class [{}] as it does not have the the @KalixService annotation", serviceClass)
+        logger.warn(
+          "Ignoring service class [{}] as it does not have the the @PlatformServiceSetup annotation",
+          serviceSetup)
       }
-      LocatedClasses(components, Some(serviceClass))
+      LocatedClasses(components, Some(serviceSetup))
     } else {
       LocatedClasses(components, None)
     }
@@ -328,11 +330,11 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
         sys.error(s"Unknown service type: $serviceClass")
     }
 
-    val serviceLifecycle: Option[ServiceLifecycle] = maybeServiceClass match {
-      case Some(serviceClass) if classOf[ServiceLifecycle].isAssignableFrom(serviceClass) =>
+    val serviceSetup: Option[ServiceSetup] = maybeServiceClass match {
+      case Some(serviceClassClass) if classOf[ServiceSetup].isAssignableFrom(serviceClassClass) =>
         // FIXME: HttpClient is tricky because auth headers waiting for discovery, we could maybe sort that
         //        by passing more runtime metadata as parameters to the start call?
-        Some(wiredInstance[ServiceLifecycle](serviceClass.asInstanceOf[Class[ServiceLifecycle]]) {
+        Some(wiredInstance[ServiceSetup](serviceClassClass.asInstanceOf[Class[ServiceSetup]]) {
           case p if p == classOf[ComponentClient] => componentClient()
           case t if t == classOf[TimerScheduler]  => timerScheduler()
         })
@@ -345,12 +347,12 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
 
     new SpiComponents {
       override def preStart(system: ActorSystem[_]): Future[Done] = {
-        serviceLifecycle match {
+        serviceSetup match {
           case None =>
             setStartCallback(None)
             Future.successful(Done)
-          case Some(hooks) =>
-            dependencyProviderOpt = Option(hooks.createDependencyProvider())
+          case Some(setup) =>
+            dependencyProviderOpt = Option(setup.createDependencyProvider())
             dependencyProviderOpt.foreach(_ => logger.info("Service configured with DependencyProvider"))
             setStartCallback(dependencyProviderOpt)
             Future.successful(Done)
@@ -359,11 +361,13 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
 
       override def onStart(system: ActorSystem[_]): Future[Done] = {
 
-        serviceLifecycle match {
+        serviceSetup match {
           case None => Future.successful(Done)
-          case Some(hooks) =>
-            logger.debug("Running onStart lifecycle hook")
-            hooks.onStartup()
+          case Some(setup) =>
+            Option(setup.serviceLifecycle()).foreach { serviceLifecycle =>
+              logger.debug("Running onStart lifecycle hook")
+              serviceLifecycle.onStartup()
+            }
             Future.successful(Done)
         }
       }

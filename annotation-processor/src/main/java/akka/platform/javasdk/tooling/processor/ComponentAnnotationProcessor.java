@@ -40,7 +40,7 @@ import java.util.stream.Collectors;
                 // all components will have this
                 "akka.platform.javasdk.annotations.ComponentId",
                 // central config/lifecycle class
-                "akka.platform.javasdk.annotations.KalixService"
+                "akka.platform.javasdk.annotations.PlatformServiceSetup"
         })
 @SupportedSourceVersion(SourceVersion.RELEASE_21)
 public class ComponentAnnotationProcessor extends AbstractProcessor {
@@ -58,9 +58,9 @@ public class ComponentAnnotationProcessor extends AbstractProcessor {
     private static final String ACTION_KEY = "action";
     private static final String VIEW_KEY = "view";
     private static final String WORKFLOW_KEY = "workflow";
-    private static final String KALIX_SERVICE_KEY = "kalix-service";
+    private static final String SERVICE_SETUP_KEY = "service-setup";
 
-    private static final List<String> ALL_COMPONENT_TYPES = List.of(ENDPOINT_KEY, EVENT_SOURCED_ENTITY_KEY, VALUE_ENTITY_KEY, ACTION_KEY, VIEW_KEY, WORKFLOW_KEY, KALIX_SERVICE_KEY);
+    private static final List<String> ALL_COMPONENT_TYPES = List.of(ENDPOINT_KEY, EVENT_SOURCED_ENTITY_KEY, VALUE_ENTITY_KEY, ACTION_KEY, VIEW_KEY, WORKFLOW_KEY, SERVICE_SETUP_KEY);
 
 
     private final boolean debugEnabled;
@@ -127,9 +127,9 @@ public class ComponentAnnotationProcessor extends AbstractProcessor {
 
 
 
-            var service = componentTypeToConcreteComponents.get(KALIX_SERVICE_KEY);
+            var service = componentTypeToConcreteComponents.get(SERVICE_SETUP_KEY);
             if (service != null && service.size() > 1) {
-                error("More than one class annotated with @KalixService, only one is allowed. Annotated classes: " + String.join(", ", service));
+                error("More than one class annotated with @PlatformServiceSetup, only one is allowed. Annotated classes: " + String.join(", ", service));
             }
 
             // nested tables will occur together with the wrapping class, list only the wrapping class
@@ -158,7 +158,7 @@ public class ComponentAnnotationProcessor extends AbstractProcessor {
         return switch (annotation.getQualifiedName().toString()) {
             case "akka.platform.javasdk.annotations.http.Endpoint" -> ENDPOINT_KEY;
             case "akka.platform.javasdk.annotations.Consume" -> ACTION_KEY;
-            case "akka.platform.javasdk.annotations.KalixService" -> KALIX_SERVICE_KEY;
+            case "akka.platform.javasdk.annotations.PlatformServiceSetup" -> SERVICE_SETUP_KEY;
             case "akka.platform.javasdk.annotations.ComponentId" -> componentType(annotatedClass);
             case String s when s.startsWith("akka.platform.javasdk.annotations.Consume") ->
                     actionOrView(annotatedClass);
@@ -253,16 +253,16 @@ public class ComponentAnnotationProcessor extends AbstractProcessor {
         final Map<String, Object> config = new HashMap<>();
         ALL_COMPONENT_TYPES.forEach(componentType -> {
             var foundComponentClasses = componentTypeToConcreteComponents.getOrDefault(componentType, List.of());
-            if (componentType.equals(KALIX_SERVICE_KEY)) {
+            if (componentType.equals(SERVICE_SETUP_KEY)) {
                 // only one kalix service annotated class
-                String serviceConfigPath = DESCRIPTOR_ENTRY_BASE_PATH + KALIX_SERVICE_KEY;
+                String serviceSetupPath = DESCRIPTOR_ENTRY_BASE_PATH + SERVICE_SETUP_KEY;
                 if (foundComponentClasses.isEmpty()) {
-                    if (foundExistingConfig.hasPath(serviceConfigPath)) {
+                    if (foundExistingConfig.hasPath(serviceSetupPath)) {
                         //use the old value
-                        config.put(serviceConfigPath, foundExistingConfig.getString(serviceConfigPath));
+                        config.put(serviceSetupPath, foundExistingConfig.getString(serviceSetupPath));
                     }
                 } else {
-                    config.put(serviceConfigPath, foundComponentClasses.getFirst());
+                    config.put(serviceSetupPath, foundComponentClasses.getFirst());
                 }
             } else {
                 Set<String> components = new HashSet<>();

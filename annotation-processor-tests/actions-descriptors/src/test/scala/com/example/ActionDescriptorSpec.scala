@@ -19,8 +19,8 @@ class ActionDescriptorSpec extends AnyWordSpec with Matchers {
       actionComponents should contain("com.example.HelloAction")
       actionComponents should contain("com.example.ActionSubscriber")
 
-      val kalixService = config.getString("akka.platform.jvm.sdk.kalix-service")
-      kalixService should be("com.example.Main")
+      val kalixService = config.getString("akka.platform.jvm.sdk.service-setup")
+      kalixService should be("com.example.Setup")
     }
   }
 }

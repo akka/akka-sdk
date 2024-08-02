@@ -27,8 +27,8 @@ class EntitiesAndViewsDescriptorSpec extends AnyWordSpec with Matchers {
       viewComponents should contain("com.example.SimpleView")
       viewComponents should contain("com.example.MultiView")
 
-      val kalixService = config.getString("akka.platform.jvm.sdk.kalix-service")
-      kalixService should be("com.example.Main")
+      val kalixService = config.getString("akka.platform.jvm.sdk.service-setup")
+      kalixService should be("com.example.Setup")
     }
   }
 }
