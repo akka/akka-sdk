@@ -11,11 +11,8 @@ import java.util.concurrent.atomic.AtomicReference
 
 import scala.concurrent.Future
 import scala.concurrent.Promise
-import scala.concurrent.duration.DurationInt
-import scala.concurrent.duration.FiniteDuration
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 import scala.jdk.CollectionConverters.MapHasAsScala
-import scala.jdk.DurationConverters.JavaDurationOps
 import scala.jdk.OptionConverters.RichOption
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
@@ -23,9 +20,6 @@ import scala.util.control.NonFatal
 import akka.Done
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
-import akka.http.scaladsl.model.HttpMethods
-import akka.http.scaladsl.model.HttpRequest
-import akka.http.scaladsl.model.HttpResponse
 import akka.platform.javasdk.BuildInfo
 import akka.platform.javasdk.DependencyProvider
 import akka.platform.javasdk.Kalix
@@ -51,7 +45,6 @@ import akka.platform.javasdk.impl.client.ComponentClientImpl
 import akka.platform.javasdk.impl.eventsourcedentity.EventSourcedEntitiesImpl
 import akka.platform.javasdk.impl.eventsourcedentity.EventSourcedEntityService
 import akka.platform.javasdk.impl.http.HttpClientProviderExtension
-import akka.platform.javasdk.impl.http.HttpEndpointOpenRouter
 import akka.platform.javasdk.impl.keyvalueentity.KeyValueEntitiesImpl
 import akka.platform.javasdk.impl.keyvalueentity.KeyValueEntityService
 import akka.platform.javasdk.impl.reflection.Reflect
@@ -66,7 +59,6 @@ import akka.platform.javasdk.keyvalueentity.KeyValueEntityContext
 import akka.platform.javasdk.keyvalueentity.KeyValueEntityProvider
 import akka.platform.javasdk.keyvalueentity.ReflectiveKeyValueEntityProvider
 import akka.platform.javasdk.spi.ComponentClients
-import akka.platform.javasdk.spi.EndpointDescriptor
 import akka.platform.javasdk.spi.HttpEndpointDescriptor
 import akka.platform.javasdk.spi.SpiComponents
 import akka.platform.javasdk.timer.TimerScheduler
@@ -196,12 +188,6 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
   val sdkSettings =
     new AkkaPlatformSdkSettings(system.settings.config.getConfig("akka.platform"))
 
-  private val endpointTimeout: FiniteDuration =
-    system.settings.config
-      .getDuration("akka.http.server.request-timeout")
-      .toScala
-      .plus(10.seconds) // 10s higher than configured timeout, so configured timeout always win
-
   // validate service classes before instantiating
   private val validation = componentClasses.foldLeft(Valid: Validation) { case (validations, cls) =>
     validations ++ Validations.validate(cls)
@@ -275,18 +261,17 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
   }
 
   // collect all Endpoints and compose them to build a larger router
-  private val endpointsRouter = componentClasses
+  private val httpEndpoints = componentClasses
     .filter(Reflect.isRestEndpoint)
-    .foldLeft(HttpEndpointOpenRouter.empty) { case (router, cls) =>
-      router ++ HttpEndpointOpenRouter(
-        cls,
-        () =>
-          wiredInstance(cls) {
+    .map { httpEndpointClass =>
+      HttpEndpointDescriptorFactory(
+        httpEndpointClass,
+        _ =>
+          wiredInstance(httpEndpointClass) {
             case p if p == classOf[ComponentClient]    => componentClient()
             case h if h == classOf[HttpClientProvider] => httpClientProvider()
           })
     }
-    .seal
 
   // FIXME mixing runtime config with sdk with user project config is tricky
   def spiEndpoints: SpiComponents = {
@@ -379,26 +364,7 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
       override def views: Option[Views] = viewsEndpoint
       override def workflowEntities: Option[WorkflowEntities] = workflowEntitiesEndpoint
       override def replicatedEntities: Option[ReplicatedEntities] = None
-
-      override def endpoints: PartialFunction[HttpRequest, Future[HttpResponse]] =
-        endpointsRouter.route(endpointTimeout)(system.classicSystem)
-
-      override val endpointDescriptors: Seq[EndpointDescriptor] =
-        endpointsRouter.getTree.allFullPaths.map { path =>
-          HttpEndpointDescriptor(HttpMethods.GET, path)
-        } ++
-        endpointsRouter.postTree.allFullPaths.map { path =>
-          HttpEndpointDescriptor(HttpMethods.POST, path)
-        } ++
-        endpointsRouter.putTree.allFullPaths.map { path =>
-          HttpEndpointDescriptor(HttpMethods.PUT, path)
-        } ++
-        endpointsRouter.patchTree.allFullPaths.map { path =>
-          HttpEndpointDescriptor(HttpMethods.PATCH, path)
-        } ++
-        endpointsRouter.deleteTree.allFullPaths.map { path =>
-          HttpEndpointDescriptor(HttpMethods.DELETE, path)
-        }
+      override def httpEndpointDescriptors: Seq[HttpEndpointDescriptor] = httpEndpoints
     }
   }
 
