@@ -24,7 +24,7 @@ object AclDescriptorFactory {
     "Invalid annotation usage. Matcher has both 'principal' and 'service' defined. " +
     "Only one is allowed."
 
-  private def validateMatcher(matcher: Acl.Matcher): Unit = {
+  def validateMatcher(matcher: Acl.Matcher): Unit = {
     if (matcher.principal() != Acl.Principal.UNSPECIFIED && matcher.service().nonEmpty)
       throw new IllegalArgumentException(invalidAnnotationUsage)
   }

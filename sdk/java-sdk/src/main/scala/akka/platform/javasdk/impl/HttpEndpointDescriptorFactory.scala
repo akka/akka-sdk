@@ -5,16 +5,25 @@
 package akka.platform.javasdk.impl
 
 import akka.http.scaladsl.model.HttpMethods
+import akka.platform.javasdk.annotations.Acl
 import akka.platform.javasdk.annotations.http.Delete
 import akka.platform.javasdk.annotations.http.Endpoint
 import akka.platform.javasdk.annotations.http.Get
 import akka.platform.javasdk.annotations.http.Patch
 import akka.platform.javasdk.annotations.http.Post
 import akka.platform.javasdk.annotations.http.Put
+import akka.platform.javasdk.impl.AclDescriptorFactory.validateMatcher
 import akka.platform.javasdk.impl.reflection.Reflect
+import akka.platform.javasdk.spi.ACL
+import akka.platform.javasdk.spi.All
+import akka.platform.javasdk.spi.ComponentOptions
 import akka.platform.javasdk.spi.HttpEndpointConstructionContext
 import akka.platform.javasdk.spi.HttpEndpointDescriptor
 import akka.platform.javasdk.spi.HttpEndpointMethodDescriptor
+import akka.platform.javasdk.spi.Internet
+import akka.platform.javasdk.spi.MethodOptions
+import akka.platform.javasdk.spi.PrincipalMatcher
+import akka.platform.javasdk.spi.ServiceNamePattern
 
 object HttpEndpointDescriptorFactory {
 
@@ -51,8 +60,7 @@ object HttpEndpointDescriptorFactory {
           httpMethod = httpMethod,
           pathExpression = path,
           userMethod = method,
-          // FIXME method level ACL will go here
-          methodOptions = None)
+          methodOptions = deriveAclOptions(Option(method.getAnnotation(classOf[Acl]))).map(MethodOptions))
       }
     }.toVector
 
@@ -60,8 +68,30 @@ object HttpEndpointDescriptorFactory {
       mainPath = mainPath,
       instanceFactory = instanceFactory,
       methods = methods,
-      // FIXME component level ACL will go here
-      componentOptions = None)
+      componentOptions = deriveAclOptions(Option(endpointClass.getAnnotation(classOf[Acl]))).map(ComponentOptions))
   }
+
+  // receives the method, checks if it is annotated with @Acl and if so,
+  // converts that into ACL spi object
+  private def deriveAclOptions(aclAnnotation: Option[Acl]): Option[ACL] =
+    aclAnnotation.map { ann =>
+      ann.allow().foreach(matcher => validateMatcher(matcher))
+      ann.deny().foreach(matcher => validateMatcher(matcher))
+
+      ACL(
+        allow = Option(ann.allow).map(toPrincipalMatcher).getOrElse(Nil),
+        deny = Option(ann.deny).map(toPrincipalMatcher).getOrElse(Nil),
+        denyHttpCode = None // FIXME we can probably use http codes instead of grpc ones
+      )
+    }
+
+  private def toPrincipalMatcher(matchers: Array[Acl.Matcher]): List[PrincipalMatcher] =
+    matchers.map { m =>
+      m.principal match {
+        case Acl.Principal.ALL         => All
+        case Acl.Principal.INTERNET    => Internet
+        case Acl.Principal.UNSPECIFIED => ServiceNamePattern(m.service())
+      }
+    }.toList
 
 }

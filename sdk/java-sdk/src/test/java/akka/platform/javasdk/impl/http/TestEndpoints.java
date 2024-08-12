@@ -5,6 +5,7 @@
 package akka.platform.javasdk.impl.http;
 
 import akka.http.javadsl.model.HttpResponse;
+import akka.platform.javasdk.annotations.Acl;
 import akka.platform.javasdk.annotations.http.Delete;
 import akka.platform.javasdk.annotations.http.Endpoint;
 import akka.platform.javasdk.annotations.http.Get;
@@ -12,6 +13,7 @@ import akka.platform.javasdk.annotations.http.Patch;
 import akka.platform.javasdk.annotations.http.Post;
 import akka.platform.javasdk.annotations.http.Put;
 import akka.platform.javasdk.http.HttpResponses;
+import kalix.acl.PrincipalMatcher;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -54,6 +56,40 @@ public class TestEndpoints {
         @Patch("/{it}")
         public HttpResponse patch(String it, AThing theBody) {
             return HttpResponses.ok();
+        }
+    }
+
+    @Acl(deny = @Acl.Matcher(principal = Acl.Principal.ALL))
+    @Endpoint("acls")
+    public static class TestEndpointAcls {
+
+        @Get("/no-acl")
+        public String noAcl() {
+            return "no-acl";
+        }
+
+        @Get("/secret")
+        @Acl(
+            allow = @Acl.Matcher(service = "backoffice-service"),
+            deny = @Acl.Matcher(principal = Acl.Principal.INTERNET))
+        public String secret() {
+            return "the greatest secret";
+        }
+
+        @Get("/this-and-that")
+        @Acl(allow = { @Acl.Matcher(service = "this"), @Acl.Matcher(service = "that") })
+        public String thisAndThat() {
+            return "this-and-that";
+        }
+
+    }
+
+    @Endpoint("invalid-acl")
+    public static class TestEndpointInvalidAcl {
+        @Get("/invalid")
+        @Acl(allow = @Acl.Matcher(service = "*", principal = Acl.Principal.INTERNET))
+        public String invalid() {
+            return "invalid matcher";
         }
 
     }
