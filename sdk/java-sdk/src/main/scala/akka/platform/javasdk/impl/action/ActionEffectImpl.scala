@@ -4,17 +4,16 @@
 
 package akka.platform.javasdk.impl.action
 
-import java.util.concurrent.CompletionStage
-
-import io.grpc.Status
+import akka.platform.javasdk.{ HttpResponse, Metadata }
 import akka.platform.javasdk.StatusCode.ErrorCode
-import akka.platform.javasdk.impl.StatusCodeConverter
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import scala.jdk.FutureConverters.CompletionStageOps
-import akka.platform.javasdk.HttpResponse
-import akka.platform.javasdk.Metadata
 import akka.platform.javasdk.action.Action
+import akka.platform.javasdk.impl.StatusCodeConverter
+import akka.platform.javasdk.impl.telemetry.Telemetry
+import io.grpc.Status
+
+import java.util.concurrent.CompletionStage
+import scala.concurrent.{ ExecutionContext, Future }
+import scala.jdk.FutureConverters.CompletionStageOps
 
 /** INTERNAL API */
 object ActionEffectImpl {
@@ -37,12 +36,12 @@ object ActionEffectImpl {
     def isEmpty: Boolean = true
   }
 
-  object Builder extends Action.Effect.Builder {
+  class Builder(val messageContextMetadata: Metadata) extends Action.Effect.Builder {
     def reply[S](message: S): Action.Effect[S] = {
       message match {
         case httpResponse: HttpResponse =>
-          ReplyEffect(message, Some(Metadata.EMPTY.withStatusCode(httpResponse.getStatusCode)))
-        case _ => ReplyEffect(message, None)
+          ReplyEffect(message, Some(Metadata.EMPTY.withStatusCode(httpResponse.getStatusCode).addTracing()))
+        case _ => ReplyEffect(message, Some(Metadata.EMPTY.addTracing()))
       }
     }
     def reply[S](message: S, metadata: Metadata): Action.Effect[S] = {
@@ -63,13 +62,25 @@ object ActionEffectImpl {
     def asyncReply[S](futureMessage: CompletionStage[S]): Action.Effect[S] =
       asyncReply(futureMessage, Metadata.EMPTY)
     def asyncReply[S](futureMessage: CompletionStage[S], metadata: Metadata): Action.Effect[S] =
-      AsyncEffect(futureMessage.asScala.map(s => Builder.reply[S](s, metadata))(ExecutionContext.parasitic))
+      AsyncEffect(futureMessage.asScala.map(s => reply[S](s, metadata.addTracing()))(ExecutionContext.parasitic))
     def asyncEffect[S](futureEffect: CompletionStage[Action.Effect[S]]): Action.Effect[S] =
       AsyncEffect(futureEffect.asScala)
     def ignore[S](): Action.Effect[S] =
       IgnoreEffect()
+
+    import scala.jdk.OptionConverters._
+
+    implicit class TracingWrapper(metadata: Metadata) {
+      def addTracing(): Metadata = {
+        messageContextMetadata.traceContext().traceParent().toScala match {
+          case Some(traceparent) if !metadata.has(Telemetry.TRACE_PARENT_KEY) =>
+            metadata.add(Telemetry.TRACE_PARENT_KEY, traceparent)
+          case _ => metadata
+        }
+      }
+    }
   }
 
-  def builder(): Action.Effect.Builder = Builder
+  def builder(messageContextMetadata: Metadata): Action.Effect.Builder = new Builder(messageContextMetadata)
 
 }

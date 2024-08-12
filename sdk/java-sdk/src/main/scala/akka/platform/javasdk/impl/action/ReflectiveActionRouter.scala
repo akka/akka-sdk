@@ -84,7 +84,7 @@ class ReflectiveActionRouter[A <: Action](
                 .invoke(action, invocationContext)
                 .asInstanceOf[Action.Effect[_]]
           }
-        case None if ignoreUnknown => ActionEffectImpl.Builder.ignore()
+        case None if ignoreUnknown => new ActionEffectImpl.Builder(invocationContext.metadata).ignore()
         case None =>
           throw new NoSuchElementException(
             s"Couldn't find any method with input type [$inputTypeUrl] in Action [$action].")

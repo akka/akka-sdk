@@ -53,7 +53,7 @@ public abstract class Action {
    * <p>It will throw an exception if accessed from constructor.
    */
   protected final MessageContext messageContext() {
-    return messageContext("ActionContext is only available when handling a message.");
+    return messageContext("MessageContext is only available when handling a message.");
   }
 
   private MessageContext messageContext(String errorMessage) {
@@ -68,7 +68,7 @@ public abstract class Action {
   }
 
   public final Effect.Builder effects() {
-    return ActionEffectImpl.builder();
+    return ActionEffectImpl.builder(messageContext().metadata());
   }
 
   /**
