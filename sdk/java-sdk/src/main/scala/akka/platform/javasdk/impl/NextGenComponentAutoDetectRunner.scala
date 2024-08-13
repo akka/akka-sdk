@@ -188,6 +188,16 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
   val sdkSettings =
     new AkkaPlatformSdkSettings(system.settings.config.getConfig("akka.platform"))
 
+  private lazy val userServiceConfig = {
+    // hiding these paths from the config provided to user
+    val sensitivePaths = List("akka", "kalix.meta", "kalix.proxy", "kalix.runtime", "system")
+    val c = system.settings.config
+    val sdkConfig = if (c.hasPath("akka.platform")) c.getConfig("akka.platform") else ConfigFactory.empty()
+    sensitivePaths
+      .foldLeft(c) { (conf, toHide) => conf.withoutPath(toHide) }
+      .withFallback(sdkConfig)
+  }
+
   // validate service classes before instantiating
   private val validation = componentClasses.foldLeft(Valid: Validation) { case (validations, cls) =>
     validations ++ Validations.validate(cls)
@@ -485,12 +495,11 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
     val totalWireFunction: PartialFunction[Class[_], Any] =
       partial.orElse {
         case p if p == classOf[Config] =>
-          // FIXME should it be a sub-config for the service rather?
-          system.settings.config
+          userServiceConfig
+
         // block wiring of clients into anything that is not an Action or Workflow
         // NOTE: if they are allowed, 'partial' should already have a matching case for them
         // if partial func doesn't match, try to lookup in the applicationContext
-
         case anyOther =>
           dependencyProviderOpt match {
             case _ if platformManagedDependency(anyOther) =>
