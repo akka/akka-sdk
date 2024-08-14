@@ -257,6 +257,8 @@
                     <version>3.3.0</version>
                     <configuration>
                         <mainClass>kalix.runtime.KalixRuntimeMain</mainClass>
+                        <!-- Silence some noise on runtime crashes -->
+                        <cleanupDaemonThreads>false</cleanupDaemonThreads>
                         <arguments>
                             <argument>-Dconfig.resource=${config.resource}</argument>
                         </arguments>
