@@ -37,7 +37,7 @@ final case class DeferredCallImpl[I, O](
     this.copy(metadata = metadata.asInstanceOf[MetadataImpl])
   }
 
-  def deferredRequest(): DeferredRequest = DeferredRequest(
+  def deferredRequest(): DeferredRequest = new DeferredRequest(
     componentType,
     fullServiceName,
     methodName = methodName,

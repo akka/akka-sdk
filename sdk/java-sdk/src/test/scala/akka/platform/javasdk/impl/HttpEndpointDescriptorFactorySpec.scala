@@ -56,7 +56,8 @@ class HttpEndpointDescriptorFactorySpec extends AnyWordSpec with Matchers {
 
       val get = byMethodName("secret")
       get.methodOptions should not be empty
-      get.methodOptions.get.acl.allow shouldBe List(ServiceNamePattern("backoffice-service"))
+      get.methodOptions.get.acl.allow.collect { case p: ServiceNamePattern => p.pattern } shouldEqual Seq(
+        "backoffice-service")
       get.methodOptions.get.acl.deny shouldBe List(Internet)
 
       val noAcl = byMethodName("noAcl")
@@ -64,7 +65,9 @@ class HttpEndpointDescriptorFactorySpec extends AnyWordSpec with Matchers {
 
       val thisAndThat = byMethodName("thisAndThat")
       thisAndThat.methodOptions should not be empty
-      thisAndThat.methodOptions.get.acl.allow shouldBe List(ServiceNamePattern("this"), ServiceNamePattern("that"))
+      thisAndThat.methodOptions.get.acl.allow.collect { case p: ServiceNamePattern => p.pattern } shouldBe Seq(
+        "this",
+        "that")
       thisAndThat.methodOptions.get.acl.deny shouldBe empty
     }
 

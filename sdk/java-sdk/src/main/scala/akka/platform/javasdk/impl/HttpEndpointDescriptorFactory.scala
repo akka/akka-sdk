@@ -56,19 +56,20 @@ object HttpEndpointDescriptorFactory {
       }
 
       maybePathMethod.map { case (path, httpMethod) =>
-        HttpEndpointMethodDescriptor(
+        new HttpEndpointMethodDescriptor(
           httpMethod = httpMethod,
           pathExpression = path,
           userMethod = method,
-          methodOptions = deriveAclOptions(Option(method.getAnnotation(classOf[Acl]))).map(MethodOptions))
+          methodOptions = deriveAclOptions(Option(method.getAnnotation(classOf[Acl]))).map(new MethodOptions(_)))
       }
     }.toVector
 
-    HttpEndpointDescriptor(
+    new HttpEndpointDescriptor(
       mainPath = mainPath,
       instanceFactory = instanceFactory,
       methods = methods,
-      componentOptions = deriveAclOptions(Option(endpointClass.getAnnotation(classOf[Acl]))).map(ComponentOptions))
+      componentOptions =
+        deriveAclOptions(Option(endpointClass.getAnnotation(classOf[Acl]))).map(new ComponentOptions(_)))
   }
 
   // receives the method, checks if it is annotated with @Acl and if so,
@@ -78,7 +79,7 @@ object HttpEndpointDescriptorFactory {
       ann.allow().foreach(matcher => validateMatcher(matcher))
       ann.deny().foreach(matcher => validateMatcher(matcher))
 
-      ACL(
+      new ACL(
         allow = Option(ann.allow).map(toPrincipalMatcher).getOrElse(Nil),
         deny = Option(ann.deny).map(toPrincipalMatcher).getOrElse(Nil),
         denyHttpCode = None // FIXME we can probably use http codes instead of grpc ones
@@ -90,7 +91,7 @@ object HttpEndpointDescriptorFactory {
       m.principal match {
         case Acl.Principal.ALL         => All
         case Acl.Principal.INTERNET    => Internet
-        case Acl.Principal.UNSPECIFIED => ServiceNamePattern(m.service())
+        case Acl.Principal.UNSPECIFIED => new ServiceNamePattern(m.service())
       }
     }.toList
 

@@ -35,9 +35,6 @@ import akka.platform.javasdk.impl.telemetry.ActionCategory
 import akka.platform.javasdk.impl.telemetry.ConsumerCategory
 import akka.platform.javasdk.impl.telemetry.Instrumentation
 import akka.platform.javasdk.impl.telemetry.Telemetry
-import akka.platform.javasdk.impl.telemetry.TraceInstrumentation
-import akka.platform.javasdk.impl.telemetry.TraceInstrumentation.TRACE_PARENT_KEY
-import akka.platform.javasdk.impl.telemetry.TraceInstrumentation.TRACE_STATE_KEY
 import akka.platform.javasdk.impl.timer.TimerSchedulerImpl
 import akka.platform.javasdk.spi.TimerClient
 import akka.platform.javasdk.timer.TimerScheduler
@@ -45,10 +42,8 @@ import akka.stream.scaladsl.Sink
 import akka.stream.scaladsl.Source
 import com.google.protobuf.Descriptors
 import io.grpc.Status
-import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.SpanContext
 import io.opentelemetry.api.trace.Tracer
-import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
 import kalix.protocol.action.ActionCommand
 import kalix.protocol.action.ActionResponse
 import kalix.protocol.action.Actions
@@ -425,7 +420,7 @@ private[akka] final class ActionsImpl(_system: ActorSystem, services: Map[String
       spanContext: Option[SpanContext],
       serviceName: String): MessageContext = {
     val metadata = MetadataImpl.of(in.metadata.map(_.entries.toVector).getOrElse(Nil))
-    val updatedMetadata = spanContext.map(metadataWithTracing(metadata, _)).getOrElse(metadata)
+    val updatedMetadata = spanContext.map(metadata.withTracing).getOrElse(metadata)
     new MessageContextImpl(updatedMetadata, messageCodec, system, timerClient, telemetries(serviceName))
   }
 
@@ -435,7 +430,7 @@ private[akka] final class ActionsImpl(_system: ActorSystem, services: Map[String
       spanContext: Option[SpanContext],
       serviceName: String): javasdk.consumer.MessageContext = {
     val metadata = MetadataImpl.of(in.metadata.map(_.entries.toVector).getOrElse(Nil))
-    val updatedMetadata = spanContext.map(metadataWithTracing(metadata, _)).getOrElse(metadata)
+    val updatedMetadata = spanContext.map(metadata.withTracing).getOrElse(metadata)
     new consumer.MessageContextImpl(updatedMetadata, messageCodec, system, timerClient, telemetries(serviceName))
   }
 
@@ -446,22 +441,6 @@ private[akka] final class ActionsImpl(_system: ActorSystem, services: Map[String
   private def createConsumerContext(serviceName: String): ConsumerContext = {
     new ConsumerContextImpl(system)
   }
-
-  private def metadataWithTracing(metadata: MetadataImpl, spanContext: SpanContext): Metadata = {
-    // remove parent traceparent and tracestate from the metadata so they can be reinjected with current span context
-    val l = metadata.entries.filter(m => m.key != TRACE_PARENT_KEY && m.key != TRACE_STATE_KEY).toBuffer
-
-    W3CTraceContextPropagator
-      .getInstance()
-      .inject(io.opentelemetry.context.Context.current().`with`(Span.wrap(spanContext)), l, TraceInstrumentation.setter)
-
-    if (log.isTraceEnabled)
-      log.trace(
-        "Updated metadata with trace context: [{}]",
-        l.toList.filter(m => m.key == TRACE_PARENT_KEY || m.key == TRACE_STATE_KEY))
-    MetadataImpl.of(l.toSeq)
-  }
-
 }
 
 case class MessageEnvelopeImpl[T](payload: T, metadata: Metadata) extends MessageEnvelope[T]

@@ -45,8 +45,8 @@ class ReflectSpec extends AnyWordSpec with Matchers {
       class Bar(val anotherComponentClient: ComponentClient, val parentComponentClient: ComponentClient)
           extends Foo(parentComponentClient)
 
-      val c1 = new ComponentClientImpl(null)(ExecutionContext.global)
-      val c2 = new ComponentClientImpl(null)(ExecutionContext.global)
+      val c1 = ComponentClientImpl(null, None)(ExecutionContext.global)
+      val c2 = ComponentClientImpl(null, None)(ExecutionContext.global)
       val bar = new Bar(c1, c2)
 
       Reflect.lookupComponentClientFields(bar) should have size 2

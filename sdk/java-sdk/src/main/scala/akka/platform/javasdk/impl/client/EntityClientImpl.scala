@@ -225,7 +225,7 @@ private[javasdk] final case class ViewClientImpl(viewClient: RuntimeViewClient, 
           { metadata =>
             viewClient
               .query(
-                ViewRequest(
+                new ViewRequest(
                   serviceName,
                   methodName,
                   ContentTypes.`application/json`,
@@ -299,7 +299,7 @@ private[javasdk] final case class ActionClientImpl(actionClient: RuntimeActionCl
           { metadata =>
             actionClient
               .call(
-                ActionRequest(
+                new ActionRequest(
                   serviceName,
                   methodName,
                   ContentTypes.`application/json`,

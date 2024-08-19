@@ -113,7 +113,7 @@ private[akka] object TraceInstrumentation {
 
   private val logger: Logger = LoggerFactory.getLogger(getClass)
 
-  lazy val otelGetter = new TextMapGetter[Metadata]() {
+  lazy val metadataGetter = new TextMapGetter[Metadata]() {
     override def get(carrier: Metadata, key: String): String = {
       if (logger.isTraceEnabled) logger.trace("For the key [{}] the value is [{}]", key, carrier.get(key))
       carrier.get(key).toScala.getOrElse("")
@@ -123,7 +123,7 @@ private[akka] object TraceInstrumentation {
       carrier.getAllKeys
   }
 
-  lazy val setter: TextMapSetter[mutable.Buffer[MetadataEntry]] = (carrier, key, value) => {
+  lazy val builderSetter: TextMapSetter[mutable.Builder[MetadataEntry, _]] = (carrier, key, value) => {
     carrier.addOne(new MetadataEntry(key, StringValue(value)))
   }
 }
@@ -176,7 +176,7 @@ private final class TraceInstrumentation(
       if (logger.isTraceEnabled) logger.trace("`traceparent` found")
 
       val context = openTelemetry.getPropagators.getTextMapPropagator
-        .extract(OtelContext.current(), metadata, otelGetter)
+        .extract(OtelContext.current(), metadata, metadataGetter)
 
       val span = openTelemetry
         .getTracer("java-sdk")
@@ -203,7 +203,7 @@ private final class TraceInstrumentation(
       if (logger.isTraceEnabled) logger.trace("`traceparent` found")
 
       val context = openTelemetry.getPropagators.getTextMapPropagator
-        .extract(OtelContext.current(), metadata, otelGetter)
+        .extract(OtelContext.current(), metadata, metadataGetter)
 
       val span = getTracer
         .spanBuilder(command.name)

@@ -30,6 +30,7 @@ import kalix.runtime.KalixRuntimeMain;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import scala.Option;
 import scala.Some;
 import scala.Tuple3;
 import scala.concurrent.Await;
@@ -589,7 +590,7 @@ public class KalixTestKit {
       holder.overrideTracingCollectorEndpoint(""); //emulating ProxyInfo with disabled tracing.
 
       // once runtime is started
-      componentClient = new ComponentClientImpl(componentClients, runtimeActorSystem.dispatcher());
+      componentClient = new ComponentClientImpl(componentClients, Option.empty(), runtimeActorSystem.dispatcher());
       this.messageBuilder = new EventingTestKit.MessageBuilder(kalix.getMessageCodec());
 
     } catch (Exception ex) {

@@ -35,6 +35,7 @@ import akka.platform.spring.testmodels.view.ViewTestModels;
 import akka.platform.spring.testmodels.view.ViewTestModels.UserByEmailWithGet;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import scala.Option;
 import scala.concurrent.ExecutionContext;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -77,7 +78,7 @@ class ComponentClientTest {
         return null;
       }
     };
-    componentClient = new ComponentClientImpl(dummyComponentClients, ExecutionContext.global());
+    componentClient = new ComponentClientImpl(dummyComponentClients, Option.empty(), ExecutionContext.global());
   }
 
   @Test

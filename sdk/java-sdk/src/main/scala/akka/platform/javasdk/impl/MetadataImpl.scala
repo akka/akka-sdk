@@ -12,10 +12,8 @@ import java.time.format.DateTimeFormatter
 import java.util
 import java.util.Objects
 import java.util.Optional
-
 import scala.compat.java8.OptionConverters._
 import scala.jdk.CollectionConverters._
-
 import com.google.protobuf.ByteString
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
 import io.opentelemetry.context.{ Context => OtelContext }
@@ -28,7 +26,9 @@ import akka.platform.javasdk.StatusCode
 import akka.platform.javasdk.TraceContext
 import akka.platform.javasdk.impl.MetadataImpl.JwtClaimPrefix
 import akka.platform.javasdk.impl.telemetry.TraceInstrumentation
-import akka.platform.javasdk.impl.telemetry.TraceInstrumentation.otelGetter
+import akka.platform.javasdk.impl.telemetry.TraceInstrumentation.metadataGetter
+import io.opentelemetry.api.trace.Span
+import io.opentelemetry.api.trace.SpanContext
 import kalix.protocol.component
 import kalix.protocol.component.MetadataEntry
 
@@ -44,6 +44,21 @@ private[akka] class MetadataImpl private (val entries: Seq[MetadataEntry]) exten
       case MetadataEntry(k, MetadataEntry.Value.StringValue(value), _) if key.equalsIgnoreCase(k) =>
         value
     }
+
+  def withTracing(spanContext: SpanContext): Metadata = {
+    withTracing(Span.wrap(spanContext))
+  }
+
+  def withTracing(span: Span): MetadataImpl = {
+    // remove parent trace parent and trace state from the metadata so they can be re-injected with current span context
+    val builder = Vector.newBuilder[MetadataEntry]
+    builder.addAll(entries.iterator.filter(m =>
+      m.key != TraceInstrumentation.TRACE_PARENT_KEY && m.key != TraceInstrumentation.TRACE_STATE_KEY))
+    W3CTraceContextPropagator
+      .getInstance()
+      .inject(io.opentelemetry.context.Context.current().`with`(span), builder, TraceInstrumentation.builderSetter)
+    MetadataImpl.of(builder.result())
+  }
 
   override def getAll(key: String): util.List[String] =
     getAllScala(key).asJava
@@ -225,7 +240,7 @@ private[akka] class MetadataImpl private (val entries: Seq[MetadataEntry]) exten
   override lazy val traceContext: TraceContext = new TraceContext {
     override def asOpenTelemetryContext(): OtelContext = W3CTraceContextPropagator
       .getInstance()
-      .extract(OtelContext.current(), asMetadata(), otelGetter)
+      .extract(OtelContext.current(), asMetadata(), metadataGetter)
 
     override def traceParent(): Optional[String] = getScala(TraceInstrumentation.TRACE_PARENT_KEY).asJava
 
@@ -309,4 +324,5 @@ object MetadataImpl {
 
     new MetadataImpl(transformedEntries)
   }
+
 }

@@ -8,7 +8,6 @@ import java.lang.reflect.Constructor
 import java.lang.reflect.ParameterizedType
 import java.util.Optional
 import java.util.concurrent.atomic.AtomicReference
-
 import scala.concurrent.Future
 import scala.concurrent.Promise
 import scala.jdk.CollectionConverters.CollectionHasAsScala
@@ -16,7 +15,6 @@ import scala.jdk.CollectionConverters.MapHasAsScala
 import scala.jdk.OptionConverters.RichOption
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
-
 import akka.Done
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
@@ -49,7 +47,7 @@ import akka.platform.javasdk.impl.client.ComponentClientImpl
 import akka.platform.javasdk.impl.consumer.ConsumerService
 import akka.platform.javasdk.impl.eventsourcedentity.EventSourcedEntitiesImpl
 import akka.platform.javasdk.impl.eventsourcedentity.EventSourcedEntityService
-import akka.platform.javasdk.impl.http.HttpClientProviderExtension
+import akka.platform.javasdk.impl.http.HttpClientProviderImpl
 import akka.platform.javasdk.impl.keyvalueentity.KeyValueEntitiesImpl
 import akka.platform.javasdk.impl.keyvalueentity.KeyValueEntityService
 import akka.platform.javasdk.impl.reflection.Reflect
@@ -64,6 +62,7 @@ import akka.platform.javasdk.keyvalueentity.KeyValueEntityContext
 import akka.platform.javasdk.keyvalueentity.KeyValueEntityProvider
 import akka.platform.javasdk.keyvalueentity.ReflectiveKeyValueEntityProvider
 import akka.platform.javasdk.spi.ComponentClients
+import akka.platform.javasdk.spi.HttpEndpointConstructionContext
 import akka.platform.javasdk.spi.HttpEndpointDescriptor
 import akka.platform.javasdk.spi.SpiComponents
 import akka.platform.javasdk.timer.TimerScheduler
@@ -78,7 +77,9 @@ import akka.platform.javasdk.workflow.WorkflowContext
 import akka.platform.javasdk.workflow.WorkflowProvider
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
+import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.Tracer
+import io.opentelemetry.context.Context
 import kalix.protocol.action.Actions
 import kalix.protocol.discovery.Discovery
 import kalix.protocol.event_sourced_entity.EventSourcedEntities
@@ -284,13 +285,7 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
   private val httpEndpoints = componentClasses
     .filter(Reflect.isRestEndpoint)
     .map { httpEndpointClass =>
-      HttpEndpointDescriptorFactory(
-        httpEndpointClass,
-        _ =>
-          wiredInstance(httpEndpointClass) {
-            case p if p == classOf[ComponentClient]    => componentClient()
-            case h if h == classOf[HttpClientProvider] => httpClientProvider()
-          })
+      HttpEndpointDescriptorFactory(httpEndpointClass, httpEndpointFactory(httpEndpointClass))
     }
 
   // FIXME mixing runtime config with sdk with user project config is tricky
@@ -509,6 +504,16 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
         }
       })
 
+  private def httpEndpointFactory[E](httpEndpointClass: Class[E]): HttpEndpointConstructionContext => E = {
+    (context: HttpEndpointConstructionContext) =>
+      wiredInstance(httpEndpointClass) {
+        case p if p == classOf[ComponentClient]    => componentClient(context.openTelemetrySpan)
+        case s if s == classOf[Span]               => context.openTelemetrySpan.getOrElse(Span.current())
+        case h if h == classOf[HttpClientProvider] => httpClientProvider(context.openTelemetrySpan)
+        case h if h == classOf[TimerScheduler]     => timerScheduler(context.openTelemetrySpan)
+      }
+  }
+
   private def wiredInstance[T](clz: Class[T])(partial: PartialFunction[Class[_], Any]): T = {
     // only one constructor allowed
     require(clz.getDeclaredConstructors.length == 1, s"Class [${clz.getSimpleName}] must have only one constructor.")
@@ -560,6 +565,7 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
     anyOther == classOf[TimerScheduler] ||
     anyOther == classOf[HttpClientProvider] ||
     anyOther == classOf[Tracer] ||
+    anyOther == classOf[Span] ||
     anyOther == classOf[Config] ||
     anyOther == classOf[WorkflowContext] ||
     anyOther == classOf[EventSourcedEntityContext] ||
@@ -567,15 +573,24 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
     anyOther == classOf[ViewContext]
   }
 
-  private def componentClient(): ComponentClient = {
-    ComponentClientImpl(runtimeComponentClients)(system.executionContext)
+  private def componentClient(openTelemetrySpan: Option[Span] = None): ComponentClient = {
+    ComponentClientImpl(runtimeComponentClients, openTelemetrySpan)(system.executionContext)
   }
 
-  private def timerScheduler(): TimerScheduler = {
-    new TimerSchedulerImpl(messageCodec, system.classicSystem, runtimeComponentClients.timerClient, MetadataImpl.Empty)
+  private def timerScheduler(openTelemetrySpan: Option[Span] = None): TimerScheduler = {
+    val metadata = openTelemetrySpan match {
+      case None       => MetadataImpl.Empty
+      case Some(span) => MetadataImpl.Empty.withTracing(span)
+    }
+    new TimerSchedulerImpl(messageCodec, system.classicSystem, runtimeComponentClients.timerClient, metadata)
   }
 
-  private def httpClientProvider(): HttpClientProvider =
-    HttpClientProviderExtension(system)
+  private def httpClientProvider(openTelemetrySpan: Option[Span] = None): HttpClientProvider = {
+    val extension = HttpClientProviderImpl(system)
+    openTelemetrySpan match {
+      case None       => extension
+      case Some(span) => extension.withTraceContext(Context.current().`with`(span))
+    }
+  }
 
 }

@@ -15,6 +15,8 @@ import akka.platform.javasdk.spi.{ ComponentClients => RuntimeComponentClients }
 
 import scala.concurrent.ExecutionContext
 import akka.platform.javasdk.client.KeyValueEntityClient
+import akka.platform.javasdk.impl.MetadataImpl
+import io.opentelemetry.api.trace.Span
 
 /**
  * Note: new instance per call since it includes call metadata
@@ -22,12 +24,15 @@ import akka.platform.javasdk.client.KeyValueEntityClient
  * INTERNAL API
  */
 @InternalApi
-private[javasdk] final case class ComponentClientImpl(runtimeComponentClients: RuntimeComponentClients)(implicit
-    ec: ExecutionContext)
+private[javasdk] final case class ComponentClientImpl(
+    runtimeComponentClients: RuntimeComponentClients,
+    openTelemetrySpan: Option[Span])(implicit ec: ExecutionContext)
     extends ComponentClient {
 
-  // Volatile since the component client could be accessed in nested/composed futures
-  @volatile var callMetadata: Option[Metadata] = None
+  // Volatile since the component client could be accessed in nested/composed futures and is mutated by the reflective action router
+  @volatile var callMetadata: Option[Metadata] = openTelemetrySpan.map { span =>
+    MetadataImpl.Empty.withTracing(span)
+  }
 
   override def forAction(): ActionClient = ActionClientImpl(runtimeComponentClients.actionClient, callMetadata)
 
