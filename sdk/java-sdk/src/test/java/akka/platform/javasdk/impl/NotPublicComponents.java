@@ -13,7 +13,6 @@ import akka.platform.javasdk.eventsourcedentity.EventSourcedEntity;
 import akka.platform.javasdk.keyvalueentity.KeyValueEntity;
 import akka.platform.javasdk.view.View;
 import akka.platform.javasdk.workflow.Workflow;
-import akka.platform.spring.testmodels.Message;
 import akka.platform.spring.testmodels.keyvalueentity.User;
 import akka.platform.spring.testmodels.keyvalueentity.UserEntity;
 import akka.platform.spring.testmodels.workflow.StartWorkflow;
@@ -23,7 +22,7 @@ import akka.platform.spring.testmodels.workflow.WorkflowState;
 public class NotPublicComponents {
   @ComponentId("not-public")
   static class NotPublicConsumer extends Consumer {
-    public Effect<Message> message() {
+    public Effect message() {
       return effects().ignore();
     }
   }

@@ -14,15 +14,15 @@ import akka.platform.javasdk.eventsourcedentity.TestEventSourcedEntity;
 @Consume.FromEventSourcedEntity(value = TestEventSourcedEntity.class, ignoreUnknown = true)
 public class TestESSubscription extends Consumer {
 
-  public Effect<Integer> handleEvent2(TestESEvent.Event2 event) {
-    return effects().reply(event.newName());
+  public Effect handleEvent2(TestESEvent.Event2 event) {
+    return effects().produce(event.newName());
   }
 
-  public Effect<Boolean> handleEvent3(TestESEvent.Event3 event) {
-    return effects().reply(event.b());
+  public Effect handleEvent3(TestESEvent.Event3 event) {
+    return effects().produce(event.b());
   }
 
-  public Effect<String> handleEvent4(TestESEvent.Event4 event) {
-    return effects().reply(event.anotherString());
+  public Effect handleEvent4(TestESEvent.Event4 event) {
+    return effects().produce(event.anotherString());
   }
 }

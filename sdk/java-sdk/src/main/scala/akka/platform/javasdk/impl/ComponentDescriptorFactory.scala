@@ -92,10 +92,7 @@ private[impl] object ComponentDescriptorFactory {
 
   def hasConsumerOutput(javaMethod: Method): Boolean = {
     if (javaMethod.isPublic) {
-      javaMethod.getGenericReturnType match {
-        case p: ParameterizedType => p.getRawType.equals(classOf[Consumer.Effect[_]])
-        case _                    => false
-      }
+      javaMethod.getReturnType.isAssignableFrom(classOf[Consumer.Effect])
     } else {
       false
     }

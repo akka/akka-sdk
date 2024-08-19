@@ -43,7 +43,7 @@ public class UniqueEmailConsumer extends Consumer {
     this.config = config;
   }
 
-  public Effect<Done> onChange(UniqueEmail email) {
+  public Effect onChange(UniqueEmail email) {
 
     logger.info("Received update for address '{}'", email);
     var timerId = "timer-" + email.address();
@@ -64,16 +64,16 @@ public class UniqueEmailConsumer extends Consumer {
         delay,
         callToUnReserve);
 
-      return effects().asyncReply(timer.thenApply(__ -> Done.done()));
+      return effects().asyncProduce(timer.thenApply(__ -> Done.done()));
 
     } else if (email.isConfirmed()) {
       logger.info("Email is already confirmed, deleting timer (if exists) '{}'", timerId);
       var cancellation = timers().cancel(timerId);
-      return effects().asyncReply(cancellation.thenApply(__ -> Done.done()));
+      return effects().asyncProduce(cancellation.thenApply(__ -> Done.done()));
 
     } else {
       // Email is not reserved, so we don't need to do anything
-      return effects().reply(Done.done());
+      return effects().done();
     }
   }
 

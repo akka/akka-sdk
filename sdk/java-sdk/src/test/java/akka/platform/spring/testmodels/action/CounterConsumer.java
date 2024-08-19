@@ -7,7 +7,6 @@ package akka.platform.spring.testmodels.action;
 import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.annotations.Consume;
 import akka.platform.javasdk.consumer.Consumer;
-import akka.platform.spring.testmodels.Done;
 import akka.platform.spring.testmodels.keyvalueentity.Counter;
 import akka.platform.spring.testmodels.keyvalueentity.CounterState;
 import org.slf4j.Logger;
@@ -19,8 +18,8 @@ public class CounterConsumer extends Consumer {
   private Logger logger = LoggerFactory.getLogger(getClass());
 
   @Consume.FromKeyValueEntity(Counter.class)
-  public Effect<Done> changes(CounterState counterState) {
+  public Effect changes(CounterState counterState) {
     logger.info("Counter subscriber: counter id '{}' is '{}'", counterState.id, counterState.value);
-    return effects().reply(Done.instance);
+    return effects().done();
   }
 }

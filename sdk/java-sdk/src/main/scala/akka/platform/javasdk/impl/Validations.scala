@@ -193,7 +193,7 @@ object Validations {
 
   private def validateAction(component: Class[_]): Validation = {
     when[Action](component) {
-      commonSubscriptionValidation(component, m => hasActionOutput(m) || hasConsumerOutput(m)) ++
+      commonSubscriptionValidation(component, hasActionOutput) ++
       actionValidation(component) ++
       mustHaveNonEmptyComponentId(component)
     }
@@ -201,7 +201,7 @@ object Validations {
 
   private def validateConsumer(component: Class[_]): Validation = {
     when[Consumer](component) {
-      commonSubscriptionValidation(component, m => hasActionOutput(m) || hasConsumerOutput(m)) ++
+      commonSubscriptionValidation(component, hasConsumerOutput) ++
       actionValidation(component) ++
       mustHaveNonEmptyComponentId(component)
     }

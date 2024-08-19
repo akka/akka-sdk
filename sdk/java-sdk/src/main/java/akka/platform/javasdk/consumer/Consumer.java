@@ -4,6 +4,7 @@
 
 package akka.platform.javasdk.consumer;
 
+import akka.Done;
 import akka.platform.javasdk.Metadata;
 import akka.platform.javasdk.impl.consumer.ConsumerEffectImpl;
 import akka.platform.javasdk.impl.consumer.MessageContextImpl;
@@ -12,7 +13,6 @@ import akka.platform.javasdk.timer.TimerScheduler;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 
-//TODO stateless?
 /**
  *
  * Consumers are stateless components that can be used to implement different uses cases, such as:
@@ -80,65 +80,66 @@ public abstract class Consumer {
    *   <li>ignore the call
    * </ul>
    *
-   * @param <T> The type of the message that must be returned by this call.
    */
-  public interface Effect<T> {
+  public interface Effect {
 
     /**
      * Construct the effect that is returned by the message handler.
      */
     interface Builder {
-      /**
-       * Create a message reply.
-       *
-       * @param message The payload of the reply.
-       * @param <S>     The type of the message that must be returned by this call.
-       * @return A message reply.
-       */
-      <S> Effect<S> reply(S message);
 
       /**
-       * Create a message reply with custom Metadata.
+       * Mark message as processed.
+       */
+      Effect done();
+
+      /**
+       * Mark message as processed from an async operation result
+       */
+      Effect acyncDone(CompletionStage<Done> message);
+
+      /**
+       * Produce a message.
        *
-       * @param message  The payload of the reply.
+       * @param message The payload of the message.
+       * @param <S>     The type of the message.
+       */
+      <S> Effect produce(S message);
+
+      /**
+       * Produce a message with custom Metadata.
+       *
+       * @param message  The payload of the message.
        * @param metadata The metadata for the message.
-       * @param <S>      The type of the message that must be returned by this call.
-       * @return A message reply.
        */
-      <S> Effect<S> reply(S message, Metadata metadata);
+      <S> Effect produce(S message, Metadata metadata);
 
       /**
-       * Create a message reply from an async operation result.
+       * Produce a message from an async operation result.
        *
-       * @param message The future payload of the reply.
-       * @param <S>     The type of the message that must be returned by this call.
-       * @return A message reply.
+       * @param message The future payload of the message.
        */
-      <S> Effect<S> asyncReply(CompletionStage<S> message);
+      <S> Effect asyncProduce(CompletionStage<S> message);
 
       /**
-       * Create a message reply from an async operation result with custom Metadata.
+       * Produce a message from an async operation result with custom Metadata.
        *
-       * @param message The future payload of the reply.
-       * @param <S>     The type of the message that must be returned by this call.
+       * @param message The future payload of the message.
        * @param metadata The metadata for the message.
-       * @return A message reply.
        */
-      <S> Effect<S> asyncReply(CompletionStage<S> message, Metadata metadata);
+      <S> Effect asyncProduce(CompletionStage<S> message, Metadata metadata);
 
       /**
-       * Create a reply from an async operation result returning an effect.
+       * Create an async operation result returning an effect.
        *
-       * @param futureEffect The future effect to reply with.
-       * @param <S>          The type of the message that must be returned by this call.
-       * @return A reply, the actual type depends on the nested Effect.
+       * @param futureEffect The future effect.
        */
-      <S> Effect<S> asyncEffect(CompletionStage<Effect<S>> futureEffect);
+      Effect asyncEffect(CompletionStage<Effect> futureEffect);
 
       /**
        * Ignore the current message and proceed with processing the next message
        */
-      <S> Effect<S> ignore();
+      Effect ignore();
     }
   }
 }

@@ -16,12 +16,12 @@ import customer.domain.CustomerEvent.NameChanged;
 @Acl(allow = @Acl.Matcher(service = "*")) // <3>
 public class CustomerEventsService extends Consumer {
 
-  public Effect<CustomerPublicEvent> onEvent(CustomerEvent event) { // <4>
+  public Effect onEvent(CustomerEvent event) { // <4>
     return switch (event) {
       case CustomerCreated created -> effects()
-        .reply(new CustomerPublicEvent.Created(created.email(), created.name()));
+        .produce(new CustomerPublicEvent.Created(created.email(), created.name()));
       case NameChanged nameChanged -> effects()
-        .reply(new CustomerPublicEvent.NameChanged(nameChanged.newName()));
+        .produce(new CustomerPublicEvent.NameChanged(nameChanged.newName()));
       case CustomerEvent.AddressChanged __ -> effects().ignore(); // <5>
     };
   }

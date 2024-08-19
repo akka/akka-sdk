@@ -30,7 +30,7 @@ private[akka] class ReflectiveConsumerRouter[A <: Consumer](
         s"no matching method for '$commandName' on [${consumer.getClass}], existing are [${commandHandlers.keySet
           .mkString(", ")}]"))
 
-  override def handleUnary(commandName: String, message: MessageEnvelope[Any]): Consumer.Effect[_] = {
+  override def handleUnary(commandName: String, message: MessageEnvelope[Any]): Consumer.Effect = {
 
     val commandHandler = commandHandlerLookup(commandName)
 
@@ -60,7 +60,7 @@ private[akka] class ReflectiveConsumerRouter[A <: Consumer](
             }
           methodInvoker.invokeDirectly(consumer, decodedParameter.asInstanceOf[AnyRef])
         }
-      result.asInstanceOf[Consumer.Effect[_]]
+      result.asInstanceOf[Consumer.Effect]
     } else {
 
       val invocationContext =
@@ -78,11 +78,11 @@ private[akka] class ReflectiveConsumerRouter[A <: Consumer](
             case ProtobufEmptyTypeUrl =>
               invoker
                 .invoke(consumer)
-                .asInstanceOf[Consumer.Effect[_]]
+                .asInstanceOf[Consumer.Effect]
             case _ =>
               invoker
                 .invoke(consumer, invocationContext)
-                .asInstanceOf[Consumer.Effect[_]]
+                .asInstanceOf[Consumer.Effect]
           }
         case None if ignoreUnknown => ConsumerEffectImpl.Builder.ignore()
         case None =>

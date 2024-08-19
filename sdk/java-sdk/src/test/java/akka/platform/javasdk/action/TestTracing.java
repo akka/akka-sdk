@@ -18,9 +18,9 @@ public class TestTracing extends Consumer {
   Logger logger = LoggerFactory.getLogger(TestTracing.class);
 
   @Consume.FromEventSourcedEntity(value = TestEventSourcedEntity.class, ignoreUnknown = true)
-  public Effect<String> consume(TestESEvent.Event2 event) {
+  public Effect consume(TestESEvent.Event2 event) {
     logger.info("registering a logging event");
-    return effects().reply(
+    return effects().produce(
         messageContext().metadata().traceContext().traceParent().orElse("not-found"));
   }
 }

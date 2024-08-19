@@ -16,9 +16,9 @@ public class CounterJournalToTopicConsumer extends Consumer {
 
   @Consume.FromEventSourcedEntity(value = Counter.class) // <1>
   @Produce.ToTopic("counter-events") // <2>
-  public Effect<CounterEvent> onValueIncreased(CounterEvent event) { // <3>
+  public Effect onValueIncreased(CounterEvent event) { // <3>
     logger.info("Received event: {}, publishing to topic counter-events", event.toString());
-    return effects().reply(event); // <4>
+    return effects().produce(event); // <4>
   }
 }
 // end::class[]

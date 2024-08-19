@@ -28,10 +28,7 @@ abstract class ConsumerRouter[A <: Consumer](protected val consumer: A) {
    * @return
    *   A future of the message to return.
    */
-  final def handleUnary(
-      commandName: String,
-      message: MessageEnvelope[Any],
-      context: MessageContext): Consumer.Effect[_] =
+  final def handleUnary(commandName: String, message: MessageEnvelope[Any], context: MessageContext): Consumer.Effect =
     callWithContext(context) { () =>
       handleUnary(commandName, message)
     }
@@ -46,7 +43,7 @@ abstract class ConsumerRouter[A <: Consumer](protected val consumer: A) {
    * @return
    *   A future of the message to return.
    */
-  def handleUnary(commandName: String, message: MessageEnvelope[Any]): Consumer.Effect[_]
+  def handleUnary(commandName: String, message: MessageEnvelope[Any]): Consumer.Effect
 
   //TODO rethink this part
   private def callWithContext[T](context: MessageContext)(func: () => T) = {

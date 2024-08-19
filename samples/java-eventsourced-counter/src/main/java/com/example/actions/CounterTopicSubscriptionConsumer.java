@@ -14,14 +14,14 @@ public class CounterTopicSubscriptionConsumer extends Consumer {
 
   private Logger logger = LoggerFactory.getLogger(CounterTopicSubscriptionConsumer.class);
 
-  public Effect<Confirmed> onValueIncreased(ValueIncreased event) { // <2>
+  public Effect onValueIncreased(ValueIncreased event) { // <2>
     logger.info("Received increased event: " + event.toString());
-    return effects().reply(Confirmed.instance); // <3>
+    return effects().done(); // <3>
   }
 
-  public Effect<Confirmed> onValueMultiplied(ValueMultiplied event) { // <5>
+  public Effect onValueMultiplied(ValueMultiplied event) { // <5>
     logger.info("Received multiplied event: " + event.toString());
-    return effects().reply(Confirmed.instance); // <6>
+    return effects().done(); // <6>
   }
 }
 // end::class[]

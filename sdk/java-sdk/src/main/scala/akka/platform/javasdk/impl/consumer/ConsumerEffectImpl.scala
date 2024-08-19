@@ -10,47 +10,46 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.FutureConverters.CompletionStageOps
 
+import akka.Done
 import akka.platform.javasdk.Metadata
 import akka.platform.javasdk.consumer.Consumer
-import io.grpc.Status
 
 /** INTERNAL API */
 object ConsumerEffectImpl {
-  sealed abstract class PrimaryEffect[T] extends Consumer.Effect[T] {}
+  sealed abstract class PrimaryEffect extends Consumer.Effect {}
 
-  final case class ReplyEffect[T](msg: T, metadata: Option[Metadata]) extends PrimaryEffect[T] {
+  final case class ReplyEffect[T](msg: T, metadata: Option[Metadata]) extends PrimaryEffect {
     def isEmpty: Boolean = false
   }
 
-  final case class AsyncEffect[T](effect: Future[Consumer.Effect[T]]) extends PrimaryEffect[T] {
+  final case class AsyncEffect(effect: Future[Consumer.Effect]) extends PrimaryEffect {
     def isEmpty: Boolean = false
   }
 
-  final case class ErrorEffect[T](description: String, statusCode: Option[Status.Code]) extends PrimaryEffect[T] {
-    def isEmpty: Boolean = false
-  }
-
-  def IgnoreEffect[T](): PrimaryEffect[T] = IgnoreEffect.asInstanceOf[PrimaryEffect[T]]
-  case object IgnoreEffect extends PrimaryEffect[Nothing] {
+  case object IgnoreEffect extends PrimaryEffect {
     def isEmpty: Boolean = true
   }
 
   object Builder extends Consumer.Effect.Builder {
-    def reply[S](message: S): Consumer.Effect[S] = ReplyEffect(message, None)
+    def produce[S](message: S): Consumer.Effect = ReplyEffect(message, None)
 
-    def reply[S](message: S, metadata: Metadata): Consumer.Effect[S] =
+    def produce[S](message: S, metadata: Metadata): Consumer.Effect =
       ReplyEffect(message, Some(metadata))
 
-    def error[S](description: String): Consumer.Effect[S] = ErrorEffect(description, None)
-
-    def asyncReply[S](futureMessage: CompletionStage[S]): Consumer.Effect[S] =
-      asyncReply(futureMessage, Metadata.EMPTY)
-    def asyncReply[S](futureMessage: CompletionStage[S], metadata: Metadata): Consumer.Effect[S] =
-      AsyncEffect(futureMessage.asScala.map(s => Builder.reply[S](s, metadata))(ExecutionContext.parasitic))
-    def asyncEffect[S](futureEffect: CompletionStage[Consumer.Effect[S]]): Consumer.Effect[S] =
+    def asyncProduce[S](futureMessage: CompletionStage[S]): Consumer.Effect =
+      asyncProduce(futureMessage, Metadata.EMPTY)
+    def asyncProduce[S](futureMessage: CompletionStage[S], metadata: Metadata): Consumer.Effect =
+      AsyncEffect(futureMessage.asScala.map(s => Builder.produce[S](s, metadata))(ExecutionContext.parasitic))
+    def asyncEffect(futureEffect: CompletionStage[Consumer.Effect]): Consumer.Effect =
       AsyncEffect(futureEffect.asScala)
-    def ignore[S](): Consumer.Effect[S] =
-      IgnoreEffect()
+    def ignore(): Consumer.Effect =
+      IgnoreEffect
+
+    override def done(): Consumer.Effect =
+      ReplyEffect(Done, None)
+
+    override def acyncDone(futureMessage: CompletionStage[Done]): Consumer.Effect =
+      AsyncEffect(futureMessage.asScala.map(done => Builder.produce(done))(ExecutionContext.parasitic))
   }
 
   def builder(): Consumer.Effect.Builder = Builder

@@ -18,11 +18,11 @@ public class CounterJournalToTopicWithMetaConsumer extends Consumer {
 
   @Consume.FromEventSourcedEntity(value = Counter.class)
   @Produce.ToTopic("counter-events-with-meta")
-  public Effect<CounterEvent> onValueIncreased(CounterEvent event) {
+  public Effect onValueIncreased(CounterEvent event) {
     String counterId = messageContext().metadata().get("ce-subject").orElseThrow(); // <1>
     Metadata metadata = Metadata.EMPTY.add("ce-subject", counterId);
     logger.info("Received event for counter id {}: {}", counterId, event);
-    return effects().reply(event, metadata); // <2>
+    return effects().produce(event, metadata); // <2>
   }
 }
 // end::class[]

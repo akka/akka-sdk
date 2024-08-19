@@ -30,7 +30,7 @@ public class GetRandomNameConsumer extends Consumer {
     this.componentClient = componentClient;
   }
 
-  public Effect<String> handleAdd(UserEvent.UserAdded userAdded) {
+  public Effect handleAdd(UserEvent.UserAdded userAdded) {
     if (messageContext().eventSubject().isPresent()) {
       var randomNameFut = getRandomNameAsync().thenCompose(name ->
         componentClient
@@ -38,7 +38,7 @@ public class GetRandomNameConsumer extends Consumer {
           .method(UserEntity::updateName)
           .invokeAsync(new UserEntity.UserCmd.UpdateNameCmd(name)));
 
-      return effects().asyncReply(randomNameFut);
+      return effects().asyncProduce(randomNameFut);
     } else {
       return effects().ignore();
     }

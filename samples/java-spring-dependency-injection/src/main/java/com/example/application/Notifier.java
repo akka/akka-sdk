@@ -22,10 +22,10 @@ public class Notifier extends Consumer {
     this.emailComposer = emailComposer1;
   }
 
-  public Effect<Done> onIncrease(ValueIncreased event) {
+  public Effect onIncrease(ValueIncreased event) {
     String counterId = messageContext().eventSubject().orElseThrow();
     logger.info("Received increased event: {} (msg ce id {})", event.toString(), counterId);
-    return effects().asyncReply(
+    return effects().asyncProduce(
       emailComposer.composeEmail(counterId).thenCompose(
         emailSender::send));
   }

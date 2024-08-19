@@ -577,7 +577,7 @@ class ActionDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSu
 
         val methodDescriptor = findMethodByName(desc, "Produce")
         methodDescriptor.getInputType.getFullName shouldBe JavaPbAny.getDescriptor.getFullName
-        methodDescriptor.getOutputType.getFullName shouldBe BytesValue.getDescriptor.getFullName
+        methodDescriptor.getOutputType.getFullName shouldBe JavaPbAny.getDescriptor.getFullName
       }
     }
 

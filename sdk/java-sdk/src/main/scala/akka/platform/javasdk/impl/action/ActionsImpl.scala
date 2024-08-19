@@ -179,7 +179,7 @@ private[akka] final class ActionsImpl(_system: ActorSystem, services: Map[String
   private def consumerEffectToResponse(
       service: ConsumerService,
       command: ActionCommand,
-      effect: Consumer.Effect[_],
+      effect: Consumer.Effect,
       messageCodec: MessageCodec): Future[ActionResponse] = {
     import akka.platform.javasdk.impl.consumer.ConsumerEffectImpl._
     effect match {
@@ -193,11 +193,6 @@ private[akka] final class ActionsImpl(_system: ActorSystem, services: Map[String
           .recover { case NonFatal(ex) =>
             handleUnexpectedExceptionInConsumer(service, command, ex)
           }
-      case ErrorEffect(description, status) =>
-        Future.successful(
-          ActionResponse(
-            ActionResponse.Response.Failure(
-              Failure(description = description, grpcStatusCode = status.map(_.value()).getOrElse(0)))))
       case IgnoreEffect =>
         Future.successful(ActionResponse(ActionResponse.Response.Empty))
       case unknown =>

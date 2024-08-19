@@ -26,21 +26,21 @@ public class CounterCommandFromTopicConsumer extends Consumer {
 
   private Logger logger = LoggerFactory.getLogger(CounterCommandFromTopicConsumer.class);
 
-  public Effect<String> onValueIncreased(IncreaseCounter increase) {
+  public Effect onValueIncreased(IncreaseCounter increase) {
     logger.info("Received increase event: {}", increase.toString());
     var increaseReply =
       componentClient.forEventSourcedEntity(increase.counterId)
         .method(Counter::increase)
         .invokeAsync(increase.value);
-    return effects().asyncReply(increaseReply);
+    return effects().asyncProduce(increaseReply);
   }
 
-  public Effect<String> onValueMultiplied(MultiplyCounter multiply) {
+  public Effect onValueMultiplied(MultiplyCounter multiply) {
     logger.info("Received multiply event: {}", multiply.toString());
     var increaseReply =
       componentClient.forEventSourcedEntity(multiply.counterId)
         .method(Counter::multiply)
         .invokeAsync(multiply.value);
-    return effects().asyncReply(increaseReply);
+    return effects().asyncProduce(increaseReply);
   }
 }

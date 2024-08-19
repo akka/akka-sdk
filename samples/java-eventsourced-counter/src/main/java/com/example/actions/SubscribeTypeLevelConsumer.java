@@ -14,9 +14,9 @@ public class SubscribeTypeLevelConsumer extends Consumer {
 
   private Logger logger = LoggerFactory.getLogger(SubscribeTypeLevelConsumer.class);
 
-  public Effect<Confirmed> onIncrease(ValueIncreased event) { // <2>
+  public Effect onIncrease(ValueIncreased event) { // <2>
     logger.info("Received increased event: {} (msg ce id {})", event.toString(), messageContext().metadata().asCloudEvent().id());
-    return effects().reply(Confirmed.instance); // <3>
+    return effects().done(); // <3>
   }
 }
 // end::class[]
