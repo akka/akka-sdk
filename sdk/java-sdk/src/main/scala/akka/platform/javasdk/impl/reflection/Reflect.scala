@@ -21,7 +21,6 @@ import akka.platform.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.platform.javasdk.impl.client.ComponentClientImpl
 import akka.platform.javasdk.keyvalueentity.KeyValueEntity
 import akka.platform.javasdk.view.View
-import akka.platform.javasdk.workflow.AbstractWorkflow
 import akka.platform.javasdk.workflow.Workflow
 
 /**
@@ -60,7 +59,7 @@ object Reflect {
     classOf[KeyValueEntity[_]].isAssignableFrom(cls)
 
   def isWorkflow(cls: Class[_]): Boolean =
-    classOf[AbstractWorkflow[_]].isAssignableFrom(cls)
+    classOf[Workflow[_]].isAssignableFrom(cls)
 
   def isView(cls: Class[_]): Boolean = isMultiTableView(cls) || extendsView(cls)
 

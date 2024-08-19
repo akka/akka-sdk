@@ -27,7 +27,7 @@ import akka.platform.javasdk.impl.reflection.Reflect
 import akka.platform.javasdk.spi.{ ActionClient => RuntimeActionClient }
 import akka.platform.javasdk.spi.{ EntityClient => RuntimeEntityClient }
 import akka.platform.javasdk.spi.{ ViewClient => RuntimeViewClient }
-import akka.platform.javasdk.workflow.AbstractWorkflow
+import akka.platform.javasdk.workflow.Workflow
 import scala.concurrent.ExecutionContext
 import scala.jdk.FutureConverters.FutureOps
 import scala.util.Failure
@@ -170,14 +170,13 @@ private[javasdk] final case class WorkflowClientImpl(
     entityClient: RuntimeEntityClient,
     callMetadata: Option[Metadata],
     entityId: String)(implicit val executionContext: ExecutionContext)
-    extends EntityClientImpl(classOf[AbstractWorkflow[_]], WorkflowType, entityClient, callMetadata, entityId)
+    extends EntityClientImpl(classOf[Workflow[_]], WorkflowType, entityClient, callMetadata, entityId)
     with WorkflowClient {
 
-  override def method[T, R](methodRef: function.Function[T, AbstractWorkflow.Effect[R]]): ComponentMethodRef[R] =
+  override def method[T, R](methodRef: function.Function[T, Workflow.Effect[R]]): ComponentMethodRef[R] =
     createMethodRef(methodRef)
 
-  override def method[T, A1, R](
-      methodRef: function.Function2[T, A1, AbstractWorkflow.Effect[R]]): ComponentMethodRef1[A1, R] =
+  override def method[T, A1, R](methodRef: function.Function2[T, A1, Workflow.Effect[R]]): ComponentMethodRef1[A1, R] =
     createMethodRef2(methodRef)
 }
 

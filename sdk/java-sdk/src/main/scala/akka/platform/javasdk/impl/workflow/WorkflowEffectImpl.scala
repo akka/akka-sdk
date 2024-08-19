@@ -18,10 +18,10 @@ import akka.platform.javasdk.impl.workflow.WorkflowEffectImpl.StepTransition
 import akka.platform.javasdk.impl.workflow.WorkflowEffectImpl.Transition
 import akka.platform.javasdk.impl.workflow.WorkflowEffectImpl.TransitionalEffectImpl
 import akka.platform.javasdk.impl.workflow.WorkflowEffectImpl.UpdateState
-import akka.platform.javasdk.workflow.AbstractWorkflow.Effect
-import akka.platform.javasdk.workflow.AbstractWorkflow.Effect.Builder
-import akka.platform.javasdk.workflow.AbstractWorkflow.Effect.PersistenceEffectBuilder
-import akka.platform.javasdk.workflow.AbstractWorkflow.Effect.TransitionalEffect
+import akka.platform.javasdk.workflow.Workflow.Effect
+import akka.platform.javasdk.workflow.Workflow.Effect.Builder
+import akka.platform.javasdk.workflow.Workflow.Effect.PersistenceEffectBuilder
+import akka.platform.javasdk.workflow.Workflow.Effect.TransitionalEffect
 
 object WorkflowEffectImpl {
 

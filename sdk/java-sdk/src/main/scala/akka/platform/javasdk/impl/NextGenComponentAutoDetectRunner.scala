@@ -67,9 +67,8 @@ import akka.platform.javasdk.view.ReflectiveViewProvider
 import akka.platform.javasdk.view.View
 import akka.platform.javasdk.view.ViewContext
 import akka.platform.javasdk.view.ViewProvider
-import akka.platform.javasdk.workflow.AbstractWorkflow
-import akka.platform.javasdk.workflow.ReflectiveWorkflowProvider
 import akka.platform.javasdk.workflow.Workflow
+import akka.platform.javasdk.workflow.ReflectiveWorkflowProvider
 import akka.platform.javasdk.workflow.WorkflowContext
 import akka.platform.javasdk.workflow.WorkflowProvider
 import com.typesafe.config.Config
@@ -425,9 +424,9 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
           .getSteps
           .asScala
           .flatMap {
-            case asyncCallStep: AbstractWorkflow.AsyncCallStep[_, _, _] =>
+            case asyncCallStep: Workflow.AsyncCallStep[_, _, _] =>
               List(asyncCallStep.callInputClass, asyncCallStep.transitionInputClass)
-            case callStep: AbstractWorkflow.CallStep[_, _, _, _] =>
+            case callStep: Workflow.CallStep[_, _, _, _] =>
               List(callStep.callInputClass, callStep.transitionInputClass)
           }
           .foreach(messageCodec.registerTypeHints)

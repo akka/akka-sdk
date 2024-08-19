@@ -47,8 +47,8 @@ import akka.platform.javasdk.impl.workflow.WorkflowEffectImpl.TransitionalEffect
 import akka.platform.javasdk.impl.workflow.WorkflowEffectImpl.UpdateState
 import akka.platform.javasdk.impl.workflow.WorkflowRouter.CommandResult
 import akka.platform.javasdk.spi.TimerClient
-import akka.platform.javasdk.workflow.AbstractWorkflow
-import akka.platform.javasdk.workflow.AbstractWorkflow.WorkflowDef
+import akka.platform.javasdk.workflow.Workflow
+import akka.platform.javasdk.workflow.Workflow.WorkflowDef
 import akka.platform.javasdk.workflow.CommandContext
 import akka.platform.javasdk.workflow.WorkflowContext
 import akka.platform.javasdk.workflow.WorkflowOptions
@@ -155,7 +155,7 @@ final class WorkflowImpl(system: ActorSystem, val services: Map[String, Workflow
       .async
 
   private def toRecoverStrategy(messageCodec: MessageCodec)(
-      recoverStrategy: AbstractWorkflow.RecoverStrategy[_]): RecoverStrategy = {
+      recoverStrategy: Workflow.RecoverStrategy[_]): RecoverStrategy = {
     RecoverStrategy(
       maxRetries = recoverStrategy.maxRetries,
       failoverTo = Some(
@@ -167,7 +167,7 @@ final class WorkflowImpl(system: ActorSystem, val services: Map[String, Workflow
   private def toStepConfig(
       name: String,
       timeout: Optional[java.time.Duration],
-      recoverStrategy: Option[AbstractWorkflow.RecoverStrategy[_]],
+      recoverStrategy: Option[Workflow.RecoverStrategy[_]],
       messageCodec: MessageCodec) = {
     val stepTimeout = timeout.toScala.map(duration.Duration(_))
     val stepRecoverStrategy = recoverStrategy.map(toRecoverStrategy(messageCodec))
@@ -215,7 +215,7 @@ final class WorkflowImpl(system: ActorSystem, val services: Map[String, Workflow
       case None => // no initial state
     }
 
-    def toProtoEffect(effect: AbstractWorkflow.Effect[_], commandId: Long, errorCode: Option[Status.Code]) = {
+    def toProtoEffect(effect: Workflow.Effect[_], commandId: Long, errorCode: Option[Status.Code]) = {
 
       def effectMessage[R](persistence: Persistence[_], transition: WorkflowEffectImpl.Transition, reply: Reply[R]) = {
 

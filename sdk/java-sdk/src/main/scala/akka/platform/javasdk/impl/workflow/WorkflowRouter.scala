@@ -28,11 +28,11 @@ import akka.platform.javasdk.impl.workflow.WorkflowRouter.CommandResult
 import akka.platform.javasdk.impl.workflow.WorkflowRouter.WorkflowStepNotFound
 import akka.platform.javasdk.impl.workflow.WorkflowRouter.WorkflowStepNotSupported
 import akka.platform.javasdk.timer.TimerScheduler
-import akka.platform.javasdk.workflow.AbstractWorkflow
-import akka.platform.javasdk.workflow.AbstractWorkflow.AsyncCallStep
-import akka.platform.javasdk.workflow.AbstractWorkflow.CallStep
-import akka.platform.javasdk.workflow.AbstractWorkflow.Effect
-import akka.platform.javasdk.workflow.AbstractWorkflow.WorkflowDef
+import akka.platform.javasdk.workflow.Workflow
+import akka.platform.javasdk.workflow.Workflow.AsyncCallStep
+import akka.platform.javasdk.workflow.Workflow.CallStep
+import akka.platform.javasdk.workflow.Workflow.Effect
+import akka.platform.javasdk.workflow.Workflow.WorkflowDef
 import akka.platform.javasdk.workflow.CommandContext
 import kalix.protocol.workflow_entity.StepExecuted
 import kalix.protocol.workflow_entity.StepExecutionFailed
@@ -40,7 +40,7 @@ import kalix.protocol.workflow_entity.StepResponse
 import org.slf4j.LoggerFactory
 
 object WorkflowRouter {
-  final case class CommandResult(effect: AbstractWorkflow.Effect[_])
+  final case class CommandResult(effect: Workflow.Effect[_])
 
   final case class CommandHandlerNotFound(commandName: String) extends RuntimeException {
     override def getMessage: String = commandName
@@ -54,7 +54,7 @@ object WorkflowRouter {
   }
 }
 
-abstract class WorkflowRouter[S, W <: AbstractWorkflow[S]](protected val workflow: W) {
+abstract class WorkflowRouter[S, W <: Workflow[S]](protected val workflow: W) {
 
   private var state: Option[S] = None
   private var workflowFinished: Boolean = false
@@ -110,11 +110,7 @@ abstract class WorkflowRouter[S, W <: AbstractWorkflow[S]](protected val workflo
     CommandResult(commandEffect)
   }
 
-  protected def handleCommand(
-      commandName: String,
-      state: S,
-      command: Any,
-      context: CommandContext): AbstractWorkflow.Effect[_]
+  protected def handleCommand(commandName: String, state: S, command: Any, context: CommandContext): Workflow.Effect[_]
 
   // in same cases, the Proxy may send a message with typeUrl set to object.
   // if that's the case, we need to patch the message using the typeUrl from the expected input class

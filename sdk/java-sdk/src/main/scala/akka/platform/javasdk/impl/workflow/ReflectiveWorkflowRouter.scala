@@ -8,10 +8,8 @@ import com.google.protobuf.any.{ Any => ScalaPbAny }
 import akka.platform.javasdk.JsonSupport
 import akka.platform.javasdk.impl.CommandHandler
 import akka.platform.javasdk.impl.InvocationContext
-import akka.platform.javasdk.impl.workflow.WorkflowRouter
-import akka.platform.javasdk.workflow.AbstractWorkflow
-import akka.platform.javasdk.workflow.CommandContext
 import akka.platform.javasdk.workflow.Workflow
+import akka.platform.javasdk.workflow.CommandContext
 
 import scala.util.control.NonFatal
 
@@ -29,7 +27,7 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
       commandName: String,
       state: S,
       command: Any,
-      commandContext: CommandContext): AbstractWorkflow.Effect[_] = {
+      commandContext: CommandContext): Workflow.Effect[_] = {
 
     workflow._internalSetCurrentState(state)
     val commandHandler = commandHandlerLookup(commandName)
@@ -58,7 +56,7 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
             }
           methodInvoker.invokeDirectly(workflow, decodedParameter.asInstanceOf[AnyRef])
         }
-      result.asInstanceOf[AbstractWorkflow.Effect[_]]
+      result.asInstanceOf[Workflow.Effect[_]]
     } else {
 
       val invocationContext =
@@ -72,7 +70,7 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
       commandHandler
         .getInvoker(inputTypeUrl)
         .invoke(workflow, invocationContext)
-        .asInstanceOf[AbstractWorkflow.Effect[_]]
+        .asInstanceOf[Workflow.Effect[_]]
     }
   }
 }

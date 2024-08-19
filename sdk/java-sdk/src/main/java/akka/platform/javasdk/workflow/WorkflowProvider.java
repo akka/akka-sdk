@@ -10,7 +10,7 @@ import akka.platform.javasdk.impl.workflow.WorkflowRouter;
 
 import java.util.Optional;
 
-public interface WorkflowProvider<S, W extends AbstractWorkflow<S>> {
+public interface WorkflowProvider<S, W extends Workflow<S>> {
 
   String typeId();
 

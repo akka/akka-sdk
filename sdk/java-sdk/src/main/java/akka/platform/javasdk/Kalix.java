@@ -29,7 +29,7 @@ import akka.platform.javasdk.keyvalueentity.KeyValueEntityOptions;
 import akka.platform.javasdk.keyvalueentity.KeyValueEntityProvider;
 import akka.platform.javasdk.view.ViewOptions;
 import akka.platform.javasdk.view.ViewProvider;
-import akka.platform.javasdk.workflow.AbstractWorkflow;
+import akka.platform.javasdk.workflow.Workflow;
 import akka.platform.javasdk.workflow.WorkflowOptions;
 import akka.platform.javasdk.workflow.WorkflowProvider;
 import org.slf4j.Logger;
@@ -431,7 +431,7 @@ public final class Kalix {
   }
 
 
-  public <S, W extends AbstractWorkflow<S>> Kalix register(WorkflowProvider<S, W> provider) {
+  public <S, W extends Workflow<S>> Kalix register(WorkflowProvider<S, W> provider) {
     return provider
       .alternativeCodec()
       .map(
