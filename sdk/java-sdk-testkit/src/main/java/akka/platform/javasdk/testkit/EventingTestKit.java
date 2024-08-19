@@ -5,7 +5,6 @@
 package akka.platform.javasdk.testkit;
 
 import akka.actor.ActorSystem;
-import akka.annotation.ApiMayChange;
 import akka.annotation.InternalApi;
 import com.google.protobuf.ByteString;
 import akka.platform.javasdk.Metadata;
@@ -198,7 +197,6 @@ public interface EventingTestKit {
     List<Message<?>> clear();
   }
 
-  @ApiMayChange
   class MessageBuilder {
     private final MessageCodec messageCodec;
 
@@ -232,7 +230,6 @@ public interface EventingTestKit {
     }
   }
 
-  @ApiMayChange
   interface Message<P> {
     P getPayload();
 

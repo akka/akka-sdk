@@ -4,7 +4,6 @@
 
 package akka.platform.javasdk.view;
 
-import akka.annotation.ApiMayChange;
 import akka.platform.javasdk.impl.view.ViewEffectImpl;
 
 import java.util.Optional;
@@ -70,7 +69,6 @@ public abstract class View<S> {
    *
    * @throws IllegalStateException if accessed outside a handler method
    */
-  @ApiMayChange
   protected final S viewState() {
     // user may call this method inside a command handler and get a null because it's legal
     // to have emptyState set to null.

@@ -4,7 +4,6 @@
 
 package akka.platform.javasdk.keyvalueentity;
 
-import akka.annotation.ApiMayChange;
 import akka.platform.javasdk.Metadata;
 import akka.platform.javasdk.impl.keyvalueentity.KeyValueEntityEffectImpl;
 
@@ -87,7 +86,6 @@ public abstract class KeyValueEntity<S> {
    *
    * @throws IllegalStateException if accessed outside a handler method
    */
-  @ApiMayChange
   protected final S currentState() {
     // user may call this method inside a command handler and get a null because it's legal
     // to have emptyState set to null.

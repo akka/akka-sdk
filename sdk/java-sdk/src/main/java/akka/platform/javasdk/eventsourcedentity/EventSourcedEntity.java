@@ -4,7 +4,6 @@
 
 package akka.platform.javasdk.eventsourcedentity;
 
-import akka.annotation.ApiMayChange;
 import akka.platform.javasdk.Metadata;
 import akka.platform.javasdk.impl.eventsourcedentity.EventSourcedEntityEffectImpl;
 
@@ -161,7 +160,6 @@ public abstract class EventSourcedEntity<S, E> {
    *
    * @throws IllegalStateException if accessed outside a handler method
    */
-  @ApiMayChange
   protected final S currentState() {
     // user may call this method inside a command handler and get a null because it's legal
     // to have emptyState set to null.

@@ -4,7 +4,6 @@
 
 package akka.platform.javasdk.workflow;
 
-import akka.annotation.ApiMayChange;
 import akka.platform.javasdk.DeferredCall;
 
 import java.util.concurrent.CompletionStage;
@@ -38,7 +37,6 @@ public class StepBuilder {
    * @param <Output>       Output of async call.
    * @return Step builder.
    */
-  @ApiMayChange
   public <Input, Output> AsyncCallStepBuilder<Input, Output> asyncCall(Class<Input> callInputClass, Function<Input, CompletionStage<Output>> callFactory) {
     return new AsyncCallStepBuilder<>(name, callInputClass, callFactory);
   }
@@ -57,7 +55,6 @@ public class StepBuilder {
    * @param <Output>     Output of async call.
    * @return Step builder.
    */
-  @ApiMayChange
   public <Output> AsyncCallStepBuilder<Void, Output> asyncCall(Supplier<CompletionStage<Output>> callSupplier) {
     return new AsyncCallStepBuilder<>(name, Void.class, (Void v) -> callSupplier.get());
   }
@@ -92,7 +89,6 @@ public class StepBuilder {
      * @param transitionFunc       Function that transform the action result to a {@link Workflow.Effect.TransitionalEffect}
      * @return CallStep
      */
-    @ApiMayChange
     public Workflow.CallStep<Input, DefCallInput, DefCallOutput, ?> andThen(Class<DefCallOutput> transitionInputClass, Function<DefCallOutput, Workflow.Effect.TransitionalEffect<Void>> transitionFunc) {
       return new Workflow.CallStep<>(name, callInputClass, callFunc, transitionInputClass, transitionFunc);
     }
@@ -126,7 +122,6 @@ public class StepBuilder {
      * @param transitionFunc       Function that transform the action result to a {@link Workflow.Effect.TransitionalEffect}
      * @return AsyncCallStep
      */
-    @ApiMayChange
     public Workflow.AsyncCallStep<CallInput, CallOutput, ?> andThen(Class<CallOutput> transitionInputClass, Function<CallOutput, Workflow.Effect.TransitionalEffect<Void>> transitionFunc) {
       return new Workflow.AsyncCallStep<>(name, callInputClass, callFunc, transitionInputClass, transitionFunc);
     }
