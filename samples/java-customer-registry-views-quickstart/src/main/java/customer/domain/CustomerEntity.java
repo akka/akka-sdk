@@ -1,7 +1,5 @@
-package customer.api;
+package customer.domain;
 
-import customer.domain.Address;
-import customer.domain.Customer;
 import akka.platform.javasdk.keyvalueentity.KeyValueEntity;
 import akka.platform.javasdk.annotations.ComponentId;
 

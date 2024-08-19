@@ -3,6 +3,7 @@ package customer.api;
 
 import customer.domain.Address;
 import customer.domain.Customer;
+import customer.domain.CustomerEntity;
 import customer.view.CustomerByEmailView;
 import customer.view.CustomersByNameView;
 import akka.platform.spring.testkit.KalixIntegrationTestKitSupport;

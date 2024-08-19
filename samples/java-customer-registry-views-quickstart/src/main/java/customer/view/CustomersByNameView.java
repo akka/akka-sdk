@@ -1,11 +1,10 @@
 package customer.view;
 
 // tag::class[]
-import customer.api.CustomerEntity;
+import customer.domain.CustomerEntity;
 import customer.domain.Customer;
 import akka.platform.javasdk.annotations.Query;
 import akka.platform.javasdk.annotations.Consume;
-import akka.platform.javasdk.annotations.Table;
 import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.view.View;
 

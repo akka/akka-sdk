@@ -34,65 +34,53 @@ This command will start your Kalix service and a companion Kalix Runtime.
 
 With your Kalix service running, any defined endpoints should be available at `http://localhost:9000`.
 
-FIXME update for spring
-
-* Create a customer with:
+* Create a customer via the endpoint with:
 
 ```shell
-curl localhost:9000/akka/v1.0/entity/customer/one/create \
+curl localhost:9000/customer \
   --header "Content-Type: application/json" \
   -XPOST \
   --data '{"customerId":"one","email":"test@example.com","name":"Test Testsson","address":{"street":"Teststreet 25","city":"Testcity"}}'
 ```
-
 * Retrieve the customer:
 
 ```shell
-curl localhost:9000/akka/v1.0/entity/customer/one/getCustomer
+curl localhost:9000/customer/one
 ```
 
 * Query by email:
 
 ```shell
-curl localhost:9000/akka/v1.0/view/view_customers_by_email/getCustomer \
-  --header "Content-Type: application/json" \
-  -XPOST \
-  --data '{"email":"test@example.com"}'
+curl localhost:9000/customer/by-email/test@example.com
 ```
 
 * Query by name:
 
 ```shell
-curl localhost:9000/akka/v1.0/view/view_customers_by_name/getCustomers \
-  --header "Content-Type: application/json" \
-  -XPOST  \
-  --data '{"name":"Test Testsson"}'
+curl localhost:9000/customer/by-name/Test%20Testsson
 ```
 
 * Change name:
 
 ```shell
-curl localhost:9000/akka/v1.0/entity/customer/one/changeName \
+curl localhost:9000/customer/one/name \
   --header "Content-Type: application/json" \
-  -XPOST \
+  -XPUT \
   --data '"Jan Janssen"'
 ```
 
 * Query by name again
 ```shell
-curl localhost:9000/akka/v1.0/view/view_customers_by_name/getCustomers \
-  --header "Content-Type: application/json" \
-  -XPOST  \
-  --data '{"name":"Jan Janssen"}'
+curl localhost:9000/customer/by-name/Jan%20Janssen
 ```
 
 * Change address:
 
 ```shell
-curl localhost:9000/akka/v1.0/entity/customer/one/changeAddress \
+curl localhost:9000/customer/one/address \
   --header "Content-Type: application/json" \
-  -XPOST \
-  --data '{"street":"Newstreet 25","city":"Newcity"}'
+  -XPUT \
+  --data '{"street":"Newstreet 25","city":"Newcity"}'  
 ```
 
 ## Deploying

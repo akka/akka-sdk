@@ -2,11 +2,10 @@ package customer.view;
 
 // tag::class[]
 import customer.domain.Customer;
-import customer.api.CustomerEntity;
+import customer.domain.CustomerEntity;
 import akka.platform.javasdk.view.View;
 import akka.platform.javasdk.annotations.Query;
 import akka.platform.javasdk.annotations.Consume;
-import akka.platform.javasdk.annotations.Table;
 import akka.platform.javasdk.annotations.ComponentId;
 
 @ComponentId("view_customers_by_email") // <1>
