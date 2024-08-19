@@ -25,14 +25,14 @@ When running a Kalix service locally, we need to have its companion Kalix Runtim
 To start your service locally, run:
 
 ```shell
-mvn kalix:runAll
+mvn compile exec:java
 ```
 
-This command will start your Kalix service and a companion Kalix Runtime as configured in [docker-compose.yml](./docker-compose.yml) file.
+This command will start your Kalix service and a companion Kalix Runtime.
 
 ## Exercise the service
 
-With both the Kalix Runtime and your service running, any defined endpoints should be available at `http://localhost:9000`, the proxy local address.
+With your Kalix service running, any defined endpoints should be available at `http://localhost:9000`, the proxy local address.
 
 ```shell
 curl -XPOST -H "Content-Type: application/json" localhost:9000/akka/v1.0/entity/counter/foo/increaseBy -d '{ "value": 10 }'

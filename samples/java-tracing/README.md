@@ -26,14 +26,14 @@ When running a Kalix service locally, we need to have its companion Kalix Runtim
 To start your service locally, run:
 
 ```shell
-mvn kalix:runAll
+mvn compile exec:java
 ```
 
-This command will start your Kalix service, a companion Kalix Runtime and Jaeger as configured in [docker-compose.yml](./docker-compose.yml) file.
+This command will start your Kalix service, a companion Kalix Runtime and Jaeger.
 
 ## Exercising the service
 
-With both the Kalix Runtime and your service running, any defined endpoints should be available at `http://localhost:9000`.
+With your Kalix service running, any defined endpoints should be available at `http://localhost:9000`.
 
 - Add a new user
 

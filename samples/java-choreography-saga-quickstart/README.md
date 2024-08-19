@@ -96,10 +96,10 @@ This example demonstrates how to implement a **Choreography Saga** in Kalix. It 
 To start your service locally, run:
 
 ```shell
-mvn kalix:runAll -Demail.confirmation.timeout=10s
+mvn compile exec:java -Demail.confirmation.timeout=10s
 ```
 
-This command will start your Kalix service and a companion Kalix Runtime as configured in [docker-compose.yml](./docker-compose.yml) file.
+This command will start your Kalix service and a companion Kalix Runtime.
 
 The `email.confirmation.timeout` setting is used to configure the timer to fire after 10 seconds. In other words, if 
 the email is not confirmed within this time, it will be released. The default value for this setting is 2 hours (see the `src/resources/application.conf` file). For demo purposes, it's convenient to set it to a few seconds so we don't have to wait.

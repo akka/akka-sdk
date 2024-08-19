@@ -21,7 +21,7 @@ First start the `java-eventsourced-customer-registry` service and proxy. It will
 To start your service locally, run:
 
 ```shell
-mvn kalix:runAll
+mvn compile exec:java
 ```
 
 ### Create a customer

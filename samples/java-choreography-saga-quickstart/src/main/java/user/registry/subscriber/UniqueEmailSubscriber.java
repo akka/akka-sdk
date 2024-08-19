@@ -51,7 +51,7 @@ public class UniqueEmailSubscriber extends Action {
     if (email.isReserved()) {
       // by default the timer will fire after 2h (see settings in src/resources/application.conf)
       // but we can override these settings using a -D argument
-      // for example, calling: mvn kalix:runAll -Demail.confirmation.timeout=10s will make the timer fire after 10 seconds
+      // for example, calling: mvn compile exec:java -Demail.confirmation.timeout=10s will make the timer fire after 10 seconds
       Duration delay = config.getDuration("email.confirmation.timeout");
       logger.info("Email is not confirmed, scheduling timer '{}' to fire in '{}'", timerId, delay);
       var callToUnReserve =
