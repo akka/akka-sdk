@@ -95,8 +95,7 @@ final class NextGenComponentAutoDetectRunner extends akka.platform.javasdk.spi.R
       Future.successful(app.spiEndpoints)
     } catch {
       case NonFatal(ex) =>
-        println("Unexpected exception while setting up service")
-        ex.printStackTrace()
+        LoggerFactory.getLogger(getClass).error("Unexpected exception while setting up service", ex)
         NextGenKalixJavaApplication.onNextStartCallback.getAndSet(null) match {
           case null =>
           case f    =>
