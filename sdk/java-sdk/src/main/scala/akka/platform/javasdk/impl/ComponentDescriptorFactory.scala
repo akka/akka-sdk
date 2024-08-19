@@ -17,6 +17,7 @@ import akka.platform.javasdk.annotations.Consume.FromServiceStream
 import akka.platform.javasdk.annotations.Consume.FromTopic
 import akka.platform.javasdk.annotations.Produce.ServiceStream
 import akka.platform.javasdk.annotations.Produce.ToTopic
+import akka.platform.javasdk.consumer.Consumer
 import akka.platform.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.platform.javasdk.impl.reflection.CombinedSubscriptionServiceMethod
 import akka.platform.javasdk.impl.reflection.KalixMethod
@@ -82,6 +83,17 @@ private[impl] object ComponentDescriptorFactory {
     if (javaMethod.isPublic) {
       javaMethod.getGenericReturnType match {
         case p: ParameterizedType => p.getRawType.equals(classOf[Action.Effect[_]])
+        case _                    => false
+      }
+    } else {
+      false
+    }
+  }
+
+  def hasConsumerOutput(javaMethod: Method): Boolean = {
+    if (javaMethod.isPublic) {
+      javaMethod.getGenericReturnType match {
+        case p: ParameterizedType => p.getRawType.equals(classOf[Consumer.Effect[_]])
         case _                    => false
       }
     } else {

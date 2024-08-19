@@ -31,6 +31,10 @@ import akka.platform.javasdk.action.ReflectiveActionProvider
 import akka.platform.javasdk.annotations.ComponentId
 import akka.platform.javasdk.annotations.PlatformServiceSetup
 import akka.platform.javasdk.client.ComponentClient
+import akka.platform.javasdk.consumer.Consumer
+import akka.platform.javasdk.consumer.ConsumerContext
+import akka.platform.javasdk.consumer.ConsumerProvider
+import akka.platform.javasdk.consumer.ReflectiveConsumerProvider
 import akka.platform.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.platform.javasdk.eventsourcedentity.EventSourcedEntityContext
 import akka.platform.javasdk.eventsourcedentity.EventSourcedEntityProvider
@@ -42,6 +46,7 @@ import akka.platform.javasdk.impl.Validations.Validation
 import akka.platform.javasdk.impl.action.ActionService
 import akka.platform.javasdk.impl.action.ActionsImpl
 import akka.platform.javasdk.impl.client.ComponentClientImpl
+import akka.platform.javasdk.impl.consumer.ConsumerService
 import akka.platform.javasdk.impl.eventsourcedentity.EventSourcedEntitiesImpl
 import akka.platform.javasdk.impl.eventsourcedentity.EventSourcedEntityService
 import akka.platform.javasdk.impl.http.HttpClientProviderExtension
@@ -123,6 +128,7 @@ private object ComponentLocator {
       Map(
         "endpoint" -> classOf[AnyRef],
         "action" -> classOf[Action],
+        "consumer" -> classOf[Consumer],
         "event-sourced-entity" -> classOf[EventSourcedEntity[_, _]],
         "workflow" -> classOf[Workflow[_]],
         "key-value-entity" -> classOf[KeyValueEntity[_]],
@@ -225,6 +231,12 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
         kalix.register(action)
       }
 
+      if (classOf[Consumer].isAssignableFrom(clz)) {
+        logger.info(s"Registering Consumer provider for [${clz.getName}]")
+        val consumer = consumerProvider(clz.asInstanceOf[Class[Consumer]])
+        kalix.register(consumer)
+      }
+
       if (classOf[EventSourcedEntity[_, _]].isAssignableFrom(clz)) {
         logger.info(s"Registering EventSourcedEntity provider for [${clz.getName}]")
         val esEntity = eventSourcedEntityProvider(clz.asInstanceOf[Class[EventSourcedEntity[Nothing, Nothing]]])
@@ -296,6 +308,16 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
     val services = serviceFactories.toSeq.map { case (serviceName, factory) =>
       serviceName -> factory(system.classicSystem)
     }.toMap
+
+    val actionAndConsumerServices = services.filter { case (_, service) =>
+      service.getClass == classOf[ActionService] || service.getClass == classOf[ConsumerService]
+    }
+
+    if (actionAndConsumerServices.nonEmpty) {
+      actionsEndpoint = Some(
+        new ActionsImpl(classicSystem, actionAndConsumerServices, runtimeComponentClients.timerClient))
+    }
+
     services.groupBy(_._2.getClass).foreach {
 
       case (serviceClass, eventSourcedServices: Map[String, EventSourcedEntityService] @unchecked)
@@ -312,9 +334,11 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
         workflowEntitiesEndpoint =
           Some(new WorkflowImpl(classicSystem, workflowServices, runtimeComponentClients.timerClient))
 
-      case (serviceClass, actionServices: Map[String, ActionService] @unchecked)
-          if serviceClass == classOf[ActionService] =>
-        actionsEndpoint = Some(new ActionsImpl(classicSystem, actionServices, runtimeComponentClients.timerClient))
+      case (serviceClass, _: Map[String, ActionService] @unchecked) if serviceClass == classOf[ActionService] =>
+      //ignore
+
+      case (serviceClass, _: Map[String, ConsumerService] @unchecked) if serviceClass == classOf[ConsumerService] =>
+      //ignore
 
       case (serviceClass, viewServices: Map[String, ViewService] @unchecked) if serviceClass == classOf[ViewService] =>
         viewsEndpoint = Some(new ViewsImpl(classicSystem, viewServices))
@@ -391,6 +415,18 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
       context =>
         wiredInstance(clz) {
           case p if p == classOf[ActionContext]      => context
+          case p if p == classOf[ComponentClient]    => componentClient()
+          case h if h == classOf[HttpClientProvider] => httpClientProvider()
+          case t if t == classOf[TimerScheduler]     => timerScheduler()
+        })
+
+  private def consumerProvider[A <: Consumer](clz: Class[A]): ConsumerProvider[A] =
+    ReflectiveConsumerProvider.of(
+      clz,
+      messageCodec,
+      context =>
+        wiredInstance(clz) {
+          case p if p == classOf[ConsumerContext]    => context
           case p if p == classOf[ComponentClient]    => componentClient()
           case h if h == classOf[HttpClientProvider] => httpClientProvider()
           case t if t == classOf[TimerScheduler]     => timerScheduler()

@@ -2,8 +2,8 @@ package user.registry.subscriber;
 
 
 import akka.platform.javasdk.annotations.ComponentId;
+import akka.platform.javasdk.consumer.Consumer;
 import com.typesafe.config.Config;
-import akka.platform.javasdk.action.Action;
 import akka.platform.javasdk.annotations.Consume;
 import akka.platform.javasdk.client.ComponentClient;
 import org.slf4j.Logger;
@@ -31,14 +31,14 @@ import java.time.Duration;
  */
 @ComponentId("unique-email-subscriber")
 @Consume.FromKeyValueEntity(UniqueEmailEntity.class)
-public class UniqueEmailSubscriber extends Action {
+public class UniqueEmailConsumer extends Consumer {
 
   private Logger logger = LoggerFactory.getLogger(getClass());
 
   private final ComponentClient client;
   private final Config config;
 
-  public UniqueEmailSubscriber(ComponentClient client, Config config) {
+  public UniqueEmailConsumer(ComponentClient client, Config config) {
     this.client = client;
     this.config = config;
   }

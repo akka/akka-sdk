@@ -1,13 +1,12 @@
 package com.example.tracing.api;
 
 import akka.platform.javasdk.annotations.ComponentId;
+import akka.platform.javasdk.consumer.Consumer;
 import com.example.tracing.domain.UserEvent;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.StatusCode;
-import io.opentelemetry.api.trace.Tracer;
 import akka.platform.javasdk.JsonSupport;
-import akka.platform.javasdk.action.Action;
 import akka.platform.javasdk.annotations.Consume;
 import akka.platform.javasdk.client.ComponentClient;
 import org.slf4j.Logger;
@@ -23,12 +22,12 @@ import java.util.concurrent.CompletionStage;
 
 @ComponentId("get-random-photo")
 @Consume.FromEventSourcedEntity(value = UserEntity.class, ignoreUnknown = true)
-public class GetRandomPhotoAction extends Action {
-  private static final Logger log = LoggerFactory.getLogger(GetRandomPhotoAction.class);
+public class GetRandomPhotoConsumer extends Consumer {
+  private static final Logger log = LoggerFactory.getLogger(GetRandomPhotoConsumer.class);
 
   private final ComponentClient componentClient;
 
-  public GetRandomPhotoAction(ComponentClient componentClient) {
+  public GetRandomPhotoConsumer(ComponentClient componentClient) {
     this.componentClient = componentClient;
   }
 

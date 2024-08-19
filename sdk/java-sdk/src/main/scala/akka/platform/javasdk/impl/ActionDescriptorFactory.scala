@@ -38,9 +38,11 @@ import akka.platform.javasdk.impl.reflection.NameGenerator
 import akka.platform.javasdk.impl.reflection.Reflect
 import akka.platform.javasdk.impl.reflection.Reflect.Syntax.MethodOps
 import akka.platform.javasdk.impl.reflection.SubscriptionServiceMethod
-
 import java.lang.reflect.Method
+
 import scala.reflect.ClassTag
+
+import akka.platform.javasdk.impl.ComponentDescriptorFactory.hasConsumerOutput
 
 private[impl] object ActionDescriptorFactory extends ComponentDescriptorFactory {
 
@@ -76,7 +78,7 @@ private[impl] object ActionDescriptorFactory extends ComponentDescriptorFactory 
     val subscriptionValueEntityMethods: IndexedSeq[KalixMethod] = if (hasValueEntitySubscription(component)) {
       //expecting only a single update method, which is validated
       component.getMethods
-        .filter(hasActionOutput)
+        .filter(m => hasActionOutput(m) || hasConsumerOutput(m))
         .map { method =>
           KalixMethod(SubscriptionServiceMethod(method))
             .withKalixOptions(buildEventingOutOptions(method))
@@ -112,7 +114,7 @@ private[impl] object ActionDescriptorFactory extends ComponentDescriptorFactory 
       if (hasEventSourcedEntitySubscription(component)) {
         val kalixMethods =
           component.getMethods
-            .filter(hasActionOutput)
+            .filter(m => hasActionOutput(m) || hasConsumerOutput(m))
             .sorted // make sure we get the methods in deterministic order
             .map { method =>
               KalixMethod(SubscriptionServiceMethod(method))
@@ -130,7 +132,7 @@ private[impl] object ActionDescriptorFactory extends ComponentDescriptorFactory 
         .map { ann =>
           val kalixMethods =
             component.getMethods
-              .filter(hasActionOutput)
+              .filter(m => hasActionOutput(m) || hasConsumerOutput(m))
               .sorted // make sure we get the methods in deterministic order
               .map { method =>
                 KalixMethod(SubscriptionServiceMethod(method))
@@ -160,7 +162,7 @@ private[impl] object ActionDescriptorFactory extends ComponentDescriptorFactory 
     val subscriptionTopicClass: Map[String, Seq[KalixMethod]] =
       if (hasTopicSubscription(component)) {
         val kalixMethods = component.getMethods
-          .filter(hasActionOutput)
+          .filter(m => hasActionOutput(m) || hasConsumerOutput(m))
           .sorted // make sure we get the methods in deterministic order
           .map { method =>
             val source = topicEventSource(component)

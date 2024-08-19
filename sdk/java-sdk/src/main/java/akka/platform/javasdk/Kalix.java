@@ -6,6 +6,11 @@ package akka.platform.javasdk;
 
 import akka.actor.ActorSystem;
 import akka.annotation.InternalApi;
+import akka.platform.javasdk.consumer.Consumer;
+import akka.platform.javasdk.consumer.ConsumerOptions;
+import akka.platform.javasdk.consumer.ConsumerProvider;
+import akka.platform.javasdk.impl.consumer.ConsumerService;
+import akka.platform.javasdk.impl.consumer.ResolvedConsumerFactory;
 import com.google.protobuf.DescriptorProtos;
 import com.google.protobuf.Descriptors;
 import akka.platform.javasdk.action.Action;
@@ -192,6 +197,46 @@ public final class Kalix {
 
       ActionService service =
         new ActionService(
+          actionFactory, descriptor, additionalDescriptors, messageCodec, actionOptions);
+
+      services.put(descriptor.getFullName(), system -> service);
+
+      return Kalix.this;
+    }
+
+    /**
+     * Register an Action handler.
+     *
+     * <p>This is a low level API intended for custom mechanisms for implementing the action.
+     *
+     * @param descriptor            The descriptor for the service that this action implements.
+     * @param additionalDescriptors Any additional descriptors that should be used to look up
+     *                              protobuf types when needed.
+     * @return This Kalix builder.
+     */
+    public Kalix registerConsumer(
+      ConsumerFactory actionFactory,
+      ConsumerOptions actionOptions,
+      Descriptors.ServiceDescriptor descriptor,
+      Descriptors.FileDescriptor... additionalDescriptors) {
+
+      final AnySupport anySupport = newAnySupport(additionalDescriptors);
+      ConsumerFactory resolvedConsumerFactory =
+        new ResolvedConsumerFactory(actionFactory, anySupport.resolveServiceDescriptor(descriptor));
+
+      return registerConsumer(
+        resolvedConsumerFactory, anySupport, actionOptions, descriptor, additionalDescriptors);
+    }
+
+    public Kalix registerConsumer(
+      ConsumerFactory actionFactory,
+      MessageCodec messageCodec,
+      ConsumerOptions actionOptions,
+      Descriptors.ServiceDescriptor descriptor,
+      Descriptors.FileDescriptor... additionalDescriptors) {
+
+      ConsumerService service =
+        new ConsumerService(
           actionFactory, descriptor, additionalDescriptors, messageCodec, actionOptions);
 
       services.put(descriptor.getFullName(), system -> service);
@@ -506,6 +551,31 @@ public final class Kalix {
       .orElseGet(
         () ->
           lowLevel.registerAction(
+            provider::newRouter,
+            provider.options(),
+            provider.serviceDescriptor(),
+            provider.additionalDescriptors()));
+  }
+
+  /**
+   * Register a Customer using an {{@link ConsumerProvider}}.
+   *
+   * @return This stateful service builder.
+   */
+  public <A extends Consumer> Kalix register(ConsumerProvider<A> provider) {
+    return provider
+      .alternativeCodec()
+      .map(
+        codec ->
+          lowLevel.registerConsumer(
+            provider::newRouter,
+            codec,
+            provider.options(),
+            provider.serviceDescriptor(),
+            provider.additionalDescriptors()))
+      .orElseGet(
+        () ->
+          lowLevel.registerConsumer(
             provider::newRouter,
             provider.options(),
             provider.serviceDescriptor(),

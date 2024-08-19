@@ -1,10 +1,10 @@
 package user.registry.subscriber;
 
 
-import akka.platform.javasdk.action.Action;
 import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.annotations.Consume;
 import akka.platform.javasdk.client.ComponentClient;
+import akka.platform.javasdk.consumer.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import user.registry.common.Done;
@@ -23,12 +23,12 @@ import user.registry.entity.UserEntity;
  */
 @ComponentId("user-events-subscriber")
 @Consume.FromEventSourcedEntity(value = UserEntity.class)
-public class UserEventsSubscriber extends Action {
+public class UserEventsConsumer extends Consumer {
 
   private final ComponentClient client;
   private final Logger logger = LoggerFactory.getLogger(getClass());
 
-  public UserEventsSubscriber(ComponentClient client) {
+  public UserEventsConsumer(ComponentClient client) {
     this.client = client;
   }
 

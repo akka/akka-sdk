@@ -56,11 +56,12 @@ public class ComponentAnnotationProcessor extends AbstractProcessor {
     private static final String EVENT_SOURCED_ENTITY_KEY = "event-sourced-entity";
     private static final String VALUE_ENTITY_KEY = "key-value-entity";
     private static final String ACTION_KEY = "action";
+    private static final String CONSUMER_KEY = "consumer";
     private static final String VIEW_KEY = "view";
     private static final String WORKFLOW_KEY = "workflow";
     private static final String SERVICE_SETUP_KEY = "service-setup";
 
-    private static final List<String> ALL_COMPONENT_TYPES = List.of(ENDPOINT_KEY, EVENT_SOURCED_ENTITY_KEY, VALUE_ENTITY_KEY, ACTION_KEY, VIEW_KEY, WORKFLOW_KEY, SERVICE_SETUP_KEY);
+    private static final List<String> ALL_COMPONENT_TYPES = List.of(ENDPOINT_KEY, EVENT_SOURCED_ENTITY_KEY, VALUE_ENTITY_KEY, ACTION_KEY, CONSUMER_KEY, VIEW_KEY, WORKFLOW_KEY, SERVICE_SETUP_KEY);
 
 
     private final boolean debugEnabled;
@@ -157,23 +158,10 @@ public class ComponentAnnotationProcessor extends AbstractProcessor {
     private String componentTypeFor(Element annotatedClass, TypeElement annotation) {
         return switch (annotation.getQualifiedName().toString()) {
             case "akka.platform.javasdk.annotations.http.Endpoint" -> ENDPOINT_KEY;
-            case "akka.platform.javasdk.annotations.Consume" -> ACTION_KEY;
             case "akka.platform.javasdk.annotations.PlatformServiceSetup" -> SERVICE_SETUP_KEY;
             case "akka.platform.javasdk.annotations.ComponentId" -> componentType(annotatedClass);
-            case String s when s.startsWith("akka.platform.javasdk.annotations.Consume") ->
-                    actionOrView(annotatedClass);
             default -> throw new IllegalArgumentException("Unknown annotation type: " + annotation.getQualifiedName());
         };
-    }
-
-    private String actionOrView(Element annotatedClass) {
-        var superClassMirror = ((TypeElement) annotatedClass).getSuperclass();
-        if (superClassMirror.getKind() != TypeKind.NONE && superClassMirror.toString().equals("akka.platform.javasdk.action.Action")) {
-            return ACTION_KEY;
-        } else {
-            // no superclass, or superclass but that is not Action
-            return VIEW_KEY;
-        }
     }
 
     /**
@@ -219,6 +207,7 @@ public class ComponentAnnotationProcessor extends AbstractProcessor {
             case "akka.platform.javasdk.keyvalueentity.KeyValueEntity" -> VALUE_ENTITY_KEY;
             case "akka.platform.javasdk.workflow.Workflow" -> WORKFLOW_KEY;
             case "akka.platform.javasdk.action.Action" -> ACTION_KEY;
+            case "akka.platform.javasdk.consumer.Consumer" -> CONSUMER_KEY;
             case "akka.platform.javasdk.view.View" -> VIEW_KEY;
             default -> {
                 if (isMultiView(annotatedClass)) yield VIEW_KEY;

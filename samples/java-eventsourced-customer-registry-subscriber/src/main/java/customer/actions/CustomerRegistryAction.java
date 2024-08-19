@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @ComponentId("customer-registry")
+//TODO this should be an Endpoint
 public class CustomerRegistryAction extends Action {
 
   private Logger log = LoggerFactory.getLogger(getClass());

@@ -9,8 +9,8 @@ import akka.platform.javasdk.annotations.Acl;
 import akka.platform.javasdk.annotations.Produce;
 import akka.platform.javasdk.annotations.Query;
 import akka.platform.javasdk.annotations.Consume;
-import akka.platform.javasdk.annotations.Table;
 import akka.platform.javasdk.annotations.ComponentId;
+import akka.platform.javasdk.consumer.Consumer;
 import akka.platform.javasdk.view.View;
 import akka.platform.spring.testmodels.Done;
 import akka.platform.spring.testmodels.Message;
@@ -28,7 +28,7 @@ import akka.platform.spring.testmodels.keyvalueentity.CounterState;
 
 public class PubSubTestModels {//TODO shall we remove this class and move things to ActionTestModels and ViewTestModels
 
-  public static class SubscribeToValueEntityAction extends Action {
+  public static class SubscribeToValueEntity extends Consumer {
 
     @Consume.FromKeyValueEntity(Counter.class)
     public Effect<CounterState> onUpdate(CounterState message) {
@@ -37,14 +37,14 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   }
 
   @Consume.FromKeyValueEntity(Counter.class)
-  public static class SubscribeToValueEntityTypeLevelAction extends Action {
+  public static class SubscribeToValueEntityTypeLevel extends Consumer {
 
     public Effect<CounterState> onUpdate(CounterState message) {
       return effects().reply(message);
     }
   }
 
-  public static class SubscribeToValueEntityWithDeletesAction extends Action {
+  public static class SubscribeToValueEntityWithDeletes extends Consumer {
 
     @Consume.FromKeyValueEntity(Counter.class)
     public Effect<CounterState> onUpdate(CounterState message) {
@@ -58,7 +58,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   }
 
   @Consume.FromEventSourcedEntity(EmployeeEntity.class)
-  public static class SubscribeToEventSourcedEmployee extends Action {
+  public static class SubscribeToEventSourcedEmployee extends Consumer {
 
     public Effect<EmployeeCreated> methodOne(EmployeeCreated message) {
       return effects().reply(message);
@@ -69,7 +69,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
     }
   }
 
-  public static class SubscribeToEventSourcedEntityAction extends Action {
+  public static class SubscribeToEventSourcedEntity extends Consumer {
 
     @Consume.FromEventSourcedEntity(CounterEventSourcedEntity.class)
     public Effect<Integer> methodOne(EventSourcedEntitiesTestModels.CounterEvent.IncrementCounter evt) {
@@ -83,7 +83,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   }
 
   @Consume.FromTopic(value = "topicAAA", consumerGroup = "aa")
-  public static class SubscribeToTopicActionTypeLevelMethodLevel extends Action {
+  public static class SubscribeToTopicActionTypeLevelMethodLevel extends Consumer {
 
     public Effect<Message> messageOne(Message message) {return effects().reply(message);}
 
@@ -92,7 +92,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   }
 
   @Consume.FromTopic(value = "topicXYZ", ignoreUnknown = true)
-  public static class SubscribeToTopicsActionTypeLevel extends Action {
+  public static class SubscribeToTopicsActionTypeLevel extends Consumer {
 
     public Effect<Message> methodOne(Message message) {
       return effects().reply(message);
@@ -104,7 +104,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   }
 
   @Consume.FromEventSourcedEntity(value = CounterEventSourcedEntity.class, ignoreUnknown = true)
-  public static class SubscribeOnlyOneToEventSourcedEntityActionTypeLevel extends Action {
+  public static class SubscribeOnlyOneToEventSourcedEntityActionTypeLevel extends Consumer {
 
     public Effect<Integer> methodOne(Integer message) {
       return effects().reply(message);
@@ -112,7 +112,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   }
 
   @Consume.FromEventSourcedEntity(value = CounterEventSourcedEntity.class, ignoreUnknown = true)
-  public static class InvalidSubscribeToEventSourcedEntityAction extends Action {
+  public static class InvalidSubscribeToEventSourcedEntityConsumer extends Consumer {
 
     public Effect<Integer> methodOne(Integer message) {
       return effects().reply(message);
@@ -128,7 +128,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   @Consume.FromEventSourcedEntity(EmployeeEntity.class)
   @Consume.FromTopic("topic")
   @Consume.FromServiceStream(id = "source", service = "abc")
-  public static class MultipleTypeLevelSubscriptionsInAction extends Action {
+  public static class MultipleTypeLevelSubscriptions extends Consumer {
 
     public Effect<Integer> methodOne(Integer message) {
       return effects().reply(message);
@@ -137,7 +137,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   }
 
   @Consume.FromKeyValueEntity(Counter.class)
-  public static class MultipleUpdateMethodsForVETypeLevelSubscriptionInAction extends Action {
+  public static class MultipleUpdateMethodsForVETypeLevelSubscription extends Consumer {
 
     public Effect<Integer> methodOne(Integer message) {
       return effects().reply(message);
@@ -148,7 +148,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
     }
   }
 
-  public static class AmbiguousHandlersVESubscriptionInAction extends Action {
+  public static class AmbiguousHandlersVESubscriptionInConsumer extends Consumer {
 
     @Consume.FromKeyValueEntity(Counter.class)
     public Effect<Integer> methodOne(Integer message) {
@@ -166,7 +166,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
     }
   }
 
-  public static class AmbiguousDeleteHandlersVESubscriptionInAction extends Action {
+  public static class AmbiguousDeleteHandlersVESubscriptionInConsumer extends Consumer {
 
     @Consume.FromKeyValueEntity(value = Counter.class, handleDeletes = true)
     public Effect<Integer> methodOne() {
@@ -185,7 +185,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   }
 
   @Consume.FromKeyValueEntity(Counter.class)
-  public static class AmbiguousHandlersVETypeLevelSubscriptionInAction extends Action {
+  public static class AmbiguousHandlersVETypeLevelSubscriptionInConsumer extends Consumer {
 
     public Effect<Integer> methodOne(Integer message) {
       return effects().reply(message);
@@ -196,7 +196,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
     }
   }
 
-  public static class AmbiguousHandlersESSubscriptionInAction extends Action {
+  public static class AmbiguousHandlersESSubscriptionInConsumer extends Consumer {
 
     @Consume.FromEventSourcedEntity(EmployeeEntity.class)
     public Effect<Integer> methodOne(Integer message) {
@@ -215,7 +215,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   }
 
   @Consume.FromEventSourcedEntity(EmployeeEntity.class)
-  public static class AmbiguousHandlersESTypeLevelSubscriptionInAction extends Action {
+  public static class AmbiguousHandlersESTypeLevelSubscriptionInConsumer extends Consumer {
 
     public Effect<Integer> methodOne(Integer message) {
       return effects().reply(message);
@@ -227,7 +227,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   }
 
   @Consume.FromServiceStream(id = "source", service = "a")
-  public static class AmbiguousHandlersStreamTypeLevelSubscriptionInAction extends Action {
+  public static class AmbiguousHandlersStreamTypeLevelSubscriptionInConsumer extends Consumer {
 
     public Effect<Integer> methodOne(Integer message) {
       return effects().reply(message);
@@ -238,7 +238,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
     }
   }
 
-  public static class AmbiguousHandlersTopiSubscriptionInAction extends Action {
+  public static class AmbiguousHandlersTopiSubscriptionInConsumer extends Consumer {
 
     @Consume.FromTopic("source")
     public Effect<Integer> methodOne(Integer message) {
@@ -257,7 +257,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   }
 
   @Consume.FromTopic("source")
-  public static class AmbiguousHandlersTopicTypeLevelSubscriptionInAction extends Action {
+  public static class AmbiguousHandlersTopicTypeLevelSubscriptionInConsumer extends Consumer {
 
     public Effect<Integer> methodOne(Integer message) {
       return effects().reply(message);
@@ -268,7 +268,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
     }
   }
 
-  public static class MissingSourceForTopicPublishing extends Action {
+  public static class MissingSourceForTopicPublishing extends Consumer {
 
     @Produce.ToTopic("test")
     public Effect<String> methodOne(String message) {
@@ -276,7 +276,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
     }
   }
 
-  public static class MissingTopicForVESubscription extends Action {
+  public static class MissingTopicForVESubscription extends Consumer {
 
     @Consume.FromKeyValueEntity(Counter.class)
     @Produce.ToTopic("test")
@@ -290,7 +290,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
     }
   }
 
-  public static class MissingTopicForESSubscription extends Action {
+  public static class MissingTopicForESSubscription extends Consumer {
 
     @Consume.FromEventSourcedEntity(EmployeeEntity.class)
     @Produce.ToTopic("test")
@@ -305,7 +305,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   }
 
   @Consume.FromEventSourcedEntity(EmployeeEntity.class)
-  public static class MissingTopicForTypeLevelESSubscription extends Action {
+  public static class MissingTopicForTypeLevelESSubscription extends Consumer {
 
     @Produce.ToTopic("test")
     public Effect<String> methodOne(String message) {
@@ -317,7 +317,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
     }
   }
 
-  public static class MissingTopicForTopicSubscription extends Action {
+  public static class MissingTopicForTopicSubscription extends Consumer {
 
     @Consume.FromTopic("source")
     @Produce.ToTopic("test")
@@ -332,7 +332,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   }
 
   @Consume.FromTopic("source")
-  public static class MissingTopicForTopicTypeLevelSubscription extends Action {
+  public static class MissingTopicForTopicTypeLevelSubscription extends Consumer {
 
     @Produce.ToTopic("test")
     public Effect<String> methodOne(String message) {
@@ -345,7 +345,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   }
 
   @Consume.FromServiceStream(id = "source", service = "abc")
-  public static class MissingTopicForStreamSubscription extends Action {
+  public static class MissingTopicForStreamSubscription extends Consumer {
 
     @Produce.ToTopic("test")
     public Effect<String> methodOne(String message) {
@@ -357,7 +357,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
     }
   }
 
-  public static class DifferentTopicForVESubscription extends Action {
+  public static class DifferentTopicForVESubscription extends Consumer {
 
     @Consume.FromKeyValueEntity(Counter.class)
     @Produce.ToTopic("test")
@@ -372,7 +372,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
     }
   }
 
-  public static class DifferentTopicForESSubscription extends Action {
+  public static class DifferentTopicForESSubscription extends Consumer {
 
     @Consume.FromEventSourcedEntity(EmployeeEntity.class)
     @Produce.ToTopic("test")
@@ -388,7 +388,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   }
 
   @Consume.FromEventSourcedEntity(EmployeeEntity.class)
-  public static class DifferentTopicForESTypeLevelSubscription extends Action {
+  public static class DifferentTopicForESTypeLevelSubscription extends Consumer {
 
     @Produce.ToTopic("test")
     public Effect<String> methodOne(String message) {
@@ -401,7 +401,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
     }
   }
 
-  public static class DifferentTopicForTopicSubscription extends Action {
+  public static class DifferentTopicForTopicSubscription extends Consumer {
 
     @Consume.FromTopic("source")
     @Produce.ToTopic("test")
@@ -417,7 +417,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   }
 
   @Consume.FromTopic("source")
-  public static class DifferentTopicForTopicTypeLevelSubscription extends Action {
+  public static class DifferentTopicForTopicTypeLevelSubscription extends Consumer {
 
     @Produce.ToTopic("test")
     public Effect<String> methodOne(String message) {
@@ -431,7 +431,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   }
 
   @Consume.FromServiceStream(id = "source", service = "abc")
-  public static class DifferentTopicForStreamSubscription extends Action {
+  public static class DifferentTopicForStreamSubscription extends Consumer {
 
     @Produce.ToTopic("test")
     public Effect<String> methodOne(String message) {
@@ -445,7 +445,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   }
 
   @Consume.FromEventSourcedEntity(value = EmployeeEntity.class)
-  public static class MissingHandlersWhenSubscribeToEventSourcedEntityAction extends Action {
+  public static class MissingHandlersWhenSubscribeToEventSourcedEntityConsumer extends Consumer {
 
     public Effect<Integer> methodOne(Integer message) {
       return effects().reply(message);
@@ -456,7 +456,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
     }
   }
 
-  public static class MissingHandlersWhenSubscribeToEventSourcedOnMethodLevelEntityAction extends Action {
+  public static class MissingHandlersWhenSubscribeToEventSourcedOnMethodLevelEntityConsumer extends Consumer {
 
     public Effect<Integer> methodOne(Integer message) {
       return effects().reply(message);
@@ -468,7 +468,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
     }
   }
 
-  public static class SubscribeToTopicAction extends Action {
+  public static class SubscribeToTopic extends Consumer {
 
     @Consume.FromTopic(value = "topicXYZ", consumerGroup = "cg")
     public Effect<Message> messageOne(Message message) {
@@ -477,7 +477,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   }
 
   @Consume.FromTopic(value = "topicXYZ", consumerGroup = "cg")
-  public static class SubscribeToTopicTypeLevelAction extends Action {
+  public static class SubscribeToTopicTypeLevel extends Consumer {
 
     public Effect<Message> messageOne(Message message) {
       return effects().reply(message);
@@ -485,7 +485,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   }
 
   @Consume.FromTopic(value = "topicXYZ", consumerGroup = "cg", ignoreUnknown = true)
-  public static class SubscribeToTopicTypeLevelCombinedAction extends Action {
+  public static class SubscribeToTopicTypeLevelCombined extends Consumer {
 
     public Effect<Message> messageOne(Message message) {
       return effects().reply(message);
@@ -496,7 +496,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
     }
   }
 
-  public static class SubscribeToTopicCombinedAction extends Action {
+  public static class SubscribeToTopicCombined extends Consumer {
 
     @Consume.FromTopic(value = "topicXYZ", consumerGroup = "cg")
     public Effect<Message> messageOne(Message message) {
@@ -509,7 +509,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
     }
   }
 
-  public static class InvalidConsumerGroupsWhenSubscribingToTopicAction extends Action {
+  public static class InvalidConsumerGroupsWhenSubscribingToTopicConsumer extends Consumer {
 
     @Consume.FromTopic(value = "topicXYZ", consumerGroup = "cg")
     public Effect<Message> messageOne(Message message) {
@@ -523,7 +523,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   }
 
   @Consume.FromTopic(value = "topicXYZ", consumerGroup = "cg")
-  public static class InvalidSubscribeToTopicAction extends Action {
+  public static class InvalidSubscribeToTopicConsumer extends Consumer {
 
     @Consume.FromTopic(value = "topicXYZ", consumerGroup = "cg")
     public Effect<Message> messageOne(Message message) {
@@ -531,7 +531,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
     }
   }
 
-  public static class SubscribeToTwoTopicsAction extends Action {
+  public static class SubscribeToTwoTopics extends Consumer {
 
     @Consume.FromTopic("topicXYZ")
     public Effect<Message> methodOne(Message message) {
@@ -550,7 +550,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   }
 
   @Consume.FromKeyValueEntity(Counter.class)
-  public static class PublishBytesToTopicAction extends Action {
+  public static class PublishBytesToTopic extends Consumer {
 
     @Produce.ToTopic("foobar")
     public Effect<byte[]> produce(Message msg) {
@@ -558,7 +558,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
     }
   }
 
-  public static class SubscribeToBytesFromTopicAction extends Action {
+  public static class SubscribeToBytesFromTopic extends Consumer {
 
     @Consume.FromTopic("foobar")
     public Effect<Done> consume(byte[] bytes) {
@@ -566,7 +566,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
     }
   }
 
-  public static class VEWithPublishToTopicAction extends Action {
+  public static class VEWithPublishToTopic extends Consumer {
 
     @Consume.FromKeyValueEntity(Counter.class)
     @Produce.ToTopic("foobar")
@@ -581,7 +581,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
     }
   }
 
-  public static class ESWithPublishToTopicAction extends Action {
+  public static class ESWithPublishToTopicConsumer extends Consumer {
 
     @Consume.FromEventSourcedEntity(EmployeeEntity.class)
     @Produce.ToTopic("foobar")
@@ -597,7 +597,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   }
 
   @Consume.FromEventSourcedEntity(EmployeeEntity.class)
-  public static class TypeLevelESWithPublishToTopicAction extends Action {
+  public static class TypeLevelESWithPublishToTopic extends Consumer {
 
     @Produce.ToTopic("foobar")
     public Effect<Message> messageOne(EmployeeCreated created) {
@@ -611,7 +611,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   }
 
   @Consume.FromTopic("source")
-  public static class TypeLevelTopicSubscriptionWithPublishToTopicAction extends Action {
+  public static class TypeLevelTopicSubscriptionWithPublishToTopic extends Consumer {
 
     @Produce.ToTopic("foobar")
     public Effect<Message> messageOne(String msg) {
@@ -625,7 +625,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   }
 
   @Consume.FromServiceStream(id = "source", service = "abc")
-  public static class StreamSubscriptionWithPublishToTopicAction extends Action {
+  public static class StreamSubscriptionWithPublishToTopic extends Consumer {
 
     @Produce.ToTopic("foobar")
     public Effect<Message> messageOne(String msg) {
@@ -685,7 +685,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
 
   @Consume.FromEventSourcedEntity(value = EmployeeEntity.class)
   @Produce.ServiceStream(id = "employee_events")
-  public static class EventStreamPublishingAction extends Action {
+  public static class EventStreamPublishingConsumer extends Consumer {
 
     public Effect<String> transform(EmployeeEvent event) {
       return switch (event){
@@ -699,7 +699,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   }
 
   @Consume.FromServiceStream(service = "employee_service", id = "employee_events", ignoreUnknown = true)
-  public static class EventStreamSubscriptionAction extends Action {
+  public static class EventStreamSubscriptionConsumer extends Consumer {
 
     public Effect<String> transform(EmployeeCreated created) {
       return effects().reply(created.toString());

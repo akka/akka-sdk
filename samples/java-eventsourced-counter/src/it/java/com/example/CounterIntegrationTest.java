@@ -1,6 +1,6 @@
 package com.example;
 
-import com.example.actions.CounterCommandFromTopicAction;
+import com.example.actions.CounterCommandFromTopicConsumer;
 import akka.platform.javasdk.CloudEvent;
 import akka.platform.javasdk.testkit.EventingTestKit;
 import akka.platform.javasdk.testkit.KalixTestKit;
@@ -107,8 +107,8 @@ public class CounterIntegrationTest extends KalixIntegrationTestKitSupport { // 
   @Test
   public void verifyCounterEventSourcedPublishToTopic()  {
     var counterId = "test-topic";
-    var increaseCmd = new CounterCommandFromTopicAction.IncreaseCounter(counterId, 3);
-    var multipleCmd = new CounterCommandFromTopicAction.MultiplyCounter(counterId, 4);
+    var increaseCmd = new CounterCommandFromTopicConsumer.IncreaseCounter(counterId, 3);
+    var multipleCmd = new CounterCommandFromTopicConsumer.MultiplyCounter(counterId, 4);
 
     commandsTopic.publish(increaseCmd, counterId); // <4>
     commandsTopic.publish(multipleCmd, counterId);
@@ -125,7 +125,7 @@ public class CounterIntegrationTest extends KalixIntegrationTestKitSupport { // 
   @Test
   public void verifyCounterCommandsAndPublishWithMetadata() {
     var counterId = "test-topic-metadata";
-    var increaseCmd = new CounterCommandFromTopicAction.IncreaseCounter(counterId, 10);
+    var increaseCmd = new CounterCommandFromTopicConsumer.IncreaseCounter(counterId, 10);
 
     var metadata = CloudEvent.of( // <1>
         "cmd1",
@@ -137,7 +137,7 @@ public class CounterIntegrationTest extends KalixIntegrationTestKitSupport { // 
 
     commandsTopic.publish(kalixTestKit.getMessageBuilder().of(increaseCmd, metadata)); // <4>
 
-    var increasedEvent = eventsTopicWithMeta.expectOneTyped(CounterCommandFromTopicAction.IncreaseCounter.class);
+    var increasedEvent = eventsTopicWithMeta.expectOneTyped(CounterCommandFromTopicConsumer.IncreaseCounter.class);
     var actualMd = increasedEvent.getMetadata(); // <5>
     assertEquals(counterId, actualMd.asCloudEvent().subject().get()); // <6>
     assertEquals("application/json", actualMd.get("Content-Type").get());

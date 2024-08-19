@@ -1,20 +1,20 @@
 package customer.api;
 
+import akka.platform.javasdk.annotations.Acl;
 import akka.platform.javasdk.annotations.ComponentId;
+import akka.platform.javasdk.annotations.Consume;
+import akka.platform.javasdk.annotations.Produce;
+import akka.platform.javasdk.consumer.Consumer;
 import customer.domain.CustomerEvent;
 import customer.domain.CustomerEvent.CustomerCreated;
 import customer.domain.CustomerEvent.NameChanged;
-import akka.platform.javasdk.action.Action;
-import akka.platform.javasdk.annotations.Acl;
-import akka.platform.javasdk.annotations.Produce;
-import akka.platform.javasdk.annotations.Consume;
 
 // tag::producer[]
 @ComponentId("customer-events-service")
 @Consume.FromEventSourcedEntity(value = CustomerEntity.class) // <1>
 @Produce.ServiceStream(id = "customer_events") // <2>
 @Acl(allow = @Acl.Matcher(service = "*")) // <3>
-public class CustomerEventsService extends Action {
+public class CustomerEventsService extends Consumer {
 
   public Effect<CustomerPublicEvent> onEvent(CustomerEvent event) { // <4>
     return switch (event) {

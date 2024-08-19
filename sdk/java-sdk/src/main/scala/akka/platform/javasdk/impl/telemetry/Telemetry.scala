@@ -41,6 +41,11 @@ object Telemetry extends ExtensionId[Telemetry] {
 sealed trait ComponentCategory {
   def name: String
 }
+
+case object ConsumerCategory extends ComponentCategory {
+  def name = "Consumer"
+}
+
 case object ActionCategory extends ComponentCategory {
   def name = "Action"
 }

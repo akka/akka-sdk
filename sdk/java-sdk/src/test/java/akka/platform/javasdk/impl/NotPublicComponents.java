@@ -8,9 +8,7 @@ import akka.platform.javasdk.action.Action;
 import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.annotations.Query;
 import akka.platform.javasdk.annotations.Consume;
-import akka.platform.javasdk.annotations.Table;
-import akka.platform.javasdk.annotations.ComponentId;
-import akka.platform.javasdk.annotations.ComponentId;
+import akka.platform.javasdk.consumer.Consumer;
 import akka.platform.javasdk.eventsourcedentity.EventSourcedEntity;
 import akka.platform.javasdk.keyvalueentity.KeyValueEntity;
 import akka.platform.javasdk.view.View;
@@ -24,8 +22,8 @@ import akka.platform.spring.testmodels.workflow.WorkflowState;
 // below components are not public and thus need to be in the same package as the corresponding test
 public class NotPublicComponents {
   @ComponentId("not-public")
-  static class NotPublicAction extends Action {
-    public Action.Effect<Message> message() {
+  static class NotPublicConsumer extends Consumer {
+    public Effect<Message> message() {
       return effects().ignore();
     }
   }

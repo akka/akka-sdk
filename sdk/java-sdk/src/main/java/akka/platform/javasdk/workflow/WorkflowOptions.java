@@ -4,10 +4,10 @@
 
 package akka.platform.javasdk.workflow;
 
-import akka.platform.javasdk.impl.ComponentOptions;
+import akka.platform.javasdk.impl.CallableComponentOptions;
 import akka.platform.javasdk.impl.workflow.WorkflowOptionsImpl;
 
-public interface WorkflowOptions extends ComponentOptions {
+public interface WorkflowOptions extends CallableComponentOptions {
 
   static WorkflowOptions defaults() {
     return WorkflowOptionsImpl.defaults();

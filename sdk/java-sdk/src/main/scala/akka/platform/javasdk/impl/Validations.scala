@@ -7,13 +7,16 @@ package akka.platform.javasdk.impl
 import java.lang.reflect.AnnotatedElement
 import java.lang.reflect.Method
 import java.lang.reflect.ParameterizedType
+
 import scala.reflect.ClassTag
+
 import akka.platform.javasdk.action.Action
 import akka.platform.javasdk.annotations.ComponentId
 import akka.platform.javasdk.annotations.Consume.FromKeyValueEntity
 import akka.platform.javasdk.annotations.Produce.ServiceStream
 import akka.platform.javasdk.annotations.Query
 import akka.platform.javasdk.annotations.Table
+import akka.platform.javasdk.consumer.Consumer
 import akka.platform.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.platform.javasdk.impl.ComponentDescriptorFactory.eventSourcedEntitySubscription
 import akka.platform.javasdk.impl.ComponentDescriptorFactory.findEventSourcedEntityClass
@@ -25,6 +28,7 @@ import akka.platform.javasdk.impl.ComponentDescriptorFactory.findSubscriptionTop
 import akka.platform.javasdk.impl.ComponentDescriptorFactory.findValueEntityType
 import akka.platform.javasdk.impl.ComponentDescriptorFactory.hasAcl
 import akka.platform.javasdk.impl.ComponentDescriptorFactory.hasActionOutput
+import akka.platform.javasdk.impl.ComponentDescriptorFactory.hasConsumerOutput
 import akka.platform.javasdk.impl.ComponentDescriptorFactory.hasEventSourcedEntitySubscription
 import akka.platform.javasdk.impl.ComponentDescriptorFactory.hasHandleDeletes
 import akka.platform.javasdk.impl.ComponentDescriptorFactory.hasStreamSubscription
@@ -117,6 +121,7 @@ object Validations {
   def validate(component: Class[_]): Validation =
     componentMustBePublic(component) ++
     validateAction(component) ++
+    validateConsumer(component) ++
     validateView(component) ++
     validateEventSourcedEntity(component) ++
     validateValueEntity(component)
@@ -188,7 +193,15 @@ object Validations {
 
   private def validateAction(component: Class[_]): Validation = {
     when[Action](component) {
-      commonSubscriptionValidation(component, hasActionOutput) ++
+      commonSubscriptionValidation(component, m => hasActionOutput(m) || hasConsumerOutput(m)) ++
+      actionValidation(component) ++
+      mustHaveNonEmptyComponentId(component)
+    }
+  }
+
+  private def validateConsumer(component: Class[_]): Validation = {
+    when[Consumer](component) {
+      commonSubscriptionValidation(component, m => hasActionOutput(m) || hasConsumerOutput(m)) ++
       actionValidation(component) ++
       mustHaveNonEmptyComponentId(component)
     }

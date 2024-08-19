@@ -1,16 +1,16 @@
 package com.example.actions;
 
 import akka.platform.javasdk.annotations.ComponentId;
-import com.example.Counter;
-import akka.platform.javasdk.action.Action;
 import akka.platform.javasdk.annotations.Consume;
 import akka.platform.javasdk.client.ComponentClient;
+import akka.platform.javasdk.consumer.Consumer;
+import com.example.Counter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @ComponentId("counter-command-from-topic")
 @Consume.FromTopic(value = "counter-commands", ignoreUnknown = true)
-public class CounterCommandFromTopicAction extends Action {
+public class CounterCommandFromTopicConsumer extends Consumer {
 
   public record IncreaseCounter(String counterId, int value) {
   }
@@ -20,11 +20,11 @@ public class CounterCommandFromTopicAction extends Action {
 
   private ComponentClient componentClient;
 
-  public CounterCommandFromTopicAction(ComponentClient componentClient) {
+  public CounterCommandFromTopicConsumer(ComponentClient componentClient) {
     this.componentClient = componentClient;
   }
 
-  private Logger logger = LoggerFactory.getLogger(CounterCommandFromTopicAction.class);
+  private Logger logger = LoggerFactory.getLogger(CounterCommandFromTopicConsumer.class);
 
   public Effect<String> onValueIncreased(IncreaseCounter increase) {
     logger.info("Received increase event: {}", increase.toString());

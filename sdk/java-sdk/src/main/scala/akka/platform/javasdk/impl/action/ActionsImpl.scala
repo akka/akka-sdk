@@ -11,12 +11,15 @@ import scala.util.control.NonFatal
 
 import akka.NotUsed
 import akka.actor.ActorSystem
+import akka.platform.javasdk
 import akka.platform.javasdk.Metadata
 import akka.platform.javasdk.action.Action
 import akka.platform.javasdk.action.ActionContext
 import akka.platform.javasdk.action.ActionOptions
 import akka.platform.javasdk.action.MessageContext
 import akka.platform.javasdk.action.MessageEnvelope
+import akka.platform.javasdk.consumer.Consumer
+import akka.platform.javasdk.consumer.ConsumerContext
 import akka.platform.javasdk.impl.ActionFactory
 import akka.platform.javasdk.impl.ComponentOptions
 import akka.platform.javasdk.impl.ErrorHandling
@@ -25,7 +28,11 @@ import akka.platform.javasdk.impl.MessageCodec
 import akka.platform.javasdk.impl.MetadataImpl
 import akka.platform.javasdk.impl.Service
 import akka.platform.javasdk.impl._
+import akka.platform.javasdk.impl.consumer
+import akka.platform.javasdk.impl.consumer.ConsumerContextImpl
+import akka.platform.javasdk.impl.consumer.ConsumerService
 import akka.platform.javasdk.impl.telemetry.ActionCategory
+import akka.platform.javasdk.impl.telemetry.ConsumerCategory
 import akka.platform.javasdk.impl.telemetry.Instrumentation
 import akka.platform.javasdk.impl.telemetry.Telemetry
 import akka.platform.javasdk.impl.telemetry.TraceInstrumentation
@@ -110,6 +117,20 @@ private[javasdk] object ActionsImpl {
     }
   }
 
+  private def handleUnexpectedExceptionInConsumer(
+      service: ConsumerService,
+      command: ActionCommand,
+      ex: Throwable): ActionResponse = {
+    ex match {
+      case badReqEx: BadRequestException => handleBadRequest(badReqEx.getMessage)
+      case _ =>
+        ErrorHandling.withCorrelationId { correlationId =>
+          service.log.error(s"Failure during handling of command ${command.serviceName}.${command.name}", ex)
+          protocolFailure(correlationId)
+        }
+    }
+  }
+
   private def handleBadRequest(description: String): ActionResponse =
     ActionResponse(ActionResponse.Response.Failure(Failure(0, description, Status.Code.INVALID_ARGUMENT.value())))
 
@@ -119,18 +140,16 @@ private[javasdk] object ActionsImpl {
 
 }
 
-private[akka] final class ActionsImpl(
-    _system: ActorSystem,
-    services: Map[String, ActionService],
-    timerClient: TimerClient)
+private[akka] final class ActionsImpl(_system: ActorSystem, services: Map[String, Service], timerClient: TimerClient)
     extends Actions {
 
   import ActionsImpl._
   import _system.dispatcher
   implicit val system: ActorSystem = _system
   private val telemetry = Telemetry(system)
-  lazy val telemetries: Map[String, Instrumentation] = services.values.map { s =>
-    (s.serviceName, telemetry.traceInstrumentation(s.serviceName, ActionCategory))
+  lazy val telemetries: Map[String, Instrumentation] = services.values.map {
+    case s: ActionService   => (s.serviceName, telemetry.traceInstrumentation(s.serviceName, ActionCategory))
+    case s: ConsumerService => (s.serviceName, telemetry.traceInstrumentation(s.serviceName, ConsumerCategory))
   }.toMap
 
   private def effectToResponse(
@@ -162,6 +181,35 @@ private[akka] final class ActionsImpl(
     }
   }
 
+  private def consumerEffectToResponse(
+      service: ConsumerService,
+      command: ActionCommand,
+      effect: Consumer.Effect[_],
+      messageCodec: MessageCodec): Future[ActionResponse] = {
+    import akka.platform.javasdk.impl.consumer.ConsumerEffectImpl._
+    effect match {
+      case ReplyEffect(message, metadata) =>
+        val response =
+          component.Reply(Some(messageCodec.encodeScala(message)), metadata.flatMap(MetadataImpl.toProtocol))
+        Future.successful(ActionResponse(ActionResponse.Response.Reply(response)))
+      case AsyncEffect(futureEffect) =>
+        futureEffect
+          .flatMap { effect => consumerEffectToResponse(service, command, effect, messageCodec) }
+          .recover { case NonFatal(ex) =>
+            handleUnexpectedExceptionInConsumer(service, command, ex)
+          }
+      case ErrorEffect(description, status) =>
+        Future.successful(
+          ActionResponse(
+            ActionResponse.Response.Failure(
+              Failure(description = description, grpcStatusCode = status.map(_.value()).getOrElse(0)))))
+      case IgnoreEffect =>
+        Future.successful(ActionResponse(ActionResponse.Response.Empty))
+      case unknown =>
+        throw new IllegalArgumentException(s"Unknown Action.Effect type ${unknown.getClass}")
+    }
+  }
+
   /**
    * Handle a unary command. The input command will contain the service name, command name, request metadata and the
    * command payload. The reply may contain a direct reply, a forward or a failure, and it may contain many side
@@ -169,7 +217,7 @@ private[akka] final class ActionsImpl(
    */
   override def handleUnary(in: ActionCommand): Future[ActionResponse] =
     services.get(in.serviceName) match {
-      case Some(service) =>
+      case Some(service: ActionService) =>
         val span = telemetries(service.serviceName).buildSpan(service, in)
 
         span.foreach(s => MDC.put(Telemetry.TRACE_ID, s.getSpanContext.getTraceId))
@@ -195,7 +243,37 @@ private[akka] final class ActionsImpl(
         fut.andThen { case _ =>
           span.foreach(_.end())
         }
-      case None =>
+
+      case Some(service: ConsumerService) =>
+        val span = telemetries(service.serviceName).buildSpan(service, in)
+
+        span.foreach(s => MDC.put(Telemetry.TRACE_ID, s.getSpanContext.getTraceId))
+        val fut =
+          try {
+            val messageContext =
+              createConsumerMessageContext(in, service.messageCodec, span.map(_.getSpanContext), service.serviceName)
+            val consumerContext = createConsumerContext(service.serviceName)
+            val decodedPayload = service.messageCodec.decodeMessage(
+              in.payload.getOrElse(throw new IllegalArgumentException("No command payload")))
+            val effect = service.factory
+              .create(consumerContext)
+              .handleUnary(
+                in.name,
+                javasdk.consumer.MessageEnvelope.of(decodedPayload, messageContext.metadata()),
+                messageContext)
+            consumerEffectToResponse(service, in, effect, service.messageCodec)
+          } catch {
+            case NonFatal(ex) =>
+              // command handler threw an "unexpected" error
+              span.foreach(_.end())
+              Future.successful(handleUnexpectedExceptionInConsumer(service, in, ex))
+          } finally {
+            MDC.remove(Telemetry.TRACE_ID)
+          }
+        fut.andThen { case _ =>
+          span.foreach(_.end())
+        }
+      case _ =>
         Future.successful(
           ActionResponse(ActionResponse.Response.Failure(Failure(0, "Unknown service: " + in.serviceName))))
     }
@@ -220,7 +298,7 @@ private[akka] final class ActionsImpl(
             "Kalix protocol failure: expected command message with service name and command name, but got empty stream"))))
         case (Seq(call), messages) =>
           services.get(call.serviceName) match {
-            case Some(service) =>
+            case Some(service: ActionService) =>
               try {
                 val messageContext = createMessageContext(call, service.messageCodec, None, service.serviceName)
                 val actionContext = createActionContext(service.serviceName)
@@ -241,7 +319,11 @@ private[akka] final class ActionsImpl(
                   // command handler threw an "unexpected" error
                   Future.successful(handleUnexpectedException(service, call, ex))
               }
-            case None =>
+            case Some(_: ConsumerService) =>
+              Future.successful(
+                ActionResponse(
+                  ActionResponse.Response.Failure(Failure(0, "Streamed calls not supported: " + call.serviceName))))
+            case _ =>
               Future.successful(
                 ActionResponse(ActionResponse.Response.Failure(Failure(0, "Unknown service: " + call.serviceName))))
           }
@@ -256,7 +338,7 @@ private[akka] final class ActionsImpl(
    */
   override def handleStreamedOut(in: ActionCommand): Source[ActionResponse, NotUsed] =
     services.get(in.serviceName) match {
-      case Some(service) =>
+      case Some(service: ActionService) =>
         try {
           val messageContext = createMessageContext(in, service.messageCodec, None, service.serviceName)
           val actionContext = createActionContext(service.serviceName)
@@ -277,7 +359,7 @@ private[akka] final class ActionsImpl(
             // command handler threw an "unexpected" error
             Source.single(handleUnexpectedException(service, in, ex))
         }
-      case None =>
+      case _ =>
         Source.single(ActionResponse(ActionResponse.Response.Failure(Failure(0, "Unknown service: " + in.serviceName))))
     }
 
@@ -302,7 +384,7 @@ private[akka] final class ActionsImpl(
             "Kalix protocol failure: expected command message with service name and command name, but got empty stream"))))
         case (Seq(call), messages) =>
           services.get(call.serviceName) match {
-            case Some(service) =>
+            case Some(service: ActionService) =>
               try {
                 val messageContext = createMessageContext(call, service.messageCodec, None, service.serviceName)
                 val actionContext = createActionContext(service.serviceName)
@@ -331,7 +413,7 @@ private[akka] final class ActionsImpl(
                     Source.single(protocolFailure(correlationId))
                   }
               }
-            case None =>
+            case _ =>
               Source.single(
                 ActionResponse(ActionResponse.Response.Failure(Failure(0, "Unknown service: " + call.serviceName))))
           }
@@ -347,8 +429,22 @@ private[akka] final class ActionsImpl(
     new MessageContextImpl(updatedMetadata, messageCodec, system, timerClient, telemetries(serviceName))
   }
 
+  private def createConsumerMessageContext(
+      in: ActionCommand,
+      messageCodec: MessageCodec,
+      spanContext: Option[SpanContext],
+      serviceName: String): javasdk.consumer.MessageContext = {
+    val metadata = MetadataImpl.of(in.metadata.map(_.entries.toVector).getOrElse(Nil))
+    val updatedMetadata = spanContext.map(metadataWithTracing(metadata, _)).getOrElse(metadata)
+    new consumer.MessageContextImpl(updatedMetadata, messageCodec, system, timerClient, telemetries(serviceName))
+  }
+
   private def createActionContext(serviceName: String): ActionContext = {
     new ActionContextImpl(system)
+  }
+
+  private def createConsumerContext(serviceName: String): ConsumerContext = {
+    new ConsumerContextImpl(system)
   }
 
   private def metadataWithTracing(metadata: MetadataImpl, spanContext: SpanContext): Metadata = {

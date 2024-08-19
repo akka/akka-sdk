@@ -4,6 +4,7 @@
 
 package akka.platform.javasdk.impl
 
+import akka.platform.javasdk.impl.NotPublicComponents.NotPublicConsumer
 import com.google.protobuf.BytesValue
 import com.google.protobuf.Descriptors.FieldDescriptor.JavaType
 import com.google.protobuf.empty.Empty
@@ -14,28 +15,12 @@ import akka.platform.spring.testmodels.action.ActionsTestModels.ActionWithoutPar
 import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.ActionWithMethodLevelAcl
 import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.ActionWithMethodLevelAclAndSubscription
 import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.ActionWithServiceLevelAcl
-import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.AmbiguousDeleteHandlersVESubscriptionInAction
-import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.AmbiguousHandlersESSubscriptionInAction
-import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.AmbiguousHandlersESTypeLevelSubscriptionInAction
-import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.AmbiguousHandlersStreamTypeLevelSubscriptionInAction
-import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.AmbiguousHandlersTopiSubscriptionInAction
-import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.AmbiguousHandlersTopicTypeLevelSubscriptionInAction
-import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.AmbiguousHandlersVESubscriptionInAction
-import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.AmbiguousHandlersVETypeLevelSubscriptionInAction
 import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.DifferentTopicForESSubscription
 import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.DifferentTopicForESTypeLevelSubscription
 import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.DifferentTopicForStreamSubscription
 import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.DifferentTopicForTopicSubscription
 import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.DifferentTopicForTopicTypeLevelSubscription
 import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.DifferentTopicForVESubscription
-import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.ESWithPublishToTopicAction
-import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.EventStreamPublishingAction
-import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.EventStreamSubscriptionAction
-import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.InvalidConsumerGroupsWhenSubscribingToTopicAction
-import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.InvalidSubscribeToEventSourcedEntityAction
-import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.InvalidSubscribeToTopicAction
-import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.MissingHandlersWhenSubscribeToEventSourcedEntityAction
-import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.MissingHandlersWhenSubscribeToEventSourcedOnMethodLevelEntityAction
 import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.MissingSourceForTopicPublishing
 import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.MissingTopicForESSubscription
 import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.MissingTopicForStreamSubscription
@@ -43,26 +28,42 @@ import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.MissingTop
 import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.MissingTopicForTopicTypeLevelSubscription
 import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.MissingTopicForTypeLevelESSubscription
 import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.MissingTopicForVESubscription
-import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.MultipleTypeLevelSubscriptionsInAction
-import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.MultipleUpdateMethodsForVETypeLevelSubscriptionInAction
-import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.PublishBytesToTopicAction
-import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.StreamSubscriptionWithPublishToTopicAction
 import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.SubscribeOnlyOneToEventSourcedEntityActionTypeLevel
-import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.SubscribeToBytesFromTopicAction
 import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.SubscribeToEventSourcedEmployee
-import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.SubscribeToEventSourcedEntityAction
-import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.SubscribeToTopicAction
-import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.SubscribeToTopicCombinedAction
-import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.SubscribeToTopicTypeLevelAction
-import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.SubscribeToTopicTypeLevelCombinedAction
-import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.SubscribeToTwoTopicsAction
-import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.SubscribeToValueEntityAction
-import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.SubscribeToValueEntityTypeLevelAction
-import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.SubscribeToValueEntityWithDeletesAction
-import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.TypeLevelESWithPublishToTopicAction
-import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.TypeLevelTopicSubscriptionWithPublishToTopicAction
-import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.VEWithPublishToTopicAction
 import akka.platform.spring.testmodels.keyvalueentity.CounterState
+import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.AmbiguousDeleteHandlersVESubscriptionInConsumer
+import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.AmbiguousHandlersESSubscriptionInConsumer
+import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.AmbiguousHandlersESTypeLevelSubscriptionInConsumer
+import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.AmbiguousHandlersStreamTypeLevelSubscriptionInConsumer
+import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.AmbiguousHandlersTopiSubscriptionInConsumer
+import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.AmbiguousHandlersTopicTypeLevelSubscriptionInConsumer
+import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.AmbiguousHandlersVESubscriptionInConsumer
+import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.AmbiguousHandlersVETypeLevelSubscriptionInConsumer
+import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.ESWithPublishToTopicConsumer
+import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.EventStreamPublishingConsumer
+import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.EventStreamSubscriptionConsumer
+import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.InvalidConsumerGroupsWhenSubscribingToTopicConsumer
+import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.InvalidSubscribeToEventSourcedEntityConsumer
+import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.InvalidSubscribeToTopicConsumer
+import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.MissingHandlersWhenSubscribeToEventSourcedEntityConsumer
+import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.MissingHandlersWhenSubscribeToEventSourcedOnMethodLevelEntityConsumer
+import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.MultipleTypeLevelSubscriptions
+import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.MultipleUpdateMethodsForVETypeLevelSubscription
+import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.PublishBytesToTopic
+import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.StreamSubscriptionWithPublishToTopic
+import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.SubscribeToBytesFromTopic
+import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.SubscribeToEventSourcedEntity
+import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.SubscribeToTopic
+import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.SubscribeToTopicCombined
+import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.SubscribeToTopicTypeLevel
+import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.SubscribeToTopicTypeLevelCombined
+import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.SubscribeToTwoTopics
+import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.SubscribeToValueEntity
+import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.SubscribeToValueEntityTypeLevel
+import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.SubscribeToValueEntityWithDeletes
+import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.TypeLevelESWithPublishToTopic
+import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.TypeLevelTopicSubscriptionWithPublishToTopic
+import akka.platform.spring.testmodels.subscriptions.PubSubTestModels.VEWithPublishToTopic
 import org.scalatest.wordspec.AnyWordSpec
 
 class ActionDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuite {
@@ -71,8 +72,8 @@ class ActionDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSu
 
     "validate an Action must be declared as public" in {
       intercept[InvalidComponentException] {
-        Validations.validate(classOf[NotPublicComponents.NotPublicAction]).failIfInvalid
-      }.getMessage should include("NotPublicAction is not marked with `public` modifier. Components must be public.")
+        Validations.validate(classOf[NotPublicConsumer]).failIfInvalid
+      }.getMessage should include("NotPublicConsumer is not marked with `public` modifier. Components must be public.")
     }
 
     "generate mappings for an Action with method without path param" in {
@@ -166,7 +167,7 @@ class ActionDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSu
     }
 
     "generate combined mapping with Event Sourced Entity Subscription annotation" in {
-      assertDescriptor[SubscribeToEventSourcedEntityAction] { desc =>
+      assertDescriptor[SubscribeToEventSourcedEntity] { desc =>
         val methodDescriptor = findMethodByName(desc, "KalixSyntheticMethodOnESCounterentity")
         methodDescriptor.isServerStreaming shouldBe false
         methodDescriptor.isClientStreaming shouldBe false
@@ -180,7 +181,7 @@ class ActionDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSu
     }
 
     "generate mapping with Key Value Entity Subscription annotations" in {
-      assertDescriptor[SubscribeToValueEntityAction] { desc =>
+      assertDescriptor[SubscribeToValueEntity] { desc =>
 
         val onUpdateMethodDescriptor = findMethodByName(desc, "OnUpdate")
         onUpdateMethodDescriptor.isServerStreaming shouldBe false
@@ -204,7 +205,7 @@ class ActionDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSu
     }
 
     "generate mapping with Key Value Entity Subscription annotations (type level)" in {
-      assertDescriptor[SubscribeToValueEntityTypeLevelAction] { desc =>
+      assertDescriptor[SubscribeToValueEntityTypeLevel] { desc =>
 
         val onUpdateMethodDescriptor = findMethodByName(desc, "OnUpdate")
         onUpdateMethodDescriptor.isServerStreaming shouldBe false
@@ -228,7 +229,7 @@ class ActionDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSu
     }
 
     "generate mapping with Key Value Entity and delete handler" in {
-      assertDescriptor[SubscribeToValueEntityWithDeletesAction] { desc =>
+      assertDescriptor[SubscribeToValueEntityWithDeletes] { desc =>
 
         val onUpdateMethodDescriptor = findMethodByName(desc, "OnUpdate")
         onUpdateMethodDescriptor.isServerStreaming shouldBe false
@@ -255,7 +256,7 @@ class ActionDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSu
     }
 
     "generate mapping for an Action with a subscription to a topic" in {
-      assertDescriptor[SubscribeToTopicAction] { desc =>
+      assertDescriptor[SubscribeToTopic] { desc =>
         val methodOne = desc.commandHandlers("MessageOne")
         methodOne.requestMessageDescriptor.getFullName shouldBe JavaPbAny.getDescriptor.getFullName
 
@@ -270,7 +271,7 @@ class ActionDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSu
     }
 
     "generate mapping for an Action with a subscription to a topic (type level)" in {
-      assertDescriptor[SubscribeToTopicTypeLevelAction] { desc =>
+      assertDescriptor[SubscribeToTopicTypeLevel] { desc =>
         val methodOne = desc.commandHandlers("MessageOne")
         methodOne.requestMessageDescriptor.getFullName shouldBe JavaPbAny.getDescriptor.getFullName
 
@@ -285,7 +286,7 @@ class ActionDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSu
     }
 
     "generate mapping for an Action with a subscription to a topic (type level) with combined handler" in {
-      assertDescriptor[SubscribeToTopicTypeLevelCombinedAction] { desc =>
+      assertDescriptor[SubscribeToTopicTypeLevelCombined] { desc =>
         val methodOne = desc.commandHandlers("KalixSyntheticMethodOnTopicTopicXYZ")
         methodOne.requestMessageDescriptor.getFullName shouldBe JavaPbAny.getDescriptor.getFullName
 
@@ -303,7 +304,7 @@ class ActionDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSu
     }
 
     "generate mapping for an Action with a subscription to a topic with combined handler" in {
-      assertDescriptor[SubscribeToTopicCombinedAction] { desc =>
+      assertDescriptor[SubscribeToTopicCombined] { desc =>
         val methodOne = desc.commandHandlers("KalixSyntheticMethodOnTopicTopicXYZ")
         methodOne.requestMessageDescriptor.getFullName shouldBe JavaPbAny.getDescriptor.getFullName
 
@@ -318,7 +319,7 @@ class ActionDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSu
     }
 
     "build a combined synthetic method when there are two subscriptions to the same topic" in {
-      assertDescriptor[SubscribeToTwoTopicsAction] { desc =>
+      assertDescriptor[SubscribeToTwoTopics] { desc =>
         val methodOne = desc.commandHandlers("KalixSyntheticMethodOnTopicTopicXYZ")
         methodOne.requestMessageDescriptor.getFullName shouldBe JavaPbAny.getDescriptor.getFullName
 
@@ -353,74 +354,74 @@ class ActionDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSu
 
     "validates it is forbidden Entity Subscription at annotation type level and method level at the same time" in {
       intercept[InvalidComponentException] {
-        Validations.validate(classOf[InvalidSubscribeToEventSourcedEntityAction]).failIfInvalid
+        Validations.validate(classOf[InvalidSubscribeToEventSourcedEntityConsumer]).failIfInvalid
       }.getMessage should include(
         "You cannot use @Consume.FromEventSourcedEntity annotation in both methods and class.")
     }
 
     "validates that ambiguous handler VE" in {
       intercept[InvalidComponentException] {
-        Validations.validate(classOf[AmbiguousHandlersVESubscriptionInAction]).failIfInvalid
+        Validations.validate(classOf[AmbiguousHandlersVESubscriptionInConsumer]).failIfInvalid
       }.getMessage should include(
         "Ambiguous handlers for java.lang.Integer, methods: [methodOne, methodTwo] consume the same type.")
     }
 
     "validates that ambiguous delete handler VE" in {
       intercept[InvalidComponentException] {
-        Validations.validate(classOf[AmbiguousDeleteHandlersVESubscriptionInAction]).failIfInvalid
+        Validations.validate(classOf[AmbiguousDeleteHandlersVESubscriptionInConsumer]).failIfInvalid
       }.getMessage should include("Ambiguous delete handlers: [methodOne, methodTwo].")
     }
 
     "validates that ambiguous handler VE (type level)" in {
       intercept[InvalidComponentException] {
-        Validations.validate(classOf[AmbiguousHandlersVETypeLevelSubscriptionInAction]).failIfInvalid
+        Validations.validate(classOf[AmbiguousHandlersVETypeLevelSubscriptionInConsumer]).failIfInvalid
       }.getMessage should include(
         "Ambiguous handlers for java.lang.Integer, methods: [methodOne, methodTwo] consume the same type.")
     }
 
     "validates that only single update handler is present for VE sub (type level)" in {
       intercept[InvalidComponentException] {
-        Validations.validate(classOf[MultipleUpdateMethodsForVETypeLevelSubscriptionInAction]).failIfInvalid
+        Validations.validate(classOf[MultipleUpdateMethodsForVETypeLevelSubscription]).failIfInvalid
       }.getMessage should include("Duplicated update methods [methodOne, methodTwo]for KeyValueEntity subscription.")
     }
 
     "validates that only type level subscription is valid" in {
       intercept[InvalidComponentException] {
-        Validations.validate(classOf[MultipleTypeLevelSubscriptionsInAction]).failIfInvalid
+        Validations.validate(classOf[MultipleTypeLevelSubscriptions]).failIfInvalid
       }.getMessage should include("Only one subscription type is allowed on a type level.")
     }
 
     "validates that ambiguous handler ES" in {
       intercept[InvalidComponentException] {
-        Validations.validate(classOf[AmbiguousHandlersESSubscriptionInAction]).failIfInvalid
+        Validations.validate(classOf[AmbiguousHandlersESSubscriptionInConsumer]).failIfInvalid
       }.getMessage should include(
         "Ambiguous handlers for java.lang.Integer, methods: [methodOne, methodTwo] consume the same type.")
     }
 
     "validates that ambiguous handler ES (type level)" in {
       intercept[InvalidComponentException] {
-        Validations.validate(classOf[AmbiguousHandlersESTypeLevelSubscriptionInAction]).failIfInvalid
+        Validations.validate(classOf[AmbiguousHandlersESTypeLevelSubscriptionInConsumer]).failIfInvalid
       }.getMessage should include(
         "Ambiguous handlers for java.lang.Integer, methods: [methodOne, methodTwo] consume the same type.")
     }
 
     "validates that ambiguous handler Stream (type level)" in {
       intercept[InvalidComponentException] {
-        Validations.validate(classOf[AmbiguousHandlersStreamTypeLevelSubscriptionInAction]).failIfInvalid
+        Validations.validate(classOf[AmbiguousHandlersStreamTypeLevelSubscriptionInConsumer]).failIfInvalid
       }.getMessage should include(
         "Ambiguous handlers for java.lang.Integer, methods: [methodOne, methodTwo] consume the same type.")
     }
 
     "validates that ambiguous handler Topic" in {
       intercept[InvalidComponentException] {
-        Validations.validate(classOf[AmbiguousHandlersTopiSubscriptionInAction]).failIfInvalid
+        Validations.validate(classOf[AmbiguousHandlersTopiSubscriptionInConsumer]).failIfInvalid
       }.getMessage should include(
         "Ambiguous handlers for java.lang.Integer, methods: [methodOne, methodTwo] consume the same type.")
     }
 
     "validates that ambiguous handler Topic (type level)" in {
       intercept[InvalidComponentException] {
-        Validations.validate(classOf[AmbiguousHandlersTopicTypeLevelSubscriptionInAction]).failIfInvalid
+        Validations.validate(classOf[AmbiguousHandlersTopicTypeLevelSubscriptionInConsumer]).failIfInvalid
       }.getMessage should include(
         "Ambiguous handlers for java.lang.Integer, methods: [methodOne, methodTwo] consume the same type.")
     }
@@ -518,33 +519,35 @@ class ActionDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSu
 
     "validates if there are missing event handlers for event sourced Entity Subscription at type level" in {
       intercept[InvalidComponentException] {
-        Validations.validate(classOf[MissingHandlersWhenSubscribeToEventSourcedEntityAction]).failIfInvalid
+        Validations.validate(classOf[MissingHandlersWhenSubscribeToEventSourcedEntityConsumer]).failIfInvalid
       }.getMessage shouldBe
-      "On 'akka.platform.spring.testmodels.subscriptions.PubSubTestModels$MissingHandlersWhenSubscribeToEventSourcedEntityAction': missing an event handler for 'akka.platform.spring.testmodels.eventsourcedentity.EmployeeEvent$EmployeeEmailUpdated'."
+      "On 'akka.platform.spring.testmodels.subscriptions.PubSubTestModels$MissingHandlersWhenSubscribeToEventSourcedEntityConsumer': missing an event handler for 'akka.platform.spring.testmodels.eventsourcedentity.EmployeeEvent$EmployeeEmailUpdated'."
     }
 
     "validates if there are missing event handlers for event sourced Entity Subscription at method level" in {
       intercept[InvalidComponentException] {
-        Validations.validate(classOf[MissingHandlersWhenSubscribeToEventSourcedOnMethodLevelEntityAction]).failIfInvalid
+        Validations
+          .validate(classOf[MissingHandlersWhenSubscribeToEventSourcedOnMethodLevelEntityConsumer])
+          .failIfInvalid
       }.getMessage shouldBe
-      "On 'akka.platform.spring.testmodels.subscriptions.PubSubTestModels$MissingHandlersWhenSubscribeToEventSourcedOnMethodLevelEntityAction': missing an event handler for 'akka.platform.spring.testmodels.eventsourcedentity.EmployeeEvent$EmployeeEmailUpdated'."
+      "On 'akka.platform.spring.testmodels.subscriptions.PubSubTestModels$MissingHandlersWhenSubscribeToEventSourcedOnMethodLevelEntityConsumer': missing an event handler for 'akka.platform.spring.testmodels.eventsourcedentity.EmployeeEvent$EmployeeEmailUpdated'."
     }
 
     "validates it is forbidden Topic Subscription at annotation type level and method level at the same time" in {
       intercept[InvalidComponentException] {
-        Validations.validate(classOf[InvalidSubscribeToTopicAction]).failIfInvalid
+        Validations.validate(classOf[InvalidSubscribeToTopicConsumer]).failIfInvalid
       }.getMessage should include("You cannot use @Consume.FormTopic annotation in both methods and class.")
     }
 
     "validates consumer group must be the same per topic" in {
       intercept[InvalidComponentException] {
-        Validations.validate(classOf[InvalidConsumerGroupsWhenSubscribingToTopicAction]).failIfInvalid
+        Validations.validate(classOf[InvalidConsumerGroupsWhenSubscribingToTopicConsumer]).failIfInvalid
       }.getMessage should include(
         "All subscription methods to topic [topicXYZ] must have the same consumer group, but found different consumer groups [cg, cg2].")
     }
 
     "generate mapping for an Action with a VE subscription and publication to a topic" in {
-      assertDescriptor[VEWithPublishToTopicAction] { desc =>
+      assertDescriptor[VEWithPublishToTopic] { desc =>
         val methodOne = desc.commandHandlers("MessageOne")
         methodOne.requestMessageDescriptor.getFullName shouldBe JavaPbAny.getDescriptor.getFullName
 
@@ -568,7 +571,7 @@ class ActionDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSu
     }
 
     "generate mapping for an Action with raw bytes publication to a topic" in {
-      assertDescriptor[PublishBytesToTopicAction] { desc =>
+      assertDescriptor[PublishBytesToTopic] { desc =>
         val methodOne = desc.commandHandlers("Produce")
         methodOne.requestMessageDescriptor.getFullName shouldBe JavaPbAny.getDescriptor.getFullName
 
@@ -579,7 +582,7 @@ class ActionDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSu
     }
 
     "generate mapping for an Action subscribing to raw bytes from a topic" in {
-      assertDescriptor[SubscribeToBytesFromTopicAction] { desc =>
+      assertDescriptor[SubscribeToBytesFromTopic] { desc =>
         val methodOne = desc.commandHandlers("Consume")
         methodOne.requestMessageDescriptor.getFullName shouldBe JavaPbAny.getDescriptor.getFullName
 
@@ -592,7 +595,7 @@ class ActionDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSu
     }
 
     "generate mapping for an Action with a ES subscription and publication to a topic" in {
-      assertDescriptor[ESWithPublishToTopicAction] { desc =>
+      assertDescriptor[ESWithPublishToTopicConsumer] { desc =>
         desc.commandHandlers should have size 1
 
         val methodOne = desc.commandHandlers("KalixSyntheticMethodOnESEmployee")
@@ -604,7 +607,7 @@ class ActionDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSu
     }
 
     "generate mapping for an Action with a ES type level subscription and publication to a topic" in {
-      assertDescriptor[TypeLevelESWithPublishToTopicAction] { desc =>
+      assertDescriptor[TypeLevelESWithPublishToTopic] { desc =>
         desc.commandHandlers should have size 1
 
         val methodOne = desc.commandHandlers("KalixSyntheticMethodOnESEmployee")
@@ -616,7 +619,7 @@ class ActionDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSu
     }
 
     "generate mapping for an Action with a Topic subscription and publication to a topic" in {
-      assertDescriptor[TypeLevelTopicSubscriptionWithPublishToTopicAction] { desc =>
+      assertDescriptor[TypeLevelTopicSubscriptionWithPublishToTopic] { desc =>
         desc.commandHandlers should have size 1
 
         val methodOne = desc.commandHandlers("KalixSyntheticMethodOnTopicSource")
@@ -628,7 +631,7 @@ class ActionDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSu
     }
 
     "generate mapping for an Action with a Topic type level subscription and publication to a topic" in {
-      assertDescriptor[TypeLevelTopicSubscriptionWithPublishToTopicAction] { desc =>
+      assertDescriptor[TypeLevelTopicSubscriptionWithPublishToTopic] { desc =>
         desc.commandHandlers should have size 1
 
         val methodOne = desc.commandHandlers("KalixSyntheticMethodOnTopicSource")
@@ -640,7 +643,7 @@ class ActionDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSu
     }
 
     "generate mapping for an Action with a Stream subscription and publication to a topic" in {
-      assertDescriptor[StreamSubscriptionWithPublishToTopicAction] { desc =>
+      assertDescriptor[StreamSubscriptionWithPublishToTopic] { desc =>
         desc.commandHandlers should have size 1
 
         val methodOne = desc.commandHandlers("KalixSyntheticMethodOnStreamSource")
@@ -675,7 +678,7 @@ class ActionDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSu
     }
 
     "generate mappings for service to service publishing " in {
-      assertDescriptor[EventStreamPublishingAction] { desc =>
+      assertDescriptor[EventStreamPublishingConsumer] { desc =>
         val serviceOptions = findKalixServiceOptions(desc)
 
         val eventingOut = serviceOptions.getEventing.getOut
@@ -698,7 +701,7 @@ class ActionDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSu
     }
 
     "generate mappings for service to service subscription " in {
-      assertDescriptor[EventStreamSubscriptionAction] { desc =>
+      assertDescriptor[EventStreamSubscriptionConsumer] { desc =>
         val serviceOptions = findKalixServiceOptions(desc)
 
         val eventingIn = serviceOptions.getEventing.getIn

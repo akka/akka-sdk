@@ -1,9 +1,8 @@
 package com.example;
 
 import akka.http.javadsl.model.ContentTypes;
-import akka.http.javadsl.model.StatusCode;
 import akka.http.javadsl.model.StatusCodes;
-import com.example.actions.CounterCommandFromTopicAction;
+import com.example.actions.CounterCommandFromTopicConsumer;
 import akka.platform.javasdk.testkit.KalixTestKit;
 import akka.platform.spring.testkit.KalixIntegrationTestKitSupport;
 import org.awaitility.Awaitility;
@@ -39,7 +38,7 @@ public class CounterIntegrationWithRealPubSubTest extends KalixIntegrationTestKi
         { "counterId": "%s", "value":20 }
       """.formatted(counterId);
 
-    var messageBody = buildMessageBody(msg, CounterCommandFromTopicAction.IncreaseCounter.class.getName());
+    var messageBody = buildMessageBody(msg, CounterCommandFromTopicConsumer.IncreaseCounter.class.getName());
 
     var pubSubClient = new akka.platform.javasdk.http.HttpClient(kalixTestKit.getActorSystem(), "http://localhost:8085");
     var response = pubSubClient.POST("/v1/projects/test/topics/counter-commands:publish")

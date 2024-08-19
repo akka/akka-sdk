@@ -1,10 +1,10 @@
 package com.example.actions;
 
 import akka.Done;
-import akka.platform.javasdk.action.Action;
+import akka.platform.javasdk.consumer.Consumer;
 
 // tag::class[]
-public class SubscribeToRawBytesAction extends Action {
+public class SubscribeToRawBytesConsumer extends Consumer {
 
   public Effect<Done> onMessage(byte[] bytes) { // <1>
     // deserialization logic here

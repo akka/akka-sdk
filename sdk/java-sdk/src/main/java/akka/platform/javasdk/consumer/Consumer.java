@@ -2,34 +2,30 @@
  * Copyright (C) 2021-2024 Lightbend Inc. <https://www.lightbend.com>
  */
 
-package akka.platform.javasdk.action;
+package akka.platform.javasdk.consumer;
 
-import io.grpc.Status;
 import akka.platform.javasdk.Metadata;
-import akka.platform.javasdk.StatusCode;
-import akka.platform.javasdk.impl.action.MessageContextImpl;
-import akka.platform.javasdk.impl.action.ActionEffectImpl;
+import akka.platform.javasdk.impl.consumer.ConsumerEffectImpl;
+import akka.platform.javasdk.impl.consumer.MessageContextImpl;
 import akka.platform.javasdk.timer.TimerScheduler;
 
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 
+//TODO stateless?
 /**
- * Actions are stateless components that can be used to implement different uses cases, such as:
+ *
+ * Consumers are stateless components that can be used to implement different uses cases, such as:
  *
  * <p>
  * <ul>
- *   <li>a pure function.
- *   <li>publish messages to a Topic.
- *   <li>schedule and cancel Timers.
+ *   <li>subscribe to events from an Event Sourced Entity.
+ *   <li>subscribe to state changes from a Key Value Entity.
  * </ul>
  *
- * <p>
- * Actions can be triggered by a scheduled call from a Timer.
- *
- * An Action method should return an {@link Effect} that describes what to do next.
+ * A Consumer method should return an {@link Effect} that describes what to do next.
  */
-public abstract class Action {
+public abstract class Consumer {
 
   private volatile Optional<MessageContext> messageContext = Optional.empty();
 
@@ -54,7 +50,7 @@ public abstract class Action {
   }
 
   public final Effect.Builder effects() {
-    return ActionEffectImpl.builder(messageContext().metadata());
+    return ConsumerEffectImpl.builder();
   }
 
   /**
@@ -75,13 +71,12 @@ public abstract class Action {
    * Each Kalix component defines its own effects, which are a set of predefined
    * operations that match the capabilities of that component.
    * <p>
-   * An Action Effect can either:
+   * A Consumer Effect can either:
    * <p>
    * <ul>
-   *   <li>reply with a message to the caller
    *   <li>reply with a message to be published to a Topic (in case the method is a publisher)
+   *   <li>reply with a Done message to indicate that the command was processed successfully
    *   <li>forward the message to another component
-   *   <li>return an error
    *   <li>ignore the call
    * </ul>
    *
@@ -90,8 +85,7 @@ public abstract class Action {
   public interface Effect<T> {
 
     /**
-     * Construct the effect that is returned by the command handler. The effect describes next
-     * processing actions, such as sending a reply.
+     * Construct the effect that is returned by the message handler.
      */
     interface Builder {
       /**
@@ -112,37 +106,6 @@ public abstract class Action {
        * @return A message reply.
        */
       <S> Effect<S> reply(S message, Metadata metadata);
-
-      /**
-       * Create an error reply.
-       *
-       * @param description The description of the error.
-       * @param <S>         The type of the message that must be returned by this call.
-       * @return An error reply.
-       */
-      <S> Effect<S> error(String description);
-
-      /**
-       * Create an error reply with a custom gRPC status code.
-       *
-       * @param description   The description of the error.
-       * @param grpcErrorCode A custom gRPC status code.
-       * @param <T>           The type of the message that must be returned by this call.
-       * @return An error reply.
-       */
-      <T> Effect<T> error(String description, Status.Code grpcErrorCode);
-
-      /**
-       * Create an error reply with a custom status code.
-       * This status code will be translated to an HTTP or gRPC code
-       * depending on the type of service being exposed.
-       *
-       * @param description   The description of the error.
-       * @param httpErrorCode A custom Kalix status code to represent the error.
-       * @param <T>           The type of the message that must be returned by this call.
-       * @return An error reply.
-       */
-      <T> Effect<T> error(String description, StatusCode.ErrorCode httpErrorCode);
 
       /**
        * Create a message reply from an async operation result.
@@ -173,12 +136,7 @@ public abstract class Action {
       <S> Effect<S> asyncEffect(CompletionStage<Effect<S>> futureEffect);
 
       /**
-       * Ignore the current element and proceed with processing the next element if returned for an
-       * element from a subscription.
-       * If used as a response to a regular gRPC or HTTP request it is turned
-       * into a NotFound response.
-       * <p>
-       * Ignore is not allowed to have side effects added with `addSideEffects`
+       * Ignore the current message and proceed with processing the next message
        */
       <S> Effect<S> ignore();
     }

@@ -4,9 +4,9 @@
 
 package akka.platform.spring.testmodels.action;
 
-import akka.platform.javasdk.action.Action;
 import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.annotations.Consume;
+import akka.platform.javasdk.consumer.Consumer;
 import akka.platform.spring.testmodels.Done;
 import akka.platform.spring.testmodels.keyvalueentity.Counter;
 import akka.platform.spring.testmodels.keyvalueentity.CounterState;
@@ -14,7 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @ComponentId("counter-subscriber")
-public class CounterSubscriber extends Action {
+public class CounterConsumer extends Consumer {
 
   private Logger logger = LoggerFactory.getLogger(getClass());
 
