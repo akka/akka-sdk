@@ -40,8 +40,8 @@ public class UserCountersView extends View {
   }
 
   @Table("users")
+  @Consume.FromKeyValueEntity(UserEntity.class)
   public static class Users extends TableUpdater<UserWithId> {
-    @Consume.FromKeyValueEntity(UserEntity.class)
     public Effect<UserWithId> onChange(User user) {
       return effects()
           .updateRow(

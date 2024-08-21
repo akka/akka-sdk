@@ -27,10 +27,11 @@ mvn compile exec:java
 ### Create a customer
 
 ```shell
-curl localhost:9001/customer/one/create \
+curl localhost:9001/customer/create \
   --header "Content-Type: application/json" \
   -XPOST \
-  --data '{"email":"test@example.com","name":"Testsson","address":{"street":"Teststreet 25","city":"Testcity"}}'
+  --data '{"customerId": "one", "customer": {"email":"test@example.com","name":"Testsson","address":
+  {"street":"Teststreet 25","city":"Testcity"}}}'
 ```
 
 This call is made on the subscriber service and will be forwarded to the `java-eventsourced-customer-registry` service.

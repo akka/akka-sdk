@@ -13,11 +13,11 @@ import org.slf4j.LoggerFactory;
 import akka.platform.javasdk.annotations.ComponentId;
 
 @ComponentId("tracing-action")
+@Consume.FromEventSourcedEntity(value = TestEventSourcedEntity.class, ignoreUnknown = true)
 public class TestTracing extends Consumer {
 
   Logger logger = LoggerFactory.getLogger(TestTracing.class);
 
-  @Consume.FromEventSourcedEntity(value = TestEventSourcedEntity.class, ignoreUnknown = true)
   public Effect consume(TestESEvent.Event2 event) {
     logger.info("registering a logging event");
     return effects().produce(

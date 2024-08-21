@@ -13,11 +13,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @ComponentId("counter-subscriber")
+@Consume.FromKeyValueEntity(Counter.class)
 public class CounterConsumer extends Consumer {
 
   private Logger logger = LoggerFactory.getLogger(getClass());
 
-  @Consume.FromKeyValueEntity(Counter.class)
   public Effect changes(CounterState counterState) {
     logger.info("Counter subscriber: counter id '{}' is '{}'", counterState.id, counterState.value);
     return effects().done();

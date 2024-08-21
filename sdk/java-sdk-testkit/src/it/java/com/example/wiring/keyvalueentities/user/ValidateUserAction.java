@@ -4,18 +4,18 @@
 
 package com.example.wiring.keyvalueentities.user;
 
-import com.example.wiring.Ok;
 import akka.platform.javasdk.StatusCode;
 import akka.platform.javasdk.action.Action;
-import akka.platform.javasdk.action.ActionContext;
 import akka.platform.javasdk.client.ComponentClient;
+import akka.platform.javasdk.consumer.ConsumerContext;
+import com.example.wiring.Ok;
 
 public class ValidateUserAction extends Action {
 
-  private ActionContext ctx;
+  private ConsumerContext ctx;
   private ComponentClient componentClient;
 
-  public ValidateUserAction(ActionContext ctx, ComponentClient componentClient) {
+  public ValidateUserAction(ConsumerContext ctx, ComponentClient componentClient) {
     this.ctx = ctx;
     this.componentClient = componentClient;
   }

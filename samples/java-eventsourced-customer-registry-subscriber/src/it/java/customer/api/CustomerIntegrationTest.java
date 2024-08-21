@@ -1,10 +1,13 @@
 package customer.api;
 
 
-import customer.actions.CustomerRegistryAction;
+import akka.platform.javasdk.http.HttpClient;
+import akka.platform.javasdk.http.StrictResponse;
+import customer.api.CustomerRegistryEndpoint.Confirm;
+import customer.api.CustomerRegistryEndpoint.CreateRequest;
+import customer.api.CustomerRegistryEndpoint.Customer;
 import customer.views.CustomersByNameView;
 import org.awaitility.Awaitility;
-import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,6 +17,7 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * This test exercises the integration between the current service (customer-registry-subscriber) and the customer-registry service.
@@ -41,21 +45,26 @@ public class CustomerIntegrationTest extends CustomerRegistryIntegrationTest {
   public void create()  {
     // start the real test now
     String id = UUID.randomUUID().toString();
-    CustomerRegistryAction.Customer customer = new CustomerRegistryAction.Customer("foo@example.com", "Johanna", new CustomerRegistryAction.Address("street", "city"));
+    Customer customer = new Customer("foo@example.com", "Johanna", new CustomerRegistryEndpoint.Address("street", "city"));
+        CreateRequest createRequest = new CreateRequest(id, customer);
+
+    //TODO improve this when dealing with 2 HttpClients
+    HttpClient client = createClient("http://localhost:9001");
 
     // try until it succeeds
     Awaitility.await()
       .ignoreExceptions()
       .pollInterval(5, TimeUnit.SECONDS)
       .atMost(10, TimeUnit.SECONDS)
-      .until(() ->
-        await(
-          componentClient.forAction()
-            .method(CustomerRegistryAction::create)
-            .invokeAsync(new CustomerRegistryAction.CreateRequest(id, customer))
-        ).msg(),
-        new IsEqual<>("done")
-      );
+      .untilAsserted(() -> {
+
+        StrictResponse<Confirm> res = await(
+          client.POST("/customer/create")
+            .withRequestBody(createRequest).responseBodyAs(Confirm.class).invokeAsync()
+        );
+
+        assertThat(res.body().msg()).isEqualTo("done");
+      });
 
 
     // the view is eventually updated
@@ -64,14 +73,15 @@ public class CustomerIntegrationTest extends CustomerRegistryIntegrationTest {
       .ignoreExceptions()
       .pollInterval(5, TimeUnit.SECONDS)
       .atMost(60, TimeUnit.SECONDS)
-      .until(() ->
-          await(
-            componentClient.forView()
-              .method(CustomersByNameView::findByName)
-              .invokeAsync(new CustomersByNameView.QueryParameters("Johanna"))
-          ).customers().stream().findFirst().get().name(),
-        new IsEqual("Johanna")
-      );
+      .untilAsserted(() -> {
+        String name = await(
+          componentClient.forView()
+            .method(CustomersByNameView::findByName)
+            .invokeAsync(new CustomersByNameView.QueryParameters("Johanna"))
+        ).customers().stream().findFirst().get().name();
+
+        assertThat(name).isEqualTo("Johanna");
+      });
   }
 
 }

@@ -14,6 +14,7 @@ import akka.platform.javasdk.annotations.Consume.FromEventSourcedEntity
 import akka.platform.javasdk.annotations.Consume.FromKeyValueEntity
 import akka.platform.javasdk.annotations.Consume.FromServiceStream
 import akka.platform.javasdk.annotations.Consume.FromTopic
+import akka.platform.javasdk.annotations.DeleteHandler
 import akka.platform.javasdk.annotations.Produce.ServiceStream
 import akka.platform.javasdk.annotations.Produce.ToTopic
 import akka.platform.javasdk.consumer.Consumer
@@ -22,7 +23,6 @@ import akka.platform.javasdk.impl.reflection.CombinedSubscriptionServiceMethod
 import akka.platform.javasdk.impl.reflection.KalixMethod
 import akka.platform.javasdk.impl.reflection.NameGenerator
 import akka.platform.javasdk.impl.reflection.Reflect
-import akka.platform.javasdk.keyvalueentity.KeyValueEntity
 import akka.platform.javasdk.view.TableUpdater
 import kalix.DirectDestination
 import kalix.DirectSource
@@ -44,23 +44,11 @@ private[impl] object ComponentDescriptorFactory {
   def hasValueEntitySubscription(clazz: Class[_]): Boolean =
     clazz.isPublic && clazz.hasAnnotation[FromKeyValueEntity]
 
-  def hasValueEntitySubscription(javaMethod: Method): Boolean =
-    javaMethod.isPublic && javaMethod.hasAnnotation[FromKeyValueEntity]
-
-  def hasEventSourcedEntitySubscription(javaMethod: Method): Boolean =
-    javaMethod.isPublic && javaMethod.hasAnnotation[FromEventSourcedEntity]
-
   def hasEventSourcedEntitySubscription(clazz: Class[_]): Boolean =
     clazz.isPublic && clazz.hasAnnotation[FromEventSourcedEntity]
 
   def streamSubscription(clazz: Class[_]): Option[FromServiceStream] =
     clazz.getAnnotationOption[FromServiceStream]
-
-  def hasSubscription(javaMethod: Method): Boolean = {
-    hasValueEntitySubscription(javaMethod) ||
-    hasEventSourcedEntitySubscription(javaMethod) ||
-    hasTopicSubscription(javaMethod)
-  }
 
   def hasSubscription(clazz: Class[_]): Boolean = {
     hasValueEntitySubscription(clazz) ||
@@ -68,9 +56,6 @@ private[impl] object ComponentDescriptorFactory {
     hasTopicSubscription(clazz) ||
     hasStreamSubscription(clazz)
   }
-
-  private def valueEntitySubscription(clazz: Class[_]): Option[FromKeyValueEntity] =
-    clazz.getAnnotationOption[FromKeyValueEntity]
 
   def eventSourcedEntitySubscription(clazz: Class[_]): Option[FromEventSourcedEntity] =
     clazz.getAnnotationOption[FromEventSourcedEntity]
@@ -97,7 +82,7 @@ private[impl] object ComponentDescriptorFactory {
     }
   }
 
-  def hasViewUpdateEffectOutput(javaMethod: Method): Boolean = {
+  def hasUpdateEffectOutput(javaMethod: Method): Boolean = {
     if (javaMethod.isPublic) {
       javaMethod.getGenericReturnType match {
         case p: ParameterizedType => p.getRawType.equals(classOf[TableUpdater.Effect[_]])
@@ -108,12 +93,9 @@ private[impl] object ComponentDescriptorFactory {
     }
   }
 
-  def hasTopicSubscription(javaMethod: Method): Boolean =
-    javaMethod.isPublic && javaMethod.hasAnnotation[FromTopic]
-
   def hasHandleDeletes(javaMethod: Method): Boolean = {
-    val ann = javaMethod.getAnnotation(classOf[FromKeyValueEntity])
-    javaMethod.isPublic && ann != null && ann.handleDeletes()
+    val ann = javaMethod.getAnnotation(classOf[DeleteHandler])
+    javaMethod.isPublic && ann != null
   }
 
   def hasTopicSubscription(clazz: Class[_]): Boolean =
@@ -122,46 +104,19 @@ private[impl] object ComponentDescriptorFactory {
   def hasStreamSubscription(clazz: Class[_]): Boolean =
     clazz.isPublic && clazz.hasAnnotation[FromServiceStream]
 
-  def hasTopicPublication(javaMethod: Method): Boolean =
-    javaMethod.isPublic && javaMethod.hasAnnotation[ToTopic]
+  def hasTopicPublication(clazz: Class[_]): Boolean =
+    clazz.hasAnnotation[ToTopic]
 
   def readComponentIdIdValue(annotated: AnnotatedElement): String =
     annotated.getAnnotation(classOf[ComponentId]).value()
-
-  def findEventSourcedEntityType(javaMethod: Method): String = {
-    val ann = javaMethod.getAnnotation(classOf[FromEventSourcedEntity])
-    readComponentIdIdValue(ann.value())
-  }
 
   def findEventSourcedEntityClass(javaMethod: Method): Class[_ <: EventSourcedEntity[_, _]] = {
     val ann = javaMethod.getAnnotation(classOf[FromEventSourcedEntity])
     ann.value()
   }
 
-  private def findValueEntityClass(javaMethod: Method): Class[_ <: KeyValueEntity[_]] = {
-    val ann = javaMethod.getAnnotation(classOf[FromKeyValueEntity])
-    ann.value()
-  }
-
-  def findSubscriptionSourceName(javaMethod: Method): String = {
-    if (hasValueEntitySubscription(javaMethod)) {
-      findValueEntityClass(javaMethod).getName
-    } else if (hasEventSourcedEntitySubscription(javaMethod)) {
-      findEventSourcedEntityClass(javaMethod).getName
-    } else if (hasTopicSubscription(javaMethod)) {
-      "Topic-" + findSubscriptionTopicName(javaMethod)
-    } else {
-      throw new IllegalStateException("Unsupported source for " + javaMethod.getName)
-    }
-  }
-
   def findEventSourcedEntityType(clazz: Class[_]): String = {
     val ann = clazz.getAnnotation(classOf[FromEventSourcedEntity])
-    readComponentIdIdValue(ann.value())
-  }
-
-  def findValueEntityType(javaMethod: Method): String = {
-    val ann = javaMethod.getAnnotation(classOf[FromKeyValueEntity])
     readComponentIdIdValue(ann.value())
   }
 
@@ -170,14 +125,8 @@ private[impl] object ComponentDescriptorFactory {
     readComponentIdIdValue(ann.value())
   }
 
-  def findHandleDeletes(javaMethod: Method): Boolean = {
-    val ann = javaMethod.getAnnotation(classOf[FromKeyValueEntity])
-    ann.handleDeletes()
-  }
-
   def findHandleDeletes(component: Class[_]): Boolean = {
-    val ann = component.getAnnotation(classOf[FromKeyValueEntity])
-    ann.handleDeletes()
+    component.getMethods.exists(hasHandleDeletes)
   }
 
   def findSubscriptionTopicName(javaMethod: Method): String = {
@@ -200,8 +149,8 @@ private[impl] object ComponentDescriptorFactory {
     ann.consumerGroup()
   }
 
-  def findPublicationTopicName(javaMethod: Method): String = {
-    val ann = javaMethod.getAnnotation(classOf[ToTopic])
+  def findPublicationTopicName(clazz: Class[_]): String = {
+    val ann = clazz.getAnnotation(classOf[ToTopic])
     ann.value()
   }
 
@@ -221,38 +170,22 @@ private[impl] object ComponentDescriptorFactory {
     else false
   }
 
-  def eventingInForValueEntity(javaMethod: Method): Eventing = {
-    val eventSource: EventSource = valueEntityEventSource(javaMethod)
-    Eventing.newBuilder().setIn(eventSource).build()
-  }
-
-  def valueEntityEventSource(javaMethod: Method) = {
-    val entityType = findValueEntityType(javaMethod)
+  def valueEntityEventSource(clazz: Class[_], handleDeletes: Boolean) = {
+    val entityType = findValueEntityType(clazz)
     EventSource
       .newBuilder()
       .setValueEntity(entityType)
-      .setHandleDeletes(findHandleDeletes(javaMethod))
+      .setHandleDeletes(handleDeletes)
       .build()
   }
 
-  def topicEventDestination(javaMethod: Method): Option[EventDestination] = {
-    if (hasTopicPublication(javaMethod)) {
-      val topicName = findPublicationTopicName(javaMethod)
+  def topicEventDestination(clazz: Class[_]): Option[EventDestination] = {
+    if (hasTopicPublication(clazz)) {
+      val topicName = findPublicationTopicName(clazz)
       Some(EventDestination.newBuilder().setTopic(topicName).build())
     } else {
       None
     }
-  }
-
-  def eventingInForEventSourcedEntity(javaMethod: Method): Eventing = {
-    val eventSource: EventSource = eventSourceEntityEventSource(javaMethod)
-    // ignore in method must be always false
-    Eventing.newBuilder().setIn(eventSource).build()
-  }
-
-  def eventSourceEntityEventSource(javaMethod: Method) = {
-    val entityType = findEventSourcedEntityType(javaMethod)
-    EventSource.newBuilder().setEventSourcedEntity(entityType).build()
   }
 
   def eventingInForEventSourcedEntity(clazz: Class[_]): Eventing = {
@@ -263,19 +196,6 @@ private[impl] object ComponentDescriptorFactory {
 
   def eventingInForTopic(clazz: Class[_]): Eventing = {
     Eventing.newBuilder().setIn(topicEventSource(clazz)).build()
-  }
-
-  def eventingInForTopic(javaMethod: Method): Eventing = {
-    Eventing.newBuilder().setIn(topicEventSource(javaMethod)).build()
-  }
-
-  def eventingInForValueEntityServiceLevel(clazz: Class[_]): Option[kalix.ServiceOptions] = {
-    valueEntitySubscription(clazz).map { _ =>
-      val entityType = findValueEntityType(clazz)
-      val in = EventSource.newBuilder().setValueEntity(entityType)
-      val eventing = ServiceEventing.newBuilder().setIn(in)
-      kalix.ServiceOptions.newBuilder().setEventing(eventing).build()
-    }
   }
 
   def eventingInForEventSourcedEntityServiceLevel(clazz: Class[_]): Option[kalix.ServiceOptions] = {
@@ -307,11 +227,12 @@ private[impl] object ComponentDescriptorFactory {
     EventSource.newBuilder().setTopic(topicName).setConsumerGroup(consumerGroup).build()
   }
 
-  def eventingOutForTopic(javaMethod: Method): Option[Eventing] = {
-    topicEventDestination(javaMethod).map(eventSource => Eventing.newBuilder().setOut(eventSource).build())
+  def eventingOutForTopic(clazz: Class[_]): Option[Eventing] = {
+    topicEventDestination(clazz).map(eventSource => Eventing.newBuilder().setOut(eventSource).build())
   }
 
-  def eventingInForValueEntity(entityType: String, handleDeletes: Boolean): Eventing = {
+  def eventingInForValueEntity(clazz: Class[_], handleDeletes: Boolean): Eventing = {
+    val entityType = findValueEntityType(clazz)
     val eventSource = EventSource
       .newBuilder()
       .setValueEntity(entityType)
@@ -457,8 +378,8 @@ private[impl] object ComponentDescriptorFactory {
     value.replaceAll("[\\._\\-]", "")
   }
 
-  private[impl] def buildEventingOutOptions(method: Method): Option[MethodOptions] =
-    eventingOutForTopic(method)
+  private[impl] def buildEventingOutOptions(clazz: Class[_]): Option[MethodOptions] =
+    eventingOutForTopic(clazz)
       .map(eventingOut => kalix.MethodOptions.newBuilder().setEventing(eventingOut).build())
 
   def mergeServiceOptions(allOptions: Option[kalix.ServiceOptions]*): Option[ServiceOptions] = {

@@ -5,6 +5,7 @@
 package com.example.wiring.views;
 
 import akka.platform.javasdk.view.TableUpdater;
+import akka.platform.javasdk.annotations.DeleteHandler;
 import com.example.wiring.keyvalueentities.user.User;
 import com.example.wiring.keyvalueentities.user.UserEntity;
 import akka.platform.javasdk.annotations.Query;
@@ -19,14 +20,15 @@ public class UserWithVersionView extends View {
 
   private static final Logger logger = LoggerFactory.getLogger(UserWithVersionView.class);
 
+  @Consume.FromKeyValueEntity(UserEntity.class)
   public static class Users extends TableUpdater<UserWithVersion> {
-    @Consume.FromKeyValueEntity(UserEntity.class)
+
     public Effect<UserWithVersion> onChange(User user) {
       if (rowState() == null) return effects().updateRow(new UserWithVersion(user.email, 1));
       else return effects().updateRow(new UserWithVersion(user.email, rowState().version + 1));
     }
 
-    @Consume.FromKeyValueEntity(value = UserEntity.class, handleDeletes = true)
+    @DeleteHandler
     public Effect<UserWithVersion> onDelete() {
       logger.info("Deleting user with email={}", rowState().email);
       return effects().deleteRow();
@@ -43,6 +45,5 @@ public class UserWithVersionView extends View {
   public QueryEffect<UserWithVersion> getUser(QueryParameters params) {
     return queryResult();
   }
-
 
 }

@@ -47,6 +47,4 @@ public class CountersByValue extends View {
   public QueryEffect<Counter> getCounterByValue(QueryParameters params) {
     return queryResult();
   }
-
-
 }

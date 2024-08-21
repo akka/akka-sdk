@@ -7,7 +7,9 @@ package akka.platform.javasdk.impl
 import java.lang.reflect.AnnotatedElement
 import java.lang.reflect.Method
 import java.lang.reflect.ParameterizedType
+
 import scala.reflect.ClassTag
+
 import akka.platform.javasdk.action.Action
 import akka.platform.javasdk.annotations.ComponentId
 import akka.platform.javasdk.annotations.Consume.FromKeyValueEntity
@@ -17,13 +19,6 @@ import akka.platform.javasdk.annotations.Table
 import akka.platform.javasdk.consumer.Consumer
 import akka.platform.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.platform.javasdk.impl.ComponentDescriptorFactory.eventSourcedEntitySubscription
-import akka.platform.javasdk.impl.ComponentDescriptorFactory.findEventSourcedEntityClass
-import akka.platform.javasdk.impl.ComponentDescriptorFactory.findEventSourcedEntityType
-import akka.platform.javasdk.impl.ComponentDescriptorFactory.findPublicationTopicName
-import akka.platform.javasdk.impl.ComponentDescriptorFactory.findSubscriptionConsumerGroup
-import akka.platform.javasdk.impl.ComponentDescriptorFactory.findSubscriptionSourceName
-import akka.platform.javasdk.impl.ComponentDescriptorFactory.findSubscriptionTopicName
-import akka.platform.javasdk.impl.ComponentDescriptorFactory.findValueEntityType
 import akka.platform.javasdk.impl.ComponentDescriptorFactory.hasAcl
 import akka.platform.javasdk.impl.ComponentDescriptorFactory.hasActionOutput
 import akka.platform.javasdk.impl.ComponentDescriptorFactory.hasConsumerOutput
@@ -33,10 +28,8 @@ import akka.platform.javasdk.impl.ComponentDescriptorFactory.hasStreamSubscripti
 import akka.platform.javasdk.impl.ComponentDescriptorFactory.hasSubscription
 import akka.platform.javasdk.impl.ComponentDescriptorFactory.hasTopicPublication
 import akka.platform.javasdk.impl.ComponentDescriptorFactory.hasTopicSubscription
-import akka.platform.javasdk.impl.ComponentDescriptorFactory.hasViewUpdateEffectOutput
+import akka.platform.javasdk.impl.ComponentDescriptorFactory.hasUpdateEffectOutput
 import akka.platform.javasdk.impl.ComponentDescriptorFactory.hasValueEntitySubscription
-import akka.platform.javasdk.impl.ComponentDescriptorFactory.streamSubscription
-import akka.platform.javasdk.impl.ComponentDescriptorFactory.topicSubscription
 import akka.platform.javasdk.impl.reflection.Reflect
 import akka.platform.javasdk.impl.reflection.Reflect.Syntax._
 import akka.platform.javasdk.keyvalueentity.KeyValueEntity
@@ -104,15 +97,13 @@ object Validations {
       component: Class[_],
       updateMethodPredicate: Method => Boolean): Validation = {
     typeLevelSubscriptionValidation(component) ++
-    eventSourcedEntitySubscriptionValidations(component) ++
     missingEventHandlerValidations(component, updateMethodPredicate) ++
     ambiguousHandlerValidations(component, updateMethodPredicate) ++
     valueEntitySubscriptionValidations(component, updateMethodPredicate) ++
-    topicSubscriptionValidations(component) ++
-    topicPublicationValidations(component, updateMethodPredicate) ++
+    topicPublicationValidations(component) ++
     publishStreamIdMustBeFilled(component) ++
-    noSubscriptionMethodWithAcl(component) ++
-    subscriptionMethodMustHaveOneParameter(component)
+    noSubscriptionMethodWithAcl(component, updateMethodPredicate) ++
+    subscriptionMethodMustHaveOneParameter(component, updateMethodPredicate)
   }
 
   def validate(component: Class[_]): Validation =
@@ -223,7 +214,7 @@ object Validations {
         .map(updaterClass =>
           validateVewTableUpdater(updaterClass) ++
           viewTableAnnotationMustNotBeEmptyString(updaterClass) ++
-          viewMustHaveMethodLevelSubscriptionWhenTransformingUpdates(updaterClass))
+          viewMustHaveCorrectUpdateHandlerWhenTransformingViewUpdates(updaterClass))
         .foldLeft(Valid: Validation)(_ ++ _)
       // FIXME query annotated return type should be effect
     }
@@ -234,7 +225,7 @@ object Validations {
     }
 
   private def validateVewTableUpdater(tableUpdater: Class[_]): Validation =
-    commonSubscriptionValidation(tableUpdater, hasViewUpdateEffectOutput)
+    commonSubscriptionValidation(tableUpdater, hasUpdateEffectOutput)
 
   private def viewTableAnnotationMustNotBeEmptyString(tableUpdater: Class[_]): Validation = {
     val annotation = tableUpdater.getAnnotation(classOf[Table])
@@ -283,21 +274,6 @@ object Validations {
     }
   }
 
-  private def eventSourcedEntitySubscriptionValidations(component: Class[_]): Validation = {
-    val methods = component.getMethods.toIndexedSeq
-    when(
-      hasEventSourcedEntitySubscription(component) &&
-      methods.exists(hasEventSourcedEntitySubscription)) {
-      // collect offending methods
-      val messages = methods.filter(hasEventSourcedEntitySubscription).map { method =>
-        errorMessage(
-          method,
-          "You cannot use @Consume.FromEventSourcedEntity annotation in both methods and class. You can do either one or the other.")
-      }
-      Validation(messages)
-    }
-  }
-
   private def getEventType(esEntity: Class[_]): Class[_] = {
     val genericTypeArguments = esEntity.getGenericSuperclass
       .asInstanceOf[ParameterizedType]
@@ -314,18 +290,8 @@ object Validations {
         .filter(updateMethodPredicate)
       ambiguousHandlersErrors(effectMethods, component)
     } else {
-      val effectOutputMethodsGrouped = methods
-        .filter(hasSubscription)
-        .filter(updateMethodPredicate)
-        .groupBy(findSubscriptionSourceName)
-
-      effectOutputMethodsGrouped
-        .map { case (_, methods) =>
-          ambiguousHandlersErrors(methods, component)
-        }
-        .fold(Valid)(_ ++ _)
+      Valid
     }
-
   }
 
   private def ambiguousHandlersErrors(handlers: Seq[Method], component: Class[_]): Validation = {
@@ -374,22 +340,7 @@ object Validations {
           Valid
         }
       case None =>
-        //method level
-        val effectOutputMethodsGrouped = methods
-          .filter(hasEventSourcedEntitySubscription)
-          .filter(updateMethodPredicate)
-          .groupBy(findEventSourcedEntityClass)
-
-        effectOutputMethodsGrouped
-          .map { case (entityClass, methods) =>
-            val eventType = getEventType(entityClass)
-            if (eventType.isSealed) {
-              missingEventHandler(methods.map(_.getParameterTypes.last), eventType, component)
-            } else {
-              Valid
-            }
-          }
-          .fold(Valid)(_ ++ _)
+        Valid
     }
   }
 
@@ -414,118 +365,19 @@ object Validations {
     }
   }
 
-  private def topicSubscriptionValidations(component: Class[_]): Validation = {
-    val methods = component.getMethods.toIndexedSeq
-    val noMixedLevelSubs = when(hasTopicSubscription(component) && methods.exists(hasTopicSubscription)) {
-      // collect offending methods
-      val messages = methods.filter(hasTopicSubscription).map { method =>
-        errorMessage(
-          method,
-          "You cannot use @Consume.FormTopic annotation in both methods and class. You can do either one or the other.")
-      }
-      Validation(messages)
-    }
-
-    val theSameConsumerGroupPerTopic = when(methods.exists(hasTopicSubscription)) {
-      methods
-        .filter(hasTopicSubscription)
-        .sorted
-        .groupBy(findSubscriptionTopicName)
-        .map { case (topicName, methods) =>
-          val consumerGroups = methods.map(findSubscriptionConsumerGroup).distinct.sorted
-          when(consumerGroups.size > 1) {
-            Validation(errorMessage(
-              component,
-              s"All subscription methods to topic [$topicName] must have the same consumer group, but found different consumer groups [${consumerGroups
-                .mkString(", ")}]."))
-          }
-        }
-        .fold(Valid)(_ ++ _)
-    }
-
-    noMixedLevelSubs ++ theSameConsumerGroupPerTopic
-  }
-
   private def missingSourceForTopicPublication(component: Class[_]): Validation = {
-    val methods = component.getMethods.toSeq
-    if (hasSubscription(component)) {
-      Valid
+    if (hasTopicPublication(component) && !hasSubscription(component)) {
+      Validation(
+        errorMessage(
+          component,
+          "You must select a source for @Produce.ToTopic. Annotate this class with one a @Consume annotation."))
     } else {
-      val messages = methods
-        .filter(hasTopicPublication)
-        .filterNot(method => hasSubscription(method))
-        .map { method =>
-          errorMessage(
-            method,
-            "You must select a source for @Produce.ToTopic. Annotate this methods with one a @Consume annotation.")
-        }
-      Validation(messages)
+      Valid
     }
   }
 
-  private def topicPublicationForSourceValidation(
-      sourceName: String,
-      component: Class[_],
-      methodsGroupedBySource: Map[String, Seq[Method]]): Validation = {
-    methodsGroupedBySource
-      .map { case (entityType, methods) =>
-        val topicNames = methods
-          .filter(hasTopicPublication)
-          .map(findPublicationTopicName)
-
-        if (topicNames.nonEmpty && topicNames.length != methods.size) {
-          Validation(errorMessage(
-            component,
-            s"Add @Produce.ToTopic annotation to all subscription methods from $sourceName \"$entityType\". Or remove it from all methods."))
-        } else if (topicNames.toSet.size > 1) {
-          Validation(
-            errorMessage(
-              component,
-              s"All @Produce.ToTopic annotation for the same subscription source $sourceName \"$entityType\" should point to the same topic name. " +
-              s"Create a separate Action if you want to split messages to different topics from the same source."))
-        } else {
-          Valid
-        }
-      }
-      .fold(Valid)(_ ++ _)
-  }
-
-  private def topicPublicationValidations(component: Class[_], updateMethodPredicate: Method => Boolean): Validation = {
-    val methods = component.getMethods.toSeq
-
-    //VE type level subscription is not checked since we expecting only a single method in this case
-    val veSubscriptions: Map[String, Seq[Method]] = methods
-      .filter(hasValueEntitySubscription)
-      .groupBy(findValueEntityType)
-
-    val esSubscriptions: Map[String, Seq[Method]] = eventSourcedEntitySubscription(component) match {
-      case Some(esEntity) =>
-        Map(
-          ComponentDescriptorFactory.readComponentIdIdValue(esEntity.value()) -> methods.filter(updateMethodPredicate))
-      case None =>
-        methods
-          .filter(hasEventSourcedEntitySubscription)
-          .groupBy(findEventSourcedEntityType)
-    }
-
-    val topicSubscriptions: Map[String, Seq[Method]] = topicSubscription(component) match {
-      case Some(topic) => Map(topic.value() -> methods.filter(updateMethodPredicate))
-      case None =>
-        methods
-          .filter(hasTopicSubscription)
-          .groupBy(findSubscriptionTopicName)
-    }
-
-    val streamSubscriptions: Map[String, Seq[Method]] = streamSubscription(component) match {
-      case Some(stream) => Map(stream.id() -> methods.filter(updateMethodPredicate))
-      case None         => Map.empty //only type level
-    }
-
-    missingSourceForTopicPublication(component) ++
-    topicPublicationForSourceValidation("ValueEntity", component, veSubscriptions) ++
-    topicPublicationForSourceValidation("EventSourcedEntity", component, esSubscriptions) ++
-    topicPublicationForSourceValidation("Topic", component, topicSubscriptions) ++
-    topicPublicationForSourceValidation("Stream", component, streamSubscriptions)
+  private def topicPublicationValidations(component: Class[_]): Validation = {
+    missingSourceForTopicPublication(component)
   }
 
   private def publishStreamIdMustBeFilled(component: Class[_]): Validation = {
@@ -538,15 +390,16 @@ object Validations {
       .getOrElse(Valid)
   }
 
-  private def noSubscriptionMethodWithAcl(component: Class[_]): Validation = {
+  private def noSubscriptionMethodWithAcl(component: Class[_], updateMethodPredicate: Method => Boolean): Validation = {
 
-    val hasSubscriptionAndAcl = (method: Method) => hasAcl(method) && hasSubscription(method)
+    val hasSubscriptionAndAcl = (method: Method) =>
+      hasAcl(method) && updateMethodPredicate(method) && hasSubscription(component)
 
     val messages =
       component.getMethods.toIndexedSeq.filter(hasSubscriptionAndAcl).map { method =>
         errorMessage(
           method,
-          "Methods annotated with Kalix @Consume annotations are for internal use only and cannot be annotated with ACL annotations.")
+          "Methods from classes annotated with Kalix @Consume annotations are for internal use only and cannot be annotated with ACL annotations.")
       }
 
     Validation(messages)
@@ -572,22 +425,44 @@ object Validations {
     }
   }
 
-  private def viewMustHaveMethodLevelSubscriptionWhenTransformingUpdates(tableUpdater: Class[_]): Validation = {
+  private def viewMustHaveCorrectUpdateHandlerWhenTransformingViewUpdates(tableUpdater: Class[_]): Validation = {
     if (hasValueEntitySubscription(tableUpdater)) {
       val tableType: Class[_] = tableTypeOf(tableUpdater)
       val valueEntityClass: Class[_] =
         tableUpdater.getAnnotation(classOf[FromKeyValueEntity]).value().asInstanceOf[Class[_]]
       val entityStateClass = valueEntityStateClassOf(valueEntityClass)
 
-      when(entityStateClass != tableType) {
-        val message =
-          s"You are using a type level annotation on View TableUpdater [$tableUpdater] and that requires updater row type [${tableType.getName}] " +
-          s"to match the ValueEntity type [${entityStateClass.getName}]. " +
-          s"If your intention is to transform the type, you should instead add a method like " +
-          s"`UpdateEffect<${tableType.getName}> onChange(${entityStateClass.getName} state)`" +
-          " and move the @Consume.FromKeyValueEntity to it."
+//<<<<<<< HEAD
+//      when(entityStateClass != tableType) {
+//        val message =
+//          s"You are using a type level annotation on View TableUpdater [$tableUpdater] and that requires updater row type [${tableType.getName}] " +
+//          s"to match the ValueEntity type [${entityStateClass.getName}]. " +
+//          s"If your intention is to transform the type, you should instead add a method like " +
+//          s"`UpdateEffect<${tableType.getName}> onChange(${entityStateClass.getName} state)`" +
+//          " and move the @Consume.FromKeyValueEntity to it."
+//
+//        Validation(Seq(errorMessage(tableUpdater, message)))
+//=======
+      if (entityStateClass != tableType) {
+        val viewUpdateMatchesTableType = tableUpdater.getMethods
+          .filter(hasUpdateEffectOutput)
+          .exists(m => {
+            val updateHandlerType = m.getGenericReturnType.asInstanceOf[ParameterizedType].getActualTypeArguments.head
+            updateHandlerType == tableType
+          })
 
-        Validation(Seq(errorMessage(tableUpdater, message)))
+        when(!viewUpdateMatchesTableType) {
+          val message =
+            s"You are using a type level annotation in this View and that requires the View type [${tableType.getName}] " +
+            s"to match the ValueEntity type [${entityStateClass.getName}]. " +
+            s"If your intention is to transform the type, you should add a method like " +
+            s"`UpdateEffect<${tableType.getName}> onChange(${entityStateClass.getName} state)`."
+
+          Validation(Seq(errorMessage(tableUpdater, message)))
+        }
+      } else {
+        Valid
+//>>>>>>> e328613f6 (feat: @Consume and @Produce annotations refactor)
       }
     } else {
       Valid
@@ -605,83 +480,84 @@ object Validations {
     else Valid
   }
 
-  private def subscriptionMethodMustHaveOneParameter(component: Class[_]): Validation = {
-    val offendingMethods = component.getMethods
-      .filter(hasValueEntitySubscription)
-      .filterNot(hasHandleDeletes)
-      .filterNot(_.getParameterTypes.length == 1)
+  //TODO add tests for this
+  private def subscriptionMethodMustHaveOneParameter(
+      component: Class[_],
+      updateMethodPredicate: Method => Boolean): Validation = {
+    if (hasSubscription(component)) {
+      val offendingMethods = component.getMethods
+        .filter(updateMethodPredicate)
+        .filterNot(hasHandleDeletes)
+        .filterNot(_.getParameterTypes.length == 1)
 
-    val messages =
-      offendingMethods.map { method =>
-        errorMessage(
-          method,
-          "Subscription method must have exactly one parameter, unless it's marked as handleDeletes.")
-      }
+      val messages =
+        offendingMethods.map { method =>
+          errorMessage(
+            method,
+            "Subscription method must have exactly one parameter, unless it's marked as handleDeletes.")
+        }
 
-    Validation(messages)
+      Validation(messages)
+    } else {
+      Valid
+    }
+
   }
 
   private def valueEntitySubscriptionValidations(
       component: Class[_],
       updateMethodPredicate: Method => Boolean): Validation = {
 
-    val subscriptionMethods = component.getMethods.toIndexedSeq.filter(hasValueEntitySubscription).sorted
-    val updatedMethods = if (hasValueEntitySubscription(component)) {
-      component.getMethods.toIndexedSeq.filter(updateMethodPredicate).sorted
-    } else {
-      subscriptionMethods.filterNot(hasHandleDeletes).filter(updateMethodPredicate)
-    }
+    if (hasValueEntitySubscription(component)) {
+      val subscriptionMethods = component.getMethods.toIndexedSeq.filter(updateMethodPredicate).sorted
+      val updatedMethods = subscriptionMethods.filterNot(hasHandleDeletes)
 
-    val (handleDeleteMethods, handleDeleteMethodsWithParam) =
-      subscriptionMethods.filter(hasHandleDeletes).partition(_.getParameterTypes.isEmpty)
+      val (handleDeleteMethods, handleDeleteMethodsWithParam) =
+        subscriptionMethods.filter(hasHandleDeletes).partition(_.getParameterTypes.isEmpty)
 
-    val noMixedLevelValueEntitySubscription =
-      when(hasValueEntitySubscription(component) && subscriptionMethods.nonEmpty) {
-        // collect offending methods
-        val messages = subscriptionMethods.map { method =>
-          errorMessage(
-            method,
-            "You cannot use @Consume.FromKeyValueEntity annotation in both methods and class. You can do either one or the other.")
-        }
+      val handleDeletesMustHaveZeroArity = {
+        val messages =
+          handleDeleteMethodsWithParam.map { method =>
+            val numParams = method.getParameters.length
+            errorMessage(
+              method,
+              s"Method annotated with '@Consume.FromKeyValueEntity' and handleDeletes=true must not have parameters. Found $numParams method parameters.")
+          }
+
         Validation(messages)
       }
 
-    val handleDeletesMustHaveZeroArity = {
-      val messages =
-        handleDeleteMethodsWithParam.map { method =>
-          val numParams = method.getParameters.length
-          errorMessage(
-            method,
-            s"Method annotated with '@Consume.FromKeyValueEntity' and handleDeletes=true must not have parameters. Found $numParams method parameters.")
-        }
+      val onlyOneValueEntityUpdateIsAllowed = {
+        if (updatedMethods.size >= 2) {
+          val messages = errorMessage(
+            component,
+            s"Duplicated update methods [${updatedMethods.map(_.getName).mkString(", ")}]for KeyValueEntity subscription.")
+          Validation(messages)
+        } else Valid
+      }
 
-      Validation(messages)
-    }
+      val onlyOneHandlesDeleteIsAllowed = {
+        val offendingMethods = handleDeleteMethods.filter(_.getParameterTypes.isEmpty)
 
-    val onlyOneValueEntityUpdateIsAllowed = {
-      if (updatedMethods.size >= 2) {
-        val messages = errorMessage(
-          component,
-          s"Duplicated update methods [${updatedMethods.map(_.getName).mkString(", ")}]for KeyValueEntity subscription.")
-        Validation(messages)
-      } else Valid
-    }
+        if (offendingMethods.size >= 2) {
+          val messages =
+            offendingMethods.map { method =>
+              errorMessage(
+                method,
+                "Multiple methods annotated with @Consume.FromKeyValueEntity(handleDeletes=true) is not allowed.")
+            }
+          Validation(messages)
+        } else Valid
+      }
 
-    val onlyOneHandlesDeleteIsAllowed = {
-      val offendingMethods = handleDeleteMethods.filter(_.getParameterTypes.isEmpty)
+      handleDeletesMustHaveZeroArity ++
+      onlyOneValueEntityUpdateIsAllowed ++
+      onlyOneHandlesDeleteIsAllowed
 
-      if (offendingMethods.size >= 2) {
-        val messages =
-          offendingMethods.map { method =>
-            errorMessage(
-              method,
-              "Multiple methods annotated with @Consume.FromKeyValueEntity(handleDeletes=true) is not allowed.")
-          }
-        Validation(messages)
-      } else Valid
-    }
-
-    val standaloneMethodLevelHandleDeletesIsNotAllowed = {
+    } else {
+      val subscriptionMethods = component.getMethods.toIndexedSeq.filter(updateMethodPredicate).sorted
+      val updatedMethods = subscriptionMethods.filterNot(hasHandleDeletes)
+      val handleDeleteMethods = subscriptionMethods.filter(hasHandleDeletes)
       if (handleDeleteMethods.nonEmpty && updatedMethods.isEmpty) {
         val messages =
           handleDeleteMethods.map { method =>
@@ -690,12 +566,6 @@ object Validations {
         Validation(messages)
       } else Valid
     }
-
-    noMixedLevelValueEntitySubscription ++
-    handleDeletesMustHaveZeroArity ++
-    onlyOneValueEntityUpdateIsAllowed ++
-    onlyOneHandlesDeleteIsAllowed ++
-    standaloneMethodLevelHandleDeletesIsNotAllowed
   }
 
   private def tableTypeOf(component: Class[_]) = {

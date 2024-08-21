@@ -39,5 +39,9 @@ public class CustomerEntity extends KeyValueEntity<Customer> { // <4>
     return effects().updateState(updatedCustomer).thenReply(Ok.instance);
   }
 
+  public Effect<Ok> delete() {
+    return effects().deleteEntity().thenReply(Ok.instance);
+  }
+
 }
 // end::customer[]

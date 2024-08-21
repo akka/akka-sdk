@@ -43,7 +43,7 @@ public abstract class CustomerRegistryIntegrationTest extends KalixIntegrationTe
       throw ex;
     }
 
-    createClient("http://localhost:9000");
+    httpClient = createClient("http://localhost:9000");
   }
 
 
@@ -74,6 +74,7 @@ public abstract class CustomerRegistryIntegrationTest extends KalixIntegrationTe
     return httpClient;
   }
 
-
-
+  public HttpClient getHttpClient() {
+    return httpClient;
+  }
 }

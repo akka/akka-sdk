@@ -4,34 +4,36 @@
 
 package com.example.wiring.eventsourcedentities.counter;
 
-import akka.platform.javasdk.action.Action;
-import akka.platform.javasdk.action.ActionContext;
+import akka.Done;
 import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.annotations.Consume;
 import akka.platform.javasdk.client.ComponentClient;
+import akka.platform.javasdk.consumer.Consumer;
+import akka.platform.javasdk.consumer.ConsumerContext;
 
 import java.util.concurrent.CompletionStage;
 
 @ComponentId("increase-action-with-ignore")
 @Consume.FromEventSourcedEntity(value = CounterEntity.class, ignoreUnknown = true)
-public class IncreaseActionWithIgnore extends Action {
+public class IncreaseActionWithIgnore extends Consumer {
 
     private ComponentClient componentClient;
 
-    private ActionContext context;
+    private ConsumerContext context;
 
-    public IncreaseActionWithIgnore(ComponentClient componentClient, ActionContext context) {
+    public IncreaseActionWithIgnore(ComponentClient componentClient, ConsumerContext context) {
         this.componentClient = componentClient;
         this.context = context;
     }
 
-    public Effect<Integer> oneShallPass(CounterEvent.ValueIncreased event) {
+    public Effect oneShallPass(CounterEvent.ValueIncreased event) {
         String entityId = this.messageContext().metadata().asCloudEvent().subject().get();
         if (event.value() == 1234) {
-            CompletionStage<Integer> res =
-                componentClient.forEventSourcedEntity(entityId).method(CounterEntity::increase).invokeAsync(1);
-            return effects().asyncReply(res);
+            CompletionStage<Done> res =
+                componentClient.forEventSourcedEntity(entityId).method(CounterEntity::increase).invokeAsync(1)
+                  .thenApply(__ -> Done.done());
+            return effects().acyncDone(res);
         }
-        return effects().reply(event.value());
+        return effects().done();
     }
 }

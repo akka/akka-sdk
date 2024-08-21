@@ -13,7 +13,7 @@ public @interface Produce {
    * Annotation for marking a method as producing information to be published on a PubSub or Kafka
    * topic.
    */
-  @Target(ElementType.METHOD)
+  @Target(ElementType.TYPE)
   @Retention(RetentionPolicy.RUNTIME)
   @Documented
   @interface ToTopic {

@@ -1,6 +1,7 @@
 package customer.view;
 
 import akka.platform.javasdk.view.TableUpdater;
+import akka.platform.javasdk.annotations.DeleteHandler;
 import customer.api.CustomerEntity;
 import customer.api.CustomerSummary;
 import customer.domain.Customer;
@@ -17,15 +18,15 @@ public class CustomerSummaryByName extends View {
   @Query("SELECT * FROM customers WHERE name = :name")
   public QueryEffect<CustomerSummary> getCustomer(QueryParameters params) { return queryResult(); }
 
+  @Consume.FromKeyValueEntity(value = CustomerEntity.class)
   public static class Customers extends TableUpdater<CustomerSummary> {
 
-    @Consume.FromKeyValueEntity(value = CustomerEntity.class)
     public Effect<CustomerSummary> onChange(Customer customer) {
       return effects()
           .updateRow(new CustomerSummary(customer.email(), customer.name()));
     }
 
-    @Consume.FromKeyValueEntity(value = CustomerEntity.class, handleDeletes = true)
+    @DeleteHandler
     public Effect<CustomerSummary> onDelete() {
       return effects()
           .deleteRow();

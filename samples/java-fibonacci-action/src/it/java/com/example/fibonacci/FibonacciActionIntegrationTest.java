@@ -4,11 +4,13 @@ import akka.http.javadsl.model.StatusCodes;
 import akka.platform.spring.testkit.KalixIntegrationTestKitSupport;
 import akka.platform.javasdk.http.StrictResponse;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 public class FibonacciActionIntegrationTest extends KalixIntegrationTestKitSupport {
 
-  @Test
+  // TODO enable after introducing TimedAction
+  @Disabled
   public void calculateNextNumber() {
     StrictResponse<Number> res = await(
       httpClient.GET("/fibonacci/5/next").responseBodyAs(Number.class).invokeAsync()
@@ -18,7 +20,7 @@ public class FibonacciActionIntegrationTest extends KalixIntegrationTestKitSuppo
     Assertions.assertEquals(8, res.body().value());
   }
 
-  @Test
+  @Disabled
   public void calculateNextNumberWithLimitedFibo() {
 
     StrictResponse<Number> res = await(
@@ -29,7 +31,7 @@ public class FibonacciActionIntegrationTest extends KalixIntegrationTestKitSuppo
     Assertions.assertEquals(8, res.body().value());
   }
 
-  @Test
+  @Disabled
   public void wrongNumberReturnsError() {
 
     StrictResponse<String> res = await(

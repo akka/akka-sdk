@@ -39,17 +39,18 @@ public class FibonacciSetup implements ServiceSetup {
 
             @Override
             public void onStartup() {
-                logger.info("Fibonacci service started");
-                componentClient.forAction()
-                  .method(FibonacciAction::getNumber)
-                  .invokeAsync(5L)
-                  .thenAccept(number ->
-                    logger.info("Action call during startup, result: {}", number)
-                  );
-                timerScheduler.startSingleTimer("fibonacci-in-the-future", Duration.ofSeconds(10),
-                  componentClient.forAction()
-                    .method(FibonacciAction::getNumber)
-                    .deferred(5L));
+                //TODO revert that after introducing TimedAction
+//                logger.info("Fibonacci service started");
+//                componentClient.forAction()
+//                  .method(FibonacciAction::getNumber)
+//                  .invokeAsync(5L)
+//                  .thenAccept(number ->
+//                    logger.info("Action call during startup, result: {}", number)
+//                  );
+//                timerScheduler.startSingleTimer("fibonacci-in-the-future", Duration.ofSeconds(10),
+//                  componentClient.forAction()
+//                    .method(FibonacciAction::getNumber)
+//                    .deferred(5L));
             }
         };
     }

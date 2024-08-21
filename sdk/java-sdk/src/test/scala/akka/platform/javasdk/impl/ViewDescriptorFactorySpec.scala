@@ -5,6 +5,7 @@
 package akka.platform.javasdk.impl
 
 import scala.jdk.CollectionConverters.CollectionHasAsScala
+
 import com.google.protobuf.Descriptors.FieldDescriptor
 import com.google.protobuf.Descriptors.FieldDescriptor.JavaType
 import com.google.protobuf.timestamp.Timestamp
@@ -29,21 +30,15 @@ import akka.platform.spring.testmodels.view.ViewTestModels.TopicTypeLevelSubscri
 import akka.platform.spring.testmodels.view.ViewTestModels.TransformedUserView
 import akka.platform.spring.testmodels.view.ViewTestModels.TransformedUserViewWithDeletes
 import akka.platform.spring.testmodels.view.ViewTestModels.TransformedUserViewWithMethodLevelJWT
-import akka.platform.spring.testmodels.view.ViewTestModels.TransformedViewWithoutSubscriptionOnMethodLevel
 import akka.platform.spring.testmodels.view.ViewTestModels.TypeLevelSubscribeToEventSourcedEventsWithMissingHandler
 import akka.platform.spring.testmodels.view.ViewTestModels.UserByEmailWithCollectionReturn
-import akka.platform.spring.testmodels.view.ViewTestModels.ViewDuplicatedESSubscriptions
 import akka.platform.spring.testmodels.view.ViewTestModels.ViewDuplicatedHandleDeletesAnnotations
-import akka.platform.spring.testmodels.view.ViewTestModels.ViewDuplicatedVESubscriptions
 import akka.platform.spring.testmodels.view.ViewTestModels.ViewHandleDeletesWithParam
 import akka.platform.spring.testmodels.view.ViewTestModels.ViewWithEmptyComponentIdAnnotation
-import akka.platform.spring.testmodels.view.ViewTestModels.ViewWithHandleDeletesFalseOnMethodLevel
 import akka.platform.spring.testmodels.view.ViewTestModels.ViewWithMethodLevelAcl
 import akka.platform.spring.testmodels.view.ViewTestModels.ViewWithNoQuery
 import akka.platform.spring.testmodels.view.ViewTestModels.ViewWithServiceLevelAcl
 import akka.platform.spring.testmodels.view.ViewTestModels.ViewWithServiceLevelJWT
-import akka.platform.spring.testmodels.view.ViewTestModels.ViewWithSubscriptionsInMixedLevels
-import akka.platform.spring.testmodels.view.ViewTestModels.ViewWithSubscriptionsInMixedLevelsHandleDelete
 import akka.platform.spring.testmodels.view.ViewTestModels.ViewWithTwoQueries
 import akka.platform.spring.testmodels.view.ViewTestModels.ViewWithoutSubscriptionButWithHandleDelete
 import org.scalatest.wordspec.AnyWordSpec
@@ -133,27 +128,7 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
       }.getMessage should include("@ComponentId name is empty, must be a non-empty string.")
     }
 
-    "not allow @Consume annotations in mixed levels" in {
-      // it should be annotated either on type or on method level
-      intercept[InvalidComponentException] {
-        Validations.validate(classOf[ViewWithSubscriptionsInMixedLevels]).failIfInvalid
-      }.getMessage should include("You cannot use @Consume.FromKeyValueEntity annotation in both methods and class.")
-    }
-
-    "not allow @Consume annotations on type level with transformation" in {
-      // it should be annotated either on type or on method level
-      intercept[InvalidComponentException] {
-        Validations.validate(classOf[TransformedViewWithoutSubscriptionOnMethodLevel]).failIfInvalid
-      }.getMessage should include("and move the @Consume.FromKeyValueEntity to it")
-    }
-
-    "not allow method level handle deletes with type level subscription" in {
-      intercept[InvalidComponentException] {
-        Validations.validate(classOf[ViewWithSubscriptionsInMixedLevelsHandleDelete]).failIfInvalid
-      }.getMessage should include("You cannot use @Consume.FromKeyValueEntity annotation in both methods and class.")
-    }
-
-    "not allow method level handle deletes without method level subscription" in {
+    "not allow method level handle deletes without class level subscription" in {
       intercept[InvalidComponentException] {
         Validations.validate(classOf[ViewWithoutSubscriptionButWithHandleDelete]).failIfInvalid
       }.getMessage should include("Method annotated with handleDeletes=true has no matching update method.")
@@ -171,22 +146,6 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
         Validations.validate(classOf[ViewHandleDeletesWithParam]).failIfInvalid
       }.getMessage should include(
         "Method annotated with '@Consume.FromKeyValueEntity' and handleDeletes=true must not have parameters.")
-    }
-
-    "not allow handle deletes false on method level" in {
-      // on method level only true is acceptable
-      intercept[InvalidComponentException] {
-        Validations.validate(classOf[ViewWithHandleDeletesFalseOnMethodLevel]).failIfInvalid
-      }.getMessage should include(
-        "Subscription method must have exactly one parameter, unless it's marked as handleDeletes.")
-    }
-
-    "not allow duplicated subscriptions methods" in {
-      // it should be annotated either on type or on method level
-      intercept[InvalidComponentException] {
-        Validations.validate(classOf[ViewDuplicatedVESubscriptions]).failIfInvalid
-      }.getMessage should include(
-        "Ambiguous handlers for akka.platform.spring.testmodels.keyvalueentity.User, methods: [onChange, onChange2] consume the same type.")
     }
 
     "generate proto for a View with explicit update method" in {
@@ -319,8 +278,8 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
       assertDescriptor[SubscribeToEventSourcedEvents] { desc =>
 
         val methodOptions = this.findKalixMethodOptions(desc, "KalixSyntheticMethodOnESEmployee")
-        methodOptions.getEventing.getIn.getEventSourcedEntity shouldBe "employee"
 
+        methodOptions.getEventing.getIn.getEventSourcedEntity shouldBe "employee"
         methodOptions.getView.getUpdate.getTable shouldBe "employees"
         methodOptions.getView.getUpdate.getTransformUpdates shouldBe true
         methodOptions.getView.getJsonSchema.getOutput shouldBe "Employee"
@@ -343,8 +302,8 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
       assertDescriptor[SubscribeToSealedEventSourcedEvents] { desc =>
 
         val methodOptions = this.findKalixMethodOptions(desc, "KalixSyntheticMethodOnESEmployee")
-        methodOptions.getEventing.getIn.getEventSourcedEntity shouldBe "employee"
 
+        methodOptions.getEventing.getIn.getEventSourcedEntity shouldBe "employee"
         methodOptions.getView.getUpdate.getTable shouldBe "employees"
         methodOptions.getView.getUpdate.getTransformUpdates shouldBe true
         methodOptions.getView.getJsonSchema.getOutput shouldBe "Employee"
@@ -397,14 +356,6 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
       }.getMessage shouldBe
       "On 'akka.platform.spring.testmodels.view.ViewTestModels$TypeLevelSubscribeToEventSourcedEventsWithMissingHandler$Employees': missing an event handler for 'akka.platform.spring.testmodels.eventsourcedentity.EmployeeEvent$EmployeeEmailUpdated'."
     }
-
-    "not allow duplicated ES subscriptions methods" in {
-      // it should be annotated either on type or on method level
-      intercept[InvalidComponentException] {
-        Validations.validate(classOf[ViewDuplicatedESSubscriptions]).failIfInvalid
-      }.getMessage should include(
-        "Ambiguous handlers for akka.platform.spring.testmodels.keyvalueentity.User, methods: [onChange, onChange2] consume the same type.")
-    }
   }
 
   "View descriptor factory (for multi-table views)" should {
@@ -421,10 +372,10 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
       }.getMessage should include("@Table name is empty, must be a non-empty string.")
     }
 
-    "not allow @Consume annotations in mixed levels on a TableUpdater" in {
+    "not allow empty component id" in {
       intercept[InvalidComponentException] {
-        Validations.validate(classOf[MultiTableViewValidation]).failIfInvalid
-      }.getMessage should include("You cannot use @Consume.FromKeyValueEntity annotation in both methods and class.")
+        Validations.validate(classOf[ViewWithEmptyComponentIdAnnotation]).failIfInvalid
+      }.getMessage should include("@ComponentId name is empty, must be a non-empty string.")
     }
 
     "fail if no query method found" in {

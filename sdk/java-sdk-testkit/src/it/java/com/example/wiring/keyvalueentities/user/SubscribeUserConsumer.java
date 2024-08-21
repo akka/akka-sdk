@@ -4,22 +4,23 @@
 
 package com.example.wiring.keyvalueentities.user;
 
-import akka.platform.javasdk.action.Action;
 import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.annotations.Consume;
+import akka.platform.javasdk.annotations.DeleteHandler;
+import akka.platform.javasdk.consumer.Consumer;
 
 @ComponentId("subscribe-user-action")
-public class SubscribeUserAction extends Action {
+@Consume.FromKeyValueEntity(UserEntity.class)
+public class SubscribeUserConsumer extends Consumer {
 
-  @Consume.FromKeyValueEntity(UserEntity.class)
-  public Action.Effect<String> onUpdate(User user) {
+  public Effect onUpdate(User user) {
     String userId = messageContext().metadata().get("ce-subject").get();
     UserSideEffect.addUser(userId, user);
     return effects().ignore();
   }
 
-  @Consume.FromKeyValueEntity(value = UserEntity.class, handleDeletes = true)
-  public Action.Effect<String> onDelete() {
+  @DeleteHandler
+  public Effect onDelete() {
     String userId = messageContext().metadata().get("ce-subject").get();
     UserSideEffect.removeUser(userId);
     return effects().ignore();

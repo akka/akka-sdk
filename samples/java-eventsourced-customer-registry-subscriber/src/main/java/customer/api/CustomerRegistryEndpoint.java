@@ -1,17 +1,17 @@
-package customer.actions;
+package customer.api;
 
-import akka.platform.javasdk.action.Action;
-import akka.platform.javasdk.annotations.ComponentId;
+import akka.platform.javasdk.annotations.http.Endpoint;
+import akka.platform.javasdk.annotations.http.Post;
 import akka.platform.javasdk.http.HttpClient;
 import akka.platform.javasdk.http.HttpClientProvider;
-
 import akka.platform.javasdk.http.StrictResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@ComponentId("customer-registry")
-//TODO this should be an Endpoint
-public class CustomerRegistryAction extends Action {
+import java.util.concurrent.CompletionStage;
+
+@Endpoint("/customer")
+public class CustomerRegistryEndpoint {
 
   private Logger log = LoggerFactory.getLogger(getClass());
   private final HttpClient httpClient;
@@ -28,20 +28,19 @@ public class CustomerRegistryAction extends Action {
   public record CreateRequest(String customerId, Customer customer) {}
 
 
-  public CustomerRegistryAction(HttpClientProvider webClientProvider) {
+  public CustomerRegistryEndpoint(HttpClientProvider webClientProvider) {
     this.httpClient = webClientProvider.httpClientFor("customer-registry");
   }
 
-  public Effect<Confirm> create(CreateRequest createRequest) {
+  @Post("/create")
+  public CompletionStage<Confirm> create(CreateRequest createRequest) {
     log.debug("Creating {} with id: {}", createRequest.customer, createRequest.customerId);
     // make call on customer-registry service
-    var res =
+    return
       httpClient.POST("/akka/v1.0/entity/customer/" + createRequest.customerId + "/create")
         .withRequestBody(createRequest.customer)
         .responseBodyAs(Confirm.class)
         .invokeAsync()
         .thenApply(StrictResponse::body);
-
-    return effects().asyncReply(res);
   }
 }

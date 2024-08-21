@@ -2,6 +2,7 @@ package com.example.fibonacci;
 
 import akka.platform.spring.testkit.KalixIntegrationTestKitSupport;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.ExecutionException;
@@ -11,7 +12,8 @@ import java.util.concurrent.TimeoutException;
 public class FibonacciActionComponentClientIntegrationTest extends KalixIntegrationTestKitSupport {
 
 
-  @Test
+  // TODO delete or refactor
+  @Disabled
   public void calculateNextNumber() throws ExecutionException, InterruptedException, TimeoutException {
 
     Number response =
@@ -24,7 +26,8 @@ public class FibonacciActionComponentClientIntegrationTest extends KalixIntegrat
   }
   // end::testing-action[]
 
-  @Test
+  // TODO enable after introducing TimedAction
+  @Disabled
   public void calculateNextNumberWithLimitedFibo() {
     Number response = await(
       httpClient.GET("/fibonacci/5/next").responseBodyAs(Number.class).invokeAsync()

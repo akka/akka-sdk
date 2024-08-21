@@ -15,8 +15,8 @@ import static io.grpc.Status.Code.INVALID_ARGUMENT;
 
 
 // tag::implementing-action[]
-@ComponentId("fibonacci")
-//TODO should this be a component?
+//@ComponentId("fibonacci")
+//TODO refactor to TimedAction
 public class FibonacciAction extends Action {
 
   private final Logger logger = LoggerFactory.getLogger(FibonacciAction.class);

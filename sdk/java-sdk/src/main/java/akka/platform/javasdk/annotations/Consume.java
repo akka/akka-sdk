@@ -15,11 +15,9 @@ import java.lang.annotation.*;
 public @interface Consume {
 
   /**
-   * Annotation for consuming state updates from a Key Value Entity. It can be used both at type and
-   * method levels. When used at type level, it means the `View` or `Action` will not be transforming state.
-   * When used at method level, it gives the ability to transform the updates into a different state.
+   * Annotation for consuming state updates from a Key Value Entity.
    */
-  @Target({ElementType.TYPE, ElementType.METHOD})
+  @Target(ElementType.TYPE)
   @Retention(RetentionPolicy.RUNTIME)
   @Documented
   @interface FromKeyValueEntity {
@@ -28,27 +26,6 @@ public @interface Consume {
      *  {@link KeyValueEntity}.
      */
     Class<? extends KeyValueEntity<?>> value();
-
-    /**
-     * When true at type level of the `View`, it will automatically delete the view state based on KeyValueEntity deletion fact.
-     * When true at method level it allows to create a special handler for deletes (must be declared to receive zero parameters):
-     * <pre>{@code
-     * @Consume.FromKeyValueEntity(MyKeyValueEntity.class)
-     * public Effect<MyView> onChange(KeyValueEntityState valueEntity) {
-     *   return effects().updateState(...);
-     * }
-     *
-     * @Consume.FromKeyValueEntity(value = MyKeyValueEntity.class, handleDeletes = true)
-     * public Effect<MyView> onDelete() {
-     *   return effects().deleteState();
-     * }
-     * </pre>
-     *
-     * The flag has no effect when used at type level of the `Action`. On the `Action` method level it allows to create
-     * a delete handler, similar to the example above.
-     *
-     */
-    boolean handleDeletes() default false;
   }
 
   /**
@@ -57,7 +34,7 @@ public @interface Consume {
    * The underlying method must be declared to receive one parameter.
    *
    */
-  @Target({ElementType.METHOD, ElementType.TYPE})
+  @Target(ElementType.TYPE)
   @Retention(RetentionPolicy.RUNTIME)
   @Documented
   @interface FromEventSourcedEntity {
@@ -83,7 +60,7 @@ public @interface Consume {
   /**
    * Annotation for consuming messages from a topic (i.e PubSub or Kafka topic).
    */
-  @Target({ElementType.METHOD, ElementType.TYPE})
+  @Target(ElementType.TYPE)
   @Retention(RetentionPolicy.RUNTIME)
   @Documented
   @interface FromTopic {

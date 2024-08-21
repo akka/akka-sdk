@@ -28,6 +28,7 @@ import org.hamcrest.core.IsNull;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
@@ -55,7 +56,7 @@ public class SpringSdkIntegrationTest extends KalixIntegrationTestKitSupport {
   }
 
 
-  @Test
+  @Disabled
   public void verifyEchoActionWiring() {
 
     Message response = await(
@@ -382,7 +383,8 @@ public class SpringSdkIntegrationTest extends KalixIntegrationTestKitSupport {
     assertThat(bobCounters.counters).containsOnly(new UserCounter("c2", 22), new UserCounter("c4", 44));
   }
 
-  @Test
+  @Disabled
+  //TODO enable after introducing TimedAction
   public void verifyForwardHeaders() {
 
     String actionHeaderValue = "action-value";
@@ -420,7 +422,8 @@ public class SpringSdkIntegrationTest extends KalixIntegrationTestKitSupport {
     assertThat(esResponse.text()).isEqualTo(esHeaderValue);
   }
 
-  @Test
+  @Disabled
+  //TODO enable after introducing TimedAction
   public void shouldPropagateMetadataWithHttpAsyncCall() {
     String value = "someValue";
 

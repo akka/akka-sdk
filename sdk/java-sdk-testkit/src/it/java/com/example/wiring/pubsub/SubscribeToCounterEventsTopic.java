@@ -5,8 +5,8 @@
 package com.example.wiring.pubsub;
 
 import akka.platform.javasdk.annotations.ComponentId;
+import akka.platform.javasdk.consumer.Consumer;
 import com.example.wiring.eventsourcedentities.counter.CounterEvent;
-import akka.platform.javasdk.action.Action;
 import akka.platform.javasdk.annotations.Consume;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,16 +15,16 @@ import static com.example.wiring.pubsub.PublishESToTopic.COUNTER_EVENTS_TOPIC;
 
 @ComponentId("subscribe-to-counter-events-topic")
 @Consume.FromTopic(COUNTER_EVENTS_TOPIC)
-public class SubscribeToCounterEventsTopic extends Action {
+public class SubscribeToCounterEventsTopic extends Consumer {
 
   private Logger logger = LoggerFactory.getLogger(getClass());
 
-  public Effect<CounterEvent> handleIncrease(CounterEvent.ValueIncreased increased) {
+  public Effect handleIncrease(CounterEvent.ValueIncreased increased) {
     addEvent(increased);
     return effects().ignore();
   }
 
-  public Effect<CounterEvent> handleMultiply(CounterEvent.ValueMultiplied multiplied) {
+  public Effect handleMultiply(CounterEvent.ValueMultiplied multiplied) {
     addEvent(multiplied);
     return effects().ignore();
   }

@@ -57,7 +57,6 @@ public class MyAction extends Action {
     }
 
     // tag::open-subscription-acl[]
-    @Consume.FromKeyValueEntity(Counter.class)
     @Acl(allow = @Acl.Matcher(service = "*"))
     public Effect<Done> changes(CounterState counterState) {
      //...
