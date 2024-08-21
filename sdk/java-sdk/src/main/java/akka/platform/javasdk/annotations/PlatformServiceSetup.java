@@ -4,7 +4,6 @@
 
 package akka.platform.javasdk.annotations;
 
-import akka.platform.javasdk.ServiceLifecycle;
 
 import java.lang.annotation.*;
 
@@ -14,7 +13,8 @@ import java.lang.annotation.*;
  * <p>
  * Annotate the class with @Acl as well for defining a default ACL for the entire service
  * <p>
- * If the class implements {@link ServiceLifecycle} the lifecycle callbacks will be invoked.
+ * The class can optionally implement {@link akka.platform.javasdk.ServiceSetup} for customizing various service setup
+ * level aspects.
  * <p>
  * May only be used on one class per Kalix service.
  */

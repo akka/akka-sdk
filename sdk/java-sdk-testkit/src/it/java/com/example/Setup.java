@@ -5,7 +5,6 @@
 package com.example;
 
 import akka.platform.javasdk.ServiceSetup;
-import akka.platform.javasdk.ServiceLifecycle;
 import akka.platform.javasdk.annotations.Acl;
 import akka.platform.javasdk.annotations.PlatformServiceSetup;
 import org.slf4j.Logger;
@@ -18,13 +17,8 @@ public class Setup implements ServiceSetup {
   private static final Logger logger = LoggerFactory.getLogger(Setup.class);
 
   @Override
-  public ServiceLifecycle serviceLifecycle() {
-    return new ServiceLifecycle() {
-      @Override
-      public void onStartup() {
-        logger.info("Starting Application");
-      }
-    };
+  public void onStartup() {
+    logger.info("Starting Application");
   }
 
 }

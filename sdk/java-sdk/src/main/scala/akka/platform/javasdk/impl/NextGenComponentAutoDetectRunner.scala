@@ -349,6 +349,7 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
         Some(wiredInstance[ServiceSetup](serviceClassClass.asInstanceOf[Class[ServiceSetup]]) {
           case p if p == classOf[ComponentClient] => componentClient()
           case t if t == classOf[TimerScheduler]  => timerScheduler()
+          case c if c == classOf[Config]          => userServiceConfig
         })
       case _ => None
     }
@@ -376,10 +377,8 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
         serviceSetup match {
           case None => Future.successful(Done)
           case Some(setup) =>
-            Option(setup.serviceLifecycle()).foreach { serviceLifecycle =>
-              logger.debug("Running onStart lifecycle hook")
-              serviceLifecycle.onStartup()
-            }
+            logger.debug("Running onStart lifecycle hook")
+            setup.onStartup()
             Future.successful(Done)
         }
       }

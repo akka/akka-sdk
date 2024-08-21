@@ -1,6 +1,6 @@
 package com.example.callanotherservice;
 
-import akka.platform.javasdk.ServiceLifecycle;
+import akka.platform.javasdk.ServiceSetup;
 import akka.platform.javasdk.annotations.Acl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 // per component or method using annotations.
 // Documentation at https://docs.kalix.io/java/access-control.html
 @Acl(allow = @Acl.Matcher(service = "*"))
-public class Main implements ServiceLifecycle {
+public class Main implements ServiceSetup {
 
   private static final Logger logger = LoggerFactory.getLogger(Main.class);
 

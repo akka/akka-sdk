@@ -2,7 +2,6 @@ package com.example;
 
 import akka.platform.javasdk.DependencyProvider;
 import akka.platform.javasdk.ServiceSetup;
-import akka.platform.javasdk.ServiceLifecycle;
 import akka.platform.javasdk.annotations.Acl;
 import akka.platform.javasdk.annotations.PlatformServiceSetup;
 import akka.platform.javasdk.client.ComponentClient;
@@ -28,13 +27,8 @@ public class CounterSetup implements ServiceSetup {
   }
 
   @Override
-  public ServiceLifecycle serviceLifecycle() {
-    return new ServiceLifecycle() {
-      @Override
-      public void onStartup() {
-        componentClient.forEventSourcedEntity("123").method(Counter::increase).invokeAsync(10);
-      }
-    };
+  public void onStartup() {
+    componentClient.forEventSourcedEntity("123").method(Counter::increase).invokeAsync(10);
   }
 
   @Override

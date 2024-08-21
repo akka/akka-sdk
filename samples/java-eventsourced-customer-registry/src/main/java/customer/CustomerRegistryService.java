@@ -1,7 +1,7 @@
 package customer;
 
 import akka.platform.javasdk.JsonSupport;
-import akka.platform.javasdk.ServiceLifecycle;
+import akka.platform.javasdk.ServiceSetup;
 import akka.platform.javasdk.annotations.Acl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,7 +14,7 @@ import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_NULL
 // Documentation at https://docs.kalix.io/java/access-control.html
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
 // tag::object-mapper[]
-public class CustomerRegistryService implements ServiceLifecycle {
+public class CustomerRegistryService implements ServiceSetup {
   // end::object-mapper[]
 
   private static final Logger logger = LoggerFactory.getLogger(CustomerRegistryService.class);
