@@ -12,6 +12,7 @@ import akka.platform.javasdk.annotations.Consume;
 import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.consumer.Consumer;
 import akka.platform.javasdk.view.View;
+import akka.platform.javasdk.view.TableUpdater;
 import akka.platform.spring.testmodels.Done;
 import akka.platform.spring.testmodels.Message;
 import akka.platform.spring.testmodels.Message2;
@@ -663,22 +664,24 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   public record ByEmail(String email) {}
 
   @ComponentId("employee_view")
-  @Consume.FromEventSourcedEntity(value = EmployeeEntity.class, ignoreUnknown = true)
-  public static class SubscribeOnTypeToEventSourcedEvents extends View<Employee> {
+  public static class SubscribeOnTypeToEventSourcedEvents extends View {
 
-    public Effect<Employee> onCreate(EmployeeCreated evt) {
-      return effects()
-        .updateState(new Employee(evt.firstName, evt.lastName, evt.email));
+    @Consume.FromEventSourcedEntity(value = EmployeeEntity.class, ignoreUnknown = true)
+    public static class Employees extends TableUpdater<Employee> {
+      public Effect<Employee> onCreate(EmployeeCreated evt) {
+        return effects()
+            .updateRow(new Employee(evt.firstName, evt.lastName, evt.email));
+      }
+
+      public Effect<Employee> onEmailUpdate(EmployeeEmailUpdated eeu) {
+        var employee = rowState();
+        return effects().updateRow(new Employee(employee.firstName(), employee.lastName(), eeu.email));
+      }
     }
 
-    public Effect<Employee> onEmailUpdate(EmployeeEmailUpdated eeu) {
-      var employee = viewState();
-      return effects().updateState(new Employee(employee.firstName(), employee.lastName(), eeu.email));
-    }
-
-    @Query("SELECT * FROM employees_table WHERE email = :email")
-    public Employee getEmployeeByEmail(ByEmail byEmail) {
-      return null;
+    @Query("SELECT * FROM employees WHERE email = :email")
+    public QueryEffect<Employee> getEmployeeByEmail(ByEmail byEmail) {
+      return queryResult();
     }
   }
 
@@ -711,22 +714,24 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   }
 
   @ComponentId("employee_view")
-  @Consume.FromServiceStream(service = "employee_service", id = "employee_events")
-  public static class EventStreamSubscriptionView extends View<Employee> {
+  public static class EventStreamSubscriptionView extends View {
 
-    public Effect<Employee> onCreate(EmployeeCreated evt) {
-      return effects()
-        .updateState(new Employee(evt.firstName, evt.lastName, evt.email));
+    @Consume.FromServiceStream(service = "employee_service", id = "employee_events")
+    public static class Employees extends TableUpdater<Employee> {
+      public Effect<Employee> onCreate(EmployeeCreated evt) {
+        return effects()
+            .updateRow(new Employee(evt.firstName, evt.lastName, evt.email));
+      }
+
+      public Effect<Employee> onEmailUpdate(EmployeeEmailUpdated eeu) {
+        var employee = rowState();
+        return effects().updateRow(new Employee(employee.firstName(), employee.lastName(), eeu.email));
+      }
     }
 
-    public Effect<Employee> onEmailUpdate(EmployeeEmailUpdated eeu) {
-      var employee = viewState();
-      return effects().updateState(new Employee(employee.firstName(), employee.lastName(), eeu.email));
-    }
-
-    @Query("SELECT * FROM employees_table WHERE email = :email")
-    public Employee getEmployeeByEmail(ByEmail byEmail) {
-      return null;
+    @Query("SELECT * FROM employees WHERE email = :email")
+    public QueryEffect<Employee> getEmployeeByEmail(ByEmail byEmail) {
+      return queryResult();
     }
   }
 }

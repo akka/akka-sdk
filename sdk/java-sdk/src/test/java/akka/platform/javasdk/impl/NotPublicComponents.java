@@ -4,14 +4,13 @@
 
 package akka.platform.javasdk.impl;
 
-import akka.platform.javasdk.action.Action;
 import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.annotations.Query;
 import akka.platform.javasdk.annotations.Consume;
 import akka.platform.javasdk.consumer.Consumer;
 import akka.platform.javasdk.eventsourcedentity.EventSourcedEntity;
 import akka.platform.javasdk.keyvalueentity.KeyValueEntity;
-import akka.platform.javasdk.view.View;
+import akka.platform.javasdk.view.TableUpdater;
 import akka.platform.javasdk.workflow.Workflow;
 import akka.platform.spring.testmodels.keyvalueentity.User;
 import akka.platform.spring.testmodels.keyvalueentity.UserEntity;
@@ -52,12 +51,15 @@ public class NotPublicComponents {
   }
 
   @ComponentId("users_view")
-  @Consume.FromKeyValueEntity(UserEntity.class)
-  static class NotPublicView extends View<User> {
+  static class NotPublicView {
+
+    @Consume.FromKeyValueEntity(UserEntity.class)
+    public static class Users extends TableUpdater<User> {
+    }
 
     public record QueryParameters(String email) {}
 
-    @Query("SELECT * FROM users_view WHERE email = :email")
+    @Query("SELECT * FROM users WHERE email = :email")
     public User getUser(QueryParameters email) {
       return null;
     }

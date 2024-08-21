@@ -28,12 +28,12 @@ import akka.platform.javasdk.spi.{ ActionClient => RuntimeActionClient }
 import akka.platform.javasdk.spi.{ EntityClient => RuntimeEntityClient }
 import akka.platform.javasdk.spi.{ ViewClient => RuntimeViewClient }
 import akka.platform.javasdk.workflow.Workflow
+
 import scala.concurrent.ExecutionContext
 import scala.jdk.FutureConverters.FutureOps
 import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
-
 import akka.platform.javasdk.client.KeyValueEntityClient
 import akka.platform.javasdk.keyvalueentity.KeyValueEntity
 import akka.platform.javasdk.spi.ActionRequest
@@ -45,6 +45,7 @@ import akka.platform.javasdk.spi.KeyValueEntityType
 import akka.platform.javasdk.spi.ViewRequest
 import akka.platform.javasdk.spi.ViewType
 import akka.platform.javasdk.spi.WorkflowType
+import akka.platform.javasdk.view.View
 
 /**
  * INTERNAL API
@@ -188,10 +189,11 @@ private[javasdk] final case class ViewClientImpl(viewClient: RuntimeViewClient, 
     val executionContext: ExecutionContext)
     extends ViewClient {
 
-  override def method[T, R](methodRef: function.Function[T, R]): ComponentInvokeOnlyMethodRef[R] =
+  override def method[T, R](methodRef: function.Function[T, View.QueryEffect[R]]): ComponentInvokeOnlyMethodRef[R] =
     createMethodRefForEitherArity(methodRef)
 
-  override def method[T, A1, R](methodRef: function.Function2[T, A1, R]): ComponentInvokeOnlyMethodRef1[A1, R] =
+  override def method[T, A1, R](
+      methodRef: function.Function2[T, A1, View.QueryEffect[R]]): ComponentInvokeOnlyMethodRef1[A1, R] =
     createMethodRefForEitherArity(methodRef)
 
   private def createMethodRefForEitherArity[A1, R](lambda: AnyRef): ComponentMethodRefImpl[A1, R] = {

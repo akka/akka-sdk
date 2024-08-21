@@ -1,6 +1,7 @@
 package customer.view;
 
 // tag::class[]
+import akka.platform.javasdk.view.TableUpdater;
 import customer.domain.CustomerEntity;
 import customer.domain.Customer;
 import akka.platform.javasdk.annotations.Query;
@@ -12,7 +13,15 @@ import java.util.Collection;
 
 @ComponentId("view_customers_by_name")
 public class CustomersByNameView
-  extends View<CustomersByNameView.CustomerSummary> {
+  extends View {
+
+  public static class CustomerByNameUpdater extends TableUpdater<CustomerSummary> {
+    @Consume.FromKeyValueEntity(CustomerEntity.class) // <4>
+    public Effect<CustomerSummary> onUpdate(Customer customer) {
+      return effects()
+          .updateRow(new CustomerSummary(customer.name(), customer.email()));
+    }
+  }
 
   public record CustomerSummary(String name, String email) {
   }
@@ -23,14 +32,9 @@ public class CustomersByNameView
   }
 
   @Query("SELECT * AS customers FROM customers_by_name WHERE name = :name")
-  public Customers getCustomers(QueryParameters params) {
-    return null;
+  public QueryEffect<Customers> getCustomers(QueryParameters params) {
+    return queryResult();
   }
 
-  @Consume.FromKeyValueEntity(CustomerEntity.class) // <4>
-  public Effect<CustomerSummary> onUpdate(Customer customer) {
-    return effects()
-      .updateState(new CustomerSummary(customer.name(), customer.email()));
-  }
 }
 // end::class[]

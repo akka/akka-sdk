@@ -5,33 +5,27 @@
 package akka.platform.javasdk.impl.view
 
 import java.lang.reflect.ParameterizedType
-import java.util.{ Map => JMap }
-import scala.jdk.CollectionConverters._
 import com.google.protobuf.any.{ Any => ScalaPbAny }
 import akka.platform.javasdk.impl.AnySupport.ProtobufEmptyTypeUrl
 import akka.platform.javasdk.impl.CommandHandler
 import akka.platform.javasdk.impl.ComponentDescriptorFactory
 import akka.platform.javasdk.impl.InvocationContext
 import akka.platform.javasdk.JsonSupport
-import akka.platform.javasdk.impl.view.ViewMultiTableRouter
-import akka.platform.javasdk.impl.view.ViewRouter
-import akka.platform.javasdk.impl.view.ViewEffectImpl
-import akka.platform.javasdk.view.View
-import akka.platform.javasdk.view.View.Effect
+import akka.platform.javasdk.view.TableUpdater
 
-class ReflectiveViewRouter[S, V <: View[S]](
-    view: V,
+class ReflectiveViewRouter[S, V <: TableUpdater[S]](
+    viewUpdater: V,
     commandHandlers: Map[String, CommandHandler],
     ignoreUnknown: Boolean)
-    extends ViewRouter[S, V](view) {
+    extends ViewRouter[S, V](viewUpdater) {
 
   private def commandHandlerLookup(commandName: String) =
     commandHandlers.getOrElse(commandName, throw new RuntimeException(s"no matching method for '$commandName'"))
 
-  override def handleUpdate(commandName: String, state: S, event: Any): Effect[S] = {
+  override def handleUpdate(commandName: String, state: S, event: Any): TableUpdater.Effect[S] = {
 
     val viewStateType: Class[S] =
-      this.view.getClass.getGenericSuperclass
+      updater.getClass.getGenericSuperclass
         .asInstanceOf[ParameterizedType]
         .getActualTypeArguments
         .head
@@ -43,11 +37,11 @@ class ReflectiveViewRouter[S, V <: View[S]](
       case s if s == null || state.getClass == viewStateType =>
         // note that we set the state even if null, this is needed in order to
         // be able to call viewState() later
-        view._internalSetViewState(s)
+        viewUpdater._internalSetViewState(s)
       case s =>
         val deserializedState =
           JsonSupport.decodeJson(viewStateType, ScalaPbAny.toJavaProto(s.asInstanceOf[ScalaPbAny]))
-        view._internalSetViewState(deserializedState)
+        viewUpdater._internalSetViewState(deserializedState)
     }
 
     val commandHandler = commandHandlerLookup(commandName)
@@ -61,33 +55,34 @@ class ReflectiveViewRouter[S, V <: View[S]](
         inputTypeUrl match {
           case ProtobufEmptyTypeUrl =>
             invoker
-              .invoke(view)
-              .asInstanceOf[Effect[S]]
+              .invoke(viewUpdater)
+              .asInstanceOf[TableUpdater.Effect[S]]
           case _ =>
             val context =
               InvocationContext(anyEvent, commandHandler.requestMessageDescriptor)
             invoker
-              .invoke(view, context)
-              .asInstanceOf[Effect[S]]
+              .invoke(viewUpdater, context)
+              .asInstanceOf[TableUpdater.Effect[S]]
         }
       case None if ignoreUnknown => ViewEffectImpl.builder().ignore()
       case None =>
-        throw new NoSuchElementException(s"Couldn't find any method with input type [$inputTypeUrl] in View [$view].")
+        throw new NoSuchElementException(
+          s"Couldn't find any method with input type [$inputTypeUrl] in View [$updater].")
     }
   }
 
 }
 
 class ReflectiveViewMultiTableRouter(
-    viewTables: JMap[Class[View[_]], View[_]],
+    viewTables: Map[Class[TableUpdater[AnyRef]], TableUpdater[AnyRef]],
     commandHandlers: Map[String, CommandHandler])
     extends ViewMultiTableRouter {
 
-  private val routers: Map[Class[_], ReflectiveViewRouter[Any, View[Any]]] = viewTables.asScala.toMap.map {
+  private val routers: Map[Class[_], ReflectiveViewRouter[Any, TableUpdater[Any]]] = viewTables.map {
     case (viewTableClass, viewTable) => viewTableClass -> createViewRouter(viewTableClass, viewTable)
   }
 
-  private val commandRouters: Map[String, ReflectiveViewRouter[Any, View[Any]]] = commandHandlers.flatMap {
+  private val commandRouters: Map[String, ReflectiveViewRouter[Any, TableUpdater[Any]]] = commandHandlers.flatMap {
     case (commandName, commandHandler) =>
       commandHandler.methodInvokers.values.headOption.flatMap { methodInvoker =>
         routers.get(methodInvoker.method.getDeclaringClass).map(commandName -> _)
@@ -95,15 +90,18 @@ class ReflectiveViewMultiTableRouter(
   }
 
   private def createViewRouter(
-      viewTableClass: Class[View[_]],
-      viewTable: View[_]): ReflectiveViewRouter[Any, View[Any]] = {
-    val ignoreUnknown = ComponentDescriptorFactory.findIgnore(viewTableClass)
+      updaterClass: Class[TableUpdater[AnyRef]],
+      updater: TableUpdater[AnyRef]): ReflectiveViewRouter[Any, TableUpdater[Any]] = {
+    val ignoreUnknown = ComponentDescriptorFactory.findIgnore(updaterClass)
     val tableCommandHandlers = commandHandlers.filter { case (_, commandHandler) =>
       commandHandler.methodInvokers.exists { case (_, methodInvoker) =>
-        methodInvoker.method.getDeclaringClass eq viewTableClass
+        methodInvoker.method.getDeclaringClass eq updaterClass
       }
     }
-    new ReflectiveViewRouter(viewTable.asInstanceOf[View[Any]], tableCommandHandlers, ignoreUnknown)
+    new ReflectiveViewRouter[Any, TableUpdater[Any]](
+      updater.asInstanceOf[TableUpdater[Any]],
+      tableCommandHandlers,
+      ignoreUnknown)
   }
 
   override def viewRouter(commandName: String): ViewRouter[_, _] = {

@@ -4,22 +4,24 @@
 
 package com.example.wiring.views;
 
+import akka.platform.javasdk.view.TableUpdater;
 import com.example.wiring.keyvalueentities.user.User;
 import com.example.wiring.keyvalueentities.user.UserEntity;
 import akka.platform.javasdk.annotations.Query;
 import akka.platform.javasdk.annotations.Consume;
-import akka.platform.javasdk.annotations.Table;
 import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.view.View;
 
 @ComponentId("users_by_email_and_name")
-@Consume.FromKeyValueEntity(UserEntity.class)
-public class UsersByEmailAndName extends View<User> {
+public class UsersByEmailAndName extends View {
+
+  @Consume.FromKeyValueEntity(UserEntity.class)
+  public static class Users extends TableUpdater<User> {}
 
   public record QueryParameters(String email, String name) {}
 
-  @Query("SELECT * FROM users_by_email_and_name WHERE email = :email AND name = :name")
-  public User getUsers(QueryParameters params) {
-    return null;
+  @Query("SELECT * FROM users WHERE email = :email AND name = :name")
+  public QueryEffect<User> getUsers(QueryParameters params) {
+    return queryResult();
   }
 }

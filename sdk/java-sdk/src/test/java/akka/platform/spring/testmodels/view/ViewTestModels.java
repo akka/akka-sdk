@@ -11,6 +11,7 @@ import akka.platform.javasdk.annotations.JWT;
 import akka.platform.javasdk.annotations.Query;
 import akka.platform.javasdk.annotations.Table;
 import akka.platform.javasdk.view.View;
+import akka.platform.javasdk.view.TableUpdater;
 import akka.platform.spring.testmodels.eventsourcedentity.Employee;
 import akka.platform.spring.testmodels.eventsourcedentity.EmployeeEvent;
 import akka.platform.spring.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.EmployeeEntity;
@@ -30,95 +31,132 @@ public class ViewTestModels {
 
 
   @ComponentId("users_view")
-  @Consume.FromKeyValueEntity(UserEntity.class) // when types are annotated, it's implicitly a transform = false
-  public static class UserByEmailWithGet extends View<User> {
+  public static class UserByEmailWithGet extends View {
 
-    @Query("SELECT * FROM users_table WHERE email = :email")
-    public User getUser(ByEmail byEmail) {
-      return null; // TODO: user should not implement this. we need to find a nice API for this
+    @Consume.FromKeyValueEntity(UserEntity.class) // when types are annotated, it's implicitly a transform = false
+    public static class UserUpdater extends TableUpdater<User> {}
+
+    @Query("SELECT * FROM users WHERE email = :email")
+    public QueryEffect<User> getUser(ByEmail byEmail) {
+      return queryResult();
     }
   }
 
-  @Table("users_table")
-  @Consume.FromKeyValueEntity(UserEntity.class)
-  public static class ViewWithoutComponentIdAnnotation extends View<User> {
+  @Table("users")
+  public static class ViewWithoutComponentIdAnnotation extends View {
 
+    @Consume.FromKeyValueEntity(UserEntity.class)
+    public static class UserUpdater extends TableUpdater<User> {}
 
-    @Query("SELECT * FROM users_table WHERE email = :email")
-    public User getUser(ByEmail byEmail) {
-      return null; // TODO: user should not implement this. we need to find a nice API for this
+    @Query("SELECT * FROM users WHERE email = :email")
+    public QueryEffect<User> getUser(ByEmail byEmail) {
+      return queryResult();
     }
   }
 
   @ComponentId(" ")
-  @Consume.FromKeyValueEntity(UserEntity.class)
-  public static class ViewWithEmptyComponentIdAnnotation extends View<User> {
+  public static class ViewWithEmptyComponentIdAnnotation extends View {
 
-    @Query("SELECT * FROM users_table WHERE email = :email")
-    public User getUser(String email) {
-      return null; // TODO: user should not implement this. we need to find a nice API for this
+    @Consume.FromKeyValueEntity(UserEntity.class)
+    public static class UserUpdater extends TableUpdater<User> {}
+
+    @Query("SELECT * FROM users WHERE email = :email")
+    public QueryEffect<User> getUser(String email) {
+      return queryResult();
     }
   }
 
   @ComponentId("users_view")
-  @Table("users_table")
-  @Consume.FromKeyValueEntity(UserEntity.class)
-  public static class ViewWithTableName extends View<User> {
+  public static class ViewWithNoTableUpdater extends View {
 
-    @Query("SELECT * FROM users_table WHERE email = :email")
-    public User getUser(String email) {
+    @Query("SELECT * FROM users WHERE email = :email")
+    public QueryEffect<User> getUser(String email) {
+      return queryResult();
+    }
+  }
+
+
+  @ComponentId("users_view")
+  @Table("users")
+  public static class ViewWithTableName extends View {
+
+    @Consume.FromKeyValueEntity(UserEntity.class)
+    public static class UserUpdater extends TableUpdater<User> {}
+
+    @Query("SELECT * FROM users WHERE email = :email")
+    public QueryEffect<User> getUser(String email) {
+      return queryResult();
+    }
+  }
+
+  @ComponentId("users_view")
+  public static class WrongQueryReturnType extends View {
+
+    @Consume.FromKeyValueEntity(UserEntity.class) // when types are annotated, it's implicitly a transform = false
+    public static class UserUpdater extends TableUpdater<User> {}
+
+    @Query("SELECT * FROM users WHERE email = :email")
+    public User getUser(ByEmail byEmail) {
       return null;
     }
   }
 
 
   @ComponentId("users_view")
-  public static class TransformedUserView extends View<TransformedUser> {
+  public static class TransformedUserView extends View {
 
-    // when methods are annotated, it's implicitly a transform = true
-    @Consume.FromKeyValueEntity(UserEntity.class)
-    public Effect<TransformedUser> onChange(User user) {
-      return effects()
-          .updateState(new TransformedUser(user.lastName + ", " + user.firstName, user.email));
+    public static class TransformedUserUpdater extends TableUpdater<TransformedUser> {
+      // when methods are annotated, it's implicitly a transform = true
+      @Consume.FromKeyValueEntity(UserEntity.class)
+      public Effect<TransformedUser> onChange(User user) {
+        return effects()
+            .updateRow(new TransformedUser(user.lastName + ", " + user.firstName, user.email));
+      }
+
     }
 
-    @Query("SELECT * FROM users_table WHERE email = :email")
-    public TransformedUser getUser(ByEmail byEmail) {
-      return null;
-    }
-  }
-
-  @ComponentId("users_view")
-  public static class TransformedUserViewWithDeletes extends View<TransformedUser> {
-
-    @Consume.FromKeyValueEntity(UserEntity.class)
-    public Effect<TransformedUser> onChange(User user) {
-      return effects()
-          .updateState(new TransformedUser(user.lastName + ", " + user.firstName, user.email));
-    }
-
-    @Consume.FromKeyValueEntity(value = UserEntity.class, handleDeletes = true)
-    public Effect<TransformedUser> onDelete() {
-      return effects().deleteState();
-    }
-
-    @Query("SELECT * FROM users_table WHERE email = :email")
-    public TransformedUser getUser(ByEmail byEmail) {
-      return null;
+    @Query("SELECT * FROM users WHERE email = :email")
+    public QueryEffect<TransformedUser> getUser(ByEmail byEmail) {
+      return queryResult();
     }
   }
 
   @ComponentId("users_view")
-  public static class TransformedUserViewWithMethodLevelJWT extends View<TransformedUser> {
+  public static class TransformedUserViewWithDeletes extends View {
 
-    // when methods are annotated, it's implicitly a transform = true
-    @Consume.FromKeyValueEntity(UserEntity.class)
-    public Effect<TransformedUser> onChange(User user) {
-      return effects()
-          .updateState(new TransformedUser(user.lastName + ", " + user.firstName, user.email));
+    public static class TransformedUserUpdater extends TableUpdater<TransformedUser> {
+
+      @Consume.FromKeyValueEntity(UserEntity.class)
+      public Effect<TransformedUser> onChange(User user) {
+        return effects()
+            .updateRow(new TransformedUser(user.lastName + ", " + user.firstName, user.email));
+      }
+
+      @Consume.FromKeyValueEntity(value = UserEntity.class, handleDeletes = true)
+      public Effect<TransformedUser> onDelete() {
+        return effects().deleteRow();
+      }
     }
 
-    @Query("SELECT * FROM users_table WHERE email = :email")
+    @Query("SELECT * FROM users WHERE email = :email")
+    public QueryEffect<TransformedUser>  getUser(ByEmail byEmail) {
+      return queryResult();
+    }
+  }
+
+  @ComponentId("users_view")
+  public static class TransformedUserViewWithMethodLevelJWT extends View {
+
+    public static class TransformedUserUpdater extends TableUpdater<TransformedUser> {
+      // when methods are annotated, it's implicitly a transform = true
+      @Consume.FromKeyValueEntity(UserEntity.class)
+      public Effect<TransformedUser> onChange(User user) {
+        return effects()
+            .updateRow(new TransformedUser(user.lastName + ", " + user.firstName, user.email));
+      }
+    }
+
+    @Query("SELECT * FROM users WHERE email = :email")
     @JWT(
         validate = JWT.JwtMethodMode.BEARER_TOKEN,
         bearerTokenIssuer = {"a", "b"},
@@ -126,8 +164,8 @@ public class ViewTestModels {
             @JWT.StaticClaim(claim = "role", value = "admin"),
             @JWT.StaticClaim(claim = "aud", value = "${ENV}.kalix.io")
         })
-    public TransformedUser getUser(ByEmail byEmail) {
-      return null;
+    public QueryEffect<TransformedUser> getUser(ByEmail byEmail) {
+      return queryResult();
     }
   }
 
@@ -139,10 +177,14 @@ public class ViewTestModels {
         @JWT.StaticClaim(claim = "role", value = "admin"),
         @JWT.StaticClaim(claim = "aud", value = "${ENV}.kalix.io")
     })
-  public static class ViewWithServiceLevelJWT extends View<User> {
-    @Query("SELECT * FROM users_table WHERE email = :email")
-    public User getUser(ByEmail byEmail) {
-      return null;
+  public static class ViewWithServiceLevelJWT extends View {
+
+    @Consume.FromKeyValueEntity(UserEntity.class)
+    public static class UserUpdater extends TableUpdater<User> {}
+
+    @Query("SELECT * FROM users WHERE email = :email")
+    public QueryEffect<User> getUser(ByEmail byEmail) {
+      return queryResult();
     }
   }
 
@@ -153,400 +195,401 @@ public class ViewTestModels {
    * subscribe at method level, and it's a transform = true.
    */
   @ComponentId("users_view")
-  @Consume.FromKeyValueEntity(UserEntity.class)
-  public static class ViewWithSubscriptionsInMixedLevels extends View<TransformedUser> {
-
-    // when methods are annotated, it's implicitly a transform = true
-    @Consume.FromKeyValueEntity(UserEntity.class)
-    public Effect<TransformedUser> onChange(User user) {
-      return effects()
-          .updateState(new TransformedUser(user.lastName + ", " + user.firstName, user.email));
-    }
-
-    @Query("SELECT * FROM users_table WHERE email = :email")
-    public TransformedUser getUser(ByEmail byEmail) {
-      return null;
-    }
-  }
-
-  @ComponentId("users_view")
-  @Consume.FromKeyValueEntity(UserEntity.class) //it's implicitly a transform = false
-  public static class TransformedViewWithoutSubscriptionOnMethodLevel extends View<TransformedUser> {
-
-    public Effect<TransformedUser> onChange(User user) {
-      return effects()
-          .updateState(new TransformedUser(user.lastName + ", " + user.firstName, user.email));
-    }
-
-    @Query("SELECT * FROM users_table WHERE email = :email")
-    public TransformedUser getUser(ByEmail byEmail) {
-      return null;
-    }
-  }
-
-  @ComponentId("users_view")
-  @Consume.FromKeyValueEntity(UserEntity.class)
-  public static class ViewWithSubscriptionsInMixedLevelsHandleDelete extends View<User> {
-
-    @Consume.FromKeyValueEntity(value = UserEntity.class, handleDeletes = true)
-    public Effect<User> onDelete() {
-      return effects().deleteState();
-    }
-
-    @Query("SELECT * FROM users_table WHERE email = :email")
-    public User getUser(ByEmail byEmail) {
-      return null;
-    }
-  }
-
-  @ComponentId("users_view")
-  public static class ViewWithoutSubscriptionButWithHandleDelete extends View<TransformedUser> {
-
-    @Consume.FromKeyValueEntity(value = UserEntity.class, handleDeletes = true)
-    public Effect<TransformedUser> onDelete() {
-      return effects().deleteState();
-    }
-
-    @Query("SELECT * FROM users_table WHERE email = :email")
-    public TransformedUser getUser(ByEmail byEmail) {
-      return null;
-    }
-  }
-
-  @ComponentId("users_view")
-  public static class ViewDuplicatedHandleDeletesAnnotations extends View<TransformedUser> {
+  public static class ViewWithSubscriptionsInMixedLevels extends View {
 
     @Consume.FromKeyValueEntity(UserEntity.class)
-    public Effect<TransformedUser> onChange(User user) {
-      return effects()
-          .updateState(new TransformedUser(user.lastName + ", " + user.firstName, user.email));
-    }
-
-    @Consume.FromKeyValueEntity(value = UserEntity.class, handleDeletes = true)
-    public Effect<TransformedUser> onDelete() {
-      return effects().deleteState();
-    }
-
-    @Consume.FromKeyValueEntity(value = UserEntity.class, handleDeletes = true)
-    public Effect<TransformedUser> onDelete2() {
-      return effects().deleteState();
-    }
-
-    @Query("SELECT * FROM users_table WHERE email = :email")
-    public TransformedUser getUser(ByEmail byEmail) {
-      return null;
-    }
-  }
-
-  @ComponentId("users_view")
-  public static class ViewHandleDeletesWithParam extends View<TransformedUser> {
-
-    @Consume.FromKeyValueEntity(UserEntity.class)
-    public Effect<TransformedUser> onChange(User user) {
-      return effects()
-          .updateState(new TransformedUser(user.lastName + ", " + user.firstName, user.email));
-    }
-
-    @Consume.FromKeyValueEntity(value = UserEntity.class, handleDeletes = true)
-    public Effect<TransformedUser> onDelete(User user) {
-      return effects().deleteState();
-    }
-
-    @Query("SELECT * FROM users_table WHERE email = :email")
-    public TransformedUser getUser(ByEmail byEmail) {
-      return null;
-    }
-  }
-
-  @ComponentId("users_view")
-  public static class ViewWithHandleDeletesFalseOnMethodLevel extends View<TransformedUser> {
-
-    @Consume.FromKeyValueEntity(UserEntity.class)
-    public Effect<TransformedUser> onChange(User user) {
-      return effects()
-          .updateState(new TransformedUser(user.lastName + ", " + user.firstName, user.email));
-    }
-
-    @Consume.FromKeyValueEntity(value = UserEntity.class, handleDeletes = false)
-    public Effect<TransformedUser> onDelete() {
-      return effects().deleteState();
-    }
-
-    @Query("SELECT * FROM users_table WHERE email = :email")
-    public TransformedUser getUser(ByEmail byEmail) {
-      return null;
-    }
-  }
-
-  @ComponentId("users_view")
-  public static class ViewDuplicatedVESubscriptions extends View<TransformedUser> {
-
-    @Consume.FromKeyValueEntity(UserEntity.class)
-    public Effect<TransformedUser> onChange(User user) {
-      return effects()
-        .updateState(new TransformedUser(user.lastName + ", " + user.firstName, user.email));
-    }
-
-    @Consume.FromKeyValueEntity(UserEntity.class)
-    public Effect<TransformedUser> onChange2(User user) {
-      return effects()
-          .updateState(new TransformedUser(user.lastName + ", " + user.firstName, user.email));
-    }
-
-    @Consume.FromKeyValueEntity(value = UserEntity.class, handleDeletes = true)
-    public Effect<TransformedUser> onDelete() {
-      return effects().deleteState();
-    }
-
-    @Query("SELECT * FROM users_table WHERE email = :email")
-    public TransformedUser getUser(ByEmail byEmail) {
-      return null;
-    }
-  }
-
-  @ComponentId("users_view")
-  public static class ViewDuplicatedESSubscriptions extends View<TransformedUser> {
-
-    @Consume.FromEventSourcedEntity(EmployeeEntity.class)
-    public Effect<TransformedUser> onChange(User user) {
-      return effects()
-        .updateState(new TransformedUser(user.lastName + ", " + user.firstName, user.email));
-    }
-
-    @Consume.FromEventSourcedEntity(EmployeeEntity.class)
-    public Effect<TransformedUser> onChange2(User user) {
-      return effects()
-        .updateState(new TransformedUser(user.lastName + ", " + user.firstName, user.email));
-    }
-
-    @Consume.FromKeyValueEntity(value = UserEntity.class, handleDeletes = true)
-    public Effect<TransformedUser> onDelete() {
-      return effects().deleteState();
-    }
-
-    @Query("SELECT * FROM users_table WHERE email = :email")
-    public TransformedUser getUser(ByEmail byEmail) {
-      return null;
-    }
-  }
-
-  @ComponentId("users_view")
-  @Consume.FromKeyValueEntity(UserEntity.class)
-  public static class ViewWithNoQuery extends View<TransformedUser> {}
-
-  @ComponentId("users_view")
-  @Consume.FromKeyValueEntity(UserEntity.class)
-  public static class ViewWithTwoQueries extends View<User> {
-
-    @Query("SELECT * FROM users_table WHERE email = :email")
-    public User getUserByEmail(ByEmail byEmail) {
-      return null;
-    }
-
-    @Query("SELECT * FROM users_table WHERE email = :email AND name = :name")
-    public User getUserByNameAndEmail(ByNameAndEmail byEmail) {
-      return null;
-    }
-  }
-
-
-
-  @ComponentId("users_view")
-  public static class SubscribeToEventSourcedEvents extends View<Employee> {
-
-    @Consume.FromEventSourcedEntity(EmployeeEntity.class)
-    public Effect<Employee> onCreated(EmployeeEvent.EmployeeCreated created) {
-      return effects()
-          .updateState(new Employee(created.firstName, created.lastName, created.email));
-    }
-
-    @Consume.FromEventSourcedEntity(EmployeeEntity.class)
-    public Effect<Employee> onUpdated(EmployeeEvent.EmployeeEmailUpdated updated) {
-      return effects().ignore();
-    }
-
-    @Query("SELECT * FROM employees_table WHERE email = :email")
-    public Employee getEmployeeByEmail(ByEmail byEmail) {
-      return null;
-    }
-  }
-
-  @ComponentId("users_view")
-  public static class SubscribeToSealedEventSourcedEvents extends View<Employee> {
-
-    @Consume.FromEventSourcedEntity(EmployeeEntity.class)
-    public Effect<Employee> handle(EmployeeEvent event) {
-      return switch (event) {
-        case EmployeeEvent.EmployeeCreated created ->
-           effects()
-              .updateState(new Employee(created.firstName, created.lastName, created.email));
-        case EmployeeEvent.EmployeeEmailUpdated updated ->
-           effects().ignore();
-      };
-    }
-
-    @Query("SELECT * FROM employees_table WHERE email = :email")
-    public Employee getEmployeeByEmail(ByEmail byEmail) {
-      return null;
-    }
-  }
-
-  @ComponentId("users_view")
-  public static class SubscribeToEventSourcedWithMissingHandler extends View<Employee> {
-
-    @Consume.FromEventSourcedEntity(EmployeeEntity.class)
-    public Effect<Employee> onCreated(EmployeeEvent.EmployeeCreated created) {
-      return effects()
-          .updateState(new Employee(created.firstName, created.lastName, created.email));
-    }
-
-    @Query("SELECT * FROM employees_table WHERE email = :email")
-    public Employee getEmployeeByEmail(ByEmail byEmail) {
-      return null;
-    }
-  }
-
-
-  @ComponentId("users_view")
-  @Consume.FromEventSourcedEntity(value = EmployeeEntity.class, ignoreUnknown = false)
-  public static class TypeLevelSubscribeToEventSourcedEventsWithMissingHandler extends View<Employee> {
-
-    public Effect<Employee> onEvent(EmployeeEvent.EmployeeCreated created) {
-      return effects()
-          .updateState(new Employee(created.firstName, created.lastName, created.email));
-    }
-
-    @Query("SELECT * FROM employees_table WHERE email = :email")
-    public Employee getEmployeeByEmail(ByEmail byEmail) {
-      return null;
-    }
-  }
-
-  @ComponentId("users_view")
-  @Acl(allow = @Acl.Matcher(service = "test"))
-  public static class ViewWithServiceLevelAcl extends View<Employee> {
-
-    @Query("SELECT * FROM employees_table WHERE email = :email")
-    public Employee getEmployeeByEmail(ByEmail byEmail) {
-      return null;
-    }
-  }
-
-  @ComponentId("users_view")
-  public static class ViewWithMethodLevelAcl extends View<Employee> {
-
-    @Query("SELECT * FROM employees_table WHERE email = :email")
-    @Acl(allow = @Acl.Matcher(service = "test"))
-    public Employee getEmployeeByEmail(ByEmail byEmail) {
-      return null;
-    }
-  }
-
-
-  @ComponentId("users_view")
-  @Consume.FromKeyValueEntity(UserEntity.class)
-  public static class UserByEmailWithCollectionReturn extends View<User> {
-
-    @Query(value = "SELECT * AS users FROM users_table WHERE name = :name")
-    public UserCollection getUser(ByEmail name) {
-      return null;
-    }
-  }
-
-
-  @ComponentId("users_view")
-  public static class MultiTableViewValidation {
-    @Consume.FromKeyValueEntity(UserEntity.class)
-    public static class ViewTableWithoutTableAnnotation extends View<User> {}
-
-    @Table(" ")
-    @Consume.FromKeyValueEntity(UserEntity.class)
-    public static class ViewTableWithEmptyTableAnnotation extends View<User> {}
-
-    @Table("users_table")
-    @Consume.FromKeyValueEntity(UserEntity.class)
-    public static class ViewTableWithMixedLevelSubscriptions extends View<TransformedUser> {
+    public static class TransformedUserUpdater extends TableUpdater<TransformedUser> {
+      // when methods are annotated, it's implicitly a transform = true
       @Consume.FromKeyValueEntity(UserEntity.class)
       public Effect<TransformedUser> onChange(User user) {
         return effects()
-            .updateState(new TransformedUser(user.lastName + ", " + user.firstName, user.email));
+            .updateRow(new TransformedUser(user.lastName + ", " + user.firstName, user.email));
+      }
+
+    }
+
+    @Query("SELECT * FROM users WHERE email = :email")
+    public QueryEffect<TransformedUser> getUser(ByEmail byEmail) {
+      return queryResult();
+    }
+  }
+
+  @ComponentId("users_view")
+  public static class TransformedViewWithoutSubscriptionOnMethodLevel extends View {
+
+    @Consume.FromKeyValueEntity(UserEntity.class) //it's implicitly a transform = false
+    public static class TransformedUserUpdater extends TableUpdater<TransformedUser> {
+      public Effect<TransformedUser> onChange(User user) {
+        return effects()
+            .updateRow(new TransformedUser(user.lastName + ", " + user.firstName, user.email));
+      }
+    }
+
+    @Query("SELECT * FROM users WHERE email = :email")
+    public QueryEffect<TransformedUser> getUser(ByEmail byEmail) {
+      return queryResult();
+    }
+  }
+
+  @ComponentId("users_view")
+  public static class ViewWithSubscriptionsInMixedLevelsHandleDelete extends View {
+
+    @Consume.FromKeyValueEntity(UserEntity.class)
+    public static class UserUpdater extends TableUpdater<User> {
+
+      @Consume.FromKeyValueEntity(value = UserEntity.class, handleDeletes = true)
+      public Effect<User> onDelete() {
+      return effects().deleteRow();
+    }
+    }
+
+    @Query("SELECT * FROM users WHERE email = :email")
+    public QueryEffect<User> getUser(ByEmail byEmail) {
+      return queryResult();
+    }
+  }
+
+  @ComponentId("users_view")
+  public static class ViewWithoutSubscriptionButWithHandleDelete extends View {
+
+    public static class UserUpdater extends TableUpdater<TransformedUser> {
+      @Consume.FromKeyValueEntity(value = UserEntity.class, handleDeletes = true)
+      public Effect<TransformedUser> onDelete() {
+        return effects().deleteRow();
+      }
+    }
+    
+    @Query("SELECT * FROM users WHERE email = :email")
+    public QueryEffect<TransformedUser> getUser(ByEmail byEmail) {
+      return queryResult();
+    }
+  }
+
+  @ComponentId("users_view")
+  public static class ViewDuplicatedHandleDeletesAnnotations extends View {
+
+    public static class TransformedUserUpdater extends TableUpdater<TransformedUser> {
+      @Consume.FromKeyValueEntity(UserEntity.class)
+      public Effect<TransformedUser> onChange(User user) {
+        return effects()
+            .updateRow(new TransformedUser(user.lastName + ", " + user.firstName, user.email));
+      }
+
+      @Consume.FromKeyValueEntity(value = UserEntity.class, handleDeletes = true)
+      public Effect<TransformedUser> onDelete() {
+        return effects().deleteRow();
+      }
+
+      @Consume.FromKeyValueEntity(value = UserEntity.class, handleDeletes = true)
+      public Effect<TransformedUser> onDelete2() {
+        return effects().deleteRow();
+      }
+    }
+
+    @Query("SELECT * FROM users WHERE email = :email")
+    public QueryEffect<TransformedUser> getUser(ByEmail byEmail) {
+      return queryResult();
+    }
+  }
+
+  @ComponentId("users_view")
+  public static class ViewHandleDeletesWithParam extends View {
+
+    public static class TransformedUserUpdater extends TableUpdater<TransformedUser> {
+      @Consume.FromKeyValueEntity(UserEntity.class)
+      public Effect<TransformedUser> onChange(User user) {
+        return effects()
+            .updateRow(new TransformedUser(user.lastName + ", " + user.firstName, user.email));
+      }
+
+      @Consume.FromKeyValueEntity(value = UserEntity.class, handleDeletes = true)
+      public Effect<TransformedUser> onDelete(User user) {
+        return effects().deleteRow();
+      }
+    }
+
+    @Query("SELECT * FROM users WHERE email = :email")
+    public QueryEffect<TransformedUser> getUser(ByEmail byEmail) {
+      return queryResult();
+    }
+  }
+
+  @ComponentId("users_view")
+  public static class ViewWithHandleDeletesFalseOnMethodLevel extends View {
+
+    public static class TransformedUserUpdater extends TableUpdater<TransformedUser> {
+      @Consume.FromKeyValueEntity(UserEntity.class)
+      public Effect<TransformedUser> onChange(User user) {
+        return effects()
+            .updateRow(new TransformedUser(user.lastName + ", " + user.firstName, user.email));
+      }
+
+      @Consume.FromKeyValueEntity(value = UserEntity.class, handleDeletes = false)
+      public Effect<TransformedUser> onDelete() {
+        return effects().deleteRow();
+      }
+    }
+
+    @Query("SELECT * FROM users WHERE email = :email")
+    public QueryEffect<TransformedUser> getUser(ByEmail byEmail) {
+      return queryResult();
+    }
+  }
+
+  @ComponentId("users_view")
+  public static class ViewDuplicatedVESubscriptions extends View {
+
+    public static class TransformedUserUpdater extends TableUpdater<TransformedUser> {
+
+      @Consume.FromKeyValueEntity(UserEntity.class)
+      public Effect<TransformedUser> onChange(User user) {
+        return effects()
+            .updateRow(new TransformedUser(user.lastName + ", " + user.firstName, user.email));
+      }
+
+      @Consume.FromKeyValueEntity(UserEntity.class)
+      public Effect<TransformedUser> onChange2(User user) {
+        return effects()
+            .updateRow(new TransformedUser(user.lastName + ", " + user.firstName, user.email));
+      }
+
+      @Consume.FromKeyValueEntity(value = UserEntity.class, handleDeletes = true)
+      public Effect<TransformedUser> onDelete() {
+        return effects().deleteRow();
+      }
+    }
+    
+    @Query("SELECT * FROM users WHERE email = :email")
+    public QueryEffect<TransformedUser> getUser(ByEmail byEmail) {
+      return queryResult();
+    }
+  }
+
+  @ComponentId("users_view")
+  public static class ViewDuplicatedESSubscriptions extends View {
+
+    public static class TransformedUserUpdater extends TableUpdater<TransformedUser> {
+      @Consume.FromEventSourcedEntity(EmployeeEntity.class)
+      public Effect<TransformedUser> onChange(User user) {
+        return effects()
+          .updateRow(new TransformedUser(user.lastName + ", " + user.firstName, user.email));
+      }
+  
+      @Consume.FromEventSourcedEntity(EmployeeEntity.class)
+      public Effect<TransformedUser> onChange2(User user) {
+        return effects()
+          .updateRow(new TransformedUser(user.lastName + ", " + user.firstName, user.email));
+      }
+  
+      @Consume.FromKeyValueEntity(value = UserEntity.class, handleDeletes = true)
+      public Effect<TransformedUser> onDelete() {
+        return effects().deleteRow();
+      }
+    }
+
+    @Query("SELECT * FROM users WHERE email = :email")
+    public QueryEffect<TransformedUser> getUser(ByEmail byEmail) {
+      return queryResult();
+    }
+  }
+
+  @ComponentId("users_view")
+  @Consume.FromKeyValueEntity(UserEntity.class)
+  public static class ViewWithNoQuery extends View {}
+
+  @ComponentId("users_view")
+  public static class ViewWithTwoQueries extends View {
+
+    @Consume.FromKeyValueEntity(UserEntity.class)
+    public static class UsersTable extends TableUpdater<User> {}
+
+    @Query("SELECT * FROM users WHERE email = :email")
+    public QueryEffect<User> getUserByEmail(ByEmail byEmail) {
+      return queryResult();
+    }
+
+    @Query("SELECT * FROM users WHERE email = :email AND name = :name")
+    public QueryEffect<User> getUserByNameAndEmail(ByNameAndEmail byEmail) {
+      return queryResult();
+    }
+  }
+
+
+
+  @ComponentId("employees_view")
+  public static class SubscribeToEventSourcedEvents extends View {
+
+    public static class Employees extends TableUpdater<Employee> {
+
+      @Consume.FromEventSourcedEntity(EmployeeEntity.class)
+      public Effect<Employee> onCreated(EmployeeEvent.EmployeeCreated created) {
+        return effects()
+            .updateRow(new Employee(created.firstName, created.lastName, created.email));
+      }
+
+      @Consume.FromEventSourcedEntity(EmployeeEntity.class)
+      public Effect<Employee> onUpdated(EmployeeEvent.EmployeeEmailUpdated updated) {
+        return effects().ignore();
+      }
+    }
+
+    @Query("SELECT * FROM employees WHERE email = :email")
+    public QueryEffect<Employee> getEmployeeByEmail(ByEmail byEmail) {
+      return queryResult();
+    }
+  }
+
+  @ComponentId("employees_view")
+  public static class SubscribeToSealedEventSourcedEvents extends View {
+
+    public static class Employees extends TableUpdater<Employee> {
+
+      @Consume.FromEventSourcedEntity(EmployeeEntity.class)
+      public Effect<Employee> handle(EmployeeEvent event) {
+        return switch (event) {
+          case EmployeeEvent.EmployeeCreated created -> effects()
+              .updateRow(new Employee(created.firstName, created.lastName, created.email));
+          case EmployeeEvent.EmployeeEmailUpdated updated -> effects().ignore();
+        };
+      }
+    }
+
+    @Query("SELECT * FROM employees WHERE email = :email")
+    public QueryEffect<Employee> getEmployeeByEmail(ByEmail byEmail) {
+      return queryResult();
+    }
+  }
+
+  @ComponentId("users_view")
+  public static class SubscribeToEventSourcedWithMissingHandler extends View {
+
+    public static class Employees extends TableUpdater<Employee> {
+      @Consume.FromEventSourcedEntity(EmployeeEntity.class)
+      public Effect<Employee> onCreated(EmployeeEvent.EmployeeCreated created) {
+        return effects()
+            .updateRow(new Employee(created.firstName, created.lastName, created.email));
+      }
+    }
+
+    @Query("SELECT * FROM employees WHERE email = :email")
+    public QueryEffect<Employee> getEmployeeByEmail(ByEmail byEmail) {
+      return queryResult();
+    }
+  }
+
+
+  @ComponentId("users_view")
+  public static class TypeLevelSubscribeToEventSourcedEventsWithMissingHandler extends View {
+
+    @Consume.FromEventSourcedEntity(value = EmployeeEntity.class, ignoreUnknown = false)
+    public static class Employees extends TableUpdater<Employee> {
+      public Effect<Employee> onEvent(EmployeeEvent.EmployeeCreated created) {
+        return effects()
+            .updateRow(new Employee(created.firstName, created.lastName, created.email));
+      }
+    }
+
+    @Query("SELECT * FROM employees WHERE email = :email")
+    public QueryEffect<Employee> getEmployeeByEmail(ByEmail byEmail) {
+      return queryResult();
+    }
+  }
+
+  @ComponentId("employees_view")
+  @Acl(allow = @Acl.Matcher(service = "test"))
+  public static class ViewWithServiceLevelAcl extends View {
+
+    @Consume.FromKeyValueEntity(UserEntity.class)
+    public static class Users extends TableUpdater<User> { }
+
+    @Query("SELECT * FROM users WHERE email = :email")
+    public QueryEffect<Employee> getEmployeeByEmail(ByEmail byEmail) {
+      return queryResult();
+    }
+  }
+
+  @ComponentId("employees_view")
+  public static class ViewWithMethodLevelAcl extends View {
+
+    @Consume.FromKeyValueEntity(UserEntity.class)
+    public static class Users extends TableUpdater<User> { }
+
+    @Query("SELECT * FROM users WHERE email = :email")
+    @Acl(allow = @Acl.Matcher(service = "test"))
+    public QueryEffect<Employee> getEmployeeByEmail(ByEmail byEmail) {
+      return queryResult();
+    }
+  }
+
+
+  @ComponentId("users_view")
+  public static class UserByEmailWithCollectionReturn extends View {
+
+    @Consume.FromKeyValueEntity(UserEntity.class)
+    public static class UsersTable extends TableUpdater<User> { }
+
+    @Query(value = "SELECT * AS users FROM users WHERE name = :name")
+    public QueryEffect<UserCollection> getUser(ByEmail name) {
+      return queryResult();
+    }
+  }
+
+
+  @ComponentId("users_view")
+  public static class MultiTableViewValidation extends View {
+    @Consume.FromKeyValueEntity(UserEntity.class)
+    public static class ViewTableWithoutTableAnnotation extends TableUpdater<User> {}
+
+    @Table(" ")
+    @Consume.FromKeyValueEntity(UserEntity.class)
+    public static class ViewTableWithEmptyTableAnnotation extends TableUpdater<User> {}
+
+    @Consume.FromKeyValueEntity(UserEntity.class) // both here
+    @Table("users")
+    public static class ViewTableWithMixedLevelSubscriptions extends TableUpdater<TransformedUser> {
+      @Consume.FromKeyValueEntity(UserEntity.class) // and here
+      public Effect<TransformedUser> onChange(User user) {
+        return effects()
+            .updateRow(new TransformedUser(user.lastName + ", " + user.firstName, user.email));
       }
     }
   }
 
   @ComponentId("multi-table-view-without-query")
-  public static class MultiTableViewWithoutQuery {
-    @Table("users_table")
-    public static class Users extends View<User> {}
+  public static class MultiTableViewWithoutQuery extends View {
+    @Table("users")
+    public static class Users extends TableUpdater<User> {}
   }
 
-  public static class MultiTableViewWithoutComponentId {
+  public static class MultiTableViewWithoutComponentId extends View {
 
-    @Table("users_table")
-    public static class Users extends View<User> {}
+    @Table("users")
+    public static class Users extends TableUpdater<User> {}
 
-    @Query("SELECT * FROM users_table")
-    public User query1() {
-      return null;
-    }
-  }
-
-  @ComponentId(" ")
-  public static class MultiTableViewWithEmptyComponentId {
-
-    @Table("users_table")
-    public static class Users extends View<User> {}
-
-    @Query("SELECT * FROM users_table")
-    public User query1() {
-      return null;
-    }
-  }
-
-  @ComponentId("users_multi_view")
-  public static class MultiTableViewWithComponentIdInInnerView {
-
-    @ComponentId("users_view")
-    @Table("users_table")
-    public static class Users extends View<User> {}
-
-    @Query("SELECT * FROM users_table")
-    public User query1() {
-      return null;
-    }
-  }
-
-  @ComponentId("users_multi_view")
-  @Table("users_table")
-  public static class MultiTableViewWithTableName {
-
-    @Table("users_table")
-    public static class Users extends View<User> {}
-
-    @Query("SELECT * FROM users_table")
-    public User query1() {
-      return null;
+    @Query("SELECT * FROM users")
+    public QueryEffect<User> query1() {
+      return queryResult();
     }
   }
 
   @ComponentId("multi-table-view-with-multiple-queries")
-  public static class MultiTableViewWithMultipleQueries {
-    @Query("SELECT * FROM users_table")
-    public User query1() {
-      return null;
+  public static class MultiTableViewWithMultipleQueries extends View {
+    @Query("SELECT * FROM users")
+    public QueryEffect<User> query1() {
+      return queryResult();
     }
 
-    @Query("SELECT * FROM users_table")
-    public User query2() {
-      return null;
+    @Query("SELECT * FROM users")
+    public QueryEffect<User> query2() {
+      return queryResult();
     }
 
-    @Table("users_table")
-    public static class Users extends View<User> {}
+    @Table("users")
+    public static class Users extends TableUpdater<User> {}
   }
 
   @ComponentId("multi-table-view-with-join-query")
-  public static class MultiTableViewWithJoinQuery {
+  public static class MultiTableViewWithJoinQuery extends View {
 
     @Query("""
       SELECT employees.*, counters.* as counters
@@ -555,16 +598,16 @@ public class ViewTestModels {
       JOIN counters ON assigned.counterId = counters.id
       WHERE employees.email = :email
       """)
-    public EmployeeCounters get(ByEmail byEmail) {
-      return null;
+    public QueryEffect<EmployeeCounters> get(ByEmail byEmail) {
+      return queryResult();
     }
 
     @Table("employees")
     @Consume.FromEventSourcedEntity(EmployeeEntity.class)
-    public static class Employees extends View<Employee> {
+    public static class Employees extends TableUpdater<Employee> {
       public Effect<Employee> onCreated(EmployeeEvent.EmployeeCreated created) {
         return effects()
-            .updateState(new Employee(created.firstName, created.lastName, created.email));
+            .updateRow(new Employee(created.firstName, created.lastName, created.email));
       }
 
       public Effect<Employee> onUpdated(EmployeeEvent.EmployeeEmailUpdated updated) {
@@ -574,36 +617,36 @@ public class ViewTestModels {
 
     @Table("counters")
     @Consume.FromKeyValueEntity(Counter.class)
-    public static class Counters extends View<CounterState> {}
+    public static class Counters extends TableUpdater<CounterState> {}
 
     @Table("assigned")
     @Consume.FromKeyValueEntity(AssignedCounter.class)
-    public static class Assigned extends View<AssignedCounterState> {}
+    public static class Assigned extends TableUpdater<AssignedCounterState> {}
   }
 
   @ComponentId("multi-table-view-with-join-query")
-  public static class MultiTableViewWithDuplicatedVESubscriptions {
+  public static class MultiTableViewWithDuplicatedVESubscriptions extends View {
 
     @Query("SELECT * FROM employees")
-    public EmployeeCounters get(ByEmail byEmail) {
-      return null;
+    public QueryEffect<EmployeeCounters> get(ByEmail byEmail) {
+      return queryResult();
     }
 
     @Table("employees")
     @Consume.FromEventSourcedEntity(EmployeeEntity.class)
-    public static class Employees extends View<Employee> {
+    public static class Employees extends TableUpdater<Employee> {
       public Effect<Employee> onEvent(EmployeeEvent.EmployeeCreated created) {
         return effects()
-          .updateState(new Employee(created.firstName, created.lastName, created.email));
+          .updateRow(new Employee(created.firstName, created.lastName, created.email));
       }
     }
 
     @Table("counters")
     @Consume.FromKeyValueEntity(Counter.class)
-    public static class Counters extends View<CounterState> {}
+    public static class Counters extends TableUpdater<CounterState> {}
 
     @Table("assigned")
-    public static class Assigned extends View<CounterState> {
+    public static class Assigned extends TableUpdater<CounterState> {
       @Consume.FromKeyValueEntity(Counter.class)
       public Effect<CounterState> onEvent(CounterState counterState) {
         return effects().ignore();
@@ -617,28 +660,28 @@ public class ViewTestModels {
   }
 
   @ComponentId("multi-table-view-with-join-query")
-  public static class MultiTableViewWithDuplicatedESSubscriptions {
+  public static class MultiTableViewWithDuplicatedESSubscriptions extends View {
 
-    @Query("SELECT * FROM users_table")
-    public EmployeeCounters get(ByEmail byEmail) {
-      return null;
+    @Query("SELECT * FROM users")
+    public QueryEffect<EmployeeCounters> get(ByEmail byEmail) {
+      return queryResult();
     }
 
     @Table("employees")
     @Consume.FromEventSourcedEntity(EmployeeEntity.class)
-    public static class Employees extends View<Employee> {
+    public static class Employees extends TableUpdater<Employee> {
       public Effect<Employee> onEvent(EmployeeEvent.EmployeeCreated created) {
         return effects()
-          .updateState(new Employee(created.firstName, created.lastName, created.email));
+          .updateRow(new Employee(created.firstName, created.lastName, created.email));
       }
     }
 
     @Table("counters")
     @Consume.FromKeyValueEntity(Counter.class)
-    public static class Counters extends View<CounterState> {}
+    public static class Counters extends TableUpdater<CounterState> {}
 
     @Table("assigned")
-    public static class Assigned extends View<Employee> {
+    public static class Assigned extends TableUpdater<Employee> {
       @Consume.FromEventSourcedEntity(EmployeeEntity.class)
       public Effect<Employee> onEvent(CounterState counterState) {
         return effects().ignore();
@@ -652,54 +695,62 @@ public class ViewTestModels {
   }
 
   @ComponentId("time-tracker-view")
-  @Consume.FromKeyValueEntity(TimeTrackerEntity.class)
-  public static class TimeTrackerView extends View<TimeTrackerEntity.TimerState> {
+  public static class TimeTrackerView extends View {
 
-    @Query(value = "SELECT * FROM time_tracker_table WHERE name = :name")
-    public TimeTrackerEntity.TimerState query2() {
-      return null;
+    @Consume.FromKeyValueEntity(TimeTrackerEntity.class)
+    public static class TimeTrackers extends TableUpdater<TimeTrackerEntity.TimerState> { }
+
+    @Query(value = "SELECT * FROM time_trackers WHERE name = :name")
+    public QueryEffect<TimeTrackerEntity.TimerState> query2() {
+      return queryResult();
     }
   }
 
 
   @ComponentId("employee_view")
-  @Consume.FromTopic(value = "source", consumerGroup = "cg")
-  public static class TopicTypeLevelSubscriptionView extends View<Employee> {
+  public static class TopicTypeLevelSubscriptionView extends View {
 
-    public Effect<Employee> onCreate(EmployeeEvent.EmployeeCreated evt) {
-      return effects()
-        .updateState(new Employee(evt.firstName, evt.lastName, evt.email));
+    @Consume.FromTopic(value = "source", consumerGroup = "cg")
+    public static class Employees extends TableUpdater<Employee> {
+
+      public Effect<Employee> onCreate(EmployeeEvent.EmployeeCreated evt) {
+        return effects()
+            .updateRow(new Employee(evt.firstName, evt.lastName, evt.email));
+      }
+
+      public Effect<Employee> onEmailUpdate(EmployeeEvent.EmployeeEmailUpdated eeu) {
+        var employee = rowState();
+        return effects().updateRow(new Employee(employee.firstName(), employee.lastName(), eeu.email));
+      }
     }
 
-    public Effect<Employee> onEmailUpdate(EmployeeEvent.EmployeeEmailUpdated eeu) {
-      var employee = viewState();
-      return effects().updateState(new Employee(employee.firstName(), employee.lastName(), eeu.email));
-    }
-
-    @Query("SELECT * FROM employees_table WHERE email = :email")
-    public Employee getEmployeeByEmail(ByEmail byEmail) {
-      return null;
+    @Query("SELECT * FROM employees WHERE email = :email")
+    public QueryEffect<Employee> getEmployeeByEmail(ByEmail byEmail) {
+      return queryResult();
     }
   }
 
   @ComponentId("employee_view")
-  public static class TopicSubscriptionView extends View<Employee> {
+  public static class TopicSubscriptionView extends View {
 
-    @Consume.FromTopic(value = "source", consumerGroup = "cg")
-    public Effect<Employee> onCreate(EmployeeEvent.EmployeeCreated evt) {
-      return effects()
-        .updateState(new Employee(evt.firstName, evt.lastName, evt.email));
+    public static class Employees extends TableUpdater<Employee> {
+
+      @Consume.FromTopic(value = "source", consumerGroup = "cg")
+      public Effect<Employee> onCreate(EmployeeEvent.EmployeeCreated evt) {
+        return effects()
+            .updateRow(new Employee(evt.firstName, evt.lastName, evt.email));
+      }
+
+      @Consume.FromTopic(value = "source", consumerGroup = "cg")
+      public Effect<Employee> onEmailUpdate(EmployeeEvent.EmployeeEmailUpdated eeu) {
+        var employee = rowState();
+        return effects().updateRow(new Employee(employee.firstName(), employee.lastName(), eeu.email));
+      }
     }
 
-    @Consume.FromTopic(value = "source", consumerGroup = "cg")
-    public Effect<Employee> onEmailUpdate(EmployeeEvent.EmployeeEmailUpdated eeu) {
-      var employee = viewState();
-      return effects().updateState(new Employee(employee.firstName(), employee.lastName(), eeu.email));
-    }
-
-    @Query("SELECT * FROM employees_table WHERE email = :email")
-    public Employee getEmployeeByEmail(ByEmail byEmail) {
-      return null;
+    @Query("SELECT * FROM employees WHERE email = :email")
+    public QueryEffect<Employee> getEmployeeByEmail(ByEmail byEmail) {
+      return queryResult();
     }
   }
 }

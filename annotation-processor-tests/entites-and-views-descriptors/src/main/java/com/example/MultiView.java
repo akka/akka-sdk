@@ -7,16 +7,17 @@ package com.example;
 
 import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.view.View;
+import akka.platform.javasdk.view.TableUpdater;
 
 @ComponentId("simple-view")
-public class MultiView {
+public class MultiView extends View {
 
 
-  public static class OneView extends View<String> {
+  public static class OneTable extends TableUpdater<String> {
 
   }
 
-  public static class AnotherView extends View<String> {
+  public static class AnotherTable extends TableUpdater<String> {
 
   }
 

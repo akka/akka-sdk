@@ -4,20 +4,34 @@
 
 package com.example.wiring.views;
 
+import akka.platform.javasdk.view.TableUpdater;
 import com.example.wiring.keyvalueentities.user.User;
 import com.example.wiring.keyvalueentities.user.UserEntity;
 import akka.platform.javasdk.annotations.Query;
 import akka.platform.javasdk.annotations.Consume;
-import akka.platform.javasdk.annotations.Table;
 import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.view.View;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @ComponentId("user_view")
-public class UserWithVersionView extends View<UserWithVersion> {
+public class UserWithVersionView extends View {
 
   private static final Logger logger = LoggerFactory.getLogger(UserWithVersionView.class);
+
+  public static class Users extends TableUpdater<UserWithVersion> {
+    @Consume.FromKeyValueEntity(UserEntity.class)
+    public Effect<UserWithVersion> onChange(User user) {
+      if (rowState() == null) return effects().updateRow(new UserWithVersion(user.email, 1));
+      else return effects().updateRow(new UserWithVersion(user.email, rowState().version + 1));
+    }
+
+    @Consume.FromKeyValueEntity(value = UserEntity.class, handleDeletes = true)
+    public Effect<UserWithVersion> onDelete() {
+      logger.info("Deleting user with email={}", rowState().email);
+      return effects().deleteRow();
+    }
+  }
 
   public record QueryParameters(String email) {}
 
@@ -25,21 +39,10 @@ public class UserWithVersionView extends View<UserWithVersion> {
     return new QueryParameters(email);
   }
 
-  @Query("SELECT * FROM user_view WHERE email = :email")
-  public UserWithVersion getUser(QueryParameters params) {
-    return null;
+  @Query("SELECT * FROM users WHERE email = :email")
+  public QueryEffect<UserWithVersion> getUser(QueryParameters params) {
+    return queryResult();
   }
 
-  @Consume.FromKeyValueEntity(UserEntity.class)
-  public Effect<UserWithVersion> onChange(User user) {
-    if (viewState() == null) return effects().updateState(new UserWithVersion(user.email, 1));
-    else return effects().updateState(new UserWithVersion(user.email, viewState().version + 1));
-  }
-
-  @Consume.FromKeyValueEntity(value = UserEntity.class, handleDeletes = true)
-  public Effect<UserWithVersion> onDelete() {
-    logger.info("Deleting user with email={}", viewState().email);
-    return effects().deleteState();
-  }
 
 }

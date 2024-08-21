@@ -4,18 +4,30 @@
 
 package com.example.wiring.views;
 
+import akka.platform.javasdk.view.TableUpdater;
 import com.example.wiring.eventsourcedentities.counter.Counter;
 import com.example.wiring.eventsourcedentities.counter.CounterEntity;
 import com.example.wiring.eventsourcedentities.counter.CounterEvent;
 import akka.platform.javasdk.annotations.Query;
 import akka.platform.javasdk.annotations.Consume;
-import akka.platform.javasdk.annotations.Table;
 import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.view.View;
 
 @ComponentId("counters_by_value_with_ignore")
-@Consume.FromEventSourcedEntity(value = CounterEntity.class, ignoreUnknown = true)
-public class CountersByValueWithIgnore extends View<Counter> {
+public class CountersByValueWithIgnore extends View {
+
+  @Consume.FromEventSourcedEntity(value = CounterEntity.class, ignoreUnknown = true)
+  public static class Counters extends TableUpdater<Counter> {
+    @Override
+    public Counter emptyRow() {
+      return new Counter(0);
+    }
+
+    public Effect<Counter> onValueIncreased(CounterEvent.ValueIncreased event){
+      Counter counter = rowState();
+      return effects().updateRow(counter.onValueIncreased(event));
+    }
+  }
 
   public record QueryParameters(Integer value) {}
 
@@ -23,18 +35,9 @@ public class CountersByValueWithIgnore extends View<Counter> {
     return new QueryParameters(value);
   }
 
-  @Override
-  public Counter emptyState() {
-    return new Counter(0);
+  @Query("SELECT * FROM counters WHERE value = :value")
+  public QueryEffect<Counter> getCounterByValue(QueryParameters params) {
+    return queryResult();
   }
 
-  @Query("SELECT * FROM counters_by_value_with_ignore WHERE value = :value")
-  public Counter getCounterByValue(QueryParameters params) {
-    return null;
-  }
-
-  public Effect<Counter> onValueIncreased(CounterEvent.ValueIncreased event){
-    Counter counter = viewState();
-    return effects().updateState(counter.onValueIncreased(event));
-  }
 }

@@ -27,7 +27,7 @@ import akka.platform.javasdk.impl.ComponentDescriptorFactory.hasEventSourcedEnti
 import akka.platform.javasdk.impl.ComponentDescriptorFactory.hasHandleDeletes
 import akka.platform.javasdk.impl.ComponentDescriptorFactory.hasStreamSubscription
 import akka.platform.javasdk.impl.ComponentDescriptorFactory.hasTopicSubscription
-import akka.platform.javasdk.impl.ComponentDescriptorFactory.hasUpdateEffectOutput
+import akka.platform.javasdk.impl.ComponentDescriptorFactory.hasViewUpdateEffectOutput
 import akka.platform.javasdk.impl.ComponentDescriptorFactory.hasValueEntitySubscription
 import akka.platform.javasdk.impl.ComponentDescriptorFactory.mergeServiceOptions
 import akka.platform.javasdk.impl.ComponentDescriptorFactory.subscribeToEventStream
@@ -41,7 +41,7 @@ import akka.platform.javasdk.impl.reflection.SubscriptionServiceMethod
 import akka.platform.javasdk.impl.reflection.ViewUrlTemplate
 import akka.platform.javasdk.impl.reflection.VirtualDeleteServiceMethod
 import akka.platform.javasdk.impl.reflection.VirtualServiceMethod
-// TODO: abstract away reactor dependency
+import akka.platform.javasdk.view.View
 
 private[impl] object ViewDescriptorFactory extends ComponentDescriptorFactory {
 
@@ -52,20 +52,17 @@ private[impl] object ViewDescriptorFactory extends ComponentDescriptorFactory {
       messageCodec: JsonMessageCodec,
       nameGenerator: NameGenerator): ComponentDescriptor = {
 
-    val isMultiTable = Reflect.isMultiTableView(component)
-
-    val tableComponents =
-      if (isMultiTable) component.getDeclaredClasses.toSeq.filter(Reflect.isNestedViewTable)
-      else Seq(component)
+    val tableUpdaters =
+      component.getDeclaredClasses.toSeq.filter(Reflect.isViewTableUpdater)
 
     val allQueryMethods = queryMethods(component)
 
     val (tableTypeDescriptors, updateMethods) = {
-      tableComponents
-        .map { component =>
+      tableUpdaters
+        .map { tableUpdater =>
           // View class type parameter declares table type
           val tableType: Class[_] =
-            component.getGenericSuperclass
+            tableUpdater.getGenericSuperclass
               .asInstanceOf[ParameterizedType]
               .getActualTypeArguments
               .head
@@ -73,9 +70,9 @@ private[impl] object ViewDescriptorFactory extends ComponentDescriptorFactory {
 
           val queries = allQueryMethods.map(_.queryString)
           val tableName: String = {
-            if (isMultiTable) {
-              // explicitly annotated since queries are not on the nested view tables
-              component.getAnnotation(classOf[Table]).value()
+            if (tableUpdaters.size > 1) {
+              // explicitly annotated since multiple view table updaters
+              tableUpdater.getAnnotation(classOf[Table]).value()
             } else {
               // figure out from first query
               val query = queries.head
@@ -90,39 +87,45 @@ private[impl] object ViewDescriptorFactory extends ComponentDescriptorFactory {
 
           val tableProtoMessageName = tableTypeDescriptor.mainMessageDescriptor.getName
 
-          val hasMethodLevelEventSourcedEntitySubs = component.getMethods.exists(hasEventSourcedEntitySubscription)
-          val hasTypeLevelEventSourcedEntitySubs = hasEventSourcedEntitySubscription(component)
-          val hasTypeLevelValueEntitySubs = hasValueEntitySubscription(component)
-          val hasMethodLevelValueEntitySubs = component.getMethods.exists(hasValueEntitySubscription)
-          val hasTypeLevelTopicSubs = hasTopicSubscription(component)
-          val hasMethodLevelTopicSubs = component.getMethods.exists(hasTopicSubscription)
-          val hasTypeLevelStreamSubs = hasStreamSubscription(component)
-
           val updateMethods = {
+            def hasMethodLevelEventSourcedEntitySubs = tableUpdater.getMethods.exists(hasEventSourcedEntitySubscription)
+
+            def hasTypeLevelEventSourcedEntitySubs = hasEventSourcedEntitySubscription(tableUpdater)
+
+            def hasTypeLevelValueEntitySubs = hasValueEntitySubscription(tableUpdater)
+
+            def hasMethodLevelValueEntitySubs = tableUpdater.getMethods.exists(hasValueEntitySubscription)
+
+            def hasTypeLevelTopicSubs = hasTopicSubscription(tableUpdater)
+
+            def hasMethodLevelTopicSubs = tableUpdater.getMethods.exists(hasTopicSubscription)
+
+            def hasTypeLevelStreamSubs = hasStreamSubscription(tableUpdater)
+
             if (hasTypeLevelValueEntitySubs)
-              subscriptionForTypeLevelValueEntity(component, tableType, tableName, tableProtoMessageName)
+              subscriptionForTypeLevelValueEntity(tableUpdater, tableType, tableName, tableProtoMessageName)
             else if (hasMethodLevelValueEntitySubs)
-              subscriptionForMethodLevelValueEntity(component, tableName, tableProtoMessageName)
+              subscriptionForMethodLevelValueEntity(tableUpdater, tableName, tableProtoMessageName)
             else if (hasTypeLevelEventSourcedEntitySubs) {
               val kalixSubscriptionMethods =
-                methodsForTypeLevelESSubscriptions(component, tableName, tableProtoMessageName, isMultiTable)
-              combineBy("ES", kalixSubscriptionMethods, messageCodec, component)
+                methodsForTypeLevelESSubscriptions(tableUpdater, tableName, tableProtoMessageName)
+              combineBy("ES", kalixSubscriptionMethods, messageCodec, tableUpdater)
             } else if (hasMethodLevelEventSourcedEntitySubs) {
               val methodsForMethodLevelESSubscriptions =
-                subscriptionEventSourcedEntityMethodLevel(component, tableName, tableProtoMessageName)
-              combineByES(methodsForMethodLevelESSubscriptions, messageCodec, component)
+                subscriptionEventSourcedEntityMethodLevel(tableUpdater, tableName, tableProtoMessageName)
+              combineByES(methodsForMethodLevelESSubscriptions, messageCodec, tableUpdater)
             } else if (hasTypeLevelTopicSubs) {
               val kalixSubscriptionMethods =
-                methodsForTypeLevelTopicSubscriptions(component, tableName, tableProtoMessageName, isMultiTable)
-              combineBy("Topic", kalixSubscriptionMethods, messageCodec, component)
+                methodsForTypeLevelTopicSubscriptions(tableUpdater, tableName, tableProtoMessageName)
+              combineBy("Topic", kalixSubscriptionMethods, messageCodec, tableUpdater)
             } else if (hasMethodLevelTopicSubs) {
               val methodsForMethodLevelTopicSubscriptions =
-                subscriptionTopicMethodLevel(component, tableName, tableProtoMessageName)
-              combineByTopic(methodsForMethodLevelTopicSubscriptions, messageCodec, component)
+                subscriptionTopicMethodLevel(tableUpdater, tableName, tableProtoMessageName)
+              combineByTopic(methodsForMethodLevelTopicSubscriptions, messageCodec, tableUpdater)
             } else if (hasTypeLevelStreamSubs) {
               val kalixSubscriptionMethods =
-                methodsForTypeLevelStreamSubscriptions(component, tableName, tableProtoMessageName)
-              combineBy("Stream", kalixSubscriptionMethods, messageCodec, component)
+                methodsForTypeLevelStreamSubscriptions(tableUpdater, tableName, tableProtoMessageName)
+              combineBy("Stream", kalixSubscriptionMethods, messageCodec, tableUpdater)
             } else
               Seq.empty
           }
@@ -141,13 +144,15 @@ private[impl] object ViewDescriptorFactory extends ComponentDescriptorFactory {
       tableTypeDescriptors.toSet ++ allQueryMethods.map(_.queryOutputSchemaDescriptor) ++ allQueryMethods.flatMap(
         _.queryInputSchemaDescriptor.toSet)
 
-    val serviceLevelOptions =
-      mergeServiceOptions(
+    val serviceLevelOptions = {
+      val forMerge = Seq(
         AclDescriptorFactory.serviceLevelAclAnnotation(component, default = Some(AclDescriptorFactory.denyAll)),
         JwtDescriptorFactory.serviceLevelJwtAnnotation(component),
+        // FIXME does these two do anything anymore - no annotations on View itself
         eventingInForEventSourcedEntityServiceLevel(component),
-        eventingInForTopicServiceLevel(component),
-        subscribeToEventStream(component))
+        eventingInForTopicServiceLevel(component)) ++ tableUpdaters.map(subscribeToEventStream)
+      mergeServiceOptions(forMerge: _*)
+    }
 
     ComponentDescriptor(
       nameGenerator,
@@ -169,10 +174,14 @@ private[impl] object ViewDescriptorFactory extends ComponentDescriptorFactory {
     // we only take methods with Query annotations
     val annotatedQueryMethods =
       component.getDeclaredMethods.toIndexedSeq
-        .filter(_.getAnnotation(classOf[Query]) != null)
+        .filter(m => m.getAnnotation(classOf[Query]) != null && m.getReturnType == classOf[View.QueryEffect[_]])
 
     annotatedQueryMethods.map { queryMethod =>
-      val queryOutputType = queryMethod.getReturnType
+      val queryOutputType = queryMethod.getGenericReturnType
+        .asInstanceOf[java.lang.reflect.ParameterizedType]
+        .getActualTypeArguments
+        .head
+        .asInstanceOf[Class[_]]
 
       val queryOutputSchemaDescriptor =
         ProtoMessageDescriptors.generateMessageDescriptors(queryOutputType)
@@ -227,51 +236,49 @@ private[impl] object ViewDescriptorFactory extends ComponentDescriptorFactory {
   }
 
   private def methodsForTypeLevelStreamSubscriptions(
-      component: Class[_],
+      tableUpdater: Class[_],
       tableName: String,
       tableProtoMessageName: String): Map[String, Seq[KalixMethod]] = {
-    val methods = eligibleSubscriptionMethods(component, tableName, tableProtoMessageName, None).toIndexedSeq
-    val ann = component.getAnnotation(classOf[FromServiceStream])
+    val methods = eligibleSubscriptionMethods(tableUpdater, tableName, tableProtoMessageName, None).toIndexedSeq
+    val ann = tableUpdater.getAnnotation(classOf[FromServiceStream])
     val key = ann.id().capitalize
     Map(key -> methods)
   }
 
   private def methodsForTypeLevelESSubscriptions(
-      component: Class[_],
+      tableUpdater: Class[_],
       tableName: String,
-      tableProtoMessageName: String,
-      isMultiTable: Boolean): Map[String, Seq[KalixMethod]] = {
+      tableProtoMessageName: String): Map[String, Seq[KalixMethod]] = {
 
     val methods = eligibleSubscriptionMethods(
-      component,
+      tableUpdater,
       tableName,
       tableProtoMessageName,
-      if (isMultiTable) Some(eventingInForEventSourcedEntity(component)) else None).toIndexedSeq
-    val entityType = findEventSourcedEntityType(component)
+      Some(eventingInForEventSourcedEntity(tableUpdater))).toIndexedSeq
+    val entityType = findEventSourcedEntityType(tableUpdater)
     Map(entityType -> methods)
   }
 
   private def methodsForTypeLevelTopicSubscriptions(
-      component: Class[_],
+      tableUpdater: Class[_],
       tableName: String,
-      tableProtoMessageName: String,
-      isMultiTable: Boolean): Map[String, Seq[KalixMethod]] = {
+      tableProtoMessageName: String): Map[String, Seq[KalixMethod]] = {
 
     val methods = eligibleSubscriptionMethods(
-      component,
+      tableUpdater,
       tableName,
       tableProtoMessageName,
-      if (isMultiTable) Some(eventingInForTopic(component)) else None).toIndexedSeq
-    val entityType = findSubscriptionTopicName(component)
+      Some(eventingInForTopic(tableUpdater))).toIndexedSeq
+    val entityType = findSubscriptionTopicName(tableUpdater)
     Map(entityType -> methods)
   }
 
   private def eligibleSubscriptionMethods(
-      component: Class[_],
+      tableUpdater: Class[_],
       tableName: String,
       tableProtoMessageName: String,
       eventing: Option[Eventing]) =
-    component.getMethods.filter(hasUpdateEffectOutput).map { method =>
+    tableUpdater.getMethods.filter(hasViewUpdateEffectOutput).map { method =>
       // event sourced or topic subscription updates
       val methodOptionsBuilder = kalix.MethodOptions.newBuilder()
 
@@ -284,13 +291,13 @@ private[impl] object ViewDescriptorFactory extends ComponentDescriptorFactory {
     }
 
   private def subscriptionEventSourcedEntityMethodLevel(
-      component: Class[_],
+      tableUpdater: Class[_],
       tableName: String,
       tableProtoMessageName: String): Seq[KalixMethod] = {
 
-    def getMethodsWithSubscription(component: Class[_]): Seq[Method] = {
+    def getMethodsWithSubscription(tableUpdater: Class[_]): Seq[Method] = {
       import akka.platform.javasdk.impl.reflection.Reflect.methodOrdering
-      component.getMethods
+      tableUpdater.getMethods
         .filter(hasEventSourcedEntitySubscription)
         .sorted
         .toIndexedSeq
@@ -300,12 +307,12 @@ private[impl] object ViewDescriptorFactory extends ComponentDescriptorFactory {
       if (hasEventSourcedEntitySubscription(component)) eventingInForEventSourcedEntity(component)
       else eventingInForEventSourcedEntity(method)
 
-    getMethodsWithSubscription(component).map { method =>
+    getMethodsWithSubscription(tableUpdater).map { method =>
       // event sourced or topic subscription updates
       val methodOptionsBuilder = kalix.MethodOptions.newBuilder()
 
       if (hasEventSourcedEntitySubscription(method))
-        methodOptionsBuilder.setEventing(getEventing(method, component))
+        methodOptionsBuilder.setEventing(getEventing(method, tableUpdater))
 
       addTableOptionsToUpdateMethod(tableName, tableProtoMessageName, methodOptionsBuilder, true)
 
@@ -315,19 +322,19 @@ private[impl] object ViewDescriptorFactory extends ComponentDescriptorFactory {
   }
 
   private def subscriptionTopicMethodLevel(
-      component: Class[_],
+      tableUpdater: Class[_],
       tableName: String,
       tableProtoMessageName: String): Seq[KalixMethod] = {
 
-    def getMethodsWithSubscription(component: Class[_]): Seq[Method] = {
+    def getMethodsWithSubscription(tableUpdater: Class[_]): Seq[Method] = {
       import Reflect.methodOrdering
-      component.getMethods
+      tableUpdater.getMethods
         .filter(hasTopicSubscription)
         .sorted
         .toIndexedSeq
     }
 
-    getMethodsWithSubscription(component).map { method =>
+    getMethodsWithSubscription(tableUpdater).map { method =>
       // event sourced or topic subscription updates
       val methodOptionsBuilder = kalix.MethodOptions.newBuilder()
 
@@ -341,13 +348,13 @@ private[impl] object ViewDescriptorFactory extends ComponentDescriptorFactory {
   }
 
   private def subscriptionForMethodLevelValueEntity(
-      component: Class[_],
+      tableUpdater: Class[_],
       tableName: String,
       tableProtoMessageName: String): Seq[KalixMethod] = {
 
     import Reflect.methodOrdering
 
-    val handleDeletesMethods = component.getMethods
+    val handleDeletesMethods = tableUpdater.getMethods
       .filter(hasHandleDeletes)
       .sorted
       .map { method =>
@@ -360,7 +367,7 @@ private[impl] object ViewDescriptorFactory extends ComponentDescriptorFactory {
           .withKalixOptions(buildJWTOptions(method))
       }
 
-    val valueEntitySubscriptionMethods = component.getMethods
+    val valueEntitySubscriptionMethods = tableUpdater.getMethods
       .filterNot(hasHandleDeletes)
       .filter(hasValueEntitySubscription)
       .sorted // make sure we get the methods in deterministic order
@@ -379,29 +386,29 @@ private[impl] object ViewDescriptorFactory extends ComponentDescriptorFactory {
   }
 
   private def subscriptionForTypeLevelValueEntity(
-      component: Class[_],
+      tableUpdater: Class[_],
       tableType: Class[_],
       tableName: String,
       tableProtoMessageName: String) = {
     // create a virtual method
     val methodOptionsBuilder = kalix.MethodOptions.newBuilder()
 
-    val entityType = findValueEntityType(component)
+    val entityType = findValueEntityType(tableUpdater)
     methodOptionsBuilder.setEventing(eventingInForValueEntity(entityType, handleDeletes = false))
 
     addTableOptionsToUpdateMethod(tableName, tableProtoMessageName, methodOptionsBuilder, transform = false)
     val kalixOptions = methodOptionsBuilder.build()
 
-    if (findHandleDeletes(component)) {
+    if (findHandleDeletes(tableUpdater)) {
       val deleteMethodOptionsBuilder = kalix.MethodOptions.newBuilder()
       deleteMethodOptionsBuilder.setEventing(eventingInForValueEntity(entityType, handleDeletes = true))
       addTableOptionsToUpdateMethod(tableName, tableProtoMessageName, deleteMethodOptionsBuilder, transform = false)
       Seq(
-        KalixMethod(VirtualServiceMethod(component, "OnChange", tableType)).withKalixOptions(kalixOptions),
-        KalixMethod(VirtualDeleteServiceMethod(component, "OnDelete")).withKalixOptions(
+        KalixMethod(VirtualServiceMethod(tableUpdater, "OnChange", tableType)).withKalixOptions(kalixOptions),
+        KalixMethod(VirtualDeleteServiceMethod(tableUpdater, "OnDelete")).withKalixOptions(
           deleteMethodOptionsBuilder.build()))
     } else {
-      Seq(KalixMethod(VirtualServiceMethod(component, "OnChange", tableType)).withKalixOptions(kalixOptions))
+      Seq(KalixMethod(VirtualServiceMethod(tableUpdater, "OnChange", tableType)).withKalixOptions(kalixOptions))
     }
   }
 

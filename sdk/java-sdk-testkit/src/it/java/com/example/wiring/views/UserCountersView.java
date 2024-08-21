@@ -4,6 +4,7 @@
 
 package com.example.wiring.views;
 
+import akka.platform.javasdk.view.TableUpdater;
 import com.example.wiring.eventsourcedentities.counter.CounterEntity;
 import com.example.wiring.eventsourcedentities.counter.CounterEvent;
 import com.example.wiring.keyvalueentities.user.AssignedCounter;
@@ -19,7 +20,7 @@ import akka.platform.javasdk.annotations.ComponentId;
 import java.util.Optional;
 
 @ComponentId("user-counters")
-public class UserCountersView {
+public class UserCountersView extends View {
 
   public record QueryParameters(String userId) {}
   public static QueryParameters queryParam(String userId) {
@@ -34,42 +35,45 @@ public class UserCountersView {
     WHERE users.id = :userId
     ORDER BY counters.id
     """)
-  public UserCounters get(QueryParameters params) {
-    return null;
+  public View.QueryEffect<UserCounters> get(QueryParameters params) {
+    return queryResult();
   }
 
   @Table("users")
-  public static class Users extends View<UserWithId> {
+  public static class Users extends TableUpdater<UserWithId> {
     @Consume.FromKeyValueEntity(UserEntity.class)
     public Effect<UserWithId> onChange(User user) {
       return effects()
-          .updateState(
+          .updateRow(
               new UserWithId(updateContext().eventSubject().orElse(""), user.email, user.name));
     }
   }
 
   @Table("counters")
   @Consume.FromEventSourcedEntity(CounterEntity.class)
-  public static class Counters extends View<UserCounter> {
+  public static class Counters extends TableUpdater<UserCounter> {
+
+
     private UserCounter counterState() {
-      return Optional.ofNullable(viewState())
-        .orElseGet(() -> new UserCounter(updateContext().eventSubject().orElse(""), 0));
+      return Optional.ofNullable(rowState())
+          .orElseGet(() -> new UserCounter(updateContext().eventSubject().orElse(""), 0));
     }
 
     public Effect<UserCounter> onEvent(CounterEvent.ValueIncreased event) {
-      return effects().updateState(counterState().onValueIncreased(event));
+      return effects().updateRow(counterState().onValueIncreased(event));
     }
 
     public Effect<UserCounter> onEvent(CounterEvent.ValueMultiplied event) {
-      return effects().updateState(counterState().onValueMultiplied(event));
+      return effects().updateRow(counterState().onValueMultiplied(event));
     }
 
     public Effect<UserCounter> onEvent(CounterEvent.ValueSet event) {
-      return effects().updateState(counterState().onValueSet(event));
+      return effects().updateRow(counterState().onValueSet(event));
     }
   }
 
+
   @Table("assigned")
   @Consume.FromKeyValueEntity(AssignedCounterEntity.class)
-  public static class Assigned extends View<AssignedCounter> {}
+  public static class Assigned extends TableUpdater<AssignedCounter> {}
 }

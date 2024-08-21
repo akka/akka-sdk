@@ -10,16 +10,15 @@ import java.lang.reflect.Method
 import java.lang.reflect.Modifier
 import java.lang.reflect.ParameterizedType
 import java.util
-
 import scala.annotation.tailrec
 import scala.reflect.ClassTag
-
 import akka.platform.javasdk.action.Action
 import akka.platform.javasdk.annotations.http.Endpoint
 import akka.platform.javasdk.client.ComponentClient
 import akka.platform.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.platform.javasdk.impl.client.ComponentClientImpl
 import akka.platform.javasdk.keyvalueentity.KeyValueEntity
+import akka.platform.javasdk.view.TableUpdater
 import akka.platform.javasdk.view.View
 import akka.platform.javasdk.workflow.Workflow
 
@@ -61,28 +60,12 @@ object Reflect {
   def isWorkflow(cls: Class[_]): Boolean =
     classOf[Workflow[_]].isAssignableFrom(cls)
 
-  def isView(cls: Class[_]): Boolean = isMultiTableView(cls) || extendsView(cls)
+  def isView(cls: Class[_]): Boolean = extendsView(cls)
 
   def isAction(clazz: Class[_]): Boolean = classOf[Action].isAssignableFrom(clazz)
 
-  /**
-   * A multi-table view doesn't extend View itself, but contains at least one View class.
-   */
-  def isMultiTableView(component: Class[_]): Boolean = {
-    !extendsView(component) && component.getDeclaredClasses.exists(extendsView)
-  }
-
-  /**
-   * A view table component is a View which is a nested class (static member class) of a multi-table view.
-   */
-  def isNestedViewTable(component: Class[_]): Boolean = {
-    extendsView(component) &&
-    (component.getDeclaringClass ne null) &&
-    Modifier.isStatic(component.getModifiers)
-  }
-
   def getReturnType[R](declaringClass: Class[_], method: Method): Class[R] = {
-    if (isAction(declaringClass) || isEntity(declaringClass) || isWorkflow(declaringClass)) {
+    if (isAction(declaringClass) || isEntity(declaringClass) || isWorkflow(declaringClass) || isView(declaringClass)) {
       // here we are expecting a wrapper in the form of an Effect
       method.getGenericReturnType.asInstanceOf[ParameterizedType].getActualTypeArguments.head.asInstanceOf[Class[R]]
     } else {
@@ -92,7 +75,12 @@ object Reflect {
   }
 
   private def extendsView(component: Class[_]): Boolean =
-    classOf[View[_]].isAssignableFrom(component)
+    classOf[View].isAssignableFrom(component)
+
+  def isViewTableUpdater(component: Class[_]): Boolean =
+    classOf[TableUpdater[_]].isAssignableFrom(component) &&
+    Modifier.isStatic(component.getModifiers) &&
+    Modifier.isPublic(component.getModifiers)
 
   def allKnownEventTypes[S, E, ES <: EventSourcedEntity[S, E]](entity: ES): Seq[Class[_]] = {
     val eventType = entity.getClass.getGenericSuperclass

@@ -53,6 +53,7 @@ import akka.platform.javasdk.impl.keyvalueentity.KeyValueEntityService
 import akka.platform.javasdk.impl.reflection.Reflect
 import akka.platform.javasdk.impl.reflection.Reflect.Syntax.AnnotatedElementOps
 import akka.platform.javasdk.impl.timer.TimerSchedulerImpl
+import akka.platform.javasdk.impl.view.ViewProviderImpl
 import akka.platform.javasdk.impl.view.ViewService
 import akka.platform.javasdk.impl.view.ViewsImpl
 import akka.platform.javasdk.impl.workflow.WorkflowImpl
@@ -66,8 +67,7 @@ import akka.platform.javasdk.spi.HttpEndpointConstructionContext
 import akka.platform.javasdk.spi.HttpEndpointDescriptor
 import akka.platform.javasdk.spi.SpiComponents
 import akka.platform.javasdk.timer.TimerScheduler
-import akka.platform.javasdk.view.ReflectiveMultiTableViewProvider
-import akka.platform.javasdk.view.ReflectiveViewProvider
+import akka.platform.javasdk.view.TableUpdater
 import akka.platform.javasdk.view.View
 import akka.platform.javasdk.view.ViewContext
 import akka.platform.javasdk.view.ViewProvider
@@ -256,15 +256,9 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
         kalix.register(valueEntity)
       }
 
-      if (classOf[View[_]].isAssignableFrom(clz) && !Reflect.isNestedViewTable(clz)) {
+      if (Reflect.isView(clz)) {
         logger.info(s"Registering View provider for [${clz.getName}]")
-        val view = viewProvider(clz.asInstanceOf[Class[View[Nothing]]])
-        kalix.register(view)
-      }
-
-      if (Reflect.isMultiTableView(clz)) {
-        logger.info(s"Registering multi-table View provider for [${clz.getName}]")
-        val view = multiTableViewProvider(clz)
+        val view = viewProvider(clz.asInstanceOf[Class[View]])
         kalix.register(view)
       }
     }
@@ -484,24 +478,20 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
           case p if p == classOf[KeyValueEntityContext] => context
         })
 
-  private def viewProvider[S, V <: View[S]](clz: Class[V]): ViewProvider =
-    ReflectiveViewProvider.of[S, V](
+  // FIXME a bit much of low level stuff here right now
+  private def viewProvider[V <: View](clz: Class[V]): ViewProvider =
+    new ViewProviderImpl[V](
       clz,
       messageCodec,
-      context =>
-        wiredInstance(clz) {
-          case p if p == classOf[ViewContext] => context
-        })
-
-  private def multiTableViewProvider[V](clz: Class[V]): ViewProvider =
-    ReflectiveMultiTableViewProvider.of[V](
-      clz,
-      messageCodec,
-      (viewTableClass, context) => {
-        val constructor = viewTableClass.getConstructors.head.asInstanceOf[Constructor[View[_]]]
-        wiredInstance(constructor) {
-          case p if p == classOf[ViewContext] => context
-        }
+      ComponentDescriptorFactory.readComponentIdIdValue(clz),
+      { context =>
+        val updaterClasses = clz.getDeclaredClasses.collect {
+          case clz if Reflect.isViewTableUpdater(clz) => clz.asInstanceOf[Class[TableUpdater[AnyRef]]]
+        }.toSet
+        updaterClasses.map(updaterClass =>
+          wiredInstance(updaterClass) {
+            case p if p == classOf[ViewContext] => context
+          })
       })
 
   private def httpEndpointFactory[E](httpEndpointClass: Class[E]): HttpEndpointConstructionContext => E = {

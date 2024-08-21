@@ -7,7 +7,6 @@ package akka.platform.javasdk.impl
 import java.lang.reflect.AnnotatedElement
 import java.lang.reflect.Method
 import java.lang.reflect.ParameterizedType
-
 import akka.platform.javasdk.action.Action
 import akka.platform.javasdk.annotations.Acl
 import akka.platform.javasdk.annotations.ComponentId
@@ -24,7 +23,7 @@ import akka.platform.javasdk.impl.reflection.KalixMethod
 import akka.platform.javasdk.impl.reflection.NameGenerator
 import akka.platform.javasdk.impl.reflection.Reflect
 import akka.platform.javasdk.keyvalueentity.KeyValueEntity
-import akka.platform.javasdk.view.View.Effect
+import akka.platform.javasdk.view.TableUpdater
 import kalix.DirectDestination
 import kalix.DirectSource
 import kalix.EventDestination
@@ -98,10 +97,10 @@ private[impl] object ComponentDescriptorFactory {
     }
   }
 
-  def hasUpdateEffectOutput(javaMethod: Method): Boolean = {
+  def hasViewUpdateEffectOutput(javaMethod: Method): Boolean = {
     if (javaMethod.isPublic) {
       javaMethod.getGenericReturnType match {
-        case p: ParameterizedType => p.getRawType.equals(classOf[Effect[_]])
+        case p: ParameterizedType => p.getRawType.equals(classOf[TableUpdater.Effect[_]])
         case _                    => false
       }
     } else {

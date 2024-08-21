@@ -7,9 +7,7 @@ package akka.platform.javasdk.impl
 import java.lang.reflect.AnnotatedElement
 import java.lang.reflect.Method
 import java.lang.reflect.ParameterizedType
-
 import scala.reflect.ClassTag
-
 import akka.platform.javasdk.action.Action
 import akka.platform.javasdk.annotations.ComponentId
 import akka.platform.javasdk.annotations.Consume.FromKeyValueEntity
@@ -35,13 +33,12 @@ import akka.platform.javasdk.impl.ComponentDescriptorFactory.hasStreamSubscripti
 import akka.platform.javasdk.impl.ComponentDescriptorFactory.hasSubscription
 import akka.platform.javasdk.impl.ComponentDescriptorFactory.hasTopicPublication
 import akka.platform.javasdk.impl.ComponentDescriptorFactory.hasTopicSubscription
-import akka.platform.javasdk.impl.ComponentDescriptorFactory.hasUpdateEffectOutput
+import akka.platform.javasdk.impl.ComponentDescriptorFactory.hasViewUpdateEffectOutput
 import akka.platform.javasdk.impl.ComponentDescriptorFactory.hasValueEntitySubscription
 import akka.platform.javasdk.impl.ComponentDescriptorFactory.streamSubscription
 import akka.platform.javasdk.impl.ComponentDescriptorFactory.topicSubscription
 import akka.platform.javasdk.impl.reflection.Reflect
 import akka.platform.javasdk.impl.reflection.Reflect.Syntax._
-import akka.platform.javasdk.impl.reflection.Reflect.isMultiTableView
 import akka.platform.javasdk.keyvalueentity.KeyValueEntity
 import akka.platform.javasdk.view.View
 
@@ -212,32 +209,57 @@ object Validations {
     Valid
   }
 
-  private def validateView(component: Class[_]): Validation = {
-    when[View[_]](component) {
-      validateSingleView(component) ++
+  private def validateView(component: Class[_]): Validation =
+    when[View](component) {
+      val tableUpdaters = component.getDeclaredClasses.filter(Reflect.isViewTableUpdater).toSeq
+
       mustHaveNonEmptyComponentId(component) ++
-      viewMustNotHaveTableAnnotation(component)
-    } ++
-    when(Reflect.isMultiTableView(component)) {
-      val nestedViewClasses = component.getDeclaredClasses.toSeq.filter(Reflect.isNestedViewTable)
-      val nestedValidations =
-        nestedViewClasses.map(validateSingleView) ++ nestedViewClasses.map(
-          viewMustNotHaveComponentId) ++ nestedViewClasses.map(nestedViewTableMustHaveTableAnnotation)
-      nestedValidations.reduce(_ ++ _) ++
       viewMustNotHaveTableAnnotation(component) ++
+      viewMustHaveAtLeastOneViewTableUpdater(component) ++
       viewMustHaveAtLeastOneQueryMethod(component) ++
-      mustHaveNonEmptyComponentId(component)
+      viewQueriesMustReturnEffect(component) ++
+      viewMultipleTableUpdatersMustHaveTableAnnotations(tableUpdaters) ++
+      tableUpdaters
+        .map(updaterClass =>
+          validateVewTableUpdater(updaterClass) ++
+          viewTableAnnotationMustNotBeEmptyString(updaterClass) ++
+          viewMustHaveMethodLevelSubscriptionWhenTransformingUpdates(updaterClass))
+        .foldLeft(Valid: Validation)(_ ++ _)
+      // FIXME query annotated return type should be effect
     }
 
+  private def viewMustHaveAtLeastOneViewTableUpdater(component: Class[_]) =
+    when(component.getDeclaredClasses.count(Reflect.isViewTableUpdater) < 1) {
+      Validation(errorMessage(component, "A view must contain at least one public static TableUpdater subclass."))
+    }
+
+  private def validateVewTableUpdater(tableUpdater: Class[_]): Validation =
+    commonSubscriptionValidation(tableUpdater, hasViewUpdateEffectOutput)
+
+  private def viewTableAnnotationMustNotBeEmptyString(tableUpdater: Class[_]): Validation = {
+    val annotation = tableUpdater.getAnnotation(classOf[Table])
+    when(annotation != null && annotation.value().trim.isEmpty) {
+      Validation(errorMessage(tableUpdater, "@Table name is empty, must be a non-empty string."))
+    }
   }
 
-  private def validateSingleView(component: Class[_]): Validation = {
-    when(!Reflect.isNestedViewTable(component)) {
-      viewMustHaveAtLeastOneQueryMethod(component)
-    } ++
-    commonSubscriptionValidation(component, hasUpdateEffectOutput) ++
-    viewMustHaveMethodLevelSubscriptionWhenTransformingUpdates(component)
+  private def viewQueriesMustReturnEffect(component: Class[_]): Validation = {
+    val queriesWithWrongReturnType = component.getMethods.toIndexedSeq.filter(m =>
+      m.getAnnotation(classOf[Query]) != null && m.getReturnType != classOf[View.QueryEffect[_]])
+    queriesWithWrongReturnType.foldLeft(Valid: Validation) { (validation, methodWithWrongReturnType) =>
+      validation ++ Validation(
+        errorMessage(methodWithWrongReturnType, "Query methods must return View.QueryEffect<RowType>."))
+    }
   }
+
+  private def viewMultipleTableUpdatersMustHaveTableAnnotations(tableUpdaters: Seq[Class[_]]): Validation =
+    if (tableUpdaters.size > 1) {
+      tableUpdaters.find(_.getAnnotation(classOf[Table]) == null) match {
+        case Some(clazz) =>
+          Validation(errorMessage(clazz, "When there are multiple table updater, each must be annotated with @Table."))
+        case None => Valid
+      }
+    } else Valid
 
   private def errorMessage(element: AnnotatedElement, message: String): String = {
     val elementStr =
@@ -530,12 +552,6 @@ object Validations {
     Validation(messages)
   }
 
-  private def viewMustNotHaveComponentId(component: Class[_]): Validation = {
-    val ann = component.getAnnotation(classOf[ComponentId])
-    when(ann != null) {
-      Invalid(errorMessage(component, "A nested View should not be annotated with @ComponentId."))
-    }
-  }
   private def mustHaveNonEmptyComponentId(component: Class[_]): Validation = {
     val ann = component.getAnnotation(classOf[ComponentId])
     if (ann != null) {
@@ -552,40 +568,26 @@ object Validations {
   private def viewMustNotHaveTableAnnotation(component: Class[_]): Validation = {
     val ann = component.getAnnotation(classOf[Table])
     when(ann != null) {
-      if (isMultiTableView(component))
-        Invalid(errorMessage(component, "A multi-table View should not be annotated with @Table."))
-      else
-        Invalid(errorMessage(component, "A single-table View should not be annotated with @Table."))
-    }
-  }
-  private def nestedViewTableMustHaveTableAnnotation(component: Class[_]): Validation = {
-    val ann = component.getAnnotation(classOf[Table])
-    if (ann == null) {
-      Invalid(errorMessage(component, "A nested View must be annotated with @Table."))
-    } else {
-      val tableName: String = ann.value()
-      if (tableName == null || tableName.trim.isEmpty) {
-        Invalid(errorMessage(component, "@Table name is empty, must be a non-empty string."))
-      } else Valid
+      Invalid(errorMessage(component, "A View itself should not be annotated with @Table."))
     }
   }
 
-  private def viewMustHaveMethodLevelSubscriptionWhenTransformingUpdates(component: Class[_]): Validation = {
-    if (hasValueEntitySubscription(component)) {
-      val tableType: Class[_] = tableTypeOf(component)
+  private def viewMustHaveMethodLevelSubscriptionWhenTransformingUpdates(tableUpdater: Class[_]): Validation = {
+    if (hasValueEntitySubscription(tableUpdater)) {
+      val tableType: Class[_] = tableTypeOf(tableUpdater)
       val valueEntityClass: Class[_] =
-        component.getAnnotation(classOf[FromKeyValueEntity]).value().asInstanceOf[Class[_]]
+        tableUpdater.getAnnotation(classOf[FromKeyValueEntity]).value().asInstanceOf[Class[_]]
       val entityStateClass = valueEntityStateClassOf(valueEntityClass)
 
       when(entityStateClass != tableType) {
         val message =
-          s"You are using a type level annotation in this View and that requires the View type [${tableType.getName}] " +
+          s"You are using a type level annotation on View TableUpdater [$tableUpdater] and that requires updater row type [${tableType.getName}] " +
           s"to match the ValueEntity type [${entityStateClass.getName}]. " +
           s"If your intention is to transform the type, you should instead add a method like " +
           s"`UpdateEffect<${tableType.getName}> onChange(${entityStateClass.getName} state)`" +
           " and move the @Consume.FromKeyValueEntity to it."
 
-        Validation(Seq(errorMessage(component, message)))
+        Validation(Seq(errorMessage(tableUpdater, message)))
       }
     } else {
       Valid

@@ -8,19 +8,33 @@
 
 package com.example.wiring.views;
 
+import akka.platform.javasdk.view.TableUpdater;
 import com.example.wiring.eventsourcedentities.counter.*;
 import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.view.View;
 import akka.platform.javasdk.annotations.Query;
 import akka.platform.javasdk.annotations.Consume;
-import akka.platform.javasdk.annotations.Table;
 
 @ComponentId("counters_by_value")
-public class CountersByValue extends View<Counter> {
+public class CountersByValue extends View {
 
-  @Override
-  public Counter emptyState() {
-    return new Counter(0);
+  @Consume.FromEventSourcedEntity(CounterEntity.class)
+  public static class Counters extends TableUpdater<Counter> {
+
+    public Effect<Counter> onEvent(CounterEvent event) {
+      Counter counter = rowState();
+      var updatedCounter = switch(event) {
+        case CounterEvent.ValueIncreased valueIncreased -> counter.onValueIncreased(valueIncreased);
+        case CounterEvent.ValueMultiplied valueMultiplied -> counter.onValueMultiplied(valueMultiplied);
+        case CounterEvent.ValueSet valueSet -> counter.onValueSet(valueSet);
+      };
+      return effects().updateRow(updatedCounter);
+    }
+
+    @Override
+    public Counter emptyRow() {
+      return new Counter(0);
+    }
   }
 
   public record QueryParameters(Integer value) {}
@@ -29,26 +43,10 @@ public class CountersByValue extends View<Counter> {
     return new QueryParameters(value);
   }
 
-  @Query("SELECT * FROM counters_by_value WHERE value = :value")
-  public Counter getCounterByValue(QueryParameters params) {
-    return null;
+  @Query("SELECT * FROM counters WHERE value = :value")
+  public QueryEffect<Counter> getCounterByValue(QueryParameters params) {
+    return queryResult();
   }
 
-  @Consume.FromEventSourcedEntity(CounterEntity.class)
-  public Effect<Counter> onEvent(CounterEvent.ValueIncreased event) {
-    Counter counter = viewState();
-    return effects().updateState(counter.onValueIncreased(event));
-  }
 
-  @Consume.FromEventSourcedEntity(CounterEntity.class)
-  public Effect<Counter> onEvent(CounterEvent.ValueMultiplied event) {
-    Counter counter = viewState();
-    return effects().updateState(counter.onValueMultiplied(event));
-  }
-
-  @Consume.FromEventSourcedEntity(CounterEntity.class)
-  public Effect<Counter> onEvent(CounterEvent.ValueSet event) {
-    Counter counter = viewState();
-    return effects().updateState(counter.onValueSet(event));
-  }
 }
