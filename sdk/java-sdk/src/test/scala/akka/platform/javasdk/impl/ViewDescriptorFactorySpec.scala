@@ -32,6 +32,7 @@ import akka.platform.spring.testmodels.view.ViewTestModels.TransformedUserViewWi
 import akka.platform.spring.testmodels.view.ViewTestModels.TransformedUserViewWithMethodLevelJWT
 import akka.platform.spring.testmodels.view.ViewTestModels.TypeLevelSubscribeToEventSourcedEventsWithMissingHandler
 import akka.platform.spring.testmodels.view.ViewTestModels.UserByEmailWithCollectionReturn
+import akka.platform.spring.testmodels.view.ViewTestModels.UserViewWithOnlyDeleteHandler
 import akka.platform.spring.testmodels.view.ViewTestModels.ViewDuplicatedHandleDeletesAnnotations
 import akka.platform.spring.testmodels.view.ViewTestModels.ViewHandleDeletesWithParam
 import akka.platform.spring.testmodels.view.ViewTestModels.ViewWithEmptyComponentIdAnnotation
@@ -40,7 +41,7 @@ import akka.platform.spring.testmodels.view.ViewTestModels.ViewWithNoQuery
 import akka.platform.spring.testmodels.view.ViewTestModels.ViewWithServiceLevelAcl
 import akka.platform.spring.testmodels.view.ViewTestModels.ViewWithServiceLevelJWT
 import akka.platform.spring.testmodels.view.ViewTestModels.ViewWithTwoQueries
-import akka.platform.spring.testmodels.view.ViewTestModels.ViewWithoutSubscriptionButWithHandleDelete
+import akka.platform.spring.testmodels.view.ViewTestModels.ViewWithoutSubscription
 import org.scalatest.wordspec.AnyWordSpec
 
 class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuite {
@@ -69,6 +70,13 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
       intercept[InvalidComponentException] {
         Validations.validate(classOf[ViewTestModels.WrongQueryReturnType]).failIfInvalid
       }.getMessage should include("Query methods must return View.QueryEffect<RowType>.")
+    }
+
+    "not allow View update handler with more than on parameter" in {
+      intercept[InvalidComponentException] {
+        Validations.validate(classOf[ViewTestModels.WrongHandlerSignature]).failIfInvalid
+      }.getMessage should include(
+        "Subscription method must have exactly one parameter, unless it's marked with @DeleteHandler.")
     }
 
     "generate ACL annotations at service level" in {
@@ -130,22 +138,20 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
 
     "not allow method level handle deletes without class level subscription" in {
       intercept[InvalidComponentException] {
-        Validations.validate(classOf[ViewWithoutSubscriptionButWithHandleDelete]).failIfInvalid
-      }.getMessage should include("Method annotated with handleDeletes=true has no matching update method.")
+        Validations.validate(classOf[ViewWithoutSubscription]).failIfInvalid
+      }.getMessage should include("A TableUpdater subclass must be annotated with `@Consume` annotation.")
     }
 
     "not allow duplicated handle deletes methods" in {
       intercept[InvalidComponentException] {
         Validations.validate(classOf[ViewDuplicatedHandleDeletesAnnotations]).failIfInvalid
-      }.getMessage should include(
-        "Multiple methods annotated with @Consume.FromKeyValueEntity(handleDeletes=true) is not allowed.")
+      }.getMessage should include("Multiple methods annotated with @DeleteHandler are not allowed.")
     }
 
     "not allow handle deletes method with param" in {
       intercept[InvalidComponentException] {
         Validations.validate(classOf[ViewHandleDeletesWithParam]).failIfInvalid
-      }.getMessage should include(
-        "Method annotated with '@Consume.FromKeyValueEntity' and handleDeletes=true must not have parameters.")
+      }.getMessage should include("Method annotated with '@DeleteHandler' must not have parameters.")
     }
 
     "generate proto for a View with explicit update method" in {
@@ -199,11 +205,30 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
         val in = methodOptions.getEventing.getIn
         in.getValueEntity shouldBe "user"
         in.getHandleDeletes shouldBe false
+        methodOptions.getView.getUpdate.getTransformUpdates shouldBe true
 
         val deleteMethodOptions = this.findKalixMethodOptions(desc, "OnDelete")
         val deleteIn = deleteMethodOptions.getEventing.getIn
         deleteIn.getValueEntity shouldBe "user"
         deleteIn.getHandleDeletes shouldBe true
+        deleteMethodOptions.getView.getUpdate.getTransformUpdates shouldBe true
+      }
+    }
+
+    "generate proto for a View with only delete handler" in {
+      assertDescriptor[UserViewWithOnlyDeleteHandler] { desc =>
+
+        val methodOptions = this.findKalixMethodOptions(desc, "OnChange")
+        val in = methodOptions.getEventing.getIn
+        in.getValueEntity shouldBe "user"
+        in.getHandleDeletes shouldBe false
+        methodOptions.getView.getUpdate.getTransformUpdates shouldBe false
+
+        val deleteMethodOptions = this.findKalixMethodOptions(desc, "OnDelete")
+        val deleteIn = deleteMethodOptions.getEventing.getIn
+        deleteIn.getValueEntity shouldBe "user"
+        deleteIn.getHandleDeletes shouldBe true
+        deleteMethodOptions.getView.getUpdate.getTransformUpdates shouldBe false
       }
     }
 

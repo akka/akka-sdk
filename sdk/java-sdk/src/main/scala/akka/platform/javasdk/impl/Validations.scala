@@ -202,7 +202,7 @@ object Validations {
 
   private def validateView(component: Class[_]): Validation =
     when[View](component) {
-      val tableUpdaters = component.getDeclaredClasses.filter(Reflect.isViewTableUpdater).toSeq
+      val tableUpdaters: Seq[Class[_]] = component.getDeclaredClasses.filter(Reflect.isViewTableUpdater).toSeq
 
       mustHaveNonEmptyComponentId(component) ++
       viewMustNotHaveTableAnnotation(component) ++
@@ -224,8 +224,12 @@ object Validations {
       Validation(errorMessage(component, "A view must contain at least one public static TableUpdater subclass."))
     }
 
-  private def validateVewTableUpdater(tableUpdater: Class[_]): Validation =
+  private def validateVewTableUpdater(tableUpdater: Class[_]): Validation = {
+    when(!hasSubscription(tableUpdater)) {
+      Validation(errorMessage(tableUpdater, "A TableUpdater subclass must be annotated with `@Consume` annotation."))
+    } ++
     commonSubscriptionValidation(tableUpdater, hasUpdateEffectOutput)
+  }
 
   private def viewTableAnnotationMustNotBeEmptyString(tableUpdater: Class[_]): Validation = {
     val annotation = tableUpdater.getAnnotation(classOf[Table])
@@ -432,17 +436,6 @@ object Validations {
         tableUpdater.getAnnotation(classOf[FromKeyValueEntity]).value().asInstanceOf[Class[_]]
       val entityStateClass = valueEntityStateClassOf(valueEntityClass)
 
-//<<<<<<< HEAD
-//      when(entityStateClass != tableType) {
-//        val message =
-//          s"You are using a type level annotation on View TableUpdater [$tableUpdater] and that requires updater row type [${tableType.getName}] " +
-//          s"to match the ValueEntity type [${entityStateClass.getName}]. " +
-//          s"If your intention is to transform the type, you should instead add a method like " +
-//          s"`UpdateEffect<${tableType.getName}> onChange(${entityStateClass.getName} state)`" +
-//          " and move the @Consume.FromKeyValueEntity to it."
-//
-//        Validation(Seq(errorMessage(tableUpdater, message)))
-//=======
       if (entityStateClass != tableType) {
         val viewUpdateMatchesTableType = tableUpdater.getMethods
           .filter(hasUpdateEffectOutput)
@@ -462,7 +455,6 @@ object Validations {
         }
       } else {
         Valid
-//>>>>>>> e328613f6 (feat: @Consume and @Produce annotations refactor)
       }
     } else {
       Valid
@@ -480,7 +472,6 @@ object Validations {
     else Valid
   }
 
-  //TODO add tests for this
   private def subscriptionMethodMustHaveOneParameter(
       component: Class[_],
       updateMethodPredicate: Method => Boolean): Validation = {
@@ -494,7 +485,7 @@ object Validations {
         offendingMethods.map { method =>
           errorMessage(
             method,
-            "Subscription method must have exactly one parameter, unless it's marked as handleDeletes.")
+            "Subscription method must have exactly one parameter, unless it's marked with @DeleteHandler.")
         }
 
       Validation(messages)
@@ -508,7 +499,7 @@ object Validations {
       component: Class[_],
       updateMethodPredicate: Method => Boolean): Validation = {
 
-    if (hasValueEntitySubscription(component)) {
+    when(hasValueEntitySubscription(component)) {
       val subscriptionMethods = component.getMethods.toIndexedSeq.filter(updateMethodPredicate).sorted
       val updatedMethods = subscriptionMethods.filterNot(hasHandleDeletes)
 
@@ -521,50 +512,36 @@ object Validations {
             val numParams = method.getParameters.length
             errorMessage(
               method,
-              s"Method annotated with '@Consume.FromKeyValueEntity' and handleDeletes=true must not have parameters. Found $numParams method parameters.")
+              s"Method annotated with '@DeleteHandler' must not have parameters. Found $numParams method parameters.")
           }
 
         Validation(messages)
       }
 
       val onlyOneValueEntityUpdateIsAllowed = {
-        if (updatedMethods.size >= 2) {
+        when(updatedMethods.size >= 2) {
           val messages = errorMessage(
             component,
             s"Duplicated update methods [${updatedMethods.map(_.getName).mkString(", ")}]for KeyValueEntity subscription.")
           Validation(messages)
-        } else Valid
+        }
       }
 
       val onlyOneHandlesDeleteIsAllowed = {
         val offendingMethods = handleDeleteMethods.filter(_.getParameterTypes.isEmpty)
 
-        if (offendingMethods.size >= 2) {
+        when(offendingMethods.size >= 2) {
           val messages =
             offendingMethods.map { method =>
-              errorMessage(
-                method,
-                "Multiple methods annotated with @Consume.FromKeyValueEntity(handleDeletes=true) is not allowed.")
+              errorMessage(method, "Multiple methods annotated with @DeleteHandler are not allowed.")
             }
           Validation(messages)
-        } else Valid
+        }
       }
 
       handleDeletesMustHaveZeroArity ++
       onlyOneValueEntityUpdateIsAllowed ++
       onlyOneHandlesDeleteIsAllowed
-
-    } else {
-      val subscriptionMethods = component.getMethods.toIndexedSeq.filter(updateMethodPredicate).sorted
-      val updatedMethods = subscriptionMethods.filterNot(hasHandleDeletes)
-      val handleDeleteMethods = subscriptionMethods.filter(hasHandleDeletes)
-      if (handleDeleteMethods.nonEmpty && updatedMethods.isEmpty) {
-        val messages =
-          handleDeleteMethods.map { method =>
-            errorMessage(method, "Method annotated with handleDeletes=true has no matching update method.")
-          }
-        Validation(messages)
-      } else Valid
     }
   }
 

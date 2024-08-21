@@ -34,7 +34,7 @@ public class ViewTestModels {
   @ComponentId("users_view")
   public static class UserByEmailWithGet extends View {
 
-    @Consume.FromKeyValueEntity(UserEntity.class) // when types are annotated, it's implicitly a transform = false
+    @Consume.FromKeyValueEntity(UserEntity.class)
     public static class UserUpdater extends TableUpdater<User> {}
 
     @Query("SELECT * FROM users WHERE email = :email")
@@ -93,12 +93,29 @@ public class ViewTestModels {
   @ComponentId("users_view")
   public static class WrongQueryReturnType extends View {
 
-    @Consume.FromKeyValueEntity(UserEntity.class) // when types are annotated, it's implicitly a transform = false
+    @Consume.FromKeyValueEntity(UserEntity.class)
     public static class UserUpdater extends TableUpdater<User> {}
 
     @Query("SELECT * FROM users WHERE email = :email")
     public User getUser(ByEmail byEmail) {
       return null;
+    }
+  }
+
+  @ComponentId("users_view")
+  public static class WrongHandlerSignature extends View {
+
+    @Consume.FromKeyValueEntity(UserEntity.class)
+    public static class UserUpdater extends TableUpdater<User> {
+
+      public Effect<User> onUpdate(User user, String extra) {
+        return effects().updateRow(user);
+      }
+    }
+
+    @Query("SELECT * FROM users WHERE email = :email")
+    public QueryEffect<User> getUser(ByEmail byEmail) {
+      return queryResult();
     }
   }
 
@@ -133,6 +150,24 @@ public class ViewTestModels {
 
       @DeleteHandler
       public Effect<TransformedUser> onDelete() {
+        return effects().deleteRow();
+      }
+    }
+
+    @Query("SELECT * FROM users WHERE email = :email")
+    public QueryEffect<TransformedUser>  getUser(ByEmail byEmail) {
+      return queryResult();
+    }
+  }
+
+  @ComponentId("users_view")
+  public static class UserViewWithOnlyDeleteHandler extends View {
+
+    @Consume.FromKeyValueEntity(UserEntity.class)
+    public static class TransformedUserUpdater extends TableUpdater<User> {
+
+      @DeleteHandler
+      public Effect<User> onDelete() {
         return effects().deleteRow();
       }
     }
@@ -188,13 +223,9 @@ public class ViewTestModels {
   }
 
   @ComponentId("users_view")
-  public static class ViewWithoutSubscriptionButWithHandleDelete extends View {
+  public static class ViewWithoutSubscription extends View {
 
     public static class UserUpdater extends TableUpdater<TransformedUser> {
-      @DeleteHandler
-      public Effect<TransformedUser> onDelete() {
-        return effects().deleteRow();
-      }
     }
     
     @Query("SELECT * FROM users WHERE email = :email")
@@ -417,17 +448,6 @@ public class ViewTestModels {
     public static class Users extends TableUpdater<User> {}
   }
 
-  public static class MultiTableViewWithoutComponentId extends View {
-
-    @Table("users")
-    public static class Users extends TableUpdater<User> {}
-
-    @Query("SELECT * FROM users")
-    public QueryEffect<User> query1() {
-      return queryResult();
-    }
-  }
-
   @ComponentId("multi-table-view-with-multiple-queries")
   public static class MultiTableViewWithMultipleQueries extends View {
     @Query("SELECT * FROM users")
@@ -441,6 +461,7 @@ public class ViewTestModels {
     }
 
     @Table("users")
+    @Consume.FromKeyValueEntity(UserEntity.class)
     public static class Users extends TableUpdater<User> {}
   }
 

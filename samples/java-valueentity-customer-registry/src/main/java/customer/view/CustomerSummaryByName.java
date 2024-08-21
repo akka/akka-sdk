@@ -28,8 +28,7 @@ public class CustomerSummaryByName extends View {
 
     @DeleteHandler
     public Effect<CustomerSummary> onDelete() {
-      return effects()
-          .deleteRow();
+      return effects().deleteRow();
     }
   }
 }
