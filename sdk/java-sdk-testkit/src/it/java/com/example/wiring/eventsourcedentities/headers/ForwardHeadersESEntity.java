@@ -19,7 +19,7 @@ public class ForwardHeadersESEntity extends EventSourcedEntity<String, ForwardHe
     public record Created() implements Event {}
   }
 
-  public Effect<Message> createUser() {
+  public ReadOnlyEffect<Message> createUser() {
     String headerValue = commandContext().metadata().get(SOME_HEADER).orElse("");
     return effects().reply(new Message(headerValue));
   }

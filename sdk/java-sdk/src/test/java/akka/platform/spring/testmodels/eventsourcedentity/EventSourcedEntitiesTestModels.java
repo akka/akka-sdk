@@ -60,12 +60,18 @@ public class EventSourcedEntitiesTestModels {
             }
         }
 
-        public Effect<Integer> getInteger() {
+        public ReadOnlyEffect<Integer> getInteger() {
             return effects().reply(currentState());
         }
 
         public Effect<Integer> changeInteger(Integer number) {
-            return effects().reply(number);
+            if (number == 0) {
+                return effects().reply(currentState());
+            } else if (number < 0) {
+                return effects().persist(new CounterEvent.DecrementCounter(number)).thenReply(newValue -> newValue);
+            } else {
+                return effects().persist(new CounterEvent.IncrementCounter(number)).thenReply(newValue -> newValue);
+            }
         }
 
         @Override
@@ -82,7 +88,7 @@ public class EventSourcedEntitiesTestModels {
         @JWT(
             validate = JWT.JwtMethodMode.BEARER_TOKEN,
             bearerTokenIssuer = {"a", "b"})
-        public Effect<Integer> getInteger() {
+        public ReadOnlyEffect<Integer> getInteger() {
             return effects().reply(currentState());
         }
 
@@ -93,7 +99,7 @@ public class EventSourcedEntitiesTestModels {
                 @JWT.StaticClaim(claim = "role", value = "method-admin"),
                 @JWT.StaticClaim(claim = "aud", value = "${ENV}")
             })
-        public Effect<Integer> changeInteger(Integer number) {
+        public ReadOnlyEffect<Integer> changeInteger(Integer number) {
             return effects().reply(number);
         }
 
@@ -113,11 +119,11 @@ public class EventSourcedEntitiesTestModels {
         })
     public static class CounterEventSourcedEntityWithServiceLevelJWT extends EventSourcedEntity<Integer, CounterEvent> {
 
-        public Effect<Integer> getInteger() {
+        public ReadOnlyEffect<Integer> getInteger() {
             return effects().reply(currentState());
         }
 
-        public Effect<Integer> changeInteger(Integer number) {
+        public ReadOnlyEffect<Integer> changeInteger(Integer number) {
             return effects().reply(number);
         }
 

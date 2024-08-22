@@ -29,7 +29,7 @@ public class FailingCounterEntity extends EventSourcedEntity<Counter, CounterEve
     }
   }
 
-  public Effect<Integer> get() {
+  public ReadOnlyEffect<Integer> get() {
     return effects().reply(currentState().value());
   }
 

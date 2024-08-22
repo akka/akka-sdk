@@ -13,7 +13,7 @@ import static store.customer.domain.CustomerEvent.CustomerNameChanged;
 @ComponentId("customer")
 public class CustomerEntity extends EventSourcedEntity<Customer, CustomerEvent> {
 
-  public Effect<Customer> get() {
+  public ReadOnlyEffect<Customer> get() {
     return effects().reply(currentState());
   }
 

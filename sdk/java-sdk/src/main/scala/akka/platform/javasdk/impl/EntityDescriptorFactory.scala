@@ -38,8 +38,17 @@ private[impl] object EntityDescriptorFactory extends ComponentDescriptorFactory 
         component.getDeclaredMethods.collect {
           case method if isCommandHandlerCandidate[EventSourcedEntity.Effect[_]](method) =>
             val servMethod = CommandHandlerMethod(component, method, EntityUrlTemplate)
+            val readOnlyCommandHandler = method.getReturnType == classOf[EventSourcedEntity.ReadOnlyEffect[_]]
+            var options = buildJWTOptions(method)
+            if (readOnlyCommandHandler)
+              options = Some(
+                options
+                  .map(_.toBuilder)
+                  .getOrElse(kalix.MethodOptions.newBuilder())
+                  .setReadOnly(true)
+                  .build())
             KalixMethod(servMethod, entityIds = Seq("entity-id"))
-              .withKalixOptions(buildJWTOptions(method))
+              .withKalixOptions(options)
         }.toSeq
 
       } else if (classOf[KeyValueEntity[_]].isAssignableFrom(component)) {

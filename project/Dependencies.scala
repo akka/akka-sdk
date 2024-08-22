@@ -8,12 +8,12 @@ object Dependencies {
     val ProtocolVersionMinor = 1
     val RuntimeImage = "gcr.io/kalix-public/kalix-runtime"
     // Remember to bump kalix-runtime.version in maven-java/kalix-spring-boot-parent if bumping this
-    val RuntimeVersion = sys.props.getOrElse("kalix-runtime.version", "1.1.40-c2f0a43")
+    val RuntimeVersion = sys.props.getOrElse("kalix-runtime.version", "1.1.41-7e9cf1e")
   }
   // NOTE: embedded SDK should have the AkkaVersion aligned, when updating RuntimeVersion, make sure to check
   // if AkkaVersion and AkkaHttpVersion are aligned
   // for prod code, they are marked as Provided, but testkit still requires the alignment
-  val AkkaVersion = "2.9.4"
+  val AkkaVersion = "2.9.5"
   val AkkaHttpVersion = "10.6.3" // Note: should at least the Akka HTTP version required by Akka gRPC
 
   // changing the Scala version of the Java SDK affects end users

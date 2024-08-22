@@ -81,7 +81,7 @@ public class CartEntity extends AbstractCartEntity {
   }
 
   @Override
-  public Effect<ShoppingCartApi.Cart> getCart(
+  public ReadOnlyEffect<ShoppingCartApi.Cart> getCart(
       ShoppingCartDomain.Cart currentState, ShoppingCartApi.GetShoppingCart command) {
 
     List<ShoppingCartApi.LineItem> apiItems =

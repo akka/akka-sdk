@@ -62,7 +62,7 @@ public class UserEntity extends EventSourcedEntity<User, UserEvent> {
       .thenReply(__ -> Done.done());
   }
 
-  public Effect<User> getState() {
+  public ReadOnlyEffect<User> getState() {
     if (currentState() == null) {
       return effects().error("User not found");
     }

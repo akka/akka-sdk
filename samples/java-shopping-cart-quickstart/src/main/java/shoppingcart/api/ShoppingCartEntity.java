@@ -63,7 +63,7 @@ public class ShoppingCartEntity
       .thenReply(newState -> "OK");
   }
 
-  public Effect<ShoppingCart> getCart() {
+  public ReadOnlyEffect<ShoppingCart> getCart() {
     return effects().reply(currentState());
   }
 

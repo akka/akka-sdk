@@ -17,7 +17,7 @@ import org.scalatest.wordspec.AnyWordSpec
 
 class EventSourcedEntityDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuite {
 
-  "EventSourced descriptor factory" should {
+  "The EventSourced entity descriptor factory" should {
 
     "validate an ESE must be declared as public" in {
       intercept[InvalidComponentException] {
@@ -26,7 +26,17 @@ class EventSourcedEntityDescriptorFactorySpec extends AnyWordSpec with Component
         "NotPublicEventSourced is not marked with `public` modifier. Components must be public.")
     }
 
-    "generate mappings for an Event Sourced" in {
+    "annotate read only command handlers for the runtime" in {
+      assertDescriptor[CounterEventSourcedEntity] { desc =>
+        val getIngeterOptions = findKalixMethodOptions(desc, "GetInteger")
+        getIngeterOptions.getReadOnly shouldEqual true
+
+        val changeIntegerOptions = findKalixMethodOptions(desc, "ChangeInteger")
+        changeIntegerOptions.getReadOnly shouldEqual false
+      }
+    }
+
+    "generate HTTP mappings for an entity" in {
       assertDescriptor[CounterEventSourcedEntity] { desc =>
         val method = desc.commandHandlers("GetInteger")
         val getIntegerUrl = findHttpRule(desc, method.grpcMethodName).getGet
@@ -38,7 +48,7 @@ class EventSourcedEntityDescriptorFactorySpec extends AnyWordSpec with Component
       }
     }
 
-    "generate mappings for a Event Sourced with method level JWT annotation" in {
+    "generate HTTP mappings with method level JWT annotation" in {
       assertDescriptor[CounterEventSourcedEntityWithMethodLevelJWT] { desc =>
         val method = desc.commandHandlers("GetInteger")
         val getIntegerUrl = findHttpRule(desc, method.grpcMethodName).getGet
@@ -66,7 +76,7 @@ class EventSourcedEntityDescriptorFactorySpec extends AnyWordSpec with Component
       }
     }
 
-    "generate mappings for a Event Sourced with service level JWT annotation" in {
+    "generate mappings for service level JWT annotation" in {
       assertDescriptor[CounterEventSourcedEntityWithServiceLevelJWT] { desc =>
         val extension = desc.serviceDescriptor.getOptions.getExtension(kalix.Annotations.service)
         val jwtOption = extension.getJwt

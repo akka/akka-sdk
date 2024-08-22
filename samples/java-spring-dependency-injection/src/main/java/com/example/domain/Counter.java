@@ -40,7 +40,7 @@ public class Counter extends EventSourcedEntity<Integer, CounterEvent> {
     }
   }
 
-  public Effect<Integer> get() {
+  public ReadOnlyEffect<Integer> get() {
     return effects().reply(currentState());
   }
 

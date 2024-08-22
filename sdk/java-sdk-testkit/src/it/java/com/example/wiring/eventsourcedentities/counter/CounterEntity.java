@@ -36,7 +36,7 @@ public class CounterEntity extends EventSourcedEntity<Counter, CounterEvent> {
     return effects().persist(new CounterEvent.ValueSet(value)).thenReply(Counter::value);
   }
 
-  public Effect<Integer> get() {
+  public ReadOnlyEffect<Integer> get() {
     // don't modify, we want to make sure we call currentState().value here
     return effects().reply(currentState().value());
   }

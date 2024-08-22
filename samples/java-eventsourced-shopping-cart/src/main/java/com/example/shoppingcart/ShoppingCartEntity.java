@@ -29,7 +29,7 @@ public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCart, Shoppin
 
   // end::getCart[]
 
-  public Effect<String> create() {
+  public ReadOnlyEffect<String> create() {
     return effects().reply("OK");
   }
 
@@ -65,7 +65,7 @@ public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCart, Shoppin
   }
 
   // tag::getCart[]
-  public Effect<ShoppingCart> getCart() {
+  public ReadOnlyEffect<ShoppingCart> getCart() {
     return effects().reply(currentState()); // <3>
   }
   // end::getCart[]

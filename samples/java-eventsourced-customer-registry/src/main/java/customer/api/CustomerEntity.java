@@ -22,7 +22,7 @@ public class CustomerEntity extends EventSourcedEntity<Customer, CustomerEvent> 
     public static Confirm done = new Confirm("done");
   }
 
-  public Effect<Customer> getCustomer() {
+  public ReadOnlyEffect<Customer> getCustomer() {
     return effects().reply(currentState());
   }
 

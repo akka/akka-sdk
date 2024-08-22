@@ -16,7 +16,7 @@ public class TestEventSourcedEntity extends EventSourcedEntity<TestESState, Test
   }
 
 
-  public Effect<TestESState> get() {
+  public ReadOnlyEffect<TestESState> get() {
     return effects().reply(currentState());
   }
 

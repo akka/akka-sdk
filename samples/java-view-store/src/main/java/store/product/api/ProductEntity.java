@@ -14,7 +14,7 @@ import static store.product.domain.ProductEvent.ProductPriceChanged;
 public class ProductEntity extends EventSourcedEntity<Product, ProductEvent> {
 
 
-  public Effect<Product> get() {
+  public ReadOnlyEffect<Product> get() {
     return effects().reply(currentState());
   }
 

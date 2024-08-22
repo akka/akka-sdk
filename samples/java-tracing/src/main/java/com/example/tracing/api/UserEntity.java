@@ -38,7 +38,7 @@ public class UserEntity extends EventSourcedEntity<User, UserEvent> {
     return new User(entityId, "", "", "");
   }
 
-  public Effect<User> get() {
+  public ReadOnlyEffect<User> get() {
     if (currentState().equals(emptyState()))
       return effects().error("User does not exist");
 

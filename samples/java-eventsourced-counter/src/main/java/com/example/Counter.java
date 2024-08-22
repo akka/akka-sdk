@@ -26,7 +26,7 @@ public class Counter extends EventSourcedEntity<Integer, CounterEvent> {
       .thenReply(Object::toString);
   }
 
-  public Effect<Integer> get() {
+  public ReadOnlyEffect<Integer> get() {
     return effects().reply(currentState());
   }
 
