@@ -6,6 +6,7 @@ import akka.platform.javasdk.annotations.http.Get;
 import akka.platform.javasdk.annotations.http.Post;
 import akka.platform.javasdk.annotations.http.Put;
 import akka.platform.javasdk.client.ComponentClient;
+import akka.platform.javasdk.http.HttpException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import user.registry.common.Done;
@@ -91,7 +92,7 @@ public class ApplicationController {
           // in case of exception `callToUser` is not executed,
           // and we return an error to the caller of this method
           logger.info("Email is already reserved '{}'", cmd.email());
-          throw new IllegalArgumentException("Email is already reserved '" + cmd.email() + "'");
+          throw HttpException.badRequest("Email is already reserved '" + cmd.email() + "'");
         });
 
     return userCreated;
@@ -132,7 +133,7 @@ public class ApplicationController {
           // in case of exception `callToUser` is not executed,
           // and we return an error to the caller of this method
           logger.info("Email already reserved '{}'", e.getMessage());
-          throw new IllegalArgumentException("Email already reserved");
+          throw HttpException.badRequest("Email already reserved");
         });
 
     return userCreated;

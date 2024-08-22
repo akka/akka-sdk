@@ -14,9 +14,9 @@ package akka.platform.javasdk;
  * akka.platform.javasdk.client.ComponentClient}, and {@link com.typesafe.config.Config} injected to
  * for example allow on-startup scheduling of calls.
  */
-// FIXME possibly allow additional useful constructor params to inject: config, an enum with
-// DEV/TEST/PROD
 public interface ServiceSetup {
+
+  // FIXME document something about thread safety or that it should not be stateful/mutate concrete
 
   /**
    * The on startup hook is called every time a service instance boots up. This can happen for very
@@ -25,13 +25,16 @@ public interface ServiceSetup {
    * infrastructure-related incidents, etc.). Therefore, one should carefully consider how to use
    * this hook and its implementation.
    *
-   * <p>The hook is always called before {{@link #createDependencyProvider()}}
+   * <p>This hook is called after {@link #createDependencyProvider()}.
    */
-  // FIXME document something about thread safety or that it should not be stateful/mutate concrete
-  // setup state?
   default void onStartup() {}
 
-  /** Invoked once when the service is starting to create a dependency provider. */
+  /**
+   * Invoked once before service is started, to create a dependency provider. It is not possible to
+   * interact with components in this method.
+   *
+   * <p>This hook is called before {@link #onStartup()}.
+   */
   default DependencyProvider createDependencyProvider() {
     return null;
   }

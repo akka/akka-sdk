@@ -1,5 +1,6 @@
 package com.example.api;
 
+import akka.platform.javasdk.http.HttpException;
 import com.example.api.ShoppingCartDTO.LineItemDTO;
 import akka.platform.javasdk.Metadata;
 import akka.platform.javasdk.annotations.ForwardHeaders;
@@ -105,7 +106,7 @@ public class ShoppingCartController {
         .sum();
 
       if (totalCount < 10) {
-        throw new IllegalArgumentException("Max 10 items in a cart");
+        throw HttpException.badRequest("Max 10 items in a cart");
       } else {
         CompletionStage<String> addItemReply =
           componentClient.forKeyValueEntity(cartId)

@@ -8,6 +8,7 @@ package akka.platform.javasdk;
  * Interface used to represent HTTP status code. **NOT** for user extension.
  */
 public interface StatusCode {
+  // FIXME why are we defining our own of this rather than re-using the one in Akka HTTP?
 
   // return the value of the status code
   int value();
