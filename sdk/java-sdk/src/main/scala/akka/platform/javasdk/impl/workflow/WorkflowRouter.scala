@@ -4,23 +4,22 @@
 
 package akka.platform.javasdk.impl.workflow
 
+import akka.http.scaladsl.model.StatusCode
+
 import java.nio.ByteBuffer
 import java.util.Optional
 import java.util.concurrent.CompletionStage
 import java.util.function.{ Function => JFunc }
-
 import scala.compat.java8.FutureConverters.CompletionStageOps
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
 import scala.jdk.OptionConverters.RichOptional
-
 import com.google.api.HttpBody
 import com.google.protobuf.any.{ Any => ScalaPbAny }
 import akka.platform.javasdk.HttpResponse
 import akka.platform.javasdk.HttpResponse.STATUS_CODE_EXTENSION_TYPE_URL
 import akka.platform.javasdk.JsonSupport
-import akka.platform.javasdk.StatusCode
 import akka.platform.javasdk.impl.MessageCodec
 import akka.platform.javasdk.impl.WorkflowExceptions.WorkflowException
 import akka.platform.javasdk.impl.workflow.WorkflowRouter.CommandHandlerNotFound
@@ -122,9 +121,9 @@ abstract class WorkflowRouter[S, W <: Workflow[S]](protected val workflow: W) {
       //HttpBodyStatusCodeExtensionTypeUrl constant from java-sdk-spring
       httpBody.getExtensionsList.asScala.find(_.getTypeUrl == STATUS_CODE_EXTENSION_TYPE_URL) match {
         case Some(statusCodeAny) =>
-          val statusCode = ByteBuffer.wrap(statusCodeAny.getValue.toByteArray).getInt
+          val statusCode = StatusCode.int2StatusCode(ByteBuffer.wrap(statusCodeAny.getValue.toByteArray).getInt)
           val contentType = httpBody.getContentType
-          HttpResponse.of(StatusCode.Success.from(statusCode), contentType, httpBody.getData.toByteArray)
+          HttpResponse.of(statusCode, contentType, httpBody.getData.toByteArray)
         case None => throw new IllegalStateException("Missing status code extension in HttpBody")
       }
     } else {

@@ -4,8 +4,8 @@
 
 package akka.platform.javasdk.impl.action
 
+import akka.http.javadsl.model.StatusCode
 import akka.platform.javasdk.{ HttpResponse, Metadata }
-import akka.platform.javasdk.StatusCode.ErrorCode
 import akka.platform.javasdk.action.Action
 import akka.platform.javasdk.impl.StatusCodeConverter
 import akka.platform.javasdk.impl.telemetry.Telemetry
@@ -57,8 +57,11 @@ object ActionEffectImpl {
       if (grpcErrorCode.toStatus.isOk) throw new IllegalArgumentException("Cannot fail with a success status")
       ErrorEffect(description, Some(grpcErrorCode))
     }
-    def error[S](description: String, httpErrorCode: ErrorCode): Action.Effect[S] =
+    def error[S](description: String, httpErrorCode: StatusCode): Action.Effect[S] = {
+      require(httpErrorCode.isFailure, s"Error effect http error code is not an error: [$httpErrorCode]")
       error(description, StatusCodeConverter.toGrpcCode(httpErrorCode))
+    }
+
     def asyncReply[S](futureMessage: CompletionStage[S]): Action.Effect[S] =
       asyncReply(futureMessage, Metadata.EMPTY)
     def asyncReply[S](futureMessage: CompletionStage[S], metadata: Metadata): Action.Effect[S] =

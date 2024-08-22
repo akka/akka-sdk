@@ -1,6 +1,6 @@
 package com.example.jwt;
 
-import akka.platform.javasdk.StatusCode;
+import akka.http.javadsl.model.StatusCodes;
 import akka.platform.javasdk.action.Action;
 import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.annotations.JWT;
@@ -37,7 +37,7 @@ public class JWTAction extends Action {
     public Action.Effect<String> messageWithClaimValidation(String msg) {
         var maybeSubject = messageContext().metadata().jwtClaims().subject();
         if (maybeSubject.isEmpty())
-            return effects().error("No subject present", StatusCode.ErrorCode.UNAUTHORIZED);
+            return effects().error("No subject present", StatusCodes.UNAUTHORIZED);
 
         return effects().reply(msg);
     }

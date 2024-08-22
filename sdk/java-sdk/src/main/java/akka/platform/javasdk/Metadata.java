@@ -4,6 +4,7 @@
 
 package akka.platform.javasdk;
 
+import akka.http.javadsl.model.StatusCode;
 import akka.platform.javasdk.impl.MetadataImpl;
 
 import java.net.URI;
@@ -240,16 +241,7 @@ public interface Metadata extends Iterable<Metadata.MetadataEntry> {
    * @param httpStatusCode The success status code to add.
    * @return a copy of this metadata with the HTTP response code set.
    */
-  Metadata withStatusCode(StatusCode.Success httpStatusCode);
-
-  /**
-   * Add an HTTP response code to this metadata.
-   * This will only take effect when HTTP transcoding is in use. It will be ignored for gRPC requests.
-   *
-   * @param httpStatusCode The redirect status code to add.
-   * @return a copy of this metadata with the HTTP response code set.
-   */
-  Metadata withStatusCode(StatusCode.Redirect httpStatusCode);
+  Metadata withStatusCode(StatusCode httpStatusCode);
 
   /**
    * Merge the given Metadata entries with this Metadata. If the same key is present in both, both values will be kept.

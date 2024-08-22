@@ -4,6 +4,8 @@
 
 package akka.platform.javasdk.impl
 
+import akka.http.javadsl.model.StatusCode
+
 import java.lang
 import java.net.URI
 import java.nio.ByteBuffer
@@ -22,7 +24,6 @@ import akka.platform.javasdk.JwtClaims
 import akka.platform.javasdk.Metadata
 import akka.platform.javasdk.Principal
 import akka.platform.javasdk.Principals
-import akka.platform.javasdk.StatusCode
 import akka.platform.javasdk.TraceContext
 import akka.platform.javasdk.impl.MetadataImpl.JwtClaimPrefix
 import akka.platform.javasdk.impl.telemetry.TraceInstrumentation
@@ -204,11 +205,8 @@ private[akka] class MetadataImpl private (val entries: Seq[MetadataEntry]) exten
 
   override def clearTime(): MetadataImpl = remove(MetadataImpl.CeTime)
 
-  override def withStatusCode(code: StatusCode.Redirect): MetadataImpl =
-    set("_kalix-http-code", code.value.toString)
-
-  override def withStatusCode(code: StatusCode.Success): MetadataImpl =
-    set("_kalix-http-code", code.value.toString)
+  override def withStatusCode(code: StatusCode): MetadataImpl =
+    set("_kalix-http-code", code.intValue().toString)
 
   override def asMetadata(): Metadata = this
 

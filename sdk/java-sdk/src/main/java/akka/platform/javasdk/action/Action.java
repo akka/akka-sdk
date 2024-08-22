@@ -4,9 +4,9 @@
 
 package akka.platform.javasdk.action;
 
+import akka.http.javadsl.model.StatusCode;
 import io.grpc.Status;
 import akka.platform.javasdk.Metadata;
-import akka.platform.javasdk.StatusCode;
 import akka.platform.javasdk.impl.action.MessageContextImpl;
 import akka.platform.javasdk.impl.action.ActionEffectImpl;
 import akka.platform.javasdk.timer.TimerScheduler;
@@ -142,7 +142,7 @@ public abstract class Action {
        * @param <T>           The type of the message that must be returned by this call.
        * @return An error reply.
        */
-      <T> Effect<T> error(String description, StatusCode.ErrorCode httpErrorCode);
+      <T> Effect<T> error(String description, StatusCode httpErrorCode);
 
       /**
        * Create a message reply from an async operation result.

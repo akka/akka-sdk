@@ -5,6 +5,8 @@
 package akka.platform.javasdk;
 
 
+import akka.http.javadsl.model.StatusCode;
+import akka.http.javadsl.model.StatusCodes;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 import java.io.IOException;
@@ -18,11 +20,11 @@ public class HttpResponse {
 
   public static final String STATUS_CODE_EXTENSION_TYPE_URL = "Status-Code";
 
-  private final StatusCode.Success statusCode;
+  private final StatusCode statusCode;
   private final String contentType;
   private final byte[] body;
 
-  private HttpResponse(StatusCode.Success statusCode, String contentType, byte[] body) {
+  private HttpResponse(StatusCode statusCode, String contentType, byte[] body) {
     if (statusCode == null) throw new IllegalArgumentException("statusCode must not be null");
     if (contentType == null) throw new IllegalArgumentException("contentType must not be null");
     if (body == null) throw new IllegalArgumentException("body must not be null");
@@ -31,11 +33,11 @@ public class HttpResponse {
     this.body = body;
   }
 
-  private HttpResponse(StatusCode.Success statusCode) {
+  private HttpResponse(StatusCode statusCode) {
     this(statusCode, "application/octet-stream", new byte[0]);
   }
 
-  public StatusCode.Success getStatusCode() {
+  public StatusCode getStatusCode() {
     return statusCode;
   }
 
@@ -51,28 +53,28 @@ public class HttpResponse {
    * Creates a 200 OK response.
    */
   public static HttpResponse ok() {
-    return new HttpResponse(StatusCode.Success.OK);
+    return new HttpResponse(StatusCodes.OK);
   }
 
   /**
    * Creates a 201 CREATED response.
    */
   public static HttpResponse created() {
-    return new HttpResponse(StatusCode.Success.CREATED);
+    return new HttpResponse(StatusCodes.CREATED);
   }
 
   /**
    * Creates a 202 ACCEPTED response.
    */
   public static HttpResponse accepted() {
-    return new HttpResponse(StatusCode.Success.ACCEPTED);
+    return new HttpResponse(StatusCodes.ACCEPTED);
   }
 
   /**
    * Creates a 204 NO CONTENT response.
    */
   public static HttpResponse noContent() {
-    return new HttpResponse(StatusCode.Success.NO_CONTENT);
+    return new HttpResponse(StatusCodes.NO_CONTENT);
   }
 
   /**
@@ -80,7 +82,7 @@ public class HttpResponse {
    */
   public static HttpResponse ok(String text) {
     if (text == null) throw new IllegalArgumentException("text must not be null");
-    return new HttpResponse(StatusCode.Success.OK, "text/plain", text.getBytes(UTF_8));
+    return new HttpResponse(StatusCodes.OK, "text/plain", text.getBytes(UTF_8));
   }
 
   /**
@@ -90,7 +92,7 @@ public class HttpResponse {
     if (object == null) throw new IllegalArgumentException("object must not be null");
     try {
       byte[] body = JsonSupport.encodeToBytes(object).toByteArray();
-      return new HttpResponse(StatusCode.Success.OK, "application/json", body);
+      return new HttpResponse(StatusCodes.OK, "application/json", body);
     } catch (JsonProcessingException e) {
       throw new RuntimeException(e);
     }
@@ -100,7 +102,7 @@ public class HttpResponse {
    * Creates a 200 OK response with a application/octet-stream body.
    */
   public static HttpResponse ok(byte[] body) {
-    return new HttpResponse(StatusCode.Success.OK, "application/octet-stream", body);
+    return new HttpResponse(StatusCodes.OK, "application/octet-stream", body);
   }
 
   /**
@@ -110,7 +112,7 @@ public class HttpResponse {
    * @param contentType HTTP content type
    * @param body        HTTP body
    */
-  public static HttpResponse of(StatusCode.Success statusCode, String contentType, byte[] body) {
+  public static HttpResponse of(StatusCode statusCode, String contentType, byte[] body) {
     return new HttpResponse(statusCode, contentType, body);
   }
 

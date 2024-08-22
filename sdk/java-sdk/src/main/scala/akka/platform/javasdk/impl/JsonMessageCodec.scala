@@ -67,7 +67,7 @@ private[akka] class JsonMessageCodec extends MessageCodec {
     val httpBodyBuilder = HttpBody.newBuilder()
     httpBodyBuilder.setData(ByteString.copyFrom(httpResponse.getBody))
     httpBodyBuilder.setContentType(httpResponse.getContentType)
-    val statusAsBytes = ByteBuffer.allocate(Integer.BYTES).putInt(httpResponse.getStatusCode.value()).rewind()
+    val statusAsBytes = ByteBuffer.allocate(Integer.BYTES).putInt(httpResponse.getStatusCode.intValue()).rewind()
     val statusAsAny =
       JavaPbAny
         .newBuilder()

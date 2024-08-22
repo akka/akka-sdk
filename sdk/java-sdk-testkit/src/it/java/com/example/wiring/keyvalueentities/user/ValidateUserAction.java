@@ -4,7 +4,7 @@
 
 package com.example.wiring.keyvalueentities.user;
 
-import akka.platform.javasdk.StatusCode;
+import akka.http.javadsl.model.StatusCodes;
 import akka.platform.javasdk.action.Action;
 import akka.platform.javasdk.client.ComponentClient;
 import akka.platform.javasdk.consumer.ConsumerContext;
@@ -23,7 +23,7 @@ public class ValidateUserAction extends Action {
   public record CreateUser(String user, String email, String name){}
   public Action.Effect<Ok> createOrUpdateUser(CreateUser createUser) {
     if (createUser.email.isEmpty() || createUser.name.isEmpty())
-      return effects().error("No field can be empty", StatusCode.ErrorCode.BAD_REQUEST);
+      return effects().error("No field can be empty", StatusCodes.BAD_REQUEST);
 
     var reply =
       componentClient
@@ -36,7 +36,7 @@ public class ValidateUserAction extends Action {
   public record UpdateEmail(String user, String email){}
   public Action.Effect<Ok> updateEmail(UpdateEmail updateEmail) {
     if (updateEmail.email.isEmpty())
-      return effects().error("No field can be empty", StatusCode.ErrorCode.BAD_REQUEST);
+      return effects().error("No field can be empty", StatusCodes.BAD_REQUEST);
 
     var reply =
       componentClient

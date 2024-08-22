@@ -4,8 +4,7 @@
 
 package akka.platform.javasdk.impl
 
-import akka.platform.javasdk.StatusCode.Redirect
-import akka.platform.javasdk.StatusCode.Success
+import akka.http.javadsl.model.StatusCodes
 
 import java.time.Instant
 import java.util.Optional
@@ -139,10 +138,10 @@ class MetadataImplSpec extends AnyWordSpec with Matchers with OptionValues {
     }
 
     "support setting a HTTP status code" in {
-      val md = Metadata.EMPTY.withStatusCode(Success.CREATED)
+      val md = Metadata.EMPTY.withStatusCode(StatusCodes.CREATED)
       md.get("_kalix-http-code").toScala.value shouldBe "201"
 
-      val mdRedirect = md.withStatusCode(Redirect.MOVED_PERMANENTLY)
+      val mdRedirect = md.withStatusCode(StatusCodes.MOVED_PERMANENTLY)
       mdRedirect.get("_kalix-http-code").toScala.value shouldBe "301"
     }
 
