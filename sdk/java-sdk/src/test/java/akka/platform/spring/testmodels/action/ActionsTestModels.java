@@ -6,21 +6,20 @@ package akka.platform.spring.testmodels.action;
 
 import akka.platform.javasdk.action.Action;
 import akka.platform.javasdk.annotations.ComponentId;
-import akka.platform.spring.testmodels.Message;
 
 public class ActionsTestModels {
 
   @ComponentId("test-action-0")
   public static class ActionWithoutParam extends Action {
-    public Action.Effect<Message> message() {
-      return effects().reply(new Message("hello"));
+    public Action.Effect message() {
+      return effects().done();
     }
   }
 
   @ComponentId("test-action-1")
   public static class ActionWithOneParam extends Action {
-    public Action.Effect<Message> message(String one) {
-      return effects().reply(new Message(one));
+    public Action.Effect message(String one) {
+      return effects().done();
     }
   }
 

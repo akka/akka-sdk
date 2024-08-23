@@ -4,7 +4,6 @@
 
 package akka.platform.spring.testmodels.subscriptions;
 
-import akka.platform.javasdk.action.Action;
 import akka.platform.javasdk.annotations.Acl;
 import akka.platform.javasdk.annotations.DeleteHandler;
 import akka.platform.javasdk.annotations.Produce;
@@ -88,7 +87,7 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
   }
 
   @Consume.FromEventSourcedEntity(value = CounterEventSourcedEntity.class, ignoreUnknown = true)
-  public static class SubscribeOnlyOneToEventSourcedEntityActionTypeLevel extends Consumer {
+  public static class SubscribeOnlyOneToEventSourcedEntity extends Consumer {
 
     public Effect methodOne(Integer message) {
       return effects().produce(message);
@@ -337,18 +336,6 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
 
     public Effect messageTwo(Integer msg) {
       return effects().ignore();
-    }
-  }
-
-  @Acl(allow = @Acl.Matcher(service = "test"))
-  public static class ActionWithServiceLevelAcl extends Action {
-  }
-
-
-  public static class ActionWithMethodLevelAcl extends Action {
-    @Acl(allow = @Acl.Matcher(service = "test"))
-    public Effect messageOne(Message message) {
-      return effects().reply(message);
     }
   }
 

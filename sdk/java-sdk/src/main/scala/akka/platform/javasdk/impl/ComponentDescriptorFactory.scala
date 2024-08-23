@@ -65,10 +65,7 @@ private[impl] object ComponentDescriptorFactory {
 
   def hasActionOutput(javaMethod: Method): Boolean = {
     if (javaMethod.isPublic) {
-      javaMethod.getGenericReturnType match {
-        case p: ParameterizedType => p.getRawType.equals(classOf[Action.Effect[_]])
-        case _                    => false
-      }
+      javaMethod.getReturnType.isAssignableFrom(classOf[Action.Effect])
     } else {
       false
     }
@@ -296,6 +293,8 @@ private[impl] object ComponentDescriptorFactory {
       EntityDescriptorFactory
     else if (Reflect.isView(component))
       ViewDescriptorFactory
+    else if (Reflect.isConsumer(component))
+      ConsumerDescriptorFactory
     else
       ActionDescriptorFactory
   }

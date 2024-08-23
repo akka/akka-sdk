@@ -40,8 +40,9 @@ final case class ComponentMethodRefImpl[A1, R](
     createDeferred(metadataOpt, None).asInstanceOf[DeferredCall[NotUsed, R]]
   }
 
-  def invokeAsync(): CompletionStage[R] =
-    createDeferred(metadataOpt, None).asInstanceOf[DeferredCall[NotUsed, R]].invokeAsync()
+  def invokeAsync(): CompletionStage[R] = {
+    createDeferred(metadataOpt, None).asInstanceOf[DeferredCallImpl[NotUsed, R]].invokeAsync()
+  }
 
   def deferred(arg: A1): DeferredCall[A1, R] = {
     // extra protection against type cast since the same backing impl for non deferrable and deferrable
@@ -50,6 +51,6 @@ final case class ComponentMethodRefImpl[A1, R](
   }
 
   def invokeAsync(arg: A1): CompletionStage[R] =
-    createDeferred(metadataOpt, Some(arg)).invokeAsync()
+    createDeferred(metadataOpt, Some(arg)).asInstanceOf[DeferredCallImpl[NotUsed, R]].invokeAsync()
 
 }

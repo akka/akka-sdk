@@ -5,7 +5,6 @@
 package com.example.wiring.actions.headers;
 
 import akka.platform.javasdk.annotations.ComponentId;
-import com.example.wiring.actions.echo.Message;
 import akka.platform.javasdk.action.Action;
 import akka.platform.javasdk.annotations.ForwardHeaders;
 
@@ -15,8 +14,9 @@ public class ForwardHeadersAction extends Action {
 
   public static final String SOME_HEADER = "some-header";
 
-  public Effect<Message> stringMessage() {
+  public Effect stringMessage() {
     String headerValue = messageContext().metadata().get(SOME_HEADER).orElse("");
-    return effects().reply(new Message(headerValue));
+    TestBuffer.addValue(SOME_HEADER, headerValue);
+    return effects().done();
   }
 }

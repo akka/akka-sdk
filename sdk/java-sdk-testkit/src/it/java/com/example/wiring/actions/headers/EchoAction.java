@@ -14,7 +14,7 @@ import akka.platform.javasdk.annotations.ComponentId;
 @ComponentId("echo2")
 public class EchoAction extends Action {
 
-  public Effect<Message> stringMessage(String msg) {
-    return effects().reply(new Message(msg));
+  public Effect stringMessage(String msg) {
+    return effects().done();
   }
 }

@@ -1,10 +1,8 @@
 package com.example.fibonacci;
 
 // tag::testing-action[]
-import akka.platform.javasdk.http.HttpResponses;
 import akka.platform.javasdk.testkit.ActionResult;
 import akka.platform.javasdk.testkit.ActionTestkit;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 // end::testing-action[]
@@ -13,20 +11,19 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 // tag::testing-action[]
-public class FibonacciActionTest {
+public class FibonacciTimedActionTest {
 
   @Test
   public void testNextFib() {
-    ActionTestkit<FibonacciAction> testkit = ActionTestkit.of(FibonacciAction::new); // <1>
-    ActionResult<Number> result = testkit.call(a -> a.getNumber(3L));  // <2>
-    assertTrue(result.isReply());
-    assertEquals(5L, result.getReply().value());
+    ActionTestkit<FibonacciTimedAction> testkit = ActionTestkit.of(FibonacciTimedAction::new); // <1>
+    ActionResult result = testkit.call(a -> a.calculateNextNumber(3L));  // <2>
+    assertTrue(result.isDone());
   }
 
   @Test
   public void testNextFibError() {
-    ActionTestkit<FibonacciAction> testkit = ActionTestkit.of(FibonacciAction::new);  // <1>
-    ActionResult<Number> result = testkit.call(a -> a.getNumber(4L));     // <2>
+    ActionTestkit<FibonacciTimedAction> testkit = ActionTestkit.of(FibonacciTimedAction::new);  // <1>
+    ActionResult result = testkit.call(a -> a.calculateNextNumber(4L));     // <2>
     assertTrue(result.isError());
     assertTrue(result.getError().startsWith("Input number is not a Fibonacci number"));
   }

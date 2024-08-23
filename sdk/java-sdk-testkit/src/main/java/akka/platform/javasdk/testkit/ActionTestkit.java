@@ -53,9 +53,8 @@ public class ActionTestkit<A extends Action> {
    *
    * @param func A function from Action to Action.Effect
    * @return an ActionResult
-   * @param <R> The type of reply that is expected from invoking a command handler
    */
-  public <R> ActionResult<R> call(Function<A, Action.Effect<R>> func) {
+  public ActionResult call(Function<A, Action.Effect> func) {
     return call(func, Metadata.EMPTY);
   }
 
@@ -66,10 +65,9 @@ public class ActionTestkit<A extends Action> {
    *
    * @param func     A function from Action to Action.Effect
    * @param metadata A metadata passed as a call context
-   * @param <R>      The type of reply that is expected from invoking a command handler
    * @return an ActionResult
    */
-  public <R> ActionResult<R> call(Function<A, Action.Effect<R>> func, Metadata metadata) {
+  public ActionResult call(Function<A, Action.Effect> func, Metadata metadata) {
     TestKitMessageContext context = new TestKitMessageContext(metadata, MockRegistry.EMPTY);
     return new ActionResultImpl<>(func.apply(createAction(context)));
   }

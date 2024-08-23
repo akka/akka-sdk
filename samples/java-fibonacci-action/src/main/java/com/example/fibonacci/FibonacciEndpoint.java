@@ -13,6 +13,8 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
+import static java.util.concurrent.CompletableFuture.completedStage;
+
 @Endpoint("/fibonacci")
 public class FibonacciEndpoint {
 
@@ -29,15 +31,11 @@ public class FibonacciEndpoint {
     @Get("/{number}/next")
     public CompletionStage<HttpResponse> nextNumberPath(Long number) {
         if (!myContext.requestValidator().isValid(number)) {
-            return CompletableFuture.completedStage(
+            return completedStage(
               HttpResponses.badRequest("Only numbers between 0 and 10k are allowed"));
         } else {
             logger.info("Executing GET call to real /fibonacci = " + number);
-            CompletionStage<Number> numberResult = componentClient.forAction()
-              .method(FibonacciAction::getNumber)
-            // FIXME no longer forward as documented
-              .invokeAsync(number);
-            return numberResult.thenApply(HttpResponses::ok)
+            return completedStage(HttpResponses.ok(Fibonacci.nextFib(number)))
                     // FIXME right now any error code from the component error effect becomes a runtime exception
                     //       before handing it back to us, we should see that here more easily.
                     //       (and be able to choose if we want to propagate that maybe, but whose responsibility is it
@@ -52,17 +50,11 @@ public class FibonacciEndpoint {
     public CompletionStage<HttpResponse> nextNumber(Number number) {
 
         if (number.value() < 0 || number.value() > 10000) {
-            return CompletableFuture.completedStage(
+            return completedStage(
               HttpResponses.badRequest("Only numbers between 0 and 10k are allowed"));
         } else {
             logger.info("Executing POST call to real /fibonacci = " + number.value());
-
-            var nextNumberReply =
-              componentClient.forAction()
-                .method(FibonacciAction::nextNumber)
-                .invokeAsync(number);
-
-            return nextNumberReply.thenApply(HttpResponses::ok);
+            return completedStage(HttpResponses.ok(Fibonacci.nextFib(number.value())));
         }
     }
 }

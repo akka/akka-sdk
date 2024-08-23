@@ -9,6 +9,7 @@ import java.util.Optional
 import scala.concurrent.Future
 import scala.util.control.NonFatal
 
+import akka.Done
 import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.platform.javasdk
@@ -38,7 +39,6 @@ import akka.platform.javasdk.impl.telemetry.Telemetry
 import akka.platform.javasdk.impl.timer.TimerSchedulerImpl
 import akka.platform.javasdk.spi.TimerClient
 import akka.platform.javasdk.timer.TimerScheduler
-import akka.stream.scaladsl.Sink
 import akka.stream.scaladsl.Source
 import com.google.protobuf.Descriptors
 import io.grpc.Status
@@ -150,13 +150,13 @@ private[akka] final class ActionsImpl(_system: ActorSystem, services: Map[String
   private def effectToResponse(
       service: ActionService,
       command: ActionCommand,
-      effect: Action.Effect[_],
+      effect: Action.Effect,
       messageCodec: MessageCodec): Future[ActionResponse] = {
     import ActionEffectImpl._
     effect match {
-      case ReplyEffect(message, metadata) =>
+      case ReplyEffect(metadata) =>
         val response =
-          component.Reply(Some(messageCodec.encodeScala(message)), metadata.flatMap(MetadataImpl.toProtocol))
+          component.Reply(Some(messageCodec.encodeScala(Done)), metadata.flatMap(MetadataImpl.toProtocol))
         Future.successful(ActionResponse(ActionResponse.Response.Reply(response)))
       case AsyncEffect(futureEffect) =>
         futureEffect
@@ -164,13 +164,8 @@ private[akka] final class ActionsImpl(_system: ActorSystem, services: Map[String
           .recover { case NonFatal(ex) =>
             handleUnexpectedException(service, command, ex)
           }
-      case ErrorEffect(description, status) =>
-        Future.successful(
-          ActionResponse(
-            ActionResponse.Response.Failure(
-              Failure(description = description, grpcStatusCode = status.map(_.value()).getOrElse(0)))))
-      case IgnoreEffect =>
-        Future.successful(ActionResponse(ActionResponse.Response.Empty))
+      case ErrorEffect(description) =>
+        Future.successful(ActionResponse(ActionResponse.Response.Failure(Failure(description = description))))
       case unknown =>
         throw new IllegalArgumentException(s"Unknown Action.Effect type ${unknown.getClass}")
     }
@@ -268,147 +263,6 @@ private[akka] final class ActionsImpl(_system: ActorSystem, services: Map[String
           ActionResponse(ActionResponse.Response.Failure(Failure(0, "Unknown service: " + in.serviceName))))
     }
 
-  /**
-   * Handle a streamed in command. The first message in will contain the request metadata, including the service name
-   * and command name. It will not have an associated payload set. This will be followed by zero to many messages in
-   * with a payload, but no service name or command name set. The semantics of stream closure in this protocol map 1:1
-   * with the semantics of gRPC stream closure, that is, when the client closes the stream, the stream is considered
-   * half closed, and the server should eventually, but not necessarily immediately, send a response message with a
-   * status code and trailers. If however the server sends a response message before the client closes the stream, the
-   * stream is completely closed, and the client should handle this and stop sending more messages. Either the client or
-   * the server may cancel the stream at any time, cancellation is indicated through an HTTP2 stream RST message.
-   */
-  override def handleStreamedIn(in: Source[ActionCommand, NotUsed]): Future[ActionResponse] =
-    in.prefixAndTail(1)
-      .runWith(Sink.head)
-      .flatMap {
-        case (Nil, _) =>
-          Future.successful(ActionResponse(ActionResponse.Response.Failure(Failure(
-            0,
-            "Kalix protocol failure: expected command message with service name and command name, but got empty stream"))))
-        case (Seq(call), messages) =>
-          services.get(call.serviceName) match {
-            case Some(service: ActionService) =>
-              try {
-                val messageContext = createMessageContext(call, service.messageCodec, None, service.serviceName)
-                val actionContext = createActionContext(service.serviceName)
-                val effect = service.factory
-                  .create(actionContext)
-                  .handleStreamedIn(
-                    call.name,
-                    messages.map { message =>
-                      val metadata = MetadataImpl.of(message.metadata.map(_.entries.toVector).getOrElse(Nil))
-                      val decodedPayload = service.messageCodec.decodeMessage(
-                        message.payload.getOrElse(throw new IllegalArgumentException("No command payload")))
-                      MessageEnvelope.of(decodedPayload, metadata)
-                    }.asJava,
-                    messageContext)
-                effectToResponse(service, call, effect, service.messageCodec)
-              } catch {
-                case NonFatal(ex) =>
-                  // command handler threw an "unexpected" error
-                  Future.successful(handleUnexpectedException(service, call, ex))
-              }
-            case Some(_: ConsumerService) =>
-              Future.successful(
-                ActionResponse(
-                  ActionResponse.Response.Failure(Failure(0, "Streamed calls not supported: " + call.serviceName))))
-            case _ =>
-              Future.successful(
-                ActionResponse(ActionResponse.Response.Failure(Failure(0, "Unknown service: " + call.serviceName))))
-          }
-      }
-
-  /**
-   * Handle a streamed out command. The input command will contain the service name, command name, request metadata and
-   * the command payload. Zero or more replies may be sent, each containing either a direct reply, a forward or a
-   * failure. The stream to the client will be closed when the this stream is closed, with the same status as this
-   * stream is closed with. Either the client or the server may cancel the stream at any time, cancellation is indicated
-   * through an HTTP2 stream RST message.
-   */
-  override def handleStreamedOut(in: ActionCommand): Source[ActionResponse, NotUsed] =
-    services.get(in.serviceName) match {
-      case Some(service: ActionService) =>
-        try {
-          val messageContext = createMessageContext(in, service.messageCodec, None, service.serviceName)
-          val actionContext = createActionContext(service.serviceName)
-          val decodedPayload = service.messageCodec.decodeMessage(
-            in.payload.getOrElse(throw new IllegalArgumentException("No command payload")))
-          service.factory
-            .create(actionContext)
-            .handleStreamedOut(in.name, MessageEnvelope.of(decodedPayload, messageContext.metadata()), messageContext)
-            .asScala
-            .mapAsync(1)(effect => effectToResponse(service, in, effect, service.messageCodec))
-            .recover { case NonFatal(ex) =>
-              // user stream failed with an "unexpected" error
-              handleUnexpectedException(service, in, ex)
-            }
-            .async
-        } catch {
-          case NonFatal(ex) =>
-            // command handler threw an "unexpected" error
-            Source.single(handleUnexpectedException(service, in, ex))
-        }
-      case _ =>
-        Source.single(ActionResponse(ActionResponse.Response.Failure(Failure(0, "Unknown service: " + in.serviceName))))
-    }
-
-  /**
-   * Handle a full duplex streamed command. The first message in will contain the request metadata, including the
-   * service name and command name. It will not have an associated payload set. This will be followed by zero to many
-   * messages in with a payload, but no service name or command name set. Zero or more replies may be sent, each
-   * containing either a direct reply, a forward or a failure. The semantics of stream closure in this protocol map 1:1
-   * with the semantics of gRPC stream closure, that is, when the client closes the stream, the stream is considered
-   * half closed, and the server should eventually, but not necessarily immediately, close the stream with a status code
-   * and trailers. If however the server closes the stream with a status code and trailers, the stream is immediately
-   * considered completely closed, and no further messages sent by the client will be handled by the server. Either the
-   * client or the server may cancel the stream at any time, cancellation is indicated through an HTTP2 stream RST
-   * message.
-   */
-  override def handleStreamed(in: Source[ActionCommand, NotUsed]): Source[ActionResponse, NotUsed] =
-    in.prefixAndTail(1)
-      .flatMapConcat {
-        case (Nil, _) =>
-          Source.single(ActionResponse(ActionResponse.Response.Failure(Failure(
-            0,
-            "Kalix protocol failure: expected command message with service name and command name, but got empty stream"))))
-        case (Seq(call), messages) =>
-          services.get(call.serviceName) match {
-            case Some(service: ActionService) =>
-              try {
-                val messageContext = createMessageContext(call, service.messageCodec, None, service.serviceName)
-                val actionContext = createActionContext(service.serviceName)
-                service.factory
-                  .create(actionContext)
-                  .handleStreamed(
-                    call.name,
-                    messages.map { message =>
-                      val metadata = MetadataImpl.of(message.metadata.map(_.entries.toVector).getOrElse(Nil))
-                      val decodedPayload = service.messageCodec.decodeMessage(
-                        message.payload.getOrElse(throw new IllegalArgumentException("No command payload")))
-                      MessageEnvelope.of(decodedPayload, metadata)
-                    }.asJava,
-                    messageContext)
-                  .asScala
-                  .mapAsync(1)(effect => effectToResponse(service, call, effect, service.messageCodec))
-                  .recover { case NonFatal(ex) =>
-                    // user stream failed with an "unexpected" error
-                    handleUnexpectedException(service, call, ex)
-                  }
-              } catch {
-                case NonFatal(ex) =>
-                  // command handler threw an "unexpected" error
-                  ErrorHandling.withCorrelationId { correlationId =>
-                    service.log.error(s"Failure during handling of command ${call.serviceName}.${call.name}", ex)
-                    Source.single(protocolFailure(correlationId))
-                  }
-              }
-            case _ =>
-              Source.single(
-                ActionResponse(ActionResponse.Response.Failure(Failure(0, "Unknown service: " + call.serviceName))))
-          }
-      }
-
   private def createMessageContext(
       in: ActionCommand,
       messageCodec: MessageCodec,
@@ -435,6 +289,18 @@ private[akka] final class ActionsImpl(_system: ActorSystem, services: Map[String
 
   private def createConsumerContext(serviceName: String): ConsumerContext = {
     new ConsumerContextImpl(system)
+  }
+
+  override def handleStreamedIn(in: Source[ActionCommand, NotUsed]): Future[ActionResponse] = {
+    throw new UnsupportedOperationException("Stream in calls are not supported")
+  }
+
+  override def handleStreamedOut(in: ActionCommand): Source[ActionResponse, NotUsed] = {
+    throw new UnsupportedOperationException("Stream out not supported")
+  }
+
+  override def handleStreamed(in: Source[ActionCommand, NotUsed]): Source[ActionResponse, NotUsed] = {
+    throw new UnsupportedOperationException("Stream in calls are not supported")
   }
 }
 

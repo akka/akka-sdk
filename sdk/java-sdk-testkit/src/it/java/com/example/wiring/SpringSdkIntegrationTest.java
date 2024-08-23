@@ -4,10 +4,16 @@
 
 package com.example.wiring;
 
+import akka.platform.javasdk.Metadata;
+import akka.platform.javasdk.client.EventSourcedEntityClient;
+import akka.platform.javasdk.client.NoEntryFoundException;
+import akka.platform.javasdk.testkit.KalixTestKit;
+import akka.platform.spring.testkit.KalixIntegrationTestKitSupport;
 import com.example.wiring.actions.echo.ActionWithMetadata;
 import com.example.wiring.actions.echo.EchoAction;
 import com.example.wiring.actions.echo.Message;
 import com.example.wiring.actions.headers.ForwardHeadersAction;
+import com.example.wiring.actions.headers.TestBuffer;
 import com.example.wiring.eventsourcedentities.counter.CounterEntity;
 import com.example.wiring.eventsourcedentities.headers.ForwardHeadersESEntity;
 import com.example.wiring.keyvalueentities.customer.CustomerEntity;
@@ -16,12 +22,18 @@ import com.example.wiring.keyvalueentities.user.AssignedCounterEntity;
 import com.example.wiring.keyvalueentities.user.User;
 import com.example.wiring.keyvalueentities.user.UserEntity;
 import com.example.wiring.keyvalueentities.user.UserSideEffect;
-import com.example.wiring.views.*;
-import akka.platform.javasdk.Metadata;
-import akka.platform.javasdk.client.EventSourcedEntityClient;
-import akka.platform.javasdk.client.NoEntryFoundException;
-import akka.platform.javasdk.testkit.KalixTestKit;
-import akka.platform.spring.testkit.KalixIntegrationTestKitSupport;
+import com.example.wiring.views.CountersByValue;
+import com.example.wiring.views.CountersByValueSubscriptions;
+import com.example.wiring.views.CountersByValueWithIgnore;
+import com.example.wiring.views.CustomerByCreationTime;
+import com.example.wiring.views.UserCounter;
+import com.example.wiring.views.UserCounters;
+import com.example.wiring.views.UserCountersView;
+import com.example.wiring.views.UserWithVersion;
+import com.example.wiring.views.UserWithVersionView;
+import com.example.wiring.views.UsersByEmailAndName;
+import com.example.wiring.views.UsersByName;
+import com.example.wiring.views.UsersView;
 import org.awaitility.Awaitility;
 import org.hamcrest.core.IsEqual;
 import org.hamcrest.core.IsNull;
@@ -49,22 +61,26 @@ public class SpringSdkIntegrationTest extends KalixIntegrationTestKitSupport {
   protected KalixTestKit.Settings kalixTestKitSettings() {
     // here only to show how to set different `Settings` in a test.
     return KalixTestKit.Settings.DEFAULT
-            .withAclEnabled()
-            .withAdvancedViews()
-            .withWorkflowTickInterval(ofMillis(500))
-            .withTopicOutgoingMessages(CUSTOMERS_TOPIC);
+      .withAclEnabled()
+      .withAdvancedViews()
+      .withWorkflowTickInterval(ofMillis(500))
+      .withTopicOutgoingMessages(CUSTOMERS_TOPIC);
   }
 
 
   @Disabled
   public void verifyEchoActionWiring() {
 
-    Message response = await(
-      componentClient.forAction()
-        .method(EchoAction::stringMessage)
-        .invokeAsync("abc"));
+    timerScheduler.startSingleTimer("echo-action", ofMillis(0), componentClient.forAction()
+      .method(EchoAction::stringMessage)
+      .deferred("hello"));
 
-    assertThat(response.text()).isEqualTo("Parrot says: 'abc'");
+    Awaitility.await()
+      .atMost(20, TimeUnit.SECONDS)
+      .untilAsserted(() -> {
+        var value = TestBuffer.getValue("echo-action");
+        assertThat(value).isEqualTo("hello");
+      });
   }
 
   @Test
@@ -180,10 +196,10 @@ public class SpringSdkIntegrationTest extends KalixIntegrationTestKitSupport {
       .atMost(20, TimeUnit.SECONDS)
       .until(
         () ->
-            await(componentClient.forView()
-                .method(CountersByValueSubscriptions::getCounterByValue)
-                .invokeAsync(new CountersByValueSubscriptions.QueryParameters(1)))
-              .counters().size(),
+          await(componentClient.forView()
+            .method(CountersByValueSubscriptions::getCounterByValue)
+            .invokeAsync(new CountersByValueSubscriptions.QueryParameters(1)))
+            .counters().size(),
         new IsEqual<>(2));
   }
 
@@ -260,10 +276,10 @@ public class SpringSdkIntegrationTest extends KalixIntegrationTestKitSupport {
       .untilAsserted(
         () -> {
           var ex =
-              failed(
-                  componentClient.forView()
-              .method(UserWithVersionView::getUser)
-              .invokeAsync(UserWithVersionView.queryParam(user.email)));
+            failed(
+              componentClient.forView()
+                .method(UserWithVersionView::getUser)
+                .invokeAsync(UserWithVersionView.queryParam(user.email)));
           // FIXME why is the root ex java.util.concurrent.ExecutionException and not our exception
           Assertions.assertTrue(ex.getCause() instanceof NoEntryFoundException);
         });
@@ -329,9 +345,9 @@ public class SpringSdkIntegrationTest extends KalixIntegrationTestKitSupport {
 
           var byEmail =
             await(
-            componentClient.forView()
-              .method(UsersByEmailAndName::getUsers)
-              .invokeAsync(request));
+              componentClient.forView()
+                .method(UsersByEmailAndName::getUsers)
+                .invokeAsync(request));
 
           assertThat(byEmail.email).isEqualTo(user.email);
           assertThat(byEmail.name).isEqualTo(user.name);
@@ -383,23 +399,25 @@ public class SpringSdkIntegrationTest extends KalixIntegrationTestKitSupport {
     assertThat(bobCounters.counters).containsOnly(new UserCounter("c2", 22), new UserCounter("c4", 44));
   }
 
-  @Disabled
-  //TODO enable after introducing TimedAction
+  @Test
   public void verifyForwardHeaders() {
 
     String actionHeaderValue = "action-value";
     String veHeaderValue = "ve-value";
     String esHeaderValue = "es-value";
 
-    Message actionResponse =
-      await(
-        componentClient.forAction()
-          .method(ForwardHeadersAction::stringMessage)
-          .withMetadata(Metadata.EMPTY.add(ForwardHeadersAction.SOME_HEADER, actionHeaderValue))
-          .invokeAsync()
-      );
+    timerScheduler.startSingleTimer("forward-headers", ofMillis(0), componentClient.forAction()
+      .method(ForwardHeadersAction::stringMessage)
+      .withMetadata(Metadata.EMPTY.add(ForwardHeadersAction.SOME_HEADER, actionHeaderValue))
+      .deferred());
 
-    assertThat(actionResponse.text()).isEqualTo(actionHeaderValue);
+    Awaitility.await()
+      .atMost(20, TimeUnit.SECONDS)
+      .ignoreExceptions()
+      .untilAsserted(() -> {
+        var header = TestBuffer.getValue(ForwardHeadersAction.SOME_HEADER);
+        assertThat(header).isEqualTo(actionHeaderValue);
+      });
 
     Message veResponse =
       await(
@@ -420,23 +438,6 @@ public class SpringSdkIntegrationTest extends KalixIntegrationTestKitSupport {
       );
 
     assertThat(esResponse.text()).isEqualTo(esHeaderValue);
-  }
-
-  @Disabled
-  //TODO enable after introducing TimedAction
-  public void shouldPropagateMetadataWithHttpAsyncCall() {
-    String value = "someValue";
-
-    Message actionResponse =
-      await(
-        componentClient
-          .forAction()
-          .method(ActionWithMetadata::actionWithMeta)
-          // Note that myKey is explicitly enabled for header-forward on action
-          .deferred(new ActionWithMetadata.KeyValue("myKey", value)).invokeAsync()
-      );
-
-    assertThat(actionResponse.text()).isEqualTo(value);
   }
 
   @Test
@@ -462,10 +463,10 @@ public class SpringSdkIntegrationTest extends KalixIntegrationTestKitSupport {
   @NotNull
   private List<User> getUsersByName(String name) {
     return await(
-        componentClient.forView()
-            .method(UsersByName::getUsers)
-            .invokeAsync(new UsersByName.QueryParameters(name)))
-        .users();
+      componentClient.forView()
+        .method(UsersByName::getUsers)
+        .invokeAsync(new UsersByName.QueryParameters(name)))
+      .users();
   }
 
   @Nullable

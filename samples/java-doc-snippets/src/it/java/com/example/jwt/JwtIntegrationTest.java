@@ -16,23 +16,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class JwtIntegrationTest extends KalixIntegrationTestKitSupport {
 
   // tag::bearer-token-claims-test[]
-  @Test
-  public void testMsgWithClaim() throws Exception {
-    String bearerToken = bearerTokenWith( // <1>
-        Map.of("iss", "my-issuer", "sub", "hello"));
-
-    var msg = "Hello from integration test";
-    var response = componentClient
-        .forAction().method(JWTAction::messageWithClaimValidation)
-        .withMetadata( // <2>
-            Metadata.EMPTY.add("Authorization", "Bearer " + bearerToken))
-        .invokeAsync(msg)
-        .toCompletableFuture()
-        .get();
-
-    assertThat(response).contains(msg);
-  }
-
   private String bearerTokenWith(Map<String, String> claims) throws JsonProcessingException {
     // setting algorithm to none
     String alg = Base64.getEncoder().encodeToString("""

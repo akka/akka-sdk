@@ -73,20 +73,15 @@ public class ApplicationController {
         .method(UniqueEmailEntity::reserve)
         .invokeAsync(createUniqueEmail); // eager, executing it now
 
-    // this call is lazy and will be executed only if the email reservation succeeds
-    var callToUser =
-      client
-        .forEventSourcedEntity(userId)
-        .method(UserEntity::createUser)
-        .deferred(cmd);
-
-
     var userCreated =
       emailReserved
         .thenCompose(__ -> {
           // on successful email reservation, we create the user and return the result
           logger.info("Creating user '{}'", userId);
-          return callToUser.invokeAsync();
+          return client
+              .forEventSourcedEntity(userId)
+              .method(UserEntity::createUser)
+              .invokeAsync(cmd);
         })
         .exceptionally(e -> {
           // in case of exception `callToUser` is not executed,
@@ -114,20 +109,15 @@ public class ApplicationController {
         .method(UniqueEmailEntity::reserve)
         .invokeAsync(createUniqueEmail); // eager, executing it now
 
-    // this call is lazy and will be executed only if the email reservation succeeds
-    var callToUser =
-      client
-        .forEventSourcedEntity(userId)
-        .method(UserEntity::changeEmail)
-        .deferred(cmd);
-
-
     var userCreated =
       emailReserved
         .thenCompose(__ -> {
           // on successful email reservation, we change the user's email addreess
           logger.info("Changing user's address '{}'", userId);
-          return callToUser.invokeAsync();
+          return client
+            .forEventSourcedEntity(userId)
+            .method(UserEntity::changeEmail)
+            .invokeAsync(cmd);
         })
         .exceptionally(e -> {
           // in case of exception `callToUser` is not executed,

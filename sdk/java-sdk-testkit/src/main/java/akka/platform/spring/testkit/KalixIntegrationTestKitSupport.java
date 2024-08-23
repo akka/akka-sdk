@@ -8,6 +8,7 @@ import akka.platform.javasdk.DependencyProvider;
 import akka.platform.javasdk.client.ComponentClient;
 import akka.platform.javasdk.http.HttpClient;
 import akka.platform.javasdk.testkit.KalixTestKit;
+import akka.platform.javasdk.timer.TimerScheduler;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
@@ -39,6 +40,8 @@ public abstract class KalixIntegrationTestKitSupport extends AsyncCallsSupport {
 
   protected ComponentClient componentClient;
 
+  protected TimerScheduler timerScheduler;
+
   protected Optional<DependencyProvider> dependencyProvider;
 
   protected Duration timeout = Duration.of(10, SECONDS);
@@ -58,6 +61,7 @@ public abstract class KalixIntegrationTestKitSupport extends AsyncCallsSupport {
     try {
       kalixTestKit = (new KalixTestKit(kalixTestKitSettings())).start();
       componentClient = kalixTestKit.getComponentClient();
+      timerScheduler = kalixTestKit.getTimerScheduler();
       dependencyProvider = kalixTestKit.getDependencyContext();
       var baseUrl = "http://localhost:" + kalixTestKit.getPort();
       httpClient = new HttpClient(kalixTestKit.getActorSystem(), baseUrl);

@@ -4,14 +4,12 @@
 
 package akka.platform.javasdk.impl.action
 
-import akka.NotUsed
-import akka.stream.javadsl.Source
-import akka.platform.javasdk.impl.action.ActionRouter.HandlerNotFound
-
 import java.util.Optional
+
 import akka.platform.javasdk.action.Action
 import akka.platform.javasdk.action.MessageContext
 import akka.platform.javasdk.action.MessageEnvelope
+import akka.platform.javasdk.impl.action.ActionRouter.HandlerNotFound
 
 object ActionRouter {
   case class HandlerNotFound(commandName: String) extends RuntimeException
@@ -30,7 +28,7 @@ abstract class ActionRouter[A <: Action](protected val action: A) {
    * @return
    *   A future of the message to return.
    */
-  final def handleUnary(commandName: String, message: MessageEnvelope[Any], context: MessageContext): Action.Effect[_] =
+  final def handleUnary(commandName: String, message: MessageEnvelope[Any], context: MessageContext): Action.Effect =
     callWithContext(context) { () =>
       handleUnary(commandName, message)
     }
@@ -45,105 +43,7 @@ abstract class ActionRouter[A <: Action](protected val action: A) {
    * @return
    *   A future of the message to return.
    */
-  def handleUnary(commandName: String, message: MessageEnvelope[Any]): Action.Effect[_]
-
-  /**
-   * Handle a streamed out call call.
-   *
-   * @param commandName
-   *   The name of the command this call is for.
-   * @param message
-   *   The message envelope of the message.
-   * @param context
-   *   The action context.
-   * @return
-   *   The stream of messages to return.
-   */
-  final def handleStreamedOut(
-      commandName: String,
-      message: MessageEnvelope[Any],
-      context: MessageContext): Source[Action.Effect[_], NotUsed] =
-    callWithContext(context) { () =>
-      handleStreamedOut(commandName, message)
-    }
-
-  /**
-   * Handle a streamed out call call.
-   *
-   * @param commandName
-   *   The name of the command this call is for.
-   * @param message
-   *   The message envelope of the message.
-   * @return
-   *   The stream of messages to return.
-   */
-  def handleStreamedOut(commandName: String, message: MessageEnvelope[Any]): Source[Action.Effect[_], NotUsed]
-
-  /**
-   * Handle a streamed in call.
-   *
-   * @param commandName
-   *   The name of the command this call is for.
-   * @param stream
-   *   The stream of messages to handle.
-   * @param context
-   *   The action context.
-   * @return
-   *   A future of the message to return.
-   */
-  final def handleStreamedIn(
-      commandName: String,
-      stream: Source[MessageEnvelope[Any], NotUsed],
-      context: MessageContext): Action.Effect[_] =
-    callWithContext(context) { () =>
-      handleStreamedIn(commandName, stream)
-    }
-
-  /**
-   * Handle a streamed in call.
-   *
-   * @param commandName
-   *   The name of the command this call is for.
-   * @param stream
-   *   The stream of messages to handle.
-   * @return
-   *   A future of the message to return.
-   */
-  def handleStreamedIn(commandName: String, stream: Source[MessageEnvelope[Any], NotUsed]): Action.Effect[_]
-
-  /**
-   * Handle a full duplex streamed in call.
-   *
-   * @param commandName
-   *   The name of the command this call is for.
-   * @param stream
-   *   The stream of messages to handle.
-   * @param context
-   *   The action context.
-   * @return
-   *   The stream of messages to return.
-   */
-  final def handleStreamed(
-      commandName: String,
-      stream: Source[MessageEnvelope[Any], NotUsed],
-      context: MessageContext): Source[Action.Effect[_], NotUsed] =
-    callWithContext(context) { () =>
-      handleStreamed(commandName, stream)
-    }
-
-  /**
-   * Handle a full duplex streamed in call.
-   *
-   * @param commandName
-   *   The name of the command this call is for.
-   * @param stream
-   *   The stream of messages to handle.
-   * @return
-   *   The stream of messages to return.
-   */
-  def handleStreamed(
-      commandName: String,
-      stream: Source[MessageEnvelope[Any], NotUsed]): Source[Action.Effect[_], NotUsed]
+  def handleUnary(commandName: String, message: MessageEnvelope[Any]): Action.Effect
 
   private def callWithContext[T](context: MessageContext)(func: () => T) = {
     // only set, never cleared, to allow access from other threads in async callbacks in the action

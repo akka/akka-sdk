@@ -2,27 +2,31 @@
  * Copyright (C) 2021-2024 Lightbend Inc. <https://www.lightbend.com>
  */
 
-package akka.platform.javasdk.impl.action
+package akka.platform.javasdk.impl.cusomer
 
-import akka.Done
 import scala.concurrent.Await
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
+import akka.Done
 import akka.actor.testkit.typed.scaladsl.LogCapturing
 import akka.actor.testkit.typed.scaladsl.LoggingTestKit
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import akka.actor.typed.scaladsl.adapter._
+import akka.platform.javasdk.consumer.Consumer
+import akka.platform.javasdk.consumer.MessageEnvelope
+import akka.platform.javasdk.impl.AnySupport
+import akka.platform.javasdk.impl.ConsumerFactory
+import akka.platform.javasdk.impl.ProxyInfoHolder
+import akka.platform.javasdk.impl.action.ActionsImpl
+import akka.platform.javasdk.impl.consumer.ConsumerEffectImpl
+import akka.platform.javasdk.impl.consumer.ConsumerRouter
+import akka.platform.javasdk.impl.consumer.ConsumerService
+import akka.platform.javasdk.spi.DeferredRequest
+import akka.platform.javasdk.spi.TimerClient
 import com.google.protobuf
 import com.google.protobuf.any.{ Any => ScalaPbAny }
 import kalix.javasdk.actionspec.ActionspecApi
-import akka.platform.javasdk.action.Action
-import akka.platform.javasdk.action.MessageEnvelope
-import akka.platform.javasdk.impl.ActionFactory
-import akka.platform.javasdk.impl.JsonMessageCodec
-import akka.platform.javasdk.impl.ProxyInfoHolder
-import akka.platform.javasdk.spi.DeferredRequest
-import akka.platform.javasdk.spi.TimerClient
 import kalix.protocol.action.ActionCommand
 import kalix.protocol.action.ActionResponse
 import kalix.protocol.action.Actions
@@ -33,7 +37,7 @@ import org.scalatest.OptionValues
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
 
-class ActionHandlerSpec
+class CustomerHandlerSpec
     extends ScalaTestWithActorTestKit
     with LogCapturing
     with AnyWordSpecLike
@@ -47,11 +51,11 @@ class ActionHandlerSpec
   private val serviceDescriptor =
     ActionspecApi.getDescriptor.findServiceByName("ActionSpecService")
   private val serviceName = serviceDescriptor.getFullName
-  private val jsonCodec = new JsonMessageCodec()
+  private val anySupport = new AnySupport(Array(ActionspecApi.getDescriptor), this.getClass.getClassLoader)
 
-  def create(handler: ActionRouter[_]): Actions = {
-    val actionFactory: ActionFactory = _ => handler
-    val service = new ActionService(actionFactory, serviceDescriptor, Array(), jsonCodec, None)
+  def create(handler: ConsumerRouter[_]): Actions = {
+    val actionFactory: ConsumerFactory = _ => handler
+    val service = new ConsumerService(actionFactory, serviceDescriptor, Array(), anySupport, None)
 
     val services = Map(serviceName -> service)
 
@@ -76,22 +80,22 @@ class ActionHandlerSpec
     "invoke unary commands" in {
       val service = create(new AbstractHandler {
 
-        override def handleUnary(commandName: String, message: MessageEnvelope[Any]): Action.Effect =
-          createReplyEffect()
+        override def handleUnary(commandName: String, message: MessageEnvelope[Any]): Consumer.Effect =
+          createProduceEffect("out: " + extractInField(message))
       })
 
       val reply =
         Await.result(service.handleUnary(ActionCommand(serviceName, "Unary", createInPayload("in"))), 10.seconds)
 
       inside(reply.response) { case ActionResponse.Response.Reply(Reply(payload, _, _)) =>
-        isDoneReply(payload) shouldBe true
+        extractOutField(payload) should ===("out: in")
       }
     }
 
     "turn thrown unary command handler exceptions into failure responses" in {
       val service = create(new AbstractHandler {
 
-        override def handleUnary(commandName: String, message: MessageEnvelope[Any]): Action.Effect =
+        override def handleUnary(commandName: String, message: MessageEnvelope[Any]): Consumer.Effect =
           throw new RuntimeException("boom")
       })
 
@@ -107,11 +111,28 @@ class ActionHandlerSpec
       }
     }
 
+    "allow async ignore" in {
+      val service = create(new AbstractHandler {
+
+        override def handleUnary(commandName: String, message: MessageEnvelope[Any]): Consumer.Effect = {
+          createAsyncEffect(Future.successful(createIgnoreEffect()))
+        }
+      })
+
+      val reply =
+        Await.result(service.handleUnary(ActionCommand(serviceName, "Unary", createInPayload("in"))), 10.seconds)
+
+      reply match {
+        case ActionResponse(ActionResponse.Response.Empty, _, _) =>
+        case e                                                   => fail(s"Unexpected response: $e")
+      }
+    }
+
     "turn async failure into failure response" in {
       val service = create(new AbstractHandler {
 
-        override def handleUnary(commandName: String, message: MessageEnvelope[Any]): Action.Effect =
-          createAsyncReplyEffect(Future.failed(new RuntimeException("boom")))
+        override def handleUnary(commandName: String, message: MessageEnvelope[Any]): Consumer.Effect =
+          createAsyncEffect(Future.failed(new RuntimeException("boom")))
       })
 
       val reply =
@@ -125,25 +146,38 @@ class ActionHandlerSpec
 
   }
 
-  private def createReplyEffect(): Action.Effect =
-    ActionEffectImpl.ReplyEffect(None)
+  private def createProduceEffect(msg: String): Consumer.Effect =
+    ConsumerEffectImpl.ReplyEffect(ActionspecApi.Out.newBuilder().setField(msg).build(), None)
 
-  private def createAsyncReplyEffect(future: Future[Action.Effect]): Action.Effect =
-    ActionEffectImpl.AsyncEffect(future)
+  private def createIgnoreEffect(): Consumer.Effect =
+    ConsumerEffectImpl.IgnoreEffect
+
+  private def createAsyncEffect(future: Future[Consumer.Effect]): Consumer.Effect =
+    ConsumerEffectImpl.AsyncEffect(future)
+
+  private def extractInField(message: MessageEnvelope[Any]) =
+    message.payload().asInstanceOf[ActionspecApi.In].getField
 
   private def createInPayload(field: String) =
     Some(ScalaPbAny.fromJavaProto(protobuf.Any.pack(ActionspecApi.In.newBuilder().setField(field).build())))
 
-  private def isDoneReply(payload: Option[ScalaPbAny]): Boolean = {
-    ScalaPbAny.toJavaProto(payload.value).getTypeUrl == "json.kalix.io/akka.Done$"
-  }
+  private def extractOutField(payload: Option[ScalaPbAny]) =
+    ScalaPbAny.toJavaProto(payload.value).unpack(classOf[ActionspecApi.Out]).getField
 
-  class TestAction extends Action
+  class TestConsumer extends Consumer
 
-  private abstract class AbstractHandler extends ActionRouter[TestAction](new TestAction) {
-    override def handleUnary(commandName: String, message: MessageEnvelope[Any]): Action.Effect =
+  private abstract class AbstractHandler extends ConsumerRouter[TestConsumer](new TestConsumer) {
+    override def handleUnary(commandName: String, message: MessageEnvelope[Any]): Consumer.Effect =
       ???
 
+//    def handleStreamedOut(commandName: String, message: MessageEnvelope[Any]): Source[Consumer.Effect, NotUsed] = ???
+//
+//    override def handleStreamedIn(commandName: String, stream: Source[MessageEnvelope[Any], NotUsed]): Consumer.Effect =
+//      ???
+
+//    def handleStreamed(
+//        commandName: String,
+//        stream: Source[MessageEnvelope[Any], NotUsed]): Source[Consumer.Effect, NotUsed] = ???
   }
 
 }

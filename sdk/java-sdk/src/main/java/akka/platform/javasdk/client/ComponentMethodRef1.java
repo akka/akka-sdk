@@ -5,7 +5,6 @@
 package akka.platform.javasdk.client;
 
 import akka.annotation.DoNotInherit;
-import akka.platform.javasdk.DeferredCall;
 import akka.platform.javasdk.Metadata;
 
 import java.util.concurrent.CompletionStage;
@@ -19,10 +18,9 @@ import java.util.concurrent.CompletionStage;
  *     <p>Not for user extension or instantiation, returned by the SDK component client
  */
 @DoNotInherit
-public interface ComponentMethodRef1<A1, R> {
-  ComponentMethodRef1<A1, R> withMetadata(Metadata metadata);
+public interface ComponentMethodRef1<A1, R> extends ComponentDeferredMethodRef1<A1, R> {
 
-  DeferredCall<A1, R> deferred(A1 arg);
+  ComponentMethodRef1<A1, R> withMetadata(Metadata metadata);
 
   CompletionStage<R> invokeAsync(A1 arg);
 }

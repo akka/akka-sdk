@@ -10,11 +10,14 @@ import java.lang.reflect.Method
 import java.lang.reflect.Modifier
 import java.lang.reflect.ParameterizedType
 import java.util
+
 import scala.annotation.tailrec
 import scala.reflect.ClassTag
+
 import akka.platform.javasdk.action.Action
 import akka.platform.javasdk.annotations.http.Endpoint
 import akka.platform.javasdk.client.ComponentClient
+import akka.platform.javasdk.consumer.Consumer
 import akka.platform.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.platform.javasdk.impl.client.ComponentClientImpl
 import akka.platform.javasdk.keyvalueentity.KeyValueEntity
@@ -62,6 +65,8 @@ object Reflect {
 
   def isView(cls: Class[_]): Boolean = extendsView(cls)
 
+  def isConsumer(cls: Class[_]): Boolean = extendsConsumer(cls)
+
   def isAction(clazz: Class[_]): Boolean = classOf[Action].isAssignableFrom(clazz)
 
   def getReturnType[R](declaringClass: Class[_], method: Method): Class[R] = {
@@ -76,6 +81,9 @@ object Reflect {
 
   private def extendsView(component: Class[_]): Boolean =
     classOf[View].isAssignableFrom(component)
+
+  private def extendsConsumer(component: Class[_]): Boolean =
+    classOf[Consumer].isAssignableFrom(component)
 
   def isViewTableUpdater(component: Class[_]): Boolean =
     classOf[TableUpdater[_]].isAssignableFrom(component) &&

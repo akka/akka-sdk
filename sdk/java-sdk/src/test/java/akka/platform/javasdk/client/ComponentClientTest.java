@@ -4,7 +4,9 @@
 
 package akka.platform.javasdk.client;
 
+import akka.Done;
 import akka.NotUsed;
+import akka.platform.javasdk.DeferredCall;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.DynamicMessage;
@@ -88,10 +90,9 @@ class ComponentClientTest {
     var targetMethod = action.serviceDescriptor().findMethodByName("Message");
 
     //when
-    DeferredCallImpl<NotUsed, Message> call = (DeferredCallImpl<NotUsed, Message>)
-      componentClient.forAction()
-        .method(ActionWithoutParam::message)
-        .deferred();
+    DeferredCallImpl<NotUsed, Object> call = (DeferredCallImpl<NotUsed, Object>) componentClient.forAction()
+      .method(ActionWithoutParam::message)
+      .deferred();
 
     //then
     assertEquals(call.componentType(), ActionType$.MODULE$);
@@ -104,7 +105,7 @@ class ComponentClientTest {
     var targetMethod = action.serviceDescriptor().findMethodByName("Message");
 
     //when
-    DeferredCallImpl<String, Message> call = (DeferredCallImpl<String, Message>)
+    DeferredCallImpl<String, Object> call = (DeferredCallImpl<String, Object>)
             componentClient.forAction()
                     .method(ActionWithOneParam::message)
                     .deferred("Message");
@@ -120,7 +121,7 @@ class ComponentClientTest {
     String traceparent = "074c4c8d-d87c-4573-847f-77951ce4e0a4";
     Metadata metadata = MetadataImpl.Empty().set(Telemetry.TRACE_PARENT_KEY(), traceparent);
     //when
-    DeferredCallImpl<NotUsed, Message> call = (DeferredCallImpl<NotUsed, Message>)
+    DeferredCallImpl<NotUsed, Object> call = (DeferredCallImpl<NotUsed, Object>)
       componentClient.forAction()
         .method(ActionWithoutParam::message)
         .withMetadata(metadata)

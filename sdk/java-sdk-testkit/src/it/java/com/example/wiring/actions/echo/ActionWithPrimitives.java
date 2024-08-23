@@ -13,19 +13,18 @@ import java.util.stream.Collectors;
 @ComponentId("with-primitives")
 public class ActionWithPrimitives extends Action {
 
-  public Effect<Message> stringMessageWithOptionalParams(long longValue) {
-    return effects().reply(new Message(String.valueOf(longValue)));
+  public Effect stringMessageWithOptionalParams(long longValue) {
+    return effects().done();
   }
 
-  public Effect<Message> stringMessage(double doubleValue) {
+  public Effect stringMessage(double doubleValue) {
     String response = String.valueOf(doubleValue);
-    return effects().reply(new Message(response));
+    return effects().done();
   }
 
-  public Effect<Message> listMessage(Collection<Integer> ints) {
+  public Effect listMessage(Collection<Integer> ints) {
     String response = ints.stream().map(Object::toString).collect(Collectors.joining(","));
-
-    return effects().reply(new Message(response));
+    return effects().done();
   }
 
 }

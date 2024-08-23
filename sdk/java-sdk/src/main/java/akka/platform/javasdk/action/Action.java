@@ -4,7 +4,9 @@
 
 package akka.platform.javasdk.action;
 
+import akka.Done;
 import akka.http.javadsl.model.StatusCode;
+import akka.platform.javasdk.consumer.Consumer;
 import io.grpc.Status;
 import akka.platform.javasdk.Metadata;
 import akka.platform.javasdk.impl.action.MessageContextImpl;
@@ -15,19 +17,9 @@ import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 
 /**
- * Actions are stateless components that can be used to implement different uses cases, such as:
+ * TimedAction is stateless component that can be used together with a Timer to schedule an action.
  *
- * <p>
- * <ul>
- *   <li>a pure function.
- *   <li>publish messages to a Topic.
- *   <li>schedule and cancel Timers.
- * </ul>
- *
- * <p>
- * Actions can be triggered by a scheduled call from a Timer.
- *
- * An Action method should return an {@link Effect} that describes what to do next.
+ * An TimedAction method should return an {@link Effect} that describes the result of the action invocation.
  */
 public abstract class Action {
 
@@ -54,7 +46,7 @@ public abstract class Action {
   }
 
   public final Effect.Builder effects() {
-    return ActionEffectImpl.builder(messageContext().metadata());
+    return ActionEffectImpl.builder();
   }
 
   /**
@@ -75,112 +67,47 @@ public abstract class Action {
    * Each Kalix component defines its own effects, which are a set of predefined
    * operations that match the capabilities of that component.
    * <p>
-   * An Action Effect can either:
+   * An TimedAction Effect can either:
    * <p>
    * <ul>
-   *   <li>reply with a message to the caller
-   *   <li>reply with a message to be published to a Topic (in case the method is a publisher)
-   *   <li>forward the message to another component
+   *   <li>reply with Done to confirm that the command was processed successfully
    *   <li>return an error
-   *   <li>ignore the call
    * </ul>
-   *
-   * @param <T> The type of the message that must be returned by this call.
    */
-  public interface Effect<T> {
+  public interface Effect {
 
     /**
      * Construct the effect that is returned by the command handler. The effect describes next
      * processing actions, such as sending a reply.
      */
     interface Builder {
-      /**
-       * Create a message reply.
-       *
-       * @param message The payload of the reply.
-       * @param <S>     The type of the message that must be returned by this call.
-       * @return A message reply.
-       */
-      <S> Effect<S> reply(S message);
 
       /**
-       * Create a message reply with custom Metadata.
-       *
-       * @param message  The payload of the reply.
-       * @param metadata The metadata for the message.
-       * @param <S>      The type of the message that must be returned by this call.
-       * @return A message reply.
+       * Command was processed successfully.
        */
-      <S> Effect<S> reply(S message, Metadata metadata);
+      Effect done();
+
+      /**
+       * Command was processed successfully from an async operation result
+       */
+      Effect asyncDone(CompletionStage<Done> message);
+
 
       /**
        * Create an error reply.
        *
        * @param description The description of the error.
-       * @param <S>         The type of the message that must be returned by this call.
        * @return An error reply.
        */
-      <S> Effect<S> error(String description);
-
-      /**
-       * Create an error reply with a custom gRPC status code.
-       *
-       * @param description   The description of the error.
-       * @param grpcErrorCode A custom gRPC status code.
-       * @param <T>           The type of the message that must be returned by this call.
-       * @return An error reply.
-       */
-      <T> Effect<T> error(String description, Status.Code grpcErrorCode);
-
-      /**
-       * Create an error reply with a custom status code.
-       * This status code will be translated to an HTTP or gRPC code
-       * depending on the type of service being exposed.
-       *
-       * @param description   The description of the error.
-       * @param httpErrorCode A custom Kalix status code to represent the error.
-       * @param <T>           The type of the message that must be returned by this call.
-       * @return An error reply.
-       */
-      <T> Effect<T> error(String description, StatusCode httpErrorCode);
-
-      /**
-       * Create a message reply from an async operation result.
-       *
-       * @param message The future payload of the reply.
-       * @param <S>     The type of the message that must be returned by this call.
-       * @return A message reply.
-       */
-      <S> Effect<S> asyncReply(CompletionStage<S> message);
-
-      /**
-       * Create a message reply from an async operation result with custom Metadata.
-       *
-       * @param message The future payload of the reply.
-       * @param <S>     The type of the message that must be returned by this call.
-       * @param metadata The metadata for the message.
-       * @return A message reply.
-       */
-      <S> Effect<S> asyncReply(CompletionStage<S> message, Metadata metadata);
+      Effect error(String description);
 
       /**
        * Create a reply from an async operation result returning an effect.
        *
        * @param futureEffect The future effect to reply with.
-       * @param <S>          The type of the message that must be returned by this call.
        * @return A reply, the actual type depends on the nested Effect.
        */
-      <S> Effect<S> asyncEffect(CompletionStage<Effect<S>> futureEffect);
-
-      /**
-       * Ignore the current element and proceed with processing the next element if returned for an
-       * element from a subscription.
-       * If used as a response to a regular gRPC or HTTP request it is turned
-       * into a NotFound response.
-       * <p>
-       * Ignore is not allowed to have side effects added with `addSideEffects`
-       */
-      <S> Effect<S> ignore();
+      Effect asyncEffect(CompletionStage<Effect> futureEffect);
     }
   }
 }

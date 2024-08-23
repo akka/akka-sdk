@@ -10,6 +10,9 @@ import akka.http.javadsl.Http;
 import akka.http.javadsl.model.HttpRequest;
 import akka.pattern.Patterns;
 import akka.platform.javasdk.DependencyProvider;
+import akka.platform.javasdk.Metadata;
+import akka.platform.javasdk.impl.timer.TimerSchedulerImpl;
+import akka.platform.javasdk.timer.TimerScheduler;
 import akka.stream.Materializer;
 import akka.stream.SystemMaterializer;
 import akka.testkit.javadsl.TestKit;
@@ -441,6 +444,7 @@ public class KalixTestKit {
   private EventingTestKit eventingTestKit;
   private ActorSystem runtimeActorSystem;
   private ComponentClient componentClient;
+  private TimerScheduler timerScheduler;
   private Optional<DependencyProvider> dependencyProvider;
   private int eventingTestKitPort = -1;
 
@@ -591,6 +595,7 @@ public class KalixTestKit {
 
       // once runtime is started
       componentClient = new ComponentClientImpl(componentClients, Option.empty(), runtimeActorSystem.dispatcher());
+      timerScheduler = new TimerSchedulerImpl(kalix.getMessageCodec(), runtimeActorSystem, componentClients.timerClient(), Metadata.EMPTY);
       this.messageBuilder = new EventingTestKit.MessageBuilder(kalix.getMessageCodec());
 
     } catch (Exception ex) {
@@ -684,6 +689,13 @@ public class KalixTestKit {
    */
   public ComponentClient getComponentClient() {
     return componentClient;
+  }
+
+  /**
+   * Get a {@link TimerScheduler} for scheduling TimedAction.
+   */
+  public TimerScheduler getTimerScheduler() {
+    return timerScheduler;
   }
 
   /**

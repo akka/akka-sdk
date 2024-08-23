@@ -4,10 +4,6 @@
 
 package akka.platform.javasdk;
 
-import akka.platform.javasdk.action.Action;
-
-import java.util.concurrent.CompletionStage;
-
 /**
  * Represents a call to another component, performed as a forward, a side effect, or a
  * request-reply.
@@ -24,13 +20,6 @@ public interface DeferredCall<I, O> {
 
   /** @return The metadata to pass with the message when the call is invoked. */
   Metadata metadata();
-
-  /**
-   * Execute this call right away and get the async result back for composition. Can be used to
-   * create an async reply in an {@link Action} with {@code effects().asyncReply} and {@code
-   * effects().asyncEffect}
-   */
-  CompletionStage<O> invokeAsync();
 
   /** @return DeferredCall with updated metadata */
   DeferredCall<I, O> withMetadata(Metadata metadata);

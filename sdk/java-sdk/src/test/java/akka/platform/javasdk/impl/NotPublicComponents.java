@@ -4,6 +4,7 @@
 
 package akka.platform.javasdk.impl;
 
+import akka.platform.javasdk.action.Action;
 import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.annotations.Query;
 import akka.platform.javasdk.annotations.Consume;
@@ -19,6 +20,14 @@ import akka.platform.spring.testmodels.workflow.WorkflowState;
 
 // below components are not public and thus need to be in the same package as the corresponding test
 public class NotPublicComponents {
+
+  @ComponentId("not-public")
+  static class NotPublicAction extends Action {
+    public Effect message() {
+      return effects().done();
+    }
+  }
+
   @ComponentId("not-public")
   static class NotPublicConsumer extends Consumer {
     public Effect message() {

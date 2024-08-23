@@ -12,22 +12,7 @@ import java.util.concurrent.TimeoutException;
 public class FibonacciActionComponentClientIntegrationTest extends KalixIntegrationTestKitSupport {
 
 
-  // TODO delete or refactor
-  @Disabled
-  public void calculateNextNumber() throws ExecutionException, InterruptedException, TimeoutException {
-
-    Number response =
-      await(
-        componentClient.forAction()
-          .method(FibonacciAction::nextNumber)
-          .invokeAsync(new Number(5)));
-
-    Assertions.assertEquals(8, response.value());
-  }
-  // end::testing-action[]
-
-  // TODO enable after introducing TimedAction
-  @Disabled
+  @Test
   public void calculateNextNumberWithLimitedFibo() {
     Number response = await(
       httpClient.GET("/fibonacci/5/next").responseBodyAs(Number.class).invokeAsync()

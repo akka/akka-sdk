@@ -62,7 +62,7 @@ public class ReflectiveActionProvider<A extends Action> implements ActionProvide
   @Override
   public ActionRouter<A> newRouter(ActionContext context) {
     A action = factory.apply(context);
-    return new ReflectiveActionRouter<>(action, componentDescriptor.commandHandlers(), ComponentDescriptorFactory.findIgnore(action.getClass()));
+    return new ReflectiveActionRouter<>(action, componentDescriptor.commandHandlers());
   }
 
   @Override

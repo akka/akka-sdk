@@ -12,11 +12,11 @@ public interface ActionClient {
   /**
    * Pass in an Action method reference, e.g. <code>MyAction::create</code>
    */
-  <T, R> ComponentMethodRef<R> method(Function<T, Action.Effect<R>> methodRef);
+  <T, R> ComponentDeferredMethodRef<R> method(Function<T, Action.Effect> methodRef);
 
   /**
    * Pass in an Action method reference, e.g. <code>MyAction::create</code>
    */
-  <T, A1, R> ComponentMethodRef1<A1, R> method(Function2<T, A1, Action.Effect<R>> methodRef);
+  <T, A1, R> ComponentDeferredMethodRef1<A1, R> method(Function2<T, A1, Action.Effect> methodRef);
 
 }

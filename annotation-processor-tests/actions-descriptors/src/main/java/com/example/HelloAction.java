@@ -10,7 +10,7 @@ import akka.platform.javasdk.annotations.ComponentId;
 @ComponentId("hello")
 public class HelloAction extends Action {
 
-  public Effect<String> hello() {
-    return effects().reply("Hello, World!");
+  public Effect hello() {
+    return effects().done();
   }
 }

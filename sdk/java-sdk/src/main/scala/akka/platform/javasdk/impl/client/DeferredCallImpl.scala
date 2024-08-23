@@ -31,7 +31,7 @@ final case class DeferredCallImpl[I, O](
     asyncCall: Metadata => CompletionStage[O])
     extends DeferredCall[I, O] {
 
-  override def invokeAsync(): CompletionStage[O] = asyncCall(metadata)
+  def invokeAsync(): CompletionStage[O] = asyncCall(metadata)
 
   override def withMetadata(metadata: Metadata): DeferredCallImpl[I, O] = {
     this.copy(metadata = metadata.asInstanceOf[MetadataImpl])
