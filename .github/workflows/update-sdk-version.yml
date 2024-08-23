@@ -1,17 +1,26 @@
 name: SDK version update
 
 on:
-  workflow_dispatch: # for testing
+  workflow_dispatch: # to trigger manually
   workflow_run:
     workflows: ["Publish"]
     types:
       - completed
 
 jobs:
+  debug:
+    if: github.event_name != 'workflow_dispatch'
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Debugging
+        run: |
+          echo "Conclusion from `Publish` workflow: ${{ github.event.workflow_run.conclusion }}
+          echo "Tag created from `Publish` workflow: ${{ github.ref }}
+
   open-pr-update-sample:
     runs-on: ubuntu-22.04
     # run only when publish workflow is successful and it's a tag
-    if: github.event.workflow_run.conclusion == 'success' && startsWith(github.ref, 'refs/tags/v')
+    if: (github.event.workflow_run.conclusion == 'success' && startsWith(github.ref, 'refs/tags/v')) || github.event_name == 'workflow_dispatch'
     steps:
       - name: Checkout
         # https://github.com/actions/checkout/releases
@@ -41,9 +50,18 @@ jobs:
           echo "SDK version: '${SDK_VERSION}'"
           echo "sdk_version=${SDK_VERSION}" >> $GITHUB_OUTPUT
 
+      - name: Determine SDK version (manual triggered) # provisional until normal flow gets fixed)
+        if:  github.event_name == 'workflow_dispatch'
+        id: determine_sdk_version_manual_triggered
+        run: |-
+          .github/determine-sdk-version.sh
+          SDK_VERSION="$(cat ~/kalix-sdk-version.txt | sed 's/-.*//')" 
+          echo "SDK version: '${SDK_VERSION}'"
+          echo "sdk_version=${SDK_VERSION}" >> $GITHUB_OUTPUT
+
       - name: Create PR to update all sdk versions (samples, sbt and maven)
         env:
-          SDK_VERSION: ${{ steps.determine_sdk_version.outputs.sdk_version }}
+          SDK_VERSION: ${{ steps.determine_sdk_version.outputs.sdk_version || steps.determine_sdk_version_manual_triggered.outputs.sdk_version }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |-
           echo "Updating samples to version ${SDK_VERSION}"
