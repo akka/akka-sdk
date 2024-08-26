@@ -126,9 +126,12 @@ object Dependencies {
     jacksonJsr310,
     jacksonParameterNames)
 
+  // Important: be careful when adding dependencies here, unless provided, runtime or test they will also be packaged in the user project
+  //            binaries/artifacts unless explicitly excluded in the akka-platform-parent assembly descriptor
   val javaSdk = deps ++= sdkDeps ++ Seq(
     kalixSdkSpi,
     jacksonDataFormatProto,
+    "com.typesafe.akka" %% "akka-http-core" % AkkaHttpVersion,
     akkaDependency("akka-actor-typed") % Provided,
     "org.scala-lang.modules" %% "scala-parser-combinators" % "2.3.0",
     "net.aichler" % "jupiter-interface" % JupiterKeys.jupiterVersion.value % Test,

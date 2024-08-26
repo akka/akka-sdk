@@ -335,6 +335,78 @@ jobs:
       - name: Compile and Run annotation-processor-tests
         run: sbt "annotation-processor-tests/compile;annotation-processor-tests/test"
 
+  check-docker-image-contents:
+    name: Check service docker image contents
+    needs: [ checks, publish-local ] # usually done via now disabled check-samples-in-ci
+    runs-on: ubuntu-22.04
+
+    # tar tvf target/docker/kcr.us-east-1.kalix.io/acme/java-fibonacci-action/latest/tmp/docker-build.tar
+    steps:
+      - name: Checkout
+        # https://github.com/actions/checkout/releases
+        # v4.1.1
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
+
+      - name: Checkout GitHub merge
+        if: github.event.pull_request
+        run: |-
+          git fetch origin pull/${{ github.event.pull_request.number }}/merge:scratch
+          git checkout scratch
+
+      - name: Set up JDK 21
+        # https://github.com/coursier/setup-action/releases
+        # v1.3.5
+        uses: coursier/setup-action@7bde40eee928896f074dbb76d22dd772eed5c65f
+        with:
+          jvm: temurin:1.21
+
+      - name: Cache Maven repository
+        # https://github.com/actions/cache/releases
+        # v4.0.2
+        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('maven-java/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: Download io.akka dependencies
+        # https://github.com/actions/download-artifact/releases
+        # v4.1.5
+        uses: actions/download-artifact@8caf195ad4b1dee92908e23f56eeb0696f1dd42d
+        with:
+          name: m2-cache
+          path: ~/
+
+      - name: Unpack io.akka dependencies
+        run: |-
+          cd
+          tar -xf dependencies.tar.gz
+
+      - name: Update sdk version in java-customer-registry-quickstart
+        run: |-
+          export SDK_VERSION=$(cat ~/akka-platform-sdk-version.txt)
+          ./updateSdkVersions.sh java samples/java-customer-registry-quickstart
+
+      - name: Verify java-customer-registry-quickstart docker build
+        run: |-
+          export SDK_VERSION=$(cat ~/akka-platform-sdk-version.txt)
+          cd samples/java-customer-registry-quickstart
+          mvn install --no-transfer-progress
+          echo "Docker image contents"
+          tar tvf target/docker/kcr.us-east-1.kalix.io/acme/java-customer-registry/latest/tmp/docker-build.tar
+          tar tvf target/docker/kcr.us-east-1.kalix.io/acme/java-customer-registry/latest/tmp/docker-build.tar > content-list.txt
+          for artifact in "akka-actor" "akka-http-core" "kalix-dev-runtime"
+          do
+            if grep -q "$artifact" "content-list.txt"; then
+              echo "Docker image contained $artifact, it shouldn't"
+              exit 1
+            fi
+          done
+      
+          
+          
+
   maven-samples:
     name: Maven samples
     # needs: check-samples-in-ci
