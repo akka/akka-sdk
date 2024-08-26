@@ -4,15 +4,14 @@
 
 package com.example.wiring.actions.headers;
 
-import com.example.wiring.actions.echo.Message;
-import akka.platform.javasdk.action.Action;
+import akka.platform.javasdk.timedaction.TimedAction;
 import akka.platform.javasdk.annotations.ComponentId;
 
 /**
  * Action with the same name in a different package.
  */
 @ComponentId("echo2")
-public class EchoAction extends Action {
+public class EchoAction extends TimedAction {
 
   public Effect stringMessage(String msg) {
     return effects().done();

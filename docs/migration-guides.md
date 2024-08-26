@@ -164,7 +164,7 @@ import akka.platform.springsdk.testkit.ValueEntityTestKit;
 With:
 
 ```java
-import akka.platform.javasdk.testkit.ActionTestkit;
+import akka.platform.javasdk.testkit.TimedActionTestkit;
 import akka.platform.javasdk.testkit.EventSourcedTestKit;
 import akka.platform.javasdk.testkit.KeyValueEntityTestKit;
 ```

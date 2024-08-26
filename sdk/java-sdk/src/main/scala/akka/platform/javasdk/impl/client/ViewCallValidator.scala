@@ -5,8 +5,8 @@
 package akka.platform.javasdk.impl.client
 
 import java.lang.reflect.Method
+import akka.platform.javasdk.timedaction.TimedAction
 import akka.platform.javasdk.annotations.Query
-import akka.platform.javasdk.action.Action
 import akka.platform.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.platform.javasdk.keyvalueentity.KeyValueEntity
 import akka.platform.javasdk.workflow.Workflow
@@ -15,7 +15,7 @@ object ViewCallValidator {
 
   def validate(method: Method): Unit = {
     val declaringClass = method.getDeclaringClass
-    if (classOf[Action].isAssignableFrom(declaringClass)
+    if (classOf[TimedAction].isAssignableFrom(declaringClass)
       || classOf[KeyValueEntity[_]].isAssignableFrom(declaringClass)
       || classOf[EventSourcedEntity[_, _]].isAssignableFrom(declaringClass)
       || classOf[Workflow[_]].isAssignableFrom(declaringClass)) {

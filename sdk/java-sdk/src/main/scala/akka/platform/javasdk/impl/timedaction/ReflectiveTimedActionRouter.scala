@@ -2,21 +2,21 @@
  * Copyright (C) 2021-2024 Lightbend Inc. <https://www.lightbend.com>
  */
 
-package akka.platform.javasdk.impl.action
+package akka.platform.javasdk.impl.timedaction
 
 import scala.util.control.NonFatal
 
 import akka.platform.javasdk.JsonSupport
-import akka.platform.javasdk.action.Action
-import akka.platform.javasdk.action.MessageEnvelope
 import akka.platform.javasdk.impl.AnySupport.ProtobufEmptyTypeUrl
 import akka.platform.javasdk.impl.CommandHandler
 import akka.platform.javasdk.impl.InvocationContext
 import akka.platform.javasdk.impl.reflection.Reflect
+import akka.platform.javasdk.timedaction.CommandEnvelope
+import akka.platform.javasdk.timedaction.TimedAction
 import com.google.protobuf.any.{ Any => ScalaPbAny }
 
-class ReflectiveActionRouter[A <: Action](action: A, commandHandlers: Map[String, CommandHandler])
-    extends ActionRouter[A](action) {
+class ReflectiveTimedActionRouter[A <: TimedAction](action: A, commandHandlers: Map[String, CommandHandler])
+    extends TimedActionRouter[A](action) {
 
   private def commandHandlerLookup(commandName: String) =
     commandHandlers.getOrElse(
@@ -25,7 +25,7 @@ class ReflectiveActionRouter[A <: Action](action: A, commandHandlers: Map[String
         s"no matching method for '$commandName' on [${action.getClass}], existing are [${commandHandlers.keySet
           .mkString(", ")}]"))
 
-  override def handleUnary(commandName: String, message: MessageEnvelope[Any]): Action.Effect = {
+  override def handleUnary(commandName: String, message: CommandEnvelope[Any]): TimedAction.Effect = {
 
     val commandHandler = commandHandlerLookup(commandName)
 
@@ -55,7 +55,7 @@ class ReflectiveActionRouter[A <: Action](action: A, commandHandlers: Map[String
             }
           methodInvoker.invokeDirectly(action, decodedParameter.asInstanceOf[AnyRef])
         }
-      result.asInstanceOf[Action.Effect]
+      result.asInstanceOf[TimedAction.Effect]
     } else {
 
       val invocationContext =
@@ -76,11 +76,11 @@ class ReflectiveActionRouter[A <: Action](action: A, commandHandlers: Map[String
             case ProtobufEmptyTypeUrl =>
               invoker
                 .invoke(action)
-                .asInstanceOf[Action.Effect]
+                .asInstanceOf[TimedAction.Effect]
             case _ =>
               invoker
                 .invoke(action, invocationContext)
-                .asInstanceOf[Action.Effect]
+                .asInstanceOf[TimedAction.Effect]
           }
         case None =>
           throw new NoSuchElementException(
@@ -88,16 +88,4 @@ class ReflectiveActionRouter[A <: Action](action: A, commandHandlers: Map[String
       }
     }
   }
-
-//  override def handleStreamedOut(commandName: String, message: MessageEnvelope[Any]): Source[Action.Effect, NotUsed] = {
-//    throw new UnsupportedOperationException("Stream out not supported")
-//  }
-//
-//  override def handleStreamedIn(commandName: String, stream: Source[MessageEnvelope[Any], NotUsed]): Action.Effect =
-//    throw new UnsupportedOperationException("Stream in calls are not supported")
-//
-//  override def handleStreamed(
-//      commandName: String,
-//      stream: Source[MessageEnvelope[Any], NotUsed]): Source[Action.Effect, NotUsed] =
-//    throw new UnsupportedOperationException("Stream in calls are not supported")
 }

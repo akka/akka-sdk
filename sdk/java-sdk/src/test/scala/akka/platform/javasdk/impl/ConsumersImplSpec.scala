@@ -14,8 +14,8 @@ import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import akka.actor.typed.scaladsl.adapter._
 import akka.platform.javasdk.JsonSupport
 import akka.platform.javasdk.JsonSupport.decodeJson
-import akka.platform.javasdk.action.TestESSubscription
-import akka.platform.javasdk.action.TestTracing
+import akka.platform.javasdk.timedaction.TestESSubscription
+import akka.platform.javasdk.timedaction.TestTracing
 import akka.platform.javasdk.consumer.ConsumerContext
 import akka.platform.javasdk.consumer.ReflectiveConsumerProvider
 import akka.platform.javasdk.eventsourcedentity.OldTestESEvent.OldEvent1

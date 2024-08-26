@@ -4,11 +4,11 @@
 
 package com.example;
 
-import akka.platform.javasdk.action.Action;
+import akka.platform.javasdk.timedaction.TimedAction;
 import akka.platform.javasdk.annotations.ComponentId;
 
 @ComponentId("hello")
-public class HelloAction extends Action {
+public class HelloAction extends TimedAction {
 
   public Effect hello() {
     return effects().done();

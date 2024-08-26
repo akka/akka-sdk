@@ -2,45 +2,43 @@
  * Copyright (C) 2021-2024 Lightbend Inc. <https://www.lightbend.com>
  */
 
-package akka.platform.javasdk.action;
+package akka.platform.javasdk.timedaction;
 
 import com.google.protobuf.Descriptors;
-import akka.platform.javasdk.common.ForwardHeadersExtractor;
 import akka.platform.javasdk.impl.ComponentDescriptor;
-import akka.platform.javasdk.impl.ComponentDescriptorFactory;
 import akka.platform.javasdk.impl.JsonMessageCodec;
-import akka.platform.javasdk.impl.action.ReflectiveActionRouter;
+import akka.platform.javasdk.impl.timedaction.ReflectiveTimedActionRouter;
 import akka.platform.javasdk.impl.MessageCodec;
-import akka.platform.javasdk.impl.action.ActionRouter;
+import akka.platform.javasdk.impl.timedaction.TimedActionRouter;
 
 import java.util.Optional;
 import java.util.function.Function;
 
-public class ReflectiveActionProvider<A extends Action> implements ActionProvider<A> {
+public class ReflectiveTimedActionProvider<A extends TimedAction> implements TimedActionProvider<A> {
 
-  private final Function<ActionContext, A> factory;
+  private final Function<TimedActionContext, A> factory;
 
-  private final ActionOptions options;
+  private final TimedActionOptions options;
   private final Descriptors.FileDescriptor fileDescriptor;
   private final Descriptors.ServiceDescriptor serviceDescriptor;
   private final ComponentDescriptor componentDescriptor;
   private final JsonMessageCodec messageCodec;
 
-  public static <A extends Action> ReflectiveActionProvider<A> of(
+  public static <A extends TimedAction> ReflectiveTimedActionProvider<A> of(
       Class<A> cls,
       JsonMessageCodec messageCodec,
-      Function<ActionContext, A> factory) {
-    return new ReflectiveActionProvider<>(cls, messageCodec, factory, ActionOptions.defaults());
+      Function<TimedActionContext, A> factory) {
+    return new ReflectiveTimedActionProvider<>(cls, messageCodec, factory, TimedActionOptions.defaults());
   }
 
-  private ReflectiveActionProvider(
+  private ReflectiveTimedActionProvider(
       Class<A> cls,
       JsonMessageCodec messageCodec,
-      Function<ActionContext, A> factory,
-      ActionOptions options) {
+      Function<TimedActionContext, A> factory,
+      TimedActionOptions options) {
 
     this.factory = factory;
-    this.options = options.withForwardHeaders(ForwardHeadersExtractor.extractFrom(cls));
+    this.options = options;
     this.messageCodec = messageCodec;
 
     this.componentDescriptor = ComponentDescriptor.descriptorFor(cls, messageCodec);
@@ -50,7 +48,7 @@ public class ReflectiveActionProvider<A extends Action> implements ActionProvide
   }
 
   @Override
-  public ActionOptions options() {
+  public TimedActionOptions options() {
     return options;
   }
 
@@ -60,9 +58,9 @@ public class ReflectiveActionProvider<A extends Action> implements ActionProvide
   }
 
   @Override
-  public ActionRouter<A> newRouter(ActionContext context) {
+  public TimedActionRouter<A> newRouter(TimedActionContext context) {
     A action = factory.apply(context);
-    return new ReflectiveActionRouter<>(action, componentDescriptor.commandHandlers());
+    return new ReflectiveTimedActionRouter<>(action, componentDescriptor.commandHandlers());
   }
 
   @Override

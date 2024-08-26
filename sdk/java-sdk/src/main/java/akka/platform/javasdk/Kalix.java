@@ -13,15 +13,15 @@ import akka.platform.javasdk.impl.consumer.ConsumerService;
 import akka.platform.javasdk.impl.consumer.ResolvedConsumerFactory;
 import com.google.protobuf.DescriptorProtos;
 import com.google.protobuf.Descriptors;
-import akka.platform.javasdk.action.Action;
-import akka.platform.javasdk.action.ActionOptions;
-import akka.platform.javasdk.action.ActionProvider;
+import akka.platform.javasdk.timedaction.TimedAction;
+import akka.platform.javasdk.timedaction.TimedActionOptions;
+import akka.platform.javasdk.timedaction.TimedActionProvider;
 import akka.platform.javasdk.eventsourcedentity.EventSourcedEntity;
 import akka.platform.javasdk.eventsourcedentity.EventSourcedEntityOptions;
 import akka.platform.javasdk.eventsourcedentity.EventSourcedEntityProvider;
 import akka.platform.javasdk.impl.*;
 import akka.platform.javasdk.impl.action.ActionService;
-import akka.platform.javasdk.impl.action.ResolvedActionFactory;
+import akka.platform.javasdk.impl.timedaction.ResolvedTimedActionFactory;
 import akka.platform.javasdk.impl.eventsourcedentity.EventSourcedEntityService;
 import akka.platform.javasdk.impl.eventsourcedentity.ResolvedEventSourcedEntityFactory;
 import akka.platform.javasdk.impl.keyvalueentity.ResolvedKeyValueEntityFactory;
@@ -174,30 +174,30 @@ public final class Kalix {
      *                              protobuf types when needed.
      * @return This Kalix builder.
      */
-    public Kalix registerAction(
-      ActionFactory actionFactory,
-      ActionOptions actionOptions,
+    public Kalix registerTimedAction(
+      TimedActionFactory timedActionFactory,
+      TimedActionOptions timedActionOptions,
       Descriptors.ServiceDescriptor descriptor,
       Descriptors.FileDescriptor... additionalDescriptors) {
 
       final AnySupport anySupport = newAnySupport(additionalDescriptors);
-      ActionFactory resolvedActionFactory =
-        new ResolvedActionFactory(actionFactory, anySupport.resolveServiceDescriptor(descriptor));
+      TimedActionFactory resolvedTimedActionFactory =
+        new ResolvedTimedActionFactory(timedActionFactory, anySupport.resolveServiceDescriptor(descriptor));
 
-      return registerAction(
-        resolvedActionFactory, anySupport, actionOptions, descriptor, additionalDescriptors);
+      return registerTimedAction(
+        resolvedTimedActionFactory, anySupport, timedActionOptions, descriptor, additionalDescriptors);
     }
 
-    public Kalix registerAction(
-      ActionFactory actionFactory,
+    public Kalix registerTimedAction(
+      TimedActionFactory timedActionFactory,
       MessageCodec messageCodec,
-      ActionOptions actionOptions,
+      TimedActionOptions timedActionOptions,
       Descriptors.ServiceDescriptor descriptor,
       Descriptors.FileDescriptor... additionalDescriptors) {
 
       ActionService service =
         new ActionService(
-          actionFactory, descriptor, additionalDescriptors, messageCodec, actionOptions);
+          timedActionFactory, descriptor, additionalDescriptors, messageCodec, timedActionOptions);
 
       services.put(descriptor.getFullName(), system -> service);
 
@@ -531,18 +531,18 @@ public final class Kalix {
   }
 
   /**
-   * Register an action using an {{@link ActionProvider}}. The concrete <code>
+   * Register an action using an {{@link TimedActionProvider}}. The concrete <code>
    * ActionProvider</code> is generated for the specific entities defined in Protobuf, for example
    * <code>CustomerActionProvider</code>.
    *
    * @return This stateful service builder.
    */
-  public <A extends Action> Kalix register(ActionProvider<A> provider) {
+  public <A extends TimedAction> Kalix register(TimedActionProvider<A> provider) {
     return provider
       .alternativeCodec()
       .map(
         codec ->
-          lowLevel.registerAction(
+          lowLevel.registerTimedAction(
             provider::newRouter,
             codec,
             provider.options(),
@@ -550,7 +550,7 @@ public final class Kalix {
             provider.additionalDescriptors()))
       .orElseGet(
         () ->
-          lowLevel.registerAction(
+          lowLevel.registerTimedAction(
             provider::newRouter,
             provider.options(),
             provider.serviceDescriptor(),

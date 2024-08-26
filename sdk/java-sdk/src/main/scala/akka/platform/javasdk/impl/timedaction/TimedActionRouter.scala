@@ -2,19 +2,19 @@
  * Copyright (C) 2021-2024 Lightbend Inc. <https://www.lightbend.com>
  */
 
-package akka.platform.javasdk.impl.action
+package akka.platform.javasdk.impl.timedaction
 
 import java.util.Optional
 
-import akka.platform.javasdk.action.Action
-import akka.platform.javasdk.action.MessageContext
-import akka.platform.javasdk.action.MessageEnvelope
-import akka.platform.javasdk.impl.action.ActionRouter.HandlerNotFound
+import akka.platform.javasdk.impl.timedaction.TimedActionRouter.HandlerNotFound
+import akka.platform.javasdk.timedaction.CommandContext
+import akka.platform.javasdk.timedaction.CommandEnvelope
+import akka.platform.javasdk.timedaction.TimedAction
 
-object ActionRouter {
+object TimedActionRouter {
   case class HandlerNotFound(commandName: String) extends RuntimeException
 }
-abstract class ActionRouter[A <: Action](protected val action: A) {
+abstract class TimedActionRouter[A <: TimedAction](protected val action: A) {
 
   /**
    * Handle a unary call.
@@ -28,7 +28,10 @@ abstract class ActionRouter[A <: Action](protected val action: A) {
    * @return
    *   A future of the message to return.
    */
-  final def handleUnary(commandName: String, message: MessageEnvelope[Any], context: MessageContext): Action.Effect =
+  final def handleUnary(
+      commandName: String,
+      message: CommandEnvelope[Any],
+      context: CommandContext): TimedAction.Effect =
     callWithContext(context) { () =>
       handleUnary(commandName, message)
     }
@@ -43,12 +46,12 @@ abstract class ActionRouter[A <: Action](protected val action: A) {
    * @return
    *   A future of the message to return.
    */
-  def handleUnary(commandName: String, message: MessageEnvelope[Any]): Action.Effect
+  def handleUnary(commandName: String, message: CommandEnvelope[Any]): TimedAction.Effect
 
-  private def callWithContext[T](context: MessageContext)(func: () => T) = {
+  private def callWithContext[T](context: CommandContext)(func: () => T) = {
     // only set, never cleared, to allow access from other threads in async callbacks in the action
     // the same handler and action instance is expected to only ever be invoked for a single command
-    action._internalSetMessageContext(Optional.of(context))
+    action._internalSetCommandContext(Optional.of(context))
     try {
       func()
     } catch {

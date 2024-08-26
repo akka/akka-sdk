@@ -1,7 +1,7 @@
 package com.example.fibonacci;
 
 
-import akka.platform.javasdk.action.Action;
+import akka.platform.javasdk.timedaction.TimedAction;
 import akka.platform.javasdk.annotations.ComponentId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory;
 
 // tag::implementing-action[]
 @ComponentId("fibonacci")
-public class FibonacciTimedAction extends Action {
+public class FibonacciTimedAction extends TimedAction {
 
   private final Logger logger = LoggerFactory.getLogger(FibonacciTimedAction.class);
 

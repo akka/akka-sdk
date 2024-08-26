@@ -4,9 +4,7 @@
 
 package akka.platform.javasdk.client;
 
-import akka.Done;
 import akka.NotUsed;
-import akka.platform.javasdk.DeferredCall;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.DynamicMessage;
@@ -27,7 +25,6 @@ import akka.platform.javasdk.spi.ComponentClients;
 import akka.platform.javasdk.spi.EntityClient;
 import akka.platform.javasdk.spi.TimerClient;
 import akka.platform.javasdk.spi.ViewClient;
-import akka.platform.spring.testmodels.Message;
 import akka.platform.spring.testmodels.Number;
 import akka.platform.spring.testmodels.action.ActionsTestModels.ActionWithOneParam;
 import akka.platform.spring.testmodels.action.ActionsTestModels.ActionWithoutParam;
@@ -90,7 +87,7 @@ class ComponentClientTest {
     var targetMethod = action.serviceDescriptor().findMethodByName("Message");
 
     //when
-    DeferredCallImpl<NotUsed, Object> call = (DeferredCallImpl<NotUsed, Object>) componentClient.forAction()
+    DeferredCallImpl<NotUsed, Object> call = (DeferredCallImpl<NotUsed, Object>) componentClient.forTimedAction()
       .method(ActionWithoutParam::message)
       .deferred();
 
@@ -106,7 +103,7 @@ class ComponentClientTest {
 
     //when
     DeferredCallImpl<String, Object> call = (DeferredCallImpl<String, Object>)
-            componentClient.forAction()
+            componentClient.forTimedAction()
                     .method(ActionWithOneParam::message)
                     .deferred("Message");
 
@@ -122,7 +119,7 @@ class ComponentClientTest {
     Metadata metadata = MetadataImpl.Empty().set(Telemetry.TRACE_PARENT_KEY(), traceparent);
     //when
     DeferredCallImpl<NotUsed, Object> call = (DeferredCallImpl<NotUsed, Object>)
-      componentClient.forAction()
+      componentClient.forTimedAction()
         .method(ActionWithoutParam::message)
         .withMetadata(metadata)
         .deferred();

@@ -4,16 +4,12 @@
 
 package akka.platform.javasdk.testkit;
 
-import io.grpc.Status;
-
-import java.util.concurrent.CompletionStage;
-
 /**
  * Represents the result of an Action handling a command when run in through the testkit.
  *
  * <p>Not for user extension, returned by the testkit.
  */
-public interface ActionResult {
+public interface TimedActionResult {
 
   /** @return true if the call had an effect with a reply, false if not */
   boolean isDone();

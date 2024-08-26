@@ -4,11 +4,11 @@
 
 package akka.platform.spring.testmodels.action;
 
-import akka.platform.javasdk.action.Action;
+import akka.platform.javasdk.timedaction.TimedAction;
 import akka.platform.javasdk.annotations.ComponentId;
 
 @ComponentId("test-echo")
-public class EchoAction extends Action {
+public class EchoAction extends TimedAction {
 
   public Effect stringMessage(String msg) {
     return effects().done();

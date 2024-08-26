@@ -5,12 +5,11 @@
 package com.example.wiring.keyvalueentities.user;
 
 import akka.Done;
-import akka.http.javadsl.model.StatusCodes;
-import akka.platform.javasdk.action.Action;
+import akka.platform.javasdk.timedaction.TimedAction;
 import akka.platform.javasdk.client.ComponentClient;
 import akka.platform.javasdk.consumer.ConsumerContext;
 
-public class ValidateUserAction extends Action {
+public class ValidateUserAction extends TimedAction {
 
   private ConsumerContext ctx;
   private ComponentClient componentClient;
@@ -21,7 +20,7 @@ public class ValidateUserAction extends Action {
   }
 
   public record CreateUser(String user, String email, String name){}
-  public Action.Effect createOrUpdateUser(CreateUser createUser) {
+  public TimedAction.Effect createOrUpdateUser(CreateUser createUser) {
     if (createUser.email.isEmpty() || createUser.name.isEmpty())
       return effects().error("No field can be empty");
 
@@ -34,7 +33,7 @@ public class ValidateUserAction extends Action {
   }
 
   public record UpdateEmail(String user, String email){}
-  public Action.Effect updateEmail(UpdateEmail updateEmail) {
+  public TimedAction.Effect updateEmail(UpdateEmail updateEmail) {
     if (updateEmail.email.isEmpty())
       return effects().error("No field can be empty");
 
@@ -45,7 +44,7 @@ public class ValidateUserAction extends Action {
       .thenApply(__ -> Done.done()));
   }
 
-  public Action.Effect delete(String user) {
+  public TimedAction.Effect delete(String user) {
     return effects().asyncDone(componentClient
       .forKeyValueEntity(user)
       .method(UserEntity::deleteUser)

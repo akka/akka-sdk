@@ -4,7 +4,7 @@
 
 package akka.platform.javasdk.impl;
 
-import akka.platform.javasdk.action.Action;
+import akka.platform.javasdk.timedaction.TimedAction;
 import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.annotations.Query;
 import akka.platform.javasdk.annotations.Consume;
@@ -22,7 +22,7 @@ import akka.platform.spring.testmodels.workflow.WorkflowState;
 public class NotPublicComponents {
 
   @ComponentId("not-public")
-  static class NotPublicAction extends Action {
+  static class NotPublicAction extends TimedAction {
     public Effect message() {
       return effects().done();
     }

@@ -2,23 +2,13 @@
  * Copyright (C) 2021-2024 Lightbend Inc. <https://www.lightbend.com>
  */
 
-package akka.platform.javasdk.action;
+package akka.platform.javasdk.timedaction;
 
-import akka.platform.javasdk.CloudEvent;
 import akka.platform.javasdk.MetadataContext;
 import io.opentelemetry.api.trace.Tracer;
 
-import java.util.Optional;
-
 /** Context for action calls. */
-// TODO rename to CommandContext
-public interface MessageContext extends MetadataContext {
-
-  /**
-   * The origin subject of the {@link CloudEvent}. For example, the entity id when the event was
-   * emitted from an entity.
-   */
-  Optional<String> eventSubject();
+public interface CommandContext extends MetadataContext {
 
   /**
    * Get an OpenTelemetry tracer for the current action. This will allow for building and automatic

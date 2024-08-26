@@ -7,7 +7,7 @@ package akka.platform.javasdk.impl
 import java.lang.reflect.AnnotatedElement
 import java.lang.reflect.Method
 import java.lang.reflect.ParameterizedType
-import akka.platform.javasdk.action.Action
+import akka.platform.javasdk.timedaction.TimedAction
 import akka.platform.javasdk.annotations.Acl
 import akka.platform.javasdk.annotations.ComponentId
 import akka.platform.javasdk.annotations.Consume.FromEventSourcedEntity
@@ -65,7 +65,7 @@ private[impl] object ComponentDescriptorFactory {
 
   def hasActionOutput(javaMethod: Method): Boolean = {
     if (javaMethod.isPublic) {
-      javaMethod.getReturnType.isAssignableFrom(classOf[Action.Effect])
+      javaMethod.getReturnType.isAssignableFrom(classOf[TimedAction.Effect])
     } else {
       false
     }

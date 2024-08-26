@@ -4,28 +4,28 @@
 
 package akka.platform.javasdk.testkit.impl
 
-import akka.platform.javasdk.action.Action
-import akka.platform.javasdk.impl.action.ActionEffectImpl
-import akka.platform.javasdk.testkit.ActionResult
+import akka.platform.javasdk.impl.timedaction.TimedActionEffectImpl
+import akka.platform.javasdk.timedaction.TimedAction
+import akka.platform.javasdk.testkit.TimedActionResult
 
 /**
  * INTERNAL API
  */
-final class ActionResultImpl[T](effect: ActionEffectImpl.PrimaryEffect) extends ActionResult {
+final class TimedActionResultImpl[T](effect: TimedActionEffectImpl.PrimaryEffect) extends TimedActionResult {
 
-  def this(effect: Action.Effect) = this(effect.asInstanceOf[ActionEffectImpl.PrimaryEffect])
+  def this(effect: TimedAction.Effect) = this(effect.asInstanceOf[TimedActionEffectImpl.PrimaryEffect])
 
   /** @return true if the call had an effect with a reply, false if not */
-  override def isDone(): Boolean = effect.isInstanceOf[ActionEffectImpl.ReplyEffect]
+  override def isDone(): Boolean = effect.isInstanceOf[TimedActionEffectImpl.ReplyEffect]
 
   /** @return true if the call was async, false if not */
-  override def isAsync(): Boolean = effect.isInstanceOf[ActionEffectImpl.AsyncEffect]
+  override def isAsync(): Boolean = effect.isInstanceOf[TimedActionEffectImpl.AsyncEffect]
 
   /** @return true if the call was an error, false if not */
-  override def isError(): Boolean = effect.isInstanceOf[ActionEffectImpl.ErrorEffect]
+  override def isError(): Boolean = effect.isInstanceOf[TimedActionEffectImpl.ErrorEffect]
 
   override def getError(): String = {
-    val error = getEffectOfType(classOf[ActionEffectImpl.ErrorEffect])
+    val error = getEffectOfType(classOf[TimedActionEffectImpl.ErrorEffect])
     error.description
   }
 

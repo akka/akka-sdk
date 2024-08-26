@@ -36,7 +36,7 @@ public class FibonacciSetup implements ServiceSetup {
     public void onStartup() {
         logger.info("Fibonacci service started");
         timerScheduler.startSingleTimer("fibonacci-in-the-future", Duration.ofSeconds(10),
-            componentClient.forAction()
+            componentClient.forTimedAction()
                 .method(FibonacciTimedAction::calculateNextNumber)
                 .deferred(5L));
     }

@@ -12,7 +12,6 @@ import akka.platform.spring.testkit.KalixIntegrationTestKitSupport;
 import com.example.wiring.actions.echo.ActionWithMetadata;
 import com.example.wiring.actions.echo.EchoAction;
 import com.example.wiring.actions.echo.Message;
-import com.example.wiring.actions.headers.ForwardHeadersAction;
 import com.example.wiring.actions.headers.TestBuffer;
 import com.example.wiring.eventsourcedentities.counter.CounterEntity;
 import com.example.wiring.eventsourcedentities.headers.ForwardHeadersESEntity;
@@ -68,10 +67,10 @@ public class SpringSdkIntegrationTest extends KalixIntegrationTestKitSupport {
   }
 
 
-  @Disabled
+  @Test
   public void verifyEchoActionWiring() {
 
-    timerScheduler.startSingleTimer("echo-action", ofMillis(0), componentClient.forAction()
+    timerScheduler.startSingleTimer("echo-action", ofMillis(0), componentClient.forTimedAction()
       .method(EchoAction::stringMessage)
       .deferred("hello"));
 
@@ -400,30 +399,30 @@ public class SpringSdkIntegrationTest extends KalixIntegrationTestKitSupport {
   }
 
   @Test
-  public void verifyForwardHeaders() {
+  public void verifyActionWithMetadata() {
 
-    String actionHeaderValue = "action-value";
+    String metadataValue = "action-value";
     String veHeaderValue = "ve-value";
     String esHeaderValue = "es-value";
 
-    timerScheduler.startSingleTimer("forward-headers", ofMillis(0), componentClient.forAction()
-      .method(ForwardHeadersAction::stringMessage)
-      .withMetadata(Metadata.EMPTY.add(ForwardHeadersAction.SOME_HEADER, actionHeaderValue))
+    timerScheduler.startSingleTimer("metadata", ofMillis(0), componentClient.forTimedAction()
+      .method(ActionWithMetadata::processWithMeta)
+      .withMetadata(Metadata.EMPTY.add(ActionWithMetadata.SOME_HEADER, metadataValue))
       .deferred());
 
     Awaitility.await()
       .atMost(20, TimeUnit.SECONDS)
       .ignoreExceptions()
       .untilAsserted(() -> {
-        var header = TestBuffer.getValue(ForwardHeadersAction.SOME_HEADER);
-        assertThat(header).isEqualTo(actionHeaderValue);
+        var header = TestBuffer.getValue(ActionWithMetadata.SOME_HEADER);
+        assertThat(header).isEqualTo(metadataValue);
       });
 
     Message veResponse =
       await(
         componentClient.forKeyValueEntity("1")
           .method(ForwardHeadersValueEntity::createUser)
-          .withMetadata(Metadata.EMPTY.add(ForwardHeadersAction.SOME_HEADER, veHeaderValue))
+          .withMetadata(Metadata.EMPTY.add(ForwardHeadersValueEntity.SOME_HEADER, veHeaderValue))
           .invokeAsync()
       );
 
@@ -433,7 +432,7 @@ public class SpringSdkIntegrationTest extends KalixIntegrationTestKitSupport {
       await(
         componentClient.forEventSourcedEntity("1")
           .method(ForwardHeadersESEntity::createUser)
-          .withMetadata(Metadata.EMPTY.add(ForwardHeadersAction.SOME_HEADER, esHeaderValue))
+          .withMetadata(Metadata.EMPTY.add(ForwardHeadersESEntity.SOME_HEADER, esHeaderValue))
           .invokeAsync()
       );
 

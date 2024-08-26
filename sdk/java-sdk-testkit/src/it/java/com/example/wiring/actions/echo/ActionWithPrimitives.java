@@ -4,14 +4,15 @@
 
 package com.example.wiring.actions.echo;
 
-import akka.platform.javasdk.action.Action;
+import akka.platform.javasdk.timedaction.TimedAction;
 import akka.platform.javasdk.annotations.ComponentId;
 
 import java.util.Collection;
 import java.util.stream.Collectors;
 
 @ComponentId("with-primitives")
-public class ActionWithPrimitives extends Action {
+//TODO remove or bring tests back
+public class ActionWithPrimitives extends TimedAction {
 
   public Effect stringMessageWithOptionalParams(long longValue) {
     return effects().done();

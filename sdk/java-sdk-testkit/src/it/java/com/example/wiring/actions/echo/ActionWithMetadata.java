@@ -4,28 +4,18 @@
 
 package com.example.wiring.actions.echo;
 
-import akka.platform.javasdk.action.Action;
+import akka.platform.javasdk.timedaction.TimedAction;
 import akka.platform.javasdk.annotations.ComponentId;
-import akka.platform.javasdk.annotations.ForwardHeaders;
-import akka.platform.javasdk.client.ComponentClient;
+import com.example.wiring.actions.headers.TestBuffer;
 
-// FIXME used in SpringSdkIntegrationTest, since component client is currently going over the rest endpoint
-//       all headers expected to be forwarded must be opt-in. Once we switch to "native" component client
-//       we will forward all metadata and this won't be needed
 @ComponentId("with-metadata")
-@ForwardHeaders({"myKey"})
-public class ActionWithMetadata extends Action {
+public class ActionWithMetadata extends TimedAction {
 
-  private ComponentClient componentClient;
+  public static final String SOME_HEADER = "some-header";
 
-  public ActionWithMetadata(ComponentClient componentClient) {
-    this.componentClient = componentClient;
-  }
-
-  public record KeyValue(String key, String value) {}
-
-  public Effect returnMeta(String key) {
-    var metaValue = messageContext().metadata().get(key).get();
+  public Effect processWithMeta() {
+    String headerValue = commandContext().metadata().get(SOME_HEADER).orElse("");
+    TestBuffer.addValue(SOME_HEADER, headerValue);
     return effects().done();
   }
 }

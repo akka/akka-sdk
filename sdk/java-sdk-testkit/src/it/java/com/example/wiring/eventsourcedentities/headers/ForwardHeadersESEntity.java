@@ -9,11 +9,13 @@ import akka.platform.javasdk.annotations.ForwardHeaders;
 import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.eventsourcedentity.EventSourcedEntity;
 
-import static com.example.wiring.actions.headers.ForwardHeadersAction.SOME_HEADER;
+import static com.example.wiring.eventsourcedentities.headers.ForwardHeadersESEntity.SOME_HEADER;
 
 @ComponentId("forward-headers-es")
 @ForwardHeaders(SOME_HEADER)
 public class ForwardHeadersESEntity extends EventSourcedEntity<String, ForwardHeadersESEntity.Event> {
+
+  public static final String SOME_HEADER = "some-header";
 
   sealed interface Event {
     public record Created() implements Event {}

@@ -4,8 +4,6 @@
 
 package akka.platform.javasdk.impl.action
 
-import java.util.Optional
-
 import scala.concurrent.Future
 import scala.util.control.NonFatal
 
@@ -14,20 +12,20 @@ import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.platform.javasdk
 import akka.platform.javasdk.Metadata
-import akka.platform.javasdk.action.Action
-import akka.platform.javasdk.action.ActionContext
-import akka.platform.javasdk.action.ActionOptions
-import akka.platform.javasdk.action.MessageContext
-import akka.platform.javasdk.action.MessageEnvelope
+import akka.platform.javasdk.timedaction.CommandContext
+import akka.platform.javasdk.timedaction.CommandEnvelope
+import akka.platform.javasdk.timedaction.TimedAction
+import akka.platform.javasdk.timedaction.TimedActionContext
+import akka.platform.javasdk.timedaction.TimedActionOptions
 import akka.platform.javasdk.consumer.Consumer
 import akka.platform.javasdk.consumer.ConsumerContext
-import akka.platform.javasdk.impl.ActionFactory
 import akka.platform.javasdk.impl.ComponentOptions
 import akka.platform.javasdk.impl.ErrorHandling
 import akka.platform.javasdk.impl.ErrorHandling.BadRequestException
 import akka.platform.javasdk.impl.MessageCodec
 import akka.platform.javasdk.impl.MetadataImpl
 import akka.platform.javasdk.impl.Service
+import akka.platform.javasdk.impl.TimedActionFactory
 import akka.platform.javasdk.impl._
 import akka.platform.javasdk.impl.consumer
 import akka.platform.javasdk.impl.consumer.ConsumerContextImpl
@@ -36,6 +34,7 @@ import akka.platform.javasdk.impl.telemetry.ActionCategory
 import akka.platform.javasdk.impl.telemetry.ConsumerCategory
 import akka.platform.javasdk.impl.telemetry.Instrumentation
 import akka.platform.javasdk.impl.telemetry.Telemetry
+import akka.platform.javasdk.impl.timedaction.TimedActionRouter
 import akka.platform.javasdk.impl.timer.TimerSchedulerImpl
 import akka.platform.javasdk.spi.TimerClient
 import akka.platform.javasdk.timer.TimerScheduler
@@ -55,24 +54,24 @@ import org.slf4j.LoggerFactory
 import org.slf4j.MDC
 
 final class ActionService(
-    val factory: ActionFactory,
+    val factory: TimedActionFactory,
     override val descriptor: Descriptors.ServiceDescriptor,
     override val additionalDescriptors: Array[Descriptors.FileDescriptor],
     val messageCodec: MessageCodec,
-    val actionOptions: Option[ActionOptions])
+    val actionOptions: Option[TimedActionOptions])
     extends Service {
 
   def this(
-      factory: ActionFactory,
+      factory: TimedActionFactory,
       descriptor: Descriptors.ServiceDescriptor,
       additionalDescriptors: Array[Descriptors.FileDescriptor],
       messageCodec: MessageCodec,
-      actionOptions: ActionOptions) =
+      actionOptions: TimedActionOptions) =
     this(factory, descriptor, additionalDescriptors, messageCodec, Some(actionOptions))
 
   @volatile var actionClass: Option[Class[_]] = None
 
-  def createAction(context: ActionContext): ActionRouter[_] = {
+  def createAction(context: TimedActionContext): TimedActionRouter[_] = {
     val handler = factory.create(context)
     actionClass = Some(handler.actionClass())
     handler
@@ -150,9 +149,9 @@ private[akka] final class ActionsImpl(_system: ActorSystem, services: Map[String
   private def effectToResponse(
       service: ActionService,
       command: ActionCommand,
-      effect: Action.Effect,
+      effect: TimedAction.Effect,
       messageCodec: MessageCodec): Future[ActionResponse] = {
-    import ActionEffectImpl._
+    import akka.platform.javasdk.impl.timedaction.TimedActionEffectImpl._
     effect match {
       case ReplyEffect(metadata) =>
         val response =
@@ -215,7 +214,7 @@ private[akka] final class ActionsImpl(_system: ActorSystem, services: Map[String
               in.payload.getOrElse(throw new IllegalArgumentException("No command payload")))
             val effect = service.factory
               .create(actionContext)
-              .handleUnary(in.name, MessageEnvelope.of(decodedPayload, messageContext.metadata()), messageContext)
+              .handleUnary(in.name, CommandEnvelope.of(decodedPayload, messageContext.metadata()), messageContext)
             effectToResponse(service, in, effect, service.messageCodec)
           } catch {
             case NonFatal(ex) =>
@@ -267,10 +266,10 @@ private[akka] final class ActionsImpl(_system: ActorSystem, services: Map[String
       in: ActionCommand,
       messageCodec: MessageCodec,
       spanContext: Option[SpanContext],
-      serviceName: String): MessageContext = {
+      serviceName: String): CommandContext = {
     val metadata = MetadataImpl.of(in.metadata.map(_.entries.toVector).getOrElse(Nil))
     val updatedMetadata = spanContext.map(metadata.withTracing).getOrElse(metadata)
-    new MessageContextImpl(updatedMetadata, messageCodec, system, timerClient, telemetries(serviceName))
+    new CommandContextImpl(updatedMetadata, messageCodec, system, timerClient, telemetries(serviceName))
   }
 
   private def createConsumerMessageContext(
@@ -283,8 +282,8 @@ private[akka] final class ActionsImpl(_system: ActorSystem, services: Map[String
     new consumer.MessageContextImpl(updatedMetadata, messageCodec, system, timerClient, telemetries(serviceName))
   }
 
-  private def createActionContext(serviceName: String): ActionContext = {
-    new ActionContextImpl(system)
+  private def createActionContext(serviceName: String): TimedActionContext = {
+    new TimedActionContextImpl(system)
   }
 
   private def createConsumerContext(serviceName: String): ConsumerContext = {
@@ -304,27 +303,21 @@ private[akka] final class ActionsImpl(_system: ActorSystem, services: Map[String
   }
 }
 
-case class MessageEnvelopeImpl[T](payload: T, metadata: Metadata) extends MessageEnvelope[T]
+case class CommandEnvelopeImpl[T](payload: T, metadata: Metadata) extends CommandEnvelope[T]
 
 /**
  * INTERNAL API
  */
-class MessageContextImpl(
+class CommandContextImpl(
     override val metadata: Metadata,
     val messageCodec: MessageCodec,
     val system: ActorSystem,
     timerClient: TimerClient,
     instrumentation: Instrumentation)
     extends AbstractContext(system)
-    with MessageContext {
+    with CommandContext {
 
   val timers: TimerScheduler = new TimerSchedulerImpl(messageCodec, system, timerClient, componentCallMetadata)
-
-  override def eventSubject(): Optional[String] =
-    if (metadata.isCloudEvent)
-      metadata.asCloudEvent().subject()
-    else
-      Optional.empty()
 
   override def componentCallMetadata: MetadataImpl = {
     if (metadata.has(Telemetry.TRACE_PARENT_KEY)) {
@@ -343,4 +336,4 @@ class MessageContextImpl(
 
 }
 
-class ActionContextImpl(val system: ActorSystem) extends AbstractContext(system) with ActionContext {}
+class TimedActionContextImpl(val system: ActorSystem) extends AbstractContext(system) with TimedActionContext {}

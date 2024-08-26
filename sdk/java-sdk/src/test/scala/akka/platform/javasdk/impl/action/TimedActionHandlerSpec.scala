@@ -13,14 +13,16 @@ import akka.actor.testkit.typed.scaladsl.LogCapturing
 import akka.actor.testkit.typed.scaladsl.LoggingTestKit
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import akka.actor.typed.scaladsl.adapter._
+import akka.platform.javasdk.timedaction.CommandEnvelope
 import com.google.protobuf
 import com.google.protobuf.any.{ Any => ScalaPbAny }
 import kalix.javasdk.actionspec.ActionspecApi
-import akka.platform.javasdk.action.Action
-import akka.platform.javasdk.action.MessageEnvelope
-import akka.platform.javasdk.impl.ActionFactory
+import akka.platform.javasdk.timedaction.TimedAction
 import akka.platform.javasdk.impl.JsonMessageCodec
 import akka.platform.javasdk.impl.ProxyInfoHolder
+import akka.platform.javasdk.impl.TimedActionFactory
+import akka.platform.javasdk.impl.timedaction.TimedActionEffectImpl
+import akka.platform.javasdk.impl.timedaction.TimedActionRouter
 import akka.platform.javasdk.spi.DeferredRequest
 import akka.platform.javasdk.spi.TimerClient
 import kalix.protocol.action.ActionCommand
@@ -33,7 +35,7 @@ import org.scalatest.OptionValues
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
 
-class ActionHandlerSpec
+class TimedActionHandlerSpec
     extends ScalaTestWithActorTestKit
     with LogCapturing
     with AnyWordSpecLike
@@ -49,8 +51,8 @@ class ActionHandlerSpec
   private val serviceName = serviceDescriptor.getFullName
   private val jsonCodec = new JsonMessageCodec()
 
-  def create(handler: ActionRouter[_]): Actions = {
-    val actionFactory: ActionFactory = _ => handler
+  def create(handler: TimedActionRouter[_]): Actions = {
+    val actionFactory: TimedActionFactory = _ => handler
     val service = new ActionService(actionFactory, serviceDescriptor, Array(), jsonCodec, None)
 
     val services = Map(serviceName -> service)
@@ -76,7 +78,7 @@ class ActionHandlerSpec
     "invoke unary commands" in {
       val service = create(new AbstractHandler {
 
-        override def handleUnary(commandName: String, message: MessageEnvelope[Any]): Action.Effect =
+        override def handleUnary(commandName: String, message: CommandEnvelope[Any]): TimedAction.Effect =
           createReplyEffect()
       })
 
@@ -91,7 +93,7 @@ class ActionHandlerSpec
     "turn thrown unary command handler exceptions into failure responses" in {
       val service = create(new AbstractHandler {
 
-        override def handleUnary(commandName: String, message: MessageEnvelope[Any]): Action.Effect =
+        override def handleUnary(commandName: String, message: CommandEnvelope[Any]): TimedAction.Effect =
           throw new RuntimeException("boom")
       })
 
@@ -110,7 +112,7 @@ class ActionHandlerSpec
     "turn async failure into failure response" in {
       val service = create(new AbstractHandler {
 
-        override def handleUnary(commandName: String, message: MessageEnvelope[Any]): Action.Effect =
+        override def handleUnary(commandName: String, message: CommandEnvelope[Any]): TimedAction.Effect =
           createAsyncReplyEffect(Future.failed(new RuntimeException("boom")))
       })
 
@@ -125,11 +127,11 @@ class ActionHandlerSpec
 
   }
 
-  private def createReplyEffect(): Action.Effect =
-    ActionEffectImpl.ReplyEffect(None)
+  private def createReplyEffect(): TimedAction.Effect =
+    TimedActionEffectImpl.ReplyEffect(None)
 
-  private def createAsyncReplyEffect(future: Future[Action.Effect]): Action.Effect =
-    ActionEffectImpl.AsyncEffect(future)
+  private def createAsyncReplyEffect(future: Future[TimedAction.Effect]): TimedAction.Effect =
+    TimedActionEffectImpl.AsyncEffect(future)
 
   private def createInPayload(field: String) =
     Some(ScalaPbAny.fromJavaProto(protobuf.Any.pack(ActionspecApi.In.newBuilder().setField(field).build())))
@@ -138,10 +140,10 @@ class ActionHandlerSpec
     ScalaPbAny.toJavaProto(payload.value).getTypeUrl == "json.kalix.io/akka.Done$"
   }
 
-  class TestAction extends Action
+  class TestAction extends TimedAction
 
-  private abstract class AbstractHandler extends ActionRouter[TestAction](new TestAction) {
-    override def handleUnary(commandName: String, message: MessageEnvelope[Any]): Action.Effect =
+  private abstract class AbstractHandler extends TimedActionRouter[TestAction](new TestAction) {
+    override def handleUnary(commandName: String, message: CommandEnvelope[Any]): TimedAction.Effect =
       ???
 
   }

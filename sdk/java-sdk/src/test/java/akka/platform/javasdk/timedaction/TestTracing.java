@@ -2,7 +2,7 @@
  * Copyright (C) 2021-2024 Lightbend Inc. <https://www.lightbend.com>
  */
 
-package akka.platform.javasdk.action;
+package akka.platform.javasdk.timedaction;
 
 import akka.platform.javasdk.annotations.Consume;
 import akka.platform.javasdk.consumer.Consumer;

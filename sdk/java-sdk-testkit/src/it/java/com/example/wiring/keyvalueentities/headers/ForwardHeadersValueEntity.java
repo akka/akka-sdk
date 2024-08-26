@@ -4,16 +4,18 @@
 
 package com.example.wiring.keyvalueentities.headers;
 
-import com.example.wiring.actions.echo.Message;
-import akka.platform.javasdk.annotations.ForwardHeaders;
 import akka.platform.javasdk.annotations.ComponentId;
+import akka.platform.javasdk.annotations.ForwardHeaders;
 import akka.platform.javasdk.keyvalueentity.KeyValueEntity;
+import com.example.wiring.actions.echo.Message;
 
-import static com.example.wiring.actions.headers.ForwardHeadersAction.SOME_HEADER;
+import static com.example.wiring.keyvalueentities.headers.ForwardHeadersValueEntity.SOME_HEADER;
 
 @ComponentId("forward-headers-ve")
 @ForwardHeaders(SOME_HEADER)
 public class ForwardHeadersValueEntity extends KeyValueEntity<String> {
+
+  public static final String SOME_HEADER = "some-header";
 
   public Effect<Message> createUser() {
     String headerValue = commandContext().metadata().get(SOME_HEADER).orElse("");

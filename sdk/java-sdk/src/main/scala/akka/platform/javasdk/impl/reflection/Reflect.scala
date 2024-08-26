@@ -13,8 +13,7 @@ import java.util
 
 import scala.annotation.tailrec
 import scala.reflect.ClassTag
-
-import akka.platform.javasdk.action.Action
+import akka.platform.javasdk.timedaction.TimedAction
 import akka.platform.javasdk.annotations.http.Endpoint
 import akka.platform.javasdk.client.ComponentClient
 import akka.platform.javasdk.consumer.Consumer
@@ -67,7 +66,7 @@ object Reflect {
 
   def isConsumer(cls: Class[_]): Boolean = extendsConsumer(cls)
 
-  def isAction(clazz: Class[_]): Boolean = classOf[Action].isAssignableFrom(clazz)
+  def isAction(clazz: Class[_]): Boolean = classOf[TimedAction].isAssignableFrom(clazz)
 
   def getReturnType[R](declaringClass: Class[_], method: Method): Class[R] = {
     if (isAction(declaringClass) || isEntity(declaringClass) || isWorkflow(declaringClass) || isView(declaringClass)) {

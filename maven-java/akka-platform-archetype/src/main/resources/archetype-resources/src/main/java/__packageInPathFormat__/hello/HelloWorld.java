@@ -1,6 +1,6 @@
 package ${package}.hello;
 
-import akka.platform.javasdk.action.Action;
+import akka.platform.javasdk.timedaction.Action;
 import akka.platform.javasdk.annotations.Acl;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;

@@ -15,7 +15,6 @@ import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.type.TypeKind;
 import javax.lang.model.util.ElementFilter;
 import javax.tools.Diagnostic;
 import javax.tools.FileObject;
@@ -55,13 +54,13 @@ public class ComponentAnnotationProcessor extends AbstractProcessor {
     private static final String ENDPOINT_KEY = "endpoint";
     private static final String EVENT_SOURCED_ENTITY_KEY = "event-sourced-entity";
     private static final String VALUE_ENTITY_KEY = "key-value-entity";
-    private static final String ACTION_KEY = "action";
+    private static final String TIMED_ACTION_KEY = "timed-action";
     private static final String CONSUMER_KEY = "consumer";
     private static final String VIEW_KEY = "view";
     private static final String WORKFLOW_KEY = "workflow";
     private static final String SERVICE_SETUP_KEY = "service-setup";
 
-    private static final List<String> ALL_COMPONENT_TYPES = List.of(ENDPOINT_KEY, EVENT_SOURCED_ENTITY_KEY, VALUE_ENTITY_KEY, ACTION_KEY, CONSUMER_KEY, VIEW_KEY, WORKFLOW_KEY, SERVICE_SETUP_KEY);
+    private static final List<String> ALL_COMPONENT_TYPES = List.of(ENDPOINT_KEY, EVENT_SOURCED_ENTITY_KEY, VALUE_ENTITY_KEY, TIMED_ACTION_KEY, CONSUMER_KEY, VIEW_KEY, WORKFLOW_KEY, SERVICE_SETUP_KEY);
 
 
     private final boolean debugEnabled;
@@ -99,16 +98,16 @@ public class ComponentAnnotationProcessor extends AbstractProcessor {
             // Extra pass until we have removed the RequestMapping support, can be present on all types of components
             // so, it is not a water tight way to find actions. If something is listed as both an action and some other
             // component type, remove it from actions
-            var actions = componentTypeToConcreteComponents.get(ACTION_KEY);
+            var actions = componentTypeToConcreteComponents.get(TIMED_ACTION_KEY);
             if (actions != null) {
                 var foundDuplicates = new HashSet<String>();
                 actions.forEach(actionClass -> {
-                    if (componentTypeToConcreteComponents.entrySet().stream().anyMatch((entry) -> !entry.getKey().equals(ACTION_KEY) && entry.getValue().contains(actionClass))) {
+                    if (componentTypeToConcreteComponents.entrySet().stream().anyMatch((entry) -> !entry.getKey().equals(TIMED_ACTION_KEY) && entry.getValue().contains(actionClass))) {
                         foundDuplicates.add(actionClass);
                     }
                 });
                 actions.removeAll(foundDuplicates);
-                if (actions.isEmpty()) componentTypeToConcreteComponents.remove(ACTION_KEY);
+                if (actions.isEmpty()) componentTypeToConcreteComponents.remove(TIMED_ACTION_KEY);
             }
 
             var views = componentTypeToConcreteComponents.get(VIEW_KEY);
@@ -206,7 +205,7 @@ public class ComponentAnnotationProcessor extends AbstractProcessor {
             case "akka.platform.javasdk.eventsourcedentity.EventSourcedEntity" -> EVENT_SOURCED_ENTITY_KEY;
             case "akka.platform.javasdk.keyvalueentity.KeyValueEntity" -> VALUE_ENTITY_KEY;
             case "akka.platform.javasdk.workflow.Workflow" -> WORKFLOW_KEY;
-            case "akka.platform.javasdk.action.Action" -> ACTION_KEY;
+            case "akka.platform.javasdk.timedaction.TimedAction" -> TIMED_ACTION_KEY;
             case "akka.platform.javasdk.consumer.Consumer" -> CONSUMER_KEY;
             case "akka.platform.javasdk.view.View" -> VIEW_KEY;
             default -> {

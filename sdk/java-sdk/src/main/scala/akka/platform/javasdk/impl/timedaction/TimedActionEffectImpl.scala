@@ -2,7 +2,7 @@
  * Copyright (C) 2021-2024 Lightbend Inc. <https://www.lightbend.com>
  */
 
-package akka.platform.javasdk.impl.action
+package akka.platform.javasdk.impl.timedaction
 
 import java.util.concurrent.CompletionStage
 
@@ -12,17 +12,17 @@ import scala.jdk.FutureConverters.CompletionStageOps
 
 import akka.Done
 import akka.platform.javasdk.Metadata
-import akka.platform.javasdk.action.Action
+import akka.platform.javasdk.timedaction.TimedAction
 
 /** INTERNAL API */
-object ActionEffectImpl {
-  sealed abstract class PrimaryEffect extends Action.Effect {}
+object TimedActionEffectImpl {
+  sealed abstract class PrimaryEffect extends TimedAction.Effect {}
 
   final case class ReplyEffect(metadata: Option[Metadata]) extends PrimaryEffect {
     def isEmpty: Boolean = false
   }
 
-  final case class AsyncEffect(effect: Future[Action.Effect]) extends PrimaryEffect {
+  final case class AsyncEffect(effect: Future[TimedAction.Effect]) extends PrimaryEffect {
     def isEmpty: Boolean = false
   }
 
@@ -30,19 +30,19 @@ object ActionEffectImpl {
     def isEmpty: Boolean = false
   }
 
-  class Builder extends Action.Effect.Builder {
-    def done(): Action.Effect = {
+  class Builder extends TimedAction.Effect.Builder {
+    def done(): TimedAction.Effect = {
       ReplyEffect(None)
     }
-    def error(description: String): Action.Effect = ErrorEffect(description)
+    def error(description: String): TimedAction.Effect = ErrorEffect(description)
 
-    def asyncDone(futureMessage: CompletionStage[Done]): Action.Effect =
+    def asyncDone(futureMessage: CompletionStage[Done]): TimedAction.Effect =
       AsyncEffect(futureMessage.asScala.map(_ => done())(ExecutionContext.parasitic))
 
-    def asyncEffect(futureEffect: CompletionStage[Action.Effect]): Action.Effect =
+    def asyncEffect(futureEffect: CompletionStage[TimedAction.Effect]): TimedAction.Effect =
       AsyncEffect(futureEffect.asScala)
   }
 
-  def builder(): Action.Effect.Builder = new Builder()
+  def builder(): TimedAction.Effect.Builder = new Builder()
 
 }

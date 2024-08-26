@@ -11,7 +11,7 @@ import akka.platform.spring.testmodels.action.ActionsTestModels.ActionWithoutPar
 import com.google.protobuf.Descriptors.FieldDescriptor.JavaType
 import org.scalatest.wordspec.AnyWordSpec
 
-class ActionDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuite {
+class TimedActionDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuite {
 
   "Action descriptor factory" should {
 

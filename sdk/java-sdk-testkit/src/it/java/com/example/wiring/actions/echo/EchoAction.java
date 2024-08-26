@@ -4,19 +4,19 @@
 
 package com.example.wiring.actions.echo;
 
-import akka.platform.javasdk.action.Action;
-import akka.platform.javasdk.action.ActionContext;
+import akka.platform.javasdk.timedaction.TimedAction;
+import akka.platform.javasdk.timedaction.TimedActionContext;
 import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.client.ComponentClient;
 import com.example.wiring.actions.headers.TestBuffer;
 
 @ComponentId("echo")
-public class EchoAction extends Action {
+public class EchoAction extends TimedAction {
 
-  private ActionContext ctx;
+  private TimedActionContext ctx;
   private final ComponentClient componentClient;
 
-  public EchoAction(ActionContext ctx, ComponentClient componentClient) {
+  public EchoAction(TimedActionContext ctx, ComponentClient componentClient) {
     this.ctx = ctx;
     this.componentClient = componentClient;
   }

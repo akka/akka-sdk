@@ -4,21 +4,21 @@
 
 package akka.platform.spring.testmodels.action;
 
-import akka.platform.javasdk.action.Action;
+import akka.platform.javasdk.timedaction.TimedAction;
 import akka.platform.javasdk.annotations.ComponentId;
 
 public class ActionsTestModels {
 
   @ComponentId("test-action-0")
-  public static class ActionWithoutParam extends Action {
-    public Action.Effect message() {
+  public static class ActionWithoutParam extends TimedAction {
+    public Effect message() {
       return effects().done();
     }
   }
 
   @ComponentId("test-action-1")
-  public static class ActionWithOneParam extends Action {
-    public Action.Effect message(String one) {
+  public static class ActionWithOneParam extends TimedAction {
+    public Effect message(String one) {
       return effects().done();
     }
   }

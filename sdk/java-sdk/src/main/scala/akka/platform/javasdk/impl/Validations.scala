@@ -9,8 +9,7 @@ import java.lang.reflect.Method
 import java.lang.reflect.ParameterizedType
 
 import scala.reflect.ClassTag
-
-import akka.platform.javasdk.action.Action
+import akka.platform.javasdk.timedaction.TimedAction
 import akka.platform.javasdk.annotations.ComponentId
 import akka.platform.javasdk.annotations.Consume.FromKeyValueEntity
 import akka.platform.javasdk.annotations.Produce.ServiceStream
@@ -20,7 +19,6 @@ import akka.platform.javasdk.consumer.Consumer
 import akka.platform.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.platform.javasdk.impl.ComponentDescriptorFactory.eventSourcedEntitySubscription
 import akka.platform.javasdk.impl.ComponentDescriptorFactory.hasAcl
-import akka.platform.javasdk.impl.ComponentDescriptorFactory.hasActionOutput
 import akka.platform.javasdk.impl.ComponentDescriptorFactory.hasConsumerOutput
 import akka.platform.javasdk.impl.ComponentDescriptorFactory.hasEventSourcedEntitySubscription
 import akka.platform.javasdk.impl.ComponentDescriptorFactory.hasHandleDeletes
@@ -108,7 +106,7 @@ object Validations {
 
   def validate(component: Class[_]): Validation =
     componentMustBePublic(component) ++
-    validateAction(component) ++
+    validateTimedAction(component) ++
     validateConsumer(component) ++
     validateView(component) ++
     validateEventSourcedEntity(component) ++
@@ -179,9 +177,8 @@ object Validations {
     }
   }
 
-  private def validateAction(component: Class[_]): Validation = {
-    when[Action](component) {
-      commonSubscriptionValidation(component, hasActionOutput) ++
+  private def validateTimedAction(component: Class[_]): Validation = {
+    when[TimedAction](component) {
       actionValidation(component) ++
       mustHaveNonEmptyComponentId(component)
     }

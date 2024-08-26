@@ -10,8 +10,6 @@ import akka.japi.function
 import akka.util.ByteString
 import akka.platform.javasdk.JsonSupport
 import akka.platform.javasdk.Metadata
-import akka.platform.javasdk.action.Action
-import akka.platform.javasdk.client.ActionClient
 import akka.platform.javasdk.client.ComponentInvokeOnlyMethodRef
 import akka.platform.javasdk.client.ComponentInvokeOnlyMethodRef1
 import akka.platform.javasdk.client.ComponentMethodRef
@@ -33,10 +31,12 @@ import scala.jdk.FutureConverters.FutureOps
 import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
+import akka.platform.javasdk.timedaction.TimedAction
 
 import akka.platform.javasdk.client.ComponentDeferredMethodRef
 import akka.platform.javasdk.client.ComponentDeferredMethodRef1
 import akka.platform.javasdk.client.KeyValueEntityClient
+import akka.platform.javasdk.client.TimedActionClient
 import akka.platform.javasdk.keyvalueentity.KeyValueEntity
 import akka.platform.javasdk.spi.ActionRequest
 import akka.platform.javasdk.spi.ActionType
@@ -260,14 +260,15 @@ private[javasdk] final case class ViewClientImpl(viewClient: RuntimeViewClient, 
  * INTERNAL API
  */
 @InternalApi
-private[javasdk] final case class ActionClientImpl(actionClient: RuntimeActionClient, callMetadata: Option[Metadata])(
-    implicit val executionContext: ExecutionContext)
-    extends ActionClient {
-  override def method[T, R](methodRef: function.Function[T, Action.Effect]): ComponentDeferredMethodRef[R] =
+private[javasdk] final case class TimedActionClientImpl(
+    actionClient: RuntimeActionClient,
+    callMetadata: Option[Metadata])(implicit val executionContext: ExecutionContext)
+    extends TimedActionClient {
+  override def method[T, R](methodRef: function.Function[T, TimedAction.Effect]): ComponentDeferredMethodRef[R] =
     createMethodRefForEitherArity(methodRef)
 
   override def method[T, A1, R](
-      methodRef: function.Function2[T, A1, Action.Effect]): ComponentDeferredMethodRef1[A1, R] =
+      methodRef: function.Function2[T, A1, TimedAction.Effect]): ComponentDeferredMethodRef1[A1, R] =
     createMethodRefForEitherArity(methodRef)
 
   private def createMethodRefForEitherArity[A1, R](lambda: AnyRef): ComponentMethodRefImpl[A1, R] = {

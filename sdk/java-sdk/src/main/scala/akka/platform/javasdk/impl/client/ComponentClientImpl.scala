@@ -9,12 +9,12 @@ import akka.platform.javasdk.Metadata
 import akka.platform.javasdk.client.ComponentClient
 import akka.platform.javasdk.client.EventSourcedEntityClient
 import akka.platform.javasdk.client.WorkflowClient
-import akka.platform.javasdk.client.ActionClient
 import akka.platform.javasdk.client.ViewClient
 import akka.platform.javasdk.spi.{ ComponentClients => RuntimeComponentClients }
 
 import scala.concurrent.ExecutionContext
 import akka.platform.javasdk.client.KeyValueEntityClient
+import akka.platform.javasdk.client.TimedActionClient
 import akka.platform.javasdk.impl.MetadataImpl
 import io.opentelemetry.api.trace.Span
 
@@ -34,7 +34,8 @@ private[javasdk] final case class ComponentClientImpl(
     MetadataImpl.Empty.withTracing(span)
   }
 
-  override def forAction(): ActionClient = ActionClientImpl(runtimeComponentClients.actionClient, callMetadata)
+  override def forTimedAction(): TimedActionClient =
+    TimedActionClientImpl(runtimeComponentClients.actionClient, callMetadata)
 
   override def forKeyValueEntity(valueEntityId: String): KeyValueEntityClient =
     new KeyValueEntityClientImpl(runtimeComponentClients.keyValueEntityClient, callMetadata, valueEntityId)

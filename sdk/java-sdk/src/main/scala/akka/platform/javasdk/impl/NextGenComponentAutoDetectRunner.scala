@@ -24,10 +24,10 @@ import akka.platform.javasdk.BuildInfo
 import akka.platform.javasdk.DependencyProvider
 import akka.platform.javasdk.Kalix
 import akka.platform.javasdk.ServiceSetup
-import akka.platform.javasdk.action.Action
-import akka.platform.javasdk.action.ActionContext
-import akka.platform.javasdk.action.ActionProvider
-import akka.platform.javasdk.action.ReflectiveActionProvider
+import akka.platform.javasdk.timedaction.ReflectiveTimedActionProvider
+import akka.platform.javasdk.timedaction.TimedAction
+import akka.platform.javasdk.timedaction.TimedActionContext
+import akka.platform.javasdk.timedaction.TimedActionProvider
 import akka.platform.javasdk.annotations.ComponentId
 import akka.platform.javasdk.annotations.PlatformServiceSetup
 import akka.platform.javasdk.annotations.http.Endpoint
@@ -131,7 +131,7 @@ private object ComponentLocator {
     val kalixComponentTypeAndBaseClasses: Map[String, Class[_]] =
       Map(
         "endpoint" -> classOf[AnyRef],
-        "action" -> classOf[Action],
+        "timed-action" -> classOf[TimedAction],
         "consumer" -> classOf[Consumer],
         "event-sourced-entity" -> classOf[EventSourcedEntity[_, _]],
         "workflow" -> classOf[Workflow[_]],
@@ -229,9 +229,9 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
   componentClasses
     .filter(hasComponentId)
     .foreach { clz =>
-      if (classOf[Action].isAssignableFrom(clz)) {
-        logger.info(s"Registering Action provider for [${clz.getName}]")
-        val action = actionProvider(clz.asInstanceOf[Class[Action]])
+      if (classOf[TimedAction].isAssignableFrom(clz)) {
+        logger.info(s"Registering TimedAction provider for [${clz.getName}]")
+        val action = timedActionProvider(clz.asInstanceOf[Class[TimedAction]])
         kalix.register(action)
       }
 
@@ -402,13 +402,13 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
     }
   }
 
-  private def actionProvider[A <: Action](clz: Class[A]): ActionProvider[A] =
-    ReflectiveActionProvider.of(
+  private def timedActionProvider[A <: TimedAction](clz: Class[A]): TimedActionProvider[A] =
+    ReflectiveTimedActionProvider.of(
       clz,
       messageCodec,
       context =>
         wiredInstance(clz) {
-          case p if p == classOf[ActionContext]      => context
+          case p if p == classOf[TimedActionContext] => context
           case p if p == classOf[ComponentClient]    => componentClient()
           case h if h == classOf[HttpClientProvider] => httpClientProvider()
           case t if t == classOf[TimerScheduler]     => timerScheduler()

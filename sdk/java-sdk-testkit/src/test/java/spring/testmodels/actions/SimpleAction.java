@@ -4,9 +4,9 @@
 
 package spring.testmodels.actions;
 
-import akka.platform.javasdk.action.Action;
+import akka.platform.javasdk.timedaction.TimedAction;
 
-public class SimpleAction extends Action {
+public class SimpleAction extends TimedAction {
 
   public Effect echo(String msg) {
     return effects().done();

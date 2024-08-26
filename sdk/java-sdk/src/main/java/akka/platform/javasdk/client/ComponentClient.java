@@ -5,6 +5,7 @@
 package akka.platform.javasdk.client;
 
 import akka.annotation.DoNotInherit;
+import akka.platform.javasdk.timedaction.TimedAction;
 
 /**
  * Utility to send requests to other Kalix components by composing a DeferredCall. To compose a
@@ -33,8 +34,8 @@ import akka.annotation.DoNotInherit;
  */
 @DoNotInherit
 public interface ComponentClient {
-  /** Select Action as a call target component. */
-  ActionClient forAction();
+  /** Select {@link TimedAction} as a call target component. */
+  TimedActionClient forTimedAction();
 
   /**
    * Select KeyValueEntity as a call target component.

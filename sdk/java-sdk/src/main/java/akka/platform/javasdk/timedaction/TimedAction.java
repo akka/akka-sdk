@@ -2,15 +2,11 @@
  * Copyright (C) 2021-2024 Lightbend Inc. <https://www.lightbend.com>
  */
 
-package akka.platform.javasdk.action;
+package akka.platform.javasdk.timedaction;
 
 import akka.Done;
-import akka.http.javadsl.model.StatusCode;
-import akka.platform.javasdk.consumer.Consumer;
-import io.grpc.Status;
-import akka.platform.javasdk.Metadata;
-import akka.platform.javasdk.impl.action.MessageContextImpl;
-import akka.platform.javasdk.impl.action.ActionEffectImpl;
+import akka.platform.javasdk.impl.action.CommandContextImpl;
+import akka.platform.javasdk.impl.timedaction.TimedActionEffectImpl;
 import akka.platform.javasdk.timer.TimerScheduler;
 
 import java.util.Optional;
@@ -21,41 +17,41 @@ import java.util.concurrent.CompletionStage;
  *
  * An TimedAction method should return an {@link Effect} that describes the result of the action invocation.
  */
-public abstract class Action {
+public abstract class TimedAction {
 
-  private volatile Optional<MessageContext> messageContext = Optional.empty();
+  private volatile Optional<CommandContext> commandContext = Optional.empty();
 
   /**
    * Additional context and metadata for a message handler.
    *
    * <p>It will throw an exception if accessed from constructor.
    */
-  protected final MessageContext messageContext() {
-    return messageContext("MessageContext is only available when handling a message.");
+  protected final CommandContext commandContext() {
+    return commandContext("CommandContext is only available when handling a command.");
   }
 
-  private MessageContext messageContext(String errorMessage) {
-    return messageContext.orElseThrow(() -> new IllegalStateException(errorMessage));
+  private CommandContext commandContext(String errorMessage) {
+    return commandContext.orElseThrow(() -> new IllegalStateException(errorMessage));
   }
 
   /**
    * INTERNAL API
    */
-  public void _internalSetMessageContext(Optional<MessageContext> context) {
-    messageContext = context;
+  public void _internalSetCommandContext(Optional<CommandContext> context) {
+    commandContext = context;
   }
 
   public final Effect.Builder effects() {
-    return ActionEffectImpl.builder();
+    return TimedActionEffectImpl.builder();
   }
 
   /**
    * Returns a {@link TimerScheduler} that can be used to schedule further in time.
    */
   public final TimerScheduler timers() {
-    MessageContextImpl impl =
-      (MessageContextImpl)
-        messageContext("Timers can only be scheduled or cancelled when handling a message.");
+    CommandContextImpl impl =
+      (CommandContextImpl)
+        commandContext("Timers can only be scheduled or cancelled when handling a command.");
     return impl.timers();
   }
 
