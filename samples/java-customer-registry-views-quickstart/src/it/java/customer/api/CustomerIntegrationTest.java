@@ -1,17 +1,19 @@
 package customer.api;
 
 
+import akka.http.javadsl.model.ContentTypes;
 import customer.domain.Address;
 import customer.domain.Customer;
-import customer.domain.CustomerEntity;
-import customer.view.CustomerByEmailView;
-import customer.view.CustomersByNameView;
+import customer.application.CustomerEntity;
+import customer.application.CustomerByEmailView;
+import customer.application.CustomersByNameView;
 import akka.platform.spring.testkit.KalixIntegrationTestKitSupport;
 import org.awaitility.Awaitility;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -20,94 +22,62 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 
 public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
 
-  private Duration timeout = Duration.of(5, SECONDS);
-
   @Test
   public void create() {
-    String id = UUID.randomUUID().toString();
-    Customer customer = new Customer(id, "foo@example.com", "Johanna", null);
+    var id = newUniqueId();
+    var customer = new Customer(id, "foo@example.com", "Johanna", null);
 
+    var response = await(httpClient.POST("/customer")
+        .withRequestBody(customer)
+        .responseBodyAs(CustomerEntity.Ok.class)
+        .invokeAsync());
 
-    var res =
-      await(
-        componentClient
-          .forKeyValueEntity(id)
-          .method(CustomerEntity::create)
-          .invokeAsync(customer)
-      );
-    Assertions.assertEquals(CustomerEntity.Ok.instance, res);
-    Assertions.assertEquals("Johanna", getCustomerById(id).name());
+    Assertions.assertEquals(CustomerEntity.Ok.instance, response.body());
+    Assertions.assertEquals("Johanna", getCustomerFromEntity(id).name());
   }
 
   @Test
-  public void changeName()  {
-    String id = UUID.randomUUID().toString();
-    Customer customer = new Customer(id, "foo@example.com", "Johanna", null);
+  public void changeName() {
+    var id = newUniqueId();
+    createCustomerEntity(new Customer(id, "foo@example.com", "Johanna", null));
 
-    var resCreation =
-      await(
-        componentClient
-          .forKeyValueEntity(id)
-          .method(CustomerEntity::create)
-          .invokeAsync(customer)
-      );
-    Assertions.assertEquals(CustomerEntity.Ok.instance, resCreation);
+    var response =
+        await(
+            httpClient.PUT("/customer/" + id + "/name")
+                // FIXME string request body https://github.com/lightbend/kalix-runtime/issues/2635
+                .withRequestBody(ContentTypes.APPLICATION_JSON, "\"Katarina\"".getBytes(StandardCharsets.UTF_8))
+                .responseBodyAs(CustomerEntity.Ok.class)
+                .invokeAsync()
+        );
 
-    var resUpdate =
-      await(
-        componentClient
-          .forKeyValueEntity(id)
-          .method(CustomerEntity::changeName)
-          .invokeAsync("Katarina")
-      );
-
-    Assertions.assertEquals(CustomerEntity.Ok.instance, resUpdate);
-    Assertions.assertEquals("Katarina", getCustomerById(id).name());
+    Assertions.assertEquals(CustomerEntity.Ok.instance, response.body());
+    Assertions.assertEquals("Katarina", getCustomerFromEntity(id).name());
   }
 
   @Test
-  public void changeAddress()  {
-    String id = UUID.randomUUID().toString();
-    Customer customer = new Customer(id, "foo@example.com", "Johanna", null);
+  public void changeAddress() {
+    var id = newUniqueId();
+    createCustomerEntity(new Customer(id, "foo@example.com", "Johanna", null));
 
-    var resCreation =
-      await(
-        componentClient
-          .forKeyValueEntity(id)
-          .method(CustomerEntity::create)
-          .invokeAsync(customer)
-      );
-
-    Assertions.assertEquals(CustomerEntity.Ok.instance, resCreation);
     Address address = new Address("Elm st. 5", "New Orleans");
 
-    var res =
-      await(
-        componentClient
-          .forKeyValueEntity(id)
-          .method(CustomerEntity::changeAddress)
-          .invokeAsync(address)
-      );
+    var response =
+        await(
+            httpClient.PUT("/customer/" + id + "/address")
+                .withRequestBody(address)
+                .responseBodyAs(CustomerEntity.Ok.class)
+                .invokeAsync()
+        );
 
-    Assertions.assertEquals(CustomerEntity.Ok.instance, res);
-    Assertions.assertEquals("Elm st. 5", getCustomerById(id).address().street());
+    Assertions.assertEquals(CustomerEntity.Ok.instance, response.body());
+    Assertions.assertEquals("Elm st. 5", getCustomerFromEntity(id).address().street());
   }
 
 
   @Test
   public void findByName() throws Exception {
-    String id = UUID.randomUUID().toString();
-    Customer customer = new Customer(id, "foo@example.com", "Foo", null);
-
-    var resCreation =
-      await(
-        componentClient
-          .forKeyValueEntity(id)
-          .method(CustomerEntity::create)
-          .invokeAsync(customer)
-      );
-    Assertions.assertEquals(CustomerEntity.Ok.instance, resCreation);
-
+    var id = newUniqueId();
+    createCustomerEntity(new Customer(id, "foo@example.com", "Foo", null));
 
     // the view is eventually updated
     Awaitility.await()
@@ -125,17 +95,8 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
 
   @Test
   public void findByEmail() throws Exception {
-    String id = UUID.randomUUID().toString();
-    Customer customer = new Customer(id, "bar@example.com", "Bar", null);
-
-    var resCreation =
-      await(
-        componentClient
-          .forKeyValueEntity(id)
-          .method(CustomerEntity::create)
-          .invokeAsync(customer)
-      );
-    Assertions.assertEquals(CustomerEntity.Ok.instance, resCreation);
+    String id = newUniqueId();
+    createCustomerEntity(new Customer(id, "bar@example.com", "Bar", null));
 
     // the view is eventually updated
     Awaitility.await()
@@ -151,13 +112,29 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
         );
   }
 
-  private Customer getCustomerById(String customerId) {
+  // access the entity directly
+  private void createCustomerEntity(Customer customer) {
+    var creationResponse =
+        await(
+            componentClient
+                .forKeyValueEntity(customer.customerId())
+                .method(CustomerEntity::create)
+                .invokeAsync(customer)
+        );
+    Assertions.assertEquals(CustomerEntity.Ok.instance, creationResponse);
+  }
+
+  private Customer getCustomerFromEntity(String customerId) {
     return await(
       componentClient
         .forKeyValueEntity(customerId)
         .method(CustomerEntity::getCustomer)
         .invokeAsync()
     );
+  }
+
+  private static String newUniqueId() {
+    return UUID.randomUUID().toString();
   }
 
 }

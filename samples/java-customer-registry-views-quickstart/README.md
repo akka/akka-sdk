@@ -83,6 +83,32 @@ curl localhost:9000/customer/one/address \
   --data '{"street":"Newstreet 25","city":"Newcity"}'  
 ```
 
+Since the sample `customer.Setup` class opens up ACLs for entities it is also possible to interact directly with the
+entities on pre-defined paths based on the component id, entity id and the method name. Zero parameter methods are exposed
+as HTTP GET:
+
+```shell
+curl localhost:9000/akka/v1.0/entity/customer/one/getCustomer
+```
+
+Methods with a parameter are instead exposed as HTTP POST:
+
+```shell
+curl localhost:9000/akka/v1.0/entity/customer/two/create \
+  --header "Content-Type: application/json" \
+  -XPOST \
+  --data '{"customerId":"two","email":"test2@example.com","name":"Test 2 Testsson","address":{"street":"Teststreet 27","city":"Testcity"}}'
+```
+
+The views:
+
+```shell
+curl localhost:9000/akka/v1.0/view/view_customers_by_email/getCustomer \
+  --header "Content-Type: application/json" \
+  -XPOST \
+  --data '{"email":"test2@example.com"}'
+```
+
 ## Deploying
 
 To deploy your service, install the `kalix` CLI as documented in

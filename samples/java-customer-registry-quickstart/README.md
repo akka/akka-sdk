@@ -37,7 +37,7 @@ With your Kalix service running, any defined endpoints should be available at `h
 * Create a customer with:
 
 ```shell
-curl localhost:9000/customer/one/create \
+curl localhost:9000/customer \
   --header "Content-Type: application/json" \
   -XPOST \
   --data '{"customerId":"one","email":"test@example.com","name":"Test Testsson","address":{"street":"Teststreet 25","city":"Testcity"}}'
@@ -49,31 +49,51 @@ curl localhost:9000/customer/one/create \
 curl localhost:9000/customer/one
 ```
 
-* Query by email:
-
-```shell
-curl localhost:9000/customer/by_email/test%40example.com
-```
-
-* Query by name:
-
-```shell
-curl localhost:9000/customer/by_name/Test%20Testsson
-```
-
 * Change name:
 
 ```shell
-curl localhost:9000/customer/one/changeName/Jan%20Banan -XPOST
+curl localhost:9000/customer/one/name \
+  --header "Content-Type: application/json" \
+  -XPUT \
+  --data '"Jan Banan"'
 ```
 
 * Change address:
 
 ```shell
-curl localhost:9000/customer/one/changeAddress \
+curl localhost:9000/customer/one/address \
+  --header "Content-Type: application/json" \
+  -XPUT \
+  --data '{"street":"Newstreet 25","city":"Newcity"}'
+```
+
+* Request only the address to see changes:
+
+```shell
+curl localhost:9000/customer/one/address
+```
+
+* Request the full customer again to see changes:
+
+```shell
+curl localhost:9000/customer/one
+```
+
+Since the sample `customer.Setup` class opens up ACLs for entities it is also possible to interact directly with the
+entities on pre-defined paths based on the component id, entity id and the method name. Zero parameter methods are exposed
+as HTTP GET:
+
+```shell
+curl localhost:9000/akka/v1.0/entity/customer/one/getCustomer
+```
+
+Methods with a parameter are instead exposed as HTTP POST:
+
+```shell
+curl localhost:9000/akka/v1.0/entity/customer/two/create \
   --header "Content-Type: application/json" \
   -XPOST \
-  --data '{"street":"Newstreet 25","city":"Newcity"}'
+  --data '{"customerId":"two","email":"test2@example.com","name":"Test 2 Testsson","address":{"street":"Teststreet 27","city":"Testcity"}}'
 ```
 
 ## Deploying

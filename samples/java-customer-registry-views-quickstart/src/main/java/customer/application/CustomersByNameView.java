@@ -1,8 +1,7 @@
-package customer.view;
+package customer.application;
 
 // tag::class[]
 import akka.platform.javasdk.view.TableUpdater;
-import customer.domain.CustomerEntity;
 import customer.domain.Customer;
 import akka.platform.javasdk.annotations.Query;
 import akka.platform.javasdk.annotations.Consume;

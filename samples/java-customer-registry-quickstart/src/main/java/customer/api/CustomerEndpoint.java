@@ -6,11 +6,9 @@ import akka.platform.javasdk.annotations.http.Post;
 import akka.platform.javasdk.annotations.http.Put;
 import akka.platform.javasdk.client.ComponentClient;
 import akka.platform.javasdk.http.HttpException;
+import customer.application.CustomerEntity;
 import customer.domain.Address;
 import customer.domain.Customer;
-import customer.application.CustomerEntity;
-import customer.application.CustomerByEmailView;
-import customer.application.CustomersByNameView;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,12 +56,14 @@ public class CustomerEndpoint {
                 .invokeAsync(newName);
     }
 
+
     @Get("/{id}/address")
     public CompletionStage<Address> getAddress(String id) {
         return componentClient.forKeyValueEntity(id)
             .method(CustomerEntity::getCustomer)
             .invokeAsync().thenApply(Customer::address);
     }
+
 
     @Put("/{id}/address")
     public CompletionStage<CustomerEntity.Ok> changeAddress(String id, Address newAddress) {
@@ -72,20 +72,5 @@ public class CustomerEndpoint {
                 .method(CustomerEntity::changeAddress)
                 .invokeAsync(newAddress);
     }
-
-    @Get("/by-email/{email}")
-    public CompletionStage<Customer> getCustomerByEmail(String email) {
-        return componentClient.forView()
-                .method(CustomerByEmailView::getCustomer)
-                .invokeAsync(new CustomerByEmailView.QueryParameters(email));
-    }
-
-    @Get("/by-name/{name}")
-    public CompletionStage<CustomersByNameView.Customers> getCustomersByName(String name) {
-        return componentClient.forView()
-                .method(CustomersByNameView::getCustomers)
-                .invokeAsync(new CustomersByNameView.QueryParameters(name));
-    }
-
 
 }

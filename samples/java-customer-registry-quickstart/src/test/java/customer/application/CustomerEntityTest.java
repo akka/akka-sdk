@@ -1,7 +1,8 @@
-package customer.api;
+package customer.application;
 
 import akka.platform.javasdk.testkit.KeyValueEntityTestKit;
 import akka.platform.javasdk.testkit.KeyValueEntityResult;
+import customer.application.CustomerEntity;
 import org.junit.jupiter.api.Test;
 
 import customer.domain.Address;
@@ -12,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class CustomerEntityTest {
 
   private Address address = new Address("Acme Street", "Acme City");
-  private Customer customer = new Customer("info@acme.com", "Acme Inc.", address);
+  private Customer customer = new Customer("one", "info@acme.com", "Acme Inc.", address);
 
   @Test
   public void testCustomerNameChange() {

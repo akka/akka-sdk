@@ -1,10 +1,10 @@
-package customer.api;
+package customer.application;
 
 import customer.domain.Address;
 import customer.domain.Customer;
 import akka.platform.javasdk.testkit.KeyValueEntityResult;
 import akka.platform.javasdk.testkit.KeyValueEntityTestKit;
-import customer.domain.CustomerEntity;
+import customer.application.CustomerEntity;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

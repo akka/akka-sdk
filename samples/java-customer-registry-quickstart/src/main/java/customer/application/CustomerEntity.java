@@ -1,4 +1,4 @@
-package customer.api;
+package customer.application;
 
 // tag::customer[]
 import akka.platform.javasdk.keyvalueentity.KeyValueEntity;
@@ -31,15 +31,25 @@ public class CustomerEntity extends KeyValueEntity<Customer> { // <4>
   }
 
   public Effect<Ok> changeName(String newName) {
-    Customer updatedCustomer = currentState().withName(newName);
-    return effects()
-            .updateState(updatedCustomer)
-            .thenReply(Ok.instance);
+    if (currentState() == null)
+      return effects().error(
+          "No customer found for id '" + commandContext().entityId() + "'");
+    else {
+      Customer updatedCustomer = currentState().withName(newName);
+      return effects()
+          .updateState(updatedCustomer)
+          .thenReply(Ok.instance);
+    }
   }
 
   public Effect<Ok> changeAddress(Address newAddress) {
-    Customer updatedCustomer = currentState().withAddress(newAddress);
-    return effects().updateState(updatedCustomer).thenReply(Ok.instance);
+    if (currentState() == null)
+      return effects().error(
+          "No customer found for id '" + commandContext().entityId() + "'");
+    else {
+      Customer updatedCustomer = currentState().withAddress(newAddress);
+      return effects().updateState(updatedCustomer).thenReply(Ok.instance);
+    }
   }
 
 }
