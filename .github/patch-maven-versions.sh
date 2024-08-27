@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-echo "updating sdk verison to '$SDK_VERSION'"
+echo "updating sdk version to '$SDK_VERSION'"
 # update poms with the version extracted from sbt dynver
 mvn --quiet --batch-mode --activate-profiles patch-version versions:set -DnewVersion=${SDK_VERSION}
 

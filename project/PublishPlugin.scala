@@ -1,11 +1,8 @@
-import sbt._
-import sbt.Keys._
 import com.geirsson.CiReleasePlugin
 import com.jsuereth.sbtpgp.PgpKeys.publishSigned
-import com.jsuereth.sbtpgp.PgpKeys.publishSignedConfiguration
-import sbtdynver.DynVerPlugin
+import sbt._
+import sbt.Keys._
 import sbtdynver.DynVerPlugin.autoImport.dynverSonatypeSnapshots
-import xerial.sbt.Sonatype
 import xerial.sbt.Sonatype.autoImport.sonatypeProfileName
 
 import java.util.concurrent.atomic.AtomicBoolean
@@ -35,7 +32,7 @@ object Publish extends AutoPlugin {
   override def projectSettings: Seq[Def.Setting[_]] =
     Seq(
       publish / skip := false, // re-enable publishing
-      dynverSonatypeSnapshots := false, // don't append -SNAPSHOT
+      dynverSonatypeSnapshots := true, // append -SNAPSHOT
       sonatypeProfileName := "com.typesafe",
       beforePublishTask := beforePublish(isSnapshot.value),
       publishSigned := publishSigned.dependsOn(beforePublishTask).value,
