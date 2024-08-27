@@ -11,9 +11,7 @@ import akka.platform.javasdk.view.View;
 import java.util.Collection;
 
 @ComponentId("view_customers_by_name")
-@Consume.FromKeyValueEntity(CustomerEntity.class) // <4>
-public class CustomersByNameView
-  extends View {
+public class CustomersByNameView extends View {
 
   @Consume.FromKeyValueEntity(CustomerEntity.class) // <4>
   public static class CustomerByNameUpdater extends TableUpdater<CustomerSummary> {

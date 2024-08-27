@@ -36,7 +36,7 @@ public class ShoppingCartEntity extends KeyValueEntity<ShoppingCart> {
   // tag::create[]
   // tag::summary[]
 
-  public KeyValueEntity.Effect<ShoppingCartDTO> create() {
+  public Effect<ShoppingCartDTO> create() {
     //...
     // end::summary[]
     if (currentState().creationTimestamp() > 0L) {
@@ -53,7 +53,7 @@ public class ShoppingCartEntity extends KeyValueEntity<ShoppingCart> {
   // tag::add-item[]
   // tag::summary[]
 
-  public KeyValueEntity.Effect<ShoppingCartDTO> addItem(LineItemDTO addLineItem) {
+  public Effect<ShoppingCartDTO> addItem(LineItemDTO addLineItem) {
     //...
     // end::summary[]
     if (addLineItem.quantity() <= 0) {
@@ -68,7 +68,7 @@ public class ShoppingCartEntity extends KeyValueEntity<ShoppingCart> {
   }
 
   // end::add-item[]
-  public KeyValueEntity.Effect<ShoppingCartDTO> removeItem(String productId) {
+  public Effect<ShoppingCartDTO> removeItem(String productId) {
     var lineItemOpt = currentState().findItemByProductId(productId);
 
     if (lineItemOpt.isEmpty()) {
@@ -85,14 +85,14 @@ public class ShoppingCartEntity extends KeyValueEntity<ShoppingCart> {
   // tag::get-cart[]
   // tag::summary[]
 
-  public KeyValueEntity.Effect<ShoppingCartDTO> getCart() {
+  public Effect<ShoppingCartDTO> getCart() {
     //...
     // end::summary[]
     return effects().reply(ShoppingCartDTO.of(currentState()));
   }
   // end::get-cart[]
 
-  public KeyValueEntity.Effect<String> removeCart() {
+  public Effect<String> removeCart() {
     var userRole = commandContext().metadata().get("Role").get();
     if (userRole.equals("Admin")) {
       return effects().deleteEntity().thenReply("OK");

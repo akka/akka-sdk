@@ -13,11 +13,11 @@ public class CustomerEntity extends KeyValueEntity<Customer> {
     public static final Ok instance = new Ok();
   }
 
-  public KeyValueEntity.Effect<Ok> create(Customer customer) {
+  public Effect<Ok> create(Customer customer) {
     return effects().updateState(customer).thenReply(Ok.instance);
   }
 
-  public KeyValueEntity.Effect<Customer> getCustomer() {
+  public Effect<Customer> getCustomer() {
     return effects().reply(currentState());
   }
 

@@ -1,5 +1,6 @@
 package com.example.actions;
 
+import akka.Done;
 import akka.platform.javasdk.annotations.ComponentId;
 import akka.platform.javasdk.annotations.Consume;
 import akka.platform.javasdk.client.ComponentClient;
@@ -31,8 +32,9 @@ public class CounterCommandFromTopicConsumer extends Consumer {
     var increaseReply =
       componentClient.forEventSourcedEntity(increase.counterId)
         .method(Counter::increase)
-        .invokeAsync(increase.value);
-    return effects().asyncProduce(increaseReply);
+        .invokeAsync(increase.value)
+        .thenApply(__ -> Done.done());
+    return effects().acyncDone(increaseReply);
   }
 
   public Effect onValueMultiplied(MultiplyCounter multiply) {
@@ -40,7 +42,8 @@ public class CounterCommandFromTopicConsumer extends Consumer {
     var increaseReply =
       componentClient.forEventSourcedEntity(multiply.counterId)
         .method(Counter::multiply)
-        .invokeAsync(multiply.value);
-    return effects().asyncProduce(increaseReply);
+        .invokeAsync(multiply.value)
+        .thenApply(__ -> Done.done());
+    return effects().acyncDone(increaseReply);
   }
 }

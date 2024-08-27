@@ -11,7 +11,7 @@ import akka.platform.javasdk.annotations.JWT;
      bearerTokenIssuer = "my-issuer") // <1>
 public class HelloJwtAction extends TimedAction {
 
-    public TimedAction.Effect message(String msg) {
+    public Effect message(String msg) {
         //..
     // end::bearer-token[]    
         return effects().done();
@@ -20,7 +20,7 @@ public class HelloJwtAction extends TimedAction {
 
     @JWT(validate = JWT.JwtMethodMode.BEARER_TOKEN,
          bearerTokenIssuer = "my-other-issuer")     
-    public TimedAction.Effect messageWithIssuer(String msg) { // <3>
+    public Effect messageWithIssuer(String msg) { // <3>
         //..
     // end::bearer-token[]    
         return effects().done();
