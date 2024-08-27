@@ -125,10 +125,15 @@ final class WorkflowService(
   override def componentOptions: Option[ComponentOptions] = workflowOptions
 }
 
-final class WorkflowImpl(system: ActorSystem, val services: Map[String, WorkflowService], timerClient: TimerClient)
+final class WorkflowImpl(
+    system: ActorSystem,
+    val services: Map[String, WorkflowService],
+    timerClient: TimerClient,
+    sdkExcutionContext: ExecutionContext,
+    sdkDispatcherName: String)
     extends kalix.protocol.workflow_entity.WorkflowEntities {
 
-  private implicit val ec: ExecutionContext = system.dispatcher
+  private implicit val ec: ExecutionContext = sdkExcutionContext
   private final val log = LoggerFactory.getLogger(this.getClass)
 
   override def handle(in: Source[WorkflowStreamIn, NotUsed]): Source[WorkflowStreamOut, NotUsed] =
@@ -152,7 +157,7 @@ final class WorkflowImpl(system: ActorSystem, val services: Map[String, Workflow
           WorkflowStreamOut(OutFailure(component.Failure(description = s"Unexpected error [$correlationId]")))
         }
       }
-      .async
+      .async(sdkDispatcherName)
 
   private def toRecoverStrategy(messageCodec: MessageCodec)(
       recoverStrategy: Workflow.RecoverStrategy[_]): RecoverStrategy = {
@@ -201,7 +206,7 @@ final class WorkflowImpl(system: ActorSystem, val services: Map[String, Workflow
     val service =
       services.getOrElse(init.serviceName, throw ProtocolException(init, s"Service not found: ${init.serviceName}"))
     val router: WorkflowRouter[_, _] =
-      service.factory.create(new WorkflowContextImpl(init.entityId, system))
+      service.factory.create(new WorkflowContextImpl(init.entityId))
     val workflowId = init.entityId
 
     val workflowConfig =
@@ -295,7 +300,7 @@ final class WorkflowImpl(system: ActorSystem, val services: Map[String, Workflow
 
           val context = new CommandContextImpl(workflowId, command.name, command.id, metadata, system)
           val timerScheduler =
-            new TimerSchedulerImpl(service.strictMessageCodec, system, timerClient, context.componentCallMetadata)
+            new TimerSchedulerImpl(service.strictMessageCodec, timerClient, context.componentCallMetadata)
 
           val cmd =
             service.messageCodec.decodeMessage(
@@ -322,7 +327,7 @@ final class WorkflowImpl(system: ActorSystem, val services: Map[String, Workflow
           val context =
             new CommandContextImpl(workflowId, executeStep.stepName, executeStep.commandId, Metadata.EMPTY, system)
           val timerScheduler =
-            new TimerSchedulerImpl(service.strictMessageCodec, system, timerClient, context.componentCallMetadata)
+            new TimerSchedulerImpl(service.strictMessageCodec, timerClient, context.componentCallMetadata)
           val stepResponse =
             try {
               executeStep.userState.foreach { state =>
@@ -336,7 +341,7 @@ final class WorkflowImpl(system: ActorSystem, val services: Map[String, Workflow
                 service.strictMessageCodec,
                 timerScheduler,
                 context,
-                system.dispatcher)
+                sdkExcutionContext)
             } catch {
               case e: WorkflowException => throw e
               case NonFatal(ex) =>
@@ -381,10 +386,10 @@ private[akka] final class CommandContextImpl(
     override val commandId: Long,
     override val metadata: Metadata,
     system: ActorSystem)
-    extends AbstractContext(system)
+    extends AbstractContext
     with CommandContext
     with ActivatableContext
 
-private[akka] final class WorkflowContextImpl(override val workflowId: String, system: ActorSystem)
-    extends AbstractContext(system)
+private[akka] final class WorkflowContextImpl(override val workflowId: String)
+    extends AbstractContext
     with WorkflowContext

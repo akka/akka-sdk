@@ -595,7 +595,7 @@ public class KalixTestKit {
 
       // once runtime is started
       componentClient = new ComponentClientImpl(componentClients, Option.empty(), runtimeActorSystem.dispatcher());
-      timerScheduler = new TimerSchedulerImpl(kalix.getMessageCodec(), runtimeActorSystem, componentClients.timerClient(), Metadata.EMPTY);
+      timerScheduler = new TimerSchedulerImpl(kalix.getMessageCodec(), componentClients.timerClient(), Metadata.EMPTY);
       this.messageBuilder = new EventingTestKit.MessageBuilder(kalix.getMessageCodec());
 
     } catch (Exception ex) {

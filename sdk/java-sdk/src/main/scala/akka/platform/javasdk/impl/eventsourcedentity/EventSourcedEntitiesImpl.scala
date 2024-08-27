@@ -91,7 +91,8 @@ final class EventSourcedEntityService(
 final class EventSourcedEntitiesImpl(
     system: ActorSystem,
     _services: Map[String, EventSourcedEntityService],
-    configuration: AkkaPlatformSdkSettings)
+    configuration: AkkaPlatformSdkSettings,
+    sdkDispatcherName: String)
     extends EventSourcedEntities {
   import akka.platform.javasdk.impl.EntityExceptions._
 
@@ -271,7 +272,7 @@ final class EventSourcedEntitiesImpl(
           EventSourcedStreamOut(OutFailure(Failure(description = s"Unexpected failure [$correlationId]")))
         }
       }
-      .async
+      .async(sdkDispatcherName)
   }
 
   private class CommandContextImpl(
@@ -280,12 +281,12 @@ final class EventSourcedEntitiesImpl(
       override val commandName: String,
       override val commandId: Long,
       override val metadata: Metadata)
-      extends AbstractContext(system)
+      extends AbstractContext
       with CommandContext
       with ActivatableContext
 
   private class EventSourcedEntityContextImpl(override final val entityId: String)
-      extends AbstractContext(system)
+      extends AbstractContext
       with EventSourcedEntityContext
 
   private final class EventContextImpl(entityId: String, override val sequenceNumber: Long)

@@ -80,13 +80,12 @@ case class MessageEnvelopeImpl[T](payload: T, metadata: Metadata) extends Messag
 final class MessageContextImpl(
     override val metadata: Metadata,
     val messageCodec: MessageCodec,
-    val system: ActorSystem,
     timerClient: TimerClient,
     instrumentation: Instrumentation)
-    extends AbstractContext(system)
+    extends AbstractContext
     with MessageContext {
 
-  val timers: TimerScheduler = new TimerSchedulerImpl(messageCodec, system, timerClient, componentCallMetadata)
+  val timers: TimerScheduler = new TimerSchedulerImpl(messageCodec, timerClient, componentCallMetadata)
 
   override def eventSubject(): Optional[String] =
     if (metadata.isCloudEvent)
@@ -112,4 +111,4 @@ final class MessageContextImpl(
 }
 
 @InternalApi
-final class ConsumerContextImpl(val system: ActorSystem) extends AbstractContext(system) with ConsumerContext {}
+final class ConsumerContextImpl(val system: ActorSystem) extends AbstractContext with ConsumerContext {}

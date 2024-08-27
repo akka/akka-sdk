@@ -73,7 +73,8 @@ class CustomerHandlerSpec
             maxRetries: Int,
             deferredRequest: DeferredRequest): Future[Done] = ???
         override def removeTimer(name: String): Future[Done] = ???
-      })
+      },
+      system.executionContext)
   }
 
   "The action service" should {

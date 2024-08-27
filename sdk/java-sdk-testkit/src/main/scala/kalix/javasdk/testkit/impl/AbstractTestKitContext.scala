@@ -4,7 +4,6 @@
 
 package akka.platform.javasdk.testkit.impl
 
-import akka.stream.Materializer
 import akka.platform.javasdk.Context
 import akka.platform.javasdk.impl.InternalContext
 import akka.platform.javasdk.testkit.MockRegistry
@@ -12,9 +11,6 @@ import akka.platform.javasdk.testkit.MockRegistry
 import scala.jdk.OptionConverters.RichOptional
 
 class AbstractTestKitContext(mockRegistry: MockRegistry) extends Context with InternalContext {
-
-  override def materializer(): Materializer = throw new UnsupportedOperationException(
-    "Accessing the materializer from testkit not supported yet")
 
   def getComponentGrpcClient[T](serviceClass: Class[T]): T =
     mockRegistry

@@ -4,7 +4,6 @@
 
 package akka.platform.javasdk.testkit.impl
 
-import akka.stream.Materializer
 import akka.platform.javasdk.eventsourcedentity.EventContext
 
 /**
@@ -13,6 +12,4 @@ import akka.platform.javasdk.eventsourcedentity.EventContext
 final class TestKitEventSourcedEntityEventContext extends EventContext {
   override def entityId = "testkit-entity-id"
   override def sequenceNumber = 0L
-  override def materializer(): Materializer = throw new UnsupportedOperationException(
-    "Accessing the materializer from testkit not supported yet")
 }

@@ -62,7 +62,8 @@ object ViewsImpl {
 }
 
 /** INTERNAL API */
-final class ViewsImpl(system: ActorSystem, _services: Map[String, ViewService]) extends pv.Views {
+final class ViewsImpl(system: ActorSystem, _services: Map[String, ViewService], sdkDispatcherName: String)
+    extends pv.Views {
   import ViewsImpl.log
 
   private final val services = _services.iterator.toMap
@@ -150,10 +151,10 @@ final class ViewsImpl(system: ActorSystem, _services: Map[String, ViewService]) 
             s"Kalix protocol failure: expected ReceiveEvent message, but got ${other.getClass.getName}"
           Source.failed(new RuntimeException(errMsg))
       }
-      .async
+      .async(sdkDispatcherName)
 
   private final class UpdateContextImpl(override val eventName: String, override val metadata: Metadata)
-      extends AbstractContext(system)
+      extends AbstractContext
       with UpdateContext {
 
     override def eventSubject(): Optional[String] =
@@ -163,6 +164,6 @@ final class ViewsImpl(system: ActorSystem, _services: Map[String, ViewService]) 
         Optional.empty()
   }
 
-  private final class ViewContextImpl extends AbstractContext(system) with ViewContext
+  private final class ViewContextImpl extends AbstractContext with ViewContext
 
 }

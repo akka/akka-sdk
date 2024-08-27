@@ -53,6 +53,8 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
 
+import scala.concurrent.ExecutionContext
+
 final class ActionService(
     val factory: TimedActionFactory,
     override val descriptor: Descriptors.ServiceDescriptor,
@@ -134,11 +136,16 @@ private[javasdk] object ActionsImpl {
 
 }
 
-private[akka] final class ActionsImpl(_system: ActorSystem, services: Map[String, Service], timerClient: TimerClient)
+private[akka] final class ActionsImpl(
+    _system: ActorSystem,
+    services: Map[String, Service],
+    timerClient: TimerClient,
+    sdkExecutionContext: ExecutionContext)
     extends Actions {
 
   import ActionsImpl._
-  import _system.dispatcher
+
+  private implicit val executionContext: ExecutionContext = sdkExecutionContext
   implicit val system: ActorSystem = _system
   private val telemetry = Telemetry(system)
   lazy val telemetries: Map[String, Instrumentation] = services.values.map {
@@ -279,7 +286,7 @@ private[akka] final class ActionsImpl(_system: ActorSystem, services: Map[String
       serviceName: String): javasdk.consumer.MessageContext = {
     val metadata = MetadataImpl.of(in.metadata.map(_.entries.toVector).getOrElse(Nil))
     val updatedMetadata = spanContext.map(metadata.withTracing).getOrElse(metadata)
-    new consumer.MessageContextImpl(updatedMetadata, messageCodec, system, timerClient, telemetries(serviceName))
+    new consumer.MessageContextImpl(updatedMetadata, messageCodec, timerClient, telemetries(serviceName))
   }
 
   private def createActionContext(serviceName: String): TimedActionContext = {
@@ -314,10 +321,10 @@ class CommandContextImpl(
     val system: ActorSystem,
     timerClient: TimerClient,
     instrumentation: Instrumentation)
-    extends AbstractContext(system)
+    extends AbstractContext
     with CommandContext {
 
-  val timers: TimerScheduler = new TimerSchedulerImpl(messageCodec, system, timerClient, componentCallMetadata)
+  val timers: TimerScheduler = new TimerSchedulerImpl(messageCodec, timerClient, componentCallMetadata)
 
   override def componentCallMetadata: MetadataImpl = {
     if (metadata.has(Telemetry.TRACE_PARENT_KEY)) {
@@ -336,4 +343,4 @@ class CommandContextImpl(
 
 }
 
-class TimedActionContextImpl(val system: ActorSystem) extends AbstractContext(system) with TimedActionContext {}
+class TimedActionContextImpl(val system: ActorSystem) extends AbstractContext with TimedActionContext {}

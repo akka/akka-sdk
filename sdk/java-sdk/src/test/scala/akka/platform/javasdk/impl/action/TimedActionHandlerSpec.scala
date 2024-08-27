@@ -71,7 +71,8 @@ class TimedActionHandlerSpec
             maxRetries: Int,
             deferredRequest: DeferredRequest): Future[Done] = ???
         override def removeTimer(name: String): Future[Done] = ???
-      })
+      },
+      classicSystem.dispatcher)
   }
 
   "The action service" should {

@@ -4,9 +4,6 @@
 
 package akka.platform.javasdk.impl
 
-import akka.actor.ActorSystem
-import akka.stream.Materializer
-import akka.stream.SystemMaterializer
 import akka.platform.javasdk.Context
 
 /**
@@ -34,9 +31,4 @@ private[akka] trait InternalContext {
 /**
  * INTERNAL API
  */
-abstract class AbstractContext(system: ActorSystem) extends Context with InternalContext {
-
-  override def materializer(): Materializer =
-    SystemMaterializer(system).materializer
-
-}
+abstract class AbstractContext extends Context with InternalContext {}

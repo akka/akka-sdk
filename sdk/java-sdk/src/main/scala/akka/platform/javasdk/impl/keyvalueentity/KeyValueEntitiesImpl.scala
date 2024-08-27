@@ -77,7 +77,8 @@ final class KeyValueEntityService(
 final class KeyValueEntitiesImpl(
     system: ActorSystem,
     val services: Map[String, KeyValueEntityService],
-    configuration: AkkaPlatformSdkSettings)
+    configuration: AkkaPlatformSdkSettings,
+    sdkDispatcherName: String)
     extends ValueEntities {
 
   import EntityExceptions._
@@ -120,7 +121,7 @@ final class KeyValueEntitiesImpl(
           ValueEntityStreamOut(OutFailure(Failure(description = s"Unexpected error [$correlationId]")))
         }
       }
-      .async
+      .async(sdkDispatcherName)
 
   private def runEntity(init: ValueEntityInit): Flow[ValueEntityStreamIn, ValueEntityStreamOut, NotUsed] = {
     val service =
@@ -234,10 +235,10 @@ private[akka] final class CommandContextImpl(
     override val commandId: Long,
     override val metadata: Metadata,
     system: ActorSystem)
-    extends AbstractContext(system)
+    extends AbstractContext
     with CommandContext
     with ActivatableContext
 
 private[akka] final class KeyValueEntityContextImpl(override val entityId: String, system: ActorSystem)
-    extends AbstractContext(system)
+    extends AbstractContext
     with KeyValueEntityContext

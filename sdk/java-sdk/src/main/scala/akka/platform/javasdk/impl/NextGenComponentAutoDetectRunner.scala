@@ -8,7 +8,6 @@ import java.lang.reflect.Constructor
 import java.lang.reflect.ParameterizedType
 import java.util.Optional
 import java.util.concurrent.atomic.AtomicReference
-
 import scala.concurrent.Future
 import scala.concurrent.Promise
 import scala.jdk.CollectionConverters.CollectionHasAsScala
@@ -16,7 +15,6 @@ import scala.jdk.CollectionConverters.MapHasAsScala
 import scala.jdk.OptionConverters.RichOption
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
-
 import akka.Done
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
@@ -69,6 +67,7 @@ import akka.platform.javasdk.spi.ComponentClients
 import akka.platform.javasdk.spi.HttpEndpointConstructionContext
 import akka.platform.javasdk.spi.HttpEndpointDescriptor
 import akka.platform.javasdk.spi.SpiComponents
+import akka.platform.javasdk.spi.StartContext
 import akka.platform.javasdk.timer.TimerScheduler
 import akka.platform.javasdk.view.TableUpdater
 import akka.platform.javasdk.view.View
@@ -78,6 +77,7 @@ import akka.platform.javasdk.workflow.Workflow
 import akka.platform.javasdk.workflow.ReflectiveWorkflowProvider
 import akka.platform.javasdk.workflow.WorkflowContext
 import akka.platform.javasdk.workflow.WorkflowProvider
+import akka.stream.Materializer
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import io.opentelemetry.api.trace.Span
@@ -92,15 +92,22 @@ import kalix.protocol.view.Views
 import kalix.protocol.workflow_entity.WorkflowEntities
 import org.slf4j.LoggerFactory
 
+import scala.concurrent.ExecutionContext
+
 /**
  * INTERNAL API
  */
 @InternalApi
 final class NextGenComponentAutoDetectRunner extends akka.platform.javasdk.spi.Runner {
 
-  override def start(system: ActorSystem[_], runtimeComponentClients: ComponentClients): Future[SpiComponents] = {
+  override def start(startContext: StartContext): Future[SpiComponents] = {
     try {
-      val app = new NextGenKalixJavaApplication(system, runtimeComponentClients)
+      val app = new NextGenKalixJavaApplication(
+        startContext.system,
+        startContext.sdkDispatcherName,
+        startContext.executionContext,
+        startContext.materializer,
+        startContext.componentClients)
       Future.successful(app.spiEndpoints)
     } catch {
       case NonFatal(ex) =>
@@ -185,7 +192,12 @@ private[javasdk] final object NextGenKalixJavaApplication {
     new AtomicReference(null)
 }
 
-private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeComponentClients: ComponentClients) {
+private final class NextGenKalixJavaApplication(
+    system: ActorSystem[_],
+    sdkDispatcherName: String,
+    sdkExecutionContext: ExecutionContext,
+    sdkMaterializer: Materializer,
+    runtimeComponentClients: ComponentClients) {
   private val logger = LoggerFactory.getLogger(getClass)
   private val messageCodec = new JsonMessageCodec
   private val ComponentLocator.LocatedClasses(componentClasses, maybeServiceClass) =
@@ -310,24 +322,35 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
 
     if (actionAndConsumerServices.nonEmpty) {
       actionsEndpoint = Some(
-        new ActionsImpl(classicSystem, actionAndConsumerServices, runtimeComponentClients.timerClient))
+        new ActionsImpl(
+          classicSystem,
+          actionAndConsumerServices,
+          runtimeComponentClients.timerClient,
+          sdkExecutionContext))
     }
 
     services.groupBy(_._2.getClass).foreach {
 
       case (serviceClass, eventSourcedServices: Map[String, EventSourcedEntityService] @unchecked)
           if serviceClass == classOf[EventSourcedEntityService] =>
-        val eventSourcedImpl = new EventSourcedEntitiesImpl(classicSystem, eventSourcedServices, sdkSettings)
+        val eventSourcedImpl =
+          new EventSourcedEntitiesImpl(classicSystem, eventSourcedServices, sdkSettings, sdkDispatcherName)
         eventSourcedEntitiesEndpoint = Some(eventSourcedImpl)
 
       case (serviceClass, entityServices: Map[String, KeyValueEntityService] @unchecked)
           if serviceClass == classOf[KeyValueEntityService] =>
-        valueEntitiesEndpoint = Some(new KeyValueEntitiesImpl(classicSystem, entityServices, sdkSettings))
+        valueEntitiesEndpoint =
+          Some(new KeyValueEntitiesImpl(classicSystem, entityServices, sdkSettings, sdkDispatcherName))
 
       case (serviceClass, workflowServices: Map[String, WorkflowService] @unchecked)
           if serviceClass == classOf[WorkflowService] =>
-        workflowEntitiesEndpoint =
-          Some(new WorkflowImpl(classicSystem, workflowServices, runtimeComponentClients.timerClient))
+        workflowEntitiesEndpoint = Some(
+          new WorkflowImpl(
+            classicSystem,
+            workflowServices,
+            runtimeComponentClients.timerClient,
+            sdkExecutionContext,
+            sdkDispatcherName))
 
       case (serviceClass, _: Map[String, ActionService] @unchecked) if serviceClass == classOf[ActionService] =>
       //ignore
@@ -336,7 +359,7 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
       //ignore
 
       case (serviceClass, viewServices: Map[String, ViewService] @unchecked) if serviceClass == classOf[ViewService] =>
-        viewsEndpoint = Some(new ViewsImpl(classicSystem, viewServices))
+        viewsEndpoint = Some(new ViewsImpl(classicSystem, viewServices, sdkDispatcherName))
 
       case (serviceClass, _) =>
         sys.error(s"Unknown service type: $serviceClass")
@@ -350,6 +373,7 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
           case p if p == classOf[ComponentClient] => componentClient()
           case t if t == classOf[TimerScheduler]  => timerScheduler()
           case c if c == classOf[Config]          => userServiceConfig
+          case m if m == classOf[Materializer]    => sdkMaterializer
         })
       case _ => None
     }
@@ -412,6 +436,7 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
           case p if p == classOf[ComponentClient]    => componentClient()
           case h if h == classOf[HttpClientProvider] => httpClientProvider()
           case t if t == classOf[TimerScheduler]     => timerScheduler()
+          case m if m == classOf[Materializer]       => sdkMaterializer
         })
 
   private def consumerProvider[A <: Consumer](clz: Class[A]): ConsumerProvider[A] =
@@ -424,6 +449,7 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
           case p if p == classOf[ComponentClient]    => componentClient()
           case h if h == classOf[HttpClientProvider] => httpClientProvider()
           case t if t == classOf[TimerScheduler]     => timerScheduler()
+          case m if m == classOf[Materializer]       => sdkMaterializer
         })
 
   private def workflowProvider[S, W <: Workflow[S]](clz: Class[W]): WorkflowProvider[S, W] = {
@@ -437,6 +463,7 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
             case p if p == classOf[WorkflowContext]    => context
             case p if p == classOf[ComponentClient]    => componentClient()
             case h if h == classOf[HttpClientProvider] => httpClientProvider()
+            case m if m == classOf[Materializer]       => sdkMaterializer
           }
 
         val workflowStateType: Class[S] =
@@ -506,6 +533,7 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
         case s if s == classOf[Span]               => context.openTelemetrySpan.getOrElse(Span.current())
         case h if h == classOf[HttpClientProvider] => httpClientProvider(context.openTelemetrySpan)
         case h if h == classOf[TimerScheduler]     => timerScheduler(context.openTelemetrySpan)
+        case m if m == classOf[Materializer]       => sdkMaterializer
       }
   }
 
@@ -569,7 +597,7 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
   }
 
   private def componentClient(openTelemetrySpan: Option[Span] = None): ComponentClient = {
-    ComponentClientImpl(runtimeComponentClients, openTelemetrySpan)(system.executionContext)
+    ComponentClientImpl(runtimeComponentClients, openTelemetrySpan)(sdkExecutionContext)
   }
 
   private def timerScheduler(openTelemetrySpan: Option[Span] = None): TimerScheduler = {
@@ -577,7 +605,7 @@ private final class NextGenKalixJavaApplication(system: ActorSystem[_], runtimeC
       case None       => MetadataImpl.Empty
       case Some(span) => MetadataImpl.Empty.withTracing(span)
     }
-    new TimerSchedulerImpl(messageCodec, system.classicSystem, runtimeComponentClients.timerClient, metadata)
+    new TimerSchedulerImpl(messageCodec, runtimeComponentClients.timerClient, metadata)
   }
 
   private def httpClientProvider(openTelemetrySpan: Option[Span] = None): HttpClientProvider = {

@@ -8,7 +8,6 @@ import java.time.Duration
 import java.util.concurrent.CompletionStage
 import scala.jdk.FutureConverters.FutureOps
 import akka.Done
-import akka.actor.ActorSystem
 import akka.platform.javasdk.DeferredCall
 import akka.platform.javasdk.Metadata
 import akka.platform.javasdk.impl.MessageCodec
@@ -20,7 +19,6 @@ import scala.jdk.DurationConverters.JavaDurationOps
 /** INTERNAL API */
 private[akka] final class TimerSchedulerImpl(
     val messageCodec: MessageCodec,
-    val system: ActorSystem,
     val timerClient: akka.platform.javasdk.spi.TimerClient,
     val metadata: Metadata)
     extends TimerScheduler {

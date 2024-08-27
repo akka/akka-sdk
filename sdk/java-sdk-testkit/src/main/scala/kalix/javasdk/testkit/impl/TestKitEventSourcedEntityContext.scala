@@ -4,7 +4,6 @@
 
 package akka.platform.javasdk.testkit.impl
 
-import akka.stream.Materializer
 import akka.platform.javasdk.eventsourcedentity.EventSourcedEntityContext
 import akka.platform.javasdk.testkit.MockRegistry
 
@@ -20,7 +19,4 @@ final class TestKitEventSourcedEntityContext(
   def this(entityId: String) = {
     this(entityId, MockRegistry.EMPTY)
   }
-
-  override def materializer(): Materializer = throw new UnsupportedOperationException(
-    "Accessing the materializer from testkit not supported yet")
 }

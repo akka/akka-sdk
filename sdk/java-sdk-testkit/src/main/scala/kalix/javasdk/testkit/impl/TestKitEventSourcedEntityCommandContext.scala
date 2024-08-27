@@ -7,7 +7,6 @@ package akka.platform.javasdk.testkit.impl
 import akka.platform.javasdk.eventsourcedentity.CommandContext
 import akka.platform.javasdk.Metadata
 import akka.platform.javasdk.impl.InternalContext
-import akka.stream.Materializer
 
 /** INTERNAL API Used by the generated testkit */
 final class TestKitEventSourcedEntityCommandContext(
@@ -22,9 +21,6 @@ final class TestKitEventSourcedEntityCommandContext(
   def this(metadata: Metadata) = {
     this(metadata = metadata, commandName = "stubCommandName")
   }
-
-  override def materializer(): Materializer = throw new UnsupportedOperationException(
-    "Accessing the materializer from testkit not supported yet")
 
 }
 

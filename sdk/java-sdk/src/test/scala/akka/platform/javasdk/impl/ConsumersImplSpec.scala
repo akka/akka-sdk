@@ -78,7 +78,8 @@ class ConsumersImplSpec
             maxRetries: Int,
             deferredRequest: DeferredRequest): Future[Done] = ???
         override def removeTimer(name: String): Future[Done] = ???
-      })
+      },
+      classicSystem.dispatcher)
   }
 
   "The consumer service" should {
