@@ -6,7 +6,6 @@ package akka.platform.javasdk.impl
 
 import java.lang.reflect.ParameterizedType
 
-import akka.platform.javasdk.HttpResponse
 import akka.platform.javasdk.annotations.ComponentId
 import akka.platform.javasdk.impl.AnySupport.ProtobufEmptyTypeUrl
 import akka.platform.javasdk.impl.reflection.ActionHandlerMethod
@@ -24,7 +23,6 @@ import akka.platform.javasdk.impl.reflection.ServiceMethod
 import akka.platform.javasdk.impl.reflection.SubscriptionServiceMethod
 import akka.platform.javasdk.impl.reflection.VirtualServiceMethod
 import com.google.api.AnnotationsProto
-import com.google.api.HttpBody
 import com.google.api.HttpRule
 import com.google.protobuf.BytesValue
 import com.google.protobuf.DescriptorProtos
@@ -149,8 +147,6 @@ private[akka] object ComponentDescriptor {
             val outputType = parameterizedType.getActualTypeArguments.head
             if (outputType == classOf[Array[Byte]]) {
               BytesValue.getDescriptor.getFullName
-            } else if (outputType == classOf[HttpResponse]) {
-              HttpBody.getDescriptor.getFullName
             } else {
               JavaPbAny.getDescriptor.getFullName
             }

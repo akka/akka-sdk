@@ -5,20 +5,16 @@
 package akka.platform.javasdk.impl
 
 import java.lang
-import java.nio.ByteBuffer
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
 
 import scala.jdk.CollectionConverters._
 
 import com.fasterxml.jackson.annotation.JsonSubTypes
-import com.google.api.HttpBody
 import com.google.protobuf.ByteString
 import com.google.protobuf.BytesValue
 import com.google.protobuf.any.{ Any => ScalaPbAny }
 import com.google.protobuf.{ Any => JavaPbAny }
-import akka.platform.javasdk.HttpResponse
-import akka.platform.javasdk.HttpResponse.STATUS_CODE_EXTENSION_TYPE_URL
 import akka.platform.javasdk.JsonSupport
 import akka.platform.javasdk.annotations.Migration
 import akka.platform.javasdk.annotations.TypeName
@@ -39,10 +35,9 @@ private[akka] class JsonMessageCodec extends MessageCodec {
   override def encodeScala(value: Any): ScalaPbAny = {
     if (value == null) throw NullSerializationException
     value match {
-      case javaPbAny: JavaPbAny       => ScalaPbAny.fromJavaProto(javaPbAny)
-      case scalaPbAny: ScalaPbAny     => scalaPbAny
-      case httpResponse: HttpResponse => ScalaPbAny.fromJavaProto(encodeJava(httpResponse))
-      case bytes: Array[Byte] => ScalaPbAny.fromJavaProto(JavaPbAny.pack(BytesValue.of(ByteString.copyFrom(bytes))))
+      case javaPbAny: JavaPbAny   => ScalaPbAny.fromJavaProto(javaPbAny)
+      case scalaPbAny: ScalaPbAny => scalaPbAny
+      case bytes: Array[Byte]     => ScalaPbAny.fromJavaProto(JavaPbAny.pack(BytesValue.of(ByteString.copyFrom(bytes))))
       case other => ScalaPbAny.fromJavaProto(JsonSupport.encodeJson(other, lookupTypeHintWithVersion(other)))
     }
   }
@@ -56,25 +51,10 @@ private[akka] class JsonMessageCodec extends MessageCodec {
   override def encodeJava(value: Any): JavaPbAny = {
     if (value == null) throw NullSerializationException
     value match {
-      case javaPbAny: JavaPbAny       => javaPbAny
-      case httpResponse: HttpResponse => encodeToHttpBody(httpResponse)
-      case scalaPbAny: ScalaPbAny     => ScalaPbAny.toJavaProto(scalaPbAny)
-      case other                      => JsonSupport.encodeJson(other, lookupTypeHintWithVersion(other))
+      case javaPbAny: JavaPbAny   => javaPbAny
+      case scalaPbAny: ScalaPbAny => ScalaPbAny.toJavaProto(scalaPbAny)
+      case other                  => JsonSupport.encodeJson(other, lookupTypeHintWithVersion(other))
     }
-  }
-
-  private def encodeToHttpBody(httpResponse: HttpResponse) = {
-    val httpBodyBuilder = HttpBody.newBuilder()
-    httpBodyBuilder.setData(ByteString.copyFrom(httpResponse.getBody))
-    httpBodyBuilder.setContentType(httpResponse.getContentType)
-    val statusAsBytes = ByteBuffer.allocate(Integer.BYTES).putInt(httpResponse.getStatusCode.intValue()).rewind()
-    val statusAsAny =
-      JavaPbAny
-        .newBuilder()
-        .setTypeUrl(STATUS_CODE_EXTENSION_TYPE_URL)
-        .setValue(ByteString.copyFrom(statusAsBytes))
-        .build()
-    JavaPbAny.pack(httpBodyBuilder.addExtensions(statusAsAny).build())
   }
 
   private def lookupTypeHintWithVersion(value: Any): String =
