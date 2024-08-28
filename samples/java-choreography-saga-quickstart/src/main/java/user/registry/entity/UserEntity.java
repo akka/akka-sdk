@@ -1,9 +1,9 @@
 package user.registry.entity;
 
 
-import akka.platform.javasdk.annotations.Acl;
-import akka.platform.javasdk.annotations.ComponentId;
-import akka.platform.javasdk.eventsourcedentity.EventSourcedEntity;
+import akka.javasdk.annotations.Acl;
+import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import user.registry.common.Done;

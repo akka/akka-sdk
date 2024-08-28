@@ -1,7 +1,7 @@
 package com.example.shoppingcart.domain;
 
 import com.example.shoppingcart.ShoppingCartEntity;
-import akka.platform.javasdk.testkit.EventSourcedTestKit;
+import akka.javasdk.testkit.EventSourcedTestKit;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

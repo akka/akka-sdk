@@ -1,10 +1,10 @@
 package com.example;
 
 import com.example.actions.CounterCommandFromTopicConsumer;
-import akka.platform.javasdk.CloudEvent;
-import akka.platform.javasdk.testkit.EventingTestKit;
-import akka.platform.javasdk.testkit.KalixTestKit;
-import akka.platform.spring.testkit.KalixIntegrationTestKitSupport;
+import akka.javasdk.CloudEvent;
+import akka.javasdk.testkit.EventingTestKit;
+import akka.javasdk.testkit.KalixTestKit;
+import akka.javasdk.testkit.KalixIntegrationTestKitSupport;
 import org.awaitility.Awaitility;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.BeforeAll;

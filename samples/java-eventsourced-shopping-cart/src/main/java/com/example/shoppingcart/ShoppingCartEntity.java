@@ -3,9 +3,9 @@ package com.example.shoppingcart;
 import com.example.shoppingcart.domain.ShoppingCart;
 import com.example.shoppingcart.domain.ShoppingCart.LineItem;
 import com.example.shoppingcart.domain.ShoppingCartEvent;
-import akka.platform.javasdk.annotations.ComponentId;
-import akka.platform.javasdk.eventsourcedentity.EventSourcedEntity;
-import akka.platform.javasdk.eventsourcedentity.EventSourcedEntityContext;
+import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.eventsourcedentity.EventSourcedEntity;
+import akka.javasdk.eventsourcedentity.EventSourcedEntityContext;
 
 import java.util.Collections;
 

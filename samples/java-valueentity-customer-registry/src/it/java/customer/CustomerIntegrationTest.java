@@ -7,7 +7,7 @@ import customer.api.Ok;
 import customer.domain.Address;
 import customer.domain.Customer;
 import customer.view.CustomersByCity;
-import akka.platform.spring.testkit.KalixIntegrationTestKitSupport;
+import akka.javasdk.testkit.KalixIntegrationTestKitSupport;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;

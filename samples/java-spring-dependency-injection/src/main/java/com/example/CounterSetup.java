@@ -1,10 +1,10 @@
 package com.example;
 
-import akka.platform.javasdk.DependencyProvider;
-import akka.platform.javasdk.ServiceSetup;
-import akka.platform.javasdk.annotations.Acl;
-import akka.platform.javasdk.annotations.PlatformServiceSetup;
-import akka.platform.javasdk.client.ComponentClient;
+import akka.javasdk.DependencyProvider;
+import akka.javasdk.ServiceSetup;
+import akka.javasdk.annotations.Acl;
+import akka.javasdk.annotations.Setup;
+import akka.javasdk.client.ComponentClient;
 import com.example.domain.Counter;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.core.io.ClassPathResource;
@@ -12,7 +12,7 @@ import org.springframework.core.io.support.ResourcePropertySource;
 
 import java.io.IOException;
 
-@PlatformServiceSetup
+@Setup
 // NOTE: This default ACL settings is very permissive as it allows any traffic from the internet.
 // Our samples default to this permissive configuration to allow users to easily try it out.
 // However, this configuration is not intended to be reproduced in production environments.

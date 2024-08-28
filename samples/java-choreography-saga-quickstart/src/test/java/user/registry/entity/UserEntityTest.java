@@ -1,6 +1,6 @@
 package user.registry.entity;
 
-import akka.platform.javasdk.testkit.EventSourcedTestKit;
+import akka.javasdk.testkit.EventSourcedTestKit;
 import org.junit.jupiter.api.Test;
 import user.registry.domain.User;
 import user.registry.domain.UserEvent;

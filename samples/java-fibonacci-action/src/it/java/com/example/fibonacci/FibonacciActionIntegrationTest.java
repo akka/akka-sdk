@@ -1,10 +1,9 @@
 package com.example.fibonacci;
 
 import akka.http.javadsl.model.StatusCodes;
-import akka.platform.spring.testkit.KalixIntegrationTestKitSupport;
-import akka.platform.javasdk.http.StrictResponse;
+import akka.javasdk.testkit.KalixIntegrationTestKitSupport;
+import akka.javasdk.http.StrictResponse;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 public class FibonacciActionIntegrationTest extends KalixIntegrationTestKitSupport {

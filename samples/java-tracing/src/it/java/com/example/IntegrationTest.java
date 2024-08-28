@@ -1,6 +1,6 @@
 package com.example;
 
-import akka.platform.spring.testkit.KalixIntegrationTestKitSupport;
+import akka.javasdk.testkit.KalixIntegrationTestKitSupport;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;

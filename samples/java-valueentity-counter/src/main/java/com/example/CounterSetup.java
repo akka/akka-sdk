@@ -1,10 +1,10 @@
 package com.example;
 
-import akka.platform.javasdk.annotations.Acl;
-import akka.platform.javasdk.annotations.PlatformServiceSetup;
+import akka.javasdk.annotations.Acl;
+import akka.javasdk.annotations.Setup;
 
 // tag::main[]
-@PlatformServiceSetup
+@Setup
 // end::main[]
 // Allow all other Kalix services deployed in the same project to access the components of this
 // Kalix service, but disallow access from the internet. This can be overridden explicitly

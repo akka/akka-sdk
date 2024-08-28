@@ -1,6 +1,6 @@
 package shoppingcart.domain;
 
-import akka.platform.javasdk.annotations.TypeName;
+import akka.javasdk.annotations.TypeName;
 
 import java.util.List;
 import java.util.stream.Collectors;

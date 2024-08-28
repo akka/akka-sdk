@@ -7,7 +7,7 @@ object Dependencies {
     val ProtocolVersionMajor = 1
     val ProtocolVersionMinor = 1
     val RuntimeImage = "gcr.io/kalix-public/kalix-runtime"
-    // Remember to bump kalix-runtime.version in maven-java/kalix-spring-boot-parent if bumping this
+    // Remember to bump kalix-runtime.version in akka-javasdk-maven/akka-javasdk-parent if bumping this
     val RuntimeVersion = sys.props.getOrElse("kalix-runtime.version", "1.1.41-d90f5c7")
   }
   // NOTE: embedded SDK should have the AkkaVersion aligned, when updating RuntimeVersion, make sure to check
@@ -127,7 +127,7 @@ object Dependencies {
     jacksonParameterNames)
 
   // Important: be careful when adding dependencies here, unless provided, runtime or test they will also be packaged in the user project
-  //            binaries/artifacts unless explicitly excluded in the akka-platform-parent assembly descriptor
+  //            binaries/artifacts unless explicitly excluded in the akka-javasdk-parent assembly descriptor
   val javaSdk = deps ++= sdkDeps ++ Seq(
     kalixSdkSpi,
     jacksonDataFormatProto,

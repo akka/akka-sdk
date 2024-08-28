@@ -2,9 +2,9 @@ package com.example.domain;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import akka.platform.javasdk.annotations.ComponentId;
-import akka.platform.javasdk.keyvalueentity.KeyValueEntity;
-import akka.platform.javasdk.keyvalueentity.KeyValueEntityContext;
+import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.keyvalueentity.KeyValueEntity;
+import akka.javasdk.keyvalueentity.KeyValueEntityContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

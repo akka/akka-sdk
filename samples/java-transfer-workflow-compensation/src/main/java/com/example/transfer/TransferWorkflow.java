@@ -9,9 +9,9 @@ import com.example.wallet.WalletEntity.DepositResult.DepositSucceed;
 import com.example.wallet.WalletEntity.WithdrawResult;
 import com.example.wallet.WalletEntity.WithdrawResult.WithdrawFailed;
 import com.example.wallet.WalletEntity.WithdrawResult.WithdrawSucceed;
-import akka.platform.javasdk.annotations.ComponentId;
-import akka.platform.javasdk.client.ComponentClient;
-import akka.platform.javasdk.workflow.Workflow;
+import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.client.ComponentClient;
+import akka.javasdk.workflow.Workflow;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

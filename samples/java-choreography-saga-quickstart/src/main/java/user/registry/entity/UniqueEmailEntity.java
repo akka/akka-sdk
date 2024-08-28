@@ -1,10 +1,10 @@
 package user.registry.entity;
 
 
-import akka.platform.javasdk.annotations.Acl;
-import akka.platform.javasdk.annotations.ComponentId;
-import akka.platform.javasdk.keyvalueentity.KeyValueEntity;
-import akka.platform.javasdk.keyvalueentity.KeyValueEntityContext;
+import akka.javasdk.annotations.Acl;
+import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.keyvalueentity.KeyValueEntity;
+import akka.javasdk.keyvalueentity.KeyValueEntityContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import user.registry.common.Done;

@@ -1,8 +1,7 @@
 package customer.application;
 
-import akka.platform.javasdk.testkit.KeyValueEntityTestKit;
-import akka.platform.javasdk.testkit.KeyValueEntityResult;
-import customer.application.CustomerEntity;
+import akka.javasdk.testkit.KeyValueEntityTestKit;
+import akka.javasdk.testkit.KeyValueEntityResult;
 import org.junit.jupiter.api.Test;
 
 import customer.domain.Address;

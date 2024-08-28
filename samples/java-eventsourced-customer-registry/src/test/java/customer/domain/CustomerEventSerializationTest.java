@@ -3,7 +3,7 @@ package customer.domain;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
-import akka.platform.javasdk.JsonSupport;
+import akka.javasdk.JsonSupport;
 import org.junit.jupiter.api.Test;
 
 import java.util.Base64;

@@ -1,6 +1,6 @@
 package com.example.application;
 
-import akka.platform.javasdk.client.ComponentClient;
+import akka.javasdk.client.ComponentClient;
 import com.example.domain.Counter;
 import org.springframework.stereotype.Service;
 

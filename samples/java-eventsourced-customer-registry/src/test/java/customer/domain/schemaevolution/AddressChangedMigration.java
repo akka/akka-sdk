@@ -2,7 +2,7 @@ package customer.domain.schemaevolution;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import akka.platform.javasdk.JsonMigration;
+import akka.javasdk.JsonMigration;
 
 import java.util.List;
 

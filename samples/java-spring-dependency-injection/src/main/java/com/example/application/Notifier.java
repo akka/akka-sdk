@@ -1,9 +1,8 @@
 package com.example.application;
 
-import akka.Done;
-import akka.platform.javasdk.annotations.ComponentId;
-import akka.platform.javasdk.annotations.Consume;
-import akka.platform.javasdk.consumer.Consumer;
+import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Consume;
+import akka.javasdk.consumer.Consumer;
 import com.example.domain.Counter;
 import com.example.domain.CounterEvent.ValueIncreased;
 import org.slf4j.Logger;

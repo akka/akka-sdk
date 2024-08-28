@@ -1,0 +1,424 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>io.akka</groupId>
+        <artifactId>akka-javasdk-maven</artifactId>
+        <version>1.5.0</version>
+    </parent>
+
+    <groupId>io.akka</groupId>
+    <artifactId>akka-javasdk-parent</artifactId>
+    <version>1.5.0</version>
+    <packaging>pom</packaging>
+
+
+    <name>Akka Java SDK Parent pom</name>
+    <description>
+        This is the parent pom for Akka Platform applications.
+        It contains all dependencies and plugins to build an Akka Platform service using the Akka Java SDK.
+    </description>
+
+    <properties>
+        <!-- archetype need to override kalixContainerRegistry and kalixOrganization -->
+        <kalixContainerRegistry>kcr.us-east-1.kalix.io</kalixContainerRegistry>
+        <kalixOrganization>acme</kalixOrganization>
+
+        <dockerImage>${kalixContainerRegistry}/${kalixOrganization}/${project.artifactId}</dockerImage>
+        <dockerTag>${project.version}-${build.timestamp}</dockerTag>
+
+        <!-- note that this image does never actually run the service, it's just a means for distribution -->
+        <docker.base.image>alpine:3.14</docker.base.image>
+        <docker.platform>linux/amd64</docker.platform>
+
+        <maven.build.timestamp.format>yyyyMMddHHmmss</maven.build.timestamp.format>
+        <java.version>21</java.version>
+        <maven.compiler.release>${java.version}</maven.compiler.release>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <akka-javasdk.version>1.5.0</akka-javasdk.version>
+        <kalix-runtime.version>1.1.41-d90f5c7</kalix-runtime.version>
+        <skip.docker>false</skip.docker>
+
+
+        <!-- plugin versions -->
+        <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
+        <protobuf-maven-plugin.version>0.6.1</protobuf-maven-plugin.version>
+        <docker-maven-plugin.version>0.44.0</docker-maven-plugin.version>
+        <build-helper-maven-plugin.version>3.2.0</build-helper-maven-plugin.version>
+        <maven-failsafe-plugin.version>3.1.2</maven-failsafe-plugin.version>
+        <maven-surefire-plugin.version>2.22.2</maven-surefire-plugin.version>
+        <maven-deploy-plugin.version>3.1.1</maven-deploy-plugin.version>
+
+        <maven-failsafe-plugin.version>3.1.2</maven-failsafe-plugin.version>
+    </properties>
+
+
+    <pluginRepositories>
+        <pluginRepository>
+            <id>akka-repository</id>
+            <url>https://repo.akka.io/maven</url>
+        </pluginRepository>
+    </pluginRepositories>
+
+    <repositories>
+        <repository>
+            <id>akka-repository</id>
+            <name>Akka library repository</name>
+            <url>https://repo.akka.io/maven</url>
+        </repository>
+    </repositories>
+
+
+    <build>
+        <resources>
+            <resource>
+                <directory>${basedir}/src/main/resources</directory>
+            </resource>
+        </resources>
+
+        <extensions>
+            <extension>
+                <groupId>kr.motd.maven</groupId>
+                <artifactId>os-maven-plugin</artifactId>
+                <version>1.7.1</version>
+            </extension>
+        </extensions>
+
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>${maven-compiler-plugin.version}</version>
+                    <configuration>
+                        <source>${java.version}</source>
+                        <target>${java.version}</target>
+                        <compilerArgs>
+                            <arg>-Xlint:deprecation</arg>
+                            <arg>-parameters</arg>
+                        </compilerArgs>
+                        <annotationProcessors>
+                            <annotationProcessor>
+                                akka.javasdk.tooling.processor.ComponentAnnotationProcessor
+                            </annotationProcessor>
+                        </annotationProcessors>
+                        <annotationProcessorPaths>
+                            <path>
+                                <groupId>io.akka</groupId>
+                                <artifactId>akka-javasdk-annotation-processor</artifactId>
+                                <version>${akka-javasdk.version}</version>
+                            </path>
+                        </annotationProcessorPaths>
+                    </configuration>
+                </plugin>
+
+                <plugin>
+                    <groupId>io.fabric8</groupId>
+                    <artifactId>docker-maven-plugin</artifactId>
+                    <version>${docker-maven-plugin.version}</version>
+                    <configuration>
+                        <images>
+                            <image>
+                                <name>${dockerImage}:%l</name>
+                                <build>
+                                    <!-- Base Docker image which contains jre-->
+                                    <from>${docker.base.image}</from>
+                                    <createImageOptions>
+                                        <platform>${docker.platform}</platform>
+                                    </createImageOptions>
+                                    <tags>
+                                        <!-- tag for generated image -->
+                                        <tag>${dockerTag}</tag>
+                                    </tags>
+                                    <labels>
+                                        <io.kalix.container-type>init</io.kalix.container-type>
+                                    </labels>
+                                    <assembly>
+                                        <inline>
+                                            <dependencySets>
+                                                <dependencySet>
+                                                    <outputDirectory>.</outputDirectory>
+                                                    <useProjectArtifact>true</useProjectArtifact>
+                                                    <scope>compile</scope>
+                                                    <excludes>
+                                                        <!-- Dependencies of SDK and or available as API for users
+                                                             but already provided by runtime. Since runtime versions
+                                                             will always be preferred, there is no need to package up
+                                                             these. -->
+                                                        <exclude>com.typesafe:config</exclude>
+                                                        <exclude>com.typesafe.akka:*</exclude>
+                                                        <exclude>com.hierynomus:asn-one</exclude>
+                                                        <!-- Scala stdlib -->
+                                                        <exclude>org.scala-lang.modules:*</exclude>
+                                                        <exclude>org.scala-lang:scala-library</exclude>
+                                                        <!-- Protobuf/gRPC
+                                                            Note: scalapb validation is still provided from with service (for now) -->
+                                                        <exclude>com.thesamet.scalapb:lenses_2.13</exclude>
+                                                        <exclude>com.thesamet.scalapb:scalapb-runtime_2.13</exclude>
+                                                        <exclude>com.thesamet.scalapb.common-protos:*</exclude>
+                                                        <exclude>io.grpc:grpc-stub</exclude>
+                                                        <exclude>io.grpc:grpc-api</exclude>
+                                                        <exclude>com.google.protobuf:protobuf-java</exclude>
+                                                        <exclude>com.google.protobuf:protobuf-java-util</exclude>
+                                                        <!-- guava and related -->
+                                                        <exclude>com.google.code.gson:gson</exclude>
+                                                        <exclude>com.google.guava:guava</exclude>
+                                                        <exclude>com.google.guava:failureaccess</exclude>
+                                                        <exclude>com.google.guava:listenablefuture</exclude>
+                                                        <exclude>com.google.errorprone:error_prone_annotations</exclude>
+                                                        <exclude>com.google.code.findbugs:jsr305</exclude>
+                                                        <exclude>org.checkerframework:checker-qual</exclude>
+                                                        <exclude>com.google.j2objc:j2objc-annotations</exclude>
+                                                        <!-- open telemetry -->
+                                                        <exclude>io.opentelemetry:*</exclude>
+                                                        <exclude>io.opentelemetry.semconv:opentelemetry-semconv</exclude>
+                                                        <!-- logging -->
+                                                        <exclude>org.slf4j:slf4j-api</exclude>
+                                                        <exclude>ch.qos.logback:logback-classic</exclude>
+                                                        <exclude>ch.qos.logback:logback-core</exclude>
+                                                        <exclude>ch.qos.logback.contrib:logback-json-classic</exclude>
+                                                        <exclude>ch.qos.logback.contrib:logback-json-core</exclude>
+                                                        <!-- serialization/jackson -->
+                                                        <exclude>com.fasterxml.jackson.core:*</exclude>
+                                                        <exclude>com.fasterxml.jackson.datatype:*</exclude>
+                                                        <exclude>io.kalix:akka-platform-sdk-spi_2.13</exclude>
+                                                    </excludes>
+                                                </dependencySet>
+                                            </dependencySets>
+                                        </inline>
+                                    </assembly>
+                                    <entryPoint>
+                                        <shell>cp /maven/*.jar /opt/local-lib/</shell>
+                                    </entryPoint>
+                                </build>
+                            </image>
+                        </images>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>build-docker-image</id>
+                            <phase>install</phase>
+                            <goals>
+                                <goal>build</goal>
+                            </goals>
+                        </execution>
+                        <execution>
+                            <id>push-docker-image</id>
+                            <phase>deploy</phase>
+                            <goals>
+                                <goal>push</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+
+                <plugin>
+                    <!-- configure src/it/java and src/it/resources -->
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>build-helper-maven-plugin</artifactId>
+                    <version>${build-helper-maven-plugin.version}</version>
+                    <executions>
+                        <execution>
+                            <id>add-integration-test-source</id>
+                            <phase>generate-test-sources</phase>
+                            <goals>
+                                <goal>add-test-source</goal>
+                            </goals>
+                            <configuration>
+                                <sources>
+                                    <source>src/it/java</source>
+                                </sources>
+                            </configuration>
+                        </execution>
+                        <execution>
+                            <id>add-integration-test-resource</id>
+                            <phase>generate-test-resources</phase>
+                            <goals>
+                                <goal>add-test-resource</goal>
+                            </goals>
+                            <configuration>
+                                <resources>
+                                    <resource>
+                                        <directory>${basedir}/src/it/resources</directory>
+                                    </resource>
+                                </resources>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>${maven-surefire-plugin.version}</version>
+                    <configuration>
+                        <excludes>
+                            <!-- ignore integration test classes -->
+                            <exclude>**/*IntegrationTest</exclude>
+                        </excludes>
+                    </configuration>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-deploy-plugin</artifactId>
+                    <version>${maven-deploy-plugin.version}</version>
+                    <configuration>
+                        <skip>false</skip>
+                    </configuration>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>exec-maven-plugin</artifactId>
+                    <version>3.3.0</version>
+                    <configuration>
+                        <mainClass>kalix.runtime.KalixRuntimeMain</mainClass>
+                        <arguments>
+                            <argument>-Dconfig.resource=${config.resource}</argument>
+                        </arguments>
+                        <systemProperties>
+                            <systemProperty>
+                                <key>akka.platform.dev-mode.service-name</key>
+                                <value>${project.artifactId}</value>
+                            </systemProperty>
+                            <systemProperty>
+                                <key>akka.platform.dev-mode.enabled</key>
+                                <value>true</value>
+                            </systemProperty>
+                            <systemProperty>
+                                <key>logback.configurationFile</key>
+                                <value>logback-runtime-dev-mode.xml</value>
+                            </systemProperty>
+                        </systemProperties>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-deploy-plugin</artifactId>
+            </plugin>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+            </plugin>
+
+            <plugin>
+                <groupId>io.fabric8</groupId>
+                <artifactId>docker-maven-plugin</artifactId>
+                <configuration>
+                    <skip>${skip.docker}</skip>
+                </configuration>
+            </plugin>
+
+        </plugins>
+    </build>
+
+    <profiles>
+
+        <profile>
+            <!-- run Integration Tests in src/it/java with `mvn verify -Pit`-->
+            <id>it</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <!-- run *IntegrationTest with failsafe -->
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <version>${maven-failsafe-plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>integration-test</goal>
+                                    <goal>verify</goal>
+                                </goals>
+                                <configuration>
+                                    <includes>
+                                        <include>**/*IntegrationTest</include>
+                                    </includes>
+                                </configuration>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <classesDirectory>${project.build.outputDirectory}</classesDirectory>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>        
+    </profiles>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>io.akka</groupId>
+                <artifactId>akka-javasdk</artifactId>
+                <version>${akka-javasdk.version}</version>
+                <!-- FIXME, just a temporal dependency issues fix -->
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.lightbend.akka.grpc</groupId>
+                        <artifactId>akka-grpc-runtime_2.13</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>io.akka</groupId>
+                <artifactId>akka-javasdk-testkit</artifactId>
+                <version>${akka-javasdk.version}</version>
+                <!-- FIXME, just a temporal dependency issues fix -->
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.lightbend.akka.grpc</groupId>
+                        <artifactId>akka-grpc-runtime_2.13</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>io.kalix</groupId>
+                <artifactId>kalix-dev-runtime_2.13</artifactId>
+                <version>${kalix-runtime.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.akka</groupId>
+            <artifactId>akka-javasdk</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.akka</groupId>
+            <artifactId>akka-javasdk-testkit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.kalix</groupId>
+            <artifactId>kalix-dev-runtime_2.13</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+    </dependencies>
+</project>

@@ -2,10 +2,10 @@ package com.example.tracing.api;
 
 import com.example.tracing.domain.User;
 import com.example.tracing.domain.UserEvent;
-import akka.platform.javasdk.annotations.ForwardHeaders;
-import akka.platform.javasdk.annotations.ComponentId;
-import akka.platform.javasdk.eventsourcedentity.EventSourcedEntity;
-import akka.platform.javasdk.eventsourcedentity.EventSourcedEntityContext;
+import akka.javasdk.annotations.ForwardHeaders;
+import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.eventsourcedentity.EventSourcedEntity;
+import akka.javasdk.eventsourcedentity.EventSourcedEntityContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

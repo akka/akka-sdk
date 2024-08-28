@@ -39,13 +39,13 @@ jobs:
           echo ### List targets ###
           fossa list-targets
 
-          echo ### Java SDK (code-first) ###
-          fossa analyze -p akka-platform-java-sdk \
-            --only-target scala@sdk/java-sdk/target/ \
-            --only-target scala@sdk/java-sdk-testkit/target/ 
+          echo ### Akka Java SDK ###
+          fossa analyze -p akka-javasdk \
+            --only-target scala@sdk/akka-javasdk/target/ \
+            --only-target scala@sdk/akka-javasdk-testkit/target/ 
 
           echo ### report all parts including testkits, tests, TCKs, and samples ###
-          fossa analyze -p akka-platform-jvm-sdk
+          fossa analyze -p akka-javasdk-root
 
         env:
           FOSSA_API_KEY: "${{secrets.FOSSA_API_KEY}}"

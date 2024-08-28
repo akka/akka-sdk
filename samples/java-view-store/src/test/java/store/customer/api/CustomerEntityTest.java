@@ -1,7 +1,7 @@
 package store.customer.api;
 
-import akka.platform.javasdk.testkit.EventSourcedResult;
-import akka.platform.javasdk.testkit.EventSourcedTestKit;
+import akka.javasdk.testkit.EventSourcedResult;
+import akka.javasdk.testkit.EventSourcedTestKit;
 import org.junit.jupiter.api.Test;
 import store.customer.domain.Address;
 import store.customer.domain.Customer;

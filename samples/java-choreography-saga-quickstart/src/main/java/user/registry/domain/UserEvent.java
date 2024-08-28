@@ -1,6 +1,6 @@
 package user.registry.domain;
 
-import akka.platform.javasdk.annotations.TypeName;
+import akka.javasdk.annotations.TypeName;
 
 /**
  * It's recommended to seal the event interface.

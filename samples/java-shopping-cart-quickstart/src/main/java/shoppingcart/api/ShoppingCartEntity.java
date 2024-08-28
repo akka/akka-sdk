@@ -3,9 +3,9 @@ package shoppingcart.api;
 
 // tag::class[]
 
-import akka.platform.javasdk.annotations.ComponentId;
-import akka.platform.javasdk.eventsourcedentity.EventSourcedEntity;
-import akka.platform.javasdk.eventsourcedentity.EventSourcedEntityContext;
+import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.eventsourcedentity.EventSourcedEntity;
+import akka.javasdk.eventsourcedentity.EventSourcedEntityContext;
 import shoppingcart.domain.ShoppingCart;
 import shoppingcart.domain.ShoppingCart.Event.CheckedOut;
 import shoppingcart.domain.ShoppingCart.Event.ItemAdded;

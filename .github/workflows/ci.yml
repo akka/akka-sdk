@@ -116,7 +116,7 @@ jobs:
         uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9
         with:
           path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('maven-java/pom.xml') }}
+          key: ${{ runner.os }}-maven-${{ hashFiles('akka-javasdk-maven/pom.xml') }}
           restore-keys: |
             ${{ runner.os }}-maven-
 
@@ -126,21 +126,21 @@ jobs:
           sbt -Ddisable.apidocs=true publishM2 +publishLocal
           # the SDK_VERSION is later used to run the maven tests (see below)
           .github/determine-sdk-version.sh
-          SDK_VERSION="$(cat ~/akka-platform-sdk-version.txt)"
+          SDK_VERSION="$(cat ~/akka-javasdk-version.txt)"
           echo "SDK version: '${SDK_VERSION}'"
 
-      - name: Build maven-java
+      - name: Build maven
         run: |-
-          export SDK_VERSION=$(cat ~/akka-platform-sdk-version.txt)
-          cd maven-java
-          echo "Running maven-java with SDK version: '${SDK_VERSION}'"
+          export SDK_VERSION=$(cat ~/akka-javasdk-version.txt)
+          cd akka-javasdk-maven
+          echo "Running maven with SDK version: '${SDK_VERSION}'"
           ../.github/patch-maven-versions.sh
           mvn verify install --no-transfer-progress -Dskip.docker=true
 
       - name: Package io.akka dependencies
         run: |-
           cd
-          tar -czf dependencies.tar.gz .m2/repository/io/akka/ .ivy2/local/io.akka/ akka-platform-sdk-version.txt
+          tar -czf dependencies.tar.gz .m2/repository/io/akka/ .ivy2/local/io.akka/ akka-javasdk-version.txt
 
       - name: Upload io.akka dependencies
         # https://github.com/actions/upload-artifact/releases
@@ -263,22 +263,22 @@ jobs:
       # this is due to the fact that the tests are a bit flaky when running all together due to
       # failing in binding or error about running multiple tests at the same time
       - name: "Integration Test only SpringSdkIntegrationTest"
-        run: sbt 'java-sdk-testkit/IntegrationTest/testOnly *SpringSdkIntegrationTest'
+        run: sbt 'akka-javasdk-testkit/IntegrationTest/testOnly *SpringSdkIntegrationTest'
 
       - name: "Integration Test only KeyValueEntityIntegrationTest"
-        run: sbt 'java-sdk-testkit/IntegrationTest/testOnly *KeyValueEntityIntegrationTest'
+        run: sbt 'akka-javasdk-testkit/IntegrationTest/testOnly *KeyValueEntityIntegrationTest'
 
       - name: "Integration Test only EventSourcedEntityIntegrationTest"
-        run: sbt 'java-sdk-testkit/IntegrationTest/testOnly *EventSourcedEntityIntegrationTest'
+        run: sbt 'akka-javasdk-testkit/IntegrationTest/testOnly *EventSourcedEntityIntegrationTest'
 
       - name: "Integration Test only SpringWorkflowIntegrationTest"
-        run: sbt 'java-sdk-testkit/IntegrationTest/testOnly *SpringWorkflowIntegrationTest'
+        run: sbt 'akka-javasdk-testkit/IntegrationTest/testOnly *SpringWorkflowIntegrationTest'
 
       - name: "Integration Test only EventingTestkitDestinationIntegrationTest"
-        run: sbt 'java-sdk-testkit/IntegrationTest/testOnly *EventingTestkitDestinationIntegrationTest'
+        run: sbt 'akka-javasdk-testkit/IntegrationTest/testOnly *EventingTestkitDestinationIntegrationTest'
 
       - name: "Integration Test only EndpointsIntegrationTest"
-        run: sbt 'java-sdk-testkit/IntegrationTest/testOnly *EndpointsIntegrationTest'
+        run: sbt 'akka-javasdk-testkit/IntegrationTest/testOnly *EndpointsIntegrationTest'
 
   java-sdk-annotation-processor-test:
     name: Run annotation processor tests
@@ -333,7 +333,7 @@ jobs:
           tar -xf dependencies.tar.gz
 
       - name: Compile and Run annotation-processor-tests
-        run: sbt "annotation-processor-tests/compile;annotation-processor-tests/test"
+        run: sbt "akka-javasdk-annotation-processor-tests/compile;akka-javasdk-annotation-processor-tests/test"
 
   check-docker-image-contents:
     name: Check service docker image contents
@@ -366,7 +366,7 @@ jobs:
         uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9
         with:
           path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('maven-java/pom.xml') }}
+          key: ${{ runner.os }}-maven-${{ hashFiles('akka-javasdk-maven/pom.xml') }}
           restore-keys: |
             ${{ runner.os }}-maven-
 
@@ -385,12 +385,12 @@ jobs:
 
       - name: Update sdk version in java-customer-registry-quickstart
         run: |-
-          export SDK_VERSION=$(cat ~/akka-platform-sdk-version.txt)
+          export SDK_VERSION=$(cat ~/akka-javasdk-version.txt)
           ./updateSdkVersions.sh java samples/java-customer-registry-quickstart
 
       - name: Verify java-customer-registry-quickstart docker build
         run: |-
-          export SDK_VERSION=$(cat ~/akka-platform-sdk-version.txt)
+          export SDK_VERSION=$(cat ~/akka-javasdk-version.txt)
           cd samples/java-customer-registry-quickstart
           mvn install --no-transfer-progress
           echo "Docker image contents"
@@ -468,7 +468,7 @@ jobs:
         uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9
         with:
           path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('maven-java/pom.xml') }}
+          key: ${{ runner.os }}-maven-${{ hashFiles('akka-javasdk-maven/pom.xml') }}
           restore-keys: |
             ${{ runner.os }}-maven-
 
@@ -487,14 +487,14 @@ jobs:
 
       - name: Update sdk version in samples
         run: |-
-          export SDK_VERSION=$(cat ~/akka-platform-sdk-version.txt)
+          export SDK_VERSION=$(cat ~/akka-javasdk-version.txt)
           ./updateSdkVersions.sh java samples/
 
       - name: ${{ matrix.sample }} test-compile
         env:
           DIR: ${{ matrix.sample }}
         run: |-
-          export SDK_VERSION=$(cat ~/akka-platform-sdk-version.txt)
+          export SDK_VERSION=$(cat ~/akka-javasdk-version.txt)
           cd samples/${DIR}
           echo "Running mvn on ${DIR} with SDK version: '${SDK_VERSION}'"
           # must also compile without the profile!
@@ -506,7 +506,7 @@ jobs:
           DIR: ${{ matrix.sample }}
           PRE_CMD: ${{ matrix.pre_cmd }}
         run: |-
-          export SDK_VERSION=$(cat ~/akka-platform-sdk-version.txt)
+          export SDK_VERSION=$(cat ~/akka-javasdk-version.txt)
           ./updateSdkVersions.sh java samples/${DIR}
           cd samples/${DIR}
           if [ true == '${{matrix.verify}}' ]; then
@@ -521,7 +521,7 @@ jobs:
         env:
           DIR: ${{ matrix.sample }}
         run: |-
-          export SDK_VERSION=$(cat ~/akka-platform-sdk-version.txt)
+          export SDK_VERSION=$(cat ~/akka-javasdk-version.txt)
           cd samples/${DIR}
           echo "==== Verifying that generated unmanaged sources compile ===="
           rm -rf src/main/java src/test/java src/it/java

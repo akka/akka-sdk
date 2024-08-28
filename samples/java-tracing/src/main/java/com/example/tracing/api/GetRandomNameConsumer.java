@@ -1,14 +1,14 @@
 package com.example.tracing.api;
 
-import akka.platform.javasdk.annotations.ComponentId;
-import akka.platform.javasdk.consumer.Consumer;
+import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.consumer.Consumer;
 import com.example.tracing.domain.UserEvent;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.StatusCode;
-import akka.platform.javasdk.JsonSupport;
-import akka.platform.javasdk.annotations.Consume;
-import akka.platform.javasdk.client.ComponentClient;
+import akka.javasdk.JsonSupport;
+import akka.javasdk.annotations.Consume;
+import akka.javasdk.client.ComponentClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

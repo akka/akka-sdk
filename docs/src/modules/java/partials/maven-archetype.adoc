@@ -20,7 +20,7 @@ Linux or macOS::
 mvn archetype:generate \
   -DarchetypeGroupId=io.kalix \
   -DarchetypeArtifactId=kalix-spring-boot-archetype \
-  -DarchetypeVersion={akka-platform-java-sdk-version}
+  -DarchetypeVersion={akka-javasdk-version}
 ----
 --
 Windows 10+::
@@ -31,7 +31,7 @@ Windows 10+::
 mvn archetype:generate ^
   -DarchetypeGroupId=io.kalix ^
   -DarchetypeArtifactId=kalix-spring-boot-archetype ^
-  -DarchetypeVersion={akka-platform-java-sdk-version}
+  -DarchetypeVersion={akka-javasdk-version}
 ----
 --
 

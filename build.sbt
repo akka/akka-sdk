@@ -1,11 +1,8 @@
-import scala.collection.immutable.Seq
-
 import Dependencies.Kalix
-import com.jsuereth.sbtpgp.PgpKeys.publishSignedConfiguration
 
-lazy val `akka-platform-jvm-sdk` = project
+lazy val `akka-javasdk-root` = project
   .in(file("."))
-  .aggregate(devTools, annotationProcessor, javaSdk, javaSdkTestKit)
+  .aggregate(akkaJavaSdkAnnotationProcessor, akkaJavaSdk, akkaJavaSdkTestKit)
   .settings(
     (publish / skip) := true,
     // https://github.com/sbt/sbt/issues/3465
@@ -40,7 +37,7 @@ lazy val scala213Options = scala212Options ++
 lazy val scala3Options = sharedScalacOptions ++ Seq("-Wunused:imports,privates,locals")
 
 def disciplinedScalacSettings: Seq[Setting[_]] = {
-  if (sys.props.get("akka.platform.no-discipline").isEmpty) {
+  if (sys.props.get("akka.javasdk.no-discipline").isEmpty) {
     Seq(
       Compile / scalacOptions ++= {
         if (scalaVersion.value.startsWith("3.")) scala3Options
@@ -51,15 +48,14 @@ def disciplinedScalacSettings: Seq[Setting[_]] = {
   } else Seq.empty
 }
 
-lazy val javaSdk =
-  Project(id = "java-sdk", base = file("sdk/java-sdk"))
-    .dependsOn(devTools)
+lazy val akkaJavaSdk =
+  Project(id = "akka-javasdk", base = file("akka-javasdk"))
     .enablePlugins(AkkaGrpcPlugin, BuildInfoPlugin, Publish)
     .disablePlugins(CiReleasePlugin) // we use publishSigned, but use a pgp utility from CiReleasePlugin
     .settings(commonCompilerSettings)
     .settings(disciplinedScalacSettings)
     .settings(
-      name := "akka-platform-java-sdk",
+      name := "akka-javasdk",
       crossPaths := false,
       Compile / javacOptions ++= Seq("--release", "21"),
       Compile / scalacOptions ++= Seq("-release", "17"),
@@ -73,7 +69,7 @@ lazy val javaSdk =
         "protocolMinorVersion" -> Kalix.ProtocolVersionMinor,
         "scalaVersion" -> scalaVersion.value,
         "akkaVersion" -> Dependencies.AkkaVersion),
-      buildInfoPackage := "akka.platform.javasdk",
+      buildInfoPackage := "akka.javasdk",
       Compile / akkaGrpcGeneratedSources := Seq(AkkaGrpc.Server),
       Compile / akkaGrpcGeneratedLanguages := Seq(AkkaGrpc.Scala),
       Test / javacOptions ++= Seq("-parameters"), // for Jackson
@@ -91,7 +87,7 @@ lazy val javaSdk =
         ((Compile / javaSource).value / "overview.html").getAbsolutePath,
         "-notimestamp",
         "-doctitle",
-        "Akka Platform Java SDK",
+        "Akka Java SDK",
         "-noqualifier",
         "java.lang"),
       Compile / akkaGrpcGeneratedSources := Seq(AkkaGrpc.Server, AkkaGrpc.Client),
@@ -102,15 +98,15 @@ lazy val javaSdk =
       Test / PB.targets += PB.gens.java -> crossTarget.value / "akka-grpc" / "test")
     .settings(Dependencies.javaSdk)
 
-lazy val javaSdkTestKit =
-  Project(id = "java-sdk-testkit", base = file("sdk/java-sdk-testkit"))
-    .dependsOn(javaSdk)
+lazy val akkaJavaSdkTestKit =
+  Project(id = "akka-javasdk-testkit", base = file("akka-javasdk-testkit"))
+    .dependsOn(akkaJavaSdk)
     .enablePlugins(AkkaGrpcPlugin, BuildInfoPlugin, Publish, IntegrationTests)
     .disablePlugins(CiReleasePlugin) // we use publishSigned, but use a pgp utility from CiReleasePlugin
     .settings(commonCompilerSettings)
     .settings(disciplinedScalacSettings)
     .settings(
-      name := "akka-platform-java-sdk-testkit",
+      name := "akka-javasdk-testkit",
       crossPaths := false,
       Compile / javacOptions ++= Seq("--release", "21"),
       Compile / scalacOptions ++= Seq("-release", "17"),
@@ -120,7 +116,7 @@ lazy val javaSdkTestKit =
         "runtimeImage" -> Kalix.RuntimeImage,
         "runtimeVersion" -> Kalix.RuntimeVersion,
         "scalaVersion" -> scalaVersion.value),
-      buildInfoPackage := "akka.platform.javasdk.testkit",
+      buildInfoPackage := "akka.javasdk.testkit",
       Test / javacOptions ++= Seq("-parameters"), // for Jackson
       IntegrationTest / javacOptions += "-parameters", // for Jackson
       // Generate javadocs by just including non generated Java sources
@@ -137,7 +133,7 @@ lazy val javaSdkTestKit =
         ((Compile / javaSource).value / "overview.html").getAbsolutePath,
         "-notimestamp",
         "-doctitle",
-        "Akka Platform Java SDK Testkit",
+        "Akka Java SDK Testkit",
         "-noqualifier",
         "java.lang"))
     .settings(inConfig(IntegrationTest)(JupiterPlugin.scopedSettings): _*)
@@ -160,70 +156,23 @@ def scaladocOptions(title: String, ver: String, base: File): List[String] = {
 
 def githubUrl(v: String): String = {
   val branch = if (v.endsWith("SNAPSHOT")) "main" else "v" + v
-  "https://github.com/lightbend/akka-platform-jvm-sdk/tree/" + branch
+  "https://github.com/lightbend/akka-javasdk/tree/" + branch
 }
-
-lazy val devTools = devToolsCommon(
-  Project(id = "dev-tools", base = file("devtools"))
-    .settings(
-      name := "akka-platform-devtools",
-      scalaVersion := Dependencies.ScalaVersion,
-      crossScalaVersions := Dependencies.CrossScalaVersions))
-
-/*
- Common configuration to be applied to devTools modules (both 2.12 and 2.13)
- We need to have this 'split' module because compilation of sbt plugins don't play nice with cross-compiled modules.
- Instead, it's easier to have a separate module for each Scala version, but share the same source files.
- */
-def devToolsCommon(project: Project): Project =
-  project
-    .enablePlugins(BuildInfoPlugin, Publish)
-    .disablePlugins(CiReleasePlugin) // we use publishSigned, but use a pgp utility from CiReleasePlugin
-    .settings(commonCompilerSettings)
-    // TODO: need fix in KalixPlugin
-    // .settings(disciplinedScalacSettings)
-    .settings(
-      Compile / javacOptions ++= Seq("--release", "11"),
-      Compile / scalacOptions ++= Seq("-release", "11"),
-      buildInfoKeys := Seq[BuildInfoKey](
-        name,
-        version,
-        "runtimeImage" -> Kalix.RuntimeImage,
-        "runtimeVersion" -> Kalix.RuntimeVersion),
-      buildInfoPackage := "akka.platform.devtools",
-      // Generate javadocs by just including non generated Java sources
-      Compile / doc / sources := {
-        val javaSourceDir = (Compile / javaSource).value.getAbsolutePath
-        (Compile / doc / sources).value.filter(_.getAbsolutePath.startsWith(javaSourceDir))
-      },
-      // javadoc (I think java 9 onwards) refuses to compile javadocs if it can't compile the entire source path.
-      // but since we have java files depending on Scala files, we need to include ourselves on the classpath.
-      Compile / doc / dependencyClasspath := (Compile / fullClasspath).value,
-      Compile / doc / javacOptions ++= Seq(
-        "-Xdoclint:none",
-        "-overview",
-        ((Compile / javaSource).value / "overview.html").getAbsolutePath,
-        "-notimestamp",
-        "-doctitle",
-        "Akka Platform Dev Tools",
-        "-noqualifier",
-        "java.lang"))
-    .settings(Dependencies.devTools)
 
 lazy val samplesCompilationProject: CompositeProject =
   SamplesCompilationProject.compilationProject { sampleProject =>
     sampleProject
-      .dependsOn(javaSdk)
-      .dependsOn(javaSdkTestKit % "compile->test")
+      .dependsOn(akkaJavaSdk)
+      .dependsOn(akkaJavaSdkTestKit % "compile->test")
   }
 
-lazy val annotationProcessor =
-  Project(id = "annotation-processor", base = file("annotation-processor"))
+lazy val akkaJavaSdkAnnotationProcessor =
+  Project(id = "akka-javasdk-annotation-processor", base = file("akka-javasdk-annotation-processor"))
     .enablePlugins(Publish)
     .disablePlugins(CiReleasePlugin) // we use publishSigned, but use a pgp utility from CiReleasePlugin
     .settings(commonCompilerSettings)
     .settings(
-      name := "akka-platform-java-sdk-annotation-processor",
+      name := "akka-javasdk-annotation-processor",
       crossPaths := false,
       Compile / javacOptions ++= Seq("--release", "21"))
     .settings(libraryDependencies += Dependencies.typesafeConfig)
@@ -231,14 +180,12 @@ lazy val annotationProcessor =
 lazy val annotationProcessorTestProject: CompositeProject =
   AnnotationProcessorTestProject.compilationProject { sampleProject =>
     sampleProject
-      .dependsOn(javaSdk)
-      .dependsOn(annotationProcessor)
+      .dependsOn(akkaJavaSdk)
+      .dependsOn(akkaJavaSdkAnnotationProcessor)
       .settings(libraryDependencies += Dependencies.scalaTest % Test)
       .settings(
         libraryDependencies += Dependencies.scalaTest % Test,
-        Compile / javacOptions ++= Seq(
-          "-processor",
-          "akka.platform.javasdk.tooling.processor.ComponentAnnotationProcessor"))
+        Compile / javacOptions ++= Seq("-processor", "akka.javasdk.tooling.processor.ComponentAnnotationProcessor"))
   }
 
 addCommandAlias("formatAll", "scalafmtAll; javafmtAll")

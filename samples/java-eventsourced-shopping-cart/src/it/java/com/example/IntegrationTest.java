@@ -3,7 +3,7 @@ package com.example;
 import com.example.shoppingcart.ShoppingCartEntity;
 import com.example.shoppingcart.domain.ShoppingCart;
 import com.example.shoppingcart.domain.ShoppingCart.LineItem;
-import akka.platform.spring.testkit.KalixIntegrationTestKitSupport;
+import akka.javasdk.testkit.KalixIntegrationTestKitSupport;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

@@ -4,9 +4,9 @@ import akka.http.javadsl.model.StatusCode;
 import akka.http.javadsl.model.StatusCodes;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
-import akka.platform.javasdk.http.HttpClient;
-import akka.platform.javasdk.testkit.KalixTestKit;
-import akka.platform.spring.testkit.KalixIntegrationTestKitSupport;
+import akka.javasdk.http.HttpClient;
+import akka.javasdk.testkit.KalixTestKit;
+import akka.javasdk.testkit.KalixIntegrationTestKitSupport;
 import org.awaitility.Awaitility;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.BeforeAll;
@@ -28,7 +28,7 @@ public abstract class CustomerRegistryIntegrationTest extends KalixIntegrationTe
     Map<String, Object> confMap = new HashMap<>();
     // don't kill the test JVM when terminating the KalixRunner
     confMap.put("kalix.system.akka.coordinated-shutdown.exit-jvm", "off");
-    confMap.put("kalix.dev-mode.service-port-mappings.customer-registry", "localhost:9000");
+    confMap.put("akka.platform.dev-mode.service-port-mappings.customer-registry", "localhost:9000");
     // avoid conflits with upstream service using port 9000 and 25520
     confMap.put("kalix.proxy.http-port", "9001");
     confMap.put("akka.remote.artery.canonical.port", "25521");
@@ -60,7 +60,7 @@ public abstract class CustomerRegistryIntegrationTest extends KalixIntegrationTe
   // create the client but only return it after verifying that service is reachable
   protected HttpClient createClient(String url) {
 
-    var httpClient = new akka.platform.javasdk.http.HttpClient(kalixTestKit.getActorSystem(), url);
+    var httpClient = new HttpClient(kalixTestKit.getActorSystem(), url);
 
     // wait until customer service is up
     Awaitility.await()

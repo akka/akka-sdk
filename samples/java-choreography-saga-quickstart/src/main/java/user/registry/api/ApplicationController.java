@@ -1,12 +1,12 @@
 package user.registry.api;
 
 
-import akka.platform.javasdk.annotations.http.Endpoint;
-import akka.platform.javasdk.annotations.http.Get;
-import akka.platform.javasdk.annotations.http.Post;
-import akka.platform.javasdk.annotations.http.Put;
-import akka.platform.javasdk.client.ComponentClient;
-import akka.platform.javasdk.http.HttpException;
+import akka.javasdk.annotations.http.Endpoint;
+import akka.javasdk.annotations.http.Get;
+import akka.javasdk.annotations.http.Post;
+import akka.javasdk.annotations.http.Put;
+import akka.javasdk.client.ComponentClient;
+import akka.javasdk.http.HttpException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import user.registry.common.Done;

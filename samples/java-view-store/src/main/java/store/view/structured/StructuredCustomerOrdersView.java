@@ -1,11 +1,11 @@
 package store.view.structured;
 
-import akka.platform.javasdk.annotations.Query;
-import akka.platform.javasdk.annotations.Consume;
-import akka.platform.javasdk.annotations.Table;
-import akka.platform.javasdk.annotations.ComponentId;
-import akka.platform.javasdk.view.View;
-import akka.platform.javasdk.view.TableUpdater;
+import akka.javasdk.annotations.Query;
+import akka.javasdk.annotations.Consume;
+import akka.javasdk.annotations.Table;
+import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.view.View;
+import akka.javasdk.view.TableUpdater;
 import store.customer.api.CustomerEntity;
 import store.customer.domain.CustomerEvent;
 import store.order.api.OrderEntity;

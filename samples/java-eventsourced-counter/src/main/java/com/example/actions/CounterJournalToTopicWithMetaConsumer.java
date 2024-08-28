@@ -1,10 +1,10 @@
 package com.example.actions;
 
-import akka.platform.javasdk.Metadata;
-import akka.platform.javasdk.annotations.ComponentId;
-import akka.platform.javasdk.annotations.Consume;
-import akka.platform.javasdk.annotations.Produce;
-import akka.platform.javasdk.consumer.Consumer;
+import akka.javasdk.Metadata;
+import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Consume;
+import akka.javasdk.annotations.Produce;
+import akka.javasdk.consumer.Consumer;
 import com.example.Counter;
 import com.example.CounterEvent;
 import org.slf4j.Logger;

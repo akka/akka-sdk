@@ -1,7 +1,7 @@
 package store.view;
 
-import akka.platform.javasdk.testkit.KalixTestKit;
-import akka.platform.spring.testkit.KalixIntegrationTestKitSupport;
+import akka.javasdk.testkit.KalixTestKit;
+import akka.javasdk.testkit.KalixIntegrationTestKitSupport;
 import store.customer.api.CustomerEntity;
 import store.customer.domain.Address;
 import store.customer.domain.Customer;

@@ -1,8 +1,8 @@
 package customer;
 
-import akka.platform.javasdk.JsonSupport;
-import akka.platform.javasdk.ServiceSetup;
-import akka.platform.javasdk.annotations.Acl;
+import akka.javasdk.JsonSupport;
+import akka.javasdk.ServiceSetup;
+import akka.javasdk.annotations.Acl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

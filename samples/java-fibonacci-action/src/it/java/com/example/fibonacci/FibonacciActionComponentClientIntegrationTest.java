@@ -1,12 +1,8 @@
 package com.example.fibonacci;
 
-import akka.platform.spring.testkit.KalixIntegrationTestKitSupport;
+import akka.javasdk.testkit.KalixIntegrationTestKitSupport;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
 
 // tag::testing-action[]
 public class FibonacciActionComponentClientIntegrationTest extends KalixIntegrationTestKitSupport {

@@ -2,8 +2,8 @@ package customer.domain;
 
 // tag::class[]
 
-import akka.platform.javasdk.annotations.Migration;
-import akka.platform.javasdk.annotations.TypeName;
+import akka.javasdk.annotations.Migration;
+import akka.javasdk.annotations.TypeName;
 
 public sealed interface CustomerEvent {
 

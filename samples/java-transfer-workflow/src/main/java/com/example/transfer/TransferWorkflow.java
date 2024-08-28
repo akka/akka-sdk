@@ -3,9 +3,9 @@ package com.example.transfer;
 import com.example.transfer.TransferState.Transfer;
 import com.example.wallet.Ok;
 import com.example.wallet.WalletEntity;
-import akka.platform.javasdk.annotations.ComponentId;
-import akka.platform.javasdk.client.ComponentClient;
-import akka.platform.javasdk.workflow.Workflow;
+import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.client.ComponentClient;
+import akka.javasdk.workflow.Workflow;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

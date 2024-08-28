@@ -1,11 +1,11 @@
 package com.example;
 
-import akka.platform.javasdk.DependencyProvider;
-import akka.platform.javasdk.ServiceSetup;
-import akka.platform.javasdk.annotations.Acl;
-import akka.platform.javasdk.annotations.PlatformServiceSetup;
-import akka.platform.javasdk.client.ComponentClient;
-import akka.platform.javasdk.timer.TimerScheduler;
+import akka.javasdk.DependencyProvider;
+import akka.javasdk.ServiceSetup;
+import akka.javasdk.annotations.Acl;
+import akka.javasdk.annotations.Setup;
+import akka.javasdk.client.ComponentClient;
+import akka.javasdk.timer.TimerScheduler;
 import com.example.fibonacci.FibonacciTimedAction;
 import com.example.fibonacci.RequestValidator;
 import org.slf4j.Logger;
@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 
-@PlatformServiceSetup
+@Setup
 // NOTE: This default ACL settings is very permissive as it allows any traffic from the internet.
 // Our samples default to this permissive configuration to allow users to easily try it out.
 // However, this configuration is not intended to be reproduced in production environments.

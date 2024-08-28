@@ -8,21 +8,21 @@ import sbt.ProjectReference
 object AnnotationProcessorTestProject {
 
   def compilationProject(configureFunc: Project => Project): CompositeProject = {
-    val pathToTests = "annotation-processor-tests"
+    val pathToTests = "akka-javasdk-annotation-processor-tests"
 
     new CompositeProject {
 
       def componentProjects: Seq[Project] = innerProjects :+ root
 
       lazy val root =
-        Project(id = s"annotation-processor-tests", base = file(pathToTests))
+        Project(id = pathToTests, base = file(pathToTests))
           .disablePlugins(Publish)
           .aggregate(innerProjects.map(p => p: ProjectReference): _*)
 
       lazy val innerProjects =
         findProjects
           .map { dir =>
-            Project("annotation-processor-tests-" + dir.getName, dir)
+            Project(s"$pathToTests-" + dir.getName, dir)
               .disablePlugins(Publish)
           }
           .map(configureFunc)

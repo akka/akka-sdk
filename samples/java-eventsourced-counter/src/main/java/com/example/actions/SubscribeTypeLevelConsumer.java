@@ -1,10 +1,10 @@
 package com.example.actions;
 
-import akka.platform.javasdk.annotations.ComponentId;
-import akka.platform.javasdk.consumer.Consumer;
+import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.consumer.Consumer;
 import com.example.Counter;
 import com.example.CounterEvent.ValueIncreased;
-import akka.platform.javasdk.annotations.Consume;
+import akka.javasdk.annotations.Consume;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

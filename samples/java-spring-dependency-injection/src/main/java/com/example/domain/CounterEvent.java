@@ -1,6 +1,6 @@
 package com.example.domain;
 
-import akka.platform.javasdk.annotations.TypeName;
+import akka.javasdk.annotations.TypeName;
 
 public sealed interface CounterEvent {
 

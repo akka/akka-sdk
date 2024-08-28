@@ -1,17 +1,8 @@
 package com.example;
 
-import com.example.domain.Order;
-import com.example.domain.OrderEntity;
-import com.example.domain.OrderRequest;
-import com.example.domain.OrderStatus;
-
-import akka.platform.spring.testkit.KalixIntegrationTestKitSupport;
-import org.awaitility.Awaitility;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import akka.javasdk.testkit.KalixIntegrationTestKitSupport;
 
 import java.time.Duration;
-import java.util.concurrent.TimeUnit;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
 

@@ -1,7 +1,7 @@
 package store.customer.api;
 
-import akka.platform.javasdk.annotations.ComponentId;
-import akka.platform.javasdk.eventsourcedentity.EventSourcedEntity;
+import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import store.customer.domain.Address;
 import store.customer.domain.Customer;
 import store.customer.domain.CustomerEvent;

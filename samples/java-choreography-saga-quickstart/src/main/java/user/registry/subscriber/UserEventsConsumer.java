@@ -1,13 +1,12 @@
 package user.registry.subscriber;
 
 
-import akka.platform.javasdk.annotations.ComponentId;
-import akka.platform.javasdk.annotations.Consume;
-import akka.platform.javasdk.client.ComponentClient;
-import akka.platform.javasdk.consumer.Consumer;
+import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Consume;
+import akka.javasdk.client.ComponentClient;
+import akka.javasdk.consumer.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import user.registry.common.Done;
 import user.registry.domain.UserEvent;
 import user.registry.domain.UserEvent.EmailAssigned;
 import user.registry.domain.UserEvent.EmailUnassigned;

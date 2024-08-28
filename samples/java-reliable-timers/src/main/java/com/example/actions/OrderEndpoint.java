@@ -3,9 +3,9 @@ package com.example.actions;
 import com.example.domain.Order;
 import com.example.domain.OrderEntity;
 import com.example.domain.OrderRequest;
-import akka.platform.javasdk.annotations.http.Endpoint;
-import akka.platform.javasdk.annotations.http.Post;
-import akka.platform.javasdk.client.ComponentClient;
+import akka.javasdk.annotations.http.Endpoint;
+import akka.javasdk.annotations.http.Post;
+import akka.javasdk.client.ComponentClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

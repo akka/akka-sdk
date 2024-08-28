@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>io.akka</groupId>
-    <artifactId>akka-platform-parent</artifactId>
+    <artifactId>akka-javasdk-parent</artifactId>
     <version>0.0.0-2123-d20485dc-dev</version>
   </parent>
 

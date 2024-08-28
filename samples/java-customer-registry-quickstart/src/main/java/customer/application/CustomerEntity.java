@@ -1,8 +1,8 @@
 package customer.application;
 
 // tag::customer[]
-import akka.platform.javasdk.keyvalueentity.KeyValueEntity;
-import akka.platform.javasdk.annotations.ComponentId;
+import akka.javasdk.keyvalueentity.KeyValueEntity;
+import akka.javasdk.annotations.ComponentId;
 import customer.domain.Address;
 import customer.domain.Customer;
 

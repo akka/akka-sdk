@@ -1,8 +1,8 @@
 package com.example.fibonacci;
 
 
-import akka.platform.javasdk.timedaction.TimedAction;
-import akka.platform.javasdk.annotations.ComponentId;
+import akka.javasdk.timedaction.TimedAction;
+import akka.javasdk.annotations.ComponentId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

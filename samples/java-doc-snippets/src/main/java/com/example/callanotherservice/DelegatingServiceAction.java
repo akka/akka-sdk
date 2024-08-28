@@ -1,11 +1,10 @@
 package com.example.callanotherservice;
 
-import akka.platform.javasdk.annotations.http.Endpoint;
-import akka.platform.javasdk.annotations.http.Post;
-import akka.platform.javasdk.client.ComponentClient;
-import akka.platform.javasdk.http.HttpClient;
-import akka.platform.javasdk.http.HttpClientProvider;
-import akka.platform.javasdk.http.StrictResponse;
+import akka.javasdk.annotations.http.Endpoint;
+import akka.javasdk.annotations.http.Post;
+import akka.javasdk.http.HttpClient;
+import akka.javasdk.http.HttpClientProvider;
+import akka.javasdk.http.StrictResponse;
 
 import java.util.concurrent.CompletionStage;
 

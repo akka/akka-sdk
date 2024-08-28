@@ -5,7 +5,7 @@ import customer.domain.Address;
 import customer.domain.Customer;
 import customer.view.CustomerByEmailView;
 import customer.view.CustomerByNameView;
-import akka.platform.spring.testkit.KalixIntegrationTestKitSupport;
+import akka.javasdk.testkit.KalixIntegrationTestKitSupport;
 import org.awaitility.Awaitility;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Assertions;

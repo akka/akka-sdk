@@ -1,7 +1,6 @@
 package com.example.actions;
 
-import akka.Done;
-import akka.platform.javasdk.consumer.Consumer;
+import akka.javasdk.consumer.Consumer;
 
 // tag::class[]
 public class SubscribeToRawBytesConsumer extends Consumer {

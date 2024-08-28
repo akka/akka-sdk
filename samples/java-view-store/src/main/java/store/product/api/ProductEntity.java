@@ -1,7 +1,7 @@
 package store.product.api;
 
-import akka.platform.javasdk.annotations.ComponentId;
-import akka.platform.javasdk.eventsourcedentity.EventSourcedEntity;
+import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import store.product.domain.Money;
 import store.product.domain.Product;
 import store.product.domain.ProductEvent;

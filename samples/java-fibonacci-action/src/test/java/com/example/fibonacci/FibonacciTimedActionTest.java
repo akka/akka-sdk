@@ -1,8 +1,8 @@
 package com.example.fibonacci;
 
 // tag::testing-action[]
-import akka.platform.javasdk.testkit.TimedActionResult;
-import akka.platform.javasdk.testkit.TimedActionTestkit;
+import akka.javasdk.testkit.TimedActionResult;
+import akka.javasdk.testkit.TimedActionTestkit;
 import org.junit.jupiter.api.Test;
 
 // end::testing-action[]

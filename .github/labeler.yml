@@ -4,8 +4,11 @@ kalix-runtime:
   - '**/*'
 
 java-sdk:
-  - sdk/java-sdk/**/*
-  - sdk/java-sdk-testkit/**/*
+  - akka-javasdk/**/*
+  - akka-javasdk-testkit/**/*
+  - akka-javasdk-annotation-processor/**/*
+  - akka-javasdk-annotation-processor-tests/**/*
+  - akka-javasdk-maven/**/*
 
 Documentation:
   - docs/**/*

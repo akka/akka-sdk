@@ -175,7 +175,7 @@ include::java-protobuf:partial$env-file.txt[tag=env-file]
 
 Moreover, since *customer-registry-subscriber* needs to subscribe to *customer-registry* and since we will be running it on our local machine, we need to _show_ it where to find the *customer-registry* service.
 
-This is done by passing an extra property (`kalix.dev-mode.service-port-mappings.customer-registry`) to its Kalix Runtime to let it create a mapping between the logical name *customer-registry* and the host and port where the *customer-registry* service is running.
+This is done by passing an extra property (`akka.platform.dev-mode.service-port-mappings.customer-registry`) to its Kalix Runtime to let it create a mapping between the logical name *customer-registry* and the host and port where the *customer-registry* service is running.
 
 Note that you need to add service port mappings to the Kalix Runtime configuration for the service that depends on the other service. Here, *customer-registry-subscriber* depends on *customer-registry*, therefore we add the service port mapping to the Kalix Runtime associated with the *customer-registry-subscriber*.
 
@@ -265,7 +265,7 @@ Java::
 --
 [source, command line]
 ----
-mvn -Dkalix.dev-mode.docker-compose-file=docker-compose-integration.yml kalix:runAll
+mvn -Dakka.platform.dev-mode.docker-compose-file=docker-compose-integration.yml kalix:runAll
 ----
 --
 
@@ -274,7 +274,7 @@ Scala::
 --
 [source, command line]
 ----
-sbt -Dkalix.dev-mode.docker-compose-file=docker-compose-integration.yml runAll
+sbt -Dakka.platform.dev-mode.docker-compose-file=docker-compose-integration.yml runAll
 ----
 --
 

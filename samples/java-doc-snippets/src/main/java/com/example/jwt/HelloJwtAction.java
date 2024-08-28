@@ -1,8 +1,8 @@
 package com.example.jwt;
 
-import akka.platform.javasdk.timedaction.TimedAction;
-import akka.platform.javasdk.annotations.ComponentId;
-import akka.platform.javasdk.annotations.JWT;
+import akka.javasdk.timedaction.TimedAction;
+import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.JWT;
 
 //TODO migrate to endpoint is needed
 // tag::bearer-token[]

@@ -24,7 +24,7 @@ updateJavaSamples() {
 updateMavenPlugin() {
   echo ">>> Updating maven plugin to $SDK_VERSION"
   (
-    cd maven-java && 
+    cd akka-javasdk-maven &&
     ../.github/patch-maven-versions.sh
   )
 }

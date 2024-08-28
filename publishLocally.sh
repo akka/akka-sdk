@@ -1,7 +1,7 @@
 # This script will publish the current snapshot of all artifacts. 
 # Including the maven plugin and archetypes.
 
-export SDK_VERSION=$(sbt "print java-sdk/version" | tail -1)
+export SDK_VERSION=$(sbt "print akka-javasdk/version" | tail -1)
 
 echo
 echo "------------------------------------------------------------------------"
@@ -10,7 +10,7 @@ echo "------------------------------------------------------------------------"
 
 sbt 'publishM2; +publishLocal'
 (
-  cd maven-java
+  cd akka-javasdk-maven
   ../.github/patch-maven-versions.sh
   mvn clean install -Dskip.docker=true
 

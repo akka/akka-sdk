@@ -1,8 +1,8 @@
 package customer.api;
 
 
-import akka.platform.javasdk.http.HttpClient;
-import akka.platform.javasdk.http.StrictResponse;
+import akka.javasdk.http.HttpClient;
+import akka.javasdk.http.StrictResponse;
 import customer.api.CustomerRegistryEndpoint.Confirm;
 import customer.api.CustomerRegistryEndpoint.CreateRequest;
 import customer.api.CustomerRegistryEndpoint.Customer;

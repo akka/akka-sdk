@@ -27,7 +27,7 @@ then
   exit 1
 fi
 
-cd maven-java
+cd akka-javasdk-maven
 ../.github/patch-maven-versions.sh
 
 # create Maven settings.xml with credentials for repository publishing

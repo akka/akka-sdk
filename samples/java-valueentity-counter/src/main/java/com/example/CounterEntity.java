@@ -1,7 +1,7 @@
 package com.example;
 
-import akka.platform.javasdk.keyvalueentity.KeyValueEntity;
-import akka.platform.javasdk.annotations.ComponentId;
+import akka.javasdk.keyvalueentity.KeyValueEntity;
+import akka.javasdk.annotations.ComponentId;
 
 
 // tag::declarations[]

@@ -142,10 +142,10 @@ import akka.platform.springsdk.annotations.GenerateEntityKey;
 
 It should now be:
 ```java
-import akka.platform.javasdk.annotations.EntityKey;
-import akka.platform.javasdk.annotations.EntityType;
-import akka.platform.javasdk.annotations.EventHandler;
-import akka.platform.javasdk.annotations.GenerateEntityKey;
+import akka.javasdk.annotations.EntityKey;
+import akka.javasdk.annotations.EntityType;
+import akka.javasdk.annotations.EventHandler;
+import akka.javasdk.annotations.GenerateEntityKey;
 ```
 
 Note these are only a few example of the existing annotations but all of them were moved.
@@ -164,9 +164,9 @@ import akka.platform.springsdk.testkit.ValueEntityTestKit;
 With:
 
 ```java
-import akka.platform.javasdk.testkit.TimedActionTestkit;
-import akka.platform.javasdk.testkit.EventSourcedTestKit;
-import akka.platform.javasdk.testkit.KeyValueEntityTestKit;
+import akka.javasdk.testkit.TimedActionTestkit;
+import akka.javasdk.testkit.EventSourcedTestKit;
+import akka.javasdk.testkit.KeyValueEntityTestKit;
 ```
 
 Lastly, `KalixIntegrationTestKitSupport` was also moved, so you will need to replace:
@@ -175,5 +175,5 @@ import akka.platform.springsdk.testkit.KalixIntegrationTestKitSupport;
 ```
 With:
 ```java
-import akka.platform.spring.testkit.KalixIntegrationTestKitSupport;
+import akka.javasdk.testkit.KalixIntegrationTestKitSupport;
 ```

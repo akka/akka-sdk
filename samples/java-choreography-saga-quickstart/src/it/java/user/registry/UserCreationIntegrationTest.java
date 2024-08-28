@@ -1,7 +1,7 @@
 package user.registry;
 
 import akka.http.javadsl.model.StatusCodes;
-import akka.platform.spring.testkit.KalixIntegrationTestKitSupport;
+import akka.javasdk.testkit.KalixIntegrationTestKitSupport;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 import user.registry.api.ApplicationController;

@@ -2,10 +2,7 @@ package com.example.jwt;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import akka.platform.javasdk.Metadata;
-import akka.platform.spring.testkit.KalixIntegrationTestKitSupport;
-
-import org.junit.jupiter.api.Test;
+import akka.javasdk.testkit.KalixIntegrationTestKitSupport;
 
 import java.util.Base64;
 import java.util.Map;

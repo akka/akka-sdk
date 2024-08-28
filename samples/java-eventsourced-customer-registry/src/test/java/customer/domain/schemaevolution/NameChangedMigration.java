@@ -3,7 +3,7 @@ package customer.domain.schemaevolution;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
-import akka.platform.javasdk.JsonMigration;
+import akka.javasdk.JsonMigration;
 
 
 // tag::name-changed-migration[]

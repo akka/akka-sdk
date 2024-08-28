@@ -1,13 +1,13 @@
 package com.example.api;
 
-import akka.platform.javasdk.http.HttpException;
+import akka.javasdk.http.HttpException;
 import com.example.api.ShoppingCartDTO.LineItemDTO;
-import akka.platform.javasdk.Metadata;
-import akka.platform.javasdk.annotations.ForwardHeaders;
-import akka.platform.javasdk.annotations.http.Delete;
-import akka.platform.javasdk.annotations.http.Endpoint;
-import akka.platform.javasdk.annotations.http.Post;
-import akka.platform.javasdk.client.ComponentClient;
+import akka.javasdk.Metadata;
+import akka.javasdk.annotations.ForwardHeaders;
+import akka.javasdk.annotations.http.Delete;
+import akka.javasdk.annotations.http.Endpoint;
+import akka.javasdk.annotations.http.Post;
+import akka.javasdk.client.ComponentClient;
 
 import java.util.UUID;
 import java.util.concurrent.CompletionStage;

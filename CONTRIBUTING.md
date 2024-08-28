@@ -14,7 +14,7 @@ FIXME contribution guidelines like in other LB projects
 `publishLocally.sh` or
 
     ```shell
-    cd maven-java
+    cd akka-javasdk-maven
     mvn versions:set -DnewVersion="0.7...-SNAPSHOT"
     mvn install
     git checkout .
@@ -29,4 +29,4 @@ FIXME contribution guidelines like in other LB projects
     mvn -Dkalix-sdk.version="0.7...-SNAPSHOT" compile
     ```
 
-Be careful not to accidentally check in the `maven-java` `pom.xml` files with changed version.
+Be careful not to accidentally check in the `maven` `pom.xml` files with changed version.

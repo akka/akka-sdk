@@ -1,6 +1,6 @@
-# Make Akka Platform Java SDK documentation
+# Make Akka Java SDK documentation
 
-upstream := lightbend/akka-platform-java-sdk
+upstream := lightbend/akka-javasdk
 branch   := docs/current
 sources  := src build/src/managed
 
@@ -30,7 +30,7 @@ managed: prepare attributes apidocs examples bundles
 
 attributes:
 	mkdir -p "${java_managed_partials}"
-	bin/version.sh | xargs -0  printf ":akka-platform-jvm-sdk-version: %s" \
+	bin/version.sh | xargs -0  printf ":akka-javasdk-version: %s" \
 		> "${java_managed_partials}/attributes.adoc"
 	echo ":java-pb-version: 11" \
 		>> "${java_managed_partials}/attributes.adoc"

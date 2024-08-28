@@ -1,8 +1,8 @@
 package customer.domain.schemaevolution;
 
 import customer.domain.Address;
-import akka.platform.javasdk.annotations.Migration;
-import akka.platform.javasdk.annotations.TypeName;
+import akka.javasdk.annotations.Migration;
+import akka.javasdk.annotations.TypeName;
 
 import java.util.Optional;
 

@@ -1,6 +1,6 @@
 package com.example;
 
-import akka.platform.javasdk.testkit.KeyValueEntityTestKit;
+import akka.javasdk.testkit.KeyValueEntityTestKit;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

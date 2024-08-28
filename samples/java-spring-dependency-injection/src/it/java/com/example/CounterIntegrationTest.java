@@ -1,6 +1,6 @@
 package com.example;
 
-import akka.platform.spring.testkit.KalixIntegrationTestKitSupport;
+import akka.javasdk.testkit.KalixIntegrationTestKitSupport;
 import com.example.application.EmailSender;
 import com.example.domain.Clock;
 import com.example.domain.Counter;

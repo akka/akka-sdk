@@ -1,7 +1,7 @@
 package com.example.wallet;
 
-import akka.platform.javasdk.keyvalueentity.KeyValueEntity;
-import akka.platform.javasdk.annotations.ComponentId;
+import akka.javasdk.keyvalueentity.KeyValueEntity;
+import akka.javasdk.annotations.ComponentId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

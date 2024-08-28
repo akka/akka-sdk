@@ -1,6 +1,6 @@
 package customer.views;
 
-import akka.platform.javasdk.annotations.TypeName;
+import akka.javasdk.annotations.TypeName;
 
 public interface CustomerPublicEvent {
 

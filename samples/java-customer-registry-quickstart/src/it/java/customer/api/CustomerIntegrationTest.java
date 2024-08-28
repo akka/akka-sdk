@@ -1,16 +1,12 @@
 package customer.api;
 
-import akka.http.javadsl.model.ContentTypes;
-import akka.util.ByteString;
 import customer.application.CustomerEntity;
 import customer.domain.Address;
 import customer.domain.Customer;
-import akka.platform.spring.testkit.KalixIntegrationTestKitSupport;
-import jdk.jfr.ContentType;
+import akka.javasdk.testkit.KalixIntegrationTestKitSupport;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
@@ -37,8 +33,7 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
     var response =
       await(
         httpClient.PUT("/customer/" + id + "/name")
-          // FIXME string request body https://github.com/lightbend/kalix-runtime/issues/2635
-          .withRequestBody(ContentTypes.APPLICATION_JSON, "\"Katarina\"".getBytes(StandardCharsets.UTF_8))
+          .withRequestBody("Katarina")
           .responseBodyAs(CustomerEntity.Ok.class)
           .invokeAsync()
       );

@@ -1,7 +1,7 @@
 package store.product.api;
 
-import akka.platform.javasdk.testkit.EventSourcedResult;
-import akka.platform.javasdk.testkit.EventSourcedTestKit;
+import akka.javasdk.testkit.EventSourcedResult;
+import akka.javasdk.testkit.EventSourcedTestKit;
 import org.junit.jupiter.api.Test;
 import store.product.domain.Money;
 import store.product.domain.Product;

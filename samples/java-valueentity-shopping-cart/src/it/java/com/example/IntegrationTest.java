@@ -3,8 +3,8 @@ package com.example;
 import com.example.api.ShoppingCartDTO;
 import com.example.api.ShoppingCartDTO.LineItemDTO;
 import com.example.api.ShoppingCartEntity;
-import akka.platform.javasdk.Metadata;
-import akka.platform.spring.testkit.KalixIntegrationTestKitSupport;
+import akka.javasdk.Metadata;
+import akka.javasdk.testkit.KalixIntegrationTestKitSupport;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;

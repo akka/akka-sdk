@@ -1,16 +1,15 @@
 package com.example.fibonacci;
 
 import akka.http.javadsl.model.HttpResponse;
-import akka.platform.javasdk.annotations.http.Endpoint;
-import akka.platform.javasdk.annotations.http.Get;
-import akka.platform.javasdk.annotations.http.Post;
-import akka.platform.javasdk.client.ComponentClient;
-import akka.platform.javasdk.http.HttpResponses;
+import akka.javasdk.annotations.http.Endpoint;
+import akka.javasdk.annotations.http.Get;
+import akka.javasdk.annotations.http.Post;
+import akka.javasdk.client.ComponentClient;
+import akka.javasdk.http.HttpResponses;
 import com.example.MyContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 import static java.util.concurrent.CompletableFuture.completedStage;

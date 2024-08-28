@@ -4,8 +4,8 @@ import customer.views.Customer;
 import customer.views.CustomerPublicEvent.Created;
 import customer.views.CustomersByEmailView;
 import customer.views.CustomersByNameView;
-import akka.platform.javasdk.testkit.EventingTestKit.IncomingMessages;
-import akka.platform.javasdk.testkit.KalixTestKit;
+import akka.javasdk.testkit.EventingTestKit.IncomingMessages;
+import akka.javasdk.testkit.KalixTestKit;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 

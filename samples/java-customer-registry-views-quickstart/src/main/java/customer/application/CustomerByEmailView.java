@@ -1,12 +1,12 @@
 package customer.application;
 
 // tag::class[]
-import akka.platform.javasdk.view.TableUpdater;
+import akka.javasdk.view.TableUpdater;
 import customer.domain.Customer;
-import akka.platform.javasdk.view.View;
-import akka.platform.javasdk.annotations.Query;
-import akka.platform.javasdk.annotations.Consume;
-import akka.platform.javasdk.annotations.ComponentId;
+import akka.javasdk.view.View;
+import akka.javasdk.annotations.Query;
+import akka.javasdk.annotations.Consume;
+import akka.javasdk.annotations.ComponentId;
 
 @ComponentId("view_customers_by_email") // <1>
 public class CustomerByEmailView extends View { //  <3>

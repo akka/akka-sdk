@@ -1,7 +1,7 @@
 package com.example;
 
-import akka.platform.javasdk.testkit.EventSourcedResult;
-import akka.platform.javasdk.testkit.EventSourcedTestKit;
+import akka.javasdk.testkit.EventSourcedResult;
+import akka.javasdk.testkit.EventSourcedTestKit;
 import org.junit.jupiter.api.Test;
 
 import static com.example.CounterEvent.ValueIncreased;

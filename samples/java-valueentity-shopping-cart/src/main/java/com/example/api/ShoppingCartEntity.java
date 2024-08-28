@@ -2,11 +2,11 @@ package com.example.api;
 
 import com.example.api.ShoppingCartDTO.LineItemDTO;
 import com.example.domain.ShoppingCart;
-import akka.platform.javasdk.annotations.Acl;
-import akka.platform.javasdk.annotations.ForwardHeaders;
-import akka.platform.javasdk.annotations.ComponentId;
-import akka.platform.javasdk.keyvalueentity.KeyValueEntity;
-import akka.platform.javasdk.keyvalueentity.KeyValueEntityContext;
+import akka.javasdk.annotations.Acl;
+import akka.javasdk.annotations.ForwardHeaders;
+import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.keyvalueentity.KeyValueEntity;
+import akka.javasdk.keyvalueentity.KeyValueEntityContext;
 
 import java.time.Instant;
 

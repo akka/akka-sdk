@@ -1,8 +1,7 @@
 package user.registry;
 
-import akka.platform.javasdk.annotations.Acl;
-import akka.platform.javasdk.annotations.PlatformServiceSetup;
+import akka.javasdk.annotations.Acl;
 
-@PlatformServiceSetup
+@akka.javasdk.annotations.Setup
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
 public class Setup { }

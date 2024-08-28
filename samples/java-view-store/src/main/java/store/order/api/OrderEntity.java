@@ -1,7 +1,7 @@
 package store.order.api;
 
-import akka.platform.javasdk.annotations.ComponentId;
-import akka.platform.javasdk.keyvalueentity.KeyValueEntity;
+import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.keyvalueentity.KeyValueEntity;
 import store.order.domain.Order;
 
 import java.time.Instant;
