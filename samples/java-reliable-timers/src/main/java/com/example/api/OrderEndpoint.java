@@ -1,14 +1,19 @@
-package com.example.actions;
+package com.example.api;
 
-import com.example.domain.Order;
-import com.example.domain.OrderEntity;
-import com.example.domain.OrderRequest;
+import akka.Done;
+import akka.http.javadsl.model.HttpResponse;
 import akka.javasdk.annotations.http.Endpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
+import akka.javasdk.http.HttpResponses;
+import akka.javasdk.timer.TimerScheduler;
+import com.example.application.OrderEntity;
+import com.example.application.OrderTimedAction;
+import com.example.domain.Order;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
 import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 
@@ -20,9 +25,11 @@ public class OrderEndpoint {
   private final Logger logger = LoggerFactory.getLogger(getClass());
 
   private final ComponentClient componentClient;
+  private final TimerScheduler timerScheduler;
 
-  public OrderEndpoint(ComponentClient componentClient) {
+  public OrderEndpoint(ComponentClient componentClient, TimerScheduler timerScheduler) {
     this.componentClient = componentClient;
+    this.timerScheduler = timerScheduler;
   }
 
   // tag::place-order[]
@@ -30,20 +37,17 @@ public class OrderEndpoint {
     return "order-expiration-timer-" + orderId;
   }
 
-  @Post("/place")
+  @Post
   public CompletionStage<Order> placeOrder(OrderRequest orderRequest) {
 
     var orderId = UUID.randomUUID().toString(); // <1>
 
-    // FIXME no timer access in endpoint
-    /*
     CompletionStage<Done> timerRegistration = // <2>
-      timers().startSingleTimer(
+      timerScheduler.startSingleTimer(
         timerName(orderId), // <3>
         Duration.ofSeconds(10), // <4>
-        componentClient.forAction().method(OrderAction::expire).deferred(orderId) // <5>
+        componentClient.forTimedAction().method(OrderTimedAction::expireOrder).deferred(orderId) // <5>
       );
-    */
 
     // end::place-order[]
     logger.info(
@@ -53,65 +57,56 @@ public class OrderEndpoint {
       orderId);
     // tag::place-order[]
 
-    var request =
-      componentClient.forKeyValueEntity(orderId)
-        .method(OrderEntity::placeOrder).deferred(orderRequest); // <6>
-
-    throw new UnsupportedOperationException("No timers in endpoints yet");
-    /* return  // <7>
+    return
       timerRegistration
-        .thenCompose(done -> request.invokeAsync())
-        .thenApply(order -> order)
-    ); */
+        .thenCompose(done -> componentClient.forKeyValueEntity(orderId)
+          .method(OrderEntity::placeOrder).invokeAsync(orderRequest))
+        .thenApply(order -> order);
+
   }
   // end::place-order[]
 
   // tag::expire-order[]
   // ...
 
-  @Post("/expire/{orderId}")
-  public CompletionStage<String> expire(String orderId) {
+  @Post("/{orderId}/expire")
+  public CompletionStage<HttpResponse> expire(String orderId) {
     logger.info("Expiring order '{}'", orderId);
-    CompletionStage<String> reply =
+    return
       componentClient.forKeyValueEntity(orderId)
         .method(OrderEntity::cancel).invokeAsync() // <1>
         .thenApply(result -> {
           // Entity can return Ok, NotFound or Invalid.
           // Those are valid response and should not trigger a re-try.
           // In case of exceptions, this method call will fail.
-          return "Ok";
+          return HttpResponses.ok();
         });
-    return reply;
   }
   // end::expire-order[]
 
   // tag::confirm-cancel-order[]
   // ...
 
-  @Post("/confirm/{orderId}")
-  public CompletionStage<String> confirm(String orderId) {
+  @Post("/{orderId}/confirm")
+  public CompletionStage<HttpResponse> confirm(String orderId) {
     logger.info("Confirming order '{}'", orderId);
 
-    CompletionStage<String> reply =
+    return
       componentClient.forKeyValueEntity(orderId)
         .method(OrderEntity::confirm).invokeAsync() // <1>
-        // FIXME no timer support in endpoints yet .thenCompose(result -> timers().cancel(timerName(orderId))) // <2>
-        .thenApply(done -> "Ok");
-
-    return reply;
+        .thenCompose(result -> timerScheduler.cancel(timerName(orderId))) // <2>
+        .thenApply(__ -> HttpResponses.ok());
   }
 
-  @Post("/cancel/{orderId}")
-  public CompletionStage<String> cancel(String orderId) {
+  @Post("/{orderId}/cancel")
+  public CompletionStage<HttpResponse> cancel(String orderId) {
     logger.info("Cancelling order '{}'", orderId);
 
-    CompletionStage<String> reply =
+    return
       componentClient.forKeyValueEntity(orderId)
         .method(OrderEntity::cancel).invokeAsync()
-          // FIXME no timer support in endpoints yet.thenCompose(req -> timers().cancel(timerName(orderId)))
-        .thenApply(done -> "Ok");
-
-    return reply;
+        .thenCompose(req -> timerScheduler.cancel(timerName(orderId)))
+        .thenApply(done -> HttpResponses.ok());
   }
   // end::confirm-cancel-order[]
 

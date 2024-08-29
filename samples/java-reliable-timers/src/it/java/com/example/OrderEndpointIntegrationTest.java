@@ -1,36 +1,44 @@
 package com.example;
 
+import akka.http.javadsl.model.HttpResponse;
+import akka.http.javadsl.model.StatusCodes;
 import akka.javasdk.testkit.AkkaSdkTestKitSupport;
+import com.example.api.OrderRequest;
+import com.example.application.OrderEntity;
+import com.example.domain.Order;
+import com.example.domain.OrderStatus;
+import org.awaitility.Awaitility;
+import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class OrderEndpointIntegrationTest extends AkkaSdkTestKitSupport {
 
   private Duration timeout = Duration.of(20, SECONDS);
-
-  /* FIXME two problems here:
-    1. we need to allow timer access in endpoints
-    2. this specific sample endpoint wants to call itself with a timer (so needs to have an action as well or something?)
 
   @Test
   public void placeOrder() {
 
     var orderReq = new OrderRequest("nice swag tshirt", 10);
     String orderId = placeOrder(orderReq);
-    Assertions.assertNotNull(orderId);
-    Assertions.assertFalse(orderId.isEmpty());
+    assertThat(orderId).isNotEmpty();
 
     Awaitility.await()
       .ignoreExceptions()
       .atMost(20, TimeUnit.of(SECONDS))
-      .until(
-        () -> getOrderStatus(orderId),
-        s -> s.quantity() == 10 && s.item().equals("nice swag tshirt"));
+      .untilAsserted(
+        () -> {
+          OrderStatus orderStatus = getOrderStatus(orderId);
+          assertThat(orderStatus.quantity()).isEqualTo(10);
+          assertThat(orderStatus.item()).isEqualTo("nice swag tshirt");
+        });
 
     var confirmResp = confirmOrder(orderId);
-    Assertions.assertEquals("\"Ok\"", confirmResp);
+    assertThat(confirmResp.status()).isEqualTo(StatusCodes.OK);
 
     Awaitility.await()
       .ignoreExceptions()
@@ -47,12 +55,11 @@ public class OrderEndpointIntegrationTest extends AkkaSdkTestKitSupport {
     var orderReq = new OrderRequest("nice swag tshirt", 20);
     String orderId = placeOrder(orderReq);
 
-    Assertions.assertNotNull(orderId);
-    Assertions.assertFalse(orderId.isEmpty());
+    assertThat(orderId).isNotEmpty();
 
     var methodRef =
         componentClient
-            .forValueEntity(orderId)
+            .forKeyValueEntity(orderId)
             .method(OrderEntity::status);
 
     // After the default timeout, status changed to not placed as order is reverted
@@ -68,9 +75,8 @@ public class OrderEndpointIntegrationTest extends AkkaSdkTestKitSupport {
   public void expireNonexistentOrder() {
     // the 'expire' endpoint is made to be used internally by timers
     // thus, in case the order does not exist, it should return successfully so the timer is not rescheduled
-    String resp = expireOrder("made-up-id");
-    Assertions.assertNotNull(resp);
-    Assertions.assertEquals("\"Ok\"", resp);
+    HttpResponse resp = expireOrder("made-up-id");
+    assertThat(resp.status()).isEqualTo(StatusCodes.OK);
   }
 
   @Test
@@ -82,28 +88,25 @@ public class OrderEndpointIntegrationTest extends AkkaSdkTestKitSupport {
     String orderId = placeOrder(orderReq);
 
     var confirmResp = confirmOrder(orderId);
-    Assertions.assertEquals("\"Ok\"", confirmResp);
+    assertThat(confirmResp.status()).isEqualTo(StatusCodes.OK);
 
-    String resp = expireOrder("made-up-id");
-    Assertions.assertNotNull(resp);
-    Assertions.assertEquals("\"Ok\"", resp);
+    var expireResp = expireOrder("made-up-id");
+    assertThat(expireResp.status()).isEqualTo(StatusCodes.OK);
   }
 
 
-  private String confirmOrder(String orderId) {
-    return await(httpClient.POST("/orders/confirm/" + orderId)
-            .responseBodyAs(String.class).invokeAsync(), timeout)
-            .body();
+  private HttpResponse confirmOrder(String orderId) {
+    return await(httpClient.POST("/orders/" + orderId + "/confirm")
+            .invokeAsync()).httpResponse();
   }
 
-  private String expireOrder(String orderId) {
-    return await(httpClient.POST("/orders/expire/" + orderId)
-            .responseBodyAs(String.class)
-            .invokeAsync(), timeout).body();
+  private HttpResponse expireOrder(String orderId) {
+    return await(httpClient.POST("/orders/" + orderId + "/expire")
+            .invokeAsync()).httpResponse();
   }
 
   private String placeOrder(OrderRequest orderReq) {
-    return await(httpClient.POST("/orders/place")
+    return await(httpClient.POST("/orders")
                     .withRequestBody(orderReq)
                     .responseBodyAs(Order.class)
                     .invokeAsync(),
@@ -113,13 +116,10 @@ public class OrderEndpointIntegrationTest extends AkkaSdkTestKitSupport {
   private OrderStatus getOrderStatus(String orderId) {
     return await(
       componentClient
-        .forValueEntity(orderId)
+        .forKeyValueEntity(orderId)
         .method(OrderEntity::status).invokeAsync()
     );
-
   }
-
-   */
 
 
 }

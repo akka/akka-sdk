@@ -1,12 +1,17 @@
-package com.example.domain;
+package com.example.application;
 
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
 import akka.javasdk.keyvalueentity.KeyValueEntityContext;
+import com.example.api.OrderRequest;
+import com.example.domain.Order;
+import com.example.domain.OrderStatus;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static com.example.application.OrderEntity.Result.Ok.ok;
 
 // tag::order[]
 @ComponentId("order")
@@ -29,8 +34,7 @@ public class OrderEntity extends KeyValueEntity<Order> {
   public sealed interface Result {
 
     public record Ok() implements Result {
-      public static Ok instance = new Ok();
-
+      public static Ok ok = new Ok();
     }
 
     public record NotFound(String message) implements Result {
@@ -71,8 +75,9 @@ public class OrderEntity extends KeyValueEntity<Order> {
     if (currentState().placed()) { // <3>
       return effects()
         .updateState(currentState().confirm())
-        .thenReply(Result.Ok.instance);
+        .thenReply(ok);
     } else {
+      //TODO rethink the error handling when working on documentation
       return effects().error(
         "No order found for '" + orderId + "'"); // <4>
     }
@@ -87,7 +92,7 @@ public class OrderEntity extends KeyValueEntity<Order> {
       return effects().reply(Result.Invalid.of("Cannot cancel an already confirmed order")); // <6>
     } else {
       return effects().updateState(emptyState())
-        .thenReply(Result.Ok.instance); // <7>
+        .thenReply(ok); // <7>
     }
   }
   // end::order[]
