@@ -1,7 +1,7 @@
 package com.example;
 
 import akka.javasdk.testkit.AkkaSdkTestKitSupport;
-import com.example.shoppingcart.ShoppingCartEntity;
+import com.example.shoppingcart.application.ShoppingCartEntity;
 import com.example.shoppingcart.domain.ShoppingCart;
 import com.example.shoppingcart.domain.ShoppingCart.LineItem;
 import org.junit.jupiter.api.Assertions;
@@ -11,9 +11,9 @@ import org.junit.jupiter.api.Test;
 
 
 /**
- * This is a skeleton for implementing integration tests for a Kalix application built with the Java SDK.
+ * This is a skeleton for implementing integration tests for an Akka application built with the Java SDK.
  * <p>
- * This test will initiate a Kalix Runtime using testcontainers and therefore it's required to have Docker installed
+ * This test will initiate an Akka Runtime using testcontainers, and therefore it's required to have Docker installed
  * on your machine. This test will also start your Spring Boot application.
  * <p>
  * Since this is an integration tests, it interacts with the application using a WebClient

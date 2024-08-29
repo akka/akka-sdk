@@ -2,7 +2,7 @@
 
 ## Designing
 
-To understand the Kalix concepts that are the basis for this example, see [Designing services](https://docs.kalix.io/java/development-process.html) in the documentation.
+To understand the Akka SDK concepts that are the basis for this example, see [Designing services](https://docs.kalix.io/java/development-process.html) in the documentation.
 
 ## Developing
 
@@ -20,7 +20,7 @@ mvn compile
 
 ## Running Locally
 
-When running a Kalix service locally, we need to have its companion Kalix Runtime running alongside it.
+When running an Akka service locally, we need to have its companion Akka Runtime running alongside it.
 
 To start your service locally, run:
 
@@ -28,29 +28,36 @@ To start your service locally, run:
 mvn compile exec:java
 ```
 
-This command will start your Kalix service and a companion Kalix Runtime.
+This command will start your Akka service and a companion Akka Runtime.
 
 ## Exercising the service
 
-With your Kalix service running, any defined endpoints should be available at `http://localhost:9000`.
+With your Akka service running, any defined endpoints should be available at `http://localhost:9000`.
+The ACL settings in `Setup.java` are very permissive. It has `Acl.Principal.ALL` which allows any traffic from the internet. More info at `Setup.java`.
 
 - Add items to shopping cart
 
 ```shell
-curl -i -XPOST -H "Content-Type: application/json" localhost:9000/akka/v1.0/entity/shopping-cart/123/addItem -d '{"productId":"kalix-tshirt", "name":"Akka Tshirt", "quantity": 10}'
-curl -i -XPOST -H "Content-Type: application/json" localhost:9000/akka/v1.0/entity/shopping-cart/123/addItem -d '{"productId":"scala-tshirt", "name":"Scala Tshirt", "quantity": 20}'
+curl -i -XPOST -H "Content-Type: application/json" localhost:9000/shopping-cart/123/item -d '{"productId":"akka-tshirt", "name":"Akka Tshirt", "quantity": 10}'
+curl -i -XPOST -H "Content-Type: application/json" localhost:9000/shopping-cart/123/item -d '{"productId":"scala-tshirt", "name":"Scala Tshirt", "quantity": 20}'
 ```
 
 - See current status of the shopping cart
 
 ```shell
-curl -i -XGET localhost:9000/akka/v1.0/entity/shopping-cart/123/getCart
+curl -i -XGET localhost:9000/shopping-cart/123
 ```
 
 - Remove an item from the cart
 
 ```shell
-curl -XPOST -H "Content-Type: application/json" localhost:9000/akka/v1.0/entity/shopping-cart/123/removeItem -d '"kalix-tshirt"'
+curl -i -XDELETE -H "Content-Type: application/json" localhost:9000/shopping-cart/123/item/akka-tshirt
+```
+
+- Checkout the cart
+
+```shell
+curl -i -XPOST -H "Content-Type: application/json" localhost:9000/shopping-cart/123/checkout
 ```
 
 ## Deploying

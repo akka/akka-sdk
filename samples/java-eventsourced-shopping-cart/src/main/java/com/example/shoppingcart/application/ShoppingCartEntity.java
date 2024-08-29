@@ -1,4 +1,4 @@
-package com.example.shoppingcart;
+package com.example.shoppingcart.application;
 
 import com.example.shoppingcart.domain.ShoppingCart;
 import com.example.shoppingcart.domain.ShoppingCart.LineItem;
@@ -16,6 +16,10 @@ public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCart, Shoppin
 
   // tag::getCart[]
   private final String entityId;
+  
+  public enum Done {
+    INSTANCE
+  }
 
   public ShoppingCartEntity(EventSourcedEntityContext context) {
     this.entityId = context.entityId(); // <1>
@@ -29,12 +33,12 @@ public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCart, Shoppin
 
   // end::getCart[]
 
-  public ReadOnlyEffect<String> create() {
-    return effects().reply("OK");
+  public Effect<Done> create() {
+    return effects().reply(Done.INSTANCE);
   }
 
   // tag::addItem[]
-  public Effect<String> addItem(LineItem item) {
+  public Effect<Done> addItem(LineItem item) {
     if (currentState().checkedOut())
       return effects().error("Cart is already checked out.");
     if (item.quantity() <= 0) { // <1>
@@ -45,12 +49,12 @@ public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCart, Shoppin
 
     return effects()
       .persist(event) // <3>
-      .thenReply(newState -> "OK"); // <4>
+      .thenReply(newState -> Done.INSTANCE); // <4>
   }
 
   // end::addItem[]
 
-  public Effect<String> removeItem(String productId) {
+  public Effect<Done> removeItem(String productId) {
     if (currentState().checkedOut())
       return effects().error("Cart is already checked out.");
     if (currentState().findItemByProductId(productId).isEmpty()) {
@@ -61,7 +65,7 @@ public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCart, Shoppin
 
     return effects()
       .persist(event)
-      .thenReply(newState -> "OK");
+      .thenReply(newState -> Done.INSTANCE);
   }
 
   // tag::getCart[]
@@ -71,14 +75,14 @@ public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCart, Shoppin
   // end::getCart[]
 
   // tag::checkout[]
-  public Effect<String> checkout() {
+  public Effect<Done> checkout() {
     if (currentState().checkedOut())
-      return effects().reply("OK");
+      return effects().reply(Done.INSTANCE);
 
     return effects()
       .persist(new ShoppingCartEvent.CheckedOut()) // <1>
       .deleteEntity() // <2>
-      .thenReply(newState -> "OK"); // <4>
+      .thenReply(newState -> Done.INSTANCE); // <4>
   }
   // end::checkout[]
 
