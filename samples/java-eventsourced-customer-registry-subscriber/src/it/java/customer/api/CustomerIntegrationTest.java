@@ -3,10 +3,9 @@ package customer.api;
 
 import akka.javasdk.http.HttpClient;
 import akka.javasdk.http.StrictResponse;
-import customer.api.CustomerRegistryEndpoint.Confirm;
-import customer.api.CustomerRegistryEndpoint.CreateRequest;
-import customer.api.CustomerRegistryEndpoint.Customer;
-import customer.views.CustomersByNameView;
+import akka.util.ByteString;
+import customer.api.CustomerRegistryEndpoint.CreateCustomerRequest;
+import customer.application.CustomersByNameView;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -22,8 +21,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * This test exercises the integration between the current service (customer-registry-subscriber) and the customer-registry service.
  * <p>
- * The customer registry service is started as a Docker container as well as it own Kalix Runtime. The current service is
- * started as a local JVM process (not dockerized), but its own Kalix Runtime starts as a docker container.
+ * The customer registry service is started as a Docker container as well as it own Akka Runtime. The current service is
+ * started as a local JVM process (not dockerized), but its own Akka Runtime starts as a docker container.
  * The `docker-compose-integration.yml` file is used to start all these services.
  * <p>
  * The subscriber service will first create a customer on customer-registry service. The customer will be streamed back
@@ -32,7 +31,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * This test will exercise the following:
  * - service under test can read settings from docker-compose file and correctly configure itself.
  * - resolution of service port mappings from docker-compose file allows for cross service calls (eg: create customer from subscriber service)
- * - resolution of service port mappings passed to kalix-runtime allows for service to service streaming (eg: customer view is updated in subscriber service)
+ * - resolution of service port mappings passed to akka-runtime allows for service to service streaming (eg: customer view is updated in subscriber service)
  */
 public class CustomerIntegrationTest extends CustomerRegistryIntegrationTest {
 
@@ -40,13 +39,12 @@ public class CustomerIntegrationTest extends CustomerRegistryIntegrationTest {
   private Logger logger = LoggerFactory.getLogger(getClass());
 
 
-  // this test relies on a source Kalix service to which it subscribes. Such service should be running on :9000
+  // this test relies on a source Akka service to which it subscribes. Such service should be running on :9000
   @Test
   public void create()  {
     // start the real test now
     String id = UUID.randomUUID().toString();
-    Customer customer = new Customer("foo@example.com", "Johanna", new CustomerRegistryEndpoint.Address("street", "city"));
-        CreateRequest createRequest = new CreateRequest(id, customer);
+    CreateCustomerRequest createRequest = new CreateCustomerRequest(id, "foo@example.com", "Johanna", new CustomerRegistryEndpoint.Address("street", "city"));
 
     //TODO improve this when dealing with 2 HttpClients
     HttpClient client = createClient("http://localhost:9001");
@@ -58,12 +56,12 @@ public class CustomerIntegrationTest extends CustomerRegistryIntegrationTest {
       .atMost(10, TimeUnit.SECONDS)
       .untilAsserted(() -> {
 
-        StrictResponse<Confirm> res = await(
+        StrictResponse<ByteString> res = await(
           client.POST("/customer/create")
-            .withRequestBody(createRequest).responseBodyAs(Confirm.class).invokeAsync()
+            .withRequestBody(createRequest).invokeAsync()
         );
 
-        assertThat(res.body().msg()).isEqualTo("done");
+        assertThat(res.httpResponse().status().isSuccess()).isTrue();
       });
 
 

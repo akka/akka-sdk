@@ -1,9 +1,9 @@
 package customer.api;
 
-import customer.views.Customer;
-import customer.views.CustomerPublicEvent.Created;
-import customer.views.CustomersByEmailView;
-import customer.views.CustomersByNameView;
+import customer.domain.Customer;
+import customer.application.CustomerPublicEvent.Created;
+import customer.application.CustomersByEmailView;
+import customer.application.CustomersByNameView;
 import akka.javasdk.testkit.EventingTestKit.IncomingMessages;
 import akka.javasdk.testkit.KalixTestKit;
 import org.awaitility.Awaitility;

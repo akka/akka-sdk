@@ -2,7 +2,8 @@
 
 ## Designing
 
-To understand the Kalix concepts that are the basis for this example, see [Designing services](https://docs.kalix.io/java/development-process.html) in the documentation.
+To understand the Akka concepts that are the basis for this example, see [Designing services](https://docs.kalix.
+io/java/development-process.html) in the documentation.
 
 The project `java-eventsourced-customer-registry-subscriber` is a downstream consumer of the Service to Service event stream provided by `java-eventsourced-customer-registry` project.
 
@@ -30,8 +31,8 @@ mvn compile exec:java
 curl localhost:9001/customer/create \
   --header "Content-Type: application/json" \
   -XPOST \
-  --data '{"customerId": "one", "customer": {"email":"test@example.com","name":"Testsson","address":
-  {"street":"Teststreet 25","city":"Testcity"}}}'
+  --data '{"id": "one","email":"test@example.com","name":"Test Testsson","address":{"street":"Teststreet 25", 
+  "city":"Testcity"}}'
 ```
 
 This call is made on the subscriber service and will be forwarded to the `java-eventsourced-customer-registry` service.

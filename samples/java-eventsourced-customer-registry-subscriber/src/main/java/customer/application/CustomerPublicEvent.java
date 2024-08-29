@@ -1,4 +1,4 @@
-package customer.views;
+package customer.application;
 
 import akka.javasdk.annotations.TypeName;
 

@@ -26,7 +26,7 @@ public abstract class CustomerRegistryIntegrationTest extends KalixIntegrationTe
   @BeforeAll
   public void beforeAll() {
     Map<String, Object> confMap = new HashMap<>();
-    // don't kill the test JVM when terminating the KalixRunner
+    // don't kill the test JVM when terminating the AkkaRunner
     confMap.put("kalix.system.akka.coordinated-shutdown.exit-jvm", "off");
     confMap.put("akka.platform.dev-mode.service-port-mappings.customer-registry", "localhost:9000");
     // avoid conflits with upstream service using port 9000 and 25520
@@ -39,7 +39,7 @@ public abstract class CustomerRegistryIntegrationTest extends KalixIntegrationTe
       kalixTestKit = (new KalixTestKit(kalixTestKitSettings())).start(config);
       componentClient = kalixTestKit.getComponentClient();
     } catch (Exception ex) {
-      logger.error("Failed to startup Kalix service", ex);
+      logger.error("Failed to startup Akka service", ex);
       throw ex;
     }
 
@@ -53,7 +53,7 @@ public abstract class CustomerRegistryIntegrationTest extends KalixIntegrationTe
           .invokeAsync()
       ).httpResponse().status();
     } catch (Exception ex) {
-      throw new RuntimeException("This test requires an external kalix service to be running on localhost:9000 but was not able to reach it.", ex);
+      throw new RuntimeException("This test requires an external Akka service to be running on localhost:9000 but was not able to reach it.", ex);
     }
   }
 

@@ -1,4 +1,4 @@
-package customer.views;
+package customer.domain;
 
 public record Customer(String id, String email, String name) {
   public Customer withName(String newName) {

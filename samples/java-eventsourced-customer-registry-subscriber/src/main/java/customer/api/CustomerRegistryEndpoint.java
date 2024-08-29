@@ -1,10 +1,11 @@
 package customer.api;
 
+import akka.http.javadsl.model.HttpResponse;
 import akka.javasdk.annotations.http.Endpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.http.HttpClient;
 import akka.javasdk.http.HttpClientProvider;
-import akka.javasdk.http.StrictResponse;
+import akka.javasdk.http.HttpResponses;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,19 +14,14 @@ import java.util.concurrent.CompletionStage;
 @Endpoint("/customer")
 public class CustomerRegistryEndpoint {
 
-  private Logger log = LoggerFactory.getLogger(getClass());
+  private final Logger log = LoggerFactory.getLogger(getClass());
   private final HttpClient httpClient;
 
   public record Address(String street, String city) {
   }
 
-  public record Customer(String email, String name, Address address) {
+  record CreateCustomerRequest(String id, String email, String name, Address address){
   }
-
-  public record Confirm(String msg) {
-  }
-
-  public record CreateRequest(String customerId, Customer customer) {}
 
 
   public CustomerRegistryEndpoint(HttpClientProvider webClientProvider) {
@@ -33,14 +29,13 @@ public class CustomerRegistryEndpoint {
   }
 
   @Post("/create")
-  public CompletionStage<Confirm> create(CreateRequest createRequest) {
-    log.debug("Creating {} with id: {}", createRequest.customer, createRequest.customerId);
+  public CompletionStage<HttpResponse> create(CreateCustomerRequest createRequest) {
+    log.debug("Creating customer: {}", createRequest);
     // make call on customer-registry service
     return
-      httpClient.POST("/akka/v1.0/entity/customer/" + createRequest.customerId + "/create")
-        .withRequestBody(createRequest.customer)
-        .responseBodyAs(Confirm.class)
+      httpClient.POST("/customer")
+        .withRequestBody(createRequest)
         .invokeAsync()
-        .thenApply(StrictResponse::body);
+        .thenApply(__ -> HttpResponses.created());
   }
 }

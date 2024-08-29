@@ -1,10 +1,11 @@
 package customer.api;
 
-import customer.api.CustomerEntity.Confirm;
+import akka.Done;
+import customer.application.CustomerEntity;
 import customer.domain.Address;
 import customer.domain.Customer;
-import customer.view.CustomerByEmailView;
-import customer.view.CustomerByNameView;
+import customer.application.CustomerByEmailView;
+import customer.application.CustomerByNameView;
 import akka.javasdk.testkit.KalixIntegrationTestKitSupport;
 import org.awaitility.Awaitility;
 import org.hamcrest.core.IsEqual;
@@ -15,6 +16,7 @@ import java.time.Duration;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import static akka.Done.done;
 import static java.time.temporal.ChronoUnit.SECONDS;
 
 
@@ -27,12 +29,12 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
     String id = UUID.randomUUID().toString();
     Customer customer = new Customer("foo@example.com", "Johanna", null);
 
-    Confirm response = await(
+    Done response = await(
       componentClient.forEventSourcedEntity(id)
         .method(CustomerEntity::create)
         .invokeAsync(customer));
 
-    Assertions.assertEquals(Confirm.done, response);
+    Assertions.assertEquals(done(), response);
     Assertions.assertEquals("Johanna", getCustomerById(id).name());
   }
 
@@ -41,20 +43,20 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
     String id = UUID.randomUUID().toString();
     Customer customer = new Customer("foo@example.com", "Johanna", null);
 
-    Confirm response = await(
+    Done response = await(
       componentClient.forEventSourcedEntity(id)
         .method(CustomerEntity::create)
         .invokeAsync(customer));
 
-    Assertions.assertEquals(Confirm.done, response);
+    Assertions.assertEquals(done(), response);
 
-    Confirm resUpdate = await(
+    Done resUpdate = await(
       componentClient.forEventSourcedEntity(id)
         .method(CustomerEntity::changeName)
         .invokeAsync("Katarina"));
 
 
-    Assertions.assertEquals(Confirm.done, resUpdate);
+    Assertions.assertEquals(done(), resUpdate);
     Assertions.assertEquals("Katarina", getCustomerById(id).name());
   }
 
@@ -63,21 +65,21 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
     String id = UUID.randomUUID().toString();
     Customer customer = new Customer("foo@example.com", "Johanna", null);
 
-    Confirm response = await(
+    Done response = await(
       componentClient.forEventSourcedEntity(id)
         .method(CustomerEntity::create)
         .invokeAsync(customer));
 
-    Assertions.assertEquals(Confirm.done, response);
+    Assertions.assertEquals(done(), response);
 
     Address address = new Address("Elm st. 5", "New Orleans");
 
-    Confirm resUpdate = await(
+    Done resUpdate = await(
       componentClient.forEventSourcedEntity(id)
         .method(CustomerEntity::changeAddress)
         .invokeAsync(address));
 
-    Assertions.assertEquals(Confirm.done, resUpdate);
+    Assertions.assertEquals(done(), resUpdate);
     Assertions.assertEquals("Elm st. 5", getCustomerById(id).address().street());
   }
 
@@ -86,12 +88,12 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
   public void findByName() {
     String id = UUID.randomUUID().toString();
     Customer customer = new Customer("foo@example.com", "Foo", null);
-    Confirm response = await(
+    Done response = await(
       componentClient.forEventSourcedEntity(id)
         .method(CustomerEntity::create)
         .invokeAsync(customer));
 
-    Assertions.assertEquals(Confirm.done, response);
+    Assertions.assertEquals(done(), response);
 
     // the view is eventually updated
     Awaitility.await()
@@ -100,7 +102,7 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
       .until(() ->
         await(
           componentClient.forView()
-            .method(CustomerByNameView::getCustomer)
+            .method(CustomerByNameView::getCustomers)
             .invokeAsync(new CustomerByNameView.QueryParameters("Foo"))
         ).customers().stream().findFirst().get().name(),
         new IsEqual("Foo")
@@ -111,12 +113,12 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
   public void findByEmail() {
     String id = UUID.randomUUID().toString();
     Customer customer = new Customer("bar@example.com", "Bar", null);
-    Confirm response = await(
+    Done response = await(
       componentClient.forEventSourcedEntity(id)
         .method(CustomerEntity::create)
         .invokeAsync(customer));
 
-    Assertions.assertEquals(Confirm.done, response);
+    Assertions.assertEquals(done(), response);
 
     // the view is eventually updated
     Awaitility.await()
@@ -125,7 +127,7 @@ public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
       .until(() ->
           await(
             componentClient.forView()
-              .method(CustomerByEmailView::getCustomer)
+              .method(CustomerByEmailView::getCustomers)
               .invokeAsync(new CustomerByEmailView.QueryParameters("bar@example.com"))
           ).customers().stream().findFirst().get().name(),
         new IsEqual("Bar")

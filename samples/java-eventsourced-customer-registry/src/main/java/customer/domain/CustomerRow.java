@@ -1,4 +1,4 @@
-package customer.view;
+package customer.domain;
 
 import customer.domain.Address;
 

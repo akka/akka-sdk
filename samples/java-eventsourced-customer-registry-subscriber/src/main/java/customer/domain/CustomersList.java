@@ -1,4 +1,4 @@
-package customer.views;
+package customer.domain;
 
 import java.util.Collection;
 

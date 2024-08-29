@@ -14,19 +14,18 @@ import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_NULL
 // Documentation at https://docs.kalix.io/java/access-control.html
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
 // tag::object-mapper[]
-public class CustomerRegistryService implements ServiceSetup {
+public class CustomerRegistrySetup implements ServiceSetup {
   // end::object-mapper[]
 
-  private static final Logger logger = LoggerFactory.getLogger(CustomerRegistryService.class);
+  private static final Logger logger = LoggerFactory.getLogger(CustomerRegistrySetup.class);
 
   // tag::object-mapper[]
 
   @Override
   public void onStartup() {
     // end::object-mapper[]
-    logger.info("Starting Kalix Application");
+    logger.info("Starting Akka Application");
     // tag::object-mapper[]
-    // FIXME should this perhaps be a pre-start rather?
     JsonSupport.getObjectMapper()
             .configure(FAIL_ON_NULL_CREATOR_PROPERTIES, true); // <1>
   }

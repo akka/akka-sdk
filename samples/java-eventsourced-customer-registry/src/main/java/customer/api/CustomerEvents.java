@@ -5,6 +5,7 @@ import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.Produce;
 import akka.javasdk.consumer.Consumer;
+import customer.application.CustomerEntity;
 import customer.domain.CustomerEvent;
 import customer.domain.CustomerEvent.CustomerCreated;
 import customer.domain.CustomerEvent.NameChanged;
@@ -14,7 +15,7 @@ import customer.domain.CustomerEvent.NameChanged;
 @Consume.FromEventSourcedEntity(value = CustomerEntity.class) // <1>
 @Produce.ServiceStream(id = "customer_events") // <2>
 @Acl(allow = @Acl.Matcher(service = "*")) // <3>
-public class CustomerEventsService extends Consumer {
+public class CustomerEvents extends Consumer {
 
   public Effect onEvent(CustomerEvent event) { // <4>
     return switch (event) {

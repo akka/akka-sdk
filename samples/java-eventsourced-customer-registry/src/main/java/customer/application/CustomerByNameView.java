@@ -1,26 +1,28 @@
-package customer.view;
+package customer.application;
 
-import akka.javasdk.view.TableUpdater;
-import customer.api.CustomerEntity;
-import customer.domain.CustomerEvent;
-import akka.javasdk.annotations.Query;
-import akka.javasdk.annotations.Consume;
+// tag::class[]
+
 import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Consume;
+import akka.javasdk.annotations.Query;
+import akka.javasdk.view.TableUpdater;
 import akka.javasdk.view.View;
+import customer.domain.CustomerEvent;
+import customer.domain.CustomerRow;
+import customer.domain.CustomersList;
 
-@ComponentId("view_customers_by_email")
-public class CustomerByEmailView extends View {
+@ComponentId("view_customers_by_name") // <1>
+public class CustomerByNameView extends View {
 
-  public record QueryParameters(String email) {
-  }
+  public record QueryParameters(String name) { }
 
-  @Query("SELECT * as customers FROM customers_by_email WHERE email = :email")
-  public QueryEffect<CustomersList> getCustomer(QueryParameters params) {
+  @Query("SELECT * as customers FROM customers_by_name WHERE name = :name")
+  public QueryEffect<CustomersList> getCustomers(QueryParameters params) {
     return queryResult();
   }
 
   @Consume.FromEventSourcedEntity(CustomerEntity.class)
-  public static class CustomersByEmail extends TableUpdater<CustomerRow> {
+  public static class CustomersByName extends TableUpdater<CustomerRow> {
 
     public Effect<CustomerRow> onEvent(CustomerEvent event) {
       return switch (event) {
@@ -36,3 +38,4 @@ public class CustomerByEmailView extends View {
     }
   }
 }
+// end::class[]

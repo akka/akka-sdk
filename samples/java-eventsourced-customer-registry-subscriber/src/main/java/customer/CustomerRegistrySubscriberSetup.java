@@ -8,4 +8,4 @@ import akka.javasdk.annotations.Acl;
 // However, this configuration is not intended to be reproduced in production environments.
 // Documentation at https://docs.kalix.io/java/access-control.html
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
-public class Setup { }
+public class CustomerRegistrySubscriberSetup { }
