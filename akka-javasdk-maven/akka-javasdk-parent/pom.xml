@@ -7,12 +7,12 @@
     <parent>
         <groupId>io.akka</groupId>
         <artifactId>akka-javasdk-maven</artifactId>
-        <version>1.5.0</version>
+        <version>3.0.0-M1</version>
     </parent>
 
     <groupId>io.akka</groupId>
     <artifactId>akka-javasdk-parent</artifactId>
-    <version>1.5.0</version>
+    <version>3.0.0-M1</version>
     <packaging>pom</packaging>
 
 
@@ -38,7 +38,7 @@
         <java.version>21</java.version>
         <maven.compiler.release>${java.version}</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <akka-javasdk.version>1.5.0</akka-javasdk.version>
+        <akka-javasdk.version>3.0.0-M1</akka-javasdk.version>
         <kalix-runtime.version>1.1.41-c73f437</kalix-runtime.version>
         <skip.docker>false</skip.docker>
 
