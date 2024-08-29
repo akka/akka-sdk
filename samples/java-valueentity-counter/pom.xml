@@ -22,4 +22,18 @@
 
   <dependencies>
   </dependencies>
+
+  <repositories>
+    <!-- FIXME needed for the milestone releases, drop once final release out -->
+    <repository>
+      <id>akka-snapshot-repository</id>
+      <name>Akka snapshot repository</name>
+      <url>https://repo.akka.io/snapshots</url>
+    </repository>
+    <repository>
+      <id>akka-repository</id>
+      <name>Akka snapshot repository</name>
+      <url>https://repo.akka.io/maven</url>
+    </repository>
+  </repositories>
 </project>
