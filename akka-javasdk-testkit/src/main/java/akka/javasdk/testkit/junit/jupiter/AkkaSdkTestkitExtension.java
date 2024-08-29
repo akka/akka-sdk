@@ -4,56 +4,31 @@
 
 package akka.javasdk.testkit.junit.jupiter;
 
-import akka.actor.ActorSystem;
+import akka.actor.typed.ActorSystem;
 import akka.stream.Materializer;
 import akka.javasdk.testkit.EventingTestKit;
 import akka.javasdk.testkit.EventingTestKit.IncomingMessages;
 import akka.javasdk.testkit.EventingTestKit.OutgoingMessages;
-import akka.javasdk.testkit.KalixTestKit;
+import akka.javasdk.testkit.AkkaSdkTestKit;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 /**
- * A JUnit 5 "Jupiter" Extension for {@link KalixTestKit}, which automatically manages the lifecycle of
+ * A JUnit 5 "Jupiter" Extension for {@link AkkaSdkTestKit}, which automatically manages the lifecycle of
  * the testkit. The testkit will be automatically stopped when the test completes or fails.
- *
- * <p>Example:
- *
- * <pre>
- * import akka.javasdk.testkit.junit.jupiter.KalixTestKitExtension;
- *
- * public class MyKalixIntegrationTest {
- *
- *   private static final Kalix MY_KALIX = new Kalix(); // with registered services
- *
- *   &#64;RegisterExtension
- *   public static final KalixTestKitExtension testKit = new KalixTestKitExtension(MY_KALIX);
- *
- *   private final MyServiceClient client; // generated Akka gRPC client
- *
- *   public MyKalixIntegrationTest() {
- *     this.client = MyServiceClient.create(testKit.getGrpcClientSettings(), testKit.getActorSystem());
- *   }
- *
- *   &#64;Test
- *   public void test() {
- *     // use client to test service
- *   }
- * }
- * </pre>
  */
-public final class KalixTestKitExtension implements BeforeAllCallback, AfterAllCallback {
+public final class AkkaSdkTestkitExtension implements BeforeAllCallback, AfterAllCallback {
 
-  private final KalixTestKit testKit;
+  private final AkkaSdkTestKit testKit;
 
-  public KalixTestKitExtension() {
-    this.testKit = new KalixTestKit();
+  public AkkaSdkTestkitExtension() {
+    this.testKit = new AkkaSdkTestKit();
   }
 
 
-  public KalixTestKitExtension(KalixTestKit.Settings settings) {
-    this.testKit = new KalixTestKit(settings);
+  public AkkaSdkTestkitExtension(AkkaSdkTestKit.Settings settings) {
+    this.testKit = new AkkaSdkTestKit(settings);
   }
 
   /**
@@ -172,7 +147,7 @@ public final class KalixTestKitExtension implements BeforeAllCallback, AfterAllC
    *
    * @return test actor system
    */
-  public ActorSystem getActorSystem() {
+  public ActorSystem<?> getActorSystem() {
     return testKit.getActorSystem();
   }
 

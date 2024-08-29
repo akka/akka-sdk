@@ -4,7 +4,7 @@
 
 package akka.javasdk.testkit;
 
-import akka.actor.ActorSystem;
+import akka.actor.typed.ActorSystem;
 import akka.annotation.InternalApi;
 import akka.http.javadsl.Http;
 import akka.http.javadsl.model.HttpRequest;
@@ -18,16 +18,16 @@ import akka.stream.SystemMaterializer;
 import akka.testkit.javadsl.TestKit;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
-import akka.javasdk.Kalix;
+import akka.javasdk.impl.Kalix;
 import akka.javasdk.Principal;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.impl.GrpcClients;
 import akka.javasdk.impl.JsonMessageCodec;
 import akka.javasdk.impl.MessageCodec;
-import akka.javasdk.impl.NextGenKalixJavaApplication;
+import akka.javasdk.impl.AkkaJavaSdkApplication;
 import akka.javasdk.impl.ProxyInfoHolder;
 import akka.javasdk.impl.client.ComponentClientImpl;
-import akka.platform.javasdk.spi.ComponentClients;
+import akka.runtime.sdk.spi.ComponentClients;
 import akka.javasdk.testkit.EventingTestKit.IncomingMessages;
 import kalix.runtime.KalixRuntimeMain;
 import org.jetbrains.annotations.NotNull;
@@ -55,7 +55,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
-import static akka.javasdk.testkit.KalixTestKit.Settings.EventingSupport.TEST_BROKER;
+import static akka.javasdk.testkit.AkkaSdkTestKit.Settings.EventingSupport.TEST_BROKER;
 
 /**
  * Testkit for running Kalix services locally.
@@ -66,7 +66,7 @@ import static akka.javasdk.testkit.KalixTestKit.Settings.EventingSupport.TEST_BR
  * testkit before testing the service with gRPC or HTTP clients. Call {@link #stop} after tests are
  * complete.
  */
-public class KalixTestKit {
+public class AkkaSdkTestKit {
 
   public static class MockedEventing {
     public static final String KEY_VALUE_ENTITY = "key-value-entity";
@@ -426,7 +426,7 @@ public class KalixTestKit {
     }
   }
 
-  private static final Logger log = LoggerFactory.getLogger(KalixTestKit.class);
+  private static final Logger log = LoggerFactory.getLogger(AkkaSdkTestKit.class);
 
   /** Default local port where the Google Pub/Sub emulator is available (8085). */
   public static final int DEFAULT_GOOGLE_PUBSUB_PORT = 8085;
@@ -442,7 +442,7 @@ public class KalixTestKit {
   private String proxyHost;
   private int proxyPort;
   private EventingTestKit eventingTestKit;
-  private ActorSystem runtimeActorSystem;
+  private ActorSystem<?> runtimeActorSystem;
   private ComponentClient componentClient;
   private TimerScheduler timerScheduler;
   private Optional<DependencyProvider> dependencyProvider;
@@ -451,7 +451,7 @@ public class KalixTestKit {
   /**
    * Create a new testkit for a Kalix service descriptor with the default settings.
    */
-  public KalixTestKit() {
+  public AkkaSdkTestKit() {
     this(Settings.DEFAULT);
   }
 
@@ -460,7 +460,7 @@ public class KalixTestKit {
    *
    * @param settings     custom testkit settings
    */
-  public KalixTestKit(final Settings settings) {
+  public AkkaSdkTestKit(final Settings settings) {
     this.settings = settings;
   }
 
@@ -469,7 +469,7 @@ public class KalixTestKit {
    *
    * @return this KalixTestkit
    */
-  public KalixTestKit start() {
+  public AkkaSdkTestKit start() {
     return start(ConfigFactory.empty());
   }
 
@@ -479,7 +479,7 @@ public class KalixTestKit {
    * @param config custom test configuration for the KalixRunner
    * @return this KalixTestkit
    */
-  public KalixTestKit start(final Config config) {
+  public AkkaSdkTestKit start(final Config config) {
     if (started)
       throw new IllegalStateException("KalixTestkit already started");
 
@@ -503,6 +503,7 @@ public class KalixTestKit {
 
   private void startRuntime(final Config config)  {
     try {
+      // FIXME should we really pass all these "kalix" props?
       final Map<String, Object> runtimeOptions = new HashMap<>();
       runtimeOptions.put("kalix.proxy.acl.local-dev.self-deployment-name", settings.serviceName);
       runtimeOptions.put("kalix.proxy.acl.enabled", settings.aclEnabled);
@@ -528,11 +529,10 @@ public class KalixTestKit {
       if (settings.mockedEventing.hasOutgoingConfig()) {
         runtimeOptions.put("kalix.proxy.eventing.override.destinations", settings.mockedEventing.toOutgoingFlowConfig());
       }
-      settings.servicePortMappings.forEach((serviceName, hostPort) ->
-        runtimeOptions.put("akka.platform.dev-mode.service-port-mappings." + serviceName, hostPort)
-      );
       settings.workflowTickInterval.ifPresent(tickInterval -> runtimeOptions.put("kalix.proxy.workflow-entity.tick-interval", tickInterval.toMillis() + " ms"));
 
+      // A bit messy right now, but we also need to signal to SDK also that it is in dev-mode
+      runtimeOptions.put("akka.runtime.dev-mode.enabled", true);
 
       log.debug("Config for runtime: {}", runtimeOptions);
       log.debug("Config from user: {}", config);
@@ -548,13 +548,13 @@ public class KalixTestKit {
       proxyHost = "localhost";
 
       Promise<Tuple3<Kalix, ComponentClients, Optional<DependencyProvider>>> startedKalix = Promise.apply();
-      if (!NextGenKalixJavaApplication.onNextStartCallback().compareAndSet(null, startedKalix)) {
+      if (!AkkaJavaSdkApplication.onNextStartCallback().compareAndSet(null, startedKalix)) {
         throw new RuntimeException("Found another integration test run waiting for Kalix to start, multiple tests must not run in parallel");
       }
       // FIXME this can't possibly work, we have already done logging, logback-test should be picked up?
       System.setProperty("logback.configurationFile", "logback-dev-mode.xml");
 
-      runtimeActorSystem = KalixRuntimeMain.start(Some.apply(runtimeConfig)).classicSystem();
+      runtimeActorSystem = KalixRuntimeMain.start(Some.apply(runtimeConfig));
       // wait for SDK to get on start callback (or fail starting), we need it to set up the component client
       var tuple = Await.result(startedKalix.future(), scala.concurrent.duration.Duration.create("20s"));
       kalix = tuple._1();
@@ -594,7 +594,7 @@ public class KalixTestKit {
       holder.overrideTracingCollectorEndpoint(""); //emulating ProxyInfo with disabled tracing.
 
       // once runtime is started
-      componentClient = new ComponentClientImpl(componentClients, Option.empty(), runtimeActorSystem.dispatcher());
+      componentClient = new ComponentClientImpl(componentClients, Option.empty(), runtimeActorSystem.executionContext());
       timerScheduler = new TimerSchedulerImpl(kalix.getMessageCodec(), componentClients.timerClient(), Metadata.EMPTY);
       this.messageBuilder = new EventingTestKit.MessageBuilder(kalix.getMessageCodec());
 
@@ -678,14 +678,14 @@ public class KalixTestKit {
    *
    * @return test actor system
    */
-  public ActorSystem getActorSystem() {
+  public ActorSystem<?> getActorSystem() {
     if (!started)
       throw new IllegalStateException("Need to start KalixTestkit before accessing actor system");
     return runtimeActorSystem;
   }
 
   /**
-   * Get an {@link ActorSystem} for interacting "internally" with the components of a service.
+   * Get an {@link ComponentClient} for interacting "internally" with the components of a service.
    */
   public ComponentClient getComponentClient() {
     return componentClient;
@@ -770,7 +770,7 @@ public class KalixTestKit {
   public void stop() {
     try {
       if (runtimeActorSystem != null) {
-        TestKit.shutdownActorSystem(runtimeActorSystem, FiniteDuration.create(settings.stopTimeout.toMillis(), "ms"), true);
+        TestKit.shutdownActorSystem(runtimeActorSystem.classicSystem(), FiniteDuration.create(settings.stopTimeout.toMillis(), "ms"), true);
       }
     } catch (Exception e) {
       log.error("KalixTestkit Kalix runtime failed to terminate", e);

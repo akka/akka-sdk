@@ -4,6 +4,7 @@
 
 package akka.javasdk.impl.eventsourcedentity
 
+import akka.annotation.InternalApi
 import akka.javasdk.JsonSupport
 import akka.javasdk.eventsourcedentity.CommandContext
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
@@ -12,12 +13,17 @@ import akka.javasdk.impl.InvocationContext
 import akka.javasdk.impl.JsonMessageCodec
 import akka.javasdk.impl.StrictJsonMessageCodec
 import akka.javasdk.impl.reflection.Reflect
+
 import java.lang.reflect.ParameterizedType
 import com.google.protobuf.any.{ Any => ScalaPbAny }
 
 import scala.util.control.NonFatal
 
-class ReflectiveEventSourcedEntityRouter[S, E, ES <: EventSourcedEntity[S, E]](
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[impl] class ReflectiveEventSourcedEntityRouter[S, E, ES <: EventSourcedEntity[S, E]](
     override protected val entity: ES,
     commandHandlers: Map[String, CommandHandler],
     messageCodec: JsonMessageCodec)
@@ -123,7 +129,11 @@ class ReflectiveEventSourcedEntityRouter[S, E, ES <: EventSourcedEntity[S, E]](
   }
 }
 
-final class HandlerNotFoundException(handlerType: String, name: String, availableHandlers: Set[String])
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[impl] final class HandlerNotFoundException(handlerType: String, name: String, availableHandlers: Set[String])
     extends RuntimeException(
       s"no matching $handlerType handler for '$name'. " +
       s"Available handlers are: [${availableHandlers.mkString(", ")}]")

@@ -5,15 +5,25 @@
 package akka.javasdk.impl.timedaction
 
 import TimedActionRouter.HandlerNotFound
+import akka.annotation.InternalApi
 import akka.javasdk.timedaction.CommandContext
 import akka.javasdk.timedaction.CommandEnvelope
 import akka.javasdk.timedaction.TimedAction
 
 import java.util.Optional
 
+/**
+ * INTERNAL API
+ */
+@InternalApi
 object TimedActionRouter {
   case class HandlerNotFound(commandName: String) extends RuntimeException
 }
+
+/**
+ * INTERNAL API
+ */
+@InternalApi
 abstract class TimedActionRouter[A <: TimedAction](protected val action: A) {
 
   /**

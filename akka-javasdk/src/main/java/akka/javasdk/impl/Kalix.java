@@ -2,11 +2,11 @@
  * Copyright (C) 2021-2024 Lightbend Inc. <https://www.lightbend.com>
  */
 
-package akka.javasdk;
+package akka.javasdk.impl;
 
 import akka.actor.ActorSystem;
 import akka.annotation.InternalApi;
-import akka.javasdk.impl.*;
+import akka.javasdk.BuildInfo$;
 import akka.javasdk.consumer.Consumer;
 import akka.javasdk.consumer.ConsumerOptions;
 import akka.javasdk.consumer.ConsumerProvider;
@@ -46,7 +46,10 @@ import java.util.function.Function;
 /**
  * The Kalix class is the main interface to configuring entities to deploy, and subsequently
  * starting a local server which will expose these entities to the Kalix Runtime Sidecar.
+ *
+ * INTERNAL API
  */
+@InternalApi
 public final class Kalix {
 
   private final Logger logger = LoggerFactory.getLogger(getClass());

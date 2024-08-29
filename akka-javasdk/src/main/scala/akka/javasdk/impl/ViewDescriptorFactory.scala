@@ -13,8 +13,8 @@ import akka.javasdk.impl.reflection.SubscriptionServiceMethod
 import akka.javasdk.impl.reflection.ViewUrlTemplate
 import akka.javasdk.impl.reflection.VirtualDeleteServiceMethod
 import akka.javasdk.impl.reflection.VirtualServiceMethod
-import java.lang.reflect.ParameterizedType
 
+import java.lang.reflect.ParameterizedType
 import akka.javasdk.annotations.Consume.FromKeyValueEntity
 import akka.javasdk.annotations.Consume.FromServiceStream
 import ComponentDescriptorFactory.combineBy
@@ -35,13 +35,17 @@ import ComponentDescriptorFactory.hasValueEntitySubscription
 import ComponentDescriptorFactory.mergeServiceOptions
 import ComponentDescriptorFactory.subscribeToEventStream
 import JwtDescriptorFactory.buildJWTOptions
+import akka.annotation.InternalApi
 import akka.javasdk.annotations.Query
 import akka.javasdk.annotations.Table
 import akka.javasdk.view.View
 import kalix.Eventing
 import kalix.MethodOptions
-// TODO: abstract away reactor dependency
 
+/**
+ * INTERNAL API
+ */
+@InternalApi
 private[impl] object ViewDescriptorFactory extends ComponentDescriptorFactory {
 
   val TableNamePattern = """FROM\s+`?([A-Za-z][A-Za-z0-9_]*)""".r

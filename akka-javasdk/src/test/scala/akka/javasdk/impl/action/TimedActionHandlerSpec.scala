@@ -25,8 +25,8 @@ import akka.javasdk.timedaction.TimedAction
 import com.google.protobuf
 import com.google.protobuf.any.{ Any => ScalaPbAny }
 import kalix.javasdk.actionspec.ActionspecApi
-import akka.platform.javasdk.spi.DeferredRequest
-import akka.platform.javasdk.spi.TimerClient
+import akka.runtime.sdk.spi.DeferredRequest
+import akka.runtime.sdk.spi.TimerClient
 import kalix.protocol.action.ActionCommand
 import kalix.protocol.action.ActionResponse
 import kalix.protocol.action.Actions

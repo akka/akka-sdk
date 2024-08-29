@@ -4,6 +4,7 @@
 
 package akka.javasdk.impl;
 
+import akka.annotation.InternalApi;
 import akka.javasdk.timedaction.TimedAction;
 import akka.javasdk.timedaction.TimedActionContext;
 import akka.javasdk.impl.timedaction.TimedActionRouter;
@@ -13,7 +14,10 @@ import akka.javasdk.impl.timedaction.TimedActionRouter;
  *
  * <p>Generally, this should not be needed, instead, a class extending a generated abstract {@link
  * TimedAction} should be used.
+ *
+ * <p>INTERNAL API
  */
+@InternalApi
 public interface TimedActionFactory {
   TimedActionRouter<?> create(TimedActionContext context);
 }

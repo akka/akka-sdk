@@ -7,25 +7,28 @@ package akka.javasdk.impl
 import java.lang
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
-
 import scala.jdk.CollectionConverters._
-
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.google.protobuf.ByteString
 import com.google.protobuf.BytesValue
 import com.google.protobuf.any.{ Any => ScalaPbAny }
 import com.google.protobuf.{ Any => JavaPbAny }
 import AnySupport.BytesPrimitive
+import akka.annotation.InternalApi
 import akka.javasdk.JsonSupport
 import akka.javasdk.annotations.Migration
 import akka.javasdk.annotations.TypeName
 
-private[akka] class JsonMessageCodec extends MessageCodec {
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[javasdk] class JsonMessageCodec extends MessageCodec {
 
-  private[akka] case class TypeHint(currenTypeHintWithVersion: String, allTypeHints: List[String])
+  case class TypeHint(currenTypeHintWithVersion: String, allTypeHints: List[String])
 
   private val typeHints: ConcurrentMap[Class[_], TypeHint] = new ConcurrentHashMap()
-  private[akka] val reversedTypeHints: ConcurrentMap[String, Class[_]] = new ConcurrentHashMap()
+  val reversedTypeHints: ConcurrentMap[String, Class[_]] = new ConcurrentHashMap()
 
   override def toString: String = s"JsonMessageCodec: ${typeHints.keySet().size()} registered types"
 
@@ -174,8 +177,11 @@ private[akka] class JsonMessageCodec extends MessageCodec {
  * Used in workflows where it is necessary to decode message directly to Java class for calls and transitions. This
  * behavior is not correct for other components (Action, Views) where e.g. subscription can't decode the payload to Java
  * class too early (typeUrl is used for the component logic). It must reuse the same cache as JsonMessageCodec.
+ *
+ * INTERNAL API
  */
-private[akka] class StrictJsonMessageCodec(delegate: JsonMessageCodec) extends MessageCodec {
+@InternalApi
+private[javasdk] class StrictJsonMessageCodec(delegate: JsonMessageCodec) extends MessageCodec {
 
   override def toString: String = s"StrictJsonMessageCodec -> $delegate"
   override def decodeMessage(value: ScalaPbAny): Any =

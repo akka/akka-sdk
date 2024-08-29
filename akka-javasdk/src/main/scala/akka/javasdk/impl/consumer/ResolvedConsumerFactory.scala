@@ -4,12 +4,17 @@
 
 package akka.javasdk.impl.consumer
 
+import akka.annotation.InternalApi
 import akka.javasdk.consumer.ConsumerContext
 import akka.javasdk.impl.ConsumerFactory
 import akka.javasdk.impl.ResolvedEntityFactory
 import akka.javasdk.impl.ResolvedServiceMethod
 
-class ResolvedConsumerFactory(
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[impl] class ResolvedConsumerFactory(
     delegate: ConsumerFactory,
     override val resolvedMethods: Map[String, ResolvedServiceMethod[_, _]])
     extends ConsumerFactory

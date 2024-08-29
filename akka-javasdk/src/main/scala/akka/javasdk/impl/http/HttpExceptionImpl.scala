@@ -6,7 +6,7 @@ package akka.javasdk.impl.http
 
 import akka.annotation.InternalApi
 import akka.http.scaladsl.model.StatusCode
-import akka.platform.javasdk.spi.HttpEndpointInvocationException
+import akka.runtime.sdk.spi.HttpEndpointInvocationException
 
 import scala.util.control.NoStackTrace
 
@@ -14,7 +14,7 @@ import scala.util.control.NoStackTrace
  * INTERNAL API
  */
 @InternalApi
-final class HttpExceptionImpl(val statusCode: StatusCode, val responseText: Option[String])
+private[impl] final class HttpExceptionImpl(val statusCode: StatusCode, val responseText: Option[String])
     extends RuntimeException
     with HttpEndpointInvocationException
     with NoStackTrace {

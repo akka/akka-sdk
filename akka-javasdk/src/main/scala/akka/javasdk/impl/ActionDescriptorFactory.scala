@@ -8,8 +8,13 @@ import akka.javasdk.impl.reflection.ActionHandlerMethod
 import akka.javasdk.impl.reflection.KalixMethod
 import akka.javasdk.impl.reflection.NameGenerator
 import ComponentDescriptorFactory.hasActionOutput
+import akka.annotation.InternalApi
 import akka.javasdk
 
+/**
+ * INTERNAL API
+ */
+@InternalApi
 private[impl] object ActionDescriptorFactory extends ComponentDescriptorFactory {
 
   override def buildDescriptorFor(

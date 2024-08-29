@@ -1,6 +1,6 @@
 package shoppingcart.cart;
 
-import akka.javasdk.testkit.KalixIntegrationTestKitSupport;
+import akka.javasdk.testkit.AkkaSdkTestKitSupport;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import shoppingcart.api.ShoppingCartEntity;
@@ -18,7 +18,7 @@ import shoppingcart.domain.ShoppingCart.LineItem;
  * Since this is an integration tests, it interacts with the application using a WebClient
  * (already configured and provided automatically through {{componentClient}}).
  */
-public class IntegrationTest extends KalixIntegrationTestKitSupport {
+public class IntegrationTest extends AkkaSdkTestKitSupport {
 
   @Test
   public void createAndManageCart() {

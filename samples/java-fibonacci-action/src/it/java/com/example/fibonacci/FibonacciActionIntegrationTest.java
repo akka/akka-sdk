@@ -1,12 +1,12 @@
 package com.example.fibonacci;
 
 import akka.http.javadsl.model.StatusCodes;
-import akka.javasdk.testkit.KalixIntegrationTestKitSupport;
+import akka.javasdk.testkit.AkkaSdkTestKitSupport;
 import akka.javasdk.http.StrictResponse;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class FibonacciActionIntegrationTest extends KalixIntegrationTestKitSupport {
+public class FibonacciActionIntegrationTest extends AkkaSdkTestKitSupport {
 
   @Test
   public void calculateNextNumber() {

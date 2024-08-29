@@ -1,12 +1,12 @@
 package customer.api;
 
 
+import akka.javasdk.testkit.AkkaSdkTestKitSupport;
 import customer.domain.Address;
 import customer.domain.Customer;
 import customer.application.CustomerEntity;
 import customer.application.CustomerByEmailView;
 import customer.application.CustomersByNameView;
-import akka.javasdk.testkit.KalixIntegrationTestKitSupport;
 import org.awaitility.Awaitility;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Assertions;
@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
+public class CustomerIntegrationTest extends AkkaSdkTestKitSupport {
 
   @Test
   public void create() {

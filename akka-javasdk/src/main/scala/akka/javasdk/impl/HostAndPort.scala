@@ -10,17 +10,12 @@ import akka.annotation.InternalApi
  * INTERNAL API
  */
 @InternalApi
-object HostAndPort {
+private[impl] object HostAndPort {
 
   private val HostPortPattern = """([\w+\-_.]+):(\d{1,5})""".r
   private val PortPattern = """(\d{1,5})""".r
 
   /**
-   * When running locally, users can configure service port mappings associating a name and a port. In such a case, we
-   * will resolve to 0.0.0.0:port and that's just enough. However, when building a docker-compose file containing more
-   * than one service, the config will need to include the docker host address, for example:
-   * -Dakka.platform.dev-mode.service-port-mappings.my-service=host.docker.internal:9001
-   *
    * We should not default to host.docker.internal because it might depend on docker environment, for example: Docker
    * Desktop, Podman, Colima, Linux, etc.
    */

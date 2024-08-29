@@ -4,12 +4,17 @@
 
 package akka.javasdk.impl.effect
 
+import akka.annotation.InternalApi
 import akka.javasdk.Metadata
 import com.google.protobuf.{ Any => JavaPbAny }
 import io.grpc.Status
 import kalix.protocol.component.ClientAction
 
-sealed trait SecondaryEffectImpl {
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[javasdk] sealed trait SecondaryEffectImpl {
   final def replyToClientAction(commandId: Long, errorCode: Option[Status.Code]): Option[ClientAction] = {
     this match {
       case message: MessageReplyImpl[JavaPbAny] @unchecked =>
@@ -31,8 +36,21 @@ sealed trait SecondaryEffectImpl {
   }
 }
 
-case object NoSecondaryEffectImpl extends SecondaryEffectImpl {}
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[javasdk] case object NoSecondaryEffectImpl extends SecondaryEffectImpl {}
 
-final case class MessageReplyImpl[T](message: T, metadata: Metadata) extends SecondaryEffectImpl {}
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[javasdk] final case class MessageReplyImpl[T](message: T, metadata: Metadata) extends SecondaryEffectImpl {}
 
-final case class ErrorReplyImpl[T](description: String, status: Option[Status.Code]) extends SecondaryEffectImpl {}
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[javasdk] final case class ErrorReplyImpl[T](description: String, status: Option[Status.Code])
+    extends SecondaryEffectImpl {}

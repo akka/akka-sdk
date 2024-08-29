@@ -4,7 +4,7 @@
 
 package akka.javasdk.testkit;
 
-import akka.actor.ActorSystem;
+import akka.actor.typed.ActorSystem;
 import akka.annotation.InternalApi;
 import com.google.protobuf.ByteString;
 import akka.javasdk.Metadata;
@@ -23,7 +23,7 @@ public interface EventingTestKit {
    * INTERNAL API
    */
   @InternalApi
-  static EventingTestKit start(ActorSystem system, String host, int port, MessageCodec codec) {
+  static EventingTestKit start(ActorSystem<?> system, String host, int port, MessageCodec codec) {
     return EventingTestKitImpl.start(system, host, port, codec);
   }
 

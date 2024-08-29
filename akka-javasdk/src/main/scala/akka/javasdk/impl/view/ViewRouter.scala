@@ -4,14 +4,24 @@
 
 package akka.javasdk.impl.view
 
+import akka.annotation.InternalApi
 import akka.javasdk.view.TableUpdater
 import akka.javasdk.view.UpdateContext
+
 import java.util.Optional
 
+/**
+ * INTERNAL API
+ */
+@InternalApi
 abstract class ViewUpdateRouter {
   def _internalHandleUpdate(state: Option[Any], event: Any, context: UpdateContext): TableUpdater.Effect[_]
 }
 
+/**
+ * INTERNAL API
+ */
+@InternalApi
 abstract class ViewRouter[S, V <: TableUpdater[S]](protected val updater: V) extends ViewUpdateRouter {
 
   /** INTERNAL API */
@@ -35,6 +45,10 @@ abstract class ViewRouter[S, V <: TableUpdater[S]](protected val updater: V) ext
 
 }
 
+/**
+ * INTERNAL API
+ */
+@InternalApi
 abstract class ViewMultiTableRouter extends ViewUpdateRouter {
 
   /** INTERNAL API */

@@ -22,8 +22,8 @@ import akka.javasdk.impl.action.ActionsImpl
 import akka.javasdk.impl.consumer.ConsumerEffectImpl
 import akka.javasdk.impl.consumer.ConsumerRouter
 import akka.javasdk.impl.consumer.ConsumerService
-import akka.platform.javasdk.spi.DeferredRequest
-import akka.platform.javasdk.spi.TimerClient
+import akka.runtime.sdk.spi.DeferredRequest
+import akka.runtime.sdk.spi.TimerClient
 import com.google.protobuf
 import com.google.protobuf.any.{ Any => ScalaPbAny }
 import kalix.javasdk.actionspec.ActionspecApi

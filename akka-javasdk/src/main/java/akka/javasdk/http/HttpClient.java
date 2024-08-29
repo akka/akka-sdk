@@ -4,7 +4,7 @@
 
 package akka.javasdk.http;
 
-import akka.actor.ActorSystem;
+import akka.actor.typed.ActorSystem;
 import akka.annotation.InternalApi;
 import akka.http.javadsl.Http;
 import akka.http.javadsl.model.ContentType;
@@ -30,6 +30,9 @@ import java.util.concurrent.CompletionStage;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
+/**
+ * FIXME separate in internal IMPL and public API
+ */
 public class HttpClient {
 
   private final Http http;
@@ -38,7 +41,7 @@ public class HttpClient {
   private final Duration timeout;
   private final List<HttpHeader> defaultHeaders;
 
-  public HttpClient(ActorSystem system, String baseUrl) {
+  public HttpClient(ActorSystem<?> system, String baseUrl) {
     this.http = Http.get(system);
     this.materializer = SystemMaterializer.get(system).materializer();
     this.timeout = system.settings().config()

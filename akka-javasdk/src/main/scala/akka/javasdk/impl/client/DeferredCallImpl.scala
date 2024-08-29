@@ -12,8 +12,8 @@ import MetadataImpl.toProtocol
 import akka.javasdk.DeferredCall
 import akka.javasdk.JsonSupport
 import akka.javasdk.Metadata
-import akka.platform.javasdk.spi.ComponentType
-import akka.platform.javasdk.spi.DeferredRequest
+import akka.runtime.sdk.spi.ComponentType
+import akka.runtime.sdk.spi.DeferredRequest
 
 import java.util.concurrent.CompletionStage
 
@@ -21,7 +21,7 @@ import java.util.concurrent.CompletionStage
  * INTERNAL API
  */
 @InternalApi
-final case class DeferredCallImpl[I, O](
+private[impl] final case class DeferredCallImpl[I, O](
     message: I,
     metadata: MetadataImpl,
     componentType: ComponentType,

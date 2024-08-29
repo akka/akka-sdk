@@ -1,7 +1,7 @@
 package store.view;
 
-import akka.javasdk.testkit.KalixTestKit;
-import akka.javasdk.testkit.KalixIntegrationTestKitSupport;
+import akka.javasdk.testkit.AkkaSdkTestKitSupport;
+import akka.javasdk.testkit.AkkaSdkTestKit;
 import store.customer.api.CustomerEntity;
 import store.customer.domain.Address;
 import store.customer.domain.Customer;
@@ -13,11 +13,11 @@ import store.product.domain.Product;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-public abstract class StoreViewIntegrationTest extends KalixIntegrationTestKitSupport {
+public abstract class StoreViewIntegrationTest extends AkkaSdkTestKitSupport {
 
   @Override
-  protected KalixTestKit.Settings kalixTestKitSettings() {
-    return KalixTestKit.Settings.DEFAULT.withAdvancedViews();
+  protected AkkaSdkTestKit.Settings kalixTestKitSettings() {
+    return AkkaSdkTestKit.Settings.DEFAULT.withAdvancedViews();
   }
 
   protected void createProduct(String id, String name, String currency, long units, int cents) {

@@ -4,7 +4,13 @@
 
 package akka.javasdk.impl
 
-case class DocLinks(sdkName: String) {
+import akka.annotation.InternalApi
+
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[javasdk] final case class DocLinks(sdkName: String) {
   private val baseUrl = "https://docs.kalix.io"
 
   // sdkName is of format e.g. kalix-java-sdk-protobuf

@@ -9,14 +9,20 @@ import akka.javasdk.impl.reflection.EntityUrlTemplate
 import akka.javasdk.impl.reflection.KalixMethod
 import akka.javasdk.impl.reflection.NameGenerator
 import akka.javasdk.impl.reflection.WorkflowUrlTemplate
+
 import java.lang.reflect.Method
 import scala.reflect.ClassTag
 import ComponentDescriptorFactory.mergeServiceOptions
 import JwtDescriptorFactory.buildJWTOptions
+import akka.annotation.InternalApi
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.javasdk.keyvalueentity.KeyValueEntity
 import akka.javasdk.workflow.Workflow
 
+/**
+ * INTERNAL API
+ */
+@InternalApi
 private[impl] object EntityDescriptorFactory extends ComponentDescriptorFactory {
 
   override def buildDescriptorFor(

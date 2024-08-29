@@ -4,11 +4,11 @@
 
 package akka.javasdk.testkit.impl
 
-import akka.javasdk.testkit.KalixTestKit.MockedEventing
+import akka.javasdk.testkit.AkkaSdkTestKit.MockedEventing
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
-class KalixTestKitSpec extends AnyWordSpec with Matchers {
+class AkkaSdkTestKitSpec extends AnyWordSpec with Matchers {
 
   "MockedSubscriptions" should {
     "create config" in {

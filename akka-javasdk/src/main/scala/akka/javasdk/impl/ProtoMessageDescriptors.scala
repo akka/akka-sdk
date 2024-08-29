@@ -4,12 +4,12 @@
 
 package akka.javasdk.impl
 
+import akka.annotation.InternalApi
+
 import java.lang.reflect.AnnotatedParameterizedType
 import java.lang.reflect.Field
 import java.time.Instant
-
 import scala.jdk.CollectionConverters._
-
 import com.fasterxml.jackson.dataformat.protobuf.ProtobufMapper
 import com.fasterxml.jackson.dataformat.protobuf.schema.ProtobufField
 import com.fasterxml.jackson.dataformat.protobuf.schema.ProtobufMessage
@@ -20,7 +20,10 @@ import com.google.protobuf.DescriptorProtos.FieldDescriptorProto
 
 /**
  * Extracts a protobuf schema for a message, used only for assigning a typed schema to view state and results
+ *
+ * INTERNAL API
  */
+@InternalApi
 object ProtoMessageDescriptors {
   private val protobufMapper = ProtobufMapper.builder.addModule(new JavaTimeModule).build;
 
@@ -154,6 +157,10 @@ object ProtoMessageDescriptors {
 
 }
 
+/**
+ * INTERNAL API
+ */
+@InternalApi
 case class ProtoMessageDescriptors(
     mainMessageDescriptor: DescriptorProtos.DescriptorProto,
     additionalMessageDescriptors: Seq[DescriptorProtos.DescriptorProto])

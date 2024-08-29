@@ -4,15 +4,22 @@
 
 package akka.javasdk.impl.logging
 
-import java.io.File
+import akka.annotation.InternalApi
 
+import java.io.File
 import ch.qos.logback.classic.ClassicConstants
 import ch.qos.logback.classic.LoggerContext
 import ch.qos.logback.classic.spi.Configurator.ExecutionStatus
 import ch.qos.logback.classic.util.DefaultJoranConfigurator
 import ch.qos.logback.core.util.Loader
 
-class KalixJoranConfigurator extends DefaultJoranConfigurator {
+/**
+ * INTERNAL API
+ *
+ * FIXME is this needed anymore?
+ */
+@InternalApi
+class AkkaSdkJoranConfigurator extends DefaultJoranConfigurator {
 
   private val devModeLogbackFile = "src/main/resources/logback-dev-mode.xml"
 

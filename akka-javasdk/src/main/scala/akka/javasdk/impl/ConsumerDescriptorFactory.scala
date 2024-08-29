@@ -10,10 +10,15 @@ import akka.javasdk.impl.reflection.NameGenerator
 import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.reflection.SubscriptionServiceMethod
 import ComponentDescriptorFactory._
+import akka.annotation.InternalApi
 import kalix.EventSource
 import kalix.Eventing
 import kalix.MethodOptions
 
+/**
+ * INTERNAL API
+ */
+@InternalApi
 private[impl] object ConsumerDescriptorFactory extends ComponentDescriptorFactory {
 
   override def buildDescriptorFor(

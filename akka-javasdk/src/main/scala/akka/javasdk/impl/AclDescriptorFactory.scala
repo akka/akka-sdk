@@ -4,7 +4,9 @@
 
 package akka.javasdk.impl
 
+import akka.annotation.InternalApi
 import akka.javasdk.annotations.Acl
+
 import java.lang.reflect.Method
 import com.google.protobuf.DescriptorProtos
 import com.google.protobuf.Descriptors
@@ -16,7 +18,11 @@ import org.slf4j.LoggerFactory
 import java.util.Collections
 import scala.PartialFunction.condOpt
 
-object AclDescriptorFactory {
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[impl] object AclDescriptorFactory {
 
   private val logger = LoggerFactory.getLogger(classOf[AclDescriptorFactory.type])
 

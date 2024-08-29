@@ -4,11 +4,13 @@
 
 package akka.javasdk.impl
 
+import akka.annotation.InternalApi
 import akka.javasdk.Context
 
 /**
  * INTERNAL API
  */
+@InternalApi
 private[impl] trait ActivatableContext extends Context {
   private final var active = true
   final def deactivate(): Unit = active = false
@@ -18,6 +20,7 @@ private[impl] trait ActivatableContext extends Context {
 /**
  * INTERNAL API
  */
+@InternalApi
 private[akka] trait InternalContext {
 
   /**
@@ -31,4 +34,5 @@ private[akka] trait InternalContext {
 /**
  * INTERNAL API
  */
+@InternalApi
 abstract class AbstractContext extends Context with InternalContext {}

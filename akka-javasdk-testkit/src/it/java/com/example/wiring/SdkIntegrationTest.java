@@ -7,8 +7,8 @@ package com.example.wiring;
 import akka.javasdk.Metadata;
 import akka.javasdk.client.EventSourcedEntityClient;
 import akka.javasdk.client.NoEntryFoundException;
-import akka.javasdk.testkit.KalixTestKit;
-import akka.javasdk.testkit.KalixIntegrationTestKitSupport;
+import akka.javasdk.testkit.AkkaSdkTestKit;
+import akka.javasdk.testkit.AkkaSdkTestKitSupport;
 import com.example.wiring.actions.echo.ActionWithMetadata;
 import com.example.wiring.actions.echo.EchoAction;
 import com.example.wiring.actions.echo.Message;
@@ -51,14 +51,14 @@ import static java.time.Duration.ofMillis;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class SdkIntegrationTest extends KalixIntegrationTestKitSupport {
+public class SdkIntegrationTest extends AkkaSdkTestKitSupport {
 
   private Duration timeout = Duration.of(10, SECONDS);
 
   @Override
-  protected KalixTestKit.Settings kalixTestKitSettings() {
+  protected AkkaSdkTestKit.Settings kalixTestKitSettings() {
     // here only to show how to set different `Settings` in a test.
-    return KalixTestKit.Settings.DEFAULT
+    return AkkaSdkTestKit.Settings.DEFAULT
       .withAclEnabled()
       .withAdvancedViews()
       .withWorkflowTickInterval(ofMillis(500))

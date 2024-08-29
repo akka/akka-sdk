@@ -4,6 +4,7 @@
 
 package akka.javasdk.impl
 
+import akka.annotation.InternalApi
 import com.google.api.HttpBodyProto
 import com.google.api.{ AnnotationsProto => HttpAnnotationsProto }
 import com.google.protobuf.AnyProto
@@ -15,6 +16,10 @@ import com.google.protobuf.WrappersProto
 import kalix.{ Annotations => KalixAnnotations }
 import org.slf4j.LoggerFactory
 
+/**
+ * INTERNAL API
+ */
+@InternalApi
 private[impl] object ProtoDescriptorGenerator {
 
   private val logger = LoggerFactory.getLogger(classOf[ProtoDescriptorGenerator.type])

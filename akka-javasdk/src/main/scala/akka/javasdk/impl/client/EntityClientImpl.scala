@@ -30,30 +30,30 @@ import akka.javasdk.keyvalueentity.KeyValueEntity
 import akka.javasdk.timedaction.TimedAction
 import akka.javasdk.view.View
 import akka.javasdk.workflow.Workflow
-import akka.platform.javasdk.spi.{ ActionClient => RuntimeActionClient }
-import akka.platform.javasdk.spi.{ EntityClient => RuntimeEntityClient }
-import akka.platform.javasdk.spi.{ ViewClient => RuntimeViewClient }
+import akka.runtime.sdk.spi.{ ActionClient => RuntimeActionClient }
+import akka.runtime.sdk.spi.{ EntityClient => RuntimeEntityClient }
+import akka.runtime.sdk.spi.{ ViewClient => RuntimeViewClient }
 import scala.concurrent.ExecutionContext
 import scala.jdk.FutureConverters.FutureOps
 import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
 
-import akka.platform.javasdk.spi.ActionRequest
-import akka.platform.javasdk.spi.ActionType
-import akka.platform.javasdk.spi.ComponentType
-import akka.platform.javasdk.spi.EntityRequest
-import akka.platform.javasdk.spi.EventSourcedEntityType
-import akka.platform.javasdk.spi.KeyValueEntityType
-import akka.platform.javasdk.spi.ViewRequest
-import akka.platform.javasdk.spi.ViewType
-import akka.platform.javasdk.spi.WorkflowType
+import akka.runtime.sdk.spi.ActionRequest
+import akka.runtime.sdk.spi.ActionType
+import akka.runtime.sdk.spi.ComponentType
+import akka.runtime.sdk.spi.EntityRequest
+import akka.runtime.sdk.spi.EventSourcedEntityType
+import akka.runtime.sdk.spi.KeyValueEntityType
+import akka.runtime.sdk.spi.ViewRequest
+import akka.runtime.sdk.spi.ViewType
+import akka.runtime.sdk.spi.WorkflowType
 
 /**
  * INTERNAL API
  */
 @InternalApi
-private[javasdk] sealed abstract class EntityClientImpl(
+private[impl] sealed abstract class EntityClientImpl(
     expectedComponentSuperclass: Class[_],
     componentType: ComponentType,
     entityClient: RuntimeEntityClient,

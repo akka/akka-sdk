@@ -5,6 +5,7 @@
 package akka.javasdk.impl.timedaction
 
 import akka.Done
+import akka.annotation.InternalApi
 import akka.javasdk.Metadata
 import akka.javasdk.timedaction.TimedAction
 
@@ -13,8 +14,11 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.FutureConverters.CompletionStageOps
 
-/** INTERNAL API */
-object TimedActionEffectImpl {
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[javasdk] object TimedActionEffectImpl {
   sealed abstract class PrimaryEffect extends TimedAction.Effect {}
 
   final case class ReplyEffect(metadata: Option[Metadata]) extends PrimaryEffect {

@@ -5,6 +5,7 @@
 package akka.javasdk.impl.telemetry
 
 import akka.actor.{ ActorSystem, ExtendedActorSystem, Extension, ExtensionId }
+import akka.annotation.InternalApi
 import akka.javasdk.Metadata
 import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.ProxyInfoHolder
@@ -31,6 +32,10 @@ import scala.collection.mutable
 import scala.concurrent.ExecutionContext
 import scala.jdk.OptionConverters._
 
+/**
+ * INTERNAL API
+ */
+@InternalApi
 object Telemetry extends ExtensionId[Telemetry] {
 
   val TRACE_PARENT_KEY: String = TraceInstrumentation.TRACE_PARENT_KEY
@@ -40,25 +45,50 @@ object Telemetry extends ExtensionId[Telemetry] {
     new Telemetry(system)
 }
 
+/**
+ * INTERNAL API
+ */
+@InternalApi
 sealed trait ComponentCategory {
   def name: String
 }
 
+/**
+ * INTERNAL API
+ */
+@InternalApi
 case object ConsumerCategory extends ComponentCategory {
   def name = "Consumer"
 }
 
+/**
+ * INTERNAL API
+ */
+@InternalApi
 case object ActionCategory extends ComponentCategory {
   def name = "Action"
 }
+
+/**
+ * INTERNAL API
+ */
+@InternalApi
 case object EventSourcedEntityCategory extends ComponentCategory {
   def name = "Event Sourced Entity"
 }
 
+/**
+ * INTERNAL API
+ */
+@InternalApi
 case object KeyValueEntityCategory extends ComponentCategory {
   def name = "Key Value Entity"
 }
 
+/**
+ * INTERNAL API
+ */
+@InternalApi
 final class Telemetry(system: ActorSystem) extends Extension {
 
   private val proxyInfoHolder = ProxyInfoHolder(system)
@@ -96,6 +126,10 @@ final class Telemetry(system: ActorSystem) extends Extension {
   }
 }
 
+/**
+ * INTERNAL API
+ */
+@InternalApi
 trait Instrumentation {
 
   def buildSpan(service: Service, command: Command): Option[Span]
@@ -106,12 +140,17 @@ trait Instrumentation {
 
 }
 
+/**
+ * INTERNAL API
+ */
+@InternalApi
 private[akka] object TraceInstrumentation {
 
   val TRACE_PARENT_KEY = "traceparent"
   val TRACE_STATE_KEY = "tracestate"
 
-  val TRACING_ENDPOINT = "akka.platform.telemetry.tracing.collector-endpoint"
+  // FIXME strange having both this and kalix.proxy.telemetry.tracing.collector-endpoint now with embedded SDK
+  val TRACING_ENDPOINT = "akka.javasdk.telemetry.tracing.collector-endpoint"
 
   private val logger: Logger = LoggerFactory.getLogger(getClass)
 
@@ -130,6 +169,10 @@ private[akka] object TraceInstrumentation {
   }
 }
 
+/**
+ * INTERNAL API
+ */
+@InternalApi
 private final class TraceInstrumentation(
     collectorEndpoint: String,
     componentName: String,
@@ -226,6 +269,10 @@ private final class TraceInstrumentation(
   override def getTracer: Tracer = openTelemetry.getTracer("kalix")
 }
 
+/**
+ * INTERNAL API
+ */
+@InternalApi
 private object NoOpInstrumentation extends Instrumentation {
 
   override def buildSpan(service: Service, command: Command): Option[Span] = None

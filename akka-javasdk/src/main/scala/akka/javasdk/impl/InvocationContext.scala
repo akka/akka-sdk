@@ -10,10 +10,15 @@ import com.google.protobuf.Descriptors
 import com.google.protobuf.DynamicMessage
 import com.google.protobuf.any.{ Any => ScalaPbAny }
 import AnySupport.BytesPrimitive
+import akka.annotation.InternalApi
 import akka.javasdk.JsonSupport
 import akka.javasdk.Metadata
 
-object InvocationContext {
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[javasdk] object InvocationContext {
 
   private val typeUrlField = ScalaPbAny.javaDescriptor.findFieldByName("type_url")
   private val valueField = ScalaPbAny.javaDescriptor.findFieldByName("value")

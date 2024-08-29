@@ -4,6 +4,7 @@
 
 package akka.javasdk.impl;
 
+import akka.annotation.InternalApi;
 import akka.javasdk.consumer.Consumer;
 import akka.javasdk.consumer.ConsumerContext;
 import akka.javasdk.impl.consumer.ConsumerRouter;
@@ -13,7 +14,10 @@ import akka.javasdk.impl.consumer.ConsumerRouter;
  *
  * <p>Generally, this should not be needed, instead, a class extending a generated abstract {@link
  * Consumer} should be used.
+ *
+ * <p>INTERNAL API
  */
+@InternalApi
 public interface ConsumerFactory {
   ConsumerRouter<?> create(ConsumerContext context);
 }

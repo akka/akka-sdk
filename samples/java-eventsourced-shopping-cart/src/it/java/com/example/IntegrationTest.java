@@ -1,9 +1,9 @@
 package com.example;
 
+import akka.javasdk.testkit.AkkaSdkTestKitSupport;
 import com.example.shoppingcart.ShoppingCartEntity;
 import com.example.shoppingcart.domain.ShoppingCart;
 import com.example.shoppingcart.domain.ShoppingCart.LineItem;
-import akka.javasdk.testkit.KalixIntegrationTestKitSupport;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
  * (already configured and provided automatically through injection).
  */
 // tag::sample-it[]
-public class IntegrationTest extends KalixIntegrationTestKitSupport { // <1>
+public class IntegrationTest extends AkkaSdkTestKitSupport { // <1>
 
   @Test
   public void createAndManageCart() {

@@ -5,7 +5,7 @@
 package akka.javasdk.timedaction;
 
 import com.google.protobuf.Descriptors;
-import akka.javasdk.Kalix;
+import akka.javasdk.impl.Kalix;
 import akka.javasdk.impl.MessageCodec;
 import akka.javasdk.impl.timedaction.TimedActionRouter;
 

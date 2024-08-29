@@ -4,15 +4,21 @@
 
 package akka.javasdk.impl.view
 
+import akka.annotation.InternalApi
 import akka.javasdk.JsonSupport
 import akka.javasdk.impl.CommandHandler
 import akka.javasdk.impl.ComponentDescriptorFactory
 import akka.javasdk.impl.InvocationContext
+
 import java.lang.reflect.ParameterizedType
 import com.google.protobuf.any.{ Any => ScalaPbAny }
 import akka.javasdk.impl.AnySupport.ProtobufEmptyTypeUrl
 import akka.javasdk.view.TableUpdater
 
+/**
+ * INTERNAL API
+ */
+@InternalApi
 class ReflectiveViewRouter[S, V <: TableUpdater[S]](
     viewUpdater: V,
     commandHandlers: Map[String, CommandHandler],

@@ -4,11 +4,12 @@
 
 package akka.javasdk.impl.reflection
 
+import akka.annotation.InternalApi
 import akka.javasdk.JsonSupport
 import akka.javasdk.Metadata
 import akka.javasdk.impl.AnySupport
-import scala.jdk.OptionConverters._
 
+import scala.jdk.OptionConverters._
 import com.google.protobuf.ByteString
 import com.google.protobuf.Descriptors
 import com.google.protobuf.DynamicMessage
@@ -20,20 +21,35 @@ import akka.javasdk.impl.StrictJsonMessageCodec
 
 /**
  * Extracts method parameters from an invocation context for the purpose of passing them to a reflective invocation call
+ *
+ * INTERNAL API
  */
-trait ParameterExtractor[-C, +T] {
+@InternalApi
+private[impl] trait ParameterExtractor[-C, +T] {
   def extract(context: C): T
 }
 
-trait MetadataContext {
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[impl] trait MetadataContext {
   def metadata: Metadata
 }
 
-trait DynamicMessageContext {
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[impl] trait DynamicMessageContext {
   def message: DynamicMessage
 }
 
-object ParameterExtractors {
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[impl] object ParameterExtractors {
 
   private def toAny(dm: DynamicMessage) = {
     val bytes = dm.getField(JavaPbAny.getDescriptor.findFieldByName("value")).asInstanceOf[ByteString]

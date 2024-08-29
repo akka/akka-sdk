@@ -4,6 +4,7 @@
 
 package akka.javasdk.impl
 
+import akka.annotation.InternalApi
 import org.slf4j.MDC
 
 import java.util.UUID
@@ -11,7 +12,8 @@ import java.util.UUID
 /**
  * INTERNAL API
  */
-private[akka] object ErrorHandling {
+@InternalApi
+private[javasdk] object ErrorHandling {
 
   case class BadRequestException(msg: String) extends RuntimeException(msg)
 

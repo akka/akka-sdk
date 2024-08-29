@@ -139,13 +139,13 @@ public class ComponentAnnotationProcessor extends AbstractProcessor {
                     var summary = String.join(", ", componentTypeToConcreteComponents.entrySet().stream().map(mapEntry ->
                         mapEntry.getValue().size() + " " + mapEntry.getKey()
                     ).toList());
-                    info("Kalix annotation processor detected components: " + summary);
+                    info("Akka SDK annotation processor detected components: " + summary);
                     createComponentServiceDescriptor(componentTypeToConcreteComponents);
                 } else {
-                    debug("Kalix annotation processor found no annotated components");
+                    debug("Akka SDK annotation processor found no annotated components");
                 }
             } catch (IOException ex) {
-                error("Kalix annotation processor failed to create Kalix component descriptor: " + ex.getMessage());
+                error("Akka SDK annotation processor failed to create Kalix component descriptor: " + ex.getMessage());
                 throw new RuntimeException(ex);
             }
             return true;
@@ -268,7 +268,7 @@ public class ComponentAnnotationProcessor extends AbstractProcessor {
         });
 
         var newDescriptorResource = filer.createResource(StandardLocation.CLASS_OUTPUT, "", COMPONENT_DESCRIPTOR_FILE_PATH);
-        debug("Kalix annotation processor writing component descriptor " + new File(newDescriptorResource.toUri()));
+        debug("Akka SDK annotation processor writing component descriptor " + new File(newDescriptorResource.toUri()));
         writeConfig(newDescriptorResource, ConfigFactory.parseMap(config));
     }
 

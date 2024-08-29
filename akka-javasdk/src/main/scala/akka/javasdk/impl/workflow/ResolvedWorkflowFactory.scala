@@ -4,11 +4,16 @@
 
 package akka.javasdk.impl.workflow
 
+import akka.annotation.InternalApi
 import akka.javasdk.impl.ResolvedEntityFactory
 import akka.javasdk.impl.ResolvedServiceMethod
 import akka.javasdk.impl.WorkflowFactory
 import akka.javasdk.workflow.WorkflowContext
 
+/**
+ * INTERNAL API
+ */
+@InternalApi
 class ResolvedWorkflowFactory(
     delegate: WorkflowFactory,
     override val resolvedMethods: Map[String, ResolvedServiceMethod[_, _]])

@@ -4,11 +4,13 @@
 
 package akka.javasdk.impl.eventsourcedentity
 
+import akka.annotation.InternalApi
 import akka.javasdk.Metadata
 import akka.javasdk.impl.effect.ErrorReplyImpl
 import akka.javasdk.impl.effect.MessageReplyImpl
 import akka.javasdk.impl.effect.NoSecondaryEffectImpl
 import akka.javasdk.impl.effect.SecondaryEffectImpl
+
 import java.util
 import java.util.function.{ Function => JFunction }
 import scala.jdk.CollectionConverters._
@@ -17,7 +19,11 @@ import akka.javasdk.eventsourcedentity.EventSourcedEntity.Effect.Builder
 import akka.javasdk.eventsourcedentity.EventSourcedEntity.Effect.OnSuccessBuilder
 import akka.javasdk.eventsourcedentity.EventSourcedEntity.ReadOnlyEffect
 
-object EventSourcedEntityEffectImpl {
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[javasdk] object EventSourcedEntityEffectImpl {
   sealed trait PrimaryEffectImpl
   final case class EmitEvents[E](event: Iterable[E], deleteEntity: Boolean = false) extends PrimaryEffectImpl
   case object NoPrimaryEffect extends PrimaryEffectImpl
@@ -25,7 +31,11 @@ object EventSourcedEntityEffectImpl {
 
 // Note: Effect and ReadOnlyEffect both implemented here, so not possible to identify at runtime, but all we need
 //       for now is compile time/type level identification if a command handler is read only or not.
-class EventSourcedEntityEffectImpl[S, E]
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[javasdk] class EventSourcedEntityEffectImpl[S, E]
     extends Builder[S, E]
     with OnSuccessBuilder[S]
     with Effect[S]

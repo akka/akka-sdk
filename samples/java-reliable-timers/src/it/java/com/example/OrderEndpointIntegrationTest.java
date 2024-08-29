@@ -1,12 +1,12 @@
 package com.example;
 
-import akka.javasdk.testkit.KalixIntegrationTestKitSupport;
+import akka.javasdk.testkit.AkkaSdkTestKitSupport;
 
 import java.time.Duration;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
 
-public class OrderEndpointIntegrationTest extends KalixIntegrationTestKitSupport {
+public class OrderEndpointIntegrationTest extends AkkaSdkTestKitSupport {
 
   private Duration timeout = Duration.of(20, SECONDS);
 

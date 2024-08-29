@@ -1,11 +1,11 @@
 package com.example.fibonacci;
 
-import akka.javasdk.testkit.KalixIntegrationTestKitSupport;
+import akka.javasdk.testkit.AkkaSdkTestKitSupport;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 // tag::testing-action[]
-public class FibonacciActionComponentClientIntegrationTest extends KalixIntegrationTestKitSupport {
+public class FibonacciActionComponentClientIntegrationTest extends AkkaSdkTestKitSupport {
 
 
   @Test

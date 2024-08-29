@@ -6,7 +6,7 @@ package akka.javasdk.testkit.impl
 
 import akka.NotUsed
 import akka.actor.ActorRef
-import akka.actor.ActorSystem
+import akka.actor.typed.ActorSystem
 import akka.actor.Props
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.HttpRequest
@@ -68,13 +68,13 @@ import scala.util.Success
 object EventingTestKitImpl {
 
   /**
-   * Start a pretend eventing backend, configure the proxy to use this through the
-   * 'akka.platform.proxy.eventing.support' "grpc-backend" and the same host and port as this was started with.
+   * Start a pretend eventing backend, configure the proxy to use this through the 'akka.runtime.eventing.support'
+   * "grpc-backend" and the same host and port as this was started with.
    *
    * The returned testkit can be used to expect and emit events to the proxy as if they came from an actual pub/sub
    * event backend.
    */
-  def start(system: ActorSystem, host: String, port: Int, decoder: MessageCodec): EventingTestKit = {
+  def start(system: ActorSystem[_], host: String, port: Int, decoder: MessageCodec): EventingTestKit = {
 
     // Create service handlers
     val service = new EventingTestServiceImpl(system, host, port, decoder)
@@ -139,12 +139,12 @@ object EventingTestKitImpl {
  * Implements the EventingTestKit protocol originally defined in proxy
  * protocols/testkit/src/main/protobuf/eventing_test_backend.proto
  */
-final class EventingTestServiceImpl(system: ActorSystem, val host: String, var port: Int, codec: MessageCodec)
+final class EventingTestServiceImpl(system: ActorSystem[_], val host: String, var port: Int, codec: MessageCodec)
     extends EventingTestKit {
 
   private val log = LoggerFactory.getLogger(classOf[EventingTestServiceImpl])
-  private implicit val sys: ActorSystem = system
-  private implicit val ec: ExecutionContextExecutor = sys.dispatcher
+  private implicit val sys: akka.actor.ActorSystem = system.classicSystem
+  private implicit val ec: ExecutionContextExecutor = system.executionContext
 
   private val topicDestinations = new ConcurrentHashMap[String, OutgoingMessagesImpl]()
 
@@ -158,7 +158,7 @@ final class EventingTestServiceImpl(system: ActorSystem, val host: String, var p
   private def getTopicIncomingMessagesImpl(topic: String): IncomingMessagesImpl =
     topicSubscriptions.computeIfAbsent(
       topic,
-      _ => new IncomingMessagesImpl(system.actorOf(Props[SourcesHolder](), "topic-holder-" + topic), codec))
+      _ => new IncomingMessagesImpl(sys.actorOf(Props[SourcesHolder](), "topic-holder-" + topic), codec))
 
   override def getTopicOutgoingMessages(topic: String): OutgoingMessages = getTopicOutgoingMessagesImpl(topic)
 
@@ -171,7 +171,7 @@ final class EventingTestServiceImpl(system: ActorSystem, val host: String, var p
   private def getValueEntityIncomingMessagesImpl(typeId: String): VeIncomingMessagesImpl =
     veSubscriptions.computeIfAbsent(
       typeId,
-      _ => new VeIncomingMessagesImpl(system.actorOf(Props[SourcesHolder](), "ve-holder-" + typeId), codec))
+      _ => new VeIncomingMessagesImpl(sys.actorOf(Props[SourcesHolder](), "ve-holder-" + typeId), codec))
 
   override def getEventSourcedEntityIncomingMessages(typeId: String): IncomingMessages =
     getEventSourcedSubscriptionImpl(typeId)
@@ -179,7 +179,7 @@ final class EventingTestServiceImpl(system: ActorSystem, val host: String, var p
   private def getEventSourcedSubscriptionImpl(typeId: String): IncomingMessagesImpl =
     esSubscriptions.computeIfAbsent(
       typeId,
-      _ => new IncomingMessagesImpl(system.actorOf(Props[SourcesHolder](), "es-holder-" + typeId), codec))
+      _ => new IncomingMessagesImpl(sys.actorOf(Props[SourcesHolder](), "es-holder-" + typeId), codec))
 
   override def getStreamIncomingMessages(service: String, streamId: String): IncomingMessages =
     getStreamIncomingMessagesImpl(service, streamId)
@@ -187,7 +187,7 @@ final class EventingTestServiceImpl(system: ActorSystem, val host: String, var p
   private def getStreamIncomingMessagesImpl(service: String, streamId: String): IncomingMessagesImpl =
     streamSubscriptions.computeIfAbsent(
       service + "/" + streamId,
-      _ => new IncomingMessagesImpl(system.actorOf(Props[SourcesHolder](), s"stream-holder-$service-$streamId"), codec))
+      _ => new IncomingMessagesImpl(sys.actorOf(Props[SourcesHolder](), s"stream-holder-$service-$streamId"), codec))
 
   final class ServiceImpl extends EventingTestKitService {
     override def emitSingle(in: EmitSingleCommand): Future[EmitSingleResult] = {

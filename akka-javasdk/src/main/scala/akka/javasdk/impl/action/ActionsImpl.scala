@@ -19,6 +19,7 @@ import akka.javasdk.impl.telemetry.Telemetry
 import akka.javasdk.impl.timedaction.TimedActionRouter
 import akka.javasdk.impl.timer.TimerSchedulerImpl
 import ErrorHandling.BadRequestException
+import akka.annotation.InternalApi
 import akka.javasdk.Metadata
 import akka.javasdk.consumer.Consumer
 import akka.javasdk.consumer.ConsumerContext
@@ -39,7 +40,7 @@ import akka.javasdk.timedaction.TimedAction
 import akka.javasdk.timedaction.TimedActionContext
 import akka.javasdk.timedaction.TimedActionOptions
 import akka.javasdk.timer.TimerScheduler
-import akka.platform.javasdk.spi.TimerClient
+import akka.runtime.sdk.spi.TimerClient
 import akka.stream.scaladsl.Source
 import com.google.protobuf.Descriptors
 import io.grpc.Status
@@ -57,7 +58,11 @@ import org.slf4j.MDC
 
 import scala.concurrent.ExecutionContext
 
-final class ActionService(
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[impl] final class ActionService(
     val factory: TimedActionFactory,
     override val descriptor: Descriptors.ServiceDescriptor,
     override val additionalDescriptors: Array[Descriptors.FileDescriptor],
@@ -342,4 +347,10 @@ class CommandContextImpl(
 
 }
 
-class TimedActionContextImpl(val system: ActorSystem) extends AbstractContext with TimedActionContext {}
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[impl] final class TimedActionContextImpl(val system: ActorSystem)
+    extends AbstractContext
+    with TimedActionContext {}

@@ -24,7 +24,7 @@ import akka.javasdk.impl.telemetry.Instrumentation
 import akka.javasdk.impl.telemetry.Telemetry
 import akka.javasdk.impl.timer.TimerSchedulerImpl
 import akka.javasdk.timer.TimerScheduler
-import akka.platform.javasdk.spi.TimerClient
+import akka.runtime.sdk.spi.TimerClient
 import com.google.protobuf.Descriptors
 import io.opentelemetry.api.trace.Tracer
 import kalix.protocol.action.Actions
@@ -32,7 +32,11 @@ import kalix.protocol.component.MetadataEntry
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-final class ConsumerService(
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[impl] final class ConsumerService(
     val factory: ConsumerFactory,
     override val descriptor: Descriptors.ServiceDescriptor,
     override val additionalDescriptors: Array[Descriptors.FileDescriptor],
@@ -73,13 +77,17 @@ final class ConsumerService(
   override final val componentType = Actions.name
 }
 
-case class MessageEnvelopeImpl[T](payload: T, metadata: Metadata) extends MessageEnvelope[T]
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[impl] final case class MessageEnvelopeImpl[T](payload: T, metadata: Metadata) extends MessageEnvelope[T]
 
 /**
  * INTERNAL API
  */
 @InternalApi
-final class MessageContextImpl(
+private[impl] final class MessageContextImpl(
     override val metadata: Metadata,
     val messageCodec: MessageCodec,
     timerClient: TimerClient,
@@ -112,5 +120,8 @@ final class MessageContextImpl(
 
 }
 
+/**
+ * INTERNAL API
+ */
 @InternalApi
-final class ConsumerContextImpl(val system: ActorSystem) extends AbstractContext with ConsumerContext {}
+private[impl] final class ConsumerContextImpl(val system: ActorSystem) extends AbstractContext with ConsumerContext {}

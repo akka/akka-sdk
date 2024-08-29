@@ -4,12 +4,17 @@
 
 package akka.javasdk.impl
 
-import scala.collection.mutable
+import akka.annotation.InternalApi
 
+import scala.collection.mutable
 import com.google.protobuf.DescriptorProtos.FieldDescriptorProto
 import com.google.protobuf.Descriptors.FileDescriptor
 
-object ProtoDescriptorRenderer {
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[impl] object ProtoDescriptorRenderer {
 
   def toString(fileDescriptor: FileDescriptor): String = {
     // not water tight but better than the default non-protobuf Proto-toString format

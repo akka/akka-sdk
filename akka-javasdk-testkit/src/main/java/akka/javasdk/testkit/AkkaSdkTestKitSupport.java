@@ -31,11 +31,11 @@ import static java.time.temporal.ChronoUnit.SECONDS;
  * <p>On test teardown, the Kalix application and the Kalix Runtime will be stopped.
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public abstract class KalixIntegrationTestKitSupport extends AsyncCallsSupport {
+public abstract class AkkaSdkTestKitSupport extends AsyncCallsSupport {
 
   private Logger logger = LoggerFactory.getLogger(getClass());
 
-  protected KalixTestKit kalixTestKit;
+  protected AkkaSdkTestKit akkaSdkTestKit;
 
   protected ComponentClient componentClient;
 
@@ -51,19 +51,19 @@ public abstract class KalixIntegrationTestKitSupport extends AsyncCallsSupport {
   /**
    * Override this to use custom settings for an integration test
    */
-  protected KalixTestKit.Settings kalixTestKitSettings() {
-    return KalixTestKit.Settings.DEFAULT;
+  protected AkkaSdkTestKit.Settings kalixTestKitSettings() {
+    return AkkaSdkTestKit.Settings.DEFAULT;
   }
 
   @BeforeAll
   public void beforeAll() {
     try {
-      kalixTestKit = (new KalixTestKit(kalixTestKitSettings())).start();
-      componentClient = kalixTestKit.getComponentClient();
-      timerScheduler = kalixTestKit.getTimerScheduler();
-      dependencyProvider = kalixTestKit.getDependencyContext();
-      var baseUrl = "http://localhost:" + kalixTestKit.getPort();
-      httpClient = new HttpClient(kalixTestKit.getActorSystem(), baseUrl);
+      akkaSdkTestKit = (new AkkaSdkTestKit(kalixTestKitSettings())).start();
+      componentClient = akkaSdkTestKit.getComponentClient();
+      timerScheduler = akkaSdkTestKit.getTimerScheduler();
+      dependencyProvider = akkaSdkTestKit.getDependencyContext();
+      var baseUrl = "http://localhost:" + akkaSdkTestKit.getPort();
+      httpClient = new HttpClient(akkaSdkTestKit.getActorSystem(), baseUrl);
     } catch (Exception ex) {
       logger.error("Failed to startup Kalix service", ex);
       throw ex;
@@ -72,9 +72,9 @@ public abstract class KalixIntegrationTestKitSupport extends AsyncCallsSupport {
 
   @AfterAll
   public void afterAll() {
-    if (kalixTestKit != null) {
+    if (akkaSdkTestKit != null) {
       logger.info("Stopping Kalix TestKit...");
-      kalixTestKit.stop();
+      akkaSdkTestKit.stop();
     }
   }
 

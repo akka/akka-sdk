@@ -4,8 +4,8 @@ import customer.api.CustomerList;
 import customer.domain.Address;
 import customer.domain.Customer;
 import akka.javasdk.testkit.EventingTestKit.IncomingMessages;
-import akka.javasdk.testkit.KalixTestKit;
-import akka.javasdk.testkit.KalixIntegrationTestKitSupport;
+import akka.javasdk.testkit.AkkaSdkTestKit;
+import akka.javasdk.testkit.AkkaSdkTestKitSupport;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 import java.util.concurrent.TimeUnit;
@@ -13,17 +13,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 // tag::view-test[]
 
-class CustomersResponseByCityIntegrationTest extends KalixIntegrationTestKitSupport {
+class CustomersResponseByCityIntegrationTest extends AkkaSdkTestKitSupport {
 
   @Override
-  protected KalixTestKit.Settings kalixTestKitSettings() {
-    return KalixTestKit.Settings.DEFAULT
+  protected AkkaSdkTestKit.Settings kalixTestKitSettings() {
+    return AkkaSdkTestKit.Settings.DEFAULT
             .withKeyValueEntityIncomingMessages("customer"); // <1>
   }
 
   @Test
   public void shouldGetCustomerByCity() {
-    IncomingMessages customerEvents = kalixTestKit.getKeyValueEntityIncomingMessages("customer"); // <2>
+    IncomingMessages customerEvents = akkaSdkTestKit.getKeyValueEntityIncomingMessages("customer"); // <2>
 
     Customer johanna = new Customer("1", "johanna@example.com", "Johanna",
       new Address("Cool Street", "Porto"));

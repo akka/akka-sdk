@@ -18,8 +18,10 @@ import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.reflection.ServiceMethod
 import akka.javasdk.impl.reflection.SubscriptionServiceMethod
 import akka.javasdk.impl.reflection.VirtualServiceMethod
+
 import java.lang.reflect.ParameterizedType
 import AnySupport.ProtobufEmptyTypeUrl
+import akka.annotation.InternalApi
 import akka.javasdk.annotations.ComponentId
 import com.google.api.AnnotationsProto
 import com.google.api.HttpRule
@@ -39,8 +41,11 @@ import com.google.protobuf.{ Any => JavaPbAny }
  * The component descriptor is both used for generating the protobuf service descriptor to communicate the service type
  * and methods etc. to Kalix and for the reflective routers routing incoming calls to the right method of the user
  * component class.
+ *
+ * INTERNAL API
  */
-private[akka] object ComponentDescriptor {
+@InternalApi
+private[impl] object ComponentDescriptor {
 
   def descriptorFor(component: Class[_], messageCodec: JsonMessageCodec): ComponentDescriptor =
     ComponentDescriptorFactory.getFactoryFor(component).buildDescriptorFor(component, messageCodec, new NameGenerator)

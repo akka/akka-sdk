@@ -4,7 +4,7 @@
 
 package akka.javasdk.keyvalueentity;
 
-import akka.javasdk.Kalix;
+import akka.javasdk.impl.Kalix;
 import akka.javasdk.impl.MessageCodec;
 import com.google.protobuf.Descriptors;
 import akka.javasdk.impl.keyvalueentity.KeyValueEntityRouter;

@@ -4,9 +4,9 @@
 
 package com.example.wiring;
 
+import akka.javasdk.testkit.AkkaSdkTestKitSupport;
 import com.example.wiring.eventsourcedentities.counter.CounterEntity;
 import akka.javasdk.client.EventSourcedEntityClient;
-import akka.javasdk.testkit.KalixIntegrationTestKitSupport;
 import org.awaitility.Awaitility;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Assertions;
@@ -18,7 +18,7 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
 
-public class EventSourcedEntityIntegrationTest extends KalixIntegrationTestKitSupport {
+public class EventSourcedEntityIntegrationTest extends AkkaSdkTestKitSupport {
 
   @Test
   public void verifyCounterEventSourcedWiring() {

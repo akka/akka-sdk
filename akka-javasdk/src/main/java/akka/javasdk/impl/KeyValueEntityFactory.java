@@ -4,6 +4,7 @@
 
 package akka.javasdk.impl;
 
+import akka.annotation.InternalApi;
 import akka.javasdk.impl.keyvalueentity.KeyValueEntityRouter;
 import akka.javasdk.keyvalueentity.KeyValueEntityContext;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
@@ -13,7 +14,10 @@ import akka.javasdk.keyvalueentity.KeyValueEntity;
  *
  * <p>Generally, this should not be needed, instead, a class extending a generated abstract {@link
  * KeyValueEntity} should be used.
+ *
+ * <p>INTERNAL API
  */
+@InternalApi
 public interface KeyValueEntityFactory {
   /**
    * Create an entity handler for the given context.

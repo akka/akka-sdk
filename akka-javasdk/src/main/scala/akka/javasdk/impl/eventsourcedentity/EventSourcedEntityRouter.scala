@@ -6,6 +6,7 @@ package akka.javasdk.impl.eventsourcedentity
 
 import EventSourcedEntityEffectImpl.EmitEvents
 import EventSourcedEntityEffectImpl.NoPrimaryEffect
+import akka.annotation.InternalApi
 import akka.javasdk.eventsourcedentity.CommandContext
 import akka.javasdk.eventsourcedentity.EventContext
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
@@ -14,7 +15,11 @@ import akka.javasdk.impl.effect.SecondaryEffectImpl
 
 import java.util.Optional
 
-object EventSourcedEntityRouter {
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[impl] object EventSourcedEntityRouter {
 
   final case class CommandResult(
       events: Vector[Any],
@@ -34,7 +39,11 @@ object EventSourcedEntityRouter {
  *
  * The concrete <code>EventSourcedEntityRouter</code> is generated for the specific entities defined in Protobuf.
  */
-abstract class EventSourcedEntityRouter[S, E, ES <: EventSourcedEntity[S, E]](protected val entity: ES) {
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[impl] abstract class EventSourcedEntityRouter[S, E, ES <: EventSourcedEntity[S, E]](protected val entity: ES) {
   import EventSourcedEntityRouter._
 
   private var state: Option[S] = None

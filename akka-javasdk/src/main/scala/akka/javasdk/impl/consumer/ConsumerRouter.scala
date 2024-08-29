@@ -6,14 +6,24 @@ package akka.javasdk.impl.consumer
 
 import java.util.Optional
 import ConsumerRouter.HandlerNotFound
+import akka.annotation.InternalApi
 import akka.javasdk.consumer.Consumer
 import akka.javasdk.consumer.MessageContext
 import akka.javasdk.consumer.MessageEnvelope
 
-object ConsumerRouter {
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[impl] object ConsumerRouter {
   case class HandlerNotFound(commandName: String) extends RuntimeException
 }
-abstract class ConsumerRouter[A <: Consumer](protected val consumer: A) {
+
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[impl] abstract class ConsumerRouter[A <: Consumer](protected val consumer: A) {
 
   /**
    * Handle a unary call.

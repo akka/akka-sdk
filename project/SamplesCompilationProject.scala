@@ -10,6 +10,9 @@ import sbt.Test
 
 object SamplesCompilationProject {
 
+  val additionalDeps = Map(
+    "java-spring-dependency-injection" -> Seq("org.springframework" % "spring-context" % "6.1.6"))
+
   def compilationProject(configureFunc: Project => Project): CompositeProject = {
     val pathToSample = "samples"
 
@@ -24,9 +27,11 @@ object SamplesCompilationProject {
       lazy val innerProjects =
         findSamples
           .map { dir =>
-            Project(dir.getName, dir)
+            val proj = Project(dir.getName, dir)
               .disablePlugins(HeaderPlugin)
               .settings(Test / unmanagedSourceDirectories += baseDirectory.value / "src" / "it" / "java")
+
+            additionalDeps.get(dir.getName).fold(proj)(deps => proj.settings(libraryDependencies ++= deps))
           }
           .map(configureFunc)
 

@@ -10,12 +10,17 @@ import akka.actor.ExtendedActorSystem
 import akka.actor.Extension
 import akka.actor.ExtensionId
 import akka.actor.ExtensionIdProvider
+import akka.annotation.InternalApi
 import kalix.protocol.discovery.IdentificationInfo
 import kalix.protocol.discovery.ProxyInfo
 import org.slf4j.LoggerFactory
 
 import java.util.concurrent.atomic.AtomicReference
 
+/**
+ * INTERNAL API
+ */
+@InternalApi
 object ProxyInfoHolder extends ExtensionId[ProxyInfoHolder] with ExtensionIdProvider {
   override def get(system: ActorSystem): ProxyInfoHolder = super.get(system)
 
@@ -27,6 +32,10 @@ object ProxyInfoHolder extends ExtensionId[ProxyInfoHolder] with ExtensionIdProv
   override def lookup: ExtensionId[_ <: Extension] = this
 }
 
+/**
+ * INTERNAL API
+ */
+@InternalApi
 class ProxyInfoHolder extends Extension {
 
   private val log = LoggerFactory.getLogger(classOf[ProxyInfoHolder])

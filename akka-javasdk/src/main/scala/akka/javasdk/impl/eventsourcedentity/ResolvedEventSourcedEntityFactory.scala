@@ -4,12 +4,17 @@
 
 package akka.javasdk.impl.eventsourcedentity
 
+import akka.annotation.InternalApi
 import akka.javasdk.eventsourcedentity.EventSourcedEntityContext
 import akka.javasdk.impl.EventSourcedEntityFactory
 import akka.javasdk.impl.ResolvedEntityFactory
 import akka.javasdk.impl.ResolvedServiceMethod
 
-class ResolvedEventSourcedEntityFactory(
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[impl] class ResolvedEventSourcedEntityFactory(
     delegate: EventSourcedEntityFactory,
     override val resolvedMethods: Map[String, ResolvedServiceMethod[_, _]])
     extends EventSourcedEntityFactory

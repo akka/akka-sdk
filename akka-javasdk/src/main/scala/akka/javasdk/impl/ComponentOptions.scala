@@ -4,6 +4,12 @@
 
 package akka.javasdk.impl
 
+import akka.annotation.InternalApi
+
+/**
+ * INTERNAL API
+ */
+@InternalApi
 trait ComponentOptions {
 
   /**

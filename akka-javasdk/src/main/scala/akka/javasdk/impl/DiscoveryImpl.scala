@@ -7,6 +7,7 @@ package akka.javasdk.impl
 import akka.Done
 import akka.actor.ActorSystem
 import akka.actor.CoordinatedShutdown
+import akka.annotation.InternalApi
 import com.google.protobuf.DescriptorProtos
 import com.google.protobuf.DescriptorProtos.FileDescriptorProto
 import com.google.protobuf.empty.Empty
@@ -24,6 +25,10 @@ import scala.concurrent.Promise
 import scala.io.Source
 import scala.jdk.CollectionConverters._
 
+/**
+ * INTERNAL API
+ */
+@InternalApi
 class DiscoveryImpl(
     system: ActorSystem,
     services: Map[String, Service],
@@ -80,15 +85,15 @@ class DiscoveryImpl(
 
     // possibly filtered or hidden env, passed along for substitution in descriptor options
     val env: Map[String, String] = {
-      if (system.settings.config.getBoolean("akka.platform.discovery.pass-along-env-all"))
+      if (system.settings.config.getBoolean("akka.javasdk.discovery.pass-along-env-all"))
         sys.env
       else {
-        system.settings.config.getAnyRef("akka.platform.discovery.pass-along-env-allow") match {
+        system.settings.config.getAnyRef("akka.javasdk.discovery.pass-along-env-allow") match {
           case allowed: util.ArrayList[String @unchecked] =>
             allowed.asScala.flatMap(name => sys.env.get(name).map(value => name -> value)).toMap
           case unexpected =>
             throw new IllegalArgumentException(
-              s"The setting 'akka.platform.discovery.pass-along-env-allow' must be a list of env val names, but was [${unexpected}]")
+              s"The setting 'akka.javasdk.discovery.pass-along-env-allow' must be a list of env val names, but was [${unexpected}]")
         }
       }
     }
@@ -98,11 +103,11 @@ class DiscoveryImpl(
       serviceRuntime =
         sys.props.getOrElse("java.runtime.name", "") + " " + sys.props.getOrElse("java.runtime.version", ""),
       supportLibraryName = sdkName,
-      supportLibraryVersion = configuredOrElse("akka.platform.library.version", BuildInfo.version),
+      supportLibraryVersion = configuredOrElse("akka.javasdk.library.version", BuildInfo.version),
       protocolMajorVersion =
-        configuredIntOrElse("akka.platform.library.protocol-major-version", BuildInfo.protocolMajorVersion),
+        configuredIntOrElse("akka.javasdk.library.protocol-major-version", BuildInfo.protocolMajorVersion),
       protocolMinorVersion =
-        configuredIntOrElse("akka.platform.library.protocol-minor-version", BuildInfo.protocolMinorVersion),
+        configuredIntOrElse("akka.javasdk.library.protocol-minor-version", BuildInfo.protocolMinorVersion),
       // passed along for substitution in options
       env = env,
       serviceIncarnationUuid = serviceIncarnationUuid)
@@ -154,7 +159,7 @@ class DiscoveryImpl(
 
       val fileDescriptorsBuilder = fileDescriptorSetBuilder(
         services.values,
-        system.settings.config.getString("akka.platform.discovery.protobuf-descriptor-with-source-info-path"),
+        system.settings.config.getString("akka.javasdk.discovery.protobuf-descriptor-with-source-info-path"),
         log)
 
       // For the SpringSDK, the ACL default descriptor is provided programmatically

@@ -4,6 +4,7 @@
 
 package akka.javasdk.impl;
 
+import akka.annotation.InternalApi;
 import akka.javasdk.eventsourcedentity.EventSourcedEntityContext;
 import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityRouter;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
@@ -13,7 +14,10 @@ import akka.javasdk.eventsourcedentity.EventSourcedEntity;
  *
  * <p>Generally, this should not be needed, instead, a class extending a generated abstract {@link
  * EventSourcedEntity} should be used.
+ *
+ * <p>INTERNAL API
  */
+@InternalApi
 public interface EventSourcedEntityFactory {
   /**
    * Create an entity handler for the given context.

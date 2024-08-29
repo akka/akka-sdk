@@ -1,13 +1,13 @@
 package customer;
 
 
+import akka.javasdk.testkit.AkkaSdkTestKitSupport;
 import customer.api.CustomerEntity;
 import customer.api.CustomerList;
 import customer.api.Ok;
 import customer.domain.Address;
 import customer.domain.Customer;
 import customer.view.CustomersByCity;
-import akka.javasdk.testkit.KalixIntegrationTestKitSupport;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class CustomerIntegrationTest extends KalixIntegrationTestKitSupport {
+public class CustomerIntegrationTest extends AkkaSdkTestKitSupport {
 
   @Test
   public void create()  {

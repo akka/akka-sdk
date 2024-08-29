@@ -4,12 +4,17 @@
 
 package akka.javasdk.impl.effect
 
+import akka.annotation.InternalApi
 import akka.javasdk.impl.MetadataImpl
 import com.google.protobuf.any.{ Any => ScalaPbAny }
 import com.google.protobuf.{ Any => JavaPbAny }
 import kalix.protocol.component
 
-object EffectSupport {
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[impl] object EffectSupport {
 
   def asProtocol(messageReply: MessageReplyImpl[JavaPbAny]): component.Reply =
     component.Reply(

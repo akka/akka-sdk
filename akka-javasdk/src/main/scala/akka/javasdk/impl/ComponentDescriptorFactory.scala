@@ -4,6 +4,7 @@
 
 package akka.javasdk.impl
 
+import akka.annotation.InternalApi
 import akka.javasdk.annotations.Acl
 import akka.javasdk.annotations.ComponentId
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
@@ -11,6 +12,7 @@ import akka.javasdk.impl.reflection.CombinedSubscriptionServiceMethod
 import akka.javasdk.impl.reflection.KalixMethod
 import akka.javasdk.impl.reflection.NameGenerator
 import akka.javasdk.impl.reflection.Reflect
+
 import java.lang.reflect.AnnotatedElement
 import java.lang.reflect.Method
 import java.lang.reflect.ParameterizedType
@@ -36,6 +38,10 @@ import kalix.ServiceOptions
 // TODO: abstract away spring dependency
 import Reflect.Syntax._
 
+/**
+ * INTERNAL API
+ */
+@InternalApi
 private[impl] object ComponentDescriptorFactory {
 
   def hasAcl(javaMethod: Method): Boolean =

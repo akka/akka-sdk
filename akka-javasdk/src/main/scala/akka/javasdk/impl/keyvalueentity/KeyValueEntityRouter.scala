@@ -7,11 +7,16 @@ package akka.javasdk.impl.keyvalueentity
 import java.util.Optional
 import KeyValueEntityEffectImpl.DeleteEntity
 import KeyValueEntityEffectImpl.UpdateState
+import akka.annotation.InternalApi
 import akka.javasdk.impl.EntityExceptions
 import akka.javasdk.keyvalueentity.CommandContext
 import akka.javasdk.keyvalueentity.KeyValueEntity
 
-object KeyValueEntityRouter {
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[impl] object KeyValueEntityRouter {
   final case class CommandResult(effect: KeyValueEntity.Effect[_])
 
   final case class CommandHandlerNotFound(commandName: String) extends RuntimeException
@@ -23,8 +28,11 @@ object KeyValueEntityRouter {
  *   the type of the managed state for the entity Not for manual user extension or interaction
  *
  * The concrete <code>KeyValueEntityRouter</code> is generated for the specific entities defined in Protobuf.
+ *
+ * INTERNAL API
  */
-abstract class KeyValueEntityRouter[S, E <: KeyValueEntity[S]](protected val entity: E) {
+@InternalApi
+private[impl] abstract class KeyValueEntityRouter[S, E <: KeyValueEntity[S]](protected val entity: E) {
   import KeyValueEntityRouter._
 
   private var state: Option[S] = None

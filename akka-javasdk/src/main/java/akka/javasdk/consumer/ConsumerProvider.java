@@ -4,7 +4,7 @@
 
 package akka.javasdk.consumer;
 
-import akka.javasdk.Kalix;
+import akka.javasdk.impl.Kalix;
 import akka.javasdk.impl.MessageCodec;
 import akka.javasdk.impl.consumer.ConsumerRouter;
 import com.google.protobuf.Descriptors;

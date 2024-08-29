@@ -4,10 +4,16 @@
 
 package akka.javasdk.impl.reflection
 
+import akka.annotation.InternalApi
+
 import java.lang.reflect.AnnotatedElement
 import java.lang.reflect.Method
 
-object ServiceIntrospectionException {
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[impl] object ServiceIntrospectionException {
   def apply(element: AnnotatedElement, msg: String): ServiceIntrospectionException = {
     val elementStr =
       element match {
@@ -21,4 +27,8 @@ object ServiceIntrospectionException {
 
 }
 
-class ServiceIntrospectionException private (msg: String) extends RuntimeException(msg)
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[impl] final class ServiceIntrospectionException private (msg: String) extends RuntimeException(msg)

@@ -13,7 +13,7 @@ import akka.javasdk.client.TimedActionClient
 import akka.javasdk.client.ViewClient
 import akka.javasdk.client.WorkflowClient
 import akka.javasdk.impl.MetadataImpl
-import akka.platform.javasdk.spi.{ ComponentClients => RuntimeComponentClients }
+import akka.runtime.sdk.spi.{ ComponentClients => RuntimeComponentClients }
 
 import scala.concurrent.ExecutionContext
 import io.opentelemetry.api.trace.Span

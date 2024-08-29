@@ -4,8 +4,13 @@
 
 package akka.javasdk.impl.view
 
+import akka.annotation.InternalApi
 import akka.javasdk.view.TableUpdater
 
+/**
+ * INTERNAL API
+ */
+@InternalApi
 object ViewEffectImpl {
   sealed trait PrimaryEffect[S] extends TableUpdater.Effect[S]
   case class Update[S](state: S) extends PrimaryEffect[S]

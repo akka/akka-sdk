@@ -5,13 +5,11 @@
 package akka.javasdk.impl.workflow
 
 import java.util.Optional
-
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.OptionConverters._
 import scala.language.existentials
 import scala.util.control.NonFatal
-
 import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.javasdk.impl.ErrorHandling.BadRequestException
@@ -46,8 +44,9 @@ import akka.javasdk.impl.StrictJsonMessageCodec
 import akka.javasdk.impl.timer.TimerSchedulerImpl
 import akka.javasdk.workflow.CommandContext
 import akka.javasdk.workflow.Workflow
-import akka.platform.javasdk.spi.TimerClient
+import akka.runtime.sdk.spi.TimerClient
 import Workflow.WorkflowDef
+import akka.annotation.InternalApi
 import akka.javasdk.JsonSupport
 import akka.javasdk.impl.WorkflowFactory
 import akka.javasdk.workflow.WorkflowContext
@@ -86,6 +85,10 @@ import akka.javasdk.Metadata
 import scala.jdk.CollectionConverters._
 import com.google.protobuf.Descriptors
 
+/**
+ * INTERNAL API
+ */
+@InternalApi
 final class WorkflowService(
     val factory: WorkflowFactory,
     override val descriptor: Descriptors.ServiceDescriptor,
@@ -124,6 +127,10 @@ final class WorkflowService(
   override def componentOptions: Option[ComponentOptions] = workflowOptions
 }
 
+/**
+ * INTERNAL API
+ */
+@InternalApi
 final class WorkflowImpl(
     system: ActorSystem,
     val services: Map[String, WorkflowService],
@@ -379,6 +386,10 @@ final class WorkflowImpl(
 
 }
 
+/**
+ * INTERNAL API
+ */
+@InternalApi
 private[akka] final class CommandContextImpl(
     override val workflowId: String,
     override val commandName: String,
@@ -389,6 +400,10 @@ private[akka] final class CommandContextImpl(
     with CommandContext
     with ActivatableContext
 
+/**
+ * INTERNAL API
+ */
+@InternalApi
 private[akka] final class WorkflowContextImpl(override val workflowId: String)
     extends AbstractContext
     with WorkflowContext

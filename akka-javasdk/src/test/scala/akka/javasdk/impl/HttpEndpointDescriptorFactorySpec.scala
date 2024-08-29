@@ -6,9 +6,9 @@ package akka.javasdk.impl
 
 import akka.http.scaladsl.model.HttpMethods
 import akka.javasdk.impl.HttpEndpointDescriptorFactory
-import akka.platform.javasdk.spi.All
-import akka.platform.javasdk.spi.Internet
-import akka.platform.javasdk.spi.ServiceNamePattern
+import akka.runtime.sdk.spi.All
+import akka.runtime.sdk.spi.Internet
+import akka.runtime.sdk.spi.ServiceNamePattern
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 

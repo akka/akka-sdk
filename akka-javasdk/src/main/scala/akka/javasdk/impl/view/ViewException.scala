@@ -4,11 +4,13 @@
 
 package akka.javasdk.impl.view
 
+import akka.annotation.InternalApi
 import akka.javasdk.view.UpdateContext
 
 /**
  * INTERNAL API
  */
+@InternalApi
 private[impl] final case class ViewException(
     viewId: String,
     commandName: String,
@@ -19,6 +21,7 @@ private[impl] final case class ViewException(
 /**
  * INTERNAL API
  */
+@InternalApi
 private[impl] object ViewException {
   def apply(message: String): ViewException =
     ViewException(viewId = "", commandName = "", message, None)

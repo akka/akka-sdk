@@ -4,9 +4,9 @@
 
 package com.example.wiring;
 
+import akka.javasdk.testkit.AkkaSdkTestKitSupport;
 import com.example.wiring.keyvalueentities.user.User;
 import com.example.wiring.keyvalueentities.user.UserEntity;
-import akka.javasdk.testkit.KalixIntegrationTestKitSupport;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.junit.jupiter.api.Assertions.fail;
 
-public class KeyValueEntityIntegrationTest extends KalixIntegrationTestKitSupport {
+public class KeyValueEntityIntegrationTest extends AkkaSdkTestKitSupport {
 
   @Test
   public void verifyValueEntityCurrentState() {

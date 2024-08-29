@@ -16,8 +16,11 @@ import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.AnySupport.ProtobufEmptyTypeUrl
 import com.google.protobuf.any.{ Any => ScalaPbAny }
 
+/**
+ * INTERNAL API
+ */
 @InternalApi
-private[akka] class ReflectiveConsumerRouter[A <: Consumer](
+private[impl] class ReflectiveConsumerRouter[A <: Consumer](
     consumer: A,
     commandHandlers: Map[String, CommandHandler],
     ignoreUnknown: Boolean)

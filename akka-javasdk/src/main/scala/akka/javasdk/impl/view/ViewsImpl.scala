@@ -8,6 +8,7 @@ import java.util.Optional
 import scala.compat.java8.OptionConverters._
 import scala.util.control.NonFatal
 import akka.actor.ActorSystem
+import akka.annotation.InternalApi
 import akka.javasdk.Metadata
 import akka.javasdk.impl.AbstractContext
 import akka.javasdk.impl.ComponentOptions
@@ -26,7 +27,10 @@ import com.google.protobuf.Descriptors
 import com.google.protobuf.any.{ Any => ScalaPbAny }
 import org.slf4j.LoggerFactory
 
-/** INTERNAL API */
+/**
+ * INTERNAL API
+ */
+@InternalApi
 final class ViewService(
     val factory: Optional[ViewFactory],
     override val descriptor: Descriptors.ServiceDescriptor,
@@ -57,11 +61,18 @@ final class ViewService(
   override def componentOptions: Option[ComponentOptions] = viewOptions
 }
 
+/**
+ * INTERNAL API
+ */
+@InternalApi
 object ViewsImpl {
   private val log = LoggerFactory.getLogger(classOf[ViewsImpl])
 }
 
-/** INTERNAL API */
+/**
+ * INTERNAL API
+ */
+@InternalApi
 final class ViewsImpl(system: ActorSystem, _services: Map[String, ViewService], sdkDispatcherName: String)
     extends pv.Views {
   import ViewsImpl.log

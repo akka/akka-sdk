@@ -19,7 +19,7 @@ import java.util.concurrent.CompletionStage
  * INTERNAL API
  */
 @InternalApi
-final case class ComponentMethodRefImpl[A1, R](
+private[impl] final case class ComponentMethodRefImpl[A1, R](
     optionalId: Option[String],
     metadataOpt: Option[Metadata],
     createDeferred: (Option[Metadata], Option[A1]) => DeferredCall[A1, R],

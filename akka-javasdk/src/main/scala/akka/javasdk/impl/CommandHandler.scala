@@ -4,14 +4,19 @@
 
 package akka.javasdk.impl
 
+import akka.annotation.InternalApi
 import akka.javasdk.impl.reflection.ParameterExtractor
-import java.lang.reflect.Method
 
+import java.lang.reflect.Method
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.google.protobuf.Descriptors
 import org.slf4j.LoggerFactory
 
-case class CommandHandler(
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[impl] final case class CommandHandler(
     grpcMethodName: String,
     messageCodec: JsonMessageCodec,
     requestMessageDescriptor: Descriptors.Descriptor,
@@ -57,14 +62,24 @@ case class CommandHandler(
     else methodInvokers.head._2
 }
 
-object MethodInvoker {
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[impl] object MethodInvoker {
 
   def apply(javaMethod: Method, parameterExtractor: ParameterExtractor[InvocationContext, AnyRef]): MethodInvoker =
     MethodInvoker(javaMethod, Array(parameterExtractor))
 
 }
 
-case class MethodInvoker(method: Method, parameterExtractors: Array[ParameterExtractor[InvocationContext, AnyRef]]) {
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[impl] final case class MethodInvoker(
+    method: Method,
+    parameterExtractors: Array[ParameterExtractor[InvocationContext, AnyRef]]) {
 
   /**
    * To invoke methods with parameters an InvocationContext is necessary extract them from the message.

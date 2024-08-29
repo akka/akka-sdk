@@ -39,8 +39,8 @@ class DiscoverySpec extends AnyWordSpec with Matchers with ScalaFutures {
           Behaviors.empty[Nothing],
           "DiscoverySpec2",
           ConfigFactory.parseString("""
-              |akka.platform.discovery.pass-along-env-all = false
-              |akka.platform.discovery.pass-along-env-allow = ["HOME"]""".stripMargin))
+              |akka.javasdk.discovery.pass-along-env-all = false
+              |akka.javasdk.discovery.pass-along-env-allow = ["HOME"]""".stripMargin))
         val discovery = new DiscoveryImpl(system.classicSystem, Map.empty, emptyAcl, "test", None)
         val result = discovery.discover(ProxyInfo()).futureValue
         result.getServiceInfo.env should have size 1
@@ -56,8 +56,8 @@ class DiscoverySpec extends AnyWordSpec with Matchers with ScalaFutures {
           Behaviors.empty[Nothing],
           "DiscoverySpec2",
           ConfigFactory.parseString("""
-              |akka.platform.discovery.pass-along-env-all = false
-              |akka.platform.discovery.pass-along-env-allow = []
+              |akka.javasdk.discovery.pass-along-env-all = false
+              |akka.javasdk.discovery.pass-along-env-allow = []
               |""".stripMargin))
         val discovery = new DiscoveryImpl(system.classicSystem, Map.empty, emptyAcl, "test", None)
         val result = discovery.discover(ProxyInfo()).futureValue

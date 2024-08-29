@@ -4,11 +4,15 @@
 
 package akka.javasdk.impl
 
+import akka.annotation.InternalApi
 import com.google.protobuf.Descriptors
 
 /**
  * Service describes a component type in a way which makes it possible to deploy.
+ *
+ * INTERNAL API
  */
+@InternalApi
 trait Service {
 
   /**

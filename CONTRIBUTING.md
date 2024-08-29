@@ -1,4 +1,4 @@
-# Contributing to Kalix JVM SDKs
+# Contributing to Akka Java SDKs
 
 FIXME contribution guidelines like in other LB projects
 

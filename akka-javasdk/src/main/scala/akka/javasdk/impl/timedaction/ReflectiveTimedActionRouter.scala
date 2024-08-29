@@ -4,6 +4,7 @@
 
 package akka.javasdk.impl.timedaction
 
+import akka.annotation.InternalApi
 import akka.javasdk.JsonSupport
 import akka.javasdk.impl.CommandHandler
 import akka.javasdk.impl.InvocationContext
@@ -15,7 +16,13 @@ import com.google.protobuf.any.{ Any => ScalaPbAny }
 
 import scala.util.control.NonFatal
 
-class ReflectiveTimedActionRouter[A <: TimedAction](action: A, commandHandlers: Map[String, CommandHandler])
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[impl] final class ReflectiveTimedActionRouter[A <: TimedAction](
+    action: A,
+    commandHandlers: Map[String, CommandHandler])
     extends TimedActionRouter[A](action) {
 
   private def commandHandlerLookup(commandName: String) =

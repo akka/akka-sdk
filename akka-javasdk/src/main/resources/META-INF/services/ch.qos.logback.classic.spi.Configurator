@@ -1,1 +1,1 @@
-akka.javasdk.impl.logging.KalixJoranConfigurator
+akka.javasdk.impl.logging.AkkaSdkJoranConfigurator

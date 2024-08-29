@@ -4,22 +4,31 @@
 
 package akka.javasdk.impl.reflection
 
+import akka.annotation.InternalApi
 import akka.javasdk.impl.AclDescriptorFactory
+
 import java.lang.reflect.Method
-
 import scala.annotation.tailrec
-
 import com.google.protobuf.Descriptors
 import com.google.protobuf.any.{ Any => ScalaPbAny }
 
-object ServiceMethod {
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[impl] object ServiceMethod {
   def isStreamOut(method: Method): Boolean = false
 
   // this is more for early validation. We don't support stream-in right now
   // we block it before deploying anything
   def isStreamIn(method: Method): Boolean = false
 }
-sealed trait ServiceMethod {
+
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[impl] sealed trait ServiceMethod {
   def methodName: String
   def javaMethodOpt: Option[Method]
 
@@ -27,38 +36,57 @@ sealed trait ServiceMethod {
   def streamOut: Boolean
 }
 
-sealed trait AnyJsonRequestServiceMethod extends ServiceMethod {
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[impl] sealed trait AnyJsonRequestServiceMethod extends ServiceMethod {
   def inputType: Class[_]
 }
 
-sealed trait UrlTemplate {
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[impl] sealed trait UrlTemplate {
   def templateUrl(componentTypeId: String, methodName: String): String
 }
-object EntityUrlTemplate extends UrlTemplate {
+
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[impl] object EntityUrlTemplate extends UrlTemplate {
   override def templateUrl(componentTypeId: String, methodName: String): String = {
     s"/akka/v1.0/entity/${componentTypeId}/{id}/${methodName}"
   }
 }
 
-object WorkflowUrlTemplate extends UrlTemplate {
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[impl] object WorkflowUrlTemplate extends UrlTemplate {
   override def templateUrl(componentTypeId: String, methodName: String): String =
     s"/akka/v1.0/workflow/${componentTypeId}/{id}/${methodName}"
 }
 
-object ViewUrlTemplate extends UrlTemplate {
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[impl] object ViewUrlTemplate extends UrlTemplate {
   override def templateUrl(componentTypeId: String, methodName: String): String =
     s"/akka/v1.0/view/${componentTypeId}/${methodName}"
 }
 
-object ActionUrlTemplate extends UrlTemplate {
-  override def templateUrl(componentTypeId: String, methodName: String): String =
-    s"/akka/v1.0/action/${componentTypeId}/${methodName}"
-}
-
 /**
  * Build from command handler methods on Entities and Workflows
+ *
+ * INTERNAL API
  */
-case class CommandHandlerMethod(component: Class[_], method: Method, urlTemplate: UrlTemplate)
+@InternalApi
+private[impl] final case class CommandHandlerMethod(component: Class[_], method: Method, urlTemplate: UrlTemplate)
     extends AnyJsonRequestServiceMethod {
 
   override def methodName: String = method.getName
@@ -71,8 +99,12 @@ case class CommandHandlerMethod(component: Class[_], method: Method, urlTemplate
 
 /**
  * Build from command handler methods on actions
+ *
+ * INTERNAL API
  */
-case class ActionHandlerMethod(component: Class[_], method: Method) extends AnyJsonRequestServiceMethod {
+@InternalApi
+private[impl] final case class ActionHandlerMethod(component: Class[_], method: Method)
+    extends AnyJsonRequestServiceMethod {
   override def methodName: String = method.getName
   override def javaMethodOpt: Option[Method] = Some(method)
   val hasInputType: Boolean = method.getParameterTypes.headOption.isDefined
@@ -86,8 +118,11 @@ case class ActionHandlerMethod(component: Class[_], method: Method) extends AnyJ
  *
  * It's used as a 'virtual' method because there is no Java method backing it. It will exist only in the gRPC descriptor
  * and will be used for view updates with transform = false
+ *
+ * INTERNAL API
  */
-case class VirtualServiceMethod(component: Class[_], methodName: String, inputType: Class[_])
+@InternalApi
+private[impl] final case class VirtualServiceMethod(component: Class[_], methodName: String, inputType: Class[_])
     extends AnyJsonRequestServiceMethod {
 
   override def javaMethodOpt: Option[Method] = None
@@ -96,7 +131,7 @@ case class VirtualServiceMethod(component: Class[_], methodName: String, inputTy
   val streamOut: Boolean = false
 }
 
-case class CombinedSubscriptionServiceMethod(
+private[impl] final case class CombinedSubscriptionServiceMethod(
     componentName: String,
     combinedMethodName: String,
     methodsMap: Map[String, Method])
@@ -114,8 +149,11 @@ case class CombinedSubscriptionServiceMethod(
 /**
  * Build from methods annotated with @Consume. Those methods are not annotated with Spring REST annotations and are only
  * used internally (between proxy and user function).
+ *
+ * INTERNAL API
  */
-case class SubscriptionServiceMethod(javaMethod: Method) extends AnyJsonRequestServiceMethod {
+@InternalApi
+private[impl] final case class SubscriptionServiceMethod(javaMethod: Method) extends AnyJsonRequestServiceMethod {
 
   val methodName: String = javaMethod.getName
   val inputType: Class[_] = javaMethod.getParameterTypes.head
@@ -128,14 +166,20 @@ case class SubscriptionServiceMethod(javaMethod: Method) extends AnyJsonRequestS
 
 /**
  * Additional trait to simplify pattern matching for actual and virtual delete service method
+ *
+ * INTERNAL API
  */
-trait DeleteServiceMethod extends ServiceMethod
+@InternalApi
+private[impl] trait DeleteServiceMethod extends ServiceMethod
 
 /**
  * A special case for subscription method with arity zero, in comparison to SubscriptionServiceMethod with required
  * arity one.
+ *
+ * INTERNAL API
  */
-case class HandleDeletesServiceMethod(javaMethod: Method) extends DeleteServiceMethod {
+@InternalApi
+private[impl] final case class HandleDeletesServiceMethod(javaMethod: Method) extends DeleteServiceMethod {
   override def methodName: String = javaMethod.getName
 
   override def javaMethodOpt: Option[Method] = Some(javaMethod)
@@ -147,8 +191,12 @@ case class HandleDeletesServiceMethod(javaMethod: Method) extends DeleteServiceM
 
 /**
  * Similar to VirtualServiceMethod but for deletes.
+ *
+ * INTERNAL API
  */
-case class VirtualDeleteServiceMethod(component: Class[_], methodName: String) extends DeleteServiceMethod {
+@InternalApi
+private[impl] final case class VirtualDeleteServiceMethod(component: Class[_], methodName: String)
+    extends DeleteServiceMethod {
 
   override def javaMethodOpt: Option[Method] = None
 
@@ -157,7 +205,11 @@ case class VirtualDeleteServiceMethod(component: Class[_], methodName: String) e
   override def streamOut: Boolean = false
 }
 
-object KalixMethod {
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[impl] object KalixMethod {
   def apply(
       serviceMethod: ServiceMethod,
       methodOptions: Option[kalix.MethodOptions] = None,
@@ -173,7 +225,11 @@ object KalixMethod {
   }
 }
 
-case class KalixMethod private (
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[impl] final case class KalixMethod private (
     serviceMethod: ServiceMethod,
     methodOptions: Option[kalix.MethodOptions] = None,
     entityIds: Seq[String] = Seq.empty) {
@@ -228,7 +284,11 @@ case class KalixMethod private (
   }
 }
 
-trait ExtractorCreator {
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[impl] trait ExtractorCreator {
   def apply(descriptor: Descriptors.Descriptor): ParameterExtractor[DynamicMessageContext, AnyRef]
 }
 
@@ -238,8 +298,11 @@ trait ExtractorCreator {
  *
  * Note that it is important to make sure that invoking this is done in an deterministic order or else JVMs on different
  * nodes will generate different names for the same method. Sorting can be done using ReflectionUtils.methodOrdering
+ *
+ * INTERNAL API
  */
-class NameGenerator {
+@InternalApi
+private[impl] final class NameGenerator {
   private var names: Set[String] = Set.empty
 
   def getName(base: String): String = {

@@ -1,4 +1,4 @@
-# Releasing Kalix Java SDK
+# Releasing Akka Java SDK
 
 Create a release issue (using the [GitHub CLI](https://cli.github.com/))
 

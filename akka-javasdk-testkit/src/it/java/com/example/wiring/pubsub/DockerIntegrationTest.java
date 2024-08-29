@@ -13,7 +13,7 @@ package com.example.wiring.pubsub;
     // don't kill the test JVM when terminating the KalixRunner
     confMap.put("kalix.system.akka.coordinated-shutdown.exit-jvm", "off");
     confMap.put("kalix.user-function-interface", "0.0.0.0");
-    confMap.put("akka.platform.dev-mode.docker-compose-file", "docker-compose-integration.yml");
+    confMap.put("akka.javasdk.dev-mode.docker-compose-file", "docker-compose-integration.yml");
     return ConfigFactory.parseMap(confMap);
   }
 

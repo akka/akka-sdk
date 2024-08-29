@@ -24,6 +24,7 @@ import Workflow.AsyncCallStep
 import Workflow.CallStep
 import Workflow.Effect
 import Workflow.WorkflowDef
+import akka.annotation.InternalApi
 import akka.javasdk.JsonSupport
 import akka.javasdk.timer.TimerScheduler
 import kalix.protocol.workflow_entity.StepExecuted
@@ -31,6 +32,10 @@ import kalix.protocol.workflow_entity.StepExecutionFailed
 import kalix.protocol.workflow_entity.StepResponse
 import org.slf4j.LoggerFactory
 
+/**
+ * INTERNAL API
+ */
+@InternalApi
 object WorkflowRouter {
   final case class CommandResult(effect: Workflow.Effect[_])
 
@@ -46,6 +51,10 @@ object WorkflowRouter {
   }
 }
 
+/**
+ * INTERNAL API
+ */
+@InternalApi
 abstract class WorkflowRouter[S, W <: Workflow[S]](protected val workflow: W) {
 
   private var state: Option[S] = None

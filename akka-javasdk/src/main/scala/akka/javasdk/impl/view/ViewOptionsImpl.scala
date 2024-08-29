@@ -4,12 +4,15 @@
 
 package akka.javasdk.impl.view
 
+import akka.annotation.InternalApi
 import akka.javasdk.view.ViewOptions
+
 import java.util
 
 /**
  * INTERNAL API
  */
+@InternalApi
 private[akka] final case class ViewOptionsImpl(override val forwardHeaders: java.util.Set[String]) extends ViewOptions {
   def withForwardHeaders(headers: util.Set[String]): ViewOptions = copy(forwardHeaders = headers)
 }

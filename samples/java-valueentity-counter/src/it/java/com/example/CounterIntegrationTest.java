@@ -1,6 +1,6 @@
 package com.example;
 
-import akka.javasdk.testkit.KalixIntegrationTestKitSupport;
+import akka.javasdk.testkit.AkkaSdkTestKitSupport;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Test;
  */
 
 // tag::sample-it[]
-public class CounterIntegrationTest extends KalixIntegrationTestKitSupport { // <1>
+public class CounterIntegrationTest extends AkkaSdkTestKitSupport { // <1>
 
   // end::sample-it[]
   @Test

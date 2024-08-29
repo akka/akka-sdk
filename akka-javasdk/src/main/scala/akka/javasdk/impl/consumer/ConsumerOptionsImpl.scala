@@ -4,12 +4,17 @@
 
 package akka.javasdk.impl.consumer
 
+import akka.annotation.InternalApi
 import akka.javasdk.consumer.ConsumerOptions
 
 import java.util
 import java.util.Collections
 
-private[akka] final case class ConsumerOptionsImpl() extends ConsumerOptions {
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[impl] final case class ConsumerOptionsImpl() extends ConsumerOptions {
 
   /**
    * @return

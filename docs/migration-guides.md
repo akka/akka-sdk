@@ -175,5 +175,5 @@ import akka.platform.springsdk.testkit.KalixIntegrationTestKitSupport;
 ```
 With:
 ```java
-import akka.javasdk.testkit.KalixIntegrationTestKitSupport;
+import akka.javasdk.testkit.AkkaSdkTestKitSupport;
 ```

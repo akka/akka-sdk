@@ -4,7 +4,9 @@
 
 package akka.javasdk.impl
 
+import akka.annotation.InternalApi
 import akka.javasdk.annotations.JWT
+
 import java.lang.reflect.Method
 import kalix.JwtMethodOptions
 import kalix.JwtServiceOptions
@@ -14,7 +16,11 @@ import kalix.JwtStaticClaim
 
 import scala.jdk.CollectionConverters.IterableHasAsJava
 
-object JwtDescriptorFactory {
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[javasdk] object JwtDescriptorFactory {
 
   private def buildStaticClaimFromAnnotation(sc: JWT.StaticClaim): JwtStaticClaim =
     JwtStaticClaim

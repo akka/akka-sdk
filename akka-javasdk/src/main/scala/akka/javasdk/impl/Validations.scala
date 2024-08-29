@@ -5,10 +5,10 @@
 package akka.javasdk.impl
 
 import akka.javasdk.impl.reflection.Reflect
+
 import java.lang.reflect.AnnotatedElement
 import java.lang.reflect.Method
 import java.lang.reflect.ParameterizedType
-
 import scala.reflect.ClassTag
 import akka.javasdk.annotations.Consume.FromKeyValueEntity
 import akka.javasdk.annotations.Produce.ServiceStream
@@ -24,6 +24,7 @@ import ComponentDescriptorFactory.hasTopicSubscription
 import ComponentDescriptorFactory.hasUpdateEffectOutput
 import ComponentDescriptorFactory.hasValueEntitySubscription
 import Reflect.Syntax._
+import akka.annotation.InternalApi
 import akka.javasdk.annotations.ComponentId
 import akka.javasdk.annotations.Query
 import akka.javasdk.annotations.Table
@@ -33,7 +34,11 @@ import akka.javasdk.keyvalueentity.KeyValueEntity
 import akka.javasdk.timedaction.TimedAction
 import akka.javasdk.view.View
 
-object Validations {
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[javasdk] object Validations {
 
   import Reflect.methodOrdering
 

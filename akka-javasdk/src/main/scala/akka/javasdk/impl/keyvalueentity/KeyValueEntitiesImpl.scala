@@ -15,10 +15,11 @@ import com.google.protobuf.any.{ Any => ScalaPbAny }
 import io.grpc.Status
 import akka.javasdk.impl.ErrorHandling.BadRequestException
 import KeyValueEntityEffectImpl.DeleteEntity
+import akka.annotation.InternalApi
 import akka.javasdk.JsonSupport
 import akka.javasdk.impl.AbstractContext
 import akka.javasdk.impl.ActivatableContext
-import akka.javasdk.impl.AkkaPlatformSdkSettings
+import akka.javasdk.impl.AkkaSdkSettings
 import akka.javasdk.impl.ComponentOptions
 import akka.javasdk.impl.ErrorHandling
 import akka.javasdk.impl.MessageCodec
@@ -53,7 +54,11 @@ import kalix.protocol.value_entity.ValueEntityStreamOut.Message.{ Failure => Out
 import kalix.protocol.value_entity.ValueEntityStreamOut.Message.{ Reply => OutReply }
 import kalix.protocol.value_entity._
 
-final class KeyValueEntityService(
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[impl] final class KeyValueEntityService(
     val factory: KeyValueEntityFactory,
     override val descriptor: Descriptors.ServiceDescriptor,
     override val additionalDescriptors: Array[Descriptors.FileDescriptor],
@@ -82,10 +87,14 @@ final class KeyValueEntityService(
   override def componentOptions: Option[ComponentOptions] = entityOptions
 }
 
-final class KeyValueEntitiesImpl(
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[impl] final class KeyValueEntitiesImpl(
     system: ActorSystem,
     val services: Map[String, KeyValueEntityService],
-    configuration: AkkaPlatformSdkSettings,
+    configuration: AkkaSdkSettings,
     sdkDispatcherName: String)
     extends ValueEntities {
 
@@ -237,7 +246,11 @@ final class KeyValueEntitiesImpl(
 
 }
 
-private[akka] final class CommandContextImpl(
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[impl] final class CommandContextImpl(
     override val entityId: String,
     override val commandName: String,
     override val commandId: Long,
@@ -247,6 +260,10 @@ private[akka] final class CommandContextImpl(
     with CommandContext
     with ActivatableContext
 
-private[akka] final class KeyValueEntityContextImpl(override val entityId: String, system: ActorSystem)
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[impl] final class KeyValueEntityContextImpl(override val entityId: String, system: ActorSystem)
     extends AbstractContext
     with KeyValueEntityContext

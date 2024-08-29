@@ -29,7 +29,6 @@ import Validations.Valid
 import Validations.Validation
 import Reflect.Syntax.AnnotatedElementOps
 import akka.javasdk.DependencyProvider
-import akka.javasdk.Kalix
 import akka.javasdk.ServiceSetup
 import akka.javasdk.annotations.ComponentId
 import akka.javasdk.annotations.Setup
@@ -72,11 +71,11 @@ import akka.javasdk.workflow.ReflectiveWorkflowProvider
 import akka.javasdk.workflow.Workflow
 import akka.javasdk.workflow.WorkflowContext
 import akka.javasdk.workflow.WorkflowProvider
-import akka.platform.javasdk.spi.ComponentClients
-import akka.platform.javasdk.spi.HttpEndpointConstructionContext
-import akka.platform.javasdk.spi.HttpEndpointDescriptor
-import akka.platform.javasdk.spi.SpiComponents
-import akka.platform.javasdk.spi.StartContext
+import akka.runtime.sdk.spi.ComponentClients
+import akka.runtime.sdk.spi.HttpEndpointConstructionContext
+import akka.runtime.sdk.spi.HttpEndpointDescriptor
+import akka.runtime.sdk.spi.SpiComponents
+import akka.runtime.sdk.spi.StartContext
 import akka.stream.Materializer
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
@@ -98,11 +97,11 @@ import scala.concurrent.ExecutionContext
  * INTERNAL API
  */
 @InternalApi
-final class NextGenComponentAutoDetectRunner extends akka.platform.javasdk.spi.Runner {
+final class AkkaJavaSdkRunner extends akka.runtime.sdk.spi.Runner {
 
   override def start(startContext: StartContext): Future[SpiComponents] = {
     try {
-      val app = new NextGenKalixJavaApplication(
+      val app = new AkkaJavaSdkApplication(
         startContext.system,
         startContext.sdkDispatcherName,
         startContext.executionContext,
@@ -112,7 +111,7 @@ final class NextGenComponentAutoDetectRunner extends akka.platform.javasdk.spi.R
     } catch {
       case NonFatal(ex) =>
         LoggerFactory.getLogger(getClass).error("Unexpected exception while setting up service", ex)
-        NextGenKalixJavaApplication.onNextStartCallback.getAndSet(null) match {
+        AkkaJavaSdkApplication.onNextStartCallback.getAndSet(null) match {
           case null =>
           case f    =>
             // Integration test mode
@@ -123,6 +122,10 @@ final class NextGenComponentAutoDetectRunner extends akka.platform.javasdk.spi.R
   }
 }
 
+/**
+ * INTERNAL API
+ */
+@InternalApi
 private object ComponentLocator {
 
   // populated by annotation processor
@@ -187,12 +190,16 @@ private object ComponentLocator {
  * INTERNAL API
  */
 @InternalApi
-private[javasdk] final object NextGenKalixJavaApplication {
+private[javasdk] final object AkkaJavaSdkApplication {
   val onNextStartCallback: AtomicReference[Promise[(Kalix, ComponentClients, Optional[DependencyProvider])]] =
     new AtomicReference(null)
 }
 
-private final class NextGenKalixJavaApplication(
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private final class AkkaJavaSdkApplication(
     system: ActorSystem[_],
     sdkDispatcherName: String,
     sdkExecutionContext: ExecutionContext,
@@ -204,15 +211,14 @@ private final class NextGenKalixJavaApplication(
     ComponentLocator.locateUserComponents(system)
   private var dependencyProviderOpt: Option[DependencyProvider] = None
 
-  // FIXME pick the right config up without port?
-  val sdkSettings =
-    new AkkaPlatformSdkSettings(system.settings.config.getConfig("akka.platform"))
+  val sdkSettings = AkkaSdkSettings(system)
 
   private lazy val userServiceConfig = {
     // hiding these paths from the config provided to user
     val sensitivePaths = List("akka", "kalix.meta", "kalix.proxy", "kalix.runtime", "system")
     val c = system.settings.config
-    val sdkConfig = if (c.hasPath("akka.platform")) c.getConfig("akka.platform") else ConfigFactory.empty()
+    // FIXME it will always have this path because of reference.conf, no need for condition here
+    val sdkConfig = if (c.hasPath("akka.javasdk")) c.getConfig("akka.javasdk") else ConfigFactory.empty()
     sensitivePaths
       .foldLeft(c) { (conf, toHide) => conf.withoutPath(toHide) }
       .withFallback(sdkConfig)
@@ -419,7 +425,7 @@ private final class NextGenKalixJavaApplication(
   }
 
   private def setStartCallback(maybeDependencyProvider: Option[DependencyProvider]) = {
-    NextGenKalixJavaApplication.onNextStartCallback.getAndSet(null) match {
+    AkkaJavaSdkApplication.onNextStartCallback.getAndSet(null) match {
       case null =>
       case f =>
         f.success((kalix, runtimeComponentClients, maybeDependencyProvider.toJava))

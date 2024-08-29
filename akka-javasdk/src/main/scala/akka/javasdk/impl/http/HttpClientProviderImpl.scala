@@ -4,37 +4,33 @@
 
 package akka.javasdk.impl.http
 
-import akka.actor.ActorSystem
-import akka.actor.ClassicActorSystemProvider
-import akka.actor.ExtendedActorSystem
-import akka.actor.Extension
-import akka.actor.ExtensionId
-import akka.actor.ExtensionIdProvider
+import akka.actor.typed.ActorSystem
+import akka.actor.typed.Extension
+import akka.actor.typed.ExtensionId
 import akka.annotation.InternalApi
+import akka.discovery.Discovery
 import akka.http.javadsl.model.HttpHeader
 import akka.http.javadsl.model.headers.RawHeader
 import akka.javasdk.http.HttpClient
 import akka.javasdk.http.HttpClientProvider
-import akka.javasdk.impl.DevModeSettings
+import akka.javasdk.impl.AkkaSdkSettings
 import akka.javasdk.impl.HostAndPort
 import akka.javasdk.impl.ProxyInfoHolder
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
 import io.opentelemetry.context.{ Context => OtelContext }
 
+import scala.concurrent.Await
+import scala.concurrent.duration.DurationInt
 import scala.jdk.CollectionConverters.SeqHasAsJava
+import scala.util.control.NonFatal
 
 /**
  * INTERNAL API
  */
 @InternalApi
-private[akka] object HttpClientProviderImpl extends ExtensionId[HttpClientProviderImpl] with ExtensionIdProvider {
-  override def get(system: ActorSystem): HttpClientProviderImpl = super.get(system)
-
-  override def get(system: ClassicActorSystemProvider): HttpClientProviderImpl = super.get(system)
-
-  override def createExtension(system: ExtendedActorSystem): HttpClientProviderImpl =
-    new HttpClientProviderImpl(system)
-  override def lookup: ExtensionId[_ <: Extension] = this
+private[akka] object HttpClientProviderImpl extends ExtensionId[HttpClientProviderImpl] {
+  override def createExtension(system: ActorSystem[_]): HttpClientProviderImpl =
+    new HttpClientProviderImpl(system, None, ProxyInfoHolder(system), AkkaSdkSettings(system))
 
 }
 
@@ -42,27 +38,40 @@ private[akka] object HttpClientProviderImpl extends ExtensionId[HttpClientProvid
  * INTERNAL API
  */
 @InternalApi
-private[akka] class HttpClientProviderImpl(system: ExtendedActorSystem, traceContext: Option[OtelContext])
+private[akka] final class HttpClientProviderImpl(
+    system: ActorSystem[_],
+    traceContext: Option[OtelContext],
+    proxyInfoHolder: ProxyInfoHolder,
+    settings: AkkaSdkSettings)
     extends Extension
     with HttpClientProvider {
 
-  def this(system: ExtendedActorSystem) = this(system, None)
-
-  private val proxyInfoHolder = ProxyInfoHolder(system)
-
-  private val devModeSettings = DevModeSettings.fromConfig(system.settings.config).portMappings
-
   /*  private val MaxCrossServiceResponseContentLength =
-    system.settings.config.getBytes("kalix.cross-service.max-content-length").toInt */
+    system.settings.config.getBytes("kalix.javasdk.max-content-length").toInt */
 
   override def httpClientFor(host: String): HttpClient = {
-    // read the dev-mode settings directly and use it to override the host and port
-    val (mappedHost, mappedPort) =
-      devModeSettings
-        .get(host)
-        .map(HostAndPort.extract)
-        .getOrElse((host, 80))
-    val client: HttpClient = new HttpClient(system, s"http://$mappedHost:$mappedPort")
+    val (actualHost, actualPort) =
+      if (settings.devModeSettings.isDefined && !host.contains('.') && !host.contains(':') && host != "localhost") {
+        // dev mode, other service name, use Akka discovery to find it
+        // the runtime has set up a mechanism that finds locally running
+        // services. Since in dev mode blocking is probably fine for now.
+        try {
+          val result = Await.result(Discovery(system).discovery.lookup(host, 5.seconds), 5.seconds)
+          val address = result.addresses.head
+          (address.host, address.port.get) // port is always set
+        } catch {
+          case NonFatal(ex) =>
+            throw new RuntimeException(
+              s"Failed to look up service [$host] in dev-mode, make sure that it is also running " +
+              "with a separate port and service name correctly defined in its application.conf under 'akka.javasdk.dev-mode.service-name'",
+              ex)
+        }
+      } else {
+        HostAndPort.extract(host)
+      }
+
+    // FIXME always http? what about https?
+    val client: HttpClient = new HttpClient(system, s"http://$actualHost:$actualPort")
 
     // FIXME fail fast on too large request
     // .filter(ExchangeFilterFunctions.limitResponseSize(MaxCrossServiceResponseContentLength))
@@ -72,7 +81,7 @@ private[akka] class HttpClientProviderImpl(system: ExtendedActorSystem, traceCon
   }
 
   def withTraceContext(traceContext: OtelContext): HttpClientProvider =
-    new HttpClientProviderImpl(system, Some(traceContext))
+    new HttpClientProviderImpl(system, Some(traceContext), proxyInfoHolder, settings)
 
   private def defaultHeaders = {
     val authHeaders = proxyInfoHolder.remoteIdentificationHeader.map { case (key, value) =>

@@ -26,15 +26,14 @@
     </appender>
 
     <logger name="akka" level="WARN"/>
-    <logger name="akka.platform" level="DEBUG"/>
-    <logger name="kalix.springsdk" level="INFO"/>
+    <logger name="akka.runtime" level="DEBUG"/>
+    <logger name="akka.javasdk" level="INFO"/>
     <logger name="kalix.runtime.views" level="INFO"/>
-    <logger name="org.springframework.web" level="INFO"/>
     <logger name="akka.http" level="WARN"/>
     <logger name="io.grpc" level="WARN"/>
-    <logger name="kalix.springsdk.impl" level="INFO" />
-    <logger name="kalix.javasdk.testkit" level="DEBUG" />
-    <logger name="kalix.javasdk.impl.ProtoDescriptorGenerator$" level="INFO" />
+    <logger name="akka.javasdk.impl" level="INFO" />
+    <logger name="akka.javasdk.testkit" level="DEBUG" />
+    <logger name="akka.javasdk.impl.ProtoDescriptorGenerator$" level="INFO" />
 
     <root level="INFO">
         <appender-ref ref="STDOUT"/>

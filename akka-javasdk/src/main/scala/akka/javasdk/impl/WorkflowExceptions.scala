@@ -4,10 +4,15 @@
 
 package akka.javasdk.impl
 
+import akka.annotation.InternalApi
 import kalix.protocol.entity.Command
 import kalix.protocol.workflow_entity.WorkflowEntityInit
 
-object WorkflowExceptions {
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[javasdk] object WorkflowExceptions {
 
   final case class WorkflowException(
       workflowId: String,

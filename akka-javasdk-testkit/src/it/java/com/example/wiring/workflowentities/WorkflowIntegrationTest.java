@@ -5,8 +5,8 @@
 package com.example.wiring.workflowentities;
 
 import com.example.wiring.actions.echo.Message;
-import akka.javasdk.testkit.KalixTestKit;
-import akka.javasdk.testkit.KalixIntegrationTestKitSupport;
+import akka.javasdk.testkit.AkkaSdkTestKit;
+import akka.javasdk.testkit.AkkaSdkTestKitSupport;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 
@@ -18,11 +18,11 @@ import static java.time.Duration.ofMillis;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class WorkflowIntegrationTest extends KalixIntegrationTestKitSupport {
+public class WorkflowIntegrationTest extends AkkaSdkTestKitSupport {
 
     @Override
-    protected KalixTestKit.Settings kalixTestKitSettings() {
-        return KalixTestKit.Settings.DEFAULT
+    protected AkkaSdkTestKit.Settings kalixTestKitSettings() {
+        return AkkaSdkTestKit.Settings.DEFAULT
                 .withWorkflowTickInterval(ofMillis(500));
     }
 

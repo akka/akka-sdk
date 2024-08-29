@@ -4,6 +4,7 @@
 
 package akka.javasdk.impl
 
+import akka.annotation.InternalApi
 import com.google.protobuf.ByteString
 import com.google.protobuf.Descriptors
 import com.google.protobuf.Parser
@@ -11,7 +12,10 @@ import com.google.protobuf.{ Message => JavaMessage }
 
 /**
  * A resolved service method.
+ *
+ * INTERNAL API
  */
+@InternalApi
 final case class ResolvedServiceMethod[I, O](
     descriptor: Descriptors.MethodDescriptor,
     inputType: ResolvedType[I],
@@ -25,7 +29,10 @@ final case class ResolvedServiceMethod[I, O](
 
 /**
  * A resolved type
+ *
+ * INTERNAL API
  */
+@InternalApi
 trait ResolvedType[T] {
 
   /**
@@ -44,6 +51,10 @@ private final class ScalaPbResolvedType[T <: scalapb.GeneratedMessage](companion
   override def parseFrom(bytes: ByteString): T = companion.parseFrom(bytes.newCodedInput()).asInstanceOf[T]
 }
 
+/**
+ * INTERNAL API
+ */
+@InternalApi
 trait ResolvedEntityFactory {
   // TODO JavaDoc
   def resolvedMethods: Map[String, ResolvedServiceMethod[_, _]]

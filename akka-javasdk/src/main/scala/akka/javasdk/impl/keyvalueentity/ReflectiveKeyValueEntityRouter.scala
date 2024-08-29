@@ -4,6 +4,7 @@
 
 package akka.javasdk.impl.keyvalueentity
 
+import akka.annotation.InternalApi
 import akka.javasdk.JsonSupport
 import akka.javasdk.impl.CommandHandler
 import akka.javasdk.impl.InvocationContext
@@ -14,7 +15,11 @@ import com.google.protobuf.any.{ Any => ScalaPbAny }
 import java.lang.reflect.ParameterizedType
 import scala.util.control.NonFatal
 
-class ReflectiveKeyValueEntityRouter[S, E <: KeyValueEntity[S]](
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[impl] final class ReflectiveKeyValueEntityRouter[S, E <: KeyValueEntity[S]](
     override protected val entity: E,
     commandHandlers: Map[String, CommandHandler])
     extends KeyValueEntityRouter[S, E](entity) {

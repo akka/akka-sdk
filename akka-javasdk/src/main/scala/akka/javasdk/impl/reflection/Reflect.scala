@@ -4,6 +4,7 @@
 
 package akka.javasdk.impl.reflection
 
+import akka.annotation.InternalApi
 import akka.javasdk.annotations.http.Endpoint
 import akka.javasdk.client.ComponentClient
 import akka.javasdk.consumer.Consumer
@@ -14,20 +15,23 @@ import akka.javasdk.timedaction.TimedAction
 import akka.javasdk.view.TableUpdater
 import akka.javasdk.view.View
 import akka.javasdk.workflow.Workflow
+
 import java.lang.annotation.Annotation
 import java.lang.reflect.AnnotatedElement
 import java.lang.reflect.Method
 import java.lang.reflect.Modifier
 import java.lang.reflect.ParameterizedType
 import java.util
-
 import scala.annotation.tailrec
 import scala.reflect.ClassTag
 
 /**
  * Class extension to facilitate some reflection common usages.
+ *
+ * INTERNAL API
  */
-object Reflect {
+@InternalApi
+private[impl] object Reflect {
   object Syntax {
 
     implicit class ClassOps(clazz: Class[_]) {

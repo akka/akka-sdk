@@ -22,6 +22,7 @@ import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
 import io.opentelemetry.context.{ Context => OtelContext }
 import MetadataImpl.JwtClaimPrefix
 import TraceInstrumentation.metadataGetter
+import akka.annotation.InternalApi
 import akka.javasdk.CloudEvent
 import akka.javasdk.JwtClaims
 import akka.javasdk.Metadata
@@ -33,7 +34,11 @@ import io.opentelemetry.api.trace.SpanContext
 import kalix.protocol.component
 import kalix.protocol.component.MetadataEntry
 
-private[akka] class MetadataImpl private (val entries: Seq[MetadataEntry]) extends Metadata with CloudEvent {
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[javasdk] class MetadataImpl private (val entries: Seq[MetadataEntry]) extends Metadata with CloudEvent {
 
   override def has(key: String): Boolean = entries.exists(_.key.equalsIgnoreCase(key))
 

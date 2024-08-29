@@ -23,6 +23,7 @@ import com.google.protobuf.{ Any => JavaPbAny }
 import AnySupport.Prefer.Java
 import AnySupport.Prefer.Scala
 import ErrorHandling.BadRequestException
+import akka.annotation.InternalApi
 import akka.javasdk.JsonSupport
 import org.slf4j.LoggerFactory
 import scalapb.GeneratedMessage
@@ -31,7 +32,11 @@ import scalapb.options.Scalapb
 
 import scala.collection.compat.immutable.ArraySeq
 
-object AnySupport {
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[impl] object AnySupport {
 
   private final val KalixPrimitiveFieldNumber = 1
   final val KalixPrimitive = "type.kalix.io/"

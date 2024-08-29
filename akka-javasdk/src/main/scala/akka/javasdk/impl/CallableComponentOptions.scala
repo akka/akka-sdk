@@ -4,7 +4,13 @@
 
 package akka.javasdk.impl
 
-trait CallableComponentOptions extends ComponentOptions {
+import akka.annotation.InternalApi
+
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[javasdk] trait CallableComponentOptions extends ComponentOptions {
 
   /**
    * Ask Kalix to forward these headers from the incoming request as metadata headers for the incoming commands. By

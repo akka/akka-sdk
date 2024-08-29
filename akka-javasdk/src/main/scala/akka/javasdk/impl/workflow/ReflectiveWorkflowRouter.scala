@@ -4,6 +4,7 @@
 
 package akka.javasdk.impl.workflow
 
+import akka.annotation.InternalApi
 import akka.javasdk.JsonSupport
 import akka.javasdk.impl.CommandHandler
 import akka.javasdk.impl.InvocationContext
@@ -13,6 +14,10 @@ import com.google.protobuf.any.{ Any => ScalaPbAny }
 
 import scala.util.control.NonFatal
 
+/**
+ * INTERNAL API
+ */
+@InternalApi
 class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
     override protected val workflow: W,
     commandHandlers: Map[String, CommandHandler])
@@ -75,6 +80,10 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
   }
 }
 
+/**
+ * INTERNAL API
+ */
+@InternalApi
 final class HandlerNotFoundException(handlerType: String, name: String, availableHandlers: Set[String])
     extends RuntimeException(
       s"no matching $handlerType handler for '$name'. " +

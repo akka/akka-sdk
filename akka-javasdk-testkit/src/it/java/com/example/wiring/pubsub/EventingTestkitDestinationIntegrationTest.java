@@ -7,8 +7,8 @@ package com.example.wiring.pubsub;
 import com.example.wiring.keyvalueentities.customer.CustomerEntity;
 import com.example.wiring.keyvalueentities.customer.CustomerEntity.Customer;
 import akka.javasdk.testkit.EventingTestKit;
-import akka.javasdk.testkit.KalixTestKit;
-import akka.javasdk.testkit.KalixIntegrationTestKitSupport;
+import akka.javasdk.testkit.AkkaSdkTestKit;
+import akka.javasdk.testkit.AkkaSdkTestKitSupport;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -25,12 +25,12 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class EventingTestkitDestinationIntegrationTest extends KalixIntegrationTestKitSupport {
+public class EventingTestkitDestinationIntegrationTest extends AkkaSdkTestKitSupport {
 
   private EventingTestKit.OutgoingMessages destination;
 
-  public KalixTestKit.Settings kalixTestKitSettings() {
-    return KalixTestKit.Settings.DEFAULT
+  public AkkaSdkTestKit.Settings kalixTestKitSettings() {
+    return AkkaSdkTestKit.Settings.DEFAULT
         .withAclEnabled()
         .withAdvancedViews()
         .withWorkflowTickInterval(ofMillis(500))
@@ -40,7 +40,7 @@ public class EventingTestkitDestinationIntegrationTest extends KalixIntegrationT
   @BeforeAll
   public void beforeAll() {
     super.beforeAll();
-    destination = kalixTestKit.getTopicOutgoingMessages(CUSTOMERS_TOPIC);
+    destination = akkaSdkTestKit.getTopicOutgoingMessages(CUSTOMERS_TOPIC);
   }
 
   @Test

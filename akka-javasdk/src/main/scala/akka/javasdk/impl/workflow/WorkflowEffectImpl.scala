@@ -17,12 +17,17 @@ import WorkflowEffectImpl.StepTransition
 import WorkflowEffectImpl.Transition
 import WorkflowEffectImpl.TransitionalEffectImpl
 import WorkflowEffectImpl.UpdateState
+import akka.annotation.InternalApi
 import akka.javasdk.Metadata
 import akka.javasdk.workflow.Workflow.Effect
 import akka.javasdk.workflow.Workflow.Effect.Builder
 import akka.javasdk.workflow.Workflow.Effect.PersistenceEffectBuilder
 import akka.javasdk.workflow.Workflow.Effect.TransitionalEffect
 
+/**
+ * INTERNAL API
+ */
+@InternalApi
 object WorkflowEffectImpl {
 
   sealed trait Transition
@@ -69,6 +74,11 @@ object WorkflowEffectImpl {
 
   final case class ErrorEffectImpl[R](description: String, status: Option[Status.Code]) extends Effect.ErrorEffect[R]
 }
+
+/**
+ * INTERNAL API
+ */
+@InternalApi
 case class WorkflowEffectImpl[S, T](persistence: Persistence[S], transition: Transition, reply: Reply[T])
     extends Builder[S]
     with Effect[T] {

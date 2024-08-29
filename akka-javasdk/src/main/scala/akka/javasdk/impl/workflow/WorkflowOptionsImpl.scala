@@ -4,11 +4,16 @@
 
 package akka.javasdk.impl.workflow
 
+import akka.annotation.InternalApi
 import akka.javasdk.workflow.WorkflowOptions
 
 import java.util
 import java.util.Collections
 
+/**
+ * INTERNAL API
+ */
+@InternalApi
 case class WorkflowOptionsImpl(override val forwardHeaders: java.util.Set[String]) extends WorkflowOptions {
 
   /**
@@ -20,6 +25,10 @@ case class WorkflowOptionsImpl(override val forwardHeaders: java.util.Set[String
 
 }
 
+/**
+ * INTERNAL API
+ */
+@InternalApi
 object WorkflowOptionsImpl {
   val defaults = new WorkflowOptionsImpl(Collections.emptySet())
 }

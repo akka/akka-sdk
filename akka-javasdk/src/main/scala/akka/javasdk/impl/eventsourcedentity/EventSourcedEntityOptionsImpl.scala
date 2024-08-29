@@ -4,10 +4,16 @@
 
 package akka.javasdk.impl.eventsourcedentity
 
+import akka.annotation.InternalApi
 import akka.javasdk.eventsourcedentity.EventSourcedEntityOptions
+
 import java.util
 import java.util.Collections
 
+/**
+ * INTERNAL API
+ */
+@InternalApi
 private[impl] final case class EventSourcedEntityOptionsImpl(
     override val snapshotEvery: Int,
     override val forwardHeaders: java.util.Set[String])

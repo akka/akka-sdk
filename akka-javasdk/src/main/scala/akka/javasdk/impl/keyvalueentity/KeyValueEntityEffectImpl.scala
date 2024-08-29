@@ -4,6 +4,7 @@
 
 package akka.javasdk.impl.keyvalueentity
 
+import akka.annotation.InternalApi
 import akka.javasdk.Metadata
 import akka.javasdk.impl.effect.ErrorReplyImpl
 import akka.javasdk.impl.effect.MessageReplyImpl
@@ -13,14 +14,22 @@ import akka.javasdk.keyvalueentity.KeyValueEntity.Effect
 import akka.javasdk.keyvalueentity.KeyValueEntity.Effect.Builder
 import akka.javasdk.keyvalueentity.KeyValueEntity.Effect.OnSuccessBuilder
 
-object KeyValueEntityEffectImpl {
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[javasdk] object KeyValueEntityEffectImpl {
   sealed trait PrimaryEffectImpl[+S]
   final case class UpdateState[S](newState: S) extends PrimaryEffectImpl[S]
   case object DeleteEntity extends PrimaryEffectImpl[Nothing]
   case object NoPrimaryEffect extends PrimaryEffectImpl[Nothing]
 }
 
-class KeyValueEntityEffectImpl[S] extends Builder[S] with OnSuccessBuilder[S] with Effect[S] {
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[javasdk] final class KeyValueEntityEffectImpl[S] extends Builder[S] with OnSuccessBuilder[S] with Effect[S] {
   import KeyValueEntityEffectImpl._
 
   private var _primaryEffect: PrimaryEffectImpl[S] = NoPrimaryEffect

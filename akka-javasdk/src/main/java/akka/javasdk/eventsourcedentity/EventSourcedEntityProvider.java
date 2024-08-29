@@ -4,7 +4,7 @@
 
 package akka.javasdk.eventsourcedentity;
 
-import akka.javasdk.Kalix;
+import akka.javasdk.impl.Kalix;
 import akka.javasdk.impl.MessageCodec;
 import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityRouter;
 import com.google.protobuf.Descriptors;

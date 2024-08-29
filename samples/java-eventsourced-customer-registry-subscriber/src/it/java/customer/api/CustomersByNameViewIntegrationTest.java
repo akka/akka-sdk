@@ -5,7 +5,7 @@ import customer.application.CustomerPublicEvent.Created;
 import customer.application.CustomersByEmailView;
 import customer.application.CustomersByNameView;
 import akka.javasdk.testkit.EventingTestKit.IncomingMessages;
-import akka.javasdk.testkit.KalixTestKit;
+import akka.javasdk.testkit.AkkaSdkTestKit;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 
@@ -16,14 +16,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class CustomersByNameViewIntegrationTest extends CustomerRegistryIntegrationTest {
 
   @Override
-  protected KalixTestKit.Settings kalixTestKitSettings() {
-      return KalixTestKit.Settings.DEFAULT.withAclEnabled()
+  protected AkkaSdkTestKit.Settings kalixTestKitSettings() {
+      return AkkaSdkTestKit.Settings.DEFAULT.withAclEnabled()
               .withStreamIncomingMessages("customer-registry", "customer_events");
   }
 
   @Test
   public void shouldReturnCustomersFromViews() {
-    IncomingMessages customerEvents = kalixTestKit.getStreamIncomingMessages("customer-registry", "customer_events");
+    IncomingMessages customerEvents = akkaSdkTestKit.getStreamIncomingMessages("customer-registry", "customer_events");
 
     String bob = "bob";
     Created created1 = new Created("bob@gmail.com", bob);

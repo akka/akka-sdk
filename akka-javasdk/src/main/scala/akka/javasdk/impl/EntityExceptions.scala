@@ -4,6 +4,7 @@
 
 package akka.javasdk.impl
 
+import akka.annotation.InternalApi
 import akka.javasdk.eventsourcedentity.CommandContext
 import akka.javasdk.keyvalueentity
 import kalix.protocol.entity.Command
@@ -11,7 +12,11 @@ import kalix.protocol.event_sourced_entity.EventSourcedInit
 import kalix.protocol.replicated_entity.ReplicatedEntityInit
 import kalix.protocol.value_entity.ValueEntityInit
 
-object EntityExceptions {
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[javasdk] object EntityExceptions {
 
   final case class EntityException(
       entityId: String,

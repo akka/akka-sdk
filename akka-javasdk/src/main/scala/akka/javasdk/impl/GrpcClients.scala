@@ -6,12 +6,10 @@ package akka.javasdk.impl
 
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executor
-
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
 import scala.jdk.FutureConverters._
-
 import akka.Done
 import akka.actor.ActorSystem
 import akka.actor.ClassicActorSystemProvider
@@ -20,6 +18,7 @@ import akka.actor.ExtendedActorSystem
 import akka.actor.Extension
 import akka.actor.ExtensionId
 import akka.actor.ExtensionIdProvider
+import akka.annotation.InternalApi
 import akka.grpc.GrpcClientSettings
 import akka.grpc.javadsl.{ AkkaGrpcClient => AkkaGrpcJavaClient }
 import akka.grpc.scaladsl.{ AkkaGrpcClient => AkkaGrpcScalaClient }
@@ -30,6 +29,7 @@ import org.slf4j.LoggerFactory
 /**
  * INTERNAL API
  */
+@InternalApi
 object GrpcClients extends ExtensionId[GrpcClients] with ExtensionIdProvider {
   override def get(system: ActorSystem): GrpcClients = super.get(system)
 
@@ -45,6 +45,7 @@ object GrpcClients extends ExtensionId[GrpcClients] with ExtensionIdProvider {
 /**
  * INTERNAL API
  */
+@InternalApi
 final class GrpcClients(system: ExtendedActorSystem) extends Extension {
   import GrpcClients._
   private val log = LoggerFactory.getLogger(classOf[GrpcClients])
@@ -53,7 +54,7 @@ final class GrpcClients(system: ExtendedActorSystem) extends Extension {
   private implicit val ec: ExecutionContext = system.dispatcher
   private val clients = new ConcurrentHashMap[Key, AnyRef]()
   private val MaxCrossServiceResponseContentLength =
-    system.settings.config.getBytes("akka.platform.cross-service.max-content-length").toInt
+    system.settings.config.getBytes("akka.javasdk.cross-service.max-content-length").toInt
 
   CoordinatedShutdown(system).addTask(CoordinatedShutdown.PhaseServiceStop, "stop-grpc-clients")(() =>
     Future

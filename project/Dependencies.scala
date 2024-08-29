@@ -8,7 +8,7 @@ object Dependencies {
     val ProtocolVersionMinor = 1
     val RuntimeImage = "gcr.io/kalix-public/kalix-runtime"
     // Remember to bump kalix-runtime.version in akka-javasdk-maven/akka-javasdk-parent if bumping this
-    val RuntimeVersion = sys.props.getOrElse("kalix-runtime.version", "1.1.41-d90f5c7")
+    val RuntimeVersion = sys.props.getOrElse("kalix-runtime.version", "1.1.41-c73f437")
   }
   // NOTE: embedded SDK should have the AkkaVersion aligned, when updating RuntimeVersion, make sure to check
   // if AkkaVersion and AkkaHttpVersion are aligned
@@ -45,7 +45,7 @@ object Dependencies {
   val kalixSdkProtocol = "io.kalix" % "kalix-sdk-protocol" % Kalix.RuntimeVersion
   val kalixTckProtocol = "io.kalix" % "kalix-tck-protocol" % Kalix.RuntimeVersion
   val kalixTestkitProtocol = "io.kalix" % "kalix-testkit-protocol" % Kalix.RuntimeVersion
-  val kalixSdkSpi = "io.kalix" %% "akka-platform-sdk-spi" % Kalix.RuntimeVersion
+  val kalixSdkSpi = "io.akka" %% "akka-sdk-spi" % Kalix.RuntimeVersion
 
   // Note: this should never be on the compile classpath, only test and or runtime
   val kalixDevRuntime = "io.kalix" %% "kalix-dev-runtime" % Kalix.RuntimeVersion
@@ -55,6 +55,7 @@ object Dependencies {
   val logbackJson = "ch.qos.logback.contrib" % "logback-json-classic" % LogbackContribVersion
   val logbackJackson = "ch.qos.logback.contrib" % "logback-jackson" % LogbackContribVersion
 
+  // FIXME is this still correct with embedded SDK?
   // akka-slf4j pulls in slf4j-api v1.7.36 and but we want v2.0.9
   // because of Logback v1.4.5+ and because of Spring 3. Therefore we have to explicitly bump slf4j-api.
   // Version 2.0.9 is also problematic for Akka, but only when using the BehaviorTestKit which is not used in the SDK

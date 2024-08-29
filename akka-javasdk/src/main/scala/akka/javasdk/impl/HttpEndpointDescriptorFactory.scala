@@ -7,6 +7,7 @@ package akka.javasdk.impl
 import akka.http.scaladsl.model.HttpMethods
 import akka.javasdk.impl.reflection.Reflect
 import AclDescriptorFactory.validateMatcher
+import akka.annotation.InternalApi
 import akka.javasdk.annotations.Acl
 import akka.javasdk.annotations.http.Delete
 import akka.javasdk.annotations.http.Endpoint
@@ -14,18 +15,22 @@ import akka.javasdk.annotations.http.Get
 import akka.javasdk.annotations.http.Patch
 import akka.javasdk.annotations.http.Post
 import akka.javasdk.annotations.http.Put
-import akka.platform.javasdk.spi.ACL
-import akka.platform.javasdk.spi.All
-import akka.platform.javasdk.spi.ComponentOptions
-import akka.platform.javasdk.spi.HttpEndpointConstructionContext
-import akka.platform.javasdk.spi.HttpEndpointDescriptor
-import akka.platform.javasdk.spi.HttpEndpointMethodDescriptor
-import akka.platform.javasdk.spi.Internet
-import akka.platform.javasdk.spi.MethodOptions
-import akka.platform.javasdk.spi.PrincipalMatcher
-import akka.platform.javasdk.spi.ServiceNamePattern
+import akka.runtime.sdk.spi.ACL
+import akka.runtime.sdk.spi.All
+import akka.runtime.sdk.spi.ComponentOptions
+import akka.runtime.sdk.spi.HttpEndpointConstructionContext
+import akka.runtime.sdk.spi.HttpEndpointDescriptor
+import akka.runtime.sdk.spi.HttpEndpointMethodDescriptor
+import akka.runtime.sdk.spi.Internet
+import akka.runtime.sdk.spi.MethodOptions
+import akka.runtime.sdk.spi.PrincipalMatcher
+import akka.runtime.sdk.spi.ServiceNamePattern
 
-object HttpEndpointDescriptorFactory {
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[javasdk] object HttpEndpointDescriptorFactory {
 
   def apply(
       endpointClass: Class[_],

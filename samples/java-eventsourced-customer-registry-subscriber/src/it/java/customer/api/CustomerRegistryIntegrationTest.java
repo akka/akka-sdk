@@ -5,8 +5,8 @@ import akka.http.javadsl.model.StatusCodes;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import akka.javasdk.http.HttpClient;
-import akka.javasdk.testkit.KalixTestKit;
-import akka.javasdk.testkit.KalixIntegrationTestKitSupport;
+import akka.javasdk.testkit.AkkaSdkTestKit;
+import akka.javasdk.testkit.AkkaSdkTestKitSupport;
 import org.awaitility.Awaitility;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.BeforeAll;
@@ -17,7 +17,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-public abstract class CustomerRegistryIntegrationTest extends KalixIntegrationTestKitSupport {
+public abstract class CustomerRegistryIntegrationTest extends AkkaSdkTestKitSupport {
 
   private Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -26,18 +26,15 @@ public abstract class CustomerRegistryIntegrationTest extends KalixIntegrationTe
   @BeforeAll
   public void beforeAll() {
     Map<String, Object> confMap = new HashMap<>();
-    // don't kill the test JVM when terminating the AkkaRunner
-    confMap.put("kalix.system.akka.coordinated-shutdown.exit-jvm", "off");
-    confMap.put("akka.platform.dev-mode.service-port-mappings.customer-registry", "localhost:9000");
-    // avoid conflits with upstream service using port 9000 and 25520
+    // avoid conflicts with upstream service using port 9000
+    // FIXME why is this kalix.proxy.http-port and why doesn't akka.runtime.dev-mode.http-port=9000 work?
     confMap.put("kalix.proxy.http-port", "9001");
-    confMap.put("akka.remote.artery.canonical.port", "25521");
 
     Config config = ConfigFactory.parseMap(confMap);
 
     try {
-      kalixTestKit = (new KalixTestKit(kalixTestKitSettings())).start(config);
-      componentClient = kalixTestKit.getComponentClient();
+      akkaSdkTestKit = (new AkkaSdkTestKit(kalixTestKitSettings())).start(config);
+      componentClient = akkaSdkTestKit.getComponentClient();
     } catch (Exception ex) {
       logger.error("Failed to startup Akka service", ex);
       throw ex;
@@ -60,7 +57,7 @@ public abstract class CustomerRegistryIntegrationTest extends KalixIntegrationTe
   // create the client but only return it after verifying that service is reachable
   protected HttpClient createClient(String url) {
 
-    var httpClient = new HttpClient(kalixTestKit.getActorSystem(), url);
+    var httpClient = new HttpClient(akkaSdkTestKit.getActorSystem(), url);
 
     // wait until customer service is up
     Awaitility.await()

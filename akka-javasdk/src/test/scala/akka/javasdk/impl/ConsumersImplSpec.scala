@@ -28,8 +28,8 @@ import akka.javasdk.eventsourcedentity.TestESEvent
 import TestESEvent.Event4
 import akka.javasdk.timedaction.TestESSubscription
 import akka.javasdk.timedaction.TestTracing
-import akka.platform.javasdk.spi.DeferredRequest
-import akka.platform.javasdk.spi.TimerClient
+import akka.runtime.sdk.spi.DeferredRequest
+import akka.runtime.sdk.spi.TimerClient
 import com.google.protobuf.any.Any.toJavaProto
 import com.google.protobuf.any.{ Any => ScalaPbAny }
 import kalix.protocol.action.ActionCommand

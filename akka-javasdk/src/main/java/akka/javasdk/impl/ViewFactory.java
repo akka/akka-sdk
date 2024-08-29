@@ -4,6 +4,7 @@
 
 package akka.javasdk.impl;
 
+import akka.annotation.InternalApi;
 import akka.javasdk.impl.view.ViewUpdateRouter;
 import akka.javasdk.view.View;
 import akka.javasdk.view.ViewContext;
@@ -13,7 +14,10 @@ import akka.javasdk.view.ViewContext;
  *
  * <p>Generally, this should not be needed, instead, a class extending a generated abstract {@link
  * View} should be used.
+ *
+ * <p>INTERNAL API
  */
+@InternalApi
 public interface ViewFactory {
   /**
    * Create a view handler for the given context.

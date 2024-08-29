@@ -15,6 +15,7 @@ import com.google.protobuf.any.{ Any => ScalaPbAny }
 import io.grpc.Status
 import akka.javasdk.impl.ErrorHandling.BadRequestException
 import EventSourcedEntityRouter.CommandResult
+import akka.annotation.InternalApi
 import akka.javasdk.JsonSupport
 import akka.javasdk.Metadata
 import akka.javasdk.eventsourcedentity.CommandContext
@@ -24,7 +25,7 @@ import akka.javasdk.eventsourcedentity.EventSourcedEntityContext
 import akka.javasdk.eventsourcedentity.EventSourcedEntityOptions
 import akka.javasdk.impl.AbstractContext
 import akka.javasdk.impl.ActivatableContext
-import akka.javasdk.impl.AkkaPlatformSdkSettings
+import akka.javasdk.impl.AkkaSdkSettings
 import akka.javasdk.impl.ComponentOptions
 import akka.javasdk.impl.ErrorHandling
 import akka.javasdk.impl.EventSourcedEntityFactory
@@ -52,7 +53,11 @@ import kalix.protocol.event_sourced_entity._
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
 
-final class EventSourcedEntityService(
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[impl] final class EventSourcedEntityService(
     val factory: EventSourcedEntityFactory,
     override val descriptor: Descriptors.ServiceDescriptor,
     override val additionalDescriptors: Array[Descriptors.FileDescriptor],
@@ -96,10 +101,14 @@ final class EventSourcedEntityService(
   override def componentOptions: Option[ComponentOptions] = entityOptions
 }
 
-final class EventSourcedEntitiesImpl(
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[impl] final class EventSourcedEntitiesImpl(
     system: ActorSystem,
     _services: Map[String, EventSourcedEntityService],
-    configuration: AkkaPlatformSdkSettings,
+    configuration: AkkaSdkSettings,
     sdkDispatcherName: String)
     extends EventSourcedEntities {
   import akka.javasdk.impl.EntityExceptions._
