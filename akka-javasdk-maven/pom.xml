@@ -121,6 +121,17 @@
     </repository>
   </repositories>
 
+  <distributionManagement>
+    <repository>
+      <id>akka-repo</id>
+      <url>https://maven.cloudsmith.io/lightbend/akka</url>
+    </repository>
+    <snapshotRepository>
+      <id>akka-snapshot-repo</id>
+      <url>https://maven.cloudsmith.io/lightbend/akka-snapshots</url>
+    </snapshotRepository>
+  </distributionManagement>
+
   <modules>
     <module>akka-javasdk-parent</module>
     <module>akka-javasdk-archetype</module>
