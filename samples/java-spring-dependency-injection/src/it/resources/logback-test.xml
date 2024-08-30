@@ -6,8 +6,6 @@
     </appender>
 
     <logger name="akka" level="INFO"/>
-    <logger name="kalix" level="INFO"/>
-    <logger name="kalix.javasdk.testkit" level="DEBUG"/>
 
     <root level="INFO">
         <appender-ref ref="STDOUT"/>
