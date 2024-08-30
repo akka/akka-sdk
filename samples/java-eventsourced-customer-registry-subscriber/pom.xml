@@ -5,7 +5,7 @@
   <parent>
     <groupId>io.akka</groupId>
     <artifactId>akka-javasdk-parent</artifactId>
-    <version>3.0.0-M1</version>
+    <version>3.0.0-M2</version>
   </parent>
 
   <groupId>customer</groupId>
@@ -31,12 +31,6 @@
 
 
   <repositories>
-    <!-- FIXME needed for the milestone releases, drop once final release out -->
-    <repository>
-      <id>akka-snapshot-repository</id>
-      <name>Akka snapshot repository</name>
-      <url>https://repo.akka.io/snapshots</url>
-    </repository>
     <repository>
       <id>akka-repository</id>
       <name>Akka snapshot repository</name>
