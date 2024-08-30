@@ -2,7 +2,8 @@
 
 ## Designing
 
-To understand the Kalix concepts that are the basis for this example, see [Designing services](https://docs.kalix.io/java/development-process.html) in the documentation.
+To understand the Akka concepts that are the basis for this example, see [Designing services](https://docs.kalix.
+io/java/development-process.html) in the documentation.
 
 ## Developing
 
@@ -20,56 +21,53 @@ mvn compile
 
 ## Running Locally
 
-When running a Kalix service locally, we need to have its companion Kalix Runtime running alongside it.
-
-To start your service locally, run:
+To start your Akka service locally, run:
 
 ```shell
 mvn compile exec:java
 ```
 
-This command will start your Kalix service and a companion Kalix Runtime.
-
 ## Exercising the service
 
-With your Kalix service running, any defined endpoints should be available at `http://localhost:9000`.
+With your Akka service running, any defined endpoints should be available at `http://localhost:9000`.
 
 * Add an item
 
 ```shell
-curl -i -XPOST -H "Content-Type: application/json" localhost:9000/akka/v1.0/entity/shopping-cart/123/addItem -d '{"productId":"kalix-tshirt", "name":"Kalix Tshirt", "quantity": 10}'
+curl -i -XPUT -H "Content-Type: application/json" localhost:9000/shopping-cart/123/item -d '
+{"productId":"akka-tshirt", "name":"Akka Tshirt", "quantity": 10}'
 ```
 
 * Get cart state
 
 ```shell
-curl localhost:9000/akka/v1.0/entity/shopping-cart/123/getCart
+curl localhost:9000/shopping-cart/123
 ```
 
 * Remove an item
 
 ```shell
-curl -XPOST -H "Content-Type: application/json" localhost:9000/akka/v1.0/entity/shopping-cart/123/removeItem -d '"kalix-tshirt"'
+curl -i -XDELETE -H "Content-Type: application/json" localhost:9000/shopping-cart/123/item/akka-tshirt
 ```
 
 * Checkout the cart
 
 ```shell
-curl -XGET localhost:9000/akka/v1.0/entity/shopping-cart/123/checkout
+curl -i -XPOST localhost:9000/shopping-cart/123/checkout
 ```
 
 ## Deploying
 
-To deploy your service, install the `kalix` CLI as documented in
-[Install Kalix](https://docs.kalix.io/kalix/install-kalix.html)
+To deploy your service, install the `akka` CLI as documented in
+[Install Akka](https://docs.kalix.io/kalix/install-kalix.html)
 and configure a Docker Registry to upload your docker image to.
 
 You will need to update the `dockerImage` property in the `pom.xml` and refer to
 [Configuring registries](https://docs.kalix.io/projects/container-registries.html)
 for more information on how to make your docker image available to Kalix.
 
-Finally, you can use the [Kalix Console](https://console.kalix.io)
+Finally, you can use the [Akka Console](https://console.kalix.io)
 to create a project and then deploy your service into the project either by using `mvn deploy kalix:deploy` which
 will conveniently package, publish your docker image, and deploy your service to Kalix, or by first packaging and
 publishing the docker image through `mvn deploy` and then deploying the image
-through the `kalix` CLI.
+through the `akka` CLI.

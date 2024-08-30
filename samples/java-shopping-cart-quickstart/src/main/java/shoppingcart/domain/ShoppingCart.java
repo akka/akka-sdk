@@ -1,7 +1,5 @@
 package shoppingcart.domain;
 
-import akka.javasdk.annotations.TypeName;
-
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -50,20 +48,5 @@ public record ShoppingCart(String cartId, List<LineItem> items, boolean checkedO
 
   public ShoppingCart checkOut() {
     return new ShoppingCart(cartId, items, true);
-  }
-
-  public sealed interface Event {
-
-    @TypeName("item-added")
-    record ItemAdded(ShoppingCart.LineItem item) implements Event {
-    }
-
-    @TypeName("item-removed")
-    record ItemRemoved(String productId) implements Event {
-    }
-
-    @TypeName("checked-out")
-    record CheckedOut() implements Event {
-    }
   }
 }

@@ -3,7 +3,7 @@ package shoppingcart.cart;
 import akka.javasdk.testkit.AkkaSdkTestKitSupport;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import shoppingcart.api.ShoppingCartEntity;
+import shoppingcart.application.ShoppingCartEntity;
 import shoppingcart.domain.ShoppingCart;
 import shoppingcart.domain.ShoppingCart.LineItem;
 
@@ -11,9 +11,9 @@ import shoppingcart.domain.ShoppingCart.LineItem;
 
 
 /**
- * This is a skeleton for implementing integration tests for a Kalix application built with the Spring SDK.
+ * This is a skeleton for implementing integration tests for a Akka application.
  * <p>
- * This test will initiate a Kalix Runtime with your service.
+ * This test will initiate an Akka Runtime with your service.
  * <p>
  * Since this is an integration tests, it interacts with the application using a WebClient
  * (already configured and provided automatically through {{componentClient}}).
@@ -75,6 +75,4 @@ public class IntegrationTest extends AkkaSdkTestKitSupport {
     Assertions.assertEquals(1, cartUpdated.items().size());
     Assertions.assertEquals(item2, cartUpdated.items().get(0));
   }
-
-
 }

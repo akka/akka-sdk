@@ -1,21 +1,24 @@
-package shoppingcart.api;
+package shoppingcart.application;
 
 
 // tag::class[]
 
+import akka.Done;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import akka.javasdk.eventsourcedentity.EventSourcedEntityContext;
 import shoppingcart.domain.ShoppingCart;
-import shoppingcart.domain.ShoppingCart.Event.CheckedOut;
-import shoppingcart.domain.ShoppingCart.Event.ItemAdded;
-import shoppingcart.domain.ShoppingCart.Event.ItemRemoved;
+import shoppingcart.domain.ShoppingCartEvent;
+import shoppingcart.domain.ShoppingCartEvent.CheckedOut;
+import shoppingcart.domain.ShoppingCartEvent.ItemAdded;
+import shoppingcart.domain.ShoppingCartEvent.ItemRemoved;
 
 import java.util.ArrayList;
 
+import static akka.Done.done;
+
 @ComponentId("shopping-cart") // <1>
-public class ShoppingCartEntity
-  extends EventSourcedEntity<ShoppingCart, ShoppingCart.Event> { // <2>
+public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCart, ShoppingCartEvent> { // <2>
 
   final private String cartId;
 
@@ -29,7 +32,7 @@ public class ShoppingCartEntity
   }
 
 
-  public Effect<String> addItem(ShoppingCart.LineItem item) {
+  public Effect<Done> addItem(ShoppingCart.LineItem item) {
     if (currentState().checkedOut())
       return effects().error("Cart is already checked out.");
 
@@ -41,39 +44,38 @@ public class ShoppingCartEntity
 
     return effects()
       .persist(event) // <6>
-      .thenReply(newState -> "OK");
+      .thenReply(__ -> done());
   }
 
 
-  public Effect<String> removeItem(String productId) {
+  public Effect<Done> removeItem(String productId) {
     if (currentState().checkedOut())
       return effects().error("Cart is already checked out.");
 
     return effects()
       .persist(new ItemRemoved(productId)) // <7>
-      .thenReply(newState -> "OK");
+      .thenReply(__ -> done());
   }
 
-  public Effect<String> checkout() {
+  public Effect<Done> checkout() {
     if (currentState().checkedOut())
-      return effects().reply("OK");
+      return effects().reply(done());
 
     return effects()
       .persist(new CheckedOut()) // <7>
-      .thenReply(newState -> "OK");
+      .thenReply(__ -> done());
   }
 
   public ReadOnlyEffect<ShoppingCart> getCart() {
     return effects().reply(currentState());
   }
 
-
   @Override
-  public ShoppingCart applyEvent(ShoppingCart.Event event) { // <7>
+  public ShoppingCart applyEvent(ShoppingCartEvent event) { // <7>
     return switch (event) {
       case ItemAdded evt -> currentState().addItem(evt.item());
       case ItemRemoved evt -> currentState().removeItem(evt.productId());
-      case CheckedOut evt -> currentState().checkOut();
+      case CheckedOut __ -> currentState().checkOut();
     };
   }
 }
