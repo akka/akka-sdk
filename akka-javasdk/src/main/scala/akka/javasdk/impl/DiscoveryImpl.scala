@@ -14,7 +14,6 @@ import com.google.protobuf.empty.Empty
 import kalix.protocol.action.Actions
 import kalix.protocol.discovery._
 import akka.javasdk.BuildInfo
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 import java.util
@@ -65,24 +64,17 @@ class DiscoveryImpl(
    * Discover what components the user function wishes to serve.
    */
   override def discover(in: ProxyInfo): scala.concurrent.Future[Spec] = {
-    log.info(
-      "Received discovery call from [{} {}] at [{}]:[{}] supporting Kalix protocol {}.{}",
-      in.proxyName,
-      in.proxyVersion,
-      in.internalProxyHostname,
-      in.proxyPort,
-      in.protocolMajorVersion,
-      in.protocolMinorVersion)
-
     if (in.devMode && BuildInfo.runtimeVersion.compareTo(in.proxyVersion) > 0) {
       log.warn(
-        "Your service is using an outdated runtime image (version: {}). It's recommended to update your image to '{}' in your docker-compose.yml",
+        "Your service is using an outdated runtime version (version: {}). It's recommended to update your image to '{}' in your docker-compose.yml",
         in.proxyVersion,
         s"${BuildInfo.runtimeImage}:${BuildInfo.runtimeVersion}")
     }
 
+    // FIXME pull this into parameters for the Runner StartContext instead of only available once discovery happened
     ProxyInfoHolder(system).setProxyInfo(in)
 
+    // FIXME is this needed anymore, we are running in the same process, so ENV is available
     // possibly filtered or hidden env, passed along for substitution in descriptor options
     val env: Map[String, String] = {
       if (system.settings.config.getBoolean("akka.javasdk.discovery.pass-along-env-all"))
@@ -157,10 +149,7 @@ class DiscoveryImpl(
         }
       }.toSeq
 
-      val fileDescriptorsBuilder = fileDescriptorSetBuilder(
-        services.values,
-        system.settings.config.getString("akka.javasdk.discovery.protobuf-descriptor-with-source-info-path"),
-        log)
+      val fileDescriptorsBuilder = fileDescriptorSetBuilder(services.values)
 
       // For the SpringSDK, the ACL default descriptor is provided programmatically
       fileDescriptorsBuilder.addFile(aclDescriptor)
@@ -247,7 +236,7 @@ class DiscoveryImpl(
 
 object DiscoveryImpl {
 
-  private[impl] def fileDescriptorSetBuilder(services: Iterable[Service], userDescPath: String, log: Logger) = {
+  private[impl] def fileDescriptorSetBuilder(services: Iterable[Service]) = {
 
     val descriptors = Map.empty[String, DescriptorProtos.FileDescriptorProto]
 
@@ -268,11 +257,6 @@ object DiscoveryImpl {
       }
       builder.addFile(protoWithSource)
     }
-    // include 'kalix_policy.proto' with ACL defaults for entire Kalix service if the file exists
-    descriptors
-      .collect { case (file, proto) if file.endsWith("kalix_policy.proto") => proto }
-      .foreach(defaultPolicy => builder.addFile(defaultPolicy))
-
     builder
   }
 
