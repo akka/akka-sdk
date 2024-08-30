@@ -3,6 +3,7 @@ package customer;
 import akka.javasdk.JsonSupport;
 import akka.javasdk.ServiceSetup;
 import akka.javasdk.annotations.Acl;
+import akka.javasdk.annotations.Setup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,6 +15,7 @@ import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_NULL
 // Documentation at https://docs.kalix.io/java/access-control.html
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
 // tag::object-mapper[]
+@Setup
 public class CustomerRegistrySetup implements ServiceSetup {
   // end::object-mapper[]
 
@@ -26,8 +28,11 @@ public class CustomerRegistrySetup implements ServiceSetup {
     // end::object-mapper[]
     logger.info("Starting Akka Application");
     // tag::object-mapper[]
-    JsonSupport.getObjectMapper()
+    /* NOTE Enabling this actually breaks tests now
+      JsonSupport.getObjectMapper()
             .configure(FAIL_ON_NULL_CREATOR_PROPERTIES, true); // <1>
+
+     */
   }
 }
 // end::object-mapper[]

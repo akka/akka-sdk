@@ -282,7 +282,7 @@
                         </arguments>
                         <systemProperties>
                             <systemProperty>
-                                <key>akka.runtime.dev-mode.service-name</key>
+                                <key>akka.javasdk.dev-mode.service-name</key>
                                 <value>${project.artifactId}</value>
                             </systemProperty>
                             <systemProperty>

@@ -430,8 +430,8 @@ jobs:
 
           - { sample: java-eventsourced-customer-registry, it: true }
           - { sample: java-eventsourced-counter, pre_cmd: 'docker compose up gcloud-pubsub-emulator -d', it: true }
-          # FIXME disabled until we get local service discovery working on CI
-          # - { sample: java-eventsourced-customer-registry-subscriber, it: true, pre_cmd: './start-upstream.sh' }
+
+          - { sample: java-eventsourced-customer-registry-subscriber, it: true, pre_cmd: './start-upstream.sh' }
           - { sample: java-eventsourced-shopping-cart, it: true }
 
           - { sample: java-valueentity-counter, it: true }
