@@ -1,9 +1,9 @@
-# Akka Java SDK
+# Akka SDK (for Java)
 
-The Akka Java SDK is used to develop Akka services using Java.
+The Akka SDK (for Java) is used to develop Akka services.
 
 License
 -------
-The Akka Java SDK is licensed under the Business Source License 1.1, please see the [Akka License FAQ](https://www.lightbend.com/akka/license-faq).
+The Akka SDK is licensed under the Business Source License 1.1, please see the [Akka License FAQ](https://www.lightbend.com/akka/license-faq).
 
 Tests and documentation are under a separate license, see the LICENSE file in each documentation and test root directory for details.
