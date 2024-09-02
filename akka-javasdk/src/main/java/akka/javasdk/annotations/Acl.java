@@ -83,9 +83,9 @@ public @interface Acl {
   @interface Matcher {
 
     /**
-     * Match a Kalix service principal.
+     * Match a service principal.
      *
-     * This matches a service in the same Kalix project.
+     * This matches a service in the same project.
      *
      * Supports glob matching, that is, * means all services in this project.
      */
@@ -109,7 +109,7 @@ public @interface Acl {
     ALL,
     /**
      * The internet. This will match all requests that originated from the internet, and passed
-     * through the Kalix ingress via a configured route.
+     * through the ingress via a configured route.
      */
     INTERNET
   }

@@ -17,8 +17,8 @@ import java.util.Collections
 case class WorkflowOptionsImpl(override val forwardHeaders: java.util.Set[String]) extends WorkflowOptions {
 
   /**
-   * Ask Kalix to forward these headers from the incoming request as metadata headers for the incoming commands. By
-   * default, no headers except "X-Server-Timing" are forwarded.
+   * Ask the runtime to forward these headers from the incoming request as metadata headers for the incoming commands.
+   * By default, no headers except "X-Server-Timing" are forwarded.
    */
   override def withForwardHeaders(headers: util.Set[String]): WorkflowOptions =
     copy(forwardHeaders = Collections.unmodifiableSet(new util.HashSet(headers)))

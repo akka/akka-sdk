@@ -24,9 +24,9 @@ public interface ServiceSetup {
   /**
    * The on startup hook is called every time a service instance boots up. This can happen for very
    * different reasons: restarting / redeploying the service, scaling up to more instances or even
-   * without any user-driven action (e.g. Kalix Runtime versions being rolled out,
-   * infrastructure-related incidents, etc.). Therefore, one should carefully consider how to use
-   * this hook and its implementation.
+   * without any user-driven action (e.g. Runtime versions being rolled out, infrastructure-related
+   * incidents, etc.). Therefore, one should carefully consider how to use this hook and its
+   * implementation.
    *
    * <p>This hook is called after {@link #createDependencyProvider()}.
    */

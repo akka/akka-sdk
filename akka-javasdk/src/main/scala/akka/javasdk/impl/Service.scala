@@ -42,7 +42,7 @@ trait Service {
 
   /**
    * @return
-   *   the options [[ComponentOptions]] or [[kalix.javasdk.EntityOptions]] used by this service
+   *   the options used by this service
    */
   def componentOptions: Option[ComponentOptions]
 
@@ -50,7 +50,7 @@ trait Service {
    * @return
    *   a dictionary of service methods (Protobuf Descriptors.MethodDescriptor) classified by method name. The dictionary
    *   values represent a mapping of Protobuf Descriptors.MethodDescriptor with its input and output types (see
-   *   [[kalix.javasdk.impl.ResolvedServiceMethod]])
+   *   [[ResolvedServiceMethod]])
    */
   def resolvedMethods: Option[Map[String, ResolvedServiceMethod[_, _]]]
 }

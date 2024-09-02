@@ -58,11 +58,11 @@ import java.util.stream.Collectors;
 import static akka.javasdk.testkit.AkkaSdkTestKit.Settings.EventingSupport.TEST_BROKER;
 
 /**
- * Testkit for running Kalix services locally.
+ * Testkit for running services locally.
  *
- * <p>Requires Docker for starting a local instance of the Kalix Runtime.
+ * <p>Requires Docker for starting a local instance of the runtime.
  *
- * <p>Create a KalixTestkit with an {@link Kalix} service descriptor, and then {@link #start} the
+ * <p>Create a testkit with an {@link Kalix} service descriptor, and then {@link #start} the
  * testkit before testing the service with gRPC or HTTP clients. Call {@link #stop} after tests are
  * complete.
  */
@@ -196,7 +196,7 @@ public class AkkaSdkTestKit {
   }
 
   /**
-   * Settings for KalixTestkit.
+   * Settings for testkit.
    */
   public static class Settings {
     /**
@@ -204,12 +204,12 @@ public class AkkaSdkTestKit {
      */
     public static Duration DEFAULT_STOP_TIMEOUT = Duration.ofSeconds(10);
     /**
-     * Default settings for KalixTestkit.
+     * Default settings for testkit.
      */
     public static Settings DEFAULT = new Settings(DEFAULT_STOP_TIMEOUT);
 
     /**
-     * Timeout setting for stopping the local Kalix test instance.
+     * Timeout setting for stopping the local runtime test instance.
      */
     public final Duration stopTimeout;
 
@@ -243,9 +243,9 @@ public class AkkaSdkTestKit {
     public final MockedEventing mockedEventing;
 
     /**
-     * Create new settings for KalixTestkit.
+     * Create new settings for the TestKit.
      *
-     * @param stopTimeout timeout to use when waiting for Kalix to stop
+     * @param stopTimeout timeout to use when waiting for the runtime to stop
      * @deprecated Use Settings.DEFAULT.withStopTimeout() instead.
      */
     @Deprecated
@@ -295,9 +295,9 @@ public class AkkaSdkTestKit {
     }
 
     /**
-     * Set a custom stop timeout, for stopping the local Kalix test instance.
+     * Set a custom stop timeout, for stopping the local runtime test instance.
      *
-     * @param stopTimeout timeout to use when waiting for Kalix to stop
+     * @param stopTimeout timeout to use when waiting for the runtime to stop
      * @return updated Settings
      */
     public Settings withStopTimeout(final Duration stopTimeout) {
@@ -449,14 +449,14 @@ public class AkkaSdkTestKit {
   private int eventingTestKitPort = -1;
 
   /**
-   * Create a new testkit for a Kalix service descriptor with the default settings.
+   * Create a new testkit for a service descriptor with the default settings.
    */
   public AkkaSdkTestKit() {
     this(Settings.DEFAULT);
   }
 
   /**
-   * Create a new testkit for a Kalix service descriptor with custom settings.
+   * Create a new testkit for a service descriptor with custom settings.
    *
    * @param settings     custom testkit settings
    */
@@ -467,7 +467,7 @@ public class AkkaSdkTestKit {
   /**
    * Start this testkit with default configuration (loaded from {@code application.conf}).
    *
-   * @return this KalixTestkit
+   * @return this TestKit instance
    */
   public AkkaSdkTestKit start() {
     return start(ConfigFactory.empty());
@@ -476,12 +476,12 @@ public class AkkaSdkTestKit {
   /**
    * Start this testkit with custom configuration (overrides {@code application.conf}).
    *
-   * @param config custom test configuration for the KalixRunner
-   * @return this KalixTestkit
+   * @param config custom test configuration for the runtime
+   * @return this Testkit instance
    */
   public AkkaSdkTestKit start(final Config config) {
     if (started)
-      throw new IllegalStateException("KalixTestkit already started");
+      throw new IllegalStateException("Testkit already started");
 
     eventingTestKitPort = availableLocalPort();
     startRuntime(config);
@@ -503,7 +503,7 @@ public class AkkaSdkTestKit {
 
   private void startRuntime(final Config config)  {
     try {
-      // FIXME should we really pass all these "kalix" props?
+      // FIXME should we really pass all these properties?
       final Map<String, Object> runtimeOptions = new HashMap<>();
       runtimeOptions.put("kalix.proxy.acl.local-dev.self-deployment-name", settings.serviceName);
       runtimeOptions.put("kalix.proxy.acl.enabled", settings.aclEnabled);
@@ -564,12 +564,12 @@ public class AkkaSdkTestKit {
       startEventingTestkit();
 
       Http http = Http.get(runtimeActorSystem);
-      log.info("Checking kalix-runtime status");
+      log.info("Checking runtime status");
       CompletionStage<String> checkingProxyStatus = Patterns.retry(() ->
         http.singleRequest(HttpRequest.GET("http://localhost:" + proxyPort + "/akka/dev-mode/health-check")).thenCompose(response -> {
         int responseCode = response.status().intValue();
         if (responseCode == 404) {
-          log.info("Kalix-runtime started");
+          log.info("Runtime started");
           return CompletableFuture.completedStage("Ok");
         } else {
           log.info("Waiting for kalix-runtime, current response code is {}", responseCode);
@@ -604,26 +604,22 @@ public class AkkaSdkTestKit {
   }
 
   /**
-   * Get the host name/IP address where the Kalix service is available. This is relevant in certain
+   * Get the host name/IP address where the service is available. This is relevant in certain
    * Continuous Integration environments.
-   *
-   * @return Kalix host
    */
   public String getHost() {
     if (!started)
-      throw new IllegalStateException("Need to start KalixTestkit before accessing the host name");
+      throw new IllegalStateException("Need to start the testkit before accessing the host name");
 
     return proxyHost;
   }
 
   /**
-   * Get the local port where the Kalix service is available.
-   *
-   * @return local Kalix port
+   * Get the local port where the service is available.
    */
   public int getPort() {
     if (!started)
-      throw new IllegalStateException("Need to start KalixTestkit before accessing the port");
+      throw new IllegalStateException("Need to start the testkit before accessing the port");
 
     return proxyPort;
   }
@@ -680,7 +676,7 @@ public class AkkaSdkTestKit {
    */
   public ActorSystem<?> getActorSystem() {
     if (!started)
-      throw new IllegalStateException("Need to start KalixTestkit before accessing actor system");
+      throw new IllegalStateException("Need to start the testkit before accessing actor system");
     return runtimeActorSystem;
   }
 
@@ -765,7 +761,7 @@ public class AkkaSdkTestKit {
   }
 
   /**
-   * Stop the testkit and local Kalix.
+   * Stop the testkit and local runtime.
    */
   public void stop() {
     try {
@@ -773,7 +769,7 @@ public class AkkaSdkTestKit {
         TestKit.shutdownActorSystem(runtimeActorSystem.classicSystem(), FiniteDuration.create(settings.stopTimeout.toMillis(), "ms"), true);
       }
     } catch (Exception e) {
-      log.error("KalixTestkit Kalix runtime failed to terminate", e);
+      log.error("TestKit runtime failed to terminate", e);
     }
     started = false;
   }

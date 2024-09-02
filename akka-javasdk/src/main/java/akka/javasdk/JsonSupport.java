@@ -71,7 +71,8 @@ public final class JsonSupport {
 
   /**
    * The Jackson ObjectMapper that is used for encoding and decoding JSON. You may adjust it's
-   * configuration, but that must only be performed before starting {@link Kalix}
+   * configuration, but that must only be performed before starting the service,
+   * from {@link akka.javasdk.ServiceSetup#onStartup}.
    */
   public static ObjectMapper getObjectMapper() {
     return objectMapper;

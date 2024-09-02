@@ -8,8 +8,8 @@ import akka.annotation.DoNotInherit;
 import akka.javasdk.timedaction.TimedAction;
 
 /**
- * Utility to send requests to other Kalix components by composing a DeferredCall. To compose a
- * call:
+ * Utility to send requests to other components by composing a call that can be executed by the
+ * runtime. To compose a call:
  *
  * <ol>
  *   <li>select component type (and pass id if necessary)

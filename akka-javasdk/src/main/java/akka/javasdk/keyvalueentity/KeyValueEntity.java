@@ -13,7 +13,7 @@ import java.util.Optional;
  * Key Value Entities persist their state on every change. You can think of them as a Key-Value entity where
  * the key is the entity id and the value is the state of the entity.
  * <p>
- * Kalix Key Value Entities have nothing in common with the domain-driven design concept of Value Objects.
+ * Key Value Entities have nothing in common with the domain-driven design concept of Value Objects.
  * The Value in the name refers to the direct modification of the entity's state.
  *
  * When implementing a Key Value Entity, you first define what will be its internal state (your domain model),
@@ -26,7 +26,7 @@ import java.util.Optional;
  *   <li>update the entity state and send a reply to the caller
  *   <li>directly reply to the caller if the command is not requesting any state change
  *   <li>rejected the command by returning an error
- *   <li>instruct Kalix to delete the entity
+ *   <li>instruct the runtime to delete the entity
  * </ul>
  *
  * @param <S> The type of the state for this entity. */
@@ -76,7 +76,7 @@ public abstract class KeyValueEntity<S> {
   }
 
   /**
-   * Returns the state as currently stored by Kalix.
+   * Returns the state as currently stored.
    *
    * <p>Note that modifying the state directly will not update it in storage. To save the state, one
    * must call {{@code effects().updateState()}}.
@@ -99,11 +99,11 @@ public abstract class KeyValueEntity<S> {
   }
 
   /**
-   * An Effect is a description of what Kalix needs to do after the command is handled.
-   * You can think of it as a set of instructions you are passing to Kalix. Kalix will process the instructions on your
-   * behalf and ensure that any data that needs to be persisted will be persisted.
+   * An Effect is a description of what the runtime needs to do after the command is handled.
+   * You can think of it as a set of instructions you are passing to the runtime, which will process
+   * the instructions on your behalf.
    * <p>
-   * Each Kalix component defines its own effects, which are a set of predefined
+   * Each component defines its own effects, which are a set of predefined
    * operations that match the capabilities of that component.
    * <p>
    * a KeyValueEntity Effect can either:
@@ -112,7 +112,7 @@ public abstract class KeyValueEntity<S> {
    *   <li>update the entity state and send a reply to the caller
    *   <li>directly reply to the caller if the command is not requesting any state change
    *   <li>rejected the command by returning an error
-   *   <li>instruct Kalix to delete the entity
+   *   <li>instruct the runtime to delete the entity
    * </ul>
    *
    * @param <T> The type of the message that must be returned by this call.

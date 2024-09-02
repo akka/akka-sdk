@@ -7,13 +7,12 @@ package akka.javasdk.view;
 import akka.annotation.DoNotInherit;
 
 /**
- * Kalix applications follow the Command Query Responsibility Segregation (CQRS) pattern (see
+ * A service follow the Command Query Responsibility Segregation (CQRS) pattern (see
  * https://developer.lightbend.com/docs/akka-guide/concepts/cqrs.html).
  *
- * <p>Kalix' Entities represent the command side where you change the state of your model in a
- * strictly consistent and isolated manner. Kalix' Views represent the query side of your
- * application. Views are optimized for reads and allow you to query your model by fields other than
- * the entity identifier.
+ * <p>Entities represent the command side where you change the state of your model in a strictly
+ * consistent and isolated manner. Views represent the query side of your application. Views are
+ * optimized for reads and allow you to query your model by fields other than the entity identifier.
  *
  * <p>A View implementation consists of two parts:
  *

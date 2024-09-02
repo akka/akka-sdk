@@ -4,7 +4,7 @@ import akka.javasdk.annotations.TypeName;
 
 /**
  * It's recommended to seal the event interface.
- * As such, Kalix can detect that there are event handlers defined for each event.
+ * As such, the runtime can detect that there are event handlers defined for each event.
  */
 public sealed interface UserEvent {
   @TypeName("user-created")

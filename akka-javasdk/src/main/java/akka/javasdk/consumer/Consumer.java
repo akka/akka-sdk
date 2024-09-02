@@ -64,11 +64,11 @@ public abstract class Consumer {
   }
 
   /**
-   * An Effect is a description of what Kalix needs to do after the command is handled.
-   * You can think of it as a set of instructions you are passing to Kalix. Kalix will process the instructions on your
-   * behalf.
+   * An Effect is a description of what the runtime needs to do after the command is handled.
+   * You can think of it as a set of instructions you are passing to the runtime, which will process
+   * the instructions on your behalf.
    * <p>
-   * Each Kalix component defines its own effects, which are a set of predefined
+   * Each component defines its own effects, which are a set of predefined
    * operations that match the capabilities of that component.
    * <p>
    * A Consumer Effect can either:

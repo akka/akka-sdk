@@ -39,7 +39,7 @@ import com.google.protobuf.{ Any => JavaPbAny }
 
 /**
  * The component descriptor is both used for generating the protobuf service descriptor to communicate the service type
- * and methods etc. to Kalix and for the reflective routers routing incoming calls to the right method of the user
+ * and methods etc. to the runtime and for the reflective routers routing incoming calls to the right method of the user
  * component class.
  *
  * INTERNAL API

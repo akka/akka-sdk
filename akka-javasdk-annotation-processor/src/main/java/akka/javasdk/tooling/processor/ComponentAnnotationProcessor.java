@@ -145,7 +145,7 @@ public class ComponentAnnotationProcessor extends AbstractProcessor {
                     debug("Akka SDK annotation processor found no annotated components");
                 }
             } catch (IOException ex) {
-                error("Akka SDK annotation processor failed to create Kalix component descriptor: " + ex.getMessage());
+                error("Akka SDK annotation processor failed to create component descriptor: " + ex.getMessage());
                 throw new RuntimeException(ex);
             }
             return true;

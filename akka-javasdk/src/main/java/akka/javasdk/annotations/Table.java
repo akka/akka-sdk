@@ -6,7 +6,7 @@ package akka.javasdk.annotations;
 
 import java.lang.annotation.*;
 
-/** Annotation for providing a table name for View-type Kalix components. */
+/** Annotation for providing a table name for View components. */
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented

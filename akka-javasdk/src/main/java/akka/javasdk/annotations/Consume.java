@@ -90,7 +90,7 @@ public @interface Consume {
 
 
   /**
-   * Annotation for consuming messages from another Kalix service.
+   * Annotation for consuming messages from another service.
    */
   @Target(ElementType.TYPE)
   @Retention(RetentionPolicy.RUNTIME)
@@ -104,8 +104,8 @@ public @interface Consume {
 
     /**
      * The deployed name of the service to consume from, can be the deployed name of another
-     * Kalix service in the same Kalix Project or a fully qualified public hostname of
-     * a Kalix service in a different project.
+     * service in the same project or a fully qualified public hostname of
+     * a service in a different project.
      * <p>
      * Note: The service name is used as unique identifier for tracking progress when consuming it.
      * Changing this name will lead to starting over from the beginning of the event stream.

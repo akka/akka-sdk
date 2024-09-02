@@ -20,15 +20,15 @@ import java.util.Optional;
 import static java.time.temporal.ChronoUnit.SECONDS;
 
 /**
- * This class provided the necessary infrastructure to run Kalix integration test for projects built
+ * This class provided the necessary infrastructure to run integration test for projects built
  * with the Java SDK. Users should let their test classes extends this class.
  *
- * <p>This class wires-up a local Kalix application using the user's defined Kalix components.
+ * <p>This class wires-up a local service using the user's defined components.
  *
  * <p>Users can interact with their components via their public endpoint via an HTTP client or
  * internally through the {{componentClient}}.
  *
- * <p>On test teardown, the Kalix application and the Kalix Runtime will be stopped.
+ * <p>On test teardown, the service and the runtime will be stopped.
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class AkkaSdkTestKitSupport extends AsyncCallsSupport {
@@ -65,7 +65,7 @@ public abstract class AkkaSdkTestKitSupport extends AsyncCallsSupport {
       var baseUrl = "http://localhost:" + akkaSdkTestKit.getPort();
       httpClient = new HttpClient(akkaSdkTestKit.getActorSystem(), baseUrl);
     } catch (Exception ex) {
-      logger.error("Failed to startup Kalix service", ex);
+      logger.error("Failed to startup service", ex);
       throw ex;
     }
   }
@@ -73,7 +73,7 @@ public abstract class AkkaSdkTestKitSupport extends AsyncCallsSupport {
   @AfterAll
   public void afterAll() {
     if (akkaSdkTestKit != null) {
-      logger.info("Stopping Kalix TestKit...");
+      logger.info("Stopping TestKit...");
       akkaSdkTestKit.stop();
     }
   }

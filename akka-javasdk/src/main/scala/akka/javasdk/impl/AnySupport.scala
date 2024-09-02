@@ -382,8 +382,8 @@ class AnySupport(
     }
 
   /**
-   * Decodes a JavaPbAny wrapped proto message into the concrete user message type or a ScalaPbAny wrapped Kalix
-   * primitive into the Java primitive type value. Must only be used where primitive values are expected.
+   * Decodes a JavaPbAny wrapped proto message into the concrete user message type or a ScalaPbAny wrapped primitive
+   * into the Java primitive type value. Must only be used where primitive values are expected.
    */
   def decodePossiblyPrimitive(any: ScalaPbAny): Any = {
     val typeUrl = any.typeUrl
@@ -401,9 +401,9 @@ class AnySupport(
   }
 
   /**
-   * Decodes a JavaPbAny wrapped proto message into the concrete user message type or a Kalix specific wrapping of
-   * bytes, string or strings containing JSON into com.google.protobuf.{BytesValue, StringValue} which the user method
-   * is expected to accept for such messages (for example coming from a topic).
+   * Decodes a JavaPbAny wrapped proto message into the concrete user message type or a specific wrapping of bytes,
+   * string or strings containing JSON into com.google.protobuf.{BytesValue, StringValue} which the user method is
+   * expected to accept for such messages (for example coming from a topic).
    *
    * Other JavaPbAny wrapped primitives are not expected, but the wrapped value is passed through as it is.
    */

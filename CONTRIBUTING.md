@@ -26,7 +26,7 @@ FIXME contribution guidelines like in other LB projects
 
     ```shell
     cd samples/java-protobuf-valueentity-shopping-cart
-    mvn -Dkalix-sdk.version="0.7...-SNAPSHOT" compile
+    mvn -Dakka-javasdk.version="0.7...-SNAPSHOT" compile
     ```
 
 Be careful not to accidentally check in the `maven` `pom.xml` files with changed version.

@@ -23,14 +23,14 @@ public @interface Produce {
 
 
   /**
-   * Annotation to configure the component to produce an event stream that can be consumed by another Kalix services.
+   * Annotation to configure the component to produce an event stream that can be consumed by other services.
    */
   @Target(ElementType.TYPE)
   @Retention(RetentionPolicy.RUNTIME)
   @Documented
   @interface ServiceStream {
     /**
-     * Identifier for the event stream. Must be unique inside the same Kalix service.
+     * Identifier for the event stream. Must be unique inside the same service.
      */
     String id();
   }

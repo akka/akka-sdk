@@ -7,11 +7,11 @@ package akka.javasdk.http;
 public interface HttpClientProvider {
 
   /**
-   * Returns a {@link HttpClient} configured to connect to another Kalix service deployed on the
-   * same Kalix project.
+   * Returns a {@link HttpClient} configured to connect to another service deployed on the same
+   * project.
    *
-   * <p>The service is identified only by the name it has been deployed. Kalix takes care of routing
-   * requests to the service and keeping the data safe by encrypting the connection.
+   * <p>The service is identified only by the name it has been deployed. The runtime takes care of
+   * routing requests to the service and keeping the data safe by encrypting the connection.
    */
   HttpClient httpClientFor(String serviceName);
 }

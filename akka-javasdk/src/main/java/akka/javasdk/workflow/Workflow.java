@@ -29,7 +29,7 @@ import java.util.function.Supplier;
  * call to be executed and the transition to the next step based on the result of the call. The
  * workflow state can be updated after each successful step execution.
  *
- * <p>Kalix keeps track of the state of the workflow and the current step. If the workflow is
+ * <p>The runtime keeps track of the state of the workflow and the current step. If the workflow is
  * stopped for any reason, it can be resumed from the last known state and step.
  *
  * <p>Workflow methods that handle incoming commands should return an {@link
@@ -111,7 +111,7 @@ public abstract class Workflow<S> {
   }
 
   /**
-   * Returns the state as currently stored by Kalix.
+   * Returns the state as currently stored.
    *
    * <p>Note that modifying the state directly will not update it in storage. To save the state, one
    * must call {{@code effects().updateState()}}.
@@ -138,11 +138,11 @@ public abstract class Workflow<S> {
   }
 
   /**
-   * An Effect is a description of what Kalix needs to do after the command is handled.
-   * You can think of it as a set of instructions you are passing to Kalix. Kalix will process the instructions on your
-   * behalf and ensure that any data that needs to be persisted will be persisted.
+   * An Effect is a description of what the runtime needs to do after the command is handled.
+   * You can think of it as a set of instructions you are passing to the runtime, which will process
+   * the instructions on your behalf.
    * <p>
-   * Each Kalix component defines its own effects, which are a set of predefined
+   * Each component defines its own effects, which are a set of predefined
    * operations that match the capabilities of that component.
    * <p>
    * A Workflow Effect can either:

@@ -103,10 +103,8 @@ public final class AkkaSdkTestkitExtension implements BeforeAllCallback, AfterAl
   }
 
   /**
-   * Get the host name/IP address where the Kalix service is available. This is relevant in certain
+   * Get the host name/IP address where the service is available. This is relevant in certain
    * Continuous Integration environments.
-   *
-   * @return Kalix host
    */
   public String getHost() {
     return testKit.getHost();
@@ -114,8 +112,6 @@ public final class AkkaSdkTestkitExtension implements BeforeAllCallback, AfterAl
 
   /**
    * Get the local port where the Kalix service is available.
-   *
-   * @return local Kalix port
    */
   public int getPort() {
     return testKit.getPort();

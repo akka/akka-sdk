@@ -13,8 +13,8 @@ import java.util.concurrent.CompletionStage;
 public interface TimerScheduler {
 
   /**
-   * Schedule a single timer in Kalix. Timers allow for scheduling calls in the future. For example,
-   * to verify that some process have been completed or not.
+   * Schedule a single timer. Timers allow for scheduling calls in the future. For example, to
+   * verify that some process have been completed or not.
    *
    * <p>Timers are persisted and are guaranteed to run at least once.
    *
@@ -34,8 +34,8 @@ public interface TimerScheduler {
       String name, Duration delay, DeferredCall<I, O> deferredCall);
 
   /**
-   * Schedule a single timer in Kalix. Timers allow for scheduling calls in the future. For example,
-   * to verify that some process have been completed or not.
+   * Schedule a single timer. Timers allow for scheduling calls in the future. For example, to
+   * verify that some process have been completed or not.
    *
    * <p>Timers are persisted and are guaranteed to run at least once.
    *

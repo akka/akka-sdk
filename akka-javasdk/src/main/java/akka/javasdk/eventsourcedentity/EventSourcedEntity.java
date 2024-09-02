@@ -25,7 +25,7 @@ import java.util.function.Function;
  *   <li>emit events and build a reply
  *   <li>directly returning to the caller if the command is not requesting any state change
  *   <li>rejected the command by returning an error
- *   <li>instruct Kalix to delete the entity
+ *   <li>instruct the runtime to delete the entity
  * </ul>
  *
  * <p>Each event is handled by the {@link #applyEvent(E)} method.
@@ -150,7 +150,7 @@ public abstract class EventSourcedEntity<S, E> {
   public abstract S applyEvent(E event);
 
   /**
-   * Returns the state as currently stored by Kalix.
+   * Returns the state as currently stored.
    *
    * <p>Note that modifying the state directly will not update it in storage.
    * The state can only be updated through the {@link #applyEvent(E)} method.
@@ -173,11 +173,11 @@ public abstract class EventSourcedEntity<S, E> {
   }
 
   /**
-   * An Effect is a description of what Kalix needs to do after the command is handled.
-   * You can think of it as a set of instructions you are passing to Kalix. Kalix will process the instructions on your
-   * behalf and ensure that any data that needs to be persisted will be persisted.
+   * An Effect is a description of what the runtime needs to do after the command is handled.
+   * You can think of it as a set of instructions you are passing to the runtime, which will process
+   * the instructions on your behalf.
    * <p>
-   * Each Kalix component defines its own effects, which are a set of predefined
+   * Each component defines its own effects, which are a set of predefined
    * operations that match the capabilities of that component.
    * <p>
    * An EventSourcedEntity Effect can either:
@@ -186,7 +186,7 @@ public abstract class EventSourcedEntity<S, E> {
    *   <li>emit events and send a reply to the caller
    *   <li>directly reply to the caller if the command is not requesting any state change
    *   <li>rejected the command by returning an error
-   *   <li>instruct Kalix to delete the entity
+   *   <li>instruct the runtime to delete the entity
    * </ul>
    * <p>
    *
