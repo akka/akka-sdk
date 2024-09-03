@@ -12,6 +12,7 @@ import akka.javasdk.testkit.TestKitSupport;
 import com.example.wiring.actions.echo.ActionWithMetadata;
 import com.example.wiring.actions.echo.EchoAction;
 import com.example.wiring.actions.headers.TestBuffer;
+import com.example.wiring.eventsourcedentities.counter.Counter;
 import com.example.wiring.eventsourcedentities.counter.CounterEntity;
 import com.example.wiring.keyvalueentities.customer.CustomerEntity;
 import com.example.wiring.keyvalueentities.user.AssignedCounterEntity;
@@ -152,6 +153,13 @@ public class SdkIntegrationTest extends TestKitSupport {
   @Test
   public void verifyFindCounterByValue() {
 
+    var emptyCounter = await(
+      componentClient.forView()
+        .method(CountersByValue::getCounterByValue)
+        .invokeAsync(CountersByValue.queryParam(10)));
+
+    assertThat(emptyCounter).isEmpty();
+
     await(
       componentClient.forEventSourcedEntity("abc")
         .method(CounterEntity::increase)
@@ -169,7 +177,7 @@ public class SdkIntegrationTest extends TestKitSupport {
               .method(CountersByValue::getCounterByValue)
               .invokeAsync(CountersByValue.queryParam(10)));
 
-          assertThat(byValue.value()).isEqualTo(10);
+          assertThat(byValue).hasValue(new Counter(10));
         });
   }
 

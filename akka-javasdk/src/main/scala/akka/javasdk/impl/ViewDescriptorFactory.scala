@@ -13,8 +13,9 @@ import akka.javasdk.impl.reflection.SubscriptionServiceMethod
 import akka.javasdk.impl.reflection.ViewUrlTemplate
 import akka.javasdk.impl.reflection.VirtualDeleteServiceMethod
 import akka.javasdk.impl.reflection.VirtualServiceMethod
-
 import java.lang.reflect.ParameterizedType
+import java.util.Optional
+
 import akka.javasdk.annotations.Consume.FromKeyValueEntity
 import akka.javasdk.annotations.Consume.FromServiceStream
 import ComponentDescriptorFactory.combineBy
@@ -168,10 +169,15 @@ private[impl] object ViewDescriptorFactory extends ComponentDescriptorFactory {
         .asInstanceOf[java.lang.reflect.ParameterizedType]
         .getActualTypeArguments
         .head
-        .asInstanceOf[Class[_]]
+
+      val actualQueryOutputType = queryOutputType match {
+        case parameterizedType: ParameterizedType if parameterizedType.getRawType == classOf[Optional[_]] =>
+          parameterizedType.getActualTypeArguments.head.asInstanceOf[Class[_]]
+        case other => other.asInstanceOf[Class[_]]
+      }
 
       val queryOutputSchemaDescriptor =
-        ProtoMessageDescriptors.generateMessageDescriptors(queryOutputType)
+        ProtoMessageDescriptors.generateMessageDescriptors(actualQueryOutputType)
 
       // TODO: it should be possible to have fixed queries and use a GET method
       val QueryParametersSchemaDescriptor =

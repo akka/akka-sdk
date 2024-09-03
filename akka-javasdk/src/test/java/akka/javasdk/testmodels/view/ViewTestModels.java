@@ -24,6 +24,8 @@ import akka.javasdk.testmodels.keyvalueentity.TimeTrackerEntity;
 import akka.javasdk.testmodels.keyvalueentity.User;
 import akka.javasdk.testmodels.keyvalueentity.UserEntity;
 
+import java.util.Optional;
+
 public class ViewTestModels {
 
   // common query parameter for views in this file
@@ -132,7 +134,7 @@ public class ViewTestModels {
     }
 
     @Query("SELECT * FROM users WHERE email = :email")
-    public QueryEffect<TransformedUser> getUser(ByEmail byEmail) {
+    public QueryEffect<Optional<TransformedUser>> getUser(ByEmail byEmail) {
       return queryResult();
     }
   }

@@ -15,13 +15,14 @@ import akka.javasdk.timedaction.TimedAction
 import akka.javasdk.view.TableUpdater
 import akka.javasdk.view.View
 import akka.javasdk.workflow.Workflow
-
 import java.lang.annotation.Annotation
 import java.lang.reflect.AnnotatedElement
 import java.lang.reflect.Method
 import java.lang.reflect.Modifier
 import java.lang.reflect.ParameterizedType
 import java.util
+import java.util.Optional
+
 import scala.annotation.tailrec
 import scala.reflect.ClassTag
 
@@ -73,13 +74,30 @@ private[impl] object Reflect {
   def isAction(clazz: Class[_]): Boolean = classOf[TimedAction].isAssignableFrom(clazz)
 
   def getReturnType[R](declaringClass: Class[_], method: Method): Class[R] = {
-    if (isAction(declaringClass) || isEntity(declaringClass) || isWorkflow(declaringClass) || isView(declaringClass)) {
+    if (isAction(declaringClass) || isEntity(declaringClass) || isWorkflow(declaringClass)) {
       // here we are expecting a wrapper in the form of an Effect
       method.getGenericReturnType.asInstanceOf[ParameterizedType].getActualTypeArguments.head.asInstanceOf[Class[R]]
+    } else if (isView(declaringClass)) {
+      // maybe later we could support Optional for other types of components
+      val returnType = method.getGenericReturnType.asInstanceOf[ParameterizedType].getActualTypeArguments.head
+      returnType match {
+        case parameterizedType: ParameterizedType if parameterizedType.getRawType == classOf[Optional[_]] =>
+          parameterizedType.getActualTypeArguments.head.asInstanceOf[Class[R]]
+        case other => other.asInstanceOf[Class[R]]
+      }
     } else {
       // in other cases we expect a View query method, but declaring class may not extend View[_] class for join views
       method.getReturnType.asInstanceOf[Class[R]]
     }
+  }
+
+  def isReturnTypeOptional[R](method: Method): Boolean = {
+    method.getGenericReturnType
+      .asInstanceOf[ParameterizedType]
+      .getActualTypeArguments
+      .headOption
+      .exists(t =>
+        t.isInstanceOf[ParameterizedType] && t.asInstanceOf[ParameterizedType].getRawType == classOf[Optional[_]])
   }
 
   private def extendsView(component: Class[_]): Boolean =

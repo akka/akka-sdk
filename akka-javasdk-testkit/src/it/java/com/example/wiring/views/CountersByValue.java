@@ -15,6 +15,8 @@ import akka.javasdk.view.View;
 import akka.javasdk.annotations.Query;
 import akka.javasdk.annotations.Consume;
 
+import java.util.Optional;
+
 @ComponentId("counters_by_value")
 public class CountersByValue extends View {
 
@@ -44,7 +46,7 @@ public class CountersByValue extends View {
   }
 
   @Query("SELECT * FROM counters WHERE value = :value")
-  public QueryEffect<Counter> getCounterByValue(QueryParameters params) {
+  public QueryEffect<Optional<Counter>> getCounterByValue(QueryParameters params) {
     return queryResult();
   }
 }

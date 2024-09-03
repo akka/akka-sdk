@@ -4,6 +4,8 @@
 
 package akka.javasdk.impl.client
 
+import java.util.Optional
+
 import akka.annotation.InternalApi
 import akka.http.scaladsl.model.ContentTypes
 import akka.japi.function
@@ -239,12 +241,23 @@ private[javasdk] final case class ViewClientImpl(viewClient: RuntimeViewClient, 
               .transform {
                 case Success(reply) =>
                   // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
-                  val returnType = Reflect.getReturnType(declaringClass, method)
-                  if (reply.payload.isEmpty)
-                    Failure(
-                      new NoEntryFoundException(
-                        s"No matching entry found when calling $declaringClass.${method.getName}"))
-                  else Try(JsonSupport.parseBytes[R](reply.payload.toArrayUnsafe(), returnType.asInstanceOf[Class[R]]))
+                  val returnType: Class[_] = Reflect.getReturnType(declaringClass, method)
+                  val optional = Reflect.isReturnTypeOptional(method)
+                  if (reply.payload.isEmpty) {
+                    if (optional) Success(Optional.empty().asInstanceOf[R])
+                    else
+                      Failure(
+                        new NoEntryFoundException(
+                          s"No matching entry found when calling $declaringClass.${method.getName}"))
+                  } else {
+                    if (optional) {
+                      Try(JsonSupport.parseBytes(reply.payload.toArrayUnsafe(), returnType))
+                        .map(Optional.of)
+                        .map(_.asInstanceOf[R])
+                    } else {
+                      Try(JsonSupport.parseBytes[R](reply.payload.toArrayUnsafe(), returnType.asInstanceOf[Class[R]]))
+                    }
+                  }
                 case Failure(ex) => Failure(ex)
               }
               .asJava
