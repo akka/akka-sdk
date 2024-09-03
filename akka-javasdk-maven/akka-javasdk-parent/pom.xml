@@ -23,6 +23,7 @@
     </description>
 
     <properties>
+        <akka.javasdk.dev-mode.service-name>${project.artifactId}</akka.javasdk.dev-mode.service-name>
         <!-- archetype need to override kalixContainerRegistry and kalixOrganization -->
         <kalixContainerRegistry>kcr.us-east-1.kalix.io</kalixContainerRegistry>
         <kalixOrganization>acme</kalixOrganization>
@@ -283,7 +284,7 @@
                         <systemProperties>
                             <systemProperty>
                                 <key>akka.javasdk.dev-mode.service-name</key>
-                                <value>${project.artifactId}</value>
+                                <value>${akka.javasdk.dev-mode.service-name}</value>
                             </systemProperty>
                             <systemProperty>
                                 <key>akka.runtime.dev-mode.enabled</key>
