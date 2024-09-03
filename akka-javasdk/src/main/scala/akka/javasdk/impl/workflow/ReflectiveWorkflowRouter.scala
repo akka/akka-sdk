@@ -38,7 +38,7 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
     val commandHandler = commandHandlerLookup(commandName)
 
     val scalaPbAnyCommand = command.asInstanceOf[ScalaPbAny]
-    if (scalaPbAnyCommand.typeUrl.startsWith(JsonSupport.KALIX_JSON)) {
+    if (scalaPbAnyCommand.typeUrl.startsWith(JsonSupport.JSON_TYPE_URL_PREFIX)) {
       // special cased component client calls, lets json commands trough all the way
       val methodInvoker = commandHandler.getSingleNameInvoker()
       val parameterTypes = methodInvoker.method.getParameterTypes

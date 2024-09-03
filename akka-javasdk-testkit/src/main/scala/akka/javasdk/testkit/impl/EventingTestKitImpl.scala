@@ -351,7 +351,7 @@ private[testkit] class OutgoingMessagesImpl(
     val metadata = MetadataImpl.of(msg.getMessage.getMetadata.entries)
     val scalaPb = ScalaPbAny(typeUrlFor(metadata), msg.getMessage.payload)
 
-    val decodedMsg = if (typeUrlFor(metadata).startsWith(JsonSupport.KALIX_JSON)) {
+    val decodedMsg = if (typeUrlFor(metadata).startsWith(JsonSupport.JSON_TYPE_URL_PREFIX)) {
       JsonSupport.getObjectMapper
         .readerFor(clazz)
         .readValue(msg.getMessage.payload.toByteArray)
@@ -365,7 +365,7 @@ private[testkit] class OutgoingMessagesImpl(
 
   private def anyFromMessage(m: kalix.testkit.protocol.eventing_test_backend.Message): TestKitMessage[_] = {
     val metadata = MetadataImpl.of(m.metadata.getOrElse(Metadata.defaultInstance).entries)
-    val anyMsg = if (typeUrlFor(metadata).startsWith(JsonSupport.KALIX_JSON)) {
+    val anyMsg = if (typeUrlFor(metadata).startsWith(JsonSupport.JSON_TYPE_URL_PREFIX)) {
       m.payload.toStringUtf8
     } else {
       codec.decodeMessage(ScalaPbAny(typeUrlFor(metadata), m.payload))
@@ -435,7 +435,7 @@ private[testkit] object TestKitMessageImpl {
       case _: String =>
         ("text/plain; charset=utf-8", "")
       case _ =>
-        ("application/json", messageCodec.typeUrlFor(message.getClass).stripPrefix(JsonSupport.KALIX_JSON))
+        ("application/json", messageCodec.typeUrlFor(message.getClass).stripPrefix(JsonSupport.JSON_TYPE_URL_PREFIX))
     }
 
     defaultMetadata(subject, contentType, ceType)

@@ -40,7 +40,7 @@ private[impl] class ReflectiveConsumerRouter[A <: Consumer](
     val inputTypeUrl = message.payload().asInstanceOf[ScalaPbAny].typeUrl
     val scalaPbAnyCommand = message.payload().asInstanceOf[ScalaPbAny]
     if ((scalaPbAnyCommand.typeUrl.startsWith(
-        JsonSupport.KALIX_JSON) || scalaPbAnyCommand.value.isEmpty) && commandHandler.isSingleNameInvoker) {
+        JsonSupport.JSON_TYPE_URL_PREFIX) || scalaPbAnyCommand.value.isEmpty) && commandHandler.isSingleNameInvoker) {
       // special cased component client calls, lets json commands trough all the way
       val methodInvoker = commandHandler.getSingleNameInvoker()
       val parameterTypes = methodInvoker.method.getParameterTypes

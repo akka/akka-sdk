@@ -29,7 +29,7 @@ private[javasdk] object InvocationContext {
       metadata: Metadata = Metadata.EMPTY): InvocationContext = {
 
     val dynamicMessage =
-      if (anyMessage.typeUrl.startsWith(JsonSupport.KALIX_JSON) ||
+      if (anyMessage.typeUrl.startsWith(JsonSupport.JSON_TYPE_URL_PREFIX) ||
         anyMessage.typeUrl == BytesPrimitive.fullName) {
         // FIXME how can this ever work unless methodDescriptor is protobuf Any, or a synthetic
         //       message with exactly the two fields type_url and value?

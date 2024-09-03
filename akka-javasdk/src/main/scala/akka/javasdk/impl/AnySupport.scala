@@ -425,7 +425,7 @@ class AnySupport(
       else
         com.google.protobuf.wrappers.StringValue.of(string)
 
-    } else if (typeUrl.startsWith(JsonSupport.KALIX_JSON)) {
+    } else if (typeUrl.startsWith(JsonSupport.JSON_TYPE_URL_PREFIX)) {
       // we do not actually parse JSON here but returns it as is and let the user
       // decide which json type to try decode it into etc. based on the type_url which
       // may have additional detail about what it can be JSON-deserialized into

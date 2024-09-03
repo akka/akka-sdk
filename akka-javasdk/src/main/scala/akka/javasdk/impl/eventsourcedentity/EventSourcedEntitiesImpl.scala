@@ -197,10 +197,9 @@ private[impl] final class EventSourcedEntitiesImpl(
           span.foreach(s => MDC.put(Telemetry.TRACE_ID, s.getSpanContext.getTraceId))
           try {
             val cmd =
-              service.messageCodec.decodeMessage(
-                command.payload.getOrElse(
-                  // FIXME smuggling 0 arity method called from component client through here
-                  ScalaPbAny.defaultInstance.withTypeUrl(JsonSupport.KALIX_JSON).withValue(ByteString.empty())))
+              service.messageCodec.decodeMessage(command.payload.getOrElse(
+                // FIXME smuggling 0 arity method called from component client through here
+                ScalaPbAny.defaultInstance.withTypeUrl(JsonSupport.JSON_TYPE_URL_PREFIX).withValue(ByteString.empty())))
             val metadata = MetadataImpl.of(command.metadata.map(_.entries.toVector).getOrElse(Nil))
             val context =
               new CommandContextImpl(thisEntityId, sequence, command.name, command.id, metadata)

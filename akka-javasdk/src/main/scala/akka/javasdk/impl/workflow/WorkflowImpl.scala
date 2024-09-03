@@ -312,7 +312,7 @@ final class WorkflowImpl(
             service.messageCodec.decodeMessage(
               command.payload.getOrElse(
                 // FIXME smuggling 0 arity method called from component client through here
-                ScalaPbAny.defaultInstance.withTypeUrl(JsonSupport.KALIX_JSON).withValue(ByteString.empty())))
+                ScalaPbAny.defaultInstance.withTypeUrl(JsonSupport.JSON_TYPE_URL_PREFIX).withValue(ByteString.empty())))
 
           val (CommandResult(effect), errorCode) =
             try {
