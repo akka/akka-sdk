@@ -4,9 +4,11 @@
 
 package akka.javasdk.impl
 
-import akka.annotation.InternalApi
+import java.util.Locale
 
+import akka.annotation.InternalApi
 import scala.collection.mutable
+
 import com.google.protobuf.DescriptorProtos.FieldDescriptorProto
 import com.google.protobuf.Descriptors.FileDescriptor
 
@@ -20,7 +22,7 @@ private[impl] object ProtoDescriptorRenderer {
     // not water tight but better than the default non-protobuf Proto-toString format
     val proto = fileDescriptor.toProto
     val builder = new mutable.StringBuilder()
-    builder ++= s"""syntax = "${fileDescriptor.toProto.getSyntax.toLowerCase}";\n\n"""
+    builder ++= s"""syntax = "${fileDescriptor.toProto.getSyntax.toLowerCase(Locale.ROOT)}";\n\n"""
 
     builder ++= "package "
     builder ++= fileDescriptor.getPackage + ";\n\n"
@@ -61,7 +63,7 @@ private[impl] object ProtoDescriptorRenderer {
         if (field.hasTypeName)
           builder ++= field.getTypeName
         else
-          builder ++= field.getType.name().toLowerCase.drop(5)
+          builder ++= field.getType.name().toLowerCase(Locale.ROOT).drop(5)
         builder ++= " "
         builder ++= field.getName
         builder ++= " = ";

@@ -15,10 +15,11 @@ import com.google.protobuf.empty.Empty
 import kalix.protocol.action.Actions
 import kalix.protocol.discovery._
 import org.slf4j.LoggerFactory
-
 import java.util
+import java.util.Locale
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicReference
+
 import scala.concurrent.Future
 import scala.concurrent.Promise
 import scala.io.Source
@@ -171,7 +172,7 @@ class DiscoveryImpl(
           s"At ${location.fileName}:${location.startLine + 1}:${location.startCol + 1}:${"\n"}$source"
       }
     }.toList
-    val severityString = in.severity.name.take(1) + in.severity.name.drop(1).toLowerCase
+    val severityString = in.severity.name.take(1) + in.severity.name.drop(1).toLowerCase(Locale.ROOT)
     val message = s"$severityString reported from Kalix system: ${in.code} ${in.message}"
     val detail = if (in.detail.isEmpty) Nil else List(in.detail)
     val seeDocs = DocLinks(sdkName).forErrorCode(in.code).map(link => s"See documentation: $link").toList
