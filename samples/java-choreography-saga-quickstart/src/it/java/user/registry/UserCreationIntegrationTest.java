@@ -1,7 +1,7 @@
 package user.registry;
 
 import akka.http.javadsl.model.StatusCodes;
-import akka.javasdk.testkit.AkkaSdkTestKitSupport;
+import akka.javasdk.testkit.TestKitSupport;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 import user.registry.api.ApplicationController;
@@ -20,7 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Since this is an integration tests, it interacts with the application using a WebClient
  * (already configured and provided automatically through injection).
  */
-public class UserCreationIntegrationTest extends AkkaSdkTestKitSupport {
+public class UserCreationIntegrationTest extends TestKitSupport {
 
   private final Duration timeout = Duration.ofSeconds(6);
 

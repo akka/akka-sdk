@@ -4,28 +4,21 @@
 
 package akka.javasdk.impl
 
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import scala.concurrent.duration.FiniteDuration
 import akka.Done
 import akka.actor.testkit.typed.scaladsl.LoggingTestKit
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import akka.actor.typed.scaladsl.adapter._
 import akka.javasdk.JsonSupport
+import akka.javasdk.JsonSupport.decodeJson
 import akka.javasdk.consumer.ConsumerContext
-import akka.javasdk.consumer.ReflectiveConsumerProvider
-import akka.javasdk.impl.JsonMessageCodec
-import akka.javasdk.impl.MessageCodec
-import akka.javasdk.impl.ProxyInfoHolder
-import akka.javasdk.impl.action.ActionsImpl
-import akka.javasdk.impl.consumer.ConsumerService
-import akka.javasdk.impl.telemetry.Telemetry
-import JsonSupport.decodeJson
 import akka.javasdk.eventsourcedentity.OldTestESEvent.OldEvent1
 import akka.javasdk.eventsourcedentity.OldTestESEvent.OldEvent2
 import akka.javasdk.eventsourcedentity.OldTestESEvent.OldEvent3
 import akka.javasdk.eventsourcedentity.TestESEvent
-import TestESEvent.Event4
+import akka.javasdk.eventsourcedentity.TestESEvent.Event4
+import akka.javasdk.impl.action.ActionsImpl
+import akka.javasdk.impl.consumer.ConsumerProvider
+import akka.javasdk.impl.telemetry.Telemetry
 import akka.javasdk.timedaction.TestESSubscription
 import akka.javasdk.timedaction.TestTracing
 import akka.runtime.sdk.spi.DeferredRequest
@@ -46,6 +39,10 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
 import org.slf4j.LoggerFactory
 
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.concurrent.duration.FiniteDuration
+
 class ConsumersImplSpec
     extends ScalaTestWithActorTestKit
     with AnyWordSpecLike
@@ -57,14 +54,10 @@ class ConsumersImplSpec
 
   private val classicSystem = system.toClassic
 
-  def create(
-      provider: ReflectiveConsumerProvider[_],
-      messageCodec: MessageCodec,
-      tracingCollector: String = ""): Actions = {
-    val actionFactory: ConsumerFactory = ctx => provider.newRouter(ctx)
-    val service = new ConsumerService(actionFactory, provider.serviceDescriptor(), Array(), messageCodec, None)
+  def create(provider: ConsumerProvider[_], tracingCollector: String = ""): Actions = {
+    val service = provider.newServiceInstance()
 
-    val services = Map(provider.serviceDescriptor().getFullName -> service)
+    val services = Map(provider.serviceDescriptor.getFullName -> service)
 
     //setting tracing as disabled, emulating that is discovered from the proxy.
     ProxyInfoHolder(system).overrideTracingCollectorEndpoint(tracingCollector)
@@ -87,13 +80,11 @@ class ConsumersImplSpec
   "The consumer service" should {
     "check event migration for subscription" in {
       val jsonMessageCodec = new JsonMessageCodec()
-      val consumerProvider = ReflectiveConsumerProvider.of(
-        classOf[TestESSubscription],
-        jsonMessageCodec,
-        (_: ConsumerContext) => new TestESSubscription)
+      val consumerProvider =
+        ConsumerProvider(classOf[TestESSubscription], jsonMessageCodec, (_: ConsumerContext) => new TestESSubscription)
 
-      val service = create(consumerProvider, jsonMessageCodec)
-      val serviceName = consumerProvider.serviceDescriptor().getFullName
+      val service = create(consumerProvider)
+      val serviceName = consumerProvider.serviceDescriptor.getFullName
 
       val event1 = jsonMessageCodec.encodeScala(new OldEvent1("state"))
       val reply1 = service.handleUnary(toActionCommand(serviceName, event1)).futureValue
@@ -124,10 +115,10 @@ class ConsumersImplSpec
     "inject traces correctly into metadata and keeps trace_id in MDC" in {
       val jsonMessageCodec = new JsonMessageCodec()
       val consumerProvider =
-        ReflectiveConsumerProvider.of(classOf[TestTracing], jsonMessageCodec, (_: ConsumerContext) => new TestTracing)
+        ConsumerProvider(classOf[TestTracing], jsonMessageCodec, (_: ConsumerContext) => new TestTracing)
 
-      val service = create(consumerProvider, jsonMessageCodec, "http://localhost:1111")
-      val serviceName = consumerProvider.serviceDescriptor().getFullName
+      val service = create(consumerProvider, "http://localhost:1111")
+      val serviceName = consumerProvider.serviceDescriptor.getFullName
 
       val cmd1 = ScalaPbAny.fromJavaProto(JsonSupport.encodeJson(new TestESEvent.Event2(123)))
 

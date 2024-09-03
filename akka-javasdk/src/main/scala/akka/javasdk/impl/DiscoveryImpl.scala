@@ -8,12 +8,12 @@ import akka.Done
 import akka.actor.ActorSystem
 import akka.actor.CoordinatedShutdown
 import akka.annotation.InternalApi
+import akka.javasdk.BuildInfo
 import com.google.protobuf.DescriptorProtos
 import com.google.protobuf.DescriptorProtos.FileDescriptorProto
 import com.google.protobuf.empty.Empty
 import kalix.protocol.action.Actions
 import kalix.protocol.discovery._
-import akka.javasdk.BuildInfo
 import org.slf4j.LoggerFactory
 
 import java.util
@@ -129,7 +129,7 @@ class DiscoveryImpl(
       }
 
       val components = services.map { case (name, service) =>
-        val forwardHeaders = service.componentOptions.map(_.forwardHeaders().asScala.toSeq).getOrElse(Seq.empty)
+        val forwardHeaders = Seq.empty
         service.componentType match {
           case Actions.name =>
             Component(
@@ -141,11 +141,7 @@ class DiscoveryImpl(
               service.componentType,
               name,
               Component.ComponentSettings.Entity(
-                EntitySettings(
-                  service.serviceName,
-                  None,
-                  service.componentOptions.map(_.forwardHeaders().asScala.toSeq).getOrElse(Nil),
-                  EntitySettings.SpecificSettings.Empty)))
+                EntitySettings(service.serviceName, None, forwardHeaders, EntitySettings.SpecificSettings.Empty)))
         }
       }.toSeq
 

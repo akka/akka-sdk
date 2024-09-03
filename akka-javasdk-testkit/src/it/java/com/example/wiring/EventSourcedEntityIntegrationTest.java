@@ -4,7 +4,7 @@
 
 package com.example.wiring;
 
-import akka.javasdk.testkit.AkkaSdkTestKitSupport;
+import akka.javasdk.testkit.TestKitSupport;
 import com.example.wiring.eventsourcedentities.counter.CounterEntity;
 import akka.javasdk.client.EventSourcedEntityClient;
 import org.awaitility.Awaitility;
@@ -18,7 +18,7 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
 
-public class EventSourcedEntityIntegrationTest extends AkkaSdkTestKitSupport {
+public class EventSourcedEntityIntegrationTest extends TestKitSupport {
 
   @Test
   public void verifyCounterEventSourcedWiring() {

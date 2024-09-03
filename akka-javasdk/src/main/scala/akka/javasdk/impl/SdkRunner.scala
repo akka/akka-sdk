@@ -4,30 +4,10 @@
 
 package akka.javasdk.impl
 
-import java.lang.reflect.Constructor
-import java.lang.reflect.ParameterizedType
-import java.util.Optional
-import java.util.concurrent.atomic.AtomicReference
-import scala.concurrent.Future
-import scala.concurrent.Promise
-import scala.jdk.CollectionConverters.CollectionHasAsScala
-import scala.jdk.CollectionConverters.MapHasAsScala
-import scala.jdk.OptionConverters.RichOption
-import scala.reflect.ClassTag
-import scala.util.control.NonFatal
 import akka.Done
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
-import akka.javasdk.impl.eventsourcedentity.EventSourcedEntitiesImpl
-import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityService
-import akka.javasdk.impl.keyvalueentity.KeyValueEntitiesImpl
-import akka.javasdk.impl.keyvalueentity.KeyValueEntityService
-import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.BuildInfo
-import Validations.Invalid
-import Validations.Valid
-import Validations.Validation
-import Reflect.Syntax.AnnotatedElementOps
 import akka.javasdk.DependencyProvider
 import akka.javasdk.ServiceSetup
 import akka.javasdk.annotations.ComponentId
@@ -36,47 +16,51 @@ import akka.javasdk.annotations.http.Endpoint
 import akka.javasdk.client.ComponentClient
 import akka.javasdk.consumer.Consumer
 import akka.javasdk.consumer.ConsumerContext
-import akka.javasdk.consumer.ConsumerProvider
-import akka.javasdk.consumer.ReflectiveConsumerProvider
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.javasdk.eventsourcedentity.EventSourcedEntityContext
-import akka.javasdk.eventsourcedentity.EventSourcedEntityProvider
-import akka.javasdk.eventsourcedentity.ReflectiveEventSourcedEntityProvider
 import akka.javasdk.http.HttpClientProvider
+import akka.javasdk.impl.Validations.Invalid
+import akka.javasdk.impl.Validations.Valid
+import akka.javasdk.impl.Validations.Validation
 import akka.javasdk.impl.action.ActionService
 import akka.javasdk.impl.action.ActionsImpl
 import akka.javasdk.impl.client.ComponentClientImpl
 import akka.javasdk.impl.consumer.ConsumerService
+import akka.javasdk.impl.consumer.ConsumerProvider
+import akka.javasdk.impl.eventsourcedentity.EventSourcedEntitiesImpl
+import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityProvider
+import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityService
 import akka.javasdk.impl.http.HttpClientProviderImpl
+import akka.javasdk.impl.keyvalueentity.KeyValueEntitiesImpl
+import akka.javasdk.impl.keyvalueentity.KeyValueEntityProvider
+import akka.javasdk.impl.keyvalueentity.KeyValueEntityService
+import akka.javasdk.impl.reflection.Reflect
+import akka.javasdk.impl.reflection.Reflect.Syntax.AnnotatedElementOps
+import akka.javasdk.impl.timedaction.TimedActionProvider
 import akka.javasdk.impl.timer.TimerSchedulerImpl
-import akka.javasdk.impl.view.ViewProviderImpl
+import akka.javasdk.impl.view.ViewProvider
 import akka.javasdk.impl.view.ViewService
 import akka.javasdk.impl.view.ViewsImpl
 import akka.javasdk.impl.workflow.WorkflowImpl
+import akka.javasdk.impl.workflow.WorkflowProvider
 import akka.javasdk.impl.workflow.WorkflowService
 import akka.javasdk.keyvalueentity.KeyValueEntity
 import akka.javasdk.keyvalueentity.KeyValueEntityContext
-import akka.javasdk.keyvalueentity.KeyValueEntityProvider
-import akka.javasdk.keyvalueentity.ReflectiveKeyValueEntityProvider
-import akka.javasdk.timedaction.ReflectiveTimedActionProvider
 import akka.javasdk.timedaction.TimedAction
 import akka.javasdk.timedaction.TimedActionContext
-import akka.javasdk.timedaction.TimedActionProvider
 import akka.javasdk.timer.TimerScheduler
 import akka.javasdk.view.TableUpdater
 import akka.javasdk.view.View
 import akka.javasdk.view.ViewContext
-import akka.javasdk.view.ViewProvider
-import akka.javasdk.workflow.ReflectiveWorkflowProvider
 import akka.javasdk.workflow.Workflow
 import akka.javasdk.workflow.WorkflowContext
-import akka.javasdk.workflow.WorkflowProvider
 import akka.runtime.sdk.spi.ComponentClients
 import akka.runtime.sdk.spi.HttpEndpointConstructionContext
 import akka.runtime.sdk.spi.HttpEndpointDescriptor
 import akka.runtime.sdk.spi.SpiComponents
 import akka.runtime.sdk.spi.StartContext
 import akka.stream.Materializer
+import com.google.protobuf.Descriptors
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import io.opentelemetry.api.trace.Span
@@ -91,17 +75,25 @@ import kalix.protocol.view.Views
 import kalix.protocol.workflow_entity.WorkflowEntities
 import org.slf4j.LoggerFactory
 
+import java.lang.reflect.Constructor
+import java.lang.reflect.ParameterizedType
+import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.concurrent.Promise
+import scala.jdk.CollectionConverters.CollectionHasAsScala
+import scala.reflect.ClassTag
+import scala.util.control.NonFatal
 
 /**
  * INTERNAL API
  */
 @InternalApi
-final class AkkaJavaSdkRunner extends akka.runtime.sdk.spi.Runner {
+final class SdkRunner extends akka.runtime.sdk.spi.Runner {
 
   override def start(startContext: StartContext): Future[SpiComponents] = {
     try {
-      val app = new AkkaJavaSdkApplication(
+      val app = new Sdk(
         startContext.system,
         startContext.sdkDispatcherName,
         startContext.executionContext,
@@ -111,7 +103,7 @@ final class AkkaJavaSdkRunner extends akka.runtime.sdk.spi.Runner {
     } catch {
       case NonFatal(ex) =>
         LoggerFactory.getLogger(getClass).error("Unexpected exception while setting up service", ex)
-        AkkaJavaSdkApplication.onNextStartCallback.getAndSet(null) match {
+        Sdk.onNextStartCallback.getAndSet(null) match {
           case null =>
           case f    =>
             // Integration test mode
@@ -190,8 +182,10 @@ private object ComponentLocator {
  * INTERNAL API
  */
 @InternalApi
-private[javasdk] final object AkkaJavaSdkApplication {
-  val onNextStartCallback: AtomicReference[Promise[(Kalix, ComponentClients, Optional[DependencyProvider])]] =
+private[javasdk] object Sdk {
+  final case class StartupContext(componentClients: ComponentClients, dependencyProvider: Option[DependencyProvider])
+
+  val onNextStartCallback: AtomicReference[Promise[StartupContext]] =
     new AtomicReference(null)
 }
 
@@ -199,7 +193,7 @@ private[javasdk] final object AkkaJavaSdkApplication {
  * INTERNAL API
  */
 @InternalApi
-private final class AkkaJavaSdkApplication(
+private final class Sdk(
     system: ActorSystem[_],
     sdkDispatcherName: String,
     sdkExecutionContext: ExecutionContext,
@@ -211,7 +205,7 @@ private final class AkkaJavaSdkApplication(
     ComponentLocator.locateUserComponents(system)
   private var dependencyProviderOpt: Option[DependencyProvider] = None
 
-  val sdkSettings = AkkaSdkSettings(system)
+  private val sdkSettings = Settings(system)
 
   private lazy val userServiceConfig = {
     // hiding these paths from the config provided to user
@@ -235,53 +229,35 @@ private final class AkkaJavaSdkApplication(
       validation.failIfInvalid
   }
 
-  // register them if all valid
-  val aclDescriptor =
-    maybeServiceClass
-      .map(serviceClass => AclDescriptorFactory.buildAclFileDescriptor(serviceClass))
-      .getOrElse(AclDescriptorFactory.defaultAclFileDescriptor)
-
-  // FIXME why is acl descriptor needed both here and in discovery?
-  // FIXME drop the Kalix class and pull all logic in here
-  private val kalix = new Kalix().withDefaultAclFileDescriptor(aclDescriptor)
-  componentClasses
+  // register them if all valid, prototobuf
+  private val componentFactories: Map[Descriptors.ServiceDescriptor, () => Service] = componentClasses
     .filter(hasComponentId)
-    .foreach { clz =>
+    .foldLeft(Map[Descriptors.ServiceDescriptor, () => Service]()) { (factories, clz) =>
       if (classOf[TimedAction].isAssignableFrom(clz)) {
         logger.info(s"Registering TimedAction provider for [${clz.getName}]")
         val action = timedActionProvider(clz.asInstanceOf[Class[TimedAction]])
-        kalix.register(action)
-      }
-
-      if (classOf[Consumer].isAssignableFrom(clz)) {
+        factories.updated(action.serviceDescriptor, action.newServiceInstance _)
+      } else if (classOf[Consumer].isAssignableFrom(clz)) {
         logger.info(s"Registering Consumer provider for [${clz.getName}]")
         val consumer = consumerProvider(clz.asInstanceOf[Class[Consumer]])
-        kalix.register(consumer)
-      }
-
-      if (classOf[EventSourcedEntity[_, _]].isAssignableFrom(clz)) {
+        factories.updated(consumer.serviceDescriptor, consumer.newServiceInstance _)
+      } else if (classOf[EventSourcedEntity[_, _]].isAssignableFrom(clz)) {
         logger.info(s"Registering EventSourcedEntity provider for [${clz.getName}]")
         val esEntity = eventSourcedEntityProvider(clz.asInstanceOf[Class[EventSourcedEntity[Nothing, Nothing]]])
-        kalix.register(esEntity)
-      }
-
-      if (classOf[Workflow[_]].isAssignableFrom(clz)) {
+        factories.updated(esEntity.serviceDescriptor, esEntity.newServiceInstance _)
+      } else if (classOf[Workflow[_]].isAssignableFrom(clz)) {
         logger.info(s"Registering Workflow provider for [${clz.getName}]")
         val workflow = workflowProvider(clz.asInstanceOf[Class[Workflow[Nothing]]])
-        kalix.register(workflow)
-      }
-
-      if (classOf[KeyValueEntity[_]].isAssignableFrom(clz)) {
+        factories.updated(workflow.serviceDescriptor, workflow.newServiceInstance _)
+      } else if (classOf[KeyValueEntity[_]].isAssignableFrom(clz)) {
         logger.info(s"Registering KeyValueEntity provider for [${clz.getName}]")
-        val valueEntity = valueEntityProvider(clz.asInstanceOf[Class[KeyValueEntity[Nothing]]])
-        kalix.register(valueEntity)
-      }
-
-      if (Reflect.isView(clz)) {
+        val keyValueEntity = valueEntityProvider(clz.asInstanceOf[Class[KeyValueEntity[Nothing]]])
+        factories.updated(keyValueEntity.serviceDescriptor, keyValueEntity.newServiceInstance _)
+      } else if (Reflect.isView(clz)) {
         logger.info(s"Registering View provider for [${clz.getName}]")
         val view = viewProvider(clz.asInstanceOf[Class[View]])
-        kalix.register(view)
-      }
+        factories.updated(view.serviceDescriptor, view.newServiceInstance _)
+      } else throw new IllegalArgumentException(s"Component class of unknown component type [$clz]")
     }
 
   private def hasComponentId(clz: Class[_]): Boolean = {
@@ -317,10 +293,9 @@ private final class AkkaJavaSdkApplication(
 
     val classicSystem = system.classicSystem
 
-    val serviceFactories = kalix.internalGetServices().asScala
-    val services = serviceFactories.toSeq.map { case (serviceName, factory) =>
-      serviceName -> factory(system.classicSystem)
-    }.toMap
+    val services = componentFactories.map { case (serviceDescriptor, factory) =>
+      serviceDescriptor.getFullName -> factory()
+    }
 
     val actionAndConsumerServices = services.filter { case (_, service) =>
       service.getClass == classOf[ActionService] || service.getClass == classOf[ConsumerService]
@@ -385,6 +360,10 @@ private final class AkkaJavaSdkApplication(
     }
 
     val devModeServiceName = sdkSettings.devModeSettings.map(_.serviceName)
+    val aclDescriptor =
+      maybeServiceClass
+        .map(serviceClass => AclDescriptorFactory.buildAclFileDescriptor(serviceClass))
+        .getOrElse(AclDescriptorFactory.defaultAclFileDescriptor)
     val discoveryEndpoint =
       new DiscoveryImpl(classicSystem, services, aclDescriptor, BuildInfo.name, devModeServiceName)
 
@@ -425,15 +404,17 @@ private final class AkkaJavaSdkApplication(
   }
 
   private def setStartCallback(maybeDependencyProvider: Option[DependencyProvider]) = {
-    AkkaJavaSdkApplication.onNextStartCallback.getAndSet(null) match {
+    Sdk.onNextStartCallback.getAndSet(null) match {
       case null =>
       case f =>
-        f.success((kalix, runtimeComponentClients, maybeDependencyProvider.toJava))
+        f.success(
+          Sdk
+            .StartupContext(runtimeComponentClients, maybeDependencyProvider))
     }
   }
 
   private def timedActionProvider[A <: TimedAction](clz: Class[A]): TimedActionProvider[A] =
-    ReflectiveTimedActionProvider.of(
+    TimedActionProvider(
       clz,
       messageCodec,
       context =>
@@ -446,7 +427,7 @@ private final class AkkaJavaSdkApplication(
         })
 
   private def consumerProvider[A <: Consumer](clz: Class[A]): ConsumerProvider[A] =
-    ReflectiveConsumerProvider.of(
+    ConsumerProvider(
       clz,
       messageCodec,
       context =>
@@ -459,10 +440,10 @@ private final class AkkaJavaSdkApplication(
         })
 
   private def workflowProvider[S, W <: Workflow[S]](clz: Class[W]): WorkflowProvider[S, W] = {
-    ReflectiveWorkflowProvider.of(
+    WorkflowProvider(
       clz,
       messageCodec,
-      context => {
+      { context =>
 
         val workflow =
           wiredInstance(clz) {
@@ -499,7 +480,7 @@ private final class AkkaJavaSdkApplication(
 
   private def eventSourcedEntityProvider[S, E, ES <: EventSourcedEntity[S, E]](
       clz: Class[ES]): EventSourcedEntityProvider[S, E, ES] =
-    ReflectiveEventSourcedEntityProvider.of(
+    EventSourcedEntityProvider(
       clz,
       messageCodec,
       context =>
@@ -508,7 +489,7 @@ private final class AkkaJavaSdkApplication(
         })
 
   private def valueEntityProvider[S, VE <: KeyValueEntity[S]](clz: Class[VE]): KeyValueEntityProvider[S, VE] =
-    ReflectiveKeyValueEntityProvider.of(
+    KeyValueEntityProvider(
       clz,
       messageCodec,
       context =>
@@ -517,8 +498,8 @@ private final class AkkaJavaSdkApplication(
         })
 
   // FIXME a bit much of low level stuff here right now
-  private def viewProvider[V <: View](clz: Class[V]): ViewProvider =
-    new ViewProviderImpl[V](
+  private def viewProvider[V <: View](clz: Class[V]): ViewProvider[V] =
+    ViewProvider[V](
       clz,
       messageCodec,
       ComponentDescriptorFactory.readComponentIdIdValue(clz),

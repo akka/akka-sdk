@@ -6,7 +6,7 @@ import customer.domain.Address;
 import customer.domain.Customer;
 import customer.application.CustomerByEmailView;
 import customer.application.CustomerByNameView;
-import akka.javasdk.testkit.AkkaSdkTestKitSupport;
+import akka.javasdk.testkit.TestKitSupport;
 import org.awaitility.Awaitility;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Assertions;
@@ -20,7 +20,7 @@ import static akka.Done.done;
 import static java.time.temporal.ChronoUnit.SECONDS;
 
 
-public class CustomerIntegrationTest extends AkkaSdkTestKitSupport {
+public class CustomerIntegrationTest extends TestKitSupport {
 
   private Duration timeout = Duration.of(5, SECONDS);
 

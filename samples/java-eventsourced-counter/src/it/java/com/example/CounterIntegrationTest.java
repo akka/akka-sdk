@@ -3,8 +3,8 @@ package com.example;
 import com.example.actions.CounterCommandFromTopicConsumer;
 import akka.javasdk.CloudEvent;
 import akka.javasdk.testkit.EventingTestKit;
-import akka.javasdk.testkit.AkkaSdkTestKit;
-import akka.javasdk.testkit.AkkaSdkTestKitSupport;
+import akka.javasdk.testkit.TestKit;
+import akka.javasdk.testkit.TestKitSupport;
 import org.awaitility.Awaitility;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.BeforeAll;
@@ -18,15 +18,15 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 // tag::class[]
-public class CounterIntegrationTest extends AkkaSdkTestKitSupport { // <1>
+public class CounterIntegrationTest extends TestKitSupport { // <1>
 
 // end::class[]
 
   // tag::acls[]
   // tag::eventing-config[]
   @Override
-  protected AkkaSdkTestKit.Settings kalixTestKitSettings() {
-    return AkkaSdkTestKit.Settings.DEFAULT
+  protected TestKit.Settings kalixTestKitSettings() {
+    return TestKit.Settings.DEFAULT
             // end::eventing-config[]
             .withAclEnabled() // <1>
             // end::acls[]
@@ -52,11 +52,11 @@ public class CounterIntegrationTest extends AkkaSdkTestKitSupport { // <1>
   public void beforeAll() {
     super.beforeAll();
     // <2>
-    commandsTopic = akkaSdkTestKit.getTopicIncomingMessages("counter-commands"); // <3>
-    eventsTopic = akkaSdkTestKit.getTopicOutgoingMessages("counter-events");
+    commandsTopic = testKit.getTopicIncomingMessages("counter-commands"); // <3>
+    eventsTopic = testKit.getTopicOutgoingMessages("counter-events");
     // end::test-topic[]
 
-    eventsTopicWithMeta = akkaSdkTestKit.getTopicOutgoingMessages("counter-events-with-meta");
+    eventsTopicWithMeta = testKit.getTopicOutgoingMessages("counter-events-with-meta");
     // tag::test-topic[]
   }
   // end::test-topic[]
@@ -135,7 +135,7 @@ public class CounterIntegrationTest extends AkkaSdkTestKitSupport { // <1>
       .asMetadata()
       .add("Content-Type", "application/json"); // <3>
 
-    commandsTopic.publish(akkaSdkTestKit.getMessageBuilder().of(increaseCmd, metadata)); // <4>
+    commandsTopic.publish(testKit.getMessageBuilder().of(increaseCmd, metadata)); // <4>
 
     var increasedEvent = eventsTopicWithMeta.expectOneTyped(CounterCommandFromTopicConsumer.IncreaseCounter.class);
     var actualMd = increasedEvent.getMetadata(); // <5>

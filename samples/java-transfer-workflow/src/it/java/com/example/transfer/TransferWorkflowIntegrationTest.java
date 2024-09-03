@@ -1,6 +1,6 @@
 package com.example.transfer;
 
-import akka.javasdk.testkit.AkkaSdkTestKitSupport;
+import akka.javasdk.testkit.TestKitSupport;
 import com.example.transfer.TransferState.Transfer;
 import com.example.wallet.Ok;
 import com.example.wallet.WalletEntity;
@@ -15,7 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
-public class TransferWorkflowIntegrationTest extends AkkaSdkTestKitSupport {
+public class TransferWorkflowIntegrationTest extends TestKitSupport {
 
   @Test
   public void shouldTransferMoney() {

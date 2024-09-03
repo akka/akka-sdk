@@ -2,7 +2,6 @@ package com.example.tracing.api;
 
 import com.example.tracing.domain.User;
 import com.example.tracing.domain.UserEvent;
-import akka.javasdk.annotations.ForwardHeaders;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import akka.javasdk.eventsourcedentity.EventSourcedEntityContext;
@@ -10,7 +9,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @ComponentId("user")
-@ForwardHeaders("traceparent")
 public class UserEntity extends EventSourcedEntity<User, UserEvent> {
 
   private static final Logger log = LoggerFactory.getLogger(UserEntity.class);

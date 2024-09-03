@@ -3,7 +3,6 @@ package com.example.api;
 import akka.javasdk.http.HttpException;
 import com.example.api.ShoppingCartDTO.LineItemDTO;
 import akka.javasdk.Metadata;
-import akka.javasdk.annotations.ForwardHeaders;
 import akka.javasdk.annotations.http.Delete;
 import akka.javasdk.annotations.http.Endpoint;
 import akka.javasdk.annotations.http.Post;
@@ -12,13 +11,7 @@ import akka.javasdk.client.ComponentClient;
 import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 
-// tag::forward[]
-// tag::forward-headers[]
-
 @Endpoint("/carts")
-// end::forward[]
-@ForwardHeaders("UserRole") // <1>
-// tag::forward[]
 public class ShoppingCartController {
   // end::forward-headers[]
 

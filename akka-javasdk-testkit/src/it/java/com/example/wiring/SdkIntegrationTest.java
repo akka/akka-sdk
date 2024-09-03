@@ -7,16 +7,13 @@ package com.example.wiring;
 import akka.javasdk.Metadata;
 import akka.javasdk.client.EventSourcedEntityClient;
 import akka.javasdk.client.NoEntryFoundException;
-import akka.javasdk.testkit.AkkaSdkTestKit;
-import akka.javasdk.testkit.AkkaSdkTestKitSupport;
+import akka.javasdk.testkit.TestKit;
+import akka.javasdk.testkit.TestKitSupport;
 import com.example.wiring.actions.echo.ActionWithMetadata;
 import com.example.wiring.actions.echo.EchoAction;
-import com.example.wiring.actions.echo.Message;
 import com.example.wiring.actions.headers.TestBuffer;
 import com.example.wiring.eventsourcedentities.counter.CounterEntity;
-import com.example.wiring.eventsourcedentities.headers.ForwardHeadersESEntity;
 import com.example.wiring.keyvalueentities.customer.CustomerEntity;
-import com.example.wiring.keyvalueentities.headers.ForwardHeadersValueEntity;
 import com.example.wiring.keyvalueentities.user.AssignedCounterEntity;
 import com.example.wiring.keyvalueentities.user.User;
 import com.example.wiring.keyvalueentities.user.UserEntity;
@@ -51,14 +48,14 @@ import static java.time.Duration.ofMillis;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class SdkIntegrationTest extends AkkaSdkTestKitSupport {
+public class SdkIntegrationTest extends TestKitSupport {
 
   private Duration timeout = Duration.of(10, SECONDS);
 
   @Override
-  protected AkkaSdkTestKit.Settings kalixTestKitSettings() {
+  protected TestKit.Settings kalixTestKitSettings() {
     // here only to show how to set different `Settings` in a test.
-    return AkkaSdkTestKit.Settings.DEFAULT
+    return TestKit.Settings.DEFAULT
       .withAclEnabled()
       .withAdvancedViews()
       .withWorkflowTickInterval(ofMillis(500))
@@ -416,26 +413,6 @@ public class SdkIntegrationTest extends AkkaSdkTestKitSupport {
         var header = TestBuffer.getValue(ActionWithMetadata.SOME_HEADER);
         assertThat(header).isEqualTo(metadataValue);
       });
-
-    Message veResponse =
-      await(
-        componentClient.forKeyValueEntity("1")
-          .method(ForwardHeadersValueEntity::createUser)
-          .withMetadata(Metadata.EMPTY.add(ForwardHeadersValueEntity.SOME_HEADER, veHeaderValue))
-          .invokeAsync()
-      );
-
-    assertThat(veResponse.text()).isEqualTo(veHeaderValue);
-
-    Message esResponse =
-      await(
-        componentClient.forEventSourcedEntity("1")
-          .method(ForwardHeadersESEntity::createUser)
-          .withMetadata(Metadata.EMPTY.add(ForwardHeadersESEntity.SOME_HEADER, esHeaderValue))
-          .invokeAsync()
-      );
-
-    assertThat(esResponse.text()).isEqualTo(esHeaderValue);
   }
 
   @Test

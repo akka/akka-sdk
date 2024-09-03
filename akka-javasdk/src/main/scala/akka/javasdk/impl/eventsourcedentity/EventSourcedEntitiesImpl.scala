@@ -22,11 +22,9 @@ import akka.javasdk.eventsourcedentity.CommandContext
 import akka.javasdk.eventsourcedentity.EventContext
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.javasdk.eventsourcedentity.EventSourcedEntityContext
-import akka.javasdk.eventsourcedentity.EventSourcedEntityOptions
 import akka.javasdk.impl.AbstractContext
 import akka.javasdk.impl.ActivatableContext
-import akka.javasdk.impl.AkkaSdkSettings
-import akka.javasdk.impl.ComponentOptions
+import akka.javasdk.impl.Settings
 import akka.javasdk.impl.ErrorHandling
 import akka.javasdk.impl.EventSourcedEntityFactory
 import akka.javasdk.impl.MessageCodec
@@ -63,19 +61,8 @@ private[impl] final class EventSourcedEntityService(
     override val additionalDescriptors: Array[Descriptors.FileDescriptor],
     val messageCodec: MessageCodec,
     override val serviceName: String,
-    val snapshotEvery: Int, // FIXME remove and only use entityOptions snapshotEvery?
-    val entityOptions: Option[EventSourcedEntityOptions])
+    val snapshotEvery: Int) // FIXME always 0 now, so drop
     extends Service {
-
-  def this(
-      factory: EventSourcedEntityFactory,
-      descriptor: Descriptors.ServiceDescriptor,
-      additionalDescriptors: Array[Descriptors.FileDescriptor],
-      messageCodec: MessageCodec,
-      entityType: String,
-      snapshotEvery: Int,
-      entityOptions: EventSourcedEntityOptions) =
-    this(factory, descriptor, additionalDescriptors, messageCodec, entityType, snapshotEvery, Some(entityOptions))
 
   override def resolvedMethods: Option[Map[String, ResolvedServiceMethod[_, _]]] =
     factory match {
@@ -93,12 +80,9 @@ private[impl] final class EventSourcedEntityService(
         this.additionalDescriptors,
         this.messageCodec,
         this.serviceName,
-        snapshotEvery,
-        this.entityOptions)
+        snapshotEvery)
     else
       this
-
-  override def componentOptions: Option[ComponentOptions] = entityOptions
 }
 
 /**
@@ -108,7 +92,7 @@ private[impl] final class EventSourcedEntityService(
 private[impl] final class EventSourcedEntitiesImpl(
     system: ActorSystem,
     _services: Map[String, EventSourcedEntityService],
-    configuration: AkkaSdkSettings,
+    configuration: Settings,
     sdkDispatcherName: String)
     extends EventSourcedEntities {
   import akka.javasdk.impl.EntityExceptions._

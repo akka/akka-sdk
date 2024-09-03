@@ -4,7 +4,7 @@
 
 package com.example.wiring;
 
-import akka.javasdk.testkit.AkkaSdkTestKitSupport;
+import akka.javasdk.testkit.TestKitSupport;
 
 import java.time.Duration;
 
@@ -12,7 +12,7 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 
 
 // These are mainly about API specification and validation.
-public class EndpointsIntegrationTest extends AkkaSdkTestKitSupport {
+public class EndpointsIntegrationTest extends TestKitSupport {
 
   private Duration timeout = Duration.of(10, SECONDS);
 

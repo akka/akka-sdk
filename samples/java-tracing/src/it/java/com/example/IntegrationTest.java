@@ -1,6 +1,6 @@
 package com.example;
 
-import akka.javasdk.testkit.AkkaSdkTestKitSupport;
+import akka.javasdk.testkit.TestKitSupport;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
@@ -17,7 +17,7 @@ import static java.time.temporal.ChronoUnit.SECONDS;
  * Since this is an integration tests, it interacts with the application using a WebClient
  * (already configured and provided automatically through injection).
  */
-public class IntegrationTest extends AkkaSdkTestKitSupport {
+public class IntegrationTest extends TestKitSupport {
 
   private Duration timeout = Duration.of(5, SECONDS);
 

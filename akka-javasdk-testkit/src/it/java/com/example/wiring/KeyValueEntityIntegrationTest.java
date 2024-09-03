@@ -4,7 +4,7 @@
 
 package com.example.wiring;
 
-import akka.javasdk.testkit.AkkaSdkTestKitSupport;
+import akka.javasdk.testkit.TestKitSupport;
 import com.example.wiring.keyvalueentities.user.User;
 import com.example.wiring.keyvalueentities.user.UserEntity;
 import org.awaitility.Awaitility;
@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.junit.jupiter.api.Assertions.fail;
 
-public class KeyValueEntityIntegrationTest extends AkkaSdkTestKitSupport {
+public class KeyValueEntityIntegrationTest extends TestKitSupport {
 
   @Test
   public void verifyValueEntityCurrentState() {

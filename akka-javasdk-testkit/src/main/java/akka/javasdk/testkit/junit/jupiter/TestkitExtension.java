@@ -9,26 +9,26 @@ import akka.stream.Materializer;
 import akka.javasdk.testkit.EventingTestKit;
 import akka.javasdk.testkit.EventingTestKit.IncomingMessages;
 import akka.javasdk.testkit.EventingTestKit.OutgoingMessages;
-import akka.javasdk.testkit.AkkaSdkTestKit;
+import akka.javasdk.testkit.TestKit;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 /**
- * A JUnit 5 "Jupiter" Extension for {@link AkkaSdkTestKit}, which automatically manages the lifecycle of
+ * A JUnit 5 "Jupiter" Extension for {@link TestKit}, which automatically manages the lifecycle of
  * the testkit. The testkit will be automatically stopped when the test completes or fails.
  */
-public final class AkkaSdkTestkitExtension implements BeforeAllCallback, AfterAllCallback {
+public final class TestkitExtension implements BeforeAllCallback, AfterAllCallback {
 
-  private final AkkaSdkTestKit testKit;
+  private final TestKit testKit;
 
-  public AkkaSdkTestkitExtension() {
-    this.testKit = new AkkaSdkTestKit();
+  public TestkitExtension() {
+    this.testKit = new TestKit();
   }
 
 
-  public AkkaSdkTestkitExtension(AkkaSdkTestKit.Settings settings) {
-    this.testKit = new AkkaSdkTestKit(settings);
+  public TestkitExtension(TestKit.Settings settings) {
+    this.testKit = new TestKit(settings);
   }
 
   /**

@@ -1,6 +1,6 @@
 package com.example;
 
-import akka.javasdk.testkit.AkkaSdkTestKitSupport;
+import akka.javasdk.testkit.TestKitSupport;
 import com.example.shoppingcart.application.ShoppingCartEntity;
 import com.example.shoppingcart.domain.ShoppingCart;
 import com.example.shoppingcart.domain.ShoppingCart.LineItem;
@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
  * (already configured and provided automatically through injection).
  */
 // tag::sample-it[]
-public class IntegrationTest extends AkkaSdkTestKitSupport { // <1>
+public class IntegrationTest extends TestKitSupport { // <1>
 
   @Test
   public void createAndManageCart() {

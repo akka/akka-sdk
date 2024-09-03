@@ -26,7 +26,6 @@ import akka.javasdk.consumer.ConsumerContext
 import akka.javasdk.consumer.MessageContext
 import akka.javasdk.consumer.MessageEnvelope
 import akka.javasdk.impl.AbstractContext
-import akka.javasdk.impl.ComponentOptions
 import akka.javasdk.impl.MessageCodec
 import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.ResolvedEntityFactory
@@ -38,7 +37,6 @@ import akka.javasdk.timedaction.CommandContext
 import akka.javasdk.timedaction.CommandEnvelope
 import akka.javasdk.timedaction.TimedAction
 import akka.javasdk.timedaction.TimedActionContext
-import akka.javasdk.timedaction.TimedActionOptions
 import akka.javasdk.timer.TimerScheduler
 import akka.runtime.sdk.spi.TimerClient
 import akka.stream.scaladsl.Source
@@ -66,17 +64,8 @@ private[impl] final class ActionService(
     val factory: TimedActionFactory,
     override val descriptor: Descriptors.ServiceDescriptor,
     override val additionalDescriptors: Array[Descriptors.FileDescriptor],
-    val messageCodec: MessageCodec,
-    val actionOptions: Option[TimedActionOptions])
+    val messageCodec: MessageCodec)
     extends Service {
-
-  def this(
-      factory: TimedActionFactory,
-      descriptor: Descriptors.ServiceDescriptor,
-      additionalDescriptors: Array[Descriptors.FileDescriptor],
-      messageCodec: MessageCodec,
-      actionOptions: TimedActionOptions) =
-    this(factory, descriptor, additionalDescriptors, messageCodec, Some(actionOptions))
 
   @volatile var actionClass: Option[Class[_]] = None
 
@@ -97,8 +86,6 @@ private[impl] final class ActionService(
       case resolved: ResolvedEntityFactory => Some(resolved.resolvedMethods)
       case _                               => None
     }
-
-  override def componentOptions: Option[ComponentOptions] = actionOptions
 
   override final val componentType = Actions.name
 }

@@ -1,6 +1,6 @@
 package com.example.transfer;
 
-import akka.javasdk.testkit.AkkaSdkTestKitSupport;
+import akka.javasdk.testkit.TestKitSupport;
 import com.example.transfer.TransferState.Transfer;
 import com.example.wallet.WalletEntity;
 import org.awaitility.Awaitility;
@@ -16,7 +16,7 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 
 
-public class TransferWorkflowIntegrationTest extends AkkaSdkTestKitSupport {
+public class TransferWorkflowIntegrationTest extends TestKitSupport {
 
   @Test
   public void shouldTransferMoney() {

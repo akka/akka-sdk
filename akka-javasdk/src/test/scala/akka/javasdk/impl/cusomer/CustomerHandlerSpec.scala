@@ -55,7 +55,7 @@ class CustomerHandlerSpec
 
   def create(handler: ConsumerRouter[_]): Actions = {
     val actionFactory: ConsumerFactory = _ => handler
-    val service = new ConsumerService(actionFactory, serviceDescriptor, Array(), anySupport, None)
+    val service = new ConsumerService(actionFactory, serviceDescriptor, Array(), anySupport)
 
     val services = Map(serviceName -> service)
 

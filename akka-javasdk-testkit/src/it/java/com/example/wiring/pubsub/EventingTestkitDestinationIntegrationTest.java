@@ -4,11 +4,11 @@
 
 package com.example.wiring.pubsub;
 
+import akka.javasdk.testkit.TestKitSupport;
 import com.example.wiring.keyvalueentities.customer.CustomerEntity;
 import com.example.wiring.keyvalueentities.customer.CustomerEntity.Customer;
 import akka.javasdk.testkit.EventingTestKit;
-import akka.javasdk.testkit.AkkaSdkTestKit;
-import akka.javasdk.testkit.AkkaSdkTestKitSupport;
+import akka.javasdk.testkit.TestKit;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -25,12 +25,12 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class EventingTestkitDestinationIntegrationTest extends AkkaSdkTestKitSupport {
+public class EventingTestkitDestinationIntegrationTest extends TestKitSupport {
 
   private EventingTestKit.OutgoingMessages destination;
 
-  public AkkaSdkTestKit.Settings kalixTestKitSettings() {
-    return AkkaSdkTestKit.Settings.DEFAULT
+  public TestKit.Settings kalixTestKitSettings() {
+    return TestKit.Settings.DEFAULT
         .withAclEnabled()
         .withAdvancedViews()
         .withWorkflowTickInterval(ofMillis(500))
@@ -40,7 +40,7 @@ public class EventingTestkitDestinationIntegrationTest extends AkkaSdkTestKitSup
   @BeforeAll
   public void beforeAll() {
     super.beforeAll();
-    destination = akkaSdkTestKit.getTopicOutgoingMessages(CUSTOMERS_TOPIC);
+    destination = testKit.getTopicOutgoingMessages(CUSTOMERS_TOPIC);
   }
 
   @Test

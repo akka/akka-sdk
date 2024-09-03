@@ -5,8 +5,8 @@ import akka.http.javadsl.model.StatusCodes;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import akka.javasdk.http.HttpClient;
-import akka.javasdk.testkit.AkkaSdkTestKit;
-import akka.javasdk.testkit.AkkaSdkTestKitSupport;
+import akka.javasdk.testkit.TestKit;
+import akka.javasdk.testkit.TestKitSupport;
 import org.awaitility.Awaitility;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.BeforeAll;
@@ -17,7 +17,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-public abstract class CustomerRegistryIntegrationTest extends AkkaSdkTestKitSupport {
+public abstract class CustomerRegistryIntegrationTest extends TestKitSupport {
 
   private Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -33,8 +33,8 @@ public abstract class CustomerRegistryIntegrationTest extends AkkaSdkTestKitSupp
     Config config = ConfigFactory.parseMap(confMap);
 
     try {
-      akkaSdkTestKit = (new AkkaSdkTestKit(kalixTestKitSettings())).start(config);
-      componentClient = akkaSdkTestKit.getComponentClient();
+      testKit = (new TestKit(kalixTestKitSettings())).start(config);
+      componentClient = testKit.getComponentClient();
     } catch (Exception ex) {
       logger.error("Failed to startup Akka service", ex);
       throw ex;
@@ -57,7 +57,7 @@ public abstract class CustomerRegistryIntegrationTest extends AkkaSdkTestKitSupp
   // create the client but only return it after verifying that service is reachable
   protected HttpClient createClient(String url) {
 
-    var httpClient = new HttpClient(akkaSdkTestKit.getActorSystem(), url);
+    var httpClient = new HttpClient(testKit.getActorSystem(), url);
 
     // wait until customer service is up
     Awaitility.await()

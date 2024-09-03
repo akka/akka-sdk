@@ -40,6 +40,8 @@ class ProxyInfoHolder extends Extension {
 
   private val log = LoggerFactory.getLogger(classOf[ProxyInfoHolder])
 
+  // FIXME move init of what are still needed of these to spi SdkApplicationStartContext
+  //       so we have it and can inject as needed instead of through mutable extension stuff
   private val _proxyHostname = new AtomicReference[String]()
   private val _proxyPort = new AtomicReference[Int](-1)
   @volatile private var _identificationInfo: Option[IdentificationInfo] = None

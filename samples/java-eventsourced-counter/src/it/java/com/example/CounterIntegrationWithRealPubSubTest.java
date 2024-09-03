@@ -3,9 +3,9 @@ package com.example;
 import akka.http.javadsl.model.ContentTypes;
 import akka.http.javadsl.model.StatusCodes;
 import akka.javasdk.http.HttpClient;
-import akka.javasdk.testkit.AkkaSdkTestKitSupport;
+import akka.javasdk.testkit.TestKitSupport;
 import com.example.actions.CounterCommandFromTopicConsumer;
-import akka.javasdk.testkit.AkkaSdkTestKit;
+import akka.javasdk.testkit.TestKit;
 import org.awaitility.Awaitility;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Test;
@@ -19,14 +19,14 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 // tag::class[]
-public class CounterIntegrationWithRealPubSubTest extends AkkaSdkTestKitSupport { // <1>
+public class CounterIntegrationWithRealPubSubTest extends TestKitSupport { // <1>
 
 // end::class[]
     
   @Override
-  protected AkkaSdkTestKit.Settings kalixTestKitSettings() {
-    return AkkaSdkTestKit.Settings.DEFAULT.withAclEnabled()
-      .withEventingSupport(AkkaSdkTestKit.Settings.EventingSupport.GOOGLE_PUBSUB);
+  protected TestKit.Settings kalixTestKitSettings() {
+    return TestKit.Settings.DEFAULT.withAclEnabled()
+      .withEventingSupport(TestKit.Settings.EventingSupport.GOOGLE_PUBSUB);
   }
 
   @Test
@@ -41,7 +41,7 @@ public class CounterIntegrationWithRealPubSubTest extends AkkaSdkTestKitSupport 
 
     var messageBody = buildMessageBody(msg, CounterCommandFromTopicConsumer.IncreaseCounter.class.getName());
 
-    var pubSubClient = new HttpClient(akkaSdkTestKit.getActorSystem(), "http://localhost:8085");
+    var pubSubClient = new HttpClient(testKit.getActorSystem(), "http://localhost:8085");
     var response = pubSubClient.POST("/v1/projects/test/topics/counter-commands:publish")
             .withRequestBody(ContentTypes.APPLICATION_JSON, messageBody.getBytes(StandardCharsets.UTF_8))
             .invokeAsync();

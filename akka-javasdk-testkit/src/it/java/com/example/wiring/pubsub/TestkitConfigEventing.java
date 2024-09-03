@@ -4,7 +4,7 @@
 
 package com.example.wiring.pubsub;
 
-import akka.javasdk.testkit.AkkaSdkTestKit;
+import akka.javasdk.testkit.TestKit;
 
 import static com.example.wiring.pubsub.PublishESToTopic.COUNTER_EVENTS_TOPIC;
 import static com.example.wiring.pubsub.PublishVEToTopic.CUSTOMERS_TOPIC;
@@ -12,18 +12,18 @@ import static java.time.Duration.ofMillis;
 
 public class TestkitConfigEventing {
 
-  public AkkaSdkTestKit.Settings settingsMockedDestination() {
+  public TestKit.Settings settingsMockedDestination() {
     // here only to show how to set different `Settings` in a test. See SpringSdkIntegrationTest.java
-    return AkkaSdkTestKit.Settings.DEFAULT
+    return TestKit.Settings.DEFAULT
         .withAclEnabled()
         .withAdvancedViews()
         .withWorkflowTickInterval(ofMillis(500))
         .withTopicOutgoingMessages(CUSTOMERS_TOPIC);
   }
 
-  public AkkaSdkTestKit.Settings settingsMockedSubscription() {
+  public TestKit.Settings settingsMockedSubscription() {
     // here only to show how to set different `Settings` in a test. See SpringSdkIntegrationTest.java
-    return AkkaSdkTestKit.Settings.DEFAULT
+    return TestKit.Settings.DEFAULT
         .withAclEnabled()
         .withAdvancedViews()
         .withWorkflowTickInterval(ofMillis(500))

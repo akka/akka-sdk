@@ -17,7 +17,7 @@ public abstract class EventSourcedEntityEffectsRunner<S, E> {
 
   private EventSourcedEntity<S, E> entity;
   private S _state;
-  private List<E> events = new ArrayList();
+  private List<E> events = new ArrayList<>();
 
   public EventSourcedEntityEffectsRunner(EventSourcedEntity<S, E> entity) {
     this.entity = entity;
@@ -44,6 +44,7 @@ public abstract class EventSourcedEntityEffectsRunner<S, E> {
    *
    * @return the result of the side effects
    */
+  @SuppressWarnings("unchecked") // event type in loop
   protected <R> EventSourcedResult<R> interpretEffects(
       Supplier<EventSourcedEntity.Effect<R>> effect, Metadata metadata) {
     var commandContext = new TestKitEventSourcedEntityCommandContext(metadata);

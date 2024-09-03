@@ -5,7 +5,7 @@
 package akka.javasdk.testkit.impl
 
 import akka.actor.Actor
-import akka.javasdk.testkit.AkkaSdkTestKit
+import akka.javasdk.testkit.TestKit
 import akka.javasdk.testkit.impl.EventingTestKitImpl.RunningSourceProbe
 import akka.javasdk.testkit.impl.SourcesHolder.AddSource
 import akka.javasdk.testkit.impl.SourcesHolder.Publish
@@ -23,7 +23,7 @@ object SourcesHolder {
 
 class SourcesHolder extends Actor {
 
-  private val log = LoggerFactory.getLogger(classOf[AkkaSdkTestKit])
+  private val log = LoggerFactory.getLogger(classOf[TestKit])
 
   private val sources: ArrayBuffer[RunningSourceProbe] = ArrayBuffer.empty
   private val publishedMessages: ArrayBuffer[PublishedMessage] = ArrayBuffer.empty

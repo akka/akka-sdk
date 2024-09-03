@@ -1,6 +1,6 @@
 package com.example;
 
-import akka.javasdk.testkit.AkkaSdkTestKitSupport;
+import akka.javasdk.testkit.TestKitSupport;
 import com.example.api.ShoppingCartDTO;
 import com.example.api.ShoppingCartDTO.LineItemDTO;
 import com.example.api.ShoppingCartEntity;
@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * Since this is an integration tests, it interacts with the application using a WebClient
  * provided by {{KalixIntegrationTestKitSupport}}
  */
-public class IntegrationTest extends AkkaSdkTestKitSupport {
+public class IntegrationTest extends TestKitSupport {
 
   private Duration timeout = Duration.of(5, SECONDS);
 

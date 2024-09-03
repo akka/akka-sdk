@@ -1,6 +1,6 @@
 package com.example;
 
-import akka.javasdk.testkit.AkkaSdkTestKitSupport;
+import akka.javasdk.testkit.TestKitSupport;
 import com.example.application.EmailSender;
 import com.example.domain.Clock;
 import com.example.domain.Counter;
@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class CounterIntegrationTest extends AkkaSdkTestKitSupport {
+public class CounterIntegrationTest extends TestKitSupport {
 
   @Test
   public void verifyIfEmailWasSent() {

@@ -31,11 +31,11 @@ import static java.time.temporal.ChronoUnit.SECONDS;
  * <p>On test teardown, the service and the runtime will be stopped.
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public abstract class AkkaSdkTestKitSupport extends AsyncCallsSupport {
+public abstract class TestKitSupport extends AsyncCallsSupport {
 
   private Logger logger = LoggerFactory.getLogger(getClass());
 
-  protected AkkaSdkTestKit akkaSdkTestKit;
+  protected TestKit testKit;
 
   protected ComponentClient componentClient;
 
@@ -51,19 +51,19 @@ public abstract class AkkaSdkTestKitSupport extends AsyncCallsSupport {
   /**
    * Override this to use custom settings for an integration test
    */
-  protected AkkaSdkTestKit.Settings kalixTestKitSettings() {
-    return AkkaSdkTestKit.Settings.DEFAULT;
+  protected TestKit.Settings kalixTestKitSettings() {
+    return TestKit.Settings.DEFAULT;
   }
 
   @BeforeAll
   public void beforeAll() {
     try {
-      akkaSdkTestKit = (new AkkaSdkTestKit(kalixTestKitSettings())).start();
-      componentClient = akkaSdkTestKit.getComponentClient();
-      timerScheduler = akkaSdkTestKit.getTimerScheduler();
-      dependencyProvider = akkaSdkTestKit.getDependencyContext();
-      var baseUrl = "http://localhost:" + akkaSdkTestKit.getPort();
-      httpClient = new HttpClient(akkaSdkTestKit.getActorSystem(), baseUrl);
+      testKit = (new TestKit(kalixTestKitSettings())).start();
+      componentClient = testKit.getComponentClient();
+      timerScheduler = testKit.getTimerScheduler();
+      dependencyProvider = testKit.getDependencyContext();
+      var baseUrl = "http://localhost:" + testKit.getPort();
+      httpClient = new HttpClient(testKit.getActorSystem(), baseUrl);
     } catch (Exception ex) {
       logger.error("Failed to startup service", ex);
       throw ex;
@@ -72,9 +72,9 @@ public abstract class AkkaSdkTestKitSupport extends AsyncCallsSupport {
 
   @AfterAll
   public void afterAll() {
-    if (akkaSdkTestKit != null) {
+    if (testKit != null) {
       logger.info("Stopping TestKit...");
-      akkaSdkTestKit.stop();
+      testKit.stop();
     }
   }
 

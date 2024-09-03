@@ -3,7 +3,6 @@ package com.example.api;
 import com.example.api.ShoppingCartDTO.LineItemDTO;
 import com.example.domain.ShoppingCart;
 import akka.javasdk.annotations.Acl;
-import akka.javasdk.annotations.ForwardHeaders;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
 import akka.javasdk.keyvalueentity.KeyValueEntityContext;
@@ -15,9 +14,6 @@ import java.time.Instant;
  */
 // tag::summary[]
 @ComponentId("shopping-cart")
-// end::summary[]
-@ForwardHeaders("Role")
-// tag::summary[]
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.ALL))
 public class ShoppingCartEntity extends KeyValueEntity<ShoppingCart> {
   // end::summary[]

@@ -1,1 +1,1 @@
-akka.javasdk.impl.AkkaJavaSdkRunner
+akka.javasdk.impl.SdkRunner

@@ -1,8 +1,8 @@
 package com.example.jwt;
 
+import akka.javasdk.testkit.TestKitSupport;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import akka.javasdk.testkit.AkkaSdkTestKitSupport;
 
 import java.util.Base64;
 import java.util.Map;
@@ -10,7 +10,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 
 
-public class JwtIntegrationTest extends AkkaSdkTestKitSupport {
+public class JwtIntegrationTest extends TestKitSupport {
 
   // tag::bearer-token-claims-test[]
   private String bearerTokenWith(Map<String, String> claims) throws JsonProcessingException {

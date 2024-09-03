@@ -19,8 +19,7 @@ import akka.annotation.InternalApi
 import akka.javasdk.JsonSupport
 import akka.javasdk.impl.AbstractContext
 import akka.javasdk.impl.ActivatableContext
-import akka.javasdk.impl.AkkaSdkSettings
-import akka.javasdk.impl.ComponentOptions
+import akka.javasdk.impl.Settings
 import akka.javasdk.impl.ErrorHandling
 import akka.javasdk.impl.MessageCodec
 import akka.javasdk.impl.MetadataImpl
@@ -33,7 +32,6 @@ import akka.javasdk.impl.telemetry.KeyValueEntityCategory
 import akka.javasdk.impl.telemetry.Telemetry
 import akka.javasdk.keyvalueentity.CommandContext
 import akka.javasdk.keyvalueentity.KeyValueEntityContext
-import akka.javasdk.keyvalueentity.KeyValueEntityOptions
 import kalix.protocol.component.Failure
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
@@ -63,18 +61,8 @@ private[impl] final class KeyValueEntityService(
     override val descriptor: Descriptors.ServiceDescriptor,
     override val additionalDescriptors: Array[Descriptors.FileDescriptor],
     val messageCodec: MessageCodec,
-    override val serviceName: String,
-    val entityOptions: Option[KeyValueEntityOptions])
+    override val serviceName: String)
     extends Service {
-
-  def this(
-      factory: KeyValueEntityFactory,
-      descriptor: Descriptors.ServiceDescriptor,
-      additionalDescriptors: Array[Descriptors.FileDescriptor],
-      messageCodec: MessageCodec,
-      entityType: String,
-      entityOptions: KeyValueEntityOptions) =
-    this(factory, descriptor, additionalDescriptors, messageCodec, entityType, Some(entityOptions))
 
   override def resolvedMethods: Option[Map[String, ResolvedServiceMethod[_, _]]] =
     factory match {
@@ -83,8 +71,6 @@ private[impl] final class KeyValueEntityService(
     }
 
   override final val componentType = ValueEntities.name
-
-  override def componentOptions: Option[ComponentOptions] = entityOptions
 }
 
 /**
@@ -94,7 +80,7 @@ private[impl] final class KeyValueEntityService(
 private[impl] final class KeyValueEntitiesImpl(
     system: ActorSystem,
     val services: Map[String, KeyValueEntityService],
-    configuration: AkkaSdkSettings,
+    configuration: Settings,
     sdkDispatcherName: String)
     extends ValueEntities {
 

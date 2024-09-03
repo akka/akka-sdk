@@ -1,15 +1,15 @@
 package customer.api;
 
+import akka.javasdk.testkit.TestKitSupport;
 import customer.application.CustomerEntity;
 import customer.domain.Address;
 import customer.domain.Customer;
-import akka.javasdk.testkit.AkkaSdkTestKitSupport;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.UUID;
 
-public class CustomerIntegrationTest extends AkkaSdkTestKitSupport {
+public class CustomerIntegrationTest extends TestKitSupport {
 
   @Test
   public void create() {

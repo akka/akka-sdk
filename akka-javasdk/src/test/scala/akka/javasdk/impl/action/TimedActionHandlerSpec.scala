@@ -55,7 +55,7 @@ class TimedActionHandlerSpec
 
   def create(handler: TimedActionRouter[_]): Actions = {
     val actionFactory: TimedActionFactory = _ => handler
-    val service = new ActionService(actionFactory, serviceDescriptor, Array(), jsonCodec, None)
+    val service = new ActionService(actionFactory, serviceDescriptor, Array(), jsonCodec)
 
     val services = Map(serviceName -> service)
 

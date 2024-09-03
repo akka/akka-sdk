@@ -13,7 +13,7 @@ import akka.http.javadsl.model.HttpHeader
 import akka.http.javadsl.model.headers.RawHeader
 import akka.javasdk.http.HttpClient
 import akka.javasdk.http.HttpClientProvider
-import akka.javasdk.impl.AkkaSdkSettings
+import akka.javasdk.impl.Settings
 import akka.javasdk.impl.HostAndPort
 import akka.javasdk.impl.ProxyInfoHolder
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
@@ -30,7 +30,7 @@ import scala.util.control.NonFatal
 @InternalApi
 private[akka] object HttpClientProviderImpl extends ExtensionId[HttpClientProviderImpl] {
   override def createExtension(system: ActorSystem[_]): HttpClientProviderImpl =
-    new HttpClientProviderImpl(system, None, ProxyInfoHolder(system), AkkaSdkSettings(system))
+    new HttpClientProviderImpl(system, None, ProxyInfoHolder(system), Settings(system))
 
 }
 
@@ -42,7 +42,7 @@ private[akka] final class HttpClientProviderImpl(
     system: ActorSystem[_],
     traceContext: Option[OtelContext],
     proxyInfoHolder: ProxyInfoHolder,
-    settings: AkkaSdkSettings)
+    settings: Settings)
     extends Extension
     with HttpClientProvider {
 

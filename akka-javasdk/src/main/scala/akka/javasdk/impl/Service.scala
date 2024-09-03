@@ -42,12 +42,6 @@ trait Service {
 
   /**
    * @return
-   *   the options used by this service
-   */
-  def componentOptions: Option[ComponentOptions]
-
-  /**
-   * @return
    *   a dictionary of service methods (Protobuf Descriptors.MethodDescriptor) classified by method name. The dictionary
    *   values represent a mapping of Protobuf Descriptors.MethodDescriptor with its input and output types (see
    *   [[ResolvedServiceMethod]])

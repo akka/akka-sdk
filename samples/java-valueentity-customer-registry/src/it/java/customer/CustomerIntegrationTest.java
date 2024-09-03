@@ -1,7 +1,7 @@
 package customer;
 
 
-import akka.javasdk.testkit.AkkaSdkTestKitSupport;
+import akka.javasdk.testkit.TestKitSupport;
 import customer.api.CustomerEntity;
 import customer.api.CustomerList;
 import customer.api.Ok;
@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class CustomerIntegrationTest extends AkkaSdkTestKitSupport {
+public class CustomerIntegrationTest extends TestKitSupport {
 
   @Test
   public void create()  {

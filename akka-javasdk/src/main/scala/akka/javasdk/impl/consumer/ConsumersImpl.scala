@@ -9,11 +9,9 @@ import akka.actor.ActorSystem
 import akka.annotation.InternalApi
 import akka.javasdk.Metadata
 import akka.javasdk.consumer.ConsumerContext
-import akka.javasdk.consumer.ConsumerOptions
 import akka.javasdk.consumer.MessageContext
 import akka.javasdk.consumer.MessageEnvelope
 import akka.javasdk.impl.AbstractContext
-import akka.javasdk.impl.ComponentOptions
 import akka.javasdk.impl.ConsumerFactory
 import akka.javasdk.impl.MessageCodec
 import akka.javasdk.impl.MetadataImpl
@@ -40,17 +38,8 @@ private[impl] final class ConsumerService(
     val factory: ConsumerFactory,
     override val descriptor: Descriptors.ServiceDescriptor,
     override val additionalDescriptors: Array[Descriptors.FileDescriptor],
-    val messageCodec: MessageCodec,
-    val consumerOptions: Option[ConsumerOptions])
+    val messageCodec: MessageCodec)
     extends Service {
-
-  def this(
-      factory: ConsumerFactory,
-      descriptor: Descriptors.ServiceDescriptor,
-      additionalDescriptors: Array[Descriptors.FileDescriptor],
-      messageCodec: MessageCodec,
-      consumerOptions: ConsumerOptions) =
-    this(factory, descriptor, additionalDescriptors, messageCodec, Some(consumerOptions))
 
   @volatile var consumerClass: Option[Class[_]] = None
 
@@ -70,8 +59,6 @@ private[impl] final class ConsumerService(
       case resolved: ResolvedEntityFactory => Some(resolved.resolvedMethods)
       case _                               => None
     }
-
-  override def componentOptions: Option[ComponentOptions] = consumerOptions
 
   //TODO???
   override final val componentType = Actions.name

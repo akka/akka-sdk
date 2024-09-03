@@ -32,7 +32,6 @@ import WorkflowEffectImpl.UpdateState
 import WorkflowRouter.CommandResult
 import akka.javasdk.impl.AbstractContext
 import akka.javasdk.impl.ActivatableContext
-import akka.javasdk.impl.ComponentOptions
 import akka.javasdk.impl.ErrorHandling
 import akka.javasdk.impl.JsonMessageCodec
 import akka.javasdk.impl.MessageCodec
@@ -50,7 +49,6 @@ import akka.annotation.InternalApi
 import akka.javasdk.JsonSupport
 import akka.javasdk.impl.WorkflowFactory
 import akka.javasdk.workflow.WorkflowContext
-import akka.javasdk.workflow.WorkflowOptions
 import akka.stream.scaladsl.Flow
 import akka.stream.scaladsl.Source
 import com.google.protobuf.ByteString
@@ -94,25 +92,8 @@ final class WorkflowService(
     override val descriptor: Descriptors.ServiceDescriptor,
     override val additionalDescriptors: Array[Descriptors.FileDescriptor],
     val messageCodec: JsonMessageCodec,
-    override val serviceName: String,
-    val workflowOptions: Option[WorkflowOptions])
+    override val serviceName: String)
     extends Service {
-
-  def this(
-      factory: WorkflowFactory,
-      descriptor: Descriptors.ServiceDescriptor,
-      additionalDescriptors: Array[Descriptors.FileDescriptor],
-      messageCodec: MessageCodec,
-      workflowName: String,
-      workflowOptions: WorkflowOptions) =
-    this(
-      factory,
-      descriptor,
-      additionalDescriptors,
-      // FIXME ugh
-      messageCodec.asInstanceOf[JsonMessageCodec],
-      workflowName,
-      Some(workflowOptions))
 
   val strictMessageCodec = new StrictJsonMessageCodec(new JsonMessageCodec)
 
@@ -123,8 +104,6 @@ final class WorkflowService(
     }
 
   override final val componentType = WorkflowEntities.name
-
-  override def componentOptions: Option[ComponentOptions] = workflowOptions
 }
 
 /**

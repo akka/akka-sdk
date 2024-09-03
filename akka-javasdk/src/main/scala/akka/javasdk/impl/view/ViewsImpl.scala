@@ -5,13 +5,11 @@
 package akka.javasdk.impl.view
 
 import java.util.Optional
-import scala.compat.java8.OptionConverters._
 import scala.util.control.NonFatal
 import akka.actor.ActorSystem
 import akka.annotation.InternalApi
 import akka.javasdk.Metadata
 import akka.javasdk.impl.AbstractContext
-import akka.javasdk.impl.ComponentOptions
 import akka.javasdk.impl.MessageCodec
 import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.ResolvedEntityFactory
@@ -20,7 +18,6 @@ import akka.javasdk.impl.Service
 import akka.javasdk.impl.ViewFactory
 import akka.javasdk.view.UpdateContext
 import akka.javasdk.view.ViewContext
-import akka.javasdk.view.ViewOptions
 import akka.stream.scaladsl.Source
 import kalix.protocol.{ view => pv }
 import com.google.protobuf.Descriptors
@@ -32,33 +29,21 @@ import org.slf4j.LoggerFactory
  */
 @InternalApi
 final class ViewService(
-    val factory: Optional[ViewFactory],
+    val factory: Option[ViewFactory],
     override val descriptor: Descriptors.ServiceDescriptor,
     override val additionalDescriptors: Array[Descriptors.FileDescriptor],
     val messageCodec: MessageCodec,
-    val viewId: String,
-    val viewOptions: Option[ViewOptions])
+    val viewId: String)
     extends Service {
 
-  def this(
-      factory: Optional[ViewFactory],
-      descriptor: Descriptors.ServiceDescriptor,
-      additionalDescriptors: Array[Descriptors.FileDescriptor],
-      messageCodec: MessageCodec,
-      viewId: String,
-      viewOptions: ViewOptions) =
-    this(factory, descriptor, additionalDescriptors, messageCodec, viewId, Some(viewOptions))
-
   override def resolvedMethods: Option[Map[String, ResolvedServiceMethod[_, _]]] =
-    factory.asScala.collect { case resolved: ResolvedEntityFactory =>
+    factory.collect { case resolved: ResolvedEntityFactory =>
       resolved.resolvedMethods
     }
 
   override final val componentType = pv.Views.name
 
   override def serviceName: String = viewId
-
-  override def componentOptions: Option[ComponentOptions] = viewOptions
 }
 
 /**
@@ -97,7 +82,7 @@ final class ViewsImpl(system: ActorSystem, _services: Map[String, ViewService], 
         case (Seq(pv.ViewStreamIn(pv.ViewStreamIn.Message.Receive(receiveEvent), _)), _) =>
           services.get(receiveEvent.serviceName) match {
             case Some(service: ViewService) =>
-              if (!service.factory.isPresent)
+              if (service.factory.isEmpty)
                 throw new IllegalArgumentException(
                   s"Unexpected call to service [${receiveEvent.serviceName}] with viewId [${service.viewId}]: " +
                   "this view has `transform_updates=false` set, so updates should be handled entirely by the proxy " +

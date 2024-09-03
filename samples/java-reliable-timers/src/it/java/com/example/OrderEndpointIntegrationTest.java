@@ -2,7 +2,7 @@ package com.example;
 
 import akka.http.javadsl.model.HttpResponse;
 import akka.http.javadsl.model.StatusCodes;
-import akka.javasdk.testkit.AkkaSdkTestKitSupport;
+import akka.javasdk.testkit.TestKitSupport;
 import com.example.api.OrderRequest;
 import com.example.application.OrderEntity;
 import com.example.domain.Order;
@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class OrderEndpointIntegrationTest extends AkkaSdkTestKitSupport {
+public class OrderEndpointIntegrationTest extends TestKitSupport {
 
   private Duration timeout = Duration.of(20, SECONDS);
 
