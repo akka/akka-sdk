@@ -17,7 +17,7 @@ mvn compile
 
 ## Running Locally
 
-First start the `java-eventsourced-customer-registry` service and proxy. It will run with the default service and proxy ports (`8080` and `9000`).
+First start the `java-eventsourced-customer-registry` service. It will run with the default service and proxy ports (`8080` and `9000`).
 
 To start your service locally, run:
 

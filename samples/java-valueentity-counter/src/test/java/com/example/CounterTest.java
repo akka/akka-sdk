@@ -1,6 +1,8 @@
 package com.example;
 
 import akka.javasdk.testkit.KeyValueEntityTestKit;
+import com.example.api.Number;
+import com.example.application.CounterEntity;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -11,10 +13,10 @@ public class CounterTest {
   @Test
   public void testIncrease() {
     var testKit = KeyValueEntityTestKit.of(CounterEntity::new);
-    var result = testKit.call(e -> e.increaseBy(new Number(10)));
+    var result = testKit.call(e -> e.increaseBy(10));
 
     assertTrue(result.isReply());
-    assertEquals(10, result.getReply().value());
+    assertEquals(10, result.getReply());
     assertEquals(10, testKit.getState());
   }
 
@@ -23,13 +25,13 @@ public class CounterTest {
   public void testSetAndIncrease() {
     var testKit = KeyValueEntityTestKit.of(CounterEntity::new); // <1>
 
-    var resultSet = testKit.call(e -> e.set(new Number(10))); // <2>
+    var resultSet = testKit.call(e -> e.set(10)); // <2>
     assertTrue(resultSet.isReply());
-    assertEquals(10, resultSet.getReply().value()); // <3>
+    assertEquals(10, resultSet.getReply()); // <3>
 
     var resultPlusOne = testKit.call(CounterEntity::plusOne); // <4>
     assertTrue(resultPlusOne.isReply());
-    assertEquals(11, resultPlusOne.getReply().value());
+    assertEquals(11, resultPlusOne.getReply());
 
     assertEquals(11, testKit.getState()); // <5>
   }
@@ -38,7 +40,7 @@ public class CounterTest {
   @Test
   public void testDelete() {
     var testKit = KeyValueEntityTestKit.of(CounterEntity::new);
-    testKit.call(e -> e.increaseBy(new Number(10)));
+    testKit.call(e -> e.increaseBy(10));
 
     testKit.call(e -> e.delete());
 

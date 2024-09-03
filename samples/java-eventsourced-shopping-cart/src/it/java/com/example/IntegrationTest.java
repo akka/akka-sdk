@@ -10,15 +10,6 @@ import org.junit.jupiter.api.Test;
 
 
 
-/**
- * This is a skeleton for implementing integration tests for an Akka application built with the Java SDK.
- * <p>
- * This test will initiate an Akka Runtime using testcontainers, and therefore it's required to have Docker installed
- * on your machine. This test will also start your Spring Boot application.
- * <p>
- * Since this is an integration tests, it interacts with the application using a WebClient
- * (already configured and provided automatically through injection).
- */
 // tag::sample-it[]
 public class IntegrationTest extends TestKitSupport { // <1>
 

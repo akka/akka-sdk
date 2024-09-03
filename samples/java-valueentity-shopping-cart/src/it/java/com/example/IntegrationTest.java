@@ -15,12 +15,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 
-/**
- * This is a skeleton for implmenting integration tests for a Kalix application built with the Java SDK.
- * <p>
- * Since this is an integration tests, it interacts with the application using a WebClient
- * provided by {{KalixIntegrationTestKitSupport}}
- */
 public class IntegrationTest extends TestKitSupport {
 
   private Duration timeout = Duration.of(5, SECONDS);

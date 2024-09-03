@@ -10,14 +10,6 @@ import shoppingcart.domain.ShoppingCart.LineItem;
 
 
 
-/**
- * This is a skeleton for implementing integration tests for a Akka application.
- * <p>
- * This test will initiate an Akka Runtime with your service.
- * <p>
- * Since this is an integration tests, it interacts with the application using a WebClient
- * (already configured and provided automatically through {{componentClient}}).
- */
 public class IntegrationTest extends TestKitSupport {
 
   @Test

@@ -1,7 +1,10 @@
-package com.example;
+package com.example.application;
 
-import akka.javasdk.keyvalueentity.KeyValueEntity;
+import akka.Done;
 import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.keyvalueentity.KeyValueEntity;
+
+import static akka.Done.done;
 
 
 // tag::declarations[]
@@ -13,42 +16,42 @@ public class CounterEntity extends KeyValueEntity<Integer> { // <3>
   // end::declarations[]
 
   // tag::increase[]
-  public Effect<Number> increaseBy(Number increaseBy) {
-    int newCounter = currentState() + increaseBy.value(); // <6>
+  public Effect<Integer> increaseBy(int increaseBy) {
+    int newCounter = currentState() + increaseBy; // <6>
     return effects()
         .updateState(newCounter) // <7>
-        .thenReply(new Number(newCounter));
+        .thenReply(newCounter);
   }
   // end::increase[]
 
   // tag::behaviour[]
-  public Effect<Number> set(Number number) {
-    int newCounter = number.value();
+  public Effect<Integer> set(int number) {
+    int newCounter = number;
     return effects()
         .updateState(newCounter) // <2>
-        .thenReply(new Number(newCounter)); // <3>
+        .thenReply(newCounter); // <3>
   }
 
-  public Effect<Number> plusOne() {
+  public Effect<Integer> plusOne() {
     int newCounter = currentState() + 1; // <5>
     return effects()
         .updateState(newCounter) // <6>
-        .thenReply(new Number(newCounter));
+        .thenReply(newCounter);
   }
   // end::behaviour[]
 
   // tag::delete[]
-  public Effect<String> delete() {
+  public Effect<Done> delete() {
     return effects()
         .deleteEntity() // <1>
-        .thenReply("deleted: " + commandContext().entityId());
+        .thenReply(done());
   }
   // end::delete[]
 
   // tag::query[]
-  public Effect<Number> get() {
+  public Effect<Integer> get() {
     return effects()
-        .reply(new Number(currentState())); // <2>
+        .reply(currentState()); // <2>
   }
   // end::query[]
   // tag::close[]
