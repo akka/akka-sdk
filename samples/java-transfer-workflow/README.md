@@ -6,7 +6,7 @@ Used for code snippets in the Workflow documentation.
 
 ## Designing
 
-To understand the Kalix concepts that are the basis for this example, see [Designing services](https://docs.kalix.io/java/development-process.html) in the documentation.
+To understand the Akka SDK concepts that are the basis for this example, see [Designing services](https://docs.kalix.io/java/development-process.html) in the documentation.
 
 ## Developing
 
@@ -24,30 +24,35 @@ mvn compile
 
 ## Running Locally
 
-When running a Kalix service locally, we need to have its companion Kalix Runtime running alongside it.
-
 To start your service locally, run:
 
 ```shell
 mvn compile exec:java
 ```
 
-This command will start your Kalix service and a companion Kalix Runtime.
+This command will start your Akka service and a companion Akka Runtime.
 
 ### Exercising the transfer
 
-With your Kalix service running, any defined endpoints should be available at `http://localhost:9000`.
+With your Akka service running, any defined endpoints should be available at `http://localhost:9000`.
+The ACL settings in `TransferWorkflowSetup.java` are very permissive. It has `Acl.Principal.ALL` which allows any traffic from the internet. More info at `TransferWorkflowSetup.java`.
+
+With your Akka service running, any defined endpoints should be available at `http://localhost:9000`.
 
 Create wallet `a` with an initial balance
 
 ```shell
-curl -X POST http://localhost:9000/wallet/a/create/100
+curl -i  http://localhost:9000/wallet/a/create \
+   -XPOST --header "Content-type: application/json" \
+   --data '{"initialAmount": 100}'
 ```
 
 Create wallet `b` with an initial balance
 
 ```shell
-curl -X POST http://localhost:9000/wallet/b/create/100
+curl -i  http://localhost:9000/wallet/b/create \
+   -XPOST --header "Content-type: application/json" \
+   --data '{"initialAmount": 100}'
 ```
 
 Get wallet `a` current balance
@@ -65,8 +70,8 @@ curl http://localhost:9000/wallet/b
 Start transfer from wallet `a` to wallet `b`
 
 ```shell
-curl http://localhost:9000/transfer/1 \
-  -X PUT \
+curl -i http://localhost:9000/transfer/1 \
+  -XPOST  \
   --header "Content-Type: application/json" \
   --data '{"from": "a", "to": "b", "amount": 10}'
 ```
@@ -94,7 +99,7 @@ and configure a Docker Registry to upload your docker image to.
 
 You will need to update the `dockerImage` property in the `pom.xml` and refer to
 [Configuring registries](https://docs.kalix.io/projects/container-registries.html)
-for more information on how to make your docker image available to Kalix.
+for more information on how to make your docker image available to Akka SDK.
 
 Finally, you can use the [Kalix Console](https://console.kalix.io)
 to create a project and then deploy your service into the project either by using `mvn deploy kalix:deploy` which

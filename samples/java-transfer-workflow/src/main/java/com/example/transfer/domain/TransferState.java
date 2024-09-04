@@ -1,6 +1,6 @@
-package com.example.transfer;
+package com.example.transfer.domain;
 
-import static com.example.transfer.TransferState.TransferStatus.*;
+import static com.example.transfer.domain.TransferState.TransferStatus.STARTED;
 
 // tag::domain[]
 public record TransferState(Transfer transfer, TransferStatus status) {

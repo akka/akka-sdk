@@ -1,4 +1,4 @@
-package com.example.transfer;
+package com.example.transfer.domain;
 
 public record Message(String value) {
 }

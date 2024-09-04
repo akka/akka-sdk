@@ -1,16 +1,19 @@
-package com.example.transfer;
+package com.example.transfer.application;
 
-import com.example.transfer.TransferState.Transfer;
-import com.example.wallet.Ok;
-import com.example.wallet.WalletEntity;
+import akka.Done;
+import com.example.wallet.application.WalletEntity;
+import com.example.transfer.domain.Message;
+import com.example.transfer.domain.TransferState;
+import com.example.transfer.domain.TransferState.Transfer;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.workflow.Workflow;
+import com.example.wallet.domain.WalletCmd;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static com.example.transfer.TransferState.TransferStatus.COMPLETED;
-import static com.example.transfer.TransferState.TransferStatus.WITHDRAW_SUCCEED;
+import static com.example.transfer.domain.TransferState.TransferStatus.COMPLETED;
+import static com.example.transfer.domain.TransferState.TransferStatus.WITHDRAW_SUCCEED;
 
 // tag::class[]
 @ComponentId("transfer")
@@ -29,8 +32,6 @@ public class TransferWorkflow extends Workflow<TransferState> { // <1>
 
   // end::definition[]
 
-  private static final Logger logger = LoggerFactory.getLogger(TransferWorkflow.class);
-
   final private ComponentClient componentClient;
 
   public TransferWorkflow(ComponentClient componentClient) {
@@ -43,10 +44,10 @@ public class TransferWorkflow extends Workflow<TransferState> { // <1>
     Step withdraw =
       step("withdraw") // <1>
         .asyncCall(Withdraw.class, cmd ->
-          componentClient.forKeyValueEntity(cmd.from)
+          componentClient.forEventSourcedEntity(cmd.from)
             .method(WalletEntity::withdraw)
-            .invokeAsync(cmd.amount)) // <2>
-        .andThen(Ok.class, __ -> {
+            .invokeAsync(new WalletCmd.WithdrawCmd(cmd.amount))) // <2>
+        .andThen(Done.class, __ -> {
           Deposit depositInput = new Deposit(currentState().transfer().to(), currentState().transfer().amount());
           return effects()
             .updateState(currentState().withStatus(WITHDRAW_SUCCEED))
@@ -56,10 +57,10 @@ public class TransferWorkflow extends Workflow<TransferState> { // <1>
     Step deposit =
       step("deposit") // <1>
         .asyncCall(Deposit.class, cmd ->
-          componentClient.forKeyValueEntity(cmd.to)
+          componentClient.forEventSourcedEntity(cmd.to)
             .method(WalletEntity::deposit)
-            .invokeAsync(cmd.amount)) // <4>
-        .andThen(Ok.class, __ -> {
+            .invokeAsync(new WalletCmd.DepositCmd(cmd.amount))) // <4>
+        .andThen(Done.class, __ -> {
           return effects()
             .updateState(currentState().withStatus(COMPLETED))
             .end(); // <5>

@@ -1,9 +1,11 @@
 package com.example.transfer;
 
 import akka.javasdk.testkit.TestKitSupport;
-import com.example.transfer.TransferState.Transfer;
-import com.example.wallet.Ok;
-import com.example.wallet.WalletEntity;
+import akka.Done;
+import com.example.transfer.domain.TransferState.Transfer;
+import com.example.wallet.application.WalletEntity;
+import com.example.transfer.application.TransferWorkflow;
+import com.example.wallet.domain.WalletCmd;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 
@@ -56,18 +58,18 @@ public class TransferWorkflowIntegrationTest extends TestKitSupport {
     var res =
       await(
         componentClient
-          .forKeyValueEntity(walletId)
+          .forEventSourcedEntity(walletId)
           .method(WalletEntity::create)
-          .invokeAsync(amount)
+          .invokeAsync(new WalletCmd.CreateCmd(amount))
       );
 
-    assertEquals(Ok.instance, res);
+    assertEquals(Done.done(), res);
   }
 
   private int getWalletBalance(String walletId) {
     return await(
       componentClient
-        .forKeyValueEntity(walletId)
+        .forEventSourcedEntity(walletId)
         .method(WalletEntity::get).invokeAsync()
     );
   }
