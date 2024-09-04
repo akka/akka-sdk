@@ -24,6 +24,7 @@ import akka.javasdk.testmodels.keyvalueentity.TimeTrackerEntity;
 import akka.javasdk.testmodels.keyvalueentity.User;
 import akka.javasdk.testmodels.keyvalueentity.UserEntity;
 
+import java.util.List;
 import java.util.Optional;
 
 public class ViewTestModels {
@@ -134,7 +135,14 @@ public class ViewTestModels {
     }
 
     @Query("SELECT * FROM users WHERE email = :email")
-    public QueryEffect<Optional<TransformedUser>> getUser(ByEmail byEmail) {
+    public QueryEffect<Optional<TransformedUser>> getUser(String email) {
+      return queryResult();
+    }
+
+    public record TransformedUsers(List<TransformedUser> users) {}
+
+    @Query("SELECT * as users FROM users WHERE email = :emails")
+    public QueryEffect<TransformedUsers> getUsersByEmails(List<String> emails) {
       return queryResult();
     }
   }

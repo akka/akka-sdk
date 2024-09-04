@@ -4,6 +4,8 @@
 
 package akka.javasdk.impl
 
+import java.lang.reflect.Parameter
+
 import akka.javasdk.impl.reflection.CommandHandlerMethod
 import akka.javasdk.impl.reflection.HandleDeletesServiceMethod
 import akka.javasdk.impl.reflection.KalixMethod
@@ -14,7 +16,11 @@ import akka.javasdk.impl.reflection.ViewUrlTemplate
 import akka.javasdk.impl.reflection.VirtualDeleteServiceMethod
 import akka.javasdk.impl.reflection.VirtualServiceMethod
 import java.lang.reflect.ParameterizedType
+import java.lang.reflect.Type
+import java.util
 import java.util.Optional
+
+import scala.annotation.tailrec
 
 import akka.javasdk.annotations.Consume.FromKeyValueEntity
 import akka.javasdk.annotations.Consume.FromServiceStream
@@ -40,6 +46,9 @@ import akka.annotation.InternalApi
 import akka.javasdk.annotations.Query
 import akka.javasdk.annotations.Table
 import akka.javasdk.view.View
+import com.google.protobuf.ByteString
+import com.google.protobuf.DescriptorProtos.DescriptorProto
+import com.google.protobuf.DescriptorProtos.FieldDescriptorProto
 import kalix.Eventing
 import kalix.MethodOptions
 
@@ -59,7 +68,7 @@ private[impl] object ViewDescriptorFactory extends ComponentDescriptorFactory {
     val tableUpdaters =
       component.getDeclaredClasses.toSeq.filter(Reflect.isViewTableUpdater)
 
-    val allQueryMethods = queryMethods(component)
+    val allQueryMethods = queryMethods(component, nameGenerator)
 
     val (tableTypeDescriptors, updateMethods) = {
       tableUpdaters
@@ -158,7 +167,7 @@ private[impl] object ViewDescriptorFactory extends ComponentDescriptorFactory {
       queryOutputSchemaDescriptor: ProtoMessageDescriptors,
       queryString: String)
 
-  private def queryMethods(component: Class[_]): Seq[QueryMethod] = {
+  private def queryMethods(component: Class[_], nameGenerator: NameGenerator): Seq[QueryMethod] = {
     // we only take methods with Query annotations
     val annotatedQueryMethods =
       component.getDeclaredMethods.toIndexedSeq
@@ -179,12 +188,6 @@ private[impl] object ViewDescriptorFactory extends ComponentDescriptorFactory {
       val queryOutputSchemaDescriptor =
         ProtoMessageDescriptors.generateMessageDescriptors(actualQueryOutputType)
 
-      // TODO: it should be possible to have fixed queries and use a GET method
-      val QueryParametersSchemaDescriptor =
-        queryMethod.getParameterTypes.headOption.map { param =>
-          ProtoMessageDescriptors.generateMessageDescriptors(param)
-        }
-
       val queryAnnotation = queryMethod.getAnnotation(classOf[Query])
       val queryStr = queryAnnotation.value()
 
@@ -193,12 +196,34 @@ private[impl] object ViewDescriptorFactory extends ComponentDescriptorFactory {
         .setQuery(queryStr)
         .build()
 
+      // TODO: it should be possible to have fixed queries and use a GET method
+      val queryParametersSchemaDescriptor =
+        queryMethod.getGenericParameterTypes.headOption.map { param =>
+          val protoType: FieldDescriptorProto.Type = mapJavaTypeToProtobuf(param)
+          if (protoType == FieldDescriptorProto.Type.TYPE_MESSAGE) {
+            if (isCollection(param)) {
+              throw new IllegalStateException("Collection used for queries should contain only primitive object types.")
+            } else {
+              ProtoMessageDescriptors.generateMessageDescriptors(param.asInstanceOf[Class[_]])
+            }
+          } else {
+            val inputMessageName = nameGenerator.getName(queryMethod.getName.capitalize + "AkkaJsonQuery")
+
+            val inputMessageDescriptor = DescriptorProto.newBuilder()
+            inputMessageDescriptor.setName(inputMessageName)
+            val name: Parameter = queryMethod.getParameters.head
+            inputMessageDescriptor.addField(buildField(name.getName, param))
+
+            ProtoMessageDescriptors(inputMessageDescriptor.build(), Seq.empty)
+          }
+        }
+
       val jsonSchema = {
         val builder = kalix.JsonSchema
           .newBuilder()
           .setOutput(queryOutputSchemaDescriptor.mainMessageDescriptor.getName)
 
-        QueryParametersSchemaDescriptor.foreach { inputSchema =>
+        queryParametersSchemaDescriptor.foreach { inputSchema =>
           builder
             .setInput(inputSchema.mainMessageDescriptor.getName)
             .setJsonBodyInputField("json_body")
@@ -224,9 +249,55 @@ private[impl] object ViewDescriptorFactory extends ComponentDescriptorFactory {
         KalixMethod(servMethod, methodOptions = Some(methodOptions))
           .withKalixOptions(buildJWTOptions(queryMethod))
 
-      QueryMethod(kalixQueryMethod, QueryParametersSchemaDescriptor, queryOutputSchemaDescriptor, queryStr)
+      QueryMethod(kalixQueryMethod, queryParametersSchemaDescriptor, queryOutputSchemaDescriptor, queryStr)
     }
   }
+
+  private def buildField(name: String, paramType: Type): FieldDescriptorProto = {
+    FieldDescriptorProto
+      .newBuilder()
+      .setName(name)
+      .setNumber(1)
+      .setType(mapJavaTypeToProtobuf(paramType))
+      .setLabel(mapJavaWrapperToLabel(paramType))
+      .build()
+  }
+
+  private def mapJavaWrapperToLabel(javaType: Type): FieldDescriptorProto.Label =
+    if (isCollection(javaType))
+      FieldDescriptorProto.Label.LABEL_REPEATED
+    else
+      FieldDescriptorProto.Label.LABEL_OPTIONAL
+
+  @tailrec
+  private def mapJavaTypeToProtobuf(javaType: Type): FieldDescriptorProto.Type = {
+    if (javaType == classOf[String]) {
+      FieldDescriptorProto.Type.TYPE_STRING
+    } else if (javaType == classOf[java.lang.Long] || javaType.getTypeName == "long") {
+      FieldDescriptorProto.Type.TYPE_INT64
+    } else if (javaType == classOf[java.lang.Integer] || javaType.getTypeName == "int"
+      || javaType.getTypeName == "short"
+      || javaType.getTypeName == "byte"
+      || javaType.getTypeName == "char") {
+      FieldDescriptorProto.Type.TYPE_INT32
+    } else if (javaType == classOf[java.lang.Double] || javaType.getTypeName == "double") {
+      FieldDescriptorProto.Type.TYPE_DOUBLE
+    } else if (javaType == classOf[java.lang.Float] || javaType.getTypeName == "float") {
+      FieldDescriptorProto.Type.TYPE_FLOAT
+    } else if (javaType == classOf[java.lang.Boolean] || javaType.getTypeName == "boolean") {
+      FieldDescriptorProto.Type.TYPE_BOOL
+    } else if (javaType == classOf[ByteString]) {
+      FieldDescriptorProto.Type.TYPE_BYTES
+    } else if (isCollection(javaType)) {
+      mapJavaTypeToProtobuf(javaType.asInstanceOf[ParameterizedType].getActualTypeArguments.head)
+    } else {
+      FieldDescriptorProto.Type.TYPE_MESSAGE
+    }
+  }
+
+  private def isCollection(javaType: Type): Boolean = javaType.isInstanceOf[ParameterizedType] &&
+    classOf[util.Collection[_]]
+      .isAssignableFrom(javaType.asInstanceOf[ParameterizedType].getRawType.asInstanceOf[Class[_]])
 
   private def methodsForTypeLevelStreamSubscriptions(
       tableUpdater: Class[_],

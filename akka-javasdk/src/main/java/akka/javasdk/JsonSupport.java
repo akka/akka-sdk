@@ -6,6 +6,8 @@ package akka.javasdk;
 
 import akka.Done;
 import akka.annotation.InternalApi;
+import akka.javasdk.annotations.Migration;
+import akka.javasdk.impl.ByteStringEncoding;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
@@ -23,11 +25,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.UnsafeByteOperations;
-import akka.javasdk.annotations.Migration;
-import akka.javasdk.impl.ByteStringEncoding;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -100,11 +102,11 @@ public final class JsonSupport {
    * Encode the given value as JSON using Jackson and put the encoded string as bytes in a protobuf
    * Any with the type URL {@code "json.kalix.io/[jsonType]"}.
    *
-   * @param value the object to encode as JSON, must be an instance of a class properly annotated
-   *     with the needed Jackson annotations.
+   * @param value    the object to encode as JSON, must be an instance of a class properly annotated
+   *                 with the needed Jackson annotations.
    * @param jsonType A discriminator making it possible to identify which type of object is in the
-   *     JSON, useful for example when multiple different objects are passed through a pub/sub
-   *     topic.
+   *                 JSON, useful for example when multiple different objects are passed through a pub/sub
+   *                 topic.
    * @throws IllegalArgumentException if the given value cannot be turned into JSON
    */
   public static <T> Any encodeJson(T value, String jsonType) {
@@ -114,17 +116,29 @@ public final class JsonSupport {
       return Any.newBuilder().setTypeUrl(JSON_TYPE_URL_PREFIX + jsonType).setValue(encodedBytes).build();
     } catch (JsonProcessingException ex) {
       throw new IllegalArgumentException(
-          "Could not encode [" + value.getClass().getName() + "] as JSON", ex);
+        "Could not encode [" + value.getClass().getName() + "] as JSON", ex);
     }
   }
 
   public static <T> ByteString encodeToBytes(T value) throws JsonProcessingException {
     return UnsafeByteOperations.unsafeWrap(
-        objectMapper.writerFor(value.getClass()).writeValueAsBytes(value));
+      objectMapper.writerFor(value.getClass()).writeValueAsBytes(value));
   }
 
   public static <T> akka.util.ByteString encodeToAkkaByteString(T value) throws JsonProcessingException {
     return akka.util.ByteString.fromArrayUnsafe(objectMapper.writerFor(value.getClass()).writeValueAsBytes(value));
+  }
+
+  public static akka.util.ByteString encodeDynamicToAkkaByteString(String key, String value) throws JsonProcessingException {
+    ObjectNode dynamicJson = objectMapper.createObjectNode().put(key, value);
+    return akka.util.ByteString.fromArrayUnsafe(objectMapper.writeValueAsBytes(dynamicJson));
+  }
+
+  public static akka.util.ByteString encodeDynamicCollectionToAkkaByteString(String key, Collection<?> values) throws JsonProcessingException {
+    ObjectNode objectNode = objectMapper.createObjectNode();
+    ArrayNode dynamicJson = objectNode.putArray(key);
+    values.forEach(v -> dynamicJson.add(v.toString()));
+    return akka.util.ByteString.fromArrayUnsafe(objectMapper.writeValueAsBytes(objectNode));
   }
 
   /**

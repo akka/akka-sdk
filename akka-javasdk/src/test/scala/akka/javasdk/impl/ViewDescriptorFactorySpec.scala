@@ -170,11 +170,17 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
         methodOptions.getView.getUpdate.getTransformUpdates shouldBe true
         methodOptions.getView.getJsonSchema.getOutput shouldBe "TransformedUser"
 
-        val queryMethodOptions = this.findKalixMethodOptions(desc, "GetUser")
-        queryMethodOptions.getView.getQuery.getQuery shouldBe "SELECT * FROM users WHERE email = :email"
-        queryMethodOptions.getView.getJsonSchema.getJsonBodyInputField shouldBe "json_body"
-        queryMethodOptions.getView.getJsonSchema.getInput shouldBe "ByEmail"
-        queryMethodOptions.getView.getJsonSchema.getOutput shouldBe "TransformedUser"
+        val queryMethodOptions1 = this.findKalixMethodOptions(desc, "GetUser")
+        queryMethodOptions1.getView.getQuery.getQuery shouldBe "SELECT * FROM users WHERE email = :email"
+        queryMethodOptions1.getView.getJsonSchema.getJsonBodyInputField shouldBe "json_body"
+        queryMethodOptions1.getView.getJsonSchema.getInput shouldBe "GetUserAkkaJsonQuery"
+        queryMethodOptions1.getView.getJsonSchema.getOutput shouldBe "TransformedUser"
+
+        val queryMethodOptions2 = this.findKalixMethodOptions(desc, "GetUsersByEmails")
+        queryMethodOptions2.getView.getQuery.getQuery shouldBe "SELECT * as users FROM users WHERE email = :emails"
+        queryMethodOptions2.getView.getJsonSchema.getJsonBodyInputField shouldBe "json_body"
+        queryMethodOptions2.getView.getJsonSchema.getInput shouldBe "GetUsersByEmailsAkkaJsonQuery"
+        queryMethodOptions2.getView.getJsonSchema.getOutput shouldBe "TransformedUsers"
 
         val tableMessageDescriptor = desc.fileDescriptor.findMessageTypeByName("TransformedUser")
         tableMessageDescriptor should not be null

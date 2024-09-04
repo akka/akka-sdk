@@ -30,6 +30,7 @@ import com.example.wiring.views.UserWithVersion;
 import com.example.wiring.views.UserWithVersionView;
 import com.example.wiring.views.UsersByEmailAndName;
 import com.example.wiring.views.UsersByName;
+import com.example.wiring.views.UsersByPrimitives;
 import com.example.wiring.views.UsersView;
 import org.awaitility.Awaitility;
 import org.hamcrest.core.IsEqual;
@@ -254,9 +255,59 @@ public class SdkIntegrationTest extends TestKitSupport {
 
 
   @Test
+  public void shouldAcceptPrimitivesForViewQueries() {
+
+    TestUser user1 = new TestUser("654321", "john654321@doe.com", "Bob2");
+    TestUser user2 = new TestUser("7654321", "john7654321@doe.com", "Bob3");
+    createUser(user1);
+    createUser(user2);
+
+    Awaitility.await()
+      .ignoreExceptions()
+      .atMost(10, TimeUnit.of(SECONDS))
+      .untilAsserted(() -> {
+        var resultByString = await(
+          componentClient.forView()
+            .method(UsersByPrimitives::getUserByString)
+            .invokeAsync(user1.email));
+        assertThat(resultByString.users()).isNotEmpty();
+
+        var resultByInt = await(
+          componentClient.forView()
+            .method(UsersByPrimitives::getUserByInt)
+            .invokeAsync(123));
+        assertThat(resultByInt.users()).isNotEmpty();
+
+        var resultByLong = await(
+          componentClient.forView()
+            .method(UsersByPrimitives::getUserByLong)
+            .invokeAsync(321l));
+        assertThat(resultByLong.users()).isNotEmpty();
+
+        var resultByDouble = await(
+          componentClient.forView()
+            .method(UsersByPrimitives::getUserByDouble)
+            .invokeAsync(12.3d));
+        assertThat(resultByDouble.users()).isNotEmpty();
+
+        var resultByBoolean = await(
+          componentClient.forView()
+            .method(UsersByPrimitives::getUserByBoolean)
+            .invokeAsync(true));
+        assertThat(resultByBoolean.users()).isNotEmpty();
+
+        var resultByEmails = await(
+          componentClient.forView()
+            .method(UsersByPrimitives::getUserByEmails)
+            .invokeAsync(List.of(user1.email, user2.email)));
+        assertThat(resultByEmails.users()).hasSize(2);
+      });
+  }
+
+  @Test
   public void shouldDeleteValueEntityAndDeleteViewsState() {
 
-    TestUser user = new TestUser("userId", "john2@doe.com", "Bob");
+    TestUser user = new TestUser("userId", "john123@doe.com", "Bob123");
     createUser(user);
 
     Awaitility.await()

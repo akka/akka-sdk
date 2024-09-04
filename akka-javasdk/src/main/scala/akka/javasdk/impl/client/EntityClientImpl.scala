@@ -5,14 +5,15 @@
 package akka.javasdk.impl.client
 
 import java.util.Optional
+import scala.concurrent.ExecutionContext
+import scala.jdk.FutureConverters.FutureOps
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
 
 import akka.annotation.InternalApi
 import akka.http.scaladsl.model.ContentTypes
 import akka.japi.function
-import akka.javasdk.impl.MetadataImpl
-import akka.javasdk.impl.reflection.Reflect
-import akka.util.ByteString
-import MetadataImpl.toProtocol
 import akka.javasdk.JsonSupport
 import akka.javasdk.Metadata
 import akka.javasdk.client.ComponentDeferredMethodRef
@@ -28,19 +29,13 @@ import akka.javasdk.client.TimedActionClient
 import akka.javasdk.client.ViewClient
 import akka.javasdk.client.WorkflowClient
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
+import akka.javasdk.impl.MetadataImpl
+import akka.javasdk.impl.MetadataImpl.toProtocol
+import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.keyvalueentity.KeyValueEntity
 import akka.javasdk.timedaction.TimedAction
 import akka.javasdk.view.View
 import akka.javasdk.workflow.Workflow
-import akka.runtime.sdk.spi.{ ActionClient => RuntimeActionClient }
-import akka.runtime.sdk.spi.{ EntityClient => RuntimeEntityClient }
-import akka.runtime.sdk.spi.{ ViewClient => RuntimeViewClient }
-import scala.concurrent.ExecutionContext
-import scala.jdk.FutureConverters.FutureOps
-import scala.util.Failure
-import scala.util.Success
-import scala.util.Try
-
 import akka.runtime.sdk.spi.ActionRequest
 import akka.runtime.sdk.spi.ActionType
 import akka.runtime.sdk.spi.ComponentType
@@ -50,6 +45,10 @@ import akka.runtime.sdk.spi.KeyValueEntityType
 import akka.runtime.sdk.spi.ViewRequest
 import akka.runtime.sdk.spi.ViewType
 import akka.runtime.sdk.spi.WorkflowType
+import akka.runtime.sdk.spi.{ ActionClient => RuntimeActionClient }
+import akka.runtime.sdk.spi.{ EntityClient => RuntimeEntityClient }
+import akka.runtime.sdk.spi.{ ViewClient => RuntimeViewClient }
+import akka.util.ByteString
 
 /**
  * INTERNAL API
@@ -193,6 +192,17 @@ private[javasdk] final case class ViewClientImpl(viewClient: RuntimeViewClient, 
     val executionContext: ExecutionContext)
     extends ViewClient {
 
+  private val primitiveObjects: Set[Class[_]] = Set(
+    classOf[java.lang.String],
+    classOf[java.lang.Boolean],
+    classOf[java.lang.Character],
+    classOf[java.lang.Byte],
+    classOf[java.lang.Short],
+    classOf[java.lang.Integer],
+    classOf[java.lang.Long],
+    classOf[java.lang.Float],
+    classOf[java.lang.Double])
+
   override def method[T, R](methodRef: function.Function[T, View.QueryEffect[R]]): ComponentInvokeOnlyMethodRef[R] =
     createMethodRefForEitherArity(methodRef)
 
@@ -217,7 +227,14 @@ private[javasdk] final case class ViewClientImpl(viewClient: RuntimeViewClient, 
         val serializedPayload = maybeArg match {
           case Some(arg) =>
             // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
-            JsonSupport.encodeToAkkaByteString(arg)
+            if (arg.getClass.isPrimitive || primitiveObjects.contains(arg.getClass)) {
+              JsonSupport.encodeDynamicToAkkaByteString(method.getParameters.head.getName, arg.toString)
+            } else if (classOf[java.util.Collection[_]].isAssignableFrom(arg.getClass)) {
+              JsonSupport.encodeDynamicCollectionToAkkaByteString(
+                method.getParameters.head.getName,
+                arg.asInstanceOf[java.util.Collection[_]])
+            } else
+              JsonSupport.encodeToAkkaByteString(arg)
           case None => ByteString.emptyByteString
         }
 
