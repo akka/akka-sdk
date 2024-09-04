@@ -1,4 +1,4 @@
-package com.example.fibonacci;
+package com.example.fibonacci.api;
 
 import akka.http.javadsl.model.HttpResponse;
 import akka.javasdk.annotations.http.Endpoint;
@@ -6,7 +6,9 @@ import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.http.HttpResponses;
-import com.example.MyContext;
+import com.example.fibonacci.MyDependency;
+import com.example.fibonacci.domain.Fibonacci;
+import com.example.fibonacci.domain.Number;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,11 +20,9 @@ import static java.util.concurrent.CompletableFuture.completedStage;
 public class FibonacciEndpoint {
 
     private static final Logger logger = LoggerFactory.getLogger(FibonacciEndpoint.class);
-    private ComponentClient componentClient;
-    private MyContext myContext;
+    private MyDependency myContext;
 
-    public FibonacciEndpoint(ComponentClient componentClient, MyContext myContext) {
-        this.componentClient = componentClient;
+    public FibonacciEndpoint(ComponentClient componentClient, MyDependency myContext) {
         this.myContext = myContext;
     }
     // end::injecting-component-client[]
@@ -33,7 +33,7 @@ public class FibonacciEndpoint {
             return completedStage(
               HttpResponses.badRequest("Only numbers between 0 and 10k are allowed"));
         } else {
-            logger.info("Executing GET call to real /fibonacci = " + number);
+            logger.info("Executing GET call to real /fibonacci = [{}].", number);
             return completedStage(HttpResponses.ok(Fibonacci.nextFib(number)))
                     // FIXME right now any error code from the component error effect becomes a runtime exception
                     //       before handing it back to us, we should see that here more easily.
@@ -52,7 +52,7 @@ public class FibonacciEndpoint {
             return completedStage(
               HttpResponses.badRequest("Only numbers between 0 and 10k are allowed"));
         } else {
-            logger.info("Executing POST call to real /fibonacci = " + number.value());
+            logger.info("Executing POST call to real /fibonacci = [{}].", number.value());
             return completedStage(HttpResponses.ok(Fibonacci.nextFib(number.value())));
         }
     }

@@ -1,4 +1,4 @@
-package com.example;
+package com.example.fibonacci;
 
 import akka.javasdk.DependencyProvider;
 import akka.javasdk.ServiceSetup;
@@ -6,8 +6,8 @@ import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.Setup;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.timer.TimerScheduler;
-import com.example.fibonacci.FibonacciTimedAction;
-import com.example.fibonacci.RequestValidator;
+import com.example.fibonacci.api.RequestValidator;
+import com.example.fibonacci.application.FibonacciTimedAction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,7 +43,7 @@ public class FibonacciSetup implements ServiceSetup {
 
     @Override
     public DependencyProvider createDependencyProvider() {
-        return DependencyProvider.single(new MyContext(new RequestValidator()));
+        return DependencyProvider.single(new MyDependency(new RequestValidator()));
     }
 
 }

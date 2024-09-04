@@ -1,8 +1,9 @@
-package com.example.fibonacci;
+package com.example.fibonacci.application;
 
 
 import akka.javasdk.timedaction.TimedAction;
 import akka.javasdk.annotations.ComponentId;
+import com.example.fibonacci.domain.Fibonacci;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,7 +16,7 @@ public class FibonacciTimedAction extends TimedAction {
 
   public Effect calculateNextNumber(Long number) { // <3>
     try {
-      logger.info("Request for the next number {}", Fibonacci.nextFib(number));
+      logger.info("Request for the next number [{}].", Fibonacci.nextFib(number).value());
       return effects().done();
     } catch (IllegalArgumentException e) {
       return effects().error(e.getMessage());

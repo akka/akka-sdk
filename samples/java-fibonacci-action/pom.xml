@@ -20,7 +20,6 @@
     <kalixOrganization>acme</kalixOrganization>
   </properties>
 
-
   <repositories>
     <repository>
       <id>akka-repository</id>

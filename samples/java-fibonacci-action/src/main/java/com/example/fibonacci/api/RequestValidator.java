@@ -1,7 +1,7 @@
-package com.example.fibonacci;
+package com.example.fibonacci.api;
 
 public class RequestValidator {
-  public boolean isValid(Long number) {
+  public boolean isValid(long number) {
     return number > 0 & number < 10000;
   }
 }

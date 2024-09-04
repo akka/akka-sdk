@@ -3,10 +3,11 @@ package com.example.fibonacci;
 import akka.http.javadsl.model.StatusCodes;
 import akka.javasdk.testkit.TestKitSupport;
 import akka.javasdk.http.StrictResponse;
+import com.example.fibonacci.domain.Number;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class FibonacciActionIntegrationTest extends TestKitSupport {
+public class FibonacciIntegrationTest extends TestKitSupport {
 
   @Test
   public void calculateNextNumber() {

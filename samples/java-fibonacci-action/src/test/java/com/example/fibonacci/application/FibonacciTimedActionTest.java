@@ -1,4 +1,4 @@
-package com.example.fibonacci;
+package com.example.fibonacci.application;
 
 // tag::testing-action[]
 import akka.javasdk.testkit.TimedActionResult;

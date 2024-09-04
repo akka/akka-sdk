@@ -1,4 +1,4 @@
-package com.example.fibonacci;
+package com.example.fibonacci.domain;
 
 import java.util.function.Predicate;
 
