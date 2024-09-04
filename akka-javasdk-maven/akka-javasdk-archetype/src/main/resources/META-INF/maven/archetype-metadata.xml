@@ -18,18 +18,11 @@
                 <include>**/*</include>
             </includes>
         </fileSet>
-        <fileSet filtered="true">
-            <directory></directory>
-            <includes>
-                <include>.env</include>
-            </includes>
-        </fileSet>
         <fileSet filtered="true" encoding="UTF-8">
             <directory/>
             <includes>
                 <include>.gitignore</include>
                 <include>README.md</include>
-                <include>docker-compose.yml</include>
             </includes>
         </fileSet>
     </fileSets>
