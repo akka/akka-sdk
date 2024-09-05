@@ -24,6 +24,7 @@
 
     <properties>
         <akka.javasdk.dev-mode.service-name>${project.artifactId}</akka.javasdk.dev-mode.service-name>
+        <akka.runtime.dev-mode.http-port>9000</akka.runtime.dev-mode.http-port>
         <!-- archetype need to override kalixContainerRegistry and kalixOrganization -->
         <kalixContainerRegistry>kcr.us-east-1.kalix.io</kalixContainerRegistry>
         <kalixOrganization>acme</kalixOrganization>
@@ -285,6 +286,10 @@
                             <systemProperty>
                                 <key>akka.javasdk.dev-mode.service-name</key>
                                 <value>${akka.javasdk.dev-mode.service-name}</value>
+                            </systemProperty>
+                            <systemProperty>
+                                <key>akka.runtime.dev-mode.http-port</key>
+                                <value>${akka.runtime.dev-mode.http-port}</value>
                             </systemProperty>
                             <systemProperty>
                                 <key>akka.runtime.dev-mode.enabled</key>
