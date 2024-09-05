@@ -38,7 +38,7 @@ public class IncreaseConsumer extends Consumer {
     String entityId = this.messageContext().metadata().asCloudEvent().subject().get();
     if (event.value() == 42) {
       CompletionStage<Done> res = componentClient.forEventSourcedEntity(entityId).method(CounterEntity::increase).invokeAsync(1).thenApply(__ -> Done.getInstance());
-      return effects().acyncDone(res);
+      return effects().asyncDone(res);
     }
     return effects().done();
   }

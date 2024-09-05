@@ -32,7 +32,7 @@ public class IncreaseActionWithIgnore extends Consumer {
             CompletionStage<Done> res =
                 componentClient.forEventSourcedEntity(entityId).method(CounterEntity::increase).invokeAsync(1)
                   .thenApply(__ -> Done.done());
-            return effects().acyncDone(res);
+            return effects().asyncDone(res);
         }
         return effects().done();
     }

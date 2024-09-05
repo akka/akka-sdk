@@ -34,7 +34,7 @@ public class CounterCommandFromTopicConsumer extends Consumer {
         .method(Counter::increase)
         .invokeAsync(increase.value)
         .thenApply(__ -> Done.done());
-    return effects().acyncDone(increaseReply);
+    return effects().asyncDone(increaseReply);
   }
 
   public Effect onValueMultiplied(MultiplyCounter multiply) {
@@ -44,6 +44,6 @@ public class CounterCommandFromTopicConsumer extends Consumer {
         .method(Counter::multiply)
         .invokeAsync(multiply.value)
         .thenApply(__ -> Done.done());
-    return effects().acyncDone(increaseReply);
+    return effects().asyncDone(increaseReply);
   }
 }

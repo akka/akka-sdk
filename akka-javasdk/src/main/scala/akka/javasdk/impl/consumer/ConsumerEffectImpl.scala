@@ -50,7 +50,7 @@ private[impl] object ConsumerEffectImpl {
     override def done(): Consumer.Effect =
       ReplyEffect(Done, None)
 
-    override def acyncDone(futureMessage: CompletionStage[Done]): Consumer.Effect =
+    override def asyncDone(futureMessage: CompletionStage[Done]): Consumer.Effect =
       AsyncEffect(futureMessage.asScala.map(done => Builder.produce(done))(ExecutionContext.parasitic))
   }
 

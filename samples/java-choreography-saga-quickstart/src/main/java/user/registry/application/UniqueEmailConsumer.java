@@ -62,12 +62,12 @@ public class UniqueEmailConsumer extends Consumer {
         delay,
         callToUnReserve);
 
-      return effects().acyncDone(timer);
+      return effects().asyncDone(timer);
 
     } else if (email.isConfirmed()) {
       logger.info("Email is already confirmed, deleting timer (if exists) '{}'", timerId);
       var cancellation = timers().cancel(timerId);
-      return effects().acyncDone(cancellation);
+      return effects().asyncDone(cancellation);
 
     } else {
       // Email is not reserved, so we don't need to do anything

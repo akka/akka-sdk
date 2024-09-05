@@ -96,7 +96,7 @@ public abstract class Consumer {
       /**
        * Mark message as processed from an async operation result
        */
-      Effect acyncDone(CompletionStage<Done> message);
+      Effect asyncDone(CompletionStage<Done> message);
 
       /**
        * Produce a message.

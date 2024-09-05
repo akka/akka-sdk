@@ -48,7 +48,7 @@ public class UserEventsConsumer extends Consumer {
         .method(UniqueEmailEntity::markAsNotUsed)
         .invokeAsync();
 
-    return effects().acyncDone(unreserved);
+    return effects().asyncDone(unreserved);
   }
 
   /**
@@ -62,6 +62,6 @@ public class UserEventsConsumer extends Consumer {
         .method(UniqueEmailEntity::confirm)
         .invokeAsync();
 
-    return effects().acyncDone(confirmation);
+    return effects().asyncDone(confirmation);
   }
 }
