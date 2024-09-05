@@ -1,7 +1,7 @@
 package user.registry.api;
 
-import akka.javasdk.annotations.http.Endpoint;
 import akka.javasdk.annotations.http.Get;
+import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.client.ComponentClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,7 +9,7 @@ import user.registry.application.UniqueEmailEntity;
 
 import java.util.concurrent.CompletionStage;
 
-@Endpoint("/api")
+@HttpEndpoint("/api")
 public class EmailEndpoint {
 
   private final Logger logger = LoggerFactory.getLogger(getClass());
