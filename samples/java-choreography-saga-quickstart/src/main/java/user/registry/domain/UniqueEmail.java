@@ -1,6 +1,6 @@
 package user.registry.domain;
 
-import user.registry.entity.UniqueEmailEntity;
+import user.registry.application.UniqueEmailEntity;
 
 import java.util.Optional;
 

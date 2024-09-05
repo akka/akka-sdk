@@ -1,4 +1,4 @@
-package user.registry.subscriber;
+package user.registry.application;
 
 
 import akka.javasdk.annotations.ComponentId;
@@ -11,13 +11,11 @@ import user.registry.domain.UserEvent;
 import user.registry.domain.UserEvent.EmailAssigned;
 import user.registry.domain.UserEvent.EmailUnassigned;
 import user.registry.domain.UserEvent.UserWasCreated;
-import user.registry.entity.UniqueEmailEntity;
-import user.registry.entity.UserEntity;
 
 /**
- * This Action plays the role of a subscriber to the UserEntity.
+ * This Consumer consumes from the UserEntity.
  * <p>
- * In the choreography, this subscriber will react to events (facts) produced by the UserEntity and modify the
+ * In the choreography, this consumer will react to events (facts) produced by the UserEntity and modify the
  * UniqueEmailEntity accordingly. Either by confirming or un-reserving the email address.
  */
 @ComponentId("user-events-subscriber")
@@ -50,7 +48,7 @@ public class UserEventsConsumer extends Consumer {
         .method(UniqueEmailEntity::markAsNotUsed)
         .invokeAsync();
 
-    return effects().asyncProduce(unreserved);
+    return effects().acyncDone(unreserved);
   }
 
   /**
@@ -64,6 +62,6 @@ public class UserEventsConsumer extends Consumer {
         .method(UniqueEmailEntity::confirm)
         .invokeAsync();
 
-    return effects().asyncProduce(confirmation);
+    return effects().acyncDone(confirmation);
   }
 }

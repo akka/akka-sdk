@@ -1,20 +1,21 @@
 package user.registry.api;
 
 
+import akka.http.javadsl.model.HttpResponse;
 import akka.javasdk.annotations.http.Endpoint;
 import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.annotations.http.Put;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.http.HttpException;
+import akka.javasdk.http.HttpResponses;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import user.registry.common.Done;
+import user.registry.application.UniqueEmailEntity;
+import user.registry.application.UserEntity;
 import user.registry.domain.UniqueEmail;
 import user.registry.domain.User;
-import user.registry.entity.UniqueEmailEntity;
-import user.registry.entity.UserEntity;
-import user.registry.views.UsersByCountryView;
+import user.registry.application.UsersByCountryView;
 
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
@@ -24,16 +25,15 @@ import java.util.concurrent.CompletionStage;
  * This controller works as a gateway for the user service. It receives the requests from the outside world and
  * forwards them to the user service and ensure that the email address is not already reserved.
  * <p>
- * The UniqueEmailEntity and the UserEntity are protected from external access. They can only be accessed through
- * this controller.
+ * The UserEntity is protected from external access. It can only be accessed through this controller.
  */
-@Endpoint("/api")
-public class ApplicationController {
+@Endpoint("/api/users")
+public class UserEndpoint {
 
   private final Logger logger = LoggerFactory.getLogger(getClass());
   private final ComponentClient client;
 
-  public ApplicationController(ComponentClient client) {
+  public UserEndpoint(ComponentClient client) {
     this.client = client;
   }
 
@@ -58,8 +58,8 @@ public class ApplicationController {
    * <p>
    * If we succeed in reserving the email address, we move forward and create the user.
    */
-  @Post("/users/{userId}")
-  public CompletionStage<Done> createUser(String userId, User.Create cmd) {
+  @Post("/{userId}")
+  public CompletionStage<HttpResponse> createUser(String userId, User.Create cmd) {
 
     var createUniqueEmail = new UniqueEmail.ReserveEmail(cmd.email(), userId);
 
@@ -79,9 +79,10 @@ public class ApplicationController {
           // on successful email reservation, we create the user and return the result
           logger.info("Creating user '{}'", userId);
           return client
-              .forEventSourcedEntity(userId)
-              .method(UserEntity::createUser)
-              .invokeAsync(cmd);
+            .forEventSourcedEntity(userId)
+            .method(UserEntity::createUser)
+            .invokeAsync(cmd)
+            .thenApply(done -> HttpResponses.created());
         })
         .exceptionally(e -> {
           // in case of exception `callToUser` is not executed,
@@ -94,8 +95,8 @@ public class ApplicationController {
   }
 
 
-  @Put("/users/{userId}/change-email")
-  public CompletionStage<Done> changeEmail(String userId, User.ChangeEmail cmd) {
+  @Put("/{userId}/email")
+  public CompletionStage<HttpResponse> changeEmail(String userId, User.ChangeEmail cmd) {
 
     var createUniqueEmail = new UniqueEmail.ReserveEmail(cmd.newEmail(), userId);
 
@@ -117,7 +118,8 @@ public class ApplicationController {
           return client
             .forEventSourcedEntity(userId)
             .method(UserEntity::changeEmail)
-            .invokeAsync(cmd);
+            .invokeAsync(cmd)
+            .thenApply(done -> HttpResponses.ok());
         })
         .exceptionally(e -> {
           // in case of exception `callToUser` is not executed,
@@ -134,7 +136,7 @@ public class ApplicationController {
   /**
    * This is gives access to the user state.
    */
-  @Get("/users/{userId}")
+  @Get("/{userId}")
   public CompletionStage<UserInfo> getUserInfo(String userId) {
     return
       client.forEventSourcedEntity(userId)
@@ -154,27 +156,7 @@ public class ApplicationController {
   }
 
 
-  /**
-   * This is gives access to the email state.
-   */
-  @Get("/emails/{address}")
-  public CompletionStage<EmailInfo> getEmailInfo(String address) {
-    return
-      client.forKeyValueEntity(address)
-        .method(UniqueEmailEntity::getState).invokeAsync()
-        .thenApply(email -> {
-          var emailInfo =
-            new EmailInfo(
-              email.address(),
-              email.status().toString(),
-              email.ownerId());
-
-          logger.info("Getting email info: {}", emailInfo);
-          return emailInfo;
-        });
-  }
-
-  @Get("/users/by-country/{country}")
+  @Get("/by-country/{country}")
   public CompletionStage<UsersByCountryView.UserList> getUsersByCountry(String country) {
     return
       client.forView()

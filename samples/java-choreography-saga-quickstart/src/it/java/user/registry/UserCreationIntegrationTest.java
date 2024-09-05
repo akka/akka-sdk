@@ -4,7 +4,7 @@ import akka.http.javadsl.model.StatusCodes;
 import akka.javasdk.testkit.TestKitSupport;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
-import user.registry.api.ApplicationController;
+import user.registry.api.UserEndpoint;
 import user.registry.domain.User;
 
 import java.time.Duration;
@@ -23,7 +23,7 @@ public class UserCreationIntegrationTest extends TestKitSupport {
   @Test
   public void testSuccessfulUserCreation() {
     var emailInfoResponse = httpClient.GET("/api/emails/doe@acme.com")
-            .responseBodyAs(ApplicationController.EmailInfo.class)
+            .responseBodyAs(UserEndpoint.EmailInfo.class)
             .invokeAsync();
 
     assertThat(emailInfoResponse)
@@ -46,7 +46,7 @@ public class UserCreationIntegrationTest extends TestKitSupport {
             .atMost(timeout)
             .untilAsserted(() -> {
                 var emailInfoResponseAfter = httpClient.GET("/api/emails/doe@acme.com")
-                        .responseBodyAs(ApplicationController.EmailInfo.class)
+                        .responseBodyAs(UserEndpoint.EmailInfo.class)
                         .invokeAsync();
                 assertThat(emailInfoResponseAfter)
                       .succeedsWithin(timeout)
@@ -66,7 +66,7 @@ public class UserCreationIntegrationTest extends TestKitSupport {
   @Test
   public void testUserCreationFailureDueToInvalidInput() throws Exception {
     var emailInfoResponse = httpClient.GET("/api/emails/invalid@acme.com")
-            .responseBodyAs(ApplicationController.EmailInfo.class)
+            .responseBodyAs(UserEndpoint.EmailInfo.class)
             .invokeAsync();
     assertThat(emailInfoResponse)
             .succeedsWithin(timeout)
@@ -90,7 +90,7 @@ public class UserCreationIntegrationTest extends TestKitSupport {
             .atMost(timeout)
             .untilAsserted(() -> {
               var emailInfoResponseAfter = httpClient.GET("/api/emails/invalid@acme.com")
-                      .responseBodyAs(ApplicationController.EmailInfo.class)
+                      .responseBodyAs(UserEndpoint.EmailInfo.class)
                       .invokeAsync();
               assertThat(emailInfoResponseAfter)
                       .succeedsWithin(timeout)
@@ -105,7 +105,7 @@ public class UserCreationIntegrationTest extends TestKitSupport {
             .timeout(Duration.ofSeconds(10)) //3 seconds for the projection lag + 3 seconds for the timer to fire
             .untilAsserted(() -> {
               var emailInfoResponseAfter = httpClient.GET("/api/emails/invalid@acme.com")
-                      .responseBodyAs(ApplicationController.EmailInfo.class)
+                      .responseBodyAs(UserEndpoint.EmailInfo.class)
                       .invokeAsync();
               assertThat(emailInfoResponseAfter)
                       .succeedsWithin(timeout)

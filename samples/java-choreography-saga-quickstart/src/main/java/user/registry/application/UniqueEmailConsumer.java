@@ -1,21 +1,19 @@
-package user.registry.subscriber;
+package user.registry.application;
 
 
 import akka.javasdk.annotations.ComponentId;
-import akka.javasdk.consumer.Consumer;
-import com.typesafe.config.Config;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.client.ComponentClient;
+import akka.javasdk.consumer.Consumer;
+import com.typesafe.config.Config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import user.registry.common.Done;
 import user.registry.domain.UniqueEmail;
-import user.registry.entity.UniqueEmailEntity;
 
 import java.time.Duration;
 
 /**
- * This Action plays the role of a subscriber to the UniqueEmailEntity state changes.
+ * This Consumer consumes from the UniqueEmailEntity state changes.
  * <p>
  * In the choreography, this subscriber will react to state changes from the UniqueEmailEntity.
  * <p>
@@ -64,12 +62,12 @@ public class UniqueEmailConsumer extends Consumer {
         delay,
         callToUnReserve);
 
-      return effects().asyncProduce(timer.thenApply(__ -> Done.done()));
+      return effects().acyncDone(timer);
 
     } else if (email.isConfirmed()) {
       logger.info("Email is already confirmed, deleting timer (if exists) '{}'", timerId);
       var cancellation = timers().cancel(timerId);
-      return effects().asyncProduce(cancellation.thenApply(__ -> Done.done()));
+      return effects().acyncDone(cancellation);
 
     } else {
       // Email is not reserved, so we don't need to do anything

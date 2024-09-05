@@ -1,8 +1,9 @@
-package user.registry.entity;
+package user.registry;
 
 
 import akka.javasdk.testkit.KeyValueEntityTestKit;
 import org.junit.jupiter.api.Test;
+import user.registry.application.UniqueEmailEntity;
 import user.registry.domain.UniqueEmail;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;

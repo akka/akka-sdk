@@ -1,16 +1,15 @@
-package user.registry.views;
+package user.registry.application;
 
-import akka.javasdk.annotations.Query;
-import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.ComponentId;
-import akka.javasdk.view.View;
+import akka.javasdk.annotations.Consume;
+import akka.javasdk.annotations.Query;
 import akka.javasdk.view.TableUpdater;
+import akka.javasdk.view.View;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import user.registry.domain.UserEvent;
 import user.registry.domain.UserEvent.EmailAssigned;
 import user.registry.domain.UserEvent.UserWasCreated;
-import user.registry.entity.UserEntity;
 
 import java.util.List;
 

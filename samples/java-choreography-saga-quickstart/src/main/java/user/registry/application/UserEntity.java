@@ -1,22 +1,24 @@
-package user.registry.entity;
+package user.registry.application;
 
 
+import akka.Done;
 import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import user.registry.common.Done;
 import user.registry.domain.User;
 import user.registry.domain.UserEvent;
+
+import static akka.Done.done;
 
 /**
  * Entity wrapping a User.
  * <p>
- * The UserEntity is part of the application layer. It implements the glue between the domain layer (user) and Kalix.
+ * The UserEntity is part of the application layer. It implements the glue between the domain layer (user) and Akka.
  * Incoming commands are delivered to the UserEntity, which passes them to the domain layer.
  * The domain layer returns the events that need to be persisted. The entity wraps them in an {@link Effect} that describes
- * to Kalix what needs to be done, e.g.: emit events, reply to the caller, etc.
+ * to Akka what needs to be done, e.g.: emit events, reply to the caller, etc.
  * <p>
  * A User has a name, a country and an email address.
  * The email address must be unique across all existing users. This is achieved with a choreography saga which ensures that
@@ -44,13 +46,13 @@ public class UserEntity extends EventSourcedEntity<User, UserEvent> {
     }
 
     if (currentState() != null) {
-      return effects().reply(Done.done());
+      return effects().reply(done());
     }
 
     logger.info("Creating user {}", cmd);
     return effects()
       .persist(User.onCommand(cmd))
-      .thenReply(__ -> Done.done());
+      .thenReply(__ -> done());
   }
 
   public Effect<Done> changeEmail(User.ChangeEmail cmd) {
@@ -59,7 +61,7 @@ public class UserEntity extends EventSourcedEntity<User, UserEvent> {
     }
     return effects()
       .persistAll(currentState().onCommand(cmd))
-      .thenReply(__ -> Done.done());
+      .thenReply(__ -> done());
   }
 
   public ReadOnlyEffect<User> getState() {

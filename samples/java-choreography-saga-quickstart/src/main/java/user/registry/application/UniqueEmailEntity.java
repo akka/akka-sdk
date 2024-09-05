@@ -1,24 +1,26 @@
-package user.registry.entity;
+package user.registry.application;
 
 
+import akka.Done;
 import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
 import akka.javasdk.keyvalueentity.KeyValueEntityContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import user.registry.common.Done;
 import user.registry.domain.UniqueEmail;
 
 import java.util.Optional;
+
+import static akka.Done.done;
 
 /**
  * Entity wrapping a UniqueEmail.
  * <p>
  * The UniqueEmailEntity is part of the application layer. It implements the glue between the domain layer (UniqueEmail)
- * and Kalix. Incoming commands are delivered to the UniqueEmailEntity, which passes them to the domain layer.
+ * and Akka. Incoming commands are delivered to the UniqueEmailEntity, which passes them to the domain layer.
  * The domain layer mutates and the new state is passed back to the entity. The entity wraps it in an {@link Effect} that
- * describes to Kalix what needs to be done, e.g. update the state, reply to the caller, etc.
+ * describes to Akka what needs to be done, e.g. update the state, reply to the caller, etc.
  * <p>
  * This entity works as a barrier to ensure that an email address is only used once.
  * In the process of creating a user, the email address is reserved.
@@ -77,13 +79,13 @@ public class UniqueEmailEntity extends KeyValueEntity<UniqueEmail> {
     }
 
     if (currentState().sameOwner(cmd.ownerId())) {
-      return effects().reply(Done.done());
+      return effects().reply(done());
     }
 
     logger.info("Reserving email address '{}'", cmd.address());
     return effects()
       .updateState(new UniqueEmail(cmd.address(), Status.RESERVED, Optional.of(cmd.ownerId())))
-      .thenReply(Done.done());
+      .thenReply(done());
   }
 
   /**
@@ -95,10 +97,10 @@ public class UniqueEmailEntity extends KeyValueEntity<UniqueEmail> {
       logger.info("Confirming email address '{}'", currentState().address());
       return effects()
         .updateState(currentState().asConfirmed())
-        .thenReply(Done.done());
+        .thenReply(done());
     } else {
       logger.info("Email address status is not reserved. Ignoring confirmation request.");
-      return effects().reply(Done.done());
+      return effects().reply(done());
     }
   }
 
@@ -116,9 +118,9 @@ public class UniqueEmailEntity extends KeyValueEntity<UniqueEmail> {
       // when cancelling, we go back to the initial state (not in use)
       return effects()
         .updateState(notInUse())
-        .thenReply(Done.done());
+        .thenReply(done());
     } else {
-      return effects().reply(Done.done());
+      return effects().reply(done());
     }
   }
 
@@ -136,7 +138,7 @@ public class UniqueEmailEntity extends KeyValueEntity<UniqueEmail> {
     logger.info("Marking as not used email address '{}'", currentState().address());
     return effects()
       .updateState(notInUse())
-      .thenReply(Done.done());
+      .thenReply(done());
   }
 
 
