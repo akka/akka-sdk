@@ -1,7 +1,7 @@
 package user.registry.api;
 
-import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.HttpEndpoint;
+import akka.javasdk.annotations.http.Get;
 import akka.javasdk.client.ComponentClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

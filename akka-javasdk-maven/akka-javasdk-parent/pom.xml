@@ -41,7 +41,7 @@
         <maven.compiler.release>${java.version}</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <akka-javasdk.version>3.0.0-M1</akka-javasdk.version>
-        <kalix-runtime.version>1.1.41-c73f437</kalix-runtime.version>
+        <kalix-runtime.version>1.1.41-6a806ef</kalix-runtime.version>
         <skip.docker>false</skip.docker>
 
 
@@ -54,7 +54,6 @@
         <maven-surefire-plugin.version>2.22.2</maven-surefire-plugin.version>
         <maven-deploy-plugin.version>3.1.1</maven-deploy-plugin.version>
 
-        <maven-failsafe-plugin.version>3.1.2</maven-failsafe-plugin.version>
     </properties>
 
 
