@@ -1,7 +1,7 @@
 package com.example.transfer.api;
 
 import akka.http.javadsl.model.HttpResponse;
-import akka.javasdk.annotations.http.Endpoint;
+import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.CompletionStage;
 
-@Endpoint("/transfer")
+@HttpEndpoint("/transfer")
 public class TransferEndpoint {
 
     private static final Logger log = LoggerFactory.getLogger(TransferEndpoint.class);

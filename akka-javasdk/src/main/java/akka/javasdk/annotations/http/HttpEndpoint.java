@@ -13,6 +13,6 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-public @interface Endpoint {
+public @interface HttpEndpoint {
     String value() default "";
 }

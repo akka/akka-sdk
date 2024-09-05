@@ -4,10 +4,10 @@
 
 package com.example;
 
-import akka.javasdk.annotations.http.Endpoint;
+import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
 
-@Endpoint("/user")
+@HttpEndpoint("/user")
 public class UserRegistryController {
 
   @Post("/{id}")

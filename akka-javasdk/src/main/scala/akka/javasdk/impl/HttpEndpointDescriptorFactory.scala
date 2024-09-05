@@ -10,8 +10,8 @@ import AclDescriptorFactory.validateMatcher
 import akka.annotation.InternalApi
 import akka.javasdk.annotations.Acl
 import akka.javasdk.annotations.http.Delete
-import akka.javasdk.annotations.http.Endpoint
 import akka.javasdk.annotations.http.Get
+import akka.javasdk.annotations.http.HttpEndpoint
 import akka.javasdk.annotations.http.Patch
 import akka.javasdk.annotations.http.Post
 import akka.javasdk.annotations.http.Put
@@ -37,7 +37,7 @@ private[javasdk] object HttpEndpointDescriptorFactory {
       instanceFactory: HttpEndpointConstructionContext => Any): HttpEndpointDescriptor = {
     assert(Reflect.isRestEndpoint(endpointClass))
 
-    val mainPath = Option(endpointClass.getAnnotation(classOf[Endpoint])).map(_.value()).filterNot(_.isEmpty)
+    val mainPath = Option(endpointClass.getAnnotation(classOf[HttpEndpoint])).map(_.value()).filterNot(_.isEmpty)
 
     val methods = endpointClass.getDeclaredMethods.flatMap { method =>
       val maybePathMethod = if (method.getAnnotation(classOf[Get]) != null) {

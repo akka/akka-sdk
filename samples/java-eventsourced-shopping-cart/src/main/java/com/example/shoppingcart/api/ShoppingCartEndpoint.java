@@ -1,6 +1,5 @@
 package com.example.shoppingcart.api;
 
-import akka.http.javadsl.model.HttpResponse;
 import akka.javasdk.annotations.http.*;
 import akka.javasdk.client.ComponentClient;
 import com.example.shoppingcart.application.ShoppingCartEntity;
@@ -10,7 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.CompletionStage;
 
-@Endpoint("/shopping-cart")
+@HttpEndpoint("/shopping-cart")
 public class ShoppingCartEndpoint {
 
     private static final Logger logger = LoggerFactory.getLogger(ShoppingCartEndpoint.class);

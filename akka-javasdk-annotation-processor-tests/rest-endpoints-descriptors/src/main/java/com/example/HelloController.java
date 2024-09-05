@@ -4,10 +4,10 @@
 
 package com.example;
 
-import akka.javasdk.annotations.http.Endpoint;
+import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Get;
 
-@Endpoint("/hello")
+@HttpEndpoint("/hello")
 public class HelloController {
 
   @Get

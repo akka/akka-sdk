@@ -2,7 +2,7 @@ package com.example.api;
 
 import akka.Done;
 import akka.http.javadsl.model.HttpResponse;
-import akka.javasdk.annotations.http.Endpoint;
+import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.http.HttpResponses;
@@ -18,7 +18,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 
 // tag::timers[]
-@Endpoint("/orders")
+@HttpEndpoint("/orders")
 public class OrderEndpoint {
 // end::timers[]
 

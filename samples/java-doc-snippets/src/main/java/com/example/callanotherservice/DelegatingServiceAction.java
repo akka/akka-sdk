@@ -1,6 +1,6 @@
 package com.example.callanotherservice;
 
-import akka.javasdk.annotations.http.Endpoint;
+import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.http.HttpClient;
 import akka.javasdk.http.HttpClientProvider;
@@ -9,7 +9,7 @@ import akka.javasdk.http.StrictResponse;
 import java.util.concurrent.CompletionStage;
 
 // tag::delegating-action[]
-@Endpoint
+@HttpEndpoint
 public class DelegatingServiceAction {
 
   private final HttpClient httpClient;

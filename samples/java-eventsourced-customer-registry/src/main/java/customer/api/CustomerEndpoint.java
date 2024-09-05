@@ -1,7 +1,7 @@
 package customer.api;
 
 import akka.http.javadsl.model.HttpResponse;
-import akka.javasdk.annotations.http.Endpoint;
+import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.Patch;
 import akka.javasdk.annotations.http.Post;
@@ -16,7 +16,7 @@ import customer.domain.CustomersList;
 
 import java.util.concurrent.CompletionStage;
 
-@Endpoint("/customer")
+@HttpEndpoint("/customer")
 public class CustomerEndpoint {
 
   record CreateCustomerRequest(String id, String email, String name, Address address){

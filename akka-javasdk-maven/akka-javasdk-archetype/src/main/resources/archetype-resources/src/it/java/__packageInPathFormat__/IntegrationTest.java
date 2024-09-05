@@ -1,7 +1,7 @@
 package ${package};
 
 import org.junit.jupiter.api.Test;
-import akka.javasdk.testkit.AkkaSdkTestKitSupport;
+import akka.javasdk.testkit.TestKitSupport;
 
 
 
@@ -11,7 +11,7 @@ import akka.javasdk.testkit.AkkaSdkTestKitSupport;
  * It interacts with the components of the application using a componentClient
  * (already configured and provided automatically through injection).
  */
-public class IntegrationTest extends AkkaSdkTestKitSupport {
+public class IntegrationTest extends TestKitSupport {
 
 
   @Test

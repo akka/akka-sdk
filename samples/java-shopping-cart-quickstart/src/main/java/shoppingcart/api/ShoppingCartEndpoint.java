@@ -2,7 +2,7 @@ package shoppingcart.api;
 
 import akka.http.javadsl.model.HttpResponse;
 import akka.javasdk.annotations.http.Delete;
-import akka.javasdk.annotations.http.Endpoint;
+import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.annotations.http.Put;
@@ -13,7 +13,7 @@ import shoppingcart.domain.ShoppingCart;
 
 import java.util.concurrent.CompletionStage;
 
-@Endpoint("/shopping-cart")
+@HttpEndpoint("/shopping-cart")
 public class ShoppingCartEndpoint {
 
   private final ComponentClient componentClient;

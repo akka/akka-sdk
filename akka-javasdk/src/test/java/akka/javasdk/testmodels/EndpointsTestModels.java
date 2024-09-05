@@ -6,7 +6,7 @@ package akka.javasdk.testmodels;
 
 import akka.http.javadsl.model.HttpResponse;
 import akka.javasdk.annotations.http.Delete;
-import akka.javasdk.annotations.http.Endpoint;
+import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.Patch;
 import akka.javasdk.annotations.http.Post;
@@ -26,7 +26,7 @@ public class EndpointsTestModels {
     }
   }
 
-  @Endpoint("/hello")
+  @HttpEndpoint("/hello")
   public static class GetHelloEndpoint {
 
     /**
@@ -83,7 +83,7 @@ public class EndpointsTestModels {
 
   }
 
-  @Endpoint("/hello")
+  @HttpEndpoint("/hello")
   public static class PostHelloEndpoint {
 
     @Post
@@ -104,7 +104,7 @@ public class EndpointsTestModels {
   }
 
 
-  @Endpoint("/hello")
+  @HttpEndpoint("/hello")
   public static class PutHelloEndpoint {
     @Put
     public String helloPut(Name body) {
@@ -112,7 +112,7 @@ public class EndpointsTestModels {
     }
   }
 
-  @Endpoint("/hello")
+  @HttpEndpoint("/hello")
   public static class PatchHelloEndpoint {
     @Patch
     public String helloPatch(Name body) {
@@ -120,7 +120,7 @@ public class EndpointsTestModels {
     }
   }
 
-  @Endpoint("/hello")
+  @HttpEndpoint("/hello")
   public static class DeleteHelloEndpoint {
 
     @Delete

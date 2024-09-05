@@ -2,7 +2,7 @@ package user.registry.api;
 
 
 import akka.http.javadsl.model.HttpResponse;
-import akka.javasdk.annotations.http.Endpoint;
+import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.annotations.http.Put;
@@ -27,7 +27,7 @@ import java.util.concurrent.CompletionStage;
  * <p>
  * The UserEntity is protected from external access. It can only be accessed through this controller.
  */
-@Endpoint("/api/users")
+@HttpEndpoint("/api/users")
 public class UserEndpoint {
 
   private final Logger logger = LoggerFactory.getLogger(getClass());

@@ -7,7 +7,7 @@ package akka.javasdk.impl.http;
 import akka.http.javadsl.model.HttpResponse;
 import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.http.Delete;
-import akka.javasdk.annotations.http.Endpoint;
+import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.Patch;
 import akka.javasdk.annotations.http.Post;
@@ -21,7 +21,7 @@ public class TestEndpoints {
 
     record AThing(String someProperty) {}
 
-    @Endpoint("prefix")
+    @HttpEndpoint("prefix")
     public static class TestEndpoint {
 
         public void nonHttpEndpointMethod() {
@@ -59,7 +59,7 @@ public class TestEndpoints {
     }
 
     @Acl(deny = @Acl.Matcher(principal = Acl.Principal.ALL))
-    @Endpoint("acls")
+    @HttpEndpoint("acls")
     public static class TestEndpointAcls {
 
         @Get("/no-acl")
@@ -83,7 +83,7 @@ public class TestEndpoints {
 
     }
 
-    @Endpoint("invalid-acl")
+    @HttpEndpoint("invalid-acl")
     public static class TestEndpointInvalidAcl {
         @Get("/invalid")
         @Acl(allow = @Acl.Matcher(service = "*", principal = Acl.Principal.INTERNET))

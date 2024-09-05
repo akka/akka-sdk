@@ -11,13 +11,13 @@ import org.scalatest.wordspec.AnyWordSpec
 class EndpointsDescriptorSpec extends AnyWordSpec with Matchers {
 
   "akka-javasdk-components.conf" should {
-    "contain endpoints components" in {
+    "contain http endpoints components" in {
       val config = ConfigFactory.load("META-INF/akka-javasdk-components.conf")
 
-      val actionComponents = config.getStringList("akka.javasdk.components.endpoint")
-      actionComponents.size() shouldBe 2
-      actionComponents should contain("com.example.HelloController")
-      actionComponents should contain("com.example.UserRegistryController")
+      val endpointComponents = config.getStringList("akka.javasdk.components.http-endpoint")
+      endpointComponents.size() shouldBe 2
+      endpointComponents should contain("com.example.HelloController")
+      endpointComponents should contain("com.example.UserRegistryController")
     }
   }
 }

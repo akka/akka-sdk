@@ -2,7 +2,7 @@ package com.example.api;
 
 import akka.http.javadsl.model.HttpResponse;
 import akka.javasdk.annotations.http.Delete;
-import akka.javasdk.annotations.http.Endpoint;
+import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.annotations.http.Put;
@@ -12,7 +12,7 @@ import com.example.application.CounterEntity;
 
 import java.util.concurrent.CompletionStage;
 
-@Endpoint("/counter")
+@HttpEndpoint("/counter")
 public class CounterEndpoint {
 
   private final ComponentClient componentClient;

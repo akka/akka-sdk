@@ -4,14 +4,14 @@ import akka.javasdk.http.HttpException;
 import com.example.api.ShoppingCartDTO.LineItemDTO;
 import akka.javasdk.Metadata;
 import akka.javasdk.annotations.http.Delete;
-import akka.javasdk.annotations.http.Endpoint;
+import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
 
 import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 
-@Endpoint("/carts")
+@HttpEndpoint("/carts")
 public class ShoppingCartController {
   // end::forward-headers[]
 

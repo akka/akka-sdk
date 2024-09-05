@@ -1,6 +1,6 @@
 package customer.api;
 
-import akka.javasdk.annotations.http.Endpoint;
+import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.annotations.http.Put;
@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.CompletionStage;
 
-@Endpoint("/customer")
+@HttpEndpoint("/customer")
 public class CustomerEndpoint {
 
     private static final Logger logger = LoggerFactory.getLogger(CustomerEndpoint.class);

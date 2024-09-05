@@ -1,7 +1,7 @@
 package com.example.fibonacci.api;
 
 import akka.http.javadsl.model.HttpResponse;
-import akka.javasdk.annotations.http.Endpoint;
+import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
@@ -16,7 +16,7 @@ import java.util.concurrent.CompletionStage;
 
 import static java.util.concurrent.CompletableFuture.completedStage;
 
-@Endpoint("/fibonacci")
+@HttpEndpoint("/fibonacci")
 public class FibonacciEndpoint {
 
     private static final Logger logger = LoggerFactory.getLogger(FibonacciEndpoint.class);

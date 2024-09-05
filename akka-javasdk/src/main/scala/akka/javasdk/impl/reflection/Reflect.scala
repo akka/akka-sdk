@@ -5,7 +5,7 @@
 package akka.javasdk.impl.reflection
 
 import akka.annotation.InternalApi
-import akka.javasdk.annotations.http.Endpoint
+import akka.javasdk.annotations.http.HttpEndpoint
 import akka.javasdk.client.ComponentClient
 import akka.javasdk.consumer.Consumer
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
@@ -58,7 +58,7 @@ private[impl] object Reflect {
   }
 
   def isRestEndpoint(cls: Class[_]): Boolean =
-    cls.getAnnotation(classOf[Endpoint]) != null
+    cls.getAnnotation(classOf[HttpEndpoint]) != null
 
   def isEntity(cls: Class[_]): Boolean =
     classOf[EventSourcedEntity[_, _]].isAssignableFrom(cls) ||
