@@ -70,6 +70,18 @@ public class ViewTestModels {
     }
   }
 
+  @ComponentId("view_query_with_too_many_arguments")
+  public static class ViewQueryWithTooManyArguments extends View {
+
+    @Consume.FromKeyValueEntity(UserEntity.class)
+    public static class UserUpdater extends TableUpdater<User> {}
+
+    @Query("SELECT * FROM users WHERE email = :email")
+    public QueryEffect<User> getUser(String email, String sthElse) {
+      return queryResult();
+    }
+  }
+
   @ComponentId("users_view")
   public static class ViewWithNoTableUpdater extends View {
 

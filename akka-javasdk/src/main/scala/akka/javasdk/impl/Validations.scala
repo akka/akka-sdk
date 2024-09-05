@@ -5,11 +5,12 @@
 package akka.javasdk.impl
 
 import akka.javasdk.impl.reflection.Reflect
-
 import java.lang.reflect.AnnotatedElement
 import java.lang.reflect.Method
 import java.lang.reflect.ParameterizedType
+
 import scala.reflect.ClassTag
+
 import akka.javasdk.annotations.Consume.FromKeyValueEntity
 import akka.javasdk.annotations.Produce.ServiceStream
 import ComponentDescriptorFactory.eventSourcedEntitySubscription
@@ -30,6 +31,10 @@ import akka.javasdk.annotations.Query
 import akka.javasdk.annotations.Table
 import akka.javasdk.consumer.Consumer
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
+import akka.javasdk.impl.ComponentDescriptorFactory.hasESEffectOutput
+import akka.javasdk.impl.ComponentDescriptorFactory.hasKVEEffectOutput
+import akka.javasdk.impl.ComponentDescriptorFactory.hasQueryEffectOutput
+import akka.javasdk.impl.ComponentDescriptorFactory.hasTimedActionEffectOutput
 import akka.javasdk.keyvalueentity.KeyValueEntity
 import akka.javasdk.timedaction.TimedAction
 import akka.javasdk.view.View
@@ -121,7 +126,8 @@ private[javasdk] object Validations {
     when[EventSourcedEntity[_, _]](component) {
       eventSourcedEntityEventMustBeSealed(component) ++
       eventSourcedCommandHandlersMustBeUnique(component) ++
-      mustHaveNonEmptyComponentId(component)
+      mustHaveNonEmptyComponentId(component) ++
+      commandHandlerArityShouldBeZeroOrOne(component, hasESEffectOutput)
     }
 
   private def eventSourcedEntityEventMustBeSealed(component: Class[_]): Validation = {
@@ -145,7 +151,8 @@ private[javasdk] object Validations {
 
   def validateValueEntity(component: Class[_]): Validation = when[KeyValueEntity[_]](component) {
     valueEntityCommandHandlersMustBeUnique(component) ++
-    mustHaveNonEmptyComponentId(component)
+    mustHaveNonEmptyComponentId(component) ++
+    commandHandlerArityShouldBeZeroOrOne(component, hasKVEEffectOutput)
   }
 
   def valueEntityCommandHandlersMustBeUnique(component: Class[_]): Validation = {
@@ -185,7 +192,8 @@ private[javasdk] object Validations {
   private def validateTimedAction(component: Class[_]): Validation = {
     when[TimedAction](component) {
       actionValidation(component) ++
-      mustHaveNonEmptyComponentId(component)
+      mustHaveNonEmptyComponentId(component) ++
+      commandHandlerArityShouldBeZeroOrOne(component, hasTimedActionEffectOutput)
     }
   }
 
@@ -211,6 +219,7 @@ private[javasdk] object Validations {
       viewMustHaveAtLeastOneViewTableUpdater(component) ++
       viewMustHaveAtLeastOneQueryMethod(component) ++
       viewQueriesMustReturnEffect(component) ++
+      commandHandlerArityShouldBeZeroOrOne(component, hasQueryEffectOutput) ++
       viewMultipleTableUpdatersMustHaveTableAnnotations(tableUpdaters) ++
       tableUpdaters
         .map(updaterClass =>
@@ -220,6 +229,20 @@ private[javasdk] object Validations {
         .foldLeft(Valid: Validation)(_ ++ _)
       // FIXME query annotated return type should be effect
     }
+
+  private def commandHandlerArityShouldBeZeroOrOne(
+      component: Class[_],
+      methodPredicate: Method => Boolean): Validation = {
+    component.getMethods.toIndexedSeq
+      .filter(methodPredicate)
+      .filter(_.getParameters.length > 1)
+      .foldLeft(Valid: Validation) { (validation, methodWithWrongArity) =>
+        validation ++ Validation(errorMessage(
+          component,
+          s"Method [${methodWithWrongArity.getName}] must have zero or one argument. If you need to pass more arguments, wrap them in a class."))
+      }
+
+  }
 
   private def viewMustHaveAtLeastOneViewTableUpdater(component: Class[_]) =
     when(component.getDeclaredClasses.count(Reflect.isViewTableUpdater) < 1) {

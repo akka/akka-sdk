@@ -12,10 +12,10 @@ import akka.javasdk.impl.reflection.CombinedSubscriptionServiceMethod
 import akka.javasdk.impl.reflection.KalixMethod
 import akka.javasdk.impl.reflection.NameGenerator
 import akka.javasdk.impl.reflection.Reflect
-
 import java.lang.reflect.AnnotatedElement
 import java.lang.reflect.Method
 import java.lang.reflect.ParameterizedType
+
 import akka.javasdk.annotations.Consume.FromEventSourcedEntity
 import akka.javasdk.annotations.Consume.FromKeyValueEntity
 import akka.javasdk.annotations.Consume.FromServiceStream
@@ -24,8 +24,10 @@ import akka.javasdk.annotations.DeleteHandler
 import akka.javasdk.annotations.Produce.ServiceStream
 import akka.javasdk.annotations.Produce.ToTopic
 import akka.javasdk.consumer.Consumer
+import akka.javasdk.keyvalueentity.KeyValueEntity
 import akka.javasdk.timedaction.TimedAction
 import akka.javasdk.view.TableUpdater
+import akka.javasdk.view.View
 import kalix.DirectDestination
 import kalix.DirectSource
 import kalix.EventDestination
@@ -69,20 +71,30 @@ private[impl] object ComponentDescriptorFactory {
   def topicSubscription(clazz: Class[_]): Option[FromTopic] =
     clazz.getAnnotationOption[FromTopic]
 
-  def hasActionOutput(javaMethod: Method): Boolean = {
-    if (javaMethod.isPublic) {
-      javaMethod.getReturnType.isAssignableFrom(classOf[TimedAction.Effect])
-    } else {
-      false
-    }
-  }
-
   def hasConsumerOutput(javaMethod: Method): Boolean = {
     if (javaMethod.isPublic) {
       javaMethod.getReturnType.isAssignableFrom(classOf[Consumer.Effect])
     } else {
       false
     }
+  }
+
+  def hasQueryEffectOutput(javaMethod: Method): Boolean = {
+    javaMethod.isPublic && javaMethod.getReturnType == classOf[View.QueryEffect[_]]
+  }
+
+  def hasESEffectOutput(javaMethod: Method): Boolean = {
+    javaMethod.isPublic &&
+    (javaMethod.getReturnType == classOf[EventSourcedEntity.Effect[_]]
+    || javaMethod.getReturnType == classOf[EventSourcedEntity.ReadOnlyEffect[_]])
+  }
+
+  def hasKVEEffectOutput(javaMethod: Method): Boolean = {
+    javaMethod.isPublic && javaMethod.getReturnType == classOf[KeyValueEntity.Effect[_]]
+  }
+
+  def hasTimedActionEffectOutput(javaMethod: Method): Boolean = {
+    javaMethod.isPublic && javaMethod.getReturnType == classOf[TimedAction.Effect]
   }
 
   def hasUpdateEffectOutput(javaMethod: Method): Boolean = {

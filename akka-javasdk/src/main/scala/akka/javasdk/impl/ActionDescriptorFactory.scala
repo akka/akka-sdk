@@ -7,9 +7,9 @@ package akka.javasdk.impl
 import akka.javasdk.impl.reflection.ActionHandlerMethod
 import akka.javasdk.impl.reflection.KalixMethod
 import akka.javasdk.impl.reflection.NameGenerator
-import ComponentDescriptorFactory.hasActionOutput
 import akka.annotation.InternalApi
 import akka.javasdk
+import akka.javasdk.impl.ComponentDescriptorFactory.hasTimedActionEffectOutput
 
 /**
  * INTERNAL API
@@ -25,7 +25,7 @@ private[impl] object ActionDescriptorFactory extends ComponentDescriptorFactory 
     val serviceName = nameGenerator.getName(component.getSimpleName)
 
     val commandHandlerMethods = component.getDeclaredMethods
-      .filter(hasActionOutput)
+      .filter(hasTimedActionEffectOutput)
       .map { method =>
         val servMethod = ActionHandlerMethod(component, method)
         KalixMethod(servMethod, entityIds = Seq.empty)

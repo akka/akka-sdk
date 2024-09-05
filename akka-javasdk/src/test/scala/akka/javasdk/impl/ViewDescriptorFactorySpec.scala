@@ -7,8 +7,8 @@ package akka.javasdk.impl
 import akka.javasdk.impl.InvalidComponentException
 import akka.javasdk.impl.Validations
 import akka.javasdk.impl.ViewDescriptorFactory
-
 import scala.jdk.CollectionConverters.CollectionHasAsScala
+
 import com.google.protobuf.Descriptors.FieldDescriptor
 import com.google.protobuf.Descriptors.FieldDescriptor.JavaType
 import com.google.protobuf.timestamp.Timestamp
@@ -45,6 +45,7 @@ import ViewTestModels.ViewWithServiceLevelAcl
 import ViewTestModels.ViewWithServiceLevelJWT
 import ViewTestModels.ViewWithTwoQueries
 import ViewTestModels.ViewWithoutSubscription
+import akka.javasdk.testmodels.view.ViewTestModels.ViewQueryWithTooManyArguments
 import org.scalatest.wordspec.AnyWordSpec
 
 class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuite {
@@ -137,6 +138,13 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
       intercept[InvalidComponentException] {
         Validations.validate(classOf[ViewWithEmptyComponentIdAnnotation]).failIfInvalid
       }.getMessage should include("@ComponentId name is empty, must be a non-empty string.")
+    }
+
+    "not allow View with a query with more than 1 param" in {
+      intercept[InvalidComponentException] {
+        Validations.validate(classOf[ViewQueryWithTooManyArguments]).failIfInvalid
+      }.getMessage should include(
+        "Method [getUser] must have zero or one argument. If you need to pass more arguments, wrap them in a class.")
     }
 
     "not allow method level handle deletes without class level subscription" in {
