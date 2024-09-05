@@ -18,18 +18,12 @@ public class CustomersByCity extends View {
   @Consume.FromKeyValueEntity(CustomerEntity.class)
   public static class Customers extends TableUpdater<Customer> {}
 
-  public record QueryParameters(List<String> cities) {
-    public static QueryParameters of(String... cities) {
-      return new QueryParameters(List.of(cities));
-    }
-  }
-
   @Query("""
     SELECT * AS customers
         FROM customers_by_city
       WHERE address.city = ANY(:cities)
     """)
-  public QueryEffect<CustomerList> getCustomers(QueryParameters params) {
+  public QueryEffect<CustomerList> getCustomers(List<String> cities) {
     return queryResult();
   }
 }

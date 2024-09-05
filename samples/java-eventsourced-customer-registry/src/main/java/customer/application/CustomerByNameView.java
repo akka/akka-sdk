@@ -14,10 +14,8 @@ import customer.domain.CustomersList;
 @ComponentId("view_customers_by_name") // <1>
 public class CustomerByNameView extends View {
 
-  public record QueryParameters(String name) { }
-
   @Query("SELECT * as customers FROM customers_by_name WHERE name = :name")
-  public QueryEffect<CustomersList> getCustomers(QueryParameters params) {
+  public QueryEffect<CustomersList> getCustomers(String name) {
     return queryResult();
   }
 

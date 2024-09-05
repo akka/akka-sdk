@@ -2,7 +2,6 @@ package store.view.joined;
 
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
-import store.view.QueryParameters;
 import store.view.StoreViewIntegrationTest;
 
 import java.util.List;
@@ -93,7 +92,7 @@ public class JoinedCustomerOrdersViewIntegrationTest extends StoreViewIntegratio
     return await(
       componentClient.forView()
         .method(JoinedCustomerOrdersView::get)
-        .invokeAsync(new QueryParameters(customerId))
+        .invokeAsync(customerId)
     ).orders();
 
   }

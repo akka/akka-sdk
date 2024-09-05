@@ -13,10 +13,8 @@ import akka.javasdk.view.View;
 @ComponentId("summary_customer_by_name")
 public class CustomerSummaryByName extends View {
 
-  public record QueryParameters(String name) { }
-
   @Query("SELECT * FROM customers WHERE name = :name")
-  public QueryEffect<CustomerSummary> getCustomer(QueryParameters params) { return queryResult(); }
+  public QueryEffect<CustomerSummary> getCustomer(String name) { return queryResult(); }
 
   @Consume.FromKeyValueEntity(value = CustomerEntity.class)
   public static class Customers extends TableUpdater<CustomerSummary> {

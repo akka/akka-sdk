@@ -63,13 +63,13 @@ public class CustomerEndpoint {
   public CompletionStage<CustomersList> userByName(String name) {
     return componentClient.forView()
       .method(CustomerByNameView::getCustomers)
-      .invokeAsync(new CustomerByNameView.QueryParameters(name));
+      .invokeAsync(name);
   }
 
   @Get("/by-email/{name}")
   public CompletionStage<CustomersList> userByEmail(String email) {
     return componentClient.forView()
       .method(CustomerByEmailView::getCustomers)
-      .invokeAsync(new CustomerByEmailView.QueryParameters(email));
+      .invokeAsync(email);
   }
 }

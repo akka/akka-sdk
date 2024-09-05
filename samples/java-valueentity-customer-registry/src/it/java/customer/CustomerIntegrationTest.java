@@ -12,6 +12,7 @@ import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -56,7 +57,7 @@ public class CustomerIntegrationTest extends TestKitSupport {
               componentClient
                 .forView()
                 .method(CustomersByCity::getCustomers)
-                .invokeAsync(CustomersByCity.QueryParameters.of("Nazare", "Lisbon"))
+                .invokeAsync(List.of("Nazare", "Lisbon"))
             );
           assertThat(response.customers()).containsOnly(johanna, joe);
         });

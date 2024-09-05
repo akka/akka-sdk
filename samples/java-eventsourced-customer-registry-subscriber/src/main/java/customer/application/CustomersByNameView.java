@@ -46,12 +46,9 @@ public class CustomersByNameView extends View {
     }
   }
 
-  public record QueryParameters(String name) {
-  }
-  
   @Query("SELECT * as customers FROM customers_by_name WHERE name = :name")
   @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
-  public QueryEffect<CustomersList> findByName(QueryParameters params) {
+  public QueryEffect<CustomersList> findByName(String name) {
     return queryResult();
   }
 

@@ -16,14 +16,12 @@ public class CustomersResponseByName extends View {
   @Consume.FromKeyValueEntity(CustomerEntity.class)
   public static class Customers extends TableUpdater<Customer> { }
 
-  public record QueryParameters(String name) { }
-
   @Query("""
     SELECT * AS customers
       FROM customers_by_name
       WHERE name = :name
     """) // <2>
-  public QueryEffect<CustomerList> getCustomers(QueryParameters params) { // <4>
+  public QueryEffect<CustomerList> getCustomers(String name) { // <4>
     return queryResult();
   }
 }

@@ -2,7 +2,6 @@ package store.view.structured;
 
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
-import store.view.QueryParameters;
 import store.view.StoreViewIntegrationTest;
 
 import java.util.concurrent.TimeUnit;
@@ -83,7 +82,7 @@ public class StructuredCustomerOrdersViewIntegrationTest extends StoreViewIntegr
     return await(
       componentClient.forView()
         .method(StructuredCustomerOrdersView::get)
-        .invokeAsync(new QueryParameters(customerId))
+        .invokeAsync(customerId)
     );
   }
 

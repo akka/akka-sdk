@@ -14,10 +14,8 @@ public class CustomerByEmailView extends View { //  <3>
   @Consume.FromKeyValueEntity(CustomerEntity.class)// <2>
   public static class CustomersByEmail extends TableUpdater<Customer> { }
 
-  public record QueryParameters(String email) {
-  }
   @Query("SELECT * FROM customers_by_email WHERE email = :email") // <4>
-  public QueryEffect<Customer> getCustomer(QueryParameters params) {
+  public QueryEffect<Customer> getCustomer(String email) {
     return queryResult(); // <5>
   }
 }

@@ -49,10 +49,8 @@ public class UsersByCountryView extends View {
 
   public record UserList(List<UserView> users) { }
 
-  public record QueryParameters(String country) { }
-
   @Query("SELECT * AS users FROM users_by_country WHERE country = :country")
-  public QueryEffect<UserList> getUserByCountry(QueryParameters params) {
+  public QueryEffect<UserList> getUserByCountry(String country) {
     return queryResult();
   }
 

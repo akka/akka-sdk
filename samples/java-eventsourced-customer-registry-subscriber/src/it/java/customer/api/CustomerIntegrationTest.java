@@ -75,7 +75,7 @@ public class CustomerIntegrationTest extends CustomerRegistryIntegrationTest {
         String name = await(
           componentClient.forView()
             .method(CustomersByNameView::findByName)
-            .invokeAsync(new CustomersByNameView.QueryParameters("Johanna"))
+            .invokeAsync("Johanna")
         ).customers().stream().findFirst().get().name();
 
         assertThat(name).isEqualTo("Johanna");

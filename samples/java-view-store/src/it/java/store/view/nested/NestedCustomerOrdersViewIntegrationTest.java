@@ -2,7 +2,6 @@ package store.view.nested;
 
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
-import store.view.QueryParameters;
 import store.view.StoreViewIntegrationTest;
 
 import java.util.concurrent.TimeUnit;
@@ -86,7 +85,7 @@ public class NestedCustomerOrdersViewIntegrationTest extends StoreViewIntegratio
     return await(
       componentClient.forView()
         .method(NestedCustomerOrdersView::get)
-        .invokeAsync(new QueryParameters(customerId)));
+        .invokeAsync(customerId));
   }
 
   private CustomerOrders awaitCustomerOrders(

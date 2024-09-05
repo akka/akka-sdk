@@ -12,7 +12,6 @@ import store.order.api.OrderEntity;
 import store.order.domain.Order;
 import store.product.api.ProductEntity;
 import store.product.domain.ProductEvent;
-import store.view.QueryParameters;
 import store.view.model.Customer;
 import store.view.model.Product;
 
@@ -29,7 +28,7 @@ public class NestedCustomerOrdersView extends View {
       WHERE customers.customerId = :customerId
       ORDER BY orders.createdTimestamp
       """)
-  public QueryEffect<CustomerOrders> get(QueryParameters params) { // <2>
+  public QueryEffect<CustomerOrders> get(String customerId) { // <2>
     return queryResult();
   }
   // end::query[]

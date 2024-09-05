@@ -82,7 +82,7 @@ public class CustomerIntegrationTest extends TestKitSupport {
           await(
             componentClient.forView()
               .method(CustomersByNameView::getCustomers)
-              .invokeAsync(new CustomersByNameView.QueryParameters("Foo"))
+              .invokeAsync("Foo")
           ).customers().stream().findFirst().get().name(),
             new IsEqual("Foo")
         );
@@ -101,7 +101,7 @@ public class CustomerIntegrationTest extends TestKitSupport {
             await(
               componentClient.forView()
                 .method(CustomerByEmailView::getCustomer)
-                .invokeAsync(new CustomerByEmailView.QueryParameters("bar@example.com"))
+                .invokeAsync("bar@example.com")
             ).name(),
             new IsEqual("Bar")
         );

@@ -42,7 +42,7 @@ public class CustomersByNameViewIntegrationTest extends CustomerRegistryIntegrat
           await(
             componentClient.forView()
               .method(CustomersByNameView::findByName)
-              .invokeAsync(new CustomersByNameView.QueryParameters(created1.name()))
+              .invokeAsync(created1.name())
           ).customers().stream().findFirst().get();
 
         assertThat(customer).isEqualTo(new Customer("b", created1.email(), created1.name()));
@@ -51,7 +51,7 @@ public class CustomersByNameViewIntegrationTest extends CustomerRegistryIntegrat
           await(
             componentClient.forView()
               .method(CustomersByEmailView::findByEmail)
-              .invokeAsync(new CustomersByEmailView.QueryParameters(created2.email()))
+              .invokeAsync(created2.email())
           ).customers().stream().findFirst().get();
 
         assertThat(customer2).isEqualTo(new Customer("a", created2.email(), created2.name()));

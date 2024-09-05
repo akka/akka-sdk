@@ -26,11 +26,9 @@ public class CustomersByNameView extends View {
 
   public record Customers(Collection<CustomerSummary> customers) {
   }
-  public record QueryParameters(String name) {
-  }
 
   @Query("SELECT * AS customers FROM customers_by_name WHERE name = :name")
-  public QueryEffect<Customers> getCustomers(QueryParameters params) {
+  public QueryEffect<Customers> getCustomers(String name) {
     return queryResult();
   }
 }

@@ -161,6 +161,6 @@ public class UserEndpoint {
     return
       client.forView()
         .method(UsersByCountryView::getUserByCountry)
-        .invokeAsync(new UsersByCountryView.QueryParameters(country));
+        .invokeAsync(country);
   }
 }

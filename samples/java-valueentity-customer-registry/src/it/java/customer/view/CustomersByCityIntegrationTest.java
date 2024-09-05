@@ -8,6 +8,8 @@ import akka.javasdk.testkit.EventingTestKit.IncomingMessages;
 import akka.javasdk.testkit.TestKit;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -46,7 +48,7 @@ class CustomersResponseByCityIntegrationTest extends TestKitSupport {
             await(
               componentClient.forView()
                 .method(CustomersByCity::getCustomers) // <4>
-                .invokeAsync(CustomersByCity.QueryParameters.of("Porto", "London"))
+                .invokeAsync(List.of("Porto", "London"))
             );
 
           assertThat(customersResponse.customers()).containsOnly(johanna, bob);

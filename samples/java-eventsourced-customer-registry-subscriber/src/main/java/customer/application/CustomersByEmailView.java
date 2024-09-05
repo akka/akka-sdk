@@ -43,12 +43,9 @@ public class CustomersByEmailView extends View {
     }
   }
 
-  public record QueryParameters(String email) {
-  }
-
   @Query("SELECT * AS customers FROM customers_by_email WHERE email = :email")
   @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
-  public QueryEffect<CustomersList> findByEmail(QueryParameters params) {
+  public QueryEffect<CustomersList> findByEmail(String email) {
     return queryResult();
   }
 
