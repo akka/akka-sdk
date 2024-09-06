@@ -49,9 +49,9 @@ attributes:
 
 apidocs:
 	mkdir -p "${java_managed_attachments}"
-	cd .. && sbt java-sdk/doc java-sdk-testkit/doc
-	rsync -a ../sdk/java-sdk/target/api/ "${java_managed_attachments}/api/"
-	rsync -a ../sdk/java-sdk-testkit/target/api/ "${java_managed_attachments}/testkit/"
+	cd .. && sbt akka-javasdk/doc akka-javasdk-testkit/doc
+	rsync -a ../akka-javasdk/target/api/ "${java_managed_attachments}/api/"
+	rsync -a ../akka-javasdk-testkit/target/api/ "${java_managed_attachments}/testkit/"
 	bin/version.sh > "${java_managed_attachments}/latest-version.txt"
 
 examples:
