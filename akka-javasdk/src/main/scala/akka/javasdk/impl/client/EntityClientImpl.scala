@@ -5,6 +5,7 @@
 package akka.javasdk.impl.client
 
 import java.util.Optional
+
 import scala.concurrent.ExecutionContext
 import scala.jdk.FutureConverters.FutureOps
 import scala.util.Failure
@@ -16,6 +17,7 @@ import akka.http.scaladsl.model.ContentTypes
 import akka.japi.function
 import akka.javasdk.JsonSupport
 import akka.javasdk.Metadata
+import akka.javasdk.Result
 import akka.javasdk.client.ComponentDeferredMethodRef
 import akka.javasdk.client.ComponentDeferredMethodRef1
 import akka.javasdk.client.ComponentInvokeOnlyMethodRef
@@ -114,7 +116,12 @@ private[impl] sealed abstract class EntityClientImpl(
               .map { reply =>
                 // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
                 val returnType = Reflect.getReturnType(declaringClass, method)
-                JsonSupport.parseBytes[R](reply.payload.toArrayUnsafe(), returnType.asInstanceOf[Class[R]])
+                if (returnType == classOf[Result[_, _]]) {
+                  val types = Reflect.getResultReturnTypes(method)
+                  JsonSupport.parseResultBytes(reply.payload.toArrayUnsafe(), types._1, types._2).asInstanceOf[R]
+                } else {
+                  JsonSupport.parseBytes[R](reply.payload.toArrayUnsafe(), returnType.asInstanceOf[Class[R]])
+                }
               }
               .asJava
           })

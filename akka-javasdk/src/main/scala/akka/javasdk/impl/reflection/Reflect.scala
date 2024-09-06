@@ -26,6 +26,8 @@ import java.util.Optional
 import scala.annotation.tailrec
 import scala.reflect.ClassTag
 
+import akka.javasdk.Result
+
 /**
  * Class extension to facilitate some reflection common usages.
  *
@@ -76,7 +78,12 @@ private[impl] object Reflect {
   def getReturnType[R](declaringClass: Class[_], method: Method): Class[R] = {
     if (isAction(declaringClass) || isEntity(declaringClass) || isWorkflow(declaringClass)) {
       // here we are expecting a wrapper in the form of an Effect
-      method.getGenericReturnType.asInstanceOf[ParameterizedType].getActualTypeArguments.head.asInstanceOf[Class[R]]
+      val returnType = method.getGenericReturnType.asInstanceOf[ParameterizedType].getActualTypeArguments.head
+      returnType match {
+        case parameterizedType: ParameterizedType if parameterizedType.getRawType == classOf[Result[_, _]] =>
+          classOf[Result[_, _]].asInstanceOf[Class[R]]
+        case other => other.asInstanceOf[Class[R]]
+      }
     } else if (isView(declaringClass)) {
       // maybe later we could support Optional for other types of components
       val returnType = method.getGenericReturnType.asInstanceOf[ParameterizedType].getActualTypeArguments.head
@@ -89,6 +96,12 @@ private[impl] object Reflect {
       // in other cases we expect a View query method, but declaring class may not extend View[_] class for join views
       method.getReturnType.asInstanceOf[Class[R]]
     }
+  }
+
+  def getResultReturnTypes(method: Method): (Class[_], Class[_]) = {
+    val resultReturnType = method.getGenericReturnType.asInstanceOf[ParameterizedType].getActualTypeArguments.head
+    val arguments = resultReturnType.asInstanceOf[ParameterizedType].getActualTypeArguments
+    (arguments.head.asInstanceOf[Class[_]], arguments(1).asInstanceOf[Class[_]])
   }
 
   def isReturnTypeOptional[R](method: Method): Boolean = {

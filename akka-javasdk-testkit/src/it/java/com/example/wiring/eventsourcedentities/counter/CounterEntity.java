@@ -4,6 +4,7 @@
 
 package com.example.wiring.eventsourcedentities.counter;
 
+import akka.javasdk.Result;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import org.slf4j.Logger;
@@ -12,6 +13,9 @@ import org.slf4j.LoggerFactory;
 @ComponentId("counter-entity")
 public class CounterEntity extends EventSourcedEntity<Counter, CounterEvent> {
 
+  public enum Error{
+    TOO_HIGH, TOO_LOW
+  }
 
   private final Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -29,6 +33,18 @@ public class CounterEntity extends EventSourcedEntity<Counter, CounterEvent> {
       currentState(),
       value);
     return effects().persist(new CounterEvent.ValueIncreased(value)).thenReply(Counter::value);
+  }
+
+  public Effect<Result<Error, Counter>> increaseWithValidation(Integer value) {
+    if (value <= 0){
+      return effects().reply(new Result.Error<>(CounterEntity.Error.TOO_LOW));
+    } else if (value > 10000) {
+      return effects().reply(new Result.Error<>(CounterEntity.Error.TOO_HIGH));
+    }else {
+      return effects()
+        .persist(new CounterEvent.ValueIncreased(value))
+        .thenReply(Result.Success::new);
+    }
   }
 
 

@@ -196,6 +196,18 @@ public final class JsonSupport {
     return objectMapper.readValue(bytes, valueClass);
   }
 
+  public static Result<Object, Object> parseResultBytes(byte[] bytes, Class<?> errorClass, Class<?> okClass) throws IOException {
+    JsonNode jsonNode = objectMapper.readTree(bytes);
+    String type = jsonNode.get("@type").asText();
+    if ("S".equals(type)) {
+      return new Result.Success(objectMapper.treeToValue(jsonNode.get("value"), okClass));
+    } else if ("E".equals(type)) {
+      return new Result.Error(objectMapper.treeToValue(jsonNode.get("value"), errorClass));
+    } else {
+      throw new IllegalStateException("Unknown Result type: " + type);
+    }
+  }
+
   private static <T> IllegalArgumentException jsonProcessingException(Class<T> valueClass, Any any, JsonProcessingException e) {
     return new IllegalArgumentException(
         "JSON with type url ["

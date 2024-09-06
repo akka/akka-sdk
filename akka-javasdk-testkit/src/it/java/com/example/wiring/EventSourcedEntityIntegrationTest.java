@@ -4,7 +4,9 @@
 
 package com.example.wiring;
 
+import akka.javasdk.Result;
 import akka.javasdk.testkit.TestKitSupport;
+import com.example.wiring.eventsourcedentities.counter.Counter;
 import com.example.wiring.eventsourcedentities.counter.CounterEntity;
 import akka.javasdk.client.EventSourcedEntityClient;
 import org.awaitility.Awaitility;
@@ -34,6 +36,30 @@ public class EventSourcedEntityIntegrationTest extends TestKitSupport {
 
     int counterGet = getCounter(client);
     Assertions.assertEquals(200, counterGet);
+  }
+
+  @Test
+  public void verifyCounterResultResponse() {
+
+    var client = componentClient.forEventSourcedEntity("testing");
+
+    Result<CounterEntity.Error, Counter> result = await(client
+      .method(CounterEntity::increaseWithValidation)
+      .invokeAsync(-10));
+
+    assertThat(result.error()).isEqualTo(CounterEntity.Error.TOO_LOW);
+
+    Result<CounterEntity.Error, Counter> result2 = await(client
+      .method(CounterEntity::increaseWithValidation)
+      .invokeAsync(1000001));
+
+    assertThat(result2.error()).isEqualTo(CounterEntity.Error.TOO_HIGH);
+
+    Result<CounterEntity.Error, Counter> result3 = await(client
+      .method(CounterEntity::increaseWithValidation)
+      .invokeAsync(123));
+
+    assertThat(result3.success()).isEqualTo(new Counter(123));
   }
 
   @Test

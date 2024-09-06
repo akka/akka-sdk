@@ -4,11 +4,9 @@
 
 package akka.javasdk.impl
 
-import akka.javasdk.impl.JsonMessageCodec
-import akka.javasdk.impl.StrictJsonMessageCodec
-
 import java.lang
 import java.util
+
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.IntNode
