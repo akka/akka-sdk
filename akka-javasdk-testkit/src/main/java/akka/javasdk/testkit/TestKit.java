@@ -45,6 +45,7 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
@@ -500,6 +501,9 @@ public class TestKit {
     try {
       // FIXME should we really pass all these properties?
       final Map<String, Object> runtimeOptions = new HashMap<>();
+
+      // randomize the database name to avoid conflicts
+      runtimeOptions.put("akka.persistence.r2dbc.connection-factory.database", UUID.randomUUID().toString());
       runtimeOptions.put("kalix.proxy.acl.local-dev.self-deployment-name", settings.serviceName);
       runtimeOptions.put("kalix.proxy.acl.enabled", settings.aclEnabled);
       runtimeOptions.put("kalix.proxy.view.features.all", settings.advancedViews);
