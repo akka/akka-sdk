@@ -185,7 +185,7 @@
                                                         <!-- serialization/jackson -->
                                                         <exclude>com.fasterxml.jackson.core:*</exclude>
                                                         <exclude>com.fasterxml.jackson.datatype:*</exclude>
-                                                        <exclude>io.kalix:akka-platform-sdk-spi_2.13</exclude>
+                                                        <exclude>io.akka:akka-sdk-spi_2.13</exclude>
                                                     </excludes>
                                                 </dependencySet>
                                             </dependencySets>
