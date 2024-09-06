@@ -51,14 +51,14 @@ public abstract class TestKitSupport extends AsyncCallsSupport {
   /**
    * Override this to use custom settings for an integration test
    */
-  protected TestKit.Settings kalixTestKitSettings() {
+  protected TestKit.Settings testKitSettings() {
     return TestKit.Settings.DEFAULT;
   }
 
   @BeforeAll
   public void beforeAll() {
     try {
-      testKit = (new TestKit(kalixTestKitSettings())).start();
+      testKit = (new TestKit(testKitSettings())).start();
       componentClient = testKit.getComponentClient();
       timerScheduler = testKit.getTimerScheduler();
       dependencyProvider = testKit.getDependencyContext();

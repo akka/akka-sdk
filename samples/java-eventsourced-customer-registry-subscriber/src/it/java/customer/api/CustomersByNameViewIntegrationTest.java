@@ -16,7 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class CustomersByNameViewIntegrationTest extends CustomerRegistryIntegrationTest {
 
   @Override
-  protected TestKit.Settings kalixTestKitSettings() {
+  protected TestKit.Settings testKitSettings() {
       return TestKit.Settings.DEFAULT.withAclEnabled()
               .withStreamIncomingMessages("customer-registry", "customer_events");
   }

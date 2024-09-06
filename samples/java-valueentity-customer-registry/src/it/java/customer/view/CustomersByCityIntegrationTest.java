@@ -18,7 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class CustomersResponseByCityIntegrationTest extends TestKitSupport {
 
   @Override
-  protected TestKit.Settings kalixTestKitSettings() {
+  protected TestKit.Settings testKitSettings() {
     return TestKit.Settings.DEFAULT
             .withKeyValueEntityIncomingMessages("customer"); // <1>
   }

@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 public abstract class StoreViewIntegrationTest extends TestKitSupport {
 
   @Override
-  protected TestKit.Settings kalixTestKitSettings() {
+  protected TestKit.Settings testKitSettings() {
     return TestKit.Settings.DEFAULT.withAdvancedViews();
   }
 

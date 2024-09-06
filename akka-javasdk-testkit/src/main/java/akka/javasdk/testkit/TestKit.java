@@ -570,15 +570,15 @@ public class TestKit {
           log.info("Runtime started");
           return CompletableFuture.completedStage("Ok");
         } else {
-          log.info("Waiting for kalix-runtime, current response code is {}", responseCode);
-          return CompletableFuture.failedFuture(new IllegalStateException("Kalix Runtime not started."));
+          log.info("Waiting for runtime, current response code is {}", responseCode);
+          return CompletableFuture.failedFuture(new IllegalStateException("Runtime not started."));
         }
       }), 10, Duration.ofSeconds(1), runtimeActorSystem);
 
       try {
         checkingProxyStatus.toCompletableFuture().get();
       } catch (InterruptedException | ExecutionException e) {
-        log.error("Failed to connect to Kalix Runtime with:", e);
+        log.error("Failed to connect to Runtime with:", e);
         throw new RuntimeException(e);
       }
 
@@ -598,7 +598,7 @@ public class TestKit {
       this.messageBuilder = new EventingTestKit.MessageBuilder(codec);
 
     } catch (Exception ex) {
-      throw new RuntimeException("Error while starting Kalix testkit", ex);
+      throw new RuntimeException("Error while starting testkit", ex);
     }
   }
 

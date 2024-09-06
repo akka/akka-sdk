@@ -29,7 +29,7 @@ public class EventingTestkitDestinationIntegrationTest extends TestKitSupport {
 
   private EventingTestKit.OutgoingMessages destination;
 
-  public TestKit.Settings kalixTestKitSettings() {
+  public TestKit.Settings testKitSettings() {
     return TestKit.Settings.DEFAULT
         .withAclEnabled()
         .withAdvancedViews()

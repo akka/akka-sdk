@@ -33,7 +33,7 @@ public abstract class CustomerRegistryIntegrationTest extends TestKitSupport {
     Config config = ConfigFactory.parseMap(confMap);
 
     try {
-      testKit = (new TestKit(kalixTestKitSettings())).start(config);
+      testKit = (new TestKit(testKitSettings())).start(config);
       componentClient = testKit.getComponentClient();
     } catch (Exception ex) {
       logger.error("Failed to startup Akka service", ex);

@@ -25,7 +25,7 @@ public class CounterIntegrationTest extends TestKitSupport { // <1>
   // tag::acls[]
   // tag::eventing-config[]
   @Override
-  protected TestKit.Settings kalixTestKitSettings() {
+  protected TestKit.Settings testKitSettings() {
     return TestKit.Settings.DEFAULT
             // end::eventing-config[]
             .withAclEnabled() // <1>

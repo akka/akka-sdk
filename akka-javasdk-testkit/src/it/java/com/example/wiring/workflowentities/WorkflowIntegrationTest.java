@@ -21,7 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class WorkflowIntegrationTest extends TestKitSupport {
 
     @Override
-    protected TestKit.Settings kalixTestKitSettings() {
+    protected TestKit.Settings testKitSettings() {
         return TestKit.Settings.DEFAULT
                 .withWorkflowTickInterval(ofMillis(500));
     }
