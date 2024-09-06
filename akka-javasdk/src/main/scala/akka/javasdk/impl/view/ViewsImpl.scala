@@ -16,6 +16,7 @@ import akka.javasdk.impl.ResolvedEntityFactory
 import akka.javasdk.impl.ResolvedServiceMethod
 import akka.javasdk.impl.Service
 import akka.javasdk.impl.ViewFactory
+import akka.javasdk.impl.telemetry.Telemetry
 import akka.javasdk.view.UpdateContext
 import akka.javasdk.view.ViewContext
 import akka.stream.scaladsl.Source
@@ -23,6 +24,9 @@ import kalix.protocol.{ view => pv }
 import com.google.protobuf.Descriptors
 import com.google.protobuf.any.{ Any => ScalaPbAny }
 import org.slf4j.LoggerFactory
+import org.slf4j.MDC
+
+import scala.jdk.OptionConverters._
 
 /**
  * INTERNAL API
@@ -98,6 +102,12 @@ final class ViewsImpl(system: ActorSystem, _services: Map[String, ViewService], 
               val commandName = receiveEvent.commandName
               val msg = service.messageCodec.decodeMessage(receiveEvent.payload.get)
               val metadata = MetadataImpl.of(receiveEvent.metadata.map(_.entries.toVector).getOrElse(Nil))
+              val addedToMDC = metadata.traceContext.traceId().toScala match {
+                case Some(traceId) =>
+                  MDC.put(Telemetry.TRACE_ID, traceId)
+                  true
+                case None => false
+              }
               val context = new UpdateContextImpl(commandName, metadata)
 
               val effect =
@@ -111,6 +121,8 @@ final class ViewsImpl(system: ActorSystem, _services: Map[String, ViewService], 
                       context,
                       s"View unexpected failure: ${error.getMessage}",
                       Some(error))
+                } finally {
+                  if (addedToMDC) MDC.remove(Telemetry.TRACE_ID)
                 }
 
               effect match {

@@ -245,6 +245,14 @@ private[javasdk] class MetadataImpl private (val entries: Seq[MetadataEntry]) ex
       .getInstance()
       .extract(OtelContext.current(), asMetadata(), metadataGetter)
 
+    override def traceId(): Optional[String] = {
+      Span.fromContext(asOpenTelemetryContext()).getSpanContext.getTraceId match {
+        case "00000000000000000000000000000000" =>
+          Optional.empty() // when no traceId returns io.opentelemetry.api.trace.TraceId.INVALID
+        case traceId => Some(traceId).asJava
+      }
+    }
+
     override def traceParent(): Optional[String] = getScala(TraceInstrumentation.TRACE_PARENT_KEY).asJava
 
     override def traceState(): Optional[String] = getScala(TraceInstrumentation.TRACE_STATE_KEY).asJava
