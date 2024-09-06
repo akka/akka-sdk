@@ -16,8 +16,8 @@
   <name>spring-view-store</name>
   <properties>
     <!-- For Docker setup see https://docs.kalix.io/projects/container-registries.html -->
-    <kalixContainerRegistry>kcr.us-east-1.kalix.io</kalixContainerRegistry>
-    <kalixOrganization>acme</kalixOrganization>
+    <container.registry>kcr.us-east-1.kalix.io</container.registry>
+    <organization>acme</organization>
   </properties>
 
   <dependencies>

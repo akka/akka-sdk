@@ -25,11 +25,11 @@
     <properties>
         <akka.javasdk.dev-mode.service-name>${project.artifactId}</akka.javasdk.dev-mode.service-name>
         <akka.runtime.dev-mode.http-port>9000</akka.runtime.dev-mode.http-port>
-        <!-- archetype need to override kalixContainerRegistry and kalixOrganization -->
-        <kalixContainerRegistry>kcr.us-east-1.kalix.io</kalixContainerRegistry>
-        <kalixOrganization>acme</kalixOrganization>
+        <!-- archetype need to override container.registry and organisation -->
+        <container.registry>kcr.us-east-1.kalix.io</container.registry>
+        <organization>acme</organization>
 
-        <dockerImage>${kalixContainerRegistry}/${kalixOrganization}/${project.artifactId}</dockerImage>
+        <dockerImage>${container.registry}/${organization}/${project.artifactId}</dockerImage>
         <dockerTag>${project.version}-${build.timestamp}</dockerTag>
 
         <!-- note that this image does never actually run the service, it's just a means for distribution -->
