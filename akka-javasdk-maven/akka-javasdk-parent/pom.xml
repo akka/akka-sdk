@@ -24,7 +24,7 @@
 
     <properties>
         <akka.javasdk.dev-mode.service-name>${project.artifactId}</akka.javasdk.dev-mode.service-name>
-        <akka.runtime.dev-mode.http-port>9000</akka.runtime.dev-mode.http-port>
+        <akka.javasdk.dev-mode.http-port>9000</akka.javasdk.dev-mode.http-port>
         <!-- archetype need to override container.registry and organisation -->
         <container.registry>kcr.us-east-1.kalix.io</container.registry>
         <organization>acme</organization>
@@ -41,7 +41,7 @@
         <maven.compiler.release>${java.version}</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <akka-javasdk.version>3.0.0-M3</akka-javasdk.version>
-        <kalix-runtime.version>1.1.41-6a806ef</kalix-runtime.version>
+        <kalix-runtime.version>1.1.41-dcb5d51</kalix-runtime.version>
         <skip.docker>false</skip.docker>
 
 
@@ -287,11 +287,11 @@
                                 <value>${akka.javasdk.dev-mode.service-name}</value>
                             </systemProperty>
                             <systemProperty>
-                                <key>akka.runtime.dev-mode.http-port</key>
-                                <value>${akka.runtime.dev-mode.http-port}</value>
+                                <key>akka.javasdk.dev-mode.http-port</key>
+                                <value>${akka.javasdk.dev-mode.http-port}</value>
                             </systemProperty>
                             <systemProperty>
-                                <key>akka.runtime.dev-mode.enabled</key>
+                                <key>akka.javasdk.dev-mode.enabled</key>
                                 <value>true</value>
                             </systemProperty>
                             <systemProperty>

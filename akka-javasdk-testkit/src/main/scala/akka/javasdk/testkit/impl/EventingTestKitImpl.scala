@@ -68,8 +68,8 @@ import scala.util.Success
 object EventingTestKitImpl {
 
   /**
-   * Start a pretend eventing backend, configure the proxy to use this through the 'akka.runtime.eventing.support'
-   * "grpc-backend" and the same host and port as this was started with.
+   * Start a pretend eventing backend, configure the runtime to use this through the
+   * 'akka.javasdk.dev-mode.eventing.support' "grpc-backend" and the same host and port as this was started with.
    *
    * The returned testkit can be used to expect and emit events to the proxy as if they came from an actual pub/sub
    * event backend.

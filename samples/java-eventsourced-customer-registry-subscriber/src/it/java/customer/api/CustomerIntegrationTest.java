@@ -35,9 +35,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 public class CustomerIntegrationTest extends CustomerRegistryIntegrationTest {
 
-  final private Duration timeout = Duration.of(5, SECONDS);
-  private Logger logger = LoggerFactory.getLogger(getClass());
-
 
   // this test relies on a source Akka service to which it subscribes. Such service should be running on :9000
   @Test

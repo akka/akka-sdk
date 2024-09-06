@@ -27,8 +27,10 @@ public abstract class CustomerRegistryIntegrationTest extends TestKitSupport {
   public void beforeAll() {
     Map<String, Object> confMap = new HashMap<>();
     // avoid conflicts with upstream service using port 9000
-    // FIXME why is this kalix.proxy.http-port and why doesn't akka.runtime.dev-mode.http-port=9000 work?
+    // note, we need to use kalix.proxy keys because this config object
+    // won't participate in the config transfer in the runtime
     confMap.put("kalix.proxy.http-port", "9001");
+    confMap.put("akka.javasdk.dev-mode.http-port", "9001");
 
     Config config = ConfigFactory.parseMap(confMap);
 
@@ -65,7 +67,7 @@ public abstract class CustomerRegistryIntegrationTest extends TestKitSupport {
         .pollInterval(5, TimeUnit.SECONDS)
         .atMost(5, TimeUnit.MINUTES)
         .until(() -> assertSourceServiceIsUp(httpClient),
-            new IsEqual(StatusCodes.NOT_FOUND)  // NOT_FOUND is a sign that the customer registry service is there
+            new IsEqual(StatusCodes.NOT_FOUND)  // NOT_FOUND is a sign that the service is there
         );
 
     return httpClient;

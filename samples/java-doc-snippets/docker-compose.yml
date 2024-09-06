@@ -2,7 +2,7 @@
 version: "3"
 services:
   kalix-runtime:
-    image: gcr.io/kalix-public/kalix-runtime:1.1.36
+    image: gcr.io/kalix-public/kalix-runtime:1.1.41-dcb5d51
     # uncomment volumes when persistence is enabled
     volumes: # <1>
       - ./target/kalix:/var/kalix
@@ -14,7 +14,7 @@ services:
       PERSISTENCE_ENABLED: "true" # <2>
       # end::persistence-mode[]
       JAVA_TOOL_OPTIONS: >
-        -Dkalix.proxy.eventing.support=google-pubsub-emulator
+        -Dakka.javasdk.dev-mode.eventing.support=google-pubsub-emulator
       # tag::persistence-mode[]
       # those variables are defined in the .env file
       # when running multiple services on your local machine, make sure that 

@@ -18,16 +18,15 @@ private[impl] object Settings {
   def apply(system: ActorSystem[_]): Settings = {
     // note: some config is for the runtime and some for the sdk only, with two different config namespaces
     val sdkConfig = system.settings.config.getConfig("akka.javasdk")
-    val runtimeConfig = system.settings.config.getConfig("akka.runtime")
 
     Settings(
       snapshotEvery = sdkConfig.getInt("event-sourced-entity.snapshot-every"),
       cleanupDeletedEventSourcedEntityAfter = sdkConfig.getDuration("event-sourced-entity.cleanup-deleted-after"),
       cleanupDeletedValueEntityAfter = sdkConfig.getDuration("value-entity.cleanup-deleted-after"),
-      devModeSettings = Option.when(runtimeConfig.getBoolean("dev-mode.enabled"))(
+      devModeSettings = Option.when(sdkConfig.getBoolean("dev-mode.enabled"))(
         DevModeSettings(
           serviceName = sdkConfig.getString("dev-mode.service-name"),
-          httpPort = runtimeConfig.getInt("dev-mode.http-port"))))
+          httpPort = sdkConfig.getInt("dev-mode.http-port"))))
   }
 
   final case class DevModeSettings(serviceName: String, httpPort: Int)

@@ -531,7 +531,8 @@ public class TestKit {
       settings.workflowTickInterval.ifPresent(tickInterval -> runtimeOptions.put("kalix.proxy.workflow-entity.tick-interval", tickInterval.toMillis() + " ms"));
 
       // A bit messy right now, but we also need to signal to SDK also that it is in dev-mode
-      runtimeOptions.put("akka.runtime.dev-mode.enabled", true);
+      runtimeOptions.put("akka.javasdk.dev-mode.enabled", true);
+      runtimeOptions.put("kalix.proxy.dev-mode.enabled", true);
 
       log.debug("Config for runtime: {}", runtimeOptions);
       log.debug("Config from user: {}", config);
@@ -542,9 +543,6 @@ public class TestKit {
               .withFallback(config)
               .withFallback(ConfigFactory.load("dev-mode.conf"))
               .withFallback(ConfigFactory.load("application.conf"));
-
-      proxyPort = runtimeConfig.getInt("kalix.proxy.http-port");
-      proxyHost = "localhost";
 
       Promise<Sdk.StartupContext> startedKalix = Promise.apply();
       if (!Sdk.onNextStartCallback().compareAndSet(null, startedKalix)) {
@@ -561,19 +559,22 @@ public class TestKit {
 
       startEventingTestkit();
 
+      proxyPort = runtimeActorSystem.settings().config().getInt("kalix.proxy.http-port");
+      proxyHost = "localhost";
+
       Http http = Http.get(runtimeActorSystem);
       log.info("Checking runtime status");
       CompletionStage<String> checkingProxyStatus = Patterns.retry(() ->
         http.singleRequest(HttpRequest.GET("http://localhost:" + proxyPort + "/akka/dev-mode/health-check")).thenCompose(response -> {
-        int responseCode = response.status().intValue();
-        if (responseCode == 404) {
-          log.info("Runtime started");
-          return CompletableFuture.completedStage("Ok");
-        } else {
-          log.info("Waiting for runtime, current response code is {}", responseCode);
-          return CompletableFuture.failedFuture(new IllegalStateException("Runtime not started."));
-        }
-      }), 10, Duration.ofSeconds(1), runtimeActorSystem);
+          int responseCode = response.status().intValue();
+          if (responseCode == 404) {
+            log.info("Runtime started");
+            return CompletableFuture.completedStage("Ok");
+          } else {
+            log.info("Waiting for runtime, current response code is {}", responseCode);
+            return CompletableFuture.failedFuture(new IllegalStateException("Runtime not started."));
+          }
+        }), 10, Duration.ofSeconds(1), runtimeActorSystem);
 
       try {
         checkingProxyStatus.toCompletableFuture().get();

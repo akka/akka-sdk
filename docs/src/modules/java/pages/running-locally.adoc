@@ -198,7 +198,7 @@ Run the following command at the root of *customer-registry-subscriber*:
 --
 [source,command line]
 ----
-mvn -Dakka.runtime.dev-mode.docker-compose-file=docker-compose-integration.yml kalix:runAll
+mvn -Dakka.javasdk.dev-mode.docker-compose-file=docker-compose-integration.yml kalix:runAll
 ----
 --
 

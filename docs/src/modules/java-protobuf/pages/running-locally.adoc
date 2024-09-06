@@ -254,7 +254,7 @@ Java::
 --
 [source, command line]
 ----
-mvn -Dakka.runtime.dev-mode.docker-compose-file=docker-compose-integration.yml kalix:runAll
+mvn -Dakka.javasdk.dev-mode.docker-compose-file=docker-compose-integration.yml kalix:runAll
 ----
 --
 
@@ -263,7 +263,7 @@ Scala::
 --
 [source, command line]
 ----
-sbt -Dakka.runtime.dev-mode.docker-compose-file=docker-compose-integration.yml runAll
+sbt -Dakka.javasdk.dev-mode.docker-compose-file=docker-compose-integration.yml runAll
 ----
 --
 

@@ -20,7 +20,7 @@ public class CustomerRegistryEndpoint {
   public record Address(String street, String city) {
   }
 
-  record CreateCustomerRequest(String id, String email, String name, Address address){
+  public record CreateCustomerRequest(String id, String email, String name, Address address){
   }
 
 
