@@ -38,9 +38,7 @@ object SamplesCompilationProject {
       def findSamples: Seq[File] = {
         file(pathToSample)
           .listFiles()
-          .filter { file =>
-            file.isDirectory && file.getName.startsWith("java-")
-          }
+          .filter { file => file.isDirectory }
       }
     }
   }

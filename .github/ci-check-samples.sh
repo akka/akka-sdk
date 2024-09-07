@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 ALL_OK=true
-for SAMPLE in samples/java* samples/scala*
+for SAMPLE in samples/*
 do
   SAMPLE_NAME="${SAMPLE#samples/}"
   if [ $(grep -c ${SAMPLE_NAME} .github/workflows/ci.yml) -lt 1 ] ; then

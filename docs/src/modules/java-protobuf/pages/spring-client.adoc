@@ -31,7 +31,7 @@ To get started, do the following:
 git clone https://github.com/lightbend/kalix-jvm-sdk.git
 ----
 
-- cd into `kalix-jvm-sdk/samples/java-protobuf-valueentity-counter`
+- cd into `kalix-jvm-sdk/samples/protobuf-valueentity-counter`
 
 == Build and Run the Kalix Service Locally
 
@@ -75,7 +75,7 @@ Download the resulting ZIP file, which is an archive of a web application that i
 
 Creating a Spring REST WebClient would allow Spring application to communicate with the REST Endpoints exposed via Kalix Service.
 
-cd into `kalix-jvm-sdk/samples/java-protobuf-valueentity-counter-spring-client`.
+cd into `kalix-jvm-sdk/samples/protobuf-valueentity-counter-spring-client`.
 
 Now you can create a `WebClient`. You need to configure the WebClient to use the Kalix Service's host and port. The following listing shows how to do so:
 
@@ -231,7 +231,7 @@ Add following Maven Dependencies to `pom.xml`
 
 Creating a Spring gRPC would allow Spring application to communicate with the gRPC Services exposed via Kalix Service.
 
-cd into `kalix-jvm-sdk/samples/java-protobuf-valueentity-counter-spring-client`.
+cd into `kalix-jvm-sdk/samples/protobuf-valueentity-counter-spring-client`.
 
 Now you can create a `GrpcClientConfig`. You need to configure the gRPC Client to use the Kalix Service's host and port. The following listing shows how to do so:
 

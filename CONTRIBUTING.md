@@ -25,7 +25,7 @@ FIXME contribution guidelines like in other LB projects
 `updateSamplesVersions.sh` or
 
     ```shell
-    cd samples/java-protobuf-valueentity-shopping-cart
+    cd samples/protobuf-valueentity-shopping-cart
     mvn -Dakka-javasdk.version="0.7...-SNAPSHOT" compile
     ```
 

@@ -56,13 +56,13 @@ apidocs:
 
 examples:
 	mkdir -p "${java_managed_examples}"
-	rsync -a --exclude-from=.examplesignore ../samples/java-* "${java_managed_examples}/"
+	rsync -a --exclude-from=.examplesignore ../samples/* "${java_managed_examples}/"
 
 bundles:
-	bin/bundle.sh --zip "${java_managed_attachments}/java-customer-registry-quickstart.zip" ../samples/java-customer-registry-quickstart
-	bin/bundle.sh --zip "${java_managed_attachments}/java-customer-registry-views-quickstart.zip" ../samples/java-customer-registry-views-quickstart
-	bin/bundle.sh --zip "${java_managed_attachments}/java-shopping-cart-quickstart.zip" ../samples/java-shopping-cart-quickstart
-	bin/bundle.sh --zip "${java_managed_attachments}/java-choreography-saga-quickstart.zip" ../samples/java-choreography-saga-quickstart
+	bin/bundle.sh --zip "${java_managed_attachments}/customer-registry-quickstart.zip" ../samples/customer-registry-quickstart
+	bin/bundle.sh --zip "${java_managed_attachments}/customer-registry-views-quickstart.zip" ../samples/customer-registry-views-quickstart
+	bin/bundle.sh --zip "${java_managed_attachments}/shopping-cart-quickstart.zip" ../samples/shopping-cart-quickstart
+	bin/bundle.sh --zip "${java_managed_attachments}/choreography-saga-quickstart.zip" ../samples/choreography-saga-quickstart
 
 dev: clean managed validate-xrefs dev-html
 

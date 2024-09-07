@@ -45,7 +45,7 @@ cd customerregistry
 +
 [source,command line]
 ----
-curl -OL https://raw.githubusercontent.com/lightbend/kalix-jvm-sdk/main/samples/java-protobuf-customer-registry-quickstart/pom.xml
+curl -OL https://raw.githubusercontent.com/lightbend/kalix-jvm-sdk/main/samples/protobuf-customer-registry-quickstart/pom.xml
 ----
 
 . Update the `dockerImage` property (line 13 of the `pom.xml` file) with your container registry name.

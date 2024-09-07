@@ -6,9 +6,9 @@ if [ $# -eq 0 ]; then
   echo "No arguments provided!"
   echo "This scripted is used to update sample versions to the latest snapshot."
   echo "You should call it by passing one or more samples as arguments."
-  echo "eg: ./updateSampleVersions.sh samples/java-valueentity-counter samples/java-eventsourced-counter"
+  echo "eg: ./updateSampleVersions.sh samples/valueentity-counter samples/eventsourced-counter"
   echo "or simply using bash expansion..."
-  echo "eg: ./updateSampleVersions.sh samples/java-*"
+  echo "eg: ./updateSampleVersions.sh samples/*"
 else 
   source publishLocally.sh
   export SDK_VERSION="$SDK_VERSION"

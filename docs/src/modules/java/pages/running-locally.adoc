@@ -44,7 +44,7 @@ Note:: You can extend `docker-compose.yml` with any external services required t
 
 After you start the service it will accept invocations on `localhost:9000`. You can use cURL to invoke your service.
 
-As an example, we will use the https://github.com/lightbend/kalix-jvm-sdk/tree/main/samples/java-spring-eventsourced-customer-registry[`customer-registry`] sample. 
+As an example, we will use the https://github.com/lightbend/kalix-jvm-sdk/tree/main/samples/spring-eventsourced-customer-registry[`customer-registry`] sample. 
 
 === Using cURL
 
@@ -107,7 +107,7 @@ A typical Kalix application is composed of one or more services deployed to the 
 The same can be done on your local machine by configuring the services to run on different ports and by configuring them to "_discover_" each other using some extra configurations.
 
 In this section, we will show you how to configure your local development environment to run two services and have them call each other.
-For that we will use two of our existing samples: https://github.com/lightbend/kalix-jvm-sdk/tree/main/samples/java-spring-eventsourced-customer-registry[`customer-registry`] and https://github.com/lightbend/kalix-jvm-sdk/tree/main/samples/java-spring-eventsourced-customer-registry-subscriber[`customer-registry-subscriber`].
+For that we will use two of our existing samples: https://github.com/lightbend/kalix-jvm-sdk/tree/main/samples/spring-eventsourced-customer-registry[`customer-registry`] and https://github.com/lightbend/kalix-jvm-sdk/tree/main/samples/spring-eventsourced-customer-registry-subscriber[`customer-registry-subscriber`].
 
 The *customer-registry* sample provides a service to register customers and the *customer-registry-subscriber* subscribes to an event stream produced by the *customer-registry* service, building a xref:views.adoc[View] from it.
 

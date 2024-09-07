@@ -67,7 +67,7 @@ sbt run
 After you start the service it will accept invocations on `localhost:9000`. You can use https://github.com/fullstorydev/grpcurl[gRPCurl] to invoke your service.
 
 [.group-java]
-As an example, we will use the https://github.com/lightbend/kalix-jvm-sdk/tree/main/samples/java-protobuf-eventsourced-customer-registry[`customer-registry`] sample. 
+As an example, we will use the https://github.com/lightbend/kalix-jvm-sdk/tree/main/samples/protobuf-eventsourced-customer-registry[`customer-registry`] sample. 
 
 [.group-scala]
 As an example, we will use the https://github.com/lightbend/kalix-jvm-sdk/tree/main/samples/scala-protobuf-eventsourced-customer-registry[`customer-registry`] sample. 
@@ -147,7 +147,7 @@ The same can be done on your local machine by configuring the services to run on
 In this section, we will show you how to configure your local development environment to run two services and have them call each other.
 
 [.group-java]
-For that we will use two of our existing samples: https://github.com/lightbend/kalix-jvm-sdk/tree/main/samples/java-protobuf-eventsourced-customer-registry[`customer-registry`] and https://github.com/lightbend/kalix-jvm-sdk/tree/main/samples/java-protobuf-eventsourced-customer-registry-subscriber[`customer-registry-subscriber`].
+For that we will use two of our existing samples: https://github.com/lightbend/kalix-jvm-sdk/tree/main/samples/protobuf-eventsourced-customer-registry[`customer-registry`] and https://github.com/lightbend/kalix-jvm-sdk/tree/main/samples/protobuf-eventsourced-customer-registry-subscriber[`customer-registry-subscriber`].
 
 [.group-scala]
 For that we will use two of our existing samples: https://github.com/lightbend/kalix-jvm-sdk/tree/main/samples/scala-protobuf-eventsourced-customer-registry[`customer-registry`] and https://github.com/lightbend/kalix-jvm-sdk/tree/main/samples/scala-protobuf-eventsourced-customer-registry-subscriber[`customer-registry-subscriber`].

@@ -340,7 +340,7 @@ jobs:
     needs: [ checks, publish-local ] # usually done via now disabled check-samples-in-ci
     runs-on: ubuntu-22.04
 
-    # tar tvf target/docker/kcr.us-east-1.kalix.io/acme/java-fibonacci-action/latest/tmp/docker-build.tar
+    # tar tvf target/docker/kcr.us-east-1.kalix.io/acme/fibonacci-action/latest/tmp/docker-build.tar
     steps:
       - name: Checkout
         # https://github.com/actions/checkout/releases
@@ -386,16 +386,16 @@ jobs:
       - name: Update sdk version in java-customer-registry-quickstart
         run: |-
           export SDK_VERSION=$(cat ~/akka-javasdk-version.txt)
-          ./updateSdkVersions.sh java samples/java-customer-registry-quickstart
+          ./updateSdkVersions.sh java samples/customer-registry-quickstart
 
       - name: Verify java-customer-registry-quickstart docker build
         run: |-
           export SDK_VERSION=$(cat ~/akka-javasdk-version.txt)
-          cd samples/java-customer-registry-quickstart
+          cd samples/customer-registry-quickstart
           mvn install --no-transfer-progress
           echo "Docker image contents"
-          tar tvf target/docker/kcr.us-east-1.kalix.io/acme/java-customer-registry/latest/tmp/docker-build.tar
-          tar tvf target/docker/kcr.us-east-1.kalix.io/acme/java-customer-registry/latest/tmp/docker-build.tar > content-list.txt
+          tar tvf target/docker/kcr.us-east-1.kalix.io/acme/customer-registry/latest/tmp/docker-build.tar
+          tar tvf target/docker/kcr.us-east-1.kalix.io/acme/customer-registry/latest/tmp/docker-build.tar > content-list.txt
           for artifact in "akka-actor" "akka-http-core" "kalix-dev-runtime"
           do
             if grep -q "$artifact" "content-list.txt"; then
@@ -417,32 +417,32 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { sample: java-shopping-cart-quickstart, it: true }
+          - { sample: shopping-cart-quickstart, it: true }
 
-          - { sample: java-customer-registry-quickstart, it: true }
-          - { sample: java-customer-registry-views-quickstart, it: true }
+          - { sample: customer-registry-quickstart, it: true }
+          - { sample: customer-registry-views-quickstart, it: true }
 
-          - { sample: java-choreography-saga-quickstart, it: true }
-          - { sample: java-fibonacci-action, it: true }
-          - { sample: java-doc-snippets, it: false }
-          - { sample: java-view-store, it: true }
-          - { sample: java-spring-dependency-injection, it: true }
+          - { sample: choreography-saga-quickstart, it: true }
+          - { sample: fibonacci-action, it: true }
+          - { sample: doc-snippets, it: false }
+          - { sample: view-store, it: true }
+          - { sample: spring-dependency-injection, it: true }
 
-          - { sample: java-eventsourced-customer-registry, it: true }
-          - { sample: java-eventsourced-counter, pre_cmd: 'docker compose up gcloud-pubsub-emulator -d', it: true }
+          - { sample: eventsourced-customer-registry, it: true }
+          - { sample: eventsourced-counter, pre_cmd: 'docker compose up gcloud-pubsub-emulator -d', it: true }
 
-          - { sample: java-eventsourced-customer-registry-subscriber, it: true, pre_cmd: './start-upstream.sh' }
-          - { sample: java-eventsourced-shopping-cart, it: true }
+          - { sample: eventsourced-customer-registry-subscriber, it: true, pre_cmd: './start-upstream.sh' }
+          - { sample: eventsourced-shopping-cart, it: true }
 
-          - { sample: java-valueentity-counter, it: true }
-          - { sample: java-valueentity-shopping-cart, it: true }
-          - { sample: java-valueentity-customer-registry, it: true }
+          - { sample: valueentity-counter, it: true }
+          - { sample: valueentity-shopping-cart, it: true }
+          - { sample: valueentity-customer-registry, it: true }
 
-          - { sample: java-tracing, it: false }
-          - { sample: java-reliable-timers, it: true }
+          - { sample: tracing, it: false }
+          - { sample: reliable-timers, it: true }
 
-          - { sample: java-transfer-workflow, it: true }
-          - { sample: java-transfer-workflow-compensation, it: true }
+          - { sample: transfer-workflow, it: true }
+          - { sample: transfer-workflow-compensation, it: true }
 
     steps:
       - name: Checkout

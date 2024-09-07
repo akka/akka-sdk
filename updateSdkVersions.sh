@@ -43,7 +43,7 @@ case ${option} in
       ;;
    *)
       echo "`basename ${0}`:usage: java|plugin|all [project-folder]"
-      echo "e.g.: `basename ${0}` java ./samples/java-customer-registry-kafka-quickstart/"
+      echo "e.g.: `basename ${0}` java ./samples/customer-registry-kafka-quickstart/"
       exit 1 # Command to come out of the program with status 1
       ;;
 esac
