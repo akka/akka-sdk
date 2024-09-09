@@ -19,6 +19,9 @@ public class CounterCommandFromTopicConsumer extends Consumer {
   public record MultiplyCounter(String counterId, int value) {
   }
 
+  public record IgnoredEvent(String message) {
+  }
+
   private ComponentClient componentClient;
 
   public CounterCommandFromTopicConsumer(ComponentClient componentClient) {

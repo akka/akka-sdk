@@ -121,6 +121,20 @@ public class CounterIntegrationTest extends TestKitSupport { // <1>
   }
   // end::test-topic[]
 
+  @Test
+  public void verifyIgnoreUnknownToTopic()  {
+    var counterId = "test-ignore";
+    var ignoreCmd = new CounterCommandFromTopicConsumer.IgnoredEvent("test");
+    var increaseCmd = new CounterCommandFromTopicConsumer.IncreaseCounter(counterId, 1);
+
+    commandsTopic.publish(ignoreCmd, counterId);
+    commandsTopic.publish(increaseCmd, counterId);
+
+    var eventIncreased = eventsTopic.expectOneTyped(CounterEvent.ValueIncreased.class, Duration.ofSeconds(20)); // <5>
+
+    assertEquals(increaseCmd.value(), eventIncreased.getPayload().value()); // <6>
+  }
+
   // tag::test-topic-metadata[]
   @Test
   public void verifyCounterCommandsAndPublishWithMetadata() {
