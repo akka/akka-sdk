@@ -32,7 +32,7 @@
   <repositories>
     <repository>
       <id>akka-repository</id>
-      <name>Akka snapshot repository</name>
+      <name>Akka Repository</name>
       <url>https://repo.akka.io/maven</url>
     </repository>
   </repositories>
