@@ -2,12 +2,12 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>akka-javasdk-archetype</artifactId>
-    <version>3.0.0-M3</version>
+    <version>3.0.0-M4</version>
     <packaging>maven-archetype</packaging>
     <parent>
         <groupId>io.akka</groupId>
         <artifactId>akka-javasdk-maven</artifactId>
-        <version>3.0.0-M3</version>
+        <version>3.0.0-M4</version>
     </parent>
 
     <name>Akka Java SDK Maven Archetype</name>
