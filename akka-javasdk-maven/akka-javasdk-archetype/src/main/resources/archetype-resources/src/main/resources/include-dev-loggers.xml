@@ -2,7 +2,7 @@
 <!-- 
      This is a logback include file. 
 
-     Add here the loggers you would like to have for your application during development.
+     Add here the loggers you would like to have for your application during development and testing.
      To define loggers for production mode use 'include-loggers.xml'
 
      The loggers you define inside the <included> tag will be added to the final log configuration 

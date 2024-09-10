@@ -548,8 +548,6 @@ public class TestKit {
       if (!Sdk.onNextStartCallback().compareAndSet(null, startedKalix)) {
         throw new RuntimeException("Found another integration test run waiting for Kalix to start, multiple tests must not run in parallel");
       }
-      // FIXME this can't possibly work, we have already done logging, logback-test should be picked up?
-      System.setProperty("logback.configurationFile", "logback-dev-mode.xml");
 
       runtimeActorSystem = KalixRuntimeMain.start(Some.apply(runtimeConfig));
       // wait for SDK to get on start callback (or fail starting), we need it to set up the component client
