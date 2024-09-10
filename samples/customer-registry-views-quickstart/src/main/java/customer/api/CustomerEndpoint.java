@@ -1,11 +1,23 @@
 package customer.api;
 
+import akka.NotUsed;
+import akka.http.javadsl.model.ContentTypes;
+import akka.http.javadsl.model.HttpEntities;
+import akka.http.javadsl.model.HttpEntity;
+import akka.http.javadsl.model.HttpResponse;
+import akka.http.javadsl.model.ResponseEntity;
+import akka.http.javadsl.model.StatusCodes;
+import akka.javasdk.JsonSupport;
 import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.annotations.http.Put;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.http.HttpException;
+import akka.javasdk.http.HttpResponses;
+import akka.stream.Materializer;
+import akka.stream.javadsl.Source;
+import akka.util.ByteString;
 import customer.domain.Address;
 import customer.domain.Customer;
 import customer.application.CustomerEntity;
@@ -14,6 +26,7 @@ import customer.application.CustomersByNameView;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletionStage;
 
 @HttpEndpoint("/customer")
@@ -22,6 +35,7 @@ public class CustomerEndpoint {
     private static final Logger logger = LoggerFactory.getLogger(CustomerEndpoint.class);
 
     private final ComponentClient componentClient;
+
 
     public CustomerEndpoint(ComponentClient componentClient) {
         this.componentClient = componentClient;
@@ -85,6 +99,24 @@ public class CustomerEndpoint {
         return componentClient.forView()
                 .method(CustomersByNameView::getCustomers)
                 .invokeAsync(name);
+    }
+
+    @Get("/by-name-csv/{name}")
+    public HttpResponse getCustomersCsvByName(String name) {
+        // Note: somewhat superficial, shows of streaming consumption of a view, transforming
+        // each element and passing along to a streamed response
+        var customerSummarySource = componentClient.forView()
+            .stream(CustomersByNameView::getCustomerSummaryStream)
+            .source(name);
+
+        Source<ByteString, NotUsed> csvByteChunkStream =
+            Source.single("name,email\n").concat(customerSummarySource.map(customerSummary ->
+                    customerSummary.name() + "," + customerSummary.email() + "\n"
+                )).map(ByteString::fromString);
+
+        return HttpResponse.create()
+            .withStatus(StatusCodes.OK)
+            .withEntity(HttpEntities.create(ContentTypes.TEXT_CSV_UTF8, csvByteChunkStream));
     }
 
 

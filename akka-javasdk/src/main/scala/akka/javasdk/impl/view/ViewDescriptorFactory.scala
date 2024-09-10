@@ -2,10 +2,37 @@
  * Copyright (C) 2021-2024 Lightbend Inc. <https://www.lightbend.com>
  */
 
-package akka.javasdk.impl
+package akka.javasdk.impl.view
 
-import java.lang.reflect.Parameter
-
+import akka.annotation.InternalApi
+import akka.javasdk.annotations.Consume.FromKeyValueEntity
+import akka.javasdk.annotations.Consume.FromServiceStream
+import akka.javasdk.annotations.Query
+import akka.javasdk.annotations.Table
+import akka.javasdk.impl.AclDescriptorFactory
+import akka.javasdk.impl.ComponentDescriptor
+import akka.javasdk.impl.ComponentDescriptorFactory
+import akka.javasdk.impl.ComponentDescriptorFactory.combineBy
+import akka.javasdk.impl.ComponentDescriptorFactory.eventingInForEventSourcedEntity
+import akka.javasdk.impl.ComponentDescriptorFactory.eventingInForEventSourcedEntityServiceLevel
+import akka.javasdk.impl.ComponentDescriptorFactory.eventingInForTopic
+import akka.javasdk.impl.ComponentDescriptorFactory.eventingInForTopicServiceLevel
+import akka.javasdk.impl.ComponentDescriptorFactory.eventingInForValueEntity
+import akka.javasdk.impl.ComponentDescriptorFactory.findEventSourcedEntityType
+import akka.javasdk.impl.ComponentDescriptorFactory.findHandleDeletes
+import akka.javasdk.impl.ComponentDescriptorFactory.findSubscriptionTopicName
+import akka.javasdk.impl.ComponentDescriptorFactory.hasEventSourcedEntitySubscription
+import akka.javasdk.impl.ComponentDescriptorFactory.hasHandleDeletes
+import akka.javasdk.impl.ComponentDescriptorFactory.hasStreamSubscription
+import akka.javasdk.impl.ComponentDescriptorFactory.hasTopicSubscription
+import akka.javasdk.impl.ComponentDescriptorFactory.hasUpdateEffectOutput
+import akka.javasdk.impl.ComponentDescriptorFactory.hasValueEntitySubscription
+import akka.javasdk.impl.ComponentDescriptorFactory.mergeServiceOptions
+import akka.javasdk.impl.ComponentDescriptorFactory.subscribeToEventStream
+import akka.javasdk.impl.JsonMessageCodec
+import akka.javasdk.impl.JwtDescriptorFactory
+import akka.javasdk.impl.JwtDescriptorFactory.buildJWTOptions
+import akka.javasdk.impl.ProtoMessageDescriptors
 import akka.javasdk.impl.reflection.CommandHandlerMethod
 import akka.javasdk.impl.reflection.HandleDeletesServiceMethod
 import akka.javasdk.impl.reflection.KalixMethod
@@ -15,42 +42,19 @@ import akka.javasdk.impl.reflection.SubscriptionServiceMethod
 import akka.javasdk.impl.reflection.ViewUrlTemplate
 import akka.javasdk.impl.reflection.VirtualDeleteServiceMethod
 import akka.javasdk.impl.reflection.VirtualServiceMethod
-import java.lang.reflect.ParameterizedType
-import java.lang.reflect.Type
-import java.util
-import java.util.Optional
-
-import scala.annotation.tailrec
-
-import akka.javasdk.annotations.Consume.FromKeyValueEntity
-import akka.javasdk.annotations.Consume.FromServiceStream
-import ComponentDescriptorFactory.combineBy
-import ComponentDescriptorFactory.eventingInForEventSourcedEntity
-import ComponentDescriptorFactory.eventingInForEventSourcedEntityServiceLevel
-import ComponentDescriptorFactory.eventingInForTopic
-import ComponentDescriptorFactory.eventingInForTopicServiceLevel
-import ComponentDescriptorFactory.eventingInForValueEntity
-import ComponentDescriptorFactory.findEventSourcedEntityType
-import ComponentDescriptorFactory.findHandleDeletes
-import ComponentDescriptorFactory.findSubscriptionTopicName
-import ComponentDescriptorFactory.hasEventSourcedEntitySubscription
-import ComponentDescriptorFactory.hasHandleDeletes
-import ComponentDescriptorFactory.hasStreamSubscription
-import ComponentDescriptorFactory.hasTopicSubscription
-import ComponentDescriptorFactory.hasUpdateEffectOutput
-import ComponentDescriptorFactory.hasValueEntitySubscription
-import ComponentDescriptorFactory.mergeServiceOptions
-import ComponentDescriptorFactory.subscribeToEventStream
-import JwtDescriptorFactory.buildJWTOptions
-import akka.annotation.InternalApi
-import akka.javasdk.annotations.Query
-import akka.javasdk.annotations.Table
 import akka.javasdk.view.View
 import com.google.protobuf.ByteString
 import com.google.protobuf.DescriptorProtos.DescriptorProto
 import com.google.protobuf.DescriptorProtos.FieldDescriptorProto
 import kalix.Eventing
 import kalix.MethodOptions
+
+import java.lang.reflect.Parameter
+import java.lang.reflect.ParameterizedType
+import java.lang.reflect.Type
+import java.util
+import java.util.Optional
+import scala.annotation.tailrec
 
 /**
  * INTERNAL API
@@ -171,22 +175,39 @@ private[impl] object ViewDescriptorFactory extends ComponentDescriptorFactory {
     // we only take methods with Query annotations
     val annotatedQueryMethods =
       component.getDeclaredMethods.toIndexedSeq
-        .filter(m => m.getAnnotation(classOf[Query]) != null && m.getReturnType == classOf[View.QueryEffect[_]])
+        .filter(m =>
+          m.getAnnotation(classOf[Query]) != null && (m.getReturnType == classOf[
+            View.QueryEffect[_]] || m.getReturnType == classOf[View.QueryStreamEffect[_]]))
 
     annotatedQueryMethods.map { queryMethod =>
-      val queryOutputType = queryMethod.getGenericReturnType
-        .asInstanceOf[java.lang.reflect.ParameterizedType]
-        .getActualTypeArguments
-        .head
 
-      val actualQueryOutputType = queryOutputType match {
-        case parameterizedType: ParameterizedType if parameterizedType.getRawType == classOf[Optional[_]] =>
-          parameterizedType.getActualTypeArguments.head.asInstanceOf[Class[_]]
-        case other => other.asInstanceOf[Class[_]]
+      val parameterizedReturnType = queryMethod.getGenericReturnType
+        .asInstanceOf[java.lang.reflect.ParameterizedType]
+
+      val (actualQueryOutputType, streamingQuery) =
+        if (queryMethod.getReturnType == classOf[View.QueryEffect[_]]) {
+          val unwrapped = parameterizedReturnType.getActualTypeArguments.head match {
+            case parameterizedType: ParameterizedType if parameterizedType.getRawType == classOf[Optional[_]] =>
+              parameterizedType.getActualTypeArguments.head
+            case other => other
+          }
+          (unwrapped, false)
+        } else if (queryMethod.getReturnType == classOf[View.QueryStreamEffect[_]]) {
+          (parameterizedReturnType.getActualTypeArguments.head, true)
+        } else {
+          throw new IllegalArgumentException(
+            s"Return type of ${queryMethod.getName} is not supported ${queryMethod.getReturnType}")
+        }
+
+      val actualQueryOutputClass = actualQueryOutputType match {
+        case clazz: Class[_] => clazz
+        case other =>
+          throw new IllegalArgumentException(
+            s"Actual query output type for ${queryMethod.getName} is not a class (must not be parameterized): $other")
       }
 
       val queryOutputSchemaDescriptor =
-        ProtoMessageDescriptors.generateMessageDescriptors(actualQueryOutputType)
+        ProtoMessageDescriptors.generateMessageDescriptors(actualQueryOutputClass)
 
       val queryAnnotation = queryMethod.getAnnotation(classOf[Query])
       val queryStr = queryAnnotation.value()
@@ -244,7 +265,7 @@ private[impl] object ViewDescriptorFactory extends ComponentDescriptorFactory {
       // since it is a query, we don't actually ever want to handle any request in the SDK
       // the proxy does the work for us, mark the method as non-callable
       // TODO: this new variant can be marked as non-callable - check what is the impact of it
-      val servMethod = CommandHandlerMethod(component, queryMethod, ViewUrlTemplate)
+      val servMethod = CommandHandlerMethod(component, queryMethod, ViewUrlTemplate, streamOut = streamingQuery)
       val kalixQueryMethod =
         KalixMethod(servMethod, methodOptions = Some(methodOptions))
           .withKalixOptions(buildJWTOptions(queryMethod))

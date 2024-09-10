@@ -21,10 +21,14 @@ public class CustomersByNameView extends View {
     }
   }
 
-  public record CustomerSummary(String name, String email) {
-  }
+  public record CustomerSummary(String name, String email) { }
 
   public record Customers(Collection<CustomerSummary> customers) {
+  }
+
+  @Query("SELECT * FROM customers_by_name WHERE name = :name")
+  public QueryStreamEffect<CustomerSummary> getCustomerSummaryStream(String name) {
+    return queryStreamResult();
   }
 
   @Query("SELECT * AS customers FROM customers_by_name WHERE name = :name")

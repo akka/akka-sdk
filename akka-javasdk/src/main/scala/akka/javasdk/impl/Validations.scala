@@ -300,10 +300,13 @@ private[javasdk] object Validations {
 
   private def viewQueriesMustReturnEffect(component: Class[_]): Validation = {
     val queriesWithWrongReturnType = component.getMethods.toIndexedSeq.filter(m =>
-      m.getAnnotation(classOf[Query]) != null && m.getReturnType != classOf[View.QueryEffect[_]])
+      m.getAnnotation(classOf[Query]) != null && !(m.getReturnType == classOf[
+        View.QueryEffect[_]] || m.getReturnType == classOf[View.QueryStreamEffect[_]]))
     queriesWithWrongReturnType.foldLeft(Valid: Validation) { (validation, methodWithWrongReturnType) =>
       validation ++ Validation(
-        errorMessage(methodWithWrongReturnType, "Query methods must return View.QueryEffect<RowType>."))
+        errorMessage(
+          methodWithWrongReturnType,
+          s"Query methods must return View.QueryEffect<RowType> or View.QueryStreamEffect<RowType> (was ${methodWithWrongReturnType.getReturnType}."))
     }
   }
 

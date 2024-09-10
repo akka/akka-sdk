@@ -132,6 +132,7 @@ object Dependencies {
   val javaSdk = deps ++= sdkDeps ++ Seq(
     kalixSdkSpi,
     jacksonDataFormatProto,
+    // make sure these two are on the classpath for users to consume http request/response APIs and streams
     "com.typesafe.akka" %% "akka-http-core" % AkkaHttpVersion,
     akkaDependency("akka-stream"),
     akkaDependency("akka-actor-typed") % Provided,

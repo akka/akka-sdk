@@ -86,7 +86,11 @@ private[impl] object ViewUrlTemplate extends UrlTemplate {
  * INTERNAL API
  */
 @InternalApi
-private[impl] final case class CommandHandlerMethod(component: Class[_], method: Method, urlTemplate: UrlTemplate)
+private[impl] final case class CommandHandlerMethod(
+    component: Class[_],
+    method: Method,
+    urlTemplate: UrlTemplate,
+    streamOut: Boolean = false)
     extends AnyJsonRequestServiceMethod {
 
   override def methodName: String = method.getName
@@ -94,7 +98,6 @@ private[impl] final case class CommandHandlerMethod(component: Class[_], method:
   val hasInputType: Boolean = method.getParameterTypes.headOption.isDefined
   val inputType: Class[_] = method.getParameterTypes.headOption.getOrElse(classOf[Unit])
   val streamIn: Boolean = false
-  val streamOut: Boolean = false
 }
 
 /**

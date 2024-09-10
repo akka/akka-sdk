@@ -4,14 +4,6 @@
 
 package akka.javasdk.impl.client
 
-import java.util.Optional
-
-import scala.concurrent.ExecutionContext
-import scala.jdk.FutureConverters.FutureOps
-import scala.util.Failure
-import scala.util.Success
-import scala.util.Try
-
 import akka.annotation.InternalApi
 import akka.http.scaladsl.model.ContentTypes
 import akka.japi.function
@@ -20,15 +12,11 @@ import akka.javasdk.Metadata
 import akka.javasdk.Result
 import akka.javasdk.client.ComponentDeferredMethodRef
 import akka.javasdk.client.ComponentDeferredMethodRef1
-import akka.javasdk.client.ComponentInvokeOnlyMethodRef
-import akka.javasdk.client.ComponentInvokeOnlyMethodRef1
 import akka.javasdk.client.ComponentMethodRef
 import akka.javasdk.client.ComponentMethodRef1
 import akka.javasdk.client.EventSourcedEntityClient
 import akka.javasdk.client.KeyValueEntityClient
-import akka.javasdk.client.NoEntryFoundException
 import akka.javasdk.client.TimedActionClient
-import akka.javasdk.client.ViewClient
 import akka.javasdk.client.WorkflowClient
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.javasdk.impl.MetadataImpl
@@ -36,7 +24,6 @@ import akka.javasdk.impl.MetadataImpl.toProtocol
 import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.keyvalueentity.KeyValueEntity
 import akka.javasdk.timedaction.TimedAction
-import akka.javasdk.view.View
 import akka.javasdk.workflow.Workflow
 import akka.runtime.sdk.spi.ActionRequest
 import akka.runtime.sdk.spi.ActionType
@@ -44,13 +31,16 @@ import akka.runtime.sdk.spi.ComponentType
 import akka.runtime.sdk.spi.EntityRequest
 import akka.runtime.sdk.spi.EventSourcedEntityType
 import akka.runtime.sdk.spi.KeyValueEntityType
-import akka.runtime.sdk.spi.ViewRequest
-import akka.runtime.sdk.spi.ViewType
 import akka.runtime.sdk.spi.WorkflowType
 import akka.runtime.sdk.spi.{ ActionClient => RuntimeActionClient }
 import akka.runtime.sdk.spi.{ EntityClient => RuntimeEntityClient }
-import akka.runtime.sdk.spi.{ ViewClient => RuntimeViewClient }
 import akka.util.ByteString
+
+import scala.concurrent.ExecutionContext
+import scala.jdk.FutureConverters.FutureOps
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
 
 /**
  * INTERNAL API
@@ -189,108 +179,6 @@ private[javasdk] final case class WorkflowClientImpl(
 
   override def method[T, A1, R](methodRef: function.Function2[T, A1, Workflow.Effect[R]]): ComponentMethodRef1[A1, R] =
     createMethodRef2(methodRef)
-}
-
-/**
- * INTERNAL API
- */
-@InternalApi
-private[javasdk] final case class ViewClientImpl(viewClient: RuntimeViewClient, callMetadata: Option[Metadata])(implicit
-    val executionContext: ExecutionContext)
-    extends ViewClient {
-
-  private val primitiveObjects: Set[Class[_]] = Set(
-    classOf[java.lang.String],
-    classOf[java.lang.Boolean],
-    classOf[java.lang.Character],
-    classOf[java.lang.Byte],
-    classOf[java.lang.Short],
-    classOf[java.lang.Integer],
-    classOf[java.lang.Long],
-    classOf[java.lang.Float],
-    classOf[java.lang.Double])
-
-  override def method[T, R](methodRef: function.Function[T, View.QueryEffect[R]]): ComponentInvokeOnlyMethodRef[R] =
-    createMethodRefForEitherArity(methodRef)
-
-  override def method[T, A1, R](
-      methodRef: function.Function2[T, A1, View.QueryEffect[R]]): ComponentInvokeOnlyMethodRef1[A1, R] =
-    createMethodRefForEitherArity(methodRef)
-
-  private def createMethodRefForEitherArity[A1, R](lambda: AnyRef): ComponentMethodRefImpl[A1, R] = {
-    val method = MethodRefResolver.resolveMethodRef(lambda)
-    ViewCallValidator.validate(method)
-    // extract view id
-    val declaringClass = method.getDeclaringClass
-    // FIXME Surprising that this isn' the view id declaringClass.getAnnotation(classOf[ViewId]).value()
-    val serviceName = declaringClass.getName
-    val methodName = method.getName.capitalize
-
-    new ComponentMethodRefImpl[AnyRef, R](
-      None,
-      callMetadata,
-      { (maybeMetadata, maybeArg) =>
-        // Note: same path for 0 and 1 arg calls
-        val serializedPayload = maybeArg match {
-          case Some(arg) =>
-            // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
-            if (arg.getClass.isPrimitive || primitiveObjects.contains(arg.getClass)) {
-              JsonSupport.encodeDynamicToAkkaByteString(method.getParameters.head.getName, arg.toString)
-            } else if (classOf[java.util.Collection[_]].isAssignableFrom(arg.getClass)) {
-              JsonSupport.encodeDynamicCollectionToAkkaByteString(
-                method.getParameters.head.getName,
-                arg.asInstanceOf[java.util.Collection[_]])
-            } else
-              JsonSupport.encodeToAkkaByteString(arg)
-          case None => ByteString.emptyByteString
-        }
-
-        DeferredCallImpl(
-          maybeArg.orNull,
-          maybeMetadata.getOrElse(Metadata.EMPTY).asInstanceOf[MetadataImpl],
-          ViewType,
-          serviceName,
-          methodName,
-          None,
-          { metadata =>
-            viewClient
-              .query(
-                new ViewRequest(
-                  serviceName,
-                  methodName,
-                  ContentTypes.`application/json`,
-                  serializedPayload,
-                  toProtocol(metadata.asInstanceOf[MetadataImpl]).getOrElse(
-                    kalix.protocol.component.Metadata.defaultInstance)))
-              .transform {
-                case Success(reply) =>
-                  // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
-                  val returnType: Class[_] = Reflect.getReturnType(declaringClass, method)
-                  val optional = Reflect.isReturnTypeOptional(method)
-                  if (reply.payload.isEmpty) {
-                    if (optional) Success(Optional.empty().asInstanceOf[R])
-                    else
-                      Failure(
-                        new NoEntryFoundException(
-                          s"No matching entry found when calling $declaringClass.${method.getName}"))
-                  } else {
-                    if (optional) {
-                      Try(JsonSupport.parseBytes(reply.payload.toArrayUnsafe(), returnType))
-                        .map(Optional.of)
-                        .map(_.asInstanceOf[R])
-                    } else {
-                      Try(JsonSupport.parseBytes[R](reply.payload.toArrayUnsafe(), returnType.asInstanceOf[Class[R]]))
-                    }
-                  }
-                case Failure(ex) => Failure(ex)
-              }
-              .asJava
-
-          })
-      },
-      canBeDeferred = false).asInstanceOf[ComponentMethodRefImpl[A1, R]]
-
-  }
 }
 
 /**

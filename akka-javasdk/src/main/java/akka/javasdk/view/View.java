@@ -30,22 +30,36 @@ import akka.annotation.DoNotInherit;
  * query will be executed.
  *
  * <p>The query is executed by the runtime when a request is made to the View.
- *
- * <p>
- *
- * <p>
  */
 public abstract class View {
 
+  /**
+   * @return query effect for a query result that is a single response in the form of a row, an
+   *     Optional row or a collection of rows projected into a single result type.
+   */
   protected final <T> QueryEffect<T> queryResult() {
     return null;
   }
 
+  /** @return query effect for a query result that can be streamed */
+  protected final <T> QueryStreamEffect<T> queryStreamResult() {
+    return null;
+  }
+
   /**
-   * @param <T> The type of result returned by this a query
-   *     <p>Not for user extension, instances are returned through factory method {@link
-   *     #queryResult()}
+   * Not for user extension, instances are returned through factory method {{@link #queryResult()}}
+   *
+   * @param <T> The type of result returned by this query
    */
   @DoNotInherit
   public interface QueryEffect<T> {}
+
+  /**
+   * Not for user extension, instances are returned through factory method {@link
+   * #queryStreamResult()}
+   *
+   * @param <T> The type of result returned as a stream by this query
+   */
+  @DoNotInherit
+  public interface QueryStreamEffect<T> {}
 }

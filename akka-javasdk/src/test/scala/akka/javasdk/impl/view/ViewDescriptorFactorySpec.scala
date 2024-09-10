@@ -2,51 +2,52 @@
  * Copyright (C) 2021-2024 Lightbend Inc. <https://www.lightbend.com>
  */
 
-package akka.javasdk.impl
+package akka.javasdk.impl.view
 
+import akka.javasdk.impl.ComponentDescriptorSuite
 import akka.javasdk.impl.InvalidComponentException
 import akka.javasdk.impl.Validations
-import akka.javasdk.impl.ViewDescriptorFactory
-import scala.jdk.CollectionConverters.CollectionHasAsScala
-
-import com.google.protobuf.Descriptors.FieldDescriptor
-import com.google.protobuf.Descriptors.FieldDescriptor.JavaType
-import com.google.protobuf.timestamp.Timestamp
-import kalix.JwtMethodOptions.JwtMethodMode
-import kalix.JwtServiceOptions.JwtServiceMode
-import com.google.protobuf.{ Any => JavaPbAny }
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.EventStreamSubscriptionView
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.SubscribeOnTypeToEventSourcedEvents
 import akka.javasdk.testmodels.view.ViewTestModels
-import ViewTestModels.MultiTableViewValidation
-import ViewTestModels.MultiTableViewWithDuplicatedESSubscriptions
-import ViewTestModels.MultiTableViewWithDuplicatedVESubscriptions
-import ViewTestModels.MultiTableViewWithJoinQuery
-import ViewTestModels.MultiTableViewWithMultipleQueries
-import ViewTestModels.MultiTableViewWithoutQuery
-import ViewTestModels.SubscribeToEventSourcedEvents
-import ViewTestModels.SubscribeToEventSourcedWithMissingHandler
-import ViewTestModels.SubscribeToSealedEventSourcedEvents
-import ViewTestModels.TimeTrackerView
-import ViewTestModels.TopicSubscriptionView
-import ViewTestModels.TopicTypeLevelSubscriptionView
-import ViewTestModels.TransformedUserView
-import ViewTestModels.TransformedUserViewWithDeletes
-import ViewTestModels.TransformedUserViewWithMethodLevelJWT
-import ViewTestModels.TypeLevelSubscribeToEventSourcedEventsWithMissingHandler
-import ViewTestModels.UserByEmailWithCollectionReturn
-import ViewTestModels.UserViewWithOnlyDeleteHandler
-import ViewTestModels.ViewDuplicatedHandleDeletesAnnotations
-import ViewTestModels.ViewHandleDeletesWithParam
-import ViewTestModels.ViewWithEmptyComponentIdAnnotation
-import ViewTestModels.ViewWithMethodLevelAcl
-import ViewTestModels.ViewWithNoQuery
-import ViewTestModels.ViewWithServiceLevelAcl
-import ViewTestModels.ViewWithServiceLevelJWT
-import ViewTestModels.ViewWithTwoQueries
-import ViewTestModels.ViewWithoutSubscription
+import akka.javasdk.testmodels.view.ViewTestModels.MultiTableViewValidation
+import akka.javasdk.testmodels.view.ViewTestModels.MultiTableViewWithDuplicatedESSubscriptions
+import akka.javasdk.testmodels.view.ViewTestModels.MultiTableViewWithDuplicatedVESubscriptions
+import akka.javasdk.testmodels.view.ViewTestModels.MultiTableViewWithJoinQuery
+import akka.javasdk.testmodels.view.ViewTestModels.MultiTableViewWithMultipleQueries
+import akka.javasdk.testmodels.view.ViewTestModels.MultiTableViewWithoutQuery
+import akka.javasdk.testmodels.view.ViewTestModels.SubscribeToEventSourcedEvents
+import akka.javasdk.testmodels.view.ViewTestModels.SubscribeToEventSourcedWithMissingHandler
+import akka.javasdk.testmodels.view.ViewTestModels.SubscribeToSealedEventSourcedEvents
+import akka.javasdk.testmodels.view.ViewTestModels.TimeTrackerView
+import akka.javasdk.testmodels.view.ViewTestModels.TopicSubscriptionView
+import akka.javasdk.testmodels.view.ViewTestModels.TopicTypeLevelSubscriptionView
+import akka.javasdk.testmodels.view.ViewTestModels.TransformedUserView
+import akka.javasdk.testmodels.view.ViewTestModels.TransformedUserViewWithDeletes
+import akka.javasdk.testmodels.view.ViewTestModels.TransformedUserViewWithMethodLevelJWT
+import akka.javasdk.testmodels.view.ViewTestModels.TypeLevelSubscribeToEventSourcedEventsWithMissingHandler
+import akka.javasdk.testmodels.view.ViewTestModels.UserByEmailWithCollectionReturn
+import akka.javasdk.testmodels.view.ViewTestModels.UserByEmailWithStreamReturn
+import akka.javasdk.testmodels.view.ViewTestModels.UserViewWithOnlyDeleteHandler
+import akka.javasdk.testmodels.view.ViewTestModels.ViewDuplicatedHandleDeletesAnnotations
+import akka.javasdk.testmodels.view.ViewTestModels.ViewHandleDeletesWithParam
 import akka.javasdk.testmodels.view.ViewTestModels.ViewQueryWithTooManyArguments
+import akka.javasdk.testmodels.view.ViewTestModels.ViewWithEmptyComponentIdAnnotation
+import akka.javasdk.testmodels.view.ViewTestModels.ViewWithMethodLevelAcl
+import akka.javasdk.testmodels.view.ViewTestModels.ViewWithNoQuery
+import akka.javasdk.testmodels.view.ViewTestModels.ViewWithServiceLevelAcl
+import akka.javasdk.testmodels.view.ViewTestModels.ViewWithServiceLevelJWT
+import akka.javasdk.testmodels.view.ViewTestModels.ViewWithTwoQueries
+import akka.javasdk.testmodels.view.ViewTestModels.ViewWithoutSubscription
+import com.google.protobuf.Descriptors.FieldDescriptor
+import com.google.protobuf.Descriptors.FieldDescriptor.JavaType
+import com.google.protobuf.timestamp.Timestamp
+import com.google.protobuf.{ Any => JavaPbAny }
+import kalix.JwtMethodOptions.JwtMethodMode
+import kalix.JwtServiceOptions.JwtServiceMode
 import org.scalatest.wordspec.AnyWordSpec
+
+import scala.jdk.CollectionConverters.CollectionHasAsScala
 
 class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuite {
 
@@ -54,7 +55,7 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
 
     "validate a View must be declared as public" in {
       intercept[InvalidComponentException] {
-        Validations.validate(classOf[NotPublicComponents.NotPublicView]).failIfInvalid
+        Validations.validate(classOf[NotPublicView]).failIfInvalid
       }.getMessage should include("NotPublicView is not marked with `public` modifier. Components must be public.")
     }
 
@@ -73,7 +74,7 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
     "not allow View queries not returning QueryEffect<T>" in {
       intercept[InvalidComponentException] {
         Validations.validate(classOf[ViewTestModels.WrongQueryReturnType]).failIfInvalid
-      }.getMessage should include("Query methods must return View.QueryEffect<RowType>.")
+      }.getMessage should include("Query methods must return View.QueryEffect<RowType>")
     }
 
     "not allow View update handler with more than on parameter" in {
@@ -104,6 +105,20 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
         val queryMethodOptions = this.findKalixMethodOptions(desc, "GetUser")
         queryMethodOptions.getView.getQuery.getQuery shouldBe "SELECT * AS users FROM users WHERE name = :name"
         queryMethodOptions.getView.getJsonSchema.getOutput shouldBe "UserCollection"
+
+        val streamUpdates = queryMethodOptions.getView.getQuery.getStreamUpdates
+        streamUpdates shouldBe false
+      }
+    }
+
+    "generate query with stream return type" in {
+      assertDescriptor[UserByEmailWithStreamReturn] { desc =>
+        val queryMethodOptions = this.findKalixMethodOptions(desc, "GetAllUsers")
+        queryMethodOptions.getView.getQuery.getQuery shouldBe "SELECT * AS users FROM users"
+        queryMethodOptions.getView.getJsonSchema.getOutput shouldBe "User"
+        val method = findMethodByName(desc, "GetAllUsers")
+        method.isClientStreaming shouldBe false
+        method.isServerStreaming shouldBe true
 
         val streamUpdates = queryMethodOptions.getView.getQuery.getStreamUpdates
         streamUpdates shouldBe false

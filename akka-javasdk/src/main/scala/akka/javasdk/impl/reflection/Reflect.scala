@@ -84,14 +84,6 @@ private[impl] object Reflect {
           classOf[Result[_, _]].asInstanceOf[Class[R]]
         case other => other.asInstanceOf[Class[R]]
       }
-    } else if (isView(declaringClass)) {
-      // maybe later we could support Optional for other types of components
-      val returnType = method.getGenericReturnType.asInstanceOf[ParameterizedType].getActualTypeArguments.head
-      returnType match {
-        case parameterizedType: ParameterizedType if parameterizedType.getRawType == classOf[Optional[_]] =>
-          parameterizedType.getActualTypeArguments.head.asInstanceOf[Class[R]]
-        case other => other.asInstanceOf[Class[R]]
-      }
     } else {
       // in other cases we expect a View query method, but declaring class may not extend View[_] class for join views
       method.getReturnType.asInstanceOf[Class[R]]

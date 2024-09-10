@@ -4,6 +4,7 @@
 
 package akka.javasdk.testmodels.view;
 
+import akka.NotUsed;
 import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.annotations.Consume;
@@ -23,6 +24,7 @@ import akka.javasdk.testmodels.keyvalueentity.CounterState;
 import akka.javasdk.testmodels.keyvalueentity.TimeTrackerEntity;
 import akka.javasdk.testmodels.keyvalueentity.User;
 import akka.javasdk.testmodels.keyvalueentity.UserEntity;
+import akka.stream.javadsl.Source;
 
 import java.util.List;
 import java.util.Optional;
@@ -441,6 +443,18 @@ public class ViewTestModels {
     @Query(value = "SELECT * AS users FROM users WHERE name = :name")
     public QueryEffect<UserCollection> getUser(ByEmail name) {
       return queryResult();
+    }
+  }
+
+  @ComponentId("users_view")
+  public static class UserByEmailWithStreamReturn extends View {
+
+    @Consume.FromKeyValueEntity(UserEntity.class)
+    public static class UsersTable extends TableUpdater<User> { }
+
+    @Query(value = "SELECT * AS users FROM users")
+    public QueryStreamEffect<User> getAllUsers() {
+      return queryStreamResult();
     }
   }
 
