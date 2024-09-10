@@ -183,4 +183,25 @@ public class EventSourcedEntitiesTestModels {
             return null;
         }
     }
+
+    @ComponentId("counter")
+    public static class InvalidEventSourcedEntityWithGenericReturnTypeHandler extends EventSourcedEntity<Employee, EmployeeEvent> {
+
+        public Effect<List<String>> createUser(CreateEmployee create) {
+            return effects()
+              .persist(new EmployeeEvent.EmployeeCreated(create.firstName, create.lastName, create.email))
+              .thenReply(__ -> List.of("ok"));
+        }
+
+        public Effect<String> createUser2(CreateEmployee create) {
+            return effects()
+              .persist(new EmployeeEvent.EmployeeCreated(create.firstName, create.lastName, create.email))
+              .thenReply(__ -> "ok");
+        }
+
+        @Override
+        public Employee applyEvent(EmployeeEvent event) {
+            return null;
+        }
+    }
 }

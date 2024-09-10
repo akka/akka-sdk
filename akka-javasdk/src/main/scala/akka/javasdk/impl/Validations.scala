@@ -4,37 +4,39 @@
 
 package akka.javasdk.impl
 
-import akka.javasdk.impl.reflection.Reflect
 import java.lang.reflect.AnnotatedElement
 import java.lang.reflect.Method
 import java.lang.reflect.ParameterizedType
+import java.util.Optional
 
 import scala.reflect.ClassTag
 
+import akka.annotation.InternalApi
+import akka.javasdk.Result
+import akka.javasdk.annotations.ComponentId
 import akka.javasdk.annotations.Consume.FromKeyValueEntity
 import akka.javasdk.annotations.Produce.ServiceStream
-import ComponentDescriptorFactory.eventSourcedEntitySubscription
-import ComponentDescriptorFactory.hasAcl
-import ComponentDescriptorFactory.hasConsumerOutput
-import ComponentDescriptorFactory.hasEventSourcedEntitySubscription
-import ComponentDescriptorFactory.hasHandleDeletes
-import ComponentDescriptorFactory.hasStreamSubscription
-import ComponentDescriptorFactory.hasSubscription
-import ComponentDescriptorFactory.hasTopicPublication
-import ComponentDescriptorFactory.hasTopicSubscription
-import ComponentDescriptorFactory.hasUpdateEffectOutput
-import ComponentDescriptorFactory.hasValueEntitySubscription
-import Reflect.Syntax._
-import akka.annotation.InternalApi
-import akka.javasdk.annotations.ComponentId
 import akka.javasdk.annotations.Query
 import akka.javasdk.annotations.Table
 import akka.javasdk.consumer.Consumer
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
+import akka.javasdk.impl.ComponentDescriptorFactory.eventSourcedEntitySubscription
+import akka.javasdk.impl.ComponentDescriptorFactory.hasAcl
+import akka.javasdk.impl.ComponentDescriptorFactory.hasConsumerOutput
 import akka.javasdk.impl.ComponentDescriptorFactory.hasESEffectOutput
+import akka.javasdk.impl.ComponentDescriptorFactory.hasEventSourcedEntitySubscription
+import akka.javasdk.impl.ComponentDescriptorFactory.hasHandleDeletes
 import akka.javasdk.impl.ComponentDescriptorFactory.hasKVEEffectOutput
 import akka.javasdk.impl.ComponentDescriptorFactory.hasQueryEffectOutput
+import akka.javasdk.impl.ComponentDescriptorFactory.hasStreamSubscription
+import akka.javasdk.impl.ComponentDescriptorFactory.hasSubscription
 import akka.javasdk.impl.ComponentDescriptorFactory.hasTimedActionEffectOutput
+import akka.javasdk.impl.ComponentDescriptorFactory.hasTopicPublication
+import akka.javasdk.impl.ComponentDescriptorFactory.hasTopicSubscription
+import akka.javasdk.impl.ComponentDescriptorFactory.hasUpdateEffectOutput
+import akka.javasdk.impl.ComponentDescriptorFactory.hasValueEntitySubscription
+import akka.javasdk.impl.reflection.Reflect
+import akka.javasdk.impl.reflection.Reflect.Syntax._
 import akka.javasdk.keyvalueentity.KeyValueEntity
 import akka.javasdk.timedaction.TimedAction
 import akka.javasdk.view.View
@@ -127,8 +129,31 @@ private[javasdk] object Validations {
       eventSourcedEntityEventMustBeSealed(component) ++
       eventSourcedCommandHandlersMustBeUnique(component) ++
       mustHaveNonEmptyComponentId(component) ++
-      commandHandlerArityShouldBeZeroOrOne(component, hasESEffectOutput)
+      commandHandlerArityShouldBeZeroOrOne(component, hasESEffectOutput) ++
+      validateEffectReturnType(component, hasESEffectOutput)
     }
+
+  private def validateEffectReturnType(component: Class[_], methodPredicate: Method => Boolean): Validation = {
+    component.getMethods.toIndexedSeq
+      .filter(methodPredicate)
+      .filterNot { method =>
+        val returnType = method.getGenericReturnType
+          .asInstanceOf[ParameterizedType]
+          .getActualTypeArguments
+          .head
+
+        returnType match {
+          case p: ParameterizedType => p.getRawType == classOf[Optional[_]] || p.getRawType == classOf[Result[_, _]]
+          case _                    => true
+        }
+      }
+      .foldLeft(Valid: Validation) { (validation, methodWithWrongEffectReturnType) =>
+        validation ++ Validation(
+          errorMessage(
+            component,
+            s"Effect cannot be typed with a generic type in method [${methodWithWrongEffectReturnType.getName}]. Supported generic types are: Optional<> and Result<>."))
+      }
+  }
 
   private def eventSourcedEntityEventMustBeSealed(component: Class[_]): Validation = {
     val eventType =
@@ -152,7 +177,8 @@ private[javasdk] object Validations {
   def validateValueEntity(component: Class[_]): Validation = when[KeyValueEntity[_]](component) {
     valueEntityCommandHandlersMustBeUnique(component) ++
     mustHaveNonEmptyComponentId(component) ++
-    commandHandlerArityShouldBeZeroOrOne(component, hasKVEEffectOutput)
+    commandHandlerArityShouldBeZeroOrOne(component, hasKVEEffectOutput) ++
+    validateEffectReturnType(component, hasKVEEffectOutput)
   }
 
   def valueEntityCommandHandlersMustBeUnique(component: Class[_]): Validation = {
@@ -227,6 +253,7 @@ private[javasdk] object Validations {
       viewMustHaveAtLeastOneQueryMethod(component) ++
       viewQueriesMustReturnEffect(component) ++
       commandHandlerArityShouldBeZeroOrOne(component, hasQueryEffectOutput) ++
+      validateEffectReturnType(component, hasQueryEffectOutput) ++
       viewMultipleTableUpdatersMustHaveTableAnnotations(tableUpdaters) ++
       tableUpdaters
         .map(updaterClass =>

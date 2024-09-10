@@ -4,18 +4,17 @@
 
 package akka.javasdk.impl
 
-import akka.javasdk.impl.InvalidComponentException
-import akka.javasdk.impl.Validations
-
 import scala.jdk.CollectionConverters.CollectionHasAsScala
-import kalix.JwtMethodOptions.JwtMethodMode
-import kalix.JwtServiceOptions.JwtServiceMode
+
 import akka.javasdk.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.CounterEventSourcedEntity
 import akka.javasdk.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.CounterEventSourcedEntityWithMethodLevelJWT
 import akka.javasdk.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.CounterEventSourcedEntityWithServiceLevelJWT
 import akka.javasdk.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.EventSourcedEntityWithMethodLevelAcl
 import akka.javasdk.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.EventSourcedEntityWithServiceLevelAcl
+import akka.javasdk.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.InvalidEventSourcedEntityWithGenericReturnTypeHandler
 import akka.javasdk.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.InvalidEventSourcedEntityWithOverloadedCommandHandler
+import kalix.JwtMethodOptions.JwtMethodMode
+import kalix.JwtServiceOptions.JwtServiceMode
 import org.scalatest.wordspec.AnyWordSpec
 
 class EventSourcedEntityDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuite {
@@ -116,6 +115,13 @@ class EventSourcedEntityDescriptorFactorySpec extends AnyWordSpec with Component
         Validations.validate(classOf[InvalidEventSourcedEntityWithOverloadedCommandHandler]).failIfInvalid
       }.getMessage should include(
         "InvalidEventSourcedEntityWithOverloadedCommandHandler has 2 command handler methods named 'createUser'. Command handlers must have unique names.")
+    }
+
+    "not allow generic return types" in {
+      intercept[InvalidComponentException] {
+        Validations.validate(classOf[InvalidEventSourcedEntityWithGenericReturnTypeHandler]).failIfInvalid
+      }.getMessage should include(
+        "Effect cannot be typed with a generic type in method [createUser]. Supported generic types are: Optional<> and Result<>.")
     }
 
   }
