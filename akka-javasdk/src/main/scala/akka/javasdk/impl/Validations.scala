@@ -199,9 +199,16 @@ private[javasdk] object Validations {
 
   private def validateConsumer(component: Class[_]): Validation = {
     when[Consumer](component) {
+      hasConsumeAnnotation(component, "Consumer") ++
       commonSubscriptionValidation(component, hasConsumerOutput) ++
       actionValidation(component) ++
       mustHaveNonEmptyComponentId(component)
+    }
+  }
+
+  private def hasConsumeAnnotation(component: Class[_], componentName: String): Validation = {
+    when(!hasSubscription(component)) {
+      Invalid(errorMessage(component, s"A $componentName must be annotated with `@Consume` annotation."))
     }
   }
 
@@ -224,6 +231,7 @@ private[javasdk] object Validations {
       tableUpdaters
         .map(updaterClass =>
           validateVewTableUpdater(updaterClass) ++
+          hasConsumeAnnotation(updaterClass, "TableUpdater") ++
           viewTableAnnotationMustNotBeEmptyString(updaterClass) ++
           viewMustHaveCorrectUpdateHandlerWhenTransformingViewUpdates(updaterClass))
         .foldLeft(Valid: Validation)(_ ++ _)

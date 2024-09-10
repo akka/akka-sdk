@@ -20,6 +20,7 @@ import akka.javasdk.testmodels.subscriptions.PubSubTestModels.ConsumerWithMethod
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.ESWithPublishToTopicConsumer
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.EventStreamPublishingConsumer
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.EventStreamSubscriptionConsumer
+import akka.javasdk.testmodels.subscriptions.PubSubTestModels.MissingConsumeAnnotationConsumer
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.MissingHandlersWhenSubscribeToEventSourcedEntityConsumer
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.MissingSourceForTopicPublishing
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.MultipleTypeLevelSubscriptions
@@ -50,6 +51,12 @@ class ConsumerDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptor
       intercept[InvalidComponentException] {
         Validations.validate(classOf[NotPublicConsumer]).failIfInvalid
       }.getMessage should include("NotPublicConsumer is not marked with `public` modifier. Components must be public.")
+    }
+
+    "validate that Consumer must be annotated with Consume" in {
+      intercept[InvalidComponentException] {
+        Validations.validate(classOf[MissingConsumeAnnotationConsumer]).failIfInvalid
+      }.getMessage should include("A Consumer must be annotated with `@Consume` annotation.")
     }
 
     "generate mapping with Event Sourced Subscription annotations" in {

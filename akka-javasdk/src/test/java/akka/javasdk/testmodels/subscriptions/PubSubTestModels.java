@@ -61,6 +61,17 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
     }
   }
 
+  public static class MissingConsumeAnnotationConsumer extends Consumer {
+
+    public Effect methodOne(EmployeeCreated message) {
+      return effects().produce(message);
+    }
+
+    public Effect methodTwo(EmployeeEmailUpdated message) {
+      return effects().produce(message);
+    }
+  }
+
   @Consume.FromEventSourcedEntity(CounterEventSourcedEntity.class)
   public static class SubscribeToEventSourcedEntity extends Consumer {
 
