@@ -141,7 +141,8 @@ private[akka] final class ActionsImpl(
 
   private implicit val executionContext: ExecutionContext = sdkExecutionContext
   implicit val system: ActorSystem = _system
-  private val telemetry = Telemetry(system)
+  import akka.actor.typed.scaladsl.adapter._
+  private val telemetry = Telemetry(system.toTyped)
   lazy val telemetries: Map[String, Instrumentation] = services.values.map {
     case s: ActionService   => (s.serviceName, telemetry.traceInstrumentation(s.serviceName, ActionCategory))
     case s: ConsumerService => (s.serviceName, telemetry.traceInstrumentation(s.serviceName, ConsumerCategory))

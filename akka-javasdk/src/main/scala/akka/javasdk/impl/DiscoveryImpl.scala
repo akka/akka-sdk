@@ -40,6 +40,8 @@ class DiscoveryImpl(
 
   private val log = LoggerFactory.getLogger(getClass)
 
+  private val applicationConfig = ApplicationConfig(system).getConfig
+
   private val serviceIncarnationUuid = UUID.randomUUID().toString
 
   // Delay CoordinatedShutdown until the runtime has been terminated.
@@ -51,10 +53,10 @@ class DiscoveryImpl(
   }
 
   private def configuredOrElse(key: String, default: String): String =
-    if (system.settings.config.hasPath(key)) system.settings.config.getString(key) else default
+    if (applicationConfig.hasPath(key)) applicationConfig.getString(key) else default
 
   private def configuredIntOrElse(key: String, default: Int): Int =
-    if (system.settings.config.hasPath(key)) system.settings.config.getInt(key) else default
+    if (applicationConfig.hasPath(key)) applicationConfig.getInt(key) else default
 
   // detect hybrid runtime version probes when protocol version 0.0
   private def isVersionProbe(info: ProxyInfo): Boolean = {
@@ -78,10 +80,10 @@ class DiscoveryImpl(
     // FIXME is this needed anymore, we are running in the same process, so ENV is available
     // possibly filtered or hidden env, passed along for substitution in descriptor options
     val env: Map[String, String] = {
-      if (system.settings.config.getBoolean("akka.javasdk.discovery.pass-along-env-all"))
+      if (applicationConfig.getBoolean("akka.javasdk.discovery.pass-along-env-all"))
         sys.env
       else {
-        system.settings.config.getAnyRef("akka.javasdk.discovery.pass-along-env-allow") match {
+        applicationConfig.getAnyRef("akka.javasdk.discovery.pass-along-env-allow") match {
           case allowed: util.ArrayList[String @unchecked] =>
             allowed.asScala.flatMap(name => sys.env.get(name).map(value => name -> value)).toMap
           case unexpected =>

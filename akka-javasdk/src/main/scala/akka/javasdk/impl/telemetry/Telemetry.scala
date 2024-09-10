@@ -4,17 +4,31 @@
 
 package akka.javasdk.impl.telemetry
 
-import akka.actor.{ ActorSystem, ExtendedActorSystem, Extension, ExtensionId }
+import scala.collection.mutable
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.jdk.OptionConverters._
+
+import akka.Done
+import akka.actor.CoordinatedShutdown
+import akka.actor.typed.ActorSystem
+import akka.actor.typed.Extension
+import akka.actor.typed.ExtensionId
 import akka.annotation.InternalApi
 import akka.javasdk.Metadata
+import akka.javasdk.impl.ApplicationConfig
 import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.ProxyInfoHolder
 import akka.javasdk.impl.Service
 import io.opentelemetry.api.OpenTelemetry
 import io.opentelemetry.api.common.Attributes
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
-import io.opentelemetry.api.trace.{ Span, SpanKind, Tracer }
-import io.opentelemetry.context.propagation.{ ContextPropagators, TextMapGetter, TextMapSetter }
+import io.opentelemetry.api.trace.Span
+import io.opentelemetry.api.trace.SpanKind
+import io.opentelemetry.api.trace.Tracer
+import io.opentelemetry.context.propagation.ContextPropagators
+import io.opentelemetry.context.propagation.TextMapGetter
+import io.opentelemetry.context.propagation.TextMapSetter
 import io.opentelemetry.context.{ Context => OtelContext }
 import io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporter
 import io.opentelemetry.sdk.OpenTelemetrySdk
@@ -26,11 +40,8 @@ import kalix.protocol.action.ActionCommand
 import kalix.protocol.component.MetadataEntry
 import kalix.protocol.component.MetadataEntry.Value.StringValue
 import kalix.protocol.entity.Command
-import org.slf4j.{ Logger, LoggerFactory }
-
-import scala.collection.mutable
-import scala.concurrent.ExecutionContext
-import scala.jdk.OptionConverters._
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 /**
  * INTERNAL API
@@ -41,7 +52,8 @@ object Telemetry extends ExtensionId[Telemetry] {
   val TRACE_PARENT_KEY: String = TraceInstrumentation.TRACE_PARENT_KEY
   val TRACE_STATE_KEY: String = TraceInstrumentation.TRACE_STATE_KEY
   val TRACE_ID: String = "trace_id"
-  override def createExtension(system: ExtendedActorSystem): Telemetry =
+
+  override def createExtension(system: ActorSystem[_]): Telemetry =
     new Telemetry(system)
 }
 
@@ -89,15 +101,17 @@ case object KeyValueEntityCategory extends ComponentCategory {
  * INTERNAL API
  */
 @InternalApi
-final class Telemetry(system: ActorSystem) extends Extension {
+final class Telemetry(system: ActorSystem[_]) extends Extension {
 
   private val proxyInfoHolder = ProxyInfoHolder(system)
 
   private val logger = LoggerFactory.getLogger(classOf[Telemetry])
 
-  private val collectorEndpointSDK = system.settings.config.getString(TraceInstrumentation.TRACING_ENDPOINT)
+  private val applicationConfig = ApplicationConfig(system).getConfig
 
-  implicit val ec: ExecutionContext = system.dispatcher
+  private val collectorEndpointSDK = applicationConfig.getString(TraceInstrumentation.TRACING_ENDPOINT)
+
+  implicit val ec: ExecutionContext = system.executionContext
 
   /**
    * This method assumes the instrumentation won't be consumed until discovery from the proxy is requested. Therefore
@@ -176,7 +190,7 @@ private[akka] object TraceInstrumentation {
 private final class TraceInstrumentation(
     collectorEndpoint: String,
     componentName: String,
-    system: ActorSystem,
+    system: ActorSystem[_],
     componentCategory: ComponentCategory)
     extends Instrumentation {
 
@@ -204,7 +218,10 @@ private final class TraceInstrumentation(
       .setTracerProvider(sdkTracerProvider)
       .setPropagators(ContextPropagators.create(W3CTraceContextPropagator.getInstance()))
       .build()
-    system.registerOnTermination(sdk.close())
+    CoordinatedShutdown(system).addTask(CoordinatedShutdown.PhaseBeforeActorSystemTerminate, "close telemetry") { () =>
+      sdk.close()
+      Future.successful(Done)
+    }
     sdk
   }
 

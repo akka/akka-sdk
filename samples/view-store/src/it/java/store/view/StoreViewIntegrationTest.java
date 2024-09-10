@@ -1,7 +1,6 @@
 package store.view;
 
 import akka.javasdk.testkit.TestKitSupport;
-import akka.javasdk.testkit.TestKit;
 import store.customer.api.CustomerEntity;
 import store.customer.domain.Address;
 import store.customer.domain.Customer;
@@ -14,11 +13,6 @@ import store.product.domain.Product;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public abstract class StoreViewIntegrationTest extends TestKitSupport {
-
-  @Override
-  protected TestKit.Settings testKitSettings() {
-    return TestKit.Settings.DEFAULT.withAdvancedViews();
-  }
 
   protected void createProduct(String id, String name, String currency, long units, int cents) {
     Product product = new Product(name, new Money(currency, units, cents));

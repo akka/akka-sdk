@@ -41,7 +41,7 @@
         <maven.compiler.release>${java.version}</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <akka-javasdk.version>3.0.0-M4</akka-javasdk.version>
-        <kalix-runtime.version>1.1.41-dcb5d51</kalix-runtime.version>
+        <kalix-runtime.version>1.1.41-2f557c8</kalix-runtime.version>
         <skip.docker>false</skip.docker>
 
 
@@ -278,9 +278,6 @@
                     <version>3.3.0</version>
                     <configuration>
                         <mainClass>kalix.runtime.KalixRuntimeMain</mainClass>
-                        <arguments>
-                            <argument>-Dconfig.resource=${config.resource}</argument>
-                        </arguments>
                         <systemProperties>
                             <systemProperty>
                                 <key>akka.javasdk.dev-mode.service-name</key>

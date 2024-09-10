@@ -59,8 +59,6 @@ public class SdkIntegrationTest extends TestKitSupport {
     // here only to show how to set different `Settings` in a test.
     return TestKit.Settings.DEFAULT
       .withAclEnabled()
-      .withAdvancedViews()
-      .withWorkflowTickInterval(ofMillis(500))
       .withTopicOutgoingMessages(CUSTOMERS_TOPIC);
   }
 

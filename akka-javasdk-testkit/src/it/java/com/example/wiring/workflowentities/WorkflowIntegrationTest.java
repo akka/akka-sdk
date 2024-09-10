@@ -20,13 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class WorkflowIntegrationTest extends TestKitSupport {
 
-    @Override
-    protected TestKit.Settings testKitSettings() {
-        return TestKit.Settings.DEFAULT
-                .withWorkflowTickInterval(ofMillis(500));
-    }
-
-    @Test
+  @Test
   public void shouldNotStartTransferForWithNegativeAmount() {
     var walletId1 = "1";
     var walletId2 = "2";

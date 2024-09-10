@@ -5,9 +5,10 @@
 package akka.javasdk.impl
 
 import java.time.Duration
+
 import akka.annotation.InternalApi
 import Settings.DevModeSettings
-import akka.actor.typed.ActorSystem
+import com.typesafe.config.Config
 
 /**
  * INTERNAL API
@@ -15,10 +16,7 @@ import akka.actor.typed.ActorSystem
 @InternalApi
 private[impl] object Settings {
 
-  def apply(system: ActorSystem[_]): Settings = {
-    // note: some config is for the runtime and some for the sdk only, with two different config namespaces
-    val sdkConfig = system.settings.config.getConfig("akka.javasdk")
-
+  def apply(sdkConfig: Config): Settings = {
     Settings(
       snapshotEvery = sdkConfig.getInt("event-sourced-entity.snapshot-every"),
       cleanupDeletedEventSourcedEntityAfter = sdkConfig.getDuration("event-sourced-entity.cleanup-deleted-after"),

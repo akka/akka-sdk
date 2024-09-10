@@ -15,8 +15,6 @@ public class EventingTestkitIntegrationTest extends KalixIntegrationTestKitSuppo
   protected KalixTestKit.Settings kalixTestKitSettings() {
     return KalixTestKit.Settings.DEFAULT
         .withAclEnabled()
-        .withAdvancedViews()
-        .withWorkflowTickInterval(ofMillis(500))
         .withTopicIncomingMessages(COUNTER_EVENTS_TOPIC)
         .withValueEntityIncomingMessages("user");
   }

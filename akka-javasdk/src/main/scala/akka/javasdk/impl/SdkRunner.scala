@@ -4,6 +4,18 @@
 
 package akka.javasdk.impl
 
+import java.lang.reflect.Constructor
+import java.lang.reflect.ParameterizedType
+import java.util.concurrent.CompletionStage
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.concurrent.Promise
+import scala.jdk.CollectionConverters.CollectionHasAsScala
+import scala.jdk.FutureConverters._
+import scala.reflect.ClassTag
+import scala.util.control.NonFatal
+
 import akka.Done
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
@@ -19,14 +31,15 @@ import akka.javasdk.consumer.ConsumerContext
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.javasdk.eventsourcedentity.EventSourcedEntityContext
 import akka.javasdk.http.HttpClientProvider
+import akka.javasdk.impl.Sdk.StartupContext
 import akka.javasdk.impl.Validations.Invalid
 import akka.javasdk.impl.Validations.Valid
 import akka.javasdk.impl.Validations.Validation
 import akka.javasdk.impl.action.ActionService
 import akka.javasdk.impl.action.ActionsImpl
 import akka.javasdk.impl.client.ComponentClientImpl
-import akka.javasdk.impl.consumer.ConsumerService
 import akka.javasdk.impl.consumer.ConsumerProvider
+import akka.javasdk.impl.consumer.ConsumerService
 import akka.javasdk.impl.eventsourcedentity.EventSourcedEntitiesImpl
 import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityProvider
 import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityService
@@ -58,6 +71,10 @@ import akka.runtime.sdk.spi.ComponentClients
 import akka.runtime.sdk.spi.HttpEndpointConstructionContext
 import akka.runtime.sdk.spi.HttpEndpointDescriptor
 import akka.runtime.sdk.spi.SpiComponents
+import akka.runtime.sdk.spi.SpiDevModeSettings
+import akka.runtime.sdk.spi.SpiEventingSupportSettings
+import akka.runtime.sdk.spi.SpiMockedEventingSettings
+import akka.runtime.sdk.spi.SpiSettings
 import akka.runtime.sdk.spi.StartContext
 import akka.stream.Materializer
 import com.google.protobuf.Descriptors
@@ -75,43 +92,57 @@ import kalix.protocol.view.Views
 import kalix.protocol.workflow_entity.WorkflowEntities
 import org.slf4j.LoggerFactory
 
-import java.lang.reflect.Constructor
-import java.lang.reflect.ParameterizedType
-import java.util.concurrent.atomic.AtomicReference
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import scala.concurrent.Promise
-import scala.jdk.CollectionConverters.CollectionHasAsScala
-import scala.reflect.ClassTag
-import scala.util.control.NonFatal
-
 /**
  * INTERNAL API
  */
 @InternalApi
-final class SdkRunner extends akka.runtime.sdk.spi.Runner {
+class SdkRunner extends akka.runtime.sdk.spi.Runner {
+  private val startedPromise = Promise[StartupContext]()
+
+  def applicationConfig: Config =
+    ApplicationConfig.loadApplicationConf
+
+  override def getSettings: SpiSettings = {
+    val applicationConf = applicationConfig
+    val devModeSettings =
+      if (applicationConf.getBoolean("akka.javasdk.dev-mode.enabled"))
+        Some(
+          new SpiDevModeSettings(
+            httpPort = applicationConf.getInt("akka.javasdk.dev-mode.http-port"),
+            aclEnabled = applicationConf.getBoolean("akka.javasdk.dev-mode.acl.enabled"),
+            serviceName = applicationConf.getString("akka.javasdk.dev-mode.service-name"),
+            eventingSupport = SpiEventingSupportSettings.fromConfigValue(
+              applicationConf.getString("akka.javasdk.dev-mode.eventing.support")),
+            mockedEventing = SpiMockedEventingSettings.empty,
+            testMode = false))
+      else
+        None
+
+    new SpiSettings(devModeSettings)
+  }
 
   override def start(startContext: StartContext): Future[SpiComponents] = {
     try {
+      ApplicationConfig(startContext.system).overrideConfig(applicationConfig)
       val app = new Sdk(
         startContext.system,
         startContext.sdkDispatcherName,
         startContext.executionContext,
         startContext.materializer,
-        startContext.componentClients)
+        startContext.componentClients,
+        startedPromise)
       Future.successful(app.spiEndpoints)
     } catch {
       case NonFatal(ex) =>
         LoggerFactory.getLogger(getClass).error("Unexpected exception while setting up service", ex)
-        Sdk.onNextStartCallback.getAndSet(null) match {
-          case null =>
-          case f    =>
-            // Integration test mode
-            f.failure(ex)
-        }
+        startedPromise.tryFailure(ex)
         throw ex
     }
   }
+
+  def started: CompletionStage[StartupContext] =
+    startedPromise.future.asJava
+
 }
 
 /**
@@ -184,9 +215,6 @@ private object ComponentLocator {
 @InternalApi
 private[javasdk] object Sdk {
   final case class StartupContext(componentClients: ComponentClients, dependencyProvider: Option[DependencyProvider])
-
-  val onNextStartCallback: AtomicReference[Promise[StartupContext]] =
-    new AtomicReference(null)
 }
 
 /**
@@ -198,23 +226,23 @@ private final class Sdk(
     sdkDispatcherName: String,
     sdkExecutionContext: ExecutionContext,
     sdkMaterializer: Materializer,
-    runtimeComponentClients: ComponentClients) {
+    runtimeComponentClients: ComponentClients,
+    startedPromise: Promise[StartupContext]) {
   private val logger = LoggerFactory.getLogger(getClass)
   private val messageCodec = new JsonMessageCodec
   private val ComponentLocator.LocatedClasses(componentClasses, maybeServiceClass) =
     ComponentLocator.locateUserComponents(system)
   private var dependencyProviderOpt: Option[DependencyProvider] = None
 
-  private val sdkSettings = Settings(system)
+  private val applicationConfig = ApplicationConfig(system).getConfig
+  private val sdkSettings = Settings(applicationConfig.getConfig("akka.javasdk"))
 
   private lazy val userServiceConfig = {
     // hiding these paths from the config provided to user
     val sensitivePaths = List("akka", "kalix.meta", "kalix.proxy", "kalix.runtime", "system")
-    val c = system.settings.config
-    // FIXME it will always have this path because of reference.conf, no need for condition here
-    val sdkConfig = if (c.hasPath("akka.javasdk")) c.getConfig("akka.javasdk") else ConfigFactory.empty()
+    val sdkConfig = applicationConfig.getConfig("akka.javasdk")
     sensitivePaths
-      .foldLeft(c) { (conf, toHide) => conf.withoutPath(toHide) }
+      .foldLeft(applicationConfig) { (conf, toHide) => conf.withoutPath(toHide) }
       .withFallback(sdkConfig)
   }
 
@@ -371,12 +399,12 @@ private final class Sdk(
       override def preStart(system: ActorSystem[_]): Future[Done] = {
         serviceSetup match {
           case None =>
-            setStartCallback(None)
+            startedPromise.trySuccess(StartupContext(runtimeComponentClients, None))
             Future.successful(Done)
           case Some(setup) =>
             dependencyProviderOpt = Option(setup.createDependencyProvider())
             dependencyProviderOpt.foreach(_ => logger.info("Service configured with DependencyProvider"))
-            setStartCallback(dependencyProviderOpt)
+            startedPromise.trySuccess(StartupContext(runtimeComponentClients, dependencyProviderOpt))
             Future.successful(Done)
         }
       }
@@ -400,16 +428,6 @@ private final class Sdk(
       override def workflowEntities: Option[WorkflowEntities] = workflowEntitiesEndpoint
       override def replicatedEntities: Option[ReplicatedEntities] = None
       override def httpEndpointDescriptors: Seq[HttpEndpointDescriptor] = httpEndpoints
-    }
-  }
-
-  private def setStartCallback(maybeDependencyProvider: Option[DependencyProvider]) = {
-    Sdk.onNextStartCallback.getAndSet(null) match {
-      case null =>
-      case f =>
-        f.success(
-          Sdk
-            .StartupContext(runtimeComponentClients, maybeDependencyProvider))
     }
   }
 

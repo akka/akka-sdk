@@ -39,26 +39,23 @@ class PretendServiceClient(val settings: GrpcClientSettings) extends PretendServ
   def closed(): CompletionStage[Done] = closePromise.future.asJava
 }
 
-object GrpcClientsSpec {
-  def config = ConfigFactory.parseString("""
-     |akka.grpc.client.c {
-     |  service-discovery {
-     |    service-name = "my-service"
-     |  }
-     |  host = "my-host"
-     |  port = 42
-     |  override-authority = "google.fr"
-     |  deadline = 10m
-     |  user-agent = "Akka-gRPC"
-     |}
-     |""".stripMargin)
-}
+class GrpcClientsSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike with Matchers with ScalaFutures {
 
-class GrpcClientsSpec
-    extends ScalaTestWithActorTestKit(GrpcClientsSpec.config)
-    with AnyWordSpecLike
-    with Matchers
-    with ScalaFutures {
+  ApplicationConfig(system).overrideConfig(
+    ConfigFactory
+      .parseString("""
+      |akka.grpc.client.c {
+      |  service-discovery {
+      |    service-name = "my-service"
+      |  }
+      |  host = "my-host"
+      |  port = 42
+      |  override-authority = "google.fr"
+      |  deadline = 10m
+      |  user-agent = "Akka-gRPC"
+      |}
+      |""".stripMargin)
+      .withFallback(ApplicationConfig(system).getConfig))
 
   "The GrpcClients extension" must {
     "create the client for a service and pool it" in {

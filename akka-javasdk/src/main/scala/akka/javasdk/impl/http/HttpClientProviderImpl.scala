@@ -4,6 +4,11 @@
 
 package akka.javasdk.impl.http
 
+import scala.concurrent.Await
+import scala.concurrent.duration.DurationInt
+import scala.jdk.CollectionConverters.SeqHasAsJava
+import scala.util.control.NonFatal
+
 import akka.actor.typed.ActorSystem
 import akka.actor.typed.Extension
 import akka.actor.typed.ExtensionId
@@ -13,24 +18,22 @@ import akka.http.javadsl.model.HttpHeader
 import akka.http.javadsl.model.headers.RawHeader
 import akka.javasdk.http.HttpClient
 import akka.javasdk.http.HttpClientProvider
-import akka.javasdk.impl.Settings
+import akka.javasdk.impl.ApplicationConfig
 import akka.javasdk.impl.HostAndPort
 import akka.javasdk.impl.ProxyInfoHolder
+import akka.javasdk.impl.Settings
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
 import io.opentelemetry.context.{ Context => OtelContext }
-
-import scala.concurrent.Await
-import scala.concurrent.duration.DurationInt
-import scala.jdk.CollectionConverters.SeqHasAsJava
-import scala.util.control.NonFatal
 
 /**
  * INTERNAL API
  */
 @InternalApi
 private[akka] object HttpClientProviderImpl extends ExtensionId[HttpClientProviderImpl] {
-  override def createExtension(system: ActorSystem[_]): HttpClientProviderImpl =
-    new HttpClientProviderImpl(system, None, ProxyInfoHolder(system), Settings(system))
+  override def createExtension(system: ActorSystem[_]): HttpClientProviderImpl = {
+    val sdkConfig = ApplicationConfig(system).getConfig.getConfig("akka.javasdk")
+    new HttpClientProviderImpl(system, None, ProxyInfoHolder(system), Settings(sdkConfig))
+  }
 
 }
 
@@ -45,9 +48,6 @@ private[akka] final class HttpClientProviderImpl(
     settings: Settings)
     extends Extension
     with HttpClientProvider {
-
-  /*  private val MaxCrossServiceResponseContentLength =
-    system.settings.config.getBytes("kalix.javasdk.max-content-length").toInt */
 
   override def httpClientFor(host: String): HttpClient = {
     val (actualHost, actualPort) =

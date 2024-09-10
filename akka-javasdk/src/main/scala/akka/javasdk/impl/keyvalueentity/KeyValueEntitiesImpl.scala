@@ -88,7 +88,8 @@ private[impl] final class KeyValueEntitiesImpl(
 
   private final val log = LoggerFactory.getLogger(this.getClass)
 
-  val telemetry = Telemetry(system)
+  import akka.actor.typed.scaladsl.adapter._
+  val telemetry = Telemetry(system.toTyped)
   lazy val instrumentations: Map[String, Instrumentation] = services.values.map { s =>
     (s.serviceName, telemetry.traceInstrumentation(s.serviceName, KeyValueEntityCategory))
   }.toMap

@@ -32,8 +32,6 @@ public class EventingTestkitDestinationIntegrationTest extends TestKitSupport {
   public TestKit.Settings testKitSettings() {
     return TestKit.Settings.DEFAULT
         .withAclEnabled()
-        .withAdvancedViews()
-        .withWorkflowTickInterval(ofMillis(500))
         .withTopicOutgoingMessages(CUSTOMERS_TOPIC);
   }
 

@@ -12,16 +12,21 @@ import akka.javasdk.DependencyProvider;
 import akka.javasdk.Metadata;
 import akka.javasdk.Principal;
 import akka.javasdk.client.ComponentClient;
+import akka.javasdk.impl.ApplicationConfig;
 import akka.javasdk.impl.GrpcClients;
 import akka.javasdk.impl.JsonMessageCodec;
 import akka.javasdk.impl.MessageCodec;
 import akka.javasdk.impl.ProxyInfoHolder;
-import akka.javasdk.impl.Sdk;
+import akka.javasdk.impl.SdkRunner;
 import akka.javasdk.impl.client.ComponentClientImpl;
 import akka.javasdk.impl.timer.TimerSchedulerImpl;
 import akka.javasdk.testkit.EventingTestKit.IncomingMessages;
 import akka.javasdk.timer.TimerScheduler;
 import akka.pattern.Patterns;
+import akka.runtime.sdk.spi.SpiDevModeSettings;
+import akka.runtime.sdk.spi.SpiEventingSupportSettings;
+import akka.runtime.sdk.spi.SpiMockedEventingSettings;
+import akka.runtime.sdk.spi.SpiSettings;
 import akka.stream.Materializer;
 import akka.stream.SystemMaterializer;
 import com.typesafe.config.Config;
@@ -32,23 +37,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.Option;
 import scala.Some;
-import scala.concurrent.Await;
-import scala.concurrent.Promise;
 import scala.concurrent.duration.FiniteDuration;
 
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.time.Duration;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
@@ -197,18 +199,9 @@ public class TestKit {
    */
   public static class Settings {
     /**
-     * Default stop timeout (10 seconds).
-     */
-    public static Duration DEFAULT_STOP_TIMEOUT = Duration.ofSeconds(10);
-    /**
      * Default settings for testkit.
      */
-    public static Settings DEFAULT = new Settings(DEFAULT_STOP_TIMEOUT);
-
-    /**
-     * Timeout setting for stopping the local runtime test instance.
-     */
-    public final Duration stopTimeout;
+    public static Settings DEFAULT = new Settings("self", false, TEST_BROKER, MockedEventing.EMPTY);
 
     /**
      * The name of this service when deployed.
@@ -220,35 +213,9 @@ public class TestKit {
      */
     public final boolean aclEnabled;
 
-    /**
-     * Whether advanced View features are enabled.
-     */
-    public final boolean advancedViews;
-
-    /**
-     * To override workflow tick interval for integration tests
-     */
-    public final Optional<Duration> workflowTickInterval;
-
-    /**
-     * Service port mappings from serviceName to host:port
-     */
-    public final Map<String, String> servicePortMappings;
-
     public final EventingSupport eventingSupport;
 
     public final MockedEventing mockedEventing;
-
-    /**
-     * Create new settings for the TestKit.
-     *
-     * @param stopTimeout timeout to use when waiting for the runtime to stop
-     * @deprecated Use Settings.DEFAULT.withStopTimeout() instead.
-     */
-    @Deprecated
-    public Settings(final Duration stopTimeout) {
-      this(stopTimeout, "self", false, false, Optional.empty(), Collections.emptyMap(), TEST_BROKER, MockedEventing.EMPTY);
-    }
 
     public enum EventingSupport {
       /**
@@ -273,32 +240,14 @@ public class TestKit {
     }
 
     private Settings(
-        final Duration stopTimeout,
         final String serviceName,
         final boolean aclEnabled,
-        final boolean advancedViews,
-        final Optional<Duration> workflowTickInterval,
-        final Map<String, String> servicePortMappings,
         final EventingSupport eventingSupport,
         final MockedEventing mockedEventing) {
-      this.stopTimeout = stopTimeout;
       this.serviceName = serviceName;
       this.aclEnabled = aclEnabled;
-      this.advancedViews = advancedViews;
-      this.workflowTickInterval = workflowTickInterval;
-      this.servicePortMappings = servicePortMappings;
       this.eventingSupport = eventingSupport;
       this.mockedEventing = mockedEventing;
-    }
-
-    /**
-     * Set a custom stop timeout, for stopping the local runtime test instance.
-     *
-     * @param stopTimeout timeout to use when waiting for the runtime to stop
-     * @return updated Settings
-     */
-    public Settings withStopTimeout(final Duration stopTimeout) {
-      return new Settings(stopTimeout, serviceName, aclEnabled, advancedViews, workflowTickInterval, servicePortMappings, eventingSupport, mockedEventing);
     }
 
     /**
@@ -310,7 +259,7 @@ public class TestKit {
      * @return The updated settings.
      */
     public Settings withServiceName(final String serviceName) {
-      return new Settings(stopTimeout, serviceName, aclEnabled, advancedViews, workflowTickInterval, servicePortMappings, eventingSupport, mockedEventing);
+      return new Settings(serviceName, aclEnabled, eventingSupport, mockedEventing);
     }
 
     /**
@@ -319,7 +268,7 @@ public class TestKit {
      * @return The updated settings.
      */
     public Settings withAclDisabled() {
-      return new Settings(stopTimeout, serviceName, false, advancedViews, workflowTickInterval, servicePortMappings, eventingSupport, mockedEventing);
+      return new Settings(serviceName, false, eventingSupport, mockedEventing);
     }
 
     /**
@@ -328,32 +277,14 @@ public class TestKit {
      * @return The updated settings.
      */
     public Settings withAclEnabled() {
-      return new Settings(stopTimeout, serviceName, true, advancedViews, workflowTickInterval, servicePortMappings, eventingSupport, mockedEventing);
-    }
-
-    /**
-     * Enable advanced View features for this service.
-     *
-     * @return The updated settings.
-     */
-    public Settings withAdvancedViews() {
-      return new Settings(stopTimeout, serviceName, aclEnabled, true, workflowTickInterval, servicePortMappings, eventingSupport, mockedEventing);
-    }
-
-    /**
-     * Overrides workflow tick interval
-     *
-     * @return The updated settings.
-     */
-    public Settings withWorkflowTickInterval(Duration tickInterval) {
-      return new Settings(stopTimeout, serviceName, aclEnabled, true, Optional.of(tickInterval), servicePortMappings, eventingSupport, mockedEventing);
+      return new Settings(serviceName, true, eventingSupport, mockedEventing);
     }
 
     /**
      * Mock the incoming messages flow from a KeyValueEntity.
      */
     public Settings withKeyValueEntityIncomingMessages(String typeId) {
-      return new Settings(stopTimeout, serviceName, aclEnabled, true, workflowTickInterval, servicePortMappings, eventingSupport,
+      return new Settings(serviceName, aclEnabled, eventingSupport,
           mockedEventing.withKeyValueEntityIncomingMessages(typeId));
     }
 
@@ -361,7 +292,7 @@ public class TestKit {
      * Mock the incoming events flow from an EventSourcedEntity.
      */
     public Settings withEventSourcedEntityIncomingMessages(String typeId) {
-      return new Settings(stopTimeout, serviceName, aclEnabled, true, workflowTickInterval, servicePortMappings, eventingSupport,
+      return new Settings(serviceName, aclEnabled, eventingSupport,
           mockedEventing.withEventSourcedIncomingMessages(typeId));
     }
 
@@ -369,7 +300,7 @@ public class TestKit {
      * Mock the incoming messages flow from a Stream (eventing.in.direct in case of protobuf SDKs).
      */
     public Settings withStreamIncomingMessages(String service, String streamId) {
-      return new Settings(stopTimeout, serviceName, aclEnabled, true, workflowTickInterval, servicePortMappings, eventingSupport,
+      return new Settings(serviceName, aclEnabled, eventingSupport,
           mockedEventing.withStreamIncomingMessages(service, streamId));
     }
 
@@ -377,7 +308,7 @@ public class TestKit {
      * Mock the incoming events flow from a Topic.
      */
     public Settings withTopicIncomingMessages(String topic) {
-      return new Settings(stopTimeout, serviceName, aclEnabled, true, workflowTickInterval, servicePortMappings, eventingSupport,
+      return new Settings(serviceName, aclEnabled, eventingSupport,
           mockedEventing.withTopicIncomingMessages(topic));
     }
 
@@ -385,38 +316,19 @@ public class TestKit {
      * Mock the outgoing events flow for a Topic.
      */
     public Settings withTopicOutgoingMessages(String topic) {
-      return new Settings(stopTimeout, serviceName, aclEnabled, true, workflowTickInterval, servicePortMappings, eventingSupport,
+      return new Settings(serviceName, aclEnabled, eventingSupport,
           mockedEventing.withTopicOutgoingMessages(topic));
     }
 
-    /**
-     * Add a service port mapping from serviceName to host:port.
-     *
-     * @return The updated settings.
-     */
-    public Settings withServicePortMapping(String serviceName, String host, int port) {
-      var updatedMappings = new HashMap<>(servicePortMappings);
-      updatedMappings.put(serviceName, host + ":" + port);
-      return new Settings(stopTimeout, serviceName, aclEnabled, advancedViews, workflowTickInterval, Map.copyOf(updatedMappings), eventingSupport, mockedEventing);
-    }
-
     public Settings withEventingSupport(EventingSupport eventingSupport) {
-      return new Settings(stopTimeout, serviceName, aclEnabled, advancedViews, workflowTickInterval, servicePortMappings, eventingSupport, mockedEventing);
+      return new Settings(serviceName, aclEnabled, eventingSupport, mockedEventing);
     }
 
     @Override
     public String toString() {
-      var portMappingsRendered =
-          servicePortMappings.entrySet().stream()
-              .map(e -> e.getKey() + "=" + e.getValue()).collect(Collectors.toList());
-
       return "Settings(" +
-          "stopTimeout=" + stopTimeout +
-          ", serviceName='" + serviceName + '\'' +
+          "serviceName='" + serviceName + '\'' +
           ", aclEnabled=" + aclEnabled +
-          ", advancedViews=" + advancedViews +
-          ", workflowTickInterval=" + workflowTickInterval +
-          ", servicePortMappings=[" + String.join(", ", portMappingsRendered) + "]" +
           ", eventingSupport=" + eventingSupport +
           ", mockedEventing=" + mockedEventing +
           ')';
@@ -424,11 +336,6 @@ public class TestKit {
   }
 
   private static final Logger log = LoggerFactory.getLogger(TestKit.class);
-
-  /** Default local port where the Google Pub/Sub emulator is available (8085). */
-  public static final int DEFAULT_GOOGLE_PUBSUB_PORT = 8085;
-
-  public static final int DEFAULT_KAFKA_PORT = 9092;
 
   private final Settings settings;
 
@@ -461,7 +368,9 @@ public class TestKit {
   }
 
   /**
-   * Start this testkit with default configuration (loaded from {@code application.conf}).
+   * Start this testkit with default configuration.
+   * The default configuration is loaded from {@code application-test.conf} if that exists, otherwise
+   * from {@code application.conf}.
    *
    * @return this TestKit instance
    */
@@ -470,9 +379,11 @@ public class TestKit {
   }
 
   /**
-   * Start this testkit with custom configuration (overrides {@code application.conf}).
+   * Start this testkit with custom configuration that overrides the default configuration.
+   * The default configuration is loaded from {@code application-test.conf} if that exists, otherwise
+   * from {@code application.conf}. The default configuration is still used as fallback.
    *
-   * @param config custom test configuration for the runtime
+   * @param config custom test configuration
    * @return this Testkit instance
    */
   public TestKit start(final Config config) {
@@ -499,71 +410,60 @@ public class TestKit {
 
   private void startRuntime(final Config config)  {
     try {
-      // FIXME should we really pass all these properties?
-      final Map<String, Object> runtimeOptions = new HashMap<>();
-
-      // randomize the database name to avoid conflicts
-      runtimeOptions.put("akka.persistence.r2dbc.connection-factory.database", UUID.randomUUID().toString());
-      runtimeOptions.put("kalix.proxy.acl.local-dev.self-deployment-name", settings.serviceName);
-      runtimeOptions.put("kalix.proxy.acl.enabled", settings.aclEnabled);
-      runtimeOptions.put("kalix.proxy.view.features.all", settings.advancedViews);
-      runtimeOptions.put("kalix.proxy.version-check-on-startup", false);
-      if (settings.mockedEventing.hasConfig()) {
-        runtimeOptions.put("kalix.proxy.eventing.grpc-backend.host", "localhost");
-        runtimeOptions.put("kalix.proxy.eventing.grpc-backend.port", eventingTestKitPort);
-      }
-      if (settings.eventingSupport == TEST_BROKER) {
-        runtimeOptions.put("kalix.proxy.eventing.support", "grpc-backend");
-      } else if (settings.eventingSupport == Settings.EventingSupport.KAFKA) {
-        runtimeOptions.put("kalix.proxy.eventing.support", "kafka");
-        runtimeOptions.put("kalix.proxy.eventing.kafka.bootstrap-servers=host.testcontainers.internal", DEFAULT_KAFKA_PORT);
-      } else if (settings.eventingSupport == Settings.EventingSupport.GOOGLE_PUBSUB) {
-        runtimeOptions.put("kalix.proxy.eventing.support", "google-pubsub-emulator");
-        runtimeOptions.put("kalix.proxy.eventing.google-pubsub-emulator-defaults.host", "host.testcontainers.internal");
-        runtimeOptions.put("kalix.proxy.eventing.google-pubsub-emulator-defaults.port", DEFAULT_GOOGLE_PUBSUB_PORT);
-      }
-      if (settings.mockedEventing.hasIncomingConfig()) {
-        runtimeOptions.put("kalix.proxy.eventing.override.sources", settings.mockedEventing.toIncomingFlowConfig());
-      }
-      if (settings.mockedEventing.hasOutgoingConfig()) {
-        runtimeOptions.put("kalix.proxy.eventing.override.destinations", settings.mockedEventing.toOutgoingFlowConfig());
-      }
-      settings.workflowTickInterval.ifPresent(tickInterval -> runtimeOptions.put("kalix.proxy.workflow-entity.tick-interval", tickInterval.toMillis() + " ms"));
-
-      // A bit messy right now, but we also need to signal to SDK also that it is in dev-mode
-      runtimeOptions.put("akka.javasdk.dev-mode.enabled", true);
-      runtimeOptions.put("kalix.proxy.dev-mode.enabled", true);
-
-      log.debug("Config for runtime: {}", runtimeOptions);
       log.debug("Config from user: {}", config);
-      // rationale: we want to override things with the runtime options, then use dev mode for everything the runtime
-      //            needs but then allow user to specify their own settings that are found (Note that users cannot override
-      //            runtime config with an application.conf)
-      var runtimeConfig = ConfigFactory.parseMap(runtimeOptions)
+
+      SdkRunner runner = new SdkRunner() {
+        @Override
+        public Config applicationConfig() {
+          return ConfigFactory.parseString("akka.javasdk.dev-mode.enabled = true")
               .withFallback(config)
-              .withFallback(ConfigFactory.load("dev-mode.conf"))
-              .withFallback(ConfigFactory.load("application.conf"));
+              .withFallback(super.applicationConfig());
+        }
 
-      Promise<Sdk.StartupContext> startedKalix = Promise.apply();
-      if (!Sdk.onNextStartCallback().compareAndSet(null, startedKalix)) {
-        throw new RuntimeException("Found another integration test run waiting for Kalix to start, multiple tests must not run in parallel");
-      }
+        @Override
+        public SpiSettings getSettings() {
+          SpiSettings s = super.getSettings();
 
-      runtimeActorSystem = KalixRuntimeMain.start(Some.apply(runtimeConfig));
+          SpiEventingSupportSettings eventingSettings =
+              switch (settings.eventingSupport) {
+                case TEST_BROKER -> new SpiEventingSupportSettings.TestBroker(eventingTestKitPort);
+                case GOOGLE_PUBSUB -> SpiEventingSupportSettings.fromConfigValue("google-pubsub-emulator");
+                case KAFKA -> SpiEventingSupportSettings.fromConfigValue("kafka");
+              };
+          SpiMockedEventingSettings mockedEventingSettings =
+              SpiMockedEventingSettings.create(settings.mockedEventing.mockedIncomingEvents, settings.mockedEventing.mockedOutgoingEvents);
+
+
+          if (s.devMode().isEmpty())
+            throw new IllegalStateException("dev-mode must be enabled"); // it's set from overridden applicationConfig method
+
+          SpiDevModeSettings devModeSettings = s.devMode().get()
+              .withTestMode(true)
+              .withAclEnabled(settings.aclEnabled).withServiceName(settings.serviceName)
+              .withEventingSupport(eventingSettings)
+              .withMockedEventing(mockedEventingSettings);
+
+          return s.withDevMode(devModeSettings);
+        }
+
+      };
+
+      Config runtimeConfig = ConfigFactory.empty();
+      runtimeActorSystem = KalixRuntimeMain.start(Some.apply(runtimeConfig), Some.apply(runner));
       // wait for SDK to get on start callback (or fail starting), we need it to set up the component client
-      var startupContext = Await.result(startedKalix.future(), scala.concurrent.duration.Duration.create("20s"));
+      var startupContext = runner.started().toCompletableFuture().get(20, TimeUnit.SECONDS);
       var componentClients = startupContext.componentClients();
       dependencyProvider = Optional.ofNullable(startupContext.dependencyProvider().getOrElse(() -> null));
 
       startEventingTestkit();
 
-      proxyPort = runtimeActorSystem.settings().config().getInt("kalix.proxy.http-port");
+      proxyPort = ApplicationConfig.get(runtimeActorSystem).getConfig().getInt("akka.javasdk.dev-mode.http-port");
       proxyHost = "localhost";
 
       Http http = Http.get(runtimeActorSystem);
       log.info("Checking runtime status");
       CompletionStage<String> checkingProxyStatus = Patterns.retry(() ->
-        http.singleRequest(HttpRequest.GET("http://localhost:" + proxyPort + "/akka/dev-mode/health-check")).thenCompose(response -> {
+        http.singleRequest(HttpRequest.GET("http://" + proxyHost + ":" + proxyPort + "/akka/dev-mode/health-check")).thenCompose(response -> {
           int responseCode = response.status().intValue();
           if (responseCode == 404) {
             log.info("Runtime started");
@@ -764,7 +664,7 @@ public class TestKit {
   public void stop() {
     try {
       if (runtimeActorSystem != null) {
-        akka.testkit.javadsl.TestKit.shutdownActorSystem(runtimeActorSystem.classicSystem(), FiniteDuration.create(settings.stopTimeout.toMillis(), "ms"), true);
+        akka.testkit.javadsl.TestKit.shutdownActorSystem(runtimeActorSystem.classicSystem(), FiniteDuration.create(10, TimeUnit.SECONDS), true);
       }
     } catch (Exception e) {
       log.error("TestKit runtime failed to terminate", e);

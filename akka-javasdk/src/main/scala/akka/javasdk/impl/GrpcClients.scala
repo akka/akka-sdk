@@ -6,18 +6,18 @@ package akka.javasdk.impl
 
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executor
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
 import scala.jdk.FutureConverters._
+
 import akka.Done
-import akka.actor.ActorSystem
 import akka.actor.ClassicActorSystemProvider
 import akka.actor.CoordinatedShutdown
-import akka.actor.ExtendedActorSystem
-import akka.actor.Extension
-import akka.actor.ExtensionId
-import akka.actor.ExtensionIdProvider
+import akka.actor.typed.ActorSystem
+import akka.actor.typed.Extension
+import akka.actor.typed.ExtensionId
 import akka.annotation.InternalApi
 import akka.grpc.GrpcClientSettings
 import akka.grpc.javadsl.{ AkkaGrpcClient => AkkaGrpcJavaClient }
@@ -30,31 +30,31 @@ import org.slf4j.LoggerFactory
  * INTERNAL API
  */
 @InternalApi
-object GrpcClients extends ExtensionId[GrpcClients] with ExtensionIdProvider {
-  override def get(system: ActorSystem): GrpcClients = super.get(system)
+object GrpcClients extends ExtensionId[GrpcClients] {
 
-  override def get(system: ClassicActorSystemProvider): GrpcClients = super.get(system)
-
-  override def createExtension(system: ExtendedActorSystem): GrpcClients =
+  override def createExtension(system: ActorSystem[_]): GrpcClients =
     new GrpcClients(system)
-  override def lookup: ExtensionId[_ <: Extension] = this
+
+  def get(system: ActorSystem[_]): GrpcClients = apply(system)
 
   final private case class Key(serviceClass: Class[_], service: String, port: Int, addHeader: Option[(String, String)])
+
 }
 
 /**
  * INTERNAL API
  */
 @InternalApi
-final class GrpcClients(system: ExtendedActorSystem) extends Extension {
+final class GrpcClients(system: ActorSystem[_]) extends Extension {
   import GrpcClients._
   private val log = LoggerFactory.getLogger(classOf[GrpcClients])
+  private val applicationConfig = ApplicationConfig(system).getConfig
 
   private val proxyInfoHolder = ProxyInfoHolder(system)
-  private implicit val ec: ExecutionContext = system.dispatcher
+  private implicit val ec: ExecutionContext = system.executionContext
   private val clients = new ConcurrentHashMap[Key, AnyRef]()
   private val MaxCrossServiceResponseContentLength =
-    system.settings.config.getBytes("akka.javasdk.cross-service.max-content-length").toInt
+    applicationConfig.getBytes("akka.javasdk.cross-service.max-content-length").toInt
 
   CoordinatedShutdown(system).addTask(CoordinatedShutdown.PhaseServiceStop, "stop-grpc-clients")(() =>
     Future
@@ -123,7 +123,7 @@ final class GrpcClients(system: ExtendedActorSystem) extends Extension {
 
   private def createClient(key: Key): AnyRef = {
     val settings =
-      if (!system.settings.config.hasPath(s"""akka.grpc.client."${key.service}"""")) {
+      if (!applicationConfig.hasPath(s"""akka.grpc.client."${key.service}"""")) {
         // "service" is not present in the config, treat it as an Akka gRPC inter-service call
         log.debug("Creating gRPC client for Kalix service [{}:{}]", key.service, key.port)
         GrpcClientSettings
@@ -135,7 +135,7 @@ final class GrpcClients(system: ExtendedActorSystem) extends Extension {
       } else {
         log.debug("Creating gRPC client for external service [{}]", key.service)
         // external service, defined in config
-        GrpcClientSettings.fromConfig(key.service)(system)
+        grpcClientSettingsForExternal(key.service)
       }
 
     val settingsWithCallCredentials = key.addHeader match {
@@ -187,6 +187,20 @@ final class GrpcClients(system: ExtendedActorSystem) extends Extension {
     }
 
     client
+  }
+
+  private def grpcClientSettingsForExternal(serviceName: String): GrpcClientSettings = {
+    // This is same as GrpcClientSettings.fromConfig but using the applicationConfig
+    val akkaGrpcClientConfig = applicationConfig.getConfig("akka.grpc.client")
+    val clientConfig = {
+      // Use config named "*" by default
+      val defaultServiceConfig = akkaGrpcClientConfig.getConfig("\"*\"")
+      require(
+        akkaGrpcClientConfig.hasPath(s""""$serviceName""""),
+        s"Config path `akka.grpc.client.$serviceName` does not exist")
+      akkaGrpcClientConfig.getConfig(s""""$serviceName"""").withFallback(defaultServiceConfig)
+    }
+    GrpcClientSettings.fromConfig(clientConfig)(system)
   }
 
 }
