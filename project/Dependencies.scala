@@ -133,6 +133,7 @@ object Dependencies {
     kalixSdkSpi,
     jacksonDataFormatProto,
     "com.typesafe.akka" %% "akka-http-core" % AkkaHttpVersion,
+    akkaDependency("akka-stream"),
     akkaDependency("akka-actor-typed") % Provided,
     "org.scala-lang.modules" %% "scala-parser-combinators" % "2.3.0",
     "net.aichler" % "jupiter-interface" % JupiterKeys.jupiterVersion.value % Test,
@@ -145,6 +146,7 @@ object Dependencies {
         jacksonDataFormatProto,
         // These two are for the eventing testkit
         akkaDependency("akka-actor-testkit-typed"),
+        akkaDependency("akka-stream-testkit"),
         kalixTestkitProtocol % "protobuf-src",
         // user will interface with these
         junit5,
