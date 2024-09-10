@@ -20,7 +20,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static com.example.wiring.pubsub.PublishVEToTopic.CUSTOMERS_TOPIC;
-import static java.time.Duration.ofMillis;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -31,7 +30,6 @@ public class EventingTestkitDestinationIntegrationTest extends TestKitSupport {
 
   public TestKit.Settings testKitSettings() {
     return TestKit.Settings.DEFAULT
-        .withAclEnabled()
         .withTopicOutgoingMessages(CUSTOMERS_TOPIC);
   }
 

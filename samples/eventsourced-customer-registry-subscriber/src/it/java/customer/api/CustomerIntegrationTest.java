@@ -1,21 +1,19 @@
 package customer.api;
 
 
+import akka.http.javadsl.model.StatusCodes;
 import akka.javasdk.http.HttpClient;
 import akka.javasdk.http.StrictResponse;
 import akka.util.ByteString;
 import customer.api.CustomerRegistryEndpoint.CreateCustomerRequest;
 import customer.application.CustomersByNameView;
+import customer.domain.Customer;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.time.Duration;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -36,7 +34,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class CustomerIntegrationTest extends CustomerRegistryIntegrationTest {
 
 
-  // this test relies on a source Akka service to which it subscribes. Such service should be running on :9000
+  // this test relies on a source Akka eventsourced-customer-registry service to which it subscribes.
+  // Such service should be running on :9000 (and this service runs on 9001 in the test)
   @Test
   public void create()  {
     // start the real test now
@@ -46,19 +45,19 @@ public class CustomerIntegrationTest extends CustomerRegistryIntegrationTest {
     //TODO improve this when dealing with 2 HttpClients
     HttpClient client = createClient("http://localhost:9001");
 
+    // call our own endpoint service (why not call the other endpoint directly here?) which will in turn call the endpoint of the other service
     // try until it succeeds
     Awaitility.await()
       .ignoreExceptions()
       .pollInterval(5, TimeUnit.SECONDS)
       .atMost(10, TimeUnit.SECONDS)
       .untilAsserted(() -> {
-
         StrictResponse<ByteString> res = await(
           client.POST("/customer/create")
             .withRequestBody(createRequest).invokeAsync()
         );
 
-        assertThat(res.httpResponse().status().isSuccess()).isTrue();
+        assertThat(res.httpResponse().status()).isEqualTo(StatusCodes.CREATED);
       });
 
 
@@ -69,13 +68,13 @@ public class CustomerIntegrationTest extends CustomerRegistryIntegrationTest {
       .pollInterval(5, TimeUnit.SECONDS)
       .atMost(60, TimeUnit.SECONDS)
       .untilAsserted(() -> {
-        String name = await(
+        var foundCustomers = await(
           componentClient.forView()
             .method(CustomersByNameView::findByName)
-            .invokeAsync("Johanna")
-        ).customers().stream().findFirst().get().name();
+            .invokeAsync(createRequest.name())
+        ).customers().stream().map(Customer::name);
 
-        assertThat(name).isEqualTo("Johanna");
+        assertThat(foundCustomers).containsExactly(createRequest.name());
       });
   }
 

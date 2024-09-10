@@ -2,6 +2,7 @@ package com.example.api;
 
 import akka.Done;
 import akka.http.javadsl.model.HttpResponse;
+import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
@@ -18,6 +19,9 @@ import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 
 // tag::timers[]
+// Opened up for access from the public internet to make the sample service easy to try out.
+// For actual services meant for production this must be carefully considered, and often set more limited
+@Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
 @HttpEndpoint("/orders")
 public class OrderEndpoint {
 // end::timers[]

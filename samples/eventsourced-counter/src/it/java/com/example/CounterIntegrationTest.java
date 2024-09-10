@@ -28,7 +28,6 @@ public class CounterIntegrationTest extends TestKitSupport { // <1>
   protected TestKit.Settings testKitSettings() {
     return TestKit.Settings.DEFAULT
             // end::eventing-config[]
-            .withAclEnabled() // <1>
             // end::acls[]
             // tag::eventing-config[]
             .withTopicIncomingMessages("counter-commands") // <1>

@@ -79,9 +79,15 @@ curl localhost:9000/customer/one/address
 curl localhost:9000/customer/one
 ```
 
-Since the sample `customer.Setup` class opens up ACLs for entities it is also possible to interact directly with the
-entities on pre-defined paths based on the component id, entity id and the method name. Zero parameter methods are exposed
-as HTTP GET:
+Akka runtime provides pre-defined paths based on the component id, entity id and the method name to interact directly 
+with the entities, those are however locked down from access throuh default deny-all ACLs. It is possible to explicitly
+allow access on an entity using the `akka.javasdk.annotations.Acl` annotation, or by completely disabling the local 
+"dev mode" ACL checking by running the service with `mvn -Dakka.javasdk.dev-mode.acl.enabled=false compile exec:java`
+or changing the default in your `src/main/resources/application.conf`.
+
+For deployed services the ACLs are always enabled.
+
+Zero parameter methods are exposed as HTTP GET:
 
 ```shell
 curl localhost:9000/akka/v1.0/entity/customer/one/getCustomer

@@ -388,12 +388,13 @@ private final class Sdk(
     }
 
     val devModeServiceName = sdkSettings.devModeSettings.map(_.serviceName)
-    val aclDescriptor =
-      maybeServiceClass
-        .map(serviceClass => AclDescriptorFactory.buildAclFileDescriptor(serviceClass))
-        .getOrElse(AclDescriptorFactory.defaultAclFileDescriptor)
     val discoveryEndpoint =
-      new DiscoveryImpl(classicSystem, services, aclDescriptor, BuildInfo.name, devModeServiceName)
+      new DiscoveryImpl(
+        classicSystem,
+        services,
+        AclDescriptorFactory.defaultAclFileDescriptor,
+        BuildInfo.name,
+        devModeServiceName)
 
     new SpiComponents {
       override def preStart(system: ActorSystem[_]): Future[Done] = {

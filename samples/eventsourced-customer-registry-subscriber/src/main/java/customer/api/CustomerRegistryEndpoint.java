@@ -1,6 +1,8 @@
 package customer.api;
 
 import akka.http.javadsl.model.HttpResponse;
+import akka.http.javadsl.model.StatusCodes;
+import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.http.HttpClient;
@@ -11,6 +13,9 @@ import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.CompletionStage;
 
+// Opened up for access from the public internet to make the sample service easy to try out.
+// For actual services meant for production this must be carefully considered, and often set more limited
+@Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
 @HttpEndpoint("/customer")
 public class CustomerRegistryEndpoint {
 
@@ -30,12 +35,18 @@ public class CustomerRegistryEndpoint {
 
   @Post("/create")
   public CompletionStage<HttpResponse> create(CreateCustomerRequest createRequest) {
-    log.debug("Creating customer: {}", createRequest);
+    log.info("Delegating customer creation to upstream service: {}", createRequest);
     // make call on customer-registry service
     return
       httpClient.POST("/customer")
         .withRequestBody(createRequest)
         .invokeAsync()
-        .thenApply(__ -> HttpResponses.created());
+        .thenApply(response -> {
+          if (response.httpResponse().status() == StatusCodes.CREATED) {
+            return HttpResponses.created();
+          } else {
+            throw new RuntimeException("Delegate call to create upstream customer failed, response status: " + response.httpResponse().status());
+          }
+        });
   }
 }

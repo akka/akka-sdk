@@ -1,6 +1,7 @@
 package com.example.wallet.api;
 
 import akka.http.javadsl.model.HttpResponse;
+import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.Post;
@@ -13,6 +14,9 @@ import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.CompletionStage;
 
+// Opened up for access from the public internet to make the sample service easy to try out.
+// For actual services meant for production this must be carefully considered, and often set more limited
+@Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
 @HttpEndpoint("/wallet")
 public class WalletEndpoint {
 

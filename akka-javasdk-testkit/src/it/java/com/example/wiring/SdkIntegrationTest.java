@@ -40,7 +40,6 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -52,13 +51,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class SdkIntegrationTest extends TestKitSupport {
 
-  private Duration timeout = Duration.of(10, SECONDS);
-
   @Override
   protected TestKit.Settings testKitSettings() {
     // here only to show how to set different `Settings` in a test.
     return TestKit.Settings.DEFAULT
-      .withAclEnabled()
       .withTopicOutgoingMessages(CUSTOMERS_TOPIC);
   }
 

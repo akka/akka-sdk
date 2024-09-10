@@ -2,18 +2,12 @@ package customer;
 
 import akka.javasdk.JsonSupport;
 import akka.javasdk.ServiceSetup;
-import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.Setup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_NULL_CREATOR_PROPERTIES;
 
-// NOTE: This default ACL settings is very permissive as it allows any traffic from the internet.
-// Our samples default to this permissive configuration to allow users to easily try it out.
-// However, this configuration is not intended to be reproduced in production environments.
-// Documentation at https://docs.kalix.io/java/access-control.html
-@Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
 // tag::object-mapper[]
 @Setup
 public class CustomerRegistrySetup implements ServiceSetup {

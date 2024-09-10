@@ -1,5 +1,6 @@
 package com.example.shoppingcart.api;
 
+import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.http.*;
 import akka.javasdk.client.ComponentClient;
 import com.example.shoppingcart.application.ShoppingCartEntity;
@@ -9,6 +10,9 @@ import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.CompletionStage;
 
+// Opened up for access from the public internet to make the sample service easy to try out.
+// For actual services meant for production this must be carefully considered, and often set more limited
+@Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
 @HttpEndpoint("/shopping-cart")
 public class ShoppingCartEndpoint {
 

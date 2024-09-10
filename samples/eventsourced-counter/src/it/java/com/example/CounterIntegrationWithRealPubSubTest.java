@@ -25,7 +25,7 @@ public class CounterIntegrationWithRealPubSubTest extends TestKitSupport { // <1
     
   @Override
   protected TestKit.Settings testKitSettings() {
-    return TestKit.Settings.DEFAULT.withAclEnabled()
+    return TestKit.Settings.DEFAULT
       .withEventingSupport(TestKit.Settings.EventingSupport.GOOGLE_PUBSUB);
   }
 

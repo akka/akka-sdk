@@ -1,5 +1,6 @@
 package com.example.api;
 
+import akka.javasdk.annotations.Acl;
 import akka.javasdk.http.HttpException;
 import com.example.api.ShoppingCartDTO.LineItemDTO;
 import akka.javasdk.Metadata;
@@ -11,6 +12,9 @@ import akka.javasdk.client.ComponentClient;
 import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 
+// Opened up for access from the public internet to make the sample service easy to try out.
+// For actual services meant for production this must be carefully considered, and often set more limited
+@Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
 @HttpEndpoint("/carts")
 public class ShoppingCartController {
   // end::forward-headers[]

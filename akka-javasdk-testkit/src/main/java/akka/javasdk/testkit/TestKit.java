@@ -201,7 +201,7 @@ public class TestKit {
     /**
      * Default settings for testkit.
      */
-    public static Settings DEFAULT = new Settings("self", false, TEST_BROKER, MockedEventing.EMPTY);
+    public static Settings DEFAULT = new Settings("self", true, TEST_BROKER, MockedEventing.EMPTY);
 
     /**
      * The name of this service when deployed.
@@ -272,7 +272,7 @@ public class TestKit {
     }
 
     /**
-     * Enable ACL checking in this service.
+     * Enable ACL checking in this service (this is the default).
      *
      * @return The updated settings.
      */

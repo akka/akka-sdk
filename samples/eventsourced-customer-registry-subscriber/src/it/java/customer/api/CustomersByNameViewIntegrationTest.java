@@ -17,7 +17,7 @@ public class CustomersByNameViewIntegrationTest extends CustomerRegistryIntegrat
 
   @Override
   protected TestKit.Settings testKitSettings() {
-      return TestKit.Settings.DEFAULT.withAclEnabled()
+      return TestKit.Settings.DEFAULT
               .withStreamIncomingMessages("customer-registry", "customer_events");
   }
 

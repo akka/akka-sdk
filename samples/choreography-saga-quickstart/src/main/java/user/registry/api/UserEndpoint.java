@@ -2,6 +2,7 @@ package user.registry.api;
 
 
 import akka.http.javadsl.model.HttpResponse;
+import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.Post;
@@ -27,6 +28,9 @@ import java.util.concurrent.CompletionStage;
  * <p>
  * The UserEntity is protected from external access. It can only be accessed through this controller.
  */
+// Opened up for access from the public internet to make the sample service easy to try out.
+// For actual services meant for production this must be carefully considered, and often set more limited
+@Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
 @HttpEndpoint("/api/users")
 public class UserEndpoint {
 

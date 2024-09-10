@@ -1,6 +1,7 @@
 package shoppingcart.api;
 
 import akka.http.javadsl.model.HttpResponse;
+import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.http.Delete;
 import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Get;
@@ -13,6 +14,9 @@ import shoppingcart.domain.ShoppingCart;
 
 import java.util.concurrent.CompletionStage;
 
+// Opened up for access from the public internet to make the sample service easy to try out.
+// For actual services meant for production this must be carefully considered, and often set more limited
+@Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
 @HttpEndpoint("/shopping-cart")
 public class ShoppingCartEndpoint {
 

@@ -2,7 +2,6 @@ package com.example;
 
 import akka.javasdk.DependencyProvider;
 import akka.javasdk.ServiceSetup;
-import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.Setup;
 import akka.javasdk.client.ComponentClient;
 import com.example.domain.Counter;
@@ -13,11 +12,6 @@ import org.springframework.core.io.support.ResourcePropertySource;
 import java.io.IOException;
 
 @Setup
-// NOTE: This default ACL settings is very permissive as it allows any traffic from the internet.
-// Our samples default to this permissive configuration to allow users to easily try it out.
-// However, this configuration is not intended to be reproduced in production environments.
-// Documentation at https://docs.kalix.io/java/access-control.html
-@Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
 public class CounterSetup implements ServiceSetup {
 
   private ComponentClient componentClient;
