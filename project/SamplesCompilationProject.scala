@@ -10,8 +10,7 @@ import sbt.Test
 
 object SamplesCompilationProject {
 
-  val additionalDeps = Map(
-    "java-spring-dependency-injection" -> Seq("org.springframework" % "spring-context" % "6.1.6"))
+  val additionalDeps = Map("spring-dependency-injection" -> Seq("org.springframework" % "spring-context" % "6.1.6"))
 
   def compilationProject(configureFunc: Project => Project): CompositeProject = {
     val pathToSample = "samples"
