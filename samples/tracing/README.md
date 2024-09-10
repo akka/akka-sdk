@@ -2,14 +2,12 @@
 
 ## Designing
 
-To understand the Kalix concepts that are the basis for this example, see [Designing services](https://docs.kalix.io/java/development-process.html) in the documentation.
+To understand the Akka SDK concepts that are the basis for this example, see [Designing services](https://docs.kalix.io/java/development-process.html) in the documentation.
 
 ## Developing
 
-This project demonstrates how to use tracing in a Kalix Service using Java SDK.
-The service is based on a User entity that gets updated with a random name and random picture after created.
-Such updates are done after calling an external API to get a random name and picture.
-All the flow is traced (most of it automatically), and see the traces in Jaeger UI.
+This project demonstrates how to use tracing in an Akka Service using Akka SDK.
+By calling from an Akka endpoint to an external service, and manually creating a trace. 
 
 
 ## Building
@@ -22,40 +20,48 @@ mvn compile
 
 ## Running Locally
 
-When running a Kalix service locally, we need to have its companion Kalix Runtime running alongside it.
+When running an Akka service locally.
 To start your service locally, run:
 
 ```shell
-mvn compile exec:java
+TRACING_ENABLED=true COLLECTOR_ENDPOINT="http://localhost:4317" mvn compile exec:java
 ```
 
-This command will start your Kalix service, a companion Kalix Runtime and Jaeger.
+This command will start your Akka service, with tracing enabled and exporting the generated 
+traces to the Jaeger container referred below.
+
+To start Jaeger locally, run:
+
+```shell
+docker compose up
+```
 
 ## Exercising the service
 
-With your Kalix service running, any defined endpoints should be available at `http://localhost:9000`.
+With your Akka service running, any defined endpoints should be available at `http://localhost:9000`.
 
 - Add a new user
 
 ```shell
- curl -i -XPOST -H "Content-Type: application/json" localhost:9000/akka/v1.0/entity/user/1/add -d '{"email":"john@doe.com"}'
+ curl -i -XPOST -H "Content-Type: application/json" localhost:9000/tracing -d '{"id":"2454cb46-1b16-408a-b7f8-bd2d5c376969"}'
 ```
 
+
 - Now you can see the trace in Jaeger UI at http://localhost:16686
-  - select "Kalix endpoint" and "Find all traces" to explore the trace
+  - select "runtime" and "Find all traces" to explore the trace
 
 ## Deploying
 
-To deploy your service, install the `kalix` CLI as documented in
+To deploy your service, install the `akka` CLI as documented in
 [Install Kalix](https://docs.kalix.io/kalix/install-kalix.html)
 and configure a Docker Registry to upload your docker image to.
 
 You will need to update the `dockerImage` property in the `pom.xml` and refer to
 [Configuring registries](https://docs.kalix.io/projects/container-registries.html)
-for more information on how to make your docker image available to Kalix.
+for more information on how to make your docker image available to Akka.
 
-Finally, you can use the [Kalix Console](https://console.kalix.io)
-to create a project and then deploy your service into the project either by using `mvn deploy kalix:deploy` which
-will conveniently package, publish your docker image, and deploy your service to Kalix, or by first packaging and
+Finally, you can use the [Akka Console](https://console.kalix.io)
+to create a project and then deploy your service into the project either by using `mvn deploy akka:deploy` which
+will conveniently package, publish your docker image, and deploy your service to Akka SDK, or by first packaging and
 publishing the docker image through `mvn deploy` and then deploying the image
-through the `kalix` CLI.
+through the `akka` CLI.
