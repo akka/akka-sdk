@@ -27,8 +27,8 @@ readonly sdk_version="$("$script_dir/version.sh")"
 function _remove_doc_tags {
   local -r dir="$1"
   # note: use commands that are compatible with both GNU sed and BSD (macOS) sed
-  LC_CTYPE=C find "$dir" -type f -exec sed -i.bak "/tag::[^\[]*\[.*\]/d" {} \; -exec rm -f {}.bak \;
-  LC_CTYPE=C find "$dir" -type f -exec sed -i.bak "/end::[^\[]*\[.*\]/d" {} \; -exec rm -f {}.bak \;
+  find "$dir/src" -type f -exec sed -i.bak "/tag::[^\[]*\[.*\]/d" {} \; -exec rm -f {}.bak \;
+  find "$dir/src" -type f -exec sed -i.bak "/end::[^\[]*\[.*\]/d" {} \; -exec rm -f {}.bak \;
 }
 
 function _set_sdk_version {
