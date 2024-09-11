@@ -43,6 +43,7 @@ import akka.javasdk.impl.reflection.ViewUrlTemplate
 import akka.javasdk.impl.reflection.VirtualDeleteServiceMethod
 import akka.javasdk.impl.reflection.VirtualServiceMethod
 import akka.javasdk.view.View
+import akka.javasdk.view.View.QueryStreamEffect
 import com.google.protobuf.ByteString
 import com.google.protobuf.DescriptorProtos.DescriptorProto
 import com.google.protobuf.DescriptorProtos.FieldDescriptorProto
@@ -211,10 +212,16 @@ private[impl] object ViewDescriptorFactory extends ComponentDescriptorFactory {
 
       val queryAnnotation = queryMethod.getAnnotation(classOf[Query])
       val queryStr = queryAnnotation.value()
+      val streamUpdates = queryAnnotation.streamUpdates()
+      if (streamUpdates && !streamingQuery)
+        throw new IllegalArgumentException(
+          s"Method [${queryMethod.getName}] is marked as streaming updates, this requires it to return a ${classOf[
+            QueryStreamEffect[_]]}")
 
       val query = kalix.View.Query
         .newBuilder()
         .setQuery(queryStr)
+        .setStreamUpdates(streamUpdates)
         .build()
 
       // TODO: it should be possible to have fixed queries and use a GET method

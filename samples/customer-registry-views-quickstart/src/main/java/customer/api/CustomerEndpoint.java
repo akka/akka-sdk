@@ -1,12 +1,17 @@
 package customer.api;
 
 import akka.NotUsed;
+import akka.http.javadsl.model.ContentType;
 import akka.http.javadsl.model.ContentTypes;
 import akka.http.javadsl.model.HttpEntities;
 import akka.http.javadsl.model.HttpEntity;
 import akka.http.javadsl.model.HttpResponse;
+import akka.http.javadsl.model.MediaType;
 import akka.http.javadsl.model.ResponseEntity;
 import akka.http.javadsl.model.StatusCodes;
+import akka.http.javadsl.model.headers.CacheControl;
+import akka.http.javadsl.model.headers.CacheDirectives;
+import akka.http.javadsl.model.headers.Connection;
 import akka.javasdk.JsonSupport;
 import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.http.HttpEndpoint;
@@ -28,6 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.concurrent.CompletionStage;
 
 // Opened up for access from the public internet to make the sample service easy to try out.
@@ -114,13 +120,40 @@ public class CustomerEndpoint {
             .source(name);
 
         Source<ByteString, NotUsed> csvByteChunkStream =
-            Source.single("name,email\n").concat(customerSummarySource.map(customerSummary ->
-                    customerSummary.name() + "," + customerSummary.email() + "\n"
+            Source.single("id,name,email\n").concat(customerSummarySource.map(customerSummary ->
+                    customerSummary.customerId() + "," + customerSummary.name() + "," + customerSummary.email() + "\n"
                 )).map(ByteString::fromString);
 
         return HttpResponse.create()
             .withStatus(StatusCodes.OK)
             .withEntity(HttpEntities.create(ContentTypes.TEXT_CSV_UTF8, csvByteChunkStream));
+    }
+
+    private final static ContentType TEXT_EVENT_STREAM = ContentTypes.parse("text/event-stream");
+
+    @Get("/by-name-sse/{name}")
+    public HttpResponse continousByNameServerSentEvents(String name) {
+        // view will keep stream going, toggled with streamUpdates = true on the query
+        var customerSummarySource = componentClient.forView()
+            .stream(CustomersByNameView::continousGetCustomerSummaryStream)
+            .source(name);
+
+        final var eventPrefix = ByteString.fromString("data: ");
+        final var eventEnd = ByteString.fromString("\n\n");
+        // Server sent events
+        // https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events#event_stream_format
+        Source<ByteString, NotUsed> sseCustomerSummaryStream =
+            customerSummarySource.map(customerSummary ->
+                eventPrefix.concat(JsonSupport.encodeToAkkaByteString(customerSummary)).concat(eventEnd)
+            );
+
+        return HttpResponse.create()
+            .withStatus(StatusCodes.OK)
+            .withHeaders(Arrays.asList(
+                CacheControl.create(CacheDirectives.NO_CACHE),
+                Connection.create("keep-alive")
+            ))
+            .withEntity(HttpEntities.create(TEXT_EVENT_STREAM, sseCustomerSummaryStream));
     }
 
 

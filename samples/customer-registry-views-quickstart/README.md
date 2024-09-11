@@ -60,6 +60,11 @@ curl localhost:9000/customer/by-email/test@example.com
 curl localhost:9000/customer/by-name/Test%20Testsson
 ```
 
+* Query by name in CSV format
+```shell
+curl localhost:9000/customer/by-name-csv/Jan%20Janssen
+```
+
 * Change name:
 
 ```shell
@@ -82,6 +87,19 @@ curl localhost:9000/customer/one/address \
   -XPUT \
   --data '{"street":"Newstreet 25","city":"Newcity"}'  
 ```
+
+* There is also a Server Sent Event (SSE) version that will first emit matching rows that exist in the view, and then
+  stay running, continuously stream updates to a view matching the query:
+
+```shell
+curl localhost:9000/customer/by-name-sse/Jan%20Janssen 
+```
+
+Start this query in one terminal window while triggering updates in another terminal window, for example 
+changing the name to and from "Jan Janssen" or adding more customers with different ids and the same name, to see the
+updates appear.
+
+## Pre-defined paths
 
 Akka runtime provides pre-defined paths based on the component id, entity id and the method name to interact directly
 with the entities, those are however locked down from access throuh default deny-all ACLs. It is possible to explicitly

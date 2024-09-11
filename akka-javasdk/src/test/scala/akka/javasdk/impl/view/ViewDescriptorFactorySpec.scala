@@ -327,6 +327,13 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
     "allow more than one query method" in {
       Validations.validate(classOf[ViewWithTwoQueries]).failIfInvalid
     }
+
+    "not allow stream updates that are not returning View.QueryStreamEffect<T>" in {
+      intercept[InvalidComponentException] {
+        Validations.validate(classOf[ViewTestModels.ViewWithIncorrectQueries]).failIfInvalid
+      }.getMessage shouldBe
+      "On 'akka.javasdk.testmodels.view.ViewTestModels$ViewWithIncorrectQueries#getUserByEmail': Query methods marked with streamUpdates must return View.QueryStreamEffect<RowType>"
+    }
   }
 
   "View descriptor factory (for Event Sourced Entity)" should {

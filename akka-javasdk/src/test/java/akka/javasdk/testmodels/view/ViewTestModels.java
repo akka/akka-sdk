@@ -321,11 +321,31 @@ public class ViewTestModels {
       return queryResult();
     }
 
-    @Query("SELECT * FROM users WHERE email = :email AND name = :name")
+    @Query(value = "SELECT * FROM users WHERE email = :email AND name = :name")
     public QueryEffect<User> getUserByNameAndEmail(ByNameAndEmail byEmail) {
       return queryResult();
     }
   }
+
+  @ComponentId("users_view")
+  public static class ViewWithIncorrectQueries extends View {
+
+    @Consume.FromKeyValueEntity(UserEntity.class)
+    public static class UsersTable extends TableUpdater<User> {}
+
+    // stream updates but single-result effect
+    @Query(value = "SELECT * FROM users WHERE email = :email", streamUpdates = true)
+    public QueryEffect<User> getUserByEmail(ByEmail byEmail) {
+      return queryResult();
+    }
+
+    @Query(value = "SELECT * FROM users WHERE email = :email AND name = :name")
+    public QueryEffect<User> getUserByNameAndEmail(ByNameAndEmail byEmail) {
+      return queryResult();
+    }
+  }
+
+
 
 
 

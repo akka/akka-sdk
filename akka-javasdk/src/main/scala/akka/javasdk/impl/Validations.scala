@@ -252,6 +252,7 @@ private[javasdk] object Validations {
       viewMustHaveAtLeastOneViewTableUpdater(component) ++
       viewMustHaveAtLeastOneQueryMethod(component) ++
       viewQueriesMustReturnEffect(component) ++
+      viewQueriesWithStreamUpdatesMustBeStreaming(component) ++
       commandHandlerArityShouldBeZeroOrOne(component, hasQueryEffectOutput) ++
       validateEffectReturnType(component, hasQueryEffectOutput) ++
       viewMultipleTableUpdatersMustHaveTableAnnotations(tableUpdaters) ++
@@ -308,6 +309,18 @@ private[javasdk] object Validations {
           methodWithWrongReturnType,
           s"Query methods must return View.QueryEffect<RowType> or View.QueryStreamEffect<RowType> (was ${methodWithWrongReturnType.getReturnType}."))
     }
+  }
+
+  private def viewQueriesWithStreamUpdatesMustBeStreaming(component: Class[_]): Validation = {
+    val streamingUpdatesQueriesWithWrongEffect = component.getMethods.toIndexedSeq.filter { m =>
+      val annotation = m.getAnnotation(classOf[Query])
+      annotation != null && annotation.streamUpdates() && m.getReturnType != classOf[View.QueryStreamEffect[_]]
+    }
+    streamingUpdatesQueriesWithWrongEffect.foldLeft(Valid: Validation)((validation, incorrectMethod) =>
+      validation ++ Validation(
+        errorMessage(
+          incorrectMethod,
+          s"Query methods marked with streamUpdates must return View.QueryStreamEffect<RowType>")))
   }
 
   private def viewMultipleTableUpdatersMustHaveTableAnnotations(tableUpdaters: Seq[Class[_]]): Validation =
