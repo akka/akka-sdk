@@ -27,21 +27,15 @@ readonly sdk_version="$("$script_dir/version.sh")"
 function _remove_doc_tags {
   local -r dir="$1"
   # note: use commands that are compatible with both GNU sed and BSD (macOS) sed
-  find "$dir" -type f -exec sed -i.bak "/tag::[^\[]*\[.*\]/d" {} \; -exec rm -f {}.bak \;
-  find "$dir" -type f -exec sed -i.bak "/end::[^\[]*\[.*\]/d" {} \; -exec rm -f {}.bak \;
+  LC_CTYPE=C find "$dir" -type f -exec sed -i.bak "/tag::[^\[]*\[.*\]/d" {} \; -exec rm -f {}.bak \;
+  LC_CTYPE=C find "$dir" -type f -exec sed -i.bak "/end::[^\[]*\[.*\]/d" {} \; -exec rm -f {}.bak \;
 }
 
 function _set_sdk_version {
   local -r dir="$1"
-  # note: use commands that are compatible with both GNU sed and BSD (macOS) sed
-  if [ -f "$dir/pom.xml" ] ; then
-    sed -i.bak "s/<kalix-sdk.version>.*</<kalix-sdk.version>$sdk_version</" "$dir/pom.xml"
-    rm -f "$dir/pom.xml.bak"
-  fi
-  if [ -f "$dir/project/plugins.sbt" ] ; then
-    sed -i.bak "s/\"sbt-kalix\" % .*/\"sbt-kalix\" % \"$sdk_version\")/" "$dir/project/plugins.sbt"
-    rm -f "$dir/project/plugins.sbt.bak"
-  fi
+  export SDK_VERSION=$sdk_version
+  # we only want to update the first occurrence of <version>, the one belonging the parent-pom
+  awk '/<version>[^<]*<\/version>/ && !subyet {sub("<version>[^<]*<\/version>", "<version>"ENVIRON["SDK_VERSION"]"</version>"); subyet=1} 1' $dir/pom.xml > temp && mv temp $dir/pom.xml
 }
 
 function _bundle {
