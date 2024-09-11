@@ -3,48 +3,54 @@
 include::ROOT:partial$include.adoc[]
 include::partial$attributes.adoc[]
 
-The Java SDK provides a code-first approach to developing Kalix applications. This SDK offers a way to develop applications which should be familiar to someone who has worked with Spring applications by making use of annotations to assemble Kalix and its components.
+Building services with the Akka SDK leads you into embracing proven design patterns that enable your apps to remain responsive to change. It frees you from infrastructure concerns and lets you focus on the application logic.
 
-When using the Kalix Java SDK, your services are exposed using traditional Spring REST annotations and serialization is backed by the ubiquitous Jackson library.
+With its few, concise components, the Akka SDK is easy to learn, and you can develop services in quick, iterative steps by running your code locally with full insight through Akka's console.
 
-NOTE: If you're new to Kalix and the different types of entities that exist in a Kalix app, consider reading https://docs.kalix.io/services/programming-model.html#_what_is_a_kalix_service[this section] before continuing.
+Akka services let you build REST endpoints with flexible access control and multiple ways to expose these endpoints to their consuming systems or applications. Akka is secure by default, and you explicitly express the desired access through code and configuration.
+
+Akka encapsulates data together with the logic to access and modify it. The data itself is expressed in regular Java records (plain old Java objects). The same goes for the events that change the data, these are expressed in pure Java to reflect business events that lead to data updates. Akka enables you to build fully event-driven services by combining logic and data into one thing: entities.
+
+Data and changes to it are managed by Akka's runtime without the need to manage database storage. Changes to your data can be automatically replicated to multiple places, not only within a single service, but also across applications and even cloud providers. An SQL-like language lets you design read access that ensures the data is properly indexed for your application needs.
+
+Integrations with message systems like Kafka are already built-in and the Akka SDK enables message consumers to listen to topics and queues.
 
 == Prerequisites
 
-The following are required to develop services in Java:
+The following are required to develop services with the Akka SDK:
 
-Java:: Kalix requires Java {java-version} or later.
+Java:: Java {java-version} or later.
 
-Apache Maven:: Kalix relies on https://maven.apache.org/[Apache Maven {tab-icon}, window="new"] as build tool. 
+Apache Maven:: https://maven.apache.org/[Apache Maven {tab-icon}, window="new"] is the recommended build tool with the Akka SDK.
 
-Docker:: Kalix requires https://docs.docker.com/get-docker/[Docker {tab-icon}, window="new"] {minimum_docker_version} for building your service images. Most popular build tools have plugins that assist in building Docker images.
+== A simple service
 
+:TODO: Graph view of the customer registry service with endpoints, entities and views.
+
+This tiny service exposes its REST API (POST, PATCH, GET,...) through Endpoints.
+The data and changes to it are defined as Java records describing the domain that are managed as an Entity.
+To query the data, the service offers Views.
 
 == Getting Started
 
-You can start a new Kalix service using our xref:java:getting-started.adoc[Getting started] guide. If you prefer to first explore a fully implemented Kalix service, you can try one of our https://docs.kalix.io/samples/index.html[beginner samples].
+Follow our xref:java:getting-started.adoc["Getting started with the Akka SDK"] guide to implement your first service. If you prefer to first explore working example code, you can check out the https://docs.kalix.io/samples/index.html[beginner samples].
 
 On the other hand, if you would rather spend some time exploring our documentation, here are some main features you will find in this section:
 
-* xref:java:actions.adoc[Actions]
+* xref:java:endpoints.adoc[REST Endpoints]
 * xref:java:value-entity.adoc[Key Value Entities]
 * xref:java:event-sourced-entities.adoc[Event Sourced Entities]
 * xref:java:views.adoc[Views]
-* xref:java:actions-publishing-subscribing.adoc[Publishing and Subscribing]
-* xref:java:timers.adoc[Timers]
+* xref:java:publishing-subscribing.adoc[Consumers]
+* xref:java:timed-actions.adoc[Timed Actions]
 * xref:java:workflows.adoc[Workflows]
+* xref:java:actions.adoc[Actions]
 
-
-== Spring Boot Integration
-
-The Kalix Java SDK provides a familiar developer experience for Java developers that are used to Spring. Its `Main`
-class is annotated with `@SpringBootApplication` and starts exactly the same way as a common Spring Boot application, namely
-by calling `SpringApplication.run(Main.class, args)`.
-
-For all matters, it's a Spring Boot application that runs and connects with the https://docs.kalix.io/reference/glossary.html#runtime[Kalix Runtime]. As such, your application can benefit of most features available to Spring applications. However, some features are not available or are not recommended when building a Kalix application based on the Java SDK. Those are explained in the sections below.
 
 [#_dependency_injection]
 === Dependency Injection
+
+:TODO: Should this section be kept?
 
 *Actions*, *Entities* and *Views* are all Kalix components, and they get special treatment.
 
@@ -56,17 +62,7 @@ On the other hand, it is possible to inject non-Kalix classes into Kalix compone
 
 For more details on how Kalix manage state and distribution, consult the https://docs.kalix.io/services/programming-model.html[Programming model] page.
 
-=== @Transactional
-
-Kalix is a stateful serverless solution and as such it takes care of all the aspects of persisting data in a distributed environment. Using `@Transactional` annotations on methods have no effect because the database access and transactional management won't happen at the level of the Spring container. All database operations take place within the Kalix Runtime side.
-
-Moreover, and also related with the subject of transactions, each entity in Kalix lives in its own transactional boundary. Therefore, it's not possible to send two commands to two different entities and have them be applied in the same transaction.
-
-Kalix is a distributed runtime and two different entities may be located on different JVMs, on different nodes, running on different hardware, making it, if not impossible, extremely expensive and inefficient to mutate two different entities on the same transaction.
-
 === Spring Repositories
-
-Spring developers are used to build Spring Data Repositories to store and retrieve data. However, in Kalix these tasks are fulfilled by the Runtime, not by the Spring container. As stateful serverless solution, Kalix takes care of all data persistence for you. Configuring your own Spring Data Repositories means that you will need to manage the database yourself and that defeats the purpose of using Kalix. Therefore, the usage of Spring Data Repositories is not recommended.
 
 In Kalix, data storage and retrieval follows the https://developer.lightbend.com/docs/akka-platform-guide/concepts/cqrs.html[Command Query Responsibility Segregation (CQRS)] pattern. In CQRS, we work with two models. One that is designed for writes, often called the command-model, and one that is optimized for reads, also known as the query-model.
 

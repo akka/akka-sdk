@@ -1,5 +1,4 @@
 = Implementing Key Value Entities
-:page-aliases: spring:value-entity.adoc
 
 include::ROOT:partial$include.adoc[]
 

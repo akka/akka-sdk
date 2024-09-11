@@ -1,5 +1,4 @@
-= Timers
-:page-aliases: spring:timers.adoc
+= Timed Actions
 
 include::java-protobuf:partial$timers-intro.adoc[]
 

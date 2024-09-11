@@ -1,5 +1,4 @@
 = Publishing and Subscribing
-:page-aliases: spring:actions-publishing-subscribing.adoc, spring:service-to-service.adoc, java:service-to-service.adoc, java:actions-publishing-subscribing.adoc
 
 include::ROOT:partial$include.adoc[]
 

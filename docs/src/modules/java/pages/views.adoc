@@ -1,5 +1,4 @@
 = Implementing Views
-:page-aliases: spring:views.adoc
 
 include::ROOT:partial$include.adoc[]
 
