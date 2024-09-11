@@ -22,8 +22,8 @@
 .ensime*
 .eprj
 .history
-.idea
-.ideaq
+/.idea
+!**/.idea/runConfigurations/Run_locally.xml
 .java-version
 .sublime-project
 .sublime-workspace
