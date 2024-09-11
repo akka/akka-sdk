@@ -87,7 +87,7 @@ lazy val akkaJavaSdk =
         ((Compile / javaSource).value / "overview.html").getAbsolutePath,
         "-notimestamp",
         "-doctitle",
-        "Akka Java SDK",
+        "Akka SDK for Java",
         "-noqualifier",
         "java.lang"),
       Compile / akkaGrpcGeneratedSources := Seq(AkkaGrpc.Server, AkkaGrpc.Client),
@@ -133,7 +133,7 @@ lazy val akkaJavaSdkTestKit =
         ((Compile / javaSource).value / "overview.html").getAbsolutePath,
         "-notimestamp",
         "-doctitle",
-        "Akka Java SDK Testkit",
+        "Akka SDK for Java Testkit",
         "-noqualifier",
         "java.lang"))
     .settings(inConfig(IntegrationTest)(JupiterPlugin.scopedSettings): _*)

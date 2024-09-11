@@ -1,4 +1,4 @@
-# Contributing to Akka Java SDKs
+# Contributing to Akka SDK for Javas
 
 FIXME contribution guidelines like in other LB projects
 

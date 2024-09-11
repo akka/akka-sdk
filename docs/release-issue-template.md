@@ -1,4 +1,4 @@
-# Release Akka Java SDK 
+# Release Akka SDK for Java 
 
 ### Prepare
 

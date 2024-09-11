@@ -5,11 +5,11 @@
 
   <groupId>io.akka</groupId>
   <artifactId>akka-javasdk-maven</artifactId>
-  <version>3.0.0-M4</version>
+  <version>3.0.0-M5</version>
   <packaging>pom</packaging>
 
-  <name>Akka Java SDK Maven</name>
-  <description>This is the parent pom for the Akka Java SDK maven projects</description>
+  <name>Akka SDK for Java Maven</name>
+  <description>This is the parent pom for the Akka SDK for Java maven projects</description>
   <licenses>
     <license>
       <name>Apache-2.0</name>

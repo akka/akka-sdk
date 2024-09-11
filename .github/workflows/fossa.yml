@@ -39,7 +39,7 @@ jobs:
           echo ### List targets ###
           fossa list-targets
 
-          echo ### Akka Java SDK ###
+          echo ### Akka SDK for Java ###
           fossa analyze -p akka-javasdk \
             --only-target scala@sdk/akka-javasdk/target/ \
             --only-target scala@sdk/akka-javasdk-testkit/target/ 

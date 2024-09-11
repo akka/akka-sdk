@@ -23,7 +23,7 @@
   <version>0.0.1-SNAPSHOT</version>
   <name>valueentity-shoppingcart</name>
   <description>This is the parent pom for Akka Platform applications.
-        It contains all dependencies and plugins to build an Akka Platform service using the Akka Java SDK.</description>
+        It contains all dependencies and plugins to build an Akka Platform service using the Akka SDK for Java.</description>
   <url>https://www.akka.io/akka-javasdk-parent/valueentity-shoppingcart</url>
   <licenses>
     <license>

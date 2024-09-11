@@ -19,7 +19,7 @@ object CommonSettings extends AutoPlugin {
       organizationName := "Lightbend Inc.",
       organizationHomepage := Some(url("https://lightbend.com")),
       homepage := Some(url("https://akka.io")),
-      description := "Akka Java SDK",
+      description := "Akka SDK for Java",
       resolvers += "Akka library repository".at("https://repo.akka.io/maven"),
       developers := List(
         Developer(

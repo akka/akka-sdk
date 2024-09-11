@@ -7,19 +7,19 @@
     <parent>
         <groupId>io.akka</groupId>
         <artifactId>akka-javasdk-maven</artifactId>
-        <version>3.0.0-M4</version>
+        <version>3.0.0-M5</version>
     </parent>
 
     <groupId>io.akka</groupId>
     <artifactId>akka-javasdk-parent</artifactId>
-    <version>3.0.0-M4</version>
+    <version>3.0.0-M5</version>
     <packaging>pom</packaging>
 
 
-    <name>Akka Java SDK Parent pom</name>
+    <name>Akka SDK for Java Parent pom</name>
     <description>
         This is the parent pom for Akka Platform applications.
-        It contains all dependencies and plugins to build an Akka Platform service using the Akka Java SDK.
+        It contains all dependencies and plugins to build an Akka Platform service using the Akka SDK for Java.
     </description>
 
     <properties>
@@ -41,7 +41,7 @@
         <java.version>21</java.version>
         <maven.compiler.release>${java.version}</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <akka-javasdk.version>3.0.0-M4</akka-javasdk.version>
+        <akka-javasdk.version>3.0.0-M5</akka-javasdk.version>
         <kalix-runtime.version>1.1.41-2f557c8</kalix-runtime.version>
         <skip.docker>false</skip.docker>
 

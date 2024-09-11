@@ -1,4 +1,4 @@
-# Make Akka Java SDK documentation
+# Make Akka SDK for Java documentation
 
 upstream := lightbend/akka-javasdk
 branch   := docs/current

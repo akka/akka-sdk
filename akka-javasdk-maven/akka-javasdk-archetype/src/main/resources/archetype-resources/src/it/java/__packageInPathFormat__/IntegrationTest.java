@@ -6,7 +6,7 @@ import akka.javasdk.testkit.TestKitSupport;
 
 
 /**
- * This is a skeleton for implementing integration tests for an Akka application built with the Akka Java SDK.
+ * This is a skeleton for implementing integration tests for an Akka application built with the Akka SDK for Java.
  *
  * It interacts with the components of the application using a componentClient
  * (already configured and provided automatically through injection).

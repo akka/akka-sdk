@@ -2,15 +2,15 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>akka-javasdk-archetype</artifactId>
-    <version>3.0.0-M4</version>
+    <version>3.0.0-M5</version>
     <packaging>maven-archetype</packaging>
     <parent>
         <groupId>io.akka</groupId>
         <artifactId>akka-javasdk-maven</artifactId>
-        <version>3.0.0-M4</version>
+        <version>3.0.0-M5</version>
     </parent>
 
-    <name>Akka Java SDK Maven Archetype</name>
+    <name>Akka SDK for Java Maven Archetype</name>
     <description>This archetype can be used to generate a project suitable for the general development of Akka Java applications</description>
     <url>https://docs.akka.io</url>
 
