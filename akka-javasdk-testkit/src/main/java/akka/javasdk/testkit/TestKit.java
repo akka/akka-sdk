@@ -201,7 +201,7 @@ public class TestKit {
     /**
      * Default settings for testkit.
      */
-    public static Settings DEFAULT = new Settings("self", true, TEST_BROKER, MockedEventing.EMPTY);
+    public static Settings DEFAULT = new Settings("self", true, TEST_BROKER, MockedEventing.EMPTY, ConfigFactory.empty());
 
     /**
      * The name of this service when deployed.
@@ -216,6 +216,8 @@ public class TestKit {
     public final EventingSupport eventingSupport;
 
     public final MockedEventing mockedEventing;
+
+    public final Config additionalConfig;
 
     public enum EventingSupport {
       /**
@@ -243,11 +245,14 @@ public class TestKit {
         final String serviceName,
         final boolean aclEnabled,
         final EventingSupport eventingSupport,
-        final MockedEventing mockedEventing) {
+        final MockedEventing mockedEventing,
+        Config additionalConfig
+      ) {
       this.serviceName = serviceName;
       this.aclEnabled = aclEnabled;
       this.eventingSupport = eventingSupport;
       this.mockedEventing = mockedEventing;
+      this.additionalConfig = additionalConfig;
     }
 
     /**
@@ -259,7 +264,7 @@ public class TestKit {
      * @return The updated settings.
      */
     public Settings withServiceName(final String serviceName) {
-      return new Settings(serviceName, aclEnabled, eventingSupport, mockedEventing);
+      return new Settings(serviceName, aclEnabled, eventingSupport, mockedEventing, additionalConfig);
     }
 
     /**
@@ -268,7 +273,7 @@ public class TestKit {
      * @return The updated settings.
      */
     public Settings withAclDisabled() {
-      return new Settings(serviceName, false, eventingSupport, mockedEventing);
+      return new Settings(serviceName, false, eventingSupport, mockedEventing, additionalConfig);
     }
 
     /**
@@ -277,7 +282,7 @@ public class TestKit {
      * @return The updated settings.
      */
     public Settings withAclEnabled() {
-      return new Settings(serviceName, true, eventingSupport, mockedEventing);
+      return new Settings(serviceName, true, eventingSupport, mockedEventing, additionalConfig);
     }
 
     /**
@@ -285,7 +290,7 @@ public class TestKit {
      */
     public Settings withKeyValueEntityIncomingMessages(String typeId) {
       return new Settings(serviceName, aclEnabled, eventingSupport,
-          mockedEventing.withKeyValueEntityIncomingMessages(typeId));
+          mockedEventing.withKeyValueEntityIncomingMessages(typeId), additionalConfig);
     }
 
     /**
@@ -293,7 +298,7 @@ public class TestKit {
      */
     public Settings withEventSourcedEntityIncomingMessages(String typeId) {
       return new Settings(serviceName, aclEnabled, eventingSupport,
-          mockedEventing.withEventSourcedIncomingMessages(typeId));
+          mockedEventing.withEventSourcedIncomingMessages(typeId), additionalConfig);
     }
 
     /**
@@ -301,7 +306,7 @@ public class TestKit {
      */
     public Settings withStreamIncomingMessages(String service, String streamId) {
       return new Settings(serviceName, aclEnabled, eventingSupport,
-          mockedEventing.withStreamIncomingMessages(service, streamId));
+          mockedEventing.withStreamIncomingMessages(service, streamId), additionalConfig);
     }
 
     /**
@@ -309,7 +314,7 @@ public class TestKit {
      */
     public Settings withTopicIncomingMessages(String topic) {
       return new Settings(serviceName, aclEnabled, eventingSupport,
-          mockedEventing.withTopicIncomingMessages(topic));
+          mockedEventing.withTopicIncomingMessages(topic), additionalConfig);
     }
 
     /**
@@ -317,11 +322,19 @@ public class TestKit {
      */
     public Settings withTopicOutgoingMessages(String topic) {
       return new Settings(serviceName, aclEnabled, eventingSupport,
-          mockedEventing.withTopicOutgoingMessages(topic));
+          mockedEventing.withTopicOutgoingMessages(topic), additionalConfig);
     }
 
     public Settings withEventingSupport(EventingSupport eventingSupport) {
-      return new Settings(serviceName, aclEnabled, eventingSupport, mockedEventing);
+      return new Settings(serviceName, aclEnabled, eventingSupport, mockedEventing, additionalConfig);
+    }
+
+    /**
+     * Specify additional config that will override the application-test.conf or application.conf configuration
+     * in a particular test.
+     */
+    public Settings withAdditionalConfig(Config additionalConfig) {
+      return new Settings(serviceName, aclEnabled, eventingSupport, mockedEventing, additionalConfig);
     }
 
     @Override
@@ -375,23 +388,11 @@ public class TestKit {
    * @return this TestKit instance
    */
   public TestKit start() {
-    return start(ConfigFactory.empty());
-  }
-
-  /**
-   * Start this testkit with custom configuration that overrides the default configuration.
-   * The default configuration is loaded from {@code application-test.conf} if that exists, otherwise
-   * from {@code application.conf}. The default configuration is still used as fallback.
-   *
-   * @param config custom test configuration
-   * @return this Testkit instance
-   */
-  public TestKit start(final Config config) {
     if (started)
       throw new IllegalStateException("Testkit already started");
 
     eventingTestKitPort = availableLocalPort();
-    startRuntime(config);
+    startRuntime(settings.additionalConfig);
     started = true;
 
     if (log.isDebugEnabled())

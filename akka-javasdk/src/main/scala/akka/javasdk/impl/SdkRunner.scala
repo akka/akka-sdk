@@ -237,6 +237,8 @@ private final class Sdk(
   private val applicationConfig = ApplicationConfig(system).getConfig
   private val sdkSettings = Settings(applicationConfig.getConfig("akka.javasdk"))
 
+  private lazy val httpClientProvider = new HttpClientProviderImpl(system, None, ProxyInfoHolder(system), sdkSettings)
+
   private lazy val userServiceConfig = {
     // hiding these paths from the config provided to user
     val sensitivePaths = List("akka", "kalix.meta", "kalix.proxy", "kalix.runtime", "system")
@@ -614,12 +616,10 @@ private final class Sdk(
     new TimerSchedulerImpl(messageCodec, runtimeComponentClients.timerClient, metadata)
   }
 
-  private def httpClientProvider(openTelemetrySpan: Option[Span] = None): HttpClientProvider = {
-    val extension = HttpClientProviderImpl(system)
+  private def httpClientProvider(openTelemetrySpan: Option[Span] = None): HttpClientProvider =
     openTelemetrySpan match {
-      case None       => extension
-      case Some(span) => extension.withTraceContext(Context.current().`with`(span))
+      case None       => httpClientProvider
+      case Some(span) => httpClientProvider.withTraceContext(Context.current().`with`(span))
     }
-  }
 
 }

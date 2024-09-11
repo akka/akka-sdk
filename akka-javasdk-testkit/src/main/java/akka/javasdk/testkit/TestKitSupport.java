@@ -8,6 +8,7 @@ import akka.javasdk.DependencyProvider;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.http.HttpClient;
 import akka.javasdk.timer.TimerScheduler;
+import com.typesafe.config.Config;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
@@ -45,8 +46,11 @@ public abstract class TestKitSupport extends AsyncCallsSupport {
 
   protected Duration timeout = Duration.of(10, SECONDS);
 
+  /**
+   * A http client for interacting with the service under test, the client will not be authenticated
+   * and will appear to the service as a request with the internet principal.
+   */
   protected HttpClient httpClient;
-
 
   /**
    * Override this to use custom settings for an integration test

@@ -42,8 +42,7 @@ public class CustomerIntegrationTest extends CustomerRegistryIntegrationTest {
     String id = UUID.randomUUID().toString();
     CreateCustomerRequest createRequest = new CreateCustomerRequest(id, "foo@example.com", "Johanna", new CustomerRegistryEndpoint.Address("street", "city"));
 
-    //TODO improve this when dealing with 2 HttpClients
-    HttpClient client = createClient("http://localhost:9001");
+    waitForUpstreamServiceStart();
 
     // call our own endpoint service (why not call the other endpoint directly here?) which will in turn call the endpoint of the other service
     // try until it succeeds
@@ -53,7 +52,7 @@ public class CustomerIntegrationTest extends CustomerRegistryIntegrationTest {
       .atMost(10, TimeUnit.SECONDS)
       .untilAsserted(() -> {
         StrictResponse<ByteString> res = await(
-          client.POST("/customer/create")
+          httpClient.POST("/customer/create")
             .withRequestBody(createRequest).invokeAsync()
         );
 
@@ -76,6 +75,27 @@ public class CustomerIntegrationTest extends CustomerRegistryIntegrationTest {
 
         assertThat(foundCustomers).containsExactly(createRequest.name());
       });
+  }
+
+  // create the client but only return it after verifying that service is reachable
+  private void waitForUpstreamServiceStart() {
+    // No auth headers (so principal Internet)
+    var httpClient = new HttpClient(testKit.getActorSystem(), "http://localhost:9000");
+
+    // wait until customer service is up
+    try {
+    Awaitility.await()
+        .ignoreExceptions()
+        .pollInterval(5, TimeUnit.SECONDS)
+        .atMost(5, TimeUnit.MINUTES)
+        .untilAsserted(() -> {
+          var response = await(httpClient.GET("").invokeAsync()).httpResponse();
+              // NOT_FOUND is a sign that the service is started and responding
+            assertThat(response.status()).isEqualTo(StatusCodes.NOT_FOUND);
+        });
+    } catch (Exception ex) {
+      throw new RuntimeException("This test requires an external Akka service to be running on localhost:9000 but was not able to reach it.", ex);
+    }
   }
 
 }
