@@ -11,9 +11,9 @@ import akka.http.javadsl.model.HttpHeader;
 import akka.http.javadsl.model.HttpResponse;
 import akka.http.javadsl.model.StatusCode;
 import akka.http.javadsl.model.StatusCodes;
+import akka.javasdk.JsonSupport;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.net.HttpHeaders;
-import akka.javasdk.JsonSupport;
 
 
 /**
@@ -25,35 +25,8 @@ import akka.javasdk.JsonSupport;
  */
 public class HttpResponses {
 
-
-  /**
-   * Creates an HTTP response with a text/plain body.
-   */
-  public static HttpResponse plainTextResponse(String text) {
-    if (text == null) throw new IllegalArgumentException("text must not be null");
-    return HttpResponse.create().withEntity(ContentTypes.TEXT_PLAIN_UTF8, text);
-  }
-
-  /**
-   * Creates an HTTP response with an application/json body.
-   * The passed Object is serialized to json using the application's default Jackson serializer.
-   */
-  public static HttpResponse jsonResponse(Object object) {
-    if (object == null) throw new IllegalArgumentException("object must not be null");
-    try {
-      byte[] body = JsonSupport.encodeToBytes(object).toByteArray();
-      return HttpResponse.create().withEntity(ContentTypes.APPLICATION_JSON, body);
-    } catch (JsonProcessingException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  /**
-   * Creates an HTTP response with an application/octet-stream body.
-   */
-  public static HttpResponse bytesResponse(byte[] body) {
-    return HttpResponse.create().withEntity(ContentTypes.APPLICATION_OCTET_STREAM, body);
-  }
+  // static factory class, no instantiation
+  private HttpResponses() {}
 
   /**
    * Creates an HTTP response with specified status code, content type and body.
@@ -62,6 +35,7 @@ public class HttpResponses {
    * @param contentType HTTP content type
    * @param body        HTTP body
    */
+  // FIXME this is so close to the underlying API, so provides minimal convenience, should we maybe drop it?
   public static HttpResponse of(StatusCode statusCode, ContentType contentType, byte[] body) {
     return HttpResponse.create().withStatus(statusCode).withEntity(contentType, body);
   }
@@ -77,7 +51,8 @@ public class HttpResponses {
    * Creates a 200 OK response with a text/plain body.
    */
   public static HttpResponse ok(String text) {
-    return plainTextResponse(text).withStatus(StatusCodes.OK);
+    if (text == null) throw new IllegalArgumentException("text must not be null");
+    return HttpResponse.create().withEntity(ContentTypes.TEXT_PLAIN_UTF8, text);
   }
 
   /**
@@ -85,14 +60,13 @@ public class HttpResponses {
    * The passed Object is serialized to json using the application's default Jackson serializer.
    */
   public static HttpResponse ok(Object object) {
-    return jsonResponse(object).withStatus(StatusCodes.OK);
-  }
-
-  /**
-   * Creates a 200 OK response with an application/octet-stream body.
-   */
-  public static HttpResponse ok(byte[] body) {
-    return bytesResponse(body).withStatus(StatusCodes.OK);
+    if (object == null) throw new IllegalArgumentException("object must not be null");
+    try {
+      byte[] body = JsonSupport.encodeToBytes(object).toByteArray();
+      return HttpResponse.create().withEntity(ContentTypes.APPLICATION_JSON, body);
+    } catch (JsonProcessingException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   /**
@@ -106,14 +80,14 @@ public class HttpResponses {
    * Creates a 201 CREATED response with a text/plain body.
    */
   public static HttpResponse created(String text) {
-    return plainTextResponse(text).withStatus(StatusCodes.CREATED);
+    return ok(text).withStatus(StatusCodes.CREATED);
   }
 
   /**
    * Creates a 201 CREATED response with a text/plain body and a location header.
    */
   public static HttpResponse created(String text, String location) {
-    return plainTextResponse(text)
+    return ok(text)
       .withStatus(StatusCodes.CREATED)
       .addHeader(HttpHeader.parse(HttpHeaders.LOCATION, location));
   }
@@ -123,7 +97,7 @@ public class HttpResponses {
    * The passed Object is serialized to json using the application's default Jackson serializer.
    */
   public static HttpResponse created(Object object) {
-    return jsonResponse(object).withStatus(StatusCodes.CREATED);
+    return ok(object).withStatus(StatusCodes.CREATED);
   }
 
   /**
@@ -131,22 +105,7 @@ public class HttpResponses {
    * The passed Object is serialized to json using the application's default Jackson serializer.
    */
   public static HttpResponse created(Object object, String location) {
-    return jsonResponse(object).withStatus(StatusCodes.CREATED)
-      .addHeader(HttpHeader.parse(HttpHeaders.LOCATION, location));
-  }
-
-  /**
-   * Creates a 201 CREATED response with an application/octet-stream body.
-   */
-  public static HttpResponse created(byte[] body) {
-    return bytesResponse(body).withStatus(StatusCodes.CREATED);
-  }
-
-  /**
-   * Creates a 201 CREATED response with an application/octet-stream body and a location header.
-   */
-  public static HttpResponse created(byte[] body, String location) {
-    return bytesResponse(body).withStatus(StatusCodes.CREATED)
+    return ok(object).withStatus(StatusCodes.CREATED)
       .addHeader(HttpHeader.parse(HttpHeaders.LOCATION, location));
   }
 
@@ -161,7 +120,7 @@ public class HttpResponses {
    * Creates a 202 ACCEPTED response with a text/plain body.
    */
   public static HttpResponse accepted(String text) {
-    return plainTextResponse(text).withStatus(StatusCodes.ACCEPTED);
+    return ok(text).withStatus(StatusCodes.ACCEPTED);
   }
 
   /**
@@ -169,14 +128,7 @@ public class HttpResponses {
    * The passed Object is serialized to json using the application's default Jackson serializer.
    */
   public static HttpResponse accepted(Object object) {
-    return jsonResponse(object).withStatus(StatusCodes.ACCEPTED);
-  }
-
-  /**
-   * Creates a 202 ACCEPTED response with an application/octet-stream body.
-   */
-  public static HttpResponse accepted(byte[] body) {
-    return bytesResponse(body).withStatus(StatusCodes.ACCEPTED);
+    return ok(object).withStatus(StatusCodes.ACCEPTED);
   }
 
   /**
@@ -197,7 +149,7 @@ public class HttpResponses {
    * Creates a 400 BAD REQUEST response with a text/plain body.
    */
   public static HttpResponse badRequest(String text) {
-    return plainTextResponse(text).withStatus(StatusCodes.BAD_REQUEST);
+    return ok(text).withStatus(StatusCodes.BAD_REQUEST);
   }
 
   /**
@@ -211,7 +163,7 @@ public class HttpResponses {
    * Creates a 404 NOT FOUND response with a text/plain body.
    */
   public static HttpResponse notFound(String text) {
-    return plainTextResponse(text).withStatus(StatusCodes.NOT_FOUND);
+    return ok(text).withStatus(StatusCodes.NOT_FOUND);
   }
 
   /**
@@ -225,7 +177,7 @@ public class HttpResponses {
    * Creates a 500 INTERNAL SERVER ERROR response with a text/plain body.
    */
   public static HttpResponse internalServerError(String text) {
-    return plainTextResponse(text).withStatus(StatusCodes.INTERNAL_SERVER_ERROR);
+    return ok(text).withStatus(StatusCodes.INTERNAL_SERVER_ERROR);
   }
 
   /**
@@ -239,7 +191,7 @@ public class HttpResponses {
    * Creates a 501 NOT IMPLEMENTED response with a text/plain body.
    */
   public static HttpResponse notImplemented(String text) {
-    return plainTextResponse(text).withStatus(StatusCodes.NOT_IMPLEMENTED);
+    return ok(text).withStatus(StatusCodes.NOT_IMPLEMENTED);
   }
 
 
