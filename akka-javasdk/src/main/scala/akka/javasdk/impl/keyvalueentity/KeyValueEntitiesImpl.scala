@@ -122,10 +122,23 @@ private[impl] final class KeyValueEntitiesImpl(
       .recover { case error =>
         ErrorHandling.withCorrelationId { correlationId =>
           log.error(failureMessageForLog(error), error)
-          ValueEntityStreamOut(OutFailure(Failure(description = s"Unexpected error [$correlationId]")))
+          toFailureOut(error, correlationId)
         }
       }
       .async(sdkDispatcherName)
+
+  private def toFailureOut(error: Throwable, correlationId: String) = {
+    error match {
+      case EntityException(entityId, commandId, commandName, _, _) =>
+        ValueEntityStreamOut(
+          OutFailure(
+            Failure(
+              commandId = commandId,
+              description = s"Unexpected entity [$entityId] error for command [$commandName] [$correlationId]")))
+      case _ =>
+        ValueEntityStreamOut(OutFailure(Failure(description = s"Unexpected error [$correlationId]")))
+    }
+  }
 
   private def runEntity(init: ValueEntityInit): Flow[ValueEntityStreamIn, ValueEntityStreamOut, NotUsed] = {
     val service =
@@ -225,7 +238,7 @@ private[impl] final class KeyValueEntitiesImpl(
       .recover { case error =>
         ErrorHandling.withCorrelationId { correlationId =>
           LoggerFactory.getLogger(router.entityClass).error(failureMessageForLog(error), error)
-          ValueEntityStreamOut(OutFailure(Failure(description = s"Unexpected error [$correlationId]")))
+          toFailureOut(error, correlationId)
         }
       }
   }

@@ -141,9 +141,22 @@ private[impl] final class EventSourcedEntitiesImpl(
         // only "unexpected" exceptions should end up here
         ErrorHandling.withCorrelationId { correlationId =>
           log.error(failureMessageForLog(error), error)
-          EventSourcedStreamOut(OutFailure(Failure(description = s"Unexpected failure [$correlationId]")))
+          toFailureOut(error, correlationId)
         }
       }
+  }
+
+  private def toFailureOut(error: Throwable, correlationId: String) = {
+    error match {
+      case EntityException(entityId, commandId, commandName, _, _) =>
+        EventSourcedStreamOut(
+          OutFailure(
+            Failure(
+              commandId = commandId,
+              description = s"Unexpected entity [$entityId] error for command [$commandName] [$correlationId]")))
+      case _ =>
+        EventSourcedStreamOut(OutFailure(Failure(description = s"Unexpected error [$correlationId]")))
+    }
   }
 
   private def runEntity(init: EventSourcedInit): Flow[EventSourcedStreamIn, EventSourcedStreamOut, NotUsed] = {
@@ -270,7 +283,7 @@ private[impl] final class EventSourcedEntitiesImpl(
         // only "unexpected" exceptions should end up here
         ErrorHandling.withCorrelationId { correlationId =>
           LoggerFactory.getLogger(router.entityClass).error(failureMessageForLog(error), error)
-          EventSourcedStreamOut(OutFailure(Failure(description = s"Unexpected failure [$correlationId]")))
+          toFailureOut(error, correlationId)
         }
       }
       .async(sdkDispatcherName)

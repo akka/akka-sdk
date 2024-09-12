@@ -5,11 +5,13 @@
 package akka.javasdk.impl.workflow
 
 import java.util.Optional
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.OptionConverters._
 import scala.language.existentials
 import scala.util.control.NonFatal
+
 import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.javasdk.impl.ErrorHandling.BadRequestException
@@ -139,10 +141,23 @@ final class WorkflowImpl(
       .recover { case error =>
         ErrorHandling.withCorrelationId { correlationId =>
           log.error(failureMessageForLog(error), error)
-          WorkflowStreamOut(OutFailure(component.Failure(description = s"Unexpected error [$correlationId]")))
+          toFailureOut(error, correlationId)
         }
       }
       .async(sdkDispatcherName)
+
+  private def toFailureOut(error: Throwable, correlationId: String) = {
+    error match {
+      case WorkflowException(workflowId, commandId, commandName, _, _) =>
+        WorkflowStreamOut(
+          OutFailure(
+            component.Failure(
+              commandId = commandId,
+              description = s"Unexpected workflow [$workflowId] error for command [$commandName] [$correlationId]")))
+      case _ =>
+        WorkflowStreamOut(OutFailure(component.Failure(description = s"Unexpected error [$correlationId]")))
+    }
+  }
 
   private def toRecoverStrategy(messageCodec: MessageCodec)(
       recoverStrategy: Workflow.RecoverStrategy[_]): RecoverStrategy = {
