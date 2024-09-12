@@ -9,5 +9,5 @@
      when the application runs. 
  -->
 <included>
-    <logger name="com.example" level="INFO"/>
+    <logger name="counter" level="INFO"/>
 </included>

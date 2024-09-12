@@ -1,10 +1,9 @@
-package com.example;
+package counter.application;
 
 import akka.http.javadsl.model.ContentTypes;
 import akka.http.javadsl.model.StatusCodes;
 import akka.javasdk.http.HttpClient;
 import akka.javasdk.testkit.TestKitSupport;
-import com.example.actions.CounterCommandFromTopicConsumer;
 import akka.javasdk.testkit.TestKit;
 import org.awaitility.Awaitility;
 import org.hamcrest.core.IsEqual;
@@ -19,7 +18,7 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 // tag::class[]
-public class CounterIntegrationWithRealPubSubTest extends TestKitSupport { // <1>
+public class CounterWithRealPubSubIntegrationTest extends TestKitSupport { // <1>
 
 // end::class[]
     
@@ -49,7 +48,7 @@ public class CounterIntegrationWithRealPubSubTest extends TestKitSupport { // <1
     assertEquals(StatusCodes.OK, await(response).httpResponse().status());
 
     var getCounterState =
-      componentClient.forEventSourcedEntity(counterId).method(Counter::get);
+      componentClient.forEventSourcedEntity(counterId).method(CounterEntity::get);
 
 
     Awaitility.await()

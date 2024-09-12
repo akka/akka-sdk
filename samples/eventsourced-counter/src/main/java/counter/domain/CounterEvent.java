@@ -1,4 +1,4 @@
-package com.example;
+package counter.domain;
 
 import akka.javasdk.annotations.TypeName;
 

@@ -1,17 +1,18 @@
-package com.example;
+package counter.application;
 
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
+import counter.domain.CounterEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static com.example.CounterEvent.ValueIncreased;
-import static com.example.CounterEvent.ValueMultiplied;
+import static counter.domain.CounterEvent.ValueIncreased;
+import static counter.domain.CounterEvent.ValueMultiplied;
 
 @ComponentId("counter")
-public class Counter extends EventSourcedEntity<Integer, CounterEvent> {
+public class CounterEntity extends EventSourcedEntity<Integer, CounterEvent> {
 
-  private Logger logger = LoggerFactory.getLogger(Counter.class);
+  private Logger logger = LoggerFactory.getLogger(CounterEntity.class);
 
   @Override
   public Integer emptyState() {

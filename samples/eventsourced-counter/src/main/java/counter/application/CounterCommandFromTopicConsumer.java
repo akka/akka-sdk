@@ -1,11 +1,10 @@
-package com.example.actions;
+package counter.application;
 
 import akka.Done;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.consumer.Consumer;
-import com.example.Counter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,7 +33,7 @@ public class CounterCommandFromTopicConsumer extends Consumer {
     logger.info("Received increase event: {}", increase.toString());
     var increaseReply =
       componentClient.forEventSourcedEntity(increase.counterId)
-        .method(Counter::increase)
+        .method(CounterEntity::increase)
         .invokeAsync(increase.value)
         .thenApply(__ -> Done.done());
     return effects().asyncDone(increaseReply);
@@ -44,7 +43,7 @@ public class CounterCommandFromTopicConsumer extends Consumer {
     logger.info("Received multiply event: {}", multiply.toString());
     var increaseReply =
       componentClient.forEventSourcedEntity(multiply.counterId)
-        .method(Counter::multiply)
+        .method(CounterEntity::multiply)
         .invokeAsync(multiply.value)
         .thenApply(__ -> Done.done());
     return effects().asyncDone(increaseReply);

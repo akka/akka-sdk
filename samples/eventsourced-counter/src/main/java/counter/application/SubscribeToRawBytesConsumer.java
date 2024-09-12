@@ -1,4 +1,4 @@
-package com.example.actions;
+package counter.application;
 
 import akka.javasdk.consumer.Consumer;
 

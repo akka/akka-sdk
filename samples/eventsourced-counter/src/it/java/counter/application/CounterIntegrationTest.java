@@ -1,10 +1,10 @@
-package com.example;
+package counter.application;
 
-import com.example.actions.CounterCommandFromTopicConsumer;
 import akka.javasdk.CloudEvent;
 import akka.javasdk.testkit.EventingTestKit;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
+import counter.domain.CounterEvent;
 import org.awaitility.Awaitility;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.BeforeAll;
@@ -77,12 +77,12 @@ public class CounterIntegrationTest extends TestKitSupport { // <1>
 
     // increase counter (from 0 to 10)
     counterClient
-      .method(Counter::increase)
+      .method(CounterEntity::increase)
       .invokeAsync(10);
 
     var getCounterState =
       counterClient
-        .method(Counter::get);
+        .method(CounterEntity::get);
     Awaitility.await()
       .ignoreExceptions()
       .atMost(20, TimeUnit.SECONDS)
@@ -91,7 +91,7 @@ public class CounterIntegrationTest extends TestKitSupport { // <1>
 
     // multiply by 20 (from 10 to 200
     counterClient
-      .method(Counter::multiply)
+      .method(CounterEntity::multiply)
       .invokeAsync(20);
 
     Awaitility.await()

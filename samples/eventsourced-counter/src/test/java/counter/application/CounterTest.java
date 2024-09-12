@@ -1,11 +1,12 @@
-package com.example;
+package counter.application;
 
 import akka.javasdk.testkit.EventSourcedResult;
 import akka.javasdk.testkit.EventSourcedTestKit;
+import counter.domain.CounterEvent;
 import org.junit.jupiter.api.Test;
 
-import static com.example.CounterEvent.ValueIncreased;
-import static com.example.CounterEvent.ValueMultiplied;
+import static counter.domain.CounterEvent.ValueIncreased;
+import static counter.domain.CounterEvent.ValueMultiplied;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -13,7 +14,7 @@ public class CounterTest {
 
   @Test
   public void testIncrease() {
-    EventSourcedTestKit<Integer, CounterEvent, Counter> testKit = EventSourcedTestKit.of(Counter::new);
+    EventSourcedTestKit<Integer, CounterEvent, CounterEntity> testKit = EventSourcedTestKit.of(CounterEntity::new);
     EventSourcedResult<String> result = testKit.call(e -> e.increase(10));
 
     assertTrue(result.isReply());
@@ -25,7 +26,7 @@ public class CounterTest {
 
   @Test
   public void testMultiply() {
-    EventSourcedTestKit<Integer, CounterEvent, Counter> testKit = EventSourcedTestKit.of(Counter::new);
+    EventSourcedTestKit<Integer, CounterEvent, CounterEntity> testKit = EventSourcedTestKit.of(CounterEntity::new);
     // set initial value to 2
     testKit.call(e -> e.increase(2));
 

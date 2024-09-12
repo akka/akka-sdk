@@ -1,18 +1,17 @@
-package com.example.actions;
+package counter.application;
 
 import akka.javasdk.Metadata;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.Produce;
 import akka.javasdk.consumer.Consumer;
-import com.example.Counter;
-import com.example.CounterEvent;
+import counter.domain.CounterEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 // tag::class[]
 @ComponentId("counter-journal-to-topic-with-meta")
-@Consume.FromEventSourcedEntity(value = Counter.class)
+@Consume.FromEventSourcedEntity(value = CounterEntity.class)
 @Produce.ToTopic("counter-events-with-meta")
 public class CounterJournalToTopicWithMetaConsumer extends Consumer {
 

@@ -1,10 +1,10 @@
-package com.example.actions;
+package counter.application;
 
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.consumer.Consumer;
-import com.example.CounterEvent.ValueIncreased;
-import com.example.CounterEvent.ValueMultiplied;
+import counter.domain.CounterEvent.ValueIncreased;
+import counter.domain.CounterEvent.ValueMultiplied;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
