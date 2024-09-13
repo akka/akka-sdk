@@ -1,11 +1,12 @@
 package com.example.shoppingcart.application;
 
-import com.example.shoppingcart.domain.ShoppingCart;
-import com.example.shoppingcart.domain.ShoppingCart.LineItem;
-import com.example.shoppingcart.domain.ShoppingCartEvent;
+import akka.Done;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import akka.javasdk.eventsourcedentity.EventSourcedEntityContext;
+import com.example.shoppingcart.domain.ShoppingCart;
+import com.example.shoppingcart.domain.ShoppingCart.LineItem;
+import com.example.shoppingcart.domain.ShoppingCartEvent;
 
 import java.util.Collections;
 
@@ -16,10 +17,6 @@ public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCart, Shoppin
 
   // tag::getCart[]
   private final String entityId;
-  
-  public enum Done {
-    INSTANCE
-  }
 
   public ShoppingCartEntity(EventSourcedEntityContext context) {
     this.entityId = context.entityId(); // <1>
@@ -30,11 +27,10 @@ public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCart, Shoppin
     return new ShoppingCart(entityId, Collections.emptyList(), false);
   }
 
-
   // end::getCart[]
 
   public Effect<Done> create() {
-    return effects().reply(Done.INSTANCE);
+    return effects().reply(Done.getInstance());
   }
 
   // tag::addItem[]
@@ -49,7 +45,7 @@ public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCart, Shoppin
 
     return effects()
       .persist(event) // <3>
-      .thenReply(newState -> Done.INSTANCE); // <4>
+      .thenReply(newState -> Done.getInstance()); // <4>
   }
 
   // end::addItem[]
@@ -65,7 +61,7 @@ public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCart, Shoppin
 
     return effects()
       .persist(event)
-      .thenReply(newState -> Done.INSTANCE);
+      .thenReply(newState -> Done.getInstance());
   }
 
   // tag::getCart[]
@@ -77,23 +73,27 @@ public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCart, Shoppin
   // tag::checkout[]
   public Effect<Done> checkout() {
     if (currentState().checkedOut())
-      return effects().reply(Done.INSTANCE);
+      return effects().reply(Done.getInstance());
 
     return effects()
       .persist(new ShoppingCartEvent.CheckedOut()) // <1>
       .deleteEntity() // <2>
-      .thenReply(newState -> Done.INSTANCE); // <4>
+      .thenReply(newState -> Done.getInstance());
   }
   // end::checkout[]
 
-
+  // tag::addItem[]
   @Override
   public ShoppingCart applyEvent(ShoppingCartEvent event) {
     return switch (event) {
-      case ShoppingCartEvent.ItemAdded evt -> currentState().onItemAdded(evt);
+      case ShoppingCartEvent.ItemAdded evt -> currentState().onItemAdded(evt); // <5>
+      // end::addItem[]
       case ShoppingCartEvent.ItemRemoved evt -> currentState().onItemRemoved(evt);
       case ShoppingCartEvent.CheckedOut evt -> currentState().onCheckedOut();
+      // tag::addItem[]
     };
   }
+  // tag::addItem[]
+// tag::class[]
 }
 // end::class[]

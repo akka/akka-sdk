@@ -37,8 +37,6 @@ public record ShoppingCart(String cartId, List<LineItem> items, boolean checkedO
     return new ShoppingCart(cartId, updatedItems, checkedOut);
   }
 
-  // tag::itemAdded[]
-
   private static List<LineItem> removeItemByProductId(
     ShoppingCart cart, String productId) {
     return cart.items().stream()
@@ -57,8 +55,6 @@ public record ShoppingCart(String cartId, List<LineItem> items, boolean checkedO
       lineItem -> lineItem.productId().equals(productId);
     return items.stream().filter(lineItemExists).findFirst();
   }
-
-  // end::itemAdded[]
 
   public ShoppingCart onCheckedOut() {
     return new ShoppingCart(cartId, items, true);

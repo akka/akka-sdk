@@ -1,7 +1,8 @@
 package com.example.shoppingcart.domain;
 
-import com.example.shoppingcart.application.ShoppingCartEntity;
+import akka.Done;
 import akka.javasdk.testkit.EventSourcedTestKit;
+import com.example.shoppingcart.application.ShoppingCartEntity;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -21,7 +22,7 @@ public class ShoppingCartTest {
 
     {
       var result = testKit.call(e -> e.addItem(akkaTshirt)); // <2>
-      assertEquals(ShoppingCartEntity.Done.INSTANCE, result.getReply()); // <3>
+      assertEquals(Done.getInstance(), result.getReply()); // <3>
 
       var itemAdded = result.getNextEventOfType(ItemAdded.class);
       assertEquals(10, itemAdded.item().quantity()); // <4>
@@ -30,7 +31,7 @@ public class ShoppingCartTest {
     // actually we want more akka tshirts
     {
       var result = testKit.call(e -> e.addItem(akkaTshirt.withQuantity(5))); // <5>
-      assertEquals(ShoppingCartEntity.Done.INSTANCE, result.getReply());
+      assertEquals(Done.getInstance(), result.getReply());
 
       var itemAdded = result.getNextEventOfType(ItemAdded.class);
       assertEquals(5, itemAdded.item().quantity());

@@ -19,9 +19,9 @@ public class IntegrationTest extends TestKitSupport { // <1>
     String cartId = "card-abc";
     var item1 = new LineItem("tv", "Super TV 55'", 1);
     var response1 = await(
-      componentClient
-        .forEventSourcedEntity(cartId)
-        .method(ShoppingCartEntity::addItem)
+      componentClient // <2>
+        .forEventSourcedEntity(cartId) // <3>
+        .method(ShoppingCartEntity::addItem) // <4>
         .invokeAsync(item1)
     );
     Assertions.assertNotNull(response1);
@@ -62,10 +62,10 @@ public class IntegrationTest extends TestKitSupport { // <1>
     ShoppingCart cartUpdated = await(
       componentClient
         .forEventSourcedEntity(cartId)
-        .method(ShoppingCartEntity::getCart)
+        .method(ShoppingCartEntity::getCart) // <5>
         .invokeAsync()
     );
-    Assertions.assertEquals(1, cartUpdated.items().size());
+    Assertions.assertEquals(1, cartUpdated.items().size()); // <6>
     Assertions.assertEquals(item2, cartUpdated.items().get(0));
   }
 
