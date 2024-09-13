@@ -25,6 +25,7 @@
     <properties>
         <akka.javasdk.dev-mode.service-name>${project.artifactId}</akka.javasdk.dev-mode.service-name>
         <akka.javasdk.dev-mode.http-port>9000</akka.javasdk.dev-mode.http-port>
+        <logback.configurationFile>logback-runtime-dev-mode.xml</logback.configurationFile>
         
         <!-- archetype need to override container.registry and organisation -->
         <container.registry>kcr.us-east-1.kalix.io</container.registry>
@@ -294,7 +295,7 @@
                             </systemProperty>
                             <systemProperty>
                                 <key>logback.configurationFile</key>
-                                <value>logback-runtime-dev-mode.xml</value>
+                                <value>${logback.configurationFile}</value>
                             </systemProperty>
                         </systemProperties>
                     </configuration>
