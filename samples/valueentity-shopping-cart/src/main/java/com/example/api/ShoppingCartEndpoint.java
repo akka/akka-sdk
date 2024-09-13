@@ -1,13 +1,16 @@
 package com.example.api;
 
-import akka.javasdk.annotations.Acl;
-import akka.javasdk.http.HttpException;
-import com.example.api.ShoppingCartDTO.LineItemDTO;
 import akka.javasdk.Metadata;
+import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.http.Delete;
+import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
+import akka.javasdk.http.HttpException;
+import com.example.application.ShoppingCartDTO;
+import com.example.application.ShoppingCartDTO.LineItemDTO;
+import com.example.application.ShoppingCartEntity;
 
 import java.util.UUID;
 import java.util.concurrent.CompletionStage;
@@ -16,12 +19,12 @@ import java.util.concurrent.CompletionStage;
 // For actual services meant for production this must be carefully considered, and often set more limited
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
 @HttpEndpoint("/carts")
-public class ShoppingCartController {
+public class ShoppingCartEndpoint {
   // end::forward-headers[]
 
   private final ComponentClient componentClient;
 
-  public ShoppingCartController(ComponentClient componentClient) {
+  public ShoppingCartEndpoint(ComponentClient componentClient) {
     this.componentClient = componentClient; // <1>
   }
 
@@ -52,9 +55,9 @@ public class ShoppingCartController {
   // end::initialize[]
 
   // tag::forward[]
-  @Post("/{cartId}/items/add") // <2>
+  @Post("/{cartId}/items") // <2>
   public CompletionStage<ShoppingCartDTO> verifiedAddItem(String cartId,
-                                                        LineItemDTO addLineItem) {
+                                                          LineItemDTO addLineItem) {
     if (addLineItem.name().equalsIgnoreCase("carrot")) { // <3>
       throw new RuntimeException("Carrots no longer for sale"); // <4>
     } else {
@@ -121,13 +124,21 @@ public class ShoppingCartController {
   // tag::forward-headers[]
   @Delete("/{cartId}")
   public CompletionStage<String> removeCart(String cartId
-          /*, No headers support quite yet @Headers("UserRole") String userRole */) { // <2>
+    /*, No headers support quite yet @Headers("UserRole") String userRole */) { // <2>
     var userRole = "Admin";
     var metadata = Metadata.EMPTY.add("Role", userRole);
     return
       componentClient.forKeyValueEntity(cartId)
         .method(ShoppingCartEntity::removeCart)
         .withMetadata(metadata)
+        .invokeAsync(); // <4>
+  }
+
+  @Get("/{cartId}")
+  public CompletionStage<ShoppingCartDTO> getCart(String cartId) {
+    return
+      componentClient.forKeyValueEntity(cartId)
+        .method(ShoppingCartEntity::getCart)
         .invokeAsync(); // <4>
   }
 }

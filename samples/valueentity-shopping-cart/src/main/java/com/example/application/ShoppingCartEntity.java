@@ -1,11 +1,10 @@
-package com.example.api;
+package com.example.application;
 
-import com.example.api.ShoppingCartDTO.LineItemDTO;
-import com.example.domain.ShoppingCart;
-import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
 import akka.javasdk.keyvalueentity.KeyValueEntityContext;
+import com.example.application.ShoppingCartDTO.LineItemDTO;
+import com.example.domain.ShoppingCart;
 
 import java.time.Instant;
 
@@ -14,7 +13,6 @@ import java.time.Instant;
  */
 // tag::summary[]
 @ComponentId("shopping-cart")
-@Acl(allow = @Acl.Matcher(principal = Acl.Principal.ALL))
 public class ShoppingCartEntity extends KeyValueEntity<ShoppingCart> {
   // end::summary[]
   @SuppressWarnings("unused")
@@ -54,13 +52,13 @@ public class ShoppingCartEntity extends KeyValueEntity<ShoppingCart> {
     // end::summary[]
     if (addLineItem.quantity() <= 0) {
       return effects()
-          .error("Quantity for item " + addLineItem.productId() + " must be greater than zero.");
+        .error("Quantity for item " + addLineItem.productId() + " must be greater than zero.");
     }
 
     var newState = currentState().withItem(addLineItem.toDomain());
     return effects()
-        .updateState(newState)
-        .thenReply(ShoppingCartDTO.of(newState));
+      .updateState(newState)
+      .thenReply(ShoppingCartDTO.of(newState));
   }
 
   // end::add-item[]
@@ -69,13 +67,13 @@ public class ShoppingCartEntity extends KeyValueEntity<ShoppingCart> {
 
     if (lineItemOpt.isEmpty()) {
       return effects()
-          .error("Cannot remove item " + productId + " because it is not in the cart.");
+        .error("Cannot remove item " + productId + " because it is not in the cart.");
     }
 
     var newState = currentState().withoutItem(lineItemOpt.get());
     return effects()
-        .updateState(newState)
-        .thenReply(ShoppingCartDTO.of(newState));
+      .updateState(newState)
+      .thenReply(ShoppingCartDTO.of(newState));
   }
 
   // tag::get-cart[]

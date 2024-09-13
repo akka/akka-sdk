@@ -1,10 +1,10 @@
 package com.example;
 
-import akka.javasdk.testkit.TestKitSupport;
-import com.example.api.ShoppingCartDTO;
-import com.example.api.ShoppingCartDTO.LineItemDTO;
-import com.example.api.ShoppingCartEntity;
 import akka.javasdk.Metadata;
+import akka.javasdk.testkit.TestKitSupport;
+import com.example.application.ShoppingCartDTO;
+import com.example.application.ShoppingCartDTO.LineItemDTO;
+import com.example.application.ShoppingCartEntity;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
@@ -67,15 +67,15 @@ public class IntegrationTest extends TestKitSupport {
       await(httpClient.POST("/carts/prepopulated")
         .responseBodyAs(String.class)
         .invokeAsync(), timeout)
-              .body();
+        .body();
   }
 
   ShoppingCartDTO verifiedAddItem(String cartId, LineItemDTO in) {
-    return await(httpClient.POST("/carts/" + cartId + "/items/add")
-              .withRequestBody(in)
-              .responseBodyAs(ShoppingCartDTO.class)
-              .invokeAsync(), timeout)
-              .body();
+    return await(httpClient.POST("/carts/" + cartId + "/items")
+      .withRequestBody(in)
+      .responseBodyAs(ShoppingCartDTO.class)
+      .invokeAsync(), timeout)
+      .body();
   }
 
   @Test

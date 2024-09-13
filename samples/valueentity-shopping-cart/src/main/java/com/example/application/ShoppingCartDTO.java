@@ -1,4 +1,4 @@
-package com.example.api;
+package com.example.application;
 
 import com.example.domain.ShoppingCart;
 
@@ -17,10 +17,10 @@ public record ShoppingCartDTO(String cartId, List<LineItemDTO> items) {
 
   public static ShoppingCartDTO of(ShoppingCart cart) {
     List<LineItemDTO> allItems =
-        cart.items().stream()
-            .map(i -> new LineItemDTO(i.productId(), i.name(), i.quantity()))
-            .sorted(Comparator.comparing(LineItemDTO::productId))
-            .toList();
+      cart.items().stream()
+        .map(i -> new LineItemDTO(i.productId(), i.name(), i.quantity()))
+        .sorted(Comparator.comparing(LineItemDTO::productId))
+        .toList();
 
     return new ShoppingCartDTO(cart.cartId(), allItems);
   }
