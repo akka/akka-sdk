@@ -340,7 +340,6 @@ jobs:
     needs: [ checks, publish-local ] # usually done via now disabled check-samples-in-ci
     runs-on: ubuntu-22.04
 
-    # tar tvf target/docker/kcr.us-east-1.kalix.io/acme/fibonacci-action/latest/tmp/docker-build.tar
     steps:
       - name: Checkout
         # https://github.com/actions/checkout/releases
@@ -423,7 +422,6 @@ jobs:
           - { sample: customer-registry-views-quickstart, it: true }
 
           - { sample: choreography-saga-quickstart, it: true }
-          - { sample: fibonacci-action, it: true }
           - { sample: doc-snippets, it: false }
           - { sample: view-store, it: true }
           - { sample: spring-dependency-injection, it: true }
