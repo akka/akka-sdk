@@ -1,0 +1,30 @@
+You would normally not expose Entities, Workflows and Views directly to the outside world, but have an Endpoint or Consumer in front of it.
+
+However, a built-in endpoint for the component can be enabled. The primary purpose of this component endpoint is for convenience in local development so that you can try the entity with `curl` without having to define the final `HttpEndpoint`.
+
+=== Enable access
+
+To enable the component's HTTP endpoint you can disable access control checks in `application.conf`:
+
+[source,conf]
+.src/main/resources/application.conf
+----
+akka.javasdk.dev-mode.acl.enabled = false
+----
+
+Alternativly, start with:
+
+[source,shell]
+----
+mvn compile exec:java -Dakka.javasdk.dev-mode.acl.enabled=false
+----
+
+Note that this `acl` configuration is only used when running locally and not in production. To enable component endpoints in production you must add `@Acl` to the component class:
+
+[source,java]
+----
+// Opened up for access from the public internet.
+// For actual services meant for production this must be carefully considered,
+// and often set more limited
+@Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
+----

@@ -39,7 +39,7 @@ The ACL settings in `Setup.java` are very permissive. It has `Acl.Principal.ALL`
 
 ```shell
 curl -i -XPOST -H "Content-Type: application/json" localhost:9000/shopping-cart/123/item -d '{"productId":"akka-tshirt", "name":"Akka Tshirt", "quantity": 10}'
-curl -i -XPOST -H "Content-Type: application/json" localhost:9000/shopping-cart/123/item -d '{"productId":"scala-tshirt", "name":"Scala Tshirt", "quantity": 20}'
+curl -i -XPOST -H "Content-Type: application/json" localhost:9000/shopping-cart/123/item -d '{"productId":"java-tshirt", "name":"Java Tshirt", "quantity": 20}'
 ```
 
 - See current status of the shopping cart
