@@ -26,7 +26,7 @@
         <akka.javasdk.dev-mode.service-name>${project.artifactId}</akka.javasdk.dev-mode.service-name>
         <akka.javasdk.dev-mode.http-port>9000</akka.javasdk.dev-mode.http-port>
         <logback.configurationFile>logback-runtime-dev-mode.xml</logback.configurationFile>
-        
+
         <!-- archetype need to override container.registry and organisation -->
         <container.registry>kcr.us-east-1.kalix.io</container.registry>
         <organization>acme</organization>
@@ -262,6 +262,9 @@
                             <!-- ignore integration test classes -->
                             <exclude>**/*IntegrationTest</exclude>
                         </excludes>
+                        <systemPropertyVariables>
+                            <logback.configurationFile>${logback.configurationFile}</logback.configurationFile>
+                        </systemPropertyVariables>
                     </configuration>
                 </plugin>
 
@@ -362,7 +365,7 @@
                                     <includes>
                                         <include>**/*IntegrationTest</include>
                                     </includes>
-                                    <argLine>-Dlogback.configurationFile=logback-runtime-dev-mode.xml</argLine>
+                                    <argLine>-Dlogback.configurationFile=${logback.configurationFile}</argLine>
                                 </configuration>
                             </execution>
                         </executions>
