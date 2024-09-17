@@ -27,7 +27,7 @@ The gRPC definitions in `.proto` files describe the external interface, messages
 
 TIP: Kickstart a project using the xref:java:getting-started.adoc[project template].
 
-include::java-protobuf:partial$effects-api.adoc[]
+include::java:partial$effects-api.adoc[]
 
 [#_implement_components]
 == Implement components

@@ -23,7 +23,7 @@ To start your service locally, run the following command from the root of your p
 --
 [source, command line]
 ----
-mvn kalix:runAll
+mvn compile exec:java
 ----
 --
 
@@ -122,15 +122,9 @@ include::java:example$java-spring-eventsourced-customer-registry/docker-compose.
 
 === Customer Registry Subscriber Sample
 
-On the other hand, in the *customer-registry-subscriber* we will use port 8081 and 9001 respectively to avoid port conflicts with the *customer-registry* service. 
-The ports can be configured in the `.env` located at the project's root folder.
+On the other hand, in the *customer-registry-subscriber* we will use port 9001 to avoid port conflicts with the *customer-registry* service. This port is configured in `akka.javasdk.dev-mode.http-port` property in `pom.xml`.
 
-[source,bash,indent=0]
-----
-include::java-protobuf:partial$env-file.txt[tag=env-file]
-----
-
-With both services configured, we can start them independently by running `mvn kalix:runAll` in two separate terminals. 
+With both services configured, we can start them independently by running `mvn compile exec:java` in two separate terminals.
 
 From a third terminal, we can create a customer on *customer-registry* service.
 
@@ -169,7 +163,7 @@ curl localhost:9001/customers/by_name/Test
 
 == Running other services with Docker
 
-In the previous example, we run two services independently with `mvn kalix:runAll`. Each time, the service is started together with a Kalix Runtime running in a Docker container.
+In the previous example, we run two services independently with `mvn compile exec:java`. Each time, the service is started together with a Kalix Runtime running in a Docker container.
 
 An alternative is to build a larger `docker-compose` file containing dependent services. In the case of *customer-registry-subscriber*, we can have a second `docker-compose` file containing a Kalix Runtime for *customer-registry-subscriber*, a Kalix Runtime for *customer-registry* and the *customer-registry* itself. 
 
@@ -204,6 +198,6 @@ mvn -Dakka.javasdk.dev-mode.docker-compose-file=docker-compose-integration.yml k
 
 This time, `kalix:runAll` will start `docker-compose-integration.yml` instead. The *customer-registry* service and its companion Kalix Runtime will run alongside *customer-registry-subscriber* and its own Kalix Runtime. 
 
-Note that the configuration is exactly the same except that now we are running one single `mvn kalix:runAll` command and the `docker-compose` file we are using contains all the dependencies required by *customer-registry-subscriber*.
+Note that the configuration is exactly the same except that now we are running one single `mvn compile exec:java` command and the `docker-compose` file we are using contains all the dependencies required by *customer-registry-subscriber*.
 
 This approach can be extended to any service you might want to integrate with. It can be any other Kalix service that you plan to deploy to the same Kalix project or even external services. The only requirement is to have a Docker image for it.

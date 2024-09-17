@@ -18,7 +18,15 @@ The remainder of this page describes:
 
 IMPORTANT: Be aware that Views are not updated immediately when Entity state changes. Kalix does update Views as quickly as possible. It is not instant but eventually all changes will become visible in the query results. View updates might also take more time during failure scenarios than during normal operation.
 
-include::java-protobuf:partial$effects-view.adoc[]
+== View's Effect API
+
+The View's Effect defines the operations that Kalix should perform when an event, a message or a state change is handled by a View.
+
+A View Effect can either:
+
+* update the view state
+* delete the view state
+* ignore the event or state change notification (and not update the view state)
 
 See also xref:java:development-process.adoc#_effects_api[Understanding what an Effect is]
 
@@ -270,11 +278,11 @@ NOTE: This is not intended as transport for xref:service-to-service.adoc[service
 should instead publish events to a topic, see xref:actions-publishing-subscribing.adoc[Publishing and Subscribing with Actions]
 
 [#query]
-include::java-protobuf:partial$query-syntax-reference.adoc[tag=spring]
+include::java:partial$query-syntax-reference.adoc[tag=spring]
 
-include::java-protobuf:partial$query-syntax-paging.adoc[tag=spring]
+include::java:partial$query-syntax-paging.adoc[tag=spring]
 
-include::java-protobuf:partial$query-syntax-advanced.adoc[tag=spring]
+include::java:partial$query-syntax-advanced.adoc[tag=spring]
 
 == Testing the View
 

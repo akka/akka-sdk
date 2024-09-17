@@ -26,7 +26,7 @@ We recommend that you separate the service API and Entity domain data model. Sep
 
 TIP: Kickstart a project using the xref:java:getting-started.adoc[Getting started] guide.
 
-include::java-protobuf:partial$effects-api.adoc[]
+include::java:partial$effects-api.adoc[]
 
 [#_implement_components]
 == Implement components

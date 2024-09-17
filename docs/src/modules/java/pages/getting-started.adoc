@@ -127,7 +127,7 @@ To start your service locally, run:
 
 [source,bash]
 ----
-mvn kalix:runAll
+mvn compile exec:java
 ----
 
 This command will start your Kalix service and a companion Kalix Runtime as configured in `docker-compose.yml` file.

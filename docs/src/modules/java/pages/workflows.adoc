@@ -32,7 +32,18 @@ It will often be necessary to access the generated id from inside the workflow c
 
 NOTE: Kalix generates a UUID version 4 (random) keys. Only version 4 UUIDs are currently supported for generated Workflow identifiers.
 
-include::java-protobuf:partial$effects-workflow.adoc[]
+== Workflow's Effect API
+
+The Workflow's Effect defines the operations that Kalix should perform when an incoming command is handled by a Workflow.
+
+A Workflow Effect can either:
+
+* update the state of the workflow
+* define the next step to be executed (transition)
+* pause the workflow
+* end the workflow
+* fail the step or reject a command by returning an error
+* reply to incoming commands
 
 See also xref:java:development-process.adoc#_effects_api[Understanding what an Effect is]
 

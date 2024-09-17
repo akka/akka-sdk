@@ -17,9 +17,16 @@ mvn compile
 
 ## Running Locally
 
-First start the `eventsourced-customer-registry` service. It will run with the default service and proxy ports (`8080` and `9000`).
+First start the `eventsourced-customer-registry` service. It will run with the default service port (`9000`).
 
-To start your service locally, run:
+To start `eventsourced-customer-registry` service locally, run:
+
+```shell
+cd ../eventsourced-customer-registry
+mvn compile exec:java
+```
+
+Then start this service in another terminal. It will run with the service port (`9001`):
 
 ```shell
 mvn compile exec:java

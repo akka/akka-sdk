@@ -17,7 +17,6 @@ public abstract class CustomerRegistryIntegrationTest extends TestKitSupport {
     // note, we need to use kalix.proxy keys because this config object
     // won't participate in the config transfer in the runtime
     var customPortConfig = ConfigFactory.parseMap(Map.of(
-        "kalix.proxy.http-port", "9001",
         "akka.javasdk.dev-mode.http-port", "9001"));
     return TestKit.Settings.DEFAULT.withAdditionalConfig(customPortConfig);
   }

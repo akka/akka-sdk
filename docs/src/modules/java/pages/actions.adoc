@@ -1,7 +1,6 @@
 = Implementing Actions
 
 include::ROOT:partial$include.adoc[]
-include::java-protobuf:partial$actions.adoc[]
 
 == Action's Effect API
 
