@@ -6,6 +6,7 @@ package akka.javasdk.http;
 
 
 import akka.http.javadsl.model.HttpResponse;
+import akka.http.javadsl.model.StatusCode;
 
 /**
  * A strict response that contains both the HTTP response and the body.
@@ -21,5 +22,7 @@ import akka.http.javadsl.model.HttpResponse;
  * @param body The body of the response, already parsed and ready to be used.
  */
 public record StrictResponse<T>(HttpResponse httpResponse, T body) {
-
+  public StatusCode status() {
+    return httpResponse.status();
+  }
 }

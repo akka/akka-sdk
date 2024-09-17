@@ -16,14 +16,22 @@ import java.util.concurrent.CompletionStage;
 
 // Opened up for access from the public internet to make the sample service easy to try out.
 // For actual services meant for production this must be carefully considered, and often set more limited
+// tag::endpoint-component-interaction[]
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
 @HttpEndpoint("/shopping-cart")
 public class ShoppingCartEndpoint {
 
   private final ComponentClient componentClient;
 
-  public ShoppingCartEndpoint(ComponentClient componentClient) {
+  public ShoppingCartEndpoint(ComponentClient componentClient) { // <1>
     this.componentClient = componentClient;
+  }
+
+  @Get("/{cartId}")
+  public CompletionStage<ShoppingCart> get(String cartId) {
+    return componentClient.forEventSourcedEntity(cartId) // <2>
+        .method(ShoppingCartEntity::getCart)
+        .invokeAsync(); // <3>
   }
 
   @Put("/{cartId}/item")
@@ -31,8 +39,9 @@ public class ShoppingCartEndpoint {
     return componentClient.forEventSourcedEntity(cartId)
       .method(ShoppingCartEntity::addItem)
       .invokeAsync(item)
-      .thenApply(__ -> HttpResponses.ok());
+      .thenApply(__ -> HttpResponses.ok()); // <4>
   }
+  // end::endpoint-component-interaction[]
 
   @Delete("/{cartId}/item/{productId}")
   public CompletionStage<HttpResponse> removeItem(String cartId, String productId) {
@@ -48,12 +57,5 @@ public class ShoppingCartEndpoint {
       .method(ShoppingCartEntity::checkout)
       .invokeAsync()
       .thenApply(__ -> HttpResponses.ok());
-  }
-
-  @Get("/{cartId}")
-  public CompletionStage<ShoppingCart> get(String cartId) {
-    return componentClient.forEventSourcedEntity(cartId)
-      .method(ShoppingCartEntity::getCart)
-      .invokeAsync();
   }
 }
