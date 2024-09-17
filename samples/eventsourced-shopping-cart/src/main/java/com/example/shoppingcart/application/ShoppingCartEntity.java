@@ -65,9 +65,11 @@ public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCart, Shoppin
   }
 
   // tag::getCart[]
+  // tag::read-only[]
   public ReadOnlyEffect<ShoppingCart> getCart() {
     return effects().reply(currentState()); // <3>
   }
+  // end::read-only[]
   // end::getCart[]
 
   // tag::checkout[]
