@@ -11,15 +11,18 @@ import org.slf4j.LoggerFactory;
 
 // tag::class[]
 @ComponentId("counter-journal-to-topic-with-meta")
-@Consume.FromEventSourcedEntity(value = CounterEntity.class)
+@Consume.FromEventSourcedEntity(CounterEntity.class)
 @Produce.ToTopic("counter-events-with-meta")
 public class CounterJournalToTopicWithMetaConsumer extends Consumer {
 
+  // end::class[]
   private Logger logger = LoggerFactory.getLogger(CounterJournalToTopicWithMetaConsumer.class);
 
-  public Effect onValueIncreased(CounterEvent event) {
-    String counterId = messageContext().metadata().get("ce-subject").orElseThrow(); // <1>
-    Metadata metadata = Metadata.EMPTY.add("ce-subject", counterId);
+  // tag::class[]
+  public Effect onEvent(CounterEvent event) {
+    String counterId = messageContext().metadata().asCloudEvent().subject().get(); // <1>
+    String key = "ce-subject";
+    Metadata metadata = Metadata.EMPTY.add(key, counterId);
     logger.info("Received event for counter id {}: {}", counterId, event);
     return effects().produce(event, metadata); // <2>
   }

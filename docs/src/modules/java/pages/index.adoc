@@ -41,7 +41,7 @@ On the other hand, if you would rather spend some time exploring our documentati
 * xref:java:value-entity.adoc[Key Value Entities]
 * xref:java:event-sourced-entities.adoc[Event Sourced Entities]
 * xref:java:views.adoc[Views]
-* xref:java:publishing-subscribing.adoc[Consumers]
+* xref:java:consuming-producing.adoc[Consuming and Producing]
 * xref:java:timed-actions.adoc[Timed Actions]
 * xref:java:workflows.adoc[Workflows]
 * xref:java:actions.adoc[Actions]

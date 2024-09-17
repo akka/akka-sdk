@@ -17,16 +17,15 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-// tag::class[]
 public class CounterWithRealPubSubIntegrationTest extends TestKitSupport { // <1>
 
-// end::class[]
-    
+  // tag::pubsub[]
   @Override
   protected TestKit.Settings testKitSettings() {
     return TestKit.Settings.DEFAULT
       .withEventingSupport(TestKit.Settings.EventingSupport.GOOGLE_PUBSUB);
   }
+  // end::pubsub[]
 
   @Test
   public void verifyCounterEventSourcedConsumesFromPubSub() {
@@ -56,7 +55,6 @@ public class CounterWithRealPubSubIntegrationTest extends TestKitSupport { // <1
       .atMost(30, TimeUnit.SECONDS)
       .until(() -> await(getCounterState.invokeAsync(), Duration.ofSeconds(3)), new IsEqual<>(20));
   }
-  // end::test-topic[]
 
   // builds a message in PubSub format, ready to be injected
   private String buildMessageBody(String jsonMsg, String ceType) {
@@ -77,7 +75,4 @@ public class CounterWithRealPubSubIntegrationTest extends TestKitSupport { // <1
       }
       """.formatted(data, ceType);
   }
-
-// tag::class[]
 }
-// end::class[]

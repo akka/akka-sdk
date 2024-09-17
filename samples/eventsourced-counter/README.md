@@ -25,7 +25,7 @@ When running an Akka service locally.
 To start your service locally, run:
 
 ```shell
-mvn compile exec:java
+mvn compile exec:java -Dakka.javasdk.dev-mode.eventing.support=google-pubsub-emulator
 ```
 
 ## Exercising the services

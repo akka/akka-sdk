@@ -4,7 +4,10 @@ import akka.javasdk.CloudEvent;
 import akka.javasdk.testkit.EventingTestKit;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
-import counter.domain.CounterEvent;
+import counter.application.CounterCommandFromTopicConsumer.IncreaseCounter;
+import counter.application.CounterCommandFromTopicConsumer.MultiplyCounter;
+import counter.domain.CounterEvent.ValueIncreased;
+import counter.domain.CounterEvent.ValueMultiplied;
 import org.awaitility.Awaitility;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.BeforeAll;
@@ -12,9 +15,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.net.URI;
-import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
+import static java.time.Duration.ofSeconds;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 // tag::class[]
@@ -22,21 +25,17 @@ public class CounterIntegrationTest extends TestKitSupport { // <1>
 
 // end::class[]
 
-  // tag::acls[]
   // tag::eventing-config[]
   @Override
   protected TestKit.Settings testKitSettings() {
     return TestKit.Settings.DEFAULT
-            // end::eventing-config[]
-            // end::acls[]
-            // tag::eventing-config[]
             .withTopicIncomingMessages("counter-commands") // <1>
             .withTopicOutgoingMessages("counter-events") // <2>
             // end::eventing-config[]
             .withTopicOutgoingMessages("counter-events-with-meta");
     // tag::eventing-config[]
-    // tag::acls[]
   }
+  // end::eventing-config[]
 
   // tag::test-topic[]
   private EventingTestKit.IncomingMessages commandsTopic;
@@ -50,8 +49,7 @@ public class CounterIntegrationTest extends TestKitSupport { // <1>
   @BeforeAll
   public void beforeAll() {
     super.beforeAll();
-    // <2>
-    commandsTopic = testKit.getTopicIncomingMessages("counter-commands"); // <3>
+    commandsTopic = testKit.getTopicIncomingMessages("counter-commands"); // <2>
     eventsTopic = testKit.getTopicOutgoingMessages("counter-events");
     // end::test-topic[]
 
@@ -106,16 +104,16 @@ public class CounterIntegrationTest extends TestKitSupport { // <1>
   @Test
   public void verifyCounterEventSourcedPublishToTopic()  {
     var counterId = "test-topic";
-    var increaseCmd = new CounterCommandFromTopicConsumer.IncreaseCounter(counterId, 3);
-    var multipleCmd = new CounterCommandFromTopicConsumer.MultiplyCounter(counterId, 4);
+    var increaseCmd = new IncreaseCounter(counterId, 3);
+    var multipleCmd = new MultiplyCounter(counterId, 4);
 
-    commandsTopic.publish(increaseCmd, counterId); // <4>
+    commandsTopic.publish(increaseCmd, counterId); // <3>
     commandsTopic.publish(multipleCmd, counterId);
 
-    var eventIncreased = eventsTopic.expectOneTyped(CounterEvent.ValueIncreased.class, Duration.ofSeconds(20)); // <5>
-    var eventMultiplied = eventsTopic.expectOneTyped(CounterEvent.ValueMultiplied.class);
+    var eventIncreased = eventsTopic.expectOneTyped(ValueIncreased.class, ofSeconds(20)); // <4>
+    var eventMultiplied = eventsTopic.expectOneTyped(ValueMultiplied.class);
 
-    assertEquals(increaseCmd.value(), eventIncreased.getPayload().value()); // <6>
+    assertEquals(increaseCmd.value(), eventIncreased.getPayload().value()); // <5>
     assertEquals(multipleCmd.value(), eventMultiplied.getPayload().value());
   }
   // end::test-topic[]
@@ -124,12 +122,12 @@ public class CounterIntegrationTest extends TestKitSupport { // <1>
   public void verifyIgnoreUnknownToTopic()  {
     var counterId = "test-ignore";
     var ignoreCmd = new CounterCommandFromTopicConsumer.IgnoredEvent("test");
-    var increaseCmd = new CounterCommandFromTopicConsumer.IncreaseCounter(counterId, 1);
+    var increaseCmd = new IncreaseCounter(counterId, 1);
 
     commandsTopic.publish(ignoreCmd, counterId);
     commandsTopic.publish(increaseCmd, counterId);
 
-    var eventIncreased = eventsTopic.expectOneTyped(CounterEvent.ValueIncreased.class, Duration.ofSeconds(20)); // <5>
+    var eventIncreased = eventsTopic.expectOneTyped(ValueIncreased.class, ofSeconds(20)); // <5>
 
     assertEquals(increaseCmd.value(), eventIncreased.getPayload().value()); // <6>
   }
@@ -138,7 +136,7 @@ public class CounterIntegrationTest extends TestKitSupport { // <1>
   @Test
   public void verifyCounterCommandsAndPublishWithMetadata() {
     var counterId = "test-topic-metadata";
-    var increaseCmd = new CounterCommandFromTopicConsumer.IncreaseCounter(counterId, 10);
+    var increaseCmd = new IncreaseCounter(counterId, 10);
 
     var metadata = CloudEvent.of( // <1>
         "cmd1",
@@ -150,7 +148,7 @@ public class CounterIntegrationTest extends TestKitSupport { // <1>
 
     commandsTopic.publish(testKit.getMessageBuilder().of(increaseCmd, metadata)); // <4>
 
-    var increasedEvent = eventsTopicWithMeta.expectOneTyped(CounterCommandFromTopicConsumer.IncreaseCounter.class);
+    var increasedEvent = eventsTopicWithMeta.expectOneTyped(IncreaseCounter.class);
     var actualMd = increasedEvent.getMetadata(); // <5>
     assertEquals(counterId, actualMd.asCloudEvent().subject().get()); // <6>
     assertEquals("application/json", actualMd.get("Content-Type").get());

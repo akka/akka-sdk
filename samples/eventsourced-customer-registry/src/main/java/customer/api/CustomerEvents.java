@@ -7,12 +7,13 @@ import akka.javasdk.annotations.Produce;
 import akka.javasdk.consumer.Consumer;
 import customer.application.CustomerEntity;
 import customer.domain.CustomerEvent;
+import customer.domain.CustomerEvent.AddressChanged;
 import customer.domain.CustomerEvent.CustomerCreated;
 import customer.domain.CustomerEvent.NameChanged;
 
 // tag::producer[]
 @ComponentId("customer-events-service")
-@Consume.FromEventSourcedEntity(value = CustomerEntity.class) // <1>
+@Consume.FromEventSourcedEntity(CustomerEntity.class) // <1>
 @Produce.ServiceStream(id = "customer_events") // <2>
 @Acl(allow = @Acl.Matcher(service = "*")) // <3>
 public class CustomerEvents extends Consumer {
@@ -23,7 +24,7 @@ public class CustomerEvents extends Consumer {
         .produce(new CustomerPublicEvent.Created(created.email(), created.name()));
       case NameChanged nameChanged -> effects()
         .produce(new CustomerPublicEvent.NameChanged(nameChanged.newName()));
-      case CustomerEvent.AddressChanged __ -> effects().ignore(); // <5>
+      case AddressChanged __ -> effects().ignore(); // <5>
     };
   }
 }
