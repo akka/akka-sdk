@@ -3,16 +3,15 @@
 
 == Jackson serialization
 
-In the Kalix Java SDK, you do not need to create serializers for the messages, events, or the state of Kalix components. The same is true for Kalix endpoints. Kalix exposes the inputs and outputs of endpoints as JSON, but you need to make them serializable with https://github.com/FasterXML/jackson[Jackson]. There are two ways to do this.
+You need to make the messages, events, or the state of Akka components serializable with https://github.com/FasterXML/jackson[Jackson]. The same is true for inputs and outputs of HTTP Endpoints. There are two ways to do this.
 
-1. If you are using Java https://openjdk.org/jeps/395[record] then no annotation is needed. It just works. It's as simple as using `record` instead of `class`. Kalix leverages https://github.com/FasterXML/[Jackson] under the hood and makes these records serializable for you.
+1. If you are using Java https://openjdk.org/jeps/395[record] then no annotation is needed. It just works. It's as simple as using `record` instead of `class`. Akka leverages https://github.com/FasterXML/[Jackson] under the hood and makes these records serializable for you.
 2. If you are using Java `class` then you need to annotate them with the https://github.com/FasterXML/jackson-annotations#usage-general[proper Jackson annotation].
 
-Kalix uses a predefined `Jackson` configuration, for serialization. Use the `JsonSupport` utility to update the `ObjectMapper` with your custom requirements. To minimize the number of `Jackson` annotations, Java classes are compiled with the `-parameters` flag.
-
+Akka uses a predefined `Jackson` configuration, for serialization. Use the `JsonSupport` utility to update the `ObjectMapper` with your custom requirements. To minimize the number of `Jackson` annotations, Java classes are compiled with the `-parameters` flag.
 [source,java,indent=0]
 ----
-include::example$java-spring-eventsourced-customer-registry/src/main/java/customer/Main.java[tag=object-mapper]
+include::example$eventsourced-customer-registry/src/main/java/customer/CustomerRegistrySetup.java[tag=object-mapper]
 ----
 <1> Sets custom `ObjectMapper` configuration.
 
@@ -37,14 +36,14 @@ Old class:
 
 [source,java,indent=0]
 ----
-include::example$java-spring-eventsourced-customer-registry/src/main/java/customer/domain/CustomerEvent.java[tag=name-changed-old]
+include::example$eventsourced-customer-registry/src/main/java/customer/domain/CustomerEvent.java[tag=name-changed-old]
 ----
 
 New class with optional `oldName` and nullable `reason`.
 
 [source,java,indent=0]
 ----
-include::example$java-spring-eventsourced-customer-registry/src/test/java/customer/domain/schemaevolution/CustomerEvent.java[tag=name-changed-new]
+include::example$eventsourced-customer-registry/src/test/java/customer/domain/schemaevolution/CustomerEvent.java[tag=name-changed-new]
 ----
 
 === Adding a mandatory field
@@ -55,7 +54,7 @@ Another approach is to use the `JsonMigration` extension that allows you to crea
 
 [source,java,indent=0]
 ----
-include::example$java-spring-eventsourced-customer-registry/src/test/java/customer/domain/schemaevolution/NameChangedMigration.java[tag=name-changed-migration]
+include::example$eventsourced-customer-registry/src/test/java/customer/domain/schemaevolution/NameChangedMigration.java[tag=name-changed-migration]
 ----
 <1> Migration must extend `JsonMigration` class.
 <2> Sets current version number. The first version, when no migration was used, is always 0. Increase this version number whenever you perform a change that is not backwards compatible without migration code.
@@ -67,7 +66,7 @@ The migration class must be linked to the updated model with the `@Migration` an
 
 [source,java,indent=0]
 ----
-include::example$java-spring-eventsourced-customer-registry/src/test/java/customer/domain/schemaevolution/CustomerEvent.java[tag=name-changed-with-migration]
+include::example$eventsourced-customer-registry/src/test/java/customer/domain/schemaevolution/CustomerEvent.java[tag=name-changed-with-migration]
 ----
 <1> Links the migration implementation with the updated event.
 
@@ -79,21 +78,21 @@ Old class:
 
 [source,java,indent=0]
 ----
-include::example$java-spring-eventsourced-customer-registry/src/main/java/customer/domain/CustomerEvent.java[tag=address-changed-old]
+include::example$eventsourced-customer-registry/src/main/java/customer/domain/CustomerEvent.java[tag=address-changed-old]
 ----
 
 New class:
 
 [source,java,indent=0]
 ----
-include::example$java-spring-eventsourced-customer-registry/src/test/java/customer/domain/schemaevolution/CustomerEvent.java[tag=address-changed-new]
+include::example$eventsourced-customer-registry/src/test/java/customer/domain/schemaevolution/CustomerEvent.java[tag=address-changed-new]
 ----
 
 The migration implementation:
 
 [source,java,indent=0]
 ----
-include::example$java-spring-eventsourced-customer-registry/src/test/java/customer/domain/schemaevolution/AddressChangedMigration.java[tag=address-changed-migration]
+include::example$eventsourced-customer-registry/src/test/java/customer/domain/schemaevolution/AddressChangedMigration.java[tag=address-changed-migration]
 ----
 <1> Finds the old `address` field.
 <2> Updates the JSON tree with the `newAddress` field name.
@@ -105,31 +104,31 @@ Old class:
 
 [source,java,indent=0]
 ----
-include::example$java-spring-eventsourced-customer-registry/src/test/java/customer/domain/schemaevolution/CustomerEvent.java[tag=customer-created-old]
+include::example$eventsourced-customer-registry/src/test/java/customer/domain/schemaevolution/CustomerEvent.java[tag=customer-created-old]
 ----
 
 New class with the `Address` type:
 
 [source,java,indent=0]
 ----
-include::example$java-spring-eventsourced-customer-registry/src/main/java/customer/domain/CustomerEvent.java[tag=customer-created-new]
+include::example$eventsourced-customer-registry/src/main/java/customer/domain/CustomerEvent.java[tag=customer-created-new]
 ----
 
 The migration implementation:
 
 [source,java,indent=0]
 ----
-include::example$java-spring-eventsourced-customer-registry/src/main/java/customer/domain/CustomerCreatedMigration.java[tag=customer-created-migration]
+include::example$eventsourced-customer-registry/src/main/java/customer/domain/CustomerCreatedMigration.java[tag=customer-created-migration]
 ----
 <1> Creates a new nested JSON object, with the data from the old schema.
 
 === Renaming class
 
-Renaming the class doesn't require any additional work when @TypeName annotation is used. For other cases, the `JsonMigration` implementation can specify all supported class names.
+Renaming the class doesn't require any additional work when @TypeName annotation is used. For other cases, the `JsonMigration` implementation can specify all old class names.
 
 [source,java,indent=0]
 ----
-include::example$java-spring-eventsourced-customer-registry/src/test/java/customer/domain/schemaevolution/AddressChangedMigration.java[tag=name-migration]
+include::example$eventsourced-customer-registry/src/test/java/customer/domain/schemaevolution/AddressChangedMigration.java[tag=name-migration]
 ----
 <1> Specifies the old event name.
 
@@ -139,19 +138,17 @@ It's highly recommended to cover all schema changes with unit tests. In most cas
 
 [source,java,indent=0]
 ----
-Any serialized = JsonSupport.encodeJson(
-    new CustomerCreated("bob@lightbend.com", "bob", "Wall Street", "New York"));
-
-new String(Base64.getEncoder().encode(serialized.toByteArray()));
+include::example$eventsourced-customer-registry/src/test/java/customer/domain/CustomerEventSerializationTest.java[tag=testing-deserialization-encoding]
 ----
+<1> Encodes old class in Base64 String.
 
 Test example:
 
 [source,java,indent=0]
 ----
-include::example$java-spring-eventsourced-customer-registry/src/test/java/customer/domain/CustomerEventSerializationTest.java[tag=testing-deserialization]
+include::example$eventsourced-customer-registry/src/test/java/customer/domain/CustomerEventSerializationTest.java[tag=testing-deserialization]
 ----
-<1> Decodes Base64 bytes.
-<2> Parses bytes into `Any` object.
-<3> Verifies JSON deserialization.
-
+<1> Encodes old class in Base64 String.
+<2> Decodes Base64 bytes.
+<3> Parses bytes into `Any` object.
+<4> Verifies JSON deserialization.

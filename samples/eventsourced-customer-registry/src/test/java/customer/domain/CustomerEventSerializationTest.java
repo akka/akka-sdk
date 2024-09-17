@@ -44,7 +44,7 @@ class CustomerEventSerializationTest {
   @Test
   public void shouldDeserializeWithStructureMigration() {
     //given
-    Any serialized = JsonSupport.encodeJson(new CustomerCreated("bob@lightbend.com", "bob", "Wall Street", "New York"));
+    Any serialized = JsonSupport.encodeJson(new CustomerCreatedOld("bob@lightbend.com", "bob", "Wall Street", "New York"));
 
     //when
     CustomerEvent.CustomerCreated deserialized = JsonSupport.decodeJson(CustomerEvent.CustomerCreated.class, serialized);
@@ -57,18 +57,16 @@ class CustomerEventSerializationTest {
   // tag::testing-deserialization[]
   @Test
   public void shouldDeserializeCustomerCreated_V0() throws InvalidProtocolBufferException {
-    // end::testing-deserialization[]
-    Any serialized = JsonSupport.encodeJson(new CustomerCreated("bob@lightbend.com", "bob", "Wall Street", "New York"));
+    // tag::testing-deserialization-encoding[]
+    Any serialized = JsonSupport.encodeJson(new CustomerCreatedOld("bob@lightbend.com", "bob", "Wall Street", "New York"));
+    String encodedBytes = new String(Base64.getEncoder().encode(serialized.toByteArray())); // <1>
+    // end::testing-deserialization-encoding[]
 
-    new String(Base64.getEncoder().encode(serialized.toByteArray()));
-
-    // tag::testing-deserialization[]
-    String encodedBytes = "Cktqc29uLmthbGl4LmlvL2N1c3RvbWVyLmRvbWFpbi5zY2hlbWFldm9sdXRpb24uQ3VzdG9tZXJFdmVudCRDdXN0b21lckNyZWF0ZWQSVQpTeyJlbWFpbCI6ImJvYkBsaWdodGJlbmQuY29tIiwibmFtZSI6ImJvYiIsInN0cmVldCI6IldhbGwgU3RyZWV0IiwiY2l0eSI6Ik5ldyBZb3JrIn0=";
-    byte[] bytes = Base64.getDecoder().decode(encodedBytes.getBytes()); // <1>
-    Any serializedAny = Any.parseFrom(ByteString.copyFrom(bytes)); // <2>
+    byte[] bytes = Base64.getDecoder().decode(encodedBytes.getBytes()); // <2>
+    Any serializedAny = Any.parseFrom(ByteString.copyFrom(bytes)); // <3>
 
     CustomerEvent.CustomerCreated deserialized = JsonSupport.decodeJson(CustomerEvent.CustomerCreated.class,
-      serializedAny); // <3>
+      serializedAny); // <4>
 
     assertEquals("Wall Street", deserialized.address().street());
     assertEquals("New York", deserialized.address().city());

@@ -27,7 +27,7 @@ public class CustomerIntegrationTest extends TestKitSupport {
   @Test
   public void create() {
     String id = UUID.randomUUID().toString();
-    Customer customer = new Customer("foo@example.com", "Johanna", null);
+    Customer customer = new Customer("foo@example.com", "Johanna", new Address("Regent Street","London"));
 
     Done response = await(
       componentClient.forEventSourcedEntity(id)
@@ -41,7 +41,7 @@ public class CustomerIntegrationTest extends TestKitSupport {
   @Test
   public void changeName() {
     String id = UUID.randomUUID().toString();
-    Customer customer = new Customer("foo@example.com", "Johanna", null);
+    Customer customer = new Customer("foo@example.com", "Johanna", new Address("Regent Street","London"));
 
     Done response = await(
       componentClient.forEventSourcedEntity(id)
@@ -63,7 +63,7 @@ public class CustomerIntegrationTest extends TestKitSupport {
   @Test
   public void changeAddress() {
     String id = UUID.randomUUID().toString();
-    Customer customer = new Customer("foo@example.com", "Johanna", null);
+    Customer customer = new Customer("foo@example.com", "Johanna", new Address("Regent Street","London"));
 
     Done response = await(
       componentClient.forEventSourcedEntity(id)
@@ -87,7 +87,7 @@ public class CustomerIntegrationTest extends TestKitSupport {
   @Test
   public void findByName() {
     String id = UUID.randomUUID().toString();
-    Customer customer = new Customer("foo@example.com", "Foo", null);
+    Customer customer = new Customer("foo@example.com", "Foo", new Address("Regent Street","London"));
     Done response = await(
       componentClient.forEventSourcedEntity(id)
         .method(CustomerEntity::create)
@@ -112,7 +112,7 @@ public class CustomerIntegrationTest extends TestKitSupport {
   @Test
   public void findByEmail() {
     String id = UUID.randomUUID().toString();
-    Customer customer = new Customer("bar@example.com", "Bar", null);
+    Customer customer = new Customer("bar@example.com", "Bar", new Address("Regent Street","London"));
     Done response = await(
       componentClient.forEventSourcedEntity(id)
         .method(CustomerEntity::create)

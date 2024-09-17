@@ -10,7 +10,7 @@ public sealed interface CustomerEvent {
 
   @TypeName("internal-customer-created")
     // tag::customer-created-old[]
-  record CustomerCreated(String email, String name, String street, String city) implements CustomerEvent {
+  record CustomerCreatedOld(String email, String name, String street, String city) implements CustomerEvent {
   }
   // end::customer-created-old[]
 

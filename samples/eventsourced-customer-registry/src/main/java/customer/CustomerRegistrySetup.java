@@ -22,11 +22,8 @@ public class CustomerRegistrySetup implements ServiceSetup {
     // end::object-mapper[]
     logger.info("Starting Akka Application");
     // tag::object-mapper[]
-    /* NOTE Enabling this actually breaks tests now
       JsonSupport.getObjectMapper()
             .configure(FAIL_ON_NULL_CREATOR_PROPERTIES, true); // <1>
-
-     */
   }
 }
 // end::object-mapper[]

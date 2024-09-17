@@ -90,7 +90,6 @@ You will need to update the `dockerImage` property in the `pom.xml` and refer to
 for more information on how to make your docker image available to Akka.
 
 Finally, you can use the [Akka Console](https://console.kalix.io)
-to create a project and then deploy your service into the project either by using `mvn deploy kalix:deploy` which
-will conveniently package, publish your docker image, and deploy your service to Akka, or by first packaging and
+to create a project and then deploy your service into the project by first packaging and
 publishing the docker image through `mvn deploy` and then deploying the image
 through the `akka` CLI.

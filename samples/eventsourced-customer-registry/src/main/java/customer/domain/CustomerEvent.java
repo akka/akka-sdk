@@ -9,8 +9,8 @@ public sealed interface CustomerEvent {
 
   @TypeName("internal-customer-created") // <1>
   // end::class[]
+  // tag::customer-created-new[]
   @Migration(CustomerCreatedMigration.class)
-    // tag::customer-created-new[]
     // tag::class[]
   record CustomerCreated(String email, String name, Address address) implements CustomerEvent {
   }
