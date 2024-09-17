@@ -16,21 +16,20 @@ import java.util.concurrent.CompletionStage;
 // Opened up for access from the public internet to make the sample service easy to try out.
 // For actual services meant for production this must be carefully considered, and often set more limited
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
+// tag::cross-service-call[]
 @HttpEndpoint("/customer")
 public class CustomerRegistryEndpoint {
 
   private final Logger log = LoggerFactory.getLogger(getClass());
   private final HttpClient httpClient;
 
-  public record Address(String street, String city) {
-  }
+  public record Address(String street, String city) { }
 
-  public record CreateCustomerRequest(String id, String email, String name, Address address){
-  }
+  public record CreateCustomerRequest(String id, String email, String name, Address address){ }
 
 
-  public CustomerRegistryEndpoint(HttpClientProvider webClientProvider) {
-    this.httpClient = webClientProvider.httpClientFor("customer-registry");
+  public CustomerRegistryEndpoint(HttpClientProvider webClientProvider) { // <1>
+    this.httpClient = webClientProvider.httpClientFor("customer-registry"); // <2>
   }
 
   @Post("/create")
@@ -38,10 +37,10 @@ public class CustomerRegistryEndpoint {
     log.info("Delegating customer creation to upstream service: {}", createRequest);
     // make call on customer-registry service
     return
-      httpClient.POST("/customer")
+      httpClient.POST("/customer") // <3>
         .withRequestBody(createRequest)
-        .invokeAsync()
-        .thenApply(response -> {
+        .invokeAsync() // <4>
+        .thenApply(response -> { // <5>
           if (response.httpResponse().status() == StatusCodes.CREATED) {
             return HttpResponses.created();
           } else {
@@ -49,4 +48,5 @@ public class CustomerRegistryEndpoint {
           }
         });
   }
+  // end::cross-service-call[]
 }

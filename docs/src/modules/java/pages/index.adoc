@@ -37,7 +37,7 @@ Follow our xref:java:getting-started.adoc["Getting started with the Akka SDK"] g
 
 On the other hand, if you would rather spend some time exploring our documentation, here are some main features you will find in this section:
 
-* xref:java:endpoints.adoc[REST Endpoints]
+* xref:java:http-endpoints.adoc[REST Endpoints]
 * xref:java:value-entity.adoc[Key Value Entities]
 * xref:java:event-sourced-entities.adoc[Event Sourced Entities]
 * xref:java:views.adoc[Views]
