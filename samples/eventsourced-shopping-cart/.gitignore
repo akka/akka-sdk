@@ -17,3 +17,4 @@
 # Maven
 log/
 target/
+effective-pom.xml
