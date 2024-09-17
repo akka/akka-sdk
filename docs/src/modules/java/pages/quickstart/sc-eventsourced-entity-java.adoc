@@ -91,4 +91,4 @@ include::page$quickstart/expose-service.adoc[]
 
 == Next steps
 
-* You can learn more about xref:java-protobuf:event-sourced-entities.adoc[Event Sourced Entities].
+* You can learn more about xref:java:event-sourced-entities.adoc[Event Sourced Entities].
