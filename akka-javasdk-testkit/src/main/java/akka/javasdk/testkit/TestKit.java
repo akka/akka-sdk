@@ -12,6 +12,8 @@ import akka.javasdk.DependencyProvider;
 import akka.javasdk.Metadata;
 import akka.javasdk.Principal;
 import akka.javasdk.client.ComponentClient;
+import akka.javasdk.http.HttpClient;
+import akka.javasdk.http.HttpClientProvider;
 import akka.javasdk.impl.ApplicationConfig;
 import akka.javasdk.impl.GrpcClients;
 import akka.javasdk.impl.JsonMessageCodec;
@@ -360,6 +362,8 @@ public class TestKit {
   private EventingTestKit eventingTestKit;
   private ActorSystem<?> runtimeActorSystem;
   private ComponentClient componentClient;
+  private HttpClientProvider httpClientProvider;
+  private HttpClient selfHttpClient;
   private TimerScheduler timerScheduler;
   private Optional<DependencyProvider> dependencyProvider;
   private int eventingTestKitPort = -1;
@@ -492,8 +496,10 @@ public class TestKit {
       holder.overrideTracingCollectorEndpoint(""); //emulating ProxyInfo with disabled tracing.
 
       // once runtime is started
-      var codec = new JsonMessageCodec();
       componentClient = new ComponentClientImpl(componentClients, Option.empty(), runtimeActorSystem.executionContext());
+      selfHttpClient = new HttpClient(runtimeActorSystem, "http://localhost:" + proxyPort);
+      httpClientProvider = startupContext.httpClientProvider();
+      var codec = new JsonMessageCodec();
       timerScheduler = new TimerSchedulerImpl(codec, componentClients.timerClient(), Metadata.EMPTY);
       this.messageBuilder = new EventingTestKit.MessageBuilder(codec);
 
@@ -591,6 +597,22 @@ public class TestKit {
    */
   public TimerScheduler getTimerScheduler() {
     return timerScheduler;
+  }
+
+  /**
+   * Get a {@link HttpClientProvider} for looking up HTTP clients to interact with other services than the current.
+   * Requests will appear as coming from this service from an ACL perspective.
+   */
+  public HttpClientProvider getHttpClientProvider() {
+    return httpClientProvider;
+  }
+
+  /**
+   * Get a {@link HttpClient} for interacting with the service itself, the client will not be authenticated
+   * and will appear to the service as a request with the internet principal.
+   */
+  public HttpClient getSelfHttpClient() {
+    return selfHttpClient;
   }
 
   /**

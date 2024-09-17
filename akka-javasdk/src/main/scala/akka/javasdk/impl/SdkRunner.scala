@@ -214,7 +214,10 @@ private object ComponentLocator {
  */
 @InternalApi
 private[javasdk] object Sdk {
-  final case class StartupContext(componentClients: ComponentClients, dependencyProvider: Option[DependencyProvider])
+  final case class StartupContext(
+      componentClients: ComponentClients,
+      dependencyProvider: Option[DependencyProvider],
+      httpClientProvider: HttpClientProvider)
 }
 
 /**
@@ -402,12 +405,13 @@ private final class Sdk(
       override def preStart(system: ActorSystem[_]): Future[Done] = {
         serviceSetup match {
           case None =>
-            startedPromise.trySuccess(StartupContext(runtimeComponentClients, None))
+            startedPromise.trySuccess(StartupContext(runtimeComponentClients, None, httpClientProvider))
             Future.successful(Done)
           case Some(setup) =>
             dependencyProviderOpt = Option(setup.createDependencyProvider())
             dependencyProviderOpt.foreach(_ => logger.info("Service configured with DependencyProvider"))
-            startedPromise.trySuccess(StartupContext(runtimeComponentClients, dependencyProviderOpt))
+            startedPromise.trySuccess(
+              StartupContext(runtimeComponentClients, dependencyProviderOpt, httpClientProvider))
             Future.successful(Done)
         }
       }

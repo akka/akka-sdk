@@ -79,8 +79,8 @@ public class CustomerIntegrationTest extends CustomerRegistryIntegrationTest {
 
   // create the client but only return it after verifying that service is reachable
   private void waitForUpstreamServiceStart() {
-    // No auth headers (so principal Internet)
-    var httpClient = new HttpClient(testKit.getActorSystem(), "http://localhost:9000");
+    // Auth headers will be like coming from this service
+    var httpClient = testKit.getHttpClientProvider().httpClientFor("customer-registry");
 
     // wait until customer service is up
     try {

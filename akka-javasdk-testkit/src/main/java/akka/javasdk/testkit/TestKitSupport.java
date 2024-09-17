@@ -34,7 +34,7 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class TestKitSupport extends AsyncCallsSupport {
 
-  private Logger logger = LoggerFactory.getLogger(getClass());
+  private final Logger logger = LoggerFactory.getLogger(getClass());
 
   protected TestKit testKit;
 
@@ -43,8 +43,6 @@ public abstract class TestKitSupport extends AsyncCallsSupport {
   protected TimerScheduler timerScheduler;
 
   protected Optional<DependencyProvider> dependencyProvider;
-
-  protected Duration timeout = Duration.of(10, SECONDS);
 
   /**
    * A http client for interacting with the service under test, the client will not be authenticated
@@ -66,8 +64,7 @@ public abstract class TestKitSupport extends AsyncCallsSupport {
       componentClient = testKit.getComponentClient();
       timerScheduler = testKit.getTimerScheduler();
       dependencyProvider = testKit.getDependencyContext();
-      var baseUrl = "http://localhost:" + testKit.getPort();
-      httpClient = new HttpClient(testKit.getActorSystem(), baseUrl);
+      httpClient = testKit.getSelfHttpClient();
     } catch (Exception ex) {
       logger.error("Failed to startup service", ex);
       throw ex;
@@ -81,6 +78,8 @@ public abstract class TestKitSupport extends AsyncCallsSupport {
       testKit.stop();
     }
   }
+
+
 
   public <T> T getDependency(Class<T> clazz) {
     return dependencyProvider.map(provider -> provider.getDependency(clazz))

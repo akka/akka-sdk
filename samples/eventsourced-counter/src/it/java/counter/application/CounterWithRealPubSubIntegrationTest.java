@@ -39,7 +39,7 @@ public class CounterWithRealPubSubIntegrationTest extends TestKitSupport { // <1
 
     var messageBody = buildMessageBody(msg, CounterCommandFromTopicConsumer.IncreaseCounter.class.getName());
 
-    var pubSubClient = new HttpClient(testKit.getActorSystem(), "http://localhost:8085");
+    var pubSubClient = testKit.getHttpClientProvider().httpClientFor("http://localhost:8085");
     var response = pubSubClient.POST("/v1/projects/test/topics/counter-commands:publish")
             .withRequestBody(ContentTypes.APPLICATION_JSON, messageBody.getBytes(StandardCharsets.UTF_8))
             .invokeAsync();
