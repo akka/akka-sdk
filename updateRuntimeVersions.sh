@@ -12,15 +12,10 @@ if [[ -z "$RUNTIME_VERSION" ]]; then
     exit 1
 fi
 
-echo ">>> Updating docker image versions to $RUNTIME_VERSION"
-PROJS=$(find . -type f -name "docker-compose*.yml")
-for i in ${PROJS[@]}
-do
-  echo "Updating Dockerfile for: $i"
-  sed -i.bak "s/gcr.io\/kalix-public\/kalix-runtime:\(.*\)/gcr.io\/kalix-public\/kalix-runtime:$RUNTIME_VERSION/" $i
-  rm $i.bak
-done
-
 echo ">>> Updating Dependencies.scala"
 sed -i.bak "s/sys.props.getOrElse(\"kalix-runtime.version\", \"\(.*\)\")/sys.props.getOrElse(\"kalix-runtime.version\", \"$RUNTIME_VERSION\")/" ./project/Dependencies.scala
 rm ./project/Dependencies.scala.bak
+
+echo ">>> Updating akka-javasdk-maven/akka-javasdk-parent/pom.xml"
+sed -i.bak "s/<kalix-runtime\.version>[^<]*/<kalix-runtime.version>$RUNTIME_VERSION/" ./akka-javasdk-maven/akka-javasdk-parent/pom.xml
+rm ./akka-javasdk-maven/akka-javasdk-parent/pom.xml.bak
