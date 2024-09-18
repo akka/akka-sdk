@@ -6,7 +6,6 @@ package akka.javasdk.testkit;
 
 import akka.javasdk.Metadata;
 import akka.javasdk.timedaction.TimedAction;
-import akka.javasdk.timedaction.TimedActionContext;
 import akka.javasdk.testkit.impl.TimedActionResultImpl;
 import akka.javasdk.testkit.impl.TestKitCommandContextTimed;
 
@@ -25,23 +24,19 @@ import java.util.function.Supplier;
  */
 public class TimedActionTestkit<A extends TimedAction> {
 
-  private final Function<TimedActionContext, A> actionFactory;
+  private final Supplier<A> actionFactory;
 
-  private TimedActionTestkit(Function<TimedActionContext, A> actionFactory) {
+  private TimedActionTestkit(Supplier<A> actionFactory) {
     this.actionFactory = actionFactory;
   }
 
   public static <A extends TimedAction> TimedActionTestkit<A> of(
-      Function<TimedActionContext, A> actionFactory) {
+      Supplier<A> actionFactory) {
     return new TimedActionTestkit<>(actionFactory);
   }
 
-  public static <A extends TimedAction> TimedActionTestkit<A> of(Supplier<A> actionFactory) {
-    return new TimedActionTestkit<>(ctx -> actionFactory.get());
-  }
-
   private A createTimedAction(TestKitCommandContextTimed context) {
-    A action = actionFactory.apply(context);
+    A action = actionFactory.get();
     action._internalSetCommandContext(Optional.of(context));
     return action;
   }

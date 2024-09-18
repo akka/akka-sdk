@@ -8,7 +8,6 @@ import akka.javasdk.Metadata
 import akka.javasdk.impl.InternalContext
 import akka.javasdk.testkit.MockRegistry
 import akka.javasdk.timedaction.CommandContext
-import akka.javasdk.timedaction.TimedActionContext
 import io.opentelemetry.api.OpenTelemetry
 import io.opentelemetry.api.trace.Tracer
 
@@ -18,7 +17,6 @@ import io.opentelemetry.api.trace.Tracer
 final class TestKitCommandContextTimed(metadata: Metadata, mockRegistry: MockRegistry = MockRegistry.EMPTY)
     extends AbstractTestKitContext(mockRegistry)
     with CommandContext
-    with TimedActionContext
     with InternalContext {
 
   def this() = {

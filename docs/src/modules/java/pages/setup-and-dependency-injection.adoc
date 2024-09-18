@@ -1,0 +1,108 @@
+= Setup and dependency injection
+
+== Service lifecycle
+
+It is possible to define logic that runs on service instance start up.
+
+This is done by creating a class implementing `akka.javasdk.ServiceSetup` and annotating it with `akka.javasdk.annotations.Setup`.
+Only one such class may exist in the same service.
+
+[source,java]
+.src/main/java/com/example/CounterSetup.java
+----
+include::example$spring-dependency-injection/src/main/java/com/example/CounterSetup.java[tag=lifecycle]
+----
+<1> One annotated implementation of `ServiceSetup`
+<2> A few different objects can be dependency injected, see below
+<3> `onStartup` is invoked at service start, but before the service is completely started up
+
+
+It is important to remember that an Akka service consists of one to many distributed instances that can be restarted
+individually and independently, for example during a rolling upgrade. Each such instance starting up will invoke
+`onStartup` when starting up, even if other instances run it before.
+
+== Dependency injection
+
+The Akka SDK provides injection of types related to capabilities the SDK provides to components.
+
+Injection is done as constructor parameters for the component implementation class.
+
+The following types can be injected in Service Setup, Endpoints, Consumers, Timed Actions and Workflow components:
+
+[cols="1,1"]
+|===
+| Injectable class
+| Description
+
+|`akka.javasdk.client.ComponentClient`
+| for interaction between components, see xref:component-and-service-calls.adoc[]
+| `akka.javasdk.http.HttpClientProvider`
+| for creating clients to make calls between Akka services and also to other HTTP servers, see xref:component-and-service-calls.adoc[]
+| `akka.javasdk.timer.TimerScheduler`
+| for scheduling timed actions, see xref:timed-actions.adoc[]
+| `akka.stream.Materializer`
+|Used for running Akka streams
+| `com.typesafe.config.Config`
+| Access the user defined configuration picked up from `application.conf`
+|===
+
+Furthermore, the following component type specific types can also be injected:
+
+[cols="1,1"]
+|===
+| Component Type
+| Injectable classes
+
+| Endpoint
+|`io.opentelemetry.api.trace.Span` for creating custom traces
+|Workflow
+|`akka.javasdk.workflow.WorkflowContext` for access to the workflow id
+|Event Sourced Entity
+|`akka.javasdk.eventsourcedentity.EventSourcedEntityContext` for access to the entity id
+|Key Value Entity
+|`akka.javasdk.keyvalueentity.KeyValueEntityContext` for access to the entity id
+|===
+
+== Custom dependency injection
+
+In addition to the predefined objects a service can also provide its own objects for injection. Any unknown
+types in component constructor parameter lists will be looked up using a `DependencyProvider`.
+
+Providing custom objects for injection is done by implementing a service setup class with an overridden `createDependencyProvider` that returns a custom instance of `akka.javasdk.DependencyProvider`. A single instance
+of the provider is used for the entire service instance.
+
+Note that the objects returned from a custom `DependencyProvider` must either be a new instance for every call
+to the dependency provider or be thread safe since they will be shared by any component instance accepting
+them, potentially each running in parallel. This is best done by using immutable objects which is completely safe.
+
+Important:: Injecting shared objects that use regular JVM concurrency primitives such as locks, can easily block
+individual component instances from running in parallel and cause throughput issues or even worse, deadlocks,
+so should be avoided.
+
+The implementation can be pure Java without any dependencies:
+
+[source,java]
+.src/main/java/com/example/CounterSetup.java
+----
+include::example$doc-snippets/src/main/java/com/example/MyAppSetup.java[tag=pojo-dependency-injection]
+----
+<1> Override `createDependencyProvider`
+<2> Create an object for injection, in this case an immutable settings class built from config defined in
+    the `application.conf` file of the service.
+<3> Return an implementation of `DependencyProvider` that will return the instance if called with its class.
+
+It is now possible to declare a constructor parameter in any component accepting `MyAppSettings`. The SDK will
+inject the instance provided by the `DependencyProvider`.
+
+Or make use of an existing dependency injection framework, like this example leveraging Spring:
+
+[source,java]
+.src/main/java/com/example/CounterSetup.java
+----
+include::example$spring-dependency-injection/src/main/java/com/example/CounterSetup.java[tag=spring]
+----
+<1> Set up a Spring `AnnotationConfigApplicationContext`
+<2> DependencyProvider is a SAM (single abstract method) type with signature `Class<T> -> T`, the method reference `AnnotationConfigApplicationContext#getBean` matches it.
+
+ifdef::todo[TODO: == Dependency injection in tests - Injection of custom mock objects in tests, not yet possible]
+

@@ -5,14 +5,11 @@
 package akka.javasdk.impl.consumer
 
 import java.util.Optional
-import akka.actor.ActorSystem
 import akka.annotation.InternalApi
 import akka.javasdk.Metadata
-import akka.javasdk.consumer.ConsumerContext
 import akka.javasdk.consumer.MessageContext
 import akka.javasdk.consumer.MessageEnvelope
 import akka.javasdk.impl.AbstractContext
-import akka.javasdk.impl.ConsumerFactory
 import akka.javasdk.impl.MessageCodec
 import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.ResolvedEntityFactory
@@ -35,7 +32,7 @@ import org.slf4j.LoggerFactory
  */
 @InternalApi
 private[impl] final class ConsumerService(
-    val factory: ConsumerFactory,
+    val factory: () => ConsumerRouter[_],
     override val descriptor: Descriptors.ServiceDescriptor,
     override val additionalDescriptors: Array[Descriptors.FileDescriptor],
     val messageCodec: MessageCodec)
@@ -43,8 +40,8 @@ private[impl] final class ConsumerService(
 
   @volatile var consumerClass: Option[Class[_]] = None
 
-  def createConsumer(context: ConsumerContext): ConsumerRouter[_] = {
-    val handler = factory.create(context)
+  def createConsumer(): ConsumerRouter[_] = {
+    val handler = factory()
     consumerClass = Some(handler.consumerClass())
     handler
   }
@@ -106,9 +103,3 @@ private[impl] final class MessageContextImpl(
     instrumentation.getTracer
 
 }
-
-/**
- * INTERNAL API
- */
-@InternalApi
-private[impl] final class ConsumerContextImpl(val system: ActorSystem) extends AbstractContext with ConsumerContext {}

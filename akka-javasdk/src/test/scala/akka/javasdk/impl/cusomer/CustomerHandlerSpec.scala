@@ -16,7 +16,6 @@ import akka.actor.typed.scaladsl.adapter._
 import akka.javasdk.consumer.Consumer
 import akka.javasdk.consumer.MessageEnvelope
 import akka.javasdk.impl.AnySupport
-import akka.javasdk.impl.ConsumerFactory
 import akka.javasdk.impl.ProxyInfoHolder
 import akka.javasdk.impl.action.ActionsImpl
 import akka.javasdk.impl.consumer.ConsumerEffectImpl
@@ -54,7 +53,7 @@ class CustomerHandlerSpec
   private val anySupport = new AnySupport(Array(ActionspecApi.getDescriptor), this.getClass.getClassLoader)
 
   def create(handler: ConsumerRouter[_]): Actions = {
-    val actionFactory: ConsumerFactory = _ => handler
+    val actionFactory = () => handler
     val service = new ConsumerService(actionFactory, serviceDescriptor, Array(), anySupport)
 
     val services = Map(serviceName -> service)

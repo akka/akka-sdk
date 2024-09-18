@@ -96,7 +96,7 @@ private[impl] object Reflect {
     (arguments.head.asInstanceOf[Class[_]], arguments(1).asInstanceOf[Class[_]])
   }
 
-  def isReturnTypeOptional[R](method: Method): Boolean = {
+  def isReturnTypeOptional(method: Method): Boolean = {
     method.getGenericReturnType
       .asInstanceOf[ParameterizedType]
       .getActualTypeArguments

@@ -15,9 +15,6 @@ import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import akka.actor.typed.scaladsl.adapter._
 import akka.javasdk.impl.JsonMessageCodec
 import akka.javasdk.impl.ProxyInfoHolder
-import akka.javasdk.impl.TimedActionFactory
-import akka.javasdk.impl.action.ActionService
-import akka.javasdk.impl.action.ActionsImpl
 import akka.javasdk.impl.timedaction.TimedActionEffectImpl
 import akka.javasdk.impl.timedaction.TimedActionRouter
 import akka.javasdk.timedaction.CommandEnvelope
@@ -54,7 +51,7 @@ class TimedActionHandlerSpec
   private val jsonCodec = new JsonMessageCodec()
 
   def create(handler: TimedActionRouter[_]): Actions = {
-    val actionFactory: TimedActionFactory = _ => handler
+    val actionFactory = () => handler
     val service = new ActionService(actionFactory, serviceDescriptor, Array(), jsonCodec)
 
     val services = Map(serviceName -> service)

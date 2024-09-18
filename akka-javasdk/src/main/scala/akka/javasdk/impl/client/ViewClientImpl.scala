@@ -29,7 +29,6 @@ import java.lang.reflect.ParameterizedType
 import java.util.Optional
 import scala.concurrent.ExecutionContext
 import scala.jdk.FutureConverters.FutureOps
-import scala.util.Success
 
 /**
  * INTERNAL API
@@ -76,7 +75,7 @@ private[javasdk] object ViewClientImpl {
       val typeParameter = method.getGenericReturnType.asInstanceOf[ParameterizedType].getActualTypeArguments.head
       typeParameter match {
         case parameterizedType: ParameterizedType if parameterizedType.getRawType == classOf[Optional[_]] =>
-          parameterizedType.getActualTypeArguments.head.asInstanceOf
+          parameterizedType.getActualTypeArguments.head.asInstanceOf[Class[_]]
         case other => other
       }
     } else if (method.getReturnType == classOf[View.QueryStreamEffect[_]]) {
@@ -153,7 +152,7 @@ private[javasdk] final case class ViewClientImpl(viewClient: RuntimeViewClient, 
               .map { result =>
                 val deserializedReWrapped =
                   if (result.payload.isEmpty) {
-                    if (returnTypeOptional) Success(Optional.empty().asInstanceOf[R])
+                    if (returnTypeOptional) Optional.empty().asInstanceOf[R]
                     else
                       throw new NoEntryFoundException(
                         s"No matching entry found when calling ${viewMethodProperties.declaringClass}.${viewMethodProperties.methodName}")

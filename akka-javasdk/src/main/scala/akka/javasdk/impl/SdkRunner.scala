@@ -7,7 +7,6 @@ package akka.javasdk.impl
 import java.lang.reflect.Constructor
 import java.lang.reflect.ParameterizedType
 import java.util.concurrent.CompletionStage
-
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.Promise
@@ -15,7 +14,6 @@ import scala.jdk.CollectionConverters.CollectionHasAsScala
 import scala.jdk.FutureConverters._
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
-
 import akka.Done
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
@@ -27,7 +25,6 @@ import akka.javasdk.annotations.Setup
 import akka.javasdk.annotations.http.HttpEndpoint
 import akka.javasdk.client.ComponentClient
 import akka.javasdk.consumer.Consumer
-import akka.javasdk.consumer.ConsumerContext
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.javasdk.eventsourcedentity.EventSourcedEntityContext
 import akka.javasdk.http.HttpClientProvider
@@ -60,11 +57,9 @@ import akka.javasdk.impl.workflow.WorkflowService
 import akka.javasdk.keyvalueentity.KeyValueEntity
 import akka.javasdk.keyvalueentity.KeyValueEntityContext
 import akka.javasdk.timedaction.TimedAction
-import akka.javasdk.timedaction.TimedActionContext
 import akka.javasdk.timer.TimerScheduler
 import akka.javasdk.view.TableUpdater
 import akka.javasdk.view.View
-import akka.javasdk.view.ViewContext
 import akka.javasdk.workflow.Workflow
 import akka.javasdk.workflow.WorkflowContext
 import akka.runtime.sdk.spi.ComponentClients
@@ -315,6 +310,17 @@ private final class Sdk(
       HttpEndpointDescriptorFactory(httpEndpointClass, httpEndpointFactory(httpEndpointClass))
     }
 
+  // these are available for injecting in all kinds of component that are primarily
+  // for side effects
+  // Note: config is also always available through the combination with user DI way down below
+  def sideEffectingComponentInjects(span: Option[Span]): PartialFunction[Class[_], Any] = {
+    case p if p == classOf[ComponentClient]    => componentClient(span)
+    case h if h == classOf[HttpClientProvider] => httpClientProvider(span)
+    case t if t == classOf[TimerScheduler]     => timerScheduler(span)
+    case m if m == classOf[Materializer]       => sdkMaterializer
+    case s if s == classOf[Span]               => span.getOrElse(Span.current())
+  }
+
   // FIXME mixing runtime config with sdk with user project config is tricky
   def spiEndpoints: SpiComponents = {
 
@@ -373,7 +379,7 @@ private final class Sdk(
       //ignore
 
       case (serviceClass, viewServices: Map[String, ViewService] @unchecked) if serviceClass == classOf[ViewService] =>
-        viewsEndpoint = Some(new ViewsImpl(classicSystem, viewServices, sdkDispatcherName))
+        viewsEndpoint = Some(new ViewsImpl(viewServices, sdkDispatcherName))
 
       case (serviceClass, _) =>
         sys.error(s"Unknown service type: $serviceClass")
@@ -381,14 +387,11 @@ private final class Sdk(
 
     val serviceSetup: Option[ServiceSetup] = maybeServiceClass match {
       case Some(serviceClassClass) if classOf[ServiceSetup].isAssignableFrom(serviceClassClass) =>
-        // FIXME: HttpClient is tricky because auth headers waiting for discovery, we could maybe sort that
-        //        by passing more runtime metadata as parameters to the start call?
-        Some(wiredInstance[ServiceSetup](serviceClassClass.asInstanceOf[Class[ServiceSetup]]) {
-          case p if p == classOf[ComponentClient] => componentClient()
-          case t if t == classOf[TimerScheduler]  => timerScheduler()
-          case c if c == classOf[Config]          => userServiceConfig
-          case m if m == classOf[Materializer]    => sdkMaterializer
-        })
+        // FIXME: HttpClientProvider will inject but not quite work for cross service calls until we
+        //        pass auth headers with the runner startup context from the runtime
+        Some(
+          wiredInstance[ServiceSetup](serviceClassClass.asInstanceOf[Class[ServiceSetup]])(
+            sideEffectingComponentInjects(None)))
       case _ => None
     }
 
@@ -439,30 +442,10 @@ private final class Sdk(
   }
 
   private def timedActionProvider[A <: TimedAction](clz: Class[A]): TimedActionProvider[A] =
-    TimedActionProvider(
-      clz,
-      messageCodec,
-      context =>
-        wiredInstance(clz) {
-          case p if p == classOf[TimedActionContext] => context
-          case p if p == classOf[ComponentClient]    => componentClient()
-          case h if h == classOf[HttpClientProvider] => httpClientProvider()
-          case t if t == classOf[TimerScheduler]     => timerScheduler()
-          case m if m == classOf[Materializer]       => sdkMaterializer
-        })
+    TimedActionProvider(clz, messageCodec, () => wiredInstance(clz)(sideEffectingComponentInjects(None)))
 
   private def consumerProvider[A <: Consumer](clz: Class[A]): ConsumerProvider[A] =
-    ConsumerProvider(
-      clz,
-      messageCodec,
-      context =>
-        wiredInstance(clz) {
-          case p if p == classOf[ConsumerContext]    => context
-          case p if p == classOf[ComponentClient]    => componentClient()
-          case h if h == classOf[HttpClientProvider] => httpClientProvider()
-          case t if t == classOf[TimerScheduler]     => timerScheduler()
-          case m if m == classOf[Materializer]       => sdkMaterializer
-        })
+    ConsumerProvider(clz, messageCodec, () => wiredInstance(clz)(sideEffectingComponentInjects(None)))
 
   private def workflowProvider[S, W <: Workflow[S]](clz: Class[W]): WorkflowProvider[S, W] = {
     WorkflowProvider(
@@ -471,12 +454,9 @@ private final class Sdk(
       { context =>
 
         val workflow =
-          wiredInstance(clz) {
-            case p if p == classOf[WorkflowContext]    => context
-            case p if p == classOf[ComponentClient]    => componentClient()
-            case h if h == classOf[HttpClientProvider] => httpClientProvider()
-            case m if m == classOf[Materializer]       => sdkMaterializer
-          }
+          wiredInstance(clz)(sideEffectingComponentInjects(None).orElse {
+            case p if p == classOf[WorkflowContext] => context
+          })
 
         val workflowStateType: Class[S] =
           workflow.getClass.getGenericSuperclass
@@ -528,25 +508,16 @@ private final class Sdk(
       clz,
       messageCodec,
       ComponentDescriptorFactory.readComponentIdIdValue(clz),
-      { context =>
+      { () =>
         val updaterClasses = clz.getDeclaredClasses.collect {
           case clz if Reflect.isViewTableUpdater(clz) => clz.asInstanceOf[Class[TableUpdater[AnyRef]]]
         }.toSet
-        updaterClasses.map(updaterClass =>
-          wiredInstance(updaterClass) {
-            case p if p == classOf[ViewContext] => context
-          })
+        updaterClasses.map(updaterClass => wiredInstance(updaterClass)(PartialFunction.empty))
       })
 
   private def httpEndpointFactory[E](httpEndpointClass: Class[E]): HttpEndpointConstructionContext => E = {
     (context: HttpEndpointConstructionContext) =>
-      wiredInstance(httpEndpointClass) {
-        case p if p == classOf[ComponentClient]    => componentClient(context.openTelemetrySpan)
-        case s if s == classOf[Span]               => context.openTelemetrySpan.getOrElse(Span.current())
-        case h if h == classOf[HttpClientProvider] => httpClientProvider(context.openTelemetrySpan)
-        case h if h == classOf[TimerScheduler]     => timerScheduler(context.openTelemetrySpan)
-        case m if m == classOf[Materializer]       => sdkMaterializer
-      }
+      wiredInstance(httpEndpointClass)(sideEffectingComponentInjects(context.openTelemetrySpan))
   }
 
   private def wiredInstance[T](clz: Class[T])(partial: PartialFunction[Class[_], Any]): T = {
@@ -604,15 +575,14 @@ private final class Sdk(
     anyOther == classOf[Config] ||
     anyOther == classOf[WorkflowContext] ||
     anyOther == classOf[EventSourcedEntityContext] ||
-    anyOther == classOf[KeyValueEntityContext] ||
-    anyOther == classOf[ViewContext]
+    anyOther == classOf[KeyValueEntityContext]
   }
 
-  private def componentClient(openTelemetrySpan: Option[Span] = None): ComponentClient = {
+  private def componentClient(openTelemetrySpan: Option[Span]): ComponentClient = {
     ComponentClientImpl(runtimeComponentClients, openTelemetrySpan)(sdkExecutionContext)
   }
 
-  private def timerScheduler(openTelemetrySpan: Option[Span] = None): TimerScheduler = {
+  private def timerScheduler(openTelemetrySpan: Option[Span]): TimerScheduler = {
     val metadata = openTelemetrySpan match {
       case None       => MetadataImpl.Empty
       case Some(span) => MetadataImpl.Empty.withTracing(span)
@@ -620,7 +590,7 @@ private final class Sdk(
     new TimerSchedulerImpl(messageCodec, runtimeComponentClients.timerClient, metadata)
   }
 
-  private def httpClientProvider(openTelemetrySpan: Option[Span] = None): HttpClientProvider =
+  private def httpClientProvider(openTelemetrySpan: Option[Span]): HttpClientProvider =
     openTelemetrySpan match {
       case None       => httpClientProvider
       case Some(span) => httpClientProvider.withTraceContext(Context.current().`with`(span))

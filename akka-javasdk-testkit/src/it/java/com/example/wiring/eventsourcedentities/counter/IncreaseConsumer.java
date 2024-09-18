@@ -9,7 +9,6 @@ import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.consumer.Consumer;
-import akka.javasdk.consumer.ConsumerContext;
 
 import java.util.concurrent.CompletionStage;
 
@@ -19,11 +18,8 @@ public class IncreaseConsumer extends Consumer {
 
   private ComponentClient componentClient;
 
-  private ConsumerContext context;
-
-  public IncreaseConsumer(ComponentClient componentClient, ConsumerContext context) {
+  public IncreaseConsumer(ComponentClient componentClient) {
     this.componentClient = componentClient;
-    this.context = context;
   }
 
   public Effect printMultiply(CounterEvent.ValueMultiplied event) {

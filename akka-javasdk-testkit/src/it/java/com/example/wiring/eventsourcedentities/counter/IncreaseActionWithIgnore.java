@@ -9,7 +9,6 @@ import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.consumer.Consumer;
-import akka.javasdk.consumer.ConsumerContext;
 
 import java.util.concurrent.CompletionStage;
 
@@ -19,11 +18,8 @@ public class IncreaseActionWithIgnore extends Consumer {
 
     private ComponentClient componentClient;
 
-    private ConsumerContext context;
-
-    public IncreaseActionWithIgnore(ComponentClient componentClient, ConsumerContext context) {
+    public IncreaseActionWithIgnore(ComponentClient componentClient) {
         this.componentClient = componentClient;
-        this.context = context;
     }
 
     public Effect oneShallPass(CounterEvent.ValueIncreased event) {

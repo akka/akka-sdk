@@ -7,7 +7,6 @@ package com.example.wiring.eventsourcedentities.tracingcounter;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.consumer.Consumer;
-import akka.javasdk.consumer.ConsumerContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,12 +16,6 @@ import org.slf4j.LoggerFactory;
 public class TIncrease extends Consumer {
 
     Logger log = LoggerFactory.getLogger(TIncrease.class);
-
-    private ConsumerContext actionContext;
-
-    public TIncrease(ConsumerContext actionContext){
-        this.actionContext = actionContext;
-    }
 
     public Effect printIncrease(TCounterEvent.ValueIncreased increase){
         log.info("increasing [{}].", increase);

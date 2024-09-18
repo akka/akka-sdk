@@ -9,7 +9,6 @@ import akka.javasdk.impl.ComponentDescriptor
 import akka.javasdk.impl.JsonMessageCodec
 import akka.javasdk.view.TableUpdater
 import akka.javasdk.view.View
-import akka.javasdk.view.ViewContext
 import com.google.protobuf.Descriptors
 
 /**
@@ -20,14 +19,14 @@ final case class ViewProvider[V <: View](
     cls: Class[V],
     messageCodec: JsonMessageCodec,
     viewId: String,
-    viewUpdaterFactory: ViewContext => Set[TableUpdater[AnyRef]]) {
+    viewUpdaterFactory: () => Set[TableUpdater[AnyRef]]) {
 
   private val componentDescriptor = ComponentDescriptor.descriptorFor(cls, messageCodec)
 
   val serviceDescriptor: Descriptors.ServiceDescriptor = componentDescriptor.serviceDescriptor
 
-  private def newRouter(context: ViewContext): ViewUpdateRouter = {
-    val viewUpdaters = viewUpdaterFactory(context)
+  private def newRouter(): ViewUpdateRouter = {
+    val viewUpdaters = viewUpdaterFactory()
       .map { updater =>
         val anyRefUpdater: TableUpdater[AnyRef] = updater
         anyRefUpdater.getClass.asInstanceOf[Class[TableUpdater[AnyRef]]] -> anyRefUpdater
@@ -37,5 +36,5 @@ final case class ViewProvider[V <: View](
   }
 
   def newServiceInstance(): ViewService =
-    new ViewService(Some(newRouter), serviceDescriptor, Array.empty, messageCodec, viewId)
+    new ViewService(Some(newRouter _), serviceDescriptor, Array.empty, messageCodec, viewId)
 }

@@ -10,7 +10,6 @@ import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import akka.actor.typed.scaladsl.adapter._
 import akka.javasdk.JsonSupport
 import akka.javasdk.JsonSupport.decodeJson
-import akka.javasdk.consumer.ConsumerContext
 import akka.javasdk.eventsourcedentity.OldTestESEvent.OldEvent1
 import akka.javasdk.eventsourcedentity.OldTestESEvent.OldEvent2
 import akka.javasdk.eventsourcedentity.OldTestESEvent.OldEvent3
@@ -81,7 +80,7 @@ class ConsumersImplSpec
     "check event migration for subscription" in {
       val jsonMessageCodec = new JsonMessageCodec()
       val consumerProvider =
-        ConsumerProvider(classOf[TestESSubscription], jsonMessageCodec, (_: ConsumerContext) => new TestESSubscription)
+        ConsumerProvider(classOf[TestESSubscription], jsonMessageCodec, () => new TestESSubscription)
 
       val service = create(consumerProvider)
       val serviceName = consumerProvider.serviceDescriptor.getFullName
@@ -115,7 +114,7 @@ class ConsumersImplSpec
     "inject traces correctly into metadata and keeps trace_id in MDC" in {
       val jsonMessageCodec = new JsonMessageCodec()
       val consumerProvider =
-        ConsumerProvider(classOf[TestTracing], jsonMessageCodec, (_: ConsumerContext) => new TestTracing)
+        ConsumerProvider(classOf[TestTracing], jsonMessageCodec, () => new TestTracing)
 
       val service = create(consumerProvider, "http://localhost:1111")
       val serviceName = consumerProvider.serviceDescriptor.getFullName

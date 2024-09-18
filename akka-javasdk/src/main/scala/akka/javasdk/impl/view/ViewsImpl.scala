@@ -6,7 +6,6 @@ package akka.javasdk.impl.view
 
 import java.util.Optional
 import scala.util.control.NonFatal
-import akka.actor.ActorSystem
 import akka.annotation.InternalApi
 import akka.javasdk.Metadata
 import akka.javasdk.impl.AbstractContext
@@ -15,10 +14,8 @@ import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.ResolvedEntityFactory
 import akka.javasdk.impl.ResolvedServiceMethod
 import akka.javasdk.impl.Service
-import akka.javasdk.impl.ViewFactory
 import akka.javasdk.impl.telemetry.Telemetry
 import akka.javasdk.view.UpdateContext
-import akka.javasdk.view.ViewContext
 import akka.stream.scaladsl.Source
 import kalix.protocol.{ view => pv }
 import com.google.protobuf.Descriptors
@@ -33,7 +30,7 @@ import scala.jdk.OptionConverters._
  */
 @InternalApi
 final class ViewService(
-    val factory: Option[ViewFactory],
+    val factory: Option[() => ViewUpdateRouter],
     override val descriptor: Descriptors.ServiceDescriptor,
     override val additionalDescriptors: Array[Descriptors.FileDescriptor],
     val messageCodec: MessageCodec,
@@ -62,8 +59,7 @@ object ViewsImpl {
  * INTERNAL API
  */
 @InternalApi
-final class ViewsImpl(system: ActorSystem, _services: Map[String, ViewService], sdkDispatcherName: String)
-    extends pv.Views {
+final class ViewsImpl(_services: Map[String, ViewService], sdkDispatcherName: String) extends pv.Views {
   import ViewsImpl.log
 
   private final val services = _services.iterator.toMap
@@ -93,7 +89,7 @@ final class ViewsImpl(system: ActorSystem, _services: Map[String, ViewService], 
                   "and not reach the user function")
 
               // FIXME should we really create a new handler instance per incoming command ???
-              val handler = service.factory.get.create(new ViewContextImpl)
+              val handler = service.factory.get.apply()
 
               val state: Option[Any] =
                 receiveEvent.bySubjectLookupResult.flatMap(row =>
@@ -171,7 +167,5 @@ final class ViewsImpl(system: ActorSystem, _services: Map[String, ViewService], 
       else
         Optional.empty()
   }
-
-  private final class ViewContextImpl extends AbstractContext with ViewContext
 
 }

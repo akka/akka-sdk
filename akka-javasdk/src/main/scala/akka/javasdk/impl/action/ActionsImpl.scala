@@ -10,7 +10,6 @@ import akka.Done
 import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.javasdk.impl.ErrorHandling
-import akka.javasdk.impl.consumer.ConsumerContextImpl
 import akka.javasdk.impl.consumer.ConsumerService
 import akka.javasdk.impl.telemetry.ActionCategory
 import akka.javasdk.impl.telemetry.ConsumerCategory
@@ -22,7 +21,6 @@ import ErrorHandling.BadRequestException
 import akka.annotation.InternalApi
 import akka.javasdk.Metadata
 import akka.javasdk.consumer.Consumer
-import akka.javasdk.consumer.ConsumerContext
 import akka.javasdk.consumer.MessageContext
 import akka.javasdk.consumer.MessageEnvelope
 import akka.javasdk.impl.AbstractContext
@@ -31,12 +29,10 @@ import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.ResolvedEntityFactory
 import akka.javasdk.impl.ResolvedServiceMethod
 import akka.javasdk.impl.Service
-import akka.javasdk.impl.TimedActionFactory
 import akka.javasdk.impl.consumer.MessageContextImpl
 import akka.javasdk.timedaction.CommandContext
 import akka.javasdk.timedaction.CommandEnvelope
 import akka.javasdk.timedaction.TimedAction
-import akka.javasdk.timedaction.TimedActionContext
 import akka.javasdk.timer.TimerScheduler
 import akka.runtime.sdk.spi.TimerClient
 import akka.stream.scaladsl.Source
@@ -61,7 +57,7 @@ import scala.concurrent.ExecutionContext
  */
 @InternalApi
 private[impl] final class ActionService(
-    val factory: TimedActionFactory,
+    val factory: () => TimedActionRouter[_],
     override val descriptor: Descriptors.ServiceDescriptor,
     override val additionalDescriptors: Array[Descriptors.FileDescriptor],
     val messageCodec: MessageCodec)
@@ -69,8 +65,8 @@ private[impl] final class ActionService(
 
   @volatile var actionClass: Option[Class[_]] = None
 
-  def createAction(context: TimedActionContext): TimedActionRouter[_] = {
-    val handler = factory.create(context)
+  def createAction(): TimedActionRouter[_] = {
+    val handler = factory()
     actionClass = Some(handler.actionClass())
     handler
   }
@@ -141,12 +137,15 @@ private[akka] final class ActionsImpl(
 
   private implicit val executionContext: ExecutionContext = sdkExecutionContext
   implicit val system: ActorSystem = _system
-  import akka.actor.typed.scaladsl.adapter._
-  private val telemetry = Telemetry(system.toTyped)
-  lazy val telemetries: Map[String, Instrumentation] = services.values.map {
-    case s: ActionService   => (s.serviceName, telemetry.traceInstrumentation(s.serviceName, ActionCategory))
-    case s: ConsumerService => (s.serviceName, telemetry.traceInstrumentation(s.serviceName, ConsumerCategory))
-  }.toMap
+
+  private lazy val telemetries: Map[String, Instrumentation] = {
+    import akka.actor.typed.scaladsl.adapter._
+    val telemetry = Telemetry(system.toTyped)
+    services.values.map {
+      case s: ActionService   => (s.serviceName, telemetry.traceInstrumentation(s.serviceName, ActionCategory))
+      case s: ConsumerService => (s.serviceName, telemetry.traceInstrumentation(s.serviceName, ConsumerCategory))
+    }.toMap
+  }
 
   private def effectToResponse(
       service: ActionService,
@@ -211,11 +210,10 @@ private[akka] final class ActionsImpl(
           try {
             val messageContext =
               createMessageContext(in, service.messageCodec, span.map(_.getSpanContext), service.serviceName)
-            val actionContext = createActionContext(service.serviceName)
             val decodedPayload = service.messageCodec.decodeMessage(
               in.payload.getOrElse(throw new IllegalArgumentException("No command payload")))
-            val effect = service.factory
-              .create(actionContext)
+            val effect = service
+              .factory()
               .handleUnary(in.name, CommandEnvelope.of(decodedPayload, messageContext.metadata()), messageContext)
             effectToResponse(service, in, effect, service.messageCodec)
           } catch {
@@ -238,11 +236,10 @@ private[akka] final class ActionsImpl(
           try {
             val messageContext =
               createConsumerMessageContext(in, service.messageCodec, span.map(_.getSpanContext), service.serviceName)
-            val consumerContext = createConsumerContext(service.serviceName)
             val decodedPayload = service.messageCodec.decodeMessage(
               in.payload.getOrElse(throw new IllegalArgumentException("No command payload")))
-            val effect = service.factory
-              .create(consumerContext)
+            val effect = service
+              .factory()
               .handleUnary(in.name, MessageEnvelope.of(decodedPayload, messageContext.metadata()), messageContext)
             consumerEffectToResponse(service, in, effect, service.messageCodec)
           } catch {
@@ -279,14 +276,6 @@ private[akka] final class ActionsImpl(
     val metadata = MetadataImpl.of(in.metadata.map(_.entries.toVector).getOrElse(Nil))
     val updatedMetadata = spanContext.map(metadata.withTracing).getOrElse(metadata)
     new MessageContextImpl(updatedMetadata, messageCodec, timerClient, telemetries(serviceName))
-  }
-
-  private def createActionContext(serviceName: String): TimedActionContext = {
-    new TimedActionContextImpl(system)
-  }
-
-  private def createConsumerContext(serviceName: String): ConsumerContext = {
-    new ConsumerContextImpl(system)
   }
 
   override def handleStreamedIn(in: Source[ActionCommand, NotUsed]): Future[ActionResponse] = {
@@ -334,11 +323,3 @@ class CommandContextImpl(
     instrumentation.getTracer
 
 }
-
-/**
- * INTERNAL API
- */
-@InternalApi
-private[impl] final class TimedActionContextImpl(val system: ActorSystem)
-    extends AbstractContext
-    with TimedActionContext {}

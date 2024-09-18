@@ -7,15 +7,12 @@ package com.example.wiring.keyvalueentities.user;
 import akka.Done;
 import akka.javasdk.timedaction.TimedAction;
 import akka.javasdk.client.ComponentClient;
-import akka.javasdk.consumer.ConsumerContext;
 
 public class ValidateUserAction extends TimedAction {
 
-  private ConsumerContext ctx;
   private ComponentClient componentClient;
 
-  public ValidateUserAction(ConsumerContext ctx, ComponentClient componentClient) {
-    this.ctx = ctx;
+  public ValidateUserAction(ComponentClient componentClient) {
     this.componentClient = componentClient;
   }
 
