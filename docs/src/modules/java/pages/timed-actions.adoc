@@ -23,7 +23,7 @@ You can schedule a timer for any service method in Kalix, but you can only creat
 * Timers can only be scheduled from within an Action or Workflow.
 * Timers can only call other components (e.g., Actions, Entities, Workflows), therefore external service calls must be wrapped by an Action in the deployed service.
 
-To demonstrate its functionality, let's consider an Ordering Service composed of a xref:value-entity.adoc[Key Value Entity] and an xref:actions.adoc[Action]. The Action will work as a xref:actions-as-controller.adoc[Controller] receiving calls and delegating to the Order Entity.
+To demonstrate its functionality, let's consider an Ordering Service composed of a xref:key-value-entities.adoc[Key Value Entity] and an xref:actions.adoc[Action]. The Action will work as a xref:actions-as-controller.adoc[Controller] receiving calls and delegating to the Order Entity.
 
 Users can place an order, but the order must be confirmed within a period of time. You can think of it as an Ordering Food application where the restaurant needs to confirm if it can accept the order. If no confirmation is sent within some pre-defined period of time, the order is automatically cancelled.
 

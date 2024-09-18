@@ -82,5 +82,5 @@ curl https://<generated hostname>/customer/abc123
 
 == Next steps
 
-* You can learn more about xref:java:value-entity.adoc[Key Value Entities].
+* You can learn more about xref:java:key-value-entities.adoc[Key Value Entities].
 * Continue this example by xref:java:quickstart/cr-value-entity-views-java.adoc[adding Views], which makes it possible to query the customer registry.

@@ -1,7 +1,6 @@
 package com.example;
 
 import akka.javasdk.testkit.KeyValueEntityTestKit;
-import com.example.api.Number;
 import com.example.application.CounterEntity;
 import org.junit.jupiter.api.Test;
 
@@ -16,8 +15,8 @@ public class CounterTest {
     var result = testKit.call(e -> e.increaseBy(10));
 
     assertTrue(result.isReply());
-    assertEquals(10, result.getReply());
-    assertEquals(10, testKit.getState());
+    assertEquals(10, result.getReply().value());
+    assertEquals(10, testKit.getState().value());
   }
 
   // tag::example[]
@@ -27,13 +26,13 @@ public class CounterTest {
 
     var resultSet = testKit.call(e -> e.set(10)); // <2>
     assertTrue(resultSet.isReply());
-    assertEquals(10, resultSet.getReply()); // <3>
+    assertEquals(10, resultSet.getReply().value()); // <3>
 
     var resultPlusOne = testKit.call(CounterEntity::plusOne); // <4>
     assertTrue(resultPlusOne.isReply());
-    assertEquals(11, resultPlusOne.getReply());
+    assertEquals(11, resultPlusOne.getReply().value());
 
-    assertEquals(11, testKit.getState()); // <5>
+    assertEquals(11, testKit.getState().value()); // <5>
   }
   // end::example[]
 
@@ -44,6 +43,6 @@ public class CounterTest {
 
     testKit.call(e -> e.delete());
 
-    assertEquals(0, testKit.getState());
+    assertEquals(0, testKit.getState().value());
   }
 }

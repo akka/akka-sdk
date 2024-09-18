@@ -32,11 +32,15 @@ mvn compile exec:java
 With your Akka service running, any defined endpoints should be available at `http://localhost:9000`
 
 ```shell
-curl -XPOST -H "Content-Type: application/json" localhost:9000/counter/foo/increase -d '{ "value": 10 }'
+curl -XPOST -H "Content-Type: application/json" localhost:9000/counter/foo/increase -d '10'
 ```
 
 ```shell
 curl localhost:9000/counter/foo
+```
+
+```shell
+curl -XPOST -H "Content-Type: application/json" localhost:9000/counter/foo/plus-one
 ```
 
 ## Deploying

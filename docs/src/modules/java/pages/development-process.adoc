@@ -42,7 +42,7 @@ Actions are stateless functions that can be triggered by HTTP calls. They can al
 Stateful services encapsulate business logic in Key Value Entities or Event Sourced Entities. At runtime, command messages invoke operations on Entities. A command may only act on one Entity at a time.
 
 
-TIP: To learn more about Kalix entities see xref:java:value-entity.adoc[Implementing Key Value Entities] and xref:java:event-sourced-entities.adoc[Implementing Event Sourced Entities].
+TIP: To learn more about Kalix entities see xref:java:key-value-entities.adoc[Implementing Key Value Entities] and xref:java:event-sourced-entities.adoc[Implementing Event Sourced Entities].
 
 If you would like to update multiple Entities from a single command, you can use forwarding and side effects.
 
@@ -59,7 +59,7 @@ A View provides a way to retrieve state from multiple Entities based on a query.
 
 For more details and examples take a look at the following topics:
 
-* xref:java:value-entity.adoc[Key Value Entities]
+* xref:java:key-value-entities.adoc[Key Value Entities]
 * xref:java:event-sourced-entities.adoc[Event Sourced Entities]
 * xref:java:workflows.adoc[Workflows]
 * xref:java:actions.adoc[Actions]

@@ -10,6 +10,7 @@ import akka.javasdk.annotations.http.Put;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.http.HttpResponses;
 import com.example.application.CounterEntity;
+import com.example.domain.Counter;
 
 import java.util.concurrent.CompletionStage;
 
@@ -26,35 +27,35 @@ public class CounterEndpoint {
   }
 
   @Post("/{counterId}/increase")
-  public CompletionStage<Number> increaseBy(String counterId, Number increaseBy) {
+  public CompletionStage<Integer> increaseBy(String counterId, int increaseBy) {
     return componentClient.forKeyValueEntity(counterId)
         .method(CounterEntity::increaseBy)
-        .invokeAsync(increaseBy.value())
-      .thenApply(Number::new);
+        .invokeAsync(increaseBy)
+        .thenApply(Counter::value);
   }
 
-  @Put("/{counterId}/increase")
-  public CompletionStage<Number> set(String counterId, Number increaseBy) {
+  @Put("/{counterId}/set")
+  public CompletionStage<Integer> set(String counterId, Counter increaseBy) {
     return componentClient.forKeyValueEntity(counterId)
       .method(CounterEntity::set)
       .invokeAsync(increaseBy.value())
-      .thenApply(Number::new);
+      .thenApply(Counter::value);
   }
 
   @Post("/{counterId}/plus-one")
-  public CompletionStage<Number> plusOne(String counterId) {
+  public CompletionStage<Integer> plusOne(String counterId) {
     return componentClient.forKeyValueEntity(counterId)
       .method(CounterEntity::plusOne)
       .invokeAsync()
-      .thenApply(Number::new);
+      .thenApply(Counter::value);
   }
 
   @Get("/{counterId}")
-  public CompletionStage<Number> get(String counterId) {
+  public CompletionStage<Integer> get(String counterId) {
     return componentClient.forKeyValueEntity(counterId)
       .method(CounterEntity::get)
       .invokeAsync()
-      .thenApply(Number::new);
+      .thenApply(Counter::value);
   }
 
   @Delete("/{counterId}")

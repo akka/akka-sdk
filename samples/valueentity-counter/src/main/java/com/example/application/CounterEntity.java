@@ -3,21 +3,22 @@ package com.example.application;
 import akka.Done;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
+import com.example.domain.Counter;
 
 import static akka.Done.done;
 
 
 // tag::declarations[]
 @ComponentId("counter") // <1>
-public class CounterEntity extends KeyValueEntity<Integer> { // <3>
+public class CounterEntity extends KeyValueEntity<Counter> { // <2>
 
   @Override
-  public Integer emptyState() { return 0; } // <4>
+  public Counter emptyState() { return new Counter(0); } // <3>
   // end::declarations[]
 
   // tag::increase[]
-  public Effect<Integer> increaseBy(int increaseBy) {
-    int newCounter = currentState() + increaseBy; // <6>
+  public Effect<Counter> increaseBy(int increaseBy) {
+    Counter newCounter = currentState().increment(increaseBy); // <6>
     return effects()
         .updateState(newCounter) // <7>
         .thenReply(newCounter);
@@ -25,17 +26,17 @@ public class CounterEntity extends KeyValueEntity<Integer> { // <3>
   // end::increase[]
 
   // tag::behaviour[]
-  public Effect<Integer> set(int number) {
-    int newCounter = number;
+  public Effect<Counter> set(int number) {
+    Counter newCounter = new Counter(number);
     return effects()
-        .updateState(newCounter) // <2>
-        .thenReply(newCounter); // <3>
+        .updateState(newCounter) // <1>
+        .thenReply(newCounter); // <2>
   }
 
-  public Effect<Integer> plusOne() {
-    int newCounter = currentState() + 1; // <5>
+  public Effect<Counter> plusOne() {
+    Counter newCounter = currentState().increment(1); // <3>
     return effects()
-        .updateState(newCounter) // <6>
+        .updateState(newCounter) // <4>
         .thenReply(newCounter);
   }
   // end::behaviour[]
@@ -49,12 +50,12 @@ public class CounterEntity extends KeyValueEntity<Integer> { // <3>
   // end::delete[]
 
   // tag::query[]
-  public Effect<Integer> get() {
+  public Effect<Counter> get() {
     return effects()
-        .reply(currentState()); // <2>
+        .reply(currentState()); // <1>
   }
   // end::query[]
-  // tag::close[]
 
+  // tag::declarations[]
 }
-// end::close[]
+// end::declarations[]

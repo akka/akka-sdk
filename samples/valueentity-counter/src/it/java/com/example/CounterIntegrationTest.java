@@ -2,6 +2,7 @@ package com.example;
 
 import akka.javasdk.testkit.TestKitSupport;
 import com.example.application.CounterEntity;
+import com.example.domain.Counter;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -20,36 +21,39 @@ public class CounterIntegrationTest extends TestKitSupport { // <1>
           .invokeAsync(10)
       );
 
-    Assertions.assertEquals(10, counterIncrease);
+    Assertions.assertEquals(10, counterIncrease.value());
   }
 
   // tag::sample-it[]
   @Test
   public void verifyCounterSetAndIncrease() {
 
-    Integer counterGet = // <3>
+    Counter counterGet =
       await(
-        componentClient
+        componentClient // <2>
           .forKeyValueEntity("bar")
-          .method(CounterEntity::get).invokeAsync()
+          .method(CounterEntity::get) // <3>
+          .invokeAsync()
       );
-    Assertions.assertEquals(0, counterGet);
+    Assertions.assertEquals(0, counterGet.value());
 
-    Integer counterPlusOne = // <4>
+    Counter counterPlusOne =
       await(
         componentClient
           .forKeyValueEntity("bar")
-          .method(CounterEntity::plusOne).invokeAsync()
+          .method(CounterEntity::plusOne) // <4>
+          .invokeAsync()
       );
-    Assertions.assertEquals(1, counterPlusOne);
+    Assertions.assertEquals(1, counterPlusOne.value());
 
-    Integer counterGetAfter = // <5>
+    Counter counterGetAfter = // <5>
       await(
         componentClient
           .forKeyValueEntity("bar")
-          .method(CounterEntity::get).invokeAsync()
+          .method(CounterEntity::get)
+          .invokeAsync()
       );
-    Assertions.assertEquals(1, counterGetAfter);
+    Assertions.assertEquals(1, counterGetAfter.value());
   }
 
 }

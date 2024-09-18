@@ -68,7 +68,7 @@ Kalix have different kinds of components that you can use to implement your appl
 The list of components are:
 
 * xref:java:actions.adoc[Actions]
-* xref:java:value-entity.adoc[Key Value Entities]
+* xref:java:key-value-entities.adoc[Key Value Entities]
 * xref:java:event-sourced-entities.adoc[Event Sourced Entities]
 * xref:java:views.adoc[Views]
 

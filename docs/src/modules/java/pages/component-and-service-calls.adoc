@@ -30,7 +30,7 @@ The component client is only available for injection in the following types of c
 
 Calling other Akka services in the same project is done by invoking them using an HTTP client. The service is identified by the name it has been deployed. Akka takes care of routing requests to the service and keeping the data safe by encrypting the connection and handling authentication for you.
 
-In this sample we will make an action that does a call to the xref:value-entity.adoc[Key Value Entity Counter] service, deployed with the service name `counter`.
+In this sample we will make an action that does a call to the xref:key-value-entities.adoc[Key Value Entity Counter] service, deployed with the service name `counter`.
 
 The SDK provides `akka.javasdk.http.HttpClientProvider` which provides HTTP client instances for calling other services.
 
