@@ -40,4 +40,4 @@ cat <<EOF >~/.m2/settings.xml
 </settings>
 EOF
 
-mvn --activate-profiles release -Dskip.docker=true deploy
+mvn --activate-profiles release -Dskip.docker=true -Dskip.deploy=false deploy

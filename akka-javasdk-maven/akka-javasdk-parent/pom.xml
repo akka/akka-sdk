@@ -45,6 +45,7 @@
         <akka-javasdk.version>3.0.0-M5</akka-javasdk.version>
         <kalix-runtime.version>1.1.45</kalix-runtime.version>
         <skip.docker>false</skip.docker>
+        <skip.deploy>true</skip.deploy>
 
 
         <!-- plugin versions -->
@@ -273,7 +274,7 @@
                     <artifactId>maven-deploy-plugin</artifactId>
                     <version>${maven-deploy-plugin.version}</version>
                     <configuration>
-                        <skip>false</skip>
+                        <skip>${skip.deploy}</skip>
                     </configuration>
                 </plugin>
 
