@@ -1,20 +1,41 @@
-# JVM SDKs docs
+# Akka SDK docs
 
+## Building the docs
 
-## Building docs
+### Prerequisites
 
-To build the docs, run `make` in the `docs` directory:
+- **Docker**: The documentation build process uses Docker to run the Antora build inside a container. You can [download and install Docker](https://docs.docker.com/get-docker/) from the official site.
 
+### Build Process
+
+To build the documentation locally, use the following commands in the root directory of the repository.
+
+1. Prepare managed sources (copies samples sources into Antora directories)
+
+```bash
+make managed
 ```
-make
+
+2. Create the full site
+```bash
+make local
 ```
 
-Dynamically-generated and managed sources will be created in `build/src/managed`.
+This command will execute a Docker-based build process that compiles the documentation. The generated documentation will be output to the `target/site/akka-documentation` directory.
 
-For quick iteration of changes you can use a partial build:
-
+3. Clean site and managed sources
+```bash
+make clean
 ```
-make examples dev-html
+
+## Viewing the docs
+
+Once the build process is complete, you can view the documentation by opening the `index.html` file located in the `target/site/akka-documentation` directory in your web browser.
+
+Example path:
+
+```bash
+open target/site/akka-documentation/index.html
 ```
 
 ## Deploying the docs
@@ -33,4 +54,4 @@ To start the deployment workflow:
 
 #### Post-Deployment
 
-Once the deployment process is complete, the WIP documentation will be published and available for viewing at [https://doc.akka.io/snapshots](https://doc.akka.io/snapshots).
+Once the deployment process is complete, the WIP documentation will be published and available for viewing at [https://doc.akka.io/snapshots/](https://doc.akka.io/snapshots).
