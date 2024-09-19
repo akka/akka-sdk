@@ -3,3 +3,4 @@ title: Akka
 version: master
 nav:
 - modules/ROOT/nav.adoc
+- modules/concepts/nav.adoc

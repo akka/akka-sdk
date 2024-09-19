@@ -1,0 +1,11 @@
+= Concepts
+:page-aliases: services:index.adoc[] 
+
+include::ROOT:partial$include.adoc[]
+
+This section provides an introduction to concepts that are relevant to be aware of when developing Akka applications and services.
+
+== Topics
+
+- xref:concepts:programming-model.adoc[]
+- xref:concepts:development-process.adoc[]

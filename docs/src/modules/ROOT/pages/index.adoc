@@ -18,12 +18,10 @@ _Start here as an Akka developer:_
 A collection of useful https://github.com/lightbend/akka-javasdk/tree/main/samples[samples] for building with Akka, demonstrating several important patterns and abstractions.
 
 |
-== Concepts
+== xref:concepts:index.adoc[Concepts]
 
-_Explanation of Akka's core components:_
+_Explanation of Akka's core components_|
 
-
-|
 == Reference
 
 _Technical reference for:_
