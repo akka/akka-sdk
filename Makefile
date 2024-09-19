@@ -7,11 +7,11 @@ upstream := lightbend/akka-javasdk
 branch   := docs/current
 sources  := src build/src/managed
 
-src_managed := build/src/managed
+src_managed := docs/src-managed
 
-java_managed_attachments := ${src_managed}/modules/java/attachments
-java_managed_examples := ${src_managed}/modules/java/examples
-java_managed_partials := ${src_managed}/modules/java/partials
+java_managed_attachments := docs/src/modules/java/attachments
+java_managed_examples := docs/src/modules/java/examples
+java_managed_partials := docs/src/modules/java/partials
 
 antora_docker_image := local/antora-doc
 antora_docker_image_tag := latest
@@ -22,6 +22,9 @@ BASE_PATH := $(shell git rev-parse --show-prefix)
 build: dev
 
 clean:
+	rm -rf "${java_managed_attachments}"
+	rm -rf "${java_managed_examples}"
+	rm -rf "${java_managed_partials}/attributes.adoc"
 	rm -rf target/site
 
 docker-image:
@@ -29,13 +32,13 @@ docker-image:
 
 prepare:
 	mkdir -p "${src_managed}"
-	cp src/antora.yml "${src_managed}/antora.yml"
+	#cp docs/docs-managed-antora.yml "${src_managed}/antora.yml"
 
 managed: prepare attributes apidocs examples bundles
 
-attributes:
+attributes: prepare
 	mkdir -p "${java_managed_partials}"
-	bin/version.sh | xargs -0  printf ":akka-javasdk-version: %s" \
+	docs/bin/version.sh | xargs -0  printf ":akka-javasdk-version: %s" \
 		> "${java_managed_partials}/attributes.adoc"
 	echo ":java-pb-version: 11" \
 		>> "${java_managed_partials}/attributes.adoc"
@@ -52,22 +55,22 @@ attributes:
 	echo ":console: https://console.kalix.io/" \
 		>> "${java_managed_partials}/attributes.adoc"
 
-apidocs:
+apidocs: prepare
 	mkdir -p "${java_managed_attachments}"
-	cd .. && sbt akka-javasdk/doc akka-javasdk-testkit/doc
-	rsync -a ../akka-javasdk/target/api/ "${java_managed_attachments}/api/"
-	rsync -a ../akka-javasdk-testkit/target/api/ "${java_managed_attachments}/testkit/"
-	bin/version.sh > "${java_managed_attachments}/latest-version.txt"
+	sbt akka-javasdk/doc akka-javasdk-testkit/doc
+	rsync -a akka-javasdk/target/api/ "${java_managed_attachments}/api/"
+	rsync -a akka-javasdk-testkit/target/api/ "${java_managed_attachments}/testkit/"
+	docs/bin/version.sh > "${java_managed_attachments}/latest-version.txt"
 
-examples:
+examples: prepare
 	mkdir -p "${java_managed_examples}"
-	rsync -a --exclude-from=.examplesignore ../samples/* "${java_managed_examples}/"
+	rsync -a --exclude-from=docs/.examplesignore samples/* "${java_managed_examples}/"
 
 bundles:
-	bin/bundle.sh --zip "${java_managed_attachments}/customer-registry-quickstart.zip" ../samples/customer-registry-quickstart
-	bin/bundle.sh --zip "${java_managed_attachments}/customer-registry-views-quickstart.zip" ../samples/customer-registry-views-quickstart
-	bin/bundle.sh --zip "${java_managed_attachments}/shopping-cart-quickstart.zip" ../samples/shopping-cart-quickstart
-	bin/bundle.sh --zip "${java_managed_attachments}/choreography-saga-quickstart.zip" ../samples/choreography-saga-quickstart
+#	bin/bundle.sh --zip "${java_managed_attachments}/customer-registry-quickstart.zip" ../samples/customer-registry-quickstart
+#	bin/bundle.sh --zip "${java_managed_attachments}/customer-registry-views-quickstart.zip" ../samples/customer-registry-views-quickstart
+#	bin/bundle.sh --zip "${java_managed_attachments}/shopping-cart-quickstart.zip" ../samples/shopping-cart-quickstart
+#	bin/bundle.sh --zip "${java_managed_attachments}/choreography-saga-quickstart.zip" ../samples/choreography-saga-quickstart
 
 dev: clean managed validate-xrefs dev-html
 
@@ -77,7 +80,9 @@ quick-dev: clean prepare attributes examples dev-html
 done:
 	@echo "Generated docs at ${TARGET_DIR}/akka-documentation/index.html"
 
-local: clean docker-image done
+local: docker-image examples antora-local
+
+antora-local:
 	docker run \
 		-v ${ROOT_DIR}:/antora \
 		--rm \

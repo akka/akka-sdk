@@ -2,3 +2,6 @@
 /.deploy/
 /build/
 /dev/build/
+/src/modules/java/examples/
+/src/modules/java/attachments/
+/src/modules/java/partials/attributes.adoc
