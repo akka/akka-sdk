@@ -12,7 +12,8 @@ fi
 
 make local
 eval "$(ssh-agent -s)"
-echo "${SCP_SECRET}" | base64 -d > /tmp/id_rsa
-chmod 600 /tmp/id_rsa
-scp -i /tmp/id_rsa -o UserKnownHostsFile=docs/bin/gustav_known_hosts.txt -r target/* ${TARGET}
-rm /tmp/id_rsa
+echo "${SCP_SECRET}" | base64 -di > .github/id_rsa
+chmod 600 .github/id_rsa
+export RSYNC_RSH="ssh -o UserKnownHostsFile=docs/bin/gustav_known_hosts.txt "
+rsync -azP target/site/akka-documentation/* ${TARGET}
+rm .github/id_rsa

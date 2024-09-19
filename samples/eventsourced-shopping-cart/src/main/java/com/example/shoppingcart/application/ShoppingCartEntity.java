@@ -95,7 +95,7 @@ public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCart, Shoppin
       // tag::addItem[]
     };
   }
-  // tag::addItem[]
+  // end::addItem[]
 // tag::class[]
 }
 // end::class[]
