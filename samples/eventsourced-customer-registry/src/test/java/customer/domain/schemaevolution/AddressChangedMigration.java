@@ -19,7 +19,7 @@ public class AddressChangedMigration extends JsonMigration {
 
   @Override
   public List<String> supportedClassNames() {
-    return List.of("customer.domain.CustomerEvent$OldAddressName"); // <1>
+    return List.of("customer.domain.CustomerEvent$OldAddressChanged"); // <1>
   }
 
   // end::name-migration[]
