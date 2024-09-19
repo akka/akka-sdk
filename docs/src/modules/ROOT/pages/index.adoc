@@ -1,0 +1,33 @@
+= Welcome to Akka
+
+Akka is a platform as a service (PaaS) to build and run distributed applications that are guaranteed to remain responsive to change. It abstracts the complexities of building distributed systems by providing an event-driven, stateful service model, allowing developers to focus on business logic rather than managing infrastructure and scalability.
+
+[cols="1a,1a",frame="none",grid="none"]
+|===
+
+|
+== Get Started
+
+_Start here as an Akka developer:_
+
+* Register for an https://console.kalix.io/register[Akka account].
+
+|
+== Samples
+
+A collection of useful https://github.com/lightbend/akka-javasdk/tree/main/samples[samples] for building with Akka, demonstrating several important patterns and abstractions.
+
+|
+== Concepts
+
+_Explanation of Akka's core components:_
+
+
+|
+== Reference
+
+_Technical reference for:_
+
+* https://doc.akka.io/docs[Akka Libraries]
+
+|===

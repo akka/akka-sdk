@@ -1,0 +1,40 @@
+site:
+  title: "Akka Documentation"
+  url: https://doc.akka.io
+  robots: disallow
+  keys:
+    cookie_consent: 'a91f1ffd-cda7-4530-aedc-a15650b825ad-test'
+
+
+content:
+  sources:
+  - url: ./
+    branches: [HEAD]
+    start_paths: [docs/src]
+
+ui:
+  bundle:
+    url: ./supplemental_ui/bundle/kalix-theme-ui-001-bundle.zip
+    snapshot: true
+  default_layout: default
+  supplemental_files: ./supplemental_ui
+
+runtime:
+  fetch: true
+ 
+asciidoc:
+  attributes:
+    # the following two attributes cause review and todo notes to display
+    review: ''
+    todo: ''
+    # this attribute causes the next and previous page links to appear at the bottom of the page
+    page-pagination: ''
+    page-toctitle: 'On This Page'
+    page-toclevels: 3@
+
+antora:
+  extensions:
+  - require: '@antora/lunr-extension'
+  
+output:
+  clean: true

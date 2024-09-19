@@ -16,6 +16,8 @@
 .bloop
 .bsp
 .DS_Store
+build/
+!build/site/.gitignore
 .cache
 .classpath
 .codefellow

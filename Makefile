@@ -69,6 +69,10 @@ dev: clean managed validate-xrefs dev-html
 # like dev but without apidocs, bundles and testkits. Useful for fast dev cycles
 quick-dev: clean prepare attributes examples dev-html
 
+local-html:
+	antora --fetch --stacktrace local.yml
+	@echo "local done, generated docs at ./build/site/index.html"
+
 dev-html:
 	docker run \
 		-v ${root_dir}:/antora \
