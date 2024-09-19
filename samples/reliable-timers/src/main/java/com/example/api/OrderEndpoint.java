@@ -18,10 +18,10 @@ import java.time.Duration;
 import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 
-// tag::timers[]
 // Opened up for access from the public internet to make the sample service easy to try out.
 // For actual services meant for production this must be carefully considered, and often set more limited
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
+// tag::timers[]
 @HttpEndpoint("/orders")
 public class OrderEndpoint {
 // end::timers[]
@@ -50,7 +50,9 @@ public class OrderEndpoint {
       timerScheduler.startSingleTimer(
         timerName(orderId), // <3>
         Duration.ofSeconds(10), // <4>
-        componentClient.forTimedAction().method(OrderTimedAction::expireOrder).deferred(orderId) // <5>
+        componentClient.forTimedAction()
+          .method(OrderTimedAction::expireOrder)
+          .deferred(orderId) // <5>
       );
 
     // end::place-order[]
@@ -62,9 +64,10 @@ public class OrderEndpoint {
     // tag::place-order[]
 
     return
-      timerRegistration
-        .thenCompose(done -> componentClient.forKeyValueEntity(orderId)
-          .method(OrderEntity::placeOrder).invokeAsync(orderRequest))
+      timerRegistration.thenCompose(done ->
+          componentClient.forKeyValueEntity(orderId)
+            .method(OrderEntity::placeOrder)
+            .invokeAsync(orderRequest)) // <6>
         .thenApply(order -> order);
 
   }
@@ -98,7 +101,8 @@ public class OrderEndpoint {
     return
       componentClient.forKeyValueEntity(orderId)
         .method(OrderEntity::confirm).invokeAsync() // <1>
-        .thenCompose(result -> timerScheduler.cancel(timerName(orderId))) // <2>
+        .thenCompose(result ->
+          timerScheduler.cancel(timerName(orderId))) // <2>
         .thenApply(__ -> HttpResponses.ok());
   }
 
@@ -109,7 +113,8 @@ public class OrderEndpoint {
     return
       componentClient.forKeyValueEntity(orderId)
         .method(OrderEntity::cancel).invokeAsync()
-        .thenCompose(req -> timerScheduler.cancel(timerName(orderId)))
+        .thenCompose(req ->
+          timerScheduler.cancel(timerName(orderId)))
         .thenApply(done -> HttpResponses.ok());
   }
   // end::confirm-cancel-order[]

@@ -5,8 +5,7 @@
 package akka.javasdk;
 
 /**
- * Represents a call to another component, performed as a forward, a side effect, or a
- * request-reply.
+ * Represents a call to another component that can be persisted and invoked later.
  *
  * <p>Not for user extension.
  *

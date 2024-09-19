@@ -17,6 +17,7 @@ import static com.example.application.OrderEntity.Result.Ok.ok;
 @ComponentId("order")
 public class OrderEntity extends KeyValueEntity<Order> {
 
+  // end::order[]
   private static final Logger logger = LoggerFactory.getLogger(OrderEntity.class);
 
   private final String entityId;
@@ -31,6 +32,7 @@ public class OrderEntity extends KeyValueEntity<Order> {
     @JsonSubTypes.Type(value = Result.NotFound.class, name = "notFound"),
     @JsonSubTypes.Type(value = Result.Invalid.class, name = "invalid")
   })
+  // tag::order[]
   public sealed interface Result {
 
     public record Ok() implements Result {
@@ -57,11 +59,15 @@ public class OrderEntity extends KeyValueEntity<Order> {
 
   public Effect<Order> placeOrder(OrderRequest orderRequest) { // <1>
     var orderId = commandContext().entityId();
+    // end::order[]
     logger.info("Placing orderId={} request={}", orderId, orderRequest);
+    // tag::order[]
+    boolean placed = true;
+    boolean confirmed = false;
     var newOrder = new Order(
       orderId,
-      false,
-      true, // <2>
+      confirmed,
+      placed, // <2>
       orderRequest.item(),
       orderRequest.quantity());
     return effects()
@@ -71,21 +77,23 @@ public class OrderEntity extends KeyValueEntity<Order> {
 
   public Effect<Result> confirm() {
     var orderId = commandContext().entityId();
+    // end::order[]
     logger.info("Confirming orderId={}", orderId);
+    // tag::order[]
     if (currentState().placed()) { // <3>
       return effects()
         .updateState(currentState().confirm())
         .thenReply(ok);
     } else {
-      //TODO rethink the error handling when working on documentation
-      return effects().error(
-        "No order found for '" + orderId + "'"); // <4>
+      return effects().reply(Result.NotFound.of("No order found for " + orderId)); // <4>
     }
   }
 
   public Effect<Result> cancel() {
     var orderId = commandContext().entityId();
+    // end::order[]
     logger.info("Cancelling orderId={} currentState={}", orderId, currentState());
+    // tag::order[]
     if (!currentState().placed()) {
       return effects().reply(Result.NotFound.of("No order found for " + orderId)); // <5>
     } else if (currentState().confirmed()) {

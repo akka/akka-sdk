@@ -1,13 +1,11 @@
 = Timed Actions
+:sample-base-url: https://github.com/lightbend/akka-javasdk/blob/main/samples
 
 Timers allow for scheduling calls in the future. For example, to verify that some process have been completed or not.
 
-Timers are persisted in the https://docs.kalix.io/reference/glossary.html#runtime[Kalix Runtime] and are guaranteed to run at least once.
+Timers are persisted by the https://docs.kalix.io/reference/glossary.html#runtime[Akka Runtime] and are guaranteed to run at least once.
 
-When a timer is triggered, the scheduled call is executed. If successfully executed, the timer completes and is automatically removed.
-In case of a failure, the timer is rescheduled with a delay of 3 seconds. This process repeats until the call succeeds.
-
-You can schedule a timer for any service method in Kalix, but you can only create a timer from within an Action or Workflow by passing a `DeferredCall`.
+When a timer is triggered, the scheduled call is executed. If successfully executed, the timer completes and is automatically removed. In case of a failure, the timer is rescheduled with a delay of 3 seconds. This process repeats until the call succeeds.
 
 **Timer features**:
 
@@ -20,74 +18,78 @@ You can schedule a timer for any service method in Kalix, but you can only creat
 
 **Timer limitations**:
 
-* Timers can only be scheduled from within an Action or Workflow.
-* Timers can only call other components (e.g., Actions, Entities, Workflows), therefore external service calls must be wrapped by an Action in the deployed service.
+* Timers can only call other components (e.g., Entities, Workflows, Timed Actions). External service calls must be wrapped by Timed Action component.
+* Maximum allowed timer command payload is 1024 bytes.
 
-To demonstrate its functionality, let's consider an Ordering Service composed of a xref:key-value-entities.adoc[Key Value Entity] and an xref:actions.adoc[Action]. The Action will work as a xref:actions-as-controller.adoc[Controller] receiving calls and delegating to the Order Entity.
+== Order Entity
+
+To demonstrate its functionality, let's consider an Ordering Service composed of a xref:value-entity.adoc[Key Value Entity] and a Timed Action component. The Timed Action will orchestrate the cancellation task, which requires a call to an external service.
 
 Users can place an order, but the order must be confirmed within a period of time. You can think of it as an Ordering Food application where the restaurant needs to confirm if it can accept the order. If no confirmation is sent within some pre-defined period of time, the order is automatically cancelled.
 
-== Order Entity
 Let's have a look on how the Order Entity can be implemented.
 
-.src/main/java/com/example/domain/OrderEntity.java
+[source,java,indent=0]
+.{sample-base-url}/reliable-timers/src/main/java/com/example/application/OrderEntity.java[OrderEntity.java]
 [source,java]
 ----
-include::example$java-spring-reliable-timers/src/main/java/com/example/domain/OrderEntity.java[tag=order]
+include::example$reliable-timers/src/main/java/com/example/application/OrderEntity.java[tag=order]
 ----
-<1> The first method to look at is the `placeOrder`. It's basically the creation of an order.
-<2> Note that you set the `placed` field to true.
-<3> When confirming an Order, you must ensure that the Order was created before.
-<4> If the Order was never created, it returns `NOT_FOUND`.
-<5> Cancelling an Order that was never placed also returns `NOT_FOUND`.
-<6> While cancelling an already confirmed order returns `BAD_REQUEST`.
+<1> The `placeOrder` method is responsible for the creation of an order.
+<2> Note that we set the `placed` field to true.
+<3> When confirming an Order, we must ensure that the Order was created before.
+<4> If the Order was never created, it returns `NotFound`.
+<5> Cancelling an Order that was never placed also returns `NotFound`.
+<6> While cancelling an already confirmed order returns `Invalid`.
 <7> Finally, if the Order is placed, but not confirmed, the cancel method resets the order to the `emptyState`.
 
-== Order Action and Timers
+== Timed Action
 
-As said before, the `OrderEndpoint` will act as a controller ahead of the Order Entity, receiving incoming messages, running some logic and then calling the Order Entity as needed.
+As said before, the `OrderEndpoint` will , receiving incoming messages, running some logic and then calling the Order Entity as needed.
 
 === Scheduling a timer
 
-We will first look at `OrderAction.placeOrder`. Before delegating the request to the Order Entity, the Action creates a timer.
+We will first look at `OrderEndpoint` which acts as a controller ahead of the Order Entity. Before delegating the request to the Order Entity, the Endpoint creates a timer.
 
-.src/main/java/com/example/actions/OrderAction.java
-[source,java]
+[source,java,indent=0]
+.{sample-base-url}/reliable-timers/src/main/java/com/example/api/OrderEndpoint.java[OrderEndpoint.java]
 ----
-include::example$java-spring-reliable-timers/src/main/java/com/example/actions/OrderAction.java[tags=timers;place-order]
+include::example$reliable-timers/src/main/java/com/example/api/OrderEndpoint.java[tags=timers;place-order]
 ----
-<1> First you generate a random identifier for the OrderEntity. It will be used to identify the Order, but also as a unique name for the timer.
-<2> Call the timers API to register a new timer. Note that it returns `CompletionStage<Done>`. A successful completion means that Kalix registered the timer.
+<1> First we generate a random identifier for the OrderEntity. It will be used to identify the Order, but also as a unique name for the timer.
+<2> Call the timers API to register a new timer. Note that it returns `CompletionStage<Done>`. A successful completion means that Akka registered the timer.
 <3> Order id is used to generate a unique name for the timer.
-<4> Set the delay you want for the timer to trigger.
-<5> Scheduled call to `OrderAction.expire` method. We will cover it in a while.
-<6> Pass on the request for the Order entity using the `ComponentClient`.
-<7> Finally, you build an `asyncReply` by composing the `timerRegistration` CompletionStage with a call to execute the request and place the order.
+<4> Set the delay we want for the timer to trigger.
+<5> Schedule a deferred call to the Timed Action component. We will cover it in a while.
+<6> Finally, compose the `timerRegistration` CompletionStage with a call to `OrderEntity` to place the order.
 
-In a nutshell, you first requested Kalix to register a timer. When it completes, you know that the timer is persisted and will run at the specified time. You then proceed by placing the order.
+In a nutshell, we first requested Akka to register a timer. When it completes, we know that the timer is persisted and will run at the specified time. You then proceed by placing the order.
 
-The sequence of actions is important here. If you had called the entity first and then registered the timer, the Order could have been placed and the timer registration could have failed due to some network issue for example. In such a case, you would end up with an Order without an expiration timer.
+The `DeferredCall` returned from the component client `deferred` method is a way to defer the call to Akka components. It can be persisted and executed at a later time.
+
+The sequence of actions is important here. If we had called the entity first and then registered the timer, the Order could have been placed and the timer registration could have failed due to some network issue for example. In such a case, we would end up with an Order without an expiration timer.
 
 But the inverse is also true. There is still the risk of registering the timer and then failing to place the Order. However, the implementation of the `expire` method can take that into account.
 
 === Handling the timer call
 
-Let's have a look at the `OrderAction.expire` method implementation.
+Let's have a look at the `OrderTimedAction.expire` method implementation.
 
-.src/main/java/com/example/actions/OrderAction.java
-[source,java]
+[source,java,indent=0]
+.{sample-base-url}/reliable-timers/src/main/java/com/example/application/OrderTimedAction.java[OrderTimedAction.java]
 ----
-include::example$java-spring-reliable-timers/src/main/java/com/example/actions/OrderAction.java[tags=timers;expire-order]
+include::example$reliable-timers/src/main/java/com/example/application/OrderTimedAction.java[tags=expire-order]
 ----
-<1> When the `OrderEndpoint` receives the expiration call, it immediately tries to cancel the Order. You use the `execute()` method to run it and this method returns a `CompletionStage`.
-<2> If the `CompletionStage` completes successfully, it's all good and can simply return `Ok`. Since this method is returning normally, the timer will be considered as executed and will be removed from Kalix.
-<3> On the other hand, if the `CompletionStage` completes with a failure, you must decide if you will recover the call or not. If you recover it, the timer will be considered as completed. If you let the call fail, the timer will be re-scheduled.
+<1> Set `@ComponentId` annotation for the component.
+<2> Extend `TimedAction` class.
+<3> The effect will return an asynchronous call to an external service and `OrderEntity` component.
+<4> The `OrderEntity.cancel` method is called to cancel the Order.
+<5> On the other hand, if the `CompletionStage` completes with a failure, we must decide if we will recover the call or not. If we recover it, the timer will be considered as completed. If we let the call fail, the timer will be re-scheduled.
+<6> The `OrderEntity.cancel` implementation, except `Ok`, can return `NotFound` or `Invalid` responses. In both cases, we can consider that the timer has become obsolete and don't need to be rescheduled, therefore we recover the call.
 
-You have seen the `OrderEntity.cancel` implementation, so you know that if you get a `NOT_FOUND`, it means that either the Order never existed or it was already cancelled (deleted). Or, you may get a `BAD_REQUEST` error, meaning that the order has been confirmed in the meantime. In both cases, you can consider that the timer has become obsolete and don't need to be rescheduled, therefore we recover the call.
+For all other possible errors, the call to `OrderTimedAction.expire` will fail and the timer will be re-scheduled.
 
-For all other possible errors, the call to `OrderAction.expire` will fail and the timer will be re-scheduled.
-
-IMPORTANT: Whenever you implement a method that is called from a timer, you need to carefully handle errors inside that method. Failing to do so may cause the timer to keep re-scheduling. Therefore, you should ensure that any failure is properly handled and only propagated if the intention is to re-try the call.
+IMPORTANT: Whenever we implement a method that is called from a timer, we need to carefully handle errors inside that method. Failing to do so may cause the timer to keep re-scheduling. Therefore, we should ensure that any failure is properly handled and only propagated if the intention is to re-try the call.
 
 === Failures and retries
 
@@ -98,18 +100,18 @@ The default is to keep retrying indefinitely, but it is possible to limit the nu
 
 === Cancelling a timer
 
-Next, we can have a look at `OrderAction.confirm` and `OrderAction.cancel` implementations. They are very similar. The only difference being the method they call on the `OrderEntity`.
+Next, we can have a look at confirmation and cancellation endpoint implementations.
 
-.src/main/java/com/example/actions/OrderAction.java
-[source,java]
+[source,java,indent=0]
+.{sample-base-url}/reliable-timers/src/main/java/com/example/api/OrderEndpoint.java[OrderEndpoint.java]
 ----
-include::example$java-spring-reliable-timers/src/main/java/com/example/actions/OrderAction.java[tags=timers;confirm-cancel-order]
+include::example$reliable-timers/src/main/java/com/example/api/OrderEndpoint.java[tags=timers;confirm-cancel-order]
 ----
-<1> Call the Order entity to execute the command.
+<1> Call the Order entity to execute confirmation.
 <2> If it succeeds, remove the timer.
 
-In both methods, you pass the request to the entity and when it completes, you cancel the timer.
+In both methods, we call proper `OrderEntity` method and when it completes, we cancel the timer.
 
-Once more, the ordering is important. It's not a problem if the call to cancel the timer fails. As we have seen in the `OrderAction.expire` implementation, if the timer is triggered, but is obsolete, you will properly recover from it and signal to Kalix that the timer can be removed.
+Once more, the ordering is important. It's not a problem if the call to cancel the timer fails. As we have seen in the `OrderEntity.expireOrder` implementation, if the timer is triggered, but is obsolete, we will properly recover from it and signal to Akka that the timer can be removed.
 
-TIP: We could have completely ignored the timer when handling the confirmation or the cancelling. The registered timer would then be triggered at some point later and the `expire` method would have handled the fact that it has become obsolete. However, it's always of good measure to do some housekeeping to save resources.
+TIP: We could have completely ignored the timer cancellation when handling the confirmation or the cancelling. The registered timer would then be triggered at some point later and the implementation is ready to handle gracefully this case. However, it's always of good measure to do some housekeeping to save resources.
