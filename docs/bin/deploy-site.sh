@@ -17,4 +17,4 @@ chmod 600 .github/id_rsa
 ssh-add .github/id_rsa
 rm .github/id_rsa
 export RSYNC_RSH="ssh -o UserKnownHostsFile=docs/bin/gustav_known_hosts.txt "
-rsync -azP target/site/akka-documentation/* ${TARGET}
+rsync -azP target/site/* ${TARGET}
