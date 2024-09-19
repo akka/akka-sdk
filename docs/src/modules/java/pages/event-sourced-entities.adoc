@@ -210,7 +210,7 @@ There are two operational choices for deciding where the primary is located:
 * static mode - one region is defined as the primary when deploying the service, and all entities will use that region as primary
 * dynamic mode - the primary is selected by each individual entity based on where the first event is persisted
 
-The replication mode is defined when deploying the service for all entities of the service or different modes for certain entity types. For each such configuration it's also possible to define which regions that participate in the replication.
+The replication mode is defined when deploying the service.
 
 ifdef::todo[TODO: link to ops docs for multi-region deployments]
 
