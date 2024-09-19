@@ -1,0 +1,25 @@
+// global attributes
+
+// :minimum_docker_version: 20.10.14
+// :minimum_protoc_version: 3.0.0
+// :minimum_node_version: 14.0.0
+// :minimum_maven_version: 3.x
+// // Docker Registry HTTP API Version
+// :docker_registry_http_api_version: v1
+//
+// // The Kalix runtime version used for local testing
+// :kalix-runtime-version: 1.1.41
+
+//URLs
+:console: https://console.akka.io/
+
+//constant to add icon for opening link in a new page
+:tab-icon: image:ROOT:new-tab.svg[width=12]
+
+// // SDKs
+// :javascript-protobuf-sdk-support-version: 1.0.0
+// :jvm-protobuf-sdk-support-version: 1.0.0
+// :java-sdk-support-version: 1.2.0
+//
+// // CLI
+// :kalix-support-version: 2.0.0
