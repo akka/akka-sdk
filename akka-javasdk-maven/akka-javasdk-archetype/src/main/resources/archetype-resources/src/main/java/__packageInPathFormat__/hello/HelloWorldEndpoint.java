@@ -1,5 +1,6 @@
 package ${package}.hello;
 
+import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Get;
 

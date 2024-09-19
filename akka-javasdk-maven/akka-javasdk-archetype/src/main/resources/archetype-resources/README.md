@@ -2,11 +2,11 @@
 
 ## Designing
 
-To understand the Kalix concepts that are the basis for this example, see [Designing services](https://docs.kalix.io/java/development-process.html) in the documentation.
+To understand the Akka concepts that are the basis for this example, see [Designing services](https://docs.kalix.io/java/development-process.html) in the documentation.
 
 ## Developing
 
-This project contains the framework to create a Kalix service. To understand more about these components, see [Developing services](https://docs.kalix.io/services/) and check Spring-SDK [official documentation](https://docs.kalix.io/spring/index.html). Examples can be found [here](https://github.com/lightbend/akka-javasdk/tree/main/samples) in the folders with "spring" in their name.
+This project contains the framework to create an Akka service. To understand more about these components, see [Developing services](https://docs.kalix.io/services/). Examples can be found [here](https://github.com/lightbend/akka-javasdk/tree/main/samples).
 
 ## Building
 
@@ -43,7 +43,4 @@ You will need to update the `dockerImage` property in the `pom.xml` and refer to
 for more information on how to make your docker image available to Akka.
 
 Finally, you can use the [Akka Console](https://console.kalix.io)
-to create a project and then deploy your service into the project either by using `mvn deploy akka:deploy` which
-will conveniently package, publish your docker image, and deploy your service to Akka, or by first packaging and
-publishing the docker image through `mvn deploy` and then deploying the image
-through the `akka` CLI.
+to create a project and then deploy your service into the project by first packaging and publishing the docker image through `mvn deploy` and then deploying the image through the `akka` CLI.
