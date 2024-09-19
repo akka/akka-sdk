@@ -32,9 +32,9 @@ asciidoc:
     page-toctitle: 'On This Page'
     page-toclevels: 3@
 
-antora:
-  extensions:
-  - require: '@antora/lunr-extension'
+#antora:
+#  extensions:
+#  - require: '@antora/lunr-extension'
   
 output:
   clean: true

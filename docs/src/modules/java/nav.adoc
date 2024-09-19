@@ -1,1 +1,1 @@
-* xref:pages/index.adoc[Akka SDK]
+* xref:index.adoc[Akka SDK]

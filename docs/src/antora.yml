@@ -1,5 +1,5 @@
-name: akka-javasdk
-title: Akka Java SDK
+name: akka-documentation
+title: Akka
 version: master
 nav:
 - modules/ROOT/nav.adoc
