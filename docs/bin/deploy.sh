@@ -21,7 +21,7 @@ readonly deploy_email="kalix.github@lightbend.com"
 
 readonly docs_dir=$(pwd)
 readonly deploy_dir="$docs_dir/.deploy"
-readonly base_path=$(git rev-parse --show-prefix 2> /dev/null || echo "")
+readonly BASE_PATH=$(git rev-parse --show-prefix 2> /dev/null || echo "")
 
 # echo logs
 
@@ -157,8 +157,8 @@ function __deploy {
   local sources_dir="$deploy_dir/sources/$upstream"
   rm -rf "$sources_dir"
   for dir in "${dirs[@]}" ; do
-    mkdir -p "$sources_dir/${base_path}${dir}"
-    rsync -a "$dir/" "$sources_dir/${base_path}${dir}/"
+    mkdir -p "$sources_dir/${BASE_PATH}${dir}"
+    rsync -a "$dir/" "$sources_dir/${BASE_PATH}${dir}/"
   done
   rsync -av --delete --exclude='.git/' "$sources_dir/" "$upstream_repo_dir/"
 

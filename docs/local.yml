@@ -8,7 +8,7 @@ site:
 
 content:
   sources:
-  - url: ./
+  - url: ./../
     branches: [HEAD]
     start_paths: [docs/src]
 
@@ -32,9 +32,10 @@ asciidoc:
     page-toctitle: 'On This Page'
     page-toclevels: 3@
 
-#antora:
-#  extensions:
-#  - require: '@antora/lunr-extension'
+antora:
+  extensions:
+  - require: '@antora/lunr-extension'
   
 output:
+  dir: ./../target/site
   clean: true

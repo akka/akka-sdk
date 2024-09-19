@@ -1,4 +1,7 @@
 # Make Akka SDK for Java documentation
+SHELL_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
+ROOT_DIR := ${SHELL_DIR}
+TARGET_DIR := ${ROOT_DIR}/target/site
 
 upstream := lightbend/akka-javasdk
 branch   := docs/current
@@ -10,17 +13,19 @@ java_managed_attachments := ${src_managed}/modules/java/attachments
 java_managed_examples := ${src_managed}/modules/java/examples
 java_managed_partials := ${src_managed}/modules/java/partials
 
-antora_docker_image := gcr.io/kalix-public/kalix-docbuilder
-antora_docker_image_tag := 0.0.7
-root_dir := $(shell git rev-parse --show-toplevel)
-base_path := $(shell git rev-parse --show-prefix)
+antora_docker_image := local/antora-doc
+antora_docker_image_tag := latest
+BASE_PATH := $(shell git rev-parse --show-prefix)
 
 .SILENT:
 
 build: dev
 
 clean:
-	rm -rf build
+	rm -rf target/site
+
+docker-image:
+	(cd ${ROOT_DIR}/docs/antora-docker;  docker build -t ${antora_docker_image}:${antora_docker_image_tag} .)
 
 prepare:
 	mkdir -p "${src_managed}"
@@ -69,34 +74,31 @@ dev: clean managed validate-xrefs dev-html
 # like dev but without apidocs, bundles and testkits. Useful for fast dev cycles
 quick-dev: clean prepare attributes examples dev-html
 
-local-html:
-	antora --fetch --stacktrace local.yml
-	@echo "local done, generated docs at ./build/site/index.html"
+done:
+	@echo "Generated docs at ${TARGET_DIR}/akka-documentation/index.html"
 
-dev-html:
+local: clean docker-image done
 	docker run \
-		-v ${root_dir}:/antora \
+		-v ${ROOT_DIR}:/antora \
 		--rm \
-		--entrypoint /bin/sh \
 		-t ${antora_docker_image}:${antora_docker_image_tag} \
-		-c "cd /antora/${base_path} && antora --cache-dir=.cache/antora --stacktrace --log-failure-level=warn dev/antora.yml"
-	@echo "Generated docs at dev/build/site/java/index.html"
+		--cache-dir=.cache/antora --stacktrace --log-failure-level=warn docs/local.yml
 
 validate-xrefs:
 	docker run \
-		-v ${root_dir}:/antora \
+		-v ${ROOT_DIR}:/antora \
 		--rm \
 		--entrypoint /bin/sh \
 		-t ${antora_docker_image}:${antora_docker_image_tag} \
-		-c 'cd /antora/${base_path} && NODE_PATH="$$(npm -g root)" antora --generator @antora/xref-validator dev/antora.yml'
+		--generator @antora/xref-validator dev/antora.yml
 
 validate-links:
 	docker run \
-		-v ${root_dir}:/antora \
+		-v ${ROOT_DIR}:/antora \
 		--rm \
 		--entrypoint /bin/sh \
 		-t ${antora_docker_image}:${antora_docker_image_tag} \
-		-c "cd /antora/${base_path} && find src -name '*.adoc' -print0 | xargs -0 -n1 asciidoc-link-check --progress --config config/validate-links.json"
+		-c "cd /antora/${BASE_PATH} && find src -name '*.adoc' -print0 | xargs -0 -n1 asciidoc-link-check --progress --config config/validate-links.json"
 
 deploy: clean managed
 	bin/deploy.sh --module java --upstream ${upstream} --branch ${branch} ${sources}
