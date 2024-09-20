@@ -195,7 +195,7 @@
                                         </inline>
                                     </assembly>
                                     <entryPoint>
-                                        <shell>cp /maven/*.jar /opt/local-lib/</shell>
+                                        <shell>echo "Listing dependencies copied:"; cp --verbose /maven/*.jar /opt/local-lib/</shell>
                                     </entryPoint>
                                 </build>
                             </image>
