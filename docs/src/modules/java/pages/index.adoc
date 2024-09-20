@@ -37,14 +37,13 @@ Follow our xref:java:getting-started.adoc["Getting started with the Akka SDK"] g
 
 On the other hand, if you would rather spend some time exploring our documentation, here are some main features you will find in this section:
 
-* xref:java:http-endpoints.adoc[REST Endpoints]
-* xref:java:key-value-entities.adoc[Key Value Entities]
-* xref:java:event-sourced-entities.adoc[Event Sourced Entities]
-* xref:java:views.adoc[Views]
-* xref:java:consuming-producing.adoc[Consuming and Producing]
-* xref:java:timed-actions.adoc[Timed Actions]
-* xref:java:workflows.adoc[Workflows]
-* xref:java:actions.adoc[Actions]
+* xref:http-endpoints.adoc[REST Endpoints]
+* xref:key-value-entities.adoc[Key Value Entities]
+* xref:event-sourced-entities.adoc[Event Sourced Entities]
+* xref:views.adoc[Views]
+* xref:consuming-producing.adoc[Consuming and Producing]
+* xref:timed-actions.adoc[Timed Actions]
+* xref:workflows.adoc[Workflows]
 
 
 [#_dependency_injection]

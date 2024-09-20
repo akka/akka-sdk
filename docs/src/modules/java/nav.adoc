@@ -1,1 +1,8 @@
 * xref:index.adoc[Akka SDK]
+** xref:http-endpoints.adoc[REST Endpoints]
+** xref:key-value-entities.adoc[Key Value Entities]
+** xref:event-sourced-entities.adoc[Event Sourced Entities]
+** xref:views.adoc[Views]
+** xref:consuming-producing.adoc[Consuming and Producing]
+** xref:timed-actions.adoc[Timed Actions]
+** xref:workflows.adoc[Workflows]

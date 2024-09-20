@@ -1,2 +1,0 @@
-* xref:index.adoc[Akka]
-* xref:java:index.adoc[Akka SDK]

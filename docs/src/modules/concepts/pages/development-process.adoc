@@ -9,13 +9,13 @@ The main steps in developing a service include:
 . <<_create_unit_tests>>
 . <<_package_service>>
 . <<_run_locally>>
-. <<_deploy_to_kalix>>
+. <<_deploy>>
 
 
 [#_specify_service_interface_and_domain_model]
 == Specify service interface and domain model
 
-The main components of a Kalix service are:
+The main components of an Akka service are:
 
 * Stateful https://docs.kalix.io/reference/glossary.html#entity[Entities]
 * Stateful https://docs.kalix.io/reference/glossary.html#Workflow[Workflows]
@@ -85,10 +85,10 @@ See https://docs.kalix.io/projects/container-registries.html[Configuring registr
 
 You can test and debug your services by xref:running-locally.adoc[running them locally] before deploying to Kalix.
 
-[#_deploy_to_kalix]
-== Deploy to Kalix
+[#_deploy]
+== Deploy to akka.io
 
-After testing locally, deploy your service to Kalix using the CLI or the Console. The following pages provide information about deployment:
+After testing locally, deploy your service to akka.io using the CLI or the Console. The following pages provide information about deployment:
 
 * https://docs.kalix.io/projects/index.html[Working with Kalix projects]
 * https://docs.kalix.io/services/deploy-service.html#_deploy[Deploying a packaged service]

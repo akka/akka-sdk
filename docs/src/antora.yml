@@ -1,6 +1,7 @@
 name: akka-documentation
 title: Akka
-version: master
+version: ~
 nav:
 - modules/ROOT/nav.adoc
 - modules/concepts/nav.adoc
+- modules/java/nav.adoc

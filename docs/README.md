@@ -35,7 +35,7 @@ Once the build process is complete, you can view the documentation by opening th
 Example path:
 
 ```bash
-open target/site/akka-documentation/index.html
+open ../target/site/akka-documentation/index.html
 ```
 
 ## Deploying the docs

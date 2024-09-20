@@ -87,7 +87,7 @@ antora-local:
 		-v ${ROOT_DIR}:/antora \
 		--rm \
 		-t ${antora_docker_image}:${antora_docker_image_tag} \
-		--cache-dir=.cache/antora --stacktrace --log-failure-level=warn docs/local.yml
+		--cache-dir=.cache/antora --stacktrace --log-failure-level=warn docs/antora-playbook-local.yml
 
 validate-xrefs:
 	docker run \

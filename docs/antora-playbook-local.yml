@@ -1,6 +1,6 @@
 site:
   title: "Akka Documentation"
-  url: https://doc.akka.io
+  url: https://doc.akka.io/
   robots: disallow
   keys:
     cookie_consent: 'a91f1ffd-cda7-4530-aedc-a15650b825ad-test'
@@ -37,5 +37,7 @@ antora:
   - require: '@antora/lunr-extension'
   
 output:
-  dir: ./../target/site
+  destinations:
+    - provider: fs
+      path: ./../target/site
   clean: true
