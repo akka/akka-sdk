@@ -17,6 +17,7 @@ import scala.util.control.NonFatal
 import akka.Done
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
+import akka.http.scaladsl.model.headers.RawHeader
 import akka.javasdk.BuildInfo
 import akka.javasdk.DependencyProvider
 import akka.javasdk.ServiceSetup
@@ -65,6 +66,7 @@ import akka.javasdk.workflow.WorkflowContext
 import akka.runtime.sdk.spi.ComponentClients
 import akka.runtime.sdk.spi.HttpEndpointConstructionContext
 import akka.runtime.sdk.spi.HttpEndpointDescriptor
+import akka.runtime.sdk.spi.RemoteIdentification
 import akka.runtime.sdk.spi.SpiComponents
 import akka.runtime.sdk.spi.SpiDevModeSettings
 import akka.runtime.sdk.spi.SpiEventingSupportSettings
@@ -125,6 +127,8 @@ class SdkRunner extends akka.runtime.sdk.spi.Runner {
         startContext.executionContext,
         startContext.materializer,
         startContext.componentClients,
+        startContext.remoteIdentification,
+        startContext.tracerFactory,
         startedPromise)
       Future.successful(app.spiEndpoints)
     } catch {
@@ -225,6 +229,8 @@ private final class Sdk(
     sdkExecutionContext: ExecutionContext,
     sdkMaterializer: Materializer,
     runtimeComponentClients: ComponentClients,
+    remoteIdentification: Option[RemoteIdentification],
+    tracerFactory: String => Tracer,
     startedPromise: Promise[StartupContext]) {
   private val logger = LoggerFactory.getLogger(getClass)
   private val messageCodec = new JsonMessageCodec
@@ -235,7 +241,11 @@ private final class Sdk(
   private val applicationConfig = ApplicationConfig(system).getConfig
   private val sdkSettings = Settings(applicationConfig.getConfig("akka.javasdk"))
 
-  private lazy val httpClientProvider = new HttpClientProviderImpl(system, None, ProxyInfoHolder(system), sdkSettings)
+  private val httpClientProvider = new HttpClientProviderImpl(
+    system,
+    None,
+    remoteIdentification.map(ri => RawHeader(ri.headerName, ri.headerValue)),
+    sdkSettings)
 
   private lazy val userServiceConfig = {
     // hiding these paths from the config provided to user
@@ -346,7 +356,8 @@ private final class Sdk(
           classicSystem,
           actionAndConsumerServices,
           runtimeComponentClients.timerClient,
-          sdkExecutionContext))
+          sdkExecutionContext,
+          tracerFactory))
     }
 
     services.groupBy(_._2.getClass).foreach {
@@ -354,13 +365,18 @@ private final class Sdk(
       case (serviceClass, eventSourcedServices: Map[String, EventSourcedEntityService] @unchecked)
           if serviceClass == classOf[EventSourcedEntityService] =>
         val eventSourcedImpl =
-          new EventSourcedEntitiesImpl(classicSystem, eventSourcedServices, sdkSettings, sdkDispatcherName)
+          new EventSourcedEntitiesImpl(
+            classicSystem,
+            eventSourcedServices,
+            sdkSettings,
+            sdkDispatcherName,
+            tracerFactory)
         eventSourcedEntitiesEndpoint = Some(eventSourcedImpl)
 
       case (serviceClass, entityServices: Map[String, KeyValueEntityService] @unchecked)
           if serviceClass == classOf[KeyValueEntityService] =>
         valueEntitiesEndpoint =
-          Some(new KeyValueEntitiesImpl(classicSystem, entityServices, sdkSettings, sdkDispatcherName))
+          Some(new KeyValueEntitiesImpl(classicSystem, entityServices, sdkSettings, sdkDispatcherName, tracerFactory))
 
       case (serviceClass, workflowServices: Map[String, WorkflowService] @unchecked)
           if serviceClass == classOf[WorkflowService] =>

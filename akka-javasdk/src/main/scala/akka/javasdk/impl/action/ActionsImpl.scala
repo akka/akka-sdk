@@ -13,7 +13,6 @@ import akka.javasdk.impl.ErrorHandling
 import akka.javasdk.impl.consumer.ConsumerService
 import akka.javasdk.impl.telemetry.ActionCategory
 import akka.javasdk.impl.telemetry.ConsumerCategory
-import akka.javasdk.impl.telemetry.Instrumentation
 import akka.javasdk.impl.telemetry.Telemetry
 import akka.javasdk.impl.timedaction.TimedActionRouter
 import akka.javasdk.impl.timer.TimerSchedulerImpl
@@ -30,6 +29,7 @@ import akka.javasdk.impl.ResolvedEntityFactory
 import akka.javasdk.impl.ResolvedServiceMethod
 import akka.javasdk.impl.Service
 import akka.javasdk.impl.consumer.MessageContextImpl
+import akka.javasdk.impl.telemetry.TraceInstrumentation
 import akka.javasdk.timedaction.CommandContext
 import akka.javasdk.timedaction.CommandEnvelope
 import akka.javasdk.timedaction.TimedAction
@@ -130,7 +130,8 @@ private[akka] final class ActionsImpl(
     _system: ActorSystem,
     services: Map[String, Service],
     timerClient: TimerClient,
-    sdkExecutionContext: ExecutionContext)
+    sdkExecutionContext: ExecutionContext,
+    tracerFactory: String => Tracer)
     extends Actions {
 
   import ActionsImpl._
@@ -138,14 +139,12 @@ private[akka] final class ActionsImpl(
   private implicit val executionContext: ExecutionContext = sdkExecutionContext
   implicit val system: ActorSystem = _system
 
-  private lazy val telemetries: Map[String, Instrumentation] = {
-    import akka.actor.typed.scaladsl.adapter._
-    val telemetry = Telemetry(system.toTyped)
+  private val telemetries: Map[String, TraceInstrumentation] =
     services.values.map {
-      case s: ActionService   => (s.serviceName, telemetry.traceInstrumentation(s.serviceName, ActionCategory))
-      case s: ConsumerService => (s.serviceName, telemetry.traceInstrumentation(s.serviceName, ConsumerCategory))
+      case s: ActionService => (s.serviceName, new TraceInstrumentation(s.serviceName, ActionCategory, tracerFactory))
+      case s: ConsumerService =>
+        (s.serviceName, new TraceInstrumentation(s.serviceName, ConsumerCategory, tracerFactory))
     }.toMap
-  }
 
   private def effectToResponse(
       service: ActionService,
@@ -301,7 +300,7 @@ class CommandContextImpl(
     val messageCodec: MessageCodec,
     val system: ActorSystem,
     timerClient: TimerClient,
-    instrumentation: Instrumentation)
+    instrumentation: TraceInstrumentation)
     extends AbstractContext
     with CommandContext {
 

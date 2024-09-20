@@ -36,8 +36,9 @@ import akka.javasdk.impl.effect.ErrorReplyImpl
 import akka.javasdk.impl.effect.MessageReplyImpl
 import akka.javasdk.impl.effect.SecondaryEffectImpl
 import akka.javasdk.impl.telemetry.EventSourcedEntityCategory
-import akka.javasdk.impl.telemetry.Instrumentation
 import akka.javasdk.impl.telemetry.Telemetry
+import akka.javasdk.impl.telemetry.TraceInstrumentation
+import io.opentelemetry.api.trace.Tracer
 import kalix.protocol.component.Failure
 import kalix.protocol.event_sourced_entity.EventSourcedStreamIn.Message.{ Command => InCommand }
 import kalix.protocol.event_sourced_entity.EventSourcedStreamIn.Message.{ Empty => InEmpty }
@@ -93,7 +94,8 @@ private[impl] final class EventSourcedEntitiesImpl(
     system: ActorSystem,
     _services: Map[String, EventSourcedEntityService],
     configuration: Settings,
-    sdkDispatcherName: String)
+    sdkDispatcherName: String,
+    tracerFactory: String => Tracer)
     extends EventSourcedEntities {
   import akka.javasdk.impl.EntityExceptions._
 
@@ -104,10 +106,9 @@ private[impl] final class EventSourcedEntitiesImpl(
     // FIXME overlay configuration provided by _system
     (name, if (service.snapshotEvery == 0) service.withSnapshotEvery(configuration.snapshotEvery) else service)
   }.toMap
-  import akka.actor.typed.scaladsl.adapter._
-  val telemetry = Telemetry(system.toTyped)
-  lazy val instrumentations: Map[String, Instrumentation] = services.values.map { s =>
-    (s.serviceName, telemetry.traceInstrumentation(s.serviceName, EventSourcedEntityCategory))
+
+  private val instrumentations: Map[String, TraceInstrumentation] = services.values.map { s =>
+    (s.serviceName, new TraceInstrumentation(s.serviceName, EventSourcedEntityCategory, tracerFactory))
   }.toMap
 
   private val pbCleanupDeletedEventSourcedEntityAfter =

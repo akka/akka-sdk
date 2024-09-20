@@ -14,7 +14,6 @@ import akka.actor.testkit.typed.scaladsl.LoggingTestKit
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import akka.actor.typed.scaladsl.adapter._
 import akka.javasdk.impl.JsonMessageCodec
-import akka.javasdk.impl.ProxyInfoHolder
 import akka.javasdk.impl.timedaction.TimedActionEffectImpl
 import akka.javasdk.impl.timedaction.TimedActionRouter
 import akka.javasdk.timedaction.CommandEnvelope
@@ -24,6 +23,7 @@ import com.google.protobuf.any.{ Any => ScalaPbAny }
 import kalix.javasdk.actionspec.ActionspecApi
 import akka.runtime.sdk.spi.DeferredRequest
 import akka.runtime.sdk.spi.TimerClient
+import io.opentelemetry.api.OpenTelemetry
 import kalix.protocol.action.ActionCommand
 import kalix.protocol.action.ActionResponse
 import kalix.protocol.action.Actions
@@ -56,9 +56,6 @@ class TimedActionHandlerSpec
 
     val services = Map(serviceName -> service)
 
-    //setting tracing as disabled, emulating that is discovered from the proxy.
-    ProxyInfoHolder(system).overrideTracingCollectorEndpoint("")
-
     new ActionsImpl(
       classicSystem,
       services,
@@ -71,7 +68,8 @@ class TimedActionHandlerSpec
             deferredRequest: DeferredRequest): Future[Done] = ???
         override def removeTimer(name: String): Future[Done] = ???
       },
-      classicSystem.dispatcher)
+      classicSystem.dispatcher,
+      OpenTelemetry.noop().getTracer _)
   }
 
   "The action service" should {

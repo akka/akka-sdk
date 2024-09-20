@@ -15,8 +15,8 @@ import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.ResolvedEntityFactory
 import akka.javasdk.impl.ResolvedServiceMethod
 import akka.javasdk.impl.Service
-import akka.javasdk.impl.telemetry.Instrumentation
 import akka.javasdk.impl.telemetry.Telemetry
+import akka.javasdk.impl.telemetry.TraceInstrumentation
 import akka.javasdk.impl.timer.TimerSchedulerImpl
 import akka.javasdk.timer.TimerScheduler
 import akka.runtime.sdk.spi.TimerClient
@@ -75,7 +75,7 @@ private[impl] final class MessageContextImpl(
     override val metadata: Metadata,
     val messageCodec: MessageCodec,
     timerClient: TimerClient,
-    instrumentation: Instrumentation)
+    instrumentation: TraceInstrumentation)
     extends AbstractContext
     with MessageContext {
 

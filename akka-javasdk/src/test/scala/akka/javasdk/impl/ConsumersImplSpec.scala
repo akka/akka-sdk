@@ -24,6 +24,9 @@ import akka.runtime.sdk.spi.DeferredRequest
 import akka.runtime.sdk.spi.TimerClient
 import com.google.protobuf.any.Any.toJavaProto
 import com.google.protobuf.any.{ Any => ScalaPbAny }
+import io.opentelemetry.api.OpenTelemetry
+import io.opentelemetry.api.trace.Tracer
+import io.opentelemetry.sdk.OpenTelemetrySdk
 import kalix.protocol.action.ActionCommand
 import kalix.protocol.action.ActionResponse
 import kalix.protocol.action.Actions
@@ -53,13 +56,12 @@ class ConsumersImplSpec
 
   private val classicSystem = system.toClassic
 
-  def create(provider: ConsumerProvider[_], tracingCollector: String = ""): Actions = {
+  def create(
+      provider: ConsumerProvider[_],
+      tracerFactory: String => Tracer = OpenTelemetry.noop.getTracer _): Actions = {
     val service = provider.newServiceInstance()
 
     val services = Map(provider.serviceDescriptor.getFullName -> service)
-
-    //setting tracing as disabled, emulating that is discovered from the proxy.
-    ProxyInfoHolder(system).overrideTracingCollectorEndpoint(tracingCollector)
 
     new ActionsImpl(
       classicSystem,
@@ -73,7 +75,8 @@ class ConsumersImplSpec
             deferredRequest: DeferredRequest): Future[Done] = ???
         override def removeTimer(name: String): Future[Done] = ???
       },
-      classicSystem.dispatcher)
+      classicSystem.dispatcher,
+      tracerFactory)
   }
 
   "The consumer service" should {
@@ -116,14 +119,21 @@ class ConsumersImplSpec
       val consumerProvider =
         ConsumerProvider(classOf[TestTracing], jsonMessageCodec, () => new TestTracing)
 
-      val service = create(consumerProvider, "http://localhost:1111")
+      val openTelemetryInstance = OpenTelemetrySdk
+        .builder()
+        .build()
+
+      val service = create(consumerProvider, openTelemetryInstance.getTracer)
       val serviceName = consumerProvider.serviceDescriptor.getFullName
 
       val cmd1 = ScalaPbAny.fromJavaProto(JsonSupport.encodeJson(new TestESEvent.Event2(123)))
 
-      val traceParent = "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
-      val metadata = Metadata(Seq(MetadataEntry("traceparent", MetadataEntry.Value.StringValue(traceParent))))
-      val expectedMDC = Map(Telemetry.TRACE_ID -> "0af7651916cd43dd8448eb211c80319c")
+      val originalTraceId = "0af7651916cd43dd8448eb211c80319c"
+      val originalParentId = "b7ad6b7169203331"
+      // w3c encoding - [version]-[traceid]-[parentid]-[flags]
+      val traceParentW3cEncoded = s"00-$originalTraceId-$originalParentId-01"
+      val metadata = Metadata(Seq(MetadataEntry("traceparent", MetadataEntry.Value.StringValue(traceParentW3cEncoded))))
+      val expectedMDC = Map(Telemetry.TRACE_ID -> originalTraceId)
       val reply1 =
         LoggingTestKit.empty.withMdc(expectedMDC).expect {
           service.handleUnary(ActionCommand(serviceName, "Consume", Some(cmd1), Some(metadata))).futureValue
@@ -132,8 +142,11 @@ class ConsumersImplSpec
       inside(reply1.response) { case ActionResponse.Response.Reply(Reply(Some(payload), _, _)) =>
         val tp = decodeJson(classOf[String], toJavaProto(payload))
         tp should not be "not-found"
-        tp should include("0af7651916cd43dd8448eb211c80319c") // trace id should be propagated
-        (tp should not).include("b7ad6b7169203331") // new span id should be generated
+        val Array(version, traceId, parentId, flags) = tp.split("-")
+        version shouldEqual "00"
+        traceId should equal(originalTraceId) // trace id should be propagated
+        (parentId should not).equal(originalParentId) // new span id should be generated and be parent
+        flags shouldEqual "01"
       }
 
       val log = LoggerFactory.getLogger(classOf[ConsumersImplSpec])

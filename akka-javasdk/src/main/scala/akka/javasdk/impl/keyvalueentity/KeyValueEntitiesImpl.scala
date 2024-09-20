@@ -27,11 +27,12 @@ import akka.javasdk.impl.ResolvedEntityFactory
 import akka.javasdk.impl.ResolvedServiceMethod
 import akka.javasdk.impl.Service
 import akka.javasdk.impl.effect.ErrorReplyImpl
-import akka.javasdk.impl.telemetry.Instrumentation
 import akka.javasdk.impl.telemetry.KeyValueEntityCategory
 import akka.javasdk.impl.telemetry.Telemetry
+import akka.javasdk.impl.telemetry.TraceInstrumentation
 import akka.javasdk.keyvalueentity.CommandContext
 import akka.javasdk.keyvalueentity.KeyValueEntityContext
+import io.opentelemetry.api.trace.Tracer
 import kalix.protocol.component.Failure
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
@@ -81,17 +82,16 @@ private[impl] final class KeyValueEntitiesImpl(
     system: ActorSystem,
     val services: Map[String, KeyValueEntityService],
     configuration: Settings,
-    sdkDispatcherName: String)
+    sdkDispatcherName: String,
+    tracerFactory: String => Tracer)
     extends ValueEntities {
 
   import akka.javasdk.impl.EntityExceptions._
 
   private final val log = LoggerFactory.getLogger(this.getClass)
 
-  import akka.actor.typed.scaladsl.adapter._
-  val telemetry = Telemetry(system.toTyped)
-  lazy val instrumentations: Map[String, Instrumentation] = services.values.map { s =>
-    (s.serviceName, telemetry.traceInstrumentation(s.serviceName, KeyValueEntityCategory))
+  private val instrumentations: Map[String, TraceInstrumentation] = services.values.map { s =>
+    (s.serviceName, new TraceInstrumentation(s.serviceName, KeyValueEntityCategory, tracerFactory))
   }.toMap
 
   private val pbCleanupDeletedValueEntityAfter =

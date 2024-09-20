@@ -11,7 +11,6 @@ import akka.http.javadsl.model.HttpHeader
 import akka.http.javadsl.model.headers.RawHeader
 import akka.javasdk.http.HttpClient
 import akka.javasdk.http.HttpClientProvider
-import akka.javasdk.impl.ProxyInfoHolder
 import akka.javasdk.impl.Settings
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
 import io.opentelemetry.context.{ Context => OtelContext }
@@ -29,17 +28,11 @@ import scala.util.control.NonFatal
 private[akka] final class HttpClientProviderImpl(
     system: ActorSystem[_],
     traceContext: Option[OtelContext],
-    // FIXME could we have the remote identification header as start context and not need this dynamic fetching of it?
-    proxyInfoHolder: ProxyInfoHolder,
+    remoteIdentificationHeader: Option[RawHeader],
     settings: Settings)
     extends HttpClientProvider {
 
   private val log = LoggerFactory.getLogger(classOf[HttpClientProvider])
-
-  // Lazy because not set until runtime has sent discovery (see  fixme above)
-  private lazy val authHeaders = proxyInfoHolder.remoteIdentificationHeader.map { case (key, value) =>
-    RawHeader.create(key, value): HttpHeader
-  }
 
   private val otelTraceHeaders: Vector[HttpHeader] = {
     val builder = Vector.newBuilder[HttpHeader]
@@ -101,7 +94,7 @@ private[akka] final class HttpClientProviderImpl(
 
     if (nameIsService) {
       // cross service request, include auth
-      client.withDefaultHeaders((otelTraceHeaders ++ authHeaders).asJava)
+      client.withDefaultHeaders((otelTraceHeaders ++ remoteIdentificationHeader).asJava)
     } else {
       // arbitrary http request
       client.withDefaultHeaders(otelTraceHeaders.asJava)
@@ -109,6 +102,6 @@ private[akka] final class HttpClientProviderImpl(
   }
 
   def withTraceContext(traceContext: OtelContext): HttpClientProvider =
-    new HttpClientProviderImpl(system, Some(traceContext), proxyInfoHolder, settings)
+    new HttpClientProviderImpl(system, Some(traceContext), remoteIdentificationHeader, settings)
 
 }

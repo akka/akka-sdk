@@ -7,7 +7,6 @@ package akka.javasdk.impl.cusomer
 import scala.concurrent.Await
 import scala.concurrent.Future
 import scala.concurrent.duration._
-
 import akka.Done
 import akka.actor.testkit.typed.scaladsl.LogCapturing
 import akka.actor.testkit.typed.scaladsl.LoggingTestKit
@@ -16,7 +15,6 @@ import akka.actor.typed.scaladsl.adapter._
 import akka.javasdk.consumer.Consumer
 import akka.javasdk.consumer.MessageEnvelope
 import akka.javasdk.impl.AnySupport
-import akka.javasdk.impl.ProxyInfoHolder
 import akka.javasdk.impl.action.ActionsImpl
 import akka.javasdk.impl.consumer.ConsumerEffectImpl
 import akka.javasdk.impl.consumer.ConsumerRouter
@@ -25,6 +23,7 @@ import akka.runtime.sdk.spi.DeferredRequest
 import akka.runtime.sdk.spi.TimerClient
 import com.google.protobuf
 import com.google.protobuf.any.{ Any => ScalaPbAny }
+import io.opentelemetry.api.OpenTelemetry
 import kalix.javasdk.actionspec.ActionspecApi
 import kalix.protocol.action.ActionCommand
 import kalix.protocol.action.ActionResponse
@@ -58,9 +57,6 @@ class CustomerHandlerSpec
 
     val services = Map(serviceName -> service)
 
-    //setting tracing as disabled, emulating that is discovered from the proxy.
-    ProxyInfoHolder(system).overrideTracingCollectorEndpoint("")
-
     new ActionsImpl(
       classicSystem,
       services,
@@ -73,7 +69,8 @@ class CustomerHandlerSpec
             deferredRequest: DeferredRequest): Future[Done] = ???
         override def removeTimer(name: String): Future[Done] = ???
       },
-      system.executionContext)
+      system.executionContext,
+      OpenTelemetry.noop().getTracer _)
   }
 
   "The action service" should {

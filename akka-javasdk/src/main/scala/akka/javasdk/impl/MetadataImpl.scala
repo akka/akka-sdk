@@ -5,7 +5,7 @@
 package akka.javasdk.impl
 
 import akka.http.javadsl.model.StatusCode
-import akka.javasdk.impl.telemetry.TraceInstrumentation
+import akka.javasdk.impl.telemetry.Telemetry
 
 import java.lang
 import java.net.URI
@@ -21,7 +21,7 @@ import com.google.protobuf.ByteString
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
 import io.opentelemetry.context.{ Context => OtelContext }
 import MetadataImpl.JwtClaimPrefix
-import TraceInstrumentation.metadataGetter
+import Telemetry.metadataGetter
 import akka.annotation.InternalApi
 import akka.javasdk.CloudEvent
 import akka.javasdk.JwtClaims
@@ -58,11 +58,11 @@ private[javasdk] class MetadataImpl private (val entries: Seq[MetadataEntry]) ex
   def withTracing(span: Span): MetadataImpl = {
     // remove parent trace parent and trace state from the metadata so they can be re-injected with current span context
     val builder = Vector.newBuilder[MetadataEntry]
-    builder.addAll(entries.iterator.filter(m =>
-      m.key != TraceInstrumentation.TRACE_PARENT_KEY && m.key != TraceInstrumentation.TRACE_STATE_KEY))
+    builder.addAll(
+      entries.iterator.filter(m => m.key != Telemetry.TRACE_PARENT_KEY && m.key != Telemetry.TRACE_STATE_KEY))
     W3CTraceContextPropagator
       .getInstance()
-      .inject(io.opentelemetry.context.Context.current().`with`(span), builder, TraceInstrumentation.builderSetter)
+      .inject(io.opentelemetry.context.Context.current().`with`(span), builder, Telemetry.builderSetter)
     MetadataImpl.of(builder.result())
   }
 
@@ -253,9 +253,9 @@ private[javasdk] class MetadataImpl private (val entries: Seq[MetadataEntry]) ex
       }
     }
 
-    override def traceParent(): Optional[String] = getScala(TraceInstrumentation.TRACE_PARENT_KEY).asJava
+    override def traceParent(): Optional[String] = getScala(Telemetry.TRACE_PARENT_KEY).asJava
 
-    override def traceState(): Optional[String] = getScala(TraceInstrumentation.TRACE_STATE_KEY).asJava
+    override def traceState(): Optional[String] = getScala(Telemetry.TRACE_STATE_KEY).asJava
   }
 
   private[akka] def allJwtClaimNames: Iterable[String] =

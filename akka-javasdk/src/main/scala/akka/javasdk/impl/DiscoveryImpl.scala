@@ -74,9 +74,6 @@ class DiscoveryImpl(
         s"${BuildInfo.runtimeImage}:${BuildInfo.runtimeVersion}")
     }
 
-    // FIXME pull this into parameters for the Runner StartContext instead of only available once discovery happened
-    ProxyInfoHolder(system).setProxyInfo(in)
-
     // FIXME is this needed anymore, we are running in the same process, so ENV is available
     // possibly filtered or hidden env, passed along for substitution in descriptor options
     val env: Map[String, String] = {
