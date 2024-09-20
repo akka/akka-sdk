@@ -180,13 +180,22 @@ private object ComponentLocator {
     val componentConfig = descriptorConfig.getConfig(DescriptorComponentBasePath)
 
     val components = kalixComponentTypeAndBaseClasses.flatMap { case (componentTypeKey, componentTypeClass) =>
-      if (componentConfig.hasPath(componentTypeKey))
+      if (componentConfig.hasPath(componentTypeKey)) {
         componentConfig.getStringList(componentTypeKey).asScala.map { className =>
-          val componentClass = system.dynamicAccess.getClassFor(className)(ClassTag(componentTypeClass)).get
-          logger.debug("Found and loaded component class: [{}]", componentClass)
-          componentClass
+          try {
+            val componentClass = system.dynamicAccess.getClassFor(className)(ClassTag(componentTypeClass)).get
+            logger.debug("Found and loaded component class: [{}]", componentClass)
+            componentClass
+          } catch {
+            case ex: ClassNotFoundException =>
+              throw new IllegalStateException(
+                s"Could not load component class [$className]. The exception might appear after rename or repackaging operation. " +
+                "Java Annotation Processor (used by Akka) is not able provide sufficient information to handle such situation gracefully. " +
+                "The solution is to rebuild the project, for instance by calling `mvn clean compile`.",
+                ex)
+          }
         }
-      else
+      } else
         Seq.empty
     }.toSeq
 
