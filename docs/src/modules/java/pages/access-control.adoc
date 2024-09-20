@@ -165,4 +165,14 @@ In the generated unit test testkits, the ACLs are ignored.
 
 == ACLs when running integration tests
 
-ifdef::todo[TODO: needs full re-write]
+ACLs are enabled by default when running integration tests.
+
+ACL rules will be applied whenever a call is made using testkit's `HttpClient`. Those calls are interpreted as
+originated from the internet. You can disable the ACL checks, by overriding the `testKitSettings()` method.
+
+[source, java, indent=0]
+----
+include::example$doc-snippets/src/it/java/com/example/acl/UserEndpointIntegrationTest.java[tag=disable-acl-in-it]
+----
+
+Calls made through the `ComponentClient` are internal to the service and therefore no ACL rule is applied.
