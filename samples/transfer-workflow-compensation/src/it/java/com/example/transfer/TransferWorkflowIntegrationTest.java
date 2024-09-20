@@ -1,17 +1,20 @@
 package com.example.transfer;
 
 import akka.javasdk.testkit.TestKitSupport;
-import com.example.transfer.TransferState.Transfer;
-import com.example.wallet.WalletEntity;
+import com.example.transfer.domain.TransferState;
+import com.example.transfer.domain.TransferState.Transfer;
+import com.example.transfer.application.TransferWorkflow;
+import com.example.wallet.application.WalletEntity;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import static com.example.transfer.TransferState.TransferStatus.COMPENSATION_COMPLETED;
-import static com.example.transfer.TransferState.TransferStatus.REQUIRES_MANUAL_INTERVENTION;
-import static com.example.transfer.TransferState.TransferStatus.TRANSFER_ACCEPTATION_TIMED_OUT;
+import static akka.Done.done;
+import static com.example.transfer.domain.TransferState.TransferStatus.COMPENSATION_COMPLETED;
+import static com.example.transfer.domain.TransferState.TransferStatus.REQUIRES_MANUAL_INTERVENTION;
+import static com.example.transfer.domain.TransferState.TransferStatus.TRANSFER_ACCEPTATION_TIMED_OUT;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -31,8 +34,7 @@ public class TransferWorkflowIntegrationTest extends TestKitSupport {
       componentClient
       .forWorkflow(transferId)
       .method(TransferWorkflow::startTransfer)
-      .invokeAsync(transfer))
-      .value();
+      .invokeAsync(transfer));
 
     assertThat(response).isEqualTo("transfer started");
 
@@ -59,16 +61,14 @@ public class TransferWorkflowIntegrationTest extends TestKitSupport {
     String response = await(componentClient
       .forWorkflow(transferId)
       .method(TransferWorkflow::startTransfer)
-      .invokeAsync(transfer))
-      .value();
+      .invokeAsync(transfer));
 
     assertThat(response).isEqualTo("transfer started, waiting for acceptation");
 
     String acceptationResponse = await(
       componentClient
       .forWorkflow(transferId)
-      .method(TransferWorkflow::accept).invokeAsync())
-      .value();
+      .method(TransferWorkflow::accept).invokeAsync());
 
     assertThat(acceptationResponse).isEqualTo("transfer accepted");
 
@@ -95,8 +95,7 @@ public class TransferWorkflowIntegrationTest extends TestKitSupport {
     String response = await(componentClient
       .forWorkflow(transferId)
       .method(TransferWorkflow::startTransfer)
-      .invokeAsync(transfer))
-      .value();
+      .invokeAsync(transfer));
     assertThat(response).isEqualTo("transfer started, waiting for acceptation");
 
     String acceptationResponse = await(componentClient
@@ -124,8 +123,7 @@ public class TransferWorkflowIntegrationTest extends TestKitSupport {
     String response = await(componentClient
       .forWorkflow(transferId)
       .method(TransferWorkflow::startTransfer)
-      .invokeAsync(transfer))
-      .value();
+      .invokeAsync(transfer));
 
     assertThat(response).isEqualTo("transfer started");
 
@@ -152,8 +150,7 @@ public class TransferWorkflowIntegrationTest extends TestKitSupport {
     String response = await(componentClient
       .forWorkflow(transferId)
       .method(TransferWorkflow::startTransfer)
-      .invokeAsync(transfer))
-      .value();
+      .invokeAsync(transfer));
 
     assertThat(response).isEqualTo("transfer started");
 
@@ -172,13 +169,13 @@ public class TransferWorkflowIntegrationTest extends TestKitSupport {
   }
 
   private void createWallet(String walletId, int amount) {
-    String response = await(
+    var response = await(
       componentClient
         .forKeyValueEntity(walletId)
         .method(WalletEntity::create)
         .invokeAsync(amount));
 
-    assertThat(response).contains("Ok");
+    assertThat(response).isEqualTo(done());
   }
 
   private int getWalletBalance(String walletId) {

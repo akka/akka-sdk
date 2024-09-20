@@ -1,74 +1,49 @@
 package com.example.wallet.application;
 
-import akka.javasdk.eventsourcedentity.EventSourcedEntity;
-import akka.javasdk.eventsourcedentity.EventSourcedEntityContext;
+import akka.Done;
 import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.eventsourcedentity.EventSourcedEntityContext;
+import akka.javasdk.keyvalueentity.KeyValueEntity;
 import com.example.wallet.domain.Wallet;
-import com.example.wallet.domain.WalletCmd;
-import com.example.wallet.domain.WalletEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import akka.Done;
+
+import static akka.Done.done;
 
 // tag::wallet[]
 @ComponentId("wallet")
-public class WalletEntity extends EventSourcedEntity<Wallet, WalletEvent> {
-  
-  private final String entityId;
+public class WalletEntity extends KeyValueEntity<Wallet> {
 
   // end::wallet[]
   private static final Logger logger = LoggerFactory.getLogger(WalletEntity.class);
 
-  public WalletEntity(EventSourcedEntityContext context) {
-    this.entityId = context.entityId();
-  }
-
-  @Override
-  public Wallet emptyState(){
-    return new Wallet(entityId,0);
-  }
-
   // tag::wallet[]
-  public Effect<Done> create(WalletCmd.CreateCmd cmd) {
-    var event = new WalletEvent.Created(cmd.initialAmount());
-    return effects().persist(event).thenReply(newState -> Done.done());
+  public Effect<Done> create(int initialBalance) { // <1>
+    return effects().updateState(new Wallet(commandContext().entityId(), initialBalance)).thenReply(done());
   }
 
-  public Effect<Done> withdraw(WalletCmd.WithdrawCmd cmd) {
-    Wallet updatedWallet = currentState().withdrawn(cmd.amount());
-    if (updatedWallet.balance() < 0) {
+  public Effect<Done> withdraw(int amount) { // <2>
+    if (currentState().balance() < amount) {
       return effects().error("Insufficient balance");
     } else {
+      Wallet updateWallet = currentState().withdraw(amount);
       // end::wallet[]
-      logger.info("Withdraw walletId: [{}] amount -{} balance after {}", currentState().id(), cmd.amount(), updatedWallet.balance());
+      logger.info("Withdraw walletId: [{}] amount -{} balance after {}", currentState().id(), amount, updateWallet.balance());
       // tag::wallet[]
-
-      var event = new WalletEvent.Withdrawn(cmd.amount());
-      return effects().persist(event).thenReply(newState -> Done.done());
+      return effects().updateState(updateWallet).thenReply(done());
     }
   }
 
-  public Effect<Done> deposit(WalletCmd.DepositCmd cmd) {
-    Wallet updatedWallet = currentState().deposited(cmd.amount());
+  public Effect<Done> deposit(int amount) { // <3>
+    Wallet updateWallet = currentState().deposit(amount);
     // end::wallet[]
-    logger.info("Deposit walletId: [{}] amount +{} balance after {}", currentState().id(), cmd.amount(), updatedWallet.balance());
+    logger.info("Deposit walletId: [{}] amount +{} balance after {}", currentState().id(), amount, updateWallet.balance());
     // tag::wallet[]
-
-    var event = new WalletEvent.Deposited(cmd.amount());
-    return effects().persist(event).thenReply(newState -> Done.done());
+    return effects().updateState(updateWallet).thenReply(done());
   }
 
-  public Effect<Integer> get() {
+  public Effect<Integer> get() { // <4>
     return effects().reply(currentState().balance());
-  }
-
-  @Override
-  public Wallet applyEvent(WalletEvent event) {
-    return switch (event) {
-      case WalletEvent.Deposited dep -> currentState().deposited(dep.amount());
-      case WalletEvent.Withdrawn with -> currentState().withdrawn(with.amount());
-      case WalletEvent.Created con -> currentState().created(con.initialAmount());
-    };
   }
 }
 // end::wallet[]

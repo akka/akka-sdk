@@ -1,17 +1,16 @@
 package com.example.transfer;
 
 import akka.javasdk.testkit.TestKitSupport;
-import akka.Done;
+import com.example.transfer.application.TransferWorkflow;
 import com.example.transfer.domain.TransferState.Transfer;
 import com.example.wallet.application.WalletEntity;
-import com.example.transfer.application.TransferWorkflow;
-import com.example.wallet.domain.WalletCmd;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import static akka.Done.done;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -28,15 +27,15 @@ public class TransferWorkflowIntegrationTest extends TestKitSupport {
     var transferId = randomTransferId();
     var transfer = new Transfer(walletId1, walletId2, 10);
 
-    String response =
+    var response =
       await(
         componentClient
           .forWorkflow(transferId)
           .method(TransferWorkflow::startTransfer)
           .invokeAsync(transfer)
-      ).value();
+      );
 
-    assertThat(response).isEqualTo("transfer started");
+    assertThat(response).isEqualTo(done());
 
     Awaitility.await()
       .atMost(10, TimeUnit.of(SECONDS))
@@ -58,18 +57,18 @@ public class TransferWorkflowIntegrationTest extends TestKitSupport {
     var res =
       await(
         componentClient
-          .forEventSourcedEntity(walletId)
+          .forKeyValueEntity(walletId)
           .method(WalletEntity::create)
-          .invokeAsync(new WalletCmd.CreateCmd(amount))
+          .invokeAsync(amount)
       );
 
-    assertEquals(Done.done(), res);
+    assertEquals(done(), res);
   }
 
   private int getWalletBalance(String walletId) {
     return await(
       componentClient
-        .forEventSourcedEntity(walletId)
+        .forKeyValueEntity(walletId)
         .method(WalletEntity::get).invokeAsync()
     );
   }

@@ -1,6 +1,5 @@
 package com.example.wallet.domain;
 
-// tag::wallet[]
 public record Wallet(String id, int balance) {
 
   public Wallet withdraw(int amount) {
@@ -11,4 +10,3 @@ public record Wallet(String id, int balance) {
     return new Wallet(id, balance + amount);
   }
 }
-// end::wallet[]

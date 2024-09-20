@@ -8,23 +8,22 @@ import com.example.transfer.domain.TransferState.Transfer;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.workflow.Workflow;
-import com.example.wallet.domain.WalletCmd;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+import static akka.Done.done;
 import static com.example.transfer.domain.TransferState.TransferStatus.COMPLETED;
 import static com.example.transfer.domain.TransferState.TransferStatus.WITHDRAW_SUCCEED;
 
 // tag::class[]
-@ComponentId("transfer")
-public class TransferWorkflow extends Workflow<TransferState> { // <1>
+@ComponentId("transfer") // <1>
+public class TransferWorkflow extends Workflow<TransferState> { // <2>
   // end::class[]
 
-  // tag::start[]
-  public record Withdraw(String from, int amount) { // <4>
+  // tag::class[]
+
+  public record Withdraw(String from, int amount) {
   }
 
-  // end::start[]
+  // end::class[]
 
   // tag::definition[]
   public record Deposit(String to, int amount) {
@@ -44,9 +43,9 @@ public class TransferWorkflow extends Workflow<TransferState> { // <1>
     Step withdraw =
       step("withdraw") // <1>
         .asyncCall(Withdraw.class, cmd ->
-          componentClient.forEventSourcedEntity(cmd.from)
+          componentClient.forKeyValueEntity(cmd.from)
             .method(WalletEntity::withdraw)
-            .invokeAsync(new WalletCmd.WithdrawCmd(cmd.amount))) // <2>
+            .invokeAsync(cmd.amount)) // <2>
         .andThen(Done.class, __ -> {
           Deposit depositInput = new Deposit(currentState().transfer().to(), currentState().transfer().amount());
           return effects()
@@ -57,9 +56,9 @@ public class TransferWorkflow extends Workflow<TransferState> { // <1>
     Step deposit =
       step("deposit") // <1>
         .asyncCall(Deposit.class, cmd ->
-          componentClient.forEventSourcedEntity(cmd.to)
+          componentClient.forKeyValueEntity(cmd.to)
             .method(WalletEntity::deposit)
-            .invokeAsync(new WalletCmd.DepositCmd(cmd.amount))) // <4>
+            .invokeAsync(cmd.amount)) // <4>
         .andThen(Done.class, __ -> {
           return effects()
             .updateState(currentState().withStatus(COMPLETED))
@@ -72,32 +71,32 @@ public class TransferWorkflow extends Workflow<TransferState> { // <1>
   }
   // end::definition[]
 
-  // tag::start[]
-  public Effect<Message> startTransfer(Transfer transfer) {
-    if (transfer.amount() <= 0) {
-      return effects().error("transfer amount should be greater than zero"); // <1>
+  // tag::class[]
+  public Effect<Done> startTransfer(Transfer transfer) { // <3>
+    if (transfer.amount() <= 0) { // <4>
+      return effects().error("transfer amount should be greater than zero");
     } else if (currentState() != null) {
-      return effects().error("transfer already started"); // <2>
+      return effects().error("transfer already started");
     } else {
 
-      TransferState initialState = new TransferState(transfer); // <3>
+      TransferState initialState = new TransferState(transfer); // <5>
 
       Withdraw withdrawInput = new Withdraw(transfer.from(), transfer.amount());
 
       return effects()
-        .updateState(initialState) // <4>
-        .transitionTo("withdraw", withdrawInput) // <5>
-        .thenReply(new Message("transfer started")); // <6>
+        .updateState(initialState) // <6>
+        .transitionTo("withdraw", withdrawInput) // <7>
+        .thenReply(done()); // <8>
     }
   }
-  // end::start[]
+  // end::class[]
 
   // tag::get-transfer[]
   public Effect<TransferState> getTransferState() {
     if (currentState() == null) {
       return effects().error("transfer not started");
     } else {
-      return effects().reply(currentState()); // <2>
+      return effects().reply(currentState()); // <1>
     }
   }
   // end::get-transfer[]

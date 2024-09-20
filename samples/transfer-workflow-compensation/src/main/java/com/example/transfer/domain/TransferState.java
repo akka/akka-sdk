@@ -1,6 +1,6 @@
-package com.example.transfer;
+package com.example.transfer.domain;
 
-import static com.example.transfer.TransferState.TransferStatus.*;
+import static com.example.transfer.domain.TransferState.TransferStatus.*;
 
 public record TransferState(String transferId, Transfer transfer, TransferStatus status) {
 
