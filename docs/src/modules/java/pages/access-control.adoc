@@ -168,7 +168,7 @@ In the generated unit test testkits, the ACLs are ignored.
 ACLs are enabled by default when running integration tests.
 
 ACL rules will be applied whenever a call is made using testkit's `HttpClient`. Those calls are interpreted as
-originated from the internet. You can disable the ACL checks, by overriding the `testKitSettings()` method.
+originating from the internet. You can disable the ACL checks by overriding the `testKitSettings()` method.
 
 [source, java, indent=0]
 ----
