@@ -107,6 +107,7 @@ class SdkRunner extends akka.runtime.sdk.spi.Runner {
           new SpiDevModeSettings(
             httpPort = applicationConf.getInt("akka.javasdk.dev-mode.http-port"),
             aclEnabled = applicationConf.getBoolean("akka.javasdk.dev-mode.acl.enabled"),
+            persistenceEnabled = applicationConf.getBoolean("akka.javasdk.dev-mode.persistence.enabled"),
             serviceName = applicationConf.getString("akka.javasdk.dev-mode.service-name"),
             eventingSupport = SpiEventingSupportSettings.fromConfigValue(
               applicationConf.getString("akka.javasdk.dev-mode.eventing.support")),
