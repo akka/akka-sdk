@@ -11,3 +11,4 @@ This section provides an introduction to concepts that are relevant to be aware 
 - xref:concepts:state-model.adoc[]
 - xref:concepts:programming-model.adoc[]
 - xref:concepts:best-practices.adoc[]
+- xref:concepts:control-tower.adoc[]
