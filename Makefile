@@ -42,7 +42,7 @@ attributes: prepare
 		> "${java_managed_partials}/attributes.adoc"
 	echo ":java-pb-version: 11" \
 		>> "${java_managed_partials}/attributes.adoc"
-	echo ":java-version: 17" \
+	echo ":java-version: 21" \
 		>> "${java_managed_partials}/attributes.adoc"
 	echo ":minimum_maven_version: 3.6" \
 		>> "${java_managed_partials}/attributes.adoc"

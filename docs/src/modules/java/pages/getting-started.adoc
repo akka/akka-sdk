@@ -13,7 +13,7 @@ The Akka SDK comes with Maven support that gets you started quickly:
 
 Before you start, make sure you have the following:
 
-* Java {java-version} or later
+* Java {java-version}
 * Apache Maven {minimum_maven_version} or later
 
 :sectnums:
@@ -60,11 +60,9 @@ mvn archetype:generate ^
 
 == Examine the project
 
-:TODO: Adapt once we have the new archetype
-
 == Implementing first component
 
-Kalix have different kinds of components that you can use to implement your application.
+Akka has different kinds of components that you can use to implement your application.
 The list of components are:
 
 * xref:java:key-value-entities.adoc[Key Value Entities]
@@ -79,39 +77,36 @@ that receives commands to increase the counter.
 .src/main/java/com/example/application/CounterEntity.java
 [source,java]
 ----
-include::example$valueentity-counter/src/main/java/com/example/application/CounterEntity.java[tags=declarations;increase;close]
+include::example$valueentity-counter/src/main/java/com/example/application/CounterEntity.java[tags=declarations]
 ----
-<1> Every Entity must be annotated with `@ComponentId` with a stable identifier. This identifier should be unique among the different existing entities within a Kalix application.
-<2> The `@Id` value should be unique per entity and map to some field being received on the route path, in this example it's the `counter_id`.
-<3> The `CounterEntity` class should extend `kalix.javasdk.valueentity.ValueEntity`.
-<4> The initial state of each counter is defined as 0.
-<5> The method is accessible as a POST endpoint on `/counter/\{counter_id\}/increase`, where `counter_id` will be its unique identifier.
-Note that it matches the `@Id` value.
-<6> Its `increaseBy` method receives a `Number` as input and increases the counter by adding it to the current state.
-<7> Finally, using the Effect API, we instruct Kalix to persist the new state, and we build a reply.
+<1> Every Entity must be annotated with `@ComponentId` with a stable unique identifier for this entity type.
+<2> The `CounterEntity` class should extend `akka.javasdk.keyvalueentity.KeyValueEntity`.
+<3> The initial state of each counter is defined with value 0.
 
-The `Counter` record in this example is used as input for the `increment` method and as to return the
-counter's current state.
+Akka will automatically find annotated components annotated with `@ComponentId` and make them available for use in your application.
 
-.src/main/java/com/example/domain/Counter.java
-[source,java]
+We can now add further commands to allowing for modifying the counter:
+
+.src/main/java/com/example/application/CounterEntity.java
+[source,java,indent=0]
 ----
-include::example$valueentity-counter/src/main/java/com/example/domain/Counter.java[]
+include::example$valueentity-counter/src/main/java/com/example/application/CounterEntity.java[tags=behaviour]
 ----
+<1> Set the new counter value to the value received from the command request.
+<2> Reply with the new counter value wrapped within a `Counter` object.
+<3> `plusOne` increases the counter by adding 1 to the current state.
+<4> Finally, using the Effect API, you instruct Akka to persist the new state, and build a reply with the wrapper object.
 
-[sidebar]
-An Akka component doesn't require any other annotation. They will be registered to Akka and be exposed automatically.
-It suffices to add them on the same package or on a sub-package of your `Main` class.
-
-The project also includes a dependency on the *Kalix Java SDK Test Kit*. Please consult the component specific pages to
-learn more about writing unit tests and integration tests for your application.
+The project also includes a dependency on the *Kalix Java SDK Test Kit*. Please consult the specific documentation page
+for each type of component to learn more about writing unit tests and integration tests for your application.
 
 == Package service
 
-The project is configured to package your service into a Docker image which can be deployed to Kalix. The Docker image
+The project is configured to package your service into a Docker image which can be deployed to Akka. The Docker image
 name can be changed in the `pom.xml` file's `properties` section. Update this file to publish your image to your Docker repository.
 
-This uses JDK {java-version} and the image is based on the link:https://adoptium.net/[Eclipse Adoptium] JDK image (formerly Adopt OpenJDK). Choose a different image in the `docker-maven-plugin` configuration  `pom.xml` file.
+The built docker image is minimal and only contains the service itself and the SDK and transitive dependencies. In a deployment
+environment it is combined with a runtime image which contains a JVM and the runtime to actually run.
 
 [source,bash]
 ----
@@ -129,42 +124,19 @@ To start your service locally, run:
 mvn compile exec:java
 ----
 
-This command will start your Kalix service and a companion Kalix Runtime as configured in `docker-compose.yml` file.
+This command will start your Akka service.
 
-If you prefer, you can also start docker-compose directly by running `docker-compose up` in one terminal and in another terminal start your Kalix service with:
+Once successfully started, any defined endpoints should be available at `localhost:9000`.
 
-[source,bash]
-----
-mvn kalix:run
-----
-
-With both the runtime and your service running, any defined endpoints should be available at `localhost:9000`,
-the runtime local address.
+You can try sending a request using https://curl.se[curl], a minimal command line HTTP client:
 
 [source, command window]
 ----
 curl -XPOST -H "Content-Type: application/json" localhost:9000/counter/foo/increase -d '{ "value": 10 }'
 ----
 
-== Deploy to Kalix
+== Deploy to akka.io
 
-To deploy your service to Kalix:
+FIXME should it be here, or only in the developent-process page or where?
 
-First make sure you have updated the `dockerImage` property in the `pom.xml` to point at your Docker registry.
-Then use the `deploy` target to build the container image, publish it to the container registry as configured in the `pom.xml` file, and the target `kalix:deploy` to automatically deploy the service to Kalix:
-
-[source,command line]
-----
-mvn deploy kalix:deploy
-----
-include::partial$important-mvn-kalixdeploy.adoc[]
-
-- When using the CLI, in your command window, you can set your Kalix project to be the current project:
-
-+
-[source, command window]
-----
-kalix config set project <project-name>
-----
-
-- Deploy your service following the instructions at xref:concepts:development-process.adoc#_deploy_to_kalix[Development Process - Deploy to Akka].
+Deploy your service following the instructions at xref:concepts:development-process.adoc#_deploy[Development Process - Deploy to Akka].
