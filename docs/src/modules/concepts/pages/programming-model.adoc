@@ -49,6 +49,10 @@ You will use Akka xref:reference:glossary.adoc#component[_Components_] to build 
 
 :TODO: add links to each component
 
+=== Endpoint
+
+Endpoints are defined points of interaction for services that allow external clients to communicate via standard HTTP methods like GET, POST, PUT, and DELETE. They facilitate the integration and communication between the other types of internal Akka components.
+
 === Entities
 
 
@@ -61,7 +65,11 @@ Key Value Entities are, as the name implies, an object that is stored and retrie
 Event Sourced Entities persist their state using a journal of events. The current state of the entity is derived from these events. Readers can access the event journal independently of the active entity instance to create read models, known as xref:reference:glossary.adoc#view[_Views_], or to perform business actions based on the events.
 
 === Views
-Views provide a way to materialize state from multiple entities based on a query. You can create views from Key Value Entities, Event Sourced Entities, and by subscribing to a topic. 
+Views provide a way to materialize state from multiple entities based on a query. You can create views from Key Value Entities, Event Sourced Entities, and by subscribing to a topic.
+
+=== Consumer
+
+Consumers listen for and process events or messages from various sources, such as Event Sourced Entities, Key Value Entities and external messaging systems. They can also produce messages to topics, facilitating communication and data flow between different services within an application.
 
 === Workflow
 Workflows enable the developer to implement long-running, multi-step business processes while focusing exclusively on domain and business logic. Technical concerns such as delivery guarantees, scaling, error handling and recovery are managed by Akka.
