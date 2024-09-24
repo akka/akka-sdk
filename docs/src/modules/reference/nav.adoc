@@ -1,0 +1,5 @@
+* xref:index.adoc[Reference]
+** xref:glossary.adoc[Glossary of terms]
+** xref:descriptor-reference.adoc[Descriptor reference]
+** xref:release-notes.adoc[Release notes]
+** xref:migration-guide.adoc[Migration Guide]

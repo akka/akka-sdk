@@ -1,0 +1,545 @@
+= Service Descriptor reference
+
+include::ROOT:partial$include.adoc[]
+
+:TODO: revise
+
+[#kalix-service]
+== Kalix service
+
+A Kalix service resource. This is used by the `kalix service apply` command, described in xref:operations:deploy-service.adoc#apply[deploying a service with a descriptor].
+
+[cols="1,1,1"]
+|===
+|Field   |Type                              |Description
+
+|*name*    |string _required_               |The name of the service
+|*service* |<<KalixServiceSpec>> _required_ |Specification for the Kalix service
+|===
+
+=== KalixServiceSpec
+
+The specification for a Kalix service.
+
+[cols="1,1,1"]
+|===
+|Field          |Type                      |Description
+
+|*image*        |string _required_         |The name of the docker image for the service container
+|*env*          |[]<<KalixEnvVar>>         |Environment variables to be set in the service's container
+|*jwt*          |<<KalixServiceJwt>>       |JWT configuration for the Kalix service
+|*resources*    |<<KalixServiceResources>> |Resource configuration for the Kalix service, including instance size and autoscaling
+|*volumeMounts* |[]<<KalixVolumeMount>>    |Volume mounts to mount in the service's container.
+|*telemetry*      |[]<<KalixServiceTelemetry>>    |Telemetry configuration for the service
+|===
+
+
+
+
+
+=== KalixEnvVar
+
+An environment variable declaration.
+
+[cols="1,1,1"]
+|===
+|Field       |Type                  |Description
+
+|*name*      |string _required_     |The name of the environment variable
+|*value*     |string                |The value of the environment variable. Either this must be set, or *valueFrom* must be set, but not both.
+|*valueFrom* |<<KalixEnvVarSource>> |Configuration for where to get the value of the environment variable from. Either this must be set, or *value* must be set, but not both.
+|===
+
+=== KalixEnvVarSource
+
+The source for an environment variable.
+
+[cols="1,1,1"]
+|===
+|Field          |Type                             |Description
+
+|*secretKeyRef* |<<KalixSecretKeyRef>> _required_ |A reference to a secret.
+|===
+
+=== KalixSecretKeyRef
+
+A reference to a particular key in a particular secret, used by environment variables.
+
+[cols="1,1,1"]
+|===
+|Field          |Type                  |Description
+
+|*name*     |string _required_ |The name of a configured Kalix secret
+|*key*      |string _required_ |The name of a key in the specified Kalix secret
+|*optional* |boolean           |Whether the secret or its key must exist. If true, the service will fail to deploy if the secret or its key doesn't exist. If false, the service will be deployed with the environment variable unset if the secret doesn't or its key doesn't exist.
+|===
+
+=== KalixServiceJwt
+
+The JWT configuration for a Kalix service.
+
+[cols="1,1,1"]
+|===
+|Field      |Type              |Description
+
+|*keys*     |[]<<KalixJwtKey>>
+a|The JWT keys for the service to use when signing and validating JWTs.
+
+The order of this list is important. When signing or validating, the first matching key will be used, according to the following rules.
+
+For validating:
+
+* The list is first filtered by all keys capable of validating - that is, any keys for the HMAC algorithm, or any keys for an asymmetric algorithm that have the public key defined.
+* If the token being validated defines an issuer (iss), and there is at least one key that has that issuer defined, then the list is filtered to only include keys from that issuer. Otherwise, all keys capable of validating remain as candidates.
+* The list is then filtered matching the algorithm. The algorithm only has to match by key type, that is, by HMAC, RSA, ECDSA or EdDSA. So a key that has an algorithm of HS256 can be used to validate a token signed by an algorithm of HS512.
+* If at this point, there are still multiple keys remaining, then the first key that matches the key id (kid) parameter, if defined, in the token is used, otherwise, the first key of the remaining keys is used.
+
+For signing:
+
+* The list is first filtered by all keys capable of signing - that is, any keys for the HMAC algorithm, or any keys for an asymmetric algorithm that have the private key defined.
+* If the token to be signed contains an issuer claim (iss), and there is at least one key that has that same issuer defined, then the list is filtered to only include the keys with that issuer, otherwise, all keys capable of signing remain as candidates. The first key out of the remaining keys is used.
+|===
+
+=== KalixJwtKey
+
+A key that can be used for Kalix's JWT support.
+
+[cols="1,1,1"]
+|===
+|Field       |Type              |Description
+
+|*keyId*     |string _required_
+a|The id of the key.
+
+When signing, it will be placed in the key id parameter (kid) of the JWT header. It may be used for matching incoming keys when validating. It is important that, for a given issuer, if two keys have the same id, that those keys must be the same key.
+
+Ideally, key ids should be unique across all services.
+
+The key id allows JWT keys to be rotated: a new key can be configured with a lower priority on all services that use it. Once that change is pushed out, then the key's priority, i.e., the order in the list, can be increased so that it is now the key that gets used for signing. Finally, once all JWTs signed by the old key have expired, the old key can be removed.
+|*issuer*    |string
+a|The issuer of tokens that use this key.
+
+If a token being signed or validated contains an issuer (iss) claim, this will be matched against it. This allows multiple keys for different issuers to be provisioned without conflicting.
+
+Setting this parameter is also important if you have keys from multiple issuers, but you don't trust that one of them won't try and spoof the other. Since it pins a particular set of keys to only be used to validate that issuer's token, if the other tries to spoof it, validation will fail.
+|*algorithm* |string _required_
+a|The algorithm to use this key for.
+
+When validating, this secret may be used if the secret for this algorithm is compatible with the algorithm that the token being validated was signed with.
+
+Valid values are:
+
+* `HMD5` - HMAC with MD5
+* `HS224` - HMAC with SHA224
+* `HS256` - HMAC with SHA256
+* `HS384` - HMAC with SHA384
+* `HS512` - HMAC with SHA512
+* `RS256` - RSA with SHA256
+* `RS384` - RSA with SHA384
+* `RS512` - RSA with SHA512
+* `ES256` - Elliptic Curve DSA with SHA256
+* `ES384` - Elliptic Curve DSA with SHA384
+* `ES512` - Elliptic Curve DSA with SHA512
+* `Ed25519` - Edward's Curve DSA
+|*secret*    |<<KalixObjectRef>> _required_
+a|The configured Kalix secret to use for signing or validating.
+
+This must be a reference to a Kalix secret. The secret must have the following keys defined, depending on the algorithm used:
+
+* HMAC algorithms - a key named `secret.key`, containing the bytes of the secret.
+* Asymmetric algorithms - One or both of `private.key` and `public.key`. If only a `private.key` is supplied, the key will only be used for signing, if only a public key is supplied, the key will only be used for validating. The public key must be formatted as an X.509 PEM public key (with a header, `BEGIN PUBLIC KEY`). The private key must be a PEM PKCS-8 key encoded (with a header, `BEGIN PRIVATE KEY`) according to the algorithm the secret is used for. Alternatively, for RSA algorithms, RSA private keys may be PEM PKCS-1 encoded (with a header, `BEGIN RSA PRIVATE KEY`). The keys must not be encrypted. For ECDSA keys, EC key encoding (`BEGIN EC PRIVATE KEY`) is not supported, and PKCS-8 must be used instead.
+|===
+
+=== KalixObjectRef
+
+A reference to a Kalix object, such as a configured secret.
+
+[cols="1,1,1"]
+|===
+|Field  |Type              |Description
+
+|*name* |string _required_ |The name of the object.
+|===
+
+=== KalixServiceResources
+
+The configuration for the resources used by a Kalix service.
+
+[cols="1,1,1"]
+|===
+|Field          |Type                        |Description
+
+|*instanceType* |string
+a|The type of instance to use. Supported values are:
+
+* `small` - A small instance.
+|*autoscaling*  |<<KalixServiceAutoscaling>> |The autoscaling configuration for a Kalix service. Autoscaling is only supported for non-trial projects.
+|===
+
+=== KalixServiceAutoscaling
+
+The configuration for how a Kalix service is scaled in response to load.
+
+[cols="1,1,1"]
+|===
+|Field               |Type |Description
+
+|*minInstances*      |int  |The minimum instances of a service that should be available. Must be at least 1, and no greater than *maxInstances*. May not be greater than 10.
+|*maxInstances*      |int  |The maximum instances of a service that should be available. Must be at least 1, and no less than *minInstances*. May not be greater than 10.
+|*cpuUsageThreshold* |int  |The target CPU usage for autoscaling to achieve. Once CPU usage across all instances exceeds this, the service will be scaled up. Must be at least 1 and no greater than 100.
+|===
+
+=== KalixVolumeMount
+
+A volume that should be mounted into the services container.
+
+[cols="1,1,1"]
+|===
+|Field                  |Type                        |Description
+
+|*mountPath* _required_ |string                      |Path within the container at which the volume should be mounted. Must not contain ':'.
+|*secret*               |<<KalixSecretVolumeSource>> |A secret that should be used to populate this volume.
+|===
+
+=== KalixSecretVolumeSource
+
+Adapts a secret into a volume that can be mounted into the service's container.
+
+[cols="1,1,1"]
+|===
+|Field                   |Type    |Description
+
+|*secretName* _required_ |string  |The name of a secret in the Kalix service's project to mount.
+|*defaultMode*           |int     |Mode bits to set the permissions on created files from the secret by default. Must be an octal value between 0000 and 0777, or a decimal value between 0 and 511. Defaults to 0644.
+|*optional*              |boolean |Specifies whether the container should fail to start if the secret doesn't exist.
+|===
+
+=== KalixServiceTelemetry
+
+Telemetry configuration for the service.
+
+
+[cols="1,1,1"]
+|===
+|Field       |Type                  |Description
+
+|*tracing*   |[]<<KalixServiceTracing>>    |Tracing configuration for the service
+|===
+
+=== KalixServiceTracing
+
+Tracing configuration for the service.
+
+
+[cols="1,1,1"]
+|===
+|Field       |Type                  |Description
+
+|*enabled*   |boolean    |Specifies if the service produces traces or not
+|===
+
+[#kalix-route]
+== Kalix route
+
+A Kalix route describes the way ingress traffic is routed to Kalix services. It is used by the `kalix route update` command, described in xref:operations:invoke-service.adoc#descriptor[working with route descriptors].
+
+[cols="1,1,1"]
+|===
+|Field        |Type                            |Description
+
+|*host*       |string _required_               |The host that this route is for. This hostname must be configured as one of the Kalix project hostnames.
+|*routes*     |[]<<KalixRouteRule>> _required_ |The routing rules defined for this route.
+|*tls*        |<<KalixRouteTls>>               |The TLS configuration for this route.
+|*validation* |<<KalixRouteValidation>>        |Validation, such as authentication, for the route.
+|*corsPolicy* |<<KalixRouteCorsPolicy>>        |The CORS policy for this route. If present, will enable CORS support for the route.
+|===
+
+=== KalixRouteRule
+
+A Kalix route rule is a rule that defines how requests should be matched, and what the destination for those matched requests should be.
+
+[cols="1,1,1"]
+|===
+|Field    |Type                                |Description
+
+|*name*   |string                               |A name for this rule. Only used for debugging purposes.
+|*prefix* |string _required_                    |The prefix to match for this route. Must start with a `/`.
+|*route*  |<<KalixRouteDestination>> _required_ |The destination for requests matched by this rule.
+|===
+
+=== KalixRouteDestination
+
+A destination for a routed Kalix requested.
+
+[cols="1,1,1"]
+|===
+|Field     |Type   |Description
+
+|*service* |string |The name of a Kalix service in this project that requests should be routed to
+|===
+
+=== KalixRouteTls
+
+TLS configuration for a Kalix route.
+
+[cols="1,1,1"]
+|===
+|Field                |Type               |Description
+
+|*clientValidationCa* |<<KalixObjectRef>> |The name of a Kalix secret of type CA that should be used to validate client certificates provided to the server. The presence of this configuration will cause any requests that do not provide a client certificate, or do not provide a certificate that is trusted by this CA, to be rejected.
+|*serverCertificate*  |<<KalixObjectRef>> |The name of a Kalix secret of type TLS that should be used as the servers certificate. Allows a custom TLS certificate to be used for the host, instead of Kalix's automatic certificate provisioning from Let's Encrypt.
+|===
+
+=== KalixRouteValidation
+
+Validation rules for a route. This can be used to configure authentication and authorization rules.
+
+[cols="1,1,1"]
+|===
+|Field               |Type                                      |Description
+
+|*clientCertificate* |<<KalixRouteValidationClientCertificate>> |Validation to be done on the client certificate. This can only be used when a `tls.clientValidationCa` certificate is configured.
+|*httpBasic*         |<<KalixRouteValidationHttpBasic>>         |HTTP Basic authentication configuration.
+|===
+
+=== KalixRouteValidationClientCertificate
+
+Client certificate validation rules for a route.
+
+[cols="1,1,1"]
+|===
+|Field            |Type                           |Description
+
+|*subjectMatches* |[]<<StringMatcher>> _required_ |A list of matchers to apply to the client certificate subject. Validation passes if at least one of the matchers matches either the Common Name (CN) in the subject on the client certificate, or one of the DNS Subject Alternative Names of the certificate.
+|===
+
+=== StringMatcher
+
+A string matcher. Exactly one match rule must be specified.
+
+[cols="1,1,1"]
+|===
+|Field       |Type   |Description
+
+|*exact*     |string |Perform an exact match on the value.
+|*hasPrefix* |string |Matches if the value has the given prefix.
+|*hasSuffix* |string |Matches if the value has the given suffix.
+|*regex*     |string |Matches if the value matches the given regular expression.
+|===
+
+=== KalixRouteValidationHttpBasic
+
+HTTP Basic authentication configured for a route.
+
+[cols="1,1,1"]
+|===
+|Field            |Type                               |Description
+
+|*realm*          |string _required_                  |The name of the realm to return in a `WWW-Authenticate` header when a `401 Unauthorized` response code is sent.
+|*passwordHashes* |map<string, string> _required_
+a|A map of username to password hashes to validate the authentication against.
+
+The password hashes must be hashed in the format `<hash algorithm>:<base64 hash>`, where hash algorithm is one of:
+
+* `sha512`
+* `sha384`
+* `sha256`
+
+For example:
+
+[source,yaml]
+----
+passwordHashes:
+  admin: "sha256:xLvLH77JnWW/WdhcjLYu4tuWPw/hBvSD2a+nO9Tjmoo="
+  support: "sha256:eiwSRduQVGX/XHmH00+GT8Dt/X13173SqVDCc8mNJZg="
+----
+
+To generate a password hash in the above format, the following command can be used:
+
+[source,shellscript]
+----
+$ echo -n "correct horse battery staple" \|
+  openssl dgst -sha256 -binary \|
+  openssl base64 -e -A
+----
+
+Note that the use of unsalted, computationally cheap hash algorithms implies that only passwords that are strong and randomly generated, not reused between accounts or services, should be used. For service to service communication which this feature is intended for use by, where passwords are chosen by system operators rather than end users, this requirement can easily be implemented.
+|===
+
+=== KalixRouteCorsPolicy
+
+A CORS policy to be used by a Kalix route.
+
+[cols="1,1,1"]
+|===
+|Field          |Type     |Description
+
+|*allowOrigins* |[]string |A list of origins to allow to make requests.
+|*allowMethods* |[]string |A list of HTTP methods to allow to make requests, such as `GET`, `POST`, `PUT`, `DELETE`, `PATCH`, `HEAD`.
+|===
+
+[#kalix-observability]
+== Kalix observability
+
+A Kalix observability descriptor describes how metrics, logs, and traces are exported to third party services. It is used by the `kalix project observability apply` command. Exporters can be optionally defined as default exporter, meaning it will be used for  the metrics, logs, and traces, but can then be optionally overridden for each of metrics, logs, and traces.
+
+[cols="1,1,1"]
+|===
+|Field        |Type                           |Description
+
+|*exporter*   |<<KalixObservabilityDefault>> |The default exporter used for metrics, logs, and traces. Will be used for each unless a respective exporter in `logs` or `metrics` is defined.
+|*metrics*    |<<KalixObservabilityMetrics>>  |The exporter to use for metrics. Overrides the exporter defined in `exporter`, but just for metrics.
+|*logs*       |<<KalixObservabilityLogs>>     |The exporter to use for logs. Overrides the exporter defined in `exporter`, but just for logs.
+|*traces*     |<<KalixObservabilityTraces>>   |The exporter to use for traces. Overrides the exporter defined in `exporter`, but just for traces.
+|===
+
+=== KalixObservabilityDefault
+
+The default exporter configuration for metrics, logs, and traces. At most one default exporter may be configured.
+
+[cols="1,1,1"]
+|===
+|Field          |Type                              |Description
+
+|*kalixConsole* |object                            |If defined, metrics will be exported to the Kalix Console. There are no configuration parameters for the Kalix console exporter, it should be declared as an empty object.
+|*otlp*         |<<KalixObservabilityOtlp>>        |If defined, will export metrics, logs, and traces to an OpenTelemetry collector using the OTLP gRPC protocol.
+|*splunkHec*    |<<KalixObservabilitySplunkHec>>   |If defined, will export metrics and logs to a Splunk platform instance, using the Splunk HTTP Event Collector.
+|*googleCloud*  |<<KalixObservabilityGoogleCloud>> |If defined, will export metrics, logs, and traces to Google Cloud.
+|===
+
+=== KalixObservabilityMetrics
+
+The metrics exporter configuration. At most one metrics exporter may be configured. If a default exporter is configured, the exporter configured here will override that exporter for metrics.
+
+[cols="1,1,1"]
+|===
+|Field             |Type                                  |Description
+
+|*kalixConsole*    |object                                |If defined, metrics will be exported to the Kalix Console. There are no configuration parameters for the Kalix console exporter, it should be declared as an empty object.
+|*otlp*            |<<KalixObservabilityOtlp>>            |If defined, will export metrics to an OpenTelemetry collector using the OTLP gRPC protocol.
+|*prometheuswrite* |<<KalixObservabilityPrometheusWrite>> |If defined, will export metrics using the Prometheus remote write protocol.
+|*splunkHec*       |<<KalixObservabilitySplunkHec>>       |If defined, will export metrics to a Splunk platform instance, using the Splunk HTTP Event Collector.
+|*googleCloud*     |<<KalixObservabilityGoogleCloud>>     |If defined, will export metrics to Google Cloud.
+|===
+
+
+=== KalixObservabilityTraces
+
+The traces exporter configuration. At most one traces exporter may be configured. If a default exporter is configured, the exporter configured here will override the default exporter for traces.
+
+[cols="1,1,1"]
+|===
+|Field             |Type                                  |Description
+
+|*kalixConsole*    |object                                |If defined, metrics will be exported to the Kalix Console. There are no configuration parameters for the Kalix console exporter, it should be declared as an empty object.
+|*otlp*            |<<KalixObservabilityOtlp>>            |If defined, will export traces to an OpenTelemetry collector using the OTLP gRPC protocol.
+|*googleCloud*     |<<KalixObservabilityGoogleCloud>>     |If defined, will export traces to Google Cloud.
+|===
+
+
+
+=== KalixObservabilityLogs
+
+The logs exporter configuration. At most one logs exporter may be configured. If a default exporter is configured, the exporter configured here will override that exporter for logs.
+
+[cols="1,1,1"]
+|===
+|Field         |Type                              |Description
+
+|*otlp*        |<<KalixObservabilityOtlp>>        |If defined, will export logs to an OpenTelemetry collector using the OTLP gRPC protocol.
+|*splunkHec*   |<<KalixObservabilitySplunkHec>>   |If defined, will export logs to a Splunk platform instance, using the Splunk HTTP Event Collector.
+|*googleCloud* |<<KalixObservabilityGoogleCloud>> |If defined, will export logs to Google Cloud.
+|===
+
+=== KalixObservabilityOtlp
+
+Configuration for an OpenTelemetry exporter using the OTLP gRPC protocol.
+
+[cols="1,1,1"]
+|===
+|Field      |Type                           |Description
+
+|*endpoint* |string _required_              |The endpoint to export OTLP metrics, logs, or traces to, for example, `my.otlp.host:443`.
+|*tls*      |<<KalixObservabilityTls>>      |TLS configuration for connections to the OpenTelemetry collector.
+|*headers*  |[]<<KalixObservabilityHeader>> |A list of headers to add to outgoing requests.
+|===
+
+=== KalixObservabilityPrometheusWrite
+
+Configuration for a Prometheus exporter using the Prometheus remote write protocol.
+
+[cols="1,1,1"]
+|===
+|Field      |Type                           |Description
+
+|*endpoint* |string _required_              |The URL to export Prometheus remote write metrics to, for example, `https://my.cortex.host/api/v1/push`.
+|*tls*      |<<KalixObservabilityTls>>      |TLS configuration for connections to the Prometheus remote write endpoint.
+|*headers*  |[]<<KalixObservabilityHeader>> |A list of headers to add to outgoing requests.
+|===
+
+=== KalixObservabilitySplunkHec
+
+Configuration for a Splunk HEC exporter to export to Splunk Platform instance using the Splunk HTTP Event Collector.
+
+[cols="1,1,1"]
+|===
+|Field         |Type                             |Description
+
+|*endpoint*    |string _required_                |The URL to export Prometheus remote write metrics to, for example, `\https://<my-trial-instance>.splunkcloud.com:8088/services/collector`.
+|*tokenSecret* |<<KalixSecretKeyRef>> _required_ |A reference to the Kalix secret and key containing the Splunk HTTP Event Collector.
+|*source*      |string                           |The https://docs.splunk.com/Splexicon%3ASource[Splunk source]. Identifies the source of an event, that is, where the event originated. In the case of data monitored from files and directories, the source consists of the full pathname of the file or directory. In the case of a network-based source, the source field consists of the protocol and port, such as UDP:514.
+|*sourceType*  |string                           |The https://docs.splunk.com/Splexicon%3ASourcetype[Splunk source type]. Identifies the data structure of an event. A source type determines how the Splunk platform formats the data during the indexing process. Example source types include `access_combined` and `cisco_syslog`.
+|*index*	   |string                           |The splunk index, optional name of the Splunk index targeted.
+|*tls*         |<<KalixObservabilityTls>>        |TLS configuration for connections to the Splunk HTTP Event Collector.
+|===
+
+=== KalixObservabilityGoogleCloud
+
+Configuration for a Google Cloud exporter.
+
+[cols="1,1,1"]
+|===
+|Field                  |Type                          |Description
+
+|*serviceAccountSecret* |<<KalixObjectRef>> _required_ |A Kalix secret containing a Google service account JSON key, in a property called `key.json`.
+
+The service account used must have the `roles/logging.logWriter` role if exporting logs. The `roles/monitoring.metricWriter` role if exporting metrics. The `roles/cloudtrace.agent` role if exporting traces.
+|===
+
+=== KalixObservabilityTls
+
+Configuration for TLS connections to various exporters.
+
+[cols="1,1,1"]
+|===
+|Field                |Type               |Description
+
+|*insecure*           |boolean            |If true, will not use TLS. Defaults to false.
+|*insecureSkipVerify* |boolean            |If true, will not verify the certificate presented by the server it connects to. Has no effect if `insecure` is set to true.
+|*clientCertSecret*   |<<KalixObjectRef>> |If configured, will use the Kalix TLS secret as a client certificate to authenticate outgoing connections to the server with.
+|*caSecret*           |<<KalixObjectRef>> |If configured, will use the certificate chain defined in the Kalix TLS CA secret to verify the server certificate provided by the server.
+|===
+
+=== KalixObservabilityHeader
+
+Configuration for a header. Only one value field may be defined.
+
+[cols="1,1,1"]
+|===
+|Field       |Type                               |Description
+
+|*name*      |string                             |The name of the header.
+|*value*     |string                             |The value for the header. Either this, or `valueFrom` may be defined, but not both.
+|*valueFrom* |<<KalixObservabilityHeaderSource>> |The source of the value for the header. Either this, or `value` may be defined, but not both.
+|===
+
+=== KalixObservabilityHeaderSource
+
+The source for a header value.
+
+[cols="1,1,1"]
+|===
+|Field          |Type                             |Description
+
+|*secretKeyRef* |<<KalixSecretKeyRef>> _required_ |A reference to a secret.
+|===

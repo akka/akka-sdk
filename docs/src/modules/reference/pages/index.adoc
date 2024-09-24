@@ -1,0 +1,12 @@
+= Reference
+
+include::ROOT:partial$include.adoc[]
+
+The Kalix Reference section contains the latest product updates and API changes, an SDK feature matrix, descriptions of each CLI command, details for creating YAML service descriptors and key concepts in the Glossary of Terms.
+
+== Topics
+
+- xref:reference:release-notes.adoc[]
+- xref:reference:glossary.adoc[]
+- xref:reference:descriptor-reference.adoc[]
+- xref:reference:cli-change-notifications.adoc[]
