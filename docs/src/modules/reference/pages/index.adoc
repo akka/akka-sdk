@@ -8,5 +8,4 @@ The Kalix Reference section contains the latest product updates and API changes,
 
 - xref:reference:release-notes.adoc[]
 - xref:reference:glossary.adoc[]
-- xref:reference:descriptor-reference.adoc[]
 - xref:reference:cli-change-notifications.adoc[]
