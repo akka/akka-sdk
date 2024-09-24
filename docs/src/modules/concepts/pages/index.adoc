@@ -1,5 +1,4 @@
 = Concepts
-:page-aliases: services:index.adoc[] 
 
 include::ROOT:partial$include.adoc[]
 
@@ -7,5 +6,7 @@ This section provides an introduction to concepts that are relevant to be aware 
 
 == Topics
 
-- xref:concepts:programming-model.adoc[]
 - xref:concepts:development-process.adoc[]
+- xref:concepts:deployment-model.adoc[]
+- xref:concepts:state-model.adoc[]
+- xref:concepts:programming-model.adoc[]

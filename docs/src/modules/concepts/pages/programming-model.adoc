@@ -1,5 +1,4 @@
 = Programming model
-:page-aliases: services:programming-model.adoc[] 
 
 include::ROOT:partial$include.adoc[]
 
