@@ -1,9 +1,7 @@
-package customer.view;
+package customer.application;
 
 import akka.javasdk.view.TableUpdater;
 import akka.javasdk.annotations.DeleteHandler;
-import customer.api.CustomerEntity;
-import customer.api.CustomerSummary;
 import customer.domain.Customer;
 import akka.javasdk.annotations.Query;
 import akka.javasdk.annotations.Consume;
@@ -12,6 +10,8 @@ import akka.javasdk.view.View;
 
 @ComponentId("summary_customer_by_name")
 public class CustomerSummaryByName extends View {
+
+  public record CustomerSummary(String id, String name) { }
 
   @Query("SELECT * FROM customers WHERE name = :name")
   public QueryEffect<CustomerSummary> getCustomer(String name) { return queryResult(); }

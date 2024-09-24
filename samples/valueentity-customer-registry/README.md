@@ -2,7 +2,7 @@
 
 ## Designing
 
-To understand the Kalix concepts that are the basis for this example, see [Designing services](https://docs.kalix.io/java/development-process.html) in the documentation.
+To understand the Akka concepts that are the basis for this example, see [Designing services](https://docs.kalix.io/java/development-process.html) in the documentation.
 
 ## Developing
 
@@ -20,72 +20,65 @@ mvn compile
 
 ## Running Locally
 
-When running a Kalix service locally, we need to have its companion Kalix Runtime running alongside it.
-
-To start your service locally, run:
+To start your Akka service locally, run:
 
 ```shell
 mvn compile exec:java
 ```
 
-This command will start your Kalix service and a companion Kalix Runtime.
 
 ## Exercise the service
 
-With your Kalix service running, once you have defined endpoints they should be available at `http://localhost:9000`.
+With your Akka service running, once you have defined endpoints they should be available at `http://localhost:9000`.
 
 * Create customers with:
 
 ```shell
-curl localhost:9000/akka/v1.0/entity/customer/001/create \
+curl localhost:9000/customer/001/create \
   --header "Content-Type: application/json" \
   -XPOST \
-  --data '{"customerId":"001","email":"test@example.com","name":"Test Testsson","address":{"street":"Teststreet 25", 
-  "city":"City Test"}}'
+  --data '{"email":"test@example.com","name":"Test Testsson", "street":"Teststreet 25", "city":"City Test"}'
 ```
 
 ```shell
-curl localhost:9000/akka/v1.0/entity/customer/002/create \
+curl localhost:9000/customer/002/create \
   --header "Content-Type: application/json" \
   -XPOST \
-  --data '{"customerId":"002","email":"test@example.com","name":"Test Testsson II","address":{"street":"Teststreet 25", "city":"New City Test"}}'
+  --data '{"email":"test@example.com","name":"Test Testsson II", "street":"Teststreet 25", "city":"New City Test"}'
 ```
 
 
 ```shell
-curl localhost:9000/akka/v1.0/entity/customer/003/create \
+curl localhost:9000/customer/003/create \
   --header "Content-Type: application/json" \
   -XPOST \
-  --data '{"customerId":"003","email":"test@example.com","name":"Test Testsson III","address":{"street":"Teststreet 25", "city":"New York City Test"}}'
+  --data '{"email":"test@example.com","name":"Test Testsson III","street":"Teststreet 25", "city":"New York City Test"}'
 ```
 
 * Retrieve the customers:
 
 ```shell
-curl localhost:9000/akka/v1.0/entity/customer/001/getCustomer 
+curl localhost:9000/customer/001 
 ```
 
 ```shell
-curl localhost:9000/akka/v1.0/entity/customer/002/getCustomer
+curl localhost:9000/customer/002
 ```
 
 ```shell
-curl localhost:9000/akka/v1.0/entity/customer/003/getCustomer
+curl localhost:9000/customer/003
 ```
 
 * Query by name with a wrapped result:
 
 ```shell
-curl localhost:9000/akka/v1.0/view/customers_by_name/getCustomers \
-  --header "Content-Type: application/json" \
-  -XPOST \
-  --data '{"name":"Test Testsson"}'
+curl localhost:9000/customer/by-name/Test%20Testsson
 ```
 
 * Query by name with a response using a summary:
 
 ```shell
-curl localhost:9000/akka/v1.0/view/summary_customer_by_name/getCustomer \
+curl localhost:9000/customer/by-name-summary \
   --header "Content-Type: application/json" \
   -XPOST \
   --data '{"name":"Test Testsson"}'
@@ -93,7 +86,7 @@ curl localhost:9000/akka/v1.0/view/summary_customer_by_name/getCustomer \
 
 * Query by cities
 ```shell
-curl localhost:9000/akka/v1.0/view/customers_by_city/getCustomers \
+curl localhost:9000/customer/by-city \
   --header "Content-Type: application/json" \
   -XPOST  \
   --data '{ "cities": ["City Test", "New City Test"]}'
@@ -101,16 +94,16 @@ curl localhost:9000/akka/v1.0/view/customers_by_city/getCustomers \
 
 ## Deploying
 
-To deploy your service, install the `kalix` CLI as documented in
-[Install Kalix](https://docs.kalix.io/kalix/install-kalix.html)
+To deploy your service, install the `akka` CLI as documented in
+[Install Akka](https://docs.kalix.io/kalix/install-kalix.html)
 and configure a Docker Registry to upload your docker image to.
 
 You will need to update the `dockerImage` property in the `pom.xml` and refer to
 [Configuring registries](https://docs.kalix.io/projects/container-registries.html)
-for more information on how to make your docker image available to Kalix.
+for more information on how to make your docker image available to Akka.
 
-Finally, you can use the [Kalix Console](https://console.kalix.io)
+Finally, you can use the [Akka Console](https://console.kalix.io)
 to create a project and then deploy your service into the project either by using `mvn deploy kalix:deploy` which
-will conveniently package, publish your docker image, and deploy your service to Kalix, or by first packaging and
+will conveniently package, publish your docker image, and deploy your service to Akka, or by first packaging and
 publishing the docker image through `mvn deploy` and then deploying the image
-through the `kalix` CLI.
+through the `akka` CLI.

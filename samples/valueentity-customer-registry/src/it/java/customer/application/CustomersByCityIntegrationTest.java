@@ -1,7 +1,6 @@
-package customer.view;
+package customer.application;
 
 import akka.javasdk.testkit.TestKitSupport;
-import customer.api.CustomerList;
 import customer.domain.Address;
 import customer.domain.Customer;
 import akka.javasdk.testkit.EventingTestKit.IncomingMessages;
@@ -15,7 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 // tag::view-test[]
 
-class CustomersResponseByCityIntegrationTest extends TestKitSupport {
+class CustomersByCityIntegrationTest extends TestKitSupport {
 
   @Override
   protected TestKit.Settings testKitSettings() {

@@ -1,8 +1,6 @@
-package customer.view;
+package customer.application;
 
 import akka.javasdk.view.TableUpdater;
-import customer.api.CustomerEntity;
-import customer.api.CustomerList;
 import customer.domain.Customer;
 import akka.javasdk.annotations.Query;
 import akka.javasdk.annotations.Consume;

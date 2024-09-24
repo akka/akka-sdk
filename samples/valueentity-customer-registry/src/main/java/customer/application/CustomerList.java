@@ -1,9 +1,7 @@
-package customer.api;
+package customer.application;
 
 import customer.domain.Customer;
 
 import java.util.Collection;
 
-// tag::record[]
 public record CustomerList(Collection<Customer> customers) { }
-// end::record[]

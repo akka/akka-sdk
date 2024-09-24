@@ -1,20 +1,27 @@
-package customer.api;
+package customer.application;
 
 // tag::customer[]
 
+import akka.Done;
 import customer.domain.Address;
 import customer.domain.Customer;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 @ComponentId("customer") // <1>
 public class CustomerEntity extends KeyValueEntity<Customer> { // <4>
 
-  public Effect<Ok> create(Customer customer) {
+  private static final Logger logger = LoggerFactory.getLogger(CustomerEntity.class);
+
+
+  public Effect<Done> create(Customer customer) {
     if (currentState() == null)
       return effects()
         .updateState(customer) // <6>
-        .thenReply(Ok.instance);  // <7>
+        .thenReply(Done.done());  // <7>
     else
       return effects().error("Customer exists already");
   }
@@ -27,20 +34,20 @@ public class CustomerEntity extends KeyValueEntity<Customer> { // <4>
       return effects().reply(currentState());
   }
 
-  public Effect<Ok> changeName(String newName) {
+  public Effect<Done> changeName(String newName) {
     Customer updatedCustomer = currentState().withName(newName);
     return effects()
             .updateState(updatedCustomer)
-            .thenReply(Ok.instance);
+            .thenReply(Done.done());
   }
 
-  public Effect<Ok> changeAddress(Address newAddress) {
+  public Effect<Done> changeAddress(Address newAddress) {
     Customer updatedCustomer = currentState().withAddress(newAddress);
-    return effects().updateState(updatedCustomer).thenReply(Ok.instance);
+    return effects().updateState(updatedCustomer).thenReply(Done.done());
   }
 
-  public Effect<Ok> delete() {
-    return effects().deleteEntity().thenReply(Ok.instance);
+  public Effect<Done> delete() {
+    return effects().deleteEntity().thenReply(Done.done());
   }
 
 }

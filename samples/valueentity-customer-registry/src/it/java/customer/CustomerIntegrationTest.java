@@ -1,13 +1,13 @@
 package customer;
 
 
+import akka.Done;
 import akka.javasdk.testkit.TestKitSupport;
-import customer.api.CustomerEntity;
-import customer.api.CustomerList;
-import customer.api.Ok;
+import customer.application.CustomerEntity;
+import customer.application.CustomerList;
 import customer.domain.Address;
 import customer.domain.Customer;
-import customer.view.CustomersByCity;
+import customer.application.CustomersByCity;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -71,6 +71,6 @@ public class CustomerIntegrationTest extends TestKitSupport {
           .method(CustomerEntity::create)
           .invokeAsync(customer)
       );
-    Assertions.assertEquals(Ok.instance, res);
+    Assertions.assertEquals(Done.done(), res);
   }
 }
