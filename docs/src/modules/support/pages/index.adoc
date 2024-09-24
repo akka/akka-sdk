@@ -1,0 +1,14 @@
+= Support
+
+include::ROOT:partial$include.adoc[]
+
+Support is available through various channels, including a community forum, a dedicated Slack channel, a Frequently Asked Questions (FAQ) page, comprehensive troubleshooting resources and direct 1-1 contact with the Akka team.
+
+* xref:support:community-forum.adoc[]
+* xref:support:email.adoc[]
+* xref:support:frequently-asked-questions.adoc[]
+* xref:support:paid-plans.adoc[]
+* xref:support:platform-status.adoc[]
+* xref:support:request-a-demo.adoc[]
+* xref:support:slack.adoc[]
+* xref:support:troubleshooting.adoc[]
