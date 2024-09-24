@@ -18,7 +18,6 @@ import org.slf4j.LoggerFactory
 
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
-import scala.jdk.CollectionConverters.SeqHasAsJava
 import scala.util.control.NonFatal
 
 /**
@@ -87,18 +86,17 @@ private[akka] final class HttpClientProviderImpl(
         name
       }
 
-    val client: HttpClient = new HttpClient(system, baseUrl)
-
     // FIXME fail fast on too large request
     // .filter(ExchangeFilterFunctions.limitResponseSize(MaxCrossServiceResponseContentLength))
 
-    if (nameIsService) {
-      // cross service request, include auth
-      client.withDefaultHeaders((otelTraceHeaders ++ remoteIdentificationHeader).asJava)
-    } else {
-      // arbitrary http request
-      client.withDefaultHeaders(otelTraceHeaders.asJava)
-    }
+    val defaultHeaders =
+      if (nameIsService)
+        // cross service request, include auth
+        otelTraceHeaders ++ remoteIdentificationHeader
+      else
+        // arbitrary http request
+        otelTraceHeaders
+    new HttpClientImpl(system, baseUrl, defaultHeaders)
   }
 
   def withTraceContext(traceContext: OtelContext): HttpClientProvider =

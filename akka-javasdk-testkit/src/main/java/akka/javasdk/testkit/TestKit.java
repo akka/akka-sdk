@@ -18,6 +18,7 @@ import akka.javasdk.impl.JsonMessageCodec;
 import akka.javasdk.impl.MessageCodec;
 import akka.javasdk.impl.SdkRunner;
 import akka.javasdk.impl.client.ComponentClientImpl;
+import akka.javasdk.impl.http.HttpClientImpl;
 import akka.javasdk.impl.timer.TimerSchedulerImpl;
 import akka.javasdk.testkit.EventingTestKit.IncomingMessages;
 import akka.javasdk.timer.TimerScheduler;
@@ -485,7 +486,7 @@ public class TestKit {
 
       // once runtime is started
       componentClient = new ComponentClientImpl(componentClients, Option.empty(), runtimeActorSystem.executionContext());
-      selfHttpClient = new HttpClient(runtimeActorSystem, "http://localhost:" + proxyPort);
+      selfHttpClient = new HttpClientImpl(runtimeActorSystem, "http://localhost:" + proxyPort);
       httpClientProvider = startupContext.httpClientProvider();
       var codec = new JsonMessageCodec();
       timerScheduler = new TimerSchedulerImpl(codec, componentClients.timerClient(), Metadata.EMPTY);

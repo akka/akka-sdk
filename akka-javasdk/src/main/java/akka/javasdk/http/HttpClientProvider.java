@@ -4,6 +4,12 @@
 
 package akka.javasdk.http;
 
+import akka.annotation.DoNotInherit;
+
+/**
+ * Not for user extension, instances are available through injection in selected component types.
+ */
+@DoNotInherit
 public interface HttpClientProvider {
 
   /**
