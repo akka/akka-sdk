@@ -1,0 +1,94 @@
+= Using Confluent Cloud as Kafka service
+:page-aliases: projects:broker-confluent.adoc[]
+
+include::ROOT:partial$include.adoc[]
+
+Akka connects to https://confluent.cloud[Confluent Cloud] Kafka services via TLS, authenticating using SASL (Simple Authentication and Security Layer) PLAIN.
+
+== Steps to connect to a Confluent Cloud Kafka broker
+
+Take the following steps to configure access to your Confluent Cloud Kafka broker for your Akka project.
+
+. Log in to https://confluent.cloud/[Confluent Cloud] and select the cluster Akka should connect to. Create a new cluster if you don't have one already.
+
+. Create an API key for authentication
+
+.. Select "API Keys"
++
+image:operations:confluent-api-key-new.png[New API key]
+
+.. Choose the API key scope for development use, or proper setup with ACLs. The API key's "Key" is the username, the "Secret" acts as password.
+.. When the API key was created, your browser downloads an `api-key-... .txt` file with the API key details.
++
+image:operations:confluent-api-key-details.png[API key details]
+
+. Ensure you are on the correct Akka project
++
+[source, command window]
+----
+akka config get-project
+----
+
+. Copy the API secret and store it in a Akka secret (e.g. called `confluent-api-secret`)
++
+[source, command window]
+----
+akka secret create generic confluent-api-secret --literal secret=<the API key secret>
+----
+
+. Select "Cluster Settings" and copy the bootstrap server address shown in the "Endpoints" box.
+
+. Use `akka projects config` to set the broker details. Set the username using the provided API key's "Key" and service URI according to the connection information.
++
+[source, command window]
+----
+akka projects config set broker  \
+  --broker-service kafka \
+  --broker-auth plain \
+  --broker-user <API_KEY> \
+  --broker-password-secret confluent-api-secret/secret \
+  --broker-bootstrap-servers <bootstrap server address> \
+----
+
+The `broker-password-secret` refer to the name of the Akka secret created earlier rather than the actual API key secret.
+
+An optional description can be added with the parameter `--description` to provide additional notes about the broker.
+
+The broker config can be inspected using:
+[source, command window]
+----
+akka projects config get broker
+----
+
+== Create a topic
+
+To create a topic, you can either use the Confluent Cloud user interface, or the https://docs.confluent.io/confluent-cli/current/overview.html[Confluent CLI].
+
+[.tabset]
+Browser::
++
+--
+ . Open https://confluent.cloud/[Confluent Cloud]. 
+ . Go to your cluster
+ . Go to the Topics page
+ . Use the Add Topic button
+ . Fill in the topic name, select the number of partitions, and use the Create with defaults button
+
+You can now use the topic to connect with Akka.
+--
+Confluent Cloud CLI::
++
+--
+[source, command line]
+----
+confluent kafka topic create \
+  <topic name> \
+  --partitions 3 \
+  --replication 2
+----
+
+You can now use the topic to connect with Akka.
+--
+
+include::ROOT:partial$broker-kafka-setup-common.adoc[]
+

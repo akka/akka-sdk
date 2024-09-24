@@ -5,4 +5,5 @@ nav:
 - modules/ROOT/nav.adoc
 - modules/concepts/nav.adoc
 - modules/java/nav.adoc
+- modules/operations/nav.adoc
 - modules/reference/nav.adoc

@@ -1,0 +1,44 @@
+= Organizations
+:page-aliases: organizations:organizations.adoc[]
+
+include::ROOT:partial$include.adoc[]
+
+A Akka organization is the owner of projects where services are deployed.
+
+An organization can be available in different xref:operations:regions.adoc[regions]. Projects created in the organization will be located in one of these regions.
+
+A user can be a member of one or more organizations; being a member does not automatically give the user access to the projects owned by the organization.
+
+xref:operations:manage-users.adoc[Membership in an organization] and xref:operations:manage-project-access.adoc[access to its projects] are controlled using role bindings.
+
+xref:operations:billing.adoc[Billing] data is collected and paid for per organization.
+
+== Details
+
+* An Organization Administrator is created that can add or invite other users to the organization with various roles.
+
+* A project is owned by one Organization.
+
+* A user can be a member of any number of organizations. Users must ensure that any projects they create are associated with the correct organization.
+
+* An organization is associated with one or more Akka regions. Projects created for the organization are assigned to one of these regions.
+
+== Usage
+
+To determine which organizations the current user is a member of use the `organizations list` command. For example:
+
+[source,command window]
+----
+$ akka organizations list
+NAME        ID                                     ROLES
+myorg       1a4a9d5d-1234-5678-910a-9c8fb3700da7   superuser
+----
+
+Note that you can refer to the organization in `akka` commands using either the "friendly name" or the "ID."  See the page on xref:operations:manage-users.adoc[managing organization users] to find more, including the use of organization roles.
+
+== Topics
+
+- xref:support:paid-plans.adoc[]
+- xref:operations:manage-users.adoc[]
+- xref:operations:regions.adoc[]
+- xref:operations:billing.adoc[]

@@ -1,0 +1,104 @@
+= Using Aiven for Apache Kafka
+:page-aliases: projects:broker-avien.adoc[]
+
+include::ROOT:partial$include.adoc[]
+
+Akka connects to https://aiven.io[Aiven]'s Kafka service via TLS, using a CA certificate provided by Aiven for the service, authenticating using SASL (Simple Authentication and Security Layer) SCRAM.
+
+NOTE: In this guide we use the default `avnadmin` account, but you may want to create a specific service user to use for your Akka service connection.
+
+== Steps to connect to an Aiven Kafka service
+
+. Log in to the https://console.aiven.io/[Aiven web console] and select the Aiven Kafka service Akka should connect to.
+
+. Enable SASL for your Aiven Kafka (See Aiven's https://docs.aiven.io/docs/products/kafka/howto/kafka-sasl-auth[Use SASL Authentication with Apache Kafka])
+ .. Scroll down the Service overview page to the **Advanced configuration** section.
+  .. Turn on the setting labelled `kafka_authentication_methods.sasl`, and click **Save advanced configuration**.
++
+image::operations:aiven-advanced-configuration.png[Aiven Kafka advanced configuration]
+
+  .. The connection information at the top of the Service overview page will now offer the ability to connect via SASL or via client certificate. Select SASL in "Authentication Method" to show the right connection details:
++
+image::operations:aiven-connection-information.png[Aiven Kafka connection information]
+  .. Download the CA Certificate via the link in the connection information.
+
+. Ensure you are on the correct Akka project
++
+[source, command window]
+----
+akka config get-project
+----
+
+.  Create a Akka TLS CA secret with the CA certificate for the service (e.g. called `kafka-ca-cert`)
++
+[source, command window]
+----
+akka secret create tls-ca kafka-ca-cert --cert ./ca.pem
+----
+
+. Copy the CA password from the "Connection Information" and store it in a Akka secret (e.g. called `kafka-secret`)
++
+[source, command window]
+----
+akka secret create generic kafka-secret --literal pwd=<the password>
+----
+
+. Use `akka projects config` to set the broker details. Set the Aiven username and service URI according to the Aiven connection information page.
++
+[source, command window]
+----
+akka projects config set broker \
+  --broker-service kafka \
+  --broker-auth scram-sha-256  \
+  --broker-user avnadmin \
+  --broker-password-secret kafka-secret/pwd \
+  --broker-bootstrap-servers <kafka...aivencloud.com:12976> \
+  --broker-ca-cert-secret kafka-ca-cert
+----
+
+The `broker-password-secret` and `broker-ca-cert-secret` refer to the names of the Akka secrets created earlier rather than the actual secret values.
+
+An optional description can be added with the parameter `--description` to provide additional notes about the broker.
+
+The broker config can be inspected using:
+[source, command window]
+----
+akka projects config get broker
+----
+
+== Create a topic
+
+To create a topic, you can either use the Aiven console, or the Aiven CLI.
+
+[.tabset]
+Browser::
++
+--
+Instructions from Aiven's https://docs.aiven.io/docs/products/kafka/howto/create-topic[Creating an Apache Kafka topic]
+
+. Open the https://console.aiven.io/[Aiven Console].
+. In the Services page, click on the Aiven for Apache Kafka® service where you want to crate the topic.
+. Select the Topics tab:
+.. In the Add new topic section, enter a name for your topic.
+.. In the Advanced configuration you can set the replication factor, number of partitions and other advanced settings. These can be modified later.
+. Click Add Topic on the right hand side of the console.
+
+You can now use the topic to connect with Akka.
+--
+Aiven CLI::
++
+--
+See Aiven's https://docs.aiven.io/docs/tools/cli/service/topic#avn-cli-service-topic-create[Manage Aiven for Apache Kafka topics]
+[source, command line]
+----
+avn service topic-create \
+  <service name> \
+  <topic name> \
+  --partitions 3 \
+  --replication 2
+----
+
+You can now use the topic to connect with Akka.
+--
+
+include::ROOT:partial$broker-kafka-setup-common.adoc[]

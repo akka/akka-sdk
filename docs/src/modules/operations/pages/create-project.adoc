@@ -1,0 +1,70 @@
+= Create a new project
+:page-aliases: projects:create-project.adoc[]
+
+include::ROOT:partial$include.adoc[]
+
+== Project names
+
+A Akka project must have a name and can have a description. It is good practice to name and describe the project so that you and other project members can identify it and its purpose.
+
+A project is created in a region determining the cloud provider and the geographical region within that provider.
+
+== Create a new project
+
+To create a new project, follow the steps below:
+
+[.tabset]
+--
+CLI::
++
+. If you haven't done so yet, xref:akka:install-akka.adoc[install the Akka CLI] and log into your account:
++
+----
+akka auth login
+----
+
+. Create a project by substituting your project name and placing a short project description name in quotes, followed by the `region` flag and last the `organization` flag. Check for the available regions with `akka regions list`. The region list command will also print the organizations.
++
+
+----
+akka projects new <projectname> "project description" --region=<region> --organization=<org>
+----
++
+
+For example:
++
+
+----
+akka projects new my-akka-proj "My Akka Project" --region=gcp-us-east1 --organization=my-organization
+----
++
+
+When the command is successfully completed a response is returned similar to the following:
++
+
+----
+NAME           DESCRIPTION   ID                                     OWNER                                       REGION
+my-akka-proj   "My ..        xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx   id:"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"   gcp-us-east1
+
+'my-akka-proj' is now the currently active project.
+----
+--
+
+
+[NOTE]
+--
+Project names must conform to the following:
+
+* Up to 63 characters
+* Can include:
+** lowercase letters
+** numbers
+** hyphens (-)
+* Must not:
+** start or end with hyphens (-)
+* Cannot include:
+** underscores (_)
+** spaces
+** non-alphanumeric characters
+--
+

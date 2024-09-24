@@ -1,0 +1,48 @@
+= Billing
+:page-aliases: organizations:billng.adoc[]
+
+include::ROOT:partial$include.adoc[]
+
+The billing information provided by Akka is a great way to gain oversight and control over the operational costs associated with projects owned by the organization. Billing admins will be able to see the cost breakdown for each project in the organization, current month-to-date aggregate cost and the cost forecast for the current month's projected aggregate usage across all projects. Billing information can only be viewed by a user with the `billing-admin` role. See xref:operations:billing.adoc#_assigning_the_billing_admin_role[Assigning the billing-admin Role] for further details.
+
+== Billing Interface
+
+For users with the `billing-admin` role, there will be a billing icon available in the side navigation of the Akka Console. Users without this role will see the default navigation. Clicking the billing icon will show the new billing UI where the user can select which month to view billing data for. If the user is a billing admin for more than one organization, there will also be multiple organizations selectable.
+
+image::billing-ui.jpg[Akka Billing User Interface]
+
+In the upper-right of the billing UI, the month-to-date costs will be shown as well as a cost forecast for the entire month based on current and prior (if any) usage trends.
+
+Selecting an organization and billing month will show detailed billing data for each project in the organization. Cost breakdown for the following items will be shown for each project and are aggregated across all services in the given project:
+
+* Network data transfer - The data transfer charges from all services. Measured in GB.
+
+* Data operations - The sum of all read and write ops for all services.
+
+* Instance hours - The total number of hours all service Instances in the project have been running during the month.
+
+* Data persistence - Total amount of persisted data during the month measured in GB-Hours.
+
+See https://akka.io/pricing#[Akka Pricing{tab-icon}, window="new"] for more information.
+
+== Assigning the billing-admin Role
+
+The organization superuser may invite a user and give them the `billing-admin` role. Alternatively, if a separate billing administrator is not needed for the organization, the organization superuser may assign this role to themselves using `akka organizations users add-binding` command.
+
+To create a `billing-admin` by sending an invitation, use the `akka organizations invitations create` command:
+
+[source,command window]
+----
+akka organizations invitations create --organization <organization name> \
+  --email <email address> --role billing-admin
+----
+
+The organization superuser may also assign an existing member the `billing-admin` role by `user-id` or email address. For example:
+
+[source,command window]
+----
+akka organization users add-binding --organization <organization name> \
+  --email <email address> --role billing-admin
+----
+
+See xref:operations:manage-users.adoc[managing organization users] for more information about managing users and their roles.

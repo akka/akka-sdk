@@ -1,0 +1,94 @@
+= Managing project users
+:page-aliases: projects:manage-projects-access.adoc[]
+
+include::ROOT:partial$include.adoc[]
+
+Access to projects is managed by granting users roles. The following roles exist: admin, developer, and backoffice.
+
+[cols="1,1,1,1"]
+|===
+|Role:                       |admin |developer |backoffice
+
+|View project                |✅     |✅        |✅
+|Admin project               |✅     |❌        |❌
+|View/deploy/update services |✅     |✅        |❌
+|Delete services             |✅     |❌        |❌
+|Manage routes               |✅     |✅        |❌
+|Manage secrets              |✅     |✅        |❌
+|Backoffice functions        |✅     |❌        |✅
+|===
+
+Backoffice functions include the ability to view entity event logs and values directly, the ability to invoke methods on services even when not exposed to the internet or protected by ACLs, and the ability to manage projections.
+
+== Listing role bindings
+[[managing-project-users-list-role-bindings]]
+
+You can list the role bindings in a project by running `akka roles list-bindings`:
+
+[source,command window]
+----
+$ akka roles list-bindings
+ROLE BINDING ID                        ROLE        USERNAME       EMAIL                      NAME
+fd21044c-b973-4220-8f65-0f7d317bb23b   developer   jane.citizen   jane.citizen@example.com   Jane Citizen
+120b75b6-6b53-4ebb-b23b-2272be974966   admin       john.smith     john.smith@example.com     John Smith
+----
+
+This shows a list of all the role bindings in the project.
+
+== Granting a role
+
+There are two ways to grant a role to a user. The first is to invite them to join the project using their email address.
+
+To send an invitation, use the `akka roles invitations invite-user` command:
+
+[source,command window]
+----
+akka roles invitations invite-user <email address> --role <role>
+----
+
+The user will then receive an email inviting them to join the project. If they accept the invitation, a role binding will be created for them with the specified role.
+
+If the user is already either a member of the project, and you want to grant them additional roles, or the project is owned by an organization, and the user is a member of that organization, you can add them directly without sending them an invite and requiring them to accept it, by either passing their username or email address, using the `akka roles add-binding` command.
+
+To add a role to a user by email address:
+
+[source,command window]
+----
+akka roles add-binding --email <email address> --role <role>
+----
+
+To add a role to a user by username:
+
+[source,command window]
+----
+akka roles add-binding --username <username> --role <role>
+----
+
+== Deleting a role binding
+
+A role binding can be deleted by referencing its role binding ID. The role binding ID can be obtained by <<managing-project-users-list-role-bindings,listing role bindings>>. Once you have the role binding ID, you can delete the role binding using `akka roles delete-binding`:
+
+[source,command window]
+----
+akka roles delete-binding <role binding id>
+----
+
+== Managing invitations
+
+You can view a list of outstanding invitations by running `akka roles invitations list`:
+
+[source,command window]
+----
+$ akka roles invitations list
+EMAIL                      ROLE
+jane.citizen@example.com   admin
+----
+
+Invitations will automatically expire after 7 days. You can manually delete an invitation by running `akka roles invitations delete`:
+
+[source,command window]
+----
+akka roles invitations delete <email address>
+----
+
+If you wish to resend an invitation, this can be done by first deleting the invitation, and then inviting the user again.

@@ -1,0 +1,92 @@
+= CI/CD with GitHub Actions
+:page-aliases: projects:integrate-cicd-github-actions.adoc[]
+
+include::ROOT:partial$include.adoc[]
+
+Use the Akka https://github.com/lightbend/setup-akka-action[setup-akka-action] GitHub Action to use GitHub Actions with your Akka project. The action supports commands for installing, authenticating, and invoking the Akka CLI. Releases are tracked https://github.com/lightbend/setup-akka-action/releases[on the GitHub releases page]. The action is present in the https://github.com/marketplace/actions/setup-akka-cli[GitHub marketplace].
+
+== Prerequisites
+
+To use the Akka GitHub Action, you'll need to:
+
+- Create a xref:operations:integrate-cicd.adoc#create_a_service_token[service token] for your project
+- Get the UUID of your project, which can be obtained by running `akka projects list`
+
+== Configure variables
+
+The GitHub Action uses two required variables to authenticate and set the project you want to work on correctly:
+
+- `AKKA_TOKEN`: The Akka service token
+- `AKKA_PROJECT_ID`: The project ID for the Akka project you're using
+
+These variables should be configured as https://docs.github.com/en/actions/reference/encrypted-secrets#creating-encrypted-secrets-for-a-repository[secrets {tab-icon}, window="new"] for your repository.
+
+== Create a workflow
+
+Follow these steps to create a workflow to invoke the GitHub Action for your project:
+
+. Create a folder named `.github` at the root of the project folder.
+
+. Create a file named `config.yml` in the `.github` folder.
+
+. Open `config.yml` for editing and add:
++
+[source, yaml]
+----
+name: akka
+
+on: 
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Akka CLI
+        uses: lightbend/setup-akka-action@v1
+        with:
+          token: ${{ secrets.AKKA_TOKEN }} <1>
+          project-id: ${{ vars.AKKA_PROJECT_ID }} <2>
+      - name: List services <3>
+        run: akka service list <4>
+----
+<1> The Akka authentication token.
+<2> The UUID of the project to which the service belongs.
+<3> A unique name for this workflow step. The example lists Akka services.
+<4> The command to execute.
+
+== Example workflow
+
+The https://github.com/lightbend/akka-cicd-github-actions[lightbend/akka-cicd-github-actions] repository contains an example of a workflow that automatically builds, tests, and deploys a Node.js service to Akka.
+
+The repository contains two workflows defined in `.yml` files:
+
+- Triggered by a pull request event, `node-build-test.yml` runs tests and builds a Docker image.
+- Triggered by a release event, `node-build-test-deploy.yml` runs tests and builds the image, pushes the image to Docker Hub, and deploys it to Akka.
+
+=== How to use the example
+
+The  `setup-akka-action` used in the example workflows allows you to execute any `akka` command. It takes two required
+variables to authenticate and set the active project:
+
+* `AKKA_TOKEN`: The Akka authentication token.
+
+* `AKKA_PROJECT_ID`: The Akka project ID for the service to be deployed.
+
+The workflows additionally use variables to supply Docker credentials for building the service image:
+
+* `DOCKERHUB_USERNAME`
+* `DOCKERHUB_TOKEN`
+
+To use the https://github.com/lightbend/akka-cicd-github-actions[lightbend/akka-cicd-github-actions] example, copy the workflow files and save the required variables as GitHub https://docs.github.com/en/actions/reference/encrypted-secrets#creating-encrypted-secrets-for-a-repository[secrets {tab-icon}, window="new"]:
+
+. Copy the workflow `.yml` files from the example repository https://github.com/lightbend/akka-cicd-github-actions/tree/main/.github/workflows[.github/workflows/ {tab-icon}, window="new"] directory into your project repository `.github/workflow` directory.
+
+. In the project GitHub repository, use the saved values to create
+secrets for the `AKKA_TOKEN` and `AKKA_PROJECT_ID` variables.
+
+. Create secrets to store your Docker username and password as `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` variables.
+
+. Modify the `.yml` files, if required.
+. From the GitHub *Actions* tab, view both workflows.

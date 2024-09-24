@@ -1,0 +1,126 @@
+= Managing services
+:page-supergroup-console-cli: Interface
+:page-aliases: services:deploy-service.adoc[], concepts:deploy-service.adoc
+
+include::ROOT:partial$include.adoc[]
+
+Once you have xref:operations:create-project.adoc[created a Akka project], use the Akka Console or the `akka` CLI to deploy container images.
+
+Akka services are automatically fault-tolerant and highly available. When you deploy a service, Akka creates multiple service instances. When the service load increases, Akka automatically scales up by adding more instances, and when the load decreases, it automatically scales down.
+
+== Deploy
+
+A service can be deployed either by describing it with command line arguments, or using a service descriptor. Describing a service with command line arguments is more convenient for simple configurations to get started, while using a descriptor is useful because the descriptor can be checked into version control and re-used to ensure repeatable deployments.
+
+=== Describing a service with command line arguments.
+
+Assuming a service name of `my-service`, enter the following:
+[source, command line]
+----
+akka service deploy \
+    my-service \
+    my-container-uri/container-name:tag-name
+----
+
+[#apply]
+=== Describing a service with a descriptor
+
+A Akka service can also be described using a YAML descriptor. For example:
+
+[source, yaml]
+----
+name: my-service
+spec:
+  image: my-container-uri/container-name:tag-name
+  env:
+  - name: SOME_VARIABLE
+    value: some value
+----
+
+This can then be created by running:
+
+[source, command line]
+----
+akka service apply -f my-service.yaml
+----
+
+You can also export the descriptor for an existing service by running:
+
+[source, command line]
+----
+akka service export my-service -f my-service.yaml
+----
+
+For a complete reference of the Akka service descriptor, see the xref:reference:descriptor-reference.adoc#akka-service[Akka service descriptor reference].
+
+== Verify service status
+
+To verify the status of a service:
+
+[.tabset]
+Console::
++
+--
+From the *Dashboard*, the *Services* card displays the *Status* of all services in a project:
+
+image::service-status.png[Services card]
+
+--
+CLI::
++
+--
+Use the following command:
+
+[source, command line]
+----
+akka service list
+----
+--
+
+A service status can be one of the following:
+
+* *Ready*: All service instances are up to date and fully available.
+* *UpdateInProgress*: Service is updating.
+* *Unavailable*: No service instances are available.
+* *PartiallyReady*: Some, but not all, service instances are available.
+
+
+[#update-deployed]
+== Update a deployed service
+
+First, package and tag the changes to your service. When you redeploy, Akka performs a rolling update.
+
+To re-deploy:
+
+[.tabset]
+CLI with command line arguments::
++
+--
+* Update the deployed `my-service` service with a new package tagged `tag-name-2`:
++
+[source, command line]
+----
+akka service deploy \
+    my-service \
+    my-container-uri/container-name:tag-name-2
+----
+--
+CLI with a descriptor::
++
+--
+* After editing `my-service.yaml`:
++
+[source, command line]
+----
+akka service apply -f my-service.yaml
+----
+--
+
+== Removing a deployed service
+
+Remove a deployed service using the CLI `delete` command. The following example removes a deployed service, where `my-service` is the service name:
+
+[source, command line]
+----
+akka service delete my-service
+----

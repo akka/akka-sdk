@@ -1,0 +1,44 @@
+= Regions
+:page-aliases: organizations:regions.adoc[]
+
+include::ROOT:partial$include.adoc[]
+
+== Overview
+
+All Akka projects are deployed to a particular _region_. Regions are related to the backend infrastructure used by Akka to support the project. They:
+
+* are associated with a particular cloud provider  (e.g. GCP, AWS)
+* exist in a particular geographic region  (e.g. Europe, North America)
+* may have particular performance characteristics
+
+They can also provide a degree of isolation. Dedicated plans provide an isolated region for example.
+
+== For organizations
+
+When an organization is created, it is associated with one or more regions. One of these regions must be specified when creating a new project for the organization.
+
+For example, assume that the `myorg` organization has been granted access to the `aws-us-east-2` region. The following command would create a new project for that organization, in that region:
+
+[source,command window]
+----
+akka project new myproject --organization myorg --region aws-us-east-2
+----
+
+If you don't remember what regions the organization has access to, there are two choices. If you don't provide the `--region` flag to the `project new` command, the error will inform you of the available regions. For example:
+
+[source,command window]
+----
+$ akka project new myproject --organization myorg
+
+--region is a required flag. The following regions are available: [aws-us-east-2]
+----
+
+You can also inquire more directly with the `regions` command. For example:
+
+[source,command window]
+----
+$ akka regions list --organization myorg
+NAME            ORGANIZATION
+aws-us-east-2   db805ff5-4fbd-4442-ab56-6e6a9a3c200a
+----
+

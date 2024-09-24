@@ -1,0 +1,48 @@
+= Configure message brokers
+:page-aliases: projects:message-brokers.adoc
+
+include::ROOT:partial$include.adoc[]
+
+Akka eventing integrates with https://cloud.google.com/pubsub/docs/overview[Google Cloud Pub/Sub] and managed Kafka services such as https://www.confluent.io/confluent-cloud[Confluent Cloud] and https://aiven.io/kafka[Aiven for Apache Kafka] to enable asynchronous messaging.
+
+Message brokers are configured on Akka Project level. A project can have one broker configuration, Akka eventing is independent of the broker technology.
+
+== Broker services
+
+- xref:operations:broker-aiven.adoc[Aiven for Apache Kafka]
+- xref:operations:broker-aws-msk.adoc[AWS MSK Kafka]
+- xref:operations:broker-confluent.adoc[Confluent Cloud]
+- xref:operations:broker-google-pubsub.adoc[Google Pub/Sub]
+
+== Testing Akka eventing
+
+The Java SDK testkit has built-in support to simulate message brokers. See xref:java:actions-publishing-subscribing.adoc#_testing_the_integration[Testing the Integration].
+
+=== Using a Kafka broker locally
+
+During development, you may want to run a local Kafka broker for testing.
+
+The docker-compose example file below shows how to set the `akka.proxy.eventing.support` to `kafka`.
+A volume is mounted to the current directory `.`, which is expected to contain a `kafka.properties` file.
+The `BROKER_CONFIG_FILE` environment variable points to the `kafka.properties` file in the mounted volume 'conf', which 
+ensures that the service can connect to Kafka.
+
+[source,yaml,subs="attributes+"]
+----
+version: "3"
+services:
+  akka-runtime:
+    image: gcr.io/akka-public/akka-proxy:{akka-runtime-version}
+    command: -Dakka.proxy.eventing.support=kafka
+    ports:
+      - "9000:9000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      BROKER_CONFIG_FILE: /conf/kafka.properties
+    volumes:
+      - .:/conf
+----
+
+You can check out a complete example in xref:java-protobuf:quickstart/cr-value-entity-kafka-java.adoc[Java Customer Registry (with Kafka)].
+
