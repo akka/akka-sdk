@@ -8,8 +8,8 @@ whether services or methods can be invoked from the Internet.
 ==  Principals
 
 A principal in Akka is an abstract concept that represents anything that can make or be the source of a request.
-Principals that are currently supported by Akka include other services, and the internet. Akka uses mTLS support to
-associate requests with one or more principals.
+Principals that are currently supported by Akka include other services, and the internet. Services are identified
+by the service name chosen when deployed. Akka uses mTLS support to associate requests with one or more principals.
 
 Note that requests that have the internet principal are requests that Akka has identified as coming through the Akka
 ingress route. This is identified by mTLS, however it does not imply that mTLS has been
@@ -33,7 +33,9 @@ Here is an example of an ACL added at the class level on a Http Endpoint:
 include::example$doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[tags=endpoint-class;class-level-acl]
 ----
 
-The above ACL only allows incoming traffic from `service-a`. This rule is applied to all methods in this Http Endpoint.
+The above ACL only allows incoming traffic from `service-a`. Meaning that only a service named `service-a` deployed
+on that same project will be able to make calls to this endpoint. This rule is applied to all methods in this Http
+Endpoint.
 
 This rule can be overridden by an ACL on a method level. Here is an example ACL on a method that overrides the class level ACL:
 
@@ -129,10 +131,47 @@ Alternativly, start with:
 mvn compile exec:java -Dakka.javasdk.dev-mode.acl.enabled=false
 ----
 
-ifdef::todo[TODO: Impersonate-Akka-Service should translate to Impersonate-Kalix-Service internally]
+== Service identification in local development
 
-ifdef::todo[TODO: Http Client should add Impersonate-Akka-Service header when in dev-mode]
+If running multiple services in local development, you may want to run with ACLs enabled to verify that they work for
+cross-service communication.
 
+Let's consider the existence of two distinct services called `shopping-cart` and `payment`.
+
+The payment service only accepts request from the shopping cart service and has an ACL defined as
+such:
+
+[source,java,ident=0]
+----
+include::example$doc-snippets/src/main/java/com/example/acl/PaymentEndpoint.java[tag=endpoint-class]
+----
+
+During development, if you want to make calls to the payment service from inside the shopping cart service, then the
+shopping cart service needs to identify itself as `shopping-cart` (as per PaymentEndpoint's ACL). When running
+locally, the services identify themselves with the name used in the `artifactId` tag in its `pom.xml` file. This value can be
+overwritten in the project's pom file by defining a maven property named `akka.javasdk.dev-mode.service-name`.
+
+[source,xml,ident=0]
+----
+<properties>
+  <akka.javasdk.dev-mode.service-name>shopping-cart</akka.javasdk.dev-mode.service-name>
+  ...
+</properties>
+----
+
+NOTE: This property is only applicable when running the services on your local machine. When deployed, the service name
+is the one used to create the service and should also match the ACL definition, i.e.: `shopping-cart`.
+
+If you want to simulate calls to the payment endpoint and pretend that the calls are
+coming from the shopping cart service, you can add the header `impersonate-service` to your requests, for example:
+
+[source,bash,ident=0]
+----
+curl -i localhost:9000/payments/{cart-id}/check-transaction \
+  --header "impersonate-service: shopping-cart"
+----
+
+Note that in local development, the services don’t actually authenticate with each other, they only pass their identity in a header. It is assumed in local development that a client can be trusted to set that header correctly.
 
 == Programmatically accessing principals
 
