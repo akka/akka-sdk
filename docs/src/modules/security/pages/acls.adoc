@@ -1,0 +1,22 @@
+= Access Control Lists (ACLs)
+:page-aliases: services:using-acls.adoc[], concepts:using-acls.adoc[]
+
+include::ROOT:partial$include.adoc[]
+
+The simplest access control that Akka offers is through Access Control Lists (ACLs). ACLs allow you to specify lists of what can access your services, at multiple granularity. For example, you can configure a method that initiates a payment on a payment service to only accept requests from the shopping cart service. You can also control whether services or methods can be invoked from the Internet.
+
+Within a Akka project, all communication between services uses Mutual TLS (mTLS). This is injected transparently by Akka. The HTTP or gRPC clients you use to make calls from one service to another do not need to be configured to do this. Akka transparently captures outgoing requests to other services and wraps them in an mTLS connection.
+
+Based on this mTLS support, Akka is able to read and apply policies based on where the request was made from.
+
+== Principals
+
+A principal in Akka is an abstract concept that represents anything that can make or be the source of a request. Principals that are currently supported by Akka include other services, and the internet. Akka uses the above described mTLS support to associate requests with one or more principals.
+
+Note that requests that have the internet principal are requests that Akka has identified as coming through the Akka ingress, according to a configured route. This is identified by mTLS, however it does not imply that mTLS has been used to connect to the ingress from the client in the internet. These are separate hops. To configure mTLS from internet clients, see xref:security:tls-certificates.adoc[].
+
+== Configuring ACLs
+
+To understand how to make use of ACLs to secure your Akka services in practice, consult the respective SDK's sub-section:
+
+* xref:java:access-control.adoc[Java: Using ACLs]
