@@ -1,0 +1,46 @@
+= Best practices
+
+include::ROOT:partial$include.adoc[]
+
+== Reactive principles
+
+Akka is ideally suited for the creation of _Microservices_. Microservices generally follow the Unix philosophy of "Do one thing and do it well." Akka allows developers to build systems that follow https://principles.reactive.foundation/[the Reactive Principles {tab-icon}, window="new-tab"] without having to become distributed data or distributed computing experts. As a best practice, following the Reactive Principles in your design makes it easier to build distributed systems. https://akkademy.akka.io/learn/public/catalog/view/3[Akkademy] offers free courses on Reactive Architecture.
+
+== Domain Driven Design
+
+[sidebar]
+Domain-driven design (DDD) is the concept that the structure and language of software code (class names, class methods, class variables) should match the business domain. For example, if a software processes loan applications, it might have classes such as LoanApplication and Customer, and methods such as AcceptOffer and Withdraw. &mdash; https://en.wikipedia.org/wiki/Domain-driven_design[Wikipedia {tab-icon}, window="new"]
+
+Akka makes it easy and fast to build services using the concepts of Domain Driven Design (DDD). While it's not necessary to understand all the ins and outs of Domain Driven Design, you'll find a few of the concepts that make building services even more straightforward below. See xref:concepts:programming-model.adoc#_Architecture[Akka programming model] for more information on the role of your domain model in Akka and how Akka layers your architecture. Akkademy provides a free course on https://akkademy.akka.io/learn/courses/6/reactive-architecture2-domain-driven-design[Domain Driven Design{tab-icon}, window="new"].
+
+=== Bounded context
+
+https://martinfowler.com/bliki/BoundedContext.html[Bounded context] is a concept that divides large domain models into smaller groups that are explicit about their interrelationships. Generally a microservice is a bounded context. You _may_ choose to have multiple bounded contexts in a microservice. 
+
+Each of these contexts will have autonomy to evolve the models it owns. Keeping each model within strict boundaries allows different modelling for entities that look similar but have slightly different meaning in each of the contexts. Each bounded contact should have its own domain, application, and API layers as described in xref:concepts:programming-model.adoc#_Architecture[Akka programming model]. 
+
+[.darkmode-white-padded]
+image::bounded-context.svg[Bounded Context]
+
+=== Events first
+
+Defining your data structures first, and splitting them into xref:concepts:best-practices.adoc#_Bounded_context[bounded contexts], will also help you think about all the different interactions your data needs to have. These interactions, like `ItemAddedToShoppingCart` or `LightbulbTurnedOn` are the events that are processed and persisted in Akka. Defining your data structures first, makes it easier to think about which events are needed and where they fit into your design. These data structures and events will live in your domain model layer as described in xref:concepts:programming-model.adoc#_Architecture[Akka programming model].
+
+=== Message migration
+
+Behind the scenes everything in Akka is ultimately message driven. Plan for the evolution of your messages. Commands and events use data structures that often must evolve over time. Fields get added, fields get removed, the meaning of fields may change. How do you handle this over time as your system grows and evolves? Akka will make this easier, but you are ultimately responsible for schema evolution. 
+
+== Deployment units
+
+Each Akka Service consists of one or more Components and is packaged and deployed as a unit. Akka services are deployed to Akka Projects. Thus, when you couple multiple business concerns by packaging them in the same service, even under separate xref:concepts:best-practices.adoc#_Bounded_context[bounded contexts], you limit the runtime's ability to make the most efficient decisions to scale up or down.
+
+=== Advantages of right-sized services
+
+When you design a series of small services that don't share code and can be deployed independently, you reap these benefits:
+
+- It is faster and less complex to write and debug them because they focus on a small set of operations, usually around a single business concern (be it with one or multiple types of xref:reference:glossary.adoc#entity[_Entities_]).
+- They simplify operational concerns and provide scalability because they can be deployed, stopped and started independently of the rest of the system.
+- They handle variations in load gracefully. If properly designed, multiple instances of the service can be started up when necessary to support more load: for example, if your system runs on Black Friday and the shopping cart service gets super busy, you can spin up more shopping carts to handle that load without also having to start up more copies of the catalog service. When the load decreases, these extra instances can be removed again, minimizing resource usage.
+- They handle failures gracefully. Components interact asynchronously with the rest of the world through messages and xref:reference:glossary.adoc#command[_commands_]. If one instance, or even a whole service, fails, it is possible for the rest of the system to keep going with reduced capabilities. This prevents cascading failures that take down entire systems.
+- A team can focus on features of a single service at a time, without worrying about what other services or teams are doing, or when they are releasing, allowing more parallel teams to focus on other services, allowing your development efforts to scale as needed.
+- You can upgrade services in a "rolling" fashion, where new instances are started before older instances are removed, allowing new versions to be deployed with no downtime or interruption.

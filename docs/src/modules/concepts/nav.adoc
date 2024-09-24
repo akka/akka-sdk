@@ -4,3 +4,4 @@
 *** xref:concepts:deployment-model.adoc[]
 *** xref:concepts:state-model.adoc[]
 *** xref:concepts:programming-model.adoc[]
+*** xref:concepts:best-practices.adoc[]
