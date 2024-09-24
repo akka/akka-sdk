@@ -1,0 +1,21 @@
+= Deploy prebuilt samples 
+
+include::ROOT:partial$include.adoc[]
+
+== Deploy one of the samples
+
+The table provided below displays samples along with the container image URL required for deploying each sample. By clicking on the respective programming language, you will be directed to the GitHub repository containing the source code.
+
+[width="100%",options="header"]
+|=========================================================
+| Sample                                                                                                                    | Container image URL
+.3+| Samples TBD | Container images TBD 
+|=========================================================
+
+== Invoke your service
+
+* Service invocation instructions TBD
+
+== Next steps
+
+* Next steps TBD

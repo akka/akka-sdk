@@ -1,0 +1,15 @@
+= Samples
+
+include::ROOT:partial$include.adoc[]
+
+A collection of useful samples for building with Akka, demonstrating several important patterns and abstractions.
+
+[options="header", cols="4,2"]
+|=======================
+|Sample|Level
+|https://github.com/lightbend/akka-javasdk/tree/main/samples/eventsourced-shopping-cart[Build a shopping cart]|Beginner
+|Other samples TBD|Beginner/Intermediate/Advanced
+|=======================
+
+[sidebar]
+Akka also offers a variety of xref:samples:prebuilt-samples.adoc[prebuilt samples] that are ready for immediate deployment, eliminating the need for local development.

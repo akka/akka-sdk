@@ -13,9 +13,9 @@ _Start here as an Akka developer:_
 * Register for an https://console.kalix.io/register[Akka account].
 
 |
-== Samples
+== xref:samples:index.adoc[Samples]
 
-A collection of useful https://github.com/lightbend/akka-javasdk/tree/main/samples[samples] for building with Akka, demonstrating several important patterns and abstractions.
+_A collection of useful samples for building with Akka, demonstrating several important patterns and abstractions._
 
 |
 == xref:concepts:index.adoc[Concepts]
