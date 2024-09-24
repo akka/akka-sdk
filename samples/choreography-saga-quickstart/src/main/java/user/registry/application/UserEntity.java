@@ -28,7 +28,6 @@ import static akka.Done.done;
  * External access is gated and should go through the ApplicationController.
  */
 @ComponentId("user")
-@Acl(allow = @Acl.Matcher(service = "*"))
 public class UserEntity extends EventSourcedEntity<User, UserEvent> {
 
   private final Logger logger = LoggerFactory.getLogger(getClass());

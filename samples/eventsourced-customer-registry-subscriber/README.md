@@ -38,7 +38,7 @@ mvn compile exec:java
 curl localhost:9001/customer/create \
   --header "Content-Type: application/json" \
   -XPOST \
-  --data '{"id": "one","email":"test@example.com","name":"Test Testsson","address":{"street":"Teststreet 25", 
+  --data '{"id": "one","email":"test@example.com","name":"Testsson","address":{"street":"Teststreet 25", 
   "city":"Testcity"}}'
 ```
 
@@ -47,10 +47,7 @@ This call is made on the subscriber service and will be forwarded to the `events
 ### Run a view query from this project
 
 ```shell
-curl localhost:9001/akka/v1.0/view/customers_by_name/findByName \
-  --header "Content-Type: application/json" \
-  -XPOST \
-  --data '{ "name": "Testsson" }'
+curl localhost:9001/customers/by_name/Testsson
 ```
 
 The subscriber service will receive updates from customer-registry via service-to-service stream and update the view.
@@ -58,7 +55,7 @@ The subscriber service will receive updates from customer-registry via service-t
 ### Change name
 
 ```shell
-curl  -XPOST --header "Content-Type: application/json"  localhost:9000/akka/v1.0/entity/customer/one/changeName -d '"Jan Banan"'
+curl -i -XPATCH --header "Content-Type: application/json"  localhost:9000/customer/one/name/Joe
 ```
 
 This call is performed on the customer-registry directly.
@@ -66,5 +63,5 @@ This call is performed on the customer-registry directly.
 ### Check the view again
 
 ```shell
-curl localhost:9001/customers/by_name/Jan%20Banan
+curl localhost:9001/customers/by_name/Joe
 ```

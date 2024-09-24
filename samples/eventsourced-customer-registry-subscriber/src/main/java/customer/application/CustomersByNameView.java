@@ -4,7 +4,6 @@ import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.Query;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.ComponentId;
-import akka.javasdk.annotations.Table;
 import akka.javasdk.view.View;
 import akka.javasdk.view.TableUpdater;
 import customer.domain.Customer;
@@ -47,7 +46,6 @@ public class CustomersByNameView extends View {
   }
 
   @Query("SELECT * as customers FROM customers_by_name WHERE name = :name")
-  @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
   public QueryEffect<CustomersList> findByName(String name) {
     return queryResult();
   }

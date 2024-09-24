@@ -15,7 +15,6 @@ import static customer.domain.CustomerEvent.AddressChanged;
 import static customer.domain.CustomerEvent.CustomerCreated;
 import static customer.domain.CustomerEvent.NameChanged;
 
-@Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
 @ComponentId("customer")
 public class CustomerEntity extends EventSourcedEntity<Customer, CustomerEvent> {
   private static final Logger logger = LoggerFactory.getLogger(CustomerEntity.class);

@@ -29,8 +29,6 @@ import static akka.Done.done;
  * If, while creating a user, the email address is already reserved, the user creation fails.
  */
 @ComponentId("unique-address")
-// Only allow access to this entity from inside the service (i.e. from the ApplicationController)
-@Acl(allow = @Acl.Matcher(service = "*"))
 public class UniqueEmailEntity extends KeyValueEntity<UniqueEmail> {
 
   private final String address;
