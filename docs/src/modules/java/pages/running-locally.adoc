@@ -1,20 +1,13 @@
 = Run a service locally
 
-include::ROOT:partial$include.adoc[]
-
 Running a service locally is helpful to test and debug. The following sections provide commands for starting and stopping a single service locally.
 
 == Prerequisites
 
 In order to run your service locally, you'll need to have the following prerequisites:
 
-* Docker {minimum_docker_version} or higher
-* Access to the `gcr.io/kalix-public` container registry. This is a public container registry that provides a Kalix Runtime container suited for local development. Make sure this registry is not blocked by your firewall.
-
-[TIP]
-====
-The samples provided with the Kalix SDKs all have `docker-compose` files preconfigured to run your service locally.
-====
+ * JDK 21
+ * Maven
 
 == Starting your service
 
@@ -27,24 +20,11 @@ mvn compile exec:java
 ----
 --
 
-This command will start your Kalix service and a Kalix Runtime using the included `docker-compose.yml` file.
-
-If you prefer, you can instead start `docker-compose` manually by running `docker-compose up` in one terminal and in another terminal start your Kalix service with:
-
---
-[source, command line]
-----
-mvn kalix:run
-----
---
-
-Note:: You can extend `docker-compose.yml` with any external services required to run your Kalix service.
-
 == Invoking your service
 
 After you start the service it will accept invocations on `localhost:9000`. You can use cURL to invoke your service.
 
-As an example, we will use the https://github.com/lightbend/kalix-jvm-sdk/tree/main/samples/spring-eventsourced-customer-registry[`customer-registry`] sample. 
+As an example, we will use the https://github.com/lightbend/akka-javasdk/tree/main/samples/eventsourced-customer-registry[`customer-registry`] sample.
 
 === Using cURL
 
@@ -56,10 +36,11 @@ Linux or macOS::
 --
 [source,command line]
 ----
-curl localhost:9000/customer/one/create \
+curl -i localhost:9000/customer \
   --header "Content-Type: application/json" \
   -XPOST \
-  --data '{"email":"test@example.com","name":"Test","address":{"street":"Test street 25","city":"Test City"}}'
+  --data '{"id": "one","email":"test@example.com","name":"Test Testsson","address":{"street":"Teststreet 25",
+  "city":"Testcity"}}'
 ----
 --
 Windows 10+::
@@ -67,10 +48,11 @@ Windows 10+::
 --
 [source,command line]
 ----
-curl localhost:9000/customer/one/create ^
+curl -i localhost:9000/customer ^
   --header "Content-Type: application/json" ^
   -XPOST ^
-  --data '{"email":"test@example.com","name":"Test","address":{"street":"Test street 25","city":"Test City"}}'
+  --data '{"id": "one","email":"test@example.com","name":"Test Testsson","address":{"street":"Teststreet 25",
+  "city":"Testcity"}}'
 ----
 --
 
@@ -79,50 +61,49 @@ Retrieve an existing customer:
 --
 [source,command line]
 ----
-curl -XGET localhost:9000/customer/one
+curl localhost:9000/customer/one
 ----
 --
 
 == Shutting down the service
 
-Use `Ctrl+C` to shut down the service. When stopping your service, it will also shutdown the Kalix Runtime container and any other container you have defined in `docker-compose.yml`. Unless you have chosen to start `docker-compose` manually in a separate terminal, in which case you will need to stop it manually as well.
+Use `Ctrl+C` to shut down the service.
 
 == Running service with persistence enabled
 
-By default, Kalix services are configured to run locally with persistence disabled. This means the Kalix Runtime will use an in-memory datastore for the state of your services. This is useful for local development since it allows you to quickly start and stop your service without having to worry about cleaning the database.
+By default, when running locally, persistence is disabled. This means the Akka Runtime will use an in-memory datastore for the state of your services. This is useful for local development since it allows you to quickly start and stop your service without having to worry about cleaning the database.
 
-However, if you want to run your service with persistence enabled to keep the data when restarting, you may update the `docker-compose` file as below.
+However, if you want to run your service with persistence enabled to keep the data when restarting, you can configure
+the service in `application.conf` with `akka.javasdk.dev-mode.persistence.enabled=true` or as a system property when
+running starting the service locally `mvn compile exec:java -Dakka.javasdk.dev-mode.persistence.enabled=true`.
 
-[source, dockerfile, indent=0]
-----
-include::example$java-spring-doc-snippets/docker-compose.yml[tag=persistence-mode]
-----
-<1> Maps local directory to the Kalix Runtime database directory `/var/kalix`.
-<2> Sets `PERSISTENCE_ENABLED` environment variable to `true`.
+ifdef::todo[TODO: will only work once https://github.com/lightbend/kalix-runtime/issues/2758 is sorted]
 
 == Running multiple services locally
 
-A typical Kalix application is composed of one or more services deployed to the same Kalix project. When deployed under the same Kalix project, two different services can make xref:component-and-service-calls.adoc[calls to each other] or xref:service-to-service.adoc[subscribe to each other's event streams] by simply using their logical names.
+A typical application is composed of one or more services deployed to the same Akka project. When deployed under the same project, two different services can make xref:component-and-service-calls.adoc[calls to each other] or xref:service-to-service.adoc[subscribe to each other's event streams] by simply using their logical names.
 
-The same can be done on your local machine by configuring the services to run on different ports and by configuring them to "_discover_" each other using some extra configurations.
+The same can be done on your local machine by configuring the services to run on different ports. The services
+will discover each other by name and will be able to interact.
 
 In this section, we will show you how to configure your local development environment to run two services and have them call each other.
-For that we will use two of our existing samples: https://github.com/lightbend/kalix-jvm-sdk/tree/main/samples/spring-eventsourced-customer-registry[`customer-registry`] and https://github.com/lightbend/kalix-jvm-sdk/tree/main/samples/spring-eventsourced-customer-registry-subscriber[`customer-registry-subscriber`].
+For that we will use two of our existing samples: https://github.com/lightbend/akka-javasdk/tree/main/samples/spring-eventsourced-customer-registry[`customer-registry`] and https://github.com/lightbend/akka-javasdk/tree/main/samples/spring-eventsourced-customer-registry-subscriber[`customer-registry-subscriber`].
 
 The *customer-registry* sample provides a service to register customers and the *customer-registry-subscriber* subscribes to an event stream produced by the *customer-registry* service, building a xref:views.adoc[View] from it.
 
 === Customer Registry Sample
 
-The `docker-compose.yml` file from *customer-registry* is left untouched and use the usual default ports. The user service will run on port 8080 and the Kalix Runtime on port 9000.
-
-[source,yml,indent=0]
-----
-include::java:example$java-spring-eventsourced-customer-registry/docker-compose.yml[tag=customer-registry]
-----
+The *customer-registry* service is left as is, to use the usual default port 9000.
 
 === Customer Registry Subscriber Sample
 
 On the other hand, in the *customer-registry-subscriber* we will use port 9001 to avoid port conflicts with the *customer-registry* service. This port is configured in `akka.javasdk.dev-mode.http-port` property in `pom.xml`.
+
+
+[source,xml,indent=0]
+----
+include::java:example$eventsourced-customer-registry-subscriber/pom.xml[tag=custom-port]
+----
 
 With both services configured, we can start them independently by running `mvn compile exec:java` in two separate terminals.
 
@@ -134,10 +115,11 @@ Linux or macOS::
 --
 [source,command line]
 ----
-curl localhost:9000/customer/one/create \
+curl localhost:9000/customer \
   --header "Content-Type: application/json" \
   -XPOST \
-  --data '{"email":"test@example.com","name":"Test","address":{"street":"Test street 25","city":"Test City"}}'
+  --data '{"id": "one","email":"test@example.com","name":"Test Testsson","address":{"street":"Teststreet 25",
+  "city":"Testcity"}}'
 ----
 --
 Windows 10+::
@@ -145,10 +127,11 @@ Windows 10+::
 --
 [source,command line]
 ----
-curl localhost:9000/customer/one/create ^
+curl localhost:9000/customer ^
   --header "Content-Type: application/json" ^
   -XPOST ^
-  --data '{"email":"test@example.com","name":"Test","address":{"street":"Test street 25","city":"Test City"}}'
+  --data '{"id": "one","email":"test@example.com","name":"Test Testsson","address":{"street":"Teststreet 25",
+  "city":"Testcity"}}'
 ----
 --
 
@@ -157,47 +140,6 @@ While watching the logs in *customer-registry-subscriber* service, we will see i
 --
 [source,command line]
 ----
-curl localhost:9001/customers/by_name/Test
+curl localhost:9001/customers/by_name/Test%20Testsson
 ----
 --
-
-== Running other services with Docker
-
-In the previous example, we run two services independently with `mvn compile exec:java`. Each time, the service is started together with a Kalix Runtime running in a Docker container.
-
-An alternative is to build a larger `docker-compose` file containing dependent services. In the case of *customer-registry-subscriber*, we can have a second `docker-compose` file containing a Kalix Runtime for *customer-registry-subscriber*, a Kalix Runtime for *customer-registry* and the *customer-registry* itself. 
-
-At the root of the *customer-registry-subscriber* service, we can find an alternative `docker-compose` file called `docker-compose-integration.yml`. 
-
-[source,yml,indent=0]
-----
-include::java:example$java-spring-eventsourced-customer-registry-subscriber/docker-compose-integration.yml[tag=customer-registry-docker]
-----
-
-But first, we need to build an image for *customer-registry*. For local development, we don't need to publish it to a remote container registry. It suffices to build it locally. 
-
-We can build the image by calling the following command at the root of  *customer-registry*:
-
---
-[source,command line]
-----
-mvn package docker:build
-----
---
-
-Next we can run *customer-registry-subscriber* and instead pass `docker-compose-integration.yml` to it. 
-
-Run the following command at the root of *customer-registry-subscriber*:
-
---
-[source,command line]
-----
-mvn -Dakka.javasdk.dev-mode.docker-compose-file=docker-compose-integration.yml kalix:runAll
-----
---
-
-This time, `kalix:runAll` will start `docker-compose-integration.yml` instead. The *customer-registry* service and its companion Kalix Runtime will run alongside *customer-registry-subscriber* and its own Kalix Runtime. 
-
-Note that the configuration is exactly the same except that now we are running one single `mvn compile exec:java` command and the `docker-compose` file we are using contains all the dependencies required by *customer-registry-subscriber*.
-
-This approach can be extended to any service you might want to integrate with. It can be any other Kalix service that you plan to deploy to the same Kalix project or even external services. The only requirement is to have a Docker image for it.
