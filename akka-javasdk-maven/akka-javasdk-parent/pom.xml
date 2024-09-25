@@ -23,8 +23,6 @@
     </description>
 
     <properties>
-        <akka.javasdk.dev-mode.service-name>${project.artifactId}</akka.javasdk.dev-mode.service-name>
-        <akka.javasdk.dev-mode.http-port>9000</akka.javasdk.dev-mode.http-port>
         <logback.configurationFile>logback-runtime-dev-mode.xml</logback.configurationFile>
 
         <!-- archetype need to override container.registry and organisation -->
@@ -281,18 +279,10 @@
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>exec-maven-plugin</artifactId>
-                    <version>3.3.0</version>
+                    <version>3.4.1</version>
                     <configuration>
                         <mainClass>kalix.runtime.KalixRuntimeMain</mainClass>
                         <systemProperties>
-                            <systemProperty>
-                                <key>akka.javasdk.dev-mode.service-name</key>
-                                <value>${akka.javasdk.dev-mode.service-name}</value>
-                            </systemProperty>
-                            <systemProperty>
-                                <key>akka.javasdk.dev-mode.http-port</key>
-                                <value>${akka.javasdk.dev-mode.http-port}</value>
-                            </systemProperty>
                             <systemProperty>
                                 <key>akka.javasdk.dev-mode.enabled</key>
                                 <value>true</value>
@@ -300,6 +290,10 @@
                             <systemProperty>
                                 <key>logback.configurationFile</key>
                                 <value>${logback.configurationFile}</value>
+                            </systemProperty>
+                            <systemProperty>
+                                <key>akka.javasdk.dev-mode.project-artifact-id</key>
+                                <value>${project.artifactId}</value>
                             </systemProperty>
                         </systemProperties>
                     </configuration>
@@ -366,7 +360,7 @@
                                     <includes>
                                         <include>**/*IntegrationTest</include>
                                     </includes>
-                                    <argLine>-Dlogback.configurationFile=${logback.configurationFile}</argLine>
+                                    <argLine>-Dlogback.configurationFile=${logback.configurationFile} -Dakka.javasdk.dev-mode.project-artifact-id=${project.artifactId}</argLine>
                                 </configuration>
                             </execution>
                         </executions>

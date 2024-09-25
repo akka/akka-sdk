@@ -97,12 +97,14 @@ The *customer-registry* service is left as is, to use the usual default port 900
 
 === Customer Registry Subscriber Sample
 
-On the other hand, in the *customer-registry-subscriber* we will use port 9001 to avoid port conflicts with the *customer-registry* service. This port is configured in `akka.javasdk.dev-mode.http-port` property in `pom.xml`.
+On the other hand, in the *customer-registry-subscriber* we will use port 9001 to avoid port conflicts with the
+*customer-registry* service. This port is configured in `akka.javasdk.dev-mode.http-port` property in
+`src/main/resources/application.conf` file.
 
 
 [source,xml,indent=0]
 ----
-include::java:example$eventsourced-customer-registry-subscriber/pom.xml[tag=custom-port]
+include::java:example$eventsourced-customer-registry-subscriber/src/main/resources/application.conf[tag=custom-port]
 ----
 
 With both services configured, we can start them independently by running `mvn compile exec:java` in two separate terminals.

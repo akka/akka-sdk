@@ -149,14 +149,15 @@ include::example$doc-snippets/src/main/java/com/example/acl/PaymentEndpoint.java
 During development, if you want to make calls to the payment service from inside the shopping cart service, then the
 shopping cart service needs to identify itself as `shopping-cart` (as per PaymentEndpoint's ACL). When running
 locally, the services identify themselves with the name used in the `artifactId` tag in its `pom.xml` file. This value can be
-overwritten in the project's pom file by defining a maven property named `akka.javasdk.dev-mode.service-name`.
+overwritten in the project's `application.conf` file by defining a maven property named `akka.javasdk.dev-mode
+.service-name`.
 
-[source,xml,ident=0]
+The `application.conf` needs to be located in the project's main resources directory, i.e.: `src/main/resources`.
+
+[source,conf,ident=0]
+.src/main/resources/application.conf
 ----
-<properties>
-  <akka.javasdk.dev-mode.service-name>shopping-cart</akka.javasdk.dev-mode.service-name>
-  ...
-</properties>
+akka.javasdk.dev-mode.service-name=shopping-cart
 ----
 
 NOTE: This property is only applicable when running the services on your local machine. When deployed, the service name

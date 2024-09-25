@@ -14,10 +14,7 @@
   <packaging>jar</packaging>
 
   <name>eventsourced-customer-registry-subscriber</name>
-  <!-- tag::custom-port[] -->
   <properties>
-    <akka.javasdk.dev-mode.http-port>9001</akka.javasdk.dev-mode.http-port>
-    <!-- end::custom-port[] -->
     <!-- For Docker setup see https://docs.kalix.io/projects/container-registries.html -->
     <container.registry>kcr.us-east-1.kalix.io</container.registry>
     <organization>acme</organization>
