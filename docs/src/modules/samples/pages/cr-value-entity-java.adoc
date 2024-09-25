@@ -1,5 +1,4 @@
 = Customer Registry in Java
-:page-aliases: spring:quickstart/cr-value-entity-spring.adoc
 
 include::ROOT:partial$include.adoc[]
 include::java:partial$attributes.adoc[]
@@ -12,7 +11,7 @@ In this sample, you will learn how to create a customer registry with the Java S
 * How to package the customer registry into a container.
 * How to deploy and run the customer registry on Kalix.
 
-include::page$quickstart/before-you-begin.adoc[]
+include::partial$before-you-begin.adoc[]
 
 [NOTE]
 ====
@@ -24,7 +23,7 @@ If you want to bypass writing code and jump straight to the deployment:
 . Skip to <<Package and deploy your service>>.
 ====
 
-include::partial$maven-archetype.adoc[]
+include::java:partial$maven-archetype.adoc[]
 
 == Customer Registry Service
 
@@ -69,9 +68,9 @@ include::example$java-spring-customer-registry-quickstart/src/main/java/customer
 <6> The implementation instructs Kalix to persist the state `customer`.
 <7> After persisting, Kalix is instructed to return the String 'Ok'.
 
-include::page$quickstart/package-and-deploy.adoc[]
-include::page$quickstart/create-customer.adoc[]
-include::page$quickstart/expose-service.adoc[]
+include::partial$package-and-deploy.adoc[]
+include::partial$create-customer.adoc[]
+include::partial$expose-service.adoc[]
 
 Try to call the exposed service with `curl`:
 
@@ -83,4 +82,4 @@ curl https://<generated hostname>/customer/abc123
 == Next steps
 
 * You can learn more about xref:java:key-value-entities.adoc[Key Value Entities].
-* Continue this example by xref:java:quickstart/cr-value-entity-views-java.adoc[adding Views], which makes it possible to query the customer registry.
+* Continue this example by xref:cr-value-entity-views-java.adoc[adding Views], which makes it possible to query the customer registry.

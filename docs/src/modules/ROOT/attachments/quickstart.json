@@ -1,0 +1,13 @@
+{
+  "base-url": "https://doc.akka.io",
+  "baseUrl": "https://doc.akka.io",
+  "quickstarts": [
+    {
+      "id": "shopping-cart",
+      "language":  "java",
+      "title": "Shopping Cart",
+      "url": "/java/_attachments/eventsourced-shopping-cart.zip",
+      "dir": "shopping-cart"
+    }
+  ]
+}

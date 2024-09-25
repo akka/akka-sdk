@@ -6,9 +6,9 @@ A collection of useful samples for building with Akka, demonstrating several imp
 
 [options="header", cols="4,2"]
 |=======================
-|Sample|Level
-|https://github.com/lightbend/akka-javasdk/tree/main/samples/eventsourced-shopping-cart[Build a shopping cart]|Beginner
-|Other samples TBD|Beginner/Intermediate/Advanced
+| Sample|Level
+| xref:shopping-cart.adoc[]|Beginner
+| Other samples TBD|Beginner/Intermediate/Advanced
 |=======================
 
 [sidebar]

@@ -16,7 +16,7 @@ kalix auth login
 ----
 mvn deploy kalix:deploy
 ----
-include::partial$important-mvn-kalixdeploy.adoc[]
+include:java:partial$important-mvn-kalixdeploy.adoc[]
 
 . You can https://docs.kalix.io/services/deploy-service.html#_verify_service_status[verify the status of the deployed service] using:
 +

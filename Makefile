@@ -50,9 +50,9 @@ attributes: prepare
     	>> "${java_managed_partials}/attributes.adoc"
 	echo ":minimum_docker_version: 20.10.14" \
 		>> "${java_managed_partials}/attributes.adoc"
-	echo ":java_minimum_sdk_version: 0.7.0" \
+	echo ":java_minimum_sdk_version: 3.0.0" \
 		>> "${java_managed_partials}/attributes.adoc"
-	echo ":console: https://console.kalix.io/" \
+	echo ":console: https://console.akka.io/" \
 		>> "${java_managed_partials}/attributes.adoc"
 
 apidocs: prepare
@@ -67,6 +67,7 @@ examples: prepare
 	rsync -a --exclude-from=docs/.examplesignore samples/* "${java_managed_examples}/"
 
 bundles:
+	./docs/bin/bundle.sh --zip "${java_managed_attachments}/eventsourced-shopping-cart.zip" samples/eventsourced-shopping-cart
 #	bin/bundle.sh --zip "${java_managed_attachments}/customer-registry-quickstart.zip" ../samples/customer-registry-quickstart
 #	bin/bundle.sh --zip "${java_managed_attachments}/customer-registry-views-quickstart.zip" ../samples/customer-registry-views-quickstart
 #	bin/bundle.sh --zip "${java_managed_attachments}/shopping-cart-quickstart.zip" ../samples/shopping-cart-quickstart
@@ -80,7 +81,7 @@ quick-dev: clean prepare attributes examples dev-html
 done:
 	@echo "Generated docs at ${TARGET_DIR}/akka-documentation/index.html"
 
-local: docker-image examples antora-local
+local: docker-image examples antora-local done
 
 antora-local:
 	docker run \
