@@ -2,12 +2,11 @@ package com.example.acl;
 
 import akka.Done;
 import akka.javasdk.annotations.Acl;
+import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
+import akka.javasdk.http.RequestContext;
 
-// tag::endpoint-class[]
-@HttpEndpoint("/user")
-// end::endpoint-class[]
 /*
 // tag::class-level-acl[]
 @Acl(allow = @Acl.Matcher(service = "service-a"))
@@ -20,11 +19,36 @@ import akka.javasdk.annotations.http.Post;
 // end::deny-class-level[]
  */
 // tag::endpoint-class[]
+@HttpEndpoint("/user")
 public class UserEndpoint {
   // ...
   // end::endpoint-class[]
 
+  // tag::request-context[]
+  final private RequestContext requestContext;
+
+  public UserEndpoint(RequestContext requestContext) { // 1
+    this.requestContext = requestContext;
+  }
+  // end::request-context[]
+
   public record CreateUser(String username, String email) { }
+
+  // tag::checking-principals[]
+  @Get
+  public String checkingPrincipals() {
+    if (requestContext.getPrincipals().isInternet()) {
+      return "accessed from the Internet";
+    } else if (requestContext.getPrincipals().isSelf()) {
+      return "accessed from Self (internal call from current service)";
+    } else if (requestContext.getPrincipals().isBackoffice()) {
+      return "accessed from Backoffice API";
+    } else {
+      return "accessed from another service: " +
+        requestContext.getPrincipals().getLocalService();
+    }
+  }
+  // end::checking-principals[]
 
   // tag::method-overwrite[]
   @Post

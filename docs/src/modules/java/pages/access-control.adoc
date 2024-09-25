@@ -175,28 +175,34 @@ Note that in local development, the services don’t actually authenticate with 
 
 == Programmatically accessing principals
 
-The current principal associated with a request can be accessed by reading metadata headers. If the request came from
-another service, the `_kalix-src-svc` header will be set to the name of the service that made the request. Akka
-guarantees that this header will only be present from an authenticated principal, it can't be spoofed.
+The current principal associated with a request can be accessed through the `RequestContext`. The `RequestContext`
+can be injected in the endpoint constructor.
 
-For internet, self and backoffice requests, the `_kalix-src` header will be set to `internet`, `self` and
-`backoffice` respectively. Backoffice requests are those made using the `akka services proxy` command,
-they are authenticated and authorized to ensure only developers of your project can make them.
+NOTE: Endpoints are stateless and each request is served by a new Endpoint instance. Therefore, the
+injected `RequestContext` is always a new instance and is associated with the request currently being handled.
 
+[source, java, indent=0]
+----
+include::example$doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[tags=endpoint-class;request-context]
+----
 
-ifdef::todo[TODO: what to do with _kalix vs. _akka headers?]
+<1> Inject `RequestContext` on your endpoint constructor to gain access to the request specific context.
 
-ifdef::todo[TODO: we need to make headers more accessible in Endpoint or maybe an Endpoint Context?]
+You can access the current Principals through method `RequestContext.getPrincipals()`
 
-== Inspecting the principal inside a service
+If the request came from another service, the `Principals.getLocalService()` method will return a non-empty
+`Optional` containing the name of the service that made the request. Akka guarantees that this field will only be
+present from an authenticated principal, it can't be spoofed.
 
-Checking the ACLs are in general done for you by Akka, however in some cases programmatic access to the principal of a
-call can be useful.
+Further, you can use `Principals.isInternet`, `Principals.isSelf` or `Principals.isBackoffice` to verify if the request
+was made from the Internet, from the current service or from the Backoffice API respectively. Backoffice requests are
+those made using the `akka services proxy` command, they are authenticated and authorized to ensure only developers
+of your project can make them.
 
-Accessing the principal of a call inside a service is possible through the request metadata `Metadata.principals()`.
-The `Metadata` for a call is available through the context (`CommandContext`) of the component.
-
-ifdef::todo[TODO: how to access it from inside a HttpEndpoint?]
+[source, java, indent=0]
+----
+include::example$doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[tags=checking-principals]
+----
 
 == ACLs when running unit tests
 

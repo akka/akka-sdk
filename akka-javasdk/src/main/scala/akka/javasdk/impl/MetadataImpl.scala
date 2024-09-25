@@ -4,9 +4,6 @@
 
 package akka.javasdk.impl
 
-import akka.http.javadsl.model.StatusCode
-import akka.javasdk.impl.telemetry.Telemetry
-
 import java.lang
 import java.net.URI
 import java.nio.ByteBuffer
@@ -15,22 +12,25 @@ import java.time.format.DateTimeFormatter
 import java.util
 import java.util.Objects
 import java.util.Optional
+
 import scala.compat.java8.OptionConverters._
 import scala.jdk.CollectionConverters._
-import com.google.protobuf.ByteString
-import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
-import io.opentelemetry.context.{ Context => OtelContext }
-import MetadataImpl.JwtClaimPrefix
-import Telemetry.metadataGetter
+
 import akka.annotation.InternalApi
+import akka.http.javadsl.model.StatusCode
 import akka.javasdk.CloudEvent
 import akka.javasdk.JwtClaims
 import akka.javasdk.Metadata
-import akka.javasdk.Principal
 import akka.javasdk.Principals
 import akka.javasdk.TraceContext
+import akka.javasdk.impl.MetadataImpl.JwtClaimPrefix
+import akka.javasdk.impl.telemetry.Telemetry
+import akka.javasdk.impl.telemetry.Telemetry.metadataGetter
+import com.google.protobuf.ByteString
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.SpanContext
+import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
+import io.opentelemetry.context.{ Context => OtelContext }
 import kalix.protocol.component
 import kalix.protocol.component.MetadataEntry
 
@@ -222,23 +222,8 @@ private[javasdk] class MetadataImpl private (val entries: Seq[MetadataEntry]) ex
     override def getString(name: String): Optional[String] = getJwtClaim(name).asJava
   }
 
-  override lazy val principals: Principals = new Principals {
-    private def src: Option[String] = getScala(MetadataImpl.PrincipalsSource)
-    private def svc: Option[String] = getScala(MetadataImpl.PrincipalsService)
-    override def isInternet: Boolean = src.contains("internet")
-    override def isSelf: Boolean = src.contains("self")
-    override def isBackoffice: Boolean = src.contains("backoffice")
-    override def isLocalService(name: String): Boolean = svc.contains(name)
-    override def isAnyLocalService: Boolean = svc.nonEmpty
-    override def getLocalService: Optional[String] = svc.asJava
-    override def get(): util.Collection[Principal] = {
-      (src.collect {
-        case "internet"   => Principal.INTERNET
-        case "self"       => Principal.SELF
-        case "backoffice" => Principal.BACKOFFICE
-      } ++ svc.map(Principal.localService)).asJavaCollection
-    }
-  }
+  override lazy val principals: Principals =
+    PrincipalsImpl(getScala(MetadataImpl.PrincipalsSource), getScala(MetadataImpl.PrincipalsService))
 
   override lazy val traceContext: TraceContext = new TraceContext {
     override def asOpenTelemetryContext(): OtelContext = W3CTraceContextPropagator

@@ -81,8 +81,6 @@ include::example$eventsourced-customer-registry/src/main/java/customer/api/Custo
 
 The consuming side can be a Consumer or a View, annotated with `@Consume.FromStream` with a `service` identifying the publishing service, and the `id` of the stream to subscribe to.
 
-Java::
-+
 [source,java,indent=0]
 .{sample-base-url}/eventsourced-customer-registry-subscriber/src/main/java/customer/application/CustomersByNameView.java[CustomersByNameView.java]
 ----

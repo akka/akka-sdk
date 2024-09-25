@@ -42,7 +42,7 @@ The ACL settings in `CustomerRegistrySetup.java` are very permissive. It has `Ac
 curl -i localhost:9000/customer \
   --header "Content-Type: application/json" \
   -XPOST \
-  --data '{"id": "one","email":"test@example.com","name":"Test Testsson","address":{"street":"Teststreet 25", 
+  --data '{"id": "one","email":"test@example.com","name":"Testsson","address":{"street":"Teststreet 25", 
   "city":"Testcity"}}'
 ```
 
@@ -61,7 +61,7 @@ curl localhost:9000/customer/by-email/test%40example.com
 * Query by name:
 
 ```shell
-curl localhost:9000/customer/by-name/Test%20Testsson
+curl localhost:9000/customer/by-name/Testsson
 ```
 
 * Change name:

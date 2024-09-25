@@ -95,7 +95,7 @@ private[impl] sealed abstract class EntityClientImpl(
           { metadata =>
             entityClient
               .send(
-                EntityRequest(
+                new EntityRequest(
                   entityType,
                   entityId,
                   methodName,

@@ -7,6 +7,7 @@ package akka.javasdk.impl
 import java.lang.reflect.Constructor
 import java.lang.reflect.ParameterizedType
 import java.util.concurrent.CompletionStage
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.Promise
@@ -14,12 +15,14 @@ import scala.jdk.CollectionConverters.CollectionHasAsScala
 import scala.jdk.FutureConverters._
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
+
 import akka.Done
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
 import akka.http.scaladsl.model.headers.RawHeader
 import akka.javasdk.BuildInfo
 import akka.javasdk.DependencyProvider
+import akka.javasdk.Principals
 import akka.javasdk.ServiceSetup
 import akka.javasdk.annotations.ComponentId
 import akka.javasdk.annotations.Setup
@@ -29,6 +32,7 @@ import akka.javasdk.consumer.Consumer
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.javasdk.eventsourcedentity.EventSourcedEntityContext
 import akka.javasdk.http.HttpClientProvider
+import akka.javasdk.http.RequestContext
 import akka.javasdk.impl.Sdk.StartupContext
 import akka.javasdk.impl.Validations.Invalid
 import akka.javasdk.impl.Validations.Valid
@@ -333,7 +337,7 @@ private final class Sdk(
   // these are available for injecting in all kinds of component that are primarily
   // for side effects
   // Note: config is also always available through the combination with user DI way down below
-  def sideEffectingComponentInjects(span: Option[Span]): PartialFunction[Class[_], Any] = {
+  private def sideEffectingComponentInjects(span: Option[Span]): PartialFunction[Class[_], Any] = {
     case p if p == classOf[ComponentClient]    => componentClient(span)
     case h if h == classOf[HttpClientProvider] => httpClientProvider(span)
     case t if t == classOf[TimerScheduler]     => timerScheduler(span)
@@ -479,10 +483,11 @@ private final class Sdk(
       messageCodec,
       { context =>
 
-        val workflow =
-          wiredInstance(clz)(sideEffectingComponentInjects(None).orElse {
+        val workflow = wiredInstance(clz) {
+          sideEffectingComponentInjects(None).orElse {
             case p if p == classOf[WorkflowContext] => context
-          })
+          }
+        }
 
         val workflowStateType: Class[S] =
           workflow.getClass.getGenericSuperclass
@@ -543,7 +548,15 @@ private final class Sdk(
 
   private def httpEndpointFactory[E](httpEndpointClass: Class[E]): HttpEndpointConstructionContext => E = {
     (context: HttpEndpointConstructionContext) =>
-      wiredInstance(httpEndpointClass)(sideEffectingComponentInjects(context.openTelemetrySpan))
+      wiredInstance(httpEndpointClass) {
+        sideEffectingComponentInjects(context.openTelemetrySpan).orElse {
+          case p if p == classOf[RequestContext] =>
+            new RequestContext {
+              override def getPrincipals: Principals =
+                PrincipalsImpl(context.principal.source, context.principal.service)
+            };
+        }
+      }
   }
 
   private def wiredInstance[T](clz: Class[T])(partial: PartialFunction[Class[_], Any]): T = {
