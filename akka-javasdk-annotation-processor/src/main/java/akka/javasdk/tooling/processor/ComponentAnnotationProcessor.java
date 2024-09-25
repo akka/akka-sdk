@@ -129,7 +129,7 @@ public class ComponentAnnotationProcessor extends AbstractProcessor {
 
             var service = componentTypeToConcreteComponents.get(SERVICE_SETUP_KEY);
             if (service != null && service.size() > 1) {
-                error("More than one class annotated with @PlatformServiceSetup, only one is allowed. Annotated classes: " + String.join(", ", service));
+                error("More than one class annotated with @Setup, only one is allowed. Annotated classes: " + String.join(", ", service));
             }
 
             // nested tables will occur together with the wrapping class, list only the wrapping class

@@ -211,9 +211,7 @@ private object ComponentLocator {
       if (serviceSetup.hasAnnotation[Setup]) {
         logger.debug("Found and loaded service class setup: [{}]", serviceSetup)
       } else {
-        logger.warn(
-          "Ignoring service class [{}] as it does not have the the @PlatformServiceSetup annotation",
-          serviceSetup)
+        logger.warn("Ignoring service class [{}] as it does not have the the @Setup annotation", serviceSetup)
       }
       LocatedClasses(components, Some(serviceSetup))
     } else {
