@@ -1,0 +1,72 @@
+= Enable CLI command completion
+
+include::ROOT:partial$include.adoc[]
+
+Completion allows you to hit [TAB] on a partially entered `akka` command and have the shell complete the command, subcommand or flag for you.
+
+[.tabset]
+bash::
+To load completion in the current bash shell run:
++
+[source,bash]
+----
+source <(akka completion)
+----
++
+Configure bash to load `akka` completions for each session by adding the following line to your `~/.bashrc` or `~/.profile` file:
++
+[source,bash]
+----
+# add to ~/.bashrc or ~/.profile
+source <(akka completion)
+----
++
+[TIP]
+====
+Using bash completions with `akka` requires you have bash completions enabled to begin with.
+Enable it in your `~/.bashrc` or `~/.profile` file with the following lines:
+
+[source,bash]
+----
+if [ -f /etc/bash_completion ]; then
+  source /etc/bash_completion
+fi
+----
+For definitive details on setting up your shell with auto-completion, see the shell documentation.
+====
+
+zsh (e.g. macOS)::
+To set up `zsh` shell completion run:
++
+[source,zsh]
+----
+akka completion zsh > "${fpath[1]}/_akka"
+compinit
+----
++
+[NOTE]
+====
+If shell completion is not already enabled in your environment execute the following:
+
+[source,zsh]
+----
+echo "autoload -U compinit; compinit" >> ~/.zshrc
+----
+====
+
+fish::
+To set up fish shell completion run:
++
+[source,fish]
+----
+akka completion fish > ~/.config/fish/completions/akka.fish
+source ~/.config/fish/completions/akka.fish
+----
+
+PowerShell::
+To set up shell completion for PowerShell run:
++
+[source,powershell]
+----
+akka completion powershell | Out-String | Invoke-Expression
+----

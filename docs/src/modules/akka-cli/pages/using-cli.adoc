@@ -1,0 +1,171 @@
+= Configure the Akka CLI
+:page-supergroup-browser-cli: Interface
+
+include::ROOT:partial$include.adoc[]
+
+The Akka command-line interface (CLI) complements the Console interface and makes most deployment and configuration operations available from the command line. This page shows the use of common commands. The xref:reference:akka-cli/index.adoc[] page links to all commands.
+
+[TIP]
+====
+Check periodically to make sure you have the latest `akka` command installed. The command `akka version` prints the version number of `akka`. Download the latest version as described in xref:akka-cli:installation.adoc[].
+====
+
+== Usage
+
+Generally, `akka` is followed by a command, with optional sub-commands and parameters. You may also supply _flags_, preceded by `--` (two hyphens) that modify the operation of the command-line client itself.
+
+== Log in
+
+To use the `akka` CLI, you must authenticate your command line client with your Akka account. Entering `auth login` at the command line launches the Akka console login screen in your default browser. The command line client prints `Waiting for UI login...` and pauses. After you log in and click *Authorize*, the command line prompt returns.
+
+Upon successful authentication, if your account contains:
+
+* One project, the CLI reports that it is the `current` project, which will be the target of subsequent commands.
+* No projects, in this case explicitly set the target project after creating a project.
+* Multiple projects, you need to explicitly set the target. Use `akka projects list` to see all of your projects.)
+
+To log in, enter:
+
+[source, command line]
+----
+akka auth login
+----
+
+To set the target project to `my-project`:
+
+[source, command line]
+----
+akka config set project my-project
+----
+
+Enter `akka auth -h` at the command line, or see xref:reference:akka-cli/akka_auth.adoc[] for other authentication related commands.
+
+=== Traversing proxies
+
+In some corporate environments, transparent decrypting HTTP proxy servers are used, and often these proxy servers don't support HTTP/2. The `akka` CLI uses gRPC to communicate with backend services, which requires HTTP/2. In these environments, the CLI can be configured to use grpc-web instead, which works over HTTP/1.1 and HTTP/2.
+
+To configure `akka` to use grpc-web, when logging in, run:
+
+[source, shell]
+----
+akka auth login --use-grpc-web
+----
+
+Once logged in, the `akka` CLI will continue to use grpc-web for all subsequent commands without requiring the `--use-grpc-web` flag.
+
+If you are already logged in, but need to enable grpc-web, this can be done by running:
+
+[source, shell]
+----
+akka config set api-server-use-grpc-web true
+----
+
+== Administer Akka projects
+
+Enter `akka projects -h` at the command line.
+
+TIP: See xref:reference:akka-cli/akka_projects.adoc[] for a complete list of commands to manage your Akka projects.
+
+=== Create a new project
+
+[source, shell script]
+----
+akka projects new sample-project "An example project in Akka"
+----
+
+The `akka projects new _NAME_ _[DESCRIPTION]_` command creates a new
+project in your Akka account.
+
+[NOTE]
+====
+To mark the new project as the _current project_ and thus the target of subsequent commands,  use the following command:
+
+[source, command window]
+----
+akka config set project sample-project
+----
+====
+
+=== List projects
+
+[source, command window]
+----
+akka projects list
+----
+
+The `akka projects list` command lists a quick one-line summary of
+all projects accessible from the Akka account. The current project is indicated with an asterisk `*`.
+
+== Add container registry credentials
+
+[source, command window]
+----
+akka docker add-credentials \
+  --docker-server https://mydockerregistry.com \
+  --docker-username myself \
+  --docker-password secret
+----
+
+Allow Akka to retrieve container images from private repositories by using the `akka docker add-credentials [flags]` command to add a set of container registry credentials to the project. The flags are:
+
+* `--docker-server string` The docker server, for example `https://mydockerregistry.com`
+* `--docker-username string` The docker username
+* `--docker-password string` The docker password
+* `--docker-email string` The docker email address
+
+TIP: See `akka docker -h` or xref:reference:akka-cli/akka_docker.adoc[] for a complete list of commands to manage Docker credentials.
+
+NOTE: For information about using the Akka Container Registry (ACR) or other external container registries, see xref:operations:container-registries.adoc[].
+
+== Administer services
+
+The `akka services` commands manipulate the services in your current Akka project.
+
+=== List services
+
+[source, command window]
+----
+akka services list
+----
+
+The `akka services list` command lists a one-line summary of all services under the current project.
+
+=== Deploy a service
+
+[source, command window]
+----
+akka services deploy \
+    my-service \
+    my-container-uri/container-name:tag-name
+----
+
+The `akka services deploy _service-name_ _docker-image_` command deploys a service named `_service-name_` using the `_docker-image_`.
+
+NOTE: For information about setting up container registry credentials to authorize Akka to pull from your image repository, see xref:operations:container-registries.adoc[].
+
+=== Expose a service route
+
+[source, command window]
+----
+akka services expose my-service --enable-cors
+----
+
+The `akka services expose _service-name_` command creates a route to expose a service for inbound traffic. Optionally, you can enable HTTP CORS with the `--enable-cors` flag.
+
+=== View service logs
+
+[source, command window]
+----
+akka services logs my-service
+----
+
+The `akka services logs _service-name_` command returns logging output for your service.
+
+=== View service details
+
+[source, command window]
+----
+akka services get my-service
+----
+
+The `akka services get _service-name_` shows the description of a specific service in the current project.

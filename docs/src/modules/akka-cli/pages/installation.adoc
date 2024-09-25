@@ -1,0 +1,84 @@
+= Install the Akka CLI
+
+include::ROOT:partial$include.adoc[]
+
+The Akka CLI, `akka` enables you to interact with Akka projects. To install it, follow these steps:
+
+[.tabset]
+Linux::
++
+--
+Download and install the latest version of `akka`:
+[source,bash]
+....
+curl -sL https://doc.akka.io/install-cli.sh | bash
+....
+
+If that fails due to permission issues, use:
+
+[source,bash]
+....
+curl -sL https://doc.akka.io/install-cli.sh | bash -s -- --prefix /tmp && \
+    sudo mv /tmp/akka /usr/local/bin/akka
+....
+
+You can pass options to the installer script with `-s --` e.g.:
+
+[source,bash]
+....
+curl -sL https://doc.akka.io/install-cli.sh | bash -s -- --prefix=$HOME --version=2.0.22 --verbose
+curl -sL https://doc.akka.io/install-cli.sh | bash -s -- -P $HOME -v 2.0.22 -V
+....
+
+--
+macOS::
++
+--
+**Recommended approach**
+
+The recommended approach to install `akka` on macOS, is using https://brew.sh[brew]
+
+[source,bash]
+----
+brew install akka/brew/akka
+----
+
+If the `akka` CLI is already installed, and you want to upgrade `akka` to the latest version, you can run
+
+[source,bash]
+----
+brew update
+brew upgrade akka
+----
+
+**Alternative approach**
+
+....
+curl -sL https://doc.akka.io/install-cli.sh | bash
+....
+
+You can pass options to the installer script with `-s --` e.g.:
+
+....
+curl -sL https://doc.akka.io/install-cli.sh | bash -s -- --prefix=$HOME --version=2.0.22 --verbose
+curl -sL https://doc.akka.io/install-cli.sh | bash -s -- -P $HOME -v 2.0.22 -V
+....
+--
+Windows::
++
+--
+
+. Download the latest version of `akka` from https://downloads.akka.io/latest/akka_windows_amd64.zip[https://downloads.akka.io/latest/akka_windows_amd64.zip]
+
+. Optionally, you can verify the integrity of the downloaded files using the https://downloads.akka.io/latest/checksums.txt[SHA256 checksums].
+
+. Extract the zip file and move `akka.exe` to a location on your `%PATH%`.
+
+--
+
+Verify that the Akka CLI has been installed successfully by running the following to list all available commands:
+
+[source, command window]
+----
+akka help
+----

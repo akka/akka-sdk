@@ -1,0 +1,12 @@
+= Akka CLI
+:page-aliases: cli:index.adoc[]
+
+include::ROOT:partial$include.adoc[]
+
+Using the Akka CLI, you control all aspects of your Akka account from your command line. With it, you create and deploy new services, stream logs, and invite new developers to join your projects.
+
+== Topics
+
+- xref:akka-cli:installation.adoc[]
+- xref:akka-cli:using-cli.adoc[]
+- xref:akka-cli:command-completion.adoc[]

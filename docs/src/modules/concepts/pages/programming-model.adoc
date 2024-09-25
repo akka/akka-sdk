@@ -84,4 +84,4 @@ A _Service_ is the base deployment unit in Akka. It contains the layers and pack
 
 == Next steps
 
-Start building your own Akka Service using the xref:java:index.adoc[Akka SDK for Java]
+Start building your own Akka Service using the xref:java:index.adoc[Akka SDK]

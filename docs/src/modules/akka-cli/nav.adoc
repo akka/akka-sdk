@@ -1,0 +1,4 @@
+** xref:akka-cli:index.adoc[]
+*** xref:akka-cli:installation.adoc[]
+*** xref:akka-cli:using-cli.adoc[]
+*** xref:akka-cli:command-completion.adoc[]
