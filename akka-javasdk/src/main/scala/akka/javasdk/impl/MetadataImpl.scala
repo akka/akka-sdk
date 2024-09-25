@@ -21,7 +21,6 @@ import akka.http.javadsl.model.StatusCode
 import akka.javasdk.CloudEvent
 import akka.javasdk.JwtClaims
 import akka.javasdk.Metadata
-import akka.javasdk.Principals
 import akka.javasdk.TraceContext
 import akka.javasdk.impl.MetadataImpl.JwtClaimPrefix
 import akka.javasdk.impl.telemetry.Telemetry
@@ -222,9 +221,6 @@ private[javasdk] class MetadataImpl private (val entries: Seq[MetadataEntry]) ex
     override def getString(name: String): Optional[String] = getJwtClaim(name).asJava
   }
 
-  override lazy val principals: Principals =
-    PrincipalsImpl(getScala(MetadataImpl.PrincipalsSource), getScala(MetadataImpl.PrincipalsService))
-
   override lazy val traceContext: TraceContext = new TraceContext {
     override def asOpenTelemetryContext(): OtelContext = W3CTraceContextPropagator
       .getInstance()
@@ -294,9 +290,6 @@ object MetadataImpl {
   val Empty = MetadataImpl.of(Vector.empty)
 
   val JwtClaimPrefix = "_kalix-jwt-claim-"
-
-  val PrincipalsSource = "_kalix-src"
-  val PrincipalsService = "_kalix-src-svc"
 
   def toProtocol(metadata: Metadata): Option[component.Metadata] =
     metadata match {

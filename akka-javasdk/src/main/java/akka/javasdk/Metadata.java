@@ -82,7 +82,7 @@ public interface Metadata extends Iterable<Metadata.MetadataEntry> {
   /**
    * Check whether this metadata has a entry for the given key.
    *
-   * <p>The key lookup will be case insensitive.
+   * <p>The key lookup will be case-insensitive.
    *
    * @param key The key to lookup.
    * @return True if an entry for the given key exists, otherwise false.
@@ -220,13 +220,6 @@ public interface Metadata extends Iterable<Metadata.MetadataEntry> {
    * @return The JWT claims.
    */
   JwtClaims jwtClaims();
-
-  /**
-   * Get the principals associated with this request metadata.
-   *
-   * @return The principals associated with this request metadata.
-   */
-  Principals principals();
 
   /**
    * Get the trace context associated with this request metadata.
