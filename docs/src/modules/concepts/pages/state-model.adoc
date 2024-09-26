@@ -2,14 +2,14 @@
 
 include::ROOT:partial$include.adoc[]
 
-Entities are used to store the data defined in the xref:concepts:programming-model.adoc#_domain[domain model]. They follow a specific _state_ _model_ chosen by the developer. The state model determines how the data is organized and persisted. Entities have data fields that can be simple or primitive types like numbers, strings, booleans, and characters. The fields can be more complex, which allows custom types to be stored in Akka.
+Entities are used to store the data defined in the xref:concepts:architecture-model.adoc#_domain[domain model]. They follow a specific _state_ _model_ chosen by the developer. The state model determines how the data is organized and persisted. Entities have data fields that can be simple or primitive types like numbers, strings, booleans, and characters. The fields can be more complex, which allows custom types to be stored in Akka.
 
 :TODO: link to Effect
 Entities have operations that can change their state. These operations are triggered asynchronously and implemented via methods that return Effect. Operations allow entities to be dynamic and reflect the most up-to-date information and this all gets wired together for you.
 
 Akka supports two state models: Key Value Entity and Event Sourced Entity. Key Value Entities store their state as a single unit in a Key/Value store. Event Sourced Entities store updates as events, which together build the entity's state. In order for Akka to replicate state across clusters and regions Akka uses conflict resolution strategies for each model. Key Value Entities *will* support a Last Writer Wins (LWW) mechanism. *This is not supported today.*
 
-Event Sourced Entities replicate their state by default. If you deploy your Service to a Project that spans multiple regions the state is replicated for you with no extra work to be done. By default, any region can read the data, and will do so from a local store within the region, but only the xref:concepts:programming-model.adoc#_architecture[Akka programming model] origin region will be able to perform writes. To make this easier, Akka will forward writes to the appropriate region.
+Event Sourced Entities replicate their state by default. If you deploy your Service to a Project that spans multiple regions the state is replicated for you with no extra work to be done. By default, any region can read the data, and will do so from a local store within the region, but only the xref:concepts:architecture-model.adoc[Akka architecture model] origin region will be able to perform writes. To make this easier, Akka will forward writes to the appropriate region.
 
 To understand more about regions and distribution see xref:concepts:deployment-model.adoc#_region[].
 

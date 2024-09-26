@@ -13,7 +13,7 @@ In Akka the logical unit of deployment is a Service. A service contains your com
 A project is the root of one or more services that are meant to be deployed and run together. The project is a logical container for these services and provides common management capabilities. Projects contain a list of xref:concepts:deployment-model.adoc#_region[regions] that they deploy to. More detail is covered in xref:concepts:deployment-model.adoc#_physical_deployment[physical deployment].
 
 === Service(s)
-Services are the core unit of deployment in Akka. They equate to the concept of a microservice and contain all your components and objects as described in the Akka programming model xref:concepts:programming-model.adoc#_architecture[Architecture]. A project contains one or more services. Services can be started, stopped, and paused independently.
+Services are the core unit of deployment in Akka. They equate to the concept of a microservice and contain all your components and objects as described in the xref:concepts:architecture-model.adoc[Akka architecture model]. A project contains one or more services. Services can be started, stopped, and paused independently.
 
 == Physical deployment 
 
@@ -22,7 +22,7 @@ Akka services run in a cluster. A cluster is an instance of the Akka runtime whi
 === Region
 Regions are specific Akka clusters running in a specific place. Regions are designed to run independently for greater availability. They are also designed to replicate data asynchronously between eachother. Every Akka xref:concepts:deployment-model.adoc#_project[project] specifies a list of one or more regions in which it runs.
 
-In addition to your services from a project, a region also has endpoints for your API. You define endpoints within the xref:concepts:programming-model.adoc#_architecture[API layer] and Akka will expose them. They will be unique to each region. That is they will have unique DNS, much like AWS services S3 and SQS do.
+In addition to your services from a project, a region also has endpoints for your API. You define endpoints within the xref:concepts:architecture-model.adoc#_architecture[API layer] and Akka will expose them. They will be unique to each region. That is they will have unique DNS, much like AWS services S3 and SQS do.
 
 A given cloud provider region _may_ have many Akka regions within it. In this way Akka can scale past any upper bound limits of the infrastructure on which it runs.
 

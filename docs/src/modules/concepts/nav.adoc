@@ -3,6 +3,6 @@
 *** xref:concepts:development-process.adoc[]
 *** xref:concepts:deployment-model.adoc[]
 *** xref:concepts:state-model.adoc[]
-*** xref:concepts:programming-model.adoc[]
+*** xref:concepts:architecture-model.adoc[]
 *** xref:concepts:best-practices.adoc[]
 *** xref:concepts:control-tower.adoc[]
