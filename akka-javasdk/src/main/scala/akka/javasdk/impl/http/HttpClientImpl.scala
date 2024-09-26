@@ -25,7 +25,6 @@ import akka.stream.Materializer
 import akka.stream.SystemMaterializer
 import akka.util.ByteString
 import com.fasterxml.jackson.core.JsonProcessingException
-
 import java.io.IOException
 import java.nio.charset.StandardCharsets
 import java.time.Duration
@@ -33,10 +32,13 @@ import java.lang.{ Iterable => JIterable }
 import java.nio.charset.Charset
 import java.util.concurrent.CompletionStage
 import java.util.function.Function
+
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.duration.FiniteDuration
 import scala.jdk.CollectionConverters.SeqHasAsJava
 import scala.jdk.DurationConverters.JavaDurationOps
+
+import akka.http.javadsl.model.StatusCodes
 
 /**
  * INTERNAL API
@@ -158,7 +160,12 @@ private[akka] final case class RequestBuilderImpl[R](
         // FIXME what about error responses with a body, now we can't expect/parse those
         val errorString = "HTTP request for [" + request.getUri + "] failed with HTTP status " + res.status
         if (res.entity.getContentType.binary) throw new RuntimeException(errorString)
-        else throw new RuntimeException(errorString + ": " + bytes.utf8String)
+        else {
+          if (res.status.intValue() == StatusCodes.BAD_REQUEST.intValue())
+            throw new IllegalArgumentException(errorString + ": " + bytes.utf8String)
+          else
+            throw new RuntimeException(errorString + ": " + bytes.utf8String)
+        }
       } else if (res.entity.getContentType == ContentTypes.APPLICATION_JSON)
         new StrictResponse[T](res, JsonSupport.parseBytes(bytes.toArrayUnsafe(), `type`))
       else if (!res.entity.getContentType.binary && (`type` eq classOf[String]))

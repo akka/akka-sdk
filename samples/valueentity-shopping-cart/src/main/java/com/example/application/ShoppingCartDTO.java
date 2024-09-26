@@ -5,7 +5,6 @@ import com.example.domain.ShoppingCart;
 import java.util.Comparator;
 import java.util.List;
 
-// tag::domain[]
 public record ShoppingCartDTO(String cartId, List<LineItemDTO> items) {
 
   public record LineItemDTO(String productId, String name, int quantity) {
@@ -25,4 +24,3 @@ public record ShoppingCartDTO(String cartId, List<LineItemDTO> items) {
     return new ShoppingCartDTO(cart.cartId(), allItems);
   }
 }
-// end::domain[]

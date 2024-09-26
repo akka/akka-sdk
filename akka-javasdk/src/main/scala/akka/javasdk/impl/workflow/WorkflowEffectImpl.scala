@@ -105,6 +105,6 @@ case class WorkflowEffectImpl[S, T](persistence: Persistence[S], transition: Tra
     TransitionalEffectImpl(NoPersistence, NoTransition).thenReply(reply, metadata)
 
   override def error[R](description: String): Effect.ErrorEffect[R] =
-    ErrorEffectImpl(description, None)
+    ErrorEffectImpl(description, Some(Status.Code.INVALID_ARGUMENT))
 
 }

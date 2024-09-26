@@ -23,7 +23,7 @@ public class WalletEntity extends KeyValueEntity<Wallet> {
   @JsonTypeInfo(use = JsonTypeInfo.Id.NAME)
   @JsonSubTypes({
     @JsonSubTypes.Type(value = Success.class, name = "success"),
-    @JsonSubTypes.Type(value = Error.class, name = "error")})
+    @JsonSubTypes.Type(value = Failure.class, name = "failure")})
   public sealed interface WalletResult {
     record Failure(String errorMsg) implements WalletResult {
     }

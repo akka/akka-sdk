@@ -11,7 +11,6 @@ import akka.javasdk.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels
 import akka.javasdk.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.CounterEventSourcedEntityWithServiceLevelJWT
 import akka.javasdk.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.EventSourcedEntityWithMethodLevelAcl
 import akka.javasdk.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.EventSourcedEntityWithServiceLevelAcl
-import akka.javasdk.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.InvalidEventSourcedEntityWithGenericReturnTypeHandler
 import akka.javasdk.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.InvalidEventSourcedEntityWithOverloadedCommandHandler
 import kalix.JwtMethodOptions.JwtMethodMode
 import kalix.JwtServiceOptions.JwtServiceMode
@@ -115,13 +114,6 @@ class EventSourcedEntityDescriptorFactorySpec extends AnyWordSpec with Component
         Validations.validate(classOf[InvalidEventSourcedEntityWithOverloadedCommandHandler]).failIfInvalid
       }.getMessage should include(
         "InvalidEventSourcedEntityWithOverloadedCommandHandler has 2 command handler methods named 'createUser'. Command handlers must have unique names.")
-    }
-
-    "not allow generic return types" in {
-      intercept[InvalidComponentException] {
-        Validations.validate(classOf[InvalidEventSourcedEntityWithGenericReturnTypeHandler]).failIfInvalid
-      }.getMessage should include(
-        "Effect cannot be typed with a generic type in method [createUser]. Supported generic types are: Optional<> and Result<>.")
     }
 
   }

@@ -20,7 +20,6 @@ import java.util.concurrent.CompletionStage;
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
 @HttpEndpoint("/carts")
 public class ShoppingCartEndpoint {
-  // end::forward-headers[]
 
   private final ComponentClient componentClient;
 
@@ -28,49 +27,43 @@ public class ShoppingCartEndpoint {
     this.componentClient = componentClient; // <1>
   }
 
-  // end::forward[]
-
-  // tag::initialize[]
   @Post("/create")
-  public CompletionStage<String> initializeCart() {
-    final String cartId = UUID.randomUUID().toString(); // <1>
+  public CompletionStage<String> create() {
+    final String cartId = UUID.randomUUID().toString();
     CompletionStage<ShoppingCartDTO> shoppingCartCreated =
       componentClient.forKeyValueEntity(cartId)
-        .method(ShoppingCartEntity::create) // <2>
-        .invokeAsync(); // <3>
+        .method(ShoppingCartEntity::create)
+        .invokeAsync();
 
 
     // transform response
     CompletionStage<String> response =
-      shoppingCartCreated.handle((empty, error) -> { // <4>
+      shoppingCartCreated.handle((empty, error) -> {
         if (error == null) {
-          return cartId; // <5>
+          return cartId;
         } else {
-          throw new RuntimeException("Failed to create cart, please retry"); // <6>
+          throw new RuntimeException("Failed to create cart, please retry");
         }
       });
 
-    return response; // <7>
+    return response;
   }
-  // end::initialize[]
 
-  // tag::forward[]
-  @Post("/{cartId}/items") // <2>
+
+  @Post("/{cartId}/items")
   public CompletionStage<ShoppingCartDTO> verifiedAddItem(String cartId,
                                                           LineItemDTO addLineItem) {
-    if (addLineItem.name().equalsIgnoreCase("carrot")) { // <3>
-      throw new RuntimeException("Carrots no longer for sale"); // <4>
+    if (addLineItem.name().equalsIgnoreCase("carrot")) {
+      throw new RuntimeException("Carrots no longer for sale");
     } else {
       var addItemResult = componentClient.forKeyValueEntity(cartId)
         .method(ShoppingCartEntity::addItem)
-        .invokeAsync(addLineItem); // <5>
-      return addItemResult; // <6>
+        .invokeAsync(addLineItem);
+      return addItemResult;
     }
   }
-  // end::forward[]
 
 
-  // tag::createPrePopulated[]
   @Post("/prepopulated")
   public CompletionStage<String> createPrePopulated() {
     final String cartId = UUID.randomUUID().toString();
@@ -78,21 +71,19 @@ public class ShoppingCartEndpoint {
       componentClient.forKeyValueEntity(cartId).method(ShoppingCartEntity::create).invokeAsync();
 
     CompletionStage<ShoppingCartDTO> cartPopulated =
-      shoppingCartCreated.thenCompose(empty -> { // <1>
+      shoppingCartCreated.thenCompose(empty -> {
         var initialItem = new LineItemDTO("e", "eggplant", 1);
 
         return componentClient.forKeyValueEntity(cartId)
           .method(ShoppingCartEntity::addItem)
-          .invokeAsync(initialItem); // <2>
+          .invokeAsync(initialItem);
       });
 
-    CompletionStage<String> response = cartPopulated.thenApply(ShoppingCartDTO::cartId); // <4>
+    CompletionStage<String> response = cartPopulated.thenApply(ShoppingCartDTO::cartId);
 
-    return response; // <5>
+    return response;
   }
-  // end::createPrePopulated[]
 
-  // tag::unsafeValidation[]
   @Post("/{cartId}/unsafeAddItem")
   public CompletionStage<String> unsafeValidation(String cartId,
                                                   LineItemDTO addLineItem) {
@@ -119,19 +110,17 @@ public class ShoppingCartEndpoint {
 
     return response;
   }
-  // end::unsafeValidation[]
 
-  // tag::forward-headers[]
   @Delete("/{cartId}")
   public CompletionStage<String> removeCart(String cartId
-    /*, No headers support quite yet @Headers("UserRole") String userRole */) { // <2>
+    /*, No headers support quite yet @Headers("UserRole") String userRole */) {
     var userRole = "Admin";
     var metadata = Metadata.EMPTY.add("Role", userRole);
     return
       componentClient.forKeyValueEntity(cartId)
         .method(ShoppingCartEntity::removeCart)
         .withMetadata(metadata)
-        .invokeAsync(); // <4>
+        .invokeAsync();
   }
 
   @Get("/{cartId}")
@@ -139,7 +128,6 @@ public class ShoppingCartEndpoint {
     return
       componentClient.forKeyValueEntity(cartId)
         .method(ShoppingCartEntity::getCart)
-        .invokeAsync(); // <4>
+        .invokeAsync();
   }
 }
-// end::forward-headers[]

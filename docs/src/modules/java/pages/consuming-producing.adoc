@@ -1,5 +1,4 @@
 = Consuming and Producing
-:sample-base-url: https://github.com/lightbend/akka-javasdk/blob/main/samples
 
 include::ROOT:partial$include.adoc[]
 

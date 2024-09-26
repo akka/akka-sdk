@@ -1,5 +1,7 @@
 // global attributes
 
+:sample-base-url: https://github.com/lightbend/akka-javasdk/blob/main/samples
+
 // :minimum_docker_version: 20.10.14
 // :minimum_protoc_version: 3.0.0
 // :minimum_node_version: 14.0.0

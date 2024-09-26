@@ -1,43 +1,75 @@
 package counter.api;
 
+import akka.http.javadsl.model.HttpResponse;
+import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
 import counter.application.CounterEntity;
+import counter.application.CounterEntity.CounterResult.ExceedingMaxCounterValue;
+import counter.application.CounterEntity.CounterResult.Success;
 
 import java.util.concurrent.CompletionStage;
 
+import static akka.javasdk.http.HttpResponses.badRequest;
+import static akka.javasdk.http.HttpResponses.ok;
+
 @HttpEndpoint("/counter")
+@Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
 public class CounterEndpoint {
 
-    private final ComponentClient componentClient;
+  private final ComponentClient componentClient;
 
-    public CounterEndpoint(ComponentClient componentClient) {
-        this.componentClient = componentClient;
-    }
+  public CounterEndpoint(ComponentClient componentClient) {
+    this.componentClient = componentClient;
+  }
 
-    @Post("/increase")
-    public CompletionStage<String> increase(CounterRequest request) {
-        return componentClient.forEventSourcedEntity(request.id())
-            .method(CounterEntity::increase)
-            .invokeAsync(request.value());
-    }
+  @Post("/{counterId}/increase/{value}")
+  public CompletionStage<Integer> increase(String counterId, Integer value) {
+    return componentClient.forEventSourcedEntity(counterId)
+      .method(CounterEntity::increase)
+      .invokeAsync(value);
+  }
 
-    @Post("/multiply")
-    public CompletionStage<String> multiply(CounterRequest request) {
-        return componentClient.forEventSourcedEntity(request.id())
-            .method(CounterEntity::multiply)
-            .invokeAsync(request.value());
-    }
+  //tag::increaseWithError[]
+  @Post("/{counterId}/increase-with-error/{value}")
+  public CompletionStage<Integer> increaseWithError(String counterId, Integer value) {
+    return componentClient.forEventSourcedEntity(counterId)
+      .method(CounterEntity::increaseWithError)
+      .invokeAsync(value); // <1>
+  }
+  //end::increaseWithError[]
 
-    @Get("/{counterId}")
-    public CompletionStage<Integer> get(String counterId) {
-        return componentClient.forEventSourcedEntity(counterId)
-            .method(CounterEntity::get)
-            .invokeAsync();
-    }
+  //tag::increaseWithResult[]
+  @Post("/{counterId}/increase-with-result/{value}")
+  public CompletionStage<HttpResponse> increaseWithResult(String counterId, Integer value) {
+    return componentClient.forEventSourcedEntity(counterId)
+      .method(CounterEntity::increaseWithResult)
+      .invokeAsync(value)
+      .thenApply(counterResult ->
+        switch (counterResult) { // <1>
+          case Success success -> ok(success.value());
+          case ExceedingMaxCounterValue __ -> badRequest("Increasing the counter above 10000 is blocked");
+        });
+  }
+  //end::increaseWithResult[]
 
-    public record CounterRequest(String id, Integer value) {}
+  @Post("/{counterId}/multiply/{value}")
+  public CompletionStage<Integer> multiply(String counterId, Integer value) {
+    return componentClient.forEventSourcedEntity(counterId)
+      .method(CounterEntity::multiply)
+      .invokeAsync(value);
+  }
+
+  @Get("/{counterId}")
+  public CompletionStage<Integer> get(String counterId) {
+    return componentClient.forEventSourcedEntity(counterId)
+      .method(CounterEntity::get)
+      .invokeAsync();
+  }
+
+  public record CounterRequest(String id, Integer value) {
+  }
 
 }

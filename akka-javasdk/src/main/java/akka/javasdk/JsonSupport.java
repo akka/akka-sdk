@@ -24,6 +24,8 @@ import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.jsontype.TypeDeserializer;
+import com.fasterxml.jackson.databind.jsontype.TypeSerializer;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -196,18 +198,6 @@ public final class JsonSupport {
     return objectMapper.readValue(bytes, valueClass);
   }
 
-  public static Result<Object, Object> parseResultBytes(byte[] bytes, Class<?> errorClass, Class<?> okClass) throws IOException {
-    JsonNode jsonNode = objectMapper.readTree(bytes);
-    String type = jsonNode.get("@type").asText();
-    if ("S".equals(type)) {
-      return new Result.Success(objectMapper.treeToValue(jsonNode.get("value"), okClass));
-    } else if ("E".equals(type)) {
-      return new Result.Error(objectMapper.treeToValue(jsonNode.get("value"), errorClass));
-    } else {
-      throw new IllegalStateException("Unknown Result type: " + type);
-    }
-  }
-
   private static <T> IllegalArgumentException jsonProcessingException(Class<T> valueClass, Any any, JsonProcessingException e) {
     return new IllegalArgumentException(
         "JSON with type url ["
@@ -298,6 +288,15 @@ class DoneSerializer extends JsonSerializer<Done> {
     gen.writeStartObject();
     gen.writeEndObject();
   }
+
+  @Override
+  public void serializeWithType(Done value, JsonGenerator gen, SerializerProvider serializers, TypeSerializer typeSer) throws IOException {
+    typeSer.writeTypePrefixForObject(value, gen);
+    gen.writeFieldName("value");
+    gen.writeStartObject();
+    gen.writeEndObject();
+    typeSer.writeTypeSuffixForObject(value, gen);
+  }
 }
 
 class DoneDeserializer extends JsonDeserializer<Done> {
@@ -309,5 +308,10 @@ class DoneDeserializer extends JsonDeserializer<Done> {
     } else {
       throw JsonMappingException.from(ctxt, "Cannot deserialize Done class, expecting empty object '{}'");
     }
+  }
+
+  @Override
+  public Object deserializeWithType(JsonParser p, DeserializationContext ctxt, TypeDeserializer typeDeserializer) throws IOException {
+    return typeDeserializer.deserializeTypedFromObject(p, ctxt);
   }
 }

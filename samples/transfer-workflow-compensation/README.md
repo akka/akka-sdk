@@ -41,13 +41,19 @@ With your Kalix service running, once you have defined endpoints they should be 
 Create wallet `a` with an initial balance
 
 ```shell
-curl -X POST http://localhost:9000/wallet/a/create/100
+curl -i -X POST http://localhost:9000/wallet/a/create/100
 ```
 
 Create wallet `b` with an initial balance
 
 ```shell
-curl -X POST http://localhost:9000/wallet/b/create/100
+curl -i -X POST http://localhost:9000/wallet/b/create/100
+```
+
+Withdraw from wallet `a`
+
+```shell
+curl -i -X POST http://localhost:9000/wallet/a/withdraw/110
 ```
 
 Get wallet `a` current balance
@@ -66,7 +72,7 @@ Start transfer from wallet `a` to wallet `b`
 
 ```shell
 curl http://localhost:9000/transfer/1 \
-  -X PUT \
+  -X POST \
   --header "Content-Type: application/json" \
   --data '{"from": "a", "to": "b", "amount": 10}'
 ```

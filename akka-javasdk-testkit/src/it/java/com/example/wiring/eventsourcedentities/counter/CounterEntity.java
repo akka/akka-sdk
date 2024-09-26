@@ -4,11 +4,14 @@
 
 package com.example.wiring.eventsourcedentities.counter;
 
-import akka.javasdk.Result;
+import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
+import com.example.wiring.Result;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static java.util.function.Function.identity;
 
 @ComponentId("counter-entity")
 public class CounterEntity extends EventSourcedEntity<Counter, CounterEvent> {
@@ -35,7 +38,7 @@ public class CounterEntity extends EventSourcedEntity<Counter, CounterEvent> {
     return effects().persist(new CounterEvent.ValueIncreased(value)).thenReply(Counter::value);
   }
 
-  public Effect<Result<Error, Counter>> increaseWithValidation(Integer value) {
+  public Effect<Result<Error, Counter>> increaseWithResult(Integer value) {
     if (value <= 0){
       return effects().reply(new Result.Error<>(CounterEntity.Error.TOO_LOW));
     } else if (value > 10000) {
@@ -44,6 +47,19 @@ public class CounterEntity extends EventSourcedEntity<Counter, CounterEvent> {
       return effects()
         .persist(new CounterEvent.ValueIncreased(value))
         .thenReply(Result.Success::new);
+    }
+  }
+
+  @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET)) //required for testing
+  public Effect<Counter> increaseWithError(Integer value) {
+    if (value <= 0){
+      return effects().error("Value must be greater than 0");
+    } else if (value > 10000) {
+      return effects().error("Value must be less than 10000");
+    }else {
+      return effects()
+        .persist(new CounterEvent.ValueIncreased(value))
+        .thenReply(identity());
     }
   }
 

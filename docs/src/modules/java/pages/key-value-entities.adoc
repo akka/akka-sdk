@@ -43,6 +43,7 @@ A Key Value Entity Effect can either:
 * update the entity state and send a reply to the caller
 * directly reply to the caller if the command is not requesting any state change
 * instruct Akka to delete the entity
+* return an error message
 
 See also xref:java:development-process.adoc#_effects_api[Understanding what an Effect is]
 

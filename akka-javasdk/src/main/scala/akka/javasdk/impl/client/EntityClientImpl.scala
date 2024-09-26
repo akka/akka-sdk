@@ -9,7 +9,6 @@ import akka.http.scaladsl.model.ContentTypes
 import akka.japi.function
 import akka.javasdk.JsonSupport
 import akka.javasdk.Metadata
-import akka.javasdk.Result
 import akka.javasdk.client.ComponentDeferredMethodRef
 import akka.javasdk.client.ComponentDeferredMethodRef1
 import akka.javasdk.client.ComponentMethodRef
@@ -105,13 +104,8 @@ private[impl] sealed abstract class EntityClientImpl(
                     kalix.protocol.component.Metadata.defaultInstance)))
               .map { reply =>
                 // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
-                val returnType = Reflect.getReturnType(declaringClass, method)
-                if (returnType == classOf[Result[_, _]]) {
-                  val types = Reflect.getResultReturnTypes(method)
-                  JsonSupport.parseResultBytes(reply.payload.toArrayUnsafe(), types._1, types._2).asInstanceOf[R]
-                } else {
-                  JsonSupport.parseBytes[R](reply.payload.toArrayUnsafe(), returnType.asInstanceOf[Class[R]])
-                }
+                val returnType = Reflect.getReturnType[R](declaringClass, method)
+                JsonSupport.parseBytes[R](reply.payload.toArrayUnsafe(), returnType)
               }
               .asJava
           })

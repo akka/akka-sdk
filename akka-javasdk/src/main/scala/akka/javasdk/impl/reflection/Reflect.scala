@@ -26,8 +26,6 @@ import java.util.Optional
 import scala.annotation.tailrec
 import scala.reflect.ClassTag
 
-import akka.javasdk.Result
-
 /**
  * Class extension to facilitate some reflection common usages.
  *
@@ -80,20 +78,14 @@ private[impl] object Reflect {
       // here we are expecting a wrapper in the form of an Effect
       val returnType = method.getGenericReturnType.asInstanceOf[ParameterizedType].getActualTypeArguments.head
       returnType match {
-        case parameterizedType: ParameterizedType if parameterizedType.getRawType == classOf[Result[_, _]] =>
-          classOf[Result[_, _]].asInstanceOf[Class[R]]
+        case parameterizedType: ParameterizedType =>
+          parameterizedType.getRawType.asInstanceOf[Class[R]]
         case other => other.asInstanceOf[Class[R]]
       }
     } else {
       // in other cases we expect a View query method, but declaring class may not extend View[_] class for join views
       method.getReturnType.asInstanceOf[Class[R]]
     }
-  }
-
-  def getResultReturnTypes(method: Method): (Class[_], Class[_]) = {
-    val resultReturnType = method.getGenericReturnType.asInstanceOf[ParameterizedType].getActualTypeArguments.head
-    val arguments = resultReturnType.asInstanceOf[ParameterizedType].getActualTypeArguments
-    (arguments.head.asInstanceOf[Class[_]], arguments(1).asInstanceOf[Class[_]])
   }
 
   def isReturnTypeOptional(method: Method): Boolean = {

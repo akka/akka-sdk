@@ -4,7 +4,7 @@
 
 package com.example.wiring;
 
-import akka.javasdk.Result;
+import akka.javasdk.http.StrictResponse;
 import akka.javasdk.testkit.TestKitSupport;
 import com.example.wiring.eventsourcedentities.counter.Counter;
 import com.example.wiring.eventsourcedentities.counter.CounterEntity;
@@ -14,6 +14,7 @@ import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
@@ -39,24 +40,44 @@ public class EventSourcedEntityIntegrationTest extends TestKitSupport {
   }
 
   @Test
+  public void verifyCounterErrorEffect() {
+
+    CompletableFuture<StrictResponse<String>> call = httpClient.POST("/akka/v1.0/entity/counter-entity/c001/increaseWithError")
+      .withRequestBody(-10)
+      .responseBodyAs(String.class)
+      .invokeAsync()
+      .toCompletableFuture();
+
+    Awaitility.await()
+      .ignoreExceptions()
+      .atMost(5, TimeUnit.SECONDS)
+      .untilAsserted(() -> {
+
+        assertThat(call).isCompletedExceptionally();
+        assertThat(call.exceptionNow()).isInstanceOf(IllegalArgumentException.class);
+        assertThat(call.exceptionNow().getMessage()).contains("Value must be greater than 0");
+      });
+  }
+
+  @Test
   public void verifyCounterResultResponse() {
 
     var client = componentClient.forEventSourcedEntity("testing");
 
     Result<CounterEntity.Error, Counter> result = await(client
-      .method(CounterEntity::increaseWithValidation)
+      .method(CounterEntity::increaseWithResult)
       .invokeAsync(-10));
 
     assertThat(result.error()).isEqualTo(CounterEntity.Error.TOO_LOW);
 
     Result<CounterEntity.Error, Counter> result2 = await(client
-      .method(CounterEntity::increaseWithValidation)
+      .method(CounterEntity::increaseWithResult)
       .invokeAsync(1000001));
 
     assertThat(result2.error()).isEqualTo(CounterEntity.Error.TOO_HIGH);
 
     Result<CounterEntity.Error, Counter> result3 = await(client
-      .method(CounterEntity::increaseWithValidation)
+      .method(CounterEntity::increaseWithResult)
       .invokeAsync(123));
 
     assertThat(result3.success()).isEqualTo(new Counter(123));

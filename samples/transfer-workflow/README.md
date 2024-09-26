@@ -42,17 +42,19 @@ With your Akka service running, any defined endpoints should be available at `ht
 Create wallet `a` with an initial balance
 
 ```shell
-curl -i  http://localhost:9000/wallet/a/create \
-   -XPOST --header "Content-type: application/json" \
-   --data '{"initialAmount": 100}'
+curl -i -X POST http://localhost:9000/wallet/a/create/100
 ```
 
 Create wallet `b` with an initial balance
 
 ```shell
-curl -i  http://localhost:9000/wallet/b/create \
-   -XPOST --header "Content-type: application/json" \
-   --data '{"initialAmount": 100}'
+curl -i -X POST http://localhost:9000/wallet/b/create/100
+```
+
+Withdraw from wallet `a`
+
+```shell
+curl -i -X POST http://localhost:9000/wallet/a/withdraw/110
 ```
 
 Get wallet `a` current balance
@@ -70,8 +72,8 @@ curl http://localhost:9000/wallet/b
 Start transfer from wallet `a` to wallet `b`
 
 ```shell
-curl -i http://localhost:9000/transfer/1 \
-  -XPOST  \
+curl http://localhost:9000/transfer/1 \
+  -X POST \
   --header "Content-Type: application/json" \
   --data '{"from": "a", "to": "b", "amount": 10}'
 ```

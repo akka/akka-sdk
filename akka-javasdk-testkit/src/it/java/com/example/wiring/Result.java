@@ -2,7 +2,7 @@
  * Copyright (C) 2021-2024 Lightbend Inc. <https://www.lightbend.com>
  */
 
-package akka.javasdk;
+package com.example.wiring;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
@@ -14,7 +14,10 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
   @JsonSubTypes.Type(value = Result.Error.class, name = "E")})
 public sealed interface Result<E, T> {
 
-  record Success<E, T>(T value) implements Result<E, T> {
+  record Success<E, T>(
+    @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS)
+    T value
+  ) implements Result<E, T> {
     @Override
     public E error() {
       throw new IllegalStateException("Result is not an error");
@@ -31,7 +34,10 @@ public sealed interface Result<E, T> {
     }
   }
 
-  record Error<E, T>(E value) implements Result<E, T> {
+  record Error<E, T>(
+    @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS)
+    E value
+  ) implements Result<E, T> {
     @Override
     public E error() {
       return value;
@@ -57,4 +63,3 @@ public sealed interface Result<E, T> {
   @JsonIgnore
   boolean isSuccess();
 }
-

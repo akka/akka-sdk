@@ -7,12 +7,10 @@ package akka.javasdk.impl
 import java.lang.reflect.AnnotatedElement
 import java.lang.reflect.Method
 import java.lang.reflect.ParameterizedType
-import java.util.Optional
 
 import scala.reflect.ClassTag
 
 import akka.annotation.InternalApi
-import akka.javasdk.Result
 import akka.javasdk.annotations.ComponentId
 import akka.javasdk.annotations.Consume.FromKeyValueEntity
 import akka.javasdk.annotations.Produce.ServiceStream
@@ -129,31 +127,8 @@ private[javasdk] object Validations {
       eventSourcedEntityEventMustBeSealed(component) ++
       eventSourcedCommandHandlersMustBeUnique(component) ++
       mustHaveNonEmptyComponentId(component) ++
-      commandHandlerArityShouldBeZeroOrOne(component, hasESEffectOutput) ++
-      validateEffectReturnType(component, hasESEffectOutput)
+      commandHandlerArityShouldBeZeroOrOne(component, hasESEffectOutput)
     }
-
-  private def validateEffectReturnType(component: Class[_], methodPredicate: Method => Boolean): Validation = {
-    component.getMethods.toIndexedSeq
-      .filter(methodPredicate)
-      .filterNot { method =>
-        val returnType = method.getGenericReturnType
-          .asInstanceOf[ParameterizedType]
-          .getActualTypeArguments
-          .head
-
-        returnType match {
-          case p: ParameterizedType => p.getRawType == classOf[Optional[_]] || p.getRawType == classOf[Result[_, _]]
-          case _                    => true
-        }
-      }
-      .foldLeft(Valid: Validation) { (validation, methodWithWrongEffectReturnType) =>
-        validation ++ Validation(
-          errorMessage(
-            component,
-            s"Effect cannot be typed with a generic type in method [${methodWithWrongEffectReturnType.getName}]. Supported generic types are: Optional<> and Result<>."))
-      }
-  }
 
   private def eventSourcedEntityEventMustBeSealed(component: Class[_]): Validation = {
     val eventType =
@@ -177,8 +152,7 @@ private[javasdk] object Validations {
   def validateValueEntity(component: Class[_]): Validation = when[KeyValueEntity[_]](component) {
     valueEntityCommandHandlersMustBeUnique(component) ++
     mustHaveNonEmptyComponentId(component) ++
-    commandHandlerArityShouldBeZeroOrOne(component, hasKVEEffectOutput) ++
-    validateEffectReturnType(component, hasKVEEffectOutput)
+    commandHandlerArityShouldBeZeroOrOne(component, hasKVEEffectOutput)
   }
 
   def valueEntityCommandHandlersMustBeUnique(component: Class[_]): Validation = {
@@ -254,7 +228,6 @@ private[javasdk] object Validations {
       viewQueriesMustReturnEffect(component) ++
       viewQueriesWithStreamUpdatesMustBeStreaming(component) ++
       commandHandlerArityShouldBeZeroOrOne(component, hasQueryEffectOutput) ++
-      validateEffectReturnType(component, hasQueryEffectOutput) ++
       viewMultipleTableUpdatersMustHaveTableAnnotations(tableUpdaters) ++
       tableUpdaters
         .map(updaterClass =>

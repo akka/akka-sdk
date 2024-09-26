@@ -19,41 +19,41 @@ import java.util.concurrent.CompletionStage;
 @HttpEndpoint("/wallet")
 public class WalletEndpoint {
 
-    private static final Logger log = LoggerFactory.getLogger(WalletEndpoint.class);
+  private static final Logger log = LoggerFactory.getLogger(WalletEndpoint.class);
 
-    private final ComponentClient componentClient;
+  private final ComponentClient componentClient;
 
-    public WalletEndpoint(ComponentClient componentClient) {
-        this.componentClient = componentClient;
-    }
+  public WalletEndpoint(ComponentClient componentClient) {
+    this.componentClient = componentClient;
+  }
 
-    @Get("/{id}")
-    public CompletionStage<String> get(String id){
-        log.info("Get wallet with id [{}].", id);
-        return componentClient.forKeyValueEntity(id)
-                .method(WalletEntity::get).invokeAsync()
-                .thenApply(balance -> "The balance is ["+ balance +"].");
-    }
+  @Get("/{id}")
+  public CompletionStage<String> get(String id) {
+    log.info("Get wallet with id [{}].", id);
+    return componentClient.forKeyValueEntity(id)
+      .method(WalletEntity::get).invokeAsync()
+      .thenApply(balance -> "The balance is [" + balance + "].");
+  }
 
-    @Post("/{id}/create/{initialAmount}")
-    public CompletionStage<HttpResponse> create(String id, int initialAmount){
-        log.info("creating wallet [{}] with balance [{}].", id, initialAmount);
-        return componentClient.forKeyValueEntity(id)
-                .method(WalletEntity::create).invokeAsync(initialAmount)
-                .thenApply(done -> HttpResponses.ok());
-    }
+  @Post("/{id}/create/{initialAmount}")
+  public CompletionStage<HttpResponse> create(String id, int initialAmount) {
+    log.info("creating wallet [{}] with balance [{}].", id, initialAmount);
+    return componentClient.forKeyValueEntity(id)
+      .method(WalletEntity::create).invokeAsync(initialAmount)
+      .thenApply(done -> HttpResponses.ok());
+  }
 
-    @Post("/{id}/deposit/{amount}")
-    public CompletionStage<HttpResponse> deposit(String id, int amount){
-        return componentClient.forKeyValueEntity(id)
-                .method(WalletEntity::deposit).invokeAsync(amount)
-                .thenApply(done -> HttpResponses.ok());
-    }
+  @Post("/{id}/deposit/{amount}")
+  public CompletionStage<HttpResponse> deposit(String id, int amount) {
+    return componentClient.forKeyValueEntity(id)
+      .method(WalletEntity::deposit).invokeAsync(amount)
+      .thenApply(done -> HttpResponses.ok());
+  }
 
-    @Post("/{id}/withdraw/{amount}")
-    public CompletionStage<HttpResponse> withdraw(String id, int amount){
-        return componentClient.forKeyValueEntity(id)
-                .method(WalletEntity::withdraw).invokeAsync(amount)
-                .thenApply(done -> HttpResponses.ok());
-    }
+  @Post("/{id}/withdraw/{amount}")
+  public CompletionStage<HttpResponse> withdraw(String id, int amount) {
+    return componentClient.forKeyValueEntity(id)
+      .method(WalletEntity::withdraw).invokeAsync(amount)
+      .thenApply(done -> HttpResponses.ok());
+  }
 }

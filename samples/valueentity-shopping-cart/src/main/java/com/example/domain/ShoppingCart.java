@@ -7,19 +7,14 @@ import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-// tag::domain[]
-public record ShoppingCart(String cartId, List<LineItem> items, long creationTimestamp) { // <1>
+public record ShoppingCart(String cartId, List<LineItem> items, long creationTimestamp) {
 
-  public record LineItem(String productId, String name, int quantity) { // <2>
-    // end::domain[]
+  public record LineItem(String productId, String name, int quantity) {
     public LineItem withQuantity(int quantity) {
       return new LineItem(productId, name, quantity);
     }
-    // tag::domain[]
   }
-  // end::domain[]
 
-  // tag::itemAdded[]
   public ShoppingCart withItem(LineItem itemAdded) {
     var lineItem = updateItem(itemAdded, this); // <1>
     List<LineItem> lineItems =
@@ -28,7 +23,6 @@ public record ShoppingCart(String cartId, List<LineItem> items, long creationTim
     lineItems.sort(Comparator.comparing(LineItem::productId));
     return new ShoppingCart(cartId, lineItems, creationTimestamp); // <4>
   }
-  // end::itemAdded[]
 
   public ShoppingCart withoutItem(LineItem itemRemoved) {
     List<LineItem> updatedItems =
@@ -40,8 +34,6 @@ public record ShoppingCart(String cartId, List<LineItem> items, long creationTim
   public ShoppingCart withCreationTimestamp(long ts) {
     return new ShoppingCart(cartId, items, ts);
   }
-
-  // tag::itemAdded[]
 
   private static List<LineItem> removeItemByProductId(ShoppingCart cart, String productId) {
     return cart.items().stream()
@@ -61,12 +53,7 @@ public record ShoppingCart(String cartId, List<LineItem> items, long creationTim
     return items.stream().filter(lineItemExists).findFirst();
   }
 
-  // end::itemAdded[]
-  // tag::domain[]
-
   public static ShoppingCart of(String id) {
     return new ShoppingCart(id, Collections.emptyList(), 0L);
   }
 }
-
-// end::domain[]
