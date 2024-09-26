@@ -4,7 +4,6 @@
 
 package akka.javasdk.impl
 
-import java.lang
 import java.net.URI
 import java.nio.ByteBuffer
 import java.time.ZonedDateTime
@@ -19,10 +18,8 @@ import scala.jdk.CollectionConverters._
 import akka.annotation.InternalApi
 import akka.http.javadsl.model.StatusCode
 import akka.javasdk.CloudEvent
-import akka.javasdk.JwtClaims
 import akka.javasdk.Metadata
 import akka.javasdk.TraceContext
-import akka.javasdk.impl.MetadataImpl.JwtClaimPrefix
 import akka.javasdk.impl.telemetry.Telemetry
 import akka.javasdk.impl.telemetry.Telemetry.metadataGetter
 import com.google.protobuf.ByteString
@@ -214,13 +211,6 @@ private[javasdk] class MetadataImpl private (val entries: Seq[MetadataEntry]) ex
 
   override def asMetadata(): Metadata = this
 
-  // The reason we don't just implement JwtClaims ourselves is that some of the methods clash with CloudEvent
-  override lazy val jwtClaims: JwtClaims = new JwtClaims {
-    override def allClaimNames(): lang.Iterable[String] = allJwtClaimNames.asJava
-    override def asMap(): util.Map[String, String] = jwtClaimsAsMap.asJava
-    override def getString(name: String): Optional[String] = getJwtClaim(name).asJava
-  }
-
   override lazy val traceContext: TraceContext = new TraceContext {
     override def asOpenTelemetryContext(): OtelContext = W3CTraceContextPropagator
       .getInstance()
@@ -237,24 +227,6 @@ private[javasdk] class MetadataImpl private (val entries: Seq[MetadataEntry]) ex
     override def traceParent(): Optional[String] = getScala(Telemetry.TRACE_PARENT_KEY).asJava
 
     override def traceState(): Optional[String] = getScala(Telemetry.TRACE_STATE_KEY).asJava
-  }
-
-  private[akka] def allJwtClaimNames: Iterable[String] =
-    entries.view.collect {
-      case MetadataEntry(key, MetadataEntry.Value.StringValue(_), _) if key.startsWith(JwtClaimPrefix) => key
-    }
-
-  private[akka] def jwtClaimsAsMap: Map[String, String] =
-    entries.view.collect {
-      case MetadataEntry(key, MetadataEntry.Value.StringValue(value), _) if key.startsWith(JwtClaimPrefix) =>
-        key -> value
-    }.toMap
-
-  private[akka] def getJwtClaim(name: String): Option[String] = {
-    val prefixedName = JwtClaimPrefix + name
-    entries.collectFirst {
-      case MetadataEntry(key, MetadataEntry.Value.StringValue(value), _) if key == prefixedName => value
-    }
   }
 
   override def merge(other: Metadata): Metadata = {
@@ -288,8 +260,6 @@ object MetadataImpl {
   }.toMap
 
   val Empty = MetadataImpl.of(Vector.empty)
-
-  val JwtClaimPrefix = "_kalix-jwt-claim-"
 
   def toProtocol(metadata: Metadata): Option[component.Metadata] =
     metadata match {

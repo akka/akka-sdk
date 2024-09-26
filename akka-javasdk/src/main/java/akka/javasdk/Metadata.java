@@ -16,7 +16,7 @@ import java.util.Optional;
  * Transport specific metadata.
  *
  * <p>The exact semantics of how metadata is handled depends on the underlying transport. This API
- * exposes case insensitive lookups on metadata, but maintains the original case of the keys as
+ * exposes case-insensitive lookups on metadata, but maintains the original case of the keys as
  * received or inserted. If case matters, the iterator should be used to access elements.
  *
  * <p>Multiple values are also supported per key, if the underlying transport does not support
@@ -214,12 +214,6 @@ public interface Metadata extends Iterable<Metadata.MetadataEntry> {
    */
   CloudEvent asCloudEvent(String id, URI source, String type);
 
-  /**
-   * Get the JWT claims present in this metadata.
-   *
-   * @return The JWT claims.
-   */
-  JwtClaims jwtClaims();
 
   /**
    * Get the trace context associated with this request metadata.
