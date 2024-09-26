@@ -16,7 +16,6 @@ import scala.compat.java8.OptionConverters._
 import scala.jdk.CollectionConverters._
 
 import akka.annotation.InternalApi
-import akka.http.javadsl.model.StatusCode
 import akka.javasdk.CloudEvent
 import akka.javasdk.Metadata
 import akka.javasdk.TraceContext
@@ -205,9 +204,6 @@ private[javasdk] class MetadataImpl private (val entries: Seq[MetadataEntry]) ex
     set(MetadataImpl.CeTime, DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(time))
 
   override def clearTime(): MetadataImpl = remove(MetadataImpl.CeTime)
-
-  override def withStatusCode(code: StatusCode): MetadataImpl =
-    set("_kalix-http-code", code.intValue().toString)
 
   override def asMetadata(): Metadata = this
 

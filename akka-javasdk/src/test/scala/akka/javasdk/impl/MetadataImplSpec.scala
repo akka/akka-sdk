@@ -7,7 +7,6 @@ package akka.javasdk.impl
 import scala.jdk.CollectionConverters._
 import scala.jdk.OptionConverters._
 
-import akka.http.javadsl.model.StatusCodes
 import akka.javasdk.Metadata
 import kalix.protocol.component.MetadataEntry
 import org.scalatest.OptionValues
@@ -17,14 +16,6 @@ import org.scalatest.wordspec.AnyWordSpec
 class MetadataImplSpec extends AnyWordSpec with Matchers with OptionValues {
 
   "MetadataImpl" should {
-
-    "support setting a HTTP status code" in {
-      val md = Metadata.EMPTY.withStatusCode(StatusCodes.CREATED)
-      md.get("_kalix-http-code").toScala.value shouldBe "201"
-
-      val mdRedirect = md.withStatusCode(StatusCodes.MOVED_PERMANENTLY)
-      mdRedirect.get("_kalix-http-code").toScala.value shouldBe "301"
-    }
 
     "support creating with CloudEvents prefixed with ce_" in {
       val md = metadata("ce_id" -> "id", "ce_source" -> "source", "ce_specversion" -> "1.0", "ce_type" -> "foo")
