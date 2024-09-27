@@ -575,7 +575,7 @@ private final class Sdk(
    *
    * Each component provider should define what are the acceptable dependencies in the partial function.
    *
-   * If the partial function doesn't match, it will try to lookup in the Spring applicationContext.
+   * If the partial function doesn't match, it will try to lookup from a user provided DependencyProvider.
    */
   private def wiredInstance[T](constructor: Constructor[T])(partial: PartialFunction[Class[_], Any]): T = {
 
