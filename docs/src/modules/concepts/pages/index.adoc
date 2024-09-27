@@ -14,9 +14,9 @@ A very detailed explanation to how _Entities_ persist their state, is presented 
 
 == Topics
 
-- xref:concepts:architecture-model.adoc[]
-- xref:concepts:deployment-model.adoc[]
-- xref:concepts:development-process.adoc[]
-- xref:concepts:state-model.adoc[]
-- xref:concepts:best-practices.adoc[]
-- xref:concepts:control-tower.adoc[]
+- xref:architecture-model.adoc[]
+- xref:deployment-model.adoc[]
+- xref:development-process.adoc[]
+- xref:state-model.adoc[]
+- xref:best-practices.adoc[]
+- xref:control-tower.adoc[]
