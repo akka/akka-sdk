@@ -35,6 +35,18 @@ import java.util.function.Supplier;
  * <p>Workflow methods that handle incoming commands should return an {@link
  * Workflow.Effect} describing the next processing actions.
  *
+ * <p>
+ * Concrete classes can accept the following types to the constructor:
+ * <ul>
+ *   <li>{@link akka.javasdk.client.ComponentClient}</li>
+ *   <li>{@link akka.javasdk.http.HttpClientProvider}</li>
+ *   <li>{@link akka.javasdk.timer.TimerScheduler}</li>
+ *   <li>{@link akka.stream.Materializer}</li>
+ *   <li>{@link com.typesafe.config.Config}</li>
+ *   <li>{@link akka.javasdk.workflow.WorkflowContext}</li>
+ *   <li>Custom types provided by a {@link akka.javasdk.DependencyProvider} from the service setup</li>
+ * </ul>
+ *
  * @param <S> The type of the state for this workflow.
  */
 public abstract class Workflow<S> {

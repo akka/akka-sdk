@@ -336,6 +336,7 @@ private final class Sdk(
   // for side effects
   // Note: config is also always available through the combination with user DI way down below
   private def sideEffectingComponentInjects(span: Option[Span]): PartialFunction[Class[_], Any] = {
+    // remember to update component type API doc and docs if changing the set of injectables
     case p if p == classOf[ComponentClient]    => componentClient(span)
     case h if h == classOf[HttpClientProvider] => httpClientProvider(span)
     case t if t == classOf[TimerScheduler]     => timerScheduler(span)
@@ -483,6 +484,7 @@ private final class Sdk(
 
         val workflow = wiredInstance(clz) {
           sideEffectingComponentInjects(None).orElse {
+            // remember to update component type API doc and docs if changing the set of injectables
             case p if p == classOf[WorkflowContext] => context
           }
         }
@@ -519,6 +521,7 @@ private final class Sdk(
       messageCodec,
       context =>
         wiredInstance(clz) {
+          // remember to update component type API doc and docs if changing the set of injectables
           case p if p == classOf[EventSourcedEntityContext] => context
         })
 
@@ -528,6 +531,7 @@ private final class Sdk(
       messageCodec,
       context =>
         wiredInstance(clz) {
+          // remember to update component type API doc and docs if changing the set of injectables
           case p if p == classOf[KeyValueEntityContext] => context
         })
 
@@ -541,7 +545,10 @@ private final class Sdk(
         val updaterClasses = clz.getDeclaredClasses.collect {
           case clz if Reflect.isViewTableUpdater(clz) => clz.asInstanceOf[Class[TableUpdater[AnyRef]]]
         }.toSet
-        updaterClasses.map(updaterClass => wiredInstance(updaterClass)(PartialFunction.empty))
+        updaterClasses.map(updaterClass =>
+          wiredInstance(updaterClass)(
+            // remember to update component type API doc and docs if changing the set of injectables
+            PartialFunction.empty))
       })
 
   private def httpEndpointFactory[E](httpEndpointClass: Class[E]): HttpEndpointConstructionContext => E = {

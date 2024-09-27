@@ -13,9 +13,15 @@ import akka.javasdk.timer.TimerScheduler;
  * override one or more of the default methods to provide objects for dependency injection or act on
  * service lifecycle events.
  *
- * <p>The constructor of the concrete class can get {@link TimerScheduler}, {@link ComponentClient},
- * and {@link com.typesafe.config.Config} injected to for example allow on-startup scheduling of
- * calls.
+ * <p>Concrete classes can accept the following types to the constructor:
+ *
+ * <ul>
+ *   <li>{@link akka.javasdk.client.ComponentClient}
+ *   <li>{@link akka.javasdk.http.HttpClientProvider}
+ *   <li>{@link akka.javasdk.timer.TimerScheduler}
+ *   <li>{@link akka.stream.Materializer}
+ *   <li>{@link com.typesafe.config.Config}
+ * </ul>
  */
 public interface ServiceSetup {
 

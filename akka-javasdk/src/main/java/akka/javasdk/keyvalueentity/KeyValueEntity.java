@@ -28,6 +28,12 @@ import java.util.Optional;
  *   <li>rejected the command by returning an error
  *   <li>instruct the runtime to delete the entity
  * </ul>
+ * <p>
+ * Concrete classes can accept the following types to the constructor:
+ * <ul>
+ *   <li>{@link akka.javasdk.keyvalueentity.KeyValueEntityContext}</li>
+ *   <li>Custom types provided by a {@link akka.javasdk.DependencyProvider} from the service setup</li>
+ * </ul>
  *
  * @param <S> The type of the state for this entity. */
 public abstract class KeyValueEntity<S> {

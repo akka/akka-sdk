@@ -19,11 +19,21 @@ import java.util.concurrent.CompletionStage;
  *
  * <p>
  * <ul>
- *   <li>subscribe to events from an Event Sourced Entity.
- *   <li>subscribe to state changes from a Key Value Entity.
+ *   <li>subscribe to events from an Event Sourced Entity.</li>
+ *   <li>subscribe to state changes from a Key Value Entity.</li>
  * </ul>
  *
  * A Consumer method should return an {@link Effect} that describes what to do next.
+ * <p>
+ * Concrete classes can accept the following types to the constructor:
+ * <ul>
+ *   <li>{@link akka.javasdk.client.ComponentClient}</li>
+ *   <li>{@link akka.javasdk.http.HttpClientProvider}</li>
+ *   <li>{@link akka.javasdk.timer.TimerScheduler}</li>
+ *   <li>{@link akka.stream.Materializer}</li>
+ *   <li>{@link com.typesafe.config.Config}</li>
+ *   <li>Custom types provided by a {@link akka.javasdk.DependencyProvider} from the service setup</li>
+ * </ul>
  */
 public abstract class Consumer {
 

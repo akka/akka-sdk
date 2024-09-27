@@ -14,8 +14,18 @@ import java.util.concurrent.CompletionStage;
 
 /**
  * TimedAction is stateless component that can be used together with a Timer to schedule an action.
- *
- * An TimedAction method should return an {@link Effect} that describes the result of the action invocation.
+ * <p>
+ * A TimedAction method should return an {@link Effect} that describes the result of the action invocation.
+ * <p>
+ * Concrete classes can accept the following types to the constructor:
+ * <ul>
+ *   <li>{@link akka.javasdk.client.ComponentClient}</li>
+ *   <li>{@link akka.javasdk.http.HttpClientProvider}</li>
+ *   <li>{@link akka.javasdk.timer.TimerScheduler}</li>
+ *   <li>{@link akka.stream.Materializer}</li>
+ *   <li>{@link com.typesafe.config.Config}</li>
+ *   <li>Custom types provided by a {@link akka.javasdk.DependencyProvider} from the service setup</li>
+ * </ul>
  */
 public abstract class TimedAction {
 

@@ -49,6 +49,13 @@ import java.util.function.Function;
  * }
  * }
  *</pre>
+ * <p>
+ * Concrete classes can accept the following types to the constructor:
+ * <ul>
+ *   <li>{@link akka.javasdk.eventsourcedentity.EventSourcedEntityContext}</li>
+ *   <li>Custom types provided by a {@link akka.javasdk.DependencyProvider} from the service setup</li>
+ * </ul>
+ *
  *
  * @param <S> The type of the state for this entity.
  * @param <E> The parent type of the event hierarchy for this entity. Required to be a sealed interface.
