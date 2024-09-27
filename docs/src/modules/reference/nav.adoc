@@ -2,4 +2,3 @@
 ** xref:glossary.adoc[Glossary of terms]
 ** xref:release-notes.adoc[Release notes]
 ** xref:migration-guide.adoc[Migration Guide]
-** xref:cli-change-notifications.adoc[Akka CLI change notifications]
