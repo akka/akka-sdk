@@ -5,6 +5,7 @@
 *** xref:operations:deploy-service.adoc[]
 *** xref:operations:invoke-service.adoc[]
 *** xref:operations:view-data.adoc[]
+*** xref:operations:data-management.adoc[]
 *** xref:operations:view-logs.adoc[]
 *** xref:operations:controltower-metrics.adoc[]
 *** xref:operations:controltower-traces.adoc[]

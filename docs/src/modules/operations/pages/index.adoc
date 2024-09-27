@@ -11,6 +11,7 @@ In this section, you can find information on:
 * xref:operations:invoke-service.adoc[]
 * xref:operations:view-logs.adoc[]
 * xref:operations:view-data.adoc[]
+* xref:operations:data-management.adoc[]
 * xref:operations:integrate-cicd.adoc[]
 * xref:operations:controltower-metrics.adoc[]
 * xref:operations:observability-exports.adoc[]
