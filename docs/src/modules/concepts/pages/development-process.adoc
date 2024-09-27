@@ -6,6 +6,7 @@ The main steps in developing a service include:
 
 . <<_effects_api>>
 . <<_implement_components>>
+. <<_endpoints>>
 . <<_create_unit_tests>>
 . <<_package_service>>
 . <<_run_locally>>
@@ -27,17 +28,22 @@ We recommend that you separate the service API and Entity domain data model. Sep
 
 TIP: Kickstart a project using the xref:java:getting-started.adoc[Getting started] guide.
 
-include::java:partial$effects-api.adoc[]
+[#_effects_api]
+== Understanding what an Effect is
+
+Each component defines a set of operations through its application programming interface (API). These operations are specific to the semantics of each component. For the JVM SDKs, these APIs take the shape of an Effect.
+
+An Effect is a description of what Kalix needs to do after an incoming command is handled. You can think of it as a set of instructions you are passing to Kalix. Kalix will process the instructions on your behalf.
+
+The component Effect APIs play a central role when implementing a component as it provides the glue between your application logic and Kalix. For a more high-level overview of Kalix Architecture Style, check out the https://docs.kalix.io/concepts/programming-model.html[Programming model] page.
+
+The details of each component Effect type are explained in the component's specific pages.
 
 [#_implement_components]
-== Implement components
+== Implementing components
 
 Stateful services can implement xref:reference:glossary.html#value_entity[Key Value Entity] or xref:reference:glossary.html#event_sourced_entity[Event Sourced Entity] and xref:reference:glossary.html#view[View] components. Stateless services implement xref:reference:glossary.html#action[Actions]. Typically, a stateful service should only have one Entity type, but can also include Actions and Views.
 
-
-=== Actions
-
-Actions are stateless functions that can be triggered by HTTP calls. They can also subscribe to published events, and they can send commands to other services based on the events they receive. For more information about writing actions see xref:java:actions.adoc[Implementing Actions].
 
 === Entities
 Stateful services encapsulate business logic in Key Value Entities or Event Sourced Entities. At runtime, command messages invoke operations on Entities. A command may only act on one Entity at a time.
@@ -67,6 +73,11 @@ For more details and examples take a look at the following topics:
 * xref:java:timed-actions.adoc[Timed Actions]
 * xref:java:consuming-producing.adoc[]
 
+[#_endpoints]
+== Exposing components through Endpoints
+
+:TODO:
+
 [#_create_unit_tests]
 == Testing your application
 
@@ -80,17 +91,17 @@ integration tests. Please consult the component specific pages to learn more abo
 == Package service
 
 Use Docker to package your service and any of its dependencies.
-See xref:projects:container-registries.adoc[Configuring registries] for more information.
+See xref:operations:container-registries.adoc[] for more information.
 
 [#_run_locally]
-== Run locally
+== Running locally
 
-You can test and debug your services by xref:running-locally.adoc[running them locally] before deploying to Kalix.
+You can test and debug your services by xref:java:running-locally.adoc[running them locally] before deploying your Service.
 
 [#_deploy]
 == Deploy to akka.io
 
 After testing locally, deploy your service to akka.io using the CLI or the Console. The following pages provide information about deployment:
 
-* xref:projects:index.adoc[Working with Kalix projects]
-* https://docs.kalix.io/services/deploy-service.html#_deploy[Deploying a packaged service]
+* xref:operations:projects.adoc[Akka projects]
+* xref:operations:deploy-service.adoc#_deploy[Deploying a packaged service]

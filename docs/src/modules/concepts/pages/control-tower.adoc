@@ -2,4 +2,4 @@
 
 *Telemetry* and *monitoring* are essential for understanding how your services are performing, identifying potential failures, and ensuring they meet your System Level Objectives (SLOs). Effective monitoring allows you to deploy new features with confidence, maintain high availability and respond quickly to any issues.
 
-The *Control Tower*, accessible via the https://console.akka.io[Akka Portal], provides a comprehensive telemetry and monitoring solution. It includes a pre-built, read-only *dashboard* that offers a clear view of key performance indicators across all your services and components, eliminating the need to set up complex monitoring systems.
+The *Control Tower*, accessible via the https://console.akka.io[Akka Console], provides a comprehensive telemetry and monitoring solution. It includes a pre-built, read-only *dashboard* that offers a clear view of key performance indicators across all your services and components, eliminating the need to set up complex monitoring systems.
