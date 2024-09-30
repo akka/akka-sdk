@@ -3,7 +3,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-The Akka command-line interface (CLI) complements the browser-based `Console` UI and enables deployment and configuration operations directly from the command line. This page provides an overview of common commands. For a full reference of all available commands, see the xref:reference:akka-cli/index.adoc[reference] page.
+The Akka command-line interface (CLI) complements the browser-based https://console.akka.io[Akka Console] user interface (UI), allowing you to perform deployment and configuration operations directly from the command line. This page provides an overview of common commands. For a full reference of all available commands, see the xref:reference:akka-cli/index.adoc[reference] page.
 
 [TIP]
 ====
