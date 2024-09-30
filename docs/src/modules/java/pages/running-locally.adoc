@@ -142,6 +142,6 @@ While watching the logs in *customer-registry-subscriber* service, we will see i
 --
 [source,command line]
 ----
-curl localhost:9001/customers/by_name/Test%20Testsson
+curl localhost:9001/customer/by_name/Test%20Testsson
 ----
 --

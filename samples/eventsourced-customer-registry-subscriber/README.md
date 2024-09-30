@@ -47,7 +47,7 @@ This call is made on the subscriber service and will be forwarded to the `events
 ### Run a view query from this project
 
 ```shell
-curl localhost:9001/customers/by_name/Testsson
+curl localhost:9001/customer/by_name/Testsson
 ```
 
 The subscriber service will receive updates from customer-registry via service-to-service stream and update the view.
@@ -63,5 +63,5 @@ This call is performed on the customer-registry directly.
 ### Check the view again
 
 ```shell
-curl localhost:9001/customers/by_name/Joe
+curl localhost:9001/customer/by_name/Joe
 ```
