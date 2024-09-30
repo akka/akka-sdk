@@ -24,7 +24,7 @@ mvn compile exec:java
 
 ## Exercise the service
 
-This sample does not expose any Endpoints, since the main goal is to show how to configure a `DependencyProvider` in the `CounterSetup` class. Dependencies can be overridden and injected into an integration test with the `getDependency` method from `AkkaSdkTestKitSupport` class.
+This sample does not expose any Endpoints, since the main goal is to show how to configure a `DependencyProvider` in the `CounterSetup` class.
 
 ## Deploying
 

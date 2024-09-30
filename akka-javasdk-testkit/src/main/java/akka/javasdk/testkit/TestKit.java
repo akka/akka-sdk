@@ -201,7 +201,7 @@ public class TestKit {
     /**
      * Default settings for testkit.
      */
-    public static Settings DEFAULT = new Settings("self", true, TEST_BROKER, MockedEventing.EMPTY, ConfigFactory.empty());
+    public static Settings DEFAULT = new Settings("self", true, TEST_BROKER, MockedEventing.EMPTY, Optional.empty(), ConfigFactory.empty());
 
     /**
      * The name of this service when deployed.
@@ -218,6 +218,8 @@ public class TestKit {
     public final MockedEventing mockedEventing;
 
     public final Config additionalConfig;
+
+    public final Optional<DependencyProvider> dependencyProvider;
 
     public enum EventingSupport {
       /**
@@ -242,16 +244,18 @@ public class TestKit {
     }
 
     private Settings(
-        final String serviceName,
-        final boolean aclEnabled,
-        final EventingSupport eventingSupport,
-        final MockedEventing mockedEventing,
+        String serviceName,
+        boolean aclEnabled,
+        EventingSupport eventingSupport,
+        MockedEventing mockedEventing,
+        Optional<DependencyProvider> dependencyProvider,
         Config additionalConfig
       ) {
       this.serviceName = serviceName;
       this.aclEnabled = aclEnabled;
       this.eventingSupport = eventingSupport;
       this.mockedEventing = mockedEventing;
+      this.dependencyProvider = dependencyProvider;
       this.additionalConfig = additionalConfig;
     }
 
@@ -264,7 +268,7 @@ public class TestKit {
      * @return The updated settings.
      */
     public Settings withServiceName(final String serviceName) {
-      return new Settings(serviceName, aclEnabled, eventingSupport, mockedEventing, additionalConfig);
+      return new Settings(serviceName, aclEnabled, eventingSupport, mockedEventing, dependencyProvider, additionalConfig);
     }
 
     /**
@@ -273,7 +277,7 @@ public class TestKit {
      * @return The updated settings.
      */
     public Settings withAclDisabled() {
-      return new Settings(serviceName, false, eventingSupport, mockedEventing, additionalConfig);
+      return new Settings(serviceName, false, eventingSupport, mockedEventing, dependencyProvider, additionalConfig);
     }
 
     /**
@@ -282,7 +286,7 @@ public class TestKit {
      * @return The updated settings.
      */
     public Settings withAclEnabled() {
-      return new Settings(serviceName, true, eventingSupport, mockedEventing, additionalConfig);
+      return new Settings(serviceName, true, eventingSupport, mockedEventing, dependencyProvider, additionalConfig);
     }
 
     /**
@@ -290,7 +294,7 @@ public class TestKit {
      */
     public Settings withKeyValueEntityIncomingMessages(String typeId) {
       return new Settings(serviceName, aclEnabled, eventingSupport,
-          mockedEventing.withKeyValueEntityIncomingMessages(typeId), additionalConfig);
+          mockedEventing.withKeyValueEntityIncomingMessages(typeId), dependencyProvider, additionalConfig);
     }
 
     /**
@@ -298,7 +302,7 @@ public class TestKit {
      */
     public Settings withEventSourcedEntityIncomingMessages(String typeId) {
       return new Settings(serviceName, aclEnabled, eventingSupport,
-          mockedEventing.withEventSourcedIncomingMessages(typeId), additionalConfig);
+          mockedEventing.withEventSourcedIncomingMessages(typeId), dependencyProvider, additionalConfig);
     }
 
     /**
@@ -306,7 +310,7 @@ public class TestKit {
      */
     public Settings withStreamIncomingMessages(String service, String streamId) {
       return new Settings(serviceName, aclEnabled, eventingSupport,
-          mockedEventing.withStreamIncomingMessages(service, streamId), additionalConfig);
+          mockedEventing.withStreamIncomingMessages(service, streamId), dependencyProvider, additionalConfig);
     }
 
     /**
@@ -314,7 +318,7 @@ public class TestKit {
      */
     public Settings withTopicIncomingMessages(String topic) {
       return new Settings(serviceName, aclEnabled, eventingSupport,
-          mockedEventing.withTopicIncomingMessages(topic), additionalConfig);
+          mockedEventing.withTopicIncomingMessages(topic), dependencyProvider, additionalConfig);
     }
 
     /**
@@ -322,11 +326,11 @@ public class TestKit {
      */
     public Settings withTopicOutgoingMessages(String topic) {
       return new Settings(serviceName, aclEnabled, eventingSupport,
-          mockedEventing.withTopicOutgoingMessages(topic), additionalConfig);
+          mockedEventing.withTopicOutgoingMessages(topic), dependencyProvider, additionalConfig);
     }
 
     public Settings withEventingSupport(EventingSupport eventingSupport) {
-      return new Settings(serviceName, aclEnabled, eventingSupport, mockedEventing, additionalConfig);
+      return new Settings(serviceName, aclEnabled, eventingSupport, mockedEventing, dependencyProvider, additionalConfig);
     }
 
     /**
@@ -334,7 +338,15 @@ public class TestKit {
      * in a particular test.
      */
     public Settings withAdditionalConfig(Config additionalConfig) {
-      return new Settings(serviceName, aclEnabled, eventingSupport, mockedEventing, additionalConfig);
+      return new Settings(serviceName, aclEnabled, eventingSupport, mockedEventing, dependencyProvider, additionalConfig);
+    }
+
+    /**
+     * Set a dependency provider that will be used for looking up arbitrary dependencies, useful to provide mocks for
+     * production dependencies in tests rather than calling the real thing.
+     */
+    public Settings withDependencyProvider(DependencyProvider dependencyProvider) {
+      return new Settings(serviceName, aclEnabled, eventingSupport, mockedEventing, Optional.of(dependencyProvider), additionalConfig);
     }
 
     @Override
@@ -344,6 +356,7 @@ public class TestKit {
           ", aclEnabled=" + aclEnabled +
           ", eventingSupport=" + eventingSupport +
           ", mockedEventing=" + mockedEventing +
+          ", dependencyProvider=" + dependencyProvider +
           ')';
     }
   }
@@ -415,7 +428,7 @@ public class TestKit {
     try {
       log.debug("Config from user: {}", config);
 
-      SdkRunner runner = new SdkRunner() {
+      SdkRunner runner = new SdkRunner(settings.dependencyProvider) {
         @Override
         public Config applicationConfig() {
           return ConfigFactory.parseString("akka.javasdk.dev-mode.enabled = true")
@@ -677,7 +690,11 @@ public class TestKit {
     return messageBuilder;
   }
 
-  public Optional<DependencyProvider> getDependencyContext() {
+  /**
+   * @return The custom dependency provider used in this test, if one is defined, when overriding the dependency provided
+   *         through {@link Settings#withDependencyProvider(DependencyProvider)} the overridden provider is returned.
+   */
+  public Optional<DependencyProvider> getDependencyProvider() {
     return dependencyProvider;
   }
 }

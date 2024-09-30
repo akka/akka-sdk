@@ -7,7 +7,6 @@ package akka.javasdk.impl
 import java.lang.reflect.Constructor
 import java.lang.reflect.ParameterizedType
 import java.util.concurrent.CompletionStage
-
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.Promise
@@ -15,7 +14,6 @@ import scala.jdk.CollectionConverters.CollectionHasAsScala
 import scala.jdk.FutureConverters._
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
-
 import akka.Done
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
@@ -93,12 +91,20 @@ import kalix.protocol.view.Views
 import kalix.protocol.workflow_entity.WorkflowEntities
 import org.slf4j.LoggerFactory
 
+import scala.jdk.OptionConverters.RichOptional
+
 /**
  * INTERNAL API
  */
 @InternalApi
-class SdkRunner extends akka.runtime.sdk.spi.Runner {
+class SdkRunner private (dependencyProvider: Option[DependencyProvider]) extends akka.runtime.sdk.spi.Runner {
   private val startedPromise = Promise[StartupContext]()
+
+  // default constructor for runtime creation
+  def this() = this(None)
+
+  // constructor for testkit
+  def this(dependencyProvider: java.util.Optional[DependencyProvider]) = this(dependencyProvider.toScala)
 
   def applicationConfig: Config =
     ApplicationConfig.loadApplicationConf
@@ -134,6 +140,7 @@ class SdkRunner extends akka.runtime.sdk.spi.Runner {
         startContext.componentClients,
         startContext.remoteIdentification,
         startContext.tracerFactory,
+        dependencyProvider,
         startedPromise)
       Future.successful(app.spiEndpoints)
     } catch {
@@ -243,12 +250,13 @@ private final class Sdk(
     runtimeComponentClients: ComponentClients,
     remoteIdentification: Option[RemoteIdentification],
     tracerFactory: String => Tracer,
+    dependencyProviderOverride: Option[DependencyProvider],
     startedPromise: Promise[StartupContext]) {
   private val logger = LoggerFactory.getLogger(getClass)
   private val messageCodec = new JsonMessageCodec
   private val ComponentLocator.LocatedClasses(componentClasses, maybeServiceClass) =
     ComponentLocator.locateUserComponents(system)
-  private var dependencyProviderOpt: Option[DependencyProvider] = None
+  @volatile private var dependencyProviderOpt: Option[DependencyProvider] = dependencyProviderOverride
 
   private val applicationConfig = ApplicationConfig(system).getConfig
   private val sdkSettings = Settings(applicationConfig.getConfig("akka.javasdk"))
@@ -440,8 +448,12 @@ private final class Sdk(
             startedPromise.trySuccess(StartupContext(runtimeComponentClients, None, httpClientProvider))
             Future.successful(Done)
           case Some(setup) =>
-            dependencyProviderOpt = Option(setup.createDependencyProvider())
-            dependencyProviderOpt.foreach(_ => logger.info("Service configured with DependencyProvider"))
+            if (dependencyProviderOpt.nonEmpty) {
+              logger.info("Service configured with TestKit DependencyProvider")
+            } else {
+              dependencyProviderOpt = Option(setup.createDependencyProvider())
+              dependencyProviderOpt.foreach(_ => logger.info("Service configured with DependencyProvider"))
+            }
             startedPromise.trySuccess(
               StartupContext(runtimeComponentClients, dependencyProviderOpt, httpClientProvider))
             Future.successful(Done)

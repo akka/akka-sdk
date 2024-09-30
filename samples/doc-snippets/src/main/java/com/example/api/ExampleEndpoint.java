@@ -105,7 +105,7 @@ public class ExampleEndpoint {
   // end::low-level-response[]
 
   // tag::even-lower-level-response[]
-  @Get("/hello-low-level-response/{name}/{age}")
+  @Get("/hello-lower-level-response/{name}/{age}")
   public HttpResponse lowerLevelResponseHello(String name, int age) {
     if (age > 130)
       return HttpResponse.create()

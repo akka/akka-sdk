@@ -82,7 +82,7 @@ so should be avoided.
 The implementation can be pure Java without any dependencies:
 
 [source,java]
-.src/main/java/com/example/CounterSetup.java
+.src/main/java/com/example/MyAppSetup.java
 ----
 include::example$doc-snippets/src/main/java/com/example/MyAppSetup.java[tag=pojo-dependency-injection]
 ----
@@ -104,5 +104,20 @@ include::example$spring-dependency-injection/src/main/java/com/example/CounterSe
 <1> Set up a Spring `AnnotationConfigApplicationContext`
 <2> DependencyProvider is a SAM (single abstract method) type with signature `Class<T> -> T`, the method reference `AnnotationConfigApplicationContext#getBean` matches it.
 
-ifdef::todo[TODO: == Dependency injection in tests - Injection of custom mock objects in tests, not yet possible]
+== Custom dependency injection in tests
 
+The TestKit allows providing a custom `DependencyProvider` through `TestKit.Settings#withDependencyProvider(provider)` so
+that mock instances of dependencies can be used in tests.
+
+[source,java]
+.src/main/java/com/example/MyAppSetup.java
+----
+include::example$doc-snippets/src/it/java/com/example/MyIntegrationTest.java[tag=test-di-provider]
+----
+<1> Implement a test specific `DependencyProvider`.
+<2> Configure the TestKit to use it.
+
+Any component injection happening during the test will now use the custom `DependencyProvider`.
+
+The test specific `DependencyProvider` must be able to provide all custom dependencies used by
+all components that the test interacts with.

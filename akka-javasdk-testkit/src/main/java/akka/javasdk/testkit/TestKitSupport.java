@@ -4,21 +4,14 @@
 
 package akka.javasdk.testkit;
 
-import akka.javasdk.DependencyProvider;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.http.HttpClient;
 import akka.javasdk.timer.TimerScheduler;
-import com.typesafe.config.Config;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.time.Duration;
-import java.util.Optional;
-
-import static java.time.temporal.ChronoUnit.SECONDS;
 
 /**
  * This class provided the necessary infrastructure to run integration test for projects built
@@ -42,8 +35,6 @@ public abstract class TestKitSupport extends AsyncCallsSupport {
 
   protected TimerScheduler timerScheduler;
 
-  protected Optional<DependencyProvider> dependencyProvider;
-
   /**
    * A http client for interacting with the service under test, the client will not be authenticated
    * and will appear to the service as a request with the internet principal.
@@ -63,7 +54,6 @@ public abstract class TestKitSupport extends AsyncCallsSupport {
       testKit = (new TestKit(testKitSettings())).start();
       componentClient = testKit.getComponentClient();
       timerScheduler = testKit.getTimerScheduler();
-      dependencyProvider = testKit.getDependencyContext();
       httpClient = testKit.getSelfHttpClient();
     } catch (Exception ex) {
       logger.error("Failed to startup service", ex);
@@ -82,7 +72,7 @@ public abstract class TestKitSupport extends AsyncCallsSupport {
 
 
   public <T> T getDependency(Class<T> clazz) {
-    return dependencyProvider.map(provider -> provider.getDependency(clazz))
+    return testKit.getDependencyProvider().map(provider -> provider.getDependency(clazz))
       .orElseThrow(() -> new IllegalStateException("DependencyProvider not available, or not yet initialized."));
   }
 
