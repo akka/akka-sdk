@@ -10,22 +10,26 @@ Akka is a platform as a service (PaaS) to build and run distributed applications
 
 _Start here as an Akka developer:_
 
-* Register for an https://console.kalix.io/register[Akka account].
+. Register for an https://console.akka.io/register[Akka account].
+. Follow a guide to xref:java:getting-started.adoc[create your first service].
+. Learn key patterns and abstractions by xref:samples:index.adoc[exploring the samples].
 
 |
-== xref:samples:index.adoc[Samples]
+== How-To Guides
 
-_A collection of useful samples for building with Akka, demonstrating several important patterns and abstractions._
+_Practical guides for:_
+
+* xref:java:index.adoc[Developing Services]
+* xref:operations:index.adoc[Operating Services]
 
 |
 == xref:concepts:index.adoc[Concepts]
 
-_Explanation of Akka's core components_|
+_Essential principles, components and best practices for building with Akka._
 
-== Reference
+|
+== xref:reference:index.adoc[Reference]
 
-_Technical reference for:_
-
-* https://doc.akka.io/docs[Akka Libraries]
+_Technical reference for product updates, migration guides, and https://doc.akka.io/docs[Akka Libraries]._
 
 |===
