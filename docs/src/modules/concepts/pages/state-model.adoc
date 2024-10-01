@@ -8,9 +8,9 @@ Entities have operations that can change their state. These operations are trigg
 
 Akka supports two state models: _Key Value Entity_ and _Event Sourced Entity_. Key Value Entities store their state as a single unit in a Key/Value store. Event Sourced Entities store updates as events, which together build the entity's state. In order for Akka to replicate state across clusters and regions Akka uses conflict resolution strategies for each model. Key Value Entities *will* support a Last Writer Wins (LWW) mechanism. *This is not supported today.*
 
-Event Sourced Entities replicate their state by default. If you deploy your Service to a Project that spans multiple regions the state is replicated for you with no extra work to be done. By default, any region can read the data, and will do so from a local store within the region, but only the xref:concepts:architecture-model.adoc[Akka architecture model] origin region will be able to perform writes. To make this easier, Akka will forward writes to the appropriate region.
+Event Sourced Entities replicate their state by default. If you deploy your Service to a Project that spans multiple regions the state is replicated for you with no extra work to be done. By default, any region can read the data, and will do so from a local store within the region, but only the xref:architecture-model.adoc[Akka architecture model] origin region will be able to perform writes. To make this easier, Akka will forward writes to the appropriate region.
 
-To understand more about regions and distribution see xref:concepts:deployment-model.adoc#_region[].
+To understand more about regions and distribution see xref:deployment-model.adoc#_region[Deployment model].
 
 == Identity
 Each Entity instance has a unique id that distinguishes it from others. The id can have multiple parts, such as an address, serial number, or customer number. Akka handles concurrency for Entity instances by processing requests sequentially, one after the other, within the boundaries of a transaction. Akka proactively manages state, eliminating the need for techniques like lazy loading. For each state model, Akka uses a specific back-end data store, which cannot be configured. 
@@ -46,5 +46,5 @@ In order to have multi-writer (or write anywhere) capabilities you must implemen
 
 == Related documentation
 
-- xref:java:key-value-entities.adoc[]
-- xref:java:event-sourced-entities.adoc[]
+- xref:java:key-value-entities.adoc[Key Value Entities]
+- xref:java:event-sourced-entities.adoc[Event Sourced Entities]

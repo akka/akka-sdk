@@ -4,13 +4,13 @@ include::ROOT:partial$include.adoc[]
 
 This section introduces key concepts to be aware of when developing Akka applications and services.
 
-The xref:architecture-model.adoc[] explains the principles by which Akka applications are structured and introduces the _Components_ used to building _Services_.
+The xref:architecture-model.adoc[Architectural Model] explains the principles by which Akka applications are structured and introduces the _Components_ used to building _Services_.
 
-Akka manages the operational aspects of your application. To learn about how Akka Services run in distributed infrastructure and may span multiple _Regions_, see xref:deployment-model.adoc[]. Once deployed, Akka's xref:control-tower.adoc[built-in telemetry and monitoring] provides operational insights into your deployment.
+Akka manages the operational aspects of your application. To learn about how Akka Services run in distributed infrastructure and may span multiple _Regions_, see xref:deployment-model.adoc[Deployment Model]. Once deployed, Akka's xref:control-tower.adoc[Telemetry and Monitoring] provides operational insights into your deployment.
 
-When you are familiar with the main aspects for Akka applications, continue with xref:concepts:development-process.adoc[] to understand the steps involved to implement a _Service_.
+When you are familiar with the main aspects for Akka applications, continue with xref:concepts:development-process.adoc[Development Process] to understand the steps involved to implement a _Service_.
 
-A very detailed explanation to how _Entities_ persist their state, is presented in xref:state-model.adoc[].
+A detailed explanation to how _Entities_ persist their state, is presented in xref:state-model.adoc[State Model] should you wish to learn more.
 
 == Topics
 

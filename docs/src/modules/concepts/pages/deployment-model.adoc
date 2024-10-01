@@ -50,3 +50,13 @@ There are two ways to remove regions from a project: *graceful* and *emergency*.
 
 Emergency region removal is for emergency scenarios such as the rare times when an infrastructure provider's region becomes unavailable. Executing an emergency region removal fast ejects the region and reassigns the origin for all entities to the remaining regions. If there are writes in progress for non-CRDT types (i.e. entities that do not implement conflict resolutions e.g. KeyValueEntity) they _could_ be lost or overwritten.
 
+== Next steps
+
+Now that you understand the overall architecture and deployment model of Akka you are ready to learn more about the xref:development-process.adoc[Development process]. 
+
+The following topics may also be of interest.
+
+- xref:state-model.adoc[State model]
+- xref:best-practices.adoc[Best practices]
+- xref:control-tower.adoc[Monitoring and observability]
+- xref:architecture-model.adoc[Architecture model]
