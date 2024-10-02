@@ -1,4 +1,5 @@
 * xref:index.adoc[Developing Services]
+** xref:getting-started.adoc[Get Started]
 ** xref:http-endpoints.adoc[REST Endpoints]
 ** xref:key-value-entities.adoc[Key Value Entities]
 ** xref:event-sourced-entities.adoc[Event Sourced Entities]
