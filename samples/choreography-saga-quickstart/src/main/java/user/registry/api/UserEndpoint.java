@@ -75,7 +75,16 @@ public class UserEndpoint {
       client
         .forKeyValueEntity(cmd.email())
         .method(UniqueEmailEntity::reserve)
-        .invokeAsync(createUniqueEmail); // eager, executing it now
+        .invokeAsync(createUniqueEmail) // eager, executing it now
+        .thenApply(result ->
+          switch (result) {
+            case UniqueEmailEntity.Result.Success s -> s;
+            case UniqueEmailEntity.Result.AlreadyReserved e -> {
+              logger.info("Email is already reserved '{}'", cmd.email());
+              throw HttpException.badRequest("Email is already reserved '" + cmd.email() + "'");
+            }
+        });
+
 
     var userCreated =
       emailReserved
@@ -86,14 +95,17 @@ public class UserEndpoint {
             .forEventSourcedEntity(userId)
             .method(UserEntity::createUser)
             .invokeAsync(cmd)
-            .thenApply(done -> HttpResponses.created());
+            .thenApply(result ->
+            switch (result) {
+              case UserEntity.Result.Success s -> HttpResponses.ok();
+              case UserEntity.Result.InvalidCommand error -> {
+                String msg = "Couldn't create user: " + error.msg();
+                logger.info(msg);
+                throw HttpException.badRequest(msg);
+              }
+            });
         })
-        .exceptionally(e -> {
-          // in case of exception `callToUser` is not executed,
-          // and we return an error to the caller of this method
-          logger.info("Email is already reserved '{}'", cmd.email());
-          throw HttpException.badRequest("Email is already reserved '" + cmd.email() + "'");
-        });
+        ;
 
     return userCreated;
   }

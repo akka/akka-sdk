@@ -2,10 +2,11 @@ package user.registry.application;
 
 
 import akka.Done;
-import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
 import akka.javasdk.keyvalueentity.KeyValueEntityContext;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import user.registry.domain.UniqueEmail;
@@ -33,6 +34,19 @@ public class UniqueEmailEntity extends KeyValueEntity<UniqueEmail> {
 
   private final String address;
   private final Logger logger = LoggerFactory.getLogger(getClass());
+
+  @JsonTypeInfo(use = JsonTypeInfo.Id.NAME)
+  @JsonSubTypes({
+    @JsonSubTypes.Type(value = Result.Success.class, name = "Success"),
+    @JsonSubTypes.Type(value = Result.AlreadyReserved.class, name = "AlreadyReserved")})
+  public sealed interface Result {
+
+    record AlreadyReserved() implements Result {
+    }
+
+    record Success() implements Result {
+    }
+  }
 
   public UniqueEmailEntity(KeyValueEntityContext context) {
     this.address = context.entityId();
@@ -71,19 +85,19 @@ public class UniqueEmailEntity extends KeyValueEntity<UniqueEmail> {
    * <p>
    * If the email address is not in use at all, the call will succeed and the email address will be reserved for the given user.
    */
-  public Effect<Done> reserve(UniqueEmail.ReserveEmail cmd) {
+  public Effect<Result> reserve(UniqueEmail.ReserveEmail cmd) {
     if (currentState().isInUse() && currentState().notSameOwner(cmd.ownerId())) {
-      return effects().error("Email address is already reserved");
+      return effects().reply(new Result.AlreadyReserved());
     }
 
     if (currentState().sameOwner(cmd.ownerId())) {
-      return effects().reply(done());
+      return effects().reply(new Result.Success());
     }
 
     logger.info("Reserving email address '{}'", cmd.address());
     return effects()
       .updateState(new UniqueEmail(cmd.address(), Status.RESERVED, Optional.of(cmd.ownerId())))
-      .thenReply(done());
+      .thenReply(new Result.Success());
   }
 
   /**

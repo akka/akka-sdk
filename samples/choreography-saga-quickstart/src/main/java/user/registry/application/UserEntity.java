@@ -2,9 +2,10 @@ package user.registry.application;
 
 
 import akka.Done;
-import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import user.registry.domain.User;
@@ -32,8 +33,22 @@ public class UserEntity extends EventSourcedEntity<User, UserEvent> {
 
   private final Logger logger = LoggerFactory.getLogger(getClass());
 
+  @JsonTypeInfo(use = JsonTypeInfo.Id.NAME)
+  @JsonSubTypes({
+    @JsonSubTypes.Type(value = Result.Success.class, name = "Success"),
+    @JsonSubTypes.Type(value = Result.InvalidCommand.class, name = "InvalidCommand")
+  })
+  public sealed interface Result {
 
-  public Effect<Done> createUser(User.Create cmd) {
+    record InvalidCommand(String msg) implements Result {
+    }
+
+    record Success() implements Result {
+    }
+
+  }
+
+  public Effect<Result> createUser(User.Create cmd) {
 
     // since the user creation depends on the email address reservation, a better place to valid an incoming command
     // would be in the ApplicationController where we coordinate the two operations.
@@ -41,17 +56,17 @@ public class UserEntity extends EventSourcedEntity<User, UserEvent> {
     // As such, we can simulate the situation where an email address is reserved, but we fail to create the user.
     // When that happens the timer defined by the UniqueEmailSubscriber will fire and cancel the email address reservation.
     if (cmd.name() == null) {
-      return effects().error("Name is empty");
+      return effects().reply(new Result.InvalidCommand("Name is empty"));
     }
 
     if (currentState() != null) {
-      return effects().reply(done());
+      return effects().reply(new Result.Success());
     }
 
     logger.info("Creating user {}", cmd);
     return effects()
       .persist(User.onCommand(cmd))
-      .thenReply(__ -> done());
+      .thenReply(__ -> new Result.Success());
   }
 
   public Effect<Done> changeEmail(User.ChangeEmail cmd) {
