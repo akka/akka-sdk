@@ -97,7 +97,7 @@ final class WorkflowService(
     override val serviceName: String)
     extends Service {
 
-  val strictMessageCodec = new StrictJsonMessageCodec(new JsonMessageCodec)
+  val strictMessageCodec = new StrictJsonMessageCodec(messageCodec)
 
   override def resolvedMethods: Option[Map[String, ResolvedServiceMethod[_, _]]] =
     factory match {
