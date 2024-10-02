@@ -1,6 +1,7 @@
 package customer.api;
 
 import akka.http.javadsl.model.HttpResponse;
+import akka.javasdk.annotations.http.Delete;
 import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
@@ -50,11 +51,12 @@ public class CustomerEndpoint {
         .invokeAsync(name);
   }
 
-  @Get("/by-name-summary/{name}")
-  public CompletionStage<CustomerSummaryByName.CustomerSummary> getSummaryByName(String name) {
+  public record ByNameSummary(String name) {}
+  @Post("/by-name-summary")
+  public CompletionStage<CustomerSummaryByName.CustomerSummary> getSummaryByName(ByNameSummary req) {
     return componentClient.forView()
         .method(CustomerSummaryByName::getCustomer)
-        .invokeAsync(name);
+        .invokeAsync(req.name());
   }
 
   public record ByCityRequest(List<String> cities) {}
@@ -64,6 +66,14 @@ public class CustomerEndpoint {
     return componentClient.forView()
         .method(CustomersByCity::getCustomers)
         .invokeAsync(req.cities());
+  }
+
+  @Delete("/{customerId}")
+  public CompletionStage<HttpResponse> delete(String customerId) {
+    return componentClient.forKeyValueEntity(customerId)
+        .method(CustomerEntity::delete)
+        .invokeAsync()
+        .thenApply(__ -> HttpResponses.noContent());
   }
 
 }

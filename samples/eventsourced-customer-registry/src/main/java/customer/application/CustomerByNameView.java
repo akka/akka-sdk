@@ -14,15 +14,10 @@ import customer.domain.CustomersList;
 @ComponentId("view_customers_by_name") // <1>
 public class CustomerByNameView extends View {
 
-  @Query("SELECT * as customers FROM customers_by_name WHERE name = :name")
-  public QueryEffect<CustomersList> getCustomers(String name) {
-    return queryResult();
-  }
-
   @Consume.FromEventSourcedEntity(CustomerEntity.class)
-  public static class CustomersByName extends TableUpdater<CustomerRow> {
+  public static class CustomersByName extends TableUpdater<CustomerRow> { // <2>
 
-    public Effect<CustomerRow> onEvent(CustomerEvent event) {
+    public Effect<CustomerRow> onEvent(CustomerEvent event) { // <3>
       return switch (event) {
         case CustomerEvent.CustomerCreated created ->
             effects().updateRow(new CustomerRow(created.email(), created.name(), created.address()));
@@ -35,5 +30,11 @@ public class CustomerByNameView extends View {
       };
     }
   }
+
+  @Query("SELECT * as customers FROM customers_by_name WHERE name = :name")
+  public QueryEffect<CustomersList> getCustomers(String name) {
+    return queryResult();
+  }
+
 }
 // end::class[]

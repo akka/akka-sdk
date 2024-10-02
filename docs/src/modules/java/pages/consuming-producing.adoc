@@ -76,6 +76,7 @@ include::example$eventsourced-customer-registry/src/main/java/customer/api/Custo
 <4> Event handler transforms service internal event model into public API types.
 <5> Filter event types that should not be available to consuming services using `ignore()`.
 
+[#_event_consumer]
 === Event Consumer
 
 The consuming side can be a Consumer or a View, annotated with `@Consume.FromStream` with a `service` identifying the publishing service, and the `id` of the stream to subscribe to.

@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
 // tag::class[]
 @ComponentId("counter-journal-to-topic-with-meta")
 @Consume.FromEventSourcedEntity(CounterEntity.class)
-@Produce.ToTopic("counter-events-with-meta")
+@Produce.ToTopic("counter-events-with-meta")  // <1>
 public class CounterJournalToTopicWithMetaConsumer extends Consumer {
 
   // end::class[]
@@ -20,11 +20,10 @@ public class CounterJournalToTopicWithMetaConsumer extends Consumer {
 
   // tag::class[]
   public Effect onEvent(CounterEvent event) {
-    String counterId = messageContext().metadata().asCloudEvent().subject().get(); // <1>
-    String key = "ce-subject";
-    Metadata metadata = Metadata.EMPTY.add(key, counterId);
+    String counterId = messageContext().metadata().asCloudEvent().subject().get(); // <2>
+    Metadata metadata = Metadata.EMPTY.add("ce-subject", counterId);
     logger.info("Received event for counter id {}: {}", counterId, event);
-    return effects().produce(event, metadata); // <2>
+    return effects().produce(event, metadata); // <3>
   }
 }
 // end::class[]

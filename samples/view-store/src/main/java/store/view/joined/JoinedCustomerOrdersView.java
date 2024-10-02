@@ -15,24 +15,13 @@ import store.product.domain.ProductEvent;
 import store.view.model.Customer;
 import store.view.model.Product;
 
+import java.util.List;
+
 // tag::join[]
 @ComponentId("joined-customer-orders") // <1>
 public class JoinedCustomerOrdersView extends View {
 
-  @Query( // <2>
-    """
-      SELECT * AS orders
-      FROM customers
-      JOIN orders ON customers.customerId = orders.customerId
-      JOIN products ON products.productId = orders.productId
-      WHERE customers.customerId = :customerId
-      ORDER BY orders.createdTimestamp
-      """)
-  public QueryEffect<CustomerOrders> get(String customerId) { // <3>
-    return queryResult();
-  }
-
-  @Table("customers") // <4>
+  @Table("customers") // <2>
   @Consume.FromEventSourcedEntity(CustomerEntity.class)
   public static class Customers extends TableUpdater<Customer> {
     public Effect<Customer> onEvent(CustomerEvent event) {
@@ -52,7 +41,7 @@ public class JoinedCustomerOrdersView extends View {
     }
   }
 
-  @Table("products") // <4>
+  @Table("products") // <2>
   @Consume.FromEventSourcedEntity(ProductEntity.class)
   public static class Products extends TableUpdater<Product> {
     public Effect<Product> onEvent(ProductEvent event) {
@@ -71,9 +60,25 @@ public class JoinedCustomerOrdersView extends View {
     }
   }
 
-  @Table("orders") // <4>
+  @Table("orders") // <2>
   @Consume.FromKeyValueEntity(OrderEntity.class)
   public static class Orders extends TableUpdater<Order> {
   }
+
+  public record CustomerOrders(List<CustomerOrder> orders) { }
+
+  @Query( // <3>
+      """
+        SELECT * AS orders
+        FROM customers
+        JOIN orders ON customers.customerId = orders.customerId
+        JOIN products ON products.productId = orders.productId
+        WHERE customers.customerId = :customerId
+        ORDER BY orders.createdTimestamp
+        """)
+  public QueryEffect<CustomerOrders> get(String customerId) { // <4>
+    return queryResult();
+  }
+
 }
 // end::join[]

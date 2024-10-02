@@ -1,6 +1,6 @@
-You would normally not expose Entities, Workflows and Views directly to the outside world, but have an Endpoint or Consumer in front of it.
+You would normally not expose Entities, Workflows and Views directly to the outside world, but have an xref:java:http-endpoints.adoc[Endpoint] or xref:java:consuming-producing.adoc[Consumer] in front of it.
 
-However, a built-in endpoint for the component can be enabled. The primary purpose of this component endpoint is for convenience in local development so that you can try the entity with `curl` without having to define the final `HttpEndpoint`.
+However, a built-in HTTP endpoint for the component can be enabled. The primary purpose of this component endpoint is for convenience in local development so that you can try the entity with `curl` without having to define the final `HttpEndpoint`.
 
 === Enable access
 
@@ -12,7 +12,7 @@ To enable the component's HTTP endpoint you can disable access control checks in
 akka.javasdk.dev-mode.acl.enabled = false
 ----
 
-Alternativly, start with:
+Alternatively, start with:
 
 [source,shell]
 ----

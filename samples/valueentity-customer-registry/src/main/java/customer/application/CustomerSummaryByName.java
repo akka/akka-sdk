@@ -13,20 +13,23 @@ public class CustomerSummaryByName extends View {
 
   public record CustomerSummary(String id, String name) { }
 
-  @Query("SELECT * FROM customers WHERE name = :name")
-  public QueryEffect<CustomerSummary> getCustomer(String name) { return queryResult(); }
-
+  // tag::delete[]
   @Consume.FromKeyValueEntity(value = CustomerEntity.class)
-  public static class Customers extends TableUpdater<CustomerSummary> {
+  public static class Customers extends TableUpdater<Customer> { // <1>
 
-    public Effect<CustomerSummary> onChange(Customer customer) {
-      return effects()
-          .updateRow(new CustomerSummary(customer.email(), customer.name()));
-    }
-
-    @DeleteHandler
-    public Effect<CustomerSummary> onDelete() {
-      return effects().deleteRow();
+    // ...
+    @DeleteHandler // <2>
+    public Effect<Customer> onDelete() {
+      return effects().deleteRow(); // <3>
     }
   }
+  // end::delete[]
+
+  // tag::projection[]
+  @Query("SELECT customerId AS id, name FROM customers WHERE name = :customerName") // <1>
+  public QueryEffect<CustomerSummary> getCustomer(String customerName) {
+    return queryResult(); // <2>
+  }
+  // end::projection[]
+
 }

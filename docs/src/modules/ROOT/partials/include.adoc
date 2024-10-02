@@ -25,3 +25,5 @@
 //
 // // CLI
 // :kalix-support-version: 2.0.0
+
+:sample-base-url: https://github.com/lightbend/akka-javasdk/blob/main/samples

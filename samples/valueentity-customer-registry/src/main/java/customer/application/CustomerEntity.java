@@ -18,12 +18,14 @@ public class CustomerEntity extends KeyValueEntity<Customer> { // <4>
 
 
   public Effect<Done> create(Customer customer) {
-    if (currentState() == null)
+    if (currentState() == null) {
+      logger.info("Creating customer with id '{}'", commandContext().entityId());
       return effects()
-        .updateState(customer) // <6>
-        .thenReply(Done.done());  // <7>
-    else
+          .updateState(customer) // <6>
+          .thenReply(Done.done());  // <7>
+    } else {
       return effects().error("Customer exists already");
+    }
   }
 
   public Effect<Customer> getCustomer() {
@@ -47,6 +49,7 @@ public class CustomerEntity extends KeyValueEntity<Customer> { // <4>
   }
 
   public Effect<Done> delete() {
+    logger.info("Deleting customer with id '{}'", commandContext().entityId());
     return effects().deleteEntity().thenReply(Done.done());
   }
 

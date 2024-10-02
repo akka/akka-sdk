@@ -92,6 +92,12 @@ curl localhost:9000/customer/by-city \
   --data '{ "cities": ["City Test", "New City Test"]}'
 ```
 
+* Delete a customer:
+
+```shell
+curl -i -XDELETE localhost:9000/customer/001
+```
+
 ## Deploying
 
 To deploy your service, install the `akka` CLI as documented in

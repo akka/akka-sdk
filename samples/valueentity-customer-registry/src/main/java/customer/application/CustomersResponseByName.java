@@ -12,14 +12,14 @@ import akka.javasdk.view.View;
 public class CustomersResponseByName extends View {
 
   @Consume.FromKeyValueEntity(CustomerEntity.class)
-  public static class Customers extends TableUpdater<Customer> { }
+  public static class Customers extends TableUpdater<Customer> { } // <1>
 
   @Query("""
     SELECT * AS customers
       FROM customers_by_name
       WHERE name = :name
     """) // <2>
-  public QueryEffect<CustomerList> getCustomers(String name) { // <4>
+  public QueryEffect<CustomerList> getCustomers(String name) { // <3>
     return queryResult();
   }
 }

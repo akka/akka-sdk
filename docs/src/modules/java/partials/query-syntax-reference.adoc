@@ -1,8 +1,8 @@
-// tag::grpc[]
-// tag::spring[]
 == Query syntax reference
 
-Define View queries in a language that is similar to SQL. The following examples illustrate the syntax. To retrieve:
+Define View queries in a language that is similar to SQL. The following examples are added to illustrate the syntax. 
+
+=== Retrieving
 
 * All customers without any filtering conditions (no WHERE clause):
 +
@@ -18,7 +18,7 @@ SELECT * FROM customers
 SELECT * FROM customers WHERE name = :customer_name
 ----
 
-* Customers matching the `customer_name` AND `city` properties of the request message:
+* Customers matching the `customer_name` AND `city` properties of the request message, with `city` being matched on a nested field:
 +
 [source,proto,indent=0]
 ----
@@ -99,7 +99,7 @@ Use `LIKE` to pattern match on strings. The standard SQL `LIKE` patterns are sup
 SELECT * FROM customers WHERE name LIKE 'Bob%'
 ----
 
-NOTE: For index efficiency, the pattern must have a non-wildcard prefix or suffix. A pattern like `'%foo%'` is not supported. Given this limitation, only constant patterns with literal strings are supported; patterns in request parameters are not allowed.
+NOTE: For index efficiency, the pattern must have a non-wildcard prefix or suffix as used in the query above. A pattern like `'%foo%'` is not supported. Given this limitation, only constant patterns with literal strings are supported; patterns in request parameters are not allowed.
 
 ==== Text search
 
@@ -120,59 +120,6 @@ SELECT * FROM customers WHERE text_search(profile, :search_words, 'english')
 NOTE: Text search is currently only available for deployed services, and can't be used in local testing.
 
 ==== Data types
-// end::spring[]
-
-The following data types are supported, for their corresponding Protobuf types. Arrays are created for a repeated field in a Protobuf message. Timestamps can be stored and compared using the `google.protobuf.Timestamp` message type.
-
-[cols="1,1"]
-|===
-| Data type | Protobuf type
-
-| Text
-| `string`
-
-| Integer
-| `int32`
-
-| Long (Big Integer)
-| `int64`
-
-| Float (Real)
-| `float`
-
-| Double
-| `double`
-
-| Boolean
-| `bool`
-
-| Byte String
-| `bytes`
-
-| Array
-| repeated fields
-
-| Timestamp
-| `google.protobuf.Timestamp`
-
-|===
-
-==== Optional fields
-
-Fields in a Protobuf message that were not given a value are handled as https://developers.google.com/protocol-buffers/docs/proto3#default[the default value] of the field data type.
-
-In some use cases it is important to explicitly express that a value is missing, doing that in a view column can be done in three ways:
-
- * mark the message field as `optional`
- * use one of the Protobuf "wrapper" types for the field (messages in the package `google.protobuf` ending with `Value`)
- * make the field a part of a nested message and omit that whole nested message, for example `address.street` where the lack of an `address` message implies there is no `street` field.
-
-Optional fields with values present can be queried just like regular view fields:
-
-// end::grpc[]
-
-
-// tag::spring[]
 
 When modeling your queries, the following data types are supported:
 
@@ -208,7 +155,6 @@ When modeling your queries, the following data types are supported:
 | `java.time.Instant`
 |===
 
-NOTE: `Instant` is only supported for queries with a `@RequestBody`. It's currently not possible to pass an `Instant` as a `@PathVariable` or `@RequestParam`.
 
 ==== Optional fields
 
@@ -220,8 +166,6 @@ However, in some use cases it is important to explicitly express that a value is
 * make the field a part of another class and leave it uninitialized (i.e. `null`), for example `address.street` where the lack of an `address` message implies there is no `street` field.
 
 Optional fields with values present can be queried just like regular view fields:
-
-// tag::grpc[]
 
 ----
 SELECT * FROM customers WHERE phone_number = :number
@@ -253,5 +197,80 @@ SELECT * FROM customers WHERE name = :name AND age > :min_age ORDER BY age DESC
 
 NOTE: Some orderings may be rejected, if the view index cannot be efficiently ordered. Generally, to order by a column it should also appear in the `WHERE` conditions.
 
-// end::grpc[]
-// end::spring[]
+=== Paging
+
+Splitting a query result into one "page" at a time rather than returning the entire result at once is possible in two ways:
+
+* a count based offset;
+* a token based offset.
+
+In both cases `OFFSET` and `LIMIT` are used.
+
+`OFFSET` specifies at which offset in the result to start
+
+`LIMIT` specifies a maximum number of results to return
+
+==== Count based offset ====
+
+The values can either be static, defined up front in the query:
+
+[source,proto,indent=0]
+----
+SELECT * FROM customers LIMIT 10
+----
+
+Or come from fields in the request message:
+[source,proto,indent=0]
+----
+SELECT * FROM customers OFFSET :start_from LIMIT :max_customers
+----
+
+Note: Using count based offsets can lead to missing or duplicated entries in the result if entries are added to or removed from the view between requests for the pages.
+
+==== Token based offset ====
+
+The count based offset requires that you keep track of how far you got by adding the page size to the offset for each query.
+
+An alternative to this is to use a string token emitted by Akka identifying how far into the result set the paging has reached using the functions `next_page_token()` and `page_token_offset()`.
+
+When reading the first page, an empty token is provided to `page_token_offset`. For each returned result page a new token that can be used to read the next page is returned by `next_page_token()`, once the last page has been read, an empty token is returned (see also xref:has-more[has_more] for determining if the last page was reached).
+
+The size of each page can optionally be specified using `LIMIT`, if it is not present a default page size of 100 is used.
+
+With the query return type like this:
+
+[source,java,indent=0]
+----
+public record Response(List<Customer> customers, String next_page_token) { }
+----
+
+A query such as the one below will allow for reading through the view in pages, each containing 10 customers:
+[source,proto,indent=0]
+----
+SELECT * AS customers, next_page_token() AS next_page_token
+FROM customers
+OFFSET page_token_offset(:page_token)
+LIMIT 10
+----
+
+The token value is not meant to be parseable into any meaningful information other than being a token for reading the next page.
+
+==== Total count of results
+
+To get the total number of results that will be returned over all pages, use `COUNT(*)` in a query that projects its results into a field. The total count will be returned in the aliased field (using `AS`) or otherwise into a field named `count`.
+
+----
+SELECT * AS customers, COUNT(*) AS total, has_more() AS more FROM customers LIMIT 10
+----
+
+[#has-more]
+==== Check if there are more pages ====
+
+To check if there are more pages left, you can use the function `has_more()` providing a boolean value for the result. This works both for the count and token based offset paging, and also when only using `LIMIT` without any `OFFSET`:
+
+[source,proto,indent=0]
+----
+SELECT * AS customers, has_more() AS more_customers FROM customers LIMIT 10
+----
+
+This query will return `more_customers = true` when the view contains more than 10 customers.

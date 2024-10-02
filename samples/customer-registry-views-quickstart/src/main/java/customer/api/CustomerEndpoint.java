@@ -4,10 +4,7 @@ import akka.NotUsed;
 import akka.http.javadsl.model.ContentType;
 import akka.http.javadsl.model.ContentTypes;
 import akka.http.javadsl.model.HttpEntities;
-import akka.http.javadsl.model.HttpEntity;
 import akka.http.javadsl.model.HttpResponse;
-import akka.http.javadsl.model.MediaType;
-import akka.http.javadsl.model.ResponseEntity;
 import akka.http.javadsl.model.StatusCodes;
 import akka.http.javadsl.model.headers.CacheControl;
 import akka.http.javadsl.model.headers.CacheDirectives;
@@ -20,8 +17,6 @@ import akka.javasdk.annotations.http.Post;
 import akka.javasdk.annotations.http.Put;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.http.HttpException;
-import akka.javasdk.http.HttpResponses;
-import akka.stream.Materializer;
 import akka.stream.javadsl.Source;
 import akka.util.ByteString;
 import customer.domain.Address;
@@ -32,7 +27,6 @@ import customer.application.CustomersByNameView;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.concurrent.CompletionStage;
 
@@ -111,6 +105,13 @@ public class CustomerEndpoint {
                 .invokeAsync(name);
     }
 
+    @Get("/first-by-name/{name}")
+    public CompletionStage<CustomersByNameView.CustomerSummary> getOneCustomerByName(String name) {
+        return componentClient.forView()
+            .method(CustomersByNameView::getFirstCustomerSummary)
+            .invokeAsync(name);
+    }
+
     @Get("/by-name-csv/{name}")
     public HttpResponse getCustomersCsvByName(String name) {
         // Note: somewhat superficial, shows of streaming consumption of a view, transforming
@@ -135,7 +136,7 @@ public class CustomerEndpoint {
     public HttpResponse continousByNameServerSentEvents(String name) {
         // view will keep stream going, toggled with streamUpdates = true on the query
         var customerSummarySource = componentClient.forView()
-            .stream(CustomersByNameView::continousGetCustomerSummaryStream)
+            .stream(CustomersByNameView::continuousGetCustomerSummaryStream)
             .source(name);
 
         final var eventPrefix = ByteString.fromString("data: ");
