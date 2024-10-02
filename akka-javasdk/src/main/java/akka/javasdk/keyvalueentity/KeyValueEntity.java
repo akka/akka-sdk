@@ -13,8 +13,6 @@ import java.util.Optional;
  * Key Value Entities persist their state on every change. You can think of them as a Key-Value entity where
  * the key is the entity id and the value is the state of the entity.
  * <p>
- * Key Value Entities have nothing in common with the domain-driven design concept of Value Objects.
- * The Value in the name refers to the direct modification of the entity's state.
  *
  * When implementing a Key Value Entity, you first define what will be its internal state (your domain model),
  * and the commands it will handle (mutation requests).
