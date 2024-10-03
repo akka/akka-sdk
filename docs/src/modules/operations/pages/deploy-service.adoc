@@ -4,7 +4,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-Once you have xref:operations:create-project.adoc[created a Akka project], use the Akka Console or the `akka` CLI to deploy container images.
+Once you have xref:operations:create-project.adoc[created an Akka project], use the Akka Console or the `akka` CLI to deploy a Service container images to the project.
 
 Akka services are automatically fault-tolerant and highly available. When you deploy a service, Akka creates multiple service instances. When the service load increases, Akka automatically scales up by adding more instances, and when the load decreases, it automatically scales down.
 

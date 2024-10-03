@@ -48,6 +48,12 @@ my-akka-proj   "My ..        xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx   id:"xxxxxxxx
 
 'my-akka-proj' is now the currently active project.
 ----
+UI::
++
+. Log into the xref:https://console.akka.io[Akka Management Console]
+
+:TODO: Finsh
+. Navigate to
 --
 
 

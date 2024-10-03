@@ -3,9 +3,9 @@
 
 include::ROOT:partial$include.adoc[]
 
-A Akka organization is the owner of projects where services are deployed.
+The _Organization_ is the root of the management hierarchy in Akka. It is container for all xref:operations:projects.adoc[] where services are deployed. The organization services as a context for users within it. When working in https://console.akka.io[Akka Console] or the Akka CLI you will operate in this context. If you want to switch organizations you must specify the organization context to which you want to switch.
 
-An organization can be available in different xref:operations:regions.adoc[regions]. Projects created in the organization will be located in one of these regions.
+An organization has access to a set of xref:operations:regions.adoc[regions]. Projects created in the organization will be located in one or more of these regions.
 
 A user can be a member of one or more organizations; being a member does not automatically give the user access to the projects owned by the organization.
 
@@ -38,7 +38,7 @@ Note that you can refer to the organization in `akka` commands using either the 
 
 == Topics
 
-- xref:support:paid-plans.adoc[]
 - xref:operations:manage-users.adoc[]
 - xref:operations:regions.adoc[]
 - xref:operations:billing.adoc[]
+- xref:support:paid-plans.adoc[]

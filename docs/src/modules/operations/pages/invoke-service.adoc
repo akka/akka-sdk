@@ -1,9 +1,9 @@
-= Invoke services
+= Service communication
 :page-aliases: services:invoke-service.adoc[], concepts:invoke-service.adoc[] 
 
 include::ROOT:partial$include.adoc[]
 
-You can invoke services that have been deployed to Akka in the following ways:
+For security reasons, _Services_ deployed to Akka have limited exposure by default. You can invoke services that have been deployed to Akka in the following ways:
 
 - From another Akka service in the same project
 - By <<_exposing_services_to_the_internet,exposing services to the internet>> using routes

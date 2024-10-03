@@ -1,4 +1,4 @@
-= Integrate with CI/CD tools
+= Integrating with CI/CD tools
 :page-aliases: projects:integrate-cicd.adoc[]
 
 include::ROOT:partial$include.adoc[]

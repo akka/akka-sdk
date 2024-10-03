@@ -3,14 +3,15 @@
 
 include::ROOT:partial$include.adoc[]
 
-Akka services are deployed to projects owned by an xref:operations:organizations.adoc[organization] in a xref:operations:regions.adoc[region].
+Akka services are deployed to _Projects_ within an xref:operations:organizations.adoc[organization].
 
 == Details
 
-* From a security standpoint, projects are isolated from other projects.
+* From a security standpoint, projects are isolated from other projects even in the same organization.
 * Users are given access to projects on a per-project basis.
 * One or more services can be deployed to a project.
-* A project is located in a region.
+* A project is located in one or more regions.
+* The services in a project are each packaged as container images for deployment.
 
 == Topics
 

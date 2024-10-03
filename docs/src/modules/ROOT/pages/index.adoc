@@ -2,8 +2,18 @@
 
 Akka is a platform as a service (PaaS) to build and run distributed applications that are guaranteed to remain responsive to change. It abstracts the complexities of building distributed systems by providing an event-driven, stateful service model, allowing developers to focus on business logic rather than managing infrastructure and scalability.
 
+TIP: Register for an https://console.akka.io/register[Akka account] to see Akka in action as you go through your learning journey. 
+
 [cols="1a,1a",frame="none",grid="none"]
 |===
+
+|
+== xref:concepts:index.adoc[Concepts]
+
+_Learn essential principles, components and best practices for building with Akka. You should read this first._
+
+* xref:concepts:architecture-model.adoc[] provides a high level overview of how Akka works. 
+* xref:concepts:deployment-model.adoc[] introduces how Akka runs after deployment.
 
 |
 == Get Started
@@ -21,11 +31,6 @@ _Practical guides for:_
 
 * xref:java:index.adoc[Developing Services]
 * xref:operations:index.adoc[Operating Services]
-
-|
-== xref:concepts:index.adoc[Concepts]
-
-_Essential principles, components and best practices for building with Akka._
 
 |
 == xref:reference:index.adoc[Reference]

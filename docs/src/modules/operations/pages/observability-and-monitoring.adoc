@@ -1,0 +1,14 @@
+= Observability and Monitoring
+:page-aliases: observability:index.adoc[]
+
+include::ROOT:partial$include.adoc[]
+
+Akka provides a host of observability and monitoring capabilities and is designed to plug into your existing monitoring tools. This means that while the tools in https://console.akka.io[Akka Console] will allow you to understand what is happening, they are designed to feed other tools you use to monitor, log, and observe your applications and services over time. 
+
+You can view logs, metrics, and traces via the following:
+
+* xref:operations:view-logs.adoc[]
+* xref:operations:controltower-metrics.adoc[]
+* xref:operations:controltower-traces.adoc[]
+
+To export this data into your other tools see xref:operations:observability-exports.adoc[] for more information.
