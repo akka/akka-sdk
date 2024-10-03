@@ -77,10 +77,19 @@ Endpoints are how you expose your services to the outside world. They can also c
 [#_create_unit_tests]
 == Testing your application
 
-It is good practice to write unit tests and integration tests as you implement your services.
+Writing automated tests for your application is a good practice. Automated testing helps catch bugs early in the development process, reduces the likelihood of regressions, enables confident refactoring, and ensures your application behaves as expected. There are three main types of tests to consider: unit tests, integration tests, and end-to-end tests.
 
-The Akka SDK provides a test kit dependency that you can use to write unit tests for Entities as well as integration tests. Please consult the component specific pages to learn more about writing unit tests and integration tests for your application.
+=== Unit Tests
 
+Unit tests focus on testing individual components in isolation to ensure they work as intended. The Akka SDK provides a test kit for unit testing your components.
+
+=== Integration Tests
+
+Integration tests validate the interactions between multiple components or services within your application, ensuring that different parts of your system work together as intended.
+
+=== End-to-End Tests
+
+End-to-end tests validate the entire application by simulating real-world user scenarios. These tests span multiple services or modules to ensure the system functions correctly as a whole, whether within the same project or across different projects. For example, you might test the data flow between two Akka services in the same project using service-to-service eventing. Akka also offers flexible configuration options to accommodate various environments.
 
 [#_run_locally]
 == Running locally
