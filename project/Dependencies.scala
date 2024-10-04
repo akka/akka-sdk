@@ -16,11 +16,9 @@ object Dependencies {
   val AkkaVersion = "2.9.5"
   val AkkaHttpVersion = "10.6.3" // Note: should at least the Akka HTTP version required by Akka gRPC
 
-  // changing the Scala version of the Java SDK affects end users
-  val ScalaVersion = "2.13.14"
-  val ScalaVersionForTooling = "2.12.19"
-  val Scala3Version = "3.3.3"
-  val CrossScalaVersions = Seq(ScalaVersion, Scala3Version)
+  // Note: the Scala version must be aligned with the runtime
+  val ScalaVersion = "2.13.15"
+  val CrossScalaVersions = Seq(ScalaVersion)
 
   val ProtobufVersion = // akka.grpc.gen.BuildInfo.googleProtobufVersion
     "3.21.12" // explicitly overriding the 3.21.1 version from Akka gRPC 2.1.6 (even though its build says 3.20.1)

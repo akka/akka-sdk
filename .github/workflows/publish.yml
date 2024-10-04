@@ -50,10 +50,10 @@ jobs:
           PGP_SECRET: ${{ secrets.PGP_SECRET }}
           PUBLISH_USER: ${{ secrets.CLOUDSMITH_MACHINE_USER }}
           PUBLISH_PASSWORD: ${{ secrets.CLOUDSMITH_MACHINE_PASSWORD }}
-        run: sbt --client +publishSigned
+        run: sbt --client publishSigned
 
       - name: sbt publishM2
-        run: sbt --client +publishM2
+        run: sbt --client publishM2
 
       - name: mvn deploy
         run: |-
