@@ -2,7 +2,9 @@
 
 ## Designing
 
-To understand the Kalix concepts that are the basis for this example, see [Designing services](https://docs.kalix.io/java/development-process.html) in the documentation.
+
+To understand the Akka concepts that are the basis for this example, see [Designing services](https://docs.kalix.
+io/java/development-process.html) in the documentation.
 
 ## Developing
 
@@ -20,19 +22,15 @@ mvn compile
 
 ## Running Locally
 
-When running a Kalix service locally, we need to have its companion Kalix Runtime running alongside it.
-
 To start your service locally, run:
 
 ```shell
 mvn compile exec:java
 ```
 
-This command will start your Kalix service and a companion Kalix Runtime.
-
 ## Exercising the services
 
-With your Kalix service running, any defined endpoints should be available at `http://localhost:9000`.
+With your service running, any defined endpoints should be available at `http://localhost:9000`.
 
 * Create a customer with:
 

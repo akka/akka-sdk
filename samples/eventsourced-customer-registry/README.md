@@ -21,15 +21,11 @@ mvn compile
 
 ## Running Locally
 
-When running a Akka service locally, we need to have its companion Akka Runtime running alongside it.
-
 To start your service locally, run:
 
 ```shell
 mvn compile exec:java
 ```
-
-This command will start your Akka service.
 
 ## Exercising the service
 

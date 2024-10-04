@@ -20,8 +20,6 @@ mvn compile
 
 ## Running Locally
 
-When running an Akka service locally.
-
 To start your service locally, run:
 
 ```shell
