@@ -70,6 +70,7 @@ import kalix.protocol.workflow_entity.WorkflowEntityInit
 import kalix.protocol.workflow_entity.WorkflowStreamIn
 import kalix.protocol.workflow_entity.WorkflowStreamIn.Message.Empty
 import kalix.protocol.workflow_entity.WorkflowStreamIn.Message.Init
+import kalix.protocol.workflow_entity.WorkflowStreamIn.Message
 import kalix.protocol.workflow_entity.WorkflowStreamIn.Message.Step
 import kalix.protocol.workflow_entity.WorkflowStreamIn.Message.Transition
 import kalix.protocol.workflow_entity.WorkflowStreamIn.Message.{ Command => InCommand }
@@ -368,11 +369,24 @@ final class WorkflowImpl(
 
           Future.successful(toProtoEffect(effect, cmd.commandId, None))
 
+        case Message.UpdateState(updateState) =>
+          updateState.userState match {
+            case Some(state) =>
+              val decoded = service.strictMessageCodec.decodeMessage(state)
+              router._internalSetInitState(decoded, updateState.finished)
+            case None => // no state
+          }
+          Future.successful(WorkflowStreamOut(WorkflowStreamOut.Message.Empty))
+
         case Init(_) =>
           throw ProtocolException(init, "Workflow already initiated")
 
         case Empty =>
           throw ProtocolException(init, "Workflow received empty/unknown message")
+
+        case _ =>
+          //dummy case to allow future protocol updates without breaking existing workflows
+          Future.successful(WorkflowStreamOut(WorkflowStreamOut.Message.Empty))
       }
 
     (flow, workflowConfig)
