@@ -29,12 +29,9 @@ To start your service locally, run:
 mvn compile exec:java
 ```
 
-This command will start your Akka service and a companion Akka Runtime.
+This command will start your Akka service.
 
 ## Exercising the service
-
-With your Akka service running, any defined endpoints should be available at `http://localhost:9000`.
-The ACL settings in `CustomerRegistrySetup.java` are very permissive. It has `Acl.Principal.ALL` which allows any traffic from the internet. More info at `CustomerRegistrySetup.java`.
 
 * Create a customer with:
 
@@ -42,7 +39,7 @@ The ACL settings in `CustomerRegistrySetup.java` are very permissive. It has `Ac
 curl -i localhost:9000/customer \
   --header "Content-Type: application/json" \
   -XPOST \
-  --data '{"id": "one","email":"test@example.com","name":"Testsson","address":{"street":"Teststreet 25", 
+  --data '{"customerId": "one","email":"test@example.com","name":"Testsson","address":{"street":"Teststreet 25", 
   "city":"Testcity"}}'
 ```
 

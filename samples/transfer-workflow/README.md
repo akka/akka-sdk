@@ -30,12 +30,9 @@ To start your service locally, run:
 mvn compile exec:java
 ```
 
-This command will start your Akka service and a companion Akka Runtime.
+This command will start your Akka service.
 
 ### Exercising the transfer
-
-With your Akka service running, any defined endpoints should be available at `http://localhost:9000`.
-The ACL settings in `TransferWorkflowSetup.java` are very permissive. It has `Acl.Principal.ALL` which allows any traffic from the internet. More info at `TransferWorkflowSetup.java`.
 
 With your Akka service running, any defined endpoints should be available at `http://localhost:9000`.
 
