@@ -10,7 +10,7 @@ if [ -z ${TARGET} ]; then
   exit 1;
 fi
 
-make local
+make managed local
 eval "$(ssh-agent -s)"
 echo "${SCP_SECRET}" | base64 -di > .github/id_rsa
 chmod 600 .github/id_rsa
