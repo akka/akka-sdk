@@ -35,7 +35,7 @@ mvn compile exec:java
 curl -i localhost:9000/customer \
   --header "Content-Type: application/json" \
   -XPOST \
-  --data '{"customerId": "one","email":"test@example.com","name":"Testsson","address":{"street":"Teststreet 25", 
+  --data '{"id": "one","email":"test@example.com","name":"Testsson","address":{"street":"Teststreet 25", 
   "city":"Testcity"}}'
 ```
 

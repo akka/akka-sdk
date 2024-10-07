@@ -38,13 +38,21 @@ private[javasdk] final case class ComponentClientImpl(
     TimedActionClientImpl(runtimeComponentClients.actionClient, callMetadata)
 
   override def forKeyValueEntity(valueEntityId: String): KeyValueEntityClient =
-    new KeyValueEntityClientImpl(runtimeComponentClients.keyValueEntityClient, callMetadata, valueEntityId)
+    if (valueEntityId eq null) throw new NullPointerException("Key Value entity id is null")
+    else if (valueEntityId.isEmpty) throw new IllegalArgumentException("Empty value entity id now allowed")
+    else new KeyValueEntityClientImpl(runtimeComponentClients.keyValueEntityClient, callMetadata, valueEntityId)
 
   override def forEventSourcedEntity(eventSourcedEntityId: String): EventSourcedEntityClient =
-    EventSourcedEntityClientImpl(runtimeComponentClients.eventSourcedEntityClient, callMetadata, eventSourcedEntityId)
+    if (eventSourcedEntityId eq null) throw new NullPointerException("Event sourced entity id is null")
+    else if (eventSourcedEntityId.isEmpty)
+      throw new IllegalArgumentException("Empty event sourced entity id now allowed")
+    else
+      EventSourcedEntityClientImpl(runtimeComponentClients.eventSourcedEntityClient, callMetadata, eventSourcedEntityId)
 
   override def forWorkflow(workflowId: String): WorkflowClient =
-    WorkflowClientImpl(runtimeComponentClients.workFlowClient, callMetadata, workflowId)
+    if (workflowId eq null) throw new NullPointerException("Workflow id is null")
+    else if (workflowId.isEmpty) throw new IllegalArgumentException("Empty workflow id now allowed")
+    else WorkflowClientImpl(runtimeComponentClients.workFlowClient, callMetadata, workflowId)
 
   override def forView(): ViewClient = ViewClientImpl(runtimeComponentClients.viewClient, callMetadata)
 

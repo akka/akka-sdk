@@ -40,21 +40,23 @@ public interface ComponentClient {
   /**
    * Select KeyValueEntity as a call target component.
    *
-   * @param keyValueEntityId - key value entity id used to create a call.
+   * @param keyValueEntityId - key value entity id used to create a call. Must not be null or empty
+   *     string.
    */
   KeyValueEntityClient forKeyValueEntity(String keyValueEntityId);
 
   /**
    * Select EventSourcedEntity as a call target component.
    *
-   * @param eventSourcedEntityId - event sourced entity id used to create a call.
+   * @param eventSourcedEntityId - event sourced entity id used to create a call. Must not be null
+   *     or empty string.
    */
   EventSourcedEntityClient forEventSourcedEntity(String eventSourcedEntityId);
 
   /**
    * Select Workflow as a call target component.
    *
-   * @param workflowId - workflow id used to create a call.
+   * @param workflowId - workflow id used to create a call. Must not be null or empty string.
    */
   WorkflowClient forWorkflow(String workflowId);
 
