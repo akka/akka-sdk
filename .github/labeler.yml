@@ -1,8 +1,5 @@
 # https://github.com/marketplace/actions/labeler
 
-kalix-runtime:
-  - '**/*'
-
 java-sdk:
   - akka-javasdk/**/*
   - akka-javasdk-testkit/**/*
@@ -10,6 +7,6 @@ java-sdk:
   - akka-javasdk-annotation-processor-tests/**/*
   - akka-javasdk-maven/**/*
 
-Documentation:
+documentation:
   - docs/**/*
   - samples/**/*
