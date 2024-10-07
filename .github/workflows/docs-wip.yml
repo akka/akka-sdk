@@ -18,6 +18,13 @@ jobs:
         with:
           ref: main
 
+      - name: Set up JDK 21
+        # https://github.com/coursier/setup-action/releases
+        # v1.3.5
+        uses: coursier/setup-action@7bde40eee928896f074dbb76d22dd772eed5c65f
+        with:
+          jvm: temurin:1.21
+
       - name: Downloads, Antora, SCP to Gustav
         run: |
           ./docs/bin/deploy-site.sh akkarepo@gustav.akka.io:www/snapshots/akka-documentation/
