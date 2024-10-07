@@ -20,7 +20,11 @@ public class CustomerEntity extends EventSourcedEntity<Customer, CustomerEvent> 
   private static final Logger logger = LoggerFactory.getLogger(CustomerEntity.class);
 
   public ReadOnlyEffect<Customer> getCustomer() {
-    return effects().reply(currentState());
+    if (currentState() == null) {
+      return errorNotFound();
+    } else {
+      return effects().reply(currentState());
+    }
   }
 
   public Effect<Done> create(Customer customer) {
@@ -31,15 +35,23 @@ public class CustomerEntity extends EventSourcedEntity<Customer, CustomerEvent> 
   }
 
   public Effect<Done> changeName(String newName) {
-    return effects()
-      .persist(new NameChanged(newName))
-      .thenReply(__ -> done());
+    if (currentState() == null) {
+      return errorNotFound();
+    } else {
+      return effects()
+          .persist(new NameChanged(newName))
+          .thenReply(__ -> done());
+    }
   }
 
   public Effect<Done> changeAddress(Address newAddress) {
-    return effects()
-      .persist(new AddressChanged(newAddress))
-      .thenReply(__ -> done());
+    if (currentState() == null) {
+      return errorNotFound();
+    } else {
+      return effects()
+          .persist(new AddressChanged(newAddress))
+          .thenReply(__ -> done());
+    }
   }
 
   @Override
@@ -49,5 +61,10 @@ public class CustomerEntity extends EventSourcedEntity<Customer, CustomerEvent> 
       case NameChanged nameChanged -> currentState().withName(nameChanged.newName());
       case AddressChanged addressChanged -> currentState().withAddress(addressChanged.address());
     };
+  }
+
+  private <T> ReadOnlyEffect<T> errorNotFound() {
+    return effects().error(
+        "No customer found for id '" + commandContext().entityId() + "'");
   }
 }
