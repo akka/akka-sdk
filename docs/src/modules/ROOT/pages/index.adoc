@@ -44,9 +44,10 @@ _Practical guides for:_
 [.grid-item]
 --
 [discrete]
-== xref:reference:index.adoc[Reference]
+== xref:libraries:index.adoc[Akka Libraries]
 
-_Technical reference for product updates, migration guides, and https://doc.akka.io/docs[Akka Libraries]._
+The documentation for Akka libraries such as Akka actors, event sourcing and integrations.
+
 --
 
 ====
