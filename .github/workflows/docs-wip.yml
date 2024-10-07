@@ -20,6 +20,6 @@ jobs:
 
       - name: Downloads, Antora, SCP to Gustav
         run: |
-          ./docs/bin/deploy-site.sh akkarepo@gustav.akka.io:www/snapshots/
+          ./docs/bin/deploy-site.sh akkarepo@gustav.akka.io:www/snapshots/akka-documentation/
         env:
           SCP_SECRET: ${{ secrets.GUSTAV_SCP_SECRET }}
