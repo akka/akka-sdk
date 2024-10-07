@@ -126,7 +126,7 @@ private[javasdk] object Validations {
     when[EventSourcedEntity[_, _]](component) {
       eventSourcedEntityEventMustBeSealed(component) ++
       eventSourcedCommandHandlersMustBeUnique(component) ++
-      mustHaveNonEmptyComponentId(component) ++
+      mustHaveValidComponentId(component) ++
       commandHandlerArityShouldBeZeroOrOne(component, hasESEffectOutput)
     }
 
@@ -151,7 +151,7 @@ private[javasdk] object Validations {
 
   def validateValueEntity(component: Class[_]): Validation = when[KeyValueEntity[_]](component) {
     valueEntityCommandHandlersMustBeUnique(component) ++
-    mustHaveNonEmptyComponentId(component) ++
+    mustHaveValidComponentId(component) ++
     commandHandlerArityShouldBeZeroOrOne(component, hasKVEEffectOutput)
   }
 
@@ -192,7 +192,7 @@ private[javasdk] object Validations {
   private def validateTimedAction(component: Class[_]): Validation = {
     when[TimedAction](component) {
       actionValidation(component) ++
-      mustHaveNonEmptyComponentId(component) ++
+      mustHaveValidComponentId(component) ++
       commandHandlerArityShouldBeZeroOrOne(component, hasTimedActionEffectOutput)
     }
   }
@@ -202,7 +202,7 @@ private[javasdk] object Validations {
       hasConsumeAnnotation(component, "Consumer") ++
       commonSubscriptionValidation(component, hasConsumerOutput) ++
       actionValidation(component) ++
-      mustHaveNonEmptyComponentId(component)
+      mustHaveValidComponentId(component)
     }
   }
 
@@ -221,7 +221,7 @@ private[javasdk] object Validations {
     when[View](component) {
       val tableUpdaters: Seq[Class[_]] = component.getDeclaredClasses.filter(Reflect.isViewTableUpdater).toSeq
 
-      mustHaveNonEmptyComponentId(component) ++
+      mustHaveValidComponentId(component) ++
       viewMustNotHaveTableAnnotation(component) ++
       viewMustHaveAtLeastOneViewTableUpdater(component) ++
       viewMustHaveAtLeastOneQueryMethod(component) ++
@@ -458,13 +458,15 @@ private[javasdk] object Validations {
     Validation(messages)
   }
 
-  private def mustHaveNonEmptyComponentId(component: Class[_]): Validation = {
+  private def mustHaveValidComponentId(component: Class[_]): Validation = {
     val ann = component.getAnnotation(classOf[ComponentId])
     if (ann != null) {
       val componentId: String = ann.value()
-      if (componentId == null || componentId.trim.isEmpty) {
+      if (componentId == null || componentId.trim.isEmpty)
         Invalid(errorMessage(component, "@ComponentId name is empty, must be a non-empty string."))
-      } else Valid
+      else if (componentId.contains("|"))
+        Invalid(errorMessage(component, "@ComponentId must not contain the pipe character '|'."))
+      else Valid
     } else {
       //missing annotation means that the component is disabled
       Valid

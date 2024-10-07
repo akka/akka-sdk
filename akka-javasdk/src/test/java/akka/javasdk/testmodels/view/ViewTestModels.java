@@ -72,6 +72,18 @@ public class ViewTestModels {
     }
   }
 
+  @ComponentId("oh|my|pipe")
+  public static class ViewWithPipeyComponentIdAnnotation extends View {
+
+    @Consume.FromKeyValueEntity(UserEntity.class)
+    public static class UserUpdater extends TableUpdater<User> {}
+
+    @Query("SELECT * FROM users WHERE email = :email")
+    public QueryEffect<User> getUser(String email) {
+      return queryResult();
+    }
+  }
+
   @ComponentId("view_query_with_too_many_arguments")
   public static class ViewQueryWithTooManyArguments extends View {
 

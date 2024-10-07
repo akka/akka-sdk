@@ -35,6 +35,7 @@ import akka.javasdk.testmodels.view.ViewTestModels.ViewQueryWithTooManyArguments
 import akka.javasdk.testmodels.view.ViewTestModels.ViewWithEmptyComponentIdAnnotation
 import akka.javasdk.testmodels.view.ViewTestModels.ViewWithMethodLevelAcl
 import akka.javasdk.testmodels.view.ViewTestModels.ViewWithNoQuery
+import akka.javasdk.testmodels.view.ViewTestModels.ViewWithPipeyComponentIdAnnotation
 import akka.javasdk.testmodels.view.ViewTestModels.ViewWithServiceLevelAcl
 import akka.javasdk.testmodels.view.ViewTestModels.ViewWithServiceLevelJWT
 import akka.javasdk.testmodels.view.ViewTestModels.ViewWithTwoQueries
@@ -440,6 +441,12 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
       intercept[InvalidComponentException] {
         Validations.validate(classOf[ViewWithEmptyComponentIdAnnotation]).failIfInvalid
       }.getMessage should include("@ComponentId name is empty, must be a non-empty string.")
+    }
+
+    "not allow invalid component id" in {
+      intercept[InvalidComponentException] {
+        Validations.validate(classOf[ViewWithPipeyComponentIdAnnotation]).failIfInvalid
+      }.getMessage should include("must not contain the pipe character")
     }
 
     "fail if no query method found" in {
