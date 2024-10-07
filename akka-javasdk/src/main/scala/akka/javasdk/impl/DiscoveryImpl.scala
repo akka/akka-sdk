@@ -172,15 +172,15 @@ class DiscoveryImpl(
       }
     }.toList
     val severityString = in.severity.name.take(1) + in.severity.name.drop(1).toLowerCase(Locale.ROOT)
-    val message = s"$severityString reported from Kalix system: ${in.code} ${in.message}"
+    val message = s"$severityString reported from Akka runtime: ${in.code} ${in.message}"
     val detail = if (in.detail.isEmpty) Nil else List(in.detail)
-    val seeDocs = DocLinks(sdkName).forErrorCode(in.code).map(link => s"See documentation: $link").toList
+    val seeDocs = DocLinks.forErrorCode(in.code).map(link => s"See documentation: $link").toList
     val messages = message :: detail ::: seeDocs ::: sourceMsgs
     val logMessage = messages.mkString("\t|\t")
 
     // ignoring waring for runtime version
     // TODO: remove it once we remove this check in the runtime
-    if (in.code != "KLX-00010") {
+    if (in.code != "AK-00010") {
       in.severity match {
         case UserFunctionError.Severity.ERROR   => log.error(logMessage)
         case UserFunctionError.Severity.WARNING => log.warn(logMessage)

@@ -10,35 +10,31 @@ import akka.annotation.InternalApi
  * INTERNAL API
  */
 @InternalApi
-private[javasdk] final case class DocLinks(sdkName: String) {
-  private val baseUrl = "https://docs.kalix.io"
+private[javasdk] object DocLinks {
 
-  // sdkName is of format e.g. kalix-java-sdk-protobuf
-  private val sdkPath = if (sdkName.endsWith("-protobuf")) "java-protobuf" else "java"
+  private val baseUrl = s"https://doc.akka.io/"
 
-  val errorCodes = Map(
-    "KLX-00112" -> "views.html#changing",
-    "KLX-00415" -> "publishing-subscribing.html#_subscribing_to_state_changes_from_a_value_entity")
+  val MessageBrokersPage = "operations/message-brokers.html"
+
+  private val errorCodes = Map(
+    "AK-00112" -> "java/views.html#changing",
+    "AK-00415" -> "java/consuming-producing.html#consume-from-event-sourced-entity",
+    "AK-00406" -> MessageBrokersPage,
+    "AK-00416" -> MessageBrokersPage)
 
   // fallback if not defined in errorCodes
-  val errorCodeCategories = Map(
-    "KLX-001" -> "views.html",
-    "KLX-002" -> "value-entity.html",
-    "KLX-003" -> "event-sourced-entities.html",
-    "KLX-004" -> "publishing-subscribing.html",
-    "KLX-005" -> "replicated-entity-crdt.html", // only pb sdks
-    "KLX-006" -> "writing-grpc-descriptors-protobuf.html#_transcoding_http", // only pb sdks
-    "KLX-007" -> "using-jwts.html",
-    "KLX-008" -> "timers.html",
-    "KLX-009" -> "access-control.html",
-    "KLX-010" -> "workflows.html", // only java sdk currently
-    "KLX-011" -> "actions.html#_actions_as_life_cycle_hooks")
+  private val errorCodeCategories = Map(
+    "AK-001" -> "java/views.html",
+    "AK-002" -> "java/key-value-entities.html",
+    "AK-003" -> "java/event-sourced-entities.html",
+    "AK-004" -> "java/consuming-producing.html",
+    "AK-007" -> "java/using-jwts.html",
+    "AK-008" -> "java/timed-actions.html",
+    "AK-009" -> "java/access-control.html",
+    "AK-010" -> "java/workflows.html")
 
   def forErrorCode(code: String): Option[String] = {
-    val page = errorCodes.get(code) match {
-      case s @ Some(_) => s
-      case None        => errorCodeCategories.get(code.take(7))
-    }
-    page.map(p => s"$baseUrl/$sdkPath/$p")
+    val page = errorCodes.get(code).orElse(errorCodeCategories.get(code.take("AK-000".length)))
+    page.map(p => s"$baseUrl/$p")
   }
 }
