@@ -4,18 +4,23 @@ Akka is a platform as a service (PaaS) to build and run distributed applications
 
 TIP: Register for an https://console.akka.io/register[Akka account] to see Akka in action as you go through your learning journey. 
 
-[cols="1a,1a",frame="none",grid="none"]
-|===
+[.akka-docs-homepage-grid]
+====
 
-|
+[.grid-item]
+--
+[discrete]
 == xref:concepts:index.adoc[Concepts]
 
 _Learn essential principles, components and best practices for building with Akka. You should read this first._
 
 * xref:concepts:architecture-model.adoc[] provides a high level overview of how Akka works. 
 * xref:concepts:deployment-model.adoc[] introduces how Akka runs after deployment.
+--
 
-|
+[.grid-item]
+--
+[discrete]
 == Get Started
 
 _Start here as an Akka developer:_
@@ -23,18 +28,25 @@ _Start here as an Akka developer:_
 . Register for an https://console.akka.io/register[Akka account].
 . Follow a guide to xref:java:getting-started.adoc[create your first service].
 . Learn key patterns and abstractions by xref:samples:index.adoc[exploring the samples].
+--
 
-|
+[.grid-item]
+--
+[discrete]
 == How-To Guides
 
 _Practical guides for:_
 
 * xref:java:index.adoc[Developing Services]
 * xref:operations:index.adoc[Operating Services]
+--
 
-|
+[.grid-item]
+--
+[discrete]
 == xref:reference:index.adoc[Reference]
 
 _Technical reference for product updates, migration guides, and https://doc.akka.io/docs[Akka Libraries]._
+--
 
-|===
+====
