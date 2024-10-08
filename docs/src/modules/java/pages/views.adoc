@@ -99,9 +99,9 @@ The View state corresponding to an Entity is not automatically deleted when the 
 We can update our table updater with an additional handler marked with `@DeleteHandler`, to handle a Key Value Entity xref:key-value-entities.adoc#deleting-state[delete] operation.
 
 [source,java,indent=0]
-.{sample-base-url}/valueentity-customer-registry/src/main/java/customer/application/CustomerSummaryByName.java[CustomerSummaryByName.java]
+.{sample-base-url}/key-value-customer-registry/src/main/java/customer/application/CustomerSummaryByName.java[CustomerSummaryByName.java]
 ----
-include::example$valueentity-customer-registry/src/main/java/customer/application/CustomerSummaryByName.java[tag=delete]
+include::example$key-value-customer-registry/src/main/java/customer/application/CustomerSummaryByName.java[tag=delete]
 ----
 <1> Note we are adding a new handler to the existing table updater.
 <2> Marks the method as a delete handler.
@@ -118,9 +118,9 @@ you have to <<_define_the_view_to_consume_events, define the view to consume eve
 This example assumes a Customer equal to the previous example and an Event Sourced Entity that uses this Customer. The Event Sourced Entity is in charge of producing the events that update the View. These events are defined as subtypes of the class `CustomerEvent` using a sealed interface:
 
 [source,java]
-.{sample-base-url}/eventsourced-customer-registry/src/main/java/customer/domain/CustomerEvent.java[CustomerEvent.java]
+.{sample-base-url}/event-sourced-customer-registry/src/main/java/customer/domain/CustomerEvent.java[CustomerEvent.java]
 ----
-include::example$eventsourced-customer-registry/src/main/java/customer/domain/CustomerEvent.java[tags=class]
+include::example$event-sourced-customer-registry/src/main/java/customer/domain/CustomerEvent.java[tags=class]
 ----
 <1> Includes the logical type name using `@TypeName` annotation.
 
@@ -134,9 +134,9 @@ Defining a view that consumes from an Event Sourced Entity is very similar to th
 Every time an event is processed by the view, the state of the view can be updated. You can do this with the `updateRow` method, which is available through the `effects()` API. Below you can see how the View is updated:
 
 [source,java]
-.{sample-base-url}/eventsourced-customer-registry/src/main/java/customer/view/CustomerByNameView.class[CustomerByNameView.java]
+.{sample-base-url}/event-sourced-customer-registry/src/main/java/customer/view/CustomerByNameView.class[CustomerByNameView.java]
 ----
-include::example$eventsourced-customer-registry/src/main/java/customer/application/CustomerByNameView.java[tags=class]
+include::example$event-sourced-customer-registry/src/main/java/customer/application/CustomerByNameView.java[tags=class]
 ----
 <1> Defines a component id for the view.
 <2> Declares a `TableUpdater` of type `CustomerRow`.
@@ -162,9 +162,9 @@ The source of a View can be a topic. It works the same way as shown in <<event-s
 NOTE: For the messages to be correctly consumed in the view, there must be a `ce-subject` metadata associated with each message. This is required because for each message consumed from the topic there will be a corresponding view row. That view row is selected based on such `ce-subject`. See the example below for how to pass such metadata when producing to a topic with Akka SDK.
 
 [source,java]
-.{sample-base-url}/eventsourced-counter/src/main/java/counter/application/CounterJournalToTopicWithMetaConsumer.java[CounterJournalToTopicWithMetaConsumer.java]
+.{sample-base-url}/event-sourced-counter/src/main/java/counter/application/CounterJournalToTopicWithMetaConsumer.java[CounterJournalToTopicWithMetaConsumer.java]
 ----
-include::example$eventsourced-counter/src/main/java/counter/application/CounterJournalToTopicWithMetaConsumer.java[tag=class]
+include::example$event-sourced-counter/src/main/java/counter/application/CounterJournalToTopicWithMetaConsumer.java[tag=class]
 ----
 <1> Uses `@Consume.FromTopic` annotation to set the target topic.
 <2> Composes the `ce-subject` attribute from the entity's event subject.
@@ -183,9 +183,9 @@ Instead of using `SELECT *` you can define which columns will be used in the res
 You will need to define your entity as this:
 
 [source,java,indent=0]
-.{sample-base-url}/valueentity-customer-registry/src/main/java/customer/application/CustomerSummaryByName.java[CustomerSummaryByName.java]
+.{sample-base-url}/key-value-customer-registry/src/main/java/customer/application/CustomerSummaryByName.java[CustomerSummaryByName.java]
 ----
-include::example$valueentity-customer-registry/src/main/java/customer/application/CustomerSummaryByName.java[tag=projection]
+include::example$key-value-customer-registry/src/main/java/customer/application/CustomerSummaryByName.java[tag=projection]
 ----
 <1> Note the renaming from `customerId` as `id` on the query, as `id` and `name` match the record `CustomerSummary`.
 <2> Returns the query result.
@@ -210,15 +210,15 @@ Oftentimes a query might be designed to return multiple results. In this case, y
 To include the results in a `Collection` field in the response object, you can do as below:
 
 [source,java]
-.{sample-base-url}/valueentity-customer-registry/src/main/java/customer/application/CustomerList.java[CustomerList.java]
+.{sample-base-url}/key-value-customer-registry/src/main/java/customer/application/CustomerList.java[CustomerList.java]
 ----
-include::example$valueentity-customer-registry/src/main/java/customer/application/CustomerList.java[tag=class]
+include::example$key-value-customer-registry/src/main/java/customer/application/CustomerList.java[tag=class]
 ----
 
 [source,java,indent=0]
-.{sample-base-url}/valueentity-customer-registry/src/main/java/customer/application/CustomersResponseByName.java[CustomersResponseByName.java]
+.{sample-base-url}/key-value-customer-registry/src/main/java/customer/application/CustomersResponseByName.java[CustomersResponseByName.java]
 ----
-include::example$valueentity-customer-registry/src/main/java/customer/application/CustomersResponseByName.java[tag=class]
+include::example$key-value-customer-registry/src/main/java/customer/application/CustomersResponseByName.java[tag=class]
 ----
 <1> Table updater type is the original `Customer` as shown at the beginning of this section.
 <2> Note the use of `* AS customers` so records are matched to `customers` field in `CustomersList`.
@@ -291,17 +291,17 @@ Testing Views is very similar to testing other xref:consuming-producing.adoc#_te
 For a View definition that subscribes to changes from the `customer` Key Value Entity.
 
 [source,java,indent=0]
-.{sample-base-url}/valueentity-customer-registry/src/main/java/customer/view/CustomersResponseByCity.java[CustomersResponseByCity.java]
+.{sample-base-url}/key-value-customer-registry/src/main/java/customer/view/CustomersResponseByCity.java[CustomersResponseByCity.java]
 ----
-include::example$valueentity-customer-registry/src/main/java/customer/application/CustomersByCity.java[tag=view-test]
+include::example$key-value-customer-registry/src/main/java/customer/application/CustomersByCity.java[tag=view-test]
 ----
 
 An integration test can be implemented as below.
 
 [source,java,indent=0]
-.{sample-base-url}/valueentity-customer-registry/src/main/java/customer/view/CustomersByCityIntegrationTest.java[CustomersByCityIntegrationTest.java]
+.{sample-base-url}/key-value-customer-registry/src/main/java/customer/view/CustomersByCityIntegrationTest.java[CustomersByCityIntegrationTest.java]
 ----
-include::example$valueentity-customer-registry/src/it/java/customer/application/CustomersByCityIntegrationTest.java[tag=view-test]
+include::example$key-value-customer-registry/src/it/java/customer/application/CustomersByCityIntegrationTest.java[tag=view-test]
 ----
 <1> Mocks incoming messages from the `customer` Key Value Entity.
 <2> Gets an `IncomingMessages` from the `customer` Key Value Entity.

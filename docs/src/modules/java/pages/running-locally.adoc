@@ -24,7 +24,7 @@ mvn compile exec:java
 
 After you start the service it will accept invocations on `localhost:9000`. You can use cURL to invoke your service.
 
-As an example, we will use the https://github.com/lightbend/akka-javasdk/tree/main/samples/eventsourced-customer-registry[`customer-registry`] sample.
+As an example, we will use the https://github.com/lightbend/akka-javasdk/tree/main/samples/event-sourced-customer-registry[`customer-registry`] sample.
 
 === Using cURL
 
@@ -87,7 +87,7 @@ The same can be done on your local machine by configuring the services to run on
 will discover each other by name and will be able to interact.
 
 In this section, we will show you how to configure your local development environment to run two services and have them call each other.
-For that we will use two of our existing samples: https://github.com/lightbend/akka-javasdk/tree/main/samples/spring-eventsourced-customer-registry[`customer-registry`] and https://github.com/lightbend/akka-javasdk/tree/main/samples/spring-eventsourced-customer-registry-subscriber[`customer-registry-subscriber`].
+For that we will use two of our existing samples: https://github.com/lightbend/akka-javasdk/tree/main/samples/spring-event-sourced-customer-registry[`customer-registry`] and https://github.com/lightbend/akka-javasdk/tree/main/samples/spring-event-sourced-customer-registry-subscriber[`customer-registry-subscriber`].
 
 The *customer-registry* sample provides a service to register customers and the *customer-registry-subscriber* subscribes to an event stream produced by the *customer-registry* service, building a xref:views.adoc[View] from it.
 
@@ -104,7 +104,7 @@ On the other hand, in the *customer-registry-subscriber* we will use port 9001 t
 
 [source,xml,indent=0]
 ----
-include::java:example$eventsourced-customer-registry-subscriber/src/main/resources/application.conf[tag=custom-port]
+include::java:example$event-sourced-customer-registry-subscriber/src/main/resources/application.conf[tag=custom-port]
 ----
 
 With both services configured, we can start them independently by running `mvn compile exec:java` in two separate terminals.

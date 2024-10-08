@@ -9,16 +9,19 @@
   </parent>
 
   <groupId>com.example</groupId>
-  <artifactId>eventsourced-shopping-cart</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
+  <artifactId>key-value-counter</artifactId>
+  <version>1.0-SNAPSHOT</version>
   <packaging>jar</packaging>
 
-  <name>eventsourced-shopping-cart</name>
+  <name>key-value-counter</name>
   <properties>
     <!-- For Docker setup see https://docs.kalix.io/projects/container-registries.html -->
     <container.registry>kcr.us-east-1.kalix.io</container.registry>
     <organization>acme</organization>
   </properties>
+
+  <dependencies>
+  </dependencies>
 
   <repositories>
     <repository>

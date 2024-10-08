@@ -1,7 +1,7 @@
 #!/bin/env bash
 
 # Run the Maven command in the background
-mvn -f ../eventsourced-customer-registry/pom.xml compile exec:java --no-transfer-progress &
+mvn -f ../event-sourced-customer-registry/pom.xml compile exec:java --no-transfer-progress &
 
 sleep 7
 echo "Waiting for service to be listed for local discovery"

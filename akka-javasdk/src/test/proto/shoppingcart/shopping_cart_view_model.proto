@@ -13,7 +13,7 @@ import "google/api/annotations.proto";
 service ShoppingCartViewService {
   rpc ProcessAdded(ItemAdded) returns (CartViewState) {
     option (kalix.method).eventing.in = {
-      event_sourced_entity: "eventsourced-shopping-cart"
+      event_sourced_entity: "event-sourced-shopping-cart"
     };
     option (kalix.method).view.update = {
       table: "carts"
@@ -21,7 +21,7 @@ service ShoppingCartViewService {
   }
   rpc ProcessRemoved(ItemRemoved) returns (CartViewState) {
     option (kalix.method).eventing.in = {
-      event_sourced_entity: "eventsourced-shopping-cart"
+      event_sourced_entity: "event-sourced-shopping-cart"
     };
     option (kalix.method).view.update = {
       table: "carts"
@@ -29,7 +29,7 @@ service ShoppingCartViewService {
   }
   rpc ProcessCheckedOut(CheckedOut) returns (CartViewState) {
     option (kalix.method).eventing.in = {
-      event_sourced_entity: "eventsourced-shopping-cart"
+      event_sourced_entity: "event-sourced-shopping-cart"
     };
     option (kalix.method).view.update = {
       table: "carts"

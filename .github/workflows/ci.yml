@@ -428,15 +428,15 @@ jobs:
           - { sample: view-store, it: true }
           - { sample: spring-dependency-injection, it: true }
 
-          - { sample: eventsourced-customer-registry, it: true }
-          - { sample: eventsourced-counter, pre_cmd: 'docker compose up gcloud-pubsub-emulator -d', it: true }
+          - { sample: event-sourced-customer-registry, it: true }
+          - { sample: event-sourced-counter, pre_cmd: 'docker compose up gcloud-pubsub-emulator -d', it: true }
 
-          - { sample: eventsourced-customer-registry-subscriber, it: true, pre_cmd: './start-upstream.sh' }
-          - { sample: eventsourced-shopping-cart, it: true }
+          - { sample: event-sourced-customer-registry-subscriber, it: true, pre_cmd: './start-upstream.sh' }
+          - { sample: event-sourced-shopping-cart, it: true }
 
-          - { sample: valueentity-counter, it: true }
-          - { sample: valueentity-shopping-cart, it: true }
-          - { sample: valueentity-customer-registry, it: true }
+          - { sample: key-value-counter, it: true }
+          - { sample: key-value-shopping-cart, it: true }
+          - { sample: key-value-customer-registry, it: true }
 
           - { sample: tracing, it: false }
           - { sample: reliable-timers, it: true }

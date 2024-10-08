@@ -13,7 +13,7 @@
   <version>1.0-SNAPSHOT</version>
   <packaging>jar</packaging>
 
-  <name>eventsourced-customer-registry-subscriber</name>
+  <name>event-sourced-customer-registry-subscriber</name>
   <properties>
     <!-- For Docker setup see https://docs.kalix.io/projects/container-registries.html -->
     <container.registry>kcr.us-east-1.kalix.io</container.registry>

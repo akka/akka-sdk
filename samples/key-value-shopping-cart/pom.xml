@@ -9,11 +9,11 @@
   </parent>
 
   <groupId>com.example</groupId>
-  <artifactId>valueentity-customer-registry</artifactId>
+  <artifactId>key-value-shoppingcart</artifactId>
   <version>0.0.1-SNAPSHOT</version>
   <packaging>jar</packaging>
 
-  <name>valueentity-customer-registry</name>
+  <name>key-value-shoppingcart</name>
   <properties>
     <!-- For Docker setup see https://docs.kalix.io/projects/container-registries.html -->
     <container.registry>kcr.us-east-1.kalix.io</container.registry>
@@ -21,12 +21,6 @@
   </properties>
 
   <dependencies>
-    <dependency>
-      <groupId>org.awaitility</groupId>
-      <artifactId>awaitility</artifactId>
-      <version>4.1.0</version>
-      <scope>test</scope>
-    </dependency>
   </dependencies>
 
   <repositories>

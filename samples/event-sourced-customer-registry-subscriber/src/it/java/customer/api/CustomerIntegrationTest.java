@@ -34,7 +34,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class CustomerIntegrationTest extends CustomerRegistryIntegrationTest {
 
 
-  // this test relies on a source Akka eventsourced-customer-registry service to which it subscribes.
+  // this test relies on a source Akka event-sourced-customer-registry service to which it subscribes.
   // Such service should be running on :9000 (and this service runs on 9001 in the test)
   @Test
   public void create()  {

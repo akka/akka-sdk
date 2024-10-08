@@ -11,7 +11,7 @@ You need to make the messages, events, or the state of Akka components serializa
 Akka uses a predefined `Jackson` configuration, for serialization. Use the `JsonSupport` utility to update the `ObjectMapper` with your custom requirements. To minimize the number of `Jackson` annotations, Java classes are compiled with the `-parameters` flag.
 [source,java,indent=0]
 ----
-include::example$eventsourced-customer-registry/src/main/java/customer/CustomerRegistrySetup.java[tag=object-mapper]
+include::example$event-sourced-customer-registry/src/main/java/customer/CustomerRegistrySetup.java[tag=object-mapper]
 ----
 <1> Sets custom `ObjectMapper` configuration.
 
@@ -36,14 +36,14 @@ Old class:
 
 [source,java,indent=0]
 ----
-include::example$eventsourced-customer-registry/src/main/java/customer/domain/CustomerEvent.java[tag=name-changed-old]
+include::example$event-sourced-customer-registry/src/main/java/customer/domain/CustomerEvent.java[tag=name-changed-old]
 ----
 
 New class with optional `oldName` and nullable `reason`.
 
 [source,java,indent=0]
 ----
-include::example$eventsourced-customer-registry/src/test/java/customer/domain/schemaevolution/CustomerEvent.java[tag=name-changed-new]
+include::example$event-sourced-customer-registry/src/test/java/customer/domain/schemaevolution/CustomerEvent.java[tag=name-changed-new]
 ----
 
 === Adding a mandatory field
@@ -54,7 +54,7 @@ Another approach is to use the `JsonMigration` extension that allows you to crea
 
 [source,java,indent=0]
 ----
-include::example$eventsourced-customer-registry/src/test/java/customer/domain/schemaevolution/NameChangedMigration.java[tag=name-changed-migration]
+include::example$event-sourced-customer-registry/src/test/java/customer/domain/schemaevolution/NameChangedMigration.java[tag=name-changed-migration]
 ----
 <1> Migration must extend `JsonMigration` class.
 <2> Sets current version number. The first version, when no migration was used, is always 0. Increase this version number whenever you perform a change that is not backwards compatible without migration code.
@@ -66,7 +66,7 @@ The migration class must be linked to the updated model with the `@Migration` an
 
 [source,java,indent=0]
 ----
-include::example$eventsourced-customer-registry/src/test/java/customer/domain/schemaevolution/CustomerEvent.java[tag=name-changed-with-migration]
+include::example$event-sourced-customer-registry/src/test/java/customer/domain/schemaevolution/CustomerEvent.java[tag=name-changed-with-migration]
 ----
 <1> Links the migration implementation with the updated event.
 
@@ -78,21 +78,21 @@ Old class:
 
 [source,java,indent=0]
 ----
-include::example$eventsourced-customer-registry/src/main/java/customer/domain/CustomerEvent.java[tag=address-changed-old]
+include::example$event-sourced-customer-registry/src/main/java/customer/domain/CustomerEvent.java[tag=address-changed-old]
 ----
 
 New class:
 
 [source,java,indent=0]
 ----
-include::example$eventsourced-customer-registry/src/test/java/customer/domain/schemaevolution/CustomerEvent.java[tag=address-changed-new]
+include::example$event-sourced-customer-registry/src/test/java/customer/domain/schemaevolution/CustomerEvent.java[tag=address-changed-new]
 ----
 
 The migration implementation:
 
 [source,java,indent=0]
 ----
-include::example$eventsourced-customer-registry/src/test/java/customer/domain/schemaevolution/AddressChangedMigration.java[tag=address-changed-migration]
+include::example$event-sourced-customer-registry/src/test/java/customer/domain/schemaevolution/AddressChangedMigration.java[tag=address-changed-migration]
 ----
 <1> Finds the old `address` field.
 <2> Updates the JSON tree with the `newAddress` field name.
@@ -104,21 +104,21 @@ Old class:
 
 [source,java,indent=0]
 ----
-include::example$eventsourced-customer-registry/src/test/java/customer/domain/schemaevolution/CustomerEvent.java[tag=customer-created-old]
+include::example$event-sourced-customer-registry/src/test/java/customer/domain/schemaevolution/CustomerEvent.java[tag=customer-created-old]
 ----
 
 New class with the `Address` type:
 
 [source,java,indent=0]
 ----
-include::example$eventsourced-customer-registry/src/main/java/customer/domain/CustomerEvent.java[tag=customer-created-new]
+include::example$event-sourced-customer-registry/src/main/java/customer/domain/CustomerEvent.java[tag=customer-created-new]
 ----
 
 The migration implementation:
 
 [source,java,indent=0]
 ----
-include::example$eventsourced-customer-registry/src/main/java/customer/domain/CustomerCreatedMigration.java[tag=customer-created-migration]
+include::example$event-sourced-customer-registry/src/main/java/customer/domain/CustomerCreatedMigration.java[tag=customer-created-migration]
 ----
 <1> Creates a new nested JSON object, with the data from the old schema.
 
@@ -128,7 +128,7 @@ Renaming the class doesn't require any additional work when @TypeName annotation
 
 [source,java,indent=0]
 ----
-include::example$eventsourced-customer-registry/src/test/java/customer/domain/schemaevolution/AddressChangedMigration.java[tag=name-migration]
+include::example$event-sourced-customer-registry/src/test/java/customer/domain/schemaevolution/AddressChangedMigration.java[tag=name-migration]
 ----
 <1> Specifies the old event name.
 
@@ -138,7 +138,7 @@ It's highly recommended to cover all schema changes with unit tests. In most cas
 
 [source,java,indent=0]
 ----
-include::example$eventsourced-customer-registry/src/test/java/customer/domain/CustomerEventSerializationTest.java[tag=testing-deserialization-encoding]
+include::example$event-sourced-customer-registry/src/test/java/customer/domain/CustomerEventSerializationTest.java[tag=testing-deserialization-encoding]
 ----
 <1> Encodes old class in Base64 String.
 
@@ -146,7 +146,7 @@ Test example:
 
 [source,java,indent=0]
 ----
-include::example$eventsourced-customer-registry/src/test/java/customer/domain/CustomerEventSerializationTest.java[tag=testing-deserialization]
+include::example$event-sourced-customer-registry/src/test/java/customer/domain/CustomerEventSerializationTest.java[tag=testing-deserialization]
 ----
 <1> Encodes old class in Base64 String.
 <2> Decodes Base64 bytes.

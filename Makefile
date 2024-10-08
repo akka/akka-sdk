@@ -67,7 +67,7 @@ examples: prepare
 	rsync -a --exclude-from=docs/.examplesignore samples/* "${java_managed_examples}/"
 
 bundles:
-	./docs/bin/bundle.sh --zip "${java_managed_attachments}/eventsourced-shopping-cart.zip" samples/eventsourced-shopping-cart
+	./docs/bin/bundle.sh --zip "${java_managed_attachments}/event-sourced-shopping-cart.zip" samples/event-sourced-shopping-cart
 #	bin/bundle.sh --zip "${java_managed_attachments}/customer-registry-quickstart.zip" ../samples/customer-registry-quickstart
 #	bin/bundle.sh --zip "${java_managed_attachments}/customer-registry-views-quickstart.zip" ../samples/customer-registry-views-quickstart
 #	bin/bundle.sh --zip "${java_managed_attachments}/shopping-cart-quickstart.zip" ../samples/shopping-cart-quickstart

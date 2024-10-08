@@ -5,7 +5,7 @@
 To understand the Akka concepts that are the basis for this example, see [Designing services](https://docs.kalix.
 io/java/development-process.html) in the documentation.
 
-The project `eventsourced-customer-registry-subscriber` is a downstream consumer of the Service to Service event stream provided by `eventsourced-customer-registry` project.
+The project `event-sourced-customer-registry-subscriber` is a downstream consumer of the Service to Service event stream provided by `event-sourced-customer-registry` project.
 
 ## Building
 
@@ -17,12 +17,12 @@ mvn compile
 
 ## Running Locally
 
-First start the `eventsourced-customer-registry` service. It will run with the default service port (`9000`).
+First start the `event-sourced-customer-registry` service. It will run with the default service port (`9000`).
 
-To start `eventsourced-customer-registry` service locally, run:
+To start `event-sourced-customer-registry` service locally, run:
 
 ```shell
-cd ../eventsourced-customer-registry
+cd ../event-sourced-customer-registry
 mvn compile exec:java
 ```
 
@@ -42,7 +42,7 @@ curl localhost:9001/customer/create \
   "city":"Testcity"}}'
 ```
 
-This call is made on the subscriber service and will be forwarded to the `eventsourced-customer-registry` service.
+This call is made on the subscriber service and will be forwarded to the `event-sourced-customer-registry` service.
 
 ### Run a view query from this project
 

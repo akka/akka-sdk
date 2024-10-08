@@ -223,7 +223,7 @@ ifdef::todo[TODO: this sample is a bit too synthetic to be good, we accept a req
 .src/main/java/shoppingcart/api/ShoppingCartEndpoint.java
 [source,java]
 ----
-include::example$eventsourced-customer-registry-subscriber/src/main/java/customer/api/CustomerRegistryEndpoint.java[tag=cross-service-call]
+include::example$event-sourced-customer-registry-subscriber/src/main/java/customer/api/CustomerRegistryEndpoint.java[tag=cross-service-call]
 ----
 <1> Accept the `HttpClientProvider`
 <2> Use it to create a client for the service `customer-registry`

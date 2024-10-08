@@ -77,7 +77,7 @@ that receives commands to increase the counter.
 .src/main/java/com/example/application/CounterEntity.java
 [source,java]
 ----
-include::example$valueentity-counter/src/main/java/com/example/application/CounterEntity.java[tags=declarations]
+include::example$key-value-counter/src/main/java/com/example/application/CounterEntity.java[tags=declarations]
 ----
 <1> Every Entity must be annotated with `@ComponentId` with a stable unique identifier for this entity type.
 <2> The `CounterEntity` class should extend `akka.javasdk.keyvalueentity.KeyValueEntity`.
@@ -90,7 +90,7 @@ We can now add further commands to allowing for modifying the counter:
 .src/main/java/com/example/application/CounterEntity.java
 [source,java,indent=0]
 ----
-include::example$valueentity-counter/src/main/java/com/example/application/CounterEntity.java[tags=behaviour]
+include::example$key-value-counter/src/main/java/com/example/application/CounterEntity.java[tags=behaviour]
 ----
 <1> Set the new counter value to the value received from the command request.
 <2> Reply with the new counter value wrapped within a `Counter` object.

@@ -1,5 +1,5 @@
 = Implementing Event Sourced Entities
-:sample-url: https://github.com/lightbend/akka-javasdk/tree/main/samples/eventsourced-shopping-cart
+:sample-url: https://github.com/lightbend/akka-javasdk/tree/main/samples/event-sourced-shopping-cart
 
 include::ROOT:partial$include.adoc[]
 
@@ -37,7 +37,7 @@ Through our "Shopping Cart" Event Sourced Entity we expect to manage our cart, a
 [source,java]
 .src/main/java/com/example/shoppingcart/domain/ShoppingCart.java
 ----
-include::example$eventsourced-shopping-cart/src/main/java/com/example/shoppingcart/domain/ShoppingCart.java[tag=domain]
+include::example$event-sourced-shopping-cart/src/main/java/com/example/shoppingcart/domain/ShoppingCart.java[tag=domain]
 ----
 <1> Our `ShoppingCart` is fairly simple, being composed only by a `cartId` and a list of line items.
 <2> A `LineItem` represents a single product and the quantity we intend to buy.
@@ -49,7 +49,7 @@ Another fundamental aspect of our entity will be its domain events. For now, we 
 [source,java]
 .src/main/java/com/example/shoppingcart/domain/ShoppingCartEvent.java
 ----
-include::example$eventsourced-shopping-cart/src/main/java/com/example/shoppingcart/domain/ShoppingCartEvent.java[tag=events]
+include::example$event-sourced-shopping-cart/src/main/java/com/example/shoppingcart/domain/ShoppingCartEvent.java[tag=events]
 ----
 <1> The 3 types of event all derive from the same type `ShoppingCartEvent`.
 <2> Includes the logical type name using `@TypeName` annotation.
@@ -84,7 +84,7 @@ The class signature for our shopping cart entity will look like this:
 [source,java]
 .src/main/java/com/example/shoppingcart/domain/application/ShoppingCartEntity.java
 ----
-include::example$eventsourced-shopping-cart/src/main/java/com/example/shoppingcart/application/ShoppingCartEntity.java[tag=class]
+include::example$event-sourced-shopping-cart/src/main/java/com/example/shoppingcart/application/ShoppingCartEntity.java[tag=class]
 ----
 <1> Create a class that extends `EventSourcedEntity<S, E>`, where `S` is the state type this entity will store (i.e. `ShoppingCart`) and `E` is the top type for the events it persists (i.e. `ShoppingCartEvent`).
 <2> Make sure to annotate such class with `@ComponentId` and pass a stable unique identifier for this entity type.
@@ -101,7 +101,7 @@ IMPORTANT: The **only** way for a command handler to modify the Entity's state i
 [source,java,indent=0]
 .src/main/java/com/example/shoppingcart/application/ShoppingCartEntity.java
 ----
-include::example$eventsourced-shopping-cart/src/main/java/com/example/shoppingcart/application/ShoppingCartEntity.java[tag=addItem]
+include::example$event-sourced-shopping-cart/src/main/java/com/example/shoppingcart/application/ShoppingCartEntity.java[tag=addItem]
 ----
 <1> The validation ensures the quantity of items added is greater than zero and it fails for calls with illegal values by returning an `Effect` with `effects().error`.
 <2> From the current incoming `LineItem` we create a new `ItemAdded` event representing the change of the cart.
@@ -114,7 +114,7 @@ As mentioned above, the business logic that allows us to transition between stat
 [source,java,indent=0]
 .src/main/java/com/example/shoppingcart/domain/ShoppingCart.java
 ----
-include::example$eventsourced-shopping-cart/src/main/java/com/example/shoppingcart/domain/ShoppingCart.java[tag=itemAdded]
+include::example$event-sourced-shopping-cart/src/main/java/com/example/shoppingcart/domain/ShoppingCart.java[tag=itemAdded]
 ----
 <1> For an existing item, we will make sure to sum the existing quantity with the incoming one.
 <2> Returns an update list of items without the existing item.
@@ -129,7 +129,7 @@ To have access to the current state of the entity we can use `currentState()` as
 [source,java,indent=0]
 .src/main/java/com/example/shoppingcart/application/ShoppingCartEntity.java
 ----
-include::example$eventsourced-shopping-cart/src/main/java/com/example/shoppingcart/application/ShoppingCartEntity.java[tag=getCart]
+include::example$event-sourced-shopping-cart/src/main/java/com/example/shoppingcart/application/ShoppingCartEntity.java[tag=getCart]
 ----
 <1> Stores the `entityId` on an internal attribute so we can use it later.
 <2> Provides initial state - overriding `emptyState()` is optional but if not doing it, be careful to deal with a currentState() with a `null` value when receiving the first command or event.
@@ -146,7 +146,7 @@ Snapshots are stored and handled automatically by Akka without any specific code
 [source,conf,indent=0]
 .src/main/resources/application.conf
 ----
-include::example$eventsourced-shopping-cart/src/main/resources/application.conf[tag=snapshot-every]
+include::example$event-sourced-shopping-cart/src/main/resources/application.conf[tag=snapshot-every]
 ----
 
 When the Event Sourced Entity is loaded again, the snapshot will be loaded before any other events are received.
@@ -159,7 +159,7 @@ For certain use cases or for regulatory reasons the entity can be deleted.
 [source,java,indent=0]
 .src/main/java/com/example/shoppingcart/application/ShoppingCartEntity.java
 ----
-include::example$eventsourced-shopping-cart/src/main/java/com/example/shoppingcart/application/ShoppingCartEntity.java[tag=checkout]
+include::example$event-sourced-shopping-cart/src/main/java/com/example/shoppingcart/application/ShoppingCartEntity.java[tag=checkout]
 ----
 <1> Persist final event before deletion, which is handled as any other event.
 <2> Instruction to delete the entity.
@@ -187,7 +187,7 @@ Read requests are defined by declaring the command handler method with `ReadOnly
 [source,java,indent=0]
 .src/main/java/com/example/shoppingcart/application/ShoppingCartEntity.java
 ----
-include::example$eventsourced-shopping-cart/src/main/java/com/example/shoppingcart/application/ShoppingCartEntity.java[tag=read-only]
+include::example$event-sourced-shopping-cart/src/main/java/com/example/shoppingcart/application/ShoppingCartEntity.java[tag=read-only]
 ----
 
 Write requests are defined by declaring the command handler method with `Effect` as return type, instead of `ReadOnlyEffect`. Write requests are routed to the primary region and handled by the entity in that region even if the original call to the entity with the component client was made from another region.
@@ -235,7 +235,7 @@ The following snippet shows how the `EventSourcedTestKit` is used to test the `S
 .src/test/java/com/example/shoppingcart/domain/ShoppingCartTest.java
 [source,java]
 ----
-include::example$eventsourced-shopping-cart/src/test/java/com/example/shoppingcart/domain/ShoppingCartTest.java[]
+include::example$event-sourced-shopping-cart/src/test/java/com/example/shoppingcart/domain/ShoppingCartTest.java[]
 ----
 <1> Creates the TestKit passing the constructor of the Entity.
 <2> Calls the method `addItem` from the Entity in the `EventSourcedTestKit` with quantity `10`.
@@ -271,7 +271,7 @@ The skeleton of an Integration Test is generated for you if you use the archetyp
 ./src/it/java/com/example/IntegrationTest.java
 [source,java,indent=0]
 ----
-include::example$eventsourced-shopping-cart/src/it/java/com/example/IntegrationTest.java[tag=sample-it]
+include::example$event-sourced-shopping-cart/src/it/java/com/example/IntegrationTest.java[tag=sample-it]
 ----
 <1> Note the test class must extend `TestKitSupport`.
 <2> A built-in component client is provided to interact with the components.

@@ -6,7 +6,7 @@ if [ $# -eq 0 ]; then
   echo "No arguments provided!"
   echo "This scripted is used to update sample versions to the latest snapshot."
   echo "You should call it by passing one or more samples as arguments."
-  echo "eg: ./updateSampleVersions.sh samples/valueentity-counter samples/eventsourced-counter"
+  echo "eg: ./updateSampleVersions.sh samples/key-value-counter samples/event-sourced-counter"
   echo "or simply using bash expansion..."
   echo "eg: ./updateSampleVersions.sh samples/*"
 else 

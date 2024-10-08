@@ -25,7 +25,7 @@ As mentioned above, to help us illustrate a Key Value Entity, you will be implem
 .src/main/java/com/example/domain/Counter.java
 [source,java]
 ----
-include::example$valueentity-counter/src/main/java/com/example/domain/Counter.java[]
+include::example$key-value-counter/src/main/java/com/example/domain/Counter.java[]
 ----
 
 NOTE: Above we are taking advantage of the Java `record` to reduce the amount of boilerplate code, but you can use regular classes so long as they can be serialized to JSON (e.g. using Jackson annotations). See xref:serialization.adoc[Serialization].
@@ -58,7 +58,7 @@ The class signature for our counter entity will look like this:
 .src/main/java/com/example/application/CounterEntity.java
 [source,java]
 ----
-include::example$valueentity-counter/src/main/java/com/example/application/CounterEntity.java[tags=declarations]
+include::example$key-value-counter/src/main/java/com/example/application/CounterEntity.java[tags=declarations]
 ----
 <1> Every Entity must be annotated with `@ComponentId` with a stable unique identifier for this entity type.
 <2> The `CounterEntity` class should extend `akka.javasdk.keyvalueentity.KeyValueEntity`.
@@ -73,7 +73,7 @@ We will now show how to add the command handlers for supporting the two desired 
 .src/main/java/com/example/application/CounterEntity.java
 [source,java,indent=0]
 ----
-include::example$valueentity-counter/src/main/java/com/example/application/CounterEntity.java[tags=behaviour]
+include::example$key-value-counter/src/main/java/com/example/application/CounterEntity.java[tags=behaviour]
 ----
 <1> Set the new counter value to the value received from the command request.
 <2> Reply with the new counter value wrapped within a `Counter` object.
@@ -89,7 +89,7 @@ The following example shows how to implement a simple endpoint to retrieve the c
 .src/main/java/com/example/application/CounterEntity.java
 [source,java,indent=0]
 ----
-include::example$valueentity-counter/src/main/java/com/example/application/CounterEntity.java[tags=query]
+include::example$key-value-counter/src/main/java/com/example/application/CounterEntity.java[tags=query]
 ----
 <1> Reply with the current state.
 
@@ -103,7 +103,7 @@ The next example shows how to delete a Key Value Entity state by returning speci
 .src/main/java/com/example/application/CounterEntity.java
 [source,java,indent=0]
 ----
-include::example$valueentity-counter/src/main/java/com/example/application/CounterEntity.java[tags=delete]
+include::example$key-value-counter/src/main/java/com/example/application/CounterEntity.java[tags=delete]
 ----
 <1> We delete the state by returning an `Effect` with `effects().deleteEntity()`.
 
@@ -132,7 +132,7 @@ The following snippet shows how the `KeyValueEntityTestKit` is used to test the 
 ./src/test/java/com/example/CounterTest.java
 [source,java,indent=0]
 ----
-include::example$valueentity-counter/src/test/java/com/example/CounterTest.java[tags=example]
+include::example$key-value-counter/src/test/java/com/example/CounterTest.java[tags=example]
 ----
 <1> Creates the TestKit passing the constructor of the Entity.
 <2> Calls the method `set` from the Entity in the `KeyValueEntityTestKit` with value `10`.
@@ -149,7 +149,7 @@ The skeleton of an Integration Test is generated for you if you use the archetyp
 ./src/it/java/com/example/CounterIntegrationTest.java
 [source,java,indent=0]
 ----
-include::example$valueentity-counter/src/it/java/com/example/CounterIntegrationTest.java[tags=sample-it]
+include::example$key-value-counter/src/it/java/com/example/CounterIntegrationTest.java[tags=sample-it]
 ----
 <1> Note the test class must extend `TestKitSupport`.
 <2> A built-in component client is provided to interact with the components.
