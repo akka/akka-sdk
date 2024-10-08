@@ -95,44 +95,10 @@ public class ComponentAnnotationProcessor extends AbstractProcessor {
                 });
             }
 
-            // Extra pass until we have removed the RequestMapping support, can be present on all types of components
-            // so, it is not a water tight way to find actions. If something is listed as both an action and some other
-            // component type, remove it from actions
-            var actions = componentTypeToConcreteComponents.get(TIMED_ACTION_KEY);
-            if (actions != null) {
-                var foundDuplicates = new HashSet<String>();
-                actions.forEach(actionClass -> {
-                    if (componentTypeToConcreteComponents.entrySet().stream().anyMatch((entry) -> !entry.getKey().equals(TIMED_ACTION_KEY) && entry.getValue().contains(actionClass))) {
-                        foundDuplicates.add(actionClass);
-                    }
-                });
-                actions.removeAll(foundDuplicates);
-                if (actions.isEmpty()) componentTypeToConcreteComponents.remove(TIMED_ACTION_KEY);
-            }
-
-            var views = componentTypeToConcreteComponents.get(VIEW_KEY);
-            if (views != null) {
-                var foundNestedViews = new HashSet<String>();
-                views.forEach(viewClass -> {
-                    // For multi table views each table is an inner class to a view,
-                    // we'll find both the parent wrapping class and the nested, but, we want list
-                    // only the wrapping class as a component.
-                    if(views.stream().anyMatch(otherViewClass ->
-                            !otherViewClass.equals(viewClass) && viewClass.startsWith(otherViewClass) && viewClass.length() > otherViewClass.length()))
-                        foundNestedViews.add(viewClass);
-                });
-                views.removeAll(foundNestedViews);
-                if (views.isEmpty()) componentTypeToConcreteComponents.remove(VIEW_KEY);
-            }
-
-
-
             var service = componentTypeToConcreteComponents.get(SERVICE_SETUP_KEY);
             if (service != null && service.size() > 1) {
                 error("More than one class annotated with @Setup, only one is allowed. Annotated classes: " + String.join(", ", service));
             }
-
-            // nested tables will occur together with the wrapping class, list only the wrapping class
 
             try {
                 if (!componentTypeToConcreteComponents.isEmpty()) {
@@ -161,22 +127,6 @@ public class ComponentAnnotationProcessor extends AbstractProcessor {
             case "akka.javasdk.annotations.ComponentId" -> componentType(annotatedClass);
             default -> throw new IllegalArgumentException("Unknown annotation type: " + annotation.getQualifiedName());
         };
-    }
-
-    /**
-     * A multi-view is a regular class with nested classes implementing View.
-     * This method returns true if at least one inner class implements View
-     */
-    private boolean isMultiView(Element annotatedClass) {
-
-        var innerClasses =
-          annotatedClass.getEnclosedElements().stream()
-            .filter(e -> e instanceof TypeElement)
-            .map(this::superClassName)
-            .toList();
-
-        // is one of the inner classes is a View, we have a MultiView
-        return innerClasses.contains("akka.javasdk.view.View");
     }
 
     // extract the super class name of the passed Element (without the type parameter brackets)
@@ -208,11 +158,7 @@ public class ComponentAnnotationProcessor extends AbstractProcessor {
             case "akka.javasdk.timedaction.TimedAction" -> TIMED_ACTION_KEY;
             case "akka.javasdk.consumer.Consumer" -> CONSUMER_KEY;
             case "akka.javasdk.view.View" -> VIEW_KEY;
-            default -> {
-                if (isMultiView(annotatedClass)) yield VIEW_KEY;
-                else
-                    throw new IllegalArgumentException("Unknown supertype for class [" + annotatedClass + "] annotated with @ComponentId: [" + superClassName + "]");
-            }
+            default -> throw new IllegalArgumentException("Unknown supertype for class [" + annotatedClass + "] annotated with @ComponentId: [" + superClassName + "]");
         };
     }
 

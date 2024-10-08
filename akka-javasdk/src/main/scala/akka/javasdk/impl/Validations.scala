@@ -500,7 +500,7 @@ private[javasdk] object Validations {
             s"You are using a type level annotation in this View and that requires the View type [${tableType.getName}] " +
             s"to match the ValueEntity type [${entityStateClass.getName}]. " +
             s"If your intention is to transform the type, you should add a method like " +
-            s"`UpdateEffect<${tableType.getName}> onChange(${entityStateClass.getName} state)`."
+            s"`Effect<${tableType.getName}> onChange(${entityStateClass.getName} state)`."
 
           Validation(Seq(errorMessage(tableUpdater, message)))
         }

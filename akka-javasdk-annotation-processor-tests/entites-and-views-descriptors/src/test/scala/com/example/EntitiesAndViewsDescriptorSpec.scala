@@ -23,9 +23,10 @@ class EntitiesAndViewsDescriptorSpec extends AnyWordSpec with Matchers {
       eventSourcedComponents should contain("com.example.SimpleEventSourcedEntity")
 
       val viewComponents = config.getStringList("akka.javasdk.components.view")
-      viewComponents.size() shouldBe 2
+      viewComponents.size() shouldBe 3
       viewComponents should contain("com.example.SimpleView")
       viewComponents should contain("com.example.MultiView")
+      viewComponents should contain("com.example.MultiView2")
 
       val kalixService = config.getString("akka.javasdk.service-setup")
       kalixService should be("com.example.Setup")
