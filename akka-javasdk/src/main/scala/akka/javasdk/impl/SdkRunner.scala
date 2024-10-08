@@ -5,8 +5,10 @@
 package akka.javasdk.impl
 
 import java.lang.reflect.Constructor
+import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.ParameterizedType
 import java.util.concurrent.CompletionStage
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.Promise
@@ -14,6 +16,7 @@ import scala.jdk.CollectionConverters.CollectionHasAsScala
 import scala.jdk.FutureConverters._
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
+
 import akka.Done
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
@@ -90,7 +93,6 @@ import kalix.protocol.value_entity.ValueEntities
 import kalix.protocol.view.Views
 import kalix.protocol.workflow_entity.WorkflowEntities
 import org.slf4j.LoggerFactory
-
 import scala.jdk.OptionConverters.RichOptional
 
 /**
@@ -619,7 +621,11 @@ private final class Sdk(
     // all params must be wired so we use 'map' not 'collect'
     val params = constructor.getParameterTypes.map(totalWireFunction)
 
-    constructor.newInstance(params: _*)
+    try constructor.newInstance(params: _*)
+    catch {
+      case exc: InvocationTargetException if exc.getCause != null =>
+        throw exc.getCause
+    }
   }
 
   private def platformManagedDependency(anyOther: Class[_]) = {

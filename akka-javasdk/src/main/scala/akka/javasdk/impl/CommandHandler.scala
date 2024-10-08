@@ -6,8 +6,11 @@ package akka.javasdk.impl
 
 import akka.annotation.InternalApi
 import akka.javasdk.impl.reflection.ParameterExtractor
-
+import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
+
+import scala.util.control.Exception.Catcher
+
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.google.protobuf.Descriptors
 import org.slf4j.LoggerFactory
@@ -84,18 +87,30 @@ private[impl] final case class MethodInvoker(
   /**
    * To invoke methods with parameters an InvocationContext is necessary extract them from the message.
    */
-  def invoke(componentInstance: AnyRef, invocationContext: InvocationContext): AnyRef =
-    method.invoke(componentInstance, parameterExtractors.map(e => e.extract(invocationContext)): _*)
+  def invoke(componentInstance: AnyRef, invocationContext: InvocationContext): AnyRef = {
+    try method.invoke(componentInstance, parameterExtractors.map(e => e.extract(invocationContext)): _*)
+    catch unwrapInvocationTargetException()
+  }
 
   /**
    * To invoke methods with arity zero.
    */
-  def invoke(componentInstance: AnyRef): AnyRef =
-    method.invoke(componentInstance)
+  def invoke(componentInstance: AnyRef): AnyRef = {
+    try method.invoke(componentInstance)
+    catch unwrapInvocationTargetException()
+  }
 
   /**
    * To invoke a methods with a deserialized payload
    */
-  def invokeDirectly(componentInstance: AnyRef, payload: AnyRef): AnyRef =
-    method.invoke(componentInstance, payload)
+  def invokeDirectly(componentInstance: AnyRef, payload: AnyRef): AnyRef = {
+    try method.invoke(componentInstance, payload)
+    catch unwrapInvocationTargetException()
+  }
+
+  private def unwrapInvocationTargetException(): Catcher[AnyRef] = {
+    case exc: InvocationTargetException if exc.getCause != null =>
+      throw exc.getCause
+  }
+
 }
