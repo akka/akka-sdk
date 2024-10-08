@@ -46,11 +46,18 @@ private[impl] final case class ComponentMethodRefImpl[A1, R](
 
   def deferred(arg: A1): DeferredCall[A1, R] = {
     // extra protection against type cast since the same backing impl for non deferrable and deferrable
-    if (!canBeDeferred) throw new IllegalStateException("Call to this method cannot be deferred")
+    if (!canBeDeferred)
+      throw new IllegalStateException("Call to this method cannot be deferred")
+    if (arg == null)
+      throw new IllegalStateException("Argument to deferred must not be null")
+
     createDeferred(metadataOpt, Some(arg))
   }
 
-  def invokeAsync(arg: A1): CompletionStage[R] =
+  def invokeAsync(arg: A1): CompletionStage[R] = {
+    if (arg == null)
+      throw new IllegalStateException("Argument to invokeAsync must not be null")
     createDeferred(metadataOpt, Some(arg)).asInstanceOf[DeferredCallImpl[NotUsed, R]].invokeAsync()
+  }
 
 }

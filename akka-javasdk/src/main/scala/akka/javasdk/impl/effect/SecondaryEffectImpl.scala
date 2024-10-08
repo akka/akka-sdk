@@ -46,7 +46,10 @@ private[javasdk] case object NoSecondaryEffectImpl extends SecondaryEffectImpl {
  * INTERNAL API
  */
 @InternalApi
-private[javasdk] final case class MessageReplyImpl[T](message: T, metadata: Metadata) extends SecondaryEffectImpl {}
+private[javasdk] final case class MessageReplyImpl[T](message: T, metadata: Metadata) extends SecondaryEffectImpl {
+  if (message == null)
+    throw new IllegalArgumentException("Reply must not be null")
+}
 
 /**
  * INTERNAL API
