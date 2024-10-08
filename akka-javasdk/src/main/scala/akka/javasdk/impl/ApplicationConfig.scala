@@ -22,7 +22,7 @@ object ApplicationConfig extends ExtensionId[ApplicationConfig] {
 
   def loadApplicationConf: Config = {
     val testConf = "application-test.conf"
-    if (getClass.getResource(s"/$testConf") == null)
+    if (getClass.getResource(s"/$testConf") eq null)
       ConfigFactory.load(ConfigFactory.parseResources("application.conf"))
     else
       ConfigFactory.load(ConfigFactory.parseResources(testConf))

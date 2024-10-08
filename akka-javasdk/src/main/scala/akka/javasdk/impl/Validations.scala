@@ -298,7 +298,7 @@ private[javasdk] object Validations {
 
   private def viewMultipleTableUpdatersMustHaveTableAnnotations(tableUpdaters: Seq[Class[_]]): Validation =
     if (tableUpdaters.size > 1) {
-      tableUpdaters.find(_.getAnnotation(classOf[Table]) == null) match {
+      tableUpdaters.find(_.getAnnotation(classOf[Table]) eq null) match {
         case Some(clazz) =>
           Validation(errorMessage(clazz, "When there are multiple table updater, each must be annotated with @Table."))
         case None => Valid
@@ -462,7 +462,7 @@ private[javasdk] object Validations {
     val ann = component.getAnnotation(classOf[ComponentId])
     if (ann != null) {
       val componentId: String = ann.value()
-      if (componentId == null || componentId.trim.isEmpty)
+      if ((componentId eq null) || componentId.trim.isEmpty)
         Invalid(errorMessage(component, "@ComponentId name is empty, must be a non-empty string."))
       else if (componentId.contains("|"))
         Invalid(errorMessage(component, "@ComponentId must not contain the pipe character '|'."))

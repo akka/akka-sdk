@@ -23,7 +23,7 @@ private[impl] final case class KeyValueEntityProvider[S, E <: KeyValueEntity[S]]
     messageCodec: JsonMessageCodec,
     factory: Function[KeyValueEntityContext, E]) {
   private val typeId: String = ComponentDescriptorFactory.readComponentIdIdValue(entityClass)
-  if (typeId == null)
+  if (typeId eq null)
     throw new IllegalArgumentException(
       "Key Value Entity [" + entityClass.getName + "] is missing '@ComponentId' annotation")
   private val componentDescriptor = ComponentDescriptor.descriptorFor(entityClass, messageCodec)

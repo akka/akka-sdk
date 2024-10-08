@@ -125,7 +125,7 @@ private[javasdk] class JsonMessageCodec extends MessageCodec {
     reversedTypeHints.compute(
       typeName,
       (_, currentValue) => {
-        if (currentValue == null) {
+        if (currentValue eq null) {
           clz
         } else if (currentValue == clz) {
           currentValue
@@ -190,7 +190,7 @@ private[javasdk] class StrictJsonMessageCodec(delegate: JsonMessageCodec) extend
     if (value.typeUrl.startsWith(JsonSupport.JSON_TYPE_URL_PREFIX)) {
       val typeName = delegate.removeVersion(value.typeUrl.replace(JsonSupport.JSON_TYPE_URL_PREFIX, ""))
       val typeClass = delegate.reversedTypeHints.get(typeName)
-      if (typeClass == null) {
+      if (typeClass eq null) {
         throw new IllegalStateException(s"Cannot decode ${value.typeUrl} message type. Class mapping not found.")
       } else {
         JsonSupport.decodeJson(typeClass, value)

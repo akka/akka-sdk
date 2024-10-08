@@ -369,7 +369,7 @@ private[impl] object ComponentDescriptor {
       } else if (Reflect.isAction(commandHandlerMethod.component)) {
         val annotation = commandHandlerMethod.component.getAnnotation(classOf[ComponentId])
         // don't require id on actions (subscriptions etc)
-        if (annotation == null) commandHandlerMethod.getClass.getName
+        if (annotation eq null) commandHandlerMethod.getClass.getName
         else annotation.value()
       } else {
         commandHandlerMethod.component.getAnnotation(classOf[ComponentId]).value()

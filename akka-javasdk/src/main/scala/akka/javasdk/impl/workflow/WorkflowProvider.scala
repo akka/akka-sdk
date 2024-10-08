@@ -21,7 +21,7 @@ private[impl] final case class WorkflowProvider[S, W <: Workflow[S]](
     messageCodec: JsonMessageCodec,
     factory: Function[WorkflowContext, W]) {
   private val annotation: ComponentId = workflowClass.getAnnotation(classOf[ComponentId])
-  if (annotation == null) {
+  if (annotation eq null) {
     throw new IllegalArgumentException("Workflow [" + workflowClass.getName + "] is missing '@Type' annotation")
   }
   private val componentDescriptor = ComponentDescriptor.descriptorFor(workflowClass, messageCodec)

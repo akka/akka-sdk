@@ -115,7 +115,7 @@ private[akka] final case class RequestBuilderImpl[R](
     adapter.apply(request))
 
   override def withRequestBody(`object`: AnyRef): RequestBuilder[R] = {
-    if (`object` == null) throw new IllegalArgumentException("object must not be null")
+    if (`object` eq null) throw new IllegalArgumentException("object must not be null")
     try {
       val body = JsonSupport.encodeToBytes(`object`).toByteArray
       val requestWithBody = request.withEntity(ContentTypes.APPLICATION_JSON, body)
@@ -127,7 +127,7 @@ private[akka] final case class RequestBuilderImpl[R](
   }
 
   override def withRequestBody(text: String): RequestBuilder[R] = {
-    if (text == null) throw new IllegalArgumentException("text must not be null")
+    if (text eq null) throw new IllegalArgumentException("text must not be null")
     val requestWithBody = request.withEntity(ContentTypes.TEXT_PLAIN_UTF8, text)
     withRequest(requestWithBody)
   }

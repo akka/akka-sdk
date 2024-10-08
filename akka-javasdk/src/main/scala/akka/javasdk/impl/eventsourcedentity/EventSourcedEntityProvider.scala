@@ -23,7 +23,7 @@ private[impl] final case class EventSourcedEntityProvider[S, E, ES <: EventSourc
     messageCodec: JsonMessageCodec,
     factory: Function[EventSourcedEntityContext, ES]) {
   private val typeId: String = ComponentDescriptorFactory.readComponentIdIdValue(entityClass)
-  if (typeId == null)
+  if (typeId eq null)
     throw new IllegalArgumentException(
       "Event Sourced Entity [" + entityClass.getName + "] is missing '@TypeId' annotation")
 
