@@ -128,11 +128,9 @@
                                 <build>
                                     <!-- Base Docker image which contains jre-->
                                     <from>${docker.base.image}</from>
-                                    <buildx>
-                                        <platforms>
-                                            <platform>${docker.platform}</platform>
-                                        </platforms>
-                                    </buildx>
+                                    <buildOptions>
+                                        <platform>${docker.platform}</platform>
+                                    </buildOptions>
                                     <tags>
                                         <!-- tag for generated image -->
                                         <tag>${dockerTag}</tag>
