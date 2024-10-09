@@ -6,7 +6,6 @@ Technical reference material for various aspects of Akka.
 
 == Topics
 
-- https://doc.akka.io/docs[Akka Libraries]
-- xref:reference:release-notes.adoc[]
-- xref:reference:glossary.adoc[]
-- xref:reference:cli-change-notifications.adoc[]
+- xref:libraries:index.adoc[]
+- xref:release-notes.adoc[Release notes]
+- xref:glossary.adoc[]

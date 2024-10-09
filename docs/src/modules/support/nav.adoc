@@ -7,5 +7,4 @@
 ** xref:support:paid-plans.adoc[]
 ** xref:support:platform-status.adoc[]
 ** xref:support:request-a-demo.adoc[]
-** xref:support:slack.adoc[]
 ** xref:support:troubleshooting.adoc[]
