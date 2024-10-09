@@ -112,6 +112,52 @@ id and the response message only includes the correlation id to not leak service
 ** In local development and integration tests the full exception is returned as response body.
 
 
+== Interacting with other components ==
+
+The most common use case for endpoints is to interact with other components in a service. This is done through
+the `akka.javasdk.client.ComponentClient`. If the constructor of the endpoint class has a parameter of this type,
+it will be injected by the SDK.
+
+.src/main/java/shoppingcart/api/ShoppingCartEndpoint.java
+[source,java]
+----
+include::example$shopping-cart-quickstart/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java[tag=endpoint-component-interaction]
+----
+<1> Accept the `ComponentClient` and keep it in a field
+<2> The component client can be used to interact with other components
+<3> Result of a request to a component is a `CompletionStage<T>`, it can be returned directly to let Akka serialize it
+<4> Or mapped to a more suitable response, in this case, `200 Ok` with an empty body.
+
+For more details see xref:component-and-service-calls.adoc[]
+
+== Interacting with other HTTP services
+
+It is also possible to interact with other services over HTTP. This is done through the `akka.javasdk.http.HttpClientProvider`.
+
+When the other service is also an Akka service deployed in the same project, it can be looked up via the deployed name
+of the service:
+
+ifdef::todo[TODO: this sample is a bit too synthetic to be good, we accept a request and pass it on, and then we don't look at the response body at all]
+
+.src/main/java/shoppingcart/api/ShoppingCartEndpoint.java
+[source,java]
+----
+include::example$event-sourced-customer-registry-subscriber/src/main/java/customer/api/CustomerRegistryEndpoint.java[tag=cross-service-call]
+----
+<1> Accept the `HttpClientProvider`
+<2> Use it to create a client for the service `customer-registry`
+<3> Issue an HTTP POST request to the service
+<4> The result of a request is either `CompletionStage<T>` with the result
+<5> Once the response arrives, turn it into our own response.
+
+TIP: If you're looking to test this locally, you will likely need to run the 2 services with different ports. For more details, consult xref:running-locally.adoc#_running_multiple_services_locally[Running multiple services].
+
+It is also possible to interact with arbitrary non-Akka services using the `HttpClientProvider`, for such use,
+pass a string with `https://example.com` or `http://example.com` instead of a service name.
+
+For more details see xref:component-and-service-calls.adoc[]
+
+
 == Advanced HTTP requests and responses ==
 
 For more control over the request and responses it is also possible to use the more
@@ -191,49 +237,3 @@ include::example$doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java
 <1> Accept the materializer and keep it in a field
 <2> Make sure to discard the request body when failing
 <3> Or collect the bytes into memory
-
-
-== Interacting with other components ==
-
-The most common use case for endpoints is to interact with other components in a service. This is done through
-the `akka.javasdk.client.ComponentClient`. If the constructor of the endpoint class has a parameter of this type,
-it will be injected by the SDK.
-
-.src/main/java/shoppingcart/api/ShoppingCartEndpoint.java
-[source,java]
-----
-include::example$shopping-cart-quickstart/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java[tag=endpoint-component-interaction]
-----
-<1> Accept the `ComponentClient` and keep it in a field
-<2> The component client can be used to interact with other components
-<3> Result of a request to a component is a `CompletionStage<T>`, it can be returned directly to let Akka serialize it
-<4> Or mapped to a more suitable response, in this case, `200 Ok` with an empty body.
-
-For more details see xref:component-and-service-calls.adoc[]
-
-== Interacting with other HTTP services
-
-It is also possible to interact with other services over HTTP. This is done through the `akka.javasdk.http.HttpClientProvider`.
-
-When the other service is also an Akka service deployed in the same project, it can be looked up via the deployed name
-of the service:
-
-ifdef::todo[TODO: this sample is a bit too synthetic to be good, we accept a request and pass it on, and then we don't look at the response body at all]
-
-.src/main/java/shoppingcart/api/ShoppingCartEndpoint.java
-[source,java]
-----
-include::example$event-sourced-customer-registry-subscriber/src/main/java/customer/api/CustomerRegistryEndpoint.java[tag=cross-service-call]
-----
-<1> Accept the `HttpClientProvider`
-<2> Use it to create a client for the service `customer-registry`
-<3> Issue an HTTP POST request to the service
-<4> The result of a request is either `CompletionStage<T>` with the result
-<5> Once the response arrives, turn it into our own response.
-
-TIP: If you're looking to test this locally, you will likely need to run the 2 services with different ports. For more details, consult xref:running-locally.adoc#_running_multiple_services_locally[Running multiple services].
-
-It is also possible to interact with arbitrary non-Akka services using the `HttpClientProvider`, for such use,
-pass a string with `https://example.com` or `http://example.com` instead of a service name.
-
-For more details see xref:component-and-service-calls.adoc[]
