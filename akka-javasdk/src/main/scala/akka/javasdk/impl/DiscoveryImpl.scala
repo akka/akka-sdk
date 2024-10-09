@@ -176,7 +176,7 @@ class DiscoveryImpl(
     val detail = if (in.detail.isEmpty) Nil else List(in.detail)
     val seeDocs = DocLinks.forErrorCode(in.code).map(link => s"See documentation: $link").toList
     val messages = message :: detail ::: seeDocs ::: sourceMsgs
-    val logMessage = messages.mkString("\t|\t")
+    val logMessage = messages.mkString("\n\n")
 
     // ignoring waring for runtime version
     // TODO: remove it once we remove this check in the runtime
