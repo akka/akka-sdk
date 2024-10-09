@@ -76,7 +76,7 @@ Event Sourced Entities persist events instead of state in the event journal. The
 
 === Views
 
-_Views_ provide a way to materialize real only state from multiple entities based on a query. You can create views from Key Value Entities, Event Sourced Entities, and by subscribing to a topic. For more information see xref:java:views.adoc[Views].
+_Views_ provide a way to materialize read only state from multiple entities based on a query. You can create views from Key Value Entities, Event Sourced Entities, and by subscribing to a topic. For more information see xref:java:views.adoc[Views].
 
 === Consumer
 
