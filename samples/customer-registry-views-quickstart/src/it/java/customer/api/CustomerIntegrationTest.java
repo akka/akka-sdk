@@ -5,7 +5,7 @@ import akka.javasdk.testkit.TestKitSupport;
 import customer.domain.Address;
 import customer.domain.Customer;
 import customer.application.CustomerEntity;
-import customer.application.CustomerByEmailView;
+import customer.application.CustomersByEmailView;
 import customer.application.CustomersByNameView;
 import org.awaitility.Awaitility;
 import org.hamcrest.core.IsEqual;
@@ -97,14 +97,16 @@ public class CustomerIntegrationTest extends TestKitSupport {
     Awaitility.await()
         .ignoreExceptions()
         .atMost(20, TimeUnit.SECONDS)
-        .until(() ->
-            await(
+        .untilAsserted(() -> {
+          var foundCustomers = await(
               componentClient.forView()
-                .method(CustomerByEmailView::getCustomer)
-                .invokeAsync("bar@example.com")
-            ).name(),
-            new IsEqual("Bar")
-        );
+                  .method(CustomersByEmailView::getCustomer)
+                  .invokeAsync("bar@example.com")
+          );
+
+          Assertions.assertEquals(1, foundCustomers.customers().size());
+          Assertions.assertEquals("Bar", foundCustomers.customers().getFirst().name());
+        });
   }
 
   // access the entity directly

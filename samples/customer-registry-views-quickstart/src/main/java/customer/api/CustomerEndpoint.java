@@ -22,7 +22,7 @@ import akka.util.ByteString;
 import customer.domain.Address;
 import customer.domain.Customer;
 import customer.application.CustomerEntity;
-import customer.application.CustomerByEmailView;
+import customer.application.CustomersByEmailView;
 import customer.application.CustomersByNameView;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -92,9 +92,9 @@ public class CustomerEndpoint {
     }
 
     @Get("/by-email/{email}")
-    public CompletionStage<Customer> getCustomerByEmail(String email) {
+    public CompletionStage<CustomersByEmailView.Customers> getCustomerByEmail(String email) {
         return componentClient.forView()
-                .method(CustomerByEmailView::getCustomer)
+                .method(CustomersByEmailView::getCustomer)
                 .invokeAsync(email);
     }
 

@@ -8,14 +8,18 @@ import akka.javasdk.annotations.Query;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.ComponentId;
 
+import java.util.List;
+
 @ComponentId("view_customers_by_email") // <1>
-public class CustomerByEmailView extends View { // <2>
+public class CustomersByEmailView extends View { // <2>
+
+  public record Customers(List<Customer> customers) { }
 
   @Consume.FromKeyValueEntity(CustomerEntity.class) // <3>
-  public static class CustomersByEmail extends TableUpdater<Customer> { } // <4>
+  public static class CustomerByEmail extends TableUpdater<Customer> { } // <4>
 
-  @Query("SELECT * FROM customers_by_email WHERE email = :email") // <5>
-  public QueryEffect<Customer> getCustomer(String email) {
+  @Query("SELECT * AS customers FROM customers_by_email WHERE email = :email") // <5>
+  public QueryEffect<Customers> getCustomer(String email) {
     return queryResult(); // <6>
   }
 }
