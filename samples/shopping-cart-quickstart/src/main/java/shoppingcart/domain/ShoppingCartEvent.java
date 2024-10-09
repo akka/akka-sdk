@@ -2,8 +2,11 @@ package shoppingcart.domain;
 
 import akka.javasdk.annotations.TypeName;
 
-public sealed interface ShoppingCartEvent {
-  @TypeName("item-added")
+// tag::events[]
+
+public sealed interface ShoppingCartEvent { // <1>
+
+  @TypeName("item-added") // <2>
   record ItemAdded(ShoppingCart.LineItem item) implements ShoppingCartEvent {
   }
 
@@ -15,3 +18,4 @@ public sealed interface ShoppingCartEvent {
   record CheckedOut() implements ShoppingCartEvent {
   }
 }
+// end::events[]

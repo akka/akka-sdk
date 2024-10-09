@@ -2,51 +2,65 @@ package shoppingcart.domain;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.Comparator;
+import java.util.Optional;
+import java.util.function.Predicate;
 
-public record ShoppingCart(String cartId, List<LineItem> items, boolean checkedOut) {
+// tag::domain[]
+public record ShoppingCart(String cartId, List<LineItem> items, boolean checkedOut) { // <1>
 
-
-  public record LineItem(String productId, String name, int quantity) {
-    public LineItem increaseQuantity(int qty) {
-      return new LineItem(productId, name, quantity + qty);
+  public record LineItem(String productId, String name, int quantity) { // <2>
+    // end::domain[]
+    public LineItem withQuantity(int quantity) {
+      return new LineItem(productId, name, quantity);
     }
+    // tag::domain[]
+  }
+  // end::domain[]
+
+  // tag::itemAdded[]
+  public ShoppingCart onItemAdded(ShoppingCartEvent.ItemAdded itemAdded) {
+    var item = itemAdded.item();
+    var lineItem = updateItem(item, this); // <1>
+    List<LineItem> lineItems =
+        removeItemByProductId(this, item.productId()); // <2>
+    lineItems.add(lineItem); // <3>
+    lineItems.sort(Comparator.comparing(LineItem::productId));
+    return new ShoppingCart(cartId, lineItems, checkedOut); // <4>
+  }
+  // end::itemAdded[]
+
+  public ShoppingCart onItemRemoved(ShoppingCartEvent.ItemRemoved itemRemoved) {
+    List<LineItem> updatedItems =
+        removeItemByProductId(this, itemRemoved.productId());
+    updatedItems.sort(Comparator.comparing(LineItem::productId));
+    return new ShoppingCart(cartId, updatedItems, checkedOut);
   }
 
-  public ShoppingCart addItem(LineItem item) {
-    var itemToAdd =
-      items.stream()
-        .filter(it -> it.productId.equals(item.productId))
-        .findFirst()
-        .map(it -> it.increaseQuantity(item.quantity))
+  private static List<LineItem> removeItemByProductId(
+      ShoppingCart cart, String productId) {
+    return cart.items().stream()
+        .filter(lineItem -> !lineItem.productId().equals(productId))
+        .collect(Collectors.toList());
+  }
+
+  private static LineItem updateItem(LineItem item, ShoppingCart cart) {
+    return cart.findItemByProductId(item.productId())
+        .map(li -> li.withQuantity(li.quantity() + item.quantity()))
         .orElse(item);
-
-    return removeItem(item.productId).addAsNew(itemToAdd);
   }
 
-  public ShoppingCart removeItem(String productId) {
-    if (hasItem(productId)) {
-      var updatedItems =
-        items.stream()
-          .filter(it -> !it.productId.equals(productId))
-          .collect(Collectors.toList());
-
-      return new ShoppingCart(cartId, updatedItems, checkedOut);
-    } else {
-      return this;
-    }
+  public Optional<LineItem> findItemByProductId(String productId) {
+    Predicate<LineItem> lineItemExists =
+        lineItem -> lineItem.productId().equals(productId);
+    return items.stream().filter(lineItemExists).findFirst();
   }
 
-
-  private ShoppingCart addAsNew(LineItem item) {
-    items.add(item);
-    return this;
-  }
-
-  private boolean hasItem(String productId) {
-    return items().stream().anyMatch(it -> it.productId.equals(productId));
-  }
-
-  public ShoppingCart checkOut() {
+  public ShoppingCart onCheckedOut() {
     return new ShoppingCart(cartId, items, true);
   }
+
+  // tag::domain[]
 }
+
+// end::domain[]

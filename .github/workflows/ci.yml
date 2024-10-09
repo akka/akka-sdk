@@ -434,7 +434,6 @@ jobs:
           - { sample: event-sourced-counter, pre_cmd: 'docker compose up gcloud-pubsub-emulator -d', it: true }
 
           - { sample: event-sourced-customer-registry-subscriber, it: true, pre_cmd: './start-upstream.sh' }
-          - { sample: event-sourced-shopping-cart, it: true }
 
           - { sample: key-value-counter, it: true }
           - { sample: key-value-shopping-cart, it: true }

@@ -6,7 +6,7 @@
       "id": "shopping-cart",
       "language":  "java",
       "title": "Shopping Cart",
-      "url": "/java/_attachments/event-sourced-shopping-cart.zip",
+      "url": "/java/_attachments/shopping-cart-quickstart.zip",
       "dir": "shopping-cart"
     }
   ]

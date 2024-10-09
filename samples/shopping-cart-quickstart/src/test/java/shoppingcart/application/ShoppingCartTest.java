@@ -1,19 +1,18 @@
-package com.example.shoppingcart.domain;
+package shoppingcart.application;
 
 import akka.Done;
 import akka.javasdk.testkit.EventSourcedTestKit;
-import com.example.shoppingcart.application.ShoppingCartEntity;
 import org.junit.jupiter.api.Test;
+import shoppingcart.domain.ShoppingCart;
 
 import java.util.List;
 
-import static com.example.shoppingcart.domain.ShoppingCartEvent.ItemAdded;
+import static shoppingcart.domain.ShoppingCartEvent.ItemAdded;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ShoppingCartTest {
 
   private final ShoppingCart.LineItem akkaTshirt = new ShoppingCart.LineItem("akka-tshirt", "Akka Tshirt", 10);
-
 
   @Test
   public void testAddLineItem() {
