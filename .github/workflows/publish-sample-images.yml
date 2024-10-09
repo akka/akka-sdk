@@ -1,0 +1,23 @@
+name: Publish sample docker images
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: [ Publish ]
+    types:
+      - completed
+
+permissions:
+  contents: read
+
+jobs:
+  publish-sample-images:
+    name: Publish (sbt & Maven)
+    runs-on: ubuntu-22.04
+    if: github.event.repository.fork == false
+    steps:
+      - name: Quickstart docker image for console quick-deploy
+        run: |-
+          cd samples/shopping-cart-quickstart
+          echo "$PUBLIC_GCR_SERVICE_KEY" | docker login -u _json_key --password-stdin https://gcr.io
+          mvn --batch-mode deploy -DskipTests -Dcontainer.registry=gcr.io -Dorganization=kalix-public/samples
