@@ -113,7 +113,7 @@ abstract class WorkflowRouter[S, W <: Workflow[S]](protected val workflow: W) {
 
   protected def handleCommand(commandName: String, state: S, command: Any, context: CommandContext): Workflow.Effect[_]
 
-  // in same cases, the Proxy may send a message with typeUrl set to object.
+  // in same cases, the runtime may send a message with typeUrl set to object.
   // if that's the case, we need to patch the message using the typeUrl from the expected input class
   private def decodeInput(messageCodec: MessageCodec, result: ScalaPbAny, expectedInputClass: Class[_]) = {
     if (result.typeUrl == JsonSupport.JSON_TYPE_URL_PREFIX + "object" || result.typeUrl == JsonSupport.JSON_TYPE_URL_PREFIX) {

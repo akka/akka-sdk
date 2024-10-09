@@ -404,7 +404,7 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
         methodOptions.getView.getUpdate.getTable shouldBe "employees"
         methodOptions.getView.getUpdate.getTransformUpdates shouldBe true
         methodOptions.getView.getJsonSchema.getOutput shouldBe "Employee"
-        methodOptions.getEventing.getIn.getIgnore shouldBe false // we don't set the property so the proxy won't ignore. Ignore is only internal to the SDK
+        methodOptions.getEventing.getIn.getIgnore shouldBe false // we don't set the property so the runtime won't ignore. Ignore is only internal to the SDK
       }
     }
 

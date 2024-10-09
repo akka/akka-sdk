@@ -23,7 +23,7 @@ object WorkflowMessages extends EntityMessages {
 
   def init(serviceName: String, entityId: String, payload: JavaPbMessage): InMessage = {
     // FIXME: workflow payload should not be a snapshot
-    // entity in proxy is ES, but its snapshot is not the workflow state
+    // entity in runtime is ES, but its snapshot is not the workflow state
     init(serviceName, entityId, messagePayload(payload))
   }
 

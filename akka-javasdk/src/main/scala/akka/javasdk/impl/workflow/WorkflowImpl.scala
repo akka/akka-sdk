@@ -132,7 +132,7 @@ final class WorkflowImpl(
           Source.single(config).concat(source.via(flow))
 
         case (Seq(), _) =>
-          // if error during recovery in proxy the stream will be completed before init
+          // if error during recovery in runtime the stream will be completed before init
           log.warn("Workflow stream closed before init.")
           Source.empty[WorkflowStreamOut]
 

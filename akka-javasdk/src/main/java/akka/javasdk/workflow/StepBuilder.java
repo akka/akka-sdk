@@ -65,7 +65,7 @@ public class StepBuilder {
     final private String name;
 
     final private Class<Input> callInputClass;
-    /* callFactory builds the DeferredCall that will be passed to proxy for execution */
+    /* callFactory builds the DeferredCall that will be passed to runtime for execution */
     final private Function<Input, DeferredCall<DefCallInput, DefCallOutput>> callFunc;
 
     public CallStepBuilder(String name, Class<Input> callInputClass, Function<Input, DeferredCall<DefCallInput, DefCallOutput>> callFunc) {

@@ -48,8 +48,9 @@ class DiscoveryImpl(
   // This is updated from the `discover` call with a new Promise. Completed in the `proxyTerminated` call.
   private val runtimeTerminatedRef = new AtomicReference[Promise[Done]](Promise.successful(Done))
 
-  CoordinatedShutdown(system).addTask(CoordinatedShutdown.PhaseBeforeServiceUnbind, "wait-for-proxy-terminated") { () =>
-    runtimeTerminatedRef.get().future
+  CoordinatedShutdown(system).addTask(CoordinatedShutdown.PhaseBeforeServiceUnbind, "wait-for-runtime-terminated") {
+    () =>
+      runtimeTerminatedRef.get().future
   }
 
   private def configuredOrElse(key: String, default: String): String =
@@ -67,13 +68,6 @@ class DiscoveryImpl(
    * Discover what components the user function wishes to serve.
    */
   override def discover(in: ProxyInfo): scala.concurrent.Future[Spec] = {
-    if (in.devMode && BuildInfo.runtimeVersion.compareTo(in.proxyVersion) > 0) {
-      log.warn(
-        "Your service is using an outdated runtime version (version: {}). It's recommended to update your image to '{}' in your docker-compose.yml",
-        in.proxyVersion,
-        s"${BuildInfo.runtimeImage}:${BuildInfo.runtimeVersion}")
-    }
-
     // FIXME is this needed anymore, we are running in the same process, so ENV is available
     // possibly filtered or hidden env, passed along for substitution in descriptor options
     val env: Map[String, String] = {
@@ -112,7 +106,7 @@ class DiscoveryImpl(
       val runtimeTerminatedPromise = if (in.devMode) Promise.successful[Done](Done) else Promise[Done]()
       runtimeTerminatedRef.getAndSet(runtimeTerminatedPromise).trySuccess(Done)
 
-      log.debug(s"Supported sidecar entity types: {}", in.supportedEntityTypes.mkString("[", ",", "]"))
+      log.debug(s"Supported entity types: {}", in.supportedEntityTypes.mkString("[", ",", "]"))
 
       val unsupportedServices = services.values.filterNot { service =>
         in.supportedEntityTypes.contains(service.componentType)

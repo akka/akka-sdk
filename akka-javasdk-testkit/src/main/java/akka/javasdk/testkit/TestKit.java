@@ -411,7 +411,7 @@ public class TestKit {
     started = true;
 
     if (log.isDebugEnabled())
-      log.debug("TestKit using [{}:{}] for calls to proxy from service", proxyHost, proxyPort);
+      log.debug("TestKit using [{}:{}] for calls to the service", proxyHost, proxyPort);
 
     return this;
   }

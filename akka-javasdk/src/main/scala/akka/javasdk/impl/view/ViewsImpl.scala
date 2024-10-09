@@ -71,7 +71,7 @@ final class ViewsImpl(_services: Map[String, ViewService], sdkDispatcherName: St
    */
   override def handle(in: akka.stream.scaladsl.Source[pv.ViewStreamIn, akka.NotUsed])
       : akka.stream.scaladsl.Source[pv.ViewStreamOut, akka.NotUsed] =
-    // FIXME: see kalix-proxy/issues/209 and kalix-proxy/issues/207
+    // FIXME: see runtime issues #207 and #209
     // It is currently only implemented to support one request (ReceiveEvent) with one response (Upsert).
     // The intention, and reason for full-duplex streaming, is that there should be able to have an interaction
     // with two main types of operations, loads, and updates, and with
@@ -85,7 +85,7 @@ final class ViewsImpl(_services: Map[String, ViewService], sdkDispatcherName: St
               if (service.factory.isEmpty)
                 throw new IllegalArgumentException(
                   s"Unexpected call to service [${receiveEvent.serviceName}] with viewId [${service.viewId}]: " +
-                  "this view has `transform_updates=false` set, so updates should be handled entirely by the proxy " +
+                  "this view has `transform_updates=false` set, so updates should be handled entirely by the runtime " +
                   "and not reach the user function")
 
               // FIXME should we really create a new handler instance per incoming command ???

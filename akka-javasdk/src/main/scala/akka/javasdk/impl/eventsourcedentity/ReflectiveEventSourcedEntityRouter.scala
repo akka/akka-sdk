@@ -44,7 +44,7 @@ private[impl] class ReflectiveEventSourcedEntityRouter[S, E, ES <: EventSourcedE
     _extractAndSetCurrentState(state)
 
     event match {
-      case anyPb: ScalaPbAny => // replaying event coming from proxy
+      case anyPb: ScalaPbAny => // replaying event coming from runtime
         val deserEvent = strictCodec.decodeMessage(anyPb)
         val casted = deserEvent.asInstanceOf[event.type]
         entity.applyEvent(casted)
@@ -115,7 +115,7 @@ private[impl] class ReflectiveEventSourcedEntityRouter[S, E, ES <: EventSourcedE
         .asInstanceOf[Class[S]]
 
     // the state: S received can either be of the entity "state" type (if coming from emptyState/memory)
-    // or PB Any type (if coming from the proxy)
+    // or PB Any type (if coming from the runtime)
     state match {
       case s if s == null || state.getClass == entityStateType =>
         // note that we set the state even if null, this is needed in order to

@@ -93,7 +93,7 @@ public interface Metadata extends Iterable<Metadata.MetadataEntry> {
    *
    * <p>This list may contain duplicate keys if there are multiple entries with the same key.
    *
-   * <p>The case of the keys will be the case as passed from the proxy or from other APIs.
+   * <p>The case of the keys will be the case as passed from the runtime or from other APIs.
    *
    * @return A list of all the keys in this metadata.
    */

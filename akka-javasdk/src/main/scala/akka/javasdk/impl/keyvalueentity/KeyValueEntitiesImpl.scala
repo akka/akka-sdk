@@ -112,7 +112,7 @@ private[impl] final class KeyValueEntitiesImpl(
         case (Seq(ValueEntityStreamIn(InInit(init), _)), source) =>
           source.via(runEntity(init))
         case (Seq(), _) =>
-          // if error during recovery in proxy the stream will be completed before init
+          // if error during recovery in runtime the stream will be completed before init
           log.warn("Value Entity stream closed before init.")
           Source.empty[ValueEntityStreamOut]
         case (Seq(ValueEntityStreamIn(other, _)), _) =>

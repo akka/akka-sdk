@@ -166,7 +166,7 @@ class ConsumerDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptor
         val topicSource = findKalixMethodOptions(desc, "KalixSyntheticMethodOnTopicTopicXYZ").getEventing.getIn
         topicSource.getTopic shouldBe "topicXYZ"
         topicSource.getConsumerGroup shouldBe "cg"
-        // we don't set the property so the proxy won't ignore. Ignore is only internal to the SDK
+        // we don't set the property so the runtime won't ignore. Ignore is only internal to the SDK
         topicSource.getIgnore shouldBe false
         topicSource.getIgnoreUnknown shouldBe false
 
@@ -202,7 +202,7 @@ class ConsumerDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptor
 
         val eventSourceOne = findKalixServiceOptions(desc).getEventing.getIn
         eventSourceOne.getEventSourcedEntity shouldBe "counter-entity"
-        // we don't set the property so the proxy won't ignore. Ignore is only internal to the SDK
+        // we don't set the property so the runtime won't ignore. Ignore is only internal to the SDK
         eventSourceOne.getIgnore shouldBe false
         eventSourceOne.getIgnoreUnknown shouldBe false
       }
@@ -424,7 +424,7 @@ class ConsumerDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptor
         eventingInDirect.getService shouldBe "employee_service"
         eventingInDirect.getEventStreamId shouldBe "employee_events"
 
-        // we don't set the property so the proxy won't ignore. Ignore is only internal to the SDK
+        // we don't set the property so the runtime won't ignore. Ignore is only internal to the SDK
         eventingIn.getIgnore shouldBe false
         eventingIn.getIgnoreUnknown shouldBe false
 

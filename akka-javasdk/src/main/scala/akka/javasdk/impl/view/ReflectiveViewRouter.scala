@@ -38,7 +38,7 @@ class ReflectiveViewRouter[S, V <: TableUpdater[S]](
         .asInstanceOf[Class[S]]
 
     // the state: S received can either be of the view "state" type (if coming from emptyState)
-    // or PB Any type (if coming from the proxy)
+    // or PB Any type (if coming from the runtime)
     state match {
       case s if s == null || state.getClass == viewStateType =>
         // note that we set the state even if null, this is needed in order to

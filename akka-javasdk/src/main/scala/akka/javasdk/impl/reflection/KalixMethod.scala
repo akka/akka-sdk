@@ -151,7 +151,7 @@ private[impl] final case class CombinedSubscriptionServiceMethod(
 
 /**
  * Build from methods annotated with @Consume. Those methods are not annotated with Spring REST annotations and are only
- * used internally (between proxy and user function).
+ * used internally (between runtime and user function).
  *
  * INTERNAL API
  */
@@ -238,8 +238,8 @@ private[impl] final case class KalixMethod private (
     entityIds: Seq[String] = Seq.empty) {
 
   /**
-   * KalixMethod is used to collect all the information that we need to produce a gRPC method for the proxy. At the end
-   * of the road, we need to check if any incompatibility was created. Therefore the validation should occur when we
+   * KalixMethod is used to collect all the information that we need to produce a gRPC method for the runtime. At the
+   * end of the road, we need to check if any incompatibility was created. Therefore the validation should occur when we
    * finish to scan the component and are ready to build the gRPC method.
    *
    * For example, a method eventing.in method with an ACL annotation.

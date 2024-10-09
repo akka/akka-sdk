@@ -270,7 +270,7 @@ private[impl] object ViewDescriptorFactory extends ComponentDescriptorFactory {
       val methodOptions = builder.build()
 
       // since it is a query, we don't actually ever want to handle any request in the SDK
-      // the proxy does the work for us, mark the method as non-callable
+      // the runtime does the work for us, mark the method as non-callable
       // TODO: this new variant can be marked as non-callable - check what is the impact of it
       val servMethod = CommandHandlerMethod(component, queryMethod, ViewUrlTemplate, streamOut = streamingQuery)
       val kalixQueryMethod =

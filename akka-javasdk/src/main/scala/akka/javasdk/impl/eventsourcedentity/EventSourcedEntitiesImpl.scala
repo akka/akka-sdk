@@ -131,7 +131,7 @@ private[impl] final class EventSourcedEntitiesImpl(
         case (Seq(EventSourcedStreamIn(InInit(init), _)), source) =>
           source.via(runEntity(init))
         case (Seq(), _) =>
-          // if error during recovery in proxy the stream will be completed before init
+          // if error during recovery in runtime the stream will be completed before init
           log.error("Event Sourced Entity stream closed before init.")
           Source.empty[EventSourcedStreamOut]
         case (Seq(EventSourcedStreamIn(other, _)), _) =>
