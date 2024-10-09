@@ -77,7 +77,7 @@ However, if you want to run your service with persistence enabled to keep the da
 the service in `application.conf` with `akka.javasdk.dev-mode.persistence.enabled=true` or as a system property when
 running starting the service locally `mvn compile exec:java -Dakka.javasdk.dev-mode.persistence.enabled=true`.
 
-ifdef::todo[TODO: will only work once https://github.com/lightbend/kalix-runtime/issues/2758 is sorted]
+To clean the local database look for `db.mv.db` file in the root of your project and delete it.
 
 == Running multiple services locally
 
