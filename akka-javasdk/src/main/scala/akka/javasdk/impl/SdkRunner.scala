@@ -191,6 +191,8 @@ private object ComponentLocator {
     // Descriptor hocon has one entry per component type with a list of strings containing
     // the concrete component classes for the given project
     val descriptorConfig = ConfigFactory.load(ComponentDescriptorResourcePath)
+    if (!descriptorConfig.hasPath(DescriptorComponentBasePath))
+      throw new IllegalStateException("Missing component descriptor, rebuild with `mvn clean compile`")
     val componentConfig = descriptorConfig.getConfig(DescriptorComponentBasePath)
 
     val components = kalixComponentTypeAndBaseClasses.flatMap { case (componentTypeKey, componentTypeClass) =>
