@@ -1,5 +1,4 @@
 = Using Confluent Cloud as Kafka service
-:page-aliases: projects:broker-confluent.adoc[]
 
 include::ROOT:partial$include.adoc[]
 
@@ -90,5 +89,5 @@ confluent kafka topic create \
 You can now use the topic to connect with Akka.
 --
 
-include::ROOT:partial$broker-kafka-setup-common.adoc[]
+include::partial$broker-kafka-setup-common.adoc[]
 

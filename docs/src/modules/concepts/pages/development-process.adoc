@@ -20,13 +20,13 @@ All services and applications start as a Java project. Akka has a Maven archetyp
 [#_specify_service_interface_and_domain_model]
 == Specify service interface and domain model
 
-Creating services in Akka follows the architecture outlined in xref:concepts/programming-model.adoc#_Architecture[Akka Architecture]. You start with your domain model, which models your business domain in plain old Java objects. Then you will create Akka components to coordinate them.
+Creating services in Akka follows the architecture outlined in xref:concepts:architecture-model.adoc#_architecture[Akka Architecture]. You start with your domain model, which models your business domain in plain old Java objects. Then you will create Akka components to coordinate them.
 
 The main components of an Akka service are:
 
 * Stateful xref:reference:glossary.adoc#entity[Entities]
-* Stateful xref:reference:glossary.adoc#Workflow[Workflows]
-* xref:reference:glossary.html#view[Views], which return the state of multiple instances of a stateful entity.
+* Stateful xref:reference:glossary.adoc#workflow[Workflows]
+* xref:reference:glossary.adoc#view[Views], which return the state of multiple instances of a stateful entity.
 * xref:reference:glossary.adoc#timed_action[Timed Actions]
 * xref:reference:glossary.adoc#consumers[Consumers]
 
@@ -110,7 +110,7 @@ After testing locally, deploy your service to akka.io using the CLI or the Conso
 
 
 * xref:operations:projects.adoc[Akka projects]
-* xref:operations:deploy-service.adoc#_deploy[Deploying a packaged service]
+* xref:operations:deploy-service.adoc#_deploying_a_service[Deploying a packaged service]
 
 == Next steps
 

@@ -1,5 +1,4 @@
 = Using AWS MSK as Kafka service
-:page-aliases: projects:broker-aws-msk.adoc[]
 
 include::ROOT:partial$include.adoc[]
 
@@ -91,4 +90,4 @@ akka projects config set broker  \
 ----
 
 
-include::ROOT:partial$broker-kafka-setup-common.adoc[]
+include::partial$broker-kafka-setup-common.adoc[]

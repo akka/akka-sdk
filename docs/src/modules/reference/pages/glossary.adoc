@@ -62,7 +62,7 @@ The _state_ is simply data--the current set of values for an entity instance. Ev
 
 [[state_model]]State model:: Each entity uses one of the supported state models. The state model determines the way Kalix manages data. Currently, these include <<value_entity>>, <<event_sourced_entity>> and <<replicated_entity>>.
 
-[[timer]]Timer:: A Timer provides consistent scheduling and execution of a call to another <<Component>> at specified intervals or delays. They are convenient for automating repetitive work and handling timeouts within business logic implementation.
+[[timed_action]]Timed actions:: A Timed Action provides consistent scheduling and execution of a call to another <<Component>> at specified intervals or delays. They are convenient for automating repetitive work and handling timeouts within business logic implementation.
 
 [[value_entity]]Value Entity:: A Value Entity stores state in an update-in-place model, similar to a Key-Value store that supports CRUD (Create, Read, Update, Delete) operations. In Domain Driven Design (DDD) terms, a Value Entity is an "Entity." In contrast with "Value Objects," you reference Entities by an identifier and the value associated with that identifier can change (be updated) over time. These are discussed in more detail in xref:concepts:state-model.adoc#_the_value_state_model[Value state model].
 

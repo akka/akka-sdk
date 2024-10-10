@@ -1,7 +1,7 @@
 = Troubleshooting
-:page-aliases: reference:troubleshooting.adoc[]
 
 include::ROOT:partial$include.adoc[]
+include::java:partial$attributes.adoc[]
 
 This page provides troubleshooting advice for errors and issues that you might encounter when using Akka. If come across an issue that is not listed here, let us know using any of the below options.
 
@@ -15,7 +15,7 @@ This page provides troubleshooting advice for errors and issues that you might e
 
 == Update your Akka CLI
 
-We make frequent changes and updates to the Akka CLI to give you a great experience. Make sure that you're using at least the latest supported version ({akka-support-version}), and preferably the latest version.
+We make frequent changes and updates to the Akka CLI to give you a great experience. Make sure that you're using at least the latest supported version ({akka-cli-min-version}), and preferably the latest version.
 
 NOTE: You can check the version of the Akka CLI you have by running `akka version`.
 

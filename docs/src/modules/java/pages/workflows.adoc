@@ -18,11 +18,9 @@ A Workflow Effect can either:
 * fail the step or reject a command by returning an error
 * reply to incoming commands
 
-See also xref:java:development-process.adoc#_effects_api[Understanding what an Effect is]
-
 == Modeling state
 
-We want to build a simple workflow that transfers funds between two wallets. Before that, we will create a wallet subdomain with some basic functionalities that we could use later. For simplicity a `WalletEntity` is implemented as a xref:value-entity.adoc[Key Value Entity], but for a production-ready solution an xref:event-sourced-entities.adoc[Event Sourced Entity] would be a better choice, because a ledger of all transactions is usually required by the business.
+We want to build a simple workflow that transfers funds between two wallets. Before that, we will create a wallet subdomain with some basic functionalities that we could use later. For simplicity a `WalletEntity` is implemented as a xref:key-value-entities.adoc[Key Value Entity], but for a production-ready solution an xref:event-sourced-entities.adoc[Event Sourced Entity] would be a better choice, because a ledger of all transactions is usually required by the business.
 
 The `Wallet` class represents domain object that holds the wallet balance. We can also withdraw or deposit funds to the wallet.
 

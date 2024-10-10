@@ -18,7 +18,7 @@ If you want to bypass writing code and jump straight to the deployment:
 . Skip to <<Package and deploy your service>>.
 ====
 
-include::java:partial$maven-archetype.adoc[]
+:TODO: include::java:partial$maven-archetype.adoc[]
 
 == Shopping Cart Service
 

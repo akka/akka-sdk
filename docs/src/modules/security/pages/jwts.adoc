@@ -1,5 +1,4 @@
 = JSON Web Tokens (JWTs)
-:page-aliases: services:using-jwts.adoc[], concepts:using-jwts.adoc[] 
 
 include::ROOT:partial$include.adoc[]
 
@@ -137,4 +136,4 @@ akka secrets create asymmetric <my-secret-name> \
 
 == Using JWTs
 
-Once you generated a token and provided it to your service, you still need to configure which endpoint requires such token. For more information on that, consult the respective "JWTs" sub-section under the SDK-specific xref:developing-services:index.adoc[] section.
+Once you generated a token and provided it to your service, you still need to configure which endpoint requires such token. For more information on that, consult xref:java:using-jwts.adoc[].

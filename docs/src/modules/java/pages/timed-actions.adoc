@@ -23,7 +23,7 @@ When a timer is triggered, the scheduled call is executed. If successfully execu
 
 == Order Entity
 
-To demonstrate its functionality, let's consider an Ordering Service composed of a xref:value-entity.adoc[Key Value Entity] and a Timed Action component. The Timed Action will orchestrate the cancellation task, which requires a call to an external service.
+To demonstrate its functionality, let's consider an Ordering Service composed of a xref:key-value-entities.adoc[Key Value Entity] and a Timed Action component. The Timed Action will orchestrate the cancellation task, which requires a call to an external service.
 
 Users can place an order, but the order must be confirmed within a period of time. You can think of it as an Ordering Food application where the restaurant needs to confirm if it can accept the order. If no confirmation is sent within some pre-defined period of time, the order is automatically cancelled.
 

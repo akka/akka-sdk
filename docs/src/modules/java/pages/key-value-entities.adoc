@@ -43,8 +43,6 @@ A Key Value Entity Effect can either:
 * instruct Akka to delete the entity
 * return an error message
 
-See also xref:java:development-process.adoc#_effects_api[Understanding what an Effect is]
-
 [#entity-behavior]
 == Implementing behavior
 
