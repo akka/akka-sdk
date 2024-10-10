@@ -82,10 +82,8 @@ include::example$reliable-timers/src/main/java/com/example/application/OrderTime
 ----
 <1> Set `@ComponentId` annotation for the component.
 <2> Extend `TimedAction` class.
-<3> The effect will return an asynchronous call to an external service and `OrderEntity` component.
-<4> The `OrderEntity.cancel` method is called to cancel the Order.
-<5> On the other hand, if the `CompletionStage` completes with a failure, we must decide if we will recover the call or not. If we recover it, the timer will be considered as completed. If we let the call fail, the timer will be re-scheduled.
-<6> The `OrderEntity.cancel` implementation, except `Ok`, can return `NotFound` or `Invalid` responses. In both cases, we can consider that the timer has become obsolete and don't need to be rescheduled, therefore we recover the call.
+<3> The effect will return an asynchronous call to the `OrderEntity` component to cancel the Order.
+<4> If the `CompletionStage` completes with a failure, we must decide if we will recover the call or not. If we recover it, the timer will be considered as completed. If we let the call fail, the timer will be re-scheduled. The `OrderEntity.cancel` implementation, except `Ok`, can return `NotFound` or `Invalid` responses. In both cases, we can consider that the timer has become obsolete and don't need to be rescheduled, therefore we recover the call.
 
 For all other possible errors, the call to `OrderTimedAction.expire` will fail and the timer will be re-scheduled.
 

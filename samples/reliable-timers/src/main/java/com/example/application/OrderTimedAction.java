@@ -13,35 +13,19 @@ import java.util.concurrent.CompletionStage;
 @ComponentId("order-timed-action") // <1>
 public class OrderTimedAction extends TimedAction { // <2>
 
-  // end::expire-order[]
   private final ComponentClient componentClient;
-  private final HttpClient httpClient;
 
-  public OrderTimedAction(ComponentClient componentClient, HttpClient httpClient) {
+  public OrderTimedAction(ComponentClient componentClient) {
     this.componentClient = componentClient;
-    this.httpClient = httpClient;
   }
 
-  // tag::expire-order[]
   public Effect expireOrder(String orderId) {
     return effects().asyncDone(
-      canExpireOrder(orderId) // <3>
-        .thenCompose(canExpire -> {
-          if (canExpire) {
-            return componentClient.forKeyValueEntity(orderId)
-              .method(OrderEntity::cancel) // <4>
-              .invokeAsync()
-              .thenApply(__ -> Done.done());
-          } else { // <5>
-            //handle the case where the order cannot be expired
-            return CompletableFuture.completedFuture(Done.done());
-          }
-        }));
+        componentClient.forKeyValueEntity(orderId)
+            .method(OrderEntity::cancel) // <3>
+            .invokeAsync()
+            .thenApply(__ -> Done.done())); // <4>
   }
 
-  public CompletionStage<Boolean> canExpireOrder(String orderId) {
-    //use the httpClient to check if the order can be expired
-    return CompletableFuture.completedFuture(true);
-  }
 }
 // end::expire-order[]

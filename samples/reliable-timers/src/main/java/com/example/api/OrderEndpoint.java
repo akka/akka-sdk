@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 // Opened up for access from the public internet to make the sample service easy to try out.
@@ -73,24 +74,6 @@ public class OrderEndpoint {
   }
   // end::place-order[]
 
-  // tag::expire-order[]
-  // ...
-
-  @Post("/{orderId}/expire")
-  public CompletionStage<HttpResponse> expire(String orderId) {
-    logger.info("Expiring order '{}'", orderId);
-    return
-      componentClient.forKeyValueEntity(orderId)
-        .method(OrderEntity::cancel).invokeAsync() // <1>
-        .thenApply(result -> {
-          // Entity can return Ok, NotFound or Invalid.
-          // Those are valid response and should not trigger a re-try.
-          // In case of exceptions, this method call will fail.
-          return HttpResponses.ok();
-        });
-  }
-  // end::expire-order[]
-
   // tag::confirm-cancel-order[]
   // ...
 
@@ -99,11 +82,17 @@ public class OrderEndpoint {
     logger.info("Confirming order '{}'", orderId);
 
     return
-      componentClient.forKeyValueEntity(orderId)
-        .method(OrderEntity::confirm).invokeAsync() // <1>
-        .thenCompose(result ->
-          timerScheduler.cancel(timerName(orderId))) // <2>
-        .thenApply(__ -> HttpResponses.ok());
+        componentClient.forKeyValueEntity(orderId)
+            .method(OrderEntity::confirm).invokeAsync() // <1>
+            .thenCompose(result ->
+                switch (result) {
+                  case OrderEntity.Result.Ok __ -> timerScheduler.cancel(timerName(orderId)) // <2>
+                      .thenApply(___ -> HttpResponses.ok());
+                  case OrderEntity.Result.NotFound notFound ->
+                      CompletableFuture.completedFuture(HttpResponses.notFound(notFound.message()));
+                  case OrderEntity.Result.Invalid invalid ->
+                      CompletableFuture.completedFuture(HttpResponses.badRequest(invalid.message()));
+                });
   }
 
   @Post("/{orderId}/cancel")

@@ -72,17 +72,15 @@ public class OrderEndpointIntegrationTest extends TestKitSupport {
   }
 
   @Test
-  public void expireNonexistentOrder() {
-    // the 'expire' endpoint is made to be used internally by timers
-    // thus, in case the order does not exist, it should return successfully so the timer is not rescheduled
-    HttpResponse resp = expireOrder("made-up-id");
+  public void cancelNonexistentOrder() {
+    // in case the order does not exist, it should return successfully
+    HttpResponse resp = cancelOrder("made-up-id");
     assertThat(resp.status()).isEqualTo(StatusCodes.OK);
   }
 
   @Test
-  public void expireConfirmedOrder() {
-    // the 'expire' endpoint is made to be used internally by timers
-    // thus, in case the order is already confirmed, it should return successfully so the timer is not rescheduled
+  public void cancelConfirmedOrder() {
+    // in case the order is already confirmed, cancel should still return successfully
 
     var orderReq = new OrderRequest("nice swag tshirt", 20);
     String orderId = placeOrder(orderReq);
@@ -90,8 +88,8 @@ public class OrderEndpointIntegrationTest extends TestKitSupport {
     var confirmResp = confirmOrder(orderId);
     assertThat(confirmResp.status()).isEqualTo(StatusCodes.OK);
 
-    var expireResp = expireOrder("made-up-id");
-    assertThat(expireResp.status()).isEqualTo(StatusCodes.OK);
+    var resp = cancelOrder(orderId);
+    assertThat(resp.status()).isEqualTo(StatusCodes.OK);
   }
 
 
@@ -100,8 +98,8 @@ public class OrderEndpointIntegrationTest extends TestKitSupport {
             .invokeAsync()).httpResponse();
   }
 
-  private HttpResponse expireOrder(String orderId) {
-    return await(httpClient.POST("/orders/" + orderId + "/expire")
+  private HttpResponse cancelOrder(String orderId) {
+    return await(httpClient.POST("/orders/" + orderId + "/cancel")
             .invokeAsync()).httpResponse();
   }
 
