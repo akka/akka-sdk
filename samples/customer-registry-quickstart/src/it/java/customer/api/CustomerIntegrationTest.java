@@ -14,9 +14,9 @@ public class CustomerIntegrationTest extends TestKitSupport {
   @Test
   public void create() {
     var id = newUniqueId();
-    var customer = new Customer(id, "foo@example.com", "Johanna", null);
+    var customer = new Customer("foo@example.com", "Johanna", null);
 
-    var response = await(httpClient.POST("/customer")
+    var response = await(httpClient.POST("/customer/" + id)
         .withRequestBody(customer)
         .responseBodyAs(CustomerEntity.Ok.class)
         .invokeAsync());
@@ -28,7 +28,7 @@ public class CustomerIntegrationTest extends TestKitSupport {
   @Test
   public void changeName() {
     var id = newUniqueId();
-    createCustomerEntity(new Customer(id, "foo@example.com", "Johanna", null));
+    createCustomerEntity(id, new Customer("foo@example.com", "Johanna", null));
 
     var response =
       await(
@@ -45,7 +45,7 @@ public class CustomerIntegrationTest extends TestKitSupport {
   @Test
   public void changeAddress() {
     var id = newUniqueId();
-    createCustomerEntity(new Customer(id, "foo@example.com", "Johanna", null));
+    createCustomerEntity(id, new Customer("foo@example.com", "Johanna", null));
 
     var address = new Address("Elm st. 5", "New Orleans");
 
@@ -62,11 +62,11 @@ public class CustomerIntegrationTest extends TestKitSupport {
   }
 
   // access the entity directly
-  private void createCustomerEntity(Customer customer) {
+  private void createCustomerEntity(String id, Customer customer) {
     var creationResponse =
         await(
             componentClient
-                .forKeyValueEntity(customer.customerId())
+                .forKeyValueEntity(id)
                 .method(CustomerEntity::create)
                 .invokeAsync(customer)
         );

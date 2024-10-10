@@ -48,7 +48,7 @@ public class CustomerIntegrationTest extends CustomerRegistryIntegrationTest {
     // try until it succeeds
     Awaitility.await()
       .ignoreExceptions()
-      .pollInterval(5, TimeUnit.SECONDS)
+      .pollInterval(1, TimeUnit.SECONDS)
       .atMost(10, TimeUnit.SECONDS)
       .untilAsserted(() -> {
         StrictResponse<ByteString> res = await(
@@ -64,7 +64,7 @@ public class CustomerIntegrationTest extends CustomerRegistryIntegrationTest {
     // on this service (updated via s2s streaming)
     Awaitility.await()
       .ignoreExceptions()
-      .pollInterval(5, TimeUnit.SECONDS)
+      .pollInterval(1, TimeUnit.SECONDS)
       .atMost(60, TimeUnit.SECONDS)
       .untilAsserted(() -> {
         var foundCustomers = await(
@@ -86,7 +86,7 @@ public class CustomerIntegrationTest extends CustomerRegistryIntegrationTest {
     try {
     Awaitility.await()
         .ignoreExceptions()
-        .pollInterval(5, TimeUnit.SECONDS)
+        .pollInterval(1, TimeUnit.SECONDS)
         .atMost(5, TimeUnit.MINUTES)
         .untilAsserted(() -> {
           var response = await(httpClient.GET("").invokeAsync()).httpResponse();

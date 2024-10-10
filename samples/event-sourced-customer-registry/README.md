@@ -32,11 +32,10 @@ mvn compile exec:java
 * Create a customer with:
 
 ```shell
-curl -i localhost:9000/customer \
+curl -i localhost:9000/customer/one \
   --header "Content-Type: application/json" \
   -XPOST \
-  --data '{"id": "one","email":"test@example.com","name":"Testsson","address":{"street":"Teststreet 25", 
-  "city":"Testcity"}}'
+  --data '{"email":"test@example.com","name":"Testsson","address":{"street":"Teststreet 25", "city":"Testcity"}}'
 ```
 
 * Retrieve the customer:

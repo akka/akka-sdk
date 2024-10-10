@@ -1,14 +1,14 @@
 package customer.domain;
 
 // tag::class[]
-public record Customer(String customerId, String email, String name, Address address) {
+public record Customer(String email, String name, Address address) {
 
   public Customer withName(String newName){
-    return new Customer(customerId, email, newName, address);
+    return new Customer(email, newName, address);
   }
 
   public Customer withAddress(Address newAddress){
-    return new Customer(customerId, email, name, newAddress);
+    return new Customer(email, name, newAddress);
   }
 }
 // end::class[]

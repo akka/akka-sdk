@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class CustomerEntityTest {
 
   private Address address = new Address("Acme Street", "Acme City");
-  private Customer customer = new Customer("id", "info@acme.com", "Acme Inc.", address);
+  private Customer customer = new Customer("info@acme.com", "Acme Inc.", address);
 
   @Test
   public void testCustomerNameChange() {

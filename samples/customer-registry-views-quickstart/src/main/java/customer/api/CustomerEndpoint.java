@@ -45,13 +45,13 @@ public class CustomerEndpoint {
         this.componentClient = componentClient;
     }
 
-    @Post("/")
-    public CompletionStage<CustomerEntity.Ok> create(Customer customer) {
+    @Post("/{id}")
+    public CompletionStage<CustomerEntity.Ok> create(String id, Customer customer) {
         logger.info("Request to create customer {}", customer);
         if (customer.name() == null || customer.name().isEmpty()) {
             throw HttpException.badRequest("Customer name must not be empty");
         }
-        return componentClient.forKeyValueEntity(customer.customerId())
+        return componentClient.forKeyValueEntity(id)
                 .method(CustomerEntity::create)
                 .invokeAsync(customer);
     }

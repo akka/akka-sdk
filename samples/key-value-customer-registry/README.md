@@ -34,14 +34,14 @@ With your Akka service running, once you have defined endpoints they should be a
 * Create customers with:
 
 ```shell
-curl localhost:9000/customer/001/create \
+curl localhost:9000/customer/001 \
   --header "Content-Type: application/json" \
   -XPOST \
   --data '{"email":"test@example.com","name":"Test Testsson", "street":"Teststreet 25", "city":"City Test"}'
 ```
 
 ```shell
-curl localhost:9000/customer/002/create \
+curl localhost:9000/customer/002 \
   --header "Content-Type: application/json" \
   -XPOST \
   --data '{"email":"test@example.com","name":"Test Testsson II", "street":"Teststreet 25", "city":"New City Test"}'
@@ -49,7 +49,7 @@ curl localhost:9000/customer/002/create \
 
 
 ```shell
-curl localhost:9000/customer/003/create \
+curl localhost:9000/customer/003 \
   --header "Content-Type: application/json" \
   -XPOST \
   --data '{"email":"test@example.com","name":"Test Testsson III","street":"Teststreet 25", "city":"New York City Test"}'

@@ -26,7 +26,7 @@ public class CustomerEndpoint {
 
   public record CustomerRequest(String id, String name, String email, String city, String street) {}
 
-  @Post("/{customerId}/create")
+  @Post("/{customerId}")
   public CompletionStage<HttpResponse> create(String customerId, CustomerRequest request) {
     Customer c = new Customer(customerId, request.email(), request.name(), new Address(request.street(), request.city()));
 

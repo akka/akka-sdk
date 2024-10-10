@@ -20,9 +20,9 @@ public class CustomerIntegrationTest extends TestKitSupport {
   @Test
   public void create() {
     var id = newUniqueId();
-    var customer = new Customer(id, "foo@example.com", "Johanna", null);
+    var customer = new Customer("foo@example.com", "Johanna", null);
 
-    var response = await(httpClient.POST("/customer")
+    var response = await(httpClient.POST("/customer/" + id)
         .withRequestBody(customer)
         .responseBodyAs(CustomerEntity.Ok.class)
         .invokeAsync());
@@ -34,7 +34,7 @@ public class CustomerIntegrationTest extends TestKitSupport {
   @Test
   public void changeName() {
     var id = newUniqueId();
-    createCustomerEntity(new Customer(id, "foo@example.com", "Johanna", null));
+    createCustomerEntity(id, new Customer("foo@example.com", "Johanna", null));
 
     var response =
         await(
@@ -52,7 +52,7 @@ public class CustomerIntegrationTest extends TestKitSupport {
   @Test
   public void changeAddress() {
     var id = newUniqueId();
-    createCustomerEntity(new Customer(id, "foo@example.com", "Johanna", null));
+    createCustomerEntity(id, new Customer("foo@example.com", "Johanna", null));
 
     Address address = new Address("Elm st. 5", "New Orleans");
 
@@ -72,7 +72,7 @@ public class CustomerIntegrationTest extends TestKitSupport {
   @Test
   public void findByName() throws Exception {
     var id = newUniqueId();
-    createCustomerEntity(new Customer(id, "foo@example.com", "Foo", null));
+    createCustomerEntity(id, new Customer("foo@example.com", "Foo", null));
 
     // the view is eventually updated
     Awaitility.await()
@@ -91,7 +91,7 @@ public class CustomerIntegrationTest extends TestKitSupport {
   @Test
   public void findByEmail() throws Exception {
     String id = newUniqueId();
-    createCustomerEntity(new Customer(id, "bar@example.com", "Bar", null));
+    createCustomerEntity(id, new Customer("bar@example.com", "Bar", null));
 
     // the view is eventually updated
     Awaitility.await()
@@ -110,21 +110,21 @@ public class CustomerIntegrationTest extends TestKitSupport {
   }
 
   // access the entity directly
-  private void createCustomerEntity(Customer customer) {
+  private void createCustomerEntity(String id, Customer customer) {
     var creationResponse =
         await(
             componentClient
-                .forKeyValueEntity(customer.customerId())
+                .forKeyValueEntity(id)
                 .method(CustomerEntity::create)
                 .invokeAsync(customer)
         );
     Assertions.assertEquals(CustomerEntity.Ok.instance, creationResponse);
   }
 
-  private Customer getCustomerFromEntity(String customerId) {
+  private Customer getCustomerFromEntity(String id) {
     return await(
       componentClient
-        .forKeyValueEntity(customerId)
+        .forKeyValueEntity(id)
         .method(CustomerEntity::getCustomer)
         .invokeAsync()
     );

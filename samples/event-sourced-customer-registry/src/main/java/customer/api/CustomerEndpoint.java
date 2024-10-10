@@ -7,6 +7,7 @@ import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.Patch;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
+import akka.javasdk.http.HttpException;
 import akka.javasdk.http.HttpResponses;
 import customer.application.CustomerByEmailView;
 import customer.application.CustomerByNameView;
@@ -28,7 +29,7 @@ public class CustomerEndpoint {
 
   private static final Logger log = LoggerFactory.getLogger(CustomerEndpoint.class);
 
-  record CreateCustomerRequest(String id, String email, String name, Address address){ }
+  record CreateCustomerRequest(String email, String name, Address address){ }
 
   private final ComponentClient componentClient;
 
@@ -36,13 +37,24 @@ public class CustomerEndpoint {
     this.componentClient = componentClient;
   }
 
-  @Post
-  public CompletionStage<HttpResponse> create(CreateCustomerRequest createCustomerRequest) {
+  @Post("/{customerId}")
+  public CompletionStage<HttpResponse> create(String customerId, CreateCustomerRequest createCustomerRequest) {
     log.info("Request to create customer: {}", createCustomerRequest);
-    return componentClient.forEventSourcedEntity(createCustomerRequest.id())
+    return componentClient.forEventSourcedEntity(customerId)
       .method(CustomerEntity::create)
       .invokeAsync(new Customer(createCustomerRequest.email, createCustomerRequest.name, createCustomerRequest.address))
       .thenApply(__ -> HttpResponses.created());
+  }
+
+  @Get("/{customerId}")
+  public CompletionStage<Customer> getCustomer(String customerId) {
+    return componentClient.forEventSourcedEntity(customerId)
+        .method(CustomerEntity::getCustomer)
+        .invokeAsync()
+        .exceptionally(ex -> {
+          if (ex.getMessage().contains("No customer found for id")) throw HttpException.notFound();
+          else throw new RuntimeException(ex);
+        });
   }
 
   @Patch("/{customerId}/name/{newName}")
@@ -61,13 +73,6 @@ public class CustomerEndpoint {
       .method(CustomerEntity::changeAddress)
       .invokeAsync(newAddress)
       .thenApply(__ -> HttpResponses.ok());
-  }
-
-  @Get("/{customerId}")
-  public CompletionStage<Customer> getAddress(String customerId) {
-    return componentClient.forEventSourcedEntity(customerId)
-      .method(CustomerEntity::getCustomer)
-      .invokeAsync();
   }
 
   @Get("/by-name/{name}")

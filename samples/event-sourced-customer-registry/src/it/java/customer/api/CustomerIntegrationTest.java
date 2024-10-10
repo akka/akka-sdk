@@ -1,6 +1,7 @@
 package customer.api;
 
 import akka.Done;
+import akka.http.javadsl.model.StatusCodes;
 import customer.application.CustomerEntity;
 import customer.domain.Address;
 import customer.domain.Customer;
@@ -12,74 +13,72 @@ import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.time.Duration;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static akka.Done.done;
-import static java.time.temporal.ChronoUnit.SECONDS;
 
 
 public class CustomerIntegrationTest extends TestKitSupport {
 
-  private Duration timeout = Duration.of(5, SECONDS);
-
   @Test
   public void create() {
     String id = UUID.randomUUID().toString();
-    Customer customer = new Customer("foo@example.com", "Johanna", new Address("Regent Street","London"));
+    var createCustomerRequest = new CustomerEndpoint.CreateCustomerRequest("foo@example.com", "Johanna", new Address("Regent Street","London"));
 
-    Done response = await(
-      componentClient.forEventSourcedEntity(id)
-        .method(CustomerEntity::create)
-        .invokeAsync(customer));
+    var response = await(httpClient.POST("/customer/" + id)
+        .withRequestBody(createCustomerRequest)
+        .invokeAsync());
+    Assertions.assertEquals(StatusCodes.CREATED, response.status());
 
-    Assertions.assertEquals(done(), response);
     Assertions.assertEquals("Johanna", getCustomerById(id).name());
+  }
+
+  @Test
+  public void getUser() {
+    String id = UUID.randomUUID().toString();
+    createCustomer(id, new Customer("foo@example.com", "Johanna", new Address("Regent Street","London")));
+
+    var response = await(httpClient.GET("/customer/" + id)
+        .responseBodyAs(Customer.class)
+        .invokeAsync());
+    Assertions.assertEquals(StatusCodes.OK, response.status());
+    Assertions.assertEquals("Johanna", response.body().name());
+  }
+
+  @Test
+  public void getNonexistantUser() {
+    String id = UUID.randomUUID().toString();
+
+    // FIXME invoke async throws on error codes, runtime ex, no way to inspect http response #2879
+    Assertions.assertThrows(RuntimeException.class, () ->
+        await(httpClient.GET("/customer/" + id)
+        .responseBodyAs(Customer.class)
+        .invokeAsync())
+    );
   }
 
   @Test
   public void changeName() {
     String id = UUID.randomUUID().toString();
-    Customer customer = new Customer("foo@example.com", "Johanna", new Address("Regent Street","London"));
+    createCustomer(id, new Customer("foo@example.com", "Johanna", new Address("Regent Street","London")));
 
-    Done response = await(
-      componentClient.forEventSourcedEntity(id)
-        .method(CustomerEntity::create)
-        .invokeAsync(customer));
+    await(httpClient.PATCH("/customer/" + id + "/name/Katarina").invokeAsync());
 
-    Assertions.assertEquals(done(), response);
-
-    Done resUpdate = await(
-      componentClient.forEventSourcedEntity(id)
-        .method(CustomerEntity::changeName)
-        .invokeAsync("Katarina"));
-
-
-    Assertions.assertEquals(done(), resUpdate);
     Assertions.assertEquals("Katarina", getCustomerById(id).name());
   }
 
   @Test
   public void changeAddress() {
     String id = UUID.randomUUID().toString();
-    Customer customer = new Customer("foo@example.com", "Johanna", new Address("Regent Street","London"));
+    createCustomer(id, new Customer("foo@example.com", "Johanna", new Address("Regent Street","London")));
 
-    Done response = await(
-      componentClient.forEventSourcedEntity(id)
-        .method(CustomerEntity::create)
-        .invokeAsync(customer));
-
-    Assertions.assertEquals(done(), response);
-
-    Address address = new Address("Elm st. 5", "New Orleans");
-
-    Done resUpdate = await(
-      componentClient.forEventSourcedEntity(id)
-        .method(CustomerEntity::changeAddress)
-        .invokeAsync(address));
-
-    Assertions.assertEquals(done(), resUpdate);
+    var newAddress = new Address("Elm st. 5", "New Orleans");
+    var response = await(httpClient.PATCH("/customer/" + id + "/address")
+        .withRequestBody(newAddress)
+        .invokeAsync());
+    Assertions.assertEquals(StatusCodes.OK, response.status());
     Assertions.assertEquals("Elm st. 5", getCustomerById(id).address().street());
   }
 
@@ -87,13 +86,7 @@ public class CustomerIntegrationTest extends TestKitSupport {
   @Test
   public void findByName() {
     String id = UUID.randomUUID().toString();
-    Customer customer = new Customer("foo@example.com", "Foo", new Address("Regent Street","London"));
-    Done response = await(
-      componentClient.forEventSourcedEntity(id)
-        .method(CustomerEntity::create)
-        .invokeAsync(customer));
-
-    Assertions.assertEquals(done(), response);
+    createCustomer(id, new Customer("foo@example.com", "Foo", new Address("Regent Street","London")));
 
     // the view is eventually updated
     Awaitility.await()
@@ -134,9 +127,16 @@ public class CustomerIntegrationTest extends TestKitSupport {
       );
   }
 
-  private Customer getCustomerById(String customerId) {
+  private void createCustomer(String id, Customer customer) {
+    await(
+        componentClient.forEventSourcedEntity(id)
+            .method(CustomerEntity::create)
+            .invokeAsync(customer));
+  }
+
+  private Customer getCustomerById(String id) {
     return await(
-      componentClient.forEventSourcedEntity(customerId)
+      componentClient.forEventSourcedEntity(id)
         .method(CustomerEntity::getCustomer)
         .invokeAsync());
   }

@@ -36,10 +36,10 @@ Linux or macOS::
 --
 [source,command line]
 ----
-curl -i localhost:9000/customer \
+curl -i localhost:9000/customer/one \
   --header "Content-Type: application/json" \
   -XPOST \
-  --data '{"id": "one","email":"test@example.com","name":"Test Testsson","address":{"street":"Teststreet 25",
+  --data '{"email":"test@example.com","name":"Test Testsson","address":{"street":"Teststreet 25",
   "city":"Testcity"}}'
 ----
 --
@@ -48,10 +48,10 @@ Windows 10+::
 --
 [source,command line]
 ----
-curl -i localhost:9000/customer ^
+curl -i localhost:9000/customer/one ^
   --header "Content-Type: application/json" ^
   -XPOST ^
-  --data '{"id": "one","email":"test@example.com","name":"Test Testsson","address":{"street":"Teststreet 25",
+  --data '{"email":"test@example.com","name":"Test Testsson","address":{"street":"Teststreet 25",
   "city":"Testcity"}}'
 ----
 --
@@ -117,10 +117,10 @@ Linux or macOS::
 --
 [source,command line]
 ----
-curl localhost:9000/customer \
+curl localhost:9000/customer/one \
   --header "Content-Type: application/json" \
   -XPOST \
-  --data '{"id": "one","email":"test@example.com","name":"Test Testsson","address":{"street":"Teststreet 25",
+  --data '{"email":"test@example.com","name":"Test Testsson","address":{"street":"Teststreet 25",
   "city":"Testcity"}}'
 ----
 --
@@ -129,10 +129,10 @@ Windows 10+::
 --
 [source,command line]
 ----
-curl localhost:9000/customer ^
+curl localhost:9000/customer/one ^
   --header "Content-Type: application/json" ^
   -XPOST ^
-  --data '{"id": "one","email":"test@example.com","name":"Test Testsson","address":{"street":"Teststreet 25",
+  --data '{"email":"test@example.com","name":"Test Testsson","address":{"street":"Teststreet 25",
   "city":"Testcity"}}'
 ----
 --

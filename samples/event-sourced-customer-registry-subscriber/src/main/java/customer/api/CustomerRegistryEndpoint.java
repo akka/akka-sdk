@@ -9,6 +9,7 @@ import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.http.HttpClient;
 import akka.javasdk.http.HttpClientProvider;
+import akka.javasdk.http.HttpException;
 import akka.javasdk.http.HttpResponses;
 import customer.application.CustomersByNameView;
 import customer.domain.CustomersList;
@@ -42,9 +43,12 @@ public class CustomerRegistryEndpoint {
   @Post("/create")
   public CompletionStage<HttpResponse> create(CreateCustomerRequest createRequest) {
     log.info("Delegating customer creation to upstream service: {}", createRequest);
-    // make call on customer-registry service
+    if (createRequest.id == null || createRequest.id.isBlank())
+      throw HttpException.badRequest("No id specified");
+
+    // make call to customer-registry service
     return
-      httpClient.POST("/customer") // <3>
+      httpClient.POST("/customer/" + createRequest.id) // <3>
         .withRequestBody(createRequest)
         .invokeAsync() // <4>
         .thenApply(response -> { // <5>

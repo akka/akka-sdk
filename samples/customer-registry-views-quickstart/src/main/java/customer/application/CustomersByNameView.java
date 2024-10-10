@@ -21,12 +21,12 @@ public class CustomersByNameView extends View {
   public static class CustomerByNameUpdater extends TableUpdater<CustomerSummary> { // <1>
     public Effect<CustomerSummary> onUpdate(Customer customer) { // <2>
       return effects()
-          .updateRow(new CustomerSummary(customer.customerId(), customer.name(), customer.email()));
+          .updateRow(new CustomerSummary(updateContext().eventSubject().get(), customer.name(), customer.email())); // <3>
     }
   }
 
-  @Query("SELECT * FROM customers_by_name WHERE name = :name") // <3>
-  public QueryEffect<CustomerSummary> getFirstCustomerSummary(String name) { // <4>
+  @Query("SELECT * FROM customers_by_name WHERE name = :name") // <4>
+  public QueryEffect<CustomerSummary> getFirstCustomerSummary(String name) { // <5>
     return queryResult();
   }
   // end::class[]

@@ -56,7 +56,7 @@ You implement a View by extending `akka.javasdk.view.View` and subscribing to ch
 [source,java]
 .{sample-base-url}/customer-registry-views-quickstart/src/main/java/customer/application/CustomerByEmailView.java[CustomerByEmailView.java]
 ----
-include::example$customer-registry-views-quickstart/src/main/java/customer/application/CustomerByEmailView.java[tags=class]
+include::example$customer-registry-views-quickstart/src/main/java/customer/application/CustomersByEmailView.java[tags=class]
 ----
 <1> Define a component id for the view.
 <2> Extend from `View`.
@@ -86,8 +86,9 @@ include::example$customer-registry-views-quickstart/src/main/java/customer/appli
 ----
 <1> Declares a `TableUpdater` of type `CustomerSummary`. This type represents each stored row.
 <2> Implements a handler method `onUpdate` that receives the latest state of the entity `Customer` and returns an `Effect` with the updated row.
-<3> Defines the query.
-<4> Uses the new type `CustomerSummary` to return the result of the query.
+<3> The id of the entity that was updated is available through the update context as `eventSubject`.
+<4> Defines the query.
+<5> Uses the new type `CustomerSummary` to return the result of the query.
 
 
 
