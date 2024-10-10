@@ -2,7 +2,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-You can access a single xref:reference:glossary.adoc#entity[Entity] with its xref:reference:glossary.adoc#entity-id[entity id] but oftentimes this is not enough. You might want to retrieve multiple Entities, or retrieve them using an attribute other than its id. xref:reference:glossary.adoc#view[Views] allow you to achieve this. You can create one View for each access pattern, so that it is optimized for a specific query, or combine multiple queries into a single View.
+Views allow you to access multiple entities or retrienve entities by attributes other than their xref:reference:glossary.adoc#entity-id[entity id]. You can create Views for different access patterns, optimized by specific queries, or combine multiple queries into a single View.
 
 Views can be defined from any of the following:
 

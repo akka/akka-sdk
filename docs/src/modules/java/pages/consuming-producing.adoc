@@ -2,7 +2,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-A very common use case when building Microservices is to consume from a stream of events or publish to a stream of events. The source of events can be the journal of an Event Sourced Entity, the Key Value Entity state changes, a https://cloud.google.com/pubsub/docs/overview[Google Cloud Pub/Sub] or https://kafka.apache.org/[Apache Kafka] topic for asynchronous messaging between services.
+Consuming and producing allow stream based interaction between services and also with the outside world. Consuming or publishing a stream of events is a common Microservices pattern. The source of events can be the journal of an Event Sourced Entity, the Key Value Entity state changes, a https://cloud.google.com/pubsub/docs/overview[Google Cloud Pub/Sub] or https://kafka.apache.org/[Apache Kafka] topic for asynchronous messaging between services.
 
 In this section, we will explore how you can use a Consumer component to:
 

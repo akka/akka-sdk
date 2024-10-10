@@ -21,21 +21,21 @@ make managed
 make local
 ```
 
-This command will execute a Docker-based build process that compiles the documentation. The generated documentation will be output to the `target/site/akka-documentation` directory.
+This command will execute a Docker-based build process that compiles the documentation. The generated documentation will be output to the `target/site` directory.
 
-3. Clean site and managed sources
+1. Clean site and managed sources
 ```bash
 make clean
 ```
 
 ## Viewing the docs
 
-Once the build process is complete, you can view the documentation by opening the `index.html` file located in the `target/site/akka-documentation` directory in your web browser.
+Once the build process is complete, you can view the documentation by opening the `index.html` file located in the `target/site` directory in your web browser.
 
 Example path:
 
 ```bash
-open ../target/site/akka-documentation/index.html
+open ../target/site/index.html
 ```
 
 ## Deploying the docs

@@ -2,7 +2,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-Akka simplifies application development by allowing developers to focus on their domain models and APIs without worrying about how the data is stored. This document outlines the architecture of Akka applications. Links to further details will be at the end of this document. 
+Akka simplifies application development by allowing developers to focus on their domain models and APIs without worrying about how the data is stored. The architectural model is the key to making this work.
 
 == Architecture
 

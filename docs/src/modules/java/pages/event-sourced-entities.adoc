@@ -5,7 +5,7 @@ include::ROOT:partial$include.adoc[]
 
 :TODO: add illustrations from the local console
 
-Event Sourced Entities persist their state with https://en.wikipedia.org/wiki/ACID[ACID semantics{tab-icon}, window="new"], scale horizontally, and isolate failures. They use the Event Sourcing Model--instead of persisting the current state, they persist all the events that led to the current state. Akka stores these events in a https://docs.kalix.io/reference/glossary.html#journal[journal].
+Event Sourced Entities are components that persist their state using the Event Sourcing Model. Instead of persisting the current state, they persist all the events that led to the current state. Akka stores these events in a https://docs.kalix.io/reference/glossary.html#journal[journal]. Event Sourced Entities persist their state with https://en.wikipedia.org/wiki/ACID[ACID semantics{tab-icon}, window="new"], scale horizontally, and isolate failures. 
 
 An Event Sourced Entity must not update its in-memory state directly as a result of a https://docs.kalix.io/reference/glossary.html#command[_command_]. The handling of a command, if it results in changes being required to state, should persist https://docs.kalix.io/reference/glossary.html#event[_events_]. These events will then be processed by the entity, at which point the in-memory state can and should be changed in response.
 

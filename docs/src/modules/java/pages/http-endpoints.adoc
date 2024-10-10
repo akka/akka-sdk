@@ -1,12 +1,9 @@
 = Designing HTTP Endpoints
 
-A service does rarely contain only internal components but also publishes an API for the surrounding world to
-interact with it.
+An Endpoint is a component that creates an externally accessible API. Endpoints are how you expose your services to the outside world. Endpoints can have different protocols and, initially, support HTTP.
 
 HTTP Endpoint components makes it possible to conveniently define such APIs accepting and responding in JSON,
 or dropping down to lower level APIs for ultimate flexibility in what types of data is accepted and returned.
-
-
 
 == Basics ==
 To define an HTTP Endpoint component, create a public class and annotate it with `@HttpEndpoint("/path-prefix")`.
