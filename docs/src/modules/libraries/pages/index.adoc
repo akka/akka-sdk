@@ -1,73 +1,87 @@
-= Akka libraries
+= Akka Libraries
 
-TIP: A glance of all Akka libraries and their current versions is presented at https://doc.akka.io/docs/akka-dependencies/current[Akka library versions].
+Akka provides a set of libraries for building distributed applications that are guaranteed to remain responsive to change. This page presents an overview of the available libraries and resources for getting started.
 
-== Learn
+TIP: Get a complete list of all Akka libraries and their latest versions at https://doc.akka.io/docs/akka-dependencies/current[Akka library versions].
 
-=== Try some actors in https://doc.akka.io/libraries/akka-core/current/typed/actors.html#first-example[a first example]
-Send some "Hello world!" message between actors, continue with building a chat room.
+[.akka-docs-homepage-grid]
+====
 
-=== https://doc.akka.io/libraries/akka-core/current/typed/guide/introduction.html[Getting started guide]
-Learn Akka libraries concepts applied to an example around IoT.
+[.grid-item]
+--
+[discrete]
+== Start Learning
 
-== Architecture
-=== https://doc.akka.io/libraries/guide/microservices-tutorial/index.html[Microservices]
-Tutorial bringing together essential parts of the Akka libraries to build resilient and scalable microservices from scratch.
+* https://doc.akka.io/libraries/akka-core/current/typed/actors.html#first-example[Start with actors and build a chat room]: Explore actors with a simple "Hello world!" message example.
 
-=== https://doc.akka.io/libraries/akka-distributed-cluster/current/index.html[Distributed Cluster]
-Connect Akka services built on Akka libraries across geographical locations for lower latency and higher availability.
+* https://doc.akka.io/libraries/akka-core/current/typed/guide/introduction.html[Getting started with Akka]: Learn the fundamentals of Akka libraries with an IoT-based example.
 
-=== https://doc.akka.io/libraries/akka-distributed-cluster/current/index.html[Edge]
-Move your endpoints to the edge of the cloud for lower latency and higher availability. Akka Edge Rust extends the power of Akka’s event-driven model to resource-constrained devices.
+* https://doc.akka.io/libraries/guide/microservices-tutorial/index.html[Microservices tutorial]: Build resilient and scalable microservices using Akka's core libraries.
+--
 
+[.grid-item]
+--
+[discrete]
 == Foundations
-=== https://doc.akka.io/libraries/akka-core/current/typed/index.html[Actors]
-At the core of Akka: A model for concurrency and distribution without all the pain of threading primitives.
 
-=== https://doc.akka.io/libraries/akka-core/current/stream/index.html[Streams]
-An intuitive and safe way to do asynchronous, non-blocking backpressured stream processing.
+* https://doc.akka.io/libraries/akka-core/current/typed/index.html[Actors]: A model for concurrency and distribution without all the pain of threading primitives.
 
-=== https://doc.akka.io/libraries/akka-core/typed/persistence.html[Event sourcing]
-Enables stateful actors to persist their state changes, so that the state can be recovered when an actor is restarted.
+* https://doc.akka.io/libraries/akka-core/current/stream/index.html[Streams]: An intuitive and safe way to do asynchronous, non-blocking, backpressured stream processing.
 
-=== https://doc.akka.io/libraries/akka-core/current/typed/index-persistence-durable-state.html[Durable state]
-Enables stateful actors to persist their latest state, so that it can be recovered when an actor is restarted.
+* https://doc.akka.io/libraries/akka-core/typed/persistence.html[Event Sourcing]: Enables stateful actors to persist their state changes, so that the state can be recovered when an actor is restarted.
 
-=== https://doc.akka.io/libraries/akka-projection/current/[Projections]
-Build a projected model out of streams of events.
+* https://doc.akka.io/libraries/akka-core/current/typed/index-persistence-durable-state.html[Durable State]: Enables stateful actors to persist their latest state, so that it can be recovered when an actor is restarted.
 
-== Communications and integrations
-=== https://doc.akka.io/libraries/akka-http/current/introduction.html[HTTP]
-Modern, fast, asynchronous, streaming-first HTTP server and client.
+* https://doc.akka.io/libraries/akka-projection/current/[Projections]: Build a projected model out of streams of events.
+--
 
-=== https://doc.akka.io/libraries/akka-grpc/current/whygrpc.html[gRPC]
-Fully typed, streaming gRPC servers and clients.
+[.grid-item]
+--
+[discrete]
+== Communication and Integrations
 
-=== https://doc.akka.io/libraries/alpakka/current/[Integrations]
-Streaming integrations to various technologies including https://doc.akka.io/libraries/alpakka-kafka/current/[Apache Kafka]. Codename: https://doc.akka.io/libraries/alpakka/current/[Alpakka]
+* https://doc.akka.io/libraries/akka-http/current/introduction.html[HTTP]: Modern, fast, asynchronous, streaming-first HTTP server and client.
 
-=== https://doc.akka.io/libraries/akka-persistence-r2dbc/current/getting-started.html[Akka Persistence R2DBC]
-Use Postgres-compatible databases with Akka Persistence.
+* https://doc.akka.io/libraries/akka-grpc/current/whygrpc.html[gRPC]: Fully typed, streaming gRPC servers and clients.
 
-=== https://doc.akka.io/libraries/akka-persistence-cassandra/current/overview.html[Akka Persistence Cassandra]
-Use Cassandra databases with Akka Persistence.
+* https://doc.akka.io/libraries/alpakka/current/[Integrations (Alpakka)]: Streaming integrations to various technologies including https://doc.akka.io/libraries/alpakka-kafka/current/[Apache Kafka].
 
-== Resilience and distribution
-=== https://doc.akka.io/libraries/akka-core/current/typed/cluster.html[Cluster]
-Achieve resilience and elasticity by distributing your system over multiple nodes.
+* https://doc.akka.io/libraries/akka-persistence-r2dbc/current/getting-started.html[Akka Persistence R2DBC]: Use Postgres-compatible databases with Akka Persistence.
 
-=== https://doc.akka.io/libraries/akka-core/current/typed/cluster-sharding.html[Cluster Sharding]
-Distribute your actors across the cluster based on their identity.
+* https://doc.akka.io/libraries/akka-persistence-cassandra/current/overview.html[Akka Persistence Cassandra]: Use Cassandra databases with Akka Persistence.
+--
 
-=== https://doc.akka.io/libraries/akka-core/current/typed/distributed-data.html[Distributed Data]
-Eventually consistent, highly read and write available, low latency data.
+[.grid-item]
+--
+[discrete]
+== Resilience and Distribution
 
-== Operating
-=== https://doc.akka.io/libraries/akka-management/current/[Management]
-Extensions for operating Akka on cloud providers and Kubernetes.
+* https://doc.akka.io/libraries/akka-core/current/typed/cluster.html[Cluster]: Achieve resilience and elasticity by distributing your system over multiple nodes.
 
-=== https://doc.akka.io/libraries/akka-diagnostics/current/[Diagnostics]
-Identify configuration and operational issues in your Akka application.
+* https://doc.akka.io/libraries/akka-core/current/typed/cluster-sharding.html[Cluster Sharding]: Distribute your actors across the cluster based on their identity.
 
-=== https://doc.akka.io/libraries/akka-insights/current/[Insights]
-Intelligent monitoring and observability purpose-built for Akka.
+* https://doc.akka.io/libraries/akka-core/current/typed/distributed-data.html[Distributed Data]: Eventually consistent, highly read and write available, low latency data.
+--
+
+[.grid-item]
+--
+[discrete]
+== Architecture
+
+* https://doc.akka.io/libraries/akka-distributed-cluster/current/index.html[Distributed Cluster]: Connect Akka services built on Akka libraries across geographical locations for lower latency and higher availability.
+
+* https://doc.akka.io/libraries/akka-distributed-cluster/current/index.html[Edge]: Move your endpoints to the edge of the cloud for lower latency and higher availability. Akka Edge Rust extends the power of Akka’s event-driven model to resource-constrained devices.
+
+--
+
+[.grid-item]
+--
+[discrete]
+== Operations and Observability
+
+* https://doc.akka.io/libraries/akka-management/current/[Management]: Extensions for operating Akka on cloud providers and Kubernetes.
+
+* https://doc.akka.io/libraries/akka-diagnostics/current/[Diagnostics]: Identify configuration and operational issues in your Akka application.
+
+* https://doc.akka.io/libraries/akka-insights/current/[Insights]: Intelligent monitoring and observability purpose-built for Akka.
+--
