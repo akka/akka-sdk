@@ -11,7 +11,7 @@ src_managed := docs/src-managed
 
 java_managed_attachments := docs/src/modules/java/attachments
 java_managed_examples := docs/src/modules/java/examples
-java_managed_partials := docs/src/modules/java/partials
+managed_partials := docs/src/modules/ROOT/partials
 
 antora_docker_image := local/antora-doc
 antora_docker_image_tag := latest
@@ -24,7 +24,7 @@ build: dev
 clean:
 	rm -rf "${java_managed_attachments}"
 	rm -rf "${java_managed_examples}"
-	rm -rf "${java_managed_partials}/attributes.adoc"
+	rm -rf "${managed_partials}/attributes.adoc"
 	rm -rf target/site
 
 docker-image:
@@ -37,25 +37,22 @@ prepare:
 managed: prepare attributes apidocs examples bundles
 
 attributes: prepare
-	mkdir -p "${java_managed_partials}"
+	mkdir -p "${managed_partials}"
+	echo "// generated from Makefile" \
+		> "${managed_partials}/attributes.adoc"
 	docs/bin/version.sh | xargs -0  printf ":akka-javasdk-version: %s" \
-		> "${java_managed_partials}/attributes.adoc"
-	echo ":java-pb-version: 11" \
-		>> "${java_managed_partials}/attributes.adoc"
+		> "${managed_partials}/attributes.adoc"
 	echo ":akka-cli-version: 3.0.0-M" \
-		>> "${java_managed_partials}/attributes.adoc"
+		>> "${managed_partials}/attributes.adoc"
+	# see https://adoptium.net/marketplace/
 	echo ":java-version: 21" \
-		>> "${java_managed_partials}/attributes.adoc"
-	echo ":minimum_maven_version: 3.6" \
-		>> "${java_managed_partials}/attributes.adoc"
-	echo ":minimum_sbt_version: 1.3.6" \
-    	>> "${java_managed_partials}/attributes.adoc"
-	echo ":minimum_docker_version: 20.10.14" \
-		>> "${java_managed_partials}/attributes.adoc"
-	echo ":java_minimum_sdk_version: 3.0.0" \
-		>> "${java_managed_partials}/attributes.adoc"
-	echo ":console: https://console.akka.io/" \
-		>> "${java_managed_partials}/attributes.adoc"
+		>> "${managed_partials}/attributes.adoc"
+	# see https://maven.apache.org/docs/history.html
+	echo ":minimum_maven_version: 3.9" \
+		>> "${managed_partials}/attributes.adoc"
+	# see https://docs.docker.com/engine/release-notes/27/
+	echo ":minimum_docker_version: 27" \
+		>> "${managed_partials}/attributes.adoc"
 
 apidocs: prepare
 	mkdir -p "${java_managed_attachments}"

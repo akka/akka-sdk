@@ -1,13 +1,12 @@
 == Before you begin
 
 include::ROOT:partial$include.adoc[]
-include::java:partial$attributes.adoc[]
 
-:TODO: Update CLI URL to correct location
+* If you're new to Akka, https://console.akka.io[create an account, window="console"], you can try it out for free.
+* You'll need to install the xref:akka-cli:installation.adoc[Akka CLI] to deploy from a terminal window.
 
-* If you're new to Akka, {console}[create an account, window="console"], you can try it out for free.
-* You'll need to install the https://docs.akka.io/install-cli.html[Akka CLI, window="new-doc"] to deploy from a terminal window.
-* You'll also need
-** https://docs.docker.com/engine/install[Docker {minimum_docker_version} or higher, window="new"]
-** Java {java-version} or higher
-** https://maven.apache.org/download.cgi[Maven {minimum_maven_version} or higher, window="new"]
+You'll also need
+
+* Java {java-version}, we rely on https://adoptium.net/marketplace/[Eclipse Adoptium]
+* https://maven.apache.org/install.html[Apache Maven, window="new"] version {minimum_maven_version} or later (https://maven.apache.org/docs/history.html[Maven version history, window="new"])
+* https://docs.docker.com/get-started/get-docker/[Docker Engine, window="new"] {minimum_docker_version} or later

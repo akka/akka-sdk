@@ -1,7 +1,6 @@
 = Shopping Cart
 
 include::ROOT:partial$include.adoc[]
-include::java:partial$attributes.adoc[]
 
 :TODO: REVISE THIS CONTENT
 

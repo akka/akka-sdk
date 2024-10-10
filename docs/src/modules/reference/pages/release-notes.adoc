@@ -1,7 +1,6 @@
 = Release notes for Akka
 
 include::ROOT:partial$include.adoc[]
-include::java:partial$attributes.adoc[]
 
 Akka constantly gets updates and improvements enabling new features and expanding on existing. This page lists all releases of Akka components including the Akka libraries.
 
