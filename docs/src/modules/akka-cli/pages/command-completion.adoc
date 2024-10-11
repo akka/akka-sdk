@@ -70,3 +70,7 @@ To set up shell completion for PowerShell run:
 ----
 akka completion powershell | Out-String | Invoke-Expression
 ----
+
+== Related documentation
+
+- xref:reference:akka-cli/index.adoc[]

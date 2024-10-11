@@ -209,3 +209,8 @@ If you want to view the events from a event sourced entity you can use the `akka
 
 :TODO: More information about this command in xref:reference:akka-cli/akka_services_components_list-events.adoc[components] page.
 ====
+
+== Related documentation
+
+- xref:command-completion.adoc[]
+- xref:reference:akka-cli/index.adoc[]

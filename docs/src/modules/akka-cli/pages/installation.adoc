@@ -82,3 +82,9 @@ Verify that the Akka CLI has been installed successfully by running the followin
 ----
 akka help
 ----
+
+== Related documentation
+
+- xref:using-cli.adoc[]
+- xref:command-completion.adoc[]
+- xref:reference:akka-cli/index.adoc[]

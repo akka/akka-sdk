@@ -1,0 +1,47 @@
+= akka organizations auth add openid
+
+Add an OpenID authentication domain to the current (or specified) organization
+
+== Synopsis
+
+The `akka organizations auth openid add` command adds an OpenID authentication domain to the given organization in Kalix.
+
+----
+akka organizations auth add openid [flags]
+----
+
+== Options
+
+----
+      --auth-method string     The authentication method to use, as defined in section 9 of the OpenID Connect Core. Must be one of none, basic, post, jwt, or private-key-jwt.
+      --client-id string       The client id to use when communication with the OpenID Connect provider.
+      --client-secret string   The client secret, if needed for the given auth method.
+      --email-domain string    The domain name for email addresses used by this OIDC provider
+      --groups-claim string    The groups claim. Optional.
+  -h, --help                   help for openid
+      --issuer string          The OpenID issuer, this should be an https URL.
+      --organization string    name or ID for organization
+      --scopes strings         Any custom scopes to be added to authentication requests, in addition to Akka's default of openid, profile and email.
+----
+
+== Options inherited from parent commands
+
+----
+      --cache-file string   location of cache file (default "~/.akka/cache.yaml")
+      --config string       location of config file (default "~/.akka/config.yaml")
+      --context string      configuration context to use
+      --disable-prompt      Disable all interactive prompts when running kalix commands. If input is required, defaults will be used, or an error will be raised.
+                            This is equivalent to setting the environment variable KALIX_DISABLE_PROMPTS to true.
+  -o, --output string       set output format to one of [text,json,go-template=] (default "text")
+  -q, --quiet               set quiet output (helpful when used as part of a script)
+      --timeout duration    client command timeout (default 10s)
+      --use-grpc-web        use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+  -v, --verbose             set verbose output
+----
+
+== SEE ALSO
+
+* link:akka_organizations_auth_add.html[akka organizations auth add]	 - Add an authentication domain to your organization on Akka
+
+[discrete]
+

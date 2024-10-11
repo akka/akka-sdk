@@ -52,3 +52,4 @@ target-2.12
 tempo-data
 sdk-version-raw.txt
 sdk-version.txt
+**/*.adoc-e

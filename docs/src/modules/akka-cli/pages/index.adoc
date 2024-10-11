@@ -10,3 +10,4 @@ Using the Akka CLI, you control all aspects of your Akka account from your comma
 - xref:akka-cli:installation.adoc[]
 - xref:akka-cli:using-cli.adoc[]
 - xref:akka-cli:command-completion.adoc[]
+- xref:reference:akka-cli/index.adoc[]

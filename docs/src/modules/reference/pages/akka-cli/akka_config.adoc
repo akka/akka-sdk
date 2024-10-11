@@ -1,0 +1,49 @@
+= akka config
+
+Manage the local Akka configuration.
+
+== Synopsis
+
+The `akka config` commands display and set configuration contexts and values that apply to subsequent commands.
+Configuration settings are stored in a file on your local system, by default at `.akka/config.yaml` in your home directory.
+This location can be adjusted with the `--config` flag.
+
+== Options
+
+----
+  -h, --help   help for config
+----
+
+== Options inherited from parent commands
+
+----
+      --cache-file string   location of cache file (default "~/.akka/cache.yaml")
+      --config string       location of config file (default "~/.akka/config.yaml")
+      --context string      configuration context to use
+      --disable-prompt      Disable all interactive prompts when running kalix commands. If input is required, defaults will be used, or an error will be raised.
+                            This is equivalent to setting the environment variable KALIX_DISABLE_PROMPTS to true.
+  -o, --output string       set output format to one of [text,json,go-template=] (default "text")
+  -q, --quiet               set quiet output (helpful when used as part of a script)
+      --timeout duration    client command timeout (default 10s)
+      --use-grpc-web        use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+  -v, --verbose             set verbose output
+----
+
+== SEE ALSO
+
+* link:akka.html[akka]	 - Akka control
+* link:akka_config_clear.html[akka config clear]	 - Clear configuration value for key.
+* link:akka_config_clear-cache.html[akka config clear-cache]	 - Clear all cached data from the current context.
+* link:akka_config_current-context.html[akka config current-context]	 - Show the current context.
+* link:akka_config_delete-context.html[akka config delete-context]	 - Delete the given context.
+* link:akka_config_get.html[akka config get]	 - Get value for key.
+* link:akka_config_get-organization.html[akka config get-organization]	 - Get the currently set organization.
+* link:akka_config_get-project.html[akka config get-project]	 - Get the currently set project.
+* link:akka_config_list.html[akka config list]	 - List config values.
+* link:akka_config_list-contexts.html[akka config list-contexts]	 - List the configured contexts.
+* link:akka_config_rename-context.html[akka config rename-context]	 - Rename the current context to the given name.
+* link:akka_config_set.html[akka config set]	 - Set key to value in the current context.
+* link:akka_config_use-context.html[akka config use-context]	 - Switch to a context.
+
+[discrete]
+

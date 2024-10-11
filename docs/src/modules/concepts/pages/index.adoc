@@ -20,4 +20,3 @@ A detailed explanation to how _Entities_ persist their state, is presented in xr
 - xref:state-model.adoc[]
 - xref:saga-patterns.adoc[]
 - xref:best-practices.adoc[]
-- xref:control-tower.adoc[]

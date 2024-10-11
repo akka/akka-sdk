@@ -9,3 +9,4 @@ Technical reference material for various aspects of Akka.
 - xref:libraries:index.adoc[]
 - xref:release-notes.adoc[Release notes]
 - xref:glossary.adoc[]
+- xref:akka-cli/index.adoc[]

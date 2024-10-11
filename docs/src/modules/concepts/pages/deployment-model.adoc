@@ -58,5 +58,4 @@ The following topics may also be of interest.
 
 - xref:state-model.adoc[State model]
 - xref:best-practices.adoc[Best practices]
-- xref:control-tower.adoc[Monitoring and observability]
 - xref:architecture-model.adoc[Architecture model]

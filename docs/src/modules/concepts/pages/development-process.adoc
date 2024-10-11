@@ -119,4 +119,3 @@ Now that you have a project and have deployed it you should familairize yourself
 The following topics may also be of interest.
 
 - xref:best-practices.adoc[Best practices]
-- xref:control-tower.adoc[Monitoring and observability]
