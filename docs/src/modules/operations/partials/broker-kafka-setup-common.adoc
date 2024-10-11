@@ -8,10 +8,9 @@ WARNING: Correct partitioning is especially important for topics that stream dir
 
 To achieve at-least-once delivery, messages that are not acknowledged will be redelivered. This means redeliveries of 'older' messages may arrive behind fresh deliveries of 'newer' messages. The _first_ delivery of each message is always in-order, though.
 
-When publishing messages to Kafka from Kalix, the `ce-subject` attribute, if present, is used as the Kafka partition key for the message.
+When publishing messages to Kafka from Akka, the `ce-subject` attribute, if present, is used as the Kafka partition key for the message.
 
 
-== Testing Kalix eventing
+== Testing Akka eventing
 
-See xref:operations:message-brokers.adoc#_testing_kalix_eventing[Testing Kalix eventing]
-
+See xref:operations:message-brokers.adoc#_testing[Testing Akka eventing]

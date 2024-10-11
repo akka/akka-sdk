@@ -2,7 +2,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-https://docs.kalix.io/reference/glossary.html#value_entity[Key Value Entities] are entities that persist the full state on every change. Only the latest state is stored, so we don’t have access to any of the history of changes, unlike the event sourced storage used by xref:java:event-sourced-entities.adoc[Event Sourced Entitites].
+xref:reference:glossary.adoc#value_entity[Key Value Entities] are entities that persist the full state on every change. Only the latest state is stored, so we don’t have access to any of the history of changes, unlike the event sourced storage used by xref:java:event-sourced-entities.adoc[Event Sourced Entitites].
 
 NOTE: Key Value Entities currently doesn't support multi-region replication.
 

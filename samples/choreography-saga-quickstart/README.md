@@ -178,7 +178,7 @@ To deploy your service, install the `akka` CLI as documented in
 and configure a Docker Registry to upload your docker image to.
 
 You will need to update the `dockerImage` property in the `pom.xml` and refer to
-[Configuring registries](https://docs.kalix.io/projects/container-registries.html)
+[Configuring registries](https://doc.akka.io/operations/container-registries.html)
 for more information on how to make your docker image available to Akka.
 
 * Finally, use the `akka` CLI to generate a project.

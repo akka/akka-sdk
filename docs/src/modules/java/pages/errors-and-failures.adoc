@@ -76,4 +76,4 @@ All unexpected exception thrown be the user code are transformed into an HTTP 50
 Unexpected error [2c74bdfb-3130-464c-8852-cf9c3c2180ad]
 ----
 
-That same correlation ID `2c74bdfb-3130-464c-8852-cf9c3c2180ad` is included in the log entry for the error as an MDC value with the key `correlationID`. This makes it possible to find the specific error in the logs using `kalix logs` or by querying your configured logging backend for the service.
+That same correlation ID `2c74bdfb-3130-464c-8852-cf9c3c2180ad` is included in the log entry for the error as an MDC value with the key `correlationID`. This makes it possible to find the specific error in the logs using `akka logs` or by querying your configured logging backend for the service.

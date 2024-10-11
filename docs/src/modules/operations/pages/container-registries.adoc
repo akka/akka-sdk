@@ -25,15 +25,15 @@ Execute the `akka auth current-login` to verify that you are logged into Akka. (
 [source,command line]
 ----
 > akka auth current-login
-ba6f49b0-c4e1-cccc-ffff-30053f652c42   user test@lightbend.com   true       CLI login from the machine.localdomain(127.0.0.1)   3d21h
+ba6f49b0-c4e1-cccc-ffff-30053f652c42   user test@akka.io   true       CLI login from the machine.localdomain(127.0.0.1)   3d21h
 ----
 
-Check that you have the Docker client installed. The minimum required version of Docker is 18.03.
+Check that you have the Docker client installed.
 
 [source,command line]
 ----
 > docker --version
-Docker version 23.0.6, build ef23cbc431
+Docker version 27.3.1, build ce1223035a
 ----
 
 == Configuring ACR authentication

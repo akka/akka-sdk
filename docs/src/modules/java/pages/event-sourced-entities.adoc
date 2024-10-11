@@ -5,9 +5,9 @@ include::ROOT:partial$include.adoc[]
 
 :TODO: add illustrations from the local console
 
-Event Sourced Entities are components that persist their state using the Event Sourcing Model. Instead of persisting the current state, they persist all the events that led to the current state. Akka stores these events in a https://docs.kalix.io/reference/glossary.html#journal[journal]. Event Sourced Entities persist their state with https://en.wikipedia.org/wiki/ACID[ACID semantics{tab-icon}, window="new"], scale horizontally, and isolate failures. 
+Event Sourced Entities are components that persist their state using the Event Sourcing Model. Instead of persisting the current state, they persist all the events that led to the current state. Akka stores these events in a xref:reference:glossary.adoc#journal[journal]. Event Sourced Entities persist their state with https://en.wikipedia.org/wiki/ACID[ACID semantics{tab-icon}, window="new"], scale horizontally, and isolate failures.
 
-An Event Sourced Entity must not update its in-memory state directly as a result of a https://docs.kalix.io/reference/glossary.html#command[_command_]. The handling of a command, if it results in changes being required to state, should persist https://docs.kalix.io/reference/glossary.html#event[_events_]. These events will then be processed by the entity, at which point the in-memory state can and should be changed in response.
+An Event Sourced Entity must not update its in-memory state directly as a result of a xref:reference:glossary.adoc#command[_command_]. The handling of a command, if it results in changes being required to state, should persist xref:reference:glossary.adoc#event[_events_]. These events will then be processed by the entity, at which point the in-memory state can and should be changed in response.
 
 When you need to read state in your service, ask yourself _what events should I be listening to_?. When you need to write state, ask yourself _what events should I be persisting_?
 
@@ -21,7 +21,7 @@ include::partial$entity-sharding.adoc[]
 
 :TODO: TIP: To learn more about event sourcing, check out the free Lightbend Academy course, https://academy.lightbend.com/courses/course-v1:lightbend+LRA-CQRSandEventSourcing+v1/about[Reactive Architecture: CQRS & Event Sourcing {tab-icon}, window="new"].
 
-https://docs.kalix.io/reference/glossary.html#event_sourced_entity[Event Sourced Entities] persist changes as events and snapshots. Akka needs to serialize that data to send it to the underlying data store. However, we recommend that you do not persist your service's public API messages. Persisting private API messages may introduce some overhead when converting from a public message to an internal one but it allows the logic of the service public interface to evolve independently of the data storage format, which should be private.
+xref:reference:glossary.adoc#event_sourced_entity[Event Sourced Entities] persist changes as events and snapshots. Akka needs to serialize that data to send it to the underlying data store. However, we recommend that you do not persist your service's public API messages. Persisting private API messages may introduce some overhead when converting from a public message to an internal one but it allows the logic of the service public interface to evolve independently of the data storage format, which should be private.
 
 The steps necessary to implement an Event Sourced Entity include:
 

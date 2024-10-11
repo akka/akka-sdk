@@ -14,6 +14,7 @@ Message brokers are configured on Akka Project level. A project can have one bro
 - xref:operations:broker-confluent.adoc[Confluent Cloud]
 - xref:operations:broker-google-pubsub.adoc[Google Pub/Sub]
 
+[#_testing]
 == Testing Akka eventing
 
 The Java SDK testkit has built-in support to simulate message brokers. See xref:java:actions-publishing-subscribing.adoc#_testing_the_integration[Testing the Integration].

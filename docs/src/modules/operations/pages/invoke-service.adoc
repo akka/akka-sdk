@@ -260,6 +260,7 @@ echo -n "correct horse battery staple" |
 ----
 --
 
+[#_proxy_command]
 == Testing and development
 
 During testing and development, you can use the `akka` proxy command to invoke your services.

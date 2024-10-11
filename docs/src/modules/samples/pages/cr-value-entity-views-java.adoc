@@ -2,7 +2,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-In this section, you will learn how to create a customer registry with the Java SDK, package it into a container, and run it on Kalix.
+In this section, you will learn how to create a customer registry with the Java SDK, package it into a container, and run it on Akka.
 
 include::partial$before-you-begin.adoc[]
 
@@ -10,22 +10,22 @@ include::partial$before-you-begin.adoc[]
 ====
 If you want to bypass writing code and jump straight to the deployment:
 
-. Download the source code using the Kalix CLI:
-`kalix quickstart download customer-registry-views-java`
+. Download the source code using the Akka CLI:
+`akka quickstart download customer-registry-views-java`
 
 . Skip to <<Package and deploy your service>>.
 ====
 
 == Start from the Customer Registry Entity
 
-Start by downloading the  xref::page$cr-value-entity-java.adoc[Customer Registry sample] source code using the Kalix CLI:
+Start by downloading the  xref:cr-value-entity-java.adoc[Customer Registry sample] source code using the Akka CLI:
 
 [source,command line]
 ----
-kalix quickstart download customer-registry-java
+akka quickstart download customer-registry-java
 ----
 
-You can access the `Customer` https://docs.kalix.io/reference/glossary.html#entity[Entity] with its https://docs.kalix.io/reference/glossary.html#component_id[id]. In this guide we will describe how to retrieve customers by email or name instead.
+You can access the `Customer` xref:reference:glossary.adoc#entity[Entity] with its xref:reference:glossary.adoc#component_id[id]. In this guide we will describe how to retrieve customers by email or name instead.
 
 == Define the CustomerByEmail View
 

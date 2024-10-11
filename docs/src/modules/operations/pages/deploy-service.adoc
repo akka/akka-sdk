@@ -28,6 +28,7 @@ akka service deploy \
 
 Your service is now deployed.
 
+[#_verify_service_status]
 == How to verify the service status
 
 You can verify whether your service was successfully deployed and check its current status.

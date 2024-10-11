@@ -96,7 +96,7 @@ include::example$key-value-counter/src/main/java/com/example/application/Counter
 <3> `plusOne` increases the counter by adding 1 to the current state.
 <4> Finally, using the Effect API, you instruct Akka to persist the new state, and build a reply with the wrapper object.
 
-The project also includes a dependency on the *Kalix Java SDK Test Kit*. Please consult the specific documentation page
+The project also includes a dependency on the *Akka SDK Test Kit*. Please consult the specific documentation page
 for each type of component to learn more about writing unit tests and integration tests for your application.
 
 == Package service

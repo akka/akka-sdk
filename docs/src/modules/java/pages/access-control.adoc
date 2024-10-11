@@ -14,7 +14,7 @@ by the service name chosen when deployed. Akka uses mTLS support to associate re
 Note that requests that have the internet principal are requests that Akka has identified as coming through the Akka
 ingress route. This is identified by mTLS, however it does not imply that mTLS has been
 used to connect to the ingress from the client in the internet. These are separate hops. To configure mTLS from
-internet clients, see https://docs.kalix.io/security/tls-certificates.html[TLS certificates].
+internet clients, see xref:security:tls-certificates.adoc[TLS certificates].
 
 == Configuring ACLs
 

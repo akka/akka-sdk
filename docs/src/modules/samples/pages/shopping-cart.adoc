@@ -12,7 +12,7 @@ include::partial$before-you-begin.adoc[]
 ====
 If you want to bypass writing code and jump straight to the deployment:
 
-. Download the source code using the Kalix CLI:
+. Download the source code using the Akka CLI:
 `akka quickstart download shopping-cart`
 
 . Skip to <<Package and deploy your service>>.
@@ -68,8 +68,8 @@ curl localhost:8080/cart/123/add \
   --header "Content-Type: application/json" \
   -XPOST \
   --data '{
-    "productId": "kalix-tshirt",
-    "name": "Kalix Tshirt",
+    "productId": "akka-tshirt",
+    "name": "Akka Tshirt",
     "quantity": 5
   }'
 ----

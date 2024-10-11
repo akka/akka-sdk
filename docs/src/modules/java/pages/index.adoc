@@ -1,7 +1,6 @@
 = Akka SDK
 
 include::ROOT:partial$include.adoc[]
-include::partial$attributes.adoc[]
 
 Building services with the Akka SDK leads you into embracing proven design patterns that enable your apps to remain responsive to change. It frees you from infrastructure concerns and lets you focus on the application logic.
 
@@ -33,7 +32,7 @@ To query the data, the service offers Views.
 
 == Getting Started
 
-Follow our xref:java:getting-started.adoc["Getting started with the Akka SDK"] guide to implement your first service. If you prefer to first explore working example code, you can check out the https://docs.kalix.io/samples/index.html[beginner samples].
+Follow our xref:java:getting-started.adoc["Getting started with the Akka SDK"] guide to implement your first service. If you prefer to first explore working example code, you can check out the xref:samples:index.adoc[beginner samples].
 
 On the other hand, if you would rather spend some time exploring our documentation, here are some main features you will find in this section:
 
@@ -45,29 +44,3 @@ On the other hand, if you would rather spend some time exploring our documentati
 * xref:timed-actions.adoc[Timed Actions]
 * xref:workflows.adoc[Workflows]
 * xref:errors-and-failures.adoc[Errors and failures]
-
-
-[#_dependency_injection]
-=== Dependency Injection
-
-:TODO: Should this section be kept?
-
-*Actions*, *Entities* and *Views* are all Kalix components, and they get special treatment.
-
-When your application starts, it will scan the classpath for any class extending one of the Kalix components. Each time such a component is found, it's analysed in order to generate the necessary metadata that Kalix requires to be able to interact with them. The component is then registered to Kalix and made available to the Runtime through Kalix internal protocol.
-
-It's important to understand that interacting directly with a Kalix component is NOT possible. All interactions must happen through the Runtime since that's how Kalix manages state and distribution. Therefore, it's not possible to use dependency injection to inject Kalix components inside other components and doing so will raise a runtime error.
-
-On the other hand, it is possible to inject non-Kalix classes into Kalix components. Any Spring bean defined in your application can be injected into a Kalix component. However, you must keep in mind that Kalix components can only receive other dependencies through constructor injection.
-
-For more details on how Kalix manage state and distribution, consult the https://docs.kalix.io/services/programming-model.html[Programming model] page.
-
-=== Spring Repositories
-
-In Kalix, data storage and retrieval follows the https://developer.lightbend.com/docs/akka-platform-guide/concepts/cqrs.html[Command Query Responsibility Segregation (CQRS)] pattern. In CQRS, we work with two models. One that is designed for writes, often called the command-model, and one that is optimized for reads, also known as the query-model.
-
-The persistent Kalix entities (xref:java:event-sourced-entities.adoc[Event Sourced Entity] and xref:java:key-value-entities.adoc[Key Value Entity]) represent the command-model in the CQRS pattern. They receive `Commands` and mutate data in their own transaction.
-
-Data produced by entities can be propagated to xref:java:views.adoc[Views] in order to generate query-models, also known as view-models. Views are indexed representations of your model. You can query your data using different fields, while Entities are only accessible by their entity id.
-
-In both cases, Kalix manages all persistence aspects and your code only need to specify the business logic.
