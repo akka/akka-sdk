@@ -1,16 +1,13 @@
-# Customer Registry with Views
+# Customer Registry
 
 ## Designing
 
-
-To understand the Akka concepts that are the basis for this example, see [Designing services](https://docs.kalix.
-io/java/development-process.html) in the documentation.
+To understand the Akka concepts that are the basis for this example, see [Designing services](https://doc.akka.io/concepts/development-process.html) in the documentation.
 
 ## Developing
 
-This project demonstrates the use of Key Value Entity and View components.
-To understand more about these components, see [Developing services](https://docs.kalix.io/services/)
-and in particular the [Java section](https://docs.kalix.io/java/)
+This project demonstrates use of the Key Value Entity component.
+To understand more about these components, see [Developing services](https://doc.akka.io/java/)
 
 ## Building
 
