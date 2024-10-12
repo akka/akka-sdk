@@ -63,7 +63,7 @@ xref:consuming-producing.adoc#consume-from-event-sourced-entity[@Consume.FromEve
 
 The event producer is a Consumer that consumes the events from a local source and makes them available for consumption from another service. This is done with an additional `@Produce.ServiceStream` annotation, the stream `id` is what identifies the specific stream of events from the consuming services. The ACL configuration is set to allow access from specific (or all) Akka services.
 
-To illustrate how to publish entity events, let's assume the existence of a `CounterEntity` that emits events of types: `CustomerCreated`, `NameChanged` and `AddressChanged`. You will get the events delivered to a Consumer, transform them to a public set of event types and let them be published to a stream.
+To illustrate how to publish entity events, let's assume the existence of a `CustomerEntity` that emits events of types: `CustomerCreated`, `NameChanged` and `AddressChanged`. You will get the events delivered to a Consumer, transform them to a public set of event types and let them be published to a stream.
 
 [source,java,indent=0]
 .{sample-base-url}/event-sourced-customer-registry/src/main/java/customer/api/CustomerEvents.java[CustomerEvents.java]
