@@ -1,4 +1,4 @@
-# Event Sourecd Counter
+# Event Sourced Counter
 
 ## Designing
 
