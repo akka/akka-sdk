@@ -7,4 +7,5 @@
 ** xref:consuming-producing.adoc[Consuming and Producing]
 ** xref:timed-actions.adoc[Timed Actions]
 ** xref:workflows.adoc[Workflows]
+** xref:setup-and-dependency-injection.adoc[]
 ** xref:api-docs.adoc[API documentation]
