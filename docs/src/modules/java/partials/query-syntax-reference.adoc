@@ -60,9 +60,7 @@ SELECT * FROM customers WHERE
 ----
 ////
 
-Combine filter conditions with the `AND` operator, and negate using the `NOT` operator. Group conditions using parentheses.
-
-NOTE: `OR` support is currently disabled, until it can be more efficiently indexed.
+Combine filter conditions with the `AND` or `OR` operators, and negate using the `NOT` operator. Group conditions using parentheses.
 
 ----
 SELECT * FROM customers WHERE

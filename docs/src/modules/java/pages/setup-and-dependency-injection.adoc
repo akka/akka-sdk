@@ -75,7 +75,7 @@ Note that the objects returned from a custom `DependencyProvider` must either be
 to the dependency provider or be thread safe since they will be shared by any component instance accepting
 them, potentially each running in parallel. This is best done by using immutable objects which is completely safe.
 
-Important:: Injecting shared objects that use regular JVM concurrency primitives such as locks, can easily block
+IMPORTANT: Injecting shared objects that use regular JVM concurrency primitives such as locks, can easily block
 individual component instances from running in parallel and cause throughput issues or even worse, deadlocks,
 so should be avoided.
 

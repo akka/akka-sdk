@@ -110,8 +110,7 @@ include::example$transfer-workflow/src/main/java/com/example/transfer/applicatio
 ----
 <1> Return the current state as reply for the request.
 
-
-IMPORTANT: For simplicity purposes, we are returning the internal state directly back to the requester. In a real-world scenario, it's usually better to instead convert this internal domain model into a DTO model so the internal representation is free to evolve without breaking clients code.
+IMPORTANT: We are returning the internal state directly back to the requester. In the endpoint, it's usually best to convert this internal domain model into a public model so the internal representation is free to evolve without breaking clients code.
 
 A full transfer workflow source code is available {sample-base-url}[here, {tab-icon}, window="new"]. Follow the `README` file to run and test it.
 

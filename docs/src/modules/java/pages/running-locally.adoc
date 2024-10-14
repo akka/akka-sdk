@@ -67,7 +67,7 @@ curl localhost:9000/customer/one
 
 == Shutting down the service
 
-Use `Ctrl+C` to shut down the service.
+Use `Ctrl+c` to shut down the service.
 
 == Running service with persistence enabled
 

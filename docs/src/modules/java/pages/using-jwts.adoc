@@ -1,5 +1,4 @@
 = Using JWTs
-:page-aliases: spring:using-jwts.adoc
 
 include::ROOT:partial$include.adoc[]
 

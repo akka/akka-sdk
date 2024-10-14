@@ -65,7 +65,7 @@ include::example$event-sourced-counter/src/main/java/counter/api/CounterEndpoint
 
 This approach is more explicit and type-safe, but it requires more boilerplate code. It is recommended to use this approach when the error handling is more complex and requires more than just a simple message.
 
-Note:: Make sure that you are familiar with the Jackson serialization library and how to use it with sealed interfaces and generic types. Schema evolution and compatibility aspects in terms of response types should be considered. Especially in the context of using Workflows, where step action results are persisted and will be deserialized in the future.
+NOTE: Make sure that you are familiar with the Jackson serialization library and how to use it with sealed interfaces and generic types. Schema evolution and compatibility aspects in terms of response types should be considered. Especially in the context of using Workflows, where step action results are persisted and will be deserialized in the future.
 
 == Failures
 

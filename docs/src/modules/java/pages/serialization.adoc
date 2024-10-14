@@ -1,5 +1,4 @@
 = Serialization
-:page-aliases:spring:serialization.adoc, java:serialization.adoc,
 
 == Jackson serialization
 

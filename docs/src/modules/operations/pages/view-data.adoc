@@ -12,7 +12,7 @@ All the components in an entity can be listed by running:
 akka service components list my-service
 ----
 
-This will show you the name of the component (which equals the fully qualified name of the gRPC service that it implements), the type of component (such as value entity, event sourced entity, replicated entity, view, action), and if applicable, the entity type name.
+This will show you the name of the component (which equals the fully qualified name of the gRPC service that it implements), the type of component (such as key value entity, event sourced entity, view, action), and if applicable, the entity type name.
 
 == Listing entity ids
 

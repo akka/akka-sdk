@@ -43,4 +43,3 @@ On the other hand, if you would rather spend some time exploring our documentati
 * xref:consuming-producing.adoc[Consuming and Producing]
 * xref:timed-actions.adoc[Timed Actions]
 * xref:workflows.adoc[Workflows]
-* xref:errors-and-failures.adoc[Errors and failures]

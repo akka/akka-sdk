@@ -4,9 +4,9 @@ include::ROOT:partial$include.adoc[]
 
 The Akka SDK comes with Maven support that gets you started quickly:
 
-* A number of xref::samples:index.adoc[complete examples] let you start with working code
+* A number of xref::samples:index.adoc[complete examples] let you start with working code.
 * The Akka *Maven archetype* generates a skeleton project with the project structure, following the onion architecture recommendation. The generated project also contains configuration for packaging and deploying the service.
-* The Akka *Maven plugin* to helps you run your application locally and deploy it to akka.io.
+* The Akka *Maven parent pom* that defines dependencies and helps you run your application locally and package for deployment.
 
 == Prerequisites
 
@@ -55,9 +55,7 @@ mvn archetype:generate ^
 
 . Navigate to the new project directory.
 
-. Open it on your preferred IDE / Editor.
-
-== Examine the project
+. Open it in your preferred IDE / Editor.
 
 == Implementing first component
 

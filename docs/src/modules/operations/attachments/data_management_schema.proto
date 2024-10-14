@@ -75,7 +75,7 @@ enum ExportRecordType {
   EVENT_SOURCED_ENTITY_EVENT = 1;
   // An event sourced entity snapshot. The associated schema is EventSourcedEntitySnapshot.
   EVENT_SOURCED_ENTITY_SNAPSHOT = 2;
-  // A value entity. The associated schema is ValueEntity.
+  // A key value entity. The associated schema is ValueEntity.
   VALUE_ENTITY = 3;
 }
 
@@ -231,7 +231,7 @@ message EventSourcedEntitySnapshot {
   google.protobuf.Any payload = 5;
 }
 
-// A value entity.
+// A key value entity.
 message ValueEntity {
   // The entity_type. Required.
   //
@@ -247,7 +247,7 @@ message ValueEntity {
   // Revision number. Optional.
   //
   // The revision number is incremented on each update of the entity. It's also used for change history streaming, in
-  // projections, to track if a particular revision of a value entity has been seen.
+  // projections, to track if a particular revision of a key value entity has been seen.
   //
   // Revision numbers should be 1 based. If not present, the revision will be initialized to 1.
   int64 revision = 3;

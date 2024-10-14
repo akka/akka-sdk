@@ -23,7 +23,7 @@ A _command handler_ is the code that handles a command. It may validate the comm
 
 [[component_id]]Component id:: An id used to identify instances of a stateful components like <<entity>> or <<workflow>>. All <<command>>s must contain the component id so that the command can be routed to the right instance of the component that the command is for. The gRPC descriptoFr annotates the incoming message types for the component to indicate which field(s) contain the id.
 
-[[entity_type]]Entity type:: The type of state management that an <<entity>> uses. Available types include <<event_sourced_entity>> and <<value_entity>>. Each type has its own sub protocol that it uses for state management, to convey state and updates specific to that type.
+[[entity_type]]Entity type:: The type of state management that an <<entity>> uses. Available types include <<event_sourced_entity>> and <<key_value_entity>>. Each type has its own sub protocol that it uses for state management, to convey state and updates specific to that type.
 
 [[event]]Event:: An _event_  indicates that a change has occurred to an entity and persists the current state. Events are stored in a _journal_, and are read and replayed each time the entity is reloaded by the Kalix state management system. An event emitted by one service might be interpreted as a command by another.
 
@@ -56,13 +56,13 @@ A snapshot records current state of an Event Sourced Entity. Kalix persists snap
 [[state]]State::
 The _state_ is simply data--the current set of values for an entity instance. Event Sourced Entities hold their state in memory.
 
-[[state_model]]State model:: Each entity uses one of the supported state models. The state model determines the way Kalix manages data. Currently, these include <<value_entity>>, <<event_sourced_entity>> and <<replicated_entity>>.
+[[state_model]]State model:: Each entity uses one of the supported state models. The state model determines the way Kalix manages data. Currently, these include <<key_value_entity>> and <<event_sourced_entity>>.
 
 [[timed_action]]Timed actions:: A Timed Action provides consistent scheduling and execution of a call to another <<Component>> at specified intervals or delays. They are convenient for automating repetitive work and handling timeouts within business logic implementation.
 
-[[value_entity]]Value Entity:: A Value Entity stores state in an update-in-place model, similar to a Key-Value store that supports CRUD (Create, Read, Update, Delete) operations. In Domain Driven Design (DDD) terms, a Value Entity is an "Entity." In contrast with "Value Objects," you reference Entities by an identifier and the value associated with that identifier can change (be updated) over time. These are discussed in more detail in xref:concepts:state-model.adoc#_the_value_state_model[Value state model].
+[[key_value_entity]]Key Value Entity:: A Key Value Entity stores state in an update-in-place model, similar to a Key-Value store that supports CRUD (Create, Read, Update, Delete) operations. In Domain Driven Design (DDD) terms, a Value Entity is an "Entity." In contrast with "Value Objects," you reference Entities by an identifier and the value associated with that identifier can change (be updated) over time. These are discussed in more detail in xref:concepts:state-model.adoc#_the_value_state_model[Value state model].
 
-[[view]]View:: A View provides a way to retrieve state from multiple Entities based on a query. You can query non-key data items. You can create views from Value Entity state, Event Sourced Entity events, and by subscribing to topics.
+[[view]]View:: A View provides a way to retrieve state from multiple Entities based on a query. You can query non-key data items. You can create views from Key Value Entity state, Event Sourced Entity events, and by subscribing to topics.
 
 [[workflow]]Workflow:: Kalix Workflows are high-level descriptions to easily align business requirements with their implementation in code. Orchestration across multiple services with support for failure scenarios and compensating actions is simple with Kalix Workflows. See xref:concepts:workflows.adoc[Kalix Workflows].
 

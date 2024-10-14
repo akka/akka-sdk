@@ -12,7 +12,7 @@ In this section, we will explore how you can use a Consumer component to:
 - Consume messages from topics of Google Cloud Pub/Sub or Apache Kafka.
 - Produce messages to a Google Cloud Pub/Sub or Apache Kafka topic.
 
-Note:: Events and messages are guaranteed to be delivered at least once. This means that Consumers must be able to handle duplicated messages.
+NOTE: Events and messages are guaranteed to be delivered at least once. This means that Consumers must be able to handle duplicated messages.
 
 [#consume-from-event-sourced-entity]
 == Consume from Event Sourced Entity
@@ -56,7 +56,7 @@ Akka provides brokerless at-least-once event delivery across Akka services throu
 
 The source of the events is an xref:event-sourced-entities.adoc[Event Sourced Entity]. Its events can be published as a stream and consumed by another Akka service without the need to set up a message broker.
 
-Note:: For eventing from an entity inside the same Akka service as the consuming component, use regular
+NOTE: For eventing from an entity inside the same Akka service as the consuming component, use regular
 xref:consuming-producing.adoc#consume-from-event-sourced-entity[@Consume.FromEventSourcedEntity] instead of Service to Service eventing.
 
 === Event Producer
@@ -111,7 +111,7 @@ include::example$event-sourced-counter/src/main/java/counter/application/Counter
 <2> Add handler for a given message type.
 <3> Mark processing as completed.
 
-Note:: By default, Akka assumes the messages in the topic were serialized as JSON and as such, deserializes them into the input type of your handlers by taking advantage of CloudEvents standard.
+NOTE: By default, Akka assumes the messages in the topic were serialized as JSON and as such, deserializes them into the input type of your handlers by taking advantage of CloudEvents standard.
 
 === Receiving CloudEvents
 

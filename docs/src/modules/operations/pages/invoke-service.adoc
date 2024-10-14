@@ -284,7 +284,7 @@ The proxy can be started by running the following:
 akka service proxy my-service
 ----
 
-This will start the proxy on port 8080 bound to localhost. The proxy runs in the foreground, and will log the requests made through it as it receives them. You can stop the proxy by hitting Ctrl+C.
+This will start the proxy on port 8080 bound to localhost. The proxy runs in the foreground, and will log the requests made through it as it receives them. You can stop the proxy by hitting Ctrl+c.
 
 You can customize the port and bind address by running:
 
