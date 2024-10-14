@@ -1,6 +1,4 @@
 = Managing project users
-:page-aliases: projects:manage-projects-access.adoc[]
-
 include::ROOT:partial$include.adoc[]
 
 Access to projects is managed by granting users roles. The following roles exist: admin, developer, and backoffice.
@@ -92,3 +90,8 @@ akka roles invitations delete <email address>
 ----
 
 If you wish to resend an invitation, this can be done by first deleting the invitation, and then inviting the user again.
+
+== See also
+
+- xref:manage-users.adoc[]
+- xref:reference:akka-cli/akka_roles.adoc#_see_also[`akka roles` commands]

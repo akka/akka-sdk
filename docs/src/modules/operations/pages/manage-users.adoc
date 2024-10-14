@@ -1,8 +1,6 @@
 = Managing organization users
-:page-aliases: organizations:manage-users.adoc[]
-
-:page-supergroup-console-cli: Interface
 include::ROOT:partial$include.adoc[]
+:page-supergroup-console-cli: Interface
 
 Access to organizations is managed by granting users roles. The following roles exist: superuser, project-admin, billing-admin and member.
 
@@ -102,3 +100,8 @@ akka organizations invitations cancel --organization <organization name>
 
 If you wish to resend an invitation, this can be done by first cancelling the invitation, and then inviting the user again.
 
+== See also
+
+- xref:manage-project-access.adoc[]
+- xref:reference:akka-cli/akka_organizations_users.adoc#_see_also[`akka organizations users` commands]
+- xref:reference:akka-cli/akka_organizations_invitations.adoc#_see_also[`akka organizations invitations` commands]

@@ -1,0 +1,287 @@
+// Copyright 2024 Lightbend Inc.
+
+// Message types for Akka data exports/imports
+
+syntax = "proto3";
+
+package kalix.datamanagement.v1alpha;
+
+option go_package = "github.com/lightbend/kalix/cli/api/kalix/datamanagement/v1alpha;datamanagement";
+option java_outer_classname = "DataManagementProto";
+option java_package = "io.kalix.datamanagement.api.v1alpha";
+
+import "google/protobuf/any.proto";
+import "google/protobuf/timestamp.proto";
+
+// An export header.
+message ExportHeader {
+  // Required. A unique ID for this export.
+  string id = 1;
+
+  // Required. The type of records in this export. This must match the type of entity being exported.
+  ExportRecordType record_type = 2;
+
+  // Optional. Time the export was created, for informational purposes only.
+  google.protobuf.Timestamp export_time = 3;
+
+  // Optional. The source of this export. It will be populated when exporting data from Kalix, but is ignored when
+  // importing data into Kalix.
+  ExportSource source = 4;
+
+  // Optional. The destination for this export. It will be populated when exporting data from Kalix, but is ignored
+  // when importing data into Kalix.
+  ExportDestination destination = 5;
+
+  // Optional. The authenticated principal (user, service) that performed this export. It will be populated when
+  // exporting data from Kalix, but is ignored when importing data into Kalix.
+  string principal = 6;
+}
+
+// The source of an export.
+//
+// This is only relevant for exports that have come from Kalix services, it is used to make clear exactly where this
+// data came from.
+message ExportSource {
+  // The ID of the project that the export came from.
+  string project_id = 1;
+
+  // The name of the service that the export came from.
+  string service_name = 2;
+
+  // The unique UUID of the service that the export came from.
+  string service_uid = 3;
+}
+
+// The destination for the export.
+//
+// This is only relevant for exports that have come from Kalix services, it is used to make clear exactly where this
+// data was exported to.
+message ExportDestination {
+  // The name of the bucket that Kalix wrote the data to.
+  string bucket_name = 1;
+
+  // The object name prefix that the export used.
+  string object_name_prefix = 2;
+}
+
+// The type of record.
+//
+// A given export file must only have one record type in it. That will be specify the schema of the records in the
+// records field of the export.
+enum ExportRecordType {
+  UNSPECIFIED = 0;
+
+  // An event sourced entity event. The associated schema is EventSourcedEntityEvent.
+  EVENT_SOURCED_ENTITY_EVENT = 1;
+  // An event sourced entity snapshot. The associated schema is EventSourcedEntitySnapshot.
+  EVENT_SOURCED_ENTITY_SNAPSHOT = 2;
+  // A value entity. The associated schema is ValueEntity.
+  VALUE_ENTITY = 3;
+}
+
+// An export.
+//
+// Though an export of records will match this protobuf format, when consuming it, we do not recommend using the
+// generated protocol buffer parsers, rather we recommend reading using low level APIs, and deserializing
+// each field using the generated parsers. This means first reading the version field and the export header, and then
+// reading each record, and deserializing the record using the appropriate message type for the EventRecordType
+// specified in the header.
+//
+// Formatting is simpler as we can take advantage of the fact that when you write two protobuf messages to a stream
+// sequentially, due to the nature of the protobuf format, they get merged into one object. So, to serialize, first
+// write out an export message with the version and the header set, but no records set. Then for each record (or group
+// of records), place them into an Export message, without the version or header set, and write that message out to the
+// same output stream.
+//
+// For JSON imports/exports, the format is slightly different. The format used is new line separated JSON. The first
+// JSON line must be this export object, without the records field set. Subsequent JSON lines are the records, using
+// the schemas as described below.
+message Export {
+  // The version. Must be v1.
+  string version = 1;
+
+  // The header.
+  ExportHeader export_header = 2;
+
+  // The records.
+  repeated bytes records = 3;
+}
+
+// An event sourced entity event.
+message EventSourcedEntityEvent {
+  // The entity_type. Required.
+  //
+  // This is the type of entity, for example, "shopping-cart".
+  string entity_type = 1;
+
+  // The entity_id. Required.
+  //
+  // This is the identifier for the entity. The entity_type and entity_id uniquely identify an entity.
+  string entity_id = 2;
+
+  // Sequence number. Required.
+  //
+  // The entity_type, entity_id and sequence number uniquely identify an event, and form the primary key for events.
+  // Sequence numbers start from 1, and must be strictly increasing for the entity type/id that it is for. Sequence
+  // numbers usually increase by 1 for each event in the journal, but gaps are tolerated.
+  //
+  // If this is a tombstone event, the sequence number will be the next sequence number after the last event of the
+  // entity when it was deleted.
+  int64 seq_nr = 3;
+
+  // The timestamp of the event. Required.
+  //
+  // This has microsecond precision, and is used for the purposes of tracking progress in event streams and
+  // projections. For a given entity type and id, the timestamp must monotonically increase (in increments of at least
+  // one microsecend) as the sequence number increases. That is to say, two events may have the same timestamp, but the
+  // timestamp must never decrease as the sequence number increases.
+  //
+  // If generating an import from a source of events that do not have timestamps, do not use the same timestamp for
+  // every event. Doing so will make offset tracking of the event stream impossible, since every event will have the
+  // same timestamp offset.
+  google.protobuf.Timestamp timestamp = 4;
+
+  // The payload. Required, unless this is a tombstone event.
+  //
+  // If the payload of the event is a protobuf message, it should be serialized according to:
+  //
+  // https://github.com/protocolbuffers/protobuf/blob/main/src/google/protobuf/any.proto
+  //
+  // If the payload of the event is a JSON message, the type_url should be json.kalix.io/<type-name>, where <type-name>
+  // is the name of the type that's use to decode the message, for example, in the Java SDK as documented here:
+  //
+  // https://docs.kalix.io/java/serialization.html#_type_name
+  //
+  // The JSON itself must be wrapped in either a google.protobuf.BytesWrapper or google.protobuf.StringWrapper, before
+  // being serialized to protobuf and being placed in the value field of the google.protobuf.Any. See here for the
+  // wrapper types:
+  //
+  // https://github.com/protocolbuffers/protobuf/blob/main/src/google/protobuf/wrappers.proto
+  //
+  // Note that since protobuf doesn't encode anything about the types in its messages, any message that has it's first
+  // field as a string or bytes can be used to wrap it.
+  //
+  // When encoding to JSON, if the payload is a JSON message, then a slightly different schema will be used to Any.
+  // The JSON will placed in a field called json, and the type associated with the json will be placed in a field
+  // called type.
+  google.protobuf.Any payload = 5;
+
+  // Deleted. Optional.
+  //
+  // If true, indicates that this is a tombstone event. Tombstone events are used to indicate that an event sourced
+  // entity has been deleted. This ensures that if the entity is recreated in future, its events can still be uniquely
+  // distinguished from the deleted events, as its sequence number will start from after the sequence number of this
+  // tombstone event.
+  //
+  // There should be at most one deleted event per entity type/id.
+  bool deleted = 6;
+}
+
+// An event sourced entity snapshot.
+message EventSourcedEntitySnapshot {
+  // The entity_type. Required.
+  //
+  // This is the type of entity, for example, "shopping-cart".
+  string entity_type = 1;
+
+  // The entity_id. Required.
+  //
+  // This is the identifier for the entity. The entity_type and entity_id uniquely identify an entity.
+  string entity_id = 2;
+
+  // Sequence number. Required.
+  //
+  // The entity_type, entity_id and sequence number uniquely identify a snapshot, and form the primary key for
+  // snapshots.
+  //
+  // The sequence number indicates which events the snapshot includes, that is, the snapshot is the state of the entity
+  // up until and including the event with this sequence number.
+  int64 seq_nr = 3;
+
+  // The timestamp. Required.
+  //
+  // The timestamp must be equal to the timestamp of the event that this snapshot was taken at. The timestamp is used
+  // when including snapshots in an event stream.
+  google.protobuf.Timestamp timestamp = 4;
+
+  // The payload. Required.
+  //
+  // If the payload of the snapshot is a protobuf message, it should be serialized according to:
+  //
+  // https://github.com/protocolbuffers/protobuf/blob/main/src/google/protobuf/any.proto
+  //
+  // If the payload of the snapshot is a JSON message, the type_url should be json.kalix.io/<type-name>, where
+  // <type-name> is the name of the type that's use to decode the message, for example, in the Java SDK as documented
+  // here:
+  //
+  // https://docs.kalix.io/java/serialization.html#_type_name
+  //
+  // The JSON itself must be wrapped in either a google.protobuf.BytesWrapper or google.protobuf.StringWrapper, before
+  // being serialized to protobuf and being placed in the value field of the google.protobuf.Any. See here for the
+  // wrapper types:
+  //
+  // https://github.com/protocolbuffers/protobuf/blob/main/src/google/protobuf/wrappers.proto
+  //
+  // Note that since protobuf doesn't encode anything about the types in its messages, any message that has it's first
+  // field as a string or bytes can be used to wrap it.
+  //
+  // When encoding to JSON, if the payload is a JSON message, then a slightly different schema will be used to Any.
+  // The JSON will placed in a field called json, and the type associated with the json will be placed in a field
+  // called type.
+  google.protobuf.Any payload = 5;
+}
+
+// A value entity.
+message ValueEntity {
+  // The entity_type. Required.
+  //
+  // This is the type of entity, for example, "shopping-cart".
+  string entity_type = 1;
+
+  // The entity_id. Required.
+  //
+  // This is the identifier for the entity. The entity_type and entity_id uniquely identify an entity, and make up
+  // the primary key for value entities.
+  string entity_id = 2;
+
+  // Revision number. Optional.
+  //
+  // The revision number is incremented on each update of the entity. It's also used for change history streaming, in
+  // projections, to track if a particular revision of a value entity has been seen.
+  //
+  // Revision numbers should be 1 based. If not present, the revision will be initialized to 1.
+  int64 revision = 3;
+
+  // The timestamp of when the entity was last updated. Optional.
+  //
+  // This has microsecond precision, and is used for the purposes of tracking progress in change streams and
+  // projections.
+  //
+  // If generating an import from a source of entities that do not have timestamps, do not use the same timestamp for
+  // every entity. Doing so will make offset tracking of the change history stream impossible, since every entity will
+  // have the same timestamp offset.
+  google.protobuf.Timestamp timestamp = 4;
+
+  // If the payload of the entity is a protobuf message, it should be serialized according to:
+  //
+  // https://github.com/protocolbuffers/protobuf/blob/main/src/google/protobuf/any.proto
+  //
+  // If the payload of the entity is a JSON message, the type_url should be json.kalix.io/<type-name>, where <type-name>
+  // is the name of the type that's use to decode the message, for example, in the Java SDK as documented here:
+  //
+  // https://docs.kalix.io/java/serialization.html#_type_name
+  //
+  // The JSON itself must be wrapped in either a google.protobuf.BytesWrapper or google.protobuf.StringWrapper, before
+  // being serialized to protobuf and being placed in the value field of the google.protobuf.Any. See here for the
+  // wrapper types:
+  //
+  // https://github.com/protocolbuffers/protobuf/blob/main/src/google/protobuf/wrappers.proto
+  //
+  // Note that since protobuf doesn't encode anything about the types in its messages, any message that has it's first
+  // field as a string or bytes can be used to wrap it.
+  //
+  // When encoding to JSON, if the payload is a JSON message, then a slightly different schema will be used to Any.
+  // The JSON will placed in a field called json, and the type associated with the json will be placed in a field
+  // called type.
+  google.protobuf.Any payload = 5;
+}

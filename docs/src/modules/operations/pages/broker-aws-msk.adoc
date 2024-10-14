@@ -1,5 +1,4 @@
 = Using AWS MSK as Kafka service
-
 include::ROOT:partial$include.adoc[]
 
 Akka connects to https://aws.amazon.com/msk/[AWS MSK] clusters via TLS, authenticating using SASL (Simple Authentication and Security Layer) SCRAM.
@@ -91,3 +90,7 @@ akka projects config set broker  \
 
 
 include::partial$broker-kafka-setup-common.adoc[]
+
+== See also
+
+- xref:reference:akka-cli/akka_projects_config.adoc#_see_also[`akka projects config` commands]

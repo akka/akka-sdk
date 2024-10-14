@@ -1,6 +1,4 @@
 = Service communication
-:page-aliases: services:invoke-service.adoc[], concepts:invoke-service.adoc[] 
-
 include::ROOT:partial$include.adoc[]
 
 For security reasons, _Services_ deployed to Akka have limited exposure by default. You can invoke services that have been deployed to Akka in the following ways:
@@ -21,7 +19,7 @@ All traffic to Akka uses Transport Layer Security (TLS). Akka will automatically
 
 If you have a single service you want to expose to the internet using a Akka generated hostname, you can do so using the `akka service expose` command. This command is provided as a convenience, particularly when you're getting started with Akka:
 
-[source]
+[source,bash]
 ----
 $ akka service expose my-service
 Service 'my-service' was successfully exposed at: spring-tooth-3406.us-east1.akka.app
@@ -39,7 +37,7 @@ Routes give you the ability to direct incoming traffic to a single hostname to m
 
 If you want to provision a custom hostname, you first need to register it with your project. Only one project can use a given hostname. Let's say the hostname you want to register is called `ecommerce.acme.org`. To register a hostname, use the `akka project hostname add` command:
 
-[source]
+[source,bash]
 ----
 $ akka project hostname add ecommerce.acme.org
 HOSTNAME                      GENERATED   REGION     CNAME
@@ -53,7 +51,7 @@ Notice the CNAME value above, this tells you what you need to point your hostnam
 
 If you do not want to bring your own hostname, you can let Akka generate one for you, by running `akka project hostname add` with no arguments:
 
-[source]
+[source,bash]
 ----
 $ akka project hostname add
 HOSTNAME                                      GENERATED   REGION     CNAME
@@ -75,7 +73,7 @@ Let's also assume that you want to name the route `acme-ecommerce`, and that the
 
 We can now create the route:
 
-[source]
+[source,bash]
 ----
 akka route create acme-ecommerce \
   --hostname ecommerce.acme.org \
@@ -85,7 +83,7 @@ akka route create acme-ecommerce \
 
 Having created it, we can now get its status by listing all routes:
 
-[source]
+[source,bash]
 ----
 $ akka route list
 NAME             HOSTNAME             PATHS                     CORS ENABLED   STATUS
@@ -94,7 +92,7 @@ acme-ecommerce   ecommerce.acme.org   /example.ecommerce.Sho…   false         
 
 Note above that the status is `DnsNotVerified`. This indicates that the DNS configuration for our custom hostname is not correct. More details can be obtained by getting details for the route:
 
-[source]
+[source,bash]
 ----
 $ akka route get acme-ecommerce
 Route: 	acme-ecommerce
@@ -121,7 +119,7 @@ Here you can see the exact error message - your hostname is not resolving. To re
 
 Routes can be updated using the `akka route update` command. For example, to remove the product info service from the route, and also add an inventory service, you might run:
 
-[source]
+[source,bash]
 ----
 akka route update acme-ecommerce \
   --remove-path /example.ecommerce.ProductInfo \
@@ -135,7 +133,7 @@ You may want to specify your routes using a descriptor. Descriptors can be check
 
 You can export an existing route using the `akka route export` command, this will output the descriptor in YAML format:
 
-[source]
+[source,bash]
 ----
 $ akka route export acme-ecommerce
 corsPolicy:
@@ -156,21 +154,21 @@ routes:
 
 To save the output of the command to a YAML file, you can run the command below:
 
-[source]
+[source,bash]
 ----
 akka route export acme-ecommerce > acme-commerce-routes.yaml
 ----
 
 To use this descriptor to either create or update a route, you can pass the file name using the `-f` flag:
 
-[source]
+[source,bash]
 ----
 akka route update acme-ecommerce -f acme-ecommerce-route.yaml
 ----
 
 You can also edit the route descriptor in place using the `akka route edit` command. This will open the route descriptor in the editor configured in the `EDITOR` environment variable, allowing you to edit and save it. On exiting the editor, the route will be updated:
 
-[source]
+[source,bash]
 ----
 $ akka route edit acme-ecommerce
 Route updated.
@@ -182,7 +180,7 @@ For a complete reference for the Akka route descriptor, see the xref:reference:d
 
 CORS can be enabled by configuring at least one allowed origin, for example:
 
-[source]
+[source,bash]
 ----
 akka route update acme-ecommerce --cors-origin https://www.acme.org
 ----
@@ -312,7 +310,7 @@ curl http://localhost:8080/carts/my-cart
 
 ==== Using the built in graphical client
 
-The `akka` command can also start a graphical client, which embeds https://github.com/fullstorydev/grpcui[grpcui] in the proxy, allowing you to easily explore your services and build and make requests on them. To enable it, use the `--grpcui` flag:
+The `akka` command can also start a graphical client, which embeds https://github.com/fullstorydev/grpcui[grpcui {tab-icon}, window="new-tab"] in the proxy, allowing you to easily explore your services and build and make requests on them. To enable it, use the `--grpcui` flag:
 
 [source,bash]
 ----
@@ -322,3 +320,8 @@ akka service proxy my-service --grpcui
 A web browser will automatically be opened for you on the gRPC UI explorer page served by the proxy:
 
 image::grpcui.png[The gRPC UI explorer]
+
+== See also
+
+- xref:reference:akka-cli/akka_routes.adoc#_see_also[`akka routes` commands]
+- xref:reference:akka-cli/akka_services.adoc#_see_also[`akka services` commands]

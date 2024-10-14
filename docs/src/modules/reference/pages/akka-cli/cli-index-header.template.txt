@@ -46,15 +46,17 @@ The `akka docs` command opens the Akka online documentation page.
 == Display logs
 The `akka logs` commands allow you to display the last few lines (default: 100) of logs for a specific service. The detail are available in xref:reference:akka-cli/akka_logs.adoc[akka logs].
 
-== Manage organizations
+== Organizations
 The `akka organizations` commands allow you to manage the members within an organization. Projects can be created under an organization, and members of the organization can manage those projects.
 
 The xref:reference:akka-cli/akka_organizations.adoc[akka organization] command includes the following options:
 
 <AKKA_ORGANIZATIONS_CMD>
 
-== Manage projects
+== Projects
 The `akka projects` commands manipulate the projects in your Akka account. A project contains a set of services.
+
+See also the xref:reference:akka-cli/akka-cli/akka_roles.html#_see_also[akka roles] commands.
 
 The xref:reference:akka-cli/akka_projects.adoc[akka projects] command includes the following options:
 
@@ -67,21 +69,23 @@ The xref:reference:akka-cli/akka_quickstart.adoc[akka quickstart] command includ
 
 <AKKA_QUICKSTART_CMD>
 
-== Manage regions
+== Regions
 The `akka regions` commands allow you to manage regions on Akka.
+
+See also the xref:reference:akka-cli/akka-cli/akka_projects_regions.html#_see_also[akka project regions] commands.
 
 The xref:reference:akka-cli/akka_regions.adoc[akka regions] command includes the following options:
 
 <AKKA_REGIONS_CMD>
 
-== Manage roles
+== Roles
 The `akka roles` commands allow you to associate user roles (authorizations) with the current project.
 
 The xref:reference:akka-cli/akka_roles.adoc[akka roles] command provides the following options:
 
 <AKKA_ROLES_CMD>
 
-== Manage routes
+== Routes
 The `akka routes` commands manipulate the routes that can be used to expose services in your Akka Project to the internet.
 
 The xref:reference:akka-cli/akka_routes.adoc[akka routes] command includes the following options:

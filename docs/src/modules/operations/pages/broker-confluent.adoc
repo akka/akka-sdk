@@ -1,5 +1,4 @@
 = Using Confluent Cloud as Kafka service
-
 include::ROOT:partial$include.adoc[]
 
 Akka connects to https://confluent.cloud[Confluent Cloud] Kafka services via TLS, authenticating using SASL (Simple Authentication and Security Layer) PLAIN.
@@ -91,3 +90,6 @@ You can now use the topic to connect with Akka.
 
 include::partial$broker-kafka-setup-common.adoc[]
 
+== See also
+
+- xref:reference:akka-cli/akka_projects_config.adoc#_see_also[`akka projects config` commands]

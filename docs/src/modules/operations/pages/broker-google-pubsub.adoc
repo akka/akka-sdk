@@ -1,5 +1,4 @@
 = Using Google Cloud Pub/Sub as message broker
-
 include::ROOT:partial$include.adoc[]
 
 To configure access to your Google Cloud Pub/Sub broker for your Akka project, you need to create a Google service account with access to your Google Cloud Pub/Sub broker and provide it to Akka.
@@ -122,4 +121,8 @@ When publishing messages to Google Pub/Sub from Akka, the `ce-subject` attribute
 
 == Testing Akka eventing
 
-See xref:message-brokers.adoc#_testing_akka_eventing[Testing Akka eventing].
+See xref:message-brokers.adoc#_testing[Testing Akka eventing].
+
+== See also
+
+- xref:reference:akka-cli/akka_projects_config.adoc#_see_also[`akka projects config` commands]

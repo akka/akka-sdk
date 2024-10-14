@@ -1,6 +1,4 @@
 = Configure message brokers
-:page-aliases: projects:message-brokers.adoc
-
 include::ROOT:partial$include.adoc[]
 
 Akka eventing integrates with https://cloud.google.com/pubsub/docs/overview[Google Cloud Pub/Sub] and managed Kafka services such as https://www.confluent.io/confluent-cloud[Confluent Cloud] and https://aiven.io/kafka[Aiven for Apache Kafka] to enable asynchronous messaging.
@@ -17,7 +15,7 @@ Message brokers are configured on Akka Project level. A project can have one bro
 [#_testing]
 == Testing Akka eventing
 
-The Java SDK testkit has built-in support to simulate message brokers. See xref:java:actions-publishing-subscribing.adoc#_testing_the_integration[Testing the Integration].
+The Java SDK testkit has built-in support to simulate message brokers. See xref:java:consuming-producing.adoc#testing[Testing the Integration].
 
 === Using a Kafka broker locally
 
@@ -45,5 +43,6 @@ services:
       - .:/conf
 ----
 
-You can check out a complete example in xref:java-protobuf:quickstart/cr-value-entity-kafka-java.adoc[Java Customer Registry (with Kafka)].
+== See also
 
+- xref:reference:akka-cli/akka_projects_config.adoc#_see_also[`akka projects config` commands]

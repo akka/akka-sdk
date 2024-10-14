@@ -192,7 +192,7 @@ include::example$event-sourced-counter/src/main/java/counter/application/Counter
 <1> Get the counter ID from the metadata.
 <2> Publish event to the topic with custom metadata.
 
-
+[#testing]
 == Testing the Integration
 
 When an Akka service relies on a broker, it might be useful to use integration tests to assert that those boundaries work as intended. For such scenarios, you can either:

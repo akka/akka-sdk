@@ -156,3 +156,7 @@ akka service deploy \
   my-service \
   acr.us-east-1.akka.io/acme/my-trial-project/test-service:latest
 ----
+
+== See also
+
+- xref:reference:akka-cli/akka_container-registry.adoc#_see_also[`akka container-registry` commands]

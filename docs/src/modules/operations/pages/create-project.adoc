@@ -1,6 +1,4 @@
 = Create a new project
-:page-aliases: projects:create-project.adoc[]
-
 include::ROOT:partial$include.adoc[]
 
 == Project names
@@ -50,9 +48,8 @@ my-akka-proj   "My ..        xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx   id:"xxxxxxxx
 ----
 UI::
 +
-. Log into the xref:https://console.akka.io[Akka Management Console]
-
-:TODO: Finsh
+. Log into the https://console.akka.io[Akka Console]
+:TODO: Show project create in the Console
 . Navigate to
 --
 

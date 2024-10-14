@@ -1,6 +1,4 @@
 = Billing
-:page-aliases: organizations:billng.adoc[]
-
 include::ROOT:partial$include.adoc[]
 
 The billing information provided by Akka is a great way to gain oversight and control over the operational costs associated with projects owned by the organization. Billing admins will be able to see the cost breakdown for each project in the organization, current month-to-date aggregate cost and the cost forecast for the current month's projected aggregate usage across all projects. Billing information can only be viewed by a user with the `billing-admin` role. See xref:operations:billing.adoc#_assigning_the_billing_admin_role[Assigning the billing-admin Role] for further details.
@@ -8,6 +6,8 @@ The billing information provided by Akka is a great way to gain oversight and co
 == Billing Interface
 
 For users with the `billing-admin` role, there will be a billing icon available in the side navigation of the Akka Console. Users without this role will see the default navigation. Clicking the billing icon will show the new billing UI where the user can select which month to view billing data for. If the user is a billing admin for more than one organization, there will also be multiple organizations selectable.
+
+:TODO: update image
 
 image::billing-ui.jpg[Akka Billing User Interface]
 

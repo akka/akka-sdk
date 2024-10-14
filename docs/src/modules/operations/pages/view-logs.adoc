@@ -1,10 +1,8 @@
 = View logs
-:page-supergroup-browser-cli: Interface
-:page-aliases: services:view-logs.adoc[], concepts:view-logs.adoc[] 
-
 include::ROOT:partial$include.adoc[]
+:page-supergroup-browser-cli: Interface
 
-Akka provides logs that you can view in the Console or access with the CLI. For each service instance we aggregate a maximum of 1MB of log data. You can capture all log output by attaching a logging provider, such as Google Cloud's operations suite (formerly Stackdriver), as described xref:observability-exports.adoc#google-cloud[here].
+Akka provides logs that you can view in the Console or access with the CLI. For each service instance we aggregate a maximum of 1MB of log data. You can capture all log output by attaching a logging provider, such as Google Cloud's operations suite (formerly Stackdriver), as described xref:observability-exports.adoc#_google_cloud[here].
 
 == Aggregated logs
 
@@ -48,7 +46,8 @@ You can correlate your log statements, those that you write in your application,
 </configuration>
 ----
 
-This way, the trace ID that's passed through your components will be added to your logs. For more information on tracing, click xref:operations:controltower-traces.adoc[here]. 
+This way, the trace ID that's passed through your components will be added to your logs. For more information on tracing, click xref:operations:controltower-traces.adoc[here].
 
+== See also
 
-
+- xref:reference:akka-cli/akka_logs.adoc#_see_also[`akka logs` commands]

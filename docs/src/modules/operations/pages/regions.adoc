@@ -1,6 +1,4 @@
 = Regions
-:page-aliases: organizations:regions.adoc[]
-
 include::ROOT:partial$include.adoc[]
 
 == Overview
@@ -42,3 +40,7 @@ NAME            ORGANIZATION
 aws-us-east-2   db805ff5-4fbd-4442-ab56-6e6a9a3c200a
 ----
 
+== See also
+
+- xref:reference:akka-cli/akka_regions.adoc#_see_also[`akka regions` commands]
+- xref:reference:akka-cli/akka_projects_regions.adoc#_see_also[`akka project regions` commands]
