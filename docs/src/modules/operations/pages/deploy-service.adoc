@@ -1,6 +1,5 @@
 = Deploy and manage services
 :page-supergroup-console-cli: Interface
-:page-aliases: services:deploy-service.adoc[], concepts:deploy-service.adoc
 
 include::ROOT:partial$include.adoc[]
 
@@ -17,6 +16,8 @@ Before deploying a service, make sure you have:
 
 == Deploying a service
 
+:TODO: Show deployment in the Console
+
 To deploy your service, run the following command, replacing `my-service` with your service name and updating the container URI and tag:
 
 [source, command line]
@@ -26,12 +27,15 @@ akka service deploy \
     my-container-uri/container-name:tag-name
 ----
 
-Your service is now deployed.
+Your service is now deploying. To combine deploying a service with relevant settings, Akka supports deploying with service descriptors (xref:#apply[see below]).
+
 
 [#_verify_service_status]
 == How to verify the service status
 
 You can verify whether your service was successfully deployed and check its current status.
+
+:TODO: Image of new Console, review description
 
 [.tabset]
 Akka Console::
@@ -45,16 +49,16 @@ image::service-status.png[Services card]
 
 A service status can be one of the following:
 
-* *Ready*: All service instances are up to date and fully available.
-* *UpdateInProgress*: Service is updating.
+* *Ready*: All service instances are up-to-date and fully available.
+* *Update In Progress*: Service is updating.
 * *Unavailable*: No service instances are available.
-* *PartiallyReady*: Some, but not all, service instances are available.
+* *Partially Ready*: Some, but not all, service instances are available.
 
 --
 Akka CLI::
 +
 --
-Alternatively, you can verify the service status from the command line with this command:
+Verify the service status from the command line with this command:
 
 [source, command line]
 ----
@@ -63,7 +67,7 @@ akka service list
 
 A service status can be one of the following:
 
-* *Ready*: All service instances are up to date and fully available.
+* *Ready*: All service instances are up-to-date and fully available.
 * *UpdateInProgress*: Service is updating.
 * *Unavailable*: No service instances are available.
 * *PartiallyReady*: Some, but not all, service instances are available.
@@ -75,8 +79,8 @@ If you need to update your service with a new container image:
 
 1. *Make changes* to your service and *package them* into a *new container image*.
 2. *Tag your new image* with an updated version (e.g., `tag-name-2`).
-3. *Deploy the updated image* by running:
-
+3. *Deploy the updated image* by passing the new tag:
++
 [source, command line]
 ----
 akka service deploy \
@@ -85,6 +89,43 @@ akka service deploy \
 ----
 
 Akka will perform a rolling update, replacing old instances with new ones.
+
+[#apply]
+== Describing a service with a descriptor
+
+An Akka service can also be described using a service descriptor in YAML. For example:
+
+[source, yaml]
+----
+name: my-service
+spec:
+  image: my-container-uri/container-name:tag-name
+  env:
+  - name: SOME_VARIABLE
+    value: some value
+----
+
+This can then be created by running:
+
+[source, command line]
+----
+akka service apply -f my-service.yaml
+----
+
+You can also export the descriptor for an existing service by running:
+[source, command line]
+----
+akka service export my-service -f my-service.yaml
+----
+
+=== Redeploying with a descriptor
+
+Apply the descriptor after editing `my-service.yaml`:
+
+[source, command line]
+----
+akka service apply -f my-service.yaml
+----
 
 == How to remove a deployed service
 
@@ -100,3 +141,7 @@ The service will be deleted, and its resources will be freed.
 == Conclusion
 
 You now know how to deploy, verify, update, and remove Akka services using the Akka CLI. Continue experimenting with different configurations and commands to further enhance your services.
+
+== Related documentation
+
+- xref:reference:akka-cli/akka_services.adoc[`akka service` CLI commands]
