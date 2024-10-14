@@ -40,6 +40,8 @@ class DiscoveryImpl(
 
   private val log = LoggerFactory.getLogger(getClass)
 
+  private val userServiceLog = LoggerFactory.getLogger("akka.javasdk.ServiceLog")
+
   private val applicationConfig = ApplicationConfig(system).getConfig
 
   private val serviceIncarnationUuid = UUID.randomUUID().toString
@@ -176,11 +178,11 @@ class DiscoveryImpl(
     // TODO: remove it once we remove this check in the runtime
     if (in.code != "AK-00010") {
       in.severity match {
-        case UserFunctionError.Severity.ERROR   => log.error(logMessage)
-        case UserFunctionError.Severity.WARNING => log.warn(logMessage)
-        case UserFunctionError.Severity.INFO    => log.info(logMessage)
+        case UserFunctionError.Severity.ERROR   => userServiceLog.error(logMessage)
+        case UserFunctionError.Severity.WARNING => userServiceLog.warn(logMessage)
+        case UserFunctionError.Severity.INFO    => userServiceLog.info(logMessage)
         case UserFunctionError.Severity.UNSPECIFIED | UserFunctionError.Severity.Unrecognized(_) =>
-          log.error(logMessage)
+          userServiceLog.error(logMessage)
       }
     }
 
