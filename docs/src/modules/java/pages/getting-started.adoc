@@ -96,23 +96,24 @@ include::example$key-value-counter/src/main/java/com/example/application/Counter
 <3> `plusOne` increases the counter by adding 1 to the current state.
 <4> Finally, using the Effect API, you instruct Akka to persist the new state, and build a reply with the wrapper object.
 
+The `Counter` domain object is a Java record:
+
+.src/main/java/com/example/domain/Counter.java
+[source,java,indent=0]
+----
+include::example$key-value-counter/src/main/java/com/example/domain/Counter.java[tags=domain]
+----
+
+To expose a HTTP API of the counter we add an endpoint:
+
+.src/main/java/com/example/api/CounterEndpoint.java
+[source,java,indent=0]
+----
+include::example$key-value-counter/src/main/java/com/example/api/CounterEndpoint.java[tags=endpoint]
+----
+
 The project also includes a dependency on the *Akka SDK Test Kit*. Please consult the specific documentation page
 for each type of component to learn more about writing unit tests and integration tests for your application.
-
-== Package service
-
-The project is configured to package your service into a Docker image which can be deployed to Akka. The Docker image
-name can be changed in the `pom.xml` file's `properties` section. Update this file to publish your image to your Docker repository.
-
-The built docker image is minimal and only contains the service itself and the SDK and transitive dependencies. In a deployment
-environment it is combined with a runtime image which contains a JVM and the runtime to actually run.
-
-[source,bash]
-----
-mvn install
-----
-
-TIP: For more details see xref:concepts:development-process.adoc#_package_service[Development Process - Package service].
 
 == Run locally
 
@@ -131,7 +132,7 @@ You can try sending a request using https://curl.se[curl], a minimal command lin
 
 [source, command window]
 ----
-curl -XPOST -H "Content-Type: application/json" localhost:9000/counter/foo/increase -d '{ "value": 10 }'
+curl -XPOST -H "Content-Type: application/json" localhost:9000/counter/foo/plus-one
 ----
 
 == Deploy to akka.io
@@ -139,3 +140,4 @@ curl -XPOST -H "Content-Type: application/json" localhost:9000/counter/foo/incre
 FIXME should it be here, or only in the developent-process page or where?
 
 Deploy your service following the instructions at xref:concepts:development-process.adoc#_deploy[Development Process - Deploy to Akka].
+

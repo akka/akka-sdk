@@ -14,6 +14,8 @@ import com.example.domain.Counter;
 
 import java.util.concurrent.CompletionStage;
 
+// tag::endpoint[]
+
 // Opened up for access from the public internet to make the sample service easy to try out.
 // For actual services meant for production this must be carefully considered, and often set more limited
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
@@ -26,28 +28,30 @@ public class CounterEndpoint {
     this.componentClient = componentClient;
   }
 
-  @Post("/{counterId}/increase")
-  public CompletionStage<Integer> increaseBy(String counterId, int increaseBy) {
+  @Post("/{counterId}/plus-one")
+  public CompletionStage<Integer> plusOne(String counterId) {
     return componentClient.forKeyValueEntity(counterId)
-        .method(CounterEntity::increaseBy)
-        .invokeAsync(increaseBy)
+        .method(CounterEntity::plusOne)
+        .invokeAsync()
         .thenApply(Counter::value);
   }
 
   @Put("/{counterId}/set")
   public CompletionStage<Integer> set(String counterId, Counter increaseBy) {
     return componentClient.forKeyValueEntity(counterId)
-      .method(CounterEntity::set)
-      .invokeAsync(increaseBy.value())
-      .thenApply(Counter::value);
+        .method(CounterEntity::set)
+        .invokeAsync(increaseBy.value())
+        .thenApply(Counter::value);
   }
 
-  @Post("/{counterId}/plus-one")
-  public CompletionStage<Integer> plusOne(String counterId) {
+  // end::endpoint[]
+
+  @Post("/{counterId}/increase")
+  public CompletionStage<Integer> increaseBy(String counterId, int increaseBy) {
     return componentClient.forKeyValueEntity(counterId)
-      .method(CounterEntity::plusOne)
-      .invokeAsync()
-      .thenApply(Counter::value);
+        .method(CounterEntity::increaseBy)
+        .invokeAsync(increaseBy)
+        .thenApply(Counter::value);
   }
 
   @Get("/{counterId}")
@@ -65,4 +69,7 @@ public class CounterEndpoint {
       .invokeAsync()
       .thenApply(__ -> HttpResponses.ok());
   }
+
+  // tag::endpoint[]
 }
+// end::endpoint[]
