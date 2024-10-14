@@ -47,11 +47,9 @@ Stateful services encapsulate business logic in Key Value Entities or Event Sour
 
 TIP: To learn more about Akka entities see xref:java:key-value-entities.adoc[] and xref:java:event-sourced-entities.adoc[].
 
-If you would like to update multiple Entities from a single command, you can use forwarding and side effects.
+If you would like to update multiple Entities from a single request, you can compose that in the Endpoint, Consumer or Workflow.
 
-TIP: For more information see xref:java:http-endpoints.adoc#_advanced_http_requests_and_responses[HTTP Endpoints as Controllers].
-
-Services can interact asynchronously with other services and with external systems. Event Sourced Entities emit events to a journal, to which other services can subscribe. By configuring your own publish/subscribe (pub/sub) mechanism, any service can publish their own events and subscribe to events published by other services or external systems.
+Services can interact asynchronously with other services and with external systems. Event Sourced Entities emit events to a journal, which other services can consume. By defining your Consumer components, any service can expose their own events and consume events produced by other services or external systems.
 
 === Workflows
 
@@ -71,8 +69,10 @@ For more details and examples take a look at the following topics:
 * xref:java:consuming-producing.adoc[]
 
 [#_endpoints]
-== Exposing components through Endpoints
-Endpoints are how you expose your services to the outside world. They can also consume outside services and emit events for others to subscribe to. You use the xref:java:http-endpoints.adoc[HTTP endpoints] to do this.
+== Exposing components through Endpoints and Consumers
+Endpoints are how you expose your services to the outside world. You use the xref:java:http-endpoints.adoc[HTTP endpoints] to do this.
+
+They can also consume outside services and emit events for others to subscribe to. You use the xref:java:consuming-producing.adoc[Consumers] to do this.
 
 [#_create_unit_tests]
 == Testing your application
