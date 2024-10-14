@@ -1,6 +1,11 @@
 name: Deploy WIP to doc.akka.io/snapshots/
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - 'main'
+    paths:
+      - 'docs/**'
 
 permissions:
   contents: read
@@ -17,6 +22,7 @@ jobs:
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
         with:
           ref: main
+          fetch-tags: true # required for version.sh
 
       - name: Set up JDK 21
         # https://github.com/coursier/setup-action/releases
