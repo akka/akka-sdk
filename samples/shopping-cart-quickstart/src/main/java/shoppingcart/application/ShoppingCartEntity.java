@@ -10,6 +10,7 @@ import shoppingcart.domain.ShoppingCartEvent;
 
 import java.util.Collections;
 
+// tag::all[]
 // tag::class[]
 @ComponentId("shopping-cart") // <2>
 public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCart, ShoppingCartEvent> { // <1>
@@ -99,3 +100,4 @@ public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCart, Shoppin
 // tag::class[]
 }
 // end::class[]
+// end::all[]

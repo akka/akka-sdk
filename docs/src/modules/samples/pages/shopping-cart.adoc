@@ -31,61 +31,57 @@ First, define the domain class `ShoppingCart`, its domain events  in package `sh
 [source,java,indent=0]
 .src/main/java/shoppingcart/domain/ShoppingCart.java
 ----
-include::java:example$shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCart.java[]
+include::java:example$shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCart.java[tag=all]
 ----
 
-=== Define the external API
+=== Define the entity
 
-The `Shopping Cart` API is defined by the `ShoppingCartEntity`.
+The Event Sourced Entity is defined in the `ShoppingCartEntity`.
 
-Create a class named `ShoppingCartEntity` in package `shoppingcart.api`.
-
+Create a class named `ShoppingCartEntity` in package `shoppingcart.application`.
 
 [source,java,indent=0]
 .src/main/java/shoppingcart/application/ShoppingCartEntity.java
 ----
-include::java:example$shopping-cart-quickstart/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java[]
+include::java:example$shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java[tag=all]
 ----
-// FIXME snippet anchors do not mach up
-// <1> Each Entity needs a unique logical type name. This must be unique per Kalix service.
-// <2> The entity needs to be addressed by a unique identifier. The `@Id` declares the name of the path variable that Kalix should use as unique identifier.
-// <3> The `@RequestMapping` defines the base path to access the entity. Note that the `\{cartId\}` matches the value of `@Id`.
-// <4> `ShoppingCartEntity` must inherit from `kalix.javasdk.eventsourcedentity.EventSourcedEntity`.
-// <5> The `emptyState` method returns the initial state of the shopping cart.
-// <6> External API methods are be exposed as a REST endpoint using Spring's REST annotations.
-// <7> API methods receive input and validate it. When applicable, an event is emitted.
-// <8> Each emitted event must have a corresponding `@EventHandler` to update the state of the shopping cart.
 
+=== Define the external API
+
+The `Shopping Cart` API is defined by the `ShoppingCartEndpoint`.
+
+Create a class named `ShoppingCartEndpoint` in package `shoppingcart.api`.
+
+
+[source,java,indent=0]
+.src/main/java/shoppingcart/api/ShoppingCartEndpoint.java
+----
+include::java:example$shopping-cart-quickstart/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java[tag=all]
+----
 
 include::partial$package-and-deploy.adoc[]
 
 
-Items can be added to a shopping cart using the `/cart/\{cartId}/add` endpoint on the ShoppingCart service:
+Items can be added to a shopping cart using the `/cart/\{cartId}/item` endpoint on the ShoppingCart service:
 
 [source,command line]
 ----
-curl localhost:8080/cart/123/add \
-  --header "Content-Type: application/json" \
-  -XPOST \
-  --data '{
-    "productId": "akka-tshirt",
-    "name": "Akka Tshirt",
-    "quantity": 5
-  }'
+curl -i -XPUT -H "Content-Type: application/json" localhost:8080/shopping-cart/123/item -d '
+{"productId":"akka-tshirt", "name":"Akka Tshirt", "quantity": 10}'
 ----
 
 The state of the cart can be retrieved with `/cart/\{cartId}`.
 
 [source, command line]
 ----
-curl localhost:8080/cart/123
+curl localhost:8080/shopping-cart/123
 ----
 
 And finally, you can check out the cart with `/cart/\{cartId}/checkout`.
 
 [source, command line]
 ----
-curl -XPOST localhost:8080/cart/123/checkout
+curl -i -XPOST localhost:8080/shopping-cart/123/checkout
 ----
 
 include::partial$expose-service.adoc[]

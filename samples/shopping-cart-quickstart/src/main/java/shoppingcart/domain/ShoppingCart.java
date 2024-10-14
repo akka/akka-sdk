@@ -6,6 +6,7 @@ import java.util.Comparator;
 import java.util.Optional;
 import java.util.function.Predicate;
 
+// tag::all[]
 // tag::domain[]
 public record ShoppingCart(String cartId, List<LineItem> items, boolean checkedOut) { // <1>
 
@@ -64,3 +65,4 @@ public record ShoppingCart(String cartId, List<LineItem> items, boolean checkedO
 }
 
 // end::domain[]
+// end::all[]

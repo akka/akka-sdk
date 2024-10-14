@@ -14,6 +14,8 @@ import shoppingcart.domain.ShoppingCart;
 
 import java.util.concurrent.CompletionStage;
 
+// tag::all[]
+
 // Opened up for access from the public internet to make the sample service easy to try out.
 // For actual services meant for production this must be carefully considered, and often set more limited
 // tag::endpoint-component-interaction[]
@@ -60,3 +62,4 @@ public class ShoppingCartEndpoint {
   }
 
 }
+// end::all[]
