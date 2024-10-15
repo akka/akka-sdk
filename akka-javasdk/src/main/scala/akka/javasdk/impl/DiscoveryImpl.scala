@@ -131,7 +131,7 @@ class DiscoveryImpl(
             Component(
               service.componentType,
               name,
-              Component.ComponentSettings.Component(GenericComponentSettings(forwardHeaders)))
+              Component.ComponentSettings.Component(GenericComponentSettings(forwardHeaders, service.componentId)))
           case _ =>
             Component(
               service.componentType,

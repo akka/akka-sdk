@@ -5,6 +5,7 @@
 package akka.javasdk.client;
 
 import akka.NotUsed;
+import akka.javasdk.impl.*;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.DynamicMessage;
@@ -12,10 +13,6 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.any.Any;
 import akka.javasdk.JsonSupport;
 import akka.javasdk.Metadata;
-import akka.javasdk.impl.ComponentDescriptor;
-import akka.javasdk.impl.JsonMessageCodec;
-import akka.javasdk.impl.MetadataImpl;
-import akka.javasdk.impl.Validations;
 import akka.javasdk.impl.client.ComponentClientImpl;
 import akka.javasdk.impl.client.DeferredCallImpl;
 import akka.javasdk.impl.telemetry.Telemetry;
@@ -143,7 +140,7 @@ class ComponentClientTest {
         .deferred(param);
 
     //then
-    assertThat(call.fullServiceName()).isEqualTo(targetMethod.getService().getFullName());
+    assertThat(call.componentId()).isEqualTo(ComponentDescriptorFactory.readComponentIdIdValue(Counter.class));
     assertThat(call.methodName()).isEqualTo(targetMethod.getName());
     assertEquals(10, call.message());
   }

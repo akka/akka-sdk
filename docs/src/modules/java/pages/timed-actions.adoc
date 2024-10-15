@@ -20,6 +20,9 @@ When a timer is triggered, the scheduled call is executed. If successfully execu
 
 * Maximum allowed timer command payload is 1024 bytes.
 * At most 50,000 active timers can be scheduled.
+* Scheduled calls identifies the component through component id and the method through the name of
+  the method. If these changes, the scheduled method will not be invoked.
+* The type of parameter the method accepts must not change after a call has been scheduled.
 
 == Order Entity
 

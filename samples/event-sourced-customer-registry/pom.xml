@@ -16,8 +16,8 @@
   <name>Customer Registry with Views</name>
   <properties>
     <!-- For Docker setup see https://doc.akka.io/operations/container-registries.html -->
-    <container.registry>kcr.us-east-1.kalix.io</container.registry>
-    <organization>acme</organization>
+    <container.registry>kcr.us-east-1.kalix.dev</container.registry>
+    <organization>lightbend</organization>
   </properties>
 
   <dependencies>

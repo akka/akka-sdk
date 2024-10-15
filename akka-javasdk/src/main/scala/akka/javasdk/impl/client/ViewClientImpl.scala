@@ -15,6 +15,7 @@ import akka.javasdk.client.ComponentStreamMethodRef
 import akka.javasdk.client.ComponentStreamMethodRef1
 import akka.javasdk.client.NoEntryFoundException
 import akka.javasdk.client.ViewClient
+import akka.javasdk.impl.ComponentDescriptorFactory
 import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.MetadataImpl.toProtocol
 import akka.javasdk.impl.reflection.Reflect
@@ -53,7 +54,7 @@ private[javasdk] object ViewClientImpl {
    *   Un-nested return type, so would be T1 for `QueryEffect[Optional[T1]]` or T2 for `QueryEffect[T2]`
    */
   private case class ViewMethodProperties(
-      serviceName: String,
+      componentId: String,
       method: Method,
       methodName: String,
       declaringClass: Class[_],
@@ -63,11 +64,10 @@ private[javasdk] object ViewClientImpl {
     ViewCallValidator.validate(method)
     // extract view id
     val declaringClass = method.getDeclaringClass
-    // FIXME Surprising that this isn' the view id declaringClass.getAnnotation(classOf[ViewId]).value()
-    val serviceName = declaringClass.getName
+    val componentId = ComponentDescriptorFactory.readComponentIdIdValue(declaringClass)
     val methodName = method.getName.capitalize
     val queryReturnType = getViewQueryReturnType(method)
-    ViewMethodProperties(serviceName, method, methodName, declaringClass, queryReturnType)
+    ViewMethodProperties(componentId, method, methodName, declaringClass, queryReturnType)
   }
 
   private def getViewQueryReturnType(method: Method): Class[_] = {
@@ -136,14 +136,14 @@ private[javasdk] final case class ViewClientImpl(viewClient: RuntimeViewClient, 
           maybeArg.orNull,
           maybeMetadata.getOrElse(Metadata.EMPTY).asInstanceOf[MetadataImpl],
           ViewType,
-          viewMethodProperties.serviceName,
+          viewMethodProperties.componentId,
           viewMethodProperties.methodName,
           None,
           { metadata =>
             viewClient
               .query(
                 new ViewRequest(
-                  viewMethodProperties.serviceName,
+                  viewMethodProperties.componentId,
                   viewMethodProperties.methodName,
                   ContentTypes.`application/json`,
                   serializedPayload,
@@ -180,7 +180,7 @@ private[javasdk] final case class ViewClientImpl(viewClient: RuntimeViewClient, 
       viewClient
         .queryStream(
           new ViewRequest(
-            viewMethodProperties.serviceName,
+            viewMethodProperties.componentId,
             viewMethodProperties.methodName,
             ContentTypes.`application/json`,
             encodeArgumentAsJson(viewMethodProperties.method, None),
@@ -202,7 +202,7 @@ private[javasdk] final case class ViewClientImpl(viewClient: RuntimeViewClient, 
       viewClient
         .queryStream(
           new ViewRequest(
-            viewMethodProperties.serviceName,
+            viewMethodProperties.componentId,
             viewMethodProperties.methodName,
             ContentTypes.`application/json`,
             encodeArgumentAsJson(viewMethodProperties.method, Some(arg)),

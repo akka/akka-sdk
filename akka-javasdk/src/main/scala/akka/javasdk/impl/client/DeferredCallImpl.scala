@@ -25,7 +25,7 @@ private[impl] final case class DeferredCallImpl[I, O](
     message: I,
     metadata: MetadataImpl,
     componentType: ComponentType,
-    fullServiceName: String,
+    componentId: String,
     methodName: String,
     entityId: Option[String],
     asyncCall: Metadata => CompletionStage[O])
@@ -39,7 +39,7 @@ private[impl] final case class DeferredCallImpl[I, O](
 
   def deferredRequest(): DeferredRequest = new DeferredRequest(
     componentType,
-    fullServiceName,
+    componentId,
     methodName = methodName,
     entityId = entityId,
     contentType = ContentTypes.`application/json`,

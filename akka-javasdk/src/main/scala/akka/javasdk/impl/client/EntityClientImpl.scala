@@ -18,6 +18,7 @@ import akka.javasdk.client.KeyValueEntityClient
 import akka.javasdk.client.TimedActionClient
 import akka.javasdk.client.WorkflowClient
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
+import akka.javasdk.impl.ComponentDescriptorFactory
 import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.MetadataImpl.toProtocol
 import akka.javasdk.impl.reflection.Reflect
@@ -65,9 +66,7 @@ private[impl] sealed abstract class EntityClientImpl(
     if (!expectedComponentSuperclass.isAssignableFrom(declaringClass)) {
       throw new IllegalArgumentException(s"$declaringClass is not a subclass of $expectedComponentSuperclass")
     }
-    // FIXME Surprising that this isn' from the annotation: Reflect.entityTypeOf(declaringClass)
-    val entityType = declaringClass.getName
-    val serviceName = declaringClass.getName // ?? full service name is the class name?
+    val componentId = ComponentDescriptorFactory.readComponentIdIdValue(declaringClass)
     val methodName = method.getName.capitalize
 
     // FIXME push some of this logic into the NativeomponentMethodRef
@@ -88,14 +87,14 @@ private[impl] sealed abstract class EntityClientImpl(
           maybeArg.orNull,
           maybeMetadata.getOrElse(Metadata.EMPTY).asInstanceOf[MetadataImpl],
           componentType,
-          serviceName,
+          componentId,
           methodName,
           Some(entityId),
           { metadata =>
             entityClient
               .send(
                 new EntityRequest(
-                  entityType,
+                  componentId,
                   entityId,
                   methodName,
                   ContentTypes.`application/json`,
@@ -197,9 +196,7 @@ private[javasdk] final case class TimedActionClientImpl(
       throw new IllegalArgumentException(
         "Use dedicated builder for calling " + declaringClass.getSuperclass.getSimpleName
         + " component method " + declaringClass.getSimpleName + "::" + method.getName + ". This builder is meant for Action component calls.")
-
-    // FIXME Surprising that this isn' the view id declaringClass.getAnnotation(classOf[ViewId]).value()
-    val serviceName = declaringClass.getName
+    val componentId = ComponentDescriptorFactory.readComponentIdIdValue(declaringClass)
     val methodName = method.getName.capitalize
 
     new ComponentMethodRefImpl[AnyRef, R](
@@ -218,14 +215,14 @@ private[javasdk] final case class TimedActionClientImpl(
           maybeArg.orNull,
           maybeMetadata.getOrElse(Metadata.EMPTY).asInstanceOf[MetadataImpl],
           ActionType,
-          serviceName,
+          componentId,
           methodName,
           None,
           { metadata =>
             actionClient
               .call(
                 new ActionRequest(
-                  serviceName,
+                  componentId,
                   methodName,
                   ContentTypes.`application/json`,
                   serializedPayload,
