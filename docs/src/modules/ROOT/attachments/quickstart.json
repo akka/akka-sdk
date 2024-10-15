@@ -8,6 +8,27 @@
       "title": "Shopping Cart",
       "url": "/java/_attachments/shopping-cart-quickstart.zip",
       "dir": "shopping-cart"
+    },
+    {
+      "id": "customer-registry",
+      "language":  "java",
+      "title": "Customer Registry",
+      "url": "/java/_attachments/customer-registry-quickstart.zip",
+      "dir": "customer-registry"
+    },
+    {
+      "id": "choreography-saga",
+      "language":  "java",
+      "title": "Choreography Saga",
+      "url": "/java/_attachments/choreography-saga-quickstart.zip",
+      "dir": "choreography-saga"
+    },
+    {
+      "id": "workflow",
+      "language":  "java",
+      "title": "Workflow",
+      "url": "/java/_attachments/workflow-quickstart.zip",
+      "dir": "workflow"
     }
   ]
 }
