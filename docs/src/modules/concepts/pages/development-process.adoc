@@ -1,4 +1,4 @@
-= Process overview
+= Development Process
 
 include::ROOT:partial$include.adoc[]
 
