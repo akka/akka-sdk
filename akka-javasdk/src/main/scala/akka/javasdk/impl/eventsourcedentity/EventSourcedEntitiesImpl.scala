@@ -10,7 +10,6 @@ import akka.actor.ActorSystem
 import akka.stream.scaladsl.Flow
 import akka.stream.scaladsl.Source
 import com.google.protobuf.ByteString
-import com.google.protobuf.Descriptors
 import com.google.protobuf.any.{ Any => ScalaPbAny }
 import io.grpc.Status
 import akka.javasdk.impl.ErrorHandling.BadRequestException
@@ -26,11 +25,8 @@ import akka.javasdk.impl.AbstractContext
 import akka.javasdk.impl.ActivatableContext
 import akka.javasdk.impl.Settings
 import akka.javasdk.impl.ErrorHandling
-import akka.javasdk.impl.EventSourcedEntityFactory
-import akka.javasdk.impl.MessageCodec
+import akka.javasdk.impl.JsonMessageCodec
 import akka.javasdk.impl.MetadataImpl
-import akka.javasdk.impl.ResolvedEntityFactory
-import akka.javasdk.impl.ResolvedServiceMethod
 import akka.javasdk.impl.Service
 import akka.javasdk.impl.effect.ErrorReplyImpl
 import akka.javasdk.impl.effect.MessageReplyImpl
@@ -56,34 +52,22 @@ import org.slf4j.MDC
  * INTERNAL API
  */
 @InternalApi
-private[impl] final class EventSourcedEntityService(
-    val factory: EventSourcedEntityFactory,
-    override val descriptor: Descriptors.ServiceDescriptor,
-    override val additionalDescriptors: Array[Descriptors.FileDescriptor],
-    val messageCodec: MessageCodec,
-    override val serviceName: String,
-    val snapshotEvery: Int) // FIXME always 0 now, so drop
-    extends Service {
+private[impl] final case class EventSourcedEntityService[S, E, ES <: EventSourcedEntity[S, E]](
+    eventSourcedEntityClass: Class[_],
+    _messageCodec: JsonMessageCodec,
+    factory: EventSourcedEntityContext => ES,
+    snapshotEvery: Int = 0)
+    extends Service(eventSourcedEntityClass, EventSourcedEntities.name, _messageCodec) {
 
-  override def resolvedMethods: Option[Map[String, ResolvedServiceMethod[_, _]]] =
-    factory match {
-      case resolved: ResolvedEntityFactory => Some(resolved.resolvedMethods)
-      case _                               => None
-    }
+  def withSnapshotEvery(snapshotEvery: Int): EventSourcedEntityService[S, E, ES] =
+    if (snapshotEvery != this.snapshotEvery) copy(snapshotEvery = snapshotEvery)
+    else this
 
-  override final val componentType = EventSourcedEntities.name
-
-  def withSnapshotEvery(snapshotEvery: Int): EventSourcedEntityService =
-    if (snapshotEvery != this.snapshotEvery)
-      new EventSourcedEntityService(
-        this.factory,
-        this.descriptor,
-        this.additionalDescriptors,
-        this.messageCodec,
-        this.serviceName,
-        snapshotEvery)
-    else
-      this
+  def createRouter(context: EventSourcedEntityContext) =
+    new ReflectiveEventSourcedEntityRouter[S, E, ES](
+      factory(context),
+      componentDescriptor.commandHandlers,
+      messageCodec)
 }
 
 /**
@@ -92,7 +76,7 @@ private[impl] final class EventSourcedEntityService(
 @InternalApi
 private[impl] final class EventSourcedEntitiesImpl(
     system: ActorSystem,
-    _services: Map[String, EventSourcedEntityService],
+    _services: Map[String, EventSourcedEntityService[_, _, _]],
     configuration: Settings,
     sdkDispatcherName: String,
     tracerFactory: String => Tracer)
@@ -102,13 +86,13 @@ private[impl] final class EventSourcedEntitiesImpl(
   private val log = LoggerFactory.getLogger(this.getClass)
   private final val services = _services.iterator.map { case (name, service) =>
     if (service.snapshotEvery < 0)
-      log.warn("Snapshotting disabled for entity [{}], this is not recommended.", service.serviceName)
+      log.warn("Snapshotting disabled for entity [{}], this is not recommended.", service.componentId)
     // FIXME overlay configuration provided by _system
     (name, if (service.snapshotEvery == 0) service.withSnapshotEvery(configuration.snapshotEvery) else service)
   }.toMap
 
   private val instrumentations: Map[String, TraceInstrumentation] = services.values.map { s =>
-    (s.serviceName, new TraceInstrumentation(s.serviceName, EventSourcedEntityCategory, tracerFactory))
+    (s.componentId, new TraceInstrumentation(s.componentId, EventSourcedEntityCategory, tracerFactory))
   }.toMap
 
   private val pbCleanupDeletedEventSourcedEntityAfter =
@@ -164,8 +148,8 @@ private[impl] final class EventSourcedEntitiesImpl(
     val service =
       services.getOrElse(init.serviceName, throw ProtocolException(init, s"Service not found: ${init.serviceName}"))
 
-    val router = service.factory
-      .create(new EventSourcedEntityContextImpl(init.entityId))
+    val router = service
+      .createRouter(new EventSourcedEntityContextImpl(init.entityId))
       .asInstanceOf[EventSourcedEntityRouter[Any, Any, EventSourcedEntity[Any, Any]]]
     val thisEntityId = init.entityId
 
@@ -192,7 +176,7 @@ private[impl] final class EventSourcedEntitiesImpl(
         case ((sequence, _), InCommand(command)) =>
           if (thisEntityId != command.entityId)
             throw ProtocolException(command, "Receiving entity is not the intended recipient of command")
-          val span = instrumentations(service.serviceName).buildSpan(service, command)
+          val span = instrumentations(service.componentId).buildSpan(service, command)
           span.foreach(s => MDC.put(Telemetry.TRACE_ID, s.getSpanContext.getTraceId))
           try {
             val cmd =

@@ -123,8 +123,13 @@ private[impl] object ComponentDescriptorFactory {
   def hasTopicPublication(clazz: Class[_]): Boolean =
     clazz.hasAnnotation[ToTopic]
 
-  def readComponentIdIdValue(annotated: AnnotatedElement): String =
-    annotated.getAnnotation(classOf[ComponentId]).value()
+  def readComponentIdIdValue(annotated: AnnotatedElement): String = {
+    val annotation = annotated.getAnnotation(classOf[ComponentId])
+    if (annotation eq null)
+      throw new IllegalArgumentException(
+        s"Component [$annotated] is missing ${classOf[ComponentId].getName} annotation")
+    else annotation.value()
+  }
 
   def findEventSourcedEntityClass(javaMethod: Method): Class[_ <: EventSourcedEntity[_, _]] = {
     val ann = javaMethod.getAnnotation(classOf[FromEventSourcedEntity])

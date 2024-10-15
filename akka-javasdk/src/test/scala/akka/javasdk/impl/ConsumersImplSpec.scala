@@ -16,7 +16,7 @@ import akka.javasdk.eventsourcedentity.OldTestESEvent.OldEvent3
 import akka.javasdk.eventsourcedentity.TestESEvent
 import akka.javasdk.eventsourcedentity.TestESEvent.Event4
 import akka.javasdk.impl.action.ActionsImpl
-import akka.javasdk.impl.consumer.ConsumerProvider
+import akka.javasdk.impl.consumer.ConsumerService
 import akka.javasdk.impl.telemetry.Telemetry
 import akka.javasdk.timedaction.TestESSubscription
 import akka.javasdk.timedaction.TestTracing
@@ -56,16 +56,10 @@ class ConsumersImplSpec
 
   private val classicSystem = system.toClassic
 
-  def create(
-      provider: ConsumerProvider[_],
-      tracerFactory: String => Tracer = OpenTelemetry.noop.getTracer _): Actions = {
-    val service = provider.newServiceInstance()
-
-    val services = Map(provider.serviceDescriptor.getFullName -> service)
-
+  def create(service: ConsumerService[_], tracerFactory: String => Tracer = OpenTelemetry.noop.getTracer _): Actions = {
     new ActionsImpl(
       classicSystem,
-      services,
+      Map(service.descriptor.getFullName -> service),
       new TimerClient {
         // Not exercised here
         override def startSingleTimer(
@@ -83,10 +77,10 @@ class ConsumersImplSpec
     "check event migration for subscription" in {
       val jsonMessageCodec = new JsonMessageCodec()
       val consumerProvider =
-        ConsumerProvider(classOf[TestESSubscription], jsonMessageCodec, () => new TestESSubscription)
+        new ConsumerService(classOf[TestESSubscription], jsonMessageCodec, () => new TestESSubscription)
 
       val service = create(consumerProvider)
-      val serviceName = consumerProvider.serviceDescriptor.getFullName
+      val serviceName = consumerProvider.descriptor.getFullName
 
       val event1 = jsonMessageCodec.encodeScala(new OldEvent1("state"))
       val reply1 = service.handleUnary(toActionCommand(serviceName, event1)).futureValue
@@ -117,14 +111,14 @@ class ConsumersImplSpec
     "inject traces correctly into metadata and keeps trace_id in MDC" in {
       val jsonMessageCodec = new JsonMessageCodec()
       val consumerProvider =
-        ConsumerProvider(classOf[TestTracing], jsonMessageCodec, () => new TestTracing)
+        new ConsumerService(classOf[TestTracing], jsonMessageCodec, () => new TestTracing)
 
       val openTelemetryInstance = OpenTelemetrySdk
         .builder()
         .build()
 
       val service = create(consumerProvider, openTelemetryInstance.getTracer)
-      val serviceName = consumerProvider.serviceDescriptor.getFullName
+      val serviceName = consumerProvider.descriptor.getFullName
 
       val cmd1 = ScalaPbAny.fromJavaProto(JsonSupport.encodeJson(new TestESEvent.Event2(123)))
 

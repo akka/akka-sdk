@@ -38,8 +38,6 @@ import akka.javasdk.impl.ErrorHandling
 import akka.javasdk.impl.JsonMessageCodec
 import akka.javasdk.impl.MessageCodec
 import akka.javasdk.impl.MetadataImpl
-import akka.javasdk.impl.ResolvedEntityFactory
-import akka.javasdk.impl.ResolvedServiceMethod
 import akka.javasdk.impl.Service
 import akka.javasdk.impl.StrictJsonMessageCodec
 import akka.javasdk.impl.timer.TimerSchedulerImpl
@@ -49,7 +47,6 @@ import akka.runtime.sdk.spi.TimerClient
 import Workflow.WorkflowDef
 import akka.annotation.InternalApi
 import akka.javasdk.JsonSupport
-import akka.javasdk.impl.WorkflowFactory
 import akka.javasdk.workflow.WorkflowContext
 import akka.stream.scaladsl.Flow
 import akka.stream.scaladsl.Source
@@ -81,32 +78,24 @@ import kalix.protocol.workflow_entity.{ NoTransition => ProtoNoTransition }
 import kalix.protocol.workflow_entity.{ Pause => ProtoPause }
 import kalix.protocol.workflow_entity.{ StepTransition => ProtoStepTransition }
 import org.slf4j.LoggerFactory
-// FIXME these don't seem to be 'public API', more internals?
 import akka.javasdk.Metadata
 import scala.jdk.CollectionConverters._
-import com.google.protobuf.Descriptors
 
 /**
  * INTERNAL API
  */
 @InternalApi
-final class WorkflowService(
-    val factory: WorkflowFactory,
-    override val descriptor: Descriptors.ServiceDescriptor,
-    override val additionalDescriptors: Array[Descriptors.FileDescriptor],
-    val messageCodec: JsonMessageCodec,
-    override val serviceName: String)
-    extends Service {
+final class WorkflowService[S, W <: Workflow[S]](
+    workflowClass: Class[_],
+    messageCodec: JsonMessageCodec,
+    instanceFactory: Function[WorkflowContext, W])
+    extends Service(workflowClass, WorkflowEntities.name, messageCodec) {
+
+  def createRouter(context: WorkflowContext) =
+    new ReflectiveWorkflowRouter[S, W](instanceFactory(context), componentDescriptor.commandHandlers)
 
   val strictMessageCodec = new StrictJsonMessageCodec(messageCodec)
 
-  override def resolvedMethods: Option[Map[String, ResolvedServiceMethod[_, _]]] =
-    factory match {
-      case resolved: ResolvedEntityFactory => Some(resolved.resolvedMethods)
-      case _                               => None
-    }
-
-  override final val componentType = WorkflowEntities.name
 }
 
 /**
@@ -115,7 +104,7 @@ final class WorkflowService(
 @InternalApi
 final class WorkflowImpl(
     system: ActorSystem,
-    val services: Map[String, WorkflowService],
+    val services: Map[String, WorkflowService[_, _]],
     timerClient: TimerClient,
     sdkExcutionContext: ExecutionContext,
     sdkDispatcherName: String)
@@ -207,7 +196,7 @@ final class WorkflowImpl(
     val service =
       services.getOrElse(init.serviceName, throw ProtocolException(init, s"Service not found: ${init.serviceName}"))
     val router: WorkflowRouter[_, _] =
-      service.factory.create(new WorkflowContextImpl(init.entityId))
+      service.createRouter(new WorkflowContextImpl(init.entityId))
     val workflowId = init.entityId
 
     val workflowConfig =

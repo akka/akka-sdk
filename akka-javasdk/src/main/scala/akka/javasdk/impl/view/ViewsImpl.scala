@@ -9,16 +9,16 @@ import scala.util.control.NonFatal
 import akka.annotation.InternalApi
 import akka.javasdk.Metadata
 import akka.javasdk.impl.AbstractContext
-import akka.javasdk.impl.MessageCodec
+import akka.javasdk.impl.JsonMessageCodec
 import akka.javasdk.impl.MetadataImpl
-import akka.javasdk.impl.ResolvedEntityFactory
-import akka.javasdk.impl.ResolvedServiceMethod
 import akka.javasdk.impl.Service
+import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.telemetry.Telemetry
+import akka.javasdk.view.TableUpdater
 import akka.javasdk.view.UpdateContext
+import akka.javasdk.view.View
 import akka.stream.scaladsl.Source
 import kalix.protocol.{ view => pv }
-import com.google.protobuf.Descriptors
 import com.google.protobuf.any.{ Any => ScalaPbAny }
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
@@ -29,22 +29,27 @@ import scala.jdk.OptionConverters._
  * INTERNAL API
  */
 @InternalApi
-final class ViewService(
-    val factory: Option[() => ViewUpdateRouter],
-    override val descriptor: Descriptors.ServiceDescriptor,
-    override val additionalDescriptors: Array[Descriptors.FileDescriptor],
-    val messageCodec: MessageCodec,
-    val viewId: String)
-    extends Service {
+final class ViewService[V <: View](
+    viewClass: Class[_],
+    messageCodec: JsonMessageCodec,
+    wiredInstance: Class[TableUpdater[AnyRef]] => TableUpdater[AnyRef])
+    extends Service(viewClass, pv.Views.name, messageCodec) {
 
-  override def resolvedMethods: Option[Map[String, ResolvedServiceMethod[_, _]]] =
-    factory.collect { case resolved: ResolvedEntityFactory =>
-      resolved.resolvedMethods
-    }
-
-  override final val componentType = pv.Views.name
-
-  override def serviceName: String = viewId
+  private def viewUpdaterFactories(): Set[TableUpdater[AnyRef]] = {
+    val updaterClasses = viewClass.getDeclaredClasses.collect {
+      case clz if Reflect.isViewTableUpdater(clz) => clz.asInstanceOf[Class[TableUpdater[AnyRef]]]
+    }.toSet
+    updaterClasses.map(updaterClass => wiredInstance(updaterClass))
+  }
+  def createRouter(): ReflectiveViewMultiTableRouter = {
+    val viewUpdaters = viewUpdaterFactories()
+      .map { updater =>
+        val anyRefUpdater: TableUpdater[AnyRef] = updater
+        anyRefUpdater.getClass.asInstanceOf[Class[TableUpdater[AnyRef]]] -> anyRefUpdater
+      }
+      .toMap[Class[TableUpdater[AnyRef]], TableUpdater[AnyRef]]
+    new ReflectiveViewMultiTableRouter(viewUpdaters, componentDescriptor.commandHandlers)
+  }
 }
 
 /**
@@ -59,7 +64,7 @@ object ViewsImpl {
  * INTERNAL API
  */
 @InternalApi
-final class ViewsImpl(_services: Map[String, ViewService], sdkDispatcherName: String) extends pv.Views {
+final class ViewsImpl(_services: Map[String, ViewService[_]], sdkDispatcherName: String) extends pv.Views {
   import ViewsImpl.log
 
   private final val services = _services.iterator.toMap
@@ -81,15 +86,9 @@ final class ViewsImpl(_services: Map[String, ViewService], sdkDispatcherName: St
       .flatMapConcat {
         case (Seq(pv.ViewStreamIn(pv.ViewStreamIn.Message.Receive(receiveEvent), _)), _) =>
           services.get(receiveEvent.serviceName) match {
-            case Some(service: ViewService) =>
-              if (service.factory.isEmpty)
-                throw new IllegalArgumentException(
-                  s"Unexpected call to service [${receiveEvent.serviceName}] with viewId [${service.viewId}]: " +
-                  "this view has `transform_updates=false` set, so updates should be handled entirely by the runtime " +
-                  "and not reach the user function")
-
+            case Some(service) =>
               // FIXME should we really create a new handler instance per incoming command ???
-              val handler = service.factory.get.apply()
+              val handler = service.createRouter()
 
               val state: Option[Any] =
                 receiveEvent.bySubjectLookupResult.flatMap(row =>
@@ -113,7 +112,7 @@ final class ViewsImpl(_services: Map[String, ViewService], sdkDispatcherName: St
                   case e: ViewException => throw e
                   case NonFatal(error) =>
                     throw ViewException(
-                      service.viewId,
+                      service.componentId,
                       context,
                       s"View unexpected failure: ${error.getMessage}",
                       Some(error))
@@ -124,7 +123,11 @@ final class ViewsImpl(_services: Map[String, ViewService], sdkDispatcherName: St
               effect match {
                 case ViewEffectImpl.Update(newState) =>
                   if (newState == null)
-                    throw ViewException(service.viewId, context, "updateState with null state is not allowed.", None)
+                    throw ViewException(
+                      service.componentId,
+                      context,
+                      "updateState with null state is not allowed.",
+                      None)
                   val serializedState = ScalaPbAny.fromJavaProto(service.messageCodec.encodeJava(newState))
                   val upsert = pv.Upsert(Some(pv.Row(value = Some(serializedState))))
                   val out = pv.ViewStreamOut(pv.ViewStreamOut.Message.Upsert(upsert))

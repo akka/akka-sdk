@@ -8,7 +8,6 @@ import java.lang.reflect.Constructor
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.ParameterizedType
 import java.util.concurrent.CompletionStage
-
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.Promise
@@ -16,7 +15,6 @@ import scala.jdk.CollectionConverters.CollectionHasAsScala
 import scala.jdk.FutureConverters._
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
-
 import akka.Done
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
@@ -38,33 +36,26 @@ import akka.javasdk.impl.Sdk.StartupContext
 import akka.javasdk.impl.Validations.Invalid
 import akka.javasdk.impl.Validations.Valid
 import akka.javasdk.impl.Validations.Validation
-import akka.javasdk.impl.action.ActionService
 import akka.javasdk.impl.action.ActionsImpl
 import akka.javasdk.impl.client.ComponentClientImpl
-import akka.javasdk.impl.consumer.ConsumerProvider
 import akka.javasdk.impl.consumer.ConsumerService
 import akka.javasdk.impl.eventsourcedentity.EventSourcedEntitiesImpl
-import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityProvider
 import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityService
 import akka.javasdk.impl.http.HttpClientProviderImpl
 import akka.javasdk.impl.keyvalueentity.KeyValueEntitiesImpl
-import akka.javasdk.impl.keyvalueentity.KeyValueEntityProvider
 import akka.javasdk.impl.keyvalueentity.KeyValueEntityService
 import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.reflection.Reflect.Syntax.AnnotatedElementOps
-import akka.javasdk.impl.timedaction.TimedActionProvider
+import akka.javasdk.impl.timedaction.TimedActionService
 import akka.javasdk.impl.timer.TimerSchedulerImpl
-import akka.javasdk.impl.view.ViewProvider
 import akka.javasdk.impl.view.ViewService
 import akka.javasdk.impl.view.ViewsImpl
 import akka.javasdk.impl.workflow.WorkflowImpl
-import akka.javasdk.impl.workflow.WorkflowProvider
 import akka.javasdk.impl.workflow.WorkflowService
 import akka.javasdk.keyvalueentity.KeyValueEntity
 import akka.javasdk.keyvalueentity.KeyValueEntityContext
 import akka.javasdk.timedaction.TimedAction
 import akka.javasdk.timer.TimerScheduler
-import akka.javasdk.view.TableUpdater
 import akka.javasdk.view.View
 import akka.javasdk.workflow.Workflow
 import akka.javasdk.workflow.WorkflowContext
@@ -93,6 +84,7 @@ import kalix.protocol.value_entity.ValueEntities
 import kalix.protocol.view.Views
 import kalix.protocol.workflow_entity.WorkflowEntities
 import org.slf4j.LoggerFactory
+
 import scala.jdk.OptionConverters.RichOptional
 
 /**
@@ -292,34 +284,30 @@ private final class Sdk(
   }
 
   // register them if all valid, prototobuf
-  private val componentFactories: Map[Descriptors.ServiceDescriptor, () => Service] = componentClasses
+  private val componentFactories: Map[Descriptors.ServiceDescriptor, Service] = componentClasses
     .filter(hasComponentId)
-    .foldLeft(Map[Descriptors.ServiceDescriptor, () => Service]()) { (factories, clz) =>
-      if (classOf[TimedAction].isAssignableFrom(clz)) {
-        logger.info(s"Registering TimedAction provider for [${clz.getName}]")
-        val action = timedActionProvider(clz.asInstanceOf[Class[TimedAction]])
-        factories.updated(action.serviceDescriptor, action.newServiceInstance _)
+    .foldLeft(Map[Descriptors.ServiceDescriptor, Service]()) { (factories, clz) =>
+      val service = if (classOf[TimedAction].isAssignableFrom(clz)) {
+        logger.debug(s"Registering TimedAction [${clz.getName}]")
+        timedActionService(clz.asInstanceOf[Class[TimedAction]])
       } else if (classOf[Consumer].isAssignableFrom(clz)) {
-        logger.info(s"Registering Consumer provider for [${clz.getName}]")
-        val consumer = consumerProvider(clz.asInstanceOf[Class[Consumer]])
-        factories.updated(consumer.serviceDescriptor, consumer.newServiceInstance _)
+        logger.debug(s"Registering Consumer [${clz.getName}]")
+        consumerService(clz.asInstanceOf[Class[Consumer]])
       } else if (classOf[EventSourcedEntity[_, _]].isAssignableFrom(clz)) {
-        logger.info(s"Registering EventSourcedEntity provider for [${clz.getName}]")
-        val esEntity = eventSourcedEntityProvider(clz.asInstanceOf[Class[EventSourcedEntity[Nothing, Nothing]]])
-        factories.updated(esEntity.serviceDescriptor, esEntity.newServiceInstance _)
+        logger.debug(s"Registering EventSourcedEntity [${clz.getName}]")
+        eventSourcedEntityService(clz.asInstanceOf[Class[EventSourcedEntity[Nothing, Nothing]]])
       } else if (classOf[Workflow[_]].isAssignableFrom(clz)) {
-        logger.info(s"Registering Workflow provider for [${clz.getName}]")
-        val workflow = workflowProvider(clz.asInstanceOf[Class[Workflow[Nothing]]])
-        factories.updated(workflow.serviceDescriptor, workflow.newServiceInstance _)
+        logger.debug(s"Registering Workflow [${clz.getName}]")
+        workflowService(clz.asInstanceOf[Class[Workflow[Nothing]]])
       } else if (classOf[KeyValueEntity[_]].isAssignableFrom(clz)) {
-        logger.info(s"Registering KeyValueEntity provider for [${clz.getName}]")
-        val keyValueEntity = valueEntityProvider(clz.asInstanceOf[Class[KeyValueEntity[Nothing]]])
-        factories.updated(keyValueEntity.serviceDescriptor, keyValueEntity.newServiceInstance _)
+        logger.debug(s"Registering KeyValueEntity [${clz.getName}]")
+        keyValueEntityService(clz.asInstanceOf[Class[KeyValueEntity[Nothing]]])
       } else if (Reflect.isView(clz)) {
-        logger.info(s"Registering View provider for [${clz.getName}]")
-        val view = viewProvider(clz.asInstanceOf[Class[View]])
-        factories.updated(view.serviceDescriptor, view.newServiceInstance _)
+        logger.debug(s"Registering View [${clz.getName}]")
+        viewService(clz.asInstanceOf[Class[View]])
       } else throw new IllegalArgumentException(s"Component class of unknown component type [$clz]")
+
+      factories.updated(service.descriptor, service)
     }
 
   private def hasComponentId(clz: Class[_]): Boolean = {
@@ -367,12 +355,12 @@ private final class Sdk(
 
     val classicSystem = system.classicSystem
 
-    val services = componentFactories.map { case (serviceDescriptor, factory) =>
-      serviceDescriptor.getFullName -> factory()
+    val services = componentFactories.map { case (serviceDescriptor, service) =>
+      serviceDescriptor.getFullName -> service
     }
 
     val actionAndConsumerServices = services.filter { case (_, service) =>
-      service.getClass == classOf[ActionService] || service.getClass == classOf[ConsumerService]
+      service.getClass == classOf[TimedActionService[_]] || service.getClass == classOf[ConsumerService[_]]
     }
 
     if (actionAndConsumerServices.nonEmpty) {
@@ -387,8 +375,8 @@ private final class Sdk(
 
     services.groupBy(_._2.getClass).foreach {
 
-      case (serviceClass, eventSourcedServices: Map[String, EventSourcedEntityService] @unchecked)
-          if serviceClass == classOf[EventSourcedEntityService] =>
+      case (serviceClass, eventSourcedServices: Map[String, EventSourcedEntityService[_, _, _]] @unchecked)
+          if serviceClass == classOf[EventSourcedEntityService[_, _, _]] =>
         val eventSourcedImpl =
           new EventSourcedEntitiesImpl(
             classicSystem,
@@ -398,13 +386,13 @@ private final class Sdk(
             tracerFactory)
         eventSourcedEntitiesEndpoint = Some(eventSourcedImpl)
 
-      case (serviceClass, entityServices: Map[String, KeyValueEntityService] @unchecked)
-          if serviceClass == classOf[KeyValueEntityService] =>
+      case (serviceClass, entityServices: Map[String, KeyValueEntityService[_, _]] @unchecked)
+          if serviceClass == classOf[KeyValueEntityService[_, _]] =>
         valueEntitiesEndpoint =
           Some(new KeyValueEntitiesImpl(classicSystem, entityServices, sdkSettings, sdkDispatcherName, tracerFactory))
 
-      case (serviceClass, workflowServices: Map[String, WorkflowService] @unchecked)
-          if serviceClass == classOf[WorkflowService] =>
+      case (serviceClass, workflowServices: Map[String, WorkflowService[_, _]] @unchecked)
+          if serviceClass == classOf[WorkflowService[_, _]] =>
         workflowEntitiesEndpoint = Some(
           new WorkflowImpl(
             classicSystem,
@@ -413,13 +401,16 @@ private final class Sdk(
             sdkExecutionContext,
             sdkDispatcherName))
 
-      case (serviceClass, _: Map[String, ActionService] @unchecked) if serviceClass == classOf[ActionService] =>
+      case (serviceClass, _: Map[String, TimedActionService[_]] @unchecked)
+          if serviceClass == classOf[TimedActionService[_]] =>
       //ignore
 
-      case (serviceClass, _: Map[String, ConsumerService] @unchecked) if serviceClass == classOf[ConsumerService] =>
+      case (serviceClass, _: Map[String, ConsumerService[_]] @unchecked)
+          if serviceClass == classOf[ConsumerService[_]] =>
       //ignore
 
-      case (serviceClass, viewServices: Map[String, ViewService] @unchecked) if serviceClass == classOf[ViewService] =>
+      case (serviceClass, viewServices: Map[String, ViewService[_]] @unchecked)
+          if serviceClass == classOf[ViewService[_]] =>
         viewsEndpoint = Some(new ViewsImpl(viewServices, sdkDispatcherName))
 
       case (serviceClass, _) =>
@@ -486,14 +477,14 @@ private final class Sdk(
     }
   }
 
-  private def timedActionProvider[A <: TimedAction](clz: Class[A]): TimedActionProvider[A] =
-    TimedActionProvider(clz, messageCodec, () => wiredInstance(clz)(sideEffectingComponentInjects(None)))
+  private def timedActionService[A <: TimedAction](clz: Class[A]): TimedActionService[A] =
+    new TimedActionService[A](clz, messageCodec, () => wiredInstance(clz)(sideEffectingComponentInjects(None)))
 
-  private def consumerProvider[A <: Consumer](clz: Class[A]): ConsumerProvider[A] =
-    ConsumerProvider(clz, messageCodec, () => wiredInstance(clz)(sideEffectingComponentInjects(None)))
+  private def consumerService[A <: Consumer](clz: Class[A]): ConsumerService[A] =
+    new ConsumerService[A](clz, messageCodec, () => wiredInstance(clz)(sideEffectingComponentInjects(None)))
 
-  private def workflowProvider[S, W <: Workflow[S]](clz: Class[W]): WorkflowProvider[S, W] = {
-    WorkflowProvider(
+  private def workflowService[S, W <: Workflow[S]](clz: Class[W]): WorkflowService[S, W] = {
+    new WorkflowService[S, W](
       clz,
       messageCodec,
       { context =>
@@ -530,9 +521,9 @@ private final class Sdk(
       })
   }
 
-  private def eventSourcedEntityProvider[S, E, ES <: EventSourcedEntity[S, E]](
-      clz: Class[ES]): EventSourcedEntityProvider[S, E, ES] =
-    EventSourcedEntityProvider(
+  private def eventSourcedEntityService[S, E, ES <: EventSourcedEntity[S, E]](
+      clz: Class[ES]): EventSourcedEntityService[S, E, ES] =
+    EventSourcedEntityService(
       clz,
       messageCodec,
       context =>
@@ -541,8 +532,8 @@ private final class Sdk(
           case p if p == classOf[EventSourcedEntityContext] => context
         })
 
-  private def valueEntityProvider[S, VE <: KeyValueEntity[S]](clz: Class[VE]): KeyValueEntityProvider[S, VE] =
-    KeyValueEntityProvider(
+  private def keyValueEntityService[S, VE <: KeyValueEntity[S]](clz: Class[VE]): KeyValueEntityService[S, VE] =
+    new KeyValueEntityService(
       clz,
       messageCodec,
       context =>
@@ -551,21 +542,12 @@ private final class Sdk(
           case p if p == classOf[KeyValueEntityContext] => context
         })
 
-  // FIXME a bit much of low level stuff here right now
-  private def viewProvider[V <: View](clz: Class[V]): ViewProvider[V] =
-    ViewProvider[V](
+  private def viewService[V <: View](clz: Class[V]): ViewService[V] =
+    new ViewService[V](
       clz,
       messageCodec,
-      ComponentDescriptorFactory.readComponentIdIdValue(clz),
-      { () =>
-        val updaterClasses = clz.getDeclaredClasses.collect {
-          case clz if Reflect.isViewTableUpdater(clz) => clz.asInstanceOf[Class[TableUpdater[AnyRef]]]
-        }.toSet
-        updaterClasses.map(updaterClass =>
-          wiredInstance(updaterClass)(
-            // remember to update component type API doc and docs if changing the set of injectables
-            PartialFunction.empty))
-      })
+      // remember to update component type API doc and docs if changing the set of injectables
+      wiredInstance(_)(PartialFunction.empty))
 
   private def httpEndpointFactory[E](httpEndpointClass: Class[E]): HttpEndpointConstructionContext => E = {
     (context: HttpEndpointConstructionContext) =>

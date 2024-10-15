@@ -4,46 +4,43 @@
 
 package akka.javasdk.impl.keyvalueentity
 
-import scala.util.control.NonFatal
-import scala.language.existentials
 import akka.NotUsed
 import akka.actor.ActorSystem
+import akka.annotation.InternalApi
+import akka.javasdk.JsonSupport
+import akka.javasdk.impl.AbstractContext
+import akka.javasdk.impl.ActivatableContext
+import akka.javasdk.impl.ErrorHandling
+import akka.javasdk.impl.ErrorHandling.BadRequestException
+import akka.javasdk.impl.JsonMessageCodec
+import akka.javasdk.impl.MetadataImpl
+import akka.javasdk.impl.Service
+import akka.javasdk.impl.Settings
+import akka.javasdk.impl.effect.ErrorReplyImpl
+import akka.javasdk.impl.keyvalueentity.KeyValueEntityEffectImpl.DeleteEntity
+import akka.javasdk.impl.telemetry.KeyValueEntityCategory
+import akka.javasdk.impl.telemetry.Telemetry
+import akka.javasdk.impl.telemetry.TraceInstrumentation
+import akka.javasdk.keyvalueentity.CommandContext
+import akka.javasdk.keyvalueentity.KeyValueEntity
+import akka.javasdk.keyvalueentity.KeyValueEntityContext
 import akka.stream.scaladsl.Flow
 import akka.stream.scaladsl.Source
 import com.google.protobuf.ByteString
 import com.google.protobuf.any.{ Any => ScalaPbAny }
 import io.grpc.Status
-import akka.javasdk.impl.ErrorHandling.BadRequestException
-import KeyValueEntityEffectImpl.DeleteEntity
-import akka.annotation.InternalApi
-import akka.javasdk.JsonSupport
-import akka.javasdk.impl.AbstractContext
-import akka.javasdk.impl.ActivatableContext
-import akka.javasdk.impl.Settings
-import akka.javasdk.impl.ErrorHandling
-import akka.javasdk.impl.MessageCodec
-import akka.javasdk.impl.MetadataImpl
-import akka.javasdk.impl.ResolvedEntityFactory
-import akka.javasdk.impl.ResolvedServiceMethod
-import akka.javasdk.impl.Service
-import akka.javasdk.impl.effect.ErrorReplyImpl
-import akka.javasdk.impl.telemetry.KeyValueEntityCategory
-import akka.javasdk.impl.telemetry.Telemetry
-import akka.javasdk.impl.telemetry.TraceInstrumentation
-import akka.javasdk.keyvalueentity.CommandContext
-import akka.javasdk.keyvalueentity.KeyValueEntityContext
 import io.opentelemetry.api.trace.Tracer
 import kalix.protocol.component.Failure
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
 
-// FIXME these don't seem to be 'public API', more internals?
-import com.google.protobuf.Descriptors
-import KeyValueEntityEffectImpl.UpdateState
-import KeyValueEntityRouter.CommandResult
+import scala.language.existentials
+import scala.util.control.NonFatal
+
 import akka.javasdk.Metadata
-import akka.javasdk.impl.KeyValueEntityFactory
 import akka.javasdk.impl.effect.MessageReplyImpl
+import akka.javasdk.impl.keyvalueentity.KeyValueEntityEffectImpl.UpdateState
+import akka.javasdk.impl.keyvalueentity.KeyValueEntityRouter.CommandResult
 import kalix.protocol.value_entity.ValueEntityAction.Action.Delete
 import kalix.protocol.value_entity.ValueEntityAction.Action.Update
 import kalix.protocol.value_entity.ValueEntityStreamIn.Message.{ Command => InCommand }
@@ -57,21 +54,13 @@ import kalix.protocol.value_entity._
  * INTERNAL API
  */
 @InternalApi
-private[impl] final class KeyValueEntityService(
-    val factory: KeyValueEntityFactory,
-    override val descriptor: Descriptors.ServiceDescriptor,
-    override val additionalDescriptors: Array[Descriptors.FileDescriptor],
-    val messageCodec: MessageCodec,
-    override val serviceName: String)
-    extends Service {
-
-  override def resolvedMethods: Option[Map[String, ResolvedServiceMethod[_, _]]] =
-    factory match {
-      case resolved: ResolvedEntityFactory => Some(resolved.resolvedMethods)
-      case _                               => None
-    }
-
-  override final val componentType = ValueEntities.name
+private[impl] final class KeyValueEntityService[S, E <: KeyValueEntity[S]](
+    entityClass: Class[E],
+    messageCodec: JsonMessageCodec,
+    factory: KeyValueEntityContext => E)
+    extends Service(entityClass, ValueEntities.name, messageCodec) {
+  def createRouter(context: KeyValueEntityContext) =
+    new ReflectiveKeyValueEntityRouter[S, E](factory(context), componentDescriptor.commandHandlers)
 }
 
 /**
@@ -80,7 +69,7 @@ private[impl] final class KeyValueEntityService(
 @InternalApi
 private[impl] final class KeyValueEntitiesImpl(
     system: ActorSystem,
-    val services: Map[String, KeyValueEntityService],
+    val services: Map[String, KeyValueEntityService[_, _]],
     configuration: Settings,
     sdkDispatcherName: String,
     tracerFactory: String => Tracer)
@@ -91,7 +80,7 @@ private[impl] final class KeyValueEntitiesImpl(
   private final val log = LoggerFactory.getLogger(this.getClass)
 
   private val instrumentations: Map[String, TraceInstrumentation] = services.values.map { s =>
-    (s.serviceName, new TraceInstrumentation(s.serviceName, KeyValueEntityCategory, tracerFactory))
+    (s.componentId, new TraceInstrumentation(s.componentId, KeyValueEntityCategory, tracerFactory))
   }.toMap
 
   private val pbCleanupDeletedValueEntityAfter =
@@ -144,7 +133,7 @@ private[impl] final class KeyValueEntitiesImpl(
     val service =
       services.getOrElse(init.serviceName, throw ProtocolException(init, s"Service not found: ${init.serviceName}"))
     val router =
-      service.factory.create(new KeyValueEntityContextImpl(init.entityId, system))
+      service.createRouter(new KeyValueEntityContextImpl(init.entityId, system))
     val thisEntityId = init.entityId
 
     init.state match {
@@ -169,7 +158,7 @@ private[impl] final class KeyValueEntitiesImpl(
           val metadata = MetadataImpl.of(command.metadata.map(_.entries.toVector).getOrElse(Nil))
 
           if (log.isTraceEnabled) log.trace("Metadata entries [{}].", metadata.entries)
-          val span = instrumentations(service.serviceName).buildSpan(service, command)
+          val span = instrumentations(service.componentId).buildSpan(service, command)
 
           span.foreach(s => MDC.put(Telemetry.TRACE_ID, s.getSpanContext.getTraceId))
           try {

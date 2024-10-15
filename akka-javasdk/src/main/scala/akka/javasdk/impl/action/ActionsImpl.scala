@@ -4,39 +4,34 @@
 
 package akka.javasdk.impl.action
 
-import scala.concurrent.Future
-import scala.util.control.NonFatal
 import akka.Done
 import akka.NotUsed
 import akka.actor.ActorSystem
-import akka.javasdk.impl.ErrorHandling
-import akka.javasdk.impl.consumer.ConsumerService
-import akka.javasdk.impl.telemetry.ActionCategory
-import akka.javasdk.impl.telemetry.ConsumerCategory
-import akka.javasdk.impl.telemetry.Telemetry
-import akka.javasdk.impl.timedaction.TimedActionRouter
-import akka.javasdk.impl.timer.TimerSchedulerImpl
-import ErrorHandling.BadRequestException
 import akka.annotation.InternalApi
 import akka.javasdk.Metadata
 import akka.javasdk.consumer.Consumer
 import akka.javasdk.consumer.MessageContext
 import akka.javasdk.consumer.MessageEnvelope
 import akka.javasdk.impl.AbstractContext
+import akka.javasdk.impl.ErrorHandling
+import akka.javasdk.impl.ErrorHandling.BadRequestException
 import akka.javasdk.impl.MessageCodec
 import akka.javasdk.impl.MetadataImpl
-import akka.javasdk.impl.ResolvedEntityFactory
-import akka.javasdk.impl.ResolvedServiceMethod
 import akka.javasdk.impl.Service
+import akka.javasdk.impl.consumer.ConsumerService
 import akka.javasdk.impl.consumer.MessageContextImpl
+import akka.javasdk.impl.telemetry.ActionCategory
+import akka.javasdk.impl.telemetry.ConsumerCategory
+import akka.javasdk.impl.telemetry.Telemetry
 import akka.javasdk.impl.telemetry.TraceInstrumentation
+import akka.javasdk.impl.timedaction.TimedActionService
+import akka.javasdk.impl.timer.TimerSchedulerImpl
 import akka.javasdk.timedaction.CommandContext
 import akka.javasdk.timedaction.CommandEnvelope
 import akka.javasdk.timedaction.TimedAction
 import akka.javasdk.timer.TimerScheduler
 import akka.runtime.sdk.spi.TimerClient
 import akka.stream.scaladsl.Source
-import com.google.protobuf.Descriptors
 import io.grpc.Status
 import io.opentelemetry.api.trace.SpanContext
 import io.opentelemetry.api.trace.Tracer
@@ -46,51 +41,20 @@ import kalix.protocol.action.Actions
 import kalix.protocol.component
 import kalix.protocol.component.Failure
 import kalix.protocol.component.MetadataEntry
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 import org.slf4j.MDC
 
 import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.util.control.NonFatal
 
 /**
  * INTERNAL API
  */
 @InternalApi
-private[impl] final class ActionService(
-    val factory: () => TimedActionRouter[_],
-    override val descriptor: Descriptors.ServiceDescriptor,
-    override val additionalDescriptors: Array[Descriptors.FileDescriptor],
-    val messageCodec: MessageCodec)
-    extends Service {
-
-  @volatile var actionClass: Option[Class[_]] = None
-
-  def createAction(): TimedActionRouter[_] = {
-    val handler = factory()
-    actionClass = Some(handler.actionClass())
-    handler
-  }
-
-  // use a logger specific to the service impl if possible (concrete action was successfully created at least once)
-  def log: Logger = actionClass match {
-    case Some(clazz) => LoggerFactory.getLogger(clazz)
-    case None        => ActionsImpl.log
-  }
-
-  override def resolvedMethods: Option[Map[String, ResolvedServiceMethod[_, _]]] =
-    factory match {
-      case resolved: ResolvedEntityFactory => Some(resolved.resolvedMethods)
-      case _                               => None
-    }
-
-  override final val componentType = Actions.name
-}
-
 private[javasdk] object ActionsImpl {
-  private[action] val log = LoggerFactory.getLogger(classOf[ActionsImpl])
 
   private def handleUnexpectedException(
-      service: ActionService,
+      service: TimedActionService[_],
       command: ActionCommand,
       ex: Throwable): ActionResponse = {
     ex match {
@@ -104,7 +68,7 @@ private[javasdk] object ActionsImpl {
   }
 
   private def handleUnexpectedExceptionInConsumer(
-      service: ConsumerService,
+      service: ConsumerService[_],
       command: ActionCommand,
       ex: Throwable): ActionResponse = {
     ex match {
@@ -141,13 +105,14 @@ private[akka] final class ActionsImpl(
 
   private val telemetries: Map[String, TraceInstrumentation] =
     services.values.map {
-      case s: ActionService => (s.serviceName, new TraceInstrumentation(s.serviceName, ActionCategory, tracerFactory))
-      case s: ConsumerService =>
-        (s.serviceName, new TraceInstrumentation(s.serviceName, ConsumerCategory, tracerFactory))
+      case s: TimedActionService[_] =>
+        (s.componentId, new TraceInstrumentation(s.componentId, ActionCategory, tracerFactory))
+      case s: ConsumerService[_] =>
+        (s.componentId, new TraceInstrumentation(s.componentId, ConsumerCategory, tracerFactory))
     }.toMap
 
   private def effectToResponse(
-      service: ActionService,
+      service: TimedActionService[_],
       command: ActionCommand,
       effect: TimedAction.Effect,
       messageCodec: MessageCodec): Future[ActionResponse] = {
@@ -171,7 +136,7 @@ private[akka] final class ActionsImpl(
   }
 
   private def consumerEffectToResponse(
-      service: ConsumerService,
+      service: ConsumerService[_],
       command: ActionCommand,
       effect: Consumer.Effect,
       messageCodec: MessageCodec): Future[ActionResponse] = {
@@ -201,18 +166,18 @@ private[akka] final class ActionsImpl(
    */
   override def handleUnary(in: ActionCommand): Future[ActionResponse] =
     services.get(in.serviceName) match {
-      case Some(service: ActionService) =>
-        val span = telemetries(service.serviceName).buildSpan(service, in)
+      case Some(service: TimedActionService[_]) =>
+        val span = telemetries(service.componentId).buildSpan(service, in)
 
         span.foreach(s => MDC.put(Telemetry.TRACE_ID, s.getSpanContext.getTraceId))
         val fut =
           try {
             val messageContext =
-              createMessageContext(in, service.messageCodec, span.map(_.getSpanContext), service.serviceName)
+              createMessageContext(in, service.messageCodec, span.map(_.getSpanContext), service.componentId)
             val decodedPayload = service.messageCodec.decodeMessage(
               in.payload.getOrElse(throw new IllegalArgumentException("No command payload")))
             val effect = service
-              .factory()
+              .createRouter()
               .handleUnary(in.name, CommandEnvelope.of(decodedPayload, messageContext.metadata()), messageContext)
             effectToResponse(service, in, effect, service.messageCodec)
           } catch {
@@ -227,18 +192,18 @@ private[akka] final class ActionsImpl(
           span.foreach(_.end())
         }
 
-      case Some(service: ConsumerService) =>
-        val span = telemetries(service.serviceName).buildSpan(service, in)
+      case Some(service: ConsumerService[_]) =>
+        val span = telemetries(service.componentId).buildSpan(service, in)
 
         span.foreach(s => MDC.put(Telemetry.TRACE_ID, s.getSpanContext.getTraceId))
         val fut =
           try {
             val messageContext =
-              createConsumerMessageContext(in, service.messageCodec, span.map(_.getSpanContext), service.serviceName)
+              createConsumerMessageContext(in, service.messageCodec, span.map(_.getSpanContext), service.componentId)
             val decodedPayload = service.messageCodec.decodeMessage(
               in.payload.getOrElse(throw new IllegalArgumentException("No command payload")))
             val effect = service
-              .factory()
+              .createRouter()
               .handleUnary(in.name, MessageEnvelope.of(decodedPayload, messageContext.metadata()), messageContext)
             consumerEffectToResponse(service, in, effect, service.messageCodec)
           } catch {

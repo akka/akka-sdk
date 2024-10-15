@@ -13,9 +13,11 @@ import akka.actor.testkit.typed.scaladsl.LogCapturing
 import akka.actor.testkit.typed.scaladsl.LoggingTestKit
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import akka.actor.typed.scaladsl.adapter._
+import akka.javasdk.annotations.ComponentId
 import akka.javasdk.impl.JsonMessageCodec
 import akka.javasdk.impl.timedaction.TimedActionEffectImpl
 import akka.javasdk.impl.timedaction.TimedActionRouter
+import akka.javasdk.impl.timedaction.TimedActionService
 import akka.javasdk.timedaction.CommandEnvelope
 import akka.javasdk.timedaction.TimedAction
 import com.google.protobuf
@@ -50,15 +52,12 @@ class TimedActionHandlerSpec
   private val serviceName = serviceDescriptor.getFullName
   private val jsonCodec = new JsonMessageCodec()
 
-  def create(handler: TimedActionRouter[_]): Actions = {
-    val actionFactory = () => handler
-    val service = new ActionService(actionFactory, serviceDescriptor, Array(), jsonCodec)
-
-    val services = Map(serviceName -> service)
-
+  def create(handler: TimedActionRouter[TestAction]): Actions = {
     new ActionsImpl(
       classicSystem,
-      services,
+      Map(serviceName -> new TimedActionService[TestAction](classOf[TestAction], jsonCodec, () => new TestAction) {
+        override def createRouter() = handler
+      }),
       new TimerClient {
         // Not exercised here
         override def startSingleTimer(
@@ -138,6 +137,7 @@ class TimedActionHandlerSpec
     ScalaPbAny.toJavaProto(payload.value).getTypeUrl == "json.kalix.io/akka.Done$"
   }
 
+  @ComponentId("dummy-id")
   class TestAction extends TimedAction
 
   private abstract class AbstractHandler extends TimedActionRouter[TestAction](new TestAction) {

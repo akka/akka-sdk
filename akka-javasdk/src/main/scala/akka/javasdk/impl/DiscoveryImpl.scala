@@ -137,7 +137,7 @@ class DiscoveryImpl(
               service.componentType,
               name,
               Component.ComponentSettings.Entity(
-                EntitySettings(service.serviceName, None, forwardHeaders, EntitySettings.SpecificSettings.Empty)))
+                EntitySettings(service.componentId, None, forwardHeaders, EntitySettings.SpecificSettings.Empty)))
         }
       }.toSeq
 

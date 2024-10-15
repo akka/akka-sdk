@@ -173,7 +173,7 @@ private[akka] final class TraceInstrumentation(
           .setParent(parentContext)
           .setSpanKind(SpanKind.SERVER)
           .setAttribute("component.type", service.componentType)
-          .setAttribute("component.type_id", service.serviceName)
+          .setAttribute("component.type_id", service.componentId)
       subjectId.foreach(id => spanBuilder = spanBuilder.setAttribute("component.id", id))
       spanBuilder.startSpan()
     }

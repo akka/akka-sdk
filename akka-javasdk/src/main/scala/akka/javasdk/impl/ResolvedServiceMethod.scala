@@ -50,12 +50,3 @@ private final class ScalaPbResolvedType[T <: scalapb.GeneratedMessage](companion
     extends ResolvedType[T] {
   override def parseFrom(bytes: ByteString): T = companion.parseFrom(bytes.newCodedInput()).asInstanceOf[T]
 }
-
-/**
- * INTERNAL API
- */
-@InternalApi
-trait ResolvedEntityFactory {
-  // TODO JavaDoc
-  def resolvedMethods: Map[String, ResolvedServiceMethod[_, _]]
-}

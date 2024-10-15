@@ -4,61 +4,48 @@
 
 package akka.javasdk.impl.consumer
 
-import java.util.Optional
 import akka.annotation.InternalApi
 import akka.javasdk.Metadata
+import akka.javasdk.consumer.Consumer
 import akka.javasdk.consumer.MessageContext
 import akka.javasdk.consumer.MessageEnvelope
 import akka.javasdk.impl.AbstractContext
+import akka.javasdk.impl.ComponentDescriptorFactory
+import akka.javasdk.impl.JsonMessageCodec
 import akka.javasdk.impl.MessageCodec
 import akka.javasdk.impl.MetadataImpl
-import akka.javasdk.impl.ResolvedEntityFactory
-import akka.javasdk.impl.ResolvedServiceMethod
 import akka.javasdk.impl.Service
 import akka.javasdk.impl.telemetry.Telemetry
 import akka.javasdk.impl.telemetry.TraceInstrumentation
 import akka.javasdk.impl.timer.TimerSchedulerImpl
 import akka.javasdk.timer.TimerScheduler
 import akka.runtime.sdk.spi.TimerClient
-import com.google.protobuf.Descriptors
 import io.opentelemetry.api.trace.Tracer
 import kalix.protocol.action.Actions
 import kalix.protocol.component.MetadataEntry
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
+import java.util.Optional
+
 /**
  * INTERNAL API
  */
 @InternalApi
-private[impl] final class ConsumerService(
-    val factory: () => ConsumerRouter[_],
-    override val descriptor: Descriptors.ServiceDescriptor,
-    override val additionalDescriptors: Array[Descriptors.FileDescriptor],
-    val messageCodec: MessageCodec)
-    extends Service {
+private[impl] class ConsumerService[A <: Consumer](
+    consumerClass: Class[_],
+    messageCodec: JsonMessageCodec,
+    factory: () => A)
+    extends Service(consumerClass, Actions.name, messageCodec) {
 
-  @volatile var consumerClass: Option[Class[_]] = None
+  lazy val log: Logger = LoggerFactory.getLogger(consumerClass)
 
-  def createConsumer(): ConsumerRouter[_] = {
-    val handler = factory()
-    consumerClass = Some(handler.consumerClass())
-    handler
-  }
+  def createRouter(): ConsumerRouter[A] =
+    new ReflectiveConsumerRouter[A](
+      factory(),
+      componentDescriptor.commandHandlers,
+      ComponentDescriptorFactory.findIgnore(consumerClass))
 
-  def log: Logger = consumerClass match {
-    case Some(clazz) => LoggerFactory.getLogger(clazz)
-    case None        => LoggerFactory.getLogger("akka.javasdk.impl.consumer.ConsumersImpl")
-  }
-
-  override def resolvedMethods: Option[Map[String, ResolvedServiceMethod[_, _]]] =
-    factory match {
-      case resolved: ResolvedEntityFactory => Some(resolved.resolvedMethods)
-      case _                               => None
-    }
-
-  //TODO???
-  override final val componentType = Actions.name
 }
 
 /**
