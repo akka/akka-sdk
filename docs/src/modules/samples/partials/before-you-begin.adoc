@@ -5,8 +5,8 @@ include::ROOT:partial$include.adoc[]
 * If you're new to Akka, https://console.akka.io[create an account, window="console"], you can try it out for free.
 * You'll need to install the xref:akka-cli:installation.adoc[Akka CLI] to deploy from a terminal window.
 
-You'll also need
+You'll also need:
 
-* Java {java-version}, we rely on https://adoptium.net/marketplace/[Eclipse Adoptium]
-* https://maven.apache.org/install.html[Apache Maven, window="new"] version {minimum_maven_version} or later (https://maven.apache.org/docs/history.html[Maven version history, window="new"])
+* Java {java-version}, we recommend https://adoptium.net/marketplace/[Eclipse Adoptium]
+* https://maven.apache.org/install.html[Apache Maven, window="new"] version {minimum_maven_version} or later
 * https://docs.docker.com/get-started/get-docker/[Docker Engine, window="new"] {minimum_docker_version} or later
