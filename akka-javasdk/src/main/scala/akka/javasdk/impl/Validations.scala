@@ -225,7 +225,7 @@ private[javasdk] object Validations {
       viewMustNotHaveTableAnnotation(component) ++
       viewMustHaveAtLeastOneViewTableUpdater(component) ++
       viewMustHaveAtLeastOneQueryMethod(component) ++
-      viewQueriesMustReturnEffect(component) ++
+      validateQueryResultTypes(component) ++
       viewQueriesWithStreamUpdatesMustBeStreaming(component) ++
       commandHandlerArityShouldBeZeroOrOne(component, hasQueryEffectOutput) ++
       viewMultipleTableUpdatersMustHaveTableAnnotations(tableUpdaters) ++
@@ -262,7 +262,31 @@ private[javasdk] object Validations {
     when(!hasSubscription(tableUpdater)) {
       Validation(errorMessage(tableUpdater, "A TableUpdater subclass must be annotated with `@Consume` annotation."))
     } ++
+    validateViewUpdaterRowType(tableUpdater) ++
     commonSubscriptionValidation(tableUpdater, hasUpdateEffectOutput)
+  }
+
+  private val primitiveWrapperClasses: Set[Class[AnyRef]] = Set(
+    classOf[java.lang.Integer].asInstanceOf[Class[AnyRef]],
+    classOf[java.lang.Long].asInstanceOf[Class[AnyRef]],
+    classOf[java.lang.Float].asInstanceOf[Class[AnyRef]],
+    classOf[java.lang.Double].asInstanceOf[Class[AnyRef]],
+    classOf[java.lang.Byte].asInstanceOf[Class[AnyRef]],
+    classOf[java.lang.Short].asInstanceOf[Class[AnyRef]],
+    classOf[java.lang.Boolean].asInstanceOf[Class[AnyRef]],
+    classOf[java.lang.Character].asInstanceOf[Class[AnyRef]],
+    // not really a primitive wrapper but works for now
+    classOf[java.lang.String].asInstanceOf[Class[AnyRef]])
+
+  private def validateViewUpdaterRowType(tableUpdater: Class[_]): Validation = {
+    val tpe = tableUpdater.getGenericSuperclass.asInstanceOf[ParameterizedType]
+    tpe.getActualTypeArguments.head match {
+      case clazz: Class[_] =>
+        if (primitiveWrapperClasses(clazz.asInstanceOf[Class[AnyRef]]))
+          Validation(errorMessage(tableUpdater, s"View row type ${clazz.getName} is not supported"))
+        else Valid
+
+    }
   }
 
   private def viewTableAnnotationMustNotBeEmptyString(tableUpdater: Class[_]): Validation = {
@@ -272,16 +296,31 @@ private[javasdk] object Validations {
     }
   }
 
-  private def viewQueriesMustReturnEffect(component: Class[_]): Validation = {
-    val queriesWithWrongReturnType = component.getMethods.toIndexedSeq.filter(m =>
-      m.getAnnotation(classOf[Query]) != null && !(m.getReturnType == classOf[
-        View.QueryEffect[_]] || m.getReturnType == classOf[View.QueryStreamEffect[_]]))
-    queriesWithWrongReturnType.foldLeft(Valid: Validation) { (validation, methodWithWrongReturnType) =>
-      validation ++ Validation(
-        errorMessage(
-          methodWithWrongReturnType,
-          s"Query methods must return View.QueryEffect<RowType> or View.QueryStreamEffect<RowType> (was ${methodWithWrongReturnType.getReturnType}."))
+  private def validateQueryResultTypes(component: Class[_]): Validation = {
+    val queryMethods =
+      component.getMethods.toIndexedSeq.flatMap(m => Option(m.getAnnotation(classOf[Query])).map(_ => m))
+    val queriesWithWrongReturnType = queryMethods.filter(m =>
+      !(m.getReturnType == classOf[View.QueryEffect[_]] || m.getReturnType == classOf[View.QueryStreamEffect[_]]))
+
+    val wrongReturnTypeValidations = queriesWithWrongReturnType.foldLeft(Valid: Validation) {
+      (validation, methodWithWrongReturnType) =>
+        validation ++ Validation(
+          errorMessage(
+            methodWithWrongReturnType,
+            s"Query methods must return View.QueryEffect<RowType> or View.QueryStreamEffect<RowType> (was ${methodWithWrongReturnType.getReturnType}."))
     }
+
+    val wrongResultTypeValidations =
+      queryMethods.filterNot(queriesWithWrongReturnType.contains).foldLeft(Valid: Validation) { (validation, method) =>
+        val resultType = method.getGenericReturnType.asInstanceOf[ParameterizedType].getActualTypeArguments.head
+        resultType match {
+          case clazz: Class[_] if primitiveWrapperClasses(clazz.asInstanceOf[Class[AnyRef]]) =>
+            validation ++ Validation(errorMessage(method, s"View query result type ${clazz.getName} is not supported"))
+          case _ => validation
+        }
+      }
+
+    wrongReturnTypeValidations ++ wrongResultTypeValidations
   }
 
   private def viewQueriesWithStreamUpdatesMustBeStreaming(component: Class[_]): Validation = {

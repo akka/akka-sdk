@@ -132,6 +132,18 @@ public class ViewTestModels {
   }
 
   @ComponentId("users_view")
+  public static class WrongQueryEffectReturnType extends View {
+
+    @Consume.FromKeyValueEntity(UserEntity.class)
+    public static class UserUpdater extends TableUpdater<User> {}
+
+    @Query("SELECT * FROM users WHERE email = :email")
+    public QueryEffect<String> getUser(ByEmail byEmail) {
+      return queryResult();
+    }
+  }
+
+  @ComponentId("users_view")
   public static class WrongHandlerSignature extends View {
 
     @Consume.FromKeyValueEntity(UserEntity.class)
@@ -169,6 +181,23 @@ public class ViewTestModels {
 
     @Query("SELECT * as users FROM users WHERE email = :emails")
     public QueryEffect<TransformedUsers> getUsersByEmails(List<String> emails) {
+      return queryResult();
+    }
+  }
+
+  @ComponentId("users_view")
+  public static class ViewWithInvalidRowType extends View {
+
+    @Consume.FromKeyValueEntity(UserEntity.class)
+    public static class UserUpdater extends TableUpdater<String> {
+      public Effect<String> onChange(User user) {
+        return effects().updateRow(user.email);
+      }
+
+    }
+
+    @Query("SELECT * FROM users WHERE email = :email")
+    public QueryEffect<User> getUser(String email) {
       return queryResult();
     }
   }

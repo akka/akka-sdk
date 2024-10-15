@@ -66,6 +66,18 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
       }.getMessage should include("A view must contain at least one public static TableUpdater subclass.")
     }
 
+    "not allow View with an invalid row type" in {
+      intercept[InvalidComponentException] {
+        Validations.validate(classOf[ViewTestModels.ViewWithInvalidRowType]).failIfInvalid
+      }.getMessage should include(s"View row type java.lang.String is not supported")
+    }
+
+    "not allow View with an invalid query result type" in {
+      intercept[InvalidComponentException] {
+        Validations.validate(classOf[ViewTestModels.WrongQueryEffectReturnType]).failIfInvalid
+      }.getMessage should include("View query result type java.lang.String is not supported")
+    }
+
     "not allow View with Table annotation" in {
       intercept[InvalidComponentException] {
         Validations.validate(classOf[ViewTestModels.ViewWithTableName]).failIfInvalid
