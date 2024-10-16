@@ -11,6 +11,8 @@ In order to run your service locally, you'll need to have the following prerequi
 
 == Starting your service
 
+As an example, we will use the xref:samples:shopping-cart.adoc[] sample.
+
 To start your service locally, run the following command from the root of your project:
 
 --
@@ -22,48 +24,25 @@ mvn compile exec:java
 
 == Invoking your service
 
-After you start the service it will accept invocations on `localhost:9000`. You can use cURL to invoke your service.
-
-As an example, we will use the https://github.com/lightbend/akka-javasdk/tree/main/samples/event-sourced-customer-registry[`customer-registry`] sample.
+After you start the service it will accept invocations on `localhost:9000`. You can use https://curl.se[cURL] to invoke your service.
 
 === Using cURL
 
-Create a customer:
+Add an item to the shopping cart:
 
-[.tabset]
-Linux or macOS::
-+
---
-[source,command line]
+[source, command window]
 ----
-curl -i localhost:9000/customer/one \
-  --header "Content-Type: application/json" \
-  -XPOST \
-  --data '{"email":"test@example.com","name":"Test Testsson","address":{"street":"Teststreet 25",
-  "city":"Testcity"}}'
+curl -i -XPUT -H "Content-Type: application/json" localhost:9000/shopping-cart/123/item -d '
+{"productId":"akka-tshirt", "name":"Akka Tshirt", "quantity": 10}'
 ----
---
-Windows 10+::
-+
---
-[source,command line]
-----
-curl -i localhost:9000/customer/one ^
-  --header "Content-Type: application/json" ^
-  -XPOST ^
-  --data '{"email":"test@example.com","name":"Test Testsson","address":{"street":"Teststreet 25",
-  "city":"Testcity"}}'
-----
---
 
-Retrieve an existing customer:
+Get cart state:
 
---
-[source,command line]
+[source, command window]
 ----
-curl localhost:9000/customer/one
+curl localhost:9000/shopping-cart/123
 ----
---
+
 
 == Shutting down the service
 
@@ -86,19 +65,9 @@ A typical application is composed of one or more services deployed to the same A
 The same can be done on your local machine by configuring the services to run on different ports. The services
 will discover each other by name and will be able to interact.
 
-In this section, we will show you how to configure your local development environment to run two services and have them call each other.
-For that we will use two of our existing samples: https://github.com/lightbend/akka-javasdk/tree/main/samples/spring-event-sourced-customer-registry[`customer-registry`] and https://github.com/lightbend/akka-javasdk/tree/main/samples/spring-event-sourced-customer-registry-subscriber[`customer-registry-subscriber`].
+The default port is 9000, and only one of the services can run on the default port. The other service must be configured with another port.
 
-The *customer-registry* sample provides a service to register customers and the *customer-registry-subscriber* subscribes to an event stream produced by the *customer-registry* service, building a xref:views.adoc[View] from it.
-
-=== Customer Registry Sample
-
-The *customer-registry* service is left as is, to use the usual default port 9000.
-
-=== Customer Registry Subscriber Sample
-
-On the other hand, in the *customer-registry-subscriber* we will use port 9001 to avoid port conflicts with the
-*customer-registry* service. This port is configured in `akka.javasdk.dev-mode.http-port` property in
+This port is configured in `akka.javasdk.dev-mode.http-port` property in the
 `src/main/resources/application.conf` file.
 
 
@@ -108,40 +77,3 @@ include::java:example$event-sourced-customer-registry-subscriber/src/main/resour
 ----
 
 With both services configured, we can start them independently by running `mvn compile exec:java` in two separate terminals.
-
-From a third terminal, we can create a customer on *customer-registry* service.
-
-[.tabset]
-Linux or macOS::
-+
---
-[source,command line]
-----
-curl localhost:9000/customer/one \
-  --header "Content-Type: application/json" \
-  -XPOST \
-  --data '{"email":"test@example.com","name":"Test Testsson","address":{"street":"Teststreet 25",
-  "city":"Testcity"}}'
-----
---
-Windows 10+::
-+
---
-[source,command line]
-----
-curl localhost:9000/customer/one ^
-  --header "Content-Type: application/json" ^
-  -XPOST ^
-  --data '{"email":"test@example.com","name":"Test Testsson","address":{"street":"Teststreet 25",
-  "city":"Testcity"}}'
-----
---
-
-While watching the logs in *customer-registry-subscriber* service, we will see it receiving the customer created event. After that we can query its View.
-
---
-[source,command line]
-----
-curl localhost:9001/customer/by_name/Test%20Testsson
-----
---
