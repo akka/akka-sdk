@@ -32,4 +32,3 @@
 **** xref:operations:observability-exports.adoc[]
 *** xref:operations:integrate-cicd.adoc[]
 **** xref:operations:integrate-cicd-github-actions.adoc[]
-**** xref:operations:integrate-cicd-circleci.adoc[]

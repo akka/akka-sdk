@@ -1,4 +1,4 @@
-= Service communication
+= Invoking Akka services
 include::ROOT:partial$include.adoc[]
 
 For security reasons, _Services_ deployed to Akka have limited exposure by default. You can invoke services that have been deployed to Akka in the following ways:

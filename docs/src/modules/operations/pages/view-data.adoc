@@ -1,4 +1,4 @@
-= View service data
+= Viewing data
 include::ROOT:partial$include.adoc[]
 
 It is often helpful to see the data of your running service for debugging and administration purposes. With the Akka CLI, `akka`, you can view the entities that are stored in the durable state store. That allows you to see both the current state and the received events.
