@@ -26,11 +26,11 @@ class CustomersByCityIntegrationTest extends TestKitSupport {
   public void shouldGetCustomerByCity() {
     IncomingMessages customerEvents = testKit.getKeyValueEntityIncomingMessages("customer"); // <2>
 
-    Customer johanna = new Customer("1", "johanna@example.com", "Johanna",
+    Customer johanna = new Customer("johanna@example.com", "Johanna",
       new Address("Cool Street", "Porto"));
-    Customer bob = new Customer("2", "boc@example.com", "Bob",
+    Customer bob = new Customer( "boc@example.com", "Bob",
       new Address("Baker Street", "London"));
-    Customer alice = new Customer("3", "alice@example.com", "Alice",
+    Customer alice = new Customer("alice@example.com", "Alice",
       new Address("Long Street", "Wroclaw"));
 
 

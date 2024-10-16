@@ -37,20 +37,35 @@ public class CustomerEntity extends KeyValueEntity<Customer> { // <4>
   }
 
   public Effect<Done> changeName(String newName) {
-    Customer updatedCustomer = currentState().withName(newName);
-    return effects()
-            .updateState(updatedCustomer)
-            .thenReply(Done.done());
+    if (currentState() == null) {
+      return effects().error(
+          "No customer found for id '" + commandContext().entityId() + "'");
+    } else {
+      Customer updatedCustomer = currentState().withName(newName);
+      return effects()
+          .updateState(updatedCustomer)
+          .thenReply(Done.done());
+    }
   }
 
   public Effect<Done> changeAddress(Address newAddress) {
-    Customer updatedCustomer = currentState().withAddress(newAddress);
-    return effects().updateState(updatedCustomer).thenReply(Done.done());
+    if (currentState() == null) {
+      return effects().error(
+          "No customer found for id '" + commandContext().entityId() + "'");
+    } else {
+      Customer updatedCustomer = currentState().withAddress(newAddress);
+      return effects().updateState(updatedCustomer).thenReply(Done.done());
+    }
   }
 
   public Effect<Done> delete() {
-    logger.info("Deleting customer with id '{}'", commandContext().entityId());
-    return effects().deleteEntity().thenReply(Done.done());
+    if (currentState() == null) {
+      return effects().error(
+          "No customer found for id '" + commandContext().entityId() + "'");
+    } else {
+      logger.info("Deleting customer with id '{}'", commandContext().entityId());
+      return effects().deleteEntity().thenReply(Done.done());
+    }
   }
 
 }
