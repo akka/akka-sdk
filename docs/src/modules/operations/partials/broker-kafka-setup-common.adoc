@@ -13,4 +13,4 @@ When publishing messages to Kafka from Akka, the `ce-subject` attribute, if pres
 
 == Testing Akka eventing
 
-See xref:operations:message-brokers.adoc#_testing[Testing Akka eventing]
+See xref:operations:projects/message-brokers.adoc#_testing[Testing Akka eventing]

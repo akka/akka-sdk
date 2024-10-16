@@ -165,7 +165,7 @@ In addition, the Prometheus exporter supports <<TLS configuration>> and <<Custom
 
 === Splunk HEC
 
-The Splunk HTTP Event Collector protocol is supported for exporting both metrics and logs. It is used to export to the Splunk platform. It needs an endpoint and a splunk token. The Splunk token must be configured as a xref:operations:secrets.adoc[Akka secret], which then gets referenced from the observability configuration.
+The Splunk HTTP Event Collector protocol is supported for exporting both metrics and logs. It is used to export to the Splunk platform. It needs an endpoint and a splunk token. The Splunk token must be configured as a xref:operations:projects/secrets.adoc[Akka secret], which then gets referenced from the observability configuration.
 
 [.tabset]
 Descriptor::

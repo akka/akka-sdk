@@ -1,5 +1,5 @@
 
-You can xref:operations:invoke-service.adoc#_exposing_services_to_the_internet[expose the service to the internet]. A generated hostname will be returned from the expose command:
+You can xref:operations:services/invoke-service.adoc#_exposing_services_to_the_internet[expose the service to the internet]. A generated hostname will be returned from the expose command:
 
 [source,command line]
 ----

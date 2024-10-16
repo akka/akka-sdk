@@ -1,11 +1,11 @@
 = Configure a container registry
-:page-aliases: projects:container-registries.adoc[]
+:page-aliases: projects:projects/container-registries.adoc[]
 
 include::ROOT:partial$include.adoc[]
 
 Akka deploys services as container images. Your Akka services, and any dependencies they need, are sent to Akka as container images which can be produced using Maven (i.e. `mvn install`). Before deploying, the container must be made available for Akka in a container registry.
 
-Akka provides a built-in _Akka Container Registry_ which is readily set up for your use. Alternatively, even xref:operations:external-container-registries.adoc[external container registries] are supported with Akka.
+Akka provides a built-in _Akka Container Registry_ which is readily set up for your use. Alternatively, even xref:operations:projects/external-container-registries.adoc[external container registries] are supported with Akka.
 
 == Akka Container Registry
 

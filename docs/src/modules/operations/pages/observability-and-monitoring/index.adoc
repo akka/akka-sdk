@@ -7,8 +7,8 @@ Akka provides a host of observability and monitoring capabilities and is designe
 
 You can view logs, metrics, and traces via the following:
 
-* xref:operations:view-logs.adoc[]
-* xref:operations:controltower-metrics.adoc[]
-* xref:operations:controltower-traces.adoc[]
+* xref:operations:observability-and-monitoring/view-logs.adoc[]
+* xref:operations:observability-and-monitoring/metrics.adoc[]
+* xref:operations:observability-and-monitoring/traces.adoc[]
 
-To export this data into your other tools see xref:operations:observability-exports.adoc[] for more information.
+To export this data into your other tools see xref:operations:observability-and-monitoring/observability-exports.adoc[] for more information.

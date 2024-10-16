@@ -93,5 +93,5 @@ If you wish to resend an invitation, this can be done by first deleting the invi
 
 == See also
 
-- xref:manage-users.adoc[]
+- xref:organizations/manage-users.adoc[]
 - xref:reference:akka-cli/akka_roles.adoc#_see_also[`akka roles` commands]

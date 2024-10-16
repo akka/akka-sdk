@@ -3,7 +3,7 @@
 
 To build and publish the container image and then deploy the service, follow these steps:
 
-. If you haven't done so yet, sign in to your Akka account. If this is your first time using Akka, this will let you register an account, xref:operations:create-project.adoc[create your first project], and set this project as the default.
+. If you haven't done so yet, sign in to your Akka account. If this is your first time using Akka, this will let you register an account, xref:operations:projects/create-project.adoc[create your first project], and set this project as the default.
 +
 [source,command line]
 ----
@@ -18,7 +18,7 @@ mvn deploy akka:deploy
 ----
 IMPORTANT: If you time stamp your image. For example, `<dockerTag>${project.version}-${build.timestamp}</dockerTag>` you must always run both targets in one pass, i.e. `mvn deploy akka:deploy`. You cannot run `mvn deploy` first and then `mvn akka:deploy` because they will have different timestamps and thus different `dockerTag`s. This makes it impossible to reference the image in the repository from the second target.
 
-. You can xref:operations:deploy-service.adoc#_verify_service_status[verify the status of the deployed service] using:
+. You can xref:operations:services/deploy-service.adoc#_verify_service_status[verify the status of the deployed service] using:
 +
 [source,command line]
 ----
@@ -28,7 +28,7 @@ akka service list
 [#invoke]
 == Invoke your service
 
-Once the service has started successfully, you can xref:operations:invoke-service.adoc#_proxy_command[start a proxy locally] to access the service:
+Once the service has started successfully, you can xref:operations:services/invoke-service.adoc#_proxy_command[start a proxy locally] to access the service:
 
 [source,command line]
 ----

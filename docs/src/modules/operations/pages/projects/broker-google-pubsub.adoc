@@ -121,7 +121,7 @@ When publishing messages to Google Pub/Sub from Akka, the `ce-subject` attribute
 
 == Testing Akka eventing
 
-See xref:message-brokers.adoc#_testing[Testing Akka eventing].
+See xref:projects/message-brokers.adoc#_testing[Testing Akka eventing].
 
 == See also
 

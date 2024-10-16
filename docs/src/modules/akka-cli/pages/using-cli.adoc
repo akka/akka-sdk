@@ -126,7 +126,7 @@ Required flags:
 
 [NOTE]
 ====
-For more information about using the Akka Container Registry (ACR) or external container registries, see xref:operations:container-registries.adoc[].
+For more information about using the Akka Container Registry (ACR) or external container registries, see xref:operations:projects/container-registries.adoc[].
 ====
 
 == Managing Services
@@ -151,7 +151,7 @@ To deploy a service using a Docker image, run:
 akka services deploy my-service my-container-uri/container-name:tag-name
 ----
 
-Ensure you've set up your container registry credentials before deploying. For more details, see xref:operations:container-registries.adoc[container registry] page.
+Ensure you've set up your container registry credentials before deploying. For more details, see xref:operations:projects/container-registries.adoc[container registry] page.
 
 === Exposing a route for inbound traffic
 

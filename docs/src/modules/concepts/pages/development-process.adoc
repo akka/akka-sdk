@@ -101,7 +101,7 @@ You can test and debug your services by xref:java:running-locally.adoc[running t
 
 You use Docker to package your service and any of its dependencies for deployment. Distributing services as docker images makes Akka more cloud friendly and works well with containerization tools.
 
-See xref:operations:container-registries.adoc[container registries] for more information.
+See xref:operations:projects/container-registries.adoc[container registries] for more information.
 
 [#_deploy]
 == Deploy to akka.io
@@ -109,12 +109,12 @@ See xref:operations:container-registries.adoc[container registries] for more inf
 After testing locally, deploy your service to akka.io using the CLI or the Console. The following pages provide information about deployment:
 
 
-* xref:operations:projects.adoc[Akka projects]
-* xref:operations:deploy-service.adoc#_deploying_a_service[Deploying a packaged service]
+* xref:operations:projects/index.adoc[Akka projects]
+* xref:operations:services/deploy-service.adoc#_deploying_a_service[Deploying a packaged service]
 
 == Next steps
 
-Now that you have a project and have deployed it you should familairize yourself with operating an Akka project. See xref:operations:index.adoc[] for more information about operating Akka services.
+Now that you have a project and have deployed it you should familiarize yourself with operating an Akka project. See xref:operations:index.adoc[] for more information about operating Akka services.
 
 The following topics may also be of interest.
 

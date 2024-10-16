@@ -1,6 +1,4 @@
 = CI/CD with GitHub Actions
-:page-aliases: projects:integrate-cicd-github-actions.adoc[]
-
 include::ROOT:partial$include.adoc[]
 
 Use the Akka https://github.com/lightbend/setup-akka-action[setup-akka-action] GitHub Action to use GitHub Actions with your Akka project. The action supports commands for installing, authenticating, and invoking the Akka CLI. Releases are tracked https://github.com/lightbend/setup-akka-action/releases[on the GitHub releases page]. The action is present in the https://github.com/marketplace/actions/setup-akka-cli[GitHub marketplace].
@@ -9,7 +7,7 @@ Use the Akka https://github.com/lightbend/setup-akka-action[setup-akka-action] G
 
 To use the Akka GitHub Action, you'll need to:
 
-- Create a xref:operations:integrate-cicd.adoc#create_a_service_token[service token] for your project
+- Create a xref:operations:integrating-cicd/index.adoc#create_a_service_token[service token] for your project
 - Get the UUID of your project, which can be obtained by running `akka projects list`
 
 == Configure variables
@@ -58,7 +56,7 @@ jobs:
 
 == Example workflow
 
-The https://github.com/lightbend/akka-cicd-github-actions[lightbend/akka-cicd-github-actions] repository contains an example of a workflow that automatically builds, tests, and deploys a Node.js service to Akka.
+The https://github.com/akka/akka-cicd-github-actions[akka/akka-cicd-github-actions] repository contains an example of a workflow that automatically builds, tests, and deploys a Node.js service to Akka.
 
 The repository contains two workflows defined in `.yml` files:
 
@@ -79,9 +77,9 @@ The workflows additionally use variables to supply Docker credentials for buildi
 * `DOCKERHUB_USERNAME`
 * `DOCKERHUB_TOKEN`
 
-To use the https://github.com/lightbend/akka-cicd-github-actions[lightbend/akka-cicd-github-actions] example, copy the workflow files and save the required variables as GitHub https://docs.github.com/en/actions/reference/encrypted-secrets#creating-encrypted-secrets-for-a-repository[secrets {tab-icon}, window="new"]:
+To use the https://github.com/akka/akka-cicd-github-actions[akka/akka-cicd-github-actions] example, copy the workflow files and save the required variables as GitHub https://docs.github.com/en/actions/reference/encrypted-secrets#creating-encrypted-secrets-for-a-repository[secrets {tab-icon}, window="new"]:
 
-. Copy the workflow `.yml` files from the example repository https://github.com/lightbend/akka-cicd-github-actions/tree/main/.github/workflows[.github/workflows/ {tab-icon}, window="new"] directory into your project repository `.github/workflow` directory.
+. Copy the workflow `.yml` files from the example repository https://github.com/akka/akka-cicd-github-actions/tree/main/.github/workflows[.github/workflows/ {tab-icon}, window="new"] directory into your project repository `.github/workflow` directory.
 
 . In the project GitHub repository, use the saved values to create
 secrets for the `AKKA_TOKEN` and `AKKA_PROJECT_ID` variables.

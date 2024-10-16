@@ -1,0 +1,25 @@
+= Projects
+include::ROOT:partial$include.adoc[]
+
+Akka services are deployed to _Projects_ within an xref:operations:organizations/index.adoc[organization].
+
+== Details
+
+* From a security standpoint, projects are isolated from other projects even in the same organization.
+* Users are given access to projects on a per-project basis.
+* One or more services can be deployed to a project.
+* A project is located in one or more regions.
+* The services in a project are each packaged as container images for deployment.
+
+== Topics
+
+*** xref:operations:projects/create-project.adoc[]
+*** xref:operations:projects/manage-project-access.adoc[]
+*** xref:operations:projects/container-registries.adoc[]
+**** xref:operations:projects/external-container-registries.adoc[]
+*** xref:operations:projects/message-brokers.adoc[]
+**** xref:operations:projects/broker-aiven.adoc[Aiven for Kafka]
+**** xref:operations:projects/broker-aws-msk.adoc[AWS MSK Kafka]
+**** xref:operations:projects/broker-confluent.adoc[Confluent Cloud]
+**** xref:operations:projects/broker-google-pubsub.adoc[Google Pub/Sub]
+*** xref:operations:projects/secrets.adoc[]

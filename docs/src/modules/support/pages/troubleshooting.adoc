@@ -1,7 +1,6 @@
 = Troubleshooting
 
 include::ROOT:partial$include.adoc[]
-include::java:partial$attributes.adoc[]
 
 This page provides troubleshooting advice for errors and issues that you might encounter when using Akka. If come across an issue that is not listed here, let us know using any of the below options.
 
@@ -68,7 +67,7 @@ The same status message will appear within the System Lifecycle events window.
 *Options to resolve this issue include:*
 
 * Use a public repository
-* Supply your  xref:operations:container-registries.adoc#_a_private_container_registry[credentials], and validate that they are correct.
+* Supply your  xref:operations:projects/container-registries.adoc#_a_private_container_registry[credentials], and validate that they are correct.
 
 == How to resolve errors when my deployment cannot start
 

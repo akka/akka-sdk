@@ -10,7 +10,7 @@ In this guide, you will learn how to deploy Akka services using the Akka CLI. By
 Before deploying a service, make sure you have:
 
 * https://console.akka.io/register[Registered for an Akka account]
-* xref:operations:create-project.adoc[Created an Akka project]
+* xref:operations:projects/create-project.adoc[Created an Akka project]
 * xref:akka-cli:installation.adoc[Installed the Akka CLI]
 * A container image ready for deployment
 

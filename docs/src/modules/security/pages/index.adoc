@@ -15,13 +15,13 @@ The features for securing services that Akka supports are:
 
 == Project level
 
-Access to projects is managed by granting users roles. Different roles enable different capabilities when interacting with a project. To understand which roles exist and how to assign them, refer to the section xref:operations:manage-project-access.adoc[]. Project membership is managed via the `akka roles` commands.
+Access to projects is managed by granting users roles. Different roles enable different capabilities when interacting with a project. To understand which roles exist and how to assign them, refer to the section xref:operations:projects/manage-project-access.adoc[]. Project membership is managed via the `akka roles` commands.
 
-To allow for scripted access to projects, Akka supports authentication tokens. For details see xref:operations:integrate-cicd.adoc[].
+To allow for scripted access to projects, Akka supports authentication tokens. For details see xref:operations:integrating-cicd/index.adoc[].
 
-Akka also provides secret management for each project, typically used for passwords, login credentials, keys, etc. You can provide secrets to your services through environment variables. For details see xref:operations:secrets.adoc[] section.
+Akka also provides secret management for each project, typically used for passwords, login credentials, keys, etc. You can provide secrets to your services through environment variables. For details see xref:operations:projects/secrets.adoc[] section.
 
 
 == Organization level
 
-Similarly to projects, access to organizations is managed by granting users roles that provide different capabilities. To understand which roles exist and how to assign them, consult the section xref:operations:manage-users.adoc[]. Organization membership is managed via the `akka organization invitations` and `akka organization users` commands.
+Similarly to projects, access to organizations is managed by granting users roles that provide different capabilities. To understand which roles exist and how to assign them, consult the section xref:operations:organizations/manage-users.adoc[]. Organization membership is managed via the `akka organization invitations` and `akka organization users` commands.

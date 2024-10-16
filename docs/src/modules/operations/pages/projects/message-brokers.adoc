@@ -7,10 +7,10 @@ Message brokers are configured on Akka Project level. A project can have one bro
 
 == Broker services
 
-- xref:operations:broker-aiven.adoc[Aiven for Apache Kafka]
-- xref:operations:broker-aws-msk.adoc[AWS MSK Kafka]
-- xref:operations:broker-confluent.adoc[Confluent Cloud]
-- xref:operations:broker-google-pubsub.adoc[Google Pub/Sub]
+- xref:operations:projects/broker-aiven.adoc[Aiven for Apache Kafka]
+- xref:operations:projects/broker-aws-msk.adoc[AWS MSK Kafka]
+- xref:operations:projects/broker-confluent.adoc[Confluent Cloud]
+- xref:operations:projects/broker-google-pubsub.adoc[Google Pub/Sub]
 
 [#_testing]
 == Testing Akka eventing

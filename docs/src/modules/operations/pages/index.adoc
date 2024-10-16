@@ -8,40 +8,39 @@ In these sections, you can find information on:
 
 == Deploying and Managing Services
 
-Operating xref:operations:services.adoc[] provides an overview of what services are and how to manage them.
+Operating xref:operations:services/index.adoc[] provides an overview of what services are and how to manage them.
 
-* xref:operations:deploy-service.adoc[]
-* xref:operations:invoke-service.adoc[]
-* xref:operations:view-data.adoc[]
-* xref:operations:secrets.adoc[]
-* xref:operations:data-management.adoc[]
-* xref:operations:integrate-cicd.adoc[]
+* xref:operations:services/deploy-service.adoc[]
+* xref:operations:services/invoke-service.adoc[]
+* xref:operations:services/view-data.adoc[]
+* xref:operations:services/data-management.adoc[]
+* xref:operations:integrating-cicd/index.adoc[]
 
 == Observability and Monitoring
 
-xref:operations:observability-and-monitoring.adoc[] provides the tools and guidance you need to understand your running Akka services. 
+xref:operations:observability-and-monitoring/index.adoc[] provides the tools and guidance you need to understand your running Akka services.
 
-* xref:operations:view-logs.adoc[]
-* xref:operations:controltower-metrics.adoc[]
-* xref:operations:controltower-traces.adoc[]
-* xref:operations:observability-exports.adoc[]
+* xref:operations:observability-and-monitoring/view-logs.adoc[]
+* xref:operations:observability-and-monitoring/metrics.adoc[]
+* xref:operations:observability-and-monitoring/traces.adoc[]
+* xref:operations:observability-and-monitoring/observability-exports.adoc[]
 
 == Organizations
-xref:operations:organizations.adoc[] are the root of the Akka management tree. All services and artifacts live inside of them. They are primarily a logical construct.
+xref:operations:organizations/index.adoc[] are the root of the Akka management tree. All services and artifacts live inside of them. They are primarily a logical construct.
 
-* xref:operations:manage-users.adoc[]
-* xref:operations:regions.adoc[]
-* xref:operations:billing.adoc[]
+* xref:operations:organizations/manage-users.adoc[]
+* xref:operations:organizations/regions.adoc[]
+* xref:operations:organizations/billing.adoc[]
 
 == Projects
-xref:operations:projects.adoc[] in Akka are the place where services are deployed to. They can span xref:operations:regions.adoc[] and are the central management point for operating groups of xref:operations:services.adoc[] in Akka.
+xref:operations:projects/index.adoc[] in Akka are the place where services are deployed to. They can span xref:operations:organizations/regions.adoc[] and are the central management point for operating groups of xref:operations:services/index.adoc[] in Akka.
 
-* xref:operations:create-project.adoc[]
-* xref:operations:manage-project-access.adoc[]
-* xref:operations:container-registries.adoc[]
-** xref:operations:external-container-registries.adoc[]
-* xref:operations:message-brokers.adoc[]
-** xref:operations:broker-aiven.adoc[Aiven for Kafka]
-** xref:operations:broker-aws-msk.adoc[AWS MSK Kafka]
-** xref:operations:broker-confluent.adoc[Confluent Cloud]
-** xref:operations:broker-google-pubsub.adoc[Google Pub/Sub]
+* xref:operations:projects/create-project.adoc[]
+* xref:operations:projects/manage-project-access.adoc[]
+* xref:operations:projects/container-registries.adoc[]
+** xref:operations:projects/external-container-registries.adoc[]
+* xref:operations:projects/message-brokers.adoc[]
+** xref:operations:projects/broker-aiven.adoc[Aiven for Kafka]
+** xref:operations:projects/broker-aws-msk.adoc[AWS MSK Kafka]
+** xref:operations:projects/broker-confluent.adoc[Confluent Cloud]
+** xref:operations:projects/broker-google-pubsub.adoc[Google Pub/Sub]

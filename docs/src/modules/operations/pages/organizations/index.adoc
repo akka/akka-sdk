@@ -7,10 +7,10 @@ To switch between organizations, you must specify the target organization's cont
 
 == Key Concepts
 
-* xref:operations:manage-users.adoc[*User Membership*]: A user can belong to multiple organizations, but membership does not automatically grant access to the organization’s projects.
-* xref:operations:regions.adoc[*Regions*]: Each organization has access to specific regions. Projects created within the organization are located in one or more of these regions.
-* xref:operations:billing.adoc[*Billing*]: Billing is handled at the organization level, with all costs collected and paid per organization.
-* xref:operations:manage-project-access.adoc[*Role-Based Access*]: Membership and project access within an organization are managed through role bindings.
+* xref:organizations/manage-users.adoc[*User Membership*]: A user can belong to multiple organizations, but membership does not automatically grant access to the organization’s projects.
+* xref:organizations/regions.adoc[*Regions*]: Each organization has access to specific regions. Projects created within the organization are located in one or more of these regions.
+* xref:organizations/billing.adoc[*Billing*]: Billing is handled at the organization level, with all costs collected and paid per organization.
+* xref:projects/manage-project-access.adoc[*Role-Based Access*]: Membership and project access within an organization are managed through role bindings.
 
 == Details
 
@@ -34,11 +34,11 @@ NAME        ID                                     ROLES
 acme        1a4a9d5d-1234-5678-910a-9c8fb3700da7   superuser
 ----
 
-NOTE: You can refer to the organization in `akka` commands using either the "friendly name" or the "ID" with the `--organization` flag. See the page on xref:operations:manage-users.adoc[managing organization users] to find more, including the use of organization roles.
+NOTE: You can refer to the organization in `akka` commands using either the "friendly name" or the "ID" with the `--organization` flag. See the page on xref:organizations/manage-users.adoc[managing organization users] to find more, including the use of organization roles.
 
 == Topics
 
-- xref:operations:manage-users.adoc[]
-- xref:operations:regions.adoc[]
-- xref:operations:billing.adoc[]
+- xref:organizations/manage-users.adoc[]
+- xref:organizations/regions.adoc[]
+- xref:organizations/billing.adoc[]
 - xref:support:paid-plans.adoc[]

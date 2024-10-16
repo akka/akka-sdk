@@ -3,7 +3,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-When Akka services are xref:operations:invoke-service.adoc#_exposing_services_to_the_internet[exposed to the internet using routes], all requests are served using Transport Layer Security (TLS). By default Akka will automatically provision a server certificate for you using https://letsencrypt.org[Let's Encrypt].
+When Akka services are xref:operations:services/invoke-service.adoc#_exposing_services_to_the_internet[exposed to the internet using routes], all requests are served using Transport Layer Security (TLS). By default Akka will automatically provision a server certificate for you using https://letsencrypt.org[Let's Encrypt].
 
 Using TLS ensures that a client can trust that the server they are connecting to is the server that they intended to connect to, and ensures that the connection is encrypted and can't be tampered with. However, the default configuration doesn't offer the server any guarantees about the identity of the client. By default, anyone on the internet can connect to your exposed services.
 
@@ -52,7 +52,7 @@ akka secret create tls-ca my-root-ca --cert ./my-root-ca.crt
 
 === Configuring a route to use the secret
 
-We now need to configure a route to use a secret. Routes can be created by following the instructions in xref:operations:invoke-service.adoc#_exposing_services_to_the_internet[exposing services to the internet].
+We now need to configure a route to use a secret. Routes can be created by following the instructions in xref:operations:services/invoke-service.adoc#_exposing_services_to_the_internet[exposing services to the internet].
 
 [.tabset]
 CLI with command line arguments::
@@ -111,7 +111,7 @@ Unless you have defined HTTP transcoding rules for the root path, your service i
 
 If you wish to validate more than just that the certificate was signed by your configured CA, and what to validate the identity attached to the certificate, you can do that by specifying assertions to run against the subject of the client certificate. The client certificates subject can either be the Common Name (CN) in the Subject field of the certificate, or a DNS Subject Alternative Name in the certificate.
 
-Configuration client certificate validation can be done either with command line arguments or xref:operations:invoke-service.adoc#descriptor[route descriptors], though route descriptors are a little more powerful:
+Configuration client certificate validation can be done either with command line arguments or xref:operations:services/invoke-service.adoc#descriptor[route descriptors], though route descriptors are a little more powerful:
 
 [.tabset]
 CLI with command line arguments::

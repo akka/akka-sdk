@@ -4,7 +4,7 @@
 
 [[action]]Action:: A serverless function that is executed based on a trigger. The trigger could be an HTTP or gRPC request or a stream of messages or events.
 
-[[CICD]]CI/CD:: You can deploy <<service>>s using a Continuous Integration/Continuous Delivery service. See xref:operations:integrate-cicd.adoc[] for instructions.
+[[CICD]]CI/CD:: You can deploy <<service>>s using a Continuous Integration/Continuous Delivery service. See xref:operations:integrating-cicd/index.adoc[] for instructions.
 
 [[component]]Component:: The SDKs support <<Entity>>, <<View>>, <<Action>> and <<Workflow>> components. These components enable you to implement your business logic.
 
