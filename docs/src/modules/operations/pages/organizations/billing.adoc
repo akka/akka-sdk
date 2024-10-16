@@ -53,9 +53,9 @@ akka organization users add-binding --organization <organization name> \
   --email <email address> --role billing-admin
 ----
 
-For more details on managing users and their roles, see the xref:manage-users.adoc[] section.
+For more details on managing users and their roles, see the xref:organizations/manage-users.adoc[] section.
 
 == See also
 
-- xref:manage-users.adoc[]
+- xref:organizations/manage-users.adoc[]
 - https://akka.io/pricing#[Akka Pricing{tab-icon}, window="new"]

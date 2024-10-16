@@ -6,7 +6,7 @@ This section introduces key concepts to be aware of when developing Akka applica
 
 The xref:architecture-model.adoc[Architectural Model] explains the principles by which Akka applications are structured and introduces the _Components_ used to building _Services_.
 
-Akka manages the operational aspects of your application. To learn about how Akka Services run in distributed infrastructure and may span multiple _Regions_, see xref:deployment-model.adoc[Deployment Model]. Once deployed, Akka's xref:control-tower.adoc[Telemetry and Monitoring] provides operational insights into your deployment.
+Akka manages the operational aspects of your application. To learn about how Akka Services run in distributed infrastructure and may span multiple _Regions_, see xref:deployment-model.adoc[Deployment Model]. Once deployed, Akka's xref:operations:observability-and-monitoring/index.adoc[Telemetry and Monitoring] provides operational insights into your deployment.
 
 When you are familiar with the main aspects for Akka applications, continue with xref:concepts:development-process.adoc[Development Process] to understand the steps involved to implement a _Service_.
 

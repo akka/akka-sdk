@@ -15,7 +15,7 @@ To create a new project, follow the steps below:
 --
 CLI::
 +
-. If you haven't done so yet, xref:akka:install-akka.adoc[install the Akka CLI] and log into your account:
+. If you haven't done so yet, xref:akka-cli:installation.adoc[install the Akka CLI] and log into your account:
 +
 ----
 akka auth login

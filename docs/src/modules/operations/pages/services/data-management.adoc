@@ -75,7 +75,7 @@ Having created the policy, you can now attach the policy to the user you created
 
 Now that the user has the right permissions, you need to create an access key for that user. Instructions for doing this can be found https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html[here {tab-icon}, window="new"]. Copy the access key ID and secret access key for use in the next step.
 
-==== Create a Akka secret with the access key
+==== Create an Akka secret with the access key
 
 Now the access key that you created needs to be given to Akka. This can be done by creating a Akka secret. We're going to call this secret `my-credentials`:
 

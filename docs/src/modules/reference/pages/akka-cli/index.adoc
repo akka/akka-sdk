@@ -36,7 +36,7 @@ The xref:reference:akka-cli/akka_auth.adoc[] command offers these options:
 * xref:reference:akka-cli/akka_auth_use-token.adoc[akka auth use-token]
 
 == Enable auto-completion for your shell
-The xref:reference:akka-cli/akka_completion.adoc[akka completion] command generates auto-completion configuration for common shells. See xref:kalix:command-completion.adoc[Enable command completion] for more information.
+The xref:reference:akka-cli/akka_completion.adoc[akka completion] command generates auto-completion configuration for common shells. See xref:akka-cli:command-completion.adoc[Enable command completion] for more information.
 
 == Manage local context
 The `akka config` command is used to display and set configuration contexts and values that apply to subsequent commands. Configuration settings are stored in a file on your local system, by default at `.kalix/config.yaml` in your home directory.
