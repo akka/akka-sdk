@@ -3,27 +3,29 @@ include::ROOT:partial$include.adoc[]
 
 == Overview
 
-All Akka projects are deployed to a particular _region_. Regions are related to the backend infrastructure used by Akka to support the project. They:
+Akka projects are deployed to specific regions, which are tied to the backend infrastructure Akka uses to support projects. Regions:
 
-* are associated with a particular cloud provider  (e.g. GCP, AWS)
-* exist in a particular geographic region  (e.g. Europe, North America)
-* may have particular performance characteristics
+* Are linked to a particular cloud provider (e.g., GCP, AWS)
+* Exist in specific geographic locations (e.g., Europe, North America)
+* May have unique performance characteristics
+* Can provide varying levels of isolation (e.g., dedicated plans offer isolated regions)
 
-They can also provide a degree of isolation. Dedicated plans provide an isolated region for example.
+=== For Organizations
+When an organization is created, it is assigned access to one or more regions. A region must be specified when creating a new project within the organization.
 
-== For organizations
-
-When an organization is created, it is associated with one or more regions. One of these regions must be specified when creating a new project for the organization.
-
-For example, assume that the `myorg` organization has been granted access to the `aws-us-east-2` region. The following command would create a new project for that organization, in that region:
+For example, if the organization `myorg` has access to the region `aws-us-east-`2, you would create a project in that region using the following command:
 
 [source,command window]
 ----
 akka project new myproject --organization myorg --region aws-us-east-2
 ----
 
-If you don't remember what regions the organization has access to, there are two choices. If you don't provide the `--region` flag to the `project new` command, the error will inform you of the available regions. For example:
+=== Finding Available Regions
 
+If you're unsure which regions your organization has access to, there are two options:
+
+1. *Error Prompt*: If you omit the `--region` flag when creating a new project, Akka will inform you of the available regions in the error message. For instance:
++
 [source,command window]
 ----
 $ akka project new myproject --organization myorg
@@ -31,11 +33,17 @@ $ akka project new myproject --organization myorg
 --region is a required flag. The following regions are available: [aws-us-east-2]
 ----
 
-You can also inquire more directly with the `regions` command. For example:
-
+2. *List Regions Command*: You can list the regions directly using the following command:
++
 [source,command window]
 ----
-$ akka regions list --organization myorg
+akka regions list --organization myorg
+----
++
+Example output:
++
+[source,command window]
+----
 NAME            ORGANIZATION
 aws-us-east-2   db805ff5-4fbd-4442-ab56-6e6a9a3c200a
 ----

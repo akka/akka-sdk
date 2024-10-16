@@ -2,11 +2,11 @@
 include::ROOT:partial$include.adoc[]
 :page-supergroup-console-cli: Interface
 
-Access to organizations is managed by granting users roles. The following roles exist: superuser, project-admin, billing-admin and member.
+Access to an organization is controlled by assigning roles to users. The available roles are: *superuser*, *project-admin*, *billing-admin*, and *member*.
 
 [cols="1,1,1,1,1"]
 |===
-|Role:                                |superuser |project-admin |billing-admin| member
+|Permission                           |superuser |project-admin |billing-admin| member
 
 |View organization users              |✅         |✅            |✅    |✅    
 |Manage organization users            |✅         |❌            |❌    |❌   
@@ -18,30 +18,34 @@ Access to organizations is managed by granting users roles. The following roles 
 |View organization billing data       |❌         |❌            |✅    |❌ 
 |===
 
-Note that project operations can be accessed by xref:operations:manage-project-access.adoc[granting project roles]. An organization superuser has access to a subset of these permissions, including the ability to grant anyone (including themselves) roles on the project. When a user creates a project, they are automatically granted admin access to that project.
+NOTE: Project-level operations are accessed via project-specific roles. A superuser has a subset of project permissions, including the ability to assign roles (including to themselves). When a user creates a project, they are automatically granted admin access to it. (see xref:operations:manage-project-access.adoc[granting project roles])
 
-The purpose of the member role is to allow admins of the organization's projects to add users directly to their projects without needing to invite them to the project.
+The *member* role allows project admins to add users to their projects without needing to invite them to the organization.
 
 == Listing role bindings
 [[managing-organization-users-list-role-bindings]]
 
-You can list the role bindings in an organization by running `akka organization users list-bindings`:
+You can list role bindings within an organization using the following command:
 
 [source,command window]
 ----
-$ akka organization users list-bindings --organization <organization name>
+akka organization users list-bindings --organization <organization name>
+----
+
+Example output:
+[source]
+----
 ROLE BINDING ID                        ROLE        USERNAME       EMAIL                      NAME
 fd21044c-b973-4220-8f65-0f7d317bb23b   superuser   jane.citizen   jane.citizen@example.com   Jane Citizen
 120b75b6-6b53-4ebb-b23b-2272be974966   member      john.smith     john.smith@example.com     John Smith
 ----
 
-This shows a list of all the role bindings in the organization.
-
 == Granting a role
 
-There are two ways to grant a role to a user. The first is to invite them to join the organization using their email address.
+You can grant a role to a user in two ways:
 
-To send an invitation, use the `akka organizations invitations create` command:
+==== 1. Invite a User by Email
+Send an email invitation with the following command:
 
 [source,command window]
 ----
@@ -49,20 +53,21 @@ akka organizations invitations create --organization <organization name> \
   --email <email address> --role <role>
 ----
 
-The user will then receive an email inviting them to join the organization. If they accept the invitation, a role binding will be created for them with the specified role.
+The user will receive an email to join the organization. Once accepted, the role binding will be created.
 
-If the user is already a member of the organization, and you want to grant them additional roles, you can add the roles directly without sending them an invite and requiring them to accept it. Do this by either passing their username or email address to the `akka organization users add-binding` command.
 
-To add a role to a user by email address:
+==== 2. Add a Role Directly
 
+If the user is already a member, you can assign roles directly:
+
+* By e-mail:
 [source,command window]
 ----
 akka organization users add-binding --organization <organization name> \
   --email <email address> --role <role>
 ----
 
-To add a role to a user by username:
-
+* By username:
 [source,command window]
 ----
 akka organizations users add-binding --organization <organization name> \
@@ -71,7 +76,7 @@ akka organizations users add-binding --organization <organization name> \
 
 == Deleting a role binding
 
-A role binding can be deleted by referencing its role binding ID. The role binding ID can be obtained by <<managing-organization-users-list-role-bindings,listing organization users>>. Once you have the role binding ID, you can delete the role binding using `akka organizations users delete-binding`:
+To delete a role binding, first list the users to get the role binding ID. Then, use the following command:
 
 [source,command window]
 ----
@@ -81,24 +86,30 @@ akka organizations users delete-binding --organization <organization name> \
 
 == Managing invitations
 
-You can view a list of outstanding invitations by running `akka organizations invitations list`:
+View outstanding invitations:
+
 
 [source,command window]
 ----
-$ akka organizations invitations list --organization <organization name>
+akka organizations invitations list --organization <organization name>
+----
+
+Example output:
+[source]
+----
 EMAIL                      ROLE
 jane.citizen@example.com   member
 ----
 
-Invitations will automatically expire after 7 days. You can manually cancel an invitation by running `akka organizations invitations delete`:
+Invitations expire after 7 days, but you can cancel them manually:
 
 [source,command window]
 ----
-akka organizations invitations cancel --organization <organization name>
+akka organizations invitations cancel --organization <organization name> \
   --email <email address>
 ----
 
-If you wish to resend an invitation, this can be done by first cancelling the invitation, and then inviting the user again.
+To resend an invitation, cancel the previous one and reissue the invite.
 
 == See also
 

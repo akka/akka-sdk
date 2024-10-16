@@ -1,40 +1,40 @@
 = Organizations
-:page-aliases: organizations:organizations.adoc[]
-
 include::ROOT:partial$include.adoc[]
 
-The _Organization_ is the root of the management hierarchy in Akka. It is container for all xref:operations:projects.adoc[] where services are deployed. The organization services as a context for users within it. When working in https://console.akka.io[Akka Console] or the Akka CLI you will operate in this context. If you want to switch organizations you must specify the organization context to which you want to switch.
+An _Organization_ in Akka is the root of the management hierarchy and serves as a container for all _Projects_ where _Services_ are deployed. It provides the context in which users operate, both in the _Akka Console_ and _Akka CLI_.
 
-An organization has access to a set of xref:operations:regions.adoc[regions]. Projects created in the organization will be located in one or more of these regions.
+To switch between organizations, you must specify the target organization's context.
 
-A user can be a member of one or more organizations; being a member does not automatically give the user access to the projects owned by the organization.
+== Key Concepts
 
-xref:operations:manage-users.adoc[Membership in an organization] and xref:operations:manage-project-access.adoc[access to its projects] are controlled using role bindings.
-
-xref:operations:billing.adoc[Billing] data is collected and paid for per organization.
+* xref:operations:manage-users.adoc[*User Membership*]: A user can belong to multiple organizations, but membership does not automatically grant access to the organization’s projects.
+* xref:operations:regions.adoc[*Regions*]: Each organization has access to specific regions. Projects created within the organization are located in one or more of these regions.
+* xref:operations:billing.adoc[*Billing*]: Billing is handled at the organization level, with all costs collected and paid per organization.
+* xref:operations:manage-project-access.adoc[*Role-Based Access*]: Membership and project access within an organization are managed through role bindings.
 
 == Details
 
-* An Organization Administrator is created that can add or invite other users to the organization with various roles.
-
-* A project is owned by one Organization.
-
-* A user can be a member of any number of organizations. Users must ensure that any projects they create are associated with the correct organization.
-
-* An organization is associated with one or more Akka regions. Projects created for the organization are assigned to one of these regions.
+* *Organization Administrator*: The first user of an organization is an Organization Administrator, who can invite or add users with different roles.
+* *Project Ownership*: Each project is owned by a single organization. Users must ensure that their projects are associated with the correct organization.
+* *Region Assignment*: Projects created for an organization are assigned to one or more of the organization's available regions.
 
 == Usage
 
-To determine which organizations the current user is a member of use the `organizations list` command. For example:
+You can determine which organizations the current user is a member of using the following command:
 
 [source,command window]
 ----
-$ akka organizations list
-NAME        ID                                     ROLES
-myorg       1a4a9d5d-1234-5678-910a-9c8fb3700da7   superuser
+akka organizations list
 ----
 
-Note that you can refer to the organization in `akka` commands using either the "friendly name" or the "ID."  See the page on xref:operations:manage-users.adoc[managing organization users] to find more, including the use of organization roles.
+Example output:
+[source]
+----
+NAME        ID                                     ROLES
+acme        1a4a9d5d-1234-5678-910a-9c8fb3700da7   superuser
+----
+
+NOTE: You can refer to the organization in `akka` commands using either the "friendly name" or the "ID" with the `--organization` flag. See the page on xref:operations:manage-users.adoc[managing organization users] to find more, including the use of organization roles.
 
 == Topics
 
