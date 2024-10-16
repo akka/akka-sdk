@@ -2,7 +2,7 @@
 Ack
 ACLs
 Aiven
-Akka
+[Aa]kka
 allowMethods
 allowOrigins
 [Aa]ntora
@@ -84,7 +84,7 @@ serverCertificate
 Serverless
 serverless
 serviceAccountSecret
-sharding
+[Ss]harding
 signup
 smallstep
 sourceType
