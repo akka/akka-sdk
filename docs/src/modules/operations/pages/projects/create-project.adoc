@@ -1,15 +1,27 @@
 = Create a new project
 include::ROOT:partial$include.adoc[]
 
+When creating a new project in Akka, you’ll need to provide a *name*, an optional *description*, and select a *region*. The region determines both the cloud provider and geographical location where your project will be hosted.
+
+
 == Project names
 
-A Akka project must have a name and can have a description. It is good practice to name and describe the project so that you and other project members can identify it and its purpose.
+* Use a short but meaningful name that reflects the purpose of the project.
+* Keep descriptions short and clear to help collaborators understand the project’s context.
 
-A project is created in a region determining the cloud provider and the geographical region within that provider.
+Project Naming Requirements:
 
-== Create a new project
+* Maximum 63 characters
+* Can include: lowercase letters, numbers, hyphens (`-`)
+* Must not: start or end with hyphens
+* Cannot include: underscores, spaces, or non-alphanumeric characters
 
-To create a new project, follow the steps below:
+== Selecting a region
+Regions define the cloud provider and geographical location where your project will be deployed. Consider proximity to your users for lower latency and any compliance or performance requirements when selecting a region.
+
+== How to create a new project
+
+To create a new project, use either the Akka CLI or the https://console.akka.io[Akka Console {tab-icon}, window="new"]:
 
 [.tabset]
 --
@@ -17,57 +29,61 @@ CLI::
 +
 . If you haven't done so yet, xref:akka-cli:installation.adoc[install the Akka CLI] and log into your account:
 +
+[source,command window]
 ----
 akka auth login
 ----
++
+. To list available regions and organizations, use the following command:
++
+[source,command window]
+----
+akka regions list --organization=<org>
+----
 
-. Create a project by substituting your project name and placing a short project description name in quotes, followed by the `region` flag and last the `organization` flag. Check for the available regions with `akka regions list`. The region list command will also print the organizations.
+. Create a project by substituting your project name and placing a short project description name in quotes, followed by the `region` flag and the `organization` flag.
 +
 
+[source,command window]
 ----
-akka projects new <projectname> "project description" --region=<region> --organization=<org>
+akka projects new <project name> "<project description>" --region=<region> --organization=<org>
 ----
 +
 
 For example:
 +
-
+[source,command window]
 ----
-akka projects new my-akka-proj "My Akka Project" --region=gcp-us-east1 --organization=my-organization
+akka projects new my-akka-project "My Akka Project" --region=gcp-us-east1 --organization=my-organization
 ----
 +
 
-When the command is successfully completed a response is returned similar to the following:
+Example output:
 +
-
+[source]
 ----
-NAME           DESCRIPTION   ID                                     OWNER                                       REGION
-my-akka-proj   "My ..        xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx   id:"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"   gcp-us-east1
+NAME              DESCRIPTION   ID                                     OWNER                                       REGION
+my-akka-project   "My ..        xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx   id:"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"   gcp-us-east1
 
-'my-akka-proj' is now the currently active project.
+'my-akka-project' is now the currently active project.
 ----
 UI::
 +
-. Log into the https://console.akka.io[Akka Console]
-:TODO: Show project create in the Console
-. Navigate to
+. Log in to https://console.akka.io[Akka Console {tab-icon}, window="new"]
+. Navigate to the https://console.akka.dev/projects[Projects {tab-icon}, window="new"] section.
+. Click *Create a project* and fill in the required fields, including name, description, region, and organization.
++
+image::console-create-project.png[alt="Create a project"]
+. Review and click *Create Project* to finalize your project.
++
+
+The new project will show as a card in the *Project* section.
 --
 
+You may now continue and xref:services/deploy-service.adoc[deploy a Service] in the new Project.
 
-[NOTE]
---
-Project names must conform to the following:
+== See also
 
-* Up to 63 characters
-* Can include:
-** lowercase letters
-** numbers
-** hyphens (-)
-* Must not:
-** start or end with hyphens (-)
-* Cannot include:
-** underscores (_)
-** spaces
-** non-alphanumeric characters
---
-
+- xref:services/deploy-service.adoc[]
+- xref:reference:akka-cli/akka_projects_new.adoc#_see_also[`akka projects new` commands]
+- xref:reference:akka-cli/akka_projects_get.adoc#_see_also[`akka projects get` commands]

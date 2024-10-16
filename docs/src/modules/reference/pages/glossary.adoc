@@ -44,7 +44,9 @@ An _event handler_ is the only piece of code that is allowed to _update_ the sta
 
 [[kalix_store]]Kalix store:: A kalix store is an abstraction over a data store, typically a database. It is represented in Kubernetes as a `KalixStore` resource. Kalix manages the stateful store for you.
 
-[[protocol-first]]Protocol-first development:: A style of developing Kalix services in which you start by defining your API and data models using protobuf and then, making use of our code generators you are able to follow up and provide specific domain implementations.
+[[project]]Project:: A project is the root of one or more services that are meant to be deployed and run together. The project is a logical container for these services and provides common management capabilities.
+
+[[protocol-first]]Protocol-first development:: A style of developing Kalix services in which you start by defining your API and data models using protobuf and then, making use of our code generators you are able to follow-up and provide specific domain implementations. See xref:concepts:api-description.adoc#_protocol_first_approach[API description] section.
 
 [[runtime]]Runtime:: When you deploy a <<service>>, Kalix deploys a Runtime along with it. The runtime manages entity state, and exposes the service implementation to the rest of the system. It translates incoming messages to commands and sends them to the service. The runtime also forms a cluster with other instances of the same service, allowing advanced distributed state management features such as sharding, replication and addressed communication between instances.
 

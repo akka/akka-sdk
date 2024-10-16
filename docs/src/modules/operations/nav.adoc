@@ -2,14 +2,14 @@
 
 ** xref:operations:index.adoc[]
 *** xref:operations:organizations/index.adoc[]
-**** xref:operations:organizations/manage-users.adoc[]
+**** xref:operations:organizations/manage-users.adoc[Manage users]
 **** xref:operations:organizations/regions.adoc[]
 **** xref:operations:organizations/billing.adoc[]
 
 
 *** xref:operations:projects/index.adoc[]
-**** xref:operations:projects/create-project.adoc[]
-**** xref:operations:projects/manage-project-access.adoc[]
+**** xref:operations:projects/create-project.adoc[Create]
+**** xref:operations:projects/manage-project-access.adoc[Manage users]
 **** xref:operations:projects/container-registries.adoc[]
 ***** xref:operations:projects/external-container-registries.adoc[]
 **** xref:operations:projects/message-brokers.adoc[]
