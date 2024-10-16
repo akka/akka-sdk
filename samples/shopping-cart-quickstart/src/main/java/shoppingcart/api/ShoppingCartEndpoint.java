@@ -15,6 +15,7 @@ import shoppingcart.domain.ShoppingCart;
 import java.util.concurrent.CompletionStage;
 
 // tag::all[]
+// tag::class[]
 
 // Opened up for access from the public internet to make the sample service easy to try out.
 // For actual services meant for production this must be carefully considered, and often set more limited
@@ -29,6 +30,9 @@ public class ShoppingCartEndpoint {
     this.componentClient = componentClient;
   }
 
+  // end::class[]
+
+  // tag::get[]
   @Get("/{cartId}")
   public CompletionStage<ShoppingCart> get(String cartId) {
     return componentClient.forEventSourcedEntity(cartId) // <2>
@@ -36,6 +40,9 @@ public class ShoppingCartEndpoint {
         .invokeAsync(); // <3>
   }
 
+  // end::get[]
+
+  // tag::addItem[]
   @Put("/{cartId}/item")
   public CompletionStage<HttpResponse> addItem(String cartId, ShoppingCart.LineItem item) {
     return componentClient.forEventSourcedEntity(cartId)
@@ -44,6 +51,8 @@ public class ShoppingCartEndpoint {
       .thenApply(__ -> HttpResponses.ok()); // <4>
   }
   // end::endpoint-component-interaction[]
+
+  // end::addItem[]
 
   @Delete("/{cartId}/item/{productId}")
   public CompletionStage<HttpResponse> removeItem(String cartId, String productId) {
@@ -61,5 +70,7 @@ public class ShoppingCartEndpoint {
       .thenApply(__ -> HttpResponses.ok());
   }
 
+  // tag::class[]
 }
+// end::class[]
 // end::all[]

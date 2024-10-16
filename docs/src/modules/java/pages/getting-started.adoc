@@ -62,56 +62,50 @@ mvn archetype:generate ^
 Akka has different kinds of components that you can use to implement your application.
 The list of components are:
 
-* xref:java:key-value-entities.adoc[Key Value Entities]
 * xref:java:event-sourced-entities.adoc[Event Sourced Entities]
+* xref:java:key-value-entities.adoc[Key Value Entities]
 * xref:java:views.adoc[Views]
 * xref:java:timed-actions.adoc[Timed Actions]
 * xref:java:consuming-producing.adoc[Consumers]
 
-For this *Getting started* walk-through, we will implement a Counter based on a Key Value Entity. It's a simple counter
-that receives commands to increase the counter.
+For this *Getting started* walk-through, we will implement a Shopping Cart based on an Event Sourced Entity.
 
-.src/main/java/com/example/application/CounterEntity.java
-[source,java]
-----
-include::example$key-value-counter/src/main/java/com/example/application/CounterEntity.java[tags=declarations]
-----
-<1> Every Entity must be annotated with `@ComponentId` with a stable unique identifier for this entity type.
-<2> The `CounterEntity` class should extend `akka.javasdk.keyvalueentity.KeyValueEntity`.
-<3> The initial state of each counter is defined with value 0.
+Through our "Shopping Cart" Event Sourced Entity we expect to manage our cart, adding and removing items as we please. Being event-sourced means it will represent changes to state as a series of domain events. So let’s have a look at what kind of model we expect to store and the events our entity might generate.
 
-Akka will automatically find annotated components annotated with `@ComponentId` and make them available for use in your application.
+=== Define the domain model
 
-We can now add further commands to allowing for modifying the counter:
+First, define the domain class `ShoppingCart`, its domain events  in package `shoppingcart.domain` and some basic business logic.
 
-.src/main/java/com/example/application/CounterEntity.java
 [source,java,indent=0]
+.src/main/java/shoppingcart/domain/ShoppingCart.java
 ----
-include::example$key-value-counter/src/main/java/com/example/application/CounterEntity.java[tags=behaviour]
+include::java:example$shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCart.java[tag=domain]
 ----
-<1> Set the new counter value to the value received from the command request.
-<2> Reply with the new counter value wrapped within a `Counter` object.
-<3> `plusOne` increases the counter by adding 1 to the current state.
-<4> Finally, using the Effect API, you instruct Akka to persist the new state, and build a reply with the wrapper object.
 
-The `Counter` domain object is a Java record:
+=== Define the entity
 
-.src/main/java/com/example/domain/Counter.java
+The Event Sourced Entity is defined in the `ShoppingCartEntity`.
+
+Create a class named `ShoppingCartEntity` in package `shoppingcart.application`.
+
 [source,java,indent=0]
+.src/main/java/shoppingcart/application/ShoppingCartEntity.java
 ----
-include::example$key-value-counter/src/main/java/com/example/domain/Counter.java[tags=domain]
+include::java:example$shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java[tags=class;getCart;addItem]
 ----
 
-To expose a HTTP API of the counter we add an endpoint:
+=== Define the external API
 
-.src/main/java/com/example/api/CounterEndpoint.java
+The `Shopping Cart` API is defined by the `ShoppingCartEndpoint`.
+
+Create a class named `ShoppingCartEndpoint` in package `shoppingcart.api`.
+
+
 [source,java,indent=0]
+.src/main/java/shoppingcart/api/ShoppingCartEndpoint.java
 ----
-include::example$key-value-counter/src/main/java/com/example/api/CounterEndpoint.java[tags=endpoint]
+include::java:example$shopping-cart-quickstart/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java[tags=class,get,addItem]
 ----
-
-The project also includes a dependency on the *Akka SDK Test Kit*. Please consult the specific documentation page
-for each type of component to learn more about writing unit tests and integration tests for your application.
 
 == Run locally
 
@@ -126,11 +120,21 @@ This command will start your Akka service.
 
 Once successfully started, any defined endpoints should be available at `localhost:9000`.
 
-You can try sending a request using https://curl.se[curl], a minimal command line HTTP client:
+You can try sending a request using https://curl.se[curl], a minimal command line HTTP client.
+
+Add an item:
 
 [source, command window]
 ----
-curl -XPOST -H "Content-Type: application/json" localhost:9000/counter/foo/plus-one
+curl -i -XPUT -H "Content-Type: application/json" localhost:9000/shopping-cart/123/item -d '
+{"productId":"akka-tshirt", "name":"Akka Tshirt", "quantity": 10}'
+----
+
+Get cart state:
+
+[source, command window]
+----
+curl localhost:9000/shopping-cart/123
 ----
 
 == Deploy to akka.io

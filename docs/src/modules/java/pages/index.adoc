@@ -24,11 +24,10 @@ Apache Maven:: https://maven.apache.org/[Apache Maven {tab-icon}, window="new"] 
 
 == A simple service
 
-:TODO: Graph view of the customer registry service with endpoints, entities and views.
+:TODO: Graph view of the shopping cart service
 
 This tiny service exposes its REST API (POST, PATCH, GET,...) through Endpoints.
 The data and changes to it are defined as Java records describing the domain that are managed as an Entity.
-To query the data, the service offers Views.
 
 == Getting Started
 

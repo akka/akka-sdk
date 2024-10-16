@@ -30,10 +30,6 @@ public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCart, Shoppin
 
   // end::getCart[]
 
-  public Effect<Done> create() {
-    return effects().reply(Done.getInstance());
-  }
-
   // tag::addItem[]
   public Effect<Done> addItem(LineItem item) {
     if (currentState().checkedOut())
