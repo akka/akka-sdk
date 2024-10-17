@@ -48,6 +48,15 @@ curl localhost:9000/carts/123
 
 Use `Ctrl+c` to shut down the service.
 
+== Run from IntelliJ
+
+The samples and the archetype include a run configuration for IntelliJ. In the toolbar you should see:
+
+image:run-intellij.png[]
+
+This is a Maven run configuration for `mvn compile exec:java`. You can also run this with the debugger and set breakpoints in the components.
+
+
 == Running service with persistence enabled
 
 By default, when running locally, persistence is disabled. This means the Akka Runtime will use an in-memory datastore for the state of your services. This is useful for local development since it allows you to quickly start and stop your service without having to worry about cleaning the database.
