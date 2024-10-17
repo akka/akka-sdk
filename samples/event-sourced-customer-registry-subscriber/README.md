@@ -35,10 +35,10 @@ mvn compile exec:java
 ### Create a customer
 
 ```shell
-curl localhost:9001/customer/create \
+curl localhost:9001/customer/one \
   --header "Content-Type: application/json" \
   -XPOST \
-  --data '{"customerId": "one","email":"test@example.com","name":"Testsson","address":{"street":"Teststreet 25", 
+  --data '{"email":"test@example.com","name":"Testsson","address":{"street":"Teststreet 25", 
   "city":"Testcity"}}'
 ```
 

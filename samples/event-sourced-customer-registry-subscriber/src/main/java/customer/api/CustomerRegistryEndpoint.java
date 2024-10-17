@@ -31,7 +31,7 @@ public class CustomerRegistryEndpoint {
 
   public record Address(String street, String city) { }
 
-  public record CreateCustomerRequest(String id, String email, String name, Address address){ }
+  public record CreateCustomerRequest(String email, String name, Address address) { }
 
 
   public CustomerRegistryEndpoint(HttpClientProvider webClientProvider, // <1>
@@ -40,15 +40,15 @@ public class CustomerRegistryEndpoint {
     this.componentClient = componentClient;
   }
 
-  @Post("/create")
-  public CompletionStage<HttpResponse> create(CreateCustomerRequest createRequest) {
+  @Post("/{id}")
+  public CompletionStage<HttpResponse> create(String id, CreateCustomerRequest createRequest) {
     log.info("Delegating customer creation to upstream service: {}", createRequest);
-    if (createRequest.id == null || createRequest.id.isBlank())
+    if (id == null || id.isBlank())
       throw HttpException.badRequest("No id specified");
 
     // make call to customer-registry service
     return
-      httpClient.POST("/customer/" + createRequest.id) // <3>
+      httpClient.POST("/customer/" + id) // <3>
         .withRequestBody(createRequest)
         .invokeAsync() // <4>
         .thenApply(response -> { // <5>

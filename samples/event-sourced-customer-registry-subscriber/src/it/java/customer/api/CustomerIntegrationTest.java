@@ -40,7 +40,7 @@ public class CustomerIntegrationTest extends CustomerRegistryIntegrationTest {
   public void create()  {
     // start the real test now
     String id = UUID.randomUUID().toString();
-    CreateCustomerRequest createRequest = new CreateCustomerRequest(id, "foo@example.com", "Johanna", new CustomerRegistryEndpoint.Address("street", "city"));
+    CreateCustomerRequest createRequest = new CreateCustomerRequest("foo@example.com", "Johanna", new CustomerRegistryEndpoint.Address("street", "city"));
 
     waitForUpstreamServiceStart();
 
@@ -52,7 +52,7 @@ public class CustomerIntegrationTest extends CustomerRegistryIntegrationTest {
       .atMost(10, TimeUnit.SECONDS)
       .untilAsserted(() -> {
         StrictResponse<ByteString> res = await(
-          httpClient.POST("/customer/create")
+          httpClient.POST("/customer/"+id)
             .withRequestBody(createRequest).invokeAsync()
         );
 
