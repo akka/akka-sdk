@@ -2,7 +2,6 @@ package com.example.transfer.application;
 
 import akka.Done;
 import com.example.wallet.application.WalletEntity;
-import com.example.transfer.domain.Message;
 import com.example.transfer.domain.TransferState;
 import com.example.transfer.domain.TransferState.Transfer;
 import akka.javasdk.annotations.ComponentId;
@@ -92,7 +91,7 @@ public class TransferWorkflow extends Workflow<TransferState> { // <2>
   // end::class[]
 
   // tag::get-transfer[]
-  public Effect<TransferState> getTransferState() {
+  public ReadOnlyEffect<TransferState> getTransferState() {
     if (currentState() == null) {
       return effects().error("transfer not started");
     } else {

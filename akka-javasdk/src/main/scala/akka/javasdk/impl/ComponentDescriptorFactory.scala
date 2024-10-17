@@ -12,10 +12,10 @@ import akka.javasdk.impl.reflection.CombinedSubscriptionServiceMethod
 import akka.javasdk.impl.reflection.KalixMethod
 import akka.javasdk.impl.reflection.NameGenerator
 import akka.javasdk.impl.reflection.Reflect
-
 import java.lang.reflect.AnnotatedElement
 import java.lang.reflect.Method
 import java.lang.reflect.ParameterizedType
+
 import akka.javasdk.annotations.Consume.FromEventSourcedEntity
 import akka.javasdk.annotations.Consume.FromKeyValueEntity
 import akka.javasdk.annotations.Consume.FromServiceStream
@@ -29,6 +29,7 @@ import akka.javasdk.keyvalueentity.KeyValueEntity
 import akka.javasdk.timedaction.TimedAction
 import akka.javasdk.view.TableUpdater
 import akka.javasdk.view.View
+import akka.javasdk.workflow.Workflow
 import kalix.DirectDestination
 import kalix.DirectSource
 import kalix.EventDestination
@@ -88,6 +89,12 @@ private[impl] object ComponentDescriptorFactory {
     javaMethod.isPublic &&
     (javaMethod.getReturnType == classOf[EventSourcedEntity.Effect[_]]
     || javaMethod.getReturnType == classOf[EventSourcedEntity.ReadOnlyEffect[_]])
+  }
+
+  def hasWorkflowEffectOutput(javaMethod: Method): Boolean = {
+    javaMethod.isPublic &&
+    (javaMethod.getReturnType == classOf[Workflow.Effect[_]]
+    || javaMethod.getReturnType == classOf[Workflow.ReadOnlyEffect[_]])
   }
 
   def hasKVEEffectOutput(javaMethod: Method): Boolean = {

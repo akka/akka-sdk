@@ -68,8 +68,17 @@ private[impl] object EntityDescriptorFactory extends ComponentDescriptorFactory 
         component.getDeclaredMethods.collect {
           case method if isCommandHandlerCandidate[Workflow.Effect[_]](method) =>
             val servMethod = CommandHandlerMethod(component, method, WorkflowUrlTemplate)
+            val readOnlyCommandHandler = method.getReturnType == classOf[Workflow.ReadOnlyEffect[_]]
+            var options = buildJWTOptions(method)
+            if (readOnlyCommandHandler)
+              options = Some(
+                options
+                  .map(_.toBuilder)
+                  .getOrElse(kalix.MethodOptions.newBuilder())
+                  .setReadOnly(true)
+                  .build())
             KalixMethod(servMethod, entityIds = Seq("entity-id"))
-              .withKalixOptions(buildJWTOptions(method))
+              .withKalixOptions(options)
         }.toSeq
       } else {
         // should never happen

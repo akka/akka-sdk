@@ -43,4 +43,12 @@ public class TransferEndpoint {
       .method(TransferWorkflow::startTransfer).invokeAsync(transfer)
       .thenApply(msg -> HttpResponses.accepted());
   }
+
+  @Post("/{id}/accept")
+  public CompletionStage<HttpResponse> accept(String id) {
+    log.info("Accepting transfer [{}].", id);
+    return componentClient.forWorkflow(id)
+      .method(TransferWorkflow::accept).invokeAsync()
+      .thenApply(msg -> HttpResponses.accepted());
+  }
 }

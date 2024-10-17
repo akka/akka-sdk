@@ -226,7 +226,7 @@ public abstract class Workflow<S> {
        * @param <R>          The type of the message that must be returned by this call.
        * @return A message reply.
        */
-      <R> Effect<R> reply(R replyMessage);
+      <R> ReadOnlyEffect<R> reply(R replyMessage);
 
 
       /**
@@ -237,7 +237,7 @@ public abstract class Workflow<S> {
        * @param <R>      The type of the message that must be returned by this call.
        * @return A message reply.
        */
-      <R> Effect<R> reply(R message, Metadata metadata);
+      <R> ReadOnlyEffect<R> reply(R message, Metadata metadata);
 
       /**
        * Create an error reply.
@@ -246,11 +246,8 @@ public abstract class Workflow<S> {
        * @param <R>         The type of the message that must be returned by this call.
        * @return An error reply.
        */
-      <R> ErrorEffect<R> error(String description);
+      <R> ReadOnlyEffect<R> error(String description);
 
-    }
-
-    interface ErrorEffect<T> extends Effect<T> {
     }
 
     /**
@@ -316,6 +313,12 @@ public abstract class Workflow<S> {
     }
 
 
+  }
+
+  /**
+   * An effect that is known to be read only and does not update the state of the entity.
+   */
+  public interface ReadOnlyEffect<T> extends Effect<T> {
   }
 
   public static class WorkflowDef<S> {

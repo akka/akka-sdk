@@ -8,7 +8,6 @@ import io.grpc.Status
 import WorkflowEffectImpl.End
 import WorkflowEffectImpl.ErrorEffectImpl
 import WorkflowEffectImpl.NoPersistence
-import WorkflowEffectImpl.NoTransition
 import WorkflowEffectImpl.Pause
 import WorkflowEffectImpl.Persistence
 import WorkflowEffectImpl.PersistenceEffectBuilderImpl
@@ -19,10 +18,12 @@ import WorkflowEffectImpl.TransitionalEffectImpl
 import WorkflowEffectImpl.UpdateState
 import akka.annotation.InternalApi
 import akka.javasdk.Metadata
+import akka.javasdk.impl.workflow.WorkflowEffectImpl.ReadOnlyEffectImpl
 import akka.javasdk.workflow.Workflow.Effect
 import akka.javasdk.workflow.Workflow.Effect.Builder
 import akka.javasdk.workflow.Workflow.Effect.PersistenceEffectBuilder
 import akka.javasdk.workflow.Workflow.Effect.TransitionalEffect
+import akka.javasdk.workflow.Workflow.ReadOnlyEffect
 
 /**
  * INTERNAL API
@@ -72,7 +73,16 @@ object WorkflowEffectImpl {
       WorkflowEffectImpl(persistence, transition, ReplyValue(message, metadata))
   }
 
-  final case class ErrorEffectImpl[R](description: String, status: Option[Status.Code]) extends Effect.ErrorEffect[R]
+  final case class ReadOnlyEffectImpl[T]() extends ReadOnlyEffect[T] {
+
+    def reply[R](message: R): ReadOnlyEffect[R] =
+      WorkflowEffectImpl(NoPersistence, NoTransition, ReplyValue(message, Metadata.EMPTY))
+
+    def reply[R](message: R, metadata: Metadata): ReadOnlyEffect[R] =
+      WorkflowEffectImpl(NoPersistence, NoTransition, ReplyValue(message, metadata))
+  }
+
+  final case class ErrorEffectImpl[R](description: String, status: Option[Status.Code]) extends ReadOnlyEffect[R]
 }
 
 /**
@@ -81,6 +91,7 @@ object WorkflowEffectImpl {
 @InternalApi
 case class WorkflowEffectImpl[S, T](persistence: Persistence[S], transition: Transition, reply: Reply[T])
     extends Builder[S]
+    with ReadOnlyEffect[T]
     with Effect[T] {
 
   override def updateState(newState: S): PersistenceEffectBuilder[S] =
@@ -98,13 +109,13 @@ case class WorkflowEffectImpl[S, T](persistence: Persistence[S], transition: Tra
   override def end(): TransitionalEffect[Void] =
     TransitionalEffectImpl(NoPersistence, End)
 
-  override def reply[R](reply: R): Effect[R] =
-    TransitionalEffectImpl(NoPersistence, NoTransition).thenReply(reply)
+  override def reply[R](reply: R): ReadOnlyEffect[R] =
+    ReadOnlyEffectImpl().reply(reply)
 
-  override def reply[R](reply: R, metadata: Metadata): Effect[R] =
-    TransitionalEffectImpl(NoPersistence, NoTransition).thenReply(reply, metadata)
+  override def reply[R](reply: R, metadata: Metadata): ReadOnlyEffect[R] =
+    ReadOnlyEffectImpl().reply(reply, metadata)
 
-  override def error[R](description: String): Effect.ErrorEffect[R] =
+  override def error[R](description: String): ReadOnlyEffect[R] =
     ErrorEffectImpl(description, Some(Status.Code.INVALID_ARGUMENT))
 
 }

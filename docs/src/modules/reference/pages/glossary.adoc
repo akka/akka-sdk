@@ -6,6 +6,8 @@
 
 [[component]]Component:: The SDKs support <<entity>>, <<view>>, <<http_endpoint>> and <<workflow>> components. These components enable you to implement your business logic.
 
+[[component_client]]Component client:: It's utility to call Akka components without knowing where they are located.
+
 [[command]]Command:: A command comes from a _sender_, and a reply may be sent to the sender. A command expresses the intention to alter the state of an <<entity>>. A command is materialized by a message received by a <<service_implementation>>. Commands may come from outside the <<kalix_service>>, perhaps from other stateful services running on Kalix or from external systems, or they may come from within the service, invoked as a side effect or to forward command handling from another command. Commands are not persisted. A command might fail.
 
 [[command_handler]]Command handler::
@@ -38,6 +40,8 @@ An _event handler_ is the only piece of code that is allowed to _update_ the sta
 
 [[http_endpoint]]HTTP Endpoint::
 
+[[id]]ID:: An id used to identify instances of a <<stateful_component>>s.
+
 [[journal]]Journal:: Persistent storage for <<event>>s from <<event_sourced_entity>>s. Some documentation uses the terms _Event Log_ or _Event Store_ instead of journal. Kalix handles event storage for you, relieving you of connecting to, configuring, or managing the journal.
 
 [[kalix_service]]Kalix service:: A Kalix service is a deployable unit. It is represented in Kubernetes as a `KalixService` resource. It contains a <<service_implementation>> and a <<runtime>>. The Kalix operator transforms a kalix service into a Kubernetes Deployment resource and defines a Kubernetes Service to expose the kalix service to the outside world.
@@ -61,6 +65,9 @@ A snapshot records current state of an Event Sourced Entity. Kalix persists snap
 The _state_ is simply data--the current set of values for an entity instance. Event Sourced Entities hold their state in memory.
 
 [[state_model]]State model:: Each entity uses one of the supported state models. The state model determines the way Akka manages data. Currently, these include <<key_value_entity>> and <<event_sourced_entity>>.
+
+[[stateful_component]]Stateful component::
+A component like <<key_value_entity>>,<<event_sourced_entity>> or <<workflow>>
 
 [[timed_action]]Timed actions:: A Timed Action provides consistent scheduling and execution of a call to another <<component>> at specified intervals or delays. They are convenient for automating repetitive work and handling timeouts within business logic implementation.
 

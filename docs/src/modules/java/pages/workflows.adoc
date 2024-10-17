@@ -4,6 +4,8 @@ include::ROOT:partial$include.adoc[]
 
 Workflows implement long-running, multi-step business processes while allowing developers to focus exclusively on domain and business logic. Workflows provide durability, consistency and the ability to call other components and services. Business transactions can be modeled in one central place, and the Workflow will keep them running smoothly, or roll back if something goes wrong.
 
+include::partial$entity-sharding.adoc[]
+
 == Workflow's Effect API
 
 The Workflow's Effect defines the operations that Akka should perform when an incoming command is handled by a Workflow.
@@ -198,3 +200,5 @@ include::example$transfer-workflow-compensation/src/main/java/com/example/transf
 Compensating a workflow step(s) might involve multiple logical steps and thus is part of the overall business logic that must be defined within the workflow itself. For simplicity, in the example above, the compensation is applied only to `withdraw` step. Whereas `deposit` step itself might also require a compensation. In case of a step timeout we can't be certain about step successful or error outcome.
 
 A full error handling and compensation sample is available {sample-base-url}/transfer-workflow-compensation[here, {tab-icon}, window="new"]. Run `TransferWorkflowIntegrationTest` and examine the logs from the application.
+
+include::partial$mutli-region-replication.adoc[]

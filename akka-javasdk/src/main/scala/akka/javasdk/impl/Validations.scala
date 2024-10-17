@@ -33,11 +33,13 @@ import akka.javasdk.impl.ComponentDescriptorFactory.hasTopicPublication
 import akka.javasdk.impl.ComponentDescriptorFactory.hasTopicSubscription
 import akka.javasdk.impl.ComponentDescriptorFactory.hasUpdateEffectOutput
 import akka.javasdk.impl.ComponentDescriptorFactory.hasValueEntitySubscription
+import akka.javasdk.impl.ComponentDescriptorFactory.hasWorkflowEffectOutput
 import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.reflection.Reflect.Syntax._
 import akka.javasdk.keyvalueentity.KeyValueEntity
 import akka.javasdk.timedaction.TimedAction
 import akka.javasdk.view.View
+import akka.javasdk.workflow.Workflow
 
 /**
  * INTERNAL API
@@ -120,7 +122,8 @@ private[javasdk] object Validations {
     validateConsumer(component) ++
     validateView(component) ++
     validateEventSourcedEntity(component) ++
-    validateValueEntity(component)
+    validateValueEntity(component) ++
+    validateWorkflow(component)
 
   private def validateEventSourcedEntity(component: Class[_]) =
     when[EventSourcedEntity[_, _]](component) {
@@ -128,6 +131,11 @@ private[javasdk] object Validations {
       eventSourcedCommandHandlersMustBeUnique(component) ++
       mustHaveValidComponentId(component) ++
       commandHandlerArityShouldBeZeroOrOne(component, hasESEffectOutput)
+    }
+
+  private def validateWorkflow(component: Class[_]) =
+    when[Workflow[_]](component) {
+      commandHandlerArityShouldBeZeroOrOne(component, hasWorkflowEffectOutput)
     }
 
   private def eventSourcedEntityEventMustBeSealed(component: Class[_]): Validation = {
