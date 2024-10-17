@@ -1,12 +1,13 @@
-= Getting started with the Akka SDK
+= Build your first application
 
-include::ROOT:partial$include.adoc[]
+This guide will walk you through the process of setting up your environment, generating a project, and implementing a simple application. By the end, you will have a functional Shopping Cart application built with the Akka SDK.
 
-The Akka SDK comes with Maven support that gets you started quickly:
+== Overview
 
-* A number of xref:samples:index.adoc[complete examples] let you start with working code.
-* The Akka *Maven archetype* generates a skeleton project with the project structure, following the onion architecture recommendation. The generated project also contains configuration for packaging and deploying the service.
-* The Akka *Maven parent pom* that defines dependencies and helps you run your application locally and package for deployment.
+The Akka SDK comes with Maven support that enables you to get started quickly. In this guide, you will:
+
+* Use the Akka Maven archetype to generate a skeleton project that follows the recommended onion architecture.
+* Understand how to use the Akka Maven parent POM to define dependencies and run your application locally.
 
 == Prerequisites
 
