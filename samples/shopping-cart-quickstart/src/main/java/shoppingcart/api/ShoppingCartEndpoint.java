@@ -21,7 +21,7 @@ import java.util.concurrent.CompletionStage;
 // For actual services meant for production this must be carefully considered, and often set more limited
 // tag::endpoint-component-interaction[]
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
-@HttpEndpoint("/shopping-cart")
+@HttpEndpoint("/carts")
 public class ShoppingCartEndpoint {
 
   private final ComponentClient componentClient;

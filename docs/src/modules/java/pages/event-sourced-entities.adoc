@@ -297,14 +297,14 @@ In our shopping cart example that is:
 
 [source,shell]
 ----
-curl localhost:9000/akka/v1.0/entity/shopping-cart/12345/getCart
+curl localhost:9000/akka/v1.0/entity/carts/12345/getCart
 ----
 
 or, to add an item:
 
 [source,shell]
 ----
-curl localhost:9000/akka/v1.0/entity/shopping-cart/12345/addItem \
+curl localhost:9000/akka/v1.0/entity/carts/12345/addItem \
   --header "Content-Type: application/json" \
   -XPOST \
   --data '{"productId":"akka-tshirt","name":"Akka Tshirt","quantity":10}'

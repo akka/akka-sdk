@@ -34,26 +34,26 @@ With your Akka service running, any defined endpoints should be available at `ht
 * Add an item
 
 ```shell
-curl -i -XPUT -H "Content-Type: application/json" localhost:9000/shopping-cart/123/item -d '
+curl -i -XPUT -H "Content-Type: application/json" localhost:9000/carts/123/item -d '
 {"productId":"akka-tshirt", "name":"Akka Tshirt", "quantity": 10}'
 ```
 
 * Get cart state
 
 ```shell
-curl localhost:9000/shopping-cart/123
+curl localhost:9000/carts/123
 ```
 
 * Remove an item
 
 ```shell
-curl -i -XDELETE -H "Content-Type: application/json" localhost:9000/shopping-cart/123/item/akka-tshirt
+curl -i -XDELETE -H "Content-Type: application/json" localhost:9000/carts/123/item/akka-tshirt
 ```
 
 * Checkout the cart
 
 ```shell
-curl -i -XPOST localhost:9000/shopping-cart/123/checkout
+curl -i -XPOST localhost:9000/carts/123/checkout
 ```
 
 ## Deploying

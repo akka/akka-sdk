@@ -66,7 +66,7 @@ Items can be added to a shopping cart using the `/cart/\{cartId}/item` endpoint 
 
 [source,command line]
 ----
-curl -i -XPUT -H "Content-Type: application/json" localhost:8080/shopping-cart/123/item -d '
+curl -i -XPUT -H "Content-Type: application/json" localhost:8080/carts/123/item -d '
 {"productId":"akka-tshirt", "name":"Akka Tshirt", "quantity": 10}'
 ----
 
@@ -74,14 +74,14 @@ The state of the cart can be retrieved with `/cart/\{cartId}`.
 
 [source, command line]
 ----
-curl localhost:8080/shopping-cart/123
+curl localhost:8080/carts/123
 ----
 
 And finally, you can check out the cart with `/cart/\{cartId}/checkout`.
 
 [source, command line]
 ----
-curl -i -XPOST localhost:8080/shopping-cart/123/checkout
+curl -i -XPOST localhost:8080/carts/123/checkout
 ----
 
 include::partial$expose-service.adoc[]
