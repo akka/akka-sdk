@@ -150,7 +150,7 @@ message EventSourcedEntityEvent {
   // If the payload of the event is a JSON message, the type_url should be json.kalix.io/<type-name>, where <type-name>
   // is the name of the type that's use to decode the message, for example, in the Java SDK as documented here:
   //
-  // https://docs.kalix.io/java/serialization.html#_type_name
+  // https://doc.akka.io/java/serialization.html#_type_name
   //
   // The JSON itself must be wrapped in either a google.protobuf.BytesWrapper or google.protobuf.StringWrapper, before
   // being serialized to protobuf and being placed in the value field of the google.protobuf.Any. See here for the
@@ -214,7 +214,7 @@ message EventSourcedEntitySnapshot {
   // <type-name> is the name of the type that's use to decode the message, for example, in the Java SDK as documented
   // here:
   //
-  // https://docs.kalix.io/java/serialization.html#_type_name
+  // https://doc.akka.io/java/serialization.html#_type_name
   //
   // The JSON itself must be wrapped in either a google.protobuf.BytesWrapper or google.protobuf.StringWrapper, before
   // being serialized to protobuf and being placed in the value field of the google.protobuf.Any. See here for the
@@ -269,7 +269,7 @@ message ValueEntity {
   // If the payload of the entity is a JSON message, the type_url should be json.kalix.io/<type-name>, where <type-name>
   // is the name of the type that's use to decode the message, for example, in the Java SDK as documented here:
   //
-  // https://docs.kalix.io/java/serialization.html#_type_name
+  // https://doc.akka.io/java/serialization.html#_type_name
   //
   // The JSON itself must be wrapped in either a google.protobuf.BytesWrapper or google.protobuf.StringWrapper, before
   // being serialized to protobuf and being placed in the value field of the google.protobuf.Any. See here for the

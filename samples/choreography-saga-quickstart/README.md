@@ -2,11 +2,11 @@
 
 This sample demonstrates how to implement a Choreography Saga in Akka.
 
-This project explores the usage of [Event Sourced Entities](https://docs.kalix.io/java/event-sourced-entities.html), 
-[Key Value Entities](https://docs.kalix.io/java/value-entity.html), [Consumers](https://docs.kalix.io/java/actions.
-html) and [Timers](https://docs.kalix.io/java/timers.html).
+This project explores the usage of [Event Sourced Entities](https://doc.akka.io/java/event-sourced-entities.html),
+[Key Value Entities](https://doc.akka.io/java/value-entity.html), [Consumers](https://doc.akka.io/java/consuming-producing.html.
+html) and [Timers](https://doc.akka.io/java/timed-actions.html).
 
-To understand more about these components, see [Developing services](https://docs.kalix.io/services/) and check the Kalix Java SDK [documentation](https://docs.kalix.io/java/index.html).
+To understand more about these components, see [Developing services](https://doc.akka.io/java/index.html) and check the Akka SDK [documentation](https://doc.akka.io/java/index.html).
 
 
 
@@ -14,7 +14,7 @@ To understand more about these components, see [Developing services](https://doc
 
 To use this sample, you will need:
 
-* **Java:** Java 17 or higher
+* **Java:** Java 21 or higher
 * **Maven:** [Maven 3.6 or higher](https://maven.apache.org/download.cgi)
 * **Docker:** [Docker 20.10.14 or higher](https://docs.docker.com/engine/install)
 
@@ -174,7 +174,7 @@ The status of the email will be CONFIRMED or NOT_USED, depending on whether the 
 ## Deploying
 
 To deploy your service, install the `akka` CLI as documented in
-[Install Akka](https://docs.kalix.io/kalix/install-kalix.html)
+[Install Akka CLI](https://doc.akka.io/akka-cli/index.html)
 and configure a Docker Registry to upload your docker image to.
 
 You will need to update the `dockerImage` property in the `pom.xml` and refer to

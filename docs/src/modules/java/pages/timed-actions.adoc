@@ -1,5 +1,6 @@
 = Timed Actions
-:sample-base-url: https://github.com/lightbend/akka-javasdk/blob/main/samples
+
+include::ROOT:partial$include.adoc[]
 
 Timers allow for scheduling calls in the future. For example, to verify that some process have been completed or not.
 

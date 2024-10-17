@@ -4,7 +4,7 @@ This project provides an example for how to take advantage of Spring Dependency 
 
 ## Designing
 
-To understand the Akka concepts that are the basis for this example, see [Designing services](https://docs.kalix.io/java/development-process.html) in the documentation.
+To understand the Akka concepts that are the basis for this example, see [Development Process](https://doc.akka.io/concepts/development-process.html) in the documentation.
 
 ## Building
 
@@ -29,7 +29,7 @@ This sample does not expose any Endpoints, since the main goal is to show how to
 ## Deploying
 
 To deploy your service, install the `akka` CLI as documented in
-[Install Akka](https://docs.kalix.io/kalix/install-kalix.html)
+[Install Akka CLI](https://doc.akka.io/akka-cli/index.html)
 and configure a Docker Registry to upload your docker image to.
 
 You will need to update the `dockerImage` property in the `pom.xml` and refer to

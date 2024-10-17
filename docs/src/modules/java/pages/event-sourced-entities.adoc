@@ -1,5 +1,4 @@
 = Implementing Event Sourced Entities
-:sample-url: https://github.com/lightbend/akka-javasdk/tree/main/samples/shopping-cart-quickstart
 
 include::ROOT:partial$include.adoc[]
 
@@ -28,7 +27,7 @@ The steps necessary to implement an Event Sourced Entity include:
 . Model the entity's state and its domain events.
 . Implementing behavior in command and event handlers.
 
-The following sections walk through these steps using a shopping cart service as an example (working sample available {sample-url}[here {tab-icon}, window="new"]).
+The following sections walk through these steps using a shopping cart service as an example (working sample can be downloaded as a link:../java/_attachments/shopping-cart-quickstart.zip[zip file]).
 
 == Modeling the Entity
 

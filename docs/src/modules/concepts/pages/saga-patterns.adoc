@@ -20,7 +20,7 @@ Choreography provides a decentralized approach, with no central authority managi
 * Increased complexity in ensuring all services handle failures correctly.
 * Harder to track and debug long-running processes without a central point of control.
 
-For an example of a choreography-based Saga, check out the https://github.com/lightbend/akka-javasdk/tree/main/samples/choreography-saga-quickstart[Akka Choreography Saga Quickstart].
+For an example of a choreography-based Saga, check out the Choreography Saga sample that can be downloaded as a link:../java/_attachments/choreography-saga-quickstart.zip[zip file].
 
 == Orchestrator-Based Saga pattern
 

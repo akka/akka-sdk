@@ -19,17 +19,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * This test exercises the integration between the current service (customer-registry-subscriber) and the customer-registry service.
  * <p>
- * The customer registry service is started as a Docker container as well as it own Akka Runtime. The current service is
- * started as a local JVM process (not dockerized), but its own Akka Runtime starts as a docker container.
- * The `docker-compose-integration.yml` file is used to start all these services.
- * <p>
  * The subscriber service will first create a customer on customer-registry service. The customer will be streamed back
  * to the subscriber service and update its view.
- * <p>
- * This test will exercise the following:
- * - service under test can read settings from docker-compose file and correctly configure itself.
- * - resolution of service port mappings from docker-compose file allows for cross service calls (eg: create customer from subscriber service)
- * - resolution of service port mappings passed to akka-runtime allows for service to service streaming (eg: customer view is updated in subscriber service)
  */
 public class CustomerIntegrationTest extends CustomerRegistryIntegrationTest {
 

@@ -2,7 +2,7 @@
 
 ## Designing
 
-To understand the Akka concepts that are the basis for this example, see [Designing services](https://docs.kalix.
+To understand the Akka concepts that are the basis for this example, see [Development Process](https://docs.kalix.
 io/java/development-process.html) in the documentation.
 
 The project `event-sourced-customer-registry-subscriber` is a downstream consumer of the Service to Service event stream provided by `event-sourced-customer-registry` project.

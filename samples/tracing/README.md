@@ -2,7 +2,7 @@
 
 ## Designing
 
-To understand the Akka SDK concepts that are the basis for this example, see [Designing services](https://docs.kalix.io/java/development-process.html) in the documentation.
+To understand the Akka SDK concepts that are the basis for this example, see [Development Process](https://doc.akka.io/concepts/development-process.html) in the documentation.
 
 ## Developing
 
@@ -53,7 +53,7 @@ With your Akka service running, any defined endpoints should be available at `ht
 ## Deploying
 
 To deploy your service, install the `akka` CLI as documented in
-[Install Kalix](https://docs.kalix.io/kalix/install-kalix.html)
+[Install Akka CLI](https://doc.akka.io/akka-cli/index.html)
 and configure a Docker Registry to upload your docker image to.
 
 You will need to update the `dockerImage` property in the `pom.xml` and refer to

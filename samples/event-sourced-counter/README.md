@@ -2,13 +2,12 @@
 
 ## Designing
 
-To understand the Akka concepts that are the basis for this example, see [Designing services](https://docs.kalix.io/java/development-process.html) in the documentation.
+To understand the Akka concepts that are the basis for this example, see [Development Process](https://doc.akka.io/concepts/development-process.html) in the documentation.
 
 ## Developing
 
 This project demonstrates the use of an Event Sourced Entity and Consumer components.
-To understand more about these components, see [Developing services](https://docs.kalix.io/services/)
-and in particular the [Java section](https://docs.kalix.io/java/)
+To understand more about these components, see [Developing services](https://doc.akka.io/java/index.html).
 
 ## Building
 
@@ -53,7 +52,7 @@ curl -XPOST localhost:9000/counter/hello/multiply/5
 ### Deploy
 
 To deploy your service, install the `akka` CLI as documented in
-[Install Akka](https://docs.kalix.io/kalix/install-kalix.html)
+[Install Akka CLI](https://doc.akka.io/akka-cli/index.html)
 and configure a Docker Registry to upload your docker image to.
 
 You will need to update the `dockerImage` property in the `pom.xml` and refer to

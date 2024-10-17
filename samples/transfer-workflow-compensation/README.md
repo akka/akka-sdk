@@ -6,13 +6,12 @@ Used for code snippets in the Workflow documentation.
 
 ## Designing
 
-To understand the Kalix concepts that are the basis for this example, see [Designing services](https://docs.kalix.io/java/development-process.html) in the documentation.
+To understand the Kalix concepts that are the basis for this example, see [Development Process](https://doc.akka.io/concepts/development-process.html) in the documentation.
 
 ## Developing
 
 This project demonstrates the use of Key Value Entity and View components.
-To understand more about these components, see [Developing services](https://docs.kalix.io/services/)
-and in particular the [Java section](https://docs.kalix.io/java/)
+To understand more about these components, see [Developing services](https://doc.akka.io/java/index.html).
 
 ## Building
 
@@ -95,7 +94,7 @@ mvn verify -Pit
 ## Deploying
 
 To deploy your service, install the `kalix` CLI as documented in
-[Install Kalix](https://docs.kalix.io/kalix/install-kalix.html)
+[Install Akka CLI](https://doc.akka.io/akka-cli/index.html)
 and configure a Docker Registry to upload your docker image to.
 
 You will need to update the `dockerImage` property in the `pom.xml` and refer to

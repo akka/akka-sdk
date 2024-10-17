@@ -92,7 +92,7 @@ There are multiple ways to get started with Akka.
 |Deploy, scale, and replicate a service.    
 |Take the 5 minute walk-through by creating a free account at https://console.akka.io/register[Akka.io].
 |Locally build and run a stateful service.  
-|Start with this xref:samples:shopping-cart.adoc[] sample application.
+|Start with xref:java:build-your-first-application.adoc[].
 |Setup a local development environment with IDE integration, local debugging, and packing services into images. 
 |Getting Started - xref:java:running-locally.adoc[] 
 |Learn how to code with Akka’s components.  
