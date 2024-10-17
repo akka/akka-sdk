@@ -1,5 +1,7 @@
 = Build your first application
 
+include::ROOT:partial$include.adoc[]
+
 This guide will walk you through the process of setting up your environment, generating a project, and implementing a simple application. By the end, you will have a functional Shopping Cart application built with the Akka SDK.
 
 == Overview
@@ -54,6 +56,12 @@ mvn archetype:generate ^
 ----
 --
 
+. Fill in
+* groupId: `com.example`
+* artifactId: `shoppingcart`
+* version: `1.0-SNAPSHOT`
+* package: `shoppingcart`
+
 . Navigate to the new project directory.
 
 . Open it in your preferred IDE / Editor.
@@ -75,12 +83,20 @@ Through our "Shopping Cart" Event Sourced Entity we expect to manage our cart, a
 
 === Define the domain model
 
-First, define the domain class `ShoppingCart`, its domain events  in package `shoppingcart.domain` and some basic business logic.
+First, define the domain class `ShoppingCart` in package `shoppingcart.domain` with some basic business logic.
 
 [source,java,indent=0]
-.src/main/java/shoppingcart/domain/ShoppingCart.java
+.{sample-base-url}/shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCart.java[ShoppingCart.java]
 ----
-include::java:example$shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCart.java[tag=domain]
+include::java:example$shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCart.java[tags=top;domain]
+----
+
+Add an interface `ShoppingCartEvent` with the domain events in package `shoppingcart.domain`.
+
+[source,java,indent=0]
+.{sample-base-url}/shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCartEvent.java[ShoppingCartEvent.java]
+----
+include::java:example$shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCartEvent.java[tags=top;domain]
 ----
 
 === Define the entity
@@ -90,9 +106,9 @@ The Event Sourced Entity is defined in the `ShoppingCartEntity`.
 Create a class named `ShoppingCartEntity` in package `shoppingcart.application`.
 
 [source,java,indent=0]
-.src/main/java/shoppingcart/application/ShoppingCartEntity.java
+.{sample-base-url}/shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java[ShoppingCartEntity.java]
 ----
-include::java:example$shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java[tags=class;getCart;addItem]
+include::java:example$shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java[tags=top;class;getCart;addItem]
 ----
 
 === Define the external API
@@ -103,9 +119,9 @@ Create a class named `ShoppingCartEndpoint` in package `shoppingcart.api`.
 
 
 [source,java,indent=0]
-.src/main/java/shoppingcart/api/ShoppingCartEndpoint.java
+.{sample-base-url}/shopping-cart-quickstart/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java[ShoppingCartEndpoint.java]
 ----
-include::java:example$shopping-cart-quickstart/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java[tags=class,get,addItem]
+include::java:example$shopping-cart-quickstart/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java[tags=top;class;get;addItem]
 ----
 
 == Run locally
@@ -144,3 +160,6 @@ FIXME should it be here, or only in the developent-process page or where?
 
 Deploy your service following the instructions at xref:concepts:development-process.adoc#_deploy[Development Process - Deploy to Akka].
 
+== Download full sample
+
+You can download the full source code of the Shopping Cart sample as a link:_attachments/shopping-cart-quickstart.zip[zip file].

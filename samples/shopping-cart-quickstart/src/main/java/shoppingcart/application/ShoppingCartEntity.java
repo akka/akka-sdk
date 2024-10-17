@@ -1,3 +1,4 @@
+// tag::top[]
 package shoppingcart.application;
 
 import akka.Done;
@@ -9,6 +10,8 @@ import shoppingcart.domain.ShoppingCart.LineItem;
 import shoppingcart.domain.ShoppingCartEvent;
 
 import java.util.Collections;
+
+// end::top[]
 
 // tag::all[]
 // tag::class[]

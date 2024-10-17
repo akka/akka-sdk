@@ -8,7 +8,7 @@
     <version>3.0.0-M6</version>
   </parent>
 
-  <groupId>shopping.cart</groupId>
+  <groupId>com.example</groupId>
   <artifactId>shopping-cart-quickstart</artifactId>
   <version>1.0-SNAPSHOT</version>
   <packaging>jar</packaging>

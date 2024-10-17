@@ -1,3 +1,4 @@
+// tag::top[]
 package shoppingcart.api;
 
 import akka.http.javadsl.model.HttpResponse;
@@ -13,6 +14,8 @@ import shoppingcart.application.ShoppingCartEntity;
 import shoppingcart.domain.ShoppingCart;
 
 import java.util.concurrent.CompletionStage;
+
+// end::top[]
 
 // tag::all[]
 // tag::class[]

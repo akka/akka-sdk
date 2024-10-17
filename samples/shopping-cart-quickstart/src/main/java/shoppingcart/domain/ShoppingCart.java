@@ -1,3 +1,4 @@
+// tag::top[]
 package shoppingcart.domain;
 
 import java.util.List;
@@ -6,18 +7,17 @@ import java.util.Comparator;
 import java.util.Optional;
 import java.util.function.Predicate;
 
+// end::top[]
+
 // tag::all[]
 // tag::domain[]
 public record ShoppingCart(String cartId, List<LineItem> items, boolean checkedOut) { // <1>
 
   public record LineItem(String productId, String name, int quantity) { // <2>
-    // end::domain[]
     public LineItem withQuantity(int quantity) {
       return new LineItem(productId, name, quantity);
     }
-    // tag::domain[]
   }
-  // end::domain[]
 
   // tag::itemAdded[]
   public ShoppingCart onItemAdded(ShoppingCartEvent.ItemAdded itemAdded) {
@@ -30,13 +30,6 @@ public record ShoppingCart(String cartId, List<LineItem> items, boolean checkedO
     return new ShoppingCart(cartId, lineItems, checkedOut); // <4>
   }
   // end::itemAdded[]
-
-  public ShoppingCart onItemRemoved(ShoppingCartEvent.ItemRemoved itemRemoved) {
-    List<LineItem> updatedItems =
-        removeItemByProductId(this, itemRemoved.productId());
-    updatedItems.sort(Comparator.comparing(LineItem::productId));
-    return new ShoppingCart(cartId, updatedItems, checkedOut);
-  }
 
   private static List<LineItem> removeItemByProductId(
       ShoppingCart cart, String productId) {
@@ -55,6 +48,14 @@ public record ShoppingCart(String cartId, List<LineItem> items, boolean checkedO
     Predicate<LineItem> lineItemExists =
         lineItem -> lineItem.productId().equals(productId);
     return items.stream().filter(lineItemExists).findFirst();
+  }
+  // end::domain[]
+
+  public ShoppingCart onItemRemoved(ShoppingCartEvent.ItemRemoved itemRemoved) {
+    List<LineItem> updatedItems =
+        removeItemByProductId(this, itemRemoved.productId());
+    updatedItems.sort(Comparator.comparing(LineItem::productId));
+    return new ShoppingCart(cartId, updatedItems, checkedOut);
   }
 
   public ShoppingCart onCheckedOut() {
