@@ -8,7 +8,7 @@ import akka.javasdk.annotations.JWT;
 // tag::bearer-token[]
 @ComponentId("hello-jwt")
 @JWT(validate = JWT.JwtMethodMode.BEARER_TOKEN, 
-     bearerTokenIssuer = "my-issuer") // <1>
+     bearerTokenIssuers = "my-issuer") // <1>
 public class HelloJwtAction extends TimedAction {
 
     public Effect message(String msg) {
@@ -19,7 +19,7 @@ public class HelloJwtAction extends TimedAction {
     }
 
     @JWT(validate = JWT.JwtMethodMode.BEARER_TOKEN,
-         bearerTokenIssuer = "my-other-issuer")     
+         bearerTokenIssuers = "my-other-issuer")
     public Effect messageWithIssuer(String msg) { // <3>
         //..
     // end::bearer-token[]    

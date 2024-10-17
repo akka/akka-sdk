@@ -6,6 +6,7 @@ package akka.javasdk.impl.http;
 
 import akka.http.javadsl.model.HttpResponse;
 import akka.javasdk.annotations.Acl;
+import akka.javasdk.annotations.JWT;
 import akka.javasdk.annotations.http.Delete;
 import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Get;
@@ -93,4 +94,61 @@ public class TestEndpoints {
 
     }
 
+    @HttpEndpoint("my-endpoint")
+    @JWT(validate =
+            JWT.JwtMethodMode.BEARER_TOKEN,
+            bearerTokenIssuers = {"a", "b"},
+            staticClaims = {
+                        @JWT.StaticClaim(claim = "roles", values = {"viewer", "editor"}),
+                        @JWT.StaticClaim(claim = "aud", values = "${ENV}.kalix.io"),
+                        @JWT.StaticClaim(claim = "sub", pattern = "^sub-\\S+$")
+                })
+    public static class TestEndpointJwtClassLevel {
+        @Get("/my-object/{id}")
+        public String message(String id) {
+            return "OK";
+        }
+    }
+
+    @JWT(
+            validate = JWT.JwtMethodMode.BEARER_TOKEN,
+            bearerTokenIssuers = {"a", "b"},
+            staticClaims = {
+                    @JWT.StaticClaim(claim = "roles", values = {"editor", "viewer"}),
+                    @JWT.StaticClaim(claim = "aud", values = "${ENV}.kalix.${ENV2}.io"),
+                    @JWT.StaticClaim(claim = "sub", pattern = "^sub-\\S+$")
+            })
+    @HttpEndpoint("my-endpoint")
+    public static class TestEndpointJwtClassAndMethodLevel {
+
+        @JWT(
+                validate = JWT.JwtMethodMode.BEARER_TOKEN,
+                bearerTokenIssuers = {"c", "d"},
+                staticClaims = {
+                        @JWT.StaticClaim(claim = "roles", values = {"admin"}),
+                        @JWT.StaticClaim(claim = "aud", values = "${ENV}.kalix.dev"),
+                        @JWT.StaticClaim(claim = "sub", pattern = "^-\\S+$")
+                })
+        @Get("/my-object/{id}")
+        public String message(String id) {
+            return "OK";
+        }
+    }
+
+    @HttpEndpoint("my-endpoint")
+    public static class TestEndpointJwtOnlyMethodLevel {
+
+        @JWT(
+                validate = JWT.JwtMethodMode.BEARER_TOKEN,
+                bearerTokenIssuers = {"c", "d"},
+                staticClaims = {
+                        @JWT.StaticClaim(claim = "roles", values = {"admin"}),
+                        @JWT.StaticClaim(claim = "aud", values = "${ENV}.kalix.dev"),
+                        @JWT.StaticClaim(claim = "sub", pattern = "^-\\S+$")
+                })
+        @Get("/my-object/{id}")
+        public String message(String id) {
+            return "OK";
+        }
+    }
 }

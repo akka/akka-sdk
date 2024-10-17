@@ -26,7 +26,7 @@ private[javasdk] object JwtDescriptorFactory {
     JwtStaticClaim
       .newBuilder()
       .setClaim(sc.claim())
-      .addAllValue(sc.value().toList.asJava)
+      .addAllValue(sc.values().toList.asJava)
       .setPattern(sc.pattern())
       .build()
 
@@ -36,7 +36,7 @@ private[javasdk] object JwtDescriptorFactory {
     ann
       .validate()
       .map(springValidate => jwt.addValidate(JwtMethodOptions.JwtMethodMode.forNumber(springValidate.ordinal())))
-    ann.bearerTokenIssuer().map(jwt.addBearerTokenIssuer)
+    ann.bearerTokenIssuers().map(jwt.addBearerTokenIssuer)
 
     ann
       .staticClaims()
@@ -67,7 +67,7 @@ private[javasdk] object JwtDescriptorFactory {
       ann
         .validate()
         .map(methodMode => jwt.setValidate(JwtServiceOptions.JwtServiceMode.forNumber(methodMode.ordinal())))
-      ann.bearerTokenIssuer().map(jwt.addBearerTokenIssuer)
+      ann.bearerTokenIssuers().map(jwt.addBearerTokenIssuer)
       ann
         .staticClaims()
         .foreach(sc => jwt.addStaticClaim(buildStaticClaimFromAnnotation(sc)))

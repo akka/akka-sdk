@@ -22,39 +22,4 @@ public class ActionsTestModels {
       return effects().done();
     }
   }
-
-
-
-  /* FIXME cover these for endpoints
-  public static class ActionWithMethodLevelJWT extends Action {
-    @PostMapping("/message")
-    @JWT(
-      validate = JWT.JwtMethodMode.BEARER_TOKEN,
-      bearerTokenIssuer = {"a", "b"},
-      staticClaims = {
-          @JWT.StaticClaim(claim = "roles", value = {"viewer", "editor"}),
-          @JWT.StaticClaim(claim = "aud", value = "${ENV}.kalix.io"),
-          @JWT.StaticClaim(claim = "sub", pattern = "^sub-\\S+$")
-      })
-    public Action.Effect<Message> message(@RequestBody Message msg) {
-      return effects().reply(msg);
-    }
-  }
-
-
-  @JWT(
-    validate = JWT.JwtMethodMode.BEARER_TOKEN,
-    bearerTokenIssuer = {"a", "b"},
-    staticClaims = {
-        @JWT.StaticClaim(claim = "roles", value = {"editor", "viewer"}),
-        @JWT.StaticClaim(claim = "aud", value = "${ENV}.kalix.io"),
-        @JWT.StaticClaim(claim = "sub", pattern = "^\\S+$")
-    })
-  public static class ActionWithServiceLevelJWT extends Action {
-    @PostMapping("/message")
-    public Action.Effect<Message> message(@RequestBody Message msg) {
-      return effects().reply(msg);
-    }
-  }
-  */
 }

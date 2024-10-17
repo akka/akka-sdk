@@ -11,7 +11,6 @@ import java.util.concurrent.CompletionStage
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.Promise
-import scala.jdk.CollectionConverters.CollectionHasAsScala
 import scala.jdk.FutureConverters._
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
@@ -59,6 +58,8 @@ import akka.javasdk.timer.TimerScheduler
 import akka.javasdk.view.View
 import akka.javasdk.workflow.Workflow
 import akka.javasdk.workflow.WorkflowContext
+import akka.javasdk.JwtClaims
+import akka.javasdk.impl.http.JwtClaimsImpl
 import akka.runtime.sdk.spi.ComponentClients
 import akka.runtime.sdk.spi.HttpEndpointConstructionContext
 import akka.runtime.sdk.spi.HttpEndpointDescriptor
@@ -85,7 +86,10 @@ import kalix.protocol.view.Views
 import kalix.protocol.workflow_entity.WorkflowEntities
 import org.slf4j.LoggerFactory
 
+import java.util.Optional
+import scala.jdk.OptionConverters.RichOption
 import scala.jdk.OptionConverters.RichOptional
+import scala.jdk.CollectionConverters._
 
 /**
  * INTERNAL API
@@ -557,6 +561,9 @@ private final class Sdk(
             new RequestContext {
               override def getPrincipals: Principals =
                 PrincipalsImpl(context.principal.source, context.principal.service)
+
+              override def getJwtClaims: Optional[JwtClaims] =
+                context.jwt.map(new JwtClaimsImpl(_)).asInstanceOf[Option[JwtClaims]].toJava
             };
         }
       }

@@ -26,16 +26,16 @@ public @interface JWT {
 
   JwtMethodMode[] validate() default JwtMethodMode.UNSPECIFIED;
 
+  //TODO: add link below to docs "configuration for JWT secrets" when available
   /**
-   * If set, then the token extracted from the bearer token must have this issuer.
+   * If set, then the token extracted from the bearer token must have one of these issuers.
    *
-   * This can be used in combination with the issuer field of configuration for JWT secrets, if
-   * there is at least one secret that has this issuer set, then only those secrets with that issuer
-   * set will be used for validating or signing this token, so you can be sure that the token did
-   * come from a particular issuer.`
-   *
+   * <p>This can be used in combination with the issuer field of configuration for JWT secrets.
+   * If there is at least one secret that has this issuer set, then only the secrets with that
+   * issuer set will be used for validation. This ensures that the token comes from a
+   * particular issuer.
    */
-  String[] bearerTokenIssuer() default {};
+  String[] bearerTokenIssuers() default {};
 
 
   /**
@@ -65,7 +65,7 @@ public @interface JWT {
      * or a combination of both (e.g. "${ENV_VAR}-admin").
      * When declaring multiple values, ALL of those will be required when validating the claim.
      */
-    String[] value() default {};
+    String[] values() default {};
 
     /**
      *  This receives a regex expression (Java flavor) used to match on the incoming claim value.

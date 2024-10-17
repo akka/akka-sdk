@@ -4,7 +4,6 @@
 
 package akka.javasdk.testmodels.view;
 
-import akka.NotUsed;
 import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.annotations.Consume;
@@ -24,7 +23,6 @@ import akka.javasdk.testmodels.keyvalueentity.CounterState;
 import akka.javasdk.testmodels.keyvalueentity.TimeTrackerEntity;
 import akka.javasdk.testmodels.keyvalueentity.User;
 import akka.javasdk.testmodels.keyvalueentity.UserEntity;
-import akka.stream.javadsl.Source;
 
 import java.util.List;
 import java.util.Optional;
@@ -258,10 +256,10 @@ public class ViewTestModels {
     @Query("SELECT * FROM users WHERE email = :email")
     @JWT(
         validate = JWT.JwtMethodMode.BEARER_TOKEN,
-        bearerTokenIssuer = {"a", "b"},
+        bearerTokenIssuers = {"a", "b"},
         staticClaims = {
-            @JWT.StaticClaim(claim = "role", value = "admin"),
-            @JWT.StaticClaim(claim = "aud", value = "${ENV}.kalix.io")
+            @JWT.StaticClaim(claim = "role", values = "admin"),
+            @JWT.StaticClaim(claim = "aud", values = "${ENV}.kalix.io")
         })
     public QueryEffect<TransformedUser> getUser(ByEmail byEmail) {
       return queryResult();
@@ -271,10 +269,10 @@ public class ViewTestModels {
   @ComponentId("users_view")
   @JWT(
     validate = JWT.JwtMethodMode.BEARER_TOKEN,
-    bearerTokenIssuer = {"a", "b"},
+    bearerTokenIssuers = {"a", "b"},
     staticClaims = {
-        @JWT.StaticClaim(claim = "role", value = "admin"),
-        @JWT.StaticClaim(claim = "aud", value = "${ENV}.kalix.io")
+        @JWT.StaticClaim(claim = "role", values = "admin"),
+        @JWT.StaticClaim(claim = "aud", values = "${ENV}.kalix.io")
     })
   public static class ViewWithServiceLevelJWT extends View {
 

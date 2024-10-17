@@ -87,17 +87,17 @@ public class EventSourcedEntitiesTestModels {
 
         @JWT(
             validate = JWT.JwtMethodMode.BEARER_TOKEN,
-            bearerTokenIssuer = {"a", "b"})
+            bearerTokenIssuers = {"a", "b"})
         public ReadOnlyEffect<Integer> getInteger() {
             return effects().reply(currentState());
         }
 
         @JWT(
             validate = JWT.JwtMethodMode.BEARER_TOKEN,
-            bearerTokenIssuer = {"c", "d"},
+            bearerTokenIssuers = {"c", "d"},
             staticClaims = {
-                @JWT.StaticClaim(claim = "role", value = "method-admin"),
-                @JWT.StaticClaim(claim = "aud", value = "${ENV}")
+                @JWT.StaticClaim(claim = "role", values = "method-admin"),
+                @JWT.StaticClaim(claim = "aud", values = "${ENV}")
             })
         public ReadOnlyEffect<Integer> changeInteger(Integer number) {
             return effects().reply(number);
@@ -112,10 +112,10 @@ public class EventSourcedEntitiesTestModels {
     @ComponentId("counter")
     @JWT(
         validate = JWT.JwtMethodMode.BEARER_TOKEN,
-        bearerTokenIssuer = {"a", "b"},
+        bearerTokenIssuers = {"a", "b"},
         staticClaims = {
-            @JWT.StaticClaim(claim = "role", value = "admin"),
-            @JWT.StaticClaim(claim = "aud", value = "${ENV}.kalix.io")
+            @JWT.StaticClaim(claim = "role", values = "admin"),
+            @JWT.StaticClaim(claim = "aud", values = "${ENV}.kalix.io")
         })
     public static class CounterEventSourcedEntityWithServiceLevelJWT extends EventSourcedEntity<Integer, CounterEvent> {
 

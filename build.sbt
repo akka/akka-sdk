@@ -95,7 +95,8 @@ lazy val akkaJavaSdk =
       Compile / PB.targets += PB.gens.java -> crossTarget.value / "akka-grpc" / "main",
       Test / akkaGrpcGeneratedSources := Seq(AkkaGrpc.Client),
       Test / PB.protoSources ++= (Compile / PB.protoSources).value,
-      Test / PB.targets += PB.gens.java -> crossTarget.value / "akka-grpc" / "test")
+      Test / PB.targets += PB.gens.java -> crossTarget.value / "akka-grpc" / "test",
+      Test / envVars ++= Map("ENV" -> "value1", "ENV2" -> "value2"))
     .settings(Dependencies.javaSdk)
 
 lazy val akkaJavaSdkTestKit =

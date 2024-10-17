@@ -15,8 +15,13 @@ import akka.javasdk.annotations.http.HttpEndpoint
 import akka.javasdk.annotations.http.Patch
 import akka.javasdk.annotations.http.Post
 import akka.javasdk.annotations.http.Put
+import akka.javasdk.annotations.JWT
+import akka.javasdk.annotations.JWT.JwtMethodMode
 import akka.runtime.sdk.spi.ACL
+import akka.runtime.sdk.spi.{ JWT => RuntimeJWT }
 import akka.runtime.sdk.spi.All
+import akka.runtime.sdk.spi.ClaimPattern
+import akka.runtime.sdk.spi.ClaimValues
 import akka.runtime.sdk.spi.ComponentOptions
 import akka.runtime.sdk.spi.HttpEndpointConstructionContext
 import akka.runtime.sdk.spi.HttpEndpointDescriptor
@@ -25,12 +30,24 @@ import akka.runtime.sdk.spi.Internet
 import akka.runtime.sdk.spi.MethodOptions
 import akka.runtime.sdk.spi.PrincipalMatcher
 import akka.runtime.sdk.spi.ServiceNamePattern
+import akka.runtime.sdk.spi.StaticClaim
+import akka.runtime.sdk.spi.StaticClaimContent
+import org.slf4j.LoggerFactory
+
+import java.lang.reflect.Method
+
+import scala.util.matching.Regex
+import scala.util.Success
+import scala.util.Failure
+import scala.util.Try
 
 /**
  * INTERNAL API
  */
 @InternalApi
 private[javasdk] object HttpEndpointDescriptorFactory {
+
+  val logger = LoggerFactory.getLogger(classOf[HttpEndpointDescriptorFactory.type])
 
   def apply(
       endpointClass: Class[_],
@@ -65,7 +82,9 @@ private[javasdk] object HttpEndpointDescriptorFactory {
           httpMethod = httpMethod,
           pathExpression = path,
           userMethod = method,
-          methodOptions = deriveAclOptions(Option(method.getAnnotation(classOf[Acl]))).map(new MethodOptions(_)))
+          methodOptions = new MethodOptions(
+            deriveAclOptions(Option(method.getAnnotation(classOf[Acl]))),
+            deriveJWTOptions(Option(method.getAnnotation(classOf[JWT])), endpointClass.getCanonicalName, Some(method))))
       }
     }.toVector
 
@@ -73,8 +92,9 @@ private[javasdk] object HttpEndpointDescriptorFactory {
       mainPath = mainPath,
       instanceFactory = instanceFactory,
       methods = methods,
-      componentOptions =
-        deriveAclOptions(Option(endpointClass.getAnnotation(classOf[Acl]))).map(new ComponentOptions(_)))
+      componentOptions = new ComponentOptions(
+        deriveAclOptions(Option(endpointClass.getAnnotation(classOf[Acl]))),
+        deriveJWTOptions(Option(endpointClass.getAnnotation(classOf[JWT])), endpointClass.getCanonicalName)))
   }
 
   // receives the method, checks if it is annotated with @Acl and if so,
@@ -90,6 +110,58 @@ private[javasdk] object HttpEndpointDescriptorFactory {
         denyHttpCode = None // FIXME we can probably use http codes instead of grpc ones
       )
     }
+
+  private[impl] def extractEnvVars(claimValueContent: String, claimRef: String): String = {
+    val pattern = """\$\{([A-Z_][A-Z0-9_]*)\}""".r
+
+    pattern.replaceAllIn(
+      claimValueContent,
+      matched => {
+        val varName = matched.group(1)
+        Try(sys.env(varName)) match {
+          case Success(varValue) => varValue
+          case Failure(ex) =>
+            throw new IllegalArgumentException(
+              s"[${ex.getMessage}] env var is missing but it is used in claim [$claimValueContent] in [$claimRef].")
+        }
+      })
+  }
+
+  private def deriveJWTOptions(
+      jwtAnnotation: Option[JWT],
+      className: String,
+      method: Option[Method] = None): Option[RuntimeJWT] = {
+    //Validates the a.j.a.JWT.StaticClaim and creates a.r.s.spi.StaticClaim out of it
+    def createStaticClaim(staticClaim: JWT.StaticClaim): Option[StaticClaim] = {
+      val culprit = method.getOrElse(className).toString
+      val content: Option[StaticClaimContent] = (staticClaim.values(), staticClaim.pattern) match {
+        case (value, pattern) if value.nonEmpty && pattern.nonEmpty =>
+          throw new IllegalArgumentException(
+            s"Claim in $culprit must have a content at most for one: `value` or `pattern`. This claim has both.")
+        case (values, _) if values.nonEmpty =>
+          val staticClaimValues = values.map(v => extractEnvVars(v, culprit))
+          Some(new ClaimValues(staticClaimValues.toSet))
+        case (_, pattern) if pattern.nonEmpty =>
+          Try(new Regex(pattern)) match {
+            case Success(_) => Some(new ClaimPattern(staticClaim.pattern()))
+            case Failure(ex) =>
+              throw new IllegalArgumentException(s"Claim in $culprit has an invalid `pattern`.", ex)
+          }
+        case _ =>
+          throw new IllegalArgumentException(
+            s"Claim in $culprit must have a content at least for one: `value` or `pattern`.")
+      }
+      content.map(new StaticClaim(staticClaim.claim(), _))
+    }
+
+    jwtAnnotation.map { ann =>
+      val spiStaticClaims = ann.staticClaims().flatMap(createStaticClaim)
+      new RuntimeJWT(
+        validate = ann.validate().contains(JwtMethodMode.BEARER_TOKEN),
+        bearerTokenIssuers = ann.bearerTokenIssuers().toSeq,
+        claims = spiStaticClaims.toSet)
+    }
+  }
 
   private def toPrincipalMatcher(matchers: Array[Acl.Matcher]): List[PrincipalMatcher] =
     matchers.map { m =>
