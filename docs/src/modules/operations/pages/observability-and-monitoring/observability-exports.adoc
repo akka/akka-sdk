@@ -51,7 +51,7 @@ After updating your observability configuration, you will need to restart a serv
 
 === Activating tracing (Beta)
 
-The generation of traces is disabled by default. To enable it you need to set xref:reference:descriptor-reference.adoc#_akkaservicespec[telemetry/tracing/enabled] to `true`. Like the following: 
+The generation of traces is disabled by default. To enable it you need to set xref:reference:descriptors/service-descriptor.adoc#_servicespec[telemetry/tracing/enabled] to `true`. Like the following:
 
 [source,yaml]
 ----
@@ -139,7 +139,7 @@ CLI::
 akka project observability set default otlp --endpoint otlp.example.com:4317
 ----
 
-In addition, the OTLP exporter supports <<TLS configuration>> and <<Custom headers,custom headers>>. A full reference of configuration options is available in xref:reference:descriptor-reference.adoc#_akkaobservabilityotlp[the reference documentation].
+In addition, the OTLP exporter supports <<TLS configuration>> and <<Custom headers,custom headers>>. A full reference of configuration options is available in xref:reference:descriptors/observability-descriptor.adoc#_observabilityotlp[the reference documentation].
 
 === Prometheus Remote Write
 
@@ -161,7 +161,7 @@ CLI::
 akka project observability set metrics prometheus --endpoint https://prometheus.example.com/api/v1/push
 ----
 
-In addition, the Prometheus exporter supports <<TLS configuration>> and <<Custom headers,custom headers>>. A full reference of configuration options is available in xref:reference:descriptor-reference.adoc#_akkaobservabilityprometheuswrite[the reference documentation].
+In addition, the Prometheus exporter supports <<TLS configuration>> and <<Custom headers,custom headers>>. A full reference of configuration options is available in xref:reference:descriptors/observability-descriptor.adoc#_observabilityprometheuswrite[the reference documentation].
 
 === Splunk HEC
 
@@ -188,7 +188,7 @@ akka project observability set default splunk-hec \
   --token-secret-name my-splunk-token --token-secret-key token
 ----
 
-In addition, the Splunk HEC exporter supports <<TLS configuration>>. A full reference of configuration options is available in xref:reference:descriptor-reference.adoc#_akkaobservabilitysplunkhec[the reference documentation].
+In addition, the Splunk HEC exporter supports <<TLS configuration>>. A full reference of configuration options is available in xref:reference:descriptors/observability-descriptor.adoc#_observabilitysplunkhec[the reference documentation].
 
 [#_google_cloud]
 === Google Cloud

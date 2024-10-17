@@ -1,4 +1,7 @@
 * xref:index.adoc[Reference]
+** xref:descriptors/service-descriptor.adoc[Service descriptor]
+** xref:descriptors/route-descriptor.adoc[Route descriptor]
+** xref:descriptors/observability-descriptor.adoc[Observability descriptor]
 ** xref:glossary.adoc[Glossary of terms]
 ** xref:release-notes.adoc[Release notes]
 ** xref:migration-guide.adoc[Migration Guide]

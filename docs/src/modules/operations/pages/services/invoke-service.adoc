@@ -172,7 +172,7 @@ $ akka route edit acme-ecommerce
 Route updated.
 ----
 
-For a complete reference for the Akka route descriptor, see the xref:reference:descriptor-reference.adoc#akka-route[Akka route descriptor reference].
+For a complete reference for the Akka route descriptor, see the xref:reference:descriptors/route-descriptor.adoc[Akka route descriptor reference].
 
 ==== Enabling CORS
 
