@@ -1,14 +1,23 @@
 = Samples
-
 include::ROOT:partial$include.adoc[]
 
-A collection of useful samples for building with Akka, demonstrating several important patterns and abstractions.
+[TIP]
+====
+*New to Akka? Start here:* 
+
+xref:java:build-your-first-application.adoc[*Build a shopping cart*]
+
+This sample is recommended for beginners and provides a foundational understanding of Akka. Start here before exploring other samples.
+====
+
+Other samples are available that demonstrate important patterns and abstractions. These can be downloaded as zip files. Please refer to the `README` file in each zip for setup and usage instructions.
 
 [options="header", cols="4,2"]
 |=======================
 | Sample|Level
-| xref:shopping-cart.adoc[]|Beginner
-| Other samples TBD|Beginner/Intermediate/Advanced
+| link:../java/_attachments/customer-registry-quickstart.zip[Build a customer registry with query capabilities]|Intermediate
+| link:../java/_attachments/workflow-quickstart.zip[Build a funds transfer workflow between two wallets]|Intermediate
+| link:../java/_attachments/choreography-saga-quickstart.zip[Build a user registration service implemented as a Choreography Saga]|Advanced
 |=======================
 
 [sidebar]
