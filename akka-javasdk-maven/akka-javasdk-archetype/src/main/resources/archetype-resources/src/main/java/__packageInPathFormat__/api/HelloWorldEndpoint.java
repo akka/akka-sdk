@@ -1,4 +1,4 @@
-package ${package}.hello;
+package ${package}.api;
 
 import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.http.HttpEndpoint;
