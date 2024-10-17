@@ -5,6 +5,7 @@
 ** xref:glossary.adoc[Glossary of terms]
 ** xref:release-notes.adoc[Release notes]
 ** xref:migration-guide.adoc[Migration Guide]
+** xref:api-docs.adoc[]
 ** xref:akka-cli/index.adoc[]
 *** xref:akka-cli/akka.adoc[]
 *** xref:akka-cli/akka_auth.adoc[]

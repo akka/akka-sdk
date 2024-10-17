@@ -12,4 +12,3 @@
 ** xref:setup-and-dependency-injection.adoc[]
 ** xref:errors-and-failures.adoc[]
 ** xref:access-control.adoc[]
-** xref:api-docs.adoc[API documentation]
