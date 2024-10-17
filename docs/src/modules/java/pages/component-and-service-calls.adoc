@@ -47,7 +47,7 @@ include::java:example$doc-snippets/src/main/java/com/example/callanotherservice/
 <4> Invoking the call will return a `CompletionStage<StrictResponse<T>>` with details about the result as well as the deserialized response body.
 <5> Handle the response, which may be successful, or an error
 
-The http client provider client is only available for injection in the following types of components: Endpoints, Workflows, Consumers and Timed Actions.
+The HTTP client provider client is only available for injection in the following types of components: Endpoints, Workflows, Consumers and Timed Actions.
 
 == External services
 

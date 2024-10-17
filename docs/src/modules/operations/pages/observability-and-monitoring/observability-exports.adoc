@@ -93,7 +93,7 @@ akka project observability get
 
 To change configuration, the `set` command can be used. To change the default exporter for both logs and metrics, use `set default`, to change the exporter just for metrics, use `set metrics`, and to change the exporter just for logs, use `set logs`.
 
-When using the `set` command, the default, logs or metrics exporter configuration will be completely replaced. So, it's important to include the full configuration for that exporter when you run the command. For example, if you run `akka project observability set default otlp --endpoint otlp.example.com:4317`, and then you want to add a header, you must include the `--endpoint` flag when setting the header.
+When using the `set` command, the default, logs or metrics exporter configuration will be completely replaced. It's important to include the full configuration for that exporter when you run the command. For example, if you run `akka project observability set default otlp --endpoint otlp.example.com:4317`, and then you want to add a header, you must include the `--endpoint` flag when setting the header.
 
 == Supported exporters
 

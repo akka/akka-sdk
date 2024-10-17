@@ -26,16 +26,14 @@ matchers in the deny list.
 An ACL can be configured at the class level, or at the method level. If an ACL is configured at the class level it
 applies to all methods in the class. Unless it's overridden by an ACL added at method level.
 
-Here is an example of an ACL added at the class level on a Http Endpoint:
+Here is an example of an ACL added at the class level on an HTTP Endpoint:
 
 [source, java, indent=0]
 ----
 include::example$doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[tags=endpoint-class;class-level-acl]
 ----
 
-The above ACL only allows incoming traffic from `service-a`. Meaning that only a service named `service-a` deployed
-on that same project will be able to make calls to this endpoint. This rule is applied to all methods in this Http
-Endpoint.
+The above ACL only allows incoming traffic from `service-a`. Meaning that only a service named `service-a` deployed on that same project will be able to make calls to this endpoint. This rule is applied to all methods in this HTTP Endpoint.
 
 This rule can be overridden by an ACL on a method level. Here is an example ACL on a method that overrides the class level ACL:
 
@@ -124,7 +122,7 @@ You can disable the local ACL checks by configuring the following settings in th
 akka.javasdk.dev-mode.acl.enabled = false
 ----
 
-Alternativly, start with:
+Alternatively, start with:
 
 [source,shell]
 ----

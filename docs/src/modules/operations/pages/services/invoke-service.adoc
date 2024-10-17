@@ -286,7 +286,7 @@ You can customize the port and bind address by running:
 akka service proxy my-service --port 8081 --bind-address 0.0.0.0
 ----
 
-You can now invoke your services using an HTTP client. TLS is not enabled. So for example, using `curl` to invoke your services from another terminal window:
+You can now invoke your services using an HTTP client. TLS is not enabled. For example, using `curl` to invoke your services from another terminal window:
 
 [source,bash]
 ----

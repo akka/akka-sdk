@@ -89,7 +89,7 @@ For validating:
 
 * The list is first filtered by all keys capable of validating - that is, any keys for the HMAC algorithm, or any keys for an asymmetric algorithm that have the public key defined.
 * If the token being validated defines an issuer (iss), and there is at least one key that has that issuer defined, then the list is filtered to only include keys from that issuer. Otherwise, all keys capable of validating remain as candidates.
-* The list is then filtered matching the algorithm. The algorithm only has to match by key type, that is, by HMAC, RSA, ECDSA or EdDSA. So a key that has an algorithm of HS256 can be used to validate a token signed by an algorithm of HS512.
+* The list is then filtered matching the algorithm. The algorithm only has to match by key type, that is, by HMAC, RSA, ECDSA or EdDSA. A key that has an algorithm of HS256 can be used to validate a token signed by an algorithm of HS512.
 * If at this point, there are still multiple keys remaining, then the first key that matches the key id (kid) parameter, if defined, in the token is used, otherwise, the first key of the remaining keys is used.
 
 For signing:

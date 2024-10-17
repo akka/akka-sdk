@@ -1,6 +1,6 @@
 = View metrics
 
-Akka projects have this dashboard built-in as part of the Control Tower in the Akka Console. This is available out-of-the-box. You can see metrics such as "requests per second", "replicas" of a service, or "commands received" by a component. The data is grouped into seven categories: Services, Event Sourced Entities, Value Entities, Actions, Views, Workflows, and Subscriptions. This is an example of a section within the dashboard.
+Akka projects have this dashboard built-in as part of the Control Tower in the Akka Console. This is available out-of-the-box. You can see metrics such as requests per second, replicas of a service or commands received by a component. The data is grouped into seven categories: Services, Event Sourced Entities, Value Entities, Actions, Views, Workflows, and Subscriptions. This is an example of a section within the dashboard.
 
 image:operations:dashboard-control-tower-metrics-screenshot.png[]
 

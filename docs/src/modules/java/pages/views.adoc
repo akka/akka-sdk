@@ -179,9 +179,7 @@ When creating a View, you can transform the results as a projection for construc
 
 === Result projection
 
-Instead of using `SELECT *` you can define which columns will be used in the response message. So, if you want to use a `CustomerSummary` used on the previous section.
-
-You will need to define your entity as this:
+Instead of using `SELECT *` you can define which columns will be used in the response message. If you want to use a `CustomerSummary` used on the previous section, you will need to define your entity as this:
 
 [source,java,indent=0]
 .{sample-base-url}/key-value-customer-registry/src/main/java/customer/application/CustomerSummaryByName.java[CustomerSummaryByName.java]

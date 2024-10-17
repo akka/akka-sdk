@@ -17,6 +17,4 @@ Note that requests that have the internet principal are requests that Akka has i
 
 == Configuring ACLs
 
-To understand how to make use of ACLs to secure your Akka services in practice, consult the respective SDK's sub-section:
-
-* xref:java:access-control.adoc[Java: Using ACLs]
+To understand how to make use of ACLs to secure your Akka services in practice, see xref:java:access-control.adoc[].

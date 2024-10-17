@@ -59,7 +59,7 @@ This is a Maven run configuration for `mvn compile exec:java`. You can also run 
 
 == Running service with persistence enabled
 
-By default, when running locally, persistence is disabled. This means the Akka Runtime will use an in-memory datastore for the state of your services. This is useful for local development since it allows you to quickly start and stop your service without having to worry about cleaning the database.
+By default, when running locally, persistence is disabled. This means the Akka Runtime will use an in-memory data store for the state of your services. This is useful for local development since it allows you to quickly start and stop your service without having to worry about cleaning the database.
 
 However, if you want to run your service with persistence enabled to keep the data when restarting, you can configure
 the service in `application.conf` with `akka.javasdk.dev-mode.persistence.enabled=true` or as a system property when

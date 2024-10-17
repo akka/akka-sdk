@@ -79,7 +79,7 @@ The list of components are:
 
 For this *Getting started* walk-through, we will implement a Shopping Cart based on an Event Sourced Entity.
 
-Through our "Shopping Cart" Event Sourced Entity we expect to manage our cart, adding and removing items as we please. Being event-sourced means it will represent changes to state as a series of domain events. So let’s have a look at what kind of model we expect to store and the events our entity might generate.
+Through our "Shopping Cart" Event Sourced Entity we expect to manage our cart, adding and removing items as we please. Being event-sourced means it will represent changes to state as a series of domain events. Let’s have a look at what kind of model we expect to store and the events our entity might generate.
 
 === Define the domain model
 

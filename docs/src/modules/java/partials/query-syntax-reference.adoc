@@ -231,7 +231,7 @@ The count based offset requires that you keep track of how far you got by adding
 
 An alternative to this is to use a string token emitted by Akka identifying how far into the result set the paging has reached using the functions `next_page_token()` and `page_token_offset()`.
 
-When reading the first page, an empty token is provided to `page_token_offset`. For each returned result page a new token that can be used to read the next page is returned by `next_page_token()`, once the last page has been read, an empty token is returned (see also xref:has-more[has_more] for determining if the last page was reached).
+When reading the first page, an empty token is provided to `page_token_offset`. For each returned result page a new token that can be used to read the next page is returned by `next_page_token()`, once the last page has been read, an empty token is returned. (xref:has-more[See here] for determining if the last page was reached).
 
 The size of each page can optionally be specified using `LIMIT`, if it is not present a default page size of 100 is used.
 

@@ -50,7 +50,7 @@ It's probable that the error is happening because there is a bad value for the D
 `gcr.io/akka-public/samples-js-value-entity-shopping-cart:0.0.81818`
 An invalid value anywhere within the Name or URL triggers the `ImagePullBackoff` error. In this case, the tag used, `0.0.81818`, does not exist.
 
-*To resolve this issue, review the URL for:*
+*To resolve this issue, look for the following in the URL:*
 
 * Typos
 * Missing components

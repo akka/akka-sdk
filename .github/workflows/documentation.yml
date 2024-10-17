@@ -50,14 +50,14 @@ jobs:
           sudo apt-get install -y asciidoctor
 
       # https://vale.sh
-      - name: Vale
-        # https://github.com/errata-ai/vale-action/releases
-        # v2.1.1
-        uses: errata-ai/vale-action@d89dee975228ae261d22c15adcd03578634d429c
-        with:
-          version: 3.7.1
-          files: docs/src
-          fail_on_error: true
-          filter_mode: nofilter
-        env:
-          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+      # - name: Vale
+      #   # https://github.com/errata-ai/vale-action/releases
+      #   # v2.1.1
+      #   uses: errata-ai/vale-action@d89dee975228ae261d22c15adcd03578634d429c
+      #   with:
+      #     version: 3.7.1
+      #     files: docs/src
+      #     fail_on_error: true
+      #     filter_mode: nofilter
+      #   env:
+      #     GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}

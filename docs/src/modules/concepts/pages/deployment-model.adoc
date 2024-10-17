@@ -7,7 +7,7 @@ Akka applications are distributed by design. Although you can run an entire set 
 
 == Logical deployment
 
-In Akka the logical unit of deployment is a Service. A service contains your components and it deploys into a project. The heirarchy is described below. 
+In Akka the logical unit of deployment is a Service. A service contains your components and it deploys into a project. The hierarchy is described below. 
 
 === Project
 A project is the root of one or more services that are meant to be deployed and run together. The project is a logical container for these services and provides common management capabilities. Projects contain a list of xref:concepts:deployment-model.adoc#_region[regions] that they deploy to. More detail is covered in xref:concepts:deployment-model.adoc#_physical_deployment[physical deployment].
@@ -20,7 +20,7 @@ xref:operations:services/index.adoc[] are the core unit of deployment in Akka. T
 Akka services run in a cluster. A cluster is an instance of the Akka runtime which is spread over multiple machines in a given geographical place. We call that place a xref:concepts:deployment-model.adoc#_region[region]. In our cloud service a region corresponds to a region from a cloud infrastructure provider such as AWS, Azure, or Google Cloud. "US East" is an AWS region that contains multiple Availability Zones: for Akka this is just a region. By default Akka spans availability zones in our cloud.
 
 === Region
-xref:operations:organizations/regions.adoc[] are specific Akka clusters running in a specific place. Regions are designed to run independently for greater availability. They are also designed to replicate data asynchronously between eachother. Every Akka xref:concepts:deployment-model.adoc#_project[project] specifies a list of one or more regions in which it runs.
+xref:operations:organizations/regions.adoc[] are specific Akka clusters running in a specific place. Regions are designed to run independently for greater availability. They are also designed to replicate data asynchronously between each other. Every Akka xref:concepts:deployment-model.adoc#_project[project] specifies a list of one or more regions in which it runs.
 
 In addition to your services from a project, a region also has endpoints for your API. You define endpoints within the xref:concepts:architecture-model.adoc#_architecture[API layer] and Akka will expose them. They will be unique to each region. That is they will have unique DNS, much like AWS services S3 and SQS do.
 
@@ -41,7 +41,7 @@ You manage a project as a single unit and Akka does all the work to manage each 
 Regions can be added to or removed from an Akka project while it is running. There is no need to stop the services within the project to do this. 
 
 ==== Adding regions
-You can add regions to an Akka project and Akka will deploy the services in that project to the new region and expose endpoints. It will also begin replication of all data *(for now that excludes Key Value Entities)*. This replication time will depend on the size of the dataset (state) being replicated and the distance between the regions. Adding regions is a graceful behaivor. The new region will be available to serve traffic after being added, but it may take some time until the initial replication is complete. You can monitor replication by monitoring Consumer Lag.
+You can add regions to an Akka project and Akka will deploy the services in that project to the new region and expose endpoints. It will also begin replication of all data *(for now that excludes Key Value Entities)*. This replication time will depend on the size of the dataset (state) being replicated and the distance between the regions. Adding regions is a graceful behavior. The new region will be available to serve traffic after being added, but it may take some time until the initial replication is complete. You can monitor replication by monitoring Consumer Lag.
 
 :TODO: [NEED TO ADD LINK]
 

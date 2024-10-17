@@ -69,7 +69,7 @@ NOTE: Make sure that you are familiar with the Jackson serialization library and
 
 == Failures
 
-All unexpected exception thrown be the user code are transformed into an HTTP 500 error. When running the service locally in dev mode, a stack strace is will be a part of the HTTP response. In production, this information is hidden, to not leak internal details about the service to a client. The client will receive a non-descriptive message with a correlation ID, like below.
+All unexpected exception thrown be the user code are transformed into an HTTP 500 error. When running the service locally in dev mode, a stack trace is will be a part of the HTTP response. In production, this information is hidden, to not leak internal details about the service to a client. The client will receive a non-descriptive message with a correlation ID, like below.
 
 [source]
 ----

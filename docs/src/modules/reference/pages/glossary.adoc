@@ -21,7 +21,7 @@ A _command handler_ is the code that handles a command. It may validate the comm
 
 [[entity_key]]Entity key:: Deprecated name for the <<component_id>>.
 
-[[component_id]]Component id:: An id used to identify instances of a stateful components like <<entity>> or <<workflow>>. All <<command>>s must contain the component id so that the command can be routed to the right instance of the component that the command is for. The gRPC descriptoFr annotates the incoming message types for the component to indicate which field(s) contain the id.
+[[component_id]]Component id:: An id used to identify instances of a stateful components like <<entity>> or <<workflow>>. All <<command>>s must contain the component id so that the command can be routed to the right instance of the component that the command is for. The gRPC descriptor annotates the incoming message types for the component to indicate which field(s) contain the id.
 
 [[endpoint]]Endpoint::
 

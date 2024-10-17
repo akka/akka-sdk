@@ -78,7 +78,7 @@ Requests and responses from entities are more limited and may not be larger than
 
 === Who can sign up for a trial?
 
-We know that you want to "try before you buy" so everyone can sign up for a free trial! Whether you’re a back-end developer, an architect, a serverless expert, or have a completely different role you can sign up for Akka. The only thing we ask is that you sign up with your company email address (we promise we won’t spam you or try to sell you anything). Your trial is completely free, we give you a certain amount of credits, and if you run out drop us an email at mailto:akka-support@lightbend.com[] to request more and extend your trial.
+We know that you want to "try before you buy" so everyone can sign up for a free trial! Whether you’re a back-end developer, an architect, a serverless expert, or have a completely different role you can sign up for Akka. Our only request is that you sign up with your company email address (we promise we won’t spam you or try to sell you anything). Your trial is completely free, we give you a certain amount of credits, and if you run out drop us an email at mailto:akka-support@lightbend.com[] to request more and extend your trial.
 
 === Are there any limits to what I can deploy?
 

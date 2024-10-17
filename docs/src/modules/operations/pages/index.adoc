@@ -2,7 +2,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-Akka provides capabilities to manage, monitor and gather insights from your application and its services once they are deployed. These resources will guide you through operating Akka applications and services. You should already be familar with the xref:concepts:deployment-model.adoc[].
+Akka provides capabilities to manage, monitor and gather insights from your application and its services once they are deployed. These resources will guide you through operating Akka applications and services. You should already be familiar with the xref:concepts:deployment-model.adoc[].
 
 In these sections, you can find information on:
 

@@ -13,7 +13,7 @@ A responsive application adheres to the Reactive Principles, a set of best pract
 |Agile  
 |Akka updates, rebalances and repartitions workloads to enable no-downtime maintenance events.
 |Resilient  
-|Akka apps act as their own in-memory database that is recoverable, migratable, and replicable to to handle any potential failure.
+|Akka apps act as their own in-memory database that is recoverable, migratable, and replicable to handle any potential failure.
 |====
 
 Akka provides libraries, components, sandboxes, buildpacks, and a cloud runtime to simplify the development and operation of responsive applications. 
@@ -27,7 +27,7 @@ A new developer unfamiliar with Akka should be able to design and implement a se
 There are two ways to build Akka applications.
 [cols="1,4"]
 |====
-|Akka SDK   |Available starting with Akka 3, the SDK provides a set of components for building durable, transactional, and real-time services.The components are simple to learn, require few dependencies, and enforce a strict separation of concerns that abstracts your domain logic apart from infrastructure.
+|Akka SDK   |Available starting with Akka 3, the SDK provides a set of components for building durable, transactional, and real-time services. The components are simple to learn, require few dependencies, and enforce a strict separation of concerns that abstracts your domain logic apart from infrastructure.
 
 Applications built with the SDK are DevOps and platform-ready, where they can be deployed, scaled, replicated, and operated without requiring configuration changes or cloud infrastructure setup.
 
