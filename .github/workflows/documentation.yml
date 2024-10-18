@@ -2,7 +2,10 @@ name: Documentation
 
 on:
   workflow_dispatch: # Manually triggered workflow until docs are ready
-#  pull_request:
+  pull_request:
+    paths:
+      - 'docs/**'
+
 #  push:
 #    branches:
 #      - main
@@ -10,32 +13,35 @@ on:
 
 permissions:
   contents: read
+  pull-requests: write
 
 jobs:
-  make-docs:
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Checkout
-        # https://github.com/actions/checkout/releases
-        # v4.1.1
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
+#  make-docs:
+#    name: "Make docs"
+#    runs-on: ubuntu-22.04
+#    steps:
+#      - name: Checkout
+#        # https://github.com/actions/checkout/releases
+#        # v4.1.1
+#        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
+#
+#      - name: Cache Coursier cache
+#        # https://github.com/coursier/cache-action/releases
+#        # v6.4.5
+#        uses: coursier/cache-action@1ff273bff02a8787bc9f1877d347948af647956d
+#
+#      - name: Set up JDK 21
+#        # https://github.com/coursier/setup-action/releases
+#        # v1.3.5
+#        uses: coursier/setup-action@7bde40eee928896f074dbb76d22dd772eed5c65f
+#        with:
+#          jvm: temurin:1.21
+#
+#      - name: Make docs and validate links
+#        run: make managed local validate-links
 
-      - name: Cache Coursier cache
-        # https://github.com/coursier/cache-action/releases
-        # v6.4.5
-        uses: coursier/cache-action@1ff273bff02a8787bc9f1877d347948af647956d
-
-      - name: Set up JDK 21
-        # https://github.com/coursier/setup-action/releases
-        # v1.3.5
-        uses: coursier/setup-action@7bde40eee928896f074dbb76d22dd772eed5c65f
-        with:
-          jvm: temurin:1.21
-
-      - name: Make docs and validate links
-        run: make -C docs dev validate-links
-
-  prose:
+  vale:
+    name: "Vale style checking"
     runs-on: ubuntu-22.04
     if: github.event.repository.fork == false
     steps:
@@ -50,14 +56,15 @@ jobs:
           sudo apt-get install -y asciidoctor
 
       # https://vale.sh
-      # - name: Vale
-      #   # https://github.com/errata-ai/vale-action/releases
-      #   # v2.1.1
-      #   uses: errata-ai/vale-action@d89dee975228ae261d22c15adcd03578634d429c
-      #   with:
-      #     version: 3.7.1
-      #     files: docs/src
-      #     fail_on_error: true
-      #     filter_mode: nofilter
-      #   env:
-      #     GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+      - name: Vale
+        # https://github.com/errata-ai/vale-action/releases
+        # v2.1.1
+        uses: errata-ai/vale-action@d89dee975228ae261d22c15adcd03578634d429c
+        with:
+          version: 3.7.1
+          files: docs/src
+          fail_on_error: true
+          filter_mode: nofilter
+          vale_flags: "--config=docs/.vale.ini"
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}

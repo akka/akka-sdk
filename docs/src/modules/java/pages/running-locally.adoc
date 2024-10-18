@@ -50,9 +50,9 @@ Use `Ctrl+c` to shut down the service.
 
 == Run from IntelliJ
 
-The samples and the archetype include a run configuration for IntelliJ. In the toolbar you should see:
+The samples and archetype include a run configuration for IntelliJ. In the toolbar you should see:
 
-image:run-intellij.png[]
+image:run-intelliJ.png[]
 
 This is a Maven run configuration for `mvn compile exec:java`. You can also run this with the debugger and set breakpoints in the components.
 
