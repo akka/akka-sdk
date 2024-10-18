@@ -1,102 +1,59 @@
 = Welcome to Akka
 
-Welcome to Akka!
+Akka is a platform designed for building and running responsive applications. It adheres to the *Reactive Principles*, which promote creating services and systems that are elastic, agile, and resilient.
 
-Akka is a platform to build and run responsive applications. 
+== Key Principles
+* *Elastic*: Akka applications automatically scale to varying workloads and position active-active replicas close to users.
+* *Agile*: Akka allows for updates, rebalancing, and repartitioning of workloads, enabling no-downtime maintenance.
+* *Resilient*: Akka applications function as self-managed in-memory databases, ensuring recoverability and replicability to handle potential failures.
 
-A responsive application adheres to the Reactive Principles, a set of best practices for creating services, applications and systems that are elastic, agile, and resilient. 
+== Development and Operations
+Akka simplifies the development and operation of responsive applications by providing libraries, components, sandboxes, buildpacks, and a cloud runtime. The platform self-manages infrastructure to ensure elasticity, agility, and resilience, allowing applications to achieve their SLA goals. This includes managing database persistence, networking, clustering, and orchestration.
 
-[cols="1,4"]
-|====
-|Elastic  
-|Akka apps auto-scale to varying workloads while placing active-active replicas near users.
-|Agile  
-|Akka updates, rebalances and repartitions workloads to enable no-downtime maintenance events.
-|Resilient  
-|Akka apps act as their own in-memory database that is recoverable, migratable, and replicable to handle any potential failure.
-|====
+Akka applications are inherently event-driven, allowing developers to focus on building durable, stateful services without needing to navigate complex messaging or asynchronous programming issues. A new developer can design and implement stateful services within a day, achieving low latency and burstable performance of up to 1 million IOPS. This is made possible by integrating microservices best practices into the application and runtime transparently.
 
-Akka provides libraries, components, sandboxes, buildpacks, and a cloud runtime to simplify the development and operation of responsive applications. 
+== Building Akka Applications
+There are two primary ways to build applications with Akka:
 
-Akka self-manages the infrastructure required to achieve the elasticity, agility and resilience guarantees. Akka applications are structured to enable the Akka runtime to configure, connect, and operate the infrastructure dependencies in order for the application to achieve its SLA goals. This includes database persistence, proxies, networking traffic management, clustering, resource management, and orchestration.
+=== Akka SDK
+* *Overview*: Available with Akka 3, the SDK offers components for building durable, transactional, real-time services. It enforces separation of domain logic from infrastructure concerns.
+* *Deployment*: SDK applications are DevOps-ready and can be deployed in Akka’s serverless environment, in any hyperscaler (Bring Your Own Cloud), or (Q1 2025) in a self-hosted environment.
 
-Akka applications are inherently event-driven, without developers needing to understand the intricacies of messaging, asynchronous programming, synchronization, or locks.
+=== Akka Libraries
+* *Overview*: Available in Akka 2 and 3, these open-source libraries are foundational for building distributed systems, providing modules for actors, networking, streams, persistence, and clustering.
+* *Self-Managed*: Services built with these libraries are self-hosted and require DevOps to package them into runtime bundles. They do not operate within Akka’s serverless or BYOC environments but can interoperate with SDK-built services via message brokers.
 
-A new developer unfamiliar with Akka should be able to design and implement a set of durable, stateful services in under a day. Those services would have deterministic low latency, operate in multiple regions simultaneously, and be burstable to 1M IOPS of scale. Akka achieves this by baking microservices best practices into your application and the cloud runtime transparently. This includes ADD LINK TO SOMETHING.
+== Developer Experience
+Developers need only Java 21 and Maven as dependencies. The Akka SDK build process automatically pulls the necessary modules, enabling inter-service communication without complex orchestration. Local services include an embedded persistence store for creating distributed entities.
 
-There are two ways to build Akka applications.
-[cols="1,4"]
-|====
-|Akka SDK   |Available starting with Akka 3, the SDK provides a set of components for building durable, transactional, and real-time services. The components are simple to learn, require few dependencies, and enforce a strict separation of concerns that abstracts your domain logic apart from infrastructure.
+Developers can access a local console that replicates runtime observability, tracing, and debugging capabilities. Applications can be pushed directly to a cloud runtime or deployed via a CI/CD pipeline.
 
-Applications built with the SDK are DevOps and platform-ready, where they can be deployed, scaled, replicated, and operated without requiring configuration changes or cloud infrastructure setup.
+== DevOps Operations
+Operators can configure application elasticity without deep architectural knowledge. Akka automates instance management to meet traffic needs while preserving performance SLAs. Services can be replicated across multiple regions, spanning different geographies and environments.
+Stateful services can be read-replicated or write-replicated (Q1 2025) with conflict resolution options. Services can migrate between locations without downtime and can be restarted from specific points in time.
+Developers have access to a component library for creating various application types, including transactional, durable, AI RAG, analytics, edge, event-sourced, and streaming applications.
 
-Applications built with the SDK can be deployed in Akka’s serverless environment at Akka.io, in a Bring Your Own Cloud environment at any hyperscaler, or (Q1 2025) in a self-hosted environment.
+== Key Components
+* *Entities*: Act as in-memory databases, either event-sourced or key-value.
+* *Endpoints*: Services that expose HTTP and gRPC services, functioning similarly to Cloudflare Workers when deployed across multiple regions.
+* *Timed Actions*: Scheduled executions that are reliable and guaranteed to run at least once.
+* *Views*: Streaming projections that implement the CQRS pattern, separating reads from writes across multiple services.
+* *Workflows*: Durable, long-running processes orchestrated through Saga patterns.
 
-|Akka Libraries |Available within Akka 2 and 3, the OSS libraries are foundational modules for building distributed systems. The libraries have dozens of modules for enabling distributed services including actors, networking protocols, streams, persistence, integration, and clustering.
+== Interoperability and Integration
+Akka applications seamlessly integrate into larger service ecosystems. Components communicate via a typed _Component_ _Client_, and services can advertise state changes through events, ensuring reliable data replication and decoupled messaging.
 
-The LIbraries are un-opinionated, which offers sophisticated controls over a wide variety of distribution behavior. The Libraries are self-hosted and self-managed, where DevOps package services into runtime bundles that can operate services on devices, edge, or the cloud. 
+== Streaming
+Akka's event-sourced model is fundamentally streaming-based, providing a robust framework for handling events. Akka integrates with many messaging brokers to both interface with the outside world and to bring the benefits of Akka to non-Akka platforms and software. 
 
-Services built with the Libraries are not operable within Akka’s serverless or BYOC environments.
-
-Services built with the Libraries are interoperable with those built with the SDK through message brokers and event passing. For more information see xref:libraries:index.adoc[Akka Libraries]
-|====
-
-All docs, descriptions and AI bots default and are contextualized to the Akka SDK. They are contextualized to the Akka Libraries only when you are within their docs.
-
-Akka can be used in an SDLC flow that supports multiple teams while creating an inner dev loop that does not require platform or cloud infrastructure to be installed on a local developer’s machine. 
-
-[cols="1,4"]
-|====
-|Developers |The only dependencies for development are Java 21 and maven.
-
-The build process with Akka SDK components automatically pulls and builds the appropriate Akka modules for execution into local binaries. Akka applications that have multiple services do not require composition or orchestration to enable inter-service communication. Local services contain an embedded persistence store for creating distributed entities. Developers do not need to pack runtimes or install Akka platform components into images to test locally.
-
-Developers have access to a local console which replicates the runtime observability, tracing, and debugging capabilities for their local environment.
-
-Developers can optionally push applications directly into a cloud runtime or leverage a CI/CD pipeline workflow for deployment.
-|DevOps |Operators are able to configure an application’s elasticity properties without understanding the architecture of the microservice. Akka automates the addition and removal of instances to address current traffic needs while preserving the performance latency SLA. Akka applications automatically rebalance and reshard their data as instances are added or removed.
-
-Services can be replicated across multiple regions, which is a separate Akka environment. Regions can span across different geographies, availability zones, hyperscalers, or between Akka.io and BYOC /  self-hosted environments.
-
-Stateful services can either be read-replicated or write-replicated (Q1 2025). Write replicated services have default conflict resolution algorithms that can be overridden by developers.
-
-Services can be migrated from one location to another without downtime by configuring replication policies.
-
-Services can be restarted and replayed from a point in time, whether entities or long-lived workflows.
-|====
-
-Developers are provided with a component library that can be composed to create a variety of application types including transactional, durable execution, AI RAG, analytics, edge, event-sourced, backend for frontend, and streaming applications.
-
-[cols="1,4"]
-|====
-|Endpoints  |Services that expose and proxy HTTP & (soon) gRPC services. When deployed individually across multi-regions, Endpoints are similar to Cloudflare Workers, except replicated across hyperscalers and your POPs.
-|Timers |Scheduled execution in the future. Timers are reliable and are guaranteed to run at least once.
-|Entities   |Services that operate as their own in-memory database. Entities can either be event-sourced (with an object state definition) or key-value.
-|Views  |Streaming projections that join queries across multiple stateful services. Views implement the CQRS pattern to make reads elastically separate from writes performed on entities.
-|Workflows   |Durable, long-running processes that are composed through Saga orchestration patterns.
-|====
-
-Akka applications participate within your larger ecosystem of services through interoperability and integration.
-
-[cols="1,3"]
-|====
-|ComponentClient |Distributed components within an Akka service interact via a typed component client.
-|Event Propagation  |Services built with Akka can advertise state changes or domain-specific messages through events. Events are network accessible and can be subscribed to by other services consuming over a network or pushed into a 3rd party message broker. Event propagation is used to ensure reliable data replication, interoperability with 3rd party systems, and to facilitate decoupled messaging between services.
-|Streaming  | Akka applications are fundamentally streaming based as the event sourced model behind Akka is a stream of events.
-|====
-
+== Getting Started with Akka
 There are multiple ways to get started with Akka.
-[cols=2*]
-|====
-|Deploy, scale, and replicate a service.    
-|Take the 5 minute walk-through by creating a free account at https://console.akka.io/register[Akka.io].
-|Locally build and run a stateful service.  
-|Start with xref:java:build-your-first-application.adoc[].
-|Setup a local development environment with IDE integration, local debugging, and packing services into images. 
-|Getting Started - xref:java:running-locally.adoc[] 
-|Learn how to code with Akka’s components.  
-|Getting Started -  xref:java:build-your-first-application.adoc[]
-|Setup CI/CD pipelines, external Docker repositories, external messaging brokers, or 3rd party observability.   
-|See xref:operations:index.adoc[Operating Services].
-|====
+
+* *Deploy, scale, and replicate a service.* Take the 5 minute walk-through by creating a free account at https://console.akka.io/register[akka.io].
+* *Learn* the Akka xref:concepts:architecture-model.adoc[] for architects and developers.
+* *Learn* the Akka xref:concepts:deployment-model.adoc[] for operators.
+* *Learn* the  Akka xref:concepts:development-process.adoc[]
+* *Start a local development environment*  Getting Started with IDE integration, local debugging, and packing services into images.  xref:java:running-locally.adoc[]
+* *Learn how to code with Akka’s components.* Getting Started -  xref:java:build-your-first-application.adoc[]
+* *Setup* CI/CD pipelines, external Docker repositories, external messaging brokers, or 3rd party observability.
+See xref:operations:index.adoc[Operating Services] for more information.

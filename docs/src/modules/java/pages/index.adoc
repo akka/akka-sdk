@@ -22,13 +22,6 @@ Java:: Java {java-version} or later.
 
 Apache Maven:: https://maven.apache.org/[Apache Maven {tab-icon}, window="new"] is the recommended build tool with the Akka SDK.
 
-== A simple service
-
-:TODO: Graph view of the shopping cart service
-
-This tiny service exposes its REST API (POST, PATCH, GET,...) through Endpoints.
-The data and changes to it are defined as Java records describing the domain that are managed as an Entity.
-
 == Getting Started
 
 Follow xref:java:build-your-first-application.adoc[] to implement your first service. If you prefer to first explore working example code, you can check out the xref:samples:index.adoc[beginner samples].

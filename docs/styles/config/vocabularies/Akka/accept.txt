@@ -54,6 +54,7 @@ https
 Injectable
 instanceType
 interconnectivity
+interoperate
 iss
 Javadoc
 JUnit
@@ -92,6 +93,8 @@ proto
 [Qq]uickstarts
 rebalance
 rebalances
+rebalancing
+recoverability
 recurse
 redeliveries
 repartitions
