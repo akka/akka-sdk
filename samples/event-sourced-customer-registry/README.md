@@ -1,16 +1,26 @@
-# Customer Registry with Views
+# Build a Customer Registry with Query Capabilities
 
-## Designing
+This guide will walk you through the process of creating, retrieving, and updating information from a customer registry service.
 
-To understand the Akka concepts that are the basis for this example, see [Development Process](https://docs.kalix.
-io/java/development-process.html) in the documentation.
+## Prerequisites
 
-## Developing
+- An [Akka account](https://console.akka.io/register)
+- Java 21 (we recommend [Eclipse Adoptium](https://adoptium.net/marketplace/))
+- [Apache Maven](https://maven.apache.org/install.html)
+- [Docker Engine](https://docs.docker.com/get-started/get-docker/)
+- [`curl` command-line tool](https://curl.se/download.html)
 
-This project demonstrates the use of Event Sourced Entity and View components.
-To understand more about these components, see [Developing services](https://doc.akka.io/java/index.html).
+## Concepts
 
-## Building
+### Designing
+
+To understand the Akka concepts behind this example, see [Development Process](https://doc.akka.io/concepts/development-process.html) in the documentation.
+
+### Developing
+
+This project demonstrates the use of Event Sourced Entity and View components. For more information, see [Developing Services](https://doc.akka.io/java/index.html).
+
+## Build
 
 Use Maven to build your project:
 
@@ -18,7 +28,7 @@ Use Maven to build your project:
 mvn compile
 ```
 
-## Running Locally
+## Run Locally
 
 To start your service locally, run:
 
@@ -26,9 +36,11 @@ To start your service locally, run:
 mvn compile exec:java
 ```
 
-## Exercising the service
+## Steps
 
-* Create a customer with:
+### 1. Create a new customer
+
+To add a new customer to the registry, use the following command:
 
 ```shell
 curl -i localhost:9000/customer/one \
@@ -37,31 +49,41 @@ curl -i localhost:9000/customer/one \
   --data '{"email":"test@example.com","name":"Testsson","address":{"street":"Teststreet 25", "city":"Testcity"}}'
 ```
 
-* Retrieve the customer:
+### 2. Retrieve customer information
+
+To retrieve details of a specific customer:
 
 ```shell
 curl localhost:9000/customer/one
 ```
 
-* Query by email:
+### 3. Query customers by mmail
+
+To find a customer using their email address:
 
 ```shell
 curl localhost:9000/customer/by-email/test%40example.com
 ```
 
-* Query by name:
+### 4. Query customers by name
+
+To search for a customer by their name:
 
 ```shell
 curl localhost:9000/customer/by-name/Testsson
 ```
 
-* Change name:
+### 5. Update customer name
+
+To change a customer's name:
 
 ```shell
-curl -i -XPATCH --header "Content-Type: application/json"  localhost:9000/customer/one/name/joe
+curl -i -XPATCH --header "Content-Type: application/json" localhost:9000/customer/one/name/joe
 ```
 
-* Change address:
+### 6. Update customer address
+
+To modify a customer's address:
 
 ```shell
 curl -i localhost:9000/customer/one/address \
@@ -70,17 +92,34 @@ curl -i localhost:9000/customer/one/address \
   --data '{"street":"Newstreet 25","city":"Newcity"}'
 ```
 
-## Deploying
+## Troubleshooting
 
-To deploy your service, install the `akka` CLI as documented in
-[Install Akka CLI](https://doc.akka.io/akka-cli/index.html)
-and configure a Docker Registry to upload your docker image to.
+If you encounter issues, ensure that:
 
-You will need to update the `dockerImage` property in the `pom.xml` and refer to
-[Configuring registries](https://doc.akka.io/operations/container-registries.html)
-for more information on how to make your docker image available to Akka.
+- The Customer Registry service is running and accessible on port 9000.
+- Your `curl` commands are formatted correctly.
+- The customer ID (e.g., "one") matches an existing customer in the registry.
 
-Finally, you can use the [Akka Console](https://console.kalix.io)
-to create a project and then deploy your service into the project by first packaging and
-publishing the docker image through `mvn deploy` and then deploying the image
-through the `akka` CLI.
+## Need help?
+
+For questions or assistance, please refer to our [online support resources](https://doc.akka.io/support/index.html).
+
+## Deploy
+
+To deploy your service, install the `akka` CLI as documented in [Install Akka CLI](https://doc.akka.io/akka-cli/index.html), and configure a Docker Registry to upload your Docker image.
+
+Update the `dockerImage` property in the `pom.xml`, and refer to [Configuring Registries](https://doc.akka.io/operations/container-registries.html) for instructions on making your Docker image available to Akka.
+
+Finally, use the [Akka Console](https://console.akka.io) to create a project. Deploy your service by packaging and publishing the Docker image through `mvn deploy`, then deploy the image via the `akka` CLI.
+
+## Conclusion
+
+Congratulations, you've successfully built and interacted with a customer registry service using Akka. This project demonstrates the power of Event Sourced Entity and View components in responsive applications. You’ve learned how to create, retrieve, update, and query customer information.
+
+## Next steps
+
+Now that you've built a basic customer registry, take your Akka skills to the next level:
+
+1. **Expand the service**: Add features such as deleting customers or more complex query capabilities.
+2. **Explore other Akka components**: Dive deeper into Akka's ecosystem to enhance your application.
+3. **Join the community**: Connect with other developers and learn more in the [Akka community Slack channel](https://join.slack.com/t/kalixworld/shared_invite/zt-1x9ddzseu-aY1rB4S4Vb8Iu_YI89IfoQ/).
