@@ -21,4 +21,4 @@ Other samples are available that demonstrate important patterns and abstractions
 |=======================
 
 [sidebar]
-Akka also offers xref:samples:prebuilt-samples.adoc[prebuilt samples] that are ready for immediate deployment, eliminating the need for local development.
+It is also possible to deploy a pre-built sample project in https://console.akka.io[the Akka console], eliminating the need for local development.
