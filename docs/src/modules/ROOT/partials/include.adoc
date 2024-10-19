@@ -2,7 +2,4 @@
 
 :sample-base-url: https://github.com/lightbend/akka-javasdk/blob/main/samples
 
-//constant to add icon for opening link in a new page
-:tab-icon: image:ROOT:new-tab.svg[width=12]
-
 include::partial$attributes.adoc[]

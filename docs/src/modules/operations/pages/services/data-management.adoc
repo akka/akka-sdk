@@ -32,11 +32,11 @@ On AWS, you will need to:
 
 We recommend creating an S3 bucket in the same region as the Akka region your service is running in. If you already have a bucket that you would like to use for this, you can skip this step. For the purposes of these instructions, we're going to call the bucket `my-akka-bucket`.
 
-Instructions for creating a bucket in AWS can be found https://docs.aws.amazon.com/AmazonS3/latest/userguide/create-bucket-overview.html[here {tab-icon}, window="new"].
+Instructions for creating a bucket in AWS can be found https://docs.aws.amazon.com/AmazonS3/latest/userguide/create-bucket-overview.html[here, window="new"].
 
 ==== Create a user
 
-For the purposes of these instructions, we're going to call the user `my-akka-user`. Instructions for creating users in AWS can be found https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users_create.html[here {tab-icon}, window="new"].
+For the purposes of these instructions, we're going to call the user `my-akka-user`. Instructions for creating users in AWS can be found https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users_create.html[here, window="new"].
 
 ==== Create an IAM policy
 
@@ -65,15 +65,15 @@ For imports, the IAM policy must grant `ListBucket` permissions on the bucket, a
 }
 ----
 
-Instructions for creating IAM policies in AWS can be found https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_create-console.html[here {tab-icon}, window="new"].
+Instructions for creating IAM policies in AWS can be found https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_create-console.html[here, window="new"].
 
 ==== Attach IAM policy to user
 
-Having created the policy, you can now attach the policy to the user you created earlier. Instructions for doing that can be found https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_manage-attach-detach.html[here {tab-icon}, window="new"].
+Having created the policy, you can now attach the policy to the user you created earlier. Instructions for doing that can be found https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_manage-attach-detach.html[here, window="new"].
 
 ==== Create an access key
 
-Now that the user has the right permissions, you need to create an access key for that user. Instructions for doing this can be found https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html[here {tab-icon}, window="new"]. Copy the access key ID and secret access key for use in the next step.
+Now that the user has the right permissions, you need to create an access key for that user. Instructions for doing this can be found https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html[here, window="new"]. Copy the access key ID and secret access key for use in the next step.
 
 ==== Create an Akka secret with the access key
 
@@ -102,19 +102,19 @@ On GCP, you will need to:
 
 We recommend creating a GCS bucket in the same region as the Akka service is running. If you already have a bucket that you would like to use for this, you can skip this step. For the purposes of these instructions, we're going to call the bucket `my-akka-bucket`.
 
-Instructions for creating a bucket in GCS can be found https://cloud.google.com/storage/docs/creating-buckets[here {tab-icon}, window="new"].
+Instructions for creating a bucket in GCS can be found https://cloud.google.com/storage/docs/creating-buckets[here, window="new"].
 
 ==== Create a service account
 
-For the purposes of these instructions, we're going to call the user `my-akka-service-account`. Instructions for creating service accounts in GCP can be found https://cloud.google.com/iam/docs/service-accounts-create[here {tab-icon}, window="new"].
+For the purposes of these instructions, we're going to call the user `my-akka-service-account`. Instructions for creating service accounts in GCP can be found https://cloud.google.com/iam/docs/service-accounts-create[here, window="new"].
 
 ==== Granting access
 
-For exports, you will need to grant the service account the Storage Object Admin role to the bucket (`roles/storage.objectAdmin`). For imports, you will need to grant the service account the Storage Object Viewer role to the bucket (`roles/storage.objectViewer`). Instructions for managing IAM policies for buckets can be found https://cloud.google.com/storage/docs/access-control/using-iam-permissions[here {tab-icon}, window="new"].
+For exports, you will need to grant the service account the Storage Object Admin role to the bucket (`roles/storage.objectAdmin`). For imports, you will need to grant the service account the Storage Object Viewer role to the bucket (`roles/storage.objectViewer`). Instructions for managing IAM policies for buckets can be found https://cloud.google.com/storage/docs/access-control/using-iam-permissions[here, window="new"].
 
 ==== Create the service account key
 
-You will need to create a JSON service account key for the `my-akka-service-account` for Akka to use to access the bucket. This can be done by following https://cloud.google.com/iam/docs/keys-create-delete[these instructions {tab-icon}, window="new"]. Once the key is created, place it in a file called `key.json`.
+You will need to create a JSON service account key for the `my-akka-service-account` for Akka to use to access the bucket. This can be done by following https://cloud.google.com/iam/docs/keys-create-delete[these instructions, window="new"]. Once the key is created, place it in a file called `key.json`.
 
 ==== Create an Akka secret
 

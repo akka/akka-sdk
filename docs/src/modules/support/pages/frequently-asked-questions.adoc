@@ -3,7 +3,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-TIP: If your question doesn't appear on this page, try searching the documentation for keywords or check out our https://discuss.akka.io/[community forum {tab-icon}, window="new"].
+TIP: If your question doesn't appear on this page, try searching the documentation for keywords or check out our https://discuss.akka.io/[community forum, window="new"].
 
 == What are examples of Akka use cases?
 
@@ -123,4 +123,4 @@ https://www.akka.io/contact[Contact Lightbend] to purchase a paid plan. See the 
 
 * Email us at mailto:akka-support@lightbend.com[] to provide feedback or get help. One of our team will get back to you as soon as possible.
 
-* Check out the latest discussions about Akka at https://discuss.akka.io/[https://discuss.akka.io/ {tab-icon}, window="new"].
+* Check out the latest discussions about Akka at https://discuss.akka.io/[https://discuss.akka.io/, window="new"].

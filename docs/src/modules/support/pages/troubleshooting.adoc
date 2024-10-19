@@ -10,7 +10,7 @@ This page provides troubleshooting advice for errors and issues that you might e
 
 * Email us at mailto:akka-support@lightbend.com[] to provide feedback or get help.
 
-* Check out the latest discussions about Akka at https://discuss.akka.io/[https://discuss.akka.io/ {tab-icon}, window="new"].
+* Check out the latest discussions about Akka at https://discuss.akka.io/[https://discuss.akka.io/, window="new"].
 
 == Update your Akka CLI
 

@@ -20,7 +20,7 @@ The following are required to develop services with the Akka SDK:
 
 Java:: Java {java-version} or later.
 
-Apache Maven:: https://maven.apache.org/[Apache Maven {tab-icon}, window="new"] is the recommended build tool with the Akka SDK.
+Apache Maven:: https://maven.apache.org/[Apache Maven, window="new"] is the recommended build tool with the Akka SDK.
 
 == Getting Started
 

@@ -26,7 +26,7 @@ Akka Console::
 +
 To deploy your service via the Akka Console:
 
-. Open the https://console.akka.io[*Akka Console* {tab-icon}, window="new"].
+. Open the https://console.akka.io[*Akka Console*, window="new"].
 . Select the Project card of the Project the Service should belong to.
 . Click the *Deploy a service* button
 image:console-deploy-service-button.png[]
@@ -58,7 +58,7 @@ You can verify the deployment status of your service in the Akka Console or with
 --
 Akka Console::
 +
-1. Open the https://console.akka.io[*Akka Console* {tab-icon}, window="new"].
+1. Open the https://console.akka.io[*Akka Console*, window="new"].
 2. Navigate to the *Project* where the Service is deployed.
 3. Look for the *Service* card of the Service, it shows the status.
 +

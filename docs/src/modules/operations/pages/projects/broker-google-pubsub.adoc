@@ -12,7 +12,7 @@ The service account should allow for the `roles/pubsub.editor` https://cloud.goo
 
 To set up a service account and generate the key, follow these steps:
 
-. Navigate to https://console.cloud.google.com/[https://console.cloud.google.com/{tab-icon}, window="new"].
+. Navigate to https://console.cloud.google.com/[https://console.cloud.google.com/, window="new"].
 
 . From the blue bar, click the dropdown menu next to *Google Cloud Platform*.
 

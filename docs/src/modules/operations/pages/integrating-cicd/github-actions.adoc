@@ -17,7 +17,7 @@ The GitHub Action uses two required variables to authenticate and set the projec
 - `AKKA_TOKEN`: The Akka service token
 - `AKKA_PROJECT_ID`: The project ID for the Akka project you're using
 
-These variables should be configured as https://docs.github.com/en/actions/reference/encrypted-secrets#creating-encrypted-secrets-for-a-repository[secrets {tab-icon}, window="new"] for your repository.
+These variables should be configured as https://docs.github.com/en/actions/reference/encrypted-secrets#creating-encrypted-secrets-for-a-repository[secrets, window="new"] for your repository.
 
 == Create a workflow
 
@@ -77,9 +77,9 @@ The workflows additionally use variables to supply Docker credentials for buildi
 * `DOCKERHUB_USERNAME`
 * `DOCKERHUB_TOKEN`
 
-To use the https://github.com/akka/akka-cicd-github-actions[akka/akka-cicd-github-actions] example, copy the workflow files and save the required variables as GitHub https://docs.github.com/en/actions/reference/encrypted-secrets#creating-encrypted-secrets-for-a-repository[secrets {tab-icon}, window="new"]:
+To use the https://github.com/akka/akka-cicd-github-actions[akka/akka-cicd-github-actions] example, copy the workflow files and save the required variables as GitHub https://docs.github.com/en/actions/reference/encrypted-secrets#creating-encrypted-secrets-for-a-repository[secrets, window="new"]:
 
-. Copy the workflow `.yml` files from the example repository https://github.com/akka/akka-cicd-github-actions/tree/main/.github/workflows[.github/workflows/ {tab-icon}, window="new"] directory into your project repository `.github/workflow` directory.
+. Copy the workflow `.yml` files from the example repository https://github.com/akka/akka-cicd-github-actions/tree/main/.github/workflows[.github/workflows/, window="new"] directory into your project repository `.github/workflow` directory.
 
 . In the project GitHub repository, use the saved values to create
 secrets for the `AKKA_TOKEN` and `AKKA_PROJECT_ID` variables.

@@ -13,7 +13,7 @@ Billing data is accessible only to users with the *billing-admin* role. For more
 
 :TODO: Is this still correct in the Console?
 
-For *billing-admin* users, a billing icon appears in the https://console.akka.io/[Akka Console's{tab-icon}, window="new"] side navigation. Clicking this icon opens the billing interface, where users can select the billing month and organization to view detailed billing data.
+For *billing-admin* users, a billing icon appears in the https://console.akka.io/[Akka Console's, window="new"] side navigation. Clicking this icon opens the billing interface, where users can select the billing month and organization to view detailed billing data.
 
 If a user is a billing admin for multiple organizations, they can switch between organizations in the billing UI.
 
@@ -30,7 +30,7 @@ In the billing UI:
   ** *Instance Hours*: Total hours service instances have been running during the month.
   ** *Data Persistence*: Total amount of data persisted during the month, measured in GB-Hours.
 
-For more details on pricing, refer to https://akka.io/pricing#[Akka Pricing{tab-icon}, window="new"].
+For more details on pricing, refer to https://akka.io/pricing#[Akka Pricing, window="new"].
 
 [#assigning_billing_admin]
 == Assigning the billing-admin Role
@@ -58,4 +58,4 @@ For more details on managing users and their roles, see the xref:organizations/m
 == See also
 
 - xref:organizations/manage-users.adoc[]
-- https://akka.io/pricing#[Akka Pricing{tab-icon}, window="new"]
+- https://akka.io/pricing#[Akka Pricing, window="new"]

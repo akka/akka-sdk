@@ -81,7 +81,7 @@ When you use the Akka Console, you don't need to provide the Server URL.
 
 ==== Limits on unauthenticated and free usage
 
-Docker has https://docs.docker.com/docker-hub/download-rate-limit/[rate limits {tab-icon}, window="new"] for unauthenticated and free Docker Hub usage. For unauthenticated users, pull rates are limited based on IP address (anonymous, or unauthenticated, users have a limit of 100 container image pulls per 6 hours per IP address). Akka leverages a limited set of IP addresses to connect to Docker Hub. This means that unauthenticated image pulls might be rate limited. The limit for unauthenticated pulls is shared by all users of the Akka platform.
+Docker has https://docs.docker.com/docker-hub/download-rate-limit/[rate limits, window="new"] for unauthenticated and free Docker Hub usage. For unauthenticated users, pull rates are limited based on IP address (anonymous, or unauthenticated, users have a limit of 100 container image pulls per 6 hours per IP address). Akka leverages a limited set of IP addresses to connect to Docker Hub. This means that unauthenticated image pulls might be rate limited. The limit for unauthenticated pulls is shared by all users of the Akka platform.
 
 === Google Container Registry
 
@@ -125,7 +125,7 @@ akka docker add-credentials --docker-server https://us.gcr.io \
   --docker-email anyemail@example.com \
   --docker-password "$(cat keyfile.json)"
 ----
-NOTE: Find detailed configuration instructions in the https://cloud.google.com/container-registry/docs/advanced-authentication#json-key[Google documentation {tab-icon}, window="new"].
+NOTE: Find detailed configuration instructions in the https://cloud.google.com/container-registry/docs/advanced-authentication#json-key[Google documentation, window="new"].
 
 === Azure Container Registry
 
