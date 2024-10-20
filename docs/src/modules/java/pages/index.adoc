@@ -18,9 +18,7 @@ Integrations with message systems like Kafka are already built-in and the Akka S
 
 The following are required to develop services with the Akka SDK:
 
-Java:: Java {java-version} or later.
-
-Apache Maven:: https://maven.apache.org/[Apache Maven, window="new"] is the recommended build tool with the Akka SDK.
+include::ROOT:partial$cloud-dev-prerequisites.adoc[]
 
 == Getting Started
 

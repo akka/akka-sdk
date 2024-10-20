@@ -1,0 +1,3 @@
+* Java {java-version}, we recommend https://adoptium.net/marketplace/[Eclipse Adoptium]
+* https://maven.apache.org/install.html[Apache Maven, window="new"] version {minimum_maven_version} or later
+* https://curl.se/download.html[`curl` command-line tool]

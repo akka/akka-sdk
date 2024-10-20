@@ -6,8 +6,7 @@ Running a service locally is helpful to test and debug. The following sections p
 
 In order to run your service locally, you'll need to have the following prerequisites:
 
- * JDK 21
- * Maven
+include::ROOT:partial$local-dev-prerequisites.adoc[]
 
 == Starting your service
 

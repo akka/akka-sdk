@@ -13,10 +13,7 @@ The Akka SDK comes with Maven support that enables you to get started quickly. I
 
 == Prerequisites
 
-* An https://console.akka.io/register[Akka account]
-* Java {java-version}, we recommend https://adoptium.net/marketplace/[Eclipse Adoptium]
-* https://maven.apache.org/install.html[Apache Maven, window="new"] version {minimum_maven_version} or later
-* https://docs.docker.com/get-started/get-docker/[Docker Engine, window="new"] {minimum_docker_version} or later
+include::ROOT:partial$cloud-dev-prerequisites.adoc[]
 
 :sectnums:
 

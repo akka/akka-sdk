@@ -1,0 +1,3 @@
+include::ROOT:partial$local-dev-prerequisites.adoc[]
+* An https://console.akka.io/register[Akka account]
+* https://docs.docker.com/get-started/get-docker/[Docker Engine, window="new"] {minimum_docker_version} or later
