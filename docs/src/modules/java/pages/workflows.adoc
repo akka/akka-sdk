@@ -113,7 +113,7 @@ include::example$transfer-workflow/src/main/java/com/example/transfer/applicatio
 
 IMPORTANT: We are returning the internal state directly back to the requester. In the endpoint, it's usually best to convert this internal domain model into a public model so the internal representation is free to evolve without breaking clients code.
 
-A full transfer workflow source code is available {sample-base-url}[here,, window="new"]. Follow the `README` file to run and test it.
+A full transfer workflow source code sample can be downloaded as a link:../java/_attachments/workflow-quickstart.zip[zip file]. Follow the `README` file to run and test it.
 
 == Pausing workflow
 
@@ -199,6 +199,6 @@ include::example$transfer-workflow-compensation/src/main/java/com/example/transf
 
 Compensating a workflow step(s) might involve multiple logical steps and thus is part of the overall business logic that must be defined within the workflow itself. For simplicity, in the example above, the compensation is applied only to `withdraw` step. Whereas `deposit` step itself might also require a compensation. In case of a step timeout we can't be certain about step successful or error outcome.
 
-A full error handling and compensation sample is available {sample-base-url}/transfer-workflow-compensation[here,, window="new"]. Run `TransferWorkflowIntegrationTest` and examine the logs from the application.
+A full error handling and compensation sample can be downloaded as a link:../java/_attachments/workflow-quickstart.zip[zip file]. Run `TransferWorkflowIntegrationTest` and examine the logs from the application.
 
 include::partial$mutli-region-replication.adoc[]
