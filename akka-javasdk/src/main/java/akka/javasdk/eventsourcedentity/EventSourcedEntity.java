@@ -211,20 +211,20 @@ public abstract class EventSourcedEntity<S, E> {
 
       /**
        * Persist a single event.
-       * After this event is persisted, the event handler {@link #applyEvent(E)} is called in order to update the entity state.
+       * After this event is persisted, the event handler {@link #applyEvent(E event)} is called in order to update the entity state.
        */
       OnSuccessBuilder<S> persist(E event);
 
       /**
        * Persist the passed events.
-       * After these events are persisted, the event handler {@link #applyEvent(E)} is called in order to update the entity state.
+       * After these events are persisted, the event handler {@link #applyEvent(E event)} is called in order to update the entity state.
        * Note, the event handler is called only once after all events are persisted.
        */
       OnSuccessBuilder<S> persist(E event1, E event2, E... events);
 
       /**
        * Persist the passed List of events.
-       * After these events are persisted, the event handler {@link #applyEvent(E)} is called in order to update the entity state.
+       * After these events are persisted, the event handler {@link #applyEvent(E event)} is called in order to update the entity state.
        * Note, the event handler is called only once after all events are persisted.
        */
       OnSuccessBuilder<S> persistAll(List<? extends E> events);
