@@ -4,65 +4,51 @@
 
 [[CICD]]CI/CD:: You can deploy <<service>>s using a Continuous Integration/Continuous Delivery service. See xref:operations:integrating-cicd/index.adoc[] for instructions.
 
-[[component]]Component:: The SDKs support <<entity>>, <<view>>, <<http_endpoint>> and <<workflow>> components. These components enable you to implement your business logic.
+[[component]]Component:: The SDK supports <<endpoint>>, <<key_value_entity>>, <<event_sourced_entity>>, <<workflow>>, <<consumer>>, <<view>> and <<timed_action>> components. These components enable you to implement your business logic.
+
+[[consumer]]Consumer:: A component used to consume or produce stream of changes.
 
 [[component_client]]Component client:: It's utility to call Akka components without knowing where they are located.
 
-[[command]]Command:: A command comes from a _sender_, and a reply may be sent to the sender. A command expresses the intention to alter the state of an <<entity>>. A command is materialized by a message received by a <<service_implementation>>. Commands may come from outside the <<kalix_service>>, perhaps from other stateful services running on Kalix or from external systems, or they may come from within the service, invoked as a side effect or to forward command handling from another command. Commands are not persisted. A command might fail.
+[[command]]Command:: A command comes from a _sender_, and a reply may be sent to the sender. A command expresses the intention to alter the state or retrieve information based on the state of an <<entity>> or <<workflow>>. A command is materialized by a message received by a component implementation. Commands are not persisted and might fail.
 
 [[command_handler]]Command handler::
-A _command handler_ is the code that handles a command. It may validate the command using the current state, and may emit events as part of its processing. A command handler **must not** update the state of the entity directly, only _indirectly_ by emitting events. If a command handler _does_ update the state, then when the entity is passivated (removed from memory), _those updates will be lost_.
+A _command handler_ is the code that handles a command. It may validate the command using the current state, and may emit events or update the state as part of its processing. A command handler **must not** update the state of the entity directly, only _indirectly_ by using <<effect>> API.
 
-[[effect]]Effect:: From a <<command_handler>> a <<component>> may notify other components by emitting _effects_. Effects trigger commands on other components, but do not affect the originating command. (To give a different component the responsibility to reply to the originating command, use a <<forward>>.)
+[[effect]]Effect:: Each <<component>> has a specific role and responsibilities. Returning and effect from the <<command_handler>> allows Akka runtime to execute code related to the infrastructure (like persistence) transparently for the user.
 
-[[entity]]Entity:: You implement one or more entities that are bundled into a <<service_implementation>>. An entity is conceptually equivalent to a class, or a type of state. An entity will have multiple <<entity_instance>>s, each of which has a unique ID and can handle commands. For example, a service may implement a chat room entity, encompassing the logic associated with chat rooms, and a particular chat room may be an instance of that entity, containing a list of the users currently in the room and a history of the messages sent to it. Entities cache their state and persist it using <<event>>s.
+[[entity]]Entity:: Components like <<key_value_entity>> and <<event_sourced_entity>> are usually referred as entities. An entity is conceptually equivalent to a class, or a type of state. It will have multiple <<entity_instance>>s, each of which has a unique ID and can handle commands. For example, a service may implement a chat room entity, encompassing the logic associated with chat rooms, and a particular chat room may be an instance of that entity, containing a list of the users currently in the room and a history of the messages sent to it. Entities cache their state and persist it using <<effect>> APIs.
 
-[[entity_instance]]Entity instance:: An instance of an <<entity>>, which is identified by a unique <<entity_key>>. An entity holds state in the <<service_implementation>>, and this state is held within the context of a gRPC stream.
+[[entity_instance]]Entity instance:: An instance of an <<entity>>, which is identified by a unique <<id>>.
 
-[[entity_key]]Entity key:: Deprecated name for the <<component_id>>.
+[[component_id]]Component id:: An id to identify components. Changing component id for <<stateful_component>>s should be done with caution, because the id is used for persistence.
 
-[[component_id]]Component id:: An id used to identify instances of a stateful components like <<entity>> or <<workflow>>. All <<command>>s must contain the component id so that the command can be routed to the right instance of the component that the command is for. The gRPC descriptor annotates the incoming message types for the component to indicate which field(s) contain the id.
+[[endpoint]]Endpoint:: An _endpoint_ component is a way to expose a service to the outside world. They act as controllers ahead of the other components, like <<entity>>s or <<view>>s. They don't require <<component_id>> because URL address is enough to identify them.
 
-[[endpoint]]Endpoint::
-
-[[entity_type]]Entity type:: The type of state management that an <<entity>> uses. Available types include <<event_sourced_entity>> and <<key_value_entity>>. Each type has its own sub protocol that it uses for state management, to convey state and updates specific to that type.
-
-[[event]]Event:: An _event_  indicates that a change has occurred to an entity and persists the current state. Events are stored in a _journal_, and are read and replayed each time the entity is reloaded by the Kalix state management system. An event emitted by one service might be interpreted as a command by another.
+[[event]]Event:: An _event_  indicates that a change has occurred to an entity and persists the current state. Events are stored in a _journal_, and are read and replayed each time the entity is reloaded by the Akka runtime state management system. An event emitted by one component or service might be interpreted as a command by another.
 
 [[event_handler]]Event handler::
-An _event handler_ is the only piece of code that is allowed to _update_ the state of the entity. It receives events, and, according to the event, updates the state.
+An _event handler_ is the only piece of code that is allowed to _update_ the state of the <<event_sourced_entity>>. It receives events, and, according to the event, updates the state.
 
 [[event_sourced_entity]]Event Sourced Entity:: A type of <<entity>> that stores its state using a journal of events, and restores its state by replaying that journal. These are discussed in more detail in xref:concepts:state-model.adoc#_the_event_sourced_state_model[Event Sourced state model].
 
-[[forward]]Forward:: A <<component>>'s <<command_handler>> may _forward_ command processing to another component by issuing a _forward_. The target component's reply will become the originating commands reply.
-
-[[gRPC]]gRPC:: https://cloud.google.com/endpoints/docs/grpc/about-grpc[A Remote Procedure Call framework developed by Google] that provides high-performance communication between services. By default, gRPC uses https://developers.google.com/protocol-buffers/docs/proto3[Protocol Buffers] (or Protobuf for short) for language-neutral serialization. As a developer, you write one file (.proto) that specifies the contract of your service containing the input, output, and operations. External consumers will use the contract to know how to call your service.
-
-[[http_endpoint]]HTTP Endpoint::
-
 [[id]]ID:: An id used to identify instances of a <<stateful_component>>s.
 
-[[journal]]Journal:: Persistent storage for <<event>>s from <<event_sourced_entity>>s. Some documentation uses the terms _Event Log_ or _Event Store_ instead of journal. Kalix handles event storage for you, relieving you of connecting to, configuring, or managing the journal.
+[[journal]]Journal:: Persistent storage for <<event>>s from <<event_sourced_entity>>s. Some documentation uses the terms _Event Log_ or _Event Store_ instead of journal. Akka handles event storage for you, relieving you of connecting to, configuring, or managing the journal.
 
-[[kalix_service]]Kalix service:: A Kalix service is a deployable unit. It is represented in Kubernetes as a `KalixService` resource. It contains a <<service_implementation>> and a <<runtime>>. The Kalix operator transforms a kalix service into a Kubernetes Deployment resource and defines a Kubernetes Service to expose the kalix service to the outside world.
+[[key_value_entity]]Key Value Entity:: A Key Value Entity stores state in an update-in-place model, similar to a Key-Value store that supports CRUD (Create, Read, Update, Delete) operations. In Domain Driven Design (DDD) terms, a Value Entity is an "Entity." In contrast with "Value Objects," you reference Entities by an identifier and the value associated with that identifier can change (be updated) over time. These are discussed in more detail in xref:concepts:state-model.adoc#_the_key_value_state_model[Key Value state model].
 
-[[kalix_store]]Kalix store:: A kalix store is an abstraction over a data store, typically a database. It is represented in Kubernetes as a `KalixStore` resource. Kalix manages the stateful store for you.
+[[project]]Project:: A project is the root of one or more <<service>>s that are meant to be deployed and run together. The project is a logical container for these services and provides common management capabilities.
 
-[[project]]Project:: A project is the root of one or more services that are meant to be deployed and run together. The project is a logical container for these services and provides common management capabilities.
-
-[[protocol-first]]Protocol-first development:: A style of developing Kalix services in which you start by defining your API and data models using protobuf and then, making use of our code generators you are able to follow-up and provide specific domain implementations. See xref:concepts:api-description.adoc#_protocol_first_approach[API description] section.
-
-[[runtime]]Runtime:: When you deploy a <<service>>, Kalix deploys a Runtime along with it. The runtime manages entity state, and exposes the service implementation to the rest of the system. It translates incoming messages to commands and sends them to the service. The runtime also forms a cluster with other instances of the same service, allowing advanced distributed state management features such as sharding, replication and addressed communication between instances.
+[[runtime]]Runtime:: When you deploy a <<service>>, Akka wraps it with the runtime. The runtime manages entity state, and exposes the service implementation to the rest of the system. It translates incoming messages to commands and sends them to the service. The runtime also forms a cluster with other instances of the same service, allowing advanced distributed state management features such as sharding, replication and addressed communication between instances.
 
 [[service]]Service:: A service is implemented by the Akka SDK. At runtime, Akka enriches the incoming and outgoing messages with state management capabilities, such as the ability to receive and update state. You implement the  business logic for the service, which includes stateful entities. You deploy your services and Akka adds a <<runtime>> that handles incoming communication and persistence at runtime.
 
-[[service_implementation]]Service implementation:: A service implementation includes the logic that you write for stateful entities. You package a service as a Docker image, and Akka deploys it as a <<service>>.
-
 [[snapshot]]Snapshot::
-A snapshot records current state of an Event Sourced Entity. Kalix persists snapshots periodically as an optimization. With snapshots, when the Entity is reloaded from the journal, the entire journal doesn't need to be replayed, just the changes since the last snapshot.
+A snapshot records current state of an <<event_sourced_entity>>. Akka persists snapshots periodically as an optimization. With snapshots, when the Entity is reloaded from the journal, the entire journal doesn't need to be replayed, just the changes since the last snapshot.
 
 [[state]]State::
-The _state_ is simply data--the current set of values for an entity instance. Event Sourced Entities hold their state in memory.
+The _state_ is simply data--the current set of values for an <<entity_instance>>. <<entity>>s hold their state in memory.
 
 [[state_model]]State model:: Each entity uses one of the supported state models. The state model determines the way Akka manages data. Currently, these include <<key_value_entity>> and <<event_sourced_entity>>.
 
@@ -70,8 +56,6 @@ The _state_ is simply data--the current set of values for an entity instance. Ev
 A component like <<key_value_entity>>,<<event_sourced_entity>> or <<workflow>>
 
 [[timed_action]]Timed actions:: A Timed Action provides consistent scheduling and execution of a call to another <<component>> at specified intervals or delays. They are convenient for automating repetitive work and handling timeouts within business logic implementation.
-
-[[key_value_entity]]Key Value Entity:: A Key Value Entity stores state in an update-in-place model, similar to a Key-Value store that supports CRUD (Create, Read, Update, Delete) operations. In Domain Driven Design (DDD) terms, a Value Entity is an "Entity." In contrast with "Value Objects," you reference Entities by an identifier and the value associated with that identifier can change (be updated) over time. These are discussed in more detail in xref:concepts:state-model.adoc#_the_key_value_state_model[Key Value state model].
 
 [[view]]View:: A View provides a way to retrieve state from multiple Entities based on a query. You can query non-key data items. You can create views from Key Value Entity state, Event Sourced Entity events, and by subscribing to topics.
 
