@@ -1,4 +1,5 @@
 = Run a service locally
+include::ROOT:partial$include.adoc[]
 
 Running a service locally is helpful to test and debug. The following sections provide commands for starting and stopping a single service locally.
 
