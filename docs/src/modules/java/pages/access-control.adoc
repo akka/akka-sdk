@@ -1,5 +1,7 @@
 = Access Control Lists (ACLs)
 
+include::ROOT:partial$include.adoc[]
+
 The simplest access control that the Akka offers is through Access Control Lists (ACLs). ACLs allow you to
 specify lists of what can access your services, at multiple granularity. For example, you can configure a method that
 initiates a payment on a payment service to only accept requests from the shopping cart service. You can also control
@@ -29,6 +31,7 @@ applies to all methods in the class. Unless it's overridden by an ACL added at m
 Here is an example of an ACL added at the class level on an HTTP Endpoint:
 
 [source, java, indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[UserEndpoint.java]
 ----
 include::example$doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[tags=endpoint-class;class-level-acl]
 ----
@@ -38,6 +41,7 @@ The above ACL only allows incoming traffic from `service-a`. Meaning that only a
 This rule can be overridden by an ACL on a method level. Here is an example ACL on a method that overrides the class level ACL:
 
 [source, java, indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[UserEndpoint.java]
 ----
 include::example$doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[tags=endpoint-class;class-level-acl;method-overwrite]
 ----
@@ -48,6 +52,7 @@ You can combine `allow` and `deny` rules. In the following example, access is op
 `service-b`.
 
 [source, java, indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[UserEndpoint.java]
 ----
 include::example$doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[tag=allow-deny]
 ----
@@ -55,6 +60,7 @@ include::example$doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[ta
 To allow all traffic:
 
 [source, java, indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[UserEndpoint.java]
 ----
 include::example$doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[tag=all-traffic]
 ----
@@ -62,6 +68,7 @@ include::example$doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[ta
 To allow only traffic from the internet:
 
 [source, java, indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[UserEndpoint.java]
 ----
 include::example$doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[tag=internet]
 ----
@@ -69,6 +76,7 @@ include::example$doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[ta
 To allow traffic from `service-a` and `service-b`:
 
 [source, java, indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[UserEndpoint.java]
 ----
 include::example$doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[tag=multiple-services]
 ----
@@ -76,6 +84,7 @@ include::example$doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[ta
 To block all traffic, an ACL with no allows can be configured:
 
 [source, java, indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[UserEndpoint.java]
 ----
 include::example$doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[tag=block-traffic]
 ----
@@ -98,6 +107,7 @@ When a request is denied, by default a 403 `Forbbiden`, is sent. The code that i
 For example, to make Akka reply with 404, `Not Found`:
 
 [source, java, indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[UserEndpoint.java]
 ----
 include::example$doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[tags=endpoint-class;deny-class-level]
 ----
@@ -140,6 +150,7 @@ The payment service only accepts request from the shopping cart service and has 
 such:
 
 [source,java,ident=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/acl/PaymentEndpoint.java[PaymentEndpoint.java]
 ----
 include::example$doc-snippets/src/main/java/com/example/acl/PaymentEndpoint.java[tag=endpoint-class]
 ----
@@ -181,6 +192,7 @@ NOTE: Endpoints are stateless and each request is served by a new Endpoint insta
 injected `RequestContext` is always a new instance and is associated with the request currently being handled.
 
 [source, java, indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[UserEndpoint.java]
 ----
 include::example$doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[tags=endpoint-class;request-context]
 ----
@@ -199,6 +211,7 @@ those made using the `akka services proxy` command, they are authenticated and a
 of your project can make them.
 
 [source, java, indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[UserEndpoint.java]
 ----
 include::example$doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[tags=checking-principals]
 ----
@@ -215,6 +228,7 @@ ACL rules will be applied whenever a call is made using testkit's `HttpClient`. 
 originating from the internet. You can disable the ACL checks by overriding the `testKitSettings()` method.
 
 [source, java, indent=0]
+.{sample-base-url}/doc-snippets/src/it/java/com/example/acl/UserEndpointIntegrationTest.java[UserEndpointIntegrationTest.java]
 ----
 include::example$doc-snippets/src/it/java/com/example/acl/UserEndpointIntegrationTest.java[tag=disable-acl-in-it]
 ----

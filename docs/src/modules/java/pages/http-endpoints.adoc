@@ -1,5 +1,7 @@
 = Designing HTTP Endpoints
 
+include::ROOT:partial$include.adoc[]
+
 An Endpoint is a component that creates an externally accessible API. Endpoints are how you expose your services to the outside world. Endpoints can have different protocols and, initially, support HTTP.
 
 HTTP Endpoint components makes it possible to conveniently define such APIs accepting and responding in JSON,
@@ -14,8 +16,8 @@ for the path annotation.
 
 The most basic example:
 
-.src/main/java/com/example/api/ExampleEndpoint.java
 [source,java]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java[ExampleEndpoint.java]
 ----
 include::example$doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java[tag=basic-endpoint]
 ----
@@ -26,8 +28,8 @@ include::example$doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java
 === Path parameters ===
 The path can also contain one or more parameters, which are extracted and passed to the method:
 
-.src/main/java/com/example/api/ExampleEndpoint.java
 [source,java]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java[ExampleEndpoint.java]
 ----
 include::example$doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java[tag=basic-path-parameters]
 ----
@@ -43,8 +45,8 @@ as their `java.lang` class counterparts.
 
 To accept an HTTP JSON body, specify a parameter that is a class that https://github.com/FasterXML/jackson?tab=readme-ov-file#what-is-jackson[Jackson] can deserialize:
 
-.src/main/java/com/example/api/ExampleEndpoint.java
 [source,java]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java[ExampleEndpoint.java]
 ----
 include::example$doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java[tag=request-body]
 ----
@@ -65,8 +67,8 @@ Additionally, the request body parameter can be of the following types:
 
 To return response with JSON, the return value can be a class that Jackson can serialize:
 
-.src/main/java/com/example/api/ExampleEndpoint.java
 [source,java]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java[ExampleEndpoint.java]
 ----
 include::example$doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java[tag=response-body]
 ----
@@ -92,8 +94,8 @@ example HTTP `400 Bad request` to signal that the incoming request was not valid
 Responding with an error can be done by throwing one of the exceptions available through static factory methods in
 `akka.javasdk.http.HttpException`.
 
-.src/main/java/com/example/api/ExampleEndpoint.java
 [source,java]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java[ExampleEndpoint.java]
 ----
 include::example$doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java[tag=error-exceptions]
 ----
@@ -115,8 +117,8 @@ The most common use case for endpoints is to interact with other components in a
 the `akka.javasdk.client.ComponentClient`. If the constructor of the endpoint class has a parameter of this type,
 it will be injected by the SDK.
 
-.src/main/java/shoppingcart/api/ShoppingCartEndpoint.java
 [source,java]
+.{sample-base-url}/shopping-cart-quickstart/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java[ShoppingCartEndpoint.java]
 ----
 include::example$shopping-cart-quickstart/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java[tag=endpoint-component-interaction]
 ----
@@ -136,8 +138,8 @@ of the service:
 
 ifdef::todo[TODO: this sample is a bit too synthetic to be good, we accept a request and pass it on, and then we don't look at the response body at all]
 
-.src/main/java/shoppingcart/api/ShoppingCartEndpoint.java
 [source,java]
+.{sample-base-url}/event-sourced-customer-registry-subscriber/src/main/java/customer/api/CustomerRegistryEndpoint.java[CustomerRegistryEndpoint.java]
 ----
 include::example$event-sourced-customer-registry-subscriber/src/main/java/customer/api/CustomerRegistryEndpoint.java[tag=cross-service-call]
 ----
@@ -169,8 +171,8 @@ For example, it allows returning custom headers, custom response body encodings 
 As a convenience `akka.javasdk.http.HttpResponses` provides factories for common response scenarios without
 having to reach for the Akka HTTP model APIs directly:
 
-.src/main/java/com/example/api/ExampleEndpoint.java
 [source,java]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java[ExampleEndpoint.java]
 ----
 include::example$doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java[tag=low-level-response]
 ----
@@ -181,8 +183,8 @@ include::example$doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java
 `akka.javasdk.http.HttpResponses` provides convenient factories for common response message types without
 having to reach for the Akka HTTP model APIs directly:
 
-.src/main/java/com/example/api/ExampleEndpoint.java
 [source,java]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java[ExampleEndpoint.java]
 ----
 include::example$doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java[tag=low-level-response]
 ----
@@ -192,8 +194,8 @@ include::example$doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java
 
 Dropping all the way down to the Akka HTTP API:
 
-.src/main/java/com/example/api/ExampleEndpoint.java
 [source,java]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java[ExampleEndpoint.java]
 ----
 include::example$doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java[tag=even-lower-level-response]
 ----
@@ -207,8 +209,8 @@ include::example$doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java
 Accepting `HttpEntity.Strict` will collect all request entity bytes into memory for processing (up to 8Mb),
 for example to handle uploads of a custom media type:
 
-.src/main/java/com/example/api/ExampleEndpoint.java
 [source,java]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java[ExampleEndpoint.java]
 ----
 include::example$doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java[tag=low-level-request]
 ----
@@ -226,8 +228,8 @@ or collecting it all into memory, if not it will stall the incoming HTTP connect
 Handling the streaming request will require a `akka.stream.Materializer`, to get access to a materializer, define a
 constructor parameter of this type to have it injected by the SDK.
 
-.src/main/java/com/example/api/ExampleEndpoint.java
 [source,java]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java[ExampleEndpoint.java]
 ----
 include::example$doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java[tag=lower-level-request]
 ----

@@ -1,5 +1,7 @@
 == Advanced view queries
 
+include::ROOT:partial$include.adoc[]
+
 Advanced view queries include additional sort operations, grouping operations, joins across tables, and subquery support.
 
 IMPORTANT: Advanced view queries might not be available by default. Please contact the Akka support team if you require access to these features.

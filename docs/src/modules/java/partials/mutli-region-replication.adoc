@@ -1,5 +1,7 @@
 == Multi-region replication
 
+include::ROOT:partial$include.adoc[]
+
 Stateful components like Event Sourced Entities or Workflow can be replicated to other regions. This is useful for several reasons:
 
 * resilience to tolerate failures in one location and still be operational, even multi-cloud redundancy
@@ -11,7 +13,7 @@ For each stateful component instance there is a primary region, which handles al
 Read requests are defined by declaring the command handler method with `ReadOnlyEffect` as return type. A read-only handler cannot update the state, and that is enforced at compile time.
 
 [source,java,indent=0]
-.src//main/java/shoppingcart/application/ShoppingCartEntity.java
+.{sample-base-url}/shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java[ShoppingCartEntity.java]
 ----
 include::example$shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java[tag=read-only]
 ----

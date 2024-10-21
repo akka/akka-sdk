@@ -41,9 +41,9 @@ To create a View that lists customers by their name, <<_define_the_view, define 
 This example assumes the following `Customer` exists:
 
 [source,java,indent=0]
-.{sample-base-url}/customer-registry-views-quickstart/src/main/java/customer/domain/Customer.java[Customer.java]
+.{sample-base-url}/key-value-customer-registry/src/main/java/customer/domain/Customer.java[Customer.java]
 ----
-include::example$customer-registry-views-quickstart/src/main/java/customer/domain/Customer.java[tags=class]
+include::example$key-value-customer-registry/src/main/java/customer/domain/Customer.java[tags=class]
 ----
 
 As well as a Key Value Entity component `CustomerEntity.java` that will produce the state changes consumed by the View. You can consult xref:key-value-entities.adoc#entity-behavior[Key Value Entity] documentation on how to create such an entity if needed.
@@ -54,9 +54,9 @@ As well as a Key Value Entity component `CustomerEntity.java` that will produce 
 You implement a View by extending `akka.javasdk.view.View` and subscribing to changes from an entity. You specify how to query it by providing one or more methods annotated with `@Query`, which can then be made accessible via an xref:java:http-endpoints.adoc[HTTP Endpoint].
 
 [source,java]
-.{sample-base-url}/customer-registry-views-quickstart/src/main/java/customer/application/CustomerByEmailView.java[CustomerByEmailView.java]
+.{sample-base-url}/key-value-customer-registry/src/main/java/customer/application/CustomersByEmail.java[CustomerByEmail.java]
 ----
-include::example$customer-registry-views-quickstart/src/main/java/customer/application/CustomersByEmailView.java[tags=class]
+include::example$key-value-customer-registry/src/main/java/customer/application/CustomersByEmail.java[tags=class]
 ----
 <1> Define a component id for the view.
 <2> Extend from `View`.
@@ -72,17 +72,18 @@ IMPORTANT: Assigning a component identifier (i.e. `@ComponentId`) to your View i
 
 Often, you will want to transform the entity model to which the view is subscribing into a different representation. To do that, let's have a look at the example in which we store a summary of the `Customer` used in the previous section instead of the original one:
 
-[source,java]
+[source,java,indent=0]
+.{sample-base-url}/key-value-customer-registry/src/main/java/customer/application/CustomersByName.java[CustomersByName.java]
 ----
-include::example$customer-registry-views-quickstart/src/main/java/customer/application/CustomersByNameView.java[tag=row]
+include::example$key-value-customer-registry/src/main/java/customer/application/CustomersByName.java[tag=row]
 ----
 
 In this scenario, the view state should be of type `CustomerSummary` and you will need to handle and transform the incoming state changes into it, as shown below:
 
 [source,java]
-.{sample-base-url}/customer-registry-views-quickstart/src/main/java/customer/application/CustomersByNameView.java[CustomersByNameView.java]
+.{sample-base-url}/key-value-customer-registry/src/main/java/customer/application/CustomersByName.java[CustomersByName.java]
 ----
-include::example$customer-registry-views-quickstart/src/main/java/customer/application/CustomersByNameView.java[tags=class]
+include::example$key-value-customer-registry/src/main/java/customer/application/CustomersByName.java[tags=class]
 ----
 <1> Declares a `TableUpdater` of type `CustomerSummary`. This type represents each stored row.
 <2> Implements a handler method `onUpdate` that receives the latest state of the entity `Customer` and returns an `Effect` with the updated row.

@@ -22,8 +22,8 @@ The following sections walk through these steps using a counter service as an ex
 
 As mentioned above, to help us illustrate a Key Value Entity, you will be implementing a Counter service. For such service, you will want to be able to set the initial counter value but also to increase the counter modifying its state. The state will be a simple `Integer` but you will use a wrapper class `Counter` as the domain model, as shown below:
 
-.src/main/java/com/example/domain/Counter.java
 [source,java]
+.{sample-base-url}/key-value-counter/src/main/java/com/example/domain/Counter.java[Counter.java]
 ----
 include::example$key-value-counter/src/main/java/com/example/domain/Counter.java[]
 ----
@@ -53,8 +53,8 @@ Now that we have our Entity state defined, the remaining steps can be summarized
 
 The class signature for our counter entity will look like this:
 
-.src/main/java/com/example/application/CounterEntity.java
 [source,java]
+.{sample-base-url}/key-value-counter/src/main/java/com/example/application/CounterEntity.java[CounterEntity.java]
 ----
 include::example$key-value-counter/src/main/java/com/example/application/CounterEntity.java[tags=declarations]
 ----
@@ -70,6 +70,7 @@ We will now show how to add the command handlers for supporting the two desired 
 
 .src/main/java/com/example/application/CounterEntity.java
 [source,java,indent=0]
+.{sample-base-url}/key-value-counter/src/main/java/com/example/application/CounterEntity.java[CounterEntity.java]
 ----
 include::example$key-value-counter/src/main/java/com/example/application/CounterEntity.java[tags=behaviour]
 ----
@@ -84,8 +85,8 @@ IMPORTANT: The **only** way for a command handler to modify the Entity's state i
 
 The following example shows how to implement a simple endpoint to retrieve the current state of the entity, in this case the value for a specific counter.
 
-.src/main/java/com/example/application/CounterEntity.java
 [source,java,indent=0]
+.{sample-base-url}/key-value-counter/src/main/java/com/example/application/CounterEntity.java[CounterEntity.java]
 ----
 include::example$key-value-counter/src/main/java/com/example/application/CounterEntity.java[tags=query]
 ----
@@ -98,8 +99,8 @@ IMPORTANT: We are returning the internal state directly back to the requester. I
 
 The next example shows how to delete a Key Value Entity state by returning special `deleteEntity()` effect.
 
-.src/main/java/com/example/application/CounterEntity.java
 [source,java,indent=0]
+.{sample-base-url}/key-value-counter/src/main/java/com/example/application/CounterEntity.java[CounterEntity.java]
 ----
 include::example$key-value-counter/src/main/java/com/example/application/CounterEntity.java[tags=delete]
 ----
@@ -127,8 +128,8 @@ include::partial$testing-entity.adoc[]
 
 The following snippet shows how the `KeyValueEntityTestKit` is used to test the `CountertEntity` implementation. Akka provides two main APIs for unit tests, the `KeyValueEntityTestKit` and the `KeyValueEntityResult`. The former gives us the overall state of the entity and the ability to call the command handlers while the latter only holds the effects produced for each individual call to the Entity.
 
-./src/test/java/com/example/CounterTest.java
 [source,java,indent=0]
+.{sample-base-url}/key-value-counter/src/test/java/com/example/CounterTest.java[CounterTest.java]
 ----
 include::example$key-value-counter/src/test/java/com/example/CounterTest.java[tags=example]
 ----
@@ -144,8 +145,8 @@ NOTE: The `KeyValueEntityTestKit` is stateful, and it holds the state of a singl
 
 The skeleton of an Integration Test is generated for you if you use the archetype to start your Akka service. Let's see what it could look like to test our Counter Entity:
 
-./src/it/java/com/example/CounterIntegrationTest.java
 [source,java,indent=0]
+.{sample-base-url}/key-value-counter/src/it/java/com/example/CounterIntegrationTest.java[CounterIntegrationTest.java]
 ----
 include::example$key-value-counter/src/it/java/com/example/CounterIntegrationTest.java[tags=sample-it]
 ----

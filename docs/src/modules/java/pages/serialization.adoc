@@ -9,6 +9,7 @@ You need to make the messages, events, or the state of Akka components serializa
 
 Akka uses a predefined `Jackson` configuration, for serialization. Use the `JsonSupport` utility to update the `ObjectMapper` with your custom requirements. To minimize the number of `Jackson` annotations, Java classes are compiled with the `-parameters` flag.
 [source,java,indent=0]
+.{sample-base-url}/event-sourced-customer-registry/src/main/java/customer/CustomerRegistrySetup.java[CustomerRegistrySetup.java]
 ----
 include::example$event-sourced-customer-registry/src/main/java/customer/CustomerRegistrySetup.java[tag=object-mapper]
 ----
@@ -34,6 +35,7 @@ Adding an optional field can be done without any migration code. The default val
 Old class:
 
 [source,java,indent=0]
+.{sample-base-url}/event-sourced-customer-registry/src/main/java/customer/domain/CustomerEvent.java[CustomerEvent.java]
 ----
 include::example$event-sourced-customer-registry/src/main/java/customer/domain/CustomerEvent.java[tag=name-changed-old]
 ----
@@ -41,6 +43,7 @@ include::example$event-sourced-customer-registry/src/main/java/customer/domain/C
 New class with optional `oldName` and nullable `reason`.
 
 [source,java,indent=0]
+.{sample-base-url}/event-sourced-customer-registry/src/test/java/customer/domain/schemaevolution/CustomerEvent.java[CustomerEvent.java]
 ----
 include::example$event-sourced-customer-registry/src/test/java/customer/domain/schemaevolution/CustomerEvent.java[tag=name-changed-new]
 ----
@@ -52,6 +55,7 @@ Let's say we want to have a mandatory `reason` field. Always set to a some (non-
 Another approach is to use the `JsonMigration` extension that allows you to create a complex migration logic based on the payload version number.
 
 [source,java,indent=0]
+.{sample-base-url}/event-sourced-customer-registry/src/test/java/customer/domain/schemaevolution/NameChangedMigration.java[NameChangedMigration.java]
 ----
 include::example$event-sourced-customer-registry/src/test/java/customer/domain/schemaevolution/NameChangedMigration.java[tag=name-changed-migration]
 ----
@@ -64,6 +68,7 @@ include::example$event-sourced-customer-registry/src/test/java/customer/domain/s
 The migration class must be linked to the updated model with the `@Migration` annotation.
 
 [source,java,indent=0]
+.{sample-base-url}/event-sourced-customer-registry/src/test/java/customer/domain/schemaevolution/CustomerEvent.java[CustomerEvent.java]
 ----
 include::example$event-sourced-customer-registry/src/test/java/customer/domain/schemaevolution/CustomerEvent.java[tag=name-changed-with-migration]
 ----
@@ -76,6 +81,7 @@ Renaming a field is a very similar migration.
 Old class:
 
 [source,java,indent=0]
+.{sample-base-url}/event-sourced-customer-registry/src/main/java/customer/domain/CustomerEvent.java[CustomerEvent.java]
 ----
 include::example$event-sourced-customer-registry/src/main/java/customer/domain/CustomerEvent.java[tag=address-changed-old]
 ----
@@ -83,6 +89,7 @@ include::example$event-sourced-customer-registry/src/main/java/customer/domain/C
 New class:
 
 [source,java,indent=0]
+.{sample-base-url}/event-sourced-customer-registry/src/test/java/customer/domain/schemaevolution/CustomerEvent.java[CustomerEvent.java]
 ----
 include::example$event-sourced-customer-registry/src/test/java/customer/domain/schemaevolution/CustomerEvent.java[tag=address-changed-new]
 ----
@@ -90,6 +97,7 @@ include::example$event-sourced-customer-registry/src/test/java/customer/domain/s
 The migration implementation:
 
 [source,java,indent=0]
+.{sample-base-url}/event-sourced-customer-registry/src/test/java/customer/domain/schemaevolution/AddressChangedMigration.java[AddressChangedMigration.java]
 ----
 include::example$event-sourced-customer-registry/src/test/java/customer/domain/schemaevolution/AddressChangedMigration.java[tag=address-changed-migration]
 ----
@@ -102,6 +110,7 @@ include::example$event-sourced-customer-registry/src/test/java/customer/domain/s
 Old class:
 
 [source,java,indent=0]
+.{sample-base-url}/event-sourced-customer-registry/src/test/java/customer/domain/schemaevolution/CustomerEvent.java[CustomerEvent.java]
 ----
 include::example$event-sourced-customer-registry/src/test/java/customer/domain/schemaevolution/CustomerEvent.java[tag=customer-created-old]
 ----
@@ -109,6 +118,7 @@ include::example$event-sourced-customer-registry/src/test/java/customer/domain/s
 New class with the `Address` type:
 
 [source,java,indent=0]
+.{sample-base-url}/event-sourced-customer-registry/src/main/java/customer/domain/CustomerEvent.java[CustomerEvent.java]
 ----
 include::example$event-sourced-customer-registry/src/main/java/customer/domain/CustomerEvent.java[tag=customer-created-new]
 ----
@@ -116,6 +126,7 @@ include::example$event-sourced-customer-registry/src/main/java/customer/domain/C
 The migration implementation:
 
 [source,java,indent=0]
+.{sample-base-url}/event-sourced-customer-registry/src/main/java/customer/domain/CustomerCreatedMigration.java[CustomerCreatedMigration.java]
 ----
 include::example$event-sourced-customer-registry/src/main/java/customer/domain/CustomerCreatedMigration.java[tag=customer-created-migration]
 ----
@@ -126,6 +137,7 @@ include::example$event-sourced-customer-registry/src/main/java/customer/domain/C
 Renaming the class doesn't require any additional work when @TypeName annotation is used. For other cases, the `JsonMigration` implementation can specify all old class names.
 
 [source,java,indent=0]
+.{sample-base-url}/event-sourced-customer-registry/src/test/java/customer/domain/schemaevolution/AddressChangedMigration.java[AddressChangedMigration.java]
 ----
 include::example$event-sourced-customer-registry/src/test/java/customer/domain/schemaevolution/AddressChangedMigration.java[tag=name-migration]
 ----
@@ -136,6 +148,7 @@ include::example$event-sourced-customer-registry/src/test/java/customer/domain/s
 It's highly recommended to cover all schema changes with unit tests. In most cases it won't be possible to reuse the same class for serialization and deserialization, since the model is different from version 0 to version N. One solution could be to create a byte array snapshot of each version and save it as a Base64 test variable.
 
 [source,java,indent=0]
+.{sample-base-url}/event-sourced-customer-registry/src/test/java/customer/domain/CustomerEventSerializationTest.java[CustomerEventSerializationTest.java]
 ----
 include::example$event-sourced-customer-registry/src/test/java/customer/domain/CustomerEventSerializationTest.java[tag=testing-deserialization-encoding]
 ----
@@ -144,6 +157,7 @@ include::example$event-sourced-customer-registry/src/test/java/customer/domain/C
 Test example:
 
 [source,java,indent=0]
+.{sample-base-url}/event-sourced-customer-registry/src/test/java/customer/domain/CustomerEventSerializationTest.java[CustomerEventSerializationTest.java]
 ----
 include::example$event-sourced-customer-registry/src/test/java/customer/domain/CustomerEventSerializationTest.java[tag=testing-deserialization]
 ----

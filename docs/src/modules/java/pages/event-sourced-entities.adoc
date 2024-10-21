@@ -34,7 +34,7 @@ The following sections walk through these steps using a shopping cart service as
 Through our "Shopping Cart" Event Sourced Entity we expect to manage our cart, adding and removing items as we please. Being event-sourced means it will represent changes to state as a series of domain events. Let's have a look at what kind of model we expect to store and the events our entity might generate.
 
 [source,java]
-.src/main/java/shoppingcart/domain/ShoppingCart.java
+.{sample-base-url}/shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCart.java[ShoppingCart.java]
 ----
 include::example$shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCart.java[tag=domain]
 ----
@@ -47,6 +47,7 @@ Another fundamental aspect of our entity will be its domain events. For now, we 
 
 [source,java]
 .src/main/java/shoppingcart/domain/ShoppingCartEvent.java
+.{sample-base-url}/shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCartEvent.java[ShoppingCartEvent.java]
 ----
 include::example$shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCartEvent.java[tag=events]
 ----
@@ -79,7 +80,7 @@ Now that we have our Entity state defined along with its events, the remaining s
 The class signature for our shopping cart entity will look like this:
 
 [source,java]
-.src/main/java/shoppingcart/domain/application/ShoppingCartEntity.java
+.{sample-base-url}/shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java[ShoppingCartEntity.java]
 ----
 include::example$shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java[tag=class]
 ----
@@ -95,8 +96,8 @@ Having created the basis of our entity, we will now define how each command is h
 
 IMPORTANT: The **only** way for a command handler to modify the Entity's state is by persisting an event. Any modifications made directly to the state (or instance variables) from the command handler are not persisted. When the Entity is passivated and reloaded, those modifications will not be present.
 
-[source,java,indent=0]
-.src/main/java/shoppingcart/application/ShoppingCartEntity.java
+[source,java]
+.{sample-base-url}/shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java[ShoppingCartEntity.java]
 ----
 include::example$shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java[tag=addItem]
 ----
@@ -109,7 +110,7 @@ include::example$shopping-cart-quickstart/src/main/java/shoppingcart/application
 As mentioned above, the business logic that allows us to transition between states was placed on the domain model as seen below:
 
 [source,java,indent=0]
-.src/main/java/shoppingcart/domain/ShoppingCart.java
+.{sample-base-url}/shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCart.java[ShoppingCart.java]
 ----
 include::example$shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCart.java[tag=itemAdded]
 ----
@@ -124,7 +125,7 @@ include::example$shopping-cart-quickstart/src/main/java/shoppingcart/domain/Shop
 To have access to the current state of the entity we can use `currentState()` as you have probably noticed from the examples above. However, what if this is the first command we are receiving for this entity? The following example shows the implementation of the read-only command handler `getCart`:
 
 [source,java,indent=0]
-.src/main/java/shoppingcart/application/ShoppingCartEntity.java
+.{sample-base-url}/shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java[ShoppingCartEntity.java]
 ----
 include::example$shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java[tag=getCart]
 ----
@@ -141,7 +142,7 @@ Snapshots are an important optimization for Event Sourced Entities that persist 
 Snapshots are stored and handled automatically by Akka without any specific code required. Snapshots are stored after a configured number of events:
 
 [source,conf,indent=0]
-.src/main/resources/application.conf
+.{sample-base-url}/shopping-cart-quickstart/src/main/resources/application.conf[application.conf]
 ----
 include::example$shopping-cart-quickstart/src/main/resources/application.conf[tag=snapshot-every]
 ----
@@ -154,7 +155,7 @@ Normally, Event Sourced Entities are not deleted because the history of the even
 For certain use cases or for regulatory reasons the entity can be deleted.
 
 [source,java,indent=0]
-.src/main/java/shoppingcart/application/ShoppingCartEntity.java
+.{sample-base-url}/shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java[ShoppingCartEntity.java]
 ----
 include::example$shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java[tag=checkout]
 ----
@@ -184,8 +185,8 @@ include::partial$testing-entity.adoc[]
 
 The following snippet shows how the `EventSourcedTestKit` is used to test the `ShoppingCartEntity` implementation. Akka provides two main APIs for unit tests, the `EventSourcedTestKit` and the `EventSourcedResult`. The former gives us the overall state of the entity and all the events produced by all the calls to the Entity. While the latter only holds the effects produced for each individual call to the Entity.
 
-.src/test/java/shoppingcart/application/ShoppingCartTest.java
 [source,java]
+.{sample-base-url}/shopping-cart-quickstart/src/test/java/shoppingcart/application/ShoppingCartTest.java[ShoppingCartTest.java]
 ----
 include::example$shopping-cart-quickstart/src/test/java/shoppingcart/application/ShoppingCartTest.java[]
 ----
@@ -220,8 +221,8 @@ For the above example, this class provides access to all the command handlers of
 
 The skeleton of an Integration Test is generated for you if you use the archetype to start your Akka service. Let's see what it could look like to test our `ShoppingCartEntity`:
 
-./src/it/java/shoppingcart/IntegrationTest.java
-[source,java,indent=0]
+[source,java]
+.{sample-base-url}/shopping-cart-quickstart/src/it/java/shoppingcart/IntegrationTest.java[IntegrationTest.java]
 ----
 include::example$shopping-cart-quickstart/src/it/java/shoppingcart/IntegrationTest.java[tag=sample-it]
 ----

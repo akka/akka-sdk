@@ -35,7 +35,6 @@ Let's have a look on how the Order Entity can be implemented.
 
 [source,java,indent=0]
 .{sample-base-url}/reliable-timers/src/main/java/com/example/application/OrderEntity.java[OrderEntity.java]
-[source,java]
 ----
 include::example$reliable-timers/src/main/java/com/example/application/OrderEntity.java[tag=order]
 ----

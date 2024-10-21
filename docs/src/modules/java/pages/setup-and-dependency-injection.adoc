@@ -1,5 +1,7 @@
 = Setup and dependency injection
 
+include::ROOT:partial$include.adoc[]
+
 == Service lifecycle
 
 It is possible to define logic that runs on service instance start up.
@@ -8,7 +10,7 @@ This is done by creating a class implementing `akka.javasdk.ServiceSetup` and an
 Only one such class may exist in the same service.
 
 [source,java]
-.src/main/java/com/example/CounterSetup.java
+.{sample-base-url}/spring-dependency-injection/src/main/java/com/example/CounterSetup.java[CounterSetup.java]
 ----
 include::example$spring-dependency-injection/src/main/java/com/example/CounterSetup.java[tag=lifecycle]
 ----
@@ -82,7 +84,7 @@ so should be avoided.
 The implementation can be pure Java without any dependencies:
 
 [source,java]
-.src/main/java/com/example/MyAppSetup.java
+.{sample-base-url}/doc-snippets/src/main/java/com/example/MyAppSetup.java[MyAppSetup.java]
 ----
 include::example$doc-snippets/src/main/java/com/example/MyAppSetup.java[tag=pojo-dependency-injection]
 ----
@@ -97,7 +99,7 @@ inject the instance provided by the `DependencyProvider`.
 Or make use of an existing dependency injection framework, like this example leveraging Spring:
 
 [source,java]
-.src/main/java/com/example/CounterSetup.java
+.{sample-base-url}/spring-dependency-injection/src/main/java/com/example/CounterSetup.java[CounterSetup.java]
 ----
 include::example$spring-dependency-injection/src/main/java/com/example/CounterSetup.java[tag=spring]
 ----
@@ -110,7 +112,7 @@ The TestKit allows providing a custom `DependencyProvider` through `TestKit.Sett
 that mock instances of dependencies can be used in tests.
 
 [source,java]
-.src/main/java/com/example/MyAppSetup.java
+.{sample-base-url}/doc-snippets/src/it/java/com/example/MyIntegrationTest.java[MyIntegrationTest.java]
 ----
 include::example$doc-snippets/src/it/java/com/example/MyIntegrationTest.java[tag=test-di-provider]
 ----
