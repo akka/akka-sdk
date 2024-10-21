@@ -26,7 +26,7 @@ By default, most entities will only allow their origin region to change their st
 
 In the _Key Value_ state model, only the current state of the Entity is persisted - its value. Akka caches the state to minimize data store access. Interested parties can subscribe to state changes emitted by a Key Value Entity and perform business actions based on those state changes. 
 
-:TODO: Update texts in svg: Runtime, Key Value Enittie
+ifdef::todo[TODO:  Update texts in svg: Runtime, Key Value Enittie]
 [.darkmode-white-padded]
 image:key-value-flow.svg[Concepts Key Value Flow]
 

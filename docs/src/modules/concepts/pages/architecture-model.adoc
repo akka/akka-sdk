@@ -58,8 +58,7 @@ The API layer also uses other attributes to control access. For more information
 
 You use xref:reference:glossary.adoc#component[Akka _Components_] to build your application. These Components are crucial for ensuring responsiveness. Here is a brief overview of each. With the exception of endpoints, Akka components will live in your `application` package.
 
-:TODO: add links to each component
-
+ifdef::todo[TODO:  add links to each component]
 === Entities
 
 _Entities_ are the core components of Akka and provide persistence and state management. They map to your https://martinfowler.com/bliki/DDD_Aggregate.html[_domain aggregates_]. If you have a "Customer" domain aggregate, you almost certainly will have a `CustomerEntity` component to expose and manipulate it. This separation of concerns allows the domain object to remain purely business logic focused while the Entity handles runtime mechanics. Additionally, you may have other domain objects that are leafs of the domain aggregate. These do not need their own entity if they are just a leaf of the aggregate. An address is a good example.

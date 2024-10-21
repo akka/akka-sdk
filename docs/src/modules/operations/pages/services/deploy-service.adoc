@@ -14,8 +14,7 @@ Before deploying a service, ensure you have the following:
 * The xref:akka-cli:installation.adoc[Akka CLI installed] (optional)
 * A container image ready for deployment
 
-:TODO: We lack docs about building and pushing the container image! https://github.com/lightbend/kalix/issues/11832
-
+ifdef::todo[TODO:  We lack docs about building and pushing the container image! https://github.com/lightbend/kalix/issues/11832]
 == Deploying a service
 
 Services can be deployed via the Akka Console or with the Akka CLI.
@@ -52,8 +51,7 @@ TIP: To combine deploying a service with relevant settings, Akka supports deploy
 
 You can verify the deployment status of your service in the Akka Console or with the Akka CLI:
 
-:TODO: Image of new Console, review description
-
+ifdef::todo[TODO:  Image of new Console, review description]
 [.tabset]
 --
 Akka Console::
@@ -62,8 +60,7 @@ Akka Console::
 2. Navigate to the *Project* where the Service is deployed.
 3. Look for the *Service* card of the Service, it shows the status.
 +
-:TODO: image for service card image::console-service-card.png[Service card]
-+
+ifdef::todo[TODO:  image for service card image::console-service-card.png[Service card]]+
 A service status can be one of the following:
 
 * *Ready*: All service instances are up-to-date and fully available.

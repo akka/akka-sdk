@@ -2,7 +2,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-:TODO: add illustrations from the local console
+ifdef::todo[TODO:  add illustrations from the local console]
 
 Event Sourced Entities are components that persist their state using the Event Sourcing Model. Instead of persisting the current state, they persist all the events that led to the current state. Akka stores these events in a xref:reference:glossary.adoc#journal[journal]. Event Sourced Entities persist their state with https://en.wikipedia.org/wiki/ACID[ACID semantics, window="new"], scale horizontally, and isolate failures.
 
@@ -18,7 +18,7 @@ In contrast with typical create, read, update (CRUD) systems, event sourcing all
 
 include::partial$entity-sharding.adoc[]
 
-:TODO: TIP: To learn more about event sourcing, check out the free Lightbend Academy course, https://academy.lightbend.com/courses/course-v1:lightbend+LRA-CQRSandEventSourcing+v1/about[Reactive Architecture: CQRS & Event Sourcing, window="new"].
+ifdef::todo[TODO:  TIP: To learn more about event sourcing, TIP: To learn more about event sourcing, check out the free Lightbend Academy course, https://academy.lightbend.com/courses/course-v1:lightbend+LRA-CQRSandEventSourcing+v1/about[Reactive Architecture: CQRS & Event Sourcing, window="new"].]
 
 xref:reference:glossary.adoc#event_sourced_entity[Event Sourced Entities] persist changes as events and snapshots. Akka needs to serialize that data to send it to the underlying data store. However, we recommend that you do not persist your service's public API messages. Persisting private API messages may introduce some overhead when converting from a public message to an internal one but it allows the logic of the service public interface to evolve independently of the data storage format, which should be private.
 

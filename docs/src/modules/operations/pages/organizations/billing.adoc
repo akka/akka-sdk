@@ -11,14 +11,13 @@ Billing data is accessible only to users with the *billing-admin* role. For more
 
 == Billing Interface
 
-:TODO: Is this still correct in the Console?
+ifdef::todo[TODO:  Is this still correct in the Console?]
 
 For *billing-admin* users, a billing icon appears in the https://console.akka.io/[Akka Console's, window="new"] side navigation. Clicking this icon opens the billing interface, where users can select the billing month and organization to view detailed billing data.
 
 If a user is a billing admin for multiple organizations, they can switch between organizations in the billing UI.
 
-:TODO: update image
-
+ifdef::todo[TODO:  update image]
 image::billing-ui.jpg[Akka Billing User Interface]
 
 In the billing UI:

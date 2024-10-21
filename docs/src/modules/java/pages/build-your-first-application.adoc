@@ -153,7 +153,7 @@ curl localhost:9000/carts/123
 
 == Deploy to akka.io
 
-FIXME should it be here, or only in the developent-process page or where?
+ifdef::todo[TODO: should it be here, or only in the developent-process page or where?]
 
 Deploy your service following the instructions at xref:concepts:development-process.adoc#_deploy[Development Process - Deploy to Akka].
 
