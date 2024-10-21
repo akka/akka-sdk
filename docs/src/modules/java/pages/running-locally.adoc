@@ -51,7 +51,7 @@ Use `Ctrl+c` to shut down the service.
 
 The samples and archetype include a run configuration for IntelliJ. In the toolbar you should see:
 
-image:run-intelliJ.png[]
+image:run-intellij.png[]
 
 This is a Maven run configuration for `mvn compile exec:java`. You can also run this with the debugger and set breakpoints in the components.
 
