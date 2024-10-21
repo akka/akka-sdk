@@ -1,0 +1,66 @@
+= Managing multiple regions
+
+include::ROOT:partial$include.adoc[]
+
+A project is a multi-region project if it has more than one region assigned to it. Multi-region projects allow you to run services in multiple regions, with data being replicated between them.
+
+A multi-region project will have exactly one primary region. The primary is used to indicate which region Akka services should replicate from when using the static replicated read primary selection mode. Additionally, the primary region also indicates which region resources that you have deployed, such as services, routes and secrets, should be replicated from.
+
+To see what regions have been configured for your project, you can run:
+
+[source, command line]
+----
+akka project regions list
+----
+
+== Adding a region to a project
+
+A region can be added to a project if the organization that owns the project has access to that region. To see which regions your organization has access to, run the `akka regions list` command:
+
+[source, command line]
+----
+akka regions list --organization my-organization
+----
+
+To add one of these regions to your project, run:
+
+[source, command line]
+----
+akka project regions add gcp-us-east1
+----
+
+== Setting the primary region of a project
+
+To change the primary region of a project, for example, if you want to failover from one region to another, run:
+
+[source, command line]
+----
+akka project regions set-primary gcp-us-east1
+----
+
+NOTE: it may be necessary to clear the region cache when running the `akka` command on other machines before this change will be picked up. This can be done by running `akka config clear-cache`.
+
+== Managing resources in a multi region project
+
+When you deploy resources, including services, routes, secrets, and observability configuration, to your project,
+these resources by default will be replicated to all regions configured for your project. Such resources are called global resources.
+
+The underlying replication mechanism is that the resources are deployed to the primary region, and then a background process will sync them asynchronously to the rest of the regions. If this background sync process fails, for example, due to a temporary network partition, the sync process will retry, and eventually the rest of the regions will become up to date.
+
+The `list` and `get` commands for multi-region resources display the sync status for global resources. These commands will show the resource in the primary region by default. You can specify which region you want to get the resource from by passing the `--region` flag. If you want to view the resource in all regions, you can pass the `--all-regions` flag.
+
+=== Regional resources
+
+There are certain circumstances where it may not be appropriate to have the same resource synced to all regions. Some common reasons are as follows:
+
+* A route may need to be served from a different hostname in each region.
+* A service may require different credentials for a third party service for each region, requiring a different secret to be deployed to each region.
+* A different observability configuration may be needed in different regions, such that metrics and logs are aggregated locally in the region.
+
+To deploy a resource as a regional resource, you can specify a `--region` flag to specify which region you want to create the resource in. When updating or deleting the resource, the `--region` flag needs to be passed.
+
+=== Switching between global and regional resources
+
+If you have a global resource that you want to change to being a regional resource, this can be done by updating the resource, passing a `--region` flag, and passing the `--force-regional` flag to change it from a global to a regional resource. You must do this on the primary region first, otherwise the resource sync process may overwrite your changes.
+
+If you have a regional resource that you want to change to being a global resource, this can be done by updating the resource without specifying a `--region` flag, but passing the `--force-global` flag instead. The command will perform the update in the global region, and that configuration will be replicated to, and overwrite, the configuration in the rest of the regions.

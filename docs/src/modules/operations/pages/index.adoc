@@ -39,6 +39,7 @@ xref:operations:projects/index.adoc[] in Akka are the place where services are d
 * xref:operations:projects/manage-project-access.adoc[]
 * xref:operations:projects/container-registries.adoc[]
 ** xref:operations:projects/external-container-registries.adoc[]
+* xref:operations:projects/multi-region.adoc[]
 * xref:operations:projects/message-brokers.adoc[]
 ** xref:operations:projects/broker-aiven.adoc[Aiven for Kafka]
 ** xref:operations:projects/broker-aws-msk.adoc[AWS MSK Kafka]

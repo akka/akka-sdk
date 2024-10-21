@@ -12,6 +12,7 @@
 **** xref:operations:projects/manage-project-access.adoc[Manage users]
 **** xref:operations:projects/container-registries.adoc[]
 ***** xref:operations:projects/external-container-registries.adoc[]
+**** xref:operations:projects/multi-region.adoc[]
 **** xref:operations:projects/message-brokers.adoc[]
 ***** xref:operations:projects/broker-aiven.adoc[Aiven for Kafka]
 ***** xref:operations:projects/broker-aws-msk.adoc[AWS MSK Kafka]
