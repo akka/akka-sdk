@@ -10,6 +10,8 @@ An Event Sourced Entity must not update its in-memory state directly as a result
 
 When you need to read state in your service, ask yourself _what events should I be listening to_?. When you need to write state, ask yourself _what events should I be persisting_?
 
+TIP: 🎓 To deepen your understanding of event sourcing, consider the free online course https://akkademy.akka.io/learn/course/10/reactive-architecture6-cqrs-event-sourcing[Reactive Architecture: CQRS & Event Sourcing, window="new"] in Akkademy.
+
 ifdef::todo[TODO: add an illustration]
 
 To load an Entity, Akka reads the journal and replays events to compute the Entity's current state. As an optimization, by default, Event Sourced Entities persist state snapshots periodically. This allows Akka to recreate an Entity from the most recent snapshot plus any events saved after the snapshot.
@@ -17,8 +19,6 @@ To load an Entity, Akka reads the journal and replays events to compute the Enti
 In contrast with typical create, read, update (CRUD) systems, event sourcing allows the state of the Entity to be reliably replicated to other services. Event Sourced Entities use offset tracking in the journal to record which portions of the system have replicated which events.
 
 include::partial$entity-sharding.adoc[]
-
-ifdef::todo[TODO:  TIP: To learn more about event sourcing, TIP: To learn more about event sourcing, check out the free Lightbend Academy course, https://academy.lightbend.com/courses/course-v1:lightbend+LRA-CQRSandEventSourcing+v1/about[Reactive Architecture: CQRS & Event Sourcing, window="new"].]
 
 xref:reference:glossary.adoc#event_sourced_entity[Event Sourced Entities] persist changes as events and snapshots. Akka needs to serialize that data to send it to the underlying data store. However, we recommend that you do not persist your service's public API messages. Persisting private API messages may introduce some overhead when converting from a public message to an internal one but it allows the logic of the service public interface to evolve independently of the data storage format, which should be private.
 
