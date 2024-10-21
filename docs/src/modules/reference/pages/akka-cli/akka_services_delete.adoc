@@ -35,8 +35,8 @@ akka services delete my-service
       --cache-file string   location of cache file (default "~/.akka/cache.yaml")
       --config string       location of config file (default "~/.akka/config.yaml")
       --context string      configuration context to use
-      --disable-prompt      Disable all interactive prompts when running kalix commands. If input is required, defaults will be used, or an error will be raised.
-                            This is equivalent to setting the environment variable KALIX_DISABLE_PROMPTS to true.
+      --disable-prompt      Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                            This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
   -o, --output string       set output format to one of [text,json,go-template=] (default "text")
   -q, --quiet               set quiet output (helpful when used as part of a script)
       --timeout duration    client command timeout (default 10s)

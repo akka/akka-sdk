@@ -84,7 +84,7 @@ The `akka docs` command opens the Akka online documentation page.
 == Display logs
 The `akka logs` commands allow you to display the last few lines (default: 100) of logs for a specific service. The detail are available in xref:reference:akka-cli/akka_logs.adoc[akka logs].
 
-== Manage organizations
+== Organizations
 The `akka organizations` commands allow you to manage the members within an organization. Projects can be created under an organization, and members of the organization can manage those projects.
 
 The xref:reference:akka-cli/akka_organizations.adoc[akka organization] command includes the following options:
@@ -108,8 +108,10 @@ The xref:reference:akka-cli/akka_organizations.adoc[akka organization] command i
 * xref:reference:akka-cli/akka_organizations_users_delete-binding.adoc[akka organizations users delete-binding]
 * xref:reference:akka-cli/akka_organizations_users_list-bindings.adoc[akka organizations users list-bindings]
 
-== Manage projects
+== Projects
 The `akka projects` commands manipulate the projects in your Akka account. A project contains a set of services.
+
+See also the xref:reference:akka-cli/akka_roles.adoc#_see_also[akka roles] commands.
 
 The xref:reference:akka-cli/akka_projects.adoc[akka projects] command includes the following options:
 
@@ -177,14 +179,16 @@ The xref:reference:akka-cli/akka_quickstart.adoc[akka quickstart] command includ
 * xref:reference:akka-cli/akka_quickstart_download.adoc[akka quickstart download]
 * xref:reference:akka-cli/akka_quickstart_list.adoc[akka quickstart list]
 
-== Manage regions
+== Regions
 The `akka regions` commands allow you to manage regions on Akka.
+
+See also the xref:reference:akka-cli/akka_projects_regions.html#_see_also[akka project regions] commands.
 
 The xref:reference:akka-cli/akka_regions.adoc[akka regions] command includes the following options:
 
 * xref:reference:akka-cli/akka_regions_list.adoc[akka regions list]
 
-== Manage roles
+== Roles
 The `akka roles` commands allow you to associate user roles (authorizations) with the current project.
 
 The xref:reference:akka-cli/akka_roles.adoc[akka roles] command provides the following options:
@@ -198,7 +202,7 @@ The xref:reference:akka-cli/akka_roles.adoc[akka roles] command provides the fol
 * xref:reference:akka-cli/akka_roles_list-bindings.adoc[akka roles list-bindings]
 * xref:reference:akka-cli/akka_roles_list.adoc[akka roles list]
 
-== Manage routes
+== Routes
 The `akka routes` commands manipulate the routes that can be used to expose services in your Akka Project to the internet.
 
 The xref:reference:akka-cli/akka_routes.adoc[akka routes] command includes the following options:
@@ -239,6 +243,14 @@ The xref:reference:akka-cli/akka_services.adoc[akka services] command includes t
 * xref:reference:akka-cli/akka_services_components_list-ids.adoc[akka services components list-ids]
 * xref:reference:akka-cli/akka_services_components_list-timers.adoc[akka services components list-timers]
 * xref:reference:akka-cli/akka_services_components_list.adoc[akka services components list]
+* xref:reference:akka-cli/akka_services_connectivity.adoc[akka services connectivity]
+* xref:reference:akka-cli/akka_services_data.adoc[akka services data]
+* xref:reference:akka-cli/akka_services_data_cancel-task.adoc[akka services data cancel-task]
+* xref:reference:akka-cli/akka_services_data_export.adoc[akka services data export]
+* xref:reference:akka-cli/akka_services_data_get-task.adoc[akka services data get-task]
+* xref:reference:akka-cli/akka_services_data_import.adoc[akka services data import]
+* xref:reference:akka-cli/akka_services_data_list-tasks.adoc[akka services data list-tasks]
+* xref:reference:akka-cli/akka_services_data_watch-task.adoc[akka services data watch-task]
 * xref:reference:akka-cli/akka_services_delete.adoc[akka services delete]
 * xref:reference:akka-cli/akka_services_deploy.adoc[akka services deploy]
 * xref:reference:akka-cli/akka_services_edit.adoc[akka services edit]
@@ -278,6 +290,7 @@ The xref:reference:akka-cli/akka_local.adoc[akka local] command includes the fol
 * xref:reference:akka-cli/akka_local_services_components_list-ids.adoc[akka local services components list-ids]
 * xref:reference:akka-cli/akka_local_services_components_list-timers.adoc[akka local services components list-timers]
 * xref:reference:akka-cli/akka_local_services_components_list.adoc[akka local services components list]
+* xref:reference:akka-cli/akka_local_services_connectivity.adoc[akka local services connectivity]
 * xref:reference:akka-cli/akka_local_services_list.adoc[akka local services list]
 * xref:reference:akka-cli/akka_local_services_views.adoc[akka local services views]
 * xref:reference:akka-cli/akka_local_services_views_describe.adoc[akka local services views describe]
