@@ -54,7 +54,7 @@ As well as a Key Value Entity component `CustomerEntity.java` that will produce 
 You implement a View by extending `akka.javasdk.view.View` and subscribing to changes from an entity. You specify how to query it by providing one or more methods annotated with `@Query`, which can then be made accessible via an xref:java:http-endpoints.adoc[HTTP Endpoint].
 
 [source,java]
-.{sample-base-url}/key-value-customer-registry/src/main/java/customer/application/CustomersByEmail.java[CustomerByEmail.java]
+.{sample-base-url}/key-value-customer-registry/src/main/java/customer/application/CustomersByEmail.java[CustomersByEmail.java]
 ----
 include::example$key-value-customer-registry/src/main/java/customer/application/CustomersByEmail.java[tags=class]
 ----
@@ -136,7 +136,7 @@ Defining a view that consumes from an Event Sourced Entity is very similar to th
 Every time an event is processed by the view, the state of the view can be updated. You can do this with the `updateRow` method, which is available through the `effects()` API. Below you can see how the View is updated:
 
 [source,java]
-.{sample-base-url}/event-sourced-customer-registry/src/main/java/customer/view/CustomerByNameView.class[CustomerByNameView.java]
+.{sample-base-url}/event-sourced-customer-registry/src/main/java/customer/application/CustomerByNameView.java[CustomerByNameView.java]
 ----
 include::example$event-sourced-customer-registry/src/main/java/customer/application/CustomerByNameView.java[tags=class]
 ----
@@ -291,7 +291,7 @@ Testing Views is very similar to testing other xref:consuming-producing.adoc#_te
 For a View definition that subscribes to changes from the `customer` Key Value Entity.
 
 [source,java,indent=0]
-.{sample-base-url}/key-value-customer-registry/src/main/java/customer/view/CustomersResponseByCity.java[CustomersResponseByCity.java]
+.{sample-base-url}/key-value-customer-registry/src/main/java/customer/application/CustomersByCity.java[CustomersByCity.java]
 ----
 include::example$key-value-customer-registry/src/main/java/customer/application/CustomersByCity.java[tag=view-test]
 ----
@@ -299,7 +299,7 @@ include::example$key-value-customer-registry/src/main/java/customer/application/
 An integration test can be implemented as below.
 
 [source,java,indent=0]
-.{sample-base-url}/key-value-customer-registry/src/main/java/customer/view/CustomersByCityIntegrationTest.java[CustomersByCityIntegrationTest.java]
+.{sample-base-url}/key-value-customer-registry/src/it/java/customer/application/CustomersByCityIntegrationTest.java[CustomersByCityIntegrationTest.java]
 ----
 include::example$key-value-customer-registry/src/it/java/customer/application/CustomersByCityIntegrationTest.java[tag=view-test]
 ----

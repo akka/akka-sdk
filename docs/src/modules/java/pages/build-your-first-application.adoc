@@ -85,7 +85,7 @@ First, define the domain class `ShoppingCart` in package `shoppingcart.domain` w
 [source,java,indent=0]
 .{sample-base-url}/shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCart.java[ShoppingCart.java]
 ----
-include::java:example$shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCart.java[tags=top;domain]
+include::example$shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCart.java[tags=top;domain]
 ----
 
 Add an interface `ShoppingCartEvent` with the domain events in package `shoppingcart.domain`.
@@ -93,7 +93,7 @@ Add an interface `ShoppingCartEvent` with the domain events in package `shopping
 [source,java,indent=0]
 .{sample-base-url}/shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCartEvent.java[ShoppingCartEvent.java]
 ----
-include::java:example$shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCartEvent.java[tags=top;domain]
+include::example$shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCartEvent.java[tags=top;domain]
 ----
 
 === Define the entity
@@ -105,7 +105,7 @@ Create a class named `ShoppingCartEntity` in package `shoppingcart.application`.
 [source,java,indent=0]
 .{sample-base-url}/shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java[ShoppingCartEntity.java]
 ----
-include::java:example$shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java[tags=top;class;getCart;addItem]
+include::example$shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java[tags=top;class;getCart;addItem]
 ----
 
 === Define the external API
@@ -118,7 +118,7 @@ Create a class named `ShoppingCartEndpoint` in package `shoppingcart.api`.
 [source,java,indent=0]
 .{sample-base-url}/shopping-cart-quickstart/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java[ShoppingCartEndpoint.java]
 ----
-include::java:example$shopping-cart-quickstart/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java[tags=top;class;get;addItem]
+include::example$shopping-cart-quickstart/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java[tags=top;class;get;addItem]
 ----
 
 == Run locally

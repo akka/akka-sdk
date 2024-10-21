@@ -22,12 +22,12 @@ Each Product includes a name and a price:
 [source,java,indent=0]
 .{sample-base-url}/view-store/src/main/java/store/product/domain/Product.java[Product.java]
 ----
-include::java:example$view-store/src/main/java/store/product/domain/Product.java[tag=domain]
+include::example$view-store/src/main/java/store/product/domain/Product.java[tag=domain]
 ----
 [source,java,indent=0]
 .{sample-base-url}/view-store/src/main/java/store/product/domain/Money.java[Money.java]
 ----
-include::java:example$view-store/src/main/java/store/product/domain/Money.java[tag=domain]
+include::example$view-store/src/main/java/store/product/domain/Money.java[tag=domain]
 ----
 
 Each Order has an id, refers to the Customer and Product ids for this order, has the quantity of the ordered product, and a timestamp for when the order was created:
@@ -35,7 +35,7 @@ Each Order has an id, refers to the Customer and Product ids for this order, has
 [source,java,indent=0]
 .{sample-base-url}/view-store/src/main/java/store/order/domain/Order.java[Order.java]
 ----
-include::java:example$view-store/src/main/java/store/order/domain/Order.java[tag=domain]
+include::example$view-store/src/main/java/store/order/domain/Order.java[tag=domain]
 ----
 
 A view can subscribe to the events or changes for each of the Customer, Order, and Product entities.
@@ -47,13 +47,13 @@ To do this, create a class with a `ComponentId` annotation and extending from `V
 [source,java,indent=0]
 .{sample-base-url}/view-store/src/main/java/store/view/joined/CustomerOrder.java[CustomerOrder.java]
 ----
-include::java:example$view-store/src/main/java/store/view/joined/CustomerOrder.java[tag=joined]
+include::example$view-store/src/main/java/store/view/joined/CustomerOrder.java[tag=joined]
 ----
 
 [source,java,indent=0]
 .{sample-base-url}/view-store/src/main/java/store/view/joined/JoinedCustomerOrdersView.java[JoinedCustomerOrdersView.java]
 ----
-include::java:example$view-store/src/main/java/store/view/joined/JoinedCustomerOrdersView.java[tag=join]
+include::example$view-store/src/main/java/store/view/joined/JoinedCustomerOrdersView.java[tag=join]
 ----
 <1> Add a component id for this multi-table view.
 <2> Each nested table updater stores its state type in a different table (declared with `@Table`) and subscribes to one of the entities: `customers`, `products`, and `orders`.
@@ -72,20 +72,20 @@ In the example above, each `CustomerOrder` returned will contain the same custom
 [source,java,indent=0]
 .{sample-base-url}/view-store/src/main/java/store/view/nested/CustomerOrders.java[CustomerOrders.java]
 ----
-include::java:example$view-store/src/main/java/store/view/nested/CustomerOrders.java[tag=nested]
+include::example$view-store/src/main/java/store/view/nested/CustomerOrders.java[tag=nested]
 ----
 <1> The `orders` field will contain the nested `CustomerOrder` objects.
 
 [source,java,indent=0]
 .{sample-base-url}/view-store/src/main/java/store/view/nested/CustomerOrder.java[CustomerOrder.java]
 ----
-include::java:example$view-store/src/main/java/store/view/nested/CustomerOrder.java[tag=nested]
+include::example$view-store/src/main/java/store/view/nested/CustomerOrder.java[tag=nested]
 ----
 
 [source,java,indent=0]
 .{sample-base-url}/view-store/src/main/java/store/view/nested/NestedCustomerOrdersView.java[NestedCustomerOrdersView.java]
 ----
-include::java:example$view-store/src/main/java/store/view/nested/NestedCustomerOrdersView.java[tag=query]
+include::example$view-store/src/main/java/store/view/nested/NestedCustomerOrdersView.java[tag=query]
 ----
 <1> In the view query, the customer columns are projected into the result, and the order and product columns are combined into a nested object and projected into the `orders` field.
 <2> A single `CustomerOrders` object is returned, which will have the customer details and all orders for this customer.
@@ -96,31 +96,31 @@ A <<_result_projection, projection>> for a JOIN query can also restructure the r
 [source,java,indent=0]
 .{sample-base-url}/view-store/src/main/java/store/view/structured/CustomerOrders.java[CustomerOrders.java]
 ----
-include::java:example$view-store/src/main/java/store/view/structured/CustomerOrders.java[tag=structured]
+include::example$view-store/src/main/java/store/view/structured/CustomerOrders.java[tag=structured]
 ----
 
 [source,java,indent=0]
 .{sample-base-url}/view-store/src/main/java/store/view/structured/CustomerShipping.java[CustomerShipping.java]
 ----
-include::java:example$view-store/src/main/java/store/view/structured/CustomerShipping.java[tag=structured]
+include::example$view-store/src/main/java/store/view/structured/CustomerShipping.java[tag=structured]
 ----
 
 [source,java,indent=0]
 .{sample-base-url}/view-store/src/main/java/store/view/structured/ProductOrder.java[ProductOrder.java]
 ----
-include::java:example$view-store/src/main/java/store/view/structured/ProductOrder.java[tag=structured]
+include::example$view-store/src/main/java/store/view/structured/ProductOrder.java[tag=structured]
 ----
 
 [source,java,indent=0]
-.{sample-base-url}/view-store/src/main/java/store/view/structured/ProductOrder.java[ProductOrder.java]
+.{sample-base-url}/view-store/src/main/java/store/view/structured/ProductValue.java[ProductValue.java]
 ----
-include::java:example$view-store/src/main/java/store/view/structured/ProductValue.java[tag=structured]
+include::example$view-store/src/main/java/store/view/structured/ProductValue.java[tag=structured]
 ----
 
 [source,java,indent=0]
 .{sample-base-url}/view-store/src/main/java/store/view/structured/StructuredCustomerOrdersView.java[StructuredCustomerOrdersView.java]
 ----
-include::java:example$view-store/src/main/java/store/view/structured/StructuredCustomerOrdersView.java[tag=query]
+include::example$view-store/src/main/java/store/view/structured/StructuredCustomerOrdersView.java[tag=query]
 ----
 <1> The view query does the following:
   * The `customerId` is renamed to just `id` in the result.
