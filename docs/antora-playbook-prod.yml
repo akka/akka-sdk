@@ -2,16 +2,15 @@ site:
   title: "Akka Documentation"
   url: https://doc.akka.io
   start_page: ROOT::index.adoc
-  robots: disallow
   keys:
-    cookie_consent: '28b912e7-09e9-43d5-91e4-3d1897044004-test'
+    cookie_consent: '28b912e7-09e9-43d5-91e4-3d1897044004'
 
 
 content:
   sources:
   - url: ./../
     branches: [HEAD]
-    start_paths: [docs/src,docs/src-managed]
+    start_paths: [docs/src]
 
 ui:
   bundle:
@@ -26,8 +25,8 @@ runtime:
 asciidoc:
   attributes:
     # the following two attributes cause review and todo notes to display
-    review: ''
-    todo: ''
+    # review: ''
+    # todo: ''
     # this attribute causes the next and previous page links to appear at the bottom of the page
     page-pagination: ''
     page-toctitle: 'On This Page'

@@ -36,9 +36,12 @@ jobs:
         with:
           jvm: temurin:1.21
 
-      - name: Downloads, Antora, SCP to Gustav
+      - name: Downloads, Antora
+        run: |
+          make managed local
+
+      - name: SCP to Gustav
         run: |
           ./docs/bin/deploy-site.sh akkarepo@gustav.akka.io:www/snapshots/akka-documentation/
         env:
           SCP_SECRET: ${{ secrets.GUSTAV_SCP_SECRET }}
-          

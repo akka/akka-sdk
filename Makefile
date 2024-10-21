@@ -9,9 +9,9 @@ sources  := src build/src/managed
 
 src_managed := docs/src-managed
 
-java_managed_attachments := docs/src/modules/java/attachments
-java_managed_examples := docs/src/modules/java/examples
-managed_partials := docs/src/modules/ROOT/partials
+java_managed_attachments := ${src_managed}/modules/java/attachments
+java_managed_examples := ${src_managed}/modules/java/examples
+managed_partials := ${src_managed}/modules/ROOT/partials
 
 antora_docker_image := local/antora-doc
 antora_docker_image_tag := latest
@@ -19,12 +19,14 @@ BASE_PATH := $(shell git rev-parse --show-prefix)
 
 .SILENT:
 
-build: dev
+build: managed local open
 
 clean:
-	rm -rf "${java_managed_attachments}"
-	rm -rf "${java_managed_examples}"
-	rm -rf "${managed_partials}/attributes.adoc"
+	rm -rf "docs/src/modules/java/attachments"
+	rm -rf "docs/src/modules/java/examples"
+	rm -rf "docs/src/modules/ROOT/partials/attributes.adoc"
+	# above can eventually be removed, left for a smooth transition to managed files
+	rm -rf "${src_managed}"
 	rm -rf target/site
 
 docker-image:
@@ -32,7 +34,7 @@ docker-image:
 
 prepare:
 	mkdir -p "${src_managed}"
-	#cp docs/docs-managed-antora.yml "${src_managed}/antora.yml"
+	cp docs/src/antora.yml "${src_managed}"
 
 managed: prepare attributes apidocs examples bundles
 
@@ -71,22 +73,33 @@ bundles:
 	./docs/bin/bundle.sh --zip "${java_managed_attachments}/choreography-saga-quickstart.zip" samples/choreography-saga-quickstart
 	./docs/bin/bundle.sh --zip "${java_managed_attachments}/workflow-quickstart.zip" samples/transfer-workflow-compensation
 
-dev: clean managed validate-xrefs dev-html
-
-# like dev but without apidocs, bundles and testkits. Useful for fast dev cycles
-quick-dev: clean prepare attributes examples dev-html
-
 done:
-	@echo "Generated docs at ${TARGET_DIR}/akka-documentation/index.html"
+	@echo "Generated docs at ${TARGET_DIR}/index.html"
+
+open:
+	open "${TARGET_DIR}/index.html"
 
 local: docker-image examples antora-local done
+
+prod: docker-image managed antora-prod done
 
 antora-local:
 	docker run \
 		-v ${ROOT_DIR}:/antora \
 		--rm \
 		-t ${antora_docker_image}:${antora_docker_image_tag} \
-		--cache-dir=.cache/antora --stacktrace --log-failure-level=warn docs/antora-playbook-local.yml
+		--cache-dir=.cache/antora --stacktrace --log-failure-level=fatal \
+		docs/antora-playbook-local.yml
+	cp docs/install-cli.sh target/site/
+
+antora-prod:
+	docker run \
+		-v ${ROOT_DIR}:/antora \
+		--rm \
+		-t ${antora_docker_image}:${antora_docker_image_tag} \
+		--cache-dir=.cache/antora --stacktrace --log-level error --log-failure-level=fatal \
+		docs/antora-playbook-prod.yml
+	cp docs/install-cli.sh target/site/
 
 validate-xrefs:
 	docker run \
