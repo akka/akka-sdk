@@ -378,6 +378,7 @@ public class TestKit {
   private TimerScheduler timerScheduler;
   private Optional<DependencyProvider> dependencyProvider;
   private int eventingTestKitPort = -1;
+  private Config applicationConfig;
 
   /**
    * Create a new testkit for a service descriptor with the default settings.
@@ -464,6 +465,8 @@ public class TestKit {
 
       };
 
+      applicationConfig = runner.applicationConfig();
+
       Config runtimeConfig = ConfigFactory.empty();
       runtimeActorSystem = KalixRuntimeMain.start(Some.apply(runtimeConfig), Some.apply(runner));
       // wait for SDK to get on start callback (or fail starting), we need it to set up the component client
@@ -529,6 +532,13 @@ public class TestKit {
       throw new IllegalStateException("Need to start the testkit before accessing the port");
 
     return proxyPort;
+  }
+
+  /**
+   * @return The config as the components of the service under test sees it, if injected.
+   */
+  public Config getApplicationConfig() {
+    return applicationConfig;
   }
 
   /**
