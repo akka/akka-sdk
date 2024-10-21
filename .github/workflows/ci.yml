@@ -428,7 +428,7 @@ jobs:
           - { sample: spring-dependency-injection, it: true }
 
           - { sample: event-sourced-customer-registry, it: true }
-          - { sample: event-sourced-counter, pre_cmd: 'docker compose up gcloud-pubsub-emulator -d', it: true }
+          - { sample: event-sourced-counter-brokers, pre_cmd: 'docker compose up -d', it: true }
 
           - { sample: event-sourced-customer-registry-subscriber, it: true, pre_cmd: './start-upstream.sh' }
 

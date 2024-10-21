@@ -11,18 +11,18 @@ The first live of the defense is the validation of the incoming data on the `End
 The next phase is domain validation error. An incoming command doesn't fulfil the requirements or the current state doesn't allow the command to be handled. Such errors can be signalled back to the client as an error effect using the `effects().error(description)` function.
 
 [source,java,indent=0]
-.{sample-base-url}/event-sourced-counter/src/main/java/counter/application/CounterEntity.java[CounterEntity.java]
+.{sample-base-url}/event-sourced-counter-brokers/src/main/java/counter/application/CounterEntity.java[CounterEntity.java]
 ----
-include::example$event-sourced-counter/src/main/java/counter/application/CounterEntity.java[tag=increaseWithError]
+include::example$event-sourced-counter-brokers/src/main/java/counter/application/CounterEntity.java[tag=increaseWithError]
 ----
 <1> Return an error effect with a description if the validation fails.
 
 The `effects().error` is later transformed into a `IllegalArgumentException` that fails a Java `CompletionStage`. This exception can be handled with `CompletionStage.exceptionally` method and transformed into a proper HTTP error. The default behavior is to return an HTTP 400 error with the error message as a response body.
 
 [source,java,indent=0]
-.{sample-base-url}/event-sourced-counter/src/main/java/counter/api/CounterEndpoint.java[CounterEndpoint.java]
+.{sample-base-url}/event-sourced-counter-brokers/src/main/java/counter/api/CounterEndpoint.java[CounterEndpoint.java]
 ----
-include::example$event-sourced-counter/src/main/java/counter/api/CounterEndpoint.java[tag=increaseWithError]
+include::example$event-sourced-counter-brokers/src/main/java/counter/api/CounterEndpoint.java[tag=increaseWithError]
 ----
 <1> Calling component method without additional exception handling.
 
@@ -45,9 +45,9 @@ Increasing counter above 10000 is blocked
 To have a full and type-safe control over the errors, another approach would be to encode them as a part of reply protocol.
 
 [source,java,indent=0]
-.{sample-base-url}/event-sourced-counter/src/main/java/counter/application/CounterEntity.java[CounterEntity.java]
+.{sample-base-url}/event-sourced-counter-brokers/src/main/java/counter/application/CounterEntity.java[CounterEntity.java]
 ----
-include::example$event-sourced-counter/src/main/java/counter/application/CounterEntity.java[tag=increaseWithResult]
+include::example$event-sourced-counter-brokers/src/main/java/counter/application/CounterEntity.java[tag=increaseWithResult]
 ----
 <1> Additional Jackson annotations are required to serialize a polymorphic `CounterResult` type.
 <2> Sealed trait groups all possible results of the command handling.
@@ -57,9 +57,9 @@ include::example$event-sourced-counter/src/main/java/counter/application/Counter
 Handling the response in the client is straightforward.
 
 [source,java,indent=0]
-.{sample-base-url}/event-sourced-counter/src/main/java/counter/api/CounterEndpoint.java[CounterEndpoint.java]
+.{sample-base-url}/event-sourced-counter-brokers/src/main/java/counter/api/CounterEndpoint.java[CounterEndpoint.java]
 ----
-include::example$event-sourced-counter/src/main/java/counter/api/CounterEndpoint.java[tag=increaseWithResult]
+include::example$event-sourced-counter-brokers/src/main/java/counter/api/CounterEndpoint.java[tag=increaseWithResult]
 ----
 <1> Match all the possible results and transform them into HTTP responses.
 

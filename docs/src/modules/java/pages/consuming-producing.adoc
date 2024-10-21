@@ -20,9 +20,9 @@ NOTE: Events and messages are guaranteed to be delivered at least once. This mea
 You can consume event from an Event Sourced Entity by adding `@Consume.FromEventSourcedEntity` as a type level annotation of your Consumer implementation.
 
 [source,java,indent=0]
-.{sample-base-url}/event-sourced-counter/src/main/java/counter/application/CounterEventsConsumer.java[CounterEventsConsumer.java]
+.{sample-base-url}/event-sourced-counter-brokers/src/main/java/counter/application/CounterEventsConsumer.java[CounterEventsConsumer.java]
 ----
-include::example$event-sourced-counter/src/main/java/counter/application/CounterEventsConsumer.java[tag=ese-consumer]
+include::example$event-sourced-counter-brokers/src/main/java/counter/application/CounterEventsConsumer.java[tag=ese-consumer]
 ----
 <1> Set component id, like for any other component.
 <2> Set the source of the events to the Event Sourced Entity `CounterEntity`.
@@ -103,9 +103,9 @@ include::partial$topic-note.adoc[]
 In the following example the events from the topic are delivered to the Consumer and logged.
 
 [source,java,indent=0]
-.{sample-base-url}/event-sourced-counter/src/main/java/counter/application/CounterEventsTopicConsumer.java[CounterEventsTopicConsumer.java]
+.{sample-base-url}/event-sourced-counter-brokers/src/main/java/counter/application/CounterEventsTopicConsumer.java[CounterEventsTopicConsumer.java]
 ----
-include::example$event-sourced-counter/src/main/java/counter/application/CounterEventsTopicConsumer.java[tags=topic-consumer]
+include::example$event-sourced-counter-brokers/src/main/java/counter/application/CounterEventsTopicConsumer.java[tags=topic-consumer]
 ----
 <1> Consume from topic 'counter-events'.
 <2> Add handler for a given message type.
@@ -136,9 +136,9 @@ To allow proper reading of JSON messages from external topics, the messages need
 If the content type is `application/octet-stream`, no content type is present, or the type is unknown to Akka, the message is treated as a binary message. The topic subscriber method must accept the `byte[]` message.
 
 [source,java]
-.{sample-base-url}/event-sourced-counter/src/main/java/counter/application/RawBytesConsumer.java[RawBytesConsumer.java]
+.{sample-base-url}/event-sourced-counter-brokers/src/main/java/counter/application/RawBytesConsumer.java[RawBytesConsumer.java]
 ----
-include::example$event-sourced-counter/src/main/java/counter/application/RawBytesConsumer.java[tag=class]
+include::example$event-sourced-counter-brokers/src/main/java/counter/application/RawBytesConsumer.java[tag=class]
 ----
 <1> When consuming raw bytes messages from a topic the input type must be `byte[]`.
 
@@ -151,9 +151,9 @@ Producing to a topic is the same as producing to a stream in service to service 
 include::partial$topic-note.adoc[]
 
 [source,java,indent=0]
-.{sample-base-url}/event-sourced-counter/src/main/java/counter/application/CounterJournalToTopicConsumer.java[CounterJournalToTopicConsumer.java]
+.{sample-base-url}/event-sourced-counter-brokers/src/main/java/counter/application/CounterJournalToTopicConsumer.java[CounterJournalToTopicConsumer.java]
 ----
-include::example$event-sourced-counter/src/main/java/counter/application/CounterJournalToTopicConsumer.java[tag=class]
+include::example$event-sourced-counter-brokers/src/main/java/counter/application/CounterJournalToTopicConsumer.java[tag=class]
 ----
 <1> Set the source to events from the `CounterEntity`.
 <2> Set the destination to a topic name 'counter-events'.
@@ -185,9 +185,9 @@ Using metadata is also possible when producing messages to a topic or a stream. 
 
 
 [source,java,indent=0]
-.{sample-base-url}/event-sourced-counter/src/main/java/counter/application/CounterJournalToTopicWithMetaConsumer.java[CounterJournalToTopicWithMetaConsumer.java]
+.{sample-base-url}/event-sourced-counter-brokers/src/main/java/counter/application/CounterJournalToTopicWithMetaConsumer.java[CounterJournalToTopicWithMetaConsumer.java]
 ----
-include::example$event-sourced-counter/src/main/java/counter/application/CounterJournalToTopicWithMetaConsumer.java[tag=class]
+include::example$event-sourced-counter-brokers/src/main/java/counter/application/CounterJournalToTopicWithMetaConsumer.java[tag=class]
 ----
 <1> Get the counter ID from the metadata.
 <2> Publish event to the topic with custom metadata.
@@ -207,21 +207,20 @@ When an Akka service relies on a broker, it might be useful to use integration t
 Following up on the counter entity example used above, let's consider an example (composed by 2 Consumer and 1 Event Sourced Entity) as pictured below:
 
 ifdef::todo[TODO: convert this diagram once we have a standard language for this]
-ifdef::todo[TODO: convert this diagram to Akka sdk]
 
 image::java:eventing-testkit-sample.svg[]
 
 In this example:
 
-* commands are consumed from an external topic `event-commands` and forwarded to a Counter entity;
-* the Counter entity is an Event Sourced Entity and has its events published to another topic `counter-events`.
+* commands are consumed from an external topic `event-commands` and forwarded to a `Counter` entity;
+* the `Counter` entity is an Event Sourced Entity and has its events published to another topic `counter-events`.
 
 To test this flow, we will take advantage of the TestKit to be able to push commands into the `event-commands` topic and check what messages are produced to topic `counter-events`.
 
 [source,java]
-.{sample-base-url}/event-sourced-counter/src/it/java/counter/application/CounterIntegrationTest.java[CounterIntegrationTest.java]
+.{sample-base-url}/event-sourced-counter-brokers/src/it/java/counter/application/CounterIntegrationTest.java[CounterIntegrationTest.java]
 ----
-include::example$event-sourced-counter/src/it/java/counter/application/CounterIntegrationTest.java[tags=class;test-topic]
+include::example$event-sourced-counter-brokers/src/it/java/counter/application/CounterIntegrationTest.java[tags=class;test-topic]
 ----
 <1> Use the TestKitSupport class.
 <2> Get a `IncomingMessages` for topic named `counter-commands` and `OutgoingMessages` for `counter-events` from the TestKit.
@@ -236,9 +235,9 @@ TIP: In the example above we take advantage of the TestKit to serialize / deseri
 Before running your test, make sure to configure the TestKit correctly.
 
 [source, java]
-.{sample-base-url}/event-sourced-counter/src/it/java/counter/application/CounterIntegrationTest.java[CounterIntegrationTest.java]
+.{sample-base-url}/event-sourced-counter-brokers/src/it/java/counter/application/CounterIntegrationTest.java[CounterIntegrationTest.java]
 ----
-include::example$event-sourced-counter/src/it/java/counter/application/CounterIntegrationTest.java[tags=eventing-config]
+include::example$event-sourced-counter-brokers/src/it/java/counter/application/CounterIntegrationTest.java[tags=eventing-config]
 ----
 <1> Mock incoming messages from the `counter-commands` topic.
 <2> Mock outgoing messages from the `counter-events` topic.
@@ -248,9 +247,9 @@ include::example$event-sourced-counter/src/it/java/counter/application/CounterIn
 Typically, messages are published with associated metadata. If you want to construct your own `Metadata` to be consumed by a service or make sure the messages published out of your service have specific metadata attached, you can do so using the TestKit, as shown below.
 
 [source,java,indent=0]
-.{sample-base-url}/event-sourced-counter/src/it/java/counter/application/CounterIntegrationTest.java[CounterIntegrationTest.java]
+.{sample-base-url}/event-sourced-counter-brokers/src/it/java/counter/application/CounterIntegrationTest.java[CounterIntegrationTest.java]
 ----
-include::example$event-sourced-counter/src/it/java/counter/application/CounterIntegrationTest.java[tags=test-topic-metadata]
+include::example$event-sourced-counter-brokers/src/it/java/counter/application/CounterIntegrationTest.java[tags=test-topic-metadata]
 ----
 <1> Build a `CloudEvent` object with the 3 required attributes, respectively: `id`, `source` and `type`.
 <2> Add the subject to which the message is related, that is the `counterId`.
@@ -271,9 +270,9 @@ As an alternative, you can consider using different test suites which will use i
 
 
 [source,java,indent=0]
-.{sample-base-url}/event-sourced-counter/src/it/java/counter/application/CounterIntegrationTest.java[CounterIntegrationTest.java]
+.{sample-base-url}/event-sourced-counter-brokers/src/it/java/counter/application/CounterIntegrationTest.java[CounterIntegrationTest.java]
 ----
-include::example$event-sourced-counter/src/it/java/counter/application/CounterIntegrationTest.java[tags=clear-topics]
+include::example$event-sourced-counter-brokers/src/it/java/counter/application/CounterIntegrationTest.java[tags=clear-topics]
 ----
 <1> Run this before each test.
 <2> Clear the topic ignoring any unread messages.
@@ -285,7 +284,7 @@ NOTE: Despite the example, you are neither forced to clear all topics nor to do 
 To run an integration test against a real instance of Google PubSub (or its Emulator) or Kafka, use the TestKit settings to override the default eventing support, as shown below:
 
 [source,java]
-.{sample-base-url}/event-sourced-counter/src/it/java/counter/application/CounterWithRealPubSubIntegrationTest.java[CounterWithRealPubSubIntegrationTest.java]
+.{sample-base-url}/event-sourced-counter-brokers/src/it/java/counter/application/CounterWithRealKafkaIntegrationTest.java[CounterWithRealKafkaIntegrationTest.java]
 ----
-include::example$event-sourced-counter/src/it/java/counter/application/CounterWithRealPubSubIntegrationTest.java[tags=pubsub]
+include::example$event-sourced-counter-brokers/src/it/java/counter/application/CounterWithRealKafkaIntegrationTest.java[tags=kafka]
 ----

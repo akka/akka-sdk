@@ -1,4 +1,4 @@
-# Event Sourced Counter
+# Event Sourced Counter with Broker integration
 
 ## Designing
 
@@ -6,8 +6,8 @@ To understand the Akka concepts that are the basis for this example, see [Develo
 
 ## Developing
 
-This project demonstrates the use of an Event Sourced Entity and Consumer components.
-To understand more about these components, see [Developing services](https://doc.akka.io/java/index.html).
+This project demonstrates the use of an Event Sourced Entity and the different ways to consume and produce from/to a broker. This sample provides configuration to run with either Kafka or Google PubSub emulator.
+Note that, currently, only one broker can be configured per service. To understand more about these consumers and producers, see [Consuming and Producing](https://doc.akka.io/java/consuming-producing.html).
 
 ## Building
 
@@ -17,13 +17,32 @@ Use Maven to build your project:
 mvn compile
 ```
 
-## Running Locally
+## Running Locally with Kafka
 
-To start your service locally, run:
+Start by running Kafka:
+```shell
+docker-compose up -d kafka
+```
+
+Then, to start your service locally using Kafka support, run:
+
+```shell
+mvn compile exec:java -Dakka.javasdk.dev-mode.eventing.support=kafka
+```
+
+## Running Locally with Google PubSub Emulator
+
+Start by running the Google PubSub Emulator:
+```shell
+docker-compose up -d gcloud-pubsub-emulator
+```
+
+Then, to start your service locally with Google PubSub Emulator support, run:
 
 ```shell
 mvn compile exec:java -Dakka.javasdk.dev-mode.eventing.support=google-pubsub-emulator
 ```
+
 
 ## Exercising the services
 
@@ -59,19 +78,20 @@ You will need to update the `dockerImage` property in the `pom.xml` and refer to
 [Configuring registries](https://doc.akka.io/operations/container-registries.html)
 for more information on how to make your docker image available to Akka.
 
-Finally, you can use the [Akka Console](https://console.kalix.io)
-to create a project and then deploy your service into the project either by using `mvn deploy kalix:deploy` which
-will conveniently package, publish your docker image, and deploy your service to Akka, or by first packaging and
+Finally, you can use the [Akka Console](https://console.akka.io)
+to create a project and then deploy your service into the project by first packaging and
 publishing the docker image through `mvn deploy` and then deploying the image
 through the `akka` CLI.
 
+Since this project depends on a broker, you will need also to configure that broker access through the Akka Console or Akka CLI. See [Configure message brokers](https://doc.akka.io/operations/projects/message-brokers.html) for guidance.
+
 ## Integration Tests
 
-This sample showcases how to have integration tests with and without a real broker. Thus, to run the integration tests locally, you need to have Google PubSub Emulator running.
+This sample showcases how to have integration tests with and without a real broker. Since the test suite includes one test with each broker, you need to have both running.
 
 First run:
 ```shell
-docker-compose up -d gcloud-pubsub-emulator
+docker-compose up
 ```
 
 Then run:
