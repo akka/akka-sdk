@@ -104,14 +104,6 @@ antora-prod:
 	# cp docs/install-cli.sh.txt target/site/
 	mv target/site/install-cli.sh.txt target/site/install-cli.sh
 
-validate-xrefs:
-	docker run \
-		-v ${ROOT_DIR}:/antora \
-		--rm \
-		--entrypoint /bin/sh \
-		-t ${antora_docker_image}:${antora_docker_image_tag} \
-		--generator @antora/xref-validator dev/antora.yml
-
 validate-links:
 	docker run \
 		-v ${ROOT_DIR}:/antora \
