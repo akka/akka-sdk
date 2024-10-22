@@ -23,6 +23,15 @@ Current versions
     - View indexing improvements for some join conditions
     - Other smaller improvements
 
+* https://github.com/akka/akka-projection/releases/tag/v1.5.9[Akka Projection 1.5.9]
+    - improvement of projection scaling
+* https://github.com/akka/akka-persistence-r2dbc/releases/tag/v1.2.6[Akka Persistence R2DBC 1.2.6]
+    - improvement of latency for eventsBySlices after idle
+* https://github.com/akka/akka-projection/releases/tag/v1.5.8[Akka Projection 1.5.8]
+    - fix protobuf serialization in Replicated Event Sourcing
+* https://github.com/akka/akka/releases/tag/v2.9.7[Akka core 2.9.7]
+    - event interceptor in Replicated Event Sourcing
+    - expose license key expiry
 * https://github.com/akka/akka-projection/releases/tag/v1.5.7[Akka Projection 1.5.7]
     - dependency updates
 * https://github.com/akka/akka-grpc/releases/tag/v2.4.4[Akka gRPC 2.4.4]
