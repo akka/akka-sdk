@@ -137,5 +137,5 @@ Congratulations, you've successfully implemented a workflow between two wallets 
 
 Now that you've built a basic transfer workflow, consider these next steps:
 
-1**Explore other Akka components**: Dive deeper into Akka's ecosystem to enhance your application.
-2**Join the community**: Connect with other developers and learn more in the [Akka community Slack channel](https://join.slack.com/t/kalixworld/shared_invite/zt-1x9ddzseu-aY1rB4S4Vb8Iu_YI89IfoQ/).
+1. **Explore other Akka components**: Dive deeper into Akka's ecosystem to enhance your application.
+2. **Join the community**: Visit the [Support page](https://doc.akka.io/support/index.html) to find resources where you can connect with other Akka developers and expand your knowledge.
