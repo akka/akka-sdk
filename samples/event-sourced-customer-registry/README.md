@@ -57,7 +57,7 @@ To retrieve details of a specific customer:
 curl localhost:9000/customer/one
 ```
 
-### 3. Query customers by mmail
+### 3. Query customers by email
 
 To find a customer using their email address:
 

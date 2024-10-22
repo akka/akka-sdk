@@ -156,7 +156,7 @@ updates appear.
 ## Pre-defined paths
 
 Akka runtime provides pre-defined paths based on the component id, entity id and the method name to interact directly
-with the entities, those are however locked down from access throuh default deny-all ACLs. It is possible to explicitly
+with the entities, those are however locked down from access through default deny-all ACLs. It is possible to explicitly
 allow access on an entity using the `akka.javasdk.annotations.Acl` annotation, or by completely disabling the local
 "dev mode" ACL checking by running the service with `mvn -Dakka.javasdk.dev-mode.acl.enabled=false compile exec:java`
 or changing the default in your `src/main/resources/application.conf`.
