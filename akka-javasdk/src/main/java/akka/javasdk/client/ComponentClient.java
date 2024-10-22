@@ -20,13 +20,12 @@ import akka.javasdk.timedaction.TimedAction;
  * <p>Example of use on a cross-component call:
  *
  * <pre>{@code
- * public Effect<String> createUser(String userId, String email, String name) {
+ * public CompletionStage<String> createUser(String userId, String email, String name) {
  *   //validation here
- *   var defCall =
+ *   return
  *     componentClient.forKeyValueEntity(userId)
  *       .method(UserEntity::createUser)
- *       .deferred(new CreateRequest(email, name));
- *   return effects().forward(defCall);
+ *       .invokeAsync(new CreateRequest(email, name));
  * }
  * }</pre>
  *
