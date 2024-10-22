@@ -1,0 +1,41 @@
+= Security announcements
+include::ROOT:partial$include.adoc[]
+
+Licensing Akka libraries ensures organizations that the versions of Akka libraries they are running in production will have all the latest known vulnerabilities patched and maintain compliance with SOC 2 standards. See https://www.lightbend.com/akka/compliance[Akka Compliance] for more information.
+
+== Receiving Security Advisories
+
+The best way to receive any and all security announcements is to subscribe to the https://groups.google.com/forum/#!forum/akka-security[Akka security list].
+
+NOTE: The mailing list is very low traffic, and receives notifications only after security reports have been managed by the core team and fixes are publicly available.
+
+
+== Reporting Vulnerabilities
+
+We strongly encourage people to report such problems to our private security mailing list first, before disclosing them in a public forum.
+
+Following best-practice, we strongly encourage anyone to report potential security vulnerabilities to `security@akka.io` before disclosing them in a public forum like the mailing list or as a GitHub issue.
+
+Reports to this email address will be handled by our security team, who will work together with you to ensure that a fix can be provided without delay.
+
+== Fixed Security Vulnerabilities
+
+* xref:security-announcements/akka-cve-2023-45865.adoc[2023-10-31, Akka logs environment variables]
+* xref:security-announcements/akka-http-cve-2023-44487.adoc[2023-10-16, HTTP/2 rapid reset denial of service]
+* xref:security-announcements/akka-http-cve-2023-05-15.adoc[2023-05-15, Akka HTTP uploaded file permissions]
+* xref:security-announcements/akka-async-dns-2023-31442.adoc[2023-05-02, CVE-2023-31442, Akka Async DNS (used by Akka Discovery)]
+* xref:security-announcements/alpakka-kafka-cve-2023-29471.adoc[2023-04-17, CVE-2023-29476, Alpakka Kafka]
+* xref:security-announcements/akka-http-cve-2021-42697.adoc[2021-11-02, CVE-2021-42697, Akka HTTP]
+* xref:security-announcements/akka-http-cve-2021-23339.adoc[2021-02-24, CVE-2021-23339, Akka HTTP]
+* xref:security-announcements/akka-http-cve-2018-16131.adoc[2018-09-05, CVE-2018-16131, Akka HTTP]
+* xref:security-announcements/akka-cve-2018-16115.adoc[2017-01-23, CVE-2018-16115, Akka]
+* xref:security-announcements/akka-camel-cve-2017-5643.adoc[2017-08-09, CVE-2017-5643, Akka Camel]
+* xref:security-announcements/akka-2017-02-10.adoc[2017-02-10, Java Serialization, Akka]
+* xref:security-announcements/akka-http-2017-01-23.adoc[2017-01-23, Denial of Service, Akka HTTP]
+* xref:security-announcements/akka-http-2016-09-30.adoc[2016-09-30, Directory Traversal, Akka HTTP]
+
+This list doesn't include vulnerabilities in external dependencies of Akka. See https://www.lightbend.com/akka/compliance[Akka Compliance] for more information and full list of CVEs from dependencies addressed through upgrades in Akka libraries.
+
+== Security aspects when building systems with Akka
+
+Akka libraries supports building secure systems that assume Zero Trust to their environment. Learn more about building secure systems with Akka: https://doc.akka.io/guide/security/zero-trust.html[Implementing Zero Trust with Akka].

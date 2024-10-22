@@ -12,12 +12,14 @@ artifactId
 async
 [Aa]utoscaling
 [Bb]ackoffice
+Bastian
 [Bb]oolean
 brokerless
 Buildah
 burstable
 CA's
 caSecret
+Cembaluk
 [Cc]hatbots
 classname
 clientCertificate
@@ -27,14 +29,19 @@ configs
 corsPolicy
 CRDTs
 Ctrl
+CVEs
+decodeRequest
 defaultMode
 declaratively
 deserialize
 deserialization
 dev
+Dmitry
+DTDs
 facto
 enum
 env
+exfiltration
 failover
 [Gg]itHub
 googleCloud
@@ -48,6 +55,7 @@ hyperscaler
 hyperscalers
 hostname
 hostnames
+Hotari
 httpBasic
 https
 [Ii]dempotency
@@ -63,6 +71,8 @@ JUnit
 [Kk]afka
 [Kk]alix
 keyId
+Kolesnikov
+Lagom
 [Ll]ightbend
 matchers
 materializer
@@ -90,6 +100,7 @@ prepended
 proto
 [Pp]rotobuf
 [Qq]uantiles
+Quatrini
 [Qq]uickstarts
 rebalance
 rebalances
@@ -97,8 +108,11 @@ rebalancing
 recoverability
 recurse
 redeliveries
+remoting
+Remoting
 repartitions
 reshard
+RNGs
 runtimes
 runtime's
 (?i)RPC
@@ -125,6 +139,7 @@ subcommand
 subjectMatches
 subpage
 subquery
+Szymanski
 [Tt]elemedicine
 [Tt]estKit
 Tink
@@ -145,4 +160,5 @@ upserting
 userid
 valueFrom
 volumeMounts
+Zolotko
 [Zz]sh
