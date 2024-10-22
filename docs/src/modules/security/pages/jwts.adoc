@@ -136,4 +136,4 @@ akka secrets create asymmetric <my-secret-name> \
 
 == Using JWTs
 
-Once you generated a token and provided it to your service, you still need to configure which endpoint requires such token. For more information on that, consult xref:java:using-jwts.adoc[].
+Once you generated a token and provided it to your service, you still need to configure which endpoint requires such token. For more information on that, consult xref:java:auth-with-jwts.adoc[].

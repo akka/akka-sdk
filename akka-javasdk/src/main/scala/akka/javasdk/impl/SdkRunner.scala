@@ -86,8 +86,6 @@ import kalix.protocol.view.Views
 import kalix.protocol.workflow_entity.WorkflowEntities
 import org.slf4j.LoggerFactory
 
-import java.util.Optional
-import scala.jdk.OptionConverters.RichOption
 import scala.jdk.OptionConverters.RichOptional
 import scala.jdk.CollectionConverters._
 
@@ -562,9 +560,14 @@ private final class Sdk(
               override def getPrincipals: Principals =
                 PrincipalsImpl(context.principal.source, context.principal.service)
 
-              override def getJwtClaims: Optional[JwtClaims] =
-                context.jwt.map(new JwtClaimsImpl(_)).asInstanceOf[Option[JwtClaims]].toJava
-            };
+              override def getJwtClaims: JwtClaims =
+                context.jwt match {
+                  case Some(jwtClaims) => new JwtClaimsImpl(jwtClaims)
+                  case None =>
+                    throw new RuntimeException(
+                      "There are no JWT claims defined but trying accessing the JWT claims. The class or the method needs to be annotated with @JWT.")
+                }
+            }
         }
       }
   }

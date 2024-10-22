@@ -25,5 +25,5 @@ public interface RequestContext extends Context {
   Principals getPrincipals();
 
   /** @return The JWT claims, if any, associated with this request. */
-  Optional<JwtClaims> getJwtClaims();
+  JwtClaims getJwtClaims();
 }

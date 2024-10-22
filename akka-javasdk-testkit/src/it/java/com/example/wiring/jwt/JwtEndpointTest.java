@@ -11,9 +11,11 @@ import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class JwtEndpointTest extends TestKitSupport {
 
@@ -42,6 +44,22 @@ public class JwtEndpointTest extends TestKitSupport {
                 .atMost(5, TimeUnit.SECONDS)
                 .untilAsserted(() -> {
                     assertThat(call.get().status()).isEqualTo(StatusCodes.FORBIDDEN);
+                });
+
+    }
+
+    @Test
+    public void shouldRaiseExceptionWhenAccessingJWT() {
+        var call = httpClient.GET("/missingjwt").addHeader("Authorization","Bearer eyJhbGciOiJIUzI1NiIsImtpZCI6ImtleTEifQ.eyJpc3MiOiJteS1pc3N1ZXItMTIzIn0.7d3PJvLIFA22nVW9eNIMJhkR9m5oInTwrRuwtaNNzB8")
+                .responseBodyAs(String.class).invokeAsync().toCompletableFuture();
+
+        Awaitility.await()
+                .atMost(5, TimeUnit.SECONDS)
+                .untilAsserted(() -> {
+                    var exception = assertThrows(Exception.class, call::get);
+                    assertThat(exception.getCause().getClass()).isEqualTo(RuntimeException.class);
+                    assertTrue(exception.getCause().getMessage().contains(
+                            "There are no JWT claims defined but trying accessing the JWT claims. The class or the method needs to be annotated with @JWTl."));
                 });
 
     }

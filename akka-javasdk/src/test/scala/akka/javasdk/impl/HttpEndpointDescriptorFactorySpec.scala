@@ -15,13 +15,8 @@ import akka.runtime.sdk.spi.ServiceNamePattern
 import akka.runtime.sdk.spi.StaticClaim
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-import org.scalatest.BeforeAndAfterAll
 
-class HttpEndpointDescriptorFactorySpec extends AnyWordSpec with Matchers with BeforeAndAfterAll {
-
-  override def beforeAll(): Unit = {
-    System.setProperty("ENV", "my-env")
-  }
+class HttpEndpointDescriptorFactorySpec extends AnyWordSpec with Matchers {
 
   "The HttpEndpointDescriptorFactory" should {
     "parse annotations on an endpoint class into a descriptor" in {
