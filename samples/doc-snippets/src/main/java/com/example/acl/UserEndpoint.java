@@ -27,7 +27,7 @@ public class UserEndpoint {
   // tag::request-context[]
   final private RequestContext requestContext;
 
-  public UserEndpoint(RequestContext requestContext) { // 1
+  public UserEndpoint(RequestContext requestContext) { // <1>
     this.requestContext = requestContext;
   }
   // end::request-context[]
