@@ -62,10 +62,19 @@ This is a Maven run configuration for `mvn compile exec:java`. You can also run 
 By default, when running locally, persistence is disabled. This means the Akka Runtime will use an in-memory data store for the state of your services. This is useful for local development since it allows you to quickly start and stop your service without having to worry about cleaning the database.
 
 However, if you want to run your service with persistence enabled to keep the data when restarting, you can configure
-the service in `application.conf` with `akka.javasdk.dev-mode.persistence.enabled=true` or as a system property when
-running starting the service locally `mvn compile exec:java -Dakka.javasdk.dev-mode.persistence.enabled=true`.
+the service in `application.conf` with `akka.javasdk.dev-mode.persistence.enabled=true` or as a system property when starting the service locally `mvn compile exec:java -Dakka.javasdk.dev-mode.persistence.enabled=true`.
 
 To clean the local database look for `db.mv.db` file in the root of your project and delete it.
+
+[#_local_broker_support]
+== Running service with broker support
+
+By default, when running locally, broker support is disabled. When running a service that declares consumers or producers locally, you need to configure the broker with property `akka.javasdk.dev-mode.eventing.support=kafka` in `application.conf` or as a system property when starting the service: `mvn compile exec:java -Dakka.javasdk.dev-mode.eventing.support=kafka`.
+
+For Google PubSub Emulator, use `akka.javasdk.dev-mode.eventing.support=google-pubsub-emulator`.
+
+NOTE: For Kafka, the local Kafka broker is expected to be available on `localhost:9092`. For Google PubSub, the emulator is expected to be available on `localhost:8085`.
+
 
 == Running multiple services locally
 
