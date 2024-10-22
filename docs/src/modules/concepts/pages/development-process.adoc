@@ -15,7 +15,7 @@ The main steps in developing a service with Akka are:
 
 [#_create_a_project]
 == Create a project
-All services and applications start as a Java project. Akka has a Maven archetype and plugin that makes this easier. You will code your service in this project. See xref:java:build-your-first-application.adoc#[] for more details.
+All services and applications start as a Java project. Akka has a Maven archetype that makes this easier. You will code your service in this project. See xref:java:build-your-first-application.adoc#[] for more details.
 
 [#_specify_service_interface_and_domain_model]
 == Specify service interface and domain model
@@ -26,9 +26,9 @@ The main components of an Akka service are:
 
 * Stateful xref:reference:glossary.adoc#entity[Entities]
 * Stateful xref:reference:glossary.adoc#workflow[Workflows]
-* xref:reference:glossary.adoc#view[Views], which return the state of multiple instances of a stateful entity.
+* xref:reference:glossary.adoc#view[Views]
 * xref:reference:glossary.adoc#timed_action[Timed Actions]
-* xref:reference:glossary.adoc#consumers[Consumers]
+* xref:reference:glossary.adoc#consumer[Consumers]
 
 We recommend that you separate the service API and Entity domain data model. Separating the service interface and data model in different classes allows you to evolve them independently.
 
@@ -37,13 +37,15 @@ TIP: Kickstart a project using the xref:java:build-your-first-application.adoc[g
 [#_implement_components]
 == Implementing components
 
-Stateful services can implement xref:java:key-value-entities.adoc[Key Value Entity] or xref:java:event-sourced-entities.adoc[Event Sourced Entity] and xref:java:views.adoc[View] components. Stateless services implement xref:reference:glossary.adoc#action[HTTP Endpoints]. Typically, a stateful service should only have one Entity type, but can also include Endpoints and Views.
+In Akka, services can be stateful or stateless, and the components you implement depend on the service type.
 
+Stateful services utilize components like xref:java:key-value-entities.adoc[Key Value Entities],
+xref:java:event-sourced-entities.adoc[Event Sourced Entities], xref:java:workflows.adoc[Workflows], and
+xref:java:views.adoc[Views], while stateless services focus on exposing functionality via xref:java:http-endpoints.adoc[HTTP Endpoints]. Typically, a stateful service is centered around one Entity type but may also include Endpoints and Views to expose or retrieve data.
 
 === Entities
 
 Stateful services encapsulate business logic in Key Value Entities or Event Sourced Entities. At runtime, command messages invoke operations on Entities. A command may only act on one Entity at a time.
-
 
 TIP: To learn more about Akka entities see xref:java:key-value-entities.adoc[] and xref:java:event-sourced-entities.adoc[].
 
@@ -59,20 +61,32 @@ Akka Workflows are high-level descriptions to easily align business requirements
 
 A View provides a way to retrieve state from multiple Entities based on a query. You can create views from Key Value Entity state, Event Sourced Entity events, and by subscribing to topics. For more information about writing views see xref:java:views.adoc[].
 
+=== Timed Actions
+
+Timed Actions allow scheduling future calls, such as verifying process completion. These timers are persisted by the Akka Runtime and guarantee execution at least once.
+
 For more details and examples take a look at the following topics:
 
-* xref:java:key-value-entities.adoc[Key Value Entities]
 * xref:java:event-sourced-entities.adoc[Event Sourced Entities]
+* xref:java:key-value-entities.adoc[Key Value Entities]
 * xref:java:workflows.adoc[Workflows]
 * xref:java:views.adoc[Views]
 * xref:java:timed-actions.adoc[Timed Actions]
-* xref:java:consuming-producing.adoc[]
 
 [#_endpoints]
 == Exposing components through Endpoints and Consumers
-Endpoints are how you expose your services to the outside world. You use the xref:java:http-endpoints.adoc[HTTP endpoints] to do this.
+Endpoints are the primary means of exposing your service to external clients. You can use HTTP Endpoints to handle incoming requests and return responses to users or other services. Endpoints are stateless.
 
-They can also consume outside services and emit events for others to subscribe to. You use the xref:java:consuming-producing.adoc[Consumers] to do this.
+To handle event-driven communication, Akka uses Consumers. Consumers listen for and process events or messages from various sources, such as Event Sourced Entities, Key Value Entities, or external messaging systems. They play a key role in enabling asynchronous, event-driven architectures by subscribing to event streams and reacting to changes in state or incoming data.
+
+In addition to consuming messages, Consumers can also produce messages to topics, facilitating communication and data
+flow between different services. This makes them essential for coordinating actions across distributed services and ensuring smooth interaction within your application ecosystem.
+
+
+For more information, refer to:
+
+* xref:java:http-endpoints.adoc[]
+* xref:java:consuming-producing.adoc[]
 
 [#_create_unit_tests]
 == Testing your application
