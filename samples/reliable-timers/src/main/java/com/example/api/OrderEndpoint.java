@@ -29,15 +29,15 @@ public class OrderEndpoint {
 
   private final Logger logger = LoggerFactory.getLogger(getClass());
 
+  // tag::place-order[]
   private final ComponentClient componentClient;
   private final TimerScheduler timerScheduler;
 
-  public OrderEndpoint(ComponentClient componentClient, TimerScheduler timerScheduler) {
+  public OrderEndpoint(ComponentClient componentClient, TimerScheduler timerScheduler) { // <1>
     this.componentClient = componentClient;
     this.timerScheduler = timerScheduler;
   }
 
-  // tag::place-order[]
   private String timerName(String orderId) {
     return "order-expiration-timer-" + orderId;
   }
@@ -45,15 +45,15 @@ public class OrderEndpoint {
   @Post
   public CompletionStage<Order> placeOrder(OrderRequest orderRequest) {
 
-    var orderId = UUID.randomUUID().toString(); // <1>
+    var orderId = UUID.randomUUID().toString(); // <2>
 
-    CompletionStage<Done> timerRegistration = // <2>
+    CompletionStage<Done> timerRegistration = // <3>
       timerScheduler.startSingleTimer(
-        timerName(orderId), // <3>
-        Duration.ofSeconds(10), // <4>
+        timerName(orderId), // <4>
+        Duration.ofSeconds(10), // <5>
         componentClient.forTimedAction()
           .method(OrderTimedAction::expireOrder)
-          .deferred(orderId) // <5>
+          .deferred(orderId) // <6>
       );
 
     // end::place-order[]
@@ -68,7 +68,7 @@ public class OrderEndpoint {
       timerRegistration.thenCompose(done ->
           componentClient.forKeyValueEntity(orderId)
             .method(OrderEntity::placeOrder)
-            .invokeAsync(orderRequest)) // <6>
+            .invokeAsync(orderRequest)) // <7>
         .thenApply(order -> order);
 
   }
