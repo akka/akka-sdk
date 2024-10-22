@@ -57,7 +57,7 @@ public class TransferWorkflowIntegrationTest extends TestKitSupport {
     var res =
       await(
         componentClient
-          .forKeyValueEntity(walletId)
+          .forEventSourcedEntity(walletId)
           .method(WalletEntity::create)
           .invokeAsync(amount)
       );
@@ -68,7 +68,7 @@ public class TransferWorkflowIntegrationTest extends TestKitSupport {
   private int getWalletBalance(String walletId) {
     return await(
       componentClient
-        .forKeyValueEntity(walletId)
+        .forEventSourcedEntity(walletId)
         .method(WalletEntity::get).invokeAsync()
     );
   }

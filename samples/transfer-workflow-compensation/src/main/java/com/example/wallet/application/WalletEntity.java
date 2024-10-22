@@ -2,10 +2,11 @@ package com.example.wallet.application;
 
 import akka.Done;
 import akka.javasdk.annotations.ComponentId;
-import akka.javasdk.keyvalueentity.KeyValueEntity;
+import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import com.example.wallet.application.WalletEntity.WalletResult.Failure;
 import com.example.wallet.application.WalletEntity.WalletResult.Success;
 import com.example.wallet.domain.Wallet;
+import com.example.wallet.domain.WalletEvent;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.slf4j.Logger;
@@ -15,10 +16,19 @@ import static akka.Done.done;
 
 // tag::wallet[]
 @ComponentId("wallet")
-public class WalletEntity extends KeyValueEntity<Wallet> {
+public class WalletEntity extends EventSourcedEntity<Wallet, WalletEvent> {
 
   // end::wallet[]
   private static final Logger logger = LoggerFactory.getLogger(WalletEntity.class);
+
+  @Override
+  public Wallet applyEvent(WalletEvent event) {
+    return switch(event) {
+      case WalletEvent.Created c -> new Wallet(eventContext().entityId(), c.initialBalance());
+      case WalletEvent.Withdrawn w -> currentState().withdraw(w.amount());
+      case WalletEvent.Deposited d -> currentState().deposit(d.amount());
+    };
+  }
 
   @JsonTypeInfo(use = JsonTypeInfo.Id.NAME)
   @JsonSubTypes({
@@ -34,18 +44,19 @@ public class WalletEntity extends KeyValueEntity<Wallet> {
 
   // tag::wallet[]
   public Effect<Done> create(int initialBalance) { // <1>
-    return effects().updateState(new Wallet(commandContext().entityId(), initialBalance)).thenReply(done());
+    return effects().persist(new WalletEvent.Created(initialBalance))
+        .thenReply(__ -> done());
   }
 
   public Effect<WalletResult> withdraw(int amount) { // <2>
     if (currentState().balance() < amount) {
       return effects().reply(new Failure("Insufficient balance"));
     } else {
-      Wallet updateWallet = currentState().withdraw(amount);
       // end::wallet[]
-      logger.info("Withdraw walletId: [{}] amount -{} balance after {}", currentState().id(), amount, updateWallet.balance());
+      logger.info("Withdraw walletId: [{}] amount -{}", currentState().id(), amount);
       // tag::wallet[]
-      return effects().updateState(updateWallet).thenReply(new Success());
+      return effects().persist(new WalletEvent.Withdrawn(amount))
+          .thenReply(__ -> new WalletResult.Success());
     }
   }
 
@@ -53,11 +64,11 @@ public class WalletEntity extends KeyValueEntity<Wallet> {
     if (currentState() == null) {
       return effects().reply(new Failure("Wallet [" + commandContext().entityId() + "] not exists"));
     } else {
-      Wallet updateWallet = currentState().deposit(amount);
       // end::wallet[]
-      logger.info("Deposit walletId: [{}] amount +{} balance after {}", currentState().id(), amount, updateWallet.balance());
+      logger.info("Deposit walletId: [{}] amount +{}", currentState().id(), amount);
       // tag::wallet[]
-      return effects().updateState(updateWallet).thenReply(new Success());
+      return effects().persist(new WalletEvent.Deposited(amount))
+          .thenReply(__ -> new WalletResult.Success());
     }
   }
 

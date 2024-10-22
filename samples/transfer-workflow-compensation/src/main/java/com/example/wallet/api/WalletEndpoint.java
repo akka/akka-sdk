@@ -32,7 +32,7 @@ public class WalletEndpoint {
   @Get("/{id}")
   public CompletionStage<String> get(String id) {
     log.info("Get wallet with id [{}].", id);
-    return componentClient.forKeyValueEntity(id)
+    return componentClient.forEventSourcedEntity(id)
       .method(WalletEntity::get).invokeAsync()
       .thenApply(balance -> "The balance is [" + balance + "].");
   }
@@ -40,14 +40,14 @@ public class WalletEndpoint {
   @Post("/{id}/create/{initialAmount}")
   public CompletionStage<HttpResponse> create(String id, int initialAmount) {
     log.info("creating wallet [{}] with balance [{}].", id, initialAmount);
-    return componentClient.forKeyValueEntity(id)
+    return componentClient.forEventSourcedEntity(id)
       .method(WalletEntity::create).invokeAsync(initialAmount)
       .thenApply(done -> HttpResponses.ok());
   }
 
   @Post("/{id}/deposit/{amount}")
   public CompletionStage<HttpResponse> deposit(String id, int amount) {
-    return componentClient.forKeyValueEntity(id)
+    return componentClient.forEventSourcedEntity(id)
       .method(WalletEntity::deposit).invokeAsync(amount)
       .thenApply(walletResult ->
         switch (walletResult) {
@@ -62,7 +62,7 @@ public class WalletEndpoint {
 
   @Post("/{id}/withdraw/{amount}")
   public CompletionStage<HttpResponse> withdraw(String id, int amount) {
-    return componentClient.forKeyValueEntity(id)
+    return componentClient.forEventSourcedEntity(id)
       .method(WalletEntity::withdraw).invokeAsync(amount)
       .thenApply(walletResult ->
         switch (walletResult) {

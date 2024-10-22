@@ -18,7 +18,7 @@ To understand the Akka concepts behind this example, see [Development Process](h
 
 ### Developing
 
-This project demonstrates the use of Key Value Entity, View and Workflow components. For more information, see [Developing Services](https://doc.akka.io/java/index.html).
+This project demonstrates the use of Workflow and Event Sourced Entity components.  For more information, see [Developing Services](https://doc.akka.io/java/index.html).
 
 ## Build
 
@@ -129,7 +129,7 @@ Finally, use the [Akka Console](https://console.akka.io) to create a project. De
 
 ## Conclusion
 
-Congratulations, you've successfully implemented a workflow between two wallets using Akka. This project demonstrates the power of Key Value Entity, View and Workflow components in managing complex transactions.
+Congratulations, you've successfully implemented a workflow between two wallets using Akka. This project demonstrates the power of Workflow and Event Sourced Entity components in managing complex transactions.
 
 ## Next steps
 

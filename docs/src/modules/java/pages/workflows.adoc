@@ -21,7 +21,7 @@ A Workflow Effect can either:
 
 == Modeling state
 
-We want to build a simple workflow that transfers funds between two wallets. Before that, we will create a wallet subdomain with some basic functionalities that we could use later. For simplicity a `WalletEntity` is implemented as a xref:key-value-entities.adoc[Key Value Entity], but for a production-ready solution an xref:event-sourced-entities.adoc[Event Sourced Entity] would be a better choice, because a ledger of all transactions is usually required by the business.
+We want to build a simple workflow that transfers funds between two wallets. Before that, we will create a wallet subdomain with some basic functionalities that we could use later. A `WalletEntity` is implemented as an xref:event-sourced-entities.adoc[Event Sourced Entity], which is a better choice than a Key Value Entity for implementing a wallet, because a ledger of all transactions is usually required by the business.
 
 The `Wallet` class represents domain object that holds the wallet balance. We can also withdraw or deposit funds to the wallet.
 
@@ -31,7 +31,15 @@ The `Wallet` class represents domain object that holds the wallet balance. We ca
 include::example$transfer-workflow/src/main/java/com/example/wallet/domain/Wallet.java[tag=wallet]
 ----
 
-The domain object is wrapped with a Key Value Entity component.
+Domain events for creating and updating the wallet.
+
+[source,java,indent=0]
+.{sample-base-url}/transfer-workflow/src/main/java/com/example/wallet/domain/WalletEvent.java[WalletEvent.java]
+----
+include::example$transfer-workflow/src/main/java/com/example/wallet/domain/WalletEvent.java[tag=event]
+----
+
+The domain object is wrapped with a Event Sourced Entity component.
 
 [source,java,indent=0]
 .{sample-base-url}/transfer-workflow/src/main/java/com/example/wallet/application/WalletEntity.java[WalletEntity.java]

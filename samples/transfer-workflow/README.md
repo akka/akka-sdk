@@ -1,19 +1,28 @@
-# Workflow transfer sample
+# Build a Funds Transfer Workflow Between Two Wallets
 
-A simple workflow example of funds transfer between two wallets.
+This guide demonstrates how to create a simple workflow for transferring funds between two wallets.
 
 Used for code snippets in the Workflow documentation.
 
-## Designing
+## Prerequisites
 
-To understand the Akka SDK concepts that are the basis for this example, see [Development Process](https://doc.akka.io/concepts/development-process.html) in the documentation.
+- A [Akka account](https://console.akka.io/register)
+- Java 21 (we recommend [Eclipse Adoptium](https://adoptium.net/marketplace/))
+- [Apache Maven](https://maven.apache.org/install.html)
+- [Docker Engine](https://docs.docker.com/get-started/get-docker/)
+- [`curl` command-line tool](https://curl.se/download.html)
 
-## Developing
+## Concepts
 
-This project demonstrates the use of Key Value Entity and View components.
-To understand more about these components, see [Developing services](https://doc.akka.io/java/index.html).
+### Designing
 
-## Building
+To understand the Akka concepts behind this example, see [Development Process](https://doc.akka.io/concepts/development-process.html) in the documentation.
+
+### Developing
+
+This project demonstrates the use of Workflow and Event Sourced Entity components.  For more information, see [Developing Services](https://doc.akka.io/java/index.html).
+
+## Build
 
 Use Maven to build your project:
 
@@ -21,7 +30,7 @@ Use Maven to build your project:
 mvn compile
 ```
 
-## Running Locally
+## Run Locally
 
 To start your service locally, run:
 
@@ -29,43 +38,53 @@ To start your service locally, run:
 mvn compile exec:java
 ```
 
-This command will start your Akka service.
+This command will start your Akka service and a companion Akka Runtime.
 
-### Exercising the transfer
+## Steps
 
-With your Akka service running, any defined endpoints should be available at `http://localhost:9000`.
+### 1. Create wallet 'a'
 
-Create wallet `a` with an initial balance
+Create wallet 'a' with an initial balance of 100:
 
 ```shell
 curl -i -X POST http://localhost:9000/wallet/a/create/100
 ```
 
-Create wallet `b` with an initial balance
+### 2. Create wallet 'b'
+
+Create wallet 'b' with an initial balance of 100:
 
 ```shell
 curl -i -X POST http://localhost:9000/wallet/b/create/100
 ```
 
-Withdraw from wallet `a`
+### 3. Withdraw from wallet 'a'
+
+Attempt to withdraw 110 from wallet 'a':
 
 ```shell
 curl -i -X POST http://localhost:9000/wallet/a/withdraw/110
 ```
 
-Get wallet `a` current balance
+**Note**: This request results in an HTTP 400 Bad Request response due to insufficient balance in wallet 'a'.
+
+### 4. Check wallet balances
+
+Get wallet 'a' current balance:
 
 ```shell
 curl http://localhost:9000/wallet/a
 ```
 
-Get wallet `b` current balance
+Get wallet 'b' current balance:
 
 ```shell
 curl http://localhost:9000/wallet/b
 ```
 
-Start transfer from wallet `a` to wallet `b`
+### 5. Initiate transfer
+
+Start a transfer of 10 from wallet 'a' to wallet 'b':
 
 ```shell
 curl http://localhost:9000/transfer/1 \
@@ -74,33 +93,49 @@ curl http://localhost:9000/transfer/1 \
   --data '{"from": "a", "to": "b", "amount": 10}'
 ```
 
-Get transfer state
+### 6. Check transfer status
+
+Get the current state of the transfer:
 
 ```shell
 curl http://localhost:9000/transfer/1
 ```
 
-## Running integration tests
+## Run integration tests
 
-The integration tests in `src/it` are added by setting `it` as test source directory.
-To run the Integration Tests in `src/it/java` use
+To run the integration tests located in `src/it/java`:
 
 ```shell
 mvn verify -Pit
 ```
 
-## Deploying
+## Troubleshooting
 
-To deploy your service, install the `kalix` CLI as documented in
-[Install Akka CLI](https://doc.akka.io/akka-cli/index.html)
-and configure a Docker Registry to upload your docker image to.
+If you encounter issues, ensure that:
 
-You will need to update the `dockerImage` property in the `pom.xml` and refer to
-[Configuring registries](https://doc.akka.io/operations/container-registries.html)
-for more information on how to make your docker image available to Akka SDK.
+- The Akka service is running and accessible on port 9000.
+- Your `curl` commands are formatted correctly.
+- The wallet IDs ('a' and 'b') match the ones you created.
 
-Finally, you can use the [Kalix Console](https://console.kalix.io)
-to create a project and then deploy your service into the project either by using `mvn deploy kalix:deploy` which
-will conveniently package, publish your docker image, and deploy your service to Kalix, or by first packaging and
-publishing the docker image through `mvn deploy` and then deploying the image
-through the `kalix` CLI.
+## Need help?
+
+For questions or assistance, please refer to our [online support resources](https://doc.akka.io/support/index.html).
+
+## Deploy
+
+To deploy your service, install the `akka` CLI as documented in [Install Akka CLI](https://doc.akka.io/akka-cli/index.html), and configure a Docker Registry to upload your Docker image.
+
+Update the `dockerImage` property in the `pom.xml`, and refer to [Configuring Registries](https://doc.akka.io/operations/container-registries.html) for instructions on making your Docker image available to Akka.
+
+Finally, use the [Akka Console](https://console.akka.io) to create a project. Deploy your service by packaging and publishing the Docker image through `mvn deploy`, then deploy the image via the `akka` CLI.
+
+## Conclusion
+
+Congratulations, you've successfully implemented a workflow between two wallets using Akka. This project demonstrates the power of Workflow and Event Sourced Entity components in managing complex transactions.
+
+## Next steps
+
+Now that you've built a basic transfer workflow, consider these next steps:
+
+1**Explore other Akka components**: Dive deeper into Akka's ecosystem to enhance your application.
+2**Join the community**: Connect with other developers and learn more in the [Akka community Slack channel](https://join.slack.com/t/kalixworld/shared_invite/zt-1x9ddzseu-aY1rB4S4Vb8Iu_YI89IfoQ/).

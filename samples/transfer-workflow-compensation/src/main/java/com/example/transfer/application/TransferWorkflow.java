@@ -26,15 +26,20 @@ import static com.example.transfer.domain.TransferState.TransferStatus.WITHDRAW_
 import static java.time.Duration.ofHours;
 import static java.time.Duration.ofSeconds;
 
-@ComponentId("transfer")
-public class TransferWorkflow extends Workflow<TransferState> {
+// tag::class[]
+@ComponentId("transfer") // <1>
+public class TransferWorkflow extends Workflow<TransferState> { // <2>
 
   public record Withdraw(String from, int amount) {
   }
 
+  // end::class[]
+
+  // tag::definition[]
   public record Deposit(String to, int amount) {
   }
 
+  // end::definition[]
 
   private static final Logger logger = LoggerFactory.getLogger(TransferWorkflow.class);
 
@@ -44,6 +49,7 @@ public class TransferWorkflow extends Workflow<TransferState> {
     this.componentClient = componentClient;
   }
 
+  // tag::definition[]
   @Override
   public WorkflowDef<TransferState> definition() {
     Step withdraw =
@@ -52,7 +58,7 @@ public class TransferWorkflow extends Workflow<TransferState> {
           logger.info("Running: " + cmd);
           // cancelling the timer in case it was scheduled
           return timers().cancel("acceptationTimout-" + currentState().transferId()).thenCompose(__ ->
-            componentClient.forKeyValueEntity(cmd.from)
+            componentClient.forEventSourcedEntity(cmd.from)
               .method(WalletEntity::withdraw)
               .invokeAsync(cmd.amount));
         })
@@ -81,7 +87,7 @@ public class TransferWorkflow extends Workflow<TransferState> {
           // end::compensation[]
           logger.info("Running: " + cmd);
           // tag::compensation[]
-          return componentClient.forKeyValueEntity(cmd.to)
+          return componentClient.forEventSourcedEntity(cmd.to)
             .method(WalletEntity::deposit)
             .invokeAsync(cmd.amount);
         })
@@ -110,7 +116,7 @@ public class TransferWorkflow extends Workflow<TransferState> {
           logger.info("Running withdraw compensation");
           // tag::compensation[]
           var transfer = currentState().transfer();
-          return componentClient.forKeyValueEntity(transfer.from())
+          return componentClient.forEventSourcedEntity(transfer.from())
             .method(WalletEntity::deposit)
             .invokeAsync(transfer.amount());
         })
