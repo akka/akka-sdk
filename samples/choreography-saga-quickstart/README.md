@@ -1,107 +1,76 @@
-# Choreography Saga
+# Build a User Registration Service Using a Choreography Saga in Akka
 
-This sample demonstrates how to implement a Choreography Saga in Akka.
-
-This project explores the usage of [Event Sourced Entities](https://doc.akka.io/java/event-sourced-entities.html),
-[Key Value Entities](https://doc.akka.io/java/value-entity.html), [Consumers](https://doc.akka.io/java/consuming-producing.html.
-html) and [Timers](https://doc.akka.io/java/timed-actions.html).
-
-To understand more about these components, see [Developing services](https://doc.akka.io/java/index.html) and check the Akka SDK [documentation](https://doc.akka.io/java/index.html).
-
-
+This guide demonstrates how to implement a choreography Saga in Akka to ensure unique email addresses across user entities. You'll learn how to manage cross-entity field uniqueness in a distributed system using Akka.
 
 ## Prerequisites
 
-To use this sample, you will need:
+- An [Akka account](https://console.akka.io/register)
+- Java 21 installed (recommended: [Eclipse Adoptium](https://adoptium.net/marketplace/))
+- [Apache Maven](https://maven.apache.org/install.html)
+- [Docker Engine](https://docs.docker.com/get-started/get-docker/)
+- [`curl` command-line tool](https://curl.se/download.html)
 
-* **Java:** Java 21 or higher
-* **Maven:** [Maven 3.6 or higher](https://maven.apache.org/download.cgi)
-* **Docker:** [Docker 20.10.14 or higher](https://docs.docker.com/engine/install)
+## Concepts
 
-## What is a Choreography Saga?
+### Designing
 
-A **Choreography Saga** is a distributed transaction pattern that helps you manage transactions across multiple services.
+To understand the Akka concepts behind this example, see [Development Process](https://doc.akka.io/concepts/development-process.html) in the documentation.
 
-In the context of event-driven applications, a **Choreography Saga** is implemented as a sequence of transactions,
-each of which publishes an event or state change notification that triggers the next operation in the saga.
-If an operation fails because it violates a business rule, then the saga can execute a series of compensating transactions
-that undo the changes made by the previous operations.
+### Developing
 
-In Akka, in addition to events from Event Sourced Entities, you can also subscribe to state changes from Key Value 
-Entities.
-To subscribe to events or state changes, we can use Akka Consumers with the appropriate subscription annotations.
+In the steps below, you will see how this project demonstrates the use of many different Akka components. For more information, see [Developing Services](https://doc.akka.io/java/index.html).
 
-You can create a Choreography Saga to manage transactions across multiple entities in a single service, or across multiple services.
-This example implements a choreography that manages transactions across two entities in the same service.
+You may also wish to review the [Saga pattern](https://doc.akka.io/concepts/saga-patterns.html) concept.
 
-## Cross Entity Field Uniqueness
+## The Set-Based Consistency Validation problem
 
-A common challenge in event-sourced applications is called the _Set-Based Consistency Validation_ problem. It arises when we need to ensure that a particular field is unique across all entities in the system. For example, a user may have a unique identifier (e.g. social security number) that can be used as a unique entity ID, but may also have an email address that needs to be unique across all users in the system.
+Before diving into the implementation, it's important to understand a common challenge in event-sourced applications called the _Set-Based Consistency Validation_ problem. This issue arises when we need to ensure that a particular field is unique across all entities in the system. In our user registration service, we need to ensure that email addresses are unique across all users.
 
-In an event-sourced application, the events emitted by an entity are stored in a journal optimised to store the payload of the event, without any prior knowledge of the structure of the data. As such, it is not possible to add a unique constraint.
+While a user may have a unique identifier (e.g., a user ID), they also have an email address that needs to be unique across the entire system. This requirement introduces complexity in maintaining consistency across different entities.
 
-In this example, a **Choreography Saga** is introduced to handle this challenge. Along with the `UserEntity`, an additional entity is established to serve as a barrier. This entity, named the `UniqueEmailEntity`, is responsible for ensuring that each email address is associated with only one user. The unique ID of the `UniqueEmailEntity` corresponds to the email address itself. Consequently, it is ensured that only one instance of this entity exists for each email address.
+## Step 1: Understand Entity implementation
 
-When a request to create a new `UserEntity` is received, the application initially attempts to reserve the email address using the `UniqueEmailEntity`. If the email address is not already in use, the application proceeds to create the `UserEntity`. After the `UserEntity` is successfully created, the status of the `UniqueEmailEntity` is set to CONFIRMED. However, if the email address is already in use, the attempt to create the `UserEntity` will not succeed.
+Examine the following files to understand how Event Sourced Entities and Key Value Entities are implemented:
 
-To achieve this behavior, two Akka Consumers are implemented. These consumer subscribe to and react to events and 
-state changes from the `UserEntity` and `UniqueEmailEntity`, respectively. The Consumers are responsible for converging 
-the system to a consistent state. The components react autonomously to what is happening in the application, similar to performers in a choreographed dance. Hence, the name Choreography Saga.
+- `src/main/java/user/domain/UserEntity.java`
+- `src/main/java/user/domain/UniqueEmailEntity.java`
 
-### Successful Scenario
+## Step 2: Understand Consumer implementation
 
-The sunny day scenario is illustrated in the following diagram:
+Review the following files to see how Consumers react to events and state changes in the Entities:
 
-![Successful Flow](flow-successful.png?raw=true)
+- `src/main/java/user/domain/UserEventsConsumer.java`
+- `src/main/java/user/domain/UniqueEmailConsumer.java`
 
-1. Upon receiving a request to create a new User, the `ApplicationController` will first reserve the email.
-2. It will then create the User.
-3. The `UserEventsSubscriber` Consumer is listening to the User's event.
-4. The `UniqueEmailEntity` is confirmed as soon as the subscriber 'sees' that a User has been created.
-      
-### Failure Scenario
+## Step 3: Configure timeout duration
 
-As these are two independent transactions, it's important to consider potential failure scenarios. For instance, while a request to reserve the email address might be successful, the request to create the user could fail. In such a situation, there is a possibility of having an email address that is reserved but not linked to a user.
+1. Open `src/main/resources/application.conf`.
+2. Note the configuration for email confirmation timeout:
 
-The failure scenario is illustrated in the following diagram:
+   ```
+   email.confirmation.timeout = 10s
+   ```
 
-![Failure Flow](flow-failure.png?raw=true)
+## Step 4: Understand Endpoint implementation
 
-1. Upon receiving a request to create a new User, the `ApplicationController` will first reserve the email.
-2. Then it tries to create the User, but it fails. As such, the email will never be confirmed.
-3. In the background, the `UniqueEmailSubscriber` Consumer is listening to state changes from `UniqueEmailEntity`.
-4. When it detects that an email has been reserved, it schedules a timer to un-reserve it after a certain amount of time.
-5. When the timer fires, the reservation is cancelled if the `UniqueEmailEntity` is still in RESERVED status.
+Examine the following files to see how the functionality is exposed to the outside world:
 
-> [!NOTE]
-> Everything on the side of the `UniqueEmailSubscriber` is happening in the background and independent of the success or failure of the User creation.
+- `src/main/java/user/registry/api/EmailEndpoint.java`
+- `src/main/java/user/registry/api/UserEndpoint.java`
 
-### Full Successful Scenario
+## Step 5: Run the Application
 
-Now that the failure scenario has been covered, let's examine the complete picture in the successful scenario:
-
-![Full Successful Flow](flow-full.png?raw=true)
-
-It's important to note that `UniqueEmailSubscriber` and `UserEventsSubscriber` are two independent components. Once deployed, they operate in the background, performing their tasks whenever they receive an event or state change notification.
-
-In the scenario where a user is successfully created, `UniqueEmailSubscriber` continues to respond to the `UniqueEmailEntity` reservation, scheduling a timer for un-reservation. However, as the user has been created `UserEventsSubscriber` updates the `UniqueEmailEntity` status to CONFIRMED. This triggers another state change notification to `UniqueEmailSubscriber`, which cancels the timer.
-
-This example demonstrates how to implement a **Choreography Saga** in Akka. It involves two entities influencing each 
-other, and two consumers listening to events and state changes, ensuring the entire application converges to a 
-consistent state.
-
-## Running and exercising this sample
-
-To start your service locally, run:
+Start the service locally:
 
 ```shell
 mvn compile exec:java -Demail.confirmation.timeout=10s
 ```
 
-The `email.confirmation.timeout` setting is used to configure the timer to fire after 10 seconds. In other words, if 
-the email is not confirmed within this time, it will be released. The default value for this setting is 2 hours (see the `src/resources/application.conf` file). For demo purposes, it's convenient to set it to a few seconds so we don't have to wait.
+## Step 6: Test the Saga
 
-### create user identified by 001
+Use the following curl commands to test different scenarios:
+
+### Create a user
 
 ```shell
 curl localhost:9000/api/users/001 \
@@ -110,26 +79,13 @@ curl localhost:9000/api/users/001 \
   --data '{ "name":"John Doe","country":"Belgium", "email":"doe@acme.com" }'
 ```
 
-Check the logs of `UniqueEmailSubscriber` and `UserEventsSubscriber` to see how the saga is progressing.
-
-### check status for email doe@acme.com
+### Check email status
 
 ```shell
 curl localhost:9000/api/emails/doe@acme.com
 ```
-The status of the email will be RESERVED or CONFIRMED, depending on whether the saga has been completed or not. 
 
-### create user identified by 002
-
-```shell
-curl localhost:9000/api/users/002 \
-  --header "Content-Type: application/json" \
-  -XPOST \
-  --data '{ "name":"Anne Doe","country":"Belgium", "email":"doe@acme.com" }'
-```
-A second user with the same email address will fail.
-
-### try to create an invalid user
+### Test failure scenario
 
 ```shell
 curl localhost:9000/api/users/003 \
@@ -138,21 +94,7 @@ curl localhost:9000/api/users/003 \
   --data '{ "country":"Belgium", "email":"invalid@acme.com" }'
 ```
 
-Note that the 'name' is not stored. This will result in the email address `invalid@acme.com` being reserved but not confirmed.
-
-Check the logs of `UniqueEmailSubscriber` to see how the saga is progressing.
-
-### check status for email invalid@acme.com
-
-```shell
-curl localhost:9000/api/emails/invalid@acme.com
-```
-
-The status of the email will be RESERVED or NOT_USED, depending on whether the timer to un-reserve it has fired or not.
-
-### Bonus: change an email address
-
-Change the email address of user 001 to `john.doe@acme.com`. Inspect the code to understand how it re-uses the existing saga.
+### Change email address
 
 ```shell
 curl localhost:9000/api/users/001/email \
@@ -161,25 +103,42 @@ curl localhost:9000/api/users/001/email \
   --data '{ "newEmail": "john.doe@acme.com" }'
 ```
 
-Check the logs of `UniqueEmailSubscriber` and `UserEventsSubscriber` to see how the saga is progressing.
+## Step 7: Monitor the Saga
 
-### check status for email doe@acme.com
+1. Watch the console output for logs from `UniqueEmailConsumer.java` and `UserEventsConsumer.java`.
+2. Use the Endpoints to check email statuses.
 
-```shell
-curl localhost:9000/api/emails/doe@acme.com
-```
+## Step 8: Understand failure handling
 
-The status of the email will be CONFIRMED or NOT_USED, depending on whether the saga has been completed or not.
+Review the code in `UniqueEmailConsumer.java` and `UserEventsConsumer.java` to see how potential failures are handled:
 
-## Deploying
+1. A timer is set to release the email if user creation fails.
+2. The timer is cancelled if the user is successfully created.
 
-To deploy your service, install the `akka` CLI as documented in
-[Install Akka CLI](https://doc.akka.io/akka-cli/index.html)
-and configure a Docker Registry to upload your docker image to.
+This approach helps maintain consistency even in the face of failures.
 
-You will need to update the `dockerImage` property in the `pom.xml` and refer to
-[Configuring registries](https://doc.akka.io/operations/container-registries.html)
-for more information on how to make your docker image available to Akka.
+## Troubleshooting
 
-* Finally, use the `akka` CLI to generate a project.
-* Deploy your service into the project using `mvn deploy akka:deploy`. This command conveniently packages, publishes your Docker image, and deploys your service to Akka.
+If you encounter issues:
+
+- Ensure the Akka service is running on port 9000.
+- Verify your curl commands are correctly formatted.
+- Check that the data in your curl commands matches the intended input.
+
+## Deploy
+
+To deploy your service, install the `akka` CLI as documented in [Install Akka CLI](https://doc.akka.io/akka-cli/index.html), and configure a Docker Registry to upload your Docker image.
+
+Update the `dockerImage` property in the `pom.xml`, and refer to [Configuring Registries](https://doc.akka.io/operations/container-registries.html) for instructions on making your Docker image available to Akka.
+
+Finally, use the [Akka Console](https://console.akka.io) to create a project. Deploy your service by packaging and publishing the Docker image through `mvn deploy`, then deploy the image via the `akka` CLI.
+
+## Conclusion
+
+Congratulations, you've learned how to implement a Choreography Saga in Akka for managing cross-entity field uniqueness. This pattern ensures consistency across entities and gracefully handles failure scenarios, effectively addressing the Set-Based Consistency Validation problem.
+
+## Next Steps
+
+1. **Extend the Saga**: Add additional steps, such as sending a confirmation email to the user after successful registration.
+2. **Explore Akka's Workflow component**: Workflows offer an alternative, orchestrator-based approach to implementing Sagas.
+3. **Join the community**: Visit the [Support page](https://doc.akka.io/support/index.html) to find resources where you can connect with other Akka developers and expand your knowledge.
