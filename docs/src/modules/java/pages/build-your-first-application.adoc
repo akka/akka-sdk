@@ -15,7 +15,6 @@ The Akka SDK comes with Maven support that enables you to get started quickly. I
 
 include::ROOT:partial$cloud-dev-prerequisites.adoc[]
 
-:sectnums:
 
 == Generate and build the skeleton project
 
