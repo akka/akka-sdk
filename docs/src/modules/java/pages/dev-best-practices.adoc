@@ -30,17 +30,19 @@ Defining your data structures first, and splitting them into xref:java:dev-best-
 
 Behind the scenes everything in Akka is ultimately message driven. Plan for the evolution of your messages. Commands and events use data structures that often must evolve over time. Fields get added, fields get removed, the meaning of fields may change. How do you handle this over time as your system grows and evolves? Akka will make this easier, but you are ultimately responsible for schema evolution. 
 
-== Deployment units
+== Right-sizing your services
 
 Each Akka Service consists of one or more Components and is packaged and deployed as a unit. Akka services are deployed to Akka Projects. Thus, when you couple multiple business concerns by packaging them in the same service, even under separate xref:java:dev-best-practices.adoc#_Bounded_context[bounded contexts], you limit the runtime's ability to make the most efficient decisions to scale up or down.
 
-=== Advantages of right-sized services
+=== How big to make your services
 
-When you design a series of small services that don't share code and can be deployed independently, you reap these benefits:
+Deciding how many components and concepts to fit into a single service can be complex. Generally smaller is better hence the name microservices often being used. When you design a series of small services that don't share code and can be deployed independently, you reap these benefits:
 
-- It is faster and less complex to write and debug them because they focus on a small set of operations, usually around a single business concern (be it with one or multiple types of xref:reference:glossary.adoc#entity[_Entities_]).
-- They simplify operational concerns and provide scalability because they can be deployed, stopped and started independently of the rest of the system.
-- They handle variations in load gracefully. If properly designed, multiple instances of the service can be started up when necessary to support more load: for example, if your system runs on Black Friday and the shopping cart service gets super busy, you can spin up more shopping carts to handle that load without also having to start up more copies of the catalog service. When the load decreases, these extra instances can be removed again, minimizing resource usage.
-- They handle failures gracefully. Components interact asynchronously with the rest of the world through messages and xref:reference:glossary.adoc#command[_commands_]. If one instance, or even a whole service, fails, it is possible for the rest of the system to keep going with reduced capabilities. This prevents cascading failures that take down entire systems.
-- A team can focus on features of a single service at a time, without worrying about what other services or teams are doing, or when they are releasing, allowing more parallel teams to focus on other services, allowing your development efforts to scale as needed.
-- You can upgrade services in a "rolling" fashion, where new instances are started before older instances are removed, allowing new versions to be deployed with no downtime or interruption.
+- *Your development velocity is higher*. It is faster and less complex to write and debug them because they focus on a small set of operations, usually around a single business concern (be it with one or multiple types of xref:reference:glossary.adoc#entity[_Entities_]).
+- *Your operating velocity is higher*. Using smaller independent services simplifies operational concerns and provide scalability because they can be deployed, stopped and started independently of the rest of the system.
+- *You can scale the services independently* to handle variations in load gracefully. If properly designed, multiple instances of the service can be started up when necessary to support more load: for example, if your system runs on Black Friday and the shopping cart service gets super busy, you can spin up more shopping carts to handle that load without also having to start up more copies of the catalog service. When the load decreases, these extra instances can be removed again, minimizing resource usage.
+- *You reduce the failure domain / fault boundary*. Independent services handle failures gracefully. Components interact asynchronously with the rest of the world through messages and xref:reference:glossary.adoc#command[_commands_]. If one instance, or even a whole service, fails, it is possible for the rest of the system to keep going with reduced capabilities. This prevents cascading failures that take down entire systems.
+- *Your development team is more productive*. A team can focus on features of a single service at a time, without worrying about what other services or teams are doing, or when they are releasing, allowing more parallel teams to focus on other services, allowing your development efforts to scale as needed.
+- *You gain flexibility for upgrades*. You can upgrade services in a "rolling" fashion, where new instances are started before older instances are removed, allowing new versions to be deployed with no downtime or interruption.
+- *You gain security*. Services serve as a security boundary both in your system overall and between teams.
+- *You get granular visibility into costs*. Services are all billed separately, so it's easier to see and understand costs and billing on a per service basis if you break your services up in some way that matches your organizational needs overall.

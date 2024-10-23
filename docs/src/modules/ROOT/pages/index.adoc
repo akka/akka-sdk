@@ -13,15 +13,15 @@ Akka simplifies the development and operation of responsive applications by prov
 Akka applications are inherently event-driven, allowing developers to focus on building durable, stateful services without needing to navigate complex messaging or asynchronous programming issues. A new developer can design and implement stateful services within a day, achieving low latency and burstable performance of up to 1 million IOPS. This is made possible by integrating microservices best practices into the application and runtime transparently.
 
 == Building Akka Applications
-There are two primary ways to build applications with Akka:
+There are two ways to build applications with Akka:
 
 === Akka SDK
-* *Overview*: Available with Akka 3, the SDK offers components for building durable, transactional, real-time services. It enforces separation of domain logic from infrastructure concerns.
-* *Deployment*: SDK applications are DevOps-ready and can be deployed in Akka’s serverless environment, in any hyperscaler (Bring Your Own Cloud), or (Q1 2025) in a self-hosted environment.
+* *Overview*: The SDK includes components with a local console, debugger, and runtime. The components let you build durable, transactional, real-time services. It enforces separation of domain logic from infrastructure concerns.
+* *Operations*: SDK applications are DevOps-ready and can be deployed in Akka's Serverless environment, in any hyperscaler (Bring Your Own Cloud), or in a Kubernetes environment with an Akka orchestrator (Self-Hosted).
 
 === Akka Libraries
-* *Overview*: Available in Akka 2 and 3, these open-source libraries are foundational for building distributed systems, providing modules for actors, networking, streams, persistence, and clustering.
-* *Self-Managed*: Services built with these libraries are self-hosted and require DevOps to package them into runtime bundles. They do not operate within Akka’s serverless or BYOC environments but can interoperate with SDK-built services via message brokers.
+* *Overview*: The libraries are open-source modules that are foundational for creating distributed systems including actors, networking, streams, persistence, and clustering.
+* *Operations*: Services built with these libraries are self-managed with DevOps packaging them into microservices runtime bundles. They do not operate within Akka's Serverless, BYOC, or Self-Hosted environments.
 
 == Developer Experience
 Developers need only Java 21 and Maven as dependencies. The Akka SDK build process automatically pulls the necessary modules, enabling inter-service communication without complex orchestration. Local services include an embedded persistence store for creating distributed entities.

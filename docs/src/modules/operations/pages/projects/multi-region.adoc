@@ -1,10 +1,14 @@
-= Managing multiple regions
+= Managing regions and failover
 
 include::ROOT:partial$include.adoc[]
 
-A project is a multi-region project if it has more than one region assigned to it. Multi-region projects allow you to run services in multiple regions, with data being replicated between them.
+Projects in Akka can span across regions with data automatically replicated between all the regions. This increases availability as the regions can either be separate cloud / geographic regions or can be separate logical regions within the same cloud / geographic region. This gives you a high level of control for managing failure domains or fault boundaries in your applications. This is sometimes referred to as blast radius control.
 
-A multi-region project will have exactly one primary region. The primary is used to indicate which region Akka services should replicate from when using the static replicated read primary selection mode. Additionally, the primary region also indicates which region resources that you have deployed, such as services, routes and secrets, should be replicated from.
+xref:organizations/regions.adoc[] are specified in the project configuration. All services in the project are deployed to all regions. One of the regions will be specified as the primary region. The primary region indicates the source from which region resources (services, routes, secrets, etc.) should be replicated from. By default the primary region is the first one added to the project at deployment time. 
+
+Additionally the primary region also indicates where primary data copies should reside in when using the _Static Mode_ for xref:java:event-sourced-entities.adoc[Event Sourced Entities]. For more information see xref:java:event-sourced-entities.adoc#_multi_region_replication[].
+
+NOTE: Regions appear at two different scopes in Akka. The first is at the xref:organizations/index.adoc[] scope. This conveys which regions are available to your organization. The second is at the project scope, which conveys which regions a specific project is bound to.
 
 To see what regions have been configured for your project, you can run:
 
@@ -31,7 +35,7 @@ akka project regions add gcp-us-east1
 
 == Setting the primary region of a project
 
-To change the primary region of a project, for example, if you want to failover from one region to another, run:
+Changing the primary region of a project is how you control failover or migration in Akka. To change the primary region of a project run:
 
 [source, command line]
 ----
@@ -42,10 +46,13 @@ NOTE: it may be necessary to clear the region cache when running the `akka` comm
 
 == Managing resources in a multi region project
 
-When you deploy resources, including services, routes, secrets, and observability configuration, to your project,
-these resources by default will be replicated to all regions configured for your project. Such resources are called global resources.
+Akka projects are built to span regions. To accomplish this, Akka considers resources in two ways. 
 
-The underlying replication mechanism is that the resources are deployed to the primary region, and then a background process will sync them asynchronously to the rest of the regions. If this background sync process fails, for example, due to a temporary network partition, the sync process will retry, and eventually the rest of the regions will become up to date.
+=== Global resources
+
+In an Akka project services, routes, secrets, and observability configuration are all _global resources_ in that they will deploy to all regions that the project is bound to.
+
+The underlying replication mechanism is that when resources are deployed they first deploy to the primary region. Then a background process will asynchronously copy them to the remain regions. This background synchronization process is eventually consistent.
 
 The `list` and `get` commands for multi-region resources display the sync status for global resources. These commands will show the resource in the primary region by default. You can specify which region you want to get the resource from by passing the `--region` flag. If you want to view the resource in all regions, you can pass the `--all-regions` flag.
 
@@ -61,6 +68,6 @@ To deploy a resource as a regional resource, you can specify a `--region` flag t
 
 === Switching between global and regional resources
 
-If you have a global resource that you want to change to being a regional resource, this can be done by updating the resource, passing a `--region` flag, and passing the `--force-regional` flag to change it from a global to a regional resource. You must do this on the primary region first, otherwise the resource sync process may overwrite your changes.
+If you have a global resource that you want to change to being a regional resource, this can be done by updating the resource, passing a `--region` flag, and passing the `--force-regional` flag to change it from a global to a regional resource. You must do this on the primary region first, otherwise the resource synchronization process may overwrite your changes.
 
 If you have a regional resource that you want to change to being a global resource, this can be done by updating the resource without specifying a `--region` flag, but passing the `--force-global` flag instead. The command will perform the update in the global region, and that configuration will be replicated to, and overwrite, the configuration in the rest of the regions.
