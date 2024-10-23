@@ -25,7 +25,7 @@ As mentioned above, to help us illustrate a Key Value Entity, you will be implem
 [source,java]
 .{sample-base-url}/key-value-counter/src/main/java/com/example/domain/Counter.java[Counter.java]
 ----
-include::example$key-value-counter/src/main/java/com/example/domain/Counter.java[]
+include::example$key-value-counter/src/main/java/com/example/domain/Counter.java[tag=domain]
 ----
 
 NOTE: Above we are taking advantage of the Java `record` to reduce the amount of boilerplate code, but you can use regular classes so long as they can be serialized to JSON (e.g. using Jackson annotations). See xref:serialization.adoc[Serialization].
