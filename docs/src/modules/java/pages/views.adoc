@@ -2,7 +2,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-Views allow you to access multiple entities or retrienve entities by attributes other than their xref:reference:glossary.adoc#entity-id[entity id]. You can create Views for different access patterns, optimized by specific queries, or combine multiple queries into a single View.
+Views allow you to access multiple entities or retrieve entities by attributes other than their xref:reference:glossary.adoc#entity-id[entity id]. You can create Views for different access patterns, optimized by specific queries, or combine multiple queries into a single View.
 
 Views can be defined from any of the following:
 
