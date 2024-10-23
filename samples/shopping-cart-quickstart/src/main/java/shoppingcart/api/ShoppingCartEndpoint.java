@@ -3,10 +3,12 @@ package shoppingcart.api;
 
 import akka.http.javadsl.model.HttpResponse;
 import akka.javasdk.annotations.Acl;
+// end::top[]
 import akka.javasdk.annotations.http.Delete;
+import akka.javasdk.annotations.http.Post;
+// tag::top[]
 import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Get;
-import akka.javasdk.annotations.http.Post;
 import akka.javasdk.annotations.http.Put;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.http.HttpResponses;
@@ -17,7 +19,6 @@ import java.util.concurrent.CompletionStage;
 
 // end::top[]
 
-// tag::all[]
 // tag::class[]
 
 // Opened up for access from the public internet to make the sample service easy to try out.
@@ -76,4 +77,3 @@ public class ShoppingCartEndpoint {
   // tag::class[]
 }
 // end::class[]
-// end::all[]
