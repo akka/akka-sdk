@@ -12,7 +12,7 @@ image:docs-onion_architecture-v1.min.svg[]
 
 === Layers in the architecture
 
-The layers of the Akka programming architecture are outlined below. These layers are generally all part of a single https://martinfowler.com/bliki/DDD_Aggregate.html[_aggregate root_] in Domain Driven Design parlance. That aggregate would be a package that would contain the following layers.
+The layers of the Akka programming architecture are outlined below.
 
 ==== Domain
 
@@ -40,19 +40,21 @@ Much of the inner loop of the developer experience will be spent here. Using Jav
 
 === Application
 
-The application layer is where Akka really comes into play as the glue between your domain code and the runtime. Every class in this layer will extend an Akka component class (i.e. something in the `akka.javasdk` package) which means it will be event-based and actor-based behind the scenes, though you never have to really think about that. Akka components are marked with a `@ComponentId` annotation to identify them to the Runtime.
+The application layer is where Akka really comes into play as the glue between your domain code and the Runtime. Every class in this layer will extend an Akka component class (i.e. something in the `akka.javasdk` package) which means it will be event-based and actor-based behind the scenes, though you never have to really think about that. Akka components are marked with a `@ComponentId` annotation to identify them to the Runtime.
 
-When you want to _do something_, i.e. change state or take action, you implement methods in this layer with return type `Effect` or `ReadOnlyEffect`. The effects are signals to the runtime to persist your events: Akka will persist them for you and handle concurrent updates, scaling, and many other difficult tasks. This is a key part of what makes Akka so responsive and resilient. This model streamlines development and reduces the amount of ceremony you must perform to build Akka applications.
+When you want to _do something_, i.e. change state or take action, you implement components methods returning an `Effect` or `ReadOnlyEffect`. An effect is a description of what the Runtime needs to do after the command is handled. You can think of it as a set of instructions you are passing to the Runtime, which will process the instructions on your behalf.
+
+Each component type defines its own Effect API, which are a set of predefined operations that match the capabilities of that specific component. For example, event-sourced entities have an effect API that allows you to persist your events: Akka will persist them for you and handle concurrent updates, scaling, and many other difficult tasks. This is a key part of what makes Akka so responsive and resilient. This model streamlines development and reduces the amount of ceremony you must perform to build Akka applications.
 
 === API
 
-The outermost layer is the API layer which is how the outside world interacts with your application or service. In this layer, you define endpoints that expose your application. Each endpoint is marked with an `@HttpEndpoint` attribute, which allows the Runtime to build the appropriate endpoint URLs for uniquely identifying the components. Each public method on the endpoint that is annotated with method `@Get`, `@Post`, `@Put`, `@Patch` or `@Delete` serves those respective HTTP methods.
+The outermost layer is the API layer which is how the outside world interacts with your application or service. In this layer, you define endpoints that expose your application. Each endpoint is marked with an `@HttpEndpoint` annotation, which allows the Runtime to build the appropriate endpoint URLs for uniquely identifying the components. Each public method on the endpoint that is annotated with method `@Get`, `@Post`, `@Put`, `@Patch` or `@Delete` serves those respective HTTP methods.
 
 Having received requests, the `api` layer interacts with the `application` layer through the xref:java:component-and-service-calls.adoc#_component_client[`ComponentClient`] which makes calls in a type safe way. This is the layer boundary that keeps the isolation necessary to remain resilient that is core to an Akka application.
 
 Additionally this layer is the place for a public event model that a service exposes, often via Kafka or other messaging capabilities. This allows the event driven nature of Akka to be easily integrated into the rest of your information space. In Akka you don't reach into the database to get state, you use the event stream itself.
 
-The API layer also uses other attributes to control access. For more information on endpoints see xref:java:http-endpoints.adoc[Designing HTTP Endpoints].
+The API layer also uses other annotations to xref:java:access-control.adoc[control access]. For more information on endpoints see xref:java:http-endpoints.adoc[Designing HTTP Endpoints].
 
 == Akka components
 
