@@ -1,4 +1,4 @@
-= Operating Akka Services
+= Operating
 
 include::ROOT:partial$include.adoc[]
 

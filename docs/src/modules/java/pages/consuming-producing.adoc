@@ -1,4 +1,4 @@
-= Consuming and Producing
+= Consuming and producing
 
 include::ROOT:partial$include.adoc[]
 

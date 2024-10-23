@@ -1,4 +1,4 @@
-= Concepts
+= Understanding
 
 include::ROOT:partial$include.adoc[]
 
@@ -19,4 +19,4 @@ A detailed explanation to how _Entities_ persist their state, is presented in xr
 - xref:development-process.adoc[]
 - xref:state-model.adoc[]
 - xref:saga-patterns.adoc[]
-- xref:best-practices.adoc[]
+- xref:java:dev-best-practices.adoc[]

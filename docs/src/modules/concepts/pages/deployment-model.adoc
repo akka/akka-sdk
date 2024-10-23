@@ -56,5 +56,5 @@ Now that you understand the overall architecture and deployment model of Akka yo
 The following topics may also be of interest.
 
 - xref:state-model.adoc[State model]
-- xref:best-practices.adoc[Best practices]
+- xref:java:dev-best-practices.adoc[]
 - xref:architecture-model.adoc[Architecture model]

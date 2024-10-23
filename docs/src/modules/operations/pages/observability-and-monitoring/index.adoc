@@ -1,4 +1,4 @@
-= Observability and Monitoring
+= Observability and monitoring
 :page-aliases: observability:index.adoc[]
 
 include::ROOT:partial$include.adoc[]

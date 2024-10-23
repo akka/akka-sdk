@@ -1,4 +1,4 @@
-= Best practices
+= Developer best practices
 
 include::ROOT:partial$include.adoc[]
 
@@ -24,7 +24,7 @@ image::bounded-context.svg[Bounded Context]
 
 === Events first
 
-Defining your data structures first, and splitting them into xref:concepts:best-practices.adoc#_Bounded_context[bounded contexts], will also help you think about all the different interactions your data needs to have. These interactions, like `ItemAddedToShoppingCart` or `LightbulbTurnedOn` are the events that are processed and persisted in Akka. Defining your data structures first, makes it easier to think about which events are needed and where they fit into your design. These data structures and events will live in your domain model layer as described in xref:concepts:architecture-model.adoc[Akka architecture model].
+Defining your data structures first, and splitting them into xref:java:dev-best-practices.adoc#_Bounded_context[bounded contexts], will also help you think about all the different interactions your data needs to have. These interactions, like `ItemAddedToShoppingCart` or `LightbulbTurnedOn` are the events that are processed and persisted in Akka. Defining your data structures first, makes it easier to think about which events are needed and where they fit into your design. These data structures and events will live in your domain model layer as described in xref:concepts:architecture-model.adoc[Akka architecture model].
 
 === Message migration
 
@@ -32,7 +32,7 @@ Behind the scenes everything in Akka is ultimately message driven. Plan for the 
 
 == Deployment units
 
-Each Akka Service consists of one or more Components and is packaged and deployed as a unit. Akka services are deployed to Akka Projects. Thus, when you couple multiple business concerns by packaging them in the same service, even under separate xref:concepts:best-practices.adoc#_Bounded_context[bounded contexts], you limit the runtime's ability to make the most efficient decisions to scale up or down.
+Each Akka Service consists of one or more Components and is packaged and deployed as a unit. Akka services are deployed to Akka Projects. Thus, when you couple multiple business concerns by packaging them in the same service, even under separate xref:java:dev-best-practices.adoc#_Bounded_context[bounded contexts], you limit the runtime's ability to make the most efficient decisions to scale up or down.
 
 === Advantages of right-sized services
 

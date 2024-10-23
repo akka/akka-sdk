@@ -1,4 +1,4 @@
-= Component and Service Calls
+= Component and service calls
 
 include::ROOT:partial$include.adoc[]
 

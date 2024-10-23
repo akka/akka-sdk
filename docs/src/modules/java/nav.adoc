@@ -1,4 +1,4 @@
-* xref:index.adoc[Developing Services]
+* xref:index.adoc[Developing]
 ** xref:build-your-first-application.adoc[Build your first application]
 ** Components
 *** xref:event-sourced-entities.adoc[Event Sourced Entities]
@@ -11,10 +11,11 @@
 *** xref:consuming-producing.adoc[Consuming and Producing]
 *** xref:component-and-service-calls.adoc[]
 *** xref:operations:projects/message-brokers.adoc[]
-** Setup and Configuration
+** Setup and configuration
 *** xref:setup-and-dependency-injection.adoc[]
 *** xref:serialization.adoc[]
 *** xref:errors-and-failures.adoc[]
 *** xref:access-control.adoc[]
 *** xref:auth-with-jwts.adoc[]
 *** xref:running-locally.adoc[]
+** xref:java:dev-best-practices.adoc[]

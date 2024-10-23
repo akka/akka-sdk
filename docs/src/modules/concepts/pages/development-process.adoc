@@ -1,4 +1,4 @@
-= Development Process
+= Development process
 
 include::ROOT:partial$include.adoc[]
 
@@ -132,4 +132,4 @@ Now that you have a project and have deployed it you should familiarize yourself
 
 The following topics may also be of interest.
 
-- xref:best-practices.adoc[Best practices]
+- xref:java:dev-best-practices.adoc[]

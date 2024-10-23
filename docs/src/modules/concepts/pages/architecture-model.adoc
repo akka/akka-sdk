@@ -105,6 +105,6 @@ The following topics may also be of interest.
 
 - xref:development-process.adoc[Development process]
 - xref:state-model.adoc[State model]
-- xref:best-practices.adoc[Best practices]
+- xref:java:dev-best-practices.adoc[]
 
 Start building your own Akka Service using the xref:java:index.adoc[Akka SDK].
