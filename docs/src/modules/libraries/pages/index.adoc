@@ -28,7 +28,7 @@ TIP: Find the latest Akka library versions at https://doc.akka.io/docs/akka-depe
 
 * https://doc.akka.io/libraries/akka-core/current/stream/index.html[Streams]: An intuitive and safe way to do asynchronous, non-blocking, backpressured stream processing.
 
-* https://doc.akka.io/libraries/akka-core/typed/persistence.html[Event Sourcing]: Enables stateful actors to persist their state changes, so that the state can be recovered when an actor is restarted.
+* https://doc.akka.io/libraries/akka-core/current/typed/persistence.html[Event Sourcing]: Enables stateful actors to persist their state changes, so that the state can be recovered when an actor is restarted.
 
 * https://doc.akka.io/libraries/akka-core/current/typed/index-persistence-durable-state.html[Durable State]: Enables stateful actors to persist their latest state, so that it can be recovered when an actor is restarted.
 
