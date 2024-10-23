@@ -32,17 +32,4 @@ This also means that you might not see your own writes, immediately. Consider th
 
 If it's important for some read requests to have seen latest writes you can use `Effect` for such command handler, even though it is not persisting any events. Then the request will be routed to the primary and use the latest fully consistent state.
 
-=== Selecting primary
-
-There are two operational choices for deciding where the primary is located:
-
-* static mode - one region is defined as the primary when deploying the service, and all stateful component instances will use that region as primary
-* dynamic mode - the primary is selected by each individual instance based on where the first event is persisted
-
-The replication mode is defined when deploying the service.
-
-ifdef::todo[TODO: link to ops docs for multi-region deployments]
-
-When using the dynamic mode the application must make sure that a specific stateful component instance is not created concurrently in more than one region. Data will still be replicated if that happens but there are no ordering guarantees of these initial changes, which could result in conflicting state in different regions. After the initial updates have been replicated, one single primary is selected also in this case.
-
-It is possible to switch between static and dynamic mode, but this should only be done with careful consideration of the consequences. For example, when changing the primary, not all updates may have been replicated and the new primary may not be fully up to date. This is why there is a third mode. This is a read-only mode for all regions, which causes all write requests to be rejected. This can be used as an intermediate stage to ensure that all updates have been replicated before the primary is changed.
+The operational aspects are described in xref:operations:projects/multi-region.adoc[].

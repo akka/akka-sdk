@@ -170,6 +170,7 @@ It is best to not reuse the same entity id after deletion, but if that happens a
 
 Note that xref:views.adoc#ve_delete[deleting View state] must be handled explicitly.
 
+[#_replication]
 include::partial$mutli-region-replication.adoc[]
 
 == Side Effects

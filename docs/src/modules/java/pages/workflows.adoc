@@ -209,4 +209,5 @@ Compensating a workflow step(s) might involve multiple logical steps and thus is
 
 A full error handling and compensation sample can be downloaded as a link:../java/_attachments/workflow-quickstart.zip[zip file]. Run `TransferWorkflowIntegrationTest` and examine the logs from the application.
 
+[#_replication]
 include::partial$mutli-region-replication.adoc[]

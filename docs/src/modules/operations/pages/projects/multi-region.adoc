@@ -6,7 +6,7 @@ Projects in Akka can span across regions with data automatically replicated betw
 
 xref:organizations/regions.adoc[] are specified in the project configuration. All services in the project are deployed to all regions. One of the regions will be specified as the primary region. The primary region indicates the source from which region resources (services, routes, secrets, etc.) should be replicated from. By default the primary region is the first one added to the project at deployment time. 
 
-Additionally the primary region also indicates where primary data copies should reside in when using the _Static Mode_ for xref:java:event-sourced-entities.adoc[Event Sourced Entities]. For more information see xref:java:event-sourced-entities.adoc#_multi_region_replication[].
+Additionally, the primary region also indicates where primary data copies should reside in stateful components like Event Sourced Entities or Workflow when using the static mode.
 
 NOTE: Regions appear at two different scopes in Akka. The first is at the xref:organizations/index.adoc[] scope. This conveys which regions are available to your organization. The second is at the project scope, which conveys which regions a specific project is bound to.
 
@@ -33,9 +33,67 @@ To add one of these regions to your project, run:
 akka project regions add gcp-us-east1
 ----
 
+When you deploy a service it will run in all regions of the project. When you add a region to a project the existing services will automatically start in the new region.
+
+=== Selecting primary for stateful components
+
+Stateful components like Event Sourced Entities or Workflow can be replicated to other regions. For each stateful component instance there is a primary region, which handles all write requests. Read requests can be served from any region. See xref:java:event-sourced-entities.adoc#_replication[Event Sourced Entity replication] for more information about read and write requests.
+
+There are two operational choices for deciding where the primary is located:
+
+* static mode - one region is defined as the primary for the project, and all stateful component instances will use that region as primary
+* dynamic mode - the primary is selected by each individual component instance based on where the first event is persisted
+
+The static mode is used by default. To use dynamic mode you need to deploy the service with a xref:services/deploy-service.adoc#apply[service descriptor]:
+
+[source, yaml]
+----
+name: my-service
+spec:
+  image: my-container-uri/container-name:tag-name
+  replication:
+    mode: replicated-read
+    replicatedRead:
+      primarySelectionMode: dynamic
+----
+
+When using dynamic mode, the application must ensure that a specific stateful component instance is not created concurrently in more than one region. Although data will still be replicated if this occurs, there are no guarantees regarding the order of these initial changes, which could lead to conflicting states across regions. Once the initial updates are replicated, a single primary instance is selected.
+
+It is possible to switch between static and dynamic mode, but this should only be done with careful consideration of the consequences. For example, when changing the primary, not all updates may have been replicated and the new primary may not be fully up to date. This is why there is a third mode. This is a read-only mode for all regions, which causes all write requests to be rejected. This can be used as an intermediate stage to ensure that all updates have been replicated before the primary is changed.
+
+To use this read-only mode for all regions you set `static` in the service descriptor:
+
+[source, yaml]
+----
+name: my-service
+spec:
+  image: my-container-uri/container-name:tag-name
+  replication:
+    mode: replicated-read
+    replicatedRead:
+      primarySelectionMode: none
+----
+
+To use the static primary selection mode again you set `static` in the service descriptor:
+
+[source, yaml]
+----
+name: my-service
+spec:
+  image: my-container-uri/container-name:tag-name
+  replication:
+    mode: replicated-read
+    replicatedRead:
+      primarySelectionMode: static
+----
+
 == Setting the primary region of a project
 
-Changing the primary region of a project is how you control failover or migration in Akka. To change the primary region of a project run:
+Changing the primary region of a project is how you control failover or migration in Akka.
+
+NOTE: The primary region of a project is also the region that will be used as primary for stateful components in the static selection mode. Changing primary should only be done with careful consideration of the consequences, and it is recommended to first change to the read-only mode in all regions. See <<_selecting_primary_for_stateful_components>>.
+
+To change the primary region of a project run:
 
 [source, command line]
 ----
