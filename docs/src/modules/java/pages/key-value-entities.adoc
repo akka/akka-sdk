@@ -13,8 +13,8 @@ Akka needs to serialize that data to send it to the underlying data store. Howev
 The steps necessary to implement a Key Value Entity include:
 
 . Defining the API and model the entity's state.
-. Implementing behavior in command handlers.
 . Creating and initializing the Entity.
+. Implementing behavior in command handlers.
 
 The following sections walk through these steps using a counter service as an example.
 
@@ -49,6 +49,7 @@ A Key Value Entity Effect can either:
 Now that we have our Entity state defined, the remaining steps can be summarized as follows:
 
 - Declare your entity and pick an entity id (it needs to be a unique identifier).
+- Initialize your entity state
 - Implement how each command is handled.
 
 The class signature for our counter entity will look like this:
