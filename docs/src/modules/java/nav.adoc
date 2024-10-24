@@ -11,6 +11,7 @@
 *** xref:consuming-producing.adoc[Consuming and Producing]
 *** xref:component-and-service-calls.adoc[]
 *** xref:operations:projects/message-brokers.adoc[]
+*** xref:streaming.adoc[]
 ** Setup and configuration
 *** xref:setup-and-dependency-injection.adoc[]
 *** xref:serialization.adoc[]
