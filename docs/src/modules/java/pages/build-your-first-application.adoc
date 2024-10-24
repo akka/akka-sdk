@@ -79,21 +79,37 @@ Through our "Shopping Cart" Event Sourced Entity we expect to manage our cart, a
 
 === Define the domain model
 
-First, define the domain class `ShoppingCart` in package `shoppingcart.domain` with some basic business logic.
+First, define the domain class `ShoppingCart` in package `shoppingcart.domain`. 
 
 [source,java,indent=0]
 .{sample-base-url}/shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCart.java[ShoppingCart.java]
 ----
 include::example$shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCart.java[tags=top;domain]
 ----
+<1> Our `ShoppingCart` is fairly simple, being composed only by a `cartId` and a list of line items.
+<2> A `LineItem` represents a single product and the quantity we intend to buy.
 
-Add an interface `ShoppingCartEvent` with the domain events in package `shoppingcart.domain`.
+Next, let's define a domain event for adding items to the cart. Add an interface `ShoppingCartEvent` with the `ItemAdded` domain event in package `shoppingcart.domain`:
 
 [source,java,indent=0]
 .{sample-base-url}/shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCartEvent.java[ShoppingCartEvent.java]
 ----
 include::example$shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCartEvent.java[tags=top;domain]
 ----
+<1> `ItemAdded` event derives from `ShoppingCartEvent` interface.
+<2> Specifying a logical type name, required for serialization.
+
+Jumping back to the `ShoppingCart` domain class, add business logic to handle the `ItemAdded` domain event for adding items to the cart:
+
+[source,java,indent=0]
+.{sample-base-url}/shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCart.java[ShoppingCart.java]
+----
+include::example$shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCart.java[tag=itemAdded]
+----
+<1> For an existing item, we will make sure to sum the existing quantity with the incoming one.
+<2> Returns an update list of items without the existing item.
+<3> Adds the update item to the shopping cart.
+<4> Returns a new instance of the shopping cart with the updated line items.
 
 === Define the entity
 
