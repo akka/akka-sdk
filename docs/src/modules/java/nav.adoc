@@ -7,8 +7,8 @@
 *** xref:views.adoc[Views]
 *** xref:workflows.adoc[Workflows]
 *** xref:timed-actions.adoc[Timers]
+*** xref:consuming-producing.adoc[Consumers]
 ** Integrations
-*** xref:consuming-producing.adoc[Consuming and Producing]
 *** xref:component-and-service-calls.adoc[]
 *** xref:operations:projects/message-brokers.adoc[]
 *** xref:streaming.adoc[]
