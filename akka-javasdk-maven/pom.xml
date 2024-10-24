@@ -100,6 +100,16 @@
             <artifactId>maven-resources-plugin</artifactId>
             <version>3.2.0</version>
           </plugin>
+          <!-- promoting the released mvn artifacts from staging to prod after close -->
+          <plugin>
+            <groupId>org.sonatype.central</groupId>
+            <artifactId>central-publishing-maven-plugin</artifactId>
+            <version>0.6.0</version>
+            <extensions>true</extensions>
+            <configuration>
+              <publishingServerId>central</publishingServerId>
+            </configuration>
+          </plugin>
         </plugins>
       </build>
     </profile>
@@ -120,17 +130,6 @@
       <url>https://repo.akka.io/maven</url>
     </repository>
   </repositories>
-
-  <distributionManagement>
-    <repository>
-      <id>akka-repo</id>
-      <url>https://maven.cloudsmith.io/lightbend/akka</url>
-    </repository>
-    <snapshotRepository>
-      <id>akka-snapshot-repo</id>
-      <url>https://maven.cloudsmith.io/lightbend/akka-snapshots</url>
-    </snapshotRepository>
-  </distributionManagement>
 
   <modules>
     <module>akka-javasdk-parent</module>

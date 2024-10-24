@@ -31,25 +31,25 @@ cd akka-javasdk-maven
 ../.github/patch-maven-versions.sh
 
 # create Maven settings.xml with credentials for repository publishing
+# info
 mkdir -p ~/.m2
 cat <<EOF >~/.m2/settings.xml
 <settings xmlns="http://maven.apache.org/SETTINGS/1.1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.1.0 http://maven.apache.org/xsd/settings-1.1.0.xsd">
   <servers>
       <server>
-        <id>ossrh</id>
+        <id>central</id>
         <username>${SONATYPE_USERNAME}</username>
         <password>${SONATYPE_PASSWORD}</password>
     </server>
   </servers>
   <profiles>
     <profile>
-      <id>ossrh</id>
+      <id>central</id>
       <activation>
         <activeByDefault>true</activeByDefault>
       </activation>
       <properties>
-        <altSnapshotDeploymentRepository>snapshots::default::https://s01.oss.sonatype.org/content/repositories/snapshots</altSnapshotDeploymentRepository>
         <gpg.passphrase>${PGP_PASSPHRASE}</gpg.passphrase>
       </properties>
     </profile>
@@ -62,4 +62,4 @@ echo "${PGP_SECRET}" | base64 -d | gpg --import --batch
 
 # Maven deploy with profile `release`
 # mvn --quiet --batch-mode --activate-profiles release deploy
-mvn --batch-mode --activate-profiles release -Dskip.docker=true deploy
+mvn --batch-mode --activate-profiles release -Dskip.docker=true -Dskip.deploy=false deploy

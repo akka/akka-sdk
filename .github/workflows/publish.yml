@@ -58,19 +58,9 @@ jobs:
       - name: mvn deploy
         run: |-
           export SDK_VERSION="$(cat ~/akka-javasdk-version.txt)"
-          ./.github/publish-maven-to-cloudsmith.sh
+          ./.github/publish-maven.sh
         env:
-          CLOUDSMITH_MACHINE_USER: ${{ secrets.CLOUDSMITH_MACHINE_USER }}
-          CLOUDSMITH_MACHINE_PASSWORD: ${{ secrets.CLOUDSMITH_MACHINE_PASSWORD }}
-
-# Defer publishing Maven parts to Maven Central until we want to
-# need to check if publishing to the io.akka group ID is fully set up
-#      - name: mvn deploy
-#        run: |-
-#          export SDK_VERSION="$(cat ~/akka-javasdk-version.txt)"
-#          ./.github/publish-maven.sh
-#        env:
-#          PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
-#          PGP_SECRET: ${{ secrets.PGP_SECRET }}
-#          SONATYPE_USERNAME: ${{ secrets.KALIX_IO_SONATYPE_USER }}
-#          SONATYPE_PASSWORD: ${{ secrets.KALIX_IO_SONATYPE_PASSWORD }}
+          PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
+          PGP_SECRET: ${{ secrets.PGP_SECRET }}
+          SONATYPE_USERNAME: ${{ secrets.TEST_SONATYPE_AKKA_IO_USER }}
+          SONATYPE_PASSWORD: ${{ secrets.TEST_SONATYPE_AKKA_IO_PASSWORD }}
