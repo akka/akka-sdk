@@ -96,7 +96,7 @@ Next, let's define a domain event for adding items to the cart. Add an interface
 ----
 include::example$shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCartEvent.java[tags=top;domain]
 ----
-<1> `ItemAdded` event derives from `ShoppingCartEvent` interface.
+<1> `ItemAdded` event derives from the `ShoppingCartEvent` interface.
 <2> Specifying a logical type name, required for serialization.
 
 Jumping back to the `ShoppingCart` domain class, add business logic to handle the `ItemAdded` domain event for adding items to the cart:
@@ -113,15 +113,40 @@ include::example$shopping-cart-quickstart/src/main/java/shoppingcart/domain/Shop
 
 === Define the entity
 
-The Event Sourced Entity is defined in the `ShoppingCartEntity`.
+Create an Event Sourced Entity named `ShoppingCartEntity` in package `shoppingcart.application`. The class signature should look like this:
 
-Create a class named `ShoppingCartEntity` in package `shoppingcart.application`.
+[source,java]
+.{sample-base-url}/shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java[ShoppingCartEntity.java]
+----
+include::example$shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java[tag=class]
+----
+<1> Extend `EventSourcedEntity<ShoppingCart, ShoppingCartEvent>`, where `ShoppingCart` is the type of state this entity will store, and `ShoppingCartEvent` is the interface for the events it persists.
+<2> Annotate the class so Akka can identify it as an Event Sourced Entity.
+
+Inside `ShoppingCartEntity`, define an `addItem` command handler to generate an `ItemAdded` event, and an event handler to process the event:
+
+[source,java]
+.{sample-base-url}/shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java[ShoppingCartEntity.java]
+----
+include::example$shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java[tag=addItem]
+----
+<1> Validate the quantity of items added is greater than zero.
+<2> Create a new `ItemAdded` event representing the change to the state of the cart.
+<3> Persist the event by returning an `Effect` with `effects().persist`.
+<4> Acknowledge that the event was successfully persisted.
+<5> Event handler to process the `ItemAdded` event and return the updated state.
+
+Inside `ShoppingCartEntity`, define a `getCart` command handler to retrieve the state of the shopping cart:
 
 [source,java,indent=0]
 .{sample-base-url}/shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java[ShoppingCartEntity.java]
 ----
-include::example$shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java[tags=top;class;getCart;addItem]
+include::example$shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java[tag=getCart]
 ----
+<1> Store the `entityId` in an internal attribute, to be used elsewhere.
+<2> Define the initial state.
+<3> Return the current state as a reply to the request.
+
 
 === Define the external API
 
