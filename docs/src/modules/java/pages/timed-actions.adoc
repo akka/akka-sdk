@@ -20,7 +20,7 @@ When a timer is triggered, the scheduled call is executed. If successfully execu
 **Timer limitations**:
 
 * Maximum allowed timer command payload is 1024 bytes.
-* At most 50,000 active timers can be scheduled.
+* At most 50,000 active timers per service can be scheduled.
 * Scheduled calls identifies the component through component id and the method through the name of
   the method. If these changes, the scheduled method will not be invoked.
 * The type of parameter the method accepts must not change after a call has been scheduled.
@@ -48,7 +48,7 @@ include::example$reliable-timers/src/main/java/com/example/application/OrderEnti
 
 == Timed Action
 
-As said before, the `OrderEndpoint` will receive incoming messages, run some logic and then call the Order Entity as needed.
+The `OrderEndpoint` will receive incoming messages, run some logic and then call the Order Entity as needed.
 
 === Scheduling a timer
 

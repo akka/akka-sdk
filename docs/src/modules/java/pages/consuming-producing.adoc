@@ -54,7 +54,7 @@ include::example$key-value-shopping-cart/src/main/java/com/example/application/S
 
 An Akka application can be comprised of multiple services working to support specific business requirements. Although each service is an independent deployable unit, often times information needs to flow between those services.
 
-Akka provides brokerless at-least-once event delivery across Akka services through the Service to Service eventing.
+Akka provides brokerless at-least-once event delivery across Akka services in the same project through the Service to Service eventing.
 
 The source of the events is an xref:event-sourced-entities.adoc[Event Sourced Entity]. Its events can be published as a stream and consumed by another Akka service without the need to set up a message broker.
 

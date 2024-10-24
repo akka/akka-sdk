@@ -22,7 +22,7 @@ include::java:example$shopping-cart-quickstart/src/main/java/shoppingcart/api/Sh
 <1> Accept the `ComponentClient` as a constructor argument, keep it in a field.
 <2> Use a specific request builder for the component you want to call
 <3> Invoking the method returns a `CompletionStage<T>` where `T` is what the component eventually returns.
-<4> Potentially adapt the response rather than returning it as is.
+<4> Adapt the response rather than returning it as is. In this case discarding the response value, and respond OK without a response body.
 
 The component client can call command handlers on Event Sourced Entities, Key Value Entities and workflows, query methods.
 
