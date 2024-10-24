@@ -8,7 +8,7 @@ Akka simplifies application development by allowing developers to focus on their
 
 Akka applications are built with an _Onion Architecture_, where services are organized in concentric layers. The core of the application is at the center, with additional layers surrounding it. Each layer has a specific role.
 
-image:docs-onion_architecture-v1.min.svg[]
+image:docs-onion_architecture-v1.min.svg[Service Onion Architecture, width=400]
 
 === Layers in the architecture
 
