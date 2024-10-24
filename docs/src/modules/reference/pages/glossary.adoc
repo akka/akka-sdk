@@ -11,18 +11,18 @@ include::ROOT:partial$include.adoc[]
 
 [[component_client]]Component client:: It's utility to call Akka components without knowing where they are located.
 
+[[component_id]]Component id:: An id to identify components. Changing component id for <<stateful_component>>s should be done with caution, because the id is used for persistence.
+
 [[command]]Command:: A command comes from a _sender_, and a reply may be sent to the sender. A command expresses the intention to alter the state or retrieve information based on the state of an <<entity>> or <<workflow>>. A command is materialized by a message received by a component implementation. Commands are not persisted and might fail.
 
 [[command_handler]]Command handler::
 A _command handler_ is the code that handles a command. It may validate the command using the current state, and may emit events or update the state as part of its processing. A command handler **must not** update the state of the entity directly, only _indirectly_ by using <<effect>> API.
 
-[[effect]]Effect:: Each <<component>> has a specific role and responsibilities. Returning and effect from the <<command_handler>> allows Akka runtime to execute code related to the infrastructure (like persistence) transparently for the user.
+[[effect]]Effect:: Effects are predefined operations that align with the capabilities of each <<component>>, except <<endpoint>>s. These operations are the Component's Effect API. Returning an Effect from the <<command_handler>> allows the Akka runtime to execute infrastructure-related code transparently to the user. For example, event-sourced entities provide an Effect API that among other things can persist events.
 
 [[entity]]Entity:: Components like <<key_value_entity>> and <<event_sourced_entity>> are usually referred as entities. An entity is conceptually equivalent to a class, or a type of state. It will have multiple <<entity_instance>>s, each of which has a unique ID and can handle commands. For example, a service may implement a chat room entity, encompassing the logic associated with chat rooms, and a particular chat room may be an instance of that entity, containing a list of the users currently in the room and a history of the messages sent to it. Entities cache their state and persist it using <<effect>> APIs.
 
 [[entity_instance]]Entity instance:: An instance of an <<entity>>, which is identified by a unique <<id>>.
-
-[[component_id]]Component id:: An id to identify components. Changing component id for <<stateful_component>>s should be done with caution, because the id is used for persistence.
 
 [[endpoint]]Endpoint:: An _endpoint_ component is a way to expose a service to the outside world. They act as controllers ahead of the other components, like <<entity>>s or <<view>>s. They don't require <<component_id>> because URL address is enough to identify them.
 
