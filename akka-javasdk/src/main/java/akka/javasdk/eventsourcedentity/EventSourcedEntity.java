@@ -263,6 +263,8 @@ public abstract class EventSourcedEntity<S, E> {
 
       /**
        * Delete the entity. No addition events are allowed.
+       * To observe the deletion in consumers and views, persist a final event representing the deletion before
+       * triggering delete.
        */
       OnSuccessBuilder<S> deleteEntity();
 

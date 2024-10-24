@@ -33,6 +33,8 @@ include::example$event-sourced-counter-brokers/src/main/java/counter/application
 
 If an exception is raised during the event processing. Akka runtime will redelivery the event until the application process it without failures.
 
+When deleting Event Sourced Entities, and want to act on it in a consumer, make sure to persist a final event representing
+the deletion before triggering delete.
 
 == Consume from Key Value Entity
 
