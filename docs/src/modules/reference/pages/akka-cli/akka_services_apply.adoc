@@ -5,7 +5,7 @@ Applies a service descriptor to the currently configured project.
 == Synopsis
 
 The `akka service apply` command applies a service descriptor, creating the service, or updating the service as appropriate.
-For more information see https://docs.kalix.io/operations/deploy-service.html#apply
+For more information see https://doc.akka.io/operations/services/deploy-service.html#apply
 
 ----
 akka services apply [flags]

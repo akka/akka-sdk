@@ -81,7 +81,7 @@ When you use the Akka Console, you don't need to provide the Server URL.
 
 ==== Limits on unauthenticated and free usage
 
-Docker has https://docs.docker.com/docker-hub/download-rate-limit/[rate limits, window="new"] for unauthenticated and free Docker Hub usage. For unauthenticated users, pull rates are limited based on IP address (anonymous, or unauthenticated, users have a limit of 100 container image pulls per 6 hours per IP address). Akka leverages a limited set of IP addresses to connect to Docker Hub. This means that unauthenticated image pulls might be rate limited. The limit for unauthenticated pulls is shared by all users of the Akka platform.
+Docker has https://docs.docker.com/docker-hub/download-rate-limit/[rate limits, window="new"] for unauthenticated and free Docker Hub usage. For unauthenticated users, pull rates are limited based on IP address (anonymous, or unauthenticated, users have a limit of 100 container image pulls per 6 hours per IP address). Akka leverages a limited set of IP addresses to connect to Docker Hub. This means that unauthenticated image pulls might be rate limited. The limit for unauthenticated pulls is shared by all users of Akka.
 
 === Google Container Registry
 

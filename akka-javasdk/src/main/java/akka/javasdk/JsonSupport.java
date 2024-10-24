@@ -204,7 +204,7 @@ public final class JsonSupport {
             + any.getTypeUrl()
             + "] could not be decoded into a ["
             + valueClass.getName()
-            + "]. Make sure that changes are backwards compatible or apply a @Migration mechanism (https://docs.kalix.io/java/serialization.html#_schema_evolution).",
+            + "]. Make sure that changes are backwards compatible or apply a @Migration mechanism (https://doc.akka.io/java/serialization.html#_schema_evolution).",
         e);
   }
 

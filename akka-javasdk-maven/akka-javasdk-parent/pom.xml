@@ -18,8 +18,8 @@
 
     <name>Akka SDK for Java Parent pom</name>
     <description>
-        This is the parent pom for Akka Platform applications.
-        It contains all dependencies and plugins to build an Akka Platform service using the Akka SDK for Java.
+        This is the parent pom for Akka services.
+        It contains all dependencies and plugins to build an Akka service using the Akka SDK for Java.
     </description>
 
     <properties>

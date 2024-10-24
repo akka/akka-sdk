@@ -2,7 +2,7 @@
 
 This archetype can be used to generate a project suitable for the development of a Service using [Akka SDK](https://docs.akka.io).
 
-For the latest release see [GitHub releases](https://github.com/lightbend/akka-javasdk/releases).
+For the latest release see [GitHub releases](https://github.com/lightbend/akka-sdk/releases).
 
 To kickstart a project on Linux and macOS:
 

@@ -11,7 +11,7 @@ public class EmailComposer {
 
   private final ComponentClient componentClient;
 
-  //injecting Akka Platform dependency as any other dependency
+  //injecting Akka dependency as any other dependency
   public EmailComposer(ComponentClient componentClient) {
     this.componentClient = componentClient;
   }

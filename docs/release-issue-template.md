@@ -1,12 +1,12 @@
-# Release Akka SDK for Java 
+# Release Akka SDK 
 
 ### Prepare
 
 - [ ] Make sure all important PRs have been merged
 - [ ] Check that the [latest build](https://github.com/lightbend/akka-javasdk/actions?query=branch%3Amain) successfully finished
-- [ ] Make sure a version of the Kalix Runtime that supports the protocol version the SDK expects has been deployed to production. You can check this on `Dependencies.scala`
+- [ ] Make sure a version of the Akka Runtime that supports the protocol version the SDK expects has been deployed to production. You can check this on `Dependencies.scala`
 
-You can see the Kalix Runtime version on prod [on grafana](https://grafana.sre.kalix.io/d/b30d0d8e-3894-4fbf-9627-9cb6088949ee/prod-kalix-metrics?orgId=1) or using [various other methods](https://github.com/lightbend/kalix/wiki/Versioning-and-how-to-determine-what-version-is-running).
+You can see the Akka Runtime version on prod [on grafana](https://grafana.sre.kalix.io/d/b30d0d8e-3894-4fbf-9627-9cb6088949ee/prod-kalix-metrics?orgId=1) or using [various other methods](https://github.com/lightbend/kalix/wiki/Versioning-and-how-to-determine-what-version-is-running).
 
 ### Cutting the release 
 

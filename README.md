@@ -1,6 +1,6 @@
-# Akka SDK (for Java)
+# Akka SDK
 
-The Akka SDK (for Java) is used to develop Akka services.
+The Akka SDK is used to develop Akka services.
 
 License
 -------

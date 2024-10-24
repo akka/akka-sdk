@@ -1,9 +1,9 @@
-# Releasing Akka SDK for Java
+# Releasing Akka SDK
 
 Create a release issue (using the [GitHub CLI](https://cli.github.com/))
 
 ```shell
-gh issue create --title 'Release Akka SDK for Java' --label akka-javasdk --body-file docs/release-issue-template.md -w
+gh issue create --title 'Release Akka SDK' --label akka-javasdk --body-file docs/release-issue-template.md -w
 ````
 
 and follow the instructions.

@@ -1,10 +1,11 @@
 # endpoint-jwt
 
 
-To understand the Akka concepts that are the basis for this example, see [Designing services](https://docs.akka.io/java/development-process.html) in the documentation.
+To understand the Akka concepts that are the basis for this example, see [Development Process](https://docs.kalix.
+io/java/development-process.html) in the documentation.
 
-
-This project contains the framework to create a Akka service. To understand more about these components, see [Developing services](https://docs.akka.io/services/). Examples can be found [here](https://github.com/lightbend/akka-javasdk/tree/main/samples).
+This project demonstrates the use of an Event Sourced Entity.
+To understand more, read [JSON Web Tokens (JWT)](https://doc.akka.io/java/auth-with-jwts.html) in the documentation.
 
 Use Maven to build your project:
 

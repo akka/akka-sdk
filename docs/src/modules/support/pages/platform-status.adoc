@@ -1,4 +1,4 @@
-= Platform Status
+= Status
 include::ROOT:partial$include.adoc[]
 
-Any known issues or planned maintenance with the Akka API, Console, downloads, documentation or the support portal will be reported on the https://status.akka.io/[Akka Platform Status page,window="new"].
+Any known issues or planned maintenance with the Akka API, Console, downloads, documentation or the support portal will be reported on the https://status.akka.io/[Akka Status page,window="new"].

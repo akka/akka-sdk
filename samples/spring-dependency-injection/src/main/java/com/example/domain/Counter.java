@@ -14,7 +14,7 @@ public class Counter extends EventSourcedEntity<Integer, CounterEvent> {
 
   private final Clock clock;
 
-  //injecting custom dependency to the Akka Platform component
+  //injecting custom dependency to the Akka component
   public Counter(Clock clock) {
     this.clock = clock;
   }
