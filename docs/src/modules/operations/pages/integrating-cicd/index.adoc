@@ -50,7 +50,7 @@ To install the Akka CLI in your CI/CD environment, configure the environment to 
 
 [source,command line]
 ----
-curl -sL https://docs.akka.io/install-cli.sh | bash
+curl -sL https://doc.akka.io/install-cli.sh | bash
 ----
 
 == Managing service tokens

@@ -4,7 +4,7 @@ Akka control
 
 == Synopsis
 
-Welcome to the Akka CLI, for more information on its usage please visit the documentation https://docs.akka.io/akka/index.html.
+Welcome to the Akka CLI, for more information on its usage please visit the documentation https://doc.akka.io/index.html.
 
 == Options
 

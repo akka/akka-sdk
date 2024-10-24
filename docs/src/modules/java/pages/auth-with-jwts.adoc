@@ -90,7 +90,7 @@ include::example$endpoint-jwt/src/main/java/hellojwt/api/HelloJwtEndpoint.java[t
 ----
 
 The token extracted from the bearer token must have one of the two issuers defined in the annotation.
-Akka will place the claims from the validated token in the https://docs.akka.io/_attachments/api/akka/javasdk/http/RequestContext.html[RequestContext], so you can access them from your service via `getJwtClaims()`. The `RequestContext` can be injected into the endpoint constructor, so you can retrieve the JWT claims like this:
+Akka will place the claims from the validated token in the link:_attachments/api/akka/javasdk/http/RequestContext.html[RequestContext], so you can access them from your service via `getJwtClaims()`. The `RequestContext` can be injected into the endpoint constructor, so you can retrieve the JWT claims like this:
 
 [source, java, indent=0]
 .{sample-base-url}/endpoint-jwt/src/main/java/hellojwt/api/HelloJwtEndpoint.java[HelloJwtEndpoint.java]
