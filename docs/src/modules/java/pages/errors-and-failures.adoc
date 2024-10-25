@@ -6,7 +6,7 @@ The Akka SDK provides several mechanisms dealing with validation or when somethi
 
 == Errors
 
-The first live of the defense is the validation of the incoming data on the `Endpoint` level. Already described is details in the xref:http-endpoints.adoc#_advanced_http_requests_and_responses[request and response] section. This is a basic request validation, which doesn't require domain state. It's better to handle it as soon as possible, since it will reduce the load on the system. The logic can reject the request before it reaches the entity.
+The first line of the defense is the validation of the incoming data on the `Endpoint` level. Already described is details in the xref:http-endpoints.adoc#_advanced_http_requests_and_responses[request and response] section. This is a basic request validation, which doesn't require domain state. It's better to handle it as soon as possible, since it will reduce the load on the system. The logic can reject the request before it reaches the entity.
 
 The next phase is domain validation error. An incoming command doesn't fulfil the requirements or the current state doesn't allow the command to be handled. Such errors can be signalled back to the client as an error effect using the `effects().error(description)` function.
 
