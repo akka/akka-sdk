@@ -44,6 +44,8 @@ There are two operational choices for deciding where the primary is located:
 * static mode - one region is defined as the primary for the project, and all stateful component instances will use that region as primary
 * dynamic mode - the primary is selected by each individual component instance based on where the first event is persisted
 
+IMPORTANT: Before changing the primary selection mode, make sure that you understand and follow the steps described in the <<_how_to>>.
+
 The static mode is used by default. To use dynamic mode you need to deploy the service with a xref:services/deploy-service.adoc#apply[service descriptor]:
 
 [source, yaml]
@@ -95,6 +97,8 @@ NOTE: The primary region of a project is also the region that will be used as pr
 
 WARNING: Key Value Entities are currently not replicated across regions. The data of all Key Value Entities exists only in the primary region. All requests to Key Value Entities in other regions are forwarded to the primary region. This means that if Key Value Entities are used in a multi-region project the primary region should not be changed, since the data will not exist in the new region. Full replication of Key Value Entities is coming soon.
 
+IMPORTANT: Before changing the primary region, make sure that you understand and follow the steps described in the <<_how_to>>.
+
 To change the primary region of a project run:
 
 [source, command line]
@@ -131,3 +135,53 @@ To deploy a resource as a regional resource, you can specify a `--region` flag t
 If you have a global resource that you want to change to being a regional resource, this can be done by updating the resource, passing a `--region` flag, and passing the `--force-regional` flag to change it from a global to a regional resource. You must do this on the primary region first, otherwise the resource synchronization process may overwrite your changes.
 
 If you have a regional resource that you want to change to being a global resource, this can be done by updating the resource without specifying a `--region` flag, but passing the `--force-global` flag instead. The command will perform the update in the global region, and that configuration will be replicated to, and overwrite, the configuration in the rest of the regions.
+
+== How to
+
+There can be several reasons for changing multi-region resources and the primary of stateful components. In this section we describe a few scenarios and provide a checklist of the recommended procedure.
+
+=== Add a region
+
+1. Follow the instructions in <<_adding_a_region_to_a_project>>.
+2. You have to xref:services/deploy-service.adoc[deploy the services] again because the container images don't exist in the container registry of the new region, unless you use a global container registry.
+3. You need to xref:services/invoke-service.adoc[expose the services] in the new region.
+4. Stateful components are automatically replicated to the new region. This may take some time, and you can see progress in the Control Tower. Look for subscriptions with `RES` in the name. The event consumption lag will at first be high and then close to zero when the replication has been completed.
+
+=== Switch from static to dynamic primary selection mode for stateful components
+
+The default primary selection mode for stateful components is the static mode, as explained in <<_selecting_primary_for_stateful_components>>, and you might want to change that to dynamic after the first deployment. That section also describes how you change the primary selection mode with a service descriptor.
+
+Component instances that have already been created will remain to have their primary in the previous static primary region. New component instances will have their primary in the region they are first written in.
+
+1. First, change to the `none` primary selection mode. This is a read-only mode for all regions and all write requests will be rejected. The reason for changing to this intermediate mode is to make sure that all events have been replicated without creating new events.
+2. Wait until the deployment of the `none` primary selection mode has been successfully propagated to all regions. Observe in the Akka Console that the rolling update has been completed in all regions. You can also make sure that events consumed reach zero in the Control Tower. Look for subscriptions with `RES` in the name.
+3. Change to `dynamic` primary selection mode.
+
+=== Switch from dynamic to static primary selection mode for stateful components
+
+Static mode takes precedence over dynamic in the sense that a component instance will change its primary to the static region when there is a new write request to the component instance, and it persists a new event.
+
+<<_selecting_primary_for_stateful_components>> describes how you change the primary selection mode with a service descriptor.
+
+1. First, change to the `none` primary selection mode. This is a read-only mode for all regions and all write requests will be rejected. The reason for changing to this intermediate mode is to make sure that all events have been replicated without creating new events.
+2. Wait until the deployment of the `none` primary selection mode has been successfully propagated to all regions. Observe in the Akka Console that the rolling update has been completed in all regions. You can also make sure that events consumed reach zero in the Control Tower. Look for subscriptions with `RES` in the name.
+3. Change to `static` primary selection mode.
+
+=== Change the static primary region for stateful components
+
+You might want to change the static primary for stateful components if you migrate from one region to another, or need to bring down the primary region for maintenance for a while.
+
+<<_selecting_primary_for_stateful_components>> describes how you change the primary selection mode with a service descriptor.
+
+1. First, change to the `none` primary selection mode. This is a read-only mode for all regions and all write requests will be rejected. The reason for changing to this intermediate mode is to make sure that all events have been replicated without creating new events.
+2. Wait until the deployment of the `none` primary selection mode has been successfully propagated to all regions. Observe in the Akka Console that the rolling update has been completed in all regions. You can also make sure that events consumed reach zero in the Control Tower. Look for subscriptions with `RES` in the name.
+3. Follow instructions in <<_setting_the_primary_region_of_a_project>>.
+4. Change to `static` primary selection mode.
+
+=== Change primary region for disaster recovery
+
+If a region is failing you might want to fail over to another region that is working.
+
+1. If the failing region is the primary region, follow instructions in <<_setting_the_primary_region_of_a_project>> and change the primary to a non-failing region.
+2. If you are using `dynamic primary selection you should <<_switch_from_dynamic_to_static_primary_selection_mode_for_stateful_components>>. Depending on how responsive the failing region is this might not be possible to deploy to the failing region, but you should deploy it to the non-failing regions. The reason for this is that otherwise write requests will still be routed to the failing region for component instances that have their primary in the failing region.
+3. Be aware of that events that were written in the failing region and had not been replicated to other regions before the hard failover will be replicated when the regions are connected again. There are no guarantees regarding the order of these "old" events and any new events written by the new primary, which could lead to conflicting states across regions.
