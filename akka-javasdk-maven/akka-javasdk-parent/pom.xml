@@ -25,12 +25,8 @@
     <properties>
         <logback.configurationFile>logback-runtime-dev-mode.xml</logback.configurationFile>
 
-        <!-- archetype need to override container.registry and organisation -->
-        <container.registry>kcr.us-east-1.kalix.io</container.registry>
-        <organization>acme</organization>
-
-        <dockerImage>${container.registry}/${organization}/${project.artifactId}</dockerImage>
-        <dockerTag>${project.version}-${build.timestamp}</dockerTag>
+        <docker.image>${project.artifactId}</docker.image>
+        <docker.tag>${project.version}-${build.timestamp}</docker.tag>
 
         <!-- note that this image does never actually run the service, it's just a means for distribution -->
         <docker.base.image>alpine:3.14</docker.base.image>
@@ -124,7 +120,7 @@
                     <configuration>
                         <images>
                             <image>
-                                <name>${dockerImage}:%l</name>
+                                <name>${docker.image}:%l</name>
                                 <build>
                                     <!-- Base Docker image which contains jre-->
                                     <from>${docker.base.image}</from>
@@ -133,7 +129,7 @@
                                     </buildOptions>
                                     <tags>
                                         <!-- tag for generated image -->
-                                        <tag>${dockerTag}</tag>
+                                        <tag>${docker.tag}</tag>
                                     </tags>
                                     <labels>
                                         <io.kalix.container-type>init</io.kalix.container-type>

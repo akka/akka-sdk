@@ -123,9 +123,7 @@ Update your `pom.xml` with the ACR domain name and your Akka organization name
 ----
   <properties>
     ....
-    <akkaContainerRegistry>acr.us-east-1.akka.io</akkaContainerRegistry>
-    <akkaOrganization>acme</akkaOrganization>
-    <dockerImage>${akkaContainerRegistry}/${akkaOrganization}/${project.artifactId}</dockerImage>
+    <docker.image>acr.us-east-1.akka.io/acme/${project.artifactId}</docker.image>
   </properties>
 ----
 and run

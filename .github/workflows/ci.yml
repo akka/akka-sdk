@@ -397,8 +397,8 @@ jobs:
           cd samples/shopping-cart-quickstart
           mvn install --no-transfer-progress
           echo "Docker image contents"
-          tar tvf target/docker/kcr.us-east-1.kalix.io/acme/shopping-cart-quickstart/latest/tmp/docker-build.tar
-          tar tvf target/docker/kcr.us-east-1.kalix.io/acme/shopping-cart-quickstart/latest/tmp/docker-build.tar > content-list.txt
+          tar tvf target/docker/shopping-cart-quickstart/latest/tmp/docker-build.tar
+          tar tvf target/docker/shopping-cart-quickstart/latest/tmp/docker-build.tar > content-list.txt
           for artifact in "akka-actor" "akka-http-core" "kalix-dev-runtime"
           do
             if grep -q "$artifact" "content-list.txt"; then

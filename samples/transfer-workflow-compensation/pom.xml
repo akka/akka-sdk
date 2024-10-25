@@ -14,11 +14,6 @@
   <packaging>jar</packaging>
 
   <name>transfer-workflow-compensation</name>
-  <properties>
-    <!-- For Docker setup see https://doc.akka.io/operations/container-registries.html -->
-    <container.registry>kcr.us-east-1.kalix.io</container.registry>
-    <organization>acme</organization>
-  </properties>
 
   <dependencies>
     <dependency>

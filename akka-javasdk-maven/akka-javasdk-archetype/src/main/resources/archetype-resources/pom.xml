@@ -16,10 +16,6 @@
   #set( $D = '$' )
   <properties>
 
-    <!-- For Docker setup see https://doc.akka.io/operations/projects/container-registries.html -->
-    <container.registry>kcr.us-east-1.kalix.io</container.registry>
-    <organization>acme</organization>
-
   </properties>
 
   <dependencies>
