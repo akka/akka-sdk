@@ -15,6 +15,10 @@ Current versions
 * Akka libraries 24.10 releases
     - details to come
 
+* Akka Runtime 1.1.49
+   - JWT support for HTTP Endpoints
+   - Several smaller bug fixes and improvements
+
 * Akka CLI 3.0.1
     - Region management
     - Data export and import management
