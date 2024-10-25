@@ -59,7 +59,7 @@ public class JwtEndpointTest extends TestKitSupport {
                     var exception = assertThrows(Exception.class, call::get);
                     assertThat(exception.getCause().getClass()).isEqualTo(RuntimeException.class);
                     assertTrue(exception.getCause().getMessage().contains(
-                            "There are no JWT claims defined but trying accessing the JWT claims. The class or the method needs to be annotated with @JWTl."));
+                            "There are no JWT claims defined but trying accessing the JWT claims. The class or the method needs to be annotated with @JWT."));
                 });
 
     }

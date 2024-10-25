@@ -4,9 +4,7 @@
 
 package akka.javasdk.impl
 
-import akka.Done
 import akka.actor.ActorSystem
-import akka.actor.CoordinatedShutdown
 import akka.annotation.InternalApi
 import akka.javasdk.BuildInfo
 import com.google.protobuf.DescriptorProtos
@@ -18,10 +16,8 @@ import org.slf4j.LoggerFactory
 import java.util
 import java.util.Locale
 import java.util.UUID
-import java.util.concurrent.atomic.AtomicReference
 
 import scala.concurrent.Future
-import scala.concurrent.Promise
 import scala.io.Source
 import scala.jdk.CollectionConverters._
 
@@ -45,15 +41,6 @@ class DiscoveryImpl(
   private val applicationConfig = ApplicationConfig(system).getConfig
 
   private val serviceIncarnationUuid = UUID.randomUUID().toString
-
-  // Delay CoordinatedShutdown until the runtime has been terminated.
-  // This is updated from the `discover` call with a new Promise. Completed in the `proxyTerminated` call.
-  private val runtimeTerminatedRef = new AtomicReference[Promise[Done]](Promise.successful(Done))
-
-  CoordinatedShutdown(system).addTask(CoordinatedShutdown.PhaseBeforeServiceUnbind, "wait-for-runtime-terminated") {
-    () =>
-      runtimeTerminatedRef.get().future
-  }
 
   private def configuredOrElse(key: String, default: String): String =
     if (applicationConfig.hasPath(key)) applicationConfig.getString(key) else default
@@ -104,10 +91,6 @@ class DiscoveryImpl(
       // only (silently) send service info for hybrid runtime version probe
       Future.successful(Spec(serviceInfo = Some(serviceInfo)))
     } else {
-      // don't wait for runtime termination in dev-mode, because the user service may be stopped without stopping the runtime
-      val runtimeTerminatedPromise = if (in.devMode) Promise.successful[Done](Done) else Promise[Done]()
-      runtimeTerminatedRef.getAndSet(runtimeTerminatedPromise).trySuccess(Done)
-
       log.debug(s"Supported entity types: {}", in.supportedEntityTypes.mkString("[", ",", "]"))
 
       val unsupportedServices = services.values.filterNot { service =>
@@ -219,11 +202,8 @@ class DiscoveryImpl(
       } else None
     }
 
-  override def proxyTerminated(in: Empty): Future[Empty] = {
-    log.debug("Runtime terminated")
-    runtimeTerminatedRef.get().trySuccess(Done)
+  override def proxyTerminated(in: Empty): Future[Empty] =
     Future.successful(Empty.defaultInstance)
-  }
 }
 
 object DiscoveryImpl {
