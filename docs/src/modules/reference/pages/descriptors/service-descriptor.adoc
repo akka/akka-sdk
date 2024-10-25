@@ -24,11 +24,12 @@ The *ServiceSpec* defines the detailed configuration of an Akka service, includi
 |Field          |Type                      |Description
 
 |*image*        |string _required_         |The name of the docker image for the service container
-|*env*          |[]<<EnvVar>>         |Environment variables to be set in the service's container
-|*jwt*          |<<ServiceJwt>>       |JWT configuration for the service
-|*resources*    |<<ServiceResources>> |Resource configuration for the service, including instance size and autoscaling
-|*volumeMounts* |[]<<VolumeMount>>    |Volume mounts to mount in the service's container.
-|*telemetry*      |[]<<ServiceTelemetry>>    |Telemetry configuration for the service
+|*env*          |[]<<EnvVar>>              |Environment variables to be set in the service's container
+|*jwt*          |<<ServiceJwt>>            |JWT configuration for the service
+|*resources*    |<<ServiceResources>>      |Resource configuration for the service, including instance size and autoscaling
+|*volumeMounts* |[]<<VolumeMount>>         |Volume mounts to mount in the service's container
+|*telemetry*    |[]<<ServiceTelemetry>>    |Telemetry configuration for the service
+|*replication*  |<<ServiceReplication>>    |Replication configuration for stateful components in the service
 |===
 
 
@@ -234,4 +235,34 @@ Tracing configuration for the service.
 |Field       |Type                  |Description
 
 |*enabled*   |boolean    |Specifies if the service produces traces or not
+|===
+
+=== ServiceReplication
+
+Replication configuration for stateful components, such as Entities and Workflows, in the service. See xref:operations:projects/multi-region.adoc#_selecting_primary_for_stateful_components[Selecting primary for stateful components] for more information and considerations before changing.
+
+
+[cols="1,1,1"]
+|===
+|Field       |Type       |Description
+
+|*mode*      |string     |Replication mode. The only supported mode is `replicated-read`. Defaults to `replicated-read`.
+|*replicatedRead* | <<ReplicatedRead>>  |Configuration of `replicated-read` mode.
+
+|===
+
+=== ReplicatedRead
+
+Replicated read means that writes are handled by one primary replica and reads can be served by any replica.
+
+[cols="1,1,1"]
+|===
+|Field                    |Type        |Description
+
+|*PrimarySelectionMode*   |string     a|Selection of primary can be `static`, `dynamic` and `none`.
+
+* `static` - one region is defined as the primary for the project, and all stateful component instances will use that region as primary
+* `dynamic` - the primary is selected by each individual component instance based on where the first event is persisted
+* `none` - read-only mode for all regions, which causes all write requests to be rejected
+
 |===

@@ -61,7 +61,7 @@ When using dynamic mode, the application must ensure that a specific stateful co
 
 It is possible to switch between static and dynamic mode, but this should only be done with careful consideration of the consequences. For example, when changing the primary, not all updates may have been replicated and the new primary may not be fully up to date. This is why there is a third mode. This is a read-only mode for all regions, which causes all write requests to be rejected. This can be used as an intermediate stage to ensure that all updates have been replicated before the primary is changed.
 
-To use this read-only mode for all regions you set `static` in the service descriptor:
+To use this read-only mode for all regions you set `primarySelectionMode` to `none` in the service descriptor:
 
 [source, yaml]
 ----
