@@ -32,4 +32,4 @@ This also means that you might not see your own writes, immediately. Consider th
 
 If it's important for some read requests to have seen latest writes you can use `Effect` for such command handler, even though it is not persisting any events. Then the request will be routed to the primary and use the latest fully consistent state.
 
-The operational aspects are described in xref:operations:projects/multi-region.adoc[].
+The operational aspects are described in xref:operations:regions/index.adoc[].

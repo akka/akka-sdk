@@ -239,7 +239,7 @@ Tracing configuration for the service.
 
 === ServiceReplication
 
-Replication configuration for stateful components, such as Entities and Workflows, in the service. See xref:operations:projects/multi-region.adoc#_selecting_primary_for_stateful_components[Selecting primary for stateful components] for more information and considerations before changing.
+Replication configuration for stateful components, such as Entities and Workflows, in the service. See xref:operations:regions/index.adoc#selecting-primary[Selecting primary for stateful components] for more information and considerations before changing.
 
 
 [cols="1,1,1"]

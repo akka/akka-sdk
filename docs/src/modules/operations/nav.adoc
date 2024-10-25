@@ -10,7 +10,6 @@
 *** xref:operations:projects/index.adoc[]
 **** xref:operations:projects/create-project.adoc[Create]
 **** xref:operations:projects/manage-project-access.adoc[Manage users]
-**** xref:operations:projects/multi-region.adoc[]
 **** xref:operations:projects/container-registries.adoc[]
 ***** xref:operations:projects/external-container-registries.adoc[]
 **** xref:operations:projects/message-brokers.adoc[]
@@ -25,6 +24,8 @@
 **** xref:operations:services/invoke-service.adoc[]
 **** xref:operations:services/view-data.adoc[]
 **** xref:operations:services/data-management.adoc[]
+
+*** xref:operations:regions/index.adoc[]
 
 *** xref:operations:observability-and-monitoring/index.adoc[]
 **** xref:operations:observability-and-monitoring/view-logs.adoc[]
