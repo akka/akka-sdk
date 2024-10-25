@@ -111,7 +111,9 @@ recurse
 redeliveries
 remoting
 Remoting
+regionalization
 repartitions
+replicatedRead
 reshard
 RNGs
 runtimes
@@ -163,4 +165,3 @@ valueFrom
 volumeMounts
 Zolotko
 [Zz]sh
-replicatedRead

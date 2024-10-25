@@ -26,8 +26,9 @@ In the billing UI:
 * Billing data for each project within the selected organization is broken down into the following categories:
   ** *Network Data Transfer*: Charges for data transfer across all services, measured in GB.
   ** *Data Operations*: Total read and write operations for all services.
-  ** *Instance Hours*: Total hours service instances have been running during the month.
   ** *Data Persistence*: Total amount of data persisted during the month, measured in GB-Hours.
+
+These are all metered at the project, region, service scope and you can see the totals across organization, project, region, or service as you choose. 
 
 For more details on pricing, refer to https://akka.io/pricing#[Akka Pricing, window="new"].
 

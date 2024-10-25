@@ -193,9 +193,25 @@ Get cart state:
 curl localhost:9000/carts/123
 ----
 
+If you want to get a good view of your locally running service you can  xref:akka-cli:installation.adoc[] which will give you a tools to deploy and manage Akka services and also a local web based management console. 
+
+If you have the Akka CLI installed you can start the local management console with the following command.
+[source, command window]
+----
+akka local console
+----
+
+This will start a docker container running the web management console locally and you can open the listed URL to see your local service in action. 
+
 == Deploy to akka.io
 
 ifdef::todo[TODO: should it be here, or only in the developent-process page or where?]
+
+You can also deploy this service directly from your local command line. 
+[source,bash]
+----
+mvn compile exec:java
+----
 
 Deploy your service following the instructions at xref:concepts:development-process.adoc#_deploy[Development Process - Deploy to Akka].
 

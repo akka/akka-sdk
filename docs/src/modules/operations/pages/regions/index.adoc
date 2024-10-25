@@ -42,8 +42,8 @@ Stateful components like Event Sourced Entities or Workflow can be replicated to
 
 There are two operational choices for deciding where the primary is located:
 
-* static mode - one region is defined as the primary for the project, and all stateful component instances will use that region as primary
-* dynamic mode - the primary is selected by each individual component instance based on where the first event is persisted
+* *Static mode* - one region is defined as the primary for the project, and all stateful component instances will use that region as primary
+* *Dynamic mode* - the primary is selected by each individual component instance based on where the first event is persisted
 
 IMPORTANT: Before changing the primary selection mode, make sure that you understand and follow the steps described in the <<_how_to>>.
 
