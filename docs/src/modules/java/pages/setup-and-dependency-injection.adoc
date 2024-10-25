@@ -31,7 +31,7 @@ Injection is done as constructor parameters for the component implementation cla
 
 The following types can be injected in Service Setup, Endpoints, Consumers, Timed Actions and Workflow components:
 
-[cols="1,1"]
+[options="header" cols="1,1"]
 |===
 | Injectable class
 | Description
@@ -50,7 +50,7 @@ The following types can be injected in Service Setup, Endpoints, Consumers, Time
 
 Furthermore, the following component type specific types can also be injected:
 
-[cols="1,1"]
+[options="header" cols="1,1"]
 |===
 | Component Type
 | Injectable classes
