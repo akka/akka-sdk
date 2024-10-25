@@ -40,7 +40,7 @@ Much of the inner loop of the developer experience will be spent here. Using Jav
 
 === Application
 
-The application layer is where Akka really comes into play as the glue between your domain code and the Runtime. Every class in this layer will extend an Akka component class (i.e. something in the `akka.javasdk` package) which means it will be event-based and actor-based behind the scenes, though you never have to really think about that. Akka components are marked with a `@ComponentId` annotation to identify them to the Runtime.
+The application layer is where Akka really comes into play as the glue between your domain code and the Runtime. Most classes in this layer will extend an Akka component class (i.e. something in the `akka.javasdk` package) which means it will be event-based and actor-based behind the scenes, though you never have to really think about that.
 
 When you want to _do something_, i.e. change state or take action, you implement components methods returning an `Effect` or `ReadOnlyEffect`. An effect is a description of what the Runtime needs to do after the command is handled. You can think of it as a set of instructions you are passing to the Runtime, which will process the instructions on your behalf.
 
@@ -60,7 +60,17 @@ The API layer also uses other annotations to xref:java:access-control.adoc[contr
 
 You use xref:reference:glossary.adoc#component[Akka _Components_] to build your application. These Components are crucial for ensuring responsiveness. Here is a brief overview of each. With the exception of endpoints, Akka components will live in your `application` package.
 
-ifdef::todo[TODO:  add links to each component]
+The list of components are:
+
+* xref:java:event-sourced-entities.adoc[Event Sourced Entities]
+* xref:java:key-value-entities.adoc[Key Value Entities]
+* xref:java:http-endpoints.adoc[HTTP Endpoints]
+* xref:java:views.adoc[Views]
+* xref:java:workflows.adoc[Workflows]
+* xref:java:timed-actions.adoc[Timers]
+* xref:java:consuming-producing.adoc[Consumers]
+
+Akka components are marked with a `@ComponentId` or `@HttpEndpoint` annotation to identify them to the Runtime.
 
 === Entities
 

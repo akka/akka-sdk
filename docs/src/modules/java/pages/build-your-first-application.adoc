@@ -69,8 +69,10 @@ The list of components are:
 
 * xref:java:event-sourced-entities.adoc[Event Sourced Entities]
 * xref:java:key-value-entities.adoc[Key Value Entities]
+* xref:java:http-endpoints.adoc[HTTP Endpoints]
 * xref:java:views.adoc[Views]
-* xref:java:timed-actions.adoc[Timed Actions]
+* xref:java:workflows.adoc[Workflows]
+* xref:java:timed-actions.adoc[Timers]
 * xref:java:consuming-producing.adoc[Consumers]
 
 For this *Getting started* walk-through, we will implement a Shopping Cart based on an Event Sourced Entity.
