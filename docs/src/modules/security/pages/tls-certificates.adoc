@@ -1,72 +1,76 @@
 = TLS certificates
-:page-aliases: services:using-client-certificates.adoc[], concepts:using-client-certificates.adoc[], security:client-certificates[]
 
 include::ROOT:partial$include.adoc[]
 
-When Akka services are xref:operations:services/invoke-service.adoc#_exposing_services_to_the_internet[exposed to the internet using routes], all requests are served using Transport Layer Security (TLS). By default Akka will automatically provision a server certificate for you using https://letsencrypt.org[Let's Encrypt].
+When exposing Akka xref:operations:services/invoke-service.adoc#exposing-internet[services to the internet], Transport Layer Security (TLS) is used to secure all requests. By default, Akka provisions a server certificate via https://letsencrypt.org[Let’s Encrypt], which encrypts connections and ensures the client can verify the server's identity. However, Akka also allows for advanced TLS configurations, including the use of custom server certificates and client certificates for additional security.
 
-Using TLS ensures that a client can trust that the server they are connecting to is the server that they intended to connect to, and ensures that the connection is encrypted and can't be tampered with. However, the default configuration doesn't offer the server any guarantees about the identity of the client. By default, anyone on the internet can connect to your exposed services.
+== Why Use TLS?
+TLS helps achieve two essential security goals:
 
-Akka offers the ability to require clients to supply a valid certificate, as well as the ability to use a custom server provisioned certificate, rather than a certificate automatically provisioned by Let's Encrypt.
+* *Server Authentication*: Clients can trust that they are connecting to the intended server.
+* *Data Encryption*: TLS ensures that all communication is encrypted and protected from tampering.
 
-== Client certificates
+By default, Akka's setup does not authenticate the client’s identity, which means any internet client can connect to exposed services. To further secure access, Akka supports Mutual TLS (mTLS), requiring clients to present valid certificates.
 
-Akka's client certificate support, also known as Mutual TLS (mTLS) support, allows you to configure routes to require a client certificate. The supplied certificates will be validated using a trusted Certificate Authority that you supply.
+== Client Certificates (Mutual TLS)
+Client certificates (mTLS) allow you to require clients to present a trusted certificate to connect, offering a secure and coarse-grained level of authentication. This setup is ideal when you want to restrict access to services you control.
 
-Client certificates allow you to control who can connect to your services, by requiring all clients to present a certificate when they connect. This is a very course grained level of authentication, and is ideal for situations where you only want your service to be accessible to other services that you control.
-
-To enable this, you will need a Certificate Authority (CA) that is capable of issuing client certificates to the clients that you want to consume your Akka services. If this CA is used to issue certificates to more than just the services you want to invoke your service, such as if using a public CA, you will also need to configure xref:_client_certificate_validation[Client certificate validation]. Otherwise, Akka will trust any client that presents a certificate issued by that CA.
-
-Many organisations will already have a CA that they can use for this, perhaps using products like https://www.vaultproject.io/[HashiCorp Vault] or https://cert-manager.io[Kubernetes cert-manager]. If you already have a way of issuing client certificates from a CA, then to enable this feature, you just need that CA's certificate, and you can skip the next step.
+* *Certificate Authority (CA)*: To enable client certificates, you need a CA capable of issuing certificates to trusted clients. Many organizations use solutions like https://www.vaultproject.io/[HashiCorp Vault] or https://cert-manager.io[Kubernetes cert-manager]. If you already have a CA, you’ll only need its certificate to configure client certificate validation in Akka.
 
 === Creating your own CA
 
-If you don't have a mechanism for issuing client certificates with a CA, this guide will walk you through the process. We will use the https://smallstep.com/cli/[smallstep CLI], a tool that makes it very easy.
+If you don’t have an existing CA, you can create one using the https://smallstep.com/cli/[smallstep CLI]:
 
-First you will need to install the CLI using the instructions linked above.
-
-Then we'll create a CA certificate and key:
-
+. *Install smallstep CLI* (installation instructions available at https://smallstep.com/cli/[smallstep]).
+. Create a CA certificate and key:
++
 [source,shell]
 ----
 step certificate create --profile root-ca rootca.acme.org \
   my-root-ca.crt my-root-ca.key --insecure --no-password
 ----
 
-Now that we have the CA, we'll also create a client certificate. We don't actually need this to configure the client certificate support in Akka. Only the CA certificate is needed for that. The client certificate will be used by our client when we try to connect to the service:
-
+. *Generate a client certificate* (used by clients connecting to your service):
++
 [source,shell]
 ----
 step certificate create client.acme.org my-client.crt my-client.key \
   --ca my-root-ca.crt --ca-key my-root-ca.key --insecure --no-password
 ----
 
-=== Configuring the CA secret
+=== Configuring client CA in Akka
 
-Now that we have a CA certificate, we can configure it as a secret in Akka. The type of secret we're creating is called a TLS CA secret:
+Now that we have a CA certificate, we can configure it as a secret in Akka.
 
+. *Create a CA secret*: To use your CA certificate in Akka, configure it as a TLS CA secret:
++
 [source,shell]
 ----
 akka secret create tls-ca my-root-ca --cert ./my-root-ca.crt
 ----
 
-=== Configuring a route to use the secret
-
-We now need to configure a route to use a secret. Routes can be created by following the instructions in xref:operations:services/invoke-service.adoc#_exposing_services_to_the_internet[exposing services to the internet].
-
-[.tabset]
-CLI with command line arguments::
+. *Configure a route to use the CA secret*:
 +
---
-If you haven't yet created your route, then using the `akka route create` command, you can pass the flag `--client-ca-secret my-root-ca` when you create it. Otherwise, you can update it:
+We now need to configure a route to use a secret. Routes can be created by following the instructions in xref:operations:services/invoke-service.adoc#exposing-internet[exposing services to the internet].
+
+* If you haven’t created your route, use the following command to create it with mTLS enabled:
++
+[source,shell]
+----
+akka route create my-route --client-ca-secret my-root-ca
+----
+
+* To update an existing route:
++
 [source,shell]
 ----
 akka route update my-route --client-ca-secret my-root-ca
 ----
---
-CLI with a descriptor::
-+
---
+
+=== Configuring a client CA via the Route Descriptor
+
+For more consistent management of routes, use the xref:reference:descriptors/route-descriptor.adoc[Route Descriptor] to control all details of the route in one place.
+
 * Using either the `akka route edit` command or updating the route descriptor:
 +
 [source,yaml]
@@ -80,66 +84,61 @@ routes:
   route:
     service: shopping-cart
 ----
---
 
-==== Testing that the service is secured
+== Testing mTLS setup
 
-Your service should now be secured. You can test that it's secured using curl. Let's say the URL that your service is exposed on is `spring-tooth-3406.us-east1.akka.app`. Try issuing a simple curl request on it:
+Once configured, you can test the setup with curl. Here’s an example:
 
+* *Without Client Certificate*: the connection fails
++
+Your service should now be secured. You can test that it's secured using curl. Let's say the URL that your service is exposed on is `spring-tooth-3406.us-east1.akka.services`. Try issuing a simple curl request on it:
++
 [source]
 ----
-$ curl https://spring-tooth-3406.us-east1.akka.app -I
+$ curl https://spring-tooth-3406.us-east1.akka.services -I
 curl: (56) OpenSSL SSL_read: error:1409445C:SSL routines:ssl3_read_bytes:tlsv13 alert certificate required, errno 0
 ----
+This should return an error indicating that a client certificate is required.
 
-You can see that curl is reporting that a certificate is required to connect to this service. Now if you have a client certificate issued by the CA handy, like the one created above using smallstep, you can try the same request with the client certificate:
-
+* *With client certificate*:
++
 [source]
 ----
-$ curl https://spring-tooth-3406.us-east1.akka.app -I --key my-client.key --cert my-client.crt
+$ curl https://spring-tooth-3406.us-east1.akka.services -I --key my-client.key --cert my-client.crt
 HTTP/2 404
 content-length: 0
 date: Wed, 10 Nov 2021 05:00:59 GMT
 server: envoy
 x-envoy-upstream-service-time: 19
 ----
-
-Unless you have defined HTTP transcoding rules for the root path, your service is expected to respond with 404, as shown above. This verifies that the client certificate was accepted and the service is secured.
++
+If configured correctly, this will establish a secure connection.
 
 [#_client_certificate_validation]
-=== Client certificate validation
+== Client certificate validation
 
-If you wish to validate more than just that the certificate was signed by your configured CA, and what to validate the identity attached to the certificate, you can do that by specifying assertions to run against the subject of the client certificate. The client certificates subject can either be the Common Name (CN) in the Subject field of the certificate, or a DNS Subject Alternative Name in the certificate.
+You can add further restrictions by validating specific details on the client certificate’s subject. The client certificate's subject can either be the _Common_ _Name_ (CN) in the _Subject_ field of the certificate, or a _DNS Subject Alternative Name_ in the certificate. Use command line arguments or route descriptors to specify subject validation:
 
-Configuration client certificate validation can be done either with command line arguments or xref:operations:services/invoke-service.adoc#descriptor[route descriptors], though route descriptors are a little more powerful:
-
-[.tabset]
-CLI with command line arguments::
+* *Example command*:
 +
---
-
-If you haven't yet created your route, then using the `akka route create` command, you can pass the flag `--client-certificate-subject some.client.name` when you create it. Otherwise, you can update it:
-
 [source,shellscript]
 ----
 akka route update my-route --client-certificate-subject client.acme.org
 ----
-
-You can supply multiple `--client-certificate-subject` arguments to match multiple certificate subject names. Additionally, if the argument starts with a `*`, a suffix match will be done, and if it ends with a `*`, a prefix match will be done. For example:
-
++
+You can match multiple subject names by adding multiple --client-certificate-subject arguments or using wildcards (*). For instance:
++
 [source,shellscript]
 ----
 akka route update my-route --client-certificate-subject *.acme.org
 ----
 
-Will match any subject name under the `acme.org` domain name.
+=== Configuring certificate validation using the Route Descriptor
 
---
-CLI with a descriptor::
+For more consistent management of routes, use the xref:reference:descriptors/route-descriptor.adoc[Route Descriptor] to control all details of the route in one place.
+
+* Using either the `akka route edit` command or updating the route descriptor:
 +
---
-Using either the `akka route edit` command or updating the route descriptor:
-
 [source,yaml]
 ----
 host: ecommerce.acme.org
@@ -156,8 +155,8 @@ routes:
     service: shopping-cart
 ----
 
-Multiple subject matchers can be defined. `hasPrefix`, `hasSuffix` and `regex` can also be used to match the subject. For example, this will allow any certificate subject name under the domain `acme.org`:
-
+* *Multiple subject matchers* can be defined. `hasPrefix`, `hasSuffix` and `regex` can also be used to match the subject. For example, this will allow any certificate subject name under the domain `acme.org`:
++
 [source,yaml]
 ----
 host: ecommerce.acme.org
@@ -173,43 +172,37 @@ routes:
   route:
     service: shopping-cart
 ----
---
 
 == Custom server certificates
 
-There may be multiple reasons why you don't want to use the TLS certificates automatically provisioned by Let's Encrypt:
+While Let’s Encrypt automatically provides server certificates, you may wish to use a custom server certificate in certain situations:
 
-* The domain you want to provision the certificates at has a https://en.wikipedia.org/wiki/DNS_Certification_Authority_Authorization[Certification Authority Authorization] (CAA) policy configured in DNS, which does not permit Let's Encrypt to provision certificates for hostnames at it's domain, and you don't want to or can't change this policy.
-* You want to use certificates that are not publicly trusted, but rather are explicitly configured in your client and server.
+* *CA Authorization*: Your domain's Certification Authority Authorization (CAA) policy doesn’t permit Let’s Encrypt.
+* *Non-Public Certificates*: You may prefer certificates trusted only by your internal clients and servers.
 
-=== Configuring a TLS secret
+To configure a custom TLS secret:
 
-To configure a custom server TLS secret, you will need the key and certificate for the servers hostname in unencrypted PEM format. Once that has been provisioned, create it by running:
-
+. *Prepare Key and Certificate*: Ensure your server’s key and certificate are in unencrypted PEM format.
+. Create the TLS secret:
++
 [source,shell]
 ----
 akka secret create tls my-tls-cert --key ./my-key.pem --cert ./my-cert.pem
 ----
 
-=== Configuring a route to use the secret
-
-Now that you've created the secret, you can update or create your route to use it:
-
-[.tabset]
-CLI with command line arguments::
+. Add the TLS secret to a route:
 +
---
-If you haven't yet created your route, then using the `akka route create` command, you can pass the flag `--server-certificate-secret my-tls-cert` when you create it. Otherwise, you can update it:
 [source,shell]
 ----
 akka route update my-route --server-certificate-secret my-tls-cert
 ----
---
-CLI with a descriptor::
-+
---
-Using either the `akka route edit` command or updating the route descriptor:
 
+=== Configuring custom certificates with the Route Descriptor
+
+Use the xref:reference:descriptors/route-descriptor.adoc[Route Descriptor] to control all details of the route in one place.
+
+* Using either the `akka route edit` command or updating the route descriptor:
++
 [source,yaml]
 ----
 host: ecommerce.acme.org
@@ -221,4 +214,8 @@ routes:
   route:
     service: shopping-cart
 ----
---
+
+== See also
+* xref:reference:akka-cli/akka_secrets_create.adoc[`akka secret create` commands]
+* xref:reference:akka-cli/akka_routes.adoc[`akka routes` commands]
+* xref:reference:descriptors/route-descriptor.adoc[]

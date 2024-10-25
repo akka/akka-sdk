@@ -87,6 +87,7 @@ newname
 npx
 npm
 nullable
+Okta
 onboarding
 (?i)OpenID
 (?i)OTLP

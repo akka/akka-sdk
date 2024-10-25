@@ -7,6 +7,7 @@ For security reasons, _Services_ deployed to Akka have limited exposure by defau
 - By <<_exposing_services_to_the_internet,exposing services to the internet>> using routes
 - <<_testing_and_development,During testing and development>> from the console or using the `akka` proxy command
 
+[[exposing-internet]]
 == Exposing services to the internet
 
 Akka allows you to expose your services to the internet, using routes.

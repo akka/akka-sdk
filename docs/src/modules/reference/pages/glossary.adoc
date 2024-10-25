@@ -39,6 +39,8 @@ An _event handler_ is the only piece of code that is allowed to _update_ the sta
 
 [[key_value_entity]]Key Value Entity:: A Key Value Entity stores state in an update-in-place model, similar to a Key-Value store that supports CRUD (Create, Read, Update, Delete) operations. In Domain Driven Design (DDD) terms, a Value Entity is an "Entity." In contrast with "Value Objects," you reference Entities by an identifier and the value associated with that identifier can change (be updated) over time. These are discussed in more detail in xref:concepts:state-model.adoc#_the_key_value_state_model[Key Value state model].
 
+[[opendid-connect]]OpenID Connect:: Akka supports user management with Single Sign-On via OpenID Connect. For details see xref:security:index.adoc[].
+
 [[project]]Project:: A project is the root of one or more <<service>>s that are meant to be deployed and run together. The project is a logical container for these services and provides common management capabilities.
 
 [[runtime]]Runtime:: When you deploy a <<service>>, Akka wraps it with the runtime. The runtime manages entity state, and exposes the service implementation to the rest of the system. It translates incoming messages to commands and sends them to the service. The runtime also forms a cluster with other instances of the same service, allowing advanced distributed state management features such as sharding, replication and addressed communication between instances.

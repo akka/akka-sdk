@@ -1,20 +1,55 @@
 = Access Control Lists (ACLs)
-:page-aliases: services:using-acls.adoc[], concepts:using-acls.adoc[]
 
 include::ROOT:partial$include.adoc[]
 
-The simplest access control that Akka offers is through Access Control Lists (ACLs). ACLs allow you to specify lists of what can access your services, at multiple granularity. For example, you can configure a method that initiates a payment on a payment service to only accept requests from the shopping cart service. You can also control whether services or methods can be invoked from the Internet.
+Akka’s Access Control Lists (ACLs) provide a straightforward way to manage access to services within your projects, enabling fine-grained control over who or what can access each service or endpoint. ACLs allow you to define lists that specify permitted access sources, whether they are internal services or external internet clients.
 
-Within a Akka project, all communication between services uses Mutual TLS (mTLS). This is injected transparently by Akka. The HTTP or gRPC clients you use to make calls from one service to another do not need to be configured to do this. Akka transparently captures outgoing requests to other services and wraps them in an mTLS connection.
+== Key Capabilities of ACLs
+* *Granular Access Control*: Configure ACLs at the service or method level to specify which entities can access your service or invoke specific methods. For example, you can set up an ACL that restricts a payment initiation method to accept requests solely from the shopping cart service.
+* *Internet Access Control*: Use ACLs to control which services or methods can be accessed over the internet, providing additional security for services exposed to external clients.
 
-Based on this mTLS support, Akka is able to read and apply policies based on where the request was made from.
 
-== Principals
+== Secure Inter-Service Communication with Mutual TLS (mTLS)
+In Akka, all inter-service communication within a project is secured using Mutual TLS (mTLS), which is automatically managed by Akka. This means:
 
-A principal in Akka is an abstract concept that represents anything that can make or be the source of a request. Principals that are currently supported by Akka include other services, and the internet. Akka uses the above described mTLS support to associate requests with one or more principals.
+* *No Additional Configuration Needed*: HTTP or gRPC clients used for calls between services do not require specific configurations for mTLS.
+* *Transparent mTLS Injection*: Akka transparently captures outgoing requests and wraps them in an mTLS connection, securing communication between services.
 
-Note that requests that have the internet principal are requests that Akka has identified as coming through the Akka ingress, according to a configured route. This is identified by mTLS, however it does not imply that mTLS has been used to connect to the ingress from the client in the internet. These are separate hops. To configure mTLS from internet clients, see xref:security:tls-certificates.adoc[].
+Akka leverages mTLS to identify and authenticate services, enabling it to apply access policies based on the origin of each request.
+
+== Principals in ACLs
+In Akka, a principal is an abstract entity that represents the origin or source of a request. Principals determine how access is granted based on the request’s source. Currently, Akka supports the following principals:
+
+* *Service Principals*: Represent Akka services, allowing you to configure ACLs to permit access only to requests originating from specific services within the project.
+* *Internet Principal*: Represents external requests coming from the internet. Akka identifies these requests as originating from the Akka ingress (according to a configured route). Note that:
+** Requests labeled with the *internet principal* are validated by mTLS, but this does not imply that mTLS was used to connect to the ingress from the internet client itself. To enforce mTLS on connections from internet clients, refer to xref:tls-certificates.adoc[].
 
 == Configuring ACLs
+To configure ACLs and secure your Akka services effectively, follow these steps:
 
-To understand how to make use of ACLs to secure your Akka services in practice, see xref:java:access-control.adoc[].
+. *Identify the Service or Method*: Determine which services or methods require access restrictions. For example, a payment service might only need to accept requests from an authorized shopping cart service.
+. *Define Principals and Permissions*: Specify which principals (services or internet) are permitted to access the identified service or method.
+. *Apply ACL Policies*: Use Akka’s ACL configurations to enforce these permissions. You can configure ACLs via the Akka Console or CLI, where you can define which services can interact with others or be accessed from the internet.
+
+For detailed configuration steps and examples, see the xref:java:access-control.adoc[Access Control Lists in the *Developing* section].
+
+== Practical Example
+Suppose you have a payment service and wish to restrict access to only requests from the shopping cart service. You would:
+
+. *Define an ACL* for the payment service, allowing only the shopping cart service principal to access the payment initiation endpoint.
+. *Restrict Internet Access* by not associating the payment initiation endpoint with the internet principal, preventing direct internet access.
+
+This setup ensures that only internal, authorized services within the project can trigger sensitive actions on the payment service.
+
+== Summary
+* *ACLs* in Akka allow you to control service and method access at a granular level.
+* *mTLS* secures all inter-service communication, removing the need for additional client configurations.
+* *Principals* (service and internet) enable access policies based on request origin.
+* *Internet Access Control* lets you specify which services and methods are accessible from external clients.
+
+With ACLs, you can secure your Akka environment and ensure only authorized entities access sensitive services or endpoints.
+
+== See also
+
+* xref:tls-certificates.adoc[]
+* xref:java:access-control.adoc[] in the *Developing* section

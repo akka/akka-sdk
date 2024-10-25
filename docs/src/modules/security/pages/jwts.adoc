@@ -2,27 +2,38 @@
 
 include::ROOT:partial$include.adoc[]
 
+JWTs allow authentication and authorization of requests, especially for internet-facing applications and inter-service communication. JWTs provide a trusted mechanism for validating identities and permissions, ensuring secure interactions between services, users, and devices.
 
-JSON Web Tokens (JWTs) allow authenticating and authorizing requests. They are typically useful for requests from the users or devices on the Internet, allowing you to authenticate the user or device, and also control what that user or device can do, which entities they have access to, and so on. They can also be used for requests between services, without requiring anything external to your service to verify the tokens. This is ideal in a serverless environment where your services need to be able to run as autonomously as possible.
+This section presents how you create and manage JWTs with Akka. Using JWTs to secure services is presented in xref:java:auth-with-jwts.adoc[Authentication with JWTs in the Akka SDK].
 
-A JWT consists of a set of claims and a signature that verifies that these claims were issued by an issuer that you trust. These claims may identify a user, or they may indicate that a user has access to a particular resource, or that a user has a particular role, or is a member of a group, etc.
+== Key Concepts of JWTs
+* *Claims*: JWTs consist of claims and a signature. Claims represent user identity, roles, permissions, or access rights, allowing services to interpret what actions the JWT holder can perform.
+* *Signature*: Ensures the integrity of the JWT, verifying that it was issued by a trusted entity and has not been tampered with.
 
-For example, when a user logs in to a system, they may be given a JWT that contains their username as a claim. When the user makes a request on any of your services, they can present that JWT, and those services can verify that the token is valid, and read the username from the JWT to know that this request was made by that user.
+=== Use Cases
+* *User and Device Authentication*: JWTs authenticate internet users or devices and can define what actions they’re authorized to perform.
+* *Inter-Service Authorization*: JWTs facilitate secure serverless operations, where services validate tokens directly without needing an external verifier.
 
-Another common use case is to use claims for authorization. Imagine a social network, one of the services in that network is a friends service. When the user fetches their list of friends from the friends service, it may send them a JWT for each friend in their friends list. For each friend, the corresponding JWT will contain a claim indicating that the user is a friend of the logged in user. When the logged in user wants to send a message to another friend, they can include the JWT of that friend in their request to send a message, and the message service can verify that the JWT has the necessary friendship claim, and allow the message to be sent.
+TIP: Another common use case is to use claims for authorization. Imagine a social network, one of the services in that network is a friends service. When the user fetches their list of friends from the friends service, it may send them a JWT for each friend in their friends list. For each friend, the corresponding JWT will contain a claim indicating that the user is a friend of the logged in user. When the logged in user wants to send a message to another friend, they can include the JWT of that friend in their request to send a message, and the message service can verify that the JWT has the necessary friendship claim, and allow the message to be sent.
 
-When signing JWTs, there are two general approaches, one is to use symmetric keys, the other is to use asymmetric keys. Symmetric keys require the service that issues the token and the service that verifies the token to have the same key. Because they have the same key, they can both issue the same tokens. Symmetric keys are very simple, and are useful when you trust all the services that are verifying keys.
 
-Asymmetric keys have a private key, and a public key. Services that are issuing tokens need the private key, and only the private key can be used to issue tokens. Services that are verifying tokens only need the public key, and the public key can't be used to issue tokens. This is useful for when you don't trust the services that are verifying tokens.
+== JWT Signing Approaches
+JWTs can be signed using _symmetric_ or _asymmetric_ keys:
 
-== JWT Key Configuration
+* *Symmetric Keys*: Simple setup where both issuer and verifier share a secret key. Useful in trusted environments.
+* *Asymmetric Keys*: Use a private key to sign and a public key to verify. Useful when verifying parties are untrusted, as only the private key can sign tokens.
 
-Before the JWT feature can be used, JWT keys need to be set up for a service. Each service can have a list of keys associated with it. This allows JWTs from multiple different sources and for multiple different destinations that may require their own keys to be validated and signed. Akka decides on a key to use first by issuer, then by key id. If a JWT has no issuer defined, then all keys are considered capable of signing or validating it. If a JWT has no key id defined, then the first key in the list that matches the issuer and algorithm being used is chosen.
+== Configuring JWT keys
+
+Before the JWT feature can be used, JWT keys need to be set up for a service.
+
+=== Supported algorithms
+Akka supports a range of algorithms, including HMAC (HS256, HS384, HS512) for symmetric keys and RSA/ECDSA/Ed25519 for asymmetric keys.
 
 Akka supports the following algorithms:
 
 |===
-|Name |Description |Type
+|Algorithm |Description |Type
 
 |HMD5 |HMAC with MD5 |Symmetric
 
@@ -49,26 +60,36 @@ Akka supports the following algorithms:
 |Ed25519 |Ed25519 |Asymmetric
 |===
 
-Which algorithm is suitable for you to use depends on your particular requirements, but we recommend `HS256` for symmetric keys, and `ES256` for asymmetric keys.
+[NOTE]
+.Recommendation:
+====
+Use HS256 for symmetric keys and ES256 for asymmetric keys.
+====
 
-=== Listing keys
+=== Setting up JWT keys
 
-You can list all the keys in your service by running:
+Each service can have multiple keys to handle JWTs from different sources or for various destinations. Akka decides on a key to use first by _issuer_, then by _key id_. If a JWT has no issuer defined, then all keys are considered capable of signing or validating it. If a JWT has no key id defined, then the first key in the list that matches the issuer and algorithm being used is chosen.
 
+* *Listing keys*: View existing JWT keys:
++
+[source,shell]
 ----
 akka services jwts list <my-service>
 ----
-
++
+[NOTE]
+--
 This command does not output the secrets themselves. To see the secrets, you can output as JSON:
 
+[source,shell]
 ----
 akka services jwts list <my-service> -o json
 ----
+--
 
-=== Generating a key for a service
-
-If you don’t have a specific key that you want to use, you can let akka generate one for you:
-
+* *Generating a key*: This generates a new JWT key and configures your service with it:
++
+[source,shell]
 ----
 akka services jwts generate <my-service> \
   --key-id <my-key-id> \
@@ -76,7 +97,9 @@ akka services jwts generate <my-service> \
   --issuer <my-issuer> \
   --secret <my-secret-name>
 ----
-
++
+[NOTE]
+--
 This will do two things, it will:
 
 * Create a new secret suitable for use with the selected algorithm named according to the `--secret` argument.
@@ -85,11 +108,11 @@ This will do two things, it will:
 The `--issuer` is optional, but recommended. It will ensure that if a JWT specifies an issuer claim (`iss`), only that key will be used to verify that claim. This prevents spoofing of issuer claims. The `--key-id` is required, and should be unique to the service.
 
 The `--secret` argument is optional, if not present, the name of the secret will be the argument passed to `--key-id`.
+--
 
-=== Adding a key for a service
-
-If you've already created a suitable JWT secret, you can add it to a service. For example, perhaps you generated a secret for service A, and you want service B to reuse the same secret. This can be done using the `akka service jwts add` command:
-
+* *Adding a key*: Use an existing key by adding it to the service configuration:
++
+[source,shell]
 ----
 akka services jwts add <my-service> \
   --key-id <my-key-id> \
@@ -98,42 +121,59 @@ akka services jwts add <my-service> \
   --secret <my-secret-name>
 ----
 
-==== Managing secrets
+== Managing secrets
 
-To create secrets yourself, you can use the `akka secrets` command. To create a symmetric secret for use with HMAC algorithms:
+JWT secrets are essential for signing and validating tokens, and Akka supports both symmetric and asymmetric secret types.
 
+* *Creating symmetric secrets*:
++
+[source,shell]
 ----
-akka secrets create symmetric <my-secret-name> \
-  --secret-key-literal "<some-secret-text>"
+akka secrets create symmetric <my-secret-name> --secret-key-literal "<some-secret-text>"
 ----
-
++
+[NOTE]
+--
 The secret can also come from a file:
 
+[source,shell]
 ----
-akka secrets create symmetric <my-secret-name> \
-  --secret-key /path/to/secret.key
+akka secrets create symmetric <my-secret-name> --secret-key /path/to/secret.key
 ----
+--
 
-To create an asymmetric secret:
-
+* *Creating asymmetric secrets*:
++
+. *Specify a private and public key*:
++
+[source,shell]
 ----
 akka secrets create asymmetric <my-secret-name> \
   --private-key /path/to/private.key \
   --public-key /path/to/public.key
 ----
-
-The public and private keys must be PEM encoded keys, either RSA, ECDSA or Ed25519. We recommend PKCS8 encoded private keys (that is, keys with a PEM header of `BEGIN PRIVATE KEY`) and PKIX encoded public keys (with a header of `BEGIN PUBLIC KEY`), but we also support PKCS1 (`BEGIN RSA PRIVATE/PUBLIC KEY`) and SEC.1 (`BEGIN EC PRIVATE KEY`). For some encodings, `akka` may prompt to convert them to a format that the JWT support will work with.
-
-The public and private keys are optional, however you must specify at least one of them. For example, if you have a service that only needs the key to validate JWTs issued by another service, you may configure a secret for it that just contains the public key so that it is unable to sign JWTs with that key.
-
-If you only have the private key, you can also ask Akka to extract the public key from the private key, rather than having to do it manually yourself and passing it using the `--public-key` flag:
-
+. *Extract the public key* (optional): If only a private key is provided, Akka can automatically extract the public key:
++
+[source,shell]
 ----
 akka secrets create asymmetric <my-secret-name> \
   --private-key /path/to/private.key \
   --extract-public-key
 ----
 
+[NOTE]
+.Formats supported:
+--
+The public and private keys must be PEM encoded keys, either RSA, ECDSA or Ed25519. We recommend PKCS8 encoded private keys (that is, keys with a PEM header of `BEGIN PRIVATE KEY`) and PKIX encoded public keys (with a header of `BEGIN PUBLIC KEY`), but we also support PKCS1 (`BEGIN RSA PRIVATE/PUBLIC KEY`) and SEC.1 (`BEGIN EC PRIVATE KEY`).
+--
+
 == Using JWTs
 
-Once you generated a token and provided it to your service, you still need to configure which endpoint requires such token. For more information on that, consult xref:java:auth-with-jwts.adoc[].
+Once configured, JWTs can be used for endpoint-specific authentication and authorization.
+
+* *Specify Required JWTs for Endpoints*: Define which endpoints require JWTs and specify validation criteria for claims. Refer to the xref:java:auth-with-jwts.adoc[Authentication with JWTs in the Akka SDK] for using endpoint security.
+
+== See also
+* xref:java:auth-with-jwts.adoc[Authentication with JWTs in the Akka SDK]
+* xref:reference:akka-cli/akka_services_jwts.adoc#_see_also[`akka service jwt` commands]
+* xref:reference:akka-cli/akka_secrets.adoc#_see_also[`akka secrets` commands]
