@@ -4,7 +4,7 @@ include::ROOT:partial$include.adoc[]
 
 xref:reference:glossary.adoc#key_value_entity[Key Value Entities] are entities that persist the full state on every change. Only the latest state is stored, so we don’t have access to any of the history of changes, unlike the event sourced storage used by xref:java:event-sourced-entities.adoc[Event Sourced Entities].
 
-NOTE: Key Value Entities currently doesn't support multi-region replication.
+IMPORTANT: Key Value Entities are currently not replicated across regions. The data of all Key Value Entities exists only in the primary region. All requests to Key Value Entities in other regions are forwarded to the primary region. This means that if Key Value Entities are used in a multi-region project the primary region should not be changed, since the data will not exist in the new region. Full replication of Key Value Entities is coming soon.
 
 include::partial$entity-sharding.adoc[]
 
