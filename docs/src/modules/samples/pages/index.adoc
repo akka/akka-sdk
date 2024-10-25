@@ -22,3 +22,31 @@ Other samples are available that demonstrate important patterns and abstractions
 
 [sidebar]
 It is also possible to deploy a pre-built sample project in https://console.akka.io[the Akka console], eliminating the need for local development.
+
+== Maven archetype
+
+To create the build structure of a new service you can use the Maven archetype. From a command window, in the parent directory of the new service, run the following:
+
+[.tabset]
+Linux or macOS::
++
+--
+[source,command window, subs="attributes"]
+----
+mvn archetype:generate \
+  -DarchetypeGroupId=io.akka \
+  -DarchetypeArtifactId=akka-javasdk-archetype \
+  -DarchetypeVersion={akka-javasdk-version}
+----
+--
+Windows 10+::
++
+--
+[source,command window, subs="attributes"]
+----
+mvn archetype:generate ^
+  -DarchetypeGroupId=io.akka ^
+  -DarchetypeArtifactId=akka-javasdk-archetype ^
+  -DarchetypeVersion={akka-javasdk-version}
+----
+--
