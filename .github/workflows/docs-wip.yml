@@ -23,6 +23,8 @@ jobs:
         with:
           ref: main
           fetch-tags: true # required for version.sh
+          # we don't know what commit the last tag was, it's safer to get entire repo
+          fetch-depth: 0
 
       - name: Coursier cache
         # https://github.com/coursier/cache-action/releases
