@@ -27,6 +27,12 @@ then
   exit 1
 fi
 
+if [[ $SDK_VERSION == *SNAPSHOT* ]]
+then
+  echo "This version ["$SDK_VERSION"] is a snapshot. Not publishing to Maven Central Portal"
+  exit 0
+fi
+
 cd akka-javasdk-maven
 ../.github/patch-maven-versions.sh
 
