@@ -7,7 +7,10 @@ include::ROOT:partial$include.adoc[]
 Akka services have two different modes, *static* or *dynamic*, which controls how they perform replication for stateful components. This is outlined in  xref:operations:projects/multi-region.adoc#_selecting_primary_for_stateful_components[Selecting primary for stateful components]. It is important to note that setting this mode has the following implications for your project. 
 
 ==== Event Sourced Entities 
-If the service is set to static primary selection mode Event Sourced Entities will use the primary project region as their primary data region. They will still replicate events, and hence state, to all regions in the project, but will only be writeable in the primary. Akka will route update requests to this region from any endpoint. If the primary selection mode is dynamic then each entity instance will use the region it was created in as its primary data region and be writeable only in that region. Again Akka will forward write requests to the appropriate region on a per instance basis. 
+If the service is set to static primary selection mode Event Sourced Entities will use the primary project region as their primary data region. They will still replicate events, and hence state, to all regions in the project, but will only be writeable in the primary. Akka will route update requests to this region from any endpoint. If the primary selection mode is dynamic then each entity instance will use the region it was created in as its primary data region and be writeable only in that region. Again Akka will forward write requests to the appropriate region on a per instance basis.
+
+==== Workflows
+Workflows handle writes, reads and forwarding of requests in the same way as Event Sourced Entities, with the addition that actions are only performed by the primary Workflow instance.
 
 ==== Key Value Entities
 Static primary selection mode impacts Key Value Entities by specifying one region, the primary region, to be the source for all Key Value Entities in the project. Routing for Key Value Entities automatically forwards all requests from any regional endpoint to this primary region. 
