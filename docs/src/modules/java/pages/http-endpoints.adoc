@@ -122,10 +122,13 @@ it will be injected by the SDK.
 ----
 include::example$shopping-cart-quickstart/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java[tag=endpoint-component-interaction]
 ----
-<1> Accept the `ComponentClient` and keep it in a field
-<2> The component client can be used to interact with other components
-<3> Result of a request to a component is a `CompletionStage<T>`, it can be returned directly to let Akka serialize it
-<4> Or mapped to a more suitable response, in this case, `200 Ok` with an empty body.
+<1> Common path prefix for all methods in the same class `/carts`.
+<2> Accept the `ComponentClient` and keep it in a field.
+<3> GET endpoint path is combined with a path parameter name, e.g. `/carts/123`.
+<4> The component client can be used to interact with other components.
+<5> Result of a request to a component is a `CompletionStage<T>`, it can be returned directly to let Akka serialize it.
+<6> Use path parameter `{cartId}` in combination with request body `ShoppingCart.LineItem`.
+<7> Result of request mapped to a more suitable response, in this case, `200 Ok` with an empty body.
 
 For more details see xref:component-and-service-calls.adoc[]
 

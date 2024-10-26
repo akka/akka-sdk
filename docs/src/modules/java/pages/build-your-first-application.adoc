@@ -152,16 +152,22 @@ include::example$shopping-cart-quickstart/src/main/java/shoppingcart/application
 
 === Define the external API
 
-The `Shopping Cart` API is defined by the `ShoppingCartEndpoint`.
+The shopping cart API is defined by the `ShoppingCartEndpoint`.
 
 Create a class named `ShoppingCartEndpoint` in package `shoppingcart.api`.
-
 
 [source,java,indent=0]
 .{sample-base-url}/shopping-cart-quickstart/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java[ShoppingCartEndpoint.java]
 ----
 include::example$shopping-cart-quickstart/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java[tags=top;class;get;addItem]
 ----
+<1> Annotate the class so Akka can identify it as an Endpoint with a common path prefix for all methods `/carts`.
+<2> `ComponentClient` utility enables components to interact with each other.
+<3> GET endpoint path is combined with a path parameter name, e.g. `/carts/123`.
+<4> `ComponentClient` calling a command handler on an Event Sourced Entity from inside an Endpoint.
+<5> Result of request is a `CompletionStage<T>`, in this case a `CompletionStage<ShoppingCart>`.
+<6> Use path parameter `{cartId}` in combination with request body `ShoppingCart.LineItem`.
+<7> Map request to a more suitable response, in this case an `HTTP 200 OK` response.
 
 == Run locally
 

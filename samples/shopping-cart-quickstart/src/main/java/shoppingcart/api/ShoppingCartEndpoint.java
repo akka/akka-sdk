@@ -25,34 +25,34 @@ import java.util.concurrent.CompletionStage;
 // For actual services meant for production this must be carefully considered, and often set more limited
 // tag::endpoint-component-interaction[]
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
-@HttpEndpoint("/carts")
+@HttpEndpoint("/carts") // <1>
 public class ShoppingCartEndpoint {
 
   private final ComponentClient componentClient;
 
-  public ShoppingCartEndpoint(ComponentClient componentClient) { // <1>
+  public ShoppingCartEndpoint(ComponentClient componentClient) { // <2>
     this.componentClient = componentClient;
   }
 
   // end::class[]
 
   // tag::get[]
-  @Get("/{cartId}")
+  @Get("/{cartId}") // <3>
   public CompletionStage<ShoppingCart> get(String cartId) {
-    return componentClient.forEventSourcedEntity(cartId) // <2>
+    return componentClient.forEventSourcedEntity(cartId) // <4>
         .method(ShoppingCartEntity::getCart)
-        .invokeAsync(); // <3>
+        .invokeAsync(); // <5>
   }
 
   // end::get[]
 
   // tag::addItem[]
-  @Put("/{cartId}/item")
+  @Put("/{cartId}/item") // <6>
   public CompletionStage<HttpResponse> addItem(String cartId, ShoppingCart.LineItem item) {
     return componentClient.forEventSourcedEntity(cartId)
       .method(ShoppingCartEntity::addItem)
       .invokeAsync(item)
-      .thenApply(__ -> HttpResponses.ok()); // <4>
+      .thenApply(__ -> HttpResponses.ok()); // <7>
   }
   // end::endpoint-component-interaction[]
 
