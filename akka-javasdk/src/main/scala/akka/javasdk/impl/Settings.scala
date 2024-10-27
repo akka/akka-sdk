@@ -20,7 +20,7 @@ private[impl] object Settings {
     Settings(
       snapshotEvery = sdkConfig.getInt("event-sourced-entity.snapshot-every"),
       cleanupDeletedEventSourcedEntityAfter = sdkConfig.getDuration("event-sourced-entity.cleanup-deleted-after"),
-      cleanupDeletedValueEntityAfter = sdkConfig.getDuration("value-entity.cleanup-deleted-after"),
+      cleanupDeletedKeyValueEntityAfter = sdkConfig.getDuration("key-value-entity.cleanup-deleted-after"),
       devModeSettings = Option.when(sdkConfig.getBoolean("dev-mode.enabled"))(
         DevModeSettings(
           serviceName = sdkConfig.getString("dev-mode.service-name"),
@@ -37,5 +37,5 @@ private[impl] object Settings {
 private[impl] final case class Settings(
     snapshotEvery: Int,
     cleanupDeletedEventSourcedEntityAfter: Duration,
-    cleanupDeletedValueEntityAfter: Duration,
+    cleanupDeletedKeyValueEntityAfter: Duration,
     devModeSettings: Option[DevModeSettings])

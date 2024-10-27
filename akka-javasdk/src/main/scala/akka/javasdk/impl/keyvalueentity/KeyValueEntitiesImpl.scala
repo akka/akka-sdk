@@ -83,8 +83,8 @@ private[impl] final class KeyValueEntitiesImpl(
     (s.componentId, new TraceInstrumentation(s.componentId, KeyValueEntityCategory, tracerFactory))
   }.toMap
 
-  private val pbCleanupDeletedValueEntityAfter =
-    Some(com.google.protobuf.duration.Duration(configuration.cleanupDeletedValueEntityAfter))
+  private val pbCleanupDeletedKeyValueEntityAfter =
+    Some(com.google.protobuf.duration.Duration(configuration.cleanupDeletedKeyValueEntityAfter))
 
   /**
    * One stream will be established per active entity. Once established, the first message sent will be Init, which
@@ -201,7 +201,7 @@ private[impl] final class KeyValueEntitiesImpl(
               case _ => // non-error
                 val action: Option[ValueEntityAction] = effect.primaryEffect match {
                   case DeleteEntity =>
-                    Some(ValueEntityAction(Delete(ValueEntityDelete(pbCleanupDeletedValueEntityAfter))))
+                    Some(ValueEntityAction(Delete(ValueEntityDelete(pbCleanupDeletedKeyValueEntityAfter))))
                   case UpdateState(newState) =>
                     val newStateScalaPbAny = service.messageCodec.encodeScala(newState)
                     Some(ValueEntityAction(Update(ValueEntityUpdate(Some(newStateScalaPbAny)))))
