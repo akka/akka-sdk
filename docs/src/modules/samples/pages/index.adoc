@@ -21,7 +21,7 @@ Other samples are available that demonstrate important patterns and abstractions
 |=======================
 
 [sidebar]
-It is also possible to deploy a pre-built sample project in https://console.akka.io[the Akka console], eliminating the need for local development.
+It is also possible to deploy a pre-built sample project in https://console.akka.io[the Akka console, window="new"], eliminating the need for local development.
 
 == Maven archetype
 

@@ -49,7 +49,7 @@ aws-us-east-2   db805ff5-4fbd-4442-ab56-6e6a9a3c200a
 ----
 
 == Requesting new regions
-By default organizations are limited to which regions they can use, particularly for trial organizations. If you would like access to other regions, you can use the *?* in the upper right of the https://console.akka.io/[Akka Console] to request additional regions via the *Contact support* menu item.
+By default organizations are limited to which regions they can use, particularly for trial organizations. If you would like access to other regions, you can use the *?* in the upper right of the https://console.akka.io/[Akka Console, window="new"] to request additional regions via the *Contact support* menu item.
 
 == BYOC and self-hosted regions
 Akka also supports Bring Your Own Cloud (BYOC) meaning that we can run regions in your AWS, Azure, or Google Cloud account. These are not available to trial users.

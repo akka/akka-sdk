@@ -3,9 +3,9 @@ include::ROOT:partial$include.adoc[]
 
 To configure access to your Google Cloud Pub/Sub broker for your Akka project, you need to create a Google service account with access to your Google Cloud Pub/Sub broker and provide it to Akka.
 
-Details on doing this can be found in the https://cloud.google.com/iam/docs/creating-managing-service-accounts[Google documentation]. We provide simplified steps below.
+Details on doing this can be found in the https://cloud.google.com/iam/docs/creating-managing-service-accounts[Google documentation, window="new"]. We provide simplified steps below.
 
-The service account should allow for the `roles/pubsub.editor` https://cloud.google.com/pubsub/docs/access-control#roles[role].
+The service account should allow for the `roles/pubsub.editor` https://cloud.google.com/pubsub/docs/access-control#roles[role, window="new"].
 
 [#set-pubsub-service]
 == Setting up the service account
@@ -109,13 +109,13 @@ When your application consumes messages from Google Pub/Sub, it will try to deli
 
 * the GCP 'Subscription' has the 'Message ordering' flag enabled (this is the case by default for the subscriptions created by Akka)
 * the code that acts as a publisher has 'message ordering' enabled (if needed on this client SDK)
-* an ordering key is https://cloud.google.com/pubsub/docs/publisher#using-ordering-keys[provided for each message]
+* an ordering key is https://cloud.google.com/pubsub/docs/publisher#using-ordering-keys[provided for each message, window="new"]
 
 When passing messages to a certain entity or using them to update a view row by specifying the id as the Cloud Event `ce-subject` attribute on the message, the same id must be used for the Google Pub/Sub ordering key to guarantee that the messages are processed in order by the entity or view.
 
 WARNING: Correct ordering is especially important for topics that stream directly into views using the `transform_update` option: when messages for the same subject id are spread over different ordering keys (or do not have ordering keys), they may read stale data and lose updates.
 
-To achieve at-least-once delivery, messages that are not acknowledged before the https://cloud.google.com/pubsub/docs/subscriber#subscription-workflow[Ack deadline] will be redelivered. This means redeliveries of 'older' messages may arrive behind fresh deliveries of 'newer' messages.
+To achieve at-least-once delivery, messages that are not acknowledged before the https://cloud.google.com/pubsub/docs/subscriber#subscription-workflow[Ack deadline, window="new"] will be redelivered. This means redeliveries of 'older' messages may arrive behind fresh deliveries of 'newer' messages.
 
 When publishing messages to Google Pub/Sub from Akka, the `ce-subject` attribute, if present, is used as the ordering key for the message.
 

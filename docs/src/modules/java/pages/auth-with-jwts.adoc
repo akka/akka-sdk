@@ -8,7 +8,7 @@ Akka's JWT support is configured by placing annotations in your endpoints at the
 
 == Authentication
 
-Akka can validate the signature of JWT tokens provided in an Authorization header to grant access to your endpoints. The generation of tokens is not provided by Akka. In https://jwt.io/ you can find a simple way to generate tokens to start testing your services.
+Akka can validate the signature of JWT tokens provided in an Authorization header to grant access to your endpoints. The generation of tokens is not provided by Akka. In https://jwt.io/[window="new"] you can find a simple way to generate tokens to start testing your services.
 
 === Bearer token validation
 
@@ -28,9 +28,9 @@ Requests are only allowed if they have a bearer token that can be validated by o
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsImtpZCI6ImtleTEifQ.eyJpc3MiOiJteS1pc3N1ZXIifQ.-MLcf1-kB_1OQIZdy9_wYiFZcMOHsHOE8aJryS1tWq4
 ----
 
-You can check in https://jwt.io/ that this token contains the claim in the payload `iss: my-issuer`.
+You can check in https://jwt.io/[window="new"] that this token contains the claim in the payload `iss: my-issuer`.
 
-WARNING: It is recommended that `bearerTokenIssuers` contains the issuer that you use in your JWT key configuration. See https://doc.akka.io/security/jwts.html. Otherwise, any services with a trusted key can impersonate the issuer.
+WARNING: It is recommended that `bearerTokenIssuers` contains the issuer that you use in your JWT key configuration. See https://doc.akka.io/security/jwts.html[window="new"]. Otherwise, any services with a trusted key can impersonate the issuer.
 
 === Configuring JWT at class level or method level
 

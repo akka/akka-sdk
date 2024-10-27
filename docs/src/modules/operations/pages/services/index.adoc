@@ -7,7 +7,7 @@ A _Service_ is the core unit of deployment and scale in Akka. A service contains
 
 Akka _Services_ are deployed to xref:operations:projects/index.adoc[] where they run and are _grouped_ with other services. Services are fundamentally managed independently in keeping with established microservice principles, though some operations at the project level will be performed on all services, they are not done in an atomic unit.
 
-Services can be managed via the Akka CLI or the https://console.akka.io[Akka Console]. See xref:services/deploy-service.adoc[] for more on how to manage services.
+Services can be managed via the Akka CLI or the https://console.akka.io[Akka Console, window="new"]. See xref:services/deploy-service.adoc[] for more on how to manage services.
 
 * xref:services/invoke-service.adoc[]
 * xref:services/view-data.adoc[]

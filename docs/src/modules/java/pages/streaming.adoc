@@ -24,4 +24,4 @@ Sometimes, the built-in streaming capabilities mentioned above are not enough fo
 
 For running Akka Streams you need a so-called materializer, which can be injected as a constructor parameter of the component, see xref:setup-and-dependency-injection.adoc#_dependency_injection[dependency injection].
 
-You find more information about Akka Streams in the https://doc.akka.io/libraries/akka-core/current/stream/stream-introduction.html[Akka libraries documentation]. Many streaming connectors are provided by https://doc.akka.io/libraries/alpakka/current/[Alpakka].
+You find more information about Akka Streams in the https://doc.akka.io/libraries/akka-core/current/stream/stream-introduction.html[Akka libraries documentation, window="new"]. Many streaming connectors are provided by https://doc.akka.io/libraries/alpakka/current/[Alpakka, window="new"].

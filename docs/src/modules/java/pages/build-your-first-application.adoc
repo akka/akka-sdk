@@ -182,7 +182,7 @@ This command will start your Akka service.
 
 Once successfully started, any defined endpoints should be available at `localhost:9000`.
 
-You can try sending a request using https://curl.se[curl], a minimal command line HTTP client.
+You can try sending a request using https://curl.se[curl, window="new"], a minimal command line HTTP client.
 
 Add an item:
 

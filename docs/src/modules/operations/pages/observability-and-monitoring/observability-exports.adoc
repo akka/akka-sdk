@@ -63,7 +63,7 @@ service:
   image: <<docker-image>>
 ----
 
-Once this is set, Akka will start generating https://opentelemetry.io/docs/concepts/observability-primer/#spans[spans] for the following components: Event Sourced Entities, Value Entities, Actions, and Views. In addition, a View or an Action that subscribes to an Entity will receive the traces from that Entity and create a span related to the previous trace. 
+Once this is set, Akka will start generating https://opentelemetry.io/docs/concepts/observability-primer/#spans[spans, window="new"] for the following components: Event Sourced Entities, Value Entities, Actions, and Views. In addition, a View or an Action that subscribes to an Entity will receive the traces from that Entity and create a span related to the previous trace.
 
 Another possible use is to add a `traceparent` header when calling your Akka endpoint. In this case Akka will propagate this trace parent as the root of the subsequent interaction with a Akka component. Linking each Akka call to that external trace parent. 
 

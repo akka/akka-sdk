@@ -2,7 +2,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-Consuming and producing allow stream based interaction between services and also with the outside world. Consuming or publishing a stream of events is a common Microservices pattern. The source of events can be the journal of an Event Sourced Entity, the Key Value Entity state changes, a https://cloud.google.com/pubsub/docs/overview[Google Cloud Pub/Sub] or https://kafka.apache.org/[Apache Kafka] topic for asynchronous messaging between services.
+Consuming and producing allow stream based interaction between services and also with the outside world. Consuming or publishing a stream of events is a common Microservices pattern. The source of events can be the journal of an Event Sourced Entity, the Key Value Entity state changes, a https://cloud.google.com/pubsub/docs/overview[Google Cloud Pub/Sub, window="new"] or https://kafka.apache.org/[Apache Kafka, window="new"] topic for asynchronous messaging between services.
 
 In this section, we will explore how you can use a Consumer component to:
 
@@ -119,7 +119,7 @@ NOTE: By default, Akka assumes the messages in the topic were serialized as JSON
 
 This time instead of a single event handler, we have a handler for each message type. Consumer is able to match the payload type to the handler method based on the `ce-type` attribute of the CloudEvent message.
 
-Akka uses the https://cloudevents.io/[CloudEvents] standard when receiving from and publishing to topics. The CloudEvents specification standardizes message metadata so that systems can integrate more easily.
+Akka uses the https://cloudevents.io/[CloudEvents, window="new"] standard when receiving from and publishing to topics. The CloudEvents specification standardizes message metadata so that systems can integrate more easily.
 
 Describing the structure of the message payload is the CloudEvents feature most important to Akka.
 

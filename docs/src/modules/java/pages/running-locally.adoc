@@ -22,7 +22,7 @@ mvn compile exec:java
 
 == Invoking your service
 
-After you start the service it will accept invocations on `localhost:9000`. You can use https://curl.se[cURL] to invoke your service.
+After you start the service it will accept invocations on `localhost:9000`. You can use https://curl.se[cURL, window="new"] to invoke your service.
 
 === Using cURL
 
@@ -70,7 +70,7 @@ Start the console with the following command from a separate terminal window:
 akka local console
 ----
 
-Open link:http://localhost:3000/[]
+Open http://localhost:3000/[window="new"]
 
 Start one or more services as described in <<_starting_your_service>> and they will show up in the console. You can restart the services without restarting the console.
 

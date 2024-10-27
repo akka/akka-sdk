@@ -1,13 +1,13 @@
 = Using Confluent Cloud as Kafka service
 include::ROOT:partial$include.adoc[]
 
-Akka connects to https://confluent.cloud[Confluent Cloud] Kafka services via TLS, authenticating using SASL (Simple Authentication and Security Layer) PLAIN.
+Akka connects to https://confluent.cloud[Confluent Cloud, window="new"] Kafka services via TLS, authenticating using SASL (Simple Authentication and Security Layer) PLAIN.
 
 == Steps to connect to a Confluent Cloud Kafka broker
 
 Take the following steps to configure access to your Confluent Cloud Kafka broker for your Akka project.
 
-. Log in to https://confluent.cloud/[Confluent Cloud] and select the cluster Akka should connect to. Create a new cluster if you don't have one already.
+. Log in to https://confluent.cloud/[Confluent Cloud, window="new"] and select the cluster Akka should connect to. Create a new cluster if you don't have one already.
 
 . Create an API key for authentication
 
@@ -60,13 +60,13 @@ akka projects config get broker
 
 == Create a topic
 
-To create a topic, you can either use the Confluent Cloud user interface, or the https://docs.confluent.io/confluent-cli/current/overview.html[Confluent CLI].
+To create a topic, you can either use the Confluent Cloud user interface, or the https://docs.confluent.io/confluent-cli/current/overview.html[Confluent CLI, window="new"].
 
 [.tabset]
 Browser::
 +
 --
- . Open https://confluent.cloud/[Confluent Cloud]. 
+ . Open https://confluent.cloud/[Confluent Cloud, window="new"].
  . Go to your cluster
  . Go to the Topics page
  . Use the Add Topic button

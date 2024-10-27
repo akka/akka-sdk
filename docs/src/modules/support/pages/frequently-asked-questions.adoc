@@ -100,10 +100,10 @@ All data stored by Akka is encrypted at rest; this includes, but is not limited 
 - Information about projects, services, and users.
 - Deployment configuration such as environment variables and Docker credentials.
 
-Encryption is done using AES256, with a FIPS 140-2 validatedfootnote:fips[https://csrc.nist.gov/projects/cryptographic-module-validation-program/Certificate/3318] module of the cryptographic library 'Tink'.
+Encryption is done using AES256, with a FIPS 140-2 validatedfootnote:fips[https://csrc.nist.gov/projects/cryptographic-module-validation-program/Certificate/3318, window="new"] module of the cryptographic library 'Tink'.
 
 TIP: For a more detailed overview of encryption and key management in Google Cloud products see
-https://cloud.google.com/security/encryption-at-rest/default-encryption[Encryption at rest in Google Cloud].
+https://cloud.google.com/security/encryption-at-rest/default-encryption[Encryption at rest in Google Cloud, window="new"].
 
 === Will Akka meet my company security standards? 
 

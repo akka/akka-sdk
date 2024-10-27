@@ -36,7 +36,7 @@ macOS::
 --
 **Recommended approach**
 
-The recommended approach to install `akka` on macOS, is using https://brew.sh[brew]
+The recommended approach to install `akka` on macOS, is using https://brew.sh[brew, window="new"]
 
 [source,bash]
 ----

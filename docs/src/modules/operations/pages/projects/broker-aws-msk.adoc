@@ -1,20 +1,20 @@
 = Using AWS MSK as Kafka service
 include::ROOT:partial$include.adoc[]
 
-Akka connects to https://aws.amazon.com/msk/[AWS MSK] clusters via TLS, authenticating using SASL (Simple Authentication and Security Layer) SCRAM.
+Akka connects to https://aws.amazon.com/msk/[AWS MSK, window="new"] clusters via TLS, authenticating using SASL (Simple Authentication and Security Layer) SCRAM.
 
 Prerequisites not covered in detail by this guide:
 
 . The MSK instance must be provisioned, serverless MSK does not support SASL.
 
-. The MSK cluster must be set up with https://docs.aws.amazon.com/msk/latest/developerguide/msk-password.html[TLS for client broker connections and SASL/SCRAM for authentication]
+. The MSK cluster must be set up with https://docs.aws.amazon.com/msk/latest/developerguide/msk-password.html[TLS for client broker connections and SASL/SCRAM for authentication, window="new"]
 with a user and password to use for authenticating your Akka service
 
 .. The user and password is stored in a secret
 
 .. The secret must be encrypted with a specific key, MSK cannot use the default MKS encryption key
 
-. The provisioned cluster must be set up for https://docs.aws.amazon.com/msk/latest/developerguide/public-access.html[public access]
+. The provisioned cluster must be set up for https://docs.aws.amazon.com/msk/latest/developerguide/public-access.html[public access, window="new"]
 
 .. Creating relevant ACLs for the user to access the topics in your MSK cluster
 .. Disabling `allow.everyone.if.no.acl.found` in the MSK cluster config
@@ -40,7 +40,7 @@ akka secret create generic aws-msk-secret --literal pwd=<sasl user password>
 ----
 
 . Get the bootstrap brokers for your cluster, they can be found by selecting the cluster and clicking "View client information."
-There is a copy button at the top of "Public endpoint" that will copy a correctly formatted string with the bootstrap brokers. https://docs.aws.amazon.com/msk/latest/developerguide/msk-get-bootstrap-brokers.html[See AWS docs for other ways to inspect the bootstrap brokers.]
+There is a copy button at the top of "Public endpoint" that will copy a correctly formatted string with the bootstrap brokers. https://docs.aws.amazon.com/msk/latest/developerguide/msk-get-bootstrap-brokers.html[See AWS docs for other ways to inspect the bootstrap brokers, window="new"].
 
 . Use `akka projects config` to set the broker details. Set the MSK SASL username you have prepared and the bootstrap servers.
 +

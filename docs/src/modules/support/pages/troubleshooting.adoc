@@ -34,7 +34,7 @@ When you see the following error:
 [ERROR] Failed to execute goal org.xolstice.maven.plugins:protobuf-maven-plugin:0.6.1:compile (protobuf) on project customer-registry: protoc did not exit cleanly. Review output for more information. -> [Help 1]
 ```
 
-This problem is caused by JDK17 https://bugs.openjdk.java.net/browse/JDK-8270087[reporting some warnings to `stdout` instead of `stderr`]. The easiest way to resolve this is to avoid the situation leading to the warning, or switching to a JDK version without this bug, like JDK11.
+This problem is caused by JDK17 https://bugs.openjdk.java.net/browse/JDK-8270087[reporting some warnings to `stdout` instead of `stderr`, window="new"]. The easiest way to resolve this is to avoid the situation leading to the warning, or switching to a JDK version without this bug, like JDK11.
 
 == How to resolve service unavailable or imagePullBackoff errors
 

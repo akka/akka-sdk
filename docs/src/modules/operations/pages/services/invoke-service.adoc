@@ -14,7 +14,7 @@ Akka allows you to expose your services to the internet, using routes.
 
 A route declares how traffic to a particular hostname gets routed to your services. You can let Akka generate a hostname for you, or you can provide your own hostname at your own domain. If you want to use your own hostname, you'll need to register your domain and configure your Domain Name System (DNS) settings using a third party DNS service.
 
-All traffic to Akka uses Transport Layer Security (TLS). Akka will automatically provision a certificate for you using https://letsencrypt.org/[Let's Encrypt]. The certificate is provisioned whether you use a Akka provided hostname, or bring your own.
+All traffic to Akka uses Transport Layer Security (TLS). Akka will automatically provision a certificate for you using https://letsencrypt.org/[Let's Encrypt, window="new"]. The certificate is provisioned whether you use a Akka provided hostname, or bring your own.
 
 === Exposing a single service
 

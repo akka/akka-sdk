@@ -3,10 +3,10 @@ include::ROOT:partial$include.adoc[]
 
 == Jackson serialization
 
-You need to make the messages, events, or the state of Akka components serializable with https://github.com/FasterXML/jackson[Jackson]. The same is true for inputs and outputs of HTTP Endpoints. There are two ways to do this.
+You need to make the messages, events, or the state of Akka components serializable with https://github.com/FasterXML/jackson[Jackson, window="new"]. The same is true for inputs and outputs of HTTP Endpoints. There are two ways to do this.
 
-1. If you are using Java https://openjdk.org/jeps/395[record] then no annotation is needed. It just works. It's as simple as using `record` instead of `class`. Akka leverages https://github.com/FasterXML/[Jackson] under the hood and makes these records serializable for you.
-2. If you are using Java `class` then you need to annotate them with the https://github.com/FasterXML/jackson-annotations#usage-general[proper Jackson annotation].
+1. If you are using Java https://openjdk.org/jeps/395[record, window="new"] then no annotation is needed. It just works. It's as simple as using `record` instead of `class`. Akka leverages https://github.com/FasterXML/[Jackson] under the hood and makes these records serializable for you.
+2. If you are using Java `class` then you need to annotate them with the https://github.com/FasterXML/jackson-annotations#usage-general[proper Jackson annotation, window="new"].
 
 Akka uses a predefined `Jackson` configuration, for serialization. Use the `JsonSupport` utility to update the `ObjectMapper` with your custom requirements. To minimize the number of `Jackson` annotations, Java classes are compiled with the `-parameters` flag.
 [source,java,indent=0]

@@ -1,7 +1,7 @@
 = Configure message brokers
 include::ROOT:partial$include.adoc[]
 
-Akka eventing integrates with https://cloud.google.com/pubsub/docs/overview[Google Cloud Pub/Sub] and managed Kafka services such as https://www.confluent.io/confluent-cloud[Confluent Cloud] and https://aiven.io/kafka[Aiven for Apache Kafka] to enable asynchronous messaging.
+Akka eventing integrates with https://cloud.google.com/pubsub/docs/overview[Google Cloud Pub/Sub, window="new"] and managed Kafka services such as https://www.confluent.io/confluent-cloud[Confluent Cloud, window="new"] and https://aiven.io/kafka[Aiven for Apache Kafka, window="new"] to enable asynchronous messaging.
 
 Message brokers are configured on Akka Project level. A project can have one broker configuration, Akka eventing is independent of the broker technology.
 

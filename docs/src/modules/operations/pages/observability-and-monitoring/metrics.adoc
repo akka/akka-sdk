@@ -30,9 +30,9 @@ Filtering by  "Endpoint/Method" only affect the "Services" Category.
 == Categories
 === Services
 
-**Successful Requests:** Rate of successful requests per second (reqs/s) over time, by endpoint. This is calculated with https://prometheus.io/docs/prometheus/latest/querying/functions/#irate[irate].  
+**Successful Requests:** Rate of successful requests per second (reqs/s) over time, by endpoint. This is calculated with https://prometheus.io/docs/prometheus/latest/querying/functions/#irate[irate, window="new"].
 
-**Failed Requests:** Rate of requests (reqs/s) that raised an error when processing the request, over time, by endpoint. This is calculated with https://prometheus.io/docs/prometheus/latest/querying/functions/#irate[irate]. 
+**Failed Requests:** Rate of requests (reqs/s) that raised an error when processing the request, over time, by endpoint. This is calculated with https://prometheus.io/docs/prometheus/latest/querying/functions/#irate[irate, window="new"].
 
 **Processing time distribution(seconds):** Number of requests grouped by processing duration, by endpoint. This duration only includes processing inside the Akka service. This does not include the time between the client and the runtime from the request that generated the command, i.e. This does not include latency.
 
@@ -93,7 +93,7 @@ Processing time distribution(seconds): Idem.
 
 **Instances:** Number of running instances of the subscription.
 
-**Events consumed:** The processing rate of events consumed by a subscription. This is calculated with https://prometheus.io/docs/prometheus/latest/querying/functions/#irate[irate].
+**Events consumed:** The processing rate of events consumed by a subscription. This is calculated with https://prometheus.io/docs/prometheus/latest/querying/functions/#irate[irate, window="new"].
 
 
 

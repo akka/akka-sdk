@@ -4,7 +4,7 @@ include::ROOT:partial$include.adoc[]
 
 == Reactive principles
 
-Akka is ideally suited for the creation of _Microservices_. Microservices generally follow the Unix philosophy of "Do one thing and do it well." Akka allows developers to build systems that follow https://principles.reactive.foundation/[the Reactive Principles, window="new-tab"] without having to become distributed data or distributed computing experts. As a best practice, following the Reactive Principles in your design makes it easier to build distributed systems. https://akkademy.akka.io/learn/public/catalog/view/3[Akkademy, window="new-tab"] offers free courses on Reactive Architecture.
+Akka is ideally suited for the creation of _Microservices_. Microservices generally follow the Unix philosophy of "Do one thing and do it well." Akka allows developers to build systems that follow https://principles.reactive.foundation/[the Reactive Principles, window="new"] without having to become distributed data or distributed computing experts. As a best practice, following the Reactive Principles in your design makes it easier to build distributed systems. https://akkademy.akka.io/learn/public/catalog/view/3[Akkademy, window="new"] offers free courses on Reactive Architecture.
 
 == Domain Driven Design
 
@@ -16,7 +16,7 @@ Akka makes it easy and fast to build services using the concepts of Domain Drive
 [[bounded-context]]
 === Bounded context
 
-https://martinfowler.com/bliki/BoundedContext.html[Bounded context] is a concept that divides large domain models into smaller groups that are explicit about their interrelationships. Generally a microservice is a bounded context. You _may_ choose to have multiple bounded contexts in a microservice. 
+https://martinfowler.com/bliki/BoundedContext.html[Bounded context, window="new"] is a concept that divides large domain models into smaller groups that are explicit about their interrelationships. Generally a microservice is a bounded context. You _may_ choose to have multiple bounded contexts in a microservice.
 
 Each of these contexts will have autonomy to evolve the models it owns. Keeping each model within strict boundaries allows different modelling for entities that look similar but have slightly different meaning in each of the contexts. Each bounded contact should have its own domain, application, and API layers as described in xref:concepts:architecture-model.adoc[Akka architecture model].
 

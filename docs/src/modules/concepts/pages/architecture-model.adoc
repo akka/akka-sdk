@@ -74,7 +74,7 @@ Akka components are marked with a `@ComponentId` or `@HttpEndpoint` annotation t
 
 === Entities
 
-_Entities_ are the core components of Akka and provide persistence and state management. They map to your https://martinfowler.com/bliki/DDD_Aggregate.html[_domain aggregates_]. If you have a "Customer" domain aggregate, you almost certainly will have a `CustomerEntity` component to expose and manipulate it. This separation of concerns allows the domain object to remain purely business logic focused while the Entity handles runtime mechanics. Additionally, you may have other domain objects that are leafs of the domain aggregate. These do not need their own entity if they are just a leaf of the aggregate. An address is a good example.
+_Entities_ are the core components of Akka and provide persistence and state management. They map to your https://martinfowler.com/bliki/DDD_Aggregate.html[_domain aggregates_, window="new"]. If you have a "Customer" domain aggregate, you almost certainly will have a `CustomerEntity` component to expose and manipulate it. This separation of concerns allows the domain object to remain purely business logic focused while the Entity handles runtime mechanics. Additionally, you may have other domain objects that are leafs of the domain aggregate. These do not need their own entity if they are just a leaf of the aggregate. An address is a good example.
 
 There are two types of entities in Akka. Their difference lies in how they internally function and are persisted.
 

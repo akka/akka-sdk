@@ -1,15 +1,15 @@
 = Using Aiven for Apache Kafka
 include::ROOT:partial$include.adoc[]
 
-Akka connects to https://aiven.io[Aiven]'s Kafka service via TLS, using a CA certificate provided by Aiven for the service, authenticating using SASL (Simple Authentication and Security Layer) SCRAM.
+Akka connects to https://aiven.io[Aiven, window="new"]'s Kafka service via TLS, using a CA certificate provided by Aiven for the service, authenticating using SASL (Simple Authentication and Security Layer) SCRAM.
 
 NOTE: In this guide we use the default `avnadmin` account, but you may want to create a specific service user to use for your Akka service connection.
 
 == Steps to connect to an Aiven Kafka service
 
-. Log in to the https://console.aiven.io/[Aiven web console] and select the Aiven Kafka service Akka should connect to.
+. Log in to the https://console.aiven.io/[Aiven web console, window="new"] and select the Aiven Kafka service Akka should connect to.
 
-. Enable SASL for your Aiven Kafka (See Aiven's https://docs.aiven.io/docs/products/kafka/howto/kafka-sasl-auth[Use SASL Authentication with Apache Kafka])
+. Enable SASL for your Aiven Kafka (See Aiven's https://docs.aiven.io/docs/products/kafka/howto/kafka-sasl-auth[Use SASL Authentication with Apache Kafka, window="new"])
  .. Scroll down the Service overview page to the **Advanced configuration** section.
   .. Turn on the setting labelled `kafka_authentication_methods.sasl`, and click **Save advanced configuration**.
 +
@@ -72,9 +72,9 @@ To create a topic, you can either use the Aiven console, or the Aiven CLI.
 Browser::
 +
 --
-Instructions from Aiven's https://docs.aiven.io/docs/products/kafka/howto/create-topic[Creating an Apache Kafka topic]
+Instructions from Aiven's https://docs.aiven.io/docs/products/kafka/howto/create-topic[Creating an Apache Kafka topic, window="new"]
 
-. Open the https://console.aiven.io/[Aiven Console].
+. Open the https://console.aiven.io/[Aiven Console, window="new"].
 . In the Services page, click on the Aiven for Apache Kafka® service where you want to crate the topic.
 . Select the Topics tab:
 .. In the Add new topic section, enter a name for your topic.
@@ -86,7 +86,7 @@ You can now use the topic to connect with Akka.
 Aiven CLI::
 +
 --
-See Aiven's https://docs.aiven.io/docs/tools/cli/service/topic#avn-cli-service-topic-create[Manage Aiven for Apache Kafka topics]
+See Aiven's https://docs.aiven.io/docs/tools/cli/service/topic#avn-cli-service-topic-create[Manage Aiven for Apache Kafka topics, window="new"]
 [source, command line]
 ----
 avn service topic-create \

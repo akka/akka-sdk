@@ -2,7 +2,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-When exposing Akka xref:operations:services/invoke-service.adoc#exposing-internet[services to the internet], Transport Layer Security (TLS) is used to secure all requests. By default, Akka provisions a server certificate via https://letsencrypt.org[Let’s Encrypt], which encrypts connections and ensures the client can verify the server's identity. However, Akka also allows for advanced TLS configurations, including the use of custom server certificates and client certificates for additional security.
+When exposing Akka xref:operations:services/invoke-service.adoc#exposing-internet[services to the internet], Transport Layer Security (TLS) is used to secure all requests. By default, Akka provisions a server certificate via https://letsencrypt.org[Let’s Encrypt, window="new"], which encrypts connections and ensures the client can verify the server's identity. However, Akka also allows for advanced TLS configurations, including the use of custom server certificates and client certificates for additional security.
 
 == Why Use TLS?
 TLS helps achieve two essential security goals:
@@ -15,13 +15,13 @@ By default, Akka's setup does not authenticate the client’s identity, which me
 == Client Certificates (Mutual TLS)
 Client certificates (mTLS) allow you to require clients to present a trusted certificate to connect, offering a secure and coarse-grained level of authentication. This setup is ideal when you want to restrict access to services you control.
 
-* *Certificate Authority (CA)*: To enable client certificates, you need a CA capable of issuing certificates to trusted clients. Many organizations use solutions like https://www.vaultproject.io/[HashiCorp Vault] or https://cert-manager.io[Kubernetes cert-manager]. If you already have a CA, you’ll only need its certificate to configure client certificate validation in Akka.
+* *Certificate Authority (CA)*: To enable client certificates, you need a CA capable of issuing certificates to trusted clients. Many organizations use solutions like https://www.vaultproject.io/[HashiCorp Vault, window="new"] or https://cert-manager.io[Kubernetes cert-manager]. If you already have a CA, you’ll only need its certificate to configure client certificate validation in Akka.
 
 === Creating your own CA
 
-If you don’t have an existing CA, you can create one using the https://smallstep.com/cli/[smallstep CLI]:
+If you don’t have an existing CA, you can create one using the https://smallstep.com/cli/[smallstep CLI, window="new"]:
 
-. *Install smallstep CLI* (installation instructions available at https://smallstep.com/cli/[smallstep]).
+. *Install smallstep CLI* (installation instructions available at https://smallstep.com/cli/[smallstep, window="new"]).
 . Create a CA certificate and key:
 +
 [source,shell]
