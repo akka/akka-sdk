@@ -19,9 +19,15 @@ Current versions
    - JWT support for HTTP Endpoints
    - Several smaller bug fixes and improvements
 
-* Akka CLI 3.0.1
-    - Region management
-    - Data export and import management
+* Akka CLI 3.0.2
+    ** Added region synchronisation status for the following commands:
+        - akka service get
+        - akka service list
+        - akka routes get
+        - akka routes list
+        - akka project observability get
+    ** Region management
+    ** Data export and import management
 
 * Akka Runtime 1.1.46
     - View indexing improvements for some join conditions
