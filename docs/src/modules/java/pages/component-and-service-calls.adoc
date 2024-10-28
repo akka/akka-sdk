@@ -55,3 +55,14 @@ The HTTP client provider client is only available for injection in the following
 
 Calling HTTP services deployed on *different* Akka projects or any other external HTTP server is also done with the `HttpClientProvider`. Instead of a service name, the protocol and full server name is used when calling `httpClientFor`. For example `https://example.com` or `http://example.com`.
 
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/callanotherservice/CallExternalServiceEndpoint.java[CallExternalServiceEndpoint.java]
+----
+include::java:example$doc-snippets/src/main/java/com/example/callanotherservice/CallExternalServiceEndpoint.java[]
+----
+<1> Accept a `HttpClientProvider` parameter for the constructor
+<2> Look up a `HttpClient` for a service using `http` protocol and server name.
+<3> Issue a GET call to the path `/astros.json` on the server
+<4> Specify a class to parse the response body into
+<5> Once the call completes, handle the response.
+<6> Return an adapted result object which will be turned into a JSON response.
