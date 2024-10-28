@@ -1,4 +1,4 @@
-resolvers += "Akka library repository".at("https://repo.akka.io/maven")
+resolvers += "Akka repository".at("https://repo.akka.io/maven")
 
 addSbtPlugin("com.github.sbt" % "sbt-dynver" % "5.0.1")
 // even updated `akka-grpc.version` in pom.xml files

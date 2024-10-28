@@ -29,11 +29,4 @@
     </dependency>
   </dependencies>
 
-  <repositories>
-    <repository>
-      <id>akka-repository</id>
-      <name>Akka Repository</name>
-      <url>https://repo.akka.io/maven</url>
-    </repository>
-  </repositories>
 </project>

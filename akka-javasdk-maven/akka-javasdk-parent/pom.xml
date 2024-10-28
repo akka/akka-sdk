@@ -64,7 +64,7 @@
     <repositories>
         <repository>
             <id>akka-repository</id>
-            <name>Akka library repository</name>
+            <name>Akka repository</name>
             <url>https://repo.akka.io/maven</url>
         </repository>
     </repositories>
