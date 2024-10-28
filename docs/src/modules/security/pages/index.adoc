@@ -27,12 +27,12 @@ Similarly to projects, access to organizations is managed by granting users role
 
 === Single Sign-On
 
-Akka supports Single Sign-On (SSO) integration via *OpenID Connect* with third party providers such as https://auth0.com[Auth0, window="new"], https://www.okta.com/products/single-sign-on-customer-identity/[Okta, window="new"], and others. The Akka CLI supports configuring the desired OpenID Connect integration. Please enquire our xref::support:email.adoc[Support via the contact form] for details.
+Akka supports Single Sign-On (SSO) integration via *OpenID Connect* with third party providers such as https://auth0.com[Auth0, window="new"], https://www.okta.com/products/single-sign-on-customer-identity/[Okta, window="new"], and others. The Akka CLI supports configuring the desired OpenID Connect integration. For further details, please xref:support:email.adoc[contact our support team].
 
 === Multifactor authentication (MFA)
 
-Users accounts in Akka may be protected with _multifactor authentication_ (MFA) for increased security. Organizations in Akka can require their members to set up MFA before joining the organization. Please enquire our xref::support:email.adoc[Support via the contact form] for details.
+Users accounts in Akka may be protected with _multifactor authentication_ (MFA) for increased security. Organizations in Akka can require their members to set up MFA before joining the organization. For further details, please xref:support:email.adoc[contact our support team].
 
 === Audit logging for operating Akka services
 
-Akka records all executed commands when operating services for audit logging purposes. Please enquire our xref::support:email.adoc[Support via the contact form] for details.
+Akka records all executed commands when operating services for audit logging purposes. For further details, please xref:support:email.adoc[contact our support team].
