@@ -121,13 +121,28 @@ If you encounter issues, ensure that:
 
 For questions or assistance, please refer to our [online support resources](https://doc.akka.io/support/index.html).
 
-## Deploy
+## Deploying
 
-To deploy your service, install the `akka` CLI as documented in [Install Akka CLI](https://doc.akka.io/akka-cli/index.html), and configure a Docker Registry to upload your Docker image.
+You can use the [Akka Console](https://console.akka.io) to create a project and then deploy your service from the UI.
 
-Update the `dockerImage` property in the `pom.xml`, and refer to [Configuring Registries](https://doc.akka.io/operations/container-registries.html) for instructions on making your Docker image available to Akka.
+Build container image:
 
-Finally, use the [Akka Console](https://console.akka.io) to create a project. Deploy your service by packaging and publishing the Docker image through `mvn deploy`, then deploy the image via the `akka` CLI.
+```shell
+mvn install -DskipTests
+```
+
+You can also deploy your service from the CLI. Install the `akka` CLI as documented in
+[Install Akka CLI](https://doc.akka.io/akka-cli/index.html).
+
+Deploy the service using the image tag from above `mvn install`:
+
+```shell
+akka service deploy transfer-workflow transfer-workflow:tag-name --push
+```
+
+Refer to [Deploy and manage services](https://doc.akka.io/operations/services/deploy-service.html)
+for more information.
+
 
 ## Conclusion
 

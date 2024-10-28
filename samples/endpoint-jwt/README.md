@@ -119,15 +119,24 @@ That is:
 curl https://$HELLOJWT_ROUTE/hello/claims --header "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJteS1pc3N1ZXIiLCJzdWIiOiJteS1zdWJqZWN0In0.UcAYj_S6wuQWiQfkqMPsUCQyEBb0nmghgpYtBajtySM"
 ```
 
-Note: 
+## Deploying
 
-To deploy your service, install the `akka` CLI as documented in
-[Install Akka CLI](https://doc.akka.io/akka-cli/index.html)
-and configure a Docker Registry to upload your docker image to. Refer to
-[Configuring registries](https://doc.akka.io/operations/container-registries.html)
-for more information on how to make your docker image available to Akka.
+You can use the [Akka Console](https://console.akka.io) to create a project and then deploy your service from the UI.
 
-Finally, you can use the [Akka Console](https://console.akka.io)
-to create a project and then deploy your service into the project by first packaging and
-publishing the docker image through `mvn deploy` and then deploying the image
-through the `akka` CLI.
+Build container image:
+
+```shell
+mvn install -DskipTests
+```
+
+You can also deploy your service from the CLI. Install the `akka` CLI as documented in
+[Install Akka CLI](https://doc.akka.io/akka-cli/index.html).
+
+Deploy the service using the image tag from above `mvn install`:
+
+```shell
+akka service deploy endpoint-jwt endpoint-jwt:tag-name --push
+```
+
+Refer to [Deploy and manage services](https://doc.akka.io/operations/services/deploy-service.html)
+for more information.

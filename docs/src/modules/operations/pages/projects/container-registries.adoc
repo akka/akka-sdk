@@ -67,6 +67,24 @@ gcp-us-east1   acme           cde1044c-b973-4220-8f65-0f7d317bb458   acr.us-east
 
 The Akka Container Registry is now configured.
 
+== Build container image
+
+Build a container image of the service:
+
+[source, command line]
+----
+mvn install -DskipTests
+----
+
+Take note of the container name and tag from last line in the output, for example:
+
+[source, command line]
+----
+DOCKER> Tagging image shopping-cart:1.0-SNAPSHOT-20241028102843 successful!
+----
+
+ifdef::todo[TODO:  Describe how to build for external container registry, with <docker.image> maven property]
+
 == Pushing an image to ACR
 
 Pushing images to ACR works the same as pushing to any other Docker registry: using the Docker client, you tag an image and push it.
@@ -82,6 +100,13 @@ gcp-us-east1   acme           cde1044c-b973-4220-8f65-0f7d317bb458   acr.us-east
 ----
 
 An image can be made available to a specific project or all projects within an organization. The image URL path selects the organization and project and the domain name selects the ACR region.
+
+Push the image:
+
+[source, command line]
+----
+akka cr push container-name:tag-name
+----
 
 === Image paths
 
@@ -110,29 +135,6 @@ docker push acr.us-east-1.akka.io/acme/shopping-cart:latest
 
 This image is now available to both the `stage` and `prod` projects in the `acme` organization.
 
-== Configuring build tools for ACR
-
-Your build tool can push the image for you instead. To do that, make sure to configure the image path on your project for the respective tool, as shown below.
-
-[.tabset]
-Maven::
-Update your `pom.xml` with the ACR domain name and your Akka organization name
-+
-[source,xml]
-.pom.xml
-----
-  <properties>
-    ....
-    <docker.image>acr.us-east-1.akka.io/acme/${project.artifactId}</docker.image>
-  </properties>
-----
-and run
-+
-[source,command line]
-----
-mvn deploy
-----
-
 == Deploying a service using an image from ACR
 
 When deploying a Akka service specify the same image URL as above with the `akka service deploy` command:
@@ -153,6 +155,15 @@ Deploying a service as a member of the Acme organization, with an image in the p
 akka service deploy \
   my-service \
   acr.us-east-1.akka.io/acme/my-trial-project/test-service:latest
+----
+
+=== Push and deploy
+
+As an alternative, you can push and deploy the image with one command:
+
+[source, command line]
+----
+akka service deploy my-service container-name:tag-name --push
 ----
 
 == See also

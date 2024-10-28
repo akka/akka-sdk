@@ -65,3 +65,25 @@ This call is performed on the customer-registry directly.
 ```shell
 curl localhost:9001/customer/by_name/Joe
 ```
+
+## Deploying
+
+You can use the [Akka Console](https://console.akka.io) to create a project and then deploy your service from the UI.
+
+Build container image:
+
+```shell
+mvn install -DskipTests
+```
+
+You can also deploy your service from the CLI. Install the `akka` CLI as documented in
+[Install Akka CLI](https://doc.akka.io/akka-cli/index.html).
+
+Deploy the service using the image tag from above `mvn install`:
+
+```shell
+akka service deploy customer-registry-subscriber customer-registry-subscriber:tag-name --push
+```
+
+Refer to [Deploy and manage services](https://doc.akka.io/operations/services/deploy-service.html)
+for more information.

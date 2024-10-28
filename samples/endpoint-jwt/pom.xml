@@ -13,11 +13,6 @@
   <packaging>jar</packaging>
 
   <name>endpoint-jwt</name>
-  <properties>
-    <!-- For Docker setup see https://doc.akka.io/operations/container-registries.html -->
-    <container.registry>kcr.us-east-1.kalix.dev</container.registry>
-    <organization>lightbend</organization>
-  </properties>
 
   <repositories>
     <repository>

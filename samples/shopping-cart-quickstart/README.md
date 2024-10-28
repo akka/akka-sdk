@@ -57,16 +57,22 @@ curl -i -XPOST localhost:9000/carts/123/checkout
 
 ## Deploying
 
-To deploy your service, install the `akka` CLI as documented in
-[Install Akka CLI](https://doc.akka.io/akka-cli/index.html)
-and configure a Docker Registry to upload your docker image to.
+You can use the [Akka Console](https://console.akka.io) to create a project and then deploy your service from the UI.
 
-You will need to update the `dockerImage` property in the `pom.xml` and refer to
-[Configuring registries](https://doc.akka.io/operations/container-registries.html)
-for more information on how to make your docker image available to Kalix.
+Build container image:
 
-Finally, you can use the [Akka Console](https://console.kalix.io)
-to create a project and then deploy your service into the project either by using `mvn deploy kalix:deploy` which
-will conveniently package, publish your docker image, and deploy your service to Kalix, or by first packaging and
-publishing the docker image through `mvn deploy` and then deploying the image
-through the `akka` CLI.
+```shell
+mvn install -DskipTests
+```
+
+You can also deploy your service from the CLI. Install the `akka` CLI as documented in
+[Install Akka CLI](https://doc.akka.io/akka-cli/index.html).
+
+Deploy the service using the image tag from above `mvn install`:
+
+```shell
+akka service deploy shopping-cart shopping-cart-quickstart:tag-name --push
+```
+
+Refer to [Deploy and manage services](https://doc.akka.io/operations/services/deploy-service.html)
+for more information.

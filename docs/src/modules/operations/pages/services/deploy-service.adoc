@@ -12,9 +12,25 @@ Before deploying a service, ensure you have the following:
 * An https://console.akka.io/register[Akka account]
 * An xref:operations:projects/create-project.adoc[Akka project created]
 * The xref:akka-cli:installation.adoc[Akka CLI installed] (optional)
-* A container image ready for deployment
 
-ifdef::todo[TODO:  We lack docs about building and pushing the container image! https://github.com/lightbend/kalix/issues/11832]
+== Build container image
+
+Build a container image of the service:
+
+[source, command line]
+----
+mvn install -DskipTests
+----
+
+Take note of the container name and tag from last line in the output, for example:
+
+[source, command line]
+----
+DOCKER> Tagging image shopping-cart:1.0-SNAPSHOT-20241028102843 successful!
+----
+
+ifdef::todo[TODO:  Describe how to build for external container registry, with <docker.image> maven property]
+
 == Deploying a service
 
 Services can be deployed via the Akka Console or with the Akka CLI.
@@ -34,11 +50,11 @@ image:console-deploy-service-dialog.png[]
 +
 Akka CLI::
 +
-To deploy your service, use the following command. Replace `my-service` with your service name and update the container URI and tag accordingly:
+To deploy your service, use the following command. Replace `my-service` with your service name and update the container name and tag from the `mvn install`:
 +
 [source, command line]
 ----
-akka service deploy my-service my-container-uri/container-name:tag-name
+akka service deploy my-service container-name:tag-name --push
 ----
 +
 Your service will now begin deploying.
@@ -89,13 +105,12 @@ A service status can be one of the following:
 
 If you need to update your service with a new container image:
 
-1. *Make changes* to your service and *package them* into a *new container image*.
-2. *Tag your new image* with an updated version (e.g., `tag-name-2`).
-3. *Deploy the updated image* by passing the new tag:
+1. *Make changes* to your service and *package them* into a *new container image*, see <<_build_container_image>>.
+2. *Deploy the updated image* by passing the new tag:
 +
 [source, command line]
 ----
-akka service deploy my-service my-container-uri/container-name:tag-name-2
+akka service deploy my-service container-name:tag-name-2 --push
 ----
 
 Akka will perform a rolling update, replacing old instances with new ones without downtime.
@@ -103,7 +118,16 @@ Akka will perform a rolling update, replacing old instances with new ones withou
 [#apply]
 == Using service descriptors
 
-Akka services can also be described and managed with *YAML service descriptors*. For example:
+Akka services can also be described and managed with *YAML service descriptors*.
+
+First, <<_build_container_image>> and then push the image:
+
+[source, command line]
+----
+akka cr push container-name:tag-name
+----
+
+Example of service descriptor:
 
 [source, yaml]
 ----
