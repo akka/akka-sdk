@@ -11,6 +11,7 @@ import akka.http.javadsl.model.StatusCodes;
 import akka.javasdk.JsonSupport;
 
 // tag::basic-endpoint[]
+import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.HttpEndpoint;
 // end::basic-endpoint[]
@@ -24,8 +25,8 @@ import java.util.concurrent.CompletionStage;
 
 // tag::basic-endpoint[]
 
-
 @HttpEndpoint("/example") // <1>
+@Acl(allow = @Acl.Matcher(principal = Acl.Principal.ALL)) // <2>
 // tag::lower-level-request[]
 public class ExampleEndpoint {
 
@@ -39,9 +40,9 @@ public class ExampleEndpoint {
   // end::lower-level-request[]
   // tag::basic-endpoint[]
 
-  @Get("/hello") // <2>
+  @Get("/hello") // <3>
   public String hello() {
-    return "Hello World"; // <3>
+    return "Hello World"; // <4>
   }
 
   // end::basic-endpoint[]

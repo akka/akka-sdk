@@ -22,8 +22,11 @@ The most basic example:
 include::example$doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java[tag=basic-endpoint]
 ----
 <1> Common path prefix for all methods in the same class `/example`.
-<2> `GET` endpoint path is combined with the prefix and becomes available at `/example/hello`
-<3> Return value, is turned into an `200 Ok` response, with content type `text/plain` and the specified string as body.
+<2> ACL configuration allowing any client to access the endpoint.
+<3> `GET` endpoint path is combined with the prefix and becomes available at `/example/hello`
+<4> Return value, is turned into an `200 Ok` response, with content type `text/plain` and the specified string as body.
+
+NOTE: Without an ACL annotation no client is allowed to access the endpoint. For more details on how ACLs can be configured, see xref:access-control.adoc[]
 
 === Path parameters ===
 The path can also contain one or more parameters, which are extracted and passed to the method:
