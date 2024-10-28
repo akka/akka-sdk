@@ -76,7 +76,7 @@ Start one or more services as described in <<_starting_your_service>> and they w
 
 ifdef::todo[TODO:  add image from the local console]
 
-== Running service with persistence enabled
+== Running a service with persistence enabled
 
 By default, when running locally, persistence is disabled. This means the Akka Runtime will use an in-memory data store for the state of your services. This is useful for local development since it allows you to quickly start and stop your service without having to worry about cleaning the database.
 
@@ -91,7 +91,7 @@ mvn compile exec:java -Dakka.javasdk.dev-mode.persistence.enabled=true
 To clean the local database look for `db.mv.db` file in the root of your project and delete it.
 
 [#_local_broker_support]
-== Running service with broker support
+== Running a service with broker support
 
 By default, when running locally, broker support is disabled. When running a service that declares consumers or producers locally, you need to configure the broker with property `akka.javasdk.dev-mode.eventing.support=kafka` in `application.conf` or as a system property when starting the service.
 

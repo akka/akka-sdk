@@ -17,7 +17,7 @@ Message brokers are configured on Akka Project level. A project can have one bro
 
 The Java SDK testkit has built-in support to simulate message brokers. See xref:java:consuming-producing.adoc#testing[Testing the Integration].
 
-For running locally with a broker, see xref:java:running-locally.adoc#_local_broker_support[].
+For running locally with a broker, see xref:java:running-locally.adoc#_local_broker_support[running a service with broker support].
 
 [#_see_also]
 
