@@ -12,6 +12,9 @@ Current versions
 
 == October 2024
 
+* Akka Runtime 1.1.50
+    - Several smaller bug fixes and improvements
+
 * Akka libraries 24.10 releases
     - details to come
 
