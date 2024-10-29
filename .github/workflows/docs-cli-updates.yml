@@ -1,0 +1,48 @@
+name: Update CLI docs
+
+on:
+  workflow_dispatch:
+
+jobs:
+  gen-cli-docs:
+    runs-on: ubuntu-22.04
+    steps:
+    - name: Checkout
+      # https://github.com/actions/checkout/releases
+      # v4.1.1
+      uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
+
+    - name: Set up Ruby
+      # https://github.com/ruby/setup-ruby/releases
+      # v1.177.0
+      uses: ruby/setup-ruby@6615b4b8a02c78c4d711c06df4b8a20aa685a45d
+      with:
+        ruby-version: '3.1'
+
+    - name: Install Akka CLI
+      id: install-cli
+      run: |
+        export CLI_INSTALL_PATH=$HOME/.akka/bin
+        mkdir -p ${CLI_INSTALL_PATH}
+        curl -sL https://docs.akka.io/install-cli.sh | bash -s -- -y -P ${CLI_INSTALL_PATH}
+        echo ${CLI_INSTALL_PATH} >> ${GITHUB_PATH}
+        echo "CLI_VERSION=$(akka version)" >> ${GITHUB_OUTPUT}
+
+    - name: Script
+      run: |
+        gem install kramdown-asciidoc
+        ./docs/bin/generate_cli_docs.sh gen-index
+        
+    - name: Create Pull Request
+      # https://github.com/peter-evans/create-pull-request/releases
+      # v7.0.5
+      uses: peter-evans/create-pull-request@5e914681df9dc83aa4e4905692ca88beb2f9e91f
+      with:
+        title: Update akka CLI docs
+        branch-suffix: short-commit-hash
+        body: |
+          Latest Akka CLI help texts
+        delete-branch: true
+        labels: cli, documentation
+        commit-message: "update the CLI docs"
+        author: "GitHub <noreply@github.com>"

@@ -95,7 +95,7 @@ EOM
   # create nav entries to be replaced manually
   ls -1 akka*.adoc > ../../temp-nav.txt
   sed -e 's/\(akka.*\)/*** xref:akka-cli\/\1[]/g' ../../temp-nav.txt > ../../nav2.adoc
-  rm ../temp-nav.txt
+  rm ../../temp-nav.txt
 fi
 
 # change header level

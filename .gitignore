@@ -53,3 +53,4 @@ tempo-data
 sdk-version-raw.txt
 sdk-version.txt
 **/*.adoc-e
+/docs/src/modules/reference/nav2.adoc
