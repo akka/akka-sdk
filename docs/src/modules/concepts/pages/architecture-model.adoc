@@ -90,11 +90,11 @@ Event Sourced Entities persist events instead of state in the event journal. The
 
 _Views_ provide a way to materialize read only state from multiple entities based on a query. You can create views from Key Value Entities, Event Sourced Entities, and by subscribing to a topic. For more information see xref:java:views.adoc[Views].
 
-=== Consumer
+=== Consumers
 
 _Consumers_ listen for and process events or messages from various sources, such as Event Sourced Entities, Key Value Entities and external messaging systems. They can also produce messages to topics, facilitating communication and data flow between different services within an application. For more information see xref:java:consuming-producing.adoc[Consuming and producing].
 
-=== Workflow
+=== Workflows
 
 _Workflows_ enable the developer to implement long-running, multi-step business processes while focusing exclusively on domain and business logic. Technical concerns such as delivery guarantees, scaling, error handling and recovery are managed by Akka. For more information see xref:java:workflows.adoc[Workflows].
 
@@ -102,9 +102,9 @@ _Workflows_ enable the developer to implement long-running, multi-step business 
 
 _Timed Actions_ allow for scheduling calls in the future. For example, to verify that some process have been completed or not. For more information see xref:java:timed-actions.adoc[Timed actions]
 
-=== Endpoint
+=== Endpoints
 
-_Endpoints_ are defined points of interaction for services that allow external clients to communicate via standard HTTP methods like `GET`, `POST`, `PUT`, and `DELETE`. They facilitate the integration and communication between the other types of internal Akka components. Unlike other Akka components, endpoints will live in your `api` package. For more information on endpoints see xref:java:http-endpoints.adoc[HTTP Endpoints].
+_Endpoints_ are defined points of interaction for services that allow external clients to communicate via standard HTTP. They facilitate the integration and communication between the other types of internal Akka components. Unlike other Akka components, endpoints will live in your `api` package. For more information on endpoints see xref:java:http-endpoints.adoc[HTTP Endpoints].
 
 == Akka Services
 

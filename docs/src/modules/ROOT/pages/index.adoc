@@ -35,7 +35,7 @@ Developers have access to a component library for creating various application t
 
 == Key Components
 * *Entities*: Act as in-memory databases, either event-sourced or key-value.
-* *Endpoints*: Services that expose HTTP and gRPC services, functioning similarly to Cloudflare Workers when deployed across multiple regions.
+* *Endpoints*: Expose your services to the outside world, functioning similarly to Cloudflare Workers when deployed across multiple regions.
 * *Timed Actions*: Scheduled executions that are reliable and guaranteed to run at least once.
 * *Views*: Streaming projections that implement the CQRS pattern, separating reads from writes across multiple services.
 * *Workflows*: Durable, long-running processes orchestrated through Saga patterns.

@@ -26,7 +26,7 @@ Follow xref:java:build-your-first-application.adoc[] to implement your first ser
 
 On the other hand, if you would rather spend some time exploring our documentation, here are some main features you will find in this section:
 
-* xref:http-endpoints.adoc[REST Endpoints]
+* xref:http-endpoints.adoc[HTTP Endpoints]
 * xref:key-value-entities.adoc[Key Value Entities]
 * xref:event-sourced-entities.adoc[Event Sourced Entities]
 * xref:views.adoc[Views]
