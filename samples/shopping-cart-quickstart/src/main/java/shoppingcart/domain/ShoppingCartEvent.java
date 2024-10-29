@@ -2,9 +2,7 @@
 package shoppingcart.domain;
 
 import akka.javasdk.annotations.TypeName;
-
 // end::top[]
-
 // tag::events[]
 // tag::domain[]
 

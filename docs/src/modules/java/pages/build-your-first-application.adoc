@@ -81,17 +81,17 @@ Through our "Shopping Cart" Event Sourced Entity we expect to manage our cart, a
 
 === Define the domain model
 
-First, define the domain class `ShoppingCart` in package `shoppingcart.domain`. 
+First, define the domain class `ShoppingCart` in package `shoppingcart.domain`. This class should be located in the `src/main/java/shoppingcart/domain/` directory and saved as `ShoppingCart.java`. 
 
 [source,java,indent=0]
 .{sample-base-url}/shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCart.java[ShoppingCart.java]
 ----
-include::example$shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCart.java[tags=top;domain]
+include::example$shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCart.java[tags=first-app-top-part-1;domain]
 ----
 <1> Our `ShoppingCart` is fairly simple, being composed only by a `cartId` and a list of line items.
 <2> A `LineItem` represents a single product and the quantity we intend to buy.
 
-Next, let's define a domain event for adding items to the cart. Add an interface `ShoppingCartEvent` with the `ItemAdded` domain event in package `shoppingcart.domain`:
+Next, let's define a domain event for adding items to the cart. Add an interface `ShoppingCartEvent` with the `ItemAdded` domain event in package `shoppingcart.domain`. This class should be located in the `src/main/java/shoppingcart/domain/` directory and saved as `ShoppingCartEvent.java`:
 
 [source,java,indent=0]
 .{sample-base-url}/shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCartEvent.java[ShoppingCartEvent.java]
@@ -113,17 +113,29 @@ include::example$shopping-cart-quickstart/src/main/java/shoppingcart/domain/Shop
 <3> Adds the update item to the shopping cart.
 <4> Returns a new instance of the shopping cart with the updated line items.
 
+If your integrated development environment (IDE) did not detect it, you may need to add the following imports manually:
+
+[source,java,indent=0]
+.{sample-base-url}/shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCart.java[ShoppingCart.java]
+----
+include::example$shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCart.java[tag=first-app-top-part-2]
+----
+
 === Define the entity
 
-Create an Event Sourced Entity named `ShoppingCartEntity` in package `shoppingcart.application`. The class signature should look like this:
+Create an Event Sourced Entity named `ShoppingCartEntity` in package `shoppingcart.application`. This class should be located in the `src/main/java/shoppingcart/application/` directory and saved as `ShoppingCartEntity.java`. The class signature should look like this:
 
 [source,java]
 .{sample-base-url}/shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java[ShoppingCartEntity.java]
 ----
-include::example$shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java[tag=class]
+include::example$shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java[tags=top;class]
 ----
 <1> Extend `EventSourcedEntity<ShoppingCart, ShoppingCartEvent>`, where `ShoppingCart` is the type of state this entity will store, and `ShoppingCartEvent` is the interface for the events it persists.
 <2> Annotate the class so Akka can identify it as an Event Sourced Entity.
+
+At this point, you may encounter an error stating:
+`The type ShoppingCartEntity must implement the inherited abstract method EventSourcedEntity<ShoppingCart,ShoppingCartEvent>.applyEvent(ShoppingCartEvent).`
+This error is expected, and we will implement this abstract method in the next step.
 
 Inside `ShoppingCartEntity`, define an `addItem` command handler to generate an `ItemAdded` event, and an event handler to process the event:
 
@@ -154,7 +166,7 @@ include::example$shopping-cart-quickstart/src/main/java/shoppingcart/application
 
 The shopping cart API is defined by the `ShoppingCartEndpoint`.
 
-Create a class named `ShoppingCartEndpoint` in package `shoppingcart.api`.
+Create a class named `ShoppingCartEndpoint` in package `shoppingcart.api`. This class should be located in the `src/main/java/shoppingcart/api/` directory and saved as `ShoppingCartEndpoint.java`:
 
 [source,java,indent=0]
 .{sample-base-url}/shopping-cart-quickstart/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java[ShoppingCartEndpoint.java]
@@ -207,7 +219,9 @@ If you have the Akka CLI installed you can start the local management console wi
 akka local console
 ----
 
-This will start a docker container running the web management console locally and you can open the listed URL to see your local service in action. 
+This will start a docker container running the web management console locally and you can open the listed URL to see your local service in action:
+
+image:local-console-1.png[]
 
 == Deploy to akka.io
 

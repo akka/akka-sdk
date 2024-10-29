@@ -1,16 +1,20 @@
 // tag::top[]
+// tag::first-app-top-part-1[]
 package shoppingcart.domain;
 
 import java.util.List;
+// end::first-app-top-part-1[]
+// tag::first-app-top-part-2[]
 import java.util.stream.Collectors;
 import java.util.Comparator;
 import java.util.Optional;
 import java.util.function.Predicate;
-
+// end::first-app-top-part-2[]
 // end::top[]
 
 // tag::all[]
 // tag::domain[]
+
 public record ShoppingCart(String cartId, List<LineItem> items, boolean checkedOut) { // <1>
 
   public record LineItem(String productId, String name, int quantity) { // <2>
@@ -41,14 +45,14 @@ public record ShoppingCart(String cartId, List<LineItem> items, boolean checkedO
       .filter(lineItem -> !lineItem.productId().equals(productId))
       .collect(Collectors.toList());
   }
-  
-  // end::itemAdded[]
 
   public Optional<LineItem> findItemByProductId(String productId) {
     Predicate<LineItem> lineItemExists =
         lineItem -> lineItem.productId().equals(productId);
     return items.stream().filter(lineItemExists).findFirst();
   }
+
+  // end::itemAdded[]
 
   public ShoppingCart onItemRemoved(ShoppingCartEvent.ItemRemoved itemRemoved) {
     List<LineItem> updatedItems =
