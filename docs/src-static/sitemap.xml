@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+
+    <url><loc>https://doc.akka.io/libraries/index.html</loc></url>
+    <url><loc>https://doc.akka.io/libraries/guide/</loc></url>
+
+    <!-- libraries in alphabetical order -->
+    <url><loc>https://doc.akka.io/libraries/akka-core/current</loc></url>
+    <url><loc>https://doc.akka.io/api/akka-core/current</loc></url>
+    <url><loc>https://doc.akka.io/japi/akka-core/current</loc></url>
+
+    <url><loc>https://doc.akka.io/libraries/akka-dependencies/current</loc></url>
+
+    <url><loc>https://doc.akka.io/libraries/akka-diagnostics/current</loc></url>
+
+    <url><loc>https://doc.akka.io/libraries/akka-distributed-cluster/current</loc></url>
+
+    <url><loc>https://doc.akka.io/libraries/akka-edge/current</loc></url>
+
+    <url><loc>https://doc.akka.io/libraries/akka-enhancements/current</loc></url>
+    <url><loc>https://doc.akka.io/api/akka-enhancements/current</loc></url>
+    <url><loc>https://doc.akka.io/japi/akka-enhancements/current</loc></url>
+
+    <url><loc>https://doc.akka.io/libraries/akka-grpc/current</loc></url>
+    <url><loc>https://doc.akka.io/api/akka-grpc/current</loc></url>
+
+    <url><loc>https://doc.akka.io/libraries/akka-http/current</loc></url>
+    <url><loc>https://doc.akka.io/api/akka-http/current</loc></url>
+    <url><loc>https://doc.akka.io/japi/akka-http/current</loc></url>
+
+    <url><loc>https://doc.akka.io/libraries/akka-management/current</loc></url>
+    <url><loc>https://doc.akka.io/api/akka-management/current</loc></url>
+
+    <url><loc>https://doc.akka.io/libraries/akka-persistence-cassandra/current</loc></url>
+    <url><loc>https://doc.akka.io/api/akka-persistence-cassandra/current</loc></url>
+
+    <url><loc>https://doc.akka.io/libraries/akka-persistence-dynamodb/current</loc></url>
+    <url><loc>https://doc.akka.io/api/akka-persistence-dynamodb/current</loc></url>
+
+    <url><loc>https://doc.akka.io/libraries/akka-persistence-jdbc/current</loc></url>
+    <url><loc>https://doc.akka.io/api/akka-persistence-jdbc/current</loc></url>
+
+    <url><loc>https://doc.akka.io/libraries/akka-persistence-r2dbc/current</loc></url>
+    <url><loc>https://doc.akka.io/api/akka-persistence-r2dbc/current</loc></url>
+
+    <url><loc>https://doc.akka.io/libraries/akka-projection/current</loc></url>
+    <url><loc>https://doc.akka.io/api/akka-projection/current</loc></url>
+
+    <url><loc>https://doc.akka.io/libraries/alpakka/current</loc></url>
+    <url><loc>https://doc.akka.io/api/alpakka/current</loc></url>
+
+    <url><loc>https://doc.akka.io/libraries/alpakka-kafka/current</loc></url>
+    <url><loc>https://doc.akka.io/api/alpakka-kafka/current</loc></url>
+    <!-- in alphabetical order -->
+</urlset>

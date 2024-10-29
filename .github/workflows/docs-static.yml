@@ -1,0 +1,31 @@
+name: Static content to doc.akka.io
+on:
+  workflow_dispatch:
+#  push:
+#    branches:
+#      - 'main'
+#    paths:
+#      - 'docs/src-static'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: scp to Gustav
+    runs-on: ubuntu-22.04
+    if: github.event.repository.fork == false
+    steps:
+      - name: Checkout
+        # https://github.com/actions/checkout/releases
+        # v4.1.1
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
+        with:
+          ref: main
+
+      - name: rsync
+        run: |
+          ./docs/bin/ssh-docs-prepare.sh 
+          rsync -azP docs/src-static/* akkarepo@gustav.akka.io:www/
+        env:
+          SCP_SECRET: ${{ secrets.GUSTAV_SCP_SECRET }}
