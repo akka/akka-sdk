@@ -51,6 +51,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
@@ -454,11 +455,15 @@ public class TestKit {
           if (s.devMode().isEmpty())
             throw new IllegalStateException("dev-mode must be enabled"); // it's set from overridden applicationConfig method
 
-          SpiDevModeSettings devModeSettings = s.devMode().get()
-              .withTestMode(true)
-              .withAclEnabled(settings.aclEnabled).withServiceName(settings.serviceName)
-              .withEventingSupport(eventingSettings)
-              .withMockedEventing(mockedEventingSettings);
+          proxyPort = applicationConfig.getInt("akka.javasdk.testkit.http-port");
+          SpiDevModeSettings devModeSettings = new SpiDevModeSettings(
+              proxyPort,
+              settings.aclEnabled,
+              false,
+              settings.serviceName,
+              eventingSettings,
+              mockedEventingSettings,
+              true);
 
           return s.withDevMode(devModeSettings);
         }
@@ -476,7 +481,6 @@ public class TestKit {
 
       startEventingTestkit();
 
-      proxyPort = ApplicationConfig.get(runtimeActorSystem).getConfig().getInt("akka.javasdk.dev-mode.http-port");
       proxyHost = "localhost";
 
       Http http = Http.get(runtimeActorSystem);
@@ -491,18 +495,22 @@ public class TestKit {
             log.info("Waiting for runtime, current response code is {}", responseCode);
             return CompletableFuture.failedFuture(new IllegalStateException("Runtime not started."));
           }
+        })
+        .exceptionally(ex -> {
+          log.error("Failed to connect to runtime:", ex);
+          throw new IllegalStateException("Runtime not started.", ex);
         }), 10, Duration.ofSeconds(1), runtimeActorSystem);
 
       try {
-        checkingProxyStatus.toCompletableFuture().get();
-      } catch (InterruptedException | ExecutionException e) {
+        checkingProxyStatus.toCompletableFuture().get(60, TimeUnit.SECONDS);
+      } catch (InterruptedException | ExecutionException | TimeoutException e) {
         log.error("Failed to connect to Runtime with:", e);
         throw new RuntimeException(e);
       }
 
       // once runtime is started
       componentClient = new ComponentClientImpl(componentClients, Option.empty(), runtimeActorSystem.executionContext());
-      selfHttpClient = new HttpClientImpl(runtimeActorSystem, "http://localhost:" + proxyPort);
+      selfHttpClient = new HttpClientImpl(runtimeActorSystem, "http://" + proxyHost + ":" + proxyPort);
       httpClientProvider = startupContext.httpClientProvider();
       var codec = new JsonMessageCodec();
       timerScheduler = new TimerSchedulerImpl(codec, componentClients.timerClient(), Metadata.EMPTY);
