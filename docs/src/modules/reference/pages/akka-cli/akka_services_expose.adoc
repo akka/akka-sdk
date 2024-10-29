@@ -20,12 +20,12 @@ akka services expose my-service
 == Options
 
 ----
-      ----once-per-region   expose the service once per region
       --enable-cors         enable HTTP CORS
       --force-global        force an existing regional resource to be configured as a global resource
       --force-regional      force an existing global resource to be configured as a regional resource
   -h, --help                help for expose
       --hostname string     service route hostname
+      --once-per-region     expose the service once per region
       --owner string        the owner of the project to use, needed if you have two projects with the same name from different owners
       --project string      project to use if not using the default configured project
       --region string       region to use if project has more than one region

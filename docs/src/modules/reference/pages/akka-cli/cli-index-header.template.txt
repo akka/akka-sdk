@@ -56,7 +56,7 @@ The xref:reference:akka-cli/akka_organizations.adoc[akka organization] command i
 == Projects
 The `akka projects` commands manipulate the projects in your Akka account. A project contains a set of services.
 
-See also the xref:reference:akka-cli/akka-cli/akka_roles.html#_see_also[akka roles] commands.
+See also the xref:reference:akka-cli/akka_roles.adoc#_see_also[akka roles] commands.
 
 The xref:reference:akka-cli/akka_projects.adoc[akka projects] command includes the following options:
 
@@ -72,7 +72,7 @@ The xref:reference:akka-cli/akka_quickstart.adoc[akka quickstart] command includ
 == Regions
 The `akka regions` commands allow you to manage regions on Akka.
 
-See also the xref:reference:akka-cli/akka-cli/akka_projects_regions.html#_see_also[akka project regions] commands.
+See also the xref:reference:akka-cli/akka_projects_regions.adoc#_see_also[akka project regions] commands.
 
 The xref:reference:akka-cli/akka_regions.adoc[akka regions] command includes the following options:
 

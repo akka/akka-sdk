@@ -1,20 +1,20 @@
-= akka local run
+= akka local console
 
-Runs one or more Akka services locally.
+Start the Akka local console.
 
 == Synopsis
 
-The `akka local run` command allows you to run one or more services locally.
+The `akka local console` command allows you to start the Akka local console.
 
 ----
-akka local run [flags]
+akka local console [flags]
 ----
 
 == Options
 
 ----
-  -h, --help                         help for run
-      --local-console-image string   Override the local console image. (default "gcr.io/kalix-public/local-console:1.2.0")
+  -h, --help                         help for console
+      --local-console-image string   Override the local console image. (default "gcr.io/kalix-public/akka-local-console:latest")
 ----
 
 == Options inherited from parent commands

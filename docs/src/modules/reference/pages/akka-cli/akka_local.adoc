@@ -30,7 +30,7 @@ The `akka local` commands help with local development.
 == SEE ALSO
 
 * link:akka.html[akka]	 - Akka control
-* link:akka_local_run.html[akka local run]	 - Runs one or more Akka services locally.
+* link:akka_local_console.html[akka local console]	 - Start the Akka local console.
 * link:akka_local_services.html[akka local services]	 - Manage Akka services locally.
 
 [discrete]

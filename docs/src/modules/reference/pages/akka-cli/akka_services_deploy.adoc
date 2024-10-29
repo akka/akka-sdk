@@ -31,6 +31,7 @@ akka services deploy my-service my-repo/my-service-image
       --min-instances int32         the minimum number of instances of a service that should be available. Must be greater than or equal to 1, less than or equal to 10, and less than or equal to max-instances. Defaults to 3. Not available for trial projects. (default -1)
       --owner string                the owner of the project to use, needed if you have two projects with the same name from different owners
       --project string              project to use if not using the default configured project
+      --push                        pushes the service image to the Akka container registry for the project. Run "akka cr push --help" for more information about how image push works.
       --region string               region to use if project has more than one region
       --secret-env stringToString   environment variables from secrets, comma separated, whose values refer to secret-name and secret-key, for example MY_VAR1=secret-name/secret-key1,MY_VAR2=secret-name/secret-key2 (default [])
 ----

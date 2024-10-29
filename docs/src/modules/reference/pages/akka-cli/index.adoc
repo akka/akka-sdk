@@ -68,6 +68,7 @@ The xref:reference:akka-cli/akka_container-registry.adoc[akka container-registry
 * xref:reference:akka-cli/akka_container-registry_list-tags.adoc[akka container-registry list-tags]
 * xref:reference:akka-cli/akka_container-registry_list.adoc[akka container-registry list]
 * xref:reference:akka-cli/akka_container-registry_print.adoc[akka container-registry print]
+* xref:reference:akka-cli/akka_container-registry_push.adoc[akka container-registry push]
 
 == Manage Docker
 The `akka docker` commands allow you to manage Docker credentials so that services can pull images from registries that require authentication.
@@ -281,7 +282,7 @@ The `akka local` commands allow you to run and manage locally running Akka servi
 
 The xref:reference:akka-cli/akka_local.adoc[akka local] command includes the following options:
 
-* xref:reference:akka-cli/akka_local_run.adoc[akka local run]
+* xref:reference:akka-cli/akka_local_console.adoc[akka local console]
 * xref:reference:akka-cli/akka_local_services.adoc[akka local services]
 * xref:reference:akka-cli/akka_local_services_components.adoc[akka local services components]
 * xref:reference:akka-cli/akka_local_services_components_get-state.adoc[akka local services components get-state]

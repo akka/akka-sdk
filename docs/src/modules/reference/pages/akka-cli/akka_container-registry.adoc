@@ -36,6 +36,7 @@ If no tag is provided, it deletes all tags
 * link:akka_container-registry_list-images.html[akka container-registry list-images]	 - list images from the Akka Container Registry.
 * link:akka_container-registry_list-tags.html[akka container-registry list-tags]	 - list all images tags.
 * link:akka_container-registry_print.html[akka container-registry print]	 - Print the path of the Akka Container Registry.
+* link:akka_container-registry_push.html[akka container-registry push]	 - Push an Akka service image for a particular Akka project.
 
 [discrete]
 
