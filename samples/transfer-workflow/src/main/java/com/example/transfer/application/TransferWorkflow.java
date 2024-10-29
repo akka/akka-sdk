@@ -28,28 +28,25 @@ public class TransferWorkflow extends Workflow<TransferState> { // <2>
   public record Deposit(String to, int amount) {
   }
 
-  // end::definition[]
-
   final private ComponentClient componentClient;
 
   public TransferWorkflow(ComponentClient componentClient) {
-    this.componentClient = componentClient;
+    this.componentClient = componentClient; // <2>
   }
 
-  // tag::definition[]
   @Override
   public WorkflowDef<TransferState> definition() {
     Step withdraw =
       step("withdraw") // <1>
         .asyncCall(Withdraw.class, cmd ->
-          componentClient.forEventSourcedEntity(cmd.from)
+          componentClient.forEventSourcedEntity(cmd.from) // <2>
             .method(WalletEntity::withdraw)
-            .invokeAsync(cmd.amount)) // <2>
+            .invokeAsync(cmd.amount)) // <3>
         .andThen(Done.class, __ -> {
           Deposit depositInput = new Deposit(currentState().transfer().to(), currentState().transfer().amount());
           return effects()
             .updateState(currentState().withStatus(WITHDRAW_SUCCEED))
-            .transitionTo("deposit", depositInput); // <3>
+            .transitionTo("deposit", depositInput); // <4>
         });
 
     Step deposit =
@@ -57,14 +54,14 @@ public class TransferWorkflow extends Workflow<TransferState> { // <2>
         .asyncCall(Deposit.class, cmd ->
           componentClient.forEventSourcedEntity(cmd.to)
             .method(WalletEntity::deposit)
-            .invokeAsync(cmd.amount)) // <4>
+            .invokeAsync(cmd.amount)) // <5>
         .andThen(Done.class, __ -> {
           return effects()
             .updateState(currentState().withStatus(COMPLETED))
-            .end(); // <5>
+            .end(); // <6>
         });
 
-    return workflow() // <6>
+    return workflow() // <7>
       .addStep(withdraw)
       .addStep(deposit);
   }
