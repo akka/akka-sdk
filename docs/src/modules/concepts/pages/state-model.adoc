@@ -6,21 +6,32 @@ Entities are used to store the data defined in the xref:concepts:architecture-mo
 
 Entities have operations that can change their state. These operations are triggered asynchronously and implemented via methods that return `Effect`. Operations allow entities to be dynamic and reflect the most up-to-date information and this all gets wired together for you.
 
-Akka supports two state models: _Key Value Entity_ and _Event Sourced Entity_. Key Value Entities store their state as a single unit in a Key/Value store. Event Sourced Entities store updates as events, which together build the entity's state. In order for Akka to replicate state across clusters and regions Akka uses conflict resolution strategies for each model. Key Value Entities *will* support a Last Writer Wins (LWW) mechanism. *This is not supported today.*
+Akka supports two state models: _Event Sourced Entity_ and _Key Value Entity_. Event Sourced Entities build their state incrementally by storing each update as an event, while Key Value Entities store their entire state as a single entry in a Key/Value store. To replicate state across clusters and regions, Akka uses specific conflict resolution strategies for each state model.
+
+NOTE: Although Key Value Entities are planned to support a Last Writer Wins (LWW) mechanism, this feature is not yet available.
 
 Event Sourced Entities replicate their state by default. If you deploy your Service to a Project that spans multiple regions the state is replicated for you with no extra work to be done. By default, any region can read the data, and will do so from a local store within the region, but only the xref:architecture-model.adoc[Akka architecture model] origin region will be able to perform writes. To make this easier, Akka will forward writes to the appropriate region.
 
 To understand more about regions and distribution see xref:deployment-model.adoc#_region[Deployment model].
 
 == Identity
-Each Entity instance has a unique id that distinguishes it from others. The id can have multiple parts, such as an address, serial number, or customer number. Akka handles concurrency for Entity instances by processing requests sequentially, one after the other, within the boundaries of a transaction. Akka proactively manages state, eliminating the need for techniques like lazy loading. For each state model, Akka uses a specific back-end data store, which cannot be configured. 
+
+Each Entity instance has a unique id that distinguishes it from others. The id can have multiple parts, such as an address, serial number, or customer number. Akka handles concurrency for Entity instances by processing requests sequentially, one after the other, within the boundaries of a transaction. Akka proactively manages state, eliminating the need for techniques like lazy loading. For each state model, Akka uses a specific back-end data store, which cannot be configured.
 
 === Origin
+
 Stateful entities in Akka have a concept of location, that is region, and are designed to span regions and replicate their data. For more information about regions see xref:concepts:deployment-model.adoc#_region[region] in the Akka deployment model.
 
-Entities call the region they were created in their *origin* and keep track of it throughout their lifetime. This allows Akka to simplify some aspects of distributed state. 
+Entities call the region they were created in their *origin* and keep track of it throughout their lifetime. This allows Akka to simplify some aspects of distributed state.
 
-By default, most entities will only allow their origin region to change their state, to make this easier Akka will automatically route state changing operations to the origin region. This routing is asynchronous and durable, meaning network partitions will not stop the write from being queued. This gives you a read anywhere model out of the box that automatically routes writes appropriately.
+By default, most entities will only allow their origin region to change their state. To make this easier, Akka will automatically route state-changing operations to the origin region. This routing is asynchronous and durable, meaning network partitions will not stop the write from being queued. This gives you a read-anywhere model out of the box that automatically routes writes appropriately.
+
+== The Event Sourced state model
+
+The Event Sourced state model captures changes to data by storing events in a journal. The current entity state is derived from the events. Interested parties can read the journal and transform the stream of events into read models (Views) or perform business actions based on events. 
+
+[.darkmode-white-padded]
+image:event-source-flow.svg[Concepts Events Source Flow]
 
 == The Key Value state model
 
@@ -30,21 +41,15 @@ ifdef::todo[TODO:  Update texts in svg: Runtime, Key Value Enittie]
 [.darkmode-white-padded]
 image:key-value-flow.svg[Concepts Key Value Flow]
 
-== The Event Sourced state model
-
-The Event Sourced state model captures changes to data by storing events in a journal. The current entity state is derived from the events. Interested parties can read the journal and transform the stream of events into read models (Views) or perform business actions based on events. 
-
-[.darkmode-white-padded]
-image:event-source-flow.svg[Concepts Events Source Flow]
-
 == State models and replication
-Key Value Entities do not replicate state between regions at this time, but will soon. When they do they will use a Last Writer Wins (LWW) reconciliation strategy. 
 
-Event Sourced entities are replicated between all regions in an Akka project by default. This allows for a multi-reader capability, with writes automatically routed to the correct region based on the origin of the entity. 
+Event Sourced entities are replicated between all regions in an Akka project by default. This allows for a multi-reader capability, with writes automatically routed to the correct region based on the origin of the entity.
 
 In order to have multi-writer (or write anywhere) capabilities you must implement a conflict-free replicated data type (CRDT) for your Event Sourced Entity. This allows data to be shared across multiple instances of an entity and is eventually consistent to provide high availability with low latency. The underlying CRDT semantics allow replicated Event Sourced Entity instances to update their state independently and concurrently and without coordination. The state changes will always converge without conflicts, but note that with the state being eventually consistent, reading the current data may return an out-of-date value.
 
+Key Value Entities do not replicate state between regions at this time, but will soon. When they do they will use a Last Writer Wins (LWW) reconciliation strategy. 
+
 == Related documentation
 
-- xref:java:key-value-entities.adoc[Key Value Entities]
 - xref:java:event-sourced-entities.adoc[Event Sourced Entities]
+- xref:java:key-value-entities.adoc[Key Value Entities]
