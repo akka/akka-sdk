@@ -225,15 +225,10 @@ image:local-console-1.png[]
 
 == Deploy to akka.io
 
-ifdef::todo[TODO: should it be here, or only in the developent-process page or where?]
+After testing locally, deploy your service to akka.io using the CLI or the Console. The following pages provide information about deployment:
 
-You can also deploy this service directly from your local command line. 
-[source,bash]
-----
-mvn compile exec:java
-----
-
-Deploy your service following the instructions at xref:concepts:development-process.adoc#_deploy[Development Process - Deploy to Akka].
+* xref:operations:projects/index.adoc[Akka projects]
+* xref:operations:services/deploy-service.adoc#_deploying_a_service[Deploying a packaged service]
 
 == Download full sample
 

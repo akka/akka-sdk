@@ -28,7 +28,7 @@ This sample does not expose any Endpoints, since the main goal is to show how to
 
 ## Deploying
 
-You can use the [Akka Console](https://console.akka.io) to create a project and then deploy your service from the UI.
+You can use the [Akka Console](https://console.akka.io) to create a project and see the status of your service.
 
 Build container image:
 
@@ -36,8 +36,7 @@ Build container image:
 mvn install -DskipTests
 ```
 
-You can also deploy your service from the CLI. Install the `akka` CLI as documented in
-[Install Akka CLI](https://doc.akka.io/akka-cli/index.html).
+Install the `akka` CLI as documented in [Install Akka CLI](https://doc.akka.io/akka-cli/index.html).
 
 Deploy the service using the image tag from above `mvn install`:
 
