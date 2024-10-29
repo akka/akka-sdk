@@ -35,6 +35,6 @@ private[javasdk] object DocLinks {
 
   def forErrorCode(code: String): Option[String] = {
     val page = errorCodes.get(code).orElse(errorCodeCategories.get(code.take("AK-000".length)))
-    page.map(p => s"$baseUrl/$p")
+    page.map(p => s"$baseUrl$p")
   }
 }
