@@ -233,3 +233,11 @@ After testing locally, deploy your service to akka.io using the CLI or the Conso
 == Download full sample
 
 You can download the full source code of the Shopping Cart sample as a link:_attachments/shopping-cart-quickstart.zip[zip file].
+
+== Next steps
+
+Now that you've built and deployed a shopping cart service, take your Akka skills to the next level:
+
+. *Expand the service*: Explore xref:concepts:architecture-model.adoc#_akka_components[other Akka components] to enhance your application with additional features.
+. *Explore other Akka samples*: Discover more about Akka by exploring xref:samples:index.adoc[different use cases] for inspiration.
+. *Join the community*: Visit the xref:support:index.adoc[Support page] to find resources where you can connect with other Akka developers and expand your knowledge.
