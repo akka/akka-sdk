@@ -4,7 +4,7 @@ Configure traces sampling for your Akka project
 
 == Synopsis
 
-The `akka project observability config traces` command sets the traces sampling for your Kalix project.
+The `akka project observability config traces` command sets the traces sampling for your Akka project.
 
 ----
 akka projects observability config traces [flags]

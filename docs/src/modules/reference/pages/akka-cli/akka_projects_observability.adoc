@@ -4,7 +4,7 @@ Manage the observability settings for your Akka project
 
 == Synopsis
 
-The `akka project observability` command manages the observability settings for your Kalix project.
+The `akka project observability` command manages the observability settings for your Akka project.
 
 == Options
 

@@ -4,7 +4,7 @@ Manage authentication for your organization on Akka
 
 == Synopsis
 
-The `akka organizations auth` commands manage the authentication for organizations in Kalix.
+The `akka organizations auth` commands manage the authentication for organizations in Akka.
 
 == Options
 

@@ -4,7 +4,7 @@ Manage the regions for your Akka project
 
 == Synopsis
 
-The `akka projects regions` commands manages the regions for your Kalix project.
+The `akka projects regions` commands manages the regions for your Akka project.
 
 == Options
 

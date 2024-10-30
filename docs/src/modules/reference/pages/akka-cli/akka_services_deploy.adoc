@@ -6,7 +6,7 @@ Deploys a service to the currently configured project.
 
 The `akka service deploy _service-name_ _docker-image_` command deploys a service with name _service-name_ using the _docker-image_.
 
-NOTE: You will need Docker credentials to be set up in order for Kalix to be able to pull from your private image repository.
+NOTE: You will need Docker credentials to be set up in order for Akka to be able to pull from your private image repository.
 For more info see `akka docker`
 
 ----

@@ -5,7 +5,7 @@ Restarts all service instances using the newest image.
 == Synopsis
 
 The `akka service restart _service-name_` command restarts a service by pulling the newest image with the specified tag from the repository.
-NOTE: Configure Docker credentials to give Kalix permission to pull from a private image repository.
+NOTE: Configure Docker credentials to give Akka permission to pull from a private image repository.
 For more info see `akka docker`
 
 ----

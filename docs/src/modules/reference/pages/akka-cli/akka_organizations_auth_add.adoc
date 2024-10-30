@@ -4,7 +4,7 @@ Add an authentication domain to your organization on Akka
 
 == Synopsis
 
-The `akka organizations add` commands allow adding authentication for organizations in Kalix.
+The `akka organizations add` commands allow adding authentication for organizations in Akka.
 
 == Options
 

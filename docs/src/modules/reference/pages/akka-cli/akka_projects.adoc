@@ -4,7 +4,7 @@ Manage your Akka projects.
 
 == Synopsis
 
-The `akka projects` commands manipulate the projects in your Kalix account, where a project is a collection of services.
+The `akka projects` commands manipulate the projects in your Akka account, where a project is a collection of services.
 
 == Options
 

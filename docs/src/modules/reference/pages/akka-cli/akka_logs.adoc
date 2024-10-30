@@ -16,7 +16,7 @@ akka logs [SERVICE] [INSTANCE] [flags]
 
 ----
 
-> kalix logs my-service
+> akka logs my-service
 2021-05-27 03:44:57.755 app[service-f97bb7497-pqmk5] itemAdded::push
 2021-05-27 03:44:58.053 app[service-f97bb7497-pqmk5] return state
 ...

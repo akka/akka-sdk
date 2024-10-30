@@ -4,7 +4,7 @@ Configure the Akka Container Registry docker credential helper.
 
 == Synopsis
 
-Use the `akka auth container-registry configure` command to configure a credential helper for Kalix Container Registry hosts.
+Use the `akka auth container-registry configure` command to configure a credential helper for Akka Container Registry hosts.
 
 ----
 akka auth container-registry configure [flags]

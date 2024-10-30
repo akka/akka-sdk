@@ -14,7 +14,7 @@ akka services views list SERVICE [flags]
 
 ----
 
-> kalix service views list customer-registry
+> akka service views list customer-registry
 NAME              ACTIVE   LAST UPDATED
 CustomerByName    true     66m
 CustomerByEmail   true     66m

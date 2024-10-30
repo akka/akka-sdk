@@ -13,7 +13,7 @@ akka services jwts list [SERVICE] [flags]
 == Examples
 
 ----
-> kalix services jwt list my-service
+> akka services jwt list my-service
 KEY ID   ALGORITHM   ISSUER
 my-key   HS256       my-issuer-name
 ----

@@ -13,7 +13,7 @@ akka services jwts generate [SERVICE] [flags]
 == Examples
 
 ----
-> kalix services jwt generate my-service --key-id my-key
+> akka services jwt generate my-service --key-id my-key
   --issuer my-issuer-name --algorithm HS256
 ----
 

@@ -4,7 +4,7 @@ Manage your Akka project service tokens
 
 == Synopsis
 
-The `akka projects tokens` commands manipulate the service tokens that have access to your Kalix project.
+The `akka projects tokens` commands manipulate the service tokens that have access to your Akka project.
 
 == Options
 

@@ -4,7 +4,7 @@ Set the metrics exporter for your Akka project
 
 == Synopsis
 
-The `akka project observability set metrics` command sets the metrics exporter for your Kalix project.
+The `akka project observability set metrics` command sets the metrics exporter for your Akka project.
 
 == Options
 

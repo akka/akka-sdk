@@ -4,7 +4,7 @@ List the authentication domains for the current (or specified) organization
 
 == Synopsis
 
-The `akka organizations auth list` command lists the authentication domains for the current (or specified) organization in Kalix.
+The `akka organizations auth list` command lists the authentication domains for the current (or specified) organization in Akka.
 
 ----
 akka organizations auth list [flags]

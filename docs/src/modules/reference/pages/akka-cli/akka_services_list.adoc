@@ -14,7 +14,7 @@ akka services list [flags]
 
 ----
 
-> kalix services list
+> akka services list
 NAME               AGE    INSTANCES   STATUS   IMAGE TAG
 shopping-cart      4h20m  3           Ready    0.0.2
 ----

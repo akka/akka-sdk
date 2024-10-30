@@ -4,7 +4,7 @@ Update an authentication domain for your organization on Akka
 
 == Synopsis
 
-The `akka organizations update` commands allow updating authentication for organizations in Kalix.
+The `akka organizations update` commands allow updating authentication for organizations in Akka.
 
 == Options
 

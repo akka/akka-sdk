@@ -4,7 +4,7 @@ Manage the Akka Container Registry.
 
 == Synopsis
 
-The Kalix Container Registry (KCR) can be used by all Kalix users to deploy services and is available in all Kalix regions.
+The Akka Container Registry (ACR) can be used by all Akka users to deploy services and is available in all Akka regions.
 
 == Options
 

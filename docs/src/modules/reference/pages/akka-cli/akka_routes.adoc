@@ -4,7 +4,7 @@ Manage routes for your Akka project.
 
 == Synopsis
 
-The `akka routes` commands manipulate ingress routes for your Kalix project.
+The `akka routes` commands manipulate ingress routes for your Akka project.
 
 == Options
 

@@ -4,7 +4,7 @@ Clear all cached data from the current context.
 
 == Synopsis
 
-The command `akka config clear-cache _context_` clears all cached data in the current kalix context, including cached project information and access tokens, but does not clear login or current project information.
+The command `akka config clear-cache _context_` clears all cached data in the current Akka context, including cached project information and access tokens, but does not clear login or current project information.
 
 ----
 akka config clear-cache [flags]

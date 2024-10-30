@@ -14,7 +14,7 @@ akka services views drop SERVICE VIEW_NAME [flags]
 
 ----
 
-> kalix service views drop customer-registry CustomerByName
+> akka service views drop customer-registry CustomerByName
 The data for view 'CustomerByName' of service 'customer-registry' has successfully been dropped.
 ----
 

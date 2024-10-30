@@ -14,11 +14,11 @@ akka services get SERVICE [flags]
 
 ----
 
-> kalix services get my-service
+> akka services get my-service
 Service:        shopping-cart
 Created:        4h20m
 Status:         Ready
-Image:          gcr.io/kalix-public/samples-js-value-entity-shopping-cart:0.0.4
+Image:          gcr.io/akka-public/value-entity-shopping-cart:0.0.4
 ----
 
 == Options

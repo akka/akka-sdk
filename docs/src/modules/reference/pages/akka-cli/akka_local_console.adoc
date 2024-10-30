@@ -14,7 +14,7 @@ akka local console [flags]
 
 ----
   -h, --help                         help for console
-      --local-console-image string   Override the local console image. (default "gcr.io/kalix-public/akka-local-console:latest")
+      --local-console-image string   Override the local console image. (default "gcr.io/kalix-public/akka-local-console:d0ed8e0")
 ----
 
 == Options inherited from parent commands

@@ -4,7 +4,7 @@ Set the logs exporter for your Akka project
 
 == Synopsis
 
-The `akka project observability set logs` command sets the logs exporter for your Kalix project.
+The `akka project observability set logs` command sets the logs exporter for your Akka project.
 
 == Options
 

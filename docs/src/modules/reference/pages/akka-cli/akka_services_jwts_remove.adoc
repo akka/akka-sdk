@@ -13,7 +13,7 @@ akka services jwts remove [SERVICE] [flags]
 == Examples
 
 ----
-> kalix services jwt remove my-service --key-id my-key
+> akka services jwt remove my-service --key-id my-key
 ----
 
 == Options

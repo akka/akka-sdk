@@ -4,7 +4,7 @@ Update an OpenID authentication domain for the current (or specified) organizati
 
 == Synopsis
 
-The `akka organizations auth openid update` command updates an OpenID authentication domain for the given organization in Kalix.
+The `akka organizations auth openid update` command updates an OpenID authentication domain for the given organization in Akka.
 
 ----
 akka organizations auth update openid DOMAIN-ID [flags]

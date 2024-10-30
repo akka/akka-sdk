@@ -4,7 +4,7 @@ List all routes.
 
 == Synopsis
 
-The `akka routes list` command will list a one-line summary of all routes that your Kalix project has configured.
+The `akka routes list` command will list a one-line summary of all routes that your Akka project has configured.
 
 ----
 akka routes list [flags]

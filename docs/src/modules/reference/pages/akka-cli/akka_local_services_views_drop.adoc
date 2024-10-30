@@ -14,7 +14,7 @@ akka local services views drop SERVICE VIEW_NAME [flags]
 
 ----
 
-> kalix local service views drop customer-registry CustomerByName
+> akka local service views drop customer-registry CustomerByName
 The data for view 'CustomerByName' of service 'customer-registry' has successfully been dropped.
 ----
 

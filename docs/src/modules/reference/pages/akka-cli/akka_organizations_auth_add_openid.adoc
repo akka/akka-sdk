@@ -4,7 +4,7 @@ Add an OpenID authentication domain to the current (or specified) organization
 
 == Synopsis
 
-The `akka organizations auth openid add` command adds an OpenID authentication domain to the given organization in Kalix.
+The `akka organizations auth openid add` command adds an OpenID authentication domain to the given organization in Akka.
 
 ----
 akka organizations auth add openid [flags]

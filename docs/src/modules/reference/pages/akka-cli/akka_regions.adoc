@@ -4,7 +4,7 @@ Manage regions on Akka
 
 == Synopsis
 
-The `akka regions` commands manage the regions in your Kalix account.
+The `akka regions` commands manage the regions in your Akka account.
 
 == Options
 

@@ -4,7 +4,7 @@ List all service tokens
 
 == Synopsis
 
-The `akka project tokens list` command will list a one-line summary of all service tokens that have access to your Kalix project.
+The `akka project tokens list` command will list a one-line summary of all service tokens that have access to your Akka project.
 
 ----
 akka projects tokens list [flags]

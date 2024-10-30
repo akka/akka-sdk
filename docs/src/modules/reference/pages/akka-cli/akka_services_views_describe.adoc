@@ -14,7 +14,7 @@ akka services views describe SERVICE VIEW_ID [flags]
 
 ----
 
-> kalix service views describe customer-registry CustomerByName
+> akka service views describe customer-registry CustomerByName
 ----
 
 == Options

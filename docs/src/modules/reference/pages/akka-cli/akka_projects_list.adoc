@@ -4,7 +4,7 @@ List all projects.
 
 == Synopsis
 
-The `akka projects list` command will list a one-line summary of all projects that your Kalix account has access to.
+The `akka projects list` command will list a one-line summary of all projects that your Akka account has access to.
 The current project will have an asterisk '*' next to it.
 
 TIP: You can change the current project using `akka config set project _my-project_`

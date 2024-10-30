@@ -4,7 +4,7 @@ Manage your organizations on Akka
 
 == Synopsis
 
-The `akka organizations` commands manage the organizations in your Kalix account.
+The `akka organizations` commands manage the organizations in your Akka account.
 
 == Options
 

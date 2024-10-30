@@ -4,7 +4,7 @@ Create an Akka token.
 
 == Synopsis
 
-This command allows you to create a refresh token that can be used to authenticate another kalix command instance on another machine.
+This command allows you to create a refresh token that can be used to authenticate another Akka command instance on another machine.
 
 ----
 akka auth tokens create [flags]

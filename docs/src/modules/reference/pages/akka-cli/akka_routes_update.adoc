@@ -4,7 +4,7 @@ Update a route
 
 == Synopsis
 
-The `kalix routes update _name_' command will update a route for the project.
+The `akka routes update _name_' command will update a route for the project.
 You must either supply a filename containing the route YAML, or use other flags to manipulate the route.
 
 ----

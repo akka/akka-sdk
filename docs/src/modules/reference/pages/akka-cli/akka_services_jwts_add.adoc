@@ -13,7 +13,7 @@ akka services jwts add [SERVICE] [flags]
 == Examples
 
 ----
-> kalix services jwt add my-service --key-id my-key
+> akka services jwt add my-service --key-id my-key
   --issuer my-issuer-name --algorithm HS256 --secret my-secret
 ----
 

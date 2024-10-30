@@ -4,7 +4,7 @@ Edit a route
 
 == Synopsis
 
-The `kalix routes edit _name_' command will open the route, as a YAML file, in the editor pointed to by the EDITOR environment variable.
+The `akka routes edit _name_' command will open the route, as a YAML file, in the editor pointed to by the EDITOR environment variable.
 
 ----
 akka routes edit NAME [flags]

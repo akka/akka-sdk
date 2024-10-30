@@ -4,7 +4,7 @@ List all hostnames
 
 == Synopsis
 
-The `akka project hostnames list` command will list a one-line summary of all hostnames that your Kalix project has configured.
+The `akka project hostnames list` command will list a one-line summary of all hostnames that your Akka project has configured.
 
 ----
 akka projects hostnames list [flags]

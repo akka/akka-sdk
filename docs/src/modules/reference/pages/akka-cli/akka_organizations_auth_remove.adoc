@@ -4,7 +4,7 @@ Remove the given authentication domain from the current (or specified) organizat
 
 == Synopsis
 
-The `akka organizations auth remove` command removes an authentication domain from the given organization in Kalix.
+The `akka organizations auth remove` command removes an authentication domain from the given organization in Akka.
 
 ----
 akka organizations auth remove DOMAIN-ID [flags]

@@ -4,7 +4,7 @@ Manage and deploy services on Akka.
 
 == Synopsis
 
-The `akka services` commands are used to manage and modify the services in your Kalix project.
+The `akka services` commands are used to manage and modify the services in your Akka project.
 
 == Options
 

@@ -4,7 +4,7 @@ Akka quickstart project samples.
 
 == Synopsis
 
-The `akka quickstart` commands list and download the quickstart project samples for Kalix.
+The `akka quickstart` commands list and download the quickstart project samples for Akka.
 
 == Options
 

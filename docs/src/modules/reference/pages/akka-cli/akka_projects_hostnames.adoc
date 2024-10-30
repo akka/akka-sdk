@@ -4,7 +4,7 @@ Manage hostnames for your Akka project.
 
 == Synopsis
 
-The `akka projects hostnames` commands manipulate the hostnames in your Kalix project.
+The `akka projects hostnames` commands manipulate the hostnames in your Akka project.
 
 == Options
 

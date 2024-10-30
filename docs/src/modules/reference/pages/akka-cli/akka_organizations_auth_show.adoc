@@ -4,7 +4,7 @@ Display information about the given authentication domain for the current (or sp
 
 == Synopsis
 
-The `akka organizations auth show _domain-id_` command shows detailed information about the given  authentication domain in the current (or specified) organization in Kalix.
+The `akka organizations auth show _domain-id_` command shows detailed information about the given  authentication domain in the current (or specified) organization in Akka.
 
 ----
 akka organizations auth show DOMAIN-ID [flags]

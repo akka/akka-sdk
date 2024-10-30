@@ -4,9 +4,9 @@ Add a hostname to a project
 
 == Synopsis
 
-The `kalix project hostnames add _name_' command will add a hostname to the project.
+The `akka project hostnames add _name_' command will add a hostname to the project.
 The name is optional.
-If not specified, you will be assigned a random hostname by Kalix.
+If not specified, you will be assigned a random hostname by Akka.
 Names must be valid hostnames that have a CNAME record that resolves to the ingress address for the region you wish to use it on.
 
 ----
