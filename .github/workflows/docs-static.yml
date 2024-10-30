@@ -1,11 +1,11 @@
 name: Static content to doc.akka.io
 on:
   workflow_dispatch:
-#  push:
-#    branches:
-#      - 'main'
-#    paths:
-#      - 'docs/src-static'
+  push:
+    branches:
+      - 'main'
+    paths:
+      - 'docs/src-static'
 
 permissions:
   contents: read
@@ -25,7 +25,8 @@ jobs:
 
       - name: rsync
         run: |
-          ./docs/bin/ssh-docs-prepare.sh 
+          ./docs/bin/ssh-docs-prepare.sh
+          ssh akkarepo@gustav.akka.io 'cp www/.htaccess www/.htaccess.$(date +"%Y%m%d-%H%M")'
           rsync -azP docs/src-static/* akkarepo@gustav.akka.io:www/
         env:
           SCP_SECRET: ${{ secrets.GUSTAV_SCP_SECRET }}

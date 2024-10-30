@@ -75,6 +75,9 @@ RedirectMatch 301 ^/actors-scala$                          https://doc.akka.io/l
 RedirectMatch 301 ^/java/$                                 https://doc.akka.io/libraries/akka-core/current/index.html?language=java
 RedirectMatch 301 ^/docs/akka/scala/stream/(.*)            https://doc.akka.io/libraries/akka-core/current/stream/$1?language=scala
 
+# ===================================
+# Akka core
+# ===================================
 # broken image links
 RedirectMatch 301 ^/docs/akka/images(.*)                   https://doc.akka.io/libraries/akka-core/current/images$1
 
@@ -141,10 +144,10 @@ RedirectMatch 301 ^/(api|japi)/akka/2.9.(\d+)(/?|/.*)$       https://doc.akka.io
 # ===================================
 # Akka Dependencies
 # ===================================
-RedirectMatch 301 ^/docs/akka-dependenvies/23.10(\.\d+)?(/?|/.*)$    https://doc.akka.io/libraries/akka-dependencies/23.10$2
+RedirectMatch 301 ^/docs/akka-dependencies/23.10(\.\d+)?(/?|/.*)$    https://doc.akka.io/libraries/akka-dependencies/23.10$2
 
 # 24.05 still with detailed versions
-RedirectMatch 301 ^/docs/akka-dependenvies/24.05(\.\d+)?(/?|/.*)$    https://doc.akka.io/libraries/akka-dependencies/24.05$1$2
+RedirectMatch 301 ^/docs/akka-dependencies/24.05(\.\d+)?(/?|/.*)$    https://doc.akka.io/libraries/akka-dependencies/24.05$1$2
 
 # ===================================
 # Akka Diagnostics
@@ -396,7 +399,10 @@ RedirectMatch 301 ^/(docs|api)/akka-persistence-couchbase(/?|/.*)$             h
 RedirectMatch 301 ^/alpakka-samples(/?|/.*)$ https://akka.io/alpakka-samples$1
 
 
-# All: /docs/{module}  -> /libraries/{module}/current/
-RedirectMatch 301 ^/docs/([^/]+)/$  https://doc.akka.io/libraries/$1/current/
-# All: /docs/* -> libraries
-RedirectMatch 301 ^/docs(/?|/.*)$      https://doc.akka.io/libraries$1
+# All: /docs/{module}       -> /libraries/{module}/current/
+RedirectMatch 301 ^/docs/([^/]+)/?$       https://doc.akka.io/libraries/$1/current/
+# All: /libraries/{module}  -> /libraries/{module}/current/
+RedirectMatch 301 ^/libraries/([^/]+)/?$  https://doc.akka.io/libraries/$1/current/
+
+# TODO remove once the real docs are published
+RedirectMatch 301 ^/akka-cli(/?|/.*)$      https://doc.akka.io/snapshots/akka-documentation/akka-cli$1
