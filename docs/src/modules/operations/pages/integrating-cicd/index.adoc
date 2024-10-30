@@ -18,7 +18,7 @@ Akka development projects can be integrated into a Continuous Integration/Contin
 [#create_a_service_token]
 == Create a service token
 
-You will need a Akka authentication token to set up any CI/CD process. To create the service token, run the command below:
+You will need an Akka authentication token to set up any CI/CD process. To create the service token, run the command below:
 
 [source,command line]
 ----

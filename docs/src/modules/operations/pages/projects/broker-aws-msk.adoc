@@ -32,7 +32,7 @@ Take the following steps to configure access to your AWS Kafka broker for your A
 akka config get-project
 ----
 
-. Store the password for your user in a Akka secret:
+. Store the password for your user in an Akka secret:
 +
 [source, command window]
 ----

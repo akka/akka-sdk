@@ -137,7 +137,7 @@ This image is now available to both the `stage` and `prod` projects in the `acme
 
 == Deploying a service using an image from ACR
 
-When deploying a Akka service specify the same image URL as above with the `akka service deploy` command:
+When deploying an Akka service specify the same image URL as above with the `akka service deploy` command:
 
 Deploying a service as a member of the Acme organization.
 

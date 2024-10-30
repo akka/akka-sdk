@@ -27,7 +27,7 @@ image:operations:confluent-api-key-details.png[API key details]
 akka config get-project
 ----
 
-. Copy the API secret and store it in a Akka secret (e.g. called `confluent-api-secret`)
+. Copy the API secret and store it in an Akka secret (e.g. called `confluent-api-secret`)
 +
 [source, command window]
 ----

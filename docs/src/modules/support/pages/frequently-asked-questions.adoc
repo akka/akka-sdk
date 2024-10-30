@@ -67,7 +67,7 @@ Akka leverages the proven Akka reactive architecture for building stateful, high
 
 Akka supports Java and Scala. For a detailed overview of supported features see xref:reference:feature-matrix[Feature Matrix] section.
 
-== What are the resource limits of a Akka service?
+== What are the resource limits of an Akka service?
 
 Individual requests and responses, states and events can in general have a payload size up to 12 Mb.
 

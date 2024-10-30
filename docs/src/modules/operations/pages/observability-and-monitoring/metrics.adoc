@@ -9,7 +9,7 @@ image:operations:dashboard-control-tower-metrics-filters-screenshot.png[]
 
 When filtering by "Service" you are left with only the selected service(s) in the Service and component sections. On top of that, the second filter is reloaded with only the "Endpoints/Methods" belonging to the selected service(s).
 
-"Endpoints/Methods" refers to one thing viewed from different perspectives. An endpoint is created by defining a method inside your service. With a Akka protobuf service via an `rcp` description and with a Akka Java service via `@PostRequest`, `@PatchRequest` or equivalent. The values in "Endpoints/Methods" filter come from the name of your protobuf definition or Java  method. 
+"Endpoints/Methods" refers to one thing viewed from different perspectives. An endpoint is created by defining a method inside your service. With an Akka protobuf service via an `rcp` description and with an Akka Java service via `@PostRequest`, `@PatchRequest` or equivalent. The values in "Endpoints/Methods" filter come from the name of your protobuf definition or Java  method.
 For example, the following class defines and endpoint with the method `increaseBy`:
 
 [source,java]

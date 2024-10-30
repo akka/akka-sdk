@@ -65,7 +65,7 @@ service:
 
 Once this is set, Akka will start generating https://opentelemetry.io/docs/concepts/observability-primer/#spans[spans, window="new"] for the following components: Event Sourced Entities, Value Entities, Actions, and Views. In addition, a View or an Action that subscribes to an Entity will receive the traces from that Entity and create a span related to the previous trace.
 
-Another possible use is to add a `traceparent` header when calling your Akka endpoint. In this case Akka will propagate this trace parent as the root of the subsequent interaction with a Akka component. Linking each Akka call to that external trace parent. 
+Another possible use is to add a `traceparent` header when calling your Akka endpoint. In this case Akka will propagate this trace parent as the root of the subsequent interaction with an Akka component. Linking each Akka call to that external trace parent.
 
 ==== Setting sampling
 
@@ -224,7 +224,7 @@ gcloud projects add-iam-policy-binding <gcp-project-id> \
 gcloud iam service-accounts keys create key.json \
     --iam-account akka-exporter@<gcp-project-id>.iam.gserviceaccount.com
 ----
-. Place the key file in a Akka secret, we'll call the secret `gcp-credentials`. The key for key file must be `key.json`.
+. Place the key file in an Akka secret, we'll call the secret `gcp-credentials`. The key for key file must be `key.json`.
 +
 [source,shellscript]
 ----
@@ -232,7 +232,7 @@ akka secret create generic gcp-credentials \
   --from-file key.json=key.json
 ----
 
-Now that you have configured service account, granted it the necessary roles, created a service account key and placed it into a Akka secret, you can now configure your observability configuration to export to Google Cloud:
+Now that you have configured service account, granted it the necessary roles, created a service account key and placed it into an Akka secret, you can now configure your observability configuration to export to Google Cloud:
 
 [.tabset]
 Descriptor::
@@ -297,7 +297,7 @@ akka project observability set default otlp \
   --endpoint otlp.example.com:4137 --insecure-skip-verify
 ----
 
-To specify a custom CA to verify server certificates, use the server CA property, pointing to a Akka CA secret:
+To specify a custom CA to verify server certificates, use the server CA property, pointing to an Akka CA secret:
 
 [.tabset]
 Descriptor::
@@ -319,7 +319,7 @@ akka project observability set default otlp \
   --endpoint otlp.example.com:4137 --server-ca-secret my-ca
 ----
 
-To specify a client certificate to use to authenticate with a remote server, you can use the client certificate property, pointing to a Akka TLS secret:
+To specify a client certificate to use to authenticate with a remote server, you can use the client certificate property, pointing to an Akka TLS secret:
 
 [.tabset]
 Descriptor::

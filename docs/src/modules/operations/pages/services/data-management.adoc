@@ -77,7 +77,7 @@ Now that the user has the right permissions, you need to create an access key fo
 
 ==== Create an Akka secret with the access key
 
-Now the access key that you created needs to be given to Akka. This can be done by creating a Akka secret. We're going to call this secret `my-credentials`:
+Now the access key that you created needs to be given to Akka. This can be done by creating an Akka secret. We're going to call this secret `my-credentials`:
 
 [source,bash]
 ----

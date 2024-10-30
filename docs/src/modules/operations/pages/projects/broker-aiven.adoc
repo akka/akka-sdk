@@ -27,14 +27,14 @@ image::operations:aiven-connection-information.png[Aiven Kafka connection inform
 akka config get-project
 ----
 
-.  Create a Akka TLS CA secret with the CA certificate for the service (e.g. called `kafka-ca-cert`)
+.  Create an Akka TLS CA secret with the CA certificate for the service (e.g. called `kafka-ca-cert`)
 +
 [source, command window]
 ----
 akka secret create tls-ca kafka-ca-cert --cert ./ca.pem
 ----
 
-. Copy the CA password from the "Connection Information" and store it in a Akka secret (e.g. called `kafka-secret`)
+. Copy the CA password from the "Connection Information" and store it in an Akka secret (e.g. called `kafka-secret`)
 +
 [source, command window]
 ----

@@ -91,7 +91,7 @@ The log will also contain links to the documentation. The documentation links wi
 
 == How to resolve errors when the runtime doesn't start
 
-This should not happen. Lightbend does not expect any broken runtime releases to be deployed. However, if a service doesn't start, and there are no errors logged which indicate a problem with your code, then a Akka Runtime failure is a remote possibility.
+This should not happen. Lightbend does not expect any broken runtime releases to be deployed. However, if a service doesn't start, and there are no errors logged which indicate a problem with your code, then an Akka Runtime failure is a remote possibility.
 
 *Steps to resolve:*
 
