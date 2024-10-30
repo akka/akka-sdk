@@ -23,8 +23,6 @@ private[impl] final case class ViewException(
  */
 @InternalApi
 private[impl] object ViewException {
-  def apply(message: String): ViewException =
-    ViewException(viewId = "", commandName = "", message, None)
 
   def apply(viewId: String, context: UpdateContext, message: String, cause: Option[Throwable]): ViewException =
     ViewException(viewId, context.eventName, message, cause)

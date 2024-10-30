@@ -109,8 +109,8 @@ final class ViewsImpl(_services: Map[String, ViewService[_]], sdkDispatcherName:
                 try {
                   handler._internalHandleUpdate(state, msg, context)
                 } catch {
-                  case e: ViewException => throw e
                   case NonFatal(error) =>
+                    log.error(s"View updater for view [${service.componentId}] threw an exception", error)
                     throw ViewException(
                       service.componentId,
                       context,
@@ -122,12 +122,15 @@ final class ViewsImpl(_services: Map[String, ViewService[_]], sdkDispatcherName:
 
               effect match {
                 case ViewEffectImpl.Update(newState) =>
-                  if (newState == null)
+                  if (newState == null) {
+                    log.error(
+                      s"View updater tried to set row state to null, not allowed [${service.componentId}] threw an exception")
                     throw ViewException(
                       service.componentId,
                       context,
                       "updateState with null state is not allowed.",
                       None)
+                  }
                   val serializedState = ScalaPbAny.fromJavaProto(service.messageCodec.encodeJava(newState))
                   val upsert = pv.Upsert(Some(pv.Row(value = Some(serializedState))))
                   val out = pv.ViewStreamOut(pv.ViewStreamOut.Message.Upsert(upsert))
