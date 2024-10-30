@@ -20,7 +20,7 @@ Akka Remoting uses Java serializer as default configuration which makes it vulne
 The documentation of how to disable Java serializer was not complete.
 The documentation of how to enable mutual authentication was missing (only described in reference.conf).
 
-To protect against such attacks the system should be updated to Akka _2.4.17_ or later and be configured with https://doc.akka.io/docs/akka/2.5/remoting.html#disable-java-serializer[disabled Java serializer].
+To protect against such attacks the system should be updated to Akka _2.4.17_ or later and be configured with https://doc.akka.io/libraries/akka-core/2.5/remoting.html#disable-java-serializer[disabled Java serializer].
 Additional protection can be achieved when running in an untrusted network by enabling @ref:link:../remoting-artery.md#remote-tls[TLS with mutual authentication].
 
 Please subscribe to the https://groups.google.com/forum/#!forum/akka-security[akka-security] mailing list to be notified promptly about future security issues.

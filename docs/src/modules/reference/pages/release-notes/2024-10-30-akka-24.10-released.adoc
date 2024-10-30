@@ -1,0 +1,127 @@
+= Akka 24.10 Released
+
+Dear hakkers,
+
+Today we are excited to announce the availability of the Akka 24.10 release.
+
+Akka 24.10 consists of the following module versions:
+
+* Akka core 2.10.0
+* Akka HTTP 10.7.0
+* Akka gRPC 2.5.0
+* Akka Management 1.6.0
+* Alpakka Kafka 7.0.0
+* Alpakka 9.0.0
+* Akka Persistence R2DBC 1.3.0
+* Akka Persistence DynamoDB 2.0.0
+* Akka Persistence JDBC 5.5.0
+* Akka Persistence Cassandra 1.3.0
+* Akka Projections 1.6.0
+* Akka Diagnostics 2.2.0
+* Akka Insights 2.21.2
+
+As reference of versions that go together for Akka 24.10, please see https://doc.akka.io/libraries/akka-dependencies/24.10/[Akka module versions 24.10].
+
+== DynamoDB persistence
+
+New plugin that allows for using Amazon DynamoDB as a backend for Akka Persistence.
+It has full feature support for Event Sourced entities and Projections.
+
+Highlight of features:
+
+* Event journal designed for DynamoDB's data sharding model
+* Event deletion and cleanup tool
+* DynamoDB's Time to Live (TTL)
+* Snapshot store
+* Projections based on the `eventsBySlices` query and offset storage in a similar way as the R2DBC plugin
+* Exactly-once and at-least-once projections
+* Low latency `eventsBySlices` and projections
+* Projection over gRPC
+* Replicated Event Sourcing
+* Observability integration with Amazon CloudWatch
+
+See https://doc.akka.io/libraries/akka-persistence-dynamodb/current/index.html[documentation]
+
+== EventSourcedBehavior using Java 21
+
+API that let you leverage the switch pattern match feature, see example in the https://doc.akka.io/libraries/akka-core/2.10/typed/persistence-style.html#leveraging-java-21-features[documentation].
+
+== License key
+
+Akka requires a license key for use in production.
+
+Read about the motivation in the blog post https://www.lightbend.com/blog/akka-license-keys-and-no-spam-promise[Akka License Keys && a No SPAM Promise].
+
+Obtain a free key at https://akka.io/key.
+
+== Security Updates
+
+We run automated security vulnerability and license policy scanning of dependencies.
+Several dependencies have been updated to fix security vulnerabilities and keep up with latest improvements.
+
+The following CVEs are addressed in this build.
+
+* https://nvd.nist.gov/vuln/detail/CVE-2024-7254[CVE-2024-7254]
+* https://nvd.nist.gov/vuln/detail/CVE-2021-37137[CVE-2021-37137]
+* https://nvd.nist.gov/vuln/detail/CVE-2023-6378[CVE-2023-6378]
+
+== Bug fixes
+
+* Entity stuck in passivation https://github.com/akka/akka/pull/32439[akka #32439]
+* Use new state in snapshotWhen https://github.com/akka/akka/pull/32462[akka #32462]
+* Split event sourced remember entity updates into batched StateChange events https://github.com/akka/akka/issues/32475[akka #32475]
+* Fix stuck queries when too many events with same timestamp https://github.com/akka/akka-persistence-r2dbc/pull/586[akka-persistence-r2dbc #586]
+* Trigger replay only for a specific projection instance https://github.com/akka/akka-projection/pull/1201[akka-projection #1201]
+* Fix condition for deleting old timestamp offsets https://github.com/akka/akka-projection/pull/1186[akka-projection #1186]
+
+== Other improvements
+
+* Several vital improvements to R2DBC Projections.
+ ** Skip backtracking queries when far behind for better efficiency
+ ** Low latency also after idle
+ ** Adopt offsets for improved projection scaling, and refine start offset after downscaling
+* Shard allocation strategy to reduce database connections when using database sharding
+* Support migration to Replicated Event Sourcing
+
+== Dependency updates
+
+* Jackson 2.17.2
+* Protobuf Java 3.25.5
+* SLF4J 2.0.16
+* The transitive dependency on `scala-java8-compat` has been removed
+
+== Compatibility
+
+All modules of Akka 24.10 are backwards compatible with Akka 24.05.
+No configuration changes are needed.
+Rolling update of Akka Cluster is fully supported.
+
+SLF4J 2.0.x and Logback 1.5.x are now supported, and SLF4J 1.7.x and Logback 1.2.x are not supported anymore.
+
+The Akka Discovery implementation `akka-discovery-marathon-api` has been deprecated.
+
+Akka Multi-DC Cluster has been deprecated, use https://doc.akka.io/libraries/akka-distributed-cluster/current/index.html[Akka Distributed Cluster] and https://doc.akka.io/libraries/akka-edge/current/index.html[Akka Edge] instead.
+
+Couchbase, Kudu and Solr Alpakka connectors have been marked end-of-life.
+
+== Detailed release notes:
+
+* https://github.com/akka/akka/releases[Akka core 2.10.x]
+* https://github.com/akka/akka-http/releases[Akka HTTP 10.7.x]
+* https://github.com/akka/akka-grpc/releases[Akka gRPC 2.5.x]
+* https://github.com/akka/akka-management/releases[Akka Management 1.6.x]
+* https://github.com/akka/alpakka-kafka/releases[Alpakka Kafka 7.0.x]
+* https://github.com/akka/alpakka/releases[Alpakka 9.0.x]
+* https://github.com/akka/akka-persistence-r2dbc/releases[Akka Persistence R2DBC 1.3.x]
+* https://github.com/akka/akka-persistence-dynamodb/releases[Akka Persistence DynamoDB 2.0.x]
+* https://github.com/akka/akka-persistence-jdbc/releases[Akka Persistence JDBC 5.5.x]
+* https://github.com/akka/akka-persistence-cassandra/releases[Akka Persistence Cassandra 1.3.x]
+* https://github.com/akka/akka-projection/releases[Akka Projections 1.6.x]
+* https://github.com/akka/akka-diagnostics/releases[Akka Diagnostics 2.2.x]
+* https://doc.akka.io/libraries/akka-insights/current/project/release-notes.html[Akka Insights 2.21.x]
+
+Akka licensing and support options are available from https://www.lightbend.com/akka[Lightbend].
+
+Happy hakking!
+
+-- The Akka Team

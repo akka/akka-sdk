@@ -1,0 +1,15 @@
+= Akka license key
+
+Dear hakkers,
+
+Today we have released new versions of Akka (2.9.6, 2.8.7, 2.7.1) that require a license key for use in production.
+
+Read about the motivation in the blog post https://www.lightbend.com/blog/akka-license-keys-and-no-spam-promise[Akka License Keys && a No SPAM Promise].
+
+Obtain a free key at https://akka.io/key.
+
+Detailed https://github.com/akka/akka/releases[release notes].
+
+Happy hakking!
+
+-- The Akka Team

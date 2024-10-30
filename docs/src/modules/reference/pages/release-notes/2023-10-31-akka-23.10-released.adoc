@@ -1,0 +1,163 @@
+= Akka 23.10 Released
+
+Dear hakkers,
+
+Today we are excited to announce the availability of the Akka 23.10 release.
+It consists of the following modules:
+
+* Akka (core) 2.9.0
+* Akka HTTP 10.6.0
+* Akka gRPC 2.4.0
+* Akka Management 1.5.0
+* Alpakka Kafka 5.0.0
+* Alpakka 7.0.0
+* Akka Persistence R2DBC 1.2.0
+* Akka Persistence JDBC 5.3.0
+* Akka Persistence Cassandra 1.2.0
+* Akka Projections 1.5.0
+* Akka Diagnostics 2.1.0
+* Akka Insights 2.19.0 (to be released soon)
+
+Starting from this release, the Akka releases are now published to our own dedicated repository.
+This change provides us with more control over the distribution process, ensuring faster and more secure updates for our users.
+The repository needs to be added to your build configuration as described in the https://doc.akka.io/libraries/akka-core/current/project/migration-guide-2.8.x-2.9.x.html#migration-guide-2-8-x-to-2-9-x[migration guide].
+
+== New features
+
+For deeper insight into some of these new features, please visit the https://www.lightbend.com/blog[Lightbend blog], which will publish articles about the features during the next month.
+
+=== Akka Edge
+
+https://doc.akka.io/libraries/akka-edge/current/index.html[Akka Edge] is a set of features that will help you with stretching an Akka system to the Edge.
+Akka Edge is similar to https://doc.akka.io/libraries/akka-distributed-cluster/current/index.html[Akka Distributed Cluster] and they share features and implementation, but Akka Edge is intended for use cases with even more geographically distributed services and possibly in more resource constrained environments.
+
+It comes with new features such as:
+
+* Projections over gRPC for the Edge -- asynchronous brokerless service-to-service communication.
+* Connections are always established from the edge service.
+* Scalability and efficiency improvements to handle the large scale of many edge services.
+* Support for more constrained environments such as running with GraalVM native image and lightweight Kubernetes distributions.
+* Support for multidimensional autoscaling and scale to near zero.
+
+=== H2 dialect in R2DBC persistence plugin
+
+Support for the lightweight H2 database has been added to Akka Persistence R2DBC and Akka Projections.
+H2 can be useful as in-memory database for testing or as a lightweight database for single node systems.
+
+=== Starting projection from snapshot
+
+The https://doc.akka.io/libraries/akka-projection/current/eventsourced.html#sourceprovider-for-eventsbyslicesstartingfromsnapshots[projection can use snapshots] as starting points and thereby reducing number of events that have to be loaded.
+This can be useful if the consumer starts from zero or if it has been disconnected for a long while.
+
+=== Scalability improvements for many projections
+
+https://doc.akka.io/libraries/akka-projection/current/eventsourced.html#many-projections[Many projection consumers] of the same events can share the same event stream from the database.
+
+== Security Updates
+
+We run automated security vulnerability and license policy scanning of dependencies.
+Several dependencies have been updated to fix security vulnerabilities and keep up with latest improvements.
+
+The following CVEs are addressed in this build.
+
+* https://akka.io/security/akka-http-cve-2023-44487.html[CVE-2023-44487]
+* https://akka.io/security/akka-cve-2023-45865.html[CVE-2023-45865]
+* https://nvd.nist.gov/vuln/detail/CVE-2022-3171[CVE-2022-3171]
+* https://nvd.nist.gov/vuln/detail/CVE-2023-2976[CVE-2023-2976]
+* https://nvd.nist.gov/vuln/detail/CVE-2022-3509[CVE-2022-3509]
+* https://nvd.nist.gov/vuln/detail/CVE-2022-3510[CVE-2022-3510]
+* https://nvd.nist.gov/vuln/detail/CVE-2023-34455[CVE-2023-34455]
+* https://nvd.nist.gov/vuln/detail/CVE-2022-36944[CVE-2022-36944]
+* https://nvd.nist.gov/vuln/detail/CVE-2019-20444[CVE-2019-20444]
+* https://nvd.nist.gov/vuln/detail/CVE-2019-20445[CVE-2019-20445]
+* https://nvd.nist.gov/vuln/detail/CVE-2019-16869[CVE-2019-16869]
+* https://nvd.nist.gov/vuln/detail/CVE-2021-37136[CVE-2021-37136]
+* https://nvd.nist.gov/vuln/detail/CVE-2021-37137[CVE-2021-37137]
+* https://nvd.nist.gov/vuln/detail/CVE-2023-20883[CVE-2023-20883]
+* https://nvd.nist.gov/vuln/detail/CVE-2023-4586[CVE-2023-4586]
+
+== Bug fixes
+
+* Fix downing of all nodes in Akka Cluster in some situations https://github.com/akka/akka/issues/31095[akka #31095]
+* Wrong offset storage for projection with grouped events https://github.com/akka/akka-projection/issues/906[akka-projection #906]
+* Fix projection queries that can become stuck without progress https://github.com/akka/akka-persistence-r2dbc/pull/445[akka-persistence-r2dbc 445]
+* More safe starting offset for projection downscaling, which may otherwise lead to missed events https://github.com/akka/akka-projection/pull/1012[akka-projection #1012]
+* Don't cache failed prepared statement in Cassandra persistence plugin https://github.com/akka/akka-persistence-cassandra/issues/1056[akka-persistence-cassandra #1056]
+* Handle Kubernetes lease name truncation, which can lead to non-unique lease names https://github.com/akka/akka-management/issues/910[akka-management #910]
+* Handle ActorSystem uid collision in a more graceful way, and make uid more unique.
+https://github.com/akka/akka/pull/32161[akka #32161], https://github.com/akka/akka/pull/32168[akka #32168]
+* NullPointerException in Akka gRPC exception handler https://github.com/akka/akka-grpc/issues/1854[akka-grpc #1854]
+* Ongoing request not failed when HTTP/2 PersistentConnection connection attempt ultimately fails https://github.com/akka/akka-http/issues/3892[akka-http #3892]
+* Internal server error triggered by "`Accept-Charset`" header with unexpected value https://github.com/akka/akka-http/issues/4295[akka-http #4295]
+
+== Other improvements
+
+* Topic filters for Projections over gRPC https://github.com/akka/akka-projection/issues/916[akka-projection #916]
+* Start projection from a custom offset https://github.com/akka/akka-projection/pull/943[akka-projection #943]
+* Predefined marker interfaces for JSON and CBOR https://github.com/akka/akka/pull/32049[akka #32049]
+
+== Dependency updates
+
+* Scala 2.13.12 and 3.3.1
+* Jackson 2.15.2
+* Protobuf Java 3.24.0
+* gRPC Java 1.58.0
+* Guava 32.0.1-android
+* Config 1.4.3
+* Aeron 1.42.1, Agrona 1.19.2
+* r2dbc-pool 1.0.1
+* r2dbc-postgresql 1.0.2
+* Cassandra java-driver-core 4.17.0
+* Netty 4.1.100
+* mysql-connector-java 8.1.0
+* h2 2.2.224
+* Kafka Client 3.5.1
+* Avro 7.4.0
+* amqp-client 5.18.0
+
+== Compatibility
+
+To streamline our product we're discontinuing support for Java 8 and Scala 2.12.
+Our recommendation is to migrate to Java 11 or 17 and Scala 2.13.
+Akka 23.05 (Akka 2.8.x) with Java 8 and Scala 2.12 will be supported until October 31, 2024.
+
+Akka is cross compiled to Scala 3.3.1, if you use Scala 3 you should update to at least version 3.3.1.
+
+Akka 2.9.x is compatible with Akka 2.8.x, 2.7.x and 2.6.x aside from removal of a few deprecated modules:
+
+* Cluster client has been deprecated since Akka 2.6.0 (2019-11-06).
+Details on https://doc.akka.io/libraries/akka-core/2.6/cluster-client.html#migration-to-akka-grpc[how to migrate can be found in the Akka 2.6 docs].
+* The old "`Typed Actor`" API (akka.actor.TypedActor) has been deprecated since Akka 2.6.0 (2019-11-06) and has been dropped.
+No detailed migration guide exists, the recommendation is to move to the new Akka Typed APIs.
+* The Akka SSLConfig convenience and methods accepting it has been deprecated since Akka 2.6.0 and has been dropped.
+Usage should be replaced with directly creating a javax.net.ssl.SSLEngine using the JDK APIs.
+* Persistent FSM has been deprecated since Akka 2.6.0 (2019-11-06) and has now been dropped.
+Details on https://doc.akka.io/libraries/akka-core/2.8/persistence-fsm.html#migration-to-eventsourcedbehavior[how to migrate can be found in the Akka 2.8 docs].
+
+By compatible, we mean:
+
+* Akka 2.9.x is binary backwards compatible with 2.8.x, 2.7.x and 2.6.x, i.e.
+a library built with Akka 2.6.x can still be used with an application using Akka 2.9.x.
+* No configuration changes are needed for updating an application from Akka 2.6.x, 2.7.x or 2.8.x to 2.9.x.
+* Rolling update of Akka Cluster from Akka 2.6.x, 2.7.x or 2.8.x to 2.9.x is fully supported.
+* Other modules included in Akka 23.10 are also compatible with their previous version.
+
+== Detailed release notes:
+
+* https://github.com/akka/akka/releases[Akka (core) 2.9.x]
+* https://github.com/akka/akka-http/releases[Akka HTTP 10.6.x]
+* https://github.com/akka/akka-grpc/releases[Akka gRPC 2.4.x]
+* https://github.com/akka/akka-management/releases[Akka Management 1.5.x]
+* https://github.com/akka/alpakka-kafka/releases[Alpakka Kafka 5.0.x]
+* https://github.com/akka/alpakka/releases[Alpakka 7.0.x]
+* https://github.com/akka/akka-persistence-r2dbc/releases[Akka Persistence R2DBC 1.2.x]
+* https://github.com/akka/akka-persistence-jdbc/releases[Akka Persistence JDBC 5.3.x]
+* https://github.com/akka/akka-persistence-cassandra/releases[Akka Persistence Cassandra 1.2.x]
+* https://github.com/akka/akka-projection/releases[Akka Projections 1.5.x]
+* https://github.com/akka/akka-diagnostics/releases[Akka Diagnostics 2.1.x]
+
+Akka licensing and support options are available from https://www.lightbend.com/akka[Lightbend].
+
+Happy hakking!
+
+-- The Akka Team

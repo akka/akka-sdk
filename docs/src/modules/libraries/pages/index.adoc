@@ -2,7 +2,7 @@
 
 Akka provides a set of libraries for building and running responsive applications. Key libraries and resources are outlined to help you get started.
 
-TIP: Find the latest Akka library versions at https://doc.akka.io/docs/akka-dependencies/current[Akka library versions].
+TIP: Find the latest Akka library versions at https://doc.akka.io/libraries/akka-dependencies/current[Akka library versions].
 
 [.akka-docs-homepage-grid]
 ====

@@ -1,0 +1,139 @@
+= Akka 23.05 Released
+
+Dear hakkers,
+
+Today we are excited to announce the availability of the Akka 23.05 release.
+It consists of the following modules:
+
+* Akka (core) 2.8.2
+* Akka HTTP 10.5.2
+* Akka gRPC 2.3.2
+* Akka Management 1.4.0
+* Alpakka Kafka 4.0.2
+* Alpakka 6.0.1
+* Akka Persistence R2DBC 1.1.0
+* Akka Persistence JDBC 5.2.1
+* Akka Persistence Cassandra 1.1.1
+* Akka Projections 1.4.0
+* Akka Diagnostics 2.0.0
+
+== New features
+
+For deeper insight into some of these new features, please visit the https://www.lightbend.com/blog[Lightbend blog], which will be featuring a new feature weekly for the next month.
+
+The noteworthy features are:
+
+* https://doc.akka.io/libraries/akka-distributed-cluster/current/index.html[Akka Distributed Cluster] is a set of features that will help you with stretching an Akka Cluster over geographically distributed locations, and provides asynchronous communication between different Akka Microservices without using a message broker.
+It comes with new features such as:
+ ** Projections over gRPC -- asynchronous brokerless service-to-service communication.
+ ** Replicated Event Sourcing over gRPC -- active-active entities.
+ ** Dynamic event filters that can be defined on both the producer and on the consumer side, and they can be changed at runtime.
+* https://doc.akka.io/libraries/akka-management/current/rolling-updates.html#kubernetes-rolling-updates[Improved rolling updates in Kubernetes] by defining Pod deletion cost corresponding to Akka Cluster member age and Akka Cluster `app-version` from Kubernetes revision.
+* https://doc.akka.io/libraries/akka-core/current/typed/cluster-sharded-daemon-process.html#dynamic-scaling-of-number-of-workers[Dynamic scaling of number of Sharded Daemon Processes], e.g.
+Projection instances.
+* Storing a https://doc.akka.io/libraries/akka-persistence-r2dbc/current/durable-state-store.html[query representation of Durable State] without using asynchronous Projection processing.
+* Store event, snapshot and durable state https://doc.akka.io/libraries/akka-persistence-r2dbc/current/postgres_json.html[payloads as JSON] in PostgreSQL with Akka Persistence R2DBC.
+* https://doc.akka.io/libraries/akka-persistence-r2dbc/current/cleanup.html[Database cleanup tool] in Akka Persistence R2DBC.
+* https://doc.akka.io/libraries/akka-core/current/stream/operators/Source-or-Flow/mapAsyncPartitioned.html#mapasyncpartitioned[`mapAsyncPartitioned` Streams operator]
+* Using https://doc.akka.io/libraries/akka-core/current/remote-security.html#mtls-with-rotated-certificates-in-kubernetes[Akka Cluster with mTLS and rotated certificates in Kubernetes].
+* Scala 3 support in:
+ ** Akka HTTP
+ ** Akka gRPC
+ ** Akka Management
+ ** Akka Persistence R2DBC
+ ** Akka Persistence Cassandra
+ ** Akka Projections (some modules)
+ ** Alpakka Kafka
+ ** Alpakka (some modules)
+ ** Akka Diagnostics
+* https://doc.akka.io/libraries/akka-diagnostics/current/[Akka Diagnostics] with Thread Starvation Detector and Config Checker.
+* https://doc.akka.io/libraries/akka-core/current/typed/distributed-data.html#expire[Automatic expiry of Distributed Data entries] and https://doc.akka.io/libraries/akka-core/current/typed/distributed-data.html#subscribe[subscribe to entries with wildcard naming].
+This is useful for building cache like data structures with Distributed Data.
+
+== Security Updates
+
+We run automated security vulnerability and license policy scanning of dependencies.
+Several dependencies have been updated to fix security vulnerabilities and keep up with latest improvements.
+Security scans with several other tools have also been performed without detecting any vulnerabilities.
+
+The following CVEs are addressed in this build.
+
+* https://akka.io/security/alpakka-kafka-cve-2023-29471.html[CVE-2023-29471]
+* https://akka.io/security/akka-async-dns-2023-31442.html[CVE-2023-31442]
+* https://akka.io/security/akka-http-cve-2023-05-15.html[CVE-2023-33251]
+* https://nvd.nist.gov/vuln/detail/CVE-2022-41915[CVE-2022-41915]
+* https://nvd.nist.gov/vuln/detail/CVE-2022-3509[CVE-2022-3509]
+* https://nvd.nist.gov/vuln/detail/CVE-2022-3510[CVE-2022-3510]
+* https://nvd.nist.gov/vuln/detail/CVE-2022-3171[CVE-2022-3171]
+
+== Bug fixes
+
+* Concurrency issues in Event Sourced Behavior retention process, https://github.com/akka/akka/issues/31785[akka #31785]
+* Integer overflow in Event Sourced Behavior retention, https://github.com/akka/akka/issues/31717[akka #31717]
+* State consistency issue when deleting Durable State, https://github.com/akka/akka/issues/31752[akka #31752]
+* Release of Kubernetes lease when used with Cluster Sharding, https://github.com/akka/akka/issues/31715[akka #31715]
+* Rolling update problem with `ClusterShardingHealthCheck`, https://github.com/akka/akka/issues/31271[akka #31271]
+* Missing event in Projection R2DBC, https://github.com/akka/akka-persistence-r2dbc/issues/371[akka-persistence-r2dbc #371]
+* Sharding with separate Coordinator role, https://github.com/akka/akka/issues/31637[akka #31637]
+* `NullPointerException` in Streams shutdown, https://github.com/akka/akka/issues/30201[akka #30201]
+* Race condition in Streams `BroadcastHub` initialization, https://github.com/akka/akka/issues/31530[akka #31530]
+* Streams `groupBy` incorrectly failing for element on closed substream, https://github.com/akka/akka/issues/30205[#30205]
+* TLS session is updated too late for TLS 1.3, https://github.com/akka/akka/issues/31419[akka #31419]
+* Fix Content-Length when HTTP entity is disallowed, https://github.com/akka/akka-http/pull/4214[akka-http #4214]
+* HTTP/2 error when parsing percent-encoded query string, https://github.com/akka/akka-http/issues/4226[akka-http #4226]
+* HTTP/2 exception from handler, https://github.com/akka/akka-http/issues/4241[akka-http #4241]
+* gRPC client with TLS and a custom SslContext, https://github.com/akka/akka-grpc/issues/1728[akka-grpc #1728]
+
+== Other improvements
+
+* Kubernetes Deployment descriptors in the https://doc.akka.io/guide/microservices-tutorial/grpc-service.html#_run_in_kubernetes[Akka Guide samples]
+* https://doc.akka.io/libraries/akka-grpc/current/mtls.html[gRPC mutual authentication with TLS]
+* Recommendation to use `CooperativeStickyAssignor` https://doc.akka.io/docs/alpakka-kafka/current/consumer.html#settings[Consumer Assignment Strategy in Alpakka Kafka]
+* Optimizations of spawning typed actor behaviors, and typed actor memory footprint.
+* Sharding entity-recovery-constant-rate-strategy rate per entity type, https://github.com/akka/akka/pull/31836[akka #31836]
+
+== Dependency updates
+
+* Jackson 2.13.5
+* Scala versions have been updated to 2.12.17, 2.13.17 and 3.2.2
+* Scala-xml 2.1.0 in builds
+* r2dbc-postgresql 1.0.1, including Netty 4.1.89 (CVE-2022-41915)
+* protobuf-java 3.21.9 (CVE-2022-3509, CVE-2022-3510, CVE-2022-3171)
+* kafka-clients 3.3.2
+* lmdbjava 0.8.3
+
+== Compatibility
+
+Akka 2.8.x is compatible with Akka 2.7.x and 2.6.x aside from removal of two deprecated modules:
+
+* Classic Remoting transport has been deprecated since Akka 2.6.0 (2019-11-06) and is replaced by the Artery transport, which has been the default since 2.6.0 and declared ready for production in Akka 2.5.22 (2019-04-03).
+* OSGi packaging and support in Akka has been dropped.
+
+By compatible, we mean:
+
+* Akka 2.8.x is binary backwards compatible with 2.7.x and 2.6.x, i.e.
+a library built with Akka 2.6.x can still be used with an application using Akka 2.8.x.
+* No configuration changes are needed for updating an application from Akka 2.6.x or 2.7.x to 2.8.x.
+* Rolling update of Akka Cluster from Akka 2.6.x or 2.7.x to 2.8.x is fully supported.
+
+Other modules included in Akka 23.05 are also compatible with their previous version.
+
+== Detailed release notes:
+
+* https://github.com/akka/akka/releases[Akka (core) 2.8.x]
+* https://github.com/akka/akka-http/releases[Akka HTTP 10.5.x]
+* https://github.com/akka/akka-grpc/releases[Akka gRPC 2.3.x]
+* https://github.com/akka/akka-management/releases[Akka Management 1.3.x and 1.4.x]
+* https://github.com/akka/alpakka-kafka/releases[Alpakka Kafka 4.0.1 and 4.0.2]
+* https://github.com/akka/alpakka/releases[Alpakka 6.0.x]
+* https://github.com/akka/akka-persistence-r2dbc/releases[Akka Persistence R2DBC 1.1.x]
+* https://github.com/akka/akka-persistence-jdbc/releases[Akka Persistence JDBC 5.2.1]
+* https://github.com/akka/akka-persistence-cassandra/releases[Akka Persistence Cassandra 1.1.1]
+* https://github.com/akka/akka-projection/releases[Akka Projections 1.4.x]
+* https://github.com/akka/akka-diagnostics/releases[Akka Diagnostics 2.0.x]
+
+Akka licensing and support options are available from https://www.lightbend.com/akka[Lightbend].
+
+Happy hakking!
+
+-- The Akka Team

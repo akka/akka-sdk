@@ -8,15 +8,15 @@ Current versions
 
 * xref:java:index.adoc[Akka SDK {akka-javasdk-version}]
 * Akka CLI {akka-cli-version}
-* A glance of all Akka libraries and their current versions is presented at https://doc.akka.io/docs/akka-dependencies/current[Akka library versions].
+* A glance of all Akka libraries and their current versions is presented at https://doc.akka.io/libraries/akka-dependencies/current[Akka library versions].
 
 == October 2024
 
+* Akka libraries 24.10 releases
+    - overview in xref:release-notes/2024-10-30-akka-24.10-released.adoc[]
+
 * Akka Runtime 1.1.50
     - Several smaller bug fixes and improvements
-
-* Akka libraries 24.10 releases
-    - details to come
 
 * Akka Runtime 1.1.49
    - JWT support for HTTP Endpoints
@@ -52,8 +52,29 @@ Current versions
     - updates for https://github.com/advisories/GHSA-735f-pc8j-v9w8[CVE-2024-7254]
 * https://github.com/akka/akka/releases/tag/v2.9.6[Akka core 2.9.6]
     - updates for https://github.com/advisories/GHSA-735f-pc8j-v9w8[CVE-2024-7254]
+    - xref:release-notes/2024-10-02-akka-2.9.6-released.adoc[]
     - license key validation
 * https://github.com/akka/akka/releases/tag/v2.8.7[Akka core 2.8.7]
-    - license key validation
+    - xref:release-notes/2024-10-02-akka-2.9.6-released.adoc[]
 * https://github.com/akka/akka/releases/tag/v2.7.1[Akka core 2.7.1]
-    - license key validation
+    - xref:release-notes/2024-10-02-akka-2.9.6-released.adoc[]
+
+== May 2024
+
+* Akka libraries 24.05 releases
+    - overview in xref:release-notes/2024-05-17-akka-24.05-released.adoc[]
+
+== October 2023
+
+* Akka libraries 23.10 releases
+    - overview in xref:release-notes/2023-10-31-akka-23.10-released.adoc[]
+
+== May 2023
+
+* Akka libraries 23.05 releases
+    - overview in xref:release-notes/2023-05-16-akka-23.5-released.adoc[]
+
+== October 2022
+
+* Akka libraries 22.10 releases
+    - overview in xref:release-notes/2022-10-26-akka-22.10-released.adoc[]

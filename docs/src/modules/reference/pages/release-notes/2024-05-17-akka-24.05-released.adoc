@@ -1,0 +1,168 @@
+= Akka 24.05 released
+
+Dear hakkers,
+
+Today we are excited to announce the availability of the Akka 24.05 release.
+
+We focused on some areas of improvement for Akka 24.05:
+
+* Zero Trust, Security and Compliance
+* Performance through Database sharding
+* Java 21 is now certified
+* Akka Edge Rust and enhancements for Edge use cases
+
+Akka 24.05 consists of the following module versions:
+
+* Akka (core) 2.9.3
+* Akka HTTP 10.6.3
+* Akka gRPC 2.4.3
+* Akka Management 1.5.2
+* Alpakka Kafka 6.0.0
+* Alpakka 8.0.0
+* Akka Persistence R2DBC 1.2.4
+* Akka Persistence JDBC 5.4.1
+* Akka Persistence Cassandra 1.2.1
+* Akka Projections 1.5.4
+* Akka Diagnostics 2.1.1
+* Akka Insights 2.20.0
+
+As reference of versions that go together for Akka 24.05, please see https://doc.akka.io/libraries/akka-dependencies/24.05/[Akka module versions 24.05].
+
+
+== Zero Trust, Security and Compliance
+
+Traditionally, systems have been protected at their perimeter, using firewalls to protect the network, and with internal systems having no means to be accessed from the outside world. Security in these setups relies on the perimeter security, and trusts things that happen inside the perimeter, such as trusting requests between services, trusting the integrity of long lived credentials, and trusting that an internal service will only access the data that it needs.
+
+This system of trust doesn't stand up to scrutiny in modern systems, where network configurations use complex cloud based VPS solutions, and services number in the hundreds or thousands. It can be difficult to get a holistic understanding of the entire surface area of attack for the system, and so just trusting the perimeter leaves the system vulnerable to many types of attacks, including exploiting configuration errors and escalation of exploiting parts of the system.
+
+To combat this, an alternative approach to security architecture, called Zero Trust, is necessary. Zero trust systems assume that perimeter security measures have been breached. Note that this does not mean they have no perimeter security. Rather, services in the system use additional layers of security to ensure that in the event that perimeter security is breached, the breach can be contained.
+
+https://doc.akka.io/libraries/guide/security/zero-trust.html[Learn how to build Zero Trust systems with Akka.]
+
+=== New directives in Akka HTTP
+
+Cross-origin resource sharing (CORS) is a mechanism that allows a webpage to access restricted resources
+from a server on a domain different than the domain that served the web page. Akka HTTP now provides
+directives for CORS out of the box.
+
+JSON Web Tokens (JWT) provides a way to define fine grained access control for resources. Akka HTTP now
+provides a JWT directive to verify and extract claims to decide if a certain request should be allowed or not.
+
+In addition to simplified setup and rotation of mTLS, new directives for inspecting and asserting the identity of the client certificate are now provided.
+
+== Performance through Database sharding
+
+Using a single non-distributed database can become a bottleneck for applications that have high throughput requirements. We have added the capability to [spread the data and load over many physical backend databases](https://doc.akka.io/libraries/akka-persistence-r2dbc/current/data-partition.html). It doesn't require any partitioning or sharding support from the database itself so ordinary cost-efficient non-distributed databases can still be used.
+
+== Java 21
+
+Akka is now https://doc.akka.io/libraries/akka-dependencies/current/support-terminology.html#certified[certified] for Java 21, which gives access to useful Java language features such as deconstruction of records and pattern matching for switch statements.
+
+Java records and pattern matching allow for more concise use of Akka's APIs. The tutorial https://doc.akka.io/libraries/guide/microservices-tutorial/index.html["Implementing Microservices with Akka"] now uses Java 21 syntax in its code examples.
+
+Refer to https://doc.akka.io/libraries/akka-dependencies/current/java-versions.html[Certified Java versions] for other Java versions that are known to work well with Akka.
+
+== Akka Edge Rust and enhancements for Edge use cases
+
+We are devoted to the https://www.lightbend.com/blog/akka-edge-unifying-the-cloud-and-edge[Cloud to Edge continuum] and continue bringing features useful for Akka use at the edge of the cloud, enhancing https://doc.akka.io/libraries/akka-edge/current[Akka Edge].
+
+A major leap for Akka is the new capability to use Akka concepts outside the JVM with Akka Edge Rust!
+
+=== Akka Edge Rust
+
+Akka Edge support has been extended to empower cloud developers to run their Akka applications even closer to where they are used, away from the cloud. We call this “Akka Edge Rust”, and it provides a subset of Akka implemented with the Rust language. Rust has been chosen given its focus on reliability and efficiency for resource-constrained devices where CPU, memory and storage is at a premium.
+
+https://doc.akka.io/libraries/akka-edge/current/guide-rs.html[Learn more in the guide] that introduces Akka Edge Rust by providing a step by step explanation of how to set up and develop a Rust-based service that works with an Akka JVM, cloud-based counterpart.
+
+=== Built-in support for GraalVM native image
+
+Makes it much easier to build https://doc.akka.io/libraries/akka-core/current/additional/native-image.html[GraalVM native image of an Akka application]. GraalVM Native Image compiles Java or Scala code ahead-of-time to a native executable. A native image executable provides lower resource usage compared with the JVM, smaller deployments, faster starts, and immediate peak performance — making it ideal for Akka Edge deployments in resource-constrained environments and for responsiveness under autoscaling.
+
+=== Active-active entities in Akka Edge
+
+You would use https://doc.akka.io/libraries/akka-edge/current/feature-summary.html#replicated-event-sourcing-over-grpc[Replicated Event Sourcing for entities] that can be updated in more than one geographical location, such as edge Point-of-Presence (PoP) and different cloud regions.
+
+=== Durable State entities in Akka Edge
+
+In addition to Event Sourced entities you can now https://doc.akka.io/libraries/akka-projection/1.5/durable-state.html#sourceprovider-for-eventsbyslices[replicate state changes of Durable State entities] in Akka Edge and Akka Distributed Cluster.
+
+== Documentation updates
+
+Our recommended blueprint for building resilient and scalable microservices with Akka has been reworked to show the use of the many feature improvements in Akka from the recent releases. This now shows how point-to-point use of Kafka can be replaced with https://doc.akka.io/libraries/akka-projection/current/grpc.html[Akka Projection over gRPC] to achieve https://doc.akka.io/libraries/guide/microservices-tutorial/projection-over-grpc.html["Service-to-service eventing."] Furthermore, it now builds on https://doc.akka.io/libraries/akka-persistence-r2dbc/current/index.html[Akka Persistence R2DBC] and the Java examples now use Java 21 syntax with records and pattern matching: [Implementing Microservices with Akka](https://doc.akka.io/guide/microservices-tutorial/index.html)
+
+== Security Updates
+
+We run automated security vulnerability and license policy scanning of dependencies. Several dependencies have been updated to fix security vulnerabilities and keep up with latest improvements.
+
+The following CVE’s are addressed in this build.
+
+* https://nvd.nist.gov/vuln/detail/CVE-2023-6378[CVE-2023-6378]
+* https://nvd.nist.gov/vuln/detail/CVE-2024-1597[CVE-2024-1597]
+* https://nvd.nist.gov/vuln/detail/CVE-2023-6378[CVE-2023-6378]
+
+== Bug fixes
+
+* Connection errors not reported for gRPC client with Akka HTTP backend https://github.com/akka/akka-grpc/issues/1423[akka-grpc #1423]
+* Problems with Replicated Event Sourcing filters https://github.com/akka/akka-projection/pull/1129[akka-projection #1129] https://github.com/akka/akka-projection/pull/1133[akka-projection #1133]
+
+== Other improvements
+
+* TLS identity extraction and assertion directives https://github.com/akka/akka-http/pull/4360[akka-http #4360]
+* API to refresh Discovery name resolver for gRPC client https://github.com/akka/akka-grpc/issues/1152[akka-grpc #1152]
+* Support for Jakarta Messaging https://github.com/akka/alpakka/issues/2989[alpakka #2989]
+* Event deletion after snapshot https://github.com/akka/akka/issues/29685[akka #29685]
+* Reduce need `@JonCreator` annotations https://github.com/akka/akka/issues/32328[akka #32328]
+* Registry for Distributed PubSub topics https://github.com/akka/akka/issues/31053[akka #31053]
+* Reduce risk of message loss for the first message sent to Distributed PubSub topic https://github.com/akka/akka/issues/32267[akka #32267]
+* Migration tool for Durable State https://github.com/akka/akka-persistence-r2dbc/issues/504[akka-persistence-r2dbc #504]
+* Scala 3 support in Akka Persistence JDBC, Projections with Slick and Alpakka Slick
+* Improved support for Kafka KIP-447 transactions https://github.com/akka/alpakka-kafka/pull/1728[alpakka-kafka #1728] and https://github.com/akka/alpakka-kafka/pull/1733[alpakka-kafka #1733]
+
+== Akka Insights / Lightbend Telemetry (Cinnamon)
+
+With the latest release `2.20.x` of https://doc.akka.io/libraries/akka-insights/current/index.html[Lightbend Telemetry (Cinnamon)] the following highlights have been published:
+
+* Support for OpenTelemetry.
+* Added support for Java 21.
+* Bump DataDog integration to the latest version.
+* Improvements for the jvm-metrics dashboards.
+
+
+== Dependency updates
+
+* Scala 2.13.13 and 3.3.3
+* Jackson 2.15.4
+* proto-google-common-protos 2.34.0
+* gRPC Java 1.60.0
+* Protobuf Java 3.25.2
+* r2dbc-postgresql 1.0.5
+* PostgreSQL 42.7.1
+* mysql-connector-j 8.2.0
+* kafka-clients 3.7.0
+
+== Compatibility
+
+All modules of Akka 24.05 are backwards compatible with Akka 23.10. No configuration changes are needed. Rolling update of Akka Cluster is fully supported.
+
+The Akka Discovery implementation `akka-discovery-consul` has been removed due to lack of maintenance in upstream dependencies, which have identified vulnerabilities.
+
+== Detailed release notes:
+
+* https://github.com/akka/akka/releases[Akka (core) 2.9.x]
+* https://github.com/akka/akka-http/releases[Akka HTTP 10.6.x]
+* https://github.com/akka/akka-grpc/releases[Akka gRPC 2.4.x]
+* https://github.com/akka/akka-management/releases[Akka Management 1.5.x]
+* https://github.com/akka/alpakka-kafka/releases[Alpakka Kafka 6.0.x]
+* https://github.com/akka/alpakka/releases[Alpakka 8.0.x]
+* https://github.com/akka/akka-persistence-r2dbc/releases[Akka Persistence R2DBC 1.2.x]
+* https://github.com/akka/akka-persistence-jdbc/releases[Akka Persistence JDBC 5.3.x]
+* https://github.com/akka/akka-persistence-cassandra/releases[Akka Persistence Cassandra 1.2.x]
+* https://github.com/akka/akka-projection/releases[Akka Projections 1.5.x]
+* https://github.com/akka/akka-diagnostics/releases[Akka Diagnostics 2.1.x]
+* https://doc.akka.io/libraries/akka-insights/current/project/release-notes.html[Akka Insights / Lightbend Telemetry 2.20.x]
+
+Akka licensing and support options are available from https://www.lightbend.com/akka[Lightbend].
+
+Happy hakking!
+
+– The Akka Team
