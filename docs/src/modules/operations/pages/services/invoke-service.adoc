@@ -16,6 +16,8 @@ A route declares how traffic to a particular hostname gets routed to your servic
 
 All traffic to Akka uses Transport Layer Security (TLS). Akka will automatically provision a certificate for you using https://letsencrypt.org/[Let's Encrypt, window="new"]. The certificate is provisioned whether you use an Akka provided hostname, or bring your own.
 
+NOTE: Routes are global by default and will be replicated over to a new region if/when the project gets to be multi-region, unless created with flag `--region [region]` or converted to regional after the fact. Refer to xref:operations:regions/index.adoc#multi-region-resources[Managing resources in multi-region] for more information.
+
 === Exposing a single service
 
 If you have a single service you want to expose to the internet using an Akka generated hostname, you can do so using the `akka service expose` command. This command is provided as a convenience, particularly when you're getting started with Akka:

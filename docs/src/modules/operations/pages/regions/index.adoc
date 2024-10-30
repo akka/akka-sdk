@@ -109,6 +109,7 @@ akka project regions set-primary gcp-us-east1
 
 NOTE: It may be necessary to clear the region cache when running the `akka` command on other machines before this change will be picked up. This can be done by running `akka config clear-cache`.
 
+[[multi-region-resources]]
 == Managing resources in a multi region project
 
 Akka projects are built to span regions. To accomplish this, Akka considers resources in two ways. 
