@@ -26,7 +26,8 @@ jobs:
       - name: rsync
         run: |
           ./docs/bin/ssh-docs-prepare.sh
-          ssh akkarepo@gustav.akka.io 'cp www/.htaccess www/.htaccess.$(date +"%Y%m%d-%H%M")'
+          COMMAND="cp www/.htaccess www/.htaccess.$(date +'%Y%m%d-%H%M')"
+          ssh akkarepo@gustav.akka.io "${COMMAND}"
           rsync -azP docs/src-static/* akkarepo@gustav.akka.io:www/
         env:
           SCP_SECRET: ${{ secrets.GUSTAV_SCP_SECRET }}
