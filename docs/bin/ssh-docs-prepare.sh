@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-if [ -z ${SCP_SECRET} ]; then
+set -x
+if [ -z "${SCP_SECRET}" ]; then
   echo "No SCP_SECRET found."
   exit 1;
 fi
