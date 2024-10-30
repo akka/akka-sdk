@@ -38,7 +38,7 @@ When you deploy a service it will run in all regions of the project. When you ad
 [[selecting-primary]]
 === Selecting primary for stateful components
 
-Stateful components like Event Sourced Entities or Workflow can be replicated to other regions. For each stateful component instance there is a primary region, which handles all write requests. Read requests can be served from any region. See xref:java:event-sourced-entities.adoc#_replication[Event Sourced Entity replication] for more information about read and write requests.
+Stateful components like Event Sourced Entities or Workflow can be replicated to other regions. For each stateful component instance there is a primary region, which handles all write requests. Read requests can be served from any region. See xref:java:event-sourced-entities.adoc#_replication[Event Sourced Entity replication] and xref:java:workflows.html#_replication[Workflow replication] for more information about read and write requests.
 
 There are two operational choices for deciding where the primary is located:
 
@@ -107,7 +107,7 @@ To change the primary region of a project run:
 akka project regions set-primary gcp-us-east1
 ----
 
-NOTE: it may be necessary to clear the region cache when running the `akka` command on other machines before this change will be picked up. This can be done by running `akka config clear-cache`.
+NOTE: It may be necessary to clear the region cache when running the `akka` command on other machines before this change will be picked up. This can be done by running `akka config clear-cache`.
 
 == Managing resources in a multi region project
 
@@ -115,7 +115,7 @@ Akka projects are built to span regions. To accomplish this, Akka considers reso
 
 === Global resources
 
-In an Akka project services, routes, secrets, and observability configuration are all _global resources_ in that they will deploy to all regions that the project is bound to.
+In an Akka project, services, routes, secrets, and observability configuration are all _global resources_ in that they will deploy to all regions that the project is bound to.
 
 The underlying replication mechanism is that when resources are deployed they first deploy to the primary region. Then a background process will asynchronously copy them to the remain regions. This background synchronization process is eventually consistent.
 
@@ -135,7 +135,7 @@ To deploy a resource as a regional resource, you can specify a `--region` flag t
 
 If you have a global resource that you want to change to being a regional resource, this can be done by updating the resource, passing a `--region` flag, and passing the `--force-regional` flag to change it from a global to a regional resource. You must do this on the primary region first, otherwise the resource synchronization process may overwrite your changes.
 
-If you have a regional resource that you want to change to being a global resource, this can be done by updating the resource without specifying a `--region` flag, but passing the `--force-global` flag instead. The command will perform the update in the global region, and that configuration will be replicated to, and overwrite, the configuration in the rest of the regions.
+If you have a regional resource that you want to change to being a global resource, this can be done by updating the resource without specifying a `--region` flag, but passing the `--force-global` flag instead. The command will perform the update in the primary region, and that configuration will be replicated to, and overwrite, the configuration in the rest of the regions.
 
 == How to
 
