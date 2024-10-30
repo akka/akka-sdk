@@ -44,6 +44,7 @@ jobs:
 
       - name: SCP to Gustav
         run: |
-          ./docs/bin/deploy-site.sh akkarepo@gustav.akka.io:www/snapshots/akka-documentation/
+          ./docs/bin/ssh-docs-prepare.sh
+          rsync -azP target/site/* akkarepo@gustav.akka.io:www/snapshots/akka-documentation/
         env:
           SCP_SECRET: ${{ secrets.GUSTAV_SCP_SECRET }}
