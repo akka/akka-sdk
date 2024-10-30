@@ -183,45 +183,81 @@ include::example$shopping-cart-quickstart/src/main/java/shoppingcart/api/Shoppin
 
 == Run locally
 
-To start your service locally, run:
+Start your service locally:
 
 [source,bash]
 ----
 mvn compile exec:java
 ----
 
-This command will start your Akka service.
+Once successfully started, any defined endpoints become available at `localhost:9000`.
 
-Once successfully started, any defined endpoints should be available at `localhost:9000`.
+Let's send some requests using `curl`.
 
-You can try sending a request using https://curl.se[curl, window="new"], a minimal command line HTTP client.
-
-Add an item:
+Add some T-shirts to a shopping cart:
 
 [source, command window]
 ----
 curl -i -XPUT -H "Content-Type: application/json" localhost:9000/carts/123/item -d '
-{"productId":"akka-tshirt", "name":"Akka Tshirt", "quantity": 10}'
+{"productId":"akka-tshirt", "name":"Akka Tshirt", "quantity": 3}'
 ----
 
-Get cart state:
+Add some blue jeans to the shopping cart:
+
+[source, command window]
+----
+curl -i -XPUT -H "Content-Type: application/json" localhost:9000/carts/123/item -d '
+{"productId":"blue-jeans", "name":"Blue Jeans", "quantity": 2}'
+----
+
+Add a few more T-shirts to the shopping cart:
+
+[source, command window]
+----
+curl -i -XPUT -H "Content-Type: application/json" localhost:9000/carts/123/item -d '
+{"productId":"akka-tshirt", "name":"Akka Tshirt", "quantity": 3}'
+----
+
+Request to see all of the items in the cart:
 
 [source, command window]
 ----
 curl localhost:9000/carts/123
 ----
 
+Observe all of the items in the cart:
+
+[source]
+----
+{"cartId":"123","items":[{"productId":"akka-tshirt","name":"Akka Tshirt","quantity":6},
+{"productId":"blue-jeans","name":"Blue Jeans","quantity":5}],"checkedOut":false}
+----
+
 If you want to get a good view of your locally running service you can  xref:akka-cli:installation.adoc[] which will give you a tools to deploy and manage Akka services and also a local web based management console. 
 
-If you have the Akka CLI installed you can start the local management console with the following command.
+== Explore the local console
+
+If you have already xref:akka-cli:installation.adoc[installed the Akka CLI], start the local console:
+
 [source, command window]
 ----
 akka local console
 ----
 
-This will start a docker container running the web management console locally and you can open the listed URL to see your local service in action:
+This will start a Docker container running the local console:
 
-image:local-console-1.png[]
+[source]
+----
+> Local Console is running at:             http://localhost:3000
+ - shopping-cart-quickstart is running at: localhost:9000
+--------------------
+----
+
+You can open the listed URL to see your local service in action:
+
+image:local-console-first-app-events.png[]
+
+Here, you can view not only the current state of the cart, but also *a detailed log of events*, and the corresponding state changes that occurred along the way.
 
 == Deploy to akka.io
 
