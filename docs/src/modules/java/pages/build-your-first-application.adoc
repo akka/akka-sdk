@@ -233,11 +233,12 @@ Observe all of the items in the cart:
 {"productId":"blue-jeans","name":"Blue Jeans","quantity":5}],"checkedOut":false}
 ----
 
-If you want to get a good view of your locally running service you can  xref:akka-cli:installation.adoc[] which will give you a tools to deploy and manage Akka services and also a local web based management console. 
 
 == Explore the local console
 
-If you have already xref:akka-cli:installation.adoc[installed the Akka CLI], start the local console:
+To get a clear view of your locally running service, xref:akka-cli:installation.adoc[install the Akka CLI]. It provides a local web-based management console.
+
+After you have installed the CLI, start the local console:
 
 [source, command window]
 ----
