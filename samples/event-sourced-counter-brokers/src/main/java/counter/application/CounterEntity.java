@@ -5,6 +5,7 @@ import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import counter.domain.CounterEvent;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,7 +25,7 @@ public class CounterEntity extends EventSourcedEntity<Integer, CounterEvent> {
     @JsonSubTypes.Type(value = CounterResult.ExceedingMaxCounterValue.class, name = "ExceedingMaxCounterValue")})
   public sealed interface CounterResult { // <2>
 
-    record ExceedingMaxCounterValue() implements CounterResult {
+    record ExceedingMaxCounterValue(String message) implements CounterResult {
     }
 
     record Success(int value) implements CounterResult {
@@ -63,7 +64,7 @@ public class CounterEntity extends EventSourcedEntity<Integer, CounterEvent> {
   //tag::increaseWithResult[]
   public Effect<CounterResult> increaseWithResult(Integer value) {
     if (currentState() + value > 10000) {
-      return effects().reply(new CounterResult.ExceedingMaxCounterValue()); // <3>
+      return effects().reply(new CounterResult.ExceedingMaxCounterValue("Increasing the counter above 10000 is blocked")); // <3>
     }
     //end::increaseWithResult[]
     logger.info("Counter {} increased by {}", this.commandContext().entityId(), value);

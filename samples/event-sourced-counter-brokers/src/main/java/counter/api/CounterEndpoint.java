@@ -50,7 +50,7 @@ public class CounterEndpoint {
       .thenApply(counterResult ->
         switch (counterResult) { // <1>
           case Success success -> ok(success.value());
-          case ExceedingMaxCounterValue __ -> badRequest("Increasing the counter above 10000 is blocked");
+          case ExceedingMaxCounterValue e -> badRequest(e.message());
         });
   }
   //end::increaseWithResult[]
