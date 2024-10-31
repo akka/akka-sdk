@@ -39,15 +39,13 @@ TIP: Kickstart a project using the xref:java:build-your-first-application.adoc[g
 
 In Akka, services can be stateful or stateless, and the components you implement depend on the service type.
 
-Stateful services utilize components like xref:java:key-value-entities.adoc[Key Value Entities],
-xref:java:event-sourced-entities.adoc[Event Sourced Entities], xref:java:workflows.adoc[Workflows], and
-xref:java:views.adoc[Views], while stateless services focus on exposing functionality via xref:java:http-endpoints.adoc[HTTP Endpoints]. Typically, a stateful service is centered around one Entity type but may also include Endpoints and Views to expose or retrieve data.
+Stateful services utilize components like xref:java:event-sourced-entities.adoc[Event Sourced Entities], xref:java:key-value-entities.adoc[Key Value Entities], xref:java:workflows.adoc[Workflows], and xref:java:views.adoc[Views], while stateless services focus on exposing functionality via xref:java:http-endpoints.adoc[HTTP Endpoints]. Typically, a stateful service is centered around one Entity type but may also include Endpoints and Views to expose or retrieve data.
 
 === Entities
 
 Stateful services encapsulate business logic in Key Value Entities or Event Sourced Entities. At runtime, command messages invoke operations on Entities. A command may only act on one Entity at a time.
 
-TIP: To learn more about Akka entities see xref:java:key-value-entities.adoc[] and xref:java:event-sourced-entities.adoc[].
+TIP: To learn more about Akka entities see xref:java:event-sourced-entities.adoc[] and xref:java:key-value-entities.adoc[].
 
 If you would like to update multiple Entities from a single request, you can compose that in the Endpoint, Consumer or Workflow.
 
