@@ -12,6 +12,9 @@ Current versions
 
 == October 2024
 
+* Akka CLI 3.0.3
+    - Improved support for pushing Service images to multiple Akka Container Registries
+
 * Akka libraries 24.10 releases
     - overview in xref:release-notes/2024-10-30-akka-24.10-released.adoc[]
 

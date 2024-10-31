@@ -46,6 +46,7 @@ To deploy your service via the Akka Console:
 . Click the *Deploy a service* button
 image:console-deploy-service-button.png[]
 . In the dialog that appears, specify the desired Service name and paste the container URI including the correct tag (e.g. `my-container-uri/container-name:tag-name`) to set the Service image
++
 image:console-deploy-service-dialog.png[]
 +
 Akka CLI::
