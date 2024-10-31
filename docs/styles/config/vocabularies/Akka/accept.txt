@@ -36,6 +36,7 @@ CVEs
 decodeRequest
 defaultMode
 declaratively
+deduplication
 deserialize
 deserialization
 dev

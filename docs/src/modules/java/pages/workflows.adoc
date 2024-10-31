@@ -109,6 +109,8 @@ include::example$transfer-workflow/src/main/java/com/example/transfer/applicatio
 <6> This time we return an effect that will stop workflow processing, by using special `end` method.
 <7> We collect all steps to form a workflow definition.
 
+IMPORTANT: In the following example all `WalletEntity` interactions are not idempotent. It means that if the workflow step retries, it will make the deposit or withdraw again. In a real-world scenario, you should consider making all interactions idempotent with a proper deduplication mechanism.
+
 == Retrieving state
 
 To have access to the current state of the workflow we can use `currentState()`. However, if this is the first command we are receiving for this workflow, the state will be `null`. We can change it by overriding the `emptyState` method. The following example shows the implementation of the read-only command handler:
