@@ -1,19 +1,23 @@
 = Managing project users
 include::ROOT:partial$include.adoc[]
 
-Access to projects is controlled by assigning specific roles to users. The available roles are: *admin*, *developer*, and *backoffice*.
+Access to projects is controlled by assigning specific roles to users. The available roles are: *admin*, *developer*, *viewer* and *backoffice*.
 
-[cols="1,1,1,1"]
+[cols="1,1,1,1,1"]
 |===
-|Permission:                       |admin |developer |backoffice
+|Permission:                       |admin |developer |viewer |backoffice
 
-|View project                      |✅     |✅        |✅
-|Admin project                     |✅     |❌        |❌
-|View, deploy, and update services |✅     |✅        |❌
-|Delete services                   |✅     |❌        |❌
-|Manage routes                     |✅     |✅        |❌
-|Manage secrets                    |✅     |✅        |❌
-|Backoffice functions              |✅     |❌        |✅
+|View project                      |✅     |✅        |✅     |✅
+|Admin project                     |✅     |❌        |❌     |❌
+|View services                     |✅     |✅        |✅     |❌
+|Deploy services                   |✅     |✅        |❌     |❌
+|Update services                   |✅     |✅        |❌     |❌
+|Delete services                   |✅     |❌        |❌     |❌
+|View routes                       |✅     |✅        |✅     |❌
+|Manage routes                     |✅     |✅        |❌     |❌
+|View secrets                      |✅     |✅        |✅     |❌
+|Manage secrets                    |✅     |✅        |❌     |❌
+|Backoffice functions              |✅     |❌        |❌     |✅
 |===
 
 *Backoffice functions* include the ability to:
