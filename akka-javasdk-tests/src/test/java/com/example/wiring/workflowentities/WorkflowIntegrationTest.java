@@ -606,7 +606,7 @@ public class WorkflowIntegrationTest extends TestKitSupport {
   }
 
   private static String randomId() {
-    return UUID.randomUUID().toString().substring(0, 8);
+    return UUID.randomUUID().toString();
   }
 
   private Integer getFailingCounterValue(String counterId) {

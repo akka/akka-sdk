@@ -43,13 +43,52 @@ object CommonSettings extends AutoPlugin {
       scalafmtOnCompile := !insideCI.value,
       javafmtOnCompile := !insideCI.value,
       scalaVersion := Dependencies.ScalaVersion,
+      Compile / javacOptions ++= Seq("-encoding", "UTF-8", "--release", "21"),
+      Compile / scalacOptions ++= Seq(
+        "-encoding",
+        "UTF-8",
+        "-deprecation",
+        // scalac doesn't do 21
+        "-release",
+        "17"),
       run / javaOptions ++= {
         sys.props.collect { case (key, value) if key.startsWith("akka") => s"-D$key=$value" }(breakOut)
       }) ++ (
       if (sys.props.contains("disable.apidocs"))
         Seq(Compile / doc / sources := Seq.empty, Compile / packageDoc / publishArtifact := false)
       else Seq.empty
-    )
+    ) ++ disciplinedScalacSettings
+
+  lazy val sharedScalacOptions =
+    Seq("-feature", "-unchecked")
+
+  lazy val fatalWarnings = Seq(
+    "-Xfatal-warnings", // discipline only in Scala 2 for now
+    "-Wconf:src=.*/target/.*:s",
+    // silence warnings from generated sources
+    "-Wconf:src=.*/src_managed/.*:s",
+    // silence warnings from deprecated protobuf fields
+    "-Wconf:src=.*/akka-grpc/.*:s")
+
+  lazy val scala212Options = sharedScalacOptions ++ fatalWarnings
+
+  lazy val scala213Options = scala212Options ++
+    Seq("-Wunused:imports,privates,locals")
+
+  // -Wconf configs will be available once https://github.com/scala/scala3/pull/20282 is merged and 3.3.4 is released
+  lazy val scala3Options = sharedScalacOptions ++ Seq("-Wunused:imports,privates,locals")
+
+  def disciplinedScalacSettings: Seq[Setting[_]] = {
+    if (sys.props.get("akka.javasdk.no-discipline").isEmpty) {
+      Seq(
+        Compile / scalacOptions ++= {
+          if (scalaVersion.value.startsWith("3.")) scala3Options
+          else if (scalaVersion.value.startsWith("2.13")) scala213Options
+          else scala212Options
+        },
+        Compile / doc / scalacOptions := (Compile / doc / scalacOptions).value.filterNot(_ == "-Xfatal-warnings"))
+    } else Seq.empty
+  }
 
   override def projectSettings = Seq(run / fork := true, Test / fork := true, Test / javaOptions ++= Seq("-Xms1G"))
 }

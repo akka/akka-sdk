@@ -2,7 +2,7 @@
  * Copyright (C) 2021-2024 Lightbend Inc. <https://www.lightbend.com>
  */
 
-package akka.javasdk.testkit.testmodels.actions;
+package akka.javasdk.testkit.actions;
 
 import akka.javasdk.timedaction.TimedAction;
 

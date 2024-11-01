@@ -146,19 +146,30 @@ object Dependencies {
         // These two are for the eventing testkit
         akkaDependency("akka-actor-testkit-typed"),
         akkaDependency("akka-stream-testkit"),
+        akkaDependency("akka-testkit"),
         kalixTestkitProtocol % "protobuf-src",
+        // FIXME use by the testkit itself but should not be on user test classpath
+        //      should possibly be provided or runtime here and added for the test runner in project parent pom
+        kalixDevRuntime,
         // user will interface with these
         junit5,
         // convenience-transitive dependencies for user assertions and async interactions
         "org.awaitility" % "awaitility" % "4.2.1",
         "org.assertj" % "assertj-core" % "3.24.2",
-        // FIXME used in the tests of the testkit itself but should not be on user test classpath
-        //       should possibly be provided or runtime here and added for the test runner in project parent pom
-        kalixDevRuntime,
-        // These are for the test of the testkit
-        // FIXME move integration tests into test config
-        "net.aichler" % "jupiter-interface" % JupiterKeys.jupiterVersion.value % s"$Test, $IntegrationTest",
+        // for the tests of the testkit itself
+        "net.aichler" % "jupiter-interface" % JupiterKeys.jupiterVersion.value % Test,
         scalaTest % Test)
+
+  val tests =
+    deps ++= Seq(
+      // FIXME why doesn't these two come along transitively from the testkit?
+      "org.assertj" % "assertj-core" % "3.24.2" % Test,
+      "org.awaitility" % "awaitility" % "4.2.1" % Test,
+      kalixDevRuntime % Test,
+      akkaDependency("akka-testkit"),
+      // These are for the test of the testkit
+      "net.aichler" % "jupiter-interface" % JupiterKeys.jupiterVersion.value % Test,
+      scalaTest % Test)
 
   val tck = deps ++= Seq(
     // FIXME: For now TCK protos have been copied and adapted into this project.

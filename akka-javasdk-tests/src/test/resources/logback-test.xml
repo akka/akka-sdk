@@ -1,0 +1,20 @@
+<configuration>
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%date{ISO8601} %-5level %logger - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <logger name="akka" level="WARN"/>
+    <logger name="akka.runtime" level="INFO"/>
+    <logger name="akka.javasdk" level="INFO"/>
+    <logger name="kalix.runtime.views" level="INFO"/>
+    <logger name="akka.http" level="WARN"/>
+    <logger name="io.grpc" level="WARN"/>
+    <logger name="akka.javasdk.impl" level="INFO" />
+    <logger name="akka.javasdk.testkit" level="INFO" />
+
+    <root level="INFO">
+        <appender-ref ref="STDOUT"/>
+    </root>
+</configuration>
