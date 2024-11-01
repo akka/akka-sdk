@@ -82,7 +82,7 @@ public class CustomerEndpoint {
       .invokeAsync(name);
   }
 
-  @Get("/by-email/{name}")
+  @Get("/by-email/{email}")
   public CompletionStage<CustomersList> userByEmail(String email) {
     return componentClient.forView()
       .method(CustomerByEmailView::getCustomers)

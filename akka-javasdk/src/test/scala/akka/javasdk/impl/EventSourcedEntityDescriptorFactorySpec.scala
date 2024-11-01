@@ -21,8 +21,8 @@ class EventSourcedEntityDescriptorFactorySpec extends AnyWordSpec with Component
   "The EventSourced entity descriptor factory" should {
 
     "validate an ESE must be declared as public" in {
-      intercept[InvalidComponentException] {
-        Validations.validate(classOf[NotPublicComponents.NotPublicEventSourced]).failIfInvalid
+      intercept[ValidationException] {
+        Validations.validate(classOf[NotPublicComponents.NotPublicEventSourced]).failIfInvalid()
       }.getMessage should include(
         "NotPublicEventSourced is not marked with `public` modifier. Components must be public.")
     }
@@ -110,8 +110,8 @@ class EventSourcedEntityDescriptorFactorySpec extends AnyWordSpec with Component
     }
 
     "not allow overloaded command handlers" in {
-      intercept[InvalidComponentException] {
-        Validations.validate(classOf[InvalidEventSourcedEntityWithOverloadedCommandHandler]).failIfInvalid
+      intercept[ValidationException] {
+        Validations.validate(classOf[InvalidEventSourcedEntityWithOverloadedCommandHandler]).failIfInvalid()
       }.getMessage should include(
         "InvalidEventSourcedEntityWithOverloadedCommandHandler has 2 command handler methods named 'createUser'. Command handlers must have unique names.")
     }

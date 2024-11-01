@@ -4,7 +4,7 @@
 
 package akka.javasdk.impl
 
-import akka.javasdk.impl.InvalidComponentException
+import akka.javasdk.impl.ValidationException
 import akka.javasdk.impl.Validations
 import NotPublicComponents.NotPublicConsumer
 import akka.javasdk.testmodels.keyvalueentity.CounterState
@@ -48,14 +48,14 @@ class ConsumerDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptor
   "Consumer descriptor factory" should {
 
     "validate a Consumer must be declared as public" in {
-      intercept[InvalidComponentException] {
-        Validations.validate(classOf[NotPublicConsumer]).failIfInvalid
+      intercept[ValidationException] {
+        Validations.validate(classOf[NotPublicConsumer]).failIfInvalid()
       }.getMessage should include("NotPublicConsumer is not marked with `public` modifier. Components must be public.")
     }
 
     "validate that Consumer must be annotated with Consume" in {
-      intercept[InvalidComponentException] {
-        Validations.validate(classOf[MissingConsumeAnnotationConsumer]).failIfInvalid
+      intercept[ValidationException] {
+        Validations.validate(classOf[MissingConsumeAnnotationConsumer]).failIfInvalid()
       }.getMessage should include("A Consumer must be annotated with `@Consume` annotation.")
     }
 
@@ -209,82 +209,82 @@ class ConsumerDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptor
     }
 
     "validates that ambiguous handler VE" in {
-      intercept[InvalidComponentException] {
-        Validations.validate(classOf[AmbiguousHandlersVESubscriptionInConsumer]).failIfInvalid
+      intercept[ValidationException] {
+        Validations.validate(classOf[AmbiguousHandlersVESubscriptionInConsumer]).failIfInvalid()
       }.getMessage should include(
         "Ambiguous handlers for java.lang.Integer, methods: [methodOne, methodTwo] consume the same type.")
     }
 
     "validates that ambiguous delete handler VE" in {
-      intercept[InvalidComponentException] {
-        Validations.validate(classOf[AmbiguousDeleteHandlersVESubscriptionInConsumer]).failIfInvalid
+      intercept[ValidationException] {
+        Validations.validate(classOf[AmbiguousDeleteHandlersVESubscriptionInConsumer]).failIfInvalid()
       }.getMessage should include("Ambiguous delete handlers: [methodOne, methodTwo].")
     }
 
     "validates that ambiguous handler VE (type level)" in {
-      intercept[InvalidComponentException] {
-        Validations.validate(classOf[AmbiguousHandlersVETypeLevelSubscriptionInConsumer]).failIfInvalid
+      intercept[ValidationException] {
+        Validations.validate(classOf[AmbiguousHandlersVETypeLevelSubscriptionInConsumer]).failIfInvalid()
       }.getMessage should include(
         "Ambiguous handlers for java.lang.Integer, methods: [methodOne, methodTwo] consume the same type.")
     }
 
     "validates that only single update handler is present for VE sub (type level)" in {
-      intercept[InvalidComponentException] {
-        Validations.validate(classOf[MultipleUpdateMethodsForVETypeLevelSubscription]).failIfInvalid
+      intercept[ValidationException] {
+        Validations.validate(classOf[MultipleUpdateMethodsForVETypeLevelSubscription]).failIfInvalid()
       }.getMessage should include("Duplicated update methods [methodOne, methodTwo]for KeyValueEntity subscription.")
     }
 
     "validates that only type level subscription is valid" in {
-      intercept[InvalidComponentException] {
-        Validations.validate(classOf[MultipleTypeLevelSubscriptions]).failIfInvalid
+      intercept[ValidationException] {
+        Validations.validate(classOf[MultipleTypeLevelSubscriptions]).failIfInvalid()
       }.getMessage should include("Only one subscription type is allowed on a type level.")
     }
 
     "validates that ambiguous handler ES" in {
-      intercept[InvalidComponentException] {
-        Validations.validate(classOf[AmbiguousHandlersESSubscriptionInConsumer]).failIfInvalid
+      intercept[ValidationException] {
+        Validations.validate(classOf[AmbiguousHandlersESSubscriptionInConsumer]).failIfInvalid()
       }.getMessage should include(
         "Ambiguous handlers for java.lang.Integer, methods: [methodOne, methodTwo] consume the same type.")
     }
 
     "validates that ambiguous handler ES (type level)" in {
-      intercept[InvalidComponentException] {
-        Validations.validate(classOf[AmbiguousHandlersESTypeLevelSubscriptionInConsumer]).failIfInvalid
+      intercept[ValidationException] {
+        Validations.validate(classOf[AmbiguousHandlersESTypeLevelSubscriptionInConsumer]).failIfInvalid()
       }.getMessage should include(
         "Ambiguous handlers for java.lang.Integer, methods: [methodOne, methodTwo] consume the same type.")
     }
 
     "validates that ambiguous handler Stream (type level)" in {
-      intercept[InvalidComponentException] {
-        Validations.validate(classOf[AmbiguousHandlersStreamTypeLevelSubscriptionInConsumer]).failIfInvalid
+      intercept[ValidationException] {
+        Validations.validate(classOf[AmbiguousHandlersStreamTypeLevelSubscriptionInConsumer]).failIfInvalid()
       }.getMessage should include(
         "Ambiguous handlers for java.lang.Integer, methods: [methodOne, methodTwo] consume the same type.")
     }
 
     "validates that ambiguous handler Topic" in {
-      intercept[InvalidComponentException] {
-        Validations.validate(classOf[AmbiguousHandlersTopiSubscriptionInConsumer]).failIfInvalid
+      intercept[ValidationException] {
+        Validations.validate(classOf[AmbiguousHandlersTopiSubscriptionInConsumer]).failIfInvalid()
       }.getMessage should include(
         "Ambiguous handlers for java.lang.Integer, methods: [methodOne, methodTwo] consume the same type.")
     }
 
     "validates that ambiguous handler Topic (type level)" in {
-      intercept[InvalidComponentException] {
-        Validations.validate(classOf[AmbiguousHandlersTopicTypeLevelSubscriptionInConsumer]).failIfInvalid
+      intercept[ValidationException] {
+        Validations.validate(classOf[AmbiguousHandlersTopicTypeLevelSubscriptionInConsumer]).failIfInvalid()
       }.getMessage should include(
         "Ambiguous handlers for java.lang.Integer, methods: [methodOne, methodTwo] consume the same type.")
     }
 
     "validates that source is missing for topic publication" in {
-      intercept[InvalidComponentException] {
-        Validations.validate(classOf[MissingSourceForTopicPublishing]).failIfInvalid
+      intercept[ValidationException] {
+        Validations.validate(classOf[MissingSourceForTopicPublishing]).failIfInvalid()
       }.getMessage should include(
         "You must select a source for @Produce.ToTopic. Annotate this class with one a @Consume annotation.")
     }
 
     "validates if there are missing event handlers for event sourced Entity Subscription at type level" in {
-      intercept[InvalidComponentException] {
-        Validations.validate(classOf[MissingHandlersWhenSubscribeToEventSourcedEntityConsumer]).failIfInvalid
+      intercept[ValidationException] {
+        Validations.validate(classOf[MissingHandlersWhenSubscribeToEventSourcedEntityConsumer]).failIfInvalid()
       }.getMessage shouldBe
       "On 'akka.javasdk.testmodels.subscriptions.PubSubTestModels$MissingHandlersWhenSubscribeToEventSourcedEntityConsumer': missing an event handler for 'akka.javasdk.testmodels.eventsourcedentity.EmployeeEvent$EmployeeEmailUpdated'."
     }
@@ -386,8 +386,8 @@ class ConsumerDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptor
     }
 
     "fail if it's subscription method exposed with ACL" in {
-      intercept[InvalidComponentException] {
-        Validations.validate(classOf[ConsumerWithMethodLevelAclAndSubscription]).failIfInvalid
+      intercept[ValidationException] {
+        Validations.validate(classOf[ConsumerWithMethodLevelAclAndSubscription]).failIfInvalid()
       }.getMessage should include(
         "Methods from classes annotated with Kalix @Consume annotations are for internal use only and cannot be annotated with ACL annotations.")
     }

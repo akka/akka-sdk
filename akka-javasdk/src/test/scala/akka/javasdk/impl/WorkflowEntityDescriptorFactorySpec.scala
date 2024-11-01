@@ -4,7 +4,7 @@
 
 package akka.javasdk.impl
 
-import akka.javasdk.impl.InvalidComponentException
+import akka.javasdk.impl.ValidationException
 import akka.javasdk.impl.Validations
 
 import scala.jdk.CollectionConverters.CollectionHasAsScala
@@ -22,8 +22,8 @@ class WorkflowEntityDescriptorFactorySpec extends AnyWordSpec with ComponentDesc
 
   "Workflow descriptor factory" should {
     "validate a Workflow must be declared as public" in {
-      intercept[InvalidComponentException] {
-        Validations.validate(classOf[NotPublicComponents.NotPublicWorkflow]).failIfInvalid
+      intercept[ValidationException] {
+        Validations.validate(classOf[NotPublicComponents.NotPublicWorkflow]).failIfInvalid()
       }.getMessage should include("NotPublicWorkflow is not marked with `public` modifier. Components must be public.")
     }
 

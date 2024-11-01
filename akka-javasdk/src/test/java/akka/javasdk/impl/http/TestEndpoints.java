@@ -151,4 +151,28 @@ public class TestEndpoints {
             return "OK";
         }
     }
+
+    @HttpEndpoint("/{id}/my-endpoint")
+    public static class InvalidEndpointMethods {
+
+        // missing parameter
+        @Get("/")
+        public void list1() {}
+
+        // wrong parameter name
+        @Get("/")
+        public void list2(String bob) {}
+
+        // ok parameter count, wrong parameter name
+        @Get("/something/{bob}")
+        public void list3(String id, String value) {}
+
+        // ok parameter count, body as last param
+        @Get("/something")
+        public void list4(String id, String body) {}
+
+        // too many parameters
+        @Get("/too-many")
+        public void list5(String id, String value, String body) {}
+    }
 }

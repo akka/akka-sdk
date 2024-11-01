@@ -280,9 +280,9 @@ private final class Sdk(
   }
   validation match { // if any invalid component, log and throw
     case Valid => ()
-    case Invalid(messages) =>
-      messages.foreach { msg => logger.error(msg) }
-      validation.failIfInvalid
+    case invalid: Invalid =>
+      invalid.messages.foreach { msg => logger.error(msg) }
+      invalid.throwFailureSummary()
   }
 
   // register them if all valid, prototobuf

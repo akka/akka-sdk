@@ -49,6 +49,21 @@ class HttpEndpointDescriptorFactorySpec extends AnyWordSpec with Matchers {
       patch.httpMethod should ===(HttpMethods.PATCH)
     }
 
+    "fail when path expression does not match parameters" in {
+      val message = intercept[ValidationException] {
+        HttpEndpointDescriptorFactory(classOf[http.TestEndpoints.InvalidEndpointMethods], _ => null)
+      }.getMessage
+
+      message should include(
+        "There are more parameters in the path expression [/{id}/my-endpoint/] than there are parameters for [akka.javasdk.impl.http.TestEndpoints$InvalidEndpointMethods.list1]")
+      message should include(
+        "The parameter [id] in the path expression [/{id}/my-endpoint/] does not match the method parameter name [bob] for [akka.javasdk.impl.http.TestEndpoints$InvalidEndpointMethods.list2]")
+      message should include(
+        "The parameter [bob] in the path expression [/{id}/my-endpoint/something/{bob}] does not match the method parameter name [value] for [akka.javasdk.impl.http.TestEndpoints$InvalidEndpointMethods.list3]")
+      message should include(
+        "There are [2] parameters ([value,body]) for endpoint method [akka.javasdk.impl.http.TestEndpoints$InvalidEndpointMethods.list5] not matched by the path expression")
+    }
+
     "parse ACL annotations into descriptor" in {
       val descriptor = HttpEndpointDescriptorFactory(classOf[http.TestEndpoints.TestEndpointAcls], _ => null)
 

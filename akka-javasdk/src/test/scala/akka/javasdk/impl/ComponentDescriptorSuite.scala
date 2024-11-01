@@ -35,7 +35,7 @@ trait ComponentDescriptorSuite extends Matchers {
         withClue(ProtoDescriptorRenderer.toString(descriptor.fileDescriptor)) {
           assertFunc(descriptor)
         }
-      case Invalid(_) => validation.failIfInvalid
+      case invalid: Invalid => invalid.throwFailureSummary()
     }
   }
 

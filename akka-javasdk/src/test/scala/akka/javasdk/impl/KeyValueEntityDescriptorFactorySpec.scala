@@ -4,7 +4,7 @@
 
 package akka.javasdk.impl
 
-import akka.javasdk.impl.InvalidComponentException
+import akka.javasdk.impl.ValidationException
 import akka.javasdk.impl.Validations
 import akka.javasdk.testmodels.keyvalueentity.Counter
 
@@ -22,8 +22,8 @@ class KeyValueEntityDescriptorFactorySpec extends AnyWordSpec with ComponentDesc
 
   "ValueEntity descriptor factory" should {
     "validate a KeyValueEntity must be declared as public" in {
-      intercept[InvalidComponentException] {
-        Validations.validate(classOf[NotPublicComponents.NotPublicValueEntity]).failIfInvalid
+      intercept[ValidationException] {
+        Validations.validate(classOf[NotPublicComponents.NotPublicValueEntity]).failIfInvalid()
       }.getMessage should include(
         "NotPublicValueEntity is not marked with `public` modifier. Components must be public.")
     }
@@ -91,8 +91,8 @@ class KeyValueEntityDescriptorFactorySpec extends AnyWordSpec with ComponentDesc
     }
 
     "not allow overloaded command handlers" in {
-      intercept[InvalidComponentException] {
-        Validations.validate(classOf[InvalidValueEntityWithOverloadedCommandHandler]).failIfInvalid
+      intercept[ValidationException] {
+        Validations.validate(classOf[InvalidValueEntityWithOverloadedCommandHandler]).failIfInvalid()
       }.getMessage should include(
         "InvalidValueEntityWithOverloadedCommandHandler has 2 command handler methods named 'createEntity'. Command handlers must have unique names.")
     }

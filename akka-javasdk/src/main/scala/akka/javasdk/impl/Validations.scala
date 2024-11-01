@@ -66,14 +66,14 @@ private[javasdk] object Validations {
     final def isInvalid: Boolean = !isInvalid
     def ++(validation: Validation): Validation
 
-    def failIfInvalid: Validation
+    def failIfInvalid(): Unit
   }
 
   case object Valid extends Validation {
     override def isValid: Boolean = true
     override def ++(validation: Validation): Validation = validation
 
-    override def failIfInvalid: Validation = this
+    override def failIfInvalid(): Unit = ()
   }
 
   object Invalid {
@@ -81,7 +81,7 @@ private[javasdk] object Validations {
       Invalid(Seq(message))
   }
 
-  case class Invalid(messages: Seq[String]) extends Validation {
+  final case class Invalid(messages: Seq[String]) extends Validation {
     override def isValid: Boolean = false
 
     override def ++(validation: Validation): Validation =
@@ -90,8 +90,10 @@ private[javasdk] object Validations {
         case i: Invalid => Invalid(this.messages ++ i.messages)
       }
 
-    override def failIfInvalid: Validation =
-      throw InvalidComponentException(messages.mkString(", "))
+    override def failIfInvalid(): Unit = throwFailureSummary()
+
+    def throwFailureSummary(): Nothing =
+      throw ValidationException(messages.mkString(", "))
   }
 
   private def when(cond: Boolean)(block: => Validation): Validation =

@@ -5,7 +5,7 @@
 package akka.javasdk.impl.view
 
 import akka.javasdk.impl.ComponentDescriptorSuite
-import akka.javasdk.impl.InvalidComponentException
+import akka.javasdk.impl.ValidationException
 import akka.javasdk.impl.Validations
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.EventStreamSubscriptionView
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.SubscribeOnTypeToEventSourcedEvents
@@ -55,44 +55,44 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
   "View descriptor factory" should {
 
     "validate a View must be declared as public" in {
-      intercept[InvalidComponentException] {
-        Validations.validate(classOf[NotPublicView]).failIfInvalid
+      intercept[ValidationException] {
+        Validations.validate(classOf[NotPublicView]).failIfInvalid()
       }.getMessage should include("NotPublicView is not marked with `public` modifier. Components must be public.")
     }
 
     "not allow View without any Table updater" in {
-      intercept[InvalidComponentException] {
-        Validations.validate(classOf[ViewTestModels.ViewWithNoTableUpdater]).failIfInvalid
+      intercept[ValidationException] {
+        Validations.validate(classOf[ViewTestModels.ViewWithNoTableUpdater]).failIfInvalid()
       }.getMessage should include("A view must contain at least one public static TableUpdater subclass.")
     }
 
     "not allow View with an invalid row type" in {
-      intercept[InvalidComponentException] {
-        Validations.validate(classOf[ViewTestModels.ViewWithInvalidRowType]).failIfInvalid
+      intercept[ValidationException] {
+        Validations.validate(classOf[ViewTestModels.ViewWithInvalidRowType]).failIfInvalid()
       }.getMessage should include(s"View row type java.lang.String is not supported")
     }
 
     "not allow View with an invalid query result type" in {
-      intercept[InvalidComponentException] {
-        Validations.validate(classOf[ViewTestModels.WrongQueryEffectReturnType]).failIfInvalid
+      intercept[ValidationException] {
+        Validations.validate(classOf[ViewTestModels.WrongQueryEffectReturnType]).failIfInvalid()
       }.getMessage should include("View query result type java.lang.String is not supported")
     }
 
     "not allow View with Table annotation" in {
-      intercept[InvalidComponentException] {
-        Validations.validate(classOf[ViewTestModels.ViewWithTableName]).failIfInvalid
+      intercept[ValidationException] {
+        Validations.validate(classOf[ViewTestModels.ViewWithTableName]).failIfInvalid()
       }.getMessage should include("A View itself should not be annotated with @Table.")
     }
 
     "not allow View queries not returning QueryEffect<T>" in {
-      intercept[InvalidComponentException] {
-        Validations.validate(classOf[ViewTestModels.WrongQueryReturnType]).failIfInvalid
+      intercept[ValidationException] {
+        Validations.validate(classOf[ViewTestModels.WrongQueryReturnType]).failIfInvalid()
       }.getMessage should include("Query methods must return View.QueryEffect<RowType>")
     }
 
     "not allow View update handler with more than on parameter" in {
-      intercept[InvalidComponentException] {
-        Validations.validate(classOf[ViewTestModels.WrongHandlerSignature]).failIfInvalid
+      intercept[ValidationException] {
+        Validations.validate(classOf[ViewTestModels.WrongHandlerSignature]).failIfInvalid()
       }.getMessage should include(
         "Subscription method must have exactly one parameter, unless it's marked with @DeleteHandler.")
     }
@@ -163,33 +163,33 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
   "View descriptor factory (for Key Value Entity)" should {
 
     "not allow View with empty ComponentId" in {
-      intercept[InvalidComponentException] {
-        Validations.validate(classOf[ViewWithEmptyComponentIdAnnotation]).failIfInvalid
+      intercept[ValidationException] {
+        Validations.validate(classOf[ViewWithEmptyComponentIdAnnotation]).failIfInvalid()
       }.getMessage should include("@ComponentId name is empty, must be a non-empty string.")
     }
 
     "not allow View with a query with more than 1 param" in {
-      intercept[InvalidComponentException] {
-        Validations.validate(classOf[ViewQueryWithTooManyArguments]).failIfInvalid
+      intercept[ValidationException] {
+        Validations.validate(classOf[ViewQueryWithTooManyArguments]).failIfInvalid()
       }.getMessage should include(
         "Method [getUser] must have zero or one argument. If you need to pass more arguments, wrap them in a class.")
     }
 
     "not allow method level handle deletes without class level subscription" in {
-      intercept[InvalidComponentException] {
-        Validations.validate(classOf[ViewWithoutSubscription]).failIfInvalid
+      intercept[ValidationException] {
+        Validations.validate(classOf[ViewWithoutSubscription]).failIfInvalid()
       }.getMessage should include("A TableUpdater subclass must be annotated with `@Consume` annotation.")
     }
 
     "not allow duplicated handle deletes methods" in {
-      intercept[InvalidComponentException] {
-        Validations.validate(classOf[ViewDuplicatedHandleDeletesAnnotations]).failIfInvalid
+      intercept[ValidationException] {
+        Validations.validate(classOf[ViewDuplicatedHandleDeletesAnnotations]).failIfInvalid()
       }.getMessage should include("Multiple methods annotated with @DeleteHandler are not allowed.")
     }
 
     "not allow handle deletes method with param" in {
-      intercept[InvalidComponentException] {
-        Validations.validate(classOf[ViewHandleDeletesWithParam]).failIfInvalid
+      intercept[ValidationException] {
+        Validations.validate(classOf[ViewHandleDeletesWithParam]).failIfInvalid()
       }.getMessage should include("Method annotated with '@DeleteHandler' must not have parameters.")
     }
 
@@ -332,18 +332,18 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
     }
 
     "fail if no query method found" in {
-      intercept[InvalidComponentException] {
-        Validations.validate(classOf[ViewWithNoQuery]).failIfInvalid
+      intercept[ValidationException] {
+        Validations.validate(classOf[ViewWithNoQuery]).failIfInvalid()
       }
     }
 
     "allow more than one query method" in {
-      Validations.validate(classOf[ViewWithTwoQueries]).failIfInvalid
+      Validations.validate(classOf[ViewWithTwoQueries]).failIfInvalid()
     }
 
     "not allow stream updates that are not returning View.QueryStreamEffect<T>" in {
-      intercept[InvalidComponentException] {
-        Validations.validate(classOf[ViewTestModels.ViewWithIncorrectQueries]).failIfInvalid
+      intercept[ValidationException] {
+        Validations.validate(classOf[ViewTestModels.ViewWithIncorrectQueries]).failIfInvalid()
       }.getMessage shouldBe
       "On 'akka.javasdk.testmodels.view.ViewTestModels$ViewWithIncorrectQueries#getUserByEmail': Query methods marked with streamUpdates must return View.QueryStreamEffect<RowType>"
     }
@@ -421,15 +421,15 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
     }
 
     "validate missing handlers for method level subscription" in {
-      intercept[InvalidComponentException] {
-        Validations.validate(classOf[SubscribeToEventSourcedWithMissingHandler]).failIfInvalid
+      intercept[ValidationException] {
+        Validations.validate(classOf[SubscribeToEventSourcedWithMissingHandler]).failIfInvalid()
       }.getMessage shouldBe
       "On 'akka.javasdk.testmodels.view.ViewTestModels$SubscribeToEventSourcedWithMissingHandler$Employees': missing an event handler for 'akka.javasdk.testmodels.eventsourcedentity.EmployeeEvent$EmployeeEmailUpdated'."
     }
 
     "validate missing handlers for type level subscription" in {
-      intercept[InvalidComponentException] {
-        Validations.validate(classOf[TypeLevelSubscribeToEventSourcedEventsWithMissingHandler]).failIfInvalid
+      intercept[ValidationException] {
+        Validations.validate(classOf[TypeLevelSubscribeToEventSourcedEventsWithMissingHandler]).failIfInvalid()
       }.getMessage shouldBe
       "On 'akka.javasdk.testmodels.view.ViewTestModels$TypeLevelSubscribeToEventSourcedEventsWithMissingHandler$Employees': missing an event handler for 'akka.javasdk.testmodels.eventsourcedentity.EmployeeEvent$EmployeeEmailUpdated'."
     }
@@ -438,49 +438,49 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
   "View descriptor factory (for multi-table views)" should {
 
     "not allow multiple TableUpdater without Table annotation" in {
-      intercept[InvalidComponentException] {
-        Validations.validate(classOf[MultiTableViewValidation]).failIfInvalid
+      intercept[ValidationException] {
+        Validations.validate(classOf[MultiTableViewValidation]).failIfInvalid()
       }.getMessage should include("When there are multiple table updater, each must be annotated with @Table.")
     }
 
     "not allow TableUpdater with empty Table name" in {
-      intercept[InvalidComponentException] {
-        Validations.validate(classOf[MultiTableViewValidation]).failIfInvalid
+      intercept[ValidationException] {
+        Validations.validate(classOf[MultiTableViewValidation]).failIfInvalid()
       }.getMessage should include("@Table name is empty, must be a non-empty string.")
     }
 
     "not allow empty component id" in {
-      intercept[InvalidComponentException] {
-        Validations.validate(classOf[ViewWithEmptyComponentIdAnnotation]).failIfInvalid
+      intercept[ValidationException] {
+        Validations.validate(classOf[ViewWithEmptyComponentIdAnnotation]).failIfInvalid()
       }.getMessage should include("@ComponentId name is empty, must be a non-empty string.")
     }
 
     "not allow invalid component id" in {
-      intercept[InvalidComponentException] {
-        Validations.validate(classOf[ViewWithPipeyComponentIdAnnotation]).failIfInvalid
+      intercept[ValidationException] {
+        Validations.validate(classOf[ViewWithPipeyComponentIdAnnotation]).failIfInvalid()
       }.getMessage should include("must not contain the pipe character")
     }
 
     "fail if no query method found" in {
-      intercept[InvalidComponentException] {
-        Validations.validate(classOf[MultiTableViewWithoutQuery]).failIfInvalid
+      intercept[ValidationException] {
+        Validations.validate(classOf[MultiTableViewWithoutQuery]).failIfInvalid()
       }
     }
 
     "allow more than one query method in multi table view" in {
-      Validations.validate(classOf[MultiTableViewWithMultipleQueries]).failIfInvalid
+      Validations.validate(classOf[MultiTableViewWithMultipleQueries]).failIfInvalid()
     }
 
     "not allow duplicated VE subscriptions methods in multi table view" in {
-      intercept[InvalidComponentException] {
-        Validations.validate(classOf[MultiTableViewWithDuplicatedVESubscriptions]).failIfInvalid
+      intercept[ValidationException] {
+        Validations.validate(classOf[MultiTableViewWithDuplicatedVESubscriptions]).failIfInvalid()
       }.getMessage should include(
         "Ambiguous handlers for akka.javasdk.testmodels.keyvalueentity.CounterState, methods: [onEvent, onEvent2] consume the same type.")
     }
 
     "not allow duplicated ES subscriptions methods in multi table view" in {
-      intercept[InvalidComponentException] {
-        Validations.validate(classOf[MultiTableViewWithDuplicatedESSubscriptions]).failIfInvalid
+      intercept[ValidationException] {
+        Validations.validate(classOf[MultiTableViewWithDuplicatedESSubscriptions]).failIfInvalid()
       }.getMessage should include(
         "Ambiguous handlers for akka.javasdk.testmodels.keyvalueentity.CounterState, methods: [onEvent, onEvent2] consume the same type.")
     }

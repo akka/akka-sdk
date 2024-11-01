@@ -4,7 +4,7 @@
 
 package akka.javasdk.impl
 
-import akka.javasdk.impl.InvalidComponentException
+import akka.javasdk.impl.ValidationException
 import NotPublicComponents.NotPublicAction
 import akka.javasdk.impl.ProtoDescriptorGenerator.fileDescriptorName
 import akka.javasdk.impl.Validations
@@ -18,8 +18,8 @@ class TimedActionDescriptorFactorySpec extends AnyWordSpec with ComponentDescrip
   "Action descriptor factory" should {
 
     "validate an Action must be declared as public" in {
-      intercept[InvalidComponentException] {
-        Validations.validate(classOf[NotPublicAction]).failIfInvalid
+      intercept[ValidationException] {
+        Validations.validate(classOf[NotPublicAction]).failIfInvalid()
       }.getMessage should include("NotPublicAction is not marked with `public` modifier. Components must be public.")
     }
 

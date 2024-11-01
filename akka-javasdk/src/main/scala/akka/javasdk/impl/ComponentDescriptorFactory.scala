@@ -441,4 +441,4 @@ private[impl] trait ComponentDescriptorFactory {
 /**
  * Thrown when the component has incorrect annotations
  */
-final case class InvalidComponentException(message: String) extends RuntimeException(message)
+final case class ValidationException(message: String) extends RuntimeException(message)
