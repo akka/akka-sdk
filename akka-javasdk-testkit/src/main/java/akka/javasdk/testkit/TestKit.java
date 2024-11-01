@@ -14,6 +14,7 @@ import akka.javasdk.client.ComponentClient;
 import akka.javasdk.http.HttpClient;
 import akka.javasdk.http.HttpClientProvider;
 import akka.javasdk.impl.ApplicationConfig;
+import akka.javasdk.impl.ErrorHandling;
 import akka.javasdk.impl.JsonMessageCodec;
 import akka.javasdk.impl.MessageCodec;
 import akka.javasdk.impl.SdkRunner;
@@ -503,7 +504,11 @@ public class TestKit {
 
       try {
         checkingProxyStatus.toCompletableFuture().get(60, TimeUnit.SECONDS);
-      } catch (InterruptedException | ExecutionException | TimeoutException e) {
+      } catch (ExecutionException e) {
+        RuntimeException cause = ErrorHandling.unwrapExecutionException(e);
+        log.error("Failed to connect to Runtime with:", cause);
+        throw cause;
+      } catch (InterruptedException| TimeoutException e) {
         log.error("Failed to connect to Runtime with:", e);
         throw new RuntimeException(e);
       }

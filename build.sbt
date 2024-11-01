@@ -137,6 +137,7 @@ lazy val akkaJavaSdkTestKit =
         "Akka SDK for Java Testkit",
         "-noqualifier",
         "java.lang"))
+    .settings(IntegrationTest / parallelExecution := false)
     .settings(inConfig(IntegrationTest)(JupiterPlugin.scopedSettings): _*)
     .settings(Dependencies.javaSdkTestKit)
 

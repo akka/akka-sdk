@@ -263,26 +263,8 @@ jobs:
           cd
           tar -xf dependencies.tar.gz
 
-      # for now, splitting this into multiple testOnly
-      # this is due to the fact that the tests are a bit flaky when running all together due to
-      # failing in binding or error about running multiple tests at the same time
-      - name: "Integration Test only SpringSdkIntegrationTest"
-        run: sbt 'akka-javasdk-testkit/IntegrationTest/testOnly *SpringSdkIntegrationTest'
-
-      - name: "Integration Test only KeyValueEntityIntegrationTest"
-        run: sbt 'akka-javasdk-testkit/IntegrationTest/testOnly *KeyValueEntityIntegrationTest'
-
-      - name: "Integration Test only EventSourcedEntityIntegrationTest"
-        run: sbt 'akka-javasdk-testkit/IntegrationTest/testOnly *EventSourcedEntityIntegrationTest'
-
-      - name: "Integration Test only SpringWorkflowIntegrationTest"
-        run: sbt 'akka-javasdk-testkit/IntegrationTest/testOnly *SpringWorkflowIntegrationTest'
-
-      - name: "Integration Test only EventingTestkitDestinationIntegrationTest"
-        run: sbt 'akka-javasdk-testkit/IntegrationTest/testOnly *EventingTestkitDestinationIntegrationTest'
-
-      - name: "Integration Test only EndpointsIntegrationTest"
-        run: sbt 'akka-javasdk-testkit/IntegrationTest/testOnly *EndpointsIntegrationTest'
+      - name: test
+        run: sbt 'akka-javasdk-testkit/IntegrationTest/test'
 
   java-sdk-annotation-processor-test:
     name: Run annotation processor tests

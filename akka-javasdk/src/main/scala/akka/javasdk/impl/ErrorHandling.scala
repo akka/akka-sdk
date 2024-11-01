@@ -6,8 +6,8 @@ package akka.javasdk.impl
 
 import akka.annotation.InternalApi
 import org.slf4j.MDC
-
 import java.util.UUID
+import java.util.concurrent.ExecutionException
 
 /**
  * INTERNAL API
@@ -26,6 +26,14 @@ private[javasdk] object ErrorHandling {
       block(correlationId)
     } finally {
       MDC.remove(CorrelationIdMdcKey)
+    }
+  }
+
+  def unwrapExecutionException(exc: ExecutionException): RuntimeException = {
+    exc.getCause match {
+      case null                => new RuntimeException(exc.getMessage)
+      case e: RuntimeException => e
+      case other               => new RuntimeException(other)
     }
   }
 

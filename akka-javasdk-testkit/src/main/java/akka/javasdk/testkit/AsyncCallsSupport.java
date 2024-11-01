@@ -4,6 +4,8 @@
 
 package akka.javasdk.testkit;
 
+import akka.javasdk.impl.ErrorHandling;
+
 import java.time.Duration;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
@@ -23,7 +25,9 @@ public abstract class AsyncCallsSupport {
   public <I, O> O await(CompletionStage<O> stage, Duration timeout) {
     try {
       return stage.toCompletableFuture().get(timeout.toMillis(), TimeUnit.MILLISECONDS);
-    } catch (InterruptedException | ExecutionException | TimeoutException e) {
+    } catch (ExecutionException e) {
+      throw ErrorHandling.unwrapExecutionException(e);
+    } catch (InterruptedException | TimeoutException e) {
       throw new RuntimeException(e);
     }
   }
@@ -36,7 +40,9 @@ public abstract class AsyncCallsSupport {
     try {
       stage.toCompletableFuture().get(defaultTimeout.toMillis(), TimeUnit.MILLISECONDS);
       throw new RuntimeException("Expected call to fail but it succeeded");
-    } catch (InterruptedException | ExecutionException | TimeoutException e) {
+    } catch (ExecutionException e) {
+      return ErrorHandling.unwrapExecutionException(e);
+    } catch (InterruptedException | TimeoutException e) {
       return e;
     }
   }

@@ -14,7 +14,7 @@ public final class HttpException {
   private HttpException() {}
 
   public static RuntimeException badRequest() {
-    throw new HttpExceptionImpl(StatusCodes.BadRequest());
+    return new HttpExceptionImpl(StatusCodes.BadRequest());
   }
 
   public static RuntimeException badRequest(String responseText) {
@@ -22,11 +22,11 @@ public final class HttpException {
   }
 
   public static RuntimeException notFound() {
-    throw new HttpExceptionImpl(StatusCodes.NotFound());
+    return new HttpExceptionImpl(StatusCodes.NotFound());
   }
 
   public static RuntimeException forbidden() {
-    throw new HttpExceptionImpl(StatusCodes.Forbidden());
+    return new HttpExceptionImpl(StatusCodes.Forbidden());
   }
 
   public static RuntimeException forbidden(String responseText) {
@@ -34,7 +34,7 @@ public final class HttpException {
   }
 
   public static RuntimeException unauthorized() {
-    throw new HttpExceptionImpl(StatusCodes.Unauthorized());
+    return new HttpExceptionImpl(StatusCodes.Unauthorized());
   }
 
   public static RuntimeException unauthorized(String responseText) {

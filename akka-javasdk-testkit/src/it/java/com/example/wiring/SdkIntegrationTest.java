@@ -37,7 +37,6 @@ import org.hamcrest.core.IsEqual;
 import org.hamcrest.core.IsNull;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
@@ -354,8 +353,7 @@ public class SdkIntegrationTest extends TestKitSupport {
               componentClient.forView()
                 .method(UserWithVersionView::getUser)
                 .invokeAsync(UserWithVersionView.queryParam(user.email)));
-          // FIXME why is the root ex java.util.concurrent.ExecutionException and not our exception
-          Assertions.assertTrue(ex.getCause() instanceof NoEntryFoundException);
+          assertThat(ex).isInstanceOf(NoEntryFoundException.class);
         });
 
     Awaitility.await()
