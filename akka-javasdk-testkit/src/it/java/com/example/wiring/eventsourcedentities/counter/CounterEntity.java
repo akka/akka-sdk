@@ -11,6 +11,8 @@ import com.example.wiring.Result;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
+
 import static java.util.function.Function.identity;
 
 @ComponentId("counter-entity")
@@ -21,6 +23,8 @@ public class CounterEntity extends EventSourcedEntity<Counter, CounterEvent> {
   }
 
   private final Logger logger = LoggerFactory.getLogger(getClass());
+
+  public record DoIncrease(int amount) {}
 
   @Override
   public Counter emptyState() {
@@ -66,6 +70,16 @@ public class CounterEntity extends EventSourcedEntity<Counter, CounterEvent> {
 
   public Effect<Integer> set(Integer value) {
     return effects().persist(new CounterEvent.ValueSet(value)).thenReply(Counter::value);
+  }
+
+  public Effect<Integer> multiIncrease(List<Integer> increase) {
+    return effects().persistAll(increase.stream().map(CounterEvent.ValueIncreased::new).toList())
+        .thenReply(Counter::value);
+  }
+
+  public Effect<Integer> multiIncreaseCommands(List<DoIncrease> increase) {
+    return effects().persistAll(increase.stream().map(di -> new CounterEvent.ValueIncreased(di.amount)).toList())
+        .thenReply(Counter::value);
   }
 
   public ReadOnlyEffect<Integer> get() {

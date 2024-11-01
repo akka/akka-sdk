@@ -10,6 +10,7 @@ import akka.javasdk.client.ComponentClient;
 import akka.javasdk.workflow.Workflow;
 
 import java.time.Duration;
+import java.util.List;
 
 @ComponentId("transfer-workflow")
 public class TransferWorkflow extends Workflow<TransferState> {
@@ -65,5 +66,15 @@ public class TransferWorkflow extends Workflow<TransferState> {
         return effects().reply(new Message("transfer started already"));
       }
     }
+  }
+
+  public Effect<Message> genericStringsCall(List<String> primitives) {
+    return effects().reply(new Message("genericCall ok"));
+  }
+
+  public record SomeClass(String someValue) {}
+
+  public Effect<Message> genericCall(List<SomeClass> objects) {
+    return effects().reply(new Message("genericCall ok"));
   }
 }

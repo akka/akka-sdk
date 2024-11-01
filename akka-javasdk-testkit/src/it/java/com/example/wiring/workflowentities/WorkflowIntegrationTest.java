@@ -11,6 +11,7 @@ import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -566,6 +567,22 @@ public class WorkflowIntegrationTest extends TestKitSupport {
         var state = await(componentClient.forWorkflow(workflowId).method(WorkflowWithoutInitialState::get).invokeAsync());
         assertThat(state).contains("success");
       });
+  }
+
+  @Test
+  public void shouldBeCallableWithGenericParameter() {
+    var workflowId = randomId();
+    String response1 = await(componentClient.forWorkflow(workflowId)
+        .method(TransferWorkflow::genericStringsCall)
+        .invokeAsync(List.of("somestring"))).text();
+
+    assertThat(response1).isEqualTo("genericCall ok");
+
+    String response2 = await(componentClient.forWorkflow(workflowId)
+        .method(TransferWorkflow::genericCall)
+        .invokeAsync(List.of(new TransferWorkflow.SomeClass("somestring")))).text();
+
+    assertThat(response2).isEqualTo("genericCall ok");
   }
 
 

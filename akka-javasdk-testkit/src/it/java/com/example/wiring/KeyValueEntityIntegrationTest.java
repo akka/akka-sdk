@@ -11,6 +11,7 @@ import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
@@ -50,6 +51,41 @@ public class KeyValueEntityIntegrationTest extends TestKitSupport {
 
         Assertions.assertEquals(newEmail, getUser(joe2).email);
       });
+  }
+
+  @Test
+  public void verifyGenericParameter() {
+    var generic = new TestUser("mrgeneric", "generic@example.com", "Generic");
+    createUser(generic);
+
+    Awaitility.await()
+        .ignoreExceptions()
+        .atMost(10, TimeUnit.of(SECONDS))
+        .untilAsserted(() -> {
+          // change email uses the currentState internally
+          var found = await(
+              componentClient
+                  .forKeyValueEntity(generic.id)
+                  .method(UserEntity::nameIsLikeOneOf)
+                  .invokeAsync(List.of(generic.name)));
+
+          Assertions.assertTrue(found);
+        });
+
+    Awaitility.await()
+        .ignoreExceptions()
+        .atMost(10, TimeUnit.of(SECONDS))
+        .untilAsserted(() -> {
+          // change email uses the currentState internally
+          var found = await(
+              componentClient
+                  .forKeyValueEntity(generic.id)
+                  .method(UserEntity::nameIsLikeOneOfUsers)
+                  .invokeAsync(List.of(new User(generic.name, generic.email))));
+
+          Assertions.assertTrue(found);
+        });
+
   }
 
   private void createUser(TestUser user) {

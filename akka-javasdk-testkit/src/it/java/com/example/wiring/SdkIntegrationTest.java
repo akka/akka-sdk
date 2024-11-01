@@ -75,6 +75,32 @@ public class SdkIntegrationTest extends TestKitSupport {
   }
 
   @Test
+  public void verifyTimedActionListCommand() {
+
+    timerScheduler.startSingleTimer("echo-action", ofMillis(0), componentClient.forTimedAction()
+        .method(EchoAction::stringMessages)
+        .deferred(List.of("hello", "mr")));
+
+    Awaitility.await()
+        .atMost(20, TimeUnit.SECONDS)
+        .untilAsserted(() -> {
+          var value = TestBuffer.getValue("echo-action");
+          assertThat(value).isEqualTo("hello mr");
+        });
+
+    timerScheduler.startSingleTimer("echo-action", ofMillis(0), componentClient.forTimedAction()
+        .method(EchoAction::commandMessages)
+        .deferred(List.of(new EchoAction.SomeCommand("tambourine"), new EchoAction.SomeCommand("man"))));
+
+    Awaitility.await()
+        .atMost(20, TimeUnit.SECONDS)
+        .untilAsserted(() -> {
+          var value = TestBuffer.getValue("echo-action");
+          assertThat(value).isEqualTo("tambourine man");
+        });
+  }
+
+  @Test
   public void verifyCounterEventSourceSubscription() {
     // GIVEN IncreaseAction is subscribed to CounterEntity events
     // WHEN the CounterEntity is requested to increase 42\

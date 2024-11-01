@@ -7,12 +7,11 @@ package akka.javasdk.impl.workflow
 import akka.annotation.InternalApi
 import akka.javasdk.JsonSupport
 import akka.javasdk.impl.CommandHandler
+import akka.javasdk.impl.CommandSerialization
 import akka.javasdk.impl.InvocationContext
 import akka.javasdk.workflow.CommandContext
 import akka.javasdk.workflow.Workflow
 import com.google.protobuf.any.{ Any => ScalaPbAny }
-
-import scala.util.control.NonFatal
 
 /**
  * INTERNAL API
@@ -41,26 +40,12 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
     if (scalaPbAnyCommand.typeUrl.startsWith(JsonSupport.JSON_TYPE_URL_PREFIX)) {
       // special cased component client calls, lets json commands trough all the way
       val methodInvoker = commandHandler.getSingleNameInvoker()
-      val parameterTypes = methodInvoker.method.getParameterTypes
-      val result =
-        if (parameterTypes.isEmpty) methodInvoker.invoke(workflow)
-        else if (parameterTypes.size > 1)
-          throw new IllegalStateException(
-            s"Handler for [$commandName] expects more than one parameter, not supported (parameter types: [${parameterTypes.mkString}]")
-        else {
-          // we used to dispatch based on the type, since that is how it works in protobuf for eventing
-          // but here we have a concrete command name, and can pick up the expected serialized type from there
-          val decodedParameter =
-            try {
-              JsonSupport.decodeJson(parameterTypes(0), scalaPbAnyCommand)
-            } catch {
-              case NonFatal(ex) =>
-                throw new IllegalArgumentException(
-                  s"Could not deserialize message for ${workflow.getClass}.${commandName}",
-                  ex)
-            }
-          methodInvoker.invokeDirectly(workflow, decodedParameter.asInstanceOf[AnyRef])
-        }
+      val deserializedCommand =
+        CommandSerialization.deserializeComponentClientCommand(methodInvoker.method, scalaPbAnyCommand)
+      val result = deserializedCommand match {
+        case None          => methodInvoker.invoke(workflow)
+        case Some(command) => methodInvoker.invokeDirectly(workflow, command)
+      }
       result.asInstanceOf[Workflow.Effect[_]]
     } else {
 

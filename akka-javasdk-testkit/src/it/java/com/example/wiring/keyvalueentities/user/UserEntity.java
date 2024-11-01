@@ -10,6 +10,8 @@ import akka.javasdk.keyvalueentity.KeyValueEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
+
 @ComponentId("user")
 public class UserEntity extends KeyValueEntity<User> {
 
@@ -38,6 +40,14 @@ public class UserEntity extends KeyValueEntity<User> {
 
   public Effect<Ok> updateEmail(UpdateEmail cmd) {
     return effects().updateState(new User(currentState().name, cmd.newEmail)).thenReply(Ok.instance);
+  }
+
+  public Effect<Boolean> nameIsLikeOneOf(List<String> names) {
+    return effects().reply(currentState() != null && names.stream().anyMatch(n -> n.equals(currentState().name)));
+  }
+
+  public Effect<Boolean> nameIsLikeOneOfUsers(List<User> users) {
+    return effects().reply(currentState() != null && users.stream().anyMatch(c -> c.name.equals(currentState().name)));
   }
 
   public Effect<Ok> deleteUser(Delete cmd) {

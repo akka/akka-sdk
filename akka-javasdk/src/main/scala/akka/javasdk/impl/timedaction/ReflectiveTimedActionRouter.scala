@@ -10,11 +10,10 @@ import akka.javasdk.impl.CommandHandler
 import akka.javasdk.impl.InvocationContext
 import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.AnySupport.ProtobufEmptyTypeUrl
+import akka.javasdk.impl.CommandSerialization
 import akka.javasdk.timedaction.CommandEnvelope
 import akka.javasdk.timedaction.TimedAction
 import com.google.protobuf.any.{ Any => ScalaPbAny }
-
-import scala.util.control.NonFatal
 
 /**
  * INTERNAL API
@@ -42,26 +41,12 @@ private[impl] final class ReflectiveTimedActionRouter[A <: TimedAction](
         JsonSupport.JSON_TYPE_URL_PREFIX) || scalaPbAnyCommand.value.isEmpty) && commandHandler.isSingleNameInvoker) {
       // special cased component client calls, lets json commands trough all the way
       val methodInvoker = commandHandler.getSingleNameInvoker()
-      val parameterTypes = methodInvoker.method.getParameterTypes
-      val result =
-        if (parameterTypes.isEmpty) methodInvoker.invoke(action)
-        else if (parameterTypes.size > 1)
-          throw new IllegalArgumentException(
-            s"Handler for [${action.getClass}.$commandName] expects more than one parameter, not supported (parameter types: [${parameterTypes.mkString}]")
-        else {
-          // we used to dispatch based on the type, since that is how it works in protobuf for eventing
-          // but here we have a concrete command name, and can pick up the expected serialized type from there
-          val decodedParameter =
-            try {
-              JsonSupport.decodeJson(parameterTypes(0), scalaPbAnyCommand)
-            } catch {
-              case NonFatal(ex) =>
-                throw new IllegalArgumentException(
-                  s"Could not deserialize message for ${action.getClass}.${commandName}",
-                  ex)
-            }
-          methodInvoker.invokeDirectly(action, decodedParameter.asInstanceOf[AnyRef])
-        }
+      val deserializedCommand =
+        CommandSerialization.deserializeComponentClientCommand(methodInvoker.method, scalaPbAnyCommand)
+      val result = deserializedCommand match {
+        case None          => methodInvoker.invoke(action)
+        case Some(command) => methodInvoker.invokeDirectly(action, command)
+      }
       result.asInstanceOf[TimedAction.Effect]
     } else {
 

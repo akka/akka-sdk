@@ -9,6 +9,8 @@ import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.client.ComponentClient;
 import com.example.wiring.actions.headers.TestBuffer;
 
+import java.util.List;
+
 @ComponentId("echo")
 public class EchoAction extends TimedAction {
 
@@ -22,4 +24,16 @@ public class EchoAction extends TimedAction {
     TestBuffer.addValue("echo-action", msg);
     return effects().done();
   }
+
+  public Effect stringMessages(List<String> msg) {
+    TestBuffer.addValue("echo-action", String.join(" ", msg));
+    return effects().done();
+  }
+
+  public record SomeCommand(String text) {}
+  public Effect commandMessages(List<SomeCommand> msg) {
+    TestBuffer.addValue("echo-action", String.join(" ", msg.stream().map(c -> c.text).toList()));
+    return effects().done();
+  }
+
 }

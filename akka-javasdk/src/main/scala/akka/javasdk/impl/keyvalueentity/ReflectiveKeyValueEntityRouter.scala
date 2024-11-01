@@ -7,13 +7,13 @@ package akka.javasdk.impl.keyvalueentity
 import akka.annotation.InternalApi
 import akka.javasdk.JsonSupport
 import akka.javasdk.impl.CommandHandler
+import akka.javasdk.impl.CommandSerialization
 import akka.javasdk.impl.InvocationContext
 import akka.javasdk.keyvalueentity.CommandContext
 import akka.javasdk.keyvalueentity.KeyValueEntity
 import com.google.protobuf.any.{ Any => ScalaPbAny }
 
 import java.lang.reflect.ParameterizedType
-import scala.util.control.NonFatal
 
 /**
  * INTERNAL API
@@ -39,28 +39,14 @@ private[impl] final class ReflectiveKeyValueEntityRouter[S, E <: KeyValueEntity[
     val scalaPbAnyCommand = command.asInstanceOf[ScalaPbAny]
 
     if (scalaPbAnyCommand.typeUrl.startsWith(JsonSupport.JSON_TYPE_URL_PREFIX)) {
-      // special cased component client calls, lets json commands trough all the way
+      // special cased component client calls, lets json commands through all the way
       val methodInvoker = commandHandler.getSingleNameInvoker()
-      val parameterTypes = methodInvoker.method.getParameterTypes
-      val result =
-        if (parameterTypes.isEmpty) methodInvoker.invoke(entity)
-        else if (parameterTypes.size > 1)
-          throw new IllegalArgumentException(
-            s"Command handler for [${entity.getClass}.$commandName] expects more than one parameter, not supported (parameter types: [${parameterTypes.mkString}]")
-        else {
-          // we used to dispatch based on the type, since that is how it works in protobuf for eventing
-          // but here we have a concrete command name, and can pick up the expected serialized type from there
-          val decodedParameter =
-            try {
-              JsonSupport.decodeJson(parameterTypes(0), scalaPbAnyCommand)
-            } catch {
-              case NonFatal(ex) =>
-                throw new IllegalArgumentException(
-                  s"Could not deserialize message for ${entity.getClass}.${commandName}",
-                  ex)
-            }
-          methodInvoker.invokeDirectly(entity, decodedParameter.asInstanceOf[AnyRef])
-        }
+      val deserializedCommand =
+        CommandSerialization.deserializeComponentClientCommand(methodInvoker.method, scalaPbAnyCommand)
+      val result = deserializedCommand match {
+        case None          => methodInvoker.invoke(entity)
+        case Some(command) => methodInvoker.invokeDirectly(entity, command)
+      }
       result.asInstanceOf[KeyValueEntity.Effect[_]]
     } else {
       val invocationContext =

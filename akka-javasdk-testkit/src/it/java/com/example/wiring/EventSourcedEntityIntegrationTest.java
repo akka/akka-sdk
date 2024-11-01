@@ -14,6 +14,7 @@ import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -81,6 +82,24 @@ public class EventSourcedEntityIntegrationTest extends TestKitSupport {
       .invokeAsync(123));
 
     assertThat(result3.success()).isEqualTo(new Counter(123));
+  }
+
+  @Test
+  public void verifyCounterGenericCommand() {
+
+    var client = componentClient.forEventSourcedEntity("testing-generics");
+
+    Integer result1 = await(client
+        .method(CounterEntity::multiIncrease)
+        .invokeAsync(List.of(1, 5, 7)));
+
+    assertThat(result1).isEqualTo(13);
+
+    Integer result2 = await(client
+        .method(CounterEntity::multiIncreaseCommands)
+        .invokeAsync(List.of(new CounterEntity.DoIncrease(1), new CounterEntity.DoIncrease(5))));
+
+    assertThat(result2).isEqualTo(19);
   }
 
   @Test
