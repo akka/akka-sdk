@@ -254,11 +254,11 @@ This will start a Docker container running the local console:
 --------------------
 ----
 
-You can open the listed URL to see your local service in action:
+You can open http://localhost:3000/[window="new"] to see your local service in action:
 
 image:local-console-first-app-events.png[]
 
-Here, you can view not only the current state of the cart, but also *a detailed log of events*, and the corresponding state changes that occurred along the way.
+Here, you can view not only the http://localhost:3000/services/shopping-cart-quickstart/components/shoppingcart.application.ShoppingCartEntity[current state of the cart, window="new"], but also http://localhost:3000/services/shopping-cart-quickstart/components/shoppingcart.application.ShoppingCartEntity/eventlog/123[*a detailed log of events*, window="new"], and the corresponding state changes that occurred along the way.
 
 == Deploy to akka.io
 
