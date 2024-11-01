@@ -15,12 +15,14 @@ class EntitiesAndViewsDescriptorSpec extends AnyWordSpec with Matchers {
       val config = ConfigFactory.load("META-INF/akka-javasdk-components.conf")
 
       val keyValueComponents = config.getStringList("akka.javasdk.components.key-value-entity")
-      keyValueComponents.size() shouldBe 1
+      keyValueComponents.size() shouldBe 2
       keyValueComponents should contain("com.example.SimpleKeyValueEntity")
+      keyValueComponents should contain("com.example.HierarchyKvEntity")
 
       val eventSourcedComponents = config.getStringList("akka.javasdk.components.event-sourced-entity")
-      eventSourcedComponents.size() shouldBe 1
+      eventSourcedComponents.size() shouldBe 2
       eventSourcedComponents should contain("com.example.SimpleEventSourcedEntity")
+      eventSourcedComponents should contain("com.example.HierarchyEsEntity")
 
       val viewComponents = config.getStringList("akka.javasdk.components.view")
       viewComponents.size() shouldBe 3

@@ -7,9 +7,7 @@ package akka.javasdk.impl
 import java.lang.reflect.AnnotatedElement
 import java.lang.reflect.Method
 import java.lang.reflect.ParameterizedType
-
 import scala.reflect.ClassTag
-
 import akka.annotation.InternalApi
 import akka.javasdk.annotations.ComponentId
 import akka.javasdk.annotations.Consume.FromKeyValueEntity
@@ -141,15 +139,10 @@ private[javasdk] object Validations {
     }
 
   private def eventSourcedEntityEventMustBeSealed(component: Class[_]): Validation = {
-    val eventType =
-      component.getGenericSuperclass
-        .asInstanceOf[ParameterizedType]
-        .getActualTypeArguments()(1)
-        .asInstanceOf[Class[_]]
-
-    when(!eventType.isSealed) {
+    val eventClass = Reflect.eventSourcedEntityEventType(component)
+    when(!eventClass.isSealed) {
       Invalid(
-        s"The event type of an EventSourcedEntity is required to be a sealed interface. Event '${eventType.getName}' in '${component.getName}' is not sealed.")
+        s"The event type of an EventSourcedEntity is required to be a sealed interface. Event '${eventClass.getName}' in '${component.getName}' is not sealed.")
     }
   }
 
@@ -376,13 +369,6 @@ private[javasdk] object Validations {
     }
   }
 
-  private def getEventType(esEntity: Class[_]): Class[_] = {
-    val genericTypeArguments = esEntity.getGenericSuperclass
-      .asInstanceOf[ParameterizedType]
-      .getActualTypeArguments
-    genericTypeArguments(1).asInstanceOf[Class[_]]
-  }
-
   private def ambiguousHandlerValidations(component: Class[_], updateMethodPredicate: Method => Boolean): Validation = {
 
     val methods = component.getMethods.toIndexedSeq
@@ -432,7 +418,7 @@ private[javasdk] object Validations {
 
     eventSourcedEntitySubscription(component) match {
       case Some(classLevel) =>
-        val eventType = getEventType(classLevel.value())
+        val eventType = Reflect.eventSourcedEntityEventType(classLevel.value())
         if (!classLevel.ignoreUnknown() && eventType.isSealed) {
           val effectMethodsInputParams: Seq[Class[_]] = methods
             .filter(updateMethodPredicate)
@@ -531,10 +517,10 @@ private[javasdk] object Validations {
 
   private def viewMustHaveCorrectUpdateHandlerWhenTransformingViewUpdates(tableUpdater: Class[_]): Validation = {
     if (hasValueEntitySubscription(tableUpdater)) {
-      val tableType: Class[_] = tableTypeOf(tableUpdater)
+      val tableType: Class[_] = Reflect.tableTypeForTableUpdater(tableUpdater)
       val valueEntityClass: Class[_] =
         tableUpdater.getAnnotation(classOf[FromKeyValueEntity]).value().asInstanceOf[Class[_]]
-      val entityStateClass = valueEntityStateClassOf(valueEntityClass)
+      val entityStateClass = Reflect.keyValueEntityStateType(valueEntityClass)
 
       if (entityStateClass != tableType) {
         val viewUpdateMatchesTableType = tableUpdater.getMethods
@@ -643,22 +629,6 @@ private[javasdk] object Validations {
       onlyOneValueEntityUpdateIsAllowed ++
       onlyOneHandlesDeleteIsAllowed
     }
-  }
-
-  private def tableTypeOf(component: Class[_]) = {
-    component.getGenericSuperclass
-      .asInstanceOf[ParameterizedType]
-      .getActualTypeArguments
-      .head
-      .asInstanceOf[Class[_]]
-  }
-
-  private def valueEntityStateClassOf(valueEntityClass: Class[_]): Class[_] = {
-    valueEntityClass.getGenericSuperclass
-      .asInstanceOf[ParameterizedType]
-      .getActualTypeArguments
-      .head
-      .asInstanceOf[Class[_]]
   }
 
 }

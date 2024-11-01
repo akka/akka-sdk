@@ -9,11 +9,10 @@ import akka.javasdk.JsonSupport
 import akka.javasdk.impl.CommandHandler
 import akka.javasdk.impl.CommandSerialization
 import akka.javasdk.impl.InvocationContext
+import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.keyvalueentity.CommandContext
 import akka.javasdk.keyvalueentity.KeyValueEntity
 import com.google.protobuf.any.{ Any => ScalaPbAny }
-
-import java.lang.reflect.ParameterizedType
 
 /**
  * INTERNAL API
@@ -62,12 +61,7 @@ private[impl] final class ReflectiveKeyValueEntityRouter[S, E <: KeyValueEntity[
   }
 
   private def _extractAndSetCurrentState(state: S): Unit = {
-    val entityStateType: Class[S] =
-      this.entity.getClass.getGenericSuperclass
-        .asInstanceOf[ParameterizedType]
-        .getActualTypeArguments
-        .head
-        .asInstanceOf[Class[S]]
+    val entityStateType: Class[S] = Reflect.keyValueEntityStateType(entity.getClass).asInstanceOf[Class[S]]
 
     // the state: S received can either be of the entity "state" type (if coming from emptyState/memory)
     // or PB Any type (if coming from the runtime)

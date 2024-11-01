@@ -15,6 +15,7 @@ import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.DeclaredType;
 import javax.lang.model.util.ElementFilter;
 import javax.tools.Diagnostic;
 import javax.tools.FileObject;
@@ -129,36 +130,35 @@ public class ComponentAnnotationProcessor extends AbstractProcessor {
         };
     }
 
-    // extract the super class name of the passed Element (without the type parameter brackets)
-    private String superClassName(Element annotatedClass) {
-        var superClassMirror = ((TypeElement) annotatedClass).getSuperclass();
-        var superClassName = superClassMirror.toString();
+    /**
+     * Entities share the same annotation, so we need to look at class supertypes
+     */
+    private String componentType(Element annotatedClass) {
+        return recurseForComponentType(annotatedClass, annotatedClass);
+    }
+
+    private String recurseForComponentType(Element annotatedClass, Element current) {
+        var superClassTypeMirror = ((TypeElement) current).getSuperclass();
+        var superClassElement = ((DeclaredType) superClassTypeMirror).asElement();
+
+        var superClassName = superClassTypeMirror.toString();
 
         // cut out type params if any
         int typeParams = superClassName.indexOf("<");
-        if (typeParams > -1) {
-            return superClassName.substring(0, typeParams);
-        } else {
-            return superClassName;
-        }
-    }
+        var classNameWithoutTypeParams = typeParams > 0 ? superClassName.substring(0, typeParams) : superClassName;
+        debug("Determining component type trough supertype: " +  classNameWithoutTypeParams);
 
-    /**
-     * Entities share the same annotation, so we need to look at class supertype
-     */
-    private String componentType(Element annotatedClass) {
-
-        var superClassName = superClassName(annotatedClass);
-
-        debug("Determining component type trough supertype: " + superClassName);
-        return switch (superClassName) {
+        return switch (classNameWithoutTypeParams) {
             case "akka.javasdk.eventsourcedentity.EventSourcedEntity" -> EVENT_SOURCED_ENTITY_KEY;
             case "akka.javasdk.keyvalueentity.KeyValueEntity" -> VALUE_ENTITY_KEY;
             case "akka.javasdk.workflow.Workflow" -> WORKFLOW_KEY;
             case "akka.javasdk.timedaction.TimedAction" -> TIMED_ACTION_KEY;
             case "akka.javasdk.consumer.Consumer" -> CONSUMER_KEY;
             case "akka.javasdk.view.View" -> VIEW_KEY;
-            default -> throw new IllegalArgumentException("Unknown supertype for class [" + annotatedClass + "] annotated with @ComponentId: [" + superClassName + "]");
+            case "java.lang.Object" -> throw new IllegalArgumentException("Unknown supertype for class [" + annotatedClass + "] annotated with @ComponentId: [" + superClassName + "]");
+            default ->
+                // go through hierarchy
+                recurseForComponentType(annotatedClass, superClassElement);
         };
     }
 

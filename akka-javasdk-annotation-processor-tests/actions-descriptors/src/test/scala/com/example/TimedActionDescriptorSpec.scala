@@ -15,9 +15,10 @@ class TimedActionDescriptorSpec extends AnyWordSpec with Matchers {
       val config = ConfigFactory.load("META-INF/akka-javasdk-components.conf")
 
       val actionComponents = config.getStringList("akka.javasdk.components.timed-action")
-      actionComponents.size() shouldBe 2
+      actionComponents.size() shouldBe 3
       actionComponents should contain("com.example.HelloAction")
       actionComponents should contain("com.example.SomeTimedAction")
+      actionComponents should contain("com.example.HierarchyTimedAction")
 
       val kalixService = config.getString("akka.javasdk.service-setup")
       kalixService should be("com.example.Setup")

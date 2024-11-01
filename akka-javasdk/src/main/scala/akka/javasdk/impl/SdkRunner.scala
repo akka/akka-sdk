@@ -6,7 +6,6 @@ package akka.javasdk.impl
 
 import java.lang.reflect.Constructor
 import java.lang.reflect.InvocationTargetException
-import java.lang.reflect.ParameterizedType
 import java.util.concurrent.CompletionStage
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -498,13 +497,8 @@ private final class Sdk(
           }
         }
 
-        val workflowStateType: Class[S] =
-          workflow.getClass.getGenericSuperclass
-            .asInstanceOf[ParameterizedType]
-            .getActualTypeArguments
-            .head
-            .asInstanceOf[Class[S]]
-
+        // FIXME pull this inline setup stuff out of SdkRunner and into some workflow class
+        val workflowStateType: Class[S] = Reflect.workflowStateType(workflow)
         messageCodec.registerTypeHints(workflowStateType)
 
         workflow

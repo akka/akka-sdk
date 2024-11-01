@@ -5,16 +5,20 @@
 package com.example.wiring;
 
 import akka.javasdk.testkit.TestKitSupport;
+import com.example.wiring.keyvalueentities.hierarchy.AbstractTextConsumer;
+import com.example.wiring.keyvalueentities.hierarchy.TextKvEntity;
 import com.example.wiring.keyvalueentities.user.User;
 import com.example.wiring.keyvalueentities.user.UserEntity;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.util.Optional;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
 
 public class KeyValueEntityIntegrationTest extends TestKitSupport {
@@ -52,6 +56,23 @@ public class KeyValueEntityIntegrationTest extends TestKitSupport {
         Assertions.assertEquals(newEmail, getUser(joe2).email);
       });
   }
+
+
+  @Test
+  public void testHierarchyEntity() {
+    var client = componentClient.forKeyValueEntity("some-id");
+
+    await(client.method(TextKvEntity::setText).invokeAsync("my text"));
+
+    var result = await(client.method(TextKvEntity::getText).invokeAsync());
+    assertThat(result).isEqualTo(Optional.of("my text"));
+
+    // also verify that hierarchy consumer works
+    Awaitility.await().untilAsserted(() ->
+        org.assertj.core.api.Assertions.assertThat(StaticTestBuffer.getValue(AbstractTextConsumer.BUFFER_KEY)).isEqualTo("my text")
+    );
+  }
+
 
   @Test
   public void verifyGenericParameter() {

@@ -97,6 +97,28 @@ private[impl] object Reflect {
         t.isInstanceOf[ParameterizedType] && t.asInstanceOf[ParameterizedType].getRawType == classOf[Optional[_]])
   }
 
+  def keyValueEntityStateType(component: Class[_]): Class[_] = {
+    @tailrec
+    def loop(current: Class[_]): Class[_] = {
+      if (current == classOf[AnyRef])
+        // recursed to root without finding type param
+        throw new IllegalArgumentException(s"Cannot find key value state class for ${component}")
+      else {
+        current.getGenericSuperclass match {
+          case parameterizedType: ParameterizedType =>
+            if (parameterizedType.getActualTypeArguments.size == 1)
+              parameterizedType.getActualTypeArguments.head.asInstanceOf[Class[_]]
+            else throw new IllegalArgumentException(s"Cannot find key value state class for ${component}")
+          case noTypeParamsParent: Class[_] =>
+            // recurse and look at parent
+            loop(noTypeParamsParent)
+        }
+      }
+    }
+
+    loop(component)
+  }
+
   private def extendsView(component: Class[_]): Boolean =
     classOf[View].isAssignableFrom(component)
 
@@ -109,20 +131,47 @@ private[impl] object Reflect {
     Modifier.isPublic(component.getModifiers)
 
   def allKnownEventTypes[S, E, ES <: EventSourcedEntity[S, E]](entity: ES): Seq[Class[_]] = {
-    val eventType = entity.getClass.getGenericSuperclass
-      .asInstanceOf[ParameterizedType]
-      .getActualTypeArguments()(1)
-      .asInstanceOf[Class[E]]
-
+    val eventType = eventSourcedEntityEventType(entity.getClass)
     eventType.getPermittedSubclasses.toSeq
   }
 
-  def workflowStateType[S, W <: Workflow[S]](workflow: W): Class[S] =
-    workflow.getClass.getGenericSuperclass
-      .asInstanceOf[ParameterizedType]
-      .getActualTypeArguments
-      .head
-      .asInstanceOf[Class[S]]
+  def workflowStateType[S, W <: Workflow[S]](workflow: W): Class[S] = {
+    @tailrec
+    def loop(current: Class[_]): Class[_] =
+      if (current == classOf[AnyRef])
+        // recursed to root without finding type param
+        throw new IllegalArgumentException(s"Cannot find workflow state class for ${workflow.getClass}")
+      else {
+        current.getGenericSuperclass match {
+          case parameterizedType: ParameterizedType =>
+            if (parameterizedType.getActualTypeArguments.size == 1)
+              parameterizedType.getActualTypeArguments.head.asInstanceOf[Class[_]]
+            else throw new IllegalArgumentException(s"Cannot find workflow state class for ${workflow.getClass}")
+          case noTypeParamsParent: Class[_] =>
+            // recurse and look at parent
+            loop(noTypeParamsParent)
+        }
+      }
+
+    loop(workflow.getClass).asInstanceOf[Class[S]]
+  }
+
+  def eventSourcedEntityEventType(component: Class[_]): Class[_] =
+    concreteEsApplyEventMethod(component).getParameterTypes.head
+
+  def eventSourcedEntityStateType(component: Class[_]): Class[_] =
+    concreteEsApplyEventMethod(component).getReturnType
+
+  private def concreteEsApplyEventMethod(component: Class[_]): Method = {
+    component.getMethods
+      .find(m =>
+        m.getName == "applyEvent" &&
+        // in case of their own overloads with more params
+        m.getParameters.length == 1 &&
+        // there the erased method from the base class
+        m.getParameterTypes.head != classOf[AnyRef])
+      .get // there always is one or else it would not compile
+  }
 
   private implicit val stringArrayOrdering: Ordering[Array[String]] =
     Ordering.fromLessThan(util.Arrays.compare[String](_, _) < 0)
@@ -154,5 +203,12 @@ private[impl] object Reflect {
 
     collectAll(instance.getClass, List.empty)
   }
+
+  def tableTypeForTableUpdater(tableUpdater: Class[_]): Class[_] =
+    tableUpdater.getGenericSuperclass
+      .asInstanceOf[ParameterizedType]
+      .getActualTypeArguments
+      .head
+      .asInstanceOf[Class[_]]
 
 }

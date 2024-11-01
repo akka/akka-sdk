@@ -15,7 +15,6 @@ import akka.javasdk.impl.JsonMessageCodec
 import akka.javasdk.impl.StrictJsonMessageCodec
 import akka.javasdk.impl.reflection.Reflect
 
-import java.lang.reflect.ParameterizedType
 import com.google.protobuf.any.{ Any => ScalaPbAny }
 
 /**
@@ -92,12 +91,7 @@ private[impl] class ReflectiveEventSourcedEntityRouter[S, E, ES <: EventSourcedE
   }
 
   private def _extractAndSetCurrentState(state: S): Unit = {
-    val entityStateType: Class[S] =
-      this.entity.getClass.getGenericSuperclass
-        .asInstanceOf[ParameterizedType]
-        .getActualTypeArguments
-        .head
-        .asInstanceOf[Class[S]]
+    val entityStateType: Class[S] = Reflect.eventSourcedEntityStateType(this.entity.getClass).asInstanceOf[Class[S]]
 
     // the state: S received can either be of the entity "state" type (if coming from emptyState/memory)
     // or PB Any type (if coming from the runtime)

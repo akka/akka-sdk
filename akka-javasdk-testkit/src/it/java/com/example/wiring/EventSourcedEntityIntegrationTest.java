@@ -9,11 +9,14 @@ import akka.javasdk.testkit.TestKitSupport;
 import com.example.wiring.eventsourcedentities.counter.Counter;
 import com.example.wiring.eventsourcedentities.counter.CounterEntity;
 import akka.javasdk.client.EventSourcedEntityClient;
+import com.example.wiring.eventsourcedentities.hierarchy.AbstractTextConsumer;
+import com.example.wiring.eventsourcedentities.hierarchy.TextEsEntity;
 import org.awaitility.Awaitility;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.util.Optional;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -156,6 +159,21 @@ public class EventSourcedEntityIntegrationTest extends TestKitSupport {
     increaseCounter(client, 2);
     Integer result = await(client.method(CounterEntity::set).invokeAsync(0));
     assertThat(result).isEqualTo(0);
+  }
+
+  @Test
+  public void testHierarchyEntity() {
+    var client = componentClient.forEventSourcedEntity("some-id");
+
+    await(client.method(TextEsEntity::setText).invokeAsync("my text"));
+
+    var result = await(client.method(TextEsEntity::getText).invokeAsync());
+    assertThat(result).isEqualTo(Optional.of("my text"));
+
+    // also verify that hierarchy consumer works
+    Awaitility.await().untilAsserted(() ->
+        assertThat(StaticTestBuffer.getValue(AbstractTextConsumer.BUFFER_KEY)).isEqualTo("my text")
+    );
   }
 
 

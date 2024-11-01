@@ -2,11 +2,11 @@
  * Copyright (C) 2021-2024 Lightbend Inc. <https://www.lightbend.com>
  */
 
-package com.example.wiring.actions.headers;
+package com.example.wiring;
 
 import java.util.concurrent.ConcurrentHashMap;
 
-public class TestBuffer {
+public class StaticTestBuffer {
 
   public static final ConcurrentHashMap<String, String> values = new ConcurrentHashMap<>();
 

@@ -11,7 +11,7 @@ import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
 import com.example.wiring.actions.echo.ActionWithMetadata;
 import com.example.wiring.actions.echo.EchoAction;
-import com.example.wiring.actions.headers.TestBuffer;
+import com.example.wiring.actions.hierarchy.HierarchyTimed;
 import com.example.wiring.eventsourcedentities.counter.Counter;
 import com.example.wiring.eventsourcedentities.counter.CounterEntity;
 import com.example.wiring.keyvalueentities.customer.CustomerEntity;
@@ -32,6 +32,7 @@ import com.example.wiring.views.UsersByEmailAndName;
 import com.example.wiring.views.UsersByName;
 import com.example.wiring.views.UsersByPrimitives;
 import com.example.wiring.views.UsersView;
+import com.example.wiring.views.hierarchy.HierarchyCountersByValue;
 import org.awaitility.Awaitility;
 import org.hamcrest.core.IsEqual;
 import org.hamcrest.core.IsNull;
@@ -68,9 +69,24 @@ public class SdkIntegrationTest extends TestKitSupport {
     Awaitility.await()
       .atMost(20, TimeUnit.SECONDS)
       .untilAsserted(() -> {
-        var value = TestBuffer.getValue("echo-action");
+        var value = StaticTestBuffer.getValue("echo-action");
         assertThat(value).isEqualTo("hello");
       });
+  }
+
+  @Test
+  public void verifyHierarchyTimedActionWiring() {
+
+    timerScheduler.startSingleTimer("wired", ofMillis(0), componentClient.forTimedAction()
+        .method(HierarchyTimed::stringMessage)
+        .deferred("hello"));
+
+    Awaitility.await()
+        .atMost(20, TimeUnit.SECONDS)
+        .untilAsserted(() -> {
+          var value = StaticTestBuffer.getValue("hierarchy-action");
+          assertThat(value).isEqualTo("hello");
+        });
   }
 
   @Test
@@ -83,7 +99,7 @@ public class SdkIntegrationTest extends TestKitSupport {
     Awaitility.await()
         .atMost(20, TimeUnit.SECONDS)
         .untilAsserted(() -> {
-          var value = TestBuffer.getValue("echo-action");
+          var value = StaticTestBuffer.getValue("echo-action");
           assertThat(value).isEqualTo("hello mr");
         });
 
@@ -94,7 +110,7 @@ public class SdkIntegrationTest extends TestKitSupport {
     Awaitility.await()
         .atMost(20, TimeUnit.SECONDS)
         .untilAsserted(() -> {
-          var value = TestBuffer.getValue("echo-action");
+          var value = StaticTestBuffer.getValue("echo-action");
           assertThat(value).isEqualTo("tambourine man");
         });
   }
@@ -199,6 +215,37 @@ public class SdkIntegrationTest extends TestKitSupport {
 
           assertThat(byValue).hasValue(new Counter(10));
         });
+  }
+
+  @Test
+  public void verifyHierarchyView() {
+
+    var emptyCounter = await(
+        componentClient.forView()
+            .method(HierarchyCountersByValue::getCounterByValue)
+            .invokeAsync(10));
+
+    assertThat(emptyCounter).isEmpty();
+
+    await(
+        componentClient.forEventSourcedEntity("bcd")
+            .method(CounterEntity::increase)
+            .invokeAsync(20));
+
+
+    // the view is eventually updated
+    Awaitility.await()
+        .ignoreExceptions()
+        .atMost(15, TimeUnit.of(SECONDS))
+        .untilAsserted(
+            () -> {
+              var byValue = await(
+                  componentClient.forView()
+                      .method(HierarchyCountersByValue::getCounterByValue)
+                      .invokeAsync(20));
+
+              assertThat(byValue).hasValue(new Counter(20));
+            });
   }
 
   @Test
@@ -487,7 +534,7 @@ public class SdkIntegrationTest extends TestKitSupport {
       .atMost(20, TimeUnit.SECONDS)
       .ignoreExceptions()
       .untilAsserted(() -> {
-        var header = TestBuffer.getValue(ActionWithMetadata.SOME_HEADER);
+        var header = StaticTestBuffer.getValue(ActionWithMetadata.SOME_HEADER);
         assertThat(header).isEqualTo(metadataValue);
       });
   }

@@ -7,10 +7,12 @@ package com.example.wiring.workflowentities;
 import com.example.wiring.actions.echo.Message;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
+import com.example.wiring.workflowentities.hierarchy.TextWorkflow;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
+import java.util.Optional;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -567,6 +569,19 @@ public class WorkflowIntegrationTest extends TestKitSupport {
         var state = await(componentClient.forWorkflow(workflowId).method(WorkflowWithoutInitialState::get).invokeAsync());
         assertThat(state).contains("success");
       });
+  }
+
+  @Test
+  public void shouldAllowHierarchyWorkflow() {
+    var workflowId = randomId();
+    await(componentClient.forWorkflow(workflowId)
+        .method(TextWorkflow::setText).invokeAsync("some text"));
+
+
+    var result = await(componentClient.forWorkflow(workflowId)
+        .method(TextWorkflow::getText).invokeAsync());
+
+    assertThat(result).isEqualTo(Optional.of("some text"));
   }
 
   @Test

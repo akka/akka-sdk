@@ -6,7 +6,7 @@ package com.example.wiring.actions.echo;
 
 import akka.javasdk.timedaction.TimedAction;
 import akka.javasdk.annotations.ComponentId;
-import com.example.wiring.actions.headers.TestBuffer;
+import com.example.wiring.StaticTestBuffer;
 
 @ComponentId("with-metadata")
 public class ActionWithMetadata extends TimedAction {
@@ -15,7 +15,7 @@ public class ActionWithMetadata extends TimedAction {
 
   public Effect processWithMeta() {
     String headerValue = commandContext().metadata().get(SOME_HEADER).orElse("");
-    TestBuffer.addValue(SOME_HEADER, headerValue);
+    StaticTestBuffer.addValue(SOME_HEADER, headerValue);
     return effects().done();
   }
 }
