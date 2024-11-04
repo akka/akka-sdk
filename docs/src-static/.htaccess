@@ -141,6 +141,10 @@ RedirectMatch 301 ^/(api|japi)/akka/2.8.(\d+)(/?|/.*)$       https://doc.akka.io
 RedirectMatch 301 ^/docs/akka/2.9(\.\d+)?(/?|/.*)$           https://doc.akka.io/libraries/akka-core/2.9$1$2
 RedirectMatch 301 ^/(api|japi)/akka/2.9.(\d+)(/?|/.*)$       https://doc.akka.io/$1/akka-core/2.9$1$2
 
+# Rename to akka-core
+RedirectMatch 301 ^/docs/akka/current(/?|/.*)$                    https://doc.akka.io/libraries/akka-core/current$1
+RedirectMatch 301 ^/(libraries|api|japi)/akka/current(/?|/.*)$    https://doc.akka.io/$1/akka-core/current/$2
+
 # ===================================
 # Akka Dependencies
 # ===================================
@@ -403,6 +407,9 @@ RedirectMatch 301 ^/alpakka-samples(/?|/.*)$ https://akka.io/alpakka-samples$1
 RedirectMatch 301 ^/docs/([^/]+)/?$       https://doc.akka.io/libraries/$1/current/
 # All: /libraries/{module}  -> /libraries/{module}/current/
 RedirectMatch 301 ^/libraries/([^/]+)/?$  https://doc.akka.io/libraries/$1/current/
+
+# All: /docs/{module}/.*    -> /libraries/{module}/.*
+RedirectMatch 301 ^/docs/([^/]+)/(.*)$       https://doc.akka.io/libraries/$1/$2
 
 # TODO remove once the real docs are published
 RedirectMatch 301 ^/akka-cli(/?|/.*)$      https://doc.akka.io/snapshots/akka-documentation/akka-cli$1
