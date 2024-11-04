@@ -7,7 +7,7 @@ package akka.javasdk.impl.workflow
 import java.util.Optional
 import java.util.concurrent.CompletionStage
 import java.util.function.{ Function => JFunc }
-import scala.compat.java8.FutureConverters.CompletionStageOps
+import scala.jdk.FutureConverters.CompletionStageOps
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.OptionConverters.RichOptional
@@ -154,7 +154,7 @@ abstract class WorkflowRouter[S, W <: Workflow[S]](protected val workflow: W) {
         val future = call.callFunc
           .asInstanceOf[JFunc[Any, CompletionStage[Any]]]
           .apply(decodedInput)
-          .toScala
+          .asScala
 
         future
           .map { res =>

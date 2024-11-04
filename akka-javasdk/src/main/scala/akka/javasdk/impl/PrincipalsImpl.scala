@@ -7,8 +7,8 @@ package akka.javasdk.impl
 import java.util
 import java.util.Optional
 
-import scala.compat.java8.OptionConverters.RichOptionForJava8
 import scala.jdk.CollectionConverters.IterableHasAsJava
+import scala.jdk.OptionConverters._
 
 import akka.annotation.InternalApi
 import akka.javasdk.Principal
@@ -28,7 +28,7 @@ private[akka] final case class PrincipalsImpl(source: Option[String], service: O
 
   override def isAnyLocalService: Boolean = service.nonEmpty
 
-  override def getLocalService: Optional[String] = service.asJava
+  override def getLocalService: Optional[String] = service.toJava
   override def get(): util.Collection[Principal] = (source.collect {
     case "internet"   => Principal.INTERNET
     case "self"       => Principal.SELF

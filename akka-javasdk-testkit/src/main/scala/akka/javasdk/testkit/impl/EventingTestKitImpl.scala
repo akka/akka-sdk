@@ -54,14 +54,14 @@ import java.time
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import java.util.{ List => JList }
-import scala.compat.java8.DurationConverters.DurationOps
-import scala.compat.java8.OptionConverters.RichOptionalGeneric
+import scala.jdk.CollectionConverters._
+import scala.jdk.DurationConverters._
+import scala.jdk.OptionConverters._
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.Future
 import scala.concurrent.Promise
 import scala.concurrent.duration._
-import scala.jdk.CollectionConverters._
 import scala.util.Failure
 import scala.util.Success
 
@@ -374,8 +374,8 @@ private[testkit] class OutgoingMessagesImpl(
   }
 
   private def typeUrlFor(metadata: MetadataImpl): String = {
-    val ceType = metadata.get("ce-type").asScala
-    val contentType = metadata.get("Content-Type").asScala
+    val ceType = metadata.get("ce-type").toScala
+    val contentType = metadata.get("Content-Type").toScala
 
     (ceType, contentType) match {
       case (_, Some("text/plain; charset=utf-8")) => "type.kalix.io/string"

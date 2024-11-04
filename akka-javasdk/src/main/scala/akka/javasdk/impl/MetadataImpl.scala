@@ -12,8 +12,8 @@ import java.util
 import java.util.Objects
 import java.util.Optional
 
-import scala.compat.java8.OptionConverters._
 import scala.jdk.CollectionConverters._
+import scala.jdk.OptionConverters._
 
 import akka.annotation.InternalApi
 import akka.javasdk.CloudEvent
@@ -38,7 +38,7 @@ private[javasdk] class MetadataImpl private (val entries: Seq[MetadataEntry]) ex
   override def has(key: String): Boolean = entries.exists(_.key.equalsIgnoreCase(key))
 
   override def get(key: String): Optional[String] =
-    getScala(key).asJava
+    getScala(key).toJava
 
   private[akka] def getScala(key: String): Option[String] =
     entries.collectFirst {
@@ -71,7 +71,7 @@ private[javasdk] class MetadataImpl private (val entries: Seq[MetadataEntry]) ex
     }
 
   override def getBinary(key: String): Optional[ByteBuffer] =
-    getBinaryScala(key).asJava
+    getBinaryScala(key).toJava
 
   private[akka] def getBinaryScala(key: String): Option[ByteBuffer] =
     entries.collectFirst {
@@ -174,7 +174,7 @@ private[javasdk] class MetadataImpl private (val entries: Seq[MetadataEntry]) ex
 
   override def withType(`type`: String): MetadataImpl = set(MetadataImpl.CeType, `type`)
 
-  override def datacontenttype(): Optional[String] = getScala(MetadataImpl.CeDatacontenttype).asJava
+  override def datacontenttype(): Optional[String] = getScala(MetadataImpl.CeDatacontenttype).toJava
   private[akka] def datacontenttypeScala(): Option[String] = getScala(MetadataImpl.CeDatacontenttype)
 
   override def withDatacontenttype(datacontenttype: String): MetadataImpl =
@@ -182,21 +182,21 @@ private[javasdk] class MetadataImpl private (val entries: Seq[MetadataEntry]) ex
 
   override def clearDatacontenttype(): MetadataImpl = remove(MetadataImpl.CeDatacontenttype)
 
-  override def dataschema(): Optional[URI] = dataschemaScala().asJava
+  override def dataschema(): Optional[URI] = dataschemaScala().toJava
   private[akka] def dataschemaScala(): Option[URI] = getScala(MetadataImpl.CeDataschema).map(URI.create(_))
 
   override def withDataschema(dataschema: URI): MetadataImpl = set(MetadataImpl.CeDataschema, dataschema.toString)
 
   override def clearDataschema(): MetadataImpl = remove(MetadataImpl.CeDataschema)
 
-  override def subject(): Optional[String] = subjectScala.asJava
+  override def subject(): Optional[String] = subjectScala.toJava
   private[akka] def subjectScala: Option[String] = getScala(MetadataImpl.CeSubject)
 
   override def withSubject(subject: String): MetadataImpl = set(MetadataImpl.CeSubject, subject)
 
   override def clearSubject(): MetadataImpl = remove(MetadataImpl.CeSubject)
 
-  override def time(): Optional[ZonedDateTime] = timeScala.asJava
+  override def time(): Optional[ZonedDateTime] = timeScala.toJava
   private[akka] def timeScala: Option[ZonedDateTime] =
     getScala(MetadataImpl.CeTime).map(ZonedDateTime.parse(_))
 
@@ -216,13 +216,13 @@ private[javasdk] class MetadataImpl private (val entries: Seq[MetadataEntry]) ex
       Span.fromContext(asOpenTelemetryContext()).getSpanContext.getTraceId match {
         case "00000000000000000000000000000000" =>
           Optional.empty() // when no traceId returns io.opentelemetry.api.trace.TraceId.INVALID
-        case traceId => Some(traceId).asJava
+        case traceId => Some(traceId).toJava
       }
     }
 
-    override def traceParent(): Optional[String] = getScala(Telemetry.TRACE_PARENT_KEY).asJava
+    override def traceParent(): Optional[String] = getScala(Telemetry.TRACE_PARENT_KEY).toJava
 
-    override def traceState(): Optional[String] = getScala(Telemetry.TRACE_STATE_KEY).asJava
+    override def traceState(): Optional[String] = getScala(Telemetry.TRACE_STATE_KEY).toJava
   }
 
   override def merge(other: Metadata): Metadata = {

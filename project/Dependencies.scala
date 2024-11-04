@@ -89,12 +89,9 @@ object Dependencies {
   val scalaPbValidateCore = "com.thesamet.scalapb" %% "scalapb-validate-core" % "0.3.4"
   val sbtProtoc = "com.thesamet" % "sbt-protoc" % "1.0.0"
 
-  val scalaCollectionCompat = "org.scala-lang.modules" %% "scala-collection-compat" % "2.10.0"
   val typesafeConfig = "com.typesafe" % "config" % "1.4.2"
 
   private val deps = libraryDependencies
-
-  val devTools = deps ++= Seq(scalaCollectionCompat, typesafeConfig, scalaTest % Test)
 
   private val sdkDeps = Seq(
     protobufJavaUtil,
