@@ -53,10 +53,11 @@ akka projects config set broker \
   --broker-bootstrap-servers <kafka...aivencloud.com:12976> \
   --broker-ca-cert-secret kafka-ca-cert
 ----
-
 The `broker-password-secret` and `broker-ca-cert-secret` refer to the names of the Akka secrets created earlier rather than the actual secret values.
-
++
 An optional description can be added with the parameter `--description` to provide additional notes about the broker.
+
+. Contact akka-support@lightbend.com to open a port in Akka to reach your Aiven port configured above.
 
 The broker config can be inspected using:
 [source, command window]
