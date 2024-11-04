@@ -109,7 +109,7 @@ Descriptor::
 [source,yaml]
 ----
 default:
-  akkaConsole: {}
+  kalixConsole: {}
 ----
 CLI::
 +

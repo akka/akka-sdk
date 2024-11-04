@@ -24,7 +24,7 @@ The default exporter configuration for metrics, logs, and traces. At most one de
 |===
 |Field          |Type                              |Description
 
-|*akkaConsole* |object                            |If defined, metrics will be exported to the Akka Console. There are no configuration parameters for the console exporter, it should be declared as an empty object.
+|*kalixConsole* |object                            |If defined, metrics will be exported to the Akka Console. There are no configuration parameters for the console exporter, it should be declared as an empty object.
 |*otlp*         |<<ObservabilityOtlp>>        |If defined, will export metrics, logs, and traces to an OpenTelemetry collector using the OTLP gRPC protocol.
 |*splunkHec*    |<<ObservabilitySplunkHec>>   |If defined, will export metrics and logs to a Splunk platform instance, using the Splunk HTTP Event Collector.
 |*googleCloud*  |<<ObservabilityGoogleCloud>> |If defined, will export metrics, logs, and traces to Google Cloud.
@@ -38,7 +38,7 @@ The metrics exporter configuration. At most one metrics exporter may be configur
 |===
 |Field             |Type                                  |Description
 
-|*akkaConsole*    |object                                |If defined, metrics will be exported to the Akka Console. There are no configuration parameters for the console exporter, it should be declared as an empty object.
+|*kalixConsole*    |object                                |If defined, metrics will be exported to the Akka Console. There are no configuration parameters for the console exporter, it should be declared as an empty object.
 |*otlp*            |<<ObservabilityOtlp>>            |If defined, will export metrics to an OpenTelemetry collector using the OTLP gRPC protocol.
 |*prometheuswrite* |<<ObservabilityPrometheusWrite>> |If defined, will export metrics using the Prometheus remote write protocol.
 |*splunkHec*       |<<ObservabilitySplunkHec>>       |If defined, will export metrics to a Splunk platform instance, using the Splunk HTTP Event Collector.
@@ -54,7 +54,7 @@ The traces exporter configuration. At most one traces exporter may be configured
 |===
 |Field             |Type                                  |Description
 
-|*akkaConsole*    |object                                |If defined, metrics will be exported to the Akka Console. There are no configuration parameters for the console exporter, it should be declared as an empty object.
+|*kalixConsole*    |object                                |If defined, metrics will be exported to the Akka Console. There are no configuration parameters for the console exporter, it should be declared as an empty object.
 |*otlp*            |<<ObservabilityOtlp>>            |If defined, will export traces to an OpenTelemetry collector using the OTLP gRPC protocol.
 |*googleCloud*     |<<ObservabilityGoogleCloud>>     |If defined, will export traces to Google Cloud.
 |===
