@@ -26,13 +26,13 @@ In IntelliJ, you can skip the command line. Open the IDE, select
 
 Follow these steps to generate and build your project:
 
-. From a command window, run the template in a convenient location:
+. From a command line, run the template in a convenient location:
 +
 [.tabset]
 Linux or macOS::
 +
 --
-[source,command window, subs="attributes"]
+[source,command line, subs="attributes"]
 ----
 mvn archetype:generate \
   -DarchetypeGroupId=io.akka \
@@ -43,7 +43,7 @@ mvn archetype:generate \
 Windows 10+::
 +
 --
-[source,command window, subs="attributes"]
+[source,command line, subs="attributes"]
 ----
 mvn archetype:generate ^
   -DarchetypeGroupId=io.akka ^
@@ -196,7 +196,7 @@ Let's send some requests using `curl`.
 
 Add some T-shirts to a shopping cart:
 
-[source, command window]
+[source, command line]
 ----
 curl -i -XPUT -H "Content-Type: application/json" localhost:9000/carts/123/item -d '
 {"productId":"akka-tshirt", "name":"Akka Tshirt", "quantity": 3}'
@@ -204,7 +204,7 @@ curl -i -XPUT -H "Content-Type: application/json" localhost:9000/carts/123/item 
 
 Add some blue jeans to the shopping cart:
 
-[source, command window]
+[source, command line]
 ----
 curl -i -XPUT -H "Content-Type: application/json" localhost:9000/carts/123/item -d '
 {"productId":"blue-jeans", "name":"Blue Jeans", "quantity": 2}'
@@ -212,7 +212,7 @@ curl -i -XPUT -H "Content-Type: application/json" localhost:9000/carts/123/item 
 
 Add a few more T-shirts to the shopping cart:
 
-[source, command window]
+[source, command line]
 ----
 curl -i -XPUT -H "Content-Type: application/json" localhost:9000/carts/123/item -d '
 {"productId":"akka-tshirt", "name":"Akka Tshirt", "quantity": 3}'
@@ -220,7 +220,7 @@ curl -i -XPUT -H "Content-Type: application/json" localhost:9000/carts/123/item 
 
 Request to see all of the items in the cart:
 
-[source, command window]
+[source, command line]
 ----
 curl localhost:9000/carts/123
 ----
@@ -240,7 +240,7 @@ To get a clear view of your locally running service, xref:akka-cli:installation.
 
 After you have installed the CLI, start the local console:
 
-[source, command window]
+[source, command line]
 ----
 akka local console
 ----
@@ -262,10 +262,88 @@ Here, you can view not only the http://localhost:3000/services/shopping-cart-qui
 
 == Deploy to akka.io
 
-After testing locally, deploy your service to akka.io using the CLI or the Console. The following pages provide information about deployment:
+. If you have not already done so, xref:akka-cli:installation.adoc[install the Akka CLI].
 
-* xref:operations:projects/index.adoc[Akka projects]
-* xref:operations:services/deploy-service.adoc#_deploying_a_service[Deploying a packaged service]
+. Authenticate the CLI with your Akka account:
+[source, command line]
+----
+akka auth login
+----
+
+. Create a project:
+[source, command line]
+----
+akka projects new my-first-app --region aws-us-east-2
+----
+
+Observe that your project was created successfully:
+[source]
+----
+NAME          DESCRIPTION   ID                                     OWNER                   REGION
+my-first-app                703391f5-cee4-4d50-8a7f-07c5d1183aaa   your-organization-name  aws-us-east-2
+
+To make this the currently active project, run: 'akka config set project my-first-app'
+----
+
+. Make the project you just created the currently active project:
+[source, command line]
+----
+akka config set project my-first-app
+----
+
+. Build a container image of your shopping cart service:
+[source, command line]
+----
+mvn install -DskipTests
+----
+
+. Take note of the container name and tag from last line in the output, for example:
+
+[source, command line]
+----
+DOCKER> Tagging image shoppingcart:1.0-SNAPSHOT-20241028102843 successful!
+----
+
+. Deploy your service, replacing:
+* `my-service` with your service name
+* `container-name` with the container name from the `mvn install` output in the previous step
+* `tag-name` with the tag name from the `mvn install` output in the previous step
+
+[source, command line]
+----
+akka service deploy cart-service shoppingcart:tag-name --push
+----
+
+Your service will now begin deploying.
+
+. Verify the deployment status of your service:
++
+[source, command line]
+----
+akka service list
+----
++
+A service status can be one of the following:
+
+* *Ready*: All service instances are up-to-date and fully available.
+* *UpdateInProgress*: Service is updating.
+* *Unavailable*: No service instances are available.
+* *PartiallyReady*: Some, but not all, service instances are available.
+
+Approximately one minute after deploying, your service status should become *Ready*.
+
+. Expose your service to the internet, replacing `my-service` with your service name:
+[source,bash]
+----
+$ akka service expose my-service
+Service 'cart-service' was successfully exposed at: spring-tooth-3406.us-east1.akka.app
+----
+
+Congratulations, you have successfully deployed your service. You can now access it using the hostname described in the output of the command above.
+
+== Invoke your deployed service
+
+[TBD](ifdef::todo[TODO: add service invocation steps])
 
 == Download full sample
 
