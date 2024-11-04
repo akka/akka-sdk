@@ -22,6 +22,16 @@ akka project observability export
 
 This will write the observability YAML descriptor out to standard out. If preferred, the `-f` argument can be used to specify a file to write the descriptor out to.
 
+[source,yaml]
+----
+exporter:
+  kalixConsole: {}
+logs: {}
+metrics: {}
+traces: {}
+----
+
+
 === Updating the observability configuration
 
 To update the current configuration, run:
@@ -63,7 +73,7 @@ service:
   image: <<docker-image>>
 ----
 
-Once this is set, Akka will start generating https://opentelemetry.io/docs/concepts/observability-primer/#spans[spans, window="new"] for the following components: Event Sourced Entities, Value Entities, Actions, and Views. In addition, a View or an Action that subscribes to an Entity will receive the traces from that Entity and create a span related to the previous trace.
+Once this is set, Akka will start generating https://opentelemetry.io/docs/concepts/observability-primer/#spans[spans, window="new"] for the following components: Event Sourced Entities, Key Value Entities, Consumers, and Views. In addition, a View or a Consumer that consumes from an Entity will receive the traces from that Entity and create a span related to the previous trace.
 
 Another possible use is to add a `traceparent` header when calling your Akka endpoint. In this case Akka will propagate this trace parent as the root of the subsequent interaction with an Akka component. Linking each Akka call to that external trace parent.
 
@@ -76,8 +86,9 @@ This filtering is known as https://opentelemetry.io/docs/concepts/sampling/#head
 [source,yaml]
 ----
 traces:
-  probabilistic: 
-    percentage: "2"
+  sampling:
+    probabilistic:
+      percentage: "2"
 ----
 
 With this configuration, 2% of the traces are sent while the 98% are filtered. More on how much sampling https://opentelemetry.io/docs/concepts/sampling/#when-to-sample[here].
