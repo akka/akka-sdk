@@ -7,8 +7,7 @@ package akka.javasdk.view;
 import akka.annotation.DoNotInherit;
 
 /**
- * A service follow the Command Query Responsibility Segregation (CQRS) pattern (see
- * https://developer.lightbend.com/docs/akka-guide/concepts/cqrs.html).
+ * A service that follows the Command Query Responsibility Segregation (CQRS) pattern.
  *
  * <p>Entities represent the command side where you change the state of your model in a strictly
  * consistent and isolated manner. Views represent the query side of your application. Views are
@@ -23,13 +22,15 @@ import akka.annotation.DoNotInherit;
  *       stored in one table of the view.
  *   <li>One or more query methods annotated with queries for the tables of the view. Query methods
  *       define the type of query parameters, if any as their input, and the type of the returned
- *       result as the type parameter of <code>QueryEffect&lt;T&gt;</code>
+ *       result as the type parameter of {@code QueryEffect&lt;T&gt;}
  * </ol>
  *
  * <p>The query strings and table field types defines which fields should be indexed and how the
  * query will be executed.
  *
  * <p>The query is executed by the runtime when a request is made to the View.
+ *
+ * <p>Concrete class must be annotated with {@link akka.javasdk.annotations.ComponentId}.
  */
 public abstract class View {
 

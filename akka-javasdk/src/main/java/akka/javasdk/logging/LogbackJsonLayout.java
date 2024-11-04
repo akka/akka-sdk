@@ -5,9 +5,9 @@
 package akka.javasdk.logging;
 
 /**
- * This Logback JSON layout uses the name `severity` (instead of `level`).
+ * This Logback JSON layout uses the name {@code severity} (instead of {@code level}).
  *
- * <p>Eg. Stackdriver expects the log severity to be in a field called `severity`.
+ * <p>Eg. Stackdriver expects the log severity to be in a field called {@code severity}.
  *
  * <p>IMPORTANT: This class depends on the "logback-json-classic" library (organization
  * "ch.qos.logback.contrib") and the Jackson layout support requires "logback-jackson" (organization

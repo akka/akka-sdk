@@ -4,6 +4,7 @@
 
 package akka.javasdk.workflow;
 
+import akka.annotation.InternalApi;
 import akka.javasdk.DeferredCall;
 import akka.javasdk.Metadata;
 import akka.javasdk.impl.workflow.WorkflowEffectImpl;
@@ -46,6 +47,8 @@ import java.util.function.Supplier;
  *   <li>{@link akka.javasdk.workflow.WorkflowContext}</li>
  *   <li>Custom types provided by a {@link akka.javasdk.DependencyProvider} from the service setup</li>
  * </ul>
+ * <p>
+ * Concrete class must be annotated with {@link akka.javasdk.annotations.ComponentId}.
  *
  * @param <S> The type of the state for this workflow.
  */
@@ -74,7 +77,7 @@ public abstract class Workflow<S> {
    *
    * <p>Also known as "zero state" or "neutral state".
    *
-   * <p>The default implementation of this method returns <code>null</code>. It can be overridden to
+   * <p>The default implementation of this method returns {@code null}. It can be overridden to
    * return a more sensible initial state.
    */
   public S emptyState() {
@@ -95,14 +98,18 @@ public abstract class Workflow<S> {
 
   /**
    * INTERNAL API
+   * @hidden
    */
+  @InternalApi
   public void _internalSetCommandContext(Optional<CommandContext> context) {
     commandContext = context;
   }
 
   /**
    * INTERNAL API
+   * @hidden
    */
+  @InternalApi
   public void _internalSetTimerScheduler(Optional<TimerScheduler> timerScheduler) {
     this.timerScheduler = timerScheduler;
   }
@@ -116,7 +123,9 @@ public abstract class Workflow<S> {
 
   /**
    * INTERNAL API
+   * @hidden
    */
+  @InternalApi
   public void _internalSetCurrentState(S state) {
     stateHasBeenSet = true;
     currentState = Optional.ofNullable(state);
@@ -230,7 +239,7 @@ public abstract class Workflow<S> {
 
 
       /**
-       * Reply after for example <code>updateState</code>.
+       * Reply after for example {@code updateState}.
        *
        * @param message  The payload of the reply.
        * @param metadata The metadata for the message.
@@ -257,7 +266,7 @@ public abstract class Workflow<S> {
     interface TransitionalEffect<T> extends Effect<T> {
 
       /**
-       * Reply after for example <code>updateState</code>.
+       * Reply after for example {@code updateState}.
        *
        * @param message The payload of the reply.
        * @param <R>     The type of the message that must be returned by this call.
@@ -266,7 +275,7 @@ public abstract class Workflow<S> {
       <R> Effect<R> thenReply(R message);
 
       /**
-       * Reply after for example <code>updateState</code>.
+       * Reply after for example {@code updateState}.
        *
        * @param message  The payload of the reply.
        * @param metadata The metadata for the message.
@@ -616,7 +625,7 @@ public abstract class Workflow<S> {
     }
 
     /**
-     * Set the number of retires for a failed step, <code>maxRetries</code> equals 0 means that the step won't retry in case of failure.
+     * Set the number of retires for a failed step, {@code maxRetries} equals 0 means that the step won't retry in case of failure.
      */
     public static MaxRetries maxRetries(int maxRetries) {
       return new MaxRetries(maxRetries);

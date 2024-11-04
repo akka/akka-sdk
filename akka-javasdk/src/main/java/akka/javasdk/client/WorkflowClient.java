@@ -16,12 +16,12 @@ import akka.javasdk.workflow.Workflow;
 public interface WorkflowClient {
 
   /**
-   * Pass in a Workflow method reference annotated as a REST endpoint, e.g. <code>MyWorkflow::start</code>
+   * Pass in a Workflow method reference annotated as a REST endpoint, e.g. {@code MyWorkflow::start}
    */
   <T, R> ComponentMethodRef<R> method(Function<T, Workflow.Effect<R>> methodRef);
 
   /**
-   * Pass in a Workflow method reference annotated as a REST endpoint, e.g. <code>MyWorkflow::start</code>
+   * Pass in a Workflow method reference annotated as a REST endpoint, e.g. {@code MyWorkflow::start}
    */
   <T, A1, R> ComponentMethodRef1<A1, R> method(Function2<T, A1, Workflow.Effect<R>> methodRef);
 

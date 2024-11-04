@@ -4,6 +4,7 @@
 
 package akka.javasdk.keyvalueentity;
 
+import akka.annotation.InternalApi;
 import akka.javasdk.Metadata;
 import akka.javasdk.impl.keyvalueentity.KeyValueEntityEffectImpl;
 
@@ -32,6 +33,8 @@ import java.util.Optional;
  *   <li>{@link akka.javasdk.keyvalueentity.KeyValueEntityContext}</li>
  *   <li>Custom types provided by a {@link akka.javasdk.DependencyProvider} from the service setup</li>
  * </ul>
+ * <p>
+ * Concrete class must be annotated with {@link akka.javasdk.annotations.ComponentId}.
  *
  * @param <S> The type of the state for this entity. */
 public abstract class KeyValueEntity<S> {
@@ -48,7 +51,7 @@ public abstract class KeyValueEntity<S> {
    *
    * <p>Also known as "zero state" or "neutral state".
    *
-   * <p>The default implementation of this method returns <code>null</code>. It can be overridden to
+   * <p>The default implementation of this method returns {@code null}. It can be overridden to
    * return a more sensible initial state.
    */
   public S emptyState() {
@@ -68,12 +71,20 @@ public abstract class KeyValueEntity<S> {
             new IllegalStateException("CommandContext is only available when handling a command."));
   }
 
-  /** INTERNAL API */
+  /**
+   * INTERNAL API
+   * @hidden
+   */
+  @InternalApi
   public void _internalSetCommandContext(Optional<CommandContext> context) {
     commandContext = context;
   }
 
-  /** INTERNAL API */
+  /**
+   * INTERNAL API
+   * @hidden
+   */
+  @InternalApi
   public void _internalSetCurrentState(S state) {
     handlingCommands = true;
     currentState = Optional.ofNullable(state);
@@ -82,7 +93,7 @@ public abstract class KeyValueEntity<S> {
   /**
    * Returns the state as currently stored.
    *
-   * <p>Note that modifying the state directly will not update it in storage. To save the state, one
+   * <p>Note that modifying the state directly will not update it in storage. To save the state, you
    * must call {{@code effects().updateState()}}.
    *
    * <p>This method can only be called when handling a command. Calling it outside a method (eg: in
@@ -172,7 +183,7 @@ public abstract class KeyValueEntity<S> {
     interface OnSuccessBuilder<S> {
 
       /**
-       * Reply after for example <code>updateState</code>.
+       * Reply after for example {@code updateState}.
        *
        * @param message The payload of the reply.
        * @param <T> The type of the message that must be returned by this call.
@@ -181,7 +192,7 @@ public abstract class KeyValueEntity<S> {
       <T> Effect<T> thenReply(T message);
 
       /**
-       * Reply after for example <code>updateState</code>.
+       * Reply after for example {@code updateState}.
        *
        * @param message The payload of the reply.
        * @param metadata The metadata for the message.

@@ -10,13 +10,18 @@ import akka.javasdk.keyvalueentity.KeyValueEntity;
 import java.lang.annotation.*;
 
 /**
- * Annotation for providing ways to consume to different streams of information: value entities,
- * event-sourced entities or topic.
+ * Annotation for providing ways to consume a stream of messages from Entities, other services,
+ * or message broker topics.
+ * <p>
+ * Use on {@link akka.javasdk.consumer.Consumer} or {@link akka.javasdk.view.TableUpdater}.
  */
 public @interface Consume {
 
   /**
-   * Annotation for consuming state updates from a Key Value Entity.
+   * Annotation for consuming state updates from a {@link KeyValueEntity}.
+   * <p>
+   * The underlying method must be declared to receive one parameter for
+   * the received state changes.
    */
   @Target(ElementType.TYPE)
   @Retention(RetentionPolicy.RUNTIME)
@@ -30,9 +35,12 @@ public @interface Consume {
   }
 
   /**
-   * Annotation for consuming events from an Event-sourced Entity.
-   *
-   * The underlying method must be declared to receive one parameter.
+   * Annotation for consuming events from an {@link EventSourcedEntity}.
+   * <p>
+   * The underlying method must be declared to receive one parameter for
+   * the received events. Use one method with the common event type as parameter,
+   * or several methods with different parameter types corresponding to different
+   * event types.
    *
    */
   @Target(ElementType.TYPE)
@@ -60,6 +68,11 @@ public @interface Consume {
 
   /**
    * Annotation for consuming messages from a topic (i.e PubSub or Kafka topic).
+   * <p>
+   * The underlying method must be declared to receive one parameter for
+   * the received messages. Use one method with the common message type as parameter,
+   * or several methods with different parameter types corresponding to different
+   * messages types.
    */
   @Target(ElementType.TYPE)
   @Retention(RetentionPolicy.RUNTIME)
@@ -91,6 +104,11 @@ public @interface Consume {
 
   /**
    * Annotation for consuming messages from another service.
+   * <p>
+   * The underlying method must be declared to receive one parameter for
+   * the received messages. Use one method with the common event type as parameter,
+   * or several methods with different parameter types corresponding to different
+   * message types.
    */
   @Target(ElementType.TYPE)
   @Retention(RetentionPolicy.RUNTIME)
@@ -104,8 +122,8 @@ public @interface Consume {
 
     /**
      * The deployed name of the service to consume from, can be the deployed name of another
-     * service in the same project or a fully qualified public hostname of
-     * a service in a different project.
+     * service in the same project or a fully qualified public hostname of a service in a
+     * different project.
      * <p>
      * Note: The service name is used as unique identifier for tracking progress when consuming it.
      * Changing this name will lead to starting over from the beginning of the event stream.

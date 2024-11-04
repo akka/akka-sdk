@@ -27,7 +27,7 @@ private[impl] object KeyValueEntityRouter {
  * @tparam S
  *   the type of the managed state for the entity Not for manual user extension or interaction
  *
- * The concrete <code>KeyValueEntityRouter</code> is generated for the specific entities defined in Protobuf.
+ * The concrete {@code KeyValueEntityRouter} is generated for the specific entities defined in Protobuf.
  *
  * INTERNAL API
  */

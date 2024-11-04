@@ -37,7 +37,7 @@ private[impl] object EventSourcedEntityRouter {
  * @tparam S
  *   the type of the managed state for the entity Not for manual user extension or interaction
  *
- * The concrete <code>EventSourcedEntityRouter</code> is generated for the specific entities defined in Protobuf.
+ * The concrete {@code EventSourcedEntityRouter} is generated for the specific entities defined in Protobuf.
  */
 /**
  * INTERNAL API
@@ -81,8 +81,9 @@ private[impl] abstract class EventSourcedEntityRouter[S, E, ES <: EventSourcedEn
     }
   }
 
-  /** INTERNAL API */
-  // "public" api against the impl/testkit
+  /**
+   * INTERNAL API "public" api against the impl/testkit
+   */
   final def _internalHandleCommand(
       commandName: String,
       command: Any,

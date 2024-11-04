@@ -8,7 +8,11 @@ import akka.annotation.InternalApi;
 import akka.javasdk.impl.workflow.WorkflowRouter;
 import akka.javasdk.workflow.WorkflowContext;
 
-/** INTERNAL API */
+/**
+ * INTERNAL API
+ *
+ * @hidden
+ */
 @InternalApi
 public interface WorkflowFactory {
 

@@ -35,7 +35,6 @@ public class HttpResponses {
    * @param contentType HTTP content type
    * @param body        HTTP body
    */
-  // FIXME this is so close to the underlying API, so provides minimal convenience, should we maybe drop it?
   public static HttpResponse of(StatusCode statusCode, ContentType contentType, byte[] body) {
     return HttpResponse.create().withStatus(statusCode).withEntity(contentType, body);
   }

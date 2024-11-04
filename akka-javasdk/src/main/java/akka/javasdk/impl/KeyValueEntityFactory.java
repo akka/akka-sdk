@@ -10,12 +10,14 @@ import akka.javasdk.keyvalueentity.KeyValueEntityContext;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
 
 /**
- * Low level interface for handling commands on a value based entity.
+ * INTERNAL API
+ *
+ * <p>Low level interface for handling commands on a value based entity.
  *
  * <p>Generally, this should not be needed, instead, a class extending a generated abstract {@link
  * KeyValueEntity} should be used.
  *
- * <p>INTERNAL API
+ * @hidden
  */
 @InternalApi
 public interface KeyValueEntityFactory {

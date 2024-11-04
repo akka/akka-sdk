@@ -12,7 +12,7 @@ import akka.javasdk.Principals;
 import java.util.Optional;
 
 /**
- * * Not for user extension, can be injected as constructor parameter into HTTP endpoint components
+ * Not for user extension, can be injected as constructor parameter into HTTP endpoint components
  */
 @DoNotInherit
 public interface RequestContext extends Context {

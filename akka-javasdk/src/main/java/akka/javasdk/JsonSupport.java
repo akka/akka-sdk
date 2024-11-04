@@ -273,6 +273,7 @@ public final class JsonSupport {
 
   /**
    * INTERNAL API
+   * @hidden
    */
   @InternalApi
   public static <T> T decodeJson(Class<T> valueClass, com.google.protobuf.any.Any scalaPbAny) {

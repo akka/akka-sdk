@@ -69,7 +69,7 @@ public @interface JWT {
 
     /**
      *  This receives a regex expression (Java flavor) used to match on the incoming claim value.
-     *  Cannot be used in conjunction with `value` field above. It's one or the other.
+     *  Cannot be used in conjunction with {@code value} field above. It's one or the other.
      *  <p>NOTE: when signing, a static claim defined with a pattern will not be included in the token.
      *
      *  <p>Usage examples:

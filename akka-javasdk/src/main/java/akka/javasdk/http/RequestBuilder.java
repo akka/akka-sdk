@@ -76,8 +76,6 @@ public interface RequestBuilder<R> {
   /**
    * Converts the response body to the specified type using the provided parser function.
    *
-   * <p>
-   *
    * @param parse the function to parse the response body
    * @return a RequestBuilder configured to produce a StrictResponse with a deserialized response
    *     body of type T

@@ -23,8 +23,8 @@ public interface TimerScheduler {
    * with an exponentially increasing delay, starting at 3 seconds with a max delay of 30 seconds.
    * This process repeats until the call succeeds.
    *
-   * <p>Each timer has a `name` and if a new timer with same `name` is registered the previous is
-   * cancelled.
+   * <p>Each timer has a {@code name} and if a new timer with same {@code name} is registered the
+   * previous is cancelled.
    *
    * @param name unique name for the timer
    * @param delay delay, starting from now, in which the timer should be triggered
@@ -44,8 +44,8 @@ public interface TimerScheduler {
    * with a delay of 3 seconds. This process repeats until the call succeeds or the maxRetries limit
    * is reached.
    *
-   * <p>Each timer has a `name` and if a new timer with same `name` is registered the previous is
-   * cancelled.
+   * <p>Each timer has a {@code name} and if a new timer with same {@code name} is registered the
+   * previous is cancelled.
    *
    * @param name unique name for the timer
    * @param delay delay, starting from now, in which the timer should be triggered

@@ -11,14 +11,14 @@ import java.lang.annotation.Target;
 
 /**
  * Annotation to assign a logical type name to events.
- *
+ * <p>
  * The type name is used for several things, such as to identify each event in order to
  * deliver them to the right event consumers.
  * If a logical type name isn't specified, the fully qualified class name is used.
- *
+ * <p>
  * Once an event is persisted, you won't be able to rename your class if no logical type name
  * has been specified, as previously persisted events would have a different identifier.
- * 
+ * <p>
  * Therefore, we recommend all event classes use a logical type name.
  */
 @Target(ElementType.TYPE)

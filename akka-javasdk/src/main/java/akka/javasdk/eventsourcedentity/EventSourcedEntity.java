@@ -4,6 +4,7 @@
 
 package akka.javasdk.eventsourcedentity;
 
+import akka.annotation.InternalApi;
 import akka.javasdk.Metadata;
 import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityEffectImpl;
 
@@ -13,16 +14,16 @@ import java.util.function.Function;
 
 /**
  * The Event Sourced state model captures changes to data by storing events in a journal.
- * The current entity state is derived from the emitted events.
+ * The current entity state is derived from the persisted events.
  * <p>
  * When implementing an Event Sourced Entity, you first define what will be its internal state (your domain model),
- * the commands it will handle and the events it will emit to modify its state.
+ * the commands it will handle and the events it will persist to modify its state.
  * <p>
  * Each command is handled by a command handler. Command handlers are methods returning an {@link Effect}.
  * When handling a command, you use the Effect API to:
  * <p>
  * <ul>
- *   <li>emit events and build a reply
+ *   <li>persist events and build a reply
  *   <li>directly returning to the caller if the command is not requesting any state change
  *   <li>rejected the command by returning an error
  *   <li>instruct the runtime to delete the entity
@@ -36,7 +37,9 @@ import java.util.function.Function;
  * {@code
  * // example of sealed event interface with concrete events implementing it
  * public sealed interface Event {
+ *   @TypeName("created")
  *   public record UserCreated(String name, String email) implements Event {};
+ *   @TypeName("email-updated")
  *   public record EmailUpdated(String newEmail) implements Event {};
  * }
  *
@@ -55,7 +58,8 @@ import java.util.function.Function;
  *   <li>{@link akka.javasdk.eventsourcedentity.EventSourcedEntityContext}</li>
  *   <li>Custom types provided by a {@link akka.javasdk.DependencyProvider} from the service setup</li>
  * </ul>
- *
+ * <p>
+ * Concrete class must be annotated with {@link akka.javasdk.annotations.ComponentId}.
  *
  * @param <S> The type of the state for this entity.
  * @param <E> The parent type of the event hierarchy for this entity. Required to be a sealed interface.
@@ -74,7 +78,7 @@ public abstract class EventSourcedEntity<S, E> {
    *
    * <p>Also known as "zero state" or "neutral state".
    *
-   * <p>The default implementation of this method returns <code>null</code>. It can be overridden to
+   * <p>The default implementation of this method returns {@code null}. It can be overridden to
    * return a more sensible initial state.
    */
   public S emptyState() {
@@ -92,7 +96,11 @@ public abstract class EventSourcedEntity<S, E> {
             new IllegalStateException("CommandContext is only available when handling a command."));
   }
 
-  /** INTERNAL API */
+  /**
+   * INTERNAL API
+   * @hidden
+   */
+  @InternalApi
   public void _internalSetCommandContext(Optional<CommandContext> context) {
     commandContext = context;
   }
@@ -107,31 +115,39 @@ public abstract class EventSourcedEntity<S, E> {
         () -> new IllegalStateException("EventContext is only available when handling an event."));
   }
 
-  /** INTERNAL API */
+  /**
+   * INTERNAL API
+   * @hidden
+   */
+  @InternalApi
   public void _internalSetEventContext(Optional<EventContext> context) {
     eventContext = context;
   }
 
-  /** INTERNAL API */
+  /**
+   * INTERNAL API
+   * @hidden
+   */
+  @InternalApi
   public void _internalSetCurrentState(S state) {
     handlingCommands = true;
     currentState = Optional.ofNullable(state);
   }
 
   /**
-   * This is the main event handler method. Whenever an event is emitted, this handler will be called.
+   * This is the main event handler method. Whenever an event is persisted, this handler will be called.
    * It should return the new state of the entity.
-   *
+   * <p>
    * Note that this method is called in two situations:
    * <ul>
-   *     <li>when one or more events are emitted by the command handler, this method is called to produce
+   *     <li>when one or more events are persisted by the command handler, this method is called to produce
    *     the new state of the entity.
    *     <li>when instantiating an entity from the event journal, this method is called to restore the state of the entity.
    * </ul>
    *
    * It's important to keep the event handler side effect free. This means that it should only apply the event
    * on the current state and return the updated state. This is because the event handler is called during recovery.
-   *
+   * <p>
    * Events are required to inherit from a common sealed interface, and it's recommend to implement this method using a switch statement.
    * As such, the compiler can check if all existing events are being handled.
    *
@@ -139,7 +155,9 @@ public abstract class EventSourcedEntity<S, E> {
    * {@code
    * // example of sealed event interface with concrete events implementing it
    * public sealed interface Event {
+   *   @TypeName("created")
    *   public record UserCreated(String name, String email) implements Event {};
+   *   @TypeName("email-updated")
    *   public record EmailUpdated(String newEmail) implements Event {};
    * }
    *
@@ -190,7 +208,7 @@ public abstract class EventSourcedEntity<S, E> {
    * An EventSourcedEntity Effect can either:
    * <p>
    * <ul>
-   *   <li>emit events and send a reply to the caller
+   *   <li>persist events and send a reply to the caller
    *   <li>directly reply to the caller if the command is not requesting any state change
    *   <li>rejected the command by returning an error
    *   <li>instruct the runtime to delete the entity
@@ -203,7 +221,7 @@ public abstract class EventSourcedEntity<S, E> {
 
     /**
      * Construct the effect that is returned by the command handler. The effect describes next
-     * processing actions, such as emitting events and sending a reply.
+     * processing actions, such as persisting events and sending a reply.
      *
      * @param <S> The type of the state for this entity.
      */
@@ -217,14 +235,14 @@ public abstract class EventSourcedEntity<S, E> {
 
       /**
        * Persist the passed events.
-       * After these events are persisted, the event handler {@link #applyEvent(E event)} is called in order to update the entity state.
+       * After these events are persisted, the event handler {@link #applyEvent} is called in order to update the entity state.
        * Note, the event handler is called only once after all events are persisted.
        */
       OnSuccessBuilder<S> persist(E event1, E event2, E... events);
 
       /**
        * Persist the passed List of events.
-       * After these events are persisted, the event handler {@link #applyEvent(E event)} is called in order to update the entity state.
+       * After these events are persisted, the event handler {@link #applyEvent} is called in order to update the entity state.
        * Note, the event handler is called only once after all events are persisted.
        */
       OnSuccessBuilder<S> persistAll(List<? extends E> events);
@@ -269,7 +287,7 @@ public abstract class EventSourcedEntity<S, E> {
       OnSuccessBuilder<S> deleteEntity();
 
       /**
-       * Reply after for example <code>emitEvent</code>.
+       * Reply after for example {@code persist} event.
        *
        * @param replyMessage Function to create the reply message from the new state.
        * @return A message reply.
@@ -278,7 +296,7 @@ public abstract class EventSourcedEntity<S, E> {
       <T> Effect<T> thenReply(Function<S, T> replyMessage);
 
       /**
-       * Reply after for example <code>emitEvent</code>.
+       * Reply after for example {@code persist} event.
        *
        * @param replyMessage Function to create the reply message from the new state.
        * @param metadata The metadata for the message.

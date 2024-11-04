@@ -10,12 +10,14 @@ import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityRouter;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 
 /**
- * Low level interface for handling events and commands on an entity.
+ * INTERNAL API
+ *
+ * <p>Low level interface for handling events and commands on an entity.
  *
  * <p>Generally, this should not be needed, instead, a class extending a generated abstract {@link
  * EventSourcedEntity} should be used.
  *
- * <p>INTERNAL API
+ * @hidden
  */
 @InternalApi
 public interface EventSourcedEntityFactory {

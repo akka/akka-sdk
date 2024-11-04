@@ -5,6 +5,7 @@
 package akka.javasdk.timedaction;
 
 import akka.Done;
+import akka.annotation.InternalApi;
 import akka.javasdk.impl.action.CommandContextImpl;
 import akka.javasdk.impl.timedaction.TimedActionEffectImpl;
 import akka.javasdk.timer.TimerScheduler;
@@ -13,7 +14,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 
 /**
- * TimedAction is stateless component that can be used together with a Timer to schedule an action.
+ * TimedAction is stateless component that can be used together with a {@link TimerScheduler} to schedule an action.
  * <p>
  * A TimedAction method should return an {@link Effect} that describes the result of the action invocation.
  * <p>
@@ -26,6 +27,8 @@ import java.util.concurrent.CompletionStage;
  *   <li>{@link com.typesafe.config.Config}</li>
  *   <li>Custom types provided by a {@link akka.javasdk.DependencyProvider} from the service setup</li>
  * </ul>
+ * <p>
+ * Concrete class must be annotated with {@link akka.javasdk.annotations.ComponentId}.
  */
 public abstract class TimedAction {
 
@@ -46,7 +49,9 @@ public abstract class TimedAction {
 
   /**
    * INTERNAL API
+   * @hidden
    */
+  @InternalApi
   public void _internalSetCommandContext(Optional<CommandContext> context) {
     commandContext = context;
   }

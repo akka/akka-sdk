@@ -40,7 +40,7 @@ lazy val akkaJavaSdk =
       Test / PB.protoSources ++= (Compile / PB.protoSources).value,
       Test / PB.targets += PB.gens.java -> crossTarget.value / "akka-grpc" / "test",
       Test / envVars ++= Map("ENV" -> "value1", "ENV2" -> "value2"))
-    .settings(DocSettings.forModule("Akka SDK for Java"))
+    .settings(DocSettings.forModule("Akka SDK"))
     .settings(Dependencies.javaSdk)
 
 lazy val akkaJavaSdkTestKit =
@@ -58,7 +58,7 @@ lazy val akkaJavaSdkTestKit =
         "runtimeVersion" -> Kalix.RuntimeVersion,
         "scalaVersion" -> scalaVersion.value),
       buildInfoPackage := "akka.javasdk.testkit")
-    .settings(DocSettings.forModule("Akka SDK for Java Testkit"))
+    .settings(DocSettings.forModule("Akka SDK Testkit"))
     .settings(Dependencies.javaSdkTestKit)
 
 lazy val akkaJavaSdkTests =

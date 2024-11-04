@@ -16,12 +16,12 @@ import akka.javasdk.keyvalueentity.KeyValueEntity;
 public interface KeyValueEntityClient {
 
   /**
-   * Pass in a Key Value Entity command handler method reference, e.g. <code>UserEntity::create</code>
+   * Pass in a Key Value Entity command handler method reference, e.g. {@code UserEntity::create}
    */
   <T, R> ComponentMethodRef<R> method(Function<T, KeyValueEntity.Effect<R>> methodRef);
 
   /**
-   * Pass in a Key Value Entity command handler method reference, e.g. <code>UserEntity::update</code>
+   * Pass in a Key Value Entity command handler method reference, e.g. {@code UserEntity::update}
    */
   <T, A1, R> ComponentMethodRef1<A1, R> method(Function2<T, A1, KeyValueEntity.Effect<R>> methodRef);
 

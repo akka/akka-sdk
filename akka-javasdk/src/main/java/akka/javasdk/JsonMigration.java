@@ -25,7 +25,7 @@ public abstract class JsonMigration {
   public abstract int currentVersion();
 
   /**
-   * Define the supported forward version this migration can read (must be greater or equal than `currentVersion`).
+   * Define the supported forward version this migration can read (must be greater or equal than {@code currentVersion}).
    * If this value is different from {@link JsonMigration#currentVersion} a {@link JsonMigration#transform} will be used to downcast
    * the received payload to the current schema.
    */
@@ -35,9 +35,9 @@ public abstract class JsonMigration {
 
   /**
    * Implement the transformation of the incoming JSON structure to the current
-   * JSON structure. The `JsonNode` is mutable so you can add and remove fields,
+   * JSON structure. The {@code JsonNode} is mutable so you can add and remove fields,
    * or change values. Note that you have to cast to specific sub-classes such
-   * as `ObjectNode` and `ArrayNode` to get access to mutators.
+   * as {@code ObjectNode} and {@code ArrayNode} to get access to mutators.
    *
    * @param fromVersion the version of the old data
    * @param json        the incoming JSON data

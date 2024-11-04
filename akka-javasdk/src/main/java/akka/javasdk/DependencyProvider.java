@@ -6,14 +6,14 @@ package akka.javasdk;
 
 /**
  * A factory method to provide additional dependencies to the component implementations.
- *
+ * <p>
  * Implementations of this interface must be thread safe.
  */
 public interface DependencyProvider {
 
   /**
    * Get a dependency for a given class. If the dependency is not found, an exception should be thrown.
-   *
+   * <p>
    * Returned instance for a given class must be safe to use concurrently.
    *
    * @param clazz The class of the dependency to get

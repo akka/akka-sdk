@@ -6,7 +6,11 @@ package akka.javasdk.annotations;
 
 import java.lang.annotation.*;
 
-/** Annotation for aggregating ways of producing outgoing information. */
+/**
+ * Annotation for ways of producing outgoing information.
+ * <p>
+ * Use on methods in a {@link akka.javasdk.consumer.Consumer}.
+ */
 public @interface Produce {
 
   /**

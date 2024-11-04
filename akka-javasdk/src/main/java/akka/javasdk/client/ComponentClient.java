@@ -5,7 +5,6 @@
 package akka.javasdk.client;
 
 import akka.annotation.DoNotInherit;
-import akka.javasdk.timedaction.TimedAction;
 
 /**
  * Utility to send requests to other components by composing a call that can be executed by the
@@ -20,12 +19,10 @@ import akka.javasdk.timedaction.TimedAction;
  * <p>Example of use on a cross-component call:
  *
  * <pre>{@code
- * public CompletionStage<String> createUser(String userId, String email, String name) {
- *   //validation here
- *   return
- *     componentClient.forKeyValueEntity(userId)
- *       .method(UserEntity::createUser)
- *       .invokeAsync(new CreateRequest(email, name));
+ * public CompletionStage<Done> addItem(String cartId, ShoppingCart.LineItem item) {
+ *   return componentClient.forEventSourcedEntity(cartId)
+ *     .method(ShoppingCartEntity::addItem)
+ *     .invokeAsync(item);
  * }
  * }</pre>
  *
@@ -33,11 +30,11 @@ import akka.javasdk.timedaction.TimedAction;
  */
 @DoNotInherit
 public interface ComponentClient {
-  /** Select {@link TimedAction} as a call target component. */
+  /** Select {@link akka.javasdk.timedaction.TimedAction} as a call target component. */
   TimedActionClient forTimedAction();
 
   /**
-   * Select KeyValueEntity as a call target component.
+   * Select {@link akka.javasdk.keyvalueentity.KeyValueEntity} as a call target component.
    *
    * @param keyValueEntityId - key value entity id used to create a call. Must not be null or empty
    *     string.
@@ -45,7 +42,7 @@ public interface ComponentClient {
   KeyValueEntityClient forKeyValueEntity(String keyValueEntityId);
 
   /**
-   * Select EventSourcedEntity as a call target component.
+   * Select {@link akka.javasdk.eventsourcedentity.EventSourcedEntity} as a call target component.
    *
    * @param eventSourcedEntityId - event sourced entity id used to create a call. Must not be null
    *     or empty string.
@@ -53,12 +50,12 @@ public interface ComponentClient {
   EventSourcedEntityClient forEventSourcedEntity(String eventSourcedEntityId);
 
   /**
-   * Select Workflow as a call target component.
+   * Select {@link akka.javasdk.workflow.Workflow} as a call target component.
    *
    * @param workflowId - workflow id used to create a call. Must not be null or empty string.
    */
   WorkflowClient forWorkflow(String workflowId);
 
-  /** Select View as a call target component. */
+  /** Select {@link akka.javasdk.view.View} as a call target component. */
   ViewClient forView();
 }

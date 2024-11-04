@@ -31,7 +31,7 @@ public @interface Acl {
 
   /**
    * The status code to respond with when access is denied.
-   *
+   * <p>
    * By default, this will be 'Forbidden', but alternatives might include 'Authentication required' or 'Not
    * Found'.
    *
@@ -39,9 +39,8 @@ public @interface Acl {
   DenyStatusCode denyCode() default DenyStatusCode.FORBIDDEN;
 
   /**
-   * If `true`, indicates that the {@code denyCode} should be inherited from the parent.
-   * If set to `true` in the top most parent - like the `Main` class - then it will be equivalent to set {@code denyCode} to 'FORBIDDEN'
-   * @return
+   * If {@code true}, indicates that the {@code denyCode} should be inherited from the parent.
+   * If set to {@code true} in the top most parent - like the {@code Main} class - then it will be equivalent to set {@code denyCode} to 'FORBIDDEN'
    */
   boolean inheritDenyCode() default false;
 
@@ -67,14 +66,14 @@ public @interface Acl {
 
   /**
    * A principal matcher that can be used in an ACL.
-   *
+   * <p>
    * A principal is a very broad concept. It can correlate to a person, a system, or a more abstract concept, such as
    * the internet.
-   *
+   * <p>
    * A single request may have multiple principals associated with it, for example, it may have come from a particular
    * source system, and it may have certain credentials associated with it. When a matcher is applied to the request,
    * the request is considered to match if at least one of the principals attached to the request matches.
-   *
+   * <p>
    * Each Matcher can be configured either with a 'service' or a 'principal', but not both.
    */
   @Target({ElementType.TYPE, ElementType.METHOD})
@@ -84,9 +83,9 @@ public @interface Acl {
 
     /**
      * Match a service principal.
-     *
+     * <p>
      * This matches a service in the same project.
-     *
+     * <p>
      * Supports glob matching, that is, * means all services in this project.
      */
     String service() default "";

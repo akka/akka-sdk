@@ -5,6 +5,7 @@
 package akka.javasdk.consumer;
 
 import akka.Done;
+import akka.annotation.InternalApi;
 import akka.javasdk.Metadata;
 import akka.javasdk.impl.consumer.ConsumerEffectImpl;
 import akka.javasdk.impl.consumer.MessageContextImpl;
@@ -34,6 +35,9 @@ import java.util.concurrent.CompletionStage;
  *   <li>{@link com.typesafe.config.Config}</li>
  *   <li>Custom types provided by a {@link akka.javasdk.DependencyProvider} from the service setup</li>
  * </ul>
+ * <p>
+ * Concrete class must be annotated with {@link akka.javasdk.annotations.ComponentId} and
+ * one of the {@link akka.javasdk.annotations.Consume} annotations.
  */
 public abstract class Consumer {
 
@@ -54,7 +58,9 @@ public abstract class Consumer {
 
   /**
    * INTERNAL API
+   * @hidden
    */
+  @InternalApi
   public void _internalSetMessageContext(Optional<MessageContext> context) {
     messageContext = context;
   }
