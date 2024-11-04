@@ -3,22 +3,22 @@ User-agent: *
 
 # docs snapshots
 Disallow: /snapshots/
-Disallow: /docs/akka-core/snapshot/
-Disallow: /docs/akka-dependencies/snapshot/
-Disallow: /docs/akka-diagnostics/snapshot/
-Disallow: /docs/akka-distributed-cluster/snapshot/
-Disallow: /docs/akka-edge/snapshot/
-Disallow: /docs/akka-enhancements/snapshot/
-Disallow: /docs/akka-grpc/snapshot/
-Disallow: /docs/akka-http/snapshot/
-Disallow: /docs/akka-management/snapshot/
-Disallow: /docs/akka-persistence-cassandra/snapshot/
-Disallow: /docs/akka-persistence-dynamodb/snapshot/
-Disallow: /docs/akka-persistence-jdbc/snapshot/
-Disallow: /docs/akka-persistence-r2dbc/snapshot/
-Disallow: /docs/akka-projection/snapshot/
-Disallow: /docs/alpakka/snapshot/
-Disallow: /docs/alpakka-kafka/snapshot/
+Disallow: /libraries/akka-core/snapshot/
+Disallow: /libraries/akka-dependencies/snapshot/
+Disallow: /libraries/akka-diagnostics/snapshot/
+Disallow: /libraries/akka-distributed-cluster/snapshot/
+Disallow: /libraries/akka-edge/snapshot/
+Disallow: /libraries/akka-enhancements/snapshot/
+Disallow: /libraries/akka-grpc/snapshot/
+Disallow: /libraries/akka-http/snapshot/
+Disallow: /libraries/akka-management/snapshot/
+Disallow: /libraries/akka-persistence-cassandra/snapshot/
+Disallow: /libraries/akka-persistence-dynamodb/snapshot/
+Disallow: /libraries/akka-persistence-jdbc/snapshot/
+Disallow: /libraries/akka-persistence-r2dbc/snapshot/
+Disallow: /libraries/akka-projection/snapshot/
+Disallow: /libraries/alpakka/snapshot/
+Disallow: /libraries/alpakka-kafka/snapshot/
 
 # libraries snapshots
 Disallow: /libraries/akka-core/snapshot/
@@ -127,300 +127,418 @@ Disallow: /api/akka-core/2.7.1/
 Disallow: /japi/akka-core/2.7.1/
 
 Disallow: /libraries/akka-core/2.8/
-Disallow: /api/akka-core/2.8/
-Disallow: /japi/akka-core/2.8/
+Disallow:       /api/akka-core/2.8/
+Disallow:      /japi/akka-core/2.8/
 Disallow: /libraries/akka-core/2.8.5/
-Disallow: /api/akka-core/2.8.5/
-Disallow: /japi/akka-core/2.8.5/
+Disallow:       /api/akka-core/2.8.5/
+Disallow:      /japi/akka-core/2.8.5/
 Disallow: /libraries/akka-core/2.8.6/
-Disallow: /api/akka-core/2.8.6/
-Disallow: /japi/akka-core/2.8.6/
+Disallow:       /api/akka-core/2.8.6/
+Disallow:      /japi/akka-core/2.8.6/
 Disallow: /libraries/akka-core/2.8.7/
-Disallow: /api/akka-core/2.8.7/
-Disallow: /japi/akka-core/2.8.7/
+Disallow:       /api/akka-core/2.8.7/
+Disallow:      /japi/akka-core/2.8.7/
 
-# historic akka-dependencies
-Disallow: /docs/akka-dependencies/23.10
-Disallow: /docs/akka-dependencies/23.10.0
-Disallow: /docs/akka-dependencies/23.10.1
-Disallow: /docs/akka-dependencies/23.10.2
-Disallow: /docs/akka-dependencies/23.10.3
-# Disallow: /docs/akka-dependencies/24.05
-# Disallow: /docs/akka-dependencies/24.05.0
-# Disallow: /docs/akka-dependencies/24.05.1
-# Disallow: /docs/akka-dependencies/24.05.2
-# Disallow: /docs/akka-dependencies/24.05.3
-# Disallow: /docs/akka-dependencies/24.05.4
-# Disallow: /docs/akka-dependencies/24.05.5
-# Disallow: /docs/akka-dependencies/24.05.6
-Disallow: /docs/akka-dependencies/24.05.7
+# akka-dependencies
+Disallow: /libraries/akka-dependencies/23.10
+Disallow: /libraries/akka-dependencies/23.10.0
+Disallow: /libraries/akka-dependencies/23.10.1
+Disallow: /libraries/akka-dependencies/23.10.2
+Disallow: /libraries/akka-dependencies/23.10.3
+Disallow: /libraries/akka-dependencies/24.05
+Disallow: /libraries/akka-dependencies/24.05.0
+Disallow: /libraries/akka-dependencies/24.05.1
+Disallow: /libraries/akka-dependencies/24.05.2
+Disallow: /libraries/akka-dependencies/24.05.3
+Disallow: /libraries/akka-dependencies/24.05.4
+Disallow: /libraries/akka-dependencies/24.05.5
+Disallow: /libraries/akka-dependencies/24.05.6
+Disallow: /libraries/akka-dependencies/24.05.7
+# Disallow: /libraries/akka-dependencies/24.10
+# Disallow: /libraries/akka-dependencies/24.10.0
 
-# historic akka-diagnostics
-Disallow: /docs/akka-diagnostics/2.0
-Disallow: /docs/akka-diagnostics/2.0.0
-Disallow: /docs/akka-diagnostics/2.0.1
-# Disallow: /docs/akka-diagnostics/2.1
-Disallow: /docs/akka-diagnostics/2.1.0
-# Disallow: /docs/akka-diagnostics/2.1.1
+# akka-diagnostics
+Disallow: /libraries/akka-diagnostics/2.0
+Disallow:       /api/akka-diagnostics/2.0
+Disallow: /libraries/akka-diagnostics/2.0.0
+Disallow:       /api/akka-diagnostics/2.0.0
+Disallow: /libraries/akka-diagnostics/2.0.1
+Disallow:       /api/akka-diagnostics/2.0.1
+Disallow: /libraries/akka-diagnostics/2.1
+Disallow:       /api/akka-diagnostics/2.1
+Disallow: /libraries/akka-diagnostics/2.1.0
+Disallow:       /api/akka-diagnostics/2.1.0
+Disallow: /libraries/akka-diagnostics/2.1.1
+Disallow:       /api/akka-diagnostics/2.1.1
+# Disallow: /libraries/akka-diagnostics/2.2
+# Disallow:       /api/akka-diagnostics/2.2
+# Disallow: /libraries/akka-diagnostics/2.2.0
+# Disallow:       /api/akka-diagnostics/2.2.0
 
-# historic akka-distributed-cluster
-# historic akka-edge
+# akka-distributed-cluster (versioned with Akka Projection)
+Disallow: /libraries/akka-distributed-cluster/1.4
+Disallow:       /api/akka-distributed-cluster/1.4
+Disallow: /libraries/akka-distributed-cluster/1.4.2
+Disallow:       /api/akka-distributed-cluster/1.4.2
+
+Disallow: /libraries/akka-distributed-cluster/1.5
+Disallow:       /api/akka-distributed-cluster/1.5
+Disallow: /libraries/akka-distributed-cluster/1.5.0
+Disallow:       /api/akka-distributed-cluster/1.5.0
+Disallow: /libraries/akka-distributed-cluster/1.5.1
+Disallow:       /api/akka-distributed-cluster/1.5.1
+Disallow: /libraries/akka-distributed-cluster/1.5.2
+Disallow:       /api/akka-distributed-cluster/1.5.2
+Disallow: /libraries/akka-distributed-cluster/1.5.3
+Disallow:       /api/akka-distributed-cluster/1.5.3
+Disallow: /libraries/akka-distributed-cluster/1.5.4
+Disallow:       /api/akka-distributed-cluster/1.5.4
+Disallow: /libraries/akka-distributed-cluster/1.5.5
+Disallow:       /api/akka-distributed-cluster/1.5.5
+Disallow: /libraries/akka-distributed-cluster/1.5.6
+Disallow:       /api/akka-distributed-cluster/1.5.6
+Disallow: /libraries/akka-distributed-cluster/1.5.7
+Disallow:       /api/akka-distributed-cluster/1.5.7
+Disallow: /libraries/akka-distributed-cluster/1.5.8
+Disallow:       /api/akka-distributed-cluster/1.5.8
+Disallow: /libraries/akka-distributed-cluster/1.5.9
+Disallow:       /api/akka-distributed-cluster/1.5.9
+
+# Disallow: /libraries/akka-distributed-cluster/1.6
+# Disallow:       /api/akka-distributed-cluster/1.6
+# Disallow: /libraries/akka-distributed-cluster/1.6.0
+# Disallow:       /api/akka-distributed-cluster/1.6.0
+
+# akka-edge
+Disallow: /libraries/akka-edge/1.4
+Disallow:       /api/akka-edge/1.4
+Disallow: /libraries/akka-edge/1.4.2
+Disallow:       /api/akka-edge/1.4.2
+
+Disallow: /libraries/akka-edge/1.5
+Disallow:       /api/akka-edge/1.5
+Disallow: /libraries/akka-edge/1.5.0
+Disallow:       /api/akka-edge/1.5.0
+Disallow: /libraries/akka-edge/1.5.1
+Disallow:       /api/akka-edge/1.5.1
+Disallow: /libraries/akka-edge/1.5.2
+Disallow:       /api/akka-edge/1.5.2
+Disallow: /libraries/akka-edge/1.5.3
+Disallow:       /api/akka-edge/1.5.3
+Disallow: /libraries/akka-edge/1.5.4
+Disallow:       /api/akka-edge/1.5.4
+Disallow: /libraries/akka-edge/1.5.5
+Disallow:       /api/akka-edge/1.5.5
+Disallow: /libraries/akka-edge/1.5.6
+Disallow:       /api/akka-edge/1.5.6
+Disallow: /libraries/akka-edge/1.5.7
+Disallow:       /api/akka-edge/1.5.7
+Disallow: /libraries/akka-edge/1.5.8
+Disallow:       /api/akka-edge/1.5.8
+Disallow: /libraries/akka-edge/1.5.9
+Disallow:       /api/akka-edge/1.5.9
+
+# Disallow: /libraries/akka-edge/1.6
+# Disallow:       /api/akka-edge/1.6
+# Disallow: /libraries/akka-edge/1.6.0
+# Disallow:       /api/akka-edge/1.6.0
 
 # historic Akka Enchantments
-Disallow: /docs/akka-enhancements/1.1/
-Disallow: /api/akka-enhancements/1.1/
-Disallow: /docs/akka-enhancements/1.1.16/
-Disallow: /api/akka-enhancements/1.1.16/
+Disallow: /libraries/akka-enhancements/1.1/
+Disallow:       /api/akka-enhancements/1.1/
+Disallow: /libraries/akka-enhancements/1.1.16/
+Disallow:       /api/akka-enhancements/1.1.16/
 
 # historic akka-grpc
-Disallow: /docs/akka-grpc/1.0
-Disallow: /api/akka-grpc/1.0
-Disallow: /docs/akka-grpc/1.0.3
-Disallow: /api/akka-grpc/1.0.3
+Disallow: /libraries/akka-grpc/1.0
+Disallow:       /api/akka-grpc/1.0
+Disallow: /libraries/akka-grpc/1.0.3
+Disallow:       /api/akka-grpc/1.0.3
 
-Disallow: /docs/akka-grpc/1.1
-Disallow: /api/akka-grpc/1.1
-Disallow: /docs/akka-grpc/1.1.1
-Disallow: /api/akka-grpc/1.1.1
-Disallow: /docs/akka-grpc/1.2.5
-Disallow: /api/akka-grpc/1.2.5
+Disallow: /libraries/akka-grpc/1.1
+Disallow:       /api/akka-grpc/1.1
+Disallow: /libraries/akka-grpc/1.1.1
+Disallow:       /api/akka-grpc/1.1.1
+Disallow: /libraries/akka-grpc/1.2.5
+Disallow:       /api/akka-grpc/1.2.5
 
-Disallow: /docs/akka-grpc/2.0
-Disallow: /api/akka-grpc/2.0
-Disallow: /docs/akka-grpc/2.0.0
-Disallow: /api/akka-grpc/2.0.0
+Disallow: /libraries/akka-grpc/2.0
+Disallow:       /api/akka-grpc/2.0
+Disallow: /libraries/akka-grpc/2.0.0
+Disallow:       /api/akka-grpc/2.0.0
 
-Disallow: /docs/akka-grpc/2.1
-Disallow: /api/akka-grpc/2.1
-Disallow: /docs/akka-grpc/2.1.6
-Disallow: /api/akka-grpc/2.1.6
+Disallow: /libraries/akka-grpc/2.1
+Disallow:       /api/akka-grpc/2.1
+Disallow: /libraries/akka-grpc/2.1.6
+Disallow:       /api/akka-grpc/2.1.6
 
-Disallow: /docs/akka-grpc/2.2
-Disallow: /api/akka-grpc/2.2
-Disallow: /docs/akka-grpc/2.2.1
-Disallow: /api/akka-grpc/2.2.1
+Disallow: /libraries/akka-grpc/2.2
+Disallow:       /api/akka-grpc/2.2
+Disallow: /libraries/akka-grpc/2.2.1
+Disallow:       /api/akka-grpc/2.2.1
 
-Disallow: /docs/akka-grpc/2.3
-Disallow: /api/akka-grpc/2.3
-Disallow: /docs/akka-grpc/2.3.0
-Disallow: /docs/akka-grpc/2.3.1
-Disallow: /docs/akka-grpc/2.3.2
-Disallow: /docs/akka-grpc/2.3.3
-Disallow: /docs/akka-grpc/2.3.4
-Disallow: /api/akka-grpc/2.3.4
+Disallow: /libraries/akka-grpc/2.3
+Disallow:       /api/akka-grpc/2.3
+Disallow: /libraries/akka-grpc/2.3.0
+Disallow:       /api/akka-grpc/2.3.0
+Disallow: /libraries/akka-grpc/2.3.1
+Disallow:       /api/akka-grpc/2.3.1
+Disallow: /libraries/akka-grpc/2.3.2
+Disallow:       /api/akka-grpc/2.3.2
+Disallow: /libraries/akka-grpc/2.3.3
+Disallow:       /api/akka-grpc/2.3.3
+Disallow: /libraries/akka-grpc/2.3.4
+Disallow:       /api/akka-grpc/2.3.4
 
-# Disallow: /docs/akka-grpc/2.4
-# Disallow: /api/akka-grpc/2.4
-Disallow: /docs/akka-grpc/2.4.0
-Disallow: /api/akka-grpc/2.4.0
-Disallow: /docs/akka-grpc/2.4.1
-Disallow: /api/akka-grpc/2.4.1
-Disallow: /docs/akka-grpc/2.4.2
-Disallow: /api/akka-grpc/2.4.2
-Disallow: /docs/akka-grpc/2.4.3
-Disallow: /api/akka-grpc/2.4.3
-# Disallow: /docs/akka-grpc/2.4.4
-# Disallow: /api/akka-grpc/2.4.4
+Disallow: /libraries/akka-grpc/2.4
+Disallow:       /api/akka-grpc/2.4
+Disallow: /libraries/akka-grpc/2.4.0
+Disallow:       /api/akka-grpc/2.4.0
+Disallow: /libraries/akka-grpc/2.4.1
+Disallow:       /api/akka-grpc/2.4.1
+Disallow: /libraries/akka-grpc/2.4.2
+Disallow:       /api/akka-grpc/2.4.2
+Disallow: /libraries/akka-grpc/2.4.3
+Disallow:       /api/akka-grpc/2.4.3
+Disallow: /libraries/akka-grpc/2.4.4
+Disallow: /api/akka-grpc/2.4.4
+
+# Disallow: /libraries/akka-grpc/2.5
+# Disallow:       /api/akka-grpc/2.5
+# Disallow: /libraries/akka-grpc/2.5.0
+# Disallow:       /api/akka-grpc/2.5.0
 
 # historic Akka HTTP versions
 Disallow: /libraries/akka-http/10.0
-Disallow: /api/akka-http/10.0
-Disallow: /japi/akka-http/10.0
+Disallow:       /api/akka-http/10.0
+Disallow:      /japi/akka-http/10.0
 Disallow: /libraries/akka-http/10.0.15
-Disallow: /api/akka-http/10.0.15
-Disallow: /japi/akka-http/10.0.15
+Disallow:       /api/akka-http/10.0.15
+Disallow:      /japi/akka-http/10.0.15
 
 Disallow: /libraries/akka-http/10.1
-Disallow: /api/akka-http/10.1
-Disallow: /japi/akka-http/10.1
+Disallow:       /api/akka-http/10.1
+Disallow:      /japi/akka-http/10.1
 Disallow: /libraries/akka-http/10.1.15
-Disallow: /api/akka-http/10.1.15
-Disallow: /japi/akka-http/10.1.15
+Disallow:       /api/akka-http/10.1.15
+Disallow:      /japi/akka-http/10.1.15
 
 Disallow: /libraries/akka-http/10.2
-Disallow: /api/akka-http/10.2
-Disallow: /japi/akka-http/10.2
+Disallow:       /api/akka-http/10.2
+Disallow:      /japi/akka-http/10.2
 Disallow: /libraries/akka-http/10.2.10
-Disallow: /api/akka-http/10.2.10
-Disallow: /japi/akka-http/10.2.10
+Disallow:       /api/akka-http/10.2.10
+Disallow:      /japi/akka-http/10.2.10
 
 Disallow: /libraries/akka-http/10.4
-Disallow: /api/akka-http/10.4
-Disallow: /japi/akka-http/10.4
+Disallow:       /api/akka-http/10.4
+Disallow:      /japi/akka-http/10.4
 Disallow: /libraries/akka-http/10.4.0
-Disallow: /api/akka-http/10.4.0
-Disallow: /japi/akka-http/10.4.0
+Disallow:       /api/akka-http/10.4.0
+Disallow:      /japi/akka-http/10.4.0
 
 Disallow: /libraries/akka-http/10.5
-Disallow: /api/akka-http/10.5
-Disallow: /japi/akka-http/10.5
+Disallow:       /api/akka-http/10.5
+Disallow:      /japi/akka-http/10.5
 Disallow: /libraries/akka-http/10.5.0
-Disallow: /api/akka-http/10.5.0
-Disallow: /japi/akka-http/10.5.0
+Disallow:       /api/akka-http/10.5.0
+Disallow:      /japi/akka-http/10.5.0
 Disallow: /libraries/akka-http/10.5.1
-Disallow: /api/akka-http/10.5.1
-Disallow: /japi/akka-http/10.5.1
+Disallow:       /api/akka-http/10.5.1
+Disallow:      /japi/akka-http/10.5.1
 Disallow: /libraries/akka-http/10.5.2
-Disallow: /api/akka-http/10.5.2
-Disallow: /japi/akka-http/10.5.2
+Disallow:       /api/akka-http/10.5.2
+Disallow:      /japi/akka-http/10.5.2
 Disallow: /libraries/akka-http/10.5.3
-Disallow: /api/akka-http/10.5.3
-Disallow: /japi/akka-http/10.5.3
+Disallow:       /api/akka-http/10.5.3
+Disallow:      /japi/akka-http/10.5.3
 
-# Disallow: /libraries/akka-http/10.6
-# Disallow: /api/akka-http/10.6
-# Disallow: /japi/akka-http/10.6
+Disallow: /libraries/akka-http/10.6
+Disallow:       /api/akka-http/10.6
+Disallow:      /japi/akka-http/10.6
 Disallow: /libraries/akka-http/10.6.0
-Disallow: /api/akka-http/10.6.0
-Disallow: /japi/akka-http/10.6.0
+Disallow:       /api/akka-http/10.6.0
+Disallow:      /japi/akka-http/10.6.0
 Disallow: /libraries/akka-http/10.6.1
-Disallow: /api/akka-http/10.6.1
-Disallow: /japi/akka-http/10.6.1
+Disallow:       /api/akka-http/10.6.1
+Disallow:      /japi/akka-http/10.6.1
 Disallow: /libraries/akka-http/10.6.2
-Disallow: /api/akka-http/10.6.2
-Disallow: /japi/akka-http/10.6.2
-# Disallow: /libraries/akka-http/10.6.3
-# Disallow: /api/akka-http/10.6.3
-# Disallow: /japi/akka-http/10.6.3
+Disallow:       /api/akka-http/10.6.2
+Disallow:      /japi/akka-http/10.6.2
+Disallow: /libraries/akka-http/10.6.3
+Disallow:       /api/akka-http/10.6.3
+Disallow:      /japi/akka-http/10.6.3
 
-# historic akka-management
+# Disallow: /libraries/akka-http/10.7
+# Disallow:       /api/akka-http/10.7
+# Disallow:      /japi/akka-http/10.7
+# Disallow: /libraries/akka-http/10.7.0
+# Disallow:       /api/akka-http/10.7.0
+# Disallow:      /japi/akka-http/10.7.0
+
+# Akka Management
 Disallow: /libraries/akka-management/1.0
-Disallow: /api/akka-management/1.0
+Disallow:       /api/akka-management/1.0
 Disallow: /libraries/akka-management/1.0.10
-Disallow: /api/akka-management/1.0.10
+Disallow:       /api/akka-management/1.0.10
 
 Disallow: /libraries/akka-management/1.1
-Disallow: /api/akka-management/1.1
+Disallow:       /api/akka-management/1.1
 Disallow: /libraries/akka-management/1.1.4
-Disallow: /api/akka-management/1.1.4
+Disallow:       /api/akka-management/1.1.4
 
 Disallow: /libraries/akka-management/1.2
-Disallow: /api/akka-management/1.2
+Disallow:       /api/akka-management/1.2
 Disallow: /libraries/akka-management/1.2.0
-Disallow: /api/akka-management/1.2.0
+Disallow:       /api/akka-management/1.2.0
 
 Disallow: /libraries/akka-management/1.3
-Disallow: /api/akka-management/1.3
+Disallow:       /api/akka-management/1.3
 Disallow: /libraries/akka-management/1.3.0
-Disallow: /api/akka-management/1.3.0
+Disallow:       /api/akka-management/1.3.0
 
 Disallow: /libraries/akka-management/1.4
-Disallow: /api/akka-management/1.4
+Disallow:       /api/akka-management/1.4
 Disallow: /libraries/akka-management/1.4.0
-Disallow: /api/akka-management/1.4.0
+Disallow:       /api/akka-management/1.4.0
 Disallow: /libraries/akka-management/1.4.1
-Disallow: /api/akka-management/1.4.1
+Disallow:       /api/akka-management/1.4.1
 
-# Disallow: /libraries/akka-management/1.5
-# Disallow: /api/akka-management/1.5
+Disallow: /libraries/akka-management/1.5
+Disallow:       /api/akka-management/1.5
 Disallow: /libraries/akka-management/1.5.0
-Disallow: /api/akka-management/1.5.0
+Disallow:       /api/akka-management/1.5.0
 Disallow: /libraries/akka-management/1.5.1
-Disallow: /api/akka-management/1.5.1
+Disallow:       /api/akka-management/1.5.1
 Disallow: /libraries/akka-management/1.5.2
-Disallow: /api/akka-management/1.5.2
-# Disallow: /libraries/akka-management/1.5.3
-# Disallow: /api/akka-management/1.5.3
+Disallow:       /api/akka-management/1.5.2
+Disallow: /libraries/akka-management/1.5.3
+Disallow:       /api/akka-management/1.5.3
 
-# historic akka-persistence-cassandra
+# Disallow: /libraries/akka-management/1.6
+# Disallow:       /api/akka-management/1.6
+# Disallow: /libraries/akka-management/1.6.0
+# Disallow:       /api/akka-management/1.6.0
+
+# akka-persistence-cassandra
 Disallow: /libraries/akka-persistence/cassandra/1.0
-Disallow: /api/akka-persistence/cassandra/1.0
+Disallow:       /api/akka-persistence/cassandra/1.0
 Disallow: /libraries/akka-persistence/cassandra/1.0.6
-Disallow: /api/akka-persistence/cassandra/1.0.6
+Disallow:       /api/akka-persistence/cassandra/1.0.6
 
 Disallow: /libraries/akka-persistence/cassandra/1.1
-Disallow: /api/akka-persistence/cassandra/1.1
+Disallow:       /api/akka-persistence/cassandra/1.1
 Disallow: /libraries/akka-persistence/cassandra/1.1.1
-Disallow: /api/akka-persistence/cassandra/1.1.1
+Disallow:       /api/akka-persistence/cassandra/1.1.1
 
-# Disallow: /libraries/akka-persistence/cassandra/1.2
-# Disallow: /api/akka-persistence/cassandra/1.2
+Disallow: /libraries/akka-persistence/cassandra/1.2
+Disallow:       /api/akka-persistence/cassandra/1.2
 Disallow: /libraries/akka-persistence/cassandra/1.2.0
-Disallow: /api/akka-persistence/cassandra/1.2.0
-# Disallow: /libraries/akka-persistence/cassandra/1.2.1
-# Disallow: /api/akka-persistence/cassandra/1.2.1
+Disallow:       /api/akka-persistence/cassandra/1.2.0
+Disallow: /libraries/akka-persistence/cassandra/1.2.1
+Disallow:       /api/akka-persistence/cassandra/1.2.1
+
+# Disallow: /libraries/akka-persistence/cassandra/1.3
+# Disallow: /api/akka-persistence/cassandra/1.3
+# Disallow: /libraries/akka-persistence/cassandra/1.3.0
+# Disallow: /api/akka-persistence/cassandra/1.3.0
 
 # historic akka-persistence-dynamodb
 Disallow: /libraries/akka-persistence-dynamodb/0.1.0
-Disallow: /api/akka-persistence-dynamodb/0.1.0
+Disallow:       /api/akka-persistence-dynamodb/0.1.0
 Disallow: /libraries/akka-persistence-dynamodb/0.2.0
-Disallow: /api/akka-persistence-dynamodb/0.2.0
+Disallow:       /api/akka-persistence-dynamodb/0.2.0
 Disallow: /libraries/akka-persistence-dynamodb/0.3.0
-Disallow: /api/akka-persistence-dynamodb/0.3.0
+Disallow:       /api/akka-persistence-dynamodb/0.3.0
 Disallow: /libraries/akka-persistence-dynamodb/0.4.0
-Disallow: /api/akka-persistence-dynamodb/0.4.0
+Disallow:       /api/akka-persistence-dynamodb/0.4.0
 Disallow: /libraries/akka-persistence-dynamodb/0.4.1
-Disallow: /api/akka-persistence-dynamodb/0.4.1
+Disallow:       /api/akka-persistence-dynamodb/0.4.1
 
-# historic akka-persistence-jdbc
+# Disallow: /libraries/akka-persistence-dynamodb/2.0
+# Disallow:       /api/akka-persistence-dynamodb/2.0
+# Disallow: /libraries/akka-persistence-dynamodb/2.0.0
+# Disallow:       /api/akka-persistence-dynamodb/2.0.0
+
+# akka-persistence-jdbc
 Disallow: /libraries/akka-persistence-jdbc/3.5
-Disallow: /api/akka-persistence-jdbc/3.5
+Disallow:       /api/akka-persistence-jdbc/3.5
 Disallow: /libraries/akka-persistence-jdbc/3.5.3
-Disallow: /api/akka-persistence-jdbc/3.5.3
+Disallow:       /api/akka-persistence-jdbc/3.5.3
 
 Disallow: /libraries/akka-persistence-jdbc/4.0
-Disallow: /api/akka-persistence-jdbc/4.0
+Disallow:       /api/akka-persistence-jdbc/4.0
 Disallow: /libraries/akka-persistence-jdbc/4.0.0
-Disallow: /api/akka-persistence-jdbc/4.0.0
+Disallow:       /api/akka-persistence-jdbc/4.0.0
 
 Disallow: /libraries/akka-persistence-jdbc/5.0
-Disallow: /api/akka-persistence-jdbc/5.0
+Disallow:       /api/akka-persistence-jdbc/5.0
 Disallow: /libraries/akka-persistence-jdbc/5.0.4
-Disallow: /api/akka-persistence-jdbc/5.0.4
+Disallow:       /api/akka-persistence-jdbc/5.0.4
 
 Disallow: /libraries/akka-persistence-jdbc/5.1
-Disallow: /api/akka-persistence-jdbc/5.1
+Disallow:       /api/akka-persistence-jdbc/5.1
 Disallow: /libraries/akka-persistence-jdbc/5.1.0
-Disallow: /api/akka-persistence-jdbc/5.1.0
+Disallow:       /api/akka-persistence-jdbc/5.1.0
 
 Disallow: /libraries/akka-persistence-jdbc/5.2
-Disallow: /api/akka-persistence-jdbc/5.2
+Disallow:       /api/akka-persistence-jdbc/5.2
 Disallow: /libraries/akka-persistence-jdbc/5.2.1
-Disallow: /api/akka-persistence-jdbc/5.2.1
+Disallow:       /api/akka-persistence-jdbc/5.2.1
 
 Disallow: /libraries/akka-persistence-jdbc/5.3
-Disallow: /api/akka-persistence-jdbc/5.3
+Disallow:       /api/akka-persistence-jdbc/5.3
 Disallow: /libraries/akka-persistence-jdbc/5.3.0
-Disallow: /api/akka-persistence-jdbc/5.3.0
+Disallow:       /api/akka-persistence-jdbc/5.3.0
 
-# Disallow: /libraries/akka-persistence-jdbc/5.4
-# Disallow: /api/akka-persistence-jdbc/5.4
+Disallow: /libraries/akka-persistence-jdbc/5.4
+Disallow:       /api/akka-persistence-jdbc/5.4
 Disallow: /libraries/akka-persistence-jdbc/5.4.0
-Disallow: /api/akka-persistence-jdbc/5.4.0
+Disallow:       /api/akka-persistence-jdbc/5.4.0
 Disallow: /libraries/akka-persistence-jdbc/5.4.1
-Disallow: /api/akka-persistence-jdbc/5.4.1
-# Disallow: /libraries/akka-persistence-jdbc/5.4.2
-# Disallow: /api/akka-persistence-jdbc/5.4.2
+Disallow:       /api/akka-persistence-jdbc/5.4.1
+Disallow: /libraries/akka-persistence-jdbc/5.4.2
+Disallow:       /api/akka-persistence-jdbc/5.4.2
 
-# historic akka-persistence-r2dbc
+# Disallow: /libraries/akka-persistence-jdbc/5.5
+# Disallow: /api/akka-persistence-jdbc/5.5
+# Disallow: /libraries/akka-persistence-jdbc/5.5.0
+# Disallow: /api/akka-persistence-jdbc/5.5.0
+
+# akka-persistence-r2dbc
 Disallow: /libraries/akka-persistence-r2dbc/1.0
-Disallow: /api/akka-persistence-r2dbc/1.0
+Disallow:       /api/akka-persistence-r2dbc/1.0
 Disallow: /libraries/akka-persistence-r2dbc/1.0.1
-Disallow: /api/akka-persistence-r2dbc/1.0.1
+Disallow:       /api/akka-persistence-r2dbc/1.0.1
 
 Disallow: /libraries/akka-persistence-r2dbc/1.1
-Disallow: /api/akka-persistence-r2dbc/1.1
+Disallow:       /api/akka-persistence-r2dbc/1.1
 Disallow: /libraries/akka-persistence-r2dbc/1.1.2
-Disallow: /api/akka-persistence-r2dbc/1.1.2
+Disallow:       /api/akka-persistence-r2dbc/1.1.2
 
-# Disallow: /libraries/akka-persistence-r2dbc/1.2
-# Disallow: /api/akka-persistence-r2dbc/1.2
+Disallow: /libraries/akka-persistence-r2dbc/1.2
+Disallow:       /api/akka-persistence-r2dbc/1.2
 Disallow: /libraries/akka-persistence-r2dbc/1.2.0
-Disallow: /api/akka-persistence-r2dbc/1.2.0
+Disallow:       /api/akka-persistence-r2dbc/1.2.0
 Disallow: /libraries/akka-persistence-r2dbc/1.2.1
-Disallow: /api/akka-persistence-r2dbc/1.2.1
+Disallow:       /api/akka-persistence-r2dbc/1.2.1
 Disallow: /libraries/akka-persistence-r2dbc/1.2.2
-Disallow: /api/akka-persistence-r2dbc/1.2.2
+Disallow:       /api/akka-persistence-r2dbc/1.2.2
 Disallow: /libraries/akka-persistence-r2dbc/1.2.3
-Disallow: /api/akka-persistence-r2dbc/1.2.3
+Disallow:       /api/akka-persistence-r2dbc/1.2.3
 Disallow: /libraries/akka-persistence-r2dbc/1.2.4
-Disallow: /api/akka-persistence-r2dbc/1.2.4
+Disallow:       /api/akka-persistence-r2dbc/1.2.4
 Disallow: /libraries/akka-persistence-r2dbc/1.2.5
-Disallow: /api/akka-persistence-r2dbc/1.2.5
-# Disallow: /libraries/akka-persistence-r2dbc/1.2.6
-# Disallow: /api/akka-persistence-r2dbc/1.2.6
+Disallow:       /api/akka-persistence-r2dbc/1.2.5
+Disallow: /libraries/akka-persistence-r2dbc/1.2.6
+Disallow:       /api/akka-persistence-r2dbc/1.2.6
 
-# historic akka-projection
+# Disallow: /libraries/akka-persistence-r2dbc/1.3
+# Disallow: /api/akka-persistence-r2dbc/1.3
+# Disallow: /libraries/akka-persistence-r2dbc/1.3.0
+# Disallow: /api/akka-persistence-r2dbc/1.3.0
+
+# akka-projection
 Disallow: /libraries/akka-projection/1.0
 Disallow: /api/akka-projection/1.0
 Disallow: /libraries/akka-projection/1.0.0
@@ -442,34 +560,39 @@ Disallow: /libraries/akka-projection/1.3.1
 Disallow: /api/akka-projection/1.3.1
 
 Disallow: /libraries/akka-projection/1.4
-Disallow: /api/akka-projection/1.4
+Disallow:       /api/akka-projection/1.4
 Disallow: /libraries/akka-projection/1.4.2
-Disallow: /api/akka-projection/1.4.2
+Disallow:       /api/akka-projection/1.4.2
 
-# Disallow: /libraries/akka-projection/1.5
-# Disallow: /api/akka-projection/1.5
+Disallow: /libraries/akka-projection/1.5
+Disallow:       /api/akka-projection/1.5
 Disallow: /libraries/akka-projection/1.5.0
-Disallow: /api/akka-projection/1.5.0
+Disallow:       /api/akka-projection/1.5.0
 Disallow: /libraries/akka-projection/1.5.1
-Disallow: /api/akka-projection/1.5.1
+Disallow:       /api/akka-projection/1.5.1
 Disallow: /libraries/akka-projection/1.5.2
-Disallow: /api/akka-projection/1.5.2
+Disallow:       /api/akka-projection/1.5.2
 Disallow: /libraries/akka-projection/1.5.3
-Disallow: /api/akka-projection/1.5.3
+Disallow:       /api/akka-projection/1.5.3
 Disallow: /libraries/akka-projection/1.5.4
-Disallow: /api/akka-projection/1.5.4
+Disallow:       /api/akka-projection/1.5.4
 Disallow: /libraries/akka-projection/1.5.5
-Disallow: /api/akka-projection/1.5.5
+Disallow:       /api/akka-projection/1.5.5
 Disallow: /libraries/akka-projection/1.5.6
-Disallow: /api/akka-projection/1.5.6
+Disallow:       /api/akka-projection/1.5.6
 Disallow: /libraries/akka-projection/1.5.7
-Disallow: /api/akka-projection/1.5.7
+Disallow:       /api/akka-projection/1.5.7
 Disallow: /libraries/akka-projection/1.5.8
-Disallow: /api/akka-projection/1.5.8
-# Disallow: /libraries/akka-projection/1.5.9
-# Disallow: /api/akka-projection/1.5.9
+Disallow:       /api/akka-projection/1.5.8
+Disallow: /libraries/akka-projection/1.5.9
+Disallow:       /api/akka-projection/1.5.9
 
-# historic alpakka
+# Disallow: /libraries/akka-projection/1.6
+# Disallow:       /api/akka-projection/1.6
+# Disallow: /libraries/akka-projection/1.6.0
+# Disallow:       /api/akka-projection/1.6.0
+
+# alpakka
 Disallow: /libraries/alpakka/1.0
 Disallow: /api/alpakka/1.0
 Disallow: /libraries/alpakka/1.0.2
@@ -514,12 +637,17 @@ Disallow: /api/alpakka/7.0.1
 Disallow: /libraries/alpakka/7.0.2
 Disallow: /api/alpakka/7.0.2
 
-# Disallow: /libraries/alpakka/8.0
-# Disallow: /api/alpakka/8.0
-# Disallow: /libraries/alpakka/8.0.0
-# Disallow: /api/alpakka/8.0.0
+Disallow: /libraries/alpakka/8.0
+Disallow:       /api/alpakka/8.0
+Disallow: /libraries/alpakka/8.0.0
+Disallow:       /api/alpakka/8.0.0
 
-# historic alpakka-kafka
+# Disallow: /libraries/alpakka/9.0
+# Disallow:       /api/alpakka/9.0
+# Disallow: /libraries/alpakka/9.0.0
+# Disallow:       /api/alpakka/9.0.0
+
+# alpakka-kafka
 Disallow: /libraries/alpakka-kafka/0.11
 Disallow: /libraries/alpakka-kafka/0.12
 Disallow: /libraries/alpakka-kafka/0.13
@@ -569,10 +697,10 @@ Disallow: /api/alpakka-kafka/5.0
 Disallow: /libraries/alpakka-kafka/5.0.0
 Disallow: /api/alpakka-kafka/5.0.0
 
-# Disallow: /libraries/alpakka-kafka/6.0
-# Disallow: /api/alpakka-kafka/6.0
-# Disallow: /libraries/alpakka-kafka/6.0.0
-# Disallow: /api/alpakka-kafka/6.0.0
+Disallow: /libraries/alpakka-kafka/6.0
+Disallow:       /api/alpakka-kafka/6.0
+Disallow: /libraries/alpakka-kafka/6.0.0
+Disallow:       /api/alpakka-kafka/6.0.0
 
 # Disallow: /libraries/alpakka-kafka/7.0
 # Disallow: /libraries/alpakka-kafka/7.0.0
