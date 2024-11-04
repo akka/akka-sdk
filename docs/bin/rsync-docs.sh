@@ -5,13 +5,13 @@ if [ -z ${SCP_SECRET} ]; then
 fi
 
 SOURCE=$1
-if [ -z ${SOURCE} ]; then
+if [ -z "${SOURCE}" ]; then
   echo "No rzync source parameter set. (e.g. 'target/site/*' )"
   exit 1;
 fi
 
 TARGET=$2
-if [ -z ${TARGET} ]; then
+if [ -z "${TARGET}" ]; then
   echo "No scp target parameter set. (e.g. akkarepo@gustav.akka.io:www/snapshots/ )"
   exit 1;
 fi

@@ -25,6 +25,6 @@ jobs:
 
       - name: rsync
         run: |
-          ./docs/bin/rsync-docs.sh docs/src-static/* akkarepo@gustav.akka.io:www/
+          ./docs/bin/rsync-docs.sh "docs/src-static/*" akkarepo@gustav.akka.io:www/
         env:
           SCP_SECRET: ${{ secrets.GUSTAV_SCP_SECRET }}

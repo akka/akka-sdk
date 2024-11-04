@@ -1,11 +1,9 @@
-name: Deploy WIP to doc.akka.io/snapshots/
+name: Documentation to doc.akka.io
 on:
   workflow_dispatch:
   push:
     branches:
-      - 'main'
-    paths:
-      - 'docs/**'
+      - 'docs-current'
 
 permissions:
   contents: read
@@ -21,10 +19,8 @@ jobs:
         # v4.1.1
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
         with:
-          ref: main
+          ref: docs-current
           fetch-tags: true # required for version.sh
-          # we don't know what commit the last tag was, it's safer to get entire repo
-          fetch-depth: 0
 
       - name: Coursier cache
         # https://github.com/coursier/cache-action/releases
@@ -40,7 +36,7 @@ jobs:
 
       - name: Downloads, Antora
         run: |
-          make managed local
+          make managed prod
 
       - name: rsync
         run: |
