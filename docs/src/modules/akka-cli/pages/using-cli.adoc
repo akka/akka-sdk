@@ -56,6 +56,7 @@ For more authentication options:
 akka auth -h
 ----
 ifdef::todo[TODO:  You can also refer to the xref:reference:akka-cli/akka_auth.adoc[auth] page.]
+
 === Handling Proxies
 
 In corporate environments with HTTP proxy servers that don't support HTTP/2, you may encounter issues since the `akka` CLI uses gRPC. To bypass these limitations, you can configure the CLI to use grpc-web, which works over HTTP/1.1 and HTTP/2.
