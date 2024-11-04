@@ -1,5 +1,6 @@
 Ack
 ACLs
+ACRs
 Adoptium
 Agrona
 Aiven
@@ -111,6 +112,7 @@ Postgres
 PostgreSQL
 preconfigured
 prepended
+prepending
 [Pp]rometheus
 proto
 [Pp]rotobuf
