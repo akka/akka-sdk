@@ -131,9 +131,6 @@
                                         <!-- tag for generated image -->
                                         <tag>${docker.tag}</tag>
                                     </tags>
-                                    <labels>
-                                        <io.kalix.container-type>init</io.kalix.container-type>
-                                    </labels>
                                     <assembly>
                                         <inline>
                                             <dependencySets>
