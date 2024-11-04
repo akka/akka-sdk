@@ -69,9 +69,9 @@ Another possible use is to add a `traceparent` header when calling your Akka end
 
 ==== Setting sampling
 
-By default, Akka doesn't filter your traces. You'll get 100% of the traces produced by your services, but this is usually too much data. That's why Akka allows you to adjust this percentage according to your needs. Based on the TraceID, if the sampling percentage is less than 100%, the traces will be filtered and won't be exported to the endpoint you have configured. By default, this is the Control Tower found in your Akka Console.
+By default, Akka filters traces and exports them to your Akka Console. You'll get 1% of the traces produced by your services. You can adjust this percentage according to your needs.
 
-This filtering is known as  https://opentelemetry.io/docs/concepts/sampling/#head-sampling[head sampling, window="new"]. To configure it, you need to set your observability descriptor as follows:
+This filtering is known as https://opentelemetry.io/docs/concepts/sampling/#head-sampling[head sampling]. To configure it, you need to set your observability descriptor as follows:
 
 [source,yaml]
 ----
@@ -80,7 +80,7 @@ traces:
     percentage: "2"
 ----
 
-With this configuration, 2% of the traces are sent while the 98% are filtered.
+With this configuration, 2% of the traces are sent while the 98% are filtered. More on how much sampling https://opentelemetry.io/docs/concepts/sampling/#when-to-sample[here].
 
 == Updating the configuration using commands
 
