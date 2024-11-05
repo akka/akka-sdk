@@ -61,6 +61,7 @@ include::example$doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java
 Additionally, the request body parameter can be of the following types:
 
  * `String` for any request with a text content type, the body decoded into a string
+ * `java.util.List<T>` where `T` is a type Jackson can deserialize, accepts a JSON array.
  * `akka.http.javadsl.model.HttpEntity.Strict` for the entire request body as bytes together with the content type for
    arbitrary payload handling.
  * `akka.http.javadsl.model.HttpRequest` for a low level, streaming representation of the entire request
