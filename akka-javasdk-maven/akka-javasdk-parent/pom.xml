@@ -357,6 +357,33 @@
                 </plugins>
             </build>
         </profile>        
+
+        <profile>
+            <id>clean-on-missing-descriptor</id>
+            <activation>
+                <file>
+                    <missing>target/classes/META-INF/akka-javasdk-components.conf</missing>
+                </file>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-clean-plugin</artifactId>
+                        <version>3.4.0</version>
+                        <executions>
+                            <execution>
+                                <id>clean-on-missing-descriptor</id>
+                                <phase>initialize</phase>
+                                <goals>
+                                    <goal>clean</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
     </profiles>
 
     <dependencyManagement>
