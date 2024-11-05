@@ -12,6 +12,12 @@ Current versions
 
 == November 2024
 
+* Akka SDK 3.0.0-RC1
+    - Json type url cleanup
+    - Allow more customization of brokers in dev mode
+    - Akka dependencies
+    - Smaller improvements
+
 * Akka Runtime 1.2.0
     - Fix configuration for tracing
     - Json type url cleanup
