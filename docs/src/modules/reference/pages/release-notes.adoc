@@ -12,16 +12,23 @@ Current versions
 
 == November 2024
 
+* Akka Runtime 1.2.0
+    - Fix configuration for tracing
+    - Json type url cleanup
+    - Allow more customization of brokers in dev mode
+    - Akka dependencies
+    - Smaller improvements
+
 * Akka Runtime 1.1.53
-- Several smaller bug fixes and improvements
+    - Several smaller bug fixes and improvements
 
 * Akka Runtime 1.1.52
-- Several smaller bug fixes and improvements
+    - Several smaller bug fixes and improvements
 
 == October 2024
 
 * Akka Runtime 1.1.51
-- Several smaller bug fixes and improvements
+    - Several smaller bug fixes and improvements
 
 * Akka CLI 3.0.3
     - Improved support for pushing Service images to multiple Akka Container Registries

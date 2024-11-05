@@ -8,28 +8,26 @@ object Dependencies {
     val ProtocolVersionMinor = 1
     val RuntimeImage = "gcr.io/kalix-public/kalix-runtime"
     // Remember to bump kalix-runtime.version in akka-javasdk-maven/akka-javasdk-parent if bumping this
-    val RuntimeVersion = sys.props.getOrElse("kalix-runtime.version", "1.1.53")
+    val RuntimeVersion = sys.props.getOrElse("kalix-runtime.version", "1.2.0")
   }
   // NOTE: embedded SDK should have the AkkaVersion aligned, when updating RuntimeVersion, make sure to check
   // if AkkaVersion and AkkaHttpVersion are aligned
   // for prod code, they are marked as Provided, but testkit still requires the alignment
-  val AkkaVersion = "2.9.7"
-  val AkkaHttpVersion = "10.6.3" // Note: should at least the Akka HTTP version required by Akka gRPC
+  val AkkaVersion = "2.10.0"
+  val AkkaHttpVersion = "10.7.0" // Note: should at least the Akka HTTP version required by Akka gRPC
 
   // Note: the Scala version must be aligned with the runtime
   val ScalaVersion = "2.13.15"
   val CrossScalaVersions = Seq(ScalaVersion)
 
-  val ProtobufVersion = // akka.grpc.gen.BuildInfo.googleProtobufVersion
-    "3.21.12" // explicitly overriding the 3.21.1 version from Akka gRPC 2.1.6 (even though its build says 3.20.1)
+  val ProtobufVersion = akka.grpc.gen.BuildInfo.googleProtobufVersion
 
   val ScalaTestVersion = "3.2.14"
   // https://github.com/akka/akka/blob/main/project/Dependencies.scala#L31
-  val JacksonVersion = "2.15.4"
+  val JacksonVersion = "2.17.2"
   val JacksonDatabindVersion = JacksonVersion
-  val LogbackVersion = "1.4.14"
+  val LogbackVersion = "1.5.12"
   val LogbackContribVersion = "0.1.5"
-  val TestContainersVersion = "1.17.6"
   val JUnitVersion = "4.13.2"
   val JUnitInterfaceVersion = "0.11"
   val JUnitJupiterVersion = "5.10.1"
@@ -53,11 +51,7 @@ object Dependencies {
   val logbackJson = "ch.qos.logback.contrib" % "logback-json-classic" % LogbackContribVersion
   val logbackJackson = "ch.qos.logback.contrib" % "logback-jackson" % LogbackContribVersion
 
-  // FIXME is this still correct with embedded SDK?
-  // akka-slf4j pulls in slf4j-api v1.7.36 and but we want v2.0.9
-  // because of Logback v1.4.5+ and because of Spring 3. Therefore we have to explicitly bump slf4j-api.
-  // Version 2.0.9 is also problematic for Akka, but only when using the BehaviorTestKit which is not used in the SDK
-  val slf4jApi = "org.slf4j" % "slf4j-api" % "2.0.9"
+  val slf4jApi = "org.slf4j" % "slf4j-api" % "2.0.16"
 
   val protobufJava = "com.google.protobuf" % "protobuf-java" % ProtobufVersion
   val protobufJavaUtil = "com.google.protobuf" % "protobuf-java-util" % ProtobufVersion
@@ -74,7 +68,6 @@ object Dependencies {
   val scalaTest = "org.scalatest" %% "scalatest" % ScalaTestVersion
   val munit = "org.scalameta" %% "munit" % MunitVersion
   val munitScalaCheck = "org.scalameta" %% "munit-scalacheck" % MunitVersion
-  val testContainers = "org.testcontainers" % "testcontainers" % TestContainersVersion
   val junit4 = "junit" % "junit" % JUnitVersion
   val junit5 = "org.junit.jupiter" % "junit-jupiter" % JUnitJupiterVersion
   val junit5Vintage = "org.junit.vintage" % "junit-vintage-engine" % JUnitJupiterVersion
@@ -103,7 +96,7 @@ object Dependencies {
     opentelemetryExporterOtlp,
     opentelemetryContext,
     opentelemetrySemConv,
-    // FIXME: akka-http is pulling akka-pki and akka-discovery v2.9.3, we need to force it to be 2.9.4
+    // akka-http is pulling akka-pki and akka-discovery, we need to force it to be same version
     akkaDependency("akka-pki"),
     akkaDependency("akka-discovery"),
     akkaDependency("akka-testkit") % Test,
@@ -131,7 +124,6 @@ object Dependencies {
     "com.typesafe.akka" %% "akka-http-core" % AkkaHttpVersion,
     akkaDependency("akka-stream"),
     akkaDependency("akka-actor-typed") % Provided,
-    "org.scala-lang.modules" %% "scala-parser-combinators" % "2.3.0",
     "net.aichler" % "jupiter-interface" % JupiterKeys.jupiterVersion.value % Test,
     junit5 % Test,
     "org.assertj" % "assertj-core" % "3.24.2" % Test)
