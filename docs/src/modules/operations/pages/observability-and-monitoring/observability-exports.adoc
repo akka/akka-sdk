@@ -1,4 +1,4 @@
-= Exporting metrics, logs, and traces.
+= Exporting metrics, logs, and traces
 include::ROOT:partial$include.adoc[]
 
 Akka supports exporting metrics, logs, and traces to a variety of different destinations for reporting, long term storage and alerting. Metrics, logs, and traces can either by exported to the same location, by configuring a default exporter, or to different locations by configuring separate logging, metrics, and tracing exporters. Only one exporter for each may be configured.
@@ -73,7 +73,7 @@ service:
   image: <<docker-image>>
 ----
 
-Once this is set, Akka will start generating https://opentelemetry.io/docs/concepts/observability-primer/#spans[spans, window="new"] for the following components: Event Sourced Entities, Key Value Entities, Consumers, and Views. In addition, a View or a Consumer that consumes from an Entity will receive the traces from that Entity and create a span related to the previous trace.
+Once this is set, Akka will start generating https://opentelemetry.io/docs/concepts/observability-primer/#spans[spans, window="new"] for the following components: Event Sourced Entities, Key Value Entities, Endpoints, Consumers, and Views.
 
 Another possible use is to add a `traceparent` header when calling your Akka endpoint. In this case Akka will propagate this trace parent as the root of the subsequent interaction with an Akka component. Linking each Akka call to that external trace parent.
 
