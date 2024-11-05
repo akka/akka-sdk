@@ -3,5 +3,6 @@
 *** xref:concepts:architecture-model.adoc[]
 *** xref:concepts:deployment-model.adoc[]
 *** xref:concepts:development-process.adoc[]
+*** xref:declarative-effects.adoc[]
 *** xref:concepts:state-model.adoc[]
 *** xref:concepts:saga-patterns.adoc[]

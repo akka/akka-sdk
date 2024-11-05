@@ -14,6 +14,19 @@ In this section, we will explore how you can use a Consumer component to:
 
 NOTE: Events and messages are guaranteed to be delivered at least once. This means that Consumers must be able to handle duplicated messages.
 
+[#_effect_api]
+== Consumer’s Effect API
+
+The Consumer's Effect defines the operations that Akka should perform when an incoming message is delivered to the Consumer.
+
+A Consumer Effect can either:
+
+* return a message to be published to a Topic (in case the method is a publisher)
+* return Done to indicate that the message was processed successfully
+* ignore the incoming message
+
+See also xref:concepts:declarative-effects.adoc[Declarative Effects] for more information.
+
 [#consume-from-event-sourced-entity]
 == Consume from Event Sourced Entity
 

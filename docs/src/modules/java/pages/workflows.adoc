@@ -6,6 +6,7 @@ Workflows implement long-running, multi-step business processes while allowing d
 
 include::partial$entity-sharding.adoc[]
 
+[#_effect_api]
 == Workflow's Effect API
 
 The Workflow's Effect defines the operations that Akka should perform when an incoming command is handled by a Workflow.
@@ -18,6 +19,9 @@ A Workflow Effect can either:
 * end the workflow
 * fail the step or reject a command by returning an error
 * reply to incoming commands
+
+
+See also xref:concepts:declarative-effects.adoc[Declarative Effects] for more information.
 
 == Modeling state
 

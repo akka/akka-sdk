@@ -25,6 +25,18 @@ When a timer is triggered, the scheduled call is executed. If successfully execu
   the method. If these changes, the scheduled method will not be invoked.
 * The type of parameter the method accepts must not change after a call has been scheduled.
 
+[#_effect_api]
+== Timed Action’s Effect API
+
+The Timed Action's Effect defines the operations that Akka should perform when an incoming command is handled by a Timed Action.
+
+A Timed Action Effect can either:
+
+* return Done to confirm that the command was processed successfully
+* return an error message
+
+See also xref:concepts:declarative-effects.adoc[Declarative Effects] for more information.
+
 == Order Entity
 
 To demonstrate its functionality, let's consider an Ordering Service composed of a xref:key-value-entities.adoc[Key Value Entity] and a Timed Action component. The Timed Action will handle the cancellation of unconfirmed orders.
@@ -46,7 +58,7 @@ include::example$reliable-timers/src/main/java/com/example/application/OrderEnti
 <6> While cancelling an already confirmed order returns `Invalid`.
 <7> Finally, if the Order is placed, but not confirmed, the cancel method resets the order to the `emptyState`.
 
-== Timed Action
+== Timed Action example
 
 The `OrderEndpoint` will receive incoming messages, run some logic and then call the Order Entity as needed.
 

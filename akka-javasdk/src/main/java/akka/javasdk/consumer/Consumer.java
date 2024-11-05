@@ -90,9 +90,8 @@ public abstract class Consumer {
    * A Consumer Effect can either:
    * <p>
    * <ul>
-   *   <li>reply with a message to be published to a Topic (in case the method is a publisher)
-   *   <li>reply with a Done message to indicate that the command was processed successfully
-   *   <li>forward the message to another component
+   *   <li>return a message to be published to a Topic (in case the method is a publisher)
+   *   <li>return Done to indicate that the message was processed successfully
    *   <li>ignore the call
    * </ul>
    *

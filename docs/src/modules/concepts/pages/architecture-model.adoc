@@ -18,6 +18,7 @@ The layers of the Akka programming architecture are outlined below.
 
 At the center is the _Domain Model_ which encapsulates your business logic. The domain should be mostly pure Java: that is not Akka components. In Akka projects and samples, this will often be a package called `domain`.
 
+[#_application_layer]
 ==== Application
 
 The middle layer is the _Application layer_. This layer uses the domain model and coordinates domain objects. This layer is where your Akka components will live. In this sense, an Akka Component acts as the glue between your domain model and the Akka Runtime. This package will generally be called `application` and only contains Akka components like Entities and Views.
@@ -40,11 +41,9 @@ Much of the inner loop of the developer experience will be spent here. Using Jav
 
 === Application
 
-The application layer is where Akka really comes into play as the glue between your domain code and the Runtime. Most classes in this layer will extend an Akka component class (i.e. something in the `akka.javasdk` package) which means it will be event-based and actor-based behind the scenes, though you never have to really think about that.
+The application layer is where Akka truly shines, acting as the bridge between your domain code and the runtime. Most classes in this layer extend an Akka component class (e.g., within the `akka.javasdk` package), making them event-based and actor-based behind the scenes, while abstracting those details from you.
 
-When you want to _do something_, i.e. change state or take action, you implement components methods returning an `Effect` or `ReadOnlyEffect`. An effect is a description of what the Runtime needs to do after the command is handled. You can think of it as a set of instructions you are passing to the Runtime, which will process the instructions on your behalf.
-
-Each component type defines its own Effect API, which are a set of predefined operations that match the capabilities of that specific component. For example, event-sourced entities have an effect API that allows you to persist your events: Akka will persist them for you and handle concurrent updates, scaling, and many other difficult tasks. This is a key part of what makes Akka so responsive and resilient. This model streamlines development and reduces the amount of ceremony you must perform to build Akka applications.
+These components include xref:java:event-sourced-entities.adoc[Event Sourced Entities], xref:java:key-value-entities.adoc[Key Value Entities],  xref:java:views.adoc[Views], xref:java:workflows.adoc[Workflows], xref:java:timed-actions.adoc[Timers] and xref:java:consuming-producing.adoc[Consumers]. Each component type provides specific functionalities to handle state, events, and interactions efficiently.
 
 === API
 

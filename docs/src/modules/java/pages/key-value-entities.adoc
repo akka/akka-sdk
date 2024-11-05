@@ -32,6 +32,7 @@ NOTE: Above we are taking advantage of the Java `record` to reduce the amount of
 
 include::partial$entity-ids.adoc[]
 
+[#_effect_api]
 == Key Value Entity's Effect API
 
 The Key Value Entity's Effect defines the operations that Akka should perform when an incoming command is handled by a Key Value Entity.
@@ -42,6 +43,8 @@ A Key Value Entity Effect can either:
 * directly reply to the caller if the command is not requesting any state change
 * instruct Akka to delete the entity
 * return an error message
+
+See also xref:concepts:declarative-effects.adoc[Declarative Effects] for more information.
 
 [#entity-behavior]
 == Implementing behavior

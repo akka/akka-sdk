@@ -58,6 +58,7 @@ IMPORTANT: The use of logical names for subtypes is essential for maintainabilit
 
 include::partial$entity-ids.adoc[]
 
+[#_effect_api]
 == Event Sourced Entity's Effect API
 
 The Event Sourced Entity's Effect defines the operations that Akka should perform when an incoming command is handled by an Event Sourced Entity.
@@ -66,8 +67,10 @@ An Event Sourced Entity Effect can either:
 
 * persist events and send a reply to the caller
 * directly reply to the caller if the command is not requesting any state change
-* instruct Akka to delete the entity
+* instruct Akka to delete the entity and send a reply to the caller
 * return an error message
+
+See also xref:concepts:declarative-effects.adoc[Declarative Effects] for more information.
 
 == Implementing behavior
 

@@ -81,8 +81,8 @@ public abstract class TimedAction {
    * An TimedAction Effect can either:
    * <p>
    * <ul>
-   *   <li>reply with Done to confirm that the command was processed successfully
-   *   <li>return an error
+   *   <li>return Done to confirm that the command was processed successfully
+   *   <li>return an error message
    * </ul>
    */
   public interface Effect {

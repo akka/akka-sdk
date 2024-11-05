@@ -19,6 +19,7 @@ The remainder of this page describes:
 
 IMPORTANT: Be aware that Views are not updated immediately when the Entity state changes. It is not instant but eventually all changes will become visible in the query results. View updates might also take more time during failure scenarios (e.g. network instability) than during normal operation.
 
+[#_effect_api]
 == View's Effect API
 
 The View's Effect defines the operations to be performed when an event, a message or a state change is handled by a View.
@@ -29,7 +30,7 @@ A View Effect can either:
 * delete the view state
 * ignore the event or state change notification (and not update the view state)
 
-See also xref:concepts:development-process.adoc#_effects_api[Understanding what an Effect is]
+See also xref:concepts:declarative-effects.adoc[Declarative Effects] for more information.
 
 [#value-entity]
 == Creating a View from a Key Value Entity
