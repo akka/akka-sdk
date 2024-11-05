@@ -406,7 +406,8 @@ RedirectMatch 301 ^/alpakka-samples(/?|/.*)$ https://akka.io/alpakka-samples$1
 # All: /docs/{module}       -> /libraries/{module}/current/
 RedirectMatch 301 ^/docs/([^/]+)/?$       https://doc.akka.io/libraries/$1/current/
 # All: /libraries/{module}  -> /libraries/{module}/current/
-RedirectMatch 301 ^/libraries/([^/]+)/?$  https://doc.akka.io/libraries/$1/current/
+# (expect `a` to make sure this doesn't apply to index.html)
+RedirectMatch 301 ^/libraries/(a[^/]+)/?$  https://doc.akka.io/libraries/$1/current/
 
 # All: /docs/{module}/.*    -> /libraries/{module}/.*
 RedirectMatch 301 ^/docs/([^/]+)/(.*)$       https://doc.akka.io/libraries/$1/$2
