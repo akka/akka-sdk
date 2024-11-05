@@ -607,29 +607,29 @@ public class TestKit {
   /**
    * Get incoming messages for KeyValueEntity.
    *
-   * @param typeId @TypeId or entity_type of the KeyValueEntity (depending on the used SDK)
+   * @param componentId As annotated with @ComponentId on the KeyValueEntity
    */
-  public IncomingMessages getKeyValueEntityIncomingMessages(String typeId) {
-    if (!settings.mockedEventing.hasKeyValueEntitySubscription(typeId)) {
-      throwMissingConfigurationException("KeyValueEntity " + typeId);
+  public IncomingMessages getKeyValueEntityIncomingMessages(String componentId) {
+    if (!settings.mockedEventing.hasKeyValueEntitySubscription(componentId)) {
+      throwMissingConfigurationException("KeyValueEntity " + componentId);
     }
-    return eventingTestKit.getKeyValueEntityIncomingMessages(typeId);
+    return eventingTestKit.getKeyValueEntityIncomingMessages(componentId);
   }
 
   /**
    * Get incoming messages for EventSourcedEntity.
    *
-   * @param typeId @TypeId or entity_type of the EventSourcedEntity (depending on the used SDK)
+   * @param componentId As annotated with @ComponentId on the EventSourcedEntity
    */
-  public IncomingMessages getEventSourcedEntityIncomingMessages(String typeId) {
-    if (!settings.mockedEventing.hasEventSourcedEntitySubscription(typeId)) {
-      throwMissingConfigurationException("EventSourcedEntity " + typeId);
+  public IncomingMessages getEventSourcedEntityIncomingMessages(String componentId) {
+    if (!settings.mockedEventing.hasEventSourcedEntitySubscription(componentId)) {
+      throwMissingConfigurationException("EventSourcedEntity " + componentId);
     }
-    return eventingTestKit.getEventSourcedEntityIncomingMessages(typeId);
+    return eventingTestKit.getEventSourcedEntityIncomingMessages(componentId);
   }
 
   /**
-   * Get incoming messages for Stream (eventing.in.direct in case of protobuf SDKs).
+   * Get incoming messages for Consume.ServiceStream.
    *
    * @param service  service name
    * @param streamId service stream id
@@ -697,14 +697,6 @@ public class TestKit {
     }
   }
 
-  /**
-   * INTERNAL API
-   */
-  @InternalApi
-  public MessageCodec getMessageCodec() {
-    return messageCodec;
-  }
-  
   /**
    * Returns {@link EventingTestKit.MessageBuilder} utility
    * to create {@link EventingTestKit.Message}s for the eventing testkit.
