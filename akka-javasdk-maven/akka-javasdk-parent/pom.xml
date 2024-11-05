@@ -200,13 +200,6 @@
                                 <goal>build</goal>
                             </goals>
                         </execution>
-                        <execution>
-                            <id>push-docker-image</id>
-                            <phase>deploy</phase>
-                            <goals>
-                                <goal>push</goal>
-                            </goals>
-                        </execution>
                     </executions>
                 </plugin>
 
