@@ -305,7 +305,6 @@ DOCKER> Tagging image shoppingcart:1.0-SNAPSHOT-20241028102843 successful!
 ----
 
 . Deploy your service, replacing:
-* `my-service` with your service name
 * `container-name` with the container name from the `mvn install` output in the previous step
 * `tag-name` with the tag name from the `mvn install` output in the previous step
 
@@ -314,7 +313,7 @@ DOCKER> Tagging image shoppingcart:1.0-SNAPSHOT-20241028102843 successful!
 akka service deploy cart-service shoppingcart:tag-name --push
 ----
 
-Your service will now begin deploying.
+Your service named `cart-service` will now begin deploying.
 
 . Verify the deployment status of your service:
 +
@@ -332,10 +331,10 @@ A service status can be one of the following:
 
 Approximately one minute after deploying, your service status should become *Ready*.
 
-. Expose your service to the internet, replacing `my-service` with your service name:
+. Expose your service to the internet:
 [source,bash]
 ----
-$ akka service expose my-service
+$ akka service expose cart-service
 Service 'cart-service' was successfully exposed at: spring-tooth-3406.us-east1.akka.app
 ----
 
@@ -343,7 +342,22 @@ Congratulations, you have successfully deployed your service. You can now access
 
 == Invoke your deployed service
 
-[TBD](ifdef::todo[TODO: add service invocation steps])
+You can use https://curl.se[cURL, window="new"] to invoke your service, replacing URL with the hostname that it was exposed as.
+
+Add an item to the shopping cart:
+
+[source, command window]
+----
+curl -i -XPUT -H "Content-Type: application/json" https://spring-tooth-3406.us-east1.akka.app/carts/123/item -d '
+{"productId":"akka-tshirt", "name":"Akka Tshirt", "quantity": 10}'
+----
+
+Get cart state:
+
+[source, command window]
+----
+curl https://spring-tooth-3406.us-east1.akka.app/carts/123
+----
 
 == Download full sample
 
