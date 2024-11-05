@@ -5,6 +5,8 @@ import akka.Done;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import akka.javasdk.eventsourcedentity.EventSourcedEntityContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import shoppingcart.domain.ShoppingCart;
 import shoppingcart.domain.ShoppingCart.LineItem;
 import shoppingcart.domain.ShoppingCartEvent;
@@ -22,6 +24,8 @@ public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCart, Shoppin
   // tag::getCart[]
   private final String entityId;
 
+  private static final Logger logger = LoggerFactory.getLogger(ShoppingCartEntity.class);
+
   public ShoppingCartEntity(EventSourcedEntityContext context) {
     this.entityId = context.entityId(); // <1>
   }
@@ -35,9 +39,12 @@ public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCart, Shoppin
 
   // tag::addItem[]
   public Effect<Done> addItem(LineItem item) {
-    if (currentState().checkedOut())
+    if (currentState().checkedOut()) {
+      logger.info("Cart id={} is already checked out.", entityId);
       return effects().error("Cart is already checked out.");
+    }
     if (item.quantity() <= 0) { // <1>
+      logger.info("Quantity for item {} must be greater than zero.", item.productId());
       return effects().error("Quantity for item " + item.productId() + " must be greater than zero.");
     }
 
@@ -51,9 +58,12 @@ public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCart, Shoppin
   // end::addItem[]
 
   public Effect<Done> removeItem(String productId) {
-    if (currentState().checkedOut())
+    if (currentState().checkedOut()) {
+      logger.info("Cart id={} is already checked out.", entityId);
       return effects().error("Cart is already checked out.");
+    }
     if (currentState().findItemByProductId(productId).isEmpty()) {
+      logger.info("Cannot remove item {} because it is not in the cart.", productId);
       return effects().error("Cannot remove item " + productId + " because it is not in the cart.");
     }
 

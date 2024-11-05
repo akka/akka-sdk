@@ -12,6 +12,8 @@ import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.Put;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.http.HttpResponses;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import shoppingcart.application.ShoppingCartEntity;
 import shoppingcart.domain.ShoppingCart;
 
@@ -30,6 +32,8 @@ public class ShoppingCartEndpoint {
 
   private final ComponentClient componentClient;
 
+  private static final Logger logger = LoggerFactory.getLogger(ShoppingCartEndpoint.class);
+
   public ShoppingCartEndpoint(ComponentClient componentClient) { // <2>
     this.componentClient = componentClient;
   }
@@ -39,6 +43,7 @@ public class ShoppingCartEndpoint {
   // tag::get[]
   @Get("/{cartId}") // <3>
   public CompletionStage<ShoppingCart> get(String cartId) {
+    logger.info("Get cart id={}", cartId);
     return componentClient.forEventSourcedEntity(cartId) // <4>
         .method(ShoppingCartEntity::getCart)
         .invokeAsync(); // <5>
@@ -49,6 +54,7 @@ public class ShoppingCartEndpoint {
   // tag::addItem[]
   @Put("/{cartId}/item") // <6>
   public CompletionStage<HttpResponse> addItem(String cartId, ShoppingCart.LineItem item) {
+    logger.info("Adding item to cart id={} item={}", cartId, item);
     return componentClient.forEventSourcedEntity(cartId)
       .method(ShoppingCartEntity::addItem)
       .invokeAsync(item)
@@ -60,6 +66,7 @@ public class ShoppingCartEndpoint {
 
   @Delete("/{cartId}/item/{productId}")
   public CompletionStage<HttpResponse> removeItem(String cartId, String productId) {
+    logger.info("Removing item from cart id={} item={}", cartId, productId);
     return componentClient.forEventSourcedEntity(cartId)
       .method(ShoppingCartEntity::removeItem)
       .invokeAsync(productId)
@@ -68,6 +75,7 @@ public class ShoppingCartEndpoint {
 
   @Post("/{cartId}/checkout")
   public CompletionStage<HttpResponse> checkout(String cartId) {
+    logger.info("Checkout cart id={}", cartId);
     return componentClient.forEventSourcedEntity(cartId)
       .method(ShoppingCartEntity::checkout)
       .invokeAsync()
