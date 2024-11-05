@@ -225,6 +225,10 @@ include::example$key-value-customer-registry/src/main/java/customer/application/
 <2> Note the use of `* AS customers` so records are matched to `customers` field in `CustomersList`.
 <3> Return type of the query is `CustomersList`.
 
+==== Streaming the result
+
+Instead of collecting the query result in memory as a collection before returning it, the entries can be streamed.
+To return the result as a stream, modify the returned type to be `QueryStreamEffect` and use `queryStreamResult()` to return the stream.
 
 ==== Streaming view updates
 
@@ -234,7 +238,7 @@ the view.
 This will first list the complete result for the query and then keep the response stream open, emitting new or updated
 entries matching the query as they are added to the view. The stream does not complete until the client closes it.
 
-To use streaming, modify the returned type to be `QueryStreamEffect` instead and use `queryStreamResult()` to return the stream.
+To use streaming, modify the returned type to be `QueryStreamEffect` instead and use `queryStreamResult()` to return the stream, then add `streamUpdates = true` to the `Query` annotation.
 
 NOTE: This is not intended as transport for xref:consuming-producing.adoc#s2s-eventing[service to service] propagation of updates, and it does not guarantee delivery. For such use cases you
 should instead publish events to a topic, see xref:consuming-producing.adoc[]
