@@ -114,14 +114,23 @@ class SdkRunner private (dependencyProvider: Option[DependencyProvider]) extends
             aclEnabled = applicationConf.getBoolean("akka.javasdk.dev-mode.acl.enabled"),
             persistenceEnabled = applicationConf.getBoolean("akka.javasdk.dev-mode.persistence.enabled"),
             serviceName = applicationConf.getString("akka.javasdk.dev-mode.service-name"),
-            eventingSupport = SpiEventingSupportSettings.fromConfigValue(
-              applicationConf.getString("akka.javasdk.dev-mode.eventing.support")),
+            eventingSupport = extractBrokerConfig(applicationConf.getConfig("akka.javasdk.dev-mode.eventing")),
             mockedEventing = SpiMockedEventingSettings.empty,
             testMode = false))
       else
         None
 
     new SpiSettings(devModeSettings)
+  }
+
+  private def extractBrokerConfig(eventingConf: Config): SpiEventingSupportSettings = {
+    val brokerConfigName = eventingConf.getString("support")
+    SpiEventingSupportSettings.fromConfigValue(
+      brokerConfigName,
+      if (eventingConf.hasPath(brokerConfigName))
+        eventingConf.getConfig(brokerConfigName)
+      else
+        ConfigFactory.empty())
   }
 
   override def start(startContext: StartContext): Future[SpiComponents] = {
