@@ -11,7 +11,6 @@ import com.google.protobuf.DynamicMessage
 import com.google.protobuf.any.{ Any => ScalaPbAny }
 import AnySupport.BytesPrimitive
 import akka.annotation.InternalApi
-import akka.javasdk.JsonSupport
 import akka.javasdk.Metadata
 
 /**
@@ -29,7 +28,7 @@ private[javasdk] object InvocationContext {
       metadata: Metadata = Metadata.EMPTY): InvocationContext = {
 
     val dynamicMessage =
-      if (anyMessage.typeUrl.startsWith(JsonSupport.JSON_TYPE_URL_PREFIX) ||
+      if (AnySupport.isJson(anyMessage) ||
         anyMessage.typeUrl == BytesPrimitive.fullName) {
         // FIXME how can this ever work unless methodDescriptor is protobuf Any, or a synthetic
         //       message with exactly the two fields type_url and value?

@@ -15,7 +15,6 @@ import io.grpc.Status
 import akka.javasdk.impl.ErrorHandling.BadRequestException
 import EventSourcedEntityRouter.CommandResult
 import akka.annotation.InternalApi
-import akka.javasdk.JsonSupport
 import akka.javasdk.Metadata
 import akka.javasdk.eventsourcedentity.CommandContext
 import akka.javasdk.eventsourcedentity.EventContext
@@ -23,6 +22,7 @@ import akka.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.javasdk.eventsourcedentity.EventSourcedEntityContext
 import akka.javasdk.impl.AbstractContext
 import akka.javasdk.impl.ActivatableContext
+import akka.javasdk.impl.AnySupport
 import akka.javasdk.impl.Settings
 import akka.javasdk.impl.ErrorHandling
 import akka.javasdk.impl.JsonMessageCodec
@@ -180,9 +180,10 @@ private[impl] final class EventSourcedEntitiesImpl(
           span.foreach(s => MDC.put(Telemetry.TRACE_ID, s.getSpanContext.getTraceId))
           try {
             val cmd =
-              service.messageCodec.decodeMessage(command.payload.getOrElse(
-                // FIXME smuggling 0 arity method called from component client through here
-                ScalaPbAny.defaultInstance.withTypeUrl(JsonSupport.JSON_TYPE_URL_PREFIX).withValue(ByteString.empty())))
+              service.messageCodec.decodeMessage(
+                command.payload.getOrElse(
+                  // FIXME smuggling 0 arity method called from component client through here
+                  ScalaPbAny.defaultInstance.withTypeUrl(AnySupport.JsonTypeUrlPrefix).withValue(ByteString.empty())))
             val metadata = MetadataImpl.of(command.metadata.map(_.entries.toVector).getOrElse(Nil))
             val context =
               new CommandContextImpl(thisEntityId, sequence, command.name, command.id, metadata)

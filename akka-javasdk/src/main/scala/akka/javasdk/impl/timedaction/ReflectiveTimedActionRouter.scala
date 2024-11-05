@@ -5,7 +5,7 @@
 package akka.javasdk.impl.timedaction
 
 import akka.annotation.InternalApi
-import akka.javasdk.JsonSupport
+import akka.javasdk.impl.AnySupport
 import akka.javasdk.impl.CommandHandler
 import akka.javasdk.impl.InvocationContext
 import akka.javasdk.impl.reflection.Reflect
@@ -37,8 +37,8 @@ private[impl] final class ReflectiveTimedActionRouter[A <: TimedAction](
 
     val inputTypeUrl = message.payload().asInstanceOf[ScalaPbAny].typeUrl
     val scalaPbAnyCommand = message.payload().asInstanceOf[ScalaPbAny]
-    if ((scalaPbAnyCommand.typeUrl.startsWith(
-        JsonSupport.JSON_TYPE_URL_PREFIX) || scalaPbAnyCommand.value.isEmpty) && commandHandler.isSingleNameInvoker) {
+    if ((AnySupport.isJson(
+        scalaPbAnyCommand) || scalaPbAnyCommand.value.isEmpty) && commandHandler.isSingleNameInvoker) {
       // special cased component client calls, lets json commands trough all the way
       val methodInvoker = commandHandler.getSingleNameInvoker()
       val deserializedCommand =

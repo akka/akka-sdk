@@ -24,7 +24,6 @@ import AnySupport.Prefer.Java
 import AnySupport.Prefer.Scala
 import ErrorHandling.BadRequestException
 import akka.annotation.InternalApi
-import akka.javasdk.JsonSupport
 import org.slf4j.LoggerFactory
 import scalapb.GeneratedMessage
 import scalapb.GeneratedMessageCompanion
@@ -36,14 +35,22 @@ import scala.collection.compat.immutable.ArraySeq
  * INTERNAL API
  */
 @InternalApi
-private[impl] object AnySupport {
+private[akka] object AnySupport {
 
   private final val KalixPrimitiveFieldNumber = 1
   final val KalixPrimitive = "type.kalix.io/"
   final val DefaultTypeUrlPrefix = "type.googleapis.com"
   final val ProtobufEmptyTypeUrl = "type.googleapis.com/google.protobuf.Empty"
+  val JsonTypeUrlPrefix: String = "json.akka.io/"
+  private val KalixJsonTypeUrlPrefix: String = "json.kalix.io/"
 
   private val log = LoggerFactory.getLogger(classOf[AnySupport])
+
+  def isJson(any: ScalaPbAny): Boolean = isJsonTypeUrl(any.typeUrl)
+
+  def isJsonTypeUrl(typeUrl: String): Boolean =
+    // check both new and old typeurl for compatibility, in case there are services with old type url stored in database
+    typeUrl.startsWith(JsonTypeUrlPrefix) || typeUrl.startsWith(KalixJsonTypeUrlPrefix)
 
   sealed abstract class Primitive[T: ClassTag] {
     val name = fieldType.name().toLowerCase(Locale.ROOT)
@@ -425,9 +432,9 @@ class AnySupport(
       else
         com.google.protobuf.wrappers.StringValue.of(string)
 
-    } else if (typeUrl.startsWith(JsonSupport.JSON_TYPE_URL_PREFIX)) {
+    } else if (typeUrl.startsWith(JsonTypeUrlPrefix)) {
       // we do not actually parse JSON here but returns it as is and let the user
-      // decide which json type to try decode it into etc. based on the type_url which
+      // decide which json type to try to decode it into etc. based on the type_url which
       // may have additional detail about what it can be JSON-deserialized into
       if (prefer == PREFER_JAVA)
         ScalaPbAny.toJavaProto(any)

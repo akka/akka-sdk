@@ -134,7 +134,7 @@ class TimedActionHandlerSpec
     Some(ScalaPbAny.fromJavaProto(protobuf.Any.pack(ActionspecApi.In.newBuilder().setField(field).build())))
 
   private def isDoneReply(payload: Option[ScalaPbAny]): Boolean = {
-    ScalaPbAny.toJavaProto(payload.value).getTypeUrl == "json.kalix.io/akka.Done$"
+    ScalaPbAny.toJavaProto(payload.value).getTypeUrl == "json.akka.io/akka.Done$"
   }
 
   @ComponentId("dummy-id")

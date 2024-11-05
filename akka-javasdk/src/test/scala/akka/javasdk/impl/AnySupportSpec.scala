@@ -93,15 +93,15 @@ class AnySupportSpec extends AnyWordSpec with Matchers with OptionValues {
     "deserialize json into StringValue" in {
       val jsonText = """{"such":"json"}"""
       val any =
-        ScalaPbAny("json.kalix.io/suffix", AnySupport.encodePrimitiveBytes(ByteString.copyFromUtf8(jsonText)))
+        ScalaPbAny("json.akka.io/suffix", AnySupport.encodePrimitiveBytes(ByteString.copyFromUtf8(jsonText)))
       // both as top level message
       val decoded = anySupport.decodeMessage(any)
       decoded shouldBe a[JavaPbAny]
-      decoded.asInstanceOf[JavaPbAny].getTypeUrl should ===("json.kalix.io/suffix")
+      decoded.asInstanceOf[JavaPbAny].getTypeUrl should ===("json.akka.io/suffix")
       decoded.asInstanceOf[JavaPbAny].getValue should ===(
         ByteStringEncoding.encodePrimitiveBytes(ByteString.copyFromUtf8(jsonText)))
       val decoded2 = anySupport.decodePossiblyPrimitive(any)
-      decoded2.asInstanceOf[JavaPbAny].getTypeUrl should ===("json.kalix.io/suffix")
+      decoded2.asInstanceOf[JavaPbAny].getTypeUrl should ===("json.akka.io/suffix")
       decoded2.asInstanceOf[JavaPbAny].getValue should ===(
         ByteStringEncoding.encodePrimitiveBytes(ByteString.copyFromUtf8(jsonText)))
     }
@@ -151,17 +151,17 @@ class AnySupportSpec extends AnyWordSpec with Matchers with OptionValues {
     "pass on json as is" in {
       val jsonText = """{"such":"json"}"""
       val any =
-        ScalaPbAny("json.kalix.io/suffix", AnySupport.encodePrimitiveBytes(ByteString.copyFromUtf8(jsonText)))
+        ScalaPbAny("json.akka.io/suffix", AnySupport.encodePrimitiveBytes(ByteString.copyFromUtf8(jsonText)))
       // both as top level message
       val decoded = anySupportScala.decodeMessage(any)
       decoded shouldBe a[ScalaPbAny]
       // kept to allow user to distinguish different messages based on suffix
-      decoded.asInstanceOf[ScalaPbAny].typeUrl should ===("json.kalix.io/suffix")
+      decoded.asInstanceOf[ScalaPbAny].typeUrl should ===("json.akka.io/suffix")
       decoded.asInstanceOf[ScalaPbAny].value should ===(
         ByteStringEncoding.encodePrimitiveBytes(ByteString.copyFromUtf8(jsonText)))
 
       val decoded2 = anySupportScala.decodePossiblyPrimitive(any)
-      decoded2.asInstanceOf[ScalaPbAny].typeUrl should ===("json.kalix.io/suffix")
+      decoded2.asInstanceOf[ScalaPbAny].typeUrl should ===("json.akka.io/suffix")
       decoded2.asInstanceOf[ScalaPbAny].value should ===(
         ByteStringEncoding.encodePrimitiveBytes(ByteString.copyFromUtf8(jsonText)))
 

@@ -149,7 +149,7 @@ private[javasdk] class JsonMessageCodec extends MessageCodec {
     if (clz == classOf[Array[Byte]]) {
       BytesPrimitive.fullName
     } else {
-      JsonSupport.JSON_TYPE_URL_PREFIX + lookupTypeHint(clz).currenTypeHintWithVersion
+      AnySupport.JsonTypeUrlPrefix + lookupTypeHint(clz).currenTypeHintWithVersion
     }
   }
 
@@ -157,7 +157,7 @@ private[javasdk] class JsonMessageCodec extends MessageCodec {
     if (clz == classOf[Array[Byte]]) {
       List(BytesPrimitive.fullName)
     } else {
-      lookupTypeHint(clz).allTypeHints.map(JsonSupport.JSON_TYPE_URL_PREFIX + _)
+      lookupTypeHint(clz).allTypeHints.map(AnySupport.JsonTypeUrlPrefix + _)
     }
   }
 
@@ -187,8 +187,8 @@ private[javasdk] class StrictJsonMessageCodec(delegate: JsonMessageCodec) extend
 
   override def toString: String = s"StrictJsonMessageCodec -> $delegate"
   override def decodeMessage(value: ScalaPbAny): Any =
-    if (value.typeUrl.startsWith(JsonSupport.JSON_TYPE_URL_PREFIX)) {
-      val typeName = delegate.removeVersion(value.typeUrl.replace(JsonSupport.JSON_TYPE_URL_PREFIX, ""))
+    if (AnySupport.isJsonTypeUrl(value.typeUrl)) {
+      val typeName = delegate.removeVersion(value.typeUrl.replace(AnySupport.JsonTypeUrlPrefix, ""))
       val typeClass = delegate.reversedTypeHints.get(typeName)
       if (typeClass eq null) {
         throw new IllegalStateException(s"Cannot decode ${value.typeUrl} message type. Class mapping not found.")

@@ -5,13 +5,11 @@
 package akka.javasdk.impl.workflow
 
 import java.util.Optional
-
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.OptionConverters._
 import scala.language.existentials
 import scala.util.control.NonFatal
-
 import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.javasdk.impl.ErrorHandling.BadRequestException
@@ -46,7 +44,6 @@ import akka.javasdk.workflow.Workflow
 import akka.runtime.sdk.spi.TimerClient
 import Workflow.WorkflowDef
 import akka.annotation.InternalApi
-import akka.javasdk.JsonSupport
 import akka.javasdk.workflow.WorkflowContext
 import akka.stream.scaladsl.Flow
 import akka.stream.scaladsl.Source
@@ -79,6 +76,8 @@ import kalix.protocol.workflow_entity.{ Pause => ProtoPause }
 import kalix.protocol.workflow_entity.{ StepTransition => ProtoStepTransition }
 import org.slf4j.LoggerFactory
 import akka.javasdk.Metadata
+import akka.javasdk.impl.AnySupport
+
 import scala.jdk.CollectionConverters._
 
 /**
@@ -296,7 +295,7 @@ final class WorkflowImpl(
             service.messageCodec.decodeMessage(
               command.payload.getOrElse(
                 // FIXME smuggling 0 arity method called from component client through here
-                ScalaPbAny.defaultInstance.withTypeUrl(JsonSupport.JSON_TYPE_URL_PREFIX).withValue(ByteString.empty())))
+                ScalaPbAny.defaultInstance.withTypeUrl(AnySupport.JsonTypeUrlPrefix).withValue(ByteString.empty())))
 
           val (CommandResult(effect), errorCode) =
             try {

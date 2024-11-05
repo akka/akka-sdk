@@ -7,6 +7,7 @@ package akka.javasdk;
 import akka.Done;
 import akka.annotation.InternalApi;
 import akka.javasdk.annotations.Migration;
+import akka.javasdk.impl.AnySupport;
 import akka.javasdk.impl.ByteStringEncoding;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -39,8 +40,6 @@ import java.util.Collection;
 import java.util.Optional;
 
 public final class JsonSupport {
-
-  public static final String JSON_TYPE_URL_PREFIX = "json.kalix.io/";
 
   private static final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -86,7 +85,7 @@ public final class JsonSupport {
 
   /**
    * Encode the given value as JSON using Jackson and put the encoded string as bytes in a protobuf
-   * Any with the type URL {@code "json.kalix.io/[valueClassName]"}.
+   * Any with the type URL {@code "json.akka.io/[valueClassName]"}.
    *
    * <p>Note that if the serialized Any is published to a pub/sub topic that is consumed by an
    * external service using the class name suffix this introduces coupling as the internal class
@@ -102,7 +101,7 @@ public final class JsonSupport {
 
   /**
    * Encode the given value as JSON using Jackson and put the encoded string as bytes in a protobuf
-   * Any with the type URL {@code "json.kalix.io/[jsonType]"}.
+   * Any with the type URL {@code "json.akka.io/[jsonType]"}.
    *
    * @param value    the object to encode as JSON, must be an instance of a class properly annotated
    *                 with the needed Jackson annotations.
@@ -115,13 +114,14 @@ public final class JsonSupport {
     try {
       ByteString bytes = encodeToBytes(value);
       ByteString encodedBytes = ByteStringEncoding.encodePrimitiveBytes(bytes);
-      return Any.newBuilder().setTypeUrl(JSON_TYPE_URL_PREFIX + jsonType).setValue(encodedBytes).build();
+      return Any.newBuilder().setTypeUrl(AnySupport.JsonTypeUrlPrefix() + jsonType).setValue(encodedBytes).build();
     } catch (JsonProcessingException ex) {
       throw new IllegalArgumentException(
         "Could not encode [" + value.getClass().getName() + "] as JSON", ex);
     }
   }
 
+  // FIXME do we really want all these to be public API?
   public static <T> ByteString encodeToBytes(T value) throws JsonProcessingException {
     return UnsafeByteOperations.unsafeWrap(
       objectMapper.writerFor(value.getClass()).writeValueAsBytes(value));
@@ -145,7 +145,7 @@ public final class JsonSupport {
 
   /**
    * Decode the given protobuf Any object to an instance of T using Jackson. The object must have
-   * the JSON string as bytes as value and a type URL starting with "json.kalix.io/".
+   * the JSON string as bytes as value and a type URL starting with "json.akka.io/".
    *
    * @param valueClass The type of class to deserialize the object to, the class must have the
    *                   proper Jackson annotations for deserialization.
@@ -154,12 +154,12 @@ public final class JsonSupport {
    * @throws IllegalArgumentException if the given value cannot be decoded to a T
    */
   public static <T> T decodeJson(Class<T> valueClass, Any any) {
-    if (!any.getTypeUrl().startsWith(JSON_TYPE_URL_PREFIX)) {
+    if (!AnySupport.isJsonTypeUrl(any.getTypeUrl())) {
       throw new IllegalArgumentException(
           "Protobuf bytes with type url ["
               + any.getTypeUrl()
               + "] cannot be decoded as JSON, must start with ["
-              + JSON_TYPE_URL_PREFIX
+              + AnySupport.JsonTypeUrlPrefix()
               + "]");
     } else {
       try {
@@ -235,12 +235,12 @@ public final class JsonSupport {
   }
 
   public static <T, C extends Collection<T>> C decodeJsonCollection(Class<T> valueClass, Class<C> collectionType, Any any) {
-    if (!any.getTypeUrl().startsWith(JSON_TYPE_URL_PREFIX)) {
+    if (!AnySupport.isJsonTypeUrl(any.getTypeUrl())) {
       throw new IllegalArgumentException(
           "Protobuf bytes with type url ["
               + any.getTypeUrl()
               + "] cannot be decoded as JSON, must start with ["
-              + JSON_TYPE_URL_PREFIX
+              + AnySupport.JsonTypeUrlPrefix()
               + "]");
     } else {
       try {

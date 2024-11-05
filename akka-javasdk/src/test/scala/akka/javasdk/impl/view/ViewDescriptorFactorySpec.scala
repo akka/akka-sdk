@@ -404,7 +404,7 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
         eventing.getEventSourcedEntity shouldBe "employee"
 
         onUpdateMethod.methodInvokers.view.mapValues(_.method.getName).toMap should
-        contain only ("json.kalix.io/created" -> "handle", "json.kalix.io/old-created" -> "handle", "json.kalix.io/emailUpdated" -> "handle")
+        contain only ("json.akka.io/created" -> "handle", "json.akka.io/old-created" -> "handle", "json.akka.io/emailUpdated" -> "handle")
       }
     }
 

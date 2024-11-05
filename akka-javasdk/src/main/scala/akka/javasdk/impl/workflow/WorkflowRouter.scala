@@ -26,6 +26,7 @@ import Workflow.Effect
 import Workflow.WorkflowDef
 import akka.annotation.InternalApi
 import akka.javasdk.JsonSupport
+import akka.javasdk.impl.AnySupport
 import akka.javasdk.timer.TimerScheduler
 import kalix.protocol.workflow_entity.StepExecuted
 import kalix.protocol.workflow_entity.StepExecutionFailed
@@ -116,7 +117,8 @@ abstract class WorkflowRouter[S, W <: Workflow[S]](protected val workflow: W) {
   // in same cases, the runtime may send a message with typeUrl set to object.
   // if that's the case, we need to patch the message using the typeUrl from the expected input class
   private def decodeInput(messageCodec: MessageCodec, result: ScalaPbAny, expectedInputClass: Class[_]) = {
-    if (result.typeUrl == JsonSupport.JSON_TYPE_URL_PREFIX + "object" || result.typeUrl == JsonSupport.JSON_TYPE_URL_PREFIX) {
+    if ((AnySupport.isJson(result) && result.typeUrl.endsWith(
+        "/object")) || result.typeUrl == AnySupport.JsonTypeUrlPrefix) {
       JsonSupport.decodeJson(expectedInputClass, result)
     } else {
       messageCodec.decodeMessage(result)

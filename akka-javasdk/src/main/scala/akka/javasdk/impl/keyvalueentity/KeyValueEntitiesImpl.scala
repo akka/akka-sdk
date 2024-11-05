@@ -7,7 +7,6 @@ package akka.javasdk.impl.keyvalueentity
 import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.annotation.InternalApi
-import akka.javasdk.JsonSupport
 import akka.javasdk.impl.AbstractContext
 import akka.javasdk.impl.ActivatableContext
 import akka.javasdk.impl.ErrorHandling
@@ -36,8 +35,8 @@ import org.slf4j.MDC
 
 import scala.language.existentials
 import scala.util.control.NonFatal
-
 import akka.javasdk.Metadata
+import akka.javasdk.impl.AnySupport
 import akka.javasdk.impl.effect.MessageReplyImpl
 import akka.javasdk.impl.keyvalueentity.KeyValueEntityEffectImpl.UpdateState
 import akka.javasdk.impl.keyvalueentity.KeyValueEntityRouter.CommandResult
@@ -163,9 +162,10 @@ private[impl] final class KeyValueEntitiesImpl(
           span.foreach(s => MDC.put(Telemetry.TRACE_ID, s.getSpanContext.getTraceId))
           try {
             val cmd =
-              service.messageCodec.decodeMessage(command.payload.getOrElse(
-                // FIXME smuggling 0 arity method called from component client through here
-                ScalaPbAny.defaultInstance.withTypeUrl(JsonSupport.JSON_TYPE_URL_PREFIX).withValue(ByteString.empty())))
+              service.messageCodec.decodeMessage(
+                command.payload.getOrElse(
+                  // FIXME smuggling 0 arity method called from component client through here
+                  ScalaPbAny.defaultInstance.withTypeUrl(AnySupport.JsonTypeUrlPrefix).withValue(ByteString.empty())))
             val context =
               new CommandContextImpl(thisEntityId, command.name, command.id, metadata, system)
 

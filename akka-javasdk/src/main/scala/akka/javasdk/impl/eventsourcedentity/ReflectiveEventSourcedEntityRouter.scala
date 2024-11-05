@@ -8,13 +8,13 @@ import akka.annotation.InternalApi
 import akka.javasdk.JsonSupport
 import akka.javasdk.eventsourcedentity.CommandContext
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
+import akka.javasdk.impl.AnySupport
 import akka.javasdk.impl.CommandHandler
 import akka.javasdk.impl.CommandSerialization
 import akka.javasdk.impl.InvocationContext
 import akka.javasdk.impl.JsonMessageCodec
 import akka.javasdk.impl.StrictJsonMessageCodec
 import akka.javasdk.impl.reflection.Reflect
-
 import com.google.protobuf.any.{ Any => ScalaPbAny }
 
 /**
@@ -65,7 +65,7 @@ private[impl] class ReflectiveEventSourcedEntityRouter[S, E, ES <: EventSourcedE
     val commandHandler = commandHandlerLookup(commandName)
 
     val scalaPbAnyCommand = command.asInstanceOf[ScalaPbAny]
-    if (scalaPbAnyCommand.typeUrl.startsWith(JsonSupport.JSON_TYPE_URL_PREFIX)) {
+    if (AnySupport.isJson(scalaPbAnyCommand)) {
       // special cased component client calls, lets json commands through all the way
       val methodInvoker = commandHandler.getSingleNameInvoker()
       val deserializedCommand =

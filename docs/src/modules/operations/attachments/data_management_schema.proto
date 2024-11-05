@@ -147,7 +147,7 @@ message EventSourcedEntityEvent {
   //
   // https://github.com/protocolbuffers/protobuf/blob/main/src/google/protobuf/any.proto
   //
-  // If the payload of the event is a JSON message, the type_url should be json.kalix.io/<type-name>, where <type-name>
+  // If the payload of the event is a JSON message, the type_url should be json.akka.io/<type-name>, where <type-name>
   // is the name of the type that's use to decode the message, for example, in the Java SDK as documented here:
   //
   // https://doc.akka.io/java/serialization.html#_type_name
@@ -210,7 +210,7 @@ message EventSourcedEntitySnapshot {
   //
   // https://github.com/protocolbuffers/protobuf/blob/main/src/google/protobuf/any.proto
   //
-  // If the payload of the snapshot is a JSON message, the type_url should be json.kalix.io/<type-name>, where
+  // If the payload of the snapshot is a JSON message, the type_url should be json.akka.io/<type-name>, where
   // <type-name> is the name of the type that's use to decode the message, for example, in the Java SDK as documented
   // here:
   //
@@ -266,7 +266,7 @@ message ValueEntity {
   //
   // https://github.com/protocolbuffers/protobuf/blob/main/src/google/protobuf/any.proto
   //
-  // If the payload of the entity is a JSON message, the type_url should be json.kalix.io/<type-name>, where <type-name>
+  // If the payload of the entity is a JSON message, the type_url should be json.akka.io/<type-name>, where <type-name>
   // is the name of the type that's use to decode the message, for example, in the Java SDK as documented here:
   //
   // https://doc.akka.io/java/serialization.html#_type_name

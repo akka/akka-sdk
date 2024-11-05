@@ -74,7 +74,7 @@ class ConsumerDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptor
 
         // in case of @Migration, it should map 2 type urls to the same method
         onUpdateMethod.methodInvokers.view.mapValues(_.method.getName).toMap should
-        contain only ("json.kalix.io/created" -> "methodOne", "json.kalix.io/old-created" -> "methodOne", "json.kalix.io/emailUpdated" -> "methodTwo")
+        contain only ("json.akka.io/created" -> "methodOne", "json.akka.io/old-created" -> "methodOne", "json.akka.io/emailUpdated" -> "methodTwo")
       }
     }
 
@@ -111,7 +111,7 @@ class ConsumerDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptor
           javaMethod.parameterExtractors.length shouldBe 1
         }
         onUpdateMethod.methodInvokers.view.mapValues(_.method.getName).toMap should
-        contain only ("json.kalix.io/counter-state" -> "onUpdate", "json.kalix.io/" + classOf[
+        contain only ("json.akka.io/counter-state" -> "onUpdate", "json.akka.io/" + classOf[
           CounterState].getName -> "onUpdate")
       }
     }
@@ -411,7 +411,7 @@ class ConsumerDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptor
         onUpdateMethod.requestMessageDescriptor.getFullName shouldBe JavaPbAny.getDescriptor.getFullName
 
         onUpdateMethod.methodInvokers.view.mapValues(_.method.getName).toMap should
-        contain only ("json.kalix.io/created" -> "transform", "json.kalix.io/old-created" -> "transform", "json.kalix.io/emailUpdated" -> "transform")
+        contain only ("json.akka.io/created" -> "transform", "json.akka.io/old-created" -> "transform", "json.akka.io/emailUpdated" -> "transform")
       }
     }
 

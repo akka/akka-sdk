@@ -84,7 +84,7 @@ object JsonMessageCodecSpec {
 }
 class JsonMessageCodecSpec extends AnyWordSpec with Matchers {
 
-  def jsonTypeUrlWith(typ: String) = JsonSupport.JSON_TYPE_URL_PREFIX + typ
+  def jsonTypeUrlWith(typ: String) = AnySupport.JsonTypeUrlPrefix + typ
 
   val messageCodec = new JsonMessageCodec
 

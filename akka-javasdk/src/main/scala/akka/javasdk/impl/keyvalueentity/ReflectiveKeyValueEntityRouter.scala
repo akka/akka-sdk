@@ -6,6 +6,7 @@ package akka.javasdk.impl.keyvalueentity
 
 import akka.annotation.InternalApi
 import akka.javasdk.JsonSupport
+import akka.javasdk.impl.AnySupport
 import akka.javasdk.impl.CommandHandler
 import akka.javasdk.impl.CommandSerialization
 import akka.javasdk.impl.InvocationContext
@@ -37,7 +38,7 @@ private[impl] final class ReflectiveKeyValueEntityRouter[S, E <: KeyValueEntity[
     val commandHandler = commandHandlerLookup(commandName)
     val scalaPbAnyCommand = command.asInstanceOf[ScalaPbAny]
 
-    if (scalaPbAnyCommand.typeUrl.startsWith(JsonSupport.JSON_TYPE_URL_PREFIX)) {
+    if (AnySupport.isJson(scalaPbAnyCommand)) {
       // special cased component client calls, lets json commands through all the way
       val methodInvoker = commandHandler.getSingleNameInvoker()
       val deserializedCommand =

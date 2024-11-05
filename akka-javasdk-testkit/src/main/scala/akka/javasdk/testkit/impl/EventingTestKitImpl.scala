@@ -13,6 +13,7 @@ import akka.http.scaladsl.model.HttpRequest
 import akka.http.scaladsl.model.HttpResponse
 import akka.javasdk.JsonSupport
 import akka.javasdk.Metadata.{ MetadataEntry => SdkMetadataEntry }
+import akka.javasdk.impl.AnySupport
 import akka.javasdk.impl.MessageCodec
 import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.testkit.EventingTestKit
@@ -351,7 +352,7 @@ private[testkit] class OutgoingMessagesImpl(
     val metadata = MetadataImpl.of(msg.getMessage.getMetadata.entries)
     val scalaPb = ScalaPbAny(typeUrlFor(metadata), msg.getMessage.payload)
 
-    val decodedMsg = if (typeUrlFor(metadata).startsWith(JsonSupport.JSON_TYPE_URL_PREFIX)) {
+    val decodedMsg = if (AnySupport.isJsonTypeUrl(typeUrlFor(metadata))) {
       JsonSupport.getObjectMapper
         .readerFor(clazz)
         .readValue(msg.getMessage.payload.toByteArray)
@@ -365,7 +366,7 @@ private[testkit] class OutgoingMessagesImpl(
 
   private def anyFromMessage(m: kalix.testkit.protocol.eventing_test_backend.Message): TestKitMessage[_] = {
     val metadata = MetadataImpl.of(m.metadata.getOrElse(Metadata.defaultInstance).entries)
-    val anyMsg = if (typeUrlFor(metadata).startsWith(JsonSupport.JSON_TYPE_URL_PREFIX)) {
+    val anyMsg = if (AnySupport.isJsonTypeUrl(typeUrlFor(metadata))) {
       m.payload.toStringUtf8
     } else {
       codec.decodeMessage(ScalaPbAny(typeUrlFor(metadata), m.payload))
@@ -380,7 +381,7 @@ private[testkit] class OutgoingMessagesImpl(
     (ceType, contentType) match {
       case (_, Some("text/plain; charset=utf-8")) => "type.kalix.io/string"
       case (_, Some("application/octet-stream"))  => "type.kalix.io/bytes"
-      case (Some(t), Some("application/json"))    => s"json.kalix.io/$t"
+      case (Some(t), Some("application/json"))    => s"json.akka.io/$t"
       case (Some(t), _)                           => s"type.googleapis.com/$t"
       case (t, ct) =>
         log.warn(s"Could not extract typeUrl from ce-type=$t content-type=$ct")
@@ -435,7 +436,7 @@ private[testkit] object TestKitMessageImpl {
       case _: String =>
         ("text/plain; charset=utf-8", "")
       case _ =>
-        ("application/json", messageCodec.typeUrlFor(message.getClass).stripPrefix(JsonSupport.JSON_TYPE_URL_PREFIX))
+        ("application/json", messageCodec.typeUrlFor(message.getClass).stripPrefix(AnySupport.JsonTypeUrlPrefix))
     }
 
     defaultMetadata(subject, contentType, ceType)

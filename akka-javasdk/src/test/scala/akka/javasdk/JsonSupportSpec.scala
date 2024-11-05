@@ -6,10 +6,9 @@ package akka.javasdk
 
 import java.util
 import java.util.Optional
-
 import scala.beans.BeanProperty
-
 import akka.Done
+import akka.javasdk.impl.AnySupport
 import akka.javasdk.impl.ByteStringEncoding
 import com.google.protobuf.Any
 import com.google.protobuf.UnsafeByteOperations
@@ -29,14 +28,14 @@ class JsonSupportSpec extends AnyWordSpec with Matchers {
 
     "serialize and deserialize JSON" in {
       val any = JsonSupport.encodeJson(myJsonable)
-      any.getTypeUrl should ===(JsonSupport.JSON_TYPE_URL_PREFIX + classOf[MyJsonable].getName)
+      any.getTypeUrl should ===(AnySupport.JsonTypeUrlPrefix + classOf[MyJsonable].getName)
       JsonSupport.decodeJson(classOf[MyJsonable], any).field should ===("foo")
     }
 
     "serialize and deserialize DummyClass" in {
       val dummyClass = new DummyClass("123", 321, Optional.of("test"))
       val any = JsonSupport.encodeJson(dummyClass)
-      any.getTypeUrl should ===(JsonSupport.JSON_TYPE_URL_PREFIX + classOf[DummyClass].getName)
+      any.getTypeUrl should ===(AnySupport.JsonTypeUrlPrefix + classOf[DummyClass].getName)
       val decoded = JsonSupport.decodeJson(classOf[DummyClass], any)
       decoded shouldBe dummyClass
     }
@@ -46,7 +45,7 @@ class JsonSupportSpec extends AnyWordSpec with Matchers {
       val encodedBytes = ByteStringEncoding.encodePrimitiveBytes(bytes)
       val any =
         Any.newBuilder
-          .setTypeUrl(JsonSupport.JSON_TYPE_URL_PREFIX + classOf[DummyClass].getName)
+          .setTypeUrl(AnySupport.JsonTypeUrlPrefix + classOf[DummyClass].getName)
           .setValue(encodedBytes)
           .build
 
@@ -60,7 +59,7 @@ class JsonSupportSpec extends AnyWordSpec with Matchers {
       val encodedBytes = ByteStringEncoding.encodePrimitiveBytes(bytes)
       val any =
         Any.newBuilder
-          .setTypeUrl(JsonSupport.JSON_TYPE_URL_PREFIX + classOf[DummyClass].getName)
+          .setTypeUrl(AnySupport.JsonTypeUrlPrefix + classOf[DummyClass].getName)
           .setValue(encodedBytes)
           .build
 
@@ -73,7 +72,7 @@ class JsonSupportSpec extends AnyWordSpec with Matchers {
       val encodedBytes = ByteStringEncoding.encodePrimitiveBytes(bytes)
       val any =
         Any.newBuilder
-          .setTypeUrl(JsonSupport.JSON_TYPE_URL_PREFIX + classOf[DummyClass2].getName)
+          .setTypeUrl(AnySupport.JsonTypeUrlPrefix + classOf[DummyClass2].getName)
           .setValue(encodedBytes)
           .build
 
@@ -86,7 +85,7 @@ class JsonSupportSpec extends AnyWordSpec with Matchers {
       val encodedBytes = ByteStringEncoding.encodePrimitiveBytes(bytes)
       val any =
         Any.newBuilder
-          .setTypeUrl(JsonSupport.JSON_TYPE_URL_PREFIX + classOf[DummyClass].getName)
+          .setTypeUrl(AnySupport.JsonTypeUrlPrefix + classOf[DummyClass].getName)
           .setValue(encodedBytes)
           .build
 
@@ -100,7 +99,7 @@ class JsonSupportSpec extends AnyWordSpec with Matchers {
       val encodedBytes = ByteStringEncoding.encodePrimitiveBytes(bytes)
       val any =
         Any.newBuilder
-          .setTypeUrl(JsonSupport.JSON_TYPE_URL_PREFIX + classOf[DummyClass2].getName + "#1")
+          .setTypeUrl(AnySupport.JsonTypeUrlPrefix + classOf[DummyClass2].getName + "#1")
           .setValue(encodedBytes)
           .build
 
@@ -111,7 +110,7 @@ class JsonSupportSpec extends AnyWordSpec with Matchers {
     "serialize and deserialize Akka Done class" in {
       val done = Done.getInstance()
       val any = JsonSupport.encodeJson(done)
-      any.getTypeUrl should ===(JsonSupport.JSON_TYPE_URL_PREFIX + Done.getClass.getName)
+      any.getTypeUrl should ===(AnySupport.JsonTypeUrlPrefix + Done.getClass.getName)
       JsonSupport.decodeJson(classOf[Done], any) shouldBe Done.getInstance()
     }
 
@@ -135,12 +134,12 @@ class JsonSupportSpec extends AnyWordSpec with Matchers {
 
     "serialize JSON with an explicit type url suffix" in {
       val any = JsonSupport.encodeJson(myJsonable, "bar")
-      any.getTypeUrl should ===(JsonSupport.JSON_TYPE_URL_PREFIX + "bar")
+      any.getTypeUrl should ===(AnySupport.JsonTypeUrlPrefix + "bar")
     }
 
     "conditionally decode JSON depending on suffix" in {
       val any = JsonSupport.encodeJson(myJsonable, "bar")
-      any.getTypeUrl should ===(JsonSupport.JSON_TYPE_URL_PREFIX + "bar")
+      any.getTypeUrl should ===(AnySupport.JsonTypeUrlPrefix + "bar")
       JsonSupport.decodeJson(classOf[MyJsonable], "other", any).isPresent() should ===(false)
       val decoded = JsonSupport.decodeJson(classOf[MyJsonable], "bar", any)
       decoded.isPresent() should ===(true)
