@@ -6,7 +6,7 @@ To understand the Akka concepts that are the basis for this example, see [Develo
 
 ## Developing
 
-This project contains the skeleton to create an Akka service. To understand more about these components, see [Developing services](https://doc.akka.io/java/index.html). Examples can be found [here](https://doc.akka.io/samples/index.html).
+This project contains the skeleton to create an Akka service. To understand more about these components, see [Developing services](https://doc.akka.io/java/index.html). Examples can be found [here](https://doc.akka.io/java/samples.html).
 
 ## Building
 

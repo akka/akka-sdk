@@ -1,5 +1,6 @@
 * xref:index.adoc[Developing]
 ** xref:build-your-first-application.adoc[Build your first application]
+** xref:samples.adoc[]
 ** Components
 *** xref:event-sourced-entities.adoc[Event Sourced Entities]
 *** xref:key-value-entities.adoc[Key Value Entities]

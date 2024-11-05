@@ -8,7 +8,6 @@ nav:
 - modules/operations/nav.adoc
 - modules/security/nav.adoc
 - modules/akka-cli/nav.adoc
-- modules/samples/nav.adoc
 - modules/support/nav.adoc
 - modules/reference/nav.adoc
 - modules/libraries/nav.adoc

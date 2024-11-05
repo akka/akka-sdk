@@ -22,7 +22,7 @@ include::ROOT:partial$cloud-dev-prerequisites.adoc[]
 
 == Getting Started
 
-Follow xref:java:build-your-first-application.adoc[] to implement your first service. If you prefer to first explore working example code, you can check out the xref:samples:index.adoc[beginner samples].
+Follow xref:java:build-your-first-application.adoc[] to implement your first service. If you prefer to first explore working example code, you can check out the xref:samples.adoc[beginner samples].
 
 On the other hand, if you would rather spend some time exploring our documentation, here are some main features you will find in this section:
 
