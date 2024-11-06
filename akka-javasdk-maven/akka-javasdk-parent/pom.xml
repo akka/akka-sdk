@@ -177,7 +177,11 @@
                                                         <exclude>com.typesafe.akka:akka-stream-kafka_2.13</exclude>
                                                         <exclude>com.typesafe.akka:akka-stream-typed_2.13</exclude>
                                                         <exclude>com.typesafe.akka:akka-stream_2.13</exclude>
+                                                        <exclude>com.lightbend.akka.grpc:akka-grpc-runtime</exclude>
                                                         <exclude>com.hierynomus:asn-one</exclude>
+                                                        <exclude>org.reactivestreams:reactive-streams</exclude>
+                                                        <!-- Runtime -->
+                                                        <exclude>io.kalix:kalix-proxy-protocol</exclude>
                                                         <!-- Scala stdlib -->
                                                         <exclude>org.scala-lang.modules:scala-collection-compat_2.13</exclude>
                                                         <exclude>org.scala-lang.modules:scala-parser-combinators_2.13</exclude>
@@ -220,6 +224,7 @@
                                                         <exclude>ch.qos.logback:logback-core</exclude>
                                                         <exclude>ch.qos.logback.contrib:logback-json-classic</exclude>
                                                         <exclude>ch.qos.logback.contrib:logback-json-core</exclude>
+                                                        <exclude>ch.qos.logback.contrib:logback-jackson</exclude>
                                                         <!-- serialization/jackson -->
                                                         <exclude>com.fasterxml.jackson.core:jackson-annotations</exclude>
                                                         <exclude>com.fasterxml.jackson.core:jackson-core</exclude>
