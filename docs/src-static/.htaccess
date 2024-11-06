@@ -61,7 +61,9 @@ Redirect 301 /docs/akka/current/dev/building-akka.html           https://github.
 Redirect 301 /docs/akka/current/intro/what-is-akka.html       https://doc.akka.io/libraries/akka-core/current/typed/guide/introduction.html
 
 # Enno 2023-11-03 Sebastian got Google search results pointing to this URL?!
-Redirect /docs/akka/current/config-checker.html /libraries/akka-diagnostics/current/config-checker.html
+Redirect 301 /docs/akka/current/config-checker.html /libraries/akka-diagnostics/current/config-checker.html
+# 2024-11-06 Sebastian got Google search results for "akka cluster"
+Redirect 301 /typed/cluster.html /libraries/akka-core/current/typed/cluster.html
 
 RedirectMatch 301 ^/docs/akka/(\d.\d.\d+)/dev/building-akka.html https://github.com/akka/akka/blob/main/CONTRIBUTING.md#sbt
 RedirectMatch 301 ^/docs/akka/(current|snapshot|2.5[^/]+)/contrib/distributed-pub-sub.html$ https://doc.akka.io/libraries/akka-core/$1/distributed-pub-sub.html
