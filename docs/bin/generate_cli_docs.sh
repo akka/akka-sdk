@@ -21,7 +21,7 @@ else
 fi
 
 echo "delete existing docs..."
-cd docs/src/modules/reference/pages/akka-cli/ || exit 1
+cd docs/src/modules/reference/pages/cli/akka-cli/ || exit 1
 rm -f akka*.adoc
 
 echo "generate docs..."
@@ -89,12 +89,12 @@ EOM
 
   echo "patch adoc reference path in cli-index.adoc ..."
   # replace links from "* xref:" to "* xref:reference:akka/" and write it to index.adoc
-  awk '{gsub(/^\* xref:/,"* xref:reference:akka-cli/"); print}' cli-index.adoc > index.adoc
+  awk '{gsub(/^\* xref:/,"* xref:reference:cli/akka-cli/"); print}' cli-index.adoc > index.adoc
   rm temp-cli-index.txt cli-index.adoc cli-index.adoc.bak
 
   # create nav entries to be replaced manually
   ls -1 akka*.adoc > ../../temp-nav.txt
-  sed -e 's/\(akka.*\)/*** xref:akka-cli\/\1[]/g' ../../temp-nav.txt > ../../nav2.adoc
+  sed -e 's/\(akka.*\)/*** xref:cli/akka-cli\/\1[]/g' ../../temp-nav.txt > ../../nav2.adoc
   rm ../../temp-nav.txt
 fi
 

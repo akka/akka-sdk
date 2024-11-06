@@ -67,4 +67,4 @@ See xref:operations:services/deploy-service.adoc[deploy and manage services] for
 
 == See also
 
-- xref:reference:akka-cli/akka_container-registry.adoc#_see_also[`akka container-registry` commands]
+- xref:reference:cli/akka-cli/akka_container-registry.adoc#_see_also[`akka container-registry` commands]

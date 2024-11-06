@@ -1,4 +1,4 @@
-= Akka CLI
+= CLI
 :page-aliases: cli:index.adoc[]
 
 include::ROOT:partial$include.adoc[]
@@ -7,7 +7,7 @@ Using the Akka CLI, you control all aspects of your Akka account from your comma
 
 == Topics
 
-- xref:akka-cli:installation.adoc[]
-- xref:akka-cli:using-cli.adoc[]
-- xref:akka-cli:command-completion.adoc[]
-- xref:reference:akka-cli/index.adoc[]
+- xref:reference:cli/installation.adoc[]
+- xref:reference:cli/using-cli.adoc[]
+- xref:reference:cli/command-completion.adoc[]
+- xref:reference:cli/akka-cli/index.adoc[]

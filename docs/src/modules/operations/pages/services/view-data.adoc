@@ -103,4 +103,4 @@ john
 
 == See also
 
-- xref:reference:akka-cli/akka_services_components.adoc#_see_also[`akka service components` commands]
+- xref:reference:cli/akka-cli/akka_services_components.adoc#_see_also[`akka service components` commands]

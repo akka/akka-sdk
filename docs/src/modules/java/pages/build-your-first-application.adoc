@@ -236,7 +236,7 @@ Observe all of the items in the cart:
 
 == Explore the local console
 
-To get a clear view of your locally running service, xref:akka-cli:installation.adoc[install the Akka CLI]. It provides a local web-based management console.
+To get a clear view of your locally running service, xref:reference:cli/installation.adoc[install the Akka CLI]. It provides a local web-based management console.
 
 After you have installed the CLI, start the local console:
 
@@ -262,7 +262,7 @@ Here, you can view not only the http://localhost:3000/services/shopping-cart-qui
 
 == Deploy to akka.io
 
-. If you have not already done so, xref:akka-cli:installation.adoc[install the Akka CLI].
+. If you have not already done so, xref:reference:cli/installation.adoc[install the Akka CLI].
 
 . Authenticate the CLI with your Akka account:
 [source, command line]

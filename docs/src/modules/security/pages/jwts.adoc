@@ -175,5 +175,5 @@ Once configured, JWTs can be used for endpoint-specific authentication and autho
 
 == See also
 * xref:java:auth-with-jwts.adoc[Authentication with JWTs in the Akka SDK]
-* xref:reference:akka-cli/akka_services_jwts.adoc#_see_also[`akka service jwt` commands]
-* xref:reference:akka-cli/akka_secrets.adoc#_see_also[`akka secrets` commands]
+* xref:reference:cli/akka-cli/akka_services_jwts.adoc#_see_also[`akka service jwt` commands]
+* xref:reference:cli/akka-cli/akka_secrets.adoc#_see_also[`akka secrets` commands]

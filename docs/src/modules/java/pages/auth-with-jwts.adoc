@@ -51,7 +51,7 @@ Akka can be configured to automatically require and validate other claims than t
 <1> When declaring multiple values for the same claim, **all** of them will be required when validating the request.
 <2> The required value of the `aud` claim includes the value of environment variable `ENV`
 
-See xref:akka-cli:index.adoc[`akka service deploy -h`] for details on how to set environment variables when deploying a service.
+See xref:reference:cli/index.adoc[`akka service deploy -h`] for details on how to set environment variables when deploying a service.
 
 NOTE: For specifying an issuer claim (i.e. "iss"), you should still use the `bearerTokenIssuers` and not static claims.
 

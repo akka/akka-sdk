@@ -154,5 +154,5 @@ When you use the Akka Console, you only need to fill in the registry name for th
 
 == See also
 
-- xref:reference:akka-cli/akka_docker.adoc#_see_also[`akka docker` commands]
-- xref:reference:akka-cli/akka_container-registry.adoc#_see_also[`akka container-registry` commands]
+- xref:reference:cli/akka-cli/akka_docker.adoc#_see_also[`akka docker` commands]
+- xref:reference:cli/akka-cli/akka_container-registry.adoc#_see_also[`akka container-registry` commands]

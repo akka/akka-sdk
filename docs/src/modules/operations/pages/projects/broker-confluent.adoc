@@ -92,4 +92,4 @@ include::partial$broker-kafka-setup-common.adoc[]
 
 == See also
 
-- xref:reference:akka-cli/akka_projects_config.adoc#_see_also[`akka projects config` commands]
+- xref:reference:cli/akka-cli/akka_projects_config.adoc#_see_also[`akka projects config` commands]

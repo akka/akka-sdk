@@ -10,7 +10,7 @@ Before deploying a service, ensure you have the following:
 
 * An https://console.akka.io/register[Akka account]
 * An xref:operations:projects/create-project.adoc[Akka project created]
-* The xref:akka-cli:installation.adoc[Akka CLI installed]
+* The xref:reference:cli/installation.adoc[Akka CLI installed]
 
 
 == Build container image
@@ -244,4 +244,4 @@ You now know how to deploy, verify, update, and remove Akka services using the A
 
 == Related documentation
 
-- xref:reference:akka-cli/akka_services.adoc[`akka service` CLI commands]
+- xref:reference:cli/akka-cli/akka_services.adoc[`akka service` CLI commands]

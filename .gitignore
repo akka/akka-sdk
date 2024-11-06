@@ -54,3 +54,4 @@ sdk-version-raw.txt
 sdk-version.txt
 **/*.adoc-e
 /docs/src/modules/reference/nav2.adoc
+/docs/src/modules/reference/pages/nav2.adoc

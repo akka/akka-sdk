@@ -216,6 +216,6 @@ routes:
 ----
 
 == See also
-* xref:reference:akka-cli/akka_secrets_create.adoc[`akka secret create` commands]
-* xref:reference:akka-cli/akka_routes.adoc[`akka routes` commands]
+* xref:reference:cli/akka-cli/akka_secrets_create.adoc[`akka secret create` commands]
+* xref:reference:cli/akka-cli/akka_routes.adoc[`akka routes` commands]
 * xref:reference:descriptors/route-descriptor.adoc[]

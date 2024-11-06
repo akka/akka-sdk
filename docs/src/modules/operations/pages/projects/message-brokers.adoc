@@ -25,4 +25,4 @@ For running locally with a broker, see xref:java:running-locally.adoc#_local_bro
 
 == See also
 
-- xref:reference:akka-cli/akka_projects_config.adoc#_see_also[`akka projects config` commands]
+- xref:reference:cli/akka-cli/akka_projects_config.adoc#_see_also[`akka projects config` commands]

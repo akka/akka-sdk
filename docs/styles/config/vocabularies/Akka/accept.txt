@@ -75,6 +75,7 @@ interconnectivity
 interoperate
 iss
 Javadoc
+Json
 JUnit
 (?i)JWT
 (?i)JWTs
@@ -180,6 +181,7 @@ unsets
 untrusted
 upsert
 upserting
+url
 userid
 valueFrom
 volumeMounts

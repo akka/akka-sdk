@@ -85,6 +85,6 @@ akka help
 
 == Related documentation
 
-- xref:using-cli.adoc[]
-- xref:command-completion.adoc[]
-- xref:reference:akka-cli/index.adoc[]
+- xref:reference:cli/using-cli.adoc[]
+- xref:reference:cli/command-completion.adoc[]
+- xref:reference:cli/akka-cli/index.adoc[]
