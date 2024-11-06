@@ -142,18 +142,50 @@
                                                         <!-- Dependencies of SDK and or available as API for users
                                                              but already provided by runtime. Since runtime versions
                                                              will always be preferred, there is no need to package up
-                                                             these. -->
+                                                             these.
+
+                                                             Avoid using wildcards here, since those may easily block
+                                                             inclusion of jars not provided by the runtime.
+
+                                                             List can be verified by building a runtime image and cross-
+                                                             referencing the list of packaged jars.
+                                                             -->
                                                         <exclude>com.typesafe:config</exclude>
-                                                        <exclude>com.typesafe.akka:*</exclude>
+                                                        <exclude>com.typesafe.akka:akka-actor-typed_2.13</exclude>
+                                                        <exclude>com.typesafe.akka:akka-actor_2.13</exclude>
+                                                        <exclude>com.typesafe.akka:akka-cluster-sharding-typed_2.13</exclude>
+                                                        <exclude>com.typesafe.akka:akka-cluster-sharding_2.13</exclude>
+                                                        <exclude>com.typesafe.akka:akka-cluster-tools_2.13</exclude>
+                                                        <exclude>com.typesafe.akka:akka-cluster-typed_2.13</exclude>
+                                                        <exclude>com.typesafe.akka:akka-cluster_2.13</exclude>
+                                                        <exclude>com.typesafe.akka:akka-coordination_2.13</exclude>
+                                                        <exclude>com.typesafe.akka:akka-discovery_2.13</exclude>
+                                                        <exclude>com.typesafe.akka:akka-distributed-data_2.13</exclude>
+                                                        <exclude>com.typesafe.akka:akka-http-core_2.13</exclude>
+                                                        <exclude>com.typesafe.akka:akka-http-spray-json_2.13</exclude>
+                                                        <exclude>com.typesafe.akka:akka-http_2.13</exclude>
+                                                        <exclude>com.typesafe.akka:akka-parsing_2.13</exclude>
+                                                        <exclude>com.typesafe.akka:akka-persistence-query_2.13</exclude>
+                                                        <exclude>com.typesafe.akka:akka-persistence-testkit_2.13</exclude>
+                                                        <exclude>com.typesafe.akka:akka-persistence-typed_2.13</exclude>
+                                                        <exclude>com.typesafe.akka:akka-persistence_2.13</exclude>
+                                                        <exclude>com.typesafe.akka:akka-pki_2.13</exclude>
+                                                        <exclude>com.typesafe.akka:akka-protobuf-v3_2.13</exclude>
+                                                        <exclude>com.typesafe.akka:akka-remote_2.13</exclude>
+                                                        <exclude>com.typesafe.akka:akka-serialization-jackson_2.13</exclude>
+                                                        <exclude>com.typesafe.akka:akka-slf4j_2.13</exclude>
+                                                        <exclude>com.typesafe.akka:akka-stream-kafka_2.13</exclude>
+                                                        <exclude>com.typesafe.akka:akka-stream-typed_2.13</exclude>
+                                                        <exclude>com.typesafe.akka:akka-stream_2.13</exclude>
                                                         <exclude>com.hierynomus:asn-one</exclude>
                                                         <!-- Scala stdlib -->
-                                                        <exclude>org.scala-lang.modules:*</exclude>
+                                                        <exclude>org.scala-lang.modules:scala-collection-compat_2.13</exclude>
+                                                        <exclude>org.scala-lang.modules:scala-parser-combinators_2.13</exclude>
                                                         <exclude>org.scala-lang:scala-library</exclude>
                                                         <!-- Protobuf/gRPC
                                                             Note: scalapb validation is still provided from with service (for now) -->
                                                         <exclude>com.thesamet.scalapb:lenses_2.13</exclude>
                                                         <exclude>com.thesamet.scalapb:scalapb-runtime_2.13</exclude>
-                                                        <exclude>com.thesamet.scalapb.common-protos:*</exclude>
                                                         <exclude>io.grpc:grpc-stub</exclude>
                                                         <exclude>io.grpc:grpc-api</exclude>
                                                         <exclude>com.google.protobuf:protobuf-java</exclude>
@@ -168,8 +200,20 @@
                                                         <exclude>org.checkerframework:checker-qual</exclude>
                                                         <exclude>com.google.j2objc:j2objc-annotations</exclude>
                                                         <!-- open telemetry -->
-                                                        <exclude>io.opentelemetry:*</exclude>
-                                                        <exclude>io.opentelemetry.semconv:opentelemetry-semconv</exclude>
+                                                        <exclude>io.opentelemetry:opentelemetry-api</exclude>
+                                                        <exclude>io.opentelemetry:opentelemetry-api-incubator</exclude>
+                                                        <exclude>io.opentelemetry:opentelemetry-context</exclude>
+                                                        <exclude>io.opentelemetry:opentelemetry-exporter-common</exclude>
+                                                        <exclude>io.opentelemetry:opentelemetry-exporter-otlp</exclude>
+                                                        <exclude>io.opentelemetry:opentelemetry-exporter-otlp-common</exclude>
+                                                        <exclude>io.opentelemetry:opentelemetry-exporter-sender-okhttp</exclude>
+                                                        <exclude>io.opentelemetry:opentelemetry-sdk</exclude>
+                                                        <exclude>io.opentelemetry:opentelemetry-sdk-common</exclude>
+                                                        <exclude>io.opentelemetry:opentelemetry-sdk-extension-autoconfigure-spi</exclude>
+                                                        <exclude>io.opentelemetry:opentelemetry-sdk-logs</exclude>
+                                                        <exclude>io.opentelemetry:opentelemetry-sdk-metrics</exclude>
+                                                        <exclude>io.opentelemetry:opentelemetry-sdk-trace</exclude>
+                                                        <exclude>io.opentelemetry:semconv.opentelemetry-semconv</exclude>
                                                         <!-- logging -->
                                                         <exclude>org.slf4j:slf4j-api</exclude>
                                                         <exclude>ch.qos.logback:logback-classic</exclude>
@@ -177,8 +221,16 @@
                                                         <exclude>ch.qos.logback.contrib:logback-json-classic</exclude>
                                                         <exclude>ch.qos.logback.contrib:logback-json-core</exclude>
                                                         <!-- serialization/jackson -->
-                                                        <exclude>com.fasterxml.jackson.core:*</exclude>
-                                                        <exclude>com.fasterxml.jackson.datatype:*</exclude>
+                                                        <exclude>com.fasterxml.jackson.core:jackson-annotations</exclude>
+                                                        <exclude>com.fasterxml.jackson.core:jackson-core</exclude>
+                                                        <exclude>com.fasterxml.jackson.core:jackson-databind</exclude>
+                                                        <exclude>com.fasterxml.jackson.dataformat:jackson-dataformat-cbor</exclude>
+                                                        <exclude>com.fasterxml.jackson.dataformat:jackson-dataformat-yaml</exclude>
+                                                        <exclude>com.fasterxml.jackson.datatype:jackson-datatype-jdk8</exclude>
+                                                        <exclude>com.fasterxml.jackson.datatype:jackson-datatype-jsr310</exclude>
+                                                        <exclude>com.fasterxml.jackson.module:jackson-module-parameter-names</exclude>
+                                                        <exclude>com.fasterxml.jackson.module:jackson-module-scala_2.13</exclude>
+                                                        <!-- SDK spi -->
                                                         <exclude>io.akka:akka-sdk-spi_2.13</exclude>
                                                     </excludes>
                                                 </dependencySet>
