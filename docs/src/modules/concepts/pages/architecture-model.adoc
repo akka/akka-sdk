@@ -16,22 +16,22 @@ The layers of the Akka programming architecture are outlined below.
 
 ==== Domain
 
-At the center is the _Domain Model_ which encapsulates your business logic. The domain should be mostly pure Java: that is not Akka components. In Akka projects and samples, this will often be a package called `domain`.
+At the center is the _Domain Model_ which encapsulates your business logic. The domain should be mostly pure Java: that is not Akka components. In Akka projects and samples, this should be a package called `domain`.
 
 [#_application_layer]
 ==== Application
 
-The middle layer is the _Application layer_. This layer uses the domain model and coordinates domain objects. This layer is where your Akka components will live. In this sense, an Akka Component acts as the glue between your domain model and the Akka Runtime. This package will generally be called `application` and only contains Akka components like Entities and Views.
+The middle layer is the _Application layer_. This layer uses the domain model and coordinates domain objects. This layer is where your Akka components will live. In this sense, an Akka Component acts as the glue between your domain model and the Akka runtime. This package should be called `application` and only contains Akka components like Entities and Views.
 
 ==== API
 
-The outermost layer is the _API layer_, which connects your application to the outside world. This is the layer where you will define endpoints that expose your application layer. This package will generally be called `api`.
+The outermost layer is the _API layer_, which connects your application to the outside world. This is the layer where you will define endpoints that expose your application layer. This package should be called `api`.
 
 == Mechanics of each layer
 
 Like most onion architectures, each layer only calls to the layers directly inside of it. This means an endpoint (API) will not directly call a domain object. It also means the outside world should never directly call domain objects or application components. If you want to call an Akka component like an entity or view, do so through an endpoint (`HttpEndpoint`). This separation is meant to contain the inner implementation and makes it easier to evolve applications over time.
 
-These layers will generally be implemented as the three packages outlined above: `domain`, `application`, `api`. The mechanics of these layers are as follows.
+These layers should be implemented as the three packages outlined above: `domain`, `application`, `api`. The mechanics of these layers are as follows.
 
 === Domain
 
@@ -41,13 +41,13 @@ Much of the inner loop of the developer experience will be spent here. Using Jav
 
 === Application
 
-The application layer is where Akka truly shines, acting as the bridge between your domain code and the runtime. Most classes in this layer extend an Akka component class (e.g., within the `akka.javasdk` package), making them event-based and actor-based behind the scenes, while abstracting those details from you.
+The application layer is where Akka becomes a first class participant as the glue between your domain code and the runtime. Most classes in this layer will extend an Akka component class (e.g., within the `akka.javasdk` package), making them event-based and actor-based behind the scenes, while abstracting those details from you.
 
 These components include xref:java:event-sourced-entities.adoc[Event Sourced Entities], xref:java:key-value-entities.adoc[Key Value Entities],  xref:java:views.adoc[Views], xref:java:workflows.adoc[Workflows], xref:java:timed-actions.adoc[Timers] and xref:java:consuming-producing.adoc[Consumers]. Each component type provides specific functionalities to handle state, events, and interactions efficiently.
 
 === API
 
-The outermost layer is the API layer which is how the outside world interacts with your application or service. In this layer, you define endpoints that expose your application. Each endpoint is marked with an `@HttpEndpoint` annotation, which allows the Runtime to build the appropriate endpoint URLs for uniquely identifying the components. Each public method on the endpoint that is annotated with method `@Get`, `@Post`, `@Put`, `@Patch` or `@Delete` serves those respective HTTP methods.
+The outermost layer is the API layer which is how the outside world interacts with your application or service. In this layer, you define endpoints that expose your application. Each endpoint is marked with an `@HttpEndpoint` annotation, which allows the runtime to build the appropriate endpoint URLs for uniquely identifying the components. Each public method on the endpoint that is annotated with method `@Get`, `@Post`, `@Put`, `@Patch` or `@Delete` serves those respective HTTP methods.
 
 Having received requests, the `api` layer interacts with the `application` layer through the xref:java:component-and-service-calls.adoc#_component_client[`ComponentClient`] which makes calls in a type safe way. This is the layer boundary that keeps the isolation necessary to remain resilient that is core to an Akka application.
 
@@ -69,7 +69,7 @@ The list of components are:
 * xref:java:timed-actions.adoc[Timers]
 * xref:java:consuming-producing.adoc[Consumers]
 
-Akka components are marked with a `@ComponentId` or `@HttpEndpoint` annotation to identify them to the Runtime.
+Akka components are marked with a `@ComponentId` or `@HttpEndpoint` annotation to identify them to the runtime.
 
 === Entities
 
@@ -83,7 +83,7 @@ _Key Value Entities_ are, as the name implies, an object that is stored and retr
 
 ==== Event Sourced Entities
 
-Event Sourced Entities persist events instead of state in the event journal. The current state of the entity is derived from these events. Readers can access the event journal independently of the active entity instance to create read models, known as xref:java:views.adoc[_Views_], or to perform business actions based on the events via xref:java:consuming-producing.adoc[Consumers]. For more information, see xref:java:event-sourced-entities.adoc[Event Sourced Entities].
+_Event Sourced Entities_ persist events instead of state in the event xref:reference:glossary.adoc#journal[journal]   . The current state of the entity is derived from these events. Readers can access the event journal independently of the active entity instance to create read models, known as xref:java:views.adoc[_Views_], or to perform business actions based on the events via xref:java:consuming-producing.adoc[Consumers]. For more information, see xref:java:event-sourced-entities.adoc[Event Sourced Entities].
 
 === Views
 
@@ -99,7 +99,7 @@ _Workflows_ enable the developer to implement long-running, multi-step business 
 
 === Timed actions
 
-_Timed Actions_ allow for scheduling calls in the future. For example, to verify that some process have been completed or not. For more information see xref:java:timed-actions.adoc[Timed actions]
+_Timed Actions_ allow for scheduling calls in the future. For example, to verify that some process have been completed or not. For more information see xref:java:timed-actions.adoc[Timed actions].
 
 === Endpoints
 
