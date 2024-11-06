@@ -61,7 +61,7 @@ After updating your observability configuration, you will need to restart a serv
 
 === Activating tracing (Beta)
 
-The generation of traces is disabled by default. To enable it you need to set xref:reference:descriptors/service-descriptor.adoc#_servicespec[telemetry/tracing/enabled] to `true`. Like the following:
+The generation of traces is disabled by default. To enable it you need to set xref:reference:descriptors/service-descriptor.adoc#_servicespec[telemetry/tracing/enabled] to `true` in the service descriptor. Like the following:
 
 [source,yaml]
 ----
@@ -73,6 +73,8 @@ service:
   image: <<docker-image>>
 ----
 
+xref:operations:services/deploy-service.adoc#apply[Deploy the service with the descriptor].
+
 Once this is set, Akka will start generating https://opentelemetry.io/docs/concepts/observability-primer/#spans[spans, window="new"] for the following components: Event Sourced Entities, Key Value Entities, Endpoints, Consumers, and Views.
 
 Another possible use is to add a `traceparent` header when calling your Akka endpoint. In this case Akka will propagate this trace parent as the root of the subsequent interaction with an Akka component. Linking each Akka call to that external trace parent.
@@ -81,7 +83,7 @@ Another possible use is to add a `traceparent` header when calling your Akka end
 
 By default, Akka filters traces and exports them to your Akka Console. You'll get 1% of the traces produced by your services. You can adjust this percentage according to your needs.
 
-This filtering is known as https://opentelemetry.io/docs/concepts/sampling/#head-sampling[head sampling]. To configure it, you need to set your observability descriptor as follows:
+This filtering is known as https://opentelemetry.io/docs/concepts/sampling/#head-sampling[head sampling, window="new"]. To configure it, you need to set your observability descriptor as follows and xref:_updating_the_observability_configuration[update the observability configuration]:
 
 [source,yaml]
 ----
@@ -91,7 +93,7 @@ traces:
       percentage: "2"
 ----
 
-With this configuration, 2% of the traces are sent while the 98% are filtered. More on how much sampling https://opentelemetry.io/docs/concepts/sampling/#when-to-sample[here].
+With this configuration, 2% of the traces are sent while the 98% are filtered. More on how much sampling https://opentelemetry.io/docs/concepts/sampling/#when-to-sample[here, window="new"].
 
 == Updating the configuration using commands
 
