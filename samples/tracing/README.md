@@ -57,7 +57,7 @@ You can use the [Akka Console](https://console.akka.io) to create a project and 
 Build container image:
 
 ```shell
-mvn install -DskipTests
+mvn clean install -DskipTests
 ```
 
 Install the `akka` CLI as documented in [Install Akka CLI](https://doc.akka.io/akka-cli/index.html).

@@ -19,7 +19,7 @@ Build a container image of the service:
 
 [source, command line]
 ----
-mvn install -DskipTests
+mvn clean install -DskipTests
 ----
 
 By default, the maven build will produce images with the following format: `container-name:tag-name` where the container name is the `artifactId` and the tag name is the `version` plus the build timestamp.

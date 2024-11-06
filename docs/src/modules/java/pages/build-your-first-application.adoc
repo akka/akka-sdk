@@ -294,7 +294,7 @@ akka config set project my-first-app
 . Build a container image of your shopping cart service:
 [source, command line]
 ----
-mvn install -DskipTests
+mvn clean install -DskipTests
 ----
 
 . Take note of the container name and tag from last line in the output, for example:
