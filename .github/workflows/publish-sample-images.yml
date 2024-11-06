@@ -36,6 +36,14 @@ jobs:
         with:
           jvm: temurin:1.21
 
+      - name: Update SDK version
+        id: update_sdk_version
+        run: |-
+          .github/determine-sdk-version.sh
+          SDK_VERSION="$(cat ~/akka-javasdk-version.txt)"
+          echo "SDK version: '${SDK_VERSION}'"
+          ./updateSdkVersions.sh java samples/shopping-cart-quickstart
+
       - name: Quickstart docker image for console quick-deploy
         env:
           PUBLIC_GCR_SERVICE_KEY: ${{ secrets.PUBLIC_GCR_SERVICE_KEY }}
