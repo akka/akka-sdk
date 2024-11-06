@@ -98,7 +98,7 @@ NOTE: The `@ComponentId` value `transfer` is common for all instances of this wo
 
 One missing piece of our transfer workflow implementation is a workflow `definition` method, which composes all steps connected with transitions. A workflow `Step` has a unique name, an action to perform (e.g. asynchronous call to an Akka component, or asynchronous call to any external service) and a transition to select the next step (or `end` transition to finish the workflow, in case of the last step).
 
-//TODO add some diagram or sth
+ifdef::todo[TODO: add some diagram or sth]
 
 [source,java,indent=0]
 .{sample-base-url}/transfer-workflow/src/main/java/com/example/transfer/application/TransferWorkflow.java[TransferWorkflow.java]
