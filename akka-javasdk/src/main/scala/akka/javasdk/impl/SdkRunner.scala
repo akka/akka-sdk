@@ -194,7 +194,8 @@ private object ComponentLocator {
     // the concrete component classes for the given project
     val descriptorConfig = ConfigFactory.load(ComponentDescriptorResourcePath)
     if (!descriptorConfig.hasPath(DescriptorComponentBasePath))
-      throw new IllegalStateException("Missing component descriptor, rebuild with `mvn clean compile`")
+      throw new IllegalStateException(
+        "It looks like your project needs to be recompiled. Run `mvn clean compile` and try again.")
     val componentConfig = descriptorConfig.getConfig(DescriptorComponentBasePath)
 
     val components = kalixComponentTypeAndBaseClasses.flatMap { case (componentTypeKey, componentTypeClass) =>
@@ -208,8 +209,7 @@ private object ComponentLocator {
             case ex: ClassNotFoundException =>
               throw new IllegalStateException(
                 s"Could not load component class [$className]. The exception might appear after rename or repackaging operation. " +
-                "Java Annotation Processor (used by Akka) is not able provide sufficient information to handle such situation gracefully. " +
-                "The solution is to rebuild the project, for instance by calling `mvn clean compile`.",
+                "It looks like your project needs to be recompiled. Run `mvn clean compile` and try again.",
                 ex)
           }
         }
