@@ -142,12 +142,18 @@ If you have a regional resource that you want to change to being a global resour
 
 There can be several reasons for changing multi-region resources and the primary of stateful components. In this section we describe a few scenarios and provide a checklist of the recommended procedure.
 
+=== Observe replication status
+
+You can see throughput, lag, and errors in the replication section in the Control Tower. The replication lag is the time from when the events were created until they were received in the other region. Some errors may be normal, since the connections are sometimes restarted.
+
+ifdef::todo[TODO:  add illustration from the console of the replication section]
+
 === Add a region
 
 1. Follow the instructions in <<_adding_a_region_to_a_project>>.
 2. You have to xref:services/deploy-service.adoc[deploy the services] again because the container images don't exist in the container registry of the new region, unless you use a global container registry.
 3. You need to xref:services/invoke-service.adoc[expose the services] in the new region.
-4. Stateful components are automatically replicated to the new region. This may take some time, and you can see progress in the Control Tower. Look for subscriptions with `RES` in the name. The event consumption lag will at first be high and then close to zero when the replication has been completed.
+4. Stateful components are automatically replicated to the new region. This may take some time, and you can see progress in the replication section in the Control Tower. The event consumption lag will at first be high and then close to zero when the replication has been completed.
 
 === Switch from static to dynamic primary selection mode for stateful components
 
@@ -156,7 +162,7 @@ The default primary selection mode for stateful components is the static mode, a
 Component instances that have already been created will continue to have their primary in the original static primary region. New component instances will have their primary in the region they are first written in.
 
 1. First, change to the `none` primary selection mode. This is a read-only mode for all regions and all write requests will be rejected. The reason for changing to this intermediate mode is to make sure that all events have been replicated without creating new events.
-2. Wait until the deployment of the `none` primary selection mode has been successfully propagated to all regions. Observe in the Akka Console that the rolling update has been completed in all regions. You can also make sure that events consumed reach zero in the Control Tower. Look for subscriptions with `RES` in the name.
+2. Wait until the deployment of the `none` primary selection mode has been successfully propagated to all regions. Observe in the Akka Console that the rolling update has been completed in all regions. You can also make sure that replicated events reach zero in the replication section in the Control Tower.
 3. Change to `dynamic` primary selection mode.
 
 === Switch from dynamic to static primary selection mode for stateful components
@@ -166,7 +172,7 @@ Static mode takes precedence over dynamic in the sense that a component instance
 <<selecting-primary>> describes how you change the primary selection mode with a service descriptor.
 
 1. First, change to the `none` primary selection mode. This is a read-only mode for all regions and all write requests will be rejected. The reason for changing to this intermediate mode is to make sure that all events have been replicated without creating new events.
-2. Wait until the deployment of the `none` primary selection mode has been successfully propagated to all regions. Observe in the Akka Console that the rolling update has been completed in all regions. You can also make sure that events consumed reach zero in the Control Tower. Look for subscriptions with `RES` in the name.
+2. Wait until the deployment of the `none` primary selection mode has been successfully propagated to all regions. Observe in the Akka Console that the rolling update has been completed in all regions. You can also make sure that replicated events reach zero in the replication section in the Control Tower.
 3. Change to `static` primary selection mode.
 
 === Change the static primary region for stateful components
@@ -176,7 +182,7 @@ You might want to change the static primary for stateful components if you migra
 <<selecting-primary>> describes how you change the primary selection mode with a service descriptor.
 
 1. First, change to the `none` primary selection mode. This is a read-only mode for all regions and all write requests will be rejected. The reason for changing to this intermediate mode is to make sure that all events have been replicated without creating new events.
-2. Wait until the deployment of the `none` primary selection mode has been successfully propagated to all regions. Observe in the Akka Console that the rolling update has been completed in all regions. You can also make sure that events consumed reach zero in the Control Tower. Look for subscriptions with `RES` in the name.
+2. Wait until the deployment of the `none` primary selection mode has been successfully propagated to all regions. Observe in the Akka Console that the rolling update has been completed in all regions. You can also make sure that replicated events reach zero in the replication section in the Control Tower.
 3. Follow instructions in <<_setting_the_primary_region_of_a_project>>.
 4. Change to `static` primary selection mode.
 
