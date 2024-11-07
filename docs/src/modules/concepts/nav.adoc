@@ -5,4 +5,5 @@
 *** xref:concepts:development-process.adoc[]
 *** xref:declarative-effects.adoc[]
 *** xref:concepts:state-model.adoc[]
+*** xref:concepts:multi-region.adoc[]
 *** xref:concepts:saga-patterns.adoc[]

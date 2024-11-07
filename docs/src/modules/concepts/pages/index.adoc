@@ -19,5 +19,6 @@ A detailed explanation to how _Entities_ persist their state, is presented in xr
 - xref:development-process.adoc[]
 - xref:declarative-effects.adoc[]
 - xref:state-model.adoc[]
+- xref:multi-region.adoc[]
 - xref:saga-patterns.adoc[]
 - xref:java:dev-best-practices.adoc[]

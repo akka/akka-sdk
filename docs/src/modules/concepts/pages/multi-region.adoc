@@ -1,0 +1,60 @@
+= Multi-region support
+
+include::ROOT:partial$include.adoc[]
+
+Akka's opinionated approach to domain modelling allow for applications to run in multiple regions without modification. An Akka application written as a single region application can be turned into a multi-region application with nothing more than a change in deployment configuration.
+
+The multi-region use cases that Akka's multi-region support encompasses include:
+
+* Geographic failover
+* Geo-homing of data for low latency access
+* Low latency global reads
+* Low latency global writes (coming soon)
+
+Akka ensures that no matter which region receives a request, the request can be serviced. Multiple replication strategies can be configured, with each offering varying features for different use cases.
+
+== Examples
+
+The two main replication strategies that Akka offers are replicated reads, and replicated writes (coming soon).
+
+=== Replicated reads
+
+With replicated reads, an entity has its "home" in one primary region, while being replicated to multiple other regions.
+
+image:geo-a.png[Geo data replication, width=600]
+
+ifdef::todo[TODO: real image A of geo data replication]
+
+In the example above, the entity representing Alice has its primary region in the US. When a user in the primary region performs a read request, the request is handled locally, and the response sent straight back.
+
+When the user in the primary region performs a write request, that request is also handled locally, and a response sent directly back. After that write request completes, that write is replicated to other regions, such as the UK. A user in the UK, when they perform a read, that read operation will happen locally, and a response sent immediately back.
+
+A user can also perform write operations on entities in non-primary regions.
+
+image:geo-b.png[Geo data replication, width=600]
+
+ifdef::todo[TODO: real image B of geo data replication]
+
+In this scenario, a user in the UK is performing a write operation on the Alice entity. Since the UK is not the primary region for the Alice entity, Akka will automatically forward that request to the primary region, in this case, the US. That request will be handled in the US, and a response sent directly back to the user.
+
+Akka has a configurable primary selection mode. The two main modes are static, and dynamic. In the static primary selection mode, the primary region for an entity is selected statically as part of the deployment, so all entities have the same primary region. This is useful for scenarios where you want one primary region, with the ability to failover to another region in the case of a regional outage.
+
+In the dynamic primary selection mode, each entity can have a different region that is considered its primary region. This is selected based on whichever region the entity was first written in. This is useful for scenarios where you want to have the primary region for you data close to the users who use the data. A user, Alice, in the US, will have her data in the US, while a user Bob, in the UK, will have his data, in the UK.
+
+image:geo-c.png[Geo data replication, width=600]
+
+ifdef::todo[TODO: real image C of geo data replication]
+
+When Bob makes a request in the UK on his data, that request is handled locally, and replicated to the US, while Alice's requests in the US with her data are handled locally in the US, and replicated to the UK.
+
+The data however is still available in all regions. If Bob travels to the US, he can still access his data.
+
+image:geo-d.png[Geo data replication, width=600]
+
+ifdef::todo[TODO: real image D of geo data replication]
+
+When Bob travels to the US, read requests that Bob makes on his data are handled locally, while write requests are forwarded to the UK. Meanwhile, write requests made by Alice on her data is all handled locally, with writes being replicated to the UK.
+
+=== Replicated writes (coming soon)
+
+The replicated write replication strategy allows every region to be capable of handling writes for all entities. This is done through the use of CRDTs, which can be modified concurrently in different regions, and their changes safely merged without conflict.
