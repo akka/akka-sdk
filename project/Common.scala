@@ -17,28 +17,28 @@ object CommonSettings extends AutoPlugin {
     Seq(
       organization := "io.akka",
       organizationName := "Lightbend Inc.",
-      organizationHomepage := Some(url("https://lightbend.com")),
+      organizationHomepage := Some(url("https://akka.io")),
       homepage := Some(url("https://akka.io")),
       description := "Akka SDK for Java",
       resolvers += "Akka repository".at("https://repo.akka.io/maven"),
       developers := List(
         Developer(
-          id = "akka-team",
-          name = "Akka Team",
-          email = "info@lightbend.com",
-          url = url("https://lightbend.com"))),
+          id = "akka-developers",
+          name = "Akka SDK Developers",
+          email = "akka.official@gmail.com",
+          url = url("https://akka.io"))),
       scmInfo := Some(
-        ScmInfo(url("https://github.com/lightbend/akka-javasdk"), "scm:git@github.com:lightbend/akka-javasdk.git")),
+        ScmInfo(url("https://github.com/akka/akka-sdk"), "scm:git@github.com:akka/akka-sdk.git")),
       releaseNotesURL := (
         if ((ThisBuild / isSnapshot).value) None
-        else Some(url(s"https://github.com/lightbend/akka-javasdk/releases/tag/v${version.value}"))
+        else Some(url(s"https://github.com/akka/akka-sdk/releases/tag/v${version.value}"))
       ),
       startYear := Some(2021),
       licenses := {
         val tagOrBranch =
           if (version.value.endsWith("SNAPSHOT")) "main"
           else "v" + version.value
-        Seq(("BUSL-1.1", url(s"https://raw.githubusercontent.com/lightbend/akka-javasdk/${tagOrBranch}/LICENSE")))
+        Seq(("BUSL-1.1", url(s"https://raw.githubusercontent.com/akka/akka-sdk/${tagOrBranch}/LICENSE")))
       },
       scalafmtOnCompile := !insideCI.value,
       javafmtOnCompile := !insideCI.value,

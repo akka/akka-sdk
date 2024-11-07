@@ -71,7 +71,7 @@ jobs:
           git config user.name "Kalix Bot"
           git config user.email "kalix.github@lightbend.com"
           git commit . -m "chore: bump SDK versions to ${SDK_VERSION}"
-          git remote add origin-rw https://${GH_TOKEN}@github.com/lightbend/akka-javasdk
+          git remote add origin-rw https://${GH_TOKEN}@github.com/akka/akka-sdk
           git push --set-upstream origin-rw ${BRANCH}
         
           gh pr create -B main -t "Auto PR - Bump SDK versions to ${SDK_VERSION}" -b "This PR should update all existing samples (pom.xml and plugins.sbt) and the maven poms. Please review, and merge if okay." || echo "No changes"; exit 0

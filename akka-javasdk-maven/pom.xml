@@ -12,24 +12,23 @@
   <description>This is the parent pom for the Akka SDK for Java maven projects</description>
   <licenses>
     <license>
-      <name>Apache-2.0</name>
-      <url>https://opensource.org/licenses/Apache-2.0</url>
+      <name>BUSL-1.1</name>
+      <url>https://raw.githubusercontent.com/akka/akka-sdk/main/LICENSE</url>
       <distribution>repo</distribution>
     </license>
   </licenses>
 
   <url>https://www.akka.io</url>
   <scm>
-    <url>https://github.com/lightbend/akka-javasdk</url>
+    <url>https://github.com/akka/akka-sdk</url>
   </scm>
 
   <developers>
     <developer>
-      <id>lightbend-engineering</id>
-      <name>Lightbend Engineering</name>
-      <email>info@lightbend.com</email>
-      <organization>Lightbend Inc.</organization>
-      <organizationUrl>https://www.lightbend.com</organizationUrl>
+      <id>akka-developers</id>
+      <name>Akka SDK Developers</name>
+      <url>https://github.com/akka/akka-sdk/graphs/contributors</url>
+      <email>akka.official@gmail.com</email>
     </developer>
   </developers>
 

@@ -1,5 +1,5 @@
 // global attributes
 
-:sample-base-url: https://github.com/lightbend/akka-javasdk/blob/main/samples
+:sample-base-url: https://github.com/akka/akka-sdk/blob/main/samples
 
 include::partial$attributes.adoc[]
