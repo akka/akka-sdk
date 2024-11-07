@@ -40,7 +40,7 @@ jobs:
         id: update_sdk_version
         run: |-
           # use latest tag
-          docs/bin/version.sh > akka-javasdk-version.txt
+          docs/bin/version.sh > ~/akka-javasdk-version.txt
           SDK_VERSION="$(cat ~/akka-javasdk-version.txt)"
           echo "SDK version: '${SDK_VERSION}'"
           ./updateSdkVersions.sh java samples/shopping-cart-quickstart
