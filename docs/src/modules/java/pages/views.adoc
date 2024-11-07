@@ -313,6 +313,11 @@ include::example$key-value-customer-registry/src/it/java/customer/application/Cu
 <3> Publishes test data.
 <4> Queries the view and asserts the results.
 
+== Multi-region replication
+
+Views are not replicated directly in the same way as for example xref:event-sourced-entities.adoc#_replication[Event Sourced Entity replication]. A View is built from entities in the same service, or another service, in the same region. The entities will replicate all events across regions and identical Views are built in each region.
+
+A View can also be built from a message broker topic, and that could be regional or global depending on how the message broker is configured.
 
 == Exposing views directly
 
