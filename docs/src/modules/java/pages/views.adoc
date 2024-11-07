@@ -30,7 +30,7 @@ A View Effect can either:
 * delete the view state
 * ignore the event or state change notification (and not update the view state)
 
-See also xref:concepts:declarative-effects.adoc[Declarative Effects] for more information.
+For additional details, refer to xref:concepts:declarative-effects.adoc[Declarative Effects].
 
 [#value-entity]
 == Creating a View from a Key Value Entity

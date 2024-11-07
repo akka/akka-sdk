@@ -1,131 +1,128 @@
-= Timed Actions
+= Timers
 
 include::ROOT:partial$include.adoc[]
 
-Timers allow for scheduling calls in the future. For example, to verify that some process have been completed or not.
+Timers enable the scheduling of calls for future execution. They are particularly useful for verifying the completion status of processes at a later time.
 
-Timers are persisted by the xref:reference:glossary.adoc#runtime[Akka Runtime] and are guaranteed to run at least once.
+Timers are stored by the xref:reference:glossary.adoc#runtime[Akka Runtime] and are guaranteed to run at least once.
 
-When a timer is triggered, the scheduled call is executed. If successfully executed, the timer completes and is automatically removed. In case of a failure, the timer is rescheduled with a delay of 3 seconds. This process repeats until the call succeeds.
+When a timer is triggered, it initiates the scheduled call. If the call is successful, the timer completes and is automatically removed. In case of a failure, the timer is rescheduled. This process continues until the call succeeds.
 
-**Timer features**:
+**Key features of timers**:
 
-* Timers are guaranteed to run at least once.
-* Timers can be scheduled to run at any time in the future.
-* Timers can be cancelled.
-* Timers are automatically removed once successfully completed.
-* Timers are re-scheduled in case of failures.
-* Timers failing can be limited to a maximum number of retries.
+* Guaranteed to run at least once.
+* Can be scheduled to run at any future time.
+* Can be canceled if no longer needed.
+* Automatically removed upon successful completion.
+* Rescheduled after failures, with a configurable limit on retry attempts.
 
-**Timer limitations**:
+**Limitations of timers**:
 
-* Maximum allowed timer command payload is 1024 bytes.
-* At most 50,000 active timers per service can be scheduled.
-* Scheduled calls identifies the component through component id and the method through the name of
-  the method. If these changes, the scheduled method will not be invoked.
-* The type of parameter the method accepts must not change after a call has been scheduled.
+* Maximum allowed payload size is 1024 bytes.
+* Each service can have up to 50,000 active timers.
+* Scheduled calls identify the component by component id and the method by its name. Any changes to these may prevent the scheduled call from executing.
+* Method parameter types must remain consistent after scheduling a call.
+
+You can schedule calls to any method accessible through the `ComponentClient`. Namely, command handlers on Event Sourced Entities, Key-Value Entities, Workflows, Timed Actions, and query methods on Views.
+
+To schedule a call, inject both the `TimerScheduler` and the `ComponentClient` into your component. These dependencies are available for injection in Service Setup, Endpoints, Consumers, Timed Actions, and Workflows. For more details, see xref:java:setup-and-dependency-injection.adoc#_dependency_injection[dependency injection].
+
+== Timed Actions
+
+Timed Actions are stateless components designed to enable the scheduling of functions for future execution. They serve as integration points for coordinating scheduled calls without storing state, unlike Entities and Workflows, and without direct data access like Consumers and Views. From inside a Timed Action you can access the `ComponentClient` and compose calls to other components like Event Sourced Entities, Key-Value Entities, Workflows, and Views.
 
 [#_effect_api]
 == Timed Action’s Effect API
 
-The Timed Action's Effect defines the operations that Akka should perform when an incoming command is handled by a Timed Action.
+The Timed Action’s Effect API defines the actions that Akka should execute when a Timed Action method is invoked.
 
 A Timed Action Effect can either:
 
-* return Done to confirm that the command was processed successfully
-* return an error message
+* return `Done`, confirming successful completion of the scheduled call
+* return an error message if the operation was unsuccessful
 
-See also xref:concepts:declarative-effects.adoc[Declarative Effects] for more information.
+For additional details, refer to xref:concepts:declarative-effects.adoc[Declarative Effects].
 
 == Order Entity
 
-To demonstrate its functionality, let's consider an Ordering Service composed of a xref:key-value-entities.adoc[Key Value Entity] and a Timed Action component. The Timed Action will handle the cancellation of unconfirmed orders.
+To illustrate the usage of Timers, consider an Ordering Service composed of a xref:key-value-entities.adoc[Key-Value Entity] and a Timed Action component, where the Timed Action handles unconfirmed order cancellations.
 
-Users can place an order, but the order must be confirmed within a period of time. You can think of it as an Ordering Food application where the restaurant needs to confirm if it can accept the order. If no confirmation is sent within some pre-defined period of time, the order is automatically cancelled.
+In this scenario, users place an order that requires confirmation within a certain period. This is similar to a food ordering app where a restaurant confirms or rejects an order. If confirmation is not received within the specified timeframe, the order is automatically canceled.
 
-Let's have a look on how the Order Entity can be implemented.
+Let's look at an example of the Order Entity implementation.
 
 [source,java,indent=0]
 .{sample-base-url}/reliable-timers/src/main/java/com/example/application/OrderEntity.java[OrderEntity.java]
 ----
 include::example$reliable-timers/src/main/java/com/example/application/OrderEntity.java[tag=order]
 ----
-<1> The `placeOrder` method is responsible for the creation of an order.
-<2> Note that we set the `placed` field to true.
-<3> When confirming an Order, we must ensure that the Order was created before.
-<4> If the Order was never created, it returns `NotFound`.
-<5> Cancelling an Order that was never placed also returns `NotFound`.
-<6> While cancelling an already confirmed order returns `Invalid`.
-<7> Finally, if the Order is placed, but not confirmed, the cancel method resets the order to the `emptyState`.
+<1> The `placeOrder` method initiates an order.
+<2> The `placed` field is set to `true`.
+<3> The confirmation process checks that the order exists.
+<4> Returns `NotFound` if the order was never created.
+<5> Returns `NotFound` for canceling a non-existent order.
+<6> Returns `Invalid` if canceling an already confirmed order.
+<7> If the order is placed but not confirmed, `cancel` resets the order to the `emptyState`.
 
 == Timed Action example
 
-The `OrderEndpoint` will receive incoming messages, run some logic and then call the Order Entity as needed.
+The `OrderEndpoint` receives incoming messages, processes logic, and invokes the Order Entity as needed.
 
 === Scheduling a timer
 
-We will first look at `OrderEndpoint` which acts as a controller ahead of the Order Entity. Before delegating the request to the Order Entity, the Endpoint creates a timer. The scheduling of a timer is done using the `akka.javasdk.timer.TimerScheduler`. To use it, you need to inject it into your component via the constructor.
+The `OrderEndpoint` acts as a controller for the Order Entity and creates a timer before passing the request. The timer is scheduled using the `akka.javasdk.timer.TimerScheduler`, which you can inject into your component’s constructor.
 
 [source,java,indent=0]
 .{sample-base-url}/reliable-timers/src/main/java/com/example/api/OrderEndpoint.java[OrderEndpoint.java]
 ----
 include::example$reliable-timers/src/main/java/com/example/api/OrderEndpoint.java[tags=timers;place-order]
 ----
-<1> Declaring a `TimerScheduler` along with the `ComponentClient`. Both will be provided automatically by Akka.
-<2> Generate a random identifier for the OrderEntity. It will be used to identify the Order, but also as a unique name for the timer.
-<3> Call the `TimerScheduler` API to register a new timer. Note that it returns `CompletionStage<Done>`. A successful completion means that Akka registered the timer.
-<4> Order id is used to generate a unique name for the timer.
-<5> Set the delay we want for the timer to trigger.
-<6> Schedule a deferred call to the Timed Action component. We will cover it in a while.
-<7> Finally, compose the `timerRegistration` CompletionStage with a call to `OrderEntity` to place the order.
+<1> Declares `TimerScheduler` alongside the `ComponentClient`, both provided by Akka.
+<2> Generates a unique identifier for the order and timer.
+<3> Calls the `TimerScheduler` API to register a new timer, which returns `CompletionStage<Done>`. A successful completion indicates that Akka has registered the timer.
+<4> Uses the order ID to generate a unique timer name.
+<5> Sets the delay for the timer.
+<6> Schedules a deferred call to the Timed Action component, covered next.
+<7> Composes the `timerRegistration` `CompletionStage` with a call to `OrderEntity` to place the order.
 
-In a nutshell, we first requested Akka to register a timer. When it completes, we know that the timer is persisted and will run at the specified time. You then proceed by placing the order.
-
-The `DeferredCall` returned from the component client `deferred` method is a way to defer the call to Akka components. It can be persisted and executed at a later time.
-
-The sequence of actions is important here. If we had called the entity first and then registered the timer, the Order could have been placed and the timer registration could have failed due to some network issue for example. In such a case, we would end up with an Order without an expiration timer.
-
-But the inverse is also true. There is still the risk of registering the timer and then failing to place the Order. However, the implementation of the `expire` method can take that into account.
+In short, Akka registers the timer before the order is placed. This ensures that, should the timer registration fail due to network issues, no untracked order remains. The inverse failure scenario — registering the timer and failing to place the order — is mitigated by handling potential failures in the `expire` method.
 
 === Handling the timer call
 
-Let's have a look at the `OrderTimedAction.expireOrder` method implementation.
+Let’s examine the `OrderTimedAction.expireOrder` method.
 
 [source,java,indent=0]
 .{sample-base-url}/reliable-timers/src/main/java/com/example/application/OrderTimedAction.java[OrderTimedAction.java]
 ----
 include::example$reliable-timers/src/main/java/com/example/application/OrderTimedAction.java[tags=expire-order]
 ----
-<1> Set `@ComponentId` annotation for the component.
-<2> Extend `TimedAction` class.
-<3> The effect will return an asynchronous call to the `OrderEntity` component to cancel the Order.
-<4> If the `CompletionStage` completes with a failure, we must decide if we will recover the call or not. If we recover it, the timer will be considered as completed. If we let the call fail, the timer will be re-scheduled. The `OrderEntity.cancel` implementation, except `Ok`, can return `NotFound` or `Invalid` responses. In both cases, we can consider that the timer has become obsolete and don't need to be rescheduled, therefore we recover the call.
+<1> Uses the `@ComponentId` annotation to identify the component.
+<2> Extends the `TimedAction` class.
+<3> Initiates an asynchronous call to the `OrderEntity` component to cancel the order.
+<4> Decides if the call should recover or fail. If `NotFound` or `Invalid` is returned, the timer is marked as obsolete and is not rescheduled. Other errors cause `expireOrder` to fail, and the timer is rescheduled.
 
-For all other possible errors, the call to `OrderTimedAction.expireOrder` will fail and the timer will be re-scheduled.
-
-IMPORTANT: Whenever we implement a method that is called from a timer, we need to carefully handle errors inside that method. Failing to do so may cause the timer to keep re-scheduling. Therefore, we should ensure that any failure is properly handled and only propagated if the intention is to re-try the call.
+IMPORTANT: Any method executed by a timer must handle errors carefully. Unhandled errors may result in continuous re-scheduling. Ensure that failures are only propagated when re-trying the call is intended.
 
 === Failures and retries
 
-If a scheduled call fails it will be retried, retries are backed off exponentially, starting at 3 seconds and can
-reach a maximum backoff of 30 seconds if consecutive retries keep failing.
+If a scheduled call fails, it will retry with an exponential backoff, starting at 3 seconds and maxing out at 30 seconds after successive failures.
 
-The default is to keep retrying indefinitely, but it is possible to limit the number of retries before giving up via the `startSingleTimer` overload parameter `maxRetries`.
+By default, retries continue indefinitely. However, you can limit retries by setting the `maxRetries` parameter in the `startSingleTimer` method.
 
-=== Cancelling a timer
+=== Canceling a timer
 
-Next, we can have a look at confirmation and cancellation endpoint implementations.
+Let’s look at the implementation of the confirmation and cancellation endpoints.
 
 [source,java,indent=0]
 .{sample-base-url}/reliable-timers/src/main/java/com/example/api/OrderEndpoint.java[OrderEndpoint.java]
 ----
 include::example$reliable-timers/src/main/java/com/example/api/OrderEndpoint.java[tags=timers;confirm-cancel-order]
 ----
-<1> Call the Order entity to execute confirmation.
-<2> If it succeeds, remove the timer.
+<1> Confirms the order through the `OrderEntity`.
+<2> Removes the timer upon successful confirmation.
 
-In both methods, we call proper `OrderEntity` method and when it completes, we cancel the timer.
+In each method, once `OrderEntity` completes the operation, the timer is canceled.
 
-Once more, the ordering is important. It's not a problem if the call to cancel the timer fails. As we have seen in the `OrderEntity.expireOrder` implementation, if the timer is triggered, but is obsolete, we will properly recover from it and signal to Akka that the timer can be removed.
+This sequence is important. Even if canceling the timer fails, the implementation of `expireOrder` ensures proper handling for obsolete timers, signaling to Akka that they can be removed.
 
 TIP: We could have completely ignored the timer cancellation when handling the confirmation or the cancelling. The registered timer would then be triggered at some point later and the implementation is ready to handle gracefully this case. However, it's always of good measure to do some housekeeping to save resources.

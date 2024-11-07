@@ -165,6 +165,7 @@ substream
 Szymanski
 [Tt]elemedicine
 [Tt]estKit
+[Tt]imeframe
 Tink
 (?i)TLS
 tokenid

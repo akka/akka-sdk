@@ -24,9 +24,9 @@ include::java:example$shopping-cart-quickstart/src/main/java/shoppingcart/api/Sh
 <3> Invoking the method returns a `CompletionStage<T>` where `T` is what the component eventually returns.
 <4> Adapt the response rather than returning it as is. In this case discarding the response value, and respond OK without a response body.
 
-The component client can call command handlers on Event Sourced Entities, Key Value Entities and workflows, query methods.
+The component client can call command handlers on Event Sourced Entities, Key Value Entities, Workflows, Timed Actions, and query methods on Views.
 
-The component client is only available for injection in the following types of components: Endpoints, Workflows, Consumers and Timed Actions.
+The component client is available for injection only in Service Setup, Endpoints, Consumers, Timed Actions, and Workflows. For more information, see xref:java:setup-and-dependency-injection.adoc#_dependency_injection[dependency injection].
 
 == Akka services
 

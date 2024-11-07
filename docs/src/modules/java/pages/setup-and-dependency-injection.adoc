@@ -23,13 +23,14 @@ It is important to remember that an Akka service consists of one to many distrib
 individually and independently, for example during a rolling upgrade. Each such instance starting up will invoke
 `onStartup` when starting up, even if other instances run it before.
 
+[#_dependency_injection]
 == Dependency injection
 
 The Akka SDK provides injection of types related to capabilities the SDK provides to components.
 
 Injection is done as constructor parameters for the component implementation class.
 
-The following types can be injected in Service Setup, Endpoints, Consumers, Timed Actions and Workflow components:
+The following types can be injected in Service Setup, Endpoints, Consumers, Timed Actions, and Workflows:
 
 [options="header" cols="1,1"]
 |===
@@ -48,7 +49,7 @@ The following types can be injected in Service Setup, Endpoints, Consumers, Time
 | Access the user defined configuration picked up from `application.conf`
 |===
 
-Furthermore, the following component type specific types can also be injected:
+Furthermore, the following component specific types can also be injected:
 
 [options="header" cols="1,1"]
 |===

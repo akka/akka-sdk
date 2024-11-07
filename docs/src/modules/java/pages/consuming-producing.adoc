@@ -25,7 +25,7 @@ A Consumer Effect can either:
 * return Done to indicate that the message was processed successfully
 * ignore the incoming message
 
-See also xref:concepts:declarative-effects.adoc[Declarative Effects] for more information.
+For additional details, refer to xref:concepts:declarative-effects.adoc[Declarative Effects].
 
 [#consume-from-event-sourced-entity]
 == Consume from Event Sourced Entity

@@ -70,7 +70,7 @@ An Event Sourced Entity Effect can either:
 * instruct Akka to delete the entity and send a reply to the caller
 * return an error message
 
-See also xref:concepts:declarative-effects.adoc[Declarative Effects] for more information.
+For additional details, refer to xref:concepts:declarative-effects.adoc[Declarative Effects].
 
 == Implementing behavior
 
