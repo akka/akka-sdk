@@ -13,6 +13,7 @@ import org.awaitility.Awaitility;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.time.Instant;
 import java.util.concurrent.ExecutionException;
@@ -23,6 +24,7 @@ import static akkajavasdk.components.pubsub.PublishVEToTopic.CUSTOMERS_TOPIC;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 
+@ExtendWith(Junit5LogCapturing.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class EventingTestkitDestinationTest extends TestKitSupport {
 

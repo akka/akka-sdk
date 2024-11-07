@@ -158,16 +158,8 @@ object Dependencies {
       akkaDependency("akka-testkit"),
       // These are for the test of the testkit
       "net.aichler" % "jupiter-interface" % JupiterKeys.jupiterVersion.value % Test,
-      scalaTest % Test)
-
-  val tck = deps ++= Seq(
-    // FIXME: For now TCK protos have been copied and adapted into this project.
-    //        Running the TCK is still meaningful as it runs the TCK check against the defined framework version.
-    //        Eventually, the final form of protos from should be backported to the framework.
-    //        See https://github.com/lightbend/kalix-jvm-sdk/issues/605
-    //  kalixTckProtocol % "protobuf-src",
-    //  "io.kalix" % "kalix-tck-protocol" % Kalix.RuntimeVersion % "protobuf-src",
-    logback)
+      scalaTest % Test,
+      akkaDependency("akka-actor-testkit-typed") % Test)
 
   lazy val excludeTheseDependencies: Seq[ExclusionRule] = Seq(
     // exclusion rules can be added here

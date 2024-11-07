@@ -12,6 +12,7 @@ import akkajavasdk.components.keyvalueentities.user.UserEntity;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.Optional;
 import java.util.List;
@@ -21,6 +22,7 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
 
+@ExtendWith(Junit5LogCapturing.class)
 public class KeyValueEntityTest extends TestKitSupport {
 
   @Test

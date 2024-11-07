@@ -5,16 +5,22 @@
         </encoder>
     </appender>
 
+    <appender name="CapturingAppender" class="akka.actor.testkit.typed.internal.CapturingAppender"/>
+
+    <logger name="akka.actor.testkit.typed.internal.CapturingAppenderDelegate">
+        <appender-ref ref="STDOUT"/>
+    </logger>
+
     <logger name="akka" level="WARN"/>
     <logger name="akka.runtime" level="INFO"/>
     <logger name="akka.javasdk" level="INFO"/>
     <logger name="kalix.runtime.views" level="INFO"/>
     <logger name="akka.http" level="WARN"/>
     <logger name="io.grpc" level="WARN"/>
-    <logger name="akka.javasdk.impl" level="INFO" />
-    <logger name="akka.javasdk.testkit" level="INFO" />
+    <logger name="akka.javasdk.impl" level="INFO"/>
+    <logger name="akka.javasdk.testkit" level="INFO"/>
 
-    <root level="INFO">
-        <appender-ref ref="STDOUT"/>
+    <root level="DEBUG">
+        <appender-ref ref="CapturingAppender"/>
     </root>
 </configuration>

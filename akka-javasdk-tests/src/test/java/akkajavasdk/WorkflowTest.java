@@ -10,6 +10,7 @@ import akkajavasdk.components.workflowentities.*;
 import akkajavasdk.components.workflowentities.hierarchy.TextWorkflow;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.time.Duration;
 import java.util.Optional;
@@ -20,6 +21,7 @@ import java.util.concurrent.TimeUnit;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 
+@ExtendWith(Junit5LogCapturing.class)
 public class WorkflowTest extends TestKitSupport {
 
   @Test
