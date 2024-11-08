@@ -6,6 +6,7 @@ package akka.javasdk.impl.view
 
 import akka.annotation.InternalApi
 import akka.javasdk.JsonSupport
+import akka.javasdk.impl.AnySupport
 import akka.javasdk.impl.CommandHandler
 import akka.javasdk.impl.ComponentDescriptorFactory
 import akka.javasdk.impl.InvocationContext
@@ -53,7 +54,8 @@ class ReflectiveViewRouter[S, V <: TableUpdater[S]](
     val commandHandler = commandHandlerLookup(commandName)
 
     val anyEvent = event.asInstanceOf[ScalaPbAny]
-    val inputTypeUrl = anyEvent.typeUrl
+    // make sure we route based on the new type url if we get an old json type url message
+    val inputTypeUrl = AnySupport.replaceLegacyJsonPrefix(anyEvent.typeUrl)
     val methodInvoker = commandHandler.lookupInvoker(inputTypeUrl)
 
     methodInvoker match {

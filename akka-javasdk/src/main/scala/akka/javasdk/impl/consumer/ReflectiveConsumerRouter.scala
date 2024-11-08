@@ -7,6 +7,7 @@ package akka.javasdk.impl.consumer
 import akka.annotation.InternalApi
 import akka.javasdk.consumer.Consumer
 import akka.javasdk.consumer.MessageEnvelope
+import akka.javasdk.impl.AnySupport
 import akka.javasdk.impl.AnySupport.ProtobufEmptyTypeUrl
 import akka.javasdk.impl.CommandHandler
 import akka.javasdk.impl.InvocationContext
@@ -34,8 +35,9 @@ private[impl] class ReflectiveConsumerRouter[A <: Consumer](
 
     val commandHandler = commandHandlerLookup(commandName)
 
-    val inputTypeUrl = message.payload().asInstanceOf[ScalaPbAny].typeUrl
     val scalaPbAnyCommand = message.payload().asInstanceOf[ScalaPbAny]
+    // make sure we route based on the new type url if we get an old json type url message
+    val inputTypeUrl = AnySupport.replaceLegacyJsonPrefix(scalaPbAnyCommand.typeUrl)
 
     val invocationContext =
       InvocationContext(scalaPbAnyCommand, commandHandler.requestMessageDescriptor, message.metadata())

@@ -35,8 +35,9 @@ private[impl] final class ReflectiveTimedActionRouter[A <: TimedAction](
 
     val commandHandler = commandHandlerLookup(commandName)
 
-    val inputTypeUrl = message.payload().asInstanceOf[ScalaPbAny].typeUrl
     val scalaPbAnyCommand = message.payload().asInstanceOf[ScalaPbAny]
+    // make sure we route based on the new type url if we get an old json type url message
+    val inputTypeUrl = AnySupport.replaceLegacyJsonPrefix(scalaPbAnyCommand.typeUrl)
     if ((AnySupport.isJson(
         scalaPbAnyCommand) || scalaPbAnyCommand.value.isEmpty) && commandHandler.isSingleNameInvoker) {
       // special cased component client calls, lets json commands trough all the way

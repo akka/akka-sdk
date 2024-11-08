@@ -52,6 +52,10 @@ private[akka] object AnySupport {
     // check both new and old typeurl for compatibility, in case there are services with old type url stored in database
     typeUrl.startsWith(JsonTypeUrlPrefix) || typeUrl.startsWith(KalixJsonTypeUrlPrefix)
 
+  def replaceLegacyJsonPrefix(typeUrl: String): String =
+    if (typeUrl.startsWith(KalixJsonTypeUrlPrefix)) JsonTypeUrlPrefix + typeUrl.stripPrefix(KalixJsonTypeUrlPrefix)
+    else typeUrl
+
   sealed abstract class Primitive[T: ClassTag] {
     val name = fieldType.name().toLowerCase(Locale.ROOT)
     val fullName = KalixPrimitive + name
