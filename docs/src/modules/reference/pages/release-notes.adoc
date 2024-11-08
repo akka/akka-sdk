@@ -12,6 +12,10 @@ Current versions
 
 == November 2024
 
+* Akka SDK 3.0.0
+    - Runtime 1.2.1
+    - Accept old type url for components that can consume pre-existing events
+
 * Akka Runtime 1.2.1
     - Remove logback startup warnings
     - Don't log TImeoutException at error level
