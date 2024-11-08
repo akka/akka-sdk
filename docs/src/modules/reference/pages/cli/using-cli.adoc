@@ -202,9 +202,10 @@ This table shows the component names, their types, and any associated type IDs.
 
 [TIP]
 ====
-If you want to view the events from a event sourced entity you can use the `akka servcie components list-events` command.
+If you want to view the events from an event sourced entity you can use the `akka service components list-events` command.
 
-ifdef::todo[TODO:  More information about this command in xref:reference:cli/akka-cli/akka_services_components_list-events.adoc[components] page.]====
+ifdef::todo[TODO:  More information about this command in xref:reference:cli/akka-cli/akka_services_components_list-events.adoc[components] page.]
+====
 
 == Related documentation
 
