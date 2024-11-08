@@ -44,12 +44,18 @@ public class WalletEntity extends EventSourcedEntity<Wallet, WalletEvent> {
 
   // tag::wallet[]
   public Effect<Done> create(int initialBalance) { // <1>
-    return effects().persist(new WalletEvent.Created(initialBalance))
+    if (currentState() != null){
+      return effects().error("Wallet already exists");
+    } else {
+      return effects().persist(new WalletEvent.Created(initialBalance))
         .thenReply(__ -> done());
+    }
   }
 
   public Effect<WalletResult> withdraw(int amount) { // <2>
-    if (currentState().balance() < amount) {
+    if (currentState() == null){
+      return effects().error("Wallet does not exist");
+    } else if (currentState().balance() < amount) {
       return effects().reply(new Failure("Insufficient balance"));
     } else {
       // end::wallet[]
@@ -61,7 +67,9 @@ public class WalletEntity extends EventSourcedEntity<Wallet, WalletEvent> {
   }
 
   public Effect<WalletResult> deposit(int amount) { // <3>
-    if (currentState() == null) {
+    if (currentState() == null){
+      return effects().error("Wallet does not exist");
+    } else if (currentState() == null) {
       return effects().reply(new Failure("Wallet [" + commandContext().entityId() + "] not exists"));
     } else {
       // end::wallet[]
@@ -73,7 +81,11 @@ public class WalletEntity extends EventSourcedEntity<Wallet, WalletEvent> {
   }
 
   public Effect<Integer> get() { // <4>
-    return effects().reply(currentState().balance());
+    if (currentState() == null){
+      return effects().error("Wallet does not exist");
+    } else {
+      return effects().reply(currentState().balance());
+    }
   }
 }
 // end::wallet[]
