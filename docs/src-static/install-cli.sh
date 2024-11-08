@@ -97,11 +97,11 @@ resolve_version() {
 
     if [ "${tag}" = "latest" ]; then
       version=$(
-        fetch "https://downloads.kalix.io/latest/akka_version.txt" | \
+        fetch "https://downloads.akka.io/latest/akka_version.txt" | \
         tr -d '[:space:]')
     else
       local exists=$(
-        fetch "https://downloads.kalix.io/" | \
+        fetch "https://downloads.akka.io/" | \
         grep -o "<Key>${tag}/akka</Key>" | \
         tr -d '[:space:]')
 
@@ -233,7 +233,7 @@ if [ -z "${ARCH-}" ]; then
 fi
 
 if [ -z "${BASE_URL-}" ]; then
-  BASE_URL="https://downloads.kalix.io/"
+  BASE_URL="https://downloads.akka.io/"
 fi
 
 # parse argv variables
