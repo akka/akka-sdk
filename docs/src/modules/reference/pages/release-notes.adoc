@@ -12,6 +12,11 @@ Current versions
 
 == November 2024
 
+* Akka Runtime 1.2.1
+    - Remove logback startup warnings
+    - Don't log TImeoutException at error level
+    - Allow root route for both sdks
+
 * Akka CLI 3.0.4
     - Changed Docker credentials commands
     - Improved logging commands
