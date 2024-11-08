@@ -188,7 +188,7 @@ private[javasdk] class StrictJsonMessageCodec(delegate: JsonMessageCodec) extend
   override def toString: String = s"StrictJsonMessageCodec -> $delegate"
   override def decodeMessage(value: ScalaPbAny): Any =
     if (AnySupport.isJsonTypeUrl(value.typeUrl)) {
-      val typeName = delegate.removeVersion(value.typeUrl.replace(AnySupport.JsonTypeUrlPrefix, ""))
+      val typeName = delegate.removeVersion(AnySupport.stripJsonTypeUrlPrefix(value.typeUrl))
       val typeClass = delegate.reversedTypeHints.get(typeName)
       if (typeClass eq null) {
         throw new IllegalStateException(s"Cannot decode ${value.typeUrl} message type. Class mapping not found.")

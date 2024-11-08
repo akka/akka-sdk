@@ -436,7 +436,7 @@ private[testkit] object TestKitMessageImpl {
       case _: String =>
         ("text/plain; charset=utf-8", "")
       case _ =>
-        ("application/json", messageCodec.typeUrlFor(message.getClass).stripPrefix(AnySupport.JsonTypeUrlPrefix))
+        ("application/json", AnySupport.stripJsonTypeUrlPrefix(messageCodec.typeUrlFor(message.getClass)))
     }
 
     defaultMetadata(subject, contentType, ceType)
