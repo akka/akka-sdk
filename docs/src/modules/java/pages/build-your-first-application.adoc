@@ -359,6 +359,14 @@ Get cart state:
 curl https://spring-tooth-3406.us-east1.akka.app/carts/123
 ----
 
+== Explore the console
+
+1. Open the https://console.akka.io[*Akka Console*, window="new"].
+2. Navigate to the *Project* where the Service is deployed.
+3. Click on the *Service* card of the Service, it shows detailed information about the running service.
+
+image:console-first-app-service.png[]
+
 == Download full sample
 
 You can download the full source code of the Shopping Cart sample as a link:_attachments/shopping-cart-quickstart.zip[zip file].

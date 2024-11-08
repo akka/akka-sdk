@@ -74,7 +74,7 @@ Open http://localhost:3000/[window="new"]
 
 Start one or more services as described in <<_starting_your_service>> and they will show up in the console. You can restart the services without restarting the console.
 
-ifdef::todo[TODO:  add image from the local console]
+image:local-console.png[]
 
 == Running a service with persistence enabled
 

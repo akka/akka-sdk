@@ -2,8 +2,6 @@
 
 include::ROOT:partial$include.adoc[]
 
-ifdef::todo[TODO:  add illustrations from the local console]
-
 Event Sourced Entities are components that persist their state using the Event Sourcing Model. Instead of persisting the current state, they persist all the events that led to the current state. Akka stores these events in a xref:reference:glossary.adoc#journal[journal]. Event Sourced Entities persist their state with https://en.wikipedia.org/wiki/ACID[ACID semantics, window="new"], scale horizontally, and isolate failures.
 
 An Event Sourced Entity must not update its in-memory state directly as a result of a xref:reference:glossary.adoc#command[_command_]. The handling of a command, if it results in changes being required to state, should persist xref:reference:glossary.adoc#event[_events_]. These events will then be processed by the entity, at which point the in-memory state can and should be changed in response.
@@ -12,7 +10,14 @@ When you need to read state in your service, ask yourself _what events should I 
 
 TIP: 🎓 To deepen your understanding of event sourcing, consider the free online course https://akkademy.akka.io/learn/course/10/reactive-architecture6-cqrs-event-sourcing[Reactive Architecture: CQRS & Event Sourcing, window="new"] in Akkademy.
 
-ifdef::todo[TODO: add an illustration]
+image:console-cart-events.png[]
+
+The image above is from the Akka console and illustrates how events for a shopping cart updates the state of the cart entity.
+
+* 3 Akka T-shirts added.
+* 5 Akka socks added.
+* 4 more Akka T-shirts added, making a total of 7.
+* Cart is checked out.
 
 To load an Entity, Akka reads the journal and replays events to compute the Entity's current state. As an optimization, by default, Event Sourced Entities persist state snapshots periodically. This allows Akka to recreate an Entity from the most recent snapshot plus any events saved after the snapshot.
 

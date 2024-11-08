@@ -146,7 +146,7 @@ There can be several reasons for changing multi-region resources and the primary
 
 You can see throughput, lag, and errors in the replication section in the Control Tower. The replication lag is the time from when the events were created until they were received in the other region. Some errors may be normal, since the connections are sometimes restarted.
 
-ifdef::todo[TODO:  add illustration from the console of the replication section]
+image:dashboard-control-tower-replication.png[]
 
 === Add a region
 

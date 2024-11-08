@@ -54,7 +54,6 @@ TIP: To combine deploying a service with relevant settings, Akka supports deploy
 
 You can verify the deployment status of your service in the Akka Console or with the Akka CLI:
 
-ifdef::todo[TODO:  Image of new Console, review description]
 [.tabset]
 --
 Akka CLI::
@@ -79,7 +78,8 @@ Akka Console::
 2. Navigate to the *Project* where the Service is deployed.
 3. Look for the *Service* card of the Service, it shows the status.
 +
-ifdef::todo[TODO:  image for service card image::console-service-card.png[Service card]]+
+image:console-service-status.png[Service card]
++
 A service status can be one of the following:
 
 * *Ready*: All service instances are up-to-date and fully available.
