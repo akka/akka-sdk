@@ -1,23 +1,26 @@
-= akka docker delete-credentials
+= akka services logging list
 
-Delete Docker credentials for given ID.
+List the log levels configuration.
 
 == Synopsis
 
-The command `akka docker delete-credentials _id_` removes a set of Docker credentials from the project.
-
-TIP: Use the `akka docker list-credentials` command to find the _id_.
+List the log levels configuration.
 
 ----
-akka docker delete-credentials ID [flags]
+akka services logging list [SERVICE_NAME] [flags]
+----
+
+== Examples
+
+----
+
+> akka service logging list my-service
 ----
 
 == Options
 
 ----
-  -h, --help             help for delete-credentials
-      --owner string     the owner of the project to use, needed if you have two projects with the same name from different owners
-      --project string   project to use if not using the default configured project
+  -h, --help   help for list
 ----
 
 == Options inherited from parent commands
@@ -37,7 +40,7 @@ akka docker delete-credentials ID [flags]
 
 == SEE ALSO
 
-* link:akka_docker.html[akka docker]	 - Manage Docker credentials for Akka projects.
+* link:akka_services_logging.html[akka services logging]	 - Change the log level configration of a service.
 
 [discrete]
 

@@ -76,8 +76,8 @@ The `akka docker` commands allow you to manage Docker credentials so that servic
 The following options are available for xref:reference:cli/akka-cli/akka_docker.adoc[akka docker]:
 
 * xref:reference:cli/akka-cli/akka_docker_add-credentials.adoc[akka docker add-credentials]
-* xref:reference:cli/akka-cli/akka_docker_delete-credentials.adoc[akka docker delete-credentials]
 * xref:reference:cli/akka-cli/akka_docker_list-credentials.adoc[akka docker list-credentials]
+* xref:reference:cli/akka-cli/akka_docker_remove-credentials.adoc[akka docker remove-credentials]
 
 == Online docs
 The `akka docs` command opens the Akka online documentation page.
@@ -266,6 +266,10 @@ The xref:reference:cli/akka-cli/akka_services.adoc[akka services] command includ
 * xref:reference:cli/akka-cli/akka_services_jwts_remove.adoc[akka services jwts remove]
 * xref:reference:cli/akka-cli/akka_services_jwts_update.adoc[akka services jwts update]
 * xref:reference:cli/akka-cli/akka_services_list.adoc[akka services list]
+* xref:reference:cli/akka-cli/akka_services_logging.adoc[akka services logging]
+* xref:reference:cli/akka-cli/akka_services_logging_list.adoc[akka services logging list]
+* xref:reference:cli/akka-cli/akka_services_logging_set-level.adoc[akka services logging set-level]
+* xref:reference:cli/akka-cli/akka_services_logging_unset-level.adoc[akka services logging unset-level]
 * xref:reference:cli/akka-cli/akka_services_pause.adoc[akka services pause]
 * xref:reference:cli/akka-cli/akka_services_proxy.adoc[akka services proxy]
 * xref:reference:cli/akka-cli/akka_services_restart.adoc[akka services restart]

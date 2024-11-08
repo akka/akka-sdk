@@ -6,6 +6,8 @@ Delete a service.
 
 The `akka services delete _service-name_` command deletes a service and removes all associated resources.
 You may optionally delete associated routes with the `--delete-routes` flag.
+Issuing the delete performs a soft delete, where the deletion of the service and its data can be undone for up to two weeks using `akka services restore _service-name_`.
+To immediately issue a permanent delete add the `--hard` flag.
 
 ----
 akka services delete SERVICE [flags]

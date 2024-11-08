@@ -1,15 +1,27 @@
-= akka docker
+= akka services logging set-level
 
-Manage Docker credentials for Akka projects.
+Set the logger level configuration.
 
 == Synopsis
 
-The family of `akka docker` commands manage Docker credentials so that services can pull images from Docker repositories that require download credentials.
+Set the logger level configuration for a specific logger in the given service.
+This configuration will be applied to all instances of the service.
+
+----
+akka services logging set-level [SERVICE_NAME] [LOGGER_NAME] [LEVEL] [flags]
+----
+
+== Examples
+
+----
+
+> akka service logging set-level my-service com.example.MyClass DEBUG
+----
 
 == Options
 
 ----
-  -h, --help   help for docker
+  -h, --help   help for set-level
 ----
 
 == Options inherited from parent commands
@@ -29,10 +41,7 @@ The family of `akka docker` commands manage Docker credentials so that services 
 
 == SEE ALSO
 
-* link:akka.html[akka]	 - Akka control
-* link:akka_docker_add-credentials.html[akka docker add-credentials]	 - Add Docker credentials to an Akka project.
-* link:akka_docker_list-credentials.html[akka docker list-credentials]	 - List all Docker credentials.
-* link:akka_docker_remove-credentials.html[akka docker remove-credentials]	 - Remove Docker credentials
+* link:akka_services_logging.html[akka services logging]	 - Change the log level configration of a service.
 
 [discrete]
 

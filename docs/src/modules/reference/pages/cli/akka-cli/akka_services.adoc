@@ -42,6 +42,7 @@ The `akka services` commands are used to manage and modify the services in your 
 * link:akka_services_get.html[akka services get]	 - Describe a specific service.
 * link:akka_services_jwts.html[akka services jwts]	 - Manage JWTs.
 * link:akka_services_list.html[akka services list]	 - List all services.
+* link:akka_services_logging.html[akka services logging]	 - Change the log level configration of a service.
 * link:akka_services_pause.html[akka services pause]	 - Pauses a service, scaling it to zero.
 * link:akka_services_proxy.html[akka services proxy]	 - Create an HTTP proxy to a service.
 * link:akka_services_restart.html[akka services restart]	 - Restarts all service instances using the newest image.
