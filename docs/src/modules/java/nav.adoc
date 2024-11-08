@@ -1,6 +1,5 @@
 * xref:index.adoc[Developing]
 ** xref:build-your-first-application.adoc[Build your first application]
-** xref:samples.adoc[]
 ** Components
 *** xref:event-sourced-entities.adoc[Event Sourced Entities]
 *** xref:key-value-entities.adoc[Key Value Entities]
@@ -21,3 +20,4 @@
 *** xref:auth-with-jwts.adoc[]
 *** xref:running-locally.adoc[]
 ** xref:java:dev-best-practices.adoc[]
+** xref:samples.adoc[]

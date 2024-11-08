@@ -6,9 +6,7 @@ Event Sourced Entities are components that persist their state using the Event S
 
 An Event Sourced Entity must not update its in-memory state directly as a result of a xref:reference:glossary.adoc#command[_command_]. The handling of a command, if it results in changes being required to state, should persist xref:reference:glossary.adoc#event[_events_]. These events will then be processed by the entity, at which point the in-memory state can and should be changed in response.
 
-When you need to read state in your service, ask yourself _what events should I be listening to_?. When you need to write state, ask yourself _what events should I be persisting_?
-
-TIP: 🎓 To deepen your understanding of event sourcing, consider the free online course https://akkademy.akka.io/learn/course/10/reactive-architecture6-cqrs-event-sourcing[Reactive Architecture: CQRS & Event Sourcing, window="new"] in Akkademy.
+When you need to read state in your service, ask yourself _what events should I be listening to_? When you need to write state, ask yourself _what events should I be persisting_?
 
 image:console-cart-events.png[]
 

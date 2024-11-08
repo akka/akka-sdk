@@ -3,8 +3,4 @@
 * xref:support:index.adoc[]
 ** xref:support:community-forum.adoc[]
 ** xref:support:email.adoc[]
-** xref:support:frequently-asked-questions.adoc[]
-** xref:support:paid-plans.adoc[]
 ** xref:support:platform-status.adoc[]
-** xref:support:request-a-demo.adoc[]
-** xref:support:troubleshooting.adoc[]
