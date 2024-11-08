@@ -30,9 +30,10 @@ jobs:
 
     - name: Script
       run: |
+        sed -i '' "s/\(echo \":akka-cli-version: \)[^\"]*/\1${CLI_VERSION}/" Makefile
         gem install kramdown-asciidoc
         ./docs/bin/generate_cli_docs.sh gen-index
-        
+
     - name: Create Pull Request
       # https://github.com/peter-evans/create-pull-request/releases
       # v7.0.5

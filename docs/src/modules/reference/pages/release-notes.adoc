@@ -12,6 +12,11 @@ Current versions
 
 == November 2024
 
+* Akka CLI 3.0.4
+    - Changed Docker credentials commands
+    - Improved logging commands
+    - New commands for dynamic logging levels (`akka service logging`)
+
 * Akka SDK 3.0.0-RC4
     - Fix dependency excludes
 
@@ -27,6 +32,9 @@ Current versions
     - Allow more customization of brokers in dev mode
     - Akka dependencies
     - Smaller improvements
+
+* https://github.com/akka/akka-projection/releases/tag/v1.6.1[Akka Projections 1.6.1]
+    - Configurable parallelism in initial offset store query for AWS DynamoDB
 
 * Akka Runtime 1.1.53
     - Several smaller bug fixes and improvements
