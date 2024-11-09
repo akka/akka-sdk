@@ -4,7 +4,7 @@ A simple store example with products, customers, and orders.
 
 Used for code snippets in the Views documentation.
 
-When running a Kalix service locally, we need to have its companion Kalix Runtime running alongside it.
+When running a Akka service locally, we need to have its companion Akka Runtime running alongside it.
 
 To start your service locally, run:
 
@@ -12,11 +12,11 @@ To start your service locally, run:
 mvn compile exec:java
 ```
 
-This command will start your Kalix service and a companion Kalix Runtime.
+This command will start your Akka service.
 
 ## Exercising the services
 
-With your Kalix service running, once you have defined endpoints they should be available at `http://localhost:9000`.
+With your Akka service running, once you have defined endpoints they should be available at `http://localhost:9000`.
 
 Create some products:
 

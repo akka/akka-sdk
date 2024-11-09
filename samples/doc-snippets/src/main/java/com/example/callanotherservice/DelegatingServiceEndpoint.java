@@ -9,8 +9,8 @@ import akka.javasdk.http.StrictResponse;
 
 import java.util.concurrent.CompletionStage;
 
-// Allow all other Kalix services deployed in the same project to access the components of this
-// Kalix service, but disallow access from the internet.
+// Allow all other Akka services deployed in the same project to access the components of this
+// Akka service, but disallow access from the internet.
 // Documentation at https://doc.akka.io/java/access-control.html
 // tag::delegating-endpoint[]
 @Acl(allow = @Acl.Matcher(service = "*"))

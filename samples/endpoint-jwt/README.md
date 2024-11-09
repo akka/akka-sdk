@@ -1,8 +1,9 @@
 # endpoint-jwt
 
 
-To understand the Akka concepts that are the basis for this example, see [Development Process](https://docs.kalix.
-io/java/development-process.html) in the documentation.
+## Designing
+
+To understand the Akka concepts behind this example, see [Development Process](https://doc.akka.io/concepts/development-process.html) in the documentation.
 
 This project demonstrates the use of an Event Sourced Entity.
 To understand more, read [JSON Web Tokens (JWT)](https://doc.akka.io/java/auth-with-jwts.html) in the documentation.
