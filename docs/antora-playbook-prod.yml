@@ -10,7 +10,7 @@ content:
   sources:
   - url: ./../
     branches: [HEAD]
-    start_paths: [docs/src]
+    start_paths: [docs/src,docs/src-managed]
 
 ui:
   bundle:
