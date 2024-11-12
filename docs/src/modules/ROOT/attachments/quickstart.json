@@ -24,11 +24,11 @@
       "dir": "choreography-saga"
     },
     {
-      "id": "workflow",
+      "id": "transfer-workflow",
       "language":  "java",
-      "title": "Workflow",
+      "title": "Transfer Workflow",
       "url": "/java/_attachments/workflow-quickstart.zip",
-      "dir": "workflow"
+      "dir": "transfer-workflow"
     }
   ]
 }
