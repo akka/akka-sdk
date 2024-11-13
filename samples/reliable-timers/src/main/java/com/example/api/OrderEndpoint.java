@@ -30,12 +30,12 @@ public class OrderEndpoint {
   private final Logger logger = LoggerFactory.getLogger(getClass());
 
   // tag::place-order[]
-  private final ComponentClient componentClient;
   private final TimerScheduler timerScheduler;
+  private final ComponentClient componentClient;
 
-  public OrderEndpoint(ComponentClient componentClient, TimerScheduler timerScheduler) { // <1>
-    this.componentClient = componentClient;
+  public OrderEndpoint(TimerScheduler timerScheduler, ComponentClient componentClient) { // <1>
     this.timerScheduler = timerScheduler;
+    this.componentClient = componentClient;
   }
 
   private String timerName(String orderId) {
@@ -74,13 +74,14 @@ public class OrderEndpoint {
   }
   // end::place-order[]
 
-  // tag::confirm-cancel-order[]
+  // tag::confirm-order[]
   // ...
 
   @Post("/{orderId}/confirm")
   public CompletionStage<HttpResponse> confirm(String orderId) {
+    // end::confirm-order[]
     logger.info("Confirming order '{}'", orderId);
-
+    // tag::confirm-order[]
     return
         componentClient.forKeyValueEntity(orderId)
             .method(OrderEntity::confirm).invokeAsync() // <1>
@@ -94,6 +95,7 @@ public class OrderEndpoint {
                       CompletableFuture.completedFuture(HttpResponses.badRequest(invalid.message()));
                 });
   }
+  // end::confirm-order[]
 
   @Post("/{orderId}/cancel")
   public CompletionStage<HttpResponse> cancel(String orderId) {
@@ -106,7 +108,6 @@ public class OrderEndpoint {
           timerScheduler.cancel(timerName(orderId)))
         .thenApply(done -> HttpResponses.ok());
   }
-  // end::confirm-cancel-order[]
 
 // tag::timers[]
 }

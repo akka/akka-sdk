@@ -13,10 +13,12 @@ import org.slf4j.LoggerFactory;
 
 import static com.example.application.OrderEntity.Result.Ok.ok;
 
+
+
 // tag::order[]
 @ComponentId("order")
 public class OrderEntity extends KeyValueEntity<Order> {
-
+   //...
   // end::order[]
   private static final Logger logger = LoggerFactory.getLogger(OrderEntity.class);
 
@@ -32,7 +34,7 @@ public class OrderEntity extends KeyValueEntity<Order> {
     @JsonSubTypes.Type(value = Result.NotFound.class, name = "notFound"),
     @JsonSubTypes.Type(value = Result.Invalid.class, name = "invalid")
   })
-  // tag::order[]
+  
   public sealed interface Result {
 
     public record Ok() implements Result {
@@ -57,11 +59,12 @@ public class OrderEntity extends KeyValueEntity<Order> {
     return new Order(entityId, false, false, "", 0);
   }
 
+  // tag::place-order[]
   public Effect<Order> placeOrder(OrderRequest orderRequest) { // <1>
     var orderId = commandContext().entityId();
-    // end::order[]
+    // end::place-order[]
     logger.info("Placing orderId={} request={}", orderId, orderRequest);
-    // tag::order[]
+    // tag::place-order[]
     boolean placed = true;
     boolean confirmed = false;
     var newOrder = new Order(
@@ -70,16 +73,18 @@ public class OrderEntity extends KeyValueEntity<Order> {
       placed, // <2>
       orderRequest.item(),
       orderRequest.quantity());
+
     return effects()
       .updateState(newOrder)
       .thenReply(newOrder);
   }
+  // end::place-order[]
 
   public Effect<Result> confirm() {
     var orderId = commandContext().entityId();
-    // end::order[]
+    
     logger.info("Confirming orderId={}", orderId);
-    // tag::order[]
+    
     if (currentState().placed()) { // <3>
       return effects()
         .updateState(currentState().confirm())
@@ -89,21 +94,23 @@ public class OrderEntity extends KeyValueEntity<Order> {
     }
   }
 
+
+  // tag::cancel-order[]
   public Effect<Result> cancel() {
     var orderId = commandContext().entityId();
-    // end::order[]
+    // end::cancel-order[]
     logger.info("Cancelling orderId={} currentState={}", orderId, currentState());
-    // tag::order[]
+
+    // tag::cancel-order[]
     if (!currentState().placed()) {
-      return effects().reply(Result.NotFound.of("No order found for " + orderId)); // <5>
+      return effects().reply(Result.NotFound.of("No order found for " + orderId)); // <1>
     } else if (currentState().confirmed()) {
-      return effects().reply(Result.Invalid.of("Cannot cancel an already confirmed order")); // <6>
+      return effects().reply(Result.Invalid.of("Cannot cancel an already confirmed order")); // <2>
     } else {
-      return effects().updateState(emptyState())
-        .thenReply(ok); // <7>
+      return effects().updateState(emptyState()).thenReply(ok); // <3>
     }
   }
-  // end::order[]
+  // end::cancel-order[]
 
   public Effect<OrderStatus> status() {
     var id = currentState().id();
@@ -114,6 +121,7 @@ public class OrderEntity extends KeyValueEntity<Order> {
       return effects().error("No order found for '" + id + "'");
     }
   }
+
 // tag::order[]
 }
 // end::order[]
