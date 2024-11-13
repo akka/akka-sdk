@@ -33,14 +33,16 @@
         <docker.platform>linux/amd64</docker.platform>
 
         <maven.build.timestamp.format>yyyyMMddHHmmss</maven.build.timestamp.format>
-        <java.version>21</java.version>
-        <maven.compiler.release>${java.version}</maven.compiler.release>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
         <akka-javasdk.version>3.0.0</akka-javasdk.version>
+
+        <!-- These are dependent on runtime environment and cannot be customized by users -->
+        <maven.compiler.release>21</maven.compiler.release>
         <kalix-runtime.version>1.2.1</kalix-runtime.version>
+
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <skip.docker>false</skip.docker>
         <skip.deploy>true</skip.deploy>
-
 
         <!-- plugin versions -->
         <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
@@ -92,8 +94,6 @@
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>${maven-compiler-plugin.version}</version>
                     <configuration>
-                        <source>${java.version}</source>
-                        <target>${java.version}</target>
                         <compilerArgs>
                             <arg>-Xlint:deprecation</arg>
                             <arg>-parameters</arg>
