@@ -90,9 +90,6 @@ antora-local:
 		-t ${antora_docker_image}:${antora_docker_image_tag} \
 		--cache-dir=.cache/antora --stacktrace --log-failure-level=fatal \
 		docs/antora-playbook-local.yml
-	# permission denied error in the GH workflow
-	# cp docs/install-cli.sh.txt target/site/
-	# mv target/site/install-cli.sh.txt target/site/install-cli.sh
 
 antora-prod:
 	docker run \
@@ -101,8 +98,6 @@ antora-prod:
 		-t ${antora_docker_image}:${antora_docker_image_tag} \
 		--cache-dir=.cache/antora --stacktrace --log-level error --log-failure-level=fatal \
 		docs/antora-playbook-prod.yml
-	# cp docs/install-cli.sh.txt target/site/
-	mv target/site/install-cli.sh.txt target/site/install-cli.sh
 
 validate-links:
 	docker run \
