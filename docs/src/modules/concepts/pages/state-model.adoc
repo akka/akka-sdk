@@ -30,15 +30,13 @@ By default, most entities will only allow their origin region to change their st
 
 The Event Sourced state model captures changes to data by storing events in a journal. The current entity state is derived from the events. Interested parties can read the journal and transform the stream of events into read models (Views) or perform business actions based on events. 
 
-[.darkmode-white-padded]
-image:event-source-flow.png[Concepts Events Source Flow]
+image:event-sourced-entity-flow.svg[Concepts Events Source Flow]
 
 == The Key Value state model
 
 In the _Key Value_ state model, only the current state of the Entity is persisted - its value. Akka caches the state to minimize data store access. Interested parties can subscribe to state changes emitted by a Key Value Entity and perform business actions based on those state changes. 
 
-[.darkmode-white-padded]
-image:key-value-flow.png[Concepts Key Value Flow]
+image:key-value-entity-flow.svg[Concepts Key Value Flow]
 
 == State models and replication
 

@@ -24,14 +24,14 @@ xref:operations:organizations/regions.adoc[] are specific clusters running Akka 
 
 In addition to your services from a project, a region also has endpoints for your API. You define endpoints within the xref:concepts:architecture-model.adoc#_architecture[API layer] and Akka will expose them. They will be unique to each region. That is they will have unique DNS, much like AWS services S3 and SQS do.
 
-xref:projects:container-registries.adoc[Container registries] exist in all Akka.io regions so that the images that are your packaged services are in close proximity to the compute they will run on. 
+xref:operations:projects/container-registries.adoc[Container registries] exist in all Akka.io regions so that the images that are your packaged services are in close proximity to the compute they will run on.
 
 A given cloud provider region _may_ have many Akka regions within it. In this way Akka can scale past any upper bound limits of the infrastructure on which it runs.
 
 === Multiple region by design
 Stateful components in Akka have a concept of location, that is region, and are designed to span regions and replicate their data across regions. This is outlined in xref:concepts:state-model.adoc[state model]. These components call the region they were created in their *primary region* and keep track of it throughout their lifetime. This allows Akka to simplify some aspects of distributed computing. 
 
-In Akka projects regional choices are made at deployment time, not development time, allowing you to change your regions over time and even change your primary region. You can also control if your service is in *static* or *dynamic* mode of regionalization, which impacts where the primary copy of component data resides. Static mode marks the primary region of the project as the primary region for all components. Dynamic mode allows components to use the region they are first created in as their primary region. For more information see xref:operations:projects/multi-region.adoc#_selecting_primary_for_stateful_components[].
+In Akka projects regional choices are made at deployment time, not development time, allowing you to change your regions over time and even change your primary region. You can also control if your service is in *static* or *dynamic* mode of regionalization, which impacts where the primary copy of component data resides. Static mode marks the primary region of the project as the primary region for all components. Dynamic mode allows components to use the region they are first created in as their primary region. For more information see xref:operations:regions/index.adoc#selecting-primary[].
 
 By default, most entities will only allow their primary region to change their state, to make this easier Akka will also automatically route state changing operations to the primary region. This routing is asynchronous and durable, meaning network partitions will not stop the write from being queued. This gives you a read anywhere model out of the box that automatically routes writes appropriately.
 
