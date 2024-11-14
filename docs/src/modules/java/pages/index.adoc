@@ -1,4 +1,4 @@
-= Akka SDK
+= Developing
 
 include::ROOT:partial$include.adoc[]
 
