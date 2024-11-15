@@ -2,6 +2,10 @@
 <svg id="a" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 540">
   <defs>
     <style>
+      .a {
+        fill: #000000;
+        stroke: none;
+      }
       .b, .c {
         fill: #f1f1f1;
       }
@@ -56,6 +60,7 @@
       }
     </style>
   </defs>
+  <rect class="a" x="0" y="0" width="1240" height="540" />
   <g>
     <g>
       <path class="d" d="M99.87,410.5h361.27c5.15,0,12.07,3.24,15.36,7.2l30.33,36.4c7.52,9.02,4.06,16.4-7.68,16.4H61.85c-11.74,0-15.2-7.38-7.68-16.4l30.33-36.4c3.3-3.96,10.21-7.2,15.36-7.2" pointer-events="all"/>
