@@ -206,7 +206,7 @@ check_prefix() {
   if [ ! -w "${bin}" ] ; then
     error "Installation directory ${bin} is not writable by current user. Suggest trying:"
     info "curl -sL https://doc.akka.io/install-cli.sh | bash -s -- --prefix /tmp && \ "
-    info "    sudo mv /tmp/akka-cli /usr/local/bin/akka"
+    info "    sudo mv /tmp/akka /usr/local/bin/akka"
     exit 1
   fi
 
