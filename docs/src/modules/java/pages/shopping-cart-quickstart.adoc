@@ -1,87 +1,46 @@
-= Build your first application
+= Shopping cart quickstart
 
 include::ROOT:partial$include.adoc[]
 
-This guide will walk you through the process of setting up your environment, generating a project, and implementing a simple application. By the end, you will have a functional Shopping Cart application built with the Akka SDK.
+This guide walks you through a shopping cart service illustrating the use of some of Akka's components.
 
 == Overview
 
-The Akka SDK comes with Maven support that enables you to get started quickly. In this guide, you will:
+The shopping cart service implements a cart that allows users to add and remove items, get the contents of carts, and checkout the carts.
 
-* Use the Akka Maven archetype to generate a skeleton project that follows the recommended onion architecture.
-* Understand how to use the Akka Maven parent POM to define dependencies and run your application locally.
+In this guide you will
+
+* Download a completed shopping cart service to examine and run it locally.
+* Be introduced to key Akka concepts including xref:java:event-sourced-entities.adoc[Event Sourced Entities].
+* See how the Akka xref:concepts:architecture-model.adoc[] provides a clear separation of concerns in your microservices.
+* Run the service locally and explore it with the local Akka console.
+* Deploy the service to https://console.akka.io[akka.io].
 
 == Prerequisites
 
 include::ROOT:partial$cloud-dev-prerequisites.adoc[]
 
 
-== Generate and build the skeleton project
+== Download the sample
 
-The Maven archetype template prompts you to specify the project's group ID, name and version interactively. Run it using the commands shown for your OS.
+You can download the full source code of the Shopping Cart sample as a link:_attachments/shopping-cart-quickstart.zip[zip file], or you can use the Akka CLI command below to download and unzip this quickstart project.
 
-[sidebar]
-In IntelliJ, you can skip the command line. Open the IDE, select
-*File > New > Project*, and click to activate *Create from archetype*. Use the UI to locate the archetype and fill in the blanks.
-
-Follow these steps to generate and build your project:
-
-. From a command line, run the template in a convenient location:
-+
-[.tabset]
-Linux or macOS::
-+
---
-[source,command line, subs="attributes"]
+[source,bash]
 ----
-mvn archetype:generate \
-  -DarchetypeGroupId=io.akka \
-  -DarchetypeArtifactId=akka-javasdk-archetype \
-  -DarchetypeVersion={akka-javasdk-version}
+akka quickstart download shopping-cart
 ----
---
-Windows 10+::
-+
---
-[source,command line, subs="attributes"]
-----
-mvn archetype:generate ^
-  -DarchetypeGroupId=io.akka ^
-  -DarchetypeArtifactId=akka-javasdk-archetype ^
-  -DarchetypeVersion={akka-javasdk-version}
-----
---
 
-. Fill in
-* groupId: `com.example`
-* artifactId: `shoppingcart`
-* version: `1.0-SNAPSHOT`
-* package: `shoppingcart`
+Then open the project in your favorite IDE.
 
-. Navigate to the new project directory.
+== Understanding the shopping cart
 
-. Open it in your preferred IDE / Editor.
+For this quickstart walk-through, we will implement a Shopping Cart based on an _Event Sourced Entity_.
 
-== Implementing first component
+Through our "Shopping Cart" Event Sourced Entity we expect to manage our cart, adding and removing items as we please. Being event-sourced means it will represent changes to state as a series of domain events. Let’s have a look at what kind of model we use to store and the events our entity generates.
 
-Akka has different kinds of components that you can use to implement your application.
-The list of components are:
+=== The domain model
 
-* xref:java:event-sourced-entities.adoc[Event Sourced Entities]
-* xref:java:key-value-entities.adoc[Key Value Entities]
-* xref:java:http-endpoints.adoc[HTTP Endpoints]
-* xref:java:views.adoc[Views]
-* xref:java:workflows.adoc[Workflows]
-* xref:java:timed-actions.adoc[Timers]
-* xref:java:consuming-producing.adoc[Consumers]
-
-For this *Getting started* walk-through, we will implement a Shopping Cart based on an Event Sourced Entity.
-
-Through our "Shopping Cart" Event Sourced Entity we expect to manage our cart, adding and removing items as we please. Being event-sourced means it will represent changes to state as a series of domain events. Let’s have a look at what kind of model we expect to store and the events our entity might generate.
-
-=== Define the domain model
-
-First, define the domain class `ShoppingCart` in package `shoppingcart.domain`. This class should be located in the `src/main/java/shoppingcart/domain/` directory and saved as `ShoppingCart.java`. 
+The first concept to note is the domain class `ShoppingCart` in package `shoppingcart.domain`. This class is located in the `src/main/java/shoppingcart/domain/` directory and named `ShoppingCart.java`. 
 
 [source,java,indent=0]
 .{sample-base-url}/shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCart.java[ShoppingCart.java]
@@ -91,7 +50,7 @@ include::example$shopping-cart-quickstart/src/main/java/shoppingcart/domain/Shop
 <1> Our `ShoppingCart` is fairly simple, being composed only by a `cartId` and a list of line items.
 <2> A `LineItem` represents a single product and the quantity we intend to buy.
 
-Next, let's define a domain event for adding items to the cart. Add an interface `ShoppingCartEvent` with the `ItemAdded` domain event in package `shoppingcart.domain`. This class should be located in the `src/main/java/shoppingcart/domain/` directory and saved as `ShoppingCartEvent.java`:
+Next, we have a domain event for adding items to the cart. Add an interface `ShoppingCartEvent` with the `ItemAdded` domain event in package `shoppingcart.domain`. This file should be located in the `src/main/java/shoppingcart/domain/` directory and named `ShoppingCartEvent.java`:
 
 [source,java,indent=0]
 .{sample-base-url}/shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCartEvent.java[ShoppingCartEvent.java]
@@ -101,7 +60,9 @@ include::example$shopping-cart-quickstart/src/main/java/shoppingcart/domain/Shop
 <1> `ItemAdded` event derives from the `ShoppingCartEvent` interface.
 <2> Specifying a logical type name, required for serialization.
 
-Jumping back to the `ShoppingCart` domain class, add business logic to handle the `ItemAdded` domain event for adding items to the cart:
+You may notice that there are other events defined as well, this is how the application will pass Java events between the Akka runtime and the domain object.
+
+Jumping back to the `ShoppingCart` domain class, there is also business logic to handle the `ItemAdded` domain event for adding items to the cart:
 
 [source,java,indent=0]
 .{sample-base-url}/shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCart.java[ShoppingCart.java]
@@ -113,17 +74,9 @@ include::example$shopping-cart-quickstart/src/main/java/shoppingcart/domain/Shop
 <3> Adds the update item to the shopping cart.
 <4> Returns a new instance of the shopping cart with the updated line items.
 
-If your integrated development environment (IDE) did not detect it, you may need to add the following imports manually:
+=== The ShoppingCart entity
 
-[source,java,indent=0]
-.{sample-base-url}/shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCart.java[ShoppingCart.java]
-----
-include::example$shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCart.java[tag=first-app-top-part-2]
-----
-
-=== Define the entity
-
-Create an Event Sourced Entity named `ShoppingCartEntity` in package `shoppingcart.application`. This class should be located in the `src/main/java/shoppingcart/application/` directory and saved as `ShoppingCartEntity.java`. The class signature should look like this:
+We also have an Event Sourced Entity named `ShoppingCartEntity` in package `shoppingcart.application`. This class is located in the `src/main/java/shoppingcart/application/` directory and named `ShoppingCartEntity.java`. The class signature looks like this:
 
 [source,java]
 .{sample-base-url}/shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java[ShoppingCartEntity.java]
@@ -133,11 +86,7 @@ include::example$shopping-cart-quickstart/src/main/java/shoppingcart/application
 <1> Extend `EventSourcedEntity<ShoppingCart, ShoppingCartEvent>`, where `ShoppingCart` is the type of state this entity will store, and `ShoppingCartEvent` is the interface for the events it persists.
 <2> Annotate the class so Akka can identify it as an Event Sourced Entity.
 
-At this point, you may encounter an error stating:
-`The type ShoppingCartEntity must implement the inherited abstract method EventSourcedEntity<ShoppingCart,ShoppingCartEvent>.applyEvent(ShoppingCartEvent).`
-This error is expected, and we will implement this abstract method in the next step.
-
-Inside `ShoppingCartEntity`, define an `addItem` command handler to generate an `ItemAdded` event, and an event handler to process the event:
+Inside `ShoppingCartEntity`, we define an `addItem` command handler to generate an `ItemAdded` event, and an event handler to process the event:
 
 [source,java]
 .{sample-base-url}/shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java[ShoppingCartEntity.java]
@@ -150,7 +99,7 @@ include::example$shopping-cart-quickstart/src/main/java/shoppingcart/application
 <4> Acknowledge that the event was successfully persisted.
 <5> Event handler to process the `ItemAdded` event and return the updated state.
 
-Inside `ShoppingCartEntity`, define a `getCart` command handler to retrieve the state of the shopping cart:
+Inside `ShoppingCartEntity`, we also define a `getCart` command handler to retrieve the state of the shopping cart:
 
 [source,java,indent=0]
 .{sample-base-url}/shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java[ShoppingCartEntity.java]
@@ -161,12 +110,11 @@ include::example$shopping-cart-quickstart/src/main/java/shoppingcart/application
 <2> Define the initial state.
 <3> Return the current state as a reply to the request.
 
-
-=== Define the external API
+=== The external API
 
 The shopping cart API is defined by the `ShoppingCartEndpoint`.
 
-Create a class named `ShoppingCartEndpoint` in package `shoppingcart.api`. This class should be located in the `src/main/java/shoppingcart/api/` directory and saved as `ShoppingCartEndpoint.java`:
+It is a class named `ShoppingCartEndpoint` in package `shoppingcart.api`. This class is located in the `src/main/java/shoppingcart/api/` directory and named `ShoppingCartEndpoint.java`:
 
 [source,java,indent=0]
 .{sample-base-url}/shopping-cart-quickstart/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java[ShoppingCartEndpoint.java]
@@ -181,11 +129,12 @@ include::example$shopping-cart-quickstart/src/main/java/shoppingcart/api/Shoppin
 <6> Use path parameter `{cartId}` in combination with request body `ShoppingCart.LineItem`.
 <7> Map request to a more suitable response, in this case an `HTTP 200 OK` response.
 
+
 == Run locally
 
 Start your service locally:
 
-[source,bash]
+[source, command line]
 ----
 mvn compile exec:java
 ----
@@ -225,7 +174,7 @@ Request to see all of the items in the cart:
 curl localhost:9000/carts/123
 ----
 
-Observe all of the items in the cart:
+Observe all the items in the cart:
 
 [source]
 ----
@@ -332,9 +281,16 @@ A service status can be one of the following:
 Approximately one minute after deploying, your service status should become *Ready*.
 
 . Expose your service to the internet:
-[source,bash]
++
+[source, command line]
 ----
-$ akka service expose cart-service
+akka service expose cart-service
+----
++
+Should respond with something similar to (the exact address is generated for your service):
++
+[source]
+----
 Service 'cart-service' was successfully exposed at: spring-tooth-3406.us-east1.akka.app
 ----
 
@@ -366,10 +322,6 @@ curl https://spring-tooth-3406.us-east1.akka.app/carts/123
 3. Click on the *Service* card of the Service, it shows detailed information about the running service.
 
 image:console-first-app-service.png[]
-
-== Download full sample
-
-You can download the full source code of the Shopping Cart sample as a link:_attachments/shopping-cart-quickstart.zip[zip file].
 
 == Next steps
 

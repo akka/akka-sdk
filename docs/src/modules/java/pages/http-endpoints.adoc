@@ -169,6 +169,7 @@ For more details see xref:component-and-service-calls.adoc[]
 For more control over the request and responses it is also possible to use the more
 low-level Akka HTTP model APIs.
 
+[#_low_level_responses]
 === Low level responses ===
 
 Returning `akka.http.javadsl.model.HttpResponse` makes it possible to do more flexible and advanced responses.

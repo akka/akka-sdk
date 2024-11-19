@@ -9,9 +9,10 @@ In order to run your service locally, you'll need to have the following prerequi
 
 include::ROOT:partial$local-dev-prerequisites.adoc[]
 
+[[_starting_your_service]]
 == Starting your service
 
-As an example, we will use the xref:build-your-first-application.adoc[Shopping Cart] sample.
+As an example, we will use the xref:shopping-cart-quickstart.adoc[Shopping Cart] sample.
 
 To start your service locally, run the following command from the root of your project:
 
@@ -22,7 +23,7 @@ mvn compile exec:java
 
 == Invoking your service
 
-After you start the service it will accept invocations on `localhost:9000`. You can use https://curl.se[cURL, window="new"] to invoke your service.
+After you start the service it will accept invocations on `localhost:9000`. You can use https://curl.se[cURL, window="new"] in another shell to invoke your service.
 
 === Using cURL
 

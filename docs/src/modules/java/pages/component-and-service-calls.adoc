@@ -10,6 +10,7 @@ Since Akka is an auto-scaling solution, components can be distributed across man
 
 Requests and responses are always serialized to JSON between the client and the component.
 
+[#_component_client]
 === Component Client
 
 The `akka.javasdk.client.ComponentClient` is a utility for making calls between components in a type-safe way. To use the `ComponentClient` you need to inject it into your component via the constructor:

@@ -5,20 +5,18 @@ include::ROOT:partial$include.adoc[]
 ====
 *New to Akka? Start here:* 
 
-xref:java:build-your-first-application.adoc[*Build a shopping cart*]
-
-This sample is recommended for beginners and provides a foundational understanding of Akka. Start here before exploring other samples.
+xref:java:author-your-first-service.adoc[] to get a minimal "Hello World!" Akka service and run it locally.
 ====
 
 Samples are available that demonstrate important patterns and abstractions. These can be downloaded as zip files. Please refer to the `README` file in each zip for setup and usage instructions.
 
-[options="header", cols="4,2"]
+[options="header", cols="3,2,1"]
 |=======================
-| Sample|Level
-| link:../java/_attachments/shopping-cart-quickstart.zip[Build a shopping cart]|Beginner
-| link:../java/_attachments/customer-registry-quickstart.zip[Build a customer registry with query capabilities]|Intermediate
-| link:../java/_attachments/workflow-quickstart.zip[Build a funds transfer workflow between two wallets]|Intermediate
-| link:../java/_attachments/choreography-saga-quickstart.zip[Build a user registration service implemented as a Choreography Saga]|Advanced
+| Description | Source download | Level
+| xref:shopping-cart-quickstart.adoc[Build a shopping cart] | link:../java/_attachments/shopping-cart-quickstart.zip[shopping-cart-quickstart.zip] |Beginner
+| A customer registry with query capabilities | link:../java/_attachments/customer-registry-quickstart.zip[customer-registry-quickstart.zip] |Intermediate
+| A funds transfer workflow between two wallets | link:../java/_attachments/workflow-quickstart.zip[workflow-quickstart.zip] |Intermediate
+| A user registration service implemented as a Choreography Saga | link:../java/_attachments/choreography-saga-quickstart.zip[choreography-saga-quickstart.zip] |Advanced
 |=======================
 
 [sidebar]
@@ -51,3 +49,5 @@ mvn archetype:generate ^
   -DarchetypeVersion={akka-javasdk-version}
 ----
 --
+
+The xref:java:author-your-first-service.adoc[] starts from the Maven archetype and lets you implement a very simple service.

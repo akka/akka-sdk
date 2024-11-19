@@ -1,4 +1,5 @@
 Sitemap: https://doc.akka.io/sitemap.xml
+Sitemap: https://doc.akka.io/sitemap-libraries.xml
 User-agent: *
 
 # docs snapshots
