@@ -56,7 +56,9 @@ class ConsumersImplSpec
 
   private val classicSystem = system.toClassic
 
-  def create(service: ConsumerService[_], tracerFactory: String => Tracer = OpenTelemetry.noop.getTracer _): Actions = {
+  def create(
+      service: ConsumerService[_],
+      tracerFactory: () => Tracer = () => OpenTelemetry.noop.getTracer("test")): Actions = {
     new ActionsImpl(
       classicSystem,
       Map(service.descriptor.getFullName -> service),
@@ -117,7 +119,7 @@ class ConsumersImplSpec
         .builder()
         .build()
 
-      val service = create(consumerProvider, openTelemetryInstance.getTracer)
+      val service = create(consumerProvider, () => openTelemetryInstance.getTracer("test"))
       val serviceName = consumerProvider.descriptor.getFullName
 
       val cmd1 = ScalaPbAny.fromJavaProto(JsonSupport.encodeJson(new TestESEvent.Event2(123)))

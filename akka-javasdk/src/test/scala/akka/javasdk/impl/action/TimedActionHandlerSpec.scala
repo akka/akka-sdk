@@ -68,7 +68,7 @@ class TimedActionHandlerSpec
         override def removeTimer(name: String): Future[Done] = ???
       },
       classicSystem.dispatcher,
-      OpenTelemetry.noop().getTracer _)
+      () => OpenTelemetry.noop().getTracer("test"))
   }
 
   "The action service" should {

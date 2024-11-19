@@ -9,8 +9,6 @@ import akka.javasdk.Context;
 import akka.javasdk.JwtClaims;
 import akka.javasdk.Principals;
 
-import java.util.Optional;
-
 /**
  * Not for user extension, can be injected as constructor parameter into HTTP endpoint components
  */

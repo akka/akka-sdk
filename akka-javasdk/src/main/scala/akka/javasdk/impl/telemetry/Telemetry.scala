@@ -113,7 +113,7 @@ private[akka] object TraceInstrumentation {
     override def keys(carrier: MetadataEntry): lang.Iterable[String] = Collections.singleton(Telemetry.TRACE_PARENT_KEY)
   }
 
-  private val InstrumentationScopeName = "akka-javasdk"
+  val InstrumentationScopeName: String = "akka-javasdk"
 }
 
 /**
@@ -123,7 +123,7 @@ private[akka] object TraceInstrumentation {
 private[akka] final class TraceInstrumentation(
     componentName: String,
     componentCategory: ComponentCategory,
-    tracerFactory: String => Tracer) {
+    val tracerFactory: () => Tracer) {
 
   import Telemetry._
   import TraceInstrumentation._
@@ -135,7 +135,7 @@ private[akka] final class TraceInstrumentation(
     s"${componentCategory.name}: $simpleComponentName"
   }
 
-  private val tracer = getTracer
+  private val tracer = tracerFactory()
   private val enabled = tracer != OpenTelemetry.noop().getTracer(InstrumentationScopeName)
 
   /**
@@ -168,7 +168,7 @@ private[akka] final class TraceInstrumentation(
 
       val spanName = s"$traceNamePrefix.${removeSyntheticName(commandName)}"
       var spanBuilder =
-        getTracer
+        tracer
           .spanBuilder(spanName)
           .setParent(parentContext)
           .setSpanKind(SpanKind.SERVER)
@@ -178,8 +178,6 @@ private[akka] final class TraceInstrumentation(
       spanBuilder.startSpan()
     }
   }
-
-  def getTracer: Tracer = tracerFactory(InstrumentationScopeName)
 
   private def removeSyntheticName(maybeSyntheticName: String): String =
     maybeSyntheticName

@@ -5,6 +5,7 @@
 package akka.javasdk.workflow;
 
 import akka.javasdk.MetadataContext;
+import akka.javasdk.Tracing;
 
 /** A value based workflow command context. */
 public interface CommandContext extends MetadataContext {
@@ -29,4 +30,7 @@ public interface CommandContext extends MetadataContext {
    * @return The workflow id.
    */
   String workflowId();
+
+  /** Access to tracing for custom app specific tracing. */
+  Tracing tracing();
 }

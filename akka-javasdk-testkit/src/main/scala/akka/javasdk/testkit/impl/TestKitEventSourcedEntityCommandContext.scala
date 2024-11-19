@@ -5,6 +5,7 @@
 package akka.javasdk.testkit.impl
 
 import akka.javasdk.Metadata
+import akka.javasdk.Tracing
 import akka.javasdk.eventsourcedentity.CommandContext
 import akka.javasdk.impl.InternalContext
 
@@ -21,6 +22,8 @@ final class TestKitEventSourcedEntityCommandContext(
   def this(metadata: Metadata) = {
     this(metadata = metadata, commandName = "stubCommandName")
   }
+
+  override def tracing(): Tracing = TestKitTracing
 
 }
 

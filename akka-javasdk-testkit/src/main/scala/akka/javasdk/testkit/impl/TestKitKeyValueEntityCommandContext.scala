@@ -5,12 +5,13 @@
 package akka.javasdk.testkit.impl
 
 import akka.javasdk.Metadata
+import akka.javasdk.Tracing
 import akka.javasdk.keyvalueentity.CommandContext
 import akka.javasdk.keyvalueentity.KeyValueEntityContext
 import akka.javasdk.testkit.MockRegistry
 
 /**
- * INTERNAL API Used by the generated testkit
+ * INTERNAL API Used by the testkit
  */
 final class TestKitKeyValueEntityCommandContext(
     override val entityId: String,
@@ -25,5 +26,7 @@ final class TestKitKeyValueEntityCommandContext(
   def this(entityId: String, metadata: Metadata) = {
     this(entityId = entityId, metadata = metadata, commandName = "stubCommandName")
   }
+
+  override def tracing(): Tracing = TestKitTracing
 
 }

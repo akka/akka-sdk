@@ -20,35 +20,38 @@ mvn compile
 
 ## Running Locally
 
-When running an Akka service locally.
-To start your service locally, run:
-
-```shell
-TRACING_ENABLED=true COLLECTOR_ENDPOINT="http://localhost:4317" mvn compile exec:java
-```
-
-This command will start your Akka service, with tracing enabled and exporting the generated 
-traces to the Jaeger container referred below.
-
-To start Jaeger locally, run:
+First start a local Jaeger in docker using the prepared docker compose file from the sample project directory: 
 
 ```shell
 docker compose up
+```
+
+Then start your service locally, with tracing enabled and reporting to the local Jaeger instance:
+
+```shell
+TRACING_ENABLED=true COLLECTOR_ENDPOINT="http://localhost:4317" mvn compile exec:java
 ```
 
 ## Exercising the service
 
 With your Akka service running, any defined endpoints should be available at `http://localhost:9000`.
 
-- Add a new user
+Report a custom span around an async task inside an endpoint:
+
+```shell
+curl -i -XPOST localhost:9000/tracing/custom/5
+```
+
+Schedule a timed action which reports a custom span when executing an async call to an external service:
 
 ```shell
  curl -i -XPOST -H "Content-Type: application/json" localhost:9000/tracing -d '{"id":"2454cb46-1b16-408a-b7f8-bd2d5c376969"}'
 ```
 
+Now you can see the trace in Jaeger UI at http://localhost:16686 
 
-- Now you can see the trace in Jaeger UI at http://localhost:16686
-  - select "runtime" and "Find all traces" to explore the trace
+Select "runtime" and "Find all traces" to explore the traces, you should see "POST /tracing/custom/{id}" and "POST /tracing/"
+for the respective two calls above.
 
 ## Deploying
 

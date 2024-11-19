@@ -36,10 +36,13 @@ import org.slf4j.MDC
 import scala.language.existentials
 import scala.util.control.NonFatal
 import akka.javasdk.Metadata
+import akka.javasdk.Tracing
 import akka.javasdk.impl.AnySupport
 import akka.javasdk.impl.effect.MessageReplyImpl
 import akka.javasdk.impl.keyvalueentity.KeyValueEntityEffectImpl.UpdateState
 import akka.javasdk.impl.keyvalueentity.KeyValueEntityRouter.CommandResult
+import akka.javasdk.impl.telemetry.SpanTracingImpl
+import io.opentelemetry.api.trace.Span
 import kalix.protocol.value_entity.ValueEntityAction.Action.Delete
 import kalix.protocol.value_entity.ValueEntityAction.Action.Update
 import kalix.protocol.value_entity.ValueEntityStreamIn.Message.{ Command => InCommand }
@@ -71,7 +74,7 @@ private[impl] final class KeyValueEntitiesImpl(
     val services: Map[String, KeyValueEntityService[_, _]],
     configuration: Settings,
     sdkDispatcherName: String,
-    tracerFactory: String => Tracer)
+    tracerFactory: () => Tracer)
     extends ValueEntities {
 
   import akka.javasdk.impl.EntityExceptions._
@@ -155,9 +158,9 @@ private[impl] final class KeyValueEntitiesImpl(
 
         case InCommand(command) =>
           val metadata = MetadataImpl.of(command.metadata.map(_.entries.toVector).getOrElse(Nil))
-
+          val instrumentation = instrumentations(service.componentId)
           if (log.isTraceEnabled) log.trace("Metadata entries [{}].", metadata.entries)
-          val span = instrumentations(service.componentId).buildSpan(service, command)
+          val span = instrumentation.buildSpan(service, command)
 
           span.foreach(s => MDC.put(Telemetry.TRACE_ID, s.getSpanContext.getTraceId))
           try {
@@ -167,7 +170,7 @@ private[impl] final class KeyValueEntitiesImpl(
                   // FIXME smuggling 0 arity method called from component client through here
                   ScalaPbAny.defaultInstance.withTypeUrl(AnySupport.JsonTypeUrlPrefix).withValue(ByteString.empty())))
             val context =
-              new CommandContextImpl(thisEntityId, command.name, command.id, metadata, system)
+              new CommandContextImpl(thisEntityId, command.name, command.id, metadata, span, tracerFactory)
 
             val (CommandResult(effect: KeyValueEntityEffectImpl[_]), errorCode) =
               try {
@@ -243,10 +246,15 @@ private[impl] final class CommandContextImpl(
     override val commandName: String,
     override val commandId: Long,
     override val metadata: Metadata,
-    system: ActorSystem)
+    span: Option[Span],
+    tracerFactory: () => Tracer)
     extends AbstractContext
     with CommandContext
-    with ActivatableContext
+    with ActivatableContext {
+
+  override def tracing(): Tracing =
+    new SpanTracingImpl(span, tracerFactory)
+}
 
 /**
  * INTERNAL API
