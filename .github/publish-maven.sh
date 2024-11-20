@@ -56,7 +56,7 @@ cat <<EOF >~/.m2/settings.xml
         <activeByDefault>true</activeByDefault>
       </activation>
       <properties>
-        <gpg.passphrase>${PGP_PASSPHRASE}</gpg.passphrase>
+        <gpg.passphrase>"${PGP_PASSPHRASE}"</gpg.passphrase>
       </properties>
     </profile>
   </profiles>
