@@ -18,7 +18,7 @@ make managed
 
 2. Create the full site
 ```bash
-make local
+make local open
 ```
 
 This command will execute a Docker-based build process that compiles the documentation. The generated documentation will be output to the `target/site` directory.
