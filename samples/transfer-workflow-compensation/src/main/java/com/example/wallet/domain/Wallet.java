@@ -1,6 +1,5 @@
 package com.example.wallet.domain;
 
-import com.example.wallet.application.WalletEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -9,7 +8,7 @@ import java.util.List;
 
 public record Wallet(String id, int balance, List<String> commandIds) {
 
-  private static final Logger logger = LoggerFactory.getLogger(WalletEntity.class);
+  private static final Logger logger = LoggerFactory.getLogger(Wallet.class);
   public static Wallet EMPTY = new Wallet("", 0, new ArrayList<>());
 
   public boolean isEmpty(){
