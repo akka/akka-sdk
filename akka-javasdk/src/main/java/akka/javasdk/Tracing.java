@@ -13,7 +13,8 @@ import java.util.Optional;
  * Factory for manually creating open telemetry spans in addition to those automatically provided by
  * the runtime and SDK.
  *
- * <p>Not for user extension. Injectable into endpoint constructors or available through component command contexts.
+ * <p>Not for user extension. Injectable into endpoint constructors or available through component
+ * command contexts.
  */
 @DoNotInherit
 public interface Tracing {
@@ -27,8 +28,11 @@ public interface Tracing {
   Optional<Span> startSpan(String name);
 
   /**
-   * If tracing is enabled, this returns the current parent span, to use for propagating trace parent
-   * through third party integrations.
+   * If tracing is enabled, this returns the current parent span, to use for propagating trace
+   * parent through third party integrations. This span should only be used for observing, ending it
+   * or marking it as failed etc. is managed by the SDK and the runtime.
+   *
+   * @see {{@link #startSpan(String)}} for creating a custom span tied to some logic in a service.
    */
   Optional<Span> parentSpan();
 }
