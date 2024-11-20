@@ -10,6 +10,8 @@ import com.example.wallet.application.WalletEntity;
 import com.example.wallet.application.WalletEntity.WalletResult;
 import com.example.wallet.application.WalletEntity.WalletResult.Failure;
 import com.example.wallet.application.WalletEntity.WalletResult.Success;
+import com.example.wallet.domain.WalletCommand.Deposit;
+import com.example.wallet.domain.WalletCommand.Withdraw;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,20 +28,8 @@ import static com.example.transfer.domain.TransferState.TransferStatus.WITHDRAW_
 import static java.time.Duration.ofHours;
 import static java.time.Duration.ofSeconds;
 
-// tag::class[]
 @ComponentId("transfer") // <1>
-public class TransferWorkflow extends Workflow<TransferState> { // <2>
-
-  public record Withdraw(String from, int amount) {
-  }
-
-  // end::class[]
-
-  // tag::definition[]
-  public record Deposit(String to, int amount) {
-  }
-
-  // end::definition[]
+public class TransferWorkflow extends Workflow<TransferState> {
 
   private static final Logger logger = LoggerFactory.getLogger(TransferWorkflow.class);
 
@@ -58,14 +48,14 @@ public class TransferWorkflow extends Workflow<TransferState> { // <2>
           logger.info("Running: " + cmd);
           // cancelling the timer in case it was scheduled
           return timers().cancel("acceptationTimout-" + currentState().transferId()).thenCompose(__ ->
-            componentClient.forEventSourcedEntity(cmd.from)
+            componentClient.forEventSourcedEntity(currentState().transfer().from())
               .method(WalletEntity::withdraw)
-              .invokeAsync(cmd.amount));
+              .invokeAsync(cmd));
         })
         .andThen(WalletResult.class, result -> {
           switch (result) {
             case Success __ -> {
-              Deposit depositInput = new Deposit(currentState().transfer().to(), currentState().transfer().amount());
+              Deposit depositInput = new Deposit(currentState().depositId(), currentState().transfer().amount());
               return effects()
                 .updateState(currentState().withStatus(WITHDRAW_SUCCEED))
                 .transitionTo("deposit", depositInput);
@@ -87,9 +77,9 @@ public class TransferWorkflow extends Workflow<TransferState> { // <2>
           // end::compensation[]
           logger.info("Running: " + cmd);
           // tag::compensation[]
-          return componentClient.forEventSourcedEntity(cmd.to)
+          return componentClient.forEventSourcedEntity(currentState().transfer().to())
             .method(WalletEntity::deposit)
-            .invokeAsync(cmd.amount);
+            .invokeAsync(cmd);
         })
         .andThen(WalletResult.class, result -> { // <1>
           switch (result) {
@@ -116,9 +106,13 @@ public class TransferWorkflow extends Workflow<TransferState> { // <2>
           logger.info("Running withdraw compensation");
           // tag::compensation[]
           var transfer = currentState().transfer();
+          // end::compensation[]
+          // depositId is reused for the compensation, just to have a stable commandId and simplify the example
+          // tag::compensation[]
+          String commandId = currentState().depositId();
           return componentClient.forEventSourcedEntity(transfer.from())
             .method(WalletEntity::deposit)
-            .invokeAsync(transfer.amount());
+            .invokeAsync(new Deposit(commandId, transfer.amount()));
         })
         .andThen(WalletResult.class, result -> {
           switch (result) {
@@ -185,29 +179,30 @@ public class TransferWorkflow extends Workflow<TransferState> { // <2>
       .addStep(failoverHandler);
   }
 
-
-
   public Effect<String> startTransfer(Transfer transfer) {
     if (currentState() != null) {
       return effects().error("transfer already started");
     } else if (transfer.amount() <= 0) {
       return effects().error("transfer amount should be greater than zero");
-    } else if (transfer.amount() > 1000) {
-      logger.info("Waiting for acceptation: " + transfer);
-      TransferState waitingForAcceptationState = new TransferState(commandContext().workflowId(), transfer)
-        .withStatus(WAITING_FOR_ACCEPTATION);
-      return effects()
-        .updateState(waitingForAcceptationState)
-        .transitionTo("wait-for-acceptation")
-        .thenReply("transfer started, waiting for acceptation");
     } else {
-      logger.info("Running: " + transfer);
-      TransferState initialState = new TransferState(commandContext().workflowId(), transfer);
-      Withdraw withdrawInput = new Withdraw(transfer.from(), transfer.amount());
-      return effects()
-        .updateState(initialState)
-        .transitionTo("withdraw", withdrawInput)
-        .thenReply("transfer started");
+      String workflowId = commandContext().workflowId();
+      if (transfer.amount() > 1000) {
+        logger.info("Waiting for acceptation: " + transfer);
+        TransferState waitingForAcceptationState = TransferState.create(workflowId, transfer)
+          .withStatus(WAITING_FOR_ACCEPTATION);
+        return effects()
+          .updateState(waitingForAcceptationState)
+          .transitionTo("wait-for-acceptation")
+          .thenReply("transfer started, waiting for acceptation");
+      } else {
+        logger.info("Running: " + transfer);
+        TransferState initialState = TransferState.create(workflowId, transfer);
+        Withdraw withdrawInput = new Withdraw(initialState.withdrawId(), transfer.amount());
+        return effects()
+          .updateState(initialState)
+          .transitionTo("withdraw", withdrawInput)
+          .thenReply("transfer started");
+      }
     }
   }
 
@@ -234,7 +229,7 @@ public class TransferWorkflow extends Workflow<TransferState> { // <2>
       // end::resuming[]
       logger.info("Accepting transfer: " + transfer);
       // tag::resuming[]
-      Withdraw withdrawInput = new Withdraw(transfer.from(), transfer.amount());
+      Withdraw withdrawInput = new Withdraw(currentState().withdrawId(), transfer.amount());
       return effects()
         .transitionTo("withdraw", withdrawInput)
         .thenReply("transfer accepted");

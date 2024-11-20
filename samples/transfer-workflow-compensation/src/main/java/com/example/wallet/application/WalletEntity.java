@@ -6,28 +6,30 @@ import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import com.example.wallet.application.WalletEntity.WalletResult.Failure;
 import com.example.wallet.application.WalletEntity.WalletResult.Success;
 import com.example.wallet.domain.Wallet;
+import com.example.wallet.domain.WalletCommand;
 import com.example.wallet.domain.WalletEvent;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
+
 import static akka.Done.done;
 
-// tag::wallet[]
 @ComponentId("wallet")
 public class WalletEntity extends EventSourcedEntity<Wallet, WalletEvent> {
 
-  // end::wallet[]
   private static final Logger logger = LoggerFactory.getLogger(WalletEntity.class);
 
   @Override
+  public Wallet emptyState() {
+    return Wallet.EMPTY;
+  }
+
+  @Override
   public Wallet applyEvent(WalletEvent event) {
-    return switch(event) {
-      case WalletEvent.Created c -> new Wallet(eventContext().entityId(), c.initialBalance());
-      case WalletEvent.Withdrawn w -> currentState().withdraw(w.amount());
-      case WalletEvent.Deposited d -> currentState().deposit(d.amount());
-    };
+    return currentState().applyEvent(event);
   }
 
   @JsonTypeInfo(use = JsonTypeInfo.Id.NAME)
@@ -42,50 +44,44 @@ public class WalletEntity extends EventSourcedEntity<Wallet, WalletEvent> {
     }
   }
 
-  // tag::wallet[]
   public Effect<Done> create(int initialBalance) { // <1>
-    if (currentState() != null){
+    if (!currentState().isEmpty()){
       return effects().error("Wallet already exists");
     } else {
-      return effects().persist(new WalletEvent.Created(initialBalance))
+      return effects().persist(new WalletEvent.Created(commandContext().entityId(), initialBalance))
         .thenReply(__ -> done());
     }
   }
 
-  public Effect<WalletResult> withdraw(int amount) { // <2>
-    if (currentState() == null){
+  public Effect<WalletResult> withdraw(WalletCommand.Withdraw withdraw) { // <2>
+    if (currentState().isEmpty()){
       return effects().error("Wallet does not exist");
-    } else if (currentState().balance() < amount) {
+    } else if (currentState().balance() < withdraw.amount()) {
       return effects().reply(new Failure("Insufficient balance"));
     } else {
-      // end::wallet[]
-      logger.info("Withdraw walletId: [{}] amount -{}", currentState().id(), amount);
-      // tag::wallet[]
-      return effects().persist(new WalletEvent.Withdrawn(amount))
+      logger.info("Withdraw walletId: [{}] amount -{}", currentState().id(), withdraw.amount());
+      List<WalletEvent> events = currentState().handle(withdraw);
+      return effects().persistAll(events)
           .thenReply(__ -> new WalletResult.Success());
     }
   }
 
-  public Effect<WalletResult> deposit(int amount) { // <3>
-    if (currentState() == null){
+  public Effect<WalletResult> deposit(WalletCommand.Deposit deposit) { // <3>
+    if (currentState().isEmpty()){
       return effects().error("Wallet does not exist");
-    } else if (currentState() == null) {
-      return effects().reply(new Failure("Wallet [" + commandContext().entityId() + "] not exists"));
     } else {
-      // end::wallet[]
-      logger.info("Deposit walletId: [{}] amount +{}", currentState().id(), amount);
-      // tag::wallet[]
-      return effects().persist(new WalletEvent.Deposited(amount))
+      logger.info("Deposit walletId: [{}] amount +{}", currentState().id(), deposit.amount());
+      List<WalletEvent> events = currentState().handle(deposit);
+      return effects().persistAll(events)
           .thenReply(__ -> new WalletResult.Success());
     }
   }
 
   public Effect<Integer> get() { // <4>
-    if (currentState() == null){
+    if (currentState().isEmpty()){
       return effects().error("Wallet does not exist");
     } else {
       return effects().reply(currentState().balance());
     }
   }
 }
-// end::wallet[]
