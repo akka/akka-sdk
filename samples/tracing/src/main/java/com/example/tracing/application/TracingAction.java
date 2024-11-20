@@ -1,10 +1,7 @@
 package com.example.tracing.application;
 
-
-import akka.javasdk.Tracing;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.timedaction.TimedAction;
-import com.example.tracing.domain.Typicode;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.StatusCode;
 import org.slf4j.Logger;
@@ -28,7 +25,7 @@ public class TracingAction extends TimedAction {
     maybeSpan.ifPresent(span -> span.setAttribute("post", postID));
 
     // FIXME this should demonstrate how to propagate the trace parent with a third party client to another service as well
-    CompletionStage<HttpResponse<Typicode.TypicodePost>> asyncResult = typicode.callAsyncService(postID);
+    CompletionStage<HttpResponse<Typicode.TypicodePost>> asyncResult = typicode.callAsyncService(postID, maybeSpan);
 
     maybeSpan.ifPresent(span ->
         asyncResult.whenComplete((response, ex) -> {
@@ -36,7 +33,7 @@ public class TracingAction extends TimedAction {
           if (ex != null) {
             span.setStatus(StatusCode.ERROR, ex.getMessage()).end();
           } else {
-            span.setAttribute("result", response.body().title()).end();
+            span.setAttribute("response-status", response.statusCode()).end();
           }
         })
     );

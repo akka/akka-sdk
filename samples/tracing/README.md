@@ -45,7 +45,7 @@ curl -i -XPOST localhost:9000/tracing/custom/5
 Schedule a timed action which reports a custom span when executing an async call to an external service:
 
 ```shell
- curl -i -XPOST -H "Content-Type: application/json" localhost:9000/tracing -d '{"id":"2454cb46-1b16-408a-b7f8-bd2d5c376969"}'
+curl -i -XPOST -H "Content-Type: application/json" localhost:9000/tracing -d '{"id":"2454cb46-1b16-408a-b7f8-bd2d5c376969"}'
 ```
 
 Now you can see the trace in Jaeger UI at http://localhost:16686 

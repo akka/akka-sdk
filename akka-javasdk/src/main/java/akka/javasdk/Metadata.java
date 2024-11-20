@@ -213,13 +213,6 @@ public interface Metadata extends Iterable<Metadata.MetadataEntry> {
    */
   CloudEvent asCloudEvent(String id, URI source, String type);
 
-
-  /**
-   * Get the trace context associated with this request metadata.
-   * @return The trace context.
-   */
-  TraceContext traceContext();
-
   /**
    * Merge the given Metadata entries with this Metadata. If the same key is present in both, both values will be kept.
    *

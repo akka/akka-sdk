@@ -16,4 +16,5 @@ object TestKitTracing extends Tracing {
 
   override def startSpan(name: String): Optional[Span] = Optional.empty()
 
+  override def parentSpan(): Optional[Span] = Optional.empty()
 }
