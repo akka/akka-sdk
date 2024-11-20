@@ -18,7 +18,6 @@ import scala.jdk.OptionConverters._
 import akka.annotation.InternalApi
 import akka.javasdk.CloudEvent
 import akka.javasdk.Metadata
-import akka.javasdk.TraceContext
 import akka.javasdk.impl.telemetry.Telemetry
 import akka.javasdk.impl.telemetry.Telemetry.metadataGetter
 import com.google.protobuf.ByteString
@@ -207,22 +206,16 @@ private[javasdk] class MetadataImpl private (val entries: Seq[MetadataEntry]) ex
 
   override def asMetadata(): Metadata = this
 
-  override lazy val traceContext: TraceContext = new TraceContext {
-    override def asOpenTelemetryContext(): OtelContext = W3CTraceContextPropagator
+  lazy val traceId: Option[String] = {
+    val otelContext = W3CTraceContextPropagator
       .getInstance()
       .extract(OtelContext.current(), asMetadata(), metadataGetter)
 
-    override def traceId(): Optional[String] = {
-      Span.fromContext(asOpenTelemetryContext()).getSpanContext.getTraceId match {
-        case "00000000000000000000000000000000" =>
-          Optional.empty() // when no traceId returns io.opentelemetry.api.trace.TraceId.INVALID
-        case traceId => Some(traceId).toJava
-      }
+    Span.fromContext(otelContext).getSpanContext.getTraceId match {
+      case "00000000000000000000000000000000" =>
+        None // when no traceId returns io.opentelemetry.api.trace.TraceId.INVALID
+      case traceId => Some(traceId)
     }
-
-    override def traceParent(): Optional[String] = getScala(Telemetry.TRACE_PARENT_KEY).toJava
-
-    override def traceState(): Optional[String] = getScala(Telemetry.TRACE_STATE_KEY).toJava
   }
 
   override def merge(other: Metadata): Metadata = {

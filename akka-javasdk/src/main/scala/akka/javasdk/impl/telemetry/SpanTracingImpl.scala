@@ -26,4 +26,6 @@ final class SpanTracingImpl(span: Option[Span], tracerFactory: () => Tracer) ext
         .setParent(parent)
         .startSpan()
     }.toJava
+
+  override def parentSpan(): Optional[Span] = span.toJava
 }
