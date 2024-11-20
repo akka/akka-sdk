@@ -57,7 +57,7 @@ jobs:
           export SDK_VERSION="$(cat ~/akka-javasdk-version.txt)"
           ./.github/publish-maven.sh
         env:
-          PGP_PASSPHRASE: '${{ secrets.PGP_PASSPHRASE }}'
+          PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
           PGP_SECRET: ${{ secrets.PGP_SECRET }}
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_AKKA_IO_USERNAME }}
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_AKKA_IO_PASSWORD }}
