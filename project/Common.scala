@@ -27,8 +27,7 @@ object CommonSettings extends AutoPlugin {
           name = "Akka SDK Developers",
           email = "akka.official@gmail.com",
           url = url("https://akka.io"))),
-      scmInfo := Some(
-        ScmInfo(url("https://github.com/akka/akka-sdk"), "scm:git@github.com:akka/akka-sdk.git")),
+      scmInfo := Some(ScmInfo(url("https://github.com/akka/akka-sdk"), "scm:git@github.com:akka/akka-sdk.git")),
       releaseNotesURL := (
         if ((ThisBuild / isSnapshot).value) None
         else Some(url(s"https://github.com/akka/akka-sdk/releases/tag/v${version.value}"))
