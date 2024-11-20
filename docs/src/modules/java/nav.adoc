@@ -1,5 +1,5 @@
 * xref:index.adoc[Developing]
-** xref:build-your-first-application.adoc[Build your first application]
+** xref:author-your-first-service.adoc[Author your first service]
 ** Components
 *** xref:event-sourced-entities.adoc[Event Sourced Entities]
 *** xref:key-value-entities.adoc[Key Value Entities]
@@ -21,3 +21,4 @@
 *** xref:running-locally.adoc[]
 ** xref:java:dev-best-practices.adoc[]
 ** xref:samples.adoc[]
+*** xref:shopping-cart-quickstart.adoc[]

@@ -58,6 +58,7 @@ There are multiple ways to get started with Akka.
 * *Learn* the Akka xref:concepts:deployment-model.adoc[] for operators.
 * *Learn* the Akka xref:concepts:development-process.adoc[]
 * *Start a local development environment* Getting started with Integrated Development Environment (IDE) integration, local debugging, and packing services into images.  xref:java:running-locally.adoc[]
-* *Learn how to code with Akka’s components.* Getting Started -  xref:java:build-your-first-application.adoc[]
+* *Learn how to implement a "Hello World" service.* xref:java:author-your-first-service.adoc[]
+* *Review a pre-built service implementation.* See some Akka components in the xref:java:shopping-cart-quickstart.adoc[]
 * *Setup* CI/CD pipelines, external Docker repositories, external messaging brokers, or 3rd party observability.
 See xref:operations:index.adoc[Operating Services] for more information.

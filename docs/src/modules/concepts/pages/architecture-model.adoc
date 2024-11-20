@@ -4,6 +4,7 @@ include::ROOT:partial$include.adoc[]
 
 Akka simplifies application development by allowing developers to focus on their domain models and APIs without worrying about how the data is stored. The architectural model is the key to making this work.
 
+[#_architecture]
 == Architecture
 
 Akka applications are built with an _Onion Architecture_, where services are organized in concentric layers. The core of the application is at the center, with additional layers surrounding it. Each layer has a specific role.
@@ -51,13 +52,14 @@ The outermost layer is the API layer which is how the outside world interacts wi
 
 Having received requests, the `api` layer interacts with the `application` layer through the xref:java:component-and-service-calls.adoc#_component_client[`ComponentClient`] which makes calls in a type safe way. This is the layer boundary that keeps the isolation necessary to remain resilient that is core to an Akka application.
 
-Additionally this layer is the place for a public event model that a service exposes, often via Kafka or other messaging capabilities. This allows the event driven nature of Akka to be easily integrated into the rest of your information space. In Akka you don't reach into the database to get state, you use the event stream itself.
+Additionally, this layer is the place for a public event model that a service exposes, often via Kafka or other messaging capabilities. This allows the event driven nature of Akka to be easily integrated into the rest of your information space. In Akka you don't reach into the database to get state, you use the event stream itself.
 
 The API layer also uses other annotations to xref:java:access-control.adoc[control access]. For more information on endpoints see xref:java:http-endpoints.adoc[Designing HTTP Endpoints].
 
+[#_akka_components]
 == Akka components
 
-You use xref:reference:glossary.adoc#component[Akka _Components_] to build your application. These Components are crucial for ensuring responsiveness. Here is a brief overview of each. With the exception of endpoints, Akka components will live in your `application` package.
+You use xref:reference:glossary.adoc#component[Akka _Components_] to build your application. These Components are crucial for ensuring responsiveness. Here is a brief overview of each. Except endpoints, Akka components will live in your `application` package.
 
 The list of components are:
 

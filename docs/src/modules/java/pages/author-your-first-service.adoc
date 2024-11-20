@@ -1,0 +1,211 @@
+= Author your first Akka service
+:page-aliases: java:build-your-first-application.adoc[]
+
+include::ROOT:partial$include.adoc[]
+
+This guide will walk you through the process of setting up your development environment, generating a project, and implementing a simple "Hello World!" REST service. By the end, you will have a functional HTTP endpoint built with the Akka SDK running locally.
+
+== Overview
+
+The Akka SDK comes with Maven support that enables you to get started quickly. In this guide, you will:
+
+* Use the Akka Maven archetype to generate a skeleton project that follows the recommended onion architecture.
+* Understand how to use the Akka Maven parent POM to define dependencies and run your application locally.
+
+NOTE: If you'd rather skip past this and want to review an already completed application see the xref:java:shopping-cart-quickstart.adoc[].
+
+== Prerequisites
+
+include::ROOT:partial$cloud-dev-prerequisites.adoc[]
+
+
+== Generate and build the skeleton project
+
+The Maven archetype template prompts you to specify the project's group ID, name and version interactively. Run it using the commands shown for your OS.
+
+[sidebar]
+In IntelliJ, you can skip the command line. Open the IDE, select
+*File > New > Project*, and click to activate *Create from archetype*. Use the UI to locate the archetype and fill in the blanks.
+
+Follow these steps to generate and build your project:
+
+. From a command line, create a new Maven project from the Akka archetype in a convenient location:
++
+[.tabset]
+Linux or macOS::
++
+--
+[source,command line, subs="attributes"]
+----
+mvn archetype:generate \
+  -DarchetypeGroupId=io.akka \
+  -DarchetypeArtifactId=akka-javasdk-archetype \
+  -DarchetypeVersion={akka-javasdk-version}
+----
+--
+Windows 10+::
++
+--
+[source,command line, subs="attributes"]
+----
+mvn archetype:generate ^
+  -DarchetypeGroupId=io.akka ^
+  -DarchetypeArtifactId=akka-javasdk-archetype ^
+  -DarchetypeVersion={akka-javasdk-version}
+----
+--
+
+. Fill in
+* groupId: `com.example`
+* artifactId: `helloworld`
+* version: `1.0-SNAPSHOT`
+* package: `helloword`
+
+. Navigate to the new project directory.
+
+. Open it in your preferred IDE / Editor.
+
+. Expand directory `src/main/java/com/example/api` and open the `HelloWorldEndpoint.java` file.
+
+The _Endpoint_ is implemented with:
+
+[source,java]
+.HelloWorldEndpoint.java
+----
+@Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
+@HttpEndpoint("/hello")
+public class HelloWorldEndpoint {
+
+  @Get("/")
+  public CompletionStage<String> helloWorld() {
+    return completedStage("Hello World!");
+  }
+}
+----
+
+== Basics
+An _Endpoint_ is a component that creates an externally accessible API. Endpoints are how you expose your services to the outside world. Endpoints can have different protocols and, initially, support HTTP.
+
+HTTP Endpoint components make it possible to conveniently define such APIs accepting and responding in JSON, or dropping down to lower level APIs for ultimate flexibility in what types of data is accepted and returned.
+
+This endpoint is on the path `/hello` and exposes an HTTP GET operation on `/`.
+
+You can also see that there is an _Access Control List_ (ACL) on this endpoint that allows all traffic from the Internet. Without this ACL the service would be unreachable, but you can be very expressive with these ACLs.
+
+== Run locally
+
+Start your service locally:
+
+[source,command line]
+----
+mvn compile exec:java
+----
+
+Once successfully started, any defined endpoints become available at `localhost:9000` and you will see an INFO message that the Akka Runtime has started.
+
+Your "Hello World" service is now running.
+
+In another shell, you can now use `curl` to send requests to this endpoint.
+
+[source, command line]
+----
+curl localhost:9000/hello
+----
+
+Which will reply
+[source]
+----
+Hello World!
+----
+
+
+== Getting more complex
+Endpoints provide the common capabilities you would expect for creating REST services. Here are a few more:
+
+=== Path parameters ===
+The path can also contain one or more parameters, which are extracted and passed to the method:
+
+[source,java]
+.HelloWorldEndpoint.java
+----
+include::example$doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java[tag=basic-path-parameters]
+----
+<1> Path parameter `name` in expression.
+<2> Method parameter named as the one in the expression
+<3> When there are multiple parameters
+<4> The method must accept all the same names in the same order as in the path expression.
+
+Path parameter can be of types `String`, `int`, `long`, `boolean`,  `float`, `double`, `short` and `char` as well
+as their `java.lang` class counterparts.
+
+If you add this code above to `HelloWorldEndpoint.java` and restart the service, you can now curl these commands:
+
+[source, command line]
+----
+curl localhost:9000/hello/hello/Bob
+----
+
+[source, command line]
+----
+curl localhost:9000/hello/hello/Bob/30
+----
+
+=== Request body ===
+
+To accept an HTTP JSON body, specify a parameter that is a class that https://github.com/FasterXML/jackson?tab=readme-ov-file#what-is-jackson[Jackson] can deserialize:
+
+[source,java]
+.HelloWorldEndpoint.java
+----
+include::example$doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java[tag=request-body]
+----
+<1> A class that Jackson can serialize and deserialize to JSON
+<2> A parameter of the request body type
+<3> When combining request body with path variables
+<4> The body must come last in the parameter list
+
+Additionally, the request body parameter can be of the following types:
+
+ * `String` for any request with a text content type, the body decoded into a string
+ * `java.util.List<T>` where `T` is a type Jackson can deserialize, accepts a JSON array.
+ * `akka.http.javadsl.model.HttpEntity.Strict` for the entire request body as bytes together with the content type for
+   arbitrary payload handling.
+ * `akka.http.javadsl.model.HttpRequest` for a low level, streaming representation of the entire request
+    including headers. See xref:http-endpoints.adoc#_low_level_requests[] below for more details
+
+You can now call these commands as well
+[source, command line]
+----
+curl -i -XPOST -H "Content-Type: application/json" localhost:9000/hello/hello -d '
+{"age":"30", "name":"Bob"}'
+----
+
+=== Response body ===
+
+To return response with JSON, the return value can be a class that Jackson can serialize:
+
+[source,java]
+.HelloWorldEndpoint.java
+----
+include::example$doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java[tag=response-body]
+----
+<1> Returning an object that Jackson can serialize into JSON
+
+In addition to an object that can be turned to JSON, a request handler can return the following:
+
+ * `null` or `void` to return an empty body.
+ * `String` to return a UTF-8 encoded `text/plain` HTTP response.
+ * `CompletionStage<T>` to respond based on an asynchronous result.
+  ** When the completion stage is completed with a `T` it is
+   turned into a response.
+  ** If it is instead failed, the failure leads to an error response according to
+   the error handling explained in xref:http-endpoints.adoc#_error_responses[error responses].
+ * `akka.http.javadsl.model.HttpResponse` for complete control over the response, see xref:http-endpoints.adoc#_low_level_responses[] below
+
+[source, command line]
+----
+curl localhost:9000/hello/hello/Bob/30
+----
+
+== Next steps
+Now that you have a basic service running, it's time to learn more about building real services in Akka. See the xref:java:shopping-cart-quickstart.adoc[] to build a more realistic application.

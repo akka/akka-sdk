@@ -23,7 +23,7 @@ include::ROOT:partial$local-dev-prerequisites.adoc[]
 
 == Getting Started
 
-Follow xref:java:build-your-first-application.adoc[] to implement your first service. If you prefer to first explore working example code, you can check out the xref:samples.adoc[beginner samples].
+Follow xref:java:author-your-first-service.adoc[] to implement your first service. If you prefer to first explore working example code, you can check out the xref:shopping-cart-quickstart.adoc[] or our other xref:samples.adoc[samples].
 
 On the other hand, if you would rather spend some time exploring our documentation, here are some main features you will find in this section:
 
