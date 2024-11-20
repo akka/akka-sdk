@@ -44,4 +44,4 @@ jobs:
         run: |
           ./docs/bin/rsync-docs.sh "target/site/*" akkarepo@gustav.akka.io:www/
         env:
-          SCP_SECRET: ${{ secrets.GUSTAV_SCP_SECRET }}
+          SCP_SECRET: ${{ secrets.AKKA_RSYNC_GUSTAV }}
