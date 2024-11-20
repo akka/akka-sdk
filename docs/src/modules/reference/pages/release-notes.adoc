@@ -12,6 +12,10 @@ Current versions
 
 == November 2024
 
+* https://github.com/akka/akka-projection/releases/tag/v1.6.2[Akka Projections 1.6.2]
+
+* https://github.com/akka/akka-persistence-dynamodb/releases/tag/v2.0.1[Akka DynamoDB 2.0.1]
+
 * Akka Runtime 1.2.2
     - Disable projection scaling until issue has been investigated and fixed
     - fix problem with read only commands in workflows
