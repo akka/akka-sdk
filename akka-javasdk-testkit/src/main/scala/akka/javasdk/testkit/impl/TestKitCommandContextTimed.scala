@@ -5,14 +5,13 @@
 package akka.javasdk.testkit.impl
 
 import akka.javasdk.Metadata
+import akka.javasdk.Tracing
 import akka.javasdk.impl.InternalContext
 import akka.javasdk.testkit.MockRegistry
 import akka.javasdk.timedaction.CommandContext
-import io.opentelemetry.api.OpenTelemetry
-import io.opentelemetry.api.trace.Tracer
 
 /**
- * INTERNAL API Used by the generated testkit
+ * INTERNAL API Used by the testkit
  */
 final class TestKitCommandContextTimed(metadata: Metadata, mockRegistry: MockRegistry = MockRegistry.EMPTY)
     extends AbstractTestKitContext(mockRegistry)
@@ -29,5 +28,5 @@ final class TestKitCommandContextTimed(metadata: Metadata, mockRegistry: MockReg
 
   override def metadata() = metadata
 
-  override def getTracer: Tracer = OpenTelemetry.noop().getTracer("noop")
+  override def tracing(): Tracing = TestKitTracing
 }

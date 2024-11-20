@@ -9,6 +9,7 @@ import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.annotation.InternalApi
 import akka.javasdk.Metadata
+import akka.javasdk.Tracing
 import akka.javasdk.consumer.Consumer
 import akka.javasdk.consumer.MessageContext
 import akka.javasdk.consumer.MessageEnvelope
@@ -24,6 +25,7 @@ import akka.javasdk.impl.telemetry.ActionCategory
 import akka.javasdk.impl.telemetry.ConsumerCategory
 import akka.javasdk.impl.telemetry.Telemetry
 import akka.javasdk.impl.telemetry.TraceInstrumentation
+import akka.javasdk.impl.telemetry.SpanTracingImpl
 import akka.javasdk.impl.timedaction.TimedActionService
 import akka.javasdk.impl.timer.TimerSchedulerImpl
 import akka.javasdk.timedaction.CommandContext
@@ -33,7 +35,7 @@ import akka.javasdk.timer.TimerScheduler
 import akka.runtime.sdk.spi.TimerClient
 import akka.stream.scaladsl.Source
 import io.grpc.Status
-import io.opentelemetry.api.trace.SpanContext
+import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.Tracer
 import kalix.protocol.action.ActionCommand
 import kalix.protocol.action.ActionResponse
@@ -95,7 +97,7 @@ private[akka] final class ActionsImpl(
     services: Map[String, Service],
     timerClient: TimerClient,
     sdkExecutionContext: ExecutionContext,
-    tracerFactory: String => Tracer)
+    tracerFactory: () => Tracer)
     extends Actions {
 
   import ActionsImpl._
@@ -173,7 +175,7 @@ private[akka] final class ActionsImpl(
         val fut =
           try {
             val messageContext =
-              createMessageContext(in, service.messageCodec, span.map(_.getSpanContext), service.componentId)
+              createMessageContext(in, service.messageCodec, span, service.componentId)
             val decodedPayload = service.messageCodec.decodeMessage(
               in.payload.getOrElse(throw new IllegalArgumentException("No command payload")))
             val effect = service
@@ -199,7 +201,7 @@ private[akka] final class ActionsImpl(
         val fut =
           try {
             val messageContext =
-              createConsumerMessageContext(in, service.messageCodec, span.map(_.getSpanContext), service.componentId)
+              createConsumerMessageContext(in, service.messageCodec, span, service.componentId)
             val decodedPayload = service.messageCodec.decodeMessage(
               in.payload.getOrElse(throw new IllegalArgumentException("No command payload")))
             val effect = service
@@ -225,21 +227,21 @@ private[akka] final class ActionsImpl(
   private def createMessageContext(
       in: ActionCommand,
       messageCodec: MessageCodec,
-      spanContext: Option[SpanContext],
+      span: Option[Span],
       serviceName: String): CommandContext = {
     val metadata = MetadataImpl.of(in.metadata.map(_.entries.toVector).getOrElse(Nil))
-    val updatedMetadata = spanContext.map(metadata.withTracing).getOrElse(metadata)
-    new CommandContextImpl(updatedMetadata, messageCodec, system, timerClient, telemetries(serviceName))
+    val updatedMetadata = span.map(metadata.withTracing).getOrElse(metadata)
+    new CommandContextImpl(updatedMetadata, messageCodec, system, timerClient, tracerFactory, span)
   }
 
   private def createConsumerMessageContext(
       in: ActionCommand,
       messageCodec: MessageCodec,
-      spanContext: Option[SpanContext],
+      span: Option[Span],
       serviceName: String): MessageContext = {
     val metadata = MetadataImpl.of(in.metadata.map(_.entries.toVector).getOrElse(Nil))
-    val updatedMetadata = spanContext.map(metadata.withTracing).getOrElse(metadata)
-    new MessageContextImpl(updatedMetadata, messageCodec, timerClient, telemetries(serviceName))
+    val updatedMetadata = span.map(metadata.withTracing).getOrElse(metadata)
+    new MessageContextImpl(updatedMetadata, messageCodec, timerClient, tracerFactory, span)
   }
 
   override def handleStreamedIn(in: Source[ActionCommand, NotUsed]): Future[ActionResponse] = {
@@ -265,7 +267,8 @@ class CommandContextImpl(
     val messageCodec: MessageCodec,
     val system: ActorSystem,
     timerClient: TimerClient,
-    instrumentation: TraceInstrumentation)
+    tracerFactory: () => Tracer,
+    span: Option[Span])
     extends AbstractContext
     with CommandContext {
 
@@ -283,7 +286,5 @@ class CommandContextImpl(
     }
   }
 
-  override def getTracer: Tracer =
-    instrumentation.getTracer
-
+  override def tracing(): Tracing = new SpanTracingImpl(span, tracerFactory)
 }

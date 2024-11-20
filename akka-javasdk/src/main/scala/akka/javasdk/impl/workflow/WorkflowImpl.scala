@@ -4,47 +4,44 @@
 
 package akka.javasdk.impl.workflow
 
-import java.util.Optional
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import scala.jdk.OptionConverters._
-import scala.language.existentials
-import scala.util.control.NonFatal
 import akka.NotUsed
-import akka.actor.ActorSystem
-import akka.javasdk.impl.ErrorHandling.BadRequestException
-import akka.javasdk.impl.WorkflowExceptions.ProtocolException
-import akka.javasdk.impl.WorkflowExceptions.WorkflowException
-import akka.javasdk.impl.WorkflowExceptions.failureMessageForLog
-import WorkflowEffectImpl.DeleteState
-import WorkflowEffectImpl.End
-import WorkflowEffectImpl.ErrorEffectImpl
-import WorkflowEffectImpl.NoPersistence
-import WorkflowEffectImpl.NoReply
-import WorkflowEffectImpl.NoTransition
-import WorkflowEffectImpl.Pause
-import WorkflowEffectImpl.Persistence
-import WorkflowEffectImpl.Reply
-import WorkflowEffectImpl.ReplyValue
-import WorkflowEffectImpl.StepTransition
-import WorkflowEffectImpl.TransitionalEffectImpl
-import WorkflowEffectImpl.UpdateState
-import WorkflowRouter.CommandResult
+import akka.annotation.InternalApi
+import akka.javasdk.Metadata
+import akka.javasdk.Tracing
 import akka.javasdk.impl.AbstractContext
 import akka.javasdk.impl.ActivatableContext
+import akka.javasdk.impl.AnySupport
 import akka.javasdk.impl.ErrorHandling
+import akka.javasdk.impl.ErrorHandling.BadRequestException
 import akka.javasdk.impl.JsonMessageCodec
 import akka.javasdk.impl.MessageCodec
 import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.Service
 import akka.javasdk.impl.StrictJsonMessageCodec
+import akka.javasdk.impl.WorkflowExceptions.ProtocolException
+import akka.javasdk.impl.WorkflowExceptions.WorkflowException
+import akka.javasdk.impl.WorkflowExceptions.failureMessageForLog
+import akka.javasdk.impl.telemetry.SpanTracingImpl
 import akka.javasdk.impl.timer.TimerSchedulerImpl
+import akka.javasdk.impl.workflow.WorkflowEffectImpl.DeleteState
+import akka.javasdk.impl.workflow.WorkflowEffectImpl.End
+import akka.javasdk.impl.workflow.WorkflowEffectImpl.ErrorEffectImpl
+import akka.javasdk.impl.workflow.WorkflowEffectImpl.NoPersistence
+import akka.javasdk.impl.workflow.WorkflowEffectImpl.NoReply
+import akka.javasdk.impl.workflow.WorkflowEffectImpl.NoTransition
+import akka.javasdk.impl.workflow.WorkflowEffectImpl.Pause
+import akka.javasdk.impl.workflow.WorkflowEffectImpl.Persistence
+import akka.javasdk.impl.workflow.WorkflowEffectImpl.Reply
+import akka.javasdk.impl.workflow.WorkflowEffectImpl.ReplyValue
+import akka.javasdk.impl.workflow.WorkflowEffectImpl.StepTransition
+import akka.javasdk.impl.workflow.WorkflowEffectImpl.TransitionalEffectImpl
+import akka.javasdk.impl.workflow.WorkflowEffectImpl.UpdateState
+import akka.javasdk.impl.workflow.WorkflowRouter.CommandResult
 import akka.javasdk.workflow.CommandContext
 import akka.javasdk.workflow.Workflow
-import akka.runtime.sdk.spi.TimerClient
-import Workflow.WorkflowDef
-import akka.annotation.InternalApi
+import akka.javasdk.workflow.Workflow.WorkflowDef
 import akka.javasdk.workflow.WorkflowContext
+import akka.runtime.sdk.spi.TimerClient
 import akka.stream.scaladsl.Flow
 import akka.stream.scaladsl.Source
 import com.google.protobuf.ByteString
@@ -52,6 +49,8 @@ import com.google.protobuf.any.{ Any => ScalaPbAny }
 import com.google.protobuf.duration
 import com.google.protobuf.duration.Duration
 import io.grpc.Status
+import io.opentelemetry.api.trace.Span
+import io.opentelemetry.api.trace.Tracer
 import kalix.protocol.component
 import kalix.protocol.component.{ Reply => ProtoReply }
 import kalix.protocol.workflow_entity.RecoverStrategy
@@ -62,9 +61,9 @@ import kalix.protocol.workflow_entity.WorkflowEffect
 import kalix.protocol.workflow_entity.WorkflowEntities
 import kalix.protocol.workflow_entity.WorkflowEntityInit
 import kalix.protocol.workflow_entity.WorkflowStreamIn
+import kalix.protocol.workflow_entity.WorkflowStreamIn.Message
 import kalix.protocol.workflow_entity.WorkflowStreamIn.Message.Empty
 import kalix.protocol.workflow_entity.WorkflowStreamIn.Message.Init
-import kalix.protocol.workflow_entity.WorkflowStreamIn.Message
 import kalix.protocol.workflow_entity.WorkflowStreamIn.Message.Step
 import kalix.protocol.workflow_entity.WorkflowStreamIn.Message.Transition
 import kalix.protocol.workflow_entity.WorkflowStreamIn.Message.{ Command => InCommand }
@@ -75,10 +74,14 @@ import kalix.protocol.workflow_entity.{ NoTransition => ProtoNoTransition }
 import kalix.protocol.workflow_entity.{ Pause => ProtoPause }
 import kalix.protocol.workflow_entity.{ StepTransition => ProtoStepTransition }
 import org.slf4j.LoggerFactory
-import akka.javasdk.Metadata
-import akka.javasdk.impl.AnySupport
 
+import java.util.Optional
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
+import scala.jdk.OptionConverters._
+import scala.language.existentials
+import scala.util.control.NonFatal
 
 /**
  * INTERNAL API
@@ -102,11 +105,11 @@ final class WorkflowService[S, W <: Workflow[S]](
  */
 @InternalApi
 final class WorkflowImpl(
-    system: ActorSystem,
     val services: Map[String, WorkflowService[_, _]],
     timerClient: TimerClient,
     sdkExcutionContext: ExecutionContext,
-    sdkDispatcherName: String)
+    sdkDispatcherName: String,
+    tracerFactory: () => Tracer)
     extends kalix.protocol.workflow_entity.WorkflowEntities {
 
   private implicit val ec: ExecutionContext = sdkExcutionContext
@@ -287,7 +290,15 @@ final class WorkflowImpl(
         case InCommand(command) =>
           val metadata = MetadataImpl.of(command.metadata.map(_.entries.toVector).getOrElse(Nil))
 
-          val context = new CommandContextImpl(workflowId, command.name, command.id, metadata, system)
+          val context =
+            new CommandContextImpl(
+              workflowId,
+              command.name,
+              command.id,
+              metadata,
+              // FIXME we'd need to start a parent span for the command here to have one to base custom user spans of off?
+              None,
+              tracerFactory)
           val timerScheduler =
             new TimerSchedulerImpl(service.strictMessageCodec, timerClient, context.componentCallMetadata)
 
@@ -314,7 +325,14 @@ final class WorkflowImpl(
 
         case Step(executeStep) =>
           val context =
-            new CommandContextImpl(workflowId, executeStep.stepName, executeStep.commandId, Metadata.EMPTY, system)
+            new CommandContextImpl(
+              workflowId,
+              executeStep.stepName,
+              executeStep.commandId,
+              Metadata.EMPTY,
+              // FIXME we'd need to start a parent span for the step here to have one to base custom user spans of off?
+              None,
+              tracerFactory)
           val timerScheduler =
             new TimerSchedulerImpl(service.strictMessageCodec, timerClient, context.componentCallMetadata)
           val stepResponse =
@@ -391,10 +409,15 @@ private[akka] final class CommandContextImpl(
     override val commandName: String,
     override val commandId: Long,
     override val metadata: Metadata,
-    system: ActorSystem)
+    span: Option[Span],
+    tracerFactory: () => Tracer)
     extends AbstractContext
     with CommandContext
-    with ActivatableContext
+    with ActivatableContext {
+
+  override def tracing(): Tracing =
+    new SpanTracingImpl(span, tracerFactory)
+}
 
 /**
  * INTERNAL API

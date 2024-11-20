@@ -58,7 +58,10 @@ import akka.javasdk.view.View
 import akka.javasdk.workflow.Workflow
 import akka.javasdk.workflow.WorkflowContext
 import akka.javasdk.JwtClaims
+import akka.javasdk.Tracing
 import akka.javasdk.impl.http.JwtClaimsImpl
+import akka.javasdk.impl.telemetry.SpanTracingImpl
+import akka.javasdk.impl.telemetry.TraceInstrumentation
 import akka.runtime.sdk.spi.ComponentClients
 import akka.runtime.sdk.spi.HttpEndpointConstructionContext
 import akka.runtime.sdk.spi.HttpEndpointDescriptor
@@ -75,7 +78,7 @@ import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.Tracer
-import io.opentelemetry.context.Context
+import io.opentelemetry.context.{ Context => OtelContext }
 import kalix.protocol.action.Actions
 import kalix.protocol.discovery.Discovery
 import kalix.protocol.event_sourced_entity.EventSourcedEntities
@@ -267,6 +270,8 @@ private final class Sdk(
   private val applicationConfig = ApplicationConfig(system).getConfig
   private val sdkSettings = Settings(applicationConfig.getConfig("akka.javasdk"))
 
+  private val sdkTracerFactory = () => tracerFactory(TraceInstrumentation.InstrumentationScopeName)
+
   private val httpClientProvider = new HttpClientProviderImpl(
     system,
     None,
@@ -351,7 +356,6 @@ private final class Sdk(
     case h if h == classOf[HttpClientProvider] => httpClientProvider(span)
     case t if t == classOf[TimerScheduler]     => timerScheduler(span)
     case m if m == classOf[Materializer]       => sdkMaterializer
-    case s if s == classOf[Span]               => span.getOrElse(Span.current())
   }
 
   // FIXME mixing runtime config with sdk with user project config is tricky
@@ -380,7 +384,7 @@ private final class Sdk(
           actionAndConsumerServices,
           runtimeComponentClients.timerClient,
           sdkExecutionContext,
-          tracerFactory))
+          sdkTracerFactory))
     }
 
     services.groupBy(_._2.getClass).foreach {
@@ -393,23 +397,23 @@ private final class Sdk(
             eventSourcedServices,
             sdkSettings,
             sdkDispatcherName,
-            tracerFactory)
+            sdkTracerFactory)
         eventSourcedEntitiesEndpoint = Some(eventSourcedImpl)
 
       case (serviceClass, entityServices: Map[String, KeyValueEntityService[_, _]] @unchecked)
           if serviceClass == classOf[KeyValueEntityService[_, _]] =>
-        valueEntitiesEndpoint =
-          Some(new KeyValueEntitiesImpl(classicSystem, entityServices, sdkSettings, sdkDispatcherName, tracerFactory))
+        valueEntitiesEndpoint = Some(
+          new KeyValueEntitiesImpl(classicSystem, entityServices, sdkSettings, sdkDispatcherName, sdkTracerFactory))
 
       case (serviceClass, workflowServices: Map[String, WorkflowService[_, _]] @unchecked)
           if serviceClass == classOf[WorkflowService[_, _]] =>
         workflowEntitiesEndpoint = Some(
           new WorkflowImpl(
-            classicSystem,
             workflowServices,
             runtimeComponentClients.timerClient,
             sdkExecutionContext,
-            sdkDispatcherName))
+            sdkDispatcherName,
+            sdkTracerFactory))
 
       case (serviceClass, _: Map[String, TimedActionService[_]] @unchecked)
           if serviceClass == classOf[TimedActionService[_]] =>
@@ -571,6 +575,8 @@ private final class Sdk(
                       "There are no JWT claims defined but trying accessing the JWT claims. The class or the method needs to be annotated with @JWT.")
                 }
             }
+
+          case c if c == classOf[Tracing] => new SpanTracingImpl(context.openTelemetrySpan, sdkTracerFactory)
         }
       }
   }
@@ -652,7 +658,7 @@ private final class Sdk(
   private def httpClientProvider(openTelemetrySpan: Option[Span]): HttpClientProvider =
     openTelemetrySpan match {
       case None       => httpClientProvider
-      case Some(span) => httpClientProvider.withTraceContext(Context.current().`with`(span))
+      case Some(span) => httpClientProvider.withTraceContext(OtelContext.current().`with`(span))
     }
 
 }

@@ -8,7 +8,7 @@ import akka.javasdk.keyvalueentity.KeyValueEntityContext
 import akka.javasdk.testkit.MockRegistry
 
 /**
- * INTERNAL API Used by the generated testkit
+ * INTERNAL API Used by the testkit
  */
 final class TestKitKeyValueEntityContext(override val entityId: String, mockRegistry: MockRegistry = MockRegistry.EMPTY)
     extends AbstractTestKitContext(mockRegistry)
