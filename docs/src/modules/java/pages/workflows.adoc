@@ -4,6 +4,10 @@ include::ROOT:partial$include.adoc[]
 
 Workflows implement long-running, multi-step business processes while allowing developers to focus exclusively on domain and business logic. Workflows provide durability, consistency and the ability to call other components and services. Business transactions can be modeled in one central place, and the Workflow will keep them running smoothly, or roll back if something goes wrong.
 
+Users can see the workflow execution details in the console (both xref:running-locally.adoc#_local_console[locally] and in the https://console.akka.io[cloud]).
+
+image:workflow-execution.png[]
+
 include::partial$entity-sharding.adoc[]
 
 [#_effect_api]
