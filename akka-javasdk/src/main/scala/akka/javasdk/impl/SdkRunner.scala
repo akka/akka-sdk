@@ -565,17 +565,15 @@ private final class Sdk(
         override def getPrincipals: Principals =
           PrincipalsImpl(context.principal.source, context.principal.service)
 
-              override def getJwtClaims: JwtClaims =
-                context.jwt match {
-                  case Some(jwtClaims) => new JwtClaimsImpl(jwtClaims)
-                  case None =>
-                    throw new RuntimeException(
-                      "There are no JWT claims defined but trying accessing the JWT claims. The class or the method needs to be annotated with @JWT.")
-                }
+        override def getJwtClaims: JwtClaims =
+          context.jwt match {
+            case Some(jwtClaims) => new JwtClaimsImpl(jwtClaims)
+            case None =>
+              throw new RuntimeException(
+                "There are no JWT claims defined but trying accessing the JWT claims. The class or the method needs to be annotated with @JWT.")
+          }
 
-              override def tracing(): Tracing = new SpanTracingImpl(context.openTelemetrySpan, sdkTracerFactory)
-            }
-        }
+        override def tracing(): Tracing = new SpanTracingImpl(context.openTelemetrySpan, sdkTracerFactory)
       }
       val instance = wiredInstance(httpEndpointClass) {
         sideEffectingComponentInjects(context.openTelemetrySpan).orElse {
