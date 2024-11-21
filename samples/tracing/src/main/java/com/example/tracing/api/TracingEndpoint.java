@@ -2,12 +2,12 @@ package com.example.tracing.api;
 
 import akka.Done;
 import akka.http.javadsl.model.HttpResponse;
-import akka.javasdk.Tracing;
 import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.http.HttpResponses;
+import akka.javasdk.http.RequestContext;
 import akka.javasdk.timer.TimerScheduler;
 import com.example.tracing.application.TracingAction;
 import io.opentelemetry.api.trace.Span;
@@ -27,12 +27,12 @@ public class TracingEndpoint {
 
     private final ComponentClient componentClient;
     private final TimerScheduler timerScheduler;
-    private final Tracing spanFactory;
+    private final RequestContext requestContext;
 
-    public TracingEndpoint(ComponentClient componentClient, TimerScheduler timerScheduler, Tracing tracing) {
+    public TracingEndpoint(ComponentClient componentClient, TimerScheduler timerScheduler, RequestContext requestContext) {
         this.componentClient = componentClient;
         this.timerScheduler = timerScheduler;
-        this.spanFactory = tracing;
+        this.requestContext = requestContext;
     }
 
     private record PostId(String id){}
@@ -49,7 +49,7 @@ public class TracingEndpoint {
 
     @Post("/custom/{id}")
     public CompletionStage<HttpResponse> customSpan(String id) {
-        Optional<Span> maybeSpan = spanFactory.startSpan("ad-hoc endpoint span");
+        Optional<Span> maybeSpan = requestContext.tracing().startSpan("ad-hoc endpoint span");
 
         maybeSpan.ifPresent(span -> span.setAttribute("id", id));
 

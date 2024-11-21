@@ -574,9 +574,9 @@ private final class Sdk(
                     throw new RuntimeException(
                       "There are no JWT claims defined but trying accessing the JWT claims. The class or the method needs to be annotated with @JWT.")
                 }
-            }
 
-          case c if c == classOf[Tracing] => new SpanTracingImpl(context.openTelemetrySpan, sdkTracerFactory)
+              override def tracing(): Tracing = new SpanTracingImpl(context.openTelemetrySpan, sdkTracerFactory)
+            }
         }
       }
   }

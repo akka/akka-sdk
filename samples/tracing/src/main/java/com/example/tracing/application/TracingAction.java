@@ -23,8 +23,7 @@ public class TracingAction extends TimedAction {
     Optional<Span> maybeSpan = commandContext().tracing().startSpan("ad-hoc span calling to: " + Typicode.url);
 
     maybeSpan.ifPresent(span -> span.setAttribute("post", postID));
-
-    // FIXME this should demonstrate how to propagate the trace parent with a third party client to another service as well
+    
     CompletionStage<HttpResponse<Typicode.TypicodePost>> asyncResult = typicode.callAsyncService(postID, maybeSpan);
 
     maybeSpan.ifPresent(span ->

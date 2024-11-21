@@ -57,7 +57,7 @@ Furthermore, the following component specific types can also be injected:
 | Injectable classes
 
 | Endpoint
-|`akka.javasdk.Tracing` for creating custom traces
+|`akka.javasdk.http.RequestContext` with access to request related things.
 |Workflow
 |`akka.javasdk.workflow.WorkflowContext` for access to the workflow id
 |Event Sourced Entity
