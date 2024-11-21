@@ -229,6 +229,14 @@ RedirectMatch 301 ^/docs/akka-http/10.4(\.\d+)(/?|/.*)$                       ht
 RedirectMatch 301 ^/(api|japi)/akka-http/10.4.\d+(/?|/.*)$                    https://doc.akka.io/$1/akka-http/10.4$2
 
 # ===================================
+# Akka Insights
+# ===================================
+
+# Fix links from https://doc.akka.io/libraries/akka-dependencies/current/#akka-insights
+# e.g. From https://doc.akka.io/libraries/akka-insights/2.20/home.html to https://doc.akka.io/libraries/akka-insights/2.20.x/home.html
+RedirectMatch 301 ^/libraries/akka-insights/(\d+\.\d+)?(/?|/.*)$ https://doc.akka.io/libraries/akka-insights/$1.x$2
+
+# ===================================
 # Akka Management
 # ===================================
 
@@ -416,7 +424,3 @@ RedirectMatch 301 ^/docs/([^/]+)/(.*)$       https://doc.akka.io/libraries/$1/$2
 
 # TODO remove once the real docs are published
 RedirectMatch 301 ^/akka-cli(/?|/.*)$      https://doc.akka.io/snapshots/akka-documentation/akka-cli$1
-
-# Fix links from https://doc.akka.io/libraries/akka-dependencies/current/#akka-insights
-# e.g. From https://doc.akka.io/libraries/akka-insights/2.20/home.html to https://doc.akka.io/libraries/akka-insights/2.20.x/home.html
-RedirectMatch 301 ^/libraries/akka-insights/(\d+\.\d+)?(/?|/.*)$ https://doc.akka.io/libraries/akka-insights/$1.x$2
