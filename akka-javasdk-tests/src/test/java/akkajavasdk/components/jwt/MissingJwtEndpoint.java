@@ -19,6 +19,8 @@ import static java.util.concurrent.CompletableFuture.completedStage;
 @HttpEndpoint("/missingjwt")
 public class MissingJwtEndpoint {
 
+    // Note: leaving this with injected request context rather than extend AbstractHttpEndpoint to keep
+    // some test coverage
     RequestContext context;
     public MissingJwtEndpoint(RequestContext context){
         this.context = context;

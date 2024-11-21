@@ -58,6 +58,7 @@ import akka.javasdk.view.View
 import akka.javasdk.workflow.Workflow
 import akka.javasdk.workflow.WorkflowContext
 import akka.javasdk.JwtClaims
+import akka.javasdk.http.AbstractHttpEndpoint
 import akka.javasdk.Tracing
 import akka.javasdk.impl.http.JwtClaimsImpl
 import akka.javasdk.impl.telemetry.SpanTracingImpl
@@ -560,12 +561,9 @@ private final class Sdk(
 
   private def httpEndpointFactory[E](httpEndpointClass: Class[E]): HttpEndpointConstructionContext => E = {
     (context: HttpEndpointConstructionContext) =>
-      wiredInstance(httpEndpointClass) {
-        sideEffectingComponentInjects(context.openTelemetrySpan).orElse {
-          case p if p == classOf[RequestContext] =>
-            new RequestContext {
-              override def getPrincipals: Principals =
-                PrincipalsImpl(context.principal.source, context.principal.service)
+      lazy val requestContext = new RequestContext {
+        override def getPrincipals: Principals =
+          PrincipalsImpl(context.principal.source, context.principal.service)
 
               override def getJwtClaims: JwtClaims =
                 context.jwt match {
@@ -579,6 +577,16 @@ private final class Sdk(
             }
         }
       }
+      val instance = wiredInstance(httpEndpointClass) {
+        sideEffectingComponentInjects(context.openTelemetrySpan).orElse {
+          case p if p == classOf[RequestContext] => requestContext
+        }
+      }
+      instance match {
+        case withBaseClass: AbstractHttpEndpoint => withBaseClass._internalSetRequestContext(requestContext)
+        case _                                   =>
+      }
+      instance
   }
 
   private def wiredInstance[T](clz: Class[T])(partial: PartialFunction[Class[_], Any]): T = {
