@@ -19,8 +19,8 @@ final class TestKitEventSourcedEntityCommandContext(
     extends CommandContext
     with InternalContext {
 
-  def this(metadata: Metadata) = {
-    this(metadata = metadata, commandName = "stubCommandName")
+  def this(entityId: String, metadata: Metadata) = {
+    this(metadata = metadata, commandName = "stubCommandName", entityId = entityId)
   }
 
   override def tracing(): Tracing = TestKitTracing

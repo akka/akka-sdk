@@ -46,8 +46,8 @@ public abstract class EventSourcedEntityEffectsRunner<S, E> {
    */
   @SuppressWarnings("unchecked") // event type in loop
   protected <R> EventSourcedResult<R> interpretEffects(
-      Supplier<EventSourcedEntity.Effect<R>> effect, Metadata metadata) {
-    var commandContext = new TestKitEventSourcedEntityCommandContext(metadata);
+      Supplier<EventSourcedEntity.Effect<R>> effect, String entityId, Metadata metadata) {
+    var commandContext = new TestKitEventSourcedEntityCommandContext(entityId, metadata);
     EventSourcedEntity.Effect<R> effectExecuted;
     try {
       entity._internalSetCommandContext(Optional.of(commandContext));

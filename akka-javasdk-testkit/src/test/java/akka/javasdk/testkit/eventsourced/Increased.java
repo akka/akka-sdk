@@ -4,11 +4,5 @@
 
 package akka.javasdk.testkit.eventsourced;
 
-public class Increased {
-
-  public final Integer value;
-
-  public Increased(Integer value) {
-    this.value = value;
-  }
+public record Increased(String counterId, Integer value) {
 }

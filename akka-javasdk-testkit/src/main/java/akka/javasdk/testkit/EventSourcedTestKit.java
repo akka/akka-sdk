@@ -27,12 +27,14 @@ public class EventSourcedTestKit<S, E, ES extends EventSourcedEntity<S, E>>
     extends EventSourcedEntityEffectsRunner<S, E> {
 
   private final ES entity;
+  private final String entityId;
 
   private final JsonMessageCodec messageCodec;
 
-  private EventSourcedTestKit(ES entity) {
+  private EventSourcedTestKit(ES entity, String entityId) {
     super(entity);
     this.entity = entity;
+    this.entityId = entityId;
     this.messageCodec = new JsonMessageCodec();
   }
 
@@ -72,7 +74,7 @@ public class EventSourcedTestKit<S, E, ES extends EventSourcedEntity<S, E>>
   public static <S, E, ES extends EventSourcedEntity<S, E>> EventSourcedTestKit<S, E, ES> of(
       String entityId, Function<EventSourcedEntityContext, ES> entityFactory) {
     EventSourcedEntityContext context = new TestKitEventSourcedEntityContext(entityId);
-    return new EventSourcedTestKit<>(entityFactory.apply(context));
+    return new EventSourcedTestKit<>(entityFactory.apply(context), entityId);
   }
 
   /**
@@ -99,7 +101,7 @@ public class EventSourcedTestKit<S, E, ES extends EventSourcedEntity<S, E>>
    * @return a EventSourcedResult
    */
   public <R> EventSourcedResult<R> call(Function<ES, EventSourcedEntity.Effect<R>> func, Metadata metadata) {
-    return interpretEffects(() -> func.apply(entity), metadata);
+    return interpretEffects(() -> func.apply(entity), entityId, metadata);
   }
 
   @Override
