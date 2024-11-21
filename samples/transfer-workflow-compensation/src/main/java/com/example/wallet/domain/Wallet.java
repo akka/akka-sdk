@@ -9,6 +9,7 @@ import java.util.List;
 public record Wallet(String id, int balance, List<String> commandIds) {
 
   private static final Logger logger = LoggerFactory.getLogger(Wallet.class);
+  public static final int COMMAND_IDS_MAX_SIZE = 1000;
   public static Wallet EMPTY = new Wallet("", 0, new ArrayList<>());
 
   public boolean isEmpty(){
@@ -16,9 +17,6 @@ public record Wallet(String id, int balance, List<String> commandIds) {
   }
 
   public List<WalletEvent> handle(WalletCommand command) {
-    // a very basic dedupliction mechanism, make sure to put some constraints on the commandIds list size
-    // for instance based on the number of commands you expect to be processed
-    // and based on the time window you expect to process them in
     if (commandIds.contains(command.commandId())) {
       logger.info("Command already processed: [{}]", command.commandId());
       return List.of();
@@ -36,14 +34,23 @@ public record Wallet(String id, int balance, List<String> commandIds) {
     return switch (event) {
       case WalletEvent.Created created ->
         new Wallet(created.walletId(), created.initialBalance(), new ArrayList<>());
-      case WalletEvent.Withdrawn withdrawn -> {
-        commandIds.add(withdrawn.commandId());
-        yield new Wallet(id, balance - withdrawn.amount(), commandIds);
-      }
-      case WalletEvent.Deposited deposited -> {
-        commandIds.add(deposited.commandId());
-        yield new Wallet(id, balance + deposited.amount(), commandIds);
-      }
+      case WalletEvent.Withdrawn withdrawn ->
+        new Wallet(id, balance - withdrawn.amount(), addCommandId(withdrawn.commandId()));
+      case WalletEvent.Deposited deposited ->
+        new Wallet(id, balance + deposited.amount(), addCommandId(deposited.commandId()));
     };
+  }
+
+  private List<String> addCommandId(String commandId) {
+    // To avoid infinite growth of the list with limit the size to 1000.
+    // This implementation is not very efficient, so you might want to use a more dedicated data structure for it.
+    // When using other collections, make sure that the state is serializable and deserializable.
+    // Another way to put some constraints on the list size is to remove commandIds based on time
+    // e.g. remove commandIds that are older than 1 hour.
+    if (commandIds.size() >= COMMAND_IDS_MAX_SIZE) {
+      commandIds.removeFirst();
+    }
+    commandIds.add(commandId);
+    return commandIds;
   }
 }
