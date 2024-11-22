@@ -19,7 +19,7 @@ jobs:
       with:
         ruby-version: '3.1'
 
-    - name: Install Akka CLI
+    - name: Install Akka CLI and create the CLI docs
       id: install-cli
       run: |
         export CLI_INSTALL_PATH=$HOME/.akka/bin
@@ -28,11 +28,6 @@ jobs:
         docs/src-static/install-cli.sh --force --prefix=${CLI_INSTALL_PATH}
         echo ${CLI_INSTALL_PATH} >> ${GITHUB_PATH}
         CLI_VERSION=$(${CLI_INSTALL_PATH}/akka version)
-        echo "CLI_VERSION=${CLI_VERSION}"
-        echo "CLI_VERSION=${CLI_VERSION}" >> ${GITHUB_OUTPUT}
-
-    - name: Script
-      run: |
         echo "setting CLI version to ${CLI_VERSION}"
         sed -i.bak "s/\(echo \":akka-cli-version: \)[^\"]*/\1${CLI_VERSION}/" Makefile
         rm Makefile.bak
