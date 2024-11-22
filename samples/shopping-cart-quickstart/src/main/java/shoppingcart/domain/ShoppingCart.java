@@ -27,21 +27,21 @@ public record ShoppingCart(String cartId, List<LineItem> items, boolean checkedO
   // tag::itemAdded[]
   public ShoppingCart onItemAdded(ShoppingCartEvent.ItemAdded itemAdded) {
     var item = itemAdded.item();
-    var lineItem = updateItem(item, this); // <1>
-    List<LineItem> lineItems = removeItemByProductId(this, item.productId()); // <2>
+    var lineItem = updateItem(item); // <1>
+    List<LineItem> lineItems = removeItemByProductId(item.productId()); // <2>
     lineItems.add(lineItem); // <3>
     lineItems.sort(Comparator.comparing(LineItem::productId));
     return new ShoppingCart(cartId, lineItems, checkedOut); // <4>
   }
 
-  private static LineItem updateItem(LineItem item, ShoppingCart cart) {
-    return cart.findItemByProductId(item.productId())
+  private LineItem updateItem(LineItem item) {
+    return findItemByProductId(item.productId())
       .map(li -> li.withQuantity(li.quantity() + item.quantity()))
       .orElse(item);
   }
 
-  private static List<LineItem> removeItemByProductId(ShoppingCart cart, String productId) {
-    return cart.items().stream()
+  private List<LineItem> removeItemByProductId(String productId) {
+    return items().stream()
       .filter(lineItem -> !lineItem.productId().equals(productId))
       .collect(Collectors.toList());
   }
@@ -56,7 +56,7 @@ public record ShoppingCart(String cartId, List<LineItem> items, boolean checkedO
 
   public ShoppingCart onItemRemoved(ShoppingCartEvent.ItemRemoved itemRemoved) {
     List<LineItem> updatedItems =
-        removeItemByProductId(this, itemRemoved.productId());
+        removeItemByProductId(itemRemoved.productId());
     updatedItems.sort(Comparator.comparing(LineItem::productId));
     return new ShoppingCart(cartId, updatedItems, checkedOut);
   }
