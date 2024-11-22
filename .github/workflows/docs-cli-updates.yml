@@ -26,7 +26,7 @@ jobs:
         mkdir -p ${CLI_INSTALL_PATH}
         curl -sL https://docs.akka.io/install-cli.sh | bash -s -- -y -P ${CLI_INSTALL_PATH}
         echo ${CLI_INSTALL_PATH} >> ${GITHUB_PATH}
-        CLI_VERSION=${CLI_INSTALL_PATH}/akka version
+        CLI_VERSION="${CLI_INSTALL_PATH}/akka version"
         echo "CLI_VERSION=${CLI_VERSION}"
         echo "CLI_VERSION=${CLI_VERSION}" >> ${GITHUB_OUTPUT}
 
