@@ -26,11 +26,14 @@ jobs:
         mkdir -p ${CLI_INSTALL_PATH}
         curl -sL https://docs.akka.io/install-cli.sh | bash -s -- -y -P ${CLI_INSTALL_PATH}
         echo ${CLI_INSTALL_PATH} >> ${GITHUB_PATH}
-        echo "CLI_VERSION=$(${CLI_INSTALL_PATH}/akka version)" >> ${GITHUB_OUTPUT}
+        CLI_VERSION=${CLI_INSTALL_PATH}/akka version
+        echo "CLI_VERSION=${CLI_VERSION}"
+        echo "CLI_VERSION=${CLI_VERSION}" >> ${GITHUB_OUTPUT}
 
     - name: Script
       run: |
-        sed -i '' "s/\(echo \":akka-cli-version: \)[^\"]*/\1${CLI_VERSION}/" Makefile
+        echo "setting CLI version to ${CLI_VERSION}"
+        sed -i.bak "s/\(echo \":akka-cli-version: \)[^\"]*/\1${CLI_VERSION}/" Makefile
         gem install kramdown-asciidoc
         ./docs/bin/generate_cli_docs.sh gen-index
 
