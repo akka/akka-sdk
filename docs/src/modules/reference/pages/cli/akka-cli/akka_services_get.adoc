@@ -4,7 +4,7 @@ Describe a specific service.
 
 == Synopsis
 
-The `akka services get _service-name_` command shows the description of a given service, including container statuses.
+The `akka services get _service-name_` command shows the details of a given service, including versions,  container image, routes, and other runtime concerns.
 
 ----
 akka services get SERVICE [flags]

@@ -41,7 +41,7 @@ akka services components list-timers SERVICE_NAME [flags]
 
 == SEE ALSO
 
-* link:akka_services_components.html[akka services components]	 - Manage the components of a service.
+* link:akka_services_components.html[akka services components]	 - Inspect components of a service.
 
 [discrete]
 

@@ -1,10 +1,14 @@
 = akka auth container-registry
 
-Manage the Akka Container Registry configuration.
+Manage configuration for Akka Container Registry.
 
 == Synopsis
 
-The Akka Container Registry (ACR) can be used by all Akka users to deploy services and is available in all Akka regions.
+The Akka Container Registry (ACR) can be used by all users to deploy their services.
+ACR uses an access token generated via Akka for authentication.
+This command allows you to configure the Docker credential helper for ACR.
+
+NOTE: to use this command, the current user must be logged into Akka and Docker must be installed and accessible for the current user.
 
 == Options
 
@@ -32,8 +36,8 @@ The Akka Container Registry (ACR) can be used by all Akka users to deploy servic
 * link:akka_auth.html[akka auth]	 - Manage Akka authentication.
 * link:akka_auth_container-registry_clear-cached-token.html[akka auth container-registry clear-cached-token]	 - Clear the cached Akka Container Registry access token.
 * link:akka_auth_container-registry_configure.html[akka auth container-registry configure]	 - Configure the Akka Container Registry docker credential helper.
-* link:akka_auth_container-registry_credentials.html[akka auth container-registry credentials]	 - Retrieves an Akka Container Registry access token for the current user.
-* link:akka_auth_container-registry_install-helper.html[akka auth container-registry install-helper]	 - Installs the Akka Docker credential helper in the selected directory.
+* link:akka_auth_container-registry_credentials.html[akka auth container-registry credentials]	 - Retrieve an Akka Container Registry access token for the current user.
+* link:akka_auth_container-registry_install-helper.html[akka auth container-registry install-helper]	 - Install the Akka Docker credential helper in the selected directory.
 
 [discrete]
 

@@ -5,6 +5,20 @@ Manage routes for your Akka project.
 == Synopsis
 
 The `akka routes` commands manipulate ingress routes for your Akka project.
+Routes are used to map incoming requests to services in your project.
+Each route has a hostname and a set of paths that map to services.
+
+== Examples
+
+----
+
+> akka route create my-ecommerce-project \
+  --hostname ecommerce.acme.org \
+  --path /carts=shopping-cart \
+  --path /products=product-info
+
+For other examples, see https://doc.akka.io/operations/services/invoke-service.html#_managing_routes .
+----
 
 == Options
 

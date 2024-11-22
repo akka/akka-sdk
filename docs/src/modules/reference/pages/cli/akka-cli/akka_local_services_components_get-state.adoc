@@ -37,7 +37,7 @@ akka local services components get-state SERVICE_NAME COMPONENT_NAME ID [flags]
 
 == SEE ALSO
 
-* link:akka_local_services_components.html[akka local services components]	 - Manage the components of a service.
+* link:akka_local_services_components.html[akka local services components]	 - Inspect components of a service.
 
 [discrete]
 

@@ -1,6 +1,6 @@
 = akka projects observability set
 
-Set the observability settings for your Akka project
+Set the observability settings for your Akka project.
 
 == Synopsis
 
@@ -29,11 +29,11 @@ The `akka project observability set` command sets the observability settings for
 
 == SEE ALSO
 
-* link:akka_projects_observability.html[akka projects observability]	 - Manage the observability settings for your Akka project
-* link:akka_projects_observability_set_default.html[akka projects observability set default]	 - Set the default exporter for your Akka project
-* link:akka_projects_observability_set_logs.html[akka projects observability set logs]	 - Set the logs exporter for your Akka project
-* link:akka_projects_observability_set_metrics.html[akka projects observability set metrics]	 - Set the metrics exporter for your Akka project
-* link:akka_projects_observability_set_traces.html[akka projects observability set traces]	 - Set the traces exporter for your Akka project
+* link:akka_projects_observability.html[akka projects observability]	 - Manage the observability settings for your Akka project.
+* link:akka_projects_observability_set_default.html[akka projects observability set default]	 - Set the default exporter for your Akka project.
+* link:akka_projects_observability_set_logs.html[akka projects observability set logs]	 - Set the logs exporter for your Akka project.
+* link:akka_projects_observability_set_metrics.html[akka projects observability set metrics]	 - Set the metrics exporter for your Akka project.
+* link:akka_projects_observability_set_traces.html[akka projects observability set traces]	 - Set the traces exporter for your Akka project.
 
 [discrete]
 

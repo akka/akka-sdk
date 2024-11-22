@@ -1,10 +1,13 @@
 = akka projects tokens
 
-Manage your Akka project service tokens
+Manage your Akka project service tokens.
 
 == Synopsis
 
 The `akka projects tokens` commands manipulate the service tokens that have access to your Akka project.
+These service tokens are tied to a single project and allow for authenticating and performing actions on that project.
+Often used for automation and CI/CD pipelines.
+See more details at https://doc.akka.io/operations/integrating-cicd/index.html .
 
 == Options
 

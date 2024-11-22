@@ -1,10 +1,14 @@
 = akka regions
 
-Manage regions on Akka
+Manage available regions.
 
 == Synopsis
 
 The `akka regions` commands manage the regions in your Akka account.
+The regions are the locations available  to which your services can be deployed.
+The regions available to you are the regions available to the organization(s) you are part of.
+
+For more details on regions, see https://doc.akka.io/operations/regions/index.html .
 
 == Options
 

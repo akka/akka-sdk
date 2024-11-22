@@ -37,7 +37,7 @@ akka auth tokens revoke ID [flags]
 
 == SEE ALSO
 
-* link:akka_auth_tokens.html[akka auth tokens]	 - Manage Akka authentication tokens.
+* link:akka_auth_tokens.html[akka auth tokens]	 - Manage Akka authentication tokens for your user.
 
 [discrete]
 

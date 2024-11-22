@@ -1,10 +1,13 @@
 = akka config
 
-Manage the local Akka configuration.
+Manage configuration and context for the Akka CLI.
 
 == Synopsis
 
 The `akka config` commands display and set configuration contexts and values that apply to subsequent commands.
+These are often useful to make your CLI experience more fluid.
+For example, by having set a default _project_, you can avoid specifying the project id or name in every command.
+
 Configuration settings are stored in a file on your local system, by default at `.akka/config.yaml` in your home directory.
 This location can be adjusted with the `--config` flag.
 

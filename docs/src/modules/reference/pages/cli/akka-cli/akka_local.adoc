@@ -1,10 +1,10 @@
 = akka local
 
-Helps with local development.
+Interact with and manage Akka services running locally.
 
 == Synopsis
 
-The `akka local` commands help with local development.
+The `akka local` commands help with local development by providing ways to interact with, discover and  explore Akka services and its data when running them locally.
 
 == Options
 

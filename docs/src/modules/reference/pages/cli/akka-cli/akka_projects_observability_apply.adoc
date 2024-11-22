@@ -1,6 +1,6 @@
 = akka projects observability apply
 
-Applies an observability descriptor to the currently configured project.
+Apply an observability descriptor to the currently configured project.
 
 == Synopsis
 
@@ -45,7 +45,7 @@ akka project observability apply -f _file-name_
 
 == SEE ALSO
 
-* link:akka_projects_observability.html[akka projects observability]	 - Manage the observability settings for your Akka project
+* link:akka_projects_observability.html[akka projects observability]	 - Manage the observability settings for your Akka project.
 
 [discrete]
 

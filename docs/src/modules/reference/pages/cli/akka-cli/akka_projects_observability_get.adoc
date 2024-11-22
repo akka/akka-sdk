@@ -37,7 +37,7 @@ akka projects observability get [flags]
 
 == SEE ALSO
 
-* link:akka_projects_observability.html[akka projects observability]	 - Manage the observability settings for your Akka project
+* link:akka_projects_observability.html[akka projects observability]	 - Manage the observability settings for your Akka project.
 
 [discrete]
 

@@ -1,6 +1,6 @@
 = akka projects observability set traces
 
-Set the traces exporter for your Akka project
+Set the traces exporter for your Akka project.
 
 == Synopsis
 
@@ -29,7 +29,7 @@ The `akka project observability set traces` command sets the traces exporter for
 
 == SEE ALSO
 
-* link:akka_projects_observability_set.html[akka projects observability set]	 - Set the observability settings for your Akka project
+* link:akka_projects_observability_set.html[akka projects observability set]	 - Set the observability settings for your Akka project.
 * link:akka_projects_observability_set_traces_google-cloud.html[akka projects observability set traces google-cloud]	 - Set your project to export traces to Google Cloud.
 * link:akka_projects_observability_set_traces_otlp.html[akka projects observability set traces otlp]	 - Set your project to export traces to an OTLP collector.
 

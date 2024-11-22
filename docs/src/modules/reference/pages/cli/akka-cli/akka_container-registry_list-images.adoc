@@ -31,7 +31,7 @@ akka container-registry list-images [flags]
 
 == SEE ALSO
 
-* link:akka_container-registry.html[akka container-registry]	 - Manage the Akka Container Registry.
+* link:akka_container-registry.html[akka container-registry]	 - Manage and push service images to the Akka Container Registry.
 
 [discrete]
 

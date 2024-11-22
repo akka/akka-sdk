@@ -46,7 +46,7 @@ my-key   HS256       my-issuer-name
 
 == SEE ALSO
 
-* link:akka_services_jwts.html[akka services jwts]	 - Manage JWTs.
+* link:akka_services_jwts.html[akka services jwts]	 - Manage JWT keys of a service.
 
 [discrete]
 

@@ -1,6 +1,6 @@
 = akka projects observability set metrics
 
-Set the metrics exporter for your Akka project
+Set the metrics exporter for your Akka project.
 
 == Synopsis
 
@@ -29,7 +29,7 @@ The `akka project observability set metrics` command sets the metrics exporter f
 
 == SEE ALSO
 
-* link:akka_projects_observability_set.html[akka projects observability set]	 - Set the observability settings for your Akka project
+* link:akka_projects_observability_set.html[akka projects observability set]	 - Set the observability settings for your Akka project.
 * link:akka_projects_observability_set_metrics_google-cloud.html[akka projects observability set metrics google-cloud]	 - Set your project to export metrics to Google Cloud.
 * link:akka_projects_observability_set_metrics_otlp.html[akka projects observability set metrics otlp]	 - Set your project to export metrics to an OTLP collector.
 * link:akka_projects_observability_set_metrics_prometheus.html[akka projects observability set metrics prometheus]	 - Set your project to export metrics to a Prometheus instance via the Prometheus remote write protocol.

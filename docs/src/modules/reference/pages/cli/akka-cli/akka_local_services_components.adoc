@@ -1,6 +1,10 @@
 = akka local services components
 
-Manage the components of a service.
+Inspect components of a service.
+
+== Synopsis
+
+The `akka service components` commands provides a way to inspect the components of a service but also to peek at the data stored in the different entities.
 
 == Options
 

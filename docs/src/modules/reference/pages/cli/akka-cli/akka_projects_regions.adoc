@@ -1,10 +1,11 @@
 = akka projects regions
 
-Manage the regions for your Akka project
+Manage the regions assigned to your Akka project.
 
 == Synopsis
 
 The `akka projects regions` commands manages the regions for your Akka project.
+The available regions are the regions assigned to the organization that the project belongs to.
 
 == Options
 

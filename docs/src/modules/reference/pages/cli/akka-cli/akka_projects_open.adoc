@@ -1,6 +1,6 @@
 = akka projects open
 
-Opens the current project in the console.
+Open the current project in the console.
 
 ----
 akka projects open [flags]

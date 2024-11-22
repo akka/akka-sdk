@@ -1,10 +1,10 @@
 = akka services resume
 
-Resumes a service, scaling it back up.
+Resume a service, scaling it back up.
 
 == Synopsis
 
-The `akka service resume _service-name_` command resumes a previously paused service, scaling it back up.
+The `akka service resume _service-name_` command resumes a previously paused service, scaling it back up to the minimum number of instances configured for the service.
 
 ----
 akka services resume SERVICE [flags]

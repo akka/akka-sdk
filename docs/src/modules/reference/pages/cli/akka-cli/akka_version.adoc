@@ -1,6 +1,6 @@
 = akka version
 
-Prints the akka version
+Print the akka CLI version
 
 ----
 akka version [flags]

@@ -1,6 +1,6 @@
 = akka services restart
 
-Restarts all service instances using the newest image.
+Restart all service instances using the newest image.
 
 == Synopsis
 

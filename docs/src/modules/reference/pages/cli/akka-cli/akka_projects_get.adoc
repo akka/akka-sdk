@@ -4,9 +4,10 @@ Get project information.
 
 == Synopsis
 
-The `akka projects get _id_` command will display information about the project with the id _id_, if it exists.
+The `akka projects get _name_` command will display information about the project with name _name_, if it exists.
+Using the _id_ of the project is also supported.
 
-TIP: Use `akka projects list` to identify a project's _id_.
+TIP: Use `akka projects list` to confirm the project's _name_ or _id_.
 
 ----
 akka projects get PROJECT [flags]

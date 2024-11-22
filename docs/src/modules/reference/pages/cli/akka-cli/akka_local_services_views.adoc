@@ -2,6 +2,10 @@
 
 Manage views.
 
+== Synopsis
+
+The `akka local service views` commands manage the views for an Akka project, including listing of existing views and deleting views and their data when a view is no longer used.
+
 == Options
 
 ----

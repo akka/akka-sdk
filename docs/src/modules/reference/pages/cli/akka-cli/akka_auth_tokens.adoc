@@ -1,6 +1,10 @@
 = akka auth tokens
 
-Manage Akka authentication tokens.
+Manage Akka authentication tokens for your user.
+
+== Synopsis
+
+The command `akka auth tokens`  manage the authentication tokens for your user allowing you to revoke any token at any time, but also to create new tokens for use in CI/CD pipelines for machine-user accounts.
 
 == Options
 

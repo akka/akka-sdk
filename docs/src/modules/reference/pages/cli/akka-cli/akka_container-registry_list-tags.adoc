@@ -1,6 +1,6 @@
 = akka container-registry list-tags
 
-list all images tags.
+List all images tags.
 
 == Synopsis
 
@@ -35,7 +35,7 @@ akka container-registry list-tags IMAGE [flags]
 
 == SEE ALSO
 
-* link:akka_container-registry.html[akka container-registry]	 - Manage the Akka Container Registry.
+* link:akka_container-registry.html[akka container-registry]	 - Manage and push service images to the Akka Container Registry.
 
 [discrete]
 

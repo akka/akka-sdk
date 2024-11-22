@@ -30,24 +30,24 @@ The `akka services` commands are used to manage and modify the services in your 
 == SEE ALSO
 
 * link:akka.html[akka]	 - Akka control
-* link:akka_services_apply.html[akka services apply]	 - Applies a service descriptor to the currently configured project.
-* link:akka_services_components.html[akka services components]	 - Manage the components of a service.
+* link:akka_services_apply.html[akka services apply]	 - Apply a service descriptor to the currently configured project.
+* link:akka_services_components.html[akka services components]	 - Inspect components of a service.
 * link:akka_services_connectivity.html[akka services connectivity]	 - Summarize all services connectivity and status.
 * link:akka_services_data.html[akka services data]	 - Manage the data of a service.
 * link:akka_services_delete.html[akka services delete]	 - Delete a service.
-* link:akka_services_deploy.html[akka services deploy]	 - Deploys a service to the currently configured project.
-* link:akka_services_edit.html[akka services edit]	 - Edits a service descriptor in the currently configured project.
-* link:akka_services_export.html[akka services export]	 - Exports a service as its service descriptor
+* link:akka_services_deploy.html[akka services deploy]	 - Deploy a service to the currently configured project.
+* link:akka_services_edit.html[akka services edit]	 - Edit a service descriptor in the currently configured project.
+* link:akka_services_export.html[akka services export]	 - Export a service as its service descriptor.
 * link:akka_services_expose.html[akka services expose]	 - Expose a service.
 * link:akka_services_get.html[akka services get]	 - Describe a specific service.
-* link:akka_services_jwts.html[akka services jwts]	 - Manage JWTs.
+* link:akka_services_jwts.html[akka services jwts]	 - Manage JWT keys of a service.
 * link:akka_services_list.html[akka services list]	 - List all services.
 * link:akka_services_logging.html[akka services logging]	 - Change the log level configration of a service.
-* link:akka_services_pause.html[akka services pause]	 - Pauses a service, scaling it to zero.
+* link:akka_services_pause.html[akka services pause]	 - Pause a service, scaling it to zero instances.
 * link:akka_services_proxy.html[akka services proxy]	 - Create an HTTP proxy to a service.
-* link:akka_services_restart.html[akka services restart]	 - Restarts all service instances using the newest image.
-* link:akka_services_restore.html[akka services restore]	 - Restores a service that was deleted in the past two weeks.
-* link:akka_services_resume.html[akka services resume]	 - Resumes a service, scaling it back up.
+* link:akka_services_restart.html[akka services restart]	 - Restart all service instances using the newest image.
+* link:akka_services_restore.html[akka services restore]	 - Restore a service that was deleted in the past two weeks.
+* link:akka_services_resume.html[akka services resume]	 - Resume a service, scaling it back up.
 * link:akka_services_unexpose.html[akka services unexpose]	 - Unexpose a service.
 * link:akka_services_views.html[akka services views]	 - Manage views.
 

@@ -1,6 +1,6 @@
 = akka auth container-registry install-helper
 
-Installs the Akka Docker credential helper in the selected directory.
+Install the Akka Docker credential helper in the selected directory.
 
 == Synopsis
 
@@ -33,7 +33,7 @@ akka auth container-registry install-helper [flags]
 
 == SEE ALSO
 
-* link:akka_auth_container-registry.html[akka auth container-registry]	 - Manage the Akka Container Registry configuration.
+* link:akka_auth_container-registry.html[akka auth container-registry]	 - Manage configuration for Akka Container Registry.
 
 [discrete]
 
