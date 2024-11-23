@@ -164,7 +164,7 @@ public class TransferWorkflowIntegrationTest extends TestKitSupport {
   }
 
 
-  private String randomId() {
+  public static String randomId() {
     return UUID.randomUUID().toString().substring(0, 8);
   }
 

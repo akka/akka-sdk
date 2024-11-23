@@ -16,6 +16,7 @@ import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.HttpEndpoint;
 // end::basic-endpoint[]
 import akka.javasdk.annotations.http.Post;
+import akka.javasdk.http.AbstractHttpEndpoint;
 import akka.javasdk.http.HttpException;
 import akka.javasdk.http.HttpResponses;
 import akka.stream.Materializer;
@@ -28,7 +29,7 @@ import java.util.concurrent.CompletionStage;
 @HttpEndpoint("/example") // <1>
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.ALL)) // <2>
 // tag::lower-level-request[]
-public class ExampleEndpoint {
+public class ExampleEndpoint extends AbstractHttpEndpoint {
 
   // end::basic-endpoint[]
   private final Materializer materializer;

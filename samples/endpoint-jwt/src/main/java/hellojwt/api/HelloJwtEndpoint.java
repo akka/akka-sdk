@@ -10,7 +10,7 @@ import akka.javasdk.annotations.http.HttpEndpoint;
 
 import akka.javasdk.annotations.http.Get;
 // tag::accessing-claims[]
-import akka.javasdk.http.RequestContext;
+import akka.javasdk.http.AbstractHttpEndpoint;
 
 // end::accessing-claims[]
 
@@ -24,15 +24,8 @@ import static java.util.concurrent.CompletableFuture.completedStage;
 @HttpEndpoint("/hello")
 @JWT(validate = JWT.JwtMethodMode.BEARER_TOKEN, bearerTokenIssuers = "my-issuer") // <1>
 // tag::accessing-claims[]
-public class HelloJwtEndpoint {
+public class HelloJwtEndpoint extends AbstractHttpEndpoint {
   // end::bearer-token[]
-  // end::accessing-claims[]
-  // tag::accessing-claims[]
-
-  RequestContext context;
-  public HelloJwtEndpoint(RequestContext context){
-    this.context = context;
-  }
   // end::accessing-claims[]
 
   @Get("/")
@@ -47,9 +40,9 @@ public class HelloJwtEndpoint {
   // end::multiple-bearer-token-issuers[]
   @Get("/claims")
   public CompletionStage<String> helloClaims() {
-    var claims = context.getJwtClaims();
-    var issuer = claims.issuer().get(); // <1>
-    var sub = claims.subject().get(); // <1>
+    var claims = requestContext().getJwtClaims(); // <1>
+    var issuer = claims.issuer().get(); // <2>
+    var sub = claims.subject().get(); // <2>
     return completedStage("issuer: " + issuer + ", subject: " + sub);
   }
   // tag::bearer-token[]

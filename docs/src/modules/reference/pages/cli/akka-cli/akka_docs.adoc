@@ -1,6 +1,6 @@
 = akka docs
 
-Opens the Akka documentation page
+Open the Akka documentation page
 
 ----
 akka docs [flags]

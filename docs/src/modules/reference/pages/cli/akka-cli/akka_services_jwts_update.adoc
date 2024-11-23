@@ -49,7 +49,7 @@ akka services jwts update [SERVICE] [flags]
 
 == SEE ALSO
 
-* link:akka_services_jwts.html[akka services jwts]	 - Manage JWTs.
+* link:akka_services_jwts.html[akka services jwts]	 - Manage JWT keys of a service.
 
 [discrete]
 

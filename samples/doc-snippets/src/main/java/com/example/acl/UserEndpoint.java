@@ -5,7 +5,7 @@ import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
-import akka.javasdk.http.RequestContext;
+import akka.javasdk.http.AbstractHttpEndpoint;
 
 /*
 // tag::class-level-acl[]
@@ -20,32 +20,25 @@ import akka.javasdk.http.RequestContext;
  */
 // tag::endpoint-class[]
 @HttpEndpoint("/user")
-public class UserEndpoint {
+public class UserEndpoint extends AbstractHttpEndpoint { // <1>
   // ...
   // end::endpoint-class[]
-
-  // tag::request-context[]
-  final private RequestContext requestContext;
-
-  public UserEndpoint(RequestContext requestContext) { // <1>
-    this.requestContext = requestContext;
-  }
-  // end::request-context[]
 
   public record CreateUser(String username, String email) { }
 
   // tag::checking-principals[]
   @Get
   public String checkingPrincipals() {
-    if (requestContext.getPrincipals().isInternet()) {
+    var principals = requestContext().getPrincipals();
+    if (principals.isInternet()) {
       return "accessed from the Internet";
-    } else if (requestContext.getPrincipals().isSelf()) {
+    } else if (principals.isSelf()) {
       return "accessed from Self (internal call from current service)";
-    } else if (requestContext.getPrincipals().isBackoffice()) {
+    } else if (principals.isBackoffice()) {
       return "accessed from Backoffice API";
     } else {
       return "accessed from another service: " +
-        requestContext.getPrincipals().getLocalService();
+        principals.getLocalService();
     }
   }
   // end::checking-principals[]

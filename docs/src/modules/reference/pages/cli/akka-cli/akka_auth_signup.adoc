@@ -1,6 +1,6 @@
 = akka auth signup
 
-Opens the registration page.
+Open the registration page.
 
 ----
 akka auth signup [flags]

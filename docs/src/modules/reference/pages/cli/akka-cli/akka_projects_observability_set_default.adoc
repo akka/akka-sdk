@@ -1,10 +1,10 @@
 = akka projects observability set default
 
-Set the default exporter for your Akka project
+Set the default exporter for your Akka project.
 
 == Synopsis
 
-The `akka project observability set default` command sets the default exporter for your Kalix project.
+The `akka project observability set default` command sets the default exporter for your Akka project.
 
 Setting a default exporter will unset all other exporters configured for your project.
 
@@ -31,7 +31,7 @@ Setting a default exporter will unset all other exporters configured for your pr
 
 == SEE ALSO
 
-* link:akka_projects_observability_set.html[akka projects observability set]	 - Set the observability settings for your Akka project
+* link:akka_projects_observability_set.html[akka projects observability set]	 - Set the observability settings for your Akka project.
 * link:akka_projects_observability_set_default_akka-console.html[akka projects observability set default akka-console]	 - Set your project to export metrics to the Akka console.
 This will unset all other exporter configuration.
 * link:akka_projects_observability_set_default_google-cloud.html[akka projects observability set default google-cloud]	 - Set your project to export default to Google Cloud.

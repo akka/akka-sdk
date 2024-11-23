@@ -24,6 +24,8 @@ import java.lang.annotation.Target;
  *   <li>{@link io.opentelemetry.api.trace.Span}</li>
  *   <li>Custom types provided by a {@link akka.javasdk.DependencyProvider} from the service setup</li>
  * </ul>
+ * <p>If the annotated class extends {@link akka.javasdk.http.AbstractHttpEndpoint} the request context
+ * is available without constructor injection.
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)

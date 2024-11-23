@@ -6,6 +6,7 @@ package akka.javasdk.impl.consumer
 
 import akka.annotation.InternalApi
 import akka.javasdk.Metadata
+import akka.javasdk.Tracing
 import akka.javasdk.consumer.Consumer
 import akka.javasdk.consumer.MessageContext
 import akka.javasdk.consumer.MessageEnvelope
@@ -15,11 +16,12 @@ import akka.javasdk.impl.JsonMessageCodec
 import akka.javasdk.impl.MessageCodec
 import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.Service
+import akka.javasdk.impl.telemetry.SpanTracingImpl
 import akka.javasdk.impl.telemetry.Telemetry
-import akka.javasdk.impl.telemetry.TraceInstrumentation
 import akka.javasdk.impl.timer.TimerSchedulerImpl
 import akka.javasdk.timer.TimerScheduler
 import akka.runtime.sdk.spi.TimerClient
+import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.Tracer
 import kalix.protocol.action.Actions
 import kalix.protocol.component.MetadataEntry
@@ -62,7 +64,8 @@ private[impl] final class MessageContextImpl(
     override val metadata: Metadata,
     val messageCodec: MessageCodec,
     timerClient: TimerClient,
-    instrumentation: TraceInstrumentation)
+    tracerFactory: () => Tracer,
+    span: Option[Span])
     extends AbstractContext
     with MessageContext {
 
@@ -86,7 +89,5 @@ private[impl] final class MessageContextImpl(
     }
   }
 
-  override def getTracer: Tracer =
-    instrumentation.getTracer
-
+  override def tracing(): Tracing = new SpanTracingImpl(span, tracerFactory)
 }

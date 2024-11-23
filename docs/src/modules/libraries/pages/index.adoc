@@ -70,7 +70,7 @@ TIP: Find the latest Akka library versions at https://doc.akka.io/libraries/akka
 
 * https://doc.akka.io/libraries/akka-distributed-cluster/current/index.html[Distributed Cluster]: Connect Akka services built on Akka libraries across geographical locations for lower latency and higher availability.
 
-* https://doc.akka.io/libraries/akka-distributed-cluster/current/index.html[Edge]: Move your endpoints to the edge of the cloud for lower latency and higher availability. Akka Edge Rust extends the power of Akka's event-driven model to resource-constrained devices.
+* https://doc.akka.io/libraries/akka-edge/current/index.html[Edge]: Move your endpoints to the edge of the cloud for lower latency and higher availability. Akka Edge Rust extends the power of Akka's event-driven model to resource-constrained devices.
 --
 
 [.grid-item]

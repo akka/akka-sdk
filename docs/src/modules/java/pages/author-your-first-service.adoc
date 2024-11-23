@@ -16,7 +16,7 @@ NOTE: If you'd rather skip past this and want to review an already completed app
 
 == Prerequisites
 
-include::ROOT:partial$cloud-dev-prerequisites.adoc[]
+include::ROOT:partial$local-dev-prerequisites.adoc[]
 
 
 == Generate and build the skeleton project
@@ -152,26 +152,17 @@ curl localhost:9000/hello/hello/Bob/30
 
 === Request body ===
 
-To accept an HTTP JSON body, specify a parameter that is a class that https://github.com/FasterXML/jackson?tab=readme-ov-file#what-is-jackson[Jackson] can deserialize:
+To accept an HTTP JSON body, specify a parameter that is a Java record.
 
 [source,java]
 .HelloWorldEndpoint.java
 ----
 include::example$doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java[tag=request-body]
 ----
-<1> A class that Jackson can serialize and deserialize to JSON
+<1> The record will serialized and deserialized as JSON
 <2> A parameter of the request body type
 <3> When combining request body with path variables
 <4> The body must come last in the parameter list
-
-Additionally, the request body parameter can be of the following types:
-
- * `String` for any request with a text content type, the body decoded into a string
- * `java.util.List<T>` where `T` is a type Jackson can deserialize, accepts a JSON array.
- * `akka.http.javadsl.model.HttpEntity.Strict` for the entire request body as bytes together with the content type for
-   arbitrary payload handling.
- * `akka.http.javadsl.model.HttpRequest` for a low level, streaming representation of the entire request
-    including headers. See xref:http-endpoints.adoc#_low_level_requests[] below for more details
 
 You can now call these commands as well
 [source, command line]
@@ -182,25 +173,14 @@ curl -i -XPOST -H "Content-Type: application/json" localhost:9000/hello/hello -d
 
 === Response body ===
 
-To return response with JSON, the return value can be a class that Jackson can serialize:
+To return response with JSON, the return value can be a record that gets serialized as JSON:
 
 [source,java]
 .HelloWorldEndpoint.java
 ----
 include::example$doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java[tag=response-body]
 ----
-<1> Returning an object that Jackson can serialize into JSON
-
-In addition to an object that can be turned to JSON, a request handler can return the following:
-
- * `null` or `void` to return an empty body.
- * `String` to return a UTF-8 encoded `text/plain` HTTP response.
- * `CompletionStage<T>` to respond based on an asynchronous result.
-  ** When the completion stage is completed with a `T` it is
-   turned into a response.
-  ** If it is instead failed, the failure leads to an error response according to
-   the error handling explained in xref:http-endpoints.adoc#_error_responses[error responses].
- * `akka.http.javadsl.model.HttpResponse` for complete control over the response, see xref:http-endpoints.adoc#_low_level_responses[] below
+<1> Returning a record that gets serialized as JSON
 
 [source, command line]
 ----
@@ -208,4 +188,4 @@ curl localhost:9000/hello/hello/Bob/30
 ----
 
 == Next steps
-Now that you have a basic service running, it's time to learn more about building real services in Akka. See the xref:java:shopping-cart-quickstart.adoc[] to build a more realistic application.
+Now that you have a basic service running, it's time to learn more about building real services in Akka. See the xref:java:shopping-cart-quickstart.adoc[] to build a more realistic application and learn how to deploy it to https://console.akka.io[akka.io].

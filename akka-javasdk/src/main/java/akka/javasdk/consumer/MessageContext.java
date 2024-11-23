@@ -6,6 +6,7 @@ package akka.javasdk.consumer;
 
 import akka.javasdk.CloudEvent;
 import akka.javasdk.MetadataContext;
+import akka.javasdk.Tracing;
 import io.opentelemetry.api.trace.Tracer;
 
 import java.util.Optional;
@@ -19,11 +20,6 @@ public interface MessageContext extends MetadataContext {
    */
   Optional<String> eventSubject();
 
-  /**
-   * Get an OpenTelemetry tracer for the current message. This will allow for building and automatic
-   * exporting of spans.
-   *
-   * @return A tracer for the current message, if tracing is configured. Otherwise, a noops tracer.
-   */
-  Tracer getTracer();
+  /** Access to tracing for custom app specific tracing. */
+  Tracing tracing();
 }

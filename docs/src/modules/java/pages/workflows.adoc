@@ -4,6 +4,10 @@ include::ROOT:partial$include.adoc[]
 
 Workflows implement long-running, multi-step business processes while allowing developers to focus exclusively on domain and business logic. Workflows provide durability, consistency and the ability to call other components and services. Business transactions can be modeled in one central place, and the Workflow will keep them running smoothly, or roll back if something goes wrong.
 
+Users can see the workflow execution details in the console (both xref:running-locally.adoc#_local_console[locally] and in the https://console.akka.io[cloud]).
+
+image:workflow-execution.png[]
+
 include::partial$entity-sharding.adoc[]
 
 [#_effect_api]
@@ -113,7 +117,7 @@ include::example$transfer-workflow/src/main/java/com/example/transfer/applicatio
 <6> This time we return an effect that will stop workflow processing, by using special `end` method.
 <7> We collect all steps to form a workflow definition.
 
-IMPORTANT: In the following example all `WalletEntity` interactions are not idempotent. It means that if the workflow step retries, it will make the deposit or withdraw again. In a real-world scenario, you should consider making all interactions idempotent with a proper deduplication mechanism.
+IMPORTANT: In the following example all `WalletEntity` interactions are not idempotent. It means that if the workflow step retries, it will make the deposit or withdraw again. In a real-world scenario, you should consider making all interactions idempotent with a proper deduplication mechanism. A very basic example of handling retries for workflows can be found in https://github.com/akka/akka-sdk/blob/main/samples/transfer-workflow-compensation/src/main/java/com/example/wallet/domain/Wallet.java[this] sample.
 
 == Retrieving state
 

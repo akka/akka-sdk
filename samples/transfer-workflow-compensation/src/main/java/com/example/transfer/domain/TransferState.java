@@ -1,8 +1,11 @@
 package com.example.transfer.domain;
 
-import static com.example.transfer.domain.TransferState.TransferStatus.*;
+import java.util.UUID;
 
-public record TransferState(String transferId, Transfer transfer, TransferStatus status) {
+import static com.example.transfer.domain.TransferState.TransferStatus.STARTED;
+
+public record TransferState(String transferId, Transfer transfer, TransferStatus status, String withdrawId,
+                            String depositId) {
 
   public record Transfer(String from, String to, int amount) {
   }
@@ -11,11 +14,14 @@ public record TransferState(String transferId, Transfer transfer, TransferStatus
     STARTED, WITHDRAW_FAILED, WITHDRAW_SUCCEED, DEPOSIT_FAILED, COMPLETED, COMPENSATION_COMPLETED, WAITING_FOR_ACCEPTATION, TRANSFER_ACCEPTATION_TIMED_OUT, REQUIRES_MANUAL_INTERVENTION
   }
 
-  public TransferState(String transferId, Transfer transfer) {
-    this(transferId, transfer, STARTED);
+  public static TransferState create(String transferId, Transfer transfer) {
+    // commandIds must be the same for every attempt, that's why we keep them as a part of the state
+    String withdrawId = UUID.randomUUID().toString();
+    String depositId = UUID.randomUUID().toString();
+    return new TransferState(transferId, transfer, STARTED, withdrawId, depositId);
   }
 
   public TransferState withStatus(TransferStatus newStatus) {
-    return new TransferState(transferId, transfer, newStatus);
+    return new TransferState(transferId, transfer, newStatus, withdrawId, depositId);
   }
 }

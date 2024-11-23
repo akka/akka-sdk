@@ -1,6 +1,6 @@
 = akka services jwts
 
-Manage JWTs.
+Manage JWT keys of a service.
 
 == Options
 

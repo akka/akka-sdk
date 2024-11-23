@@ -7,7 +7,7 @@ package akka.javasdk.testkit.impl
 import akka.javasdk.eventsourcedentity.EventContext
 
 /**
- * INTERNAL API Used by the generated testkit
+ * INTERNAL API Used by the testkit
  */
 final class TestKitEventSourcedEntityEventContext extends EventContext {
   override def entityId = "testkit-entity-id"

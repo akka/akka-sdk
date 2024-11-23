@@ -185,19 +185,16 @@ Note that in local development, the services don’t actually authenticate with 
 
 == Programmatically accessing principals
 
-The current principal associated with a request can be accessed through the `RequestContext`. The `RequestContext`
-can be injected in the endpoint constructor.
+The current principal associated with a request can be accessed through the `RequestContext`.
 
-NOTE: Endpoints are stateless and each request is served by a new Endpoint instance. Therefore, the
-injected `RequestContext` is always a new instance and is associated with the request currently being handled.
+NOTE: Endpoints are stateless and each request is served by a new Endpoint instance. Therefore, the `RequestContext` is always a new instance and is associated with the request currently being handled.
 
 [source, java, indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[UserEndpoint.java]
 ----
 include::example$doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[tags=endpoint-class;request-context]
 ----
-
-<1> Inject `RequestContext` on your endpoint constructor to gain access to the request specific context.
+<1> Let your endpoint extend link:_attachments/api/akka/javasdk/http/AbstractHttpEndpoint.html[AbstractHttpEndpoint] to get access to the request specific `RequestContext` through `requestContext()`.
 
 You can access the current Principals through method `RequestContext.getPrincipals()`
 

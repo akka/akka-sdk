@@ -16,6 +16,7 @@ import akka.javasdk.impl.ErrorHandling.BadRequestException
 import EventSourcedEntityRouter.CommandResult
 import akka.annotation.InternalApi
 import akka.javasdk.Metadata
+import akka.javasdk.Tracing
 import akka.javasdk.eventsourcedentity.CommandContext
 import akka.javasdk.eventsourcedentity.EventContext
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
@@ -32,8 +33,10 @@ import akka.javasdk.impl.effect.ErrorReplyImpl
 import akka.javasdk.impl.effect.MessageReplyImpl
 import akka.javasdk.impl.effect.SecondaryEffectImpl
 import akka.javasdk.impl.telemetry.EventSourcedEntityCategory
+import akka.javasdk.impl.telemetry.SpanTracingImpl
 import akka.javasdk.impl.telemetry.Telemetry
 import akka.javasdk.impl.telemetry.TraceInstrumentation
+import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.Tracer
 import kalix.protocol.component.Failure
 import kalix.protocol.event_sourced_entity.EventSourcedStreamIn.Message.{ Command => InCommand }
@@ -79,7 +82,7 @@ private[impl] final class EventSourcedEntitiesImpl(
     _services: Map[String, EventSourcedEntityService[_, _, _]],
     configuration: Settings,
     sdkDispatcherName: String,
-    tracerFactory: String => Tracer)
+    tracerFactory: () => Tracer)
     extends EventSourcedEntities {
   import akka.javasdk.impl.EntityExceptions._
 
@@ -186,7 +189,7 @@ private[impl] final class EventSourcedEntitiesImpl(
                   ScalaPbAny.defaultInstance.withTypeUrl(AnySupport.JsonTypeUrlPrefix).withValue(ByteString.empty())))
             val metadata = MetadataImpl.of(command.metadata.map(_.entries.toVector).getOrElse(Nil))
             val context =
-              new CommandContextImpl(thisEntityId, sequence, command.name, command.id, metadata)
+              new CommandContextImpl(thisEntityId, sequence, command.name, command.id, metadata, span, tracerFactory)
 
             val CommandResult(
               events: Vector[Any],
@@ -280,10 +283,14 @@ private[impl] final class EventSourcedEntitiesImpl(
       override val sequenceNumber: Long,
       override val commandName: String,
       override val commandId: Long,
-      override val metadata: Metadata)
+      override val metadata: Metadata,
+      span: Option[Span],
+      tracerFactory: () => Tracer)
       extends AbstractContext
       with CommandContext
-      with ActivatableContext
+      with ActivatableContext {
+    override def tracing(): Tracing = new SpanTracingImpl(span, tracerFactory)
+  }
 
   private class EventSourcedEntityContextImpl(override final val entityId: String)
       extends AbstractContext

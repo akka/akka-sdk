@@ -31,12 +31,12 @@ When authorized, you can use the CLI to perform the same operations available in
 == SEE ALSO
 
 * link:akka.html[akka]	 - Akka control
-* link:akka_auth_container-registry.html[akka auth container-registry]	 - Manage the Akka Container Registry configuration.
+* link:akka_auth_container-registry.html[akka auth container-registry]	 - Manage configuration for Akka Container Registry.
 * link:akka_auth_current-login.html[akka auth current-login]	 - Get details for the current logged in user.
 * link:akka_auth_login.html[akka auth login]	 - Log in to Akka.
 * link:akka_auth_logout.html[akka auth logout]	 - Log out the current user.
-* link:akka_auth_signup.html[akka auth signup]	 - Opens the registration page.
-* link:akka_auth_tokens.html[akka auth tokens]	 - Manage Akka authentication tokens.
+* link:akka_auth_signup.html[akka auth signup]	 - Open the registration page.
+* link:akka_auth_tokens.html[akka auth tokens]	 - Manage Akka authentication tokens for your user.
 * link:akka_auth_use-token.html[akka auth use-token]	 - Login using a token.
 
 [discrete]

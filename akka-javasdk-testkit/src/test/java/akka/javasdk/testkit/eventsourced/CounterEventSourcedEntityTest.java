@@ -8,6 +8,7 @@ import akka.javasdk.Metadata;
 import akka.javasdk.testkit.EventSourcedResult;
 import akka.javasdk.testkit.EventSourcedTestKit;
 import org.junit.jupiter.api.Test;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -19,20 +20,22 @@ public class CounterEventSourcedEntityTest {
         EventSourcedTestKit.of(ctx -> new CounterEventSourcedEntity());
     EventSourcedResult<String> result = testKit.call(entity -> entity.increaseBy(10));
     assertTrue(result.isReply());
-    assertEquals(result.getReply(), "Ok");
-    assertEquals(testKit.getState(), 10);
-    assertEquals(testKit.getAllEvents().size(), 1);
+    assertEquals("Ok", result.getReply());
+    assertEquals(10, testKit.getState());
+    assertEquals(1, testKit.getAllEvents().size());
   }
 
   @Test
   public void testIncreaseWithMetadata() {
+    String counterId = "123";
     EventSourcedTestKit<Integer, Increased, CounterEventSourcedEntity> testKit =
-        EventSourcedTestKit.of(ctx -> new CounterEventSourcedEntity());
+        EventSourcedTestKit.of(counterId, ctx -> new CounterEventSourcedEntity());
     EventSourcedResult<String> result = testKit.call(entity -> entity.increaseFromMeta(), Metadata.EMPTY.add("value", "10"));
     assertTrue(result.isReply());
-    assertEquals(result.getReply(), "Ok");
-    assertEquals(testKit.getState(), 10);
-    assertEquals(testKit.getAllEvents().size(), 1);
+    assertEquals(new Increased(counterId, 10), result.getNextEventOfType(Increased.class));
+    assertEquals("Ok", result.getReply());
+    assertEquals(10, testKit.getState());
+    assertEquals(1, testKit.getAllEvents().size());
   }
 
   @Test
@@ -41,9 +44,9 @@ public class CounterEventSourcedEntityTest {
         EventSourcedTestKit.of(ctx -> new CounterEventSourcedEntity());
     EventSourcedResult<String> result = testKit.call(entity -> entity.doubleIncreaseBy(10));
     assertTrue(result.isReply());
-    assertEquals(result.getReply(), "Ok");
-    assertEquals(testKit.getState(), 20);
-    assertEquals(testKit.getAllEvents().size(), 2);
+    assertEquals("Ok", result.getReply());
+    assertEquals(20, testKit.getState());
+    assertEquals(2, testKit.getAllEvents().size());
   }
 
   @Test
@@ -52,6 +55,6 @@ public class CounterEventSourcedEntityTest {
         EventSourcedTestKit.of(ctx -> new CounterEventSourcedEntity());
     EventSourcedResult<String> result = testKit.call(entity -> entity.increaseBy(-10));
     assertTrue(result.isError());
-    assertEquals(result.getError(), "Can't increase with a negative value");
+    assertEquals("Can't increase with a negative value", result.getError());
   }
 }

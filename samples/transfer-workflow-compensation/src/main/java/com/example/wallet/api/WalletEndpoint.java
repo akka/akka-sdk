@@ -10,9 +10,12 @@ import akka.javasdk.http.HttpResponses;
 import com.example.wallet.application.WalletEntity;
 import com.example.wallet.application.WalletEntity.WalletResult.Failure;
 import com.example.wallet.application.WalletEntity.WalletResult.Success;
+import com.example.wallet.domain.WalletCommand.Deposit;
+import com.example.wallet.domain.WalletCommand.Withdraw;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 
 // Opened up for access from the public internet to make the sample service easy to try out.
@@ -48,7 +51,7 @@ public class WalletEndpoint {
   @Post("/{id}/deposit/{amount}")
   public CompletionStage<HttpResponse> deposit(String id, int amount) {
     return componentClient.forEventSourcedEntity(id)
-      .method(WalletEntity::deposit).invokeAsync(amount)
+      .method(WalletEntity::deposit).invokeAsync(new Deposit(UUID.randomUUID().toString(), amount))
       .thenApply(walletResult ->
         switch (walletResult) {
           case Success __ -> HttpResponses.ok();
@@ -63,7 +66,7 @@ public class WalletEndpoint {
   @Post("/{id}/withdraw/{amount}")
   public CompletionStage<HttpResponse> withdraw(String id, int amount) {
     return componentClient.forEventSourcedEntity(id)
-      .method(WalletEntity::withdraw).invokeAsync(amount)
+      .method(WalletEntity::withdraw).invokeAsync(new Withdraw(UUID.randomUUID().toString(), amount))
       .thenApply(walletResult ->
         switch (walletResult) {
           case Success __ -> HttpResponses.ok();

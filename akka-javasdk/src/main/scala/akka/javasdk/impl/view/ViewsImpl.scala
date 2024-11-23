@@ -23,8 +23,6 @@ import com.google.protobuf.any.{ Any => ScalaPbAny }
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
 
-import scala.jdk.OptionConverters._
-
 /**
  * INTERNAL API
  */
@@ -97,7 +95,7 @@ final class ViewsImpl(_services: Map[String, ViewService[_]], sdkDispatcherName:
               val commandName = receiveEvent.commandName
               val msg = service.messageCodec.decodeMessage(receiveEvent.payload.get)
               val metadata = MetadataImpl.of(receiveEvent.metadata.map(_.entries.toVector).getOrElse(Nil))
-              val addedToMDC = metadata.traceContext.traceId().toScala match {
+              val addedToMDC = metadata.traceId match {
                 case Some(traceId) =>
                   MDC.put(Telemetry.TRACE_ID, traceId)
                   true

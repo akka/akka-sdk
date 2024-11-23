@@ -1,37 +1,43 @@
 package com.example.tracing.application;
 
-
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.timedaction.TimedAction;
-import com.example.tracing.domain.Typicode;
+import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.StatusCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.http.HttpResponse;
+import java.util.Optional;
+import java.util.concurrent.CompletionStage;
+
 @ComponentId("tracing-action")
 public class TracingAction extends TimedAction {
 
-    private final static Logger logger = LoggerFactory.getLogger(TracingAction.class);
+  private final static Logger logger = LoggerFactory.getLogger(TracingAction.class);
 
-    private final Typicode typicode = new Typicode();
+  private final Typicode typicode = new Typicode();
 
-    public Effect callAnotherService(String postID){
-        logger.info("Calling to [{}].", Typicode.url + "/" + postID);
-        var newSpan = commandContext().getTracer()
-                .spanBuilder("ad-hoc span calling to: " + Typicode.url)
-                .setParent(commandContext().metadata().traceContext().asOpenTelemetryContext())
-                .startSpan()
-                .setAttribute("post", postID);
+  public Effect callAnotherService(String postID) {
+    logger.info("Calling to [{}].", Typicode.url + "/" + postID);
+    Optional<Span> maybeSpan = commandContext().tracing().startSpan("ad-hoc span calling to: " + Typicode.url);
 
-        return effects().asyncEffect(
-                typicode.callAsyncService(postID)
-                        .whenComplete((response, ex) -> {
-                            if (ex != null) {
-                                newSpan.setStatus(StatusCode.ERROR, ex.getMessage()).end();
-                            } else {
-                                newSpan.setAttribute("result", response.body().title()).end();
-                            }
-                        })
-                        .thenApply(__ -> effects().done() ));
-    }
+    maybeSpan.ifPresent(span -> span.setAttribute("post", postID));
+    
+    CompletionStage<HttpResponse<Typicode.TypicodePost>> asyncResult = typicode.callAsyncService(postID, maybeSpan);
+
+    maybeSpan.ifPresent(span ->
+        asyncResult.whenComplete((response, ex) -> {
+
+          if (ex != null) {
+            span.setStatus(StatusCode.ERROR, ex.getMessage()).end();
+          } else {
+            span.setAttribute("response-status", response.statusCode()).end();
+          }
+        })
+    );
+
+
+    return effects().asyncEffect(asyncResult.thenApply(__ -> effects().done()));
+  }
 }

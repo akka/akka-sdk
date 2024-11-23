@@ -44,7 +44,7 @@ akka projects observability set logs splunk-hec [flags]
 
 == SEE ALSO
 
-* link:akka_projects_observability_set_logs.html[akka projects observability set logs]	 - Set the logs exporter for your Akka project
+* link:akka_projects_observability_set_logs.html[akka projects observability set logs]	 - Set the logs exporter for your Akka project.
 
 [discrete]
 
