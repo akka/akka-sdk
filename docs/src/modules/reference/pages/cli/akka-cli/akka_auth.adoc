@@ -7,6 +7,8 @@ Manage Akka authentication.
 The `akka auth` commands allow you to _authorize_ your command-line client against your account on Akka.
 When authorized, you can use the CLI to perform the same operations available in the web interface.
 
+NOTE: You can create multiple contexts for different akka environments by using the `--context` option (ie. `prod`, `stage`, etc). Otherwise the `default` context is used.
+
 == Options
 
 ----
