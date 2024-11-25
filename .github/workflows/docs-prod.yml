@@ -1,9 +1,9 @@
 name: Documentation to doc.akka.io
 on:
   workflow_dispatch:
-#  push:
-#    branches:
-#      - 'docs-current'
+  push:
+    branches:
+      - 'docs-current'
 
 permissions:
   contents: read
