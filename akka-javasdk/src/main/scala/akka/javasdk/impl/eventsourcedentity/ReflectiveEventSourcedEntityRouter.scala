@@ -22,7 +22,7 @@ import com.google.protobuf.any.{ Any => ScalaPbAny }
  */
 @InternalApi
 private[impl] class ReflectiveEventSourcedEntityRouter[S, E, ES <: EventSourcedEntity[S, E]](
-    override protected val entity: ES,
+    override val entity: ES,
     commandHandlers: Map[String, CommandHandler],
     messageCodec: JsonMessageCodec)
     extends EventSourcedEntityRouter[S, E, ES](entity) {
