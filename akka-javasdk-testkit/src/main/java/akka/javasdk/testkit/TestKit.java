@@ -32,7 +32,7 @@ import akka.stream.Materializer;
 import akka.stream.SystemMaterializer;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
-import kalix.runtime.KalixRuntimeMain;
+import kalix.runtime.AkkaRuntimeMain;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -474,7 +474,7 @@ public class TestKit {
       applicationConfig = runner.applicationConfig();
 
       Config runtimeConfig = ConfigFactory.empty();
-      runtimeActorSystem = KalixRuntimeMain.start(Some.apply(runtimeConfig), Some.apply(runner));
+      runtimeActorSystem = AkkaRuntimeMain.start(Some.apply(runtimeConfig), runner);
       // wait for SDK to get on start callback (or fail starting), we need it to set up the component client
       var startupContext = runner.started().toCompletableFuture().get(20, TimeUnit.SECONDS);
       var componentClients = startupContext.componentClients();

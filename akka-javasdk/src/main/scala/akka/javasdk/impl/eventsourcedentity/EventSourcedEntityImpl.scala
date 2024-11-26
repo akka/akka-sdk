@@ -87,7 +87,7 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
     componentClass: Class[_],
     messageCodec: JsonMessageCodec,
     factory: EventSourcedEntityContext => ES,
-    snapshotEvery: Int = 0)
+    snapshotEvery: Int)
     extends SpiEventSourcedEntity {
   import EventSourcedEntityImpl._
 
