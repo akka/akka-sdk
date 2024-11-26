@@ -39,7 +39,7 @@ private[impl] class ReflectiveEventSourcedEntityRouter[S, E, ES <: EventSourcedE
 
   override def handleEvent(state: S, event: E): S = {
 
-    _extractAndSetCurrentState(state)
+    _setCurrentState(state)
 
     event match {
       case anyPb: ScalaPbAny => // replaying event coming from runtime
@@ -60,7 +60,7 @@ private[impl] class ReflectiveEventSourcedEntityRouter[S, E, ES <: EventSourcedE
       command: Any,
       commandContext: CommandContext): EventSourcedEntity.Effect[_] = {
 
-    _extractAndSetCurrentState(state)
+    _setCurrentState(state)
 
     val commandHandler = commandHandlerLookup(commandName)
 
@@ -90,7 +90,7 @@ private[impl] class ReflectiveEventSourcedEntityRouter[S, E, ES <: EventSourcedE
     }
   }
 
-  private def _extractAndSetCurrentState(state: S): Unit = {
+  private def _setCurrentState(state: S): Unit = {
     val entityStateType: Class[S] = Reflect.eventSourcedEntityStateType(this.entity.getClass).asInstanceOf[Class[S]]
 
     // the state: S received can either be of the entity "state" type (if coming from emptyState/memory)
@@ -101,9 +101,12 @@ private[impl] class ReflectiveEventSourcedEntityRouter[S, E, ES <: EventSourcedE
         // be able to call currentState() later
         entity._internalSetCurrentState(s)
       case s =>
-        val deserializedState =
-          JsonSupport.decodeJson(entityStateType, ScalaPbAny.toJavaProto(s.asInstanceOf[ScalaPbAny]))
-        entity._internalSetCurrentState(deserializedState)
+        // FIXME this case should not be needed, maybe remove the type check
+        throw new IllegalArgumentException(
+          s"Unexpected state type [${s.getClass.getName}], expected [${entityStateType.getName}]")
+//        val deserializedState =
+//          JsonSupport.decodeJson(entityStateType, ScalaPbAny.toJavaProto(s.asInstanceOf[ScalaPbAny]))
+//        entity._internalSetCurrentState(deserializedState)
     }
   }
 }

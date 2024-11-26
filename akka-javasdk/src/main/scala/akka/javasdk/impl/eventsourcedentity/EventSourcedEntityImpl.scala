@@ -235,6 +235,7 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
           Some(error))
     } finally {
       router.entity._internalSetCommandContext(Optional.empty())
+      router.entity._internalClearCurrentState()
       cmdContext.deactivate() // Very important!
 
       span.foreach { s =>

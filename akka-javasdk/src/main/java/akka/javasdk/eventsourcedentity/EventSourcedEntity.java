@@ -135,6 +135,16 @@ public abstract class EventSourcedEntity<S, E> {
   }
 
   /**
+   * INTERNAL API
+   * @hidden
+   */
+  @InternalApi
+  public void _internalClearCurrentState() {
+    handlingCommands = false;
+    currentState = Optional.empty();
+  }
+
+  /**
    * This is the main event handler method. Whenever an event is persisted, this handler will be called.
    * It should return the new state of the entity.
    * <p>
