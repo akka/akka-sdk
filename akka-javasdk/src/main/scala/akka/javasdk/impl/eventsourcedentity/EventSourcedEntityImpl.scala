@@ -41,6 +41,7 @@ import akka.runtime.sdk.spi.SpiSerialization
 import akka.runtime.sdk.spi.SpiSerialization.Deserialized
 import com.google.protobuf.ByteString
 import com.google.protobuf.any.{ Any => ScalaPbAny }
+import io.grpc.Status
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.Tracer
 import org.slf4j.LoggerFactory
@@ -150,8 +151,9 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
 
       def replyOrError(updatedState: SpiEventSourcedEntity.State): (Option[ScalaPbAny], Option[SpiEntity.Error]) = {
         commandEffect.secondaryEffect(updatedState) match {
-          case ErrorReplyImpl(description, _) =>
-            (None, Some(new SpiEntity.Error(description)))
+          case ErrorReplyImpl(description, status) =>
+            val errorCode = status.map(_.value).getOrElse(Status.Code.UNKNOWN.value)
+            (None, Some(new SpiEntity.Error(description, errorCode)))
           case MessageReplyImpl(message, _) =>
             // FIXME metadata?
             // FIXME is this encoding correct?
@@ -215,14 +217,12 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
           command.name,
           s"No command handler found for command [$name] on ${router.entity.getClass}")
       case BadRequestException(msg) =>
-        // FIXME Status.Conde? Not used anyway?
-        // ErrorReplyImpl(msg, Some(Status.Code.INVALID_ARGUMENT))
         Future.successful(
           new SpiEventSourcedEntity.Effect(
             events = Vector.empty,
             updatedState = state,
             reply = None,
-            error = Some(new SpiEntity.Error(msg)),
+            error = Some(new SpiEntity.Error(msg, Status.Code.INVALID_ARGUMENT.value)),
             delete = None))
       case e: EntityException =>
         throw e

@@ -24,6 +24,7 @@ import java.util.concurrent.TimeUnit;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 @ExtendWith(Junit5LogCapturing.class)
@@ -47,22 +48,30 @@ public class EventSourcedEntityTest extends TestKitSupport {
 
   @Test
   public void verifyCounterErrorEffect() {
+    var counterId = "hello-error";
+    var client = componentClient.forEventSourcedEntity(counterId);
+    assertThrows(IllegalArgumentException.class, () ->
+    increaseCounterWithError(client, -1)
+      );
+  }
 
+  @Test
+  public void httpVerifyCounterErrorEffect() {
     CompletableFuture<StrictResponse<String>> call = httpClient.POST("/akka/v1.0/entity/counter-entity/c001/increaseWithError")
-      .withRequestBody(-10)
-      .responseBodyAs(String.class)
-      .invokeAsync()
-      .toCompletableFuture();
+        .withRequestBody(-10)
+        .responseBodyAs(String.class)
+        .invokeAsync()
+        .toCompletableFuture();
 
     Awaitility.await()
-      .ignoreExceptions()
-      .atMost(5, TimeUnit.SECONDS)
-      .untilAsserted(() -> {
+        .ignoreExceptions()
+        .atMost(5, TimeUnit.SECONDS)
+        .untilAsserted(() -> {
 
-        assertThat(call).isCompletedExceptionally();
-        assertThat(call.exceptionNow()).isInstanceOf(IllegalArgumentException.class);
-        assertThat(call.exceptionNow().getMessage()).contains("Value must be greater than 0");
-      });
+          assertThat(call).isCompletedExceptionally();
+          assertThat(call.exceptionNow()).isInstanceOf(IllegalArgumentException.class);
+          assertThat(call.exceptionNow().getMessage()).contains("Value must be greater than 0");
+        });
   }
 
   @Test
@@ -183,6 +192,12 @@ public class EventSourcedEntityTest extends TestKitSupport {
     return await(client
       .method(CounterEntity::increase)
       .invokeAsync(value));
+  }
+
+  private Counter increaseCounterWithError(EventSourcedEntityClient client, int value) {
+    return await(client
+        .method(CounterEntity::increaseWithError)
+        .invokeAsync(value));
   }
 
 

@@ -5,7 +5,6 @@
 package akka.javasdk.impl.eventsourcedentity
 
 import akka.annotation.InternalApi
-import akka.javasdk.JsonSupport
 import akka.javasdk.eventsourcedentity.CommandContext
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.javasdk.impl.AnySupport
