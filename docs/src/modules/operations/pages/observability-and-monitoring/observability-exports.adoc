@@ -59,6 +59,7 @@ This will open the observability descriptor in a text editor. After saving and e
 After updating your observability configuration, you will need to restart a service to apply the new configuration. Akka automatically makes that a rolling restart.
 ====
 
+[#activating_tracing]
 === Activating tracing (Beta)
 
 The generation of traces is disabled by default. To enable it you need to set xref:reference:descriptors/service-descriptor.adoc#_servicespec[telemetry/tracing/enabled] to `true` in the service descriptor. Like the following:

@@ -29,7 +29,9 @@ public class UserEndpoint extends AbstractHttpEndpoint { // <1>
   // tag::checking-principals[]
   @Get
   public String checkingPrincipals() {
+    // tag::request-context[]
     var principals = requestContext().getPrincipals();
+    // end::request-context[]
     if (principals.isInternet()) {
       return "accessed from the Internet";
     } else if (principals.isSelf()) {

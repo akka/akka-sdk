@@ -59,7 +59,7 @@ akka config set project <project name>
 
 You can grant a project role to a user in two ways:
 
-==== 1. Invite a user to the project by e-mail
+=== 1. Invite a user to the project by e-mail
 Invite a user to join the project and assign them a role by using the following command:
 
 [source,command window]
@@ -69,7 +69,7 @@ akka roles invitations invite-user <email address> --role <role>
 
 The user will receive an email inviting them to join the project. Upon acceptance, the role binding will be created.
 
-==== 2. Add a role directly
+=== 2. Add a role directly
 If the user is already a member of the project, or the project is part of an organization and the user belongs to that organization, you can assign roles directly without sending an invitation.
 
 * By e-mail:

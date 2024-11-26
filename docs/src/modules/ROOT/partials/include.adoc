@@ -1,5 +1,7 @@
 // global attributes
 
 :sample-base-url: https://github.com/akka/akka-sdk/blob/main/samples
+// Docker Registry HTTP API Version
+:docker_registry_http_api_version: v1
 
 include::partial$attributes.adoc[]
