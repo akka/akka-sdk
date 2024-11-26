@@ -12,15 +12,17 @@
     </logger>
 
     <logger name="akka" level="WARN"/>
-    <logger name="akka.runtime" level="INFO"/>
-    <logger name="akka.javasdk" level="INFO"/>
+    <logger name="akka.runtime" level="DEBUG"/>
+    <logger name="akka.javasdk" level="DEBUG"/>
     <logger name="kalix.runtime.views" level="INFO"/>
     <logger name="akka.http" level="WARN"/>
     <logger name="io.grpc" level="WARN"/>
+    <logger name="io.r2dbc" level="WARN"/>
     <logger name="akka.javasdk.impl" level="INFO"/>
     <logger name="akka.javasdk.testkit" level="INFO"/>
 
     <root level="DEBUG">
         <appender-ref ref="CapturingAppender"/>
+<!--        <appender-ref ref="STDOUT"/>-->
     </root>
 </configuration>

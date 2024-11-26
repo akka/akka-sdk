@@ -7,12 +7,14 @@ package akka.javasdk.impl
 import java.lang.reflect.Constructor
 import java.lang.reflect.InvocationTargetException
 import java.util.concurrent.CompletionStage
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.Promise
 import scala.jdk.FutureConverters._
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
+
 import akka.Done
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
@@ -88,9 +90,11 @@ import kalix.protocol.value_entity.ValueEntities
 import kalix.protocol.view.Views
 import kalix.protocol.workflow_entity.WorkflowEntities
 import org.slf4j.LoggerFactory
-
 import scala.jdk.OptionConverters.RichOptional
 import scala.jdk.CollectionConverters._
+
+import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityImpl
+import akka.runtime.sdk.spi.EventSourcedEntityDescriptor
 
 /**
  * INTERNAL API
@@ -342,11 +346,33 @@ private final class Sdk(
   }
 
   // collect all Endpoints and compose them to build a larger router
-  private val httpEndpoints = componentClasses
+  private val httpEndpointDescriptors = componentClasses
     .filter(Reflect.isRestEndpoint)
     .map { httpEndpointClass =>
       HttpEndpointDescriptorFactory(httpEndpointClass, httpEndpointFactory(httpEndpointClass))
     }
+
+  private val eventSourcedEntityDescriptors =
+    componentClasses
+      .filter(hasComponentId)
+      .collect {
+        case clz if classOf[EventSourcedEntity[_, _]].isAssignableFrom(clz) =>
+          val componentId = clz.getAnnotation(classOf[ComponentId]).value
+          val entitySpi =
+            new EventSourcedEntityImpl[AnyRef, AnyRef, EventSourcedEntity[AnyRef, AnyRef]](
+              sdkSettings,
+              sdkTracerFactory,
+              componentId,
+              clz,
+              messageCodec,
+              context =>
+                wiredInstance(clz.asInstanceOf[Class[EventSourcedEntity[AnyRef, AnyRef]]]) {
+                  // remember to update component type API doc and docs if changing the set of injectables
+                  case p if p == classOf[EventSourcedEntityContext] => context
+                },
+              sdkSettings.snapshotEvery)
+          new EventSourcedEntityDescriptor(componentId, entitySpi)
+      }
 
   // these are available for injecting in all kinds of component that are primarily
   // for side effects
@@ -484,11 +510,15 @@ private final class Sdk(
       override def discovery: Discovery = discoveryEndpoint
       override def actions: Option[Actions] = actionsEndpoint
       override def eventSourcedEntities: Option[EventSourcedEntities] = eventSourcedEntitiesEndpoint
+      override def eventSourcedEntityDescriptors: Seq[EventSourcedEntityDescriptor] =
+        Sdk.this.eventSourcedEntityDescriptors
       override def valueEntities: Option[ValueEntities] = valueEntitiesEndpoint
       override def views: Option[Views] = viewsEndpoint
       override def workflowEntities: Option[WorkflowEntities] = workflowEntitiesEndpoint
       override def replicatedEntities: Option[ReplicatedEntities] = None
-      override def httpEndpointDescriptors: Seq[HttpEndpointDescriptor] = httpEndpoints
+      override def httpEndpointDescriptors: Seq[HttpEndpointDescriptor] =
+        Sdk.this.httpEndpointDescriptors
+
     }
   }
 
