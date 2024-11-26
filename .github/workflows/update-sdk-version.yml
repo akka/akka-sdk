@@ -68,8 +68,8 @@ jobs:
           ./updateSdkVersions.sh all
           BRANCH=bump-sdk-versions-${SDK_VERSION}
           git checkout -b ${BRANCH}
-          git config user.name "Kalix Bot"
-          git config user.email "kalix.github@lightbend.com"
+          git config user.name "Akka Bot"
+          git config user.email "github-actions@users.noreply.github.com"
           git commit . -m "chore: bump SDK versions to ${SDK_VERSION}"
           git remote add origin-rw https://${GH_TOKEN}@github.com/akka/akka-sdk
           git push --set-upstream origin-rw ${BRANCH}
