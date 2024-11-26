@@ -59,6 +59,7 @@ private[impl] object EventSourcedEntityImpl {
       override val sequenceNumber: Long,
       override val commandName: String,
       override val commandId: Long, // FIXME remove
+      override val isDeleted: Boolean,
       override val metadata: Metadata,
       span: Option[Span],
       tracerFactory: () => Tracer)
@@ -112,7 +113,7 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
   override def emptyState(entityId: String): SpiEventSourcedEntity.State = {
     // FIXME rather messy with the contexts here
     val cmdContext =
-      new CommandContextImpl(entityId, 0L, "", 0, MetadataImpl.of(Nil), None, tracerFactory)
+      new CommandContextImpl(entityId, 0L, "", 0, false, MetadataImpl.of(Nil), None, tracerFactory)
     val context = new EventSourcedEntityContextImpl(entityId)
     val router = createRouter(context)
     router.entity._internalSetCommandContext(Optional.of(cmdContext))
@@ -138,7 +139,15 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
     val metadata: Metadata =
       MetadataImpl.of(Nil) // FIXME MetadataImpl.of(command.metadata.map(_.entries.toVector).getOrElse(Nil))
     val cmdContext =
-      new CommandContextImpl(entityId, command.sequenceNumber, command.name, 0, metadata, span, tracerFactory)
+      new CommandContextImpl(
+        entityId,
+        command.sequenceNumber,
+        command.name,
+        0,
+        command.isDeleted,
+        metadata,
+        span,
+        tracerFactory)
 
     val context = new EventSourcedEntityContextImpl(entityId)
     val router = createRouter(context)
