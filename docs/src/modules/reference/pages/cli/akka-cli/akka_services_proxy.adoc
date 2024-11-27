@@ -5,6 +5,7 @@ Create an HTTP proxy to a service.
 == Synopsis
 
 The `akka service proxy` command creates an HTTP proxy that forwards all traffic to the service.
+This allows you to interact with the service as if it was running locally.
 
 ----
 akka services proxy SERVICE [flags]

@@ -1,6 +1,6 @@
 = akka organizations list
 
-List all organizations of which the user is a member.
+List all organizations of which the user is a member of.
 
 ----
 akka organizations list [flags]

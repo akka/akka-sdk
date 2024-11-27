@@ -1,10 +1,13 @@
 = akka container-registry
 
-Manage the Akka Container Registry.
+Manage and push service images to the Akka Container Registry.
 
 == Synopsis
 
-The Akka Container Registry (ACR) can be used by all Akka users to deploy services and is available in all Akka regions.
+The Akka Container Registry (ACR) can be used by all users to deploy their services.
+ACR makes service container images available to Akka in all regions automatically.
+
+NOTE: to use an external Docker registry instead, refer to the documentation https://doc.akka.io/operations/projects/external-container-registries.html .
 
 == Options
 
@@ -30,11 +33,11 @@ The Akka Container Registry (ACR) can be used by all Akka users to deploy servic
 == SEE ALSO
 
 * link:akka.html[akka]	 - Akka control
-* link:akka_container-registry_delete-image.html[akka container-registry delete-image]	 - delete image from the Akka Container Registry.
-If no tag is provided, it deletes all tags
+* link:akka_container-registry_delete-image.html[akka container-registry delete-image]	 - Delete image from the Akka Container Registry.
+If no tag is provided, it deletes all tags.
 * link:akka_container-registry_list.html[akka container-registry list]	 - List the Akka Container Registry and region.
 * link:akka_container-registry_list-images.html[akka container-registry list-images]	 - list images from the Akka Container Registry.
-* link:akka_container-registry_list-tags.html[akka container-registry list-tags]	 - list all images tags.
+* link:akka_container-registry_list-tags.html[akka container-registry list-tags]	 - List all images tags.
 * link:akka_container-registry_print.html[akka container-registry print]	 - Print the path of the Akka Container Registry.
 * link:akka_container-registry_push.html[akka container-registry push]	 - Push an Akka service image for a particular Akka project.
 

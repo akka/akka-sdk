@@ -34,7 +34,7 @@ akka projects observability unset default [flags]
 
 == SEE ALSO
 
-* link:akka_projects_observability_unset.html[akka projects observability unset]	 - Unset the observability settings for your Akka project
+* link:akka_projects_observability_unset.html[akka projects observability unset]	 - Unset the observability settings for your Akka project.
 
 [discrete]
 

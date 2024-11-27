@@ -126,7 +126,7 @@ include::example$shopping-cart-quickstart/src/main/java/shoppingcart/api/Shoppin
 <3> GET endpoint path is combined with a path parameter name, e.g. `/carts/123`.
 <4> `ComponentClient` calling a command handler on an Event Sourced Entity from inside an Endpoint.
 <5> Result of request is a `CompletionStage<T>`, in this case a `CompletionStage<ShoppingCart>`.
-<6> Use path parameter `{cartId}` in combination with request body `ShoppingCart.LineItem`.
+<6> Use path parameter `+{cartId}+` in combination with request body `ShoppingCart.LineItem`.
 <7> Map request to a more suitable response, in this case an `HTTP 200 OK` response.
 
 

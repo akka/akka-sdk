@@ -37,7 +37,7 @@ akka config use-context CONTEXT [flags]
 
 == SEE ALSO
 
-* link:akka_config.html[akka config]	 - Manage the local Akka configuration.
+* link:akka_config.html[akka config]	 - Manage configuration and context for the Akka CLI.
 
 [discrete]
 

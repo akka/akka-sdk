@@ -5,6 +5,8 @@ Manage your Akka projects.
 == Synopsis
 
 The `akka projects` commands manipulate the projects in your Akka account, where a project is a collection of services.
+A project can be deployed to one or more regions.
+For more details on projects, see https://doc.akka.io/operations/projects/index.html
 
 == Options
 
@@ -36,10 +38,10 @@ The `akka projects` commands manipulate the projects in your Akka account, where
 * link:akka_projects_hostnames.html[akka projects hostnames]	 - Manage hostnames for your Akka project.
 * link:akka_projects_list.html[akka projects list]	 - List all projects.
 * link:akka_projects_new.html[akka projects new]	 - Create a new Akka project.
-* link:akka_projects_observability.html[akka projects observability]	 - Manage the observability settings for your Akka project
-* link:akka_projects_open.html[akka projects open]	 - Opens the current project in the console.
-* link:akka_projects_regions.html[akka projects regions]	 - Manage the regions for your Akka project
-* link:akka_projects_tokens.html[akka projects tokens]	 - Manage your Akka project service tokens
+* link:akka_projects_observability.html[akka projects observability]	 - Manage the observability settings for your Akka project.
+* link:akka_projects_open.html[akka projects open]	 - Open the current project in the console.
+* link:akka_projects_regions.html[akka projects regions]	 - Manage the regions assigned to your Akka project.
+* link:akka_projects_tokens.html[akka projects tokens]	 - Manage your Akka project service tokens.
 * link:akka_projects_update.html[akka projects update]	 - Update project attributes such as name and description.
 
 [discrete]

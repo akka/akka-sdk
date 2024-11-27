@@ -1,6 +1,6 @@
 = akka services restore
 
-Restores a service that was deleted in the past two weeks.
+Restore a service that was deleted in the past two weeks.
 
 == Synopsis
 
