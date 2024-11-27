@@ -16,6 +16,7 @@ import scala.util.control.NonFatal
 import akka.Done
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
+import akka.http.javadsl.model.HttpHeader
 import akka.http.scaladsl.model.headers.RawHeader
 import akka.javasdk.BuildInfo
 import akka.javasdk.DependencyProvider
@@ -89,8 +90,11 @@ import kalix.protocol.view.Views
 import kalix.protocol.workflow_entity.WorkflowEntities
 import org.slf4j.LoggerFactory
 
+import java.util
+import java.util.Optional
 import scala.jdk.OptionConverters.RichOptional
 import scala.jdk.CollectionConverters._
+import scala.jdk.OptionConverters.RichOption
 
 /**
  * INTERNAL API
@@ -574,6 +578,15 @@ private final class Sdk(
           }
 
         override def tracing(): Tracing = new SpanTracingImpl(context.openTelemetrySpan, sdkTracerFactory)
+
+        override def requestHeader(headerName: String): Optional[HttpHeader] =
+          // Note: force cast to Java header model
+          context.requestHeaders.header(headerName).asInstanceOf[Option[HttpHeader]].toJava
+
+        override def allRequestHeaders(): util.List[HttpHeader] =
+          // Note: force cast to Java header model
+          context.requestHeaders.allHeaders.asInstanceOf[Seq[HttpHeader]].asJava
+
       }
       val instance = wiredInstance(httpEndpointClass) {
         sideEffectingComponentInjects(context.openTelemetrySpan).orElse {

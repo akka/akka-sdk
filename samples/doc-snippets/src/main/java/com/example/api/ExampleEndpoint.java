@@ -153,4 +153,14 @@ public class ExampleEndpoint extends AbstractHttpEndpoint {
     }
   }
   // end::lower-level-request[]
+
+  // tag::header-access[]
+  @Get("/header-access")
+  public String headerAccessExample() {
+    var userAgentHeader = requestContext().requestHeader("User-Agent"); // <1>
+
+    return userAgentHeader.map(httpHeader -> "User agent: " + httpHeader.value())
+        .orElse("No user agent header present");
+  }
+  // end::header-access[]
 }
