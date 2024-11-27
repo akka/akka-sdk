@@ -1,6 +1,6 @@
 = akka organizations invitations
 
-invitations
+Invite new users to the organization with a specific role.
 
 == Options
 

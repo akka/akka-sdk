@@ -1,6 +1,6 @@
 = akka docker
 
-Manage Docker credentials for Akka projects.
+Manage credentials for projects using private Docker registries.
 
 == Synopsis
 

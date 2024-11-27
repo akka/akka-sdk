@@ -5,6 +5,7 @@ List all services.
 == Synopsis
 
 The `akka services list` command lists a one-line summary of all services under your current project.
+By default, it shows information for the primary region of the configured project only.
 
 ----
 akka services list [flags]

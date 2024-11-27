@@ -1,6 +1,6 @@
 = akka services export
 
-Exports a service as its service descriptor
+Export a service as its service descriptor.
 
 == Synopsis
 

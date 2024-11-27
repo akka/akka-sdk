@@ -1,10 +1,11 @@
 = akka services pause
 
-Pauses a service, scaling it to zero.
+Pause a service, scaling it to zero instances.
 
 == Synopsis
 
-The `akka service pause _service-name_` command pauses a service, scaling it to zero but keeping its data.
+The `akka service pause _service-name_` command pauses a service, scaling it to zero instances but keeping its data intact.
+TIP: To resume the service, use the `akka service resume _service-name_` command.
 
 ----
 akka services pause SERVICE [flags]

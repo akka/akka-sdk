@@ -6,6 +6,8 @@ Expose a service.
 
 The `akka services expose _service-name_` command creates a route to expose a service for inbound traffic.
 You may optionally enable HTTP CORS with the `--enable-cors` flag.
+When a _hostname_ is not provided, the service is exposed with a generated hostname.
+For more information on exposing services, see https://doc.akka.io/operations/services/invoke-service.html.
 
 ----
 akka services expose SERVICE [flags]
@@ -24,12 +26,12 @@ akka services expose my-service
       --force-global        force an existing regional resource to be configured as a global resource
       --force-regional      force an existing global resource to be configured as a regional resource
   -h, --help                help for expose
-      --hostname string     service route hostname
+      --hostname string     specify a service route hostname
       --once-per-region     expose the service once per region
       --owner string        the owner of the project to use, needed if you have two projects with the same name from different owners
       --project string      project to use if not using the default configured project
       --region string       region to use if project has more than one region
-      --uri-prefix string   service URI prefix (default "/")
+      --uri-prefix string   set a service URI prefix. Incoming requests will be routed to the service only if the URI path starts with this prefix. (default "/")
 ----
 
 == Options inherited from parent commands

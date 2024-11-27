@@ -1,6 +1,6 @@
 = akka services edit
 
-Edits a service descriptor in the currently configured project.
+Edit a service descriptor in the currently configured project.
 
 == Synopsis
 

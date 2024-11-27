@@ -1,6 +1,6 @@
 = akka services apply
 
-Applies a service descriptor to the currently configured project.
+Apply a service descriptor to the currently configured project.
 
 == Synopsis
 

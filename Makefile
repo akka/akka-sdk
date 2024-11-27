@@ -44,7 +44,7 @@ attributes: prepare
 		> "${managed_partials}/attributes.adoc"
 	docs/bin/version.sh | xargs -0  printf ":akka-javasdk-version: %s" \
 		> "${managed_partials}/attributes.adoc"
-	echo ":akka-cli-version: 3.0.5"     >> "${managed_partials}/attributes.adoc"
+	echo ":akka-cli-version: 3.0.6"     >> "${managed_partials}/attributes.adoc"
 	echo ":akka-cli-min-version: 3.0.4" >> "${managed_partials}/attributes.adoc"
 	# see https://adoptium.net/marketplace/
 	echo ":java-version: 21" \
@@ -88,7 +88,7 @@ antora-local:
 		-v ${ROOT_DIR}:/antora \
 		--rm \
 		-t ${antora_docker_image}:${antora_docker_image_tag} \
-		--cache-dir=.cache/antora --stacktrace --log-failure-level=fatal \
+		--cache-dir=.cache/antora --stacktrace --log-failure-level=error \
 		docs/antora-playbook-local.yml
 
 antora-prod:

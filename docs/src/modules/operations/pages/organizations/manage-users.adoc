@@ -44,7 +44,7 @@ fd21044c-b973-4220-8f65-0f7d317bb23b   superuser   jane.citizen   jane.citizen@e
 
 You can grant a role to a user in two ways:
 
-==== 1. Invite a User by Email
+=== 1. Invite a User by Email
 Send an email invitation with the following command:
 
 [source,command window]
@@ -56,7 +56,7 @@ akka organizations invitations create --organization <organization name> \
 The user will receive an email to join the organization. Once accepted, the role binding will be created.
 
 
-==== 2. Add a Role Directly
+=== 2. Add a Role Directly
 
 If the user is already a member, you can assign roles directly:
 

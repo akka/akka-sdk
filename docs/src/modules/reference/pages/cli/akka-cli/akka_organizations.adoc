@@ -5,6 +5,8 @@ Manage your organizations on Akka
 == Synopsis
 
 The `akka organizations` commands manage the organizations in your Akka account.
+Organizations are the root of the management hierarchy and serve as a container for all Projects where Services are deployed.
+For more details on organizations, see https://doc.akka.io/operations/organizations/index.html .
 
 == Options
 
@@ -32,8 +34,8 @@ The `akka organizations` commands manage the organizations in your Akka account.
 * link:akka.html[akka]	 - Akka control
 * link:akka_organizations_auth.html[akka organizations auth]	 - Manage authentication for your organization on Akka
 * link:akka_organizations_get.html[akka organizations get]	 - Get organization information.
-* link:akka_organizations_invitations.html[akka organizations invitations]	 - invitations
-* link:akka_organizations_list.html[akka organizations list]	 - List all organizations of which the user is a member.
+* link:akka_organizations_invitations.html[akka organizations invitations]	 - Invite new users to the organization with a specific role.
+* link:akka_organizations_list.html[akka organizations list]	 - List all organizations of which the user is a member of.
 * link:akka_organizations_users.html[akka organizations users]	 - Manage organization users.
 
 [discrete]

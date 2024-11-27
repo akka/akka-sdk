@@ -1,5 +1,6 @@
 = View logs
 include::ROOT:partial$include.adoc[]
+
 :page-supergroup-browser-cli: Interface
 
 Akka provides logs that you can view in the Console or access with the CLI. For each service instance we aggregate a maximum of 1MB of log data. You can capture all log output by attaching a logging provider, such as Google Cloud's operations suite (formerly Stackdriver), as described xref:observability-and-monitoring/observability-exports.adoc#_google_cloud[here].
@@ -31,7 +32,7 @@ Logs can be exported for searching, reporting, alerting and long term storage by
 
 == Correlating logs
 
-You can correlate your log statements, those that you write in your application, by adding the MDC pattern `%mdc{trace_id}` to your log file when tracing is xref:operations:observability-and-monitoring/observability-exports.adoc#_activating_tracing_beta[enabled]. Like the following:
+You can correlate your log statements, those that you write in your application, by adding the MDC pattern `%mdc{trace_id}` to your log file when tracing is xref:operations:observability-and-monitoring/observability-exports.adoc#activating_tracing[enabled]. Like the following:
 
 [source,xml]
 .logback.xml

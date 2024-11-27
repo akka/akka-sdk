@@ -32,7 +32,7 @@ akka organizations invitations create --email EMAIL --role ROLE [flags]
 
 == SEE ALSO
 
-* link:akka_organizations_invitations.html[akka organizations invitations]	 - invitations
+* link:akka_organizations_invitations.html[akka organizations invitations]	 - Invite new users to the organization with a specific role.
 
 [discrete]
 

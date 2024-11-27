@@ -1,12 +1,14 @@
 = akka services deploy
 
-Deploys a service to the currently configured project.
+Deploy a service to the currently configured project.
 
 == Synopsis
 
 The `akka service deploy _service-name_ _docker-image_` command deploys a service with name _service-name_ using the _docker-image_.
+This command is meant for rapid experimentation and development.
+For production use cases, we recommend deploying through a service descriptor, using the `akka service apply` command.
 
-NOTE: You will need Docker credentials to be set up in order for Akka to be able to pull from your private image repository.
+NOTE: If using a private image repository, you will need Docker credentials to be set up in order for Akka to be able to pull from your images.
 For more info see `akka docker`
 
 ----

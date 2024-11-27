@@ -4,7 +4,8 @@ Delete a project.
 
 == Synopsis
 
-The `akka projects delete PROJECT` command will delete the project.
+The `akka projects delete _project-name_` command will delete the project.
+If the project still has running services, you will need to delete them first.
 
 TIP: Use `akka projects list` to identify a project.
 

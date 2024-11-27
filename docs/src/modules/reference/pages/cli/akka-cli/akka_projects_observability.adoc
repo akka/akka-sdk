@@ -1,10 +1,11 @@
 = akka projects observability
 
-Manage the observability settings for your Akka project
+Manage the observability settings for your Akka project.
 
 == Synopsis
 
-The `akka project observability` command manages the observability settings for your Akka project.
+The `akka project observability` command manages the observability settings for your Akka project, allowing you to configure exporters for metrics, logs, and traces so you can ship those to your observability platform of choice.
+These observability settings are applied to all services in your project.
 
 == Options
 
@@ -30,13 +31,13 @@ The `akka project observability` command manages the observability settings for 
 == SEE ALSO
 
 * link:akka_projects.html[akka projects]	 - Manage your Akka projects.
-* link:akka_projects_observability_apply.html[akka projects observability apply]	 - Applies an observability descriptor to the currently configured project.
-* link:akka_projects_observability_config.html[akka projects observability config]	 - Manage the observability configuration for your Akka project
+* link:akka_projects_observability_apply.html[akka projects observability apply]	 - Apply an observability descriptor to the currently configured project.
+* link:akka_projects_observability_config.html[akka projects observability config]	 - Manage the observability configuration for your Akka project.
 * link:akka_projects_observability_edit.html[akka projects observability edit]	 - Edit observability configuration for your Akka project.
-* link:akka_projects_observability_export.html[akka projects observability export]	 - Exports an observability descriptor from the currently configured project.
+* link:akka_projects_observability_export.html[akka projects observability export]	 - Export an observability descriptor from the currently configured project.
 * link:akka_projects_observability_get.html[akka projects observability get]	 - Get observability configuration for your Akka project.
-* link:akka_projects_observability_set.html[akka projects observability set]	 - Set the observability settings for your Akka project
-* link:akka_projects_observability_unset.html[akka projects observability unset]	 - Unset the observability settings for your Akka project
+* link:akka_projects_observability_set.html[akka projects observability set]	 - Set the observability settings for your Akka project.
+* link:akka_projects_observability_unset.html[akka projects observability unset]	 - Unset the observability settings for your Akka project.
 
 [discrete]
 

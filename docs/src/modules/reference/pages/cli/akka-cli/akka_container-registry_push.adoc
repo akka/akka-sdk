@@ -4,15 +4,15 @@ Push an Akka service image for a particular Akka project.
 
 == Synopsis
 
-The `akka container-registry push <image>` command will push the given container image to the Akka container registry.
+The `akka container-registry push _image_` command will push the given container image to the Akka container registry.
 The provided image name must be a valid Docker image tag and not an image hash/SHA-256.
 
-This command will replace the `HOST[:PORT_NUMBER]` portion of the specified +++<image>+++with the appropriate Akka container registry hostname if it does not match the expected hostname.
+This command will replace the `HOST[:PORT_NUMBER]` portion of the specified _image_ with the appropriate Akka container registry hostname if it does not match the expected hostname.
 This command is also multi-region aware.
-If the current (or specified) Akka project is a multi-region project, the provided +++<image>+++will be tagged with a new tag for each Akka region where the project resides and this command will push the image to each of those regions for you.+++</image>++++++</image>+++
+If the current (or specified) Akka project is a multi-region project, the provided _image_ will be tagged with a new tag for each Akka region where the project resides and this command will push the image to each of those regions for you.
 
-NOTE: You must have the source +++<image>+++in your local Docker service image catalog for this command to function.
-If the image is not locally stored, you can pull it (via `docker pull +++<image>+++` first before running this command.+++</image>++++++</image>+++
+NOTE: You must have the source _image_ in your local Docker service image catalog for this command to function.
+If the image is not locally stored, you can pull it (via `docker pull _image_` first       before running this command.
 
 ----
 akka container-registry push IMAGE [flags]
@@ -43,7 +43,7 @@ akka container-registry push IMAGE [flags]
 
 == SEE ALSO
 
-* link:akka_container-registry.html[akka container-registry]	 - Manage the Akka Container Registry.
+* link:akka_container-registry.html[akka container-registry]	 - Manage and push service images to the Akka Container Registry.
 
 [discrete]
 

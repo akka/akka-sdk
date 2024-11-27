@@ -1,10 +1,10 @@
 = akka container-registry delete-image
 
-delete image from the Akka Container Registry.
-If no tag is provided, it deletes all tags
+Delete image from the Akka Container Registry.
+If no tag is provided, it deletes all tags.
 
 ----
-akka container-registry delete-image <image>[:<tag>] [flags]
+akka container-registry delete-image _image_[:<tag>] [flags]
 ----
 
 == Options
@@ -30,7 +30,7 @@ akka container-registry delete-image <image>[:<tag>] [flags]
 
 == SEE ALSO
 
-* link:akka_container-registry.html[akka container-registry]	 - Manage the Akka Container Registry.
+* link:akka_container-registry.html[akka container-registry]	 - Manage and push service images to the Akka Container Registry.
 
 [discrete]
 
