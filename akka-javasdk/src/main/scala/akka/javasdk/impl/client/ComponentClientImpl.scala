@@ -35,7 +35,7 @@ private[javasdk] final case class ComponentClientImpl(
   }
 
   override def forTimedAction(): TimedActionClient =
-    TimedActionClientImpl(runtimeComponentClients.actionClient, callMetadata)
+    TimedActionClientImpl(runtimeComponentClients.timedActionClient, callMetadata)
 
   override def forKeyValueEntity(valueEntityId: String): KeyValueEntityClient =
     if (valueEntityId eq null) throw new NullPointerException("Key Value entity id is null")

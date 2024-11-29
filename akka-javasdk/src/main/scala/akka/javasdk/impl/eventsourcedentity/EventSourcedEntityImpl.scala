@@ -110,13 +110,10 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
       messageCodec)
       .asInstanceOf[ReflectiveEventSourcedEntityRouter[AnyRef, AnyRef, EventSourcedEntity[AnyRef, AnyRef]]]
 
-  override def emptyState(entityId: String): SpiEventSourcedEntity.State = {
+  override def emptyState: SpiEventSourcedEntity.State = {
     // FIXME rather messy with the contexts here
-    val cmdContext =
-      new CommandContextImpl(entityId, 0L, "", 0, false, MetadataImpl.of(Nil), None, tracerFactory)
-    val context = new EventSourcedEntityContextImpl(entityId)
+    val context = new EventSourcedEntityContextImpl("FIXME_ID")
     val router = createRouter(context)
-    router.entity._internalSetCommandContext(Optional.of(cmdContext))
     try {
       router.entity.emptyState()
     } finally {

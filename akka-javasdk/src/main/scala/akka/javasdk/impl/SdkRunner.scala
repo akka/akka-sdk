@@ -85,7 +85,6 @@ import io.opentelemetry.context.{ Context => OtelContext }
 import kalix.protocol.action.Actions
 import kalix.protocol.discovery.Discovery
 import kalix.protocol.event_sourced_entity.EventSourcedEntities
-import kalix.protocol.replicated_entity.ReplicatedEntities
 import kalix.protocol.value_entity.ValueEntities
 import kalix.protocol.view.Views
 import kalix.protocol.workflow_entity.WorkflowEntities
@@ -94,7 +93,9 @@ import scala.jdk.OptionConverters.RichOptional
 import scala.jdk.CollectionConverters._
 
 import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityImpl
+import akka.javasdk.impl.timedaction.TimedActionImpl
 import akka.runtime.sdk.spi.EventSourcedEntityDescriptor
+import akka.runtime.sdk.spi.TimedActionDescriptor
 
 /**
  * INTERNAL API
@@ -374,6 +375,25 @@ private final class Sdk(
           new EventSourcedEntityDescriptor(componentId, entitySpi)
       }
 
+  private val timedActionDescriptors =
+    componentClasses
+      .filter(hasComponentId)
+      .collect {
+        case clz if classOf[TimedAction].isAssignableFrom(clz) =>
+          val componentId = clz.getAnnotation(classOf[ComponentId]).value
+          val timedActionClass = clz.asInstanceOf[Class[TimedAction]]
+          val timedActionSpi =
+            new TimedActionImpl[TimedAction](
+              () => wiredInstance(timedActionClass)(sideEffectingComponentInjects(None)),
+              timedActionClass,
+              system.classicSystem,
+              runtimeComponentClients.timerClient,
+              sdkExecutionContext,
+              sdkTracerFactory,
+              messageCodec)
+          new TimedActionDescriptor(componentId, timedActionSpi)
+      }
+
   // these are available for injecting in all kinds of component that are primarily
   // for side effects
   // Note: config is also always available through the combination with user DI way down below
@@ -401,7 +421,8 @@ private final class Sdk(
     }
 
     val actionAndConsumerServices = services.filter { case (_, service) =>
-      service.getClass == classOf[TimedActionService[_]] || service.getClass == classOf[ConsumerService[_]]
+      /*service.getClass == classOf[TimedActionService[_]] ||*/
+      service.getClass == classOf[ConsumerService[_]]
     }
 
     if (actionAndConsumerServices.nonEmpty) {
@@ -515,10 +536,11 @@ private final class Sdk(
       override def valueEntities: Option[ValueEntities] = valueEntitiesEndpoint
       override def views: Option[Views] = viewsEndpoint
       override def workflowEntities: Option[WorkflowEntities] = workflowEntitiesEndpoint
-      override def replicatedEntities: Option[ReplicatedEntities] = None
       override def httpEndpointDescriptors: Seq[HttpEndpointDescriptor] =
         Sdk.this.httpEndpointDescriptors
 
+      override def timedActionsDescriptors: Seq[TimedActionDescriptor] =
+        Sdk.this.timedActionDescriptors
     }
   }
 
