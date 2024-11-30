@@ -25,14 +25,14 @@ import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.keyvalueentity.KeyValueEntity
 import akka.javasdk.timedaction.TimedAction
 import akka.javasdk.workflow.Workflow
-import akka.runtime.sdk.spi.ActionRequest
+import akka.runtime.sdk.spi.TimedActionRequest
 import akka.runtime.sdk.spi.ActionType
 import akka.runtime.sdk.spi.ComponentType
 import akka.runtime.sdk.spi.EntityRequest
 import akka.runtime.sdk.spi.EventSourcedEntityType
 import akka.runtime.sdk.spi.KeyValueEntityType
 import akka.runtime.sdk.spi.WorkflowType
-import akka.runtime.sdk.spi.{ ActionClient => RuntimeActionClient }
+import akka.runtime.sdk.spi.{ TimedActionClient => RuntimeTimedActionClient }
 import akka.runtime.sdk.spi.{ EntityClient => RuntimeEntityClient }
 import akka.util.ByteString
 
@@ -179,7 +179,7 @@ private[javasdk] final case class WorkflowClientImpl(
  */
 @InternalApi
 private[javasdk] final case class TimedActionClientImpl(
-    actionClient: RuntimeActionClient,
+    timedActionClient: RuntimeTimedActionClient,
     callMetadata: Option[Metadata])(implicit val executionContext: ExecutionContext)
     extends TimedActionClient {
   override def method[T, R](methodRef: function.Function[T, TimedAction.Effect]): ComponentDeferredMethodRef[R] =
@@ -219,9 +219,9 @@ private[javasdk] final case class TimedActionClientImpl(
           methodName,
           None,
           { metadata =>
-            actionClient
+            timedActionClient
               .call(
-                new ActionRequest(
+                new TimedActionRequest(
                   componentId,
                   methodName,
                   ContentTypes.`application/json`,

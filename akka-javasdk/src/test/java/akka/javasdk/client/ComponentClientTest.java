@@ -16,7 +16,7 @@ import akka.javasdk.Metadata;
 import akka.javasdk.impl.client.ComponentClientImpl;
 import akka.javasdk.impl.client.DeferredCallImpl;
 import akka.javasdk.impl.telemetry.Telemetry;
-import akka.runtime.sdk.spi.ActionClient;
+import akka.runtime.sdk.spi.TimedActionClient;
 import akka.runtime.sdk.spi.ActionType$;
 import akka.runtime.sdk.spi.ComponentClients;
 import akka.runtime.sdk.spi.EntityClient;
@@ -70,7 +70,7 @@ class ComponentClientTest {
       }
 
       @Override
-      public ActionClient actionClient() {
+      public TimedActionClient timedActionClient() {
         return null;
       }
     };

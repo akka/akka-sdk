@@ -9,7 +9,6 @@ import akka.javasdk.eventsourcedentity.CommandContext
 import akka.javasdk.keyvalueentity
 import kalix.protocol.entity.Command
 import kalix.protocol.event_sourced_entity.EventSourcedInit
-import kalix.protocol.replicated_entity.ReplicatedEntityInit
 import kalix.protocol.value_entity.ValueEntityInit
 
 /**
@@ -69,9 +68,6 @@ private[javasdk] object EntityExceptions {
       ProtocolException(init.entityId, message)
 
     def apply(init: EventSourcedInit, message: String): EntityException =
-      ProtocolException(init.entityId, message)
-
-    def apply(init: ReplicatedEntityInit, message: String): EntityException =
       ProtocolException(init.entityId, message)
 
   }
