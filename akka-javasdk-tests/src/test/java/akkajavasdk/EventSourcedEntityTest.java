@@ -31,7 +31,9 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class EventSourcedEntityTest extends TestKitSupport {
 
   @Test
-  public void verifyCounterEventSourcedWiring() {
+  public void verifyCounterEventSourcedWiring() throws InterruptedException {
+
+    Thread.sleep(10000);
 
     var counterId = "hello";
     var client = componentClient.forEventSourcedEntity(counterId);
