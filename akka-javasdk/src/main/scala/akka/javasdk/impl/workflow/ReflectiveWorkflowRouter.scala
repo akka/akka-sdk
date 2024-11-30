@@ -18,7 +18,7 @@ import com.google.protobuf.any.{ Any => ScalaPbAny }
  */
 @InternalApi
 class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
-    override protected val workflow: W,
+    override val workflow: W,
     commandHandlers: Map[String, CommandHandler])
     extends WorkflowRouter[S, W](workflow) {
 
@@ -38,7 +38,7 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
 
     val scalaPbAnyCommand = command.asInstanceOf[ScalaPbAny]
     if (AnySupport.isJson(scalaPbAnyCommand)) {
-      // special cased component client calls, lets json commands trough all the way
+      // special cased component client calls, lets json commands through all the way
       val methodInvoker = commandHandler.getSingleNameInvoker()
       val deserializedCommand =
         CommandSerialization.deserializeComponentClientCommand(methodInvoker.method, scalaPbAnyCommand)

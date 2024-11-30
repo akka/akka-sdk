@@ -41,7 +41,6 @@ import akka.runtime.sdk.spi.SpiSerialization
 import akka.runtime.sdk.spi.SpiSerialization.Deserialized
 import com.google.protobuf.ByteString
 import com.google.protobuf.any.{ Any => ScalaPbAny }
-import io.grpc.Status
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.Tracer
 import org.slf4j.LoggerFactory
@@ -158,8 +157,7 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
       def replyOrError(updatedState: SpiEventSourcedEntity.State): (Option[ScalaPbAny], Option[SpiEntity.Error]) = {
         commandEffect.secondaryEffect(updatedState) match {
           case ErrorReplyImpl(description, status) =>
-            val errorCode = status.map(_.value).getOrElse(Status.Code.UNKNOWN.value)
-            (None, Some(new SpiEntity.Error(description, errorCode)))
+            (None, Some(new SpiEntity.Error(description)))
           case MessageReplyImpl(message, _) =>
             // FIXME metadata?
             // FIXME is this encoding correct?
@@ -228,7 +226,7 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
             events = Vector.empty,
             updatedState = state,
             reply = None,
-            error = Some(new SpiEntity.Error(msg, Status.Code.INVALID_ARGUMENT.value)),
+            error = Some(new SpiEntity.Error(msg)),
             delete = None))
       case e: EntityException =>
         throw e
@@ -286,7 +284,9 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
       override def toProto(obj: Deserialized): ScalaPbAny =
         ScalaPbAny.fromJavaProto(messageCodec.encodeJava(obj))
 
-      override def fromProto(pb: ScalaPbAny): Deserialized =
-        messageCodec.decodeMessage(pb).asInstanceOf[Deserialized]
+      override def fromProto[T](pb: ScalaPbAny, clz: Class[T]): T = {
+        // FIXME: use BytesPayload from Johan's PR
+        messageCodec.decodeMessage(clz, akka.util.ByteString.fromArrayUnsafe(pb.value.toByteArray))
+      }
     }
 }
