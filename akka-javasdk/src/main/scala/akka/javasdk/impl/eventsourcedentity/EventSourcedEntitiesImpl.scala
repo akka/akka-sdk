@@ -290,6 +290,7 @@ private[impl] final class EventSourcedEntitiesImpl(
       with CommandContext
       with ActivatableContext {
     override def tracing(): Tracing = new SpanTracingImpl(span, tracerFactory)
+    override def isDeleted: Boolean = false // FIXME not supported by old spi
   }
 
   private class EventSourcedEntityContextImpl(override final val entityId: String)

@@ -37,6 +37,8 @@ public interface CommandContext extends MetadataContext {
    */
   String entityId();
 
+  boolean isDeleted();
+
   /** Access to tracing for custom app specific tracing. */
   Tracing tracing();
 }
