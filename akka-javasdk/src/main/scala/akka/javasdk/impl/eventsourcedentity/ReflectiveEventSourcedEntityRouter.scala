@@ -31,6 +31,8 @@ private[impl] class ReflectiveEventSourcedEntityRouter[S, E, ES <: EventSourcedE
   // similar to workflow, we preemptively register the events type to the message codec
   Reflect.allKnownEventTypes[S, E, ES](entity).foreach(messageCodec.registerTypeHints)
 
+  val entityStateType: Class[S] = Reflect.eventSourcedEntityStateType(entity.getClass).asInstanceOf[Class[S]]
+
   private def commandHandlerLookup(commandName: String) =
     commandHandlers.getOrElse(
       commandName,
@@ -90,7 +92,6 @@ private[impl] class ReflectiveEventSourcedEntityRouter[S, E, ES <: EventSourcedE
   }
 
   private def _setCurrentState(state: S): Unit = {
-    val entityStateType: Class[S] = Reflect.eventSourcedEntityStateType(this.entity.getClass).asInstanceOf[Class[S]]
 
     // the state: S received can either be of the entity "state" type (if coming from emptyState/memory)
     // or PB Any type (if coming from the runtime)

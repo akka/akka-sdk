@@ -41,7 +41,6 @@ import com.google.protobuf.ByteString
 import com.google.protobuf.any.{ Any => ScalaPbAny }
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.Tracer
-import org.slf4j.LoggerFactory
 import org.slf4j.MDC
 
 /**
@@ -49,7 +48,6 @@ import org.slf4j.MDC
  */
 @InternalApi
 private[impl] object EventSourcedEntityImpl {
-  private val log = LoggerFactory.getLogger(this.getClass)
 
   private class CommandContextImpl(
       override val entityId: String,
@@ -86,13 +84,9 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
     componentClass: Class[_],
     entityId: String,
     messageCodec: JsonMessageCodec,
-    factory: EventSourcedEntityContext => ES,
-    snapshotEvery: Int)
+    factory: EventSourcedEntityContext => ES)
     extends SpiEventSourcedEntity {
   import EventSourcedEntityImpl._
-
-  if (snapshotEvery < 0)
-    log.warn("Snapshotting disabled for entity [{}], this is not recommended.", componentId)
 
   // FIXME
 //  private val traceInstrumentation = new TraceInstrumentation(componentId, EventSourcedEntityCategory, tracerFactory)
@@ -127,7 +121,7 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
           // FIXME smuggling 0 arity method called from component client through here
           ScalaPbAny.defaultInstance.withTypeUrl(AnySupport.JsonTypeUrlPrefix).withValue(ByteString.empty())))
     val metadata: Metadata =
-      MetadataImpl.of(Nil) // FIXME MetadataImpl.of(command.metadata.map(_.entries.toVector).getOrElse(Nil))
+      MetadataImpl.Empty // FIXME MetadataImpl.of(command.metadata.map(_.entries.toVector).getOrElse(Nil))
     val cmdContext =
       new CommandContextImpl(
         entityId,
@@ -161,16 +155,14 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
       }
 
       var currentSequence = command.sequenceNumber
-      var updatedState = state
       commandEffect.primaryEffect match {
         case EmitEvents(events, deleteEntity) =>
-          var shouldSnapshot = false
+          var updatedState = state
           events.foreach { event =>
             updatedState = entityHandleEvent(updatedState, event.asInstanceOf[AnyRef], entityId, currentSequence)
             if (updatedState == null)
               throw new IllegalArgumentException("Event handler must not return null as the updated state.")
             currentSequence += 1
-            shouldSnapshot = shouldSnapshot || (snapshotEvery > 0 && currentSequence % snapshotEvery == 0)
           }
 
           val (reply, error) = replyOrError(updatedState)
@@ -179,14 +171,6 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
             Future.successful(
               new SpiEventSourcedEntity.Effect(events = Vector.empty, updatedState = state, reply = None, error, None))
           } else {
-            // snapshotting final state since that is the "atomic" write
-            // emptyState can be null but null snapshot should not be stored, but that can't even
-            // happen since event handler is not allowed to return null as newState
-            // FIXME
-//            val snapshot =
-//              if (shouldSnapshot) Option(updatedState)
-//              else None
-
             val delete =
               if (deleteEntity) Some(configuration.cleanupDeletedEventSourcedEntityAfter)
               else None
@@ -199,7 +183,7 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
           }
 
         case NoPrimaryEffect =>
-          val (reply, error) = replyOrError(updatedState)
+          val (reply, error) = replyOrError(state)
 
           Future.successful(
             new SpiEventSourcedEntity.Effect(events = Vector.empty, updatedState = state, reply, error, None))
@@ -273,5 +257,5 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
     ScalaPbAny.fromJavaProto(messageCodec.encodeJava(obj))
 
   override def stateFromProto(pb: ScalaPbAny): SpiEventSourcedEntity.State =
-    messageCodec.decodeMessage(pb).asInstanceOf[SpiEventSourcedEntity.State]
+    messageCodec.decodeMessage(router.entityStateType, pb)
 }

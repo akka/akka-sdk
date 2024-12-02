@@ -18,7 +18,6 @@ private[impl] object Settings {
 
   def apply(sdkConfig: Config): Settings = {
     Settings(
-      snapshotEvery = sdkConfig.getInt("event-sourced-entity.snapshot-every"),
       cleanupDeletedEventSourcedEntityAfter = sdkConfig.getDuration("event-sourced-entity.cleanup-deleted-after"),
       cleanupDeletedKeyValueEntityAfter = sdkConfig.getDuration("key-value-entity.cleanup-deleted-after"),
       devModeSettings = Option.when(sdkConfig.getBoolean("dev-mode.enabled"))(
@@ -35,7 +34,6 @@ private[impl] object Settings {
  */
 @InternalApi
 private[impl] final case class Settings(
-    snapshotEvery: Int,
     cleanupDeletedEventSourcedEntityAfter: Duration,
     cleanupDeletedKeyValueEntityAfter: Duration,
     devModeSettings: Option[DevModeSettings])
