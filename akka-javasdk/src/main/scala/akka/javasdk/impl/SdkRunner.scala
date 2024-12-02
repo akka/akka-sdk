@@ -96,6 +96,7 @@ import scala.jdk.CollectionConverters._
 import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityImpl
 import akka.javasdk.impl.timedaction.TimedActionImpl
 import akka.runtime.sdk.spi.EventSourcedEntityDescriptor
+import akka.runtime.sdk.spi.SpiEventSourcedEntity
 import akka.runtime.sdk.spi.TimedActionDescriptor
 
 /**
@@ -361,12 +362,13 @@ private final class Sdk(
       .collect {
         case clz if classOf[EventSourcedEntity[_, _]].isAssignableFrom(clz) =>
           val componentId = clz.getAnnotation(classOf[ComponentId]).value
-          val entitySpi =
+          val instanceFactory: SpiEventSourcedEntity.FactoryContext => SpiEventSourcedEntity = { factoryContext =>
             new EventSourcedEntityImpl[AnyRef, AnyRef, EventSourcedEntity[AnyRef, AnyRef]](
               sdkSettings,
               sdkTracerFactory,
               componentId,
               clz,
+              factoryContext.entityId,
               messageCodec,
               context =>
                 wiredInstance(clz.asInstanceOf[Class[EventSourcedEntity[AnyRef, AnyRef]]]) {
@@ -374,7 +376,8 @@ private final class Sdk(
                   case p if p == classOf[EventSourcedEntityContext] => context
                 },
               sdkSettings.snapshotEvery)
-          new EventSourcedEntityDescriptor(componentId, entitySpi)
+          }
+          new EventSourcedEntityDescriptor(componentId, instanceFactory)
       }
 
   private val timedActionDescriptors =
