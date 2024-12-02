@@ -10,7 +10,4 @@
  -->
 <included>
     <logger name="shoppingcart" level="INFO"/>
-    <logger name="akka.runtime" level="DEBUG"/>
-    <logger name="kalix.runtime" level="DEBUG"/>
-
 </included>

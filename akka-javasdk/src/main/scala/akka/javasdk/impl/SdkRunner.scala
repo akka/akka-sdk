@@ -421,7 +421,7 @@ private final class Sdk(
     }
 
     val actionAndConsumerServices = services.filter { case (_, service) =>
-      /*service.getClass == classOf[TimedActionService[_]] ||*/
+      /*FIXME service.getClass == classOf[TimedActionService[_]] ||*/
       service.getClass == classOf[ConsumerService[_]]
     }
 
