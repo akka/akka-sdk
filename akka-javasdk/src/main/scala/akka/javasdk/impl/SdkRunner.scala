@@ -8,6 +8,7 @@ import java.lang.reflect.Constructor
 import java.lang.reflect.InvocationTargetException
 import java.util.concurrent.CompletionStage
 
+import scala.annotation.nowarn
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.Promise
@@ -113,6 +114,7 @@ class SdkRunner private (dependencyProvider: Option[DependencyProvider]) extends
   def applicationConfig: Config =
     ApplicationConfig.loadApplicationConf
 
+  @nowarn("msg=deprecated") //TODO remove deprecation once we remove the old constructor
   override def getSettings: SpiSettings = {
     val applicationConf = applicationConfig
     val devModeSettings =
