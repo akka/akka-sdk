@@ -5,12 +5,14 @@
 package akkajavasdk;
 
 import akka.javasdk.http.StrictResponse;
+import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
 import akkajavasdk.components.eventsourcedentities.counter.Counter;
 import akkajavasdk.components.eventsourcedentities.counter.CounterEntity;
 import akka.javasdk.client.EventSourcedEntityClient;
 import akkajavasdk.components.eventsourcedentities.hierarchy.AbstractTextConsumer;
 import akkajavasdk.components.eventsourcedentities.hierarchy.TextEsEntity;
+import com.typesafe.config.ConfigFactory;
 import org.awaitility.Awaitility;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Assertions;
@@ -29,6 +31,13 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 @ExtendWith(Junit5LogCapturing.class)
 public class EventSourcedEntityTest extends TestKitSupport {
+
+  @Override
+  protected TestKit.Settings testKitSettings() {
+    return TestKit.Settings.DEFAULT.withAdditionalConfig(ConfigFactory.parseString("""
+        akka.javasdk.event-sourced-entity.snapshot-every = 10
+        """));
+  }
 
   @Test
   public void verifyCounterEventSourcedWiring() throws InterruptedException {
@@ -144,7 +153,7 @@ public class EventSourcedEntityTest extends TestKitSupport {
   @Test
   public void verifyCounterEventSourcedAfterRestartFromSnapshot() {
 
-    // snapshotting with kalix.event-sourced-entity.snapshot-every = 10
+    // snapshotting with akka.javasdk.event-sourced-entity.snapshot-every = 10
     var counterId = "restartFromSnapshot";
     var client = componentClient.forEventSourcedEntity(counterId);
 
