@@ -10,7 +10,21 @@ Current versions
 * Akka CLI {akka-cli-version}
 * A glance of all Akka libraries and their current versions is presented at https://doc.akka.io/libraries/akka-dependencies/current[Akka library versions].
 
+== December 2024
+
+* https://github.com/akka/akka-sdk/releases/tag/v3.0.1[Akka SDK 3.0.0]
+
 == November 2024
+
+* https://github.com/akka/akka-projection/releases/tag/v1.6.5[Akka Projections 1.6.5]
+
+* https://github.com/akka/akka-projection/releases/tag/v1.6.4[Akka Projections 1.6.4]
+
+* https://github.com/akka/akka-projection/releases/tag/v1.6.3[Akka Projections 1.6.3]
+
+* https://github.com/akka/akka-persistence-dynamodb/releases/tag/v2.0.3[Akka DynamoDB 2.0.3]
+
+* https://github.com/akka/akka-persistence-dynamodb/releases/tag/v2.0.2[Akka DynamoDB 2.0.2]
 
 * Akka CLI 3.0.6
     - Automatically retry calls
