@@ -90,7 +90,7 @@ private[impl] final class EventSourcedEntitiesImpl(
     if (service.snapshotEvery < 0)
       log.warn("Snapshotting disabled for entity [{}], this is not recommended.", service.componentId)
     // FIXME overlay configuration provided by _system
-    (name, if (service.snapshotEvery == 0) service.withSnapshotEvery(configuration.snapshotEvery) else service)
+    (name, if (service.snapshotEvery == 0) service else service)
   }.toMap
 
   private val instrumentations: Map[String, TraceInstrumentation] = services.values.map { s =>

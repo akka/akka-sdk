@@ -165,9 +165,8 @@ private[javasdk] class JsonMessageCodec extends MessageCodec {
     value
   }
 
-  def decodeMessage[T](expectedType: Class[T], bytes: akka.util.ByteString): T = {
-    // FIXME could we avoid the copy?
-    JsonSupport.parseBytes(bytes.toArrayUnsafe(), expectedType)
+  def decodeMessage[T](expectedType: Class[T], pb: ScalaPbAny): T = {
+    JsonSupport.decodeJson(expectedType, pb)
   }
 
   private[akka] def removeVersion(typeName: String) = {

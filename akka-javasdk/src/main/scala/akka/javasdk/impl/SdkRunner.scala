@@ -119,6 +119,9 @@ class SdkRunner private (dependencyProvider: Option[DependencyProvider]) extends
   @nowarn("msg=deprecated") //TODO remove deprecation once we remove the old constructor
   override def getSettings: SpiSettings = {
     val applicationConf = applicationConfig
+
+    val eventSourcedEntitySnapshotEvery = applicationConfig.getInt("akka.javasdk.event-sourced-entity.snapshot-every")
+
     val devModeSettings =
       if (applicationConf.getBoolean("akka.javasdk.dev-mode.enabled"))
         Some(
@@ -133,7 +136,7 @@ class SdkRunner private (dependencyProvider: Option[DependencyProvider]) extends
       else
         None
 
-    new SpiSettings(devModeSettings)
+    new SpiSettings(eventSourcedEntitySnapshotEvery, devModeSettings)
   }
 
   private def extractBrokerConfig(eventingConf: Config): SpiEventingSupportSettings = {
@@ -393,8 +396,7 @@ private final class Sdk(
                 wiredInstance(clz.asInstanceOf[Class[EventSourcedEntity[AnyRef, AnyRef]]]) {
                   // remember to update component type API doc and docs if changing the set of injectables
                   case p if p == classOf[EventSourcedEntityContext] => context
-                },
-              sdkSettings.snapshotEvery)
+                })
           }
           new EventSourcedEntityDescriptor(componentId, readOnlyCommandNames, instanceFactory)
       }
