@@ -120,8 +120,7 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
         command.payload.getOrElse(
           // FIXME smuggling 0 arity method called from component client through here
           ScalaPbAny.defaultInstance.withTypeUrl(AnySupport.JsonTypeUrlPrefix).withValue(ByteString.empty())))
-    val metadata: Metadata =
-      MetadataImpl.Empty // FIXME MetadataImpl.of(command.metadata.map(_.entries.toVector).getOrElse(Nil))
+    val metadata: Metadata = MetadataImpl.of(command.metadata)
     val cmdContext =
       new CommandContextImpl(
         entityId,
