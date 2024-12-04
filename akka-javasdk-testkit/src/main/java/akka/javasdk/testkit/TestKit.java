@@ -5,7 +5,6 @@
 package akka.javasdk.testkit;
 
 import akka.actor.typed.ActorSystem;
-import akka.annotation.InternalApi;
 import akka.http.javadsl.Http;
 import akka.http.javadsl.model.HttpRequest;
 import akka.javasdk.DependencyProvider;
@@ -13,7 +12,6 @@ import akka.javasdk.Metadata;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.http.HttpClient;
 import akka.javasdk.http.HttpClientProvider;
-import akka.javasdk.impl.ApplicationConfig;
 import akka.javasdk.impl.ErrorHandling;
 import akka.javasdk.impl.JsonMessageCodec;
 import akka.javasdk.impl.MessageCodec;
