@@ -94,6 +94,7 @@ import scala.jdk.CollectionConverters._
 
 import akka.javasdk.impl.consumer.ConsumerImpl
 import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityImpl
+import akka.javasdk.impl.serialization.JsonSerializer
 import akka.javasdk.impl.timedaction.TimedActionImpl
 import akka.runtime.sdk.spi.ConsumerDescriptor
 import akka.runtime.sdk.spi.EventSourcedEntityDescriptor
@@ -275,7 +276,8 @@ private final class Sdk(
     dependencyProviderOverride: Option[DependencyProvider],
     startedPromise: Promise[StartupContext]) {
   private val logger = LoggerFactory.getLogger(getClass)
-  private val messageCodec = new JsonMessageCodec
+  private val messageCodec = new JsonMessageCodec // FIXME replace with JsonSerializer completely
+  private val serializer = new JsonSerializer
   private val ComponentLocator.LocatedClasses(componentClasses, maybeServiceClass) =
     ComponentLocator.locateUserComponents(system)
   @volatile private var dependencyProviderOpt: Option[DependencyProvider] = dependencyProviderOverride
@@ -392,6 +394,7 @@ private final class Sdk(
               clz,
               factoryContext.entityId,
               messageCodec,
+              serializer,
               context =>
                 wiredInstance(clz.asInstanceOf[Class[EventSourcedEntity[AnyRef, AnyRef]]]) {
                   // remember to update component type API doc and docs if changing the set of injectables

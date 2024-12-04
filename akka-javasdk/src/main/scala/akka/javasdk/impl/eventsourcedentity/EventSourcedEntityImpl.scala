@@ -33,12 +33,13 @@ import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityEffectImpl.EmitEve
 import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityEffectImpl.NoPrimaryEffect
 import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityRouter.CommandHandlerNotFound
 import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityRouter.EventHandlerNotFound
+import akka.javasdk.impl.serialization.JsonSerializer
 import akka.javasdk.impl.telemetry.SpanTracingImpl
 import akka.javasdk.impl.telemetry.Telemetry
+import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.SpiEntity
 import akka.runtime.sdk.spi.SpiEventSourcedEntity
-import com.google.protobuf.ByteString
-import com.google.protobuf.any.{ Any => ScalaPbAny }
+import akka.util.ByteString
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.Tracer
 import org.slf4j.MDC
@@ -71,6 +72,9 @@ private[impl] object EventSourcedEntityImpl {
   private final class EventContextImpl(entityId: String, override val sequenceNumber: Long)
       extends EventSourcedEntityContextImpl(entityId)
       with EventContext
+
+  // 0 arity method
+  private val NoCommandPayload = new BytesPayload(ByteString.empty, AnySupport.JsonTypeUrlPrefix)
 }
 
 /**
@@ -83,7 +87,8 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
     componentId: String,
     componentClass: Class[_],
     entityId: String,
-    messageCodec: JsonMessageCodec,
+    messageCodec: JsonMessageCodec, // FIXME replace with JsonSerializer completely
+    serializer: JsonSerializer,
     factory: EventSourcedEntityContext => ES)
     extends SpiEventSourcedEntity {
   import EventSourcedEntityImpl._
@@ -115,11 +120,9 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
 
     val span: Option[Span] = None // FIXME traceInstrumentation.buildSpan(service, command)
     span.foreach(s => MDC.put(Telemetry.TRACE_ID, s.getSpanContext.getTraceId))
-    val cmd =
-      messageCodec.decodeMessage(
-        command.payload.getOrElse(
-          // FIXME smuggling 0 arity method called from component client through here
-          ScalaPbAny.defaultInstance.withTypeUrl(AnySupport.JsonTypeUrlPrefix).withValue(ByteString.empty())))
+    val cmdPayload = command.payload.getOrElse(
+      // smuggling 0 arity method called from component client through here
+      NoCommandPayload)
     val metadata: Metadata = MetadataImpl.of(command.metadata)
     val cmdContext =
       new CommandContextImpl(
@@ -136,17 +139,16 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
     try {
       entity._internalSetCurrentState(state)
       val commandEffect = router
-        .handleCommand(command.name, state, cmd, cmdContext)
+        .handleCommand(command.name, state, cmdPayload, cmdContext)
         .asInstanceOf[EventSourcedEntityEffectImpl[AnyRef, E]] // FIXME improve?
 
-      def replyOrError(updatedState: SpiEventSourcedEntity.State): (Option[ScalaPbAny], Option[SpiEntity.Error]) = {
+      def replyOrError(updatedState: SpiEventSourcedEntity.State): (Option[BytesPayload], Option[SpiEntity.Error]) = {
         commandEffect.secondaryEffect(updatedState) match {
           case ErrorReplyImpl(description) =>
             (None, Some(new SpiEntity.Error(description)))
           case MessageReplyImpl(message, _) =>
             // FIXME metadata?
-            // FIXME is this encoding correct?
-            val replyPayload = ScalaPbAny.fromJavaProto(messageCodec.encodeJava(message))
+            val replyPayload = serializer.toBytes(message)
             (Some(replyPayload), None)
           case NoSecondaryEffectImpl =>
             (None, None)
@@ -174,8 +176,7 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
               if (deleteEntity) Some(configuration.cleanupDeletedEventSourcedEntityAfter)
               else None
 
-            val serializedEvents =
-              events.map(event => ScalaPbAny.fromJavaProto(messageCodec.encodeJava(event))).toVector
+            val serializedEvents = events.map(event => serializer.toBytes(event)).toVector
 
             Future.successful(
               new SpiEventSourcedEntity.Effect(events = serializedEvents, updatedState, reply, error, delete))
@@ -228,10 +229,8 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
   override def handleEvent(
       state: SpiEventSourcedEntity.State,
       eventEnv: SpiEventSourcedEntity.EventEnvelope): SpiEventSourcedEntity.State = {
-    val event =
-      messageCodec
-        .decodeMessage(eventEnv.payload)
-        .asInstanceOf[AnyRef] // FIXME empty?
+    // FIXME will this work, without the expected class
+    val event = serializer.fromBytes(eventEnv.payload)
     entityHandleEvent(state, event, entityId, eventEnv.sequenceNumber)
   }
 
@@ -252,9 +251,9 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
     }
   }
 
-  override def stateToProto(obj: SpiEventSourcedEntity.State): ScalaPbAny =
-    ScalaPbAny.fromJavaProto(messageCodec.encodeJava(obj))
+  override def stateToBytes(obj: SpiEventSourcedEntity.State): BytesPayload =
+    serializer.toBytes(obj)
 
-  override def stateFromProto(pb: ScalaPbAny): SpiEventSourcedEntity.State =
-    messageCodec.decodeMessage(router.entityStateType, pb)
+  override def stateFromBytes(pb: BytesPayload): SpiEventSourcedEntity.State =
+    serializer.fromBytes(router.entityStateType, pb)
 }
