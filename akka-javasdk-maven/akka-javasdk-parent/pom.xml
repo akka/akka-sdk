@@ -299,7 +299,7 @@
                     <artifactId>exec-maven-plugin</artifactId>
                     <version>3.4.1</version>
                     <configuration>
-                        <mainClass>kalix.runtime.KalixRuntimeMain</mainClass>
+                        <mainClass>kalix.runtime.AkkaRuntimeMain</mainClass>
                         <systemProperties>
                             <systemProperty>
                                 <key>akka.javasdk.dev-mode.enabled</key>
