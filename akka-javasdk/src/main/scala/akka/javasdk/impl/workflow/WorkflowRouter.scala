@@ -11,6 +11,7 @@ import java.util.function.{ Function => JFunc }
 import scala.jdk.FutureConverters.CompletionStageOps
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.jdk.FutureConverters.CompletionStageOps
 import scala.jdk.OptionConverters.RichOptional
 
 import com.google.protobuf.any.{ Any => ScalaPbAny }
@@ -28,12 +29,21 @@ import Workflow.WorkflowDef
 import akka.annotation.InternalApi
 import akka.javasdk.JsonSupport
 import akka.javasdk.impl.AnySupport
+import akka.javasdk.impl.MessageCodec
+import akka.javasdk.impl.WorkflowExceptions.WorkflowException
+import akka.javasdk.impl.workflow.WorkflowRouter.CommandHandlerNotFound
+import akka.javasdk.impl.workflow.WorkflowRouter.CommandResult
+import akka.javasdk.impl.workflow.WorkflowRouter.WorkflowStepNotFound
+import akka.javasdk.impl.workflow.WorkflowRouter.WorkflowStepNotSupported
 import akka.javasdk.impl.serialization.JsonSerializer
 import akka.javasdk.timer.TimerScheduler
-import kalix.protocol.workflow_entity.StepExecuted
-import kalix.protocol.workflow_entity.StepExecutionFailed
-import kalix.protocol.workflow_entity.StepResponse
-import org.slf4j.LoggerFactory
+import akka.javasdk.workflow.CommandContext
+import akka.javasdk.workflow.Workflow
+import akka.javasdk.workflow.Workflow.AsyncCallStep
+import akka.javasdk.workflow.Workflow.CallStep
+import akka.javasdk.workflow.Workflow.Effect
+import akka.javasdk.workflow.Workflow.WorkflowDef
+import com.google.protobuf.any.{ Any => ScalaPbAny }
 
 /**
  * INTERNAL API
@@ -62,7 +72,6 @@ abstract class WorkflowRouter[S, W <: Workflow[S]](protected val workflow: W) {
 
   private var state: Option[S] = None
   private var workflowFinished: Boolean = false
-  private final val log = LoggerFactory.getLogger(this.getClass)
 
   private def stateOrEmpty(): S = state match {
     case None =>
@@ -131,13 +140,12 @@ abstract class WorkflowRouter[S, W <: Workflow[S]](protected val workflow: W) {
   /** INTERNAL API */
   // "public" api against the impl/testkit
   final def _internalHandleStep(
-      commandId: Long,
       input: Option[ScalaPbAny],
       stepName: String,
       serializer: JsonSerializer,
       timerScheduler: TimerScheduler,
       commandContext: CommandContext,
-      executionContext: ExecutionContext): Future[StepResponse] = {
+      executionContext: ExecutionContext): Future[ScalaPbAny] = {
 
     implicit val ec = executionContext
 
@@ -167,12 +175,6 @@ abstract class WorkflowRouter[S, W <: Workflow[S]](protected val workflow: W) {
             val encoded = AnySupport.toScalaPbAny(bytesPayload)
             val executedRes = StepExecuted(Some(encoded))
 
-            StepResponse(commandId, stepName, StepResponse.Response.Executed(executedRes))
-          }
-          .recover { case t: Throwable =>
-            log.error("Workflow async call failed.", t)
-            StepResponse(commandId, stepName, StepResponse.Response.ExecutionFailed(StepExecutionFailed(t.getMessage)))
-          }
       case Some(any) => Future.failed(WorkflowStepNotSupported(any.getClass.getSimpleName))
       case None      => Future.failed(WorkflowStepNotFound(stepName))
     }
