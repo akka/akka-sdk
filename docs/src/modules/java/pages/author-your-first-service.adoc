@@ -29,12 +29,12 @@ In IntelliJ, you can skip the command line. Open the IDE, select
 Follow these steps to generate and build your project:
 
 . From a command line, create a new Maven project from the Akka archetype in a convenient location:
-+
+
 [.tabset]
 Linux or macOS::
 +
 --
-[source,command line, subs="attributes"]
+[source,command window, subs="attributes"]
 ----
 mvn archetype:generate \
   -DarchetypeGroupId=io.akka \
@@ -45,20 +45,20 @@ mvn archetype:generate \
 Windows 10+::
 +
 --
-[source,command line, subs="attributes"]
+[source,command window, subs="attributes"]
 ----
 mvn archetype:generate ^
-  -DarchetypeGroupId=com.example ^
-  -DarchetypeArtifactId=helloworld ^
+  -DarchetypeGroupId=io.akka ^
+  -DarchetypeArtifactId=akka-javasdk-archetype ^
   -DarchetypeVersion={akka-javasdk-version}
 ----
 --
 
-. Fill in
-* groupId: `com.example`
-* artifactId: `helloworld`
-* version: `1.0-SNAPSHOT`
-* package: `helloword`
+.Fill in:
+* groupId: `io.akka`
+* artifactId: `akka-javasdk-archetype`
+* version: `{akka-javasdk-version}`
+* package: `io.akka`
 
 . Navigate to the new project directory.
 
@@ -117,7 +117,6 @@ Which will reply
 ----
 Hello World!
 ----
-
 
 == Getting more complex
 
