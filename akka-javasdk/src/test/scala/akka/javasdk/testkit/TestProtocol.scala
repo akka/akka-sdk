@@ -10,7 +10,8 @@ import akka.javasdk.testkit.eventsourcedentity.TestEventSourcedProtocol
 import akka.javasdk.testkit.keyvalueentity.TestKeyValueEntityProtocol
 import akka.javasdk.testkit.workflow.TestWorkflowProtocol
 import akka.testkit.TestKit
-import com.typesafe.config.{ Config, ConfigFactory }
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
 
 // FIXME: should we be doing protocol-level testing in the SDK?
 // Copied over from Kalix framework (parts that are used here).

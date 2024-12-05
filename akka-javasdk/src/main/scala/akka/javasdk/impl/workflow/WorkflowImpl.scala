@@ -4,23 +4,26 @@
 
 package akka.javasdk.impl.workflow
 
-import akka.NotUsed
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.jdk.CollectionConverters.ListHasAsScala
+import scala.jdk.DurationConverters.JavaDurationOps
+import scala.jdk.OptionConverters.RichOptional
+import scala.util.control.NonFatal
+
 import akka.annotation.InternalApi
 import akka.javasdk.Metadata
 import akka.javasdk.Tracing
 import akka.javasdk.impl.AbstractContext
 import akka.javasdk.impl.ActivatableContext
 import akka.javasdk.impl.AnySupport
-import akka.javasdk.impl.ErrorHandling
+import akka.javasdk.impl.ComponentDescriptor
 import akka.javasdk.impl.ErrorHandling.BadRequestException
 import akka.javasdk.impl.JsonMessageCodec
-import akka.javasdk.impl.MessageCodec
 import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.Service
 import akka.javasdk.impl.StrictJsonMessageCodec
-import akka.javasdk.impl.WorkflowExceptions.ProtocolException
 import akka.javasdk.impl.WorkflowExceptions.WorkflowException
-import akka.javasdk.impl.WorkflowExceptions.failureMessageForLog
 import akka.javasdk.impl.telemetry.SpanTracingImpl
 import akka.javasdk.impl.timer.TimerSchedulerImpl
 import akka.javasdk.impl.workflow.WorkflowEffectImpl.DeleteState
@@ -31,57 +34,246 @@ import akka.javasdk.impl.workflow.WorkflowEffectImpl.NoReply
 import akka.javasdk.impl.workflow.WorkflowEffectImpl.NoTransition
 import akka.javasdk.impl.workflow.WorkflowEffectImpl.Pause
 import akka.javasdk.impl.workflow.WorkflowEffectImpl.Persistence
-import akka.javasdk.impl.workflow.WorkflowEffectImpl.Reply
 import akka.javasdk.impl.workflow.WorkflowEffectImpl.ReplyValue
 import akka.javasdk.impl.workflow.WorkflowEffectImpl.StepTransition
+import akka.javasdk.impl.workflow.WorkflowEffectImpl.Transition
 import akka.javasdk.impl.workflow.WorkflowEffectImpl.TransitionalEffectImpl
 import akka.javasdk.impl.workflow.WorkflowEffectImpl.UpdateState
 import akka.javasdk.impl.workflow.WorkflowRouter.CommandResult
 import akka.javasdk.workflow.CommandContext
 import akka.javasdk.workflow.Workflow
-import akka.javasdk.workflow.Workflow.WorkflowDef
 import akka.javasdk.workflow.WorkflowContext
+import akka.runtime.sdk.spi.SpiEntity
+import akka.runtime.sdk.spi.SpiWorkflow
 import akka.runtime.sdk.spi.TimerClient
-import akka.stream.scaladsl.Flow
-import akka.stream.scaladsl.Source
 import com.google.protobuf.ByteString
+import com.google.protobuf.any.{ Any => PbAny }
 import com.google.protobuf.any.{ Any => ScalaPbAny }
-import com.google.protobuf.duration
-import com.google.protobuf.duration.Duration
-import io.grpc.Status
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.Tracer
-import kalix.protocol.component
-import kalix.protocol.component.{ Reply => ProtoReply }
-import kalix.protocol.workflow_entity.RecoverStrategy
-import kalix.protocol.workflow_entity.StepConfig
-import kalix.protocol.workflow_entity.WorkflowClientAction
-import kalix.protocol.workflow_entity.WorkflowConfig
-import kalix.protocol.workflow_entity.WorkflowEffect
 import kalix.protocol.workflow_entity.WorkflowEntities
-import kalix.protocol.workflow_entity.WorkflowEntityInit
-import kalix.protocol.workflow_entity.WorkflowStreamIn
-import kalix.protocol.workflow_entity.WorkflowStreamIn.Message
-import kalix.protocol.workflow_entity.WorkflowStreamIn.Message.Empty
-import kalix.protocol.workflow_entity.WorkflowStreamIn.Message.Init
-import kalix.protocol.workflow_entity.WorkflowStreamIn.Message.Step
-import kalix.protocol.workflow_entity.WorkflowStreamIn.Message.Transition
-import kalix.protocol.workflow_entity.WorkflowStreamIn.Message.{ Command => InCommand }
-import kalix.protocol.workflow_entity.WorkflowStreamOut
-import kalix.protocol.workflow_entity.WorkflowStreamOut.Message.{ Failure => OutFailure }
-import kalix.protocol.workflow_entity.{ EndTransition => ProtoEndTransition }
-import kalix.protocol.workflow_entity.{ NoTransition => ProtoNoTransition }
-import kalix.protocol.workflow_entity.{ Pause => ProtoPause }
-import kalix.protocol.workflow_entity.{ StepTransition => ProtoStepTransition }
-import org.slf4j.LoggerFactory
+import akka.javasdk.workflow.Workflow.{ RecoverStrategy => SdkRecoverStrategy }
 
-import java.util.Optional
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import scala.jdk.CollectionConverters._
-import scala.jdk.OptionConverters._
-import scala.language.existentials
-import scala.util.control.NonFatal
+/**
+ * INTERNAL API
+ */
+@InternalApi
+class WorkflowImpl[S, W <: Workflow[S]](
+    workflowId: String,
+    componentClass: Class[_],
+    messageCodec: JsonMessageCodec,
+    timerClient: TimerClient,
+    sdkExecutionContext: ExecutionContext,
+    tracerFactory: () => Tracer,
+    instanceFactory: Function[WorkflowContext, W])
+    extends SpiWorkflow {
+
+  private val strictMessageCodec = new StrictJsonMessageCodec(messageCodec)
+  private val componentDescriptor = ComponentDescriptor.descriptorFor(componentClass, messageCodec)
+  private val context = new WorkflowContextImpl(workflowId)
+
+  private val router =
+    new ReflectiveWorkflowRouter[S, W](instanceFactory(context), componentDescriptor.commandHandlers)
+
+  override def configuration: SpiWorkflow.WorkflowConfig = {
+    val definition = router.workflow.definition()
+
+    def toRecovery(sdkRecoverStrategy: SdkRecoverStrategy[_]): SpiWorkflow.RecoverStrategy = {
+
+      val stepTransition = new SpiWorkflow.StepTransition(
+        sdkRecoverStrategy.failoverStepName,
+        sdkRecoverStrategy.failoverStepInput.toScala.map(strictMessageCodec.encodeScala))
+      new SpiWorkflow.RecoverStrategy(sdkRecoverStrategy.maxRetries, failoverTo = stepTransition)
+    }
+
+    val failoverTo = {
+      definition.getFailoverStepName.toScala.map { stepName =>
+        new SpiWorkflow.StepTransition(
+          stepName,
+          definition.getFailoverStepInput.toScala.map(strictMessageCodec.encodeScala))
+      }
+    }
+
+    val stepConfigs =
+      definition.getStepConfigs.asScala.map { config =>
+        val stepTimeout = config.timeout.toScala.map(_.toScala)
+        val failoverRecoverStrategy = config.recoverStrategy.toScala.map(toRecovery)
+        (config.stepName, new SpiWorkflow.StepConfig(config.stepName, stepTimeout, failoverRecoverStrategy))
+      }.toMap
+
+    val failoverRecoverStrategy = definition.getStepRecoverStrategy.toScala.map(toRecovery)
+    val stepTimeout = definition.getStepTimeout.toScala.map(_.toScala)
+
+    val defaultStepConfig = Option.when(failoverRecoverStrategy.isDefined) {
+      new SpiWorkflow.StepConfig("", stepTimeout, failoverRecoverStrategy)
+    }
+
+    new SpiWorkflow.WorkflowConfig(
+      workflowTimeout = definition.getWorkflowTimeout.toScala.map(_.toScala),
+      failoverTo = failoverTo,
+      failoverRecoverStrategy = failoverRecoverStrategy,
+      defaultStepTimeout = stepTimeout,
+      defaultStepConfig = defaultStepConfig,
+      stepConfigs = stepConfigs)
+  }
+
+  override def emptyState(workflowId: String): SpiWorkflow.State = {
+    if (router.workflow.emptyState() == null)
+      PbAny.defaultInstance
+    else
+      strictMessageCodec.encodeScala(router.workflow.emptyState())
+  }
+
+  private def commandContext(commandName: String, metadata: Metadata = MetadataImpl.Empty) =
+    new CommandContextImpl(
+      workflowId,
+      commandName,
+      commandId = 0, // FIXME: remove if proved obsolete
+      metadata,
+      // FIXME we'd need to start a parent span for the command here to have one to base custom user spans of off?
+      None,
+      tracerFactory)
+
+  private def decodeState(userState: Option[PbAny]) =
+    userState
+      .map(strictMessageCodec.decodeMessage)
+      .getOrElse(router.workflow.emptyState())
+      .asInstanceOf[S]
+
+  private def toSpiEffect(effect: Workflow.Effect[_]): SpiWorkflow.Effect = {
+
+    def toSpiTransition(transition: Transition): SpiWorkflow.Transition =
+      transition match {
+        case StepTransition(stepName, input) =>
+          new SpiWorkflow.StepTransition(stepName, input.map(strictMessageCodec.encodeScala))
+        case Pause        => SpiWorkflow.Pause
+        case NoTransition => SpiWorkflow.NoTransition
+        case End          => SpiWorkflow.End
+      }
+
+    def handleState(persistence: Persistence[Any], transition: Transition): SpiWorkflow.Persistence =
+      persistence match {
+        case UpdateState(newState) =>
+          router._internalSetInitState(newState, transition.isInstanceOf[End.type])
+          new SpiWorkflow.UpdateState(strictMessageCodec.encodeScala(newState))
+        case DeleteState   => SpiWorkflow.DeleteState
+        case NoPersistence => SpiWorkflow.NoPersistence
+      }
+
+    effect match {
+      case error: ErrorEffectImpl[_] =>
+        new SpiWorkflow.Effect(
+          userState = SpiWorkflow.NoPersistence, // mean runtime don't need to persist any new state
+          SpiWorkflow.NoTransition,
+          reply = None,
+          error = Some(new SpiEntity.Error(error.description)))
+
+      case WorkflowEffectImpl(persistence, transition, reply) =>
+        val replyOpt = reply match {
+          case ReplyValue(value, _) => Some(value) // FIXME: Metadata is being discarded
+          case NoReply              => None
+        }
+
+        new SpiWorkflow.Effect(
+          handleState(persistence, transition), // can be null when fallback to emptyState
+          toSpiTransition(transition),
+          reply = replyOpt.map(strictMessageCodec.encodeScala),
+          error = None)
+
+      case TransitionalEffectImpl(persistence, transition) =>
+        new SpiWorkflow.Effect(
+          handleState(persistence, transition), // can be null when fallback to emptyState
+          toSpiTransition(transition),
+          reply = None,
+          error = None)
+    }
+  }
+
+  override def handleCommand(userState: Option[PbAny], command: SpiEntity.Command): Future[SpiWorkflow.Effect] = {
+
+    // can be null when fallback to emptyState
+    val decodedState = decodeState(userState)
+
+    // FIXME: how to decide when finished?
+    router._internalSetInitState(decodedState, finished = false)
+
+    val metadata = MetadataImpl.Empty // FIXME: build it from Spi Metadata
+    //MetadataImpl.of(command.metadata.map(_.entries.toVector).getOrElse(Nil))
+    val context = commandContext(command.name, metadata)
+
+    val timerScheduler =
+      new TimerSchedulerImpl(strictMessageCodec, timerClient, context.componentCallMetadata)
+
+    val cmd =
+      messageCodec.decodeMessage(
+        command.payload.getOrElse(
+          // FIXME smuggling 0 arity method called from component client through here
+          ScalaPbAny.defaultInstance.withTypeUrl(AnySupport.JsonTypeUrlPrefix).withValue(ByteString.empty())))
+
+    val CommandResult(effect) =
+      try {
+        router._internalHandleCommand(
+          commandName = command.name,
+          command = cmd,
+          context = context,
+          timerScheduler = timerScheduler)
+      } catch {
+        case BadRequestException(msg) => CommandResult(WorkflowEffectImpl[Any]().error(msg))
+        case e: WorkflowException     => throw e
+        case NonFatal(error) =>
+          throw WorkflowException(
+            workflowId,
+            commandId = 0, // FIXME: remove if proved obsolete
+            command.name,
+            s"Unexpected failure: $error",
+            Some(error))
+      }
+
+    Future.successful(toSpiEffect(effect))
+  }
+
+  override def executeStep(stepName: String, input: Option[PbAny], userState: Option[PbAny]): Future[PbAny] = {
+
+    val context = commandContext(stepName)
+    val timerScheduler =
+      new TimerSchedulerImpl(strictMessageCodec, timerClient, context.componentCallMetadata)
+
+    try {
+      userState.foreach { state =>
+        val decoded = strictMessageCodec.decodeMessage(state)
+        router._internalSetInitState(decoded, finished = false) // here we know that workflow is still running
+      }
+
+      router._internalHandleStep(
+        input = input,
+        stepName = stepName,
+        messageCodec = strictMessageCodec,
+        timerScheduler = timerScheduler,
+        commandContext = context,
+        executionContext = sdkExecutionContext)
+    } catch {
+      case e: WorkflowException => throw e
+      case NonFatal(ex) =>
+        throw WorkflowException(s"unexpected exception [${ex.getMessage}] while executing step [${stepName}]", Some(ex))
+    }
+  }
+
+  override def transition(stepName: String, result: Option[PbAny]): Future[SpiWorkflow.Effect] = {
+    // can be null when fallback to emptyState
+    val CommandResult(effect) =
+      try {
+        router._internalGetNextStep(stepName, result.get, strictMessageCodec)
+      } catch {
+        case e: WorkflowException => throw e
+        case NonFatal(ex) =>
+          throw WorkflowException(
+            s"unexpected exception [${ex.getMessage}] while executing transition for step [${stepName}]",
+            Some(ex))
+      }
+    Future.successful(toSpiEffect(effect))
+  }
+
+}
 
 /**
  * INTERNAL API
@@ -95,308 +287,6 @@ final class WorkflowService[S, W <: Workflow[S]](
 
   def createRouter(context: WorkflowContext) =
     new ReflectiveWorkflowRouter[S, W](instanceFactory(context), componentDescriptor.commandHandlers)
-
-  val strictMessageCodec = new StrictJsonMessageCodec(messageCodec)
-
-}
-
-/**
- * INTERNAL API
- */
-@InternalApi
-final class WorkflowImpl(
-    val services: Map[String, WorkflowService[_, _]],
-    timerClient: TimerClient,
-    sdkExcutionContext: ExecutionContext,
-    sdkDispatcherName: String,
-    tracerFactory: () => Tracer)
-    extends kalix.protocol.workflow_entity.WorkflowEntities {
-
-  private implicit val ec: ExecutionContext = sdkExcutionContext
-  private final val log = LoggerFactory.getLogger(this.getClass)
-
-  override def handle(in: Source[WorkflowStreamIn, NotUsed]): Source[WorkflowStreamOut, NotUsed] =
-    in.prefixAndTail(1)
-      .flatMapConcat {
-        case (Seq(WorkflowStreamIn(Init(init), _)), source) =>
-          val (flow, config) = runWorkflow(init)
-          Source.single(config).concat(source.via(flow))
-
-        case (Seq(), _) =>
-          // if error during recovery in runtime the stream will be completed before init
-          log.warn("Workflow stream closed before init.")
-          Source.empty[WorkflowStreamOut]
-
-        case (Seq(WorkflowStreamIn(other, _)), _) =>
-          throw ProtocolException(s"Expected init message for Workflow, but received [${other.getClass.getName}]")
-      }
-      .recover { case error =>
-        ErrorHandling.withCorrelationId { correlationId =>
-          log.error(failureMessageForLog(error), error)
-          toFailureOut(error, correlationId)
-        }
-      }
-      .async(sdkDispatcherName)
-
-  private def toFailureOut(error: Throwable, correlationId: String) = {
-    error match {
-      case WorkflowException(workflowId, commandId, commandName, _, _) =>
-        WorkflowStreamOut(
-          OutFailure(
-            component.Failure(
-              commandId = commandId,
-              description = s"Unexpected workflow [$workflowId] error for command [$commandName] [$correlationId]")))
-      case _ =>
-        WorkflowStreamOut(OutFailure(component.Failure(description = s"Unexpected error [$correlationId]")))
-    }
-  }
-
-  private def toRecoverStrategy(messageCodec: MessageCodec)(
-      recoverStrategy: Workflow.RecoverStrategy[_]): RecoverStrategy = {
-    RecoverStrategy(
-      maxRetries = recoverStrategy.maxRetries,
-      failoverTo = Some(
-        ProtoStepTransition(
-          recoverStrategy.failoverStepName,
-          recoverStrategy.failoverStepInput.toScala.map(messageCodec.encodeScala))))
-  }
-
-  private def toStepConfig(
-      name: String,
-      timeout: Optional[java.time.Duration],
-      recoverStrategy: Option[Workflow.RecoverStrategy[_]],
-      messageCodec: MessageCodec) = {
-    val stepTimeout = timeout.toScala.map(duration.Duration(_))
-    val stepRecoverStrategy = recoverStrategy.map(toRecoverStrategy(messageCodec))
-    StepConfig(name, stepTimeout, stepRecoverStrategy)
-  }
-
-  private def toWorkflowConfig(workflowDefinition: WorkflowDef[_], messageCodec: MessageCodec): WorkflowConfig = {
-    val workflowTimeout = workflowDefinition.getWorkflowTimeout.toScala.map(Duration(_))
-    val stepConfigs = workflowDefinition.getStepConfigs.asScala
-      .map(c => toStepConfig(c.stepName, c.timeout, c.recoverStrategy.toScala, messageCodec))
-      .toSeq
-    val stepConfig =
-      toStepConfig(
-        "",
-        workflowDefinition.getStepTimeout,
-        workflowDefinition.getStepRecoverStrategy.toScala,
-        messageCodec)
-
-    val failoverTo = workflowDefinition.getFailoverStepName.toScala.map(stepName => {
-      ProtoStepTransition(stepName, workflowDefinition.getFailoverStepInput.toScala.map(messageCodec.encodeScala))
-    })
-
-    val failoverRecovery =
-      workflowDefinition.getFailoverMaxRetries.toScala.map(strategy => RecoverStrategy(strategy.getMaxRetries))
-
-    WorkflowConfig(workflowTimeout, failoverTo, failoverRecovery, Some(stepConfig), stepConfigs)
-  }
-
-  private def runWorkflow(
-      init: WorkflowEntityInit): (Flow[WorkflowStreamIn, WorkflowStreamOut, NotUsed], WorkflowStreamOut) = {
-    val service =
-      services.getOrElse(init.serviceName, throw ProtocolException(init, s"Service not found: ${init.serviceName}"))
-    val router: WorkflowRouter[_, _] =
-      service.createRouter(new WorkflowContextImpl(init.entityId))
-    val workflowId = init.entityId
-
-    val workflowConfig =
-      WorkflowStreamOut(
-        WorkflowStreamOut.Message.Config(toWorkflowConfig(router._getWorkflowDefinition(), service.strictMessageCodec)))
-
-    init.userState match {
-      case Some(state) =>
-        val decoded = service.strictMessageCodec.decodeMessage(state)
-        router._internalSetInitState(decoded, init.finished)
-      case None => // no initial state
-    }
-
-    def toProtoEffect(effect: Workflow.Effect[_], commandId: Long, errorCode: Option[Status.Code]) = {
-
-      def effectMessage[R](persistence: Persistence[_], transition: WorkflowEffectImpl.Transition, reply: Reply[R]) = {
-
-        val protoEffect =
-          persistence match {
-            case UpdateState(newState) =>
-              router._internalSetInitState(newState, transition.isInstanceOf[End.type])
-              WorkflowEffect.defaultInstance.withUserState(service.strictMessageCodec.encodeScala(newState))
-            // TODO: persistence should be optional, but we must ensure that we don't save it back to null
-            // and preferably we should not even send it over the wire.
-            case NoPersistence => WorkflowEffect.defaultInstance
-            case DeleteState   => throw new RuntimeException("Workflow state deleted not yet supported")
-          }
-
-        val toProtoTransition =
-          transition match {
-            case StepTransition(stepName, input) =>
-              WorkflowEffect.Transition.StepTransition(
-                ProtoStepTransition(stepName, input.map(service.strictMessageCodec.encodeScala)))
-            case Pause        => WorkflowEffect.Transition.Pause(ProtoPause.defaultInstance)
-            case NoTransition => WorkflowEffect.Transition.NoTransition(ProtoNoTransition.defaultInstance)
-            case End          => WorkflowEffect.Transition.EndTransition(ProtoEndTransition.defaultInstance)
-          }
-
-        val clientAction = {
-          val protoReply =
-            reply match {
-              case ReplyValue(value, metadata) =>
-                ProtoReply(
-                  payload = Some(service.strictMessageCodec.encodeScala(value)),
-                  metadata = MetadataImpl.toProtocol(metadata))
-              case NoReply => ProtoReply.defaultInstance
-            }
-          WorkflowClientAction.defaultInstance.withReply(protoReply)
-        }
-        protoEffect
-          .withTransition(toProtoTransition)
-          .withClientAction(clientAction)
-      }
-
-      effect match {
-        case error: ErrorEffectImpl[_] =>
-          val finalCode = error.status.orElse(errorCode).getOrElse(Status.Code.UNKNOWN)
-          val statusCode = finalCode.value()
-          val failure = component.Failure(commandId, error.description, statusCode)
-          val failureClientAction = WorkflowClientAction.defaultInstance.withFailure(failure)
-          val noTransition = WorkflowEffect.Transition.NoTransition(ProtoNoTransition.defaultInstance)
-          val failureEffect = WorkflowEffect.defaultInstance
-            .withClientAction(failureClientAction)
-            .withTransition(noTransition)
-            .withCommandId(commandId)
-          WorkflowStreamOut(WorkflowStreamOut.Message.Effect(failureEffect))
-
-        case WorkflowEffectImpl(persistence, transition, reply) =>
-          val protoEffect =
-            effectMessage(persistence, transition, reply)
-              .withCommandId(commandId)
-          WorkflowStreamOut(WorkflowStreamOut.Message.Effect(protoEffect))
-
-        case TransitionalEffectImpl(persistence, transition) =>
-          val protoEffect =
-            effectMessage(persistence, transition, NoReply)
-              .withCommandId(commandId)
-          WorkflowStreamOut(WorkflowStreamOut.Message.Effect(protoEffect))
-      }
-    }
-
-    val flow = Flow[WorkflowStreamIn]
-      .map(_.message)
-      .mapAsync(1) {
-
-        case InCommand(command) if workflowId != command.entityId =>
-          Future.failed(ProtocolException(command, "Receiving Workflow is not the intended recipient of command"))
-
-        case InCommand(command) =>
-          val metadata = MetadataImpl.of(command.metadata.map(_.entries.toVector).getOrElse(Nil))
-
-          val context =
-            new CommandContextImpl(
-              workflowId,
-              command.name,
-              command.id,
-              metadata,
-              // FIXME we'd need to start a parent span for the command here to have one to base custom user spans of off?
-              None,
-              tracerFactory)
-          val timerScheduler =
-            new TimerSchedulerImpl(service.strictMessageCodec, timerClient, context.componentCallMetadata)
-
-          val cmd =
-            service.messageCodec.decodeMessage(
-              command.payload.getOrElse(
-                // FIXME smuggling 0 arity method called from component client through here
-                ScalaPbAny.defaultInstance.withTypeUrl(AnySupport.JsonTypeUrlPrefix).withValue(ByteString.empty())))
-
-          val (CommandResult(effect), errorCode) =
-            try {
-              (router._internalHandleCommand(command.name, cmd, context, timerScheduler), None)
-            } catch {
-              case BadRequestException(msg) =>
-                (CommandResult(WorkflowEffectImpl[Any]().error(msg)), Some(Status.Code.INVALID_ARGUMENT))
-              case e: WorkflowException => throw e
-              case NonFatal(error) =>
-                throw WorkflowException(command, s"Unexpected failure: $error", Some(error))
-            } finally {
-              context.deactivate() // Very important!
-            }
-
-          Future.successful(toProtoEffect(effect, command.id, errorCode))
-
-        case Step(executeStep) =>
-          val context =
-            new CommandContextImpl(
-              workflowId,
-              executeStep.stepName,
-              executeStep.commandId,
-              Metadata.EMPTY,
-              // FIXME we'd need to start a parent span for the step here to have one to base custom user spans of off?
-              None,
-              tracerFactory)
-          val timerScheduler =
-            new TimerSchedulerImpl(service.strictMessageCodec, timerClient, context.componentCallMetadata)
-          val stepResponse =
-            try {
-              executeStep.userState.foreach { state =>
-                val decoded = service.strictMessageCodec.decodeMessage(state)
-                router._internalSetInitState(decoded, finished = false) // here we know that workflow is still running
-              }
-              router._internalHandleStep(
-                executeStep.commandId,
-                executeStep.input,
-                executeStep.stepName,
-                service.strictMessageCodec,
-                timerScheduler,
-                context,
-                sdkExcutionContext)
-            } catch {
-              case e: WorkflowException => throw e
-              case NonFatal(ex) =>
-                throw WorkflowException(
-                  s"unexpected exception [${ex.getMessage}] while executing step [${executeStep.stepName}]",
-                  Some(ex))
-            }
-
-          stepResponse.map { stp =>
-            WorkflowStreamOut(WorkflowStreamOut.Message.Response(stp))
-          }
-
-        case Transition(cmd) =>
-          val CommandResult(effect) =
-            try {
-              router._internalGetNextStep(cmd.stepName, cmd.result.get, service.strictMessageCodec)
-            } catch {
-              case e: WorkflowException => throw e
-              case NonFatal(ex) =>
-                throw WorkflowException(
-                  s"unexpected exception [${ex.getMessage}] while executing transition for step [${cmd.stepName}]",
-                  Some(ex))
-            }
-
-          Future.successful(toProtoEffect(effect, cmd.commandId, None))
-
-        case Message.UpdateState(updateState) =>
-          updateState.userState match {
-            case Some(state) =>
-              val decoded = service.strictMessageCodec.decodeMessage(state)
-              router._internalSetInitState(decoded, updateState.finished)
-            case None => // no state
-          }
-          Future.successful(WorkflowStreamOut(WorkflowStreamOut.Message.Empty))
-
-        case Init(_) =>
-          throw ProtocolException(init, "Workflow already initiated")
-
-        case Empty =>
-          throw ProtocolException(init, "Workflow received empty/unknown message")
-
-        case _ =>
-          //dummy case to allow future protocol updates without breaking existing workflows
-          Future.successful(WorkflowStreamOut(WorkflowStreamOut.Message.Empty))
-      }
-
-    (flow, workflowConfig)
-  }
 
 }
 
