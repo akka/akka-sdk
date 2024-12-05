@@ -26,6 +26,7 @@ import akka.javasdk.annotations.TypeName
  */
 @InternalApi
 private[javasdk] class JsonMessageCodec extends MessageCodec {
+  // FIXME fully replace with JsonSerializer
 
   case class TypeHint(currenTypeHintWithVersion: String, allTypeHints: List[String])
 
