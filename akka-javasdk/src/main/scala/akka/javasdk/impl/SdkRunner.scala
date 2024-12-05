@@ -562,7 +562,6 @@ private final class Sdk(
       }
 
       override def discovery: Discovery = discoveryEndpoint
-      override def eventSourcedEntities: Option[EventSourcedEntities] = eventSourcedEntitiesEndpoint
       override def eventSourcedEntityDescriptors: Seq[EventSourcedEntityDescriptor] =
         Sdk.this.eventSourcedEntityDescriptors
       override def valueEntities: Option[ValueEntities] = valueEntitiesEndpoint
