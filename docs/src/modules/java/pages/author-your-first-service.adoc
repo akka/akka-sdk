@@ -56,10 +56,10 @@ mvn archetype:generate ^
 
 +
 .Fill in:
-* groupId: `io.akka`
-* artifactId: `akka-javasdk-archetype`
-* version: `{akka-javasdk-version}`
-* package: `io.akka`
+* groupId: `com.example`
+* artifactId: `helloworld`
+* version: `1.0-SNAPSHOT`
+* package: `helloword`
 
 . Navigate to the new project directory.
 
