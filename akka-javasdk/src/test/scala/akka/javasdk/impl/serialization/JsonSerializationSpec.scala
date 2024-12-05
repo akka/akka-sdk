@@ -5,7 +5,14 @@
 package akka.javasdk.impl.serialization
 
 import java.util
+import java.util.Optional
 
+import scala.beans.BeanProperty
+
+import akka.Done
+import akka.javasdk.DummyClass
+import akka.javasdk.DummyClass2
+import akka.javasdk.DummyClassRenamed
 import akka.javasdk.JsonMigration
 import akka.javasdk.annotations.Migration
 import akka.javasdk.annotations.TypeName
@@ -15,6 +22,7 @@ import akka.javasdk.impl.serialization.JsonSerializationSpec.Dog
 import akka.javasdk.impl.serialization.JsonSerializationSpec.SimpleClass
 import akka.javasdk.impl.serialization.JsonSerializationSpec.SimpleClassUpdated
 import akka.runtime.sdk.spi.BytesPayload
+import akka.util.ByteString
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.IntNode
@@ -23,6 +31,9 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
 object JsonSerializationSpec {
+  class MyJsonable {
+    @BeanProperty var field: String = _
+  }
 
   @JsonCreator
   @TypeName("animal")
@@ -81,12 +92,101 @@ object JsonSerializationSpec {
 
 }
 class JsonSerializationSpec extends AnyWordSpec with Matchers {
+  import JsonSerializationSpec.MyJsonable
 
   private def jsonContentTypeWith(typ: String) = JsonSerializer.JsonContentTypePrefix + typ
 
   private val serializer = new JsonSerializer
 
+  private val myJsonable = new MyJsonable
+  myJsonable.field = "foo"
+
   "The JsonSerializer" should {
+
+    "serialize and deserialize JSON" in {
+      val bytesPayload = serializer.toBytes(myJsonable)
+      bytesPayload.contentType shouldBe jsonContentTypeWith(classOf[MyJsonable].getName)
+      serializer.fromBytes(classOf[MyJsonable], bytesPayload).field shouldBe "foo"
+    }
+
+    "serialize and deserialize DummyClass" in {
+      val dummy = new DummyClass("123", 321, Optional.of("test"))
+      val bytesPayload = serializer.toBytes(dummy)
+      bytesPayload.contentType shouldBe jsonContentTypeWith(classOf[DummyClass].getName)
+      val decoded = serializer.fromBytes(classOf[DummyClass], bytesPayload)
+      decoded shouldBe dummy
+    }
+
+    "deserialize missing field as optional none" in {
+      val bytesPayload = new BytesPayload(
+        ByteString.fromString("""{"stringValue":"123","intValue":321}"""),
+        jsonContentTypeWith(classOf[DummyClass].getName))
+      val decoded = serializer.fromBytes(classOf[DummyClass], bytesPayload)
+      decoded shouldBe new DummyClass("123", 321, Optional.empty())
+    }
+
+    "deserialize null field as optional none" in {
+      val bytesPayload = new BytesPayload(
+        ByteString.fromString("""{"stringValue":"123","intValue":321,"optionalStringValue":null}"""),
+        jsonContentTypeWith(classOf[DummyClass].getName))
+      val decoded = serializer.fromBytes(classOf[DummyClass], bytesPayload)
+      decoded shouldBe new DummyClass("123", 321, Optional.empty())
+    }
+
+    "deserialize mandatory field with migration" in {
+      val bytesPayload = new BytesPayload(
+        ByteString.fromString("""{"stringValue":"123","intValue":321}"""),
+        jsonContentTypeWith(classOf[DummyClass2].getName))
+      val decoded = serializer.fromBytes(classOf[DummyClass2], bytesPayload)
+      decoded shouldBe new DummyClass2("123", 321, "mandatory-value")
+    }
+
+    "deserialize renamed class" in {
+      val bytesPayload = new BytesPayload(
+        ByteString.fromString("""{"stringValue":"123","intValue":321}"""),
+        jsonContentTypeWith(classOf[DummyClass].getName))
+      val decoded = serializer.fromBytes(classOf[DummyClassRenamed], bytesPayload)
+      decoded shouldBe new DummyClassRenamed("123", 321, Optional.empty())
+    }
+
+    "deserialize forward from DummyClass2 to DummyClass" in {
+      val bytesPayload = new BytesPayload(
+        ByteString.fromString("""{"stringValue":"123","intValue":321,"mandatoryStringValue":"value"}"""),
+        jsonContentTypeWith(classOf[DummyClass2].getName + "#1"))
+      val decoded = serializer.fromBytes(classOf[DummyClass], bytesPayload)
+      decoded shouldBe new DummyClass("123", 321, Optional.of("value"))
+    }
+
+    "serialize and deserialize Akka Done class" in {
+      val bytesPayload = serializer.toBytes(Done.getInstance())
+      bytesPayload.contentType shouldBe jsonContentTypeWith(Done.getClass.getName)
+      serializer.fromBytes(classOf[Done], bytesPayload) shouldBe Done.getInstance()
+    }
+
+    "serialize and deserialize a List of objects" in {
+      val customers: java.util.List[MyJsonable] = new util.ArrayList[MyJsonable]()
+      val foo = new MyJsonable
+      foo.field = "foo"
+      customers.add(foo)
+
+      val bar = new MyJsonable
+      bar.field = "bar"
+      customers.add(bar)
+      val bytesPayload = serializer.toBytes(customers)
+
+      val decodedCustomers =
+        serializer.fromBytes(classOf[MyJsonable], classOf[java.util.List[MyJsonable]], bytesPayload)
+      decodedCustomers.get(0).field shouldBe "foo"
+      decodedCustomers.get(1).field shouldBe "bar"
+    }
+
+    "serialize JSON with an explicit type url suffix" in {
+      pending // FIXME do we need this? see JsonSupportSpec
+    }
+
+    "conditionally decode JSON depending on suffix" in {
+      pending // FIXME do we need this? see JsonSupportSpec
+    }
 
     "support java primitives" in {
       val integer = serializer.toBytes(123)
