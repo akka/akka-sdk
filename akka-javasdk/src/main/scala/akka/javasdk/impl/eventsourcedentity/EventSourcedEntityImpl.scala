@@ -101,10 +101,7 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
   // FIXME remove EventSourcedEntityRouter altogether, and only keep stateless ReflectiveEventSourcedEntityRouter
   private val router: ReflectiveEventSourcedEntityRouter[AnyRef, AnyRef, EventSourcedEntity[AnyRef, AnyRef]] = {
     val context = new EventSourcedEntityContextImpl(entityId)
-    new ReflectiveEventSourcedEntityRouter[S, E, ES](
-      factory(context),
-      componentDescriptor.commandHandlers,
-      messageCodec)
+    new ReflectiveEventSourcedEntityRouter[S, E, ES](factory(context), componentDescriptor.commandHandlers, serializer)
       .asInstanceOf[ReflectiveEventSourcedEntityRouter[AnyRef, AnyRef, EventSourcedEntity[AnyRef, AnyRef]]]
   }
 
@@ -135,11 +132,11 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
         span,
         tracerFactory)
 
-    entity._internalSetCommandContext(Optional.of(cmdContext))
     try {
+      entity._internalSetCommandContext(Optional.of(cmdContext))
       entity._internalSetCurrentState(state)
       val commandEffect = router
-        .handleCommand(command.name, state, cmdPayload, cmdContext)
+        .handleCommand(command.name, cmdPayload)
         .asInstanceOf[EventSourcedEntityEffectImpl[AnyRef, E]] // FIXME improve?
 
       def replyOrError(updatedState: SpiEventSourcedEntity.State): (Option[BytesPayload], Option[SpiEntity.Error]) = {
@@ -241,6 +238,7 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
       sequenceNumber: Long): SpiEventSourcedEntity.State = {
     val eventContext = new EventContextImpl(entityId, sequenceNumber)
     entity._internalSetEventContext(Optional.of(eventContext))
+    val clearState = entity._internalSetCurrentState(state)
     try {
       router.handleEvent(state, event)
     } catch {
@@ -248,6 +246,8 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
         throw new IllegalArgumentException(s"Unknown event type [$eventClass] on ${entity.getClass}")
     } finally {
       entity._internalSetEventContext(Optional.empty())
+      if (clearState)
+        entity._internalClearCurrentState()
     }
   }
 

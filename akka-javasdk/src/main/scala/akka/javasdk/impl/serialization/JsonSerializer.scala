@@ -7,6 +7,7 @@ package akka.javasdk.impl.serialization
 import java.io.IOException
 import java.lang
 import java.lang.reflect.InvocationTargetException
+import java.util
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
 
@@ -83,7 +84,7 @@ class JsonSerializer {
 
   /**
    * Parse the bytes to object of type corresponding to the type name in the `bytesPayload.contentType`. Requires that
-   * the types are known by first registering them by calling `contentTypeFor` or `toBytes`.
+   * the types are known by first `registerTypeHints` or calling `contentTypeFor` or `toBytes`.
    */
   def fromBytes(bytesPayload: BytesPayload): AnyRef = {
     validateIsJson(bytesPayload)
@@ -97,7 +98,24 @@ class JsonSerializer {
       fromBytes(typeClass, bytesPayload)
   }
 
-  private def parseVersion(contentType: String): Int = {
+  def fromBytes[T, C <: util.Collection[T]](
+      valueClass: Class[T],
+      collectionType: Class[C],
+      bytesPayload: BytesPayload): C = {
+    validateIsJson(bytesPayload)
+
+    try {
+      val typeRef = objectMapper.getTypeFactory.constructCollectionType(collectionType, valueClass)
+      objectMapper.readValue(bytesPayload.bytes.toArrayUnsafe(), typeRef)
+    } catch {
+      case e: JsonProcessingException =>
+        throw jsonProcessingException(valueClass, bytesPayload.contentType, e)
+      case e: IOException =>
+        throw genericDecodeException(valueClass, bytesPayload.contentType, e)
+    }
+  }
+
+  private def parseVersion(contentType: String) = {
     val versionSeparatorIndex = contentType.lastIndexOf('#')
     if (versionSeparatorIndex > 0) {
       contentType.substring(versionSeparatorIndex + 1).toInt

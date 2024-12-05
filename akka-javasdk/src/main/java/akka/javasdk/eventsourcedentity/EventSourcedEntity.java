@@ -127,11 +127,15 @@ public abstract class EventSourcedEntity<S, E> {
   /**
    * INTERNAL API
    * @hidden
+   * @return true if this was the first (outer) call to set the state, the caller is then
+   *         responsible for finally calling _internalClearCurrentState
    */
   @InternalApi
-  public void _internalSetCurrentState(S state) {
+  public boolean _internalSetCurrentState(S state) {
+    var wasHandlingCommands = handlingCommands;
     handlingCommands = true;
     currentState = Optional.ofNullable(state);
+    return !wasHandlingCommands;
   }
 
   /**

@@ -20,6 +20,7 @@ class MyJsonable {
 }
 
 class JsonSupportSpec extends AnyWordSpec with Matchers {
+  // FIXME move these tests to JsonSerializerSpec
 
   val myJsonable = new MyJsonable
   myJsonable.field = "foo"
