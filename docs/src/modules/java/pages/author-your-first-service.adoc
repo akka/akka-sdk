@@ -8,7 +8,7 @@ include::ROOT:partial$include.adoc[]
 In this guide, you will:
 
 * Set up your development environment.
-* Generate a simple project from a template that follows the recommended xref:concepts:architecture-model.adoc#architecture[onion architecture].
+* Generate a simple project from a template that follows the recommended xref:concepts:architecture-model.adoc#_architecture[onion architecture].
 * Explore a basic HTTP Endpoint that responds with "Hello World!"
 * Add path parameters, a request body and a response body to the Endpoint.
 * Run your service locally.
@@ -29,7 +29,7 @@ In IntelliJ, you can skip the command line. Open the IDE, select
 Follow these steps to generate and build your project:
 
 . From a command line, create a new Maven project from the Akka archetype in a convenient location:
-
++
 [.tabset]
 Linux or macOS::
 +
@@ -54,6 +54,7 @@ mvn archetype:generate ^
 ----
 --
 
++
 .Fill in:
 * groupId: `io.akka`
 * artifactId: `akka-javasdk-archetype`
@@ -118,7 +119,7 @@ Which will reply
 Hello World!
 ----
 
-== Getting more complex
+== Getting more advanced
 
 In this section, you will modify the HTTP Endpoint to accept path parameters, a request body, and return a response body.
 
@@ -198,88 +199,10 @@ The Akka local console is a web-based tool that provides a convenient way to vie
 
 === Install the Akka CLI
 
-The local console requires that you install the Akka CLI first.
+Starting the local console requires using the Akka CLI and Docker.
 
-Install the Akka CLI:
+include::ROOT:partial$cli-install-short.adoc[]
 
-[.tabset]
-Linux::
-+
---
-Download and install the latest version of `akka`:
-[source,bash]
-....
-curl -sL https://doc.akka.io/install-cli.sh | bash
-....
-
-If that fails due to permission issues, use:
-
-[source,bash]
-....
-curl -sL https://doc.akka.io/install-cli.sh | bash -s -- --prefix /tmp && \
-    sudo mv /tmp/akka /usr/local/bin/akka
-....
-
-You can pass options to the installer script with `-s --` e.g.:
-
-[source,bash,subs="attributes"]
-....
-curl -sL https://doc.akka.io/install-cli.sh | bash -s -- --prefix=$HOME --version={akka-cli-version} --verbose
-curl -sL https://doc.akka.io/install-cli.sh | bash -s -- -P $HOME -v {akka-cli-version} -V
-....
---
-macOS::
-+
---
-**Recommended approach**
-
-The recommended approach to install `akka` on macOS, is using https://brew.sh[brew, window="new"]
-
-[source,bash]
-----
-brew install akka/brew/akka
-----
-
-If the `akka` CLI is already installed, and you want to upgrade `akka` to the latest version, you can run
-
-[source,bash]
-----
-brew update
-brew upgrade akka
-----
-
-**Alternative approach**
-
-....
-curl -sL https://doc.akka.io/install-cli.sh | bash
-....
-
-You can pass options to the installer script with `-s --` e.g.:
-
-[source,bash,subs="attributes"]
-....
-curl -sL https://doc.akka.io/install-cli.sh | bash -s -- --prefix=$HOME --version={akka-cli-version} --verbose
-curl -sL https://doc.akka.io/install-cli.sh | bash -s -- -P $HOME -v {akka-cli-version} -V
-....
---
-Windows::
-+
---
-
-. Download the latest version of `akka` from https://downloads.akka.io/latest/akka_windows_amd64.zip[https://downloads.akka.io/latest/akka_windows_amd64.zip]
-
-. Optionally, you can verify the integrity of the downloaded files using the https://downloads.akka.io/latest/checksums.txt[SHA256 checksums].
-
-. Extract the zip file and move `akka.exe` to a location on your `%PATH%`.
-
---
-
-Verify that the Akka CLI has been installed successfully by running the following to list all available commands:
-
-[source, command window]
-----
-akka help
-----
 
 === Start the local console
 
