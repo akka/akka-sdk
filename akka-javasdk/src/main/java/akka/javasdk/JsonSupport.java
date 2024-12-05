@@ -41,6 +41,8 @@ import java.util.Optional;
 
 public final class JsonSupport {
 
+  // FIXME maybe move things to JsonSerializer, and delegate to it from here. Only handle the
+  // PbAny <-> BytesPayload here. However, public api with PbAny makes no sense now.
   private static final ObjectMapper objectMapper = new ObjectMapper();
 
   static {
