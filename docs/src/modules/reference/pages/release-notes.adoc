@@ -12,6 +12,9 @@ Current versions
 
 == December 2024
 
+* Akka CLI 3.0.7
+    - Improvements to the Local Console
+
 * https://github.com/akka/akka-sdk/releases/tag/v3.0.1[Akka SDK 3.0.1]
     - Minor improvements
 
