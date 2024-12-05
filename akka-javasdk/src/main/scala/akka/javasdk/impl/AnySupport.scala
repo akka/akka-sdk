@@ -6,10 +6,12 @@ package akka.javasdk.impl
 
 import java.io.ByteArrayOutputStream
 import java.util.Locale
+
 import scala.collection.concurrent.TrieMap
 import scala.jdk.CollectionConverters._
 import scala.reflect.ClassTag
 import scala.util.Try
+
 import com.google.common.base.CaseFormat
 import com.google.protobuf.ByteString
 import com.google.protobuf.CodedInputStream
@@ -28,8 +30,9 @@ import org.slf4j.LoggerFactory
 import scalapb.GeneratedMessage
 import scalapb.GeneratedMessageCompanion
 import scalapb.options.Scalapb
-
 import scala.collection.compat.immutable.ArraySeq
+
+import akka.runtime.sdk.spi.BytesPayload
 
 /**
  * INTERNAL API
@@ -200,6 +203,97 @@ private[akka] object AnySupport {
     }
 
   def extractBytes(bytes: ByteString): ByteString = bytesToPrimitive(BytesPrimitive, bytes)
+
+  def toScalaPbAny(bytesPayload: BytesPayload): ScalaPbAny = {
+    if (bytesPayload.contentType.startsWith(DefaultTypeUrlPrefix))
+      ScalaPbAny(
+        typeUrl = bytesPayload.contentType,
+        value = ByteStringUtils.toProtoByteStringUnsafe(bytesPayload.bytes))
+    else
+      ScalaPbAny(
+        typeUrl = bytesPayload.contentType,
+        value = encodeByteArray(ByteStringUtils.toProtoByteStringUnsafe(bytesPayload.bytes)))
+  }
+
+  private def encodeByteArray(bytes: ByteString): ByteString = {
+    if (bytes.isEmpty) {
+      ByteString.EMPTY
+    } else {
+      // Create a byte array the right size. It needs to have the tag and enough space to hold the length of the data
+      // (up to 5 bytes).
+      // Length encoding consumes 1 byte for every 7 bits of the field
+      val bytesLengthFieldSize = ((31 - Integer.numberOfLeadingZeros(bytes.size())) / 7) + 1
+      val byteArray = new Array[Byte](1 + bytesLengthFieldSize)
+      val stream = CodedOutputStream.newInstance(byteArray)
+      stream.writeTag(1, WireFormat.WIRETYPE_LENGTH_DELIMITED)
+      stream.writeUInt32NoTag(bytes.size())
+      UnsafeByteOperations.unsafeWrap(byteArray).concat(bytes)
+    }
+  }
+
+  object ByteStringUtils {
+    import java.nio.ByteBuffer
+    import akka.util.ByteString.ByteString1
+    import akka.util.ByteString.ByteString1C
+    import akka.util.{ ByteString => AkkaByteString }
+    import com.google.protobuf.{ ByteOutput, ByteString, UnsafeByteOperations }
+
+    def toAkkaByteStringUnsafe(bytes: ByteString): AkkaByteString = {
+      var out = AkkaByteString.empty
+      UnsafeByteOperations.unsafeWriteTo(
+        bytes,
+        new ByteOutput {
+          override def write(value: Byte): Unit =
+            out ++= AkkaByteString(value)
+
+          override def write(value: Array[Byte], offset: Int, length: Int): Unit =
+            out ++= AkkaByteString.fromArray(value, offset, length)
+
+          override def writeLazy(value: Array[Byte], offset: Int, length: Int): Unit =
+            out ++= AkkaByteString.fromArrayUnsafe(value, offset, length)
+
+          override def write(value: ByteBuffer): Unit = if (value.hasRemaining) {
+            out ++= AkkaByteString.fromByteBuffer(value)
+          }
+
+          override def writeLazy(value: ByteBuffer): Unit = {
+            if (value.hasRemaining) {
+              if (value.hasArray) {
+                out ++= AkkaByteString.fromArrayUnsafe(value.array(), value.arrayOffset(), value.remaining())
+              } else {
+                out ++= AkkaByteString.fromByteBuffer(value)
+              }
+            }
+          }
+        })
+
+      out
+    }
+
+    def toProtoByteStringUnsafe(bytes: AkkaByteString): ByteString = {
+      bytes match {
+        case _ if bytes.isEmpty =>
+          ByteString.EMPTY
+        case _: ByteString1 | _: ByteString1C =>
+          UnsafeByteOperations.unsafeWrap(bytes.toArrayUnsafe())
+        case _ =>
+          // zero copy, reuse the same underlying byte arrays
+          bytes.asByteBuffers.foldLeft(ByteString.EMPTY) { (acc, byteBuffer) =>
+            acc.concat(UnsafeByteOperations.unsafeWrap(byteBuffer))
+          }
+      }
+    }
+
+    def toProtoByteStringUnsafe(bytes: Array[Byte]): ByteString = {
+      if (bytes.isEmpty)
+        ByteString.EMPTY
+      else {
+        UnsafeByteOperations.unsafeWrap(bytes)
+      }
+    }
+
+  }
+
 }
 
 class AnySupport(

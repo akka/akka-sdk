@@ -136,7 +136,7 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
       entity._internalSetCommandContext(Optional.of(cmdContext))
       entity._internalSetCurrentState(state)
       val commandEffect = router
-        .handleCommand(command.name, cmdPayload)
+        .handleCommand(command.name, cmdPayload, cmdContext)
         .asInstanceOf[EventSourcedEntityEffectImpl[AnyRef, E]] // FIXME improve?
 
       def replyOrError(updatedState: SpiEventSourcedEntity.State): (Option[BytesPayload], Option[SpiEntity.Error]) = {
@@ -240,7 +240,7 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
     entity._internalSetEventContext(Optional.of(eventContext))
     val clearState = entity._internalSetCurrentState(state)
     try {
-      router.handleEvent(state, event)
+      router.handleEvent(event)
     } catch {
       case EventHandlerNotFound(eventClass) =>
         throw new IllegalArgumentException(s"Unknown event type [$eventClass] on ${entity.getClass}")

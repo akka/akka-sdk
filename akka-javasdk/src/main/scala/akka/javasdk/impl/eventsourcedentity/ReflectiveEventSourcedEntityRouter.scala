@@ -5,9 +5,12 @@
 package akka.javasdk.impl.eventsourcedentity
 
 import akka.annotation.InternalApi
+import akka.javasdk.eventsourcedentity.CommandContext
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
+import akka.javasdk.impl.AnySupport
 import akka.javasdk.impl.CommandHandler
 import akka.javasdk.impl.CommandSerialization
+import akka.javasdk.impl.InvocationContext
 import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.serialization.JsonSerializer
 import akka.runtime.sdk.spi.BytesPayload
@@ -31,31 +34,37 @@ private[impl] class ReflectiveEventSourcedEntityRouter[S, E, ES <: EventSourcedE
       commandName,
       throw new HandlerNotFoundException("command", commandName, commandHandlers.keySet))
 
-  def handleCommand(commandName: String, command: BytesPayload): EventSourcedEntity.Effect[_] = {
+  def handleCommand(
+      commandName: String,
+      command: BytesPayload,
+      commandContext: CommandContext): EventSourcedEntity.Effect[_] = {
 
     val commandHandler = commandHandlerLookup(commandName)
 
-    // special cased component client calls, lets json commands through all the way
-    val methodInvoker = commandHandler.getSingleNameInvoker()
-    val deserializedCommand =
-      CommandSerialization.deserializeComponentClientCommand(methodInvoker.method, command, serializer)
-    val result = deserializedCommand match {
-      case None          => methodInvoker.invoke(entity)
-      case Some(command) => methodInvoker.invokeDirectly(entity, command)
-    }
-    result.asInstanceOf[EventSourcedEntity.Effect[_]]
+    if (serializer.isJson(command)) {
+      // special cased component client calls, lets json commands through all the way
+      val methodInvoker = commandHandler.getSingleNameInvoker()
+      val deserializedCommand =
+        CommandSerialization.deserializeComponentClientCommand(methodInvoker.method, command, serializer)
+      val result = deserializedCommand match {
+        case None          => methodInvoker.invoke(entity)
+        case Some(command) => methodInvoker.invokeDirectly(entity, command)
+      }
+      result.asInstanceOf[EventSourcedEntity.Effect[_]]
+    } else {
+      // FIXME can be proto from http-grpc-handling of the static es endpoints
+      val pbAnyCommand = AnySupport.toScalaPbAny(command)
+      val invocationContext =
+        InvocationContext(pbAnyCommand, commandHandler.requestMessageDescriptor, commandContext.metadata())
 
-    // FIXME can it be proto? for example from http-grpc-handling of the static es endpoints
-//      val invocationContext =
-//        InvocationContext(scalaPbAnyCommand, commandHandler.requestMessageDescriptor, commandContext.metadata())
-//
-//      val inputTypeUrl = command.asInstanceOf[ScalaPbAny].typeUrl
-//      val methodInvoker = commandHandler
-//        .getInvoker(inputTypeUrl)
-//
-//      methodInvoker
-//        .invoke(entity, invocationContext)
-//        .asInstanceOf[EventSourcedEntity.Effect[_]]
+      val inputTypeUrl = pbAnyCommand.typeUrl
+      val methodInvoker = commandHandler
+        .getInvoker(inputTypeUrl)
+
+      methodInvoker
+        .invoke(entity, invocationContext)
+        .asInstanceOf[EventSourcedEntity.Effect[_]]
+    }
   }
 
   def handleEvent(event: E): S = {

@@ -153,7 +153,7 @@ class JsonSerializer {
         s"cannot be decoded as JSON, must start with [$JsonContentTypePrefix]")
   }
 
-  private def isJson(bytesPayload: BytesPayload) =
+  def isJson(bytesPayload: BytesPayload): Boolean =
     isJsonTypeUrl(bytesPayload.contentType)
 
   private def isJsonTypeUrl(contentType: String): Boolean =
