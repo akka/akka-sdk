@@ -11,7 +11,6 @@ import akka.javasdk.impl.AbstractContext
 import akka.javasdk.impl.ActivatableContext
 import akka.javasdk.impl.ErrorHandling
 import akka.javasdk.impl.ErrorHandling.BadRequestException
-import akka.javasdk.impl.JsonMessageCodec
 import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.Service
 import akka.javasdk.impl.Settings
@@ -32,15 +31,16 @@ import io.opentelemetry.api.trace.Tracer
 import kalix.protocol.component.Failure
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
-
 import scala.language.existentials
 import scala.util.control.NonFatal
+
 import akka.javasdk.Metadata
 import akka.javasdk.Tracing
 import akka.javasdk.impl.AnySupport
 import akka.javasdk.impl.effect.MessageReplyImpl
 import akka.javasdk.impl.keyvalueentity.KeyValueEntityEffectImpl.UpdateState
 import akka.javasdk.impl.keyvalueentity.KeyValueEntityRouter.CommandResult
+import akka.javasdk.impl.serialization.JsonSerializer
 import akka.javasdk.impl.telemetry.SpanTracingImpl
 import io.opentelemetry.api.trace.Span
 import kalix.protocol.value_entity.ValueEntityAction.Action.Delete
@@ -58,9 +58,9 @@ import kalix.protocol.value_entity._
 @InternalApi
 private[impl] final class KeyValueEntityService[S, E <: KeyValueEntity[S]](
     entityClass: Class[E],
-    messageCodec: JsonMessageCodec,
+    serializer: JsonSerializer,
     factory: KeyValueEntityContext => E)
-    extends Service(entityClass, ValueEntities.name, messageCodec) {
+    extends Service(entityClass, ValueEntities.name, serializer) {
   def createRouter(context: KeyValueEntityContext) =
     new ReflectiveKeyValueEntityRouter[S, E](factory(context), componentDescriptor.commandHandlers)
 }
@@ -142,7 +142,8 @@ private[impl] final class KeyValueEntitiesImpl(
       case Some(ValueEntityInitState(stateOpt, _)) =>
         stateOpt match {
           case Some(state) =>
-            val decoded = service.messageCodec.decodeMessage(state)
+            val bytesPayload = AnySupport.toSpiBytesPayload(state)
+            val decoded = service.serializer.fromBytes(bytesPayload)
             router._internalSetInitState(decoded)
           case None => // no initial state
         }
@@ -164,11 +165,12 @@ private[impl] final class KeyValueEntitiesImpl(
 
           span.foreach(s => MDC.put(Telemetry.TRACE_ID, s.getSpanContext.getTraceId))
           try {
-            val cmd =
-              service.messageCodec.decodeMessage(
-                command.payload.getOrElse(
-                  // FIXME smuggling 0 arity method called from component client through here
-                  ScalaPbAny.defaultInstance.withTypeUrl(AnySupport.JsonTypeUrlPrefix).withValue(ByteString.empty())))
+            val cmdPayloadPbAny = command.payload.getOrElse(
+              // FIXME smuggling 0 arity method called from component client through here
+              ScalaPbAny.defaultInstance.withTypeUrl(AnySupport.JsonTypeUrlPrefix).withValue(ByteString.empty()))
+            val cmdBytesPayload = AnySupport.toSpiBytesPayload(cmdPayloadPbAny)
+            val cmd = service.serializer.fromBytes(cmdBytesPayload)
+
             val context =
               new CommandContextImpl(thisEntityId, command.name, command.id, metadata, span, tracerFactory)
 
@@ -187,7 +189,9 @@ private[impl] final class KeyValueEntitiesImpl(
 
             val serializedSecondaryEffect = effect.secondaryEffect match {
               case MessageReplyImpl(message, metadata) =>
-                MessageReplyImpl(service.messageCodec.encodeJava(message), metadata)
+                val bytesPayload = service.serializer.toBytes(message)
+                val pbAny = AnySupport.toScalaPbAny(bytesPayload)
+                MessageReplyImpl(pbAny, metadata)
               case other => other
             }
 
@@ -203,7 +207,8 @@ private[impl] final class KeyValueEntitiesImpl(
                   case DeleteEntity =>
                     Some(ValueEntityAction(Delete(ValueEntityDelete(pbCleanupDeletedKeyValueEntityAfter))))
                   case UpdateState(newState) =>
-                    val newStateScalaPbAny = service.messageCodec.encodeScala(newState)
+                    val bytesPayload = service.serializer.toBytes(newState)
+                    val newStateScalaPbAny = AnySupport.toScalaPbAny(bytesPayload)
                     Some(ValueEntityAction(Update(ValueEntityUpdate(Some(newStateScalaPbAny)))))
                   case _ =>
                     None

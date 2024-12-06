@@ -11,9 +11,9 @@ import java.lang.reflect.Method
 
 import scala.util.control.Exception.Catcher
 
+import akka.javasdk.impl.serialization.JsonSerializer
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.google.protobuf.Descriptors
-import org.slf4j.LoggerFactory
 
 /**
  * INTERNAL API
@@ -21,11 +21,9 @@ import org.slf4j.LoggerFactory
 @InternalApi
 private[impl] final case class CommandHandler(
     grpcMethodName: String,
-    messageCodec: JsonMessageCodec,
+    serializer: JsonSerializer,
     requestMessageDescriptor: Descriptors.Descriptor,
     methodInvokers: Map[String, MethodInvoker]) {
-
-  val logger = LoggerFactory.getLogger(classOf[CommandHandler])
 
   /**
    * This method will look up for a registered method that receives a super type of the incoming payload. It's only
@@ -39,8 +37,8 @@ private[impl] final case class CommandHandler(
       val lastParam = javaMethod.method.getParameterTypes.last
       if (lastParam.getAnnotation(classOf[JsonSubTypes]) != null) {
         lastParam.getAnnotation(classOf[JsonSubTypes]).value().exists { subType =>
-          inputTypeUrl == messageCodec
-            .typeUrlFor(subType.value()) //TODO requires more changes to be used with JsonMigration
+          inputTypeUrl == serializer
+            .contentTypeFor(subType.value()) //TODO requires more changes to be used with JsonMigration
         }
       } else false
     }
@@ -50,7 +48,7 @@ private[impl] final case class CommandHandler(
 
   def lookupInvoker(inputTypeUrl: String): Option[MethodInvoker] =
     methodInvokers
-      .get(messageCodec.removeVersion(inputTypeUrl))
+      .get(serializer.removeVersion(inputTypeUrl))
       .orElse(lookupMethodAcceptingSubType(inputTypeUrl))
 
   def getInvoker(inputTypeUrl: String): MethodInvoker =

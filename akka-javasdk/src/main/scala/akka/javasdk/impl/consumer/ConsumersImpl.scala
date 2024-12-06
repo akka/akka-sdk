@@ -12,10 +12,9 @@ import akka.javasdk.consumer.MessageContext
 import akka.javasdk.consumer.MessageEnvelope
 import akka.javasdk.impl.AbstractContext
 import akka.javasdk.impl.ComponentDescriptorFactory
-import akka.javasdk.impl.JsonMessageCodec
-import akka.javasdk.impl.MessageCodec
 import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.Service
+import akka.javasdk.impl.serialization.JsonSerializer
 import akka.javasdk.impl.telemetry.SpanTracingImpl
 import akka.javasdk.impl.telemetry.Telemetry
 import akka.javasdk.impl.timer.TimerSchedulerImpl
@@ -27,7 +26,6 @@ import kalix.protocol.action.Actions
 import kalix.protocol.component.MetadataEntry
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-
 import java.util.Optional
 
 /**
@@ -36,9 +34,9 @@ import java.util.Optional
 @InternalApi
 private[impl] class ConsumerService[A <: Consumer](
     consumerClass: Class[_],
-    messageCodec: JsonMessageCodec,
+    serializer: JsonSerializer,
     factory: () => A)
-    extends Service(consumerClass, Actions.name, messageCodec) {
+    extends Service(consumerClass, Actions.name, serializer) {
 
   lazy val log: Logger = LoggerFactory.getLogger(consumerClass)
 
@@ -62,14 +60,13 @@ private[impl] final case class MessageEnvelopeImpl[T](payload: T, metadata: Meta
 @InternalApi
 private[impl] final class MessageContextImpl(
     override val metadata: Metadata,
-    val messageCodec: MessageCodec,
     timerClient: TimerClient,
     tracerFactory: () => Tracer,
     span: Option[Span])
     extends AbstractContext
     with MessageContext {
 
-  val timers: TimerScheduler = new TimerSchedulerImpl(messageCodec, timerClient, componentCallMetadata)
+  val timers: TimerScheduler = new TimerSchedulerImpl(timerClient, componentCallMetadata)
 
   override def eventSubject(): Optional[String] =
     if (metadata.isCloudEvent)

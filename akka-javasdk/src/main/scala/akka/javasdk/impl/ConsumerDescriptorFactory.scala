@@ -11,6 +11,7 @@ import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.reflection.SubscriptionServiceMethod
 import ComponentDescriptorFactory._
 import akka.annotation.InternalApi
+import akka.javasdk.impl.serialization.JsonSerializer
 import kalix.EventSource
 import kalix.Eventing
 import kalix.MethodOptions
@@ -23,7 +24,7 @@ private[impl] object ConsumerDescriptorFactory extends ComponentDescriptorFactor
 
   override def buildDescriptorFor(
       component: Class[_],
-      messageCodec: JsonMessageCodec,
+      serializer: JsonSerializer,
       nameGenerator: NameGenerator): ComponentDescriptor = {
 
     def withOptionalDestination(clazz: Class[_], source: EventSource): MethodOptions = {
@@ -126,14 +127,14 @@ private[impl] object ConsumerDescriptorFactory extends ComponentDescriptorFactor
 
     ComponentDescriptor(
       nameGenerator,
-      messageCodec,
+      serializer,
       serviceName,
       serviceOptions = serviceLevelOptions,
       component.getPackageName,
       handleDeletesMethods
       ++ subscriptionValueEntityMethods
-      ++ combineBy("ES", subscriptionEventSourcedEntityClass, messageCodec, component)
-      ++ combineBy("Stream", subscriptionStreamClass, messageCodec, component)
-      ++ combineBy("Topic", subscriptionTopicClass, messageCodec, component))
+      ++ combineBy("ES", subscriptionEventSourcedEntityClass, serializer, component)
+      ++ combineBy("Stream", subscriptionStreamClass, serializer, component)
+      ++ combineBy("Topic", subscriptionTopicClass, serializer, component))
   }
 }

@@ -9,13 +9,15 @@ import akka.javasdk.impl.reflection.EntityUrlTemplate
 import akka.javasdk.impl.reflection.KalixMethod
 import akka.javasdk.impl.reflection.NameGenerator
 import akka.javasdk.impl.reflection.WorkflowUrlTemplate
-
 import java.lang.reflect.Method
+
 import scala.reflect.ClassTag
+
 import ComponentDescriptorFactory.mergeServiceOptions
 import JwtDescriptorFactory.buildJWTOptions
 import akka.annotation.InternalApi
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
+import akka.javasdk.impl.serialization.JsonSerializer
 import akka.javasdk.keyvalueentity.KeyValueEntity
 import akka.javasdk.workflow.Workflow
 
@@ -27,7 +29,7 @@ private[impl] object EntityDescriptorFactory extends ComponentDescriptorFactory 
 
   override def buildDescriptorFor(
       component: Class[_],
-      messageCodec: JsonMessageCodec,
+      serializer: JsonSerializer,
       nameGenerator: NameGenerator): ComponentDescriptor = {
 
     // command handlers candidate must have 0 or 1 parameter and return the components effect type
@@ -89,7 +91,7 @@ private[impl] object EntityDescriptorFactory extends ComponentDescriptorFactory 
     val serviceName = nameGenerator.getName(component.getSimpleName)
     ComponentDescriptor(
       nameGenerator,
-      messageCodec,
+      serializer,
       serviceName,
       serviceOptions = mergeServiceOptions(
         AclDescriptorFactory.serviceLevelAclAnnotation(component, default = Some(AclDescriptorFactory.denyAll)),

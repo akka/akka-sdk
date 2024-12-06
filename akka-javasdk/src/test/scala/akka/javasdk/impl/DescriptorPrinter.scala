@@ -4,12 +4,10 @@
 
 package akka.javasdk.impl
 
-import akka.javasdk.eventsourcedentity.TestEventSourcedEntity
-import akka.javasdk.impl.ComponentDescriptor
-import akka.javasdk.impl.JsonMessageCodec
-import akka.javasdk.impl.ProtoDescriptorRenderer
-
 import scala.reflect.ClassTag
+
+import akka.javasdk.eventsourcedentity.TestEventSourcedEntity
+import akka.javasdk.impl.serialization.JsonSerializer
 
 /**
  * Utility class to quickly print descriptors
@@ -17,7 +15,7 @@ import scala.reflect.ClassTag
 object DescriptorPrinter {
 
   def descriptorFor[T](implicit ev: ClassTag[T]): ComponentDescriptor =
-    ComponentDescriptor.descriptorFor(ev.runtimeClass, new JsonMessageCodec)
+    ComponentDescriptor.descriptorFor(ev.runtimeClass, new JsonSerializer)
 
   def main(args: Array[String]) = {
     val descriptor = descriptorFor[TestEventSourcedEntity]

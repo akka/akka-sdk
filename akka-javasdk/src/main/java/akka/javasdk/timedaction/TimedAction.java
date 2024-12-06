@@ -6,8 +6,8 @@ package akka.javasdk.timedaction;
 
 import akka.Done;
 import akka.annotation.InternalApi;
-import akka.javasdk.impl.action.CommandContextImpl;
 import akka.javasdk.impl.timedaction.TimedActionEffectImpl;
+import akka.javasdk.impl.timedaction.TimedActionImpl.CommandContextImpl;
 import akka.javasdk.timer.TimerScheduler;
 
 import java.util.Optional;

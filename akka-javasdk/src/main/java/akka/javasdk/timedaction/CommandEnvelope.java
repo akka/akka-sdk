@@ -5,7 +5,7 @@
 package akka.javasdk.timedaction;
 
 import akka.javasdk.Metadata;
-import akka.javasdk.impl.action.CommandEnvelopeImpl;
+import akka.javasdk.impl.timedaction.TimedActionImpl.CommandEnvelopeImpl;
 
 /** A command envelope. */
 public interface CommandEnvelope<T> {

@@ -5,6 +5,7 @@
 package akka.javasdk.impl
 
 import akka.annotation.InternalApi
+import akka.javasdk.impl.serialization.JsonSerializer
 import com.google.protobuf.Descriptors
 
 /**
@@ -22,9 +23,9 @@ import com.google.protobuf.Descriptors
 private[akka] abstract class Service(
     componentClass: Class[_],
     val componentType: String,
-    val messageCodec: JsonMessageCodec) {
+    val serializer: JsonSerializer) {
   val componentId: String = ComponentDescriptorFactory.readComponentIdIdValue(componentClass)
-  val componentDescriptor = ComponentDescriptor.descriptorFor(componentClass, messageCodec)
+  val componentDescriptor = ComponentDescriptor.descriptorFor(componentClass, serializer)
   val descriptor: Descriptors.ServiceDescriptor = componentDescriptor.serviceDescriptor
   val additionalDescriptors: Array[Descriptors.FileDescriptor] = Array(componentDescriptor.fileDescriptor)
 }

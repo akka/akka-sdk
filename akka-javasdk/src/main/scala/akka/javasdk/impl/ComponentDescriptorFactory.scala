@@ -24,6 +24,7 @@ import akka.javasdk.annotations.DeleteHandler
 import akka.javasdk.annotations.Produce.ServiceStream
 import akka.javasdk.annotations.Produce.ToTopic
 import akka.javasdk.consumer.Consumer
+import akka.javasdk.impl.serialization.JsonSerializer
 import akka.javasdk.impl.view.ViewDescriptorFactory
 import akka.javasdk.keyvalueentity.KeyValueEntity
 import akka.javasdk.timedaction.TimedAction
@@ -332,7 +333,7 @@ private[impl] object ComponentDescriptorFactory {
 
   def combineByES(
       subscriptions: Seq[KalixMethod],
-      messageCodec: JsonMessageCodec,
+      serializer: JsonSerializer,
       component: Class[_]): Seq[KalixMethod] = {
 
     def groupByES(methods: Seq[KalixMethod]): Map[String, Seq[KalixMethod]] = {
@@ -343,12 +344,12 @@ private[impl] object ComponentDescriptorFactory {
       withEventSourcedIn.groupBy(m => m.methodOptions.head.getEventing.getIn.getEventSourcedEntity)
     }
 
-    combineBy("ES", groupByES(subscriptions), messageCodec, component)
+    combineBy("ES", groupByES(subscriptions), serializer, component)
   }
 
   def combineByTopic(
       kalixMethods: Seq[KalixMethod],
-      messageCodec: JsonMessageCodec,
+      serializer: JsonSerializer,
       component: Class[_]): Seq[KalixMethod] = {
     def groupByTopic(methods: Seq[KalixMethod]): Map[String, Seq[KalixMethod]] = {
       val withTopicIn = methods.filter(kalixMethod =>
@@ -358,13 +359,13 @@ private[impl] object ComponentDescriptorFactory {
       withTopicIn.groupBy(m => m.methodOptions.head.getEventing.getIn.getTopic)
     }
 
-    combineBy("Topic", groupByTopic(kalixMethods), messageCodec, component)
+    combineBy("Topic", groupByTopic(kalixMethods), serializer, component)
   }
 
   def combineBy(
       sourceName: String,
       groupedSubscriptions: Map[String, Seq[KalixMethod]],
-      messageCodec: JsonMessageCodec,
+      serializer: JsonSerializer,
       component: Class[_]): Seq[KalixMethod] = {
 
     groupedSubscriptions.collect {
@@ -375,7 +376,7 @@ private[impl] object ComponentDescriptorFactory {
             // it is safe to pick the last parameter. An action has one and View has two. In the View always the last is the event
             val eventParameter = methodParameterTypes.last
 
-            messageCodec.typeUrlsFor(eventParameter).map(typeUrl => (typeUrl, k.serviceMethod.javaMethodOpt.get))
+            serializer.contentTypesFor(eventParameter).map(typeUrl => (typeUrl, k.serviceMethod.javaMethodOpt.get))
           }.toMap
 
         KalixMethod(
@@ -390,7 +391,7 @@ private[impl] object ComponentDescriptorFactory {
         if (kMethod.serviceMethod.javaMethodOpt.exists(_.getParameterTypes.last.isSealed)) {
           val javaMethod = kMethod.serviceMethod.javaMethodOpt.get
           val methodsMap = javaMethod.getParameterTypes.last.getPermittedSubclasses.toList.flatMap { subClass =>
-            messageCodec.typeUrlsFor(subClass).map(typeUrl => (typeUrl, javaMethod))
+            serializer.contentTypesFor(subClass).map(typeUrl => (typeUrl, javaMethod))
           }.toMap
           KalixMethod(
             CombinedSubscriptionServiceMethod(
@@ -433,7 +434,7 @@ private[impl] trait ComponentDescriptorFactory {
    */
   def buildDescriptorFor(
       componentClass: Class[_],
-      messageCodec: JsonMessageCodec,
+      serializer: JsonSerializer,
       nameGenerator: NameGenerator): ComponentDescriptor
 
 }

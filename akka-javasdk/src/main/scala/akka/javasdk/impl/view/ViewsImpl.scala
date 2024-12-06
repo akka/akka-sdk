@@ -5,21 +5,23 @@
 package akka.javasdk.impl.view
 
 import java.util.Optional
+
 import scala.util.control.NonFatal
+
 import akka.annotation.InternalApi
 import akka.javasdk.Metadata
 import akka.javasdk.impl.AbstractContext
-import akka.javasdk.impl.JsonMessageCodec
+import akka.javasdk.impl.AnySupport
 import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.Service
 import akka.javasdk.impl.reflection.Reflect
+import akka.javasdk.impl.serialization.JsonSerializer
 import akka.javasdk.impl.telemetry.Telemetry
 import akka.javasdk.view.TableUpdater
 import akka.javasdk.view.UpdateContext
 import akka.javasdk.view.View
 import akka.stream.scaladsl.Source
 import kalix.protocol.{ view => pv }
-import com.google.protobuf.any.{ Any => ScalaPbAny }
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
 
@@ -29,9 +31,9 @@ import org.slf4j.MDC
 @InternalApi
 final class ViewService[V <: View](
     viewClass: Class[_],
-    messageCodec: JsonMessageCodec,
+    serializer: JsonSerializer,
     wiredInstance: Class[TableUpdater[AnyRef]] => TableUpdater[AnyRef])
-    extends Service(viewClass, pv.Views.name, messageCodec) {
+    extends Service(viewClass, pv.Views.name, serializer) {
 
   private def viewUpdaterFactories(): Set[TableUpdater[AnyRef]] = {
     val updaterClasses = viewClass.getDeclaredClasses.collect {
@@ -89,11 +91,16 @@ final class ViewsImpl(_services: Map[String, ViewService[_]], sdkDispatcherName:
               val handler = service.createRouter()
 
               val state: Option[Any] =
-                receiveEvent.bySubjectLookupResult.flatMap(row =>
-                  row.value.map(scalaPb => service.messageCodec.decodeMessage(scalaPb)))
+                receiveEvent.bySubjectLookupResult.flatMap { row =>
+                  row.value.map { scalaPb =>
+                    val bytesPayload = AnySupport.toSpiBytesPayload(scalaPb)
+                    service.serializer.fromBytes(bytesPayload)
+                  }
+                }
 
               val commandName = receiveEvent.commandName
-              val msg = service.messageCodec.decodeMessage(receiveEvent.payload.get)
+              val bytesPayload = AnySupport.toSpiBytesPayload(receiveEvent.getPayload)
+              val msg = service.serializer.fromBytes(bytesPayload)
               val metadata = MetadataImpl.of(receiveEvent.metadata.map(_.entries.toVector).getOrElse(Nil))
               val addedToMDC = metadata.traceId match {
                 case Some(traceId) =>
@@ -129,7 +136,8 @@ final class ViewsImpl(_services: Map[String, ViewService[_]], sdkDispatcherName:
                       "updateState with null state is not allowed.",
                       None)
                   }
-                  val serializedState = ScalaPbAny.fromJavaProto(service.messageCodec.encodeJava(newState))
+                  val bytesPayload = service.serializer.toBytes(newState)
+                  val serializedState = AnySupport.toScalaPbAny(bytesPayload)
                   val upsert = pv.Upsert(Some(pv.Row(value = Some(serializedState))))
                   val out = pv.ViewStreamOut(pv.ViewStreamOut.Message.Upsert(upsert))
                   Source.single(out)

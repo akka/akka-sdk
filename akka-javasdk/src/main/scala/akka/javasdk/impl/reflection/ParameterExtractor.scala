@@ -5,19 +5,17 @@
 package akka.javasdk.impl.reflection
 
 import akka.annotation.InternalApi
-import akka.javasdk.JsonSupport
 import akka.javasdk.Metadata
 import akka.javasdk.impl.AnySupport
-
 import scala.jdk.OptionConverters._
+
 import com.google.protobuf.ByteString
 import com.google.protobuf.Descriptors
 import com.google.protobuf.DynamicMessage
 import com.google.protobuf.{ Any => JavaPbAny }
 import com.google.protobuf.any.{ Any => ScalaPbAny }
 import akka.javasdk.impl.ErrorHandling.BadRequestException
-import akka.javasdk.impl.JsonMessageCodec
-import akka.javasdk.impl.StrictJsonMessageCodec
+import akka.javasdk.impl.serialization.JsonSerializer
 
 /**
  * Extracts method parameters from an invocation context for the purpose of passing them to a reflective invocation call
@@ -64,41 +62,52 @@ private[impl] object ParameterExtractors {
       .build()
   }
 
-  private def decodeParam[T](dm: DynamicMessage, cls: Class[T]): T = {
+  private def decodeParam[T](dm: DynamicMessage, cls: Class[T], serializer: JsonSerializer): T = {
     if (cls == classOf[Array[Byte]]) {
       val bytes = dm.getField(JavaPbAny.getDescriptor.findFieldByName("value")).asInstanceOf[ByteString]
       AnySupport.decodePrimitiveBytes(bytes).toByteArray.asInstanceOf[T]
     } else {
-      JsonSupport.decodeJson(cls, toAny(dm))
+      // FIXME we should not need these conversions
+      val pbAny = ScalaPbAny.fromJavaProto(toAny(dm))
+      val bytesPayload = AnySupport.toSpiBytesPayload(pbAny)
+      serializer.fromBytes(cls, bytesPayload)
     }
   }
 
-  private def decodeParam[T](dm: DynamicMessage, cls: Class[T], messageCodec: StrictJsonMessageCodec): T = {
+  private def decodeParamPossiblySealed[T](dm: DynamicMessage, cls: Class[T], serializer: JsonSerializer): T = {
     if (cls.isSealed) {
-      messageCodec.decodeMessage(ScalaPbAny.fromJavaProto(toAny(dm))).asInstanceOf[T]
+      // FIXME we should not need these conversions
+      val pbAny = ScalaPbAny.fromJavaProto(toAny(dm))
+      val bytesPayload = AnySupport.toSpiBytesPayload(pbAny)
+      serializer.fromBytes(bytesPayload).asInstanceOf[T]
     } else {
-      decodeParam(dm, cls)
+      decodeParam(dm, cls, serializer)
     }
   }
 
   private def decodeParamCollection[T, C <: java.util.Collection[T]](
       dm: DynamicMessage,
       cls: Class[T],
-      collectionType: Class[C]): C =
-    JsonSupport.decodeJsonCollection(cls, collectionType, toAny(dm))
-
-  case class AnyBodyExtractor[T](cls: Class[_], messageCodec: JsonMessageCodec)
-      extends ParameterExtractor[DynamicMessageContext, T] {
-    override def extract(context: DynamicMessageContext): T =
-      decodeParam(context.message, cls.asInstanceOf[Class[T]], new StrictJsonMessageCodec(messageCodec))
+      collectionType: Class[C],
+      serializer: JsonSerializer): C = {
+    // FIXME we should not need these conversions
+    val pbAny = ScalaPbAny.fromJavaProto(toAny(dm))
+    val bytesPayload = AnySupport.toSpiBytesPayload(pbAny)
+    serializer.fromBytes(cls, collectionType, bytesPayload)
   }
 
-  class BodyExtractor[T](field: Descriptors.FieldDescriptor, cls: Class[_])
+  case class AnyBodyExtractor[T](cls: Class[_], serializer: JsonSerializer)
+      extends ParameterExtractor[DynamicMessageContext, T] {
+    override def extract(context: DynamicMessageContext): T =
+      decodeParamPossiblySealed(context.message, cls.asInstanceOf[Class[T]], serializer)
+  }
+
+  class BodyExtractor[T](field: Descriptors.FieldDescriptor, cls: Class[_], serializer: JsonSerializer)
       extends ParameterExtractor[DynamicMessageContext, T] {
 
     override def extract(context: DynamicMessageContext): T = {
       context.message.getField(field) match {
-        case dm: DynamicMessage => decodeParam(dm, cls.asInstanceOf[Class[T]])
+        case dm: DynamicMessage => decodeParam(dm, cls.asInstanceOf[Class[T]], serializer)
       }
     }
   }
@@ -106,12 +115,13 @@ private[impl] object ParameterExtractors {
   class CollectionBodyExtractor[T, C <: java.util.Collection[T]](
       field: Descriptors.FieldDescriptor,
       cls: Class[T],
-      collectionType: Class[C])
+      collectionType: Class[C],
+      serializer: JsonSerializer)
       extends ParameterExtractor[DynamicMessageContext, C] {
 
     override def extract(context: DynamicMessageContext): C = {
       context.message.getField(field) match {
-        case dm: DynamicMessage => decodeParamCollection(dm, cls, collectionType)
+        case dm: DynamicMessage => decodeParamCollection(dm, cls, collectionType, serializer)
       }
     }
   }

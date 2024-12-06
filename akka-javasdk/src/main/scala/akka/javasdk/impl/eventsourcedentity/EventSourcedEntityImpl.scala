@@ -23,7 +23,6 @@ import akka.javasdk.impl.ComponentDescriptor
 import akka.javasdk.impl.EntityExceptions
 import akka.javasdk.impl.EntityExceptions.EntityException
 import akka.javasdk.impl.ErrorHandling.BadRequestException
-import akka.javasdk.impl.JsonMessageCodec
 import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.Settings
 import akka.javasdk.impl.effect.ErrorReplyImpl
@@ -87,7 +86,6 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
     componentId: String,
     componentClass: Class[_],
     entityId: String,
-    messageCodec: JsonMessageCodec, // FIXME replace with JsonSerializer completely
     serializer: JsonSerializer,
     factory: EventSourcedEntityContext => ES)
     extends SpiEventSourcedEntity {
@@ -96,7 +94,7 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
   // FIXME
 //  private val traceInstrumentation = new TraceInstrumentation(componentId, EventSourcedEntityCategory, tracerFactory)
 
-  private val componentDescriptor = ComponentDescriptor.descriptorFor(componentClass, messageCodec)
+  private val componentDescriptor = ComponentDescriptor.descriptorFor(componentClass, serializer)
 
   // FIXME remove EventSourcedEntityRouter altogether, and only keep stateless ReflectiveEventSourcedEntityRouter
   private val router: ReflectiveEventSourcedEntityRouter[AnyRef, AnyRef, EventSourcedEntity[AnyRef, AnyRef]] = {

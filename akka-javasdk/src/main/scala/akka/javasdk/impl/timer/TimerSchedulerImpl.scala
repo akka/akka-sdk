@@ -11,7 +11,6 @@ import akka.Done
 import akka.annotation.InternalApi
 import akka.javasdk.DeferredCall
 import akka.javasdk.Metadata
-import akka.javasdk.impl.MessageCodec
 import akka.javasdk.impl.client.DeferredCallImpl
 import akka.javasdk.timer.TimerScheduler
 
@@ -21,10 +20,7 @@ import scala.jdk.DurationConverters.JavaDurationOps
  * INTERNAL API
  */
 @InternalApi
-private[akka] final class TimerSchedulerImpl(
-    val messageCodec: MessageCodec,
-    val timerClient: akka.runtime.sdk.spi.TimerClient,
-    val metadata: Metadata)
+private[akka] final class TimerSchedulerImpl(val timerClient: akka.runtime.sdk.spi.TimerClient, val metadata: Metadata)
     extends TimerScheduler {
 
   override def startSingleTimer[I, O](

@@ -5,16 +5,16 @@
 package akka.javasdk.impl.action
 
 import akka.Done
-
 import scala.concurrent.Await
 import scala.concurrent.Future
 import scala.concurrent.duration._
+
 import akka.actor.testkit.typed.scaladsl.LogCapturing
 import akka.actor.testkit.typed.scaladsl.LoggingTestKit
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import akka.actor.typed.scaladsl.adapter._
 import akka.javasdk.annotations.ComponentId
-import akka.javasdk.impl.JsonMessageCodec
+import akka.javasdk.impl.serialization.JsonSerializer
 import akka.javasdk.impl.timedaction.TimedActionEffectImpl
 import akka.javasdk.impl.timedaction.TimedActionRouter
 import akka.javasdk.impl.timedaction.TimedActionService
@@ -50,12 +50,12 @@ class TimedActionHandlerSpec
   private val serviceDescriptor =
     ActionspecApi.getDescriptor.findServiceByName("ActionSpecService")
   private val serviceName = serviceDescriptor.getFullName
-  private val jsonCodec = new JsonMessageCodec()
+  private val serializer = new JsonSerializer
 
   def create(handler: TimedActionRouter[TestAction]): Actions = {
     new ActionsImpl(
       classicSystem,
-      Map(serviceName -> new TimedActionService[TestAction](classOf[TestAction], jsonCodec, () => new TestAction) {
+      Map(serviceName -> new TimedActionService[TestAction](classOf[TestAction], serializer, () => new TestAction) {
         override def createRouter() = handler
       }),
       new TimerClient {

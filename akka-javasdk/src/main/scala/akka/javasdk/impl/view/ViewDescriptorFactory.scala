@@ -29,7 +29,6 @@ import akka.javasdk.impl.ComponentDescriptorFactory.hasUpdateEffectOutput
 import akka.javasdk.impl.ComponentDescriptorFactory.hasValueEntitySubscription
 import akka.javasdk.impl.ComponentDescriptorFactory.mergeServiceOptions
 import akka.javasdk.impl.ComponentDescriptorFactory.subscribeToEventStream
-import akka.javasdk.impl.JsonMessageCodec
 import akka.javasdk.impl.JwtDescriptorFactory
 import akka.javasdk.impl.JwtDescriptorFactory.buildJWTOptions
 import akka.javasdk.impl.ProtoMessageDescriptors
@@ -49,13 +48,15 @@ import com.google.protobuf.DescriptorProtos.DescriptorProto
 import com.google.protobuf.DescriptorProtos.FieldDescriptorProto
 import kalix.Eventing
 import kalix.MethodOptions
-
 import java.lang.reflect.Parameter
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
 import java.util
 import java.util.Optional
+
 import scala.annotation.tailrec
+
+import akka.javasdk.impl.serialization.JsonSerializer
 
 /**
  * INTERNAL API
@@ -67,7 +68,7 @@ private[impl] object ViewDescriptorFactory extends ComponentDescriptorFactory {
 
   override def buildDescriptorFor(
       component: Class[_],
-      messageCodec: JsonMessageCodec,
+      serializer: JsonSerializer,
       nameGenerator: NameGenerator): ComponentDescriptor = {
 
     val tableUpdaters =
@@ -119,15 +120,15 @@ private[impl] object ViewDescriptorFactory extends ComponentDescriptorFactory {
             else if (hasTypeLevelEventSourcedEntitySubs) {
               val kalixSubscriptionMethods =
                 methodsForTypeLevelESSubscriptions(tableUpdater, tableName, tableProtoMessageName)
-              combineBy("ES", kalixSubscriptionMethods, messageCodec, tableUpdater)
+              combineBy("ES", kalixSubscriptionMethods, serializer, tableUpdater)
             } else if (hasTypeLevelTopicSubs) {
               val kalixSubscriptionMethods =
                 methodsForTypeLevelTopicSubscriptions(tableUpdater, tableName, tableProtoMessageName)
-              combineBy("Topic", kalixSubscriptionMethods, messageCodec, tableUpdater)
+              combineBy("Topic", kalixSubscriptionMethods, serializer, tableUpdater)
             } else if (hasTypeLevelStreamSubs) {
               val kalixSubscriptionMethods =
                 methodsForTypeLevelStreamSubscriptions(tableUpdater, tableName, tableProtoMessageName)
-              combineBy("Stream", kalixSubscriptionMethods, messageCodec, tableUpdater)
+              combineBy("Stream", kalixSubscriptionMethods, serializer, tableUpdater)
             } else
               Seq.empty
           }
@@ -158,7 +159,7 @@ private[impl] object ViewDescriptorFactory extends ComponentDescriptorFactory {
 
     ComponentDescriptor(
       nameGenerator,
-      messageCodec,
+      serializer,
       serviceName,
       serviceOptions = serviceLevelOptions,
       component.getPackageName,

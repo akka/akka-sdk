@@ -13,11 +13,8 @@ import akka.javasdk.impl.ActivatableContext
 import akka.javasdk.impl.AnySupport
 import akka.javasdk.impl.ErrorHandling
 import akka.javasdk.impl.ErrorHandling.BadRequestException
-import akka.javasdk.impl.JsonMessageCodec
-import akka.javasdk.impl.MessageCodec
 import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.Service
-import akka.javasdk.impl.StrictJsonMessageCodec
 import akka.javasdk.impl.WorkflowExceptions.ProtocolException
 import akka.javasdk.impl.WorkflowExceptions.WorkflowException
 import akka.javasdk.impl.WorkflowExceptions.failureMessageForLog
@@ -74,8 +71,8 @@ import kalix.protocol.workflow_entity.{ NoTransition => ProtoNoTransition }
 import kalix.protocol.workflow_entity.{ Pause => ProtoPause }
 import kalix.protocol.workflow_entity.{ StepTransition => ProtoStepTransition }
 import org.slf4j.LoggerFactory
-
 import java.util.Optional
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
@@ -83,20 +80,20 @@ import scala.jdk.OptionConverters._
 import scala.language.existentials
 import scala.util.control.NonFatal
 
+import akka.javasdk.impl.serialization.JsonSerializer
+
 /**
  * INTERNAL API
  */
 @InternalApi
 final class WorkflowService[S, W <: Workflow[S]](
     workflowClass: Class[_],
-    messageCodec: JsonMessageCodec,
+    serializer: JsonSerializer,
     instanceFactory: Function[WorkflowContext, W])
-    extends Service(workflowClass, WorkflowEntities.name, messageCodec) {
+    extends Service(workflowClass, WorkflowEntities.name, serializer) {
 
   def createRouter(context: WorkflowContext) =
     new ReflectiveWorkflowRouter[S, W](instanceFactory(context), componentDescriptor.commandHandlers)
-
-  val strictMessageCodec = new StrictJsonMessageCodec(messageCodec)
 
 }
 
@@ -151,40 +148,44 @@ final class WorkflowImpl(
     }
   }
 
-  private def toRecoverStrategy(messageCodec: MessageCodec)(
+  private def toRecoverStrategy(serializer: JsonSerializer)(
       recoverStrategy: Workflow.RecoverStrategy[_]): RecoverStrategy = {
     RecoverStrategy(
       maxRetries = recoverStrategy.maxRetries,
       failoverTo = Some(
         ProtoStepTransition(
           recoverStrategy.failoverStepName,
-          recoverStrategy.failoverStepInput.toScala.map(messageCodec.encodeScala))))
+          recoverStrategy.failoverStepInput.toScala.map { a =>
+            val bytesPayload = serializer.toBytes(a)
+            AnySupport.toScalaPbAny(bytesPayload)
+          })))
   }
 
   private def toStepConfig(
       name: String,
       timeout: Optional[java.time.Duration],
       recoverStrategy: Option[Workflow.RecoverStrategy[_]],
-      messageCodec: MessageCodec) = {
+      serializer: JsonSerializer) = {
     val stepTimeout = timeout.toScala.map(duration.Duration(_))
-    val stepRecoverStrategy = recoverStrategy.map(toRecoverStrategy(messageCodec))
+    val stepRecoverStrategy = recoverStrategy.map(toRecoverStrategy(serializer))
     StepConfig(name, stepTimeout, stepRecoverStrategy)
   }
 
-  private def toWorkflowConfig(workflowDefinition: WorkflowDef[_], messageCodec: MessageCodec): WorkflowConfig = {
+  private def toWorkflowConfig(workflowDefinition: WorkflowDef[_], serializer: JsonSerializer): WorkflowConfig = {
     val workflowTimeout = workflowDefinition.getWorkflowTimeout.toScala.map(Duration(_))
     val stepConfigs = workflowDefinition.getStepConfigs.asScala
-      .map(c => toStepConfig(c.stepName, c.timeout, c.recoverStrategy.toScala, messageCodec))
+      .map(c => toStepConfig(c.stepName, c.timeout, c.recoverStrategy.toScala, serializer))
       .toSeq
     val stepConfig =
-      toStepConfig(
-        "",
-        workflowDefinition.getStepTimeout,
-        workflowDefinition.getStepRecoverStrategy.toScala,
-        messageCodec)
+      toStepConfig("", workflowDefinition.getStepTimeout, workflowDefinition.getStepRecoverStrategy.toScala, serializer)
 
     val failoverTo = workflowDefinition.getFailoverStepName.toScala.map(stepName => {
-      ProtoStepTransition(stepName, workflowDefinition.getFailoverStepInput.toScala.map(messageCodec.encodeScala))
+      ProtoStepTransition(
+        stepName,
+        workflowDefinition.getFailoverStepInput.toScala.map { a =>
+          val bytesPayload = serializer.toBytes(a)
+          AnySupport.toScalaPbAny(bytesPayload)
+        })
     })
 
     val failoverRecovery =
@@ -203,11 +204,12 @@ final class WorkflowImpl(
 
     val workflowConfig =
       WorkflowStreamOut(
-        WorkflowStreamOut.Message.Config(toWorkflowConfig(router._getWorkflowDefinition(), service.strictMessageCodec)))
+        WorkflowStreamOut.Message.Config(toWorkflowConfig(router._getWorkflowDefinition(), service.serializer)))
 
     init.userState match {
       case Some(state) =>
-        val decoded = service.strictMessageCodec.decodeMessage(state)
+        val bytesPayload = AnySupport.toSpiBytesPayload(state)
+        val decoded = service.serializer.fromBytes(bytesPayload)
         router._internalSetInitState(decoded, init.finished)
       case None => // no initial state
     }
@@ -220,7 +222,9 @@ final class WorkflowImpl(
           persistence match {
             case UpdateState(newState) =>
               router._internalSetInitState(newState, transition.isInstanceOf[End.type])
-              WorkflowEffect.defaultInstance.withUserState(service.strictMessageCodec.encodeScala(newState))
+              val bytesPayload = service.serializer.toBytes(newState)
+              val pbAny = AnySupport.toScalaPbAny(bytesPayload)
+              WorkflowEffect.defaultInstance.withUserState(pbAny)
             // TODO: persistence should be optional, but we must ensure that we don't save it back to null
             // and preferably we should not even send it over the wire.
             case NoPersistence => WorkflowEffect.defaultInstance
@@ -231,7 +235,12 @@ final class WorkflowImpl(
           transition match {
             case StepTransition(stepName, input) =>
               WorkflowEffect.Transition.StepTransition(
-                ProtoStepTransition(stepName, input.map(service.strictMessageCodec.encodeScala)))
+                ProtoStepTransition(
+                  stepName,
+                  input.map { a =>
+                    val bytesPayload = service.serializer.toBytes(a)
+                    AnySupport.toScalaPbAny(bytesPayload)
+                  }))
             case Pause        => WorkflowEffect.Transition.Pause(ProtoPause.defaultInstance)
             case NoTransition => WorkflowEffect.Transition.NoTransition(ProtoNoTransition.defaultInstance)
             case End          => WorkflowEffect.Transition.EndTransition(ProtoEndTransition.defaultInstance)
@@ -241,9 +250,9 @@ final class WorkflowImpl(
           val protoReply =
             reply match {
               case ReplyValue(value, metadata) =>
-                ProtoReply(
-                  payload = Some(service.strictMessageCodec.encodeScala(value)),
-                  metadata = MetadataImpl.toProtocol(metadata))
+                val bytesPayload = service.serializer.toBytes(value)
+                val pbAny = AnySupport.toScalaPbAny(bytesPayload)
+                ProtoReply(payload = Some(pbAny), metadata = MetadataImpl.toProtocol(metadata))
               case NoReply => ProtoReply.defaultInstance
             }
           WorkflowClientAction.defaultInstance.withReply(protoReply)
@@ -300,13 +309,13 @@ final class WorkflowImpl(
               None,
               tracerFactory)
           val timerScheduler =
-            new TimerSchedulerImpl(service.strictMessageCodec, timerClient, context.componentCallMetadata)
+            new TimerSchedulerImpl(timerClient, context.componentCallMetadata)
 
-          val cmd =
-            service.messageCodec.decodeMessage(
-              command.payload.getOrElse(
-                // FIXME smuggling 0 arity method called from component client through here
-                ScalaPbAny.defaultInstance.withTypeUrl(AnySupport.JsonTypeUrlPrefix).withValue(ByteString.empty())))
+          val cmdPayloadPbAny = command.payload.getOrElse(
+            // FIXME smuggling 0 arity method called from component client through here
+            ScalaPbAny.defaultInstance.withTypeUrl(AnySupport.JsonTypeUrlPrefix).withValue(ByteString.empty()))
+          val cmdBytesPayload = AnySupport.toSpiBytesPayload(cmdPayloadPbAny)
+          val cmd = service.serializer.fromBytes(cmdBytesPayload)
 
           val (CommandResult(effect), errorCode) =
             try {
@@ -334,18 +343,19 @@ final class WorkflowImpl(
               None,
               tracerFactory)
           val timerScheduler =
-            new TimerSchedulerImpl(service.strictMessageCodec, timerClient, context.componentCallMetadata)
+            new TimerSchedulerImpl(timerClient, context.componentCallMetadata)
           val stepResponse =
             try {
               executeStep.userState.foreach { state =>
-                val decoded = service.strictMessageCodec.decodeMessage(state)
+                val bytesPayload = AnySupport.toSpiBytesPayload(state)
+                val decoded = service.serializer.fromBytes(bytesPayload)
                 router._internalSetInitState(decoded, finished = false) // here we know that workflow is still running
               }
               router._internalHandleStep(
                 executeStep.commandId,
                 executeStep.input,
                 executeStep.stepName,
-                service.strictMessageCodec,
+                service.serializer,
                 timerScheduler,
                 context,
                 sdkExcutionContext)
@@ -364,7 +374,7 @@ final class WorkflowImpl(
         case Transition(cmd) =>
           val CommandResult(effect) =
             try {
-              router._internalGetNextStep(cmd.stepName, cmd.result.get, service.strictMessageCodec)
+              router._internalGetNextStep(cmd.stepName, cmd.result.get, service.serializer)
             } catch {
               case e: WorkflowException => throw e
               case NonFatal(ex) =>
@@ -378,7 +388,8 @@ final class WorkflowImpl(
         case Message.UpdateState(updateState) =>
           updateState.userState match {
             case Some(state) =>
-              val decoded = service.strictMessageCodec.decodeMessage(state)
+              val bytesPayload = AnySupport.toSpiBytesPayload(state)
+              val decoded = service.serializer.fromBytes(bytesPayload)
               router._internalSetInitState(decoded, updateState.finished)
             case None => // no state
           }

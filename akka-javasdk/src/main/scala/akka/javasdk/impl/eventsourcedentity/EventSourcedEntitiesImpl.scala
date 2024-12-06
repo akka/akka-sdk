@@ -9,12 +9,14 @@ import akka.actor.ActorSystem
 import akka.annotation.InternalApi
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.javasdk.eventsourcedentity.EventSourcedEntityContext
-import akka.javasdk.impl.JsonMessageCodec
 import akka.javasdk.impl.Service
 import akka.javasdk.impl.Settings
+import akka.javasdk.impl.serialization.JsonSerializer
 import akka.stream.scaladsl.Source
 import io.opentelemetry.api.trace.Tracer
 import kalix.protocol.event_sourced_entity._
+
+// FIXME remove
 
 /**
  * INTERNAL API
@@ -22,10 +24,10 @@ import kalix.protocol.event_sourced_entity._
 @InternalApi
 private[impl] final case class EventSourcedEntityService[S, E, ES <: EventSourcedEntity[S, E]](
     eventSourcedEntityClass: Class[_],
-    _messageCodec: JsonMessageCodec,
+    _serializer: JsonSerializer,
     factory: EventSourcedEntityContext => ES,
     snapshotEvery: Int = 0)
-    extends Service(eventSourcedEntityClass, EventSourcedEntities.name, _messageCodec) {
+    extends Service(eventSourcedEntityClass, EventSourcedEntities.name, _serializer) {
 
   def createRouter(context: EventSourcedEntityContext) = ???
 }

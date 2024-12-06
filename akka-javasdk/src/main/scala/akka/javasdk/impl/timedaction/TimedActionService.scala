@@ -5,8 +5,8 @@
 package akka.javasdk.impl.timedaction
 
 import akka.annotation.InternalApi
-import akka.javasdk.impl.JsonMessageCodec
 import akka.javasdk.impl.Service
+import akka.javasdk.impl.serialization.JsonSerializer
 import akka.javasdk.timedaction.TimedAction
 import kalix.protocol.action.Actions
 import org.slf4j.Logger
@@ -18,9 +18,9 @@ import org.slf4j.LoggerFactory
 @InternalApi
 private[impl] class TimedActionService[A <: TimedAction](
     actionClass: Class[A],
-    messageCodec: JsonMessageCodec,
+    _serializer: JsonSerializer,
     val factory: () => A)
-    extends Service(actionClass, Actions.name, messageCodec) {
+    extends Service(actionClass, Actions.name, _serializer) {
   lazy val log: Logger = LoggerFactory.getLogger(actionClass)
 
   def createRouter(): TimedActionRouter[A] =

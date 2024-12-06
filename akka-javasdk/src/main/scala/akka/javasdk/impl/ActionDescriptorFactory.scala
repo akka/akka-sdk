@@ -8,8 +8,8 @@ import akka.javasdk.impl.reflection.ActionHandlerMethod
 import akka.javasdk.impl.reflection.KalixMethod
 import akka.javasdk.impl.reflection.NameGenerator
 import akka.annotation.InternalApi
-import akka.javasdk
 import akka.javasdk.impl.ComponentDescriptorFactory.hasTimedActionEffectOutput
+import akka.javasdk.impl.serialization.JsonSerializer
 
 /**
  * INTERNAL API
@@ -19,7 +19,7 @@ private[impl] object ActionDescriptorFactory extends ComponentDescriptorFactory 
 
   override def buildDescriptorFor(
       component: Class[_],
-      messageCodec: JsonMessageCodec,
+      serializer: JsonSerializer,
       nameGenerator: NameGenerator): ComponentDescriptor = {
 
     val serviceName = nameGenerator.getName(component.getSimpleName)
@@ -32,9 +32,9 @@ private[impl] object ActionDescriptorFactory extends ComponentDescriptorFactory 
       }
       .toIndexedSeq
 
-    javasdk.impl.ComponentDescriptor(
+    ComponentDescriptor(
       nameGenerator,
-      messageCodec,
+      serializer,
       serviceName,
       serviceOptions = None,
       component.getPackageName,

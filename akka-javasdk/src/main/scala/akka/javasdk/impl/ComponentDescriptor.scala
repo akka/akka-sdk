@@ -18,11 +18,12 @@ import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.reflection.ServiceMethod
 import akka.javasdk.impl.reflection.SubscriptionServiceMethod
 import akka.javasdk.impl.reflection.VirtualServiceMethod
-
 import java.lang.reflect.ParameterizedType
+
 import AnySupport.ProtobufEmptyTypeUrl
 import akka.annotation.InternalApi
 import akka.javasdk.annotations.ComponentId
+import akka.javasdk.impl.serialization.JsonSerializer
 import com.google.api.AnnotationsProto
 import com.google.api.HttpRule
 import com.google.protobuf.BytesValue
@@ -47,12 +48,12 @@ import com.google.protobuf.{ Any => JavaPbAny }
 @InternalApi
 private[impl] object ComponentDescriptor {
 
-  def descriptorFor(component: Class[_], messageCodec: JsonMessageCodec): ComponentDescriptor =
-    ComponentDescriptorFactory.getFactoryFor(component).buildDescriptorFor(component, messageCodec, new NameGenerator)
+  def descriptorFor(component: Class[_], serializer: JsonSerializer): ComponentDescriptor =
+    ComponentDescriptorFactory.getFactoryFor(component).buildDescriptorFor(component, serializer, new NameGenerator)
 
   def apply(
       nameGenerator: NameGenerator,
-      messageCodec: JsonMessageCodec,
+      serializer: JsonSerializer,
       serviceName: String,
       serviceOptions: Option[kalix.ServiceOptions],
       packageName: String,
@@ -117,7 +118,7 @@ private[impl] object ComponentDescriptor {
 
       NamedComponentMethod(
         kalixMethod.serviceMethod,
-        messageCodec,
+        serializer,
         grpcMethodName,
         extractors,
         inputMessageName,
@@ -183,7 +184,7 @@ private[impl] object ComponentDescriptor {
   // once we have built the full file descriptor, we can look up for the input message using its name
   private case class NamedComponentMethod(
       serviceMethod: ServiceMethod,
-      messageCodec: JsonMessageCodec,
+      serializer: JsonSerializer,
       grpcMethodName: String,
       extractorCreators: Map[Int, ExtractorCreator],
       inputMessageName: String,
@@ -207,7 +208,10 @@ private[impl] object ComponentDescriptor {
                   meth.getParameterTypes.length match {
                     case 1 =>
                       Array(
-                        new ParameterExtractors.BodyExtractor(messageDescriptor.findFieldByNumber(1), method.inputType))
+                        new ParameterExtractors.BodyExtractor(
+                          messageDescriptor.findFieldByNumber(1),
+                          method.inputType,
+                          serializer))
                     case 0 =>
                       // parameterless method, not extractor needed
                       Array.empty
@@ -220,7 +224,7 @@ private[impl] object ComponentDescriptor {
               }
               .getOrElse(Map.empty)
 
-          CommandHandler(grpcMethodName, messageCodec, messageDescriptor, methodInvokers)
+          CommandHandler(grpcMethodName, serializer, messageDescriptor, methodInvokers)
 
         case method: CombinedSubscriptionServiceMethod =>
           val methodInvokers =
@@ -228,7 +232,7 @@ private[impl] object ComponentDescriptor {
               val parameterExtractors: ParameterExtractorsArray = {
                 meth.getParameterTypes.length match {
                   case 1 =>
-                    Array(new ParameterExtractors.AnyBodyExtractor[AnyRef](meth.getParameterTypes.head, messageCodec))
+                    Array(new ParameterExtractors.AnyBodyExtractor[AnyRef](meth.getParameterTypes.head, serializer))
                   case n =>
                     throw new IllegalStateException(
                       s"Update handler ${method} is expecting $n parameters, should be 1, the update")
@@ -238,7 +242,7 @@ private[impl] object ComponentDescriptor {
               (typeUrl, MethodInvoker(meth, parameterExtractors))
             }
 
-          CommandHandler(grpcMethodName, messageCodec, JavaPbAny.getDescriptor, methodInvokers)
+          CommandHandler(grpcMethodName, serializer, JavaPbAny.getDescriptor, methodInvokers)
 
         case method: SubscriptionServiceMethod =>
           val methodInvokers =
@@ -246,25 +250,25 @@ private[impl] object ComponentDescriptor {
               .map { meth =>
 
                 val parameterExtractors: ParameterExtractorsArray =
-                  Array(ParameterExtractors.AnyBodyExtractor(method.inputType, messageCodec))
+                  Array(ParameterExtractors.AnyBodyExtractor(method.inputType, serializer))
 
-                val typeUrls = messageCodec.typeUrlsFor(method.inputType)
+                val typeUrls = serializer.contentTypesFor(method.inputType)
                 typeUrls.map(_ -> MethodInvoker(meth, parameterExtractors)).toMap
               }
               .getOrElse(Map.empty)
 
-          CommandHandler(grpcMethodName, messageCodec, JavaPbAny.getDescriptor, methodInvokers)
+          CommandHandler(grpcMethodName, serializer, JavaPbAny.getDescriptor, methodInvokers)
 
         case _: VirtualServiceMethod =>
           //java method is empty
-          CommandHandler(grpcMethodName, messageCodec, JavaPbAny.getDescriptor, Map.empty)
+          CommandHandler(grpcMethodName, serializer, JavaPbAny.getDescriptor, Map.empty)
 
         case _: DeleteServiceMethod =>
           val methodInvokers = serviceMethod.javaMethodOpt.map { meth =>
             (ProtobufEmptyTypeUrl, MethodInvoker(meth, Array.empty[ParameterExtractor[InvocationContext, AnyRef]]))
           }.toMap
 
-          CommandHandler(grpcMethodName, messageCodec, Empty.getDescriptor, methodInvokers)
+          CommandHandler(grpcMethodName, serializer, Empty.getDescriptor, methodInvokers)
 
         case method: ActionHandlerMethod =>
           val messageDescriptor = fileDescriptor.findMessageTypeByName(inputMessageName)
@@ -279,7 +283,10 @@ private[impl] object ComponentDescriptor {
                 val parameterExtractors: ParameterExtractorsArray =
                   if (meth.getParameterTypes.length == 1)
                     Array(
-                      new ParameterExtractors.BodyExtractor(messageDescriptor.findFieldByNumber(1), method.inputType))
+                      new ParameterExtractors.BodyExtractor(
+                        messageDescriptor.findFieldByNumber(1),
+                        method.inputType,
+                        serializer))
                   else
                     Array.empty // parameterless method, not extractor needed
 
@@ -287,7 +294,7 @@ private[impl] object ComponentDescriptor {
               }
               .getOrElse(Map.empty)
 
-          CommandHandler(grpcMethodName, messageCodec, messageDescriptor, methodInvokers)
+          CommandHandler(grpcMethodName, serializer, messageDescriptor, methodInvokers)
       }
 
     }

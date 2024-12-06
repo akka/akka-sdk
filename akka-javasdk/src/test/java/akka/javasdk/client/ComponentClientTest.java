@@ -6,6 +6,7 @@ package akka.javasdk.client;
 
 import akka.NotUsed;
 import akka.javasdk.impl.*;
+import akka.javasdk.impl.serialization.JsonSerializer;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.DynamicMessage;
@@ -40,7 +41,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class ComponentClientTest {
 
-  private final JsonMessageCodec messageCodec = new JsonMessageCodec();
+  private final JsonSerializer serializer = new JsonSerializer();
   private ComponentClientImpl componentClient;
 
   @BeforeEach
@@ -80,7 +81,7 @@ class ComponentClientTest {
   @Test
   public void shouldReturnDeferredCallForCallWithNoParameter() throws InvalidProtocolBufferException {
     //given
-    var action = descriptorFor(ActionWithoutParam.class, messageCodec);
+    var action = descriptorFor(ActionWithoutParam.class, serializer);
     var targetMethod = action.serviceDescriptor().findMethodByName("Message");
 
     //when
@@ -95,7 +96,7 @@ class ComponentClientTest {
   @Test
   public void shouldReturnDeferredCallForCallWithOneParameter() throws InvalidProtocolBufferException {
     //given
-    var action = descriptorFor(ActionWithoutParam.class, messageCodec);
+    var action = descriptorFor(ActionWithoutParam.class, serializer);
     var targetMethod = action.serviceDescriptor().findMethodByName("Message");
 
     //when
@@ -111,7 +112,7 @@ class ComponentClientTest {
   @Test
   public void shouldReturnDeferredCallWithTraceParent() {
     //given
-    var action = descriptorFor(ActionWithoutParam.class, messageCodec);
+    var action = descriptorFor(ActionWithoutParam.class, serializer);
     String traceparent = "074c4c8d-d87c-4573-847f-77951ce4e0a4";
     Metadata metadata = MetadataImpl.Empty().set(Telemetry.TRACE_PARENT_KEY(), traceparent);
     //when
@@ -128,7 +129,7 @@ class ComponentClientTest {
   @Test
   public void shouldReturnDeferredCallForValueEntity() throws InvalidProtocolBufferException {
     //given
-    var counterVE = descriptorFor(Counter.class, messageCodec);
+    var counterVE = descriptorFor(Counter.class, serializer);
     var targetMethod = counterVE.serviceDescriptor().findMethodByName("RandomIncrease");
     Integer param = 10;
 
@@ -150,7 +151,7 @@ class ComponentClientTest {
   @Test
   public void shouldReturnNonDeferrableCallForViewRequest() throws InvalidProtocolBufferException {
     //given
-    var view = descriptorFor(UserByEmailWithGet.class, messageCodec);
+    var view = descriptorFor(UserByEmailWithGet.class, serializer);
     var targetMethod = view.serviceDescriptor().findMethodByName("GetUser");
     String email = "email@example.com";
 
@@ -164,9 +165,9 @@ class ComponentClientTest {
 
   }
 
-  private ComponentDescriptor descriptorFor(Class<?> clazz, JsonMessageCodec messageCodec) {
+  private ComponentDescriptor descriptorFor(Class<?> clazz, JsonSerializer serializer) {
     Validations.validate(clazz).failIfInvalid();
-    return ComponentDescriptor.descriptorFor(clazz, messageCodec);
+    return ComponentDescriptor.descriptorFor(clazz, serializer);
   }
 
   private <T> T getBody(Descriptors.MethodDescriptor targetMethod, Any message, Class<T> clazz) throws InvalidProtocolBufferException {

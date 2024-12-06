@@ -517,8 +517,8 @@ public class TestKit {
       componentClient = new ComponentClientImpl(componentClients, Option.empty(), runtimeActorSystem.executionContext());
       selfHttpClient = new HttpClientImpl(runtimeActorSystem, "http://" + proxyHost + ":" + proxyPort);
       httpClientProvider = startupContext.httpClientProvider();
-      var codec = new JsonMessageCodec();
-      timerScheduler = new TimerSchedulerImpl(codec, componentClients.timerClient(), Metadata.EMPTY);
+      timerScheduler = new TimerSchedulerImpl(componentClients.timerClient(), Metadata.EMPTY);
+      var codec = new JsonMessageCodec(); // FIXME replace with JsonSerializer
       this.messageBuilder = new EventingTestKit.MessageBuilder(codec);
 
     } catch (Exception ex) {

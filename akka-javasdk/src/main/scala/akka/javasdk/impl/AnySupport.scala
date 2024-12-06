@@ -204,6 +204,23 @@ private[akka] object AnySupport {
 
   def extractBytes(bytes: ByteString): ByteString = bytesToPrimitive(BytesPrimitive, bytes)
 
+  // FIXME we should not need these conversions
+  def toSpiBytesPayload(pbAny: ScalaPbAny): BytesPayload = {
+    if (pbAny.typeUrl.startsWith(DefaultTypeUrlPrefix))
+      new BytesPayload(ByteStringUtils.toAkkaByteStringUnsafe(pbAny.value), pbAny.typeUrl)
+    else
+      new BytesPayload(decodeLengthEncodedByteArrayToAkkaByteString(pbAny.value), pbAny.typeUrl)
+  }
+
+  private def decodeLengthEncodedByteArrayToAkkaByteString(value: ByteString): akka.util.ByteString =
+    if (value.isEmpty) akka.util.ByteString.empty
+    else {
+      val codedInput = value.newCodedInput()
+      codedInput.readTag()
+      ByteStringUtils.toAkkaByteStringUnsafe(codedInput.readBytes())
+    }
+
+  // FIXME we should not need these conversions
   def toScalaPbAny(bytesPayload: BytesPayload): ScalaPbAny = {
     if (bytesPayload.contentType.startsWith(DefaultTypeUrlPrefix))
       ScalaPbAny(

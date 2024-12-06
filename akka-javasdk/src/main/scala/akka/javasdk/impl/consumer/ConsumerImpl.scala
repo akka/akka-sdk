@@ -13,8 +13,6 @@ import akka.annotation.InternalApi
 import akka.javasdk.consumer.Consumer
 import akka.javasdk.impl.ComponentDescriptor
 import akka.javasdk.impl.ErrorHandling
-import akka.javasdk.impl.JsonMessageCodec
-import akka.javasdk.impl.MessageCodec
 import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.telemetry.Telemetry
 import akka.javasdk.impl.consumer.ConsumerEffectImpl.AsyncEffect
@@ -22,6 +20,7 @@ import akka.javasdk.impl.consumer.ConsumerEffectImpl.IgnoreEffect
 import akka.javasdk.impl.consumer.ConsumerEffectImpl.ReplyEffect
 import akka.javasdk.consumer.MessageContext
 import akka.javasdk.consumer.MessageEnvelope
+import akka.javasdk.impl.serialization.JsonSerializer
 import akka.runtime.sdk.spi.SpiConsumer
 import akka.runtime.sdk.spi.SpiConsumer.Message
 import akka.runtime.sdk.spi.SpiConsumer.Effect
@@ -42,7 +41,7 @@ private[impl] final class ConsumerImpl[C <: Consumer](
     timerClient: TimerClient,
     sdkExecutionContext: ExecutionContext,
     tracerFactory: () => Tracer,
-    messageCodec: JsonMessageCodec,
+    serializer: JsonSerializer,
     ignoreUnknown: Boolean)
     extends SpiConsumer {
 
@@ -51,7 +50,7 @@ private[impl] final class ConsumerImpl[C <: Consumer](
   private implicit val executionContext: ExecutionContext = sdkExecutionContext
   implicit val system: ActorSystem = _system
 
-  private val componentDescriptor = ComponentDescriptor.descriptorFor(consumerClass, messageCodec)
+  private val componentDescriptor = ComponentDescriptor.descriptorFor(consumerClass, serializer)
 
   // FIXME remove router altogether
   private def createRouter(): ReflectiveConsumerRouter[C] =
@@ -63,10 +62,9 @@ private[impl] final class ConsumerImpl[C <: Consumer](
     span.foreach(s => MDC.put(Telemetry.TRACE_ID, s.getSpanContext.getTraceId))
     val fut =
       try {
-        val messageContext =
-          createMessageContext(message, messageCodec, span)
-        val decodedPayload = messageCodec.decodeMessage(
-          message.payload.getOrElse(throw new IllegalArgumentException("No message payload")))
+        val messageContext = createMessageContext(message, span)
+        val decodedPayload =
+          serializer.fromBytes(message.payload.getOrElse(throw new IllegalArgumentException("No message payload")))
         val effect = createRouter()
           .handleUnary(message.name, MessageEnvelope.of(decodedPayload, messageContext.metadata()), messageContext)
         toSpiEffect(message, effect)
@@ -83,10 +81,10 @@ private[impl] final class ConsumerImpl[C <: Consumer](
     }
   }
 
-  private def createMessageContext(message: Message, messageCodec: MessageCodec, span: Option[Span]): MessageContext = {
+  private def createMessageContext(message: Message, span: Option[Span]): MessageContext = {
     val metadata = MetadataImpl.of(message.metadata)
     val updatedMetadata = span.map(metadata.withTracing).getOrElse(metadata)
-    new MessageContextImpl(updatedMetadata, messageCodec, timerClient, tracerFactory, span)
+    new MessageContextImpl(updatedMetadata, timerClient, tracerFactory, span)
   }
 
   private def toSpiEffect(message: Message, effect: Consumer.Effect): Future[Effect] = {
@@ -95,7 +93,7 @@ private[impl] final class ConsumerImpl[C <: Consumer](
         Future.successful(
           new Effect(
             ignore = false,
-            reply = Some(messageCodec.encodeScala(msg)),
+            reply = Some(serializer.toBytes(msg)),
             metadata = MetadataImpl.toSpi(metadata),
             error = None))
       case AsyncEffect(futureEffect) =>

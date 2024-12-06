@@ -7,17 +7,18 @@ package akka.javasdk.impl.workflow
 import java.util.Optional
 import java.util.concurrent.CompletionStage
 import java.util.function.{ Function => JFunc }
+
 import scala.jdk.FutureConverters.CompletionStageOps
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.OptionConverters.RichOptional
+
 import com.google.protobuf.any.{ Any => ScalaPbAny }
 import akka.javasdk.impl.WorkflowExceptions.WorkflowException
 import WorkflowRouter.CommandHandlerNotFound
 import WorkflowRouter.CommandResult
 import WorkflowRouter.WorkflowStepNotFound
 import WorkflowRouter.WorkflowStepNotSupported
-import akka.javasdk.impl.MessageCodec
 import akka.javasdk.workflow.CommandContext
 import akka.javasdk.workflow.Workflow
 import Workflow.AsyncCallStep
@@ -27,6 +28,7 @@ import Workflow.WorkflowDef
 import akka.annotation.InternalApi
 import akka.javasdk.JsonSupport
 import akka.javasdk.impl.AnySupport
+import akka.javasdk.impl.serialization.JsonSerializer
 import akka.javasdk.timer.TimerScheduler
 import kalix.protocol.workflow_entity.StepExecuted
 import kalix.protocol.workflow_entity.StepExecutionFailed
@@ -116,12 +118,13 @@ abstract class WorkflowRouter[S, W <: Workflow[S]](protected val workflow: W) {
 
   // in same cases, the runtime may send a message with typeUrl set to object.
   // if that's the case, we need to patch the message using the typeUrl from the expected input class
-  private def decodeInput(messageCodec: MessageCodec, result: ScalaPbAny, expectedInputClass: Class[_]) = {
+  private def decodeInput(serializer: JsonSerializer, result: ScalaPbAny, expectedInputClass: Class[_]) = {
     if ((AnySupport.isJson(result) && result.typeUrl.endsWith(
         "/object")) || result.typeUrl == AnySupport.JsonTypeUrlPrefix) {
-      JsonSupport.decodeJson(expectedInputClass, result)
+      JsonSupport.decodeJson(expectedInputClass, result) // FIXME use serializer
     } else {
-      messageCodec.decodeMessage(result)
+      val bytesPayload = AnySupport.toSpiBytesPayload(result)
+      serializer.fromBytes(bytesPayload)
     }
   }
 
@@ -131,7 +134,7 @@ abstract class WorkflowRouter[S, W <: Workflow[S]](protected val workflow: W) {
       commandId: Long,
       input: Option[ScalaPbAny],
       stepName: String,
-      messageCodec: MessageCodec,
+      serializer: JsonSerializer,
       timerScheduler: TimerScheduler,
       commandContext: CommandContext,
       executionContext: ExecutionContext): Future[StepResponse] = {
@@ -149,7 +152,7 @@ abstract class WorkflowRouter[S, W <: Workflow[S]](protected val workflow: W) {
 
       case Some(call: AsyncCallStep[_, _, _]) =>
         val decodedInput = input match {
-          case Some(inputValue) => decodeInput(messageCodec, inputValue, call.callInputClass)
+          case Some(inputValue) => decodeInput(serializer, inputValue, call.callInputClass)
           case None             => null // to meet a signature of supplier expressed as a function
         }
 
@@ -160,7 +163,8 @@ abstract class WorkflowRouter[S, W <: Workflow[S]](protected val workflow: W) {
 
         future
           .map { res =>
-            val encoded = messageCodec.encodeScala(res)
+            val bytesPayload = serializer.toBytes(res)
+            val encoded = AnySupport.toScalaPbAny(bytesPayload)
             val executedRes = StepExecuted(Some(encoded))
 
             StepResponse(commandId, stepName, StepResponse.Response.Executed(executedRes))
@@ -175,7 +179,7 @@ abstract class WorkflowRouter[S, W <: Workflow[S]](protected val workflow: W) {
 
   }
 
-  def _internalGetNextStep(stepName: String, result: ScalaPbAny, messageCodec: MessageCodec): CommandResult = {
+  def _internalGetNextStep(stepName: String, result: ScalaPbAny, serializer: JsonSerializer): CommandResult = {
 
     workflow._internalSetCurrentState(stateOrEmpty())
     val workflowDef = workflow.definition()
@@ -185,7 +189,7 @@ abstract class WorkflowRouter[S, W <: Workflow[S]](protected val workflow: W) {
         val effect =
           call.transitionFunc
             .asInstanceOf[JFunc[Any, Effect[Any]]]
-            .apply(decodeInput(messageCodec, result, call.transitionInputClass))
+            .apply(decodeInput(serializer, result, call.transitionInputClass))
 
         CommandResult(effect)
 
@@ -193,7 +197,7 @@ abstract class WorkflowRouter[S, W <: Workflow[S]](protected val workflow: W) {
         val effect =
           call.transitionFunc
             .asInstanceOf[JFunc[Any, Effect[Any]]]
-            .apply(decodeInput(messageCodec, result, call.transitionInputClass))
+            .apply(decodeInput(serializer, result, call.transitionInputClass))
 
         CommandResult(effect)
 

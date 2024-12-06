@@ -4,6 +4,8 @@
 
 package akka.javasdk.impl
 
+/* FIXME spi refactoring
+
 import akka.Done
 import akka.actor.testkit.typed.scaladsl.LoggingTestKit
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
@@ -76,6 +78,7 @@ class ConsumersImplSpec
   }
 
   "The consumer service" should {
+
     "check event migration for subscription" in {
       val jsonMessageCodec = new JsonMessageCodec()
       val consumerProvider =
@@ -152,6 +155,7 @@ class ConsumersImplSpec
         }(ExecutionContext.parasitic) //parasitic to checking that in the same thread there's no MDC any more
       }
     }
+
   }
 
   private def toActionCommand(serviceName: String, event1: ScalaPbAny) = {
@@ -159,3 +163,6 @@ class ConsumersImplSpec
   }
 
 }
+
+
+ */

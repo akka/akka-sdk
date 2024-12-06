@@ -10,28 +10,66 @@ import scala.util.control.NonFatal
 
 import akka.actor.ActorSystem
 import akka.annotation.InternalApi
+import akka.javasdk.Metadata
+import akka.javasdk.Tracing
+import akka.javasdk.impl.AbstractContext
 import akka.javasdk.impl.ComponentDescriptor
 import akka.javasdk.impl.ErrorHandling
-import akka.javasdk.impl.JsonMessageCodec
-import akka.javasdk.impl.MessageCodec
 import akka.javasdk.impl.MetadataImpl
-import akka.javasdk.impl.action.CommandContextImpl
+import akka.javasdk.impl.serialization.JsonSerializer
+import akka.javasdk.impl.telemetry.SpanTracingImpl
 import akka.javasdk.impl.telemetry.Telemetry
 import akka.javasdk.impl.timedaction.TimedActionEffectImpl.AsyncEffect
 import akka.javasdk.impl.timedaction.TimedActionEffectImpl.ErrorEffect
 import akka.javasdk.impl.timedaction.TimedActionEffectImpl.ReplyEffect
+import akka.javasdk.impl.timer.TimerSchedulerImpl
 import akka.javasdk.timedaction.CommandContext
 import akka.javasdk.timedaction.CommandEnvelope
 import akka.javasdk.timedaction.TimedAction
+import akka.javasdk.timer.TimerScheduler
 import akka.runtime.sdk.spi.SpiTimedAction
 import akka.runtime.sdk.spi.SpiTimedAction.Command
 import akka.runtime.sdk.spi.SpiTimedAction.Effect
 import akka.runtime.sdk.spi.TimerClient
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.Tracer
+import kalix.protocol.component.MetadataEntry
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
+
+object TimedActionImpl {
+
+  /**
+   * INTERNAL API
+   */
+  class CommandContextImpl(
+      override val metadata: Metadata,
+      timerClient: TimerClient,
+      tracerFactory: () => Tracer,
+      span: Option[Span])
+      extends AbstractContext
+      with CommandContext {
+
+    val timers: TimerScheduler = new TimerSchedulerImpl(timerClient, componentCallMetadata)
+
+    override def componentCallMetadata: MetadataImpl = {
+      if (metadata.has(Telemetry.TRACE_PARENT_KEY)) {
+        MetadataImpl.of(
+          List(
+            MetadataEntry(
+              Telemetry.TRACE_PARENT_KEY,
+              MetadataEntry.Value.StringValue(metadata.get(Telemetry.TRACE_PARENT_KEY).get()))))
+      } else {
+        MetadataImpl.Empty
+      }
+    }
+
+    override def tracing(): Tracing = new SpanTracingImpl(span, tracerFactory)
+  }
+
+  final case class CommandEnvelopeImpl[T](payload: T, metadata: Metadata) extends CommandEnvelope[T]
+}
 
 /** EndMarker */
 @InternalApi
@@ -42,15 +80,16 @@ private[impl] final class TimedActionImpl[TA <: TimedAction](
     timerClient: TimerClient,
     sdkExecutionContext: ExecutionContext,
     tracerFactory: () => Tracer,
-    messageCodec: JsonMessageCodec)
+    serializer: JsonSerializer)
     extends SpiTimedAction {
+  import TimedActionImpl.CommandContextImpl
 
   private val log: Logger = LoggerFactory.getLogger(timedActionClass)
 
   private implicit val executionContext: ExecutionContext = sdkExecutionContext
   implicit val system: ActorSystem = _system
 
-  private val componentDescriptor = ComponentDescriptor.descriptorFor(timedActionClass, messageCodec)
+  private val componentDescriptor = ComponentDescriptor.descriptorFor(timedActionClass, serializer)
 
   // FIXME remove router altogether
   private def createRouter(): ReflectiveTimedActionRouter[TA] =
@@ -62,10 +101,9 @@ private[impl] final class TimedActionImpl[TA <: TimedAction](
     span.foreach(s => MDC.put(Telemetry.TRACE_ID, s.getSpanContext.getTraceId))
     val fut =
       try {
-        val commandContext =
-          createCommandContext(command, messageCodec, span)
-        val decodedPayload = messageCodec.decodeMessage(
-          command.payload.getOrElse(throw new IllegalArgumentException("No command payload")))
+        val commandContext = createCommandContext(command, span)
+        val decodedPayload =
+          serializer.fromBytes(command.payload.getOrElse(throw new IllegalArgumentException("No command payload")))
         val effect = createRouter()
           .handleUnary(command.name, CommandEnvelope.of(decodedPayload, commandContext.metadata()), commandContext)
         toSpiEffect(command, effect)
@@ -82,10 +120,10 @@ private[impl] final class TimedActionImpl[TA <: TimedAction](
     }
   }
 
-  private def createCommandContext(command: Command, messageCodec: MessageCodec, span: Option[Span]): CommandContext = {
+  private def createCommandContext(command: Command, span: Option[Span]): CommandContext = {
     val metadata = MetadataImpl.of(command.metadata)
     val updatedMetadata = span.map(metadata.withTracing).getOrElse(metadata)
-    new CommandContextImpl(updatedMetadata, messageCodec, timerClient, tracerFactory, span)
+    new CommandContextImpl(updatedMetadata, timerClient, tracerFactory, span)
   }
 
   private def toSpiEffect(command: Command, effect: TimedAction.Effect): Future[Effect] = {

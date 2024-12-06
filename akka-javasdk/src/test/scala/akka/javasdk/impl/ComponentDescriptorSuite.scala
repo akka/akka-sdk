@@ -4,28 +4,24 @@
 
 package akka.javasdk.impl
 
-import akka.javasdk.impl.CommandHandler
-import akka.javasdk.impl.ComponentDescriptor
-import akka.javasdk.impl.JsonMessageCodec
-import akka.javasdk.impl.ProtoDescriptorRenderer
-import akka.javasdk.impl.Validations
-
 import scala.reflect.ClassTag
+
+import akka.javasdk.impl.Validations.Invalid
+import akka.javasdk.impl.Validations.Valid
+import akka.javasdk.impl.serialization.JsonSerializer
 import com.google.api.AnnotationsProto
 import com.google.api.HttpRule
 import com.google.protobuf.Descriptors
 import com.google.protobuf.Descriptors.FieldDescriptor.JavaType
 import kalix.MethodOptions
 import kalix.ServiceOptions
-import akka.javasdk.impl.Validations.Invalid
-import akka.javasdk.impl.Validations.Valid
 import org.scalatest.Assertion
 import org.scalatest.matchers.should.Matchers
 
 trait ComponentDescriptorSuite extends Matchers {
 
   def descriptorFor[T](implicit ev: ClassTag[T]): ComponentDescriptor =
-    ComponentDescriptor.descriptorFor(ev.runtimeClass, new JsonMessageCodec)
+    ComponentDescriptor.descriptorFor(ev.runtimeClass, new JsonSerializer)
 
   def assertDescriptor[E](assertFunc: ComponentDescriptor => Unit)(implicit ev: ClassTag[E]): Unit = {
     val validation = Validations.validate(ev.runtimeClass)

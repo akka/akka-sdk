@@ -7,7 +7,6 @@ package akka.javasdk.impl.reflection
 import akka.javasdk.JsonSupport
 import akka.javasdk.impl.ComponentDescriptor
 import akka.javasdk.impl.InvocationContext
-import akka.javasdk.impl.JsonMessageCodec
 import scala.reflect.ClassTag
 
 import com.google.protobuf.ByteString
@@ -15,6 +14,7 @@ import com.google.protobuf.DynamicMessage
 import com.google.protobuf.any.{ Any => ScalaPbAny }
 import com.google.protobuf.{ Any => JavaPbAny }
 import akka.javasdk.impl.reflection.ParameterExtractors.BodyExtractor
+import akka.javasdk.impl.serialization.JsonSerializer
 import akka.javasdk.testmodels.action.EchoAction
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -22,7 +22,7 @@ import org.scalatest.wordspec.AnyWordSpec
 class ParameterExtractorsSpec extends AnyWordSpec with Matchers {
 
   def descriptorFor[T](implicit ev: ClassTag[T]): ComponentDescriptor =
-    ComponentDescriptor.descriptorFor(ev.runtimeClass, new JsonMessageCodec)
+    ComponentDescriptor.descriptorFor(ev.runtimeClass, new JsonSerializer)
 
   "BodyExtractor" should {
 
