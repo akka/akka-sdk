@@ -8,7 +8,7 @@ import shoppingcart.domain.ShoppingCart;
 import shoppingcart.domain.ShoppingCart.LineItem;
 
 // tag::sample-it[]
-public class IntegrationTest extends TestKitSupport { // <1>
+public class ShoppingCartIntegrationTest extends TestKitSupport { // <1>
 
   @Test
   public void createAndManageCart() {

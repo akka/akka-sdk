@@ -2,7 +2,6 @@ package counter.application;
 
 import akka.http.javadsl.model.ContentTypes;
 import akka.http.javadsl.model.StatusCodes;
-import akka.javasdk.http.HttpClient;
 import akka.javasdk.testkit.TestKitSupport;
 import akka.javasdk.testkit.TestKit;
 import org.awaitility.Awaitility;

@@ -73,12 +73,6 @@
 
 
     <build>
-        <resources>
-            <resource>
-                <directory>${basedir}/src/main/resources</directory>
-            </resource>
-        </resources>
-
         <extensions>
             <extension>
                 <groupId>kr.motd.maven</groupId>
@@ -284,7 +278,28 @@
                         </systemPropertyVariables>
                     </configuration>
                 </plugin>
-
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-failsafe-plugin</artifactId>
+                    <version>${maven-failsafe-plugin.version}</version>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>integration-test</goal>
+                                <goal>verify</goal>
+                            </goals>
+                            <configuration>
+                                <includes>
+                                    <include>**/*IntegrationTest.java</include>
+                                    <include>**/*IT.java</include>
+                                    <include>**/IT*.java</include>
+                                    <include>**/*ITCase.java</include>
+                                </includes>
+                                <argLine>-Dlogback.configurationFile=${logback.configurationFile} -Dakka.javasdk.dev-mode.project-artifact-id=${project.artifactId}</argLine>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-deploy-plugin</artifactId>
@@ -359,36 +374,30 @@
     <profiles>
 
         <profile>
-            <!-- run Integration Tests in src/it/java with `mvn verify -Pit`-->
             <id>it</id>
             <build>
                 <plugins>
                     <plugin>
-                        <!-- run *IntegrationTest with failsafe -->
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-failsafe-plugin</artifactId>
-                        <version>${maven-failsafe-plugin.version}</version>
+                        <groupId>org.codehaus.gmaven</groupId>
+                        <artifactId>groovy-maven-plugin</artifactId>
+                        <version>2.1.1</version>
                         <executions>
                             <execution>
+                                <phase>integration-test</phase>
                                 <goals>
-                                    <goal>integration-test</goal>
-                                    <goal>verify</goal>
+                                    <goal>execute</goal>
                                 </goals>
                                 <configuration>
-                                    <includes>
-                                        <include>**/*IntegrationTest</include>
-                                    </includes>
-                                    <argLine>-Dlogback.configurationFile=${logback.configurationFile} -Dakka.javasdk.dev-mode.project-artifact-id=${project.artifactId}</argLine>
+                                    <source>
+                                        log.warn('This profile is deprecated. It will be removed in future versions. Integration tests only need `mvn verify` to run.')
+                                    </source>
                                 </configuration>
                             </execution>
                         </executions>
-                        <configuration>
-                            <classesDirectory>${project.build.outputDirectory}</classesDirectory>
-                        </configuration>
                     </plugin>
                 </plugins>
             </build>
-        </profile>        
+        </profile>
 
         <profile>
             <id>clean-on-missing-descriptor</id>
