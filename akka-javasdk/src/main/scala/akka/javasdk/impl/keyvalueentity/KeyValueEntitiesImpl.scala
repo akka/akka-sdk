@@ -168,8 +168,10 @@ private[impl] final class KeyValueEntitiesImpl(
             val cmdPayloadPbAny = command.payload.getOrElse(
               // FIXME smuggling 0 arity method called from component client through here
               ScalaPbAny.defaultInstance.withTypeUrl(AnySupport.JsonTypeUrlPrefix).withValue(ByteString.empty()))
-            val cmdBytesPayload = AnySupport.toSpiBytesPayload(cmdPayloadPbAny)
-            val cmd = service.serializer.fromBytes(cmdBytesPayload)
+            // FIXME shall we deserialize here or in the router? the router needs the contentType as well.
+//            val cmdBytesPayload = AnySupport.toSpiBytesPayload(cmdPayloadPbAny)
+//            val cmd = service.serializer.fromBytes(cmdBytesPayload)
+            val cmd = cmdPayloadPbAny
 
             val context =
               new CommandContextImpl(thisEntityId, command.name, command.id, metadata, span, tracerFactory)

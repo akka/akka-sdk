@@ -16,9 +16,15 @@ import kalix.protocol.component
 @InternalApi
 private[impl] object EffectSupport {
 
-  def asProtocol(messageReply: MessageReplyImpl[JavaPbAny]): component.Reply =
-    component.Reply(
-      Some(ScalaPbAny.fromJavaProto(messageReply.message)),
-      MetadataImpl.toProtocol(messageReply.metadata))
+  def asProtocol(messageReply: MessageReplyImpl[_]): component.Reply = {
+    val scalaPbAny =
+      messageReply.message match {
+        case pb: ScalaPbAny => pb
+        case pb: JavaPbAny  => ScalaPbAny.fromJavaProto(pb)
+        case other          => throw new IllegalStateException(s"Expected PbAny, but was [${other.getClass.getName}]")
+      }
+
+    component.Reply(Some(scalaPbAny), MetadataImpl.toProtocol(messageReply.metadata))
+  }
 
 }

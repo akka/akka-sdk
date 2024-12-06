@@ -99,8 +99,10 @@ final class ViewsImpl(_services: Map[String, ViewService[_]], sdkDispatcherName:
                 }
 
               val commandName = receiveEvent.commandName
-              val bytesPayload = AnySupport.toSpiBytesPayload(receiveEvent.getPayload)
-              val msg = service.serializer.fromBytes(bytesPayload)
+              // FIXME shall we deserialize here or in the router? the router needs the contentType as well.
+//              val bytesPayload = AnySupport.toSpiBytesPayload(receiveEvent.getPayload)
+//              val msg = service.serializer.fromBytes(bytesPayload)
+              val msg = receiveEvent.getPayload
               val metadata = MetadataImpl.of(receiveEvent.metadata.map(_.entries.toVector).getOrElse(Nil))
               val addedToMDC = metadata.traceId match {
                 case Some(traceId) =>

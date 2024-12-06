@@ -6,7 +6,6 @@ package akka.javasdk.impl.effect
 
 import akka.annotation.InternalApi
 import akka.javasdk.Metadata
-import com.google.protobuf.{ Any => JavaPbAny }
 import kalix.protocol.component.ClientAction
 
 /**
@@ -16,7 +15,7 @@ import kalix.protocol.component.ClientAction
 private[javasdk] sealed trait SecondaryEffectImpl {
   final def replyToClientAction(commandId: Long): Option[ClientAction] = {
     this match {
-      case message: MessageReplyImpl[JavaPbAny] @unchecked =>
+      case message: MessageReplyImpl[_] =>
         Some(ClientAction(ClientAction.Action.Reply(EffectSupport.asProtocol(message))))
       case failure: ErrorReplyImpl =>
         Some(
