@@ -234,9 +234,9 @@ In this example:
 To test this flow, we will take advantage of the TestKit to be able to push commands into the `event-commands` topic and check what messages are produced to topic `counter-events`.
 
 [source,java]
-.{sample-base-url}/event-sourced-counter-brokers/src/it/java/counter/application/CounterIntegrationTest.java[CounterIntegrationTest.java]
+.{sample-base-url}/event-sourced-counter-brokers/src/test/java/counter/application/CounterIT.java[CounterIT.java]
 ----
-include::example$event-sourced-counter-brokers/src/it/java/counter/application/CounterIntegrationTest.java[tags=class;test-topic]
+include::example$event-sourced-counter-brokers/src/test/java/counter/application/CounterIT.java[tags=class;test-topic]
 ----
 <1> Use the TestKitSupport class.
 <2> Get a `IncomingMessages` for topic named `counter-commands` and `OutgoingMessages` for `counter-events` from the TestKit.
@@ -251,9 +251,9 @@ TIP: In the example above we take advantage of the TestKit to serialize / deseri
 Before running your test, make sure to configure the TestKit correctly.
 
 [source, java]
-.{sample-base-url}/event-sourced-counter-brokers/src/it/java/counter/application/CounterIntegrationTest.java[CounterIntegrationTest.java]
+.{sample-base-url}/event-sourced-counter-brokers/src/test/java/counter/application/CounterIT.java[CounterIT.java]
 ----
-include::example$event-sourced-counter-brokers/src/it/java/counter/application/CounterIntegrationTest.java[tags=eventing-config]
+include::example$event-sourced-counter-brokers/src/test/java/counter/application/CounterIT.java[tags=eventing-config]
 ----
 <1> Mock incoming messages from the `counter-commands` topic.
 <2> Mock outgoing messages from the `counter-events` topic.
@@ -263,9 +263,9 @@ include::example$event-sourced-counter-brokers/src/it/java/counter/application/C
 Typically, messages are published with associated metadata. If you want to construct your own `Metadata` to be consumed by a service or make sure the messages published out of your service have specific metadata attached, you can do so using the TestKit, as shown below.
 
 [source,java,indent=0]
-.{sample-base-url}/event-sourced-counter-brokers/src/it/java/counter/application/CounterIntegrationTest.java[CounterIntegrationTest.java]
+.{sample-base-url}/event-sourced-counter-brokers/src/test/java/counter/application/CounterIT.java[CounterIT.java]
 ----
-include::example$event-sourced-counter-brokers/src/it/java/counter/application/CounterIntegrationTest.java[tags=test-topic-metadata]
+include::example$event-sourced-counter-brokers/src/test/java/counter/application/CounterIT.java[tags=test-topic-metadata]
 ----
 <1> Build a `CloudEvent` object with the 3 required attributes, respectively: `id`, `source` and `type`.
 <2> Add the subject to which the message is related, that is the `counterId`.
@@ -286,9 +286,9 @@ As an alternative, you can consider using different test suites which will use i
 
 
 [source,java,indent=0]
-.{sample-base-url}/event-sourced-counter-brokers/src/it/java/counter/application/CounterIntegrationTest.java[CounterIntegrationTest.java]
+.{sample-base-url}/event-sourced-counter-brokers/src/test/java/counter/application/CounterIT.java[CounterIT.java]
 ----
-include::example$event-sourced-counter-brokers/src/it/java/counter/application/CounterIntegrationTest.java[tags=clear-topics]
+include::example$event-sourced-counter-brokers/src/test/java/counter/application/CounterIT.java[tags=clear-topics]
 ----
 <1> Run this before each test.
 <2> Clear the topic ignoring any unread messages.
@@ -300,9 +300,9 @@ NOTE: Despite the example, you are neither forced to clear all topics nor to do 
 To run an integration test against a real instance of Google PubSub (or its Emulator) or Kafka, use the TestKit settings to override the default eventing support, as shown below:
 
 [source,java]
-.{sample-base-url}/event-sourced-counter-brokers/src/it/java/counter/application/CounterWithRealKafkaIntegrationTest.java[CounterWithRealKafkaIntegrationTest.java]
+.{sample-base-url}/event-sourced-counter-brokers/src/test/java/counter/application/CounterWithRealKafkaIT.java[CounterWithRealKafkaIT.java]
 ----
-include::example$event-sourced-counter-brokers/src/it/java/counter/application/CounterWithRealKafkaIntegrationTest.java[tags=kafka]
+include::example$event-sourced-counter-brokers/src/test/java/counter/application/CounterWithRealKafkaIT.java[tags=kafka]
 ----
 
 == Multi-region replication

@@ -10,7 +10,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 
 
-public class JwtIntegrationTest extends TestKitSupport {
+public class JwtIT extends TestKitSupport {
 
   // tag::bearer-token-claims-test[]
   private String bearerTokenWith(Map<String, String> claims) throws JsonProcessingException {

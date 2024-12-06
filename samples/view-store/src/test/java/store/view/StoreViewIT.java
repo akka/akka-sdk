@@ -12,7 +12,7 @@ import store.product.domain.Product;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-public abstract class StoreViewIntegrationTest extends TestKitSupport {
+public abstract class StoreViewIT extends TestKitSupport {
 
   protected void createProduct(String id, String name, String currency, long units, int cents) {
     Product product = new Product(name, new Money(currency, units, cents));

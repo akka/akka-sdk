@@ -5,7 +5,7 @@ import akka.javasdk.testkit.TestKitSupport;
 
 
 // tag::disable-acl-in-it[]
-public class UserEndpointIntegrationTest extends TestKitSupport {
+public class UserEndpointIT extends TestKitSupport {
 
   @Override
   protected TestKit.Settings testKitSettings() {

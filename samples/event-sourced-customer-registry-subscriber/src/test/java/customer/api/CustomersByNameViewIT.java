@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class CustomersByNameViewIntegrationTest extends CustomerRegistryIntegrationTest {
+public class CustomersByNameViewIT extends CustomerRegistryIT {
 
   @Override
   protected TestKit.Settings testKitSettings() {

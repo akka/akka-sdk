@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class CounterIntegrationTest extends TestKitSupport {
+public class CounterIT extends TestKitSupport {
 
   @Test
   public void verifyIfEmailWasSent() {

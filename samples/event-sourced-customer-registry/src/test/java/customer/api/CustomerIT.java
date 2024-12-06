@@ -19,7 +19,7 @@ import java.util.concurrent.TimeUnit;
 import static akka.Done.done;
 
 
-public class CustomerIntegrationTest extends TestKitSupport {
+public class CustomerIT extends TestKitSupport {
 
   @Test
   public void create() {

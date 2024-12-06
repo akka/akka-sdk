@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class CounterWithRealPubSubIntegrationTest extends TestKitSupport { // <1>
+public class CounterWithRealPubSubIT extends TestKitSupport { // <1>
 
   // tag::pubsub[]
   @Override

@@ -113,9 +113,9 @@ The TestKit allows providing a custom `DependencyProvider` through `TestKit.Sett
 that mock instances of dependencies can be used in tests.
 
 [source,java]
-.{sample-base-url}/doc-snippets/src/it/java/com/example/MyIntegrationTest.java[MyIntegrationTest.java]
+.{sample-base-url}/doc-snippets/src/test/java/com/example/MyIT.java[MyIT.java]
 ----
-include::example$doc-snippets/src/it/java/com/example/MyIntegrationTest.java[tag=test-di-provider]
+include::example$doc-snippets/src/test/java/com/example/MyIT.java[tag=test-di-provider]
 ----
 <1> Implement a test specific `DependencyProvider`.
 <2> Configure the TestKit to use it.

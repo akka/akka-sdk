@@ -14,7 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 // tag::view-test[]
 
-class CustomersByCityIntegrationTest extends TestKitSupport {
+class CustomersByCityIT extends TestKitSupport {
 
   @Override
   protected TestKit.Settings testKitSettings() {

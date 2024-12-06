@@ -109,9 +109,9 @@ When running locally, by default, a dev key with id `dev` is configured for use.
 When running integration tests, JWTs will still be enforced but its signature will not be validated, similarly to what is described above for when running locally. Thus, when making calls in the context of integration testing, make sure to inject a proper token with the required claims, as shown below:
 
 [source, java, indent=0]
-.{sample-base-url}/endpoint-jwt/src/it/java/hellojwt/api/HelloJwtIntegrationTest.java[HelloJwtIntegrationTest.java]
+.{sample-base-url}/endpoint-jwt/src/test/java/hellojwt/api/HelloJwtIT.java[HelloJwtIT.java]
 ----
-include::example$endpoint-jwt/src/it/java/hellojwt/api/HelloJwtIntegrationTest.java[tag=bearer-token-claims-test]
+include::example$endpoint-jwt/src/test/java/hellojwt/api/HelloJwtIT.java[tag=bearer-token-claims-test]
 ----
 <1> Use a helper method to create a JWT token with 2 claims: issuer and subject.
 <2> Inject the bearer token as header with the key `Authorization`.

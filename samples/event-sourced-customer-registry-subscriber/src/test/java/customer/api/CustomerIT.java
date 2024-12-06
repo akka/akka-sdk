@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * The subscriber service will first create a customer on customer-registry service. The customer will be streamed back
  * to the subscriber service and update its view.
  */
-public class CustomerIntegrationTest extends CustomerRegistryIntegrationTest {
+public class CustomerIT extends CustomerRegistryIT {
 
 
   // this test relies on a source Akka event-sourced-customer-registry service to which it subscribes.

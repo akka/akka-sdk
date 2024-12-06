@@ -19,7 +19,7 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 
 
-public class TransferWorkflowIntegrationTest extends TestKitSupport {
+public class TransferWorkflowIT extends TestKitSupport {
 
   @Test
   public void shouldTransferMoney() {

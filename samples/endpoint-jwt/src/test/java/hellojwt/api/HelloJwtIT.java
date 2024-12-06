@@ -14,7 +14,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class HelloJwtIntegrationTest extends TestKitSupport {
+public class HelloJwtIT extends TestKitSupport {
 
   // tag::bearer-token-claims-test[]
   @Test

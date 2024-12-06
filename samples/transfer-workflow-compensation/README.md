@@ -148,6 +148,6 @@ Congratulations, you've successfully implemented a workflow between two wallets 
 
 Now that you've built a basic transfer workflow, consider these next steps:
 
-1. **Study the compensation mechanism**: Examine `TransferWorkflow.java` and `TransferWorkflowIntegrationTest.java` to understand how compensating actions are implemented when the deposit step fails after a successful withdrawal.
+1. **Study the compensation mechanism**: Examine `TransferWorkflow.java` and `TransferWorkflowIT.java` to understand how compensating actions are implemented when the deposit step fails after a successful withdrawal.
 2. **Explore other Akka components**: Dive deeper into Akka's ecosystem to enhance your application.
 3. **Join the community**: Visit the [Support page](https://doc.akka.io/support/index.html) to find resources where you can connect with other Akka developers and expand your knowledge.

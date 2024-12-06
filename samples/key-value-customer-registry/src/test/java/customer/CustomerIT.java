@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class CustomerIntegrationTest extends TestKitSupport {
+public class CustomerIT extends TestKitSupport {
 
   @Test
   public void create()  {

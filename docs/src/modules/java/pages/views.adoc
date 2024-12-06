@@ -304,9 +304,9 @@ include::example$key-value-customer-registry/src/main/java/customer/application/
 An integration test can be implemented as below.
 
 [source,java,indent=0]
-.{sample-base-url}/key-value-customer-registry/src/it/java/customer/application/CustomersByCityIntegrationTest.java[CustomersByCityIntegrationTest.java]
+.{sample-base-url}/key-value-customer-registry/src/test/java/customer/application/CustomersByCityIT.java[CustomersByCityIT.java]
 ----
-include::example$key-value-customer-registry/src/it/java/customer/application/CustomersByCityIntegrationTest.java[tag=view-test]
+include::example$key-value-customer-registry/src/test/java/customer/application/CustomersByCityIT.java[tag=view-test]
 ----
 <1> Mocks incoming messages from the `customer` Key Value Entity.
 <2> Gets an `IncomingMessages` from the `customer` Key Value Entity.

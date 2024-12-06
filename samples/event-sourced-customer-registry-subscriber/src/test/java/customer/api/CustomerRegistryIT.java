@@ -10,7 +10,7 @@ import java.util.Map;
  * Needs to be a base class for all integration tests in this project to avoid port conflict
  * since CI will already be running another service on port 9000
  */
-public abstract class CustomerRegistryIntegrationTest extends TestKitSupport {
+public abstract class CustomerRegistryIT extends TestKitSupport {
 
   @Override
   protected TestKit.Settings testKitSettings() {

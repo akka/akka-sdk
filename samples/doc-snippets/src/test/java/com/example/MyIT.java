@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
 // tag::test-di-provider[]
-public class MyIntegrationTest extends TestKitSupport {
+public class MyIT extends TestKitSupport {
 
   private static final DependencyProvider mockDependencyProvider = new DependencyProvider() { // <1>
     @SuppressWarnings("unchecked")
