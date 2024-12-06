@@ -5,7 +5,6 @@
 package akka.javasdk.testkit;
 
 import akka.actor.typed.ActorSystem;
-import akka.annotation.InternalApi;
 import akka.http.javadsl.Http;
 import akka.http.javadsl.model.HttpRequest;
 import akka.javasdk.DependencyProvider;
@@ -13,13 +12,12 @@ import akka.javasdk.Metadata;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.http.HttpClient;
 import akka.javasdk.http.HttpClientProvider;
-import akka.javasdk.impl.ApplicationConfig;
 import akka.javasdk.impl.ErrorHandling;
-import akka.javasdk.impl.JsonMessageCodec;
 import akka.javasdk.impl.MessageCodec;
 import akka.javasdk.impl.SdkRunner;
 import akka.javasdk.impl.client.ComponentClientImpl;
 import akka.javasdk.impl.http.HttpClientImpl;
+import akka.javasdk.impl.serialization.JsonSerializer;
 import akka.javasdk.impl.timer.TimerSchedulerImpl;
 import akka.javasdk.testkit.EventingTestKit.IncomingMessages;
 import akka.javasdk.timer.TimerScheduler;
@@ -423,7 +421,7 @@ public class TestKit {
     if (settings.eventingSupport == TEST_BROKER || settings.mockedEventing.hasConfig()) {
       log.info("Eventing TestKit booting up on port: " + eventingTestKitPort);
       // actual message codec instance not available until runtime/sdk started, thus this is called after discovery happens
-      eventingTestKit = EventingTestKit.start(runtimeActorSystem, "0.0.0.0", eventingTestKitPort, new JsonMessageCodec());
+      eventingTestKit = EventingTestKit.start(runtimeActorSystem, "0.0.0.0", eventingTestKitPort, new JsonSerializer());
     }
   }
 
@@ -518,8 +516,8 @@ public class TestKit {
       selfHttpClient = new HttpClientImpl(runtimeActorSystem, "http://" + proxyHost + ":" + proxyPort);
       httpClientProvider = startupContext.httpClientProvider();
       timerScheduler = new TimerSchedulerImpl(componentClients.timerClient(), Metadata.EMPTY);
-      var codec = new JsonMessageCodec(); // FIXME replace with JsonSerializer
-      this.messageBuilder = new EventingTestKit.MessageBuilder(codec);
+      var serializer = new JsonSerializer();
+      this.messageBuilder = new EventingTestKit.MessageBuilder(serializer);
 
     } catch (Exception ex) {
       throw new RuntimeException("Error while starting testkit", ex);

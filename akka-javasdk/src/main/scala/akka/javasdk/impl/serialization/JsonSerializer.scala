@@ -154,9 +154,9 @@ class JsonSerializer {
   }
 
   def isJson(bytesPayload: BytesPayload): Boolean =
-    isJsonTypeUrl(bytesPayload.contentType)
+    isJsonContentType(bytesPayload.contentType)
 
-  private def isJsonTypeUrl(contentType: String): Boolean =
+  def isJsonContentType(contentType: String): Boolean =
     // check both new and old typeurl for compatibility, in case there are services with old type url stored in database
     contentType.startsWith(JsonContentTypePrefix) || contentType.startsWith(KalixJsonContentTypePrefix)
 
@@ -166,7 +166,7 @@ class JsonSerializer {
 //      JsonContentTypePrefix + typeUrl.stripPrefix(KalixJsonContentTypePrefix)
 //    else typeUrl
 
-  private def stripJsonContentTypePrefix(contentType: String): String =
+  def stripJsonContentTypePrefix(contentType: String): String =
     contentType.stripPrefix(JsonContentTypePrefix).stripPrefix(KalixJsonContentTypePrefix)
 
   private def lookupTypeHintWithVersion(value: Any): String =

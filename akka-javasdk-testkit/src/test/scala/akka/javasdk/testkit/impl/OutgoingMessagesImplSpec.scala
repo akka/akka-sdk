@@ -20,10 +20,11 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
-
 import scala.collection.mutable
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 import scala.language.existentials
+
+import akka.javasdk.impl.serialization.JsonSerializer
 
 class OutgoingMessagesImplSpec
     extends TestKit(ActorSystem("MySpec"))
@@ -33,15 +34,19 @@ class OutgoingMessagesImplSpec
     with BeforeAndAfterAll {
 
   private val anySupport = new AnySupport(Array(), getClass.getClassLoader)
+  private val serializer = new JsonSerializer
   private val outProbe = TestProbe()(system)
-  private val destination = new OutgoingMessagesImpl(outProbe, anySupport)
+  private val destination = new OutgoingMessagesImpl(outProbe, serializer)
   val queue = new DummyQueue(mutable.Queue.empty)
 
   private val textPlainHeader = MetadataEntry("Content-Type", StringValue("text/plain; charset=utf-8"))
   private val bytesHeader = MetadataEntry("Content-Type", StringValue("application/octet-stream"))
-  private def msgWithMetadata(any: Any, mdEntry: MetadataEntry*) = EmitSingleCommand(
-    Some(EventDestination(Topic("test-topic"))),
-    Some(Message(anySupport.encodeScala(any).value, Some(Metadata(mdEntry)))))
+  private def msgWithMetadata(any: Any, mdEntry: MetadataEntry*): EmitSingleCommand = {
+    // FIXME don't use proto
+    EmitSingleCommand(
+      Some(EventDestination(Topic("test-topic"))),
+      Some(Message(anySupport.encodeScala(any).value, Some(Metadata(mdEntry)))))
+  }
 
   "TopicImpl" must {
     "provide utility to read typed messages - string" in {

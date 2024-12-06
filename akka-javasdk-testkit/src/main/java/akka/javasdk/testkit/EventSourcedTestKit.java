@@ -7,7 +7,6 @@ package akka.javasdk.testkit;
 import akka.javasdk.Metadata;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import akka.javasdk.eventsourcedentity.EventSourcedEntityContext;
-import akka.javasdk.impl.JsonMessageCodec;
 import akka.javasdk.testkit.impl.EventSourcedEntityEffectsRunner;
 import akka.javasdk.testkit.impl.TestKitEventSourcedEntityContext;
 
@@ -29,13 +28,10 @@ public class EventSourcedTestKit<S, E, ES extends EventSourcedEntity<S, E>>
   private final ES entity;
   private final String entityId;
 
-  private final JsonMessageCodec messageCodec;
-
   private EventSourcedTestKit(ES entity, String entityId) {
     super(entity);
     this.entity = entity;
     this.entityId = entityId;
-    this.messageCodec = new JsonMessageCodec();
   }
 
   /**

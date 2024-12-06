@@ -6,9 +6,9 @@ package akka.javasdk.testkit;
 
 import akka.actor.typed.ActorSystem;
 import akka.annotation.InternalApi;
+import akka.javasdk.impl.serialization.JsonSerializer;
 import com.google.protobuf.ByteString;
 import akka.javasdk.Metadata;
-import akka.javasdk.impl.MessageCodec;
 import akka.javasdk.testkit.impl.EventingTestKitImpl;
 import akka.javasdk.testkit.impl.OutgoingMessagesImpl;
 import akka.javasdk.testkit.impl.TestKitMessageImpl;
@@ -23,8 +23,8 @@ public interface EventingTestKit {
    * INTERNAL API
    */
   @InternalApi
-  static EventingTestKit start(ActorSystem<?> system, String host, int port, MessageCodec codec) {
-    return EventingTestKitImpl.start(system, host, port, codec);
+  static EventingTestKit start(ActorSystem<?> system, String host, int port, JsonSerializer serializer) {
+    return EventingTestKitImpl.start(system, host, port, serializer);
   }
 
   OutgoingMessages getTopicOutgoingMessages(String topic);
@@ -198,10 +198,10 @@ public interface EventingTestKit {
   }
 
   class MessageBuilder {
-    private final MessageCodec messageCodec;
+    private final JsonSerializer serializer;
 
-    public MessageBuilder(MessageCodec messageCodec) {
-      this.messageCodec = messageCodec;
+    public MessageBuilder(JsonSerializer serializer) {
+      this.serializer = serializer;
     }
 
     /**
@@ -214,7 +214,7 @@ public interface EventingTestKit {
      * @return a Message object to be used in the context of the Testkit
      */
     public <T> Message<T> of(T payload, String subject) {
-      return new TestKitMessageImpl<>(payload, TestKitMessageImpl.defaultMetadata(payload, subject, messageCodec));
+      return new TestKitMessageImpl<>(payload, TestKitMessageImpl.defaultMetadata(payload, subject, serializer));
     }
 
     /**

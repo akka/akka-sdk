@@ -6,7 +6,6 @@ package akka.javasdk.testkit.impl
 
 import akka.actor.ActorSystem
 import akka.actor.Props
-import akka.javasdk.impl.AnySupport
 import akka.javasdk.testkit.impl.EventingTestKitImpl.RunningSourceProbe
 import akka.stream.BoundedSourceQueue
 import akka.stream.QueueOfferResult
@@ -21,8 +20,9 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
-
 import scala.collection.mutable
+
+import akka.javasdk.impl.serialization.JsonSerializer
 
 class IncomingMessagesImplSpec
     extends TestKit(ActorSystem("MySpec"))
@@ -31,9 +31,9 @@ class IncomingMessagesImplSpec
     with BeforeAndAfterEach
     with BeforeAndAfterAll {
 
-  private val anySupport = new AnySupport(Array(), getClass.getClassLoader)
+  private val serializer = new JsonSerializer
   private val subscription =
-    new IncomingMessagesImpl(system.actorOf(Props[SourcesHolder](), "holder"), anySupport)
+    new IncomingMessagesImpl(system.actorOf(Props[SourcesHolder](), "holder"), serializer)
   val queue = new DummyQueue(mutable.Queue.empty)
 
   private val runningSourceProbe: RunningSourceProbe =
