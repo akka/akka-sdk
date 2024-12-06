@@ -13,7 +13,6 @@ import akka.javasdk.client.ComponentClient;
 import akka.javasdk.http.HttpClient;
 import akka.javasdk.http.HttpClientProvider;
 import akka.javasdk.impl.ErrorHandling;
-import akka.javasdk.impl.MessageCodec;
 import akka.javasdk.impl.SdkRunner;
 import akka.javasdk.impl.client.ComponentClientImpl;
 import akka.javasdk.impl.http.HttpClientImpl;
@@ -366,7 +365,6 @@ public class TestKit {
   private final Settings settings;
 
   private EventingTestKit.MessageBuilder messageBuilder;
-  private MessageCodec messageCodec;
   private boolean started = false;
   private String proxyHost;
   private int proxyPort;

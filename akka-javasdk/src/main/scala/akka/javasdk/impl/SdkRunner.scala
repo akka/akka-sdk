@@ -276,7 +276,6 @@ private final class Sdk(
     dependencyProviderOverride: Option[DependencyProvider],
     startedPromise: Promise[StartupContext]) {
   private val logger = LoggerFactory.getLogger(getClass)
-  private val messageCodec = new JsonMessageCodec // FIXME replace with JsonSerializer completely
   private val serializer = new JsonSerializer
   private val ComponentLocator.LocatedClasses(componentClasses, maybeServiceClass) =
     ComponentLocator.locateUserComponents(system)
@@ -598,7 +597,7 @@ private final class Sdk(
 
         // FIXME pull this inline setup stuff out of SdkRunner and into some workflow class
         val workflowStateType: Class[S] = Reflect.workflowStateType(workflow)
-        messageCodec.registerTypeHints(workflowStateType)
+        serializer.registerTypeHints(workflowStateType)
 
         workflow
           .definition()
@@ -610,7 +609,7 @@ private final class Sdk(
             case callStep: Workflow.CallStep[_, _, _, _] =>
               List(callStep.callInputClass, callStep.transitionInputClass)
           }
-          .foreach(messageCodec.registerTypeHints)
+          .foreach(serializer.registerTypeHints)
 
         workflow
       })

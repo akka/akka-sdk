@@ -317,8 +317,7 @@ class AnySupport(
     descriptors: Array[Descriptors.FileDescriptor],
     classLoader: ClassLoader,
     typeUrlPrefix: String = AnySupport.DefaultTypeUrlPrefix,
-    prefer: AnySupport.Prefer = AnySupport.Prefer.Java)
-    extends MessageCodec {
+    prefer: AnySupport.Prefer = AnySupport.Prefer.Java) {
 
   import AnySupport._
   private val allDescriptors = flattenDescriptors(ArraySeq.unsafeWrapArray(descriptors))
@@ -595,7 +594,7 @@ class AnySupport(
     }
   }
 
-  override def typeUrlFor(clz: Class[_]): String = clz.getName
+  def typeUrlFor(clz: Class[_]): String = clz.getName
 }
 
 final case class SerializationException(msg: String, cause: Throwable = null) extends RuntimeException(msg, cause)
@@ -613,11 +612,4 @@ private[akka] object ByteStringEncoding {
   def decodePrimitiveBytes(bytes: ByteString): ByteString =
     AnySupport.decodePrimitiveBytes(bytes)
 
-}
-
-trait MessageCodec {
-  def decodeMessage(any: ScalaPbAny): Any
-  def encodeScala(value: Any): ScalaPbAny
-  def encodeJava(value: Any): JavaPbAny
-  def typeUrlFor(clz: Class[_]): String
 }
