@@ -51,6 +51,7 @@ private[impl] final class ConsumerImpl[C <: Consumer](
   private implicit val executionContext: ExecutionContext = sdkExecutionContext
   implicit val system: ActorSystem = _system
 
+  //FIXME remove ComponentDescriptor and just get command handler/method invokers
   private val componentDescriptor = ComponentDescriptor.descriptorFor(consumerClass, serializer)
 
   // FIXME remove router altogether

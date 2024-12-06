@@ -13,6 +13,7 @@ import akka.annotation.InternalApi
 import akka.javasdk.Metadata
 import akka.javasdk.Tracing
 import akka.javasdk.impl.AbstractContext
+import akka.javasdk.impl.AnySupport
 import akka.javasdk.impl.ComponentDescriptor
 import akka.javasdk.impl.ErrorHandling
 import akka.javasdk.impl.MetadataImpl
@@ -27,6 +28,7 @@ import akka.javasdk.timedaction.CommandContext
 import akka.javasdk.timedaction.CommandEnvelope
 import akka.javasdk.timedaction.TimedAction
 import akka.javasdk.timer.TimerScheduler
+import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.SpiTimedAction
 import akka.runtime.sdk.spi.SpiTimedAction.Command
 import akka.runtime.sdk.spi.SpiTimedAction.Effect
@@ -102,8 +104,9 @@ private[impl] final class TimedActionImpl[TA <: TimedAction](
     val fut =
       try {
         val commandContext = createCommandContext(command, span)
-        val decodedPayload =
-          serializer.fromBytes(command.payload.getOrElse(throw new IllegalArgumentException("No command payload")))
+        //TODO reverting to previous version, timers payloads are always json.akka.io/object
+        val payload: BytesPayload = command.payload.getOrElse(throw new IllegalArgumentException("No command payload"))
+        val decodedPayload = AnySupport.toScalaPbAny(payload)
         val effect = createRouter()
           .handleUnary(command.name, CommandEnvelope.of(decodedPayload, commandContext.metadata()), commandContext)
         toSpiEffect(command, effect)

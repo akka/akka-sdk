@@ -34,9 +34,10 @@ private[impl] final case class CommandHandler(
    */
   private def lookupMethodAcceptingSubType(inputTypeUrl: String): Option[MethodInvoker] = {
     methodInvokers.values.find { javaMethod =>
-      val lastParam = javaMethod.method.getParameterTypes.last
-      if (lastParam.getAnnotation(classOf[JsonSubTypes]) != null) {
-        lastParam.getAnnotation(classOf[JsonSubTypes]).value().exists { subType =>
+      //None could happen if the method is a delete handler
+      val lastParam = javaMethod.method.getParameterTypes.lastOption
+      if (lastParam.exists(_.getAnnotation(classOf[JsonSubTypes]) != null)) {
+        lastParam.get.getAnnotation(classOf[JsonSubTypes]).value().exists { subType =>
           inputTypeUrl == serializer
             .contentTypeFor(subType.value()) //TODO requires more changes to be used with JsonMigration
         }

@@ -15,6 +15,7 @@ import akka.javasdk.JsonMigration
 import akka.javasdk.JsonSupport
 import akka.javasdk.annotations.Migration
 import akka.javasdk.annotations.TypeName
+import akka.javasdk.impl.AnySupport.BytesPrimitive
 import akka.javasdk.impl.NullSerializationException
 import akka.runtime.sdk.spi.BytesPayload
 import akka.util.ByteString
@@ -256,8 +257,13 @@ class JsonSerializer {
   def contentTypeFor(clz: Class[_]): String =
     JsonContentTypePrefix + lookupTypeHint(clz).currenTypeHintWithVersion
 
-  def contentTypesFor(clz: Class[_]): List[String] =
-    lookupTypeHint(clz).allTypeHints.map(JsonContentTypePrefix + _)
+  def contentTypesFor(clz: Class[_]): List[String] = {
+    if (clz == classOf[Array[Byte]]) {
+      List(BytesPrimitive.fullName)
+    } else {
+      lookupTypeHint(clz).allTypeHints.map(JsonContentTypePrefix + _)
+    }
+  }
 
   private[akka] def removeVersion(typeName: String) = {
     typeName.split("#").head

@@ -12,6 +12,7 @@ import com.google.protobuf.any.{ Any => ScalaPbAny }
 import AnySupport.BytesPrimitive
 import akka.annotation.InternalApi
 import akka.javasdk.Metadata
+import akka.javasdk.impl.reflection.ParameterExtractors.toAny
 
 /**
  * INTERNAL API
@@ -47,4 +48,26 @@ private[javasdk] object InvocationContext {
 }
 class InvocationContext(val message: DynamicMessage, val metadata: Metadata)
     extends DynamicMessageContext
-    with MetadataContext
+    with MetadataContext {
+
+  override def hasField(field: Descriptors.FieldDescriptor): Boolean =
+    message.hasField(field)
+
+  override def getField(field: Descriptors.FieldDescriptor): AnyRef =
+    message.getField(field)
+
+  override def getAny: ScalaPbAny = ScalaPbAny.fromJavaProto(toAny(message))
+}
+
+/**
+ * TODO remove me
+ * @param any
+ * @param metadata
+ */
+class AnyInvocationContext(val any: ScalaPbAny, metadata: Metadata) extends InvocationContext(null, metadata) {
+  override def getAny: ScalaPbAny = any
+
+  override def getField(field: Descriptors.FieldDescriptor): AnyRef = ???
+
+  override def hasField(field: Descriptors.FieldDescriptor): Boolean = ???
+}

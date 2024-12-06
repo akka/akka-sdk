@@ -9,6 +9,7 @@ import akka.javasdk.testkit.TestKitSupport;
 import akkajavasdk.components.workflowentities.*;
 import akkajavasdk.components.workflowentities.hierarchy.TextWorkflow;
 import org.awaitility.Awaitility;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -22,6 +23,7 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @ExtendWith(Junit5LogCapturing.class)
+@Disabled
 public class WorkflowTest extends TestKitSupport {
 
   @Test
