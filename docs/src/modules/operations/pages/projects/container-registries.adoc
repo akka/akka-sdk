@@ -9,7 +9,7 @@ Akka provides a built-in _Akka Container Registry (ACR)_ which is pre-configured
 
 == Akka Container Registry
 
-The _Akka Container Registry (ACR)_ is available to all Akka users and supported across all Akka regions, allowing for easy, integrated deployments without dependency on external registry connectivity. Authentication is built-in, so deployments, restarts, and scaling operate independently from external networks.
+The _Akka Container Registry (ACR)_ is available to all Akka users and supported across all Akka regions, allowing for easy, integrated deployments without dependency on external registry connectivity. Authentication is built-in, so deployments, restarts, and scaling operate independently of external networks.
 
 == Prerequisites
 
