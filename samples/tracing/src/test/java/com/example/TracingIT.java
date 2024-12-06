@@ -8,7 +8,7 @@ import java.time.Duration;
 import static java.time.temporal.ChronoUnit.SECONDS;
 
 
-public class IntegrationTest extends TestKitSupport {
+public class TracingIT extends TestKitSupport {
 
   private Duration timeout = Duration.of(5, SECONDS);
 

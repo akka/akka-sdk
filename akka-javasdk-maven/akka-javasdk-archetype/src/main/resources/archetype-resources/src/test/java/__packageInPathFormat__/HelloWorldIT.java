@@ -11,7 +11,7 @@ import akka.javasdk.testkit.TestKitSupport;
  * It interacts with the components of the application using a componentClient
  * (already configured and provided automatically through injection).
  */
-public class IntegrationTest extends TestKitSupport {
+public class HelloWorldIT extends TestKitSupport {
 
 
   @Test

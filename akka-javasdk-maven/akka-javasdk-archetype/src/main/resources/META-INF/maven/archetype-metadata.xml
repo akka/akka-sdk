@@ -13,7 +13,7 @@
             </includes>
         </fileSet>
         <fileSet filtered="true">
-            <directory>src/it/java</directory>
+            <directory>src/test/java</directory>
             <includes>
                 <include>**/*</include>
             </includes>
