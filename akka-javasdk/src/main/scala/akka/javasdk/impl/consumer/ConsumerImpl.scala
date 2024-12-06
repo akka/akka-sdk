@@ -20,6 +20,7 @@ import akka.javasdk.impl.consumer.ConsumerEffectImpl.IgnoreEffect
 import akka.javasdk.impl.consumer.ConsumerEffectImpl.ReplyEffect
 import akka.javasdk.consumer.MessageContext
 import akka.javasdk.consumer.MessageEnvelope
+import akka.javasdk.impl.AnySupport
 import akka.javasdk.impl.serialization.JsonSerializer
 import akka.runtime.sdk.spi.SpiConsumer
 import akka.runtime.sdk.spi.SpiConsumer.Message
@@ -63,10 +64,13 @@ private[impl] final class ConsumerImpl[C <: Consumer](
     val fut =
       try {
         val messageContext = createMessageContext(message, span)
-        val decodedPayload =
-          serializer.fromBytes(message.payload.getOrElse(throw new IllegalArgumentException("No message payload")))
+        val pbAnyPayload =
+          AnySupport.toScalaPbAny(message.payload.getOrElse(throw new IllegalArgumentException("No message payload")))
+        // FIXME shall we deserialize here or in the router? the router needs the contentType as well.
+//        val decodedPayload =
+//          serializer.fromBytes(message.payload.getOrElse(throw new IllegalArgumentException("No message payload")))
         val effect = createRouter()
-          .handleUnary(message.name, MessageEnvelope.of(decodedPayload, messageContext.metadata()), messageContext)
+          .handleUnary(message.name, MessageEnvelope.of(pbAnyPayload, messageContext.metadata()), messageContext)
         toSpiEffect(message, effect)
       } catch {
         case NonFatal(ex) =>
