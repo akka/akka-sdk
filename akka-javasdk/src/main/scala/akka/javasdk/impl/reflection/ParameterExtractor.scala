@@ -40,7 +40,9 @@ private[impl] trait MetadataContext {
  */
 @InternalApi
 private[impl] trait DynamicMessageContext {
-  def message: DynamicMessage
+  def getAny: ScalaPbAny
+  def getField(field: Descriptors.FieldDescriptor): AnyRef
+  def hasField(field: Descriptors.FieldDescriptor): Boolean
 }
 
 /**
@@ -49,7 +51,7 @@ private[impl] trait DynamicMessageContext {
 @InternalApi
 private[impl] object ParameterExtractors {
 
-  private def toAny(dm: DynamicMessage) = {
+  def toAny(dm: DynamicMessage) = {
     val bytes = dm.getField(JavaPbAny.getDescriptor.findFieldByName("value")).asInstanceOf[ByteString]
     val typeUrl = dm.getField(JavaPbAny.getDescriptor.findFieldByName("type_url")).asInstanceOf[String]
     // TODO: avoid creating a new JavaPbAny instance
@@ -62,26 +64,24 @@ private[impl] object ParameterExtractors {
       .build()
   }
 
-  private def decodeParam[T](dm: DynamicMessage, cls: Class[T], serializer: JsonSerializer): T = {
+  private def decodeParam[T](pbAny: ScalaPbAny, cls: Class[T], serializer: JsonSerializer): T = {
     if (cls == classOf[Array[Byte]]) {
-      val bytes = dm.getField(JavaPbAny.getDescriptor.findFieldByName("value")).asInstanceOf[ByteString]
+      val bytes = pbAny.value
       AnySupport.decodePrimitiveBytes(bytes).toByteArray.asInstanceOf[T]
     } else {
       // FIXME we should not need these conversions
-      val pbAny = ScalaPbAny.fromJavaProto(toAny(dm))
       val bytesPayload = AnySupport.toSpiBytesPayload(pbAny)
       serializer.fromBytes(cls, bytesPayload)
     }
   }
 
-  private def decodeParamPossiblySealed[T](dm: DynamicMessage, cls: Class[T], serializer: JsonSerializer): T = {
+  private def decodeParamPossiblySealed[T](pbAny: ScalaPbAny, cls: Class[T], serializer: JsonSerializer): T = {
     if (cls.isSealed) {
       // FIXME we should not need these conversions
-      val pbAny = ScalaPbAny.fromJavaProto(toAny(dm))
       val bytesPayload = AnySupport.toSpiBytesPayload(pbAny)
       serializer.fromBytes(bytesPayload).asInstanceOf[T]
     } else {
-      decodeParam(dm, cls, serializer)
+      decodeParam(pbAny, cls, serializer)
     }
   }
 
@@ -99,15 +99,16 @@ private[impl] object ParameterExtractors {
   case class AnyBodyExtractor[T](cls: Class[_], serializer: JsonSerializer)
       extends ParameterExtractor[DynamicMessageContext, T] {
     override def extract(context: DynamicMessageContext): T =
-      decodeParamPossiblySealed(context.message, cls.asInstanceOf[Class[T]], serializer)
+      decodeParamPossiblySealed(context.getAny, cls.asInstanceOf[Class[T]], serializer)
   }
 
   class BodyExtractor[T](field: Descriptors.FieldDescriptor, cls: Class[_], serializer: JsonSerializer)
       extends ParameterExtractor[DynamicMessageContext, T] {
 
     override def extract(context: DynamicMessageContext): T = {
-      context.message.getField(field) match {
-        case dm: DynamicMessage => decodeParam(dm, cls.asInstanceOf[Class[T]], serializer)
+      context.getField(field) match {
+        case dm: DynamicMessage =>
+          decodeParam(ScalaPbAny.fromJavaProto(toAny(dm)), cls.asInstanceOf[Class[T]], serializer)
       }
     }
   }
@@ -120,7 +121,7 @@ private[impl] object ParameterExtractors {
       extends ParameterExtractor[DynamicMessageContext, C] {
 
     override def extract(context: DynamicMessageContext): C = {
-      context.message.getField(field) match {
+      context.getField(field) match {
         case dm: DynamicMessage => decodeParamCollection(dm, cls, collectionType, serializer)
       }
     }
@@ -129,8 +130,8 @@ private[impl] object ParameterExtractors {
   class FieldExtractor[T](field: Descriptors.FieldDescriptor, required: Boolean, deserialize: AnyRef => T)
       extends ParameterExtractor[DynamicMessageContext, T] {
     override def extract(context: DynamicMessageContext): T = {
-      (required, field.isRepeated || context.message.hasField(field)) match {
-        case (_, true) => deserialize(context.message.getField(field))
+      (required, field.isRepeated || context.hasField(field)) match {
+        case (_, true) => deserialize(context.getField(field))
         //we know that currently this applies only to request parameters
         case (true, false)  => throw BadRequestException(s"Required request parameter is missing: ${field.getName}")
         case (false, false) => null.asInstanceOf[T] //could be mapped to optional later on

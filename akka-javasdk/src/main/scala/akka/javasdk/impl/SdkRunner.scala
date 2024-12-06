@@ -38,8 +38,6 @@ import akka.javasdk.impl.Sdk.StartupContext
 import akka.javasdk.impl.Validations.Invalid
 import akka.javasdk.impl.Validations.Valid
 import akka.javasdk.impl.Validations.Validation
-import akka.javasdk.impl.client.ComponentClientImpl
-import akka.javasdk.impl.consumer.ConsumerService
 import akka.javasdk.impl.eventsourcedentity.EventSourcedEntitiesImpl
 import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityService
 import akka.javasdk.impl.http.HttpClientProviderImpl
@@ -92,6 +90,8 @@ import org.slf4j.LoggerFactory
 import scala.jdk.OptionConverters.RichOptional
 import scala.jdk.CollectionConverters._
 
+import akka.javasdk.impl.ComponentDescriptorFactory.consumerDestination
+import akka.javasdk.impl.ComponentDescriptorFactory.consumerSource
 import akka.javasdk.impl.consumer.ConsumerImpl
 import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityImpl
 import akka.javasdk.impl.serialization.JsonSerializer
@@ -317,27 +317,31 @@ private final class Sdk(
   private val componentFactories: Map[Descriptors.ServiceDescriptor, Service] = componentClasses
     .filter(hasComponentId)
     .foldLeft(Map[Descriptors.ServiceDescriptor, Service]()) { (factories, clz) =>
-      val service = if (classOf[TimedAction].isAssignableFrom(clz)) {
+      val service: Option[Service] = if (classOf[TimedAction].isAssignableFrom(clz)) {
         logger.debug(s"Registering TimedAction [${clz.getName}]")
-        timedActionService(clz.asInstanceOf[Class[TimedAction]])
+        Some(timedActionService(clz.asInstanceOf[Class[TimedAction]]))
       } else if (classOf[Consumer].isAssignableFrom(clz)) {
         logger.debug(s"Registering Consumer [${clz.getName}]")
-        consumerService(clz.asInstanceOf[Class[Consumer]])
+        None
       } else if (classOf[EventSourcedEntity[_, _]].isAssignableFrom(clz)) {
         logger.debug(s"Registering EventSourcedEntity [${clz.getName}]")
-        eventSourcedEntityService(clz.asInstanceOf[Class[EventSourcedEntity[Nothing, Nothing]]])
+        Some(eventSourcedEntityService(clz.asInstanceOf[Class[EventSourcedEntity[Nothing, Nothing]]]))
       } else if (classOf[Workflow[_]].isAssignableFrom(clz)) {
         logger.debug(s"Registering Workflow [${clz.getName}]")
-        workflowService(clz.asInstanceOf[Class[Workflow[Nothing]]])
+        Some(workflowService(clz.asInstanceOf[Class[Workflow[Nothing]]]))
       } else if (classOf[KeyValueEntity[_]].isAssignableFrom(clz)) {
         logger.debug(s"Registering KeyValueEntity [${clz.getName}]")
-        keyValueEntityService(clz.asInstanceOf[Class[KeyValueEntity[Nothing]]])
+        Some(keyValueEntityService(clz.asInstanceOf[Class[KeyValueEntity[Nothing]]]))
       } else if (Reflect.isView(clz)) {
         logger.debug(s"Registering View [${clz.getName}]")
-        viewService(clz.asInstanceOf[Class[View]])
+        Some(viewService(clz.asInstanceOf[Class[View]]))
       } else throw new IllegalArgumentException(s"Component class of unknown component type [$clz]")
 
-      factories.updated(service.descriptor, service)
+      service match {
+        case Some(value) => factories.updated(value.descriptor, value)
+        case None        => factories
+      }
+
     }
 
   private def hasComponentId(clz: Class[_]): Boolean = {
@@ -439,7 +443,11 @@ private final class Sdk(
               sdkTracerFactory,
               serializer,
               ComponentDescriptorFactory.findIgnore(consumerClass))
-          new ConsumerDescriptor(componentId, timedActionSpi)
+          new ConsumerDescriptor(
+            componentId,
+            consumerSource(consumerClass),
+            consumerDestination(consumerClass),
+            timedActionSpi)
       }
 
   // these are available for injecting in all kinds of component that are primarily
@@ -497,11 +505,6 @@ private final class Sdk(
 
       case (serviceClass, _: Map[String, TimedActionService[_]] @unchecked)
           if serviceClass == classOf[TimedActionService[_]] =>
-      //ignore
-
-      case (serviceClass, _: Map[String, ConsumerService[_]] @unchecked)
-          if serviceClass == classOf[ConsumerService[_]] =>
-      //ignore
 
       case (serviceClass, viewServices: Map[String, ViewService[_]] @unchecked)
           if serviceClass == classOf[ViewService[_]] =>
@@ -579,9 +582,6 @@ private final class Sdk(
 
   private def timedActionService[A <: TimedAction](clz: Class[A]): TimedActionService[A] =
     new TimedActionService[A](clz, serializer, () => wiredInstance(clz)(sideEffectingComponentInjects(None)))
-
-  private def consumerService[A <: Consumer](clz: Class[A]): ConsumerService[A] =
-    new ConsumerService[A](clz, serializer, () => wiredInstance(clz)(sideEffectingComponentInjects(None)))
 
   private def workflowService[S, W <: Workflow[S]](clz: Class[W]): WorkflowService[S, W] = {
     new WorkflowService[S, W](

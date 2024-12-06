@@ -358,8 +358,9 @@ private[testkit] class OutgoingMessagesImpl(
     val scalaPb = ScalaPbAny(typeUrlFor(metadata), msg.getMessage.payload)
 
     val decodedMsg = if (serializer.isJsonContentType(typeUrlFor(metadata))) {
-      val bytesPayload = AnySupport.toSpiBytesPayload(scalaPb)
-      serializer.fromBytes(clazz, bytesPayload)
+      JsonSupport.getObjectMapper
+        .readerFor(clazz)
+        .readValue(msg.getMessage.payload.toByteArray)
     } else {
       val anySupport = new AnySupport(Array(), getClass.getClassLoader)
       anySupport.decodeMessage(scalaPb)

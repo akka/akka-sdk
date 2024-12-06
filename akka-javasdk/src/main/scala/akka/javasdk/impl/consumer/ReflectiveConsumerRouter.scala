@@ -7,10 +7,11 @@ package akka.javasdk.impl.consumer
 import akka.annotation.InternalApi
 import akka.javasdk.consumer.Consumer
 import akka.javasdk.consumer.MessageEnvelope
+import akka.javasdk.impl.AnyInvocationContext
 import akka.javasdk.impl.AnySupport
 import akka.javasdk.impl.AnySupport.ProtobufEmptyTypeUrl
 import akka.javasdk.impl.CommandHandler
-import akka.javasdk.impl.InvocationContext
+import akka.javasdk.impl.MethodInvoker
 import akka.javasdk.impl.reflection.Reflect
 import com.google.protobuf.any.{ Any => ScalaPbAny }
 
@@ -24,30 +25,28 @@ private[impl] class ReflectiveConsumerRouter[A <: Consumer](
     ignoreUnknown: Boolean)
     extends ConsumerRouter[A](consumer) {
 
-  private def commandHandlerLookup(commandName: String) =
-    commandHandlers.getOrElse(
-      commandName,
-      throw new RuntimeException(
-        s"no matching method for '$commandName' on [${consumer.getClass}], existing are [${commandHandlers.keySet
-          .mkString(", ")}]"))
+  private def invokerLookup(typeUrl: String): Option[MethodInvoker] = {
+    commandHandlers.values
+      .map(_.lookupInvoker(typeUrl))
+      .collectFirst { case Some(invoker) =>
+        invoker
+      }
+  }
 
   override def handleUnary(commandName: String, message: MessageEnvelope[Any]): Consumer.Effect = {
-
-    val commandHandler = commandHandlerLookup(commandName)
 
     val scalaPbAnyCommand = message.payload().asInstanceOf[ScalaPbAny]
     // make sure we route based on the new type url if we get an old json type url message
     val inputTypeUrl = AnySupport.replaceLegacyJsonPrefix(scalaPbAnyCommand.typeUrl)
 
-    val invocationContext =
-      InvocationContext(scalaPbAnyCommand, commandHandler.requestMessageDescriptor, message.metadata())
+    val invocationContext = new AnyInvocationContext(scalaPbAnyCommand, message.metadata())
 
     // lookup ComponentClient
     val componentClients = Reflect.lookupComponentClientFields(consumer)
 
     componentClients.foreach(_.callMetadata = Some(message.metadata()))
 
-    val methodInvoker = commandHandler.lookupInvoker(inputTypeUrl)
+    val methodInvoker = invokerLookup(inputTypeUrl)
     methodInvoker match {
       case Some(invoker) =>
         inputTypeUrl match {
