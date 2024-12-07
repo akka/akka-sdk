@@ -102,5 +102,5 @@ docker-compose up
 
 Then run:
 ```shell
-mvn verify -Pit
+mvn integration-test
 ```

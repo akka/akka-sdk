@@ -51,7 +51,7 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @ExtendWith(Junit5LogCapturing.class)
-public class SdkIntegrationTest extends TestKitSupport {
+public class SdkIT extends TestKitSupport {
 
   @Override
   protected TestKit.Settings testKitSettings() {

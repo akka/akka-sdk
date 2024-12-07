@@ -103,10 +103,10 @@ curl http://localhost:9000/transfer/1
 
 ## Run integration tests
 
-To run the integration tests located in `src/it/java`:
+To run the integration tests located in `src/test/java`:
 
 ```shell
-mvn verify -Pit
+mvn integration-test
 ```
 
 ## Troubleshooting
