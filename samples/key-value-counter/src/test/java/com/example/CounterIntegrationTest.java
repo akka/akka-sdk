@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 // tag::sample-it[]
-public class CounterIT extends TestKitSupport { // <1>
+public class CounterIntegrationTest extends TestKitSupport { // <1>
 
   // end::sample-it[]
   @Test

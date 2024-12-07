@@ -150,9 +150,9 @@ NOTE: The `KeyValueEntityTestKit` is stateful, and it holds the state of a singl
 The skeleton of an Integration Test is generated for you if you use the archetype to start your Akka service. Let's see what it could look like to test our Counter Entity:
 
 [source,java,indent=0]
-.{sample-base-url}/key-value-counter/src/test/java/com/example/CounterIT.java[CounterIT.java]
+.{sample-base-url}/key-value-counter/src/test/java/com/example/CounterIntegrationTest.java[CounterIntegrationTest.java]
 ----
-include::example$key-value-counter/src/test/java/com/example/CounterIT.java[tags=sample-it]
+include::example$key-value-counter/src/test/java/com/example/CounterIntegrationTest.java[tags=sample-it]
 ----
 <1> Note the test class must extend `TestKitSupport`.
 <2> A built-in component client is provided to interact with the components.

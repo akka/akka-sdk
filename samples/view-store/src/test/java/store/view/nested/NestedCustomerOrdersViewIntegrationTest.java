@@ -2,14 +2,14 @@ package store.view.nested;
 
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
-import store.view.StoreViewIT;
+import store.view.StoreViewIntegrationTest;
 
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class NestedCustomerOrdersViewIT extends StoreViewIT {
+public class NestedCustomerOrdersViewIntegrationTest extends StoreViewIntegrationTest {
 
 
   @Test

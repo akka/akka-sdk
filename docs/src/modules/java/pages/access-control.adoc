@@ -225,9 +225,9 @@ ACL rules will be applied whenever a call is made using testkit's `HttpClient`. 
 originating from the internet. You can disable the ACL checks by overriding the `testKitSettings()` method.
 
 [source, java, indent=0]
-.{sample-base-url}/doc-snippets/src/test/java/com/example/acl/UserEndpointIT.java[UserEndpointIT.java]
+.{sample-base-url}/doc-snippets/src/test/java/com/example/acl/UserEndpointIntegrationTest.java[UserEndpointIntegrationTest.java]
 ----
-include::example$doc-snippets/src/test/java/com/example/acl/UserEndpointIT.java[tag=disable-acl-in-it]
+include::example$doc-snippets/src/test/java/com/example/acl/UserEndpointIntegrationTest.java[tag=disable-acl-in-it]
 ----
 
 Calls made through the `ComponentClient` are internal to the service and therefore no ACL rule is applied.

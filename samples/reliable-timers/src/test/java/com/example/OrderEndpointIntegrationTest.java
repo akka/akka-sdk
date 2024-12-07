@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class OrderEndpointIT extends TestKitSupport {
+public class OrderEndpointIntegrationTest extends TestKitSupport {
 
   private Duration timeout = Duration.of(20, SECONDS);
 

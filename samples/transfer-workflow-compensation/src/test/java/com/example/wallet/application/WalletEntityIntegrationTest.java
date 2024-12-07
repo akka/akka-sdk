@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 import static com.example.transfer.TransferWorkflowIT.randomId;
 import static org.assertj.core.api.Assertions.assertThat;
 
-class WalletEntityIT extends TestKitSupport {
+class WalletEntityIntegrationTest extends TestKitSupport {
 
   @Test
   public void shouldDeduplicateWithdrawCommand() {

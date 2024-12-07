@@ -229,9 +229,9 @@ For the above example, this class provides access to all the command handlers of
 The skeleton of an Integration Test is generated for you if you use the archetype to start your Akka service. Let's see what it could look like to test our `ShoppingCartEntity`:
 
 [source,java]
-.{sample-base-url}/shopping-cart-quickstart/src/test/java/shoppingcart/ShoppingCartIT.java[ShoppingCartIT.java]
+.{sample-base-url}/shopping-cart-quickstart/src/test/java/shoppingcart/ShoppingCartIntegrationTest.java[ShoppingCartIntegrationTest.java]
 ----
-include::example$shopping-cart-quickstart/src/test/java/shoppingcart/ShoppingCartIT.java[tag=sample-it]
+include::example$shopping-cart-quickstart/src/test/java/shoppingcart/ShoppingCartIntegrationTest.java[tag=sample-it]
 ----
 <1> Note the test class must extend `TestKitSupport`.
 <2> A built-in component client is provided to interact with the components.

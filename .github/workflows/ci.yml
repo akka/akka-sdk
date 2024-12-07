@@ -450,5 +450,5 @@ jobs:
           export SDK_VERSION=$(cat ~/akka-javasdk-version.txt)
           cd samples/${DIR}
           echo "==== Verifying that generated unmanaged sources compile ===="
-          rm -rf src/main/java src/test/java src/it/java
+          rm -rf src/main/java src/test/java
           mvn test-compile --no-transfer-progress

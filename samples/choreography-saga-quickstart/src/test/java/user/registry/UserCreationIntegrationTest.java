@@ -11,7 +11,7 @@ import java.time.Duration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class UserCreationIT extends TestKitSupport {
+public class UserCreationIntegrationTest extends TestKitSupport {
 
   private final Duration timeout = Duration.ofSeconds(6);
 

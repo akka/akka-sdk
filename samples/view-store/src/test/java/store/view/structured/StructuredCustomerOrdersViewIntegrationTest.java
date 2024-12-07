@@ -2,14 +2,14 @@ package store.view.structured;
 
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
-import store.view.StoreViewIT;
+import store.view.StoreViewIntegrationTest;
 
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class StructuredCustomerOrdersViewIT extends StoreViewIT {
+public class StructuredCustomerOrdersViewIntegrationTest extends StoreViewIntegrationTest {
 
   @Test
   public void getCustomerOrders() {

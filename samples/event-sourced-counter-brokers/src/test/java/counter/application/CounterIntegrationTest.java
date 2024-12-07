@@ -21,7 +21,7 @@ import static java.time.Duration.ofSeconds;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 // tag::class[]
-public class CounterIT extends TestKitSupport { // <1>
+public class CounterIntegrationTest extends TestKitSupport { // <1>
 
 // end::class[]
 
@@ -140,7 +140,7 @@ public class CounterIT extends TestKitSupport { // <1>
 
     var metadata = CloudEvent.of( // <1>
         "cmd1",
-        URI.create("CounterTopicIT"),
+        URI.create("CounterTopicIntegrationTest"),
         increaseCmd.getClass().getName())
       .withSubject(counterId) // <2>
       .asMetadata()

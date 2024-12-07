@@ -21,10 +21,10 @@ import static java.time.Duration.ofSeconds;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class CounterWithRealKafkaIT extends TestKitSupport { // <1>
+public class CounterWithRealKafkaIntegrationTest extends TestKitSupport { // <1>
 
   // logger
-  private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(CounterWithRealKafkaIT.class);
+  private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(CounterWithRealKafkaIntegrationTest.class);
 
   // tag::kafka[]
   @Override
