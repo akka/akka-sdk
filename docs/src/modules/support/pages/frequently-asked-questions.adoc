@@ -43,8 +43,8 @@ In one sentence: "High performance and very low latency in an extremely cost-eff
 
 In a few more words, with Akka, companies can:
 
-- Provide higher agility to ever-changing market demands: Legacy infrastructure and architectures make it very expensive to deliver scalable solutions quickly. Akka lets you circumvent all those technical limitations.
-- Increase the speed to innovation: Distributed compute and data have long been purview of expert engineers proficient in narrow scope of programming languages. Akka makes building these kinds of applications straight-forward.
+- Provide higher agility to ever changing market demands: Legacy infrastructure and architectures make it very expensive to deliver scalable solutions quickly. Akka let's you circumvent all those technical limitations.
+- Increase the speed to innovation: Distributed compute and data have long been purview of expert engineers proficient in narrow scope of programming languages. Akka makes building these kinds of applications straight-forward in languages you already know and use.
 - Lower infrastructure costs: Scalable cloud architectures are difficult to operate, require large teams of costly resources and run significant risk of unexpected budget overages. Akka will charge for what you use, not what you might need (when generally available).
 
 == What are the benefits for developers?
@@ -62,6 +62,10 @@ Yes! Akka is a single globally distributed state model. Teams anywhere in the wo
 == Does Akka leverage reactive architecture?
 
 Akka leverages the proven Akka reactive architecture for building stateful, high-performance, business-critical systems, without the developer needing to understand the complexities of Akka itself or distributed systems architecture in general.
+
+== What languages are supported?
+
+Akka supports Java and Scala. For a detailed overview of supported features see xref:reference:feature-matrix[Feature Matrix] section.
 
 == What are the resource limits of an Akka service?
 
@@ -113,7 +117,7 @@ The short answer is no. Please see the documentation on xref:support:paid-plans.
 
 === How do I purchase a paid plan?
 
-https://akka.io/contact-us[Contact Akka] to purchase a paid plan. See the https://akka.io/pricing[pricing page] for purchase options.
+https://www.akka.io/contact[Contact Lightbend] to purchase a paid plan. See the https://www.akka.io/pricing[pricing page] for purchase options.
 
 == What if I have additional questions or want to provide feedback?
 

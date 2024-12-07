@@ -15,7 +15,7 @@ Upgrading to a paid plan offer several benefits:
 
 == Upgrading to a paid plan
 
-To upgrade, please https://akka.io/contact-us[contact Akka,window="new"].
+To upgrade, please https://www.akka.io/contact[contact Akka,window="new"].
 
 You will be required to provide:
 
@@ -27,4 +27,4 @@ You will be required to provide:
 
 == Billing models
 
-Please see the https://akka.io/pricing[Akka Pricing] page for more details on billing models, features and pricing.
+Please see the https://www.akka.io/pricing[Akka Pricing] page for more details on billing models, features and pricing.
