@@ -440,7 +440,7 @@ jobs:
           fi
           if [ true == '${{matrix.it}}' ]; then
             ${PRE_CMD}
-            KALIX_TESTKIT_DEBUG=true mvn verify --no-transfer-progress
+            KALIX_TESTKIT_DEBUG=true mvn integration-test --no-transfer-progress
           fi
 
       - name: ${{ matrix.sample }} rm & test-compile
