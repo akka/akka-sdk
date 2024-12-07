@@ -5,7 +5,7 @@ import com.example.wallet.application.WalletEntity.WalletResult;
 import com.example.wallet.domain.WalletCommand;
 import org.junit.jupiter.api.Test;
 
-import static com.example.transfer.TransferWorkflowIT.randomId;
+import static com.example.transfer.TransferWorkflowIntegrationTest.randomId;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class WalletEntityIntegrationTest extends TestKitSupport {
