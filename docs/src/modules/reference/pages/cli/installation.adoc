@@ -24,10 +24,10 @@ curl -sL https://doc.akka.io/install-cli.sh | bash -s -- --prefix /tmp && \
 
 You can pass options to the installer script with `-s --` e.g.:
 
-[source,bash,subs="attributes"]
+[source,bash]
 ....
-curl -sL https://doc.akka.io/install-cli.sh | bash -s -- --prefix=$HOME --version={akka-cli-version} --verbose
-curl -sL https://doc.akka.io/install-cli.sh | bash -s -- -P $HOME -v {akka-cli-version} -V
+curl -sL https://doc.akka.io/install-cli.sh | bash -s -- --prefix=$HOME --version=2.0.22 --verbose
+curl -sL https://doc.akka.io/install-cli.sh | bash -s -- -P $HOME -v 2.0.22 -V
 ....
 
 --
@@ -59,10 +59,9 @@ curl -sL https://doc.akka.io/install-cli.sh | bash
 
 You can pass options to the installer script with `-s --` e.g.:
 
-[source,bash,subs="attributes"]
 ....
-curl -sL https://doc.akka.io/install-cli.sh | bash -s -- --prefix=$HOME --version={akka-cli-version} --verbose
-curl -sL https://doc.akka.io/install-cli.sh | bash -s -- -P $HOME -v {akka-cli-version} -V
+curl -sL https://doc.akka.io/install-cli.sh | bash -s -- --prefix=$HOME --version=2.0.22 --verbose
+curl -sL https://doc.akka.io/install-cli.sh | bash -s -- -P $HOME -v 2.0.22 -V
 ....
 --
 Windows::
