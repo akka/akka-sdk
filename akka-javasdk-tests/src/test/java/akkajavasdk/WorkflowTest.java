@@ -4,17 +4,30 @@
 
 package akkajavasdk;
 
-import akkajavasdk.components.actions.echo.Message;
 import akka.javasdk.testkit.TestKitSupport;
-import akkajavasdk.components.workflowentities.*;
+import akkajavasdk.components.actions.echo.Message;
+import akkajavasdk.components.workflowentities.DummyWorkflow;
+import akkajavasdk.components.workflowentities.FailingCounterEntity;
+import akkajavasdk.components.workflowentities.Transfer;
+import akkajavasdk.components.workflowentities.TransferWorkflow;
+import akkajavasdk.components.workflowentities.TransferWorkflowWithFraudDetection;
+import akkajavasdk.components.workflowentities.TransferWorkflowWithoutInputs;
+import akkajavasdk.components.workflowentities.WalletEntity;
+import akkajavasdk.components.workflowentities.WorkflowWithDefaultRecoverStrategy;
+import akkajavasdk.components.workflowentities.WorkflowWithRecoverStrategy;
+import akkajavasdk.components.workflowentities.WorkflowWithRecoverStrategyAndAsyncCall;
+import akkajavasdk.components.workflowentities.WorkflowWithStepTimeout;
+import akkajavasdk.components.workflowentities.WorkflowWithTimeout;
+import akkajavasdk.components.workflowentities.WorkflowWithTimer;
+import akkajavasdk.components.workflowentities.WorkflowWithoutInitialState;
 import akkajavasdk.components.workflowentities.hierarchy.TextWorkflow;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.time.Duration;
-import java.util.Optional;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -454,7 +467,7 @@ public class WorkflowTest extends TestKitSupport {
       });
   }
 
-  @Test
+ @Test
   public void shouldRecoverWorkflowStepTimeout() {
     //given
     var counterId = randomId();
