@@ -19,11 +19,10 @@ import akka.javasdk.impl.ActivatableContext
 import akka.javasdk.impl.AnySupport
 import akka.javasdk.impl.ComponentDescriptor
 import akka.javasdk.impl.ErrorHandling.BadRequestException
-import akka.javasdk.impl.JsonMessageCodec
 import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.Service
-import akka.javasdk.impl.StrictJsonMessageCodec
 import akka.javasdk.impl.WorkflowExceptions.WorkflowException
+import akka.javasdk.impl.serialization.JsonSerializer
 import akka.javasdk.impl.telemetry.SpanTracingImpl
 import akka.javasdk.impl.timer.TimerSchedulerImpl
 import akka.javasdk.impl.workflow.WorkflowEffectImpl.DeleteState
@@ -39,22 +38,28 @@ import akka.javasdk.impl.workflow.WorkflowEffectImpl.StepTransition
 import akka.javasdk.impl.workflow.WorkflowEffectImpl.Transition
 import akka.javasdk.impl.workflow.WorkflowEffectImpl.TransitionalEffectImpl
 import akka.javasdk.impl.workflow.WorkflowEffectImpl.UpdateState
+import akka.javasdk.impl.workflow.WorkflowImpl.NoCommandPayload
 import akka.javasdk.impl.workflow.WorkflowRouter.CommandResult
 import akka.javasdk.workflow.CommandContext
 import akka.javasdk.workflow.Workflow
+import akka.javasdk.workflow.Workflow.{ RecoverStrategy => SdkRecoverStrategy }
 import akka.javasdk.workflow.WorkflowContext
+import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.SpiEntity
 import akka.runtime.sdk.spi.SpiWorkflow
 import akka.runtime.sdk.spi.TimerClient
-import com.google.protobuf.ByteString
-import com.google.protobuf.any.{ Any => PbAny }
-import com.google.protobuf.any.{ Any => ScalaPbAny }
+import akka.util.ByteString
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.Tracer
 import kalix.protocol.workflow_entity.WorkflowEntities
-import akka.javasdk.workflow.Workflow.{ RecoverStrategy => SdkRecoverStrategy }
 
-import akka.javasdk.impl.serialization.JsonSerializer
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[impl] object WorkflowImpl {
+  private val NoCommandPayload = new BytesPayload(ByteString.empty, AnySupport.JsonTypeUrlPrefix)
+}
 
 /**
  * INTERNAL API
@@ -63,19 +68,18 @@ import akka.javasdk.impl.serialization.JsonSerializer
 class WorkflowImpl[S, W <: Workflow[S]](
     workflowId: String,
     componentClass: Class[_],
-    messageCodec: JsonMessageCodec,
+    serializer: JsonSerializer,
     timerClient: TimerClient,
     sdkExecutionContext: ExecutionContext,
     tracerFactory: () => Tracer,
     instanceFactory: Function[WorkflowContext, W])
     extends SpiWorkflow {
 
-  private val strictMessageCodec = new StrictJsonMessageCodec(messageCodec)
-  private val componentDescriptor = ComponentDescriptor.descriptorFor(componentClass, messageCodec)
+  private val componentDescriptor = ComponentDescriptor.descriptorFor(componentClass, serializer)
   private val context = new WorkflowContextImpl(workflowId)
 
   private val router =
-    new ReflectiveWorkflowRouter[S, W](instanceFactory(context), componentDescriptor.commandHandlers)
+    new ReflectiveWorkflowRouter[S, W](instanceFactory(context), componentDescriptor.commandHandlers, serializer)
 
   override def configuration: SpiWorkflow.WorkflowConfig = {
     val definition = router.workflow.definition()
@@ -84,15 +88,13 @@ class WorkflowImpl[S, W <: Workflow[S]](
 
       val stepTransition = new SpiWorkflow.StepTransition(
         sdkRecoverStrategy.failoverStepName,
-        sdkRecoverStrategy.failoverStepInput.toScala.map(strictMessageCodec.encodeScala))
+        sdkRecoverStrategy.failoverStepInput.toScala.map(serializer.toBytes))
       new SpiWorkflow.RecoverStrategy(sdkRecoverStrategy.maxRetries, failoverTo = stepTransition)
     }
 
     val failoverTo = {
       definition.getFailoverStepName.toScala.map { stepName =>
-        new SpiWorkflow.StepTransition(
-          stepName,
-          definition.getFailoverStepInput.toScala.map(strictMessageCodec.encodeScala))
+        new SpiWorkflow.StepTransition(stepName, definition.getFailoverStepInput.toScala.map(serializer.toBytes))
       }
     }
 
@@ -120,10 +122,9 @@ class WorkflowImpl[S, W <: Workflow[S]](
   }
 
   override def emptyState(workflowId: String): SpiWorkflow.State = {
-    if (router.workflow.emptyState() == null)
-      PbAny.defaultInstance
+    if (router.workflow.emptyState() == null) BytesPayload.empty
     else
-      strictMessageCodec.encodeScala(router.workflow.emptyState())
+      serializer.toBytes(router.workflow.emptyState())
   }
 
   private def commandContext(commandName: String, metadata: Metadata = MetadataImpl.Empty) =
@@ -136,9 +137,9 @@ class WorkflowImpl[S, W <: Workflow[S]](
       None,
       tracerFactory)
 
-  private def decodeState(userState: Option[PbAny]) =
+  private def decodeState(userState: Option[BytesPayload]): S =
     userState
-      .map(strictMessageCodec.decodeMessage)
+      .map(serializer.fromBytes)
       .getOrElse(router.workflow.emptyState())
       .asInstanceOf[S]
 
@@ -147,7 +148,7 @@ class WorkflowImpl[S, W <: Workflow[S]](
     def toSpiTransition(transition: Transition): SpiWorkflow.Transition =
       transition match {
         case StepTransition(stepName, input) =>
-          new SpiWorkflow.StepTransition(stepName, input.map(strictMessageCodec.encodeScala))
+          new SpiWorkflow.StepTransition(stepName, input.map(serializer.toBytes))
         case Pause        => SpiWorkflow.Pause
         case NoTransition => SpiWorkflow.NoTransition
         case End          => SpiWorkflow.End
@@ -157,7 +158,7 @@ class WorkflowImpl[S, W <: Workflow[S]](
       persistence match {
         case UpdateState(newState) =>
           router._internalSetInitState(newState, transition.isInstanceOf[End.type])
-          new SpiWorkflow.UpdateState(strictMessageCodec.encodeScala(newState))
+          new SpiWorkflow.UpdateState(serializer.toBytes(newState))
         case DeleteState   => SpiWorkflow.DeleteState
         case NoPersistence => SpiWorkflow.NoPersistence
       }
@@ -179,7 +180,7 @@ class WorkflowImpl[S, W <: Workflow[S]](
         new SpiWorkflow.Effect(
           handleState(persistence, transition), // can be null when fallback to emptyState
           toSpiTransition(transition),
-          reply = replyOpt.map(strictMessageCodec.encodeScala),
+          reply = replyOpt.map(serializer.toBytes),
           error = None)
 
       case TransitionalEffectImpl(persistence, transition) =>
@@ -191,11 +192,12 @@ class WorkflowImpl[S, W <: Workflow[S]](
     }
   }
 
-  override def handleCommand(userState: Option[PbAny], command: SpiEntity.Command): Future[SpiWorkflow.Effect] = {
+  override def handleCommand(
+      userState: Option[BytesPayload],
+      command: SpiEntity.Command): Future[SpiWorkflow.Effect] = {
 
     // can be null when fallback to emptyState
     val decodedState = decodeState(userState)
-
     // FIXME: how to decide when finished?
     router._internalSetInitState(decodedState, finished = false)
 
@@ -204,13 +206,11 @@ class WorkflowImpl[S, W <: Workflow[S]](
     val context = commandContext(command.name, metadata)
 
     val timerScheduler =
-      new TimerSchedulerImpl(strictMessageCodec, timerClient, context.componentCallMetadata)
-
-    val cmd =
-      messageCodec.decodeMessage(
-        command.payload.getOrElse(
-          // FIXME smuggling 0 arity method called from component client through here
-          ScalaPbAny.defaultInstance.withTypeUrl(AnySupport.JsonTypeUrlPrefix).withValue(ByteString.empty())))
+      new TimerSchedulerImpl(timerClient, context.componentCallMetadata)
+    val cmd = command.payload.getOrElse {
+      // FIXME smuggling 0 arity method called from component client through here
+      NoCommandPayload
+    }
 
     val CommandResult(effect) =
       try {
@@ -234,22 +234,25 @@ class WorkflowImpl[S, W <: Workflow[S]](
     Future.successful(toSpiEffect(effect))
   }
 
-  override def executeStep(stepName: String, input: Option[PbAny], userState: Option[PbAny]): Future[PbAny] = {
+  override def executeStep(
+      stepName: String,
+      input: Option[BytesPayload],
+      userState: Option[BytesPayload]): Future[BytesPayload] = {
 
     val context = commandContext(stepName)
     val timerScheduler =
-      new TimerSchedulerImpl(strictMessageCodec, timerClient, context.componentCallMetadata)
+      new TimerSchedulerImpl(timerClient, context.componentCallMetadata)
 
     try {
       userState.foreach { state =>
-        val decoded = strictMessageCodec.decodeMessage(state)
+        val decoded = serializer.fromBytes(state)
         router._internalSetInitState(decoded, finished = false) // here we know that workflow is still running
       }
 
       router._internalHandleStep(
         input = input,
         stepName = stepName,
-        messageCodec = strictMessageCodec,
+        serializer = serializer,
         timerScheduler = timerScheduler,
         commandContext = context,
         executionContext = sdkExecutionContext)
@@ -260,11 +263,10 @@ class WorkflowImpl[S, W <: Workflow[S]](
     }
   }
 
-  override def transition(stepName: String, result: Option[PbAny]): Future[SpiWorkflow.Effect] = {
-    // can be null when fallback to emptyState
+  override def transition(stepName: String, result: Option[BytesPayload]): Future[SpiWorkflow.Effect] = {
     val CommandResult(effect) =
       try {
-        router._internalGetNextStep(stepName, result.get, strictMessageCodec)
+        router._internalGetNextStep(stepName, result.get, serializer)
       } catch {
         case e: WorkflowException => throw e
         case NonFatal(ex) =>
@@ -283,12 +285,12 @@ class WorkflowImpl[S, W <: Workflow[S]](
 @InternalApi
 final class WorkflowService[S, W <: Workflow[S]](
     workflowClass: Class[_],
-    messageCodec: JsonMessageCodec,
+    serializer: JsonSerializer,
     instanceFactory: Function[WorkflowContext, W])
-    extends Service(workflowClass, WorkflowEntities.name, messageCodec) {
+    extends Service(workflowClass, WorkflowEntities.name, serializer) {
 
   def createRouter(context: WorkflowContext) =
-    new ReflectiveWorkflowRouter[S, W](instanceFactory(context), componentDescriptor.commandHandlers)
+    new ReflectiveWorkflowRouter[S, W](instanceFactory(context), componentDescriptor.commandHandlers, serializer)
 
 }
 

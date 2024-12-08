@@ -55,6 +55,7 @@ import akka.javasdk.impl.keyvalueentity.KeyValueEntitiesImpl
 import akka.javasdk.impl.keyvalueentity.KeyValueEntityService
 import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.reflection.Reflect.Syntax.AnnotatedElementOps
+import akka.javasdk.impl.serialization.JsonSerializer
 import akka.javasdk.impl.telemetry.SpanTracingImpl
 import akka.javasdk.impl.telemetry.TraceInstrumentation
 import akka.javasdk.impl.timedaction.TimedActionImpl
@@ -98,19 +99,7 @@ import kalix.protocol.discovery.Discovery
 import kalix.protocol.event_sourced_entity.EventSourcedEntities
 import kalix.protocol.value_entity.ValueEntities
 import kalix.protocol.view.Views
-import kalix.protocol.workflow_entity.WorkflowEntities
 import org.slf4j.LoggerFactory
-import scala.jdk.OptionConverters.RichOptional
-import scala.jdk.CollectionConverters._
-
-import akka.javasdk.impl.consumer.ConsumerImpl
-import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityImpl
-import akka.javasdk.impl.serialization.JsonSerializer
-import akka.javasdk.impl.timedaction.TimedActionImpl
-import akka.runtime.sdk.spi.ConsumerDescriptor
-import akka.runtime.sdk.spi.EventSourcedEntityDescriptor
-import akka.runtime.sdk.spi.SpiEventSourcedEntity
-import akka.runtime.sdk.spi.TimedActionDescriptor
 
 /**
  * INTERNAL API
@@ -287,7 +276,6 @@ private final class Sdk(
     dependencyProviderOverride: Option[DependencyProvider],
     startedPromise: Promise[StartupContext]) {
   private val logger = LoggerFactory.getLogger(getClass)
-  private val messageCodec = new JsonMessageCodec // FIXME replace with JsonSerializer completely
   private val serializer = new JsonSerializer
   private val ComponentLocator.LocatedClasses(componentClasses, maybeServiceClass) =
     ComponentLocator.locateUserComponents(system)
@@ -397,7 +385,7 @@ private final class Sdk(
       new WorkflowImpl[S, W](
         factoryContext.workflowId,
         clz,
-        messageCodec,
+        serializer,
         timerClient = runtimeComponentClients.timerClient,
         sdkExecutionContext,
         sdkTracerFactory,
@@ -412,19 +400,16 @@ private final class Sdk(
 
           // FIXME pull this inline setup stuff out of SdkRunner and into some workflow class
           val workflowStateType: Class[_] = Reflect.workflowStateType[S, W](workflow)
-          messageCodec.registerTypeHints(workflowStateType)
+          serializer.registerTypeHints(workflowStateType)
 
           workflow
             .definition()
             .getSteps
             .asScala
-            .flatMap {
-              case asyncCallStep: Workflow.AsyncCallStep[_, _, _] =>
-                List(asyncCallStep.callInputClass, asyncCallStep.transitionInputClass)
-              case callStep: Workflow.CallStep[_, _, _, _] =>
-                List(callStep.callInputClass, callStep.transitionInputClass)
+            .flatMap { case asyncCallStep: Workflow.AsyncCallStep[_, _, _] =>
+              List(asyncCallStep.callInputClass, asyncCallStep.transitionInputClass)
             }
-            .foreach(messageCodec.registerTypeHints)
+            .foreach(serializer.registerTypeHints)
 
           workflow
         })
@@ -638,7 +623,6 @@ private final class Sdk(
         Sdk.this.eventSourcedEntityDescriptors
       override def valueEntities: Option[ValueEntities] = valueEntitiesEndpoint
       override def views: Option[Views] = viewsEndpoint
-      override def workflowEntities: Option[WorkflowEntities] = None
       override def httpEndpointDescriptors: Seq[HttpEndpointDescriptor] =
         Sdk.this.httpEndpointDescriptors
 
@@ -674,19 +658,16 @@ private final class Sdk(
 
         // FIXME pull this inline setup stuff out of SdkRunner and into some workflow class
         val workflowStateType: Class[S] = Reflect.workflowStateType(workflow)
-        messageCodec.registerTypeHints(workflowStateType)
+        serializer.registerTypeHints(workflowStateType)
 
         workflow
           .definition()
           .getSteps
           .asScala
-          .flatMap {
-            case asyncCallStep: Workflow.AsyncCallStep[_, _, _] =>
-              List(asyncCallStep.callInputClass, asyncCallStep.transitionInputClass)
-            case callStep: Workflow.CallStep[_, _, _, _] =>
-              List(callStep.callInputClass, callStep.transitionInputClass)
+          .flatMap { case asyncCallStep: Workflow.AsyncCallStep[_, _, _] =>
+            List(asyncCallStep.callInputClass, asyncCallStep.transitionInputClass)
           }
-          .foreach(messageCodec.registerTypeHints)
+          .foreach(serializer.registerTypeHints)
 
         workflow
       })

@@ -482,46 +482,6 @@ public abstract class Workflow<S> {
 
   }
 
-  public static class CallStep<CallInput, DefCallInput, DefCallOutput, FailoverInput> implements Step {
-
-    final private String _name;
-    final public Function<CallInput, DeferredCall<DefCallInput, DefCallOutput>> callFunc;
-    final public Function<DefCallOutput, Effect.TransitionalEffect<Void>> transitionFunc;
-    final public Class<CallInput> callInputClass;
-    final public Class<DefCallOutput> transitionInputClass;
-    private Optional<Duration> _timeout = Optional.empty();
-
-    public CallStep(String name,
-                    Class<CallInput> callInputClass,
-                    Function<CallInput, DeferredCall<DefCallInput, DefCallOutput>> callFunc,
-                    Class<DefCallOutput> transitionInputClass,
-                    Function<DefCallOutput, Effect.TransitionalEffect<Void>> transitionFunc) {
-      _name = name;
-      this.callInputClass = callInputClass;
-      this.callFunc = callFunc;
-      this.transitionInputClass = transitionInputClass;
-      this.transitionFunc = transitionFunc;
-    }
-
-    @Override
-    public String name() {
-      return this._name;
-    }
-
-    @Override
-    public Optional<Duration> timeout() {
-      return this._timeout;
-    }
-
-    /**
-     * Define a step timeout.
-     */
-    public CallStep<CallInput, DefCallInput, DefCallOutput, FailoverInput> timeout(Duration timeout) {
-      this._timeout = Optional.of(timeout);
-      return this;
-    }
-  }
-
   public static class AsyncCallStep<CallInput, CallOutput, FailoverInput> implements Step {
 
     final private String _name;

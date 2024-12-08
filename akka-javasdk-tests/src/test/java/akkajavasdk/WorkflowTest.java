@@ -4,17 +4,30 @@
 
 package akkajavasdk;
 
-import akkajavasdk.components.actions.echo.Message;
 import akka.javasdk.testkit.TestKitSupport;
-import akkajavasdk.components.workflowentities.*;
+import akkajavasdk.components.actions.echo.Message;
+import akkajavasdk.components.workflowentities.DummyWorkflow;
+import akkajavasdk.components.workflowentities.FailingCounterEntity;
+import akkajavasdk.components.workflowentities.Transfer;
+import akkajavasdk.components.workflowentities.TransferWorkflow;
+import akkajavasdk.components.workflowentities.TransferWorkflowWithFraudDetection;
+import akkajavasdk.components.workflowentities.TransferWorkflowWithoutInputs;
+import akkajavasdk.components.workflowentities.WalletEntity;
+import akkajavasdk.components.workflowentities.WorkflowWithDefaultRecoverStrategy;
+import akkajavasdk.components.workflowentities.WorkflowWithRecoverStrategy;
+import akkajavasdk.components.workflowentities.WorkflowWithRecoverStrategyAndAsyncCall;
+import akkajavasdk.components.workflowentities.WorkflowWithStepTimeout;
+import akkajavasdk.components.workflowentities.WorkflowWithTimeout;
+import akkajavasdk.components.workflowentities.WorkflowWithTimer;
+import akkajavasdk.components.workflowentities.WorkflowWithoutInitialState;
 import akkajavasdk.components.workflowentities.hierarchy.TextWorkflow;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.time.Duration;
-import java.util.Optional;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -24,7 +37,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @ExtendWith(Junit5LogCapturing.class)
 public class WorkflowTest extends TestKitSupport {
 
-@Test
+  @Test
   public void shouldNotStartTransferForWithNegativeAmount() {
     var walletId1 = "1";
     var walletId2 = "2";
@@ -47,7 +60,7 @@ public class WorkflowTest extends TestKitSupport {
         });
   }
 
-@Test
+  @Test
   public void shouldTransferMoney() {
     var walletId1 = "1";
     var walletId2 = "2";
@@ -83,7 +96,7 @@ public class WorkflowTest extends TestKitSupport {
   }
 
 
-@Test
+  @Test
   public void shouldTransferMoneyWithoutStepInputs() {
     var walletId1 = "1";
     var walletId2 = "2";
@@ -116,7 +129,7 @@ public class WorkflowTest extends TestKitSupport {
       });
   }
 
-@Test
+  @Test
   public void shouldTransferAsyncMoneyWithoutStepInputs() {
     var walletId1 = "1";
     var walletId2 = "2";
@@ -151,7 +164,7 @@ public class WorkflowTest extends TestKitSupport {
   }
 
 
-@Test
+  @Test
   public void shouldTransferMoneyWithFraudDetection() {
     var walletId1 = "1";
     var walletId2 = "2";
@@ -185,7 +198,7 @@ public class WorkflowTest extends TestKitSupport {
       });
   }
 
-@Test
+  @Test
   public void shouldTransferMoneyWithFraudDetectionAndManualAcceptance() {
     var walletId1 = "1";
     var walletId2 = "2";
@@ -249,7 +262,7 @@ public class WorkflowTest extends TestKitSupport {
       });
   }
 
-@Test
+  @Test
   public void shouldNotTransferMoneyWhenFraudDetectionRejectTransfer() {
     var walletId1 = "1";
     var walletId2 = "2";
@@ -454,7 +467,7 @@ public class WorkflowTest extends TestKitSupport {
       });
   }
 
-@Test
+ @Test
   public void shouldRecoverWorkflowStepTimeout() {
     //given
     var counterId = randomId();
@@ -488,7 +501,7 @@ public class WorkflowTest extends TestKitSupport {
       });
   }
 
-@Test
+  @Test
   public void shouldUseTimerInWorkflowDefinition() {
     //given
     var counterId = randomId();
@@ -523,7 +536,7 @@ public class WorkflowTest extends TestKitSupport {
   }
 
 
-@Test
+  @Test
   public void shouldNotUpdateWorkflowStateAfterEndTransition() {
     //given
     var workflowId = randomId();
@@ -551,7 +564,7 @@ public class WorkflowTest extends TestKitSupport {
         .method(DummyWorkflow::get).invokeAsync())).isEqualTo(10);
   }
 
-@Test
+  @Test
   public void shouldRunWorkflowStepWithoutInitialState() {
     //given
     var workflowId = randomId();
@@ -572,7 +585,7 @@ public class WorkflowTest extends TestKitSupport {
       });
   }
 
-@Test
+  @Test
   public void shouldAllowHierarchyWorkflow() {
     var workflowId = randomId();
     await(componentClient.forWorkflow(workflowId)
@@ -585,7 +598,7 @@ public class WorkflowTest extends TestKitSupport {
     assertThat(result).isEqualTo(Optional.of("some text"));
   }
 
-@Test
+  @Test
   public void shouldBeCallableWithGenericParameter() {
     var workflowId = randomId();
     String response1 = await(componentClient.forWorkflow(workflowId)
