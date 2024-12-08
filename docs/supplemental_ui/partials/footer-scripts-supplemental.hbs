@@ -1,1 +1,85 @@
-{{!-- add supplemental scripts as needed --}}
+<script src="{{uiRootPath}}/js/vendor/js.cookie.min.js" ></script>
+<script type="text/plain" class="optanon-category-3">
+    (function(apiKey){
+        (function(p,e,n,d,o){var v,w,x,y,z;o=p[d]=p[d]||{};o._q=o._q||[];
+        v=['initialize','identify','updateOptions','pageLoad','track'];for(w=0,x=v.length;w<x;++w)(function(m){
+            o[m]=o[m]||function(){o._q[m===v[0]?'unshift':'push']([m].concat([].slice.call(arguments,0)));};})(v[w]);
+            y=e.createElement(n);y.async=!0;y.src='https://content.pa.lightbend.com/agent/static/'+apiKey+'/pendo.js';
+            z=e.getElementsByTagName(n)[0];z.parentNode.insertBefore(y,z);})(window,document,'script','pendo');
+
+    const getEnv = () => {
+    const { hostname } = window.location;
+    switch (hostname) {
+        case "localhost":
+        return "localhost";
+        case "doc.akka.dev":
+        return "dev";
+        case "doc.akka.st":
+        return "staging";
+        case "doc.akka.io":
+        return "prod";
+        default:
+        if (hostname.includes("akka.work")) {
+            return "workbench";
+        }
+        return "unknown";
+    }
+    };
+
+    // NOTE: doc https://support.pendo.io/hc/en-us/articles/360037760572-Tracking-Anonymous-Visitors-Across-Subdomains
+    const getCookieDomain = () => {
+    const { hostname } = window.location;
+    switch (hostname) {
+        case "localhost":
+        return "localhost";
+        case "doc.akka.dev":
+        return ".akka.dev";
+        case "doc.akka.st":
+        return ".akka.st";
+        case "doc.akka.io":
+        return ".akka.io";
+        default:
+        if (hostname.includes("akka.work")) {
+            return ".akka.work";
+        }
+        return "unknown";
+    }
+    };
+
+    const saveCookie = (userId) => {
+    Cookies.set('_track_pv', userId.replace("users/", ""),  { domain: getCookieDomain(), expires: 35 });
+    };
+
+    // read userId from cookie
+    const userId = Cookies.get('_track_pv');
+
+    if (userId && userId !== "undefined") {
+    pendo.initialize({
+        visitor: {
+        id: userId.startsWith("_PENDO_T_") ? userId : "users/" + userId,
+        environment: getEnv()
+        },
+        cookieDomain: getCookieDomain()
+    });
+
+    // save cookie to update cookie expiration date
+    saveCookie(userId);
+    } else {
+    pendo.initialize({
+        visitor: {
+        environment: getEnv()
+        },
+        cookieDomain: getCookieDomain()
+    });
+
+    // save visitorId to cookie
+    setTimeout(() => {
+        const visitorId = pendo.visitorId
+        if (visitorId) {
+        saveCookie(visitorId);
+        }
+    }, 1000);
+    }
+
+    })('244586c2-5138-4af9-6ec1-a39cdd9d974d');
+</script>
