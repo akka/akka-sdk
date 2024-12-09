@@ -23,7 +23,6 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @ExtendWith(Junit5LogCapturing.class)
-@Disabled
 public class WorkflowTest extends TestKitSupport {
 
   @Test
