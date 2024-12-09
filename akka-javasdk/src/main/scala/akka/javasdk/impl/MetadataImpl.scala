@@ -262,9 +262,12 @@ object MetadataImpl {
         throw new RuntimeException(s"Unknown metadata implementation: ${other.getClass}, cannot send")
     }
 
-  def toSpi(metadata: Option[Metadata]): SpiMetadata = {
+  def toSpi(metadata: Option[Metadata]): SpiMetadata =
+    metadata.map(toSpi).getOrElse(SpiMetadata.Empty)
+
+  def toSpi(metadata: Metadata): SpiMetadata = {
     metadata match {
-      case Some(impl: MetadataImpl) if impl.entries.nonEmpty =>
+      case impl: MetadataImpl if impl.entries.nonEmpty =>
         val entries = impl.entries.map(entry =>
           entry.value match {
             case Value.Empty              => new SpiMetadataEntry(entry.key, "")
@@ -273,8 +276,7 @@ object MetadataImpl {
               new SpiMetadataEntry(entry.key, value.toStringUtf8) //FIXME support bytes values or not
           })
         new SpiMetadata(entries)
-      case Some(_: MetadataImpl) => SpiMetadata.Empty
-      case None                  => SpiMetadata.Empty
+      case _: MetadataImpl => SpiMetadata.Empty
       case other =>
         throw new RuntimeException(s"Unknown metadata implementation: ${other.getClass}, cannot send")
     }

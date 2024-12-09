@@ -13,7 +13,9 @@ import scala.annotation.nowarn
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.Promise
+import scala.jdk.CollectionConverters._
 import scala.jdk.FutureConverters._
+import scala.jdk.OptionConverters.RichOptional
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
 
@@ -23,8 +25,10 @@ import akka.annotation.InternalApi
 import akka.http.scaladsl.model.headers.RawHeader
 import akka.javasdk.BuildInfo
 import akka.javasdk.DependencyProvider
+import akka.javasdk.JwtClaims
 import akka.javasdk.Principals
 import akka.javasdk.ServiceSetup
+import akka.javasdk.Tracing
 import akka.javasdk.annotations.ComponentId
 import akka.javasdk.annotations.Setup
 import akka.javasdk.annotations.http.HttpEndpoint
@@ -32,19 +36,31 @@ import akka.javasdk.client.ComponentClient
 import akka.javasdk.consumer.Consumer
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.javasdk.eventsourcedentity.EventSourcedEntityContext
+import akka.javasdk.http.AbstractHttpEndpoint
 import akka.javasdk.http.HttpClientProvider
 import akka.javasdk.http.RequestContext
+import akka.javasdk.impl.ComponentDescriptorFactory.consumerDestination
+import akka.javasdk.impl.ComponentDescriptorFactory.consumerSource
 import akka.javasdk.impl.Sdk.StartupContext
 import akka.javasdk.impl.Validations.Invalid
 import akka.javasdk.impl.Validations.Valid
 import akka.javasdk.impl.Validations.Validation
+import akka.javasdk.impl.client.ComponentClientImpl
+import akka.javasdk.impl.consumer.ConsumerImpl
 import akka.javasdk.impl.eventsourcedentity.EventSourcedEntitiesImpl
+import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityImpl
 import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityService
 import akka.javasdk.impl.http.HttpClientProviderImpl
+import akka.javasdk.impl.http.JwtClaimsImpl
 import akka.javasdk.impl.keyvalueentity.KeyValueEntitiesImpl
+import akka.javasdk.impl.keyvalueentity.KeyValueEntityImpl
 import akka.javasdk.impl.keyvalueentity.KeyValueEntityService
 import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.reflection.Reflect.Syntax.AnnotatedElementOps
+import akka.javasdk.impl.serialization.JsonSerializer
+import akka.javasdk.impl.telemetry.SpanTracingImpl
+import akka.javasdk.impl.telemetry.TraceInstrumentation
+import akka.javasdk.impl.timedaction.TimedActionImpl
 import akka.javasdk.impl.timedaction.TimedActionService
 import akka.javasdk.impl.timer.TimerSchedulerImpl
 import akka.javasdk.impl.view.ViewService
@@ -58,22 +74,22 @@ import akka.javasdk.timer.TimerScheduler
 import akka.javasdk.view.View
 import akka.javasdk.workflow.Workflow
 import akka.javasdk.workflow.WorkflowContext
-import akka.javasdk.JwtClaims
-import akka.javasdk.http.AbstractHttpEndpoint
-import akka.javasdk.Tracing
-import akka.javasdk.impl.http.JwtClaimsImpl
-import akka.javasdk.impl.telemetry.SpanTracingImpl
-import akka.javasdk.impl.telemetry.TraceInstrumentation
 import akka.runtime.sdk.spi.ComponentClients
+import akka.runtime.sdk.spi.ConsumerDescriptor
+import akka.runtime.sdk.spi.EventSourcedEntityDescriptor
 import akka.runtime.sdk.spi.HttpEndpointConstructionContext
 import akka.runtime.sdk.spi.HttpEndpointDescriptor
 import akka.runtime.sdk.spi.RemoteIdentification
 import akka.runtime.sdk.spi.SpiComponents
 import akka.runtime.sdk.spi.SpiDevModeSettings
+import akka.runtime.sdk.spi.SpiEventSourcedEntity
 import akka.runtime.sdk.spi.SpiEventingSupportSettings
 import akka.runtime.sdk.spi.SpiMockedEventingSettings
 import akka.runtime.sdk.spi.SpiSettings
+import akka.runtime.sdk.spi.SpiWorkflow
 import akka.runtime.sdk.spi.StartContext
+import akka.runtime.sdk.spi.TimedActionDescriptor
+import akka.runtime.sdk.spi.WorkflowDescriptor
 import akka.stream.Materializer
 import com.google.protobuf.Descriptors
 import com.typesafe.config.Config
@@ -85,24 +101,7 @@ import kalix.protocol.discovery.Discovery
 import kalix.protocol.event_sourced_entity.EventSourcedEntities
 import kalix.protocol.value_entity.ValueEntities
 import kalix.protocol.view.Views
-import kalix.protocol.workflow_entity.WorkflowEntities
 import org.slf4j.LoggerFactory
-import scala.jdk.OptionConverters.RichOptional
-import scala.jdk.CollectionConverters._
-
-import akka.javasdk.impl.ComponentDescriptorFactory.consumerDestination
-import akka.javasdk.impl.ComponentDescriptorFactory.consumerSource
-import akka.javasdk.impl.client.ComponentClientImpl
-import akka.javasdk.impl.consumer.ConsumerImpl
-import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityImpl
-import akka.javasdk.impl.keyvalueentity.KeyValueEntityImpl
-import akka.javasdk.impl.serialization.JsonSerializer
-import akka.javasdk.impl.timedaction.TimedActionImpl
-import akka.runtime.sdk.spi.ConsumerDescriptor
-import akka.runtime.sdk.spi.EventSourcedEntityDescriptor
-import akka.runtime.sdk.spi.SpiEventSourcedEntity
-import akka.runtime.sdk.spi.TimedActionDescriptor
-import akka.runtime.sdk.spi.WorkflowDescriptor
 
 /**
  * INTERNAL API
@@ -352,7 +351,7 @@ private final class Sdk(
     } else {
       //additional check to skip logging for endpoints
       if (!clz.hasAnnotation[HttpEndpoint]) {
-        //this could happened when we remove the @ComponentId annotation from the class,
+        //this could happen when we remove the @ComponentId annotation from the class,
         //the file descriptor generated by annotation processor might still have this class entry,
         //for instance when working with IDE and incremental compilation (without clean)
         logger.warn("Ignoring component [{}] as it does not have the @ComponentId annotation", clz.getName)
@@ -379,6 +378,68 @@ private final class Sdk(
 
   // FIXME instead of collecting one component type at a time (looping componentClasses several times)
   // we could collect all in one loop
+  private val workflowDescriptors: Seq[WorkflowDescriptor] = {
+
+    // we need a method instead of function in order to have type params
+    // to late use in Reflect.workflowStateType
+    def workflowInstanceFactory[S, W <: Workflow[S]](
+        factoryContext: SpiWorkflow.FactoryContext,
+        clz: Class[W]): SpiWorkflow = {
+      logger.debug(s"Registering Workflow [${clz.getName}]")
+      new WorkflowImpl[S, W](
+        factoryContext.workflowId,
+        clz,
+        serializer,
+        timerClient = runtimeComponentClients.timerClient,
+        sdkExecutionContext,
+        sdkTracerFactory,
+        { context =>
+
+          val workflow = wiredInstance(clz) {
+            sideEffectingComponentInjects(None).orElse {
+              // remember to update component type API doc and docs if changing the set of injectables
+              case p if p == classOf[WorkflowContext] => context
+            }
+          }
+
+          // FIXME pull this inline setup stuff out of SdkRunner and into some workflow class
+          val workflowStateType: Class[_] = Reflect.workflowStateType[S, W](workflow)
+          serializer.registerTypeHints(workflowStateType)
+
+          workflow
+            .definition()
+            .getSteps
+            .asScala
+            .flatMap { case asyncCallStep: Workflow.AsyncCallStep[_, _, _] =>
+              List(asyncCallStep.callInputClass, asyncCallStep.transitionInputClass)
+            }
+            .foreach(serializer.registerTypeHints)
+
+          workflow
+        })
+    }
+
+    componentClasses
+      .filter(hasComponentId)
+      .collect {
+        case clz if Reflect.isWorkflow(clz) =>
+          val componentId = clz.getAnnotation(classOf[ComponentId]).value
+
+          val readOnlyCommandNames =
+            clz.getDeclaredMethods.collect {
+              case method
+                  if isCommandHandlerCandidate[Workflow.Effect[_]](method) && method.getReturnType == classOf[
+                    Workflow.ReadOnlyEffect[_]] =>
+                method.getName
+            }.toSet
+
+          new WorkflowDescriptor(
+            componentId,
+            readOnlyCommandNames,
+            ctx => workflowInstanceFactory(ctx, clz.asInstanceOf[Class[Workflow[Nothing]]]))
+      }
+  }
+
   private val eventSourcedEntityDescriptors =
     componentClasses
       .filter(hasComponentId)
@@ -497,7 +558,6 @@ private final class Sdk(
     var eventSourcedEntitiesEndpoint: Option[EventSourcedEntities] = None
     var valueEntitiesEndpoint: Option[ValueEntities] = None
     var viewsEndpoint: Option[Views] = None
-    var workflowEntitiesEndpoint: Option[WorkflowEntities] = None
 
     val classicSystem = system.classicSystem
 
@@ -523,15 +583,8 @@ private final class Sdk(
         valueEntitiesEndpoint = Some(
           new KeyValueEntitiesImpl(classicSystem, entityServices, sdkSettings, sdkDispatcherName, sdkTracerFactory))
 
-      case (serviceClass, workflowServices: Map[String, WorkflowService[_, _]] @unchecked)
+      case (serviceClass, _: Map[String, WorkflowService[_, _]] @unchecked)
           if serviceClass == classOf[WorkflowService[_, _]] =>
-        workflowEntitiesEndpoint = Some(
-          new WorkflowImpl(
-            workflowServices,
-            runtimeComponentClients.timerClient,
-            sdkExecutionContext,
-            sdkDispatcherName,
-            sdkTracerFactory))
 
       case (serviceClass, _: Map[String, TimedActionService[_]] @unchecked)
           if serviceClass == classOf[TimedActionService[_]] =>
@@ -594,12 +647,13 @@ private final class Sdk(
       }
 
       override def discovery: Discovery = discoveryEndpoint
+
       override def eventSourcedEntityDescriptors: Seq[EventSourcedEntityDescriptor] =
         Sdk.this.eventSourcedEntityDescriptors
+
       override def keyValueEntityDescriptors: Seq[EventSourcedEntityDescriptor] =
         Sdk.this.keyValueEntityDescriptors
-      override def workflowDescriptors: Seq[WorkflowDescriptor] = Nil // FIXME
-      override def views: Option[Views] = viewsEndpoint
+
       override def httpEndpointDescriptors: Seq[HttpEndpointDescriptor] =
         Sdk.this.httpEndpointDescriptors
 
@@ -608,6 +662,12 @@ private final class Sdk(
 
       override def consumersDescriptors: Seq[ConsumerDescriptor] =
         Sdk.this.consumerDescriptors
+
+      override def workflowDescriptors: Seq[WorkflowDescriptor] =
+        Sdk.this.workflowDescriptors
+
+      override def views: Option[Views] = viewsEndpoint
+
     }
   }
 
@@ -635,18 +695,14 @@ private final class Sdk(
           .definition()
           .getSteps
           .asScala
-          .flatMap {
-            case asyncCallStep: Workflow.AsyncCallStep[_, _, _] =>
-              List(asyncCallStep.callInputClass, asyncCallStep.transitionInputClass)
-            case callStep: Workflow.CallStep[_, _, _, _] =>
-              List(callStep.callInputClass, callStep.transitionInputClass)
+          .flatMap { case asyncCallStep: Workflow.AsyncCallStep[_, _, _] =>
+            List(asyncCallStep.callInputClass, asyncCallStep.transitionInputClass)
           }
           .foreach(serializer.registerTypeHints)
 
         workflow
       })
   }
-
   private def eventSourcedEntityService[S, E, ES <: EventSourcedEntity[S, E]](
       clz: Class[ES]): EventSourcedEntityService[S, E, ES] =
     EventSourcedEntityService(

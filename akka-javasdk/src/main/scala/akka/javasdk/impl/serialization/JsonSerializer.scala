@@ -158,7 +158,7 @@ class JsonSerializer {
     isJsonContentType(bytesPayload.contentType)
 
   def isJsonContentType(contentType: String): Boolean =
-    // check both new and old typeurl for compatibility, in case there are services with old type url stored in database
+    // check both new and old typeUrl for compatibility, in case there are services with old type url stored in database
     contentType.startsWith(JsonContentTypePrefix) || contentType.startsWith(KalixJsonContentTypePrefix)
 
 // FIXME could be used by some ReflectiveRouters but not yet

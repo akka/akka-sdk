@@ -40,7 +40,7 @@ private[impl] final class ReflectiveTimedActionRouter[A <: TimedAction](
     val inputTypeUrl = AnySupport.replaceLegacyJsonPrefix(scalaPbAnyCommand.typeUrl)
     if ((AnySupport.isJson(
         scalaPbAnyCommand) || scalaPbAnyCommand.value.isEmpty) && commandHandler.isSingleNameInvoker) {
-      // special cased component client calls, lets json commands trough all the way
+      // special cased component client calls, lets json commands through all the way
       val methodInvoker = commandHandler.getSingleNameInvoker()
       val deserializedCommand =
         CommandSerialization.deserializeComponentClientCommand(methodInvoker.method, scalaPbAnyCommand)
