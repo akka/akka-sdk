@@ -24,6 +24,7 @@ import akka.javasdk.impl.WorkflowExceptions.WorkflowException
 import akka.javasdk.impl.serialization.JsonSerializer
 import akka.javasdk.impl.telemetry.SpanTracingImpl
 import akka.javasdk.impl.timer.TimerSchedulerImpl
+import akka.javasdk.impl.workflow.ReflectiveWorkflowRouter.CommandResult
 import akka.javasdk.impl.workflow.WorkflowEffectImpl.DeleteState
 import akka.javasdk.impl.workflow.WorkflowEffectImpl.End
 import akka.javasdk.impl.workflow.WorkflowEffectImpl.ErrorEffectImpl
@@ -37,7 +38,6 @@ import akka.javasdk.impl.workflow.WorkflowEffectImpl.StepTransition
 import akka.javasdk.impl.workflow.WorkflowEffectImpl.Transition
 import akka.javasdk.impl.workflow.WorkflowEffectImpl.TransitionalEffectImpl
 import akka.javasdk.impl.workflow.WorkflowEffectImpl.UpdateState
-import akka.javasdk.impl.workflow.WorkflowRouter.CommandResult
 import akka.javasdk.workflow.CommandContext
 import akka.javasdk.workflow.Workflow
 import akka.javasdk.workflow.Workflow.{ RecoverStrategy => SdkRecoverStrategy }
