@@ -16,7 +16,6 @@ import akka.javasdk.Metadata
 import akka.javasdk.Tracing
 import akka.javasdk.impl.AbstractContext
 import akka.javasdk.impl.ActivatableContext
-import akka.javasdk.impl.AnySupport
 import akka.javasdk.impl.ComponentDescriptor
 import akka.javasdk.impl.ErrorHandling.BadRequestException
 import akka.javasdk.impl.MetadataImpl
@@ -38,7 +37,6 @@ import akka.javasdk.impl.workflow.WorkflowEffectImpl.StepTransition
 import akka.javasdk.impl.workflow.WorkflowEffectImpl.Transition
 import akka.javasdk.impl.workflow.WorkflowEffectImpl.TransitionalEffectImpl
 import akka.javasdk.impl.workflow.WorkflowEffectImpl.UpdateState
-import akka.javasdk.impl.workflow.WorkflowImpl.NoCommandPayload
 import akka.javasdk.impl.workflow.WorkflowRouter.CommandResult
 import akka.javasdk.workflow.CommandContext
 import akka.javasdk.workflow.Workflow
@@ -49,18 +47,9 @@ import akka.runtime.sdk.spi.SpiEntity
 import akka.runtime.sdk.spi.SpiMetadata
 import akka.runtime.sdk.spi.SpiWorkflow
 import akka.runtime.sdk.spi.TimerClient
-import akka.util.ByteString
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.Tracer
 import kalix.protocol.workflow_entity.WorkflowEntities
-
-/**
- * INTERNAL API
- */
-@InternalApi
-private[impl] object WorkflowImpl {
-  private val NoCommandPayload = new BytesPayload(ByteString.empty, AnySupport.JsonTypeUrlPrefix)
-}
 
 /**
  * INTERNAL API
@@ -209,10 +198,9 @@ class WorkflowImpl[S, W <: Workflow[S]](
 
     val timerScheduler =
       new TimerSchedulerImpl(timerClient, context.componentCallMetadata)
-    val cmd = command.payload.getOrElse {
-      // FIXME smuggling 0 arity method called from component client through here
-      NoCommandPayload
-    }
+
+    // FIXME smuggling 0 arity method called from component client through here
+    val cmd = command.payload.getOrElse(BytesPayload.empty)
 
     val CommandResult(effect) =
       try {
