@@ -30,6 +30,7 @@ import akka.javasdk.workflow.Workflow
 import akka.javasdk.workflow.Workflow.AsyncCallStep
 import akka.javasdk.workflow.Workflow.Effect
 import akka.runtime.sdk.spi.BytesPayload
+import akka.runtime.sdk.spi.SpiWorkflow
 
 /**
  * INTERNAL API
@@ -59,25 +60,21 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
     commandHandlers: Map[String, CommandHandler],
     serializer: JsonSerializer) {
 
-  private var state: Option[S] = None
-  private var workflowFinished: Boolean = false
+  private def decodeUserState(userState: Option[BytesPayload]): S =
+    userState
+      .map(s => serializer.fromBytes(s).asInstanceOf[S])
+      .getOrElse(workflow.emptyState())
 
-  private def stateOrEmpty(): S = state match {
-    case None =>
-      val emptyState = workflow.emptyState()
-      // null is allowed as emptyState
-      state = Some(emptyState)
-      emptyState
-    case Some(state) =>
-      state
-  }
-
-  /** INTERNAL API */
-  // "public" api against the impl/testkit
-  def _internalSetInitState(s: Any, finished: Boolean): Unit = {
-    if (!workflowFinished) {
-      state = Some(s.asInstanceOf[S])
-      workflowFinished = finished
+  // in same cases, the runtime may send a message with typeUrl set to object.
+  // if that's the case, we need to patch the message using the typeUrl from the expected input class
+  private def decodeInput(result: BytesPayload, expectedInputClass: Class[_]) = {
+    if (result == BytesPayload.empty) null // input can't be empty, but just in case
+    else if ((serializer.isJson(result) &&
+      result.contentType.endsWith("/object")) ||
+      result.contentType == AnySupport.JsonTypeUrlPrefix) {
+      serializer.fromBytes(expectedInputClass, result)
+    } else {
+      serializer.fromBytes(result)
     }
   }
 
@@ -89,6 +86,7 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
   /** INTERNAL API */
   // "public" api against the impl/testkit
   final def _internalHandleCommand(
+      userState: Option[SpiWorkflow.State],
       commandName: String,
       command: BytesPayload,
       context: CommandContext,
@@ -98,7 +96,9 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
       try {
         workflow._internalSetTimerScheduler(Optional.of(timerScheduler))
         workflow._internalSetCommandContext(Optional.of(context))
-        workflow._internalSetCurrentState(stateOrEmpty())
+
+        val decodedState = decodeUserState(userState)
+        workflow._internalSetCurrentState(decodedState)
 
         val commandHandler = commandHandlerLookup(commandName)
 
@@ -144,67 +144,57 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
     CommandResult(commandEffect)
   }
 
-  // in same cases, the runtime may send a message with typeUrl set to object.
-  // if that's the case, we need to patch the message using the typeUrl from the expected input class
-  private def decodeInput(serializer: JsonSerializer, result: BytesPayload, expectedInputClass: Class[_]) = {
-    if (result == BytesPayload.empty) null // input can't be empty, but just in case
-    else if ((serializer.isJson(result) &&
-      result.contentType.endsWith("/object")) ||
-      result.contentType == AnySupport.JsonTypeUrlPrefix) {
-      serializer.fromBytes(expectedInputClass, result)
-    } else {
-      serializer.fromBytes(result)
-    }
-  }
-
   /** INTERNAL API */
   // "public" api against the impl/testkit
   final def _internalHandleStep(
+      userState: Option[SpiWorkflow.State],
       input: Option[BytesPayload],
       stepName: String,
-      serializer: JsonSerializer,
       timerScheduler: TimerScheduler,
       commandContext: CommandContext,
       executionContext: ExecutionContext): Future[BytesPayload] = {
 
     implicit val ec: ExecutionContext = executionContext
 
-    workflow._internalSetCurrentState(stateOrEmpty())
+    val decodedState = decodeUserState(userState)
+    workflow._internalSetCurrentState(decodedState)
     workflow._internalSetTimerScheduler(Optional.of(timerScheduler))
-    workflow._internalSetCommandContext(Optional.of(commandContext))
-    val workflowDef = workflow.definition()
 
-    workflowDef.findByName(stepName).toScala match {
-      case Some(call: AsyncCallStep[_, _, _]) =>
-        val decodedInput = input match {
-          case Some(inputValue) => decodeInput(serializer, inputValue, call.callInputClass)
-          case None             => null // to meet a signature of supplier expressed as a function
-        }
+    try {
+      workflow._internalSetCommandContext(Optional.of(commandContext))
+      workflow.definition().findByName(stepName).toScala match {
+        case Some(call: AsyncCallStep[_, _, _]) =>
+          val decodedInput = input match {
+            case Some(inputValue) => decodeInput(inputValue, call.callInputClass)
+            case None             => null // to meet a signature of supplier expressed as a function
+          }
 
-        val future = call.callFunc
-          .asInstanceOf[JFunc[Any, CompletionStage[Any]]]
-          .apply(decodedInput)
-          .asScala
+          val future = call.callFunc
+            .asInstanceOf[JFunc[Any, CompletionStage[Any]]]
+            .apply(decodedInput)
+            .asScala
 
-        future.map(serializer.toBytes)
+          future.map(serializer.toBytes)
 
-      case Some(any) => Future.failed(WorkflowStepNotSupported(any.getClass.getSimpleName))
-      case None      => Future.failed(WorkflowStepNotFound(stepName))
+        case Some(any) => Future.failed(WorkflowStepNotSupported(any.getClass.getSimpleName))
+        case None      => Future.failed(WorkflowStepNotFound(stepName))
+      }
+    } finally {
+      workflow._internalSetCommandContext(Optional.empty())
     }
 
   }
 
-  def _internalGetNextStep(stepName: String, result: BytesPayload, serializer: JsonSerializer): CommandResult = {
+  def _internalGetNextStep(stepName: String, result: BytesPayload, userState: Option[BytesPayload]): CommandResult = {
 
-    workflow._internalSetCurrentState(stateOrEmpty())
-    val workflowDef = workflow.definition()
-
-    workflowDef.findByName(stepName).toScala match {
+    val decodedState = decodeUserState(userState)
+    workflow._internalSetCurrentState(decodedState)
+    workflow.definition().findByName(stepName).toScala match {
       case Some(call: AsyncCallStep[_, _, _]) =>
         val effect =
           call.transitionFunc
             .asInstanceOf[JFunc[Any, Effect[Any]]]
-            .apply(decodeInput(serializer, result, call.transitionInputClass))
+            .apply(decodeInput(result, call.transitionInputClass))
 
         CommandResult(effect)
 

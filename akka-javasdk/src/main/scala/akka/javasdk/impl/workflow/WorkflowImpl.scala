@@ -124,12 +124,6 @@ class WorkflowImpl[S, W <: Workflow[S]](
       None,
       tracerFactory)
 
-  private def decodeState(userState: Option[BytesPayload]): S =
-    userState
-      .map(serializer.fromBytes)
-      .getOrElse(router.workflow.emptyState())
-      .asInstanceOf[S]
-
   private def toSpiEffect(effect: Workflow.Effect[_]): SpiWorkflow.Effect = {
 
     def toSpiTransition(transition: Transition): SpiWorkflow.Transition =
@@ -141,19 +135,17 @@ class WorkflowImpl[S, W <: Workflow[S]](
         case End          => SpiWorkflow.End
       }
 
-    def handleState(persistence: Persistence[Any], transition: Transition): SpiWorkflow.Persistence =
+    def handleState(persistence: Persistence[Any]): SpiWorkflow.Persistence =
       persistence match {
-        case UpdateState(newState) =>
-          router._internalSetInitState(newState, transition.isInstanceOf[End.type])
-          new SpiWorkflow.UpdateState(serializer.toBytes(newState))
-        case DeleteState   => SpiWorkflow.DeleteState
-        case NoPersistence => SpiWorkflow.NoPersistence
+        case UpdateState(newState) => new SpiWorkflow.UpdateState(serializer.toBytes(newState))
+        case DeleteState           => SpiWorkflow.DeleteState
+        case NoPersistence         => SpiWorkflow.NoPersistence
       }
 
     effect match {
       case error: ErrorEffectImpl[_] =>
         new SpiWorkflow.Effect(
-          userState = SpiWorkflow.NoPersistence, // mean runtime don't need to persist any new state
+          persistence = SpiWorkflow.NoPersistence, // mean runtime don't need to persist any new state
           SpiWorkflow.NoTransition,
           reply = None,
           error = Some(new SpiEntity.Error(error.description)),
@@ -168,7 +160,7 @@ class WorkflowImpl[S, W <: Workflow[S]](
           }
 
         new SpiWorkflow.Effect(
-          handleState(persistence, transition), // can be null when fallback to emptyState
+          handleState(persistence),
           toSpiTransition(transition),
           reply = replyOpt.map(serializer.toBytes),
           error = None,
@@ -176,7 +168,7 @@ class WorkflowImpl[S, W <: Workflow[S]](
 
       case TransitionalEffectImpl(persistence, transition) =>
         new SpiWorkflow.Effect(
-          handleState(persistence, transition), // can be null when fallback to emptyState
+          handleState(persistence),
           toSpiTransition(transition),
           reply = None,
           error = None,
@@ -185,13 +177,8 @@ class WorkflowImpl[S, W <: Workflow[S]](
   }
 
   override def handleCommand(
-      workflowState: Option[SpiWorkflow.WorkflowState],
+      userState: Option[SpiWorkflow.State],
       command: SpiEntity.Command): Future[SpiWorkflow.Effect] = {
-
-    // can be null when fallback to emptyState
-    val decodedState = decodeState(workflowState.map(_.userState))
-    val isFinished = workflowState.exists(_.isFinished)
-    router._internalSetInitState(decodedState, finished = isFinished)
 
     val metadata = MetadataImpl.of(command.metadata)
     val context = commandContext(command.name, metadata)
@@ -205,6 +192,7 @@ class WorkflowImpl[S, W <: Workflow[S]](
     val CommandResult(effect) =
       try {
         router._internalHandleCommand(
+          userState = userState,
           commandName = command.name,
           command = cmd,
           context = context,
@@ -229,34 +217,32 @@ class WorkflowImpl[S, W <: Workflow[S]](
       new TimerSchedulerImpl(timerClient, context.componentCallMetadata)
 
     try {
-      userState.foreach { state =>
-        val decoded = serializer.fromBytes(state)
-        router._internalSetInitState(decoded, finished = false) // here we know that workflow is still running
-      }
-
       router._internalHandleStep(
+        userState,
         input = input,
         stepName = stepName,
-        serializer = serializer,
         timerScheduler = timerScheduler,
         commandContext = context,
         executionContext = sdkExecutionContext)
     } catch {
       case e: WorkflowException => throw e
       case NonFatal(ex) =>
-        throw WorkflowException(s"unexpected exception [${ex.getMessage}] while executing step [${stepName}]", Some(ex))
+        throw WorkflowException(s"unexpected exception [${ex.getMessage}] while executing step [$stepName]", Some(ex))
     }
   }
 
-  override def transition(stepName: String, result: Option[BytesPayload]): Future[SpiWorkflow.Effect] = {
+  override def transition(
+      stepName: String,
+      result: Option[BytesPayload],
+      userState: Option[BytesPayload]): Future[SpiWorkflow.Effect] = {
     val CommandResult(effect) =
       try {
-        router._internalGetNextStep(stepName, result.get, serializer)
+        router._internalGetNextStep(stepName, result.get, userState)
       } catch {
         case e: WorkflowException => throw e
         case NonFatal(ex) =>
           throw WorkflowException(
-            s"unexpected exception [${ex.getMessage}] while executing transition for step [${stepName}]",
+            s"unexpected exception [${ex.getMessage}] while executing transition for step [$stepName]",
             Some(ex))
       }
     Future.successful(toSpiEffect(effect))
