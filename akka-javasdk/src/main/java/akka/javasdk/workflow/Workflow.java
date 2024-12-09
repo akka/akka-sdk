@@ -5,7 +5,6 @@
 package akka.javasdk.workflow;
 
 import akka.annotation.InternalApi;
-import akka.javasdk.DeferredCall;
 import akka.javasdk.Metadata;
 import akka.javasdk.impl.workflow.WorkflowEffectImpl;
 import akka.javasdk.timer.TimerScheduler;
@@ -96,39 +95,12 @@ public abstract class Workflow<S> {
   }
 
 
-  /**
-   * INTERNAL API
-   * @hidden
-   */
-  @InternalApi
-  public void _internalSetCommandContext(Optional<CommandContext> context) {
-    commandContext = context;
-  }
-
-  /**
-   * INTERNAL API
-   * @hidden
-   */
-  @InternalApi
-  public void _internalSetTimerScheduler(Optional<TimerScheduler> timerScheduler) {
-    this.timerScheduler = timerScheduler;
-  }
 
   /**
    * Returns a {@link TimerScheduler} that can be used to schedule further in time.
    */
   public final TimerScheduler timers() {
     return timerScheduler.orElseThrow(() -> new IllegalStateException("Timers can only be scheduled or cancelled when handling a command or running a step action."));
-  }
-
-  /**
-   * INTERNAL API
-   * @hidden
-   */
-  @InternalApi
-  public void _internalSetCurrentState(S state) {
-    stateHasBeenSet = true;
-    currentState = Optional.ofNullable(state);
   }
 
   /**
@@ -148,6 +120,44 @@ public abstract class Workflow<S> {
     if (stateHasBeenSet) return currentState.orElse(null);
     else throw new IllegalStateException("Current state is only available when handling a command.");
   }
+
+
+  /**
+   * INTERNAL API
+   * @hidden
+   */
+  @InternalApi
+  public void _internalSetup(S state, CommandContext context, TimerScheduler timerScheduler) {
+    this.stateHasBeenSet = true;
+    this.currentState = Optional.ofNullable(state);
+    this.commandContext = Optional.of(context);
+    this.timerScheduler = Optional.of(timerScheduler);
+  }
+
+  /**
+   * INTERNAL API
+   *
+   * @hidden
+   */
+  @InternalApi
+  public void _internalSetup(S state) {
+    this.stateHasBeenSet = true;
+    this.currentState = Optional.ofNullable(state);
+  }
+
+  /**
+   * INTERNAL API
+   *
+   * @hidden
+   */
+  @InternalApi
+  public void _internalClear() {
+    this.stateHasBeenSet = false;
+    this.currentState = Optional.empty();
+    this.commandContext = Optional.empty();
+    this.timerScheduler = Optional.empty();
+  }
+
 
   /**
    * @return A workflow definition in a form of steps and transitions between them.

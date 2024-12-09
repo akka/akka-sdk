@@ -4,7 +4,6 @@
 
 package akka.javasdk.impl.workflow
 
-import java.util.Optional
 import java.util.concurrent.CompletionStage
 import java.util.function.{ Function => JFunc }
 
@@ -65,8 +64,8 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
       .map(s => serializer.fromBytes(s).asInstanceOf[S])
       .getOrElse(workflow.emptyState())
 
-  // in same cases, the runtime may send a message with typeUrl set to object.
-  // if that's the case, we need to patch the message using the typeUrl from the expected input class
+  // in same cases, the runtime may send a message with contentType set to object.
+  // if that's the case, we need to patch the message using the contentType from the expected input class
   private def decodeInput(result: BytesPayload, expectedInputClass: Class[_]) = {
     if (result == BytesPayload.empty) null // input can't be empty, but just in case
     else if ((serializer.isJson(result) &&
@@ -94,11 +93,7 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
 
     val commandEffect =
       try {
-        workflow._internalSetTimerScheduler(Optional.of(timerScheduler))
-        workflow._internalSetCommandContext(Optional.of(context))
-
-        val decodedState = decodeUserState(userState)
-        workflow._internalSetCurrentState(decodedState)
+        workflow._internalSetup(decodeUserState(userState), context, timerScheduler)
 
         val commandHandler = commandHandlerLookup(commandName)
 
@@ -138,7 +133,7 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
             commandName,
             s"No command handler found for command [$name] on ${workflow.getClass}")
       } finally {
-        workflow._internalSetCommandContext(Optional.empty())
+        workflow._internalClear();
       }
 
     CommandResult(commandEffect)
@@ -156,12 +151,8 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
 
     implicit val ec: ExecutionContext = executionContext
 
-    val decodedState = decodeUserState(userState)
-    workflow._internalSetCurrentState(decodedState)
-    workflow._internalSetTimerScheduler(Optional.of(timerScheduler))
-
     try {
-      workflow._internalSetCommandContext(Optional.of(commandContext))
+      workflow._internalSetup(decodeUserState(userState), commandContext, timerScheduler)
       workflow.definition().findByName(stepName).toScala match {
         case Some(call: AsyncCallStep[_, _, _]) =>
           val decodedInput = input match {
@@ -180,26 +171,29 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
         case None      => Future.failed(WorkflowStepNotFound(stepName))
       }
     } finally {
-      workflow._internalSetCommandContext(Optional.empty())
+      workflow._internalClear()
     }
 
   }
 
   def _internalGetNextStep(stepName: String, result: BytesPayload, userState: Option[BytesPayload]): CommandResult = {
 
-    val decodedState = decodeUserState(userState)
-    workflow._internalSetCurrentState(decodedState)
-    workflow.definition().findByName(stepName).toScala match {
-      case Some(call: AsyncCallStep[_, _, _]) =>
-        val effect =
-          call.transitionFunc
-            .asInstanceOf[JFunc[Any, Effect[Any]]]
-            .apply(decodeInput(result, call.transitionInputClass))
+    try {
+      workflow._internalSetup(decodeUserState(userState))
+      workflow.definition().findByName(stepName).toScala match {
+        case Some(call: AsyncCallStep[_, _, _]) =>
+          val effect =
+            call.transitionFunc
+              .asInstanceOf[JFunc[Any, Effect[Any]]]
+              .apply(decodeInput(result, call.transitionInputClass))
 
-        CommandResult(effect)
+          CommandResult(effect)
 
-      case Some(any) => throw WorkflowStepNotSupported(any.getClass.getSimpleName)
-      case None      => throw WorkflowStepNotFound(stepName)
+        case Some(any) => throw WorkflowStepNotSupported(any.getClass.getSimpleName)
+        case None      => throw WorkflowStepNotFound(stepName)
+      }
+    } finally {
+      workflow._internalClear();
     }
   }
 }
