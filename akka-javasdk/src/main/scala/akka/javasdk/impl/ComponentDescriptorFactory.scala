@@ -31,7 +31,8 @@ import akka.javasdk.timedaction.TimedAction
 import akka.javasdk.view.TableUpdater
 import akka.javasdk.view.View
 import akka.javasdk.workflow.Workflow
-import akka.runtime.sdk.spi
+import akka.runtime.sdk.spi.ConsumerDestination
+import akka.runtime.sdk.spi.ConsumerSource
 import kalix.DirectDestination
 import kalix.DirectSource
 import kalix.EventDestination
@@ -221,32 +222,32 @@ private[impl] object ComponentDescriptorFactory {
     }
   }
 
-  def consumerSource(clazz: Class[_]): spi.ConsumerSource = {
+  def consumerSource(clazz: Class[_]): ConsumerSource = {
     if (hasValueEntitySubscription(clazz)) {
       val kveType = findValueEntityType(clazz)
-      new spi.KeyValueEntitySource(kveType)
+      new ConsumerSource.KeyValueEntitySource(kveType)
     } else if (hasEventSourcedEntitySubscription(clazz)) {
       val esType = findEventSourcedEntityType(clazz)
-      new spi.EventSourcedEntitySource(esType)
+      new ConsumerSource.EventSourcedEntitySource(esType)
     } else if (hasTopicSubscription(clazz)) {
       val topicName = findSubscriptionTopicName(clazz)
       val consumerGroup = findSubscriptionConsumerGroup(clazz)
-      new spi.TopicSource(topicName, consumerGroup)
+      new ConsumerSource.TopicSource(topicName, consumerGroup)
     } else if (hasStreamSubscription(clazz)) {
       val streamAnn = streamSubscription(clazz).get
-      new spi.ServiceStreamSource(streamAnn.service(), streamAnn.id(), streamAnn.consumerGroup())
+      new ConsumerSource.ServiceStreamSource(streamAnn.service(), streamAnn.id(), streamAnn.consumerGroup())
     } else {
       throw new IllegalArgumentException(s"Component [$clazz] is missing a @Consume annotation")
     }
   }
 
-  def consumerDestination(clazz: Class[Consumer]): Option[spi.ConsumerDestination] = {
+  def consumerDestination(clazz: Class[Consumer]): Option[ConsumerDestination] = {
     if (hasTopicPublication(clazz)) {
       val topicName = findPublicationTopicName(clazz)
-      Some(new spi.TopicDestination(topicName))
+      Some(new ConsumerDestination.TopicDestination(topicName))
     } else if (hasStreamPublication(clazz)) {
       val streamAnn = clazz.getAnnotation(classOf[ServiceStream])
-      Some(new spi.ServiceStreamDestination(streamAnn.id()))
+      Some(new ConsumerDestination.ServiceStreamDestination(streamAnn.id()))
     } else {
       None
     }
