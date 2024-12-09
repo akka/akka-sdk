@@ -5,7 +5,6 @@
 package akka.javasdk.workflow;
 
 import akka.annotation.InternalApi;
-import akka.javasdk.DeferredCall;
 import akka.javasdk.Metadata;
 import akka.javasdk.impl.workflow.WorkflowEffectImpl;
 import akka.javasdk.timer.TimerScheduler;
@@ -96,39 +95,12 @@ public abstract class Workflow<S> {
   }
 
 
-  /**
-   * INTERNAL API
-   * @hidden
-   */
-  @InternalApi
-  public void _internalSetCommandContext(Optional<CommandContext> context) {
-    commandContext = context;
-  }
-
-  /**
-   * INTERNAL API
-   * @hidden
-   */
-  @InternalApi
-  public void _internalSetTimerScheduler(Optional<TimerScheduler> timerScheduler) {
-    this.timerScheduler = timerScheduler;
-  }
 
   /**
    * Returns a {@link TimerScheduler} that can be used to schedule further in time.
    */
   public final TimerScheduler timers() {
     return timerScheduler.orElseThrow(() -> new IllegalStateException("Timers can only be scheduled or cancelled when handling a command or running a step action."));
-  }
-
-  /**
-   * INTERNAL API
-   * @hidden
-   */
-  @InternalApi
-  public void _internalSetCurrentState(S state) {
-    stateHasBeenSet = true;
-    currentState = Optional.ofNullable(state);
   }
 
   /**
@@ -148,6 +120,44 @@ public abstract class Workflow<S> {
     if (stateHasBeenSet) return currentState.orElse(null);
     else throw new IllegalStateException("Current state is only available when handling a command.");
   }
+
+
+  /**
+   * INTERNAL API
+   * @hidden
+   */
+  @InternalApi
+  public void _internalSetup(S state, CommandContext context, TimerScheduler timerScheduler) {
+    this.stateHasBeenSet = true;
+    this.currentState = Optional.ofNullable(state);
+    this.commandContext = Optional.of(context);
+    this.timerScheduler = Optional.of(timerScheduler);
+  }
+
+  /**
+   * INTERNAL API
+   *
+   * @hidden
+   */
+  @InternalApi
+  public void _internalSetup(S state) {
+    this.stateHasBeenSet = true;
+    this.currentState = Optional.ofNullable(state);
+  }
+
+  /**
+   * INTERNAL API
+   *
+   * @hidden
+   */
+  @InternalApi
+  public void _internalClear() {
+    this.stateHasBeenSet = false;
+    this.currentState = Optional.empty();
+    this.commandContext = Optional.empty();
+    this.timerScheduler = Optional.empty();
+  }
+
 
   /**
    * @return A workflow definition in a form of steps and transitions between them.
@@ -442,6 +452,7 @@ public abstract class Workflow<S> {
       return stepTimeout;
     }
 
+
     public Optional<RecoverStrategy<?>> getStepRecoverStrategy() {
       return stepRecoverStrategy;
     }
@@ -479,46 +490,6 @@ public abstract class Workflow<S> {
     Optional<Duration> timeout();
 
 
-  }
-
-  public static class CallStep<CallInput, DefCallInput, DefCallOutput, FailoverInput> implements Step {
-
-    final private String _name;
-    final public Function<CallInput, DeferredCall<DefCallInput, DefCallOutput>> callFunc;
-    final public Function<DefCallOutput, Effect.TransitionalEffect<Void>> transitionFunc;
-    final public Class<CallInput> callInputClass;
-    final public Class<DefCallOutput> transitionInputClass;
-    private Optional<Duration> _timeout = Optional.empty();
-
-    public CallStep(String name,
-                    Class<CallInput> callInputClass,
-                    Function<CallInput, DeferredCall<DefCallInput, DefCallOutput>> callFunc,
-                    Class<DefCallOutput> transitionInputClass,
-                    Function<DefCallOutput, Effect.TransitionalEffect<Void>> transitionFunc) {
-      _name = name;
-      this.callInputClass = callInputClass;
-      this.callFunc = callFunc;
-      this.transitionInputClass = transitionInputClass;
-      this.transitionFunc = transitionFunc;
-    }
-
-    @Override
-    public String name() {
-      return this._name;
-    }
-
-    @Override
-    public Optional<Duration> timeout() {
-      return this._timeout;
-    }
-
-    /**
-     * Define a step timeout.
-     */
-    public CallStep<CallInput, DefCallInput, DefCallOutput, FailoverInput> timeout(Duration timeout) {
-      this._timeout = Optional.of(timeout);
-      return this;
-    }
   }
 
   public static class AsyncCallStep<CallInput, CallOutput, FailoverInput> implements Step {

@@ -60,40 +60,6 @@ public class StepBuilder {
   }
 
 
-  public static class CallStepBuilder<Input, DefCallInput, DefCallOutput> {
-
-    final private String name;
-
-    final private Class<Input> callInputClass;
-    /* callFactory builds the DeferredCall that will be passed to runtime for execution */
-    final private Function<Input, DeferredCall<DefCallInput, DefCallOutput>> callFunc;
-
-    public CallStepBuilder(String name, Class<Input> callInputClass, Function<Input, DeferredCall<DefCallInput, DefCallOutput>> callFunc) {
-      this.name = name;
-      this.callInputClass = callInputClass;
-      this.callFunc = callFunc;
-    }
-
-    /**
-     * Transition to the next step based on the result of the step call.
-     * <p>
-     * The {@link Function} passed to this method should receive the return type of the step call and return
-     * an {@link Workflow.Effect.TransitionalEffect} describing the next step to transition to.
-     * <p>
-     * When defining the Effect, you can update the workflow state and indicate the next step to transition to.
-     * This can be another step, or a pause or end of the workflow.
-     * <p>
-     * When transition to another step, you can also pass an input parameter to the next step.
-     *
-     * @param transitionInputClass Input class for transition.
-     * @param transitionFunc       Function that transform the action result to a {@link Workflow.Effect.TransitionalEffect}
-     * @return CallStep
-     */
-    public Workflow.CallStep<Input, DefCallInput, DefCallOutput, ?> andThen(Class<DefCallOutput> transitionInputClass, Function<DefCallOutput, Workflow.Effect.TransitionalEffect<Void>> transitionFunc) {
-      return new Workflow.CallStep<>(name, callInputClass, callFunc, transitionInputClass, transitionFunc);
-    }
-  }
-
   public static class AsyncCallStepBuilder<CallInput, CallOutput> {
 
     final private String name;
