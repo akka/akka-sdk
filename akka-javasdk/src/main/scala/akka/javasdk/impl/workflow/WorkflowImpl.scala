@@ -314,12 +314,10 @@ final class WorkflowImpl(
           val cmdPayloadPbAny = command.payload.getOrElse(
             // FIXME smuggling 0 arity method called from component client through here
             ScalaPbAny.defaultInstance.withTypeUrl(AnySupport.JsonTypeUrlPrefix).withValue(ByteString.empty()))
-          val cmdBytesPayload = AnySupport.toSpiBytesPayload(cmdPayloadPbAny)
-          val cmd = service.serializer.fromBytes(cmdBytesPayload)
 
           val (CommandResult(effect), errorCode) =
             try {
-              (router._internalHandleCommand(command.name, cmd, context, timerScheduler), None)
+              (router._internalHandleCommand(command.name, cmdPayloadPbAny, context, timerScheduler), None)
             } catch {
               case BadRequestException(msg) =>
                 (CommandResult(WorkflowEffectImpl[Any]().error(msg)), Some(Status.Code.INVALID_ARGUMENT))
