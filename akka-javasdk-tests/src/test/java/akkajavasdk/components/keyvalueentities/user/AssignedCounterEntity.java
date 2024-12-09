@@ -6,13 +6,19 @@ package akkajavasdk.components.keyvalueentities.user;
 
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
+import akka.javasdk.keyvalueentity.KeyValueEntityContext;
 
 @ComponentId("assigned-counter")
 public class AssignedCounterEntity extends KeyValueEntity<AssignedCounter> {
+  private final String entityId;
+
+  public AssignedCounterEntity(KeyValueEntityContext context) {
+    this.entityId = context.entityId();
+  }
 
   @Override
   public AssignedCounter emptyState() {
-    return new AssignedCounter(commandContext().entityId(), "");
+    return new AssignedCounter(entityId, "");
   }
 
   public KeyValueEntity.Effect<String> assign(String assigneeId) {

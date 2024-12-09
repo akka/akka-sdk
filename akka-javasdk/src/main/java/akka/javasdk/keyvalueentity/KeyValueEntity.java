@@ -91,6 +91,16 @@ public abstract class KeyValueEntity<S> {
   }
 
   /**
+   * INTERNAL API
+   * @hidden
+   */
+  @InternalApi
+  public void _internalClearCurrentState() {
+    handlingCommands = false;
+    currentState = Optional.empty();
+  }
+
+  /**
    * Returns the state as currently stored.
    *
    * <p>Note that modifying the state directly will not update it in storage. To save the state, you

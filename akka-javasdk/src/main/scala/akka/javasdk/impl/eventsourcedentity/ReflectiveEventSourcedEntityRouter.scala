@@ -86,7 +86,10 @@ private[impl] class ReflectiveEventSourcedEntityRouter[S, E, ES <: EventSourcedE
  * INTERNAL API
  */
 @InternalApi
-private[impl] final class HandlerNotFoundException(handlerType: String, name: String, availableHandlers: Set[String])
+private[impl] final class HandlerNotFoundException(
+    handlerType: String,
+    val name: String,
+    availableHandlers: Set[String])
     extends RuntimeException(
       s"no matching [$handlerType] handler for [$name]. " +
       s"Available handlers are: [${availableHandlers.mkString(", ")}]")

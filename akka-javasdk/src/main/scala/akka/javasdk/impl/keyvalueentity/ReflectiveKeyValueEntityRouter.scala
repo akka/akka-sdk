@@ -5,76 +5,75 @@
 package akka.javasdk.impl.keyvalueentity
 
 import akka.annotation.InternalApi
-import akka.javasdk.JsonSupport
 import akka.javasdk.impl.AnySupport
 import akka.javasdk.impl.CommandHandler
 import akka.javasdk.impl.CommandSerialization
 import akka.javasdk.impl.InvocationContext
 import akka.javasdk.impl.reflection.Reflect
+import akka.javasdk.impl.serialization.JsonSerializer
 import akka.javasdk.keyvalueentity.CommandContext
 import akka.javasdk.keyvalueentity.KeyValueEntity
-import com.google.protobuf.any.{ Any => ScalaPbAny }
+import akka.runtime.sdk.spi.BytesPayload
 
 /**
  * INTERNAL API
  */
 @InternalApi
-private[impl] final class ReflectiveKeyValueEntityRouter[S, E <: KeyValueEntity[S]](
-    override protected val entity: E,
-    commandHandlers: Map[String, CommandHandler])
-    extends KeyValueEntityRouter[S, E](entity) {
+private[impl] class ReflectiveKeyValueEntityRouter[S, KV <: KeyValueEntity[S]](
+    val entity: KV,
+    commandHandlers: Map[String, CommandHandler],
+    serializer: JsonSerializer) {
+
+  val entityStateType: Class[S] = Reflect.keyValueEntityStateType(entity.getClass).asInstanceOf[Class[S]]
 
   private def commandHandlerLookup(commandName: String) =
-    commandHandlers.getOrElse(commandName, throw new RuntimeException(s"no matching method for '$commandName'"))
+    commandHandlers.getOrElse(
+      commandName,
+      throw new HandlerNotFoundException("command", commandName, commandHandlers.keySet))
 
-  override protected def handleCommand(
+  def handleCommand(
       commandName: String,
-      state: S,
-      command: Any,
+      command: BytesPayload,
       commandContext: CommandContext): KeyValueEntity.Effect[_] = {
 
-    _extractAndSetCurrentState(state)
-
     val commandHandler = commandHandlerLookup(commandName)
-    val scalaPbAnyCommand = command.asInstanceOf[ScalaPbAny]
 
-    if (AnySupport.isJson(scalaPbAnyCommand)) {
+    if (serializer.isJson(command)) {
       // special cased component client calls, lets json commands through all the way
       val methodInvoker = commandHandler.getSingleNameInvoker()
       val deserializedCommand =
-        CommandSerialization.deserializeComponentClientCommand(methodInvoker.method, scalaPbAnyCommand)
+        CommandSerialization.deserializeComponentClientCommand(methodInvoker.method, command, serializer)
       val result = deserializedCommand match {
         case None          => methodInvoker.invoke(entity)
         case Some(command) => methodInvoker.invokeDirectly(entity, command)
       }
       result.asInstanceOf[KeyValueEntity.Effect[_]]
     } else {
+      // FIXME can be proto from http-grpc-handling of the static es endpoints
+      val pbAnyCommand = AnySupport.toScalaPbAny(command)
       val invocationContext =
-        InvocationContext(scalaPbAnyCommand, commandHandler.requestMessageDescriptor, commandContext.metadata())
+        InvocationContext(pbAnyCommand, commandHandler.requestMessageDescriptor, commandContext.metadata())
 
-      val inputTypeUrl = command.asInstanceOf[ScalaPbAny].typeUrl
-
-      commandHandler
+      val inputTypeUrl = pbAnyCommand.typeUrl
+      val methodInvoker = commandHandler
         .getInvoker(inputTypeUrl)
+
+      methodInvoker
         .invoke(entity, invocationContext)
         .asInstanceOf[KeyValueEntity.Effect[_]]
     }
   }
 
-  private def _extractAndSetCurrentState(state: S): Unit = {
-    val entityStateType: Class[S] = Reflect.keyValueEntityStateType(entity.getClass).asInstanceOf[Class[S]]
-
-    // the state: S received can either be of the entity "state" type (if coming from emptyState/memory)
-    // or PB Any type (if coming from the runtime)
-    state match {
-      case s if s == null || state.getClass == entityStateType =>
-        // note that we set the state even if null, this is needed in order to
-        // be able to call currentState() later
-        entity._internalSetCurrentState(s)
-      case s =>
-        val deserializedState =
-          JsonSupport.decodeJson(entityStateType, ScalaPbAny.toJavaProto(s.asInstanceOf[ScalaPbAny]))
-        entity._internalSetCurrentState(deserializedState)
-    }
-  }
 }
+
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[impl] final class HandlerNotFoundException(
+    handlerType: String,
+    val name: String,
+    availableHandlers: Set[String])
+    extends RuntimeException(
+      s"no matching [$handlerType] handler for [$name]. " +
+      s"Available handlers are: [${availableHandlers.mkString(", ")}]")
