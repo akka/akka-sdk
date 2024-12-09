@@ -9,17 +9,19 @@ import akka.javasdk.impl.AnySupport
 import akka.javasdk.impl.CommandHandler
 import akka.javasdk.impl.CommandSerialization
 import akka.javasdk.impl.InvocationContext
+import akka.javasdk.impl.serialization.JsonSerializer
 import akka.javasdk.workflow.CommandContext
 import akka.javasdk.workflow.Workflow
-import com.google.protobuf.any.{ Any => ScalaPbAny }
+import akka.runtime.sdk.spi.BytesPayload
 
 /**
  * INTERNAL API
  */
 @InternalApi
 class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
-    override protected val workflow: W,
-    commandHandlers: Map[String, CommandHandler])
+    override val workflow: W,
+    commandHandlers: Map[String, CommandHandler],
+    serializer: JsonSerializer)
     extends WorkflowRouter[S, W](workflow) {
 
   private def commandHandlerLookup(commandName: String) =
@@ -30,18 +32,17 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
   override def handleCommand(
       commandName: String,
       state: S,
-      command: Any,
+      command: BytesPayload,
       commandContext: CommandContext): Workflow.Effect[_] = {
 
     workflow._internalSetCurrentState(state)
     val commandHandler = commandHandlerLookup(commandName)
 
-    val scalaPbAnyCommand = command.asInstanceOf[ScalaPbAny]
-    if (AnySupport.isJson(scalaPbAnyCommand)) {
-      // special cased component client calls, lets json commands trough all the way
+    if (serializer.isJson(command)) {
+      // special cased component client calls, lets json commands through all the way
       val methodInvoker = commandHandler.getSingleNameInvoker()
       val deserializedCommand =
-        CommandSerialization.deserializeComponentClientCommand(methodInvoker.method, scalaPbAnyCommand)
+        CommandSerialization.deserializeComponentClientCommand(methodInvoker.method, command, serializer)
       val result = deserializedCommand match {
         case None          => methodInvoker.invoke(workflow)
         case Some(command) => methodInvoker.invokeDirectly(workflow, command)
@@ -49,16 +50,15 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
       result.asInstanceOf[Workflow.Effect[_]]
     } else {
 
+      // FIXME can be proto from http-grpc-handling of the static es endpoints
+      val pbAnyCommand = AnySupport.toScalaPbAny(command)
       val invocationContext =
-        InvocationContext(
-          command.asInstanceOf[ScalaPbAny],
-          commandHandler.requestMessageDescriptor,
-          commandContext.metadata())
+        InvocationContext(pbAnyCommand, commandHandler.requestMessageDescriptor, commandContext.metadata())
 
-      val inputTypeUrl = command.asInstanceOf[ScalaPbAny].typeUrl
+      val inputTypeUrl = pbAnyCommand.typeUrl
 
-      commandHandler
-        .getInvoker(inputTypeUrl)
+      val methodInvoker = commandHandler.getInvoker(inputTypeUrl)
+      methodInvoker
         .invoke(workflow, invocationContext)
         .asInstanceOf[Workflow.Effect[_]]
     }

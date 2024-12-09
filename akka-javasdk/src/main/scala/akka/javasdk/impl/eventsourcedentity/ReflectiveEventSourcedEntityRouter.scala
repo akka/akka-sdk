@@ -58,8 +58,7 @@ private[impl] class ReflectiveEventSourcedEntityRouter[S, E, ES <: EventSourcedE
         InvocationContext(pbAnyCommand, commandHandler.requestMessageDescriptor, commandContext.metadata())
 
       val inputTypeUrl = pbAnyCommand.typeUrl
-      val methodInvoker = commandHandler
-        .getInvoker(inputTypeUrl)
+      val methodInvoker = commandHandler.getInvoker(inputTypeUrl)
 
       methodInvoker
         .invoke(entity, invocationContext)

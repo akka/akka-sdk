@@ -18,7 +18,7 @@ import akka.javasdk.impl.reflection.ParameterExtractors.toAny
  * INTERNAL API
  */
 @InternalApi
-private[javasdk] object InvocationContext {
+private[javasdk] object InvocationContext { // FIXME: refactor this to BytesPayload
 
   private val typeUrlField = ScalaPbAny.javaDescriptor.findFieldByName("type_url")
   private val valueField = ScalaPbAny.javaDescriptor.findFieldByName("value")
