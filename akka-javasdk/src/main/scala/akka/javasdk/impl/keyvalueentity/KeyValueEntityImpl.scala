@@ -2,7 +2,7 @@
  * Copyright (C) 2021-2024 Lightbend Inc. <https://www.lightbend.com>
  */
 
-package akka.javasdk.impl.eventsourcedentity
+package akka.javasdk.impl.keyvalueentity
 
 import java.util.Optional
 
@@ -12,10 +12,6 @@ import scala.util.control.NonFatal
 import akka.annotation.InternalApi
 import akka.javasdk.Metadata
 import akka.javasdk.Tracing
-import akka.javasdk.eventsourcedentity.CommandContext
-import akka.javasdk.eventsourcedentity.EventContext
-import akka.javasdk.eventsourcedentity.EventSourcedEntity
-import akka.javasdk.eventsourcedentity.EventSourcedEntityContext
 import akka.javasdk.impl.AbstractContext
 import akka.javasdk.impl.ActivatableContext
 import akka.javasdk.impl.AnySupport
@@ -28,11 +24,12 @@ import akka.javasdk.impl.Settings
 import akka.javasdk.impl.effect.ErrorReplyImpl
 import akka.javasdk.impl.effect.MessageReplyImpl
 import akka.javasdk.impl.effect.NoSecondaryEffectImpl
-import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityEffectImpl.EmitEvents
-import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityEffectImpl.NoPrimaryEffect
 import akka.javasdk.impl.serialization.JsonSerializer
 import akka.javasdk.impl.telemetry.SpanTracingImpl
 import akka.javasdk.impl.telemetry.Telemetry
+import akka.javasdk.keyvalueentity.CommandContext
+import akka.javasdk.keyvalueentity.KeyValueEntity
+import akka.javasdk.keyvalueentity.KeyValueEntityContext
 import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.SpiEntity
 import akka.runtime.sdk.spi.SpiEventSourcedEntity
@@ -45,14 +42,14 @@ import org.slf4j.MDC
  * INTERNAL API
  */
 @InternalApi
-private[impl] object EventSourcedEntityImpl {
+private[impl] object KeyValueEntityImpl {
 
   private class CommandContextImpl(
       override val entityId: String,
-      override val sequenceNumber: Long,
+      val sequenceNumber: Long,
       override val commandName: String,
       override val commandId: Long, // FIXME remove
-      override val isDeleted: Boolean,
+      val isDeleted: Boolean,
       override val metadata: Metadata,
       span: Option[Span],
       tracerFactory: () => Tracer)
@@ -62,13 +59,9 @@ private[impl] object EventSourcedEntityImpl {
     override def tracing(): Tracing = new SpanTracingImpl(span, tracerFactory)
   }
 
-  private class EventSourcedEntityContextImpl(override final val entityId: String)
+  private class KeyValueEntityContextImpl(override final val entityId: String)
       extends AbstractContext
-      with EventSourcedEntityContext
-
-  private final class EventContextImpl(entityId: String, override val sequenceNumber: Long)
-      extends EventSourcedEntityContextImpl(entityId)
-      with EventContext
+      with KeyValueEntityContext
 
   // 0 arity method
   private val NoCommandPayload = new BytesPayload(ByteString.empty, AnySupport.JsonTypeUrlPrefix)
@@ -78,29 +71,30 @@ private[impl] object EventSourcedEntityImpl {
  * INTERNAL API
  */
 @InternalApi
-private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[S, E]](
+private[impl] final class KeyValueEntityImpl[S, KV <: KeyValueEntity[S]](
     configuration: Settings,
     tracerFactory: () => Tracer,
     componentId: String,
     componentClass: Class[_],
     entityId: String,
     serializer: JsonSerializer,
-    factory: EventSourcedEntityContext => ES)
+    factory: KeyValueEntityContext => KV)
     extends SpiEventSourcedEntity {
-  import EventSourcedEntityImpl._
+  import KeyValueEntityEffectImpl._
+  import KeyValueEntityImpl._
 
   // FIXME
 //  private val traceInstrumentation = new TraceInstrumentation(componentId, EventSourcedEntityCategory, tracerFactory)
 
   private val componentDescriptor = ComponentDescriptor.descriptorFor(componentClass, serializer)
 
-  private val router: ReflectiveEventSourcedEntityRouter[AnyRef, AnyRef, EventSourcedEntity[AnyRef, AnyRef]] = {
-    val context = new EventSourcedEntityContextImpl(entityId)
-    new ReflectiveEventSourcedEntityRouter[S, E, ES](factory(context), componentDescriptor.commandHandlers, serializer)
-      .asInstanceOf[ReflectiveEventSourcedEntityRouter[AnyRef, AnyRef, EventSourcedEntity[AnyRef, AnyRef]]]
+  private val router: ReflectiveKeyValueEntityRouter[AnyRef, KeyValueEntity[AnyRef]] = {
+    val context = new KeyValueEntityContextImpl(entityId)
+    new ReflectiveKeyValueEntityRouter[S, KV](factory(context), componentDescriptor.commandHandlers, serializer)
+      .asInstanceOf[ReflectiveKeyValueEntityRouter[AnyRef, KeyValueEntity[AnyRef]]]
   }
 
-  private def entity: EventSourcedEntity[AnyRef, AnyRef] =
+  private def entity: KeyValueEntity[AnyRef] =
     router.entity
 
   override def emptyState: SpiEventSourcedEntity.State =
@@ -132,10 +126,10 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
       entity._internalSetCurrentState(state)
       val commandEffect = router
         .handleCommand(command.name, cmdPayload, cmdContext)
-        .asInstanceOf[EventSourcedEntityEffectImpl[AnyRef, E]] // FIXME improve?
+        .asInstanceOf[KeyValueEntityEffectImpl[AnyRef]] // FIXME improve?
 
-      def replyOrError(updatedState: SpiEventSourcedEntity.State): (Option[BytesPayload], Option[SpiEntity.Error]) = {
-        commandEffect.secondaryEffect(updatedState) match {
+      def replyOrError: (Option[BytesPayload], Option[SpiEntity.Error]) = {
+        commandEffect.secondaryEffect match {
           case ErrorReplyImpl(description) =>
             (None, Some(new SpiEntity.Error(description)))
           case MessageReplyImpl(message, _) =>
@@ -147,35 +141,33 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
         }
       }
 
-      var currentSequence = command.sequenceNumber
       commandEffect.primaryEffect match {
-        case EmitEvents(events, deleteEntity) =>
-          var updatedState = state
-          events.foreach { event =>
-            updatedState = entityHandleEvent(updatedState, event.asInstanceOf[AnyRef], entityId, currentSequence)
-            if (updatedState == null)
-              throw new IllegalArgumentException("Event handler must not return null as the updated state.")
-            currentSequence += 1
-          }
-
-          val (reply, error) = replyOrError(updatedState)
+        case UpdateState(updatedState) =>
+          val (reply, error) = replyOrError
 
           if (error.isDefined) {
             Future.successful(
               new SpiEventSourcedEntity.Effect(events = Vector.empty, updatedState = state, reply = None, error, None))
           } else {
-            val delete =
-              if (deleteEntity) Some(configuration.cleanupDeletedEventSourcedEntityAfter)
-              else None
-
-            val serializedEvents = events.map(event => serializer.toBytes(event)).toVector
+            val serializedState = serializer.toBytes(updatedState)
 
             Future.successful(
-              new SpiEventSourcedEntity.Effect(events = serializedEvents, updatedState, reply, error, delete))
+              new SpiEventSourcedEntity.Effect(
+                events = Vector(serializedState),
+                updatedState,
+                reply,
+                error,
+                delete = None))
           }
 
+        case DeleteEntity =>
+          val (reply, error) = replyOrError
+
+          val delete = Some(configuration.cleanupDeletedEventSourcedEntityAfter)
+          Future.successful(new SpiEventSourcedEntity.Effect(events = Vector.empty, null, reply, error, delete))
+
         case NoPrimaryEffect =>
-          val (reply, error) = replyOrError(state)
+          val (reply, error) = replyOrError
 
           Future.successful(
             new SpiEventSourcedEntity.Effect(events = Vector.empty, updatedState = state, reply, error, None))
@@ -221,26 +213,7 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
   override def handleEvent(
       state: SpiEventSourcedEntity.State,
       eventEnv: SpiEventSourcedEntity.EventEnvelope): SpiEventSourcedEntity.State = {
-    // FIXME will this work, without the expected class
-    val event = serializer.fromBytes(eventEnv.payload)
-    entityHandleEvent(state, event, entityId, eventEnv.sequenceNumber)
-  }
-
-  def entityHandleEvent(
-      state: SpiEventSourcedEntity.State,
-      event: AnyRef,
-      entityId: String,
-      sequenceNumber: Long): SpiEventSourcedEntity.State = {
-    val eventContext = new EventContextImpl(entityId, sequenceNumber)
-    entity._internalSetEventContext(Optional.of(eventContext))
-    val clearState = entity._internalSetCurrentState(state)
-    try {
-      router.handleEvent(event)
-    } finally {
-      entity._internalSetEventContext(Optional.empty())
-      if (clearState)
-        entity._internalClearCurrentState()
-    }
+    throw new IllegalStateException("handleEvent not expected for KeyValueEntity")
   }
 
   override def stateToBytes(obj: SpiEventSourcedEntity.State): BytesPayload =
