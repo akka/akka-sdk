@@ -277,6 +277,8 @@ private[akka] final class CommandContextImpl(
 
   override def tracing(): Tracing =
     new SpanTracingImpl(span, tracerFactory)
+
+  override def commandId(): Long = 0
 }
 
 /**

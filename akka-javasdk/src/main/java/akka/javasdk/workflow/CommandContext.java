@@ -18,6 +18,14 @@ public interface CommandContext extends MetadataContext {
   String commandName();
 
   /**
+   * The id of the command being executed.
+   *
+   * @deprecated not used anymore
+   */
+  @Deprecated
+  long commandId();
+
+  /**
    * The id of the workflow that this context is for.
    *
    * @return The workflow id.
