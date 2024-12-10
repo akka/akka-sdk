@@ -61,7 +61,10 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
 
   private def decodeUserState(userState: Option[BytesPayload]): S =
     userState
-      .map(s => serializer.fromBytes(s).asInstanceOf[S])
+      .collect {
+        case payload if payload != BytesPayload.empty => serializer.fromBytes(payload).asInstanceOf[S]
+      }
+      // if runtime doesn't have a state to provide, we fall back to user's own defined empty state
       .getOrElse(workflow.emptyState())
 
   // in same cases, the runtime may send a message with contentType set to object.

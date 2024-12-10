@@ -111,10 +111,6 @@ class WorkflowImpl[S, W <: Workflow[S]](
       stepConfigs = stepConfigs)
   }
 
-  override def emptyState(workflowId: String): SpiWorkflow.State =
-    if (router.workflow.emptyState() == null) BytesPayload.empty
-    else serializer.toBytes(router.workflow.emptyState())
-
   private def commandContext(commandName: String, metadata: Metadata = MetadataImpl.Empty) =
     new CommandContextImpl(
       workflowId,
