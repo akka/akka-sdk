@@ -13,7 +13,9 @@ import scala.annotation.nowarn
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.Promise
+import scala.jdk.CollectionConverters._
 import scala.jdk.FutureConverters._
+import scala.jdk.OptionConverters.RichOptional
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
 
@@ -23,8 +25,10 @@ import akka.annotation.InternalApi
 import akka.http.scaladsl.model.headers.RawHeader
 import akka.javasdk.BuildInfo
 import akka.javasdk.DependencyProvider
+import akka.javasdk.JwtClaims
 import akka.javasdk.Principals
 import akka.javasdk.ServiceSetup
+import akka.javasdk.Tracing
 import akka.javasdk.annotations.ComponentId
 import akka.javasdk.annotations.Setup
 import akka.javasdk.annotations.http.HttpEndpoint
@@ -32,19 +36,29 @@ import akka.javasdk.client.ComponentClient
 import akka.javasdk.consumer.Consumer
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.javasdk.eventsourcedentity.EventSourcedEntityContext
+import akka.javasdk.http.AbstractHttpEndpoint
 import akka.javasdk.http.HttpClientProvider
 import akka.javasdk.http.RequestContext
+import akka.javasdk.impl.ComponentDescriptorFactory.consumerDestination
+import akka.javasdk.impl.ComponentDescriptorFactory.consumerSource
 import akka.javasdk.impl.Sdk.StartupContext
 import akka.javasdk.impl.Validations.Invalid
 import akka.javasdk.impl.Validations.Valid
 import akka.javasdk.impl.Validations.Validation
-import akka.javasdk.impl.eventsourcedentity.EventSourcedEntitiesImpl
+import akka.javasdk.impl.client.ComponentClientImpl
+import akka.javasdk.impl.consumer.ConsumerImpl
+import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityImpl
 import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityService
 import akka.javasdk.impl.http.HttpClientProviderImpl
-import akka.javasdk.impl.keyvalueentity.KeyValueEntitiesImpl
+import akka.javasdk.impl.http.JwtClaimsImpl
+import akka.javasdk.impl.keyvalueentity.KeyValueEntityImpl
 import akka.javasdk.impl.keyvalueentity.KeyValueEntityService
 import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.reflection.Reflect.Syntax.AnnotatedElementOps
+import akka.javasdk.impl.serialization.JsonSerializer
+import akka.javasdk.impl.telemetry.SpanTracingImpl
+import akka.javasdk.impl.telemetry.TraceInstrumentation
+import akka.javasdk.impl.timedaction.TimedActionImpl
 import akka.javasdk.impl.timedaction.TimedActionService
 import akka.javasdk.impl.timer.TimerSchedulerImpl
 import akka.javasdk.impl.view.ViewService
@@ -58,22 +72,20 @@ import akka.javasdk.timer.TimerScheduler
 import akka.javasdk.view.View
 import akka.javasdk.workflow.Workflow
 import akka.javasdk.workflow.WorkflowContext
-import akka.javasdk.JwtClaims
-import akka.javasdk.http.AbstractHttpEndpoint
-import akka.javasdk.Tracing
-import akka.javasdk.impl.http.JwtClaimsImpl
-import akka.javasdk.impl.telemetry.SpanTracingImpl
-import akka.javasdk.impl.telemetry.TraceInstrumentation
 import akka.runtime.sdk.spi.ComponentClients
+import akka.runtime.sdk.spi.ConsumerDescriptor
+import akka.runtime.sdk.spi.EventSourcedEntityDescriptor
 import akka.runtime.sdk.spi.HttpEndpointConstructionContext
 import akka.runtime.sdk.spi.HttpEndpointDescriptor
 import akka.runtime.sdk.spi.RemoteIdentification
 import akka.runtime.sdk.spi.SpiComponents
 import akka.runtime.sdk.spi.SpiDevModeSettings
+import akka.runtime.sdk.spi.SpiEventSourcedEntity
 import akka.runtime.sdk.spi.SpiEventingSupportSettings
 import akka.runtime.sdk.spi.SpiMockedEventingSettings
 import akka.runtime.sdk.spi.SpiSettings
 import akka.runtime.sdk.spi.StartContext
+import akka.runtime.sdk.spi.TimedActionDescriptor
 import akka.stream.Materializer
 import com.google.protobuf.Descriptors
 import com.typesafe.config.Config
@@ -82,26 +94,9 @@ import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.Tracer
 import io.opentelemetry.context.{ Context => OtelContext }
 import kalix.protocol.discovery.Discovery
-import kalix.protocol.event_sourced_entity.EventSourcedEntities
-import kalix.protocol.value_entity.ValueEntities
 import kalix.protocol.view.Views
 import kalix.protocol.workflow_entity.WorkflowEntities
 import org.slf4j.LoggerFactory
-import scala.jdk.OptionConverters.RichOptional
-import scala.jdk.CollectionConverters._
-
-import akka.javasdk.impl.ComponentDescriptorFactory.consumerDestination
-import akka.javasdk.impl.ComponentDescriptorFactory.consumerSource
-import akka.javasdk.impl.client.ComponentClientImpl
-import akka.javasdk.impl.consumer.ConsumerImpl
-import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityImpl
-import akka.javasdk.impl.keyvalueentity.KeyValueEntityImpl
-import akka.javasdk.impl.serialization.JsonSerializer
-import akka.javasdk.impl.timedaction.TimedActionImpl
-import akka.runtime.sdk.spi.ConsumerDescriptor
-import akka.runtime.sdk.spi.EventSourcedEntityDescriptor
-import akka.runtime.sdk.spi.SpiEventSourcedEntity
-import akka.runtime.sdk.spi.TimedActionDescriptor
 
 /**
  * INTERNAL API
@@ -165,7 +160,7 @@ class SdkRunner private (dependencyProvider: Option[DependencyProvider]) extends
         startContext.tracerFactory,
         dependencyProvider,
         startedPromise)
-      Future.successful(app.spiEndpoints)
+      Future.successful(app.spiComponents)
     } catch {
       case NonFatal(ex) =>
         LoggerFactory.getLogger(getClass).error("Unexpected exception while setting up service", ex)
@@ -315,7 +310,7 @@ private final class Sdk(
   }
 
   // register them if all valid, prototobuf
-  private val componentFactories: Map[Descriptors.ServiceDescriptor, Service] = componentClasses
+  private val componentServices: Map[Descriptors.ServiceDescriptor, Service] = componentClasses
     .filter(hasComponentId)
     .foldLeft(Map[Descriptors.ServiceDescriptor, Service]()) { (factories, clz) =>
       val service: Option[Service] = if (classOf[TimedAction].isAssignableFrom(clz)) {
@@ -360,13 +355,6 @@ private final class Sdk(
     }
   }
 
-  // collect all Endpoints and compose them to build a larger router
-  private val httpEndpointDescriptors = componentClasses
-    .filter(Reflect.isRestEndpoint)
-    .map { httpEndpointClass =>
-      HttpEndpointDescriptorFactory(httpEndpointClass, httpEndpointFactory(httpEndpointClass))
-    }
-
   // command handlers candidate must have 0 or 1 parameter and return the components effect type
   // we might later revisit this, instead of single param, we can require (State, Cmd) => Effect like in Akka
   def isCommandHandlerCandidate[E](method: Method)(implicit effectType: ClassTag[E]): Boolean = {
@@ -376,108 +364,113 @@ private final class Sdk(
     !method.getName.startsWith("lambda$")
   }
 
-  // FIXME instead of collecting one component type at a time (looping componentClasses several times)
-  // we could collect all in one loop
-  private val eventSourcedEntityDescriptors =
-    componentClasses
-      .filter(hasComponentId)
-      .collect {
-        case clz if classOf[EventSourcedEntity[_, _]].isAssignableFrom(clz) =>
-          val componentId = clz.getAnnotation(classOf[ComponentId]).value
+  // collect all Endpoints and compose them to build a larger router
+  private val httpEndpointDescriptors = componentClasses
+    .filter(Reflect.isRestEndpoint)
+    .map { httpEndpointClass =>
+      HttpEndpointDescriptorFactory(httpEndpointClass, httpEndpointFactory(httpEndpointClass))
+    }
 
-          val readOnlyCommandNames =
-            clz.getDeclaredMethods.collect {
-              case method
-                  if isCommandHandlerCandidate[EventSourcedEntity.Effect[_]](method) && method.getReturnType == classOf[
-                    EventSourcedEntity.ReadOnlyEffect[_]] =>
-                method.getName
-            }.toSet
+  var eventSourcedEntityDescriptors = Vector.empty[EventSourcedEntityDescriptor]
+  var keyValueEntityDescriptors = Vector.empty[EventSourcedEntityDescriptor]
+  var timedActionDescriptors = Vector.empty[TimedActionDescriptor]
+  var consumerDescriptors = Vector.empty[ConsumerDescriptor]
 
-          val instanceFactory: SpiEventSourcedEntity.FactoryContext => SpiEventSourcedEntity = { factoryContext =>
-            new EventSourcedEntityImpl[AnyRef, AnyRef, EventSourcedEntity[AnyRef, AnyRef]](
-              sdkSettings,
-              sdkTracerFactory,
-              componentId,
-              clz,
-              factoryContext.entityId,
-              serializer,
-              context =>
-                wiredInstance(clz.asInstanceOf[Class[EventSourcedEntity[AnyRef, AnyRef]]]) {
-                  // remember to update component type API doc and docs if changing the set of injectables
-                  case p if p == classOf[EventSourcedEntityContext] => context
-                })
-          }
+  componentClasses
+    .filter(hasComponentId)
+    .foreach {
+      case clz if classOf[EventSourcedEntity[_, _]].isAssignableFrom(clz) =>
+        val componentId = clz.getAnnotation(classOf[ComponentId]).value
+
+        val readOnlyCommandNames =
+          clz.getDeclaredMethods.collect {
+            case method
+                if isCommandHandlerCandidate[EventSourcedEntity.Effect[_]](method) && method.getReturnType == classOf[
+                  EventSourcedEntity.ReadOnlyEffect[_]] =>
+              method.getName
+          }.toSet
+
+        val instanceFactory: SpiEventSourcedEntity.FactoryContext => SpiEventSourcedEntity = { factoryContext =>
+          new EventSourcedEntityImpl[AnyRef, AnyRef, EventSourcedEntity[AnyRef, AnyRef]](
+            sdkSettings,
+            sdkTracerFactory,
+            componentId,
+            clz,
+            factoryContext.entityId,
+            serializer,
+            context =>
+              wiredInstance(clz.asInstanceOf[Class[EventSourcedEntity[AnyRef, AnyRef]]]) {
+                // remember to update component type API doc and docs if changing the set of injectables
+                case p if p == classOf[EventSourcedEntityContext] => context
+              })
+        }
+        eventSourcedEntityDescriptors :+=
           new EventSourcedEntityDescriptor(componentId, readOnlyCommandNames, instanceFactory)
-      }
 
-  private val keyValueEntityDescriptors =
-    componentClasses
-      .filter(hasComponentId)
-      .collect {
-        case clz if classOf[KeyValueEntity[_]].isAssignableFrom(clz) =>
-          val componentId = clz.getAnnotation(classOf[ComponentId]).value
+      case clz if classOf[KeyValueEntity[_]].isAssignableFrom(clz) =>
+        val componentId = clz.getAnnotation(classOf[ComponentId]).value
 
-          val readOnlyCommandNames = Set.empty[String]
+        val readOnlyCommandNames = Set.empty[String]
 
-          val instanceFactory: SpiEventSourcedEntity.FactoryContext => SpiEventSourcedEntity = { factoryContext =>
-            new KeyValueEntityImpl[AnyRef, KeyValueEntity[AnyRef]](
-              sdkSettings,
-              sdkTracerFactory,
-              componentId,
-              clz,
-              factoryContext.entityId,
-              serializer,
-              context =>
-                wiredInstance(clz.asInstanceOf[Class[KeyValueEntity[AnyRef]]]) {
-                  // remember to update component type API doc and docs if changing the set of injectables
-                  case p if p == classOf[KeyValueEntityContext] => context
-                })
-          }
+        val instanceFactory: SpiEventSourcedEntity.FactoryContext => SpiEventSourcedEntity = { factoryContext =>
+          new KeyValueEntityImpl[AnyRef, KeyValueEntity[AnyRef]](
+            sdkSettings,
+            sdkTracerFactory,
+            componentId,
+            clz,
+            factoryContext.entityId,
+            serializer,
+            context =>
+              wiredInstance(clz.asInstanceOf[Class[KeyValueEntity[AnyRef]]]) {
+                // remember to update component type API doc and docs if changing the set of injectables
+                case p if p == classOf[KeyValueEntityContext] => context
+              })
+        }
+        keyValueEntityDescriptors :+=
           new EventSourcedEntityDescriptor(componentId, readOnlyCommandNames, instanceFactory)
-      }
 
-  private val timedActionDescriptors =
-    componentClasses
-      .filter(hasComponentId)
-      .collect {
-        case clz if classOf[TimedAction].isAssignableFrom(clz) =>
-          val componentId = clz.getAnnotation(classOf[ComponentId]).value
-          val timedActionClass = clz.asInstanceOf[Class[TimedAction]]
-          val timedActionSpi =
-            new TimedActionImpl[TimedAction](
-              () => wiredInstance(timedActionClass)(sideEffectingComponentInjects(None)),
-              timedActionClass,
-              system.classicSystem,
-              runtimeComponentClients.timerClient,
-              sdkExecutionContext,
-              sdkTracerFactory,
-              serializer)
+      case clz if classOf[TimedAction].isAssignableFrom(clz) =>
+        val componentId = clz.getAnnotation(classOf[ComponentId]).value
+        val timedActionClass = clz.asInstanceOf[Class[TimedAction]]
+        val timedActionSpi =
+          new TimedActionImpl[TimedAction](
+            () => wiredInstance(timedActionClass)(sideEffectingComponentInjects(None)),
+            timedActionClass,
+            system.classicSystem,
+            runtimeComponentClients.timerClient,
+            sdkExecutionContext,
+            sdkTracerFactory,
+            serializer)
+        timedActionDescriptors :+=
           new TimedActionDescriptor(componentId, timedActionSpi)
-      }
 
-  private val consumerDescriptors =
-    componentClasses
-      .filter(hasComponentId)
-      .collect {
-        case clz if classOf[Consumer].isAssignableFrom(clz) =>
-          val componentId = clz.getAnnotation(classOf[ComponentId]).value
-          val consumerClass = clz.asInstanceOf[Class[Consumer]]
-          val timedActionSpi =
-            new ConsumerImpl[Consumer](
-              () => wiredInstance(consumerClass)(sideEffectingComponentInjects(None)),
-              consumerClass,
-              system.classicSystem,
-              runtimeComponentClients.timerClient,
-              sdkExecutionContext,
-              sdkTracerFactory,
-              serializer,
-              ComponentDescriptorFactory.findIgnore(consumerClass))
+      case clz if classOf[Consumer].isAssignableFrom(clz) =>
+        val componentId = clz.getAnnotation(classOf[ComponentId]).value
+        val consumerClass = clz.asInstanceOf[Class[Consumer]]
+        val timedActionSpi =
+          new ConsumerImpl[Consumer](
+            () => wiredInstance(consumerClass)(sideEffectingComponentInjects(None)),
+            consumerClass,
+            system.classicSystem,
+            runtimeComponentClients.timerClient,
+            sdkExecutionContext,
+            sdkTracerFactory,
+            serializer,
+            ComponentDescriptorFactory.findIgnore(consumerClass))
+        consumerDescriptors :+=
           new ConsumerDescriptor(
             componentId,
             consumerSource(consumerClass),
             consumerDestination(consumerClass),
             timedActionSpi)
-      }
+
+      case clz if Reflect.isRestEndpoint(clz) =>
+      // handled separately because ComponentId is not mandatory
+
+      case clz =>
+        // some other class with @ComponentId annotation
+        logger.warn("Unknown component [{}]", clz.getName)
+    }
 
   // these are available for injecting in all kinds of component that are primarily
   // for side effects
@@ -490,37 +483,24 @@ private final class Sdk(
     case m if m == classOf[Materializer]       => sdkMaterializer
   }
 
-  // FIXME mixing runtime config with sdk with user project config is tricky
-  def spiEndpoints: SpiComponents = {
+  def spiComponents: SpiComponents = {
 
-    var eventSourcedEntitiesEndpoint: Option[EventSourcedEntities] = None
-    var valueEntitiesEndpoint: Option[ValueEntities] = None
     var viewsEndpoint: Option[Views] = None
     var workflowEntitiesEndpoint: Option[WorkflowEntities] = None
 
     val classicSystem = system.classicSystem
 
-    val services = componentFactories.map { case (serviceDescriptor, service) =>
+    val services = componentServices.map { case (serviceDescriptor, service) =>
       serviceDescriptor.getFullName -> service
     }
 
     services.groupBy(_._2.getClass).foreach {
 
-      case (serviceClass, eventSourcedServices: Map[String, EventSourcedEntityService[_, _, _]] @unchecked)
+      case (serviceClass, _: Map[String, EventSourcedEntityService[_, _, _]] @unchecked)
           if serviceClass == classOf[EventSourcedEntityService[_, _, _]] =>
-        val eventSourcedImpl =
-          new EventSourcedEntitiesImpl(
-            classicSystem,
-            eventSourcedServices,
-            sdkSettings,
-            sdkDispatcherName,
-            sdkTracerFactory)
-        eventSourcedEntitiesEndpoint = Some(eventSourcedImpl)
 
-      case (serviceClass, entityServices: Map[String, KeyValueEntityService[_, _]] @unchecked)
+      case (serviceClass, _: Map[String, KeyValueEntityService[_, _]] @unchecked)
           if serviceClass == classOf[KeyValueEntityService[_, _]] =>
-        valueEntitiesEndpoint = Some(
-          new KeyValueEntitiesImpl(classicSystem, entityServices, sdkSettings, sdkDispatcherName, sdkTracerFactory))
 
       case (serviceClass, workflowServices: Map[String, WorkflowService[_, _]] @unchecked)
           if serviceClass == classOf[WorkflowService[_, _]] =>
@@ -611,7 +591,7 @@ private final class Sdk(
   }
 
   private def timedActionService[A <: TimedAction](clz: Class[A]): TimedActionService[A] =
-    new TimedActionService[A](clz, serializer, () => wiredInstance(clz)(sideEffectingComponentInjects(None)))
+    new TimedActionService[A](clz, serializer)
 
   private def workflowService[S, W <: Workflow[S]](clz: Class[W]): WorkflowService[S, W] = {
     new WorkflowService[S, W](
@@ -648,24 +628,10 @@ private final class Sdk(
 
   private def eventSourcedEntityService[S, E, ES <: EventSourcedEntity[S, E]](
       clz: Class[ES]): EventSourcedEntityService[S, E, ES] =
-    EventSourcedEntityService(
-      clz,
-      serializer,
-      context =>
-        wiredInstance(clz) {
-          // remember to update component type API doc and docs if changing the set of injectables
-          case p if p == classOf[EventSourcedEntityContext] => context
-        })
+    EventSourcedEntityService(clz, serializer)
 
   private def keyValueEntityService[S, VE <: KeyValueEntity[S]](clz: Class[VE]): KeyValueEntityService[S, VE] =
-    new KeyValueEntityService(
-      clz,
-      serializer,
-      context =>
-        wiredInstance(clz) {
-          // remember to update component type API doc and docs if changing the set of injectables
-          case p if p == classOf[KeyValueEntityContext] => context
-        })
+    new KeyValueEntityService(clz, serializer)
 
   private def viewService[V <: View](clz: Class[V]): ViewService[V] =
     new ViewService[V](
