@@ -8,7 +8,6 @@ import java.lang.reflect.Constructor
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
 import java.util.concurrent.CompletionStage
-
 import scala.annotation.nowarn
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -16,7 +15,6 @@ import scala.concurrent.Promise
 import scala.jdk.FutureConverters._
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
-
 import akka.Done
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
@@ -47,8 +45,7 @@ import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.reflection.Reflect.Syntax.AnnotatedElementOps
 import akka.javasdk.impl.timedaction.TimedActionService
 import akka.javasdk.impl.timer.TimerSchedulerImpl
-import akka.javasdk.impl.view.ViewService
-import akka.javasdk.impl.view.ViewsImpl
+import akka.javasdk.impl.view.ViewDescriptorFactory
 import akka.javasdk.impl.workflow.WorkflowImpl
 import akka.javasdk.impl.workflow.WorkflowService
 import akka.javasdk.keyvalueentity.KeyValueEntity
@@ -84,9 +81,9 @@ import io.opentelemetry.context.{ Context => OtelContext }
 import kalix.protocol.discovery.Discovery
 import kalix.protocol.event_sourced_entity.EventSourcedEntities
 import kalix.protocol.value_entity.ValueEntities
-import kalix.protocol.view.Views
 import kalix.protocol.workflow_entity.WorkflowEntities
 import org.slf4j.LoggerFactory
+
 import scala.jdk.OptionConverters.RichOptional
 import scala.jdk.CollectionConverters._
 
@@ -101,6 +98,7 @@ import akka.runtime.sdk.spi.ConsumerDescriptor
 import akka.runtime.sdk.spi.EventSourcedEntityDescriptor
 import akka.runtime.sdk.spi.SpiEventSourcedEntity
 import akka.runtime.sdk.spi.TimedActionDescriptor
+import akka.runtime.sdk.spi.views.SpiViewDescriptor
 
 /**
  * INTERNAL API
@@ -334,7 +332,7 @@ private final class Sdk(
         Some(keyValueEntityService(clz.asInstanceOf[Class[KeyValueEntity[Nothing]]]))
       } else if (Reflect.isView(clz)) {
         logger.debug(s"Registering View [${clz.getName}]")
-        Some(viewService(clz.asInstanceOf[Class[View]]))
+        None // no factory, handled below
       } else throw new IllegalArgumentException(s"Component class of unknown component type [$clz]")
 
       service match {
@@ -450,6 +448,13 @@ private final class Sdk(
             timedActionSpi)
       }
 
+  val viewDescriptors: Seq[SpiViewDescriptor] =
+    componentClasses
+      .filter(hasComponentId)
+      .collect {
+        case clz if classOf[View].isAssignableFrom(clz) => ViewDescriptorFactory(clz, serializer, sdkExecutionContext)
+      }
+
   // these are available for injecting in all kinds of component that are primarily
   // for side effects
   // Note: config is also always available through the combination with user DI way down below
@@ -466,7 +471,6 @@ private final class Sdk(
 
     var eventSourcedEntitiesEndpoint: Option[EventSourcedEntities] = None
     var valueEntitiesEndpoint: Option[ValueEntities] = None
-    var viewsEndpoint: Option[Views] = None
     var workflowEntitiesEndpoint: Option[WorkflowEntities] = None
 
     val classicSystem = system.classicSystem
@@ -505,10 +509,6 @@ private final class Sdk(
 
       case (serviceClass, _: Map[String, TimedActionService[_]] @unchecked)
           if serviceClass == classOf[TimedActionService[_]] =>
-
-      case (serviceClass, viewServices: Map[String, ViewService[_]] @unchecked)
-          if serviceClass == classOf[ViewService[_]] =>
-        viewsEndpoint = Some(new ViewsImpl(viewServices, sdkDispatcherName))
 
       case (serviceClass, _) =>
         sys.error(s"Unknown service type: $serviceClass")
@@ -566,8 +566,9 @@ private final class Sdk(
       override def discovery: Discovery = discoveryEndpoint
       override def eventSourcedEntityDescriptors: Seq[EventSourcedEntityDescriptor] =
         Sdk.this.eventSourcedEntityDescriptors
+
       override def valueEntities: Option[ValueEntities] = valueEntitiesEndpoint
-      override def views: Option[Views] = viewsEndpoint
+      override def views: Seq[SpiViewDescriptor] = viewDescriptors
       override def workflowEntities: Option[WorkflowEntities] = workflowEntitiesEndpoint
       override def httpEndpointDescriptors: Seq[HttpEndpointDescriptor] =
         Sdk.this.httpEndpointDescriptors
@@ -636,13 +637,6 @@ private final class Sdk(
           // remember to update component type API doc and docs if changing the set of injectables
           case p if p == classOf[KeyValueEntityContext] => context
         })
-
-  private def viewService[V <: View](clz: Class[V]): ViewService[V] =
-    new ViewService[V](
-      clz,
-      serializer,
-      // remember to update component type API doc and docs if changing the set of injectables
-      wiredInstance(_)(PartialFunction.empty))
 
   private def httpEndpointFactory[E](httpEndpointClass: Class[E]): HttpEndpointConstructionContext => E = {
     (context: HttpEndpointConstructionContext) =>

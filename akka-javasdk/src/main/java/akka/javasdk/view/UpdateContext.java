@@ -18,6 +18,7 @@ public interface UpdateContext extends MetadataContext {
    */
   Optional<String> eventSubject();
 
+  // FIXME is this needed anymore?
   /** The name of the event being handled. */
   String eventName();
 }
