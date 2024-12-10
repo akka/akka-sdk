@@ -163,7 +163,7 @@ If a Consumer produce messages of `byte[]` type to a topic, the messages publish
 
 Producing to a topic is the same as producing to a stream in service to service eventing. The only difference is the `@Produce.ToTopic` annotation. Used to set a destination topic name.
 
-IMPORTANT: To guarantee that events for each entity can be read from the message broker in the same order they were written the cloud event subject id must be specified in metadata along with the event. Se how to in xref:consuming-producing.adoc#_metadata[Metadata] below.
+IMPORTANT: To guarantee that events for each entity can be read from the message broker in the same order they were written the cloud event subject id must be specified in metadata along with the event. See how to in xref:consuming-producing.adoc#_metadata[Metadata] below.
 
 [source,java,indent=0]
 .{sample-base-url}/event-sourced-counter-brokers/src/main/java/counter/application/CounterJournalToTopicConsumer.java[CounterJournalToTopicConsumer.java]
