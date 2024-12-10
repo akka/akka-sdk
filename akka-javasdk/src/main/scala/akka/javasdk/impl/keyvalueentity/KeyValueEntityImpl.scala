@@ -48,7 +48,6 @@ private[impl] object KeyValueEntityImpl {
       override val entityId: String,
       val sequenceNumber: Long,
       override val commandName: String,
-      override val commandId: Long, // FIXME remove
       val isDeleted: Boolean,
       override val metadata: Metadata,
       span: Option[Span],
@@ -57,6 +56,8 @@ private[impl] object KeyValueEntityImpl {
       with CommandContext
       with ActivatableContext {
     override def tracing(): Tracing = new SpanTracingImpl(span, tracerFactory)
+
+    override def commandId(): Long = 0
   }
 
   private class KeyValueEntityContextImpl(override final val entityId: String)
@@ -115,7 +116,6 @@ private[impl] final class KeyValueEntityImpl[S, KV <: KeyValueEntity[S]](
         entityId,
         command.sequenceNumber,
         command.name,
-        0,
         command.isDeleted,
         metadata,
         span,
@@ -177,7 +177,6 @@ private[impl] final class KeyValueEntityImpl[S, KV <: KeyValueEntity[S]](
       case e: HandlerNotFoundException =>
         throw new EntityExceptions.EntityException(
           entityId,
-          0, // FIXME remove commandId
           command.name,
           s"No command handler found for command [${e.name}] on ${entity.getClass}")
       case BadRequestException(msg) =>
@@ -193,7 +192,6 @@ private[impl] final class KeyValueEntityImpl[S, KV <: KeyValueEntity[S]](
       case NonFatal(error) =>
         throw EntityException(
           entityId = entityId,
-          commandId = 0,
           commandName = command.name,
           s"Unexpected failure: $error",
           Some(error))

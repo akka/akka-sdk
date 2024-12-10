@@ -29,10 +29,11 @@ private[impl] class ReflectiveEventSourcedEntityRouter[S, E, ES <: EventSourcedE
 
   val entityStateType: Class[S] = Reflect.eventSourcedEntityStateType(entity.getClass).asInstanceOf[Class[S]]
 
-  private def commandHandlerLookup(commandName: String) =
-    commandHandlers.getOrElse(
-      commandName,
-      throw new HandlerNotFoundException("command", commandName, commandHandlers.keySet))
+  private def commandHandlerLookup(commandName: String): CommandHandler =
+    commandHandlers.get(commandName) match {
+      case Some(handler) => handler
+      case None          => throw new HandlerNotFoundException("command", commandName, commandHandlers.keySet)
+    }
 
   def handleCommand(
       commandName: String,
@@ -67,16 +68,7 @@ private[impl] class ReflectiveEventSourcedEntityRouter[S, E, ES <: EventSourcedE
   }
 
   def handleEvent(event: E): S = {
-    event match {
-      // FIXME can it be proto?
-      //      case anyPb: ScalaPbAny => // replaying event coming from runtime
-      //        val deserEvent = serializer.fromBytes(anyPb)
-      //        val casted = deserEvent.asInstanceOf[event.type]
-      //        entity.applyEvent(casted)
-
-      case _ => // processing runtime event coming from memory
-        entity.applyEvent(event.asInstanceOf[event.type])
-    }
+    entity.applyEvent(event.asInstanceOf[event.type])
   }
 
 }
