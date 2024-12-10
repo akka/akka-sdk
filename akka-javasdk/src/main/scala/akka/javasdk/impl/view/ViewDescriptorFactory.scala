@@ -5,96 +5,83 @@
 package akka.javasdk.impl.view
 
 import akka.annotation.InternalApi
-import akka.javasdk.annotations.Consume.FromKeyValueEntity
-import akka.javasdk.annotations.Consume.FromServiceStream
+import akka.javasdk.Metadata
+import akka.javasdk.annotations.Consume
 import akka.javasdk.annotations.Query
 import akka.javasdk.annotations.Table
-import akka.javasdk.impl.AclDescriptorFactory
-import akka.javasdk.impl.ComponentDescriptor
+import akka.javasdk.impl.AbstractContext
 import akka.javasdk.impl.ComponentDescriptorFactory
-import akka.javasdk.impl.ComponentDescriptorFactory.combineBy
-import akka.javasdk.impl.ComponentDescriptorFactory.eventingInForEventSourcedEntity
-import akka.javasdk.impl.ComponentDescriptorFactory.eventingInForEventSourcedEntityServiceLevel
-import akka.javasdk.impl.ComponentDescriptorFactory.eventingInForTopic
-import akka.javasdk.impl.ComponentDescriptorFactory.eventingInForTopicServiceLevel
-import akka.javasdk.impl.ComponentDescriptorFactory.eventingInForValueEntity
-import akka.javasdk.impl.ComponentDescriptorFactory.findEventSourcedEntityType
-import akka.javasdk.impl.ComponentDescriptorFactory.findHandleDeletes
-import akka.javasdk.impl.ComponentDescriptorFactory.findSubscriptionTopicName
-import akka.javasdk.impl.ComponentDescriptorFactory.hasEventSourcedEntitySubscription
-import akka.javasdk.impl.ComponentDescriptorFactory.hasHandleDeletes
-import akka.javasdk.impl.ComponentDescriptorFactory.hasStreamSubscription
-import akka.javasdk.impl.ComponentDescriptorFactory.hasTopicSubscription
-import akka.javasdk.impl.ComponentDescriptorFactory.hasUpdateEffectOutput
-import akka.javasdk.impl.ComponentDescriptorFactory.hasValueEntitySubscription
-import akka.javasdk.impl.ComponentDescriptorFactory.mergeServiceOptions
-import akka.javasdk.impl.ComponentDescriptorFactory.subscribeToEventStream
-import akka.javasdk.impl.JwtDescriptorFactory
-import akka.javasdk.impl.JwtDescriptorFactory.buildJWTOptions
-import akka.javasdk.impl.ProtoMessageDescriptors
-import akka.javasdk.impl.reflection.CommandHandlerMethod
-import akka.javasdk.impl.reflection.HandleDeletesServiceMethod
-import akka.javasdk.impl.reflection.KalixMethod
-import akka.javasdk.impl.reflection.NameGenerator
+import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.reflection.Reflect
-import akka.javasdk.impl.reflection.SubscriptionServiceMethod
-import akka.javasdk.impl.reflection.ViewUrlTemplate
-import akka.javasdk.impl.reflection.VirtualDeleteServiceMethod
-import akka.javasdk.impl.reflection.VirtualServiceMethod
+import akka.javasdk.impl.serialization.JsonSerializer
+import akka.javasdk.impl.telemetry.Telemetry
+import akka.javasdk.view.TableUpdater
+import akka.javasdk.view.UpdateContext
 import akka.javasdk.view.View
 import akka.javasdk.view.View.QueryStreamEffect
-import com.google.protobuf.ByteString
-import com.google.protobuf.DescriptorProtos.DescriptorProto
-import com.google.protobuf.DescriptorProtos.FieldDescriptorProto
-import kalix.Eventing
-import kalix.MethodOptions
-import java.lang.reflect.Parameter
+import akka.runtime.sdk.spi.ComponentOptions
+import akka.runtime.sdk.spi.ConsumerSource
+import akka.runtime.sdk.spi.MethodOptions
+import akka.runtime.sdk.spi.views.SpiQueryDescriptor
+import akka.runtime.sdk.spi.views.SpiTableDescriptor
+import akka.runtime.sdk.spi.views.SpiTableUpdateEffect
+import akka.runtime.sdk.spi.views.SpiTableUpdateEnvelope
+import akka.runtime.sdk.spi.views.SpiTableUpdateHandler
+import akka.runtime.sdk.spi.views.SpiType
+import akka.runtime.sdk.spi.views.SpiType.SpiClass
+import akka.runtime.sdk.spi.views.SpiType.SpiField
+import akka.runtime.sdk.spi.views.SpiType.SpiList
+import akka.runtime.sdk.spi.views.SpiViewDescriptor
+import org.slf4j.LoggerFactory
+import org.slf4j.MDC
+
+import java.lang.reflect.Method
 import java.lang.reflect.ParameterizedType
-import java.lang.reflect.Type
-import java.util
 import java.util.Optional
-
-import scala.annotation.tailrec
-
-import akka.javasdk.impl.serialization.JsonSerializer
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.util.control.NonFatal
+import scala.util.matching.Regex
 
 /**
  * INTERNAL API
  */
 @InternalApi
-private[impl] object ViewDescriptorFactory extends ComponentDescriptorFactory {
+private[impl] object ViewDescriptorFactory {
 
-  val TableNamePattern = """FROM\s+`?([A-Za-z][A-Za-z0-9_]*)""".r
+  val TableNamePattern: Regex = """FROM\s+`?([A-Za-z][A-Za-z0-9_]*)""".r
 
-  override def buildDescriptorFor(
-      component: Class[_],
-      serializer: JsonSerializer,
-      nameGenerator: NameGenerator): ComponentDescriptor = {
+  def apply(viewClass: Class[_], serializer: JsonSerializer, userEc: ExecutionContext): SpiViewDescriptor = {
+    val componentId = ComponentDescriptorFactory.readComponentIdIdValue(viewClass)
 
     val tableUpdaters =
-      component.getDeclaredClasses.toSeq.filter(Reflect.isViewTableUpdater)
+      viewClass.getDeclaredClasses.toSeq.filter(Reflect.isViewTableUpdater)
 
-    val allQueryMethods = queryMethods(component, nameGenerator)
+    val allQueryMethods = extractQueryMethods(viewClass)
+    val allQueryStrings = allQueryMethods.map(_.queryString)
 
-    val (tableTypeDescriptors, updateMethods) = {
+    val tables: Seq[SpiTableDescriptor] =
       tableUpdaters
-        .map { tableUpdater =>
+        .map { tableUpdaterClass =>
           // View class type parameter declares table type
-          val tableType: Class[_] =
-            tableUpdater.getGenericSuperclass
+          val tableRowClass: Class[_] =
+            tableUpdaterClass.getGenericSuperclass
               .asInstanceOf[ParameterizedType]
               .getActualTypeArguments
-              .head
-              .asInstanceOf[Class[_]]
+              .head match {
+              case clazz: Class[_] => clazz
+              case other =>
+                throw new IllegalArgumentException(
+                  s"Expected [$tableUpdaterClass] to extends TableUpdater[] for a concrete table row type but cannot figure out type parameter because type argument is unexpected [$other] ")
+            }
 
-          val queries = allQueryMethods.map(_.queryString)
           val tableName: String = {
             if (tableUpdaters.size > 1) {
               // explicitly annotated since multiple view table updaters
-              tableUpdater.getAnnotation(classOf[Table]).value()
+              tableUpdaterClass.getAnnotation(classOf[Table]).value()
             } else {
               // figure out from first query
-              val query = queries.head
+              val query = allQueryStrings.head
               TableNamePattern
                 .findFirstMatchIn(query)
                 .map(_.group(1))
@@ -102,379 +89,361 @@ private[impl] object ViewDescriptorFactory extends ComponentDescriptorFactory {
             }
           }
 
-          val tableTypeDescriptor = ProtoMessageDescriptors.generateMessageDescriptors(tableType)
-
-          val tableProtoMessageName = tableTypeDescriptor.mainMessageDescriptor.getName
-
-          val updateMethods = {
-            def hasTypeLevelEventSourcedEntitySubs = hasEventSourcedEntitySubscription(tableUpdater)
-
-            def hasTypeLevelValueEntitySubs = hasValueEntitySubscription(tableUpdater)
-
-            def hasTypeLevelTopicSubs = hasTopicSubscription(tableUpdater)
-
-            def hasTypeLevelStreamSubs = hasStreamSubscription(tableUpdater)
-
-            if (hasTypeLevelValueEntitySubs)
-              subscriptionForTypeLevelValueEntity(tableUpdater, tableType, tableName, tableProtoMessageName)
-            else if (hasTypeLevelEventSourcedEntitySubs) {
-              val kalixSubscriptionMethods =
-                methodsForTypeLevelESSubscriptions(tableUpdater, tableName, tableProtoMessageName)
-              combineBy("ES", kalixSubscriptionMethods, serializer, tableUpdater)
-            } else if (hasTypeLevelTopicSubs) {
-              val kalixSubscriptionMethods =
-                methodsForTypeLevelTopicSubscriptions(tableUpdater, tableName, tableProtoMessageName)
-              combineBy("Topic", kalixSubscriptionMethods, serializer, tableUpdater)
-            } else if (hasTypeLevelStreamSubs) {
-              val kalixSubscriptionMethods =
-                methodsForTypeLevelStreamSubscriptions(tableUpdater, tableName, tableProtoMessageName)
-              combineBy("Stream", kalixSubscriptionMethods, serializer, tableUpdater)
-            } else
-              Seq.empty
+          val tableType = ViewSchema(tableRowClass) match {
+            case spiClass: SpiClass => spiClass
+            case _ =>
+              throw new IllegalArgumentException(
+                s"Table type must be a class but was [$tableRowClass] for table updater [$tableUpdaterClass]")
           }
 
-          tableTypeDescriptor -> updateMethods
+          if (ComponentDescriptorFactory.hasValueEntitySubscription(tableUpdaterClass)) {
+            consumeFromKvEntity(componentId, tableUpdaterClass, tableType, tableName, serializer, userEc)
+          } else if (ComponentDescriptorFactory.hasEventSourcedEntitySubscription(tableUpdaterClass)) {
+            consumeFromEsEntity(componentId, tableUpdaterClass, tableType, tableName, serializer, userEc)
+          } else if (ComponentDescriptorFactory.hasTopicSubscription(tableUpdaterClass)) {
+            consumeFromTopic(componentId, tableUpdaterClass, tableType, tableName, serializer, userEc)
+          } else if (ComponentDescriptorFactory.hasStreamSubscription(tableUpdaterClass)) {
+            consumeFromServiceToService(componentId, tableUpdaterClass, tableType, tableName, serializer, userEc)
+          } else
+            throw new IllegalStateException(s"Table updater [${tableUpdaterClass}] is missing a @Consume annotation")
         }
-        .foldLeft((Seq.empty[ProtoMessageDescriptors], Seq.empty[KalixMethod])) {
-          case ((tableTypeDescriptors, allUpdateMethods), (tableTypeDescriptor, updateMethods)) =>
-            (tableTypeDescriptors :+ tableTypeDescriptor, allUpdateMethods ++ updateMethods)
-        }
-    }
 
-    val kalixMethods: Seq[KalixMethod] = allQueryMethods.map(_.queryMethod) ++ updateMethods
-    val serviceName = nameGenerator.getName(component.getSimpleName)
-    val additionalMessages =
-      tableTypeDescriptors.toSet ++ allQueryMethods.map(_.queryOutputSchemaDescriptor) ++ allQueryMethods.flatMap(
-        _.queryInputSchemaDescriptor.toSet)
-
-    val serviceLevelOptions = {
-      val forMerge = Seq(
-        AclDescriptorFactory.serviceLevelAclAnnotation(component, default = Some(AclDescriptorFactory.denyAll)),
-        JwtDescriptorFactory.serviceLevelJwtAnnotation(component),
-        // FIXME does these two do anything anymore - no annotations on View itself
-        eventingInForEventSourcedEntityServiceLevel(component),
-        eventingInForTopicServiceLevel(component)) ++ tableUpdaters.map(subscribeToEventStream)
-      mergeServiceOptions(forMerge: _*)
-    }
-
-    ComponentDescriptor(
-      nameGenerator,
-      serializer,
-      serviceName,
-      serviceOptions = serviceLevelOptions,
-      component.getPackageName,
-      kalixMethods,
-      additionalMessages.toSeq)
+    new SpiViewDescriptor(
+      componentId,
+      tables,
+      queries = allQueryMethods.map(_.descriptor),
+      // FIXME reintroduce ACLs (does JWT make any sense here? I don't think so)
+      componentOptions = new ComponentOptions(None, None))
   }
 
-  private case class QueryMethod(
-      queryMethod: KalixMethod,
-      queryInputSchemaDescriptor: Option[ProtoMessageDescriptors],
-      queryOutputSchemaDescriptor: ProtoMessageDescriptors,
-      queryString: String)
+  private case class QueryMethod(descriptor: SpiQueryDescriptor, queryString: String)
 
-  private def queryMethods(component: Class[_], nameGenerator: NameGenerator): Seq[QueryMethod] = {
-    // we only take methods with Query annotations
-    val annotatedQueryMethods =
-      component.getDeclaredMethods.toIndexedSeq
-        .filter(m =>
-          m.getAnnotation(classOf[Query]) != null && (m.getReturnType == classOf[
-            View.QueryEffect[_]] || m.getReturnType == classOf[View.QueryStreamEffect[_]]))
+  private def validQueryMethod(method: Method): Boolean =
+    method.getAnnotation(classOf[Query]) != null && (method.getReturnType == classOf[
+      View.QueryEffect[_]] || method.getReturnType == classOf[View.QueryStreamEffect[_]])
 
-    annotatedQueryMethods.map { queryMethod =>
+  private def extractQueryMethods(component: Class[_]): Seq[QueryMethod] = {
+    val annotatedQueryMethods = component.getDeclaredMethods.toIndexedSeq.filter(validQueryMethod)
+    annotatedQueryMethods.map(method =>
+      try {
+        extractQueryMethod(method)
+      } catch {
+        case t: Throwable => throw new RuntimeException(s"Failed to extract query for $method", t)
+      })
+  }
 
-      val parameterizedReturnType = queryMethod.getGenericReturnType
-        .asInstanceOf[java.lang.reflect.ParameterizedType]
+  private def extractQueryMethod(method: Method): QueryMethod = {
+    val parameterizedReturnType = method.getGenericReturnType
+      .asInstanceOf[java.lang.reflect.ParameterizedType]
 
-      val (actualQueryOutputType, streamingQuery) =
-        if (queryMethod.getReturnType == classOf[View.QueryEffect[_]]) {
-          val unwrapped = parameterizedReturnType.getActualTypeArguments.head match {
-            case parameterizedType: ParameterizedType if parameterizedType.getRawType == classOf[Optional[_]] =>
-              parameterizedType.getActualTypeArguments.head
-            case other => other
-          }
-          (unwrapped, false)
-        } else if (queryMethod.getReturnType == classOf[View.QueryStreamEffect[_]]) {
-          (parameterizedReturnType.getActualTypeArguments.head, true)
-        } else {
-          throw new IllegalArgumentException(
-            s"Return type of ${queryMethod.getName} is not supported ${queryMethod.getReturnType}")
+    // extract the actual query return type from the generic query effect
+    val (actualQueryOutputType, streamingQuery) =
+      if (method.getReturnType == classOf[View.QueryEffect[_]]) {
+        val unwrapped = parameterizedReturnType.getActualTypeArguments.head match {
+          case parameterizedType: ParameterizedType if parameterizedType.getRawType == classOf[Optional[_]] =>
+            parameterizedType.getActualTypeArguments.head
+          case other => other
         }
-
-      val actualQueryOutputClass = actualQueryOutputType match {
-        case clazz: Class[_] => clazz
-        case other =>
-          throw new IllegalArgumentException(
-            s"Actual query output type for ${queryMethod.getName} is not a class (must not be parameterized): $other")
+        (unwrapped, false)
+      } else if (method.getReturnType == classOf[View.QueryStreamEffect[_]]) {
+        (parameterizedReturnType.getActualTypeArguments.head, true)
+      } else {
+        throw new IllegalArgumentException(s"Return type of ${method.getName} is not supported ${method.getReturnType}")
       }
 
-      val queryOutputSchemaDescriptor =
-        ProtoMessageDescriptors.generateMessageDescriptors(actualQueryOutputClass)
-
-      val queryAnnotation = queryMethod.getAnnotation(classOf[Query])
-      val queryStr = queryAnnotation.value()
-      val streamUpdates = queryAnnotation.streamUpdates()
-      if (streamUpdates && !streamingQuery)
+    val actualQueryOutputClass = actualQueryOutputType match {
+      case clazz: Class[_] => clazz
+      case other =>
         throw new IllegalArgumentException(
-          s"Method [${queryMethod.getName}] is marked as streaming updates, this requires it to return a ${classOf[
-            QueryStreamEffect[_]]}")
+          s"Actual query output type for ${method.getName} is not a class (must not be parameterized): $other")
+    }
 
-      val query = kalix.View.Query
-        .newBuilder()
-        .setQuery(queryStr)
-        .setStreamUpdates(streamUpdates)
-        .build()
+    val queryAnnotation = method.getAnnotation(classOf[Query])
+    val queryStr = queryAnnotation.value()
+    val streamUpdates = queryAnnotation.streamUpdates()
+    if (streamUpdates && !streamingQuery)
+      throw new IllegalArgumentException(
+        s"Method [${method.getName}] is marked as streaming updates, this requires it to return a ${classOf[
+          QueryStreamEffect[_]]}")
 
-      // TODO: it should be possible to have fixed queries and use a GET method
-      val queryParametersSchemaDescriptor =
-        queryMethod.getGenericParameterTypes.headOption.map { param =>
-          val protoType: FieldDescriptorProto.Type = mapJavaTypeToProtobuf(param)
-          if (protoType == FieldDescriptorProto.Type.TYPE_MESSAGE) {
-            if (isCollection(param)) {
-              throw new IllegalStateException("Collection used for queries should contain only primitive object types.")
-            } else {
-              ProtoMessageDescriptors.generateMessageDescriptors(param.asInstanceOf[Class[_]])
-            }
-          } else {
-            val inputMessageName = nameGenerator.getName(queryMethod.getName.capitalize + "AkkaJsonQuery")
-
-            val inputMessageDescriptor = DescriptorProto.newBuilder()
-            inputMessageDescriptor.setName(inputMessageName)
-            val name: Parameter = queryMethod.getParameters.head
-            inputMessageDescriptor.addField(buildField(name.getName, param))
-
-            ProtoMessageDescriptors(inputMessageDescriptor.build(), Seq.empty)
-          }
-        }
-
-      val jsonSchema = {
-        val builder = kalix.JsonSchema
-          .newBuilder()
-          .setOutput(queryOutputSchemaDescriptor.mainMessageDescriptor.getName)
-
-        queryParametersSchemaDescriptor.foreach { inputSchema =>
-          builder
-            .setInput(inputSchema.mainMessageDescriptor.getName)
-            .setJsonBodyInputField("json_body")
-        }
-        builder.build()
+    val inputType: Option[SpiType.QueryInput] =
+      method.getGenericParameterTypes.headOption.map(ViewSchema.apply).map {
+        case validInput: SpiType.QueryInput => validInput
+        case other                          =>
+          // FIXME let's see if this flies
+          // For using primitive parameters directly, using their parameter name as placeholder in the query,
+          // we have to make up a valid message with that as a field
+          new SpiClass(
+            s"SyntheticInputFor${method.getName}",
+            Seq(new SpiField(method.getParameters.head.getName, other)))
       }
 
-      val view = kalix.View
-        .newBuilder()
-        .setJsonSchema(jsonSchema)
-        .setQuery(query)
-        .build()
-
-      val builder = kalix.MethodOptions.newBuilder()
-      builder.setView(view)
-      val methodOptions = builder.build()
-
-      // since it is a query, we don't actually ever want to handle any request in the SDK
-      // the runtime does the work for us, mark the method as non-callable
-      // TODO: this new variant can be marked as non-callable - check what is the impact of it
-      val servMethod = CommandHandlerMethod(component, queryMethod, ViewUrlTemplate, streamOut = streamingQuery)
-      val kalixQueryMethod =
-        KalixMethod(servMethod, methodOptions = Some(methodOptions))
-          .withKalixOptions(buildJWTOptions(queryMethod))
-
-      QueryMethod(kalixQueryMethod, queryParametersSchemaDescriptor, queryOutputSchemaDescriptor, queryStr)
+    val outputType = ViewSchema(actualQueryOutputClass) match {
+      case output: SpiType.SpiClass =>
+        if (streamingQuery) new SpiList(output)
+        else output
+      case _ =>
+        throw new IllegalArgumentException(
+          s"Query return type [${actualQueryOutputClass}] for [${method.getDeclaringClass}.${method.getName}] is not a valid query return type")
     }
+
+    QueryMethod(
+      new SpiQueryDescriptor(
+        method.getName,
+        queryStr,
+        inputType,
+        outputType,
+        streamUpdates,
+        // FIXME reintroduce ACLs (does JWT make any sense here? I don't think so)
+        new MethodOptions(None, None)),
+      queryStr)
   }
 
-  private def buildField(name: String, paramType: Type): FieldDescriptorProto = {
-    FieldDescriptorProto
-      .newBuilder()
-      .setName(name)
-      .setNumber(1)
-      .setType(mapJavaTypeToProtobuf(paramType))
-      .setLabel(mapJavaWrapperToLabel(paramType))
-      .build()
-  }
-
-  private def mapJavaWrapperToLabel(javaType: Type): FieldDescriptorProto.Label =
-    if (isCollection(javaType))
-      FieldDescriptorProto.Label.LABEL_REPEATED
-    else
-      FieldDescriptorProto.Label.LABEL_OPTIONAL
-
-  @tailrec
-  private def mapJavaTypeToProtobuf(javaType: Type): FieldDescriptorProto.Type = {
-    if (javaType == classOf[String]) {
-      FieldDescriptorProto.Type.TYPE_STRING
-    } else if (javaType == classOf[java.lang.Long] || javaType.getTypeName == "long") {
-      FieldDescriptorProto.Type.TYPE_INT64
-    } else if (javaType == classOf[java.lang.Integer] || javaType.getTypeName == "int"
-      || javaType.getTypeName == "short"
-      || javaType.getTypeName == "byte"
-      || javaType.getTypeName == "char") {
-      FieldDescriptorProto.Type.TYPE_INT32
-    } else if (javaType == classOf[java.lang.Double] || javaType.getTypeName == "double") {
-      FieldDescriptorProto.Type.TYPE_DOUBLE
-    } else if (javaType == classOf[java.lang.Float] || javaType.getTypeName == "float") {
-      FieldDescriptorProto.Type.TYPE_FLOAT
-    } else if (javaType == classOf[java.lang.Boolean] || javaType.getTypeName == "boolean") {
-      FieldDescriptorProto.Type.TYPE_BOOL
-    } else if (javaType == classOf[ByteString]) {
-      FieldDescriptorProto.Type.TYPE_BYTES
-    } else if (isCollection(javaType)) {
-      mapJavaTypeToProtobuf(javaType.asInstanceOf[ParameterizedType].getActualTypeArguments.head)
-    } else {
-      FieldDescriptorProto.Type.TYPE_MESSAGE
-    }
-  }
-
-  private def isCollection(javaType: Type): Boolean = javaType.isInstanceOf[ParameterizedType] &&
-    classOf[util.Collection[_]]
-      .isAssignableFrom(javaType.asInstanceOf[ParameterizedType].getRawType.asInstanceOf[Class[_]])
-
-  private def methodsForTypeLevelStreamSubscriptions(
+  private def consumeFromServiceToService(
+      componentId: String,
       tableUpdater: Class[_],
+      tableType: SpiClass,
       tableName: String,
-      tableProtoMessageName: String): Map[String, Seq[KalixMethod]] = {
-    val methods = eligibleSubscriptionMethods(tableUpdater, tableName, tableProtoMessageName, None).toIndexedSeq
-    val ann = tableUpdater.getAnnotation(classOf[FromServiceStream])
-    val key = ann.id().capitalize
-    Map(key -> methods)
-  }
+      serializer: JsonSerializer,
+      userEc: ExecutionContext): SpiTableDescriptor = {
+    val annotation = tableUpdater.getAnnotation(classOf[Consume.FromServiceStream])
 
-  private def methodsForTypeLevelESSubscriptions(
-      tableUpdater: Class[_],
-      tableName: String,
-      tableProtoMessageName: String): Map[String, Seq[KalixMethod]] = {
+    val updaterMethods = tableUpdater.getMethods.toIndexedSeq
 
-    val methods = eligibleSubscriptionMethods(
-      tableUpdater,
+    val deleteHandlerMethod: Option[Method] = updaterMethods
+      .find(ComponentDescriptorFactory.hasHandleDeletes)
+
+    val updateHandlerMethods: Seq[Method] = updaterMethods
+      .filterNot(ComponentDescriptorFactory.hasHandleDeletes)
+      .filter(ComponentDescriptorFactory.hasUpdateEffectOutput)
+
+    new SpiTableDescriptor(
       tableName,
-      tableProtoMessageName,
-      Some(eventingInForEventSourcedEntity(tableUpdater))).toIndexedSeq
-    val entityType = findEventSourcedEntityType(tableUpdater)
-    Map(entityType -> methods)
+      tableType,
+      new ConsumerSource.ServiceStreamSource(annotation.service(), annotation.id(), annotation.consumerGroup()),
+      Option.when(updateHandlerMethods.nonEmpty)(
+        UpdateHandlerImpl(componentId, tableUpdater, updateHandlerMethods, serializer)(userEc)),
+      deleteHandlerMethod.map(deleteMethod =>
+        UpdateHandlerImpl(
+          componentId,
+          tableUpdater,
+          methods = Seq(deleteMethod),
+          serializer = serializer,
+          deleteHandler = true)(userEc)))
   }
 
-  private def methodsForTypeLevelTopicSubscriptions(
+  private def consumeFromEsEntity(
+      componentId: String,
       tableUpdater: Class[_],
+      tableType: SpiClass,
       tableName: String,
-      tableProtoMessageName: String): Map[String, Seq[KalixMethod]] = {
+      serializer: JsonSerializer,
+      userEc: ExecutionContext): SpiTableDescriptor = {
 
-    val methods = eligibleSubscriptionMethods(
-      tableUpdater,
+    val annotation = tableUpdater.getAnnotation(classOf[Consume.FromEventSourcedEntity])
+
+    val updaterMethods = tableUpdater.getMethods.toIndexedSeq
+
+    val deleteHandlerMethod: Option[Method] = updaterMethods
+      .find(ComponentDescriptorFactory.hasHandleDeletes)
+
+    val updateHandlerMethods: Seq[Method] = updaterMethods
+      .filterNot(ComponentDescriptorFactory.hasHandleDeletes)
+      .filter(ComponentDescriptorFactory.hasUpdateEffectOutput)
+
+    // FIXME input type validation? (does that happen elsewhere?)
+    // FIXME method output vs table type validation? (does that happen elsewhere?)
+
+    new SpiTableDescriptor(
       tableName,
-      tableProtoMessageName,
-      Some(eventingInForTopic(tableUpdater))).toIndexedSeq
-    val entityType = findSubscriptionTopicName(tableUpdater)
-    Map(entityType -> methods)
+      tableType,
+      new ConsumerSource.EventSourcedEntitySource(
+        ComponentDescriptorFactory.readComponentIdIdValue(annotation.value())),
+      Option.when(updateHandlerMethods.nonEmpty)(
+        UpdateHandlerImpl(componentId, tableUpdater, updateHandlerMethods, serializer)(userEc)),
+      deleteHandlerMethod.map(deleteMethod =>
+        UpdateHandlerImpl(
+          componentId,
+          tableUpdater,
+          methods = Seq(deleteMethod),
+          deleteHandler = true,
+          serializer = serializer)(userEc)))
   }
 
-  private def eligibleSubscriptionMethods(
+  private def consumeFromTopic(
+      componentId: String,
       tableUpdater: Class[_],
+      tableType: SpiClass,
       tableName: String,
-      tableProtoMessageName: String,
-      eventing: Option[Eventing]) =
-    tableUpdater.getMethods.filter(hasUpdateEffectOutput).map { method =>
-      // event sourced or topic subscription updates
-      val methodOptionsBuilder = kalix.MethodOptions.newBuilder()
+      serializer: JsonSerializer,
+      userEc: ExecutionContext): SpiTableDescriptor = {
+    val annotation = tableUpdater.getAnnotation(classOf[Consume.FromTopic])
 
-      eventing.foreach(methodOptionsBuilder.setEventing)
+    val updaterMethods = tableUpdater.getMethods.toIndexedSeq
 
-      addTableOptionsToUpdateMethod(tableName, tableProtoMessageName, methodOptionsBuilder, true)
+    val updateHandlerMethods: Seq[Method] = updaterMethods
+      .filterNot(ComponentDescriptorFactory.hasHandleDeletes)
+      .filter(ComponentDescriptorFactory.hasUpdateEffectOutput)
 
-      KalixMethod(SubscriptionServiceMethod(method))
-        .withKalixOptions(methodOptionsBuilder.build())
-    }
+    // FIXME input type validation? (does that happen elsewhere?)
+    // FIXME method output vs table type validation? (does that happen elsewhere?)
 
-  private def subscriptionForTypeLevelValueEntity(
+    new SpiTableDescriptor(
+      tableName,
+      tableType,
+      new ConsumerSource.TopicSource(annotation.value(), annotation.consumerGroup()),
+      Option.when(updateHandlerMethods.nonEmpty)(
+        UpdateHandlerImpl(componentId, tableUpdater, updateHandlerMethods, serializer)(userEc)),
+      None)
+  }
+
+  private def consumeFromKvEntity(
+      componentId: String,
       tableUpdater: Class[_],
-      tableType: Class[_],
+      tableType: SpiClass,
       tableName: String,
-      tableProtoMessageName: String) = {
+      serializer: JsonSerializer,
+      userEc: ExecutionContext): SpiTableDescriptor = {
+    val annotation = tableUpdater.getAnnotation(classOf[Consume.FromKeyValueEntity])
 
-    val methodOptionsBuilder = kalix.MethodOptions.newBuilder()
+    val updaterMethods = tableUpdater.getMethods.toIndexedSeq
 
-    methodOptionsBuilder.setEventing(eventingInForValueEntity(tableUpdater, handleDeletes = false))
-
-    val subscriptionVEType = tableUpdater
+    // FIXME do we still need this?
+    /* val subscriptionVEType = tableUpdater
       .getAnnotation(classOf[FromKeyValueEntity])
       .value()
       .getGenericSuperclass
       .asInstanceOf[ParameterizedType]
       .getActualTypeArguments
       .head
-      .asInstanceOf[Class[_]]
+      .asInstanceOf[Class[_]] */
 
-    val transform = subscriptionVEType != tableType
+    // val transform = subscriptionVEType != tableClass
 
-    addTableOptionsToUpdateMethod(tableName, tableProtoMessageName, methodOptionsBuilder, transform)
-    val kalixOptions = methodOptionsBuilder.build()
+    val deleteHandlerMethod: Option[Method] = updaterMethods
+      .find(ComponentDescriptorFactory.hasHandleDeletes)
 
-    if (transform) {
-      import Reflect.methodOrdering
-      val handleDeletesMethods = tableUpdater.getMethods
-        .filter(hasHandleDeletes)
-        .sorted
-        .map { method =>
-          val methodOptionsBuilder = kalix.MethodOptions.newBuilder()
-          methodOptionsBuilder.setEventing(eventingInForValueEntity(tableUpdater, handleDeletes = true))
-          addTableOptionsToUpdateMethod(tableName, tableProtoMessageName, methodOptionsBuilder, transform)
+    val updateHandlerMethods: Seq[Method] = updaterMethods
+      .filterNot(ComponentDescriptorFactory.hasHandleDeletes)
+      .filter(ComponentDescriptorFactory.hasUpdateEffectOutput)
 
-          KalixMethod(HandleDeletesServiceMethod(method))
-            .withKalixOptions(methodOptionsBuilder.build())
-            .withKalixOptions(buildJWTOptions(method))
-        }
+    new SpiTableDescriptor(
+      tableName,
+      tableType,
+      new ConsumerSource.KeyValueEntitySource(ComponentDescriptorFactory.readComponentIdIdValue(annotation.value())),
+      Option.when(updateHandlerMethods.nonEmpty)(
+        UpdateHandlerImpl(componentId, tableUpdater, updateHandlerMethods, serializer)(userEc)),
+      deleteHandlerMethod.map(method =>
+        UpdateHandlerImpl(
+          componentId,
+          tableUpdater,
+          methods = Seq(method),
+          deleteHandler = true,
+          serializer = serializer)(userEc)))
+  }
 
-      val valueEntitySubscriptionMethods = tableUpdater.getMethods
-        .filterNot(hasHandleDeletes)
-        .filter(hasUpdateEffectOutput)
-        .sorted // make sure we get the methods in deterministic order
-        .map { method =>
+  // Note: shared impl for update and delete handling
+  final case class UpdateHandlerImpl(
+      componentId: String,
+      tableUpdaterClass: Class[_],
+      methods: Seq[Method],
+      serializer: JsonSerializer,
+      deleteHandler: Boolean = false)(implicit userEc: ExecutionContext)
+      extends SpiTableUpdateHandler {
 
-          val methodOptionsBuilder = kalix.MethodOptions.newBuilder()
-          methodOptionsBuilder.setEventing(eventingInForValueEntity(tableUpdater, handleDeletes = false))
-          addTableOptionsToUpdateMethod(tableName, tableProtoMessageName, methodOptionsBuilder, transform)
+    private val userLog = LoggerFactory.getLogger(tableUpdaterClass)
 
-          KalixMethod(SubscriptionServiceMethod(method))
-            .withKalixOptions(methodOptionsBuilder.build())
-            .withKalixOptions(buildJWTOptions(method))
-        }
+    private val methodsByInput: Map[Class[_], Method] =
+      if (deleteHandler) Map.empty
+      else
+        methods.map { m =>
+          // FIXME not entirely sure this is right
+          // register each possible input
+          val inputType = m.getParameterTypes.head
+          serializer.registerTypeHints(m.getParameterTypes.head)
 
-      (handleDeletesMethods ++ valueEntitySubscriptionMethods).toSeq
-    } else {
-      //TODO verify if virtual methods are needed right now, there is no need for the runtime<->sdk round trip optimisation
-      if (findHandleDeletes(tableUpdater)) {
-        val deleteMethodOptionsBuilder = kalix.MethodOptions.newBuilder()
-        deleteMethodOptionsBuilder.setEventing(eventingInForValueEntity(tableUpdater, handleDeletes = true))
-        addTableOptionsToUpdateMethod(tableName, tableProtoMessageName, deleteMethodOptionsBuilder, transform)
-        Seq(
-          KalixMethod(VirtualServiceMethod(tableUpdater, "OnChange", tableType)).withKalixOptions(kalixOptions),
-          KalixMethod(VirtualDeleteServiceMethod(tableUpdater, "OnDelete")).withKalixOptions(
-            deleteMethodOptionsBuilder.build()))
-      } else {
-        Seq(KalixMethod(VirtualServiceMethod(tableUpdater, "OnChange", tableType)).withKalixOptions(kalixOptions))
+          inputType -> m
+        }.toMap
+
+    // Note: New instance for each update to avoid users storing/leaking state
+    private def tableUpdater: TableUpdater[AnyRef] =
+      methods.head.getDeclaringClass.getConstructor().newInstance().asInstanceOf[TableUpdater[AnyRef]]
+
+    override def handle(input: SpiTableUpdateEnvelope): Future[SpiTableUpdateEffect] = Future {
+      // FIXME tracing span?
+      val existingState: Option[AnyRef] = input.existingTableRow.map(serializer.fromBytes)
+      val metadata = MetadataImpl.of(input.metadata)
+      val addedToMDC = metadata.traceId match {
+        case Some(traceId) =>
+          MDC.put(Telemetry.TRACE_ID, traceId)
+          true
+        case None => false
       }
-    }
+
+      // FIXME choose method like for other consumers
+      val event = serializer.fromBytes(input.eventPayload)
+      val method: Method =
+        if (deleteHandler) {
+          methods.head // only one delete handler
+        } else {
+          methodsByInput.getOrElse(
+            event.getClass,
+            // FIXME throw good exception for unhandled type
+            ???)
+        }
+
+      val updateContext = UpdateContextImpl(method.getName, metadata)
+
+      val effect: ViewEffectImpl.PrimaryEffect[Any] =
+        try {
+
+          existingState.foreach(state => tableUpdater._internalSetViewState(state))
+          tableUpdater._internalSetUpdateContext(Optional.of(updateContext))
+
+          method.invoke(tableUpdater, event) match {
+            case effect: ViewEffectImpl.PrimaryEffect[Any @unchecked] => effect
+            case other =>
+              throw new RuntimeException(s"Unexpected return value from table updater [$tableUpdaterClass]: [$other]")
+          }
+
+        } catch {
+          case NonFatal(error) =>
+            userLog.error(s"View updater for view [${componentId}] threw an exception", error)
+            throw ViewException(
+              componentId,
+              updateContext,
+              s"View unexpected failure: ${error.getMessage}",
+              Some(error))
+        } finally {
+          // FIXME no clear of previous current-state?
+          tableUpdater._internalSetUpdateContext(Optional.empty())
+          if (addedToMDC) MDC.remove(Telemetry.TRACE_ID)
+        }
+
+      effect match {
+        case ViewEffectImpl.Update(newState) =>
+          if (newState == null) {
+            // FIXME MDC trace id should stretch here as well
+            userLog.error(
+              s"View updater tried to set row state to null, not allowed [${componentId}] threw an exception")
+            throw ViewException(componentId, updateContext, "updateState with null state is not allowed.", None)
+          }
+          val bytesPayload = serializer.toBytes(newState)
+          new SpiTableUpdateEffect.UpdateRow(bytesPayload)
+        case ViewEffectImpl.Delete => SpiTableUpdateEffect.DeleteRow
+        case ViewEffectImpl.Ignore => SpiTableUpdateEffect.IgnoreUpdate
+      }
+    }(userEc)
   }
 
-  private def addTableOptionsToUpdateMethod(
-      tableName: String,
-      tableProtoMessage: String,
-      builder: MethodOptions.Builder,
-      transform: Boolean) = {
-    val update = kalix.View.Update
-      .newBuilder()
-      .setTable(tableName)
-      .setTransformUpdates(transform)
+  private final case class UpdateContextImpl(eventName: String, metadata: Metadata)
+      extends AbstractContext
+      with UpdateContext {
 
-    val jsonSchema = kalix.JsonSchema
-      .newBuilder()
-      .setOutput(tableProtoMessage)
-      .build()
-
-    val view = kalix.View
-      .newBuilder()
-      .setUpdate(update)
-      .setJsonSchema(jsonSchema)
-      .build()
-    builder.setView(view)
+    override def eventSubject(): Optional[String] =
+      if (metadata.isCloudEvent)
+        metadata.asCloudEvent().subject()
+      else
+        Optional.empty()
   }
-
 }

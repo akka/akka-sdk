@@ -8,7 +8,6 @@ import java.lang.reflect.Constructor
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
 import java.util.concurrent.CompletionStage
-
 import scala.annotation.nowarn
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -18,7 +17,6 @@ import scala.jdk.FutureConverters._
 import scala.jdk.OptionConverters.RichOptional
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
-
 import akka.Done
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
@@ -60,8 +58,7 @@ import akka.javasdk.impl.telemetry.SpanTracingImpl
 import akka.javasdk.impl.telemetry.TraceInstrumentation
 import akka.javasdk.impl.timedaction.TimedActionImpl
 import akka.javasdk.impl.timer.TimerSchedulerImpl
-import akka.javasdk.impl.view.ViewService
-import akka.javasdk.impl.view.ViewsImpl
+import akka.javasdk.impl.view.ViewDescriptorFactory
 import akka.javasdk.impl.workflow.WorkflowImpl
 import akka.javasdk.impl.workflow.WorkflowService
 import akka.javasdk.keyvalueentity.KeyValueEntity
@@ -86,6 +83,7 @@ import akka.runtime.sdk.spi.SpiSettings
 import akka.runtime.sdk.spi.SpiWorkflow
 import akka.runtime.sdk.spi.StartContext
 import akka.runtime.sdk.spi.TimedActionDescriptor
+import akka.runtime.sdk.spi.views.SpiViewDescriptor
 import akka.runtime.sdk.spi.WorkflowDescriptor
 import akka.stream.Materializer
 import com.google.protobuf.Descriptors
@@ -330,7 +328,7 @@ private final class Sdk(
         Some(keyValueEntityService(clz.asInstanceOf[Class[KeyValueEntity[Nothing]]]))
       } else if (Reflect.isView(clz)) {
         logger.debug(s"Registering View [${clz.getName}]")
-        Some(viewService(clz.asInstanceOf[Class[View]]))
+        None // no factory, handled below
       } else throw new IllegalArgumentException(s"Component class of unknown component type [$clz]")
 
       service match {
@@ -531,6 +529,13 @@ private final class Sdk(
         logger.warn("Unknown component [{}]", clz.getName)
     }
 
+  val viewDescriptors: Seq[SpiViewDescriptor] =
+    componentClasses
+      .filter(hasComponentId)
+      .collect {
+        case clz if classOf[View].isAssignableFrom(clz) => ViewDescriptorFactory(clz, serializer, sdkExecutionContext)
+      }
+
   // these are available for injecting in all kinds of component that are primarily
   // for side effects
   // Note: config is also always available through the combination with user DI way down below
@@ -545,6 +550,7 @@ private final class Sdk(
   def spiComponents: SpiComponents = {
 
     var viewsEndpoint: Option[Views] = None
+    var workflowEntitiesEndpoint: Option[WorkflowEntities] = None
 
     val classicSystem = system.classicSystem
 
@@ -562,10 +568,6 @@ private final class Sdk(
 
       case (serviceClass, _: Map[String, WorkflowService[_, _]] @unchecked)
           if serviceClass == classOf[WorkflowService[_, _]] =>
-
-      case (serviceClass, viewServices: Map[String, ViewService[_]] @unchecked)
-          if serviceClass == classOf[ViewService[_]] =>
-        viewsEndpoint = Some(new ViewsImpl(viewServices, sdkDispatcherName))
 
       case (serviceClass, _) =>
         sys.error(s"Unknown service type: $serviceClass")
@@ -627,7 +629,8 @@ private final class Sdk(
 
       override def keyValueEntityDescriptors: Seq[EventSourcedEntityDescriptor] =
         Sdk.this.keyValueEntityDescriptors
-
+      override def workflowDescriptors: Seq[WorkflowDescriptor] = Nil // FIXME
+      override def views: Option[Views] = viewsEndpoint
       override def httpEndpointDescriptors: Seq[HttpEndpointDescriptor] =
         Sdk.this.httpEndpointDescriptors
 
@@ -680,13 +683,6 @@ private final class Sdk(
 
   private def keyValueEntityService[S, VE <: KeyValueEntity[S]](clz: Class[VE]): KeyValueEntityService[S, VE] =
     new KeyValueEntityService(clz, serializer)
-
-  private def viewService[V <: View](clz: Class[V]): ViewService[V] =
-    new ViewService[V](
-      clz,
-      serializer,
-      // remember to update component type API doc and docs if changing the set of injectables
-      wiredInstance(_)(PartialFunction.empty))
 
   private def httpEndpointFactory[E](httpEndpointClass: Class[E]): HttpEndpointConstructionContext => E = {
     (context: HttpEndpointConstructionContext) =>

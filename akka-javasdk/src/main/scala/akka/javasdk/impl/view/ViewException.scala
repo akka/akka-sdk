@@ -12,7 +12,7 @@ import akka.javasdk.view.UpdateContext
  */
 @InternalApi
 private[impl] final case class ViewException(
-    viewId: String,
+    componentId: String,
     commandName: String,
     message: String,
     cause: Option[Throwable])
@@ -24,7 +24,7 @@ private[impl] final case class ViewException(
 @InternalApi
 private[impl] object ViewException {
 
-  def apply(viewId: String, context: UpdateContext, message: String, cause: Option[Throwable]): ViewException =
-    ViewException(viewId, context.eventName, message, cause)
+  def apply(componentId: String, context: UpdateContext, message: String, cause: Option[Throwable]): ViewException =
+    ViewException(componentId, context.eventName, message, cause)
 
 }
