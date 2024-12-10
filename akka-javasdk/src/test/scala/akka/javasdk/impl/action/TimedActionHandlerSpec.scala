@@ -4,6 +4,8 @@
 
 package akka.javasdk.impl.action
 
+/* FIXME SPI refactoring, fixme or remove
+
 import akka.Done
 import scala.concurrent.Await
 import scala.concurrent.Future
@@ -71,7 +73,6 @@ class TimedActionHandlerSpec
       () => OpenTelemetry.noop().getTracer("test"))
   }
 
-  //TODO fixme or remove
   "The action service" ignore {
     "invoke unary commands" in {
       val service = create(new AbstractHandler {
@@ -148,3 +149,6 @@ class TimedActionHandlerSpec
   }
 
 }
+
+
+ */

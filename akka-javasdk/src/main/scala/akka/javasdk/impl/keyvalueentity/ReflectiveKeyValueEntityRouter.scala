@@ -26,10 +26,11 @@ private[impl] class ReflectiveKeyValueEntityRouter[S, KV <: KeyValueEntity[S]](
 
   val entityStateType: Class[S] = Reflect.keyValueEntityStateType(entity.getClass).asInstanceOf[Class[S]]
 
-  private def commandHandlerLookup(commandName: String) =
-    commandHandlers.getOrElse(
-      commandName,
-      throw new HandlerNotFoundException("command", commandName, commandHandlers.keySet))
+  private def commandHandlerLookup(commandName: String): CommandHandler =
+    commandHandlers.get(commandName) match {
+      case Some(handler) => handler
+      case None          => throw new HandlerNotFoundException("command", commandName, commandHandlers.keySet)
+    }
 
   def handleCommand(
       commandName: String,

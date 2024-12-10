@@ -51,7 +51,6 @@ private[impl] object EventSourcedEntityImpl {
       override val entityId: String,
       override val sequenceNumber: Long,
       override val commandName: String,
-      override val commandId: Long, // FIXME remove
       override val isDeleted: Boolean,
       override val metadata: Metadata,
       span: Option[Span],
@@ -60,6 +59,8 @@ private[impl] object EventSourcedEntityImpl {
       with CommandContext
       with ActivatableContext {
     override def tracing(): Tracing = new SpanTracingImpl(span, tracerFactory)
+
+    override def commandId(): Long = 0
   }
 
   private class EventSourcedEntityContextImpl(override final val entityId: String)
@@ -121,7 +122,6 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
         entityId,
         command.sequenceNumber,
         command.name,
-        0,
         command.isDeleted,
         metadata,
         span,
@@ -152,7 +152,7 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
         case EmitEvents(events, deleteEntity) =>
           var updatedState = state
           events.foreach { event =>
-            updatedState = entityHandleEvent(updatedState, event.asInstanceOf[AnyRef], entityId, currentSequence)
+            updatedState = entityHandleEvent(updatedState, event.asInstanceOf[AnyRef], currentSequence)
             if (updatedState == null)
               throw new IllegalArgumentException("Event handler must not return null as the updated state.")
             currentSequence += 1
@@ -185,7 +185,6 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
       case e: HandlerNotFoundException =>
         throw new EntityExceptions.EntityException(
           entityId,
-          0, // FIXME remove commandId
           command.name,
           s"No command handler found for command [${e.name}] on ${entity.getClass}")
       case BadRequestException(msg) =>
@@ -201,7 +200,6 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
       case NonFatal(error) =>
         throw EntityException(
           entityId = entityId,
-          commandId = 0,
           commandName = command.name,
           s"Unexpected failure: $error",
           Some(error))
@@ -221,15 +219,14 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
   override def handleEvent(
       state: SpiEventSourcedEntity.State,
       eventEnv: SpiEventSourcedEntity.EventEnvelope): SpiEventSourcedEntity.State = {
-    // FIXME will this work, without the expected class
+    // all event types are preemptively registered to the serializer by the ReflectiveEventSourcedEntityRouter
     val event = serializer.fromBytes(eventEnv.payload)
-    entityHandleEvent(state, event, entityId, eventEnv.sequenceNumber)
+    entityHandleEvent(state, event, eventEnv.sequenceNumber)
   }
 
   def entityHandleEvent(
       state: SpiEventSourcedEntity.State,
       event: AnyRef,
-      entityId: String,
       sequenceNumber: Long): SpiEventSourcedEntity.State = {
     val eventContext = new EventContextImpl(entityId, sequenceNumber)
     entity._internalSetEventContext(Optional.of(eventContext))
