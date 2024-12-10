@@ -137,11 +137,12 @@ final class WorkflowImpl(
 
   private def toFailureOut(error: Throwable, correlationId: String) = {
     error match {
-      case WorkflowException(workflowId, commandName, _, _) =>
+      case WorkflowException(workflowId, commandId, commandName, _, _) =>
         WorkflowStreamOut(
           OutFailure(
-            component.Failure(description =
-              s"Unexpected workflow [$workflowId] error for command [$commandName] [$correlationId]")))
+            component.Failure(
+              commandId = commandId,
+              description = s"Unexpected workflow [$workflowId] error for command [$commandName] [$correlationId]")))
       case _ =>
         WorkflowStreamOut(OutFailure(component.Failure(description = s"Unexpected error [$correlationId]")))
     }

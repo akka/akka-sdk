@@ -21,10 +21,7 @@ public interface CommandContext extends MetadataContext {
    * The id of the command being executed.
    *
    * @return The id of the command.
-   *
-   * @deprecated not used anymore
    */
-  @Deprecated
   long commandId();
 
   /**

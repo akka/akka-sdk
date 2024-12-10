@@ -104,6 +104,7 @@ abstract class WorkflowRouter[S, W <: Workflow[S]](protected val workflow: W) {
         case CommandHandlerNotFound(name) =>
           throw new WorkflowException(
             context.workflowId(),
+            context.commandId(),
             commandName,
             s"No command handler found for command [$name] on ${workflow.getClass}")
       } finally {
