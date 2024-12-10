@@ -29,8 +29,8 @@ private[impl] final case class CommandHandler(
    * This method will look up for a registered method that receives a super type of the incoming payload. It's only
    * called when a direct method is not found.
    *
-   * The incoming typeUrl is for one of the existing sub types, but the method itself is defined to receive a super
-   * type. Therefore we look up the method parameter to find out if one of its sub types matches the incoming typeUrl.
+   * The incoming typeUrl is for one of the existing subtypes, but the method itself is defined to receive a super type.
+   * Therefore, we look up the method parameter to find out if one of its subtypes matches the incoming typeUrl.
    */
   private def lookupMethodAcceptingSubType(inputTypeUrl: String): Option[MethodInvoker] = {
     methodInvokers.values.find { javaMethod =>

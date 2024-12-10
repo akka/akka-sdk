@@ -23,7 +23,7 @@ public class WorkflowWithTimeout extends Workflow<FailingCounterState> {
   private final String counterStepName = "counter";
   private final String counterFailoverStepName = "counter-failover";
 
-  private ComponentClient componentClient;
+  private final ComponentClient componentClient;
 
   public WorkflowWithTimeout(ComponentClient componentClient) {
     this.componentClient = componentClient;
