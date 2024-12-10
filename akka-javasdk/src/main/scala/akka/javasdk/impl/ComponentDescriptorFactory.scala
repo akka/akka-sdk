@@ -25,7 +25,6 @@ import akka.javasdk.annotations.Produce.ServiceStream
 import akka.javasdk.annotations.Produce.ToTopic
 import akka.javasdk.consumer.Consumer
 import akka.javasdk.impl.serialization.JsonSerializer
-import akka.javasdk.impl.view.ViewDescriptorFactory
 import akka.javasdk.keyvalueentity.KeyValueEntity
 import akka.javasdk.timedaction.TimedAction
 import akka.javasdk.view.TableUpdater
@@ -359,8 +358,6 @@ private[impl] object ComponentDescriptorFactory {
   def getFactoryFor(component: Class[_]): ComponentDescriptorFactory = {
     if (Reflect.isEntity(component) || Reflect.isWorkflow(component))
       EntityDescriptorFactory
-    else if (Reflect.isView(component))
-      ViewDescriptorFactory
     else if (Reflect.isConsumer(component))
       ConsumerDescriptorFactory
     else

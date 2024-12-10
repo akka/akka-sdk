@@ -65,7 +65,7 @@ private[javasdk] object ViewClientImpl {
     // extract view id
     val declaringClass = method.getDeclaringClass
     val componentId = ComponentDescriptorFactory.readComponentIdIdValue(declaringClass)
-    val methodName = method.getName.capitalize
+    val methodName = method.getName
     val queryReturnType = getViewQueryReturnType(method)
     ViewMethodProperties(componentId, method, methodName, declaringClass, queryReturnType)
   }

@@ -23,11 +23,32 @@ import akka.javasdk.testmodels.keyvalueentity.CounterState;
 import akka.javasdk.testmodels.keyvalueentity.TimeTrackerEntity;
 import akka.javasdk.testmodels.keyvalueentity.User;
 import akka.javasdk.testmodels.keyvalueentity.UserEntity;
+import akka.util.ByteString;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
 public class ViewTestModels {
+
+  public record EveryType(
+      int intValue,
+      long longValue,
+      float floatValue,
+      double doubleValue,
+      boolean booleanValue,
+      String stringValue,
+      Integer wrappedInt,
+      Long wrappedLong,
+      Float wrappedFloat,
+      Double wrappedDouble,
+      Boolean wrappedBoolean,
+      Instant instant,
+      Byte[] bytes,
+      Optional<String> optionalString,
+      List<String> repeatedString,
+      ByEmail nestedMessage
+  ) {}
 
   // common query parameter for views in this file
   public record ByEmail(String email) {
@@ -679,29 +700,6 @@ public class ViewTestModels {
 
   @ComponentId("employee_view")
   public static class TopicTypeLevelSubscriptionView extends View {
-
-    @Consume.FromTopic(value = "source", consumerGroup = "cg")
-    public static class Employees extends TableUpdater<Employee> {
-
-      public Effect<Employee> onCreate(EmployeeEvent.EmployeeCreated evt) {
-        return effects()
-            .updateRow(new Employee(evt.firstName, evt.lastName, evt.email));
-      }
-
-      public Effect<Employee> onEmailUpdate(EmployeeEvent.EmployeeEmailUpdated eeu) {
-        var employee = rowState();
-        return effects().updateRow(new Employee(employee.firstName(), employee.lastName(), eeu.email));
-      }
-    }
-
-    @Query("SELECT * FROM employees WHERE email = :email")
-    public QueryEffect<Employee> getEmployeeByEmail(ByEmail byEmail) {
-      return queryResult();
-    }
-  }
-
-  @ComponentId("employee_view")
-  public static class TopicSubscriptionView extends View {
 
     @Consume.FromTopic(value = "source", consumerGroup = "cg")
     public static class Employees extends TableUpdater<Employee> {

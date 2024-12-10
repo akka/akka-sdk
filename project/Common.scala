@@ -43,13 +43,7 @@ object CommonSettings extends AutoPlugin {
       javafmtOnCompile := !insideCI.value,
       scalaVersion := Dependencies.ScalaVersion,
       Compile / javacOptions ++= Seq("-encoding", "UTF-8", "--release", "21"),
-      Compile / scalacOptions ++= Seq(
-        "-encoding",
-        "UTF-8",
-        "-deprecation",
-        // scalac doesn't do 21
-        "-release",
-        "17"),
+      Compile / scalacOptions ++= Seq("-encoding", "UTF-8", "-deprecation", "-release", "21"),
       run / javaOptions ++= {
         sys.props.collect { case (key, value) if key.startsWith("akka") => s"-D$key=$value" }(breakOut)
       }) ++ (

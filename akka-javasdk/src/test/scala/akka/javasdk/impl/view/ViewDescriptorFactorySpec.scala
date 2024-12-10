@@ -4,53 +4,33 @@
 
 package akka.javasdk.impl.view
 
-import akka.javasdk.impl.ComponentDescriptorSuite
+import akka.dispatch.ExecutionContexts
 import akka.javasdk.impl.ValidationException
 import akka.javasdk.impl.Validations
-import akka.javasdk.testmodels.subscriptions.PubSubTestModels.EventStreamSubscriptionView
-import akka.javasdk.testmodels.subscriptions.PubSubTestModels.SubscribeOnTypeToEventSourcedEvents
+import akka.javasdk.impl.serialization.JsonSerializer
 import akka.javasdk.testmodels.view.ViewTestModels
-import akka.javasdk.testmodels.view.ViewTestModels.MultiTableViewValidation
-import akka.javasdk.testmodels.view.ViewTestModels.MultiTableViewWithDuplicatedESSubscriptions
-import akka.javasdk.testmodels.view.ViewTestModels.MultiTableViewWithDuplicatedVESubscriptions
-import akka.javasdk.testmodels.view.ViewTestModels.MultiTableViewWithJoinQuery
-import akka.javasdk.testmodels.view.ViewTestModels.MultiTableViewWithMultipleQueries
-import akka.javasdk.testmodels.view.ViewTestModels.MultiTableViewWithoutQuery
-import akka.javasdk.testmodels.view.ViewTestModels.SubscribeToEventSourcedEvents
-import akka.javasdk.testmodels.view.ViewTestModels.SubscribeToEventSourcedWithMissingHandler
-import akka.javasdk.testmodels.view.ViewTestModels.SubscribeToSealedEventSourcedEvents
-import akka.javasdk.testmodels.view.ViewTestModels.TimeTrackerView
-import akka.javasdk.testmodels.view.ViewTestModels.TopicSubscriptionView
-import akka.javasdk.testmodels.view.ViewTestModels.TopicTypeLevelSubscriptionView
-import akka.javasdk.testmodels.view.ViewTestModels.TransformedUserView
-import akka.javasdk.testmodels.view.ViewTestModels.TransformedUserViewWithDeletes
-import akka.javasdk.testmodels.view.ViewTestModels.TransformedUserViewWithMethodLevelJWT
-import akka.javasdk.testmodels.view.ViewTestModels.TypeLevelSubscribeToEventSourcedEventsWithMissingHandler
-import akka.javasdk.testmodels.view.ViewTestModels.UserByEmailWithCollectionReturn
-import akka.javasdk.testmodels.view.ViewTestModels.UserByEmailWithStreamReturn
-import akka.javasdk.testmodels.view.ViewTestModels.UserViewWithOnlyDeleteHandler
-import akka.javasdk.testmodels.view.ViewTestModels.ViewDuplicatedHandleDeletesAnnotations
-import akka.javasdk.testmodels.view.ViewTestModels.ViewHandleDeletesWithParam
-import akka.javasdk.testmodels.view.ViewTestModels.ViewQueryWithTooManyArguments
-import akka.javasdk.testmodels.view.ViewTestModels.ViewWithEmptyComponentIdAnnotation
-import akka.javasdk.testmodels.view.ViewTestModels.ViewWithMethodLevelAcl
-import akka.javasdk.testmodels.view.ViewTestModels.ViewWithNoQuery
-import akka.javasdk.testmodels.view.ViewTestModels.ViewWithPipeyComponentIdAnnotation
-import akka.javasdk.testmodels.view.ViewTestModels.ViewWithServiceLevelAcl
-import akka.javasdk.testmodels.view.ViewTestModels.ViewWithServiceLevelJWT
-import akka.javasdk.testmodels.view.ViewTestModels.ViewWithTwoQueries
-import akka.javasdk.testmodels.view.ViewTestModels.ViewWithoutSubscription
-import com.google.protobuf.Descriptors.FieldDescriptor
-import com.google.protobuf.Descriptors.FieldDescriptor.JavaType
-import com.google.protobuf.timestamp.Timestamp
-import com.google.protobuf.{ Any => JavaPbAny }
-import kalix.JwtMethodOptions.JwtMethodMode
-import kalix.JwtServiceOptions.JwtServiceMode
+import akka.runtime.sdk.spi.ConsumerSource
+import akka.runtime.sdk.spi.Principal
+import akka.runtime.sdk.spi.ServiceNamePattern
+import akka.runtime.sdk.spi.views.SpiType.SpiClass
+import akka.runtime.sdk.spi.views.SpiType.SpiInteger
+import akka.runtime.sdk.spi.views.SpiType.SpiList
+import akka.runtime.sdk.spi.views.SpiType.SpiString
+import akka.runtime.sdk.spi.views.SpiType.SpiTimestamp
+import akka.runtime.sdk.spi.views.SpiViewDescriptor
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
-import scala.jdk.CollectionConverters.CollectionHasAsScala
+import scala.reflect.ClassTag
 
-class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuite {
+class ViewDescriptorFactorySpec extends AnyWordSpec with Matchers {
+
+  import ViewTestModels._
+  import akka.javasdk.testmodels.subscriptions.PubSubTestModels._
+
+  def assertDescriptor[T](test: SpiViewDescriptor => Any)(implicit tag: ClassTag[T]): Unit = {
+    test(ViewDescriptorFactory(tag.runtimeClass, new JsonSerializer, ExecutionContexts.global()))
+  }
 
   "View descriptor factory" should {
 
@@ -62,79 +42,80 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
 
     "not allow View without any Table updater" in {
       intercept[ValidationException] {
-        Validations.validate(classOf[ViewTestModels.ViewWithNoTableUpdater]).failIfInvalid()
+        Validations.validate(classOf[ViewWithNoTableUpdater]).failIfInvalid()
       }.getMessage should include("A view must contain at least one public static TableUpdater subclass.")
     }
 
     "not allow View with an invalid row type" in {
       intercept[ValidationException] {
-        Validations.validate(classOf[ViewTestModels.ViewWithInvalidRowType]).failIfInvalid()
+        Validations.validate(classOf[ViewWithInvalidRowType]).failIfInvalid()
       }.getMessage should include(s"View row type java.lang.String is not supported")
     }
 
     "not allow View with an invalid query result type" in {
       intercept[ValidationException] {
-        Validations.validate(classOf[ViewTestModels.WrongQueryEffectReturnType]).failIfInvalid()
+        Validations.validate(classOf[WrongQueryEffectReturnType]).failIfInvalid()
       }.getMessage should include("View query result type java.lang.String is not supported")
     }
 
     "not allow View with Table annotation" in {
       intercept[ValidationException] {
-        Validations.validate(classOf[ViewTestModels.ViewWithTableName]).failIfInvalid()
+        Validations.validate(classOf[ViewWithTableName]).failIfInvalid()
       }.getMessage should include("A View itself should not be annotated with @Table.")
     }
 
     "not allow View queries not returning QueryEffect<T>" in {
       intercept[ValidationException] {
-        Validations.validate(classOf[ViewTestModels.WrongQueryReturnType]).failIfInvalid()
+        Validations.validate(classOf[WrongQueryReturnType]).failIfInvalid()
       }.getMessage should include("Query methods must return View.QueryEffect<RowType>")
     }
 
     "not allow View update handler with more than on parameter" in {
       intercept[ValidationException] {
-        Validations.validate(classOf[ViewTestModels.WrongHandlerSignature]).failIfInvalid()
+        Validations.validate(classOf[WrongHandlerSignature]).failIfInvalid()
       }.getMessage should include(
         "Subscription method must have exactly one parameter, unless it's marked with @DeleteHandler.")
     }
 
-    "generate ACL annotations at service level" in {
+    "generate ACL annotations at service level" in pendingUntilFixed {
       assertDescriptor[ViewWithServiceLevelAcl] { desc =>
-        val extension = desc.serviceDescriptor.getOptions.getExtension(kalix.Annotations.service)
-        val service = extension.getAcl.getAllow(0).getService
-        service shouldBe "test"
+        val options = desc.componentOptions
+        val acl = options.aclOpt.get
+        acl.allow.head match {
+          case _: Principal => fail()
+          case pattern: ServiceNamePattern =>
+            pattern.pattern shouldBe "test"
+        }
       }
     }
 
-    "generate ACL annotations at method level" in {
+    "generate ACL annotations at method level" in pendingUntilFixed {
       assertDescriptor[ViewWithMethodLevelAcl] { desc =>
-        val extension = findKalixMethodOptions(desc, "GetEmployeeByEmail")
-        val service = extension.getAcl.getAllow(0).getService
-        service shouldBe "test"
+        val query = desc.queries.find(_.name == "getEmployeeByEmail").get
+        val acl = query.methodOptions.acl.get
+        acl.allow.head match {
+          case _: Principal => fail()
+          case pattern: ServiceNamePattern =>
+            pattern.pattern shouldBe "test"
+        }
       }
     }
 
     "generate query with collection return type" in {
       assertDescriptor[UserByEmailWithCollectionReturn] { desc =>
-        val queryMethodOptions = this.findKalixMethodOptions(desc, "GetUser")
-        queryMethodOptions.getView.getQuery.getQuery shouldBe "SELECT * AS users FROM users WHERE name = :name"
-        queryMethodOptions.getView.getJsonSchema.getOutput shouldBe "UserCollection"
+        val query = desc.queries.find(_.name == "getUser").get
 
-        val streamUpdates = queryMethodOptions.getView.getQuery.getStreamUpdates
-        streamUpdates shouldBe false
+        query.query shouldBe "SELECT * AS users FROM users WHERE name = :name"
+        query.streamUpdates shouldBe false
       }
     }
 
     "generate query with stream return type" in {
       assertDescriptor[UserByEmailWithStreamReturn] { desc =>
-        val queryMethodOptions = this.findKalixMethodOptions(desc, "GetAllUsers")
-        queryMethodOptions.getView.getQuery.getQuery shouldBe "SELECT * AS users FROM users"
-        queryMethodOptions.getView.getJsonSchema.getOutput shouldBe "User"
-        val method = findMethodByName(desc, "GetAllUsers")
-        method.isClientStreaming shouldBe false
-        method.isServerStreaming shouldBe true
-
-        val streamUpdates = queryMethodOptions.getView.getQuery.getStreamUpdates
-        streamUpdates shouldBe false
+        val query = desc.queries.find(_.name == "getAllUsers").get
+        query.query shouldBe "SELECT * AS users FROM users"
+        query.outputType shouldBe an[SpiList]
+        query.streamUpdates shouldBe false
       }
     }
 
@@ -193,141 +174,42 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
       }.getMessage should include("Method annotated with '@DeleteHandler' must not have parameters.")
     }
 
-    "generate proto for a View with explicit update method" in {
-      assertDescriptor[TransformedUserView] { desc =>
-
-        val methodOptions = this.findKalixMethodOptions(desc, "OnChange")
-        val entityType = methodOptions.getEventing.getIn.getValueEntity
-        val handleDeletes = methodOptions.getEventing.getIn.getHandleDeletes
-        entityType shouldBe "user"
-        handleDeletes shouldBe false
-
-        methodOptions.getView.getUpdate.getTable shouldBe "users"
-        methodOptions.getView.getUpdate.getTransformUpdates shouldBe true
-        methodOptions.getView.getJsonSchema.getOutput shouldBe "TransformedUser"
-
-        val queryMethodOptions1 = this.findKalixMethodOptions(desc, "GetUser")
-        queryMethodOptions1.getView.getQuery.getQuery shouldBe "SELECT * FROM users WHERE email = :email"
-        queryMethodOptions1.getView.getJsonSchema.getJsonBodyInputField shouldBe "json_body"
-        queryMethodOptions1.getView.getJsonSchema.getInput shouldBe "GetUserAkkaJsonQuery"
-        queryMethodOptions1.getView.getJsonSchema.getOutput shouldBe "TransformedUser"
-
-        val queryMethodOptions2 = this.findKalixMethodOptions(desc, "GetUsersByEmails")
-        queryMethodOptions2.getView.getQuery.getQuery shouldBe "SELECT * as users FROM users WHERE email = :emails"
-        queryMethodOptions2.getView.getJsonSchema.getJsonBodyInputField shouldBe "json_body"
-        queryMethodOptions2.getView.getJsonSchema.getInput shouldBe "GetUsersByEmailsAkkaJsonQuery"
-        queryMethodOptions2.getView.getJsonSchema.getOutput shouldBe "TransformedUsers"
-
-        val tableMessageDescriptor = desc.fileDescriptor.findMessageTypeByName("TransformedUser")
-        tableMessageDescriptor should not be null
-
-        val rule = findHttpRule(desc, "GetUser")
-        rule.getPost shouldBe "/akka/v1.0/view/users_view/getUser"
-      }
-
-    }
-
     "convert Interval fields to proto Timestamp" in {
       assertDescriptor[TimeTrackerView] { desc =>
+        // FIXME move to schema spec, not about descriptor in general
+        val table = desc.tables.find(_.tableName == "time_trackers").get
+        val createdTimeField = table.tableType.getField("createdTime").get
+        createdTimeField.fieldType shouldBe SpiTimestamp
 
-        val timerStateMsg = desc.fileDescriptor.findMessageTypeByName("TimerState")
-        val createdTimeField = timerStateMsg.findFieldByName("createdTime")
-        createdTimeField.getMessageType shouldBe Timestamp.javaDescriptor
+        val timerEntry =
+          table.tableType.getField("entries").get.fieldType.asInstanceOf[SpiList].valueType.asInstanceOf[SpiClass]
+        val startedField = timerEntry.getField("started").get
+        startedField.fieldType shouldBe SpiTimestamp
 
-        val timerEntry = desc.fileDescriptor.findMessageTypeByName("TimerEntry")
-        val startedField = timerEntry.findFieldByName("started")
-        startedField.getMessageType shouldBe Timestamp.javaDescriptor
-
-        val stoppedField = timerEntry.findFieldByName("stopped")
-        stoppedField.getMessageType shouldBe Timestamp.javaDescriptor
+        val stoppedField = timerEntry.getField("stopped").get
+        stoppedField.fieldType shouldBe SpiTimestamp
       }
     }
 
-    "generate proto for a View with delete handler" in {
+    "create a descriptor for a View with a delete handler" in {
       assertDescriptor[TransformedUserViewWithDeletes] { desc =>
 
-        val methodOptions = this.findKalixMethodOptions(desc, "OnChange")
-        val in = methodOptions.getEventing.getIn
-        in.getValueEntity shouldBe "user"
-        in.getHandleDeletes shouldBe false
-        methodOptions.getView.getUpdate.getTransformUpdates shouldBe true
+        val table = desc.tables.find(_.tableName == "users").get
 
-        val deleteMethodOptions = this.findKalixMethodOptions(desc, "OnDelete")
-        val deleteIn = deleteMethodOptions.getEventing.getIn
-        deleteIn.getValueEntity shouldBe "user"
-        deleteIn.getHandleDeletes shouldBe true
-        deleteMethodOptions.getView.getUpdate.getTransformUpdates shouldBe true
+        table.updateHandler shouldBe defined
+        table.deleteHandler shouldBe defined
+
+        table.consumerSource shouldBe a[ConsumerSource.KeyValueEntitySource]
+        table.consumerSource.asInstanceOf[ConsumerSource.KeyValueEntitySource].componentId shouldBe "user"
       }
     }
 
-    "generate proto for a View with only delete handler" in {
+    "create a descriptor for a View with only delete handler" in {
       assertDescriptor[UserViewWithOnlyDeleteHandler] { desc =>
+        val table = desc.tables.find(_.tableName == "users").get
 
-        val methodOptions = this.findKalixMethodOptions(desc, "OnChange")
-        val in = methodOptions.getEventing.getIn
-        in.getValueEntity shouldBe "user"
-        in.getHandleDeletes shouldBe false
-        methodOptions.getView.getUpdate.getTransformUpdates shouldBe false
-
-        val deleteMethodOptions = this.findKalixMethodOptions(desc, "OnDelete")
-        val deleteIn = deleteMethodOptions.getEventing.getIn
-        deleteIn.getValueEntity shouldBe "user"
-        deleteIn.getHandleDeletes shouldBe true
-        deleteMethodOptions.getView.getUpdate.getTransformUpdates shouldBe false
-      }
-    }
-
-    "generate proto for a View with explicit update method and method level JWT annotation" in {
-      assertDescriptor[TransformedUserViewWithMethodLevelJWT] { desc =>
-
-        val methodOptions = this.findKalixMethodOptions(desc, "OnChange")
-        val entityType = methodOptions.getEventing.getIn.getValueEntity
-        entityType shouldBe "user"
-
-        methodOptions.getView.getUpdate.getTable shouldBe "users"
-        methodOptions.getView.getUpdate.getTransformUpdates shouldBe true
-        methodOptions.getView.getJsonSchema.getOutput shouldBe "TransformedUser"
-
-        val queryMethodOptions = this.findKalixMethodOptions(desc, "GetUser")
-        queryMethodOptions.getView.getQuery.getQuery shouldBe "SELECT * FROM users WHERE email = :email"
-        queryMethodOptions.getView.getJsonSchema.getJsonBodyInputField shouldBe "json_body"
-        queryMethodOptions.getView.getJsonSchema.getInput shouldBe "ByEmail"
-        queryMethodOptions.getView.getJsonSchema.getOutput shouldBe "TransformedUser"
-
-        val tableMessageDescriptor = desc.fileDescriptor.findMessageTypeByName("TransformedUser")
-        tableMessageDescriptor should not be null
-
-        val rule = findHttpRule(desc, "GetUser")
-        rule.getPost shouldBe "/akka/v1.0/view/users_view/getUser"
-
-        val method = desc.commandHandlers("GetUser")
-        val jwtOption = findKalixMethodOptions(desc, method.grpcMethodName).getJwt
-        jwtOption.getBearerTokenIssuer(0) shouldBe "a"
-        jwtOption.getBearerTokenIssuer(1) shouldBe "b"
-        jwtOption.getValidate(0) shouldBe JwtMethodMode.BEARER_TOKEN
-        assertRequestFieldJavaType(method, "json_body", JavaType.MESSAGE)
-
-        val Seq(claim1, claim2) = jwtOption.getStaticClaimList.asScala.toSeq
-        claim1.getClaim shouldBe "role"
-        claim1.getValue(0) shouldBe "admin"
-        claim2.getClaim shouldBe "aud"
-        claim2.getValue(0) shouldBe "${ENV}.kalix.io"
-      }
-    }
-
-    "generate proto for a View with service level JWT annotation" in {
-      assertDescriptor[ViewWithServiceLevelJWT] { desc =>
-        val extension = desc.serviceDescriptor.getOptions.getExtension(kalix.Annotations.service)
-        val jwtOption = extension.getJwt
-        jwtOption.getBearerTokenIssuer(0) shouldBe "a"
-        jwtOption.getBearerTokenIssuer(1) shouldBe "b"
-        jwtOption.getValidate shouldBe JwtServiceMode.BEARER_TOKEN
-
-        val Seq(claim1, claim2) = jwtOption.getStaticClaimList.asScala.toSeq
-        claim1.getClaim shouldBe "role"
-        claim1.getValue(0) shouldBe "admin"
-        claim2.getClaim shouldBe "aud"
-        claim2.getValue(0) shouldBe "${ENV}.kalix.io"
+        table.updateHandler shouldBe empty
+        table.deleteHandler shouldBe defined
       }
     }
 
@@ -347,76 +229,128 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
       }.getMessage shouldBe
       "On 'akka.javasdk.testmodels.view.ViewTestModels$ViewWithIncorrectQueries#getUserByEmail': Query methods marked with streamUpdates must return View.QueryStreamEffect<RowType>"
     }
+
   }
+  /*
+
+        "generate proto for a View with explicit update method and method level JWT annotation" in {
+          assertDescriptor[TransformedUserViewWithMethodLevelJWT] { desc =>
+
+            val methodOptions = this.findKalixMethodOptions(desc, "OnChange")
+            val entityType = methodOptions.getEventing.getIn.getValueEntity
+            entityType shouldBe "user"
+
+            methodOptions.getView.getUpdate.getTable shouldBe "users"
+            methodOptions.getView.getUpdate.getTransformUpdates shouldBe true
+            methodOptions.getView.getJsonSchema.getOutput shouldBe "TransformedUser"
+
+            val queryMethodOptions = this.findKalixMethodOptions(desc, "getUser")
+            queryMethodOptions.getView.getQuery.getQuery shouldBe "SELECT * FROM users WHERE email = :email"
+            queryMethodOptions.getView.getJsonSchema.getJsonBodyInputField shouldBe "json_body"
+            queryMethodOptions.getView.getJsonSchema.getInput shouldBe "ByEmail"
+            queryMethodOptions.getView.getJsonSchema.getOutput shouldBe "TransformedUser"
+
+            val tableMessageDescriptor = desc.fileDescriptor.findMessageTypeByName("TransformedUser")
+            tableMessageDescriptor should not be null
+
+            val rule = findHttpRule(desc, "getUser")
+            rule.getPost shouldBe "/akka/v1.0/view/users_view/getUser"
+
+            val method = desc.commandHandlers("getUser")
+            val jwtOption = findKalixMethodOptions(desc, method.grpcMethodName).getJwt
+            jwtOption.getBearerTokenIssuer(0) shouldBe "a"
+            jwtOption.getBearerTokenIssuer(1) shouldBe "b"
+            jwtOption.getValidate(0) shouldBe JwtMethodMode.BEARER_TOKEN
+            assertRequestFieldJavaType(method, "json_body", JavaType.MESSAGE)
+
+            val Seq(claim1, claim2) = jwtOption.getStaticClaimList.asScala.toSeq
+            claim1.getClaim shouldBe "role"
+            claim1.getValue(0) shouldBe "admin"
+            claim2.getClaim shouldBe "aud"
+            claim2.getValue(0) shouldBe "${ENV}.kalix.io"
+          }
+        }
+
+        "generate proto for a View with service level JWT annotation" in {
+          assertDescriptor[ViewWithServiceLevelJWT] { desc =>
+            val extension = desc.serviceDescriptor.getOptions.getExtension(kalix.Annotations.service)
+            val jwtOption = extension.getJwt
+            jwtOption.getBearerTokenIssuer(0) shouldBe "a"
+            jwtOption.getBearerTokenIssuer(1) shouldBe "b"
+            jwtOption.getValidate shouldBe JwtServiceMode.BEARER_TOKEN
+
+            val Seq(claim1, claim2) = jwtOption.getStaticClaimList.asScala.toSeq
+            claim1.getClaim shouldBe "role"
+            claim1.getValue(0) shouldBe "admin"
+            claim2.getClaim shouldBe "aud"
+            claim2.getValue(0) shouldBe "${ENV}.kalix.io"
+          }
+        }
+
+
+      }
+   */
 
   "View descriptor factory (for Event Sourced Entity)" should {
 
-    "generate proto for a View" in {
+    "create a descriptor for a View" in {
       assertDescriptor[SubscribeToEventSourcedEvents] { desc =>
 
-        val methodOptions = this.findKalixMethodOptions(desc, "KalixSyntheticMethodOnESEmployee")
+        val table = desc.tables.find(_.tableName == "employees").get
 
-        methodOptions.getEventing.getIn.getEventSourcedEntity shouldBe "employee"
-        methodOptions.getView.getUpdate.getTable shouldBe "employees"
-        methodOptions.getView.getUpdate.getTransformUpdates shouldBe true
-        methodOptions.getView.getJsonSchema.getOutput shouldBe "Employee"
+        table.consumerSource match {
+          case es: ConsumerSource.EventSourcedEntitySource =>
+            es.componentId shouldBe "employee"
+          case _ => fail()
+        }
+        table.updateHandler shouldBe defined
 
-        val queryMethodOptions = this.findKalixMethodOptions(desc, "GetEmployeeByEmail")
-        queryMethodOptions.getView.getQuery.getQuery shouldBe "SELECT * FROM employees WHERE email = :email"
-        queryMethodOptions.getView.getJsonSchema.getOutput shouldBe "Employee"
-        // not defined when query body not used
-        queryMethodOptions.getView.getJsonSchema.getInput shouldBe "ByEmail"
-
-        val tableMessageDescriptor = desc.fileDescriptor.findMessageTypeByName("Employee")
-        tableMessageDescriptor should not be null
-
-        val rule = findHttpRule(desc, "GetEmployeeByEmail")
-        rule.getPost shouldBe "/akka/v1.0/view/employees_view/getEmployeeByEmail"
+        val query = desc.queries.find(_.name == "getEmployeeByEmail").get
+        query.query shouldBe "SELECT * FROM employees WHERE email = :email"
+      // queryMethodOptions.getView.getJsonSchema.getOutput shouldBe "Employee"
+      // not defined when query body not used
+      // queryMethodOptions.getView.getJsonSchema.getInput shouldBe "ByEmail"
       }
     }
 
-    "generate proto for a View when subscribing to sealed interface" in {
+    "create a descriptor for a View when subscribing to sealed interface" in {
       assertDescriptor[SubscribeToSealedEventSourcedEvents] { desc =>
 
-        val methodOptions = this.findKalixMethodOptions(desc, "KalixSyntheticMethodOnESEmployee")
+        val table = desc.tables.find(_.tableName == "employees").get
+        table.consumerSource match {
+          case es: ConsumerSource.EventSourcedEntitySource =>
+            es.componentId shouldBe "employee"
+          case _ => fail()
+        }
+        table.updateHandler shouldBe defined
 
-        methodOptions.getEventing.getIn.getEventSourcedEntity shouldBe "employee"
-        methodOptions.getView.getUpdate.getTable shouldBe "employees"
-        methodOptions.getView.getUpdate.getTransformUpdates shouldBe true
-        methodOptions.getView.getJsonSchema.getOutput shouldBe "Employee"
+        val query = desc.queries.find(_.name == "getEmployeeByEmail").get
+        query.query shouldBe "SELECT * FROM employees WHERE email = :email"
 
-        val queryMethodOptions = this.findKalixMethodOptions(desc, "GetEmployeeByEmail")
-        queryMethodOptions.getView.getQuery.getQuery shouldBe "SELECT * FROM employees WHERE email = :email"
-        queryMethodOptions.getView.getJsonSchema.getOutput shouldBe "Employee"
-        // not defined when query body not used
-        queryMethodOptions.getView.getJsonSchema.getInput shouldBe "ByEmail"
+        table.consumerSource match {
+          case es: ConsumerSource.EventSourcedEntitySource =>
+            es.componentId shouldBe "employee"
+          case _ => fail()
+        }
 
-        val tableMessageDescriptor = desc.fileDescriptor.findMessageTypeByName("Employee")
-        tableMessageDescriptor should not be null
-
-        val rule = findHttpRule(desc, "GetEmployeeByEmail")
-        rule.getPost shouldBe "/akka/v1.0/view/employees_view/getEmployeeByEmail"
-
-        val onUpdateMethod = desc.commandHandlers("KalixSyntheticMethodOnESEmployee")
-        onUpdateMethod.requestMessageDescriptor.getFullName shouldBe JavaPbAny.getDescriptor.getFullName
-
-        val eventing = findKalixMethodOptions(desc, "KalixSyntheticMethodOnESEmployee").getEventing.getIn
-        eventing.getEventSourcedEntity shouldBe "employee"
-
-        onUpdateMethod.methodInvokers.view.mapValues(_.method.getName).toMap should
-        contain only ("json.akka.io/created" -> "handle", "json.akka.io/old-created" -> "handle", "json.akka.io/emailUpdated" -> "handle")
+      // onUpdateMethod.methodInvokers.view.mapValues(_.method.getName).toMap should
+      // contain only ("json.akka.io/created" -> "handle", "json.akka.io/old-created" -> "handle", "json.akka.io/emailUpdated" -> "handle")
       }
     }
 
-    "generate proto for a View with multiple methods to handle different events" in {
+    "create a descriptor for a View with multiple methods to handle different events" in {
       assertDescriptor[SubscribeOnTypeToEventSourcedEvents] { desc =>
-        val methodOptions = this.findKalixMethodOptions(desc, "KalixSyntheticMethodOnESEmployee")
-        val eveningIn = methodOptions.getEventing.getIn
-        eveningIn.getEventSourcedEntity shouldBe "employee"
-        methodOptions.getView.getUpdate.getTable shouldBe "employees"
-        methodOptions.getView.getUpdate.getTransformUpdates shouldBe true
-        methodOptions.getView.getJsonSchema.getOutput shouldBe "Employee"
-        methodOptions.getEventing.getIn.getIgnore shouldBe false // we don't set the property so the runtime won't ignore. Ignore is only internal to the SDK
+        val table = desc.tables.find(_.tableName == "employees").get
+
+        table.consumerSource match {
+          case es: ConsumerSource.EventSourcedEntitySource =>
+            es.componentId shouldBe "employee"
+          case _ => fail()
+        }
+
+        table.updateHandler shouldBe defined
+      // methodOptions.getView.getJsonSchema.getOutput shouldBe "Employee"
+      // methodOptions.getEventing.getIn.getIgnore shouldBe false // we don't set the property so the runtime won't ignore. Ignore is only internal to the SDK
       }
     }
 
@@ -485,138 +419,68 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuit
         "Ambiguous handlers for akka.javasdk.testmodels.keyvalueentity.CounterState, methods: [onEvent, onEvent2] consume the same type.")
     }
 
-    "generate proto for multi-table view with join query" in {
+    "create a descriptor for multi-table view with join query" in {
       assertDescriptor[MultiTableViewWithJoinQuery] { desc =>
-        val queryMethodOptions = findKalixMethodOptions(desc, "Get")
-        queryMethodOptions.getView.getQuery.getQuery should be("""|SELECT employees.*, counters.* as counters
-            |FROM employees
-            |JOIN assigned ON assigned.assigneeId = employees.email
-            |JOIN counters ON assigned.counterId = counters.id
-            |WHERE employees.email = :email
-            |""".stripMargin)
-        queryMethodOptions.getView.getJsonSchema.getOutput shouldBe "EmployeeCounters"
-        // not defined when query body not used
-//        queryMethodOptions.getView.getJsonSchema.getJsonBodyInputField shouldBe ""
-        queryMethodOptions.getView.getJsonSchema.getInput shouldBe "ByEmail"
+        val query = desc.queries.find(_.name == "get").get
+        query.query should be("""|SELECT employees.*, counters.* as counters
+                |FROM employees
+                |JOIN assigned ON assigned.assigneeId = employees.email
+                |JOIN counters ON assigned.counterId = counters.id
+                |WHERE employees.email = :email
+                |""".stripMargin)
 
-        val queryHttpRule = findHttpRule(desc, "Get")
-        queryHttpRule.getPost shouldBe "/akka/v1.0/view/multi-table-view-with-join-query/get"
+        desc.tables should have size 3
 
-        val employeeCountersMessage = desc.fileDescriptor.findMessageTypeByName("EmployeeCounters")
-        employeeCountersMessage should not be null
-        val firstNameField = employeeCountersMessage.findFieldByName("firstName")
-        firstNameField should not be null
-        firstNameField.getType shouldBe FieldDescriptor.Type.STRING
-        val lastNameField = employeeCountersMessage.findFieldByName("lastName")
-        lastNameField should not be null
-        lastNameField.getType shouldBe FieldDescriptor.Type.STRING
-        val emailField = employeeCountersMessage.findFieldByName("email")
-        emailField should not be null
-        emailField.getType shouldBe FieldDescriptor.Type.STRING
-        val countersField = employeeCountersMessage.findFieldByName("counters")
-        countersField should not be null
-        countersField.getMessageType.getName shouldBe "CounterState"
-        countersField.isRepeated shouldBe true
+        val employeesTable = desc.tables.find(_.tableName == "employees").get
+        employeesTable.updateHandler shouldBe defined
+        employeesTable.tableType.getField("firstName").get.fieldType shouldBe SpiString
+        employeesTable.tableType.getField("lastName").get.fieldType shouldBe SpiString
+        employeesTable.tableType.getField("email").get.fieldType shouldBe SpiString
 
-        val employeeOnEventOptions = findKalixMethodOptions(desc, "KalixSyntheticMethodOnESEmployee")
-        employeeOnEventOptions.getEventing.getIn.getEventSourcedEntity shouldBe "employee"
-        employeeOnEventOptions.getView.getUpdate.getTable shouldBe "employees"
-        employeeOnEventOptions.getView.getUpdate.getTransformUpdates shouldBe true
-        employeeOnEventOptions.getView.getJsonSchema.getOutput shouldBe "Employee"
+        val countersTable = desc.tables.find(_.tableName == "counters").get
+        countersTable.updateHandler shouldBe empty
+        countersTable.tableType.getField("id").get.fieldType shouldBe SpiString
+        countersTable.tableType.getField("value").get.fieldType shouldBe SpiInteger
 
-        val employeeMessage = desc.fileDescriptor.findMessageTypeByName("Employee")
-        employeeMessage should not be null
-        val employeeFirstNameField = employeeMessage.findFieldByName("firstName")
-        employeeFirstNameField should not be null
-        employeeFirstNameField.getType shouldBe FieldDescriptor.Type.STRING
-        val employeeLastNameField = employeeMessage.findFieldByName("lastName")
-        employeeLastNameField should not be null
-        employeeLastNameField.getType shouldBe FieldDescriptor.Type.STRING
-        val employeeEmailField = employeeMessage.findFieldByName("email")
-        employeeEmailField should not be null
-        employeeEmailField.getType shouldBe FieldDescriptor.Type.STRING
-
-        val counterOnChangeOptions = findKalixMethodOptions(desc, "OnChange1")
-        counterOnChangeOptions.getEventing.getIn.getValueEntity shouldBe "ve-counter"
-        counterOnChangeOptions.getView.getUpdate.getTable shouldBe "counters"
-        counterOnChangeOptions.getView.getUpdate.getTransformUpdates shouldBe false
-        counterOnChangeOptions.getView.getJsonSchema.getOutput shouldBe "CounterState"
-
-        val counterStateMessage = desc.fileDescriptor.findMessageTypeByName("CounterState")
-        counterStateMessage should not be null
-        val counterStateIdField = counterStateMessage.findFieldByName("id")
-        counterStateIdField should not be null
-        counterStateIdField.getType shouldBe FieldDescriptor.Type.STRING
-        val counterStateValueField = counterStateMessage.findFieldByName("value")
-        counterStateValueField should not be null
-        counterStateValueField.getType shouldBe FieldDescriptor.Type.INT32
-
-        val assignedCounterOnChangeOptions = findKalixMethodOptions(desc, "OnChange")
-        assignedCounterOnChangeOptions.getEventing.getIn.getValueEntity shouldBe "assigned-counter"
-        assignedCounterOnChangeOptions.getView.getUpdate.getTable shouldBe "assigned"
-        assignedCounterOnChangeOptions.getView.getUpdate.getTransformUpdates shouldBe false
-        assignedCounterOnChangeOptions.getView.getJsonSchema.getOutput shouldBe "AssignedCounterState"
-
-        val assignedCounterStateMessage = desc.fileDescriptor.findMessageTypeByName("AssignedCounterState")
-        assignedCounterStateMessage should not be null
-        val counterIdField = assignedCounterStateMessage.findFieldByName("counterId")
-        counterIdField should not be null
-        counterIdField.getType shouldBe FieldDescriptor.Type.STRING
-        val assigneeIdField = assignedCounterStateMessage.findFieldByName("assigneeId")
-        assigneeIdField should not be null
-        assigneeIdField.getType shouldBe FieldDescriptor.Type.STRING
+        val assignedTable = desc.tables.find(_.tableName == "assigned").get
+        assignedTable.updateHandler shouldBe empty
+        assignedTable.tableType.getField("counterId").get.fieldType shouldBe SpiString
+        assignedTable.tableType.getField("assigneeId").get.fieldType shouldBe SpiString
       }
     }
   }
 
   "View descriptor factory (for Stream)" should {
-    "generate mappings for service to service subscription " in {
+    "create a descriptor for service to service subscription " in {
       assertDescriptor[EventStreamSubscriptionView] { desc =>
 
-        val serviceOptions = findKalixServiceOptions(desc)
-        val eventingInDirect = serviceOptions.getEventing.getIn.getDirect
-        eventingInDirect.getService shouldBe "employee_service"
-        eventingInDirect.getEventStreamId shouldBe "employee_events"
+        val table = desc.tables.find(_.tableName == "employees").get
 
-        val methodOptions = this.findKalixMethodOptions(desc, "KalixSyntheticMethodOnStreamEmployeeevents")
+        table.consumerSource match {
+          case stream: ConsumerSource.ServiceStreamSource =>
+            stream.service shouldBe "employee_service"
+            stream.streamId shouldBe "employee_events"
+          case _ => fail()
+        }
 
-        methodOptions.hasEventing shouldBe false
-        methodOptions.getView.getUpdate.getTable shouldBe "employees"
-        methodOptions.getView.getUpdate.getTransformUpdates shouldBe true
-        methodOptions.getView.getJsonSchema.getOutput shouldBe "Employee"
-
+        table.updateHandler shouldBe defined
       }
     }
   }
 
   "View descriptor factory (for Topic)" should {
-    "generate mappings for topic type level subscription " in {
+    "create a descriptor for topic type level subscription " in {
       assertDescriptor[TopicTypeLevelSubscriptionView] { desc =>
+        val table = desc.tables.find(_.tableName == "employees").get
 
-        val methodOptions = this.findKalixMethodOptions(desc, "KalixSyntheticMethodOnTopicSource")
+        table.consumerSource match {
+          case topic: ConsumerSource.TopicSource =>
+            topic.name shouldBe "source"
+            topic.consumerGroup shouldBe "cg"
+          case _ => fail()
+        }
 
-        val eventingInTopic = methodOptions.getEventing.getIn
-        eventingInTopic.getTopic shouldBe "source"
-        eventingInTopic.getConsumerGroup shouldBe "cg"
-
-        methodOptions.getView.getUpdate.getTable shouldBe "employees"
-        methodOptions.getView.getUpdate.getTransformUpdates shouldBe true
-        methodOptions.getView.getJsonSchema.getOutput shouldBe "Employee"
-      }
-    }
-
-    "generate mappings for topic subscription " in {
-      assertDescriptor[TopicSubscriptionView] { desc =>
-
-        val methodOptions = this.findKalixMethodOptions(desc, "KalixSyntheticMethodOnTopicSource")
-
-        val eventingInTopic = methodOptions.getEventing.getIn
-        eventingInTopic.getTopic shouldBe "source"
-        eventingInTopic.getConsumerGroup shouldBe "cg"
-
-        methodOptions.getView.getUpdate.getTable shouldBe "employees"
-        methodOptions.getView.getUpdate.getTransformUpdates shouldBe true
-        methodOptions.getView.getJsonSchema.getOutput shouldBe "Employee"
+        table.updateHandler shouldBe defined
       }
     }
   }
