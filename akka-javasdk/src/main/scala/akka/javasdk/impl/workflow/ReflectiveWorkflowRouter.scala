@@ -87,7 +87,7 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
 
   /** INTERNAL API */
   // "public" api against the impl/testkit
-  final def _internalHandleCommand(
+  final def handleCommand(
       userState: Option[SpiWorkflow.State],
       commandName: String,
       command: BytesPayload,
@@ -144,7 +144,7 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
 
   /** INTERNAL API */
   // "public" api against the impl/testkit
-  final def _internalHandleStep(
+  final def handleStep(
       userState: Option[SpiWorkflow.State],
       input: Option[BytesPayload],
       stepName: String,
@@ -179,7 +179,7 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
 
   }
 
-  def _internalGetNextStep(stepName: String, result: BytesPayload, userState: Option[BytesPayload]): CommandResult = {
+  final def getNextStep(stepName: String, result: BytesPayload, userState: Option[BytesPayload]): CommandResult = {
 
     try {
       workflow._internalSetup(decodeUserState(userState))

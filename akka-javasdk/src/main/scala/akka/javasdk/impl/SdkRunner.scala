@@ -556,7 +556,6 @@ private final class Sdk(
 
       case (serviceClass, _: Map[String, WorkflowService[_, _]] @unchecked)
           if serviceClass == classOf[WorkflowService[_, _]] =>
-      //ignore
 
       case (serviceClass, _: Map[String, TimedActionService[_]] @unchecked)
           if serviceClass == classOf[TimedActionService[_]] =>
@@ -621,7 +620,7 @@ private final class Sdk(
       override def discovery: Discovery = discoveryEndpoint
       override def eventSourcedEntityDescriptors: Seq[EventSourcedEntityDescriptor] =
         Sdk.this.eventSourcedEntityDescriptors
-      override def valueEntities: Option[ValueEntities] = valueEntitiesEndpoint
+
       override def views: Option[Views] = viewsEndpoint
       override def httpEndpointDescriptors: Seq[HttpEndpointDescriptor] =
         Sdk.this.httpEndpointDescriptors
@@ -634,6 +633,7 @@ private final class Sdk(
 
       override def workflowDescriptors: Seq[WorkflowDescriptor] = Sdk.this.workflowDescriptors
 
+      override def keyValueEntityDescriptors: Seq[EventSourcedEntityDescriptor] = Nil
     }
   }
 

@@ -187,7 +187,7 @@ class WorkflowImpl[S, W <: Workflow[S]](
 
     val CommandResult(effect) =
       try {
-        router._internalHandleCommand(
+        router.handleCommand(
           userState = userState,
           commandName = command.name,
           command = cmd,
@@ -213,7 +213,7 @@ class WorkflowImpl[S, W <: Workflow[S]](
       new TimerSchedulerImpl(timerClient, context.componentCallMetadata)
 
     try {
-      router._internalHandleStep(
+      router.handleStep(
         userState,
         input = input,
         stepName = stepName,
@@ -233,7 +233,7 @@ class WorkflowImpl[S, W <: Workflow[S]](
       userState: Option[BytesPayload]): Future[SpiWorkflow.Effect] = {
     val CommandResult(effect) =
       try {
-        router._internalGetNextStep(stepName, result.get, userState)
+        router.getNextStep(stepName, result.get, userState)
       } catch {
         case e: WorkflowException => throw e
         case NonFatal(ex) =>
