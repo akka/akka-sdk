@@ -222,7 +222,12 @@ private[impl] object ViewDescriptorFactory {
       tableType,
       new ConsumerSource.ServiceStreamSource(annotation.service(), annotation.id(), annotation.consumerGroup()),
       Option.when(updateHandlerMethods.nonEmpty)(
-        UpdateHandlerImpl(componentId, tableUpdater, updateHandlerMethods, serializer)(userEc)),
+        UpdateHandlerImpl(
+          componentId,
+          tableUpdater,
+          updateHandlerMethods,
+          ignoreUnknown = annotation.ignoreUnknown(),
+          serializer = serializer)(userEc)),
       deleteHandlerMethod.map(deleteMethod =>
         UpdateHandlerImpl(
           componentId,
@@ -260,7 +265,12 @@ private[impl] object ViewDescriptorFactory {
       new ConsumerSource.EventSourcedEntitySource(
         ComponentDescriptorFactory.readComponentIdIdValue(annotation.value())),
       Option.when(updateHandlerMethods.nonEmpty)(
-        UpdateHandlerImpl(componentId, tableUpdater, updateHandlerMethods, serializer)(userEc)),
+        UpdateHandlerImpl(
+          componentId,
+          tableUpdater,
+          updateHandlerMethods,
+          serializer,
+          ignoreUnknown = annotation.ignoreUnknown())(userEc)),
       deleteHandlerMethod.map(deleteMethod =>
         UpdateHandlerImpl(
           componentId,
@@ -293,7 +303,12 @@ private[impl] object ViewDescriptorFactory {
       tableType,
       new ConsumerSource.TopicSource(annotation.value(), annotation.consumerGroup()),
       Option.when(updateHandlerMethods.nonEmpty)(
-        UpdateHandlerImpl(componentId, tableUpdater, updateHandlerMethods, serializer)(userEc)),
+        UpdateHandlerImpl(
+          componentId,
+          tableUpdater,
+          updateHandlerMethods,
+          serializer,
+          ignoreUnknown = annotation.ignoreUnknown())(userEc)),
       None)
   }
 
@@ -348,6 +363,7 @@ private[impl] object ViewDescriptorFactory {
       tableUpdaterClass: Class[_],
       methods: Seq[Method],
       serializer: JsonSerializer,
+      ignoreUnknown: Boolean = false,
       deleteHandler: Boolean = false)(implicit userEc: ExecutionContext)
       extends SpiTableUpdateHandler {
 
@@ -366,8 +382,9 @@ private[impl] object ViewDescriptorFactory {
         }.toMap
 
     // Note: New instance for each update to avoid users storing/leaking state
-    private def tableUpdater: TableUpdater[AnyRef] =
-      methods.head.getDeclaringClass.getConstructor().newInstance().asInstanceOf[TableUpdater[AnyRef]]
+    private def tableUpdater(): TableUpdater[AnyRef] = {
+      tableUpdaterClass.getDeclaredConstructor().newInstance().asInstanceOf[TableUpdater[AnyRef]]
+    }
 
     override def handle(input: SpiTableUpdateEnvelope): Future[SpiTableUpdateEffect] = Future {
       // FIXME tracing span?
@@ -379,60 +396,78 @@ private[impl] object ViewDescriptorFactory {
           true
         case None => false
       }
+      try {
 
-      // FIXME choose method like for other consumers
-      val event = serializer.fromBytes(input.eventPayload)
-      val method: Method =
-        if (deleteHandler) {
-          methods.head // only one delete handler
-        } else {
-          methodsByInput.getOrElse(
-            event.getClass,
-            // FIXME throw good exception for unhandled type
-            ???)
-        }
+        // FIXME choose method like for other consumers
 
-      val updateContext = UpdateContextImpl(method.getName, metadata)
+        val event =
+          if (deleteHandler) null // no payload to deserialize
+          else serializer.fromBytes(input.eventPayload)
 
-      val effect: ViewEffectImpl.PrimaryEffect[Any] =
-        try {
-
-          existingState.foreach(state => tableUpdater._internalSetViewState(state))
-          tableUpdater._internalSetUpdateContext(Optional.of(updateContext))
-
-          method.invoke(tableUpdater, event) match {
-            case effect: ViewEffectImpl.PrimaryEffect[Any @unchecked] => effect
-            case other =>
-              throw new RuntimeException(s"Unexpected return value from table updater [$tableUpdaterClass]: [$other]")
+        val foundMethod: Option[Method] =
+          if (deleteHandler) {
+            Some(methods.head) // only one delete handler
+          } else {
+            methodsByInput
+              .collectFirst { case (clazz, method) if clazz.isAssignableFrom(event.getClass) => method }
           }
 
-        } catch {
-          case NonFatal(error) =>
-            userLog.error(s"View updater for view [${componentId}] threw an exception", error)
-            throw ViewException(
-              componentId,
-              updateContext,
-              s"View unexpected failure: ${error.getMessage}",
-              Some(error))
-        } finally {
-          // FIXME no clear of previous current-state?
-          tableUpdater._internalSetUpdateContext(Optional.empty())
-          if (addedToMDC) MDC.remove(Telemetry.TRACE_ID)
+        val effect: ViewEffectImpl.PrimaryEffect[Any] = {
+          foundMethod match {
+            case Some(method) =>
+              val updateContext = UpdateContextImpl(method.getName, metadata)
+              val tableUpdaterInstance = tableUpdater()
+              try {
+
+                tableUpdaterInstance._internalSetViewState(existingState.getOrElse(tableUpdaterInstance.emptyRow()))
+                tableUpdaterInstance._internalSetUpdateContext(Optional.of(updateContext))
+
+                val result =
+                  if (deleteHandler) method.invoke(tableUpdaterInstance)
+                  else method.invoke(tableUpdaterInstance, event)
+
+                result match {
+                  case effect: ViewEffectImpl.PrimaryEffect[Any @unchecked] => effect
+                  case other =>
+                    throw new RuntimeException(
+                      s"Unexpected return value from table updater [$tableUpdaterClass]: [$other]")
+                }
+
+              } catch {
+                case NonFatal(error) =>
+                  userLog.error(s"View updater for view [${componentId}] threw an exception", error)
+                  throw ViewException(componentId, s"View unexpected failure: ${error.getMessage}", Some(error))
+              } finally {
+                tableUpdaterInstance._internalSetUpdateContext(Optional.empty())
+              }
+            case None if ignoreUnknown => ViewEffectImpl.Ignore
+            case None                  =>
+              // FIXME proper error message with lots of details
+              throw ViewException(
+                componentId,
+                s"Unhandled event type [${event.getClass}] for updater [$tableUpdaterClass]",
+                None)
+
+          }
         }
 
-      effect match {
-        case ViewEffectImpl.Update(newState) =>
-          if (newState == null) {
-            // FIXME MDC trace id should stretch here as well
-            userLog.error(
-              s"View updater tried to set row state to null, not allowed [${componentId}] threw an exception")
-            throw ViewException(componentId, updateContext, "updateState with null state is not allowed.", None)
-          }
-          val bytesPayload = serializer.toBytes(newState)
-          new SpiTableUpdateEffect.UpdateRow(bytesPayload)
-        case ViewEffectImpl.Delete => SpiTableUpdateEffect.DeleteRow
-        case ViewEffectImpl.Ignore => SpiTableUpdateEffect.IgnoreUpdate
+        effect match {
+          case ViewEffectImpl.Update(newState) =>
+            if (newState == null) {
+              // FIXME MDC trace id should stretch here as well
+              userLog.error(
+                s"View updater tried to set row state to null, not allowed [${componentId}] threw an exception")
+              throw ViewException(componentId, "updateState with null state is not allowed.", None)
+            }
+            val bytesPayload = serializer.toBytes(newState)
+            new SpiTableUpdateEffect.UpdateRow(bytesPayload)
+          case ViewEffectImpl.Delete => SpiTableUpdateEffect.DeleteRow
+          case ViewEffectImpl.Ignore => SpiTableUpdateEffect.IgnoreUpdate
+        }
+      } finally {
+        if (addedToMDC) MDC.remove(Telemetry.TRACE_ID)
       }
+
     }(userEc)
   }
 
