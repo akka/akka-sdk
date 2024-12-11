@@ -57,15 +57,14 @@ import kalix.protocol.workflow_entity.WorkflowEntities
 @InternalApi
 class WorkflowImpl[S, W <: Workflow[S]](
     workflowId: String,
-    componentClass: Class[_],
     serializer: JsonSerializer,
+    componentDescriptor: ComponentDescriptor,
     timerClient: TimerClient,
     sdkExecutionContext: ExecutionContext,
     tracerFactory: () => Tracer,
     instanceFactory: Function[WorkflowContext, W])
     extends SpiWorkflow {
 
-  private val componentDescriptor = ComponentDescriptor.descriptorFor(componentClass, serializer)
   private val context = new WorkflowContextImpl(workflowId)
 
   private val router =

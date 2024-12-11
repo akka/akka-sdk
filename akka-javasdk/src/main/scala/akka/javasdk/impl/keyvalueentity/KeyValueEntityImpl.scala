@@ -76,9 +76,9 @@ private[impl] final class KeyValueEntityImpl[S, KV <: KeyValueEntity[S]](
     configuration: Settings,
     tracerFactory: () => Tracer,
     componentId: String,
-    componentClass: Class[_],
     entityId: String,
     serializer: JsonSerializer,
+    componentDescriptor: ComponentDescriptor,
     factory: KeyValueEntityContext => KV)
     extends SpiEventSourcedEntity {
   import KeyValueEntityEffectImpl._
@@ -86,8 +86,6 @@ private[impl] final class KeyValueEntityImpl[S, KV <: KeyValueEntity[S]](
 
   // FIXME
 //  private val traceInstrumentation = new TraceInstrumentation(componentId, EventSourcedEntityCategory, tracerFactory)
-
-  private val componentDescriptor = ComponentDescriptor.descriptorFor(componentClass, serializer)
 
   private val router: ReflectiveKeyValueEntityRouter[AnyRef, KeyValueEntity[AnyRef]] = {
     val context = new KeyValueEntityContextImpl(entityId)

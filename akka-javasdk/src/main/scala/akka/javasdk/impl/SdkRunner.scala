@@ -372,8 +372,8 @@ private final class Sdk(
     logger.debug(s"Registering Workflow [${clz.getName}]")
     new WorkflowImpl[S, W](
       factoryContext.workflowId,
-      clz,
       serializer,
+      ComponentDescriptor.descriptorFor(clz, serializer),
       timerClient = runtimeComponentClients.timerClient,
       sdkExecutionContext,
       sdkTracerFactory,
@@ -435,9 +435,9 @@ private final class Sdk(
             sdkSettings,
             sdkTracerFactory,
             componentId,
-            clz,
             factoryContext.entityId,
             serializer,
+            ComponentDescriptor.descriptorFor(clz, serializer),
             context =>
               wiredInstance(clz.asInstanceOf[Class[EventSourcedEntity[AnyRef, AnyRef]]]) {
                 // remember to update component type API doc and docs if changing the set of injectables
@@ -457,9 +457,9 @@ private final class Sdk(
             sdkSettings,
             sdkTracerFactory,
             componentId,
-            clz,
             factoryContext.entityId,
             serializer,
+            ComponentDescriptor.descriptorFor(clz, serializer),
             context =>
               wiredInstance(clz.asInstanceOf[Class[KeyValueEntity[AnyRef]]]) {
                 // remember to update component type API doc and docs if changing the set of injectables

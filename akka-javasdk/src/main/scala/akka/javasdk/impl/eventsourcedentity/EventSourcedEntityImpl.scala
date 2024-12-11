@@ -83,17 +83,15 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
     configuration: Settings,
     tracerFactory: () => Tracer,
     componentId: String,
-    componentClass: Class[_],
     entityId: String,
     serializer: JsonSerializer,
+    componentDescriptor: ComponentDescriptor,
     factory: EventSourcedEntityContext => ES)
     extends SpiEventSourcedEntity {
   import EventSourcedEntityImpl._
 
   // FIXME
 //  private val traceInstrumentation = new TraceInstrumentation(componentId, EventSourcedEntityCategory, tracerFactory)
-
-  private val componentDescriptor = ComponentDescriptor.descriptorFor(componentClass, serializer)
 
   private val router: ReflectiveEventSourcedEntityRouter[AnyRef, AnyRef, EventSourcedEntity[AnyRef, AnyRef]] = {
     val context = new EventSourcedEntityContextImpl(entityId)
