@@ -93,7 +93,6 @@ import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.Tracer
 import io.opentelemetry.context.{ Context => OtelContext }
 import kalix.protocol.discovery.Discovery
-import kalix.protocol.view.Views
 import org.slf4j.LoggerFactory
 
 /**
@@ -548,9 +547,6 @@ private final class Sdk(
   }
 
   def spiComponents: SpiComponents = {
-
-    var viewsEndpoint: Option[Views] = None
-    var workflowEntitiesEndpoint: Option[WorkflowEntities] = None
 
     val classicSystem = system.classicSystem
 

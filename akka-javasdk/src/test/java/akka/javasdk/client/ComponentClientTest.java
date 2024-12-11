@@ -7,6 +7,7 @@ package akka.javasdk.client;
 import akka.NotUsed;
 import akka.javasdk.impl.*;
 import akka.javasdk.impl.serialization.JsonSerializer;
+import akka.javasdk.impl.view.ViewDescriptorFactory;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.DynamicMessage;
@@ -143,10 +144,8 @@ class ComponentClientTest {
 
 
   @Test
-  public void shouldReturnNonDeferrableCallForViewRequest() throws InvalidProtocolBufferException {
+  public void shouldReturnNonDeferrableCallForViewRequest() {
     //given
-    var view = descriptorFor(UserByEmailWithGet.class, serializer);
-    var targetMethod = view.serviceDescriptor().findMethodByName("GetUser");
     String email = "email@example.com";
 
     ViewTestModels.ByEmail body = new ViewTestModels.ByEmail(email);
