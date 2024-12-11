@@ -45,10 +45,14 @@ public class TransferWorkflow extends Workflow<TransferState> {
     Step withdraw =
       step("withdraw")
         .asyncCall(Withdraw.class, cmd -> {
-          logger.info("Running: " + cmd);
+          logger.info("Running withdraw: {}", cmd);
+
+          // saving the wallet id in var because it's being used in thenCompose
+          var fromWalletId = currentState().transfer().from();
+
           // cancelling the timer in case it was scheduled
           return timers().cancel("acceptationTimout-" + currentState().transferId()).thenCompose(__ ->
-            componentClient.forEventSourcedEntity(currentState().transfer().from())
+            componentClient.forEventSourcedEntity(fromWalletId)
               .method(WalletEntity::withdraw)
               .invokeAsync(cmd));
         })
@@ -61,7 +65,7 @@ public class TransferWorkflow extends Workflow<TransferState> {
                 .transitionTo("deposit", depositInput);
             }
             case Failure failure -> {
-              logger.warn("Withdraw failed with msg: " + failure.errorMsg());
+              logger.warn("Withdraw failed with msg: {}", failure.errorMsg());
               return effects()
                 .updateState(currentState().withStatus(WITHDRAW_FAILED))
                 .end();
@@ -75,7 +79,7 @@ public class TransferWorkflow extends Workflow<TransferState> {
       step("deposit")
         .asyncCall(Deposit.class, cmd -> {
           // end::compensation[]
-          logger.info("Running: " + cmd);
+          logger.info("Running deposit: {}", cmd);
           // tag::compensation[]
           return componentClient.forEventSourcedEntity(currentState().transfer().to())
             .method(WalletEntity::deposit)
@@ -90,7 +94,7 @@ public class TransferWorkflow extends Workflow<TransferState> {
             }
             case Failure failure -> {
               // end::compensation[]
-              logger.warn("Deposit failed with msg: " + failure.errorMsg());
+              logger.warn("Deposit failed with msg: {}", failure.errorMsg());
               // tag::compensation[]
               return effects()
                 .updateState(currentState().withStatus(DEPOSIT_FAILED))

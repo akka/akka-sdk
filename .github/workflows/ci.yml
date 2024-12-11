@@ -367,7 +367,7 @@ jobs:
           - { sample: reliable-timers, it: true }
 
           - { sample: transfer-workflow, it: true }
-          - { sample: transfer-workflow-compensation, it: false }
+          - { sample: transfer-workflow-compensation, it: true }
 
     steps:
       - name: Checkout
