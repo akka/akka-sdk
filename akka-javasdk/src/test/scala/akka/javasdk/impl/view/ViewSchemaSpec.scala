@@ -58,6 +58,8 @@ class ViewSchemaSpec extends AnyWordSpec with Matchers {
         case _ => fail()
       }
     }
+
+    // FIXME self-referencing/recursive types
   }
 
 }

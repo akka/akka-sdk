@@ -167,7 +167,7 @@ private[impl] object ViewDescriptorFactory {
           QueryStreamEffect[_]]}")
 
     val inputType: Option[SpiType.QueryInput] =
-      method.getGenericParameterTypes.headOption.map(ViewSchema.apply).map {
+      method.getGenericParameterTypes.headOption.map(ViewSchema.apply(_)).map {
         case validInput: SpiType.QueryInput => validInput
         case other                          =>
           // FIXME let's see if this flies
