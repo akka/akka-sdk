@@ -53,6 +53,7 @@ import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityService
 import akka.javasdk.impl.http.HttpClientProviderImpl
 import akka.javasdk.impl.http.JwtClaimsImpl
 import akka.javasdk.impl.keyvalueentity.KeyValueEntitiesImpl
+import akka.javasdk.impl.keyvalueentity.KeyValueEntityImpl
 import akka.javasdk.impl.keyvalueentity.KeyValueEntityService
 import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.reflection.Reflect.Syntax.AnnotatedElementOps
@@ -375,6 +376,8 @@ private final class Sdk(
     !method.getName.startsWith("lambda$")
   }
 
+  // FIXME instead of collecting one component type at a time (looping componentClasses several times)
+  // we could collect all in one loop
   private val workflowDescriptors: Seq[WorkflowDescriptor] = {
 
     // we need a method instead of function in order to have type params
@@ -464,6 +467,32 @@ private final class Sdk(
                 wiredInstance(clz.asInstanceOf[Class[EventSourcedEntity[AnyRef, AnyRef]]]) {
                   // remember to update component type API doc and docs if changing the set of injectables
                   case p if p == classOf[EventSourcedEntityContext] => context
+                })
+          }
+          new EventSourcedEntityDescriptor(componentId, readOnlyCommandNames, instanceFactory)
+      }
+
+  private val keyValueEntityDescriptors =
+    componentClasses
+      .filter(hasComponentId)
+      .collect {
+        case clz if classOf[KeyValueEntity[_]].isAssignableFrom(clz) =>
+          val componentId = clz.getAnnotation(classOf[ComponentId]).value
+
+          val readOnlyCommandNames = Set.empty[String]
+
+          val instanceFactory: SpiEventSourcedEntity.FactoryContext => SpiEventSourcedEntity = { factoryContext =>
+            new KeyValueEntityImpl[AnyRef, KeyValueEntity[AnyRef]](
+              sdkSettings,
+              sdkTracerFactory,
+              componentId,
+              clz,
+              factoryContext.entityId,
+              serializer,
+              context =>
+                wiredInstance(clz.asInstanceOf[Class[KeyValueEntity[AnyRef]]]) {
+                  // remember to update component type API doc and docs if changing the set of injectables
+                  case p if p == classOf[KeyValueEntityContext] => context
                 })
           }
           new EventSourcedEntityDescriptor(componentId, readOnlyCommandNames, instanceFactory)
@@ -618,22 +647,21 @@ private final class Sdk(
       }
 
       override def discovery: Discovery = discoveryEndpoint
+
       override def eventSourcedEntityDescriptors: Seq[EventSourcedEntityDescriptor] =
         Sdk.this.eventSourcedEntityDescriptors
 
-      override def views: Option[Views] = viewsEndpoint
-      override def httpEndpointDescriptors: Seq[HttpEndpointDescriptor] =
-        Sdk.this.httpEndpointDescriptors
+      override def keyValueEntityDescriptors: Seq[EventSourcedEntityDescriptor] = Sdk.this.keyValueEntityDescriptors
 
-      override def timedActionsDescriptors: Seq[TimedActionDescriptor] =
-        Sdk.this.timedActionDescriptors
+      override def httpEndpointDescriptors: Seq[HttpEndpointDescriptor] = Sdk.this.httpEndpointDescriptors
 
-      override def consumersDescriptors: Seq[ConsumerDescriptor] =
-        Sdk.this.consumerDescriptors
+      override def timedActionsDescriptors: Seq[TimedActionDescriptor] = Sdk.this.timedActionDescriptors
+
+      override def consumersDescriptors: Seq[ConsumerDescriptor] = Sdk.this.consumerDescriptors
 
       override def workflowDescriptors: Seq[WorkflowDescriptor] = Sdk.this.workflowDescriptors
 
-      override def keyValueEntityDescriptors: Seq[EventSourcedEntityDescriptor] = Nil
+      override def views: Option[Views] = viewsEndpoint
     }
   }
 
