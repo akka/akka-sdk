@@ -16,6 +16,7 @@ import com.google.protobuf.{ Any => JavaPbAny }
 import com.google.protobuf.any.{ Any => ScalaPbAny }
 import akka.javasdk.impl.ErrorHandling.BadRequestException
 import akka.javasdk.impl.serialization.JsonSerializer
+import akka.runtime.sdk.spi.BytesPayload
 
 /**
  * Extracts method parameters from an invocation context for the purpose of passing them to a reflective invocation call
@@ -75,6 +76,14 @@ private[impl] object ParameterExtractors {
     }
   }
 
+  private def decodeParam[T](payload: BytesPayload, cls: Class[T], serializer: JsonSerializer): T = {
+    if (cls == classOf[Array[Byte]]) {
+      payload.bytes.toArrayUnsafe().asInstanceOf[T]
+    } else {
+      serializer.fromBytes(cls, payload)
+    }
+  }
+
   private def decodeParamPossiblySealed[T](pbAny: ScalaPbAny, cls: Class[T], serializer: JsonSerializer): T = {
     if (cls.isSealed) {
       // FIXME we should not need these conversions
@@ -82,6 +91,14 @@ private[impl] object ParameterExtractors {
       serializer.fromBytes(bytesPayload).asInstanceOf[T]
     } else {
       decodeParam(pbAny, cls, serializer)
+    }
+  }
+
+  def decodeParamPossiblySealed[T](payload: BytesPayload, cls: Class[T], serializer: JsonSerializer): T = {
+    if (cls.isSealed) {
+      serializer.fromBytes(payload).asInstanceOf[T]
+    } else {
+      decodeParam(payload, cls, serializer)
     }
   }
 

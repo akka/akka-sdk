@@ -51,6 +51,22 @@ private[impl] object ComponentDescriptor {
   def descriptorFor(component: Class[_], serializer: JsonSerializer): ComponentDescriptor =
     ComponentDescriptorFactory.getFactoryFor(component).buildDescriptorFor(component, serializer, new NameGenerator)
 
+  def apply(serializer: JsonSerializer, kalixMethods: Seq[KalixMethod]): ComponentDescriptor = {
+
+    //TODO remove capitalization of method name, can't be done per component, because component client reuse the same logic for all
+    val methods: Map[String, CommandHandler] =
+      kalixMethods.map { method =>
+        (method.serviceMethod.methodName.capitalize, method.toCommandHandler(serializer))
+      }.toMap
+
+    new ComponentDescriptor(null, null, methods, null, null)
+
+  }
+
+  def apply(methods: Map[String, CommandHandler]): ComponentDescriptor = {
+    new ComponentDescriptor(null, null, methods, null, null)
+  }
+
   def apply(
       nameGenerator: NameGenerator,
       serializer: JsonSerializer,

@@ -56,6 +56,7 @@ abstract class TimedActionRouter[A <: TimedAction](protected val action: A) {
    * @return
    *   A future of the message to return.
    */
+  //TODO commandName rename to methodName
   def handleUnary(commandName: String, message: CommandEnvelope[Any]): TimedAction.Effect
 
   private def callWithContext[T](context: CommandContext)(func: () => T) = {
