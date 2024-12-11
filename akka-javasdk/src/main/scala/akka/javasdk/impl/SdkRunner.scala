@@ -629,8 +629,7 @@ private final class Sdk(
 
       override def keyValueEntityDescriptors: Seq[EventSourcedEntityDescriptor] =
         Sdk.this.keyValueEntityDescriptors
-      override def workflowDescriptors: Seq[WorkflowDescriptor] = Nil // FIXME
-      override def viewDescriptors: Seq[SpiViewDescriptor] = Sdk.this.viewDescriptors
+
       override def httpEndpointDescriptors: Seq[HttpEndpointDescriptor] =
         Sdk.this.httpEndpointDescriptors
 
@@ -640,10 +639,10 @@ private final class Sdk(
       override def consumersDescriptors: Seq[ConsumerDescriptor] =
         Sdk.this.consumerDescriptors
 
+      override def viewDescriptors: Seq[SpiViewDescriptor] = Sdk.this.viewDescriptors
+
       override def workflowDescriptors: Seq[WorkflowDescriptor] =
         Sdk.this.workflowDescriptors
-
-      override def views: Option[Views] = viewsEndpoint
 
     }
   }
