@@ -12,6 +12,19 @@ Current versions
 
 == December 2024
 
+* Platform update 2024-12-10
+    - New internal structure to capture usage data
+    - Updated email server for signup emails
+    - Updated JVM memory settings for services
+    - Akka Runtime 1.2.5
+    - Better gRPC support for the CLI
+    - Console updates
+        ** Empty projects can now be deleted from the Console
+    - GCP: Updates of GKE node versions
+
+* Akka Runtime 1.2.5
+    - Improves handling of `count(*)` in the view query language
+
 * Akka CLI 3.0.7
     - Improvements to the Local Console
 
