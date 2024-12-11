@@ -440,7 +440,7 @@ jobs:
           fi
           if [ true == '${{matrix.it}}' ]; then
             ${PRE_CMD}
-            KALIX_TESTKIT_DEBUG=true mvn verify -Pit --no-transfer-progress
+            KALIX_TESTKIT_DEBUG=true mvn integration-test --no-transfer-progress
           fi
 
       - name: ${{ matrix.sample }} rm & test-compile
@@ -450,5 +450,5 @@ jobs:
           export SDK_VERSION=$(cat ~/akka-javasdk-version.txt)
           cd samples/${DIR}
           echo "==== Verifying that generated unmanaged sources compile ===="
-          rm -rf src/main/java src/test/java src/it/java
+          rm -rf src/main/java src/test/java
           mvn test-compile --no-transfer-progress
