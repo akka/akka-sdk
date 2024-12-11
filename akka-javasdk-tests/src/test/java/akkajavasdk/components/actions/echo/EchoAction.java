@@ -20,6 +20,11 @@ public class EchoAction extends TimedAction {
     this.componentClient = componentClient;
   }
 
+  public Effect emptyMessage() {
+    StaticTestBuffer.addValue("echo-action", "empty");
+    return effects().done();
+  }
+
   public Effect stringMessage(String msg) {
     StaticTestBuffer.addValue("echo-action", msg);
     return effects().done();

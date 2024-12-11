@@ -73,6 +73,9 @@ private[impl] object MethodInvoker {
   def apply(javaMethod: Method, parameterExtractor: ParameterExtractor[InvocationContext, AnyRef]): MethodInvoker =
     MethodInvoker(javaMethod, Array(parameterExtractor))
 
+  def apply(javaMethod: Method): MethodInvoker =
+    MethodInvoker(javaMethod, Array.empty[ParameterExtractor[InvocationContext, AnyRef]])
+
 }
 
 /**

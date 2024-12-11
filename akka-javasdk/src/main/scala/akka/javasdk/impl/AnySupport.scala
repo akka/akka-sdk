@@ -51,6 +51,8 @@ private[akka] object AnySupport {
 
   def isJson(any: ScalaPbAny): Boolean = isJsonTypeUrl(any.typeUrl)
 
+  def isJson(typeUrl: String): Boolean = isJsonTypeUrl(typeUrl)
+
   def isJsonTypeUrl(typeUrl: String): Boolean =
     // check both new and old typeurl for compatibility, in case there are services with old type url stored in database
     typeUrl.startsWith(JsonTypeUrlPrefix) || typeUrl.startsWith(KalixJsonTypeUrlPrefix)

@@ -7,13 +7,13 @@ package akka.javasdk.impl.consumer
 import akka.annotation.InternalApi
 import akka.javasdk.consumer.Consumer
 import akka.javasdk.consumer.MessageEnvelope
-import akka.javasdk.impl.AnyInvocationContext
 import akka.javasdk.impl.AnySupport
 import akka.javasdk.impl.AnySupport.ProtobufEmptyTypeUrl
-import akka.javasdk.impl.CommandHandler
 import akka.javasdk.impl.MethodInvoker
+import akka.javasdk.impl.reflection.ParameterExtractors
 import akka.javasdk.impl.reflection.Reflect
-import com.google.protobuf.any.{ Any => ScalaPbAny }
+import akka.javasdk.impl.serialization.JsonSerializer
+import akka.runtime.sdk.spi.BytesPayload
 
 /**
  * INTERNAL API
@@ -21,32 +21,23 @@ import com.google.protobuf.any.{ Any => ScalaPbAny }
 @InternalApi
 private[impl] class ReflectiveConsumerRouter[A <: Consumer](
     consumer: A,
-    commandHandlers: Map[String, CommandHandler],
+    methodInvokers: Map[String, MethodInvoker],
+    serializer: JsonSerializer,
     ignoreUnknown: Boolean)
     extends ConsumerRouter[A](consumer) {
 
-  private def invokerLookup(typeUrl: String): Option[MethodInvoker] = {
-    commandHandlers.values
-      .map(_.lookupInvoker(typeUrl))
-      .collectFirst { case Some(invoker) =>
-        invoker
-      }
-  }
-
   override def handleUnary(commandName: String, message: MessageEnvelope[Any]): Consumer.Effect = {
 
-    val scalaPbAnyCommand = message.payload().asInstanceOf[ScalaPbAny]
+    val payload = message.payload().asInstanceOf[BytesPayload]
     // make sure we route based on the new type url if we get an old json type url message
-    val inputTypeUrl = AnySupport.replaceLegacyJsonPrefix(scalaPbAnyCommand.typeUrl)
-
-    val invocationContext = new AnyInvocationContext(scalaPbAnyCommand, message.metadata())
+    val inputTypeUrl = serializer.removeVersion(AnySupport.replaceLegacyJsonPrefix(payload.contentType))
 
     // lookup ComponentClient
     val componentClients = Reflect.lookupComponentClientFields(consumer)
 
     componentClients.foreach(_.callMetadata = Some(message.metadata()))
 
-    val methodInvoker = invokerLookup(inputTypeUrl)
+    val methodInvoker = methodInvokers.get(inputTypeUrl)
     methodInvoker match {
       case Some(invoker) =>
         inputTypeUrl match {
@@ -55,8 +46,12 @@ private[impl] class ReflectiveConsumerRouter[A <: Consumer](
               .invoke(consumer)
               .asInstanceOf[Consumer.Effect]
           case _ =>
+            val decodedPayload = ParameterExtractors.decodeParamPossiblySealed(
+              payload,
+              invoker.method.getParameterTypes.head.asInstanceOf[Class[AnyRef]],
+              serializer)
             invoker
-              .invoke(consumer, invocationContext)
+              .invokeDirectly(consumer, decodedPayload)
               .asInstanceOf[Consumer.Effect]
         }
       case None if ignoreUnknown => ConsumerEffectImpl.Builder.ignore()

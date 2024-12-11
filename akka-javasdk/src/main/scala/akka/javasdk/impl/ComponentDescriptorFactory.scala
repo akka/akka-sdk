@@ -364,7 +364,7 @@ private[impl] object ComponentDescriptorFactory {
     else if (Reflect.isConsumer(component))
       ConsumerDescriptorFactory
     else
-      ActionDescriptorFactory
+      TimedActionDescriptorFactory
   }
 
   def combineByES(
