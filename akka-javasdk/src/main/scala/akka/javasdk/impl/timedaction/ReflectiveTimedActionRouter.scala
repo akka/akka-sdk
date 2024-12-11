@@ -49,7 +49,7 @@ private[impl] final class ReflectiveTimedActionRouter[A <: TimedAction](
       result.asInstanceOf[TimedAction.Effect]
     } else {
       throw new IllegalStateException(
-        "Could not find a matching command handler for command: " + methodName + ", content type: " + updatedContentType + ", invokers keys: " + commandHandler.methodInvokers.keys
+        "Could not find a matching command handler for method: " + methodName + ", content type: " + updatedContentType + ", invokers keys: " + commandHandler.methodInvokers.keys
           .mkString(", "))
     }
   }
