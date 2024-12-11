@@ -43,11 +43,4 @@ private[javasdk] object WorkflowExceptions {
     def apply(init: WorkflowEntityInit, message: String): WorkflowException =
       ProtocolException(init.entityId, message)
   }
-
-  def failureMessageForLog(cause: Throwable): String = cause match {
-    case WorkflowException(workflowId, commandName, _, _) =>
-      val workflowDescription = if (workflowId.nonEmpty) s" [$workflowId]" else ""
-      s"Terminating workflow$workflowDescription due to unexpected failure for command [$commandName]"
-    case _ => "Terminating workflow due to unexpected failure"
-  }
 }

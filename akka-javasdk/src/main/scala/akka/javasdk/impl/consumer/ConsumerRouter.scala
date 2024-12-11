@@ -5,11 +5,13 @@
 package akka.javasdk.impl.consumer
 
 import java.util.Optional
+
 import ConsumerRouter.HandlerNotFound
 import akka.annotation.InternalApi
 import akka.javasdk.consumer.Consumer
 import akka.javasdk.consumer.MessageContext
 import akka.javasdk.consumer.MessageEnvelope
+import akka.runtime.sdk.spi.BytesPayload
 
 /**
  * INTERNAL API
@@ -28,8 +30,6 @@ private[impl] abstract class ConsumerRouter[A <: Consumer](protected val consume
   /**
    * Handle a unary call.
    *
-   * @param commandName
-   *   The name of the command this call is for.
    * @param message
    *   The message envelope of the message.
    * @param context
@@ -37,22 +37,20 @@ private[impl] abstract class ConsumerRouter[A <: Consumer](protected val consume
    * @return
    *   A future of the message to return.
    */
-  final def handleUnary(commandName: String, message: MessageEnvelope[Any], context: MessageContext): Consumer.Effect =
+  final def handleUnary(message: MessageEnvelope[BytesPayload], context: MessageContext): Consumer.Effect =
     callWithContext(context) { () =>
-      handleUnary(commandName, message)
+      handleUnary(message)
     }
 
   /**
    * Handle a unary call.
    *
-   * @param commandName
-   *   The name of the command this call is for.
    * @param message
    *   The message envelope of the message.
    * @return
    *   A future of the message to return.
    */
-  def handleUnary(commandName: String, message: MessageEnvelope[Any]): Consumer.Effect
+  def handleUnary(message: MessageEnvelope[BytesPayload]): Consumer.Effect
 
   //TODO rethink this part
   private def callWithContext[T](context: MessageContext)(func: () => T) = {

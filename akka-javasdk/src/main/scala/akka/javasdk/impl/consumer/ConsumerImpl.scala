@@ -78,7 +78,7 @@ private[impl] final class ConsumerImpl[C <: Consumer](
         val messageContext = createMessageContext(message, span)
         val payload: BytesPayload = message.payload.getOrElse(throw new IllegalArgumentException("No message payload"))
         val effect = createRouter()
-          .handleUnary(message.name, MessageEnvelope.of(payload, messageContext.metadata()), messageContext)
+          .handleUnary(MessageEnvelope.of(payload, messageContext.metadata()), messageContext)
         toSpiEffect(message, effect)
       } catch {
         case NonFatal(ex) =>

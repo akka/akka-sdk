@@ -102,7 +102,6 @@ private[impl] final class TimedActionImpl[TA <: TimedAction](
     val fut =
       try {
         val commandContext = createCommandContext(command, span)
-        //TODO reverting to previous version, timers payloads are always json.akka.io/object
         val payload: BytesPayload = command.payload.getOrElse(throw new IllegalArgumentException("No command payload"))
         val effect = createRouter()
           .handleUnary(command.name, CommandEnvelope.of(payload, commandContext.metadata()), commandContext)

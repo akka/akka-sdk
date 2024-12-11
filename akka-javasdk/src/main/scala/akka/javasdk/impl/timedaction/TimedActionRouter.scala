@@ -9,8 +9,9 @@ import akka.annotation.InternalApi
 import akka.javasdk.timedaction.CommandContext
 import akka.javasdk.timedaction.CommandEnvelope
 import akka.javasdk.timedaction.TimedAction
-
 import java.util.Optional
+
+import akka.runtime.sdk.spi.BytesPayload
 
 /**
  * INTERNAL API
@@ -29,8 +30,8 @@ abstract class TimedActionRouter[A <: TimedAction](protected val action: A) {
   /**
    * Handle a unary call.
    *
-   * @param commandName
-   *   The name of the command this call is for.
+   * @param methodName
+   *   The name of the method to call.
    * @param message
    *   The message envelope of the message.
    * @param context
@@ -39,25 +40,25 @@ abstract class TimedActionRouter[A <: TimedAction](protected val action: A) {
    *   A future of the message to return.
    */
   final def handleUnary(
-      commandName: String,
-      message: CommandEnvelope[Any],
+      methodName: String,
+      message: CommandEnvelope[BytesPayload],
       context: CommandContext): TimedAction.Effect =
     callWithContext(context) { () =>
-      handleUnary(commandName, message)
+      handleUnary(methodName, message)
     }
 
   /**
    * Handle a unary call.
    *
-   * @param commandName
-   *   The name of the command this call is for.
+   * @param methodName
+   *   The name of the method to call.
    * @param message
    *   The message envelope of the message.
    * @return
    *   A future of the message to return.
    */
   //TODO commandName rename to methodName
-  def handleUnary(commandName: String, message: CommandEnvelope[Any]): TimedAction.Effect
+  def handleUnary(methodName: String, message: CommandEnvelope[BytesPayload]): TimedAction.Effect
 
   private def callWithContext[T](context: CommandContext)(func: () => T) = {
     // only set, never cleared, to allow access from other threads in async callbacks in the action
@@ -70,6 +71,4 @@ abstract class TimedActionRouter[A <: TimedAction](protected val action: A) {
         throw new RuntimeException(s"No call handler found for call $name on ${action.getClass.getName}")
     }
   }
-
-  def actionClass(): Class[_] = action.getClass
 }

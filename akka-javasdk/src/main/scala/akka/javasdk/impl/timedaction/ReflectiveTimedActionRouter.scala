@@ -23,18 +23,18 @@ private[impl] final class ReflectiveTimedActionRouter[A <: TimedAction](
     serializer: JsonSerializer)
     extends TimedActionRouter[A](action) {
 
-  private def commandHandlerLookup(commandName: String) =
+  private def commandHandlerLookup(methodName: String) =
     commandHandlers.getOrElse(
-      commandName,
+      methodName,
       throw new RuntimeException(
-        s"no matching method for '$commandName' on [${action.getClass}], existing are [${commandHandlers.keySet
+        s"no matching method for '$methodName' on [${action.getClass}], existing are [${commandHandlers.keySet
           .mkString(", ")}]"))
 
-  override def handleUnary(commandName: String, message: CommandEnvelope[Any]): TimedAction.Effect = {
+  override def handleUnary(methodName: String, message: CommandEnvelope[BytesPayload]): TimedAction.Effect = {
 
-    val commandHandler = commandHandlerLookup(commandName)
+    val commandHandler = commandHandlerLookup(methodName)
 
-    val payload = message.payload().asInstanceOf[BytesPayload]
+    val payload = message.payload()
     // make sure we route based on the new type url if we get an old json type url message
     val updatedContentType = AnySupport.replaceLegacyJsonPrefix(payload.contentType)
     if ((AnySupport.isJson(updatedContentType) || payload.bytes.isEmpty) && commandHandler.isSingleNameInvoker) {
@@ -49,7 +49,7 @@ private[impl] final class ReflectiveTimedActionRouter[A <: TimedAction](
       result.asInstanceOf[TimedAction.Effect]
     } else {
       throw new IllegalStateException(
-        "Could not find a matching command handler for command: " + commandName + ", content type: " + updatedContentType + ", invokers keys: " + commandHandler.methodInvokers.keys
+        "Could not find a matching command handler for command: " + methodName + ", content type: " + updatedContentType + ", invokers keys: " + commandHandler.methodInvokers.keys
           .mkString(", "))
     }
   }

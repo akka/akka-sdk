@@ -26,9 +26,9 @@ private[impl] class ReflectiveConsumerRouter[A <: Consumer](
     ignoreUnknown: Boolean)
     extends ConsumerRouter[A](consumer) {
 
-  override def handleUnary(commandName: String, message: MessageEnvelope[Any]): Consumer.Effect = {
+  override def handleUnary(message: MessageEnvelope[BytesPayload]): Consumer.Effect = {
 
-    val payload = message.payload().asInstanceOf[BytesPayload]
+    val payload = message.payload()
     // make sure we route based on the new type url if we get an old json type url message
     val inputTypeUrl = serializer.removeVersion(AnySupport.replaceLegacyJsonPrefix(payload.contentType))
 
