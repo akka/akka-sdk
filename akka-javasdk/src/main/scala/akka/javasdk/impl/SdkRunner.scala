@@ -61,7 +61,6 @@ import akka.javasdk.impl.serialization.JsonSerializer
 import akka.javasdk.impl.telemetry.SpanTracingImpl
 import akka.javasdk.impl.telemetry.TraceInstrumentation
 import akka.javasdk.impl.timedaction.TimedActionImpl
-import akka.javasdk.impl.timedaction.TimedActionService
 import akka.javasdk.impl.timer.TimerSchedulerImpl
 import akka.javasdk.impl.view.ViewService
 import akka.javasdk.impl.view.ViewsImpl
@@ -320,7 +319,7 @@ private final class Sdk(
     .foldLeft(Map[Descriptors.ServiceDescriptor, Service]()) { (factories, clz) =>
       val service: Option[Service] = if (classOf[TimedAction].isAssignableFrom(clz)) {
         logger.debug(s"Registering TimedAction [${clz.getName}]")
-        Some(timedActionService(clz.asInstanceOf[Class[TimedAction]]))
+        None
       } else if (classOf[Consumer].isAssignableFrom(clz)) {
         logger.debug(s"Registering Consumer [${clz.getName}]")
         None
@@ -513,7 +512,8 @@ private final class Sdk(
               runtimeComponentClients.timerClient,
               sdkExecutionContext,
               sdkTracerFactory,
-              serializer)
+              serializer,
+              ComponentDescriptor.descriptorFor(timedActionClass, serializer))
           new TimedActionDescriptor(componentId, timedActionSpi)
       }
 
@@ -533,7 +533,8 @@ private final class Sdk(
               sdkExecutionContext,
               sdkTracerFactory,
               serializer,
-              ComponentDescriptorFactory.findIgnore(consumerClass))
+              ComponentDescriptorFactory.findIgnore(consumerClass),
+              ComponentDescriptor.descriptorFor(consumerClass, serializer))
           new ConsumerDescriptor(
             componentId,
             consumerSource(consumerClass),
@@ -585,9 +586,6 @@ private final class Sdk(
 
       case (serviceClass, _: Map[String, WorkflowService[_, _]] @unchecked)
           if serviceClass == classOf[WorkflowService[_, _]] =>
-
-      case (serviceClass, _: Map[String, TimedActionService[_]] @unchecked)
-          if serviceClass == classOf[TimedActionService[_]] =>
 
       case (serviceClass, viewServices: Map[String, ViewService[_]] @unchecked)
           if serviceClass == classOf[ViewService[_]] =>
@@ -664,9 +662,6 @@ private final class Sdk(
       override def views: Option[Views] = viewsEndpoint
     }
   }
-
-  private def timedActionService[A <: TimedAction](clz: Class[A]): TimedActionService[A] =
-    new TimedActionService[A](clz, serializer, () => wiredInstance(clz)(sideEffectingComponentInjects(None)))
 
   private def workflowService[S, W <: Workflow[S]](clz: Class[W]): WorkflowService[S, W] = {
     new WorkflowService[S, W](

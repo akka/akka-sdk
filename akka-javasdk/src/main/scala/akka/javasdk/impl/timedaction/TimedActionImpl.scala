@@ -13,7 +13,6 @@ import akka.annotation.InternalApi
 import akka.javasdk.Metadata
 import akka.javasdk.Tracing
 import akka.javasdk.impl.AbstractContext
-import akka.javasdk.impl.AnySupport
 import akka.javasdk.impl.ComponentDescriptor
 import akka.javasdk.impl.ErrorHandling
 import akka.javasdk.impl.MetadataImpl
@@ -82,7 +81,8 @@ private[impl] final class TimedActionImpl[TA <: TimedAction](
     timerClient: TimerClient,
     sdkExecutionContext: ExecutionContext,
     tracerFactory: () => Tracer,
-    serializer: JsonSerializer)
+    jsonSerializer: JsonSerializer,
+    componentDescriptor: ComponentDescriptor)
     extends SpiTimedAction {
   import TimedActionImpl.CommandContextImpl
 
@@ -91,11 +91,9 @@ private[impl] final class TimedActionImpl[TA <: TimedAction](
   private implicit val executionContext: ExecutionContext = sdkExecutionContext
   implicit val system: ActorSystem = _system
 
-  private val componentDescriptor = ComponentDescriptor.descriptorFor(timedActionClass, serializer)
-
   // FIXME remove router altogether
   private def createRouter(): ReflectiveTimedActionRouter[TA] =
-    new ReflectiveTimedActionRouter[TA](factory(), componentDescriptor.commandHandlers)
+    new ReflectiveTimedActionRouter[TA](factory(), componentDescriptor.commandHandlers, jsonSerializer)
 
   override def handleCommand(command: Command): Future[Effect] = {
     val span: Option[Span] = None //FIXME add intrumentation
@@ -106,9 +104,8 @@ private[impl] final class TimedActionImpl[TA <: TimedAction](
         val commandContext = createCommandContext(command, span)
         //TODO reverting to previous version, timers payloads are always json.akka.io/object
         val payload: BytesPayload = command.payload.getOrElse(throw new IllegalArgumentException("No command payload"))
-        val decodedPayload = AnySupport.toScalaPbAny(payload)
         val effect = createRouter()
-          .handleUnary(command.name, CommandEnvelope.of(decodedPayload, commandContext.metadata()), commandContext)
+          .handleUnary(command.name, CommandEnvelope.of(payload, commandContext.metadata()), commandContext)
         toSpiEffect(command, effect)
       } catch {
         case NonFatal(ex) =>

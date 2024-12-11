@@ -79,11 +79,8 @@ class ComponentClientTest {
   }
 
   @Test
-  public void shouldReturnDeferredCallForCallWithNoParameter() throws InvalidProtocolBufferException {
+  public void shouldReturnDeferredCallForCallWithNoParameter() {
     //given
-    var action = descriptorFor(ActionWithoutParam.class, serializer);
-    var targetMethod = action.serviceDescriptor().findMethodByName("Message");
-
     //when
     DeferredCallImpl<NotUsed, Object> call = (DeferredCallImpl<NotUsed, Object>) componentClient.forTimedAction()
       .method(ActionWithoutParam::message)
@@ -94,11 +91,8 @@ class ComponentClientTest {
   }
 
   @Test
-  public void shouldReturnDeferredCallForCallWithOneParameter() throws InvalidProtocolBufferException {
+  public void shouldReturnDeferredCallForCallWithOneParameter() {
     //given
-    var action = descriptorFor(ActionWithoutParam.class, serializer);
-    var targetMethod = action.serviceDescriptor().findMethodByName("Message");
-
     //when
     DeferredCallImpl<String, Object> call = (DeferredCallImpl<String, Object>)
             componentClient.forTimedAction()

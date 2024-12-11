@@ -267,27 +267,6 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
     }
   }
 
-  @Consume.FromTopic(value = "topicXYZ", consumerGroup = "cg")
-  public static class SubscribeToTopicCombined extends Consumer {
-
-    public Effect messageOne(Message message) {
-      return effects().produce(message);
-    }
-
-    public Effect messageTwo(String message) {
-      return effects().produce(message);
-    }
-  }
-
-  @Consume.FromKeyValueEntity(Counter.class)
-  @Produce.ToTopic("foobar")
-  public static class PublishBytesToTopic extends Consumer {
-
-    public Effect produce(Message msg) {
-      return effects().produce(msg.value().getBytes());
-    }
-  }
-
   @Consume.FromTopic("foobar")
   public static class SubscribeToBytesFromTopic extends Consumer {
 

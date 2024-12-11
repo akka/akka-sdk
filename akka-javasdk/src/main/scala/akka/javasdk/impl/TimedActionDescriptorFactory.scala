@@ -15,14 +15,12 @@ import akka.javasdk.impl.serialization.JsonSerializer
  * INTERNAL API
  */
 @InternalApi
-private[impl] object ActionDescriptorFactory extends ComponentDescriptorFactory {
+private[impl] object TimedActionDescriptorFactory extends ComponentDescriptorFactory {
 
   override def buildDescriptorFor(
       component: Class[_],
       serializer: JsonSerializer,
       nameGenerator: NameGenerator): ComponentDescriptor = {
-
-    val serviceName = nameGenerator.getName(component.getSimpleName)
 
     val commandHandlerMethods = component.getDeclaredMethods
       .filter(hasTimedActionEffectOutput)
@@ -32,12 +30,6 @@ private[impl] object ActionDescriptorFactory extends ComponentDescriptorFactory 
       }
       .toIndexedSeq
 
-    ComponentDescriptor(
-      nameGenerator,
-      serializer,
-      serviceName,
-      serviceOptions = None,
-      component.getPackageName,
-      commandHandlerMethods)
+    ComponentDescriptor(serializer, commandHandlerMethods)
   }
 }

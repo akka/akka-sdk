@@ -4,31 +4,40 @@
 
 package akka.javasdk.impl.consumer
 
+import java.util.Optional
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.control.NonFatal
 
 import akka.actor.ActorSystem
 import akka.annotation.InternalApi
+import akka.javasdk.Metadata
+import akka.javasdk.Tracing
 import akka.javasdk.consumer.Consumer
+import akka.javasdk.consumer.MessageContext
+import akka.javasdk.consumer.MessageEnvelope
+import akka.javasdk.impl.AbstractContext
 import akka.javasdk.impl.ComponentDescriptor
 import akka.javasdk.impl.ErrorHandling
 import akka.javasdk.impl.MetadataImpl
-import akka.javasdk.impl.telemetry.Telemetry
 import akka.javasdk.impl.consumer.ConsumerEffectImpl.AsyncEffect
 import akka.javasdk.impl.consumer.ConsumerEffectImpl.IgnoreEffect
 import akka.javasdk.impl.consumer.ConsumerEffectImpl.ReplyEffect
-import akka.javasdk.consumer.MessageContext
-import akka.javasdk.consumer.MessageEnvelope
-import akka.javasdk.impl.AnySupport
 import akka.javasdk.impl.serialization.JsonSerializer
+import akka.javasdk.impl.telemetry.SpanTracingImpl
+import akka.javasdk.impl.telemetry.Telemetry
+import akka.javasdk.impl.timer.TimerSchedulerImpl
+import akka.javasdk.timer.TimerScheduler
+import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.SpiConsumer
-import akka.runtime.sdk.spi.SpiConsumer.Message
 import akka.runtime.sdk.spi.SpiConsumer.Effect
+import akka.runtime.sdk.spi.SpiConsumer.Message
 import akka.runtime.sdk.spi.SpiMetadata
 import akka.runtime.sdk.spi.TimerClient
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.Tracer
+import kalix.protocol.component.MetadataEntry
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
@@ -43,7 +52,8 @@ private[impl] final class ConsumerImpl[C <: Consumer](
     sdkExecutionContext: ExecutionContext,
     tracerFactory: () => Tracer,
     serializer: JsonSerializer,
-    ignoreUnknown: Boolean)
+    ignoreUnknown: Boolean,
+    componentDescriptor: ComponentDescriptor)
     extends SpiConsumer {
 
   private val log: Logger = LoggerFactory.getLogger(consumerClass)
@@ -51,12 +61,13 @@ private[impl] final class ConsumerImpl[C <: Consumer](
   private implicit val executionContext: ExecutionContext = sdkExecutionContext
   implicit val system: ActorSystem = _system
 
-  //FIXME remove ComponentDescriptor and just get command handler/method invokers
-  private val componentDescriptor = ComponentDescriptor.descriptorFor(consumerClass, serializer)
-
   // FIXME remove router altogether
   private def createRouter(): ReflectiveConsumerRouter[C] =
-    new ReflectiveConsumerRouter[C](factory(), componentDescriptor.commandHandlers, ignoreUnknown)
+    new ReflectiveConsumerRouter[C](
+      factory(),
+      componentDescriptor.commandHandlers.values.head.methodInvokers,
+      serializer,
+      ignoreUnknown)
 
   override def handleMessage(message: Message): Future[Effect] = {
     val span: Option[Span] = None //FIXME add intrumentation
@@ -65,13 +76,9 @@ private[impl] final class ConsumerImpl[C <: Consumer](
     val fut =
       try {
         val messageContext = createMessageContext(message, span)
-        val pbAnyPayload =
-          AnySupport.toScalaPbAny(message.payload.getOrElse(throw new IllegalArgumentException("No message payload")))
-        // FIXME shall we deserialize here or in the router? the router needs the contentType as well.
-//        val decodedPayload =
-//          serializer.fromBytes(message.payload.getOrElse(throw new IllegalArgumentException("No message payload")))
+        val payload: BytesPayload = message.payload.getOrElse(throw new IllegalArgumentException("No message payload"))
         val effect = createRouter()
-          .handleUnary(message.name, MessageEnvelope.of(pbAnyPayload, messageContext.metadata()), messageContext)
+          .handleUnary(message.name, MessageEnvelope.of(payload, messageContext.metadata()), messageContext)
         toSpiEffect(message, effect)
       } catch {
         case NonFatal(ex) =>
@@ -134,4 +141,45 @@ private[impl] final class ConsumerImpl[C <: Consumer](
       error = Some(new SpiConsumer.Error(s"Unexpected error [$correlationId]")))
   }
 
+}
+
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[impl] final case class MessageEnvelopeImpl[T](payload: T, metadata: Metadata) extends MessageEnvelope[T]
+
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[impl] final class MessageContextImpl(
+    override val metadata: Metadata,
+    timerClient: TimerClient,
+    tracerFactory: () => Tracer,
+    span: Option[Span])
+    extends AbstractContext
+    with MessageContext {
+
+  val timers: TimerScheduler = new TimerSchedulerImpl(timerClient, componentCallMetadata)
+
+  override def eventSubject(): Optional[String] =
+    if (metadata.isCloudEvent)
+      metadata.asCloudEvent().subject()
+    else
+      Optional.empty()
+
+  override def componentCallMetadata: MetadataImpl = {
+    if (metadata.has(Telemetry.TRACE_PARENT_KEY)) {
+      MetadataImpl.of(
+        List(
+          MetadataEntry(
+            Telemetry.TRACE_PARENT_KEY,
+            MetadataEntry.Value.StringValue(metadata.get(Telemetry.TRACE_PARENT_KEY).get()))))
+    } else {
+      MetadataImpl.Empty
+    }
+  }
+
+  override def tracing(): Tracing = new SpanTracingImpl(span, tracerFactory)
 }

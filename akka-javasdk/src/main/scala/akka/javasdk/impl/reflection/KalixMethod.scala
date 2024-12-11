@@ -4,11 +4,16 @@
 
 package akka.javasdk.impl.reflection
 
+import java.lang.reflect.Method
+
+import scala.annotation.tailrec
+
 import akka.annotation.InternalApi
 import akka.javasdk.impl.AclDescriptorFactory
-
-import java.lang.reflect.Method
-import scala.annotation.tailrec
+import akka.javasdk.impl.AnySupport.ProtobufEmptyTypeUrl
+import akka.javasdk.impl.CommandHandler
+import akka.javasdk.impl.MethodInvoker
+import akka.javasdk.impl.serialization.JsonSerializer
 import com.google.protobuf.Descriptors
 import com.google.protobuf.any.{ Any => ScalaPbAny }
 
@@ -284,6 +289,51 @@ private[impl] final case class KalixMethod private (
     }
     builder.mergeFrom(addOn)
     builder.build()
+  }
+
+  def toCommandHandler(serializer: JsonSerializer): CommandHandler = {
+    serviceMethod match {
+
+      case method: SubscriptionServiceMethod =>
+        val methodInvokers =
+          serviceMethod.javaMethodOpt
+            .map { meth =>
+              if (meth.getParameterTypes.last.isSealed) {
+                meth.getParameterTypes.last.getPermittedSubclasses.toList
+                  .flatMap(subClass => {
+                    serializer.contentTypesFor(subClass).map(typeUrl => typeUrl -> MethodInvoker(meth))
+                  })
+                  .toMap
+              } else {
+                val typeUrls = serializer.contentTypesFor(method.inputType)
+                typeUrls.map(_ -> MethodInvoker(meth)).toMap
+              }
+            }
+            .getOrElse(Map.empty)
+
+        CommandHandler(null, serializer, null, methodInvokers)
+
+      case _: ActionHandlerMethod =>
+        val methodInvokers =
+          serviceMethod.javaMethodOpt
+            .map { meth =>
+              //the key is the content type, but in the case of a timed action, it doesn't matter
+              Map("" -> MethodInvoker(meth))
+            }
+            .getOrElse(Map.empty)
+
+        CommandHandler(null, serializer, null, methodInvokers)
+
+      case _: DeleteServiceMethod =>
+        val methodInvokers = serviceMethod.javaMethodOpt.map { meth =>
+          (ProtobufEmptyTypeUrl, MethodInvoker(meth))
+        }.toMap
+
+        CommandHandler(null, serializer, null, methodInvokers)
+      case other =>
+        throw new IllegalStateException("Not supported method type: " + other.getClass.getName)
+    }
+
   }
 }
 
