@@ -5,7 +5,6 @@
 package akka.javasdk.impl.client
 
 import akka.annotation.InternalApi
-import akka.http.scaladsl.model.ContentTypes
 import akka.japi.function
 import akka.javasdk.JsonSupport
 import akka.javasdk.Metadata
@@ -23,13 +22,15 @@ import akka.javasdk.view.View
 import akka.runtime.sdk.spi.ViewRequest
 import akka.runtime.sdk.spi.ViewType
 import akka.runtime.sdk.spi.{ ViewClient => RuntimeViewClient }
-import akka.util.ByteString
-
 import java.lang.reflect.Method
 import java.lang.reflect.ParameterizedType
 import java.util.Optional
+
 import scala.concurrent.ExecutionContext
 import scala.jdk.FutureConverters.FutureOps
+
+import akka.javasdk.impl.serialization.JsonSerializer
+import akka.runtime.sdk.spi.BytesPayload
 
 /**
  * INTERNAL API
@@ -91,27 +92,16 @@ private[javasdk] object ViewClientImpl {
     }
   }
 
-  private def encodeArgumentAsJson(method: Method, arg: Option[Any]): ByteString = arg match {
-    case Some(arg) =>
-      // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
-      if (arg.getClass.isPrimitive || primitiveObjects.contains(arg.getClass)) {
-        JsonSupport.encodeDynamicToAkkaByteString(method.getParameters.head.getName, arg.toString)
-      } else if (classOf[java.util.Collection[_]].isAssignableFrom(arg.getClass)) {
-        JsonSupport.encodeDynamicCollectionToAkkaByteString(
-          method.getParameters.head.getName,
-          arg.asInstanceOf[java.util.Collection[_]])
-      } else
-        JsonSupport.encodeToAkkaByteString(arg)
-    case None => ByteString.emptyByteString
-  }
 }
 
 /**
  * INTERNAL API
  */
 @InternalApi
-private[javasdk] final case class ViewClientImpl(viewClient: RuntimeViewClient, callMetadata: Option[Metadata])(implicit
-    val executionContext: ExecutionContext)
+private[javasdk] final case class ViewClientImpl(
+    viewClient: RuntimeViewClient,
+    serializer: JsonSerializer,
+    callMetadata: Option[Metadata])(implicit val executionContext: ExecutionContext)
     extends ViewClient {
   import ViewClientImpl._
 
@@ -122,6 +112,26 @@ private[javasdk] final case class ViewClientImpl(viewClient: RuntimeViewClient, 
       methodRef: function.Function2[T, A1, View.QueryEffect[R]]): ComponentInvokeOnlyMethodRef1[A1, R] =
     createMethodRefForEitherArity(methodRef)
 
+  private def encodeArgument(method: Method, arg: Option[Any]): BytesPayload = arg match {
+    case Some(arg) =>
+      // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
+      if (arg.getClass.isPrimitive || primitiveObjects.contains(arg.getClass)) {
+        // FIXME eh?, move this to JsonSerializer
+        val bytes = JsonSupport.encodeDynamicToAkkaByteString(method.getParameters.head.getName, arg.toString)
+        new BytesPayload(bytes, JsonSerializer.JsonContentTypePrefix + "object")
+      } else if (classOf[java.util.Collection[_]].isAssignableFrom(arg.getClass)) {
+        // FIXME eh?, move this to JsonSerializer
+        val bytes = JsonSupport.encodeDynamicCollectionToAkkaByteString(
+          method.getParameters.head.getName,
+          arg.asInstanceOf[java.util.Collection[_]])
+        new BytesPayload(bytes, JsonSerializer.JsonContentTypePrefix + "object")
+      } else {
+        serializer.toBytes(arg)
+      }
+    case None =>
+      BytesPayload.empty
+  }
+
   private def createMethodRefForEitherArity[A1, R](lambda: AnyRef): ComponentMethodRefImpl[A1, R] = {
     val viewMethodProperties = validateAndExtractViewMethodProperties[R](lambda)
     val returnTypeOptional = Reflect.isReturnTypeOptional(viewMethodProperties.method)
@@ -131,7 +141,7 @@ private[javasdk] final case class ViewClientImpl(viewClient: RuntimeViewClient, 
       callMetadata,
       { (maybeMetadata, maybeArg) =>
         // Note: same path for 0 and 1 arg calls
-        val serializedPayload = encodeArgumentAsJson(viewMethodProperties.method, maybeArg)
+        val serializedPayload = encodeArgument(viewMethodProperties.method, maybeArg)
         DeferredCallImpl(
           maybeArg.orNull,
           maybeMetadata.getOrElse(Metadata.EMPTY).asInstanceOf[MetadataImpl],
@@ -145,7 +155,6 @@ private[javasdk] final case class ViewClientImpl(viewClient: RuntimeViewClient, 
                 new ViewRequest(
                   viewMethodProperties.componentId,
                   viewMethodProperties.methodName,
-                  ContentTypes.`application/json`,
                   serializedPayload,
                   toProtocol(metadata.asInstanceOf[MetadataImpl]).getOrElse(
                     kalix.protocol.component.Metadata.defaultInstance)))
@@ -157,8 +166,7 @@ private[javasdk] final case class ViewClientImpl(viewClient: RuntimeViewClient, 
                       throw new NoEntryFoundException(
                         s"No matching entry found when calling ${viewMethodProperties.declaringClass}.${viewMethodProperties.methodName}")
                   } else {
-                    val deserialized =
-                      JsonSupport.parseBytes(result.payload.toArrayUnsafe(), viewMethodProperties.queryReturnType)
+                    val deserialized = serializer.fromBytes(viewMethodProperties.queryReturnType, result.payload)
                     if (returnTypeOptional) Optional.of(deserialized)
                     else deserialized
                   }
@@ -167,7 +175,8 @@ private[javasdk] final case class ViewClientImpl(viewClient: RuntimeViewClient, 
                 deserializedReWrapped.asInstanceOf[R]
               }
               .asJava
-          })
+          },
+          serializer)
       },
       canBeDeferred = false).asInstanceOf[ComponentMethodRefImpl[A1, R]]
 
@@ -182,14 +191,11 @@ private[javasdk] final case class ViewClientImpl(viewClient: RuntimeViewClient, 
           new ViewRequest(
             viewMethodProperties.componentId,
             viewMethodProperties.methodName,
-            ContentTypes.`application/json`,
-            encodeArgumentAsJson(viewMethodProperties.method, None),
+            encodeArgument(viewMethodProperties.method, None),
             kalix.protocol.component.Metadata.defaultInstance))
         .map { viewResult =>
           // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
-          JsonSupport.parseBytes[R](
-            viewResult.payload.toArrayUnsafe(),
-            viewMethodProperties.queryReturnType.asInstanceOf[Class[R]])
+          serializer.fromBytes(viewMethodProperties.queryReturnType.asInstanceOf[Class[R]], viewResult.payload)
         }
         .asJava
   }
@@ -204,14 +210,11 @@ private[javasdk] final case class ViewClientImpl(viewClient: RuntimeViewClient, 
           new ViewRequest(
             viewMethodProperties.componentId,
             viewMethodProperties.methodName,
-            ContentTypes.`application/json`,
-            encodeArgumentAsJson(viewMethodProperties.method, Some(arg)),
+            encodeArgument(viewMethodProperties.method, Some(arg)),
             kalix.protocol.component.Metadata.defaultInstance))
         .map { viewResult =>
           // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
-          JsonSupport.parseBytes[R](
-            viewResult.payload.toArrayUnsafe(),
-            viewMethodProperties.queryReturnType.asInstanceOf[Class[R]])
+          serializer.fromBytes(viewMethodProperties.queryReturnType.asInstanceOf[Class[R]], viewResult.payload)
         }
         .asJava
   }

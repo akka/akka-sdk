@@ -42,7 +42,11 @@ private[impl] class ReflectiveEventSourcedEntityRouter[S, E, ES <: EventSourcedE
 
     val commandHandler = commandHandlerLookup(commandName)
 
-    if (serializer.isJson(command)) {
+    // Commands can be in three shapes:
+    // - BytesPayload.empty - there is no real command, and we are calling a method with arity 0
+    // - BytesPayload with json - we deserialize it and call the method
+    // - BytesPayload with Proto encoding - we deserialize using InvocationContext
+    if (serializer.isJson(command) || command.isEmpty) {
       // special cased component client calls, lets json commands through all the way
       val methodInvoker = commandHandler.getSingleNameInvoker()
       val deserializedCommand =

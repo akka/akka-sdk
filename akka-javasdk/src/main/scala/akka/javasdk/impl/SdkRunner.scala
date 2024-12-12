@@ -252,7 +252,8 @@ private[javasdk] object Sdk {
   final case class StartupContext(
       componentClients: ComponentClients,
       dependencyProvider: Option[DependencyProvider],
-      httpClientProvider: HttpClientProvider)
+      httpClientProvider: HttpClientProvider,
+      serializer: JsonSerializer)
 }
 
 /**
@@ -592,7 +593,7 @@ private final class Sdk(
       override def preStart(system: ActorSystem[_]): Future[Done] = {
         serviceSetup match {
           case None =>
-            startedPromise.trySuccess(StartupContext(runtimeComponentClients, None, httpClientProvider))
+            startedPromise.trySuccess(StartupContext(runtimeComponentClients, None, httpClientProvider, serializer))
             Future.successful(Done)
           case Some(setup) =>
             if (dependencyProviderOpt.nonEmpty) {
@@ -602,7 +603,7 @@ private final class Sdk(
               dependencyProviderOpt.foreach(_ => logger.info("Service configured with DependencyProvider"))
             }
             startedPromise.trySuccess(
-              StartupContext(runtimeComponentClients, dependencyProviderOpt, httpClientProvider))
+              StartupContext(runtimeComponentClients, dependencyProviderOpt, httpClientProvider, serializer))
             Future.successful(Done)
         }
       }
@@ -770,7 +771,7 @@ private final class Sdk(
   }
 
   private def componentClient(openTelemetrySpan: Option[Span]): ComponentClient = {
-    ComponentClientImpl(runtimeComponentClients, openTelemetrySpan)(sdkExecutionContext)
+    ComponentClientImpl(runtimeComponentClients, serializer, openTelemetrySpan)(sdkExecutionContext)
   }
 
   private def timerScheduler(openTelemetrySpan: Option[Span]): TimerScheduler = {

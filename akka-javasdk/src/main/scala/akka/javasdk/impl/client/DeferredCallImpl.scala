@@ -4,18 +4,17 @@
 
 package akka.javasdk.impl.client
 
+import java.util.concurrent.CompletionStage
+
 import akka.annotation.InternalApi
-import akka.http.scaladsl.model.ContentTypes
-import akka.javasdk.impl.MetadataImpl
-import akka.util.ByteString
-import MetadataImpl.toProtocol
 import akka.javasdk.DeferredCall
-import akka.javasdk.JsonSupport
 import akka.javasdk.Metadata
+import akka.javasdk.impl.MetadataImpl
+import akka.javasdk.impl.MetadataImpl.toProtocol
+import akka.javasdk.impl.serialization.JsonSerializer
+import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.ComponentType
 import akka.runtime.sdk.spi.DeferredRequest
-
-import java.util.concurrent.CompletionStage
 
 /**
  * INTERNAL API
@@ -28,7 +27,8 @@ private[impl] final case class DeferredCallImpl[I, O](
     componentId: String,
     methodName: String,
     entityId: Option[String],
-    asyncCall: Metadata => CompletionStage[O])
+    asyncCall: Metadata => CompletionStage[O],
+    serializer: JsonSerializer)
     extends DeferredCall[I, O] {
 
   def invokeAsync(): CompletionStage[O] = asyncCall(metadata)
@@ -37,15 +37,20 @@ private[impl] final case class DeferredCallImpl[I, O](
     this.copy(metadata = metadata.asInstanceOf[MetadataImpl])
   }
 
-  def deferredRequest(): DeferredRequest = new DeferredRequest(
-    componentType,
-    componentId,
-    methodName = methodName,
-    entityId = entityId,
-    contentType = ContentTypes.`application/json`,
-    payload =
-      if (message == null) ByteString.empty
-      else JsonSupport.encodeToAkkaByteString(message),
-    metadata = toProtocol(metadata).getOrElse(kalix.protocol.component.Metadata.defaultInstance))
+  def deferredRequest(): DeferredRequest = {
+    val payload =
+      if (message == null)
+        BytesPayload.empty
+      else
+        serializer.toBytes(message)
+
+    new DeferredRequest(
+      componentType,
+      componentId,
+      methodName = methodName,
+      entityId = entityId,
+      payload = payload,
+      metadata = toProtocol(metadata).getOrElse(kalix.protocol.component.Metadata.defaultInstance))
+  }
 
 }

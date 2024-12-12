@@ -13,6 +13,7 @@ import akka.javasdk.client.ComponentClient;
 import akka.javasdk.http.HttpClient;
 import akka.javasdk.http.HttpClientProvider;
 import akka.javasdk.impl.ErrorHandling;
+import akka.javasdk.impl.Sdk;
 import akka.javasdk.impl.SdkRunner;
 import akka.javasdk.impl.client.ComponentClientImpl;
 import akka.javasdk.impl.http.HttpClientImpl;
@@ -21,6 +22,7 @@ import akka.javasdk.impl.timer.TimerSchedulerImpl;
 import akka.javasdk.testkit.EventingTestKit.IncomingMessages;
 import akka.javasdk.timer.TimerScheduler;
 import akka.pattern.Patterns;
+import akka.runtime.sdk.spi.ComponentClients;
 import akka.runtime.sdk.spi.SpiDevModeSettings;
 import akka.runtime.sdk.spi.SpiEventingSupportSettings;
 import akka.runtime.sdk.spi.SpiMockedEventingSettings;
@@ -472,8 +474,9 @@ public class TestKit {
       Config runtimeConfig = ConfigFactory.empty();
       runtimeActorSystem = AkkaRuntimeMain.start(Some.apply(runtimeConfig), runner);
       // wait for SDK to get on start callback (or fail starting), we need it to set up the component client
-      var startupContext = runner.started().toCompletableFuture().get(20, TimeUnit.SECONDS);
-      var componentClients = startupContext.componentClients();
+      final Sdk.StartupContext startupContext = runner.started().toCompletableFuture().get(20, TimeUnit.SECONDS);
+      final ComponentClients componentClients = startupContext.componentClients();
+      final JsonSerializer serializer = startupContext.serializer();
       dependencyProvider = Optional.ofNullable(startupContext.dependencyProvider().getOrElse(() -> null));
 
       startEventingTestkit();
@@ -510,11 +513,10 @@ public class TestKit {
       }
 
       // once runtime is started
-      componentClient = new ComponentClientImpl(componentClients, Option.empty(), runtimeActorSystem.executionContext());
+      componentClient = new ComponentClientImpl(componentClients, serializer, Option.empty(), runtimeActorSystem.executionContext());
       selfHttpClient = new HttpClientImpl(runtimeActorSystem, "http://" + proxyHost + ":" + proxyPort);
       httpClientProvider = startupContext.httpClientProvider();
       timerScheduler = new TimerSchedulerImpl(componentClients.timerClient(), Metadata.EMPTY);
-      var serializer = new JsonSerializer();
       this.messageBuilder = new EventingTestKit.MessageBuilder(serializer);
 
     } catch (Exception ex) {

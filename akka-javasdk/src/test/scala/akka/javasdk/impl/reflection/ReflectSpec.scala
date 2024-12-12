@@ -9,8 +9,9 @@ import akka.javasdk.impl.client.ComponentClientImpl
 import akka.javasdk.impl.reflection.Reflect
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-
 import scala.concurrent.ExecutionContext
+
+import akka.javasdk.impl.serialization.JsonSerializer
 
 class SomeClass {
   def a(): Unit = {}
@@ -23,6 +24,7 @@ class SomeClass {
 }
 
 class ReflectSpec extends AnyWordSpec with Matchers {
+  private val serializer = new JsonSerializer
 
   "The reflection utils" must {
     "deterministically sort methods of the same class" in {
@@ -46,8 +48,8 @@ class ReflectSpec extends AnyWordSpec with Matchers {
       class Bar(val anotherComponentClient: ComponentClient, val parentComponentClient: ComponentClient)
           extends Foo(parentComponentClient)
 
-      val c1 = ComponentClientImpl(null, None)(ExecutionContext.global)
-      val c2 = ComponentClientImpl(null, None)(ExecutionContext.global)
+      val c1 = ComponentClientImpl(null, serializer, None)(ExecutionContext.global)
+      val c2 = ComponentClientImpl(null, serializer, None)(ExecutionContext.global)
       val bar = new Bar(c1, c2)
 
       Reflect.lookupComponentClientFields(bar) should have size 2

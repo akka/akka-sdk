@@ -14,8 +14,9 @@ import akka.javasdk.client.ViewClient
 import akka.javasdk.client.WorkflowClient
 import akka.javasdk.impl.MetadataImpl
 import akka.runtime.sdk.spi.{ ComponentClients => RuntimeComponentClients }
-
 import scala.concurrent.ExecutionContext
+
+import akka.javasdk.impl.serialization.JsonSerializer
 import io.opentelemetry.api.trace.Span
 
 /**
@@ -26,6 +27,7 @@ import io.opentelemetry.api.trace.Span
 @InternalApi
 private[javasdk] final case class ComponentClientImpl(
     runtimeComponentClients: RuntimeComponentClients,
+    serializer: JsonSerializer,
     openTelemetrySpan: Option[Span])(implicit ec: ExecutionContext)
     extends ComponentClient {
 
@@ -35,25 +37,34 @@ private[javasdk] final case class ComponentClientImpl(
   }
 
   override def forTimedAction(): TimedActionClient =
-    TimedActionClientImpl(runtimeComponentClients.timedActionClient, callMetadata)
+    TimedActionClientImpl(runtimeComponentClients.timedActionClient, serializer, callMetadata)
 
   override def forKeyValueEntity(valueEntityId: String): KeyValueEntityClient =
     if (valueEntityId eq null) throw new NullPointerException("Key Value entity id is null")
     else if (valueEntityId.isEmpty) throw new IllegalArgumentException("Empty value entity id now allowed")
-    else new KeyValueEntityClientImpl(runtimeComponentClients.keyValueEntityClient, callMetadata, valueEntityId)
+    else
+      new KeyValueEntityClientImpl(
+        runtimeComponentClients.keyValueEntityClient,
+        serializer,
+        callMetadata,
+        valueEntityId)
 
   override def forEventSourcedEntity(eventSourcedEntityId: String): EventSourcedEntityClient =
     if (eventSourcedEntityId eq null) throw new NullPointerException("Event sourced entity id is null")
     else if (eventSourcedEntityId.isEmpty)
       throw new IllegalArgumentException("Empty event sourced entity id now allowed")
     else
-      EventSourcedEntityClientImpl(runtimeComponentClients.eventSourcedEntityClient, callMetadata, eventSourcedEntityId)
+      EventSourcedEntityClientImpl(
+        runtimeComponentClients.eventSourcedEntityClient,
+        serializer,
+        callMetadata,
+        eventSourcedEntityId)
 
   override def forWorkflow(workflowId: String): WorkflowClient =
     if (workflowId eq null) throw new NullPointerException("Workflow id is null")
     else if (workflowId.isEmpty) throw new IllegalArgumentException("Empty workflow id now allowed")
-    else WorkflowClientImpl(runtimeComponentClients.workFlowClient, callMetadata, workflowId)
+    else WorkflowClientImpl(runtimeComponentClients.workFlowClient, serializer, callMetadata, workflowId)
 
-  override def forView(): ViewClient = ViewClientImpl(runtimeComponentClients.viewClient, callMetadata)
+  override def forView(): ViewClient = ViewClientImpl(runtimeComponentClients.viewClient, serializer, callMetadata)
 
 }

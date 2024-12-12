@@ -5,9 +5,7 @@
 package akka.javasdk.impl.client
 
 import akka.annotation.InternalApi
-import akka.http.scaladsl.model.ContentTypes
 import akka.japi.function
-import akka.javasdk.JsonSupport
 import akka.javasdk.Metadata
 import akka.javasdk.client.ComponentDeferredMethodRef
 import akka.javasdk.client.ComponentDeferredMethodRef1
@@ -34,13 +32,14 @@ import akka.runtime.sdk.spi.KeyValueEntityType
 import akka.runtime.sdk.spi.WorkflowType
 import akka.runtime.sdk.spi.{ TimedActionClient => RuntimeTimedActionClient }
 import akka.runtime.sdk.spi.{ EntityClient => RuntimeEntityClient }
-import akka.util.ByteString
-
 import scala.concurrent.ExecutionContext
 import scala.jdk.FutureConverters.FutureOps
 import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
+
+import akka.javasdk.impl.serialization.JsonSerializer
+import akka.runtime.sdk.spi.BytesPayload
 
 /**
  * INTERNAL API
@@ -50,6 +49,7 @@ private[impl] sealed abstract class EntityClientImpl(
     expectedComponentSuperclass: Class[_],
     componentType: ComponentType,
     entityClient: RuntimeEntityClient,
+    serializer: JsonSerializer,
     callMetadata: Option[Metadata],
     entityId: String)(implicit executionContext: ExecutionContext) {
 
@@ -79,8 +79,9 @@ private[impl] sealed abstract class EntityClientImpl(
         val serializedPayload = maybeArg match {
           case Some(arg) =>
             // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
-            JsonSupport.encodeToAkkaByteString(arg)
-          case None => ByteString.emptyByteString
+            serializer.toBytes(arg)
+          case None =>
+            BytesPayload.empty
         }
 
         DeferredCallImpl(
@@ -97,17 +98,17 @@ private[impl] sealed abstract class EntityClientImpl(
                   componentId,
                   entityId,
                   methodName,
-                  ContentTypes.`application/json`,
                   serializedPayload,
                   toProtocol(metadata.asInstanceOf[MetadataImpl]).getOrElse(
                     kalix.protocol.component.Metadata.defaultInstance)))
               .map { reply =>
                 // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
                 val returnType = Reflect.getReturnType[R](declaringClass, method)
-                JsonSupport.parseBytes[R](reply.payload.toArrayUnsafe(), returnType)
+                serializer.fromBytes(returnType, reply.payload)
               }
               .asJava
-          })
+          },
+          serializer)
       }).asInstanceOf[ComponentMethodRefImpl[A1, R]]
 
   }
@@ -119,9 +120,16 @@ private[impl] sealed abstract class EntityClientImpl(
 @InternalApi
 private[javasdk] final class KeyValueEntityClientImpl(
     entityClient: RuntimeEntityClient,
+    serializer: JsonSerializer,
     callMetadata: Option[Metadata],
     entityId: String)(implicit val executionContext: ExecutionContext)
-    extends EntityClientImpl(classOf[KeyValueEntity[_]], KeyValueEntityType, entityClient, callMetadata, entityId)
+    extends EntityClientImpl(
+      classOf[KeyValueEntity[_]],
+      KeyValueEntityType,
+      entityClient,
+      serializer,
+      callMetadata,
+      entityId)
     with KeyValueEntityClient {
 
   override def method[T, R](methodRef: function.Function[T, KeyValueEntity.Effect[R]]): ComponentMethodRef[R] =
@@ -138,12 +146,14 @@ private[javasdk] final class KeyValueEntityClientImpl(
 @InternalApi
 private[javasdk] final case class EventSourcedEntityClientImpl(
     entityClient: RuntimeEntityClient,
+    serializer: JsonSerializer,
     callMetadata: Option[Metadata],
     entityId: String)(implicit val executionContext: ExecutionContext)
     extends EntityClientImpl(
       classOf[EventSourcedEntity[_, _]],
       EventSourcedEntityType,
       entityClient,
+      serializer,
       callMetadata,
       entityId)
     with EventSourcedEntityClient {
@@ -162,9 +172,10 @@ private[javasdk] final case class EventSourcedEntityClientImpl(
 @InternalApi
 private[javasdk] final case class WorkflowClientImpl(
     entityClient: RuntimeEntityClient,
+    serializer: JsonSerializer,
     callMetadata: Option[Metadata],
     entityId: String)(implicit val executionContext: ExecutionContext)
-    extends EntityClientImpl(classOf[Workflow[_]], WorkflowType, entityClient, callMetadata, entityId)
+    extends EntityClientImpl(classOf[Workflow[_]], WorkflowType, entityClient, serializer, callMetadata, entityId)
     with WorkflowClient {
 
   override def method[T, R](methodRef: function.Function[T, Workflow.Effect[R]]): ComponentMethodRef[R] =
@@ -180,6 +191,7 @@ private[javasdk] final case class WorkflowClientImpl(
 @InternalApi
 private[javasdk] final case class TimedActionClientImpl(
     timedActionClient: RuntimeTimedActionClient,
+    serializer: JsonSerializer,
     callMetadata: Option[Metadata])(implicit val executionContext: ExecutionContext)
     extends TimedActionClient {
   override def method[T, R](methodRef: function.Function[T, TimedAction.Effect]): ComponentDeferredMethodRef[R] =
@@ -207,8 +219,9 @@ private[javasdk] final case class TimedActionClientImpl(
         val serializedPayload = maybeArg match {
           case Some(arg) =>
             // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
-            JsonSupport.encodeToAkkaByteString(arg)
-          case None => ByteString.emptyByteString
+            serializer.toBytes(arg)
+          case None =>
+            BytesPayload.empty
         }
 
         DeferredCallImpl(
@@ -224,20 +237,20 @@ private[javasdk] final case class TimedActionClientImpl(
                 new TimedActionRequest(
                   componentId,
                   methodName,
-                  ContentTypes.`application/json`,
                   serializedPayload,
                   toProtocol(metadata.asInstanceOf[MetadataImpl]).getOrElse(
                     kalix.protocol.component.Metadata.defaultInstance)))
               .transform {
                 case Success(reply) =>
                   // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
-                  val returnType = Reflect.getReturnType(declaringClass, method)
+                  val returnType = Reflect.getReturnType[R](declaringClass, method)
                   if (reply.payload.isEmpty) Success(null.asInstanceOf[R])
-                  else Try(JsonSupport.parseBytes[R](reply.payload.toArrayUnsafe(), returnType.asInstanceOf[Class[R]]))
+                  else Try(serializer.fromBytes(returnType, reply.payload))
                 case Failure(ex) => Failure(ex)
               }
               .asJava
-          })
+          },
+          serializer)
       }).asInstanceOf[ComponentMethodRefImpl[A1, R]]
   }
 }
