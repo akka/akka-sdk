@@ -58,7 +58,7 @@ class JwtClaimsImpl(jwtClaims: RuntimeJwtClaims) extends JwtClaims {
    *   The string claim, if present.
    */
   override def getString(name: String): Optional[String] =
-    jwtClaims.getRawClaim(name).toJava
+    jwtClaims.getStringClaim(name).toJava
 
   /**
    * Does this request have any claims that have been validated?
