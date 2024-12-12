@@ -132,16 +132,16 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
         .handleCommand(command.name, cmdPayload, cmdContext)
         .asInstanceOf[EventSourcedEntityEffectImpl[AnyRef, E]] // FIXME improve?
 
-      def replyOrError(updatedState: SpiEventSourcedEntity.State): (Option[BytesPayload], Option[SpiEntity.Error]) = {
+      def errorOrReply(updatedState: SpiEventSourcedEntity.State): Either[SpiEntity.Error, BytesPayload] = {
         commandEffect.secondaryEffect(updatedState) match {
           case ErrorReplyImpl(description) =>
-            (None, Some(new SpiEntity.Error(description)))
+            Left(new SpiEntity.Error(description))
           case MessageReplyImpl(message, _) =>
             // FIXME metadata?
             val replyPayload = serializer.toBytes(message)
-            (Some(replyPayload), None)
+            Right(replyPayload)
           case NoSecondaryEffectImpl =>
-            (None, None)
+            throw new IllegalStateException("Expected reply or error")
         }
       }
 
@@ -156,27 +156,27 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
             currentSequence += 1
           }
 
-          val (reply, error) = replyOrError(updatedState)
+          errorOrReply(updatedState) match {
+            case Left(err) =>
+              Future.successful(new SpiEventSourcedEntity.ErrorEffect(err))
+            case Right(reply) =>
+              val delete =
+                if (deleteEntity) Some(configuration.cleanupDeletedEventSourcedEntityAfter)
+                else None
 
-          if (error.isDefined) {
-            Future.successful(
-              new SpiEventSourcedEntity.Effect(events = Vector.empty, updatedState = state, reply = None, error, None))
-          } else {
-            val delete =
-              if (deleteEntity) Some(configuration.cleanupDeletedEventSourcedEntityAfter)
-              else None
+              val serializedEvents = events.map(event => serializer.toBytes(event)).toVector
 
-            val serializedEvents = events.map(event => serializer.toBytes(event)).toVector
-
-            Future.successful(
-              new SpiEventSourcedEntity.Effect(events = serializedEvents, updatedState, reply, error, delete))
+              Future.successful(
+                new SpiEventSourcedEntity.PersistEffect(events = serializedEvents, updatedState, reply, delete))
           }
 
         case NoPrimaryEffect =>
-          val (reply, error) = replyOrError(state)
-
-          Future.successful(
-            new SpiEventSourcedEntity.Effect(events = Vector.empty, updatedState = state, reply, error, None))
+          errorOrReply(state) match {
+            case Left(err) =>
+              Future.successful(new SpiEventSourcedEntity.ErrorEffect(err))
+            case Right(reply) =>
+              Future.successful(new SpiEventSourcedEntity.ReplyEffect(reply))
+          }
       }
 
     } catch {
@@ -186,13 +186,7 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
           command.name,
           s"No command handler found for command [${e.name}] on ${entity.getClass}")
       case BadRequestException(msg) =>
-        Future.successful(
-          new SpiEventSourcedEntity.Effect(
-            events = Vector.empty,
-            updatedState = state,
-            reply = None,
-            error = Some(new SpiEntity.Error(msg)),
-            delete = None))
+        Future.successful(new SpiEventSourcedEntity.ErrorEffect(error = new SpiEntity.Error(msg)))
       case e: EntityException =>
         throw e
       case NonFatal(error) =>
