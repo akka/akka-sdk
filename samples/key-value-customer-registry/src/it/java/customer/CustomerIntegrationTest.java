@@ -28,7 +28,7 @@ public class CustomerIntegrationTest extends TestKitSupport {
   @Test
   public void create()  {
     String id = newUniqueId();
-    Customer customer = new Customer("foo@example.com", "Johanna", null);
+    Customer customer = new Customer("foo@example.com", "Johanna", new Address("Some Street", "Somewhere"));
 
     createCustomer(id, customer);
     Assertions.assertEquals("Johanna", getCustomerById(id).name());
@@ -45,7 +45,7 @@ public class CustomerIntegrationTest extends TestKitSupport {
   @Test
   public void httpCreate() {
     var id = newUniqueId();
-    var customer = new Customer("foo@example.com", "Johanna", null);
+    var customer = new Customer("foo@example.com", "Johanna", new Address("Some Street", "Somewhere"));
 
     var response = await(httpClient.POST("/customer/" + id)
         .withRequestBody(customer)
@@ -58,7 +58,7 @@ public class CustomerIntegrationTest extends TestKitSupport {
   @Test
   public void httpChangeName() {
     var id = newUniqueId();
-    createCustomer(id, new Customer("foo@example.com", "Johanna", null));
+    createCustomer(id, new Customer("foo@example.com", "Johanna", new Address("Some Street", "Somewhere")));
 
     var response = await(httpClient.PATCH("/customer/" + id + "/name/Katarina").invokeAsync());
     Assertions.assertEquals(StatusCodes.OK, response.status());
@@ -106,7 +106,7 @@ public class CustomerIntegrationTest extends TestKitSupport {
   @Test
   public void findByName() throws Exception {
     var id = newUniqueId();
-    createCustomer(id, new Customer("foo@example.com", "Foo", null));
+    createCustomer(id, new Customer("foo@example.com", "Foo", new Address("Some Street", "Somewhere")));
 
     // the view is eventually updated
     Awaitility.await()
@@ -125,7 +125,7 @@ public class CustomerIntegrationTest extends TestKitSupport {
   @Test
   public void findByEmail() throws Exception {
     String id = newUniqueId();
-    createCustomer(id, new Customer("bar@example.com", "Bar", null));
+    createCustomer(id, new Customer("bar@example.com", "Bar", new Address("Some Street", "Somewhere")));
 
     // the view is eventually updated
     Awaitility.await()
