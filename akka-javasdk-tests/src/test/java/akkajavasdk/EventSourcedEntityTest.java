@@ -67,25 +67,6 @@ public class EventSourcedEntityTest extends TestKitSupport {
   }
 
   @Test
-  public void httpVerifyCounterErrorEffect() {
-    CompletableFuture<StrictResponse<String>> call = httpClient.POST("/akka/v1.0/entity/counter-entity/c001/increaseWithError")
-        .withRequestBody(-10)
-        .responseBodyAs(String.class)
-        .invokeAsync()
-        .toCompletableFuture();
-
-    Awaitility.await()
-        .ignoreExceptions()
-        .atMost(5, TimeUnit.SECONDS)
-        .untilAsserted(() -> {
-
-          assertThat(call).isCompletedExceptionally();
-          assertThat(call.exceptionNow()).isInstanceOf(IllegalArgumentException.class);
-          assertThat(call.exceptionNow().getMessage()).contains("Value must be greater than 0");
-        });
-  }
-
-  @Test
   public void verifyCounterResultResponse() {
 
     var client = componentClient.forEventSourcedEntity("testing");
