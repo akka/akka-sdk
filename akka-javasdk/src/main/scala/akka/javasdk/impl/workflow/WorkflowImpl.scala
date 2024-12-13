@@ -25,6 +25,7 @@ import akka.javasdk.impl.serialization.JsonSerializer
 import akka.javasdk.impl.telemetry.SpanTracingImpl
 import akka.javasdk.impl.timer.TimerSchedulerImpl
 import akka.javasdk.impl.workflow.ReflectiveWorkflowRouter.CommandResult
+import akka.javasdk.impl.workflow.ReflectiveWorkflowRouter.TransitionalResult
 import akka.javasdk.impl.workflow.WorkflowEffectImpl.DeleteState
 import akka.javasdk.impl.workflow.WorkflowEffectImpl.End
 import akka.javasdk.impl.workflow.WorkflowEffectImpl.ErrorEffectImpl
@@ -118,61 +119,74 @@ class WorkflowImpl[S, W <: Workflow[S]](
       None,
       tracerFactory)
 
-  private def toSpiEffect(effect: Workflow.Effect[_]): SpiWorkflow.Effect = {
+  private def toSpiTransition(transition: Transition): SpiWorkflow.Transition =
+    transition match {
+      case StepTransition(stepName, input) =>
+        new SpiWorkflow.StepTransition(stepName, input.map(serializer.toBytes))
+      case Pause        => SpiWorkflow.Pause
+      case NoTransition => SpiWorkflow.NoTransition
+      case End          => SpiWorkflow.End
+    }
 
-    def toSpiTransition(transition: Transition): SpiWorkflow.Transition =
-      transition match {
-        case StepTransition(stepName, input) =>
-          new SpiWorkflow.StepTransition(stepName, input.map(serializer.toBytes))
-        case Pause        => SpiWorkflow.Pause
-        case NoTransition => SpiWorkflow.NoTransition
-        case End          => SpiWorkflow.End
-      }
+  private def handleState(persistence: Persistence[Any]): SpiWorkflow.Persistence =
+    persistence match {
+      case UpdateState(newState) => new SpiWorkflow.UpdateState(serializer.toBytes(newState))
+      case DeleteState           => SpiWorkflow.DeleteState
+      case NoPersistence         => SpiWorkflow.NoPersistence
+    }
 
-    def handleState(persistence: Persistence[Any]): SpiWorkflow.Persistence =
-      persistence match {
-        case UpdateState(newState) => new SpiWorkflow.UpdateState(serializer.toBytes(newState))
-        case DeleteState           => SpiWorkflow.DeleteState
-        case NoPersistence         => SpiWorkflow.NoPersistence
-      }
+  private def toSpiCommandEffect(effect: Workflow.Effect[_]): SpiWorkflow.CommandEffect = {
 
     effect match {
       case error: ErrorEffectImpl[_] =>
-        new SpiWorkflow.Effect(
-          persistence = SpiWorkflow.NoPersistence, // mean runtime don't need to persist any new state
-          SpiWorkflow.NoTransition,
-          reply = None,
-          error = Some(new SpiEntity.Error(error.description)),
-          metadata = SpiMetadata.empty)
+        new SpiWorkflow.ErrorEffect(new SpiEntity.Error(error.description))
 
       case WorkflowEffectImpl(persistence, transition, reply) =>
-        val (replyOpt, spiMetadata) =
+        val (replyBytes, spiMetadata) =
           reply match {
-            case ReplyValue(value, metadata) => (Some(value), MetadataImpl.toSpi(metadata))
-            // discarded
-            case NoReply => (None, SpiMetadata.empty)
+            case ReplyValue(value, metadata) => (serializer.toBytes(value), MetadataImpl.toSpi(metadata))
+            // FIXME: WorkflowEffectImpl never contain a NoReply
+            case NoReply => (BytesPayload.empty, SpiMetadata.empty)
           }
 
-        new SpiWorkflow.Effect(
-          handleState(persistence),
-          toSpiTransition(transition),
-          reply = replyOpt.map(serializer.toBytes),
-          error = None,
-          metadata = spiMetadata)
+        val spiTransition = toSpiTransition(transition)
+
+        handleState(persistence) match {
+          case upt: SpiWorkflow.UpdateState =>
+            new SpiWorkflow.CommandTransitionalEffect(upt, spiTransition, replyBytes, spiMetadata)
+
+          case SpiWorkflow.NoPersistence =>
+            // no persistence and no transition, is a reply only effect
+            if (spiTransition == SpiWorkflow.NoTransition)
+              new SpiWorkflow.ReadOnlyEffect(replyBytes, spiMetadata)
+            else
+              new SpiWorkflow.CommandTransitionalEffect(
+                SpiWorkflow.NoPersistence,
+                spiTransition,
+                replyBytes,
+                spiMetadata)
+
+          case SpiWorkflow.DeleteState =>
+            // TODO: delete not yet supported, therefore always ReplyEffect
+            throw new IllegalArgumentException("State deletion not supported yet")
+
+        }
 
       case TransitionalEffectImpl(persistence, transition) =>
-        new SpiWorkflow.Effect(
-          handleState(persistence),
-          toSpiTransition(transition),
-          reply = None,
-          error = None,
-          metadata = SpiMetadata.empty)
+        // Adding for matching completeness can't happen. Typed API blocks this case.
+        throw new IllegalArgumentException("Received transitional effect while processing a command")
     }
   }
 
+  private def toSpiTransitionalEffect(effect: Workflow.Effect.TransitionalEffect[_]) =
+    effect match {
+      case trEff: TransitionalEffectImpl[_, _] =>
+        new SpiWorkflow.TransitionalOnlyEffect(handleState(trEff.persistence), toSpiTransition(trEff.transition))
+    }
+
   override def handleCommand(
       userState: Option[SpiWorkflow.State],
-      command: SpiEntity.Command): Future[SpiWorkflow.Effect] = {
+      command: SpiEntity.Command): Future[SpiWorkflow.CommandEffect] = {
 
     val metadata = MetadataImpl.of(command.metadata)
     val context = commandContext(command.name, metadata)
@@ -200,7 +214,7 @@ class WorkflowImpl[S, W <: Workflow[S]](
           throw WorkflowException(workflowId, command.name, s"Unexpected failure: $error", Some(error))
       }
 
-    Future.successful(toSpiEffect(effect))
+    Future.successful(toSpiCommandEffect(effect))
   }
 
   override def executeStep(
@@ -230,8 +244,8 @@ class WorkflowImpl[S, W <: Workflow[S]](
   override def transition(
       stepName: String,
       result: Option[BytesPayload],
-      userState: Option[BytesPayload]): Future[SpiWorkflow.Effect] = {
-    val CommandResult(effect) =
+      userState: Option[BytesPayload]): Future[SpiWorkflow.TransitionalOnlyEffect] = {
+    val TransitionalResult(effect) =
       try {
         router.getNextStep(stepName, result.get, userState)
       } catch {
@@ -241,7 +255,7 @@ class WorkflowImpl[S, W <: Workflow[S]](
             s"unexpected exception [${ex.getMessage}] while executing transition for step [$stepName]",
             Some(ex))
       }
-    Future.successful(toSpiEffect(effect))
+    Future.successful(toSpiTransitionalEffect(effect))
   }
 
 }

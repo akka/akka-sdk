@@ -20,13 +20,14 @@ import akka.javasdk.impl.WorkflowExceptions.WorkflowException
 import akka.javasdk.impl.serialization.JsonSerializer
 import akka.javasdk.impl.workflow.ReflectiveWorkflowRouter.CommandHandlerNotFound
 import akka.javasdk.impl.workflow.ReflectiveWorkflowRouter.CommandResult
+import akka.javasdk.impl.workflow.ReflectiveWorkflowRouter.TransitionalResult
 import akka.javasdk.impl.workflow.ReflectiveWorkflowRouter.WorkflowStepNotFound
 import akka.javasdk.impl.workflow.ReflectiveWorkflowRouter.WorkflowStepNotSupported
 import akka.javasdk.timer.TimerScheduler
 import akka.javasdk.workflow.CommandContext
 import akka.javasdk.workflow.Workflow
 import akka.javasdk.workflow.Workflow.AsyncCallStep
-import akka.javasdk.workflow.Workflow.Effect
+import akka.javasdk.workflow.Workflow.Effect.TransitionalEffect
 import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.SpiWorkflow
 
@@ -37,6 +38,7 @@ import akka.runtime.sdk.spi.SpiWorkflow
 object ReflectiveWorkflowRouter {
   final case class CommandResult(effect: Workflow.Effect[_])
 
+  final case class TransitionalResult(effect: Workflow.Effect.TransitionalEffect[_])
   final case class CommandHandlerNotFound(commandName: String) extends RuntimeException {
     override def getMessage: String = commandName
   }
@@ -162,7 +164,7 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
 
   }
 
-  final def getNextStep(stepName: String, result: BytesPayload, userState: Option[BytesPayload]): CommandResult = {
+  final def getNextStep(stepName: String, result: BytesPayload, userState: Option[BytesPayload]): TransitionalResult = {
 
     try {
       workflow._internalSetup(decodeUserState(userState))
@@ -170,10 +172,10 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
         case Some(call: AsyncCallStep[_, _, _]) =>
           val effect =
             call.transitionFunc
-              .asInstanceOf[JFunc[Any, Effect[Any]]]
+              .asInstanceOf[JFunc[Any, TransitionalEffect[Any]]]
               .apply(decodeInput(result, call.transitionInputClass))
 
-          CommandResult(effect)
+          TransitionalResult(effect)
 
         case Some(any) => throw WorkflowStepNotSupported(any.getClass.getSimpleName)
         case None      => throw WorkflowStepNotFound(stepName)
