@@ -115,7 +115,7 @@ private[impl] final class ConsumerImpl[C <: Consumer](
             handleUnexpectedException(message, ex)
           }
       case IgnoreEffect =>
-        Future.successful(new Effect(ignore = true, reply = None, metadata = SpiMetadata.Empty, error = None))
+        Future.successful(new Effect(ignore = true, reply = None, metadata = SpiMetadata.empty, error = None))
       case unknown =>
         throw new IllegalArgumentException(s"Unknown TimedAction.Effect type ${unknown.getClass}")
     }
@@ -137,7 +137,7 @@ private[impl] final class ConsumerImpl[C <: Consumer](
     new Effect(
       ignore = false,
       reply = None,
-      metadata = SpiMetadata.Empty,
+      metadata = SpiMetadata.empty,
       error = Some(new SpiConsumer.Error(s"Unexpected error [$correlationId]")))
   }
 

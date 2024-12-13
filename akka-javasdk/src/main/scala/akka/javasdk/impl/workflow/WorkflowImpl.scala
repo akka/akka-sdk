@@ -142,14 +142,14 @@ class WorkflowImpl[S, W <: Workflow[S]](
           SpiWorkflow.NoTransition,
           reply = None,
           error = Some(new SpiEntity.Error(error.description)),
-          metadata = SpiMetadata.Empty)
+          metadata = SpiMetadata.empty)
 
       case WorkflowEffectImpl(persistence, transition, reply) =>
         val (replyOpt, spiMetadata) =
           reply match {
             case ReplyValue(value, metadata) => (Some(value), MetadataImpl.toSpi(metadata))
             // discarded
-            case NoReply => (None, SpiMetadata.Empty)
+            case NoReply => (None, SpiMetadata.empty)
           }
 
         new SpiWorkflow.Effect(
@@ -165,7 +165,7 @@ class WorkflowImpl[S, W <: Workflow[S]](
           toSpiTransition(transition),
           reply = None,
           error = None,
-          metadata = SpiMetadata.Empty)
+          metadata = SpiMetadata.empty)
     }
   }
 

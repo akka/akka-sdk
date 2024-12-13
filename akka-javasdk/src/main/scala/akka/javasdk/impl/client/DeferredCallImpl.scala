@@ -10,7 +10,6 @@ import akka.annotation.InternalApi
 import akka.javasdk.DeferredCall
 import akka.javasdk.Metadata
 import akka.javasdk.impl.MetadataImpl
-import akka.javasdk.impl.MetadataImpl.toProtocol
 import akka.javasdk.impl.serialization.JsonSerializer
 import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.ComponentType
@@ -30,6 +29,7 @@ private[impl] final case class DeferredCallImpl[I, O](
     asyncCall: Metadata => CompletionStage[O],
     serializer: JsonSerializer)
     extends DeferredCall[I, O] {
+  import MetadataImpl.toSpi
 
   def invokeAsync(): CompletionStage[O] = asyncCall(metadata)
 
@@ -50,7 +50,7 @@ private[impl] final case class DeferredCallImpl[I, O](
       methodName = methodName,
       entityId = entityId,
       payload = payload,
-      metadata = toProtocol(metadata).getOrElse(kalix.protocol.component.Metadata.defaultInstance))
+      metadata = toSpi(metadata))
   }
 
 }

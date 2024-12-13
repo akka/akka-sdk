@@ -16,7 +16,6 @@ import akka.javasdk.client.NoEntryFoundException
 import akka.javasdk.client.ViewClient
 import akka.javasdk.impl.ComponentDescriptorFactory
 import akka.javasdk.impl.MetadataImpl
-import akka.javasdk.impl.MetadataImpl.toProtocol
 import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.view.View
 import akka.runtime.sdk.spi.ViewRequest
@@ -31,6 +30,7 @@ import scala.jdk.FutureConverters.FutureOps
 
 import akka.javasdk.impl.serialization.JsonSerializer
 import akka.runtime.sdk.spi.BytesPayload
+import akka.runtime.sdk.spi.SpiMetadata
 
 /**
  * INTERNAL API
@@ -133,6 +133,7 @@ private[javasdk] final case class ViewClientImpl(
   }
 
   private def createMethodRefForEitherArity[A1, R](lambda: AnyRef): ComponentMethodRefImpl[A1, R] = {
+    import MetadataImpl.toSpi
     val viewMethodProperties = validateAndExtractViewMethodProperties[R](lambda)
     val returnTypeOptional = Reflect.isReturnTypeOptional(viewMethodProperties.method)
 
@@ -156,8 +157,7 @@ private[javasdk] final case class ViewClientImpl(
                   viewMethodProperties.componentId,
                   viewMethodProperties.methodName,
                   serializedPayload,
-                  toProtocol(metadata.asInstanceOf[MetadataImpl]).getOrElse(
-                    kalix.protocol.component.Metadata.defaultInstance)))
+                  toSpi(metadata)))
               .map { result =>
                 val deserializedReWrapped =
                   if (result.payload.isEmpty) {
@@ -192,7 +192,7 @@ private[javasdk] final case class ViewClientImpl(
             viewMethodProperties.componentId,
             viewMethodProperties.methodName,
             encodeArgument(viewMethodProperties.method, None),
-            kalix.protocol.component.Metadata.defaultInstance))
+            SpiMetadata.empty))
         .map { viewResult =>
           // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
           serializer.fromBytes(viewMethodProperties.queryReturnType.asInstanceOf[Class[R]], viewResult.payload)
@@ -211,7 +211,7 @@ private[javasdk] final case class ViewClientImpl(
             viewMethodProperties.componentId,
             viewMethodProperties.methodName,
             encodeArgument(viewMethodProperties.method, Some(arg)),
-            kalix.protocol.component.Metadata.defaultInstance))
+            SpiMetadata.empty))
         .map { viewResult =>
           // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
           serializer.fromBytes(viewMethodProperties.queryReturnType.asInstanceOf[Class[R]], viewResult.payload)

@@ -6,28 +6,12 @@ package akka.javasdk.impl.effect
 
 import akka.annotation.InternalApi
 import akka.javasdk.Metadata
-import kalix.protocol.component.ClientAction
 
 /**
  * INTERNAL API
  */
 @InternalApi
-private[javasdk] sealed trait SecondaryEffectImpl {
-  final def replyToClientAction(commandId: Long): Option[ClientAction] = {
-    this match {
-      case message: MessageReplyImpl[_] =>
-        Some(ClientAction(ClientAction.Action.Reply(EffectSupport.asProtocol(message))))
-      case failure: ErrorReplyImpl =>
-        Some(
-          ClientAction(
-            ClientAction.Action
-              .Failure(kalix.protocol.component
-                .Failure(commandId, failure.description))))
-      case NoSecondaryEffectImpl =>
-        throw new RuntimeException("No reply or forward returned by command handler!")
-    }
-  }
-}
+private[javasdk] sealed trait SecondaryEffectImpl
 
 /**
  * INTERNAL API

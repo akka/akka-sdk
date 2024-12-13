@@ -18,7 +18,6 @@ import akka.javasdk.client.WorkflowClient
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.javasdk.impl.ComponentDescriptorFactory
 import akka.javasdk.impl.MetadataImpl
-import akka.javasdk.impl.MetadataImpl.toProtocol
 import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.keyvalueentity.KeyValueEntity
 import akka.javasdk.timedaction.TimedAction
@@ -61,6 +60,7 @@ private[impl] sealed abstract class EntityClientImpl(
     createMethodRefForEitherArity[Nothing, R](lambda)
 
   private def createMethodRefForEitherArity[A1, R](lambda: AnyRef): ComponentMethodRefImpl[A1, R] = {
+    import MetadataImpl.toSpi
     val method = MethodRefResolver.resolveMethodRef(lambda)
     val declaringClass = method.getDeclaringClass
     if (!expectedComponentSuperclass.isAssignableFrom(declaringClass)) {
@@ -93,14 +93,7 @@ private[impl] sealed abstract class EntityClientImpl(
           Some(entityId),
           { metadata =>
             entityClient
-              .send(
-                new EntityRequest(
-                  componentId,
-                  entityId,
-                  methodName,
-                  serializedPayload,
-                  toProtocol(metadata.asInstanceOf[MetadataImpl]).getOrElse(
-                    kalix.protocol.component.Metadata.defaultInstance)))
+              .send(new EntityRequest(componentId, entityId, methodName, serializedPayload, toSpi(metadata)))
               .map { reply =>
                 // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
                 val returnType = Reflect.getReturnType[R](declaringClass, method)
@@ -202,6 +195,7 @@ private[javasdk] final case class TimedActionClientImpl(
     createMethodRefForEitherArity(methodRef)
 
   private def createMethodRefForEitherArity[A1, R](lambda: AnyRef): ComponentMethodRefImpl[A1, R] = {
+    import MetadataImpl.toSpi
     val method = MethodRefResolver.resolveMethodRef(lambda)
     val declaringClass = method.getDeclaringClass
     if (!Reflect.isAction(declaringClass))
@@ -233,13 +227,7 @@ private[javasdk] final case class TimedActionClientImpl(
           None,
           { metadata =>
             timedActionClient
-              .call(
-                new TimedActionRequest(
-                  componentId,
-                  methodName,
-                  serializedPayload,
-                  toProtocol(metadata.asInstanceOf[MetadataImpl]).getOrElse(
-                    kalix.protocol.component.Metadata.defaultInstance)))
+              .call(new TimedActionRequest(componentId, methodName, serializedPayload, toSpi(metadata)))
               .transform {
                 case Success(reply) =>
                   // Note: not Kalix JSON encoded here, regular/normal utf8 bytes

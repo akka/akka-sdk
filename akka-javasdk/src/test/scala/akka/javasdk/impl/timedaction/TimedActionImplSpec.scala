@@ -84,7 +84,7 @@ class TimedActionImplSpec
       val reply: SpiTimedAction.Effect =
         service
           .handleCommand(
-            new SpiTimedAction.Command("MyMethod", Some(new BytesPayload(ByteString.empty, "")), SpiMetadata.Empty))
+            new SpiTimedAction.Command("MyMethod", Some(new BytesPayload(ByteString.empty, "")), SpiMetadata.empty))
           .futureValue
 
       reply.error shouldBe empty
@@ -102,7 +102,7 @@ class TimedActionImplSpec
                 new SpiTimedAction.Command(
                   "MyMethodWithException",
                   Some(new BytesPayload(ByteString.empty, "")),
-                  SpiMetadata.Empty))
+                  SpiMetadata.empty))
               .futureValue
           }
 

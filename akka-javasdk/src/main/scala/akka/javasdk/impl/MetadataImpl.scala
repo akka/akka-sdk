@@ -27,7 +27,6 @@ import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.SpanContext
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
 import io.opentelemetry.context.{ Context => OtelContext }
-import kalix.protocol.component
 import kalix.protocol.component.MetadataEntry
 import kalix.protocol.component.MetadataEntry.Value
 
@@ -253,17 +252,8 @@ object MetadataImpl {
 
   val Empty = MetadataImpl.of(Vector.empty)
 
-  def toProtocol(metadata: Metadata): Option[component.Metadata] =
-    metadata match {
-      case impl: MetadataImpl if impl.entries.nonEmpty =>
-        Some(component.Metadata(impl.entries))
-      case _: MetadataImpl => None
-      case other =>
-        throw new RuntimeException(s"Unknown metadata implementation: ${other.getClass}, cannot send")
-    }
-
   def toSpi(metadata: Option[Metadata]): SpiMetadata =
-    metadata.map(toSpi).getOrElse(SpiMetadata.Empty)
+    metadata.map(toSpi).getOrElse(SpiMetadata.empty)
 
   def toSpi(metadata: Metadata): SpiMetadata = {
     metadata match {
@@ -276,7 +266,7 @@ object MetadataImpl {
               new SpiMetadataEntry(entry.key, value.toStringUtf8) //FIXME support bytes values or not
           })
         new SpiMetadata(entries)
-      case _: MetadataImpl => SpiMetadata.Empty
+      case _: MetadataImpl => SpiMetadata.empty
       case other =>
         throw new RuntimeException(s"Unknown metadata implementation: ${other.getClass}, cannot send")
     }
