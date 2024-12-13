@@ -64,6 +64,3 @@ GET localhost:9000/api/users/002
 
 ### get by country
 GET localhost:9000/api/users/by-country/Belgium
-
-### doe@acme info - forbiden call (ACL blocks it)
-GET localhost:9000/akka/v1.0/entity/unique-address/doe@acme.com/getState

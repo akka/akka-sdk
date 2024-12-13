@@ -153,40 +153,6 @@ Start this query in one terminal window while triggering updates in another term
 changing the name to and from "Jan Janssen" or adding more customers with different ids and the same name, to see the
 updates appear.
 
-## Pre-defined paths
-
-Akka runtime provides pre-defined paths based on the component id, entity id and the method name to interact directly
-with the entities, those are however locked down from access through default deny-all ACLs. It is possible to explicitly
-allow access on an entity using the `akka.javasdk.annotations.Acl` annotation, or by completely disabling the local
-"dev mode" ACL checking by running the service with `mvn -Dakka.javasdk.dev-mode.acl.enabled=false compile exec:java`
-or changing the default in your `src/main/resources/application.conf`.
-
-For deployed services the ACLs are always enabled.
-
-Zero parameter methods are exposed as HTTP GET:
-
-```shell
-curl localhost:9000/akka/v1.0/entity/customer/002/getCustomer
-```
-
-Methods with a parameter are instead exposed as HTTP POST:
-
-```shell
-curl -i localhost:9000/akka/v1.0/entity/customer/004/create \
-  --header "Content-Type: application/json" \
-  -XPOST \
-  --data '{"email":"test4@example.com","name":"Test 4 Testsson","address":{"street":"Teststreet 27","city":"Testcity"}}'
-```
-
-The views:
-
-```shell
-curl localhost:9000/akka/v1.0/view/customers_by_email/getCustomer \
-  --header "Content-Type: application/json" \
-  -XPOST \
-  --data '{"email":"test4@example.com"}'
-```
-
 ## Deploying
 
 You can use the [Akka Console](https://console.akka.io) to create a project and see the status of your service.

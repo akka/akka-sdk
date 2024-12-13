@@ -19,7 +19,6 @@ import akka.javasdk.impl.ActivatableContext
 import akka.javasdk.impl.ComponentDescriptor
 import akka.javasdk.impl.ErrorHandling.BadRequestException
 import akka.javasdk.impl.MetadataImpl
-import akka.javasdk.impl.Service
 import akka.javasdk.impl.WorkflowExceptions.WorkflowException
 import akka.javasdk.impl.serialization.JsonSerializer
 import akka.javasdk.impl.telemetry.SpanTracingImpl
@@ -49,7 +48,6 @@ import akka.runtime.sdk.spi.SpiWorkflow
 import akka.runtime.sdk.spi.TimerClient
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.Tracer
-import kalix.protocol.workflow_entity.WorkflowEntities
 
 /**
  * INTERNAL API
@@ -242,21 +240,6 @@ class WorkflowImpl[S, W <: Workflow[S]](
       }
     Future.successful(toSpiEffect(effect))
   }
-
-}
-
-/**
- * INTERNAL API
- */
-@InternalApi
-final class WorkflowService[S, W <: Workflow[S]](
-    workflowClass: Class[_],
-    serializer: JsonSerializer,
-    instanceFactory: Function[WorkflowContext, W])
-    extends Service(workflowClass, WorkflowEntities.name, serializer) {
-
-  def createRouter(context: WorkflowContext) =
-    new ReflectiveWorkflowRouter[S, W](instanceFactory(context), componentDescriptor.commandHandlers, serializer)
 
 }
 

@@ -241,33 +241,3 @@ include::example$shopping-cart-quickstart/src/it/java/shoppingcart/IntegrationTe
 <6> Assert there should only be one item.
 
 NOTE: The integration tests in samples are under a specific project profile `it` and can be run using `mvn verify -Pit`.
-
-== Exposing entities directly
-
-include::partial$component-endpoint.adoc[]
-
-=== API
-
-The entity is exposed at a fixed path:
-
-[source]
-----
-/akka/v1.0/entity/<component id>/<entity id>/<method>
-----
-
-In our shopping cart example that is:
-
-[source,shell]
-----
-curl localhost:9000/akka/v1.0/entity/carts/12345/getCart
-----
-
-or, to add an item:
-
-[source,shell]
-----
-curl localhost:9000/akka/v1.0/entity/carts/12345/addItem \
-  --header "Content-Type: application/json" \
-  -XPOST \
-  --data '{"productId":"akka-tshirt","name":"Akka Tshirt","quantity":10}'
-----

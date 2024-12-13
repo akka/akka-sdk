@@ -46,11 +46,9 @@ import akka.javasdk.impl.Validations.Validation
 import akka.javasdk.impl.client.ComponentClientImpl
 import akka.javasdk.impl.consumer.ConsumerImpl
 import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityImpl
-import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityService
 import akka.javasdk.impl.http.HttpClientProviderImpl
 import akka.javasdk.impl.http.JwtClaimsImpl
 import akka.javasdk.impl.keyvalueentity.KeyValueEntityImpl
-import akka.javasdk.impl.keyvalueentity.KeyValueEntityService
 import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.reflection.Reflect.Syntax.AnnotatedElementOps
 import akka.javasdk.impl.serialization.JsonSerializer
@@ -60,7 +58,6 @@ import akka.javasdk.impl.timedaction.TimedActionImpl
 import akka.javasdk.impl.timer.TimerSchedulerImpl
 import akka.javasdk.impl.view.ViewDescriptorFactory
 import akka.javasdk.impl.workflow.WorkflowImpl
-import akka.javasdk.impl.workflow.WorkflowService
 import akka.javasdk.keyvalueentity.KeyValueEntity
 import akka.javasdk.keyvalueentity.KeyValueEntityContext
 import akka.javasdk.timedaction.TimedAction
@@ -319,13 +316,13 @@ private final class Sdk(
         None
       } else if (classOf[EventSourcedEntity[_, _]].isAssignableFrom(clz)) {
         logger.debug(s"Registering EventSourcedEntity [${clz.getName}]")
-        Some(eventSourcedEntityService(clz.asInstanceOf[Class[EventSourcedEntity[Nothing, Nothing]]]))
+        None
       } else if (classOf[Workflow[_]].isAssignableFrom(clz)) {
         logger.debug(s"Registering Workflow [${clz.getName}]")
-        Some(workflowService(clz.asInstanceOf[Class[Workflow[Nothing]]]))
+        None
       } else if (classOf[KeyValueEntity[_]].isAssignableFrom(clz)) {
         logger.debug(s"Registering KeyValueEntity [${clz.getName}]")
-        Some(keyValueEntityService(clz.asInstanceOf[Class[KeyValueEntity[Nothing]]]))
+        None
       } else if (Reflect.isView(clz)) {
         logger.debug(s"Registering View [${clz.getName}]")
         None // no factory, handled below
@@ -555,19 +552,8 @@ private final class Sdk(
       serviceDescriptor.getFullName -> service
     }
 
-    services.groupBy(_._2.getClass).foreach {
-
-      case (serviceClass, _: Map[String, EventSourcedEntityService[_, _, _]] @unchecked)
-          if serviceClass == classOf[EventSourcedEntityService[_, _, _]] =>
-
-      case (serviceClass, _: Map[String, KeyValueEntityService[_, _]] @unchecked)
-          if serviceClass == classOf[KeyValueEntityService[_, _]] =>
-
-      case (serviceClass, _: Map[String, WorkflowService[_, _]] @unchecked)
-          if serviceClass == classOf[WorkflowService[_, _]] =>
-
-      case (serviceClass, _) =>
-        sys.error(s"Unknown service type: $serviceClass")
+    services.groupBy(_._2.getClass).foreach { case (serviceClass, _) =>
+      sys.error(s"Unknown service type: $serviceClass")
     }
 
     val serviceSetup: Option[ServiceSetup] = maybeServiceClass match {
@@ -643,42 +629,6 @@ private final class Sdk(
 
     }
   }
-
-  private def workflowService[S, W <: Workflow[S]](clz: Class[W]): WorkflowService[S, W] = {
-    new WorkflowService[S, W](
-      clz,
-      serializer,
-      { context =>
-
-        val workflow = wiredInstance(clz) {
-          sideEffectingComponentInjects(None).orElse {
-            // remember to update component type API doc and docs if changing the set of injectables
-            case p if p == classOf[WorkflowContext] => context
-          }
-        }
-
-        // FIXME pull this inline setup stuff out of SdkRunner and into some workflow class
-        val workflowStateType: Class[S] = Reflect.workflowStateType(workflow)
-        serializer.registerTypeHints(workflowStateType)
-
-        workflow
-          .definition()
-          .getSteps
-          .asScala
-          .flatMap { case asyncCallStep: Workflow.AsyncCallStep[_, _, _] =>
-            List(asyncCallStep.callInputClass, asyncCallStep.transitionInputClass)
-          }
-          .foreach(serializer.registerTypeHints)
-
-        workflow
-      })
-  }
-  private def eventSourcedEntityService[S, E, ES <: EventSourcedEntity[S, E]](
-      clz: Class[ES]): EventSourcedEntityService[S, E, ES] =
-    EventSourcedEntityService(clz, serializer)
-
-  private def keyValueEntityService[S, VE <: KeyValueEntity[S]](clz: Class[VE]): KeyValueEntityService[S, VE] =
-    new KeyValueEntityService(clz, serializer)
 
   private def httpEndpointFactory[E](httpEndpointClass: Class[E]): HttpEndpointConstructionContext => E = {
     (context: HttpEndpointConstructionContext) =>

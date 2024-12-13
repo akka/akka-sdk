@@ -161,23 +161,3 @@ include::example$key-value-counter/src/it/java/com/example/CounterIntegrationTes
 <5> Explicitly request current value of `bar`. It should be `1`.
 
 NOTE: The integration tests in samples are under a specific project profile `it` and can be run using `mvn verify -Pit`.
-
-== Exposing entities directly
-
-include::partial$component-endpoint.adoc[]
-
-=== API
-
-The entity is exposed at a fixed path:
-
-[source]
-----
-/akka/v1.0/entity/<component id>/<entity id>/<method>
-----
-
-In our counter example that is:
-
-[source,shell]
-----
-curl localhost:9000/akka/v1.0/entity/counter/foo/get
-----
