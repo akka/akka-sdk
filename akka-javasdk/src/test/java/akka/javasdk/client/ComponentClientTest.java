@@ -124,11 +124,9 @@ class ComponentClientTest {
   @Test
   public void shouldReturnDeferredCallForValueEntity() throws InvalidProtocolBufferException {
     //given
-    var counterVE = descriptorFor(Counter.class, serializer);
-    var targetMethod = counterVE.serviceDescriptor().findMethodByName("RandomIncrease");
     Integer param = 10;
-
     var id = "abc123";
+
     //when
     DeferredCallImpl<Integer, Number> call = (DeferredCallImpl<Integer, Number>)
       componentClient.forKeyValueEntity(id)
@@ -137,7 +135,6 @@ class ComponentClientTest {
 
     //then
     assertThat(call.componentId()).isEqualTo(ComponentDescriptorFactory.readComponentIdIdValue(Counter.class));
-    assertThat(call.methodName()).isEqualTo(targetMethod.getName());
     assertEquals(10, call.message());
   }
 

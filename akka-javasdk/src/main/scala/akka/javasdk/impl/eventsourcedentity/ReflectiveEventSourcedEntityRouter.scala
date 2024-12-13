@@ -7,10 +7,8 @@ package akka.javasdk.impl.eventsourcedentity
 import akka.annotation.InternalApi
 import akka.javasdk.eventsourcedentity.CommandContext
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
-import akka.javasdk.impl.AnySupport
 import akka.javasdk.impl.CommandHandler
 import akka.javasdk.impl.CommandSerialization
-import akka.javasdk.impl.InvocationContext
 import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.serialization.JsonSerializer
 import akka.runtime.sdk.spi.BytesPayload
@@ -57,17 +55,9 @@ private[impl] class ReflectiveEventSourcedEntityRouter[S, E, ES <: EventSourcedE
       }
       result.asInstanceOf[EventSourcedEntity.Effect[_]]
     } else {
-      // FIXME can be proto from http-grpc-handling of the static es endpoints
-      val pbAnyCommand = AnySupport.toScalaPbAny(command)
-      val invocationContext =
-        InvocationContext(pbAnyCommand, commandHandler.requestMessageDescriptor, commandContext.metadata())
-
-      val inputTypeUrl = pbAnyCommand.typeUrl
-      val methodInvoker = commandHandler.getInvoker(inputTypeUrl)
-
-      methodInvoker
-        .invoke(entity, invocationContext)
-        .asInstanceOf[EventSourcedEntity.Effect[_]]
+      throw new IllegalStateException(
+        "Could not find a matching command handler for method: " + commandName + ", content type: " + command.contentType + ", invokers keys: " + commandHandler.methodInvokers.keys
+          .mkString(", "))
     }
   }
 

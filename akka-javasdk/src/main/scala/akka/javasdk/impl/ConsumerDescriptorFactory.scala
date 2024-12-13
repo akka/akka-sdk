@@ -8,7 +8,6 @@ import akka.annotation.InternalApi
 import akka.javasdk.impl.ComponentDescriptorFactory._
 import akka.javasdk.impl.reflection.HandleDeletesServiceMethod
 import akka.javasdk.impl.reflection.KalixMethod
-import akka.javasdk.impl.reflection.NameGenerator
 import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.reflection.SubscriptionServiceMethod
 import akka.javasdk.impl.serialization.JsonSerializer
@@ -19,10 +18,7 @@ import akka.javasdk.impl.serialization.JsonSerializer
 @InternalApi
 private[impl] object ConsumerDescriptorFactory extends ComponentDescriptorFactory {
 
-  override def buildDescriptorFor(
-      component: Class[_],
-      serializer: JsonSerializer,
-      nameGenerator: NameGenerator): ComponentDescriptor = {
+  override def buildDescriptorFor(component: Class[_], serializer: JsonSerializer): ComponentDescriptor = {
 
     import Reflect.methodOrdering
 

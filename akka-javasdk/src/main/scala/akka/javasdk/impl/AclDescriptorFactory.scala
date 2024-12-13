@@ -16,7 +16,6 @@ import kalix.{ Annotations => KalixAnnotations }
 import org.slf4j.LoggerFactory
 
 import java.util.Collections
-import scala.PartialFunction.condOpt
 
 /**
  * INTERNAL API
@@ -119,23 +118,6 @@ private[impl] object AclDescriptorFactory {
       logger.debug("Generated file descriptor for service [{}]: \n{}", policyFile, ProtoDescriptorRenderer.toString(fd))
     }
     fd.toProto
-  }
-
-  def serviceLevelAclAnnotation(component: Class[_], default: Option[ProtoAcl] = None): Option[kalix.ServiceOptions] = {
-
-    val javaAclAnnotation = component.getAnnotation(classOf[Acl])
-
-    def buildServiceOpts(acl: ProtoAcl): kalix.ServiceOptions = {
-      kalix.ServiceOptions
-        .newBuilder()
-        .setAcl(acl)
-        .build()
-    }
-
-    condOpt(javaAclAnnotation, default) {
-      case (aclAnnotation, _) if aclAnnotation != null => buildServiceOpts(deriveProtoAnnotation(aclAnnotation))
-      case (null, Some(acl))                           => buildServiceOpts(acl)
-    }
   }
 
   def methodLevelAclAnnotation(method: Method): Option[kalix.MethodOptions] = {

@@ -50,62 +50,6 @@ private[impl] sealed trait AnyJsonRequestServiceMethod extends ServiceMethod {
 }
 
 /**
- * INTERNAL API
- */
-@InternalApi
-private[impl] sealed trait UrlTemplate {
-  def templateUrl(componentTypeId: String, methodName: String): String
-}
-
-/**
- * INTERNAL API
- */
-@InternalApi
-private[impl] object EntityUrlTemplate extends UrlTemplate {
-  override def templateUrl(componentTypeId: String, methodName: String): String = {
-    s"/akka/v1.0/entity/${componentTypeId}/{id}/${methodName}"
-  }
-}
-
-/**
- * INTERNAL API
- */
-@InternalApi
-private[impl] object WorkflowUrlTemplate extends UrlTemplate {
-  override def templateUrl(componentTypeId: String, methodName: String): String =
-    s"/akka/v1.0/workflow/${componentTypeId}/{id}/${methodName}"
-}
-
-/**
- * INTERNAL API
- */
-@InternalApi
-private[impl] object ViewUrlTemplate extends UrlTemplate {
-  override def templateUrl(componentTypeId: String, methodName: String): String =
-    s"/akka/v1.0/view/${componentTypeId}/${methodName}"
-}
-
-/**
- * Build from command handler methods on Entities and Workflows
- *
- * INTERNAL API
- */
-@InternalApi
-private[impl] final case class CommandHandlerMethod(
-    component: Class[_],
-    method: Method,
-    urlTemplate: UrlTemplate,
-    streamOut: Boolean = false)
-    extends AnyJsonRequestServiceMethod {
-
-  override def methodName: String = method.getName
-  override def javaMethodOpt: Option[Method] = Some(method)
-  val hasInputType: Boolean = method.getParameterTypes.headOption.isDefined
-  val inputType: Class[_] = method.getParameterTypes.headOption.getOrElse(classOf[Unit])
-  val streamIn: Boolean = false
-}
-
-/**
  * Build from command handler methods on actions
  *
  * INTERNAL API
@@ -117,24 +61,6 @@ private[impl] final case class ActionHandlerMethod(component: Class[_], method: 
   override def javaMethodOpt: Option[Method] = Some(method)
   val hasInputType: Boolean = method.getParameterTypes.headOption.isDefined
   val inputType: Class[_] = method.getParameterTypes.headOption.getOrElse(classOf[Unit])
-  val streamIn: Boolean = false
-  val streamOut: Boolean = false
-}
-
-/**
- * Build from methods annotated with @Consume at type level.
- *
- * It's used as a 'virtual' method because there is no Java method backing it. It will exist only in the gRPC descriptor
- * and will be used for view updates with transform = false
- *
- * INTERNAL API
- */
-@InternalApi
-private[impl] final case class VirtualServiceMethod(component: Class[_], methodName: String, inputType: Class[_])
-    extends AnyJsonRequestServiceMethod {
-
-  override def javaMethodOpt: Option[Method] = None
-
   val streamIn: Boolean = false
   val streamOut: Boolean = false
 }
@@ -191,22 +117,6 @@ private[impl] final case class HandleDeletesServiceMethod(javaMethod: Method) ex
   override def methodName: String = javaMethod.getName
 
   override def javaMethodOpt: Option[Method] = Some(javaMethod)
-
-  override def streamIn: Boolean = false
-
-  override def streamOut: Boolean = false
-}
-
-/**
- * Similar to VirtualServiceMethod but for deletes.
- *
- * INTERNAL API
- */
-@InternalApi
-private[impl] final case class VirtualDeleteServiceMethod(component: Class[_], methodName: String)
-    extends DeleteServiceMethod {
-
-  override def javaMethodOpt: Option[Method] = None
 
   override def streamIn: Boolean = false
 

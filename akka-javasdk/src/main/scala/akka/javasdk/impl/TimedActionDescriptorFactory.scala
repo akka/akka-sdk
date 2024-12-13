@@ -4,11 +4,10 @@
 
 package akka.javasdk.impl
 
-import akka.javasdk.impl.reflection.ActionHandlerMethod
-import akka.javasdk.impl.reflection.KalixMethod
-import akka.javasdk.impl.reflection.NameGenerator
 import akka.annotation.InternalApi
 import akka.javasdk.impl.ComponentDescriptorFactory.hasTimedActionEffectOutput
+import akka.javasdk.impl.reflection.ActionHandlerMethod
+import akka.javasdk.impl.reflection.KalixMethod
 import akka.javasdk.impl.serialization.JsonSerializer
 
 /**
@@ -17,10 +16,7 @@ import akka.javasdk.impl.serialization.JsonSerializer
 @InternalApi
 private[impl] object TimedActionDescriptorFactory extends ComponentDescriptorFactory {
 
-  override def buildDescriptorFor(
-      component: Class[_],
-      serializer: JsonSerializer,
-      nameGenerator: NameGenerator): ComponentDescriptor = {
+  override def buildDescriptorFor(component: Class[_], serializer: JsonSerializer): ComponentDescriptor = {
 
     val commandHandlerMethods = component.getDeclaredMethods
       .filter(hasTimedActionEffectOutput)

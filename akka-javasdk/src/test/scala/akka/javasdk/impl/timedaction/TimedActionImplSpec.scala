@@ -79,7 +79,7 @@ class TimedActionImplSpec
 
   "The action service" should {
     "invoke command handler" in {
-      val service = create(TimedActionDescriptorFactory.buildDescriptorFor(classOf[TestTimedAction], serializer, null))
+      val service = create(TimedActionDescriptorFactory.buildDescriptorFor(classOf[TestTimedAction], serializer))
 
       val reply: SpiTimedAction.Effect =
         service
@@ -91,7 +91,7 @@ class TimedActionImplSpec
     }
 
     "turn thrown command handler exceptions into failure responses" in {
-      val service = create(TimedActionDescriptorFactory.buildDescriptorFor(classOf[TestTimedAction], serializer, null))
+      val service = create(TimedActionDescriptorFactory.buildDescriptorFor(classOf[TestTimedAction], serializer))
 
       val reply =
         LoggingTestKit

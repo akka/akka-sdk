@@ -5,10 +5,8 @@
 package akka.javasdk.impl.keyvalueentity
 
 import akka.annotation.InternalApi
-import akka.javasdk.impl.AnySupport
 import akka.javasdk.impl.CommandHandler
 import akka.javasdk.impl.CommandSerialization
-import akka.javasdk.impl.InvocationContext
 import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.serialization.JsonSerializer
 import akka.javasdk.keyvalueentity.CommandContext
@@ -54,18 +52,10 @@ private[impl] class ReflectiveKeyValueEntityRouter[S, KV <: KeyValueEntity[S]](
       }
       result.asInstanceOf[KeyValueEntity.Effect[_]]
     } else {
-      // FIXME can be proto from http-grpc-handling of the static es endpoints
-      val pbAnyCommand = AnySupport.toScalaPbAny(command)
-      val invocationContext =
-        InvocationContext(pbAnyCommand, commandHandler.requestMessageDescriptor, commandContext.metadata())
+      throw new IllegalStateException(
+        "Could not find a matching command handler for method: " + commandName + ", content type: " + command.contentType + ", invokers keys: " + commandHandler.methodInvokers.keys
+          .mkString(", "))
 
-      val inputTypeUrl = pbAnyCommand.typeUrl
-      val methodInvoker = commandHandler
-        .getInvoker(inputTypeUrl)
-
-      methodInvoker
-        .invoke(entity, invocationContext)
-        .asInstanceOf[KeyValueEntity.Effect[_]]
     }
   }
 
