@@ -241,6 +241,7 @@ include::example$shopping-cart-quickstart/src/test/java/shoppingcart/ShoppingCar
 <6> Assert there should only be one item.
 
 NOTE: The integration tests in samples can be run using `mvn integration-test`.
+
 == Exposing entities directly
 
 include::partial$component-endpoint.adoc[]
