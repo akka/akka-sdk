@@ -28,13 +28,13 @@ import akka.javasdk.timedaction.CommandEnvelope
 import akka.javasdk.timedaction.TimedAction
 import akka.javasdk.timer.TimerScheduler
 import akka.runtime.sdk.spi.BytesPayload
+import akka.runtime.sdk.spi.SpiMetadataEntry
 import akka.runtime.sdk.spi.SpiTimedAction
 import akka.runtime.sdk.spi.SpiTimedAction.Command
 import akka.runtime.sdk.spi.SpiTimedAction.Effect
 import akka.runtime.sdk.spi.TimerClient
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.Tracer
-import kalix.protocol.component.MetadataEntry
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
@@ -57,10 +57,7 @@ object TimedActionImpl {
     override def componentCallMetadata: MetadataImpl = {
       if (metadata.has(Telemetry.TRACE_PARENT_KEY)) {
         MetadataImpl.of(
-          List(
-            MetadataEntry(
-              Telemetry.TRACE_PARENT_KEY,
-              MetadataEntry.Value.StringValue(metadata.get(Telemetry.TRACE_PARENT_KEY).get()))))
+          List(new SpiMetadataEntry(Telemetry.TRACE_PARENT_KEY, metadata.get(Telemetry.TRACE_PARENT_KEY).get())))
       } else {
         MetadataImpl.Empty
       }

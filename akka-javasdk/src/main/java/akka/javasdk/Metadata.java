@@ -124,7 +124,9 @@ public interface Metadata extends Iterable<Metadata.MetadataEntry> {
    * @param key The key to set.
    * @param value The value to set.
    * @return A copy of this Metadata object with the entry set.
+   * @deprecated binary not supported, use {@link #set(String, String)}
    */
+  @Deprecated
   Metadata setBinary(String key, ByteBuffer value);
 
   /**
@@ -154,7 +156,9 @@ public interface Metadata extends Iterable<Metadata.MetadataEntry> {
    * @param key The key to add.
    * @param value The value to add.
    * @return A copy of this Metadata object with the entry added.
+   * @deprecated binary not supported, use {@link #add(String, String)}
    */
+  @Deprecated
   Metadata addBinary(String key, ByteBuffer value);
 
   /**
@@ -243,7 +247,9 @@ public interface Metadata extends Iterable<Metadata.MetadataEntry> {
      * The binary value for the metadata entry.
      *
      * @return The binary value, or null if this entry is not a string Metadata entry.
+     * @deprecated binary not supported, use {@link #getValue()}
      */
+    @Deprecated
     ByteBuffer getBinaryValue();
 
     /**
@@ -257,7 +263,9 @@ public interface Metadata extends Iterable<Metadata.MetadataEntry> {
      * Whether this entry is a binary entry.
      *
      * @return True if this entry is a binary entry.
+     * @deprecated binary not supported, use {@link #getValue()}
      */
+    @Deprecated
     boolean isBinary();
   }
 

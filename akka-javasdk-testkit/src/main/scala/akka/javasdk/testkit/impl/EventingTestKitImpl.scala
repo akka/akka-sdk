@@ -54,6 +54,7 @@ import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import java.util.{ List => JList }
 
+import scala.annotation.nowarn
 import scala.jdk.CollectionConverters._
 import scala.jdk.DurationConverters._
 import scala.jdk.OptionConverters._
@@ -66,6 +67,8 @@ import scala.util.Failure
 import scala.util.Success
 
 import akka.javasdk.impl.serialization.JsonSerializer
+import akka.runtime.sdk.spi.SpiMetadata
+import akka.runtime.sdk.spi.SpiMetadataEntry
 
 object EventingTestKitImpl {
 
@@ -118,7 +121,9 @@ object EventingTestKitImpl {
         if (sdkMetadataEntry.isText) {
           mde.withStringValue(sdkMetadataEntry.getValue)
         } else {
-          mde.withBytesValue(ByteString.copyFrom(sdkMetadataEntry.getBinaryValue))
+          @nowarn("msg=deprecated")
+          val binary = sdkMetadataEntry.getBinaryValue;
+          mde.withBytesValue(ByteString.copyFrom(binary))
         }
       }
 
@@ -134,6 +139,21 @@ object EventingTestKitImpl {
       emitElement(SourceElem(Some(Message(data, Some(testKitMetadata))), subject))
     }
 
+  }
+  
+  def metadataToSpi(metadata: Option[Metadata]): SpiMetadata =
+    metadata.map(metadataToSpi).getOrElse(SpiMetadata.empty)
+
+  def metadataToSpi(metadata: Metadata): SpiMetadata = {
+    import kalix.protocol.component.MetadataEntry.Value
+    val entries = metadata.entries.map(entry =>
+      entry.value match {
+        case Value.Empty              => new SpiMetadataEntry(entry.key, "")
+        case Value.StringValue(value) => new SpiMetadataEntry(entry.key, value)
+        case Value.BytesValue(value) =>
+          new SpiMetadataEntry(entry.key, value.toStringUtf8) //FIXME binary not supported
+      })
+    new SpiMetadata(entries)
   }
 }
 
@@ -325,6 +345,7 @@ private[testkit] class OutgoingMessagesImpl(
     private[testkit] val destinationProbe: TestProbe,
     protected val serializer: JsonSerializer)
     extends OutgoingMessages {
+  import EventingTestKitImpl.metadataToSpi
 
   val DefaultTimeout: time.Duration = time.Duration.ofSeconds(3)
 
@@ -353,7 +374,7 @@ private[testkit] class OutgoingMessagesImpl(
 
   override def expectOneTyped[T](clazz: Class[T], timeout: time.Duration): TestKitMessage[T] = {
     val msg = expectMsgInternal(destinationProbe, timeout, Some(clazz))
-    val metadata = MetadataImpl.of(msg.getMessage.getMetadata.entries)
+    val metadata = MetadataImpl.of(metadataToSpi(msg.getMessage.getMetadata))
     // FIXME don't use proto
     val scalaPb = ScalaPbAny(typeUrlFor(metadata), msg.getMessage.payload)
 
@@ -371,7 +392,7 @@ private[testkit] class OutgoingMessagesImpl(
   }
 
   private def anyFromMessage(m: kalix.testkit.protocol.eventing_test_backend.Message): TestKitMessage[_] = {
-    val metadata = MetadataImpl.of(m.metadata.getOrElse(Metadata.defaultInstance).entries)
+    val metadata = MetadataImpl.of(metadataToSpi(m.metadata))
     val anyMsg = if (AnySupport.isJsonTypeUrl(typeUrlFor(metadata))) {
       m.payload.toStringUtf8 // FIXME isn't this strange?
     } else {
@@ -427,8 +448,10 @@ private[testkit] case class TestKitMessageImpl[P](payload: P, metadata: SdkMetad
 }
 
 private[testkit] object TestKitMessageImpl {
+  import EventingTestKitImpl.metadataToSpi
+
   def ofProtocolMessage(m: kalix.testkit.protocol.eventing_test_backend.Message): TestKitMessage[ByteString] = {
-    val metadata = MetadataImpl.of(m.metadata.getOrElse(Metadata()).entries)
+    val metadata = MetadataImpl.of(metadataToSpi(m.metadata))
     TestKitMessageImpl[ByteString](m.payload, metadata).asInstanceOf[TestKitMessage[ByteString]]
   }
 

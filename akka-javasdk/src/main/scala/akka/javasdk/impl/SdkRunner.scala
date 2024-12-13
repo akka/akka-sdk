@@ -172,6 +172,22 @@ class SdkRunner private (dependencyProvider: Option[DependencyProvider]) extends
  * INTERNAL API
  */
 @InternalApi
+private object ComponentType {
+  // Those are also defined in ComponentAnnotationProcessor, and must be the same
+
+  val EventSourcedEntity = "event-sourced-entity"
+  val KeyValueEntity = "key-value-entity"
+  val Workflow = "workflow"
+  val HttpEndpoint = "http-endpoint"
+  val Consumer = "consumer"
+  val TimedAction = "timed-action"
+  val View = "view"
+}
+
+/**
+ * INTERNAL API
+ */
+@InternalApi
 private object ComponentLocator {
 
   // populated by annotation processor
@@ -186,13 +202,13 @@ private object ComponentLocator {
   def locateUserComponents(system: ActorSystem[_]): LocatedClasses = {
     val kalixComponentTypeAndBaseClasses: Map[String, Class[_]] =
       Map(
-        "http-endpoint" -> classOf[AnyRef],
-        "timed-action" -> classOf[TimedAction],
-        "consumer" -> classOf[Consumer],
-        "event-sourced-entity" -> classOf[EventSourcedEntity[_, _]],
-        "workflow" -> classOf[Workflow[_]],
-        "key-value-entity" -> classOf[KeyValueEntity[_]],
-        "view" -> classOf[AnyRef])
+        ComponentType.HttpEndpoint -> classOf[AnyRef],
+        ComponentType.TimedAction -> classOf[TimedAction],
+        ComponentType.Consumer -> classOf[Consumer],
+        ComponentType.EventSourcedEntity -> classOf[EventSourcedEntity[_, _]],
+        ComponentType.Workflow -> classOf[Workflow[_]],
+        ComponentType.KeyValueEntity -> classOf[KeyValueEntity[_]],
+        ComponentType.View -> classOf[AnyRef])
 
     // Alternative to but inspired by the stdlib SPI style of registering in META-INF/services
     // since we don't always have top supertypes and want to inject things into component constructors

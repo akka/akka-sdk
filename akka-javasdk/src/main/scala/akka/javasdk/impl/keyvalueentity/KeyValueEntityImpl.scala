@@ -16,6 +16,7 @@ import akka.javasdk.impl.AbstractContext
 import akka.javasdk.impl.ActivatableContext
 import akka.javasdk.impl.AnySupport
 import akka.javasdk.impl.ComponentDescriptor
+import akka.javasdk.impl.ComponentType
 import akka.javasdk.impl.EntityExceptions
 import akka.javasdk.impl.EntityExceptions.EntityException
 import akka.javasdk.impl.ErrorHandling.BadRequestException
@@ -25,8 +26,10 @@ import akka.javasdk.impl.effect.ErrorReplyImpl
 import akka.javasdk.impl.effect.MessageReplyImpl
 import akka.javasdk.impl.effect.NoSecondaryEffectImpl
 import akka.javasdk.impl.serialization.JsonSerializer
+import akka.javasdk.impl.telemetry.KeyValueEntityCategory
 import akka.javasdk.impl.telemetry.SpanTracingImpl
 import akka.javasdk.impl.telemetry.Telemetry
+import akka.javasdk.impl.telemetry.TraceInstrumentation
 import akka.javasdk.keyvalueentity.CommandContext
 import akka.javasdk.keyvalueentity.KeyValueEntity
 import akka.javasdk.keyvalueentity.KeyValueEntityContext
@@ -84,8 +87,7 @@ private[impl] final class KeyValueEntityImpl[S, KV <: KeyValueEntity[S]](
   import KeyValueEntityEffectImpl._
   import KeyValueEntityImpl._
 
-  // FIXME
-//  private val traceInstrumentation = new TraceInstrumentation(componentId, EventSourcedEntityCategory, tracerFactory)
+  private val traceInstrumentation = new TraceInstrumentation(componentId, KeyValueEntityCategory, tracerFactory)
 
   private val router: ReflectiveKeyValueEntityRouter[AnyRef, KeyValueEntity[AnyRef]] = {
     val context = new KeyValueEntityContextImpl(entityId)
@@ -103,7 +105,8 @@ private[impl] final class KeyValueEntityImpl[S, KV <: KeyValueEntity[S]](
       state: SpiEventSourcedEntity.State,
       command: SpiEntity.Command): Future[SpiEventSourcedEntity.Effect] = {
 
-    val span: Option[Span] = None // FIXME traceInstrumentation.buildSpan(service, command)
+    val span: Option[Span] =
+      traceInstrumentation.buildSpan(ComponentType.KeyValueEntity, componentId, entityId, command)
     span.foreach(s => MDC.put(Telemetry.TRACE_ID, s.getSpanContext.getTraceId))
     val cmdPayload = command.payload.getOrElse(
       // smuggling 0 arity method called from component client through here

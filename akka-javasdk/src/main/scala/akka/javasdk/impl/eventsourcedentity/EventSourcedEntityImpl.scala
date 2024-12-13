@@ -20,6 +20,7 @@ import akka.javasdk.impl.AbstractContext
 import akka.javasdk.impl.ActivatableContext
 import akka.javasdk.impl.AnySupport
 import akka.javasdk.impl.ComponentDescriptor
+import akka.javasdk.impl.ComponentType
 import akka.javasdk.impl.EntityExceptions
 import akka.javasdk.impl.EntityExceptions.EntityException
 import akka.javasdk.impl.ErrorHandling.BadRequestException
@@ -31,8 +32,10 @@ import akka.javasdk.impl.effect.NoSecondaryEffectImpl
 import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityEffectImpl.EmitEvents
 import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityEffectImpl.NoPrimaryEffect
 import akka.javasdk.impl.serialization.JsonSerializer
+import akka.javasdk.impl.telemetry.EventSourcedEntityCategory
 import akka.javasdk.impl.telemetry.SpanTracingImpl
 import akka.javasdk.impl.telemetry.Telemetry
+import akka.javasdk.impl.telemetry.TraceInstrumentation
 import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.SpiEntity
 import akka.runtime.sdk.spi.SpiEventSourcedEntity
@@ -90,8 +93,7 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
     extends SpiEventSourcedEntity {
   import EventSourcedEntityImpl._
 
-  // FIXME
-//  private val traceInstrumentation = new TraceInstrumentation(componentId, EventSourcedEntityCategory, tracerFactory)
+  private val traceInstrumentation = new TraceInstrumentation(componentId, EventSourcedEntityCategory, tracerFactory)
 
   private val router: ReflectiveEventSourcedEntityRouter[AnyRef, AnyRef, EventSourcedEntity[AnyRef, AnyRef]] = {
     val context = new EventSourcedEntityContextImpl(entityId)
@@ -109,7 +111,8 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
       state: SpiEventSourcedEntity.State,
       command: SpiEntity.Command): Future[SpiEventSourcedEntity.Effect] = {
 
-    val span: Option[Span] = None // FIXME traceInstrumentation.buildSpan(service, command)
+    val span: Option[Span] =
+      traceInstrumentation.buildSpan(ComponentType.EventSourcedEntity, componentId, entityId, command)
     span.foreach(s => MDC.put(Telemetry.TRACE_ID, s.getSpanContext.getTraceId))
     val cmdPayload = command.payload.getOrElse(
       // smuggling 0 arity method called from component client through here

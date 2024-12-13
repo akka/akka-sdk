@@ -22,19 +22,16 @@ import akka.javasdk.impl.telemetry.Telemetry
 import akka.javasdk.impl.telemetry.Telemetry.metadataGetter
 import akka.runtime.sdk.spi.SpiMetadata
 import akka.runtime.sdk.spi.SpiMetadataEntry
-import com.google.protobuf.ByteString
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.SpanContext
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
 import io.opentelemetry.context.{ Context => OtelContext }
-import kalix.protocol.component.MetadataEntry
-import kalix.protocol.component.MetadataEntry.Value
 
 /**
  * INTERNAL API
  */
 @InternalApi
-private[javasdk] class MetadataImpl private (val entries: Seq[MetadataEntry]) extends Metadata with CloudEvent {
+private[javasdk] class MetadataImpl private (val entries: Seq[SpiMetadataEntry]) extends Metadata with CloudEvent {
 
   override def has(key: String): Boolean = entries.exists(_.key.equalsIgnoreCase(key))
 
@@ -43,8 +40,7 @@ private[javasdk] class MetadataImpl private (val entries: Seq[MetadataEntry]) ex
 
   private[akka] def getScala(key: String): Option[String] =
     entries.collectFirst {
-      case MetadataEntry(k, MetadataEntry.Value.StringValue(value), _) if key.equalsIgnoreCase(k) =>
-        value
+      case entry if key.equalsIgnoreCase(entry.key) => entry.value
     }
 
   def withTracing(spanContext: SpanContext): Metadata = {
@@ -53,7 +49,7 @@ private[javasdk] class MetadataImpl private (val entries: Seq[MetadataEntry]) ex
 
   def withTracing(span: Span): MetadataImpl = {
     // remove parent trace parent and trace state from the metadata so they can be re-injected with current span context
-    val builder = Vector.newBuilder[MetadataEntry]
+    val builder = Vector.newBuilder[SpiMetadataEntry]
     builder.addAll(
       entries.iterator.filter(m => m.key != Telemetry.TRACE_PARENT_KEY && m.key != Telemetry.TRACE_STATE_KEY))
     W3CTraceContextPropagator
@@ -67,27 +63,14 @@ private[javasdk] class MetadataImpl private (val entries: Seq[MetadataEntry]) ex
 
   private[akka] def getAllScala(key: String): Seq[String] =
     entries.collect {
-      case MetadataEntry(k, MetadataEntry.Value.StringValue(value), _) if key.equalsIgnoreCase(k) =>
-        value
+      case entry if key.equalsIgnoreCase(entry.key) => entry.value
     }
 
   override def getBinary(key: String): Optional[ByteBuffer] =
-    getBinaryScala(key).toJava
-
-  private[akka] def getBinaryScala(key: String): Option[ByteBuffer] =
-    entries.collectFirst {
-      case MetadataEntry(k, MetadataEntry.Value.BytesValue(value), _) if key.equalsIgnoreCase(k) =>
-        value.asReadOnlyByteBuffer()
-    }
+    Optional.empty[ByteBuffer] // binary not supported
 
   override def getBinaryAll(key: String): util.List[ByteBuffer] =
-    getBinaryAllScala(key).asJava
-
-  private[akka] def getBinaryAllScala(key: String): Seq[ByteBuffer] =
-    entries.collect {
-      case MetadataEntry(k, MetadataEntry.Value.BytesValue(value), _) if key.equalsIgnoreCase(k) =>
-        value.asReadOnlyByteBuffer()
-    }
+    util.Collections.emptyList()
 
   override def getAllKeys: util.List[String] = getAllKeysScala.asJava
   private[akka] def getAllKeysScala: Seq[String] = entries.map(_.key)
@@ -95,43 +78,44 @@ private[javasdk] class MetadataImpl private (val entries: Seq[MetadataEntry]) ex
   override def set(key: String, value: String): MetadataImpl = {
     Objects.requireNonNull(key, "Key must not be null")
     Objects.requireNonNull(value, "Value must not be null")
-    MetadataImpl.of(removeKey(key) :+ MetadataEntry(key, MetadataEntry.Value.StringValue(value)))
+    MetadataImpl.of(removeKey(key) :+ new SpiMetadataEntry(key, value))
   }
 
   override def setBinary(key: String, value: ByteBuffer): MetadataImpl = {
     Objects.requireNonNull(key, "Key must not be null")
     Objects.requireNonNull(value, "Value must not be null")
-    MetadataImpl.of(removeKey(key) :+ MetadataEntry(key, MetadataEntry.Value.BytesValue(ByteString.copyFrom(value))))
+    // binary not supported
+    this
   }
 
   override def add(key: String, value: String): MetadataImpl = {
     Objects.requireNonNull(key, "Key must not be null")
     Objects.requireNonNull(value, "Value must not be null")
-    MetadataImpl.of(entries :+ MetadataEntry(key, MetadataEntry.Value.StringValue(value)))
+    MetadataImpl.of(entries :+ new SpiMetadataEntry(key, value))
   }
 
   override def addBinary(key: String, value: ByteBuffer): MetadataImpl = {
     Objects.requireNonNull(key, "Key must not be null")
     Objects.requireNonNull(value, "Value must not be null")
-    MetadataImpl.of(entries :+ MetadataEntry(key, MetadataEntry.Value.BytesValue(ByteString.copyFrom(value))))
+    // binary not supported
+    this
   }
 
   override def remove(key: String): MetadataImpl = MetadataImpl.of(removeKey(key))
 
   override def clear(): MetadataImpl = MetadataImpl.Empty
 
-  private[akka] def iteratorScala[R](f: MetadataEntry => R): Iterator[R] =
-    entries.iterator.map(f)
-
-  override def iterator(): util.Iterator[Metadata.MetadataEntry] =
-    iteratorScala(entry =>
+  override def iterator(): util.Iterator[Metadata.MetadataEntry] = {
+    entries.iterator.map { entry =>
       new Metadata.MetadataEntry {
         override def getKey: String = entry.key
-        override def getValue: String = entry.value.stringValue.orNull
-        override def getBinaryValue: ByteBuffer = entry.value.bytesValue.map(_.asReadOnlyByteBuffer()).orNull
-        override def isText: Boolean = entry.value.isStringValue
-        override def isBinary: Boolean = entry.value.isBytesValue
-      }).asJava
+        override def getValue: String = entry.value
+        override def getBinaryValue: ByteBuffer = null
+        override def isText: Boolean = true
+        override def isBinary: Boolean = false
+      }
+    }.asJava
+  }
 
   private def removeKey(key: String) = entries.filterNot(_.key.equalsIgnoreCase(key))
 
@@ -146,16 +130,15 @@ private[javasdk] class MetadataImpl private (val entries: Seq[MetadataEntry]) ex
     MetadataImpl.of(
       entries.filterNot(e => MetadataImpl.CeRequired(e.key)) ++
       Seq(
-        MetadataEntry(MetadataImpl.CeSpecversion, MetadataEntry.Value.StringValue(MetadataImpl.CeSpecversionValue)),
-        MetadataEntry(MetadataImpl.CeId, MetadataEntry.Value.StringValue(id)),
-        MetadataEntry(MetadataImpl.CeSource, MetadataEntry.Value.StringValue(source.toString)),
-        MetadataEntry(MetadataImpl.CeType, MetadataEntry.Value.StringValue(`type`))))
+        new SpiMetadataEntry(MetadataImpl.CeSpecversion, MetadataImpl.CeSpecversionValue),
+        new SpiMetadataEntry(MetadataImpl.CeId, id),
+        new SpiMetadataEntry(MetadataImpl.CeSource, source.toString),
+        new SpiMetadataEntry(MetadataImpl.CeType, `type`)))
 
   private def getRequiredCloudEventField(key: String) =
     entries
       .collectFirst {
-        case MetadataEntry(k, MetadataEntry.Value.StringValue(value), _) if key.equalsIgnoreCase(k) =>
-          value
+        case entry if key.equalsIgnoreCase(entry.key) => entry.value
       }
       .getOrElse {
         throw new IllegalStateException(s"Metadata is not a CloudEvent because it does not have required field $key")
@@ -258,27 +241,21 @@ object MetadataImpl {
   def toSpi(metadata: Metadata): SpiMetadata = {
     metadata match {
       case impl: MetadataImpl if impl.entries.nonEmpty =>
-        val entries = impl.entries.map(entry =>
-          entry.value match {
-            case Value.Empty              => new SpiMetadataEntry(entry.key, "")
-            case Value.StringValue(value) => new SpiMetadataEntry(entry.key, value)
-            case Value.BytesValue(value) =>
-              new SpiMetadataEntry(entry.key, value.toStringUtf8) //FIXME support bytes values or not
-          })
-        new SpiMetadata(entries)
-      case _: MetadataImpl => SpiMetadata.empty
+        new SpiMetadata(impl.entries)
+      case _: MetadataImpl =>
+        SpiMetadata.empty
       case other =>
         throw new RuntimeException(s"Unknown metadata implementation: ${other.getClass}, cannot send")
     }
   }
 
-  def of(entries: Seq[MetadataEntry]): MetadataImpl = {
+  def of(entries: Seq[SpiMetadataEntry]): MetadataImpl = {
     val transformedEntries =
       entries.map { entry =>
         // is incoming ce key in one of the alternative formats?
         // if so, convert key to our internal default key format
         alternativeKeyFormats.get(entry.key) match {
-          case Some(defaultKey) => MetadataEntry(defaultKey, entry.value)
+          case Some(defaultKey) => new SpiMetadataEntry(defaultKey, entry.value)
           case _                => entry
         }
       }
@@ -287,8 +264,7 @@ object MetadataImpl {
   }
 
   def of(metadata: SpiMetadata): MetadataImpl = {
-    val entries = metadata.entries.map(e => MetadataEntry(e.key, MetadataEntry.Value.StringValue(e.value)))
-    new MetadataImpl(entries)
+    of(metadata.entries)
   }
 
 }
