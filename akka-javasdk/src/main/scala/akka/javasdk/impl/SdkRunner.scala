@@ -7,6 +7,7 @@ package akka.javasdk.impl
 import java.lang.reflect.Constructor
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
+import java.util.Locale
 import java.util.concurrent.CompletionStage
 
 import scala.annotation.nowarn
@@ -93,7 +94,18 @@ import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.Tracer
 import io.opentelemetry.context.{ Context => OtelContext }
 import kalix.protocol.discovery.Discovery
+import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+
+/**
+ * INTERNAL API
+ */
+@InternalApi
+object SdkRunner {
+  val userServiceLog: Logger = LoggerFactory.getLogger("akka.javasdk.ServiceLog")
+
+  val FutureDone: Future[Done] = Future.successful(Done)
+}
 
 /**
  * INTERNAL API
@@ -646,11 +658,24 @@ private final class Sdk(
       override def workflowDescriptors: Seq[WorkflowDescriptor] =
         Sdk.this.workflowDescriptors
 
-      override def reportError(err: UserFunctionError): Future[Done] =
-        Future.successful(Done) // FIXME implemented in other PR
+      override def reportError(err: UserFunctionError): Future[Done] = {
+        val severityString = err.severity.name.take(1) + err.severity.name.drop(1).toLowerCase(Locale.ROOT)
+        val message = s"$severityString reported from Akka runtime: ${err.code} ${err.message}"
+        val detail = if (err.detail.isEmpty) Nil else List(err.detail)
+        val seeDocs = DocLinks.forErrorCode(err.code).map(link => s"See documentation: $link").toList
+        val messages = message :: detail ::: seeDocs
+        val logMessage = messages.mkString("\n\n")
+
+        // ignoring waring for runtime version
+        // TODO: remove it once we remove this check in the runtime
+        if (err.code != "AK-00010") {
+          SdkRunner.userServiceLog.atLevel(err.severity).log(logMessage)
+        }
+        SdkRunner.FutureDone
+      }
 
       override def healthCheck(): Future[Done] =
-        Future.successful(Done) // FIXME implemented in other PR
+        SdkRunner.FutureDone
     }
   }
 
