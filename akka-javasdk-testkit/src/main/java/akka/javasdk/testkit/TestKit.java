@@ -461,7 +461,7 @@ public class TestKit {
               proxyPort,
               settings.aclEnabled,
               false,
-              settings.serviceName,
+              settings.serviceName + "-IT-" + System.currentTimeMillis(),
               eventingSettings,
               mockedEventingSettings,
               true);
