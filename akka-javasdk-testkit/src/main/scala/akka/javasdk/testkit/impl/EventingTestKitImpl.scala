@@ -140,7 +140,7 @@ object EventingTestKitImpl {
     }
 
   }
-  
+
   def metadataToSpi(metadata: Option[Metadata]): SpiMetadata =
     metadata.map(metadataToSpi).getOrElse(SpiMetadata.empty)
 

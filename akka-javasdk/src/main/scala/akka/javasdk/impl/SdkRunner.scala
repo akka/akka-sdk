@@ -8,6 +8,7 @@ import java.lang.reflect.Constructor
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
 import java.util.concurrent.CompletionStage
+
 import scala.annotation.nowarn
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -17,6 +18,7 @@ import scala.jdk.FutureConverters._
 import scala.jdk.OptionConverters.RichOptional
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
+
 import akka.Done
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
@@ -80,6 +82,7 @@ import akka.runtime.sdk.spi.SpiSettings
 import akka.runtime.sdk.spi.SpiWorkflow
 import akka.runtime.sdk.spi.StartContext
 import akka.runtime.sdk.spi.TimedActionDescriptor
+import akka.runtime.sdk.spi.UserFunctionError
 import akka.runtime.sdk.spi.views.SpiViewDescriptor
 import akka.runtime.sdk.spi.WorkflowDescriptor
 import akka.stream.Materializer
@@ -643,6 +646,11 @@ private final class Sdk(
       override def workflowDescriptors: Seq[WorkflowDescriptor] =
         Sdk.this.workflowDescriptors
 
+      override def reportError(err: UserFunctionError): Future[Done] =
+        Future.successful(Done) // FIXME implemented in other PR
+
+      override def healthCheck(): Future[Done] =
+        Future.successful(Done) // FIXME implemented in other PR
     }
   }
 
