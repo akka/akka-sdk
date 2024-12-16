@@ -125,7 +125,7 @@ private[impl] final class TimedActionImpl[TA <: TimedAction](
   private def toSpiEffect(command: Command, effect: TimedAction.Effect): Future[Effect] = {
     effect match {
       case ReplyEffect(_) => //FIXME remove meta, not used in the reply
-        Future.successful(new SpiTimedAction.SuccessEffect)
+        Future.successful(SpiTimedAction.SuccessEffect)
       case AsyncEffect(futureEffect) =>
         futureEffect
           .flatMap { effect => toSpiEffect(command, effect) }

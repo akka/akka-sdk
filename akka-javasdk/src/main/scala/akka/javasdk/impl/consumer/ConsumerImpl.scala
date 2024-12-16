@@ -112,7 +112,7 @@ private[impl] final class ConsumerImpl[C <: Consumer](
             handleUnexpectedException(message, ex)
           }
       case IgnoreEffect =>
-        Future.successful(new SpiConsumer.IgnoreEffect)
+        Future.successful(SpiConsumer.IgnoreEffect)
       case unknown =>
         throw new IllegalArgumentException(s"Unknown TimedAction.Effect type ${unknown.getClass}")
     }

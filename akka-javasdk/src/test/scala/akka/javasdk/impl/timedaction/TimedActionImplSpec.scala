@@ -87,7 +87,7 @@ class TimedActionImplSpec
             new SpiTimedAction.Command("MyMethod", Some(new BytesPayload(ByteString.empty, "")), SpiMetadata.empty))
           .futureValue
 
-      reply shouldBe an[SpiTimedAction.SuccessEffect]
+      reply shouldBe an[SpiTimedAction.SuccessEffect.type]
     }
 
     "turn thrown command handler exceptions into failure responses" in {
