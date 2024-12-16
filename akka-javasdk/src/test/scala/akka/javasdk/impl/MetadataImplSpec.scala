@@ -8,7 +8,7 @@ import scala.jdk.CollectionConverters._
 import scala.jdk.OptionConverters._
 
 import akka.javasdk.Metadata
-import kalix.protocol.component.MetadataEntry
+import akka.runtime.sdk.spi.SpiMetadataEntry
 import org.scalatest.OptionValues
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -41,7 +41,7 @@ class MetadataImplSpec extends AnyWordSpec with Matchers with OptionValues {
 
   private def metadata(entries: (String, String)*): Metadata = {
     MetadataImpl.of(entries.map { case (key, value) =>
-      MetadataEntry(key, MetadataEntry.Value.StringValue(value))
+      new SpiMetadataEntry(key, value)
     })
   }
 
