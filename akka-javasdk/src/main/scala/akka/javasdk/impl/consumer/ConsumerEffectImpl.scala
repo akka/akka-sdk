@@ -20,7 +20,7 @@ import akka.javasdk.consumer.Consumer
 private[impl] object ConsumerEffectImpl {
   sealed abstract class PrimaryEffect extends Consumer.Effect {}
 
-  final case class ReplyEffect[T](msg: T, metadata: Option[Metadata]) extends PrimaryEffect {
+  final case class ProduceEffect[T](msg: T, metadata: Option[Metadata]) extends PrimaryEffect {
     def isEmpty: Boolean = false
   }
 
@@ -33,10 +33,10 @@ private[impl] object ConsumerEffectImpl {
   }
 
   object Builder extends Consumer.Effect.Builder {
-    def produce[S](message: S): Consumer.Effect = ReplyEffect(message, None)
+    def produce[S](message: S): Consumer.Effect = ProduceEffect(message, None)
 
     def produce[S](message: S, metadata: Metadata): Consumer.Effect =
-      ReplyEffect(message, Some(metadata))
+      ProduceEffect(message, Some(metadata))
 
     def asyncProduce[S](futureMessage: CompletionStage[S]): Consumer.Effect =
       asyncProduce(futureMessage, Metadata.EMPTY)
@@ -48,7 +48,7 @@ private[impl] object ConsumerEffectImpl {
       IgnoreEffect
 
     override def done(): Consumer.Effect =
-      ReplyEffect(Done, None)
+      ProduceEffect(Done, None)
 
     override def asyncDone(futureMessage: CompletionStage[Done]): Consumer.Effect =
       AsyncEffect(futureMessage.asScala.map(done => Builder.produce(done))(ExecutionContext.parasitic))

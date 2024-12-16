@@ -125,7 +125,7 @@ private[impl] final class TimedActionImpl[TA <: TimedAction](
   private def toSpiEffect(command: Command, effect: TimedAction.Effect): Future[Effect] = {
     effect match {
       case ReplyEffect(_) => //FIXME remove meta, not used in the reply
-        Future.successful(new Effect(None))
+        Future.successful(new SpiTimedAction.SuccessEffect)
       case AsyncEffect(futureEffect) =>
         futureEffect
           .flatMap { effect => toSpiEffect(command, effect) }
@@ -133,7 +133,7 @@ private[impl] final class TimedActionImpl[TA <: TimedAction](
             handleUnexpectedException(command, ex)
           }
       case ErrorEffect(description) =>
-        Future.successful(new Effect(Some(new SpiTimedAction.Error(description))))
+        Future.successful(new SpiTimedAction.ErrorEffect(new SpiTimedAction.Error(description)))
       case unknown =>
         throw new IllegalArgumentException(s"Unknown TimedAction.Effect type ${unknown.getClass}")
     }
@@ -152,7 +152,7 @@ private[impl] final class TimedActionImpl[TA <: TimedAction](
   }
 
   private def protocolFailure(correlationId: String): Effect = {
-    new Effect(Some(new SpiTimedAction.Error(s"Unexpected error [$correlationId]")))
+    new SpiTimedAction.ErrorEffect(new SpiTimedAction.Error(s"Unexpected error [$correlationId]"))
   }
 
 }

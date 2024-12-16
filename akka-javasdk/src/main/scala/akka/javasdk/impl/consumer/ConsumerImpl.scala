@@ -23,7 +23,7 @@ import akka.javasdk.impl.ErrorHandling
 import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.consumer.ConsumerEffectImpl.AsyncEffect
 import akka.javasdk.impl.consumer.ConsumerEffectImpl.IgnoreEffect
-import akka.javasdk.impl.consumer.ConsumerEffectImpl.ReplyEffect
+import akka.javasdk.impl.consumer.ConsumerEffectImpl.ProduceEffect
 import akka.javasdk.impl.serialization.JsonSerializer
 import akka.javasdk.impl.telemetry.SpanTracingImpl
 import akka.javasdk.impl.telemetry.Telemetry
@@ -33,7 +33,6 @@ import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.SpiConsumer
 import akka.runtime.sdk.spi.SpiConsumer.Effect
 import akka.runtime.sdk.spi.SpiConsumer.Message
-import akka.runtime.sdk.spi.SpiMetadata
 import akka.runtime.sdk.spi.SpiMetadataEntry
 import akka.runtime.sdk.spi.TimerClient
 import io.opentelemetry.api.trace.Span
@@ -101,13 +100,11 @@ private[impl] final class ConsumerImpl[C <: Consumer](
 
   private def toSpiEffect(message: Message, effect: Consumer.Effect): Future[Effect] = {
     effect match {
-      case ReplyEffect(msg, metadata) =>
+      case ProduceEffect(msg, metadata) =>
         Future.successful(
-          new Effect(
-            ignore = false,
-            reply = Some(serializer.toBytes(msg)),
-            metadata = MetadataImpl.toSpi(metadata),
-            error = None))
+          new SpiConsumer.ProduceEffect(
+            payload = Some(serializer.toBytes(msg)),
+            metadata = MetadataImpl.toSpi(metadata)))
       case AsyncEffect(futureEffect) =>
         futureEffect
           .flatMap { effect => toSpiEffect(message, effect) }
@@ -115,7 +112,7 @@ private[impl] final class ConsumerImpl[C <: Consumer](
             handleUnexpectedException(message, ex)
           }
       case IgnoreEffect =>
-        Future.successful(new Effect(ignore = true, reply = None, metadata = SpiMetadata.empty, error = None))
+        Future.successful(new SpiConsumer.IgnoreEffect)
       case unknown =>
         throw new IllegalArgumentException(s"Unknown TimedAction.Effect type ${unknown.getClass}")
     }
@@ -134,11 +131,7 @@ private[impl] final class ConsumerImpl[C <: Consumer](
   }
 
   private def protocolFailure(correlationId: String): Effect = {
-    new Effect(
-      ignore = false,
-      reply = None,
-      metadata = SpiMetadata.empty,
-      error = Some(new SpiConsumer.Error(s"Unexpected error [$correlationId]")))
+    new SpiConsumer.ErrorEffect(error = new SpiConsumer.Error(s"Unexpected error [$correlationId]"))
   }
 
 }

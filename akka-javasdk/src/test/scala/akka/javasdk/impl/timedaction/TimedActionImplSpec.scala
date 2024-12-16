@@ -87,7 +87,7 @@ class TimedActionImplSpec
             new SpiTimedAction.Command("MyMethod", Some(new BytesPayload(ByteString.empty, "")), SpiMetadata.empty))
           .futureValue
 
-      reply.error shouldBe empty
+      reply shouldBe an[SpiTimedAction.SuccessEffect]
     }
 
     "turn thrown command handler exceptions into failure responses" in {
@@ -104,9 +104,10 @@ class TimedActionImplSpec
                   Some(new BytesPayload(ByteString.empty, "")),
                   SpiMetadata.empty))
               .futureValue
+              .asInstanceOf[SpiTimedAction.ErrorEffect]
           }
 
-      reply.error.value.description should startWith("Unexpected error")
+      reply.error.description should startWith("Unexpected error")
     }
 
   }
