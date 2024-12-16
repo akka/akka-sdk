@@ -44,17 +44,38 @@ public interface EventingTestKit {
     /**
      * Simulate the publishing of a raw message.
      *
-     * @param message raw bytestring to be published
+     * @param message raw protobuf bytestring to be published
+     *
+     * @deprecated Use publish with byte array parameter
      */
+    @Deprecated
     void publish(ByteString message);
 
     /**
      * Simulate the publishing of a raw message.
      *
-     * @param message  raw bytestring to be published
+     * @param message  raw protobuf bytestring to be published
+     * @param metadata associated with the message
+     *
+     * @deprecated Use publish with byte array parameter
+     */
+    @Deprecated
+    void publish(ByteString message, Metadata metadata);
+
+    /**
+     * Simulate the publishing of a raw message.
+     *
+     * @param message raw byte array to be published
+     */
+    void publish(byte[] message);
+
+    /**
+     * Simulate the publishing of a raw message.
+     *
+     * @param message  raw byte array to be published
      * @param metadata associated with the message
      */
-    void publish(ByteString message, Metadata metadata);
+    void publish(byte[] message, Metadata metadata);
 
     /**
      * Simulate the publishing of a message.

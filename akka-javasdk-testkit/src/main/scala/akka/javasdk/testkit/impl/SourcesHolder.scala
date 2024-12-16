@@ -17,8 +17,8 @@ import scala.collection.mutable.ArrayBuffer
 
 object SourcesHolder {
 
-  case class AddSource(runningSourceProbe: RunningSourceProbe)
-  case class Publish(message: ByteString, metadata: SdkMetadata)
+  final case class AddSource(runningSourceProbe: RunningSourceProbe)
+  final case class Publish(message: ByteString, metadata: SdkMetadata)
 }
 
 class SourcesHolder extends Actor {
