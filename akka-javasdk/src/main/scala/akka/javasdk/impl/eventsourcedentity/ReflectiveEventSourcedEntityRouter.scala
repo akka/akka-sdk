@@ -96,7 +96,7 @@ private[impl] class ReflectiveEventSourcedEntityRouter[S, E, ES <: EventSourcedE
     // the state: S received can either be of the entity "state" type (if coming from emptyState/memory)
     // or PB Any type (if coming from the runtime)
     state match {
-      case s if s == null || state.getClass == entityStateType =>
+      case s if s == null || entityStateType.isAssignableFrom(state.getClass) =>
         // note that we set the state even if null, this is needed in order to
         // be able to call currentState() later
         entity._internalSetCurrentState(s)
