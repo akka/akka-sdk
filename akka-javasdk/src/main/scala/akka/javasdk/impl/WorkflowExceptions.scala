@@ -5,8 +5,6 @@
 package akka.javasdk.impl
 
 import akka.annotation.InternalApi
-import kalix.protocol.entity.Command
-import kalix.protocol.workflow_entity.WorkflowEntityInit
 
 /**
  * INTERNAL API
@@ -25,22 +23,6 @@ private[javasdk] object WorkflowExceptions {
     def apply(message: String, cause: Option[Throwable]): WorkflowException =
       WorkflowException(workflowId = "", commandName = "", message, cause)
 
-    def apply(command: Command, message: String, cause: Option[Throwable]): WorkflowException =
-      WorkflowException(command.entityId, command.name, message, cause)
-
   }
 
-  object ProtocolException {
-    def apply(message: String): WorkflowException =
-      WorkflowException(workflowId = "", commandName = "", "Protocol error: " + message, None)
-
-    def apply(command: Command, message: String): WorkflowException =
-      WorkflowException(command.entityId, command.name, "Protocol error: " + message, None)
-
-    def apply(workflowId: String, message: String): WorkflowException =
-      WorkflowException(workflowId, commandName = "", "Protocol error: " + message, None)
-
-    def apply(init: WorkflowEntityInit, message: String): WorkflowException =
-      ProtocolException(init.entityId, message)
-  }
 }
