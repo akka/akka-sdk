@@ -79,6 +79,7 @@ import akka.runtime.sdk.spi.SpiDevModeSettings
 import akka.runtime.sdk.spi.SpiEventSourcedEntity
 import akka.runtime.sdk.spi.SpiEventingSupportSettings
 import akka.runtime.sdk.spi.SpiMockedEventingSettings
+import akka.runtime.sdk.spi.SpiServiceInfo
 import akka.runtime.sdk.spi.SpiSettings
 import akka.runtime.sdk.spi.SpiWorkflow
 import akka.runtime.sdk.spi.StartContext
@@ -87,13 +88,11 @@ import akka.runtime.sdk.spi.UserFunctionError
 import akka.runtime.sdk.spi.views.SpiViewDescriptor
 import akka.runtime.sdk.spi.WorkflowDescriptor
 import akka.stream.Materializer
-import com.google.protobuf.Descriptors
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.Tracer
 import io.opentelemetry.context.{ Context => OtelContext }
-import kalix.protocol.discovery.Discovery
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -335,37 +334,6 @@ private final class Sdk(
       invalid.throwFailureSummary()
   }
 
-  // register them if all valid, prototobuf
-  private val componentServices: Map[Descriptors.ServiceDescriptor, Service] = componentClasses
-    .filter(hasComponentId)
-    .foldLeft(Map[Descriptors.ServiceDescriptor, Service]()) { (factories, clz) =>
-      val service: Option[Service] = if (classOf[TimedAction].isAssignableFrom(clz)) {
-        logger.debug(s"Registering TimedAction [${clz.getName}]")
-        None
-      } else if (classOf[Consumer].isAssignableFrom(clz)) {
-        logger.debug(s"Registering Consumer [${clz.getName}]")
-        None
-      } else if (classOf[EventSourcedEntity[_, _]].isAssignableFrom(clz)) {
-        logger.debug(s"Registering EventSourcedEntity [${clz.getName}]")
-        None
-      } else if (classOf[Workflow[_]].isAssignableFrom(clz)) {
-        logger.debug(s"Registering Workflow [${clz.getName}]")
-        None
-      } else if (classOf[KeyValueEntity[_]].isAssignableFrom(clz)) {
-        logger.debug(s"Registering KeyValueEntity [${clz.getName}]")
-        None
-      } else if (Reflect.isView(clz)) {
-        logger.debug(s"Registering View [${clz.getName}]")
-        None // no factory, handled below
-      } else throw new IllegalArgumentException(s"Component class of unknown component type [$clz]")
-
-      service match {
-        case Some(value) => factories.updated(value.descriptor, value)
-        case None        => factories
-      }
-
-    }
-
   private def hasComponentId(clz: Class[_]): Boolean = {
     if (clz.hasAnnotation[ComponentId]) {
       true
@@ -436,11 +404,11 @@ private final class Sdk(
       HttpEndpointDescriptorFactory(httpEndpointClass, httpEndpointFactory(httpEndpointClass))
     }
 
-  var eventSourcedEntityDescriptors = Vector.empty[EventSourcedEntityDescriptor]
-  var keyValueEntityDescriptors = Vector.empty[EventSourcedEntityDescriptor]
-  var workflowDescriptors = Vector.empty[WorkflowDescriptor]
-  var timedActionDescriptors = Vector.empty[TimedActionDescriptor]
-  var consumerDescriptors = Vector.empty[ConsumerDescriptor]
+  private var eventSourcedEntityDescriptors = Vector.empty[EventSourcedEntityDescriptor]
+  private var keyValueEntityDescriptors = Vector.empty[EventSourcedEntityDescriptor]
+  private var workflowDescriptors = Vector.empty[WorkflowDescriptor]
+  private var timedActionDescriptors = Vector.empty[TimedActionDescriptor]
+  private var consumerDescriptors = Vector.empty[ConsumerDescriptor]
 
   componentClasses
     .filter(hasComponentId)
@@ -557,7 +525,7 @@ private final class Sdk(
         logger.warn("Unknown component [{}]", clz.getName)
     }
 
-  val viewDescriptors: Seq[SpiViewDescriptor] =
+  private val viewDescriptors: Seq[SpiViewDescriptor] =
     componentClasses
       .filter(hasComponentId)
       .collect {
@@ -577,16 +545,6 @@ private final class Sdk(
 
   def spiComponents: SpiComponents = {
 
-    val classicSystem = system.classicSystem
-
-    val services = componentServices.map { case (serviceDescriptor, service) =>
-      serviceDescriptor.getFullName -> service
-    }
-
-    services.groupBy(_._2.getClass).foreach { case (serviceClass, _) =>
-      sys.error(s"Unknown service type: $serviceClass")
-    }
-
     val serviceSetup: Option[ServiceSetup] = maybeServiceClass match {
       case Some(serviceClassClass) if classOf[ServiceSetup].isAssignableFrom(serviceClassClass) =>
         // FIXME: HttpClientProvider will inject but not quite work for cross service calls until we
@@ -596,15 +554,6 @@ private final class Sdk(
             sideEffectingComponentInjects(None)))
       case _ => None
     }
-
-    val devModeServiceName = sdkSettings.devModeSettings.map(_.serviceName)
-    val discoveryEndpoint =
-      new DiscoveryImpl(
-        classicSystem,
-        services,
-        AclDescriptorFactory.defaultAclFileDescriptor,
-        BuildInfo.name,
-        devModeServiceName)
 
     new SpiComponents {
       override def preStart(system: ActorSystem[_]): Future[Done] = {
@@ -636,27 +585,35 @@ private final class Sdk(
         }
       }
 
-      override def discovery: Discovery = discoveryEndpoint
-
-      override def eventSourcedEntityDescriptors: Seq[EventSourcedEntityDescriptor] =
+      override val eventSourcedEntityDescriptors: Seq[EventSourcedEntityDescriptor] =
         Sdk.this.eventSourcedEntityDescriptors
 
-      override def keyValueEntityDescriptors: Seq[EventSourcedEntityDescriptor] =
+      override val keyValueEntityDescriptors: Seq[EventSourcedEntityDescriptor] =
         Sdk.this.keyValueEntityDescriptors
 
-      override def httpEndpointDescriptors: Seq[HttpEndpointDescriptor] =
+      override val httpEndpointDescriptors: Seq[HttpEndpointDescriptor] =
         Sdk.this.httpEndpointDescriptors
 
-      override def timedActionsDescriptors: Seq[TimedActionDescriptor] =
+      override val timedActionsDescriptors: Seq[TimedActionDescriptor] =
         Sdk.this.timedActionDescriptors
 
-      override def consumersDescriptors: Seq[ConsumerDescriptor] =
+      override val consumersDescriptors: Seq[ConsumerDescriptor] =
         Sdk.this.consumerDescriptors
 
-      override def viewDescriptors: Seq[SpiViewDescriptor] = Sdk.this.viewDescriptors
+      override val viewDescriptors: Seq[SpiViewDescriptor] =
+        Sdk.this.viewDescriptors
 
-      override def workflowDescriptors: Seq[WorkflowDescriptor] =
+      override val workflowDescriptors: Seq[WorkflowDescriptor] =
         Sdk.this.workflowDescriptors
+
+      override val serviceInfo: SpiServiceInfo =
+        new SpiServiceInfo(
+          serviceName = sdkSettings.devModeSettings.map(_.serviceName).getOrElse(""),
+          serviceVersion = "",
+          sdkName = "java",
+          sdkVersion = BuildInfo.version,
+          protocolMajorVersion = BuildInfo.protocolMajorVersion,
+          protocolMinorVersion = BuildInfo.protocolMinorVersion)
 
       override def reportError(err: UserFunctionError): Future[Done] = {
         val severityString = err.severity.name.take(1) + err.severity.name.drop(1).toLowerCase(Locale.ROOT)
@@ -676,6 +633,7 @@ private final class Sdk(
 
       override def healthCheck(): Future[Done] =
         SdkRunner.FutureDone
+
     }
   }
 
