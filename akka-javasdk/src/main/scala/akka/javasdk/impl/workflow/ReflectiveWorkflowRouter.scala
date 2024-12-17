@@ -13,9 +13,9 @@ import scala.jdk.FutureConverters.CompletionStageOps
 import scala.jdk.OptionConverters.RichOptional
 
 import akka.annotation.InternalApi
-import akka.javasdk.impl.AnySupport
 import akka.javasdk.impl.CommandHandler
 import akka.javasdk.impl.CommandSerialization
+import akka.javasdk.impl.HandlerNotFoundException
 import akka.javasdk.impl.WorkflowExceptions.WorkflowException
 import akka.javasdk.impl.serialization.JsonSerializer
 import akka.javasdk.impl.workflow.ReflectiveWorkflowRouter.CommandHandlerNotFound
@@ -61,7 +61,7 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
   private def decodeUserState(userState: Option[BytesPayload]): S =
     userState
       .collect {
-        case payload if payload != BytesPayload.empty => serializer.fromBytes(payload).asInstanceOf[S]
+        case payload if payload.nonEmpty => serializer.fromBytes(payload).asInstanceOf[S]
       }
       // if runtime doesn't have a state to provide, we fall back to user's own defined empty state
       .getOrElse(workflow.emptyState())
@@ -69,10 +69,9 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
   // in same cases, the runtime may send a message with contentType set to object.
   // if that's the case, we need to patch the message using the contentType from the expected input class
   private def decodeInput(result: BytesPayload, expectedInputClass: Class[_]) = {
-    if (result == BytesPayload.empty) null // input can't be empty, but just in case
-    else if ((serializer.isJson(result) &&
-      result.contentType.endsWith("/object")) ||
-      result.contentType == AnySupport.JsonTypeUrlPrefix) {
+    if (result.isEmpty) null // input can't be empty, but just in case
+    else if (serializer.isJson(result) &&
+      result.contentType.endsWith("/object")) {
       serializer.fromBytes(expectedInputClass, result)
     } else {
       serializer.fromBytes(result)
@@ -82,10 +81,8 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
   private def commandHandlerLookup(commandName: String) =
     commandHandlers.getOrElse(
       commandName,
-      throw new HandlerNotFoundException("command", commandName, commandHandlers.keySet))
+      throw new HandlerNotFoundException("command", commandName, workflow.getClass, commandHandlers.keySet))
 
-  /** INTERNAL API */
-  // "public" api against the impl/testkit
   final def handleCommand(
       userState: Option[SpiWorkflow.State],
       commandName: String,
@@ -99,12 +96,9 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
 
         val commandHandler = commandHandlerLookup(commandName)
 
-        // Commands can be in three shapes:
-        // - BytesPayload.empty - there is no real command, and we are calling a method with arity 0
-        // - BytesPayload with json - we deserialize it and call the method
-        // - BytesPayload with Proto encoding - we deserialize using InvocationContext
         if (serializer.isJson(command) || command.isEmpty) {
-          // special cased component client calls, lets json commands through all the way
+          // - BytesPayload.empty - there is no real command, and we are calling a method with arity 0
+          // - BytesPayload with json - we deserialize it and call the method
           val methodInvoker = commandHandler.getSingleNameInvoker()
           val deserializedCommand =
             CommandSerialization.deserializeComponentClientCommand(methodInvoker.method, command, serializer)
@@ -115,8 +109,9 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
           result.asInstanceOf[Workflow.Effect[_]]
         } else {
           throw new IllegalStateException(
-            "Could not find a matching command handler for method: " + commandName + ", content type: " + command.contentType + ", invokers keys: " + commandHandler.methodInvokers.keys
-              .mkString(", "))
+            s"Could not find a matching command handler for method [$commandName], content type " +
+            s"[${command.contentType}], invokers keys [${commandHandler.methodInvokers.keys.mkString(", ")}," +
+            s"on [${workflow.getClass.getName}]")
         }
 
       } catch {
@@ -124,7 +119,7 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
           throw new WorkflowException(
             context.workflowId(),
             commandName,
-            s"No command handler found for command [$name] on ${workflow.getClass}")
+            s"No command handler found for command [$name] on [${workflow.getClass.getName}]")
       } finally {
         workflow._internalClear();
       }
@@ -132,8 +127,6 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
     CommandResult(commandEffect)
   }
 
-  /** INTERNAL API */
-  // "public" api against the impl/testkit
   final def handleStep(
       userState: Option[SpiWorkflow.State],
       input: Option[BytesPayload],
@@ -190,12 +183,3 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
     }
   }
 }
-
-/**
- * INTERNAL API
- */
-@InternalApi
-final class HandlerNotFoundException(handlerType: String, name: String, availableHandlers: Set[String])
-    extends RuntimeException(
-      s"no matching $handlerType handler for '$name'. " +
-      s"Available handlers are: [${availableHandlers.mkString(", ")}]")

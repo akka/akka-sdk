@@ -20,7 +20,7 @@ import com.google.protobuf.Descriptors
  */
 @InternalApi
 private[impl] final case class CommandHandler(
-    grpcMethodName: String,
+    methodName: String,
     serializer: JsonSerializer,
     requestMessageDescriptor: Descriptors.Descriptor,
     methodInvokers: Map[String, MethodInvoker]) {
@@ -60,7 +60,7 @@ private[impl] final case class CommandHandler(
 
   // for embedded SDK we expect components to be either zero or one arity
   def getSingleNameInvoker(): MethodInvoker =
-    if (methodInvokers.size != 1) throw new IllegalStateException(s"More than one method defined for $grpcMethodName")
+    if (methodInvokers.size != 1) throw new IllegalStateException(s"More than one method defined for $methodName")
     else methodInvokers.head._2
 }
 

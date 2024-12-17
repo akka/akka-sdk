@@ -88,7 +88,6 @@ private[impl] final class TimedActionImpl[TA <: TimedAction](
   private implicit val executionContext: ExecutionContext = sdkExecutionContext
   implicit val system: ActorSystem = _system
 
-  // FIXME remove router altogether
   private def createRouter(): ReflectiveTimedActionRouter[TA] =
     new ReflectiveTimedActionRouter[TA](factory(), componentDescriptor.commandHandlers, jsonSerializer)
 
@@ -101,12 +100,11 @@ private[impl] final class TimedActionImpl[TA <: TimedAction](
         val commandContext = createCommandContext(command, span)
         val payload: BytesPayload = command.payload.getOrElse(throw new IllegalArgumentException("No command payload"))
         val effect = createRouter()
-          .handleUnary(command.name, CommandEnvelope.of(payload, commandContext.metadata()), commandContext)
+          .handleCommand(command.name, CommandEnvelope.of(payload, commandContext.metadata()), commandContext)
         toSpiEffect(command, effect)
       } catch {
         case NonFatal(ex) =>
-          // command handler threw an "unexpected" error
-          span.foreach(_.end())
+          // command handler threw an "unexpected" error, also covers HandlerNotFoundException
           Future.successful(handleUnexpectedException(command, ex))
       } finally {
         MDC.remove(Telemetry.TRACE_ID)
@@ -140,14 +138,11 @@ private[impl] final class TimedActionImpl[TA <: TimedAction](
   }
 
   private def handleUnexpectedException(command: Command, ex: Throwable): Effect = {
-    ex match {
-      case _ =>
-        ErrorHandling.withCorrelationId { correlationId =>
-          log.error(
-            s"Failure during handling command [${command.name}] from TimedAction component [${timedActionClass.getSimpleName}].",
-            ex)
-          protocolFailure(correlationId)
-        }
+    ErrorHandling.withCorrelationId { correlationId =>
+      log.error(
+        s"Failure during handling command [${command.name}] from TimedAction component [${timedActionClass.getSimpleName}].",
+        ex)
+      protocolFailure(correlationId)
     }
   }
 

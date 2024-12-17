@@ -18,6 +18,7 @@ import akka.javasdk.impl.AbstractContext
 import akka.javasdk.impl.ActivatableContext
 import akka.javasdk.impl.ComponentDescriptor
 import akka.javasdk.impl.ErrorHandling.BadRequestException
+import akka.javasdk.impl.HandlerNotFoundException
 import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.WorkflowExceptions.WorkflowException
 import akka.javasdk.impl.serialization.JsonSerializer
@@ -179,7 +180,7 @@ class WorkflowImpl[S, W <: Workflow[S]](
     val timerScheduler =
       new TimerSchedulerImpl(timerClient, context.componentCallMetadata)
 
-    // FIXME smuggling 0 arity method called from component client through here
+    // smuggling 0 arity method called from component client through here
     val cmd = command.payload.getOrElse(BytesPayload.empty)
 
     val CommandResult(effect) =
@@ -191,6 +192,8 @@ class WorkflowImpl[S, W <: Workflow[S]](
           context = context,
           timerScheduler = timerScheduler)
       } catch {
+        case e: HandlerNotFoundException =>
+          throw WorkflowException(workflowId, command.name, e.getMessage, Some(e))
         case BadRequestException(msg) => CommandResult(WorkflowEffectImpl[Any]().error(msg))
         case e: WorkflowException     => throw e
         case NonFatal(error) =>

@@ -4,10 +4,12 @@
 
 package akka.javasdk.impl.consumer
 
+import java.util.Optional
+
 import akka.annotation.InternalApi
 import akka.javasdk.consumer.Consumer
+import akka.javasdk.consumer.MessageContext
 import akka.javasdk.consumer.MessageEnvelope
-import akka.javasdk.impl.AnySupport
 import akka.javasdk.impl.AnySupport.ProtobufEmptyTypeUrl
 import akka.javasdk.impl.MethodInvoker
 import akka.javasdk.impl.reflection.ParameterExtractors
@@ -23,14 +25,16 @@ private[impl] class ReflectiveConsumerRouter[A <: Consumer](
     consumer: A,
     methodInvokers: Map[String, MethodInvoker],
     serializer: JsonSerializer,
-    ignoreUnknown: Boolean)
-    extends ConsumerRouter[A](consumer) {
+    ignoreUnknown: Boolean) {
 
-  override def handleUnary(message: MessageEnvelope[BytesPayload]): Consumer.Effect = {
+  def handleCommand(message: MessageEnvelope[BytesPayload], context: MessageContext): Consumer.Effect = {
+    // only set, never cleared, to allow access from other threads in async callbacks in the consumer
+    // the same handler and consumer instance is expected to only ever be invoked for a single message
+    consumer._internalSetMessageContext(Optional.of(context))
 
     val payload = message.payload()
     // make sure we route based on the new type url if we get an old json type url message
-    val inputTypeUrl = serializer.removeVersion(AnySupport.replaceLegacyJsonPrefix(payload.contentType))
+    val inputTypeUrl = serializer.removeVersion(serializer.replaceLegacyJsonPrefix(payload.contentType))
 
     // lookup ComponentClient
     val componentClients = Reflect.lookupComponentClientFields(consumer)
@@ -41,7 +45,7 @@ private[impl] class ReflectiveConsumerRouter[A <: Consumer](
     methodInvoker match {
       case Some(invoker) =>
         inputTypeUrl match {
-          case ProtobufEmptyTypeUrl =>
+          case BytesPayload.EmptyContentType | ProtobufEmptyTypeUrl =>
             invoker
               .invoke(consumer)
               .asInstanceOf[Consumer.Effect]
@@ -55,9 +59,10 @@ private[impl] class ReflectiveConsumerRouter[A <: Consumer](
               .asInstanceOf[Consumer.Effect]
         }
       case None if ignoreUnknown => ConsumerEffectImpl.Builder.ignore()
-      case None =>
+      case None                  =>
+        // FIXME IllegalStateException vs NoSuchElementException?
         throw new NoSuchElementException(
-          s"Couldn't find any method with input type [$inputTypeUrl] in Consumer [$consumer].")
+          s"Couldn't find any method with input type [$inputTypeUrl] in Consumer [${consumer.getClass.getName}].")
     }
   }
 }

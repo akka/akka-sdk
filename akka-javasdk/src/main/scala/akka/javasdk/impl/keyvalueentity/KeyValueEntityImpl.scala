@@ -14,10 +14,8 @@ import akka.javasdk.Metadata
 import akka.javasdk.Tracing
 import akka.javasdk.impl.AbstractContext
 import akka.javasdk.impl.ActivatableContext
-import akka.javasdk.impl.AnySupport
 import akka.javasdk.impl.ComponentDescriptor
 import akka.javasdk.impl.ComponentType
-import akka.javasdk.impl.EntityExceptions
 import akka.javasdk.impl.EntityExceptions.EntityException
 import akka.javasdk.impl.ErrorHandling.BadRequestException
 import akka.javasdk.impl.MetadataImpl
@@ -36,7 +34,6 @@ import akka.javasdk.keyvalueentity.KeyValueEntityContext
 import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.SpiEntity
 import akka.runtime.sdk.spi.SpiEventSourcedEntity
-import akka.util.ByteString
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.Tracer
 import org.slf4j.MDC
@@ -67,8 +64,6 @@ private[impl] object KeyValueEntityImpl {
       extends AbstractContext
       with KeyValueEntityContext
 
-  // 0 arity method
-  private val NoCommandPayload = new BytesPayload(ByteString.empty, AnySupport.JsonTypeUrlPrefix)
 }
 
 /**
@@ -108,9 +103,8 @@ private[impl] final class KeyValueEntityImpl[S, KV <: KeyValueEntity[S]](
     val span: Option[Span] =
       traceInstrumentation.buildSpan(ComponentType.KeyValueEntity, componentId, entityId, command)
     span.foreach(s => MDC.put(Telemetry.TRACE_ID, s.getSpanContext.getTraceId))
-    val cmdPayload = command.payload.getOrElse(
-      // smuggling 0 arity method called from component client through here
-      NoCommandPayload)
+    // smuggling 0 arity method called from component client through here
+    val cmdPayload = command.payload.getOrElse(BytesPayload.empty)
     val metadata: Metadata = MetadataImpl.of(command.metadata)
     val cmdContext =
       new CommandContextImpl(
@@ -126,7 +120,7 @@ private[impl] final class KeyValueEntityImpl[S, KV <: KeyValueEntity[S]](
       entity._internalSetCommandContext(Optional.of(cmdContext))
       entity._internalSetCurrentState(state)
       val commandEffect = router
-        .handleCommand(command.name, cmdPayload, cmdContext)
+        .handleCommand(command.name, cmdPayload)
         .asInstanceOf[KeyValueEntityEffectImpl[AnyRef]] // FIXME improve?
 
       def errorOrReply: Either[SpiEntity.Error, BytesPayload] = {
@@ -177,16 +171,12 @@ private[impl] final class KeyValueEntityImpl[S, KV <: KeyValueEntity[S]](
       }
 
     } catch {
-      case e: HandlerNotFoundException =>
-        throw new EntityExceptions.EntityException(
-          entityId,
-          command.name,
-          s"No command handler found for command [${e.name}] on ${entity.getClass}")
       case BadRequestException(msg) =>
         Future.successful(new SpiEventSourcedEntity.ErrorEffect(error = new SpiEntity.Error(msg)))
       case e: EntityException =>
         throw e
       case NonFatal(error) =>
+        // also covers HandlerNotFoundException
         throw EntityException(
           entityId = entityId,
           commandName = command.name,

@@ -61,7 +61,6 @@ private[impl] final class ConsumerImpl[C <: Consumer](
   private implicit val executionContext: ExecutionContext = sdkExecutionContext
   implicit val system: ActorSystem = _system
 
-  // FIXME remove router altogether
   private def createRouter(): ReflectiveConsumerRouter[C] =
     new ReflectiveConsumerRouter[C](
       factory(),
@@ -78,12 +77,11 @@ private[impl] final class ConsumerImpl[C <: Consumer](
         val messageContext = createMessageContext(message, span)
         val payload: BytesPayload = message.payload.getOrElse(throw new IllegalArgumentException("No message payload"))
         val effect = createRouter()
-          .handleUnary(MessageEnvelope.of(payload, messageContext.metadata()), messageContext)
+          .handleCommand(MessageEnvelope.of(payload, messageContext.metadata()), messageContext)
         toSpiEffect(message, effect)
       } catch {
         case NonFatal(ex) =>
-          // command handler threw an "unexpected" error
-          span.foreach(_.end())
+          // command handler threw an "unexpected" error, also covers HandlerNotFoundException
           Future.successful(handleUnexpectedException(message, ex))
       } finally {
         MDC.remove(Telemetry.TRACE_ID)
@@ -122,14 +120,11 @@ private[impl] final class ConsumerImpl[C <: Consumer](
   }
 
   private def handleUnexpectedException(message: Message, ex: Throwable): Effect = {
-    ex match {
-      case _ =>
-        ErrorHandling.withCorrelationId { correlationId =>
-          log.error(
-            s"Failure during handling message [${message.name}] from Consumer component [${consumerClass.getSimpleName}].",
-            ex)
-          protocolFailure(correlationId)
-        }
+    ErrorHandling.withCorrelationId { correlationId =>
+      log.error(
+        s"Failure during handling message [${message.name}] from Consumer component [${consumerClass.getSimpleName}].",
+        ex)
+      protocolFailure(correlationId)
     }
   }
 

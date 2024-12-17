@@ -161,11 +161,10 @@ class JsonSerializer {
     // check both new and old typeUrl for compatibility, in case there are services with old type url stored in database
     contentType.startsWith(JsonContentTypePrefix) || contentType.startsWith(KalixJsonContentTypePrefix)
 
-// FIXME could be used by some ReflectiveRouters but not yet
-//  private def replaceLegacyJsonPrefix(typeUrl: String): String =
-//    if (typeUrl.startsWith(KalixJsonContentTypePrefix))
-//      JsonContentTypePrefix + typeUrl.stripPrefix(KalixJsonContentTypePrefix)
-//    else typeUrl
+  private[akka] def replaceLegacyJsonPrefix(typeUrl: String): String =
+    if (typeUrl.startsWith(KalixJsonContentTypePrefix))
+      JsonContentTypePrefix + typeUrl.stripPrefix(KalixJsonContentTypePrefix)
+    else typeUrl
 
   def stripJsonContentTypePrefix(contentType: String): String =
     contentType.stripPrefix(JsonContentTypePrefix).stripPrefix(KalixJsonContentTypePrefix)

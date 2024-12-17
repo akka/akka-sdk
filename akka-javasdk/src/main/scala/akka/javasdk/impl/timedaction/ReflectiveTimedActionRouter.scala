@@ -4,11 +4,14 @@
 
 package akka.javasdk.impl.timedaction
 
+import java.util.Optional
+
 import akka.annotation.InternalApi
-import akka.javasdk.impl.AnySupport
 import akka.javasdk.impl.CommandHandler
 import akka.javasdk.impl.CommandSerialization
+import akka.javasdk.impl.HandlerNotFoundException
 import akka.javasdk.impl.serialization.JsonSerializer
+import akka.javasdk.timedaction.CommandContext
 import akka.javasdk.timedaction.CommandEnvelope
 import akka.javasdk.timedaction.TimedAction
 import akka.runtime.sdk.spi.BytesPayload
@@ -20,25 +23,30 @@ import akka.runtime.sdk.spi.BytesPayload
 private[impl] final class ReflectiveTimedActionRouter[A <: TimedAction](
     action: A,
     commandHandlers: Map[String, CommandHandler],
-    serializer: JsonSerializer)
-    extends TimedActionRouter[A](action) {
+    serializer: JsonSerializer) {
 
-  private def commandHandlerLookup(methodName: String) =
-    commandHandlers.getOrElse(
-      methodName,
-      throw new RuntimeException(
-        s"no matching method for '$methodName' on [${action.getClass}], existing are [${commandHandlers.keySet
-          .mkString(", ")}]"))
+  private def commandHandlerLookup(commandName: String): CommandHandler =
+    commandHandlers.get(commandName) match {
+      case Some(handler) => handler
+      case None =>
+        throw new HandlerNotFoundException("command", commandName, action.getClass, commandHandlers.keySet)
+    }
 
-  override def handleUnary(methodName: String, message: CommandEnvelope[BytesPayload]): TimedAction.Effect = {
+  def handleCommand(
+      methodName: String,
+      message: CommandEnvelope[BytesPayload],
+      context: CommandContext): TimedAction.Effect = {
+    // only set, never cleared, to allow access from other threads in async callbacks in the action
+    // the same handler and action instance is expected to only ever be invoked for a single command
+    action._internalSetCommandContext(Optional.of(context))
 
     val commandHandler = commandHandlerLookup(methodName)
 
     val payload = message.payload()
-    // make sure we route based on the new type url if we get an old json type url message
-    val updatedContentType = AnySupport.replaceLegacyJsonPrefix(payload.contentType)
-    if ((AnySupport.isJson(updatedContentType) || payload.bytes.isEmpty) && commandHandler.isSingleNameInvoker) {
-      // special cased component client calls, lets json commands trough all the way
+
+    if (serializer.isJson(payload) || payload.isEmpty) {
+      // - BytesPayload.empty - there is no real command, and we are calling a method with arity 0
+      // - BytesPayload with json - we deserialize it and call the method
       val methodInvoker = commandHandler.getSingleNameInvoker()
       val deserializedCommand =
         CommandSerialization.deserializeComponentClientCommand(methodInvoker.method, payload, serializer)
@@ -49,8 +57,9 @@ private[impl] final class ReflectiveTimedActionRouter[A <: TimedAction](
       result.asInstanceOf[TimedAction.Effect]
     } else {
       throw new IllegalStateException(
-        "Could not find a matching command handler for method: " + methodName + ", content type: " + updatedContentType + ", invokers keys: " + commandHandler.methodInvokers.keys
-          .mkString(", "))
+        s"Could not find a matching command handler for method [$methodName], content type " +
+        s"[${payload.contentType}], invokers keys [${commandHandler.methodInvokers.keys.mkString(", ")}," +
+        s"on [${action.getClass.getName}]")
     }
   }
 }
