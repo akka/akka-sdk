@@ -609,7 +609,6 @@ private final class Sdk(
       override val serviceInfo: SpiServiceInfo =
         new SpiServiceInfo(
           serviceName = sdkSettings.devModeSettings.map(_.serviceName).getOrElse(""),
-          serviceVersion = "",
           sdkName = "java",
           sdkVersion = BuildInfo.version,
           protocolMajorVersion = BuildInfo.protocolMajorVersion,
