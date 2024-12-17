@@ -12,6 +12,9 @@ Current versions
 
 == December 2024
 
+* Akka CLI 3.0.8
+    - Updates to configure SSO integrations
+
 * https://github.com/akka/akka-sdk/releases/tag/v3.0.2[Akka SDK 3.0.2]
     - Integration Tests are now bound to `mvn integration-test` and not a specific profile
 
