@@ -4,15 +4,12 @@
 
 package akka.javasdk.impl
 
-import akka.javasdk.impl.AnySupport
-import akka.javasdk.impl.ByteStringEncoding
 import kalix.protocol.discovery.{ DiscoveryProto, UserFunctionError }
 import kalix.protocol.event_sourced_entity.EventSourcedEntityProto
 import com.example.shoppingcart.ShoppingCartApi
 import com.google.protobuf.any.{ Any => ScalaPbAny }
 import com.google.protobuf.{ Any => JavaPbAny }
 import com.google.protobuf.ByteString
-import com.google.protobuf.Empty
 import org.scalatest.OptionValues
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -53,21 +50,6 @@ class AnySupportSpec extends AnyWordSpec with Matchers with OptionValues {
       val decoded = anySupport.decodePossiblyPrimitive(any)
       decoded.getClass should ===(error.getClass)
       decoded should ===(error)
-    }
-
-    "support resolving a service descriptor" in {
-      val methods =
-        anySupport.resolveServiceDescriptor(ShoppingCartApi.getDescriptor.findServiceByName("ShoppingCartService"))
-      methods should have size 4
-      val method = methods("AddItem")
-
-      // Input type
-      val inputAny = anySupport.encodeScala(addLineItem)
-      method.inputType.parseFrom(inputAny.value) should ===(addLineItem)
-
-      // Output type - this also checks that when java_multiple_files is true, it works
-      val outputAny = anySupport.encodeScala(Empty.getDefaultInstance)
-      method.outputType.parseFrom(outputAny.value) should ===(Empty.getDefaultInstance)
     }
 
     def testPrimitive[T](name: String, value: T, defaultValue: T) = {

@@ -5,9 +5,10 @@
 package akka.javasdk.impl
 
 import akka.javasdk.testmodels.keyvalueentity.ValueEntitiesTestModels.InvalidValueEntityWithOverloadedCommandHandler
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
-class KeyValueEntityDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuite {
+class KeyValueEntityDescriptorFactorySpec extends AnyWordSpec with Matchers {
 
   "ValueEntity descriptor factory" should {
     "validate a KeyValueEntity must be declared as public" in {

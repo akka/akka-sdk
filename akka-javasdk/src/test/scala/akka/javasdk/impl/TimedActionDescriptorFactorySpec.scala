@@ -8,9 +8,10 @@ import akka.javasdk.impl.NotPublicComponents.NotPublicAction
 import akka.javasdk.impl.serialization.JsonSerializer
 import akka.javasdk.testmodels.action.ActionsTestModels.ActionWithOneParam
 import akka.javasdk.testmodels.action.ActionsTestModels.ActionWithoutParam
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
-class TimedActionDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuite {
+class TimedActionDescriptorFactorySpec extends AnyWordSpec with Matchers {
 
   "Action descriptor factory" should {
 

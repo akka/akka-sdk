@@ -5,9 +5,10 @@
 package akka.javasdk.impl
 
 import akka.javasdk.testmodels.eventsourcedentity.EventSourcedEntitiesTestModels.InvalidEventSourcedEntityWithOverloadedCommandHandler
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
-class EventSourcedEntityDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuite {
+class EventSourcedEntityDescriptorFactorySpec extends AnyWordSpec with Matchers {
 
   "The EventSourced entity descriptor factory" should {
 

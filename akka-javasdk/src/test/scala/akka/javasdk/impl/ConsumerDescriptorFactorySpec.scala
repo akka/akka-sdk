@@ -29,9 +29,10 @@ import akka.javasdk.testmodels.subscriptions.PubSubTestModels.SubscribeToTopicTy
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.SubscribeToTopicTypeLevelCombined
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.SubscribeToValueEntityTypeLevel
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.SubscribeToValueEntityWithDeletes
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
-class ConsumerDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuite {
+class ConsumerDescriptorFactorySpec extends AnyWordSpec with Matchers {
 
   "Consumer descriptor factory" should {
 

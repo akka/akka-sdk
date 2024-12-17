@@ -4,9 +4,10 @@
 
 package akka.javasdk.impl
 
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
-class WorkflowEntityDescriptorFactorySpec extends AnyWordSpec with ComponentDescriptorSuite {
+class WorkflowEntityDescriptorFactorySpec extends AnyWordSpec with Matchers {
 
   "Workflow descriptor factory" should {
     "validate a Workflow must be declared as public" in {

@@ -446,15 +446,6 @@ class AnySupport(
         })
       .get
 
-  def resolveServiceDescriptor(
-      serviceDescriptor: Descriptors.ServiceDescriptor): Map[String, ResolvedServiceMethod[_, _]] =
-    serviceDescriptor.getMethods.asScala.map { method =>
-      method.getName -> ResolvedServiceMethod(
-        method,
-        resolveTypeDescriptor(method.getInputType),
-        resolveTypeDescriptor(method.getOutputType))
-    }.toMap
-
   private def resolveTypeUrl(typeName: String): Option[ResolvedType[_]] =
     allTypes.get(typeName).map(resolveTypeDescriptor)
 
