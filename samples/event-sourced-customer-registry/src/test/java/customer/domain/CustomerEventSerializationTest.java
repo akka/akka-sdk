@@ -1,7 +1,9 @@
 package customer.domain;
 
+import com.google.protobuf.Any;
+import com.google.protobuf.ByteString;
+import com.google.protobuf.InvalidProtocolBufferException;
 import akka.javasdk.JsonSupport;
-import akka.util.ByteString;
 import org.junit.jupiter.api.Test;
 
 import java.util.Base64;
@@ -15,7 +17,7 @@ class CustomerEventSerializationTest {
   @Test
   public void shouldDeserializeWithMandatoryField() {
     //given
-    ByteString serialized = JsonSupport.encodeToAkkaByteString(new CustomerEvent.NameChanged("andre"));
+    Any serialized = JsonSupport.encodeJson(new CustomerEvent.NameChanged("andre"));
 
     //when
     NameChanged deserialized = JsonSupport.decodeJson(NameChanged.class, serialized);
@@ -30,7 +32,7 @@ class CustomerEventSerializationTest {
   public void shouldDeserializeWithChangedFieldName() {
     //given
     Address address = new Address("Wall Street", "New York");
-    ByteString serialized = JsonSupport.encodeToAkkaByteString(new CustomerEvent.AddressChanged(address));
+    Any serialized = JsonSupport.encodeJson(new CustomerEvent.AddressChanged(address));
 
     //when
     AddressChanged deserialized = JsonSupport.decodeJson(AddressChanged.class, serialized);
@@ -42,7 +44,7 @@ class CustomerEventSerializationTest {
   @Test
   public void shouldDeserializeWithStructureMigration() {
     //given
-    ByteString serialized = JsonSupport.encodeToAkkaByteString(new CustomerCreatedOld("bob@lightbend.com", "bob", "Wall Street", "New York"));
+    Any serialized = JsonSupport.encodeJson(new CustomerCreatedOld("bob@lightbend.com", "bob", "Wall Street", "New York"));
 
     //when
     CustomerEvent.CustomerCreated deserialized = JsonSupport.decodeJson(CustomerEvent.CustomerCreated.class, serialized);
@@ -54,16 +56,17 @@ class CustomerEventSerializationTest {
 
   // tag::testing-deserialization[]
   @Test
-  public void shouldDeserializeCustomerCreated_V0() {
+  public void shouldDeserializeCustomerCreated_V0() throws InvalidProtocolBufferException {
     // tag::testing-deserialization-encoding[]
-    ByteString serialized = JsonSupport.encodeToAkkaByteString(new CustomerCreatedOld("bob@lightbend.com", "bob", "Wall Street", "New York"));
-    String encodedBytes = serialized.encodeBase64().utf8String(); // <1>
+    Any serialized = JsonSupport.encodeJson(new CustomerCreatedOld("bob@lightbend.com", "bob", "Wall Street", "New York"));
+    String encodedBytes = new String(Base64.getEncoder().encode(serialized.toByteArray())); // <1>
     // end::testing-deserialization-encoding[]
 
-    ByteString decodedBytes = ByteString.fromString(encodedBytes).decodeBase64(); // <2>
+    byte[] bytes = Base64.getDecoder().decode(encodedBytes.getBytes()); // <2>
+    Any serializedAny = Any.parseFrom(ByteString.copyFrom(bytes)); // <3>
 
     CustomerEvent.CustomerCreated deserialized = JsonSupport.decodeJson(CustomerEvent.CustomerCreated.class,
-      decodedBytes); // <3>
+      serializedAny); // <4>
 
     assertEquals("Wall Street", deserialized.address().street());
     assertEquals("New York", deserialized.address().city());
