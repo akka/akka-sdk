@@ -143,52 +143,50 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
       commandContext: CommandContext,
       executionContext: ExecutionContext): Future[BytesPayload] = {
 
-    val workflow = instanceFactory(workflowContext)
     implicit val ec: ExecutionContext = executionContext
 
-    try {
-      // if runtime doesn't have a state to provide, we fall back to user's own defined empty state
-      val decodedState = decodeUserState(userState).getOrElse(workflow.emptyState())
-      workflow._internalSetup(decodedState, commandContext, timerScheduler)
-      workflow.definition().findByName(stepName).toScala match {
-        case Some(call: AsyncCallStep[_, _, _]) =>
-          val decodedInput = input match {
-            case Some(inputValue) => decodeInput(inputValue, call.callInputClass)
-            case None             => null // to meet a signature of supplier expressed as a function
-          }
+    val workflow = instanceFactory(workflowContext)
+    // if runtime doesn't have a state to provide, we fall back to user's own defined empty state
+    val decodedState = decodeUserState(userState).getOrElse(workflow.emptyState())
+    workflow._internalSetup(decodedState, commandContext, timerScheduler)
 
-          val future = call.callFunc
-            .asInstanceOf[JFunc[Any, CompletionStage[Any]]]
-            .apply(decodedInput)
-            .asScala
+    workflow.definition().findByName(stepName).toScala match {
+      case Some(call: AsyncCallStep[_, _, _]) =>
+        val decodedInput = input match {
+          case Some(inputValue) => decodeInput(inputValue, call.callInputClass)
+          case None             => null // to meet a signature of supplier expressed as a function
+        }
 
-          future.map(serializer.toBytes)
+        val future = call.callFunc
+          .asInstanceOf[JFunc[Any, CompletionStage[Any]]]
+          .apply(decodedInput)
+          .asScala
 
-        case Some(any) => Future.failed(WorkflowStepNotSupported(any.getClass.getSimpleName))
-        case None      => Future.failed(WorkflowStepNotFound(stepName))
-      }
+        future.map(serializer.toBytes)
+
+      case Some(any) => Future.failed(WorkflowStepNotSupported(any.getClass.getSimpleName))
+      case None      => Future.failed(WorkflowStepNotFound(stepName))
     }
   }
 
   final def getNextStep(stepName: String, result: BytesPayload, userState: Option[BytesPayload]): TransitionalResult = {
 
     val workflow = instanceFactory(workflowContext)
-    try {
-      // if runtime doesn't have a state to provide, we fall back to user's own defined empty state
-      val decodedState = decodeUserState(userState).getOrElse(workflow.emptyState())
-      workflow._internalSetup(decodedState)
-      workflow.definition().findByName(stepName).toScala match {
-        case Some(call: AsyncCallStep[_, _, _]) =>
-          val effect =
-            call.transitionFunc
-              .asInstanceOf[JFunc[Any, TransitionalEffect[Any]]]
-              .apply(decodeInput(result, call.transitionInputClass))
 
-          TransitionalResult(effect)
+    // if runtime doesn't have a state to provide, we fall back to user's own defined empty state
+    val decodedState = decodeUserState(userState).getOrElse(workflow.emptyState())
+    workflow._internalSetup(decodedState)
+    workflow.definition().findByName(stepName).toScala match {
+      case Some(call: AsyncCallStep[_, _, _]) =>
+        val effect =
+          call.transitionFunc
+            .asInstanceOf[JFunc[Any, TransitionalEffect[Any]]]
+            .apply(decodeInput(result, call.transitionInputClass))
 
-        case Some(any) => throw WorkflowStepNotSupported(any.getClass.getSimpleName)
-        case None      => throw WorkflowStepNotFound(stepName)
-      }
+        TransitionalResult(effect)
+
+      case Some(any) => throw WorkflowStepNotSupported(any.getClass.getSimpleName)
+      case None      => throw WorkflowStepNotFound(stepName)
     }
   }
 }
