@@ -114,13 +114,9 @@ public class ExampleEndpoint extends AbstractHttpEndpoint {
           .withStatus(StatusCodes.BAD_REQUEST)
           .withEntity("It is unlikely that you are " + age + " years old");
     else {
-      try {
         var jsonBytes = JsonSupport.encodeToAkkaByteString(new HelloResponse("Hello " + name + "!")); // <1>
         return HttpResponse.create() // <2>
             .withEntity(ContentTypes.APPLICATION_JSON, jsonBytes); // <3>
-      } catch (JsonProcessingException e) {
-        throw new RuntimeException("Could not serialize response to JSON", e);
-      }
     }
   }
   // end::even-lower-level-response[]
