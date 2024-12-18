@@ -61,7 +61,7 @@ public class HttpResponses {
   public static HttpResponse ok(Object object) {
     if (object == null) throw new IllegalArgumentException("object must not be null");
     try {
-      byte[] body = JsonSupport.encodeToBytes(object).toByteArray();
+      var body = JsonSupport.encodeToAkkaByteString(object);
       return HttpResponse.create().withEntity(ContentTypes.APPLICATION_JSON, body);
     } catch (JsonProcessingException e) {
       throw new RuntimeException(e);

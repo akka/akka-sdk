@@ -19,8 +19,8 @@ class MyJsonable {
   @BeanProperty var field: String = _
 }
 
+@Deprecated
 class JsonSupportSpec extends AnyWordSpec with Matchers {
-  // FIXME move these tests to JsonSerializerSpec
 
   val myJsonable = new MyJsonable
   myJsonable.field = "foo"

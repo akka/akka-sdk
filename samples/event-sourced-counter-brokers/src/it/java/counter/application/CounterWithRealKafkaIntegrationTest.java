@@ -55,7 +55,7 @@ public class CounterWithRealKafkaIntegrationTest extends TestKitSupport { // <1>
           ConsumerRecords<String, byte[]> records = consumer.poll(Duration.ofMillis(200));
           var foundRecord = false;
           for (ConsumerRecord<String, byte[]> r : records) {
-            var increased = JsonSupport.parseBytes(r.value(), CounterEvent.ValueIncreased.class);
+            var increased = JsonSupport.decodeJson(CounterEvent.ValueIncreased.class, r.value());
             String subjectId = new String(r.headers().headers("ce-subject").iterator().next().value(), StandardCharsets.UTF_8);
             if (subjectId.equals(counterId) && increased.value() == 20) {
               foundRecord = true;
