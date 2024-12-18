@@ -2,7 +2,6 @@ package customer.domain;
 
 import akka.javasdk.JsonSupport;
 import akka.util.ByteString;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import org.junit.jupiter.api.Test;
 
 import java.util.Base64;
@@ -14,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class CustomerEventSerializationTest {
 
   @Test
-  public void shouldDeserializeWithMandatoryField() throws JsonProcessingException {
+  public void shouldDeserializeWithMandatoryField() {
     //given
     ByteString serialized = JsonSupport.encodeToAkkaByteString(new CustomerEvent.NameChanged("andre"));
 
@@ -55,7 +54,7 @@ class CustomerEventSerializationTest {
 
   // tag::testing-deserialization[]
   @Test
-  public void shouldDeserializeCustomerCreated_V0() throws InvalidProtocolBufferException {
+  public void shouldDeserializeCustomerCreated_V0() {
     // tag::testing-deserialization-encoding[]
     ByteString serialized = JsonSupport.encodeToAkkaByteString(new CustomerCreatedOld("bob@lightbend.com", "bob", "Wall Street", "New York"));
     String encodedBytes = serialized.encodeBase64().utf8String(); // <1>
