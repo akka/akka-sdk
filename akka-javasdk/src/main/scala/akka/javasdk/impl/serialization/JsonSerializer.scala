@@ -267,4 +267,25 @@ class JsonSerializer {
   private[akka] def removeVersion(typeName: String) = {
     typeName.split("#").head
   }
+
+  private[akka] def encodeDynamicToAkkaByteString(key: String, value: String): ByteString = {
+    try {
+      val dynamicJson = objectMapper.createObjectNode.put(key, value)
+      ByteString.fromArrayUnsafe(objectMapper.writeValueAsBytes(dynamicJson))
+    } catch {
+      case ex: JsonProcessingException =>
+        throw new IllegalArgumentException("Could not encode dynamic key/value as JSON", ex)
+    }
+  }
+
+  private[akka] def encodeDynamicCollectionToAkkaByteString(key: String, values: java.util.Collection[_]): ByteString =
+    try {
+      val objectNode = objectMapper.createObjectNode
+      val dynamicJson = objectNode.putArray(key)
+      values.forEach(v => dynamicJson.add(v.toString))
+      ByteString.fromArrayUnsafe(objectMapper.writeValueAsBytes(objectNode))
+    } catch {
+      case ex: JsonProcessingException =>
+        throw new IllegalArgumentException("Could not encode dynamic key/values as JSON", ex)
+    }
 }

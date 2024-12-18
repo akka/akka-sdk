@@ -156,6 +156,10 @@ public final class JsonSupport {
     }
   }
 
+  /**
+   * @deprecated was only intended for internal use
+   */
+  @Deprecated
   public static akka.util.ByteString encodeDynamicToAkkaByteString(String key, String value) {
     try {
       ObjectNode dynamicJson = objectMapper.createObjectNode().put(key, value);
@@ -166,6 +170,10 @@ public final class JsonSupport {
     }
   }
 
+  /**
+   * @deprecated was only intended for internal use
+   */
+  @Deprecated
   public static akka.util.ByteString encodeDynamicCollectionToAkkaByteString(String key, Collection<?> values) {
     try {
       ObjectNode objectNode = objectMapper.createObjectNode();

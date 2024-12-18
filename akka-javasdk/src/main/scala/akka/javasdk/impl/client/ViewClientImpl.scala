@@ -6,7 +6,6 @@ package akka.javasdk.impl.client
 
 import akka.annotation.InternalApi
 import akka.japi.function
-import akka.javasdk.JsonSupport
 import akka.javasdk.Metadata
 import akka.javasdk.client.ComponentInvokeOnlyMethodRef
 import akka.javasdk.client.ComponentInvokeOnlyMethodRef1
@@ -116,12 +115,10 @@ private[javasdk] final case class ViewClientImpl(
     case Some(arg) =>
       // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
       if (arg.getClass.isPrimitive || primitiveObjects.contains(arg.getClass)) {
-        // FIXME eh?, move this to JsonSerializer
-        val bytes = JsonSupport.encodeDynamicToAkkaByteString(method.getParameters.head.getName, arg.toString)
+        val bytes = serializer.encodeDynamicToAkkaByteString(method.getParameters.head.getName, arg.toString)
         new BytesPayload(bytes, JsonSerializer.JsonContentTypePrefix + "object")
       } else if (classOf[java.util.Collection[_]].isAssignableFrom(arg.getClass)) {
-        // FIXME eh?, move this to JsonSerializer
-        val bytes = JsonSupport.encodeDynamicCollectionToAkkaByteString(
+        val bytes = serializer.encodeDynamicCollectionToAkkaByteString(
           method.getParameters.head.getName,
           arg.asInstanceOf[java.util.Collection[_]])
         new BytesPayload(bytes, JsonSerializer.JsonContentTypePrefix + "object")
