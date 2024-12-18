@@ -84,6 +84,7 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
     entityId: String,
     serializer: JsonSerializer,
     componentDescriptor: ComponentDescriptor,
+    entityStateType: Class[S],
     factory: EventSourcedEntityContext => ES)
     extends SpiEventSourcedEntity {
   import EventSourcedEntityImpl._
@@ -229,5 +230,5 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
     serializer.toBytes(obj)
 
   override def stateFromBytes(pb: BytesPayload): SpiEventSourcedEntity.State =
-    serializer.fromBytes(router.entityStateType, pb)
+    serializer.fromBytes(entityStateType, pb).asInstanceOf[SpiEventSourcedEntity.State]
 }

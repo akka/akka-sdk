@@ -8,7 +8,6 @@ import akka.annotation.InternalApi
 import akka.javasdk.impl.CommandHandler
 import akka.javasdk.impl.CommandSerialization
 import akka.javasdk.impl.HandlerNotFoundException
-import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.serialization.JsonSerializer
 import akka.javasdk.keyvalueentity.KeyValueEntity
 import akka.runtime.sdk.spi.BytesPayload
@@ -21,8 +20,6 @@ private[impl] class ReflectiveKeyValueEntityRouter[S, KV <: KeyValueEntity[S]](
     val entity: KV,
     commandHandlers: Map[String, CommandHandler],
     serializer: JsonSerializer) {
-
-  val entityStateType: Class[S] = Reflect.keyValueEntityStateType(entity.getClass).asInstanceOf[Class[S]]
 
   private def commandHandlerLookup(commandName: String): CommandHandler =
     commandHandlers.get(commandName) match {

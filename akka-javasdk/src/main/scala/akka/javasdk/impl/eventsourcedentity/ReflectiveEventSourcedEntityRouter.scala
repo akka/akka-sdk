@@ -9,7 +9,6 @@ import akka.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.javasdk.impl.CommandHandler
 import akka.javasdk.impl.CommandSerialization
 import akka.javasdk.impl.HandlerNotFoundException
-import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.serialization.JsonSerializer
 import akka.runtime.sdk.spi.BytesPayload
 
@@ -21,11 +20,6 @@ private[impl] class ReflectiveEventSourcedEntityRouter[S, E, ES <: EventSourcedE
     val entity: ES,
     commandHandlers: Map[String, CommandHandler],
     serializer: JsonSerializer) {
-
-  // we preemptively register the events type to the serializer
-  Reflect.allKnownEventTypes[S, E, ES](entity).foreach(serializer.registerTypeHints)
-
-  val entityStateType: Class[S] = Reflect.eventSourcedEntityStateType(entity.getClass).asInstanceOf[Class[S]]
 
   private def commandHandlerLookup(commandName: String): CommandHandler =
     commandHandlers.get(commandName) match {

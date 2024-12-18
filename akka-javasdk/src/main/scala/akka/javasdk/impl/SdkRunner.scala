@@ -424,6 +424,11 @@ private final class Sdk(
               method.getName
           }.toSet
 
+        // we preemptively register the events type to the serializer
+        Reflect.allKnownEventSourcedEntityEventType(clz).foreach(serializer.registerTypeHints)
+
+        val entityStateType: Class[AnyRef] = Reflect.eventSourcedEntityStateType(clz).asInstanceOf[Class[AnyRef]]
+
         val instanceFactory: SpiEventSourcedEntity.FactoryContext => SpiEventSourcedEntity = { factoryContext =>
           new EventSourcedEntityImpl[AnyRef, AnyRef, EventSourcedEntity[AnyRef, AnyRef]](
             sdkSettings,
@@ -432,6 +437,7 @@ private final class Sdk(
             factoryContext.entityId,
             serializer,
             ComponentDescriptor.descriptorFor(clz, serializer),
+            entityStateType,
             context =>
               wiredInstance(clz.asInstanceOf[Class[EventSourcedEntity[AnyRef, AnyRef]]]) {
                 // remember to update component type API doc and docs if changing the set of injectables
@@ -446,6 +452,8 @@ private final class Sdk(
 
         val readOnlyCommandNames = Set.empty[String]
 
+        val entityStateType: Class[AnyRef] = Reflect.keyValueEntityStateType(clz).asInstanceOf[Class[AnyRef]]
+
         val instanceFactory: SpiEventSourcedEntity.FactoryContext => SpiEventSourcedEntity = { factoryContext =>
           new KeyValueEntityImpl[AnyRef, KeyValueEntity[AnyRef]](
             sdkSettings,
@@ -454,6 +462,7 @@ private final class Sdk(
             factoryContext.entityId,
             serializer,
             ComponentDescriptor.descriptorFor(clz, serializer),
+            entityStateType,
             context =>
               wiredInstance(clz.asInstanceOf[Class[KeyValueEntity[AnyRef]]]) {
                 // remember to update component type API doc and docs if changing the set of injectables

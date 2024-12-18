@@ -130,11 +130,6 @@ private[impl] object Reflect {
     Modifier.isStatic(component.getModifiers) &&
     Modifier.isPublic(component.getModifiers)
 
-  def allKnownEventTypes[S, E, ES <: EventSourcedEntity[S, E]](entity: ES): Seq[Class[_]] = {
-    val eventType = eventSourcedEntityEventType(entity.getClass)
-    eventType.getPermittedSubclasses.toSeq
-  }
-
   def workflowStateType[S, W <: Workflow[S]](workflow: W): Class[S] = {
     @tailrec
     def loop(current: Class[_]): Class[_] =
@@ -154,6 +149,11 @@ private[impl] object Reflect {
       }
 
     loop(workflow.getClass).asInstanceOf[Class[S]]
+  }
+
+  def allKnownEventSourcedEntityEventType(component: Class[_]): Seq[Class[_]] = {
+    val eventType = eventSourcedEntityEventType(component)
+    eventType.getPermittedSubclasses.toSeq
   }
 
   def eventSourcedEntityEventType(component: Class[_]): Class[_] =
