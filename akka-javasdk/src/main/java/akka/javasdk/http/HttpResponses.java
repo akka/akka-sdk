@@ -60,12 +60,8 @@ public class HttpResponses {
    */
   public static HttpResponse ok(Object object) {
     if (object == null) throw new IllegalArgumentException("object must not be null");
-    try {
-      var body = JsonSupport.encodeToAkkaByteString(object);
-      return HttpResponse.create().withEntity(ContentTypes.APPLICATION_JSON, body);
-    } catch (JsonProcessingException e) {
-      throw new RuntimeException(e);
-    }
+    var body = JsonSupport.encodeToAkkaByteString(object);
+    return HttpResponse.create().withEntity(ContentTypes.APPLICATION_JSON, body);
   }
 
   /**

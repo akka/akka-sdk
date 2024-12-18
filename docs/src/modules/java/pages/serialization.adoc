@@ -164,5 +164,4 @@ include::example$event-sourced-customer-registry/src/test/java/customer/domain/C
 ----
 <1> Encodes old class in Base64 String.
 <2> Decodes Base64 bytes.
-<3> Parses bytes into `Any` object.
-<4> Verifies JSON deserialization.
+<3> Verifies JSON deserialization.

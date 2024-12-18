@@ -140,20 +140,42 @@ public final class JsonSupport {
       objectMapper.writerFor(value.getClass()).writeValueAsBytes(value));
   }
 
-  public static <T> akka.util.ByteString encodeToAkkaByteString(T value) throws JsonProcessingException {
-    return akka.util.ByteString.fromArrayUnsafe(objectMapper.writerFor(value.getClass()).writeValueAsBytes(value));
+  /**
+   * Encode the given value as JSON using Jackson.
+   *
+   * @param value    the object to encode as JSON, must be an instance of a class properly annotated
+   *                 with the needed Jackson annotations.
+   * @throws IllegalArgumentException if the given value cannot be turned into JSON
+   */
+  public static <T> akka.util.ByteString encodeToAkkaByteString(T value) {
+    try {
+      return akka.util.ByteString.fromArrayUnsafe(objectMapper.writerFor(value.getClass()).writeValueAsBytes(value));
+    } catch (JsonProcessingException ex) {
+      throw new IllegalArgumentException(
+          "Could not encode [" + value.getClass().getName() + "] as JSON", ex);
+    }
   }
 
-  public static akka.util.ByteString encodeDynamicToAkkaByteString(String key, String value) throws JsonProcessingException {
-    ObjectNode dynamicJson = objectMapper.createObjectNode().put(key, value);
-    return akka.util.ByteString.fromArrayUnsafe(objectMapper.writeValueAsBytes(dynamicJson));
+  public static akka.util.ByteString encodeDynamicToAkkaByteString(String key, String value) {
+    try {
+      ObjectNode dynamicJson = objectMapper.createObjectNode().put(key, value);
+      return akka.util.ByteString.fromArrayUnsafe(objectMapper.writeValueAsBytes(dynamicJson));
+    } catch (JsonProcessingException ex) {
+      throw new IllegalArgumentException(
+          "Could not encode dynamic key/value as JSON", ex);
+    }
   }
 
-  public static akka.util.ByteString encodeDynamicCollectionToAkkaByteString(String key, Collection<?> values) throws JsonProcessingException {
-    ObjectNode objectNode = objectMapper.createObjectNode();
-    ArrayNode dynamicJson = objectNode.putArray(key);
-    values.forEach(v -> dynamicJson.add(v.toString()));
-    return akka.util.ByteString.fromArrayUnsafe(objectMapper.writeValueAsBytes(objectNode));
+  public static akka.util.ByteString encodeDynamicCollectionToAkkaByteString(String key, Collection<?> values) {
+    try {
+      ObjectNode objectNode = objectMapper.createObjectNode();
+      ArrayNode dynamicJson = objectNode.putArray(key);
+      values.forEach(v -> dynamicJson.add(v.toString()));
+      return akka.util.ByteString.fromArrayUnsafe(objectMapper.writeValueAsBytes(objectNode));
+    } catch (JsonProcessingException ex) {
+      throw new IllegalArgumentException(
+          "Could not encode dynamic key/values as JSON", ex);
+    }
   }
 
   /**
