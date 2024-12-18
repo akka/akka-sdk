@@ -37,6 +37,7 @@ import akka.javasdk.impl.telemetry.TraceInstrumentation
 import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.SpiEntity
 import akka.runtime.sdk.spi.SpiEventSourcedEntity
+import akka.runtime.sdk.spi.SpiMetadata
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.Tracer
 import org.slf4j.MDC
@@ -130,14 +131,15 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
         .handleCommand(command.name, cmdPayload)
         .asInstanceOf[EventSourcedEntityEffectImpl[AnyRef, E]] // FIXME improve?
 
-      def errorOrReply(updatedState: SpiEventSourcedEntity.State): Either[SpiEntity.Error, BytesPayload] = {
+      def errorOrReply(
+          updatedState: SpiEventSourcedEntity.State): Either[SpiEntity.Error, (BytesPayload, SpiMetadata)] = {
         commandEffect.secondaryEffect(updatedState) match {
           case ErrorReplyImpl(description) =>
             Left(new SpiEntity.Error(description))
-          case MessageReplyImpl(message, _) =>
-            // FIXME metadata?
+          case MessageReplyImpl(message, m) =>
             val replyPayload = serializer.toBytes(message)
-            Right(replyPayload)
+            val metadata = MetadataImpl.toSpi(m)
+            Right(replyPayload -> metadata)
           case NoSecondaryEffectImpl =>
             throw new IllegalStateException("Expected reply or error")
         }
@@ -157,7 +159,7 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
           errorOrReply(updatedState) match {
             case Left(err) =>
               Future.successful(new SpiEventSourcedEntity.ErrorEffect(err))
-            case Right(reply) =>
+            case Right((reply, metadata)) =>
               val delete =
                 if (deleteEntity) Some(configuration.cleanupDeletedEventSourcedEntityAfter)
                 else None
@@ -165,15 +167,20 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
               val serializedEvents = events.map(event => serializer.toBytes(event)).toVector
 
               Future.successful(
-                new SpiEventSourcedEntity.PersistEffect(events = serializedEvents, updatedState, reply, delete))
+                new SpiEventSourcedEntity.PersistEffect(
+                  events = serializedEvents,
+                  updatedState,
+                  reply,
+                  metadata,
+                  delete))
           }
 
         case NoPrimaryEffect =>
           errorOrReply(state) match {
             case Left(err) =>
               Future.successful(new SpiEventSourcedEntity.ErrorEffect(err))
-            case Right(reply) =>
-              Future.successful(new SpiEventSourcedEntity.ReplyEffect(reply))
+            case Right((reply, metadata)) =>
+              Future.successful(new SpiEventSourcedEntity.ReplyEffect(reply, metadata))
           }
       }
 
