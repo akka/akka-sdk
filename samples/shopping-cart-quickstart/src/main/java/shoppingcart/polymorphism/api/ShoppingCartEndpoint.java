@@ -1,21 +1,24 @@
 // tag::top[]
-package shoppingcart.api;
+package shoppingcart.polymorphism.api;
 
 import akka.http.javadsl.model.HttpResponse;
 import akka.javasdk.annotations.Acl;
-// end::top[]
 import akka.javasdk.annotations.http.Delete;
-import akka.javasdk.annotations.http.Post;
-// tag::top[]
-import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Get;
+import akka.javasdk.annotations.http.HttpEndpoint;
+import akka.javasdk.annotations.http.Post;
 import akka.javasdk.annotations.http.Put;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.http.HttpResponses;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import shoppingcart.application.ShoppingCartEntity;
-import shoppingcart.domain.ShoppingCart;
+import shoppingcart.domain.ShoppingCart.LineItem;
+import shoppingcart.polymorphism.application.ShoppingCartEntity;
+import shoppingcart.polymorphism.domain.ShoppingCart;
+import shoppingcart.polymorphism.domain.ShoppingCartCommand.CheckedOutShoppingCartCommand.Cancel;
+import shoppingcart.polymorphism.domain.ShoppingCartCommand.OpenShoppingCartCommand.AddItem;
+import shoppingcart.polymorphism.domain.ShoppingCartCommand.OpenShoppingCartCommand.Checkout;
+import shoppingcart.polymorphism.domain.ShoppingCartCommand.OpenShoppingCartCommand.RemoveItem;
 
 import java.util.concurrent.CompletionStage;
 
@@ -27,7 +30,7 @@ import java.util.concurrent.CompletionStage;
 // For actual services meant for production this must be carefully considered, and often set more limited
 // tag::endpoint-component-interaction[]
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
-@HttpEndpoint("/carts-old") // <1>
+@HttpEndpoint("/carts") // <1>
 public class ShoppingCartEndpoint {
 
   private final ComponentClient componentClient;
@@ -53,11 +56,11 @@ public class ShoppingCartEndpoint {
 
   // tag::addItem[]
   @Put("/{cartId}/item") // <6>
-  public CompletionStage<HttpResponse> addItem(String cartId, ShoppingCart.LineItem item) {
+  public CompletionStage<HttpResponse> addItem(String cartId, LineItem item) {
     logger.info("Adding item to cart id={} item={}", cartId, item);
     return componentClient.forEventSourcedEntity(cartId)
-      .method(ShoppingCartEntity::addItem)
-      .invokeAsync(item)
+      .method(ShoppingCartEntity::handleCommand)
+      .invokeAsync(new AddItem(item))
       .thenApply(__ -> HttpResponses.ok()); // <7>
   }
   // end::endpoint-component-interaction[]
@@ -68,8 +71,8 @@ public class ShoppingCartEndpoint {
   public CompletionStage<HttpResponse> removeItem(String cartId, String productId) {
     logger.info("Removing item from cart id={} item={}", cartId, productId);
     return componentClient.forEventSourcedEntity(cartId)
-      .method(ShoppingCartEntity::removeItem)
-      .invokeAsync(productId)
+      .method(ShoppingCartEntity::handleCommand)
+      .invokeAsync(new RemoveItem(productId))
       .thenApply(__ -> HttpResponses.ok());
   }
 
@@ -77,8 +80,17 @@ public class ShoppingCartEndpoint {
   public CompletionStage<HttpResponse> checkout(String cartId) {
     logger.info("Checkout cart id={}", cartId);
     return componentClient.forEventSourcedEntity(cartId)
-      .method(ShoppingCartEntity::checkout)
-      .invokeAsync()
+      .method(ShoppingCartEntity::handleCommand)
+      .invokeAsync(new Checkout())
+      .thenApply(__ -> HttpResponses.ok());
+  }
+
+  @Post("/{cartId}/cancel")
+  public CompletionStage<HttpResponse> cancel(String cartId) {
+    logger.info("Checkout cart id={}", cartId);
+    return componentClient.forEventSourcedEntity(cartId)
+      .method(ShoppingCartEntity::handleCommand)
+      .invokeAsync(new Cancel())
       .thenApply(__ -> HttpResponses.ok());
   }
 
