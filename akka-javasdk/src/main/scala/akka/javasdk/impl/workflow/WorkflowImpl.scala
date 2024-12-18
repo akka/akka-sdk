@@ -68,10 +68,11 @@ class WorkflowImpl[S, W <: Workflow[S]](
   private val context = new WorkflowContextImpl(workflowId)
 
   private val router =
-    new ReflectiveWorkflowRouter[S, W](instanceFactory(context), componentDescriptor.commandHandlers, serializer)
+    new ReflectiveWorkflowRouter[S, W](context, instanceFactory, componentDescriptor.commandHandlers, serializer)
 
   override def configuration: SpiWorkflow.WorkflowConfig = {
-    val definition = router.workflow.definition()
+    val workflow = instanceFactory(context)
+    val definition = workflow.definition()
 
     def toRecovery(sdkRecoverStrategy: SdkRecoverStrategy[_]): SpiWorkflow.RecoverStrategy = {
 

@@ -47,12 +47,9 @@ public class TransferWorkflow extends Workflow<TransferState> {
         .asyncCall(Withdraw.class, cmd -> {
           logger.info("Running withdraw: {}", cmd);
 
-          // saving the wallet id in var because it's being used in thenCompose
-          var fromWalletId = currentState().transfer().from();
-
           // cancelling the timer in case it was scheduled
           return timers().cancel("acceptationTimout-" + currentState().transferId()).thenCompose(__ ->
-            componentClient.forEventSourcedEntity(fromWalletId)
+            componentClient.forEventSourcedEntity(currentState().transfer().from())
               .method(WalletEntity::withdraw)
               .invokeAsync(cmd));
         })

@@ -145,19 +145,6 @@ public abstract class Workflow<S> {
     this.currentState = Optional.ofNullable(state);
   }
 
-  /**
-   * INTERNAL API
-   *
-   * @hidden
-   */
-  @InternalApi
-  public void _internalClear() {
-    this.stateHasBeenSet = false;
-    this.currentState = Optional.empty();
-    this.commandContext = Optional.empty();
-    this.timerScheduler = Optional.empty();
-  }
-
 
   /**
    * @return A workflow definition in a form of steps and transitions between them.
