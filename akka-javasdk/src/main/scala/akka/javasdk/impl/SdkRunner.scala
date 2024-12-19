@@ -494,6 +494,7 @@ private final class Sdk(
         val timedActionClass = clz.asInstanceOf[Class[TimedAction]]
         val timedActionSpi =
           new TimedActionImpl[TimedAction](
+            componentId,
             () => wiredInstance(timedActionClass)(sideEffectingComponentInjects(None)),
             timedActionClass,
             system.classicSystem,
@@ -510,6 +511,7 @@ private final class Sdk(
         val consumerClass = clz.asInstanceOf[Class[Consumer]]
         val timedActionSpi =
           new ConsumerImpl[Consumer](
+            componentId,
             () => wiredInstance(consumerClass)(sideEffectingComponentInjects(None)),
             consumerClass,
             system.classicSystem,

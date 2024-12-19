@@ -103,7 +103,7 @@ private[impl] final class KeyValueEntityImpl[S, KV <: KeyValueEntity[S]](
       command: SpiEntity.Command): Future[SpiEventSourcedEntity.Effect] = {
 
     val span: Option[Span] =
-      traceInstrumentation.buildSpan(ComponentType.KeyValueEntity, componentId, entityId, command)
+      traceInstrumentation.buildEntityCommandSpan(ComponentType.KeyValueEntity, componentId, entityId, command)
     span.foreach(s => MDC.put(Telemetry.TRACE_ID, s.getSpanContext.getTraceId))
     // smuggling 0 arity method called from component client through here
     val cmdPayload = command.payload.getOrElse(BytesPayload.empty)

@@ -387,7 +387,6 @@ private[impl] object ViewDescriptorFactory {
     }
 
     override def handle(input: SpiTableUpdateEnvelope): Future[SpiTableUpdateEffect] = Future {
-      // FIXME tracing span?
       val existingState: Option[AnyRef] = input.existingTableRow.map(serializer.fromBytes)
       val metadata = MetadataImpl.of(input.metadata)
       val addedToMDC = metadata.traceId match {

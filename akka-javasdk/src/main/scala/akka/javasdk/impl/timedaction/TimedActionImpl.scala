@@ -7,18 +7,20 @@ package akka.javasdk.impl.timedaction
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.control.NonFatal
-
 import akka.actor.ActorSystem
 import akka.annotation.InternalApi
 import akka.javasdk.Metadata
 import akka.javasdk.Tracing
 import akka.javasdk.impl.AbstractContext
 import akka.javasdk.impl.ComponentDescriptor
+import akka.javasdk.impl.ComponentType
 import akka.javasdk.impl.ErrorHandling
 import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.serialization.JsonSerializer
 import akka.javasdk.impl.telemetry.SpanTracingImpl
 import akka.javasdk.impl.telemetry.Telemetry
+import akka.javasdk.impl.telemetry.TimedActionCategory
+import akka.javasdk.impl.telemetry.TraceInstrumentation
 import akka.javasdk.impl.timedaction.TimedActionEffectImpl.AsyncEffect
 import akka.javasdk.impl.timedaction.TimedActionEffectImpl.ErrorEffect
 import akka.javasdk.impl.timedaction.TimedActionEffectImpl.ReplyEffect
@@ -72,6 +74,7 @@ object TimedActionImpl {
 /** EndMarker */
 @InternalApi
 private[impl] final class TimedActionImpl[TA <: TimedAction](
+    componentId: String,
     val factory: () => TA,
     timedActionClass: Class[TA],
     _system: ActorSystem,
@@ -87,20 +90,27 @@ private[impl] final class TimedActionImpl[TA <: TimedAction](
 
   private implicit val executionContext: ExecutionContext = sdkExecutionContext
   implicit val system: ActorSystem = _system
+  private val traceInstrumentation = new TraceInstrumentation(componentId, TimedActionCategory, tracerFactory)
 
   private def createRouter(): ReflectiveTimedActionRouter[TA] =
     new ReflectiveTimedActionRouter[TA](factory(), componentDescriptor.commandHandlers, jsonSerializer)
 
   override def handleCommand(command: Command): Future[Effect] = {
-    val span: Option[Span] = None //FIXME add intrumentation
+    val metadata = MetadataImpl.of(command.metadata)
+
+    // FIXME would be good if we could record the chosen method in the span
+    val span: Option[Span] =
+      traceInstrumentation.buildSpan(ComponentType.TimedAction, componentId, metadata.subjectScala, command.metadata)
 
     span.foreach(s => MDC.put(Telemetry.TRACE_ID, s.getSpanContext.getTraceId))
     val fut =
       try {
-        val commandContext = createCommandContext(command, span)
+        val updatedMetadata = span.map(metadata.withTracing).getOrElse(metadata)
+        val commandContext = new CommandContextImpl(updatedMetadata, timerClient, tracerFactory, span)
+
         val payload: BytesPayload = command.payload.getOrElse(throw new IllegalArgumentException("No command payload"))
         val effect = createRouter()
-          .handleCommand(command.name, CommandEnvelope.of(payload, commandContext.metadata()), commandContext)
+          .handleCommand(command.name, CommandEnvelope.of(payload, commandContext.metadata), commandContext)
         toSpiEffect(command, effect)
       } catch {
         case NonFatal(ex) =>
@@ -112,12 +122,6 @@ private[impl] final class TimedActionImpl[TA <: TimedAction](
     fut.andThen { case _ =>
       span.foreach(_.end())
     }
-  }
-
-  private def createCommandContext(command: Command, span: Option[Span]): CommandContext = {
-    val metadata = MetadataImpl.of(command.metadata)
-    val updatedMetadata = span.map(metadata.withTracing).getOrElse(metadata)
-    new CommandContextImpl(updatedMetadata, timerClient, tracerFactory, span)
   }
 
   private def toSpiEffect(command: Command, effect: TimedAction.Effect): Future[Effect] = {

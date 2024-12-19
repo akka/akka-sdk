@@ -47,8 +47,8 @@ case object ConsumerCategory extends ComponentCategory {
  * INTERNAL API
  */
 @InternalApi
-case object ActionCategory extends ComponentCategory {
-  def name = "Action"
+case object TimedActionCategory extends ComponentCategory {
+  def name = "TimedAction"
 }
 
 /**
@@ -137,20 +137,31 @@ private[akka] final class TraceInstrumentation(
   private val enabled = tracer != OpenTelemetry.noop().getTracer(InstrumentationScopeName)
 
   /**
-   * Creates a span if it finds a trace parent in the command's metadata
+   * Creates a span if tracing enabled and it finds a trace parent in the command's metadata
    */
-  def buildSpan(
+  def buildEntityCommandSpan(
       componentType: String,
       componentId: String,
       entityId: String,
       command: SpiEntity.Command): Option[Span] =
-    if (enabled) internalBuildSpan(componentType, componentId, command.name, command.metadata, Some(entityId))
+    if (enabled) internalBuildSpan(componentType, componentId, Some(command.name), command.metadata, Some(entityId))
+    else None
+
+  /**
+   * Creates a span if tracing enabled and if it finds a trace parent in the command's metadata
+   */
+  def buildSpan(
+      componentType: String,
+      componentId: String,
+      subjectId: Option[String],
+      spiMetadata: SpiMetadata): Option[Span] =
+    if (enabled) internalBuildSpan(componentType, componentId, None, spiMetadata, subjectId)
     else None
 
   private def internalBuildSpan(
       componentType: String,
       componentId: String,
-      commandName: String,
+      commandName: Option[String],
       commandMetadata: SpiMetadata,
       subjectId: Option[String]): Option[Span] = {
     // only if there is a trace parent in the metadata
@@ -159,7 +170,7 @@ private[akka] final class TraceInstrumentation(
       val parentContext = propagator.getTextMapPropagator
         .extract(OtelContext.current(), traceParentMetadataEntry, metadataEntryTraceParentGetter)
 
-      val spanName = s"$traceNamePrefix.${removeSyntheticName(commandName)}"
+      val spanName = s"$traceNamePrefix${commandName.fold("")("." + _)}"
       var spanBuilder =
         tracer
           .spanBuilder(spanName)
@@ -172,9 +183,4 @@ private[akka] final class TraceInstrumentation(
     }
   }
 
-  private def removeSyntheticName(maybeSyntheticName: String): String =
-    maybeSyntheticName
-      .replace("KalixSyntheticMethodOnES", "")
-      .replace("KalixSyntheticMethodOnTopic", "")
-      .replace("KalixSyntheticMethodOnStream", "")
 }

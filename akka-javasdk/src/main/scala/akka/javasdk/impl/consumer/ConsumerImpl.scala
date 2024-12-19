@@ -5,11 +5,9 @@
 package akka.javasdk.impl.consumer
 
 import java.util.Optional
-
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.control.NonFatal
-
 import akka.actor.ActorSystem
 import akka.annotation.InternalApi
 import akka.javasdk.Metadata
@@ -19,14 +17,17 @@ import akka.javasdk.consumer.MessageContext
 import akka.javasdk.consumer.MessageEnvelope
 import akka.javasdk.impl.AbstractContext
 import akka.javasdk.impl.ComponentDescriptor
+import akka.javasdk.impl.ComponentType
 import akka.javasdk.impl.ErrorHandling
 import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.consumer.ConsumerEffectImpl.AsyncEffect
 import akka.javasdk.impl.consumer.ConsumerEffectImpl.IgnoreEffect
 import akka.javasdk.impl.consumer.ConsumerEffectImpl.ProduceEffect
 import akka.javasdk.impl.serialization.JsonSerializer
+import akka.javasdk.impl.telemetry.ConsumerCategory
 import akka.javasdk.impl.telemetry.SpanTracingImpl
 import akka.javasdk.impl.telemetry.Telemetry
+import akka.javasdk.impl.telemetry.TraceInstrumentation
 import akka.javasdk.impl.timer.TimerSchedulerImpl
 import akka.javasdk.timer.TimerScheduler
 import akka.runtime.sdk.spi.BytesPayload
@@ -44,6 +45,7 @@ import org.slf4j.MDC
 /** EndMarker */
 @InternalApi
 private[impl] final class ConsumerImpl[C <: Consumer](
+    componentId: String,
     val factory: () => C,
     consumerClass: Class[C],
     _system: ActorSystem,
@@ -59,6 +61,7 @@ private[impl] final class ConsumerImpl[C <: Consumer](
 
   private implicit val executionContext: ExecutionContext = sdkExecutionContext
   implicit val system: ActorSystem = _system
+  private val traceInstrumentation = new TraceInstrumentation(componentId, ConsumerCategory, tracerFactory)
 
   private def createRouter(): ReflectiveConsumerRouter[C] =
     new ReflectiveConsumerRouter[C](
@@ -68,15 +71,20 @@ private[impl] final class ConsumerImpl[C <: Consumer](
       ignoreUnknown)
 
   override def handleMessage(message: Message): Future[Effect] = {
-    val span: Option[Span] = None //FIXME add intrumentation
+    val metadata = MetadataImpl.of(message.metadata)
+
+    // FIXME would be good if we could record the chosen method in the span
+    val span: Option[Span] =
+      traceInstrumentation.buildSpan(ComponentType.Consumer, componentId, metadata.subjectScala, message.metadata)
+    val updatedMetadata = span.map(metadata.withTracing).getOrElse(metadata)
 
     span.foreach(s => MDC.put(Telemetry.TRACE_ID, s.getSpanContext.getTraceId))
     val fut =
       try {
-        val messageContext = createMessageContext(message, span)
+        val messageContext = new MessageContextImpl(updatedMetadata, timerClient, tracerFactory, span)
         val payload: BytesPayload = message.payload.getOrElse(throw new IllegalArgumentException("No message payload"))
         val effect = createRouter()
-          .handleCommand(MessageEnvelope.of(payload, messageContext.metadata()), messageContext)
+          .handleCommand(MessageEnvelope.of(payload, messageContext.metadata), messageContext)
         toSpiEffect(message, effect)
       } catch {
         case NonFatal(ex) =>
@@ -88,12 +96,6 @@ private[impl] final class ConsumerImpl[C <: Consumer](
     fut.andThen { case _ =>
       span.foreach(_.end())
     }
-  }
-
-  private def createMessageContext(message: Message, span: Option[Span]): MessageContext = {
-    val metadata = MetadataImpl.of(message.metadata)
-    val updatedMetadata = span.map(metadata.withTracing).getOrElse(metadata)
-    new MessageContextImpl(updatedMetadata, timerClient, tracerFactory, span)
   }
 
   private def toSpiEffect(message: Message, effect: Consumer.Effect): Future[Effect] = {
@@ -119,7 +121,8 @@ private[impl] final class ConsumerImpl[C <: Consumer](
   private def handleUnexpectedException(message: Message, ex: Throwable): Effect = {
     ErrorHandling.withCorrelationId { correlationId =>
       log.error(
-        s"Failure during handling message [${message.name}] from Consumer component [${consumerClass.getSimpleName}].",
+        s"Failure during handling message of type [${message.payload.fold("none")(
+          _.contentType)}] from Consumer component [${consumerClass.getSimpleName}].",
         ex)
       protocolFailure(correlationId)
     }
@@ -145,7 +148,7 @@ private[impl] final class MessageContextImpl(
     override val metadata: Metadata,
     timerClient: TimerClient,
     tracerFactory: () => Tracer,
-    span: Option[Span])
+    val span: Option[Span])
     extends AbstractContext
     with MessageContext {
 
