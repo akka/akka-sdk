@@ -59,7 +59,15 @@ class ViewSchemaSpec extends AnyWordSpec with Matchers {
       }
     }
 
-    // FIXME self-referencing/recursive types
+    "handle self referencing type trees" in {
+      val result = ViewSchema(classOf[ViewTestModels.Recursive])
+      result shouldBe a[SpiClass]
+    }
+
+    "handle self referencing type trees with longer cycles" in {
+      val result = ViewSchema(classOf[ViewTestModels.TwoStepRecursive])
+      result shouldBe a[SpiClass]
+    }
   }
 
 }

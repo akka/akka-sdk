@@ -48,40 +48,49 @@ private[view] object ViewSchema {
     classOf[String] -> SpiString,
     classOf[java.time.Instant] -> SpiTimestamp)
 
-  def apply(javaType: Type): SpiType =
-    typeNameMap.get(javaType.getTypeName) match {
-      case Some(found) => found
-      case None =>
-        val clazz = javaType match {
-          case c: Class[_]          => c
-          case p: ParameterizedType => p.getRawType.asInstanceOf[Class[_]]
-        }
-        knownConcreteClasses.get(clazz) match {
-          case Some(found) => found
-          case None        =>
-            // trickier ones where we have to look at type parameters etc
-            if (clazz.isArray && clazz.componentType() == classOf[java.lang.Byte]) {
-              SpiByteString
-            } else if (clazz.isEnum) {
-              new SpiType.SpiEnum(clazz.getName)
-            } else {
-              javaType match {
-                case p: ParameterizedType if clazz == classOf[Optional[_]] =>
-                  new SpiType.SpiOptional(apply(p.getActualTypeArguments.head).asInstanceOf[SpiNestableType])
-                case p: ParameterizedType if classOf[java.util.Collection[_]].isAssignableFrom(clazz) =>
-                  new SpiType.SpiList(apply(p.getActualTypeArguments.head).asInstanceOf[SpiNestableType])
-                case _: Class[_] =>
-                  new SpiType.SpiClass(
-                    clazz.getName,
-                    clazz.getDeclaredFields
-                      .filterNot(f => f.accessFlags().contains(AccessFlag.STATIC))
-                      // FIXME recursive classes with fields of their own type
-                      .filterNot(_.getType == clazz)
-                      .map(field => new SpiType.SpiField(field.getName, apply(field.getGenericType)))
-                      .toSeq)
-              }
+  def apply(rootType: Type): SpiType = {
+    // Note: not tail recursive but trees should not ever be deep enough that it is a problem
+    def loop(currentType: Type, seenClasses: Set[Class[_]]): SpiType =
+      typeNameMap.get(currentType.getTypeName) match {
+        case Some(found) => found
+        case None =>
+          val clazz = currentType match {
+            case c: Class[_]          => c
+            case p: ParameterizedType => p.getRawType.asInstanceOf[Class[_]]
+          }
+          if (seenClasses.contains(clazz)) new SpiType.SpiClassRef(clazz.getName)
+          else
+            knownConcreteClasses.get(clazz) match {
+              case Some(found) => found
+              case None        =>
+                // trickier ones where we have to look at type parameters etc
+                if (clazz.isArray && clazz.componentType() == classOf[java.lang.Byte]) {
+                  SpiByteString
+                } else if (clazz.isEnum) {
+                  new SpiType.SpiEnum(clazz.getName)
+                } else {
+                  currentType match {
+                    case p: ParameterizedType if clazz == classOf[Optional[_]] =>
+                      new SpiType.SpiOptional(
+                        loop(p.getActualTypeArguments.head, seenClasses).asInstanceOf[SpiNestableType])
+                    case p: ParameterizedType if classOf[java.util.Collection[_]].isAssignableFrom(clazz) =>
+                      new SpiType.SpiList(
+                        loop(p.getActualTypeArguments.head, seenClasses).asInstanceOf[SpiNestableType])
+                    case _: Class[_] =>
+                      val seenIncludingThis = seenClasses + clazz
+                      new SpiType.SpiClass(
+                        clazz.getName,
+                        clazz.getDeclaredFields
+                          .filterNot(f => f.accessFlags().contains(AccessFlag.STATIC))
+                          .map(field =>
+                            new SpiType.SpiField(field.getName, loop(field.getGenericType, seenIncludingThis)))
+                          .toSeq)
+                  }
+                }
             }
-        }
-    }
+      }
+
+    loop(rootType, Set.empty)
+  }
 
 }

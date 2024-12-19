@@ -54,6 +54,9 @@ public class ViewTestModels {
   public record ByEmail(String email) {
   }
 
+  public record Recursive(Recursive child) {}
+  public record TwoStepRecursive(TwoStepRecursiveChild child) {}
+  public record TwoStepRecursiveChild(TwoStepRecursive recursive) {}
 
   @ComponentId("users_view")
   public static class UserByEmailWithGet extends View {
