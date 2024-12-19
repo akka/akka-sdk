@@ -21,7 +21,7 @@ mvn compile
 
 Start by running Kafka:
 ```shell
-docker-compose up -d kafka
+docker compose up -d kafka
 ```
 
 Then, to start your service locally using Kafka support, run:
@@ -34,7 +34,7 @@ mvn compile exec:java -Dakka.javasdk.dev-mode.eventing.support=kafka
 
 Start by running the Google PubSub Emulator:
 ```shell
-docker-compose up -d gcloud-pubsub-emulator
+docker compose up -d gcloud-pubsub-emulator
 ```
 
 Then, to start your service locally with Google PubSub Emulator support, run:
@@ -97,7 +97,7 @@ This sample showcases how to have integration tests with and without a real brok
 
 First run:
 ```shell
-docker-compose up
+docker compose up
 ```
 
 Then run:
