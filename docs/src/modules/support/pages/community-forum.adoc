@@ -12,4 +12,4 @@ include::ROOT:partial$include.adoc[]
 
 
 [sidebar]
-https://discuss.akka.io/[Join the Akka Community Forum]
+https://discuss.akka.io/c/akka-sdk/43[Join the Akka Community Forum]

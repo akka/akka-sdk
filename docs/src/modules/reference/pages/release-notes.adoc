@@ -12,6 +12,28 @@ Current versions
 
 == December 2024
 
+* Akka CLI 3.0.8
+    - Updates to configure SSO integrations
+
+* https://github.com/akka/akka-sdk/releases/tag/v3.0.2[Akka SDK 3.0.2]
+    - Integration Tests are now bound to `mvn integration-test` and not a specific profile
+
+* Platform update 2024-12-10
+    - New internal structure to capture usage data
+    - Updated email server for signup emails
+    - Updated JVM memory settings for services
+    - Akka Runtime 1.2.5
+    - Better gRPC support for the CLI
+    - Console updates
+        ** Empty projects can now be deleted from the Console
+    - GCP: Updates of GKE node versions
+
+* Akka Runtime 1.2.5
+    - Improves handling of `count(*)` in the view query language
+
+* Akka CLI 3.0.7
+    - Improvements to the Local Console
+
 * https://github.com/akka/akka-sdk/releases/tag/v3.0.1[Akka SDK 3.0.1]
     - Minor improvements
 

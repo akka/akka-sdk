@@ -167,7 +167,8 @@ class SdkRunner private (dependencyProvider: Option[DependencyProvider]) extends
         startContext.remoteIdentification,
         startContext.tracerFactory,
         dependencyProvider,
-        startedPromise)
+        startedPromise,
+        getSettings.devMode.map(_.serviceName))
       Future.successful(app.spiComponents)
     } catch {
       case NonFatal(ex) =>
@@ -296,7 +297,8 @@ private final class Sdk(
     remoteIdentification: Option[RemoteIdentification],
     tracerFactory: String => Tracer,
     dependencyProviderOverride: Option[DependencyProvider],
-    startedPromise: Promise[StartupContext]) {
+    startedPromise: Promise[StartupContext],
+    serviceNameOverride: Option[String]) {
   private val logger = LoggerFactory.getLogger(getClass)
   private val serializer = new JsonSerializer
   private val ComponentLocator.LocatedClasses(componentClasses, maybeServiceClass) =
@@ -617,7 +619,7 @@ private final class Sdk(
 
       override val serviceInfo: SpiServiceInfo =
         new SpiServiceInfo(
-          serviceName = sdkSettings.devModeSettings.map(_.serviceName).getOrElse(""),
+          serviceName = serviceNameOverride.orElse(sdkSettings.devModeSettings.map(_.serviceName)).getOrElse(""),
           sdkName = "java",
           sdkVersion = BuildInfo.version,
           protocolMajorVersion = BuildInfo.protocolMajorVersion,

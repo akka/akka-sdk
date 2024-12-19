@@ -1,0 +1,42 @@
+Install the Akka CLI:
+
+NOTE: In case there is any trouble with installing the CLI when following these instructions, please check xref:reference:cli/installation.adoc[].
+
+[.tabset]
+Linux::
++
+--
+Download and install the latest version of `akka`:
+[source,bash]
+....
+curl -sL https://doc.akka.io/install-cli.sh | bash
+....
+
+--
+macOS::
++
+--
+The recommended approach to install `akka` on macOS, is using https://brew.sh[brew, window="new"]
+
+[source,bash]
+----
+brew install akka/brew/akka
+----
+
+--
+Windows::
++
+--
+
+. Download the latest version of `akka` from https://downloads.akka.io/latest/akka_windows_amd64.zip[https://downloads.akka.io/latest/akka_windows_amd64.zip]
+
+. Extract the zip file and move `akka.exe` to a location on your `%PATH%`.
+
+--
+
+Verify that the Akka CLI has been installed successfully by running the following to list all available commands:
+
+[source, command window]
+----
+akka help
+----

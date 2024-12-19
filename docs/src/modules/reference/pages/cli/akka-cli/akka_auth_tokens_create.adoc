@@ -23,7 +23,8 @@ Token created: 0123456789abcdef0123456789abcdef0123456789abcdef
 ----
       --description string   A description of the token. If the token is a refresh token, this will be stored with the token for reference.
   -h, --help                 help for create
-      --scopes stringArray   The scopes for the token. Valid scopes are: all, container_registry, execution, organizations, projects, user (default [execution])
+      --scopes stringArray   The scopes for the token. Valid scopes are: all, container_registry, execution, organizations, projects, user. Only applies to refresh tokens. (default [execution])
+      --type string          The type of token to create, either access or refresh (default "refresh")
 ----
 
 == Options inherited from parent commands
