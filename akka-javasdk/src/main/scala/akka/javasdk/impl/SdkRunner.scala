@@ -8,7 +8,6 @@ import java.lang.reflect.Constructor
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
 import java.util.concurrent.CompletionStage
-
 import scala.annotation.nowarn
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -18,10 +17,10 @@ import scala.jdk.FutureConverters._
 import scala.jdk.OptionConverters.RichOptional
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
-
 import akka.Done
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
+import akka.http.javadsl.model.HttpHeader
 import akka.http.scaladsl.model.headers.RawHeader
 import akka.javasdk.BuildInfo
 import akka.javasdk.DependencyProvider
@@ -95,6 +94,10 @@ import io.opentelemetry.context.{ Context => OtelContext }
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
+
+import java.util
+import java.util.Optional
+import scala.jdk.OptionConverters.RichOption
 
 /**
  * INTERNAL API
@@ -664,6 +667,14 @@ private final class Sdk(
               throw new RuntimeException(
                 "There are no JWT claims defined but trying accessing the JWT claims. The class or the method needs to be annotated with @JWT.")
           }
+
+        override def requestHeader(headerName: String): Optional[HttpHeader] =
+          // Note: force cast to Java header model
+          context.requestHeaders.header(headerName).asInstanceOf[Option[HttpHeader]].toJava
+
+        override def allRequestHeaders(): util.List[HttpHeader] =
+          // Note: force cast to Java header model
+          context.requestHeaders.allHeaders.asInstanceOf[Seq[HttpHeader]].asJava
 
         override def tracing(): Tracing = new SpanTracingImpl(context.openTelemetrySpan, sdkTracerFactory)
       }
