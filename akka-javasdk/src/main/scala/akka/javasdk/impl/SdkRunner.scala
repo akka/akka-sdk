@@ -7,7 +7,6 @@ package akka.javasdk.impl
 import java.lang.reflect.Constructor
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
-import java.util.Locale
 import java.util.concurrent.CompletionStage
 
 import scala.annotation.nowarn
@@ -95,6 +94,7 @@ import io.opentelemetry.api.trace.Tracer
 import io.opentelemetry.context.{ Context => OtelContext }
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.slf4j.event.Level
 
 /**
  * INTERNAL API
@@ -624,12 +624,19 @@ private final class Sdk(
           protocolMinorVersion = BuildInfo.protocolMinorVersion)
 
       override def reportError(err: UserFunctionError): Future[Done] = {
-        val severityString = err.severity.name.take(1) + err.severity.name.drop(1).toLowerCase(Locale.ROOT)
+        val severityString = err.severity match {
+          case Level.ERROR => "Error"
+          case Level.WARN  => "Warning"
+          case Level.INFO  => "Info"
+          case Level.DEBUG => "Debug"
+          case Level.TRACE => "Trace"
+          case other       => other.name()
+        }
         val message = s"$severityString reported from Akka runtime: ${err.code} ${err.message}"
         val detail = if (err.detail.isEmpty) Nil else List(err.detail)
         val seeDocs = DocLinks.forErrorCode(err.code).map(link => s"See documentation: $link").toList
         val messages = message :: detail ::: seeDocs
-        val logMessage = messages.mkString("\n\n")
+        val logMessage = messages.mkString("\n")
 
         SdkRunner.userServiceLog.atLevel(err.severity).log(logMessage)
 
