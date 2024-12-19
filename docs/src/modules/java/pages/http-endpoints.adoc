@@ -244,3 +244,17 @@ include::example$doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java
 <1> Accept the materializer and keep it in a field
 <2> Make sure to discard the request body when failing
 <3> Or collect the bytes into memory
+
+
+ === Accessing request headers ===
+
+ Accessing request headers is done through the link:_attachments/api/akka/javasdk/http/RequestContext.html[RequestContext] methods `requestHeader(String headerName)` and `allRequestHeaders()`.
+
+ By letting the endpoint extend link:_attachments/api/akka/javasdk/http/AbstractHttpEndpoint.html[AbstractHttpEndpoint] request context is available through the method `requestContext()`.
+
+ [source,java]
+ .{sample-base-url}/doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java[ExampleEndpoint.java]
+ ----
+ include::example$doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java[tag=header-access]
+ ----
+ <1> `requestHeader(headerName)` returns an `Optional` which is empty if the header was not present.
