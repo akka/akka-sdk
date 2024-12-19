@@ -8,11 +8,14 @@ import akka.javasdk.client.EventSourcedEntityClient;
 import akka.javasdk.client.NoEntryFoundException;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
+import akka.stream.javadsl.Sink;
 import akkajavasdk.components.eventsourcedentities.counter.Counter;
 import akkajavasdk.components.eventsourcedentities.counter.CounterEntity;
 import akkajavasdk.components.keyvalueentities.user.AssignedCounterEntity;
 import akkajavasdk.components.keyvalueentities.user.User;
 import akkajavasdk.components.keyvalueentities.user.UserEntity;
+import akkajavasdk.components.views.AllTheTypesKvEntity;
+import akkajavasdk.components.views.AllTheTypesView;
 import akkajavasdk.components.views.UserCounter;
 import akkajavasdk.components.views.UserCounters;
 import akkajavasdk.components.views.UserCountersView;
@@ -31,29 +34,22 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import static akkajavasdk.components.pubsub.PublishVEToTopic.CUSTOMERS_TOPIC;
+
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @ExtendWith(Junit5LogCapturing.class)
 public class ViewIntegrationTest extends TestKitSupport {
 
-
- @Override
- protected TestKit.Settings testKitSettings() {
-  // here only to show how to set different `Settings` in a test.
-  return TestKit.Settings.DEFAULT
-      .withTopicOutgoingMessages(CUSTOMERS_TOPIC);
- }
-
  private String newId() {
    return UUID.randomUUID().toString();
  }
-
 
  @Test
  public void verifyTransformedUserViewWiring() {
@@ -164,6 +160,31 @@ public class ViewIntegrationTest extends TestKitSupport {
                   .invokeAsync(new CountersByValueSubscriptions.QueryParameters(74)))
                   .counters().size(),
           new IsEqual<>(2));
+ }
+
+ @Test
+ public void verifyAllTheFieldTypesView() throws Exception {
+   // see that we can persist and read a row with all fields, no indexed columns
+   var id = newId();
+   var row = new AllTheTypesKvEntity.AllTheTypes(1, 2L, 3F, 4D, true, "text", 5, 6L, 7F, 8D, false, Instant.EPOCH, Optional.of("optional"), List.of("text1", "text2"),
+       new AllTheTypesKvEntity.ByEmail("test@example.com"),
+       AllTheTypesKvEntity.AnEnum.THREE, new AllTheTypesKvEntity.Recursive(new AllTheTypesKvEntity.Recursive(null)));
+   await(componentClient.forKeyValueEntity(id).method(AllTheTypesKvEntity::store).invokeAsync(row));
+
+
+   Awaitility.await()
+           .ignoreExceptions()
+               .atMost(10, TimeUnit.SECONDS)
+               .untilAsserted(() -> {
+                     var rows = await(componentClient.forView()
+                         .stream(AllTheTypesView::allRows)
+                         .source().runWith(Sink.seq(), testKit.getMaterializer()));
+
+                    assertThat(rows).hasSize(1);
+                   }
+               );
+
+
  }
 
  @Disabled // pending primitive query parameters working

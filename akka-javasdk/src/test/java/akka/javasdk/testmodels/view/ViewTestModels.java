@@ -733,7 +733,7 @@ public class ViewTestModels {
 
   @ComponentId("recursive_view")
   public static class RecursiveViewStateView extends View {
-    @Consume.FromTopic(value = "source")
+    @Consume.FromTopic(value = "recursivetopic")
     public static class Events extends TableUpdater<Recursive> { }
 
     @Query("SELECT * FROM events WHERE id = :id")
@@ -744,11 +744,11 @@ public class ViewTestModels {
 
   @ComponentId("all_the_field_types_view")
   public static class AllTheFieldTypesView extends View {
-    @Consume.FromTopic(value = "source")
+    @Consume.FromTopic(value = "allthetypestopic")
     public static class Events extends TableUpdater<EveryType> { }
 
     @Query("SELECT * FROM rows")
-    public QueryStreamEffect<Employee> getEmployeeByEmail(ById id) {
+    public QueryStreamEffect<Employee> allRows() {
       return queryStreamResult();
     }
   }
