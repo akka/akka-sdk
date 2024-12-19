@@ -483,5 +483,18 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with Matchers {
         table.updateHandler shouldBe defined
       }
     }
+
+    "create a descriptor for a view with a recursive table type" in {
+      assertDescriptor[RecursiveViewStateView] { desc =>
+        // just check that it parses
+      }
+    }
+
+    "create a descriptor for a view with a table type with all possible column types" in {
+      assertDescriptor[AllTheFieldTypesView] { desc =>
+        // just check that it parses
+      }
+    }
+
   }
 }

@@ -81,7 +81,9 @@ private[impl] object ViewDescriptorFactory {
               tableUpdaterClass.getAnnotation(classOf[Table]).value()
             } else {
               // figure out from first query
-              val query = allQueryStrings.head
+              val query = allQueryStrings.headOption.getOrElse(
+                throw new IllegalArgumentException(
+                  s"View [$componentId] does not have any queries defined, must have at least one query"))
               TableNamePattern
                 .findFirstMatchIn(query)
                 .map(_.group(1))

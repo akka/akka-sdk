@@ -8,7 +8,9 @@ import akka.javasdk.testmodels.view.ViewTestModels
 import akka.runtime.sdk.spi.views.SpiType.SpiBoolean
 import akka.runtime.sdk.spi.views.SpiType.SpiByteString
 import akka.runtime.sdk.spi.views.SpiType.SpiClass
+import akka.runtime.sdk.spi.views.SpiType.SpiClassRef
 import akka.runtime.sdk.spi.views.SpiType.SpiDouble
+import akka.runtime.sdk.spi.views.SpiType.SpiEnum
 import akka.runtime.sdk.spi.views.SpiType.SpiField
 import akka.runtime.sdk.spi.views.SpiType.SpiFloat
 import akka.runtime.sdk.spi.views.SpiType.SpiInteger
@@ -47,8 +49,9 @@ class ViewSchemaSpec extends AnyWordSpec with Matchers {
             "optionalString" -> new SpiOptional(SpiString),
             "repeatedString" -> new SpiList(SpiString),
             "nestedMessage" -> new SpiClass(
-              "akka.javasdk.testmodels.view.ViewTestModels$ByEmail",
-              Seq(new SpiField("email", SpiString))))
+              classOf[ViewTestModels.ByEmail].getName,
+              Seq(new SpiField("email", SpiString))),
+            "anEnum" -> new SpiEnum(classOf[ViewTestModels.AnEnum].getName))
           clazz.fields should have size expectedFields.size
 
           expectedFields.foreach { case (name, expectedType) =>
@@ -62,11 +65,22 @@ class ViewSchemaSpec extends AnyWordSpec with Matchers {
     "handle self referencing type trees" in {
       val result = ViewSchema(classOf[ViewTestModels.Recursive])
       result shouldBe a[SpiClass]
+      result.asInstanceOf[SpiClass].getField("child").get.fieldType shouldBe new SpiClassRef(
+        classOf[ViewTestModels.Recursive].getName)
     }
 
     "handle self referencing type trees with longer cycles" in {
       val result = ViewSchema(classOf[ViewTestModels.TwoStepRecursive])
       result shouldBe a[SpiClass]
+      result
+        .asInstanceOf[SpiClass]
+        .getField("child")
+        .get
+        .fieldType
+        .asInstanceOf[SpiClass]
+        .getField("recursive")
+        .get
+        .fieldType shouldBe new SpiClassRef(classOf[ViewTestModels.TwoStepRecursive].getName)
     }
   }
 

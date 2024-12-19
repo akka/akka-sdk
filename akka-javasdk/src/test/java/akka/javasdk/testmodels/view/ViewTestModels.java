@@ -23,7 +23,6 @@ import akka.javasdk.testmodels.keyvalueentity.CounterState;
 import akka.javasdk.testmodels.keyvalueentity.TimeTrackerEntity;
 import akka.javasdk.testmodels.keyvalueentity.User;
 import akka.javasdk.testmodels.keyvalueentity.UserEntity;
-import akka.util.ByteString;
 
 import java.time.Instant;
 import java.util.List;
@@ -47,14 +46,19 @@ public class ViewTestModels {
       Byte[] bytes,
       Optional<String> optionalString,
       List<String> repeatedString,
-      ByEmail nestedMessage
+      ByEmail nestedMessage,
+      AnEnum anEnum
   ) {}
+
+  public enum AnEnum {
+    ONE, TWO, THREE
+  }
 
   // common query parameter for views in this file
   public record ByEmail(String email) {
   }
 
-  public record Recursive(Recursive child) {}
+  public record Recursive(String id, Recursive child) {}
   public record TwoStepRecursive(TwoStepRecursiveChild child) {}
   public record TwoStepRecursiveChild(TwoStepRecursive recursive) {}
 
@@ -721,6 +725,31 @@ public class ViewTestModels {
     @Query("SELECT * FROM employees WHERE email = :email")
     public QueryEffect<Employee> getEmployeeByEmail(ByEmail byEmail) {
       return queryResult();
+    }
+  }
+
+
+  public record ById(String id) {}
+
+  @ComponentId("recursive_view")
+  public static class RecursiveViewStateView extends View {
+    @Consume.FromTopic(value = "source")
+    public static class Events extends TableUpdater<Recursive> { }
+
+    @Query("SELECT * FROM events WHERE id = :id")
+    public QueryEffect<Employee> getEmployeeByEmail(ById id) {
+      return queryResult();
+    }
+  }
+
+  @ComponentId("all_the_field_types_view")
+  public static class AllTheFieldTypesView extends View {
+    @Consume.FromTopic(value = "source")
+    public static class Events extends TableUpdater<EveryType> { }
+
+    @Query("SELECT * FROM rows")
+    public QueryStreamEffect<Employee> getEmployeeByEmail(ById id) {
+      return queryStreamResult();
     }
   }
 }
