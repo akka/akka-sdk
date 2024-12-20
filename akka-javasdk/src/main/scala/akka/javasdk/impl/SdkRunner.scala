@@ -450,7 +450,7 @@ private final class Sdk(
               })
         }
         eventSourcedEntityDescriptors :+=
-          new EventSourcedEntityDescriptor(componentId, readOnlyCommandNames, instanceFactory)
+          new EventSourcedEntityDescriptor(componentId, clz.getName, readOnlyCommandNames, instanceFactory)
 
       case clz if classOf[KeyValueEntity[_]].isAssignableFrom(clz) =>
         val componentId = clz.getAnnotation(classOf[ComponentId]).value
@@ -475,7 +475,7 @@ private final class Sdk(
               })
         }
         keyValueEntityDescriptors :+=
-          new EventSourcedEntityDescriptor(componentId, readOnlyCommandNames, instanceFactory)
+          new EventSourcedEntityDescriptor(componentId, clz.getName, readOnlyCommandNames, instanceFactory)
 
       case clz if Reflect.isWorkflow(clz) =>
         val componentId = clz.getAnnotation(classOf[ComponentId]).value
@@ -491,6 +491,7 @@ private final class Sdk(
         workflowDescriptors :+=
           new WorkflowDescriptor(
             componentId,
+            clz.getName,
             readOnlyCommandNames,
             ctx => workflowInstanceFactory(ctx, clz.asInstanceOf[Class[Workflow[Nothing]]]))
 
@@ -509,7 +510,7 @@ private final class Sdk(
             serializer,
             ComponentDescriptor.descriptorFor(timedActionClass, serializer))
         timedActionDescriptors :+=
-          new TimedActionDescriptor(componentId, timedActionSpi)
+          new TimedActionDescriptor(componentId, clz.getName, timedActionSpi)
 
       case clz if classOf[Consumer].isAssignableFrom(clz) =>
         val componentId = clz.getAnnotation(classOf[ComponentId]).value
@@ -529,6 +530,7 @@ private final class Sdk(
         consumerDescriptors :+=
           new ConsumerDescriptor(
             componentId,
+            clz.getName,
             consumerSource(consumerClass),
             consumerDestination(consumerClass),
             timedActionSpi)

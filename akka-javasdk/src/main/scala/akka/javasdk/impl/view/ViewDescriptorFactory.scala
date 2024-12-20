@@ -112,6 +112,7 @@ private[impl] object ViewDescriptorFactory {
 
     new SpiViewDescriptor(
       componentId,
+      viewClass.getName,
       tables,
       queries = allQueryMethods.map(_.descriptor),
       // FIXME reintroduce ACLs (does JWT make any sense here? I don't think so)
