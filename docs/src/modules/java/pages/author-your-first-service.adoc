@@ -190,7 +190,7 @@ Restart the service and curl this command:
 
 [source, command line]
 ----
-curl localhost:9000/hello/hello/Bob/30
+curl localhost:9000/hello/hello-response/Bob/30
 ----
 
 == Explore the local console
