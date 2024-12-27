@@ -3,6 +3,7 @@ package store.customer.api;
 import akka.javasdk.testkit.EventSourcedResult;
 import akka.javasdk.testkit.EventSourcedTestKit;
 import org.junit.jupiter.api.Test;
+import store.customer.application.CustomerEntity;
 import store.customer.domain.Address;
 import store.customer.domain.Customer;
 import store.customer.domain.CustomerEvent;

@@ -1,12 +1,12 @@
 package store.view;
 
 import akka.javasdk.testkit.TestKitSupport;
-import store.customer.api.CustomerEntity;
+import store.customer.application.CustomerEntity;
 import store.customer.domain.Address;
 import store.customer.domain.Customer;
-import store.order.api.CreateOrder;
-import store.order.api.OrderEntity;
-import store.product.api.ProductEntity;
+import store.order.application.CreateOrder;
+import store.order.application.OrderEntity;
+import store.product.application.ProductEntity;
 import store.product.domain.Money;
 import store.product.domain.Product;
 

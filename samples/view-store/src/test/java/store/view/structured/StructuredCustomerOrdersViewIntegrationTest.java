@@ -2,6 +2,9 @@ package store.view.structured;
 
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
+import store.order.view.structured.CustomerOrders;
+import store.order.view.structured.ProductOrder;
+import store.order.view.structured.StructuredCustomerOrdersView;
 import store.view.StoreViewIntegrationTest;
 
 import java.util.concurrent.TimeUnit;

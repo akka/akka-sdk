@@ -1,4 +1,4 @@
-package store.view.nested;
+package store.order.view.nested;
 
 import store.customer.domain.Address;
 

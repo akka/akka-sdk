@@ -1,4 +1,4 @@
-package store.view.structured;
+package store.order.view.structured;
 
 import java.util.List;
 

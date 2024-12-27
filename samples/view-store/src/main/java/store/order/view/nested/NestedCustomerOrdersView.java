@@ -1,4 +1,4 @@
-package store.view.structured;
+package store.order.view.nested;
 
 import akka.javasdk.annotations.Query;
 import akka.javasdk.annotations.Consume;
@@ -6,40 +6,29 @@ import akka.javasdk.annotations.Table;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.view.View;
 import akka.javasdk.view.TableUpdater;
-import store.customer.api.CustomerEntity;
+import store.customer.application.CustomerEntity;
 import store.customer.domain.CustomerEvent;
-import store.order.api.OrderEntity;
+import store.order.application.OrderEntity;
 import store.order.domain.Order;
-import store.product.api.ProductEntity;
+import store.product.application.ProductEntity;
 import store.product.domain.ProductEvent;
-import store.view.model.Customer;
-import store.view.model.Product;
+import store.order.view.model.Customer;
+import store.order.view.model.Product;
 
-@ComponentId("structured-customer-orders")
-public class StructuredCustomerOrdersView extends View {
+@ComponentId("nested-customer-orders")
+public class NestedCustomerOrdersView extends View {
 
   // tag::query[]
   @Query( // <1>
     """
-      SELECT
-       customers.customerId AS id,
-       (name,
-        address.street AS address1,
-        address.city AS address2,
-        email AS contactEmail) AS shipping,
-       (products.productId AS id,
-        productName AS name,
-        quantity,
-        (price.currency, price.units, price.cents) AS value,
-        orderId,
-        createdTimestamp AS orderCreatedTimestamp) AS orders
+      SELECT customers.*, (orders.*, products.*) AS orders
       FROM customers
-      JOIN orders ON orders.customerId = customers.customerId
+      JOIN orders ON customers.customerId = orders.customerId
       JOIN products ON products.productId = orders.productId
       WHERE customers.customerId = :customerId
       ORDER BY orders.createdTimestamp
       """)
-  public QueryEffect<CustomerOrders> get(String customerId) {
+  public QueryEffect<CustomerOrders> get(String customerId) { // <2>
     return queryResult();
   }
   // end::query[]
@@ -85,6 +74,5 @@ public class StructuredCustomerOrdersView extends View {
 
   @Table("orders")
   @Consume.FromKeyValueEntity(OrderEntity.class)
-  public static class Orders extends TableUpdater<Order> {
-  }
+  public static class Orders extends TableUpdater<Order> { }
 }

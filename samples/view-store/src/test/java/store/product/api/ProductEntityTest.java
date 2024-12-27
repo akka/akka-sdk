@@ -3,6 +3,7 @@ package store.product.api;
 import akka.javasdk.testkit.EventSourcedResult;
 import akka.javasdk.testkit.EventSourcedTestKit;
 import org.junit.jupiter.api.Test;
+import store.product.application.ProductEntity;
 import store.product.domain.Money;
 import store.product.domain.Product;
 import store.product.domain.ProductEvent;

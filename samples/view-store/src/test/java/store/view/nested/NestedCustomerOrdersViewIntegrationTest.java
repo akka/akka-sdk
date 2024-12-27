@@ -2,6 +2,9 @@ package store.view.nested;
 
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
+import store.order.view.nested.CustomerOrder;
+import store.order.view.nested.CustomerOrders;
+import store.order.view.nested.NestedCustomerOrdersView;
 import store.view.StoreViewIntegrationTest;
 
 import java.util.concurrent.TimeUnit;

@@ -2,6 +2,8 @@ package store.view.joined;
 
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
+import store.order.view.joined.CustomerOrder;
+import store.order.view.joined.JoinedCustomerOrdersView;
 import store.view.StoreViewIntegrationTest;
 
 import java.util.List;
