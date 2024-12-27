@@ -1,5 +1,6 @@
 package store.customer.api;
 
+import akka.Done;
 import akka.javasdk.testkit.EventSourcedResult;
 import akka.javasdk.testkit.EventSourcedTestKit;
 import org.junit.jupiter.api.Test;
@@ -8,6 +9,7 @@ import store.customer.domain.Address;
 import store.customer.domain.Customer;
 import store.customer.domain.CustomerEvent;
 
+import static akka.Done.done;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static store.customer.domain.CustomerEvent.CustomerAddressChanged;
 import static store.customer.domain.CustomerEvent.CustomerCreated;
@@ -25,16 +27,16 @@ public class CustomerEntityTest {
       String name = "Some Customer";
       Address address = new Address("123 Some Street", "Some City");
       Customer customer = new Customer("someone@example.com", name, address);
-      EventSourcedResult<String> result = testKit.call(entity -> entity.create(customer));
-      assertEquals("OK", result.getReply());
+      EventSourcedResult<Done> result = testKit.call(entity -> entity.create(customer));
+      assertEquals(done(), result.getReply());
       assertEquals(name, testKit.getState().name());
       result.getNextEventOfType(CustomerCreated.class);
     }
 
     {
       String newName = "Some Name";
-      EventSourcedResult<String> result = testKit.call(entity -> entity.changeName(newName));
-      assertEquals("OK", result.getReply());
+      EventSourcedResult<Done> result = testKit.call(entity -> entity.changeName(newName));
+      assertEquals(done(), result.getReply());
       assertEquals(newName, testKit.getState().name());
       result.getNextEventOfType(CustomerNameChanged.class);
     }
@@ -49,8 +51,8 @@ public class CustomerEntityTest {
     {
       Address address = new Address("123 Some Street", "Some City");
       Customer customer = new Customer("someone@example.com", "Some Customer", address);
-      EventSourcedResult<String> result = testKit.call(e -> e.create(customer));
-      assertEquals("OK", result.getReply());
+      EventSourcedResult<Done> result = testKit.call(e -> e.create(customer));
+      assertEquals(done(), result.getReply());
       assertEquals(address.street(), testKit.getState().address().street());
       assertEquals(address.city(), testKit.getState().address().city());
       result.getNextEventOfType(CustomerCreated.class);
@@ -58,8 +60,8 @@ public class CustomerEntityTest {
 
     {
       Address newAddress = new Address("42 Some Road", "Some Other City");
-      EventSourcedResult<String> result = testKit.call(e -> e.changeAddress(newAddress));
-      assertEquals("OK", result.getReply());
+      EventSourcedResult<Done> result = testKit.call(e -> e.changeAddress(newAddress));
+      assertEquals(done(), result.getReply());
       assertEquals(newAddress.street(), testKit.getState().address().street());
       assertEquals(newAddress.city(), testKit.getState().address().city());
       result.getNextEventOfType(CustomerAddressChanged.class);
