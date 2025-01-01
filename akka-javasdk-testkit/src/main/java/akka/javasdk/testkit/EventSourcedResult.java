@@ -44,7 +44,7 @@ public interface EventSourcedResult<R> {
    */
   Object getUpdatedState();
 
-  boolean didEmitEvents();
+  boolean didPersistEvents();
 
   /** @return All the events that were emitted by handling this command. */
   List<Object> getAllEvents();
