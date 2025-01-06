@@ -3,7 +3,7 @@ package store.view.nested;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 import store.order.view.nested.CustomerOrder;
-import store.order.view.nested.CustomerOrders;
+import store.order.view.nested.NestedCustomerOrders;
 import store.order.view.nested.NestedCustomerOrdersView;
 import store.view.StoreViewIntegrationTest;
 
@@ -24,7 +24,7 @@ public class NestedCustomerOrdersViewIntegrationTest extends StoreViewIntegratio
     createOrder("O5678", "P987", "C001", 7);
 
     {
-      CustomerOrders customerOrders =
+      NestedCustomerOrders customerOrders =
         awaitCustomerOrders("C001", customer -> customer.orders().size() >= 2);
 
       assertEquals(2, customerOrders.orders().size());
@@ -60,7 +60,7 @@ public class NestedCustomerOrdersViewIntegrationTest extends StoreViewIntegratio
     changeCustomerName("C001", newCustomerName);
 
     {
-      CustomerOrders customerOrders =
+      NestedCustomerOrders customerOrders =
         awaitCustomerOrders("C001", customer -> newCustomerName.equals(customer.name()));
 
       assertEquals("Some Name", customerOrders.name());
@@ -70,7 +70,7 @@ public class NestedCustomerOrdersViewIntegrationTest extends StoreViewIntegratio
     changeProductName("P123", newProductName);
 
     {
-      CustomerOrders customerOrders =
+      NestedCustomerOrders customerOrders =
         awaitCustomerOrders(
           "C001", customer -> newProductName.equals(customer.orders().get(0).productName()));
 
@@ -84,15 +84,15 @@ public class NestedCustomerOrdersViewIntegrationTest extends StoreViewIntegratio
     }
   }
 
-  private CustomerOrders getCustomerOrders(String customerId) {
+  private NestedCustomerOrders getCustomerOrders(String customerId) {
     return await(
       componentClient.forView()
         .method(NestedCustomerOrdersView::get)
         .invokeAsync(customerId));
   }
 
-  private CustomerOrders awaitCustomerOrders(
-    String customerId, Function<CustomerOrders, Boolean> condition) {
+  private NestedCustomerOrders awaitCustomerOrders(
+    String customerId, Function<NestedCustomerOrders, Boolean> condition) {
     Awaitility.await()
       .ignoreExceptions()
       .atMost(20, TimeUnit.SECONDS)

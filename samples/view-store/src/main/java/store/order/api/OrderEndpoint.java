@@ -10,8 +10,10 @@ import store.order.application.CreateOrder;
 import store.order.application.OrderEntity;
 import store.order.domain.Order;
 import store.order.view.joined.JoinedCustomerOrdersView;
-import store.order.view.nested.CustomerOrders;
+import store.order.view.joined.JoinedCustomerOrdersView.JoinedCustomerOrders;
+import store.order.view.nested.NestedCustomerOrders;
 import store.order.view.nested.NestedCustomerOrdersView;
+import store.order.view.structured.StructuredCustomerOrders;
 import store.order.view.structured.StructuredCustomerOrdersView;
 
 import java.util.concurrent.CompletionStage;
@@ -44,21 +46,21 @@ public class OrderEndpoint {
   }
 
   @Get("/joined-by-customer/{customerId}")
-  public CompletionStage<JoinedCustomerOrdersView.CustomerOrders> joinedByCustomer(String customerId) {
+  public CompletionStage<JoinedCustomerOrders> joinedByCustomer(String customerId) {
     return componentClient.forView()
       .method(JoinedCustomerOrdersView::get)
       .invokeAsync(customerId);
   }
 
   @Get("/nested-by-customer/{customerId}")
-  public CompletionStage<CustomerOrders> nestedByCustomer(String customerId) {
+  public CompletionStage<NestedCustomerOrders> nestedByCustomer(String customerId) {
     return componentClient.forView()
       .method(NestedCustomerOrdersView::get)
       .invokeAsync(customerId);
   }
 
   @Get("/structured-by-customer/{customerId}")
-  public CompletionStage<store.order.view.structured.CustomerOrders> structuredByCustomer(String customerId) {
+  public CompletionStage<StructuredCustomerOrders> structuredByCustomer(String customerId) {
     return componentClient.forView()
       .method(StructuredCustomerOrdersView::get)
       .invokeAsync(customerId);

@@ -39,7 +39,7 @@ public class StructuredCustomerOrdersView extends View {
       WHERE customers.customerId = :customerId
       ORDER BY orders.createdTimestamp
       """)
-  public QueryEffect<CustomerOrders> get(String customerId) {
+  public QueryEffect<StructuredCustomerOrders> get(String customerId) {
     return queryResult();
   }
   // end::query[]

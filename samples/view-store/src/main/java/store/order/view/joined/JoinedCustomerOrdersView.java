@@ -65,7 +65,7 @@ public class JoinedCustomerOrdersView extends View {
   public static class Orders extends TableUpdater<Order> {
   }
 
-  public record CustomerOrders(List<CustomerOrder> orders) { }
+  public record JoinedCustomerOrders(List<CustomerOrder> orders) { }
 
   @Query( // <3>
       """
@@ -76,7 +76,7 @@ public class JoinedCustomerOrdersView extends View {
         WHERE customers.customerId = :customerId
         ORDER BY orders.createdTimestamp
         """)
-  public QueryEffect<CustomerOrders> get(String customerId) { // <4>
+  public QueryEffect<JoinedCustomerOrders> get(String customerId) { // <4>
     return queryResult();
   }
 

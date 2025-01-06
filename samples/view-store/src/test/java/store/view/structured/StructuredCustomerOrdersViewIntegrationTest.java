@@ -2,7 +2,7 @@ package store.view.structured;
 
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
-import store.order.view.structured.CustomerOrders;
+import store.order.view.structured.StructuredCustomerOrders;
 import store.order.view.structured.ProductOrder;
 import store.order.view.structured.StructuredCustomerOrdersView;
 import store.view.StoreViewIntegrationTest;
@@ -23,7 +23,7 @@ public class StructuredCustomerOrdersViewIntegrationTest extends StoreViewIntegr
     createOrder("O5678", "P987", "C001", 7);
 
     {
-      CustomerOrders customerOrders =
+      StructuredCustomerOrders customerOrders =
         awaitCustomerOrders("C001", customer -> customer.orders().size() >= 2);
 
       assertEquals(2, customerOrders.orders().size());
@@ -57,7 +57,7 @@ public class StructuredCustomerOrdersViewIntegrationTest extends StoreViewIntegr
     changeCustomerName("C001", newCustomerName);
 
     {
-      CustomerOrders customerOrders =
+      StructuredCustomerOrders customerOrders =
         awaitCustomerOrders("C001", customer -> newCustomerName.equals(customer.shipping().name()));
 
       assertEquals("Some Name", customerOrders.shipping().name());
@@ -67,7 +67,7 @@ public class StructuredCustomerOrdersViewIntegrationTest extends StoreViewIntegr
     changeProductName("P123", newProductName);
 
     {
-      CustomerOrders customerOrders =
+      StructuredCustomerOrders customerOrders =
         awaitCustomerOrders(
           "C001", customer -> newProductName.equals(customer.orders().get(0).name()));
 
@@ -81,7 +81,7 @@ public class StructuredCustomerOrdersViewIntegrationTest extends StoreViewIntegr
     }
   }
 
-  private CustomerOrders getCustomerOrders(String customerId) {
+  private StructuredCustomerOrders getCustomerOrders(String customerId) {
     return await(
       componentClient.forView()
         .method(StructuredCustomerOrdersView::get)
@@ -89,8 +89,8 @@ public class StructuredCustomerOrdersViewIntegrationTest extends StoreViewIntegr
     );
   }
 
-  private CustomerOrders awaitCustomerOrders(
-    String customerId, Function<CustomerOrders, Boolean> condition) {
+  private StructuredCustomerOrders awaitCustomerOrders(
+    String customerId, Function<StructuredCustomerOrders, Boolean> condition) {
     Awaitility.await()
       .ignoreExceptions()
       .atMost(20, TimeUnit.SECONDS)

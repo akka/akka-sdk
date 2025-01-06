@@ -28,7 +28,7 @@ public class NestedCustomerOrdersView extends View {
       WHERE customers.customerId = :customerId
       ORDER BY orders.createdTimestamp
       """)
-  public QueryEffect<CustomerOrders> get(String customerId) { // <2>
+  public QueryEffect<NestedCustomerOrders> get(String customerId) { // <2>
     return queryResult();
   }
   // end::query[]

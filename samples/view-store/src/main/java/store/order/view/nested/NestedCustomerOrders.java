@@ -5,7 +5,7 @@ import store.customer.domain.Address;
 import java.util.List;
 
 // tag::nested[]
-public record CustomerOrders(
+public record NestedCustomerOrders(
   String customerId,
   String email,
   String name,
