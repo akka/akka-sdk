@@ -98,4 +98,6 @@ private[akka] final class EventSourcedResultImpl[R, S, E](
         throw new NoSuchElementException(
           "expected event type [" + expectedClass.getName + "] but found [" + next.getClass.getName + "]")
     }
+
+  override def didEmitEvents(): Boolean = didPersistEvents()
 }
