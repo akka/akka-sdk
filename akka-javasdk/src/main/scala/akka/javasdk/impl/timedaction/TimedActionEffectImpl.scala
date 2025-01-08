@@ -6,7 +6,6 @@ package akka.javasdk.impl.timedaction
 
 import akka.Done
 import akka.annotation.InternalApi
-import akka.javasdk.Metadata
 import akka.javasdk.timedaction.TimedAction
 
 import java.util.concurrent.CompletionStage
@@ -21,21 +20,15 @@ import scala.jdk.FutureConverters.CompletionStageOps
 private[javasdk] object TimedActionEffectImpl {
   sealed abstract class PrimaryEffect extends TimedAction.Effect {}
 
-  final case class ReplyEffect(metadata: Option[Metadata]) extends PrimaryEffect {
-    def isEmpty: Boolean = false
-  }
+  object SuccessEffect extends PrimaryEffect {}
 
-  final case class AsyncEffect(effect: Future[TimedAction.Effect]) extends PrimaryEffect {
-    def isEmpty: Boolean = false
-  }
+  final case class AsyncEffect(effect: Future[TimedAction.Effect]) extends PrimaryEffect {}
 
-  final case class ErrorEffect(description: String) extends PrimaryEffect {
-    def isEmpty: Boolean = false
-  }
+  final case class ErrorEffect(description: String) extends PrimaryEffect {}
 
   class Builder extends TimedAction.Effect.Builder {
     def done(): TimedAction.Effect = {
-      ReplyEffect(None)
+      SuccessEffect
     }
     def error(description: String): TimedAction.Effect = ErrorEffect(description)
 
