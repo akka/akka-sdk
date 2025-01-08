@@ -5,10 +5,9 @@
 package akka.javasdk.impl
 
 import akka.annotation.InternalApi
-import akka.javasdk.impl.ComponentDescriptorFactory.hasTimedActionEffectOutput
-import akka.javasdk.impl.reflection.ActionHandlerMethod
-import akka.javasdk.impl.reflection.KalixMethod
+import akka.javasdk.impl.reflection.Reflect.isCommandHandlerCandidate
 import akka.javasdk.impl.serialization.JsonSerializer
+import akka.javasdk.timedaction.TimedAction
 
 /**
  * INTERNAL API
@@ -17,15 +16,12 @@ import akka.javasdk.impl.serialization.JsonSerializer
 private[impl] object TimedActionDescriptorFactory extends ComponentDescriptorFactory {
 
   override def buildDescriptorFor(component: Class[_], serializer: JsonSerializer): ComponentDescriptor = {
+    //TODO remove capitalization of method name, can't be done per component, because component client reuse the same logic for all
+    val invokers = component.getDeclaredMethods.collect {
+      case method if isCommandHandlerCandidate[TimedAction.Effect](method) =>
+        method.getName.capitalize -> MethodInvoker(method)
+    }.toMap
 
-    val commandHandlerMethods = component.getDeclaredMethods
-      .filter(hasTimedActionEffectOutput)
-      .map { method =>
-        val servMethod = ActionHandlerMethod(component, method)
-        KalixMethod(servMethod, entityIds = Seq.empty)
-      }
-      .toIndexedSeq
-
-    ComponentDescriptor(serializer, commandHandlerMethods)
+    ComponentDescriptor(invokers)
   }
 }

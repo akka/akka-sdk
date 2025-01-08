@@ -50,45 +50,40 @@ class ConsumerDescriptorFactorySpec extends AnyWordSpec with Matchers {
 
     "generate mapping with Event Sourced Subscription annotations" in {
       val desc = ComponentDescriptor.descriptorFor(classOf[SubscribeToEventSourcedEmployee], new JsonSerializer)
-      val onUpdateMethod = desc.commandHandlers("")
 
       // in case of @Migration, it should map 2 type urls to the same method
-      onUpdateMethod.methodInvokers.view.mapValues(_.method.getName).toMap should
+      desc.methodInvokers.view.mapValues(_.method.getName).toMap should
       contain only ("json.akka.io/created" -> "methodOne", "json.akka.io/old-created" -> "methodOne", "json.akka.io/emailUpdated" -> "methodTwo")
     }
 
     "generate mapping with Key Value Entity Subscription annotations (type level)" in {
       val desc = ComponentDescriptor.descriptorFor(classOf[SubscribeToValueEntityTypeLevel], new JsonSerializer)
-      val onUpdateMethod = desc.commandHandlers("")
 
       // in case of @Migration, it should map 2 type urls to the same method
-      onUpdateMethod.methodInvokers should have size 2
-      onUpdateMethod.methodInvokers.view.mapValues(_.method.getName).toMap should
+      desc.methodInvokers should have size 2
+      desc.methodInvokers.view.mapValues(_.method.getName).toMap should
       contain only ("json.akka.io/counter-state" -> "onUpdate", "json.akka.io/" + classOf[
         CounterState].getName -> "onUpdate")
     }
 
     "generate mapping with Key Value Entity and delete handler" in {
       val desc = ComponentDescriptor.descriptorFor(classOf[SubscribeToValueEntityWithDeletes], new JsonSerializer)
-      val commandHandler = desc.commandHandlers("")
 
-      commandHandler.methodInvokers should have size 3
-      commandHandler.methodInvokers.view.mapValues(_.method.getName).toMap should
+      desc.methodInvokers should have size 3
+      desc.methodInvokers.view.mapValues(_.method.getName).toMap should
       contain only ("json.akka.io/akka.javasdk.testmodels.keyvalueentity.CounterState" -> "onUpdate", "json.akka.io/counter-state" -> "onUpdate", "type.googleapis.com/google.protobuf.Empty" -> "onDelete")
     }
 
     "generate mapping for a Consumer with a subscription to a topic (type level)" in {
       val desc = ComponentDescriptor.descriptorFor(classOf[SubscribeToTopicTypeLevel], new JsonSerializer)
-      val commandHandler = desc.commandHandlers("")
-      commandHandler.methodInvokers should have size 1
+      desc.methodInvokers should have size 1
     }
 
     "generate mapping for a Consumer with a subscription to a topic (type level) combined" in {
       val desc = ComponentDescriptor.descriptorFor(classOf[SubscribeToTopicTypeLevelCombined], new JsonSerializer)
-      val commandHandler = desc.commandHandlers("")
-      commandHandler.methodInvokers should have size 3
+      desc.methodInvokers should have size 3
       //TODO not sure why we need to support `json.akka.io/string` and `json.akka.io/java.lang.String`
-      commandHandler.methodInvokers.view.mapValues(_.method.getName).toMap should
+      desc.methodInvokers.view.mapValues(_.method.getName).toMap should
       contain only ("json.akka.io/akka.javasdk.testmodels.Message" -> "messageOne", "json.akka.io/string" -> "messageTwo", "json.akka.io/java.lang.String" -> "messageTwo")
     }
 
@@ -179,8 +174,7 @@ class ConsumerDescriptorFactorySpec extends AnyWordSpec with Matchers {
 
     "generate mapping for a Consumer subscribing to raw bytes from a topic" in {
       val desc = ComponentDescriptor.descriptorFor(classOf[SubscribeToBytesFromTopic], new JsonSerializer)
-      val methodOne = desc.commandHandlers("")
-      methodOne.methodInvokers.contains("type.kalix.io/bytes") shouldBe true
+      desc.methodInvokers.contains("type.kalix.io/bytes") shouldBe true
     }
 
     "generate mapping for a Consumer with a ES subscription and publication to a topic" ignore {
@@ -204,15 +198,13 @@ class ConsumerDescriptorFactorySpec extends AnyWordSpec with Matchers {
 
     "generate mappings for service to service publishing " in {
       val desc = ComponentDescriptor.descriptorFor(classOf[EventStreamPublishingConsumer], new JsonSerializer)
-      val onUpdateMethod = desc.commandHandlers("")
-      onUpdateMethod.methodInvokers.view.mapValues(_.method.getName).toMap should
+      desc.methodInvokers.view.mapValues(_.method.getName).toMap should
       contain only ("json.akka.io/created" -> "transform", "json.akka.io/old-created" -> "transform", "json.akka.io/emailUpdated" -> "transform")
     }
 
     "generate mappings for service to service subscription " in {
       val desc = ComponentDescriptor.descriptorFor(classOf[EventStreamSubscriptionConsumer], new JsonSerializer)
-      val commandHandler = desc.commandHandlers("")
-      commandHandler.methodInvokers should have size 3
+      desc.methodInvokers should have size 3
     }
   }
 

@@ -93,7 +93,7 @@ private[impl] final class TimedActionImpl[TA <: TimedAction](
   private val traceInstrumentation = new TraceInstrumentation(componentId, TimedActionCategory, tracerFactory)
 
   private def createRouter(): ReflectiveTimedActionRouter[TA] =
-    new ReflectiveTimedActionRouter[TA](factory(), componentDescriptor.commandHandlers, jsonSerializer)
+    new ReflectiveTimedActionRouter[TA](factory(), componentDescriptor.methodInvokers, jsonSerializer)
 
   override def handleCommand(command: Command): Future[Effect] = {
     val metadata = MetadataImpl.of(command.metadata)

@@ -415,6 +415,9 @@ private final class Sdk(
   private var timedActionDescriptors = Vector.empty[TimedActionDescriptor]
   private var consumerDescriptors = Vector.empty[ConsumerDescriptor]
 
+  val s = componentClasses
+    .filter(hasComponentId)
+
   componentClasses
     .filter(hasComponentId)
     .foreach {
@@ -515,7 +518,7 @@ private final class Sdk(
       case clz if classOf[Consumer].isAssignableFrom(clz) =>
         val componentId = clz.getAnnotation(classOf[ComponentId]).value
         val consumerClass = clz.asInstanceOf[Class[Consumer]]
-        val timedActionSpi =
+        val consumerSpi =
           new ConsumerImpl[Consumer](
             componentId,
             () => wiredInstance(consumerClass)(sideEffectingComponentInjects(None)),
@@ -533,7 +536,7 @@ private final class Sdk(
             clz.getName,
             consumerSource(consumerClass),
             consumerDestination(consumerClass),
-            timedActionSpi)
+            consumerSpi)
 
       case clz if Reflect.isRestEndpoint(clz) =>
       // handled separately because ComponentId is not mandatory

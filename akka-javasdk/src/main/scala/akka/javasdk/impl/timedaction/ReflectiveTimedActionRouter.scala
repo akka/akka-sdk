@@ -7,7 +7,7 @@ package akka.javasdk.impl.timedaction
 import java.util.Optional
 
 import akka.annotation.InternalApi
-import akka.javasdk.impl.CommandHandler
+import akka.javasdk.impl.MethodInvoker
 import akka.javasdk.impl.CommandSerialization
 import akka.javasdk.impl.HandlerNotFoundException
 import akka.javasdk.impl.serialization.JsonSerializer
@@ -22,14 +22,14 @@ import akka.runtime.sdk.spi.BytesPayload
 @InternalApi
 private[impl] final class ReflectiveTimedActionRouter[A <: TimedAction](
     action: A,
-    commandHandlers: Map[String, CommandHandler],
+    methodInvokers: Map[String, MethodInvoker],
     serializer: JsonSerializer) {
 
-  private def commandHandlerLookup(commandName: String): CommandHandler =
-    commandHandlers.get(commandName) match {
+  private def methodInvokerLookup(commandName: String): MethodInvoker =
+    methodInvokers.get(commandName) match {
       case Some(handler) => handler
       case None =>
-        throw new HandlerNotFoundException("command", commandName, action.getClass, commandHandlers.keySet)
+        throw new HandlerNotFoundException("command", commandName, action.getClass, methodInvokers.keySet)
     }
 
   def handleCommand(
@@ -40,14 +40,13 @@ private[impl] final class ReflectiveTimedActionRouter[A <: TimedAction](
     // the same handler and action instance is expected to only ever be invoked for a single command
     action._internalSetCommandContext(Optional.of(context))
 
-    val commandHandler = commandHandlerLookup(methodName)
+    val methodInvoker = methodInvokerLookup(methodName)
 
     val payload = message.payload()
 
     if (serializer.isJson(payload) || payload.isEmpty) {
       // - BytesPayload.empty - there is no real command, and we are calling a method with arity 0
       // - BytesPayload with json - we deserialize it and call the method
-      val methodInvoker = commandHandler.getSingleNameInvoker()
       val deserializedCommand =
         CommandSerialization.deserializeComponentClientCommand(methodInvoker.method, payload, serializer)
       val result = deserializedCommand match {
@@ -57,8 +56,7 @@ private[impl] final class ReflectiveTimedActionRouter[A <: TimedAction](
       result.asInstanceOf[TimedAction.Effect]
     } else {
       throw new IllegalStateException(
-        s"Could not find a matching command handler for method [$methodName], content type " +
-        s"[${payload.contentType}], invokers keys [${commandHandler.methodInvokers.keys.mkString(", ")}," +
+        s"Could not find a matching command handler for method [$methodName], content type [${payload.contentType}] " +
         s"on [${action.getClass.getName}]")
     }
   }

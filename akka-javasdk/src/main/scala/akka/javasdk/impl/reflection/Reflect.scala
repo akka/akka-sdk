@@ -73,6 +73,15 @@ private[impl] object Reflect {
 
   def isAction(clazz: Class[_]): Boolean = classOf[TimedAction].isAssignableFrom(clazz)
 
+  // command handlers candidate must have 0 or 1 parameter and return the components effect type
+  // we might later revisit this, instead of single param, we can require (State, Cmd) => Effect like in Akka
+  def isCommandHandlerCandidate[E](method: Method)(implicit effectType: ClassTag[E]): Boolean = {
+    effectType.runtimeClass.isAssignableFrom(method.getReturnType) &&
+    method.getParameterTypes.length <= 1 &&
+    // Workflow will have lambdas returning Effect, we want to filter them out
+    !method.getName.startsWith("lambda$")
+  }
+
   def getReturnType[R](declaringClass: Class[_], method: Method): Class[R] = {
     if (isAction(declaringClass) || isEntity(declaringClass) || isWorkflow(declaringClass)) {
       // here we are expecting a wrapper in the form of an Effect

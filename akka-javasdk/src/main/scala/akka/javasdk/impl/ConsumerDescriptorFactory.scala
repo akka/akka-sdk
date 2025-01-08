@@ -5,11 +5,9 @@
 package akka.javasdk.impl
 
 import akka.annotation.InternalApi
+import akka.javasdk.impl.AnySupport.ProtobufEmptyTypeUrl
 import akka.javasdk.impl.ComponentDescriptorFactory._
-import akka.javasdk.impl.reflection.HandleDeletesServiceMethod
-import akka.javasdk.impl.reflection.KalixMethod
 import akka.javasdk.impl.reflection.Reflect
-import akka.javasdk.impl.reflection.SubscriptionServiceMethod
 import akka.javasdk.impl.serialization.JsonSerializer
 
 /**
@@ -22,35 +20,42 @@ private[impl] object ConsumerDescriptorFactory extends ComponentDescriptorFactor
 
     import Reflect.methodOrdering
 
-    val handleDeletesMethods = component.getMethods
+    val handleDeletesMethods: Map[String, MethodInvoker] = component.getMethods
       .filter(hasConsumerOutput)
       .filter(hasHandleDeletes)
       .sorted
       .map { method =>
-        KalixMethod(HandleDeletesServiceMethod(method))
+        ProtobufEmptyTypeUrl -> MethodInvoker(method)
       }
-      .toSeq
+      .toMap
 
-    val methods = component.getMethods
+    val methods: Map[String, MethodInvoker] = component.getMethods
       .filter(hasConsumerOutput)
       .filterNot(hasHandleDeletes)
-      .map { method =>
-        KalixMethod(SubscriptionServiceMethod(method))
+      .flatMap { method =>
+        method.getParameterTypes.headOption match {
+          case Some(inputType) =>
+            val invoker = MethodInvoker(method)
+            if (method.getParameterTypes.last.isSealed) {
+              method.getParameterTypes.last.getPermittedSubclasses.toList
+                .flatMap(subClass => {
+                  serializer.contentTypesFor(subClass).map(typeUrl => typeUrl -> invoker)
+                })
+            } else {
+              val typeUrls = serializer.contentTypesFor(inputType)
+              typeUrls.map(_ -> invoker)
+            }
+          case None =>
+            // FIXME check if there is a validation for that already
+            throw new IllegalStateException(
+              "Consumer method must have at least one parameter, unless it is a delete handler")
+        }
       }
-      .toIndexedSeq
+      .toMap
 
-    val allMethods = methods ++ handleDeletesMethods
-
-    val commandHandlers = allMethods.map { method =>
-      method.toCommandHandler(serializer)
-    }
-
-    //folding all invokers into a single map
-    val allInvokers = commandHandlers.foldLeft(Map.empty[String, MethodInvoker]) { (acc, handler) =>
-      acc ++ handler.methodInvokers
-    }
+    val allInvokers = methods ++ handleDeletesMethods
 
     //Empty command/method name, because it is not used in the consumer, we just need the invokers
-    ComponentDescriptor(Map("" -> CommandHandler(null, serializer, null, allInvokers)))
+    ComponentDescriptor(allInvokers)
   }
 }

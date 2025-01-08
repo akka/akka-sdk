@@ -6,26 +6,8 @@ package akka.javasdk.impl
 
 import akka.annotation.InternalApi
 import com.google.protobuf.ByteString
-import com.google.protobuf.Descriptors
 import com.google.protobuf.Parser
 import com.google.protobuf.{ Message => JavaMessage }
-
-/**
- * A resolved service method.
- *
- * INTERNAL API
- */
-@InternalApi
-final case class ResolvedServiceMethod[I, O](
-    descriptor: Descriptors.MethodDescriptor,
-    inputType: ResolvedType[I],
-    outputType: ResolvedType[O]) {
-
-  def outputStreamed: Boolean = descriptor.isServerStreaming
-  def name: String = descriptor.getName
-
-  def method(): Descriptors.MethodDescriptor = descriptor
-}
 
 /**
  * A resolved type

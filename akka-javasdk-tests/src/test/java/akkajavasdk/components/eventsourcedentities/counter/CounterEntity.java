@@ -72,6 +72,16 @@ public class CounterEntity extends EventSourcedEntity<Counter, CounterEvent> {
     return effects().persist(new CounterEvent.ValueSet(value)).thenReply(Counter::value);
   }
 
+  public Effect<Integer> handle(CounterCommand counterCommand) {
+    return switch (counterCommand){
+      case CounterCommand.Increase(var value) ->
+        effects().persist(new CounterEvent.ValueIncreased(value)).thenReply(Counter::value);
+
+      case CounterCommand.Set(var value) ->
+        effects().persist(new CounterEvent.ValueSet(value)).thenReply(Counter::value);
+    };
+  }
+
   public Effect<Integer> multiIncrease(List<Integer> increase) {
     return effects().persistAll(increase.stream().map(CounterEvent.ValueIncreased::new).toList())
         .thenReply(Counter::value);

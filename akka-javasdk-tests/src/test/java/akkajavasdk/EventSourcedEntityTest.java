@@ -8,6 +8,7 @@ import akka.javasdk.http.StrictResponse;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
 import akkajavasdk.components.eventsourcedentities.counter.Counter;
+import akkajavasdk.components.eventsourcedentities.counter.CounterCommand;
 import akkajavasdk.components.eventsourcedentities.counter.CounterEntity;
 import akka.javasdk.client.EventSourcedEntityClient;
 import akkajavasdk.components.eventsourcedentities.hierarchy.AbstractTextConsumer;
@@ -154,6 +155,24 @@ public class EventSourcedEntityTest extends TestKitSupport {
       .until(
         () -> getCounter(client),
         new IsEqual(10));
+  }
+
+  @Test
+  public void verifyRequestWithSealedCommand() {
+    var client = componentClient.forEventSourcedEntity("counter-with-sealed-command-handler");
+    await(client
+      .method(CounterEntity::handle)
+      .invokeAsync(new CounterCommand.Set(123)));
+
+    Integer result1 = await(client.method(CounterEntity::get).invokeAsync());
+    assertThat(result1).isEqualTo(123);
+
+    await(client
+      .method(CounterEntity::handle)
+      .invokeAsync(new CounterCommand.Increase(123)));
+
+    Integer result2 = await(client.method(CounterEntity::get).invokeAsync());
+    assertThat(result2).isEqualTo(246);
   }
 
   @Test
