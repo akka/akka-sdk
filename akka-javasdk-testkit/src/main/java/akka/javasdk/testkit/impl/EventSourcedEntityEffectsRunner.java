@@ -24,8 +24,24 @@ public abstract class EventSourcedEntityEffectsRunner<S, E> {
     this._state = entity.emptyState();
   }
 
+  public EventSourcedEntityEffectsRunner(EventSourcedEntity<S, E> entity, S initialState) {
+    this.entity = entity;
+    this._state = initialState;
+  }
+
+  public EventSourcedEntityEffectsRunner(EventSourcedEntity<S, E> entity, List<E> initialEvents) {
+    this.entity = entity;
+    this._state = entity.emptyState();
+
+    entity._internalSetCurrentState(this._state);
+    // NB: updates _state
+    playEventsForEntity(initialEvents);
+  }
+
   /** @return The current state of the entity after applying the event */
   protected abstract S handleEvent(S state, E event);
+
+  protected EventSourcedEntity<S, E> entity() { return entity; }
 
   /** @return The current state of the entity */
   public S getState() {
@@ -44,7 +60,6 @@ public abstract class EventSourcedEntityEffectsRunner<S, E> {
    *
    * @return the result of the side effects
    */
-  @SuppressWarnings("unchecked") // event type in loop
   protected <R> EventSourcedResult<R> interpretEffects(
       Supplier<EventSourcedEntity.Effect<R>> effect, String entityId, Metadata metadata) {
     var commandContext = new TestKitEventSourcedEntityCommandContext(entityId, metadata);
@@ -57,15 +72,9 @@ public abstract class EventSourcedEntityEffectsRunner<S, E> {
     } finally {
       entity._internalSetCommandContext(Optional.empty());
     }
-    try {
-      entity._internalSetEventContext(Optional.of(new TestKitEventSourcedEntityEventContext()));
-      for (Object event : EventSourcedResultImpl.eventsOf(effectExecuted)) {
-        this._state = handleEvent(this._state, (E) event);
-        entity._internalSetCurrentState(this._state);
-      }
-    } finally {
-      entity._internalSetEventContext(Optional.empty());
-    }
+
+    playEventsForEntity(EventSourcedResultImpl.eventsOf(effectExecuted));
+
     EventSourcedResult<R> result;
     try {
       entity._internalSetCommandContext(Optional.of(commandContext));
@@ -75,5 +84,17 @@ public abstract class EventSourcedEntityEffectsRunner<S, E> {
       entity._internalSetCommandContext(Optional.empty());
     }
     return result;
+  }
+
+  private void playEventsForEntity(List<E> events) {
+    try {
+      entity._internalSetEventContext(Optional.of(new TestKitEventSourcedEntityEventContext()));
+      for (E event : events) {
+        this._state = handleEvent(this._state, event);
+        entity._internalSetCurrentState(this._state);
+      }
+    } finally {
+      entity._internalSetEventContext(Optional.empty());
+    }
   }
 }

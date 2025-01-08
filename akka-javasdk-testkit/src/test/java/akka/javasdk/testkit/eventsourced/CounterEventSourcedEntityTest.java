@@ -12,6 +12,9 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class CounterEventSourcedEntityTest {
 
   @Test
@@ -56,5 +59,31 @@ public class CounterEventSourcedEntityTest {
     EventSourcedResult<String> result = testKit.call(entity -> entity.increaseBy(-10));
     assertTrue(result.isError());
     assertEquals("Can't increase with a negative value", result.getError());
+  }
+
+  @Test
+  public void testOverflowingIncrease() {
+    EventSourcedTestKit<Integer, Increased, CounterEventSourcedEntity> testKit =
+        EventSourcedTestKit.ofEntityWithState(ctx -> new CounterEventSourcedEntity(), Integer.MAX_VALUE - 10);
+    EventSourcedResult<String> result = testKit.call(entity -> entity.increaseBy(11));
+    assertTrue(result.isError());
+    assertEquals("Can't increase by [11] due to overflow", result.getError());
+  }
+
+  @Test
+  public void testOverflowingDoubleIncrease() {
+    List<Increased> previousEvents = new ArrayList<>();
+    int i = 1;
+    while (i > 0) {
+      previousEvents.add(new Increased(EventSourcedTestKit.DEFAULT_TEST_ENTITY_ID, i));
+      i *= 2;
+    }
+
+    EventSourcedTestKit<Integer, Increased, CounterEventSourcedEntity> testKit =
+        EventSourcedTestKit.ofEntityFromEvents(ctx -> new CounterEventSourcedEntity(), previousEvents);
+
+    EventSourcedResult<String> result = testKit.call(entity -> entity.doubleIncreaseBy(10));
+    assertTrue(result.isError());
+    assertEquals("Can't double-increase by [10] due to overflow", result.getError());
   }
 }
