@@ -16,7 +16,7 @@ final class TimedActionResultImpl[T](effect: TimedActionEffectImpl.PrimaryEffect
   def this(effect: TimedAction.Effect) = this(effect.asInstanceOf[TimedActionEffectImpl.PrimaryEffect])
 
   /** @return true if the call had an effect with a reply, false if not */
-  override def isDone(): Boolean = effect.isInstanceOf[TimedActionEffectImpl.SuccessEffect.type]
+  override def isDone(): Boolean = effect == TimedActionEffectImpl.SuccessEffect
 
   /** @return true if the call was async, false if not */
   override def isAsync(): Boolean = effect.isInstanceOf[TimedActionEffectImpl.AsyncEffect]
