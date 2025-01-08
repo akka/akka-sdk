@@ -12,7 +12,7 @@ Access to projects is controlled by assigning specific roles to users. The avail
 |View services                     |✅     |✅        |✅     |❌
 |Deploy services                   |✅     |✅        |❌     |❌
 |Update services                   |✅     |✅        |❌     |❌
-|Delete services                   |✅     |❌        |❌     |❌
+|Delete services                   |✅     |✅        |❌     |❌
 |View routes                       |✅     |✅        |✅     |❌
 |Manage routes                     |✅     |✅        |❌     |❌
 |View secrets                      |✅     |✅        |✅     |❌
