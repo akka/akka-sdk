@@ -355,13 +355,13 @@ private final class Sdk(
     }
   }
 
-  private def isNotExcluded(clz: Class[_]): Boolean = {
+  private def isExcluded(clz: Class[_]): Boolean = {
     val componentName = clz.getName
     if (sdkSettings.excludedComponents.contains(componentName)) {
       logger.info("Ignoring component [{}] as it is excluded in the configuration", clz.getName)
-      false
-    } else {
       true
+    } else {
+      false
     }
   }
 
@@ -416,6 +416,7 @@ private final class Sdk(
   // collect all Endpoints and compose them to build a larger router
   private val httpEndpointDescriptors = componentClasses
     .filter(Reflect.isRestEndpoint)
+    .filterNot(isExcluded)
     .map { httpEndpointClass =>
       HttpEndpointDescriptorFactory(httpEndpointClass, httpEndpointFactory(httpEndpointClass))
     }
@@ -425,10 +426,11 @@ private final class Sdk(
   private var workflowDescriptors = Vector.empty[WorkflowDescriptor]
   private var timedActionDescriptors = Vector.empty[TimedActionDescriptor]
   private var consumerDescriptors = Vector.empty[ConsumerDescriptor]
+  private var viewDescriptors = Vector.empty[SpiViewDescriptor]
 
   componentClasses
     .filter(hasComponentId)
-    .filter(isNotExcluded)
+    .filterNot(isExcluded)
     .foreach {
       case clz if classOf[EventSourcedEntity[_, _]].isAssignableFrom(clz) =>
         val componentId = clz.getAnnotation(classOf[ComponentId]).value
@@ -547,6 +549,9 @@ private final class Sdk(
             consumerDestination(consumerClass),
             timedActionSpi)
 
+      case clz if classOf[View].isAssignableFrom(clz) =>
+        viewDescriptors :+= ViewDescriptorFactory(clz, serializer, sdkExecutionContext)
+
       case clz if Reflect.isRestEndpoint(clz) =>
       // handled separately because ComponentId is not mandatory
 
@@ -554,14 +559,6 @@ private final class Sdk(
         // some other class with @ComponentId annotation
         logger.warn("Unknown component [{}]", clz.getName)
     }
-
-  private val viewDescriptors: Seq[SpiViewDescriptor] =
-    componentClasses
-      .filter(hasComponentId)
-      .filter(isNotExcluded)
-      .collect {
-        case clz if classOf[View].isAssignableFrom(clz) => ViewDescriptorFactory(clz, serializer, sdkExecutionContext)
-      }
 
   // these are available for injecting in all kinds of component that are primarily
   // for side effects
