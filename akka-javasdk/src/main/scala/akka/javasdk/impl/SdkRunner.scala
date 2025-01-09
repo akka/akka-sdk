@@ -355,7 +355,7 @@ private final class Sdk(
     }
   }
 
-  private def isExcluded(clz: Class[_]): Boolean = {
+  private def isDisabled(clz: Class[_]): Boolean = {
     val componentName = clz.getName
     if (sdkSettings.disabledComponents.contains(componentName)) {
       logger.info("Ignoring component [{}] as it is disabled in the configuration", clz.getName)
@@ -416,7 +416,7 @@ private final class Sdk(
   // collect all Endpoints and compose them to build a larger router
   private val httpEndpointDescriptors = componentClasses
     .filter(Reflect.isRestEndpoint)
-    .filterNot(isExcluded)
+    .filterNot(isDisabled)
     .map { httpEndpointClass =>
       HttpEndpointDescriptorFactory(httpEndpointClass, httpEndpointFactory(httpEndpointClass))
     }
@@ -430,7 +430,7 @@ private final class Sdk(
 
   componentClasses
     .filter(hasComponentId)
-    .filterNot(isExcluded)
+    .filterNot(isDisabled)
     .foreach {
       case clz if classOf[EventSourcedEntity[_, _]].isAssignableFrom(clz) =>
         val componentId = clz.getAnnotation(classOf[ComponentId]).value
