@@ -1,4 +1,4 @@
-package store.view.joined;
+package store.order.view.joined;
 
 import store.customer.domain.Address;
 import store.product.domain.Money;

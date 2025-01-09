@@ -1,4 +1,4 @@
-package store.view.model;
+package store.order.view.model;
 
 import store.customer.domain.Address;
 

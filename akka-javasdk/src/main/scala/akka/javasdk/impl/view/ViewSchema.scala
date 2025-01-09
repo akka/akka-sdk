@@ -5,16 +5,22 @@
 package akka.javasdk.impl.view
 
 import akka.annotation.InternalApi
-import akka.runtime.sdk.spi.views.SpiType
-import akka.runtime.sdk.spi.views.SpiType.SpiBoolean
-import akka.runtime.sdk.spi.views.SpiType.SpiByteString
-import akka.runtime.sdk.spi.views.SpiType.SpiDouble
-import akka.runtime.sdk.spi.views.SpiType.SpiFloat
-import akka.runtime.sdk.spi.views.SpiType.SpiInteger
-import akka.runtime.sdk.spi.views.SpiType.SpiLong
-import akka.runtime.sdk.spi.views.SpiType.SpiNestableType
-import akka.runtime.sdk.spi.views.SpiType.SpiString
-import akka.runtime.sdk.spi.views.SpiType.SpiTimestamp
+import akka.runtime.sdk.spi.SpiSchema.SpiType
+import akka.runtime.sdk.spi.SpiSchema.SpiBoolean
+import akka.runtime.sdk.spi.SpiSchema.SpiByteString
+import akka.runtime.sdk.spi.SpiSchema.SpiClass
+import akka.runtime.sdk.spi.SpiSchema.SpiClassRef
+import akka.runtime.sdk.spi.SpiSchema.SpiDouble
+import akka.runtime.sdk.spi.SpiSchema.SpiEnum
+import akka.runtime.sdk.spi.SpiSchema.SpiField
+import akka.runtime.sdk.spi.SpiSchema.SpiFloat
+import akka.runtime.sdk.spi.SpiSchema.SpiInteger
+import akka.runtime.sdk.spi.SpiSchema.SpiList
+import akka.runtime.sdk.spi.SpiSchema.SpiLong
+import akka.runtime.sdk.spi.SpiSchema.SpiNestableType
+import akka.runtime.sdk.spi.SpiSchema.SpiOptional
+import akka.runtime.sdk.spi.SpiSchema.SpiString
+import akka.runtime.sdk.spi.SpiSchema.SpiTimestamp
 
 import java.lang.reflect.AccessFlag
 import java.lang.reflect.ParameterizedType
@@ -58,7 +64,7 @@ private[view] object ViewSchema {
             case c: Class[_]          => c
             case p: ParameterizedType => p.getRawType.asInstanceOf[Class[_]]
           }
-          if (seenClasses.contains(clazz)) new SpiType.SpiClassRef(clazz.getName)
+          if (seenClasses.contains(clazz)) new SpiClassRef(clazz.getName)
           else
             knownConcreteClasses.get(clazz) match {
               case Some(found) => found
@@ -67,23 +73,20 @@ private[view] object ViewSchema {
                 if (clazz.isArray && clazz.componentType() == classOf[java.lang.Byte]) {
                   SpiByteString
                 } else if (clazz.isEnum) {
-                  new SpiType.SpiEnum(clazz.getName)
+                  new SpiEnum(clazz.getName)
                 } else {
                   currentType match {
                     case p: ParameterizedType if clazz == classOf[Optional[_]] =>
-                      new SpiType.SpiOptional(
-                        loop(p.getActualTypeArguments.head, seenClasses).asInstanceOf[SpiNestableType])
+                      new SpiOptional(loop(p.getActualTypeArguments.head, seenClasses).asInstanceOf[SpiNestableType])
                     case p: ParameterizedType if classOf[java.util.Collection[_]].isAssignableFrom(clazz) =>
-                      new SpiType.SpiList(
-                        loop(p.getActualTypeArguments.head, seenClasses).asInstanceOf[SpiNestableType])
+                      new SpiList(loop(p.getActualTypeArguments.head, seenClasses).asInstanceOf[SpiNestableType])
                     case _: Class[_] =>
                       val seenIncludingThis = seenClasses + clazz
-                      new SpiType.SpiClass(
+                      new SpiClass(
                         clazz.getName,
                         clazz.getDeclaredFields
                           .filterNot(f => f.accessFlags().contains(AccessFlag.STATIC))
-                          .map(field =>
-                            new SpiType.SpiField(field.getName, loop(field.getGenericType, seenIncludingThis)))
+                          .map(field => new SpiField(field.getName, loop(field.getGenericType, seenIncludingThis)))
                           .toSeq)
                   }
                 }

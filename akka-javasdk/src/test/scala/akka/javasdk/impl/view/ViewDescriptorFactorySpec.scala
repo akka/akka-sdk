@@ -12,12 +12,12 @@ import akka.javasdk.testmodels.view.ViewTestModels
 import akka.runtime.sdk.spi.ConsumerSource
 import akka.runtime.sdk.spi.Principal
 import akka.runtime.sdk.spi.ServiceNamePattern
-import akka.runtime.sdk.spi.views.SpiType.SpiClass
-import akka.runtime.sdk.spi.views.SpiType.SpiInteger
-import akka.runtime.sdk.spi.views.SpiType.SpiList
-import akka.runtime.sdk.spi.views.SpiType.SpiString
-import akka.runtime.sdk.spi.views.SpiType.SpiTimestamp
-import akka.runtime.sdk.spi.views.SpiViewDescriptor
+import akka.runtime.sdk.spi.SpiSchema.SpiClass
+import akka.runtime.sdk.spi.SpiSchema.SpiInteger
+import akka.runtime.sdk.spi.SpiSchema.SpiList
+import akka.runtime.sdk.spi.SpiSchema.SpiString
+import akka.runtime.sdk.spi.SpiSchema.SpiTimestamp
+import akka.runtime.sdk.spi.ViewDescriptor
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -28,7 +28,7 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with Matchers {
   import ViewTestModels._
   import akka.javasdk.testmodels.subscriptions.PubSubTestModels._
 
-  def assertDescriptor[T](test: SpiViewDescriptor => Any)(implicit tag: ClassTag[T]): Unit = {
+  def assertDescriptor[T](test: ViewDescriptor => Any)(implicit tag: ClassTag[T]): Unit = {
     test(ViewDescriptorFactory(tag.runtimeClass, new JsonSerializer, ExecutionContexts.global()))
   }
 

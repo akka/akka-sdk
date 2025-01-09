@@ -23,7 +23,7 @@ import akka.javasdk.impl.telemetry.TimedActionCategory
 import akka.javasdk.impl.telemetry.TraceInstrumentation
 import akka.javasdk.impl.timedaction.TimedActionEffectImpl.AsyncEffect
 import akka.javasdk.impl.timedaction.TimedActionEffectImpl.ErrorEffect
-import akka.javasdk.impl.timedaction.TimedActionEffectImpl.ReplyEffect
+import akka.javasdk.impl.timedaction.TimedActionEffectImpl.SuccessEffect
 import akka.javasdk.impl.timer.TimerSchedulerImpl
 import akka.javasdk.timedaction.CommandContext
 import akka.javasdk.timedaction.CommandEnvelope
@@ -126,7 +126,7 @@ private[impl] final class TimedActionImpl[TA <: TimedAction](
 
   private def toSpiEffect(command: Command, effect: TimedAction.Effect): Future[Effect] = {
     effect match {
-      case ReplyEffect(_) => //FIXME remove meta, not used in the reply
+      case SuccessEffect =>
         Future.successful(SpiTimedAction.SuccessEffect)
       case AsyncEffect(futureEffect) =>
         futureEffect

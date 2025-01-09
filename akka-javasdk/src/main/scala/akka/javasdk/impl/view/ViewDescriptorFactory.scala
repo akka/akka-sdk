@@ -19,19 +19,20 @@ import akka.javasdk.view.TableUpdater
 import akka.javasdk.view.UpdateContext
 import akka.javasdk.view.View
 import akka.javasdk.view.View.QueryStreamEffect
+import akka.runtime.sdk.spi
 import akka.runtime.sdk.spi.ComponentOptions
 import akka.runtime.sdk.spi.ConsumerSource
 import akka.runtime.sdk.spi.MethodOptions
-import akka.runtime.sdk.spi.views.SpiQueryDescriptor
-import akka.runtime.sdk.spi.views.SpiTableDescriptor
-import akka.runtime.sdk.spi.views.SpiTableUpdateEffect
-import akka.runtime.sdk.spi.views.SpiTableUpdateEnvelope
-import akka.runtime.sdk.spi.views.SpiTableUpdateHandler
-import akka.runtime.sdk.spi.views.SpiType
-import akka.runtime.sdk.spi.views.SpiType.SpiClass
-import akka.runtime.sdk.spi.views.SpiType.SpiField
-import akka.runtime.sdk.spi.views.SpiType.SpiList
-import akka.runtime.sdk.spi.views.SpiViewDescriptor
+import akka.runtime.sdk.spi.QueryDescriptor
+import akka.runtime.sdk.spi.SpiSchema
+import akka.runtime.sdk.spi.TableDescriptor
+import akka.runtime.sdk.spi.SpiTableUpdateHandler.SpiTableUpdateEffect
+import akka.runtime.sdk.spi.SpiTableUpdateHandler.SpiTableUpdateEnvelope
+import akka.runtime.sdk.spi.SpiTableUpdateHandler
+import akka.runtime.sdk.spi.SpiSchema.SpiClass
+import akka.runtime.sdk.spi.SpiSchema.SpiField
+import akka.runtime.sdk.spi.SpiSchema.SpiList
+import akka.runtime.sdk.spi.ViewDescriptor
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
 
@@ -51,7 +52,7 @@ private[impl] object ViewDescriptorFactory {
 
   val TableNamePattern: Regex = """FROM\s+`?([A-Za-z][A-Za-z0-9_]*)""".r
 
-  def apply(viewClass: Class[_], serializer: JsonSerializer, userEc: ExecutionContext): SpiViewDescriptor = {
+  def apply(viewClass: Class[_], serializer: JsonSerializer, userEc: ExecutionContext): ViewDescriptor = {
     val componentId = ComponentDescriptorFactory.readComponentIdIdValue(viewClass)
 
     val tableUpdaters =
@@ -60,7 +61,7 @@ private[impl] object ViewDescriptorFactory {
     val allQueryMethods = extractQueryMethods(viewClass)
     val allQueryStrings = allQueryMethods.map(_.queryString)
 
-    val tables: Seq[SpiTableDescriptor] =
+    val tables: Seq[TableDescriptor] =
       tableUpdaters
         .map { tableUpdaterClass =>
           // View class type parameter declares table type
@@ -110,7 +111,7 @@ private[impl] object ViewDescriptorFactory {
             throw new IllegalStateException(s"Table updater [${tableUpdaterClass}] is missing a @Consume annotation")
         }
 
-    new SpiViewDescriptor(
+    new ViewDescriptor(
       componentId,
       viewClass.getName,
       tables,
@@ -119,7 +120,7 @@ private[impl] object ViewDescriptorFactory {
       componentOptions = new ComponentOptions(None, None))
   }
 
-  private case class QueryMethod(descriptor: SpiQueryDescriptor, queryString: String)
+  private case class QueryMethod(descriptor: QueryDescriptor, queryString: String)
 
   private def validQueryMethod(method: Method): Boolean =
     method.getAnnotation(classOf[Query]) != null && (method.getReturnType == classOf[
@@ -169,10 +170,10 @@ private[impl] object ViewDescriptorFactory {
         s"Method [${method.getName}] is marked as streaming updates, this requires it to return a ${classOf[
           QueryStreamEffect[_]]}")
 
-    val inputType: Option[SpiType.QueryInput] =
+    val inputType: Option[SpiSchema.QueryInput] =
       method.getGenericParameterTypes.headOption.map(ViewSchema.apply(_)).map {
-        case validInput: SpiType.QueryInput => validInput
-        case other                          =>
+        case validInput: SpiSchema.QueryInput => validInput
+        case other                            =>
           // FIXME let's see if this flies
           // For using primitive parameters directly, using their parameter name as placeholder in the query,
           // we have to make up a valid message with that as a field
@@ -182,7 +183,7 @@ private[impl] object ViewDescriptorFactory {
       }
 
     val outputType = ViewSchema(actualQueryOutputClass) match {
-      case output: SpiType.SpiClass =>
+      case output: SpiClass =>
         if (streamingQuery) new SpiList(output)
         else output
       case _ =>
@@ -191,7 +192,7 @@ private[impl] object ViewDescriptorFactory {
     }
 
     QueryMethod(
-      new SpiQueryDescriptor(
+      new QueryDescriptor(
         method.getName,
         queryStr,
         inputType,
@@ -208,7 +209,7 @@ private[impl] object ViewDescriptorFactory {
       tableType: SpiClass,
       tableName: String,
       serializer: JsonSerializer,
-      userEc: ExecutionContext): SpiTableDescriptor = {
+      userEc: ExecutionContext): TableDescriptor = {
     val annotation = tableUpdater.getAnnotation(classOf[Consume.FromServiceStream])
 
     val updaterMethods = tableUpdater.getMethods.toIndexedSeq
@@ -220,7 +221,7 @@ private[impl] object ViewDescriptorFactory {
       .filterNot(ComponentDescriptorFactory.hasHandleDeletes)
       .filter(ComponentDescriptorFactory.hasUpdateEffectOutput)
 
-    new SpiTableDescriptor(
+    new TableDescriptor(
       tableName,
       tableType,
       new ConsumerSource.ServiceStreamSource(annotation.service(), annotation.id(), annotation.consumerGroup()),
@@ -246,7 +247,7 @@ private[impl] object ViewDescriptorFactory {
       tableType: SpiClass,
       tableName: String,
       serializer: JsonSerializer,
-      userEc: ExecutionContext): SpiTableDescriptor = {
+      userEc: ExecutionContext): TableDescriptor = {
 
     val annotation = tableUpdater.getAnnotation(classOf[Consume.FromEventSourcedEntity])
 
@@ -262,7 +263,7 @@ private[impl] object ViewDescriptorFactory {
     // FIXME input type validation? (does that happen elsewhere?)
     // FIXME method output vs table type validation? (does that happen elsewhere?)
 
-    new SpiTableDescriptor(
+    new TableDescriptor(
       tableName,
       tableType,
       new ConsumerSource.EventSourcedEntitySource(
@@ -289,7 +290,7 @@ private[impl] object ViewDescriptorFactory {
       tableType: SpiClass,
       tableName: String,
       serializer: JsonSerializer,
-      userEc: ExecutionContext): SpiTableDescriptor = {
+      userEc: ExecutionContext): TableDescriptor = {
     val annotation = tableUpdater.getAnnotation(classOf[Consume.FromTopic])
 
     val updaterMethods = tableUpdater.getMethods.toIndexedSeq
@@ -301,7 +302,7 @@ private[impl] object ViewDescriptorFactory {
     // FIXME input type validation? (does that happen elsewhere?)
     // FIXME method output vs table type validation? (does that happen elsewhere?)
 
-    new SpiTableDescriptor(
+    new TableDescriptor(
       tableName,
       tableType,
       new ConsumerSource.TopicSource(annotation.value(), annotation.consumerGroup()),
@@ -321,7 +322,7 @@ private[impl] object ViewDescriptorFactory {
       tableType: SpiClass,
       tableName: String,
       serializer: JsonSerializer,
-      userEc: ExecutionContext): SpiTableDescriptor = {
+      userEc: ExecutionContext): TableDescriptor = {
     val annotation = tableUpdater.getAnnotation(classOf[Consume.FromKeyValueEntity])
 
     val updaterMethods = tableUpdater.getMethods.toIndexedSeq
@@ -345,7 +346,7 @@ private[impl] object ViewDescriptorFactory {
       .filterNot(ComponentDescriptorFactory.hasHandleDeletes)
       .filter(ComponentDescriptorFactory.hasUpdateEffectOutput)
 
-    new SpiTableDescriptor(
+    new TableDescriptor(
       tableName,
       tableType,
       new ConsumerSource.KeyValueEntitySource(ComponentDescriptorFactory.readComponentIdIdValue(annotation.value())),
@@ -462,9 +463,9 @@ private[impl] object ViewDescriptorFactory {
               throw ViewException(componentId, "updateState with null state is not allowed.", None)
             }
             val bytesPayload = serializer.toBytes(newState)
-            new SpiTableUpdateEffect.UpdateRow(bytesPayload)
-          case ViewEffectImpl.Delete => SpiTableUpdateEffect.DeleteRow
-          case ViewEffectImpl.Ignore => SpiTableUpdateEffect.IgnoreUpdate
+            new spi.SpiTableUpdateHandler.UpdateRow(bytesPayload)
+          case ViewEffectImpl.Delete => SpiTableUpdateHandler.DeleteRow
+          case ViewEffectImpl.Ignore => SpiTableUpdateHandler.IgnoreUpdate
         }
       } finally {
         if (addedToMDC) MDC.remove(Telemetry.TRACE_ID)

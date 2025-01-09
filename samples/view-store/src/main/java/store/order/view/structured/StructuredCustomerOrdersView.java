@@ -1,4 +1,4 @@
-package store.view.structured;
+package store.order.view.structured;
 
 import akka.javasdk.annotations.Query;
 import akka.javasdk.annotations.Consume;
@@ -6,14 +6,14 @@ import akka.javasdk.annotations.Table;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.view.View;
 import akka.javasdk.view.TableUpdater;
-import store.customer.api.CustomerEntity;
+import store.customer.application.CustomerEntity;
 import store.customer.domain.CustomerEvent;
-import store.order.api.OrderEntity;
+import store.order.application.OrderEntity;
 import store.order.domain.Order;
-import store.product.api.ProductEntity;
+import store.product.application.ProductEntity;
 import store.product.domain.ProductEvent;
-import store.view.model.Customer;
-import store.view.model.Product;
+import store.order.view.model.Customer;
+import store.order.view.model.Product;
 
 @ComponentId("structured-customer-orders")
 public class StructuredCustomerOrdersView extends View {
@@ -39,7 +39,7 @@ public class StructuredCustomerOrdersView extends View {
       WHERE customers.customerId = :customerId
       ORDER BY orders.createdTimestamp
       """)
-  public QueryEffect<CustomerOrders> get(String customerId) {
+  public QueryEffect<StructuredCustomerOrders> get(String customerId) {
     return queryResult();
   }
   // end::query[]

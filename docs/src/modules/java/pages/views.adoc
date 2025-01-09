@@ -318,26 +318,3 @@ include::example$key-value-customer-registry/src/test/java/customer/application/
 Views are not replicated directly in the same way as for example xref:event-sourced-entities.adoc#_replication[Event Sourced Entity replication]. A View is built from entities in the same service, or another service, in the same region. The entities will replicate all events across regions and identical Views are built in each region.
 
 A View can also be built from a message broker topic, and that could be regional or global depending on how the message broker is configured.
-
-== Exposing views directly
-
-include::partial$component-endpoint.adoc[]
-
-=== API
-
-The view is exposed at a fixed path:
-
-[source]
-----
-/akka/v1.0/view/<component id>/<method>
-----
-
-Taking the sample from the <<value-entity, first section>> as an example, that would be:
-
-[source,shell]
-----
-curl localhost:9000/akka/v1.0/view/view_customers_by_email/getCustomer \
-  --header "Content-Type: application/json" \
-  -XPOST \
-  --data '{"email":"test2@example.com"}'
-----

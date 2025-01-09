@@ -5,20 +5,20 @@
 package akka.javasdk.impl.view
 
 import akka.javasdk.testmodels.view.ViewTestModels
-import akka.runtime.sdk.spi.views.SpiType.SpiBoolean
-import akka.runtime.sdk.spi.views.SpiType.SpiByteString
-import akka.runtime.sdk.spi.views.SpiType.SpiClass
-import akka.runtime.sdk.spi.views.SpiType.SpiClassRef
-import akka.runtime.sdk.spi.views.SpiType.SpiDouble
-import akka.runtime.sdk.spi.views.SpiType.SpiEnum
-import akka.runtime.sdk.spi.views.SpiType.SpiField
-import akka.runtime.sdk.spi.views.SpiType.SpiFloat
-import akka.runtime.sdk.spi.views.SpiType.SpiInteger
-import akka.runtime.sdk.spi.views.SpiType.SpiList
-import akka.runtime.sdk.spi.views.SpiType.SpiLong
-import akka.runtime.sdk.spi.views.SpiType.SpiOptional
-import akka.runtime.sdk.spi.views.SpiType.SpiString
-import akka.runtime.sdk.spi.views.SpiType.SpiTimestamp
+import akka.runtime.sdk.spi.SpiSchema.SpiBoolean
+import akka.runtime.sdk.spi.SpiSchema.SpiByteString
+import akka.runtime.sdk.spi.SpiSchema.SpiClass
+import akka.runtime.sdk.spi.SpiSchema.SpiClassRef
+import akka.runtime.sdk.spi.SpiSchema.SpiDouble
+import akka.runtime.sdk.spi.SpiSchema.SpiEnum
+import akka.runtime.sdk.spi.SpiSchema.SpiField
+import akka.runtime.sdk.spi.SpiSchema.SpiFloat
+import akka.runtime.sdk.spi.SpiSchema.SpiInteger
+import akka.runtime.sdk.spi.SpiSchema.SpiList
+import akka.runtime.sdk.spi.SpiSchema.SpiLong
+import akka.runtime.sdk.spi.SpiSchema.SpiOptional
+import akka.runtime.sdk.spi.SpiSchema.SpiString
+import akka.runtime.sdk.spi.SpiSchema.SpiTimestamp
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 

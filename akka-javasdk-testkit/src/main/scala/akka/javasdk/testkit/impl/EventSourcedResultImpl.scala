@@ -87,7 +87,7 @@ private[akka] final class EventSourcedResultImpl[R, S, E](
 
   override def getUpdatedState: AnyRef = state.asInstanceOf[AnyRef]
 
-  override def didEmitEvents(): Boolean = !getAllEvents().isEmpty
+  override def didPersistEvents(): Boolean = !getAllEvents().isEmpty
 
   override def getNextEventOfType[T](expectedClass: Class[T]): T =
     if (!eventsIterator.hasNext) throw new NoSuchElementException("No more events found")
@@ -98,4 +98,6 @@ private[akka] final class EventSourcedResultImpl[R, S, E](
         throw new NoSuchElementException(
           "expected event type [" + expectedClass.getName + "] but found [" + next.getClass.getName + "]")
     }
+
+  override def didEmitEvents(): Boolean = didPersistEvents()
 }

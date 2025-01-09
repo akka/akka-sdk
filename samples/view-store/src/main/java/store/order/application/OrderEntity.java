@@ -1,10 +1,13 @@
-package store.order.api;
+package store.order.application;
 
+import akka.Done;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
 import store.order.domain.Order;
 
 import java.time.Instant;
+
+import static akka.Done.done;
 
 @ComponentId("order")
 public class OrderEntity extends KeyValueEntity<Order> {
@@ -13,7 +16,7 @@ public class OrderEntity extends KeyValueEntity<Order> {
     return effects().reply(currentState());
   }
 
-  public Effect<String> create(CreateOrder createOrder) {
+  public Effect<Done> create(CreateOrder createOrder) {
     Order order =
       new Order(
         commandContext().entityId(),
@@ -21,6 +24,6 @@ public class OrderEntity extends KeyValueEntity<Order> {
         createOrder.customerId(),
         createOrder.quantity(),
         Instant.now().toEpochMilli());
-    return effects().updateState(order).thenReply("OK");
+    return effects().updateState(order).thenReply(done());
   }
 }

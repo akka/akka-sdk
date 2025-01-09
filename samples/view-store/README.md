@@ -21,7 +21,7 @@ With your Akka service running, once you have defined endpoints they should be a
 Create some products:
 
 ```shell
-curl localhost:9000/akka/v1.0/entity/product/P123/create \
+curl -i localhost:9000/products/P123 \
   -XPOST \
   --header "Content-Type: application/json" \
   --data '{
@@ -31,7 +31,7 @@ curl localhost:9000/akka/v1.0/entity/product/P123/create \
 ```
 
 ```shell
-curl localhost:9000/akka/v1.0/entity/product/P987/create \
+curl -i localhost:9000/products/P987 \
   -XPOST \
   --header "Content-Type: application/json" \
   --data '{
@@ -43,13 +43,13 @@ curl localhost:9000/akka/v1.0/entity/product/P987/create \
 Retrieve a product by id:
 
 ```shell
-curl localhost:9000/akka/v1.0/entity/product/P123/get
+curl localhost:9000/products/P123
 ```
 
 Create a customer:
 
 ```shell
-curl localhost:9000/akka/v1.0/entity/customer/C001/create \
+curl -i localhost:9000/customers/C001 \
   -XPOST \
   --header "Content-Type: application/json" \
   --data '{
@@ -62,13 +62,13 @@ curl localhost:9000/akka/v1.0/entity/customer/C001/create \
 Retrieve a customer by id:
 
 ```shell
-curl localhost:9000/akka/v1.0/entity/customer/C001/get
+curl localhost:9000/customers/C001
 ```
 
 Create customer orders for the products:
 
 ```shell
-curl localhost:9000/akka/v1.0/entity/order/O1234/create \
+curl -i localhost:9000/orders/O1234 \
   -XPOST \
   --header "Content-Type: application/json" \
   --data '{
@@ -79,7 +79,7 @@ curl localhost:9000/akka/v1.0/entity/order/O1234/create \
 ```
 
 ```shell
-curl localhost:9000/akka/v1.0/entity/order/O5678/create \
+curl -i localhost:9000/orders/O5678 \
   -XPOST \
   --header "Content-Type: application/json" \
   --data '{
@@ -92,38 +92,29 @@ curl localhost:9000/akka/v1.0/entity/order/O5678/create \
 Retrieve orders by id:
 
 ```shell
-curl localhost:9000/akka/v1.0/entity/order/O1234/get
+curl localhost:9000/orders/O1234
 ```
 
 ```shell
-curl localhost:9000/akka/v1.0/entity/order/O5678/get
+curl localhost:9000/orders/O5678
 ```
 
 Retrieve all product orders for a customer id using a view (with joins):
 
 ```shell
-curl localhost:9000/akka/v1.0/view/joined-customer-orders/get \
-    --header "Content-Type: application/json" \
-    -XPOST \
-    --data '{ "customerId": "C001" }'
+curl localhost:9000/orders/joined-by-customer/C001
 ```
 
 Retrieve all product orders for a customer id using a view (with joins and nested projection):
 
 ```shell
-curl localhost:9000/akka/v1.0/view/nested-customer-orders/get \
-    --header "Content-Type: application/json" \
-    -XPOST \
-    --data '{ "customerId": "C001" }'
+curl localhost:9000/orders/nested-by-customer/C001
 ```
 
 Retrieve all product orders for a customer id using a view (with joins and structured projection):
 
 ```shell
-curl localhost:9000/akka/v1.0/view/structured-customer-orders/get \
-    --header "Content-Type: application/json" \
-    -XPOST \
-    --data '{ "customerId": "C001" }'
+curl localhost:9000/orders/structured-by-customer/C001
 ```
 
 ## Deploying
