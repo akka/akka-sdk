@@ -26,12 +26,11 @@ public interface JwtClaims {
   /**
    * Returns all the claims as a map of strings to strings.
    *
-   * <p>Note that all values will be encoded to JSON. This means that if the value is a string,
-   * it will include the quotes. E.g. "\"my-string-claim\"" for a string claim.
+   * <p>Note that all values will be encoded to JSON. This means that if the value is a string, it
+   * will include the quotes. E.g. "\"my-string-claim\"" for a string claim.
    *
-   * @return
-   *   All the claims represented as a map of string claim names to string values containing
-   *   a JSON representation of its value.
+   * @return All the claims represented as a map of string claim names to string values containing a
+   *     JSON representation of its value.
    */
   Map<String, String> asMap();
 
