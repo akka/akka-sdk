@@ -23,7 +23,7 @@ import akka.javasdk.keyvalueentity.KeyValueEntity
 import akka.javasdk.timedaction.TimedAction
 import akka.javasdk.workflow.Workflow
 import akka.runtime.sdk.spi.TimedActionRequest
-import akka.runtime.sdk.spi.ActionType
+import akka.runtime.sdk.spi.TimedActionType
 import akka.runtime.sdk.spi.ComponentType
 import akka.runtime.sdk.spi.EntityRequest
 import akka.runtime.sdk.spi.EventSourcedEntityType
@@ -221,7 +221,7 @@ private[javasdk] final case class TimedActionClientImpl(
         DeferredCallImpl(
           maybeArg.orNull,
           maybeMetadata.getOrElse(Metadata.EMPTY).asInstanceOf[MetadataImpl],
-          ActionType,
+          TimedActionType,
           componentId,
           methodName,
           None,
