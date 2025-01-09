@@ -15,6 +15,7 @@ import akkajavasdk.components.eventsourcedentities.counter.Counter;
 import akkajavasdk.components.eventsourcedentities.counter.CounterEntity;
 import akkajavasdk.components.keyvalueentities.customer.CustomerEntity;
 import akkajavasdk.components.keyvalueentities.user.ProdCounterEntity;
+import akkajavasdk.components.keyvalueentities.user.StageCounterEntity;
 import akkajavasdk.components.keyvalueentities.user.TestCounterEntity;
 import akkajavasdk.components.keyvalueentities.user.User;
 import akkajavasdk.components.keyvalueentities.user.UserEntity;
@@ -50,7 +51,7 @@ public class SdkIntegrationTest extends TestKitSupport {
   }
 
   @Test
-  public void verifyIfComponentIsActiveBasedOnProfile() {
+  public void verifyIfComponentIsActiveBasedOnConfig() {
 
     var result = await(componentClient.forKeyValueEntity("test")
       .method(TestCounterEntity::get)
@@ -60,16 +61,23 @@ public class SdkIntegrationTest extends TestKitSupport {
   }
 
   @Test
-  public void verifyIfComponentIsDisabledBasedOnProfile() {
+  public void verifyIfComponentIsDisabledBasedOnConfig() {
 
-
-    var exc = Assertions.assertThrows(IllegalArgumentException.class, () -> {
+    var exc1 = Assertions.assertThrows(IllegalArgumentException.class, () -> {
       await(componentClient.forKeyValueEntity("test")
         .method(ProdCounterEntity::get)
         .invokeAsync());
     });
 
-    assertThat(exc.getMessage()).contains("Unknown entity type [prod-counter]");
+    assertThat(exc1.getMessage()).contains("Unknown entity type [prod-counter]");
+
+    var exc2 = Assertions.assertThrows(IllegalArgumentException.class, () -> {
+      await(componentClient.forKeyValueEntity("test")
+        .method(StageCounterEntity::get)
+        .invokeAsync());
+    });
+
+    assertThat(exc2.getMessage()).contains("Unknown entity type [stage-counter]");
   }
 
 

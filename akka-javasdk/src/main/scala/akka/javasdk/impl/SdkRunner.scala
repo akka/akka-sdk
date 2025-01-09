@@ -7,6 +7,8 @@ package akka.javasdk.impl
 import java.lang.reflect.Constructor
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
+import java.util
+import java.util.Optional
 import java.util.concurrent.CompletionStage
 
 import scala.annotation.nowarn
@@ -15,6 +17,7 @@ import scala.concurrent.Future
 import scala.concurrent.Promise
 import scala.jdk.CollectionConverters._
 import scala.jdk.FutureConverters._
+import scala.jdk.OptionConverters.RichOption
 import scala.jdk.OptionConverters.RichOptional
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
@@ -85,8 +88,8 @@ import akka.runtime.sdk.spi.SpiWorkflow
 import akka.runtime.sdk.spi.StartContext
 import akka.runtime.sdk.spi.TimedActionDescriptor
 import akka.runtime.sdk.spi.UserFunctionError
-import akka.runtime.sdk.spi.views.SpiViewDescriptor
 import akka.runtime.sdk.spi.WorkflowDescriptor
+import akka.runtime.sdk.spi.views.SpiViewDescriptor
 import akka.stream.Materializer
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
@@ -96,12 +99,6 @@ import io.opentelemetry.context.{ Context => OtelContext }
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
-import java.util
-import java.util.Optional
-
-import scala.jdk.OptionConverters.RichOption
-
-import akka.javasdk.annotations.Profile
 
 /**
  * INTERNAL API
@@ -358,19 +355,11 @@ private final class Sdk(
     }
   }
 
-  private def hasCorrectProfile(clz: Class[_]): Boolean = {
-    if (clz.hasAnnotation[Profile]) {
-      val profiles = clz.getAnnotation(classOf[Profile]).value
-      if (profiles.isEmpty || profiles.forall(sdkSettings.profiles.contains)) {
-        true
-      } else {
-        logger.info(
-          "Ignoring component [{}] as it requires profiles [{}] to be activated, but only [{}] are active",
-          clz.getName,
-          profiles.mkString(", "),
-          sdkSettings.profiles.mkString(", "))
-        false
-      }
+  private def isNotExcluded(clz: Class[_]): Boolean = {
+    val componentName = clz.getName
+    if (sdkSettings.excludedComponents.contains(componentName)) {
+      logger.info("Ignoring component [{}] as it is excluded in the configuration", clz.getName)
+      false
     } else {
       true
     }
@@ -439,7 +428,7 @@ private final class Sdk(
 
   componentClasses
     .filter(hasComponentId)
-    .filter(hasCorrectProfile)
+    .filter(isNotExcluded)
     .foreach {
       case clz if classOf[EventSourcedEntity[_, _]].isAssignableFrom(clz) =>
         val componentId = clz.getAnnotation(classOf[ComponentId]).value
@@ -569,6 +558,7 @@ private final class Sdk(
   private val viewDescriptors: Seq[SpiViewDescriptor] =
     componentClasses
       .filter(hasComponentId)
+      .filter(isNotExcluded)
       .collect {
         case clz if classOf[View].isAssignableFrom(clz) => ViewDescriptorFactory(clz, serializer, sdkExecutionContext)
       }

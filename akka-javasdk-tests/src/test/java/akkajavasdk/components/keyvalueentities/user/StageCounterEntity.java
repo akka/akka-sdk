@@ -8,11 +8,11 @@ import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
 import akka.javasdk.keyvalueentity.KeyValueEntityContext;
 
-@ComponentId("test-counter")
-public class TestCounterEntity extends KeyValueEntity<Integer> {
+@ComponentId("stage-counter")
+public class StageCounterEntity extends KeyValueEntity<Integer> {
   private final String entityId;
 
-  public TestCounterEntity(KeyValueEntityContext context) {
+  public StageCounterEntity(KeyValueEntityContext context) {
     this.entityId = context.entityId();
   }
 

@@ -5,12 +5,10 @@
 package akkajavasdk.components.keyvalueentities.user;
 
 import akka.javasdk.annotations.ComponentId;
-import akka.javasdk.annotations.Profile;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
 import akka.javasdk.keyvalueentity.KeyValueEntityContext;
 
 @ComponentId("prod-counter")
-@Profile("prod")
 public class ProdCounterEntity extends KeyValueEntity<Integer> {
   private final String entityId;
 
