@@ -33,13 +33,11 @@ public class EventSourcedTestKit<S, E, ES extends EventSourcedEntity<S, E>>
   private EventSourcedTestKit(ES entity, String entityId) {
     super(entity);
     this.entityId = entityId;
-    this.messageCodec = new JsonMessageCodec();
   }
 
   private EventSourcedTestKit(ES entity, String entityId, S initialState) {
     super(entity, initialState);
     this.entityId = entityId;
-    this.messageCodec = new JsonMessageCodec();
   }
 
   private EventSourcedTestKit(ES entity, String entityId, List<E> initialEvents) {
