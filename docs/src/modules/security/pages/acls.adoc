@@ -1,4 +1,4 @@
-= Access Control Lists (ACLs)
+= Access Control List concepts
 
 include::ROOT:partial$include.adoc[]
 

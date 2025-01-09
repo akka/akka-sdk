@@ -244,3 +244,8 @@ include::example$doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java
 <1> Accept the materializer and keep it in a field
 <2> Make sure to discard the request body when failing
 <3> Or collect the bytes into memory
+
+== See also
+
+- xref:java:access-control.adoc[]
+- xref:security:tls-certificates.adoc[]

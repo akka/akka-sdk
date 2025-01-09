@@ -271,3 +271,7 @@ curl localhost:9000/akka/v1.0/entity/carts/12345/addItem \
   -XPOST \
   --data '{"productId":"akka-tshirt","name":"Akka Tshirt","quantity":10}'
 ----
+
+== See also
+
+- xref:java:key-value-entities.adoc[]
