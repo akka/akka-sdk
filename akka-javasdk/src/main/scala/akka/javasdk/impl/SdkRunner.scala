@@ -357,8 +357,8 @@ private final class Sdk(
 
   private def isExcluded(clz: Class[_]): Boolean = {
     val componentName = clz.getName
-    if (sdkSettings.excludedComponents.contains(componentName)) {
-      logger.info("Ignoring component [{}] as it is excluded in the configuration", clz.getName)
+    if (sdkSettings.disabledComponents.contains(componentName)) {
+      logger.info("Ignoring component [{}] as it is disabled in the configuration", clz.getName)
       true
     } else {
       false

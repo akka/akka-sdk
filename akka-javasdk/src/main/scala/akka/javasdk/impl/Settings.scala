@@ -24,7 +24,7 @@ private[impl] object Settings {
         DevModeSettings(
           serviceName = sdkConfig.getString("dev-mode.service-name"),
           httpPort = sdkConfig.getInt("dev-mode.http-port"))),
-      excludedComponents = sdkConfig.getString("components.exclude").split(",").map(_.trim).toSet)
+      disabledComponents = sdkConfig.getString("components.disable").split(",").map(_.trim).toSet)
   }
 
   final case class DevModeSettings(serviceName: String, httpPort: Int)
@@ -38,4 +38,4 @@ private[impl] final case class Settings(
     cleanupDeletedEventSourcedEntityAfter: Duration,
     cleanupDeletedKeyValueEntityAfter: Duration,
     devModeSettings: Option[DevModeSettings],
-    excludedComponents: Set[String])
+    disabledComponents: Set[String])
