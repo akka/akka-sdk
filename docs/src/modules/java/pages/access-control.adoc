@@ -119,8 +119,11 @@ can be overwritten on a per method base.
 
 == Backoffice and self invocations
 
-Invocations of methods from the same service, or from the backoffice using the `akka services proxy` command, are always
+Invocations of methods from the same service, or from via the backoffice proxy that is available to developers, are always
 permitted, regardless of what ACLs are defined on them.
+
+TIP: The `akka service proxy` command creates an HTTP proxy that forwards all
+traffic to a service. This allows you to interact with the service as if it was running locally.
 
 == Local development with ACLs
 
