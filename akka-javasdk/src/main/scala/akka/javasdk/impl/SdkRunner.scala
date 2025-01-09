@@ -450,7 +450,12 @@ private final class Sdk(
               })
         }
         eventSourcedEntityDescriptors :+=
-          new EventSourcedEntityDescriptor(componentId, clz.getName, readOnlyCommandNames, instanceFactory)
+          new EventSourcedEntityDescriptor(
+            componentId,
+            clz.getName,
+            readOnlyCommandNames,
+            instanceFactory,
+            keyValue = false)
 
       case clz if classOf[KeyValueEntity[_]].isAssignableFrom(clz) =>
         val componentId = clz.getAnnotation(classOf[ComponentId]).value
@@ -475,7 +480,12 @@ private final class Sdk(
               })
         }
         keyValueEntityDescriptors :+=
-          new EventSourcedEntityDescriptor(componentId, clz.getName, readOnlyCommandNames, instanceFactory)
+          new EventSourcedEntityDescriptor(
+            componentId,
+            clz.getName,
+            readOnlyCommandNames,
+            instanceFactory,
+            keyValue = true)
 
       case clz if Reflect.isWorkflow(clz) =>
         val componentId = clz.getAnnotation(classOf[ComponentId]).value
