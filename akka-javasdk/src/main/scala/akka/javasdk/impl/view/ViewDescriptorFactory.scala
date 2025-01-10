@@ -65,16 +65,7 @@ private[impl] object ViewDescriptorFactory {
       tableUpdaters
         .map { tableUpdaterClass =>
           // View class type parameter declares table type
-          val tableRowClass: Class[_] =
-            tableUpdaterClass.getGenericSuperclass
-              .asInstanceOf[ParameterizedType]
-              .getActualTypeArguments
-              .head match {
-              case clazz: Class[_] => clazz
-              case other =>
-                throw new IllegalArgumentException(
-                  s"Expected [$tableUpdaterClass] to extends TableUpdater[] for a concrete table row type but cannot figure out type parameter because type argument is unexpected [$other] ")
-            }
+          val tableRowClass: Class[_] = Reflect.tableUpdaterRowType(tableUpdaterClass)
 
           val tableName: String = {
             if (tableUpdaters.size > 1) {
