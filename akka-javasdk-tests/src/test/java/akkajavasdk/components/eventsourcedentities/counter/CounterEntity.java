@@ -33,8 +33,7 @@ public class CounterEntity extends EventSourcedEntity<Counter, CounterEvent> {
 
   public Effect<Integer> increase(Integer value) {
     logger.info(
-      "Increasing counter with commandId={} commandName={} seqNr={} current={} value={}",
-      commandContext().commandId(),
+      "Increasing counter with commandName={} seqNr={} current={} value={}",
       commandContext().commandName(),
       commandContext().sequenceNumber(),
       currentState(),

@@ -6,7 +6,6 @@ package akka.javasdk.impl
 
 import kalix.protocol.discovery.{ DiscoveryProto, UserFunctionError }
 import kalix.protocol.event_sourced_entity.EventSourcedEntityProto
-import com.example.shoppingcart.ShoppingCartApi
 import com.google.protobuf.any.{ Any => ScalaPbAny }
 import com.google.protobuf.{ Any => JavaPbAny }
 import com.google.protobuf.ByteString
@@ -17,30 +16,17 @@ import org.scalatest.wordspec.AnyWordSpec
 class AnySupportSpec extends AnyWordSpec with Matchers with OptionValues {
 
   private val anySupport = new AnySupport(
-    Array(ShoppingCartApi.getDescriptor, EventSourcedEntityProto.javaDescriptor, DiscoveryProto.javaDescriptor),
+    Array(EventSourcedEntityProto.javaDescriptor, DiscoveryProto.javaDescriptor),
     getClass.getClassLoader,
     "com.example")
 
   private val anySupportScala = new AnySupport(
-    Array(ShoppingCartApi.getDescriptor, EventSourcedEntityProto.javaDescriptor, DiscoveryProto.javaDescriptor),
+    Array(EventSourcedEntityProto.javaDescriptor, DiscoveryProto.javaDescriptor),
     getClass.getClassLoader,
     "com.example",
     AnySupport.PREFER_SCALA)
 
-  private val addLineItem = ShoppingCartApi.AddLineItem
-    .newBuilder()
-    .setName("item")
-    .setProductId("id")
-    .setQuantity(10)
-    .build()
-
   "Any support for Java" should {
-
-    "support se/deserializing java protobufs" in {
-      val any = anySupport.encodeScala(addLineItem)
-      any.typeUrl should ===("com.example/" + ShoppingCartApi.AddLineItem.getDescriptor.getFullName)
-      anySupport.decodePossiblyPrimitive(any) should ===(addLineItem)
-    }
 
     "support se/deserializing scala protobufs" in {
       val error = UserFunctionError("error")

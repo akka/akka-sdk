@@ -14,7 +14,7 @@ lazy val `akka-javasdk-root` = project
 
 lazy val akkaJavaSdk =
   Project(id = "akka-javasdk", base = file("akka-javasdk"))
-    .enablePlugins(AkkaGrpcPlugin, BuildInfoPlugin, Publish)
+    .enablePlugins(BuildInfoPlugin, Publish)
     .disablePlugins(CiReleasePlugin) // we use publishSigned, but use a pgp utility from CiReleasePlugin
     .settings(
       name := "akka-javasdk",
@@ -30,15 +30,7 @@ lazy val akkaJavaSdk =
         "scalaVersion" -> scalaVersion.value,
         "akkaVersion" -> Dependencies.AkkaVersion),
       buildInfoPackage := "akka.javasdk",
-      Compile / akkaGrpcGeneratedSources := Seq(AkkaGrpc.Server),
-      Compile / akkaGrpcGeneratedLanguages := Seq(AkkaGrpc.Scala),
-      Compile / akkaGrpcGeneratedSources := Seq(AkkaGrpc.Server, AkkaGrpc.Client),
-      Compile / akkaGrpcGeneratedLanguages := Seq(AkkaGrpc.Scala),
-      Compile / PB.targets += PB.gens.java -> crossTarget.value / "akka-grpc" / "main",
       Test / javacOptions ++= Seq("-parameters"), // for Jackson
-      Test / akkaGrpcGeneratedSources := Seq(AkkaGrpc.Client),
-      Test / PB.protoSources ++= (Compile / PB.protoSources).value,
-      Test / PB.targets += PB.gens.java -> crossTarget.value / "akka-grpc" / "test",
       Test / envVars ++= Map("ENV" -> "value1", "ENV2" -> "value2"))
     .settings(DocSettings.forModule("Akka SDK"))
     .settings(Dependencies.javaSdk)
