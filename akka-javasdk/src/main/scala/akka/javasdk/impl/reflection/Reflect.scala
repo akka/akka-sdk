@@ -160,6 +160,27 @@ private[impl] object Reflect {
     loop(workflow.getClass).asInstanceOf[Class[S]]
   }
 
+  def tableUpdaterRowType(tableUpdater: Class[_]): Class[_] = {
+    @tailrec
+    def loop(current: Class[_]): Class[_] =
+      if (current == classOf[AnyRef])
+        // recursed to root without finding type param
+        throw new IllegalArgumentException(s"Cannot find table updater class for ${tableUpdater.getClass}")
+      else {
+        current.getGenericSuperclass match {
+          case parameterizedType: ParameterizedType =>
+            if (parameterizedType.getActualTypeArguments.size == 1)
+              parameterizedType.getActualTypeArguments.head.asInstanceOf[Class[_]]
+            else throw new IllegalArgumentException(s"Cannot find table updater class for ${tableUpdater.getClass}")
+          case noTypeParamsParent: Class[_] =>
+            // recurse and look at parent
+            loop(noTypeParamsParent)
+        }
+      }
+
+    loop(tableUpdater)
+  }
+
   def allKnownEventSourcedEntityEventType(component: Class[_]): Seq[Class[_]] = {
     val eventType = eventSourcedEntityEventType(component)
     eventType.getPermittedSubclasses.toSeq

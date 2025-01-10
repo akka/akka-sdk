@@ -371,14 +371,15 @@ private[impl] object ViewDescriptorFactory {
       deleteHandler: Boolean = false)(implicit userEc: ExecutionContext)
       extends SpiTableUpdateHandler {
 
+    private val tableUpdaterRowClass: Class[_] = Reflect.tableUpdaterRowType(tableUpdaterClass)
+
     private val userLog = LoggerFactory.getLogger(tableUpdaterClass)
 
     private val methodsByInput: Map[Class[_], Method] =
       if (deleteHandler) Map.empty
       else
         methods.map { m =>
-          // FIXME not entirely sure this is right
-          // register each possible input
+          // register each possible input to deserialize correctly an input
           val inputType = m.getParameterTypes.head
           serializer.registerTypeHints(m.getParameterTypes.head)
 
@@ -391,7 +392,8 @@ private[impl] object ViewDescriptorFactory {
     }
 
     override def handle(input: SpiTableUpdateEnvelope): Future[SpiTableUpdateEffect] = Future {
-      val existingState: Option[AnyRef] = input.existingTableRow.map(serializer.fromBytes)
+      val existingState: Option[AnyRef] =
+        input.existingTableRow.map(bytes => serializer.fromBytes(tableUpdaterRowClass, bytes).asInstanceOf[AnyRef])
       val metadata = MetadataImpl.of(input.metadata)
       val addedToMDC = metadata.traceId match {
         case Some(traceId) =>
