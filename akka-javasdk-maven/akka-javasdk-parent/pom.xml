@@ -172,9 +172,7 @@
                                                         <exclude>io.grpc:grpc-stub</exclude>
                                                         <exclude>io.grpc:grpc-api</exclude>
                                                         <exclude>com.google.protobuf:protobuf-java</exclude>
-                                                        <exclude>com.google.protobuf:protobuf-java-util</exclude>
                                                         <!-- guava and related -->
-                                                        <exclude>com.google.code.gson:gson</exclude>
                                                         <exclude>com.google.guava:guava</exclude>
                                                         <exclude>com.google.guava:failureaccess</exclude>
                                                         <exclude>com.google.guava:listenablefuture</exclude>
