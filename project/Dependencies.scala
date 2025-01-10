@@ -63,7 +63,6 @@ object Dependencies {
   val jacksonJsr310 = "com.fasterxml.jackson.datatype" % "jackson-datatype-jsr310" % JacksonVersion
   val jacksonParameterNames = "com.fasterxml.jackson.module" % "jackson-module-parameter-names" % JacksonVersion
   val jacksonScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % JacksonVersion
-  val jacksonDataFormatProto = "com.fasterxml.jackson.dataformat" % "jackson-dataformat-protobuf" % JacksonVersion
 
   val scalaTest = "org.scalatest" %% "scalatest" % ScalaTestVersion
   val munit = "org.scalameta" %% "munit" % MunitVersion
@@ -119,7 +118,6 @@ object Dependencies {
   //            binaries/artifacts unless explicitly excluded in the akka-javasdk-parent assembly descriptor
   val javaSdk = deps ++= sdkDeps ++ Seq(
     kalixSdkSpi,
-    jacksonDataFormatProto,
     // make sure these two are on the classpath for users to consume http request/response APIs and streams
     "com.typesafe.akka" %% "akka-http-core" % AkkaHttpVersion,
     akkaDependency("akka-stream"),
@@ -131,7 +129,6 @@ object Dependencies {
   val javaSdkTestKit =
     deps ++=
       Seq(
-        jacksonDataFormatProto,
         // These two are for the eventing testkit
         akkaDependency("akka-actor-testkit-typed"),
         akkaDependency("akka-stream-testkit"),
