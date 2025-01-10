@@ -415,9 +415,6 @@ private final class Sdk(
   private var timedActionDescriptors = Vector.empty[TimedActionDescriptor]
   private var consumerDescriptors = Vector.empty[ConsumerDescriptor]
 
-  val s = componentClasses
-    .filter(hasComponentId)
-
   componentClasses
     .filter(hasComponentId)
     .foreach {
