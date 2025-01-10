@@ -22,7 +22,7 @@ public class AllTheTypesKvEntity extends KeyValueEntity<AllTheTypesKvEntity.AllT
   public record ByEmail(String email) {
   }
 
-  public record Recursive(Recursive recurse) {}
+  public record Recursive(Recursive recurse, String field) {}
 
   public record AllTheTypes(
       int intValue,
