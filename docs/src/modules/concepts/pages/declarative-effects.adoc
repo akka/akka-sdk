@@ -1,5 +1,5 @@
 [#_declarative_effects]
-= Declarative Effects
+= Declarative effects
 
 Effects are declarative APIs that describes the actions the Akka runtime needs to perform. It is inherently lazy, acting as a blueprint of operations to be executed. Once passed to the Akka runtime, the Effect is executed, resulting in the requested system changes. Effect APIs are essential for implementing components, bridging your application logic with the Akka runtime.
 
