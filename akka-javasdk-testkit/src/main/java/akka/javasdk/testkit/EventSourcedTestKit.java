@@ -56,8 +56,7 @@ public class EventSourcedTestKit<S, E, ES extends EventSourcedEntity<S, E>>
   }
 
   /**
-   * Creates a new testkit instance from a Supplier of EventSourcedEntity and a state into which
-   * the supplied entity will be placed for tests.
+   * Creates a new testkit instance from a Supplier of EventSourcedEntity and a state.
    *
    * <p>A default test entity id will be automatically provided.
    */
