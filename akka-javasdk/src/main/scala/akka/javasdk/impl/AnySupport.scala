@@ -464,7 +464,7 @@ class AnySupport(
           try {
             parser.parseFrom(any.value)
           } catch {
-            case ex: scalapb.validate.FieldValidationException =>
+            case ex: Exception =>
               throw BadRequestException(ex.getMessage)
           }
         case None =>

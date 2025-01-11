@@ -7,16 +7,21 @@ package akka.javasdk.impl
 import java.lang.reflect.Constructor
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
+import java.util
+import java.util.Optional
 import java.util.concurrent.CompletionStage
+
 import scala.annotation.nowarn
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.Promise
 import scala.jdk.CollectionConverters._
 import scala.jdk.FutureConverters._
+import scala.jdk.OptionConverters.RichOption
 import scala.jdk.OptionConverters.RichOptional
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
+
 import akka.Done
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
@@ -70,7 +75,6 @@ import akka.runtime.sdk.spi.ComponentClients
 import akka.runtime.sdk.spi.ConsumerDescriptor
 import akka.runtime.sdk.spi.EventSourcedEntityDescriptor
 import akka.runtime.sdk.spi.HttpEndpointConstructionContext
-import akka.runtime.sdk.spi.HttpEndpointDescriptor
 import akka.runtime.sdk.spi.RemoteIdentification
 import akka.runtime.sdk.spi.SpiComponents
 import akka.runtime.sdk.spi.SpiDevModeSettings
@@ -94,10 +98,6 @@ import io.opentelemetry.context.{ Context => OtelContext }
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
-
-import java.util
-import java.util.Optional
-import scala.jdk.OptionConverters.RichOption
 
 /**
  * INTERNAL API
@@ -354,6 +354,16 @@ private final class Sdk(
     }
   }
 
+  private def isDisabled(clz: Class[_]): Boolean = {
+    val componentName = clz.getName
+    if (sdkSettings.disabledComponents.contains(componentName)) {
+      logger.info("Ignoring component [{}] as it is disabled in the configuration", clz.getName)
+      true
+    } else {
+      false
+    }
+  }
+
   // command handlers candidate must have 0 or 1 parameter and return the components effect type
   // we might later revisit this, instead of single param, we can require (State, Cmd) => Effect like in Akka
   def isCommandHandlerCandidate[E](method: Method)(implicit effectType: ClassTag[E]): Boolean = {
@@ -405,6 +415,7 @@ private final class Sdk(
   // collect all Endpoints and compose them to build a larger router
   private val httpEndpointDescriptors = componentClasses
     .filter(Reflect.isRestEndpoint)
+    .filterNot(isDisabled)
     .map { httpEndpointClass =>
       HttpEndpointDescriptorFactory(httpEndpointClass, httpEndpointFactory(httpEndpointClass))
     }
@@ -414,9 +425,11 @@ private final class Sdk(
   private var workflowDescriptors = Vector.empty[WorkflowDescriptor]
   private var timedActionDescriptors = Vector.empty[TimedActionDescriptor]
   private var consumerDescriptors = Vector.empty[ConsumerDescriptor]
+  private var viewDescriptors = Vector.empty[ViewDescriptor]
 
   componentClasses
     .filter(hasComponentId)
+    .filterNot(isDisabled)
     .foreach {
       case clz if classOf[EventSourcedEntity[_, _]].isAssignableFrom(clz) =>
         val componentId = clz.getAnnotation(classOf[ComponentId]).value
@@ -525,7 +538,7 @@ private final class Sdk(
       case clz if classOf[Consumer].isAssignableFrom(clz) =>
         val componentId = clz.getAnnotation(classOf[ComponentId]).value
         val consumerClass = clz.asInstanceOf[Class[Consumer]]
-        val timedActionSpi =
+        val consumerSpi =
           new ConsumerImpl[Consumer](
             componentId,
             () => wiredInstance(consumerClass)(sideEffectingComponentInjects(None)),
@@ -543,7 +556,10 @@ private final class Sdk(
             clz.getName,
             consumerSource(consumerClass),
             consumerDestination(consumerClass),
-            timedActionSpi)
+            consumerSpi)
+
+      case clz if classOf[View].isAssignableFrom(clz) =>
+        viewDescriptors :+= ViewDescriptorFactory(clz, serializer, sdkExecutionContext)
 
       case clz if Reflect.isRestEndpoint(clz) =>
       // handled separately because ComponentId is not mandatory
@@ -552,13 +568,6 @@ private final class Sdk(
         // some other class with @ComponentId annotation
         logger.warn("Unknown component [{}]", clz.getName)
     }
-
-  private val viewDescriptors: Seq[ViewDescriptor] =
-    componentClasses
-      .filter(hasComponentId)
-      .collect {
-        case clz if classOf[View].isAssignableFrom(clz) => ViewDescriptorFactory(clz, serializer, sdkExecutionContext)
-      }
 
   // these are available for injecting in all kinds of component that are primarily
   // for side effects
@@ -571,7 +580,7 @@ private final class Sdk(
     case m if m == classOf[Materializer]       => sdkMaterializer
   }
 
-  def spiComponents: SpiComponents = {
+  val spiComponents: SpiComponents = {
 
     val serviceSetup: Option[ServiceSetup] = maybeServiceClass match {
       case Some(serviceClassClass) if classOf[ServiceSetup].isAssignableFrom(serviceClassClass) =>
@@ -583,89 +592,69 @@ private final class Sdk(
       case _ => None
     }
 
-    new SpiComponents {
-      override def preStart(system: ActorSystem[_]): Future[Done] = {
-        serviceSetup match {
-          case None =>
-            startedPromise.trySuccess(StartupContext(runtimeComponentClients, None, httpClientProvider, serializer))
-            Future.successful(Done)
-          case Some(setup) =>
-            if (dependencyProviderOpt.nonEmpty) {
-              logger.info("Service configured with TestKit DependencyProvider")
-            } else {
-              dependencyProviderOpt = Option(setup.createDependencyProvider())
-              dependencyProviderOpt.foreach(_ => logger.info("Service configured with DependencyProvider"))
-            }
-            startedPromise.trySuccess(
-              StartupContext(runtimeComponentClients, dependencyProviderOpt, httpClientProvider, serializer))
-            Future.successful(Done)
-        }
+    val descriptors =
+      eventSourcedEntityDescriptors ++ keyValueEntityDescriptors ++ httpEndpointDescriptors ++ timedActionDescriptors ++ consumerDescriptors ++ viewDescriptors ++ workflowDescriptors
+
+    val preStart = { (_: ActorSystem[_]) =>
+      serviceSetup match {
+        case None =>
+          startedPromise.trySuccess(StartupContext(runtimeComponentClients, None, httpClientProvider, serializer))
+          Future.successful(Done)
+        case Some(setup) =>
+          if (dependencyProviderOpt.nonEmpty) {
+            logger.info("Service configured with TestKit DependencyProvider")
+          } else {
+            dependencyProviderOpt = Option(setup.createDependencyProvider())
+            dependencyProviderOpt.foreach(_ => logger.info("Service configured with DependencyProvider"))
+          }
+          startedPromise.trySuccess(
+            StartupContext(runtimeComponentClients, dependencyProviderOpt, httpClientProvider, serializer))
+          Future.successful(Done)
       }
-
-      override def onStart(system: ActorSystem[_]): Future[Done] = {
-
-        serviceSetup match {
-          case None => Future.successful(Done)
-          case Some(setup) =>
-            logger.debug("Running onStart lifecycle hook")
-            setup.onStartup()
-            Future.successful(Done)
-        }
-      }
-
-      override val eventSourcedEntityDescriptors: Seq[EventSourcedEntityDescriptor] =
-        Sdk.this.eventSourcedEntityDescriptors
-
-      override val keyValueEntityDescriptors: Seq[EventSourcedEntityDescriptor] =
-        Sdk.this.keyValueEntityDescriptors
-
-      override val httpEndpointDescriptors: Seq[HttpEndpointDescriptor] =
-        Sdk.this.httpEndpointDescriptors
-
-      override val timedActionsDescriptors: Seq[TimedActionDescriptor] =
-        Sdk.this.timedActionDescriptors
-
-      override val consumersDescriptors: Seq[ConsumerDescriptor] =
-        Sdk.this.consumerDescriptors
-
-      override val viewDescriptors: Seq[ViewDescriptor] =
-        Sdk.this.viewDescriptors
-
-      override val workflowDescriptors: Seq[WorkflowDescriptor] =
-        Sdk.this.workflowDescriptors
-
-      override val serviceInfo: SpiServiceInfo =
-        new SpiServiceInfo(
-          serviceName = serviceNameOverride.orElse(sdkSettings.devModeSettings.map(_.serviceName)).getOrElse(""),
-          sdkName = "java",
-          sdkVersion = BuildInfo.version,
-          protocolMajorVersion = BuildInfo.protocolMajorVersion,
-          protocolMinorVersion = BuildInfo.protocolMinorVersion)
-
-      override def reportError(err: UserFunctionError): Future[Done] = {
-        val severityString = err.severity match {
-          case Level.ERROR => "Error"
-          case Level.WARN  => "Warning"
-          case Level.INFO  => "Info"
-          case Level.DEBUG => "Debug"
-          case Level.TRACE => "Trace"
-          case other       => other.name()
-        }
-        val message = s"$severityString reported from Akka runtime: ${err.code} ${err.message}"
-        val detail = if (err.detail.isEmpty) Nil else List(err.detail)
-        val seeDocs = DocLinks.forErrorCode(err.code).map(link => s"See documentation: $link").toList
-        val messages = message :: detail ::: seeDocs
-        val logMessage = messages.mkString("\n")
-
-        SdkRunner.userServiceLog.atLevel(err.severity).log(logMessage)
-
-        SdkRunner.FutureDone
-      }
-
-      override def healthCheck(): Future[Done] =
-        SdkRunner.FutureDone
-
     }
+
+    val onStart = { _: ActorSystem[_] =>
+      serviceSetup match {
+        case None => Future.successful(Done)
+        case Some(setup) =>
+          logger.debug("Running onStart lifecycle hook")
+          setup.onStartup()
+          Future.successful(Done)
+      }
+    }
+
+    val reportError = { err: UserFunctionError =>
+      val severityString = err.severity match {
+        case Level.ERROR => "Error"
+        case Level.WARN  => "Warning"
+        case Level.INFO  => "Info"
+        case Level.DEBUG => "Debug"
+        case Level.TRACE => "Trace"
+        case other       => other.name()
+      }
+      val message = s"$severityString reported from Akka runtime: ${err.code} ${err.message}"
+      val detail = if (err.detail.isEmpty) Nil else List(err.detail)
+      val seeDocs = DocLinks.forErrorCode(err.code).map(link => s"See documentation: $link").toList
+      val messages = message :: detail ::: seeDocs
+      val logMessage = messages.mkString("\n")
+
+      SdkRunner.userServiceLog.atLevel(err.severity).log(logMessage)
+
+      SdkRunner.FutureDone
+    }
+
+    new SpiComponents(
+      serviceInfo = new SpiServiceInfo(
+        serviceName = serviceNameOverride.orElse(sdkSettings.devModeSettings.map(_.serviceName)).getOrElse(""),
+        sdkName = "java",
+        sdkVersion = BuildInfo.version,
+        protocolMajorVersion = BuildInfo.protocolMajorVersion,
+        protocolMinorVersion = BuildInfo.protocolMinorVersion),
+      componentDescriptors = descriptors,
+      preStart = preStart,
+      onStart = onStart,
+      reportError = reportError,
+      healthCheck = () => SdkRunner.FutureDone)
   }
 
   private def httpEndpointFactory[E](httpEndpointClass: Class[E]): HttpEndpointConstructionContext => E = {

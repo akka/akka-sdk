@@ -168,10 +168,10 @@ public class ViewIntegrationTest extends TestKitSupport {
    var id = newId();
    var row = new AllTheTypesKvEntity.AllTheTypes(1, 2L, 3F, 4D, true, "text", 5, 6L, 7F, 8D, false, Instant.EPOCH, Optional.of("optional"), List.of("text1", "text2"),
        new AllTheTypesKvEntity.ByEmail("test@example.com"),
-       AllTheTypesKvEntity.AnEnum.THREE, new AllTheTypesKvEntity.Recursive(new AllTheTypesKvEntity.Recursive(null)));
+       AllTheTypesKvEntity.AnEnum.THREE, new AllTheTypesKvEntity.Recursive(new AllTheTypesKvEntity.Recursive(null, "level2"), "level1"));
    await(componentClient.forKeyValueEntity(id).method(AllTheTypesKvEntity::store).invokeAsync(row));
 
-
+   // just as row payload
    Awaitility.await()
            .ignoreExceptions()
                .atMost(10, TimeUnit.SECONDS)
@@ -184,7 +184,21 @@ public class ViewIntegrationTest extends TestKitSupport {
                    }
                );
 
+   // cover indexable column types
+   var query = new AllTheTypesView.AllTheQueryableTypes(
+       row.intValue(), row.longValue(), row.floatValue(), row.doubleValue(), row.booleanValue(), row.stringValue(),
+       row.wrappedInt(), row.wrappedLong(), row.wrappedFloat(), row.wrappedDouble(), row.wrappedBoolean(),
+       row.instant(), row.optionalString(), row.repeatedString(), row.nestedMessage().email());
+   Awaitility.await()
+       .ignoreExceptions()
+       .atMost(10, TimeUnit.SECONDS)
+       .untilAsserted(() -> {
+         var rows = await(componentClient.forView()
+             .stream(AllTheTypesView::specificRow)
+             .source(query).runWith(Sink.seq(), testKit.getMaterializer()));
 
+         assertThat(rows).hasSize(1);
+       });
  }
 
  @Disabled // pending primitive query parameters working

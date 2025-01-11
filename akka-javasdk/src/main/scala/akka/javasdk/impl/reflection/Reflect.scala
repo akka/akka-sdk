@@ -73,6 +73,15 @@ private[impl] object Reflect {
 
   def isAction(clazz: Class[_]): Boolean = classOf[TimedAction].isAssignableFrom(clazz)
 
+  // command handlers candidate must have 0 or 1 parameter and return the components effect type
+  // we might later revisit this, instead of single param, we can require (State, Cmd) => Effect like in Akka
+  def isCommandHandlerCandidate[E](method: Method)(implicit effectType: ClassTag[E]): Boolean = {
+    effectType.runtimeClass.isAssignableFrom(method.getReturnType) &&
+    method.getParameterTypes.length <= 1 &&
+    // Workflow will have lambdas returning Effect, we want to filter them out
+    !method.getName.startsWith("lambda$")
+  }
+
   def getReturnType[R](declaringClass: Class[_], method: Method): Class[R] = {
     if (isAction(declaringClass) || isEntity(declaringClass) || isWorkflow(declaringClass)) {
       // here we are expecting a wrapper in the form of an Effect
@@ -149,6 +158,27 @@ private[impl] object Reflect {
       }
 
     loop(workflow.getClass).asInstanceOf[Class[S]]
+  }
+
+  def tableUpdaterRowType(tableUpdater: Class[_]): Class[_] = {
+    @tailrec
+    def loop(current: Class[_]): Class[_] =
+      if (current == classOf[AnyRef])
+        // recursed to root without finding type param
+        throw new IllegalArgumentException(s"Cannot find table updater class for ${tableUpdater.getClass}")
+      else {
+        current.getGenericSuperclass match {
+          case parameterizedType: ParameterizedType =>
+            if (parameterizedType.getActualTypeArguments.size == 1)
+              parameterizedType.getActualTypeArguments.head.asInstanceOf[Class[_]]
+            else throw new IllegalArgumentException(s"Cannot find table updater class for ${tableUpdater.getClass}")
+          case noTypeParamsParent: Class[_] =>
+            // recurse and look at parent
+            loop(noTypeParamsParent)
+        }
+      }
+
+    loop(tableUpdater)
   }
 
   def allKnownEventSourcedEntityEventType(component: Class[_]): Seq[Class[_]] = {

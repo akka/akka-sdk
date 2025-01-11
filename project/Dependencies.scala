@@ -8,7 +8,7 @@ object Dependencies {
     val ProtocolVersionMinor = 1
     val RuntimeImage = "gcr.io/kalix-public/kalix-runtime"
     // Remember to bump kalix-runtime.version in akka-javasdk-maven/akka-javasdk-parent if bumping this
-    val RuntimeVersion = sys.props.getOrElse("kalix-runtime.version", "1.3.0-645b7b0")
+    val RuntimeVersion = sys.props.getOrElse("kalix-runtime.version", "1.3.0-46b2781")
   }
   // NOTE: embedded SDK should have the AkkaVersion aligned, when updating RuntimeVersion, make sure to check
   // if AkkaVersion and AkkaHttpVersion are aligned
@@ -19,8 +19,6 @@ object Dependencies {
   // Note: the Scala version must be aligned with the runtime
   val ScalaVersion = "2.13.15"
   val CrossScalaVersions = Seq(ScalaVersion)
-
-  val ProtobufVersion = akka.grpc.gen.BuildInfo.googleProtobufVersion
 
   val ScalaTestVersion = "3.2.14"
   // https://github.com/akka/akka/blob/main/project/Dependencies.scala#L31
@@ -53,9 +51,6 @@ object Dependencies {
 
   val slf4jApi = "org.slf4j" % "slf4j-api" % "2.0.16"
 
-  val protobufJava = "com.google.protobuf" % "protobuf-java" % ProtobufVersion
-  val protobufJavaUtil = "com.google.protobuf" % "protobuf-java-util" % ProtobufVersion
-
   val jacksonCore = "com.fasterxml.jackson.core" % "jackson-core" % JacksonVersion
   val jacksonAnnotations = "com.fasterxml.jackson.core" % "jackson-annotations" % JacksonVersion
   val jacksonDatabind = "com.fasterxml.jackson.core" % "jackson-databind" % JacksonDatabindVersion
@@ -63,7 +58,6 @@ object Dependencies {
   val jacksonJsr310 = "com.fasterxml.jackson.datatype" % "jackson-datatype-jsr310" % JacksonVersion
   val jacksonParameterNames = "com.fasterxml.jackson.module" % "jackson-module-parameter-names" % JacksonVersion
   val jacksonScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % JacksonVersion
-  val jacksonDataFormatProto = "com.fasterxml.jackson.dataformat" % "jackson-dataformat-protobuf" % JacksonVersion
 
   val scalaTest = "org.scalatest" %% "scalatest" % ScalaTestVersion
   val munit = "org.scalameta" %% "munit" % MunitVersion
@@ -78,19 +72,11 @@ object Dependencies {
   val opentelemetryContext = "io.opentelemetry" % "opentelemetry-context" % OpenTelemetryVersion
   val opentelemetrySemConv = "io.opentelemetry.semconv" % "opentelemetry-semconv" % OpenTelemetrySemConv
 
-  val scalapbCompilerPlugin = "com.thesamet.scalapb" %% "compilerplugin" % scalapb.compiler.Version.scalapbVersion
-  val scalaPbValidateCore = "com.thesamet.scalapb" %% "scalapb-validate-core" % "0.3.4"
-  val sbtProtoc = "com.thesamet" % "sbt-protoc" % "1.0.0"
-
   val typesafeConfig = "com.typesafe" % "config" % "1.4.2"
 
   private val deps = libraryDependencies
 
   private val sdkDeps = Seq(
-    protobufJavaUtil,
-    kalixProxyProtocol % "protobuf-src",
-    kalixSdkProtocol % "compile;protobuf-src",
-    scalaPbValidateCore,
     opentelemetryApi,
     opentelemetrySdk,
     opentelemetryExporterOtlp,
@@ -119,7 +105,6 @@ object Dependencies {
   //            binaries/artifacts unless explicitly excluded in the akka-javasdk-parent assembly descriptor
   val javaSdk = deps ++= sdkDeps ++ Seq(
     kalixSdkSpi,
-    jacksonDataFormatProto,
     // make sure these two are on the classpath for users to consume http request/response APIs and streams
     "com.typesafe.akka" %% "akka-http-core" % AkkaHttpVersion,
     akkaDependency("akka-stream"),
@@ -131,7 +116,6 @@ object Dependencies {
   val javaSdkTestKit =
     deps ++=
       Seq(
-        jacksonDataFormatProto,
         // These two are for the eventing testkit
         akkaDependency("akka-actor-testkit-typed"),
         akkaDependency("akka-stream-testkit"),

@@ -22,22 +22,9 @@ include::ROOT:partial$local-dev-prerequisites.adoc[]
 
 The Maven archetype template prompts you to specify the project's group ID, name and version interactively. Run it using the commands shown for your operating system.
 
-****
-If you are using IntelliJ, you can skip the command line entirely. Simply open the IDE and follow these steps:
-
-. Go to *File > New > Project*.
-. Select *Maven Archetype* from the list of Generators.
-. Fill out the project details:
-  * *Name*: Enter the desired project name, such as `helloworld`.
-  * *Location*: Specify the directory where you want the project to be created.
-  * *JDK*: Select Java {java-version} or a later version.
-. Under *Catalog*, ensure "Maven Central" is selected.
-. In the *Archetype* section, click the dropdown and select `io.akka:akka-javasdk-archetype`.
-. Set the *Version* to `{akka-javasdk-version}`.
-. Click *Create*.
-
-IntelliJ will handle the project generation and setup for you, allowing you to begin development immediately.
-****
+[sidebar]
+In IntelliJ, you can skip the command line. Open the IDE, select
+*File > New > Project*, and click to activate *Create from archetype*. Use the UI to locate the archetype and fill in the blanks.
 
 Follow these steps to generate and build your project:
 

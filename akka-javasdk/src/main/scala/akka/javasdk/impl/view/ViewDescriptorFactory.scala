@@ -65,16 +65,7 @@ private[impl] object ViewDescriptorFactory {
       tableUpdaters
         .map { tableUpdaterClass =>
           // View class type parameter declares table type
-          val tableRowClass: Class[_] =
-            tableUpdaterClass.getGenericSuperclass
-              .asInstanceOf[ParameterizedType]
-              .getActualTypeArguments
-              .head match {
-              case clazz: Class[_] => clazz
-              case other =>
-                throw new IllegalArgumentException(
-                  s"Expected [$tableUpdaterClass] to extends TableUpdater[] for a concrete table row type but cannot figure out type parameter because type argument is unexpected [$other] ")
-            }
+          val tableRowClass: Class[_] = Reflect.tableUpdaterRowType(tableUpdaterClass)
 
           val tableName: String = {
             if (tableUpdaters.size > 1) {
@@ -371,14 +362,15 @@ private[impl] object ViewDescriptorFactory {
       deleteHandler: Boolean = false)(implicit userEc: ExecutionContext)
       extends SpiTableUpdateHandler {
 
+    private val tableUpdaterRowClass: Class[_] = Reflect.tableUpdaterRowType(tableUpdaterClass)
+
     private val userLog = LoggerFactory.getLogger(tableUpdaterClass)
 
     private val methodsByInput: Map[Class[_], Method] =
       if (deleteHandler) Map.empty
       else
         methods.map { m =>
-          // FIXME not entirely sure this is right
-          // register each possible input
+          // register each possible input to deserialize correctly an input
           val inputType = m.getParameterTypes.head
           serializer.registerTypeHints(m.getParameterTypes.head)
 
@@ -391,7 +383,8 @@ private[impl] object ViewDescriptorFactory {
     }
 
     override def handle(input: SpiTableUpdateEnvelope): Future[SpiTableUpdateEffect] = Future {
-      val existingState: Option[AnyRef] = input.existingTableRow.map(serializer.fromBytes)
+      val existingState: Option[AnyRef] =
+        input.existingTableRow.map(bytes => serializer.fromBytes(tableUpdaterRowClass, bytes).asInstanceOf[AnyRef])
       val metadata = MetadataImpl.of(input.metadata)
       val addedToMDC = metadata.traceId match {
         case Some(traceId) =>

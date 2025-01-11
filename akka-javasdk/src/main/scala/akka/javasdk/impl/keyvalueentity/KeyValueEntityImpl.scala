@@ -88,7 +88,7 @@ private[impl] final class KeyValueEntityImpl[S, KV <: KeyValueEntity[S]](
 
   private val router: ReflectiveKeyValueEntityRouter[AnyRef, KeyValueEntity[AnyRef]] = {
     val context = new KeyValueEntityContextImpl(entityId)
-    new ReflectiveKeyValueEntityRouter[S, KV](factory(context), componentDescriptor.commandHandlers, serializer)
+    new ReflectiveKeyValueEntityRouter[S, KV](factory(context), componentDescriptor.methodInvokers, serializer)
       .asInstanceOf[ReflectiveKeyValueEntityRouter[AnyRef, KeyValueEntity[AnyRef]]]
   }
 

@@ -1,11 +1,12 @@
-import sbt._
-import sbt.Keys._
 import akka.grpc.sbt.AkkaGrpcPlugin
+import sbt.*
+import sbt.Keys.*
 import com.lightbend.sbt.JavaFormatterPlugin.autoImport.javafmtOnCompile
 import de.heikoseeberger.sbtheader.{ AutomateHeaderPlugin, HeaderPlugin }
 import org.scalafmt.sbt.ScalafmtPlugin
 import org.scalafmt.sbt.ScalafmtPlugin.autoImport.scalafmtOnCompile
 import sbtprotoc.ProtocPlugin
+
 import scala.collection.breakOut
 
 object CommonSettings extends AutoPlugin {

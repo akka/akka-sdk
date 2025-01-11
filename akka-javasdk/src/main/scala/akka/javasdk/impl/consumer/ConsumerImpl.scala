@@ -64,11 +64,7 @@ private[impl] final class ConsumerImpl[C <: Consumer](
   private val traceInstrumentation = new TraceInstrumentation(componentId, ConsumerCategory, tracerFactory)
 
   private def createRouter(): ReflectiveConsumerRouter[C] =
-    new ReflectiveConsumerRouter[C](
-      factory(),
-      componentDescriptor.commandHandlers.values.head.methodInvokers,
-      serializer,
-      ignoreUnknown)
+    new ReflectiveConsumerRouter[C](factory(), componentDescriptor.methodInvokers, serializer, ignoreUnknown)
 
   override def handleMessage(message: Message): Future[Effect] = {
     val metadata = MetadataImpl.of(message.metadata)

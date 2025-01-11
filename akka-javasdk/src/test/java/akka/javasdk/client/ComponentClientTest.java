@@ -19,7 +19,7 @@ import akka.javasdk.impl.client.ComponentClientImpl;
 import akka.javasdk.impl.client.DeferredCallImpl;
 import akka.javasdk.impl.telemetry.Telemetry;
 import akka.runtime.sdk.spi.TimedActionClient;
-import akka.runtime.sdk.spi.ActionType$;
+import akka.runtime.sdk.spi.TimedActionType$;
 import akka.runtime.sdk.spi.ComponentClients;
 import akka.runtime.sdk.spi.EntityClient;
 import akka.runtime.sdk.spi.TimerClient;
@@ -88,7 +88,7 @@ class ComponentClientTest {
       .deferred();
 
     //then
-    assertEquals(call.componentType(), ActionType$.MODULE$);
+    assertEquals(call.componentType(), TimedActionType$.MODULE$);
   }
 
   @Test

@@ -68,7 +68,7 @@ class WorkflowImpl[S, W <: Workflow[S]](
   private val context = new WorkflowContextImpl(workflowId)
 
   private val router =
-    new ReflectiveWorkflowRouter[S, W](context, instanceFactory, componentDescriptor.commandHandlers, serializer)
+    new ReflectiveWorkflowRouter[S, W](context, instanceFactory, componentDescriptor.methodInvokers, serializer)
 
   override def configuration: SpiWorkflow.WorkflowConfig = {
     val workflow = instanceFactory(context)

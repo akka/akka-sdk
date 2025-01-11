@@ -33,11 +33,12 @@ class JwtClaimsImpl(jwtClaims: RuntimeJwtClaims) extends JwtClaims {
   /**
    * Returns all the claims as a map of strings to strings.
    *
-   * <p>If the claim is a String claim, the value will be the raw String. For all other types, it will be the value of
-   * the claim encoded to JSON.
+   * <p>Note that all values will be encoded to JSON. This means that if the value is a string, it will include the
+   * quotes. E.g. "\"my-string-claim\"" for a string claim.
    *
    * @return
-   *   All the claims represented as a map of string claim names to string values.
+   *   All the claims represented as a map of string claim names to string values containing a JSON representation of
+   *   its value.
    */
   override def asMap(): util.Map[String, String] =
     jwtClaims.getAllClaimNames

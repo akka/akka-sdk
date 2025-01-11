@@ -94,7 +94,7 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
 
   private val router: ReflectiveEventSourcedEntityRouter[AnyRef, AnyRef, EventSourcedEntity[AnyRef, AnyRef]] = {
     val context = new EventSourcedEntityContextImpl(entityId)
-    new ReflectiveEventSourcedEntityRouter[S, E, ES](factory(context), componentDescriptor.commandHandlers, serializer)
+    new ReflectiveEventSourcedEntityRouter[S, E, ES](factory(context), componentDescriptor.methodInvokers, serializer)
       .asInstanceOf[ReflectiveEventSourcedEntityRouter[AnyRef, AnyRef, EventSourcedEntity[AnyRef, AnyRef]]]
   }
 

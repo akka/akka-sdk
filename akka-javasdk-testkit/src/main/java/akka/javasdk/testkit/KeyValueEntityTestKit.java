@@ -79,8 +79,8 @@ public class KeyValueEntityTestKit<S, E extends KeyValueEntity<S>> {
     return state;
   }
 
+  @SuppressWarnings("unchecked")
   private <Reply> KeyValueEntityResult<Reply> interpretEffects(KeyValueEntity.Effect<Reply> effect) {
-    @SuppressWarnings("unchecked")
     KeyValueEntityResultImpl<Reply> result = new KeyValueEntityResultImpl<>(effect);
     if (result.stateWasUpdated()) {
       this.state = (S) result.getUpdatedState();

@@ -13,7 +13,7 @@ import scala.jdk.FutureConverters.CompletionStageOps
 import scala.jdk.OptionConverters.RichOptional
 
 import akka.annotation.InternalApi
-import akka.javasdk.impl.CommandHandler
+import akka.javasdk.impl.MethodInvoker
 import akka.javasdk.impl.CommandSerialization
 import akka.javasdk.impl.HandlerNotFoundException
 import akka.javasdk.impl.WorkflowExceptions.WorkflowException
@@ -59,7 +59,7 @@ object ReflectiveWorkflowRouter {
 class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
     workflowContext: WorkflowContext,
     instanceFactory: Function[WorkflowContext, W],
-    commandHandlers: Map[String, CommandHandler],
+    methodInvokers: Map[String, MethodInvoker],
     serializer: JsonSerializer) {
 
   private def decodeUserState(userState: Option[BytesPayload]): Option[S] =
@@ -80,14 +80,14 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
     }
   }
 
-  private def commandHandlerLookup(commandName: String) =
-    commandHandlers.getOrElse(
+  private def methodInvokerLookup(commandName: String) =
+    methodInvokers.getOrElse(
       commandName,
       throw new HandlerNotFoundException(
         "command",
         commandName,
         instanceFactory(workflowContext).getClass,
-        commandHandlers.keySet))
+        methodInvokers.keySet))
 
   final def handleCommand(
       userState: Option[SpiWorkflow.State],
@@ -104,12 +104,11 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
         val decodedState = decodeUserState(userState).getOrElse(workflow.emptyState())
         workflow._internalSetup(decodedState, context, timerScheduler)
 
-        val commandHandler = commandHandlerLookup(commandName)
+        val methodInvoker = methodInvokerLookup(commandName)
 
         if (serializer.isJson(command) || command.isEmpty) {
           // - BytesPayload.empty - there is no real command, and we are calling a method with arity 0
           // - BytesPayload with json - we deserialize it and call the method
-          val methodInvoker = commandHandler.getSingleNameInvoker()
           val deserializedCommand =
             CommandSerialization.deserializeComponentClientCommand(methodInvoker.method, command, serializer)
           val result = deserializedCommand match {
@@ -119,8 +118,7 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
           result.asInstanceOf[Workflow.Effect[_]]
         } else {
           throw new IllegalStateException(
-            s"Could not find a matching command handler for method [$commandName], content type " +
-            s"[${command.contentType}], invokers keys [${commandHandler.methodInvokers.keys.mkString(", ")}," +
+            s"Could not find a matching command handler for method [$commandName], content type [${command.contentType}] " +
             s"on [${workflow.getClass.getName}]")
         }
 

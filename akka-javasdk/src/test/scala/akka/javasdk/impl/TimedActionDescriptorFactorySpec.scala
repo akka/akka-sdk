@@ -23,14 +23,12 @@ class TimedActionDescriptorFactorySpec extends AnyWordSpec with Matchers {
 
     "generate mappings for an Action with method without path param" in {
       val desc = ComponentDescriptor.descriptorFor(classOf[ActionWithoutParam], new JsonSerializer)
-      val method = desc.commandHandlers("Message")
-      method.methodInvokers should have size 1
+      desc.methodInvokers should have size 1
     }
 
     "generate mappings for an Action with method with one param" in {
       val desc = ComponentDescriptor.descriptorFor(classOf[ActionWithOneParam], new JsonSerializer)
-      val method = desc.commandHandlers("Message")
-      method.methodInvokers.get("") should not be empty
+      desc.methodInvokers.get("Message") should not be empty
     }
   }
 
