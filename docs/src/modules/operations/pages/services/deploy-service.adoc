@@ -30,7 +30,7 @@ The docker build output in maven will print something similar to the following:
 ----
 DOCKER> Tagging image shopping-cart:1.0-SNAPSHOT-20241028102843 successful!
 ----
-
+[#_deploying_a_service]
 == Deploying a service
 
 Services can be deployed via the Akka CLI.
@@ -171,16 +171,24 @@ For further details, see xref:operations:projects/external-container-registries.
 [#apply]
 == Using service descriptors
 
-Akka services can also be described and managed with *YAML service descriptors*.
+Akka services can also be described and managed with *YAML service descriptors*. See xref:reference:descriptors/service-descriptor.adoc[].
 
-First, <<_build_container_image>> and then push the image:
+Once you have <<_deploying_a_service, deployed your service>>, you can modify it by editing its service descriptor:
+
+[source, command line]
+----
+akka service edit my-service
+----
+
+Whether you have deployed your service or not, you can always deploy it using a service descriptor.
+For this you need at least the image, which you can get by <<_build_container_image, building the container image>> and then <<_pushing_to_acr, pushing it to the container registry>>:
 
 [source, command line]
 ----
 akka container-registry push container-name:tag-name
 ----
 
-Example of service descriptor:
+Once pushed, you need to use the suggested image from the command's output in your service descriptor, for example:
 
 [source, yaml]
 ----
@@ -192,7 +200,7 @@ spec:
     value: some value
 ----
 
-NOTE: You must add the primary region image tag. See `akka container-registry push` command's output.
+NOTE: You must add the primary region image tag from `akka container-registry push` output.
 
 To apply this descriptor, run:
 
@@ -245,3 +253,4 @@ You now know how to deploy, verify, update, and remove Akka services using the A
 == Related documentation
 
 - xref:reference:cli/akka-cli/akka_services.adoc[`akka service` CLI commands]
+- xref:reference:descriptors/service-descriptor.adoc[Akka Service Descriptor]
