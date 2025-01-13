@@ -52,7 +52,11 @@ private[view] object ViewSchema {
     classOf[java.lang.Float] -> SpiFloat,
     // special classes
     classOf[String] -> SpiString,
-    classOf[java.time.Instant] -> SpiTimestamp)
+    // date/time types that can be treated as a timestamp
+    // Note: intentionally not supporting timezone-less-types for now (to make it possible to add support in the future,
+    // would require runtime changes)
+    classOf[java.time.Instant] -> SpiTimestamp,
+    classOf[java.time.ZonedDateTime] -> SpiTimestamp)
 
   def apply(rootType: Type): SpiType = {
     // Note: not tail recursive but trees should not ever be deep enough that it is a problem

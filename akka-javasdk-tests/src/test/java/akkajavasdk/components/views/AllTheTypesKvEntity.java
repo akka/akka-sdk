@@ -7,7 +7,13 @@ package akkajavasdk.components.views;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
 
+import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.Period;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -36,7 +42,9 @@ public class AllTheTypesKvEntity extends KeyValueEntity<AllTheTypesKvEntity.AllT
       Float wrappedFloat,
       Double wrappedDouble,
       Boolean wrappedBoolean,
+      // time and date types
       Instant instant,
+      ZonedDateTime zonedDateTime,
       // FIXME bytes does not work yet in runtime Byte[] bytes,
       Optional<String> optionalString,
       List<String> repeatedString,
