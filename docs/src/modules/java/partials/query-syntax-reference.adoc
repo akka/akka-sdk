@@ -6,28 +6,28 @@ Define View queries in a language that is similar to SQL. The following examples
 
 * All customers without any filtering conditions (no WHERE clause):
 +
-[source,proto,indent=0]
+[source,genericsql,indent=0]
 ----
 SELECT * FROM customers
 ----
 
-* Customers with a name matching the `customer_name` property of the request message:
+* Customers with a name matching the `customerName` property of the request object:
 +
-[source,proto,indent=0]
+[source,genericsql,indent=0]
 ----
-SELECT * FROM customers WHERE name = :customer_name
+SELECT * FROM customers WHERE name = :customerName
 ----
 
-* Customers matching the `customer_name` AND `city` properties of the request message, with `city` being matched on a nested field:
+* Customers matching the `customerName` AND `city` properties of the request object, with `city` being matched on a nested field:
 +
-[source,proto,indent=0]
+[source,genericsql,indent=0]
 ----
-SELECT * FROM customers WHERE name = :customer_name AND address.city = :city
+SELECT * FROM customers WHERE name = :customerName AND address.city = :city
 ----
 
 * Customers in a city matching a literal value:
 +
-[source,proto,indent=0]
+[source,genericsql,indent=0]
 ----
 SELECT * FROM customers WHERE address.city = 'New York'
 ----
@@ -49,19 +49,9 @@ The following comparison operators are supported:
 
 ==== Logical operators
 
-////
-Combine filter conditions with the `AND` and `OR` operators, and negate using the `NOT` operator. Group conditions using parentheses. Note that `AND` has precedence over `OR`.
-
-[source,proto,indent=0]
-----
-SELECT * FROM customers WHERE
-  name = :customer_name AND address.city = 'New York' OR
-  NOT (name = :customer_name AND address.city = 'San Francisco')
-----
-////
-
 Combine filter conditions with the `AND` or `OR` operators, and negate using the `NOT` operator. Group conditions using parentheses.
 
+[source,genericsql,indent=0]
 ----
 SELECT * FROM customers WHERE
   name = :customer_name AND NOT (address.city = 'New York' AND age > 65)
@@ -69,30 +59,34 @@ SELECT * FROM customers WHERE
 
 ==== Array operators
 
-Use `IN` or `= ANY` to check whether a value is contained in a group of values or in an array column or parameter (a `repeated` field in the Protobuf message).
+Use `IN` or `= ANY` to check whether a value is contained in a group of values or in a `List` field.
 
 Use `IN` with a list of values or parameters:
 
+[source,genericsql,indent=0]
 ----
-SELECT * FROM customers WHERE email IN ('bob@example.com', :some_email)
-----
-
-Use `= ANY` to check against an array column (a `repeated` field in the Protobuf message):
-
-----
-SELECT * FROM customers WHERE :some_email = ANY(emails)
+SELECT * FROM customers WHERE email IN ('bob@example.com', :someEmail)
 ----
 
-Or use `= ANY` with a repeated field in the request parameters:
+Use `= ANY` to check against a `List` column:
 
+[source,genericsql,indent=0]
 ----
-SELECT * FROM customers WHERE email = ANY(:some_emails)
+SELECT * FROM customers WHERE :someEmail = ANY(emails)
+----
+
+Or use `= ANY` with a `List` field in the request object:
+
+[source,genericsql,indent=0]
+----
+SELECT * FROM customers WHERE email = ANY(:someEmails)
 ----
 
 ==== Pattern matching
 
 Use `LIKE` to pattern match on strings. The standard SQL `LIKE` patterns are supported, with `_` (underscore) matching a single character, and `%` (percent sign) matching any sequence of zero or more characters.
 
+[source,genericsql,indent=0]
 ----
 SELECT * FROM customers WHERE name LIKE 'Bob%'
 ----
@@ -103,6 +97,7 @@ NOTE: For index efficiency, the pattern must have a non-wildcard prefix or suffi
 
 Use the `text_search` function to search text values for words, with automatic tokenization and normalization based on language-specific configuration. The `text_search` function takes the text column to search, the query (as a parameter or literal string), and an optional language configuration.
 
+[source,genericsql,indent=0]
 ----
 text_search(<column>, <query parameter or string>, [<configuration>])
 ----
@@ -111,6 +106,7 @@ If the query contains multiple words, the text search will find values that cont
 
 The following text search language configurations are supported: `'danish'`, `'dutch'`, `'english'`, `'finnish'`, `'french'`, `'german'`, `'hungarian'`, `'italian'`, `'norwegian'`, `'portuguese'`, `'romanian'`, `'russian'`, `'simple'`, `'spanish'`, `'swedish'`, `'turkish'`. By default, a `'simple'` configuration will be used, without language-specific features.
 
+[source,genericsql,indent=0]
 ----
 SELECT * FROM customers WHERE text_search(profile, :search_words, 'english')
 ----
@@ -143,9 +139,6 @@ When modeling your queries, the following data types are supported:
 | Boolean
 | `boolean` / `Boolean`
 
-| Byte String
-| `ByteString`
-
 | Array
 | `Collection<T>` and derived
 
@@ -164,24 +157,28 @@ Fields in a view type that were not given a value are handled as the default val
 However, in some use cases it is important to explicitly express that a value is missing, doing that in a view column can be done in two ways:
 
 * use one of the Java non-primitive types for the field (e.g. use `Integer` instead of `int`)
+* Wrap the value in an `java.util.Optional`
 * make the field a part of another class and leave it uninitialized (i.e. `null`), for example `address.street` where the lack of an `address` message implies there is no `street` field.
 
 Optional fields with values present can be queried just like regular view fields:
 
+[source,genericsql,indent=0]
 ----
-SELECT * FROM customers WHERE phone_number = :number
+SELECT * FROM customers WHERE phoneNumber = :number
 ----
 
 Finding results with missing values can be done using `IS NULL`:
 
+[source,genericsql,indent=0]
 ----
-SELECT * FROM customers WHERE phone_number IS NULL
+SELECT * FROM customers WHERE phoneNumber IS NULL
 ----
 
 Finding entries with any value present can be queried using `IS NOT NULL`:
 
+[source,genericsql,indent=0]
 ----
-SELECT * FROM customers WHERE phone_number IS NOT NULL
+SELECT * FROM customers WHERE phoneNumber IS NOT NULL
 ----
 
 Optional fields in query requests messages are handled like normal fields if they have a value, however missing optional request parameters are seen as an invalid request and lead to a bad request response.
@@ -192,11 +189,42 @@ Results for a view query can be sorted. Use `ORDER BY` with view columns to sort
 
 If no explicit ordering is specified in a view query, results will be returned in the natural index order, which is based on the filter predicates in the query.
 
+[source,genericsql,indent=0]
 ----
-SELECT * FROM customers WHERE name = :name AND age > :min_age ORDER BY age DESC
+SELECT * FROM customers WHERE name = :name AND age > :minAge ORDER BY age DESC
 ----
 
-NOTE: Some orderings may be rejected, if the view index cannot be efficiently ordered. Generally, to order by a column it should also appear in the `WHERE` conditions.
+NOTE: Some orderings may be rejected, if the view index cannot be efficiently ordered. Generally, to order by a field it should also appear in the `WHERE` conditions.
+
+=== Aggregation
+
+==== Grouping
+
+Grouping of results based on one field is supported in the form of `collect(*)` which collects all entries for a given
+grouping key value into one result object with a list of found entries.
+
+[source,java,indent=0]
+----
+record Product(String name, int popularity) {}
+record GroupedProducts(List<Products> products) {}
+----
+
+[source,genericsql,indent=0]
+----
+SELECT collect(*) as products
+  FROM all_products
+  GROUP BY popularity
+  ORDER BY popularity
+----
+
+==== Count
+
+Counting results matching a query can be done using `count(*)`.
+
+[source,genericsql,indent=0]
+----
+SELECT count(*) FROM customers WHERE address.city = 'New York'
+----
 
 === Paging
 
@@ -215,15 +243,15 @@ In both cases `OFFSET` and `LIMIT` are used.
 
 The values can either be static, defined up front in the query:
 
-[source,proto,indent=0]
+[source,genericsql,indent=0]
 ----
 SELECT * FROM customers LIMIT 10
 ----
 
 Or come from fields in the request message:
-[source,proto,indent=0]
+[source,genericsql,indent=0]
 ----
-SELECT * FROM customers OFFSET :start_from LIMIT :max_customers
+SELECT * FROM customers OFFSET :startFrom LIMIT :maxCustomers
 ----
 
 Note: Using count based offsets can lead to missing or duplicated entries in the result if entries are added to or removed from the view between requests for the pages.
@@ -242,13 +270,13 @@ With the query return type like this:
 
 [source,java,indent=0]
 ----
-public record Response(List<Customer> customers, String next_page_token) { }
+public record Response(List<Customer> customers, String nextPageToken) { }
 ----
 
 A query such as the one below will allow for reading through the view in pages, each containing 10 customers:
-[source,proto,indent=0]
+[source,genericsql,indent=0]
 ----
-SELECT * AS customers, next_page_token() AS next_page_token
+SELECT * AS customers, next_page_token() AS nexPageToken
 FROM customers
 OFFSET page_token_offset(:page_token)
 LIMIT 10
@@ -258,10 +286,10 @@ The token value is not meant to be parseable into any meaningful information oth
 
 ==== Total count of results
 
-To get the total number of results that will be returned over all pages, use `COUNT(*)` in a query that projects its results into a field. The total count will be returned in the aliased field (using `AS`) or otherwise into a field named `count`.
+To get the total number of results that will be returned over all pages, use `total_count()` in a query that projects its results into a field. The total count will be returned in the aliased field (using `AS`) or otherwise into a field named `totalCount`.
 
 ----
-SELECT * AS customers, COUNT(*) AS total, has_more() AS more FROM customers LIMIT 10
+SELECT * AS customers, total_count() AS total, has_more() AS more FROM customers LIMIT 10
 ----
 
 [#has-more]
@@ -269,9 +297,9 @@ SELECT * AS customers, COUNT(*) AS total, has_more() AS more FROM customers LIMI
 
 To check if there are more pages left, you can use the function `has_more()` providing a boolean value for the result. This works both for the count and token based offset paging, and also when only using `LIMIT` without any `OFFSET`:
 
-[source,proto,indent=0]
+[source,genericsql,indent=0]
 ----
-SELECT * AS customers, has_more() AS more_customers FROM customers LIMIT 10
+SELECT * AS customers, has_more() AS moreCustomers FROM customers LIMIT 10
 ----
 
-This query will return `more_customers = true` when the view contains more than 10 customers.
+This query will return `moreCustomers = true` when the view contains more than 10 customers.
