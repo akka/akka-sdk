@@ -246,7 +246,7 @@ include::example$doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java
 <3> Or collect the bytes into memory
 
 
- === Accessing request headers ===
+=== Accessing request headers ===
 
  Accessing request headers is done through the link:_attachments/api/akka/javasdk/http/RequestContext.html[RequestContext] methods `requestHeader(String headerName)` and `allRequestHeaders()`.
 
