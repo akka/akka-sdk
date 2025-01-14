@@ -10,6 +10,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.control.NonFatal
 
+import akka.Done
 import akka.actor.ActorSystem
 import akka.annotation.InternalApi
 import akka.javasdk.Metadata
@@ -100,6 +101,11 @@ private[impl] final class ConsumerImpl[C <: Consumer](
 
   private def toSpiEffect(message: Message, effect: Consumer.Effect): Future[Effect] = {
     effect match {
+      case ProduceEffect(msg: Done, metadata) =>
+        Future.successful(
+          new SpiConsumer.ProduceEffect(
+            payload = Some(serializer.toBytes(msg)),
+            metadata = MetadataImpl.toSpi(metadata)))
       case ProduceEffect(msg, metadata) =>
         if (consumerDestination.isEmpty) {
           val baseMsg = s"Consumer [$componentId] produced a message but no destination is defined."
