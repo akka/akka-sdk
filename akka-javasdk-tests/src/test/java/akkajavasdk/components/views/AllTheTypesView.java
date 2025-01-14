@@ -81,7 +81,7 @@ public class AllTheTypesView extends View {
   }
 
   public record InstantRequest(Instant instant) {}
-  @Query("SELECT * FROM events WHERE instant < :instant")
+  @Query("SELECT * FROM events WHERE instant > :instant")
   public QueryStreamEffect<AllTheTypesKvEntity.AllTheTypes> compareInstant(InstantRequest request) { return queryStreamResult(); }
 
   public record GroupResult(List<AllTheTypesKvEntity.AllTheTypes> grouped, long totalCount) {}

@@ -34,6 +34,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.time.Instant;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -174,7 +175,9 @@ public class ViewIntegrationTest extends TestKitSupport {
     // see that we can persist and read a row with all fields, no indexed columns
     var id = newId();
     var row = new AllTheTypesKvEntity.AllTheTypes(1, 2L, 3F, 4D, true, "text", 5, 6L, 7F, 8D, false,
-        Instant.now(), ZonedDateTime.now(),
+        Instant.now(),
+        // Note: we turn it into a timestamp internally, so the specific TZ is lost (but the exact point in time stays the same)
+        ZonedDateTime.now().withZoneSameInstant(ZoneId.of("Z")),
         Optional.of("optional"), List.of("text1", "text2"),
         new AllTheTypesKvEntity.ByEmail("test@example.com"),
         AllTheTypesKvEntity.AnEnum.THREE, new AllTheTypesKvEntity.Recursive(new AllTheTypesKvEntity.Recursive(null, "level2"), "level1"));
