@@ -539,11 +539,13 @@ private final class Sdk(
       case clz if classOf[Consumer].isAssignableFrom(clz) =>
         val componentId = clz.getAnnotation(classOf[ComponentId]).value
         val consumerClass = clz.asInstanceOf[Class[Consumer]]
+        val consumerDest = consumerDestination(consumerClass)
         val consumerSpi =
           new ConsumerImpl[Consumer](
             componentId,
             () => wiredInstance(consumerClass)(sideEffectingComponentInjects(None)),
             consumerClass,
+            consumerDest,
             system.classicSystem,
             runtimeComponentClients.timerClient,
             sdkExecutionContext,
