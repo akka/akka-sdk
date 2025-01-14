@@ -151,6 +151,9 @@ When modeling your queries, the following data types are supported:
 
 | Timestamp
 | `java.time.Instant`
+
+| Date and time
+| `java.time.ZonedDateTime`
 |===
 
 
