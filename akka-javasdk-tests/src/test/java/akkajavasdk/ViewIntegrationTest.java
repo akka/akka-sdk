@@ -41,6 +41,7 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 
+import static java.time.temporal.ChronoUnit.DAYS;
 import static java.time.temporal.ChronoUnit.HOURS;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -220,6 +221,70 @@ public class ViewIntegrationTest extends TestKitSupport {
               .runWith(Sink.seq(), testKit.getMaterializer()));
 
           assertThat(rows).hasSize(1);
+        });
+
+    Awaitility.await()
+        .ignoreExceptions()
+        .atMost(10, TimeUnit.SECONDS)
+        .untilAsserted(() -> {
+          var result = await(componentClient.forView()
+              .method(AllTheTypesView::countRows)
+              .invokeAsync());
+
+          assertThat(result.count()).isEqualTo(1);
+        });
+
+
+    Awaitility.await()
+        .ignoreExceptions()
+        .atMost(10, TimeUnit.SECONDS)
+        .untilAsserted(() -> {
+          var rows = await(componentClient.forView()
+              .stream(AllTheTypesView::compareInstant)
+              .source(new AllTheTypesView.InstantRequest(Instant.now().minus(3, DAYS)))
+              .runWith(Sink.seq(), testKit.getMaterializer()));
+
+          assertThat(rows).hasSize(1);
+        });
+
+    Awaitility.await()
+        .ignoreExceptions()
+        .atMost(10, TimeUnit.SECONDS)
+        .untilAsserted(() -> {
+          var rows = await(componentClient.forView()
+              .stream(AllTheTypesView::groupQuery)
+              .source()
+              .runWith(Sink.seq(), testKit.getMaterializer()));
+
+          assertThat(rows).hasSize(1);
+          assertThat(rows.getFirst().grouped()).hasSize(1);
+          assertThat(rows.getFirst().grouped().getFirst()).isEqualTo(row);
+          assertThat(rows.getFirst().totalCount()).isEqualTo(1L);
+        });
+
+
+    Awaitility.await()
+        .ignoreExceptions()
+        .atMost(10, TimeUnit.SECONDS)
+        .untilAsserted(() -> {
+          var rows = await(componentClient.forView()
+              .stream(AllTheTypesView::nullableQuery)
+              .source()
+              .runWith(Sink.seq(), testKit.getMaterializer()));
+
+          assertThat(rows).hasSize(1);
+        });
+
+    Awaitility.await()
+        .ignoreExceptions()
+        .atMost(10, TimeUnit.SECONDS)
+        .untilAsserted(() -> {
+          var page = await(componentClient.forView()
+              .method(AllTheTypesView::paging)
+              .invokeAsync(new AllTheTypesView.PageRequest("")));
+
+          assertThat(page.entries()).hasSize(1);
+          assertThat(page.hasMore()).isFalse();
         });
   }
 

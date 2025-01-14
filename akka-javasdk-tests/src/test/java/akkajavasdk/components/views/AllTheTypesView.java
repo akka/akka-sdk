@@ -74,6 +74,38 @@ public class AllTheTypesView extends View {
     return queryStreamResult();
   }
 
+  public record CountResult(long count) {}
+  @Query("SELECT COUNT(*) FROM events")
+  public QueryEffect<CountResult> countRows() {
+    return queryResult();
+  }
+
+  public record InstantRequest(Instant instant) {}
+  @Query("SELECT * FROM events WHERE instant < :instant")
+  public QueryStreamEffect<AllTheTypesKvEntity.AllTheTypes> compareInstant(InstantRequest request) { return queryStreamResult(); }
+
+  public record GroupResult(List<AllTheTypesKvEntity.AllTheTypes> grouped, long totalCount) {}
+  @Query("SELECT * AS grouped, total_count() FROM events GROUP BY intValue")
+  public QueryStreamEffect<GroupResult> groupQuery() { return queryStreamResult(); }
+
+  @Query("SELECT * FROM events WHERE optionalString IS NOT NULL AND nestedMessage.email IS NOT NULL")
+  public QueryStreamEffect<AllTheTypesKvEntity.AllTheTypes> nullableQuery() {
+    return queryStreamResult();
+  }
+
+  public record PageRequest(String pageToken) {}
+  public record Page(List<AllTheTypesKvEntity.AllTheTypes> entries, String nextPageToken, boolean hasMore) { }
+
+  @Query("""
+      SELECT * AS entries, next_page_token() AS nextPageToken, has_more() AS hasMore
+      FROM events
+      OFFSET page_token_offset(:pageToken)
+      LIMIT 10
+      """)
+  public QueryEffect<Page> paging(PageRequest request) {
+    return queryResult();
+  }
+
   public record BeforeRequest(Instant instant) {}
 
   @Query("SELECT * FROM events WHERE zonedDateTime < :instant")

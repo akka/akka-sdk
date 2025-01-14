@@ -4,12 +4,16 @@ Define View queries in a language that is similar to SQL. The following examples
 
 === Retrieving
 
-* All customers without any filtering conditions (no WHERE clause):
+* All customers without any filtering conditions:
 +
 [source,genericsql,indent=0]
 ----
 SELECT * FROM customers
 ----
+
+=== Filter predicates
+
+Use filter predicates in `WHERE` conditions to further refine results.
 
 * Customers with a name matching the `customerName` property of the request object:
 +
@@ -31,10 +35,6 @@ SELECT * FROM customers WHERE name = :customerName AND address.city = :city
 ----
 SELECT * FROM customers WHERE address.city = 'New York'
 ----
-
-=== Filter predicates
-
-Use filter predicates in `WHERE` conditions to further refine results.
 
 ==== Comparison operators
 
@@ -127,10 +127,10 @@ When modeling your queries, the following data types are supported:
 | Integer
 | `int` / `Integer`
 
-| Long (Big Integer)
+| Long
 | `long` / `Long`
 
-| Float (Real)
+| Float
 | `float` / `Float`
 
 | Double
@@ -139,7 +139,7 @@ When modeling your queries, the following data types are supported:
 | Boolean
 | `boolean` / `Boolean`
 
-| Array
+| Lists
 | `Collection<T>` and derived
 
 | Timestamp
@@ -200,8 +200,8 @@ NOTE: Some orderings may be rejected, if the view index cannot be efficiently or
 
 ==== Grouping
 
-Grouping of results based on one field is supported in the form of `collect(*)` which collects all entries for a given
-grouping key value into one result object with a list of found entries.
+Grouping of results based on a field is supported using `collect(*)`. Each found key leads to one returned entry, where
+all the entries for that key is collected into a `List` field.
 
 [source,java,indent=0]
 ----
@@ -216,6 +216,9 @@ SELECT collect(*) as products
   GROUP BY popularity
   ORDER BY popularity
 ----
+
+This example query returns one `GroupedProducts` entry per found unique popularity value, with all the products with
+that popularity in the `products` list.
 
 ==== Count
 
@@ -266,23 +269,26 @@ When reading the first page, an empty token is provided to `page_token_offset`. 
 
 The size of each page can optionally be specified using `LIMIT`, if it is not present a default page size of 100 is used.
 
-With the query return type like this:
+With the query request and response types like this:
 
 [source,java,indent=0]
 ----
+public record Request(String pageToken) {}
 public record Response(List<Customer> customers, String nextPageToken) { }
 ----
 
 A query such as the one below will allow for reading through the view in pages, each containing 10 customers:
 [source,genericsql,indent=0]
 ----
-SELECT * AS customers, next_page_token() AS nexPageToken
+SELECT * AS customers, next_page_token() AS nextPageToken
 FROM customers
-OFFSET page_token_offset(:page_token)
+OFFSET page_token_offset(:pageToken)
 LIMIT 10
 ----
 
-The token value is not meant to be parseable into any meaningful information other than being a token for reading the next page.
+The page token value string is not meant to be parseable into any meaningful information other than being a token for reading the next page.
+
+Starting from the beginning of the pages is done by using empty string as request `pageToken` field value.
 
 ==== Total count of results
 
