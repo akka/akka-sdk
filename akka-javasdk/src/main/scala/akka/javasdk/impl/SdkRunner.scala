@@ -381,6 +381,7 @@ private final class Sdk(
     logger.debug(s"Registering Workflow [${clz.getName}]")
     new WorkflowImpl[S, W](
       factoryContext.workflowId,
+      clz,
       serializer,
       ComponentDescriptor.descriptorFor(clz, serializer),
       timerClient = runtimeComponentClients.timerClient,

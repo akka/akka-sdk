@@ -9,6 +9,8 @@ import scala.concurrent.Future
 import scala.jdk.CollectionConverters.ListHasAsScala
 import scala.jdk.DurationConverters.JavaDurationOps
 import scala.jdk.OptionConverters.RichOptional
+import scala.util.Failure
+import scala.util.Success
 import scala.util.control.NonFatal
 
 import akka.annotation.InternalApi
@@ -50,6 +52,8 @@ import akka.runtime.sdk.spi.SpiWorkflow
 import akka.runtime.sdk.spi.TimerClient
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.Tracer
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 /**
  * INTERNAL API
@@ -57,6 +61,7 @@ import io.opentelemetry.api.trace.Tracer
 @InternalApi
 class WorkflowImpl[S, W <: Workflow[S]](
     workflowId: String,
+    workflowClass: Class[W],
     serializer: JsonSerializer,
     componentDescriptor: ComponentDescriptor,
     timerClient: TimerClient,
@@ -64,6 +69,8 @@ class WorkflowImpl[S, W <: Workflow[S]](
     tracerFactory: () => Tracer,
     instanceFactory: Function[WorkflowContext, W])
     extends SpiWorkflow {
+
+  private val log: Logger = LoggerFactory.getLogger(workflowClass)
 
   private val context = new WorkflowContextImpl(workflowId)
 
@@ -228,15 +235,19 @@ class WorkflowImpl[S, W <: Workflow[S]](
       new TimerSchedulerImpl(timerClient, context.componentCallMetadata)
 
     try {
-      router.handleStep(
+      val handleStep = router.handleStep(
         userState,
         input = input,
         stepName = stepName,
         timerScheduler = timerScheduler,
         commandContext = context,
         executionContext = sdkExecutionContext)
+      handleStep.onComplete {
+        case Failure(exception) => log.error(s"Workflow [$workflowId], failed to execute step [$stepName]", exception)
+        case Success(_)         =>
+      }(sdkExecutionContext)
+      handleStep
     } catch {
-      case e: WorkflowException => throw e
       case NonFatal(ex) =>
         throw WorkflowException(s"unexpected exception [${ex.getMessage}] while executing step [$stepName]", Some(ex))
     }
@@ -250,8 +261,8 @@ class WorkflowImpl[S, W <: Workflow[S]](
       try {
         router.getNextStep(stepName, result.get, userState)
       } catch {
-        case e: WorkflowException => throw e
         case NonFatal(ex) =>
+          log.error(s"Workflow [$workflowId], failed to transition from step [$stepName]", ex)
           throw WorkflowException(
             s"unexpected exception [${ex.getMessage}] while executing transition for step [$stepName]",
             Some(ex))

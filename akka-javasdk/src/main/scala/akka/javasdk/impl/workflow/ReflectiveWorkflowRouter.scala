@@ -16,9 +16,7 @@ import akka.annotation.InternalApi
 import akka.javasdk.impl.MethodInvoker
 import akka.javasdk.impl.CommandSerialization
 import akka.javasdk.impl.HandlerNotFoundException
-import akka.javasdk.impl.WorkflowExceptions.WorkflowException
 import akka.javasdk.impl.serialization.JsonSerializer
-import akka.javasdk.impl.workflow.ReflectiveWorkflowRouter.CommandHandlerNotFound
 import akka.javasdk.impl.workflow.ReflectiveWorkflowRouter.CommandResult
 import akka.javasdk.impl.workflow.ReflectiveWorkflowRouter.TransitionalResult
 import akka.javasdk.impl.workflow.ReflectiveWorkflowRouter.WorkflowStepNotFound
@@ -40,9 +38,6 @@ object ReflectiveWorkflowRouter {
   final case class CommandResult(effect: Workflow.Effect[_])
 
   final case class TransitionalResult(effect: Workflow.Effect.TransitionalEffect[_])
-  final case class CommandHandlerNotFound(commandName: String) extends RuntimeException {
-    override def getMessage: String = commandName
-  }
   final case class WorkflowStepNotFound(stepName: String) extends RuntimeException {
     override def getMessage: String = stepName
   }
@@ -98,39 +93,27 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
 
     val workflow = instanceFactory(workflowContext)
 
-    val commandEffect =
-      try {
-        // if runtime doesn't have a state to provide, we fall back to user's own defined empty state
-        val decodedState = decodeUserState(userState).getOrElse(workflow.emptyState())
-        workflow._internalSetup(decodedState, context, timerScheduler)
+    // if runtime doesn't have a state to provide, we fall back to user's own defined empty state
+    val decodedState = decodeUserState(userState).getOrElse(workflow.emptyState())
+    workflow._internalSetup(decodedState, context, timerScheduler)
 
-        val methodInvoker = methodInvokerLookup(commandName)
+    val methodInvoker = methodInvokerLookup(commandName)
 
-        if (serializer.isJson(command) || command.isEmpty) {
-          // - BytesPayload.empty - there is no real command, and we are calling a method with arity 0
-          // - BytesPayload with json - we deserialize it and call the method
-          val deserializedCommand =
-            CommandSerialization.deserializeComponentClientCommand(methodInvoker.method, command, serializer)
-          val result = deserializedCommand match {
-            case None        => methodInvoker.invoke(workflow)
-            case Some(input) => methodInvoker.invokeDirectly(workflow, input)
-          }
-          result.asInstanceOf[Workflow.Effect[_]]
-        } else {
-          throw new IllegalStateException(
-            s"Could not find a matching command handler for method [$commandName], content type [${command.contentType}] " +
-            s"on [${workflow.getClass.getName}]")
-        }
-
-      } catch {
-        case CommandHandlerNotFound(name) =>
-          throw new WorkflowException(
-            context.workflowId(),
-            commandName,
-            s"No command handler found for command [$name] on [${workflow.getClass.getName}]")
+    if (serializer.isJson(command) || command.isEmpty) {
+      // - BytesPayload.empty - there is no real command, and we are calling a method with arity 0
+      // - BytesPayload with json - we deserialize it and call the method
+      val deserializedCommand =
+        CommandSerialization.deserializeComponentClientCommand(methodInvoker.method, command, serializer)
+      val result = deserializedCommand match {
+        case None        => methodInvoker.invoke(workflow)
+        case Some(input) => methodInvoker.invokeDirectly(workflow, input)
       }
-
-    CommandResult(commandEffect)
+      CommandResult(result.asInstanceOf[Workflow.Effect[_]])
+    } else {
+      throw new IllegalStateException(
+        s"Could not find a matching command handler for method [$commandName], content type [${command.contentType}] " +
+        s"on [${workflow.getClass.getName}]")
+    }
   }
 
   final def handleStep(
