@@ -85,8 +85,13 @@ public class AllTheTypesView extends View {
   public QueryStreamEffect<AllTheTypesKvEntity.AllTheTypes> compareInstant(InstantRequest request) { return queryStreamResult(); }
 
   public record GroupResult(List<AllTheTypesKvEntity.AllTheTypes> grouped, long totalCount) {}
-  @Query("SELECT * AS grouped, total_count() FROM events GROUP BY intValue")
+  @Query("SELECT collect(*) AS grouped, total_count() FROM events GROUP BY intValue")
   public QueryStreamEffect<GroupResult> groupQuery() { return queryStreamResult(); }
+
+  public record ProjectedGroupResult(int intValue, List<String> groupedStringValues, long totalCount) {}
+  @Query("SELECT intValue, stringValue AS groupedStringValues, total_count() FROM events GROUP BY intValue")
+  public QueryStreamEffect<ProjectedGroupResult> projectedGroupQuery() { return queryStreamResult(); }
+
 
   @Query("SELECT * FROM events WHERE optionalString IS NOT NULL AND nestedMessage.email IS NOT NULL")
   public QueryStreamEffect<AllTheTypesKvEntity.AllTheTypes> nullableQuery() {

@@ -265,6 +265,21 @@ public class ViewIntegrationTest extends TestKitSupport {
           assertThat(rows.getFirst().totalCount()).isEqualTo(1L);
         });
 
+    Awaitility.await()
+        .ignoreExceptions()
+        .atMost(10, TimeUnit.SECONDS)
+        .untilAsserted(() -> {
+          var rows = await(componentClient.forView()
+              .stream(AllTheTypesView::projectedGroupQuery)
+              .source()
+              .runWith(Sink.seq(), testKit.getMaterializer()));
+
+          assertThat(rows).hasSize(1);
+          assertThat(rows.getFirst().groupedStringValues()).hasSize(1);
+          assertThat(rows.getFirst().groupedStringValues().getFirst()).isEqualTo(row.stringValue());
+          assertThat(rows.getFirst().totalCount()).isEqualTo(1L);
+        });
+
 
     Awaitility.await()
         .ignoreExceptions()

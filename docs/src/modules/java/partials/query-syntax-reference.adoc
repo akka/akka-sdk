@@ -203,15 +203,17 @@ NOTE: Some orderings may be rejected, if the view index cannot be efficiently or
 Grouping of results based on a field is supported using `collect(*)`. Each found key leads to one returned entry, where
 all the entries for that key are collected into a `List` field.
 
+Given the view data structure and response type:
+
 [source,java,indent=0]
 ----
 record Product(String name, int popularity) {}
-record GroupedProducts(List<Products> products) {}
+record GroupedProducts(int popularity, List<Products> products) {}
 ----
 
 [source,genericsql,indent=0]
 ----
-SELECT collect(*) as products
+SELECT popularity, collect(*) AS products
   FROM all_products
   GROUP BY popularity
   ORDER BY popularity
@@ -219,6 +221,22 @@ SELECT collect(*) as products
 
 This example query returns one `GroupedProducts` entry per found unique popularity value, with all the products with
 that popularity in the `products` list.
+
+It is also possible to project individual fields in the grouped result. Given the previous `Product` view table type
+and the following response type:
+
+[source,java,indent=0]
+----
+record GroupedProductsNames(int popularity, List<String> productNames) {}
+----
+
+[source,genericsql,indent=0]
+----
+SELECT popularity, name AS productNames
+  FROM all_products
+  GROUP BY popularity
+  ORDER BY popularity
+----
 
 ==== Count
 
