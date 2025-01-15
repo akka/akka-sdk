@@ -105,16 +105,12 @@ class WorkflowImpl[S, W <: Workflow[S]](
     val failoverRecoverStrategy = definition.getStepRecoverStrategy.toScala.map(toRecovery)
     val stepTimeout = definition.getStepTimeout.toScala.map(_.toScala)
 
-    val defaultStepConfig = Option.when(failoverRecoverStrategy.isDefined) {
-      new SpiWorkflow.StepConfig("", stepTimeout, failoverRecoverStrategy)
-    }
-
     new SpiWorkflow.WorkflowConfig(
       workflowTimeout = definition.getWorkflowTimeout.toScala.map(_.toScala),
       failoverTo = failoverTo,
       failoverRecoverStrategy = failoverRecoverStrategy,
       defaultStepTimeout = stepTimeout,
-      defaultStepConfig = defaultStepConfig,
+      defaultStepRecoverStrategy = failoverRecoverStrategy,
       stepConfigs = stepConfigs)
   }
 
