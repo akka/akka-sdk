@@ -10,6 +10,16 @@ Current versions
 * Akka CLI {akka-cli-version}
 * A glance of all Akka libraries and their current versions is presented at https://doc.akka.io/libraries/akka-dependencies/current[Akka library versions].
 
+== January 2025
+
+* Akka CLI 3.0.9
+    - Fixes listing of user role bindings
+
+* Platform update 2025-01-13
+    - updates to internal libraries for security fixes
+    - switch of internal framework to apply environment configuration
+    - minor updates to the Console
+
 == December 2024
 
 * Akka CLI 3.0.8
