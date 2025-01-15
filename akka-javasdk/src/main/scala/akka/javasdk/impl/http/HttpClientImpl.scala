@@ -17,6 +17,8 @@ import akka.http.javadsl.model.HttpMethods
 import akka.http.javadsl.model.HttpRequest
 import akka.http.javadsl.model.HttpResponse
 import akka.http.javadsl.model.headers.HttpCredentials
+import akka.http.javadsl.model.Query
+import akka.japi.Pair
 import akka.javasdk.JsonSupport
 import akka.javasdk.http.HttpClient
 import akka.javasdk.http.RequestBuilder
@@ -192,4 +194,12 @@ private[akka] final case class RequestBuilderImpl[R](
       timeout,
       request,
       (res: HttpResponse, bytes: ByteString) => new StrictResponse[T](res, parse.apply(bytes.toArray)))
+
+  override def withQuery(key: String, value: String): RequestBuilder[R] = withQuery(
+    Query.create(Pair.create(key, value)))
+
+  override def withQuery(query: Query): RequestBuilder[R] = {
+    val uriWithQuery = request.getUri.query(query)
+    withRequest(request.withUri(uriWithQuery))
+  }
 }

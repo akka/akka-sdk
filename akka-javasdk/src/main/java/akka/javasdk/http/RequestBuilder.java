@@ -9,6 +9,7 @@ import akka.http.javadsl.model.ContentType;
 import akka.http.javadsl.model.HttpHeader;
 import akka.http.javadsl.model.HttpRequest;
 import akka.http.javadsl.model.headers.HttpCredentials;
+import akka.http.javadsl.model.Query;
 
 import java.time.Duration;
 import java.util.concurrent.CompletionStage;
@@ -35,6 +36,10 @@ public interface RequestBuilder<R> {
   RequestBuilder<R> addCredentials(HttpCredentials credentials);
 
   RequestBuilder<R> withTimeout(Duration timeout);
+
+  RequestBuilder<R> withQuery(String key, String value);
+
+  RequestBuilder<R>  withQuery(Query query);
 
   /**
    * Transform the request before sending it. This method allows for extra request configuration.
