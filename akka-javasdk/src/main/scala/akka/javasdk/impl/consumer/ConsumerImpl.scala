@@ -24,7 +24,6 @@ import akka.javasdk.impl.ErrorHandling
 import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.consumer.ConsumerEffectImpl.AsyncEffect
 import akka.javasdk.impl.consumer.ConsumerEffectImpl.ConsumedEffect
-import akka.javasdk.impl.consumer.ConsumerEffectImpl.IgnoreEffect
 import akka.javasdk.impl.consumer.ConsumerEffectImpl.ProduceEffect
 import akka.javasdk.impl.serialization.JsonSerializer
 import akka.javasdk.impl.telemetry.ConsumerCategory
@@ -119,8 +118,6 @@ private[impl] final class ConsumerImpl[C <: Consumer](
           .recover { case NonFatal(ex) =>
             handleUnexpectedException(message, ex)
           }
-      case IgnoreEffect =>
-        Future.successful(SpiConsumer.ConsumedEffect)
       case unknown =>
         throw new IllegalArgumentException(s"Unknown TimedAction.Effect type ${unknown.getClass}")
     }

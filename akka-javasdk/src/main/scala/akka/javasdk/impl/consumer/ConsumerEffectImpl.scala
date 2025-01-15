@@ -22,11 +22,9 @@ private[impl] object ConsumerEffectImpl {
 
   final case class ProduceEffect[T](msg: T, metadata: Option[Metadata]) extends PrimaryEffect {}
 
-  final object ConsumedEffect extends PrimaryEffect {}
+  case object ConsumedEffect extends PrimaryEffect {}
 
   final case class AsyncEffect(effect: Future[Consumer.Effect]) extends PrimaryEffect {}
-
-  case object IgnoreEffect extends PrimaryEffect {}
 
   object Builder extends Consumer.Effect.Builder {
     def produce[S](message: S): Consumer.Effect = ProduceEffect(message, None)
@@ -44,7 +42,7 @@ private[impl] object ConsumerEffectImpl {
       AsyncEffect(futureEffect.asScala)
 
     def ignore(): Consumer.Effect =
-      IgnoreEffect
+      ConsumedEffect
 
     override def done(): Consumer.Effect =
       ConsumedEffect
