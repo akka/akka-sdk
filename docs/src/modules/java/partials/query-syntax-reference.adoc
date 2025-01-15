@@ -201,7 +201,7 @@ NOTE: Some orderings may be rejected, if the view index cannot be efficiently or
 ==== Grouping
 
 Grouping of results based on a field is supported using `collect(*)`. Each found key leads to one returned entry, where
-all the entries for that key is collected into a `List` field.
+all the entries for that key are collected into a `List` field.
 
 [source,java,indent=0]
 ----
