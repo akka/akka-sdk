@@ -590,7 +590,7 @@ private final class Sdk(
 
     // service setup + integration test config
     val combinedDisabledComponents =
-      serviceSetup.map(_.disabledComponents().asScala.toSet).getOrElse(Set.empty) ++ disabledComponents
+      (serviceSetup.map(_.disabledComponents().asScala.toSet).getOrElse(Set.empty) ++ disabledComponents).map(_.getName)
 
     val descriptors =
       (eventSourcedEntityDescriptors ++
@@ -664,9 +664,9 @@ private final class Sdk(
       healthCheck = () => SdkRunner.FutureDone)
   }
 
-  private def isDisabled(disabledComponents: Set[Class[_]])(componentDescriptor: spi.ComponentDescriptor): Boolean = {
+  private def isDisabled(disabledComponents: Set[String])(componentDescriptor: spi.ComponentDescriptor): Boolean = {
     val className = componentDescriptor.implementationName
-    if (disabledComponents.map(_.getName).contains(className)) {
+    if (disabledComponents.contains(className)) {
       logger.info("Ignoring component [{}] as it is disabled", className)
       true
     } else
