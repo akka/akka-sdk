@@ -4,8 +4,6 @@
 
 package akka.javasdk.impl
 
-import kalix.protocol.discovery.{ DiscoveryProto, UserFunctionError }
-import kalix.protocol.event_sourced_entity.EventSourcedEntityProto
 import com.google.protobuf.any.{ Any => ScalaPbAny }
 import com.google.protobuf.{ Any => JavaPbAny }
 import com.google.protobuf.ByteString
@@ -15,28 +13,12 @@ import org.scalatest.wordspec.AnyWordSpec
 
 class AnySupportSpec extends AnyWordSpec with Matchers with OptionValues {
 
-  private val anySupport = new AnySupport(
-    Array(EventSourcedEntityProto.javaDescriptor, DiscoveryProto.javaDescriptor),
-    getClass.getClassLoader,
-    "com.example")
+  private val anySupport = new AnySupport(Array.empty, getClass.getClassLoader, "com.example")
 
-  private val anySupportScala = new AnySupport(
-    Array(EventSourcedEntityProto.javaDescriptor, DiscoveryProto.javaDescriptor),
-    getClass.getClassLoader,
-    "com.example",
-    AnySupport.PREFER_SCALA)
+  private val anySupportScala =
+    new AnySupport(Array.empty, getClass.getClassLoader, "com.example", AnySupport.PREFER_SCALA)
 
   "Any support for Java" should {
-
-    "support se/deserializing scala protobufs" in {
-      val error = UserFunctionError("error")
-      val any = anySupport.encodeScala(UserFunctionError("error"))
-      any.typeUrl should ===("com.example/kalix.protocol.UserFunctionError")
-
-      val decoded = anySupport.decodePossiblyPrimitive(any)
-      decoded.getClass should ===(error.getClass)
-      decoded should ===(error)
-    }
 
     def testPrimitive[T](name: String, value: T, defaultValue: T) = {
       val any = anySupport.encodeScala(value)

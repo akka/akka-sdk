@@ -89,12 +89,6 @@ class WorkflowImpl[S, W <: Workflow[S]](
       new SpiWorkflow.RecoverStrategy(sdkRecoverStrategy.maxRetries, failoverTo = stepTransition)
     }
 
-    val failoverTo = {
-      definition.getFailoverStepName.toScala.map { stepName =>
-        new SpiWorkflow.StepTransition(stepName, definition.getFailoverStepInput.toScala.map(serializer.toBytes))
-      }
-    }
-
     val stepConfigs =
       definition.getStepConfigs.asScala.map { config =>
         val stepTimeout = config.timeout.toScala.map(_.toScala)
@@ -102,15 +96,21 @@ class WorkflowImpl[S, W <: Workflow[S]](
         (config.stepName, new SpiWorkflow.StepConfig(config.stepName, stepTimeout, failoverRecoverStrategy))
       }.toMap
 
-    val failoverRecoverStrategy = definition.getStepRecoverStrategy.toScala.map(toRecovery)
+    val defaultStepRecoverStrategy = definition.getStepRecoverStrategy.toScala.map(toRecovery)
+
+    val failoverRecoverStrategy = definition.getFailoverStepName.toScala.map(stepName =>
+      //when failoverStepName exists, maxRetries must exist
+      new SpiWorkflow.RecoverStrategy(
+        definition.getFailoverMaxRetries.toScala.get.maxRetries,
+        new SpiWorkflow.StepTransition(stepName, definition.getFailoverStepInput.toScala.map(serializer.toBytes))))
+
     val stepTimeout = definition.getStepTimeout.toScala.map(_.toScala)
 
     new SpiWorkflow.WorkflowConfig(
       workflowTimeout = definition.getWorkflowTimeout.toScala.map(_.toScala),
-      failoverTo = failoverTo,
       failoverRecoverStrategy = failoverRecoverStrategy,
       defaultStepTimeout = stepTimeout,
-      defaultStepRecoverStrategy = failoverRecoverStrategy,
+      defaultStepRecoverStrategy = defaultStepRecoverStrategy,
       stepConfigs = stepConfigs)
   }
 
