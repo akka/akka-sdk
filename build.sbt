@@ -57,6 +57,7 @@ lazy val akkaJavaSdkTestKit =
 
 lazy val akkaJavaSdkTests =
   Project(id = "akka-javasdk-tests", base = file("akka-javasdk-tests"))
+    .enablePlugins(AkkaGrpcPlugin)
     .dependsOn(akkaJavaSdk, akkaJavaSdkTestKit)
     .settings(
       name := "akka-javasdk-testkit",
@@ -67,7 +68,12 @@ lazy val akkaJavaSdkTests =
       Test / javacOptions ++= Seq("-parameters"),
       // only tests here
       publish / skip := true,
-      doc / sources := Seq.empty)
+      doc / sources := Seq.empty,
+      // generating test service
+      Test / akkaGrpcGeneratedLanguages := Seq(AkkaGrpc.Java),
+      Test / akkaGrpcGeneratedSources := Seq(AkkaGrpc.Client, AkkaGrpc.Server),
+      Test / PB.protoSources ++= (Compile / PB.protoSources).value
+    )
     .settings(inConfig(Test)(JupiterPlugin.scopedSettings))
     .settings(Dependencies.tests)
 

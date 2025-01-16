@@ -10,7 +10,6 @@ import java.lang.reflect.Method
 import java.util
 import java.util.Optional
 import java.util.concurrent.CompletionStage
-
 import scala.annotation.nowarn
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -21,7 +20,6 @@ import scala.jdk.OptionConverters.RichOption
 import scala.jdk.OptionConverters.RichOptional
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
-
 import akka.Done
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
@@ -415,6 +413,12 @@ private final class Sdk(
       HttpEndpointDescriptorFactory(httpEndpointClass, httpEndpointFactory(httpEndpointClass))
     }
 
+  private val grpcEndpointDescriptors = componentClasses
+    .filter(Reflect.isGrpcEndpoint)
+    .filterNot(isDisabled)
+    .map(grpcEndpointClass =>
+      GrpcEndpointDescriptorFactory(grpcEndpointClass, grpcEndpointFactory(grpcEndpointClass))(system))
+
   private var eventSourcedEntityDescriptors = Vector.empty[EventSourcedEntityDescriptor]
   private var keyValueEntityDescriptors = Vector.empty[EventSourcedEntityDescriptor]
   private var workflowDescriptors = Vector.empty[WorkflowDescriptor]
@@ -593,6 +597,7 @@ private final class Sdk(
       (serviceSetup.map(_.disabledComponents().asScala.toSet).getOrElse(Set.empty) ++ disabledComponents).map(_.getName)
 
     val descriptors =
+<<<<<<< Updated upstream
       (eventSourcedEntityDescriptors ++
         keyValueEntityDescriptors ++
         httpEndpointDescriptors ++
@@ -601,6 +606,10 @@ private final class Sdk(
         viewDescriptors ++
         workflowDescriptors)
         .filterNot(isDisabled(combinedDisabledComponents))
+=======
+      eventSourcedEntityDescriptors ++ keyValueEntityDescriptors ++ httpEndpointDescriptors ++ timedActionDescriptors ++
+      consumerDescriptors ++ viewDescriptors ++ workflowDescriptors ++ grpcEndpointDescriptors
+>>>>>>> Stashed changes
 
     val preStart = { (_: ActorSystem[_]) =>
       serviceSetup match {
@@ -707,6 +716,13 @@ private final class Sdk(
         case _                                   =>
       }
       instance
+  }
+
+  private def grpcEndpointFactory[E](grpcEndpointClass: Class[E]): () => E = () => {
+    wiredInstance(grpcEndpointClass) {
+      // FIXME missing span from request
+      sideEffectingComponentInjects(None)
+    }
   }
 
   private def wiredInstance[T](clz: Class[T])(partial: PartialFunction[Class[_], Any]): T = {

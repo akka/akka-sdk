@@ -5,6 +5,7 @@
 package akka.javasdk.impl.reflection
 
 import akka.annotation.InternalApi
+import akka.javasdk.annotations.GrpcEndpoint
 import akka.javasdk.annotations.http.HttpEndpoint
 import akka.javasdk.client.ComponentClient
 import akka.javasdk.consumer.Consumer
@@ -15,6 +16,7 @@ import akka.javasdk.timedaction.TimedAction
 import akka.javasdk.view.TableUpdater
 import akka.javasdk.view.View
 import akka.javasdk.workflow.Workflow
+
 import java.lang.annotation.Annotation
 import java.lang.reflect.AnnotatedElement
 import java.lang.reflect.Method
@@ -22,7 +24,6 @@ import java.lang.reflect.Modifier
 import java.lang.reflect.ParameterizedType
 import java.util
 import java.util.Optional
-
 import scala.annotation.tailrec
 import scala.reflect.ClassTag
 
@@ -59,6 +60,9 @@ private[impl] object Reflect {
 
   def isRestEndpoint(cls: Class[_]): Boolean =
     cls.getAnnotation(classOf[HttpEndpoint]) != null
+
+  def isGrpcEndpoint(cls: Class[_]): Boolean =
+    cls.getAnnotation(classOf[GrpcEndpoint]) != null
 
   def isEntity(cls: Class[_]): Boolean =
     classOf[EventSourcedEntity[_, _]].isAssignableFrom(cls) ||

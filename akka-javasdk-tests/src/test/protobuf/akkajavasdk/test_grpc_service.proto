@@ -1,0 +1,21 @@
+// Copyright (C) 2021-2024 Lightbend Inc. <https://www.lightbend.com>
+
+// gRPC interface for a gRPC endpoint component
+
+syntax = "proto3";
+
+package akkajavasdk;
+
+option java_package = "akkajavasdk.protocol";
+
+message In {
+  string data = 1;
+}
+
+message Out {
+  string data = 1;
+}
+
+service TestGrpcService {
+  rpc Simple(In) returns (Out) {};
+}

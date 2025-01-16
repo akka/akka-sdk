@@ -8,7 +8,11 @@ object Dependencies {
     val ProtocolVersionMinor = 1
     val RuntimeImage = "gcr.io/kalix-public/kalix-runtime"
     // Remember to bump kalix-runtime.version in akka-javasdk-maven/akka-javasdk-parent if bumping this
+<<<<<<< Updated upstream
     val RuntimeVersion = sys.props.getOrElse("kalix-runtime.version", "1.3.0")
+=======
+    val RuntimeVersion = sys.props.getOrElse("kalix-runtime.version", "1.3.0-1-dd515bee-SNAPSHOT")
+>>>>>>> Stashed changes
   }
   // NOTE: embedded SDK should have the AkkaVersion aligned, when updating RuntimeVersion, make sure to check
   // if AkkaVersion and AkkaHttpVersion are aligned
