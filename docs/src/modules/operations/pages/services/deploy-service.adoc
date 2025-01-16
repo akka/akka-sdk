@@ -217,7 +217,7 @@ After editing the service descriptor (e.g., `my-service.yaml`), redeploy it with
 akka service apply -f my-service.yaml
 ----
 
-=== Editing in place the service descriptor
+=== Editing the service descriptor in place
 
 Once you have <<_deploying_a_service, deployed your service>>, you can also modify it by editing its service descriptor:
 
