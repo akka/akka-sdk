@@ -32,6 +32,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static akkajavasdk.components.pubsub.PublishVEToTopic.CUSTOMERS_TOPIC;
@@ -42,12 +43,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 @ExtendWith(Junit5LogCapturing.class)
 public class SdkIntegrationTest extends TestKitSupport {
 
-
   @Override
   protected TestKit.Settings testKitSettings() {
     // here only to show how to set different `Settings` in a test.
     return TestKit.Settings.DEFAULT
-      .withTopicOutgoingMessages(CUSTOMERS_TOPIC);
+      .withTopicOutgoingMessages(CUSTOMERS_TOPIC)
+      //one defined here and one is the Setup class
+      .withDisabledComponents(Set.of(StageCounterEntity.class));
   }
 
   @Test

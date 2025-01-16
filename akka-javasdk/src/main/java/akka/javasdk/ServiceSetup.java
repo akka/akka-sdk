@@ -5,8 +5,8 @@
 package akka.javasdk;
 
 import akka.javasdk.annotations.Setup;
-import akka.javasdk.client.ComponentClient;
-import akka.javasdk.timer.TimerScheduler;
+
+import java.util.Set;
 
 /**
  * Implement this on a single class per deployable service annotated with {{@link Setup}} and
@@ -46,5 +46,12 @@ public interface ServiceSetup {
    */
   default DependencyProvider createDependencyProvider() {
     return null;
+  }
+
+  /**
+   * Provides a set of components that should be disabled from running.
+   */
+  default Set<Class<?>> disabledComponents() {
+    return Set.of();
   }
 }

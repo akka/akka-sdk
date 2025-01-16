@@ -71,6 +71,7 @@ import akka.javasdk.timer.TimerScheduler
 import akka.javasdk.view.View
 import akka.javasdk.workflow.Workflow
 import akka.javasdk.workflow.WorkflowContext
+import akka.runtime.sdk.spi
 import akka.runtime.sdk.spi.ComponentClients
 import akka.runtime.sdk.spi.ConsumerDescriptor
 import akka.runtime.sdk.spi.EventSourcedEntityDescriptor
@@ -113,14 +114,16 @@ object SdkRunner {
  * INTERNAL API
  */
 @InternalApi
-class SdkRunner private (dependencyProvider: Option[DependencyProvider]) extends akka.runtime.sdk.spi.Runner {
+class SdkRunner private (dependencyProvider: Option[DependencyProvider], disabledComponents: Set[Class[_]])
+    extends akka.runtime.sdk.spi.Runner {
   private val startedPromise = Promise[StartupContext]()
 
   // default constructor for runtime creation
-  def this() = this(None)
+  def this() = this(None, Set.empty[Class[_]])
 
   // constructor for testkit
-  def this(dependencyProvider: java.util.Optional[DependencyProvider]) = this(dependencyProvider.toScala)
+  def this(dependencyProvider: java.util.Optional[DependencyProvider], disabledComponents: java.util.Set[Class[_]]) =
+    this(dependencyProvider.toScala, disabledComponents.asScala.toSet)
 
   def applicationConfig: Config =
     ApplicationConfig.loadApplicationConf
@@ -170,6 +173,7 @@ class SdkRunner private (dependencyProvider: Option[DependencyProvider]) extends
         startContext.remoteIdentification,
         startContext.tracerFactory,
         dependencyProvider,
+        disabledComponents,
         startedPromise,
         getSettings.devMode.map(_.serviceName))
       Future.successful(app.spiComponents)
@@ -300,6 +304,7 @@ private final class Sdk(
     remoteIdentification: Option[RemoteIdentification],
     tracerFactory: String => Tracer,
     dependencyProviderOverride: Option[DependencyProvider],
+    disabledComponents: Set[Class[_]],
     startedPromise: Promise[StartupContext],
     serviceNameOverride: Option[String]) {
   private val logger = LoggerFactory.getLogger(getClass)
@@ -350,16 +355,6 @@ private final class Sdk(
         //for instance when working with IDE and incremental compilation (without clean)
         logger.warn("Ignoring component [{}] as it does not have the @ComponentId annotation", clz.getName)
       }
-      false
-    }
-  }
-
-  private def isDisabled(clz: Class[_]): Boolean = {
-    val componentName = clz.getName
-    if (sdkSettings.disabledComponents.contains(componentName)) {
-      logger.info("Ignoring component [{}] as it is disabled in the configuration", clz.getName)
-      true
-    } else {
       false
     }
   }
@@ -416,7 +411,6 @@ private final class Sdk(
   // collect all Endpoints and compose them to build a larger router
   private val httpEndpointDescriptors = componentClasses
     .filter(Reflect.isRestEndpoint)
-    .filterNot(isDisabled)
     .map { httpEndpointClass =>
       HttpEndpointDescriptorFactory(httpEndpointClass, httpEndpointFactory(httpEndpointClass))
     }
@@ -430,7 +424,6 @@ private final class Sdk(
 
   componentClasses
     .filter(hasComponentId)
-    .filterNot(isDisabled)
     .foreach {
       case clz if classOf[EventSourcedEntity[_, _]].isAssignableFrom(clz) =>
         val componentId = clz.getAnnotation(classOf[ComponentId]).value
@@ -595,8 +588,19 @@ private final class Sdk(
       case _ => None
     }
 
+    // service setup + integration test config
+    val combinedDisabledComponents =
+      serviceSetup.map(_.disabledComponents().asScala).getOrElse(Nil).toSet ++ disabledComponents
+
     val descriptors =
-      eventSourcedEntityDescriptors ++ keyValueEntityDescriptors ++ httpEndpointDescriptors ++ timedActionDescriptors ++ consumerDescriptors ++ viewDescriptors ++ workflowDescriptors
+      (eventSourcedEntityDescriptors ++
+        keyValueEntityDescriptors ++
+        httpEndpointDescriptors ++
+        timedActionDescriptors ++
+        consumerDescriptors ++
+        viewDescriptors ++
+        workflowDescriptors)
+        .filterNot(isDisabled(combinedDisabledComponents))
 
     val preStart = { (_: ActorSystem[_]) =>
       serviceSetup match {
@@ -658,6 +662,15 @@ private final class Sdk(
       onStart = onStart,
       reportError = reportError,
       healthCheck = () => SdkRunner.FutureDone)
+  }
+
+  private def isDisabled(disabledComponents: Set[Class[_]])(componentDescriptor: spi.ComponentDescriptor): Boolean = {
+    val className = componentDescriptor.implementationName
+    if (disabledComponents.map(_.getName).contains(className)) {
+      logger.info("Ignoring component [{}] as it is disabled in the configuration", className)
+      true
+    } else
+      false
   }
 
   private def httpEndpointFactory[E](httpEndpointClass: Class[E]): HttpEndpointConstructionContext => E = {

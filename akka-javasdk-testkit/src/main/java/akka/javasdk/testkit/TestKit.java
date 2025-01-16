@@ -9,6 +9,7 @@ import akka.http.javadsl.Http;
 import akka.http.javadsl.model.HttpRequest;
 import akka.javasdk.DependencyProvider;
 import akka.javasdk.Metadata;
+import akka.javasdk.ServiceSetup;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.http.HttpClient;
 import akka.javasdk.http.HttpClientProvider;
@@ -202,7 +203,7 @@ public class TestKit {
     /**
      * Default settings for testkit.
      */
-    public static Settings DEFAULT = new Settings("self", true, TEST_BROKER, MockedEventing.EMPTY, Optional.empty(), ConfigFactory.empty());
+    public static Settings DEFAULT = new Settings("self", true, TEST_BROKER, MockedEventing.EMPTY, Optional.empty(), ConfigFactory.empty(), Set.of());
 
     /**
      * The name of this service when deployed.
@@ -221,6 +222,8 @@ public class TestKit {
     public final Config additionalConfig;
 
     public final Optional<DependencyProvider> dependencyProvider;
+
+    public final Set<Class<?>> disabledComponents;
 
     public enum EventingSupport {
       /**
@@ -245,19 +248,21 @@ public class TestKit {
     }
 
     private Settings(
-        String serviceName,
-        boolean aclEnabled,
-        EventingSupport eventingSupport,
-        MockedEventing mockedEventing,
-        Optional<DependencyProvider> dependencyProvider,
-        Config additionalConfig
-      ) {
+      String serviceName,
+      boolean aclEnabled,
+      EventingSupport eventingSupport,
+      MockedEventing mockedEventing,
+      Optional<DependencyProvider> dependencyProvider,
+      Config additionalConfig,
+      Set<Class<?>> disabledComponents
+    ) {
       this.serviceName = serviceName;
       this.aclEnabled = aclEnabled;
       this.eventingSupport = eventingSupport;
       this.mockedEventing = mockedEventing;
       this.dependencyProvider = dependencyProvider;
       this.additionalConfig = additionalConfig;
+      this.disabledComponents = disabledComponents;
     }
 
     /**
@@ -269,7 +274,7 @@ public class TestKit {
      * @return The updated settings.
      */
     public Settings withServiceName(final String serviceName) {
-      return new Settings(serviceName, aclEnabled, eventingSupport, mockedEventing, dependencyProvider, additionalConfig);
+      return new Settings(serviceName, aclEnabled, eventingSupport, mockedEventing, dependencyProvider, additionalConfig, disabledComponents);
     }
 
     /**
@@ -278,7 +283,7 @@ public class TestKit {
      * @return The updated settings.
      */
     public Settings withAclDisabled() {
-      return new Settings(serviceName, false, eventingSupport, mockedEventing, dependencyProvider, additionalConfig);
+      return new Settings(serviceName, false, eventingSupport, mockedEventing, dependencyProvider, additionalConfig, disabledComponents);
     }
 
     /**
@@ -287,7 +292,7 @@ public class TestKit {
      * @return The updated settings.
      */
     public Settings withAclEnabled() {
-      return new Settings(serviceName, true, eventingSupport, mockedEventing, dependencyProvider, additionalConfig);
+      return new Settings(serviceName, true, eventingSupport, mockedEventing, dependencyProvider, additionalConfig, disabledComponents);
     }
 
     /**
@@ -295,7 +300,7 @@ public class TestKit {
      */
     public Settings withKeyValueEntityIncomingMessages(String typeId) {
       return new Settings(serviceName, aclEnabled, eventingSupport,
-          mockedEventing.withKeyValueEntityIncomingMessages(typeId), dependencyProvider, additionalConfig);
+          mockedEventing.withKeyValueEntityIncomingMessages(typeId), dependencyProvider, additionalConfig, disabledComponents);
     }
 
     /**
@@ -303,7 +308,7 @@ public class TestKit {
      */
     public Settings withEventSourcedEntityIncomingMessages(String typeId) {
       return new Settings(serviceName, aclEnabled, eventingSupport,
-          mockedEventing.withEventSourcedIncomingMessages(typeId), dependencyProvider, additionalConfig);
+          mockedEventing.withEventSourcedIncomingMessages(typeId), dependencyProvider, additionalConfig, disabledComponents);
     }
 
     /**
@@ -311,7 +316,7 @@ public class TestKit {
      */
     public Settings withStreamIncomingMessages(String service, String streamId) {
       return new Settings(serviceName, aclEnabled, eventingSupport,
-          mockedEventing.withStreamIncomingMessages(service, streamId), dependencyProvider, additionalConfig);
+          mockedEventing.withStreamIncomingMessages(service, streamId), dependencyProvider, additionalConfig, disabledComponents);
     }
 
     /**
@@ -319,7 +324,7 @@ public class TestKit {
      */
     public Settings withTopicIncomingMessages(String topic) {
       return new Settings(serviceName, aclEnabled, eventingSupport,
-          mockedEventing.withTopicIncomingMessages(topic), dependencyProvider, additionalConfig);
+          mockedEventing.withTopicIncomingMessages(topic), dependencyProvider, additionalConfig, disabledComponents);
     }
 
     /**
@@ -327,11 +332,11 @@ public class TestKit {
      */
     public Settings withTopicOutgoingMessages(String topic) {
       return new Settings(serviceName, aclEnabled, eventingSupport,
-          mockedEventing.withTopicOutgoingMessages(topic), dependencyProvider, additionalConfig);
+          mockedEventing.withTopicOutgoingMessages(topic), dependencyProvider, additionalConfig, disabledComponents);
     }
 
     public Settings withEventingSupport(EventingSupport eventingSupport) {
-      return new Settings(serviceName, aclEnabled, eventingSupport, mockedEventing, dependencyProvider, additionalConfig);
+      return new Settings(serviceName, aclEnabled, eventingSupport, mockedEventing, dependencyProvider, additionalConfig, disabledComponents);
     }
 
     /**
@@ -339,7 +344,7 @@ public class TestKit {
      * in a particular test.
      */
     public Settings withAdditionalConfig(Config additionalConfig) {
-      return new Settings(serviceName, aclEnabled, eventingSupport, mockedEventing, dependencyProvider, additionalConfig);
+      return new Settings(serviceName, aclEnabled, eventingSupport, mockedEventing, dependencyProvider, additionalConfig, disabledComponents);
     }
 
     /**
@@ -347,7 +352,14 @@ public class TestKit {
      * production dependencies in tests rather than calling the real thing.
      */
     public Settings withDependencyProvider(DependencyProvider dependencyProvider) {
-      return new Settings(serviceName, aclEnabled, eventingSupport, mockedEventing, Optional.of(dependencyProvider), additionalConfig);
+      return new Settings(serviceName, aclEnabled, eventingSupport, mockedEventing, Optional.of(dependencyProvider), additionalConfig, disabledComponents);
+    }
+
+    /**
+     * Disable components from running, useful for testing components in isolation. This set of disabled components will be added to {@link ServiceSetup#disabledComponents()} if configured.
+     */
+    public Settings withDisabledComponents(Set<Class<?>> disabledComponents) {
+      return new Settings(serviceName, aclEnabled, eventingSupport, mockedEventing, dependencyProvider, additionalConfig, disabledComponents);
     }
 
     @Override
@@ -429,7 +441,7 @@ public class TestKit {
     try {
       log.debug("Config from user: {}", config);
 
-      SdkRunner runner = new SdkRunner(settings.dependencyProvider) {
+      SdkRunner runner = new SdkRunner(settings.dependencyProvider, settings.disabledComponents) {
         @Override
         public Config applicationConfig() {
           return ConfigFactory.parseString("akka.javasdk.dev-mode.enabled = true")
