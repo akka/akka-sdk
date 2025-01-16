@@ -667,7 +667,7 @@ private final class Sdk(
   private def isDisabled(disabledComponents: Set[Class[_]])(componentDescriptor: spi.ComponentDescriptor): Boolean = {
     val className = componentDescriptor.implementationName
     if (disabledComponents.map(_.getName).contains(className)) {
-      logger.info("Ignoring component [{}] as it is disabled in the configuration", className)
+      logger.info("Ignoring component [{}] as it is disabled", className)
       true
     } else
       false
