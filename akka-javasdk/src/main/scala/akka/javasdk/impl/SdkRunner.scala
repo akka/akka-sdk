@@ -590,7 +590,7 @@ private final class Sdk(
 
     // service setup + integration test config
     val combinedDisabledComponents =
-      serviceSetup.map(_.disabledComponents().asScala).getOrElse(Nil).toSet ++ disabledComponents
+      serviceSetup.map(_.disabledComponents().asScala.toSet).getOrElse(Set.empty) ++ disabledComponents
 
     val descriptors =
       (eventSourcedEntityDescriptors ++
