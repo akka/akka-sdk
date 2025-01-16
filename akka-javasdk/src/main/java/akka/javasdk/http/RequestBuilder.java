@@ -36,6 +36,8 @@ public interface RequestBuilder<R> {
 
   RequestBuilder<R> withTimeout(Duration timeout);
 
+  RequestBuilder<R> addQueryParameter(String key, String value);
+
   /**
    * Transform the request before sending it. This method allows for extra request configuration.
    */
