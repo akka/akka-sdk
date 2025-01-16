@@ -192,4 +192,10 @@ private[akka] final case class RequestBuilderImpl[R](
       timeout,
       request,
       (res: HttpResponse, bytes: ByteString) => new StrictResponse[T](res, parse.apply(bytes.toArray)))
+
+  override def addQueryParameter(key: String, value: String): RequestBuilder[R] = {
+    val query = request.getUri.query().withParam(key, value)
+    val uriWithQuery = request.getUri.query(query)
+    withRequest(request.withUri(uriWithQuery))
+  }
 }
