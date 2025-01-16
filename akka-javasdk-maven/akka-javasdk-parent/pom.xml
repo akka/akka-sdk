@@ -160,8 +160,6 @@
                                                         <exclude>com.typesafe.akka:akka-stream_2.13</exclude>
                                                         <exclude>com.hierynomus:asn-one</exclude>
                                                         <exclude>org.reactivestreams:reactive-streams</exclude>
-                                                        <!-- Runtime -->
-                                                        <exclude>io.kalix:kalix-proxy-protocol</exclude>
                                                         <!-- Scala stdlib -->
                                                         <exclude>org.scala-lang.modules:scala-collection-compat_2.13</exclude>
                                                         <exclude>org.scala-lang:scala-library</exclude>

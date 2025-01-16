@@ -35,9 +35,6 @@ object Dependencies {
   val CommonsIoVersion = "2.11.0"
   val MunitVersion = "0.7.29"
 
-  val kalixProxyProtocol = "io.kalix" % "kalix-proxy-protocol" % Kalix.RuntimeVersion
-  val kalixSdkProtocol = "io.kalix" % "kalix-sdk-protocol" % Kalix.RuntimeVersion
-  val kalixTckProtocol = "io.kalix" % "kalix-tck-protocol" % Kalix.RuntimeVersion
   val kalixTestkitProtocol = "io.kalix" % "kalix-testkit-protocol" % Kalix.RuntimeVersion
   val kalixSdkSpi = "io.akka" %% "akka-sdk-spi" % Kalix.RuntimeVersion
 

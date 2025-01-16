@@ -49,7 +49,9 @@ lazy val akkaJavaSdkTestKit =
         "runtimeImage" -> Kalix.RuntimeImage,
         "runtimeVersion" -> Kalix.RuntimeVersion,
         "scalaVersion" -> scalaVersion.value),
-      buildInfoPackage := "akka.javasdk.testkit")
+      buildInfoPackage := "akka.javasdk.testkit",
+      // eventing testkit client
+      akkaGrpcGeneratedSources := Seq(AkkaGrpc.Client))
     .settings(DocSettings.forModule("Akka SDK Testkit"))
     .settings(Dependencies.javaSdkTestKit)
 
