@@ -22,27 +22,31 @@ Akka's replicated reads offers full data replication across regions and even clo
 
 image:geo-a.svg[Geo data replication, width=600]
 
-In the image above, the entity representing Alice has its primary region in Los Angeles. When a user in the primary region performs a read request image:steps-1.svg[width=20], the request is handled locally, and the response sent straight back image:steps-2.svg[width=20].
+In the image above, the entity representing Alice has its primary region in Los Angeles. When a user A in the primary region performs a read request image:steps-1.svg[width=20], the request is handled locally, and the response sent straight back image:steps-2.svg[width=20].
 
 When the user in the primary region performs a write request image:steps-1.svg[width=20], that request is also handled locally, and a response sent directly back image:steps-2.svg[width=20]. After that write request completes, that write is replicated to other regions image:steps-3.svg[width=20], such as in London (UK).
 
-A user in London, when they perform a read image:steps-4.svg[width=20], that read operation will happen locally, and a response sent immediately back image:steps-5.svg[width=20].
+A user B in London, when they perform a read image:steps-4.svg[width=20], that read operation will happen locally, and a response sent immediately back image:steps-5.svg[width=20].
 
 A user can also perform write operations on entities in non-primary regions.
 
 image:geo-b.svg[Geo data replication, width=600]
 
-In this scenario, a user in London (UK) is performing a write operation on the Alice entity image:steps-1.svg[width=20]. Since London is not the primary region for the Alice entity, Akka will automatically forward that request to the primary region image:steps-2.svg[width=20], in this case, Los Angeles (USA). That request will be handled in the USA, and a response sent directly back to the user image:steps-3.svg[width=20].
+In this scenario, the user B in London (UK) is performing a write operation on the Alice entity image:steps-1.svg[width=20]. Since London is not the primary region for the Alice entity, Akka will automatically forward that request to the primary region image:steps-2.svg[width=20], in this case, Los Angeles (USA). That request will be handled in the USA, and a response sent directly back to the user image:steps-3.svg[width=20].
 
-image:geo-c.svg[Geo data replication, width=600]
+image:geo-data-replication-c.png[Geo data replication, width=600]
 
-When Bob makes a request in the UK on his data image:steps-1.svg[width=20], that request is handled locally image:steps-2.svg[width=20], and replicated to the US image:steps-3.svg[width=20], while Alice's requests in the USA with her data are handled locally in the USA, and replicated to the UK.
+When Bob makes a request in the UK on his data image:steps-1.svg[width=20], that request is handled locally image:steps-2.svg[width=20], and replicated to the US image:steps-3.svg[width=20]. Exactly the same as Alice's requests in the USA with her data are handled locally in the USA, and replicated to the UK.
 
-The data however is still available in all regions. If Bob travels to the USA, he can still access his data.
+The data however is still available in all regions. If Bob travels to the USA, he can access his data in the Los Angeles region.
 
-image:geo-d.svg[Geo data replication, width=600]
+image:geo-data-replication-d.png[Geo data replication, width=600]
 
-When Bob travels to the USA, read requests that Bob makes on his data are handled locally image:steps-1.svg[width=20], while write requests are forwarded to the UK image:steps-2.svg[width=20]. Meanwhile, write requests made by Alice on her data is all handled locally image:steps-4.svg[width=20] image:steps-5.svg[width=20], with writes being replicated to the UK image:steps-6.svg[width=20].
+When Bob travels to the USA, read requests that Bob makes on his data are handled locally image:steps-1.svg[width=20], while write requests are forwarded to the UK image:steps-2.svg[width=20].
+
+image:geo-data-replication-e.png[Geo data replication, width=600]
+
+Meanwhile, all requests made by Alice on her data are handled locally image:steps-4.svg[width=20] and get an immediate reply image:steps-5.svg[width=20]. The write operations are being replicated to the UK image:steps-6.svg[width=20].
 
 === Primary selection
 
