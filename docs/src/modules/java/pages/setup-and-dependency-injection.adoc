@@ -23,6 +23,19 @@ It is important to remember that an Akka service consists of one to many distrib
 individually and independently, for example during a rolling upgrade. Each such instance starting up will invoke
 `onStartup` when starting up, even if other instances run it before.
 
+== Disabling components
+
+Users can use `ServiceSetup` to disable components by overriding `disabledComponents` and returning a set of component classes to disable.
+
+[source,java]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/MyAppSetup.java[MyAppSetup.java]
+----
+include::example$doc-snippets/src/main/java/com/example/MyAppSetup.java[tag=disable-components]
+----
+<1> Override `disabledComponents`
+<2> Provide a set of component classes to disable
+
+
 [#_dependency_injection]
 == Dependency injection
 

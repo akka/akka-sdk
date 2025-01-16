@@ -3,12 +3,17 @@ package com.example;
 import akka.javasdk.DependencyProvider;
 import akka.javasdk.ServiceSetup;
 import akka.javasdk.annotations.Setup;
+import com.example.application.MyComponent;
 import com.typesafe.config.Config;
 
+import java.util.Set;
+
 // tag::pojo-dependency-injection[]
+// tag::disable-components[]
 @Setup
 public class MyAppSetup implements ServiceSetup {
 
+  // end::disable-components[]
   private final Config appConfig;
 
   public MyAppSetup(Config appConfig) {
@@ -31,6 +36,13 @@ public class MyAppSetup implements ServiceSetup {
       }
     };
   }
-
   // end::pojo-dependency-injection[]
+  // tag::disable-components[]
+  @Override
+  public Set<Class<?>> disabledComponents() { // <1>
+    return Set.of(MyComponent.class); // <2>
+  }
+  // tag::pojo-dependency-injection[]
 }
+// end::disable-components[]
+// end::pojo-dependency-injection[]
