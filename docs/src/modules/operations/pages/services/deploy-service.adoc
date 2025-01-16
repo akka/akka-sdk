@@ -173,14 +173,7 @@ For further details, see xref:operations:projects/external-container-registries.
 
 Akka services can also be described and managed with *YAML service descriptors*. See xref:reference:descriptors/service-descriptor.adoc[].
 
-Once you have <<_deploying_a_service, deployed your service>>, you can modify it by editing its service descriptor:
-
-[source, command line]
-----
-akka service edit my-service
-----
-
-Whether you have deployed your service or not, you can always deploy it using a service descriptor.
+You can deploy your service using a service descriptor.
 For this you need at least the image, which you can get by <<_build_container_image, building the container image>> and then <<_pushing_to_acr, pushing it to the container registry>>:
 
 [source, command line]
@@ -222,6 +215,15 @@ After editing the service descriptor (e.g., `my-service.yaml`), redeploy it with
 [source, command line]
 ----
 akka service apply -f my-service.yaml
+----
+
+=== Editing in place the service descriptor
+
+Once you have <<_deploying_a_service, deployed your service>>, you can also modify it by editing its service descriptor:
+
+[source, command line]
+----
+akka service edit my-service
 ----
 
 == Removing a deployed service
