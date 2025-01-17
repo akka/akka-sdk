@@ -27,6 +27,7 @@ import java.util.function.Supplier;
 public class KeyValueEntityTestKit<S, E extends KeyValueEntity<S>> {
 
   private S state;
+  private boolean deleted;
   private final S emptyState;
   private final E entity;
   private final String entityId;
@@ -36,6 +37,7 @@ public class KeyValueEntityTestKit<S, E extends KeyValueEntity<S>> {
     this.entity = entity;
     this.state = entity.emptyState();
     this.emptyState = state;
+    this.deleted = false;
   }
 
   /**
@@ -79,6 +81,11 @@ public class KeyValueEntityTestKit<S, E extends KeyValueEntity<S>> {
     return state;
   }
 
+  /** @return true if the entity is deleted */
+  public boolean isDeleted() {
+    return deleted;
+  }
+
   @SuppressWarnings("unchecked")
   private <Reply> KeyValueEntityResult<Reply> interpretEffects(KeyValueEntity.Effect<Reply> effect) {
     KeyValueEntityResultImpl<Reply> result = new KeyValueEntityResultImpl<>(effect);
@@ -86,6 +93,7 @@ public class KeyValueEntityTestKit<S, E extends KeyValueEntity<S>> {
       this.state = (S) result.getUpdatedState();
     } else if (result.stateWasDeleted()) {
       this.state = emptyState;
+      this.deleted = true;
     }
     return result;
   }
@@ -117,7 +125,7 @@ public class KeyValueEntityTestKit<S, E extends KeyValueEntity<S>> {
     TestKitKeyValueEntityCommandContext commandContext =
         new TestKitKeyValueEntityCommandContext(entityId, metadata);
     entity._internalSetCommandContext(Optional.of(commandContext));
-    entity._internalSetCurrentState(this.state);
+    entity._internalSetCurrentState(this.state, this.deleted);
     return interpretEffects(func.apply(entity));
   }
 }

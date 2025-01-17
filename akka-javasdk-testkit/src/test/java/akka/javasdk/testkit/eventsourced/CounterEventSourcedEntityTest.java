@@ -10,6 +10,7 @@ import akka.javasdk.testkit.EventSourcedTestKit;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
@@ -26,6 +27,7 @@ public class CounterEventSourcedEntityTest {
     assertEquals("Ok", result.getReply());
     assertEquals(10, testKit.getState());
     assertEquals(1, testKit.getAllEvents().size());
+    assertFalse(testKit.isDeleted());
   }
 
   @Test
@@ -50,6 +52,16 @@ public class CounterEventSourcedEntityTest {
     assertEquals("Ok", result.getReply());
     assertEquals(20, testKit.getState());
     assertEquals(2, testKit.getAllEvents().size());
+  }
+
+  @Test
+  public void testDelete() {
+    EventSourcedTestKit<Integer, Increased, CounterEventSourcedEntity> testKit =
+      EventSourcedTestKit.of(ctx -> new CounterEventSourcedEntity());
+    EventSourcedResult<String> result = testKit.call(entity -> entity.delete());
+    assertTrue(result.isReply());
+    assertEquals("Ok", result.getReply());
+    assertTrue(testKit.isDeleted());
   }
 
   @Test

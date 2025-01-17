@@ -245,6 +245,13 @@ public class SdkIntegrationTest extends TestKitSupport {
 
     deleteUser(user);
 
+    var isDeleted = await(componentClient
+      .forKeyValueEntity(user.id())
+      .method(UserEntity::getDelete)
+      .invokeAsync());
+
+    assertThat(isDeleted).isEqualTo(true);
+
     Awaitility.await()
       .ignoreExceptions()
       .atMost(15, TimeUnit.of(SECONDS))

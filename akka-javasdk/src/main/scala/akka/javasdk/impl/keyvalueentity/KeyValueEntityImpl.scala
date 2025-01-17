@@ -49,7 +49,6 @@ private[impl] object KeyValueEntityImpl {
       override val entityId: String,
       val sequenceNumber: Long,
       override val commandName: String,
-      val isDeleted: Boolean,
       override val metadata: Metadata,
       span: Option[Span],
       tracerFactory: () => Tracer)
@@ -109,18 +108,11 @@ private[impl] final class KeyValueEntityImpl[S, KV <: KeyValueEntity[S]](
     val cmdPayload = command.payload.getOrElse(BytesPayload.empty)
     val metadata: Metadata = MetadataImpl.of(command.metadata)
     val cmdContext =
-      new CommandContextImpl(
-        entityId,
-        command.sequenceNumber,
-        command.name,
-        command.isDeleted,
-        metadata,
-        span,
-        tracerFactory)
+      new CommandContextImpl(entityId, command.sequenceNumber, command.name, metadata, span, tracerFactory)
 
     try {
       entity._internalSetCommandContext(Optional.of(cmdContext))
-      entity._internalSetCurrentState(state)
+      entity._internalSetCurrentState(state, command.isDeleted)
       val commandEffect = router
         .handleCommand(command.name, cmdPayload)
         .asInstanceOf[KeyValueEntityEffectImpl[AnyRef]] // FIXME improve?

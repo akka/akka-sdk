@@ -23,6 +23,17 @@ import scala.jdk.CollectionConverters._
  * INTERNAL API
  */
 private[akka] object EventSourcedResultImpl {
+
+  def checkIfDeleted[E](effect: EventSourcedEntity.Effect[_]): Boolean = {
+    effect match {
+      case ei: EventSourcedEntityEffectImpl[_, E @unchecked] =>
+        ei.primaryEffect match {
+          case ee: EmitEvents[E @unchecked] => ee.deleteEntity
+          case _                            => false
+        }
+    }
+  }
+
   def eventsOf[E](effect: EventSourcedEntity.Effect[_]): JList[E] = {
     effect match {
       case ei: EventSourcedEntityEffectImpl[_, E @unchecked] =>

@@ -59,6 +59,10 @@ public class UserEntity extends KeyValueEntity<User> {
     return effects().deleteEntity().thenReply(Ok.instance);
   }
 
+  public Effect<Boolean> getDelete() {
+    return effects().reply(isDeleted());
+  }
+
   public Effect<Integer> restart(Restart cmd) { // force entity restart, useful for testing
     logger.info(
         "Restarting counter with commandId={} commandName={} current={}",

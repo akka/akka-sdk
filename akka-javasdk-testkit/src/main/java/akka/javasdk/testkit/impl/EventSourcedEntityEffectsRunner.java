@@ -17,6 +17,7 @@ public abstract class EventSourcedEntityEffectsRunner<S, E> {
 
   private EventSourcedEntity<S, E> entity;
   private S _state;
+  private boolean deleted = false;
   private List<E> events = new ArrayList<>();
 
   public EventSourcedEntityEffectsRunner(EventSourcedEntity<S, E> entity) {
@@ -33,7 +34,7 @@ public abstract class EventSourcedEntityEffectsRunner<S, E> {
     this.entity = entity;
     this._state = entity.emptyState();
 
-    entity._internalSetCurrentState(this._state);
+    entity._internalSetCurrentState(this._state, false);
     // NB: updates _state
     playEventsForEntity(initialEvents);
   }
@@ -48,7 +49,12 @@ public abstract class EventSourcedEntityEffectsRunner<S, E> {
     return _state;
   }
 
-  /** @return All events emitted by command handlers of this entity up to now */
+  /** @return true if the entity is deleted */
+  public boolean isDeleted() {
+    return deleted;
+  }
+
+  /** @return All events persisted by command handlers of this entity up to now */
   public List<E> getAllEvents() {
     return events;
   }
@@ -66,7 +72,7 @@ public abstract class EventSourcedEntityEffectsRunner<S, E> {
     EventSourcedEntity.Effect<R> effectExecuted;
     try {
       entity._internalSetCommandContext(Optional.of(commandContext));
-      entity._internalSetCurrentState(this._state);
+      entity._internalSetCurrentState(this._state, this.deleted);
       effectExecuted = effect.get();
       this.events.addAll(EventSourcedResultImpl.eventsOf(effectExecuted));
     } finally {
@@ -74,6 +80,7 @@ public abstract class EventSourcedEntityEffectsRunner<S, E> {
     }
 
     playEventsForEntity(EventSourcedResultImpl.eventsOf(effectExecuted));
+    deleted = EventSourcedResultImpl.checkIfDeleted(effectExecuted);
 
     EventSourcedResult<R> result;
     try {
@@ -91,7 +98,7 @@ public abstract class EventSourcedEntityEffectsRunner<S, E> {
       entity._internalSetEventContext(Optional.of(new TestKitEventSourcedEntityEventContext()));
       for (E event : events) {
         this._state = handleEvent(this._state, event);
-        entity._internalSetCurrentState(this._state);
+        entity._internalSetCurrentState(this._state, this.deleted);
       }
     } finally {
       entity._internalSetEventContext(Optional.empty());

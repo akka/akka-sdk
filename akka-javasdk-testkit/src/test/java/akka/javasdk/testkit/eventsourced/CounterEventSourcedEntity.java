@@ -28,6 +28,10 @@ public class CounterEventSourcedEntity extends EventSourcedEntity<Integer, Incre
     }
   }
 
+  public Effect<String> delete() {
+    return effects().persist(new Increased(commandContext().entityId(), 0)).deleteEntity().thenReply(__ -> "Ok");
+  }
+
   @Override
   public Integer applyEvent(Increased increased) {
     if (currentState() == null) return increased.value();

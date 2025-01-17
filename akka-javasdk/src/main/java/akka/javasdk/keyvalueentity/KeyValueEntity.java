@@ -43,6 +43,8 @@ public abstract class KeyValueEntity<S> {
 
   private Optional<S> currentState = Optional.empty();
 
+  private boolean deleted = false;
+
   private boolean handlingCommands = false;
 
   /**
@@ -85,9 +87,10 @@ public abstract class KeyValueEntity<S> {
    * @hidden
    */
   @InternalApi
-  public void _internalSetCurrentState(S state) {
+  public void _internalSetCurrentState(S state, boolean deleted) {
     handlingCommands = true;
     currentState = Optional.ofNullable(state);
+    this.deleted = deleted;
   }
 
   /**
@@ -117,6 +120,13 @@ public abstract class KeyValueEntity<S> {
     if (handlingCommands) return currentState.orElse(null);
     else
       throw new IllegalStateException("Current state is only available when handling a command.");
+  }
+
+  /**
+   * Returns true if the entity has been deleted.
+   */
+  protected boolean isDeleted() {
+    return deleted;
   }
 
   protected final Effect.Builder<S> effects() {
