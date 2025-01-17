@@ -4,7 +4,6 @@
 
 package akkajavasdk;
 
-import akka.javasdk.http.StrictResponse;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
 import akkajavasdk.components.eventsourcedentities.counter.Counter;
@@ -66,7 +65,7 @@ public class EventSourcedEntityTest extends TestKitSupport {
     await(client.method(CounterEntity::delete).invokeAsync());
 
     var isDeleted2 = await(client.method(CounterEntity::getDeleted).invokeAsync());
-    assertThat(isDeleted2).isFalse();
+    assertThat(isDeleted2).isTrue();
   }
 
   @Test
