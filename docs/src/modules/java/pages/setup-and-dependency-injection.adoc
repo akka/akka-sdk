@@ -25,7 +25,7 @@ individually and independently, for example during a rolling upgrade. Each such 
 
 == Disabling components
 
-Users can use `ServiceSetup` to disable components by overriding `disabledComponents` and returning a set of component classes to disable.
+You can use `ServiceSetup` to disable components by overriding `disabledComponents` and returning a set of component classes to disable.
 
 [source,java]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/MyAppSetup.java[MyAppSetup.java]
