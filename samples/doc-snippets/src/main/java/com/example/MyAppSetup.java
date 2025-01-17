@@ -13,12 +13,13 @@ import java.util.Set;
 @Setup
 public class MyAppSetup implements ServiceSetup {
 
-  // end::disable-components[]
   private final Config appConfig;
 
   public MyAppSetup(Config appConfig) {
     this.appConfig = appConfig;
   }
+
+  // end::disable-components[]
 
   @Override
   public DependencyProvider createDependencyProvider() { // <1>
@@ -40,7 +41,11 @@ public class MyAppSetup implements ServiceSetup {
   // tag::disable-components[]
   @Override
   public Set<Class<?>> disabledComponents() { // <1>
-    return Set.of(MyComponent.class); // <2>
+    if (appConfig.getString("my-app.environment").equals("prod")) {
+      return Set.of(MyComponent.class); // <2>
+    } else {
+      return Set.of(); // <2>
+    }
   }
   // tag::pojo-dependency-injection[]
 }

@@ -33,7 +33,7 @@ You can use `ServiceSetup` to disable components by overriding `disabledComponen
 include::example$doc-snippets/src/main/java/com/example/MyAppSetup.java[tag=disable-components]
 ----
 <1> Override `disabledComponents`
-<2> Provide a set of component classes to disable
+<2> Provide a set of component classes to disable depending on the configuration
 
 
 [#_dependency_injection]
