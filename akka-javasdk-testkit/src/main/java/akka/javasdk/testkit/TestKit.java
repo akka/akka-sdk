@@ -63,7 +63,7 @@ import static akka.javasdk.testkit.TestKit.Settings.EventingSupport.TEST_BROKER;
  *
  * <p>Requires Docker for starting a local instance of the runtime.
  *
- * <p>Create a AkkaSdkTestkit and then {@link #start} the
+ * <p>Create a TestKit and then {@link #start} the
  * testkit before testing the service with HTTP clients. Call {@link #stop} after tests are
  * complete.
  */
