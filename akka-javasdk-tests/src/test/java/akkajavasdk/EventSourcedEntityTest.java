@@ -41,10 +41,7 @@ public class EventSourcedEntityTest extends TestKitSupport {
   }
 
   @Test
-  public void verifyCounterEventSourcedWiring() throws InterruptedException {
-
-    Thread.sleep(10000);
-
+  public void verifyCounterEventSourcedWiring() {
     var counterId = "hello";
     var client = componentClient.forEventSourcedEntity(counterId);
 
@@ -56,6 +53,20 @@ public class EventSourcedEntityTest extends TestKitSupport {
 
     int counterGet = getCounter(client);
     Assertions.assertEquals(200, counterGet);
+  }
+
+  @Test
+  public void verifyCounterEventSourcedDeletion() {
+    var counterId = "deleted-hello";
+    var client = componentClient.forEventSourcedEntity(counterId);
+
+    var isDeleted = await(client.method(CounterEntity::getDeleted).invokeAsync());
+    assertThat(isDeleted).isFalse();
+
+    await(client.method(CounterEntity::delete).invokeAsync());
+
+    var isDeleted2 = await(client.method(CounterEntity::getDeleted).invokeAsync());
+    assertThat(isDeleted2).isFalse();
   }
 
   @Test
@@ -230,5 +241,4 @@ public class EventSourcedEntityTest extends TestKitSupport {
   private Integer getCounter(EventSourcedEntityClient client) {
     return await(client.method(CounterEntity::get).invokeAsync());
   }
-
 }

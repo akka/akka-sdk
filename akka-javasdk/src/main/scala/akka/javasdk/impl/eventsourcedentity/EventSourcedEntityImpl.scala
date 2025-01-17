@@ -126,7 +126,7 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
 
     try {
       entity._internalSetCommandContext(Optional.of(cmdContext))
-      entity._internalSetCurrentState(state)
+      entity._internalSetCurrentState(state, command.isDeleted)
       val commandEffect = router
         .handleCommand(command.name, cmdPayload)
         .asInstanceOf[EventSourcedEntityEffectImpl[AnyRef, E]] // FIXME improve?
@@ -223,7 +223,7 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
       sequenceNumber: Long): SpiEventSourcedEntity.State = {
     val eventContext = new EventContextImpl(entityId, sequenceNumber)
     entity._internalSetEventContext(Optional.of(eventContext))
-    val clearState = entity._internalSetCurrentState(state)
+    val clearState = entity._internalSetCurrentState(state, false)
     try {
       router.handleEvent(event)
     } finally {

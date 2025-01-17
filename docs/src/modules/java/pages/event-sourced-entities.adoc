@@ -141,21 +141,7 @@ include::example$shopping-cart-quickstart/src/main/java/shoppingcart/application
 
 IMPORTANT: We are returning the internal state directly back to the requester. In the endpoint, it's usually best to convert this internal domain model into a public model so the internal representation is free to evolve without breaking clients code.
 
-== Snapshots
-
-Snapshots are an important optimization for Event Sourced Entities that persist many events. Rather than reading the entire journal upon loading or restart, Akka can initiate them from a snapshot.
-
-Snapshots are stored and handled automatically by Akka without any specific code required. Snapshots are stored after a configured number of events:
-
-[source,conf,indent=0]
-.{sample-base-url}/shopping-cart-quickstart/src/main/resources/application.conf[application.conf]
-----
-include::example$shopping-cart-quickstart/src/main/resources/application.conf[tag=snapshot-every]
-----
-
-When the Event Sourced Entity is loaded again, the snapshot will be loaded before any other events are received.
-
-== Deleting an Entity
+=== Deleting an Entity
 
 Normally, Event Sourced Entities are not deleted because the history of the events typically provide business value.
 For certain use cases or for regulatory reasons the entity can be deleted.
@@ -170,11 +156,25 @@ include::example$shopping-cart-quickstart/src/main/java/shoppingcart/application
 
 When you give the instruction to delete the entity it will still exist for some time, including its events and snapshots. The actual removal of events and snapshots will be deleted later to give downstream consumers time to process all prior events, including the final event that was persisted together with the `deleteEntity` effect. By default, the existence of the entity is completely cleaned up after a week.
 
-It is not allowed to persist more events after the entity has been "marked" as deleted. You can still handle read requests to the entity until it has been completely removed.
+It is not allowed to persist more events after the entity has been "marked" as deleted. You can still handle read requests to the entity until it has been completely removed. To check whether the entity has been deleted, you can use the `isDeleted` method inherited from the `EventSourcedEntity` class.
 
 It is best to not reuse the same entity id after deletion, but if that happens after the entity has been completely removed it will be instantiated as a completely new entity without any knowledge of previous state.
 
 Note that xref:views.adoc#ve_delete[deleting View state] must be handled explicitly.
+
+== Snapshots
+
+Snapshots are an important optimization for Event Sourced Entities that persist many events. Rather than reading the entire journal upon loading or restart, Akka can initiate them from a snapshot.
+
+Snapshots are stored and handled automatically by Akka without any specific code required. Snapshots are stored after a configured number of events:
+
+[source,conf,indent=0]
+.{sample-base-url}/shopping-cart-quickstart/src/main/resources/application.conf[application.conf]
+----
+include::example$shopping-cart-quickstart/src/main/resources/application.conf[tag=snapshot-every]
+----
+
+When the Event Sourced Entity is loaded again, the snapshot will be loaded before any other events are received.
 
 [#_replication]
 include::partial$mutli-region-replication.adoc[]

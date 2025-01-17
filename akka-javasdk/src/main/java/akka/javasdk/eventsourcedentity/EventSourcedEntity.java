@@ -69,6 +69,7 @@ public abstract class EventSourcedEntity<S, E> {
   private Optional<CommandContext> commandContext = Optional.empty();
   private Optional<EventContext> eventContext = Optional.empty();
   private Optional<S> currentState = Optional.empty();
+  private boolean deleted = false;
   private boolean handlingCommands = false;
 
   /**
@@ -131,10 +132,11 @@ public abstract class EventSourcedEntity<S, E> {
    *         responsible for finally calling _internalClearCurrentState
    */
   @InternalApi
-  public boolean _internalSetCurrentState(S state) {
+  public boolean _internalSetCurrentState(S state, boolean deleted) {
     var wasHandlingCommands = handlingCommands;
     handlingCommands = true;
     currentState = Optional.ofNullable(state);
+    this.deleted = deleted;
     return !wasHandlingCommands;
   }
 
@@ -205,6 +207,13 @@ public abstract class EventSourcedEntity<S, E> {
     if (handlingCommands) return currentState.orElse(null);
     else
       throw new IllegalStateException("Current state is only available when handling a command.");
+  }
+
+  /**
+   * Returns true if the entity has been deleted.
+   */
+  protected boolean isDeleted() {
+    return deleted;
   }
 
   protected final Effect.Builder<S, E> effects() {

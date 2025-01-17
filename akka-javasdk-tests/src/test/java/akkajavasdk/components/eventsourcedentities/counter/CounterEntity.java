@@ -4,6 +4,7 @@
 
 package akkajavasdk.components.eventsourcedentities.counter;
 
+import akka.Done;
 import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
@@ -13,6 +14,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
+import static akka.Done.done;
 import static java.util.function.Function.identity;
 
 @ComponentId("counter-entity")
@@ -96,6 +98,11 @@ public class CounterEntity extends EventSourcedEntity<Counter, CounterEvent> {
     return effects().reply(currentState().value());
   }
 
+  public ReadOnlyEffect<Boolean> getDeleted() {
+    // don't modify, we want to make sure we call currentState().value here
+    return effects().reply(isDeleted());
+  }
+
   public Effect<Integer> times(Integer value) {
     logger.info(
         "Multiplying counter with commandId={} commandName={} seqNr={} current={} by value={}",
@@ -117,6 +124,10 @@ public class CounterEntity extends EventSourcedEntity<Counter, CounterEvent> {
         currentState());
 
     throw new RuntimeException("Forceful restarting entity!");
+  }
+
+  public Effect<Done> delete() {
+    return effects().persist(new CounterEvent.ValueSet(0)).deleteEntity().thenReply(__ -> done());
   }
 
   @Override

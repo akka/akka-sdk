@@ -10,6 +10,7 @@ import akka.javasdk.testkit.KeyValueEntityTestKit;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class CounterKeyValueEntityTest {
@@ -40,6 +41,7 @@ public class CounterKeyValueEntityTest {
         KeyValueEntityTestKit.of(ctx -> new CounterValueEntity());
     KeyValueEntityResult<String> result = testKit.call(entity -> entity.increaseBy(-10));
     assertTrue(result.isError());
+    assertFalse(testKit.isDeleted());
     assertEquals(result.getError(), "Can't increase with a negative value");
   }
 
@@ -52,5 +54,7 @@ public class CounterKeyValueEntityTest {
     assertTrue(result.isReply());
     assertEquals(result.getReply(), "Deleted");
     assertEquals(testKit.getState(), 0);
+    assertTrue(testKit.isDeleted());
+    assertTrue(result.stateWasDeleted());
   }
 }
