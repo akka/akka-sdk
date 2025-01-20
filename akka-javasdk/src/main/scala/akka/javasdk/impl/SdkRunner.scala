@@ -415,9 +415,10 @@ private final class Sdk(
 
   private val grpcEndpointDescriptors = componentClasses
     .filter(Reflect.isGrpcEndpoint)
-    .filterNot(isDisabled)
-    .map(grpcEndpointClass =>
-      GrpcEndpointDescriptorFactory(grpcEndpointClass, grpcEndpointFactory(grpcEndpointClass))(system))
+    .map { grpcEndpointClass =>
+      val anyRefClass = grpcEndpointClass.asInstanceOf[Class[AnyRef]]
+      GrpcEndpointDescriptorFactory(anyRefClass, grpcEndpointFactory(anyRefClass))(system)
+    }
 
   private var eventSourcedEntityDescriptors = Vector.empty[EventSourcedEntityDescriptor]
   private var keyValueEntityDescriptors = Vector.empty[EventSourcedEntityDescriptor]
@@ -597,19 +598,15 @@ private final class Sdk(
       (serviceSetup.map(_.disabledComponents().asScala.toSet).getOrElse(Set.empty) ++ disabledComponents).map(_.getName)
 
     val descriptors =
-<<<<<<< Updated upstream
       (eventSourcedEntityDescriptors ++
         keyValueEntityDescriptors ++
         httpEndpointDescriptors ++
+        grpcEndpointDescriptors ++
         timedActionDescriptors ++
         consumerDescriptors ++
         viewDescriptors ++
         workflowDescriptors)
         .filterNot(isDisabled(combinedDisabledComponents))
-=======
-      eventSourcedEntityDescriptors ++ keyValueEntityDescriptors ++ httpEndpointDescriptors ++ timedActionDescriptors ++
-      consumerDescriptors ++ viewDescriptors ++ workflowDescriptors ++ grpcEndpointDescriptors
->>>>>>> Stashed changes
 
     val preStart = { (_: ActorSystem[_]) =>
       serviceSetup match {

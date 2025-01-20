@@ -6,6 +6,7 @@ package akka.javasdk.impl
 
 import akka.actor.typed.ActorSystem
 import akka.grpc.AkkaGrpcGenerated
+import akka.grpc.ServiceDescription
 import akka.grpc.scaladsl.InstancePerRequestFactory
 import akka.http.scaladsl.model.HttpRequest
 import akka.http.scaladsl.model.HttpResponse
@@ -27,12 +28,11 @@ object GrpcEndpointDescriptorFactory {
         "This is not supported.")
     }
 
+    // FIXME a derivative should be injectable into user code as well
     val instanceFactory = { (_: GrpcEndpointRequestConstructionContext) =>
       factory()
     }
 
-    // FIXME creating router is concrete method, not any interface, would be better to have an interface and not do reflectively
-    // FIXME service lifecycle - one instance vs per request for HTTP endpoint, should we align?
     val handlerFactory =
       system.dynamicAccess
         .createInstanceFor[InstancePerRequestFactory[T]](serviceDefinitionClass.getName + "ScalaHandlerFactory", Nil)
@@ -48,12 +48,16 @@ object GrpcEndpointDescriptorFactory {
     }
 
     // Pick up generated companion object for file descriptor (for reflection) and creating router
-    val companion = system.dynamicAccess.getObjectFor[akka.grpc.ServiceDescription](grpcEndpointClass.getName).get
+    // static akka.grpc.ServiceDescription description in generated service interface
+    val description = serviceDefinitionClass.getField("description").get(null).asInstanceOf[ServiceDescription]
+    if (description eq null)
+      throw new RuntimeException(
+        s"Could not access static description from gRPC service interface [${serviceDefinitionClass.getName}]")
 
     new GrpcEndpointDescriptor[T](
       grpcEndpointClass.getName,
-      companion.name,
-      companion.descriptor,
+      description.name,
+      description.descriptor,
       instanceFactory,
       routeFactory)
   }

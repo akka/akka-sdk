@@ -5,7 +5,7 @@
   <parent>
     <groupId>io.akka</groupId>
     <artifactId>akka-javasdk-parent</artifactId>
-    <version>3.0.2</version>
+    <version>3.1.0-a7630cc-37-5f1915de-dev-SNAPSHOT</version>
   </parent>
 
   <groupId>com.example</groupId>
@@ -14,5 +14,42 @@
   <packaging>jar</packaging>
 
   <name>doc-snippets</name>
+
+  <!-- fixme move to parent, or some other opt-in solution -->
+  <properties>
+    <akka.grpc.version>2.5.0-14-cac946c2-SNAPSHOT</akka.grpc.version>
+  </properties>
+  <pluginRepositories>
+    <pluginRepository>
+      <id>akka-repository</id>
+      <name>Akka library repository</name>
+      <url>https://repo.akka.io/maven</url>
+    </pluginRepository>
+  </pluginRepositories>
+  <dependencies>
+    <dependency>
+      <groupId>com.lightbend.akka.grpc</groupId>
+      <artifactId>akka-grpc-runtime_2.13</artifactId>
+      <version>${akka.grpc.version}</version>
+    </dependency>
+  </dependencies>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>com.lightbend.akka.grpc</groupId>
+        <artifactId>akka-grpc-maven-plugin</artifactId>
+        <version>${akka.grpc.version}</version>
+        <!-- Hook the generate goal into the lifecycle,
+             automatically tied to generate-sources -->
+        <executions>
+          <execution>
+            <goals>
+              <goal>generate</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
 
 </project>

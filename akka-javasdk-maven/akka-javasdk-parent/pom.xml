@@ -38,11 +38,7 @@
 
         <!-- These are dependent on runtime environment and cannot be customized by users -->
         <maven.compiler.release>21</maven.compiler.release>
-<<<<<<< Updated upstream
-        <kalix-runtime.version>1.3.0</kalix-runtime.version>
-=======
         <kalix-runtime.version>1.3.0-1-dd515bee-SNAPSHOT</kalix-runtime.version>
->>>>>>> Stashed changes
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <skip.docker>false</skip.docker>
