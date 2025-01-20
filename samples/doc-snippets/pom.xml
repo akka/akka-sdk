@@ -5,7 +5,7 @@
   <parent>
     <groupId>io.akka</groupId>
     <artifactId>akka-javasdk-parent</artifactId>
-    <version>3.1.0-a7630cc-37-5f1915de-dev-SNAPSHOT</version>
+    <version>3.1.0-a7630cc-37-b1638f53-dev-SNAPSHOT</version>
   </parent>
 
   <groupId>com.example</groupId>
@@ -39,6 +39,12 @@
         <groupId>com.lightbend.akka.grpc</groupId>
         <artifactId>akka-grpc-maven-plugin</artifactId>
         <version>${akka.grpc.version}</version>
+        <configuration>
+          <generatorSettings>
+            <!-- required to generate the instance-per-request handler -->
+            <generateScalaHandlerFactory>true</generateScalaHandlerFactory>
+          </generatorSettings>
+        </configuration>
         <!-- Hook the generate goal into the lifecycle,
              automatically tied to generate-sources -->
         <executions>
