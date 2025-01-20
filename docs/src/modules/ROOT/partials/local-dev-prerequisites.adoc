@@ -1,3 +1,4 @@
 * Java {java-version}, we recommend https://adoptium.net/marketplace/[Eclipse Adoptium, window="new"]
 * https://maven.apache.org/install.html[Apache Maven, window="new"] version {minimum_maven_version} or later
 * https://curl.se/download.html[`curl` command-line tool, window="new"]
+* Docker installed and running
