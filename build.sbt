@@ -72,8 +72,7 @@ lazy val akkaJavaSdkTests =
       // generating test service
       Test / akkaGrpcGeneratedLanguages := Seq(AkkaGrpc.Java),
       Test / akkaGrpcGeneratedSources := Seq(AkkaGrpc.Client, AkkaGrpc.Server),
-      Test / PB.protoSources ++= (Compile / PB.protoSources).value
-    )
+      Test / PB.protoSources ++= (Compile / PB.protoSources).value)
     .settings(inConfig(Test)(JupiterPlugin.scopedSettings))
     .settings(Dependencies.tests)
 
