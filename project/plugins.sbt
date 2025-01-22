@@ -1,6 +1,7 @@
 resolvers += "Akka repository".at("https://repo.akka.io/maven")
 
 addSbtPlugin("com.github.sbt" % "sbt-dynver" % "5.0.1")
+// Note: akka-grpc must be carefully kept in sync with the version used in the runtime
 addSbtPlugin("com.lightbend.akka.grpc" % "sbt-akka-grpc" % "2.5.1")
 addSbtPlugin("com.lightbend.sbt" % "sbt-java-formatter" % "0.7.0")
 addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.4.6")
