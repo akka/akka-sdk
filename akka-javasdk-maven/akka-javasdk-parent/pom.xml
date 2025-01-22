@@ -38,7 +38,7 @@
 
         <!-- These are dependent on runtime environment and cannot be customized by users -->
         <maven.compiler.release>21</maven.compiler.release>
-        <kalix-runtime.version>1.3.0-3-a5694809-dev-SNAPSHOT</kalix-runtime.version>
+        <kalix-runtime.version>1.3.1-6cd7992</kalix-runtime.version>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <skip.docker>false</skip.docker>
