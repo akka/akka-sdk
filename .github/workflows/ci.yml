@@ -73,6 +73,12 @@ jobs:
           sbt --client "scalafmtCheckAll; scalafmtSbtCheck" || \
             { echo "[error] Code not formatted prior to commit. Run 'sbt scalafmtAll scalafmtSbt' then commit the reformatted code."; false; }
 
+      - name: Run additional validations
+        run: |
+          sbt --client "additionalValidation" || \
+            { echo "[error] Additional validation failed."; false; }
+        
+
       - name: sbt shutdown
         run: |
           sbt --client shutdown

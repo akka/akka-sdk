@@ -1,18 +1,22 @@
 import akka.grpc.sbt.AkkaGrpcPlugin
-import sbt.*
-import sbt.Keys.*
+import sbt._
+import sbt.Keys._
 import com.lightbend.sbt.JavaFormatterPlugin.autoImport.javafmtOnCompile
 import de.heikoseeberger.sbtheader.{ AutomateHeaderPlugin, HeaderPlugin }
 import org.scalafmt.sbt.ScalafmtPlugin
 import org.scalafmt.sbt.ScalafmtPlugin.autoImport.scalafmtOnCompile
 import sbtprotoc.ProtocPlugin
 
+import java.nio.charset.StandardCharsets
 import scala.collection.breakOut
 
 object CommonSettings extends AutoPlugin {
 
   override def requires = plugins.JvmPlugin && ScalafmtPlugin
   override def trigger = allRequirements
+
+  val additionalValidation =
+    taskKey[Unit]("Validation of project specifics that should break the build if invalid")
 
   override def globalSettings =
     Seq(
@@ -47,7 +51,8 @@ object CommonSettings extends AutoPlugin {
       Compile / scalacOptions ++= Seq("-encoding", "UTF-8", "-deprecation", "-release", "21"),
       run / javaOptions ++= {
         sys.props.collect { case (key, value) if key.startsWith("akka") => s"-D$key=$value" }(breakOut)
-      }) ++ (
+      },
+      additionalValidation := performAdditionalValidation((ThisBuild / baseDirectory).value)) ++ (
       if (sys.props.contains("disable.apidocs"))
         Seq(Compile / doc / sources := Seq.empty, Compile / packageDoc / publishArtifact := false)
       else Seq.empty
@@ -84,7 +89,21 @@ object CommonSettings extends AutoPlugin {
     } else Seq.empty
   }
 
-  override def projectSettings = Seq(run / fork := true, Test / fork := true, Test / javaOptions ++= Seq("-Xms1G"))
+  override def projectSettings =
+    Seq(run / fork := true, Test / fork := true, Test / javaOptions ++= Seq("-Xms1G"))
+
+  def performAdditionalValidation(projectRoot: File): Unit = {
+    val pluginVersion = akka.grpc.gen.BuildInfo.version
+    val parentPomFile = projectRoot / "akka-javasdk-maven" / "akka-javasdk-parent" / "pom.xml"
+    val parentPomContents = IO.read(parentPomFile, StandardCharsets.UTF_8)
+    val akkaGrpcVersionRegex = """<akka\.grpc\.version>([0-9.]+)""".r
+    val parentPomAkkaGrpcVersion = akkaGrpcVersionRegex.findFirstMatchIn(parentPomContents).get.group(1)
+    if (pluginVersion != parentPomAkkaGrpcVersion)
+      throw new IllegalStateException(
+        s"SDK Akka gRPC plugin version is [$pluginVersion] but parent pom version is not the same [$parentPomAkkaGrpcVersion]. " +
+        s"Align $parentPomFile with the SDK build version to correct.")
+  }
+
 }
 
 object CommonHeaderSettings extends AutoPlugin {

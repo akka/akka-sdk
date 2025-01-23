@@ -1,5 +1,6 @@
-import java.io.File
+import akka.grpc.sbt.AkkaGrpcPlugin
 
+import java.io.File
 import de.heikoseeberger.sbtheader.HeaderPlugin
 import sbt.*
 import sbt.CompositeProject
@@ -23,12 +24,17 @@ object SamplesCompilationProject {
         Project(id = s"samples", base = file(pathToSample))
           .aggregate(innerProjects.map(p => p: ProjectReference): _*)
 
+      import akka.grpc.sbt.AkkaGrpcPlugin.autoImport._
       lazy val innerProjects =
         findSamples
           .map { dir =>
             val proj = Project("sample-" + dir.getName, dir)
               .disablePlugins(HeaderPlugin)
-              .settings(Test / unmanagedSourceDirectories += baseDirectory.value / "src" / "it" / "java")
+              .enablePlugins(AkkaGrpcPlugin)
+              .settings(
+                Test / unmanagedSourceDirectories += baseDirectory.value / "src" / "it" / "java",
+                akkaGrpcGeneratedLanguages := Seq(AkkaGrpc.Java),
+                akkaGrpcCodeGeneratorSettings += "generate_scala_handler_factory")
 
             additionalDeps.get(dir.getName).fold(proj)(deps => proj.settings(libraryDependencies ++= deps))
           }

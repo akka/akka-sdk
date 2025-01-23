@@ -35,6 +35,8 @@
         <maven.build.timestamp.format>yyyyMMddHHmmss</maven.build.timestamp.format>
 
         <akka-javasdk.version>3.0.2</akka-javasdk.version>
+        <!-- must be carefully kept in sync with sdk and runtime version -->
+        <akka.grpc.version>2.5.1</akka.grpc.version>
 
         <!-- These are dependent on runtime environment and cannot be customized by users -->
         <maven.compiler.release>21</maven.compiler.release>
@@ -425,6 +427,38 @@
                 </plugins>
             </build>
         </profile>
+
+        <profile>
+            <id>generate-protobuf-endpoints</id>
+            <activation>
+                <file>
+                    <exists>src/main/protobuf</exists>
+                </file>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.lightbend.akka.grpc</groupId>
+                        <artifactId>akka-grpc-maven-plugin</artifactId>
+                        <version>${akka.grpc.version}</version>
+                        <configuration>
+                            <generatorSettings>
+                                <!-- required to generate the instance-per-request handler -->
+                                <generateScalaHandlerFactory>true</generateScalaHandlerFactory>
+                            </generatorSettings>
+                        </configuration>
+                        <!-- Hook the generate goal into the lifecycle, automatically tied to generate-sources -->
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>generate</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
     </profiles>
 
     <dependencyManagement>
@@ -433,25 +467,11 @@
                 <groupId>io.akka</groupId>
                 <artifactId>akka-javasdk</artifactId>
                 <version>${akka-javasdk.version}</version>
-                <!-- FIXME, just a temporal dependency issues fix -->
-                <exclusions>
-                    <exclusion>
-                        <groupId>com.lightbend.akka.grpc</groupId>
-                        <artifactId>akka-grpc-runtime_2.13</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>io.akka</groupId>
                 <artifactId>akka-javasdk-testkit</artifactId>
                 <version>${akka-javasdk.version}</version>
-                <!-- FIXME, just a temporal dependency issues fix -->
-                <exclusions>
-                    <exclusion>
-                        <groupId>com.lightbend.akka.grpc</groupId>
-                        <artifactId>akka-grpc-runtime_2.13</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>io.kalix</groupId>
