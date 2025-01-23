@@ -76,14 +76,14 @@ public class CustomerEndpoint {
   }
 
   @Get("/by-name/{name}")
-  public CompletionStage<CustomersList> userByName(String name) {
+  public CompletionStage<CustomersList> customerByName(String name) {
     return componentClient.forView()
       .method(CustomerByNameView::getCustomers)
       .invokeAsync(name);
   }
 
   @Get("/by-email/{email}")
-  public CompletionStage<CustomersList> userByEmail(String email) {
+  public CompletionStage<CustomersList> customerByEmail(String email) {
     return componentClient.forView()
       .method(CustomerByEmailView::getCustomers)
       .invokeAsync(email);

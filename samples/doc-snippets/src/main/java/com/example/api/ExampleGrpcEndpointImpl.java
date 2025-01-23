@@ -5,9 +5,9 @@ import akka.javasdk.annotations.GrpcEndpoint;
 import akka.stream.Materializer;
 import akka.stream.javadsl.Sink;
 import akka.stream.javadsl.Source;
-import com.example.grpc.ExampleGrpcEndpoint;
-import com.example.grpc.HelloReply;
-import com.example.grpc.HelloRequest;
+import com.example.proto.ExampleGrpcEndpoint;
+import com.example.proto.HelloReply;
+import com.example.proto.HelloRequest;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;

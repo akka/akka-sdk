@@ -1,0 +1,81 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "customer.api.proto";
+
+package com.example;
+
+message Address {
+  string street = 1;
+  string city = 2;
+}
+
+message Customer {
+  string email = 1;
+  string name = 2;
+  Address address = 3;
+}
+
+message CreateCustomerRequest {
+  string customer_id = 1;
+  Customer customer = 2;
+}
+message CreateCustomerResponse {}
+
+message GetCustomerRequest {
+  string customer_id = 1;
+}
+
+message ChangeNameRequest {
+  string customer_id = 1;
+  string new_name = 2;
+}
+message ChangeNameResponse {}
+
+message ChangeAddressRequest {
+  string customer_id = 1;
+  Address new_address = 2;
+}
+message ChangeAddressResponse {}
+
+message CustomerByNameRequest {
+  string name = 1;
+}
+
+message CustomerByEmailRequest {
+  string email = 1;
+}
+
+message CustomerList {
+  repeated Customer customers = 1;
+}
+
+message StreamCustomersRequest {
+}
+
+
+service CustomerGrpcEndpoint {
+
+  rpc CreateCustomer (CreateCustomerRequest) returns (CreateCustomerResponse) {}
+
+  rpc GetCustomer (GetCustomerRequest) returns (Customer) {}
+
+  rpc ChangeName (ChangeNameRequest) returns (ChangeNameResponse) {}
+
+  rpc ChangeAddress (ChangeAddressRequest) returns (ChangeAddressResponse) {}
+
+  rpc CustomerByName (CustomerByNameRequest) returns (CustomerList) {}
+
+  rpc CustomerByEmail (CustomerByEmailRequest) returns (CustomerList) {}
+
+}
+
+// The request message containing the user's name.
+message HelloRequest {
+  string name = 1;
+}
+
+// The response message containing the greetings
+message HelloReply {
+  string message = 1;
+}
