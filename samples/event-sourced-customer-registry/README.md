@@ -36,7 +36,7 @@ To start your service locally, run:
 mvn compile exec:java
 ```
 
-## Steps
+## Steps to interact with the HTTP endpoint
 
 ### 1. Create a new customer
 
@@ -91,6 +91,81 @@ curl -i localhost:9000/customer/one/address \
   -XPATCH \
   --data '{"street":"Newstreet 25","city":"Newcity"}'
 ```
+
+## Steps to interact with the gRPC endpoint
+
+Requires the command line tool [grpcurl](https://github.com/fullstorydev/grpcurl)
+
+### 1. Inspect what services are available using gRPC reflection
+
+```shell
+grpcurl --plaintext localhost:9000 list
+```
+
+Or a more detailed listing of each service and its methods:
+
+```shell
+grpcurl --plaintext localhost:9000 describe
+```
+
+### 2. Create a new customer
+
+```shell
+grpcurl --plaintext \
+  -d '{"customer_id": "one", "customer": {"name": "Grpc Testsson", "email":"grpc@example.com", "address": {"street":"Example Street", "city": "Sample Town"}}}' \
+  localhost:9000 customer.api.CustomerGrpcEndpoint/CreateCustomer
+```
+
+### 3. Retrieve customer information
+
+To retrieve details of a specific customer:
+
+```shell
+grpcurl --plaintext \
+  -d '{"customer_id": "one"}' \
+  localhost:9000 customer.api.CustomerGrpcEndpoint/GetCustomer
+```
+
+### 4. Query customers by email
+
+To find a customer using their email address:
+
+```shell
+grpcurl --plaintext \
+  -d '{"email": "grpc@example.com"}' \
+  localhost:9000 customer.api.CustomerGrpcEndpoint/CustomerByEmail
+```
+
+### 5. Query customers by name
+
+To search for a customer by their name:
+
+```shell
+grpcurl --plaintext \
+  -d '{"name": "Grpc Testsson"}' \
+  localhost:9000 customer.api.CustomerGrpcEndpoint/CustomerByName
+```
+
+### 6. Update customer name
+
+To change a customer's name:
+
+```shell
+grpcurl --plaintext \
+  -d '{"customer_id": "one", "new_name": "Grpc Testsson 2"}' \
+  localhost:9000 customer.api.CustomerGrpcEndpoint/ChangeName
+```
+
+### 7. Update customer address
+
+To modify a customer's address:
+
+```shell
+grpcurl --plaintext \
+  -d '{"customer_id": "one", "new_address": {"street":"Upper Example Lane", "city": "Sample Town"}}' \
+  localhost:9000 customer.api.CustomerGrpcEndpoint/ChangeAddress
+```
+
 
 ## Troubleshooting
 

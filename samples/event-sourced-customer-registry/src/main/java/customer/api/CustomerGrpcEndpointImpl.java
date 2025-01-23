@@ -72,7 +72,7 @@ public class CustomerGrpcEndpointImpl implements CustomerGrpcEndpoint {
   public CompletionStage<CustomerList> customerByName(CustomerByNameRequest in) {
     return componentClient.forView()
         .method(CustomerByNameView::getCustomers)
-        .invokeAsync(name)
+        .invokeAsync(in.getName())
         .thenApply(viewCustomerList -> {
           var apiCustomers = viewCustomerList.customers().stream().map(this::domainToApi).toList();
 
@@ -84,7 +84,7 @@ public class CustomerGrpcEndpointImpl implements CustomerGrpcEndpoint {
   public CompletionStage<CustomerList> customerByEmail(CustomerByEmailRequest in) {
     return componentClient.forView()
         .method(CustomerByEmailView::getCustomers)
-        .invokeAsync(name)
+        .invokeAsync(in.getEmail())
         .thenApply(viewCustomerList -> {
           var apiCustomers = viewCustomerList.customers().stream().map(this::domainToApi).toList();
 

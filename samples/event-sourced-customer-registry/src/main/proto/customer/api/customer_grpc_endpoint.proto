@@ -3,7 +3,7 @@ syntax = "proto3";
 option java_multiple_files = true;
 option java_package = "customer.api.proto";
 
-package com.example;
+package customer.api;
 
 message Address {
   string street = 1;
