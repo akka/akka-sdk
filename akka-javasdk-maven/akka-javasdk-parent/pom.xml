@@ -432,7 +432,7 @@
             <id>generate-protobuf-endpoints</id>
             <activation>
                 <file>
-                    <exists>src/main/protobuf</exists>
+                    <exists>src/main/proto</exists>
                 </file>
             </activation>
             <build>
