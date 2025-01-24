@@ -16,6 +16,7 @@ import akka.javasdk.grpc.GrpcClientProvider
 import akka.javasdk.impl.Settings
 import akka.javasdk.impl.grpc.GrpcClientProviderImpl.AuthHeaders
 import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
 import org.slf4j.LoggerFactory
 
 import java.util.concurrent.ConcurrentHashMap
@@ -66,7 +67,7 @@ private[akka] object GrpcClientProviderImpl {
 private[akka] final class GrpcClientProviderImpl(
     system: ActorSystem[_],
     settings: Settings,
-    applicationConfig: Config,
+    userServiceConfig: Config,
     remoteIdentificationHeader: Option[AuthHeaders])
     extends GrpcClientProvider {
   import GrpcClientProviderImpl._
@@ -92,7 +93,8 @@ private[akka] final class GrpcClientProviderImpl(
   // getGrpcClient(serviceClass, service, port, Some("impersonate-kalix-service" -> impersonate))
 
   private def createNewClientFor(clientKey: ClientKey): AkkaGrpcClient = {
-    val clientSettings =
+    val clientSettings = {
+      // FIXME the old impl would look in config first and always choose that if present
       if (isAkkaService(clientKey.serviceName)) {
         val akkaServiceClientSettings = if (settings.devModeSettings.isDefined) {
           // local service discovery when running locally
@@ -139,8 +141,14 @@ private[akka] final class GrpcClientProviderImpl(
 
         // FIXME we should probably not allow any grpc client setting but a subset?
         // external service, details defined in user config
-        GrpcClientSettings.fromConfig(clientKey.serviceName, applicationConfig)(system)
+        GrpcClientSettings.fromConfig(
+          clientKey.serviceName,
+          userServiceConfig
+            .getConfig("akka.javasdk.grpc.client")
+            // this config overload requires there to be an entry for the name, but then falls back to defaults
+            .withFallback(ConfigFactory.parseString(s""""${clientKey.serviceName}" = {}""")))(system)
       }
+    }
 
     // Java API - static create
     val create =

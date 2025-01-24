@@ -341,12 +341,6 @@ private final class Sdk(
     remoteIdentification.map(ri => RawHeader(ri.headerName, ri.headerValue)),
     sdkSettings)
 
-  private lazy val grpcClientProvider = new GrpcClientProviderImpl(
-    system,
-    sdkSettings,
-    applicationConfig,
-    remoteIdentification.map(ri => GrpcClientProviderImpl.AuthHeaders(ri.headerName, ri.headerValue)))
-
   private lazy val userServiceConfig = {
     // hiding these paths from the config provided to user
     val sensitivePaths = List("akka", "kalix.meta", "kalix.proxy", "kalix.runtime", "system")
@@ -355,6 +349,12 @@ private final class Sdk(
       .foldLeft(applicationConfig) { (conf, toHide) => conf.withoutPath(toHide) }
       .withValue("akka.javasdk", sdkConfig)
   }
+
+  private lazy val grpcClientProvider = new GrpcClientProviderImpl(
+    system,
+    sdkSettings,
+    userServiceConfig,
+    remoteIdentification.map(ri => GrpcClientProviderImpl.AuthHeaders(ri.headerName, ri.headerValue)))
 
   // validate service classes before instantiating
   private val validation = componentClasses.foldLeft(Valid: Validation) { case (validations, cls) =>
