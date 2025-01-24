@@ -71,7 +71,8 @@ private[akka] final class HttpClientProviderImpl(
             case NonFatal(ex) =>
               throw new RuntimeException(
                 s"Failed to look up service [$name] in dev-mode, make sure that it is also running " +
-                "with a separate port and service name correctly defined in its application.conf under 'akka.javasdk.dev-mode.service-name'",
+                "with a separate port and service name correctly defined in its application.conf under 'akka.javasdk.dev-mode.service-name' " +
+                "if it differs from the maven project name.",
                 ex)
           }
         } else {

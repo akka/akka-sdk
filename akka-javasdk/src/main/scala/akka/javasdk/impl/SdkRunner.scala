@@ -39,6 +39,7 @@ import akka.javasdk.client.ComponentClient
 import akka.javasdk.consumer.Consumer
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.javasdk.eventsourcedentity.EventSourcedEntityContext
+import akka.javasdk.grpc.GrpcClientProvider
 import akka.javasdk.http.AbstractHttpEndpoint
 import akka.javasdk.http.HttpClientProvider
 import akka.javasdk.http.RequestContext
@@ -51,6 +52,7 @@ import akka.javasdk.impl.Validations.Validation
 import akka.javasdk.impl.client.ComponentClientImpl
 import akka.javasdk.impl.consumer.ConsumerImpl
 import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityImpl
+import akka.javasdk.impl.grpc.GrpcClientProviderImpl
 import akka.javasdk.impl.http.HttpClientProviderImpl
 import akka.javasdk.impl.http.JwtClaimsImpl
 import akka.javasdk.impl.keyvalueentity.KeyValueEntityImpl
@@ -290,6 +292,18 @@ private[javasdk] object Sdk {
       dependencyProvider: Option[DependencyProvider],
       httpClientProvider: HttpClientProvider,
       serializer: JsonSerializer)
+
+  private val platformManagedDependency = Set[Class[_]](
+    classOf[ComponentClient],
+    classOf[TimerScheduler],
+    classOf[HttpClientProvider],
+    classOf[GrpcClientProvider],
+    classOf[Tracer],
+    classOf[Span],
+    classOf[Config],
+    classOf[WorkflowContext],
+    classOf[EventSourcedEntityContext],
+    classOf[KeyValueEntityContext])
 }
 
 /**
@@ -308,6 +322,8 @@ private final class Sdk(
     disabledComponents: Set[Class[_]],
     startedPromise: Promise[StartupContext],
     serviceNameOverride: Option[String]) {
+  import Sdk._
+
   private val logger = LoggerFactory.getLogger(getClass)
   private val serializer = new JsonSerializer
   private val ComponentLocator.LocatedClasses(componentClasses, maybeServiceClass) =
@@ -319,11 +335,17 @@ private final class Sdk(
 
   private val sdkTracerFactory = () => tracerFactory(TraceInstrumentation.InstrumentationScopeName)
 
-  private val httpClientProvider = new HttpClientProviderImpl(
+  private lazy val httpClientProvider = new HttpClientProviderImpl(
     system,
     None,
     remoteIdentification.map(ri => RawHeader(ri.headerName, ri.headerValue)),
     sdkSettings)
+
+  private lazy val grpcClientProvider = new GrpcClientProviderImpl(
+    system,
+    sdkSettings,
+    applicationConfig,
+    remoteIdentification.map(ri => GrpcClientProviderImpl.AuthHeaders(ri.headerName, ri.headerValue)))
 
   private lazy val userServiceConfig = {
     // hiding these paths from the config provided to user
@@ -578,10 +600,11 @@ private final class Sdk(
   // Note: config is also always available through the combination with user DI way down below
   private def sideEffectingComponentInjects(span: Option[Span]): PartialFunction[Class[_], Any] = {
     // remember to update component type API doc and docs if changing the set of injectables
-    case p if p == classOf[ComponentClient]    => componentClient(span)
-    case h if h == classOf[HttpClientProvider] => httpClientProvider(span)
-    case t if t == classOf[TimerScheduler]     => timerScheduler(span)
-    case m if m == classOf[Materializer]       => sdkMaterializer
+    case p if p == classOf[ComponentClient]        => componentClient(span)
+    case h if h == classOf[HttpClientProvider]     => httpClientProvider(span)
+    case g if g == classOf[GrpcClientProviderImpl] => grpcClientProvider // FIXME trace propagation
+    case t if t == classOf[TimerScheduler]         => timerScheduler(span)
+    case m if m == classOf[Materializer]           => sdkMaterializer
   }
 
   val spiComponents: SpiComponents = {
@@ -773,18 +796,6 @@ private final class Sdk(
       case exc: InvocationTargetException if exc.getCause != null =>
         throw exc.getCause
     }
-  }
-
-  private def platformManagedDependency(anyOther: Class[_]) = {
-    anyOther == classOf[ComponentClient] ||
-    anyOther == classOf[TimerScheduler] ||
-    anyOther == classOf[HttpClientProvider] ||
-    anyOther == classOf[Tracer] ||
-    anyOther == classOf[Span] ||
-    anyOther == classOf[Config] ||
-    anyOther == classOf[WorkflowContext] ||
-    anyOther == classOf[EventSourcedEntityContext] ||
-    anyOther == classOf[KeyValueEntityContext]
   }
 
   private def componentClient(openTelemetrySpan: Option[Span]): ComponentClient = {

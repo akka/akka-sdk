@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+import "com/example/example_grpc_endpoint.proto";
+
+option java_multiple_files = true;
+option java_package = "com.example.grpc";
+option java_outer_classname = "DelegationExampleGrpc";
+
+package com.example;
+
+// Note: re-using the ExampleGrpcEndpoint protocol
+service DelegatingGrpcEndpoint {
+  rpc CallAkkaService (HelloRequest) returns (HelloReply) {}
+}
+
+service CallExternalGrpcEndpoint {
+  rpc CallExternalService(HelloRequest) returns (HelloReply) {}
+}
+

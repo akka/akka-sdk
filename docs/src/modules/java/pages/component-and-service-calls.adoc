@@ -31,7 +31,11 @@ The component client is available for injection only in Service Setup, Endpoints
 
 == Akka services
 
-Calling other Akka services in the same project is done by invoking them using an HTTP client. The service is identified by the name it has been deployed. Akka takes care of routing requests to the service and keeping the data safe by encrypting the connection and handling authentication for you.
+Calling other Akka services in the same project is done by invoking them using an HTTP or a GRPC client depending on what type
+of endpoints the service provides.
+
+=== Over HTTP
+The service is identified by the name it has been deployed. Akka takes care of routing requests to the service and keeping the data safe by encrypting the connection and handling authentication for you.
 
 In this sample we will make an action that does a call to the xref:key-value-entities.adoc[Key Value Entity Counter] service, deployed with the service name `counter`.
 
@@ -50,9 +54,9 @@ include::java:example$doc-snippets/src/main/java/com/example/callanotherservice/
 <4> Invoking the call will return a `CompletionStage<StrictResponse<T>>` with details about the result as well as the deserialized response body.
 <5> Handle the response, which may be successful, or an error
 
-The HTTP client provider client is only available for injection in the following types of components: HTTP Endpoints, Workflows, Consumers and Timed Actions.
+The HTTP client provider is only available for injection in the following types of components: HTTP Endpoints, gRPC endpoints, Workflows, Consumers and Timed Actions.
 
-== External services
+=== External HTTP services
 
 Calling HTTP services deployed on *different* Akka projects or any other external HTTP server is also done with the `HttpClientProvider`. Instead of a service name, the protocol and full server name is used when calling `httpClientFor`. For example `https://example.com` or `http://example.com`.
 
@@ -67,3 +71,49 @@ include::java:example$doc-snippets/src/main/java/com/example/callanotherservice/
 <4> Specify a class to parse the response body into
 <5> Once the call completes, handle the response.
 <6> Return an adapted result object which will be turned into a JSON response.
+
+=== Over gRPC
+The service is identified by the name it has been deployed. Akka takes care of routing requests to the service and keeping the data safe by encrypting the connection and handling authentication for you.
+
+ifdef::todo[TODO: a more realistic sample here, possibly aligned with the HTTP sample above]
+ifdef::todo[TODO: cover streaming calls with an example?]
+
+In this sample we will make an action that does a call to the xref:grpc-endpoints.adoc[gRPC endpoints example] service, deployed with the service name `doc-snippets`.
+
+The SDK provides `akka.javasdk.grpc.GrpcClientProvider` which provides gRPC client instances for calling other services.
+
+To consume a gRPC service, the service protobuf descriptor must be added in the `src/proto` directory of the project, this
+triggers generation of a client interface and Java classes for all the message types used as requests and responses for
+methods in the service.
+
+In our delegating service implementation:
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/callanotherservice/DelegatingGrpcEndpoint.java[DelegatingGrpcEndpoint.java]
+----
+include::java:example$doc-snippets/src/main/java/com/example/callanotherservice/DelegatingGrpcEndpoint.java[tag=delegating-endpoint]
+----
+<1> Accept a `GrpcClientProvider` parameter for the constructor
+<2> Use the generated gRPC client interface for the service `ExampleGrpcEndpointClient.class` and the service name `doc-snippets` to look up a client.
+<3> Use the client to call the other service and return a `CompletionStage<HelloReply>`
+
+Since the called service and the `DelegatingGrpcEndpoint` share request and response protocol, no further transformation
+of the request or response is needed here.
+
+The gRPC client provider is only available for injection in the following types of components: HTTP Endpoints, gRPC endpoints, Workflows, Consumers and Timed Actions.
+
+=== External gRPC services
+
+Calling gRPC services deployed on *different* Akka projects or any other external gRPC server is also done with the `GrpcClientProvider`. Instead of a service name, the protocol and full server name is used when calling `grpcClient`. For example `https://example.com` or `http://example.com`.
+
+[source,java,indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/callanotherservice/CallExternalGrpcEndpointImpl.java[CallExternalGrpcEndpointImpl.java]
+----
+include::java:example$doc-snippets/src/main/java/com/example/callanotherservice/CallExternalGrpcEndpointImpl.java[tag=call-external-endpoint]
+----
+<1> Accept a `GrpcClientProvider` parameter for the constructor
+<2> Use the generated gRPC client interface for the service `ExampleGrpcEndpointClient.class` and the service name `doc-snippets` to look up a client. `ExampleGrpcEndpointClient.class`.
+<3> Use the client to call the other service and return a `CompletionStage<HelloReply>`
+
+Since the called service and the `DelegatingGrpcEndpoint` share request and response protocol, no further transformation
+of the request or response is needed here.
