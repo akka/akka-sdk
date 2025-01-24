@@ -600,11 +600,11 @@ private final class Sdk(
   // Note: config is also always available through the combination with user DI way down below
   private def sideEffectingComponentInjects(span: Option[Span]): PartialFunction[Class[_], Any] = {
     // remember to update component type API doc and docs if changing the set of injectables
-    case p if p == classOf[ComponentClient]        => componentClient(span)
-    case h if h == classOf[HttpClientProvider]     => httpClientProvider(span)
-    case g if g == classOf[GrpcClientProviderImpl] => grpcClientProvider // FIXME trace propagation
-    case t if t == classOf[TimerScheduler]         => timerScheduler(span)
-    case m if m == classOf[Materializer]           => sdkMaterializer
+    case p if p == classOf[ComponentClient]    => componentClient(span)
+    case h if h == classOf[HttpClientProvider] => httpClientProvider(span)
+    case g if g == classOf[GrpcClientProvider] => grpcClientProvider // FIXME trace propagation
+    case t if t == classOf[TimerScheduler]     => timerScheduler(span)
+    case m if m == classOf[Materializer]       => sdkMaterializer
   }
 
   val spiComponents: SpiComponents = {

@@ -3,10 +3,10 @@ package com.example.callanotherservice;
 import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.GrpcEndpoint;
 import akka.javasdk.grpc.GrpcClientProvider;
-import com.example.grpc.CallExternalGrpcEndpoint;
-import com.example.grpc.ExampleGrpcEndpointClient;
-import com.example.grpc.HelloReply;
-import com.example.grpc.HelloRequest;
+import com.example.proto.CallExternalGrpcEndpoint;
+import com.example.proto.ExampleGrpcEndpointClient;
+import com.example.proto.HelloReply;
+import com.example.proto.HelloRequest;
 
 import java.util.concurrent.CompletionStage;
 
