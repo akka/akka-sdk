@@ -268,9 +268,35 @@ class JsonSerializer {
     typeName.split("#").head
   }
 
-  private[akka] def encodeDynamicToAkkaByteString(key: String, value: String): ByteString = {
+  private[akka] def encodeDynamicToAkkaByteString(key: String, value: Any): ByteString = {
     try {
-      val dynamicJson = objectMapper.createObjectNode.put(key, value)
+      val dynamicJson = {
+        // match all possible variants of createObjectNode.put method,
+        // except the one accepting bytes[]
+        value match {
+          case v: String => objectMapper.createObjectNode.put(key, v)
+
+          case v: Boolean           => objectMapper.createObjectNode.put(key, v)
+          case v: java.lang.Boolean => objectMapper.createObjectNode.put(key, v)
+
+          case v: Short           => objectMapper.createObjectNode.put(key, v)
+          case v: java.lang.Short => objectMapper.createObjectNode.put(key, v)
+
+          case v: Int                  => objectMapper.createObjectNode.put(key, v)
+          case v: java.lang.Integer    => objectMapper.createObjectNode.put(key, v)
+          case v: java.math.BigInteger => objectMapper.createObjectNode.put(key, v)
+
+          case v: Long           => objectMapper.createObjectNode.put(key, v)
+          case v: java.lang.Long => objectMapper.createObjectNode.put(key, v)
+
+          case v: Float           => objectMapper.createObjectNode.put(key, v)
+          case v: java.lang.Float => objectMapper.createObjectNode.put(key, v)
+
+          case v: Double               => objectMapper.createObjectNode.put(key, v)
+          case v: java.lang.Double     => objectMapper.createObjectNode.put(key, v)
+          case v: java.math.BigDecimal => objectMapper.createObjectNode.put(key, v)
+        }
+      }
       ByteString.fromArrayUnsafe(objectMapper.writeValueAsBytes(dynamicJson))
     } catch {
       case ex: JsonProcessingException =>

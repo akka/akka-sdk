@@ -115,7 +115,7 @@ private[javasdk] final case class ViewClientImpl(
     case Some(arg) =>
       // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
       if (arg.getClass.isPrimitive || primitiveObjects.contains(arg.getClass)) {
-        val bytes = serializer.encodeDynamicToAkkaByteString(method.getParameters.head.getName, arg.toString)
+        val bytes = serializer.encodeDynamicToAkkaByteString(method.getParameters.head.getName, arg)
         new BytesPayload(bytes, JsonSerializer.JsonContentTypePrefix + "object")
       } else if (classOf[java.util.Collection[_]].isAssignableFrom(arg.getClass)) {
         val bytes = serializer.encodeDynamicCollectionToAkkaByteString(

@@ -361,5 +361,64 @@ class JsonSerializationSpec extends AnyWordSpec with Matchers {
       failed.getMessage shouldBe "Don't know how to serialize object of type null."
     }
 
+    "encode a dynamic payload for string" in {
+      val payload = serializer.encodeDynamicToAkkaByteString("value", "abc")
+      payload.utf8String shouldBe """{"value":"abc"}"""
+    }
+
+    "encode a dynamic payload for boolean" in {
+      val payloadPrimitive = serializer.encodeDynamicToAkkaByteString("value", true)
+      payloadPrimitive.utf8String shouldBe """{"value":true}"""
+
+      val payloadObj = serializer.encodeDynamicToAkkaByteString("value", java.lang.Boolean.valueOf(true))
+      payloadObj.utf8String shouldBe """{"value":true}"""
+    }
+
+    "encode a dynamic payload for short" in {
+      val payloadPrimitive = serializer.encodeDynamicToAkkaByteString("value", 10.toShort)
+      payloadPrimitive.utf8String shouldBe """{"value":10}"""
+
+      val payloadObj = serializer.encodeDynamicToAkkaByteString("value", java.lang.Short.valueOf(10.toShort))
+      payloadObj.utf8String shouldBe """{"value":10}"""
+    }
+
+    "encode a dynamic payload for int" in {
+      val payloadPrimitive = serializer.encodeDynamicToAkkaByteString("value", 10)
+      payloadPrimitive.utf8String shouldBe """{"value":10}"""
+
+      val payloadObject = serializer.encodeDynamicToAkkaByteString("value", java.lang.Integer.valueOf(10))
+      payloadObject.utf8String shouldBe """{"value":10}"""
+
+      val payloadBigOne = serializer.encodeDynamicToAkkaByteString("value", java.math.BigInteger.valueOf(10))
+      payloadBigOne.utf8String shouldBe """{"value":10}"""
+    }
+
+    "encode a dynamic payload for long" in {
+      val payloadPrimitive = serializer.encodeDynamicToAkkaByteString("value", 10L)
+      payloadPrimitive.utf8String shouldBe """{"value":10}"""
+
+      val payloadObject = serializer.encodeDynamicToAkkaByteString("value", java.lang.Long.valueOf(10L))
+      payloadObject.utf8String shouldBe """{"value":10}"""
+    }
+
+    "encode a dynamic payload for float" in {
+      val payloadPrimitive = serializer.encodeDynamicToAkkaByteString("value", 10f)
+      payloadPrimitive.utf8String shouldBe """{"value":10.0}"""
+
+      val payloadObject = serializer.encodeDynamicToAkkaByteString("value", java.lang.Float.valueOf(10f))
+      payloadObject.utf8String shouldBe """{"value":10.0}"""
+    }
+
+    "encode a dynamic payload for double" in {
+      val payloadPrimitive = serializer.encodeDynamicToAkkaByteString("value", 10d)
+      payloadPrimitive.utf8String shouldBe """{"value":10.0}"""
+
+      val payloadObject = serializer.encodeDynamicToAkkaByteString("value", java.lang.Double.valueOf(10d))
+      payloadObject.utf8String shouldBe """{"value":10.0}"""
+
+      val payloadBigOne = serializer.encodeDynamicToAkkaByteString("value", java.math.BigDecimal.valueOf(10d))
+      payloadBigOne.utf8String shouldBe """{"value":10.0}"""
+    }
+
   }
 }
