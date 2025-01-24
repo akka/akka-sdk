@@ -7,12 +7,12 @@
     <parent>
         <groupId>io.akka</groupId>
         <artifactId>akka-javasdk-maven</artifactId>
-        <version>3.0.2-109-f8d7219a-dev-SNAPSHOT</version>
+        <version>3.0.2</version>
     </parent>
 
     <groupId>io.akka</groupId>
     <artifactId>akka-javasdk-parent</artifactId>
-    <version>3.0.2-109-f8d7219a-dev-SNAPSHOT</version>
+    <version>3.0.2</version>
     <packaging>pom</packaging>
 
 
