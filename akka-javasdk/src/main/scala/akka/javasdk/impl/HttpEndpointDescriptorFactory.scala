@@ -6,7 +6,6 @@ package akka.javasdk.impl
 
 import akka.http.scaladsl.model.HttpMethods
 import akka.javasdk.impl.reflection.Reflect
-import AclDescriptorFactory.validateMatcher
 import akka.annotation.InternalApi
 import akka.http.scaladsl.model.Uri.Path
 import akka.javasdk.annotations.Acl
@@ -18,21 +17,17 @@ import akka.javasdk.annotations.http.Post
 import akka.javasdk.annotations.http.Put
 import akka.javasdk.annotations.JWT
 import akka.javasdk.annotations.JWT.JwtMethodMode
+import akka.javasdk.impl.AclDescriptorFactory.deriveAclOptions
 import akka.javasdk.impl.Validations.Invalid
 import akka.javasdk.impl.Validations.Validation
-import akka.runtime.sdk.spi.ACL
 import akka.runtime.sdk.spi.{ JWT => RuntimeJWT }
-import akka.runtime.sdk.spi.All
 import akka.runtime.sdk.spi.ClaimPattern
 import akka.runtime.sdk.spi.ClaimValues
 import akka.runtime.sdk.spi.ComponentOptions
 import akka.runtime.sdk.spi.HttpEndpointConstructionContext
 import akka.runtime.sdk.spi.HttpEndpointDescriptor
 import akka.runtime.sdk.spi.HttpEndpointMethodDescriptor
-import akka.runtime.sdk.spi.Internet
 import akka.runtime.sdk.spi.MethodOptions
-import akka.runtime.sdk.spi.PrincipalMatcher
-import akka.runtime.sdk.spi.ServiceNamePattern
 import akka.runtime.sdk.spi.StaticClaim
 import akka.runtime.sdk.spi.StaticClaimContent
 import org.slf4j.LoggerFactory
@@ -152,20 +147,6 @@ private[javasdk] object HttpEndpointDescriptorFactory {
     }
   }
 
-  // receives the method, checks if it is annotated with @Acl and if so,
-  // converts that into ACL spi object
-  private def deriveAclOptions(aclAnnotation: Option[Acl]): Option[ACL] =
-    aclAnnotation.map { ann =>
-      ann.allow().foreach(matcher => validateMatcher(matcher))
-      ann.deny().foreach(matcher => validateMatcher(matcher))
-
-      new ACL(
-        allow = Option(ann.allow).map(toPrincipalMatcher).getOrElse(Nil),
-        deny = Option(ann.deny).map(toPrincipalMatcher).getOrElse(Nil),
-        denyHttpCode = None // FIXME we can probably use http codes instead of grpc ones
-      )
-    }
-
   private[impl] def extractEnvVars(claimValueContent: String, claimRef: String): String = {
     val pattern = """\$\{([A-Z_][A-Z0-9_]*)\}""".r
 
@@ -217,14 +198,5 @@ private[javasdk] object HttpEndpointDescriptorFactory {
         claims = spiStaticClaims.toSet)
     }
   }
-
-  private def toPrincipalMatcher(matchers: Array[Acl.Matcher]): List[PrincipalMatcher] =
-    matchers.map { m =>
-      m.principal match {
-        case Acl.Principal.ALL         => All
-        case Acl.Principal.INTERNET    => Internet
-        case Acl.Principal.UNSPECIFIED => new ServiceNamePattern(m.service())
-      }
-    }.toList
 
 }

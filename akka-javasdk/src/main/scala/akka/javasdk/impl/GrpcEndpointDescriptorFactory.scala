@@ -9,12 +9,19 @@ import akka.grpc.ServiceDescription
 import akka.grpc.scaladsl.InstancePerRequestFactory
 import akka.http.scaladsl.model.HttpRequest
 import akka.http.scaladsl.model.HttpResponse
+import akka.javasdk.annotations.Acl
+import akka.javasdk.impl.AclDescriptorFactory.deriveAclOptions
+import akka.javasdk.impl.ComponentDescriptorFactory.hasAcl
+import akka.runtime.sdk.spi.ComponentOptions
 import akka.runtime.sdk.spi.GrpcEndpointDescriptor
 import akka.runtime.sdk.spi.GrpcEndpointRequestConstructionContext
+import akka.runtime.sdk.spi.MethodOptions
 
 import scala.concurrent.Future
 
 object GrpcEndpointDescriptorFactory {
+
+  val logger: org.slf4j.Logger = org.slf4j.LoggerFactory.getLogger(GrpcEndpointDescriptorFactory.getClass)
 
   def apply[T](grpcEndpointClass: Class[T], factory: () => T)(implicit
       system: ActorSystem[_]): GrpcEndpointDescriptor[T] = {
@@ -54,12 +61,30 @@ object GrpcEndpointDescriptorFactory {
         system)
     }
 
+    val componentOptions =
+      new ComponentOptions(deriveAclOptions(Option(grpcEndpointClass.getAnnotation(classOf[Acl]))), None)
+
+    val methodOptions: Map[String, MethodOptions] = grpcEndpointClass.getMethods
+      .filter(m => hasAcl(m))
+      .map { m =>
+        // FIXME just do to lower case and change runtime to handle it
+        capitalizeFirstLetter(m.getName) -> new MethodOptions(
+          deriveAclOptions(Option(m.getAnnotation(classOf[Acl]))),
+          None)
+      }
+      .toMap
     new GrpcEndpointDescriptor[T](
       grpcEndpointClass.getName,
       description.name,
       description.descriptor,
       instanceFactory,
-      routeFactory)
+      routeFactory,
+      componentOptions,
+      methodOptions)
+  }
+
+  def capitalizeFirstLetter(str: String): String = {
+    s"${str.charAt(0).toUpper}${str.substring(1)}"
   }
 
 }

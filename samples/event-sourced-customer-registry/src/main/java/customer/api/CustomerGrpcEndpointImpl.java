@@ -1,6 +1,7 @@
 package customer.api;
 
 import akka.grpc.GrpcServiceException;
+import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.GrpcEndpoint;
 import akka.javasdk.client.ComponentClient;
 import customer.api.proto.*;
@@ -13,6 +14,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.CompletionStage;
 
+@Acl(allow = @Acl.Matcher(principal = Acl.Principal.ALL))
 @GrpcEndpoint
 public class CustomerGrpcEndpointImpl implements CustomerGrpcEndpoint {
 
@@ -57,6 +59,7 @@ public class CustomerGrpcEndpointImpl implements CustomerGrpcEndpoint {
         .thenApply(__ -> ChangeNameResponse.getDefaultInstance());
   }
 
+  @Acl(deny = @Acl.Matcher(principal = Acl.Principal.ALL))
   @Override
   public CompletionStage<ChangeAddressResponse> changeAddress(ChangeAddressRequest in) {
     log.info("gRPC request to change customer [{}] address: {}", in.getCustomerId(), in.getNewAddress());
