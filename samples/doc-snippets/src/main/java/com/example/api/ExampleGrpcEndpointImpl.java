@@ -1,6 +1,7 @@
 package com.example.api;
 
 import akka.NotUsed;
+import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.GrpcEndpoint;
 import akka.stream.Materializer;
 import akka.stream.javadsl.Sink;
@@ -12,6 +13,7 @@ import com.example.proto.HelloRequest;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
+@Acl(allow = @Acl.Matcher(principal = Acl.Principal.ALL))
 @GrpcEndpoint
 public class ExampleGrpcEndpointImpl implements ExampleGrpcEndpoint {
 
