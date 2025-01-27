@@ -18,5 +18,6 @@ message Out {
 
 service TestGrpcService {
   rpc Simple(In) returns (Out) {};
-  rpc SelfDelegate(In) returns (Out) {};
+  rpc DelegateToAkkaService(In) returns (Out) {};
+  rpc DelegateToExternal(In) returns (Out) {};
 }

@@ -30,12 +30,18 @@ public class TestGrpcServiceImpl implements TestGrpcService {
     );
   }
 
-  // FIXME what calls to other Akka services
-
   @Override
-  public CompletionStage<TestGrpcServiceOuterClass.Out> selfDelegate(TestGrpcServiceOuterClass.In in) {
-    // alias for external defined in application.conf
-    var grpcServiceClient = grpcClientProvider.grpcClientFor(TestGrpcServiceClient.class, "self.example.com");
+  public CompletionStage<TestGrpcServiceOuterClass.Out> delegateToAkkaService(TestGrpcServiceOuterClass.In in) {
+    // alias for external defined in application.conf - but note that it is only allowed for dev/test
+    var grpcServiceClient = grpcClientProvider.grpcClientFor(TestGrpcServiceClient.class, "other-service");
     return grpcServiceClient.simple(in);
   }
+
+  @Override
+  public CompletionStage<TestGrpcServiceOuterClass.Out> delegateToExternal(TestGrpcServiceOuterClass.In in) {
+    // alias for external defined in application.conf
+    var grpcServiceClient = grpcClientProvider.grpcClientFor(TestGrpcServiceClient.class, "some.example.com");
+    return grpcServiceClient.simple(in);
+  }
+
 }

@@ -58,6 +58,39 @@ private[akka] object GrpcClientProviderImpl {
 
   }
 
+  /**
+   * Picks up the service specific config from the client config block, sanitizes to allowed config and makes sure the
+   * return will always be at least an empty block entry with the service name (needed for Akka gRPC).
+   *
+   * @param clientConfig
+   *   the config under `akka.javasdk.grpc.client`
+   */
+  private[grpc] def serviceConfigFor(serviceName: String, clientConfig: Config): Config = {
+    val quotedServiceName = s""""$serviceName""""
+    // defaults but there must be an entry or akka grpc config parsing fails
+    def emptyServiceConfig = ConfigFactory.parseString(s"""$quotedServiceName = {}""")
+
+    // external service, details defined in user config,
+    if (clientConfig.hasPath(quotedServiceName)) {
+      // we do not allow any Akka gRPC setting, but a limited subset
+      val sanitized = onlyAllowedAkkaGrpcSettings(clientConfig.getConfig(quotedServiceName))
+      if (sanitized.isEmpty) emptyServiceConfig
+      else sanitized.atPath(quotedServiceName)
+    } else {
+      emptyServiceConfig
+    }
+  }
+
+  private val allowedAkkaGrpClientSettings = Set("host", "port", "use-tls")
+
+  private def onlyAllowedAkkaGrpcSettings(config: Config): Config = {
+    var safeConfig = ConfigFactory.empty()
+    allowedAkkaGrpClientSettings.foreach(key =>
+      if (config.hasPath(key))
+        safeConfig = safeConfig.withValue(key, config.getValue(key)))
+    safeConfig
+  }
+
 }
 
 /**
@@ -77,6 +110,8 @@ private[akka] final class GrpcClientProviderImpl(
 
   private val clients = new ConcurrentHashMap[ClientKey, AkkaGrpcClient]()
 
+  private val clientConfig = userServiceConfig.getConfig("akka.javasdk.grpc.client")
+
   CoordinatedShutdown(system).addTask(CoordinatedShutdown.PhaseServiceStop, "stop-grpc-clients")(() =>
     Future
       .traverse(clients.values().asScala)(_.close().asScala)
@@ -87,43 +122,21 @@ private[akka] final class GrpcClientProviderImpl(
     clients.computeIfAbsent(clientKey, createNewClientFor _).asInstanceOf[T]
   }
 
-  // FIXME for testkit
-  // /** This gets called by the testkit, and should impersonate the given principal. */
-  // def impersonatingGrpcClient[T  <: AkkaGrpcClient](serviceClass: Class[T], service: String, port: Int, impersonate: String): T =
-  // getGrpcClient(serviceClass, service, port, Some("impersonate-kalix-service" -> impersonate))
-
   private def createNewClientFor(clientKey: ClientKey): AkkaGrpcClient = {
     val clientSettings = {
-      // FIXME the old impl would look in config first and always choose that if present
       if (isAkkaService(clientKey.serviceName)) {
         val akkaServiceClientSettings = if (settings.devModeSettings.isDefined) {
-          // local service discovery when running locally
-          // dev mode, other service name, use Akka discovery to find it
-          // the runtime has set up a mechanism that finds locally running
-          // services. Since in dev mode blocking is probably fine for now.
-          try {
-            val result = Await.result(Discovery(system).discovery.lookup(clientKey.serviceName, 5.seconds), 5.seconds)
-            val address = result.addresses.head
-            // port is always set
-            val port = address.port.get
-            log.debug(
-              "Creating dev mode gRPC client for Akka service [{}] found at [{}:{}]",
-              clientKey.serviceName,
-              address.address,
-              port)
-            GrpcClientSettings
-              .connectToServiceAt(address.host, port)(system)
-              // (No TLS locally)
-              .withTls(false)
-          } catch {
-            case NonFatal(ex) =>
-              throw new RuntimeException(
-                s"Failed to look up service [${clientKey.serviceName}] in dev-mode, make sure that it is also running " +
-                "with a separate port and service name correctly defined in its application.conf under 'akka.javasdk.dev-mode.service-name' " +
-                "if it differs from the maven project name",
-                ex)
+          // special cases in dev mode:
+          // Allow config to override services to talk to services running wherever (auth headers won't work though)
+          if (clientConfig.hasPath(clientKey.serviceName)) {
+            log.info("Using explicit dev mode config gRPC client override for service [{}]", clientKey.serviceName)
+            clientSettingsFromConfig(clientKey.serviceName)
+          } else {
+            // Normally: local service discovery when running locally and trying to use gRPC
+            localDevModeDiscovery(clientKey.serviceName)
           }
         } else {
+          // in production, we rely on DNS and service mesh transports, no overrides allowed
           log.debug("Creating gRPC client for Akka service [{}]", clientKey.serviceName)
           GrpcClientSettings
             .connectToServiceAt(clientKey.serviceName, 80)(system)
@@ -131,6 +144,7 @@ private[akka] final class GrpcClientProviderImpl(
             .withTls(false)
         }
 
+        // auth headers for Akka ACLs
         remoteIdentificationHeader match {
           case Some(auth) => settingsWithCallCredentials(auth.headerName, auth.headerValue)(akkaServiceClientSettings)
           case None       => akkaServiceClientSettings
@@ -138,15 +152,15 @@ private[akka] final class GrpcClientProviderImpl(
       } else {
         // external/public gRPC service
         log.debug("Creating gRPC client for external service [{}]", clientKey.serviceName)
-
-        // FIXME we should probably not allow any grpc client setting but a subset?
-        // external service, details defined in user config
-        GrpcClientSettings.fromConfig(
-          clientKey.serviceName,
-          userServiceConfig
-            .getConfig("akka.javasdk.grpc.client")
-            // this config overload requires there to be an entry for the name, but then falls back to defaults
-            .withFallback(ConfigFactory.parseString(s""""${clientKey.serviceName}" = {}""")))(system)
+        if (clientConfig.hasPath(s""""${clientKey.serviceName}"""")) {
+          // user provided config for fqdn of service
+          clientSettingsFromConfig(clientKey.serviceName)
+        } else {
+          // or no config, we expect it is HTTPS on default port
+          log.debug("Creating gRPC client for external service [{}] port [443]", clientKey.serviceName)
+          println("### " + clientConfig)
+          GrpcClientSettings.connectToServiceAt(clientKey.serviceName, 443)(system)
+        }
       }
     }
 
@@ -163,4 +177,36 @@ private[akka] final class GrpcClientProviderImpl(
     client
   }
 
+  private def clientSettingsFromConfig(serviceName: String): GrpcClientSettings = {
+    val serviceConfig = serviceConfigFor(serviceName, clientConfig)
+    GrpcClientSettings.fromConfig(serviceName, serviceConfig)(system)
+  }
+
+  private def localDevModeDiscovery(serviceName: String): GrpcClientSettings = {
+    try {
+      // The runtime has set up an Akka discovery mechanism that finds locally running
+      // services. Since in dev mode only blocking is fine for now.
+      val result = Await.result(Discovery(system).discovery.lookup(serviceName, 5.seconds), 5.seconds)
+      val address = result.addresses.head
+      // port is always set
+      val port = address.port.get
+      log.debug(
+        "Creating dev mode gRPC client for Akka service [{}] found through local discovery at [{}:{}]",
+        serviceName,
+        address.address,
+        port)
+      GrpcClientSettings
+        .connectToServiceAt(address.host, port)(system)
+        // (No TLS locally)
+        .withTls(false)
+
+    } catch {
+      case NonFatal(ex) =>
+        throw new RuntimeException(
+          s"Failed to look up service [${serviceName}] in dev-mode, make sure that it is also running " +
+          "with a separate port and service name correctly defined in its application.conf under 'akka.javasdk.dev-mode.service-name' " +
+          "if it differs from the maven project name",
+          ex)
+    }
+  }
 }

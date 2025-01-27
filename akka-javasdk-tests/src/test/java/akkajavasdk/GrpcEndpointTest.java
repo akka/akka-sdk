@@ -38,7 +38,7 @@ public class GrpcEndpointTest extends TestKitSupport {
   }
 
   @Test
-  public void shouldAllowGrpcCall() {
+  public void shouldAllowExternalGrpcCall() {
     var testClient = TestGrpcServiceClient.create(
         GrpcClientSettings.connectToServiceAt("localhost", testKit.getPort(),testKit.getActorSystem())
             .withTls(false),
@@ -46,7 +46,24 @@ public class GrpcEndpointTest extends TestKitSupport {
     try {
 
       var request = TestGrpcServiceOuterClass.In.newBuilder().setData("Hello world").build();
-      var response = await(testClient.selfDelegate(request));
+      var response = await(testClient.delegateToExternal(request));
+
+      assertThat(response.getData()).isEqualTo(request.getData());
+    } finally {
+      testClient.close();
+    }
+  }
+
+  @Test
+  public void shouldAllowCrossServiceGrpcCall() {
+    var testClient = TestGrpcServiceClient.create(
+        GrpcClientSettings.connectToServiceAt("localhost", testKit.getPort(),testKit.getActorSystem())
+            .withTls(false),
+        testKit.getActorSystem());
+    try {
+
+      var request = TestGrpcServiceOuterClass.In.newBuilder().setData("Hello world").build();
+      var response = await(testClient.delegateToAkkaService(request));
 
       assertThat(response.getData()).isEqualTo(request.getData());
     } finally {
