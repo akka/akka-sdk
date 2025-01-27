@@ -18,4 +18,5 @@ message Out {
 
 service TestGrpcService {
   rpc Simple(In) returns (Out) {};
+  rpc SelfDelegate(In) returns (Out) {};
 }
