@@ -30,7 +30,7 @@ By default, most entities will only allow their origin region to change their st
 
 The Event Sourced state model captures changes to data by storing events in a journal. The current entity state is derived from the events. Interested parties can read the journal and transform the stream of events into read models (Views) or perform business actions based on events. 
 
-image:event-sourced-entity-flow.png[Concepts Events Source Flow]
+image:event-sourced-entity-flow.svg[Concepts Events Source Flow]
 
 A client sends a request to an Endpoint image:steps-1.svg[width=20]. The request is handled in the Endpoint which decides to send a command to the appropriate Event sourced  entity image:steps-2.svg[width=20], its identity is either determined from the request or by logic in the Endpoint.
 
@@ -38,7 +38,7 @@ The Event sourced entity processes the command image:steps-3.svg[width=20]. This
 
 After successfully storing the events, the event sourced entity updates its state through its event handlers image:steps-5.svg[width=20].
 
-The business logic also describes the reply as the commands effect which is passed back to the Endpoint image:steps-6.svg[width=20]. The Endpoint replies to the client when the reply is processed image:steps-1.svg[width=20].
+The business logic also describes the reply as the commands effect which is passed back to the Endpoint image:steps-6.svg[width=20]. The Endpoint replies to the client when the reply is processed image:steps-7.svg[width=20].
 
 NOTE: Event sourced entities express state changes as events that get applied to update the state.
 
@@ -46,7 +46,7 @@ NOTE: Event sourced entities express state changes as events that get applied to
 
 In the _Key Value_ state model, only the current state of the Entity is persisted - its value. Akka caches the state to minimize data store access. Interested parties can subscribe to state changes emitted by a Key Value Entity and perform business actions based on those state changes. 
 
-image:key-value-entity-flow.png[Concepts Key Value Flow]
+image:key-value-entity-flow.svg[Concepts Key Value Flow]
 
 A client sends a request to an Endpoint image:steps-1.svg[width=20]. The request is handled in the Endpoint which decides to send a command to the appropriate Key Value entity image:steps-2.svg[width=20], its identity is either determined from the request or by logic in the Endpoint.
 
