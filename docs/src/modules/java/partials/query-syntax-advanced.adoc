@@ -51,7 +51,7 @@ include::example$view-store/src/main/java/store/order/view/joined/CustomerOrder.
 ----
 
 [source,java,indent=0]
-.{sample-base-url}/view-store/src/main/java/store/view/joined/JoinedCustomerOrdersView.java[JoinedCustomerOrdersView.java]
+.{sample-base-url}/view-store/src/main/java/store/order/view/joined/JoinedCustomerOrdersView.java[JoinedCustomerOrdersView.java]
 ----
 include::example$view-store/src/main/java/store/order/view/joined/JoinedCustomerOrdersView.java[tag=join]
 ----
@@ -88,7 +88,7 @@ A <<_result_projection, projection>> for a JOIN query can also restructure the r
 
 
 [source,java,indent=0]
-.{sample-base-url}/view-store/src/main/java/store/order/view/structured/CustomerOrders.java[CustomerOrders.java]
+.{sample-base-url}/view-store/src/main/java/store/order/view/structured/StructuredCustomerOrders.java[StructuredCustomerOrders.java]
 ----
 include::example$view-store/src/main/java/store/order/view/structured/StructuredCustomerOrders.java[tag=structured]
 ----
