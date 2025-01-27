@@ -137,6 +137,11 @@ private[akka] final class GrpcClientProviderImpl(
           }
         } else {
           // in production, we rely on DNS and service mesh transports, no overrides allowed
+          if (clientConfig.hasPath(clientKey.serviceName)) {
+            log.warn(
+              s"Configuration override for [${clientKey.serviceName}] found in 'application.conf'. This is not supported and is ignored.")
+          }
+
           log.debug("Creating gRPC client for Akka service [{}]", clientKey.serviceName)
           GrpcClientSettings
             .connectToServiceAt(clientKey.serviceName, 80)(system)
@@ -158,7 +163,6 @@ private[akka] final class GrpcClientProviderImpl(
         } else {
           // or no config, we expect it is HTTPS on default port
           log.debug("Creating gRPC client for external service [{}] port [443]", clientKey.serviceName)
-          println("### " + clientConfig)
           GrpcClientSettings.connectToServiceAt(clientKey.serviceName, 443)(system)
         }
       }

@@ -86,12 +86,14 @@ To consume a gRPC service, the service protobuf descriptor must be added in the 
 triggers generation of a client interface and Java classes for all the message types used as requests and responses for
 methods in the service.
 
+ifdef::todo[TODO: recomendations for how to use other ways to handle the protos]
+
 In our delegating service implementation:
 
 [source,java,indent=0]
-.{sample-base-url}/doc-snippets/src/main/java/com/example/callanotherservice/DelegatingGrpcEndpoint.java[DelegatingGrpcEndpoint.java]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/callanotherservice/DelegatingGrpcEndpointImpl.java[DelegatingGrpcEndpointImpl.java]
 ----
-include::java:example$doc-snippets/src/main/java/com/example/callanotherservice/DelegatingGrpcEndpoint.java[tag=delegating-endpoint]
+include::java:example$doc-snippets/src/main/java/com/example/callanotherservice/DelegatingGrpcEndpointImpl.java[tag=delegating-endpoint]
 ----
 <1> Accept a `GrpcClientProvider` parameter for the constructor
 <2> Use the generated gRPC client interface for the service `ExampleGrpcEndpointClient.class` and the service name `doc-snippets` to look up a client.
@@ -100,11 +102,15 @@ include::java:example$doc-snippets/src/main/java/com/example/callanotherservice/
 Since the called service and the `DelegatingGrpcEndpoint` share request and response protocol, no further transformation
 of the request or response is needed here.
 
+For dev mode and in tests, providing a config override in `application.conf` like for external calls is possible, however
+when deployed such configuration is ignored.
+
 The gRPC client provider is only available for injection in the following types of components: HTTP Endpoints, gRPC endpoints, Workflows, Consumers and Timed Actions.
 
 === External gRPC services
 
-Calling gRPC services deployed on *different* Akka projects or any other external gRPC server is also done with the `GrpcClientProvider`. Instead of a service name, the protocol and full server name is used when calling `grpcClient`. For example `https://example.com` or `http://example.com`.
+Calling gRPC services deployed on *different* Akka projects or any other external gRPC server is also done with the `GrpcClientProvider`. Instead of a service name, the protocol and fully qualified dns name of the service is used when calling `grpcClientFor`. For example `hellogrpc.example.com`.
+
 
 [source,java,indent=0]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/callanotherservice/CallExternalGrpcEndpointImpl.java[CallExternalGrpcEndpointImpl.java]
@@ -117,3 +123,13 @@ include::java:example$doc-snippets/src/main/java/com/example/callanotherservice/
 
 Since the called service and the `DelegatingGrpcEndpoint` share request and response protocol, no further transformation
 of the request or response is needed here.
+
+The service is expected to accept HTTPS connections and run on the standard HTTPS port (443). For calling a service on a nonstandard
+port, or served unencrypted (not recommended) it is possible to define configuration overrides in `application.conf` (or `application-test.conf`
+specifically for tests):
+
+[source,json,indent=0]
+.{sample-base-url}/doc-snippets/src/main/resources/application.conf[application.conf]
+----
+include::java:example$doc-snippets/src/main/resources/application.conf[tags=customize-grpc-client]
+----
