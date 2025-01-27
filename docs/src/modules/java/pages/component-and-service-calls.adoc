@@ -109,7 +109,7 @@ The gRPC client provider is only available for injection in the following types 
 
 === External gRPC services
 
-Calling gRPC services deployed on *different* Akka projects or any other external gRPC server is also done with the `GrpcClientProvider`. Instead of a service name, the protocol and fully qualified dns name of the service is used when calling `grpcClientFor`. For example `hellogrpc.example.com`.
+Calling gRPC services deployed on *different* Akka projects or any other external gRPC server is also done with the `GrpcClientProvider`. Instead of a service name, the protocol and fully qualified DNS name of the service is used when calling `grpcClientFor`. For example `hellogrpc.example.com`.
 
 
 [source,java,indent=0]
