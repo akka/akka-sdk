@@ -82,6 +82,24 @@ public class SdkIntegrationTest extends TestKitSupport {
     assertThat(exc2.getMessage()).contains("Unknown entity type [stage-counter]");
   }
 
+  @Test
+  public void verifyUserConfig() {
+    var result = await(componentClient.forKeyValueEntity("test")
+        .method(TestCounterEntity::getUserConfigKeys)
+        .invokeAsync(Set.of(
+            // user defined config
+            "user-app.config-value",
+            // should also be able to read sdk config
+            "akka.javasdk.dev-mode.service-name",
+            // but not other akka settings
+            "akka.actor.provider"
+            )));
+
+    // from src/test/resources/application.conf
+    assertThat(result).containsEntry("user-app.config-value", "some value");
+    assertThat(result).containsEntry("akka.javasdk.dev-mode.service-name", "sdk-tests");
+    assertThat(result).doesNotContainKey("akka.actor.provider");
+  }
 
   @Test
   public void verifyEchoActionWiring() {

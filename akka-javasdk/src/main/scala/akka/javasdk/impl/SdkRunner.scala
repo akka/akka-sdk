@@ -327,10 +327,10 @@ private final class Sdk(
   private lazy val userServiceConfig = {
     // hiding these paths from the config provided to user
     val sensitivePaths = List("akka", "kalix.meta", "kalix.proxy", "kalix.runtime", "system")
-    val sdkConfig = applicationConfig.getConfig("akka.javasdk")
+    val sdkConfig = applicationConfig.getObject("akka.javasdk")
     sensitivePaths
       .foldLeft(applicationConfig) { (conf, toHide) => conf.withoutPath(toHide) }
-      .withFallback(sdkConfig)
+      .withValue("akka.javasdk", sdkConfig)
   }
 
   // validate service classes before instantiating
