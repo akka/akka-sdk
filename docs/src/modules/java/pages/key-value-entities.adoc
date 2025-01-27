@@ -160,4 +160,4 @@ include::example$key-value-counter/src/test/java/com/example/CounterIntegrationT
 <4> Request to increase the value of counter `bar`. Response should have value `1`.
 <5> Explicitly request current value of `bar`. It should be `1`.
 
-NOTE: The integration tests in samples can be run using `mvn integration-test`.
+NOTE: The integration tests in samples can be run using `mvn verify`.

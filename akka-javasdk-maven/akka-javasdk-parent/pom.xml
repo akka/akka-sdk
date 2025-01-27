@@ -389,7 +389,7 @@
                                 </goals>
                                 <configuration>
                                     <source>
-                                        log.warn('The 'it' profile is deprecated. It will be removed in future versions. Integration tests only need `mvn integration-test` to run.')
+                                        log.warn('The 'it' profile is deprecated. It will be removed in future versions. Integration tests only need `mvn verify` to run.')
                                     </source>
                                 </configuration>
                             </execution>

@@ -26,7 +26,7 @@ Current versions
     - Updates to configure SSO integrations
 
 * https://github.com/akka/akka-sdk/releases/tag/v3.0.2[Akka SDK 3.0.2]
-    - Integration Tests are now bound to `mvn integration-test` and not a specific profile
+    - Integration Tests are now bound to `mvn verify` and not a specific profile
 
 * Platform update 2024-12-10
     - New internal structure to capture usage data
