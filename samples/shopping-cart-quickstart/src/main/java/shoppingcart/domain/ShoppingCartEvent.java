@@ -8,17 +8,17 @@ import akka.javasdk.annotations.TypeName;
 
 public sealed interface ShoppingCartEvent { // <1>
 
-  @TypeName("item-added") // <2>
+  @TypeName("item-added-old") // <2>
   record ItemAdded(ShoppingCart.LineItem item) implements ShoppingCartEvent {
   }
 
 // end::domain[]
 
-  @TypeName("item-removed")
+  @TypeName("item-removed-old")
   record ItemRemoved(String productId) implements ShoppingCartEvent {
   }
 
-  @TypeName("checked-out")
+  @TypeName("checked-out-old")
   record CheckedOut() implements ShoppingCartEvent {
   }
 // tag::domain[]
