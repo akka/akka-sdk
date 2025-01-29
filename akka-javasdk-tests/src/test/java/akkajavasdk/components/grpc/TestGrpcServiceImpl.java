@@ -44,4 +44,23 @@ public class TestGrpcServiceImpl implements TestGrpcService {
     return grpcServiceClient.simple(in);
   }
 
+  @Override
+  public CompletionStage<TestGrpcServiceOuterClass.Out> aclPublicMethod(TestGrpcServiceOuterClass.In in) {
+    return simple(in);
+  }
+
+  @Acl(deny = @Acl.Matcher(principal = Acl.Principal.ALL), denyCode = Acl.DenyStatusCode.SERVICE_UNAVAILABLE)
+  @Override
+  public CompletionStage<TestGrpcServiceOuterClass.Out> aclPrivateMethod(TestGrpcServiceOuterClass.In in) {
+    return simple(in);
+  }
+
+  @Acl(
+      allow = @Acl.Matcher(service = "other-service"),
+      deny = @Acl.Matcher(principal = Acl.Principal.INTERNET))
+  @Override
+  public CompletionStage<TestGrpcServiceOuterClass.Out> aclServiceMethod(TestGrpcServiceOuterClass.In in) {
+    return simple(in);
+  }
+
 }

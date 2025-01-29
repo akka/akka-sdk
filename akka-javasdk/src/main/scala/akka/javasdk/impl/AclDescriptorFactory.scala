@@ -11,6 +11,7 @@ import akka.runtime.sdk.spi.All
 import akka.runtime.sdk.spi.Internet
 import akka.runtime.sdk.spi.PrincipalMatcher
 import akka.runtime.sdk.spi.ServiceNamePattern
+import com.google.rpc.Code
 
 /**
  * INTERNAL API
@@ -37,8 +38,8 @@ private[impl] object AclDescriptorFactory {
       new ACL(
         allow = Option(ann.allow).map(toPrincipalMatcher).getOrElse(Nil),
         deny = Option(ann.deny).map(toPrincipalMatcher).getOrElse(Nil),
-        denyHttpCode = None // FIXME we can probably use http codes instead of grpc ones
-      )
+        denyHttpCode = None, // FIXME we can probably use http codes instead of grpc ones
+        denyGrpcCode = Option(Code.forNumber(ann.denyCode().value)))
     }
 
   private def toPrincipalMatcher(matchers: Array[Acl.Matcher]): List[PrincipalMatcher] =
