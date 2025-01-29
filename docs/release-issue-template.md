@@ -22,6 +22,11 @@ You can see the Akka Runtime version on prod [on grafana](https://grafana.sre.ka
     - `version` in the `samples/*/pom.xml` files
     - `akka-javasdk.version` in the `akka-javasdk-maven/akka-javasdk-parent/pom.xml`
     - `version` in all `akka-javasdk-maven/**/pom.xml`
+
+### Publish latest docs
+- [ ] Add a summary of relevant changes into `docs/src/modules/reference/pages/release-notes.adoc`
+- [ ] Create a PR and merge `main` into `docs-current`. 
+    - Note that the PR will be pretty big normally, not only involving documentation files. 
  
 ### Announcements
 
