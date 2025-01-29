@@ -25,7 +25,7 @@ You can see the Akka Runtime version on prod [on grafana](https://grafana.sre.ka
 
 ### Publish latest docs
 - [ ] Add a summary of relevant changes into `docs/src/modules/reference/pages/release-notes.adoc`
-- [ ] Create a PR and merge `main` into `docs-current`. 
+- [ ] Create a PR and merge `main` into `docs-current` (do not squash)
     - Note that the PR will be pretty big normally, not only involving documentation files. 
  
 ### Announcements
