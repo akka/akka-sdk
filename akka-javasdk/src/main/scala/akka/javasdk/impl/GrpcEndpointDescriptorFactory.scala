@@ -16,6 +16,7 @@ import akka.runtime.sdk.spi.ComponentOptions
 import akka.runtime.sdk.spi.GrpcEndpointDescriptor
 import akka.runtime.sdk.spi.GrpcEndpointRequestConstructionContext
 import akka.runtime.sdk.spi.MethodOptions
+import io.opentelemetry.api.trace.Span
 
 import scala.concurrent.Future
 
@@ -23,7 +24,7 @@ object GrpcEndpointDescriptorFactory {
 
   val logger: org.slf4j.Logger = org.slf4j.LoggerFactory.getLogger(GrpcEndpointDescriptorFactory.getClass)
 
-  def apply[T](grpcEndpointClass: Class[T], factory: () => T)(implicit
+  def apply[T](grpcEndpointClass: Class[T], factory: Option[Span] => T)(implicit
       system: ActorSystem[_]): GrpcEndpointDescriptor[T] = {
     // FIXME now way right now to know that it is a gRPC service interface
     val serviceDefinitionClass: Class[_] = {
@@ -36,8 +37,8 @@ object GrpcEndpointDescriptorFactory {
     }
 
     // FIXME a derivative should be injectable into user code as well
-    val instanceFactory = { (_: GrpcEndpointRequestConstructionContext) =>
-      factory()
+    val instanceFactory = { (ctx: GrpcEndpointRequestConstructionContext) =>
+      factory(ctx.openTelemetrySpan)
     }
 
     val handlerFactory =

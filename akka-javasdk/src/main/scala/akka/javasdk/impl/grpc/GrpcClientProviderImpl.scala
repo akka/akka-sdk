@@ -17,6 +17,7 @@ import akka.javasdk.impl.Settings
 import akka.javasdk.impl.grpc.GrpcClientProviderImpl.AuthHeaders
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
+import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
 import org.slf4j.LoggerFactory
 
 import java.util.concurrent.ConcurrentHashMap
@@ -28,6 +29,7 @@ import scala.concurrent.duration.DurationInt
 import scala.jdk.CollectionConverters._
 import scala.jdk.FutureConverters._
 import scala.util.control.NonFatal
+import io.opentelemetry.context.{ Context => OtelContext }
 
 /**
  * INTERNAL API
@@ -212,5 +214,31 @@ private[akka] final class GrpcClientProviderImpl(
           "if it differs from the maven project name",
           ex)
     }
+  }
+
+  def withTraceContext(traceContext: OtelContext): GrpcClientProvider = {
+    val otelTraceHeaders: Vector[(String, String)] = {
+      val builder = Vector.newBuilder[(String, String)]
+      W3CTraceContextPropagator
+        .getInstance()
+        .inject(
+          traceContext,
+          null,
+          // Note: side-effecting instead of mutable collection
+          (_: scala.Any, key: String, value: String) => {
+            builder += ((key, value))
+          })
+      builder.result()
+    }
+    if (otelTraceHeaders.isEmpty) this
+    else
+      new GrpcClientProvider {
+        override def grpcClientFor[T <: AkkaGrpcClient](serviceClass: Class[T], serviceName: String): T = {
+          otelTraceHeaders.foldLeft(GrpcClientProviderImpl.this.grpcClientFor(serviceClass, serviceName)) {
+            case (client, (key, value)) =>
+              client.addRequestHeader(key, value).asInstanceOf[T]
+          }
+        }
+      }
   }
 }

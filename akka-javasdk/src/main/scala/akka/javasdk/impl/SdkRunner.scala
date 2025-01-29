@@ -602,7 +602,7 @@ private final class Sdk(
     // remember to update component type API doc and docs if changing the set of injectables
     case p if p == classOf[ComponentClient]    => componentClient(span)
     case h if h == classOf[HttpClientProvider] => httpClientProvider(span)
-    case g if g == classOf[GrpcClientProvider] => grpcClientProvider // FIXME trace propagation
+    case g if g == classOf[GrpcClientProvider] => grpcClientProvider(span)
     case t if t == classOf[TimerScheduler]     => timerScheduler(span)
     case m if m == classOf[Materializer]       => sdkMaterializer
   }
@@ -741,10 +741,9 @@ private final class Sdk(
       instance
   }
 
-  private def grpcEndpointFactory[E](grpcEndpointClass: Class[E]): () => E = () => {
+  private def grpcEndpointFactory[E](grpcEndpointClass: Class[E]): Option[Span] => E = span => {
     wiredInstance(grpcEndpointClass) {
-      // FIXME missing span from request
-      sideEffectingComponentInjects(None)
+      sideEffectingComponentInjects(span)
     }
   }
 
@@ -814,6 +813,12 @@ private final class Sdk(
     openTelemetrySpan match {
       case None       => httpClientProvider
       case Some(span) => httpClientProvider.withTraceContext(OtelContext.current().`with`(span))
+    }
+
+  private def grpcClientProvider(openTelemetrySpan: Option[Span]): GrpcClientProvider =
+    openTelemetrySpan match {
+      case None       => grpcClientProvider
+      case Some(span) => grpcClientProvider.withTraceContext(OtelContext.current().`with`(span))
     }
 
 }
