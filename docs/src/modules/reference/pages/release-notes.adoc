@@ -12,6 +12,16 @@ Current versions
 
 == January 2025
 
+* https://github.com/akka/akka-projection/releases/tag/v1.6.8[Akka Projections 1.6.8]
+
+* https://github.com/akka/akka-persistence-r2dbc/releases/tag/v1.3.2[Akka Persistence R2DBC 1.3.2]
+
+* https://github.com/akka/akka/releases/tag/v2.10.1[Akka core 2.10.1]
+
+* https://github.com/akka/akka-sdk/releases/tag/v3.1.0[Akka SDK 3.1.0]
+    - Internal refactoring of SPI between SDK and runtime
+    - Akka runtime 1.3.0
+
 * Akka CLI 3.0.9
     - Fixes listing of user role bindings
 
