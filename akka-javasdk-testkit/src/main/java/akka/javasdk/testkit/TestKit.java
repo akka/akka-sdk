@@ -10,6 +10,7 @@ import akka.http.javadsl.Http;
 import akka.http.javadsl.model.HttpRequest;
 import akka.javasdk.DependencyProvider;
 import akka.javasdk.Metadata;
+import akka.javasdk.Principal;
 import akka.javasdk.ServiceSetup;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.grpc.GrpcClientProvider;
@@ -19,6 +20,7 @@ import akka.javasdk.impl.ErrorHandling;
 import akka.javasdk.impl.Sdk;
 import akka.javasdk.impl.SdkRunner;
 import akka.javasdk.impl.client.ComponentClientImpl;
+import akka.javasdk.impl.grpc.GrpcClientProviderImpl;
 import akka.javasdk.impl.http.HttpClientImpl;
 import akka.javasdk.impl.serialization.JsonSerializer;
 import akka.javasdk.impl.timer.TimerSchedulerImpl;
@@ -388,7 +390,7 @@ public class TestKit {
   private ActorSystem<?> runtimeActorSystem;
   private ComponentClient componentClient;
   private HttpClientProvider httpClientProvider;
-  private GrpcClientProvider grpcClientProvider;
+  private GrpcClientProviderImpl grpcClientProvider;
   private HttpClient selfHttpClient;
   private TimerScheduler timerScheduler;
   private Optional<DependencyProvider> dependencyProvider;
@@ -620,24 +622,36 @@ public class TestKit {
   }
 
   /**
-   * Get a {@link GrpcClientProvider} for looking up gRPC clients to interact with other services than the current.
-   * Requests will appear as coming from this service from an ACL perspective.
-   */
-  public GrpcClientProvider getGrpcClientProvider() {
-    // FIXME pretend auth headers
-    return grpcClientProvider;
-  }
-
-  /**
-   * Get a gRPC client for an endpoint provided by this service
-   * @param grpcClientClass A client for a gRPC endpoint in this service
-   * Requests will appear as coming from this service from an ACL perspective.
+   * Get a gRPC client for an endpoint provided by this service.
+   * Requests will appear as coming from this service itself from an ACL perspective.
+   *
+   * @param grpcClientClass The generated Akka gRPC client interface for a gRPC endpoint in this service
    */
   public <T extends AkkaGrpcClient> T getGrpcEndpointClient(Class<T> grpcClientClass) {
-    // FIXME pretend auth headers
     return grpcClientProvider.grpcClientFor(grpcClientClass, settings.serviceName);
   }
 
+  /**
+   * Get a gRPC client for an endpoint provided by this service but specify the client principal for the ACLs.
+   *
+   * @param grpcClientClass The generated Akka gRPC client interface for a gRPC endpoint in this service
+   * @param requestPrincipal A principal that any request from the returned service will have when requests are handled in the endpoint.
+   */
+  @SuppressWarnings("unchecked")
+  public <T extends AkkaGrpcClient> T getGrpcEndpointClient(Class<T> grpcClientClass, Principal requestPrincipal) {
+    var client = grpcClientProvider.createNewClientFor(grpcClientClass, settings.serviceName, false);
+    if (requestPrincipal == Principal.SELF) {
+      // no need to use this method, but let's allow it
+      return getGrpcEndpointClient(grpcClientClass);
+    } else if (requestPrincipal instanceof Principal.LocalService service) {
+      return (T) client.addRequestHeader("impersonate-service", service.getName());
+    } else if (requestPrincipal == Principal.INTERNET) {
+      // no principal / as from internet
+      return client;
+    } else {
+      throw new IllegalArgumentException("Speciied principal " + requestPrincipal + " not supported by testkit");
+    }
+  }
   // FIXME do we need a "get client with this principal" kind of method? Not sure that is useful (unlike in Kalix SDKs)
 
   /**

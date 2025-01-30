@@ -6,9 +6,9 @@ package akkajavasdk;
 
 import akka.grpc.GrpcClientSettings;
 import akka.grpc.GrpcServiceException;
+import akka.javasdk.Principal;
 import akka.javasdk.testkit.TestKitSupport;
 import akkajavasdk.protocol.TestGrpcServiceClient;
-import akkajavasdk.protocol.TestGrpcServiceClientPowerApi;
 import akkajavasdk.protocol.TestGrpcServiceOuterClass;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -84,7 +84,7 @@ public class GrpcEndpointTest extends TestKitSupport {
 
   @Test
   public void shouldDenyGrpcCallFromInternetWithCustomCode() {
-    var testClient = createGrpcClient(); // FIXME creating this with testkit needs the capability to override ACL headers
+    var testClient = getGrpcEndpointClient(TestGrpcServiceClient.class, Principal.INTERNET);
     try {
       var request = TestGrpcServiceOuterClass.In.newBuilder().setData("Hello world").build();
       await(testClient.aclPrivateMethod(request));
@@ -98,18 +98,16 @@ public class GrpcEndpointTest extends TestKitSupport {
 
   @Test
   public void shouldAllowGrpcCallFromOtherService() {
-    // FIXME update to avoid casting when we give better access to send headers
-    var testClient = (TestGrpcServiceClientPowerApi) createGrpcClient(); // FIXME creating this with testkit needs the capability to override ACL headers
+    var clientFromOtherService = getGrpcEndpointClient(TestGrpcServiceClient.class, Principal.localService("other-service"));
 
     var request = TestGrpcServiceOuterClass.In.newBuilder().setData("Hello world").build();
-    var response = await(testClient.aclServiceMethod()
-        .addHeader("impersonate-service", "other-service")
-        .invoke(request));
+    var response = await(clientFromOtherService.aclServiceMethod(request));
     assertThat(response.getData()).isEqualTo(request.getData());
 
     // should still fail when called from internet since it should override component level ACL
     try {
-      await(testClient.aclServiceMethod()
+      var clientFromInternet = getGrpcEndpointClient(TestGrpcServiceClient.class, Principal.INTERNET);
+      await(clientFromInternet.aclServiceMethod()
           .invoke(request));
       fail("Expected exception");
     } catch(GrpcServiceException e) {

@@ -291,7 +291,7 @@ private[javasdk] object Sdk {
       componentClients: ComponentClients,
       dependencyProvider: Option[DependencyProvider],
       httpClientProvider: HttpClientProvider,
-      grpcClientProvider: GrpcClientProvider,
+      grpcClientProvider: GrpcClientProviderImpl,
       serializer: JsonSerializer)
 
   private val platformManagedDependency = Set[Class[_]](

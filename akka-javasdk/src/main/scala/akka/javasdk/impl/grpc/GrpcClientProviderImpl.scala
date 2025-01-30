@@ -121,66 +121,75 @@ private[akka] final class GrpcClientProviderImpl(
 
   override def grpcClientFor[T <: AkkaGrpcClient](serviceClass: Class[T], serviceName: String): T = {
     val clientKey = ClientKey(serviceClass, serviceName)
-    clients.computeIfAbsent(clientKey, createNewClientFor _).asInstanceOf[T]
+    clients
+      .computeIfAbsent(
+        clientKey,
+        { _ =>
+          val client = createNewClientFor(serviceClass, serviceName)
+          client.closed().asScala.foreach { _ =>
+            // user should not close client, but just to be sure we don't keep it around if they do
+            clients.remove(clientKey, client)
+          }
+          client
+        })
+      .asInstanceOf[T]
   }
 
-  private def createNewClientFor(clientKey: ClientKey): AkkaGrpcClient = {
+  private[akka] def createNewClientFor[T <: AkkaGrpcClient](
+      clientClass: Class[T],
+      serviceName: String,
+      addAuthHeaders: Boolean = true): T = {
     val clientSettings = {
-      if (isAkkaService(clientKey.serviceName)) {
+      if (isAkkaService(serviceName)) {
         val akkaServiceClientSettings = if (settings.devModeSettings.isDefined) {
           // special cases in dev mode:
           // Allow config to override services to talk to services running wherever (auth headers won't work though)
-          if (clientConfig.hasPath(clientKey.serviceName)) {
-            log.info("Using explicit dev mode config gRPC client override for service [{}]", clientKey.serviceName)
-            clientSettingsFromConfig(clientKey.serviceName)
+          if (clientConfig.hasPath(serviceName)) {
+            log.info("Using explicit dev mode config gRPC client override for service [{}]", serviceName)
+            clientSettingsFromConfig(serviceName)
           } else {
             // Normally: local service discovery when running locally and trying to use gRPC
-            localDevModeDiscovery(clientKey.serviceName)
+            localDevModeDiscovery(serviceName)
           }
         } else {
           // in production, we rely on DNS and service mesh transports, no overrides allowed
-          if (clientConfig.hasPath(clientKey.serviceName)) {
+          if (clientConfig.hasPath(serviceName)) {
             log.warn(
-              s"Configuration override for [${clientKey.serviceName}] found in 'application.conf'. This is not supported and is ignored.")
+              s"Configuration override for [${serviceName}] found in 'application.conf'. This is not supported and is ignored.")
           }
 
-          log.debug("Creating gRPC client for Akka service [{}]", clientKey.serviceName)
+          log.debug("Creating gRPC client for Akka service [{}]", serviceName)
           GrpcClientSettings
-            .connectToServiceAt(clientKey.serviceName, 80)(system)
+            .connectToServiceAt(serviceName, 80)(system)
             // (TLS is handled for us by Kalix infra)
             .withTls(false)
         }
 
         // auth headers for Akka ACLs
         remoteIdentificationHeader match {
+          case _ if !addAuthHeaders => akkaServiceClientSettings // used by testkit to specify its own calling principal
           case Some(auth) => settingsWithCallCredentials(auth.headerName, auth.headerValue)(akkaServiceClientSettings)
           case None       => akkaServiceClientSettings
         }
       } else {
         // external/public gRPC service
-        log.debug("Creating gRPC client for external service [{}]", clientKey.serviceName)
-        if (clientConfig.hasPath(s""""${clientKey.serviceName}"""")) {
+        log.debug("Creating gRPC client for external service [{}]", serviceName)
+        if (clientConfig.hasPath(s""""${serviceName}"""")) {
           // user provided config for fqdn of service
-          clientSettingsFromConfig(clientKey.serviceName)
+          clientSettingsFromConfig(serviceName)
         } else {
           // or no config, we expect it is HTTPS on default port
-          log.debug("Creating gRPC client for external service [{}] port [443]", clientKey.serviceName)
-          GrpcClientSettings.connectToServiceAt(clientKey.serviceName, 443)(system)
+          log.debug("Creating gRPC client for external service [{}] port [443]", serviceName)
+          GrpcClientSettings.connectToServiceAt(serviceName, 443)(system)
         }
       }
     }
 
     // Java API - static create
     val create =
-      clientKey.clientClass.getMethod("create", classOf[GrpcClientSettings], classOf[ClassicActorSystemProvider])
+      clientClass.getMethod("create", classOf[GrpcClientSettings], classOf[ClassicActorSystemProvider])
     val client = create.invoke(null, clientSettings, system).asInstanceOf[AkkaGrpcClient]
-
-    client.closed().asScala.foreach { _ =>
-      // user should not close client, but just to be sure we don't keep it around if they do
-      clients.remove(clientKey, client)
-    }
-
-    client
+    client.asInstanceOf[T]
   }
 
   private def clientSettingsFromConfig(serviceName: String): GrpcClientSettings = {
