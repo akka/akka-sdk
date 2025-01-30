@@ -19,9 +19,23 @@ When compiling the project a Java interface for the service is generated `com.ex
 and annotate the class with `@GrpcEndpoint`:
 
 [source,java]
-.{sample-base-url}/doc-snippets/src/main/java/
+.{sample-base-url}/doc-snippets/src/main/java/com/example/api/ExampleGrpcEndpointImpl.java
 ----
 include::example$doc-snippets/src/main/java/com/example/api/ExampleGrpcEndpointImpl.java[]
 ----
 
 
+== Testing
+
+To exercise a gRPC endpoint, the testkit contains methods to get a gRPC client for calling the methods of the endpoint:
+
+[source,java]
+.{sample-base-url}/doc-snippets/src/test/java/com/example/api/ExampleGrpcEndpointTest.java
+----
+include::example$doc-snippets/src/test/java/com/example/api/ExampleGrpcEndpointTest.java[]
+----
+
+By default, if ACLs are defined, the testkit client is authenticated as if it was the service itself calling the endpoint,
+but there is also an overload to `getGrpcEndpointClient` that takes a `Principal` parameter for specifying what principal
+client should seem like from the endpoints point of view, for example to simulate another service `Principal.localService("other-service")`
+or a request coming from the public internet `Principal.INTERNET`.
