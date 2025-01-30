@@ -1,26 +1,30 @@
 package customer.domain;
 
-import com.google.protobuf.Any;
-import com.google.protobuf.ByteString;
-import com.google.protobuf.InvalidProtocolBufferException;
-import akka.javasdk.JsonSupport;
+import akka.javasdk.impl.serialization.JsonSerializer;
+import akka.runtime.sdk.spi.BytesPayload;
+import akka.util.ByteString;
+import customer.domain.CustomerEvent.CustomerCreated;
 import org.junit.jupiter.api.Test;
 
 import java.util.Base64;
 import java.util.Optional;
 
-import static customer.domain.schemaevolution.CustomerEvent.*;
+import static customer.domain.schemaevolution.CustomerEvent.AddressChanged;
+import static customer.domain.schemaevolution.CustomerEvent.CustomerCreatedOld;
+import static customer.domain.schemaevolution.CustomerEvent.NameChanged;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class CustomerEventSerializationTest {
 
+
   @Test
   public void shouldDeserializeWithMandatoryField() {
     //given
-    Any serialized = JsonSupport.encodeJson(new CustomerEvent.NameChanged("andre"));
+    JsonSerializer serializer = new JsonSerializer();
+    BytesPayload serialized = serializer.toBytes(new CustomerEvent.NameChanged("andre"));
 
     //when
-    NameChanged deserialized = JsonSupport.decodeJson(NameChanged.class, serialized);
+    NameChanged deserialized = serializer.fromBytes(NameChanged.class, serialized);
 
     //then
     assertEquals("andre", deserialized.newName());
@@ -31,11 +35,12 @@ class CustomerEventSerializationTest {
   @Test
   public void shouldDeserializeWithChangedFieldName() {
     //given
+    JsonSerializer serializer = new JsonSerializer();
     Address address = new Address("Wall Street", "New York");
-    Any serialized = JsonSupport.encodeJson(new CustomerEvent.AddressChanged(address));
+    BytesPayload serialized = serializer.toBytes(new CustomerEvent.AddressChanged(address));
 
     //when
-    AddressChanged deserialized = JsonSupport.decodeJson(AddressChanged.class, serialized);
+    AddressChanged deserialized = serializer.fromBytes(AddressChanged.class, serialized);
 
     //then
     assertEquals(address, deserialized.newAddress());
@@ -44,10 +49,11 @@ class CustomerEventSerializationTest {
   @Test
   public void shouldDeserializeWithStructureMigration() {
     //given
-    Any serialized = JsonSupport.encodeJson(new CustomerCreatedOld("bob@lightbend.com", "bob", "Wall Street", "New York"));
+    JsonSerializer serializer = new JsonSerializer();
+    BytesPayload serialized = serializer.toBytes(new CustomerCreatedOld("bob@lightbend.com", "bob", "Wall Street", "New York"));
 
     //when
-    CustomerEvent.CustomerCreated deserialized = JsonSupport.decodeJson(CustomerEvent.CustomerCreated.class, serialized);
+    CustomerCreated deserialized = serializer.fromBytes(CustomerCreated.class, serialized);
 
     //then
     assertEquals("Wall Street", deserialized.address().street());
@@ -56,17 +62,19 @@ class CustomerEventSerializationTest {
 
   // tag::testing-deserialization[]
   @Test
-  public void shouldDeserializeCustomerCreated_V0() throws InvalidProtocolBufferException {
+  public void shouldDeserializeCustomerCreated_V0() {
     // tag::testing-deserialization-encoding[]
-    Any serialized = JsonSupport.encodeJson(new CustomerCreatedOld("bob@lightbend.com", "bob", "Wall Street", "New York"));
-    String encodedBytes = new String(Base64.getEncoder().encode(serialized.toByteArray())); // <1>
+    JsonSerializer serializer = new JsonSerializer();
+    BytesPayload serialized = serializer.toBytes(new CustomerCreatedOld("bob@lightbend.com", "bob", "Wall Street", "New York"));
+    String encodedBytes = new String(Base64.getEncoder().encode(serialized.bytes().toArray())); // <1>
+    //save encodedBytes and serialized.contentType to a file
     // end::testing-deserialization-encoding[]
 
+    //load encodedBytes and serialized.contentType from a file
     byte[] bytes = Base64.getDecoder().decode(encodedBytes.getBytes()); // <2>
-    Any serializedAny = Any.parseFrom(ByteString.copyFrom(bytes)); // <3>
+    BytesPayload payload = new BytesPayload(ByteString.fromArray(bytes), serialized.contentType()); // <3>
 
-    CustomerEvent.CustomerCreated deserialized = JsonSupport.decodeJson(CustomerEvent.CustomerCreated.class,
-      serializedAny); // <4>
+    CustomerCreated deserialized = serializer.fromBytes(CustomerCreated.class, payload); // <4>
 
     assertEquals("Wall Street", deserialized.address().street());
     assertEquals("New York", deserialized.address().city());
