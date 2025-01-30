@@ -28,7 +28,7 @@ public class GrpcEndpointTest extends TestKitSupport {
 
   @Test
   public void shouldProvideBasicGrpcEndpoint() {
-    var testClient = createGrpcClient();
+    var testClient = getGrpcEndpointClient(TestGrpcServiceClient.class);
 
     try {
       var request = TestGrpcServiceOuterClass.In.newBuilder().setData("Hello world").build();
@@ -42,7 +42,7 @@ public class GrpcEndpointTest extends TestKitSupport {
 
   @Test
   public void shouldAllowExternalGrpcCall() {
-    var testClient = createGrpcClient();
+    var testClient = getGrpcEndpointClient(TestGrpcServiceClient.class);
     try {
 
       var request = TestGrpcServiceOuterClass.In.newBuilder().setData("Hello world").build();
@@ -56,7 +56,7 @@ public class GrpcEndpointTest extends TestKitSupport {
 
   @Test
   public void shouldAllowCrossServiceGrpcCall() {
-    var testClient = createGrpcClient();
+    var testClient = getGrpcEndpointClient(TestGrpcServiceClient.class);
     try {
 
       var request = TestGrpcServiceOuterClass.In.newBuilder().setData("Hello world").build();
@@ -70,7 +70,7 @@ public class GrpcEndpointTest extends TestKitSupport {
 
   @Test
   public void shouldAllowGrpcCallFromInternet() {
-    var testClient = createGrpcClient();
+    var testClient = getGrpcEndpointClient(TestGrpcServiceClient.class);
     try {
 
       var request = TestGrpcServiceOuterClass.In.newBuilder().setData("Hello world").build();
@@ -84,7 +84,7 @@ public class GrpcEndpointTest extends TestKitSupport {
 
   @Test
   public void shouldDenyGrpcCallFromInternetWithCustomCode() {
-    var testClient = createGrpcClient();
+    var testClient = createGrpcClient(); // FIXME creating this with testkit needs the capability to override ACL headers
     try {
       var request = TestGrpcServiceOuterClass.In.newBuilder().setData("Hello world").build();
       await(testClient.aclPrivateMethod(request));
@@ -99,7 +99,7 @@ public class GrpcEndpointTest extends TestKitSupport {
   @Test
   public void shouldAllowGrpcCallFromOtherService() {
     // FIXME update to avoid casting when we give better access to send headers
-    var testClient = (TestGrpcServiceClientPowerApi) createGrpcClient();
+    var testClient = (TestGrpcServiceClientPowerApi) createGrpcClient(); // FIXME creating this with testkit needs the capability to override ACL headers
 
     var request = TestGrpcServiceOuterClass.In.newBuilder().setData("Hello world").build();
     var response = await(testClient.aclServiceMethod()

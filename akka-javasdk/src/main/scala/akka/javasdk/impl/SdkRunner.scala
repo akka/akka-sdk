@@ -291,6 +291,7 @@ private[javasdk] object Sdk {
       componentClients: ComponentClients,
       dependencyProvider: Option[DependencyProvider],
       httpClientProvider: HttpClientProvider,
+      grpcClientProvider: GrpcClientProvider,
       serializer: JsonSerializer)
 
   private val platformManagedDependency = Set[Class[_]](
@@ -637,7 +638,8 @@ private final class Sdk(
     val preStart = { (_: ActorSystem[_]) =>
       serviceSetup match {
         case None =>
-          startedPromise.trySuccess(StartupContext(runtimeComponentClients, None, httpClientProvider, serializer))
+          startedPromise.trySuccess(
+            StartupContext(runtimeComponentClients, None, httpClientProvider, grpcClientProvider, serializer))
           Future.successful(Done)
         case Some(setup) =>
           if (dependencyProviderOpt.nonEmpty) {
@@ -647,7 +649,12 @@ private final class Sdk(
             dependencyProviderOpt.foreach(_ => logger.info("Service configured with DependencyProvider"))
           }
           startedPromise.trySuccess(
-            StartupContext(runtimeComponentClients, dependencyProviderOpt, httpClientProvider, serializer))
+            StartupContext(
+              runtimeComponentClients,
+              dependencyProviderOpt,
+              httpClientProvider,
+              grpcClientProvider,
+              serializer))
           Future.successful(Done)
       }
     }

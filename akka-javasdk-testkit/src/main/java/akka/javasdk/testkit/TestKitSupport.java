@@ -4,6 +4,7 @@
 
 package akka.javasdk.testkit;
 
+import akka.grpc.javadsl.AkkaGrpcClient;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.http.HttpClient;
 import akka.javasdk.timer.TimerScheduler;
@@ -70,10 +71,16 @@ public abstract class TestKitSupport extends AsyncCallsSupport {
   }
 
 
-
+  /**
+   * Lookup a specific object as provided by the service dependency provider
+   */
   public <T> T getDependency(Class<T> clazz) {
     return testKit.getDependencyProvider().map(provider -> provider.getDependency(clazz))
       .orElseThrow(() -> new IllegalStateException("DependencyProvider not available, or not yet initialized."));
+  }
+
+  public <T extends AkkaGrpcClient> T getGrpcEndpointClient(Class<T> grpcClientClass) {
+    return testKit.getGrpcEndpointClient(grpcClientClass);
   }
 
 
