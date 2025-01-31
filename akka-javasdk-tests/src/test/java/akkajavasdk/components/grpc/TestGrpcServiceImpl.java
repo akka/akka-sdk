@@ -13,7 +13,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 
-@Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET), denyCode = Acl.DenyStatusCode.NOT_FOUND)
+@Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET), denyCode = 5)
 @GrpcEndpoint
 public class TestGrpcServiceImpl implements TestGrpcService {
 
