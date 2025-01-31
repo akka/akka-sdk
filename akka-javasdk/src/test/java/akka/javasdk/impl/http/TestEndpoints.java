@@ -59,7 +59,7 @@ public class TestEndpoints {
         }
     }
 
-    @Acl(deny = @Acl.Matcher(principal = Acl.Principal.ALL))
+    @Acl(deny = @Acl.Matcher(principal = Acl.Principal.ALL), denyCode = 404)
     @HttpEndpoint("acls")
     public static class TestEndpointAcls {
 
@@ -71,7 +71,8 @@ public class TestEndpoints {
         @Get("/secret")
         @Acl(
             allow = @Acl.Matcher(service = "backoffice-service"),
-            deny = @Acl.Matcher(principal = Acl.Principal.INTERNET))
+            deny = @Acl.Matcher(principal = Acl.Principal.INTERNET),
+            denyCode = 401)
         public String secret() {
             return "the greatest secret";
         }
@@ -91,7 +92,15 @@ public class TestEndpoints {
         public String invalid() {
             return "invalid matcher";
         }
+    }
 
+    @HttpEndpoint("invalid-acl-denycode")
+    public static class TestEndpointInvalidAclDenyCode {
+        @Get("/invalid")
+        @Acl(allow = @Acl.Matcher(service = "*"), denyCode = 123123)
+        public String invalid() {
+            return "invalid matcher";
+        }
     }
 
     @HttpEndpoint("my-endpoint")

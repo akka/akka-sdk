@@ -49,7 +49,7 @@ public class TestGrpcServiceImpl implements TestGrpcService {
     return simple(in);
   }
 
-  @Acl(deny = @Acl.Matcher(principal = Acl.Principal.ALL), denyCode = Acl.DenyStatusCode.SERVICE_UNAVAILABLE)
+  @Acl(deny = @Acl.Matcher(principal = Acl.Principal.ALL), denyCode = 14)
   @Override
   public CompletionStage<TestGrpcServiceOuterClass.Out> aclOverrideDenyCodeMethod(TestGrpcServiceOuterClass.In in) {
     return simple(in);

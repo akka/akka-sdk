@@ -63,14 +63,14 @@ object GrpcEndpointDescriptorFactory {
     }
 
     val componentOptions =
-      new ComponentOptions(deriveAclOptions(Option(grpcEndpointClass.getAnnotation(classOf[Acl]))), None)
+      new ComponentOptions(deriveAclOptions(Option(grpcEndpointClass.getAnnotation(classOf[Acl])), isGrpc = true), None)
 
     val methodOptions: Map[String, MethodOptions] = grpcEndpointClass.getMethods
       .filter(m => hasAcl(m))
       .map { m =>
         // FIXME just do to lower case and change runtime to handle it
         capitalizeFirstLetter(m.getName) -> new MethodOptions(
-          deriveAclOptions(Option(m.getAnnotation(classOf[Acl]))),
+          deriveAclOptions(Option(m.getAnnotation(classOf[Acl])), isGrpc = true),
           None)
       }
       .toMap

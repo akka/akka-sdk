@@ -37,27 +37,7 @@ public @interface Acl {
    * annotated with their own @Acl definition.
    *
    */
-  DenyStatusCode denyCode() default DenyStatusCode.FORBIDDEN;
-
-  enum DenyStatusCode {
-    BAD_REQUEST(3),
-    FORBIDDEN(7),
-    NOT_FOUND(5),
-    AUTHENTICATION_REQUIRED(16),
-    CONFLICT(6),
-    INTERNAL_SERVER_ERROR(13),
-    SERVICE_UNAVAILABLE(14),
-    GATEWAY_TIMEOUT(4);
-
-
-
-    public final int value;
-    DenyStatusCode(int value) {
-      this.value = value;
-    }
-
-  }
-
+  int denyCode() default -1;
 
   /**
    * A principal matcher that can be used in an ACL.

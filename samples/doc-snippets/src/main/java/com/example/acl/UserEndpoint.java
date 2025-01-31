@@ -15,7 +15,7 @@ import akka.javasdk.http.AbstractHttpEndpoint;
 /*
 // tag::deny-class-level[]
 @Acl(allow = @Acl.Matcher(service = "service-a"),
-     denyCode = Acl.DenyStatusCode.NOT_FOUND)
+     denyCode = 404)
 // end::deny-class-level[]
  */
 // tag::endpoint-class[]

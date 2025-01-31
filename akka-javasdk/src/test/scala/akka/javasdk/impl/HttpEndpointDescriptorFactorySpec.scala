@@ -5,6 +5,9 @@
 package akka.javasdk.impl
 
 import akka.http.scaladsl.model.HttpMethods
+import akka.http.scaladsl.model.StatusCodes.Forbidden
+import akka.http.scaladsl.model.StatusCodes.NotFound
+import akka.http.scaladsl.model.StatusCodes.Unauthorized
 import akka.javasdk.impl.http.TestEndpoints.TestEndpointJwtClassAndMethodLevel
 import akka.javasdk.impl.http.TestEndpoints.TestEndpointJwtOnlyMethodLevel
 import akka.runtime.sdk.spi.All
@@ -72,6 +75,7 @@ class HttpEndpointDescriptorFactorySpec extends AnyWordSpec with Matchers {
 
       descriptor.componentOptions.aclOpt should not be empty
       descriptor.componentOptions.aclOpt.get.deny shouldBe List(All)
+      descriptor.componentOptions.aclOpt.get.denyHttpCode should contain(NotFound)
 
       val byMethodName = descriptor.methods.map(md => md.userMethod.getName -> md).toMap
 
@@ -80,6 +84,7 @@ class HttpEndpointDescriptorFactorySpec extends AnyWordSpec with Matchers {
       get.methodOptions.acl.get.allow.collect { case p: ServiceNamePattern => p.pattern } shouldEqual Seq(
         "backoffice-service")
       get.methodOptions.acl.get.deny shouldBe List(Internet)
+      get.methodOptions.acl.get.denyHttpCode should contain(Unauthorized)
 
       val noAcl = byMethodName("noAcl")
       noAcl.methodOptions.acl shouldBe empty
@@ -90,12 +95,18 @@ class HttpEndpointDescriptorFactorySpec extends AnyWordSpec with Matchers {
         "this",
         "that")
       thisAndThat.methodOptions.acl.get.deny shouldBe empty
+      thisAndThat.methodOptions.acl.get.denyHttpCode should contain(Forbidden)
     }
 
     "throw error if annotations are not valid" in {
       assertThrows[IllegalArgumentException] {
         HttpEndpointDescriptorFactory(classOf[http.TestEndpoints.TestEndpointInvalidAcl], _ => null)
       }
+
+      val caught = intercept[IllegalArgumentException] {
+        HttpEndpointDescriptorFactory(classOf[http.TestEndpoints.TestEndpointInvalidAclDenyCode], _ => null)
+      }
+      caught.getMessage should include("Invalid HTTP status code: 123123")
     }
 
     //Utility to compare StaticClaim to avoid creating `equals` in the original.

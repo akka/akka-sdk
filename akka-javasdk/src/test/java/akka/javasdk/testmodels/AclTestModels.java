@@ -5,7 +5,6 @@
 package akka.javasdk.testmodels;
 
 import akka.javasdk.annotations.Acl;
-import akka.javasdk.annotations.Acl.DenyStatusCode;
 import akka.javasdk.annotations.Acl.Matcher;
 import akka.javasdk.annotations.Acl.Principal;
 
@@ -43,6 +42,6 @@ public class AclTestModels {
   @Acl(allow = @Matcher(principal = Principal.ALL, service = "*"))
   public static class MainWithInvalidDenyAnnotation {}
 
-  @Acl(denyCode = DenyStatusCode.CONFLICT)
+  @Acl(denyCode = 409)
   public static class MainDenyWithCode {}
 }
