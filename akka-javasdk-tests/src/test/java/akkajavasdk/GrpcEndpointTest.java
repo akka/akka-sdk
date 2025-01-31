@@ -19,67 +19,44 @@ import static org.assertj.core.api.Assertions.fail;
 @ExtendWith(Junit5LogCapturing.class)
 public class GrpcEndpointTest extends TestKitSupport {
 
-  private TestGrpcServiceClient createGrpcClient() {
-    return TestGrpcServiceClient.create(
-        GrpcClientSettings.connectToServiceAt("localhost", testKit.getPort(),testKit.getActorSystem())
-            .withTls(false),
-        testKit.getActorSystem());
-  }
-
   @Test
   public void shouldProvideBasicGrpcEndpoint() {
     var testClient = getGrpcEndpointClient(TestGrpcServiceClient.class);
 
-    try {
-      var request = TestGrpcServiceOuterClass.In.newBuilder().setData("Hello world").build();
-      var response = await(testClient.simple(request));
+    var request = TestGrpcServiceOuterClass.In.newBuilder().setData("Hello world").build();
+    var response = await(testClient.simple(request));
 
-      assertThat(response.getData()).isEqualTo(request.getData());
-    } finally {
-      testClient.close();
-    }
+    assertThat(response.getData()).isEqualTo(request.getData());
   }
 
   @Test
   public void shouldAllowExternalGrpcCall() {
     var testClient = getGrpcEndpointClient(TestGrpcServiceClient.class);
-    try {
 
-      var request = TestGrpcServiceOuterClass.In.newBuilder().setData("Hello world").build();
-      var response = await(testClient.delegateToExternal(request));
+    var request = TestGrpcServiceOuterClass.In.newBuilder().setData("Hello world").build();
+    var response = await(testClient.delegateToExternal(request));
 
-      assertThat(response.getData()).isEqualTo(request.getData());
-    } finally {
-      testClient.close();
-    }
+    assertThat(response.getData()).isEqualTo(request.getData());
   }
 
   @Test
   public void shouldAllowCrossServiceGrpcCall() {
     var testClient = getGrpcEndpointClient(TestGrpcServiceClient.class);
-    try {
 
-      var request = TestGrpcServiceOuterClass.In.newBuilder().setData("Hello world").build();
-      var response = await(testClient.delegateToAkkaService(request));
+    var request = TestGrpcServiceOuterClass.In.newBuilder().setData("Hello world").build();
+    var response = await(testClient.delegateToAkkaService(request));
 
-      assertThat(response.getData()).isEqualTo(request.getData());
-    } finally {
-      testClient.close();
-    }
+    assertThat(response.getData()).isEqualTo(request.getData());
   }
 
   @Test
   public void shouldAllowGrpcCallFromInternet() {
     var testClient = getGrpcEndpointClient(TestGrpcServiceClient.class);
-    try {
 
-      var request = TestGrpcServiceOuterClass.In.newBuilder().setData("Hello world").build();
-      var response = await(testClient.aclPublicMethod(request));
+    var request = TestGrpcServiceOuterClass.In.newBuilder().setData("Hello world").build();
+    var response = await(testClient.aclPublicMethod(request));
 
-      assertThat(response.getData()).isEqualTo(request.getData());
-    } finally {
-      testClient.close();
-    }
+    assertThat(response.getData()).isEqualTo(request.getData());
   }
 
   @Test
@@ -89,10 +66,8 @@ public class GrpcEndpointTest extends TestKitSupport {
       var request = TestGrpcServiceOuterClass.In.newBuilder().setData("Hello world").build();
       await(testClient.aclPrivateMethod(request));
       fail("Expected exception");
-    } catch(GrpcServiceException e) {
+    } catch (GrpcServiceException e) {
       assertThat(e.getMessage()).contains("UNAVAILABLE");
-    } finally {
-      testClient.close();
     }
   }
 
