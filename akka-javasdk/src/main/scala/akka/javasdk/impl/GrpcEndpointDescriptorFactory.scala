@@ -6,6 +6,7 @@ package akka.javasdk.impl
 
 import akka.actor.typed.ActorSystem
 import akka.grpc.ServiceDescription
+import akka.grpc.scaladsl.GrpcExceptionHandler
 import akka.grpc.scaladsl.InstancePerRequestFactory
 import akka.http.scaladsl.model.HttpRequest
 import akka.http.scaladsl.model.HttpResponse
@@ -57,8 +58,8 @@ object GrpcEndpointDescriptorFactory {
       handlerFactory.partialInstancePerRequest(
         serviceFactory,
         description.name,
-        // FIXME default error handler, is it fine to leave like this, should runtime define?
-        PartialFunction.empty,
+        // FIXME would be better if this was up to the runtime
+        GrpcExceptionHandler.defaultMapper(system.classicSystem),
         system)
     }
 
