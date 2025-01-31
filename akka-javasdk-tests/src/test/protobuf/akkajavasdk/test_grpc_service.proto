@@ -21,6 +21,8 @@ service TestGrpcService {
   rpc DelegateToAkkaService(In) returns (Out) {};
   rpc DelegateToExternal(In) returns (Out) {};
   rpc AclPublicMethod(In) returns (Out) {};
-  rpc AclPrivateMethod(In) returns (Out) {};
   rpc AclServiceMethod(In) returns (Out) {};
+  rpc AclInheritedDenyCodeMethod(In) returns (Out) {};
+  rpc AclOverrideDenyCodeMethod(In) returns (Out) {};
+  rpc AclDefaultDenyCodeMethod(In) returns (Out) {};
 }

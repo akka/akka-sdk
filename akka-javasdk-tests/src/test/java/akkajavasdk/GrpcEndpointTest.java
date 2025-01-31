@@ -6,6 +6,7 @@ package akkajavasdk;
 
 import akka.grpc.GrpcClientSettings;
 import akka.grpc.GrpcServiceException;
+import akka.grpc.javadsl.SingleResponseRequestBuilder;
 import akka.javasdk.Principal;
 import akka.javasdk.testkit.TestKitSupport;
 import akkajavasdk.protocol.TestGrpcServiceClient;
@@ -60,18 +61,6 @@ public class GrpcEndpointTest extends TestKitSupport {
   }
 
   @Test
-  public void shouldDenyGrpcCallFromInternetWithCustomCode() {
-    var testClient = getGrpcEndpointClient(TestGrpcServiceClient.class, Principal.INTERNET);
-    try {
-      var request = TestGrpcServiceOuterClass.In.newBuilder().setData("Hello world").build();
-      await(testClient.aclPrivateMethod(request));
-      fail("Expected exception");
-    } catch (GrpcServiceException e) {
-      assertThat(e.getMessage()).contains("UNAVAILABLE");
-    }
-  }
-
-  @Test
   public void shouldAllowGrpcCallFromOtherService() {
     var clientFromOtherService = getGrpcEndpointClient(TestGrpcServiceClient.class, Principal.localService("other-service"));
 
@@ -80,14 +69,35 @@ public class GrpcEndpointTest extends TestKitSupport {
     assertThat(response.getData()).isEqualTo(request.getData());
 
     // should still fail when called from internet since it should override component level ACL
+    var clientFromInternet = getGrpcEndpointClient(TestGrpcServiceClient.class, Principal.INTERNET);
+    expectFailWith(clientFromInternet.aclServiceMethod(), "PERMISSION_DENIED");
+  }
+
+  @Test
+  public void shouldInheritDenyCode() {
+    var testClient = getGrpcEndpointClient(TestGrpcServiceClient.class, Principal.INTERNET);
+
+    // should inherit deny code defined at class level
+    expectFailWith(testClient.aclInheritedDenyCodeMethod()
+        .addHeader("impersonate-service", "other-service"), "NOT_FOUND");
+
+    // should override deny code defined at class level
+    expectFailWith(testClient.aclOverrideDenyCodeMethod(), "UNAVAILABLE");
+
+    // should default to FORBIDDEN if not defined in method's @ACL annotation
+    expectFailWith(testClient.aclDefaultDenyCodeMethod(), "PERMISSION_DENIED");
+  }
+
+  private void expectFailWith(SingleResponseRequestBuilder<TestGrpcServiceOuterClass.In, TestGrpcServiceOuterClass.Out> method, String expected) {
     try {
-      var clientFromInternet = getGrpcEndpointClient(TestGrpcServiceClient.class, Principal.INTERNET);
-      await(clientFromInternet.aclServiceMethod()
+      var request = TestGrpcServiceOuterClass.In.newBuilder().setData("Hello world").build();
+      await(method
           .invoke(request));
       fail("Expected exception");
     } catch(GrpcServiceException e) {
-      assertThat(e.getMessage()).contains("PERMISSION_DENIED");
+      assertThat(e.getMessage()).contains(expected);
     }
+
   }
 
 }
