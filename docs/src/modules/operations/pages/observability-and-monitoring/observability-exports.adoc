@@ -207,7 +207,7 @@ In addition, the Splunk HEC exporter supports <<TLS configuration>>. A full refe
 [#_google_cloud]
 === Google Cloud
 
-Google Cloud is supported for exporting logs, metrics, and traces. The primary piece of configuration it needs is a service account JSON key. The service account that the key is for must have the following IAM roles:
+Google Cloud is supported for exporting logs, metrics, and traces. The primary piece of configuration it needs is a service account JSON key. The service account associated with the key must have the following IAM roles:
 
 * If exporting metrics to Google Cloud, it must have the `roles/monitoring.metricWriter` role.
 * If exporting logs to Google Cloud, it must have the `roles/logging.logWriter` role.
@@ -255,7 +255,7 @@ Descriptor::
 ----
 default:
   googleCloud:
-    serviceAccountSecret:
+    serviceAccountKeySecret:
       name: gcp-credentials
 ----
 CLI::
