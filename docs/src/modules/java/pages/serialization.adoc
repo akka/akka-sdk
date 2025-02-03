@@ -162,7 +162,5 @@ Test example:
 ----
 include::example$event-sourced-customer-registry/src/test/java/customer/domain/CustomerEventSerializationTest.java[tag=testing-deserialization]
 ----
-<1> Encodes old class in Base64 String.
-<2> Decodes Base64 bytes.
-<3> Parses bytes into `BytesPayload` object.
-<4> Verifies JSON deserialization.
+<1> Loading old payload from a file.
+<2> Deserializing with the latest schema.
