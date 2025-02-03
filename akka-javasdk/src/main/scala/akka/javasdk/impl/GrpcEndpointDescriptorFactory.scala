@@ -69,8 +69,8 @@ object GrpcEndpointDescriptorFactory {
     val methodOptions: Map[String, MethodOptions] = grpcEndpointClass.getMethods
       .filter(m => hasAcl(m))
       .map { m =>
-        // FIXME just do to lower case and change runtime to handle it
-        capitalizeFirstLetter(m.getName) -> new MethodOptions(
+        // capitalize 1st letter to make sure they match the method names used in gRPC requests
+        m.getName.capitalize -> new MethodOptions(
           deriveAclOptions(Option(m.getAnnotation(classOf[Acl])), isGrpc = true),
           None)
       }
@@ -83,10 +83,6 @@ object GrpcEndpointDescriptorFactory {
       routeFactory,
       componentOptions,
       methodOptions)
-  }
-
-  def capitalizeFirstLetter(str: String): String = {
-    s"${str.charAt(0).toUpper}${str.substring(1)}"
   }
 
 }
