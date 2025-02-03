@@ -1,5 +1,6 @@
 package customer.domain;
 
+import akka.javasdk.JsonSupport;
 import akka.javasdk.impl.serialization.JsonSerializer;
 import akka.runtime.sdk.spi.BytesPayload;
 import akka.util.ByteString;
@@ -20,11 +21,10 @@ class CustomerEventSerializationTest {
   @Test
   public void shouldDeserializeWithMandatoryField() {
     //given
-    JsonSerializer serializer = new JsonSerializer();
-    BytesPayload serialized = serializer.toBytes(new CustomerEvent.NameChanged("andre"));
+    BytesPayload serialized = JsonSupport.encodeToBytesPayload(new CustomerEvent.NameChanged("andre"));
 
     //when
-    NameChanged deserialized = serializer.fromBytes(NameChanged.class, serialized);
+    NameChanged deserialized = JsonSupport.decodeJson(NameChanged.class, serialized);
 
     //then
     assertEquals("andre", deserialized.newName());
@@ -35,12 +35,11 @@ class CustomerEventSerializationTest {
   @Test
   public void shouldDeserializeWithChangedFieldName() {
     //given
-    JsonSerializer serializer = new JsonSerializer();
     Address address = new Address("Wall Street", "New York");
-    BytesPayload serialized = serializer.toBytes(new CustomerEvent.AddressChanged(address));
+    BytesPayload serialized = JsonSupport.encodeToBytesPayload(new CustomerEvent.AddressChanged(address));
 
     //when
-    AddressChanged deserialized = serializer.fromBytes(AddressChanged.class, serialized);
+    AddressChanged deserialized = JsonSupport.decodeJson(AddressChanged.class, serialized);
 
     //then
     assertEquals(address, deserialized.newAddress());
@@ -49,11 +48,10 @@ class CustomerEventSerializationTest {
   @Test
   public void shouldDeserializeWithStructureMigration() {
     //given
-    JsonSerializer serializer = new JsonSerializer();
-    BytesPayload serialized = serializer.toBytes(new CustomerCreatedOld("bob@lightbend.com", "bob", "Wall Street", "New York"));
+    BytesPayload serialized = JsonSupport.encodeToBytesPayload(new CustomerCreatedOld("bob@lightbend.com", "bob", "Wall Street", "New York"));
 
     //when
-    CustomerCreated deserialized = serializer.fromBytes(CustomerCreated.class, serialized);
+    CustomerCreated deserialized = JsonSupport.decodeJson(CustomerCreated.class, serialized);
 
     //then
     assertEquals("Wall Street", deserialized.address().street());
@@ -64,8 +62,7 @@ class CustomerEventSerializationTest {
   @Test
   public void shouldDeserializeCustomerCreated_V0() {
     // tag::testing-deserialization-encoding[]
-    JsonSerializer serializer = new JsonSerializer();
-    BytesPayload serialized = serializer.toBytes(new CustomerCreatedOld("bob@lightbend.com", "bob", "Wall Street", "New York"));
+    BytesPayload serialized = JsonSupport.encodeToBytesPayload(new CustomerCreatedOld("bob@lightbend.com", "bob", "Wall Street", "New York"));
     String encodedBytes = new String(Base64.getEncoder().encode(serialized.bytes().toArray())); // <1>
     //save encodedBytes and serialized.contentType to a file
     // end::testing-deserialization-encoding[]
@@ -74,7 +71,7 @@ class CustomerEventSerializationTest {
     byte[] bytes = Base64.getDecoder().decode(encodedBytes.getBytes()); // <2>
     BytesPayload payload = new BytesPayload(ByteString.fromArray(bytes), serialized.contentType()); // <3>
 
-    CustomerCreated deserialized = serializer.fromBytes(CustomerCreated.class, payload); // <4>
+    CustomerCreated deserialized = JsonSupport.decodeJson(CustomerCreated.class, payload); // <4>
 
     assertEquals("Wall Street", deserialized.address().street());
     assertEquals("New York", deserialized.address().city());
