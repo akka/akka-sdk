@@ -1,7 +1,6 @@
 package customer.domain;
 
 import akka.javasdk.JsonSupport;
-import akka.javasdk.impl.serialization.JsonSerializer;
 import akka.runtime.sdk.spi.BytesPayload;
 import akka.util.ByteString;
 import customer.domain.CustomerEvent.CustomerCreated;
