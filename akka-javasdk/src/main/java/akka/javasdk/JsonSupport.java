@@ -157,17 +157,6 @@ public final class JsonSupport {
   }
 
   /**
-   * Encode the given value as JSON using Jackson.
-   *
-   * @param value the object to encode as JSON, must be an instance of a class properly annotated
-   *              with the needed Jackson annotations.
-   * @throws IllegalArgumentException if the given value cannot be turned into JSON
-   */
-  public static <T> BytesPayload encodeToBytesPayload(T value) {
-    return jsonSerializer.toBytes(value);
-  }
-
-  /**
    * @deprecated was only intended for internal use
    */
   @Deprecated
@@ -210,19 +199,6 @@ public final class JsonSupport {
    */
   public static <T> T decodeJson(Class<T> valueClass, akka.util.ByteString bytes) {
     return jsonSerializer.fromBytes(valueClass, new BytesPayload(bytes, jsonSerializer.contentTypeFor(valueClass)));
-  }
-
-  /**
-   * Decode the given BytesPayload to an instance of T using Jackson.
-   *
-   * @param valueClass   The type of class to deserialize the object to, the class must have the
-   *                     proper Jackson annotations for deserialization.
-   * @param bytesPayload The BytesPayload to deserialize.
-   * @return The decoded object
-   * @throws IllegalArgumentException if the given value cannot be decoded to a T
-   */
-  public static <T> T decodeJson(Class<T> valueClass, BytesPayload bytesPayload) {
-    return jsonSerializer.fromBytes(valueClass, bytesPayload);
   }
 
   /**
