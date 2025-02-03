@@ -32,9 +32,14 @@ public @interface Acl {
   /**
    * The status code to respond with when access is denied.
    * <p>
-   * By default, this will be 'Forbidden', but alternatives might include 'Authentication required' or 'Not
-   * Found'. If set at class-level, it will automatically be inherited by all methods in the class that are not
+   * By default, this will be '403 Forbidden' for HTTP endpoints and 'PERMISSION DENIED (7)' for gRPC endpoints.
+   * If set at class-level, it will automatically be inherited by all methods in the class that are not
    * annotated with their own @Acl definition.
+   *
+   * For HTTP, common used values are between 400 and 599,
+   * see exhaustive list at https://www.rfc-editor.org/rfc/rfc9110.html#name-status-codes
+   *
+   * For gRPC, the status codes values can be consulted at https://grpc.github.io/grpc/core/md_doc_statuscodes.html
    *
    */
   int denyCode() default -1;
