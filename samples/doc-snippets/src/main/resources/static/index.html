@@ -1,11 +1,44 @@
 <html>
     <head>
         <title>Static content sample</title>
-        <link type="text/css" resource="style.css"/>
+        <link rel="stylesheet" href="/static/style.css"/>
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <script language="JavaScript">
+            $(function(e){
+                // code here
+                $(document).on('click', '#call-service', function () {
+                    $.ajax({
+                        url: '/example/hello',
+                        type: 'GET',
+                        success: function (response) {
+                            var codeBlock = $('#response')
+                            let date = new Date()
+                            codeBlock.prepend('<p>Response (' + date + '): ' + response + '</p>')
+                        },
+                        error: function(error){
+                            console.log(error)
+                        }
+                    })
+                })
+            });
+        </script>
     </head>
     <body>
-        <h1>Static content sample</h1>
-        <p></p>
-
+        <h1>Static Akka service content sample</h1>
+        <p>This shows how resources packaged into the Akka service artifact can be served
+            through an HTTP endpoint.
+        </p>
+        <p>
+            <code>index.html</code> is directly mapped in at <code>/index.html</code> as a landing page
+            a wildcard mapping provides all the resources (css, image) under <code>static/**</code>.
+        </p>
+        <p>
+            The actual resource files can be found under <code>src/main/resources/static</code>
+            in the project.
+        </p>
+        <p>
+            <button id="call-service">Call service endpoint</button>
+        </p>
+        <p id="response"></p>
     </body>
 </html>

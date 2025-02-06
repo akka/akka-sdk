@@ -17,12 +17,15 @@ import akka.stream.javadsl.StreamConverters
 object HttpClassPathResource {
 
   private val suffixToMimeType = Map(
+    "html" -> ContentTypes.TEXT_HTML_UTF8,
+    "txt" -> ContentTypes.TEXT_PLAIN_UTF8,
     "css" -> ContentTypes.create(MediaTypes.TEXT_CSS, HttpCharsets.`UTF-8`),
     "js" -> ContentTypes.create(MediaTypes.APPLICATION_JAVASCRIPT, HttpCharsets.`UTF-8`),
     "png" -> ContentTypes.create(MediaTypes.IMAGE_PNG),
     "svg" -> ContentTypes.create(MediaTypes.IMAGE_SVG_XML),
     "jpg" -> ContentTypes.create(MediaTypes.IMAGE_JPEG),
-    "ico" -> ContentTypes.create(MediaTypes.IMAGE_X_ICON))
+    "ico" -> ContentTypes.create(MediaTypes.IMAGE_X_ICON),
+    "pdf" -> ContentTypes.create(MediaTypes.APPLICATION_PDF))
 
   def fromStaticPath(absolutePath: String): HttpResponse = {
     require(absolutePath.startsWith("/"), "Illegal path, must be absolute")
