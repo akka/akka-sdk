@@ -175,4 +175,12 @@ public class ExampleEndpoint extends AbstractHttpEndpoint {
     return HttpResponses.serverSentEvents(timeSource); // <3>
   }
   // end::basic-sse[]
+
+  // tag::static-resources-from-classpath[]
+  @Get("/static/**")
+  public HttpResponse webPageResources(HttpRequest request) {
+    return HttpResponses.resourceFromClassPath(request.getUri().getPathString());
+  }
+  // end::static-resources-from-classpath[]
+
 }

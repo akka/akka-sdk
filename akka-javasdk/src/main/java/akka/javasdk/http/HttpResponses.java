@@ -11,6 +11,8 @@ import akka.http.javadsl.model.headers.CacheDirectives;
 import akka.http.javadsl.model.headers.Connection;
 import akka.http.javadsl.model.sse.ServerSentEvent;
 import akka.javasdk.JsonSupport;
+import akka.javasdk.impl.http.HttpClassPathResource;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import akka.stream.javadsl.Source;
 import com.google.common.net.HttpHeaders;
 
@@ -190,6 +192,16 @@ public class HttpResponses {
   public static HttpResponse notImplemented(String text) {
     return ok(text).withStatus(StatusCodes.NOT_IMPLEMENTED);
   }
+
+  /**
+   * FIXME a lot to describe here
+   *
+   * Returns 404 if there is no such resource.
+   */
+  public static HttpResponse resourceFromClassPath(String absolutePath) {
+    return HttpClassPathResource.fromStaticPath(absolutePath);
+  }
+
 
   private final static ContentType TEXT_EVENT_STREAM = ContentTypes.parse("text/event-stream");
 
