@@ -183,7 +183,7 @@ CORS can be enabled by configuring at least one allowed origin, for example:
 
 [source,bash]
 ----
-akka route update acme-ecommerce --cors-origin https://www.acme.org
+akka route update acme-ecommerce --cors-origin https://www.acme.org --cors-method GET --cors-method POST
 ----
 
 ==== Securing routes
