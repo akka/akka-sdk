@@ -4,7 +4,6 @@
 
 package akkajavasdk;
 
-import akka.grpc.GrpcClientSettings;
 import akka.grpc.GrpcServiceException;
 import akka.grpc.javadsl.SingleResponseRequestBuilder;
 import akka.javasdk.Principal;
@@ -94,7 +93,7 @@ public class GrpcEndpointTest extends TestKitSupport {
       await(method
           .invoke(request));
       fail("Expected exception");
-    } catch(GrpcServiceException e) {
+    } catch (GrpcServiceException e) {
       assertThat(e.getMessage()).contains(expected);
     }
 

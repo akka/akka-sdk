@@ -25,4 +25,8 @@ service TestGrpcService {
   rpc AclInheritedDenyCodeMethod(In) returns (Out) {};
   rpc AclOverrideDenyCodeMethod(In) returns (Out) {};
   rpc AclDefaultDenyCodeMethod(In) returns (Out) {};
+  rpc JwtIssuerMethod(In) returns (Out) {};
+  rpc JwtStaticClaimValueMethod(In) returns (Out) {};
+  rpc JwtStaticClaimPatternMethod(In) returns (Out) {};
+  rpc JwtInherited(In) returns (Out) {};
 }

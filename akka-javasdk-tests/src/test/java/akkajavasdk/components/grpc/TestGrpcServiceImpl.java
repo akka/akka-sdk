@@ -6,6 +6,7 @@ package akkajavasdk.components.grpc;
 
 import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.GrpcEndpoint;
+import akka.javasdk.annotations.JWT;
 import akka.javasdk.grpc.GrpcClientProvider;
 import akkajavasdk.protocol.*;
 
@@ -14,6 +15,7 @@ import java.util.concurrent.CompletionStage;
 
 
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET), denyCode = 5)
+@JWT(validate = JWT.JwtMethodMode.BEARER_TOKEN, bearerTokenIssuers = "class-level-issuer")
 @GrpcEndpoint
 public class TestGrpcServiceImpl implements TestGrpcService {
 
@@ -68,10 +70,32 @@ public class TestGrpcServiceImpl implements TestGrpcService {
     return simple(in);
   }
 
-
   @Acl(deny = @Acl.Matcher(principal = Acl.Principal.ALL))
   @Override
   public CompletionStage<TestGrpcServiceOuterClass.Out> aclDefaultDenyCodeMethod(TestGrpcServiceOuterClass.In in) {
+    return simple(in);
+  }
+
+  @JWT(validate = JWT.JwtMethodMode.BEARER_TOKEN, bearerTokenIssuers = "my-issuer-123")
+  @Override
+  public CompletionStage<TestGrpcServiceOuterClass.Out> jwtIssuerMethod(TestGrpcServiceOuterClass.In in) {
+    return simple(in);
+  }
+
+  @JWT(validate = JWT.JwtMethodMode.BEARER_TOKEN, staticClaims = { @JWT.StaticClaim(claim = "sub", values = "my-subject-123")})
+  @Override
+  public CompletionStage<TestGrpcServiceOuterClass.Out> jwtStaticClaimValueMethod(TestGrpcServiceOuterClass.In in) {
+    return simple(in);
+  }
+
+  @JWT(validate = JWT.JwtMethodMode.BEARER_TOKEN, staticClaims = { @JWT.StaticClaim(claim = "sub", pattern = "my-subject-\\d+")})
+  @Override
+  public CompletionStage<TestGrpcServiceOuterClass.Out> jwtStaticClaimPatternMethod(TestGrpcServiceOuterClass.In in) {
+    return simple(in);
+  }
+
+  @Override
+  public CompletionStage<TestGrpcServiceOuterClass.Out> jwtInherited(TestGrpcServiceOuterClass.In in) {
     return simple(in);
   }
 

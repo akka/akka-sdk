@@ -11,8 +11,11 @@ import akka.grpc.scaladsl.InstancePerRequestFactory
 import akka.http.scaladsl.model.HttpRequest
 import akka.http.scaladsl.model.HttpResponse
 import akka.javasdk.annotations.Acl
+import akka.javasdk.annotations.JWT
 import akka.javasdk.impl.AclDescriptorFactory.deriveAclOptions
 import akka.javasdk.impl.ComponentDescriptorFactory.hasAcl
+import akka.javasdk.impl.JwtDescriptorFactory.deriveJWTOptions
+import akka.javasdk.impl.JwtDescriptorFactory.hasJwt
 import akka.runtime.sdk.spi.ComponentOptions
 import akka.runtime.sdk.spi.GrpcEndpointDescriptor
 import akka.runtime.sdk.spi.GrpcEndpointRequestConstructionContext
@@ -64,15 +67,17 @@ object GrpcEndpointDescriptorFactory {
     }
 
     val componentOptions =
-      new ComponentOptions(deriveAclOptions(Option(grpcEndpointClass.getAnnotation(classOf[Acl])), isGrpc = true), None)
+      new ComponentOptions(
+        deriveAclOptions(Option(grpcEndpointClass.getAnnotation(classOf[Acl])), isGrpc = true),
+        deriveJWTOptions(Option(grpcEndpointClass.getAnnotation(classOf[JWT])), grpcEndpointClass.getCanonicalName))
 
     val methodOptions: Map[String, MethodOptions] = grpcEndpointClass.getMethods
-      .filter(m => hasAcl(m))
+      .filter(m => hasAcl(m) || hasJwt(m))
       .map { m =>
         // capitalize 1st letter to make sure they match the method names used in gRPC requests
         m.getName.capitalize -> new MethodOptions(
           deriveAclOptions(Option(m.getAnnotation(classOf[Acl])), isGrpc = true),
-          None)
+          deriveJWTOptions(Option(m.getAnnotation(classOf[JWT])), grpcEndpointClass.getCanonicalName))
       }
       .toMap
     new GrpcEndpointDescriptor[T](
