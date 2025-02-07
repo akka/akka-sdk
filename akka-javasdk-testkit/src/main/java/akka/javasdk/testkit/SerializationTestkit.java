@@ -16,7 +16,7 @@ import java.io.IOException;
  * Helper class for serializing and deserializing objects for testing schema migration.
  *
  */
-public class SerializationTestkit {
+public final class SerializationTestkit {
 
   private record SerializedPayload(String contentType, byte[] bytes) {
   }
