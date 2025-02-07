@@ -54,7 +54,7 @@ public class GrpcEndpointTest extends TestKitSupport {
     var testClient = getGrpcEndpointClient(TestGrpcServiceClient.class);
 
     var request = TestGrpcServiceOuterClass.In.newBuilder().setData("Hello world").build();
-    var response = await(testClient.aclPublicMethod(request));
+    var response = await(testClient.aclPublic(request));
 
     assertThat(response.getData()).isEqualTo(request.getData());
   }
@@ -64,12 +64,12 @@ public class GrpcEndpointTest extends TestKitSupport {
     var clientFromOtherService = getGrpcEndpointClient(TestGrpcServiceClient.class, Principal.localService("other-service"));
 
     var request = TestGrpcServiceOuterClass.In.newBuilder().setData("Hello world").build();
-    var response = await(clientFromOtherService.aclServiceMethod(request));
+    var response = await(clientFromOtherService.aclService(request));
     assertThat(response.getData()).isEqualTo(request.getData());
 
     // should still fail when called from internet since it should override component level ACL
     var clientFromInternet = getGrpcEndpointClient(TestGrpcServiceClient.class, Principal.INTERNET);
-    expectFailWith(clientFromInternet.aclServiceMethod(), "PERMISSION_DENIED");
+    expectFailWith(clientFromInternet.aclService(), "PERMISSION_DENIED");
   }
 
   @Test
@@ -77,14 +77,14 @@ public class GrpcEndpointTest extends TestKitSupport {
     var testClient = getGrpcEndpointClient(TestGrpcServiceClient.class, Principal.INTERNET);
 
     // should inherit deny code defined at class level
-    expectFailWith(testClient.aclInheritedDenyCodeMethod()
+    expectFailWith(testClient.aclInheritedDenyCode()
         .addHeader("impersonate-service", "other-service"), "NOT_FOUND");
 
     // should override deny code defined at class level
-    expectFailWith(testClient.aclOverrideDenyCodeMethod(), "UNAVAILABLE");
+    expectFailWith(testClient.aclOverrideDenyCode(), "UNAVAILABLE");
 
-    // should default to FORBIDDEN if not defined in method's @ACL annotation
-    expectFailWith(testClient.aclDefaultDenyCodeMethod(), "PERMISSION_DENIED");
+    // should default to FORBIDDEN if not defined in method's @ACL anno
+    expectFailWith(testClient.aclDefaultDenyCode(), "PERMISSION_DENIED");
   }
 
   private void expectFailWith(SingleResponseRequestBuilder<TestGrpcServiceOuterClass.In, TestGrpcServiceOuterClass.Out> method, String expected) {

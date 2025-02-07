@@ -20,13 +20,16 @@ service TestGrpcService {
   rpc Simple(In) returns (Out) {};
   rpc DelegateToAkkaService(In) returns (Out) {};
   rpc DelegateToExternal(In) returns (Out) {};
-  rpc AclPublicMethod(In) returns (Out) {};
-  rpc AclServiceMethod(In) returns (Out) {};
-  rpc AclInheritedDenyCodeMethod(In) returns (Out) {};
-  rpc AclOverrideDenyCodeMethod(In) returns (Out) {};
-  rpc AclDefaultDenyCodeMethod(In) returns (Out) {};
-  rpc JwtIssuerMethod(In) returns (Out) {};
-  rpc JwtStaticClaimValueMethod(In) returns (Out) {};
-  rpc JwtStaticClaimPatternMethod(In) returns (Out) {};
+  rpc AclPublic(In) returns (Out) {};
+  rpc AclService(In) returns (Out) {};
+  rpc AclInheritedDenyCode(In) returns (Out) {};
+  rpc AclOverrideDenyCode(In) returns (Out) {};
+  rpc AclDefaultDenyCode(In) returns (Out) {};
+}
+
+service TestJwtsGrpcService {
+  rpc JwtIssuer(In) returns (Out) {};
+  rpc JwtStaticClaimValue(In) returns (Out) {};
+  rpc JwtStaticClaimPattern(In) returns (Out) {};
   rpc JwtInherited(In) returns (Out) {};
 }

@@ -15,7 +15,6 @@ import java.util.concurrent.CompletionStage;
 
 
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET), denyCode = 5)
-@JWT(validate = JWT.JwtMethodMode.BEARER_TOKEN, bearerTokenIssuers = "class-level-issuer")
 @GrpcEndpoint
 public class TestGrpcServiceImpl implements TestGrpcService {
 
@@ -47,13 +46,13 @@ public class TestGrpcServiceImpl implements TestGrpcService {
   }
 
   @Override
-  public CompletionStage<TestGrpcServiceOuterClass.Out> aclPublicMethod(TestGrpcServiceOuterClass.In in) {
+  public CompletionStage<TestGrpcServiceOuterClass.Out> aclPublic(TestGrpcServiceOuterClass.In in) {
     return simple(in);
   }
 
   @Acl(deny = @Acl.Matcher(principal = Acl.Principal.ALL), denyCode = 14)
   @Override
-  public CompletionStage<TestGrpcServiceOuterClass.Out> aclOverrideDenyCodeMethod(TestGrpcServiceOuterClass.In in) {
+  public CompletionStage<TestGrpcServiceOuterClass.Out> aclOverrideDenyCode(TestGrpcServiceOuterClass.In in) {
     return simple(in);
   }
 
@@ -61,41 +60,18 @@ public class TestGrpcServiceImpl implements TestGrpcService {
       allow = @Acl.Matcher(service = "other-service"),
       deny = @Acl.Matcher(principal = Acl.Principal.INTERNET))
   @Override
-  public CompletionStage<TestGrpcServiceOuterClass.Out> aclServiceMethod(TestGrpcServiceOuterClass.In in) {
+  public CompletionStage<TestGrpcServiceOuterClass.Out> aclService(TestGrpcServiceOuterClass.In in) {
     return simple(in);
   }
 
   @Override
-  public CompletionStage<TestGrpcServiceOuterClass.Out> aclInheritedDenyCodeMethod(TestGrpcServiceOuterClass.In in) {
+  public CompletionStage<TestGrpcServiceOuterClass.Out> aclInheritedDenyCode(TestGrpcServiceOuterClass.In in) {
     return simple(in);
   }
 
   @Acl(deny = @Acl.Matcher(principal = Acl.Principal.ALL))
   @Override
-  public CompletionStage<TestGrpcServiceOuterClass.Out> aclDefaultDenyCodeMethod(TestGrpcServiceOuterClass.In in) {
-    return simple(in);
-  }
-
-  @JWT(validate = JWT.JwtMethodMode.BEARER_TOKEN, bearerTokenIssuers = "my-issuer-123")
-  @Override
-  public CompletionStage<TestGrpcServiceOuterClass.Out> jwtIssuerMethod(TestGrpcServiceOuterClass.In in) {
-    return simple(in);
-  }
-
-  @JWT(validate = JWT.JwtMethodMode.BEARER_TOKEN, staticClaims = { @JWT.StaticClaim(claim = "sub", values = "my-subject-123")})
-  @Override
-  public CompletionStage<TestGrpcServiceOuterClass.Out> jwtStaticClaimValueMethod(TestGrpcServiceOuterClass.In in) {
-    return simple(in);
-  }
-
-  @JWT(validate = JWT.JwtMethodMode.BEARER_TOKEN, staticClaims = { @JWT.StaticClaim(claim = "sub", pattern = "my-subject-\\d+")})
-  @Override
-  public CompletionStage<TestGrpcServiceOuterClass.Out> jwtStaticClaimPatternMethod(TestGrpcServiceOuterClass.In in) {
-    return simple(in);
-  }
-
-  @Override
-  public CompletionStage<TestGrpcServiceOuterClass.Out> jwtInherited(TestGrpcServiceOuterClass.In in) {
+  public CompletionStage<TestGrpcServiceOuterClass.Out> aclDefaultDenyCode(TestGrpcServiceOuterClass.In in) {
     return simple(in);
   }
 

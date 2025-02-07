@@ -9,7 +9,7 @@ import akka.grpc.javadsl.SingleResponseRequestBuilder;
 import akka.http.javadsl.model.StatusCodes;
 import akka.javasdk.http.StrictResponse;
 import akka.javasdk.testkit.TestKitSupport;
-import akkajavasdk.protocol.TestGrpcServiceClient;
+import akkajavasdk.protocol.TestJwtsGrpcServiceClient;
 import akkajavasdk.protocol.TestGrpcServiceOuterClass;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -86,13 +86,13 @@ public class JwtEndpointTest extends TestKitSupport {
   @Test
   public void shouldValidateJwtIssuer() {
     String bearerToken = bearerTokenWith(Map.of("iss", "my-issuer"));
-    var wrongIss = getGrpcEndpointClient(TestGrpcServiceClient.class)
+    var wrongIss = getGrpcEndpointClient(TestJwtsGrpcServiceClient.class)
         .addRequestHeader("Authorization", bearerToken);
-    expectFailWith(wrongIss.jwtIssuerMethod(), "UNAUTHENTICATED: Bearer token from wrong issuer");
+    expectFailWith(wrongIss.jwtIssuer(), "UNAUTHENTICATED: Bearer token from wrong issuer");
 
-    var correctIss = getGrpcEndpointClient(TestGrpcServiceClient.class)
+    var correctIss = getGrpcEndpointClient(TestJwtsGrpcServiceClient.class)
         .addRequestHeader("Authorization", bearerTokenWith(Map.of("iss", "my-issuer-123")));
-    var response = await(correctIss.jwtIssuerMethod().invoke(request));
+    var response = await(correctIss.jwtIssuer().invoke(request));
     assertThat(response.getData()).isEqualTo(request.getData());
   }
 
@@ -100,13 +100,13 @@ public class JwtEndpointTest extends TestKitSupport {
   public void shouldValidateJwtStaticClaim() {
     String wrongSub = bearerTokenWith(
         Map.of("iss", "my-issuer-123", "sub", "incorrect-subject"));
-    var client = getGrpcEndpointClient(TestGrpcServiceClient.class)
+    var client = getGrpcEndpointClient(TestJwtsGrpcServiceClient.class)
         .addRequestHeader("Authorization", wrongSub);
-    expectFailWith(client.jwtStaticClaimValueMethod(), "PERMISSION_DENIED: Bearer token does not contain required claims");
+    expectFailWith(client.jwtStaticClaimValue(), "PERMISSION_DENIED: Bearer token does not contain required claims");
 
-    var correctSub = getGrpcEndpointClient(TestGrpcServiceClient.class)
+    var correctSub = getGrpcEndpointClient(TestJwtsGrpcServiceClient.class)
         .addRequestHeader("Authorization", bearerTokenWith(Map.of("iss", "my-issuer-123", "sub", "my-subject-123")));
-    var response = await(correctSub.jwtStaticClaimValueMethod().invoke(request));
+    var response = await(correctSub.jwtStaticClaimValue().invoke(request));
     assertThat(response.getData()).isEqualTo(request.getData());
   }
 
@@ -114,25 +114,25 @@ public class JwtEndpointTest extends TestKitSupport {
   public void shouldValidateJwtStaticClaimPattern() {
     String wrongClaimFormat = bearerTokenWith(
         Map.of("iss", "my-issuer-123", "sub", "not-my-subject-456"));
-    var client = getGrpcEndpointClient(TestGrpcServiceClient.class)
+    var client = getGrpcEndpointClient(TestJwtsGrpcServiceClient.class)
         .addRequestHeader("Authorization", wrongClaimFormat);
-    expectFailWith(client.jwtStaticClaimPatternMethod(), "PERMISSION_DENIED: Bearer token does not contain required claims");
+    expectFailWith(client.jwtStaticClaimPattern(), "PERMISSION_DENIED: Bearer token does not contain required claims");
 
-    var correctSub = getGrpcEndpointClient(TestGrpcServiceClient.class)
+    var correctSub = getGrpcEndpointClient(TestJwtsGrpcServiceClient.class)
         .addRequestHeader("Authorization", bearerTokenWith(Map.of("iss", "my-issuer-456", "sub", "my-subject-456")));
-    var response = await(correctSub.jwtStaticClaimPatternMethod().invoke(request));
+    var response = await(correctSub.jwtStaticClaimPattern().invoke(request));
     assertThat(response.getData()).isEqualTo(request.getData());
   }
 
   @Test
   public void shouldCorrectlyInheritFromClass() {
     String classIssuer = bearerTokenWith(Map.of("iss", "class-level-issuer"));
-    var client = getGrpcEndpointClient(TestGrpcServiceClient.class)
+    var client = getGrpcEndpointClient(TestJwtsGrpcServiceClient.class)
         .addRequestHeader("Authorization", classIssuer);
     var response = await(client.jwtInherited().invoke(request));
     assertThat(response.getData()).isEqualTo(request.getData());
 
-    var correctSub = getGrpcEndpointClient(TestGrpcServiceClient.class)
+    var correctSub = getGrpcEndpointClient(TestJwtsGrpcServiceClient.class)
         .addRequestHeader("Authorization", bearerTokenWith(Map.of("iss", "my-issuer-123")));
     expectFailWith(correctSub.jwtInherited(), "UNAUTHENTICATED: Bearer token from wrong issuer");
   }
