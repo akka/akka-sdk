@@ -153,7 +153,7 @@ It's highly recommended to cover all schema changes with unit tests. In most cas
 ----
 include::example$event-sourced-customer-registry/src/test/java/customer/domain/CustomerEventSerializationTest.java[tag=testing-deserialization-encoding]
 ----
-<1> Encodes old class in Base64 String.
+<1> Save old class payload to a file.
 
 Test example:
 
