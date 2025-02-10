@@ -12,7 +12,7 @@ import static akka.Done.done;
 @ComponentId("order")
 public class OrderEntity extends KeyValueEntity<Order> {
 
-  public Effect<Order> get() {
+  public ReadOnlyEffect<Order> get() {
     return effects().reply(currentState());
   }
 

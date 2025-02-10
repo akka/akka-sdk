@@ -28,7 +28,7 @@ public class CustomerEntity extends KeyValueEntity<Customer> { // <4>
     }
   }
 
-  public Effect<Customer> getCustomer() {
+  public ReadOnlyEffect<Customer> getCustomer() {
     if (currentState() == null)
       return effects().error(
           "No customer found for id '" + commandContext().entityId() + "'");

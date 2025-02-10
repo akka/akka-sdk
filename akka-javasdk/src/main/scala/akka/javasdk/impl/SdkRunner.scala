@@ -467,7 +467,13 @@ private final class Sdk(
       case clz if classOf[KeyValueEntity[_]].isAssignableFrom(clz) =>
         val componentId = clz.getAnnotation(classOf[ComponentId]).value
 
-        val readOnlyCommandNames = Set.empty[String]
+        val readOnlyCommandNames =
+          clz.getDeclaredMethods.collect {
+            case method
+                if isCommandHandlerCandidate[KeyValueEntity.Effect[_]](method) && method.getReturnType == classOf[
+                  KeyValueEntity.ReadOnlyEffect[_]] =>
+              method.getName
+          }.toSet
 
         val entityStateType: Class[AnyRef] = Reflect.keyValueEntityStateType(clz).asInstanceOf[Class[AnyRef]]
 

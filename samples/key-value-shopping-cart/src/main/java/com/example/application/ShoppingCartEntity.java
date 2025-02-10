@@ -60,7 +60,7 @@ public class ShoppingCartEntity extends KeyValueEntity<ShoppingCart> {
       .thenReply(ShoppingCartDTO.of(newState));
   }
 
-  public Effect<ShoppingCartDTO> getCart() {
+  public ReadOnlyEffect<ShoppingCartDTO> getCart() {
     return effects().reply(ShoppingCartDTO.of(currentState()));
   }
 

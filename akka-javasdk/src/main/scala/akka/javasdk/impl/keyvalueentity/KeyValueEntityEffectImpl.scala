@@ -13,6 +13,7 @@ import akka.javasdk.impl.effect.SecondaryEffectImpl
 import akka.javasdk.keyvalueentity.KeyValueEntity.Effect
 import akka.javasdk.keyvalueentity.KeyValueEntity.Effect.Builder
 import akka.javasdk.keyvalueentity.KeyValueEntity.Effect.OnSuccessBuilder
+import akka.javasdk.keyvalueentity.KeyValueEntity.ReadOnlyEffect
 
 /**
  * INTERNAL API
@@ -29,7 +30,11 @@ private[javasdk] object KeyValueEntityEffectImpl {
  * INTERNAL API
  */
 @InternalApi
-private[javasdk] final class KeyValueEntityEffectImpl[S] extends Builder[S] with OnSuccessBuilder[S] with Effect[S] {
+private[javasdk] final class KeyValueEntityEffectImpl[S]
+    extends Builder[S]
+    with OnSuccessBuilder[S]
+    with Effect[S]
+    with ReadOnlyEffect[S] {
   import KeyValueEntityEffectImpl._
 
   private var _primaryEffect: PrimaryEffectImpl[S] = NoPrimaryEffect

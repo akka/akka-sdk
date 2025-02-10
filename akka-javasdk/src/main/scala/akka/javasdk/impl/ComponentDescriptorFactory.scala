@@ -84,7 +84,9 @@ private[impl] object ComponentDescriptorFactory {
   }
 
   def hasKVEEffectOutput(javaMethod: Method): Boolean = {
-    javaMethod.isPublic && javaMethod.getReturnType == classOf[KeyValueEntity.Effect[_]]
+    javaMethod.isPublic &&
+    (javaMethod.getReturnType == classOf[KeyValueEntity.Effect[_]]
+    || javaMethod.getReturnType == classOf[KeyValueEntity.ReadOnlyEffect[_]])
   }
 
   def hasTimedActionEffectOutput(javaMethod: Method): Boolean = {

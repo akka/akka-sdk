@@ -177,7 +177,7 @@ public abstract class KeyValueEntity<S> {
        * @param <T> The type of the message that must be returned by this call.
        * @return A message reply.
        */
-      <T> Effect<T> reply(T message);
+      <T> ReadOnlyEffect<T> reply(T message);
 
       /**
        * Create a message reply.
@@ -187,7 +187,7 @@ public abstract class KeyValueEntity<S> {
        * @param <T> The type of the message that must be returned by this call.
        * @return A message reply.
        */
-      <T> Effect<T> reply(T message, Metadata metadata);
+      <T> ReadOnlyEffect<T> reply(T message, Metadata metadata);
 
       /**
        * Create an error reply.
@@ -196,7 +196,7 @@ public abstract class KeyValueEntity<S> {
        * @param <T> The type of the message that must be returned by this call.
        * @return An error reply.
        */
-      <T> Effect<T> error(String description);
+      <T> ReadOnlyEffect<T> error(String description);
 
     }
 
@@ -223,5 +223,11 @@ public abstract class KeyValueEntity<S> {
 
     }
 
+  }
+
+  /**
+   * An effect that is known to be read only and does not update the state of the entity.
+   */
+  public interface ReadOnlyEffect<T> extends Effect<T> {
   }
 }

@@ -112,7 +112,7 @@ public class OrderEntity extends KeyValueEntity<Order> {
   }
   // end::cancel-order[]
 
-  public Effect<OrderStatus> status() {
+  public ReadOnlyEffect<OrderStatus> status() {
     var id = currentState().id();
     if (currentState().placed()) {
       var orderStatus = new OrderStatus(id, currentState().item(), currentState().quantity(), currentState().confirmed());

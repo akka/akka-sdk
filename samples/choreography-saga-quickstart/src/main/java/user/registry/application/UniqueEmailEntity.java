@@ -154,7 +154,7 @@ public class UniqueEmailEntity extends KeyValueEntity<UniqueEmail> {
   }
 
 
-  public Effect<UniqueEmail> getState() {
+  public ReadOnlyEffect<UniqueEmail> getState() {
     return effects().reply(currentState());
   }
 

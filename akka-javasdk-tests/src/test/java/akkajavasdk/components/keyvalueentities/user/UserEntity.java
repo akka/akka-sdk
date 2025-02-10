@@ -23,7 +23,7 @@ public class UserEntity extends KeyValueEntity<User> {
   public record Restart() {};
 
 
-  public Effect<User> getUser() {
+  public ReadOnlyEffect<User> getUser() {
     if (currentState() == null)
       return effects().error("User not found");
 

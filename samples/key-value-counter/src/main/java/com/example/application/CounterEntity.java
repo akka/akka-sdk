@@ -50,7 +50,7 @@ public class CounterEntity extends KeyValueEntity<Counter> { // <2>
   // end::delete[]
 
   // tag::query[]
-  public Effect<Counter> get() {
+  public ReadOnlyEffect<Counter> get() {
     return effects()
         .reply(currentState()); // <1>
   }
