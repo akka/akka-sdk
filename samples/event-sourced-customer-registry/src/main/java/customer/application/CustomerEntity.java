@@ -56,7 +56,6 @@ public class CustomerEntity extends EventSourcedEntity<Customer, CustomerEvent> 
 
   @Override
   public Customer applyEvent(CustomerEvent event) {
-    System.out.println("test event: " + event);
     return switch (event) {
       case CustomerCreated created -> new Customer(created.email(), created.name(), created.address());
       case NameChanged nameChanged -> currentState().withName(nameChanged.newName());
