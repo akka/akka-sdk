@@ -4,8 +4,10 @@
 
 package akka.javasdk.impl
 
+import akka.actor.{ ActorSystem => ClassicActorSystem }
 import akka.actor.typed.ActorSystem
 import akka.grpc.ServiceDescription
+import akka.grpc.Trailers
 import akka.grpc.scaladsl.GrpcExceptionHandler
 import akka.grpc.scaladsl.InstancePerRequestFactory
 import akka.http.scaladsl.model.HttpRequest
@@ -20,13 +22,21 @@ import akka.runtime.sdk.spi.ComponentOptions
 import akka.runtime.sdk.spi.GrpcEndpointDescriptor
 import akka.runtime.sdk.spi.GrpcEndpointRequestConstructionContext
 import akka.runtime.sdk.spi.MethodOptions
+import io.grpc.Status
 import io.opentelemetry.api.trace.Span
 
+import java.util.concurrent.CompletionException
 import scala.concurrent.Future
 
 object GrpcEndpointDescriptorFactory {
 
   val logger: org.slf4j.Logger = org.slf4j.LoggerFactory.getLogger(GrpcEndpointDescriptorFactory.getClass)
+
+  private def failedCompletionMapper(system: ClassicActorSystem): PartialFunction[Throwable, Trailers] = {
+    case e: CompletionException =>
+      if (e.getCause == null) Trailers(Status.INTERNAL)
+      else GrpcExceptionHandler.defaultMapper(system.classicSystem)(e.getCause)
+  }
 
   def apply[T](grpcEndpointClass: Class[T], factory: Option[Span] => T)(implicit
       system: ActorSystem[_]): GrpcEndpointDescriptor[T] = {
@@ -62,7 +72,7 @@ object GrpcEndpointDescriptorFactory {
         serviceFactory,
         description.name,
         // FIXME would be better if this was up to the runtime
-        GrpcExceptionHandler.defaultMapper(system.classicSystem),
+        failedCompletionMapper(system.classicSystem).orElse(GrpcExceptionHandler.defaultMapper(system.classicSystem)),
         system)
     }
 

@@ -50,6 +50,18 @@ public class GrpcEndpointTest extends TestKitSupport {
   }
 
   @Test
+  public void shouldPropagateCustomStatusToClient() {
+    var testClient = getGrpcEndpointClient(TestGrpcServiceClient.class);
+    var request = TestGrpcServiceOuterClass.In.newBuilder().setData("error").build();
+    try {
+      await(testClient.customStatus(request));
+      fail("Expected exception");
+    } catch (GrpcServiceException e) {
+      assertThat(e.getMessage()).contains("INVALID_ARGUMENT");
+    }
+  }
+
+  @Test
   public void shouldAllowGrpcCallFromInternet() {
     var testClient = getGrpcEndpointClient(TestGrpcServiceClient.class);
 

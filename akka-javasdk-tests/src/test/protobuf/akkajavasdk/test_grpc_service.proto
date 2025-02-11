@@ -20,6 +20,7 @@ service TestGrpcService {
   rpc Simple(In) returns (Out) {};
   rpc DelegateToAkkaService(In) returns (Out) {};
   rpc DelegateToExternal(In) returns (Out) {};
+  rpc CustomStatus(In) returns (Out) {};
   rpc AclPublic(In) returns (Out) {};
   rpc AclService(In) returns (Out) {};
   rpc AclInheritedDenyCode(In) returns (Out) {};

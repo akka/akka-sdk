@@ -9,6 +9,7 @@ import akka.javasdk.annotations.GrpcEndpoint;
 import akka.javasdk.annotations.JWT;
 import akka.javasdk.grpc.GrpcClientProvider;
 import akkajavasdk.protocol.*;
+import io.grpc.Status;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -43,6 +44,15 @@ public class TestGrpcServiceImpl implements TestGrpcService {
     // alias for external defined in application.conf
     var grpcServiceClient = grpcClientProvider.grpcClientFor(TestGrpcServiceClient.class, "some.example.com");
     return grpcServiceClient.simple(in);
+  }
+
+  @Override
+  public CompletionStage<TestGrpcServiceOuterClass.Out> customStatus(TestGrpcServiceOuterClass.In in) {
+    if (in.getData().equals("error")) {
+      throw Status.INVALID_ARGUMENT.augmentDescription("Invalid data").asRuntimeException();
+    }
+
+    return simple(in);
   }
 
   @Override
