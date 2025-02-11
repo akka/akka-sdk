@@ -38,7 +38,7 @@ jobs:
 
       - name: Restore Coursier cache
         # https://github.com/actions/cache/releases
-        # v4.0.2
+        # v4.2.0
         uses: actions/cache/restore@1bd1e32a3bdc45362d1e726936510720a7c30a57
         with:
           path: |
@@ -100,7 +100,7 @@ jobs:
 
       - name: Cache Coursier cache
         # https://github.com/actions/cache/releases
-        # v4.0.2
+        # v4.2.0
         uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57
         with:
           path: |
@@ -122,7 +122,7 @@ jobs:
 
       - name: Cache Maven repository
         # https://github.com/actions/cache/releases
-        # v4.0.2
+        # v4.2.0
         uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57
         with:
           path: ~/.m2/repository
@@ -181,7 +181,7 @@ jobs:
 
       - name: Restore Coursier cache
         # https://github.com/actions/cache/releases
-        # v4.0.2
+        # v4.2.0
         uses: actions/cache/restore@1bd1e32a3bdc45362d1e726936510720a7c30a57
         with:
           path: |
@@ -236,7 +236,7 @@ jobs:
 
       - name: Restore Coursier cache
         # https://github.com/actions/cache/releases
-        # v4.0.2
+        # v4.2.0
         uses: actions/cache/restore@1bd1e32a3bdc45362d1e726936510720a7c30a57
         with:
           path: |
@@ -298,7 +298,7 @@ jobs:
 
       - name: Cache Maven repository
         # https://github.com/actions/cache/releases
-        # v4.0.2
+        # v4.2.0
         uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57
         with:
           path: ~/.m2/repository
@@ -396,7 +396,7 @@ jobs:
 
       - name: Cache Maven repository
         # https://github.com/actions/cache/releases
-        # v4.0.2
+        # v4.2.0
         uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57
         with:
           path: ~/.m2/repository
