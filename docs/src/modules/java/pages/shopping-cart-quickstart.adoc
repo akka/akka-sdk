@@ -8,7 +8,7 @@ This guide walks you through a shopping cart service illustrating the use of som
 
 The shopping cart service implements a cart that allows users to add and remove items, get the contents of carts, and checkout the carts.
 
-In this guide you will
+In this guide you will:
 
 * Download a completed shopping cart service to examine and run it locally.
 * Be introduced to key Akka concepts including xref:java:event-sourced-entities.adoc[Event Sourced Entities].
@@ -20,7 +20,6 @@ In this guide you will
 
 include::ROOT:partial$cloud-dev-prerequisites.adoc[]
 
-
 == Download the sample
 
 You can download the full source code of the Shopping Cart sample as a link:_attachments/shopping-cart-quickstart.zip[zip file], or you can use the Akka CLI command below to download and unzip this quickstart project.
@@ -30,7 +29,7 @@ You can download the full source code of the Shopping Cart sample as a link:_att
 akka quickstart download shopping-cart
 ----
 
-Then open the project in your favorite IDE.
+Then open the project in your favorite Integrated Development Environment (IDE).
 
 == Understanding the shopping cart
 
@@ -60,7 +59,7 @@ include::example$shopping-cart-quickstart/src/main/java/shoppingcart/domain/Shop
 <1> `ItemAdded` event derives from the `ShoppingCartEvent` interface.
 <2> Specifying a logical type name, required for serialization.
 
-You may notice that there are other events defined as well, this is how the application will pass Java events between the Akka runtime and the domain object.
+You may notice that there are other events defined as well. This is how the application will pass Java events between the Akka runtime and the domain object.
 
 Jumping back to the `ShoppingCart` domain class, there is also business logic to handle the `ItemAdded` domain event for adding items to the cart:
 
@@ -70,8 +69,8 @@ Jumping back to the `ShoppingCart` domain class, there is also business logic to
 include::example$shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCart.java[tag=itemAdded]
 ----
 <1> For an existing item, we will make sure to sum the existing quantity with the incoming one.
-<2> Returns an update list of items without the existing item.
-<3> Adds the update item to the shopping cart.
+<2> Returns an updated list of items without the existing item.
+<3> Adds the updated item to the shopping cart.
 <4> Returns a new instance of the shopping cart with the updated line items.
 
 === The ShoppingCart entity
@@ -129,7 +128,6 @@ include::example$shopping-cart-quickstart/src/main/java/shoppingcart/api/Shoppin
 <6> Use path parameter `+{cartId}+` in combination with request body `ShoppingCart.LineItem`.
 <7> Map request to a more suitable response, in this case an `HTTP 200 OK` response.
 
-
 == Run locally
 
 Start your service locally:
@@ -181,7 +179,6 @@ Observe all the items in the cart:
 {"cartId":"123","items":[{"productId":"akka-tshirt","name":"Akka Tshirt","quantity":6},
 {"productId":"blue-jeans","name":"Blue Jeans","quantity":5}],"checkedOut":false}
 ----
-
 
 == Explore the local console
 
@@ -251,7 +248,7 @@ akka config set project my-first-app
 mvn clean install -DskipTests
 ----
 
-. Take note of the container name and tag from last line in the output, for example:
+. Take note of the container name and tag from the last line in the output, for example:
 +
 [source, command line]
 ----
@@ -323,7 +320,7 @@ curl https://spring-tooth-3406.us-east1.akka.app/carts/123
 
 1. Open the https://console.akka.io[*Akka Console*, window="new"].
 2. Navigate to the *Project* where the Service is deployed.
-3. Click on the *Service* card of the Service, it shows detailed information about the running service.
+3. Click on the *Service* card of the Service. It shows detailed information about the running service.
 
 image:console-first-app-service.png[]
 
