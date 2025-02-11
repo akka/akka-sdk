@@ -1,15 +1,16 @@
 package customer.domain;
 
-import com.google.protobuf.Any;
-import com.google.protobuf.ByteString;
-import com.google.protobuf.InvalidProtocolBufferException;
-import akka.javasdk.JsonSupport;
+import akka.javasdk.testkit.SerializationTestkit;
+import customer.domain.CustomerEvent.CustomerCreated;
 import org.junit.jupiter.api.Test;
 
-import java.util.Base64;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Optional;
 
-import static customer.domain.schemaevolution.CustomerEvent.*;
+import static customer.domain.schemaevolution.CustomerEvent.AddressChanged;
+import static customer.domain.schemaevolution.CustomerEvent.CustomerCreatedOld;
+import static customer.domain.schemaevolution.CustomerEvent.NameChanged;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class CustomerEventSerializationTest {
@@ -17,10 +18,10 @@ class CustomerEventSerializationTest {
   @Test
   public void shouldDeserializeWithMandatoryField() {
     //given
-    Any serialized = JsonSupport.encodeJson(new CustomerEvent.NameChanged("andre"));
+    byte[] serialized = SerializationTestkit.serialize(new CustomerEvent.NameChanged("andre"));
 
     //when
-    NameChanged deserialized = JsonSupport.decodeJson(NameChanged.class, serialized);
+    NameChanged deserialized = SerializationTestkit.deserialize(NameChanged.class, serialized);
 
     //then
     assertEquals("andre", deserialized.newName());
@@ -32,10 +33,10 @@ class CustomerEventSerializationTest {
   public void shouldDeserializeWithChangedFieldName() {
     //given
     Address address = new Address("Wall Street", "New York");
-    Any serialized = JsonSupport.encodeJson(new CustomerEvent.AddressChanged(address));
+    byte[] serialized = SerializationTestkit.serialize(new CustomerEvent.AddressChanged(address));
 
     //when
-    AddressChanged deserialized = JsonSupport.decodeJson(AddressChanged.class, serialized);
+    AddressChanged deserialized = SerializationTestkit.deserialize(AddressChanged.class, serialized);
 
     //then
     assertEquals(address, deserialized.newAddress());
@@ -44,10 +45,10 @@ class CustomerEventSerializationTest {
   @Test
   public void shouldDeserializeWithStructureMigration() {
     //given
-    Any serialized = JsonSupport.encodeJson(new CustomerCreatedOld("bob@lightbend.com", "bob", "Wall Street", "New York"));
+    byte[] serialized = SerializationTestkit.serialize(new CustomerCreatedOld("bob@lightbend.com", "bob", "Wall Street", "New York"));
 
     //when
-    CustomerEvent.CustomerCreated deserialized = JsonSupport.decodeJson(CustomerEvent.CustomerCreated.class, serialized);
+    CustomerCreated deserialized = SerializationTestkit.deserialize(CustomerCreated.class, serialized);
 
     //then
     assertEquals("Wall Street", deserialized.address().street());
@@ -56,21 +57,27 @@ class CustomerEventSerializationTest {
 
   // tag::testing-deserialization[]
   @Test
-  public void shouldDeserializeCustomerCreated_V0() throws InvalidProtocolBufferException {
-    // tag::testing-deserialization-encoding[]
-    Any serialized = JsonSupport.encodeJson(new CustomerCreatedOld("bob@lightbend.com", "bob", "Wall Street", "New York"));
-    String encodedBytes = new String(Base64.getEncoder().encode(serialized.toByteArray())); // <1>
-    // end::testing-deserialization-encoding[]
+  public void shouldDeserializeCustomerCreated_V0() throws IOException {
+    // end::testing-deserialization[]
+    // saveOldPayload();
 
-    byte[] bytes = Base64.getDecoder().decode(encodedBytes.getBytes()); // <2>
-    Any serializedAny = Any.parseFrom(ByteString.copyFrom(bytes)); // <3>
-
-    CustomerEvent.CustomerCreated deserialized = JsonSupport.decodeJson(CustomerEvent.CustomerCreated.class,
-      serializedAny); // <4>
+    // tag::testing-deserialization[]
+    // load serialized bytes and deserialize with the new schema
+    var serialized = getClass().getResourceAsStream("/customer-created-old.json").readAllBytes(); //<1>
+    CustomerCreated deserialized = SerializationTestkit.deserialize(CustomerCreated.class, serialized); // <2>
 
     assertEquals("Wall Street", deserialized.address().street());
     assertEquals("New York", deserialized.address().city());
   }
   // end::testing-deserialization[]
+
+  private static void saveOldPayload() throws IOException {
+    // tag::testing-deserialization-encoding[]
+    byte[] serialized = SerializationTestkit.serialize(new CustomerCreatedOld("bob@lightbend.com", "bob", "Wall Street", "New York"));
+    var tmpDir = Files.createTempFile("customer-created-old", ".json");
+    // save serialized to a file and remove `CustomerCreatedOld`
+    Files.write(tmpDir.toAbsolutePath(), serialized); // <1>
+    // end::testing-deserialization-encoding[]
+  }
 
 }

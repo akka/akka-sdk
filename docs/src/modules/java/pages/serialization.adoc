@@ -146,14 +146,14 @@ include::example$event-sourced-customer-registry/src/test/java/customer/domain/s
 
 === Testing
 
-It's highly recommended to cover all schema changes with unit tests. In most cases it won't be possible to reuse the same class for serialization and deserialization, since the model is different from version 0 to version N. One solution could be to create a byte array snapshot of each version and save it as a Base64 test variable.
+It's highly recommended to cover all schema changes with unit tests. In most cases it won't be possible to reuse the same class for serialization and deserialization, since the model is different from version 0 to version N. One solution could be to create a byte array snapshot of each version and save it to a file. To generate the snapshot use `SerializationTestkit` utility.
 
 [source,java,indent=0]
 .{sample-base-url}/event-sourced-customer-registry/src/test/java/customer/domain/CustomerEventSerializationTest.java[CustomerEventSerializationTest.java]
 ----
 include::example$event-sourced-customer-registry/src/test/java/customer/domain/CustomerEventSerializationTest.java[tag=testing-deserialization-encoding]
 ----
-<1> Encodes old class in Base64 String.
+<1> Save old class payload to a file.
 
 Test example:
 
@@ -162,7 +162,5 @@ Test example:
 ----
 include::example$event-sourced-customer-registry/src/test/java/customer/domain/CustomerEventSerializationTest.java[tag=testing-deserialization]
 ----
-<1> Encodes old class in Base64 String.
-<2> Decodes Base64 bytes.
-<3> Parses bytes into `Any` object.
-<4> Verifies JSON deserialization.
+<1> Loading old payload from a file.
+<2> Deserializing with the latest schema.

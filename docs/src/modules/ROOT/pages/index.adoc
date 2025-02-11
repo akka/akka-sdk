@@ -33,13 +33,13 @@ Developers need only Java 21 and Maven as dependencies. The Akka SDK build proce
 Developers can access a local console that replicates runtime observability, tracing, and debugging capabilities. Applications can be pushed directly to a cloud runtime or deployed via a Continuous Integration/Continuous Deployment (CI/CD) pipeline.
 
 == DevOps Operations
-Operators can configure application elasticity without deep architectural knowledge. Akka automates instance management to meet traffic needs while preserving performance SLAs. Services can be replicated across multiple regions, spanning different geographies and environments.
+Operators can configure application elasticity without deep architectural knowledge. Akka automates instance management to meet traffic needs while preserving performance SLAs. Services can be replicated xref:concepts:multi-region.adoc[across multiple regions], spanning different geographies and environments.
 Stateful services can be read-replicated or write-replicated with conflict resolution options. Services can migrate between locations without downtime and can be restarted from specific points in time.
 Developers have access to a component library for creating various application types, including transactional, durable, Artificial Intelligence (AI) Retrieval-Augmented Generation (RAG), analytics, edge, event-sourced, and streaming applications.
 
 == Key Components
 * *Entities*: Act as in-memory databases, either event-sourced or key-value.
-* *Endpoints*: Expose your services to the outside world, functioning similarly to Cloudflare Workers when deployed across multiple regions.
+* *Endpoints*: Expose your services to the outside world, functioning similarly to Cloudflare Workers when deployed xref:concepts:multi-region.adoc[across multiple regions].
 * *Timed Actions*: Scheduled executions that are reliable and guaranteed to run at least once.
 * *Views*: Streaming projections that implement the Command Query Responsibility Segregation (CQRS) pattern, separating reads from writes across multiple services.
 * *Workflows*: Durable, long-running processes orchestrated through Saga patterns.

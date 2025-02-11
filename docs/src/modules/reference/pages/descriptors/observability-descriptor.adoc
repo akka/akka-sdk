@@ -124,7 +124,7 @@ Configuration for a Google Cloud exporter.
 |===
 |Field                  |Type                          |Description
 
-|*serviceAccountSecret* |<<ObjectRef>> _required_ |A secret containing a Google service account JSON key, in a property called `key.json`.
+|*serviceAccountKeySecret* |<<ObjectRef>> _required_ |A secret containing a Google service account JSON key, in a property called `key.json`.
 
 The service account used must have the `roles/logging.logWriter` role if exporting logs. The `roles/monitoring.metricWriter` role if exporting metrics. The `roles/cloudtrace.agent` role if exporting traces.
 |===

@@ -19,8 +19,8 @@ jobs:
 
   open-pr-update-sample:
     runs-on: ubuntu-22.04
-    # run only when publish workflow is successful and it's a tag
-    if: (github.event.workflow_run.conclusion == 'success' && startsWith(github.ref, 'refs/tags/v')) || github.event_name == 'workflow_dispatch'
+    # run only when `publish` workflow is successful or this workflow manually triggered
+    if: (github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch'
     steps:
       - name: Checkout
         # https://github.com/actions/checkout/releases
@@ -68,8 +68,8 @@ jobs:
           ./updateSdkVersions.sh all
           BRANCH=bump-sdk-versions-${SDK_VERSION}
           git checkout -b ${BRANCH}
-          git config user.name "Akka Bot"
-          git config user.email "github-actions@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit . -m "chore: bump SDK versions to ${SDK_VERSION}"
           git remote add origin-rw https://${GH_TOKEN}@github.com/akka/akka-sdk
           git push --set-upstream origin-rw ${BRANCH}
