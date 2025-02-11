@@ -214,18 +214,21 @@ Here, you can view not only the http://localhost:3000/services/shopping-cart-qui
 . If you have not already done so, xref:reference:cli/installation.adoc[install the Akka CLI].
 
 . Authenticate the CLI with your Akka account:
++
 [source, command line]
 ----
 akka auth login
 ----
 
 . Create a project:
++
 [source, command line]
 ----
 akka projects new my-first-app --region aws-us-east-2
 ----
 
-Observe that your project was created successfully:
+. Observe that your project was created successfully:
++
 [source]
 ----
 NAME          DESCRIPTION   ID                                     OWNER                   REGION
@@ -235,19 +238,21 @@ To make this the currently active project, run: 'akka config set project my-firs
 ----
 
 . Make the project you just created the currently active project:
++
 [source, command line]
 ----
 akka config set project my-first-app
 ----
 
 . Build a container image of your shopping cart service:
++
 [source, command line]
 ----
 mvn clean install -DskipTests
 ----
 
 . Take note of the container name and tag from last line in the output, for example:
-
++
 [source, command line]
 ----
 DOCKER> Tagging image shoppingcart:1.0-SNAPSHOT-20241028102843 successful!
@@ -257,11 +262,11 @@ DOCKER> Tagging image shoppingcart:1.0-SNAPSHOT-20241028102843 successful!
 * `container-name` with the container name from the `mvn install` output in the previous step
 * `tag-name` with the tag name from the `mvn install` output in the previous step
 
++
 [source, command line]
 ----
 akka service deploy cart-service shoppingcart:tag-name --push
 ----
-
 Your service named `cart-service` will now begin deploying.
 
 . Verify the deployment status of your service:
@@ -277,7 +282,6 @@ A service status can be one of the following:
 * *UpdateInProgress*: Service is updating.
 * *Unavailable*: No service instances are available.
 * *PartiallyReady*: Some, but not all, service instances are available.
-
 Approximately one minute after deploying, your service status should become *Ready*.
 
 . Expose your service to the internet:
@@ -289,7 +293,7 @@ akka service expose cart-service
 +
 Should respond with something similar to (the exact address is generated for your service):
 +
-[source]
+[source, command line]
 ----
 Service 'cart-service' was successfully exposed at: spring-tooth-3406.us-east1.akka.app
 ----
