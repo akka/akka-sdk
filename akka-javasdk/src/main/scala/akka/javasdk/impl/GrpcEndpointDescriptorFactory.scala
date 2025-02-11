@@ -32,10 +32,12 @@ object GrpcEndpointDescriptorFactory {
 
   val logger: org.slf4j.Logger = org.slf4j.LoggerFactory.getLogger(GrpcEndpointDescriptorFactory.getClass)
 
-  private def failedCompletionMapper(system: ClassicActorSystem): PartialFunction[Throwable, Trailers] = {
+  private def mapperWithFailedCompletion(system: ClassicActorSystem): PartialFunction[Throwable, Trailers] = {
     case e: CompletionException =>
       if (e.getCause == null) Trailers(Status.INTERNAL)
       else GrpcExceptionHandler.defaultMapper(system.classicSystem)(e.getCause)
+    case other =>
+      GrpcExceptionHandler.defaultMapper(system.classicSystem)(other)
   }
 
   def apply[T](grpcEndpointClass: Class[T], factory: Option[Span] => T)(implicit
@@ -72,7 +74,7 @@ object GrpcEndpointDescriptorFactory {
         serviceFactory,
         description.name,
         // FIXME would be better if this was up to the runtime
-        failedCompletionMapper(system.classicSystem).orElse(GrpcExceptionHandler.defaultMapper(system.classicSystem)),
+        mapperWithFailedCompletion(system.classicSystem),
         system)
     }
 
