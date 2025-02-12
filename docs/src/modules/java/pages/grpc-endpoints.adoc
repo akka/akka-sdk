@@ -2,7 +2,9 @@
 
 include::ROOT:partial$include.adoc[]
 
-gRPC Endpoint components make it possible to conveniently define public APIs accepting and responding in protobuf,
+An Endpoint is a component that creates an externally accessible API. Endpoints are how you expose your services to the outside world. Two different types of endpoints are available: HTTP endpoints and gRPC endpoints. In this page, we will focus on gRPC endpoints.
+
+gRPC Endpoint components make it possible to conveniently define public APIs accepting and responding in protobuf --
 a binary, typed protocol which is designed to handle evolution of a service over time.
 
 == Basics ==
@@ -10,29 +12,80 @@ To define a gRPC Endpoint component, you start by defining a `.proto` file that 
 in `src/main/proto` of the project.
 
 [source,protobuf]
-.{sample-base-url}/doc-snippets/src/main/proto/com/example/example_grpc_endpoint.proto
+.{sample-base-url}/grpc-shopping-cart-quickstart/src/main/proto/shoppingcart/api/shopping_cart_endpoint.proto[shopping_cart_endpoint.proto]
 ----
-include::example$doc-snippets/src/main/proto/com/example/example_grpc_endpoint.proto[]
+include::example$grpc-shopping-cart-quickstart/src/main/proto/shoppingcart/api/shopping_cart_endpoint.proto[tag=minimal]
 ----
 
-When compiling the project a Java interface for the service is generated `com.example.proto.ExampleGrpcEndpoint`. Define a class implementing this interface in the `api` package of your project
+When compiling the project, a Java interface for the service is generated `shoppingcart.api.proto.ShoppingCartEndpoint`. Define a class implementing this interface in the `api` package of your project
 and annotate the class with `@GrpcEndpoint`:
 
 [source,java]
-.{sample-base-url}/doc-snippets/src/main/java/com/example/api/ExampleGrpcEndpointImpl.java
+.{sample-base-url}/grpc-shopping-cart-quickstart/src/main/java/shoppingcart/api/ShoppingCartEndpointImpl.java[ShoppingCartEndpointImpl.java]
 ----
-include::example$doc-snippets/src/main/java/com/example/api/ExampleGrpcEndpointImpl.java[]
+@GrpcEndpoint // <1>
+public class ShoppingCartEndpointImpl implements ShoppingCartEndpoint {
+
+  @Override
+  public CompletionStage<ShoppingCartEndpointOuterClass.ShoppingCart> getCart(GetCartRequest in) {
+    var protoCartBuilder = ShoppingCartEndpointOuterClass.ShoppingCart.newBuilder(); // <2>
+    protoCartBuilder.setCartId(in.getCartId());
+    protoCartBuilder.setCheckedOut(false);
+    return CompletableFuture.completedFuture(protoCartBuilder.build()); // <3>
+  }
+}
+----
+<1> Mark class as a gRPC endpoint and implementing the generated interface `ShoppingCartEndpoint`.
+<2> Create a new `ShoppingCart` protobuf message and set the `cartId` and `checkedOut` fields.
+<3> Return a `CompletionStage` that is completed with the `ShoppingCart` protobuf message.
+
+NOTE: This implementation does not interact with any other components and hardcodes the response for simplification purposes. Interacting with other components is covered in the next section.
+
+=== Error responses ===
+
+The gRPC protocol has different status codes to signal that something went wrong with a request, for example `INVALID_ARGUMENT` to signal that the request was malformed.
+
+To signal an error in the response, throw a `GrpcServiceException` as shown in the example below:
+[source,java]
+.{sample-base-url}/grpc-shopping-cart-quickstart/src/main/java/shoppingcart/api/ShoppingCartEndpointImpl.java[ShoppingCartEndpointImpl.java]
+----
+include::example$grpc-shopping-cart-quickstart/src/main/java/shoppingcart/api/ShoppingCartEndpointImpl.java[tag=exception]
 ----
 
+ifdef::todo[TODO: add more details on exception handling after fix for bubble up and details in dev mode]
+
+== Interacting with other components ==
+
+Endpoints are commonly used to interact with other components in a service. This is done through
+the `akka.javasdk.client.ComponentClient`. If the constructor of the endpoint class has a parameter of this type,
+it will be injected by the SDK and can then be available for use when processing requests. Let's see how this is done:
+
+[source,java]
+.{sample-base-url}/grpc-shopping-cart-quickstart/src/main/java/shoppingcart/api/ShoppingCartEndpointImpl.java[ShoppingCartEndpointImpl.java]
+----
+include::example$grpc-shopping-cart-quickstart/src/main/java/shoppingcart/api/ShoppingCartEndpointImpl.java[tag=endpoint-component-interaction]
+----
+<1> Mark class as a gRPC endpoint and implementing the generated interface `ShoppingCartEndpoint`.
+<2> Accept the `ComponentClient` and keep it in a field.
+<3> Use the component client to interact with an Event Sourced Entity that represents the shopping cart, identified by `cartId`.
+<4> Transform the result from the component client to the external response.
+
+For more details see xref:component-and-service-calls.adoc[].
+
+== Streaming responses
+
+gRPC supports streaming requests and responses, where either the client or the server (or both) send multiple messages. That is done by marking the input and output message as `stream` in the `.proto` file. Then, the method in the endpoint interface will need to receive and return a `Stream` instead of a single message.
+
+ifdef::todo[TODO: create streaming example]
 
 == Testing
 
 To exercise a gRPC endpoint, the testkit contains methods to get a gRPC client for calling the methods of the endpoint:
 
 [source,java]
-.{sample-base-url}/doc-snippets/src/test/java/com/example/api/ExampleGrpcEndpointTest.java
+.{sample-base-url}/grpc-shopping-cart-quickstart/src/test/java/shoppingcart/ShoppingCartGrpcIntegrationTest.java[ShoppingCartGrpcIntegrationTest.java]
 ----
-include::example$doc-snippets/src/test/java/com/example/api/ExampleGrpcEndpointTest.java[]
+include::example$grpc-shopping-cart-quickstart/src/test/java/shoppingcart/ShoppingCartGrpcIntegrationTest.java[]
 ----
 
 By default, if ACLs are defined, the testkit client is authenticated as if it was the service itself calling the endpoint,

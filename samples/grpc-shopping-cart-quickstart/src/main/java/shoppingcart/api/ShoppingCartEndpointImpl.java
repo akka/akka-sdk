@@ -1,9 +1,11 @@
 // tag::top[]
 package shoppingcart.api;
 
+import akka.grpc.GrpcServiceException;
 import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.GrpcEndpoint;
 import akka.javasdk.client.ComponentClient;
+import io.grpc.Status;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import shoppingcart.api.proto.ShoppingCartEndpoint;
@@ -12,39 +14,44 @@ import shoppingcart.api.proto.ShoppingCartEndpointOuterClass.*;
 import shoppingcart.application.ShoppingCartEntity;
 import shoppingcart.domain.ShoppingCart;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 // end::top[]
 
-// tag::class[]
 
 // Opened up for access from the public internet to make the sample service easy to try out.
 // For actual services meant for production this must be carefully considered, and often set more limited
-// tag::endpoint-component-interaction[]
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
+// tag::endpoint-component-interaction[]
+// tag::class[]
 @GrpcEndpoint // <1>
 public class ShoppingCartEndpointImpl implements ShoppingCartEndpoint {
+  // end::class[]
 
   private final ComponentClient componentClient;
 
   private static final Logger logger = LoggerFactory.getLogger(ShoppingCartEndpointImpl.class);
 
-  public ShoppingCartEndpointImpl(ComponentClient componentClient) {
+  public ShoppingCartEndpointImpl(ComponentClient componentClient) { // <2>
     this.componentClient = componentClient;
   }
-
-  // end::class[]
-
   // tag::get[]
 
   @Override
   public CompletionStage<ShoppingCartEndpointOuterClass.ShoppingCart> getCart(GetCartRequest in) {
+    // tag::exception[]
+    if (in.getCartId().isEmpty())
+      throw new GrpcServiceException(Status.INVALID_ARGUMENT.augmentDescription("Cart id must be provided"));
+    // end::exception[]
+
     logger.info("Get cart id={}", in.getCartId());
-    return componentClient.forEventSourcedEntity(in.getCartId())
+    return componentClient.forEventSourcedEntity(in.getCartId()) // <3>
         .method(ShoppingCartEntity::getCart)
         .invokeAsync()
-        .thenApply(ShoppingCartEndpointImpl::convertToProto);
+        .thenApply(ShoppingCartEndpointImpl::convertToProto); // <4>
   }
+  // end::get[]
 
   private static ShoppingCartEndpointOuterClass.ShoppingCart convertToProto(ShoppingCart domainCart) {
     var protoCartBuilder = ShoppingCartEndpointOuterClass.ShoppingCart.newBuilder();
@@ -59,7 +66,7 @@ public class ShoppingCartEndpointImpl implements ShoppingCartEndpoint {
     });
     return protoCartBuilder.build();
   }
-  // end::get[]
+  // end::endpoint-component-interaction[]
 
   // tag::addItem[]
   @Override
@@ -74,13 +81,13 @@ public class ShoppingCartEndpointImpl implements ShoppingCartEndpoint {
   private static ShoppingCart.LineItem convertToDomain(ShoppingCartEndpointOuterClass.LineItem protoItem) {
     return new ShoppingCart.LineItem(protoItem.getProductId(), protoItem.getName(), protoItem.getQuantity());
   }
-  // end::endpoint-component-interaction[]
 
   // end::addItem[]
 
   @Override
   public CompletionStage<RemoveItemResponse> removeItem(RemoveItemRequest in) {
     logger.info("Removing item from cart id={} item={}", in.getCartId(), in.getProductId());
+
     return componentClient.forEventSourcedEntity(in.getCartId())
         .method(ShoppingCartEntity::removeItem)
         .invokeAsync(in.getProductId())
@@ -96,5 +103,8 @@ public class ShoppingCartEndpointImpl implements ShoppingCartEndpoint {
         .thenApply(__ -> CheckoutResponse.newBuilder().setSuccess(true).build());
   }
   // tag::class[]
+  // tag::endpoint-component-interaction[]
 }
+// end::endpoint-component-interaction[]
 // end::class[]
+

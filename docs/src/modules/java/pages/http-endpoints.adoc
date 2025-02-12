@@ -2,7 +2,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-An Endpoint is a component that creates an externally accessible API. Endpoints are how you expose your services to the outside world. Endpoints can have different protocols and, initially, support HTTP.
+An Endpoint is a component that creates an externally accessible API. Endpoints are how you expose your services to the outside world. Two different types of endpoints are available: HTTP endpoints and gRPC endpoints. In this page, we will focus on HTTP endpoints.
 
 HTTP Endpoint components make it possible to conveniently define such APIs accepting and responding in JSON,
 or dropping down to lower level APIs for ultimate flexibility in what types of data is accepted and returned.

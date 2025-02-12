@@ -4,6 +4,7 @@
 *** xref:event-sourced-entities.adoc[Event Sourced Entities]
 *** xref:key-value-entities.adoc[Key Value Entities]
 *** xref:http-endpoints.adoc[HTTP Endpoints]
+*** xref:grpc-endpoints.adoc[gRPC Endpoints]
 *** xref:views.adoc[Views]
 *** xref:workflows.adoc[Workflows]
 *** xref:timed-actions.adoc[Timers]

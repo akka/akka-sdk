@@ -1,3 +1,4 @@
+// tag::minimal[]
 syntax = "proto3";
 
 package shoppingcart;
@@ -5,18 +6,20 @@ package shoppingcart;
 option java_package = "shoppingcart.api.proto";
 
 service ShoppingCartEndpoint {
+  // end::minimal[]
+
   rpc GetCart(GetCartRequest) returns (ShoppingCart) {}
-
   rpc AddItem(AddItemRequest) returns (AddItemResponse) {}
-
   rpc RemoveItem(RemoveItemRequest) returns (RemoveItemResponse) {}
 
   rpc Checkout(CheckoutRequest) returns (CheckoutResponse) {}
+  // tag::minimal[]
 }
 
 message GetCartRequest {
   string cartId = 1;
 }
+// end::minimal[]
 
 message AddItemRequest {
   string cartId = 1;
@@ -44,6 +47,8 @@ message CheckoutResponse {
   bool success = 1;
 }
 
+// tag::minimal[]
+
 message ShoppingCart {
   string cartId = 1;
   repeated LineItem items = 2;
@@ -55,3 +60,4 @@ message LineItem {
   string name = 2;
   int32 quantity = 3;
 }
+// end::minimal[]
