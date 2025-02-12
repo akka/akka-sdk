@@ -259,6 +259,36 @@ include::example$doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java
 ----
 <1> `requestHeader(headerName)` returns an `Optional` which is empty if the header was not present.
 
+=== Serving static content ===
+
+Static resources such as HTML, CSS files can be packaged together with the service. This is done
+by placing the resource files in `src/main/resources/static-resources` and returning them from an endpoint
+method using link:_attachments/api/akka/javasdk/http/HttpResponses.html#staticResource[HttpResponses.staticResource].
+
+This can be done for a single filename:
+
+[source,java]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/api/StaticResourcesEndpoint[StaticResourcesEndpoint.java]
+----
+include::example$doc-snippets/src/main/java/com/example/api/StaticResourcesEndpoint.java[tag=single-static-resource-from-classpath]
+----
+<1> The specific path `/index.html`
+<2> Load a specific file placed in `src/main/resources/static-resources/index.html`
+
+It is also possible to map an entire path subtree using `**` as a wildcard at the end of the path:
+
+[source,java]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/api/StaticResourcesEndpoint[StaticResourcesEndpoint.java]
+----
+include::example$doc-snippets/src/main/java/com/example/api/StaticResourcesEndpoint.java[tag=static-resource-tree-from-classpath]
+----
+<1> Endpoint method for any path under `/static/`
+<2> Accept `akka.http.javadsl.model.HttpRequest` for further inspection of the actual path.
+<3> Load any available file under `static-resources` after first removing `/static` from the request path. The request path `/static/images/example.png` is resolved to the file `src/main/resources/static-resources/images/style.css` from the project.
+
+NOTE: This is convenient for service documentation or small self-contained services with web UIs but is not intended
+ for production, where coupling of the service lifecycle with the UI would mean that a new service version would need to be deployed for any changes in the UI.
+
 
 === Streaming responses with Server Sent Events ===
 

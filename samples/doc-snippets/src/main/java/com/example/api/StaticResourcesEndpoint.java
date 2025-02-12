@@ -12,20 +12,21 @@ import akka.javasdk.http.HttpResponses;
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.ALL))
 public class StaticResourcesEndpoint {
 
-  // tag::static-resources-from-classpath[]
-
   // provide a landing page from root
-  @Get("/index.html")
+  // tag::single-static-resource-from-classpath[]
+  @Get("/index.html") // <1>
   public HttpResponse index() {
-    return HttpResponses.staticResource("index.html");
+    return HttpResponses.staticResource("index.html"); // <2>
   }
+  // end::single-static-resource-from-classpath[]
 
   // map in all the available packaged static resources under /static
   // see src/main/resources in project for actual files
-  @Get("/static/**")
-  public HttpResponse webPageResources(HttpRequest request) {
-    return HttpResponses.staticResource(request, "/static/");
+  // tag::static-resource-tree-from-classpath[]
+  @Get("/static/**") // <1>
+  public HttpResponse webPageResources(HttpRequest request) { // <2>
+    return HttpResponses.staticResource(request, "/static/"); // <3>
   }
-  // end::static-resources-from-classpath[]
+  // end::static-resource-tree-from-classpath[]
 
 }
