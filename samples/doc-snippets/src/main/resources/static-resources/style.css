@@ -1,5 +1,14 @@
 body {
-    color: #f1f1f1;
+    color: #000;
     background-color: #000;
     background-image: url("images/background.png");
+    background-repeat: no-repeat;
+    background-position: right top;
+}
+
+#content-block {
+    background-color: rgba(241, 241, 241, 0.8);
+    margin-left: 50px;
+    margin-right: 50px;
+    padding: 20px 50px 50px 50px;
 }
