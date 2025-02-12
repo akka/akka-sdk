@@ -211,15 +211,15 @@ public class HttpResponses {
    * @param prefixToStrip Strip this prefix from the request path, to create the actual path relative to <code>static-resources</code>
    *                      to load the resource from. Must not be empty.
    * @return A 404 not found response if there is no such resource. 403 forbidden if the path contains <code>..</code> or references a folder.
-   * @throws IllegalArgumentException if the request path does not start with <code>prefixToStrip</code>
+   * @throws RuntimeException if the request path does not start with <code>prefixToStrip</code> or if <code>prefixToStrip</code> is empty
    */
   public static HttpResponse staticResource(HttpRequest request, String prefixToStrip) {
-    if (prefixToStrip.isEmpty()) throw new IllegalArgumentException("prefixToStrip must not be empty");
+    if (prefixToStrip.isEmpty()) throw new RuntimeException("prefixToStrip must not be empty");
     var actualPrefixToStrip = prefixToStrip.startsWith("/") ? prefixToStrip : "/" + prefixToStrip;
     actualPrefixToStrip = actualPrefixToStrip.endsWith("/") ? actualPrefixToStrip : actualPrefixToStrip + "/";
     var fullPath = request.getUri().getPathString();
     if (!fullPath.startsWith(actualPrefixToStrip)) {
-      throw new IllegalArgumentException("Request path [" + fullPath + "] does not start with the expected prefix [" + prefixToStrip + "]");
+      throw new RuntimeException("Request path [" + fullPath + "] does not start with the expected prefix [" + prefixToStrip + "]");
     }
     var strippedPath = fullPath.substring(actualPrefixToStrip.length());
     return staticResource(strippedPath);
