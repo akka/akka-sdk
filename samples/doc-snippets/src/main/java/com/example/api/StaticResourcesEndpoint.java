@@ -14,9 +14,15 @@ public class StaticResourcesEndpoint {
 
   // provide a landing page from root
   // tag::single-static-resource-from-classpath[]
-  @Get("/index.html") // <1>
+  @Get("/") // <1>
   public HttpResponse index() {
     return HttpResponses.staticResource("index.html"); // <2>
+  }
+
+  @Get("/favicon.ico") // <3>
+  public HttpResponse favicon() {
+    return HttpResponses.staticResource("favicon.ico"); // <4>
+
   }
   // end::single-static-resource-from-classpath[]
 

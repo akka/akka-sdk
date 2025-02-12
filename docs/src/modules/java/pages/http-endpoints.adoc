@@ -272,8 +272,10 @@ This can be done for a single filename:
 ----
 include::example$doc-snippets/src/main/java/com/example/api/StaticResourcesEndpoint.java[tag=single-static-resource-from-classpath]
 ----
-<1> The specific path `/index.html`
+<1> The specific path `/`
 <2> Load a specific file placed in `src/main/resources/static-resources/index.html`
+<3> Another specific path `/favicon.ico`
+<4> The specific resource to serve
 
 It is also possible to map an entire path subtree using `**` as a wildcard at the end of the path:
 
