@@ -90,6 +90,9 @@ private[javasdk] object HttpEndpointDescriptorFactory {
                 else
                   validatePath(rest, parameterNames.tail)
               }
+            case Path.Segment("**", rest) if !rest.isEmpty =>
+              Validations.Invalid(s"Wildcard path can only be the last segment of the path [$fullPathExpression]")
+
             case Path.Segment(_, rest) =>
               // non variable segment
               validatePath(rest, parameterNames)

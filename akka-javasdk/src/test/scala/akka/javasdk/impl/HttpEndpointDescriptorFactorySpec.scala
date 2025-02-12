@@ -65,6 +65,8 @@ class HttpEndpointDescriptorFactorySpec extends AnyWordSpec with Matchers {
         "The parameter [bob] in the path expression [/{id}/my-endpoint/something/{bob}] does not match the method parameter name [value] for [akka.javasdk.impl.http.TestEndpoints$InvalidEndpointMethods.list3]")
       message should include(
         "There are [2] parameters ([value,body]) for endpoint method [akka.javasdk.impl.http.TestEndpoints$InvalidEndpointMethods.list5] not matched by the path expression")
+      message should include(
+        "Wildcard path can only be the last segment of the path [/{id}/my-endpoint/wildcard/**/not/last]")
     }
 
     "parse ACL annotations into descriptor" in {

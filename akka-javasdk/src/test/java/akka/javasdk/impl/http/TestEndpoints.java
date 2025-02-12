@@ -183,5 +183,8 @@ public class TestEndpoints {
         // too many parameters
         @Get("/too-many")
         public void list5(String id, String value, String body) {}
+
+        @Get("/wildcard/**/not/last")
+        public void invalidWildcard(String id) {}
     }
 }
