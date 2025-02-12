@@ -268,7 +268,7 @@ method using link:_attachments/api/akka/javasdk/http/HttpResponses.html#staticRe
 This can be done for a single filename:
 
 [source,java]
-.{sample-base-url}/doc-snippets/src/main/java/com/example/api/StaticResourcesEndpoint[StaticResourcesEndpoint.java]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/api/StaticResourcesEndpoint.java[StaticResourcesEndpoint.java]
 ----
 include::example$doc-snippets/src/main/java/com/example/api/StaticResourcesEndpoint.java[tag=single-static-resource-from-classpath]
 ----
@@ -278,7 +278,7 @@ include::example$doc-snippets/src/main/java/com/example/api/StaticResourcesEndpo
 It is also possible to map an entire path subtree using `**` as a wildcard at the end of the path:
 
 [source,java]
-.{sample-base-url}/doc-snippets/src/main/java/com/example/api/StaticResourcesEndpoint[StaticResourcesEndpoint.java]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/api/StaticResourcesEndpoint.java[StaticResourcesEndpoint.java]
 ----
 include::example$doc-snippets/src/main/java/com/example/api/StaticResourcesEndpoint.java[tag=static-resource-tree-from-classpath]
 ----
