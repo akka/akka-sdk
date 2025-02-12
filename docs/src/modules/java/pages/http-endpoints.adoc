@@ -286,8 +286,8 @@ include::example$doc-snippets/src/main/java/com/example/api/StaticResourcesEndpo
 <2> Accept `akka.http.javadsl.model.HttpRequest` for further inspection of the actual path.
 <3> Load any available file under `static-resources` after first removing `/static` from the request path. The request path `/static/images/example.png` is resolved to the file `src/main/resources/static-resources/images/style.css` from the project.
 
-NOTE: This is convenient for service documentation or small self-contained services with web UIs but is not intended
- for production, where coupling of the service lifecycle with the UI would mean that a new service version would need to be deployed for any changes in the UI.
+NOTE: This is convenient for service documentation or small self-contained services with web user interface but is not intended
+ for production, where coupling of the service lifecycle with the user interface would mean that a new service version would need to be deployed for any changes in the user interface.
 
 
 === Streaming responses with Server Sent Events ===
