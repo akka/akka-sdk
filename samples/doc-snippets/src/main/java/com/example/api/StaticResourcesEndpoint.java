@@ -17,14 +17,14 @@ public class StaticResourcesEndpoint {
   // provide a landing page from root
   @Get("/index.html")
   public HttpResponse index() {
-    return HttpResponses.resourceFromClassPath("/static/index.html");
+    return HttpResponses.staticResource("index.html");
   }
 
   // map in all the available packaged static resources under /static
   // see src/main/resources in project for actual files
   @Get("/static/**")
   public HttpResponse webPageResources(HttpRequest request) {
-    return HttpResponses.resourceFromClassPath(request.getUri().getPathString());
+    return HttpResponses.staticResource(request, "/static/");
   }
   // end::static-resources-from-classpath[]
 
