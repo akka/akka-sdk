@@ -38,7 +38,7 @@ public class ShoppingCartEndpointImpl implements ShoppingCartEndpoint {
 <2> Create a new `ShoppingCart` protobuf message and set the `cartId` and `checkedOut` fields.
 <3> Return a `CompletionStage` that is completed with the `ShoppingCart` protobuf message.
 
-NOTE: This implementation does not interact with any other components and has an hardcoded response for simplification purposes. Interacting with other components is covered in the next section.
+NOTE: This implementation does not interact with any other components and has an hard-coded response for simplification purposes. Interacting with other components is covered in the next section.
 
 === Error responses ===
 
@@ -78,7 +78,7 @@ gRPC supports streaming requests and responses, with which either the client or 
 To stream the results of a request, mark the return type of the method as `stream` in the `.proto` file:
 
 [source,protobuf]
-.{sample-base-url}/event-sourced-customer-registry/src/main/proto/shoppingcart/api/shopping_cart_endpoint.proto[shopping_cart_endpoint.proto]
+.{sample-base-url}/event-sourced-customer-registry/src/main/proto/shoppingcart/api/customer_grpc_endpoint.proto[customer_grpc_endpoint.proto]
 ----
 include::example$event-sourced-customer-registry/src/main/proto/customer/api/customer_grpc_endpoint.proto[tag=streaming-output]
 ----
@@ -86,7 +86,7 @@ include::example$event-sourced-customer-registry/src/main/proto/customer/api/cus
 Then, the method in the endpoint interface will need to construct and return a `Stream`:
 
 [source,java]
-.{sample-base-url}/event-sourced-customer-registry/src/main/java/customer/api/CustomerGrpcEndpointImpl.java[ShoppingCartEndpointImpl.java]
+.{sample-base-url}/event-sourced-customer-registry/src/main/java/customer/api/CustomerGrpcEndpointImpl.java[CustomerGrpcEndpointImpl.java]
 ----
 include::example$event-sourced-customer-registry/src/main/java/customer/api/CustomerGrpcEndpointImpl.java[tag=customerByEmailStream]
 ----
