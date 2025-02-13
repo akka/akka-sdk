@@ -78,7 +78,7 @@ gRPC supports streaming requests and responses, with which either the client or 
 To stream the results of a request, mark the return type of the method as `stream` in the `.proto` file:
 
 [source,protobuf]
-.{sample-base-url}/event-sourced-customer-registry/src/main/proto/shoppingcart/api/customer_grpc_endpoint.proto[customer_grpc_endpoint.proto]
+.{sample-base-url}/event-sourced-customer-registry/src/main/proto/customer/api/customer_grpc_endpoint.proto[customer_grpc_endpoint.proto]
 ----
 include::example$event-sourced-customer-registry/src/main/proto/customer/api/customer_grpc_endpoint.proto[tag=streaming-output]
 ----
