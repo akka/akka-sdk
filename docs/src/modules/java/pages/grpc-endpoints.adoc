@@ -12,25 +12,27 @@ To define a gRPC Endpoint component, you start by defining a `.proto` file that 
 in `src/main/proto` of the project.
 
 [source,protobuf]
-.{sample-base-url}/grpc-shopping-cart-quickstart/src/main/proto/shoppingcart/api/shopping_cart_endpoint.proto[shopping_cart_endpoint.proto]
+.{sample-base-url}/event-sourced-customer-registry/src/main/proto/customer/api/customer_grpc_endpoint.proto[customer_grpc_endpoint.proto]
 ----
-include::example$grpc-shopping-cart-quickstart/src/main/proto/shoppingcart/api/shopping_cart_endpoint.proto[tag=minimal]
+include::example$event-sourced-customer-registry/src/main/proto/customer/api/customer_grpc_endpoint.proto[tags=minimal;get]
 ----
 
-When compiling the project, a Java interface for the service is generated `shoppingcart.api.proto.ShoppingCartEndpoint`. Define a class implementing this interface in the `api` package of your project
+When compiling the project, a Java interface for the service is generated `customer.api.proto.CustomerGrpcEndpoint`. Define a class implementing this interface in the `api` package of your project
 and annotate the class with `@GrpcEndpoint`:
 
 [source,java]
 ----
 @GrpcEndpoint // <1>
-public class ShoppingCartEndpointImpl implements ShoppingCartEndpoint {
+public class CustomerGrpcEndpointImpl implements CustomerGrpcEndpoint {
 
   @Override
-  public CompletionStage<ShoppingCartEndpointOuterClass.ShoppingCart> getCart(GetCartRequest in) {
-    var protoCartBuilder = ShoppingCartEndpointOuterClass.ShoppingCart.newBuilder(); // <2>
-    protoCartBuilder.setCartId(in.getCartId());
-    protoCartBuilder.setCheckedOut(false);
-    return CompletableFuture.completedFuture(protoCartBuilder.build()); // <3>
+  public CompletionStage<Customer> getCustomer(GetCustomerRequest in) {
+    // dummy implementation with hardcoded values
+    var customer = Customer.newBuilder() // <2>
+        .setName("Alice")
+        .setEmail("alice@email.com")
+        .build();
+    return CompletableFuture.completedFuture(customer); // <3>
   }
 }
 ----
@@ -46,9 +48,9 @@ The gRPC protocol has different status codes to signal that something went wrong
 
 To signal an error in the response, throw a `GrpcServiceException` as shown in the example below:
 [source,java]
-.{sample-base-url}/grpc-shopping-cart-quickstart/src/main/java/shoppingcart/api/ShoppingCartEndpointImpl.java[ShoppingCartEndpointImpl.java]
+.{sample-base-url}/event-sourced-customer-registry/src/main/java/customer/api/CustomerGrpcEndpointImpl.java[CustomerGrpcEndpointImpl.java]
 ----
-include::example$grpc-shopping-cart-quickstart/src/main/java/shoppingcart/api/ShoppingCartEndpointImpl.java[tag=exception]
+include::example$event-sourced-customer-registry/src/main/java/customer/api/CustomerGrpcEndpointImpl.java[tag=exception]
 ----
 
 ifdef::todo[TODO: add more details on exception handling after fix for bubble up and details in dev mode]
@@ -60,13 +62,13 @@ the `akka.javasdk.client.ComponentClient`. If the constructor of the endpoint cl
 it will be injected by the SDK and can then be available for use when processing requests. Let's see how this is done:
 
 [source,java]
-.{sample-base-url}/grpc-shopping-cart-quickstart/src/main/java/shoppingcart/api/ShoppingCartEndpointImpl.java[ShoppingCartEndpointImpl.java]
+.{sample-base-url}/event-sourced-customer-registry/src/main/java/customer/api/CustomerGrpcEndpointImpl.java[CustomerGrpcEndpointImpl.java]
 ----
-include::example$grpc-shopping-cart-quickstart/src/main/java/shoppingcart/api/ShoppingCartEndpointImpl.java[tag=endpoint-component-interaction]
+include::example$event-sourced-customer-registry/src/main/java/customer/api/CustomerGrpcEndpointImpl.java[tags=endpoint-component-interaction;get]
 ----
-<1> Mark class as a gRPC endpoint and implementing the generated interface `ShoppingCartEndpoint`.
+<1> Mark class as a gRPC endpoint and implementing the generated interface `CustomerGrpcEndpoint`.
 <2> Accept the `ComponentClient` and keep it in a field.
-<3> Use the component client to interact with an Event Sourced Entity that represents the shopping cart, identified by `cartId`.
+<3> Use the component client to interact with an Event Sourced Entity that holds the customers, identified by `customerId`.
 <4> Transform the result from the component client to the external response.
 
 For more details see xref:component-and-service-calls.adoc[].
@@ -98,9 +100,9 @@ NOTE: The above example depends on existing a View component that also returns a
 To exercise a gRPC endpoint, the testkit contains methods to get a gRPC client for calling the methods of the endpoint:
 
 [source,java]
-.{sample-base-url}/grpc-shopping-cart-quickstart/src/test/java/shoppingcart/ShoppingCartGrpcIntegrationTest.java[ShoppingCartGrpcIntegrationTest.java]
+.{sample-base-url}/event-sourced-customer-registry/src/test/java/customer/api/CustomerGrpcIntegrationTest.java[CustomerIntegrationTest.java]
 ----
-include::example$grpc-shopping-cart-quickstart/src/test/java/shoppingcart/ShoppingCartGrpcIntegrationTest.java[tag=sample-it]
+include::example$event-sourced-customer-registry/src/test/java/customer/api/CustomerGrpcIntegrationTest.java[tag=sample-it]
 ----
 
 By default, if ACLs are defined, the testkit client is authenticated as if it was the service itself calling the endpoint,

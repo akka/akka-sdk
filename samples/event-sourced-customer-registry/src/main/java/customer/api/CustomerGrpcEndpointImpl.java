@@ -14,19 +14,24 @@ import io.grpc.Status;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.ALL))
-@GrpcEndpoint
+// tag::class[]
+// tag::endpoint-component-interaction[]
+@GrpcEndpoint // <1>
 public class CustomerGrpcEndpointImpl implements CustomerGrpcEndpoint {
+  // tag::class[]
 
   private static final Logger log = LoggerFactory.getLogger(CustomerGrpcEndpointImpl.class);
 
   private final ComponentClient componentClient;
 
-  public CustomerGrpcEndpointImpl(ComponentClient componentClient) {
+  public CustomerGrpcEndpointImpl(ComponentClient componentClient) { // <2>
     this.componentClient = componentClient;
   }
+  // end::endpoint-component-interaction[]
 
   @Override
   public CompletionStage<CreateCustomerResponse> createCustomer(CreateCustomerRequest in) {
@@ -34,14 +39,22 @@ public class CustomerGrpcEndpointImpl implements CustomerGrpcEndpoint {
     if (in.getCustomerId().isBlank())
       throw new IllegalArgumentException("Customer id must not be empty");
 
-    return componentClient.forEventSourcedEntity(in.getCustomerId())
+    return componentClient.forEventSourcedEntity(in.getCustomerId()) // <3>
         .method(CustomerEntity::create)
-        .invokeAsync(apiToDomain(in.getCustomer()))
+        .invokeAsync(apiToDomain(in.getCustomer())) // <4>
         .thenApply(__ -> CreateCustomerResponse.getDefaultInstance());
   }
 
+
+  // tag::get[]
   @Override
   public CompletionStage<Customer> getCustomer(GetCustomerRequest in) {
+    // tag::exception[]
+    if (in.getCustomerId().isBlank())
+      throw new GrpcServiceException(
+          Status.INVALID_ARGUMENT.augmentDescription("Customer id must not be empty"));
+    // end::exception[]
+
     return componentClient.forEventSourcedEntity(in.getCustomerId())
         .method(CustomerEntity::getCustomer)
         .invokeAsync()
@@ -51,6 +64,8 @@ public class CustomerGrpcEndpointImpl implements CustomerGrpcEndpoint {
           else throw new RuntimeException(ex);
         });
   }
+  // end::get[]
+
 
   @Override
   public CompletionStage<ChangeNameResponse> changeName(ChangeNameRequest in) {
@@ -134,6 +149,7 @@ public class CustomerGrpcEndpointImpl implements CustomerGrpcEndpoint {
     }
   }
 
+  // tag::endpoint-component-interaction[]
   private Customer domainToApi(customer.domain.Customer domainCustomer) {
     return Customer.newBuilder()
         .setName(domainCustomer.name())
@@ -151,6 +167,7 @@ public class CustomerGrpcEndpointImpl implements CustomerGrpcEndpoint {
           .build();
     }
   }
+  // end::endpoint-component-interaction[]
 
   private Customer domainToApi(customer.domain.CustomerRow domainRow) {
     return Customer.newBuilder()
