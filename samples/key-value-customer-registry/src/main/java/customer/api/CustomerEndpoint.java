@@ -108,8 +108,6 @@ public class CustomerEndpoint {
         .withEntity(HttpEntities.create(ContentTypes.TEXT_CSV_UTF8, csvByteChunkStream));
   }
 
-  private final static ContentType TEXT_EVENT_STREAM = ContentTypes.parse("text/event-stream");
-
   @Get("/by-name-sse/{name}")
   public HttpResponse continousByNameServerSentEvents(String name) {
     // view will keep stream going, toggled with streamUpdates = true on the query
@@ -117,22 +115,7 @@ public class CustomerEndpoint {
         .stream(CustomersByName::continuousGetCustomerSummaryStream)
         .source(name);
 
-    final var eventPrefix = ByteString.fromString("data: ");
-    final var eventEnd = ByteString.fromString("\n\n");
-    // Server sent events
-    // https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events#event_stream_format
-    Source<ByteString, NotUsed> sseCustomerSummaryStream =
-        customerSummarySource.map(customerSummary ->
-            eventPrefix.concat(JsonSupport.encodeToAkkaByteString(customerSummary)).concat(eventEnd)
-        );
-
-    return HttpResponse.create()
-        .withStatus(StatusCodes.OK)
-        .withHeaders(Arrays.asList(
-            CacheControl.create(CacheDirectives.NO_CACHE),
-            Connection.create("keep-alive")
-        ))
-        .withEntity(HttpEntities.create(TEXT_EVENT_STREAM, sseCustomerSummaryStream));
+    return HttpResponses.serverSentEvents(customerSummarySource);
   }
 
   @Get("/{id}/address")

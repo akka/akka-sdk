@@ -5,15 +5,17 @@
 package akka.javasdk.http;
 
 
-import akka.http.javadsl.model.ContentType;
-import akka.http.javadsl.model.ContentTypes;
-import akka.http.javadsl.model.HttpHeader;
-import akka.http.javadsl.model.HttpResponse;
-import akka.http.javadsl.model.StatusCode;
-import akka.http.javadsl.model.StatusCodes;
+import akka.http.javadsl.model.*;
+import akka.http.javadsl.model.headers.CacheControl;
+import akka.http.javadsl.model.headers.CacheDirectives;
+import akka.http.javadsl.model.headers.Connection;
+import akka.http.javadsl.model.sse.ServerSentEvent;
 import akka.javasdk.JsonSupport;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import akka.stream.javadsl.Source;
 import com.google.common.net.HttpHeaders;
+
+import java.time.Duration;
+import java.util.Arrays;
 
 
 /**
@@ -187,6 +189,29 @@ public class HttpResponses {
    */
   public static HttpResponse notImplemented(String text) {
     return ok(text).withStatus(StatusCodes.NOT_IMPLEMENTED);
+  }
+
+  private final static ContentType TEXT_EVENT_STREAM = ContentTypes.parse("text/event-stream");
+
+  /**
+   * @return A HttpResponse with a server sent events (SSE) stream response. The HTTP response will contain each element
+   *         in the source, rendered to JSON using jackson. An SSE keepalive element is emitted every 10 seconds if the stream
+   *         is idle.
+   */
+  public static <T> HttpResponse serverSentEvents(Source<T, ?> source) {
+    var sseSource = source
+        .map(elem -> ServerSentEvent.create(JsonSupport.getObjectMapper().writeValueAsString(elem)))
+        .keepAlive(Duration.ofSeconds(10), ServerSentEvent::heartbeat)
+        // Note: using Akka HTTP internal method
+        .map(e -> ((akka.http.scaladsl.model.sse.ServerSentEvent) e).encode());
+
+    return HttpResponse.create()
+        .withStatus(StatusCodes.OK)
+        .withHeaders(Arrays.asList(
+            CacheControl.create(CacheDirectives.NO_CACHE),
+            Connection.create("keep-alive")
+        ))
+        .withEntity(HttpEntities.create(TEXT_EVENT_STREAM, sseSource));
   }
 
 
