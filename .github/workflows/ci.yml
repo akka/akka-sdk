@@ -354,7 +354,6 @@ jobs:
       matrix:
         include:
           - { sample: shopping-cart-quickstart, it: true }
-          - { sample: grpc-shopping-cart-quickstart, it: true }
 
           - { sample: choreography-saga-quickstart, it: true }
           - { sample: doc-snippets, it: false }
