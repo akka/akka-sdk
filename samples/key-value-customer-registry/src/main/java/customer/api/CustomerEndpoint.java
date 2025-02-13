@@ -2,6 +2,7 @@ package customer.api;
 
 import akka.Done;
 import akka.NotUsed;
+import akka.actor.Cancellable;
 import akka.http.javadsl.model.ContentType;
 import akka.http.javadsl.model.ContentTypes;
 import akka.http.javadsl.model.HttpEntities;
@@ -10,6 +11,7 @@ import akka.http.javadsl.model.StatusCodes;
 import akka.http.javadsl.model.headers.CacheControl;
 import akka.http.javadsl.model.headers.CacheDirectives;
 import akka.http.javadsl.model.headers.Connection;
+import akka.japi.Pair;
 import akka.javasdk.JsonSupport;
 import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.http.Delete;
@@ -26,9 +28,12 @@ import akka.util.ByteString;
 import customer.application.*;
 import customer.domain.Address;
 import customer.domain.Customer;
+import scala.Option;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 
@@ -116,6 +121,35 @@ public class CustomerEndpoint {
         .source(name);
 
     return HttpResponses.serverSentEvents(customerSummarySource);
+  }
+
+  @Get("/stream-customer-changes/{customerId}")
+  public HttpResponse streamCustomerChanges(String customerId) {
+    // fetch the current state every 5 seconds
+    Source<Customer, Cancellable> stateEvery5Seconds = Source.tick(Duration.ZERO, Duration.ofSeconds(5), "tick")
+        .mapAsync(1, __ ->
+          componentClient.forKeyValueEntity(customerId)
+              .method(CustomerEntity::getCustomer)
+              .invokeAsync()
+        );
+
+    // deduplicate, so that we don't emit if the state did not change from last time
+    Source<Customer, Cancellable> streamOfChanges = stateEvery5Seconds.scan(Optional.<Customer>empty(), (previous, current) -> {
+      if (previous.isEmpty() || !previous.get().equals(current)) {
+        // first element, or different from previous
+        return Optional.of(current);
+      } else {
+        return Optional.empty();
+      }
+    }).filter(Optional::isPresent).map(Optional::get);
+
+    // turn each internal representation into public API representation, just like get endpoint above
+    var streamOfChangesAsApiData = streamOfChanges.map(c ->
+            new CustomerRequest(customerId, c.name(), c.email(), c.address().city(), c.address().street())
+        );
+
+    // turn into server sent event response
+    return HttpResponses.serverSentEvents(streamOfChangesAsApiData);
   }
 
   @Get("/{id}/address")
