@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "customer.api.proto";
+
+import "customer/api/customer_grpc_endpoint.proto";
+
+package customer.api;
+
+service DelegateCustomerGrpcEndpoint {
+  rpc CreateCustomer (CreateCustomerRequest) returns (CreateCustomerResponse) {}
+}

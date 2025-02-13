@@ -5,7 +5,7 @@ include::ROOT:partial$include.adoc[]
 An Endpoint is a component that creates an externally accessible API. Endpoints are how you expose your services to the outside world. Two different types of endpoints are available: HTTP endpoints and gRPC endpoints. In this page, we will focus on gRPC endpoints.
 
 gRPC Endpoint components make it possible to conveniently define public APIs accepting and responding in protobuf --
-a binary, typed protocol which is designed to handle evolution of a service over time.
+a binary, typed protocol which is designed to handle evolution of a service over time. They can be used to define both unary and streaming RPCs. For more information on gRPC, see https://grpc.io.
 
 == Basics ==
 To define a gRPC Endpoint component, you start by defining a `.proto` file that defines the service and its messages

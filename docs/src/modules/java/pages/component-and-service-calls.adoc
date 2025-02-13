@@ -75,10 +75,7 @@ include::java:example$doc-snippets/src/main/java/com/example/callanotherservice/
 === Over gRPC
 The service is identified by the name it has been deployed. Akka takes care of routing requests to the service and keeping the data safe by encrypting the connection and handling authentication for you.
 
-ifdef::todo[TODO: a more realistic sample here, possibly aligned with the HTTP sample above]
-ifdef::todo[TODO: cover streaming calls with an example?]
-
-In this sample we will make an action that does a call to the xref:grpc-endpoints.adoc[gRPC endpoints example] service, deployed with the service name `doc-snippets`.
+In this sample we will make an endpoint that does a call to the xref:grpc-endpoints.adoc[gRPC endpoints] customer registry service, deployed with the service name `customer-registry`.
 
 The SDK provides `akka.javasdk.grpc.GrpcClientProvider` which provides gRPC client instances for calling other services.
 
@@ -86,20 +83,20 @@ To consume a gRPC service, the service protobuf descriptor must be added in the 
 triggers generation of a client interface and Java classes for all the message types used as requests and responses for
 methods in the service.
 
-ifdef::todo[TODO: recomendations for how to use other ways to handle the protos]
+TIP: Typically, since the service protobuf descriptors need to be shared between the provider service and the consuming service, if they are not part of the same codebase it is a common practice to put the proto files in a separate project that is then used on the two services.
 
 In our delegating service implementation:
 
 [source,java,indent=0]
-.{sample-base-url}/doc-snippets/src/main/java/com/example/callanotherservice/DelegatingGrpcEndpointImpl.java[DelegatingGrpcEndpointImpl.java]
+.{sample-base-url}/event-sourced-customer-registry-subscriber/src/main/java/customer/api/DelegateCustomerGrpcEndpoint.java[DelegateCustomerGrpcEndpoint.java]
 ----
-include::java:example$doc-snippets/src/main/java/com/example/callanotherservice/DelegatingGrpcEndpointImpl.java[tag=delegating-endpoint]
+include::java:example$event-sourced-customer-registry-subscriber/src/main/java/customer/api/DelegateCustomerGrpcEndpointImpl.java[tag=delegate]
 ----
 <1> Accept a `GrpcClientProvider` parameter for the constructor
-<2> Use the generated gRPC client interface for the service `ExampleGrpcEndpointClient.class` and the service name `doc-snippets` to look up a client.
-<3> Use the client to call the other service and return a `CompletionStage<HelloReply>`
+<2> Use the generated gRPC client interface for the service `CustomerGrpcEndpointClient.class` and the service name `customer-registry` to look up a client.
+<3> Use the client to call the other service and return a `CompletionStage<CreateCustomerResponse>`
 
-Since the called service and the `DelegatingGrpcEndpoint` share request and response protocol, no further transformation
+Since the called service and the `DelegateCustomerGrpcEndpoint` share request and response protocol, no further transformation
 of the request or response is needed here.
 
 For dev mode and in tests, providing a config override in `application.conf` like for external calls is possible, however
