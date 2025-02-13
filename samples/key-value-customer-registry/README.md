@@ -142,14 +142,20 @@ curl -i -XDELETE localhost:9000/customer/001
 curl localhost:9000/customer/001 
 ```
 
-* There is also a Server Sent Event (SSE) version that will first emit matching rows that exist in the view, and then
+* There are also a Server Sent Event (SSE) endpoints. One that will first emit matching rows that exist in the view, and then
   stay running, continuously stream updates to a view matching the query:
 
 ```shell
 curl localhost:9000/customer/by-name-sse/Jan%20Janssen 
 ```
 
-Start this query in one terminal window while triggering updates in another terminal window, for example
+* And one that emits changes to a specific customer:
+
+```shell
+curl localhost:9000/customer/stream-customer-changes/001
+```
+
+Start with either streaming request in one terminal window while triggering updates in another terminal window, for example
 changing the name to and from "Jan Janssen" or adding more customers with different ids and the same name, to see the
 updates appear.
 

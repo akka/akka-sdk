@@ -31,10 +31,7 @@ import customer.domain.Customer;
 import scala.Option;
 
 import java.time.Duration;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletionStage;
 
 // Opened up for access from the public internet to make the sample service easy to try out.
@@ -122,34 +119,58 @@ public class CustomerEndpoint {
 
     return HttpResponses.serverSentEvents(customerSummarySource);
   }
-
+  
   @Get("/stream-customer-changes/{customerId}")
   public HttpResponse streamCustomerChanges(String customerId) {
-    // fetch the current state every 5 seconds
-    Source<Customer, Cancellable> stateEvery5Seconds = Source.tick(Duration.ZERO, Duration.ofSeconds(5), "tick")
-        .mapAsync(1, __ ->
-          componentClient.forKeyValueEntity(customerId)
-              .method(CustomerEntity::getCustomer)
-              .invokeAsync()
-        );
+    Source<Customer, Cancellable> stateEvery5Seconds =
+        // stream of ticks, one immediately, then one every five seconds
+        Source.tick(Duration.ZERO, Duration.ofSeconds(5), "tick")
+          // for each tick, request the entity state
+          .mapAsync(1, __ ->
+            componentClient.forKeyValueEntity(customerId)
+                .method(CustomerEntity::getCustomer)
+                .invokeAsync().handle((Customer customer, Throwable error) -> {
+                  if (error == null) {
+                    return Optional.of(customer);
+                  } else if (error instanceof IllegalArgumentException) {
+                    // calling getCustomer throws IllegalArgument if the customer does not exist
+                    // we want the stream to continue polling in that case, so turn it into an empty optional
+                    return Optional.<Customer>empty();
+                  } else {
+                    throw new RuntimeException("Unexpected error polling customer state", error);
+                  }
+                })
+          )
+          // then filter out the empty optionals and return the actual customer states for nonempty
+          // so that the stream contains only Customer elements
+          .filter(Optional::isPresent).map(Optional::get);
 
     // deduplicate, so that we don't emit if the state did not change from last time
-    Source<Customer, Cancellable> streamOfChanges = stateEvery5Seconds.scan(Optional.<Customer>empty(), (previous, current) -> {
-      if (previous.isEmpty() || !previous.get().equals(current)) {
-        // first element, or different from previous
-        return Optional.of(current);
-      } else {
-        return Optional.empty();
-      }
-    }).filter(Optional::isPresent).map(Optional::get);
+    Source<Customer, Cancellable> streamOfChanges = stateEvery5Seconds.statefulMapConcat(() -> {
+      // Java does not allow mutating state in surrounding scope, so we need an array for that
+      Customer[] previousCustomer = new Customer[1];
 
-    // turn each internal representation into public API representation, just like get endpoint above
-    var streamOfChangesAsApiData = streamOfChanges.map(c ->
+      return (Customer customer) -> {
+        if (previousCustomer[0] == null || !previousCustomer[0].equals(customer)) {
+          // there was no previous customer, or the new state is different from what was previously
+          // seen, emit the customer
+          previousCustomer[0] = customer;
+          return Collections.singletonList(customer);
+        } else {
+          // the state was identical to previous, emit nothing
+          return Collections.emptyList();
+        }
+      };
+    });
+
+    // now turn each changed internal state representation into public API representation,
+    // just like get endpoint above
+    Source<CustomerRequest, Cancellable> streamOfChangesAsApiType = streamOfChanges.map(c ->
             new CustomerRequest(customerId, c.name(), c.email(), c.address().city(), c.address().street())
         );
 
     // turn into server sent event response
-    return HttpResponses.serverSentEvents(streamOfChangesAsApiData);
+    return HttpResponses.serverSentEvents(streamOfChangesAsApiType);
   }
 
   @Get("/{id}/address")
