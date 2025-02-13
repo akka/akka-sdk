@@ -53,8 +53,14 @@ message CustomerList {
 message StreamCustomersRequest {
 }
 
+// tag::streaming-output[]
+message CustomerSummary {
+  string email = 1;
+  string name = 2;
+}
 
 service CustomerGrpcEndpoint {
+// end::streaming-output[]
 
   rpc CreateCustomer (CreateCustomerRequest) returns (CreateCustomerResponse) {}
 
@@ -68,7 +74,11 @@ service CustomerGrpcEndpoint {
 
   rpc CustomerByEmail (CustomerByEmailRequest) returns (CustomerList) {}
 
+  // tag::streaming-output[]
+  // ...
+  rpc CustomerByEmailStream (CustomerByEmailRequest) returns (stream CustomerSummary) {}
 }
+// end::streaming-output[]
 
 // The request message containing the user's name.
 message HelloRequest {

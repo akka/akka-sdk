@@ -1,9 +1,11 @@
 package customer.api;
 
+import akka.NotUsed;
 import akka.grpc.GrpcServiceException;
 import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.GrpcEndpoint;
 import akka.javasdk.client.ComponentClient;
+import akka.stream.javadsl.Source;
 import customer.api.proto.*;
 import customer.application.CustomerByEmailView;
 import customer.application.CustomerByNameView;
@@ -95,6 +97,22 @@ public class CustomerGrpcEndpointImpl implements CustomerGrpcEndpoint {
         });
   }
 
+  // tag::customerByEmailStream[]
+  @Override
+  public Source<CustomerSummary, NotUsed> customerByEmailStream(CustomerByEmailRequest in) {
+    // Shows of streaming consumption of a view, transforming
+    // each element and passing along to a streamed response
+    var customerSummarySource = componentClient.forView()
+        .stream(CustomerByEmailView::getCustomersStream)
+        .source(in.getEmail());
+
+    return customerSummarySource.map(c ->
+      CustomerSummary.newBuilder()
+          .setName(c.name())
+          .setEmail(c.email())
+          .build());
+  }
+  // end::customerByEmailStream[]
 
   // Conversions between the public gRPC API protobuf messages and the internal
   // Java domain classes.

@@ -21,7 +21,6 @@ When compiling the project, a Java interface for the service is generated `shopp
 and annotate the class with `@GrpcEndpoint`:
 
 [source,java]
-.{sample-base-url}/grpc-shopping-cart-quickstart/src/main/java/shoppingcart/api/ShoppingCartEndpointImpl.java[ShoppingCartEndpointImpl.java]
 ----
 @GrpcEndpoint // <1>
 public class ShoppingCartEndpointImpl implements ShoppingCartEndpoint {
@@ -39,7 +38,7 @@ public class ShoppingCartEndpointImpl implements ShoppingCartEndpoint {
 <2> Create a new `ShoppingCart` protobuf message and set the `cartId` and `checkedOut` fields.
 <3> Return a `CompletionStage` that is completed with the `ShoppingCart` protobuf message.
 
-NOTE: This implementation does not interact with any other components and hardcodes the response for simplification purposes. Interacting with other components is covered in the next section.
+NOTE: This implementation does not interact with any other components and has an hardcoded response for simplification purposes. Interacting with other components is covered in the next section.
 
 === Error responses ===
 
@@ -72,20 +71,36 @@ include::example$grpc-shopping-cart-quickstart/src/main/java/shoppingcart/api/Sh
 
 For more details see xref:component-and-service-calls.adoc[].
 
-== Streaming responses
+== Streaming
 
-gRPC supports streaming requests and responses, where either the client or the server (or both) send multiple messages. That is done by marking the input and output message as `stream` in the `.proto` file. Then, the method in the endpoint interface will need to receive and return a `Stream` instead of a single message.
+gRPC supports streaming requests and responses, with which either the client or the server (or both) can send multiple messages. In this section, we will show how to stream the results of a request but the remaining combinations are similar.
 
-ifdef::todo[TODO: create streaming example]
+To stream the results of a request, mark the return type of the method as `stream` in the `.proto` file:
 
-== Testing
+[source,protobuf]
+.{sample-base-url}/event-sourced-customer-registry/src/main/proto/shoppingcart/api/shopping_cart_endpoint.proto[shopping_cart_endpoint.proto]
+----
+include::example$event-sourced-customer-registry/src/main/proto/customer/api/customer_grpc_endpoint.proto[tag=streaming-output]
+----
+
+Then, the method in the endpoint interface will need to construct and return a `Stream`:
+
+[source,java]
+.{sample-base-url}/event-sourced-customer-registry/src/main/java/customer/api/CustomerGrpcEndpointImpl.java[ShoppingCartEndpointImpl.java]
+----
+include::example$event-sourced-customer-registry/src/main/java/customer/api/CustomerGrpcEndpointImpl.java[tag=customerByEmailStream]
+----
+
+NOTE: The above example depends on existing a View component that also returns a `Stream` of `Customer` messages. See xref:views.adoc#_streaming_the_result[] for more details.
+
+== Testing the Endpoint
 
 To exercise a gRPC endpoint, the testkit contains methods to get a gRPC client for calling the methods of the endpoint:
 
 [source,java]
 .{sample-base-url}/grpc-shopping-cart-quickstart/src/test/java/shoppingcart/ShoppingCartGrpcIntegrationTest.java[ShoppingCartGrpcIntegrationTest.java]
 ----
-include::example$grpc-shopping-cart-quickstart/src/test/java/shoppingcart/ShoppingCartGrpcIntegrationTest.java[]
+include::example$grpc-shopping-cart-quickstart/src/test/java/shoppingcart/ShoppingCartGrpcIntegrationTest.java[tag=sample-it]
 ----
 
 By default, if ACLs are defined, the testkit client is authenticated as if it was the service itself calling the endpoint,
