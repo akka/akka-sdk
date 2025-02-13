@@ -13,15 +13,16 @@ akka local services components list-events SERVICE_NAME COMPONENT_NAME ENTITY_ID
 == Options
 
 ----
-  -h, --help                help for list-events
-      --include-state       Whether events should include the state of the entity after each event has been applied.
-  -i, --interactive         Whether the command should allow interactively paging through results.
-      --owner string        the owner of the project to use, needed if you have two projects with the same name from different owners
-      --page-size int       The size of pages to fetch. Defaults to 100.
-      --page-token string   Page token for paging.
-      --project string      project to use if not using the default configured project
-      --raw                 Use to specify that messages should not be decoded, but should be a raw format.
-      --region string       region to use if project has more than one region
+  -h, --help                      help for list-events
+      --include-internal-events   Whether to include internal events in the list.
+      --include-state             Whether events should include the state of the entity after each event has been applied.
+  -i, --interactive               Whether the command should allow interactively paging through results.
+      --owner string              the owner of the project to use, needed if you have two projects with the same name from different owners
+      --page-size int             The size of pages to fetch. Defaults to 100.
+      --page-token string         Page token for paging.
+      --project string            project to use if not using the default configured project
+      --raw                       Use to specify that messages should not be decoded, but should be a raw format.
+      --region string             region to use if project has more than one region
 ----
 
 == Options inherited from parent commands

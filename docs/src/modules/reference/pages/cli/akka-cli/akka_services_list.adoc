@@ -16,8 +16,8 @@ akka services list [flags]
 ----
 
 > akka services list
-NAME               AGE    INSTANCES   STATUS   IMAGE TAG    SYNC STATUS
-shopping-cart      4h20m  3           Ready    0.0.2        Synced
+NAME               AGE    INSTANCES   STATUS   IMAGE TAG
+shopping-cart      4h20m  3           Ready    0.0.2
 ----
 
 == Options
