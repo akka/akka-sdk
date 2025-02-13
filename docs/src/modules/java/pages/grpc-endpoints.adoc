@@ -100,7 +100,7 @@ NOTE: The above example depends on existing a View component that also returns a
 To exercise a gRPC endpoint, the testkit contains methods to get a gRPC client for calling the methods of the endpoint:
 
 [source,java]
-.{sample-base-url}/event-sourced-customer-registry/src/test/java/customer/api/CustomerGrpcIntegrationTest.java[CustomerIntegrationTest.java]
+.{sample-base-url}/event-sourced-customer-registry/src/test/java/customer/api/CustomerGrpcIntegrationTest.java[CustomerGrpcIntegrationTest.java]
 ----
 include::example$event-sourced-customer-registry/src/test/java/customer/api/CustomerGrpcIntegrationTest.java[tag=sample-it]
 ----

@@ -88,7 +88,7 @@ TIP: Typically, since the service protobuf descriptors need to be shared between
 In our delegating service implementation:
 
 [source,java,indent=0]
-.{sample-base-url}/event-sourced-customer-registry-subscriber/src/main/java/customer/api/DelegateCustomerGrpcEndpoint.java[DelegateCustomerGrpcEndpoint.java]
+.{sample-base-url}/event-sourced-customer-registry-subscriber/src/main/java/customer/api/DelegateCustomerGrpcEndpointImpl.java[DelegateCustomerGrpcEndpointImpl.java]
 ----
 include::java:example$event-sourced-customer-registry-subscriber/src/main/java/customer/api/DelegateCustomerGrpcEndpointImpl.java[tag=delegate]
 ----
