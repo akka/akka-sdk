@@ -274,7 +274,7 @@ to make sure the response stream is kept alive through proxies and firewalls.
 ----
 include::example$doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java[tag=basic-sse]
 ----
-<1> `Source.tick` emits th element `"tick"` immediately (after `Duration.ZERO`) and then every 5 seconds
+<1> `Source.tick` emits the element `"tick"` immediately (after `Duration.ZERO`) and then every 5 seconds
 <2> Every time a tick is seen, we turn it into a system clock timestamp
 <3> Passing the `Source` to `serverSentEvents` returns a `HttpResponse` for the endpoint method.
 
