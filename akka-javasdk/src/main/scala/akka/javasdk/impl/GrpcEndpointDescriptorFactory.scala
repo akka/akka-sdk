@@ -23,7 +23,6 @@ import akka.runtime.sdk.spi.GrpcEndpointDescriptor
 import akka.runtime.sdk.spi.GrpcEndpointRequestConstructionContext
 import akka.runtime.sdk.spi.MethodOptions
 import io.grpc.Status
-import io.opentelemetry.api.trace.Span
 
 import java.util.concurrent.CompletionException
 import scala.concurrent.Future
@@ -40,7 +39,7 @@ object GrpcEndpointDescriptorFactory {
       GrpcExceptionHandler.defaultMapper(system.classicSystem)(other)
   }
 
-  def apply[T](grpcEndpointClass: Class[T], factory: Option[Span] => T)(implicit
+  def apply[T](grpcEndpointClass: Class[T], factory: GrpcEndpointRequestConstructionContext => T)(implicit
       system: ActorSystem[_]): GrpcEndpointDescriptor[T] = {
     // FIXME now way right now to know that it is a gRPC service interface
     val serviceDefinitionClass: Class[_] = {
@@ -54,7 +53,7 @@ object GrpcEndpointDescriptorFactory {
 
     // FIXME a derivative should be injectable into user code as well
     val instanceFactory = { (ctx: GrpcEndpointRequestConstructionContext) =>
-      factory(ctx.openTelemetrySpan)
+      factory(ctx)
     }
 
     val handlerFactory =

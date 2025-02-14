@@ -23,6 +23,8 @@ import scala.util.control.NonFatal
 import akka.Done
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
+import akka.grpc.internal.JavaMetadataImpl
+import akka.grpc.javadsl.Metadata
 import akka.http.javadsl.model.HttpHeader
 import akka.http.scaladsl.model.headers.RawHeader
 import akka.javasdk.BuildInfo
@@ -40,6 +42,7 @@ import akka.javasdk.consumer.Consumer
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.javasdk.eventsourcedentity.EventSourcedEntityContext
 import akka.javasdk.grpc.GrpcClientProvider
+import akka.javasdk.grpc.GrpcRequestContext
 import akka.javasdk.http.AbstractHttpEndpoint
 import akka.javasdk.http.HttpClientProvider
 import akka.javasdk.http.RequestContext
@@ -76,6 +79,7 @@ import akka.runtime.sdk.spi
 import akka.runtime.sdk.spi.ComponentClients
 import akka.runtime.sdk.spi.ConsumerDescriptor
 import akka.runtime.sdk.spi.EventSourcedEntityDescriptor
+import akka.runtime.sdk.spi.GrpcEndpointRequestConstructionContext
 import akka.runtime.sdk.spi.HttpEndpointConstructionContext
 import akka.runtime.sdk.spi.RemoteIdentification
 import akka.runtime.sdk.spi.SpiComponents
@@ -748,11 +752,33 @@ private final class Sdk(
       instance
   }
 
-  private def grpcEndpointFactory[E](grpcEndpointClass: Class[E]): Option[Span] => E = span => {
-    wiredInstance(grpcEndpointClass) {
-      sideEffectingComponentInjects(span)
+  private def grpcEndpointFactory[E](grpcEndpointClass: Class[E]): GrpcEndpointRequestConstructionContext => E =
+    (context: GrpcEndpointRequestConstructionContext) => {
+
+      lazy val requestContext = new GrpcRequestContext {
+        override def getPrincipals: Principals =
+          PrincipalsImpl(context.principal.source, context.principal.service)
+
+        override def getJwtClaims: JwtClaims =
+          context.jwt match {
+            case Some(jwtClaims) => new JwtClaimsImpl(jwtClaims)
+            case None =>
+              throw new RuntimeException(
+                "There are no JWT claims defined but trying accessing the JWT claims. The class or the method needs to be annotated with @JWT.")
+          }
+
+        override def metadata(): Metadata = new JavaMetadataImpl(context.metadata)
+
+        override def tracing(): Tracing = new SpanTracingImpl(context.openTelemetrySpan, sdkTracerFactory)
+      }
+
+      val instance = wiredInstance(grpcEndpointClass) {
+        sideEffectingComponentInjects(context.openTelemetrySpan).orElse {
+          case p if p == classOf[GrpcRequestContext] => requestContext
+        }
+      }
+      instance
     }
-  }
 
   private def wiredInstance[T](clz: Class[T])(partial: PartialFunction[Class[_], Any]): T = {
     // only one constructor allowed

@@ -18,6 +18,7 @@ message Out {
 
 service TestGrpcService {
   rpc Simple(In) returns (Out) {};
+  rpc ReadMetadata(In) returns (Out) {};
   rpc DelegateToAkkaService(In) returns (Out) {};
   rpc DelegateToExternal(In) returns (Out) {};
   rpc CustomStatus(In) returns (Out) {};

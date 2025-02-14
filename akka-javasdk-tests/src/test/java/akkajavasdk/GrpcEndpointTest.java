@@ -30,6 +30,17 @@ public class GrpcEndpointTest extends TestKitSupport {
   }
 
   @Test
+  public void shouldProvideAccessToRequestMetadata() {
+    var testClient = getGrpcEndpointClient(TestGrpcServiceClient.class).addRequestHeader("x-foo", "bar");
+
+    var request = TestGrpcServiceOuterClass.In.newBuilder().setData("x-foo").build();
+    var response = await(testClient.readMetadata(request));
+
+    assertThat(response.getData()).isEqualTo("bar");
+  }
+
+
+  @Test
   public void shouldAllowExternalGrpcCall() {
     var testClient = getGrpcEndpointClient(TestGrpcServiceClient.class);
 

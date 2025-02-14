@@ -8,6 +8,7 @@ import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.GrpcEndpoint;
 import akka.javasdk.annotations.JWT;
 import akka.javasdk.grpc.GrpcClientProvider;
+import akka.javasdk.grpc.GrpcRequestContext;
 import akkajavasdk.protocol.*;
 import io.grpc.Status;
 
@@ -20,9 +21,11 @@ import java.util.concurrent.CompletionStage;
 public class TestGrpcServiceImpl implements TestGrpcService {
 
   private final GrpcClientProvider grpcClientProvider;
+  private final GrpcRequestContext requestContext;
 
-  public TestGrpcServiceImpl(GrpcClientProvider grpcClientProvider) {
+  public TestGrpcServiceImpl(GrpcClientProvider grpcClientProvider, GrpcRequestContext requestContext) {
     this.grpcClientProvider = grpcClientProvider;
+    this.requestContext = requestContext;
   }
 
   @Override
@@ -31,6 +34,15 @@ public class TestGrpcServiceImpl implements TestGrpcService {
         TestGrpcServiceOuterClass.Out.newBuilder().setData(in.getData()).build()
     );
   }
+
+  @Override
+  public CompletionStage<TestGrpcServiceOuterClass.Out> readMetadata(TestGrpcServiceOuterClass.In in) {
+    return CompletableFuture.completedFuture(
+        TestGrpcServiceOuterClass.Out.newBuilder().setData(
+            requestContext.metadata().getText(in.getData()).orElse("")).build()
+    );
+  }
+
 
   @Override
   public CompletionStage<TestGrpcServiceOuterClass.Out> delegateToAkkaService(TestGrpcServiceOuterClass.In in) {
