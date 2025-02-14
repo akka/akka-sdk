@@ -282,7 +282,7 @@ A more realistic use case would be to stream the changes from a view, using the 
 feature.
 
 [source,java]
-.{sample-base-url}/k-snippets/src/main/java/com/example/api/ExampleEndpoint.java[ExampleEndpoint.java]
+.{sample-base-url}/key-value-customer-registry/src/main/java/customer/api/CustomerEndpoint.java[CustomerEndpoint.java]
 ----
 include::example$key-value-customer-registry/src/main/java/customer/api/CustomerEndpoint.java[tag=sse-view-updates]
 ----
@@ -293,7 +293,7 @@ Another realistic example is to periodically poll an entity for its state,
 but only emit an element over SSE when the state changes:
 
 [source,java]
-.{sample-base-url}/k-snippets/src/main/java/com/example/api/ExampleEndpoint.java[ExampleEndpoint.java]
+.{sample-base-url}/key-value-customer-registry/src/main/java/customer/api/CustomerEndpoint.java[CustomerEndpoint.java]
 ----
 include::example$key-value-customer-registry/src/main/java/customer/api/CustomerEndpoint.java[tag=sse-customer-changes]
 ----
