@@ -66,7 +66,7 @@ it will be injected by the SDK and can then be available for use when processing
 ----
 include::example$event-sourced-customer-registry/src/main/java/customer/api/CustomerGrpcEndpointImpl.java[tags=endpoint-component-interaction;get]
 ----
-<1> Mark class as a gRPC endpoint and implementing the generated interface `CustomerGrpcEndpoint`.
+<1> Mark class as a gRPC endpoint and implement the generated interface `CustomerGrpcEndpoint`.
 <2> Accept the `ComponentClient` and keep it in a field.
 <3> Use the component client to interact with an Event Sourced Entity that holds the customers, identified by `customerId`.
 <4> Transform the result from the component client to the external response.
