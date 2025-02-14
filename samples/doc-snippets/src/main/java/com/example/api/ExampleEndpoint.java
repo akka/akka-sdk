@@ -5,6 +5,7 @@ import akka.actor.Cancellable;
 import akka.http.javadsl.model.ContentType;
 import akka.http.javadsl.model.ContentTypes;
 import akka.http.javadsl.model.HttpEntity;
+import akka.http.javadsl.model.HttpHeader;
 import akka.http.javadsl.model.HttpRequest;
 import akka.http.javadsl.model.HttpResponse;
 import akka.http.javadsl.model.MediaTypes;
@@ -152,6 +153,17 @@ public class ExampleEndpoint extends AbstractHttpEndpoint {
     }
   }
   // end::lower-level-request[]
+
+  // tag::header-access[]
+  @Get("/hello-request-header-from-context")
+  public String requestHeaderFromContext() {
+    var name = requestContext().requestHeader("X-my-special-header") // <1>
+        .map(HttpHeader::value)
+        .orElseThrow(() -> new IllegalArgumentException("Request is missing my special header"));
+
+    return "Hello " + name + "!";
+  }
+  // end::header-access[]
 
   // tag::basic-sse[]
   @Get("/current-time")
