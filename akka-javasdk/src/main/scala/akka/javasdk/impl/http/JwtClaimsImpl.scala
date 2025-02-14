@@ -199,13 +199,9 @@ class JwtClaimsImpl(jwtClaims: RuntimeJwtClaims) extends JwtClaims {
    *   The boolean claim, if present. Returns empty if the claim is not a boolean or can't be parsed as a boolean.
    */
   def getBoolean(name: String): Optional[lang.Boolean] = getString(name).flatMap((value: String) => {
-    def foo(value: String) = {
-      if (value.equalsIgnoreCase("true")) Optional.of(lang.Boolean.TRUE)
-      else if (value.equalsIgnoreCase("false")) Optional.of(lang.Boolean.FALSE)
-      Optional.empty
-    }
-
-    foo(value)
+    if (value.equalsIgnoreCase("true")) Optional.of(lang.Boolean.TRUE)
+    else if (value.equalsIgnoreCase("false")) Optional.of(lang.Boolean.FALSE)
+    Optional.empty
   })
 
   /**
