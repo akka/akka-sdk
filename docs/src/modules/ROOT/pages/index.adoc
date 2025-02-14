@@ -18,10 +18,7 @@ There are two ways to build applications with Akka:
 === Akka SDK
 The Akka software development kit (SDK) includes components with a local console, debugger, and runtime. The components let you build durable, transactional, real-time services. It enforces separation of domain logic from infrastructure concerns.
 
-* *Operations*: SDK applications are DevOps-ready and can be deployed in any of the following environments:
-** Akka's Serverless environment
-** Any hyperscaler (Bring Your Own Cloud, or BYOC)
-** A Kubernetes environment with an Akka orchestrator (self-hosted)
+Applications built with the Akka SDK can -- _without any changes_ -- operate simultaneously across **multiple regions**, even across **multiple cloud providers**. Customers can also set up private regions operating in their cloud accounts.
 
 === Akka Libraries
 * *Overview*: The libraries are open-source modules that are foundational for creating distributed systems including actors, networking, streams, persistence, and clustering.
