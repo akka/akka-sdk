@@ -259,6 +259,50 @@ include::example$doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java
 ----
 <1> `requestHeader(headerName)` returns an `Optional` which is empty if the header was not present.
 
+
+=== Streaming responses with Server Sent Events ===
+
+link:https://html.spec.whatwg.org/multipage/server-sent-events.html#server-sent-events[Server Sent Events (SSE)] is a way to push a stream of elements through a single HTTP response
+that the client can see one by one rather than have to wait for the entire response to complete.
+
+Any Akka stream `Source` of elements where the elements can be serialized to JSON using Jackson can
+be turned into a SSE endpoint method.
+
+[source,java]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java[ExampleEndpoint.java]
+----
+include::example$doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java[tag=basic-sse]
+----
+<1> `Source.tick` emits th element `"tick"` immediately (after `Duration.ZERO`) and then every 5 seconds
+<2> Every time a tick is seen, we turn it into a system clock timestamp
+<3> Passing the `Source` to `serverSentEvents` returns a `HttpResponse` for the endpoint method.
+
+A more realistic use case would be to stream the changes from a view, using the `streamUpdates` view
+feature.
+
+[source,java]
+.{sample-base-url}/k-snippets/src/main/java/com/example/api/ExampleEndpoint.java[ExampleEndpoint.java]
+----
+include::example$key-value-customer-registry/src/main/java/customer/api/CustomerEndpoint.java[tag=sse-view-updates]
+----
+<1> The view is annotated with `@Query(value = [a query], streamUpdates = true)` to keep polling the database after the initial result is returned and return updates matching the query filter
+<2> The stream of view entries and then updates are turned into an SSE response.
+
+Another realistic example is to periodically poll an entity for its state,
+but only emit an element over SSE when the state changes:
+
+[source,java]
+.{sample-base-url}/k-snippets/src/main/java/com/example/api/ExampleEndpoint.java[ExampleEndpoint.java]
+----
+include::example$key-value-customer-registry/src/main/java/customer/api/CustomerEndpoint.java[tag=sse-customer-changes]
+----
+<1> Right away, and then every 5 seconds, use the `ComponentClient` to call `CustomerEntity#getCustomer` to get the current state.
+<2> Use `scan` to filter out updates where the state did not change
+<3> Transform the internal customer domain type to a public API representation
+<4> Turn the stream to a SSE response
+
+This uses more advanced Akka stream operators, you can find more details of those in the link:https://doc.akka.io/libraries/akka-core/current/stream/operators/index.html[Akka libraries documentation].
+
 == See also
 
 - xref:java:access-control.adoc[]

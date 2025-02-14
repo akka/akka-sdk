@@ -1,6 +1,7 @@
 package com.example.api;
 
 
+import akka.actor.Cancellable;
 import akka.http.javadsl.model.ContentType;
 import akka.http.javadsl.model.ContentTypes;
 import akka.http.javadsl.model.HttpEntity;
@@ -20,8 +21,10 @@ import akka.javasdk.http.AbstractHttpEndpoint;
 import akka.javasdk.http.HttpException;
 import akka.javasdk.http.HttpResponses;
 import akka.stream.Materializer;
+import akka.stream.javadsl.Source;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
+import java.time.Duration;
 import java.util.concurrent.CompletionStage;
 
 // tag::basic-endpoint[]
@@ -134,7 +137,7 @@ public class ExampleEndpoint extends AbstractHttpEndpoint {
   // end::low-level-request[]
 
   // tag::lower-level-request[]
-  @Get("/hello-lower-level-request/{name}")
+  @Get("/hello-request-header/{name}")
   public CompletionStage<String> lowerLevelRequestHello(String name, HttpRequest request) {
     if (request.getHeader("X-my-special-header").isEmpty()) {
       return request.discardEntityBytes(materializer).completionStage().thenApply(__ -> { // <2>
@@ -149,4 +152,15 @@ public class ExampleEndpoint extends AbstractHttpEndpoint {
     }
   }
   // end::lower-level-request[]
+
+  // tag::basic-sse[]
+  @Get("/current-time")
+  public HttpResponse streamCurrentTime() {
+    Source<Long, Cancellable> timeSource =
+        Source.tick(Duration.ZERO, Duration.ofSeconds(5), "tick") // <1>
+            .map(__ -> System.currentTimeMillis()); // <2>
+
+    return HttpResponses.serverSentEvents(timeSource); // <3>
+  }
+  // end::basic-sse[]
 }
