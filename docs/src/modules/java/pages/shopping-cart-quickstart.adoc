@@ -22,14 +22,14 @@ include::ROOT:partial$cloud-dev-prerequisites.adoc[]
 
 == Download the sample
 
-You can download the full source code of the Shopping Cart sample as a link:_attachments/shopping-cart-quickstart.zip[zip file], or you can use the Akka CLI command below to download and unzip this quickstart project.
-
+. Download the full source code of the Shopping Cart sample as a link:_attachments/shopping-cart-quickstart.zip[zip file], or use the Akka CLI command below to download and unzip this quickstart project.
++
 [source,bash]
 ----
 akka quickstart download shopping-cart
 ----
 
-Then open the project in your favorite Integrated Development Environment (IDE).
+. Open the project in your favorite Integrated Development Environment (IDE).
 
 == Understanding the shopping cart
 
@@ -130,49 +130,46 @@ include::example$shopping-cart-quickstart/src/main/java/shoppingcart/api/Shoppin
 
 == Run locally
 
-Start your service locally:
-
+. Start your service locally:
++
 [source, command line]
 ----
 mvn compile exec:java
 ----
-
 Once successfully started, any defined endpoints become available at `localhost:9000`.
 
-Let's send some requests using `curl`.
-
-Add some T-shirts to a shopping cart:
-
+. Let's send some requests using `curl`. Add some T-shirts to a shopping cart:
++
 [source, command line]
 ----
 curl -i -XPUT -H "Content-Type: application/json" localhost:9000/carts/123/item -d '
 {"productId":"akka-tshirt", "name":"Akka Tshirt", "quantity": 3}'
 ----
 
-Add some blue jeans to the shopping cart:
-
+. Add some blue jeans to the shopping cart:
++
 [source, command line]
 ----
 curl -i -XPUT -H "Content-Type: application/json" localhost:9000/carts/123/item -d '
 {"productId":"blue-jeans", "name":"Blue Jeans", "quantity": 2}'
 ----
 
-Add a few more T-shirts to the shopping cart:
-
+. Add a few more T-shirts to the shopping cart:
++
 [source, command line]
 ----
 curl -i -XPUT -H "Content-Type: application/json" localhost:9000/carts/123/item -d '
 {"productId":"akka-tshirt", "name":"Akka Tshirt", "quantity": 3}'
 ----
 
-Request to see all of the items in the cart:
-
+. Request to see all of the items in the cart:
++
 [source, command line]
 ----
 curl localhost:9000/carts/123
 ----
 
-Observe all the items in the cart:
+. Observe all the items in the cart:
 
 [source]
 ----
@@ -182,17 +179,16 @@ Observe all the items in the cart:
 
 == Explore the local console
 
-To get a clear view of your locally running service, xref:reference:cli/installation.adoc[install the Akka CLI]. It provides a local web-based management console.
+. To get a clear view of your locally running service, xref:reference:cli/installation.adoc[install the Akka CLI]. It provides a local web-based management console.
 
-After you have installed the CLI, start the local console:
-
+. Start the local console:
++
 [source, command line]
 ----
 akka local console
 ----
-
 This will start a Docker container running the local console:
-
++
 [source]
 ----
 > Local Console is running at:             http://localhost:3000
@@ -200,7 +196,7 @@ This will start a Docker container running the local console:
 --------------------
 ----
 
-You can open http://localhost:3000/[window="new"] to see your local service in action:
+. Open http://localhost:3000/[window="new"] to see your local service in action:
 
 image:local-console-first-app-events.png[]
 
@@ -277,16 +273,16 @@ Congratulations, you have successfully deployed your service. You can now access
 
 You can use https://curl.se[cURL, window="new"] to invoke your service, replacing URL with the hostname that it was exposed as.
 
-Add an item to the shopping cart:
-
+. Add an item to the shopping cart:
++
 [source, command window]
 ----
 curl -i -XPUT -H "Content-Type: application/json" https://spring-tooth-3406.gcp-us-east1.akka.services/carts/123/item -d '
 {"productId":"akka-tshirt", "name":"Akka Tshirt", "quantity": 10}'
 ----
 
-Get cart state:
-
+. Get cart state:
++
 [source, command window]
 ----
 curl https://spring-tooth-3406.gcp-us-east1.akka.services/carts/123
