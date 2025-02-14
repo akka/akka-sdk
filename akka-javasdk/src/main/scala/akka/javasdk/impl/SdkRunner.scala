@@ -41,6 +41,7 @@ import akka.javasdk.client.ComponentClient
 import akka.javasdk.consumer.Consumer
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.javasdk.eventsourcedentity.EventSourcedEntityContext
+import akka.javasdk.grpc.AbstractGrpcEndpoint
 import akka.javasdk.grpc.GrpcClientProvider
 import akka.javasdk.grpc.GrpcRequestContext
 import akka.javasdk.http.AbstractHttpEndpoint
@@ -755,7 +756,7 @@ private final class Sdk(
   private def grpcEndpointFactory[E](grpcEndpointClass: Class[E]): GrpcEndpointRequestConstructionContext => E =
     (context: GrpcEndpointRequestConstructionContext) => {
 
-      lazy val requestContext = new GrpcRequestContext {
+      lazy val grpcRequestContext = new GrpcRequestContext {
         override def getPrincipals: Principals =
           PrincipalsImpl(context.principal.source, context.principal.service)
 
@@ -774,8 +775,12 @@ private final class Sdk(
 
       val instance = wiredInstance(grpcEndpointClass) {
         sideEffectingComponentInjects(context.openTelemetrySpan).orElse {
-          case p if p == classOf[GrpcRequestContext] => requestContext
+          case p if p == classOf[GrpcRequestContext] => grpcRequestContext
         }
+      }
+      instance match {
+        case withBaseClass: AbstractGrpcEndpoint => withBaseClass._internalSetRequestContext(grpcRequestContext)
+        case _                                   =>
       }
       instance
     }
