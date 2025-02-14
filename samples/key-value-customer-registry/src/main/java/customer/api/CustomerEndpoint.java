@@ -152,7 +152,7 @@ public class CustomerEndpoint {
     Source<Customer, Cancellable> streamOfChanges = // <2>
         stateEvery5Seconds.scan(new CustomerStreamState(Optional.empty(), true),
           (state, newCustomer) ->
-            new CustomerStreamState(Optional.of(newCustomer), state.customer.equals(newCustomer))
+            new CustomerStreamState(Optional.of(newCustomer), state.customer.isPresent() && state.customer.get().equals(newCustomer))
         ).filterNot(state -> state.isSame || state.customer.isEmpty())
         .map(state -> state.customer.get());
 

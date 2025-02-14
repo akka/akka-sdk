@@ -1,6 +1,7 @@
 package com.example.acl;
 
 import akka.javasdk.annotations.Acl;
+import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.HttpEndpoint;
 
 
@@ -9,5 +10,10 @@ import akka.javasdk.annotations.http.HttpEndpoint;
 @HttpEndpoint("/payments")
 public class PaymentEndpoint {
   //...
+  // end::endpoint-class[]
+  @Get("dummy")
+  public void needsAtLeastAMethod() {
+  }
+  // tag::endpoint-class[]
 }
 // end::endpoint-class[]

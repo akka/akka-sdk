@@ -266,7 +266,8 @@ link:https://html.spec.whatwg.org/multipage/server-sent-events.html#server-sent-
 that the client can see one by one rather than have to wait for the entire response to complete.
 
 Any Akka stream `Source` of elements where the elements can be serialized to JSON using Jackson can
-be turned into a SSE endpoint method.
+be turned into a SSE endpoint method. If the stream is idle, a heartbeat is emitted every 5 seconds
+to make sure the response stream is kept alive through proxies and firewalls.
 
 [source,java]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java[ExampleEndpoint.java]

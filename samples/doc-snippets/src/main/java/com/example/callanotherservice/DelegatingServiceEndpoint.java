@@ -29,7 +29,7 @@ public class DelegatingServiceEndpoint {
   // model for the JSON the upstream service responds with
   record Counter(int value) {}
 
-  @Post("/delegate/counter/{counter_id}/increase")
+  @Post("/delegate/counter/{counterId}/increase")
   public CompletionStage<String> addAndReturn(String counterId, IncreaseRequest request) {
     CompletionStage<String> result =
         httpClient.POST("/counter/" + counterId + "/increase") // <3>
