@@ -1,6 +1,6 @@
 * xref:index.adoc[Developing]
 ** xref:author-your-first-service.adoc[Author your first service]
-** Components
+** xref:components.adoc[Components]
 *** xref:event-sourced-entities.adoc[Event Sourced Entities]
 *** xref:key-value-entities.adoc[Key Value Entities]
 *** xref:http-endpoints.adoc[HTTP Endpoints]

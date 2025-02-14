@@ -1,0 +1,28 @@
+= Akka SDK Components
+
+include::ROOT:partial$include.adoc[]
+
+*Endpoints* are HTTP- and gRPC-accessible APIs that execute in a serverless execution environment. Use Endpoints for creating or augmenting apps that are exposed over multi-region routes.
+
+** image:endpoint.png[width=30] xref:http-endpoints.adoc[HTTP endpoints]
+
+*Entities* are microservices that act as their own in-memory, durable database with strongly consistent transactions. Entity state is sharded horizontally, replicated across regions, and persisted.
+
+** image:event-sourced-entity.png[width=30] xref:event-sourced-entities.adoc[Event-sourced entities]
+** image:key-value-entity.png[width=30] xref:key-value-entities.adoc[Key value entities]
+
+*Views* are aggregations of data that can be queried. Views enable complex reads of data to be independently executed and scaled apart from write operations. Views updates are triggered by events, messages, and state changes.
+
+** image:view.png[width=30] xref:views.adoc[Views]
+
+*Workflows* are long-running, multi-step business processes that can be point-in-time recovered. Workflows are Saga orchestrators for distributed transactions.
+
+** image:workflow.png[width=30] xref:workflows.adoc[Workflows]
+
+*Timers* enable the scheduling of calls for future execution. Timers are used to set timeouts and for verifying the completion status of processes without polling or blocking.
+
+** xref:timed-actions.adoc[Timers]
+
+*Producers* and *consumers* enable stream-based interaction between Akka services and the outside world.
+
+** xref:streaming.adoc[Producers and consumers]
