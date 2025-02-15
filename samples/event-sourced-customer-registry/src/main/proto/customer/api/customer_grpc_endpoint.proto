@@ -2,12 +2,12 @@
 syntax = "proto3";
 
 option java_multiple_files = true;
-option java_package = "customer.api.proto";
+option java_package = "customer.api.proto"; // <1>
 
 package customer.api;
 // end::minimal[]
 
-// tag:get[]
+// tag::get[]
 message Address {
   string street = 1;
   string city = 2;
@@ -18,7 +18,7 @@ message Customer {
   string name = 2;
   Address address = 3;
 }
-// end:get[]
+// end::get[]
 
 message CreateCustomerRequest {
   string customer_id = 1;
@@ -26,11 +26,11 @@ message CreateCustomerRequest {
 }
 message CreateCustomerResponse {}
 
-// tag:get[]
+// tag::get[]
 message GetCustomerRequest {
   string customer_id = 1;
 }
-// tag:get[]
+// tag::get[]
 
 message ChangeNameRequest {
   string customer_id = 1;
@@ -71,7 +71,7 @@ service CustomerGrpcEndpoint {
   // end::streaming-output[]
   // end::minimal[]
 
-  rpc CreateCustomer (CreateCustomerRequest) returns (CreateCustomerResponse) {}
+  rpc CreateCustomer (CreateCustomerRequest) returns (CreateCustomerResponse) {} // <2>
 
   // tag::get[]
   rpc GetCustomer (GetCustomerRequest) returns (Customer) {}

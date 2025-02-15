@@ -4,37 +4,37 @@ include::ROOT:partial$include.adoc[]
 
 An Endpoint is a component that creates an externally accessible API. Endpoints are how you expose your services to the outside world. Two different types of endpoints are available: HTTP endpoints and gRPC endpoints. In this page, we will focus on gRPC endpoints.
 
-gRPC Endpoint components make it possible to conveniently define public APIs accepting and responding in protobuf --
-a binary, typed protocol which is designed to handle evolution of a service over time. They can be used to define both unary and streaming RPCs. For more information on gRPC, see https://grpc.io.
+gRPC was designed to support service evolution and decoupling by enforcing a protocol-first design through `.proto` files. This ensures that service contracts are explicitly defined, providing a clear structure for communication. Protobuf, the underlying serialization format, supports backward and forward compatibility, avoiding tight coupling by making it easier to evolve services without breaking existing clients. Additionally, gRPC's efficient binary serialization and support for both unary and streaming calls make it a good choice for high-performance, scalable service-to-service communication. For more information on gRPC, see https://grpc.io.
+
+gRPC Endpoint components make it possible to conveniently define APIs accepting and responding in protobuf --
+the binary, typed protocol used by gRPC which is designed to handle evolution of a service over time.
+
+TIP: Our recommendation is to use gRPC Endpoints for cross-service calls (be it with another Akka service or other backend services) and HTTP Endpoints for APIs consumed directly by client-facing / frontend applications -- for which the use of gRPC comes at a greater cost.
+
+ifdef::todo[For a deeper dive into the differences between gRPC and HTTP Endpoints, see xref:concepts:grpc-vs-http-endpoints.adoc[]]
+
 
 == Basics ==
 To define a gRPC Endpoint component, you start by defining a `.proto` file that defines the service and its messages
 in `src/main/proto` of the project.
 
 [source,protobuf]
-.{sample-base-url}/event-sourced-customer-registry/src/main/proto/customer/api/customer_grpc_endpoint.proto[customer_grpc_endpoint.proto]
+.{sample-base-url}/doc-snippets/src/main/proto/com/example/customer_grpc_endpoint.proto[customer_grpc_endpoint.proto]
 ----
-include::example$event-sourced-customer-registry/src/main/proto/customer/api/customer_grpc_endpoint.proto[tags=minimal;get]
+include::example$doc-snippets/src/main/proto/com/example/customer_grpc_endpoint.proto[]
 ----
+<1> Define the java package in which the generated classes will be placed.
+<2> Declare the method along with its input and output types.
 
-When compiling the project, a Java interface for the service is generated `customer.api.proto.CustomerGrpcEndpoint`. Define a class implementing this interface in the `api` package of your project
+TIP: For a reference on how to format your protobuf files, check https://protobuf.dev/programming-guides/style/[protobuf.dev style guide].
+
+When compiling the project, a Java interface for the service is generated at `customer.api.proto.CustomerGrpcEndpoint`. Define a class implementing this interface in the `api` package of your project
 and annotate the class with `@GrpcEndpoint`:
 
 [source,java]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/api/CustomerGrpcEndpointImpl.java[CustomerGrpcEndpointImpl.java]
 ----
-@GrpcEndpoint // <1>
-public class CustomerGrpcEndpointImpl implements CustomerGrpcEndpoint {
-
-  @Override
-  public CompletionStage<Customer> getCustomer(GetCustomerRequest in) {
-    // dummy implementation with hardcoded values
-    var customer = Customer.newBuilder() // <2>
-        .setName("Alice")
-        .setEmail("alice@email.com")
-        .build();
-    return CompletableFuture.completedFuture(customer); // <3>
-  }
-}
+include::example$doc-snippets/src/main/java/com/example/api/CustomerGrpcEndpointImpl.java[]
 ----
 <1> Mark class as a gRPC endpoint and implementing the generated interface `ShoppingCartEndpoint`.
 <2> Create a new `ShoppingCart` protobuf message and set the `cartId` and `checkedOut` fields.

@@ -39,14 +39,14 @@ public class CustomerGrpcEndpointImpl implements CustomerGrpcEndpoint {
     if (in.getCustomerId().isBlank())
       throw new IllegalArgumentException("Customer id must not be empty");
 
-    return componentClient.forEventSourcedEntity(in.getCustomerId()) // <3>
+    return componentClient.forEventSourcedEntity(in.getCustomerId())
         .method(CustomerEntity::create)
-        .invokeAsync(apiToDomain(in.getCustomer())) // <4>
+        .invokeAsync(apiToDomain(in.getCustomer()))
         .thenApply(__ -> CreateCustomerResponse.getDefaultInstance());
   }
 
-
   // tag::get[]
+
   @Override
   public CompletionStage<Customer> getCustomer(GetCustomerRequest in) {
     // tag::exception[]
@@ -55,10 +55,10 @@ public class CustomerGrpcEndpointImpl implements CustomerGrpcEndpoint {
           Status.INVALID_ARGUMENT.augmentDescription("Customer id must not be empty"));
     // end::exception[]
 
-    return componentClient.forEventSourcedEntity(in.getCustomerId())
+    return componentClient.forEventSourcedEntity(in.getCustomerId()) // <3>
         .method(CustomerEntity::getCustomer)
         .invokeAsync()
-        .thenApply(this::domainToApi)
+        .thenApply(this::domainToApi) // <4>
         .exceptionally(ex -> {
           if (ex.getMessage().contains("No customer found for id")) throw new GrpcServiceException(Status.NOT_FOUND);
           else throw new RuntimeException(ex);
@@ -150,6 +150,7 @@ public class CustomerGrpcEndpointImpl implements CustomerGrpcEndpoint {
   }
 
   // tag::endpoint-component-interaction[]
+
   private Customer domainToApi(customer.domain.Customer domainCustomer) {
     return Customer.newBuilder()
         .setName(domainCustomer.name())

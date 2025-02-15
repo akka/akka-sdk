@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "customer.api.proto"; // <1>
+
+package customer.api;
+
+message Address {
+  string street = 1;
+  string city = 2;
+}
+
+message Customer {
+  string email = 1;
+  string name = 2;
+  Address address = 3;
+}
+
+message GetCustomerRequest {
+  string customer_id = 1;
+}
+
+service CustomerGrpcEndpoint {
+  rpc GetCustomer (GetCustomerRequest) returns (Customer) {} // <2>
+}
