@@ -66,6 +66,7 @@ The list of components are:
 * xref:java:event-sourced-entities.adoc[Event Sourced Entities]
 * xref:java:key-value-entities.adoc[Key Value Entities]
 * xref:java:http-endpoints.adoc[HTTP Endpoints]
+* xref:java:grpc-endpoints.adoc[gRPC Endpoints]
 * xref:java:views.adoc[Views]
 * xref:java:workflows.adoc[Workflows]
 * xref:java:timed-actions.adoc[Timers]
