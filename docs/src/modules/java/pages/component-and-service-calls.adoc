@@ -54,7 +54,7 @@ include::java:example$doc-snippets/src/main/java/com/example/callanotherservice/
 <4> Invoking the call will return a `CompletionStage<StrictResponse<T>>` with details about the result as well as the deserialized response body.
 <5> Handle the response, which may be successful, or an error
 
-The HTTP client provider is only available for injection in the following types of components: HTTP Endpoints, gRPC endpoints, Workflows, Consumers and Timed Actions.
+NOTE: The HTTP client provider is only available for injection in the following types of components: HTTP Endpoints, gRPC endpoints, Workflows, Consumers and Timed Actions.
 
 === External HTTP services
 
@@ -83,7 +83,7 @@ To consume a gRPC service, the service protobuf descriptor must be added in the 
 triggers generation of a client interface and Java classes for all the message types used as requests and responses for
 methods in the service.
 
-TIP: Typically, since the service protobuf descriptors need to be shared between the provider service and the consuming service, if they are not part of the same codebase it is a common practice to put the proto files in a separate project that is then used on the two services.
+TIP: Since the service protobuf descriptors need to be shared between the provider service and the consuming service, one simple option could be to copy the service descriptions to each service that needs them. It is also possible to use a shared library with the protobuf descriptors.
 
 In our delegating service implementation:
 
@@ -102,7 +102,7 @@ of the request or response is needed here.
 For dev mode and in tests, providing a config override in `application.conf` like for external calls is possible, however
 when deployed such configuration is ignored.
 
-The gRPC client provider is only available for injection in the following types of components: HTTP Endpoints, gRPC endpoints, Workflows, Consumers and Timed Actions.
+NOTE: The gRPC client provider is only available for injection in the following types of components: HTTP Endpoints, gRPC endpoints, Workflows, Consumers and Timed Actions.
 
 === External gRPC services
 
