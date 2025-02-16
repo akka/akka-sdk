@@ -17,7 +17,7 @@ object Dependencies {
   val AkkaHttpVersion = "10.7.0" // Note: should at least the Akka HTTP version required by Akka gRPC
 
   // Note: the Scala version must be aligned with the runtime
-  val ScalaVersion = "2.13.15"
+  val ScalaVersion = "2.13.16"
   val CrossScalaVersions = Seq(ScalaVersion)
 
   val ScalaTestVersion = "3.2.14"
