@@ -109,6 +109,7 @@ include::example$event-sourced-customer-registry-subscriber/src/main/java/custom
 
 TIP: If you're looking to test this locally, you will likely need to run the 2 services with different ports. For more details, consult xref:running-locally.adoc#_running_multiple_services_locally[Running multiple services].
 
+[#_consume_from_a_message_broker_topic]
 == Consume from a message broker Topic
 
 To receive messages from a Google Cloud Pub/Sub or Apache Kafka topic, annotate the Consumer class with `@Consume.FromTopic` and specify the topic name.

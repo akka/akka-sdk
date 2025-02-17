@@ -2,27 +2,27 @@
 
 include::ROOT:partial$include.adoc[]
 
-*Endpoints* are HTTP- and gRPC-accessible APIs that execute in a serverless execution environment. Use Endpoints for creating or augmenting apps that are exposed over multi-region routes.
+== Endpoints
 
-** image:endpoint.png[width=30] xref:http-endpoints.adoc[HTTP endpoints]
+image:ROOT:endpoint.png[width=30] xref:http-endpoints.adoc[HTTP endpoints]
 
-*Entities* are microservices that act as their own in-memory, durable database with strongly consistent transactions. Entity state is sharded horizontally, replicated across regions, and persisted.
+== Entities
 
-** image:event-sourced-entity.png[width=30] xref:event-sourced-entities.adoc[Event-sourced entities]
-** image:key-value-entity.png[width=30] xref:key-value-entities.adoc[Key value entities]
+image:ROOT:event-sourced-entity.png[width=30] xref:event-sourced-entities.adoc[Event-sourced entities]
 
-*Views* are aggregations of data that can be queried. Views enable complex reads of data to be independently executed and scaled apart from write operations. Views updates are triggered by events, messages, and state changes.
+image:ROOT:key-value-entity.png[width=30] xref:key-value-entities.adoc[Key value entities]
 
-** image:view.png[width=30] xref:views.adoc[Views]
+== Views
 
-*Workflows* are long-running, multi-step business processes that can be point-in-time recovered. Workflows are Saga orchestrators for distributed transactions.
+image:ROOT:view.png[width=30] xref:views.adoc[Views]
 
-** image:workflow.png[width=30] xref:workflows.adoc[Workflows]
+== Workflows
+image:ROOT:workflow.png[width=30] xref:workflows.adoc[Workflows]
 
-*Timers* enable the scheduling of calls for future execution. Timers are used to set timeouts and for verifying the completion status of processes without polling or blocking.
+== Timers
 
-** xref:timed-actions.adoc[Timers]
+xref:timed-actions.adoc[Timers]
 
-*Producers* and *consumers* enable stream-based interaction between Akka services and the outside world.
+== Producers and consumers
 
-** xref:streaming.adoc[Producers and consumers]
+image:ROOT:consumer.png[width=30] xref:consuming-producing.adoc#_consume_from_a_message_broker_topic[Consuming from a message broker]
