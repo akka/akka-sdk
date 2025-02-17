@@ -114,7 +114,7 @@ or a request coming from the public internet `Principal.INTERNET`.
 
 Protobuf is designed to allow evolving the messages while keeping wire compatibility.
 
-Following are the most common aspects of a message protocol you would want to change.For more details on what other changes can be compatible, see the link:https://protobuf.dev/programming-guides/proto3/#updating[Protobuf documentation].
+Following are the most common aspects of a message protocol you would want to change. For more details on what other changes can be compatible, see the link:https://protobuf.dev/programming-guides/proto3/#updating[Protobuf documentation].
 
 === gRPC services and their methods
 
