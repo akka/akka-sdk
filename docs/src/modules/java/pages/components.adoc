@@ -4,20 +4,20 @@ include::ROOT:partial$include.adoc[]
 
 == Endpoints
 
-image:ROOT:endpoint.png[width=30] xref:http-endpoints.adoc[HTTP endpoints]
+image:ROOT:endpoint.png[float=left, width=30] xref:http-endpoints.adoc[HTTP endpoints]
 
 == Entities
 
-image:ROOT:event-sourced-entity.png[width=30] xref:event-sourced-entities.adoc[Event-sourced entities]
+image:ROOT:event-sourced-entity.png[float=left, width=30] xref:event-sourced-entities.adoc[Event-sourced entities]
 
-image:ROOT:key-value-entity.png[width=30] xref:key-value-entities.adoc[Key value entities]
+image:ROOT:key-value-entity.png[float=left, width=30] xref:key-value-entities.adoc[Key value entities]
 
 == Views
 
-image:ROOT:view.png[width=30] xref:views.adoc[Views]
+image:ROOT:view.png[float=left, width=30] xref:views.adoc[Views]
 
 == Workflows
-image:ROOT:workflow.png[width=30] xref:workflows.adoc[Workflows]
+image:ROOT:workflow.png[float=left, width=30] xref:workflows.adoc[Workflows]
 
 == Timers
 
@@ -25,4 +25,4 @@ xref:timed-actions.adoc[Timers]
 
 == Producers and consumers
 
-image:ROOT:consumer.png[width=30] xref:consuming-producing.adoc#_consume_from_a_message_broker_topic[Consuming from a message broker]
+image:ROOT:consumer.png[float=left, width=30] xref:consuming-producing.adoc#_consume_from_a_message_broker_topic[Consuming from a message broker]
