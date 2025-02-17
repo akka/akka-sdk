@@ -51,3 +51,8 @@ For more information on designing and implementing HTTP and gRPC Endpoints in Ak
 
 - xref:java:http-endpoints.adoc[]
 - xref:java:grpc-endpoints.adoc[]
+
+Additionally, note that both endpoint types can be secured using ACLs and JWTs, see:
+
+- xref:java:access-control.adoc[]
+- xref:java:auth-with-jwts.adoc[]
