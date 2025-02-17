@@ -62,6 +62,10 @@ public class TestGrpcServiceImpl implements TestGrpcService {
   public CompletionStage<TestGrpcServiceOuterClass.Out> customStatus(TestGrpcServiceOuterClass.In in) {
     if (in.getData().equals("error")) {
       throw Status.INVALID_ARGUMENT.augmentDescription("Invalid data").asRuntimeException();
+    } else if (in.getData().equals("illegal")) {
+      throw new IllegalArgumentException("Invalid data");
+    } else if (in.getData().equals("error-dev-details")) {
+      throw new RuntimeException("All the details in dev mode");
     }
 
     return simple(in);

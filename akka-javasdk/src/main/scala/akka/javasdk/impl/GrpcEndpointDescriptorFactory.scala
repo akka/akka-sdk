@@ -4,11 +4,9 @@
 
 package akka.javasdk.impl
 
-import akka.actor.{ ActorSystem => ClassicActorSystem }
 import akka.actor.typed.ActorSystem
 import akka.grpc.ServiceDescription
 import akka.grpc.Trailers
-import akka.grpc.scaladsl.GrpcExceptionHandler
 import akka.grpc.scaladsl.InstancePerRequestFactory
 import akka.http.scaladsl.model.HttpRequest
 import akka.http.scaladsl.model.HttpResponse
@@ -22,7 +20,6 @@ import akka.runtime.sdk.spi.ComponentOptions
 import akka.runtime.sdk.spi.GrpcEndpointDescriptor
 import akka.runtime.sdk.spi.GrpcEndpointRequestConstructionContext
 import akka.runtime.sdk.spi.MethodOptions
-import io.grpc.Status
 
 import java.util.concurrent.CompletionException
 import scala.concurrent.Future
@@ -31,12 +28,11 @@ object GrpcEndpointDescriptorFactory {
 
   val logger: org.slf4j.Logger = org.slf4j.LoggerFactory.getLogger(GrpcEndpointDescriptorFactory.getClass)
 
-  private def mapperWithFailedCompletion(system: ClassicActorSystem): PartialFunction[Throwable, Trailers] = {
-    case e: CompletionException =>
-      if (e.getCause == null) Trailers(Status.INTERNAL)
-      else GrpcExceptionHandler.defaultMapper(system.classicSystem)(e.getCause)
-    case other =>
-      GrpcExceptionHandler.defaultMapper(system.classicSystem)(other)
+  // unwraps CompletionException and throws the cause
+  // let other exceptions pass through and be handled in the runtime
+  private def unwrapFailedCompletion(): PartialFunction[Throwable, Trailers] = {
+    case e: CompletionException if e.getCause != null => throw e.getCause
+    case e                                            => throw e
   }
 
   def apply[T](grpcEndpointClass: Class[T], factory: GrpcEndpointRequestConstructionContext => T)(implicit
@@ -69,12 +65,7 @@ object GrpcEndpointDescriptorFactory {
         s"Could not access static description from gRPC service interface [${serviceDefinitionClass.getName}]")
 
     val routeFactory: (HttpRequest => T) => PartialFunction[HttpRequest, Future[HttpResponse]] = { serviceFactory =>
-      handlerFactory.partialInstancePerRequest(
-        serviceFactory,
-        description.name,
-        // FIXME would be better if this was up to the runtime
-        mapperWithFailedCompletion(system.classicSystem),
-        system)
+      handlerFactory.partialInstancePerRequest(serviceFactory, description.name, unwrapFailedCompletion(), system)
     }
 
     val componentOptions =

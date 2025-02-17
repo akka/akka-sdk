@@ -53,7 +53,13 @@ To signal an error in the response, throw a `GrpcServiceException` as shown in t
 include::example$event-sourced-customer-registry/src/main/java/customer/api/CustomerGrpcEndpointImpl.java[tag=exception]
 ----
 
-ifdef::todo[TODO: add more details on exception handling after fix for bubble up and details in dev mode]
+In addition to the special `GrpcServiceException` and `StatusRuntimeException`, exceptions are handled like this:
+
+* `IllegalArgumentException` is turned into a `INVALID_ARGUMENT`
+* Any other exception is turned into a `INTERNAL` error.
+** In production the error is logged together with a correlation
+id and the response message only includes the correlation id to not leak service internals to an untrusted client.
+** In local development and integration tests the full exception is returned as response body.
 
 == Interacting with other components ==
 

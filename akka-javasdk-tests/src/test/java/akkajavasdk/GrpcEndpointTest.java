@@ -64,11 +64,32 @@ public class GrpcEndpointTest extends TestKitSupport {
   public void shouldPropagateCustomStatusToClient() {
     var testClient = getGrpcEndpointClient(TestGrpcServiceClient.class);
     var request = TestGrpcServiceOuterClass.In.newBuilder().setData("error").build();
+    // when the service throws a gRPC status exception
     try {
       await(testClient.customStatus(request));
       fail("Expected exception");
     } catch (GrpcServiceException e) {
       assertThat(e.getMessage()).contains("INVALID_ARGUMENT");
+    }
+
+    // when the service throws an IllegalArgumentException
+    try {
+      request = TestGrpcServiceOuterClass.In.newBuilder().setData("illegal").build();
+      await(testClient.customStatus(request));
+      fail("Expected exception");
+    } catch (GrpcServiceException e) {
+      assertThat(e.getMessage()).contains("INVALID_ARGUMENT");
+    }
+
+    // when the service throws a RuntimeException
+    try {
+      request = TestGrpcServiceOuterClass.In.newBuilder().setData("error-dev-details").build();
+      await(testClient.customStatus(request));
+      fail("Expected exception");
+    } catch (GrpcServiceException e) {
+      // making sure that we are logging a correlation ID in the error message
+      assertThat(e.getMessage()).contains("INTERNAL: Unexpected error [");
+      assertThat(e.getMessage()).contains("All the details in dev mode");
     }
   }
 
