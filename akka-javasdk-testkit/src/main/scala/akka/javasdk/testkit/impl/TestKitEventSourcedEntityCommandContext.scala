@@ -16,6 +16,7 @@ final class TestKitEventSourcedEntityCommandContext(
     override val commandName: String = "stubCommandName",
     override val sequenceNumber: Long = 0L,
     override val isDeleted: Boolean = false,
+    override val selfRegion: String = "",
     override val metadata: Metadata = Metadata.EMPTY)
     extends CommandContext
     with InternalContext {
