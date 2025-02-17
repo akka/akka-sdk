@@ -8,6 +8,7 @@ import java.util.Optional
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.jdk.OptionConverters.RichOption
 import scala.util.control.NonFatal
 
 import akka.actor.ActorSystem
@@ -34,6 +35,7 @@ import akka.javasdk.impl.timer.TimerSchedulerImpl
 import akka.javasdk.timer.TimerScheduler
 import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.ConsumerDestination
+import akka.runtime.sdk.spi.RegionInfo
 import akka.runtime.sdk.spi.SpiConsumer
 import akka.runtime.sdk.spi.SpiConsumer.Effect
 import akka.runtime.sdk.spi.SpiConsumer.Message
@@ -58,7 +60,8 @@ private[impl] final class ConsumerImpl[C <: Consumer](
     tracerFactory: () => Tracer,
     serializer: JsonSerializer,
     ignoreUnknown: Boolean,
-    componentDescriptor: ComponentDescriptor)
+    componentDescriptor: ComponentDescriptor,
+    regionInfo: RegionInfo)
     extends SpiConsumer {
 
   private val log: Logger = LoggerFactory.getLogger(consumerClass)
@@ -76,12 +79,21 @@ private[impl] final class ConsumerImpl[C <: Consumer](
     // FIXME would be good if we could record the chosen method in the span
     val span: Option[Span] =
       traceInstrumentation.buildSpan(ComponentType.Consumer, componentId, metadata.subjectScala, message.metadata)
+
     val updatedMetadata = span.map(metadata.withTracing).getOrElse(metadata)
 
     span.foreach(s => MDC.put(Telemetry.TRACE_ID, s.getSpanContext.getTraceId))
     val fut =
       try {
-        val messageContext = new MessageContextImpl(updatedMetadata, timerClient, tracerFactory, span)
+        val messageContext =
+          new MessageContextImpl(
+            updatedMetadata,
+            timerClient,
+            tracerFactory,
+            span,
+            regionInfo.selfRegion,
+            message.originRegion.toJava)
+
         val payload: BytesPayload = message.payload.getOrElse(throw new IllegalArgumentException("No message payload"))
         val effect = createRouter()
           .handleCommand(MessageEnvelope.of(payload, messageContext.metadata), messageContext)
@@ -153,7 +165,9 @@ private[impl] final class MessageContextImpl(
     override val metadata: Metadata,
     timerClient: TimerClient,
     tracerFactory: () => Tracer,
-    val span: Option[Span])
+    val span: Option[Span],
+    override val selfRegion: String,
+    override val originRegion: Optional[String])
     extends AbstractContext
     with MessageContext {
 
@@ -175,4 +189,5 @@ private[impl] final class MessageContextImpl(
   }
 
   override def tracing(): Tracing = new SpanTracingImpl(span, tracerFactory)
+
 }

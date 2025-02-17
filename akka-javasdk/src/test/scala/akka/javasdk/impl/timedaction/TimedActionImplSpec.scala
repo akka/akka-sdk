@@ -19,6 +19,7 @@ import akka.javasdk.impl.serialization.JsonSerializer
 import akka.javasdk.timedaction.TimedAction
 import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.DeferredRequest
+import akka.runtime.sdk.spi.RegionInfo
 import akka.runtime.sdk.spi.SpiMetadata
 import akka.runtime.sdk.spi.SpiTimedAction
 import akka.runtime.sdk.spi.TimerClient
@@ -62,6 +63,7 @@ class TimedActionImplSpec
       classicSystem.dispatcher,
       () => OpenTelemetry.noop().getTracer("test"),
       serializer,
+      new RegionInfo(""),
       componentDescriptor)
   }
 

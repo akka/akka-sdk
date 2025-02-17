@@ -6,11 +6,12 @@ package akka.javasdk.view;
 
 import akka.javasdk.CloudEvent;
 import akka.javasdk.MetadataContext;
+import akka.javasdk.OriginAwareContext;
 
 import java.util.Optional;
 
 /** Context for view update calls. */
-public interface UpdateContext extends MetadataContext {
+public interface UpdateContext extends MetadataContext, OriginAwareContext {
 
   /**
    * The origin subject of the {@link CloudEvent}. For example, the entity id when the event was
@@ -21,4 +22,5 @@ public interface UpdateContext extends MetadataContext {
   // FIXME is this needed anymore?
   /** The name of the event being handled. */
   String eventName();
+
 }

@@ -46,6 +46,7 @@ import akka.javasdk.workflow.Workflow
 import akka.javasdk.workflow.Workflow.{ RecoverStrategy => SdkRecoverStrategy }
 import akka.javasdk.workflow.WorkflowContext
 import akka.runtime.sdk.spi.BytesPayload
+import akka.runtime.sdk.spi.RegionInfo
 import akka.runtime.sdk.spi.SpiEntity
 import akka.runtime.sdk.spi.SpiMetadata
 import akka.runtime.sdk.spi.SpiWorkflow
@@ -67,12 +68,13 @@ class WorkflowImpl[S, W <: Workflow[S]](
     timerClient: TimerClient,
     sdkExecutionContext: ExecutionContext,
     tracerFactory: () => Tracer,
+    regionInfo: RegionInfo,
     instanceFactory: Function[WorkflowContext, W])
     extends SpiWorkflow {
 
   private val log: Logger = LoggerFactory.getLogger(workflowClass)
 
-  private val context = new WorkflowContextImpl(workflowId)
+  private val context = new WorkflowContextImpl(workflowId, regionInfo.selfRegion)
 
   private val router =
     new ReflectiveWorkflowRouter[S, W](context, instanceFactory, componentDescriptor.methodInvokers, serializer)
@@ -118,6 +120,7 @@ class WorkflowImpl[S, W <: Workflow[S]](
     new CommandContextImpl(
       workflowId,
       commandName,
+      regionInfo.selfRegion,
       metadata,
       // FIXME we'd need to start a parent span for the command here to have one to base custom user spans of off?
       None,
@@ -275,6 +278,7 @@ class WorkflowImpl[S, W <: Workflow[S]](
 private[akka] final class CommandContextImpl(
     override val workflowId: String,
     override val commandName: String,
+    override val selfRegion: String,
     override val metadata: Metadata,
     span: Option[Span],
     tracerFactory: () => Tracer)
@@ -292,6 +296,6 @@ private[akka] final class CommandContextImpl(
  * INTERNAL API
  */
 @InternalApi
-private[akka] final class WorkflowContextImpl(override val workflowId: String)
+private[akka] final class WorkflowContextImpl(override val workflowId: String, override val selfRegion: String)
     extends AbstractContext
     with WorkflowContext

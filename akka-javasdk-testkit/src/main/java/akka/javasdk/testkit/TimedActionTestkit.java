@@ -5,9 +5,9 @@
 package akka.javasdk.testkit;
 
 import akka.javasdk.Metadata;
-import akka.javasdk.timedaction.TimedAction;
-import akka.javasdk.testkit.impl.TimedActionResultImpl;
 import akka.javasdk.testkit.impl.TestKitCommandContextTimed;
+import akka.javasdk.testkit.impl.TimedActionResultImpl;
+import akka.javasdk.timedaction.TimedAction;
 
 import java.util.Optional;
 import java.util.function.Function;

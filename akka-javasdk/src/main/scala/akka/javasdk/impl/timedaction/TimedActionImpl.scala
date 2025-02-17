@@ -7,6 +7,7 @@ package akka.javasdk.impl.timedaction
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.control.NonFatal
+
 import akka.actor.ActorSystem
 import akka.annotation.InternalApi
 import akka.javasdk.Metadata
@@ -30,6 +31,7 @@ import akka.javasdk.timedaction.CommandEnvelope
 import akka.javasdk.timedaction.TimedAction
 import akka.javasdk.timer.TimerScheduler
 import akka.runtime.sdk.spi.BytesPayload
+import akka.runtime.sdk.spi.RegionInfo
 import akka.runtime.sdk.spi.SpiMetadataEntry
 import akka.runtime.sdk.spi.SpiTimedAction
 import akka.runtime.sdk.spi.SpiTimedAction.Command
@@ -47,10 +49,11 @@ object TimedActionImpl {
    * INTERNAL API
    */
   class CommandContextImpl(
+      override val selfRegion: String,
       override val metadata: Metadata,
       timerClient: TimerClient,
-      tracerFactory: () => Tracer,
-      span: Option[Span])
+      span: Option[Span],
+      tracerFactory: () => Tracer)
       extends AbstractContext
       with CommandContext {
 
@@ -82,6 +85,7 @@ private[impl] final class TimedActionImpl[TA <: TimedAction](
     sdkExecutionContext: ExecutionContext,
     tracerFactory: () => Tracer,
     jsonSerializer: JsonSerializer,
+    regionInfo: RegionInfo,
     componentDescriptor: ComponentDescriptor)
     extends SpiTimedAction {
   import TimedActionImpl.CommandContextImpl
@@ -106,7 +110,8 @@ private[impl] final class TimedActionImpl[TA <: TimedAction](
     val fut =
       try {
         val updatedMetadata = span.map(metadata.withTracing).getOrElse(metadata)
-        val commandContext = new CommandContextImpl(updatedMetadata, timerClient, tracerFactory, span)
+        val commandContext =
+          new CommandContextImpl(regionInfo.selfRegion, updatedMetadata, timerClient, span, tracerFactory)
 
         val payload: BytesPayload = command.payload.getOrElse(throw new IllegalArgumentException("No command payload"))
         val effect = createRouter()

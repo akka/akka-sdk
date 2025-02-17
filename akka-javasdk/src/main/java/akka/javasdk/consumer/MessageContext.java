@@ -6,13 +6,13 @@ package akka.javasdk.consumer;
 
 import akka.javasdk.CloudEvent;
 import akka.javasdk.MetadataContext;
+import akka.javasdk.OriginAwareContext;
 import akka.javasdk.Tracing;
-import io.opentelemetry.api.trace.Tracer;
 
 import java.util.Optional;
 
 /** Context for an incoming message. */
-public interface MessageContext extends MetadataContext {
+public interface MessageContext extends MetadataContext, OriginAwareContext {
 
   /**
    * The origin subject of the {@link CloudEvent}. For example, the entity id when the event was
@@ -22,4 +22,5 @@ public interface MessageContext extends MetadataContext {
 
   /** Access to tracing for custom app specific tracing. */
   Tracing tracing();
+
 }

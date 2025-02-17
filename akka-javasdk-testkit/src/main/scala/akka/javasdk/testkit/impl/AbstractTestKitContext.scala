@@ -20,4 +20,5 @@ class AbstractTestKitContext(mockRegistry: MockRegistry) extends Context with In
       .getOrElse(throw new NoSuchElementException(
         s"Could not find mock for component of type $serviceClass. Hint: use ${classOf[MockRegistry].getName} to provide an instance when testing services calling other components."))
 
+  override def selfRegion(): String = ""
 }

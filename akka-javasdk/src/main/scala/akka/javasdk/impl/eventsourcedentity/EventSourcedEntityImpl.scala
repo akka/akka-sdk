@@ -35,6 +35,7 @@ import akka.javasdk.impl.telemetry.SpanTracingImpl
 import akka.javasdk.impl.telemetry.Telemetry
 import akka.javasdk.impl.telemetry.TraceInstrumentation
 import akka.runtime.sdk.spi.BytesPayload
+import akka.runtime.sdk.spi.RegionInfo
 import akka.runtime.sdk.spi.SpiEntity
 import akka.runtime.sdk.spi.SpiEventSourcedEntity
 import akka.runtime.sdk.spi.SpiMetadata
@@ -53,6 +54,7 @@ private[impl] object EventSourcedEntityImpl {
       override val sequenceNumber: Long,
       override val commandName: String,
       override val isDeleted: Boolean,
+      override val selfRegion: String,
       override val metadata: Metadata,
       span: Option[Span],
       tracerFactory: () => Tracer)
@@ -64,12 +66,15 @@ private[impl] object EventSourcedEntityImpl {
     override def commandId(): Long = 0
   }
 
-  private class EventSourcedEntityContextImpl(override final val entityId: String)
+  private class EventSourcedEntityContextImpl(override final val entityId: String, override val selfRegion: String)
       extends AbstractContext
       with EventSourcedEntityContext
 
-  private final class EventContextImpl(entityId: String, override val sequenceNumber: Long)
-      extends EventSourcedEntityContextImpl(entityId)
+  private final class EventContextImpl(
+      entityId: String,
+      override val sequenceNumber: Long,
+      override val selfRegion: String)
+      extends EventSourcedEntityContextImpl(entityId, selfRegion)
       with EventContext
 
 }
@@ -86,6 +91,7 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
     serializer: JsonSerializer,
     componentDescriptor: ComponentDescriptor,
     entityStateType: Class[S],
+    regionInfo: RegionInfo,
     factory: EventSourcedEntityContext => ES)
     extends SpiEventSourcedEntity {
   import EventSourcedEntityImpl._
@@ -93,7 +99,7 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
   private val traceInstrumentation = new TraceInstrumentation(componentId, EventSourcedEntityCategory, tracerFactory)
 
   private val router: ReflectiveEventSourcedEntityRouter[AnyRef, AnyRef, EventSourcedEntity[AnyRef, AnyRef]] = {
-    val context = new EventSourcedEntityContextImpl(entityId)
+    val context = new EventSourcedEntityContextImpl(entityId, regionInfo.selfRegion)
     new ReflectiveEventSourcedEntityRouter[S, E, ES](factory(context), componentDescriptor.methodInvokers, serializer)
       .asInstanceOf[ReflectiveEventSourcedEntityRouter[AnyRef, AnyRef, EventSourcedEntity[AnyRef, AnyRef]]]
   }
@@ -120,6 +126,7 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
         command.sequenceNumber,
         command.name,
         command.isDeleted,
+        regionInfo.selfRegion,
         metadata,
         span,
         tracerFactory)
@@ -221,7 +228,7 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
       state: SpiEventSourcedEntity.State,
       event: AnyRef,
       sequenceNumber: Long): SpiEventSourcedEntity.State = {
-    val eventContext = new EventContextImpl(entityId, sequenceNumber)
+    val eventContext = new EventContextImpl(entityId, sequenceNumber, regionInfo.selfRegion)
     entity._internalSetEventContext(Optional.of(eventContext))
     val clearState = entity._internalSetCurrentState(state, false)
     try {

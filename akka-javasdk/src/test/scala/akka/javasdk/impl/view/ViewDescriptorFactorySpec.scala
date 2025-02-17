@@ -20,8 +20,9 @@ import akka.runtime.sdk.spi.SpiSchema.SpiTimestamp
 import akka.runtime.sdk.spi.ViewDescriptor
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-
 import scala.reflect.ClassTag
+
+import akka.runtime.sdk.spi.RegionInfo
 
 class ViewDescriptorFactorySpec extends AnyWordSpec with Matchers {
 
@@ -29,7 +30,7 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with Matchers {
   import akka.javasdk.testmodels.subscriptions.PubSubTestModels._
 
   def assertDescriptor[T](test: ViewDescriptor => Any)(implicit tag: ClassTag[T]): Unit = {
-    test(ViewDescriptorFactory(tag.runtimeClass, new JsonSerializer, ExecutionContexts.global()))
+    test(ViewDescriptorFactory(tag.runtimeClass, new JsonSerializer, new RegionInfo(""), ExecutionContexts.global()))
   }
 
   "View descriptor factory" should {
