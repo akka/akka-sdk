@@ -7,3 +7,4 @@
 *** xref:concepts:state-model.adoc[]
 *** xref:concepts:multi-region.adoc[]
 *** xref:concepts:saga-patterns.adoc[]
+*** xref:concepts:grpc-vs-http-endpoints.adoc[]

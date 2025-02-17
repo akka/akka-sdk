@@ -2,16 +2,14 @@
 
 include::ROOT:partial$include.adoc[]
 
-An Endpoint is a component that creates an externally accessible API. Endpoints are how you expose your services to the outside world. Two different types of endpoints are available: HTTP endpoints and gRPC endpoints. In this page, we will focus on gRPC endpoints.
+An Endpoint is a component that creates an externally accessible API. Endpoints are how you expose your services to the outside world. Two different types of endpoints are available: HTTP and gRPC endpoints. In this page, we will focus on gRPC endpoints.
 
 gRPC was designed to support service evolution and decoupling by enforcing a protocol-first design through `.proto` files. This ensures that service contracts are explicitly defined, providing a clear structure for communication. Protobuf, the underlying serialization format, supports backward and forward compatibility, avoiding tight coupling by making it easier to evolve services without breaking existing clients. Additionally, gRPC's efficient binary serialization and support for both unary and streaming calls make it a good choice for high-performance, scalable service-to-service communication. For more information on gRPC and Protobuf, see https://grpc.io and link:https://protobuf.dev/programming-guides/proto3/[the Protobuf 3 guide].
 
 gRPC Endpoint components make it possible to conveniently define APIs accepting and responding in protobuf --
 the binary, typed protocol used by gRPC which is designed to handle evolution of a service over time.
 
-TIP: Our recommendation is to use gRPC Endpoints for cross-service calls (be it with another Akka service or other backend services) and HTTP Endpoints for APIs consumed directly by client-facing / frontend applications -- for which the use of gRPC comes at a greater cost.
-
-ifdef::todo[For a deeper dive into the differences between gRPC and HTTP Endpoints, see xref:concepts:grpc-vs-http-endpoints.adoc[]]
+TIP: Our recommendation is to use gRPC Endpoints for cross-service calls (be it with another Akka service or other backend services) and HTTP Endpoints for APIs consumed directly by client-facing / frontend applications -- for which the use of gRPC comes at a greater cost. For a deeper dive into the differences between gRPC and HTTP Endpoints, see xref:concepts:grpc-vs-http-endpoints.adoc[].
 
 
 == Basics ==

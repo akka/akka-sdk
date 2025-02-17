@@ -73,7 +73,7 @@ For more details and examples take a look at the following topics:
 
 [#_endpoints]
 == Exposing components through Endpoints and Consumers
-Endpoints are the primary means of exposing your service to external clients. You can use HTTP Endpoints or gRPC Endpoints to handle incoming requests and return responses to users or other services. Endpoints are stateless.
+Endpoints are the primary means of exposing your service to external clients. You can use HTTP or gRPC Endpoints to handle incoming requests and return responses to users or other services. Endpoints are stateless.
 
 To handle event-driven communication, Akka uses Consumers. Consumers listen for and process events or messages from various sources, such as Event Sourced Entities, Key Value Entities, or external messaging systems. They play a key role in enabling asynchronous, event-driven architectures by subscribing to event streams and reacting to changes in state or incoming data.
 
