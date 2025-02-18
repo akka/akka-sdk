@@ -97,7 +97,7 @@ Then, the method in the endpoint interface will need to construct and return a `
 include::example$event-sourced-customer-registry/src/main/java/customer/api/CustomerGrpcEndpointImpl.java[tag=customerByEmailStream]
 ----
 
-NOTE: The above example depends on existing a View component that also returns a `Stream` of `Customer` messages. See xref:views.adoc#_streaming_the_result[] for more details.
+NOTE: The above example depends on existing a View component that also returns a `Stream` of `Customer` messages. See xref:views.adoc#_streaming_the_result[Streaming the result] for more details.
 
 == Testing the Endpoint
 

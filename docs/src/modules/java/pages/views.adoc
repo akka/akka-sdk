@@ -225,6 +225,7 @@ include::example$key-value-customer-registry/src/main/java/customer/application/
 <2> Note the use of `* AS customers` so records are matched to `customers` field in `CustomersList`.
 <3> Return type of the query is `CustomersList`.
 
+[#_streaming_the_result]
 ==== Streaming the result
 
 Instead of collecting the query result in memory as a collection before returning it, the entries can be streamed.
