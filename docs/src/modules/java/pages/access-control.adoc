@@ -125,11 +125,39 @@ permitted, regardless of what ACLs are defined on them.
 TIP: The `akka service proxy` command creates an HTTP proxy that forwards all
 traffic to a service. This allows you to interact with the service as if it was running locally.
 
+== Programmatically accessing principals
+
+The current principal associated with a request can be accessed through the `RequestContext`.
+
+NOTE: Endpoints are stateless and each request is served by a new Endpoint instance. Therefore, the `RequestContext` is always a new instance and is associated with the request currently being handled.
+
+[source, java, indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[UserEndpoint.java]
+----
+include::example$doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[tags=endpoint-class;request-context]
+----
+<1> Let your endpoint extend link:_attachments/api/akka/javasdk/http/AbstractHttpEndpoint.html[AbstractHttpEndpoint] to get access to the request specific `RequestContext` through `requestContext()`.
+
+You can access the current Principals through method `RequestContext.getPrincipals()`
+
+If the request came from another service, the `Principals.getLocalService()` method will return a non-empty
+`Optional` containing the name of the service that made the request. Akka guarantees that this field will only be
+present from an authenticated principal, it can't be spoofed.
+
+Further, you can use `Principals.isInternet`, `Principals.isSelf` or `Principals.isBackoffice` to verify if the request
+was made from the Internet, from the current service or from the Backoffice API respectively. Backoffice requests are
+those made using the `akka services proxy` command, they are authenticated and authorized to ensure only developers
+of your project can make them.
+
+[source, java, indent=0]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[UserEndpoint.java]
+----
+include::example$doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[tags=checking-principals]
+----
+
 == Local development with ACLs
 
-When testing or running in development, by default, all calls to your service will be blocked as ACLs are enabled by default.
-
-You can disable the local ACL checks by configuring the following settings in the `application.conf` file:
+When running locally, ACLs are enabled by default. You can disable the local ACL checks by configuring the following settings in the `application.conf` file:
 
 [source,conf]
 .src/main/resources/application.conf
@@ -144,7 +172,9 @@ Alternatively, start with:
 mvn compile exec:java -Dakka.javasdk.dev-mode.acl.enabled=false
 ----
 
-== Service identification in local development
+Note that the setting above does not apply to integration tests. See below for how to disable ACLs in integration tests.
+
+=== Service identification
 
 If running multiple services in local development, you may want to run with ACLs enabled to verify that they work for
 cross-service communication.
@@ -188,41 +218,11 @@ curl -i localhost:9000/payments/{cart-id}/check-transaction \
 
 Note that in local development, the services don’t actually authenticate with each other, they only pass their identity in a header. It is assumed in local development that a client can be trusted to set that header correctly.
 
-== Programmatically accessing principals
-
-The current principal associated with a request can be accessed through the `RequestContext`.
-
-NOTE: Endpoints are stateless and each request is served by a new Endpoint instance. Therefore, the `RequestContext` is always a new instance and is associated with the request currently being handled.
-
-[source, java, indent=0]
-.{sample-base-url}/doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[UserEndpoint.java]
-----
-include::example$doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[tags=endpoint-class;request-context]
-----
-<1> Let your endpoint extend link:_attachments/api/akka/javasdk/http/AbstractHttpEndpoint.html[AbstractHttpEndpoint] to get access to the request specific `RequestContext` through `requestContext()`.
-
-You can access the current Principals through method `RequestContext.getPrincipals()`
-
-If the request came from another service, the `Principals.getLocalService()` method will return a non-empty
-`Optional` containing the name of the service that made the request. Akka guarantees that this field will only be
-present from an authenticated principal, it can't be spoofed.
-
-Further, you can use `Principals.isInternet`, `Principals.isSelf` or `Principals.isBackoffice` to verify if the request
-was made from the Internet, from the current service or from the Backoffice API respectively. Backoffice requests are
-those made using the `akka services proxy` command, they are authenticated and authorized to ensure only developers
-of your project can make them.
-
-[source, java, indent=0]
-.{sample-base-url}/doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[UserEndpoint.java]
-----
-include::example$doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[tags=checking-principals]
-----
-
-== ACLs when running unit tests
+=== Running unit tests
 
 In the generated unit test testkits, the ACLs are ignored.
 
-== ACLs when running integration tests
+=== Running integration tests
 
 ACLs are enabled by default when running integration tests.
 
