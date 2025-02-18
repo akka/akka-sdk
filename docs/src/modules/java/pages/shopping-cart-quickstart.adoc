@@ -10,7 +10,7 @@ The shopping cart service implements a cart that allows users to add and remove 
 
 In this guide you will:
 
-* Download a completed shopping cart service to examine and run it locally.
+* Clone a completed shopping cart service repository to examine and run it locally.
 * Be introduced to key Akka concepts including xref:java:event-sourced-entities.adoc[Event Sourced Entities].
 * See how the Akka xref:concepts:architecture-model.adoc[] provides a clear separation of concerns in your microservices.
 * Run the service locally and explore it with the local Akka console.
@@ -20,9 +20,9 @@ In this guide you will:
 
 include::ROOT:partial$cloud-dev-prerequisites.adoc[]
 
-== Download the sample
+== Clone the sample
 
-. Download the full source code of the Shopping Cart sample from link:https://github.com/akka-samples/shopping-cart-quickstart[Github], or use the Akka CLI command below to download and unzip this quickstart project.
+. Clone the full source code of the Shopping Cart sample from link:https://github.com/akka-samples/shopping-cart-quickstart[Github], or use the Akka CLI command below to download and unzip this quickstart project.
 +
 [source,bash]
 ----
