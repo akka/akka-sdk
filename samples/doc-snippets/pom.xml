@@ -5,7 +5,7 @@
   <parent>
     <groupId>io.akka</groupId>
     <artifactId>akka-javasdk-parent</artifactId>
-    <version>3.1.0-37-c4526f72-dev-SNAPSHOT</version>
+    <version>3.2.0</version>
   </parent>
 
   <groupId>com.example</groupId>
