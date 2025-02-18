@@ -785,6 +785,8 @@ private final class Sdk(
         override def metadata(): Metadata = new JavaMetadataImpl(context.metadata)
 
         override def tracing(): Tracing = new SpanTracingImpl(context.openTelemetrySpan, sdkTracerFactory)
+
+        override def selfRegion(): String = regionInfo.selfRegion
       }
 
       val instance = wiredInstance(grpcEndpointClass) {
