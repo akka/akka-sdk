@@ -34,9 +34,9 @@ and annotate the class with `@GrpcEndpoint`:
 ----
 include::example$doc-snippets/src/main/java/com/example/api/CustomerGrpcEndpointImpl.java[]
 ----
-<1> Mark class as a gRPC endpoint and implementing the generated interface `ShoppingCartEndpoint`.
-<2> Create a new `ShoppingCart` protobuf message and set the `cartId` and `checkedOut` fields.
-<3> Return a `CompletionStage` that is completed with the `ShoppingCart` protobuf message.
+<1> Mark class as a gRPC endpoint and implementing the generated interface `CustomerGrpcEndpoint`.
+<2> Create a new `Customer` protobuf message and set the `name` and `email` fields.
+<3> Return a `CompletionStage` that is completed with the `Customer` protobuf message.
 
 NOTE: This implementation does not interact with any other components and has an hard-coded response for simplification purposes. Interacting with other components is covered in the next section.
 
