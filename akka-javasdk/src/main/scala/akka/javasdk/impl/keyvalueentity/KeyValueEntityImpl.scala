@@ -32,6 +32,7 @@ import akka.javasdk.keyvalueentity.CommandContext
 import akka.javasdk.keyvalueentity.KeyValueEntity
 import akka.javasdk.keyvalueentity.KeyValueEntityContext
 import akka.runtime.sdk.spi.BytesPayload
+import akka.runtime.sdk.spi.RegionInfo
 import akka.runtime.sdk.spi.SpiEntity
 import akka.runtime.sdk.spi.SpiEventSourcedEntity
 import akka.runtime.sdk.spi.SpiMetadata
@@ -47,8 +48,8 @@ private[impl] object KeyValueEntityImpl {
 
   private class CommandContextImpl(
       override val entityId: String,
-      val sequenceNumber: Long,
       override val commandName: String,
+      override val selfRegion: String,
       override val metadata: Metadata,
       span: Option[Span],
       tracerFactory: () => Tracer)
@@ -60,7 +61,7 @@ private[impl] object KeyValueEntityImpl {
     override def commandId(): Long = 0
   }
 
-  private class KeyValueEntityContextImpl(override final val entityId: String)
+  private class KeyValueEntityContextImpl(override final val entityId: String, override val selfRegion: String)
       extends AbstractContext
       with KeyValueEntityContext
 
@@ -78,6 +79,7 @@ private[impl] final class KeyValueEntityImpl[S, KV <: KeyValueEntity[S]](
     serializer: JsonSerializer,
     componentDescriptor: ComponentDescriptor,
     entityStateType: Class[S],
+    regionInfo: RegionInfo,
     factory: KeyValueEntityContext => KV)
     extends SpiEventSourcedEntity {
   import KeyValueEntityEffectImpl._
@@ -86,7 +88,7 @@ private[impl] final class KeyValueEntityImpl[S, KV <: KeyValueEntity[S]](
   private val traceInstrumentation = new TraceInstrumentation(componentId, KeyValueEntityCategory, tracerFactory)
 
   private val router: ReflectiveKeyValueEntityRouter[AnyRef, KeyValueEntity[AnyRef]] = {
-    val context = new KeyValueEntityContextImpl(entityId)
+    val context = new KeyValueEntityContextImpl(entityId, regionInfo.selfRegion)
     new ReflectiveKeyValueEntityRouter[S, KV](factory(context), componentDescriptor.methodInvokers, serializer)
       .asInstanceOf[ReflectiveKeyValueEntityRouter[AnyRef, KeyValueEntity[AnyRef]]]
   }
@@ -108,7 +110,7 @@ private[impl] final class KeyValueEntityImpl[S, KV <: KeyValueEntity[S]](
     val cmdPayload = command.payload.getOrElse(BytesPayload.empty)
     val metadata: Metadata = MetadataImpl.of(command.metadata)
     val cmdContext =
-      new CommandContextImpl(entityId, command.sequenceNumber, command.name, metadata, span, tracerFactory)
+      new CommandContextImpl(entityId, command.name, regionInfo.selfRegion, metadata, span, tracerFactory)
 
     try {
       entity._internalSetCommandContext(Optional.of(cmdContext))
