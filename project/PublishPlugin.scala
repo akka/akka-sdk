@@ -41,7 +41,10 @@ object Publish extends AutoPlugin {
            Some("Cloudsmith API".at("https://maven.cloudsmith.io/lightbend/akka-snapshots/"))
          else
            Some("Cloudsmith API".at("https://maven.cloudsmith.io/lightbend/akka/"))),
-      credentials ++= cloudsmithCredentials(validate = false))
+      credentials ++= cloudsmithCredentials(validate = false),
+      // allow overwriting, to not block reruns of partially failed publish
+      publishConfiguration := publishConfiguration.value.withOverwrite(true),
+      publishLocalConfiguration := publishLocalConfiguration.value.withOverwrite(true))
 
   private def beforePublish(snapshot: Boolean): Unit = {
     if (beforePublishDone.compareAndSet(false, true)) {
