@@ -22,7 +22,7 @@ include::ROOT:partial$cloud-dev-prerequisites.adoc[]
 
 == Download the sample
 
-. Download the full source code of the Shopping Cart sample as a link:_attachments/shopping-cart-quickstart.zip[zip file], or use the Akka CLI command below to download and unzip this quickstart project.
+. Download the full source code of the Shopping Cart sample from link:https://github.com/akka-samples/shopping-cart-quickstart[Github], or use the Akka CLI command below to download and unzip this quickstart project.
 +
 [source,bash]
 ----
