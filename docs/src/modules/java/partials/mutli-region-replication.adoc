@@ -2,7 +2,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-Stateful components like Event Sourced Entities or Workflow can be replicated to other regions. This is useful for several reasons:
+Stateful components like Event Sourced Entities, Key Value Entities or Workflow can be replicated to other regions. This is useful for several reasons:
 
 * resilience to tolerate failures in one location and still be operational, even multi-cloud redundancy
 * possibility to serve requests from a location near the user to provide better responsiveness
@@ -20,7 +20,7 @@ include::example$shopping-cart-quickstart/src/main/java/shoppingcart/application
 
 Write requests are defined by declaring the command handler method with `Effect` as return type, instead of `ReadOnlyEffect`. Write requests are routed to the primary region and handled by the stateful component instance in that region even if the original call to the instance with the component client was made from another region.
 
-State changes (Workflow) or events (Event Sourced Entity) persisted by the instance in the primary region are replicated to other regions and processed by corresponding instance there. This means that the state of the stateful components in all regions are updated from the primary.
+State changes (Workflow, Key Value Entity) or events (Event Sourced Entity) persisted by the instance in the primary region are replicated to other regions and processed by corresponding instance there. This means that the state of the stateful components in all regions are updated from the primary.
 
 The replication is asynchronous, which means that read replicas are eventually updated. Normally within a few milliseconds, but if there is for example a problem with the network between the regions it can take longer time for the read replicas to become up to date, but eventually they will.
 

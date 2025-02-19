@@ -4,8 +4,6 @@ include::ROOT:partial$include.adoc[]
 
 xref:reference:glossary.adoc#key_value_entity[Key Value Entities] are entities that persist the full state on every change. Only the latest state is stored, so we don’t have access to any of the history of changes, unlike the event sourced storage used by xref:java:event-sourced-entities.adoc[Event Sourced Entities].
 
-IMPORTANT: Key Value Entities are currently not replicated across regions. The data of all Key Value Entities exists only in the primary region. All requests to Key Value Entities in other regions are forwarded to the primary region. This means that if Key Value Entities are used in a multi-region project the primary region should not be changed, since the data will not exist in the new region. Full replication of Key Value Entities is coming soon.
-
 include::partial$entity-sharding.adoc[]
 
 Akka needs to serialize that data to send it to the underlying data store. However, we recommend that you do not persist your service's public API messages. Persisting private API messages may introduce some overhead when converting from a public message to an internal one but it allows the logic of the service public interface to evolve independently of the data storage format, which should be private.
@@ -87,7 +85,7 @@ IMPORTANT: The **only** way for a command handler to modify the Entity's state i
 
 === Retrieving state
 
-The following example shows how to implement a simple endpoint to retrieve the current state of the entity, in this case the value for a specific counter.
+To have access to the current state of the entity we can use `currentState()` as you have probably noticed from the examples above. The following example shows the implementation of the read-only command handler `get` to retrieve the value for a specific counter:
 
 [source,java,indent=0]
 .{sample-base-url}/key-value-counter/src/main/java/com/example/application/CounterEntity.java[CounterEntity.java]
@@ -95,6 +93,8 @@ The following example shows how to implement a simple endpoint to retrieve the c
 include::example$key-value-counter/src/main/java/com/example/application/CounterEntity.java[tags=query]
 ----
 <1> Reply with the current state.
+
+What if this is the first command we are receiving for this entity? The initial state is provided by overriding `emptyState()`. That is optional and if not doing it, be careful to deal with a `currentState()` with a `null` value when receiving the first command.
 
 IMPORTANT: We are returning the internal state directly back to the requester. In the endpoint, it's usually best to convert this internal domain model into a public model so the internal representation is free to evolve without breaking clients code.
 
@@ -119,6 +119,9 @@ NOTE: If you don't want to permanently delete an entity, you can instead use the
 It is best to not reuse the same entity id after deletion, but if that happens after the entity has been completely removed it will be instantiated as a completely new entity without any knowledge of previous state.
 
 Note that xref:views.adoc#ve_delete[deleting View state] must be handled explicitly.
+
+[#_replication]
+include::partial$mutli-region-replication.adoc[]
 
 == Side Effects
 

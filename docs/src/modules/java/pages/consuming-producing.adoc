@@ -51,7 +51,7 @@ the deletion before triggering delete.
 
 == Consume from Key Value Entity
 
-You can consume state changes from a Key Value Entity. To receive messages with the entity state changes, annotate the Consumer with `@Consume.FromKeyValueEntity` and specify the class of the entity. Although it looks similar to an Event Sourced Entity Consumer, the semantics are different. The Key Value Entity Consumer is guaranteed to receive the most recent state change, but not all changes in between in case of a very high update pace.
+You can consume state changes from a Key Value Entity. To receive messages with the entity state changes, annotate the Consumer with `@Consume.FromKeyValueEntity` and specify the class of the entity. Although it looks similar to an Event Sourced Entity Consumer, the semantics are slightly different. The Key Value Entity Consumer is guaranteed to receive the most recent state change, but not necessarily all changes. Normally it will receive all changes, but changes may be omitted in case of a very high update pace, and a new consumer will not see all historical changes.
 
 [source,java,indent=0]
 .{sample-base-url}/key-value-shopping-cart/src/main/java/com/example/application/ShoppingCartConsumer.java[ShoppingCartConsumer.java]
@@ -69,7 +69,7 @@ An Akka application can be comprised of multiple services working to support spe
 
 Akka provides brokerless at-least-once event delivery across Akka services in the same project through the Service to Service eventing.
 
-The source of the events is an xref:event-sourced-entities.adoc[Event Sourced Entity]. Its events can be published as a stream and consumed by another Akka service without the need to set up a message broker.
+The source of the events is an xref:event-sourced-entities.adoc[Event Sourced Entity] or xref:key-value-entities.adoc[Key Value Entity]. Its events/changes can be published as a stream and consumed by another Akka service without the need to set up a message broker.
 
 NOTE: For eventing from an entity inside the same Akka service as the consuming component, use regular
 xref:consuming-producing.adoc#consume-from-event-sourced-entity[@Consume.FromEventSourcedEntity] instead of Service to Service eventing.
