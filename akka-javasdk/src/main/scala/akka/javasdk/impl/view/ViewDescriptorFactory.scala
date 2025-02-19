@@ -275,6 +275,40 @@ private[impl] object ViewDescriptorFactory {
           serializer = serializer)(userEc)))
   }
 
+  private def consumeFromKvEntity(
+      componentId: String,
+      tableUpdater: Class[_],
+      tableType: SpiClass,
+      tableName: String,
+      serializer: JsonSerializer,
+      userEc: ExecutionContext): TableDescriptor = {
+
+    val annotation = tableUpdater.getAnnotation(classOf[Consume.FromKeyValueEntity])
+
+    val updaterMethods = tableUpdater.getMethods.toIndexedSeq
+
+    val deleteHandlerMethod: Option[Method] = updaterMethods
+      .find(ComponentDescriptorFactory.hasHandleDeletes)
+
+    val updateHandlerMethods: Seq[Method] = updaterMethods
+      .filterNot(ComponentDescriptorFactory.hasHandleDeletes)
+      .filter(ComponentDescriptorFactory.hasUpdateEffectOutput)
+
+    new TableDescriptor(
+      tableName,
+      tableType,
+      new ConsumerSource.KeyValueEntitySource(ComponentDescriptorFactory.readComponentIdIdValue(annotation.value())),
+      Option.when(updateHandlerMethods.nonEmpty)(
+        UpdateHandlerImpl(componentId, tableUpdater, updateHandlerMethods, serializer)(userEc)),
+      deleteHandlerMethod.map(deleteMethod =>
+        UpdateHandlerImpl(
+          componentId,
+          tableUpdater,
+          methods = Seq(deleteMethod),
+          deleteHandler = true,
+          serializer = serializer)(userEc)))
+  }
+
   private def consumeFromTopic(
       componentId: String,
       tableUpdater: Class[_],
@@ -305,51 +339,6 @@ private[impl] object ViewDescriptorFactory {
           serializer,
           ignoreUnknown = annotation.ignoreUnknown())(userEc)),
       None)
-  }
-
-  private def consumeFromKvEntity(
-      componentId: String,
-      tableUpdater: Class[_],
-      tableType: SpiClass,
-      tableName: String,
-      serializer: JsonSerializer,
-      userEc: ExecutionContext): TableDescriptor = {
-    val annotation = tableUpdater.getAnnotation(classOf[Consume.FromKeyValueEntity])
-
-    val updaterMethods = tableUpdater.getMethods.toIndexedSeq
-
-    // FIXME do we still need this?
-    /* val subscriptionVEType = tableUpdater
-      .getAnnotation(classOf[FromKeyValueEntity])
-      .value()
-      .getGenericSuperclass
-      .asInstanceOf[ParameterizedType]
-      .getActualTypeArguments
-      .head
-      .asInstanceOf[Class[_]] */
-
-    // val transform = subscriptionVEType != tableClass
-
-    val deleteHandlerMethod: Option[Method] = updaterMethods
-      .find(ComponentDescriptorFactory.hasHandleDeletes)
-
-    val updateHandlerMethods: Seq[Method] = updaterMethods
-      .filterNot(ComponentDescriptorFactory.hasHandleDeletes)
-      .filter(ComponentDescriptorFactory.hasUpdateEffectOutput)
-
-    new TableDescriptor(
-      tableName,
-      tableType,
-      new ConsumerSource.KeyValueEntitySource(ComponentDescriptorFactory.readComponentIdIdValue(annotation.value())),
-      Option.when(updateHandlerMethods.nonEmpty)(
-        UpdateHandlerImpl(componentId, tableUpdater, updateHandlerMethods, serializer)(userEc)),
-      deleteHandlerMethod.map(method =>
-        UpdateHandlerImpl(
-          componentId,
-          tableUpdater,
-          methods = Seq(method),
-          deleteHandler = true,
-          serializer = serializer)(userEc)))
   }
 
   // Note: shared impl for update and delete handling
