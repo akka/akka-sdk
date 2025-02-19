@@ -4,7 +4,7 @@ include::ROOT:partial$include.adoc[]
 
 == Endpoints
 
-image:ROOT:endpoint.png[float=left, width=30] xref:http-endpoints.adoc[HTTP endpoints]
+image:ROOT:endpoint.png[float=left, width=30] xref:http-endpoints.adoc[HTTP endpoints] and xref:grpc-endpoints.adoc[gRPC Endpoints]
 
 == Entities
 
