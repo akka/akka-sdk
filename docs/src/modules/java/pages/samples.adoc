@@ -17,6 +17,7 @@ Samples are available that demonstrate important patterns and abstractions. Thes
 | A customer registry with query capabilities | link:../java/_attachments/customer-registry-quickstart.zip[customer-registry-quickstart.zip] |Intermediate
 | A funds transfer workflow between two wallets | link:../java/_attachments/workflow-quickstart.zip[workflow-quickstart.zip] |Intermediate
 | A user registration service implemented as a Choreography Saga | link:../java/_attachments/choreography-saga-quickstart.zip[choreography-saga-quickstart.zip] |Advanced
+| Akka Chess: a complete, resilient, automatically scalable, event-sourced chess game | link:https://github.com/akka-samples/akka-chess[Github Repository] |Advanced
 |=======================
 
 [sidebar]
