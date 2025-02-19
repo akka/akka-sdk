@@ -259,6 +259,7 @@ include::example$doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java
 ----
 <1> `requestHeader(headerName)` returns an `Optional` which is empty if the header was not present.
 
+[#_serving_static_content]
 === Serving static content ===
 
 Static resources such as HTML, CSS files can be packaged together with the service. This is done
@@ -277,6 +278,7 @@ include::example$doc-snippets/src/main/java/com/example/api/StaticResourcesEndpo
 <3> Another specific path `/favicon.ico`
 <4> The specific resource to serve
 
+[#glob_static_content]
 It is also possible to map an entire path subtree using `**` as a wildcard at the end of the path:
 
 [source,java]
@@ -291,7 +293,7 @@ include::example$doc-snippets/src/main/java/com/example/api/StaticResourcesEndpo
 NOTE: This is convenient for service documentation or small self-contained services with web user interface but is not intended
  for production, where coupling of the service lifecycle with the user interface would mean that a new service version would need to be deployed for any changes in the user interface.
 
-
+[#sse]
 === Streaming responses with Server Sent Events ===
 
 link:https://html.spec.whatwg.org/multipage/server-sent-events.html#server-sent-events[Server Sent Events (SSE)] is a way to push a stream of elements through a single HTTP response

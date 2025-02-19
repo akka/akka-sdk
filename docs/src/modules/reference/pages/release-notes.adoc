@@ -12,11 +12,28 @@ Current versions
 
 == February 2025
 
-* https://github.com/akka/akka-sdk/releases/tag/v3.2.0[Akka SDK 3.2.0]
-    - gRPC endpoint support
-    - APIs for serving static resources from HTTP endpoints
-    - API for producing Server Sent Events (SSE) from HTTP endpoints
-    - Wildcard paths for HTTP endpoints
+[sidebar]
+.https://github.com/akka/akka-sdk/releases/tag/v3.2.0[Akka SDK 3.2.0]
+****
+
+We are pleased to announce several new features in the Akka SDK.
+
+**gRPC endpoint support**
+
+The Akka SDK 3.2 introduces xref:java:grpc-endpoints.adoc[gRPC endpoints] complementing the xref:java:http-endpoints.adoc[HTTP endpoints]. Using gRPC endpoints services can be built to adhere to protobuf specification with a contract-first approach.
+
+**Serving static resources from HTTP endpoints**
+
+For some services it is useful to serve static file contents from the same deployment. To support this, the Akka SDK offers convenience method for xref:java:http-endpoints.adoc#_serving_static_content[Serving static content].
+
+**Wildcard paths for HTTP endpoints**
+
+Especially for serving static content, the xref:java:http-endpoints.adoc#glob_static_content[subtree "glob" paths] can be useful to serve packaged files. It can also be used where other information is to be encoded into the URL.
+
+**Server sent events**
+
+This release introduced an API to simplify deferred HTTP responses as a stream of xref:java:http-endpoints.adoc#sse[Server-sent Events (SSE)].
+****
 
 * Akka Runtime 1.3.6
     - View query parameter improvements
