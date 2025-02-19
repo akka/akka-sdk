@@ -16,7 +16,7 @@ Multi-region operations are ideal for:
 * Low latency global reads
 * Low latency global writes
 
-Akka has two replication modes; replicated reads and replicated writes.
+Akka has two replication modes: replicated reads and replicated writes.
 
 == Replicated reads
 
@@ -26,19 +26,19 @@ Read requests are always handled locally within the region that they occur.
 
 An entity can only be written within a single region, known as the primary region.
 
-How Akka assigns the primary region to an entity is configurable. There are two modes for primary selection: **pinned-region-writes** and **request-region-writes**.
+How Akka assigns the primary region to an entity is configurable. There are two modes for primary selection: **pinned-region** and **request-region**.
 
-In the **pinned-region-writes** mode (which is the default), the primary region for an entity is selected statically as part of the deployment, so all entities will have the same primary region. Write requests to the primary region of the entity are handled locally. Write requests to other regions are forwarded to the primary region. The primary region stays the same until there is an operational change of the primary region.
+In the **pinned-region** primary selection mode (which is the default), the primary region for an entity is selected statically as part of the deployment, so all entities will have the same primary region. Write requests to the primary region of the entity are handled locally. Write requests to other regions are forwarded to the primary region. The primary region stays the same until there is an operational change of the primary region.
 
 This is useful for scenarios where you want one primary region, with the ability to fail over to another region in the case of a regional outage.
 
-In the **request-region-writes** mode, each entity’s primary region will be the region that receives the write request. When a write request arrives to an entity that is not the primary it will be selected as the new primary. The new primary ensures that all preceding events from the previous primary have been fully replicated and applied (i.e. persisted) before writing the new event, and thereby guarantees strong consistency when switching from one region to another. Subsequent write requests to the primary region of the entity are handled locally without any further coordination. Write requests to other regions will trigger the same switch-over process. All other entity instances operate unimpeded during the switch-over process.
+In the **request-region** primary selection mode, each entity’s primary region will be the region that receives the write request. When a write request arrives to an entity that is not the primary it will be selected as the new primary. The new primary ensures that all preceding events from the previous primary have been fully replicated and applied (i.e. persisted) before writing the new event, and thereby guarantees strong consistency when switching from one region to another. Subsequent write requests to the primary region of the entity are handled locally without any further coordination. Write requests to other regions will trigger the same switch-over process. All other entity instances operate unimpeded during the switch-over process.
 
 This is useful for scenarios where you want to have the primary region for you data close to the users who use the data. A user, Alice, in the USA, will have her data in the USA, while a user Bob, in the UK, will have his data, in the UK. If Alice travels to Asia the data will follow her.
 
 The Operating section explains more details about xref:operations:regions/index.adoc#selecting-primary[configuring the primary selection mode].
 
-=== Example of pinned-region-writes
+=== Example of writes from pinned region
 
 image:geo-a.svg[Geo data replication, width=600]
 
