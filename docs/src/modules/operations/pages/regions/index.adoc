@@ -6,7 +6,7 @@ Projects in Akka can span across regions with data automatically replicated betw
 
 xref:organizations/regions.adoc[] are specified in the project configuration. All services in the project are deployed to all regions. One of the regions will be specified as the primary region. The primary region indicates the source from which region resources (services, routes, secrets, etc.) should be replicated from. By default the primary region is the first one added to the project at deployment time. 
 
-Additionally, the primary region also indicates where primary data copies should reside in stateful components like Event Sourced Entities or Workflow when using the static mode.
+Additionally, the primary region also indicates where primary data copies should reside in stateful components like Event Sourced Entities, Key Value Entities or Workflow when using the `pinned-region` primary selection mode.
 
 NOTE: Regions appear at two different scopes in Akka. The first is at the xref:organizations/index.adoc[] scope. This conveys which regions are available to your organization. The second is at the project scope, which conveys which regions a specific project is bound to.
 
@@ -42,12 +42,12 @@ Stateful components like Event Sourced Entities and Workflows can be replicated 
 
 There are two operational choices for deciding where the primary is located:
 
-* *Static mode* - one region is defined as the primary for the project, and all stateful component instances will use that region as primary
-* *Dynamic mode* - the primary is selected by each individual component instance based on where the first event is persisted
+* *pinned-region* mode - one region is defined as the primary for the project, and all stateful component instances will use that region as primary
+* *request-region* mode - the primary is selected by each individual component instance based on where the write requests occur
 
 IMPORTANT: Before changing the primary selection mode, make sure that you understand and follow the steps described in the <<_how_to>>.
 
-The static mode is used by default. To use dynamic mode you need to deploy the service with a xref:services/deploy-service.adoc#apply[service descriptor]:
+The pinned-region mode is used by default. To use request-region mode you need to deploy the service with a xref:services/deploy-service.adoc#apply[service descriptor]:
 
 [source, yaml]
 ----
@@ -57,12 +57,12 @@ spec:
   replication:
     mode: replicated-read
     replicatedRead:
-      primarySelectionMode: dynamic
+      primarySelectionMode: request-region
 ----
 
-When using dynamic mode, the application must ensure that a specific stateful component instance is not created concurrently in more than one region. Although data will still be replicated if this occurs, there are no guarantees regarding the order of these initial changes, which could lead to conflicting states across regions. Once the initial updates are replicated, a single primary instance is selected.
+When using request-region mode, all regions must be available when the first write request is made to an entity or when switching primary region by handling a write request for an entity in another region than the currently selected primary region.
 
-It is possible to switch between static and dynamic mode, but this should only be done with careful consideration of the consequences. For example, when changing the primary, not all updates may have been replicated and the new primary may not be fully up to date. This is why there is a third mode. This is a read-only mode for all regions, which causes all write requests to be rejected. This can be used as an intermediate stage to ensure that all updates have been replicated before the primary is changed.
+It is possible to switch between pinned-region and request-region mode, but this should only be done with careful consideration of the consequences. For example, when changing the primary, not all updates may have been replicated and the new primary may not be fully up to date. This is why there is a third mode. This is a read-only mode for all regions, which causes all write requests to be rejected. This can be used as an intermediate stage to ensure that all updates have been replicated before the primary is changed.
 
 To use this read-only mode for all regions you set `primarySelectionMode` to `none` in the service descriptor:
 
@@ -77,7 +77,7 @@ spec:
       primarySelectionMode: none
 ----
 
-To use the static primary selection mode again you set `static` in the service descriptor:
+To use the pinned-region primary selection mode again you set `pinned-region` in the service descriptor:
 
 [source, yaml]
 ----
@@ -87,14 +87,14 @@ spec:
   replication:
     mode: replicated-read
     replicatedRead:
-      primarySelectionMode: static
+      primarySelectionMode: pinned-region
 ----
 
 == Setting the primary region of a project
 
 Changing the primary region of a project is how you control failover or migration in Akka.
 
-NOTE: The primary region of a project is also the region that will be used as primary for stateful components in the static selection mode. Changing primary should only be done with careful consideration of the consequences, and it is recommended to first change to the read-only mode in all regions. See <<selecting-primary>>.
+NOTE: The primary region of a project is also the region that will be used as primary for stateful components in the pinned-region selection mode. Changing primary should only be done with careful consideration of the consequences, and it is recommended to first change to the read-only mode in all regions. See <<selecting-primary>>.
 
 WARNING: Key Value Entities are currently not replicated across regions. The data of all Key Value Entities exists only in the primary region. All requests to Key Value Entities in other regions are forwarded to the primary region. This means that if Key Value Entities are used in a multi-region project the primary region should not be changed, since the data will not exist in the new region. Full replication of Key Value Entities is coming soon.
 
@@ -155,41 +155,41 @@ image:dashboard-control-tower-replication.png[]
 3. You need to xref:services/invoke-service.adoc[expose the services] in the new region.
 4. Stateful components are automatically replicated to the new region. This may take some time, and you can see progress in the replication section in the Control Tower. The event consumption lag will at first be high and then close to zero when the replication has been completed.
 
-=== Switch from static to dynamic primary selection mode for stateful components
+=== Switch from pinned-region to request-region primary selection mode for stateful components
 
-The default primary selection mode for stateful components is the static mode, as explained in <<selecting-primary>>, and you might want to change that to dynamic after the first deployment. That section also describes how you change the primary selection mode with a service descriptor.
+The default primary selection mode for stateful components is the pinned-region mode, as explained in <<selecting-primary>>, and you might want to change that to request-region after the first deployment. That section also describes how you change the primary selection mode with a service descriptor.
 
-Component instances that have already been created will continue to have their primary in the original static primary region. New component instances will have their primary in the region they are first written in.
+Component instances that have already been created will continue to have their primary in the original pinned-region primary region, and can switch primary region when write requests occur in the other region(s).
 
 1. First, change to the `none` primary selection mode. This is a read-only mode for all regions and all write requests will be rejected. The reason for changing to this intermediate mode is to make sure that all events have been replicated without creating new events.
 2. Wait until the deployment of the `none` primary selection mode has been successfully propagated to all regions. Observe in the Akka Console that the rolling update has been completed in all regions. You can also make sure that replicated events reach zero in the replication section in the Control Tower.
-3. Change to `dynamic` primary selection mode.
+3. Change to `request-region` primary selection mode.
 
-=== Switch from dynamic to static primary selection mode for stateful components
+=== Switch from request-region to pinned-region primary selection mode for stateful components
 
-Static mode takes precedence over dynamic in the sense that a component instance will change its primary to the static region when there is a new write request to the component instance, and it persists a new event.
+pinned-region mode takes precedence over request-region in the sense that a component instance will change its primary to the pinned-region region when there is a new write request to the component instance, and it persists a new event.
 
 <<selecting-primary>> describes how you change the primary selection mode with a service descriptor.
 
 1. First, change to the `none` primary selection mode. This is a read-only mode for all regions and all write requests will be rejected. The reason for changing to this intermediate mode is to make sure that all events have been replicated without creating new events.
 2. Wait until the deployment of the `none` primary selection mode has been successfully propagated to all regions. Observe in the Akka Console that the rolling update has been completed in all regions. You can also make sure that replicated events reach zero in the replication section in the Control Tower.
-3. Change to `static` primary selection mode.
+3. Change to `pinned-region` primary selection mode.
 
-=== Change the static primary region for stateful components
+=== Change the pinned-region primary region for stateful components
 
-You might want to change the static primary for stateful components if you migrate from one region to another, or need to bring down the primary region for maintenance for a while.
+You might want to change the pinned-region primary for stateful components if you migrate from one region to another, or need to bring down the primary region for maintenance for a while.
 
 <<selecting-primary>> describes how you change the primary selection mode with a service descriptor.
 
 1. First, change to the `none` primary selection mode. This is a read-only mode for all regions and all write requests will be rejected. The reason for changing to this intermediate mode is to make sure that all events have been replicated without creating new events.
 2. Wait until the deployment of the `none` primary selection mode has been successfully propagated to all regions. Observe in the Akka Console that the rolling update has been completed in all regions. You can also make sure that replicated events reach zero in the replication section in the Control Tower.
 3. Follow instructions in <<_setting_the_primary_region_of_a_project>>.
-4. Change to `static` primary selection mode.
+4. Change to `pinned-region` primary selection mode.
 
 === Change primary region for disaster recovery
 
 If a region is failing you might want to fail over to another region that is working.
 
 1. If the failing region is the primary region, follow instructions in <<_setting_the_primary_region_of_a_project>> and change the primary to a non-failing region.
-2. If you are using `dynamic` primary selection you should <<_switch_from_dynamic_to_static_primary_selection_mode_for_stateful_components>>. Depending on how responsive the failing region is this might not be possible to deploy to the failing region, but you should deploy it to the non-failing regions. The reason for this is that otherwise write requests will still be routed to the failing region for component instances that have their primary in the failing region.
+2. If you are using `request-region` primary selection you should <<_switch_from_request_region_to_pinned_region_primary_selection_mode_for_stateful_components>>. Depending on how responsive the failing region is this might not be possible to deploy to the failing region, but you should deploy it to the non-failing regions. The reason for this is that otherwise write requests will still be routed to the failing region for component instances that have their primary in the failing region.
 3. Be aware that events that were written in the failing region and had not been replicated to other regions before the hard failover will be replicated when the regions are connected again. There are no guarantees regarding the order of these "old" events and any new events written by the new primary, which could lead to conflicting states across regions.
