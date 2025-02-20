@@ -259,10 +259,10 @@ Replicated read means that writes are handled by one primary replica and reads c
 |===
 |Field                    |Type        |Description
 
-|*PrimarySelectionMode*   |string     a|Selection of primary can be `static`, `dynamic` and `none`.
+|*PrimarySelectionMode*   |string     a|Selection of primary can be `pinned-region`, `request-region` and `none`.
 
-* `static` - one region is defined as the primary for the project, and all stateful component instances will use that region as primary
-* `dynamic` - the primary is selected by each individual component instance based on where the first event is persisted
+* `pinned-region` - one region is defined as the primary for the project, and all stateful component instances will use that region as primary
+* `request-region` - the primary is selected by each individual component instance based on where the write request occurs
 * `none` - read-only mode for all regions, which causes all write requests to be rejected
 
 |===
