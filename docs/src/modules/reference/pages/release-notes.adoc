@@ -13,26 +13,20 @@ Current versions
 == February 2025
 
 [sidebar]
-.https://github.com/akka/akka-sdk/releases/tag/v3.2.0[Akka SDK 3.2.0]
 ****
 
-We are pleased to announce several new features in the Akka SDK.
+**gRPC endpoints**
 
-**gRPC endpoint support**
-
-The Akka SDK 3.2 introduces xref:java:grpc-endpoints.adoc[gRPC endpoints] complementing the xref:java:http-endpoints.adoc[HTTP endpoints]. Using gRPC endpoints services can be built to adhere to protobuf specification with a contract-first approach.
+Akka now supports xref:java:grpc-endpoints.adoc[gRPC endpoints] complementing xref:java:http-endpoints.adoc[HTTP endpoints]. gRPC services enable contract-first development where interfaces can be defined with the protobuf specification. The underlying protobuf serialization format supports backward and forward compatibility avoiding tight coupling by making it easier to evolve services without breaking existing clients. Additionally, gRPC's supports unary and streaming calls making it a good choice for high-performance service-to-service communication.
 
 **Serving static resources from HTTP endpoints**
 
-For some services it is useful to serve static file contents from the same deployment. To support this, the Akka SDK offers convenience method for xref:java:http-endpoints.adoc#_serving_static_content[Serving static content].
+HTTP endpoints can now serve static content. This enables hosting web pages, client-side applications, and other resources within the endpoint. The static content is accessible through a convenience method: xref:java:http-endpoints.adoc#_serving_static_content[Serving static content]. xref:java:http-endpoints.adoc#glob_static_content[Subtree "glob" paths] allow serving path hierarchies.
 
-**Wildcard paths for HTTP endpoints**
+**Server-sent events**
 
-Especially for serving static content, the xref:java:http-endpoints.adoc#glob_static_content[subtree "glob" paths] can be useful to serve packaged files. It can also be used where other information is to be encoded into the URL.
+Server-sent events (SSE) is a way to push a stream of elements through a single HTTP response enabling an HTTP client to see each element one-by-one rather than waiting for an entire response to complete. This is useful for streaming events from a View or monitoring state changes of an entity. We have introduced an API to simplify deferred HTTP responses as a stream of xref:java:http-endpoints.adoc#sse[Server-sent Events (SSE)].
 
-**Server sent events**
-
-This release introduced an API to simplify deferred HTTP responses as a stream of xref:java:http-endpoints.adoc#sse[Server-sent Events (SSE)].
 ****
 
 * Akka Runtime 1.3.6
