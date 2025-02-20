@@ -22,5 +22,4 @@ public interface UpdateContext extends MetadataContext, OriginAwareContext {
   // FIXME is this needed anymore?
   /** The name of the event being handled. */
   String eventName();
-
 }

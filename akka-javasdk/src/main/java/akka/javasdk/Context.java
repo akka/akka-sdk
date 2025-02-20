@@ -7,8 +7,6 @@ package akka.javasdk;
 /** Root class of all contexts. */
 public interface Context {
 
-  /**
-   * Returns the region where this instance is running.
-   */
+  /** Returns the region where this instance is running. */
   String selfRegion();
 }

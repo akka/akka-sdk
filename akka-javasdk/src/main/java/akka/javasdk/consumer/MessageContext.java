@@ -22,5 +22,4 @@ public interface MessageContext extends MetadataContext, OriginAwareContext {
 
   /** Access to tracing for custom app specific tracing. */
   Tracing tracing();
-
 }
