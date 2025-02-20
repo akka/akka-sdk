@@ -1,4 +1,4 @@
-FROM antora/antora:3.1.9
+FROM antora/antora:3.1.10
 
 # "Alpine Linux v3.11"
 RUN npm install -g @antora/lunr-extension
