@@ -14,7 +14,7 @@ content:
 
 ui:
   bundle:
-    url: ./supplemental_ui/bundle/akka-theme-ui-001-bundle.zip
+    url: ./supplemental_ui/bundle/akka-theme-ui-002-bundle.zip
     snapshot: true
   default_layout: default
   supplemental_files: ./supplemental_ui
