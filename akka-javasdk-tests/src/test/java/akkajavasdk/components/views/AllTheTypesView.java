@@ -64,7 +64,8 @@ public class AllTheTypesView extends View {
       instant = :instant AND
       zonedDateTime = :zonedDateTime AND
       optionalString = :optionalString AND
-      repeatedString = :repeatedString AND
+      stringValue = ANY(:repeatedString) AND
+      :stringValue = ANY(repeatedString) AND
       nestedMessage.email = :nestedEmail
       """)
   public QueryStreamEffect<AllTheTypesKvEntity.AllTheTypes> specificRow(AllTheQueryableTypes query) { return queryStreamResult(); }

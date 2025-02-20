@@ -178,7 +178,7 @@ public class ViewIntegrationTest extends TestKitSupport {
         Instant.now(),
         // Note: we turn it into a timestamp internally, so the specific TZ is lost (but the exact point in time stays the same)
         ZonedDateTime.now().withZoneSameInstant(ZoneId.of("Z")),
-        Optional.of("optional"), List.of("text1", "text2"),
+        Optional.of("optional"), List.of("text", "text2"),
         new AllTheTypesKvEntity.ByEmail("test@example.com"),
         AllTheTypesKvEntity.AnEnum.THREE, new AllTheTypesKvEntity.Recursive(new AllTheTypesKvEntity.Recursive(null, "level2"), "level1"));
     await(componentClient.forKeyValueEntity(id).method(AllTheTypesKvEntity::store).invokeAsync(row));
