@@ -16,9 +16,9 @@ Requests and responses are always serialized to JSON between the client and the 
 The `akka.javasdk.client.ComponentClient` is a utility for making calls between components in a type-safe way. To use the `ComponentClient` you need to inject it into your component via the constructor:
 
 [source,java,indent=0]
-.{sample-base-url}/shopping-cart-quickstart/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java[ShoppingCartEndpoint.java]
+.{sample-base-url}/event-sourced-counter-brokers/src/main/java/counter/api/CounterEndpoint.java[CounterEndpoint.java]
 ----
-include::java:example$shopping-cart-quickstart/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java[tag=endpoint-component-interaction]
+include::java:example$event-sourced-counter-brokers/src/main/java/counter/api/CounterEndpoint.java[tag=endpoint-component-interaction]
 ----
 <1> Accept the `ComponentClient` as a constructor argument, keep it in a field.
 <2> Use a specific request builder for the component you want to call
