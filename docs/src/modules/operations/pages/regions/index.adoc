@@ -4,7 +4,7 @@ include::ROOT:partial$include.adoc[]
 
 Projects in Akka can span across regions with data automatically replicated between all the regions. This increases availability as the regions can either be separate cloud / geographic regions or can be separate logical regions within the same cloud / geographic region. This gives you a high level of control for managing failure domains or fault boundaries in your applications. This is sometimes referred to as blast radius control.
 
-xref:organizations/regions.adoc[] are specified in the project configuration. All services in the project are deployed to all regions. One of the regions will be specified as the primary region. The primary region indicates the source from which region resources (services, routes, secrets, etc.) should be replicated from. By default the primary region is the first one added to the project at deployment time. 
+xref:organizations/regions.adoc[] are specified in the project configuration. All services in the project are deployed to all regions. One of the regions will be specified as the primary region. The primary region indicates the source from which region resources (services, routes, secrets, etc.) should be replicated from. Using the pinned-region default, the primary region is the first one added to the project at deployment time. 
 
 Additionally, the primary region also indicates where primary data copies should reside in stateful components like Event Sourced Entities, Key Value Entities or Workflow when using the `pinned-region` primary selection mode.
 
