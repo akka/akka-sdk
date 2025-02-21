@@ -1,7 +1,6 @@
 site:
   title: "Akka Documentation"
   url: https://doc.akka.io
-  start_page: ROOT::index.adoc
   robots: disallow
   keys:
     cookie_consent: '28b912e7-09e9-43d5-91e4-3d1897044004-test'
