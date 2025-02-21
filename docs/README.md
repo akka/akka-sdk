@@ -45,3 +45,9 @@ open ../target/site/index.html
 The deployment process is automatically triggered through GitHub Actions [Deploy WIP to doc.akka.io/snapshots/](https://github.com/akka/akka-sdk/actions/workflows/docs-wip.yml) Workflow when merging to main.
 
 The WIP documentation will be published and available for viewing at [https://doc.akka.io/snapshots/](https://doc.akka.io/snapshots).
+
+## Docs theme bundle source  
+
+The [`antora-ui-default`](https://github.com/lightbend/antora-ui-default) repository contains the source files used to build the `akka-theme-ui-002-bundle.zip` bundle. This repository is based on the [Antora Default UI](https://gitlab.com/antora/antora-ui-default) and has been customized for Akka documentation needs.  
+
+To modify or extend the theme, clone the [`antora-ui-default`](https://github.com/lightbend/antora-ui-default) repository, make the necessary changes, and build a new bundle.
