@@ -88,7 +88,7 @@ antora-local:
 		-v ${ROOT_DIR}:/antora \
 		--rm \
 		-t ${antora_docker_image}:${antora_docker_image_tag} \
-		--cache-dir=.cache/antora --stacktrace --log-failure-level=error \
+		--cache-dir=.cache/antora --stacktrace --log-failure-level=warn \
 		docs/antora-playbook-local.yml
 
 antora-prod:
@@ -96,7 +96,7 @@ antora-prod:
 		-v ${ROOT_DIR}:/antora \
 		--rm \
 		-t ${antora_docker_image}:${antora_docker_image_tag} \
-		--cache-dir=.cache/antora --stacktrace --log-level error --log-failure-level=fatal \
+		--cache-dir=.cache/antora --stacktrace --log-level error --log-failure-level=warn \
 		docs/antora-playbook-prod.yml
 
 validate-links:
