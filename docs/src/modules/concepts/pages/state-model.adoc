@@ -8,7 +8,7 @@ Entities have operations that can change their state. These operations are trigg
 
 Akka offers two state models: _Event Sourced Entity_ and _Key Value Entity_. Event Sourced Entities build their state incrementally by storing each update as an event, while Key Value Entities store their entire state as a single entry in a Key/Value store. To replicate state across clusters and regions, Akka uses specific conflict resolution strategies for each state model.
 
-Event Sourced Entities, Key Value Entities and Workflows replicate their state by default. If you deploy your Service to a Project that spans multiple regions the state is replicated for you with no extra work to be done. By default, any region can read the data, and will do so from a local store within the region, but only the xref:architecture-model.adoc[Akka architecture model] primary region will be able to perform writes. To make this easier, Akka will forward writes to the appropriate region.
+Event Sourced Entities, Key Value Entities and Workflows replicate their state by default. If you deploy your Service to a Project that spans multiple regions the state is replicated for you with no extra work to be done. By default, any region can read the data, and will do so from a local store within the region, but only the primary region will be able to perform writes. To make this easier, Akka will forward writes to the appropriate region.
 
 To understand more about regions and distribution see xref:deployment-model.adoc#_region[Deployment model].
 
