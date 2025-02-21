@@ -8,9 +8,7 @@ Entities have operations that can change their state. These operations are trigg
 
 Akka offers two state models: _Event Sourced Entity_ and _Key Value Entity_. Event Sourced Entities build their state incrementally by storing each update as an event, while Key Value Entities store their entire state as a single entry in a Key/Value store. To replicate state across clusters and regions, Akka uses specific conflict resolution strategies for each state model.
 
-NOTE: Although Key Value Entities are planned to support a Last Writer Wins (LWW) mechanism, this feature is not yet available.
-
-Event Sourced Entities replicate their state by default. If you deploy your Service to a Project that spans multiple regions the state is replicated for you with no extra work to be done. By default, any region can read the data, and will do so from a local store within the region, but only the xref:architecture-model.adoc[Akka architecture model] origin region will be able to perform writes. To make this easier, Akka will forward writes to the appropriate region.
+Event Sourced Entities, Key Value Entities and Workflows replicate their state by default. If you deploy your Service to a Project that spans multiple regions the state is replicated for you with no extra work to be done. By default, any region can read the data, and will do so from a local store within the region, but only the xref:architecture-model.adoc[Akka architecture model] primary region will be able to perform writes. To make this easier, Akka will forward writes to the appropriate region.
 
 To understand more about regions and distribution see xref:deployment-model.adoc#_region[Deployment model].
 
@@ -62,7 +60,7 @@ Event Sourced entities are replicated between all regions in an Akka project by 
 
 In order to have multi-writer (or write anywhere) capabilities you must implement a conflict-free replicated data type (CRDT) for your Event Sourced Entity. This allows data to be shared across multiple instances of an entity and is eventually consistent to provide high availability with low latency. The underlying CRDT semantics allow replicated Event Sourced Entity instances to update their state independently and concurrently and without coordination. The state changes will always converge without conflicts, but note that with the state being eventually consistent, reading the current data may return an out-of-date value.
 
-Key Value Entities do not replicate state between regions at this time, but will soon. When they do they will use a Last Writer Wins (LWW) reconciliation strategy. 
+NOTE: Although Key Value Entities are planned to support a Last Writer Wins (LWW) mechanism, this feature is not yet available.
 
 == Related documentation
 

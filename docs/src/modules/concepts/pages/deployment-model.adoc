@@ -29,13 +29,13 @@ xref:operations:projects/container-registries.adoc[Container registries] exist i
 A given cloud provider region _may_ have many Akka regions within it. In this way Akka can scale past any upper bound limits of the infrastructure on which it runs.
 
 === Multiple region by design
-Stateful components in Akka have a concept of location, that is region, and are designed to span regions and replicate their data across regions. This is outlined in xref:concepts:state-model.adoc[state model]. These components call the region they were created in their *primary region* and keep track of it throughout their lifetime. This allows Akka to simplify some aspects of distributed computing. 
+Stateful components in Akka have a concept of location, that is region, and are designed to span regions and replicate their data across regions. This is outlined in xref:concepts:state-model.adoc[state model] and xref:concepts:multi-region.adoc[multi-region operations]. These components call the region they can be updated their *primary region* and keep track of it throughout their lifetime. This allows Akka to simplify some aspects of distributed computing.
 
-In Akka projects regional choices are made at deployment time, not development time, allowing you to change your regions over time and even change your primary region. You can also control if your service is in *pinned-region* or *request-region* mode of regionalization, which impacts where the primary copy of component data resides. pinned-region mode marks the primary region of the project as the primary region for all components. request-region means that the primary is selected by each individual component instance based on where the write requests occur. For more information see xref:operations:regions/index.adoc#selecting-primary[].
+In Akka projects regional choices are made at deployment time, not development time, allowing you to change your regions over time and even change your primary region. You can also control if your service is in *pinned-region* or *request-region* mode of regionalization, which impacts where the primary copy of component data resides. For more information see xref:concepts:multi-region.adoc[multi-region operations].
 
-By default, most entities will only allow their primary region to change their state, to make this easier Akka will also automatically route state changing operations to the primary region. This routing is asynchronous and durable, meaning network partitions will not stop the write from being queued. This gives you a read anywhere model out of the box that automatically routes writes appropriately.
+By default, most entities will only allow their primary region to change their state, to make this easier Akka will also automatically route state changing operations to the primary region. This gives you a read anywhere model out of the box that automatically routes writes appropriately.
 
-NOTE: Primary region is also a concept in the context of a project. All projects will have a primary region
+NOTE: Primary region is also a concept in the context of a project. All projects will have a primary region.
 
 If you use more sophisticated state models you can have a write anywhere model. See xref:concepts:state-model.adoc[state model] for more details.
 
@@ -47,13 +47,13 @@ You manage a project as a single unit and Akka does all the work to manage each 
 Regions can be added to or removed from an Akka project while it is running. There is no need to stop the services within the project to do this. 
 
 ==== Adding regions
-You can add regions to an Akka project and Akka will deploy the services in that project to the new region and expose endpoints. It will also begin replication of all data *(for now that excludes Key Value Entities)*. This replication time will depend on the size of the dataset (state) being replicated and the distance between the regions. Adding regions is a graceful behavior. The new region will be available to serve traffic after being added, but it may take some time until the initial replication is complete. You can monitor replication by monitoring Consumer Lag.
+You can add regions to an Akka project and Akka will deploy the services in that project to the new region and expose endpoints. It will also begin replication of all data. This replication time will depend on the size of the dataset (state) being replicated and the distance between the regions. Adding regions is a graceful behavior. The new region will be available to serve traffic after being added, but it may take some time until the initial replication is complete. You can monitor replication by monitoring Consumer Lag.
 
 ifdef::todo[TODO:  [NEED TO ADD LINK]]
 ==== Removing regions
 There are two ways to remove regions from a project: *graceful* and *emergency*. Their names imply their function. Graceful remove takes time, it marks the region as read-only, and starts to move the origin for all the entities out of the region. This is the preferred way to remove regions as their is no risk of data corruption, even for entities that haven't implemented conflict resolution strategies. 
 
-Emergency region removal is for emergency scenarios such as the rare times when an infrastructure provider's region becomes unavailable. Executing an emergency region removal fast ejects the region and reassigns the origin for all entities to the remaining regions. If there are writes in progress for non-CRDT types (i.e. entities that do not implement conflict resolutions e.g. KeyValueEntity) they _could_ be lost or overwritten.
+Emergency region removal is for emergency scenarios such as the rare times when an infrastructure provider's region becomes unavailable. Executing an emergency region removal fast ejects the region and reassigns the origin for all entities to the remaining regions. If there are writes in progress for non-CRDT types (i.e. entities that do not implement conflict resolutions) they _could_ be lost or overwritten.
 
 == Next steps
 

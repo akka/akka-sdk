@@ -29,7 +29,7 @@ An entity can only be updated within a single region, known as its primary regio
 Primary region selection for entities is configurable. There are two modes for primary selection: **pinned-region** and **request-region**.
 
 Pinned-region primary selection mode (default):: 
-  all entities use the same primary region, which is selected statically as part of the deployment. Write requests to the primary region of the entity are handled locally. Write requests to other regions are forwarded to the primary region. The primary region stays the same until there is an operational change of the primary region.
+  All entities use the same primary region, which is selected statically as part of the deployment. Write requests to the primary region of the entity are handled locally. Write requests to other regions are forwarded to the primary region. The primary region stays the same until there is an operational change of the primary region.
 +
   This is useful for scenarios where you want one primary region, with the ability to fail over to another region in the case of a regional outage.
 
