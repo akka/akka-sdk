@@ -17,12 +17,10 @@ public class CustomerByEmailView extends View {
     return queryResult();
   }
 
-  // tag::stream-updates[]
   @Query(value = "SELECT * FROM customers_by_email WHERE email = :email", streamUpdates = true)
   public QueryStreamEffect<CustomerRow> getCustomersStream(String email) {
     return queryStreamResult();
   }
-  // end::stream-updates[]
 
   @Consume.FromEventSourcedEntity(CustomerEntity.class)
   public static class CustomersByEmail extends TableUpdater<CustomerRow> {

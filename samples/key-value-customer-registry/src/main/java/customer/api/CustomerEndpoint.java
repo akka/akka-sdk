@@ -109,12 +109,12 @@ public class CustomerEndpoint {
   }
 
   // tag::sse-view-updates[]
-  @Get("/by-name-sse/{name}")
-  public HttpResponse continousByNameServerSentEvents(String name) {
+  @Get("/by-city-sse/{cityName}")
+  public HttpResponse continousByCityNameServerSentEvents(String cityName) {
     // view will keep stream going, toggled with streamUpdates = true on the query
-    Source<CustomersByName.CustomerSummary, NotUsed> customerSummarySource = componentClient.forView() // <1>
-        .stream(CustomersByName::continuousGetCustomerSummaryStream)
-        .source(name);
+    Source<Customer, NotUsed> customerSummarySource = componentClient.forView() // <1>
+        .stream(CustomersByCity::continuousCustomersInCity)
+        .source(cityName);
 
     return HttpResponses.serverSentEvents(customerSummarySource); // <2>
   }

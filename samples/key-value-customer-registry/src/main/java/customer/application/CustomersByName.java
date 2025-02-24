@@ -46,12 +46,6 @@ public class CustomersByName extends View {
   }
   // end::stream[]
 
-  // tag::continuous-stream[]
-  @Query(value = "SELECT * FROM customers_by_name WHERE name = :name", streamUpdates = true)
-  public QueryStreamEffect<CustomerSummary> continuousGetCustomerSummaryStream(String name) {
-    return queryStreamResult();
-  }
-  // end::continuous-stream[]
 // tag::class[]
 }
 // end::class[]

@@ -231,6 +231,13 @@ include::example$key-value-customer-registry/src/main/java/customer/application/
 Instead of collecting the query result in memory as a collection before returning it, the entries can be streamed.
 To return the result as a stream, modify the returned type to be `QueryStreamEffect` and use `queryStreamResult()` to return the stream.
 
+[source,java]
+.{sample-base-url}/key-value-customer-registry/src/main/java/customer/application/CustomersByCity.java[CustomersByCity.java]
+----
+include::example$key-value-customer-registry/src/main/java/customer/application/CustomersByCity.java[tag=stream]
+----
+
+[#_streaming_view_updates]
 ==== Streaming view updates
 
 A query can provide a near real-time stream of results for the query, emitting new entries matching the query as they are added or updated in
@@ -239,16 +246,17 @@ the view.
 This will first list the complete result for the query and then keep the response stream open, emitting new or updated
 entries matching the query as they are added to the view. The stream does not complete until the client closes it.
 
-To use streaming, the returned type must be `QueryStreamEffect`, add `streamUpdates = true` to the `Query` annotation.
+To use streaming updates add `streamUpdates = true` to the `Query` annotation, the returned type of the
+query method must be `QueryStreamEffect`.
 
 [source,java]
-.{sample-base-url}/event-sourced-customer-registry/src/main/java/customer/application/CustomerByEmailView.java[CustomerList.java]
+.{sample-base-url}/key-value-customer-registry/src/main/java/customer/application/CustomersByCity.java[CustomersByCity.java]
 ----
-include::example$event-sourced-customer-registry/src/main/java/customer/application/CustomerByEmailView.java[tag=stream-updates]
+include::example$key-value-customer-registry/src/main/java/customer/application/CustomersByCity.java[tag=continuous-stream]
 ----
 
-This example would return the customers using the same email, and then emit every time a new `CustomerRow`
-with the queried email address is added to the view, or one of the existing rows changes.
+This example would return the customers living in the same city, and then emit every time a customer
+already in the city is changed, or when a new customer is added to the view with the given city.
 
 Streaming updates can be streamed all the way to a gRPC or HTTP client via a xref:grpc-endpoints.adoc[gRPC Endpoint] or an xref:http-endpoints.adoc#sse[HTTP
 endpoint using SSE].

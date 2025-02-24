@@ -312,8 +312,8 @@ include::example$doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java
 <2> Every time a tick is seen, we turn it into a system clock timestamp
 <3> Passing the `Source` to `serverSentEvents` returns a `HttpResponse` for the endpoint method.
 
-A more realistic use case would be to stream the changes from a view, using the `streamUpdates` view
-feature.
+A more realistic use case would be to stream the changes from a view, using the xref:views.adoc#_streaming_view_updates[stream view updates view
+feature].
 
 [source,java]
 .{sample-base-url}/key-value-customer-registry/src/main/java/customer/api/CustomerEndpoint.java[CustomerEndpoint.java]

@@ -24,5 +24,21 @@ public class CustomersByCity extends View {
   public QueryEffect<CustomerList> getCustomers(List<String> cities) {
     return queryResult();
   }
+
+  // tag::stream[]
+  @Query(value = "SELECT * FROM customers_by_city WHERE address.city = :city")
+  public QueryStreamEffect<Customer> streamCustomersInCity(String city) {
+    return queryStreamResult();
+  }
+  // end::stream[]
+
+  // tag::continuous-stream[]
+  @Query(value = "SELECT * FROM customers_by_city WHERE address.city = :city", streamUpdates = true)
+  public QueryStreamEffect<Customer> continuousCustomersInCity(String city) {
+    return queryStreamResult();
+  }
+  // end::continuous-stream[]
+
+
 }
 // end::view-test[]
