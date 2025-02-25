@@ -43,4 +43,7 @@ public interface RequestContext extends Context {
 
   /** Access to tracing for custom app specific tracing. */
   Tracing tracing();
+
+  /** @return The query parameters of the current request. */
+  QueryParams queryParams();
 }
