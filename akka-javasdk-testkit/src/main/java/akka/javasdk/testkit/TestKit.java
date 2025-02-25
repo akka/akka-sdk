@@ -528,7 +528,8 @@ public class TestKit {
         }), 10, Duration.ofSeconds(1), runtimeActorSystem);
 
       try {
-        checkingProxyStatus.toCompletableFuture().get(60, TimeUnit.SECONDS);
+        CompletableFuture.anyOf(checkingProxyStatus.toCompletableFuture(),
+            runtimeActorSystem.getWhenTerminated().toCompletableFuture()).get(60, TimeUnit.SECONDS);
       } catch (ExecutionException e) {
         RuntimeException cause = ErrorHandling.unwrapExecutionException(e);
         log.error("Failed to connect to Runtime with:", cause);
@@ -537,6 +538,10 @@ public class TestKit {
         log.error("Failed to connect to Runtime with:", e);
         throw new RuntimeException(e);
       }
+
+      // In case of failed validations in the runtime the ActorSystem will be terminated
+      if (runtimeActorSystem.whenTerminated().isCompleted())
+        throw new IllegalStateException("Runtime was terminated.");
 
       // once runtime is started
       componentClient = new ComponentClientImpl(componentClients, serializer, Option.empty(), runtimeActorSystem.executionContext());
