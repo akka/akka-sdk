@@ -159,7 +159,7 @@ image:dashboard-control-tower-replication.png[]
 
 The default primary selection mode for stateful components is the pinned-region mode, as explained in <<selecting-primary>>, and you might want to change that to request-region after the first deployment. That section also describes how you change the primary selection mode with a service descriptor.
 
-Component instances that have already been created will continue to have their primary in the original pinned-region primary region, and can switch primary region when write requests occur in the other region(s).
+Component instances that have already been created will continue to have their primary in the original pinned-region primary region, and will switch primary region when write requests occur in the other region(s).
 
 1. First, change to the `none` primary selection mode. This is a read-only mode for all regions and all write requests will be rejected. The reason for changing to this intermediate mode is to make sure that all events have been replicated without creating new events.
 2. Wait until the deployment of the `none` primary selection mode has been successfully propagated to all regions. Observe in the Akka Console that the rolling update has been completed in all regions. You can also make sure that replicated events reach zero in the replication section in the Control Tower.

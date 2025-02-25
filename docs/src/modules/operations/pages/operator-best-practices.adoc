@@ -7,7 +7,7 @@ include::ROOT:partial$include.adoc[]
 Akka services have two different modes, *pinned-region* or *request-region*, which controls how they perform replication for stateful components. This is outlined in  xref:operations:regions/index.adoc#selecting-primary[Selecting primary for stateful components]. It is important to note that setting this mode has the following implications for your project.
 
 ==== Event Sourced Entities 
-If the service is set to pinned-region primary selection mode Event Sourced Entities will use the primary project region as their primary data region. They will still replicate events, and hence state, to all regions in the project, but will only be writeable in the primary. Akka will route update requests to this region from any endpoint. If the primary selection mode is request-region then each entity instance will use the region where the write requests occur, after synchronizing events from previous primary region.
+If the service is set to pinned-region primary selection mode Event Sourced Entities will use the primary project region as their primary data region. They will still replicate events, and hence state, to all regions in the project, but will only be writeable in the primary. Akka will route update requests to this region from any endpoint. If the primary selection mode is request-region then each entity instance will use the region where the write requests occur, after synchronizing events from the previous primary region.
 
 ==== Workflows
 Workflows handle writes, reads and forwarding of requests in the same way as Event Sourced Entities, with the addition that actions are only performed by the primary Workflow instance.
