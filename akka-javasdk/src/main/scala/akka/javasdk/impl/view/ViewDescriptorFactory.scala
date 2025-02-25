@@ -4,6 +4,16 @@
 
 package akka.javasdk.impl.view
 
+import java.lang.reflect.Method
+import java.lang.reflect.ParameterizedType
+import java.util.Optional
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.jdk.OptionConverters.RichOption
+import scala.util.control.NonFatal
+import scala.util.matching.Regex
+
 import akka.annotation.InternalApi
 import akka.javasdk.Metadata
 import akka.javasdk.annotations.Consume
@@ -24,25 +34,18 @@ import akka.runtime.sdk.spi.ComponentOptions
 import akka.runtime.sdk.spi.ConsumerSource
 import akka.runtime.sdk.spi.MethodOptions
 import akka.runtime.sdk.spi.QueryDescriptor
+import akka.runtime.sdk.spi.RegionInfo
 import akka.runtime.sdk.spi.SpiSchema
-import akka.runtime.sdk.spi.TableDescriptor
-import akka.runtime.sdk.spi.SpiTableUpdateHandler.SpiTableUpdateEffect
-import akka.runtime.sdk.spi.SpiTableUpdateHandler.SpiTableUpdateEnvelope
-import akka.runtime.sdk.spi.SpiTableUpdateHandler
 import akka.runtime.sdk.spi.SpiSchema.SpiClass
 import akka.runtime.sdk.spi.SpiSchema.SpiField
 import akka.runtime.sdk.spi.SpiSchema.SpiList
+import akka.runtime.sdk.spi.SpiTableUpdateHandler
+import akka.runtime.sdk.spi.SpiTableUpdateHandler.SpiTableUpdateEffect
+import akka.runtime.sdk.spi.SpiTableUpdateHandler.SpiTableUpdateEnvelope
+import akka.runtime.sdk.spi.TableDescriptor
 import akka.runtime.sdk.spi.ViewDescriptor
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
-
-import java.lang.reflect.Method
-import java.lang.reflect.ParameterizedType
-import java.util.Optional
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import scala.util.control.NonFatal
-import scala.util.matching.Regex
 
 /**
  * INTERNAL API
@@ -52,7 +55,11 @@ private[impl] object ViewDescriptorFactory {
 
   val TableNamePattern: Regex = """FROM\s+`?([A-Za-z][A-Za-z0-9_]*)""".r
 
-  def apply(viewClass: Class[_], serializer: JsonSerializer, userEc: ExecutionContext): ViewDescriptor = {
+  def apply(
+      viewClass: Class[_],
+      serializer: JsonSerializer,
+      regionInfo: RegionInfo,
+      userEc: ExecutionContext): ViewDescriptor = {
     val componentId = ComponentDescriptorFactory.readComponentIdIdValue(viewClass)
 
     val tableUpdaters =
@@ -91,13 +98,20 @@ private[impl] object ViewDescriptorFactory {
           }
 
           if (ComponentDescriptorFactory.hasValueEntitySubscription(tableUpdaterClass)) {
-            consumeFromKvEntity(componentId, tableUpdaterClass, tableType, tableName, serializer, userEc)
+            consumeFromKvEntity(componentId, tableUpdaterClass, tableType, tableName, serializer, regionInfo, userEc)
           } else if (ComponentDescriptorFactory.hasEventSourcedEntitySubscription(tableUpdaterClass)) {
-            consumeFromEsEntity(componentId, tableUpdaterClass, tableType, tableName, serializer, userEc)
+            consumeFromEsEntity(componentId, tableUpdaterClass, tableType, tableName, serializer, regionInfo, userEc)
           } else if (ComponentDescriptorFactory.hasTopicSubscription(tableUpdaterClass)) {
-            consumeFromTopic(componentId, tableUpdaterClass, tableType, tableName, serializer, userEc)
+            consumeFromTopic(componentId, tableUpdaterClass, tableType, tableName, serializer, regionInfo, userEc)
           } else if (ComponentDescriptorFactory.hasStreamSubscription(tableUpdaterClass)) {
-            consumeFromServiceToService(componentId, tableUpdaterClass, tableType, tableName, serializer, userEc)
+            consumeFromServiceToService(
+              componentId,
+              tableUpdaterClass,
+              tableType,
+              tableName,
+              serializer,
+              regionInfo,
+              userEc)
           } else
             throw new IllegalStateException(s"Table updater [${tableUpdaterClass}] is missing a @Consume annotation")
         }
@@ -200,6 +214,7 @@ private[impl] object ViewDescriptorFactory {
       tableType: SpiClass,
       tableName: String,
       serializer: JsonSerializer,
+      regionInfo: RegionInfo,
       userEc: ExecutionContext): TableDescriptor = {
     val annotation = tableUpdater.getAnnotation(classOf[Consume.FromServiceStream])
 
@@ -222,13 +237,15 @@ private[impl] object ViewDescriptorFactory {
           tableUpdater,
           updateHandlerMethods,
           ignoreUnknown = annotation.ignoreUnknown(),
-          serializer = serializer)(userEc)),
+          serializer = serializer,
+          regionInfo = regionInfo)(userEc)),
       deleteHandlerMethod.map(deleteMethod =>
         UpdateHandlerImpl(
           componentId,
           tableUpdater,
           methods = Seq(deleteMethod),
           serializer = serializer,
+          regionInfo = regionInfo,
           deleteHandler = true)(userEc)))
   }
 
@@ -238,6 +255,7 @@ private[impl] object ViewDescriptorFactory {
       tableType: SpiClass,
       tableName: String,
       serializer: JsonSerializer,
+      regionInfo: RegionInfo,
       userEc: ExecutionContext): TableDescriptor = {
 
     val annotation = tableUpdater.getAnnotation(classOf[Consume.FromEventSourcedEntity])
@@ -265,6 +283,7 @@ private[impl] object ViewDescriptorFactory {
           tableUpdater,
           updateHandlerMethods,
           serializer,
+          regionInfo,
           ignoreUnknown = annotation.ignoreUnknown())(userEc)),
       deleteHandlerMethod.map(deleteMethod =>
         UpdateHandlerImpl(
@@ -272,7 +291,8 @@ private[impl] object ViewDescriptorFactory {
           tableUpdater,
           methods = Seq(deleteMethod),
           deleteHandler = true,
-          serializer = serializer)(userEc)))
+          serializer = serializer,
+          regionInfo = regionInfo)(userEc)))
   }
 
   private def consumeFromKvEntity(
@@ -281,6 +301,7 @@ private[impl] object ViewDescriptorFactory {
       tableType: SpiClass,
       tableName: String,
       serializer: JsonSerializer,
+      regionInfo: RegionInfo,
       userEc: ExecutionContext): TableDescriptor = {
 
     val annotation = tableUpdater.getAnnotation(classOf[Consume.FromKeyValueEntity])
@@ -299,14 +320,15 @@ private[impl] object ViewDescriptorFactory {
       tableType,
       new ConsumerSource.KeyValueEntitySource(ComponentDescriptorFactory.readComponentIdIdValue(annotation.value())),
       Option.when(updateHandlerMethods.nonEmpty)(
-        UpdateHandlerImpl(componentId, tableUpdater, updateHandlerMethods, serializer)(userEc)),
+        UpdateHandlerImpl(componentId, tableUpdater, updateHandlerMethods, serializer, regionInfo)(userEc)),
       deleteHandlerMethod.map(deleteMethod =>
         UpdateHandlerImpl(
           componentId,
           tableUpdater,
           methods = Seq(deleteMethod),
           deleteHandler = true,
-          serializer = serializer)(userEc)))
+          serializer = serializer,
+          regionInfo = regionInfo)(userEc)))
   }
 
   private def consumeFromTopic(
@@ -315,6 +337,7 @@ private[impl] object ViewDescriptorFactory {
       tableType: SpiClass,
       tableName: String,
       serializer: JsonSerializer,
+      regionInfo: RegionInfo,
       userEc: ExecutionContext): TableDescriptor = {
     val annotation = tableUpdater.getAnnotation(classOf[Consume.FromTopic])
 
@@ -337,6 +360,7 @@ private[impl] object ViewDescriptorFactory {
           tableUpdater,
           updateHandlerMethods,
           serializer,
+          regionInfo = regionInfo,
           ignoreUnknown = annotation.ignoreUnknown())(userEc)),
       None)
   }
@@ -347,6 +371,7 @@ private[impl] object ViewDescriptorFactory {
       tableUpdaterClass: Class[_],
       methods: Seq[Method],
       serializer: JsonSerializer,
+      regionInfo: RegionInfo,
       ignoreUnknown: Boolean = false,
       deleteHandler: Boolean = false)(implicit userEc: ExecutionContext)
       extends SpiTableUpdateHandler {
@@ -400,7 +425,8 @@ private[impl] object ViewDescriptorFactory {
         val effect: ViewEffectImpl.PrimaryEffect[Any] = {
           foundMethod match {
             case Some(method) =>
-              val updateContext = UpdateContextImpl(method.getName, metadata)
+              val updateContext =
+                UpdateContextImpl(method.getName, metadata, regionInfo.selfRegion, input.originRegion.toJava)
               val tableUpdaterInstance = tableUpdater()
               try {
 
@@ -456,7 +482,11 @@ private[impl] object ViewDescriptorFactory {
     }(userEc)
   }
 
-  private final case class UpdateContextImpl(eventName: String, metadata: Metadata)
+  private final case class UpdateContextImpl(
+      eventName: String,
+      metadata: Metadata,
+      override val selfRegion: String,
+      override val originRegion: Optional[String])
       extends AbstractContext
       with UpdateContext {
 
@@ -465,5 +495,6 @@ private[impl] object ViewDescriptorFactory {
         metadata.asCloudEvent().subject()
       else
         Optional.empty()
+
   }
 }
