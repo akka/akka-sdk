@@ -339,3 +339,11 @@ include::example$key-value-customer-registry/src/test/java/customer/application/
 Views are not replicated directly in the same way as for example xref:event-sourced-entities.adoc#_replication[Event Sourced Entity replication]. A View is built from entities in the same service, or another service, in the same region. The entities will replicate all events across regions and identical Views are built in each region.
 
 A View can also be built from a message broker topic, and that could be regional or global depending on how the message broker is configured.
+
+== View limits
+
+There is no limit to how many entries a view can contain, however, all queries are limited to return at
+most 10 000 entries, if a query returns a larger result the view will throw an exception.
+
+To handle views with large numbers of entries it is important to make sure that queries filter their
+results enough that they do not hit this limit.
