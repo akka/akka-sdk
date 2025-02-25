@@ -246,7 +246,7 @@ the view.
 This will first list the complete result for the query and then keep the response stream open, emitting new or updated
 entries matching the query as they are added to the view. The stream does not complete until the client closes it.
 
-To use streaming updates add `streamUpdates = true` to the `Query` annotation, the returned type of the
+To use streaming updates, add `streamUpdates = true` to the `Query` annotation. The returned type of the
 query method must be `QueryStreamEffect`.
 
 [source,java]

@@ -156,7 +156,7 @@ curl localhost:9000/customer/stream-customer-changes/001
 ```
 
 Start with either streaming request in one terminal window while triggering updates in another terminal window, for example
-changing the address to and from "City Test" or adding more customers with different ids in the same name city, to see the
+changing the address to and from "City Test" or adding more customers with different ids in the same city, to see the
 updates appear.
 
 ## Deploying
