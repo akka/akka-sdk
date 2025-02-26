@@ -5,17 +5,31 @@
 package akka.javasdk.testkit.eventsourced;
 
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
+import com.google.common.collect.HashMultimap;
 
-public class CounterEventSourcedEntity extends EventSourcedEntity<Integer, Increased> {
+public class CounterEventSourcedEntity extends EventSourcedEntity<Integer, CounterEvent> {
 
   public Effect<String> increaseBy(Integer value) {
     if (value <= 0) return effects().error("Can't increase with a negative value");
     else if (wouldOverflow(value)) return effects().error("Can't increase by [" + value + "] due to overflow");
-    else return effects().persist(new Increased(commandContext().entityId(), value)).thenReply(__ -> "Ok");
+    else return effects().persist(new CounterEvent.Increased(commandContext().entityId(), value)).thenReply(__ -> "Ok");
+  }
+
+  public Effect<Response> commandHandlerWithResponse() {
+    return effects().reply(new Response.Error());
+  }
+
+  public Effect<String> commandHandlerWithPolyInput(Response response) {
+    return effects().reply("Ok");
+  }
+
+  public Effect<String> set(Integer value) {
+    var map = HashMultimap.<String, String>create();
+    return effects().persist(new CounterEvent.Set(commandContext().entityId(), value, map)).thenReply(__ -> "Ok");
   }
 
   public Effect<String> increaseFromMeta() {
-    return effects().persist(new Increased(commandContext().entityId(), Integer.parseInt(commandContext().metadata().get("value").get()))).thenReply(__ -> "Ok");
+    return effects().persist(new CounterEvent.Increased(commandContext().entityId(), Integer.parseInt(commandContext().metadata().get("value").get()))).thenReply(__ -> "Ok");
   }
 
   public Effect<String> doubleIncreaseBy(Integer value) {
@@ -23,19 +37,24 @@ public class CounterEventSourcedEntity extends EventSourcedEntity<Integer, Incre
     else if (wouldOverflow(value + value) || (value + value) < 0) {
       return effects().error("Can't double-increase by [" + value + "] due to overflow");
     } else {
-      Increased event = new Increased(commandContext().entityId(), value);
+      CounterEvent.Increased event = new CounterEvent.Increased(commandContext().entityId(), value);
       return effects().persist(event, event).thenReply(__ -> "Ok");
     }
   }
 
   public Effect<String> delete() {
-    return effects().persist(new Increased(commandContext().entityId(), 0)).deleteEntity().thenReply(__ -> "Ok");
+    return effects().persist(new CounterEvent.Increased(commandContext().entityId(), 0)).deleteEntity().thenReply(__ -> "Ok");
   }
 
   @Override
-  public Integer applyEvent(Increased increased) {
-    if (currentState() == null) return increased.value();
-    else return currentState() + increased.value();
+  public Integer applyEvent(CounterEvent counterEvent) {
+    return switch (counterEvent) {
+      case CounterEvent.Increased increased -> {
+        if (currentState() == null) yield increased.value();
+        else yield currentState() + increased.value();
+      }
+      case CounterEvent.Set set -> set.value();
+    };
   }
 
   private boolean wouldOverflow(Integer increase) {

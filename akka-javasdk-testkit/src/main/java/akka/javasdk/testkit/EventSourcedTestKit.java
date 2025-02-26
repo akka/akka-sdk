@@ -7,10 +7,13 @@ package akka.javasdk.testkit;
 import akka.javasdk.Metadata;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import akka.javasdk.eventsourcedentity.EventSourcedEntityContext;
+import akka.javasdk.impl.client.MethodRefResolver;
+import akka.javasdk.impl.reflection.Reflect;
 import akka.javasdk.testkit.impl.EventSourcedEntityEffectsRunner;
 import akka.javasdk.testkit.impl.TestKitEventSourcedEntityContext;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -162,6 +165,70 @@ public class EventSourcedTestKit<S, E, ES extends EventSourcedEntity<S, E>>
     return new EventSourcedTestKit<>(entityWithId(entityId, entityFactory), entityId, initialEvents);
   }
 
+  public final class MethodRef<R> {
+    private final akka.japi.function.Function<ES, EventSourcedEntity.Effect<R>> func;
+    private final Metadata metadata;
+
+    public MethodRef(akka.japi.function.Function<ES, EventSourcedEntity.Effect<R>> func, Metadata metadata) {
+      this.func = func;
+      this.metadata = metadata;
+    }
+
+    public MethodRef<R> withMetadata(Metadata metadata) {
+      return new MethodRef<>(func, metadata);
+    }
+
+    public EventSourcedResult<R> invoke() {
+      var method = MethodRefResolver.resolveMethodRef(func);
+      var returnType = Reflect.getReturnType(entity.getClass(), method);
+      return EventSourcedTestKit.this.call(func, metadata, Optional.of(returnType));
+    }
+  }
+
+  public final class MethodRef1<I, R> {
+    private final akka.japi.function.Function2<ES, I, EventSourcedEntity.Effect<R>> func;
+    private final Metadata metadata;
+
+    public MethodRef1(akka.japi.function.Function2<ES, I, EventSourcedEntity.Effect<R>> func, Metadata metadata) {
+      this.func = func;
+      this.metadata = metadata;
+    }
+
+    public MethodRef1<I, R> withMetadata(Metadata metadata) {
+      return new MethodRef1<>(func, metadata);
+    }
+
+    public EventSourcedResult<R> invoke(I input) {
+      var method = MethodRefResolver.resolveMethodRef(func);
+      var returnType = Reflect.getReturnType(entity.getClass(), method);
+      var inputType = method.getParameterTypes()[0];
+
+      EventSourcedTestKit.this.verifySerDerWithExpectedType(inputType, input);
+
+      return EventSourcedTestKit.this.call(es -> {
+        try {
+          return func.apply(es, input);
+        } catch (Exception e) {
+          throw new RuntimeException(e);
+        }
+      }, metadata, Optional.of(returnType));
+    }
+  }
+
+  /**
+   * Pass in an Event Sourced Entity command handler method reference without parameters, e.g. {@code UserEntity::create}
+   */
+  public <R> MethodRef<R> method(akka.japi.function.Function<ES, EventSourcedEntity.Effect<R>> func) {
+    return new MethodRef<>(func, Metadata.EMPTY);
+  }
+
+  /**
+   * Pass in an Event Sourced Entity command handler method reference with a single parameter, e.g. {@code UserEntity::create}
+   */
+  public <I, R> MethodRef1<I, R> method(akka.japi.function.Function2<ES, I, EventSourcedEntity.Effect<R>> func) {
+    return new MethodRef1<>(func, Metadata.EMPTY);
+  }
+
   /**
    * The call method can be used to simulate a call to the EventSourcedEntity. The passed java
    * lambda should return an EventSourcedEntity.Effect. The Effect is interpreted into an
@@ -170,8 +237,10 @@ public class EventSourcedTestKit<S, E, ES extends EventSourcedEntity<S, E>>
    * @param func A function from EventSourcedEntity to EventSourcedEntity.Effect.
    * @return a EventSourcedResult
    * @param <R> The type of reply that is expected from invoking a command handler
+   * @deprecated Use "method(MyEntity::myCommandHandler).invoke()" instead
    */
-  public <R> EventSourcedResult<R> call(Function<ES, EventSourcedEntity.Effect<R>> func) {
+  @Deprecated(since = "3.2.0", forRemoval = true)
+  public <R> EventSourcedResult<R> call(akka.japi.function.Function<ES, EventSourcedEntity.Effect<R>> func) {
     return call(func, Metadata.EMPTY);
   }
 
@@ -184,10 +253,22 @@ public class EventSourcedTestKit<S, E, ES extends EventSourcedEntity<S, E>>
    * @param metadata A metadata passed as a call context.
    * @param <R>      The type of reply that is expected from invoking a command handler
    * @return a EventSourcedResult
+   * @deprecated Use "method(MyEntity::myCommandHandler).withMetadata(metadata).invoke()" instead
    */
   @SuppressWarnings("unchecked") // entity() returns the entity we were constructed with
-  public <R> EventSourcedResult<R> call(Function<ES, EventSourcedEntity.Effect<R>> func, Metadata metadata) {
-    return interpretEffects(() -> func.apply((ES)entity()), entityId, metadata);
+  @Deprecated(since = "3.2.0", forRemoval = true)
+  public <R> EventSourcedResult<R> call(akka.japi.function.Function<ES, EventSourcedEntity.Effect<R>> func, Metadata metadata) {
+    return call(func, metadata, Optional.empty());
+  }
+
+  private <R> EventSourcedResult<R> call(akka.japi.function.Function<ES, EventSourcedEntity.Effect<R>> func, Metadata metadata, Optional<Class<?>> returnType) {
+    return interpretEffects(() -> {
+      try {
+        return func.apply((ES) entity());
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
+    }, entityId, metadata,returnType);
   }
 
   @Override
