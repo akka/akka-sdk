@@ -313,6 +313,7 @@
                     <version>3.4.1</version>
                     <configuration>
                         <mainClass>kalix.runtime.AkkaRuntimeMain</mainClass>
+                        <cleanupDaemonThreads>false</cleanupDaemonThreads>
                         <systemProperties>
                             <systemProperty>
                                 <key>akka.javasdk.dev-mode.enabled</key>
