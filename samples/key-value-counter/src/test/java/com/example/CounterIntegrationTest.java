@@ -21,7 +21,7 @@ public class CounterIntegrationTest extends TestKitSupport { // <1>
           .invokeAsync(10)
       );
 
-    Assertions.assertEquals(1, counterIncrease.value());
+    Assertions.assertEquals(10, counterIncrease.value());
   }
 
   // tag::sample-it[]
