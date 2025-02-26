@@ -149,14 +149,14 @@ public class KeyValueEntityTestKit<S, E extends KeyValueEntity<S>> {
   }
 
   /**
-   * Pass in an Event Sourced Entity command handler method reference without parameters, e.g. {@code UserEntity::create}
+   * Pass in a Key Value Entity command handler method reference without parameters, e.g. {@code UserEntity::create}
    */
   public <R> MethodRef<R> method(akka.japi.function.Function<E, KeyValueEntity.Effect<R>> func) {
     return new MethodRef<>(func, Metadata.EMPTY);
   }
 
   /**
-   * Pass in an Event Sourced Entity command handler method reference with a single parameter, e.g. {@code UserEntity::create}
+   * Pass in a Key Value Entity command handler method reference with a single parameter, e.g. {@code UserEntity::create}
    */
   public <I, R> MethodRef1<I, R> method(akka.japi.function.Function2<E, I, KeyValueEntity.Effect<R>> func) {
     return new MethodRef1<>(func, Metadata.EMPTY);
