@@ -109,7 +109,7 @@ public class CounterEventSourcedEntityTest {
   }
 
   @Test
-  public void failEventSerDer() {
+  public void failEventSerDes() {
     EventSourcedTestKit<Integer, CounterEvent, CounterEventSourcedEntity> testKit =
       EventSourcedTestKit.ofEntityWithState(ctx -> new CounterEventSourcedEntity(), 0);
 
@@ -119,7 +119,7 @@ public class CounterEventSourcedEntityTest {
   }
 
   @Test
-  public void failResponseSerDer() {
+  public void failResponseSerDes() {
     EventSourcedTestKit<Integer, CounterEvent, CounterEventSourcedEntity> testKit =
       EventSourcedTestKit.ofEntityWithState(ctx -> new CounterEventSourcedEntity(), 0);
 
@@ -129,7 +129,7 @@ public class CounterEventSourcedEntityTest {
   }
 
   @Test
-  public void failStateSerDer() {
+  public void failStateSerDes() {
     var ex = assertThrows(Exception.class, () -> {
         EventSourcedTestKit.ofEntityWithState(ctx -> new PolyStateESE(), new PolyState.StateA());
     });
@@ -138,7 +138,7 @@ public class CounterEventSourcedEntityTest {
   }
 
   @Test
-  public void failInputSerDer() {
+  public void failInputSerDes() {
     EventSourcedTestKit<Integer, CounterEvent, CounterEventSourcedEntity> testKit =
       EventSourcedTestKit.ofEntityWithState(ctx -> new CounterEventSourcedEntity(), 0);
 

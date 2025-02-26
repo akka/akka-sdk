@@ -5,6 +5,7 @@
 package akka.javasdk.testkit.keyvalueentity;
 
 import akka.javasdk.keyvalueentity.KeyValueEntity;
+import akka.javasdk.testkit.eventsourced.Response;
 
 public class CounterValueEntity extends KeyValueEntity<Integer> {
 
@@ -26,5 +27,13 @@ public class CounterValueEntity extends KeyValueEntity<Integer> {
 
   public Effect<String> delete() {
     return effects().deleteEntity().thenReply("Deleted");
+  }
+
+  public Effect<Response> polyResponse() {
+    return effects().reply(new Response.Error());
+  }
+
+  public Effect<String> polyHandler(Response response) {
+    return effects().reply("");
   }
 }

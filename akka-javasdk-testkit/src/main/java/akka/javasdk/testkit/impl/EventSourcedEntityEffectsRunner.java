@@ -6,42 +6,43 @@ package akka.javasdk.testkit.impl;
 
 import akka.javasdk.Metadata;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
-import akka.javasdk.impl.effect.MessageReplyImpl;
 import akka.javasdk.impl.reflection.Reflect;
-import akka.javasdk.impl.serialization.JsonSerializer;
 import akka.javasdk.testkit.EventSourcedResult;
-import akka.runtime.sdk.spi.BytesPayload;
 
-import java.util.Optional;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 import java.util.function.Supplier;
+
+import static akka.javasdk.testkit.EntitySerializationChecker.verifySerDer;
+import static akka.javasdk.testkit.EntitySerializationChecker.verifySerDerWithExpectedType;
 
 /** Extended by generated code, not meant for user extension */
 public abstract class EventSourcedEntityEffectsRunner<S, E> {
 
+  private final Class<?> stateClass;
   protected EventSourcedEntity<S, E> entity;
   private S _state;
   private boolean deleted = false;
   private List<E> events = new ArrayList<>();
-  private JsonSerializer jsonSerializer = new JsonSerializer();
 
   public EventSourcedEntityEffectsRunner(EventSourcedEntity<S, E> entity) {
     this.entity = entity;
+    this.stateClass = Reflect.eventSourcedEntityStateType(entity.getClass());
     this._state = entity.emptyState();
   }
 
   public EventSourcedEntityEffectsRunner(EventSourcedEntity<S, E> entity, S initialState) {
     this.entity = entity;
-    var stateClass = Reflect.eventSourcedEntityStateType(entity.getClass());
-    verifySerDerWithExpectedType(stateClass, initialState);
+    this.stateClass = Reflect.eventSourcedEntityStateType(entity.getClass());
+    verifySerDerWithExpectedType(stateClass, initialState, entity);
     this._state = initialState;
   }
 
   public EventSourcedEntityEffectsRunner(EventSourcedEntity<S, E> entity, List<E> initialEvents) {
     this.entity = entity;
     this._state = entity.emptyState();
-
+    this.stateClass = Reflect.eventSourcedEntityStateType(entity.getClass());
     entity._internalSetCurrentState(this._state, false);
     // NB: updates _state
     playEventsForEntity(initialEvents);
@@ -94,48 +95,23 @@ public abstract class EventSourcedEntityEffectsRunner<S, E> {
     try {
       entity._internalSetCommandContext(Optional.of(commandContext));
       var secondaryEffect = EventSourcedResultImpl.secondaryEffectOf(effectExecuted, _state);
-      if (secondaryEffect instanceof MessageReplyImpl){
-        var reply = ((MessageReplyImpl) secondaryEffect).message();
-        returnType.ifPresent(type -> verifySerDerWithExpectedType(type, reply));
-      }
       result = new EventSourcedResultImpl<>(effectExecuted, _state, secondaryEffect);
+      if (result.isReply()) {
+        returnType.ifPresent(type -> verifySerDerWithExpectedType(type, result.getReply(), entity));
+      }
     } finally {
       entity._internalSetCommandContext(Optional.empty());
     }
     return result;
   }
 
-  protected void verifySerDer(Object object) {
-    try {
-      BytesPayload bytesPayload = jsonSerializer.toBytes(object);
-      jsonSerializer.fromBytes(bytesPayload);
-    } catch (Exception e) {
-      fail(object, e);
-    }
-  }
-
-  /**
-   * different deserialization for responses, state, and commands
-   */
-  protected void verifySerDerWithExpectedType(Class<?> expectedClass, Object object) {
-    try {
-      BytesPayload bytesPayload = jsonSerializer.toBytes(object);
-      jsonSerializer.fromBytes(expectedClass, bytesPayload);
-    } catch (Exception e) {
-      fail(object, e);
-    }
-  }
-
-  private void fail(Object object, Exception e) {
-    throw new RuntimeException("Failed to serialize or deserialize " + object.getClass().getName() + ". Make sure that all events, commands, responses and state are serializable for " + entity.getClass().getName(), e);
-  }
-
   private void playEventsForEntity(List<E> events) {
     try {
       entity._internalSetEventContext(Optional.of(new TestKitEventSourcedEntityEventContext()));
       for (E event : events) {
-        verifySerDer(event);
+        verifySerDer(event, entity);
         this._state = handleEvent(this._state, event);
+        verifySerDerWithExpectedType(stateClass, this._state, entity);
         entity._internalSetCurrentState(this._state, this.deleted);
       }
     } finally {

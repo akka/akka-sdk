@@ -12,7 +12,7 @@ public class CounterTest {
   @Test
   public void testIncrease() {
     var testKit = KeyValueEntityTestKit.of(CounterEntity::new);
-    var result = testKit.call(e -> e.increaseBy(10));
+    var result = testKit.method(CounterEntity::increaseBy).invoke(10);
 
     assertTrue(result.isReply());
     assertEquals(10, result.getReply().value());
@@ -24,11 +24,11 @@ public class CounterTest {
   public void testSetAndIncrease() {
     var testKit = KeyValueEntityTestKit.of(CounterEntity::new); // <1>
 
-    var resultSet = testKit.call(e -> e.set(10)); // <2>
+    var resultSet = testKit.method(CounterEntity::set).invoke(10); // <2>
     assertTrue(resultSet.isReply());
     assertEquals(10, resultSet.getReply().value()); // <3>
 
-    var resultPlusOne = testKit.call(CounterEntity::plusOne); // <4>
+    var resultPlusOne = testKit.method(CounterEntity::plusOne).invoke(); // <4>
     assertTrue(resultPlusOne.isReply());
     assertEquals(11, resultPlusOne.getReply().value());
 
@@ -39,9 +39,9 @@ public class CounterTest {
   @Test
   public void testDelete() {
     var testKit = KeyValueEntityTestKit.of(CounterEntity::new);
-    testKit.call(e -> e.increaseBy(10));
+    testKit.method(CounterEntity::increaseBy).invoke(10);
 
-    testKit.call(e -> e.delete());
+    testKit.method(CounterEntity::delete).invoke();
 
     assertEquals(0, testKit.getState().value());
   }

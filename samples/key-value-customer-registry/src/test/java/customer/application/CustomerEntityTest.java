@@ -19,12 +19,12 @@ public class CustomerEntityTest {
 
     KeyValueEntityTestKit<Customer, CustomerEntity> testKit = KeyValueEntityTestKit.of(CustomerEntity::new);
     {
-      KeyValueEntityResult<Done> result = testKit.call(e -> e.create(customer));
+      KeyValueEntityResult<Done> result = testKit.method(CustomerEntity::create).invoke(customer);
       assertEquals(Done.getInstance(), result.getReply());
     }
 
     {
-      KeyValueEntityResult<Done> result = testKit.call(e -> e.changeName("FooBar"));
+      KeyValueEntityResult<Done> result = testKit.method(CustomerEntity::changeName).invoke("FooBar");
       assertEquals(Done.getInstance(), result.getReply());
       assertEquals("FooBar", testKit.getState().name());
     }
@@ -36,13 +36,13 @@ public class CustomerEntityTest {
 
     KeyValueEntityTestKit<Customer, CustomerEntity> testKit = KeyValueEntityTestKit.of(CustomerEntity::new);
     {
-      KeyValueEntityResult<Done> result = testKit.call(e -> e.create(customer));
+      KeyValueEntityResult<Done> result = testKit.method(CustomerEntity::create).invoke(customer);
       assertEquals(Done.getInstance(), result.getReply());
     }
 
     {
       Address newAddress = new Address("Sesame Street", "Sesame City");
-      KeyValueEntityResult<Done> result = testKit.call(e -> e.changeAddress(newAddress));
+      KeyValueEntityResult<Done> result = testKit.method(CustomerEntity::changeAddress).invoke(newAddress);
       assertEquals(Done.getInstance(), result.getReply());
       assertEquals("Sesame Street", testKit.getState().address().street());
       assertEquals("Sesame City", testKit.getState().address().city());

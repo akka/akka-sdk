@@ -17,6 +17,8 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import static akka.javasdk.testkit.EntitySerializationChecker.verifySerDerWithExpectedType;
+
 /**
  * EventSourced Testkit for use in unit tests for EventSourced entities.
  *
@@ -203,7 +205,7 @@ public class EventSourcedTestKit<S, E, ES extends EventSourcedEntity<S, E>>
       var returnType = Reflect.getReturnType(entity.getClass(), method);
       var inputType = method.getParameterTypes()[0];
 
-      EventSourcedTestKit.this.verifySerDerWithExpectedType(inputType, input);
+      verifySerDerWithExpectedType(inputType, input, entity);
 
       return EventSourcedTestKit.this.call(es -> {
         try {
@@ -239,7 +241,7 @@ public class EventSourcedTestKit<S, E, ES extends EventSourcedEntity<S, E>>
    * @param <R> The type of reply that is expected from invoking a command handler
    * @deprecated Use "method(MyEntity::myCommandHandler).invoke()" instead
    */
-  @Deprecated(since = "3.2.0", forRemoval = true)
+  @Deprecated(since = "3.2.1", forRemoval = true)
   public <R> EventSourcedResult<R> call(akka.japi.function.Function<ES, EventSourcedEntity.Effect<R>> func) {
     return call(func, Metadata.EMPTY);
   }
@@ -256,7 +258,7 @@ public class EventSourcedTestKit<S, E, ES extends EventSourcedEntity<S, E>>
    * @deprecated Use "method(MyEntity::myCommandHandler).withMetadata(metadata).invoke()" instead
    */
   @SuppressWarnings("unchecked") // entity() returns the entity we were constructed with
-  @Deprecated(since = "3.2.0", forRemoval = true)
+  @Deprecated(since = "3.2.1", forRemoval = true)
   public <R> EventSourcedResult<R> call(akka.japi.function.Function<ES, EventSourcedEntity.Effect<R>> func, Metadata metadata) {
     return call(func, metadata, Optional.empty());
   }
