@@ -25,12 +25,12 @@ public class CustomerEntityTest {
 
     EventSourcedTestKit<Customer, CustomerEvent, CustomerEntity> testKit = EventSourcedTestKit.of(CustomerEntity::new);
     {
-      EventSourcedResult<Done> result = testKit.call(e -> e.create(customer));
+      EventSourcedResult<Done> result = testKit.method(CustomerEntity::create).invoke(customer);
       assertEquals(done(), result.getReply());
       result.getNextEventOfType(CustomerCreated.class);
     }
     {
-      EventSourcedResult<Done> result = testKit.call(e -> e.changeName("FooBar"));
+      EventSourcedResult<Done> result = testKit.method(CustomerEntity::changeName).invoke("FooBar");
       assertEquals(done(), result.getReply());
       assertEquals("FooBar", testKit.getState().name());
       result.getNextEventOfType(NameChanged.class);
@@ -42,14 +42,14 @@ public class CustomerEntityTest {
 
     EventSourcedTestKit<Customer, CustomerEvent, CustomerEntity> testKit = EventSourcedTestKit.of(CustomerEntity::new);
     {
-      EventSourcedResult<Done> result = testKit.call(e -> e.create(customer));
+      EventSourcedResult<Done> result = testKit.method(CustomerEntity::create).invoke(customer);
       assertEquals(done(), result.getReply());
       result.getNextEventOfType(CustomerCreated.class);
     }
 
     {
       Address newAddress = new Address("Sesame Street", "Sesame City");
-      EventSourcedResult<Done> result = testKit.call(e -> e.changeAddress(newAddress));
+      EventSourcedResult<Done> result = testKit.method(CustomerEntity::changeAddress).invoke(newAddress);
       assertEquals(done(), result.getReply());
       assertEquals("Sesame Street", testKit.getState().address().street());
       assertEquals("Sesame City", testKit.getState().address().city());

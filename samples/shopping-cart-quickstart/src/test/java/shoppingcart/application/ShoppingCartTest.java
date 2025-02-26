@@ -20,7 +20,7 @@ public class ShoppingCartTest {
     var testKit = EventSourcedTestKit.of(ShoppingCartEntity::new); // <1>
 
     {
-      var result = testKit.call(e -> e.addItem(akkaTshirt)); // <2>
+      var result = testKit.method(ShoppingCartEntity::addItem).invoke(akkaTshirt); // <2>
       assertEquals(Done.getInstance(), result.getReply()); // <3>
 
       var itemAdded = result.getNextEventOfType(ItemAdded.class);
@@ -29,7 +29,7 @@ public class ShoppingCartTest {
 
     // actually we want more akka tshirts
     {
-      var result = testKit.call(e -> e.addItem(akkaTshirt.withQuantity(5))); // <5>
+      var result = testKit.method(ShoppingCartEntity::addItem).invoke(akkaTshirt.withQuantity(5)); // <5>
       assertEquals(Done.getInstance(), result.getReply());
 
       var itemAdded = result.getNextEventOfType(ItemAdded.class);
@@ -38,7 +38,7 @@ public class ShoppingCartTest {
 
     {
       assertEquals(testKit.getAllEvents().size(), 2); // <6>
-      var result = testKit.call(ShoppingCartEntity::getCart); // <7>
+      var result = testKit.method(ShoppingCartEntity::getCart).invoke(); // <7>
       assertEquals(
         new ShoppingCart("testkit-entity-id", List.of(akkaTshirt.withQuantity(15)), false),
         result.getReply());
