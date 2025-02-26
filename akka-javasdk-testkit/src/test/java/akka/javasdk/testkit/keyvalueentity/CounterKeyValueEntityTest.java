@@ -45,7 +45,7 @@ public class CounterKeyValueEntityTest {
   public void testIncreaseWithNegativeValue() {
     KeyValueEntityTestKit<Integer, CounterValueEntity> testKit =
         KeyValueEntityTestKit.of(ctx -> new CounterValueEntity());
-    KeyValueEntityResult<String> result = testKit.method(CounterValueEntity::increaseBy).invoke(10);
+    KeyValueEntityResult<String> result = testKit.method(CounterValueEntity::increaseBy).invoke(-10);
     assertTrue(result.isError());
     assertFalse(testKit.isDeleted());
     assertEquals(result.getError(), "Can't increase with a negative value");

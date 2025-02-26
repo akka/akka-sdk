@@ -9,9 +9,9 @@ import com.google.common.collect.Multimap;
 
 public sealed interface CounterEvent {
 
-  record Increased(String counterId, Integer value) implements CounterEvent {
+  record Increased(String counterId, int value) implements CounterEvent {
   }
 
-  record Set(String counterId, Integer value, Multimap<String, String> notSerializableField) implements CounterEvent {
+  record Set(String counterId, int value, Multimap<String, String> notSerializableField) implements CounterEvent {
   }
 }
