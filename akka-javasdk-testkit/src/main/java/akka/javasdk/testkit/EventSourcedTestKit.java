@@ -9,7 +9,6 @@ import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import akka.javasdk.eventsourcedentity.EventSourcedEntityContext;
 import akka.javasdk.impl.client.MethodRefResolver;
 import akka.javasdk.impl.reflection.Reflect;
-import akka.javasdk.testkit.impl.EventSourcedEntityEffectsRunner;
 import akka.javasdk.testkit.impl.TestKitEventSourcedEntityContext;
 
 import java.util.List;

@@ -46,7 +46,7 @@ public class CounterEndpoint {
 
   // end::endpoint[]
 
-  @Post("/{counterId}/increase?test={test}")
+  @Post("/{counterId}/increase")
   public CompletionStage<Integer> increaseBy(String counterId, int increaseBy) {
     return componentClient.forKeyValueEntity(counterId)
         .method(CounterEntity::increaseBy)

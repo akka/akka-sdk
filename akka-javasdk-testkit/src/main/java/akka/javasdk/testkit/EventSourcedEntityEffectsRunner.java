@@ -2,12 +2,14 @@
  * Copyright (C) 2021-2024 Lightbend Inc. <https://www.lightbend.com>
  */
 
-package akka.javasdk.testkit.impl;
+package akka.javasdk.testkit;
 
 import akka.javasdk.Metadata;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import akka.javasdk.impl.reflection.Reflect;
-import akka.javasdk.testkit.EventSourcedResult;
+import akka.javasdk.testkit.impl.EventSourcedResultImpl;
+import akka.javasdk.testkit.impl.TestKitEventSourcedEntityCommandContext;
+import akka.javasdk.testkit.impl.TestKitEventSourcedEntityEventContext;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,7 +20,7 @@ import static akka.javasdk.testkit.EntitySerializationChecker.verifySerDer;
 import static akka.javasdk.testkit.EntitySerializationChecker.verifySerDerWithExpectedType;
 
 /** Extended by generated code, not meant for user extension */
-public abstract class EventSourcedEntityEffectsRunner<S, E> {
+abstract class EventSourcedEntityEffectsRunner<S, E> {
 
   private final Class<?> stateClass;
   protected EventSourcedEntity<S, E> entity;
