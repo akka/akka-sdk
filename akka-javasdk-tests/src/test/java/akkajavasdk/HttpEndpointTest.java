@@ -25,6 +25,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class HttpEndpointTest extends TestKitSupport {
 
   @Test
+  public void shouldGetQueryParams() {
+    var response = await(httpClient.GET("/query/one?a=a&b=1&c=-1").responseBodyAs(String.class).invokeAsync());
+    assertThat(response.status()).isEqualTo(StatusCodes.OK);
+    assertThat(response.body()).isEqualTo("name: one, a: a, b: 1, c: -1");
+  }
+
+  @Test
   public void shouldServeASingleResource() {
     var response = await(httpClient.GET("/index.html").invokeAsync());
     assertThat(response.status()).isEqualTo(StatusCodes.OK);

@@ -10,6 +10,7 @@ import java.lang.reflect.Method
 import java.util
 import java.util.Optional
 import java.util.concurrent.CompletionStage
+
 import scala.annotation.nowarn
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -20,12 +21,14 @@ import scala.jdk.OptionConverters.RichOption
 import scala.jdk.OptionConverters.RichOptional
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
+
 import akka.Done
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
 import akka.grpc.internal.JavaMetadataImpl
 import akka.grpc.javadsl.Metadata
 import akka.http.javadsl.model.HttpHeader
+import akka.http.javadsl.model.Query
 import akka.http.scaladsl.model.headers.RawHeader
 import akka.javasdk.BuildInfo
 import akka.javasdk.DependencyProvider
@@ -46,6 +49,7 @@ import akka.javasdk.grpc.GrpcClientProvider
 import akka.javasdk.grpc.GrpcRequestContext
 import akka.javasdk.http.AbstractHttpEndpoint
 import akka.javasdk.http.HttpClientProvider
+import akka.javasdk.http.QueryParams
 import akka.javasdk.http.RequestContext
 import akka.javasdk.impl.ComponentDescriptorFactory.consumerDestination
 import akka.javasdk.impl.ComponentDescriptorFactory.consumerSource
@@ -59,6 +63,7 @@ import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityImpl
 import akka.javasdk.impl.grpc.GrpcClientProviderImpl
 import akka.javasdk.impl.http.HttpClientProviderImpl
 import akka.javasdk.impl.http.JwtClaimsImpl
+import akka.javasdk.impl.http.QueryParamsImpl
 import akka.javasdk.impl.keyvalueentity.KeyValueEntityImpl
 import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.reflection.Reflect.Syntax.AnnotatedElementOps
@@ -746,6 +751,10 @@ private final class Sdk(
           context.requestHeaders.allHeaders.asInstanceOf[Seq[HttpHeader]].asJava
 
         override def tracing(): Tracing = new SpanTracingImpl(context.openTelemetrySpan, sdkTracerFactory)
+
+        override def queryParams(): QueryParams = {
+          QueryParamsImpl(context.httpRequest.uri.query())
+        }
       }
       val instance = wiredInstance(httpEndpointClass) {
         sideEffectingComponentInjects(context.openTelemetrySpan).orElse {
