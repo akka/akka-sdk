@@ -17,10 +17,16 @@ jobs:
           echo "Conclusion from `Publish` workflow: ${{ github.event.workflow_run.conclusion }}
           echo "Tag created from `Publish` workflow: ${{ github.ref }}
 
-  samples-shopping-cart-quickstart:
+  update-samples:
     runs-on: ubuntu-22.04
     # run only when `publish` workflow is successful or this workflow manually triggered
     if: (github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch')
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { sampleDir: "samples/shopping-cart-quickstart", sampleRepo: "akka-samples/shopping-cart-quickstart", checkoutPath: "akka-samples-shopping-cart-quickstart" }
+
     steps:
       - name: Checkout
         # https://github.com/actions/checkout/releases
@@ -66,27 +72,27 @@ jobs:
           echo "Updating samples to version ${SDK_VERSION}"
           ./updateSdkVersions.sh all
 
-      - name: Checkout shopping-cart-quickstart
+      - name: Checkout
         # https://github.com/actions/checkout/releases/tag/v4.2.2
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
-          repository: akka-samples/shopping-cart-quickstart
-          path: akka-samples-repo-shopping-cart-quickstart
+          repository: ${{ matrix.sampleRepo }}
+          path: ${{ matrix.checkoutPath }}
           token: ${{ secrets.AKKA_SDK_RW_ACCESS_TOKEN }}
           ref: main
 
-      - name: Open PR to shopping-cart-quickstart with changes
+      - name: Open PR with changes
         env:
           COMMIT_URL: "https://github.com/${{ github.repository }}/commit/"
           GH_TOKEN: ${{ secrets.AKKA_SAMPLES_RW_ACCESS_TOKEN }}
         run: |
-          cd akka-samples-repo-shopping-cart-quickstart
+          cd ${{ matrix.checkoutPath }}
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git remote add origin-rw https://${{ secrets.AKKA_SAMPLES_RW_ACCESS_TOKEN }}@github.com/akka-samples/shopping-cart-quickstart.git
+          git remote add origin-rw https://${{ secrets.AKKA_SAMPLES_RW_ACCESS_TOKEN }}@github.com/${{ matrix.sampleRepo }}.git
           BRANCH=update-sdk-${SDK_VERSION}
           git checkout -b $BRANCH
-          cp -R ../samples/shopping-cart-quickstart/* ./
+          cp -R ../${{ matrix.sampleDir }}/* ./
           git add .
           git commit . -m "chore: bump SDK version to ${SDK_VERSION}"
           git push --set-upstream origin-rw $BRANCH
