@@ -45,6 +45,10 @@ xref:concepts:multi-region.adoc[Request-region primary selection mode]: The prim
     - expose self-region and origin-region
     - rename primary selection modes
 
+* Akka Runtime 1.2.10
+    - improve view support for parameters and constants
+    - validate view parameter array typing for = ANY
+
 * https://github.com/akka/akka-projection/releases/tag/v1.6.10[Akka Projections 1.6.10]
 
 == February 2025
