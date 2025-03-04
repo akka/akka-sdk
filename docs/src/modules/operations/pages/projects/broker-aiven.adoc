@@ -57,7 +57,7 @@ The `broker-password-secret` and `broker-ca-cert-secret` refer to the names of t
 +
 An optional description can be added with the parameter `--description` to provide additional notes about the broker.
 
-. Contact akka-support@lightbend.com to open a port in Akka to reach your Aiven port configured above.
+. Contact mailto:support@akka.io[] to open a port in Akka to reach your Aiven port configured above.
 
 The broker config can be inspected using:
 [source, command window]

@@ -8,7 +8,7 @@ This page provides troubleshooting advice for errors and issues that you might e
 
 * Check out xref:support:frequently-asked-questions.adoc[Frequently Asked Questions].
 
-* Email us at mailto:akka-support@lightbend.com[] to provide feedback or get help.
+* Email us at mailto:support@akka.io[] to provide feedback or get help.
 
 * Check out the latest discussions about Akka at https://discuss.akka.io/[https://discuss.akka.io/, window="new"].
 

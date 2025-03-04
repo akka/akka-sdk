@@ -74,13 +74,13 @@ Requests and responses from entities are more limited and may not be larger than
 
 === Who can sign up for a trial?
 
-We know that you want to "try before you buy" so everyone can sign up for a free trial! Whether you’re a back-end developer, an architect, a serverless expert, or have a completely different role you can sign up for Akka. Our only request is that you sign up with your company email address (we promise we won’t spam you or try to sell you anything). Your trial is completely free, we give you a certain amount of credits, and if you run out drop us an email at mailto:akka-support@lightbend.com[] to request more and extend your trial.
+We know that you want to "try before you buy" so everyone can sign up for a free trial! Whether you’re a back-end developer, an architect, a serverless expert, or have a completely different role you can sign up for Akka. Our only request is that you sign up with your company email address (we promise we won’t spam you or try to sell you anything). Your trial is completely free, we give you a certain amount of credits, and if you run out drop us an email at mailto:support@akka.io[] to request more and extend your trial.
 
 === Are there any limits to what I can deploy?
 
 All services are limited to a maximum of 10 instances. This will limit the `requests per second (rps)` for the services. The maximum `rps` is dependent also on the type of service being created and the business logic implemented. While `rps` attainment of multiples of thousands is possible, even within the constraint of the 10 instances, generally hundreds of requests per second should be expected. To support more scale, this limit can be increased via a support request.
 
-All projects on Akka are limited to a maximum data storage size of 2TB. If you anticipate having more than 500GB of data in one project, please contact us at mailto:akka-support@lightbend.com[akka-support@lightbend.com] so that we can help optimize your data storage and performance. Changes are dependent on use case and business priority.
+All projects on Akka are limited to a maximum data storage size of 2TB. If you anticipate having more than 500GB of data in one project, please contact us at mailto:support@akka.io[] so that we can help optimize your data storage and performance. Changes are dependent on use case and business priority.
 
 === How does Akka work within my stack and integrate with my other applications?
 
@@ -117,6 +117,6 @@ https://akka.io/contact-us[Contact Akka] to purchase a paid plan. See the https:
 
 == What if I have additional questions or want to provide feedback?
 
-* Email us at mailto:akka-support@lightbend.com[] to provide feedback or get help. One of our team will get back to you as soon as possible.
+* Email us at mailto:support@akka.io[] to provide feedback or get help. One of our team will get back to you as soon as possible.
 
 * Check out the latest discussions about Akka at https://discuss.akka.io/[https://discuss.akka.io/, window="new"].
