@@ -10,6 +10,43 @@ Current versions
 * Akka CLI {akka-cli-version}
 * A glance of all Akka libraries and their current versions is presented at https://doc.akka.io/libraries/akka-dependencies/current[Akka library versions].
 
+== March 2025
+
+[sidebar]
+****
+
+**Replication of Key Value Entities**
+
+xref:java:key-value-entities.adoc[Key Value Entities] were previously located in a single region. Akka now supports full multi-region replication of Key Value Entities, in the same way as for Event Sourced Entities. No code changes are needed for making the Key Value Entities replicated, but the feature is disabled until next full restart of the service (`akka service pause/resume`). It's recommended to add the `ReadOnlyEffect` as described in xref:java:key-value-entities.adoc#_replication[Key Value Entity replication].
+
+**Service-to-service eventing for Key Value Entities**
+
+xref:java:consuming-producing.adoc#s2s-eventing[Service to service eventing] is now supported for Key Value Entities, in the same way as for Event Sourced Entities. This makes it easy to propagate information between Akka services in the same project.
+
+**New primary selection mode**
+
+xref:concepts:multi-region.adoc[Request-region primary selection mode]: The primary region changes when another region receives a write request. Upon a write request to an entity in a region that is not the primary it will move its primary. The new primary ensures that all preceding events from the previous primary have been fully replicated and applied (i.e. persisted) before writing the new event, and thereby guarantees strong consistency when switching from one region to another. Subsequent write requests to the primary region of the entity are handled locally without any further coordination. Write requests to other regions will trigger the same switch-over process. All other entity instances operate unimpeded during the switch-over process.
+
+****
+
+* https://github.com/akka/akka-sdk/releases/tag/v3.2.1[Akka SDK 3.2.1]
+    - make it possible to filter message by region origin, see xref:java:consuming-producing.adoc#_multi_region_replication[Consumer documentation]
+    - checking serialization in entity testkits
+    - shutdown immediately if runtime fails at startup
+    - Akka Chess sample
+    - Akka Runtime 1.4.2
+
+* Akka Runtime 1.4.0, 1.4.1, 1.4.2
+    - Key Value Entity Replication
+    - new primary selection mode
+    - bind local dev to 127.0.0.1 interface
+    - improve view support for parameters and constants
+    - validate view parameter array typing for = ANY
+    - expose self-region and origin-region
+    - rename primary selection modes
+
+* https://github.com/akka/akka-projection/releases/tag/v1.6.10[Akka Projections 1.6.10]
+
 == February 2025
 
 [sidebar]
