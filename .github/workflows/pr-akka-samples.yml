@@ -25,7 +25,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { sampleDir: "samples/shopping-cart-quickstart", sampleRepo: "akka-samples/shopping-cart-quickstart", checkoutPath: "akka-samples-shopping-cart-quickstart" }
+          - { sample: "shopping-cart-quickstart", sampleRepo: "akka-samples/shopping-cart-quickstart" }
 
     steps:
       - name: Checkout
@@ -65,19 +65,20 @@ jobs:
           echo "SDK version: '${SDK_VERSION}'"
           echo "sdk_version=${SDK_VERSION}" >> $GITHUB_OUTPUT
 
-      - name: Update SDK versions
+      - name: Update SDK versions and bundle
         env:
           SDK_VERSION: ${{ steps.determine_sdk_version.outputs.sdk_version || steps.determine_sdk_version_manual_triggered.outputs.sdk_version }}
         run: |-
           echo "Updating samples to version ${SDK_VERSION}"
           ./updateSdkVersions.sh all
+          ./docs/bin/bundle.sh --zip "target/bundle/${{ matrix.sample }}.zip" samples/${{ matrix.sample }}
 
       - name: Checkout
         # https://github.com/actions/checkout/releases/tag/v4.2.2
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           repository: ${{ matrix.sampleRepo }}
-          path: ${{ matrix.checkoutPath }}
+          path: akka-samples-${{ matrix.sample }}
           token: ${{ secrets.AKKA_SDK_RW_ACCESS_TOKEN }}
           ref: main
 
@@ -86,16 +87,13 @@ jobs:
           COMMIT_URL: "https://github.com/${{ github.repository }}/commit/"
           GH_TOKEN: ${{ secrets.AKKA_SAMPLES_RW_ACCESS_TOKEN }}
         run: |
-          cd ${{ matrix.checkoutPath }}
+          cd akka-samples-${{ matrix.sample }}
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git remote add origin-rw https://${{ secrets.AKKA_SAMPLES_RW_ACCESS_TOKEN }}@github.com/${{ matrix.sampleRepo }}.git
           BRANCH=update-sdk-${SDK_VERSION}
           git checkout -b $BRANCH
-          cp -R ../${{ matrix.sampleDir }}/* ./
-          mkdir -p .idea/runConfigurations
-          cp ../${{ matrix.sampleDir }}/.idea/runConfigurations/Run_locally.xml ./.idea/runConfigurations/
-          cp ../${{ matrix.sampleDir }}/.gitignore ./
+          rsync -a ../docs/build/bundle${{ matrix.sample }}/ ./
           git add .
           git commit . -m "chore: bump SDK version to ${SDK_VERSION}"
           git push --set-upstream origin-rw $BRANCH
