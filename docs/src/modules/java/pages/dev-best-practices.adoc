@@ -18,7 +18,7 @@ Akka makes it easy and fast to build services using the concepts of Domain Drive
 
 https://martinfowler.com/bliki/BoundedContext.html[Bounded context, window="new"] is a concept that divides large domain models into smaller groups that are explicit about their interrelationships. Normally a microservice is a bounded context. You _may_ choose to have multiple bounded contexts in a microservice.
 
-Each of these contexts will have autonomy to evolve the models it owns. Keeping each model within strict boundaries allows different modelling for entities that look similar but have slightly different meaning in each of the contexts. Each bounded contact should have its own domain, application, and API layers as described in xref:concepts:architecture-model.adoc[Akka architecture model].
+Each of these contexts will have autonomy to evolve the models it owns. Keeping each model within strict boundaries allows different modelling for entities that look similar but have slightly different meaning in each of the contexts. Each bounded context should have its own domain, application, and API layers as described in xref:concepts:architecture-model.adoc[Akka architecture model].
 
 [.darkmode-white-padded]
 image::bounded-context.svg[Bounded Context]
