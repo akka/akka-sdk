@@ -47,3 +47,180 @@ Deciding how many components and concepts to fit into a single service can be co
 - *You gain flexibility for upgrades*. You can upgrade services in a "rolling" fashion, where new instances are started before older instances are removed, allowing new versions to be deployed with no downtime or interruption.
 - *You gain security*. Services serve as a security boundary both in your system overall and between teams.
 - *You get granular visibility into costs*. Services are all billed separately, so it's easier to see and understand costs and billing on a per-service basis if you break your services up in some way that matches your organizational needs overall.
+
+== Messages deduplication
+
+In the realm of distributed systems, Akka 3 embraces an at-least-once delivery guarantee, for components like Consumer or Views (view updaters). Message redeliveries are not just possible, but inevitable.
+
+NOTE: When consuming from Akka components like Event Sourced Entity, Key Value Entity or another Akka service, the Akka runtime not only guarantees at-least-once delivery, but also the order of messages. Meaning that a series of duplicated messages might be redelivered but always in the same order as they were produced.
+
+To ensure system integrity, consumers must be capable of handling duplicate messages gracefully. Effective deduplication is not just an optimization - it's a core architectural requirement, transforming the potential complexity of message redeliveries into a predictable and manageable system behavior.
+
+There is no one-size-fits-all solution to this challenge. Usually it's a mix of business requirements and possible technical tricks in a given context.
+
+=== Idempotent updates
+
+The most common approach to deduplication is to make the processing of messages idempotent. An idempotent operation is one that can be applied multiple times without changing the result beyond the initial application. This means that if the same message is processed multiple times, the result will be the same as if it were processed only once.
+
+[source,java,indent=0]
+.{sample-base-url}/event-sourced-customer-registry/src/main/java/customer/application/CustomerByEmailView.java[CustomerByEmailView.java]
+----
+include::example$event-sourced-customer-registry/src/main/java/customer/application/CustomerByEmailView.java[tag=idempotent-update]
+----
+<1> Processing each event is idempotent. Duplicated events will not change the state of the view.
+
+==== Key Considerations:
+ - Ensure that operations like database inserts or state changes are idempotent.
+ - Evaluate the trade-off between complexity and storage requirements for maintaining idempotency.
+
+[#events-enrichment]
+=== Events enrichment
+
+Some updates are inherently not idempotent. A good example might be calculating and storing some value in a View based on the series of events. Processing a single event twice will corrupt the result.
+
+[source,java,indent=0]
+.{sample-base-url}/event-sourced-counter-brokers/src/main/java/counter/application/CounterByValueView.java[CounterByValueView.java]
+----
+include::example$event-sourced-counter-brokers/src/main/java/counter/application/CounterByValueView.java[tag=not-idempotent-update]
+----
+<1> Handling `ValueIncreased` is not idempotent.
+<2> Handling `ValueMultiplied` is not idempotent.
+
+In such cases we can use a technique called _events enrichment_. The idea is to keep in the event not only a delta information but also other pre-calculated values that are (or will be) necessary for down stream consumers.
+
+Events modelling is a key part of the system design. A consumer that have all the necessary information in the event can be more independent and less error-prone. Of course a balance must be found between the size of the event and simplicity of its processing.
+
+
+[source,java,indent=0]
+.{sample-base-url}/event-sourced-counter-brokers/src/main/java/counter/domain/CounterEvent.java[CounterEvent.java]
+----
+include::example$event-sourced-counter-brokers/src/main/java/counter/domain/CounterEvent.java[tag=events-enrichment]
+----
+<1> `ValueMultiplied` event contains not only delta information under `multiplier` field but also pre-calculated `currentValue` of the counter.
+
+The updated version of the `CounterByValueUpdater` can be again idempotent.
+
+[source,java,indent=0]
+.{sample-base-url}/event-sourced-counter-brokers/src/main/java/counter/application/CounterByValueViewEnrichment.java[CounterByValueViewEnrichment.java]
+----
+include::example$event-sourced-counter-brokers/src/main/java/counter/application/CounterByValueViewEnrichment.java[tag=events-enrichment]
+----
+<1> Using pre-calculated `currentValue` from the event.
+
+==== Benefits
+ - Enables idempotent processing of enriched events.
+ - Reduces coupling between producers and consumers.
+
+==== Challenges
+ - Increases event size, requiring a balance between richness and efficiency.
+ - Requires careful schema design and potential for schema evolution challenges
+
+=== Sequence number tracking
+
+For cases when events enrichment is not possible or not desired, a sequence number tracking can be used. The idea is to keep track of the sequence number of the last processed event and ignore any events with a sequence number lower or equal than the last processed one.
+
+NOTE: A monotonically increased sequence number is available only when consuming updates from Akka 3 components like Event Sourced Entity, Key Value Entity, or another Akka service. The sequence number is *not globally unique*, but unique per entity instance.
+
+[source,java,indent=0]
+.{sample-base-url}/event-sourced-counter-brokers/src/main/java/counter/application/CounterByValueViewDeduplication.java[CounterByValueViewDeduplication.java]
+----
+include::example$event-sourced-counter-brokers/src/main/java/counter/application/CounterByValueViewDeduplication.java[tag=seq-tracking]
+----
+<1> A view model keeps track of the last processed sequence number.
+<2> When sequence number is not available there is no deduplication.
+<3> When sequence number is lower or equal to the last processed one the event is ignored.
+<4> Otherwise, the event is processed and the last processed sequence number is updated.
+<5> Updates are not idempotent, but the deduplication mechanism ensures that the view is correct in case of processing duplicates.
+
+Keep in mind that a View row corresponds to a single entity instance, that's why we can use the sequence number as a deduplication token.
+
+The same technique can be used not only for the Akka Views, but for any external storage mechanism. As the matter of fact, Akka Views has a built-in support for sequence number tracking, so you don't have to implement it yourself. The example above just shows how it can be done manually.
+
+NOTE: Akka View component has a built-in support for sequence number tracking. {sample-base-url}/event-sourced-counter-brokers/src/test/java/counter/application/.CounterByValueViewTest.java[CounterByValueViewTest] demonstrates how it can be verified.
+
+==== Benefits
+ - Tracking sequence numbers is very effective and the additional storage overhead is minimal.
+
+==== Challenges
+ - Only works per entity instance, can't be used globally.
+
+=== Deterministic hashing
+
+When calling external system or other Akka components/services from the Akka Consumer perspective, deduplication might require to send the same token for the same request. Based on that token, the receiver can deduplicate the request. The potential candidate for such a token might be the sequence number of the event. Unfortunately, the sequence number is not globally unique, so the same token might be used for requests based on processing events from two different entity instances.
+
+Another idea is to use CloudEvents ID as a deduplication token. The CloudEvents ID is generated by the Akka runtime and is available in the event metadata.
+
+[source,java,indent=0]
+----
+include::example$doc-snippets/src/main/java/com/example/application/MyConsumer.java[tag=cloud-event-id]
+----
+<1> Get the CloudEvent ID from the event metadata.
+
+Unfortunately, according to the CloudEvents https://github.com/cloudevents/spec/blob/v1.0.2/cloudevents/spec.md#id[specification], the ID is not guaranteed to be the same for redelivery of the same event, hence we can't use it for deduplication.
+
+To solve this problem a technique called _deterministic hashing_ can be used. The idea is to use a deterministic hash of the event data to generate stable and unique deduplication tokens. The hash might be calculated from the event payload, but very often payloads themselves are not globally unique and might be expensive to hash. The minimal set of fields that uniquely identify the event are subject (entity ID) and sequence number from the metadata.
+
+[source,java,indent=0]
+----
+include::example$doc-snippets/src/main/java/com/example/application/MyConsumer.java[tag=deterministic-hashing]
+----
+<1> Deduplication token is calculated from the entity ID and the sequence number.
+
+The token might be also xref:dev-best-practices.adoc#events-enrichment[precalculated] and stored in the event payload. In such case the consumer can use it directly.
+
+==== Benefits
+- Useful for cross-service or cross-component communication.
+
+==== Challenges
+- Choosing the right hashing algorithm (e.g., SHA-256 vs. MD5) for a balance between collision resistance and performance.
+
+== Request deduplication
+
+A different aspect of deduplication is how to deal with, possibly duplicated, incoming commands that mutate Akka stateful components. Let's examine this based on a `WalletEntity` example.
+
+
+[source,java,indent=0]
+.{sample-base-url}/transfer-workflow-compensation/src/main/java/com/example/wallet/application/WalletEntity.java[WalletEntity.java]
+----
+include::example$transfer-workflow-compensation/src/main/java/com/example/wallet/application/WalletEntity.java[tag=deduplication]
+----
+<1> Processing the same `Deposit` command twice will corrupt the wallet state.
+
+To secure the entity from processing the same command multiple times, we must start with extending the command model with deduplication token, called `commandId` in our case.
+
+[source,java,indent=0]
+.{sample-base-url}/transfer-workflow-compensation/src/main/java/com/example/wallet/domain/WalletCommand.java[WalletCommand.java]
+----
+include::example$transfer-workflow-compensation/src/main/java/com/example/wallet/domain/WalletCommand.java[tag=deduplication]
+----
+<1> All commands that require deduplication have `commandId` field.
+
+The information about already processed commands must be stored in the entity state. The simplest way is to keep a collection of processed command IDs.
+
+[source,java,indent=0]
+.{sample-base-url}/transfer-workflow-compensation/src/main/java/com/example/wallet/domain/Wallet.java[Wallet.java]
+----
+include::example$transfer-workflow-compensation/src/main/java/com/example/wallet/domain/Wallet.java[tag=deduplication]
+----
+<1> List of processed command IDs.
+<2> Before we process the command we check if it was already processed.
+<3> To rebuild the state we need to store the command ID in the event.
+<4> To keep the collection size constrained we can remove old command IDs.
+
+This simple solution reveals a few important limitations of the deduplication that are common across many distributed technologies. It's very expensive (and often not possible) to have a total deduplication of all incoming requests/commands. There will always be some constraints like:
+
+ - the size of the collection, e.g. keep only last 1000 command IDs, like in the sample above,
+ - the time window, e.g. keep only command IDs from the last 24 hours,
+ - both combined, e.g. keep only command IDs from the last 24 hours, but not more than 1000.
+
+Production ready deduplication should take into account these limitations in the context of the expected load. Also, using `java.util.List` should be evaluated against more efficient data structures.
+
+Keep in mind that using collection types not supported by the Jackson serialization will require a custom serialization for that field. See `@JsonSerialize` annotation for more details.
+
+==== Benefits
+- Solution doesn't require additional infrastructure to store already processed command IDs.
+
+==== Challenges
+ - Memory and storage requirements for keeping command IDs.
+ - Performance consideration for effective data structure for command IDs.
+ - Custom serialization for non-standard collection types.

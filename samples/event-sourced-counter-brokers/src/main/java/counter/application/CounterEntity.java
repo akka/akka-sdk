@@ -43,23 +43,19 @@ public class CounterEntity extends EventSourcedEntity<Integer, CounterEvent> {
   public Effect<Integer> increase(Integer value) {
     logger.info("Counter {} increased by {}", this.commandContext().entityId(), value);
     return effects()
-      .persist(new ValueIncreased(value))
+      .persist(new ValueIncreased(value, currentState() + value))
       .thenReply(identity());
   }
 
-  //tag::increaseWithError[]
   public Effect<Integer> increaseWithError(Integer value) {
     if (currentState() + value > 10000) {
       return effects().error("Increasing the counter above 10000 is blocked"); // <1>
     }
-    //end::increaseWithError[]
     logger.info("Counter {} increased by {}", this.commandContext().entityId(), value);
-    //tag::increaseWithError[]
     return effects()
-      .persist(new ValueIncreased(value))
+      .persist(new ValueIncreased(value, currentState() + value))
       .thenReply(identity());
   }
-  //end::increaseWithError[]
 
   //tag::increaseWithResult[]
   public Effect<CounterResult> increaseWithResult(Integer value) {
@@ -70,7 +66,7 @@ public class CounterEntity extends EventSourcedEntity<Integer, CounterEvent> {
     logger.info("Counter {} increased by {}", this.commandContext().entityId(), value);
     //tag::increaseWithResult[]
     return effects()
-      .persist(new ValueIncreased(value))
+      .persist(new ValueIncreased(value, currentState() + value))
       .thenReply(CounterResult.Success::new); // <4>
   }
   //end::increaseWithResult[]
@@ -82,15 +78,15 @@ public class CounterEntity extends EventSourcedEntity<Integer, CounterEvent> {
   public Effect<Integer> multiply(Integer value) {
     logger.info("Counter {} multiplied by {}", this.commandContext().entityId(), value);
     return effects()
-      .persist(new ValueMultiplied(value))
+      .persist(new ValueMultiplied(value, currentState() * value))
       .thenReply(identity());
   }
 
   @Override
   public Integer applyEvent(CounterEvent event) {
     return switch (event) {
-      case ValueIncreased evt -> currentState() + evt.value();
-      case ValueMultiplied evt -> currentState() * evt.value();
+      case ValueIncreased evt -> evt.currentValue();
+      case ValueMultiplied evt -> evt.currentValue();
     };
   }
 }
