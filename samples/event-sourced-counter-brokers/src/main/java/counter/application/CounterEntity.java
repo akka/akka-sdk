@@ -43,7 +43,7 @@ public class CounterEntity extends EventSourcedEntity<Integer, CounterEvent> {
   public Effect<Integer> increase(Integer value) {
     logger.info("Counter {} increased by {}", this.commandContext().entityId(), value);
     return effects()
-      .persist(new ValueIncreased(value))
+      .persist(new ValueIncreased(value, currentState() + value))
       .thenReply(identity());
   }
 
@@ -56,7 +56,7 @@ public class CounterEntity extends EventSourcedEntity<Integer, CounterEvent> {
     logger.info("Counter {} increased by {}", this.commandContext().entityId(), value);
     //tag::increaseWithError[]
     return effects()
-      .persist(new ValueIncreased(value))
+      .persist(new ValueIncreased(value, currentState() + value))
       .thenReply(identity());
   }
   //end::increaseWithError[]
@@ -70,7 +70,7 @@ public class CounterEntity extends EventSourcedEntity<Integer, CounterEvent> {
     logger.info("Counter {} increased by {}", this.commandContext().entityId(), value);
     //tag::increaseWithResult[]
     return effects()
-      .persist(new ValueIncreased(value))
+      .persist(new ValueIncreased(value, currentState() + value))
       .thenReply(CounterResult.Success::new); // <4>
   }
   //end::increaseWithResult[]
@@ -82,15 +82,15 @@ public class CounterEntity extends EventSourcedEntity<Integer, CounterEvent> {
   public Effect<Integer> multiply(Integer value) {
     logger.info("Counter {} multiplied by {}", this.commandContext().entityId(), value);
     return effects()
-      .persist(new ValueMultiplied(value))
+      .persist(new ValueMultiplied(value, currentState() * value))
       .thenReply(identity());
   }
 
   @Override
   public Integer applyEvent(CounterEvent event) {
     return switch (event) {
-      case ValueIncreased evt -> currentState() + evt.value();
-      case ValueMultiplied evt -> currentState() * evt.value();
+      case ValueIncreased evt -> evt.currentValue();
+      case ValueMultiplied evt -> evt.currentValue();
     };
   }
 }

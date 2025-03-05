@@ -6,7 +6,8 @@ import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import com.example.wallet.application.WalletEntity.WalletResult.Failure;
 import com.example.wallet.application.WalletEntity.WalletResult.Success;
 import com.example.wallet.domain.Wallet;
-import com.example.wallet.domain.WalletCommand;
+import com.example.wallet.domain.WalletCommand.Deposit;
+import com.example.wallet.domain.WalletCommand.Withdraw;
 import com.example.wallet.domain.WalletEvent;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -17,8 +18,11 @@ import java.util.List;
 
 import static akka.Done.done;
 
+// tag::deduplication[]
 @ComponentId("wallet")
 public class WalletEntity extends EventSourcedEntity<Wallet, WalletEvent> {
+
+  // end::deduplication[]
 
   private static final Logger logger = LoggerFactory.getLogger(WalletEntity.class);
 
@@ -44,7 +48,7 @@ public class WalletEntity extends EventSourcedEntity<Wallet, WalletEvent> {
     }
   }
 
-  public Effect<Done> create(int initialBalance) { // <1>
+  public Effect<Done> create(int initialBalance) {
     if (!currentState().isEmpty()){
       return effects().error("Wallet already exists");
     } else {
@@ -53,7 +57,7 @@ public class WalletEntity extends EventSourcedEntity<Wallet, WalletEvent> {
     }
   }
 
-  public Effect<WalletResult> withdraw(WalletCommand.Withdraw withdraw) { // <2>
+  public Effect<WalletResult> withdraw(Withdraw withdraw) {
     if (currentState().isEmpty()){
       return effects().error("Wallet does not exist");
     } else if (currentState().balance() < withdraw.amount()) {
@@ -66,22 +70,28 @@ public class WalletEntity extends EventSourcedEntity<Wallet, WalletEvent> {
     }
   }
 
-  public Effect<WalletResult> deposit(WalletCommand.Deposit deposit) { // <3>
+  // tag::deduplication[]
+  public Effect<WalletResult> deposit(Deposit deposit) { // <1>
     if (currentState().isEmpty()){
       return effects().error("Wallet does not exist");
     } else {
+      // end::deduplication[]
       logger.info("Deposit walletId: [{}] amount +{}", currentState().id(), deposit.amount());
+      // tag::deduplication[]
       List<WalletEvent> events = currentState().handle(deposit);
       return effects().persistAll(events)
           .thenReply(__ -> new WalletResult.Success());
     }
   }
+  // end::deduplication[]
 
-  public Effect<Integer> get() { // <4>
+  public Effect<Integer> get() {
     if (currentState().isEmpty()){
       return effects().error("Wallet does not exist");
     } else {
       return effects().reply(currentState().balance());
     }
   }
+  // tag::deduplication[]
 }
+// end::deduplication[]

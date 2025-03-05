@@ -19,7 +19,8 @@ public interface CloudEvent {
   String specversion();
 
   /**
-   * The id of this CloudEvent.
+   * The id of this CloudEvent. According to the CloudEvents https://github.com/cloudevents/spec/blob/v1.0.2/cloudevents/spec.md#id[specification],
+   * the ID is not guaranteed to be the same for redelivery of the same event, hence we can't use it for deduplication.
    *
    * @return The id.
    */
@@ -128,6 +129,52 @@ public interface CloudEvent {
    * @return A copy of this CloudEvent.
    */
   CloudEvent clearSubject();
+
+  /**
+   * The sequence of this CloudEvent parsed to Long value.
+   */
+  Optional<Long> sequence();
+
+  /**
+   * The sequence of this CloudEvent.
+   */
+  Optional<String> sequenceString();
+
+  /**
+   * Return a new CloudEvent with the given sequence.
+   *
+   * @param sequence The sequence to set.
+   * @return A copy of this CloudEvent.
+   */
+  CloudEvent withSequence(String sequence);
+
+  /**
+   * Clear the sequence of this CloudEvent, if set.
+   *
+   * @return A copy of this CloudEvent.
+   */
+  CloudEvent clearSequence();
+
+
+  /**
+   * The sequence type of this CloudEvent.
+   */
+  Optional<String> sequenceType();
+
+  /**
+   * Return a new CloudEvent with the given sequence type.
+   *
+   * @param sequenceType The sequence type to set.
+   * @return A copy of this CloudEvent.
+   */
+  CloudEvent withSequenceType(String sequenceType);
+
+  /**
+   * Clear the sequence type of this CloudEvent, if set.
+   *
+   * @return A copy of this CloudEvent.
+   */
+  CloudEvent clearSequenceType();
 
   /**
    * The time of this CloudEvent.

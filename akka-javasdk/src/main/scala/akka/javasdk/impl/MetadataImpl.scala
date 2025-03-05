@@ -180,6 +180,16 @@ private[javasdk] class MetadataImpl private (val entries: Seq[SpiMetadataEntry])
 
   override def clearSubject(): MetadataImpl = remove(MetadataImpl.CeSubject)
 
+  override def sequence(): Optional[java.lang.Long] =
+    getScala(MetadataImpl.CeSequence).flatMap(_.toLongOption).map(Long.box).toJava
+  override def sequenceString(): Optional[String] = getScala(MetadataImpl.CeSequence).toJava
+  override def withSequence(sequence: String): MetadataImpl = set(MetadataImpl.CeSequence, sequence)
+  override def clearSequence(): MetadataImpl = remove(MetadataImpl.CeSequence)
+
+  override def sequenceType(): Optional[String] = getScala(MetadataImpl.CeSequenceType).toJava
+  override def withSequenceType(sequenceType: String): MetadataImpl = set(MetadataImpl.CeSequenceType, sequenceType)
+  override def clearSequenceType(): MetadataImpl = remove(MetadataImpl.CeSequenceType)
+
   override def time(): Optional[ZonedDateTime] = timeScala.toJava
   private[akka] def timeScala: Option[ZonedDateTime] =
     getScala(MetadataImpl.CeTime).map(ZonedDateTime.parse(_))
@@ -220,8 +230,11 @@ object MetadataImpl {
   val CeDataschema = "ce-dataschema"
   val CeSubject = "ce-subject"
   val CeTime = "ce-time"
+  val CeSequence = "ce-sequence"
+  val CeSequenceType = "ce-sequencetype"
   val CeRequired: Set[String] = Set(CeSpecversion, CeId, CeSource, CeType)
-  private val AllCeAttributes = CeRequired ++ Set(CeDataschema, CeDatacontenttype, CeSubject, CeTime)
+  private val AllCeAttributes =
+    CeRequired ++ Set(CeDataschema, CeDatacontenttype, CeSubject, CeTime, CeSequence, CeSequenceType)
 
   /**
    * Maps alternative prefixed keys to our default key format, ie: ce-.
