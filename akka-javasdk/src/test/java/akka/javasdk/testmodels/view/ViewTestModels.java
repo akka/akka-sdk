@@ -123,6 +123,30 @@ public class ViewTestModels {
   }
 
   @ComponentId("users_view")
+  public static class ViewWithLowerCaseQuery extends View {
+
+    @Consume.FromKeyValueEntity(UserEntity.class)
+    public static class UserUpdater extends TableUpdater<User> {}
+
+    @Query("select * from users where email = :email")
+    public QueryEffect<User> getUser(String email) {
+      return queryResult();
+    }
+  }
+
+  @ComponentId("users_view")
+  public static class ViewWithQuotedTableName extends View {
+
+    @Consume.FromKeyValueEntity(UserEntity.class)
+    public static class UserUpdater extends TableUpdater<User> {}
+
+    @Query("SELECT * FROM `üsérs tåble` WHERE email = :email")
+    public QueryEffect<User> getUser(String email) {
+      return queryResult();
+    }
+  }
+
+  @ComponentId("users_view")
   public static class ViewWithNoTableUpdater extends View {
 
     @Query("SELECT * FROM users WHERE email = :email")
@@ -130,7 +154,6 @@ public class ViewTestModels {
       return queryResult();
     }
   }
-
 
   @ComponentId("users_view")
   @Table("users")
