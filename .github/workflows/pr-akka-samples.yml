@@ -70,7 +70,7 @@ jobs:
           SDK_VERSION: ${{ steps.determine_sdk_version.outputs.sdk_version || steps.determine_sdk_version_manual_triggered.outputs.sdk_version }}
         run: |-
           echo "Updating samples to version ${SDK_VERSION}"
-          ./updateSdkVersions.sh all
+          #./updateSdkVersions.sh all
           ./docs/bin/bundle.sh --zip "target/bundle/${{ matrix.sample }}.zip" samples/${{ matrix.sample }}
 
       - name: Checkout
@@ -88,8 +88,8 @@ jobs:
           GH_TOKEN: ${{ secrets.AKKA_SAMPLES_RW_ACCESS_TOKEN }}
         run: |
           cd akka-samples-${{ matrix.sample }}
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name "akka-ci"
+          git config user.email "akka-ci@users.noreply.github.com"
           git remote add origin-rw https://${{ secrets.AKKA_SAMPLES_RW_ACCESS_TOKEN }}@github.com/${{ matrix.sampleRepo }}.git
           BRANCH=update-sdk-${SDK_VERSION}
           git checkout -b $BRANCH
