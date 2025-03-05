@@ -22,4 +22,5 @@ Akka services are deployed to _Projects_ within an xref:operations:organizations
 **** xref:operations:projects/broker-aws-msk.adoc[AWS MSK Kafka]
 **** xref:operations:projects/broker-confluent.adoc[Confluent Cloud]
 **** xref:operations:projects/broker-google-pubsub.adoc[Google Pub/Sub]
+**** xref:operations:projects/broker-azure-eventhubs.adoc[Azure Event Hubs]
 *** xref:operations:projects/secrets.adoc[]
