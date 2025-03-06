@@ -25,7 +25,13 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - { sample: "choreography-saga-quickstart", sampleRepo: "akka-samples/choreography-saga-quickstart" }
+          - { sample: "endpoint-jwt", sampleRepo: "akka-samples/endpoint-jwt" }
+          - { sample: "event-sourced-counter-brokers", sampleRepo: "akka-samples/event-sourced-counter-brokers" }
+          - { sample: "event-sourced-customer-registry", sampleRepo: "akka-samples/event-sourced-customer-registry" }
           - { sample: "shopping-cart-quickstart", sampleRepo: "akka-samples/shopping-cart-quickstart" }
+          - { sample: "transfer-workflow", sampleRepo: "akka-samples/transfer-workflow" }
+          - { sample: "transfer-workflow-compensation", sampleRepo: "akka-samples/transfer-workflow-compensation" }
 
     steps:
       - name: Checkout
@@ -48,29 +54,11 @@ jobs:
         with:
           jvm: temurin:1.21
 
-      - name: Determine SDK version
-        id: determine_sdk_version
+      - name: Bundle sample
         run: |-
-          .github/determine-sdk-version.sh
-          SDK_VERSION="$(cat ~/akka-javasdk-version.txt)"
-          echo "SDK version: '${SDK_VERSION}'"
-          echo "sdk_version=${SDK_VERSION}" >> $GITHUB_OUTPUT
-
-      - name: Determine SDK version (manual triggered) # provisional until normal flow gets fixed)
-        if:  github.event_name == 'workflow_dispatch'
-        id: determine_sdk_version_manual_triggered
-        run: |-
-          .github/determine-sdk-version.sh
-          SDK_VERSION="$(cat ~/akka-javasdk-version.txt | sed 's/-.*//')" 
-          echo "SDK version: '${SDK_VERSION}'"
-          echo "sdk_version=${SDK_VERSION}" >> $GITHUB_OUTPUT
-
-      - name: Update SDK versions and bundle
-        env:
-          SDK_VERSION: ${{ steps.determine_sdk_version.outputs.sdk_version || steps.determine_sdk_version_manual_triggered.outputs.sdk_version }}
-        run: |-
-          echo "Updating samples to version ${SDK_VERSION}"
-          #./updateSdkVersions.sh all
+          sdk_version=`./docs/bin/version.sh`
+          echo "Updating ${{ matrix.sample }} to sdk $sdk_version"
+          # bundle will replace sdk version and remove doc tags
           ./docs/bin/bundle.sh --zip "target/bundle/${{ matrix.sample }}.zip" samples/${{ matrix.sample }}
 
       - name: Checkout
@@ -79,7 +67,7 @@ jobs:
         with:
           repository: ${{ matrix.sampleRepo }}
           path: akka-samples-${{ matrix.sample }}
-          token: ${{ secrets.AKKA_SDK_RW_ACCESS_TOKEN }}
+          token: ${{ secrets.AKKA_SAMPLES_RW_ACCESS_TOKEN }}
           ref: main
 
       - name: Open PR with changes
@@ -87,15 +75,18 @@ jobs:
           COMMIT_URL: "https://github.com/${{ github.repository }}/commit/"
           GH_TOKEN: ${{ secrets.AKKA_SAMPLES_RW_ACCESS_TOKEN }}
         run: |
+          sdk_version=`./docs/bin/version.sh`
           cd akka-samples-${{ matrix.sample }}
-          git config user.name "akka-ci"
-          git config user.email "akka-ci@users.noreply.github.com"
+          git config user.name "lightbend-tools-secure"
+          git config user.email "lightbend-tools-secure@lightbend.com"
           git remote add origin-rw https://${{ secrets.AKKA_SAMPLES_RW_ACCESS_TOKEN }}@github.com/${{ matrix.sampleRepo }}.git
-          BRANCH=update-sdk-${SDK_VERSION}
+          BRANCH=update-sdk-$sdk_version
           git checkout -b $BRANCH
-          rsync -a ../docs/build/bundle${{ matrix.sample }}/ ./
+          rsync -a ../docs/build/bundle/${{ matrix.sample }}/ ./
+          rm -f .bundleignore
+          git add -f .idea/runConfigurations/Run_locally.xml
           git add .
-          git commit . -m "chore: bump SDK version to ${SDK_VERSION}"
+          git commit . -m "chore: bump SDK version to $sdk_version"
           git push --set-upstream origin-rw $BRANCH
-          gh pr create -B main -t "Auto PR - Bump SDK version to ${SDK_VERSION}" \
+          gh pr create -B main -t "Auto PR - Bump SDK version to $sdk_version" \
               -b "This PR should update SDK (pom.xml) and latest source code.  [$GITHUB_SHA]($COMMIT_URL$GITHUB_SHA)"
