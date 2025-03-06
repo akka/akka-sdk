@@ -92,12 +92,12 @@ public class ShoppingCartEndpoint {
   public CompletionStage<String> unsafeValidation(String cartId,
                                                   LineItemDTO addLineItem) {
     // NOTE: This is an example of an anti-pattern, do not copy this
-    CompletionStage<ShoppingCartDTO> cartReply =
+    CompletionStage<ShoppingCart> cartReply =
       componentClient.forKeyValueEntity(cartId).method(ShoppingCartEntity::getCart).invokeAsync(); // <1>
 
     CompletionStage<String> response = cartReply.thenCompose(cart -> {
       int totalCount = cart.items().stream()
-        .mapToInt(LineItemDTO::quantity)
+        .mapToInt(ShoppingCart.LineItem::quantity)
         .sum();
 
       if (totalCount < 10) {
@@ -132,6 +132,7 @@ public class ShoppingCartEndpoint {
     return
       componentClient.forKeyValueEntity(cartId)
         .method(ShoppingCartEntity::getCart)
-        .invokeAsync();
+        .invokeAsync()
+          .thenApply(ShoppingCartDTO::of);
   }
 }

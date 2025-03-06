@@ -3,7 +3,6 @@ package com.example.application;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
 import akka.javasdk.keyvalueentity.KeyValueEntityContext;
-import com.example.api.ShoppingCartDTO;
 import com.example.domain.ShoppingCart;
 
 import java.time.Instant;
@@ -46,7 +45,7 @@ public class ShoppingCartEntity extends KeyValueEntity<ShoppingCart> {
       .thenReply(newState);
   }
 
-  public Effect<ShoppingCartDTO> removeItem(String productId) {
+  public Effect<ShoppingCart> removeItem(String productId) {
     var lineItemOpt = currentState().findItemByProductId(productId);
 
     if (lineItemOpt.isEmpty()) {
@@ -57,11 +56,11 @@ public class ShoppingCartEntity extends KeyValueEntity<ShoppingCart> {
     var newState = currentState().withoutItem(lineItemOpt.get());
     return effects()
       .updateState(newState)
-      .thenReply(ShoppingCartDTO.of(newState));
+      .thenReply(newState);
   }
 
-  public ReadOnlyEffect<ShoppingCartDTO> getCart() {
-    return effects().reply(ShoppingCartDTO.of(currentState()));
+  public ReadOnlyEffect<ShoppingCart> getCart() {
+    return effects().reply(currentState());
   }
 
   public Effect<String> removeCart() {

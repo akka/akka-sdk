@@ -20,7 +20,7 @@ public class ShoppingCartIntegrationTest extends TestKitSupport {
 
   private Duration timeout = Duration.of(5, SECONDS);
 
-  ShoppingCartDTO getCart(String cartId) {
+  ShoppingCart getCart(String cartId) {
     return await(
       componentClient
         .forKeyValueEntity(cartId)
@@ -58,8 +58,8 @@ public class ShoppingCartIntegrationTest extends TestKitSupport {
     );
   }
 
-  LineItemDTO item(String productId, String name, int quantity) {
-    return new LineItemDTO(productId, name, quantity);
+  ShoppingCart.LineItem item(String productId, String name, int quantity) {
+    return new ShoppingCart.LineItem(productId, name, quantity);
   }
 
 
