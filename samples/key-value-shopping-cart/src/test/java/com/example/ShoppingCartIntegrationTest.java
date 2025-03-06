@@ -2,9 +2,10 @@ package com.example;
 
 import akka.javasdk.Metadata;
 import akka.javasdk.testkit.TestKitSupport;
-import com.example.application.ShoppingCartDTO;
-import com.example.application.ShoppingCartDTO.LineItemDTO;
+import com.example.api.ShoppingCartDTO;
+import com.example.api.ShoppingCartDTO.LineItemDTO;
 import com.example.application.ShoppingCartEntity;
+import com.example.domain.ShoppingCart;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
@@ -32,7 +33,7 @@ public class ShoppingCartIntegrationTest extends TestKitSupport {
       componentClient
         .forKeyValueEntity(cartId)
         .method(ShoppingCartEntity::addItem)
-        .invokeAsync(new LineItemDTO(productId, name, quantity))
+        .invokeAsync(new ShoppingCart.LineItem(productId, name, quantity))
     );
   }
 

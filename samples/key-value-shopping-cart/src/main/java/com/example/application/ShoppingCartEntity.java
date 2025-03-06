@@ -3,7 +3,7 @@ package com.example.application;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
 import akka.javasdk.keyvalueentity.KeyValueEntityContext;
-import com.example.application.ShoppingCartDTO.LineItemDTO;
+import com.example.api.ShoppingCartDTO;
 import com.example.domain.ShoppingCart;
 
 import java.time.Instant;
@@ -23,27 +23,27 @@ public class ShoppingCartEntity extends KeyValueEntity<ShoppingCart> {
     return ShoppingCart.of(entityId);
   }
 
-  public Effect<ShoppingCartDTO> create() {
-    if (currentState().creationTimestamp() > 0L) {
+  public Effect<ShoppingCart> create() {
+    if (currentState().creationTimestamp().isAfter(Instant.EPOCH)) {
       return effects().error("Cart was already created");
     } else {
-      var newState = currentState().withCreationTimestamp(Instant.now().toEpochMilli());
+      var newState = currentState().withCreationTimestamp(Instant.now());
       return effects()
         .updateState(newState)
-        .thenReply(ShoppingCartDTO.of(newState));
+        .thenReply(newState);
     }
   }
 
-  public Effect<ShoppingCartDTO> addItem(LineItemDTO addLineItem) {
+  public Effect<ShoppingCart> addItem(ShoppingCart.LineItem addLineItem) {
     if (addLineItem.quantity() <= 0) {
       return effects()
         .error("Quantity for item " + addLineItem.productId() + " must be greater than zero.");
     }
 
-    var newState = currentState().withItem(addLineItem.toDomain());
+    var newState = currentState().withItem(addLineItem);
     return effects()
       .updateState(newState)
-      .thenReply(ShoppingCartDTO.of(newState));
+      .thenReply(newState);
   }
 
   public Effect<ShoppingCartDTO> removeItem(String productId) {

@@ -1,4 +1,4 @@
-package com.example.application;
+package com.example.api;
 
 import com.example.domain.ShoppingCart;
 

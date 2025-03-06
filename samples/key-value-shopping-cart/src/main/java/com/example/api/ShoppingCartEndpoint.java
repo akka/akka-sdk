@@ -8,9 +8,9 @@ import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.http.HttpException;
-import com.example.application.ShoppingCartDTO;
-import com.example.application.ShoppingCartDTO.LineItemDTO;
+import com.example.api.ShoppingCartDTO.LineItemDTO;
 import com.example.application.ShoppingCartEntity;
+import com.example.domain.ShoppingCart;
 
 import java.util.UUID;
 import java.util.concurrent.CompletionStage;
@@ -33,7 +33,8 @@ public class ShoppingCartEndpoint {
     CompletionStage<ShoppingCartDTO> shoppingCartCreated =
       componentClient.forKeyValueEntity(cartId)
         .method(ShoppingCartEntity::create)
-        .invokeAsync();
+        .invokeAsync()
+          .thenApply(ShoppingCartDTO::of);
 
 
     // transform response
@@ -58,7 +59,8 @@ public class ShoppingCartEndpoint {
     } else {
       var addItemResult = componentClient.forKeyValueEntity(cartId)
         .method(ShoppingCartEntity::addItem)
-        .invokeAsync(addLineItem);
+        .invokeAsync(addLineItem.toDomain())
+          .thenApply(ShoppingCartDTO::of);
       return addItemResult;
     }
   }
@@ -67,19 +69,21 @@ public class ShoppingCartEndpoint {
   @Post("/prepopulated")
   public CompletionStage<String> createPrePopulated() {
     final String cartId = UUID.randomUUID().toString();
-    CompletionStage<ShoppingCartDTO> shoppingCartCreated =
-      componentClient.forKeyValueEntity(cartId).method(ShoppingCartEntity::create).invokeAsync();
+    CompletionStage<ShoppingCart> shoppingCartCreated =
+      componentClient.forKeyValueEntity(cartId)
+          .method(ShoppingCartEntity::create)
+          .invokeAsync();
 
-    CompletionStage<ShoppingCartDTO> cartPopulated =
+    CompletionStage<ShoppingCart> cartPopulated =
       shoppingCartCreated.thenCompose(empty -> {
-        var initialItem = new LineItemDTO("e", "eggplant", 1);
+        var initialItem = new ShoppingCart.LineItem("e", "eggplant", 1);
 
         return componentClient.forKeyValueEntity(cartId)
           .method(ShoppingCartEntity::addItem)
           .invokeAsync(initialItem);
       });
 
-    CompletionStage<String> response = cartPopulated.thenApply(ShoppingCartDTO::cartId);
+    CompletionStage<String> response = cartPopulated.thenApply(ShoppingCart::cartId);
 
     return response;
   }
@@ -102,8 +106,8 @@ public class ShoppingCartEndpoint {
         CompletionStage<String> addItemReply =
           componentClient.forKeyValueEntity(cartId)
             .method(ShoppingCartEntity::addItem)
-            .invokeAsync(addLineItem)
-            .thenApply(ShoppingCartDTO::cartId);
+            .invokeAsync(addLineItem.toDomain())
+            .thenApply(ShoppingCart::cartId);
         return addItemReply; // <2>
       }
     });
