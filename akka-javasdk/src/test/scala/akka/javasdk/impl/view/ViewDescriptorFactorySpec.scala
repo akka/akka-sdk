@@ -41,6 +41,18 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with Matchers {
       }.getMessage should include("NotPublicView is not marked with `public` modifier. Components must be public.")
     }
 
+    "allow View with lower case query" in {
+      assertDescriptor[ViewWithLowerCaseQuery] { desc =>
+        desc.tables.map(_.tableName) shouldBe Seq("users")
+      }
+    }
+
+    "allow View query with quoted table name" in {
+      assertDescriptor[ViewWithQuotedTableName] { desc =>
+        desc.tables.map(_.tableName) shouldBe Seq("üsérs tåble")
+      }
+    }
+
     "not allow View without any Table updater" in {
       intercept[ValidationException] {
         Validations.validate(classOf[ViewWithNoTableUpdater]).failIfInvalid()
@@ -120,11 +132,17 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with Matchers {
       }
     }
 
-    "match names out of various queries" in {
+    "match table names out of various queries" in {
       Seq(
         "SELECT * FROM users" -> "users",
+        // lower case FROM keyword is valid
+        "select * from users" -> "users",
+        // any case FROM keyword is valid
+        "select * fRoM users" -> "users",
         // quoted is also valid
         "SELECT * FROM `users`" -> "users",
+        // quoted can contain any characters
+        "SELECT * FROM `üsérs tåble`" -> "üsérs tåble",
         """SELECT * AS customers
           |  FROM customers_by_name
           |  WHERE name = :name
@@ -133,7 +151,9 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with Matchers {
           |FROM customers
           |OFFSET page_token_offset(:page_token)
           |LIMIT 10""".stripMargin -> "customers").foreach { case (query, expectedTableName) =>
-        ViewDescriptorFactory.TableNamePattern.findFirstMatchIn(query).map(_.group(1)) match {
+        ViewDescriptorFactory.TableNamePattern
+          .findFirstMatchIn(query)
+          .map(m => Option(m.group(1)).getOrElse(m.group(2))) match {
           case Some(tableName) => tableName shouldBe expectedTableName
           case None            => fail(s"pattern does not match [$query]")
         }
