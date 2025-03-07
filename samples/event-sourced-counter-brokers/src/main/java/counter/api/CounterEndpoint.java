@@ -6,6 +6,7 @@ import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
+import counter.application.CounterByValueView;
 import counter.application.CounterEntity;
 import counter.application.CounterEntity.CounterResult.ExceedingMaxCounterValue;
 import counter.application.CounterEntity.CounterResult.Success;
@@ -42,14 +43,12 @@ public class CounterEndpoint {
   }
   // end::endpoint-component-interaction[]
 
-  //tag::increaseWithError[]
   @Post("/{counterId}/increase-with-error/{value}")
   public CompletionStage<Integer> increaseWithError(String counterId, Integer value) {
     return componentClient.forEventSourcedEntity(counterId)
       .method(CounterEntity::increaseWithError)
       .invokeAsync(value); // <1>
   }
-  //end::increaseWithError[]
 
   //tag::increaseWithResult[]
   @Post("/{counterId}/increase-with-result/{value}")
@@ -70,6 +69,20 @@ public class CounterEndpoint {
     return componentClient.forEventSourcedEntity(counterId)
       .method(CounterEntity::multiply)
       .invokeAsync(value);
+  }
+
+  @Get("/greater-than/{value}")
+  public CompletionStage<CounterByValueView.CounterByValueList> greaterThan(Integer value) {
+    return componentClient.forView()
+      .method(CounterByValueView::findByCountersByValueGreaterThan)
+      .invokeAsync(value);
+  }
+
+  @Get("/all")
+  public CompletionStage<CounterByValueView.CounterByValueList> getAll() {
+    return componentClient.forView()
+      .method(CounterByValueView::findAll)
+      .invokeAsync();
   }
 
   public record CounterRequest(String id, Integer value) {

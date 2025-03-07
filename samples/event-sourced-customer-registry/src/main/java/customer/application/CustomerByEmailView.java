@@ -9,6 +9,7 @@ import customer.domain.CustomerEvent;
 import customer.domain.CustomerRow;
 import customer.domain.CustomersList;
 
+// tag::idempotent-update[]
 @ComponentId("view_customers_by_email")
 public class CustomerByEmailView extends View {
 
@@ -16,16 +17,18 @@ public class CustomerByEmailView extends View {
   public QueryEffect<CustomersList> getCustomers(String email) {
     return queryResult();
   }
+  // end::idempotent-update[]
 
   @Query(value = "SELECT * FROM customers_by_email WHERE email = :email", streamUpdates = true)
   public QueryStreamEffect<CustomerRow> getCustomersStream(String email) {
     return queryStreamResult();
   }
 
+  // tag::idempotent-update[]
   @Consume.FromEventSourcedEntity(CustomerEntity.class)
   public static class CustomersByEmail extends TableUpdater<CustomerRow> {
 
-    public Effect<CustomerRow> onEvent(CustomerEvent event) {
+    public Effect<CustomerRow> onEvent(CustomerEvent event) { // <1>
       return switch (event) {
         case CustomerEvent.CustomerCreated created ->
             effects().updateRow(new CustomerRow(created.email(), created.name(), created.address()));
@@ -39,3 +42,4 @@ public class CustomerByEmailView extends View {
     }
   }
 }
+// end::idempotent-update[]
