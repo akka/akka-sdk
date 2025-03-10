@@ -3,6 +3,7 @@ package com.example.wallet.domain;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.UUID;
 
@@ -13,7 +14,7 @@ class WalletTest {
   @Test
   public void shouldLimitCommandIdsSize() {
     //given
-    Wallet wallet = new Wallet("w1", 100, new ArrayList<>());
+    Wallet wallet = new Wallet("w1", 100, new LinkedHashSet<>());
 
     //when
     for (int i = 0; i < 10000; i++) {

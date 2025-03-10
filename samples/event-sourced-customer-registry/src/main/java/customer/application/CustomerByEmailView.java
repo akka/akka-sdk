@@ -25,7 +25,7 @@ public class CustomerByEmailView extends View {
   @Consume.FromEventSourcedEntity(CustomerEntity.class)
   public static class CustomersByEmail extends TableUpdater<CustomerRow> {
 
-    public Effect<CustomerRow> onEvent(CustomerEvent event) {
+    public Effect<CustomerRow> onEvent(CustomerEvent event) { // <1>
       return switch (event) {
         case CustomerEvent.CustomerCreated created ->
             effects().updateRow(new CustomerRow(created.email(), created.name(), created.address()));

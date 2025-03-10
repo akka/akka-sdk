@@ -92,6 +92,7 @@ include::example$key-value-customer-registry/src/main/java/customer/application/
 <4> Defines the query.
 <5> Uses the new type `CustomerSummary` to return the result of the query.
 
+NOTE: Some `TableUpdater` implementation might update the view model in a non-idempotent way. For example, the view model adds an element to the list. When the source of the changes is an Event Sourced Entity, Key Value Entity or another Akka service, the View component has a build-in deduplication mechanism to ensure that the same event is not processed twice. In other cases, you should add the deduplication mechanism in the `TableUpdater` implementation. See xref:dev-best-practices.adoc#message-deduplication[message deduplication] for some suggested solutions.
 
 
 [#ve_delete]
