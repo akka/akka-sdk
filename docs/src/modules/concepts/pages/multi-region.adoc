@@ -28,15 +28,15 @@ An entity can only be updated within a single region, known as its primary regio
 
 Primary region selection for entities is configurable. There are two modes for primary selection: **pinned-region** and **request-region**.
 
-Pinned-region primary selection mode (default):: 
+Pinned-region primary selection mode (default)::
   All entities use the same primary region, which is selected statically as part of the deployment. Write requests to the primary region of the entity are handled locally. Write requests to other regions are forwarded to the primary region. The primary region stays the same until there is an operational change of the primary region.
 +
-  This is useful for scenarios where you want one primary region, with the ability to fail over to another region in the case of a regional outage.
+This is useful for scenarios where you want one primary region, with the ability to fail over to another region in the case of a regional outage.
 
 Request-region primary selection mode::
   The primary region changes when another region receives a write request. Upon a write request to an entity in a region that is not the primary it will move its primary. The new primary ensures that all preceding events from the previous primary have been fully replicated and applied (i.e. persisted) before writing the new event, and thereby guarantees strong consistency when switching from one region to another. Subsequent write requests to the primary region of the entity are handled locally without any further coordination. Write requests to other regions will trigger the same switch-over process. All other entity instances operate unimpeded during the switch-over process.
 +
-  This is useful for scenarios where you want to have the primary region for your data close to the users who use the data. A user, Alice, in the USA, will have her data in the USA, while a user Bob, in the UK, will have his data, in the UK. If Alice travels to Asia the data will follow her.
+This is useful for scenarios where you want to have the primary region for your data close to the users who use the data. A user, Alice, in the USA, will have her data in the USA, while a user Bob, in the UK, will have his data, in the UK. If Alice travels to Asia the data will follow her.
 
 The Operating section explains more details about xref:operations:regions/index.adoc#selecting-primary[configuring the primary selection mode].
 
