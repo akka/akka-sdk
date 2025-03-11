@@ -430,8 +430,8 @@ private[impl] object ViewDescriptorFactory {
               val tableUpdaterInstance = tableUpdater()
               try {
 
-                tableUpdaterInstance._internalSetViewState(existingState.getOrElse(tableUpdaterInstance.emptyRow()))
                 tableUpdaterInstance._internalSetUpdateContext(Optional.of(updateContext))
+                tableUpdaterInstance._internalSetViewState(existingState.getOrElse(tableUpdaterInstance.emptyRow()))
 
                 val result =
                   if (deleteHandler) method.invoke(tableUpdaterInstance)
