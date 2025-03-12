@@ -13,6 +13,7 @@ Follow the detailed steps to configure the desired message broker service for us
 - xref:operations:projects/broker-confluent.adoc[Confluent Cloud]
 - xref:operations:projects/broker-aws-msk.adoc[Amazon MSK]
 - xref:operations:projects/broker-aiven.adoc[Aiven for Apache Kafka]
+- xref:operations:projects/broker-azure-eventhubs.adoc[Azure Event Hubs]
 
 We continuously evaluate additional integrations for potential built-in support in Akka. If you have specific requirements, please contact us at mailto:support@akka.io[].
 
