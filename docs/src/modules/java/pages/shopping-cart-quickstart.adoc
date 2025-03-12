@@ -33,7 +33,7 @@ akka quickstart download shopping-cart
 
 == Understanding the shopping cart
 
-Shopping carts are excellent examples of agenticfootnote:[Defined as a stateful behavior capable of acting on its own.] behavior (with or without AI). In real-world implementations, they can automatically apply discounts or coupons, monitor inventory levels, detect abandoned carts, maximize conversion rates, and make recommentations based on shopping history and cart contents.
+Shopping carts are excellent examples of agenticfootnote:[Defined as a stateful behavior capable of acting on its own.] behavior (with or without AI). In real-world implementations, they can automatically apply discounts or coupons, monitor inventory levels, detect abandoned carts, maximize conversion rates, and make recommendations based on shopping history and cart contents.
 
 For the purposes of this initial quickstart, we will just have a single endpoint and a single event-sourced entity to keep things easy to digest.
 
