@@ -10,7 +10,6 @@ import java.lang.reflect.Method
 import java.util
 import java.util.Optional
 import java.util.concurrent.CompletionStage
-import scala.annotation.nowarn
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.Promise
@@ -135,11 +134,12 @@ class SdkRunner private (dependencyProvider: Option[DependencyProvider], disable
   def applicationConfig: Config =
     ApplicationConfig.loadApplicationConf
 
-  @nowarn("msg=deprecated") //TODO remove deprecation once we remove the old constructor
   override def getSettings: SpiSettings = {
     val applicationConf = applicationConfig
 
     val eventSourcedEntitySnapshotEvery = applicationConfig.getInt("akka.javasdk.event-sourced-entity.snapshot-every")
+    val cleanupDeletedEntityAfter =
+      applicationConf.getDuration("akka.javasdk.event-sourced-entity.cleanup-deleted-after")
 
     val devModeSettings =
       if (applicationConf.getBoolean("akka.javasdk.dev-mode.enabled"))
@@ -155,7 +155,7 @@ class SdkRunner private (dependencyProvider: Option[DependencyProvider], disable
       else
         None
 
-    new SpiSettings(eventSourcedEntitySnapshotEvery, devModeSettings)
+    new SpiSettings(eventSourcedEntitySnapshotEvery, cleanupDeletedEntityAfter, devModeSettings)
   }
 
   private def extractBrokerConfig(eventingConf: Config): SpiEventingSupportSettings = {
@@ -481,7 +481,6 @@ private final class Sdk(
 
         val instanceFactory: SpiEventSourcedEntity.FactoryContext => SpiEventSourcedEntity = { factoryContext =>
           new EventSourcedEntityImpl[AnyRef, AnyRef, EventSourcedEntity[AnyRef, AnyRef]](
-            sdkSettings,
             sdkTracerFactory,
             componentId,
             factoryContext.entityId,

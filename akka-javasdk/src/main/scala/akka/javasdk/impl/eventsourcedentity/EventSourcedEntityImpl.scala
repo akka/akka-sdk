@@ -23,7 +23,6 @@ import akka.javasdk.impl.ComponentType
 import akka.javasdk.impl.EntityExceptions.EntityException
 import akka.javasdk.impl.ErrorHandling.BadRequestException
 import akka.javasdk.impl.MetadataImpl
-import akka.javasdk.impl.Settings
 import akka.javasdk.impl.effect.ErrorReplyImpl
 import akka.javasdk.impl.effect.MessageReplyImpl
 import akka.javasdk.impl.effect.NoSecondaryEffectImpl
@@ -84,7 +83,6 @@ private[impl] object EventSourcedEntityImpl {
  */
 @InternalApi
 private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[S, E]](
-    configuration: Settings,
     tracerFactory: () => Tracer,
     componentId: String,
     entityId: String,

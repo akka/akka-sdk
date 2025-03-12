@@ -4,8 +4,6 @@
 
 package akka.javasdk.impl
 
-import java.time.Duration
-
 import akka.annotation.InternalApi
 import Settings.DevModeSettings
 import com.typesafe.config.Config
@@ -17,13 +15,10 @@ import com.typesafe.config.Config
 private[impl] object Settings {
 
   def apply(sdkConfig: Config): Settings = {
-    Settings(
-      cleanupDeletedEventSourcedEntityAfter = sdkConfig.getDuration("event-sourced-entity.cleanup-deleted-after"),
-      cleanupDeletedKeyValueEntityAfter = sdkConfig.getDuration("key-value-entity.cleanup-deleted-after"),
-      devModeSettings = Option.when(sdkConfig.getBoolean("dev-mode.enabled"))(
-        DevModeSettings(
-          serviceName = sdkConfig.getString("dev-mode.service-name"),
-          httpPort = sdkConfig.getInt("dev-mode.http-port"))))
+    Settings(devModeSettings = Option.when(sdkConfig.getBoolean("dev-mode.enabled"))(
+      DevModeSettings(
+        serviceName = sdkConfig.getString("dev-mode.service-name"),
+        httpPort = sdkConfig.getInt("dev-mode.http-port"))))
   }
 
   final case class DevModeSettings(serviceName: String, httpPort: Int)
@@ -33,7 +28,4 @@ private[impl] object Settings {
  * INTERNAL API
  */
 @InternalApi
-private[impl] final case class Settings(
-    cleanupDeletedEventSourcedEntityAfter: Duration,
-    cleanupDeletedKeyValueEntityAfter: Duration,
-    devModeSettings: Option[DevModeSettings])
+private[impl] final case class Settings(devModeSettings: Option[DevModeSettings])
