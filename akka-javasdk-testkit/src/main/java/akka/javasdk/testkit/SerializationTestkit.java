@@ -26,7 +26,7 @@ public final class SerializationTestkit {
     BytesPayload bytesPayload = jsonSerializer.toBytes(value);
     SerializedPayload serializedPayload = new SerializedPayload(bytesPayload.contentType(), bytesPayload.bytes().toArray());
     try {
-      return jsonSerializer.getInternalObjectMapper().writeValueAsBytes(serializedPayload);
+      return jsonSerializer.objectMapper().writeValueAsBytes(serializedPayload);
     } catch (JsonProcessingException e) {
       throw new RuntimeException("Unexpected serialization error", e);
     }
@@ -34,7 +34,7 @@ public final class SerializationTestkit {
 
   public static <T> T deserialize(Class<T> valueClass, byte[] bytes) {
     try {
-      SerializedPayload serializedPayload = jsonSerializer.getInternalObjectMapper().readValue(bytes, SerializedPayload.class);
+      SerializedPayload serializedPayload = jsonSerializer.objectMapper().readValue(bytes, SerializedPayload.class);
       return jsonSerializer.fromBytes(valueClass, new BytesPayload(ByteString.fromArray(serializedPayload.bytes), serializedPayload.contentType));
     } catch (IOException e) {
       throw new RuntimeException("Unexpected deserialization error", e);

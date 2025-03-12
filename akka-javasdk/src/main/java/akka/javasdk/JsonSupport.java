@@ -42,9 +42,7 @@ import java.util.Optional;
 public final class JsonSupport {
 
   // object mapper for HTTP endpoints and explicit serialization/deserialization
-  // of objects in user code, customizable for by users
-  // FIXME should this also be used for consumers when events come from the outside
-  //       or are published to the outside?
+  // of objects in user code, customizable for by users, not used for "internal" serialization in component client, views etc.
   private static final ObjectMapper objectMapper = akka.javasdk.impl.serialization.JsonSerializer.newObjectMapperWithDefaults();
 
   /**
@@ -58,9 +56,8 @@ public final class JsonSupport {
     return objectMapper;
   }
 
-  // FIXME should this really be in here at all?
-  // internal serialization object
-  private static akka.javasdk.impl.serialization.JsonSerializer jsonSerializer = new akka.javasdk.impl.serialization.JsonSerializer();
+  // internal serialization object, but using the public/configurable mapper
+  private static akka.javasdk.impl.serialization.JsonSerializer jsonSerializer = new akka.javasdk.impl.serialization.JsonSerializer(objectMapper);
 
   private JsonSupport() {
   }

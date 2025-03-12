@@ -125,17 +125,21 @@ object JsonSerializer {
  * INTERNAL API
  */
 @InternalApi
-final class JsonSerializer {
+final class JsonSerializer(val objectMapper: ObjectMapper) {
   import JsonSerializer._
+
+  def this() = this(JsonSerializer.internalObjectMapper)
+
+  /* Mostly used for internal serialization (events, snapshots, messages sent through component client)
+   * but in some places (consumers) it is created using the user configured object mapper if interacting
+   * with the outside world (message broker consume or publish) so that users can configure for surprising
+   * external formats.
+   */
 
   private val typeHints: ConcurrentMap[Class[_], TypeHint] = new ConcurrentHashMap()
   val reversedTypeHints: ConcurrentMap[String, Class[_]] = new ConcurrentHashMap()
 
   override def toString: String = s"JsonSerializer: ${typeHints.keySet().size()} registered types"
-
-  private val objectMapper = JsonSerializer.internalObjectMapper
-
-  def getInternalObjectMapper: ObjectMapper = objectMapper
 
   def toBytes(value: Any): BytesPayload = {
     if (value == null) throw NullSerializationException
