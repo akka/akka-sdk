@@ -173,7 +173,8 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
                   updatedState,
                   reply,
                   metadata,
-                  deleteEntity))
+                  deleteEntity,
+                  replicationFilter = commandEffect.replFilter.toSpi))
           }
 
         case NoPrimaryEffect =>
