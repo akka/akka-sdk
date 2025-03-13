@@ -271,6 +271,11 @@ public abstract class EventSourcedEntity<S, E> {
       OnSuccessBuilder<S> persistAll(List<? extends E> events);
 
       /**
+       * Change the replication filter without persisting any events.
+       */
+      OnSuccessBuilder<S> replicationFilter(ReplicationFilter filter);
+
+      /**
        * Create a message reply.
        *
        * @param message The payload of the reply.
@@ -327,6 +332,11 @@ public abstract class EventSourcedEntity<S, E> {
        * @param <T> The type of the message that must be returned by this call.
        */
       <T> Effect<T> thenReply(Function<S, T> replyMessage, Metadata metadata);
+
+      /**
+       * Change the replication filter combined with for example {@code persist} event.
+       */
+      OnSuccessBuilder<S> replicationFilter(ReplicationFilter filter);
 
     }
 
