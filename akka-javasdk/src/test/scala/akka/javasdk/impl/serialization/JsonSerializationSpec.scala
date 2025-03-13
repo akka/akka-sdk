@@ -6,9 +6,7 @@ package akka.javasdk.impl.serialization
 
 import java.util
 import java.util.Optional
-
 import scala.beans.BeanProperty
-
 import akka.Done
 import akka.javasdk.DummyClass
 import akka.javasdk.DummyClass2
@@ -24,6 +22,7 @@ import akka.javasdk.impl.serialization.JsonSerializationSpec.SimpleClassUpdated
 import akka.runtime.sdk.spi.BytesPayload
 import akka.util.ByteString
 import com.fasterxml.jackson.annotation.JsonCreator
+import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.IntNode
 import com.fasterxml.jackson.databind.node.ObjectNode
@@ -89,6 +88,8 @@ object JsonSerializationSpec {
     @TypeName(" ")
     final case class Elephant(name: String, age: Int) extends Animal
   }
+
+  final case class SomeTypeWithOptional(optional: Optional[String])
 
 }
 class JsonSerializationSpec extends AnyWordSpec with Matchers {
@@ -418,6 +419,14 @@ class JsonSerializationSpec extends AnyWordSpec with Matchers {
 
       val payloadBigOne = serializer.encodeDynamicToAkkaByteString("value", java.math.BigDecimal.valueOf(10d))
       payloadBigOne.utf8String shouldBe """{"value":10.0}"""
+    }
+
+    "use the provided object mapper" in {
+      val customMapper = JsonSerializer.newObjectMapperWithDefaults()
+      customMapper.setSerializationInclusion(JsonInclude.Include.NON_ABSENT)
+      val customSerializer = new JsonSerializer(customMapper)
+      val bytesPayload = customSerializer.toBytes(JsonSerializationSpec.SomeTypeWithOptional(Optional.empty()))
+      bytesPayload.bytes.utf8String shouldBe "{}"
     }
 
   }

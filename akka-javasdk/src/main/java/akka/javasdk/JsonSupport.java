@@ -352,6 +352,10 @@ public final class JsonSupport {
 
 }
 
+/**
+ * @deprecated Not indented for public use and no longer used internally
+ */
+@Deprecated
 class DoneSerializer extends JsonSerializer<Done> {
 
   @Override
@@ -370,6 +374,10 @@ class DoneSerializer extends JsonSerializer<Done> {
   }
 }
 
+/**
+ * @deprecated Not indented for public use and no longer used internally
+ */
+@Deprecated
 class DoneDeserializer extends JsonDeserializer<Done> {
 
   @Override
