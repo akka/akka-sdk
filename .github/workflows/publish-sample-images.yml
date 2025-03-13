@@ -51,5 +51,5 @@ jobs:
       - name: Quickstart docker image for console quick-deploy
         run: |-
           cd samples/shopping-cart-quickstart
-          echo "${{ secrets.PUBLISH_PASSWORD }}" | docker login --username "${{ secrets.PUBLISH_USER }}" --password-stdin docker.cloudsmith.io/lightbend
-          mvn --batch-mode deploy docker:push -DskipTests -Ddocker.image=registry.akka.io/shopping-cart-quickstart
+          echo "${{ secrets.PUBLISH_PASSWORD }}" | docker login --username "${{ secrets.PUBLISH_USER }}" --password-stdin docker.cloudsmith.io/lightbend/akka-public
+          mvn --batch-mode deploy docker:push -DskipTests -Ddocker.image=docker.cloudsmith.io/lightbend/akka-public/shopping-cart-quickstart
