@@ -66,7 +66,7 @@ private[impl] sealed abstract class EntityClientImpl(
     if (!expectedComponentSuperclass.isAssignableFrom(declaringClass)) {
       throw new IllegalArgumentException(s"$declaringClass is not a subclass of $expectedComponentSuperclass")
     }
-    val componentId = ComponentDescriptorFactory.readComponentIdIdValue(declaringClass)
+    val componentId = ComponentDescriptorFactory.readComponentIdValue(declaringClass)
     val methodName = method.getName.capitalize
 
     // FIXME push some of this logic into the NativeomponentMethodRef
@@ -202,7 +202,7 @@ private[javasdk] final case class TimedActionClientImpl(
       throw new IllegalArgumentException(
         "Use dedicated builder for calling " + declaringClass.getSuperclass.getSimpleName
         + " component method " + declaringClass.getSimpleName + "::" + method.getName + ". This builder is meant for Action component calls.")
-    val componentId = ComponentDescriptorFactory.readComponentIdIdValue(declaringClass)
+    val componentId = ComponentDescriptorFactory.readComponentIdValue(declaringClass)
     val methodName = method.getName.capitalize
 
     new ComponentMethodRefImpl[AnyRef, R](

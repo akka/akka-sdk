@@ -76,6 +76,7 @@ public class TestKit {
   public static class MockedEventing {
     public static final String KEY_VALUE_ENTITY = "key-value-entity";
     public static final String EVENT_SOURCED_ENTITY = "event-sourced-entity";
+    public static final String WORKFLOW = "workflow";
     public static final String STREAM = "stream";
     public static final String TOPIC = "topic";
     private final Map<String, Set<String>> mockedIncomingEvents; //Subscriptions
@@ -92,15 +93,21 @@ public class TestKit {
 
     public static MockedEventing EMPTY = new MockedEventing();
 
-    public MockedEventing withKeyValueEntityIncomingMessages(String typeId) {
+    public MockedEventing withKeyValueEntityIncomingMessages(String componentId) {
       Map<String, Set<String>> copy = new HashMap<>(mockedIncomingEvents);
-      copy.compute(KEY_VALUE_ENTITY, updateValues(typeId));
+      copy.compute(KEY_VALUE_ENTITY, updateValues(componentId));
       return new MockedEventing(copy, new HashMap<>(mockedOutgoingEvents));
     }
 
-    public MockedEventing withEventSourcedIncomingMessages(String typeId) {
+    public MockedEventing withEventSourcedIncomingMessages(String componentId) {
       Map<String, Set<String>> copy = new HashMap<>(mockedIncomingEvents);
-      copy.compute(EVENT_SOURCED_ENTITY, updateValues(typeId));
+      copy.compute(EVENT_SOURCED_ENTITY, updateValues(componentId));
+      return new MockedEventing(copy, new HashMap<>(mockedOutgoingEvents));
+    }
+
+    public MockedEventing withWorkflowIncomingMessages(String componentId) {
+      Map<String, Set<String>> copy = new HashMap<>(mockedIncomingEvents);
+      copy.compute(WORKFLOW, updateValues(componentId));
       return new MockedEventing(copy, new HashMap<>(mockedOutgoingEvents));
     }
 
@@ -123,14 +130,14 @@ public class TestKit {
     }
 
     @NotNull
-    private BiFunction<String, Set<String>, Set<String>> updateValues(String typeId) {
+    private BiFunction<String, Set<String>, Set<String>> updateValues(String componentId) {
       return (key, currentValues) -> {
         if (currentValues == null) {
           LinkedHashSet<String> values = new LinkedHashSet<>(); //order is relevant only for tests
-          values.add(typeId);
+          values.add(componentId);
           return values;
         } else {
-          currentValues.add(typeId);
+          currentValues.add(componentId);
           return currentValues;
         }
       };
@@ -173,17 +180,22 @@ public class TestKit {
           }).collect(Collectors.joining(";"));
     }
 
-    boolean hasKeyValueEntitySubscription(String typeId) {
-      return checkExistence(KEY_VALUE_ENTITY, typeId);
+    boolean hasKeyValueEntitySubscription(String componentId) {
+      return checkExistence(KEY_VALUE_ENTITY, componentId);
     }
 
-    boolean hasEventSourcedEntitySubscription(String typeId) {
-      return checkExistence(EVENT_SOURCED_ENTITY, typeId);
+    boolean hasEventSourcedEntitySubscription(String componentId) {
+      return checkExistence(EVENT_SOURCED_ENTITY, componentId);
+    }
+
+    boolean hasWorkflowSubscription(String componentId) {
+      return checkExistence(WORKFLOW, componentId);
     }
 
     boolean hasStreamSubscription(String service, String streamId) {
       return checkExistence(STREAM, service + "/" + streamId);
     }
+
 
     boolean hasTopicSubscription(String topic) {
       return checkExistence(TOPIC, topic);
@@ -302,17 +314,25 @@ public class TestKit {
     /**
      * Mock the incoming messages flow from a KeyValueEntity.
      */
-    public Settings withKeyValueEntityIncomingMessages(String typeId) {
+    public Settings withKeyValueEntityIncomingMessages(String componentId) {
       return new Settings(serviceName, aclEnabled, eventingSupport,
-          mockedEventing.withKeyValueEntityIncomingMessages(typeId), dependencyProvider, additionalConfig, disabledComponents);
+          mockedEventing.withKeyValueEntityIncomingMessages(componentId), dependencyProvider, additionalConfig, disabledComponents);
     }
 
     /**
      * Mock the incoming events flow from an EventSourcedEntity.
      */
-    public Settings withEventSourcedEntityIncomingMessages(String typeId) {
+    public Settings withEventSourcedEntityIncomingMessages(String componentId) {
       return new Settings(serviceName, aclEnabled, eventingSupport,
-          mockedEventing.withEventSourcedIncomingMessages(typeId), dependencyProvider, additionalConfig, disabledComponents);
+          mockedEventing.withEventSourcedIncomingMessages(componentId), dependencyProvider, additionalConfig, disabledComponents);
+    }
+
+    /**
+     * Mock the incoming state updates flow from a Workflow.
+     */
+    public Settings withWorkflowIncomingMessages(String componentId) {
+      return new Settings(serviceName, aclEnabled, eventingSupport,
+        mockedEventing.withWorkflowIncomingMessages(componentId), dependencyProvider, additionalConfig, disabledComponents);
     }
 
     /**
@@ -689,6 +709,18 @@ public class TestKit {
       throwMissingConfigurationException("EventSourcedEntity " + componentId);
     }
     return eventingTestKit.getEventSourcedEntityIncomingMessages(componentId);
+  }
+
+  /**
+   * Get incoming messages for Workflow.
+   *
+   * @param componentId As annotated with @ComponentId on the EventSourcedEntity
+   */
+  public IncomingMessages getWorkflowIncomingMessages(String componentId) {
+    if (!settings.mockedEventing.hasWorkflowSubscription(componentId)) {
+      throwMissingConfigurationException("Workflow " + componentId);
+    }
+    return eventingTestKit.getWorkflowIncomingMessages(componentId);
   }
 
   /**
