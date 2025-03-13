@@ -26,6 +26,7 @@ import akka.javasdk.annotations.AgentDescription
 import akka.javasdk.annotations.AgentRole
 import akka.javasdk.annotations.Component
 import akka.javasdk.annotations.ComponentId
+import akka.javasdk.annotations.EnableReplicationFilter
 import akka.javasdk.annotations.GrpcEndpoint
 import akka.javasdk.annotations.http.HttpEndpoint
 import akka.javasdk.annotations.mcp.McpEndpoint
@@ -335,6 +336,9 @@ private[impl] object Reflect {
         m.getParameterTypes.head != classOf[AnyRef])
       .get // there always is one or else it would not compile
   }
+
+  def isReplicationFilterEnabled(component: Class[_]): Boolean =
+    component.hasAnnotation[EnableReplicationFilter]
 
   private implicit val stringArrayOrdering: Ordering[Array[String]] =
     Ordering.fromLessThan(util.Arrays.compare[String](_, _) < 0)

@@ -616,8 +616,7 @@ private final class Sdk(
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
             provided = isProvided(clz),
-            replicationFilterEnabled = false // FIXME: add replication filters
-          )
+            replicationFilterEnabled = Reflect.isReplicationFilterEnabled(clz))
 
       case clz if Reflect.isKeyValueEntity(clz) =>
         val componentId = Reflect.readComponentId(clz)
@@ -660,8 +659,7 @@ private final class Sdk(
             name = Reflect.readComponentName(clz),
             description = Reflect.readComponentDescription(clz),
             provided = false,
-            replicationFilterEnabled = false // FIXME: add replication filters
-          )
+            replicationFilterEnabled = Reflect.isReplicationFilterEnabled(clz))
 
       case clz if Reflect.isWorkflow(clz) =>
         val componentId = Reflect.readComponentId(clz)
