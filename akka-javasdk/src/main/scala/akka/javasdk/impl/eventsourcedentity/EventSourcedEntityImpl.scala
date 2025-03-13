@@ -13,6 +13,7 @@ import akka.annotation.InternalApi
 import akka.javasdk.CommandException
 import akka.javasdk.Metadata
 import akka.javasdk.Tracing
+import akka.javasdk.annotations.EnableReplicationFilter
 import akka.javasdk.eventsourcedentity.CommandContext
 import akka.javasdk.eventsourcedentity.EventContext
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
@@ -150,6 +151,11 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
         }
       }
 
+      if ((commandEffect.replFilter ne ReplicationFilterImpl.empty) && !isReplicationFilterEnabled) {
+        throw new IllegalStateException(
+          "To use replication filters the EventSourcedEntity class must be annotated with @EnableReplicationFilter.")
+      }
+
       var currentSequence = command.sequenceNumber
 
       def emitEvents(events: Iterable[Any], eventsMetadata: Iterable[Metadata], deleteEntity: Boolean) = {
@@ -180,7 +186,8 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
                 reply,
                 metadata,
                 deleteEntity,
-                eventsMetadata.iterator.map(MetadataImpl.toSpi).toVector))
+                eventsMetadata.iterator.map(MetadataImpl.toSpi).toVector,
+                replicationFilter = commandEffect.replFilter.toSpi))
         }
       }
 
@@ -257,4 +264,9 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
 
   override def stateFromBytes(pb: BytesPayload): SpiEventSourcedEntity.State =
     serializer.fromBytes(entityStateType, pb).asInstanceOf[SpiEventSourcedEntity.State]
+
+  private def isReplicationFilterEnabled: Boolean = {
+    import akka.javasdk.impl.reflection.Reflect.Syntax.AnnotatedElementOps
+    entity.getClass.hasAnnotation[EnableReplicationFilter]
+  }
 }

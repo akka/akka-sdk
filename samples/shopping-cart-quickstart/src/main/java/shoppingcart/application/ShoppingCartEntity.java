@@ -3,9 +3,11 @@ package shoppingcart.application;
 
 import akka.Done;
 import akka.javasdk.annotations.Component;
+import akka.javasdk.annotations.EnableReplicationFilter;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import akka.javasdk.eventsourcedentity.EventSourcedEntityContext;
 import java.util.Collections;
+import akka.javasdk.eventsourcedentity.ReplicationFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import shoppingcart.domain.ShoppingCart;
@@ -18,7 +20,8 @@ import shoppingcart.domain.ShoppingCartEvent;
 // tag::all[]
 // tag::class[]
 @Component(id = "shopping-cart") // <2>
-public class ShoppingCartEntity 
+@EnableReplicationFilter
+public class ShoppingCartEntity
   extends EventSourcedEntity<ShoppingCart, ShoppingCartEvent> { // <1>
 
   // end::class[]
@@ -53,9 +56,36 @@ public class ShoppingCartEntity
 
     var event = new ShoppingCartEvent.ItemAdded(item); // <2>
 
-    return effects()
-      .persist(event) // <3>
-      .thenReply(newState -> Done.getInstance()); // <4>
+    // FIXME this is just temporary for interactive testing of replication filters
+    if (item.addRegions().isEmpty() && item.removeRegions().isEmpty()) {
+      return effects()
+          .persist(event) // <3>
+          .thenReply(newState -> Done.getInstance()); // <4>
+    } else {
+      logger.info("Update replication filter {}", item);
+      var filter = ReplicationFilter
+          .includeRegions(item.addRegions())
+          .removeRegions(item.removeRegions());
+
+      if (item.productId().isEmpty()) {
+        return effects()
+            .updateReplicationFilter(filter)
+            .thenReply(newState -> Done.getInstance());
+      } else {
+        return effects()
+            .persist(event)
+            .updateReplicationFilter(filter)
+            .thenReply(newState -> Done.getInstance());
+
+      }
+
+
+
+    }
+
+
+
+
   }
 
   // end::addItem[]

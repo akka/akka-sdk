@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import akka.Done;
 import akka.javasdk.testkit.EventSourcedTestKit;
 import java.util.List;
+import java.util.Set;
+
 import org.junit.jupiter.api.Test;
 import shoppingcart.domain.ShoppingCart;
 import shoppingcart.domain.ShoppingCartEvent.ItemAdded;
@@ -13,7 +15,7 @@ public class ShoppingCartTest {
 
   // prettier-ignore
   private final ShoppingCart.LineItem akkaTshirt = 
-    new ShoppingCart.LineItem("akka-tshirt", "Akka Tshirt", 10);
+    new ShoppingCart.LineItem("akka-tshirt", "Akka Tshirt", 10, Set.of(), Set.of());
 
   @Test
   public void testAddLineItem() {
