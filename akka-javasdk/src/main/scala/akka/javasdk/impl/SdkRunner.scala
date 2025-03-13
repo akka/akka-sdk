@@ -139,7 +139,7 @@ class SdkRunner private (dependencyProvider: Option[DependencyProvider], disable
 
     val eventSourcedEntitySnapshotEvery = applicationConfig.getInt("akka.javasdk.event-sourced-entity.snapshot-every")
     val cleanupDeletedEntityAfter =
-      applicationConf.getDuration("akka.javasdk.event-sourced-entity.cleanup-deleted-after")
+      applicationConf.getDuration("akka.javasdk.entity.cleanup-deleted-after")
 
     val devModeSettings =
       if (applicationConf.getBoolean("akka.javasdk.dev-mode.enabled"))
