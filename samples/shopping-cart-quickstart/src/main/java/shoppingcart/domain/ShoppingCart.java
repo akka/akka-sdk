@@ -5,6 +5,7 @@ package shoppingcart.domain;
 import java.util.List;
 // end::first-app-top-part-1[]
 // tag::first-app-top-part-2[]
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.Comparator;
 import java.util.Optional;
@@ -17,9 +18,9 @@ import java.util.function.Predicate;
 
 public record ShoppingCart(String cartId, List<LineItem> items, boolean checkedOut) { // <1>
 
-  public record LineItem(String productId, String name, int quantity) { // <2>
+  public record LineItem(String productId, String name, int quantity, Set<String> addRegions, Set<String> removeRegions) { // <2>
     public LineItem withQuantity(int quantity) {
-      return new LineItem(productId, name, quantity);
+      return new LineItem(productId, name, quantity, addRegions, removeRegions);
     }
   }
 
