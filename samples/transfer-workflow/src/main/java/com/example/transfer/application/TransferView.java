@@ -9,6 +9,7 @@ import com.example.transfer.domain.TransferState;
 
 import java.util.Collection;
 
+// tag::view-from-workflow[]
 @ComponentId("transfer-view")
 public class TransferView extends View {
 
@@ -21,12 +22,13 @@ public class TransferView extends View {
     return queryResult();
   }
 
-  @Consume.FromWorkflow(TransferWorkflow.class)
+  @Consume.FromWorkflow(TransferWorkflow.class) // <1>
   public static class TransferUpdater extends TableUpdater<TransferEntry> {
 
-    public Effect<TransferEntry> onUpdate(TransferState transferState) {
+    public Effect<TransferEntry> onUpdate(TransferState transferState) { // <2>
       var id = updateContext().eventSubject().orElse("");
       return effects().updateRow(new TransferEntry(id, transferState.status().name()));
     }
   }
 }
+// end::view-from-workflow[]

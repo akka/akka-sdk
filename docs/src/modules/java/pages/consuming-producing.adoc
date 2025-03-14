@@ -6,9 +6,9 @@ image:ROOT:consumer.png[Consumer,width=100,float=left]  Consuming or producing a
 
 In this section, we will explore how you can use a Consumer component to:
 
-- Consume events emitted by an Event Sourced Entity within the same service.
-- Consume state changes emitted by a Key Value Entity within the same service.
-- Consume events from Event Sourced Entities using as service to service eventing.
+- Consume events emitted by an Event Sourced Entity within the same service or from a different service using service to service eventing
+- Consume state changes emitted by a Key Value Entity within the same service or from a different service using service to service eventing
+- Consume state changes emitted by a Workflow within the same service or from a different service using service to service eventing
 - Consume messages from topics of Google Cloud Pub/Sub or Apache Kafka.
 - Produce messages to a Google Cloud Pub/Sub or Apache Kafka topic.
 
@@ -61,6 +61,20 @@ include::example$key-value-shopping-cart/src/main/java/com/example/application/S
 <1> Set the source to the Key Value Entity `ShoppingCartEntity`.
 <2> Add handler for `ShoppingCart` state update.
 <3> Optionally, add handler when the entity is deleted.
+
+== Consume from Workflow
+
+You can consume state changes from a Workflow. To receive messages with the state changes, annotate the Consumer with `@Consume.FromWorkflow` and specify the class of the workflow.
+
+[source,java,indent=0]
+.{sample-base-url}/key-value-shopping-cart/src/main/java/com/example/application/ShoppingCartConsumer.java[ShoppingCartConsumer.java]
+----
+include::example$transfer-workflow/src/main/java/com/example/transfer/application/TransferStateConsumer.java[tag=workflow-consumer]
+----
+<1> Set the source to the `TransferWorkflow`.
+<2> Add handler for `TransferState` state update.
+
+If you need additional information about change origin, executed steps, etc., you can encode it in the state class.
 
 [#s2s-eventing]
 == Service to Service Eventing
