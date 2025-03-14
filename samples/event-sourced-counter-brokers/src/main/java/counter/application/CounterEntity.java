@@ -89,8 +89,8 @@ public class CounterEntity extends EventSourcedEntity<Integer, CounterEvent> {
   @Override
   public Integer applyEvent(CounterEvent event) {
     return switch (event) {
-      case ValueIncreased evt -> evt.currentValue();
-      case ValueMultiplied evt -> evt.currentValue();
+      case ValueIncreased evt -> evt.updatedValue();
+      case ValueMultiplied evt -> evt.updatedValue();
     };
   }
 }

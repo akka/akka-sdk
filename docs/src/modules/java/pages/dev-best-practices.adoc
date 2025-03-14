@@ -51,11 +51,11 @@ Deciding how many components and concepts to fit into a single service can be co
 [#message-deduplication]
 == Message deduplication
 
-In the realm of distributed systems, Akka embraces an at-least-once delivery guarantee, for components like Consumer or Views (view updaters). Message redeliveries are not just possible, but inevitable.
+In the realm of distributed systems, Akka embraces an at-least-once delivery guarantee, for components like Consumer or Views (view updaters). Redeliveries occur in distributed systems due to their inherent uncertainty and failure characteristics. Network failures, process crashes, restarts, and temporary unavailability of nodes can all lead to situations where an acknowledgment for a delivered message is lost, even if the recipient successfully processed it. To ensure eventual consistency and guarantee delivery, the sender must retry messages when acknowledgments are missing.
 
 NOTE: When consuming from Akka components like Event Sourced Entity, Key Value Entity or another Akka service, the Akka runtime not only guarantees at-least-once delivery, but also the order of messages. Meaning that a series of duplicated messages might be redelivered but always in the same order as they were produced.
 
-To ensure system integrity, consumers must be capable of handling duplicate messages gracefully. Effective deduplication is not just an optimization - it's a core architectural requirement, transforming the potential complexity of message redeliveries into a predictable and manageable system behavior.
+To ensure system integrity, consumers must be capable of handling duplicate messages gracefully. Effective deduplication is not just an optimization — it's a core architectural requirement, turning the challenge of message redeliveries into a structured and predictable system behavior.
 
 There is no one-size-fits-all solution to this challenge. Usually it's a mix of business requirements and possible technical tricks in a given context.
 
@@ -112,7 +112,7 @@ Events modelling is a key part of the system design. A consumer that have all th
 ----
 include::example$event-sourced-counter-brokers/src/main/java/counter/domain/CounterEvent.java[tag=events-enrichment]
 ----
-<1> `ValueMultiplied` event contains not only delta information under `multiplier` field but also pre-calculated `currentValue` of the counter.
+<1> `ValueMultiplied` event contains not only delta information under `multiplier` field but also pre-calculated `updatedValue` of the counter.
 
 The updated version of the `CounterByValueUpdater` can be again idempotent.
 
@@ -122,6 +122,8 @@ The updated version of the `CounterByValueUpdater` can be again idempotent.
 include::example$event-sourced-counter-brokers/src/main/java/counter/application/CounterByValueViewEnrichment.java[tag=events-enrichment]
 ----
 <1> Using pre-calculated `currentValue` from the event.
+
+NOTE: Overloading event payloads with excessive data, such as embedding entire entity state, can lead to bloated events, increased storage costs, and unnecessary data duplication. Instead, events should carry just enough context to maintaining a balance between enrichment and efficiency.
 
 *Benefits*
 
@@ -234,7 +236,7 @@ include::example$transfer-workflow-compensation/src/main/java/com/example/wallet
 
 This simple solution reveals a few important limitations of the deduplication that are common across many distributed technologies. It's very expensive (and often not possible) to have a total deduplication of all incoming requests/commands. There will always be some constraints like:
 
- - the size of the collection, e.g. keep only last 1000 command IDs, like in the sample above,
+ - the size of the collection, e.g. keep only last 1000 command IDs, like in the example above,
  - the time window, e.g. keep only command IDs from the last 24 hours,
  - both combined, e.g. keep only command IDs from the last 24 hours, but not more than 1000.
 

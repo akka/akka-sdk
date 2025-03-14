@@ -7,13 +7,13 @@ public sealed interface CounterEvent {
 
   // end::events-enrichment[]
   @TypeName("valie-increased")
-  record ValueIncreased(int value, int currentValue) implements CounterEvent {
+  record ValueIncreased(int value, int updatedValue) implements CounterEvent {
   }
 
   @TypeName("value-multiplied")
   // tag::events-enrichment[]
   record ValueMultiplied(int multiplier,
-                         int currentValue) // <1>
+                         int updatedValue) // <1>
     implements CounterEvent {
   }
 }

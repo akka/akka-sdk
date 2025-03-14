@@ -28,9 +28,9 @@ public class CounterByValueViewEnrichment extends View {
       var name = updateContext().eventSubject().get();
       return switch (counterEvent) {
         case ValueIncreased increased -> effects().updateRow(
-          new CounterByValue(name, increased.currentValue())); // <1>
+          new CounterByValue(name, increased.updatedValue())); // <1>
         case ValueMultiplied multiplied -> effects().updateRow(
-          new CounterByValue(name, multiplied.currentValue())); // <1>
+          new CounterByValue(name, multiplied.updatedValue())); // <1>
       };
     }
   }
