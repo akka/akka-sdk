@@ -32,7 +32,7 @@ xref:concepts:multi-region.adoc[Request-region primary selection mode]: The prim
     - automatic deduplication of views updates
     - improvements for use of reserved words in view queries
     - support for endpoint custom object mapper
-    - support for query params
+    - support for query parameters
 
 * Akka Runtime 1.2.11, 1.2.12
     - automatic deduplication of views updates
