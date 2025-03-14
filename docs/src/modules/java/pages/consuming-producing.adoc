@@ -67,7 +67,7 @@ include::example$key-value-shopping-cart/src/main/java/com/example/application/S
 You can consume state changes from a Workflow. To receive messages with the state changes, annotate the Consumer with `@Consume.FromWorkflow` and specify the class of the workflow.
 
 [source,java,indent=0]
-.{sample-base-url}/key-value-shopping-cart/src/main/java/com/example/application/ShoppingCartConsumer.java[ShoppingCartConsumer.java]
+.{sample-base-url}/transfer-workflow/src/main/java/com/example/transfer/application/TransferStateConsumer.java[TransferStateConsumer.java]
 ----
 include::example$transfer-workflow/src/main/java/com/example/transfer/application/TransferStateConsumer.java[tag=workflow-consumer]
 ----
