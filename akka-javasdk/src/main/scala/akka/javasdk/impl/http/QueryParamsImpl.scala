@@ -6,7 +6,6 @@ package akka.javasdk.impl.http
 
 import java.util.Optional
 
-import scala.jdk.CollectionConverters.SeqHasAsJava
 import scala.jdk.OptionConverters.RichOption
 
 import akka.annotation.InternalApi
@@ -37,22 +36,22 @@ private[akka] final case class QueryParamsImpl(query: Query) extends QueryParams
   /**
    * Returns the Long value of the first parameter with the given key if it exists.
    */
-  override def getLong(key: String): Optional[Long] = {
-    query.get(key).map(java.lang.Long.parseLong).toJava
+  override def getLong(key: String): Optional[java.lang.Long] = {
+    query.get(key).map(java.lang.Long.valueOf).toJava
   }
 
   /**
    * Returns the Boolean value of the first parameter with the given key if it exists.
    */
-  override def getBoolean(key: String): Optional[Boolean] = {
-    query.get(key).map(java.lang.Boolean.parseBoolean).toJava
+  override def getBoolean(key: String): Optional[java.lang.Boolean] = {
+    query.get(key).map(java.lang.Boolean.valueOf).toJava
   }
 
   /**
    * Returns the Double value of the first parameter with the given key if it exists.
    */
-  override def getDouble(key: String): Optional[Double] = {
-    query.get(key).map(java.lang.Double.parseDouble).toJava
+  override def getDouble(key: String): Optional[java.lang.Double] = {
+    query.get(key).map(java.lang.Double.valueOf).toJava
   }
 
   /**

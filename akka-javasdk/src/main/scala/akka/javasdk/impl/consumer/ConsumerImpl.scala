@@ -5,14 +5,13 @@
 package akka.javasdk.impl.consumer
 
 import java.util.Optional
-
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.OptionConverters.RichOption
 import scala.util.control.NonFatal
-
 import akka.actor.ActorSystem
 import akka.annotation.InternalApi
+import akka.javasdk.JsonSupport
 import akka.javasdk.Metadata
 import akka.javasdk.Tracing
 import akka.javasdk.consumer.Consumer
@@ -35,6 +34,9 @@ import akka.javasdk.impl.timer.TimerSchedulerImpl
 import akka.javasdk.timer.TimerScheduler
 import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.ConsumerDestination
+import akka.runtime.sdk.spi.ConsumerDestination.TopicDestination
+import akka.runtime.sdk.spi.ConsumerSource
+import akka.runtime.sdk.spi.ConsumerSource.TopicSource
 import akka.runtime.sdk.spi.RegionInfo
 import akka.runtime.sdk.spi.SpiConsumer
 import akka.runtime.sdk.spi.SpiConsumer.Effect
@@ -47,18 +49,18 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
 
-/** EndMarker */
 @InternalApi
 private[impl] final class ConsumerImpl[C <: Consumer](
     componentId: String,
     val factory: () => C,
     consumerClass: Class[C],
+    consumerSource: ConsumerSource,
     consumerDestination: Option[ConsumerDestination],
     _system: ActorSystem,
     timerClient: TimerClient,
     sdkExecutionContext: ExecutionContext,
     tracerFactory: () => Tracer,
-    serializer: JsonSerializer,
+    internalSerializer: JsonSerializer,
     ignoreUnknown: Boolean,
     componentDescriptor: ComponentDescriptor,
     regionInfo: RegionInfo)
@@ -70,8 +72,19 @@ private[impl] final class ConsumerImpl[C <: Consumer](
   implicit val system: ActorSystem = _system
   private val traceInstrumentation = new TraceInstrumentation(componentId, ConsumerCategory, tracerFactory)
 
+  private val resultSerializer =
+    // producing to topic, external json format, so mapper configurable by user
+    if (consumerDestination.exists(_.isInstanceOf[TopicDestination])) new JsonSerializer(JsonSupport.getObjectMapper)
+    // non-topic is internal, so non-configurable (also means no output json is ever passed anywhere though)
+    else internalSerializer
+
   private def createRouter(): ReflectiveConsumerRouter[C] =
-    new ReflectiveConsumerRouter[C](factory(), componentDescriptor.methodInvokers, serializer, ignoreUnknown)
+    new ReflectiveConsumerRouter[C](
+      factory(),
+      componentDescriptor.methodInvokers,
+      internalSerializer,
+      ignoreUnknown,
+      consumesFromTopic = consumerSource.isInstanceOf[TopicSource])
 
   override def handleMessage(message: Message): Future[Effect] = {
     val metadata = MetadataImpl.of(message.metadata)
@@ -121,7 +134,7 @@ private[impl] final class ConsumerImpl[C <: Consumer](
         } else {
           Future.successful(
             new SpiConsumer.ProduceEffect(
-              payload = Some(serializer.toBytes(msg)),
+              payload = Some(resultSerializer.toBytes(msg)),
               metadata = MetadataImpl.toSpi(metadata)))
         }
       case AsyncEffect(futureEffect) =>

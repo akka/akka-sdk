@@ -1,0 +1,92 @@
+name: Update and PR akka-samples
+
+on:
+  workflow_dispatch: # to trigger manually
+  workflow_run:
+    workflows: ["Publish"]
+    types:
+      - completed
+
+jobs:
+  debug:
+    if: github.event_name != 'workflow_dispatch'
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Debugging
+        run: |
+          echo "Conclusion from `Publish` workflow: ${{ github.event.workflow_run.conclusion }}
+          echo "Tag created from `Publish` workflow: ${{ github.ref }}
+
+  update-samples:
+    runs-on: ubuntu-22.04
+    # run only when `publish` workflow is successful or this workflow manually triggered
+    if: (github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch')
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { sample: "choreography-saga-quickstart", sampleRepo: "akka-samples/choreography-saga-quickstart" }
+          - { sample: "endpoint-jwt", sampleRepo: "akka-samples/endpoint-jwt" }
+          - { sample: "event-sourced-counter-brokers", sampleRepo: "akka-samples/event-sourced-counter-brokers" }
+          - { sample: "event-sourced-customer-registry", sampleRepo: "akka-samples/event-sourced-customer-registry" }
+          - { sample: "shopping-cart-quickstart", sampleRepo: "akka-samples/shopping-cart-quickstart" }
+          - { sample: "transfer-workflow", sampleRepo: "akka-samples/transfer-workflow" }
+          - { sample: "transfer-workflow-compensation", sampleRepo: "akka-samples/transfer-workflow-compensation" }
+
+    steps:
+      - name: Checkout
+        # https://github.com/actions/checkout/releases
+        # v4.1.1
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
+        with:
+          # we don't know what commit the last tag was it's safer to get entire repo so previousStableVersion resolves
+          fetch-depth: 0
+
+      - name: Cache Coursier cache
+        # https://github.com/coursier/cache-action/releases
+        # v6.4.5
+        uses: coursier/cache-action@1ff273bff02a8787bc9f1877d347948af647956d
+
+      - name: Set up JDK 21
+        # https://github.com/coursier/setup-action/releases
+        # v1.3.5
+        uses: coursier/setup-action@7bde40eee928896f074dbb76d22dd772eed5c65f
+        with:
+          jvm: temurin:1.21
+
+      - name: Bundle sample
+        run: |-
+          sdk_version=`./docs/bin/version.sh`
+          echo "Updating ${{ matrix.sample }} to sdk $sdk_version"
+          # bundle will replace sdk version and remove doc tags
+          ./docs/bin/bundle.sh --zip "target/bundle/${{ matrix.sample }}.zip" samples/${{ matrix.sample }}
+
+      - name: Checkout
+        # https://github.com/actions/checkout/releases/tag/v4.2.2
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: ${{ matrix.sampleRepo }}
+          path: akka-samples-${{ matrix.sample }}
+          token: ${{ secrets.AKKA_SAMPLES_RW_ACCESS_TOKEN }}
+          ref: main
+
+      - name: Open PR with changes
+        env:
+          COMMIT_URL: "https://github.com/${{ github.repository }}/commit/"
+          GH_TOKEN: ${{ secrets.AKKA_SAMPLES_RW_ACCESS_TOKEN }}
+        run: |
+          sdk_version=`./docs/bin/version.sh`
+          cd akka-samples-${{ matrix.sample }}
+          git config user.name "lightbend-tools-secure"
+          git config user.email "lightbend-tools-secure@lightbend.com"
+          git remote add origin-rw https://${{ secrets.AKKA_SAMPLES_RW_ACCESS_TOKEN }}@github.com/${{ matrix.sampleRepo }}.git
+          BRANCH=update-sdk-$sdk_version
+          git checkout -b $BRANCH
+          rsync -a ../docs/build/bundle/${{ matrix.sample }}/ ./
+          rm -f .bundleignore
+          git add -f .idea/runConfigurations/Run_locally.xml
+          git add .
+          git commit . -m "chore: bump SDK version to $sdk_version"
+          git push --set-upstream origin-rw $BRANCH
+          gh pr create -B main -t "Auto PR - Bump SDK version to $sdk_version" \
+              -b "This PR should update SDK (pom.xml) and latest source code.  [$GITHUB_SHA]($COMMIT_URL$GITHUB_SHA)"

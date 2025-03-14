@@ -230,6 +230,7 @@ class JwtClaimsImpl(jwtClaims: RuntimeJwtClaims) extends JwtClaims {
    *   The object claim, if present. Returns empty if the claim is not an object or can't be parsed as an object.
    */
   def getObject(name: String): Optional[JsonNode] = getString(name).flatMap((value: String) => {
+    // FIXME should this be the internal JsonSerialization rather?
     try Optional.of(JsonSupport.getObjectMapper.readTree(value))
     catch {
       case e: JsonProcessingException =>

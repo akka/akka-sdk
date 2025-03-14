@@ -4,41 +4,142 @@
 
 package akka.javasdk.impl.serialization
 
+import akka.Done
+import akka.annotation.InternalApi
+
 import java.io.IOException
 import java.lang
 import java.lang.reflect.InvocationTargetException
 import java.util
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
-
 import akka.javasdk.JsonMigration
-import akka.javasdk.JsonSupport
 import akka.javasdk.annotations.Migration
 import akka.javasdk.annotations.TypeName
 import akka.javasdk.impl.AnySupport.BytesPrimitive
 import akka.javasdk.impl.NullSerializationException
 import akka.runtime.sdk.spi.BytesPayload
 import akka.util.ByteString
+import com.fasterxml.jackson.annotation.JsonAutoDetect
+import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonSubTypes
+import com.fasterxml.jackson.annotation.PropertyAccessor
+import com.fasterxml.jackson.core.JsonGenerator
+import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.core.JsonProcessingException
+import com.fasterxml.jackson.core.JsonToken
+import com.fasterxml.jackson.databind.DeserializationContext
+import com.fasterxml.jackson.databind.DeserializationFeature
+import com.fasterxml.jackson.databind.JsonMappingException
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.SerializationFeature
+import com.fasterxml.jackson.databind.SerializerProvider
+import com.fasterxml.jackson.databind.jsontype.TypeDeserializer
+import com.fasterxml.jackson.databind.jsontype.TypeSerializer
+import com.fasterxml.jackson.databind.module.SimpleModule
 
+/**
+ * INTERNAL API
+ */
+@InternalApi
 object JsonSerializer {
   val JsonContentTypePrefix: String = "json.akka.io/"
   private val KalixJsonContentTypePrefix: String = "json.kalix.io/"
 
   final case class TypeHint(currenTypeHintWithVersion: String, allTypeHints: List[String])
 
+  def newObjectMapperWithDefaults(): ObjectMapper = {
+    val mapper = new ObjectMapper
+
+    // Date/time in ISO-8601 (rfc3339) yyyy-MM-dd'T'HH:mm:ss.SSSZ format
+    // as defined by com.fasterxml.jackson.databind.util.StdDateFormat
+    // For interoperability it's better to use the ISO format, i.e. WRITE_DATES_AS_TIMESTAMPS=off,
+    // but WRITE_DATES_AS_TIMESTAMPS=on has better performance.
+    mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
+    mapper.configure(SerializationFeature.WRITE_DURATIONS_AS_TIMESTAMPS, false)
+
+    mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+
+    mapper.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY)
+
+    // ParameterNamesModule needs the parameter to ensure that single-parameter
+    // constructors are handled the same way as constructors with multiple parameters.
+    // See https://github.com/FasterXML/jackson-module-parameter-names#delegating-creator
+    mapper.registerModule(new com.fasterxml.jackson.module.paramnames.ParameterNamesModule(JsonCreator.Mode.PROPERTIES))
+    mapper.registerModule(new com.fasterxml.jackson.datatype.jdk8.Jdk8Module())
+    mapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule())
+
+    val module = new SimpleModule()
+    module.addSerializer(classOf[Done], DoneSerializer)
+    module.addDeserializer(classOf[Done], DoneDeserializer)
+    mapper.registerModule(module)
+
+    mapper
+  }
+
+  // internal mapper used for serialization when passing objects to the runtime
+  val internalObjectMapper: ObjectMapper = newObjectMapperWithDefaults()
+
+  object DoneSerializer extends com.fasterxml.jackson.databind.JsonSerializer[Done] {
+
+    override def serialize(value: Done, gen: JsonGenerator, serializers: SerializerProvider): Unit = {
+      gen.writeStartObject()
+      gen.writeEndObject()
+    }
+
+    override def serializeWithType(
+        value: Done,
+        gen: JsonGenerator,
+        serializers: SerializerProvider,
+        typeSer: TypeSerializer): Unit = {
+      val typeId = typeSer.typeId(value, JsonToken.START_OBJECT)
+      typeSer.writeTypePrefix(gen, typeId)
+      gen.writeFieldName("value")
+      gen.writeStartObject()
+      gen.writeEndObject()
+      typeSer.writeTypeSuffix(gen, typeId)
+    }
+
+  }
+
+  object DoneDeserializer extends com.fasterxml.jackson.databind.JsonDeserializer[Done] {
+
+    override def deserialize(p: JsonParser, ctxt: DeserializationContext): Done = {
+      if (p.currentToken() == JsonToken.START_OBJECT && p.nextToken() == JsonToken.END_OBJECT) {
+        Done
+      } else {
+        throw JsonMappingException.from(ctxt, "Cannot deserialize Done class, expecting empty object '{}'")
+      }
+    }
+
+    override def deserializeWithType(
+        p: JsonParser,
+        ctxt: DeserializationContext,
+        typeDeserializer: TypeDeserializer): AnyRef =
+      typeDeserializer.deserializeTypedFromObject(p, ctxt)
+
+  }
 }
 
-class JsonSerializer {
+/**
+ * INTERNAL API
+ */
+@InternalApi
+final class JsonSerializer(val objectMapper: ObjectMapper) {
   import JsonSerializer._
+
+  def this() = this(JsonSerializer.internalObjectMapper)
+
+  /* Mostly used for internal serialization (events, snapshots, messages sent through component client)
+   * but in some places (consumers) it is created using the user configured object mapper if interacting
+   * with the outside world (message broker consume or publish) so that users can configure for surprising
+   * external formats.
+   */
 
   private val typeHints: ConcurrentMap[Class[_], TypeHint] = new ConcurrentHashMap()
   val reversedTypeHints: ConcurrentMap[String, Class[_]] = new ConcurrentHashMap()
 
   override def toString: String = s"JsonSerializer: ${typeHints.keySet().size()} registered types"
-
-  private val objectMapper = JsonSupport.getObjectMapper
 
   def toBytes(value: Any): BytesPayload = {
     if (value == null) throw NullSerializationException

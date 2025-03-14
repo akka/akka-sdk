@@ -41,48 +41,23 @@ import java.util.Optional;
 
 public final class JsonSupport {
 
-  // FIXME maybe move things to JsonSerializer, and delegate to it from here. Only handle the
-  // PbAny <-> BytesPayload here. However, public api with PbAny makes no sense now.
-  private static final ObjectMapper objectMapper = new ObjectMapper();
-
-  static {
-    // Date/time in ISO-8601 (rfc3339) yyyy-MM-dd'T'HH:mm:ss.SSSZ format
-    // as defined by com.fasterxml.jackson.databind.util.StdDateFormat
-    // For interoperability it's better to use the ISO format, i.e. WRITE_DATES_AS_TIMESTAMPS=off,
-    // but WRITE_DATES_AS_TIMESTAMPS=on has better performance.
-    objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
-    objectMapper.configure(SerializationFeature.WRITE_DURATIONS_AS_TIMESTAMPS, false);
-
-    objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-
-    objectMapper.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
-
-    // ParameterNamesModule needs the parameter to ensure that single-parameter
-    // constructors are handled the same way as constructors with multiple parameters.
-    // See https://github.com/FasterXML/jackson-module-parameter-names#delegating-creator
-    objectMapper.registerModule(
-        new com.fasterxml.jackson.module.paramnames.ParameterNamesModule(
-            JsonCreator.Mode.PROPERTIES));
-    objectMapper.registerModule(new com.fasterxml.jackson.datatype.jdk8.Jdk8Module());
-    objectMapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
-
-    SimpleModule module = new SimpleModule();
-    module.addSerializer(Done.class, new DoneSerializer());
-    module.addDeserializer(Done.class, new DoneDeserializer());
-
-    objectMapper.registerModule(module);
-  }
+  // object mapper for HTTP endpoints and explicit serialization/deserialization
+  // of objects in user code, customizable for by users, not used for "internal" serialization in component client, views etc.
+  private static final ObjectMapper objectMapper = akka.javasdk.impl.serialization.JsonSerializer.newObjectMapperWithDefaults();
 
   /**
-   * The Jackson ObjectMapper that is used for encoding and decoding JSON. You may adjust it's
-   * configuration, but that must only be performed before starting the service,
+   * The Jackson ObjectMapper that is used for encoding and decoding JSON for HTTP endpoints
+   * and HTTP requests.
+   *
+   * You may adjust its configuration, but that must only be performed before starting the service,
    * from {@link akka.javasdk.ServiceSetup#onStartup}.
    */
   public static ObjectMapper getObjectMapper() {
     return objectMapper;
   }
 
-  private static akka.javasdk.impl.serialization.JsonSerializer jsonSerializer = new akka.javasdk.impl.serialization.JsonSerializer();
+  // internal serialization object, but using the public/configurable mapper
+  private static akka.javasdk.impl.serialization.JsonSerializer jsonSerializer = new akka.javasdk.impl.serialization.JsonSerializer(objectMapper);
 
   private JsonSupport() {
   }
@@ -340,10 +315,18 @@ public final class JsonSupport {
     }
   }
 
+  /**
+   * @deprecated was only intended for internal use
+   */
+  @Deprecated
   public static <T, C extends Collection<T>> C decodeJsonCollection(Class<T> valueClass, Class<C> collectionType, akka.util.ByteString bytes) {
     return jsonSerializer.fromBytes(valueClass, collectionType, new BytesPayload(bytes, jsonSerializer.contentTypeFor(valueClass)));
   }
 
+  /**
+   * @deprecated was only intended for internal use
+   */
+  @Deprecated
   public static <T, C extends Collection<T>> C decodeJsonCollection(Class<T> valueClass, Class<C> collectionType, byte[] bytes) {
     return decodeJsonCollection(valueClass, collectionType, akka.util.ByteString.fromArrayUnsafe(bytes));
   }
@@ -369,6 +352,10 @@ public final class JsonSupport {
 
 }
 
+/**
+ * @deprecated Not indented for public use and no longer used internally
+ */
+@Deprecated
 class DoneSerializer extends JsonSerializer<Done> {
 
   @Override
@@ -387,6 +374,10 @@ class DoneSerializer extends JsonSerializer<Done> {
   }
 }
 
+/**
+ * @deprecated Not indented for public use and no longer used internally
+ */
+@Deprecated
 class DoneDeserializer extends JsonDeserializer<Done> {
 
   @Override

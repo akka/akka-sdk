@@ -8,6 +8,7 @@ import akka.http.scaladsl.model.HttpMethods
 import akka.javasdk.impl.reflection.Reflect
 import akka.annotation.InternalApi
 import akka.http.scaladsl.model.Uri.Path
+import akka.javasdk.JsonSupport
 import akka.javasdk.annotations.Acl
 import akka.javasdk.annotations.http.Delete
 import akka.javasdk.annotations.http.Get
@@ -139,7 +140,9 @@ private[javasdk] object HttpEndpointDescriptorFactory {
         methods = methods.toVector,
         componentOptions = new ComponentOptions(
           deriveAclOptions(Option(endpointClass.getAnnotation(classOf[Acl]))),
-          deriveJWTOptions(Option(endpointClass.getAnnotation(classOf[JWT])), endpointClass.getCanonicalName)))
+          deriveJWTOptions(Option(endpointClass.getAnnotation(classOf[JWT])), endpointClass.getCanonicalName)),
+        implementationClassName = endpointClass.getName,
+        objectMapper = Some(JsonSupport.getObjectMapper))
     }
   }
 
