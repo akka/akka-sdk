@@ -503,7 +503,9 @@ private final class Sdk(
             clz.getName,
             readOnlyCommandNames,
             instanceFactory,
-            keyValue = false)
+            keyValue = false,
+            replicationFilterEnabled = true
+          ) // FIXME how shall we enable it? Can we solve it without enable flag?
 
       case clz if classOf[KeyValueEntity[_]].isAssignableFrom(clz) =>
         val componentId = clz.getAnnotation(classOf[ComponentId]).value
@@ -540,7 +542,9 @@ private final class Sdk(
             clz.getName,
             readOnlyCommandNames,
             instanceFactory,
-            keyValue = true)
+            keyValue = true,
+            replicationFilterEnabled = false
+          ) // FIXME KVE replication filter
 
       case clz if Reflect.isWorkflow(clz) =>
         val componentId = clz.getAnnotation(classOf[ComponentId]).value
