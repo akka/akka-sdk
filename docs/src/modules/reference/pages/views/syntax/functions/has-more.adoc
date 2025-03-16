@@ -1,0 +1,111 @@
+= has_more()
+
+The `has_more()` function returns a boolean value indicating whether there are additional results available beyond the current page. It provides a convenient way to determine if more pages exist without having to check if the next page token is empty.
+
+== Syntax
+
+[source,sql]
+----
+has_more() AS alias
+----
+
+== Elements
+
+`AS alias`::
+Required aliasing for the boolean result in the query response. The alias determines the field name in the response object.
+
+== Features
+
+Continuation Check::
+Provides a simple boolean indicator that can be used in UIs to show or hide "load more" or pagination controls.
+
+Works with All Paging Methods::
+Can be used with both token-based pagination and traditional offset/limit pagination.
+
+Zero Additional Fetch::
+Determines if more results exist without requiring an extra query to attempt to fetch the next page.
+
+== Examples
+
+.Basic usage with LIMIT
+[source,sql]
+----
+SELECT * AS products, has_more() AS moreAvailable
+FROM products
+LIMIT 10
+----
+
+.With token-based pagination
+[source,sql]
+----
+SELECT * AS products,
+       next_page_token() AS nextPageToken,
+       has_more() AS hasMore
+FROM products
+OFFSET page_token_offset(:pageToken)
+LIMIT 10
+----
+
+.With filtering and ordering
+[source,sql]
+----
+SELECT * AS products, has_more() AS moreProducts
+FROM products
+WHERE category = :category
+ORDER BY price ASC
+OFFSET :startFrom LIMIT :pageSize
+----
+
+.Checking for more without including next page token
+[source,sql]
+----
+SELECT * AS products, has_more() AS hasMoreProducts
+FROM products
+LIMIT 20
+----
+
+== Usage Flow
+
+1. *Include in Query*: Add the function to your SELECT clause with an alias:
++
+[source,sql]
+----
+SELECT * AS products, has_more() AS moreAvailable
+----
+
+2. *Response Structure*: Define a response type including the boolean field:
++
+[source,java]
+----
+public record ProductsResponse(List<Product> products, boolean moreAvailable) {}
+----
+
+3. *Client Logic*: Use the boolean to control pagination UI:
++
+[source,java]
+----
+if (response.moreAvailable()) {
+    // Show "Load More" button or next page control
+} else {
+    // Hide pagination controls - we're at the end
+}
+----
+
+== Notes
+
+* The `has_more()` function must have an alias specified with `AS`
+* The function returns `true` if there are more results beyond the current page, `false` if the current page contains the last results
+* When used with `LIMIT`, it checks if there are more than `LIMIT` results matching the query
+* The function is particularly useful for infinite scrolling or "load more" UI patterns
+* The function can be used alongside `next_page_token()` to provide both a boolean indicator and a token for the next page
+
+== Implementation Details
+
+The implementation of `has_more()` typically works by checking if there are at least `LIMIT + 1` matching rows. If so, it returns `true` and only returns the first `LIMIT` rows in the result. This approach avoids the need for an additional query to determine if more results exist.
+
+== Related Features
+
+* xref:reference:views/syntax/functions/next-page-token.adoc[next_page_token() function] - Generates tokens for subsequent page requests
+* xref:reference:views/syntax/functions/page-token-offset.adoc[page_token_offset() function] - Uses a token to determine offset position
+* xref:reference:views/concepts/pagination.adoc[Pagination] - Complete guide to pagination approaches
+* xref:reference:views/syntax/limit.adoc[LIMIT clause] - Controls page size and works with has_more()

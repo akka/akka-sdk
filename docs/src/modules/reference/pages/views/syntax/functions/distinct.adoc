@@ -1,0 +1,103 @@
+= DISTINCT
+
+The `DISTINCT` keyword eliminates duplicate values in collection results. It is used within the `collect()` function to ensure that only unique values are included in the resulting collection.
+
+== Syntax
+
+[source,sql]
+----
+collect(distinct <select_expression>) AS <alias>
+----
+
+== Elements
+
+`select_expression`::
+The expression to collect unique values from. This can be a single column, multiple columns, or a composite expression.
+
+`AS alias`::
+Required aliasing for the resulting collection in the query result.
+
+== Features
+
+Duplicate Elimination::
+Removes duplicate values from collections based on the complete expression being collected.
+
+Unique Value Sets::
+Creates collections containing only unique values, useful for categories, tags, or other sets where duplicates are unnecessary.
+
+Composite Expression Support::
+Works with both simple column values and complex expressions, applying uniqueness checks to the entire collected expression.
+
+== Examples
+
+.Collect distinct product names
+[source,sql]
+----
+SELECT category, collect(distinct name) AS uniqueProductNames
+FROM products
+GROUP BY category
+----
+
+.Collect distinct manufacturers
+[source,sql]
+----
+SELECT category, collect(distinct manufacturer) AS uniqueManufacturers
+FROM products
+GROUP BY category
+----
+
+.Collect distinct composite values
+[source,sql]
+----
+SELECT category, collect(distinct (manufacturer, country)) AS uniqueManufacturerLocations
+FROM products
+GROUP BY category
+----
+
+.Complex structure with both distinct and non-distinct collections
+[source,sql]
+----
+SELECT
+  category,
+  (
+    collect(*) AS allProducts,
+    collect(distinct manufacturer) AS uniqueManufacturers
+  ) AS categoryData
+FROM products
+GROUP BY category
+----
+
+== Notes
+
+* Currently, `DISTINCT` is only supported within the `collect()` function
+* The `DISTINCT` keyword applies to the entire expression being collected, not just individual fields
+* When using composite expressions, uniqueness is determined by considering all values in the expression together
+* Unlike some SQL dialects, the View query language does not currently support `SELECT DISTINCT` as a standalone feature
+* `DISTINCT` is particularly useful for creating sets of unique categories, tags, or other metadata from related items
+
+== Java Type Mapping
+
+The results of `collect(distinct ...)` map to the same Java collection types as regular `collect()` operations. For example:
+
+[source,sql]
+----
+SELECT category, collect(distinct manufacturer) AS uniqueManufacturers
+FROM products
+GROUP BY category
+----
+
+Would map to a Java type like:
+
+[source,java]
+----
+public record CategoryResponse(
+    String category,
+    List<String> uniqueManufacturers
+) {}
+----
+
+== Related Features
+
+* xref:reference:views/syntax/functions/collect.adoc[collect() function] - Creates collections from grouped rows
+* xref:reference:views/syntax/group-by.adoc[GROUP BY clause] - Groups rows for collection
+* xref:reference:views/concepts/result-mapping.adoc[Result Mapping] - How query results map to Java types

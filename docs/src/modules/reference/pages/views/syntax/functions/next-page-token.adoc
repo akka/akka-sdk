@@ -1,0 +1,120 @@
+= next_page_token()
+
+The `next_page_token()` function generates an opaque token representing the position after the last returned row in a query result. This token can be used in a subsequent query with `page_token_offset()` to continue retrieving results from that position.
+
+== Syntax
+
+[source,sql]
+----
+next_page_token() AS alias
+----
+
+== Elements
+
+`AS alias`::
+Required aliasing for the token in the query result. The alias determines the field name in the response object.
+
+== Features
+
+Token Generation::
+Creates an encoded string representing the position in the result set for continuation in a subsequent query.
+
+Pagination State::
+Encapsulates information about sorting, filtering, and position within the result set without exposing implementation details.
+
+Last Page Detection::
+Returns an empty string when there are no more results, indicating the last page has been reached.
+
+== Examples
+
+.Basic usage with required alias
+[source,sql]
+----
+SELECT * AS products, next_page_token() AS nextPageToken
+FROM products
+OFFSET page_token_offset(:pageToken)
+LIMIT 10
+----
+
+.With sorting
+[source,sql]
+----
+SELECT * AS products, next_page_token() AS nextPageToken
+FROM products
+ORDER BY price DESC
+OFFSET page_token_offset(:pageToken)
+LIMIT 10
+----
+
+.With filtering and has_more indicator
+[source,sql]
+----
+SELECT * AS products,
+       next_page_token() AS nextPageToken,
+       has_more() AS hasMoreProducts
+FROM products
+WHERE category = :category
+ORDER BY name ASC
+OFFSET page_token_offset(:pageToken)
+LIMIT 10
+----
+
+== Usage Flow
+
+1. *Include in Query*: Add the function to your SELECT clause with an alias:
++
+[source,sql]
+----
+SELECT * AS products, next_page_token() AS nextPageToken
+----
+
+2. *First Page Request*: For the first page, use an empty string as the input token:
++
+[source,java]
+----
+public record PageRequest(String pageToken) {}
+
+// First request uses empty string
+PageRequest request = new PageRequest("");
+----
+
+3. *Response Structure*: The query response includes the token:
++
+[source,java]
+----
+public record PageResponse(List<Product> products, String nextPageToken) {}
+----
+
+4. *Next Page Request*: Use the received token for subsequent requests:
++
+[source,java]
+----
+// Next request uses token from previous response
+PageRequest nextRequest = new PageRequest(previousResponse.nextPageToken());
+----
+
+5. *Last Page Detection*: Check for an empty token to detect the last page:
++
+[source,java]
+----
+if (response.nextPageToken().isEmpty()) {
+    // Last page reached
+}
+----
+
+== Notes
+
+* The `next_page_token()` function must have an alias specified with `AS`
+* The token is an opaque string that should not be parsed, modified, or stored long-term
+* An empty string token indicates there are no more results
+* Tokens are specific to a query structure - they cannot be used with different queries
+* Tokens may expire after some time - they are intended for immediate use in pagination
+* The function can be used with or without `page_token_offset()`, but they are typically used together
+
+== Related Features
+
+* xref:reference:views/syntax/functions/page-token-offset.adoc[page_token_offset() function] - Uses the token to determine offset position
+* xref:reference:views/syntax/functions/has-more.adoc[has_more() function] - Alternative way to check for more results
+* xref:reference:views/concepts/pagination.adoc[Pagination] - Complete guide to pagination approaches
+* xref:reference:views/syntax/offset.adoc[OFFSET clause] - Works with page_token_offset()
+* xref:reference:views/syntax/limit.adoc[LIMIT clause] - Controls page size

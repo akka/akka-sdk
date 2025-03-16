@@ -1,0 +1,128 @@
+= = ANY
+
+The `= ANY` operator checks if a value equals any element in an array column or parameter. It provides a way to test membership in dynamic arrays without listing all possible values in the query.
+
+== Syntax
+
+[source,sql]
+----
+<value> = ANY(<array_expression>)
+----
+
+Where `<array_expression>` can be:
+
+* An array column
+* An array parameter
+* An array index parameter
+
+== Elements
+
+`value`::
+The value to check for in the array. This can be a column reference, literal value, or parameter.
+
+`array_expression`::
+An array or list to search within. This can be a column containing an array or a parameter that contains an array.
+
+== Features
+
+Array Membership Testing::
+Tests if a value is present in an array column or parameter, without having to list all possible values.
+
+Dynamic Sets::
+Works with arrays that are stored in the database or provided as parameters, allowing for flexible, dynamic sets.
+
+Bidirectional Usage::
+Can check if a value is in an array (`value = ANY(array)`) or if an array contains a value (`= ANY(array)`).
+
+== Examples
+
+.Check if a value matches any element in an array column
+[source,sql]
+----
+SELECT * FROM customers
+WHERE :email = ANY(emails)
+----
+
+.Check if a column value is in an array parameter
+[source,sql]
+----
+SELECT * FROM products
+WHERE category = ANY(:categoryList)
+----
+
+.Check if a parameter value is in an array column
+[source,sql]
+----
+SELECT * FROM customers
+WHERE :searchTag = ANY(tags)
+----
+
+.Combined with other conditions
+[source,sql]
+----
+SELECT * FROM products
+WHERE category = ANY(:categories)
+AND price < 1000
+----
+
+== Comparison with IN
+
+The View query language provides two similar operators for checking membership in a set:
+
+* `IN` - Used with a list of values specified in the query
+* `= ANY` - Used with array columns or parameters
+
+The primary differences are:
+
+[cols="1,1"]
+|===
+| IN | = ANY
+
+| `column IN (val1, val2, ...)`
+| `column = ANY(array_column)` or `value = ANY(array_parameter)`
+
+| For fixed lists of values
+| For array columns or array parameters
+
+| Values specified directly in the query
+| Values come from an array column or parameter
+|===
+
+== Syntax Variations
+
+The `= ANY` operator supports different orientations:
+
+.Column value in array parameter
+[source,sql]
+----
+category = ANY(:categories)
+----
+
+.Parameter value in array column
+[source,sql]
+----
+:category = ANY(supportedCategories)
+----
+
+Both variations check for membership in the array.
+
+== Notes
+
+* The `= ANY` operator works with array types in the view's data model
+* Arrays can be passed as parameters from Java code using collections or arrays
+* Empty arrays are handled gracefully - nothing will match if the array is empty
+* The operation is equivalent to checking if the array contains the specified value
+* The order of elements in the array doesn't affect the results
+
+== Implementation Details
+
+Depending on the underlying database, the `= ANY` operator may be implemented differently:
+
+* In PostgreSQL, it translates to the native `= ANY` operator or `@>` array contains operator
+* In other environments, it might be implemented as a function call to check array membership
+
+== Related Features
+
+* xref:reference:views/syntax/operators/in.adoc[IN operator] - Tests if a value matches any value in a specified list
+* xref:reference:views/syntax/where.adoc[WHERE clause] - Used with = ANY for filtering
+* xref:reference:views/concepts/array-types.adoc[Array Types] - Working with array data in views

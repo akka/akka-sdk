@@ -1,0 +1,70 @@
+= count(*)
+
+The `count(*)` function returns the number of rows that match the query criteria. In the current implementation, it has specific limitations and usage restrictions.
+
+== Syntax
+
+[source,sql]
+----
+count(*) [AS alias]
+----
+
+== Elements
+
+`AS alias`::
+Optional aliasing for the count result in the query response. If not specified, the count will be available in a field with an implementation-defined name.
+
+== Features
+
+Row Counting::
+Counts all rows that match the query's WHERE conditions.
+
+== Current Limitations
+
+In the current implementation, the `count(*)` function has several important limitations:
+
+Limited Use Cases::
+The `count(*)` function can only be used for counting all matching rows in a simple query, similar to `total_count()`. It cannot be used with `GROUP BY` for counting rows per group.
+
+Not for Aggregation::
+Unlike in standard SQL, `count(*)` cannot currently be used as an aggregation function within grouped results.
+
+No Distinct Support::
+`count(distinct column)` syntax is not currently supported.
+
+No Column Counting::
+`count(column_name)` for counting non-NULL values is not currently supported.
+
+== Examples
+
+.Basic usage
+[source,sql]
+----
+SELECT count(*) AS customerCount FROM customers
+----
+
+.With WHERE condition
+[source,sql]
+----
+SELECT count(*) AS activeCustomers FROM customers WHERE status = 'active'
+----
+
+== Future Enhancements
+
+Future versions of the View query language may include:
+
+* Support for `count(*)` within `GROUP BY` clauses
+* Support for `count(distinct column)` syntax
+* Support for `count(column_name)` to count non-NULL values
+* Additional aggregation functions like `sum()`, `avg()`, `min()`, and `max()`
+
+== Notes
+
+* For total counts with pagination, prefer using the `total_count()` function which is specifically designed for this purpose
+* For checking if additional pages exist, use the `has_more()` function
+
+== Related Features
+
+* xref:reference:views/syntax/functions/total-count.adoc[total_count() function] - Returns the total count of rows matching the query
+* xref:reference:views/syntax/functions/has-more.adoc[has_more() function] - Checks if more results exist
+* xref:reference:views/syntax/group-by.adoc[GROUP BY clause] - For future aggregation features

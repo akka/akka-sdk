@@ -1,0 +1,341 @@
+= Result Mapping
+
+Result mapping is the process of converting data retrieved by View queries into Java objects. This page explains how query results are mapped to Java types and provides guidance on defining response types that align with your queries.
+
+== Query Result Structure
+
+The structure of your query result is determined by:
+
+1. The columns selected in the `SELECT` clause
+2. The aliases assigned to those columns using `AS`
+3. Any nesting created by grouping columns or using `collect()`
+
+The mapping system establishes a correspondence between this structure and your Java response types.
+
+== Basic Mapping Rules
+
+=== Field Names
+
+Field names in your Java classes must match the column names or aliases in your query:
+
+[source,sql]
+----
+SELECT id, name, email FROM customers
+----
+
+Must map to a Java class with fields named `id`, `name`, and `email`:
+
+[source,java]
+----
+public record CustomerResponse(String id, String name, String email) { }
+----
+
+=== Using Aliases
+
+Use the `AS` keyword to map columns to differently named Java fields:
+
+[source,sql]
+----
+SELECT id, name AS customerName, email AS contactEmail FROM customers
+----
+
+Maps to:
+
+[source,java]
+----
+public record CustomerResponse(
+    String id,
+    String customerName,
+    String contactEmail
+) { }
+----
+
+=== Wildcard Selection
+
+When using `*` to select all columns, you can map to a specific field with an alias:
+
+[source,sql]
+----
+SELECT * AS customer FROM customers
+----
+
+Maps to:
+
+[source,java]
+----
+public record Response(Customer customer) { }
+----
+
+Where `Customer` contains all the fields from the `customers` table.
+
+== Complex Mappings
+
+=== Nested Objects
+
+Create nested objects by grouping columns with parentheses and an alias:
+
+[source,sql]
+----
+SELECT id, (name, email) AS contactInfo FROM customers
+----
+
+Maps to:
+
+[source,java]
+----
+public record CustomerResponse(
+    String id,
+    ContactInfo contactInfo
+) { }
+
+public record ContactInfo(String name, String email) { }
+----
+
+=== Custom Field Names in Nested Objects
+
+Specify field names within nested objects:
+
+[source,sql]
+----
+SELECT id, (name AS fullName, email AS emailAddress) AS contact FROM customers
+----
+
+Maps to:
+
+[source,java]
+----
+public record CustomerResponse(
+    String id,
+    Contact contact
+) { }
+
+public record Contact(String fullName, String emailAddress) { }
+----
+
+=== Collections
+
+Map collection results using the `collect()` function or by aliasing `*` to a collection field:
+
+[source,sql]
+----
+SELECT category, collect(*) AS products FROM products GROUP BY category
+----
+
+Maps to:
+
+[source,java]
+----
+public record CategoryProducts(
+    String category,
+    List<Product> products
+) { }
+----
+
+=== Collections with Specific Fields
+
+Collect specific fields into collections:
+
+[source,sql]
+----
+SELECT category, collect(name) AS productNames FROM products GROUP BY category
+----
+
+Maps to:
+
+[source,java]
+----
+public record CategoryProductNames(
+    String category,
+    List<String> productNames
+) { }
+----
+
+=== Nested Collections
+
+Create collections of nested objects:
+
+[source,sql]
+----
+SELECT category, collect((name, price) AS item) AS products FROM products GROUP BY category
+----
+
+Maps to:
+
+[source,java]
+----
+public record CategoryResponse(
+    String category,
+    List<ProductItem> products
+) { }
+
+public record ProductItem(String name, double price) { }
+----
+
+== Special Function Results
+
+=== Pagination Functions
+
+Map pagination function results to appropriate fields:
+
+[source,sql]
+----
+SELECT * AS items,
+       next_page_token() AS nextPageToken,
+       has_more() AS hasMore,
+       total_count() AS totalCount
+FROM products
+LIMIT 10
+----
+
+Maps to:
+
+[source,java]
+----
+public record ProductsPage(
+    List<Product> items,
+    String nextPageToken,
+    boolean hasMore,
+    int totalCount
+) { }
+----
+
+=== Count Function
+
+Map count results to numeric fields:
+
+[source,sql]
+----
+SELECT count(*) AS totalCustomers FROM customers
+----
+
+Maps to:
+
+[source,java]
+----
+public record CustomerCount(int totalCustomers) { }
+----
+
+== Java Type Compatibility
+
+=== Primitive vs. Object Types
+
+Both primitive and object types are supported for numeric and boolean fields:
+
+* `int`/`Integer`
+* `long`/`Long`
+* `float`/`Float`
+* `double`/`Double`
+* `boolean`/`Boolean`
+
+Use object types when the field might be NULL.
+
+=== Collection Types
+
+Query results that return collections can map to:
+
+* `java.util.List<T>`
+* `java.util.Collection<T>`
+* Other collection types that can be constructed from a `Collection`
+
+=== Optional Fields
+
+Fields that might be NULL can be represented as:
+
+* Object types (e.g., `Integer` instead of `int`)
+* `java.util.Optional<T>`
+* Nullable fields in a class
+
+== Best Practices
+
+* Define response types that exactly match your query structure
+* Use aliases in queries to match your preferred Java field names
+* Use nested objects to organize related data
+* Consider using Java records for response types
+* Match field types carefully to ensure compatibility
+* Use object types instead of primitives for potentially NULL values
+* Document the relationship between queries and response types
+
+== Examples
+
+=== Flat Object Mapping
+
+Query:
+[source,sql]
+----
+SELECT id, name, email, createdDate FROM customers WHERE id = :customerId
+----
+
+Response type:
+[source,java]
+----
+public record CustomerDetails(
+    String id,
+    String name,
+    String email,
+    Instant createdDate
+) { }
+----
+
+=== Nested Object Mapping
+
+Query:
+[source,sql]
+----
+SELECT id,
+       name,
+       (street, city, zipCode, country) AS address
+FROM customers
+WHERE id = :customerId
+----
+
+Response types:
+[source,java]
+----
+public record CustomerWithAddress(
+    String id,
+    String name,
+    Address address
+) { }
+
+public record Address(
+    String street,
+    String city,
+    String zipCode,
+    String country
+) { }
+----
+
+=== Collection Result Mapping
+
+Query:
+[source,sql]
+----
+SELECT category,
+       collect((name, price, description) AS item) AS products
+FROM products
+GROUP BY category
+WHERE category = :category
+----
+
+Response types:
+[source,java]
+----
+public record CategoryProducts(
+    String category,
+    List<ProductItem> products
+) { }
+
+public record ProductItem(
+    String name,
+    double price,
+    String description
+) { }
+----
+
+== Related Features
+
+* xref:reference:views/syntax/select.adoc[SELECT clause] - Defining the result structure
+* xref:reference:views/syntax/as.adoc[AS keyword] - Naming result fields
+* xref:reference:views/syntax/functions/collect.adoc[collect() function] - Creating collections in results
+* xref:reference:views/concepts/data-types.adoc[Data Types] - Type compatibility information
+* xref:reference:views/concepts/optional-fields.adoc[Optional Fields] - Working with nullable fields

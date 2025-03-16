@@ -1,0 +1,93 @@
+= Query
+
+A View query provides SQL-like syntax for retrieving and filtering data from your Views. It defines what data to select, where to retrieve it from, how to project data into results, and optional criteria to filter, sort, or limit the results.
+
+== Syntax
+
+[source,sql]
+----
+SELECT <select_expression> [AS alias]
+FROM <table_name>
+[JOIN <table_name> ON <join_condition>]
+[WHERE <filter_conditions>]
+[GROUP BY <group_expressions>]
+[ORDER BY <order_expressions>]
+[OFFSET <offset_value>]
+[LIMIT <limit_value>]
+----
+
+== Elements
+
+xref:reference:views/syntax/select.adoc[SELECT] (required)::
+Specifies what data to retrieve from the view. You can select specific columns, all columns using `*`, or transform the data with projections and functions.
+
+xref:reference:views/syntax/from.adoc[FROM] (required)::
+Specifies the source table to query. This corresponds to the table name defined for the table updater.
+
+xref:reference:views/syntax/join.adoc[JOIN]::
+Combines rows from two or more tables based on a related column between them. Various join types (INNER, LEFT, RIGHT, FULL) control how unmatched records are handled.
+
+xref:reference:views/syntax/where.adoc[WHERE]::
+Filters results based on specified conditions using comparison operators, logical operators, and expressions.
+
+xref:reference:views/syntax/group-by.adoc[GROUP BY]::
+Groups rows that have the same values in specified columns, often used with collect functions to create nested collections.
+
+xref:reference:views/syntax/order-by.adoc[ORDER BY]::
+Sorts the result set by one or more columns in ascending or descending order.
+
+xref:reference:views/syntax/offset.adoc[OFFSET]::
+Specifies the number of rows to skip before starting to return rows from the query. Used for pagination.
+
+xref:reference:views/syntax/limit.adoc[LIMIT]::
+Specifies the maximum number of rows to return. Used for pagination and limiting result size.
+
+== Examples
+
+.Basic query retrieving all fields
+[source,sql]
+----
+SELECT * FROM customers
+----
+
+.Query with filtering
+[source,sql]
+----
+SELECT * FROM customers
+WHERE name = :customerName
+----
+
+.Query with multiple clauses
+[source,sql]
+----
+SELECT * FROM customers
+WHERE address.city = 'New York'
+ORDER BY name
+LIMIT 10
+----
+
+.Query with join
+[source,sql]
+----
+SELECT customers.*, orders.*
+FROM customers
+JOIN orders ON customers.customerId = orders.customerId
+WHERE customers.customerId = :id
+----
+
+== Notes
+
+* The query language is similar to SQL but has some differences in behavior and feature support
+* The syntax supports referencing nested fields using dot notation
+* Clauses must appear in the order shown in the syntax definition
+* Table names correspond to xref:reference:views/concepts/table-updaters.adoc[table updaters] defined in the View
+
+== Related features
+
+* xref:reference:views/syntax/select.adoc[SELECT clause] - Detailed information on specifying what data to retrieve
+* xref:reference:views/syntax/from.adoc[FROM clause] - Information on specifying data sources
+* xref:reference:views/syntax/where.adoc[WHERE clause] - How to filter results
+* xref:reference:views/syntax/order-by.adoc[ORDER BY clause] - Sorting results
+* xref:reference:views/syntax/group-by.adoc[GROUP BY clause] - Grouping related data
+* xref:reference:views/syntax/join.adoc[JOIN operation] - Combining data from multiple tables
+* xref:reference:views/concepts/pagination.adoc[Paging with OFFSET and LIMIT] - Limiting result sets
