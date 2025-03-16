@@ -7,6 +7,7 @@ Technical reference material for various aspects of Akka.
 == Topics
 
 - xref:libraries:index.adoc[]
+- xref:views/index.adoc[]
 - xref:descriptors/service-descriptor.adoc[]
 - xref:descriptors/route-descriptor.adoc[]
 - xref:descriptors/observability-descriptor.adoc[]

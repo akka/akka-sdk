@@ -1,0 +1,319 @@
+= Array Types
+
+Array types in Views allow you to work with collections of values within a single row. This page explains how to define, query, and manipulate array data in your Views.
+
+== Defining Array Fields in Java
+
+There are several ways to represent array fields in your View data models:
+
+=== Collections
+
+Use Java collection types to represent arrays:
+
+[source,java]
+----
+public record Product(
+    String id,
+    String name,
+    List<String> categories,
+    Set<String> tags
+) { }
+----
+
+All Java collection types (List, Set, Collection, etc.) are treated as arrays in view queries.
+
+=== Java Arrays
+
+Native Java arrays are also supported:
+
+[source,java]
+----
+public record Product(
+    String id,
+    String name,
+    String[] categories,
+    int[] ratings
+) { }
+----
+
+=== Nested Object Arrays
+
+Arrays can contain complex objects:
+
+[source,java]
+----
+public record Order(
+    String id,
+    String customerId,
+    List<OrderItem> items
+) { }
+
+public record OrderItem(
+    String productId,
+    int quantity,
+    double price
+) { }
+----
+
+== Querying Array Fields
+
+=== Testing Membership with = ANY
+
+The primary way to query array fields is with the `= ANY` operator, which tests if an array contains a specific value:
+
+[source,sql]
+----
+-- Find products in a specific category
+SELECT * FROM products
+WHERE 'Electronics' = ANY(categories)
+
+-- Find products with a specific tag from a parameter
+SELECT * FROM products
+WHERE :tag = ANY(tags)
+----
+
+The `= ANY` operator can be used in two ways:
+
+1. `value = ANY(arrayColumn)` - Tests if the array column contains the value
+2. `column = ANY(:arrayParameter)` - Tests if the column's value is in the array parameter
+
+=== Filtering with Array Parameters
+
+You can pass arrays as parameters to filter rows:
+
+[source,sql]
+----
+-- Find products with IDs in a specific list
+SELECT * FROM products
+WHERE id = ANY(:productIds)
+----
+
+In your Java code, pass a List, Set, or array as the parameter:
+
+[source,java]
+----
+List<String> productIds = List.of("prod-1", "prod-2", "prod-3");
+componentClient.forView()
+    .method(ProductView::getProducts)
+    .invoke(productIds);
+----
+
+== Creating Arrays in Query Results
+
+=== Using collect() Function
+
+The primary way to create arrays in query results is with the `collect()` function, typically combined with `GROUP BY`:
+
+[source,sql]
+----
+-- Group products by category
+SELECT category, collect(*) AS products
+FROM products
+GROUP BY category
+----
+
+This groups products by category and creates an array of product objects for each category.
+
+=== Collecting Specific Fields
+
+You can collect specific fields into arrays:
+
+[source,sql]
+----
+-- Collect just product names for each category
+SELECT category, collect(name) AS productNames
+FROM products
+GROUP BY category
+----
+
+=== Collecting Distinct Values
+
+Use the `distinct` keyword to eliminate duplicates:
+
+[source,sql]
+----
+-- Collect unique tags across products
+SELECT collect(distinct tags) AS allTags
+FROM products
+----
+
+=== Arrays of Nested Objects
+
+Create arrays of custom-structured objects:
+
+[source,sql]
+----
+-- Create custom objects in the array
+SELECT category, collect((name, price) AS item) AS products
+FROM products
+GROUP BY category
+----
+
+== Mapping Array Results in Java
+
+Results containing arrays map to collection types in Java:
+
+[source,java]
+----
+public record CategoryProducts(
+    String category,
+    List<Product> products
+) { }
+
+public record CategoryProductNames(
+    String category,
+    List<String> productNames
+) { }
+
+public record CategoryItems(
+    String category,
+    List<ProductItem> products
+) { }
+
+public record ProductItem(
+    String name,
+    double price
+) { }
+----
+
+== Array Limitations and Behavior
+
+=== Querying Within Arrays
+
+In the current implementation, querying for specific elements within arrays has some limitations:
+
+* You can check if an array contains a value using `= ANY`
+* Directly accessing array elements by index is not supported
+* Querying nested properties within array elements is not supported
+
+=== Empty Arrays
+
+Empty arrays are handled as follows:
+
+* `value = ANY(emptyArray)` will always be false
+* `collect(...)` on an empty result set produces an empty array
+
+=== NULL vs. Empty Array
+
+There's a distinction between NULL arrays and empty arrays:
+
+* NULL array: The array field itself is missing (`array IS NULL`)
+* Empty array: The array exists but contains no elements (`array = '{}'`)
+
+These are queried differently:
+
+[source,sql]
+----
+-- Find products with no categories specified (NULL array)
+SELECT * FROM products
+WHERE categories IS NULL
+
+-- This would find products with an empty categories array,
+-- but this precise syntax isn't currently supported
+----
+
+== Best Practices
+
+=== When to Use Arrays
+
+Arrays are useful for:
+
+* Categorization and tagging (products with multiple categories)
+* Property lists (features, attributes)
+* Simple one-to-many relationships within a row
+* Aggregating related items in query results
+
+=== Performance Considerations
+
+* Arrays are stored and indexed efficiently in the underlying database
+* The `= ANY` operator can use indexes when properly configured
+* For very large arrays, consider alternative data models
+
+=== Array Design Tips
+
+* Keep arrays reasonably sized (typically under a few hundred elements)
+* For complex many-to-many relationships, consider using separate tables and JOINs
+* Use appropriate collection types in your Java models (List, Set, etc.)
+* Document the expected behavior of your array fields
+
+== Examples
+
+=== Full Example: Product Tags and Categories
+
+Model:
+
+[source,java]
+----
+public record Product(
+    String id,
+    String name,
+    double price,
+    List<String> categories,
+    Set<String> tags
+) { }
+----
+
+Query examples:
+
+[source,sql]
+----
+-- Find products in multiple categories
+SELECT * FROM products
+WHERE 'Electronics' = ANY(categories) OR 'Gadgets' = ANY(categories)
+
+-- Find products with specific tags
+SELECT * FROM products
+WHERE :searchTag = ANY(tags)
+
+-- Group products by category
+SELECT category, collect(*) AS categoryProducts
+FROM products, categories AS category
+WHERE category = ANY(categories)
+GROUP BY category
+----
+
+=== Nested Arrays Example
+
+Model:
+
+[source,java]
+----
+public record Order(
+    String id,
+    String customerId,
+    List<OrderItem> items,
+    Instant orderDate
+) { }
+
+public record OrderItem(
+    String productId,
+    String productName,
+    int quantity,
+    double unitPrice
+) { }
+----
+
+Queries:
+
+[source,sql]
+----
+-- Group orders by customer
+SELECT customerId, collect(*) AS orders
+FROM orders
+GROUP BY customerId
+
+-- Group with transformations
+SELECT
+  customerId,
+  collect((id, orderDate) AS orderSummary) AS orderHistory
+FROM orders
+GROUP BY customerId
+----
+
+== Related Features
+
+* xref:reference:views/syntax/operators/any.adoc[= ANY operator] - Testing array membership
+* xref:reference:views/syntax/functions/collect.adoc[collect() function] - Creating arrays in results
+* xref:reference:views/syntax/functions/distinct.adoc[DISTINCT keyword] - Removing duplicates from arrays
+* xref:reference:views/syntax/group-by.adoc[GROUP BY clause] - Grouping data for arrays
+* xref:reference:views/concepts/result-mapping.adoc[Result Mapping] - How arrays map to Java types

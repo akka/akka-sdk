@@ -1,0 +1,146 @@
+= collect()
+
+The `collect()` function creates collections or arrays of values from multiple rows in a query result. It is primarily used with `GROUP BY` to aggregate related data into nested structures, enabling hierarchical representations of one-to-many relationships.
+
+== Syntax
+
+[source,sql]
+----
+collect([distinct] <select_expression>) AS <alias>
+----
+
+== Elements
+
+`distinct`::
+Optional keyword that removes duplicate values from the collection.
+
+`select_expression`::
+The expression to collect into an array. This can be:
+* A single column name
+* A wildcard `*` to collect all columns
+* A composite expression like `(column1, column2)` to create objects within the collection
+
+`AS alias`::
+Required aliasing for the collection in the query result. The alias determines the field name in the response object.
+
+== Features
+
+Data Aggregation::
+Aggregates values from multiple rows into a single array or collection.
+
+Hierarchical Structures::
+Creates nested data structures that represent one-to-many relationships in the results.
+
+Object Collections::
+Can collect not just simple values but also complex objects with multiple fields.
+
+Duplicate Elimination::
+With the `distinct` keyword, removes duplicate values from the collection.
+
+== Examples
+
+.Collect all columns into an array
+[source,sql]
+----
+SELECT category, collect(*) AS products
+FROM products
+GROUP BY category
+----
+
+.Collect a single column into an array
+[source,sql]
+----
+SELECT category, collect(name) AS productNames
+FROM products
+GROUP BY category
+----
+
+.Collect without duplicate values
+[source,sql]
+----
+SELECT category, collect(distinct manufacturer) AS manufacturers
+FROM products
+GROUP BY category
+----
+
+.Collect with custom object structure
+[source,sql]
+----
+SELECT category, collect(name, price) AS products
+FROM products
+GROUP BY category
+----
+
+.Complex nested structure with multiple collections
+[source,sql]
+----
+SELECT
+  category,
+  (
+    collect(name) AS names,
+    collect(price, manufacturer) AS productDetails,
+    collect(distinct manufacturer) AS uniqueManufacturers
+  ) AS categoryData
+FROM products
+GROUP BY category
+----
+
+== Java Type Mapping
+
+The collect() function maps to Java collection types in your response objects. For example:
+
+[source,sql]
+----
+SELECT category, collect(name) AS productNames
+FROM products
+GROUP BY category
+----
+
+Would map to a Java type like:
+
+[source,java]
+----
+public record CategoryResponse(
+    String category,
+    List<String> productNames
+) {}
+----
+
+For complex objects within collections:
+
+[source,sql]
+----
+SELECT category, collect(name, price) AS products
+FROM products
+GROUP BY category
+----
+
+Would map to:
+
+[source,java]
+----
+public record CategoryResponse(
+    String category,
+    List<ProductInfo> products
+) {}
+
+public record ProductInfo(
+    String name,
+    double price
+) {}
+----
+
+== Notes
+
+* The `collect()` function is most effective when used with `GROUP BY`
+* The alias for `collect()` is required and should match a collection field in your Java response type
+* The `distinct` keyword eliminates duplicates based on the entire collected expression
+* Collections maintain the order determined by the query's `ORDER BY` clause, or the natural index order if no explicit ordering is specified
+* For complex nested structures, ensure that your Java classes have the correct nesting of fields and collection types
+
+== Related Features
+
+* xref:reference:views/syntax/group-by.adoc[GROUP BY clause] - Groups rows for collection
+* xref:reference:views/syntax/select.adoc[SELECT clause] - Used with collect() for result structure
+* xref:reference:views/syntax/functions/distinct.adoc[DISTINCT keyword] - Eliminates duplicate values
+* xref:reference:views/concepts/result-mapping.adoc[Result Mapping] - How query results map to Java types

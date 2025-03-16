@@ -1,0 +1,179 @@
+= Data Types
+
+The View query language supports a range of data types that map to Java types in your View components. This page explains the supported data types, how they're used in queries, and how they map between the query language and Java.
+
+== Supported Data Types
+
+View queries support the following data types:
+
+[cols="1,1,3"]
+|===
+| Query Data Type | Java Type | Description
+
+| Text
+| `String`
+| Text strings of any length
+
+| Integer
+| `int` / `Integer`
+| 32-bit signed integers
+
+| Long
+| `long` / `Long`
+| 64-bit signed integers
+
+| Float
+| `float` / `Float`
+| 32-bit floating point numbers
+
+| Double
+| `double` / `Double`
+| 64-bit floating point numbers
+
+| Boolean
+| `boolean` / `Boolean`
+| True or false values
+
+| Lists
+| `Collection<T>` and derived types
+| Collections of values
+
+| Timestamp
+| `java.time.Instant`
+| Point in time with microsecond precision
+
+| Date and Time
+| `java.time.ZonedDateTime`
+| Date and time with timezone information
+|===
+
+== Type Mapping
+
+When executing queries, the View system automatically maps between Java types and query data types:
+
+=== From Java to Query
+
+* `String` → Text
+* `int`/`Integer` → Integer
+* `long`/`Long` → Long
+* `float`/`Float` → Float
+* `double`/`Double` → Double
+* `boolean`/`Boolean` → Boolean
+* `Collection<T>` → List of the mapped type of `T`
+* `java.time.Instant` → Timestamp
+* `java.time.ZonedDateTime` → Date and time
+* Custom types → Complex structure based on fields
+
+=== From Query to Java
+
+When query results are mapped to Java objects, the reverse mapping occurs. Fields in your response types must be compatible with the corresponding data in the query result.
+
+== Literals in Queries
+
+Different data types have specific literal formats in queries:
+
+=== Text Literals
+
+Text literals are enclosed in single quotes:
+
+[source,sql]
+----
+WHERE name = 'John'
+WHERE status = 'active'
+----
+
+=== Numeric Literals
+
+Numeric literals are written without quotes:
+
+[source,sql]
+----
+WHERE price = 99.99
+WHERE quantity = 5
+----
+
+=== Boolean Literals
+
+Boolean literals are written as `true` or `false`:
+
+[source,sql]
+----
+WHERE active = true
+WHERE discontinued = false
+----
+
+=== Timestamp Literals
+
+Timestamp literals are written as ISO-8601 formatted strings in single quotes:
+
+[source,sql]
+----
+WHERE createdTime > '2023-01-01T00:00:00Z'
+----
+
+== Type Conversion
+
+The View query language generally requires exact type matches:
+
+* You cannot directly compare values of different types (e.g., a text value with a numeric value)
+* When working with numeric types, some automatic conversion may occur (e.g., Integer to Long)
+* Special handling applies to NULL values, which are compared using `IS NULL` and `IS NOT NULL`
+
+== Complex and Nested Types
+
+Views support complex and nested data structures:
+
+=== Nested Objects
+
+Nested objects are represented using dot notation:
+
+[source,sql]
+----
+WHERE address.city = 'New York'
+WHERE customer.contact.email = :email
+----
+
+=== Collection Types
+
+Collection fields can be:
+
+* Selected in results: `SELECT tags AS productTags`
+* Used with the `= ANY` operator: `WHERE :tag = ANY(tags)`
+* Created with the `collect()` function: `collect(name) AS productNames`
+
+== Optional Fields
+
+Fields in a view type can be optional, represented in Java as:
+
+* Java's non-primitive types (e.g., `Integer` instead of `int`)
+* `java.util.Optional<T>` wrapper
+* Nested classes with potentially null fields
+
+Optional fields can be queried using the `IS NULL` and `IS NOT NULL` operators:
+
+[source,sql]
+----
+WHERE phoneNumber IS NULL
+WHERE address IS NOT NULL
+----
+
+== Parameters
+
+Query parameters use the same type system as other values in the query. For example:
+
+[source,sql]
+----
+WHERE category = :categoryParam
+WHERE price < :maxPrice
+WHERE tags = ANY(:tagList)
+----
+
+The Java type of the parameter must be compatible with how it's used in the query.
+
+== Related Features
+
+* xref:reference:views/syntax/operators/comparison.adoc[Comparison Operators] - Type-compatible comparisons
+* xref:reference:views/syntax/operators/is-null.adoc[IS NULL / IS NOT NULL] - Working with optional values
+* xref:reference:views/concepts/optional-fields.adoc[Optional Fields] - Detailed information about handling optional data
+* xref:reference:views/concepts/result-mapping.adoc[Result Mapping] - How query results map to Java types
+* xref:reference:views/concepts/array-types.adoc[Array Types] - Working with collection data in views
