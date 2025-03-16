@@ -8,14 +8,14 @@ import java.util.function.Predicate;
 
 public record ShoppingCartState(String cartId, List<LineItem> items, boolean checkedOut) {
 
-  public record LineItem(String productId, String name, int quantity, String description) {
+  public record LineItem(String productId, int quantity) {
     public LineItem withQuantity(int quantity) {
-      return new LineItem(productId, name, quantity, description);
+      return new LineItem(productId, quantity);
     }
   }
 
   public ShoppingCartState onItemAdded(ShoppingCartEvent.ItemAdded itemAdded) {
-    var item = new LineItem(itemAdded.productId(), itemAdded.name(), itemAdded.quantity(), itemAdded.description());
+    var item = new LineItem(itemAdded.productId(), itemAdded.quantity());
     var lineItem = updateItem(item);
     List<LineItem> lineItems = removeItemByProductId(item.productId());
     lineItems.add(lineItem);

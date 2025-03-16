@@ -7,7 +7,7 @@
 .idea
 !.idea/
 .idea/*
-!.idea/runConfigurations/Run_locally.xml
+.idea/runConfigurations/Run_locally.xml
 *.iml
 *.iws
 
