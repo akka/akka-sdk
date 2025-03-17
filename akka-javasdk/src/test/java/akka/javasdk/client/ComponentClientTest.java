@@ -7,13 +7,7 @@ package akka.javasdk.client;
 import akka.NotUsed;
 import akka.javasdk.impl.*;
 import akka.javasdk.impl.serialization.JsonSerializer;
-import akka.javasdk.impl.view.ViewDescriptorFactory;
-import com.google.protobuf.ByteString;
-import com.google.protobuf.Descriptors;
-import com.google.protobuf.DynamicMessage;
 import com.google.protobuf.InvalidProtocolBufferException;
-import com.google.protobuf.any.Any;
-import akka.javasdk.JsonSupport;
 import akka.javasdk.Metadata;
 import akka.javasdk.impl.client.ComponentClientImpl;
 import akka.javasdk.impl.client.DeferredCallImpl;
@@ -107,7 +101,6 @@ class ComponentClientTest {
   @Test
   public void shouldReturnDeferredCallWithTraceParent() {
     //given
-    var action = descriptorFor(ActionWithoutParam.class, serializer);
     String traceparent = "074c4c8d-d87c-4573-847f-77951ce4e0a4";
     Metadata metadata = MetadataImpl.Empty().set(Telemetry.TRACE_PARENT_KEY(), traceparent);
     //when
@@ -153,34 +146,5 @@ class ComponentClientTest {
 
     // not much to assert here
 
-  }
-
-  private ComponentDescriptor descriptorFor(Class<?> clazz, JsonSerializer serializer) {
-    Validations.validate(clazz).failIfInvalid();
-    return ComponentDescriptor.descriptorFor(clazz, serializer);
-  }
-
-  private <T> T getBody(Descriptors.MethodDescriptor targetMethod, Any message, Class<T> clazz) throws InvalidProtocolBufferException {
-    var dynamicMessage = DynamicMessage.parseFrom(targetMethod.getInputType(), message.value());
-    var body = (DynamicMessage) targetMethod.getInputType()
-      .getFields().stream()
-      .filter(f -> f.getName().equals("json_body"))
-      .map(dynamicMessage::getField)
-      .findFirst().orElseThrow();
-
-    return decodeJson(body, clazz);
-  }
-
-  private <T> T decodeJson(DynamicMessage dm, Class<T> clazz) {
-    String typeUrl = (String) dm.getField(Any.javaDescriptor().findFieldByName("type_url"));
-    ByteString bytes = (ByteString) dm.getField(Any.javaDescriptor().findFieldByName("value"));
-
-    var any = com.google.protobuf.Any.newBuilder().setTypeUrl(typeUrl).setValue(bytes).build();
-
-    return JsonSupport.decodeJson(clazz, any);
-  }
-
-  private void assertMethodParamsMatch(Descriptors.MethodDescriptor targetMethod, Object message) throws InvalidProtocolBufferException {
-    assertThat(message.getClass()).isEqualTo(targetMethod.getInputType().getFullName());
   }
 }

@@ -114,7 +114,7 @@ public class CounterIntegrationTest extends TestKitSupport { // <1>
     var eventMultiplied = eventsTopic.expectOneTyped(ValueMultiplied.class);
 
     assertEquals(increaseCmd.value(), eventIncreased.getPayload().value()); // <5>
-    assertEquals(multipleCmd.value(), eventMultiplied.getPayload().value());
+    assertEquals(multipleCmd.value(), eventMultiplied.getPayload().multiplier());
   }
   // end::test-topic[]
 

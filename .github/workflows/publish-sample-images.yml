@@ -46,9 +46,7 @@ jobs:
           ./updateSdkVersions.sh java samples/shopping-cart-quickstart
 
       - name: Quickstart docker image for console quick-deploy
-        env:
-          PUBLIC_GCR_SERVICE_KEY: ${{ secrets.PUBLIC_GCR_SERVICE_KEY }}
         run: |-
           cd samples/shopping-cart-quickstart
-          echo "$PUBLIC_GCR_SERVICE_KEY" | docker login -u _json_key --password-stdin https://gcr.io
-          mvn --batch-mode deploy docker:push -DskipTests -Ddocker.image=gcr.io/kalix-public/samples/shopping-cart-quickstart
+          echo "${{ secrets.PUBLISH_PASSWORD }}" | docker login --username "${{ secrets.PUBLISH_USER }}" --password-stdin docker.cloudsmith.io/lightbend
+          mvn --batch-mode deploy docker:push -DskipTests -Ddocker.image=docker.cloudsmith.io/lightbend/akka-public/shopping-cart-quickstart

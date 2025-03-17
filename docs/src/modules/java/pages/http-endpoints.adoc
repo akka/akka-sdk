@@ -67,6 +67,32 @@ Additionally, the request body parameter can be of the following types:
  * `akka.http.javadsl.model.HttpRequest` for a low level, streaming representation of the entire request
     including headers. See xref:http-endpoints.adoc#_low_level_requests[] below for more details
 
+=== Request headers ===
+
+Accessing request headers is done through the link:_attachments/api/akka/javasdk/http/RequestContext.html[RequestContext] methods `requestHeader(String headerName)` and `allRequestHeaders()`.
+
+By letting the endpoint extend link:_attachments/api/akka/javasdk/http/AbstractHttpEndpoint.html[AbstractHttpEndpoint] request context is available through the method `requestContext()`.
+
+[source,java]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java[ExampleEndpoint.java]
+----
+include::example$doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java[tag=header-access]
+----
+<1> Extend `AbstractHttpEndpoint` class.
+<2> `requestHeader(headerName)` returns an `Optional` which is empty if the header was not present.
+
+=== Query parameters ===
+
+Accessing query parameter is done through the `requestContext()`, inherited from link:_attachments/api/akka/javasdk/http/AbstractHttpEndpoint.html[AbstractHttpEndpoint].
+
+[source,java]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java[ExampleEndpoint.java]
+----
+include::example$doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java[tag=query-params]
+----
+<1> `queryParams().get("name")` returns an `Optional` which is empty if the query parameter is not present.
+
+
 === Response body ===
 
 To return response with JSON, the return value can be a class that Jackson can serialize:
@@ -245,19 +271,6 @@ include::example$doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java
 <2> Make sure to discard the request body when failing
 <3> Or collect the bytes into memory
 
-
-=== Accessing request headers ===
-
-Accessing request headers is done through the link:_attachments/api/akka/javasdk/http/RequestContext.html[RequestContext] methods `requestHeader(String headerName)` and `allRequestHeaders()`.
-
-By letting the endpoint extend link:_attachments/api/akka/javasdk/http/AbstractHttpEndpoint.html[AbstractHttpEndpoint] request context is available through the method `requestContext()`.
-
-[source,java]
-.{sample-base-url}/doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java[ExampleEndpoint.java]
-----
-include::example$doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java[tag=header-access]
-----
-<1> `requestHeader(headerName)` returns an `Optional` which is empty if the header was not present.
 
 [#_serving_static_content]
 === Serving static content ===

@@ -146,7 +146,7 @@ private[impl] final class KeyValueEntityImpl[S, KV <: KeyValueEntity[S]](
                   updatedState,
                   reply,
                   metadata,
-                  delete = None))
+                  deleteEntity = false))
           }
 
         case DeleteEntity =>
@@ -154,9 +154,13 @@ private[impl] final class KeyValueEntityImpl[S, KV <: KeyValueEntity[S]](
             case Left(err) =>
               Future.successful(new SpiEventSourcedEntity.ErrorEffect(err))
             case Right((reply, metadata)) =>
-              val delete = Some(configuration.cleanupDeletedEventSourcedEntityAfter)
               Future.successful(
-                new SpiEventSourcedEntity.PersistEffect(events = Vector.empty, null, reply, metadata, delete))
+                new SpiEventSourcedEntity.PersistEffect(
+                  events = Vector.empty,
+                  null,
+                  reply,
+                  metadata,
+                  deleteEntity = true))
           }
 
         case NoPrimaryEffect =>

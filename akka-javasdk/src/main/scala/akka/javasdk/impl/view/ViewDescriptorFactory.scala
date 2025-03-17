@@ -53,7 +53,7 @@ import org.slf4j.MDC
 @InternalApi
 private[impl] object ViewDescriptorFactory {
 
-  val TableNamePattern: Regex = """FROM\s+`?([A-Za-z][A-Za-z0-9_]*)""".r
+  val TableNamePattern: Regex = """(?i)FROM(?-i)\s+(?:`([^`]+)`|([A-Za-z][A-Za-z0-9_]*))""".r
 
   def apply(
       viewClass: Class[_],
@@ -85,7 +85,7 @@ private[impl] object ViewDescriptorFactory {
                   s"View [$componentId] does not have any queries defined, must have at least one query"))
               TableNamePattern
                 .findFirstMatchIn(query)
-                .map(_.group(1))
+                .map(m => Option(m.group(1)).getOrElse(m.group(2))) // optionally quoted in first group
                 .getOrElse(throw new RuntimeException(s"Could not extract table name from query [${query}]"))
             }
           }
@@ -430,8 +430,8 @@ private[impl] object ViewDescriptorFactory {
               val tableUpdaterInstance = tableUpdater()
               try {
 
-                tableUpdaterInstance._internalSetViewState(existingState.getOrElse(tableUpdaterInstance.emptyRow()))
                 tableUpdaterInstance._internalSetUpdateContext(Optional.of(updateContext))
+                tableUpdaterInstance._internalSetViewState(existingState.getOrElse(tableUpdaterInstance.emptyRow()))
 
                 val result =
                   if (deleteHandler) method.invoke(tableUpdaterInstance)

@@ -239,6 +239,16 @@ public interface EventingTestKit {
     }
 
     /**
+     * Create a default metadata a given payload and subject.
+     * @param payload the message payload
+     * @param subject the entity id to associate with the payload
+     * @return
+     */
+    public Metadata defaultMetadata(Object payload, String subject) {
+      return TestKitMessageImpl.defaultMetadata(payload, subject, serializer);
+    }
+
+    /**
      * Create a message object from a payload plus metadata.
      *
      * @param payload  the message payload

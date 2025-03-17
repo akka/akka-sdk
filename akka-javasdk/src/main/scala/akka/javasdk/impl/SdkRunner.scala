@@ -10,7 +10,6 @@ import java.lang.reflect.Method
 import java.util
 import java.util.Optional
 import java.util.concurrent.CompletionStage
-import scala.annotation.nowarn
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.Promise
@@ -20,6 +19,7 @@ import scala.jdk.OptionConverters.RichOption
 import scala.jdk.OptionConverters.RichOptional
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
+
 import akka.Done
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
@@ -46,6 +46,7 @@ import akka.javasdk.grpc.GrpcClientProvider
 import akka.javasdk.grpc.GrpcRequestContext
 import akka.javasdk.http.AbstractHttpEndpoint
 import akka.javasdk.http.HttpClientProvider
+import akka.javasdk.http.QueryParams
 import akka.javasdk.http.RequestContext
 import akka.javasdk.impl.ComponentDescriptorFactory.consumerDestination
 import akka.javasdk.impl.ComponentDescriptorFactory.consumerSource
@@ -59,6 +60,7 @@ import akka.javasdk.impl.eventsourcedentity.EventSourcedEntityImpl
 import akka.javasdk.impl.grpc.GrpcClientProviderImpl
 import akka.javasdk.impl.http.HttpClientProviderImpl
 import akka.javasdk.impl.http.JwtClaimsImpl
+import akka.javasdk.impl.http.QueryParamsImpl
 import akka.javasdk.impl.keyvalueentity.KeyValueEntityImpl
 import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.reflection.Reflect.Syntax.AnnotatedElementOps
@@ -135,11 +137,12 @@ class SdkRunner private (dependencyProvider: Option[DependencyProvider], disable
   def applicationConfig: Config =
     ApplicationConfig.loadApplicationConf
 
-  @nowarn("msg=deprecated") //TODO remove deprecation once we remove the old constructor
   override def getSettings: SpiSettings = {
     val applicationConf = applicationConfig
 
     val eventSourcedEntitySnapshotEvery = applicationConfig.getInt("akka.javasdk.event-sourced-entity.snapshot-every")
+    val cleanupDeletedEntityAfter =
+      applicationConf.getDuration("akka.javasdk.entity.cleanup-deleted-after")
 
     val devModeSettings =
       if (applicationConf.getBoolean("akka.javasdk.dev-mode.enabled"))
@@ -155,7 +158,7 @@ class SdkRunner private (dependencyProvider: Option[DependencyProvider], disable
       else
         None
 
-    new SpiSettings(eventSourcedEntitySnapshotEvery, devModeSettings)
+    new SpiSettings(eventSourcedEntitySnapshotEvery, cleanupDeletedEntityAfter, devModeSettings)
   }
 
   private def extractBrokerConfig(eventingConf: Config): SpiEventingSupportSettings = {
@@ -481,7 +484,6 @@ private final class Sdk(
 
         val instanceFactory: SpiEventSourcedEntity.FactoryContext => SpiEventSourcedEntity = { factoryContext =>
           new EventSourcedEntityImpl[AnyRef, AnyRef, EventSourcedEntity[AnyRef, AnyRef]](
-            sdkSettings,
             sdkTracerFactory,
             componentId,
             factoryContext.entityId,
@@ -580,11 +582,13 @@ private final class Sdk(
         val componentId = clz.getAnnotation(classOf[ComponentId]).value
         val consumerClass = clz.asInstanceOf[Class[Consumer]]
         val consumerDest = consumerDestination(consumerClass)
+        val consumerSrc = consumerSource(consumerClass)
         val consumerSpi =
           new ConsumerImpl[Consumer](
             componentId,
             () => wiredInstance(consumerClass)(sideEffectingComponentInjects(None)),
             consumerClass,
+            consumerSrc,
             consumerDest,
             system.classicSystem,
             runtimeComponentClients.timerClient,
@@ -595,12 +599,7 @@ private final class Sdk(
             ComponentDescriptor.descriptorFor(consumerClass, serializer),
             regionInfo)
         consumerDescriptors :+=
-          new ConsumerDescriptor(
-            componentId,
-            clz.getName,
-            consumerSource(consumerClass),
-            consumerDestination(consumerClass),
-            consumerSpi)
+          new ConsumerDescriptor(componentId, clz.getName, consumerSrc, consumerDestination(consumerClass), consumerSpi)
 
       case clz if classOf[View].isAssignableFrom(clz) =>
         viewDescriptors :+= ViewDescriptorFactory(clz, serializer, regionInfo, sdkExecutionContext)
@@ -752,6 +751,10 @@ private final class Sdk(
           context.requestHeaders.allHeaders.asInstanceOf[Seq[HttpHeader]].asJava
 
         override def tracing(): Tracing = new SpanTracingImpl(context.openTelemetrySpan, sdkTracerFactory)
+
+        override def queryParams(): QueryParams = {
+          QueryParamsImpl(context.httpRequest.uri.query())
+        }
 
         override def selfRegion(): String = regionInfo.selfRegion
       }

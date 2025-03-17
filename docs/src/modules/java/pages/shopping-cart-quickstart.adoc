@@ -2,11 +2,11 @@
 
 include::ROOT:partial$include.adoc[]
 
-This guide walks you through a shopping cart service illustrating the use of some of Akka's components.
+This guide walks you through the design and implementation of a shopping cart service, illustrating the use of some of Akka's components.
 
 == Overview
 
-The shopping cart service implements a cart that allows users to add and remove items, get the contents of carts, and checkout the carts.
+This quickstart implements an HTTP endpoint and a shopping cart that supports adding, removing, querying, and cart checkout.
 
 In this guide you will:
 
@@ -29,13 +29,15 @@ include::ROOT:partial$cloud-dev-prerequisites.adoc[]
 akka quickstart download shopping-cart
 ----
 
-. Open the project in your favorite Integrated Development Environment (IDE).
+. Open the project in your favorite editor.
 
 == Understanding the shopping cart
 
-For this quickstart walk-through, we will implement a Shopping Cart based on an _Event Sourced Entity_.
+Shopping carts are excellent examples of agenticfootnote:[Defined as a stateful behavior capable of acting on its own.] behavior (with or without AI). In real-world implementations, they can automatically apply discounts or coupons, monitor inventory levels, detect abandoned carts, maximize conversion rates, and make recommendations based on shopping history and cart contents.
 
-Through our "Shopping Cart" Event Sourced Entity we expect to manage our cart, adding and removing items as we please. Being event-sourced means it will represent changes to state as a series of domain events. Let’s have a look at what kind of model we use to store and the events our entity generates.
+For the purposes of this initial quickstart, we will just have a single endpoint and a single event-sourced entity to keep things easy to digest.
+
+Through our entity we expect to manage our cart, adding and removing items as we please. Being event-sourced means it will represent changes to state as a series of domain events. Let’s have a look at what kind of model we use to store the events our entity generates.
 
 === The domain model
 
@@ -49,7 +51,7 @@ include::example$shopping-cart-quickstart/src/main/java/shoppingcart/domain/Shop
 <1> Our `ShoppingCart` is fairly simple, being composed only by a `cartId` and a list of line items.
 <2> A `LineItem` represents a single product and the quantity we intend to buy.
 
-Next, we have a domain event for adding items to the cart. Add an interface `ShoppingCartEvent` with the `ItemAdded` domain event in package `shoppingcart.domain`. This file should be located in the `src/main/java/shoppingcart/domain/` directory and named `ShoppingCartEvent.java`:
+Next, we have a domain event for adding items to the cart. Here we've created an interface `ShoppingCartEvent` with the `ItemAdded` domain event in package `shoppingcart.domain`. This file is in the `src/main/java/shoppingcart/domain/` directory and named `ShoppingCartEvent.java`:
 
 [source,java,indent=0]
 .{sample-base-url}/shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCartEvent.java[ShoppingCartEvent.java]
@@ -59,7 +61,7 @@ include::example$shopping-cart-quickstart/src/main/java/shoppingcart/domain/Shop
 <1> `ItemAdded` event derives from the `ShoppingCartEvent` interface.
 <2> Specifying a logical type name, required for serialization.
 
-You may notice that there are other events defined as well. This is how the application will pass Java events between the Akka runtime and the domain object.
+You may notice that there are other events defined as well. This is how the application passes events between the Akka runtime and the domain object.
 
 Jumping back to the `ShoppingCart` domain class, there is also business logic to handle the `ItemAdded` domain event for adding items to the cart:
 
@@ -68,24 +70,24 @@ Jumping back to the `ShoppingCart` domain class, there is also business logic to
 ----
 include::example$shopping-cart-quickstart/src/main/java/shoppingcart/domain/ShoppingCart.java[tag=itemAdded]
 ----
-<1> For an existing item, we will make sure to sum the existing quantity with the incoming one.
+<1> For an existing item, we make sure to sum the existing quantity with the incoming one.
 <2> Returns an updated list of items without the existing item.
 <3> Adds the updated item to the shopping cart.
 <4> Returns a new instance of the shopping cart with the updated line items.
 
 === The ShoppingCart entity
 
-We also have an Event Sourced Entity named `ShoppingCartEntity` in package `shoppingcart.application`. This class is located in the `src/main/java/shoppingcart/application/` directory and named `ShoppingCartEntity.java`. The class signature looks like this:
+To go with our domain data and our events, we have an entity named `ShoppingCartEntity` in package `shoppingcart.application`. This class is located in the `src/main/java/shoppingcart/application/` directory and named `ShoppingCartEntity.java`. The class signature looks like this:
 
 [source,java]
 .{sample-base-url}/shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java[ShoppingCartEntity.java]
 ----
 include::example$shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java[tags=top;class]
 ----
-<1> Extend `EventSourcedEntity<ShoppingCart, ShoppingCartEvent>`, where `ShoppingCart` is the type of state this entity will store, and `ShoppingCartEvent` is the interface for the events it persists.
-<2> Annotate the class so Akka can identify it as an Event Sourced Entity.
+<1> Extend `EventSourcedEntity<ShoppingCart, ShoppingCartEvent>`, where `ShoppingCart` is the type of state this entity stores, and `ShoppingCartEvent` is the interface for the events it persists.
+<2> Annotate the class so Akka can identify it as an event-sourced entity.
 
-Inside `ShoppingCartEntity`, we define an `addItem` command handler to generate an `ItemAdded` event, and an event handler to process the event:
+Inside `ShoppingCartEntity`, we define an `addItem` command handler to generate an `ItemAdded` event, and an event handler to process the event and update internal state:
 
 [source,java]
 .{sample-base-url}/shopping-cart-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java[ShoppingCartEntity.java]
@@ -109,6 +111,8 @@ include::example$shopping-cart-quickstart/src/main/java/shoppingcart/application
 <2> Define the initial state.
 <3> Return the current state as a reply to the request.
 
+You should be intentional about when you query views versus when you query entity state. Views are _eventually_ consistent while entities are _strongly_ consistent. You don't have to worry about views yet, though, as there are none in this quickstart.
+
 === The external API
 
 The shopping cart API is defined by the `ShoppingCartEndpoint`.
@@ -120,11 +124,11 @@ It is a class named `ShoppingCartEndpoint` in package `shoppingcart.api`. This c
 ----
 include::example$shopping-cart-quickstart/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java[tags=top;class;get;addItem]
 ----
-<1> Annotate the class so Akka can identify it as an Endpoint with a common path prefix for all methods `/carts`.
-<2> `ComponentClient` utility enables components to interact with each other.
-<3> GET endpoint path is combined with a path parameter name, e.g. `/carts/123`.
-<4> `ComponentClient` calling a command handler on an Event Sourced Entity from inside an Endpoint.
-<5> Result of request is a `CompletionStage<T>`, in this case a `CompletionStage<ShoppingCart>`.
+<1> Annotate the class so Akka can identify it as an endpoint with a common path prefix for all methods `/carts`.
+<2> The `ComponentClient` utility enables components to interact with each other.
+<3> Combine the `cartId` parameter with the endpoint root, e.g. `/carts/123`.
+<4> `ComponentClient` calls a command handler on an event-sourced entity from inside an endpoint.
+<5> The result of a request is a `CompletionStage<T>`, in this case a `CompletionStage<ShoppingCart>`.
 <6> Use path parameter `+{cartId}+` in combination with request body `ShoppingCart.LineItem`.
 <7> Map request to a more suitable response, in this case an `HTTP 200 OK` response.
 
@@ -162,7 +166,7 @@ curl -i -XPUT -H "Content-Type: application/json" localhost:9000/carts/123/item 
 {"productId":"akka-tshirt", "name":"Akka Tshirt", "quantity": 3}'
 ----
 
-. Request to see all of the items in the cart:
+. Request all of the items in the cart:
 +
 [source, command line]
 ----
@@ -202,7 +206,11 @@ image:local-console-first-app-events.png[]
 
 Here, you can view not only the http://localhost:3000/services/shopping-cart-quickstart/components/shoppingcart.application.ShoppingCartEntity[current state of the cart, window="new"], but also http://localhost:3000/services/shopping-cart-quickstart/components/shoppingcart.application.ShoppingCartEntity/eventlog/123[*a detailed log of events*, window="new"], and the corresponding state changes that occurred along the way.
 
+If you don't see anything in your console, or the console doesn't start, check to make sure that Docker is installed and configured properly and that you don't have other applications using ports `3000` or `9000`.
+
 == Deploy to akka.io
+
+Now that you've built and started the shopping cart service locally, it's time to run it on the Akka platform without having to change any code.
 
 . If you have not already done so, xref:reference:cli/installation.adoc[install the Akka CLI].
 
@@ -260,18 +268,18 @@ Approximately one minute after deploying, your service status should become *Rea
 akka service expose cart-service
 ----
 +
-Should respond with something similar to (the exact address is generated for your service):
+Should respond with something similar to (the exact address will be unique to your service):
 +
 [source, command line]
 ----
 Service 'cart-service' was successfully exposed at: spring-tooth-3406.gcp-us-east1.akka.services
 ----
 
-Congratulations, you have successfully deployed your service. You can now access it using the hostname described in the output of the command above.
+Congratulations! You have successfully deployed your service. You can now access it using the hostname described in the output of the command above.
 
 == Invoke your deployed service
 
-You can use https://curl.se[cURL, window="new"] to invoke your service, replacing URL with the hostname that it was exposed as.
+You can use https://curl.se[cURL, window="new"] to invoke your service, replacing URL with the hostname from the previous step.
 
 . Add an item to the shopping cart:
 +

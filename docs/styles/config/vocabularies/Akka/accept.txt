@@ -38,7 +38,8 @@ decodeRequest
 defaultMode
 declaratively
 Deserializing
-deduplication
+[Dd]eduplicate
+[Dd]eduplication
 deserialize
 deserialization
 dev
@@ -112,6 +113,7 @@ passwordHashes
 plaintext
 Postgres
 PostgreSQL
+precalculated
 preconfigured
 prepended
 prepending
@@ -178,6 +180,7 @@ transcoded
 uid
 unary
 unencrypted
+updaters
 [Uu]nexpose
 unnested
 unsets
