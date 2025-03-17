@@ -6,6 +6,7 @@ import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
+import counter.application.CounterByValueView;
 import counter.application.CounterEntity;
 import counter.application.CounterEntity.CounterResult.ExceedingMaxCounterValue;
 import counter.application.CounterEntity.CounterResult.Success;
@@ -70,6 +71,20 @@ public class CounterEndpoint {
     return componentClient.forEventSourcedEntity(counterId)
       .method(CounterEntity::multiply)
       .invokeAsync(value);
+  }
+
+  @Get("/greater-than/{value}")
+  public CompletionStage<CounterByValueView.CounterByValueList> greaterThan(Integer value) {
+    return componentClient.forView()
+      .method(CounterByValueView::findByCountersByValueGreaterThan)
+      .invokeAsync(value);
+  }
+
+  @Get("/all")
+  public CompletionStage<CounterByValueView.CounterByValueList> getAll() {
+    return componentClient.forView()
+      .method(CounterByValueView::findAll)
+      .invokeAsync();
   }
 
   public record CounterRequest(String id, Integer value) {

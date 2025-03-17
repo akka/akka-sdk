@@ -70,7 +70,7 @@ my-akka-project   "My ..        xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx   id:"xxxxx
 UI::
 +
 . Log in to https://console.akka.io[Akka Console, window="new"]
-. Navigate to the https://console.akka.dev/projects[Projects, window="new"] section.
+. Navigate to the https://console.akka.io/projects[Projects, window="new"] section.
 . Click *Create a project* and fill in the required fields, including name, description, region, and organization.
 +
 image::console-create-project.png[alt="Create a project"]

@@ -90,7 +90,7 @@ Accessing query parameter is done through the `requestContext()`, inherited from
 ----
 include::example$doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java[tag=query-params]
 ----
-<2> `queryParams().get("name")` returns an `Optional` which is empty if the query parameter is not present.
+<1> `queryParams().get("name")` returns an `Optional` which is empty if the query parameter is not present.
 
 
 === Response body ===
