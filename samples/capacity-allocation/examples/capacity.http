@@ -1,0 +1,194 @@
+### Create a new capacity pool
+
+POST http://localhost:9000/capacity/pools
+Content-Type: application/json
+
+{
+  "name": "Conference Tickets",
+  "description": "Allocation pool for conference ticket reservations",
+  "totalCapacity": 100,
+  "numShards": 5,
+  "allocationRules": [
+    {
+      "ruleType": "max-per-user",
+      "ruleName": "attendee-limit",
+      "maxAllocation": 4,
+      "description": "Maximum 4 tickets per attendee"
+    }
+  ]
+}
+
+@poolId = {{response.body}}
+
+### Get pool details
+
+GET http://localhost:9000/capacity/pools/{{poolId}}
+
+### Create another pool for additional capacity
+
+POST http://localhost:9000/capacity/pools
+Content-Type: application/json
+
+{
+  "name": "Premium Seats",
+  "description": "Reserved seating for premium access",
+  "totalCapacity": 50,
+  "numShards": 2,
+  "allocationRules": [
+    {
+      "ruleType": "max-per-user",
+      "ruleName": "premium-limit",
+      "maxAllocation": 2,
+      "description": "Maximum 2 premium seats per person"
+    }
+  ]
+}
+
+@poolId2 = {{response.body}}
+
+### Get second pool details
+
+GET http://localhost:9000/capacity/pools/{{poolId2}}
+
+### Should fail - try to create pool with invalid capacity
+
+POST http://localhost:9000/capacity/pools
+Content-Type: application/json
+
+{
+  "name": "Invalid Pool",
+  "description": "This should fail",
+  "totalCapacity": 0,
+  "numShards": 5,
+  "allocationRules": []
+}
+
+### Should fail - try to create pool with invalid shard count
+
+POST http://localhost:9000/capacity/pools
+Content-Type: application/json
+
+{
+  "name": "Another Invalid Pool",
+  "description": "This should also fail",
+  "totalCapacity": 100,
+  "numShards": 0,
+  "allocationRules": []
+}
+
+### Reserve capacity in the conference pool for user1
+# This should create a reservation and validate it against user allocation rules
+
+POST http://localhost:9000/capacity/pools/{{poolId}}/reservations
+Content-Type: application/json
+
+{
+  "userId": "user1"
+}
+
+@reservationId1 = {{response.body}}
+
+### Reserve another seat in the conference pool for the same user
+# This should succeed as the user is allowed up to 4 tickets
+
+POST http://localhost:9000/capacity/pools/{{poolId}}/reservations
+Content-Type: application/json
+
+{
+  "userId": "user1"
+}
+
+@reservationId2 = {{response.body}}
+
+### Reserve a third seat in the conference pool for the same user
+
+POST http://localhost:9000/capacity/pools/{{poolId}}/reservations
+Content-Type: application/json
+
+{
+  "userId": "user1"
+}
+
+@reservationId3 = {{response.body}}
+
+### Reserve a fourth seat in the conference pool for the same user
+# This should be the last allowed reservation for this user
+
+POST http://localhost:9000/capacity/pools/{{poolId}}/reservations
+Content-Type: application/json
+
+{
+  "userId": "user1"
+}
+
+@reservationId4 = {{response.body}}
+
+### Try to reserve a fifth seat in the conference pool for the same user
+# This should fail as it exceeds the maximum allocation per user (4)
+
+POST http://localhost:9000/capacity/pools/{{poolId}}/reservations
+Content-Type: application/json
+
+{
+  "userId": "user1"
+}
+
+### Reserve a premium seat for user1
+
+POST http://localhost:9000/capacity/pools/{{poolId2}}/reservations
+Content-Type: application/json
+
+{
+  "userId": "user1"
+}
+
+@premiumReservationId1 = {{response.body}}
+
+### Reserve a second premium seat for user1
+# This should succeed as the user is allowed up to 2 premium seats
+
+POST http://localhost:9000/capacity/pools/{{poolId2}}/reservations
+Content-Type: application/json
+
+{
+  "userId": "user1"
+}
+
+@premiumReservationId2 = {{response.body}}
+
+### Try to reserve a third premium seat for user1
+# This should fail as it exceeds the maximum allocation per user (2)
+
+POST http://localhost:9000/capacity/pools/{{poolId2}}/reservations
+Content-Type: application/json
+
+{
+  "userId": "user1"
+}
+
+### Reserve capacity in the conference pool for a different user
+# This should succeed as it's a different user
+
+POST http://localhost:9000/capacity/pools/{{poolId}}/reservations
+Content-Type: application/json
+
+{
+  "userId": "user2"
+}
+
+@user2ReservationId = {{response.body}}
+
+### Try to reserve capacity with a non-existent pool
+# This should fail with a not found error
+
+POST http://localhost:9000/capacity/pools/non-existent-pool/reservations
+Content-Type: application/json
+
+{
+  "userId": "user1"
+}
+
+### Get a non-existent pool
+# This should result in a 404 Not Found
+
+GET http://localhost:9000/capacity/pools/non-existent-pool
