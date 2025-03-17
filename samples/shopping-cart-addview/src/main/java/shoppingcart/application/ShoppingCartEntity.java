@@ -7,6 +7,7 @@ import akka.javasdk.eventsourcedentity.EventSourcedEntityContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import shoppingcart.domain.ShoppingCartState;
+import shoppingcart.api.ShoppingCartEndpoint;
 import shoppingcart.domain.ShoppingCartEvent;
 
 import java.util.Collections;
@@ -26,7 +27,7 @@ public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCartState, Sh
     return new ShoppingCartState(entityId, Collections.emptyList(), false);
   }
 
-  public Effect<Done> addItem(ShoppingCartState.LineItem item) {
+  public Effect<Done> addItem(ShoppingCartEndpoint.LineItemRequest item) {
     if (currentState().checkedOut()) {
       logger.info("Cart id={} is already checked out.", entityId);
       return effects().error("Cart is already checked out.");
