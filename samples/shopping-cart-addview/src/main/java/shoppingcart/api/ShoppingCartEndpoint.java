@@ -32,10 +32,10 @@ public class ShoppingCartEndpoint {
   public record LineItemRequest(String productId, String name, int quantity, String description) {
   }
 
-  public record CartResponse(String cartId, List<CartResponse.LineItem> items, boolean checkedout) {
+  public record CartResponse(String userId, List<CartResponse.LineItem> items, boolean checkedout) {
 
     public static CartResponse fromCartView(ShoppingCartView.Cart cart) {
-      return new CartResponse(cart.cartId(),
+      return new CartResponse(cart.userId(),
           cart.items().stream().map(
               i -> new CartResponse.LineItem(i.itemId(), i.name(), i.quantity(), i.description()))
               .collect(Collectors.toList()),
@@ -51,19 +51,19 @@ public class ShoppingCartEndpoint {
     this.componentClient = componentClient;
   }
 
-  @Get("/{cartId}")
-  public CompletionStage<CartResponse> get(String cartId) {
-    logger.info("Get cart id={}", cartId);
+  @Get("/{userId}")
+  public CompletionStage<CartResponse> get(String userId) {
+    logger.info("Get cart id={}", userId);
     return componentClient.forView()
-        .method(ShoppingCartView::getCart)
-        .invokeAsync(cartId)
+        .method(ShoppingCartView::getCartForUser)
+        .invokeAsync(userId)
         .thenApply(cr -> CartResponse.fromCartView(cr));
   }
 
-  @Put("/{cartId}/item")
-  public CompletionStage<HttpResponse> addItem(String cartId, LineItemRequest item) {
-    logger.info("Adding item to cart id={} item={}", cartId, item);
-    return componentClient.forEventSourcedEntity(cartId)
+  @Put("/{userId}/item")
+  public CompletionStage<HttpResponse> addItem(String userId, LineItemRequest item) {
+    logger.info("Adding item to cart id={} item={}", userId, item);
+    return componentClient.forEventSourcedEntity(userId)
         .method(ShoppingCartEntity::addItem)
         .invokeAsync(new ShoppingCartEntity.AddLineItemCommand(item.productId(),
             item.name(),
@@ -72,19 +72,19 @@ public class ShoppingCartEndpoint {
         .thenApply(__ -> HttpResponses.ok());
   }
 
-  @Delete("/{cartId}/item/{productId}")
-  public CompletionStage<HttpResponse> removeItem(String cartId, String productId) {
-    logger.info("Removing item from cart id={} item={}", cartId, productId);
-    return componentClient.forEventSourcedEntity(cartId)
+  @Delete("/{userId}/item/{productId}")
+  public CompletionStage<HttpResponse> removeItem(String userId, String productId) {
+    logger.info("Removing item from cart id={} item={}", userId, productId);
+    return componentClient.forEventSourcedEntity(userId)
         .method(ShoppingCartEntity::removeItem)
         .invokeAsync(productId)
         .thenApply(__ -> HttpResponses.ok());
   }
 
-  @Post("/{cartId}/checkout")
-  public CompletionStage<HttpResponse> checkout(String cartId) {
-    logger.info("Checkout cart id={}", cartId);
-    return componentClient.forEventSourcedEntity(cartId)
+  @Post("/{userId}/checkout")
+  public CompletionStage<HttpResponse> checkout(String userId) {
+    logger.info("Checkout cart id={}", userId);
+    return componentClient.forEventSourcedEntity(userId)
         .method(ShoppingCartEntity::checkout)
         .invokeAsync()
         .thenApply(__ -> HttpResponses.ok());

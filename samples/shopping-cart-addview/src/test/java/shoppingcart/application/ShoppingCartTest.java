@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Test;
 
 import akka.Done;
 import akka.javasdk.testkit.EventSourcedTestKit;
-import shoppingcart.api.ShoppingCartEndpoint;
 import shoppingcart.domain.ShoppingCartEvent.ItemAdded;
 import shoppingcart.domain.ShoppingCartState;
 

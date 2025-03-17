@@ -12,21 +12,21 @@ import shoppingcart.domain.ShoppingCartEvent;
 
 @ComponentId("shopping_cart_view")
 public class ShoppingCartView extends View {
-  @Query("SELECT * FROM shopping_cart_view WHERE cartId = :cartId")
-  public QueryEffect<Cart> getCart(String cartId) {
+  @Query("SELECT * FROM shopping_cart_view WHERE userId = :userId")
+  public QueryEffect<Cart> getCartForUser(String userId) {
     return queryResult();
   }
 
   public record Carts(List<Cart> carts) {
   }
 
-  public record Cart(String cartId, List<Item> items, boolean checkedout) {
+  public record Cart(String userId, List<Item> items, boolean checkedout) {
 
     public Cart addItem(String itemId, String name, int quantity, String description) {
       var newItems = items;
       newItems.add(new Item(itemId, name, quantity, description));
 
-      return new Cart(cartId, newItems, false);
+      return new Cart(userId, newItems, false);
     }
 
     public Cart withCartId(String nCartId) {
@@ -37,11 +37,11 @@ public class ShoppingCartView extends View {
       var newItems = items;
       newItems.removeIf(i -> i.itemId() == itemId);
 
-      return new Cart(cartId, newItems, false);
+      return new Cart(userId, newItems, false);
     }
 
     public Cart checkout() {
-      return new Cart(cartId, items, true);
+      return new Cart(userId, items, true);
     }
 
     public record Item(String itemId, String name, int quantity, String description) {
