@@ -33,6 +33,11 @@ When subscribing to entities and service to service eventing, from a view, updat
 
 
 ****
+* https://github.com/akka/akka-sdk/releases/tag/v3.2.2[Akka SDK 3.2.2]
+ - make it possible to define custom Jackson object mapper for endpoints
+ - query params support for HTTP Endpoints
+ - documenting deduplication strategies for common use cases
+
 * Akka Runtime 1.4.3
     - automatic deduplication of views updates
     - improvements for use of reserved words in view queries
