@@ -54,7 +54,7 @@ public class ShoppingCartView extends View {
 
     @Override
     public Cart emptyRow() {
-      return new Cart("", new ArrayList<Cart.Item>(), false);
+      return new Cart(updateContext().eventSubject().get(), new ArrayList<Cart.Item>(), false);
     }
 
     public Effect<Cart> onEvent(ShoppingCartEvent event) {
@@ -66,16 +66,16 @@ public class ShoppingCartView extends View {
     }
 
     private Effect<Cart> addItem(ShoppingCartEvent.ItemAdded added) {
-      return effects().updateRow(rowState().withCartId(added.cartId()).addItem(added.productId(),
+      return effects().updateRow(rowState().addItem(added.productId(),
           added.name(), added.quantity(), added.description()));
     }
 
     private Effect<Cart> removeItem(ShoppingCartEvent.ItemRemoved removed) {
-      return effects().updateRow(rowState().withCartId(removed.cartId()).removeItem(removed.productId()));
+      return effects().updateRow(rowState().removeItem(removed.productId()));
     }
 
     private Effect<Cart> checkout(ShoppingCartEvent.CheckedOut checkedOut) {
-      return effects().updateRow(rowState().withCartId(checkedOut.cartId()).checkout());
+      return effects().updateRow(rowState().checkout());
     }
 
   }

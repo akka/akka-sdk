@@ -1,25 +1,25 @@
 package shoppingcart.application;
 
-import akka.Done;
-import akka.javasdk.testkit.EventSourcedTestKit;
-import org.junit.jupiter.api.Test;
-
-import shoppingcart.api.ShoppingCartEndpoint;
-import shoppingcart.domain.ShoppingCartState;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
 
-import static shoppingcart.domain.ShoppingCartEvent.ItemAdded;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Test;
+
+import akka.Done;
+import akka.javasdk.testkit.EventSourcedTestKit;
+import shoppingcart.api.ShoppingCartEndpoint;
+import shoppingcart.domain.ShoppingCartEvent.ItemAdded;
+import shoppingcart.domain.ShoppingCartState;
 
 public class ShoppingCartTest {
 
-  private final ShoppingCartEndpoint.LineItemRequest akkaTshirt = new ShoppingCartEndpoint.LineItemRequest(
+  private final ShoppingCartEntity.AddLineItemCommand akkaTshirt = new ShoppingCartEntity.AddLineItemCommand(
       "akka-tshirt",
       "Akka Tshirt", 10,
       "The best t-shirt");
 
-  private final ShoppingCartEndpoint.LineItemRequest akkaTshirt5 = new ShoppingCartEndpoint.LineItemRequest(
+  private final ShoppingCartEntity.AddLineItemCommand akkaTshirt5 = new ShoppingCartEntity.AddLineItemCommand(
       "akka-tshirt",
       "Akka Tshirt", 5,
       "The best t-shirt");

@@ -1,0 +1,10 @@
+= Shopping Cart Sample Tour
+include::ROOT:partial$include.adoc[]
+
+In this sample tour, you will build and iteratively enhance a shopping cart example application. In the first step, **Quickstart**, you'll lay the foundation by creating a service, its endpoint, an entity, and the basic event model.
+
+xref:java:shopping-cart-quickstart.adoc[Quickstart]:: In this first step, you'll quickly download, build, and deploy a shopping cart service. You'll see the code that makes it all work.
+xref:java:shopping-cart-addview.adoc[Adding a View]:: In the second step, you'll re-examine the domain model and separation of concerns and use that to refactor events and add a **view** to the application.
+
+TBD
+

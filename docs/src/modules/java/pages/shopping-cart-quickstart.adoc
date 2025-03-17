@@ -308,6 +308,7 @@ image:console-first-app-service.png[]
 
 Now that you've built and deployed a shopping cart service, take your Akka skills to the next level:
 
-. *Expand the service*: Explore xref:concepts:architecture-model.adoc#_akka_components[other Akka components] to enhance your application with additional features.
+. *Add a view*: Continue to the xref:java:shopping-cart-addview.adoc[next step] in the tour.
+. *Expand on your own*: Explore xref:concepts:architecture-model.adoc#_akka_components[other Akka components] to enhance your application with additional features.
 . *Explore other Akka samples*: Discover more about Akka by exploring xref:samples.adoc[different use cases] for inspiration.
 . *Join the community*: Visit the xref:support:index.adoc[Support page] to find resources where you can connect with other Akka developers and expand your knowledge.

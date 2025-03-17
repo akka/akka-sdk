@@ -1,22 +1,25 @@
 package shoppingcart.application;
 
+import java.util.Collections;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import akka.Done;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import akka.javasdk.eventsourcedentity.EventSourcedEntityContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import shoppingcart.domain.ShoppingCartState;
-import shoppingcart.api.ShoppingCartEndpoint;
 import shoppingcart.domain.ShoppingCartEvent;
-
-import java.util.Collections;
+import shoppingcart.domain.ShoppingCartState;
 
 @ComponentId("shopping-cart")
 public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCartState, ShoppingCartEvent> {
   private final String entityId;
 
   private static final Logger logger = LoggerFactory.getLogger(ShoppingCartEntity.class);
+
+  public record AddLineItemCommand(String productId, String name, int quantity, String description) {
+  }
 
   public ShoppingCartEntity(EventSourcedEntityContext context) {
     this.entityId = context.entityId();
@@ -27,7 +30,7 @@ public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCartState, Sh
     return new ShoppingCartState(entityId, Collections.emptyList(), false);
   }
 
-  public Effect<Done> addItem(ShoppingCartEndpoint.LineItemRequest item) {
+  public Effect<Done> addItem(AddLineItemCommand item) {
     if (currentState().checkedOut()) {
       logger.info("Cart id={} is already checked out.", entityId);
       return effects().error("Cart is already checked out.");

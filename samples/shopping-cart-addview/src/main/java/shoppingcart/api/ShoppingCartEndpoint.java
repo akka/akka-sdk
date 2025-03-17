@@ -65,7 +65,10 @@ public class ShoppingCartEndpoint {
     logger.info("Adding item to cart id={} item={}", cartId, item);
     return componentClient.forEventSourcedEntity(cartId)
         .method(ShoppingCartEntity::addItem)
-        .invokeAsync(item)
+        .invokeAsync(new ShoppingCartEntity.AddLineItemCommand(item.productId(),
+            item.name(),
+            item.quantity(),
+            item.description()))
         .thenApply(__ -> HttpResponses.ok());
   }
 

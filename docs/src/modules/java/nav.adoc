@@ -22,4 +22,4 @@
 *** xref:java:running-locally.adoc[]
 ** xref:java:dev-best-practices.adoc[]
 ** xref:java:samples.adoc[]
-*** xref:java:shopping-cart-quickstart.adoc[]
+*** xref:java:shopping-cart/index.adoc[]
