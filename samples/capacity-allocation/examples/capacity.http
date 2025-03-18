@@ -76,29 +76,53 @@ Content-Type: application/json
   "allocationRules": []
 }
 
-### Reserve capacity in the conference pool for user1
+### Reserve capacity in the conference pool for user1 with a specific request ID
 # This should create a reservation and validate it against user allocation rules
 
 POST http://localhost:9000/capacity/pools/{{poolId}}/reservations
 Content-Type: application/json
 
 {
-  "userId": "user1"
+  "userId": "user1",
+  "requestId": "req-user1-1"
 }
 
-@reservationId1 = {{response.body}}
+@firstReservationResponse = {{response.body}}
 
-### Reserve another seat in the conference pool for the same user
+### Test idempotent behavior - repeat the same request
+# This should return the same reservation with CONFIRMED status
+
+POST http://localhost:9000/capacity/pools/{{poolId}}/reservations
+Content-Type: application/json
+
+{
+  "userId": "user1",
+  "requestId": "req-user1-1"
+}
+
+### Check status of the reservation
+# This should show confirmed status
+
+GET http://localhost:9000/capacity/pools/{{poolId}}/reservations
+Content-Type: application/json
+
+{
+  "userId": "user1",
+  "requestId": "req-user1-1"
+}
+
+### Reserve another seat in the conference pool for the same user with a new request ID
 # This should succeed as the user is allowed up to 4 tickets
 
 POST http://localhost:9000/capacity/pools/{{poolId}}/reservations
 Content-Type: application/json
 
 {
-  "userId": "user1"
+  "userId": "user1",
+  "requestId": "req-user1-2"
 }
 
-@reservationId2 = {{response.body}}
+@secondReservationResponse = {{response.body}}
 
 ### Reserve a third seat in the conference pool for the same user
 
@@ -106,10 +130,11 @@ POST http://localhost:9000/capacity/pools/{{poolId}}/reservations
 Content-Type: application/json
 
 {
-  "userId": "user1"
+  "userId": "user1",
+  "requestId": "req-user1-3"
 }
 
-@reservationId3 = {{response.body}}
+@thirdReservationResponse = {{response.body}}
 
 ### Reserve a fourth seat in the conference pool for the same user
 # This should be the last allowed reservation for this user
@@ -118,10 +143,11 @@ POST http://localhost:9000/capacity/pools/{{poolId}}/reservations
 Content-Type: application/json
 
 {
-  "userId": "user1"
+  "userId": "user1",
+  "requestId": "req-user1-4"
 }
 
-@reservationId4 = {{response.body}}
+@fourthReservationResponse = {{response.body}}
 
 ### Try to reserve a fifth seat in the conference pool for the same user
 # This should fail as it exceeds the maximum allocation per user (4)
@@ -130,7 +156,19 @@ POST http://localhost:9000/capacity/pools/{{poolId}}/reservations
 Content-Type: application/json
 
 {
-  "userId": "user1"
+  "userId": "user1",
+  "requestId": "req-user1-5"
+}
+
+### Check the status of the rejected reservation
+# Should show REJECTED status
+
+GET http://localhost:9000/capacity/pools/{{poolId}}/reservations
+Content-Type: application/json
+
+{
+  "userId": "user1",
+  "requestId": "req-user1-5"
 }
 
 ### Reserve a premium seat for user1
@@ -139,10 +177,11 @@ POST http://localhost:9000/capacity/pools/{{poolId2}}/reservations
 Content-Type: application/json
 
 {
-  "userId": "user1"
+  "userId": "user1",
+  "requestId": "req-user1-premium-1"
 }
 
-@premiumReservationId1 = {{response.body}}
+@premiumReservationResponse1 = {{response.body}}
 
 ### Reserve a second premium seat for user1
 # This should succeed as the user is allowed up to 2 premium seats
@@ -151,10 +190,11 @@ POST http://localhost:9000/capacity/pools/{{poolId2}}/reservations
 Content-Type: application/json
 
 {
-  "userId": "user1"
+  "userId": "user1",
+  "requestId": "req-user1-premium-2"
 }
 
-@premiumReservationId2 = {{response.body}}
+@premiumReservationResponse2 = {{response.body}}
 
 ### Try to reserve a third premium seat for user1
 # This should fail as it exceeds the maximum allocation per user (2)
@@ -163,10 +203,22 @@ POST http://localhost:9000/capacity/pools/{{poolId2}}/reservations
 Content-Type: application/json
 
 {
-  "userId": "user1"
+  "userId": "user1",
+  "requestId": "req-user1-premium-3"
 }
 
-### Reserve capacity in the conference pool for a different user
+### Try to check status of a non-existent reservation
+# Should return 404 Not Found
+
+GET http://localhost:9000/capacity/pools/{{poolId}}/reservations
+Content-Type: application/json
+
+{
+  "userId": "user1",
+  "requestId": "non-existent-request"
+}
+
+### Reserve capacity in the conference pool for a different user with auto-generated request ID
 # This should succeed as it's a different user
 
 POST http://localhost:9000/capacity/pools/{{poolId}}/reservations
@@ -176,7 +228,7 @@ Content-Type: application/json
   "userId": "user2"
 }
 
-@user2ReservationId = {{response.body}}
+@user2ReservationResponse = {{response.body}}
 
 ### Try to reserve capacity with a non-existent pool
 # This should fail with a not found error
@@ -185,10 +237,65 @@ POST http://localhost:9000/capacity/pools/non-existent-pool/reservations
 Content-Type: application/json
 
 {
-  "userId": "user1"
+  "userId": "user1",
+  "requestId": "req-non-existent-pool"
 }
 
 ### Get a non-existent pool
 # This should result in a 404 Not Found
 
 GET http://localhost:9000/capacity/pools/non-existent-pool
+
+### Test all-shard-unavailable failure scenario
+# First, create a tiny pool with just 1 capacity
+
+POST http://localhost:9000/capacity/pools
+Content-Type: application/json
+
+{
+  "name": "Tiny Pool",
+  "description": "Pool with very limited capacity",
+  "totalCapacity": 1,
+  "numShards": 1,
+  "allocationRules": [
+    {
+      "ruleType": "max-per-user",
+      "ruleName": "tiny-limit",
+      "maxAllocation": 3,
+      "description": "Maximum 3 allocations per user"
+    }
+  ]
+}
+
+@tinyPoolId = {{response.body}}
+
+### Reserve the only capacity in the tiny pool
+
+POST http://localhost:9000/capacity/pools/{{tinyPoolId}}/reservations
+Content-Type: application/json
+
+{
+  "userId": "capacity-test-user",
+  "requestId": "tiny-req-1"
+}
+
+### Try to reserve more capacity when all is allocated
+# This should fail with a capacity unavailable error
+
+POST http://localhost:9000/capacity/pools/{{tinyPoolId}}/reservations
+Content-Type: application/json
+
+{
+  "userId": "capacity-test-user",
+  "requestId": "tiny-req-2"
+}
+
+### Check the failed reservation status
+
+GET http://localhost:9000/capacity/pools/{{tinyPoolId}}/reservations
+Content-Type: application/json
+
+{
+  "userId": "capacity-test-user",
+  "requestId": "tiny-req-2"
+}

@@ -5,20 +5,16 @@ import java.time.Instant;
 
 public sealed interface CapacityShardEvent {
 
+  String poolId();
+
+  int shardId();
+
   @TypeName("shard-initialized")
   record ShardInitialized(String poolId, int shardId, int totalCapacity, Instant timestamp)
       implements CapacityShardEvent {}
 
-  @TypeName("capacity-reserved")
-  record CapacityReserved(String poolId, int shardId, PendingReservation reservation)
-      implements CapacityShardEvent {}
-
-  @TypeName("allocation-confirmed")
-  record AllocationConfirmed(String poolId, int shardId, String reservationId, Instant timestamp)
-      implements CapacityShardEvent {}
-
-  @TypeName("reservation-released")
-  record ReservationReleased(
-      String poolId, int shardId, String reservationId, Instant timestamp, String reason)
+  @TypeName("capacity-allocated")
+  record CapacityAllocated(
+      String poolId, int shardId, String userId, String requestId, Instant timestamp)
       implements CapacityShardEvent {}
 }

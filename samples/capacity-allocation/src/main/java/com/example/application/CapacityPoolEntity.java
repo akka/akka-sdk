@@ -4,11 +4,9 @@ import akka.Done;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import akka.javasdk.eventsourcedentity.EventSourcedEntityContext;
-import com.example.domain.AllocationRule;
 import com.example.domain.CapacityPool;
 import com.example.domain.CapacityPoolEvent;
 import java.time.Instant;
-import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,23 +20,10 @@ public class CapacityPoolEntity extends EventSourcedEntity<CapacityPool, Capacit
     this.entityId = context.entityId();
   }
 
-  @Override
-  public CapacityPool emptyState() {
-    return new CapacityPool();
-  }
+  // Command handling
 
-  // Commands
-
-  public record CreatePoolCommand(
-      String poolId,
-      String name,
-      String description,
-      int totalCapacity,
-      int numShards,
-      List<AllocationRule> allocationRules) {}
-
-  public Effect<Done> createPool(CreatePoolCommand command) {
-    if (!currentState().poolId().isEmpty()) {
+  public Effect<Done> createPool(CapacityPool.CreatePool command) {
+    if (currentState() != null) {
       logger.debug("Pool with id [{}] already exists", entityId);
       return effects().error("Pool already exists");
     }
@@ -65,8 +50,8 @@ public class CapacityPoolEntity extends EventSourcedEntity<CapacityPool, Capacit
   }
 
   public ReadOnlyEffect<CapacityPool> getPoolStatus() {
-    if (currentState().poolId().isEmpty()) {
-      logger.debug("Pool with id [{}] does not exist", entityId);
+    if (currentState() == null) {
+      logger.debug("Pool with id [{}] not initialized", entityId);
       return effects().error("Pool not found");
     }
 
@@ -78,19 +63,15 @@ public class CapacityPoolEntity extends EventSourcedEntity<CapacityPool, Capacit
   @Override
   public CapacityPool applyEvent(CapacityPoolEvent event) {
     return switch (event) {
-      case CapacityPoolEvent.PoolCreated evt -> handlePoolCreated(evt);
-      default -> currentState();
+      case CapacityPoolEvent.PoolCreated created ->
+          new CapacityPool(
+              created.poolId(),
+              created.name(),
+              created.description(),
+              created.totalCapacity(),
+              created.numShards(),
+              created.allocationRules(),
+              created.timestamp());
     };
-  }
-
-  private CapacityPool handlePoolCreated(CapacityPoolEvent.PoolCreated event) {
-    return new CapacityPool(
-        event.poolId(),
-        event.name(),
-        event.description(),
-        event.totalCapacity(),
-        event.numShards(),
-        event.allocationRules(),
-        event.timestamp());
   }
 }

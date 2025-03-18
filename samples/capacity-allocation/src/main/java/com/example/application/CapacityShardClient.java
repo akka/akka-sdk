@@ -4,7 +4,6 @@ import akka.javasdk.client.ComponentClient;
 import com.example.domain.AllocationRule;
 import com.example.domain.CapacityPool;
 import com.example.domain.CapacityShard;
-import com.example.domain.PendingReservation;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collections;
@@ -24,8 +23,7 @@ public class CapacityShardClient {
   private final int numShards;
   private final List<AllocationRule> allocationRules;
 
-  // Status tracking for each shard
-  private final AtomicReferenceArray<ShardStatus> shardStatuses;
+  private final AtomicReferenceArray<ShardStatus> shardStatusTracking;
 
   public CapacityShardClient(ComponentClient componentClient, CapacityPool pool) {
     this.componentClient = componentClient;
@@ -33,22 +31,23 @@ public class CapacityShardClient {
     this.numShards = pool.numShards();
     this.allocationRules = List.copyOf(pool.allocationRules());
 
-    this.shardStatuses = new AtomicReferenceArray<>(numShards);
+    this.shardStatusTracking = new AtomicReferenceArray<>(numShards);
     for (int i = 0; i < numShards; i++) {
-      shardStatuses.set(i, ShardStatus.AVAILABLE);
+      shardStatusTracking.set(i, ShardStatus.AVAILABLE);
     }
   }
 
+  public List<AllocationRule> getAllocationRules() {
+    return Collections.unmodifiableList(allocationRules);
+  }
+
   public sealed interface ReservationResult {
-    record Success(
-        PendingReservation reservation, List<AllocationRule> allocationRules, int selectedShardId)
-        implements ReservationResult {}
+    record Success(List<AllocationRule> allocationRules) implements ReservationResult {}
 
     record Failure(String errorMessage) implements ReservationResult {}
 
-    static ReservationResult success(
-        PendingReservation reservation, List<AllocationRule> rules, int shardId) {
-      return new Success(reservation, rules, shardId);
+    static ReservationResult success(List<AllocationRule> rules) {
+      return new Success(rules);
     }
 
     static ReservationResult failure(String errorMessage) {
@@ -62,10 +61,9 @@ public class CapacityShardClient {
 
   /** Status of a capacity shard */
   public enum ShardStatus {
-    AVAILABLE(3), // Plenty of capacity
-    LOW_CAPACITY(2), // Running low on capacity
-    EXHAUSTED(1), // No available capacity, but pending reservations might free up
-    FULLY_ALLOCATED(0); // Completely allocated with no pending reservations
+    AVAILABLE(2), // Plenty of available capacity
+    LOW_CAPACITY(1), // Less than 20% available capacity
+    FULLY_ALLOCATED(0); // No available capacity
 
     private final int preferenceValue;
 
@@ -82,14 +80,14 @@ public class CapacityShardClient {
    * Attempts to reserve capacity for a user. Uses the primary shard selection based on userId hash,
    * with fallback to "power of two choices" if the primary shard is exhausted.
    */
-  public CompletionStage<ReservationResult> reserveCapacity(String userId, String reservationId) {
+  public CompletionStage<ReservationResult> reserveCapacity(String userId, String requestId) {
     // Determine primary shard based on userId
     int primaryShard = selectShardForUser(userId);
     logger.debug("Primary shard for user [{}] is [{}]", userId, primaryShard);
 
     // If primary shard is not fully allocated, try it first
-    if (shardStatuses.get(primaryShard) != ShardStatus.FULLY_ALLOCATED) {
-      return tryReservationOnShard(primaryShard, userId, reservationId)
+    if (shardStatusTracking.get(primaryShard) != ShardStatus.FULLY_ALLOCATED) {
+      return tryReservationOnShard(primaryShard, userId, requestId)
           .thenCompose(
               result -> {
                 if (result.isSuccess()) {
@@ -98,13 +96,13 @@ public class CapacityShardClient {
                   return CompletableFuture.completedStage(result);
                 }
                 // Primary shard failed, try fallback
-                return tryFallbackShards(userId, reservationId, new BitSet(numShards));
+                return tryFallbackShards(userId, requestId, new BitSet(numShards));
               });
     } else {
       // Primary shard is fully allocated, go directly to fallback
       BitSet triedShards = new BitSet(numShards);
       triedShards.set(primaryShard); // Mark primary shard as already tried
-      return tryFallbackShards(userId, reservationId, triedShards);
+      return tryFallbackShards(userId, requestId, triedShards);
     }
   }
 
@@ -113,7 +111,7 @@ public class CapacityShardClient {
    * until all shards have been attempted or capacity is found.
    */
   private CompletionStage<ReservationResult> tryFallbackShards(
-      String userId, String reservationId, BitSet triedShards) {
+      String userId, String requestId, BitSet triedShards) {
 
     // If we've tried all shards, give up
     if (triedShards.cardinality() >= numShards) {
@@ -122,15 +120,15 @@ public class CapacityShardClient {
     }
 
     // Use power of two choices for next attempt
-    return tryPowerOfTwoChoices(userId, reservationId, triedShards)
+    return tryPowerOfTwoChoices(userId, requestId, triedShards)
         .thenCompose(
             result -> {
               if (result.isSuccess()) {
                 return CompletableFuture.completedStage(result);
               }
 
-              // Update tried shards from latest attempt - recursive call will try remaining shards
-              return tryFallbackShards(userId, reservationId, triedShards);
+              // Updated tried shards from latest attempt - recursive call will try remaining shards
+              return tryFallbackShards(userId, requestId, triedShards);
             });
   }
 
@@ -140,7 +138,7 @@ public class CapacityShardClient {
    * with more available capacity.
    */
   private CompletionStage<ReservationResult> tryPowerOfTwoChoices(
-      String userId, String reservationId, BitSet triedShards) {
+      String userId, String requestId, BitSet triedShards) {
 
     int[] candidates = selectTwoRandomShards(triedShards);
     if (candidates == null) {
@@ -163,8 +161,8 @@ public class CapacityShardClient {
         secondChoice);
 
     // Check status of both shards
-    ShardStatus firstStatus = shardStatuses.get(firstChoice);
-    ShardStatus secondStatus = shardStatuses.get(secondChoice);
+    ShardStatus firstStatus = shardStatusTracking.get(firstChoice);
+    ShardStatus secondStatus = shardStatusTracking.get(secondChoice);
 
     // Choose the better shard based on status
     int selectedShard;
@@ -178,7 +176,7 @@ public class CapacityShardClient {
         "Selected shard [{}] for user [{}] based on status comparison", selectedShard, userId);
 
     // Try the chosen shard
-    return tryReservationOnShard(selectedShard, userId, reservationId)
+    return tryReservationOnShard(selectedShard, userId, requestId)
         .thenCompose(
             result -> {
               if (result.isSuccess()) {
@@ -193,13 +191,13 @@ public class CapacityShardClient {
               int alternateShard = (selectedShard == firstChoice) ? secondChoice : firstChoice;
 
               // If the alternate shard is fully allocated, don't bother trying
-              if (shardStatuses.get(alternateShard) == ShardStatus.FULLY_ALLOCATED) {
+              if (shardStatusTracking.get(alternateShard) == ShardStatus.FULLY_ALLOCATED) {
                 // This will continue with tryFallbackShards since both were marked as tried
                 return CompletableFuture.completedStage(
                     ReservationResult.failure("Both candidate shards unavailable"));
               }
 
-              return tryReservationOnShard(alternateShard, userId, reservationId);
+              return tryReservationOnShard(alternateShard, userId, requestId);
             });
   }
 
@@ -216,7 +214,7 @@ public class CapacityShardClient {
     // Create a list of viable shard indices
     List<Integer> viableCandidates = new ArrayList<>();
     for (int i = 0; i < numShards; i++) {
-      if (!triedShards.get(i) && shardStatuses.get(i) != ShardStatus.FULLY_ALLOCATED) {
+      if (!triedShards.get(i) && shardStatusTracking.get(i) != ShardStatus.FULLY_ALLOCATED) {
         viableCandidates.add(i);
       }
     }
@@ -249,22 +247,19 @@ public class CapacityShardClient {
 
   /** Try to reserve capacity on a specific shard */
   private CompletionStage<ReservationResult> tryReservationOnShard(
-      int shardId, String userId, String reservationId) {
+      int shardId, String userId, String requestId) {
 
     String shardEntityId = CapacityShardEntity.formatEntityId(poolId, shardId);
-    var command = new CapacityShardEntity.ReserveCapacityCommand(reservationId, userId);
+    var command = new CapacityShard.ReserveCapacity(userId, requestId);
 
     return componentClient
         .forEventSourcedEntity(shardEntityId)
         .method(CapacityShardEntity::reserveCapacity)
         .invokeAsync(command)
         .thenApply(
-            reservationResponse -> {
-              // Update shard status based on the response
-              updateShardStatus(shardId, reservationResponse.capacityStatus());
-
-              return ReservationResult.success(
-                  reservationResponse.reservation(), allocationRules, shardId);
+            capacityStatus -> {
+              updateShardStatus(shardId, capacityStatus);
+              return ReservationResult.success(allocationRules);
             })
         .exceptionally(
             ex -> {
@@ -276,20 +271,18 @@ public class CapacityShardClient {
 
   /** Update tracked status for a shard based on its capacity stats */
   private void updateShardStatus(int shardId, CapacityShard.CapacityStatus status) {
-    double usageRatio = 1.0 - (double) status.availableCapacity() / status.totalCapacity();
+    double usageRatio = (double) status.allocatedCapacity() / status.totalCapacity();
 
     ShardStatus newStatus;
-    if (status.availableCapacity() <= 0 && status.reservedCapacity() <= 0) {
+    if (status.allocatedCapacity() == status.totalCapacity()) {
       newStatus = ShardStatus.FULLY_ALLOCATED;
-    } else if (status.availableCapacity() <= 0) {
-      newStatus = ShardStatus.EXHAUSTED;
     } else if (usageRatio > 0.8) { // More than 80% used
       newStatus = ShardStatus.LOW_CAPACITY;
     } else {
       newStatus = ShardStatus.AVAILABLE;
     }
 
-    ShardStatus oldStatus = shardStatuses.getAndSet(shardId, newStatus);
+    ShardStatus oldStatus = shardStatusTracking.getAndSet(shardId, newStatus);
     if (oldStatus != newStatus) {
       logger.debug("Shard [{}] status changed from [{}] to [{}]", shardId, oldStatus, newStatus);
     }
@@ -320,20 +313,5 @@ public class CapacityShardClient {
   /** Compute hash of userId to determine shard assignment */
   private int selectShardForUser(String userId) {
     return Math.abs(userId.hashCode()) % numShards;
-  }
-
-  /** Get allocation rules for this pool */
-  public List<AllocationRule> getAllocationRules() {
-    return Collections.unmodifiableList(allocationRules);
-  }
-
-  /** Get the pool ID */
-  public String getPoolId() {
-    return poolId;
-  }
-
-  /** Get the number of shards */
-  public int getNumShards() {
-    return numShards;
   }
 }

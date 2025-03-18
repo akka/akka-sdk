@@ -11,7 +11,12 @@ public record CapacityPool(
     int numShards,
     List<AllocationRule> allocationRules,
     Instant createdAt) {
-  public CapacityPool() {
-    this("", "", "", 0, 0, List.of(), Instant.EPOCH);
-  }
+
+  public record CreatePool(
+      String poolId,
+      String name,
+      String description,
+      int totalCapacity,
+      int numShards,
+      List<AllocationRule> allocationRules) {}
 }
