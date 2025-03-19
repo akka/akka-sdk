@@ -18,7 +18,7 @@ public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCartState, Sh
 
   private static final Logger logger = LoggerFactory.getLogger(ShoppingCartEntity.class);
 
-  public record AddLineItemCommand(String productId, String name, int quantity, String description) {
+  public record AddLineItemCommand(String userId, String productId, String name, int quantity, String description) {
   }
 
   public ShoppingCartEntity(EventSourcedEntityContext context) {
@@ -40,7 +40,7 @@ public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCartState, Sh
       return effects().error("Quantity for item " + item.productId() + " must be greater than zero.");
     }
 
-    var event = new ShoppingCartEvent.ItemAdded(entityId, item.productId(), item.name(), item.quantity(),
+    var event = new ShoppingCartEvent.ItemAdded(entityId, item.userId(), item.productId(), item.name(), item.quantity(),
         item.description());
 
     return effects()

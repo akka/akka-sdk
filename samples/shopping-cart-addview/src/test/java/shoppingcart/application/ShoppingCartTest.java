@@ -14,11 +14,13 @@ import shoppingcart.domain.ShoppingCartState;
 public class ShoppingCartTest {
 
   private final ShoppingCartEntity.AddLineItemCommand akkaTshirt = new ShoppingCartEntity.AddLineItemCommand(
+      "user",
       "akka-tshirt",
       "Akka Tshirt", 10,
       "The best t-shirt");
 
   private final ShoppingCartEntity.AddLineItemCommand akkaTshirt5 = new ShoppingCartEntity.AddLineItemCommand(
+      "user",
       "akka-tshirt",
       "Akka Tshirt", 5,
       "The best t-shirt");
