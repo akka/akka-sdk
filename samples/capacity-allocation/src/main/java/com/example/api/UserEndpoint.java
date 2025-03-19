@@ -23,19 +23,21 @@ public class UserEndpoint extends AbstractHttpEndpoint {
   }
 
   @Get("/{userId}/pools")
-  public CompletionStage<UserActivityView.PoolSummaries> getPools(String userId) {
+  public CompletionStage<UserActivityView.PagedPoolSummaries> getPools(String userId) {
 
-    var pageToken = requestContext().queryParams().getString("pageToken").orElse("");
-    var limit = requestContext().queryParams().getInteger("pageLimit").orElse(20);
+    var page = requestContext().queryParams().getInteger("page").orElse(1);
+    var pageSize = requestContext().queryParams().getInteger("pageSize").orElse(20);
+    int offset = (page - 1) * pageSize;
 
-    logger.debug("Retrieving pools for user [{}] (token: {}, limit: {})", userId, pageToken, limit);
+    logger.debug(
+        "Retrieving pools for user [{}] (page [{}], pageSize [{}])", userId, page, pageSize);
 
-    var request = new UserActivityView.UserRequestWithPaging(userId, pageToken, limit);
+    var request = new UserActivityView.UserRequestWithPaging(userId, offset, pageSize);
 
     return componentClient.forView().method(UserActivityView::getPools).invokeAsync(request);
   }
 
-  @Get("/{userId}/pools/{poolId}/activity")
+  @Get("/{userId}/pools/{poolId}/activities")
   public CompletionStage<UserActivityView.ActivitySummary> getPoolActivity(
       String userId, String poolId) {
 
@@ -47,15 +49,16 @@ public class UserEndpoint extends AbstractHttpEndpoint {
   }
 
   @Get("/{userId}/activities")
-  public CompletionStage<UserActivityView.ActivitySummaries> getUserActivities(String userId) {
+  public CompletionStage<UserActivityView.PagedActivitySummaries> getUserActivities(String userId) {
 
-    var pageToken = requestContext().queryParams().getString("pageToken").orElse("");
-    var limit = requestContext().queryParams().getInteger("pageLimit").orElse(20);
+    var page = requestContext().queryParams().getInteger("page").orElse(1);
+    var pageSize = requestContext().queryParams().getInteger("pageSize").orElse(20);
+    int offset = (page - 1) * pageSize;
 
     logger.debug(
-        "Retrieving activities for user [{}] (token: {}, limit: {})", userId, pageToken, limit);
+        "Retrieving activities for user [{}] (page [{}], pageSize [{}])", userId, page, pageSize);
 
-    var request = new UserActivityView.UserRequestWithPaging(userId, pageToken, limit);
+    var request = new UserActivityView.UserRequestWithPaging(userId, offset, pageSize);
 
     return componentClient
         .forView()

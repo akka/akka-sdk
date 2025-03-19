@@ -118,33 +118,30 @@ public class UserActivityView extends View {
 
   public record UserAndPoolRequest(String userId, String poolId) {}
 
-  public record UserRequestWithPaging(String userId, String pageToken, int pageLimit) {}
+  public record UserRequestWithPaging(String userId, int pageOffset, int pageLimit) {}
 
   public record PoolSummary(String poolId, Optional<String> name, Optional<String> description) {}
 
-  public record PoolSummaries(
-      List<PoolSummary> pools, String nextPageToken, boolean hasMore, int totalCount) {}
+  public record PagedPoolSummaries(List<PoolSummary> pools, int totalCount) {}
 
   public record ActivitySummary(PoolSummary pool, String userId, List<Allocation> allocations) {}
 
-  public record ActivitySummaries(
-      List<ActivitySummary> activities, String nextPageToken, boolean hasMore, int totalCount) {}
+  public record PagedActivitySummaries(List<ActivitySummary> activities, int totalCount) {}
 
   // Get all capacity pools that a user has had activity in (with pagination)
   @Query(
       """
       SELECT
         collect(pools.*) AS pools,
-        next_page_token() as nextPageToken,
-        has_more() as hasMore,
         total_count() as totalCount
       FROM activities
       LEFT JOIN pools ON activities.poolId = pools.poolId
       WHERE activities.userId = :userId
-      OFFSET page_token_offset(:pageToken)
+      ORDER BY pools.name
+      OFFSET :pageOffset
       LIMIT :pageLimit
       """)
-  public QueryEffect<PoolSummaries> getPools(UserRequestWithPaging request) {
+  public QueryEffect<PagedPoolSummaries> getPools(UserRequestWithPaging request) {
     return queryResult();
   }
 
@@ -152,7 +149,7 @@ public class UserActivityView extends View {
   @Query(
       """
       SELECT
-        (pools.poolId, pools.name, pools.description) AS pool,
+        pools.* AS pool,
         activities.userId,
         activities.allocations
       FROM activities
@@ -168,20 +165,19 @@ public class UserActivityView extends View {
       """
       SELECT
         collect(
-          (pools.poolId, pools.name, pools.description) AS pool,
+          pools.* AS pool,
           activities.userId,
           activities.allocations
         ) AS activities,
-        next_page_token() as nextPageToken,
-        has_more() as hasMore,
         total_count() as totalCount
       FROM activities
       LEFT JOIN pools ON activities.poolId = pools.poolId
       WHERE activities.userId = :userId
-      OFFSET page_token_offset(:pageToken)
+      ORDER BY activities.latestTimestamp DESC
+      OFFSET :pageOffset
       LIMIT :pageLimit
       """)
-  public QueryEffect<ActivitySummaries> getAllActivities(UserRequestWithPaging request) {
+  public QueryEffect<PagedActivitySummaries> getAllActivities(UserRequestWithPaging request) {
     return queryResult();
   }
 }
