@@ -41,4 +41,3 @@ NOTE: You can refer to the organization in `akka` commands using either the "fri
 - xref:organizations/manage-users.adoc[]
 - xref:organizations/regions.adoc[]
 - xref:organizations/billing.adoc[]
-- xref:support:paid-plans.adoc[]

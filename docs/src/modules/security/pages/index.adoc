@@ -31,8 +31,8 @@ Akka supports Single Sign-On (SSO) integration via *OpenID Connect* with third p
 
 === Multifactor authentication (MFA)
 
-Users accounts in Akka may be protected with _multifactor authentication_ (MFA) for increased security. Organizations in Akka can require their members to set up MFA before joining the organization. For further details, please xref:support:email.adoc[contact our support team].
+Users accounts in Akka may be protected with _multifactor authentication_ (MFA) for increased security. Organizations in Akka can require their members to set up MFA before joining the organization. For further details, please xref:support:index.adoc[contact our support team].
 
 === Audit logging for operating Akka services
 
-Akka records all executed commands when operating services for audit logging purposes. For further details, please xref:support:email.adoc[contact our support team].
+Akka records all executed commands when operating services for audit logging purposes. For further details, please xref:support:index.adoc[contact our support team].
