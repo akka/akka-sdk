@@ -135,20 +135,27 @@ public class CapacityEndpoint {
   }
 
   private CompletionStage<Done> initializeShards(String poolId, CreatePoolRequest request) {
-    logger.debug("Initializing [{}] shards for pool [{}]", request.numShards(), poolId);
+    int numShards = request.numShards();
+    int totalCapacity = request.totalCapacity();
 
-    int shardsPerInstance = request.totalCapacity() / request.numShards();
-    int remainder = request.totalCapacity() % request.numShards();
+    logger.debug(
+        "Initializing [{}] shards for pool [{}] with total capacity [{}]",
+        numShards,
+        poolId,
+        totalCapacity);
 
+    int shardsPerInstance = totalCapacity / numShards;
+    int remainder = totalCapacity % numShards;
     List<CompletionStage<Done>> shardInitializations = new ArrayList<>();
 
-    for (int i = 0; i < request.numShards(); i++) {
+    for (int i = 0; i < numShards; i++) {
       int shardId = i;
       // Distribute remainder across shards if capacity doesn't divide evenly
       int shardCapacity = shardsPerInstance + (i < remainder ? 1 : 0);
       String shardEntityId = CapacityShardEntity.formatEntityId(poolId, shardId);
 
-      var initCommand = new CapacityShard.InitializeShard(poolId, shardId, shardCapacity);
+      var initCommand =
+          new CapacityShard.InitializeShard(poolId, shardId, shardCapacity, numShards);
 
       CompletionStage<Done> shardInitFuture =
           componentClient

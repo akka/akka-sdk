@@ -17,8 +17,11 @@ public class CapacityShardEntity extends EventSourcedEntity<CapacityShard, Capac
 
   private final String entityId;
 
-  public CapacityShardEntity(EventSourcedEntityContext context) {
+  private final CapacityTelemetry telemetry;
+
+  public CapacityShardEntity(EventSourcedEntityContext context, CapacityTelemetry telemetry) {
     this.entityId = context.entityId();
+    this.telemetry = telemetry;
   }
 
   public static String formatEntityId(String poolId, int shardId) {
@@ -39,7 +42,11 @@ public class CapacityShardEntity extends EventSourcedEntity<CapacityShard, Capac
 
     CapacityShardEvent.ShardInitialized event =
         new CapacityShardEvent.ShardInitialized(
-            command.poolId(), command.shardId(), command.totalCapacity(), Instant.now());
+            command.poolId(),
+            command.shardId(),
+            command.totalCapacity(),
+            command.numShards(),
+            Instant.now());
 
     return effects().persist(event).thenReply(newState -> Done.getInstance());
   }
@@ -64,7 +71,7 @@ public class CapacityShardEntity extends EventSourcedEntity<CapacityShard, Capac
             command.requestId(),
             Instant.now());
 
-    return effects().persist(event).thenReply(newState -> newState.getCapacityStatus());
+    return effects().persist(event).thenReply(newState -> newState.status());
   }
 
   public ReadOnlyEffect<CapacityShard.CapacityStatus> getCapacityStatus() {
@@ -73,7 +80,7 @@ public class CapacityShardEntity extends EventSourcedEntity<CapacityShard, Capac
       return effects().error("Shard not initialized");
     }
 
-    return effects().reply(currentState().getCapacityStatus());
+    return effects().reply(currentState().status());
   }
 
   // Event handling
@@ -81,10 +88,19 @@ public class CapacityShardEntity extends EventSourcedEntity<CapacityShard, Capac
   @Override
   public CapacityShard applyEvent(CapacityShardEvent event) {
     return switch (event) {
-      case CapacityShardEvent.ShardInitialized shard ->
-          new CapacityShard(shard.poolId(), shard.shardId(), shard.totalCapacity());
+      case CapacityShardEvent.ShardInitialized shard -> {
+        CapacityShard initialState =
+            CapacityShard.initial(
+                shard.poolId(), shard.shardId(), shard.totalCapacity(), shard.numShards());
+        telemetry.shardInitialized(initialState);
+        yield initialState;
+      }
 
-      case CapacityShardEvent.CapacityAllocated __ -> currentState().incrementAllocations();
+      case CapacityShardEvent.CapacityAllocated __ -> {
+        CapacityShard updatedState = currentState().incrementAllocations();
+        telemetry.shardCapacityAllocated(updatedState);
+        yield updatedState;
+      }
     };
   }
 }

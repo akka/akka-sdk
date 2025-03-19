@@ -10,7 +10,8 @@ public sealed interface CapacityShardEvent {
   int shardId();
 
   @TypeName("shard-initialized")
-  record ShardInitialized(String poolId, int shardId, int totalCapacity, Instant timestamp)
+  record ShardInitialized(
+      String poolId, int shardId, int totalCapacity, int numShards, Instant timestamp)
       implements CapacityShardEvent {}
 
   @TypeName("capacity-allocated")
