@@ -6,9 +6,10 @@ image:ROOT:consumer.png[Consumer,width=100,float=left]  Consuming or producing a
 
 In this section, we will explore how you can use a Consumer component to:
 
-- Consume events emitted by an Event Sourced Entity within the same service or from a different service using service to service eventing
-- Consume state changes emitted by a Key Value Entity within the same service or from a different service using service to service eventing
-- Consume state changes emitted by a Workflow within the same service or from a different service using service to service eventing
+- Consume events emitted by an Event Sourced Entity within the same service
+- Consume state changes emitted by a Key Value Entity within the same service
+- Consume state changes emitted by a Workflow within the same service
+- Consume events or state from an Entity or Workflow in another service using service to service eventing 
 - Consume messages from topics of Google Cloud Pub/Sub or Apache Kafka.
 - Produce messages to a Google Cloud Pub/Sub or Apache Kafka topic.
 
