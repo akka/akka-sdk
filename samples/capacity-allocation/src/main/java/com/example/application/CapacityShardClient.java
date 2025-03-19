@@ -96,7 +96,9 @@ public class CapacityShardClient {
                   return CompletableFuture.completedStage(result);
                 }
                 // Primary shard failed, try fallback
-                return tryFallbackShards(userId, requestId, new BitSet(numShards));
+                BitSet triedShards = new BitSet(numShards);
+                triedShards.set(primaryShard); // Mark primary shard as already tried
+                return tryFallbackShards(userId, requestId, triedShards);
               });
     } else {
       // Primary shard is fully allocated, go directly to fallback
@@ -113,8 +115,24 @@ public class CapacityShardClient {
   private CompletionStage<ReservationResult> tryFallbackShards(
       String userId, String requestId, BitSet triedShards) {
 
-    // If we've tried all shards, give up
-    if (triedShards.cardinality() >= numShards) {
+    // Count viable shards - exclude fully allocated ones
+    int viableShardCount = 0;
+    for (int i = 0; i < numShards; i++) {
+      if (shardStatusTracking.get(i) != ShardStatus.FULLY_ALLOCATED) {
+        viableShardCount++;
+      }
+    }
+
+    // Count how many viable shards we've already tried
+    int triedViableShardsCount = 0;
+    for (int i = 0; i < numShards; i++) {
+      if (triedShards.get(i) && shardStatusTracking.get(i) != ShardStatus.FULLY_ALLOCATED) {
+        triedViableShardsCount++;
+      }
+    }
+
+    // If we've tried all viable shards, give up
+    if (triedViableShardsCount >= viableShardCount) {
       return CompletableFuture.completedStage(
           ReservationResult.failure("No capacity available in any shard"));
     }
