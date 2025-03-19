@@ -27,7 +27,7 @@ Similarly to projects, access to organizations is managed by granting users role
 
 === Single Sign-On
 
-Akka supports Single Sign-On (SSO) integration via *OpenID Connect* with third party providers such as https://auth0.com[Auth0, window="new"], https://www.okta.com/products/single-sign-on-customer-identity/[Okta, window="new"], and others. The Akka CLI supports configuring the desired OpenID Connect integration. For further details, please xref:support:email.adoc[contact our support team].
+Akka supports Single Sign-On (SSO) integration via *OpenID Connect* with third party providers such as https://auth0.com[Auth0, window="new"], https://www.okta.com/products/single-sign-on-customer-identity/[Okta, window="new"], and others. The Akka CLI supports configuring the desired OpenID Connect integration. For further details, please xref:support:index.adoc[contact our support team].
 
 === Multifactor authentication (MFA)
 
