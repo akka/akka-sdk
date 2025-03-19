@@ -64,7 +64,14 @@ public class CapacityEndpoint {
       String description,
       int totalCapacity,
       int numShards,
-      List<AllocationRule> allocationRules) {}
+      List<AllocationRule> allocationRules) {
+
+    public CreatePoolRequest {
+      if (name == null) name = "";
+      if (description == null) description = "";
+      if (allocationRules == null) allocationRules = List.of();
+    }
+  }
 
   public record ReservationRequest(String userId, String requestId) {}
 
