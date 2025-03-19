@@ -2,12 +2,8 @@
 
 include::ROOT:partial$include.adoc[]
 
-Support is available through various channels, including a community forum, a Frequently Asked Questions (FAQ) page, comprehensive troubleshooting resources and direct 1-1 contact with the Akka team.
+Reach out to our support team through the support dialog in the https://console.akka.io/support[Akka console].
 
-* xref:support:community-forum.adoc[]
-* xref:support:email.adoc[]
-* xref:support:frequently-asked-questions.adoc[]
-* xref:support:paid-plans.adoc[]
+* https://console.akka.io/support[Akka console, support]
 * xref:support:platform-status.adoc[]
 * xref:support:request-a-demo.adoc[]
-* xref:support:troubleshooting.adoc[]
