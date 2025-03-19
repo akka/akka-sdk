@@ -60,6 +60,7 @@ public class CapacityEndpoint {
   // API requests
 
   public record CreatePoolRequest(
+      Optional<String> poolId,
       String name,
       String description,
       int totalCapacity,
@@ -106,7 +107,7 @@ public class CapacityEndpoint {
 
   @Post("/pools")
   public CompletionStage<HttpResponse> createPool(CreatePoolRequest request) {
-    String poolId = UUID.randomUUID().toString();
+    String poolId = request.poolId().orElse(UUID.randomUUID().toString());
     logger.info("Creating capacity pool [{}] with id [{}]", request.name(), poolId);
 
     var createPoolCommand =
