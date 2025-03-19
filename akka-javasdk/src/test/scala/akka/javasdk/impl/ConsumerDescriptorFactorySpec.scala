@@ -110,7 +110,7 @@ class ConsumerDescriptorFactorySpec extends AnyWordSpec with Matchers {
     "validates that only single update handler is present for VE sub (type level)" in {
       intercept[ValidationException] {
         Validations.validate(classOf[MultipleUpdateMethodsForVETypeLevelSubscription]).failIfInvalid()
-      }.getMessage should include("Duplicated update methods [methodOne, methodTwo]for KeyValueEntity subscription.")
+      }.getMessage should include("Duplicated update methods [methodOne, methodTwo] for state subscription.")
     }
 
     "validates that only type level subscription is valid" in {
