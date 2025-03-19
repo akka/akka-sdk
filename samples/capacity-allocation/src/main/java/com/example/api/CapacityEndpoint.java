@@ -2,7 +2,6 @@ package com.example.api;
 
 import akka.Done;
 import akka.http.javadsl.model.HttpResponse;
-import akka.http.javadsl.model.StatusCodes;
 import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.HttpEndpoint;
@@ -14,7 +13,6 @@ import akka.javasdk.timer.TimerScheduler;
 import com.example.application.CapacityPoolEntity;
 import com.example.application.CapacityShardClient;
 import com.example.application.CapacityShardClientProvider;
-import com.example.application.CapacityShardClientProvider.ClientInitializationException;
 import com.example.application.CapacityShardEntity;
 import com.example.application.UserActivityEntity;
 import com.example.domain.AllocationRule;
@@ -28,7 +26,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -198,21 +195,13 @@ public class CapacityEndpoint {
         .thenCompose(client -> requestAllocation(client, poolId, request.userId(), requestId))
         .exceptionally(
             error -> {
-              Throwable cause = unwrapThrowable(error);
               logger.warn(
                   "Failed to process reservation request [{}] in pool [{}]: {}",
                   requestId,
                   poolId,
-                  cause.getMessage());
-
-              if (cause instanceof IllegalArgumentException) {
-                return ReservationResponse.rejected(
-                    requestId, "Invalid request: " + cause.getMessage());
-              }
-
-              throw HttpException.error(
-                  StatusCodes.INTERNAL_SERVER_ERROR,
-                  "Failed to process reservation request: " + cause.getMessage());
+                  error.getMessage());
+              return ReservationResponse.rejected(
+                  requestId, "Invalid request: " + error.getMessage());
             });
   }
 
@@ -333,11 +322,11 @@ public class CapacityEndpoint {
   }
 
   /** Get reservation status for a specific request */
-  @Get("/pools/{poolId}/reservations")
+  @Get("/pools/{poolId}/reservations/{userId}/{requestId}")
   public CompletionStage<HttpResponse> getReservationStatus(
-      String poolId, ReservationRequest request) {
+      String poolId, String userId, String requestId) {
 
-    String userActivityId = UserActivityEntity.formatEntityId(poolId, request.userId());
+    String userActivityId = UserActivityEntity.formatEntityId(poolId, userId);
 
     return componentClient
         .forEventSourcedEntity(userActivityId)
@@ -345,7 +334,7 @@ public class CapacityEndpoint {
         .invokeAsync()
         .thenApply(
             activity -> {
-              var existingAllocation = activity.getRequestStatus(request.requestId());
+              var existingAllocation = activity.getRequestStatus(requestId);
 
               if (existingAllocation.isEmpty()) {
                 return HttpResponses.notFound();
@@ -378,32 +367,7 @@ public class CapacityEndpoint {
             })
         .exceptionally(
             error -> {
-              Throwable cause = unwrapThrowable(error);
-              if (cause instanceof IllegalArgumentException) {
-                throw HttpException.badRequest(cause.getMessage());
-              }
-              throw HttpException.error(
-                  StatusCodes.INTERNAL_SERVER_ERROR, "Failed to get reservation status");
+              throw HttpException.badRequest(error.getMessage());
             });
-  }
-
-  private Throwable unwrapThrowable(Throwable error) {
-    Throwable current = error;
-    while (current != null) {
-      if (current instanceof IllegalArgumentException) {
-        return current;
-      }
-      Throwable cause =
-          switch (current) {
-            case CompletionException e -> e.getCause();
-            case ClientInitializationException e -> e.getCause();
-            default -> null;
-          };
-      if (cause == null) {
-        return current;
-      }
-      current = cause;
-    }
-    return error;
   }
 }

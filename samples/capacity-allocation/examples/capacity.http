@@ -103,13 +103,7 @@ Content-Type: application/json
 ### Check status of the reservation
 # This should show confirmed status
 
-GET http://localhost:9000/capacity/pools/{{poolId}}/reservations
-Content-Type: application/json
-
-{
-  "userId": "user1",
-  "requestId": "req-user1-1"
-}
+GET http://localhost:9000/capacity/pools/{{poolId}}/reservations/user1/req-user1-1
 
 ### Reserve another seat in the conference pool for the same user with a new request ID
 # This should succeed as the user is allowed up to 4 tickets
@@ -163,13 +157,7 @@ Content-Type: application/json
 ### Check the status of the rejected reservation
 # Should show REJECTED status
 
-GET http://localhost:9000/capacity/pools/{{poolId}}/reservations
-Content-Type: application/json
-
-{
-  "userId": "user1",
-  "requestId": "req-user1-5"
-}
+GET http://localhost:9000/capacity/pools/{{poolId}}/reservations/user1/req-user1-5
 
 ### Reserve a premium seat for user1
 
@@ -210,13 +198,7 @@ Content-Type: application/json
 ### Try to check status of a non-existent reservation
 # Should return 404 Not Found
 
-GET http://localhost:9000/capacity/pools/{{poolId}}/reservations
-Content-Type: application/json
-
-{
-  "userId": "user1",
-  "requestId": "non-existent-request"
-}
+GET http://localhost:9000/capacity/pools/{{poolId}}/reservations/user1/non-existent-request
 
 ### Reserve capacity in the conference pool for a different user with auto-generated request ID
 # This should succeed as it's a different user
@@ -229,6 +211,11 @@ Content-Type: application/json
 }
 
 @user2ReservationResponse = {{response.body}}
+@user2RequestId = {{user2ReservationResponse.requestId}}
+
+### Check the status of user2's reservation and dynamically extract requestId
+
+GET http://localhost:9000/capacity/pools/{{poolId}}/reservations/user2/{{user2RequestId}}
 
 ### Try to reserve capacity with a non-existent pool
 # This should fail with a not found error
@@ -292,10 +279,4 @@ Content-Type: application/json
 
 ### Check the failed reservation status
 
-GET http://localhost:9000/capacity/pools/{{tinyPoolId}}/reservations
-Content-Type: application/json
-
-{
-  "userId": "capacity-test-user",
-  "requestId": "tiny-req-2"
-}
+GET http://localhost:9000/capacity/pools/{{tinyPoolId}}/reservations/capacity-test-user/tiny-req-2
