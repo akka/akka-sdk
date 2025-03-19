@@ -104,9 +104,8 @@ public class CapacityEndpoint {
 
   // Endpoint methods
 
-  @Post("/pools")
-  public CompletionStage<HttpResponse> createPool(CreatePoolRequest request) {
-    String poolId = UUID.randomUUID().toString();
+  @Post("/pools/{poolId}/create")
+  public CompletionStage<HttpResponse> createPool(String poolId, CreatePoolRequest request) {
     logger.info("Creating capacity pool [{}] with id [{}]", request.name(), poolId);
 
     var createPoolCommand =
