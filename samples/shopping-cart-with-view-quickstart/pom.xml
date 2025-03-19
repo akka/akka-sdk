@@ -9,10 +9,10 @@
   </parent>
 
   <groupId>com.example</groupId>
-  <artifactId>shopping-cart-quickstart-addview</artifactId>
+  <artifactId>shopping-cart-with-view-quickstart</artifactId>
   <version>1.0-SNAPSHOT</version>
   <packaging>jar</packaging>
 
-  <name>shopping-cart-quickstart-addview</name>
+  <name>shopping-cart-with-view-quickstart</name>
 
 </project>
