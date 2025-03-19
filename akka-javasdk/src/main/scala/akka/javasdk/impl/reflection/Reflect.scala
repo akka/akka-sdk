@@ -111,27 +111,27 @@ private[impl] object Reflect {
   }
 
   def keyValueEntityStateType(component: Class[_]): Class[_] = {
-    loop(component, s"Cannot find key value state class for $component")
+    findStateType(component, s"Cannot find key value state class for $component")
   }
 
   def workflowStateType(component: Class[_]): Class[_] = {
-    loop(component, s"Cannot find workflow state class for $component")
+    findStateType(component, s"Cannot find workflow state class for $component")
   }
 
   @tailrec
-  private def loop(current: Class[_], errorMsg: String): Class[_] = {
+  private def findStateType(current: Class[_], errorMsg: String): Class[_] = {
     if (current == classOf[AnyRef])
       // recursed to root without finding type param
       throw new IllegalArgumentException(errorMsg)
     else {
       current.getGenericSuperclass match {
         case parameterizedType: ParameterizedType =>
-          if (parameterizedType.getActualTypeArguments.size == 1)
+          if (parameterizedType.getActualTypeArguments.length == 1)
             parameterizedType.getActualTypeArguments.head.asInstanceOf[Class[_]]
           else throw new IllegalArgumentException(errorMsg)
         case noTypeParamsParent: Class[_] =>
           // recurse and look at parent
-          loop(noTypeParamsParent, errorMsg)
+          findStateType(noTypeParamsParent, errorMsg)
       }
     }
   }

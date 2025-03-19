@@ -91,35 +91,31 @@ public class TestKit {
       this.mockedOutgoingEvents = mockedOutgoingEvents;
     }
 
-    public static MockedEventing EMPTY = new MockedEventing();
+    public static final MockedEventing EMPTY = new MockedEventing();
 
     public MockedEventing withKeyValueEntityIncomingMessages(String componentId) {
-      Map<String, Set<String>> copy = new HashMap<>(mockedIncomingEvents);
-      copy.compute(KEY_VALUE_ENTITY, updateValues(componentId));
-      return new MockedEventing(copy, new HashMap<>(mockedOutgoingEvents));
+      return updateIncomingMessages(KEY_VALUE_ENTITY, componentId);
     }
 
     public MockedEventing withEventSourcedIncomingMessages(String componentId) {
-      Map<String, Set<String>> copy = new HashMap<>(mockedIncomingEvents);
-      copy.compute(EVENT_SOURCED_ENTITY, updateValues(componentId));
-      return new MockedEventing(copy, new HashMap<>(mockedOutgoingEvents));
+      return updateIncomingMessages(EVENT_SOURCED_ENTITY, componentId);
     }
 
     public MockedEventing withWorkflowIncomingMessages(String componentId) {
-      Map<String, Set<String>> copy = new HashMap<>(mockedIncomingEvents);
-      copy.compute(WORKFLOW, updateValues(componentId));
-      return new MockedEventing(copy, new HashMap<>(mockedOutgoingEvents));
+      return updateIncomingMessages(WORKFLOW, componentId);
     }
 
     public MockedEventing withStreamIncomingMessages(String service, String streamId) {
-      Map<String, Set<String>> copy = new HashMap<>(mockedIncomingEvents);
-      copy.compute(STREAM, updateValues(service + "/" + streamId));
-      return new MockedEventing(copy, new HashMap<>(mockedOutgoingEvents));
+      return updateIncomingMessages(STREAM, service + "/" + streamId);
     }
 
     public MockedEventing withTopicIncomingMessages(String topic) {
+      return updateIncomingMessages(TOPIC, topic);
+    }
+
+    private MockedEventing updateIncomingMessages(String keyValueEntity, String componentId) {
       Map<String, Set<String>> copy = new HashMap<>(mockedIncomingEvents);
-      copy.compute(TOPIC, updateValues(topic));
+      copy.compute(keyValueEntity, updateValues(componentId));
       return new MockedEventing(copy, new HashMap<>(mockedOutgoingEvents));
     }
 

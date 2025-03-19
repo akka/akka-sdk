@@ -30,7 +30,6 @@ public class TransferView extends View {
   public static class TransferUpdater extends TableUpdater<TransferEntry> {
 
     public Effect<TransferEntry> onUpdate(TransferState transferState) {
-      System.out.println("TransferUpdater.onUpdate: " + transferState);
       var id = updateContext().eventSubject().orElse("");
       return effects().updateRow(new TransferEntry(id, transferState.finished()));
     }
