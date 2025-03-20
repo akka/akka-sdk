@@ -6,6 +6,7 @@ import java.util.Comparator;
 import java.util.Optional;
 import java.util.function.Predicate;
 
+// tag::domain[]
 public record ShoppingCartState(String cartId, List<LineItem> items, boolean checkedOut) {
 
   public record LineItem(String productId, int quantity) {
@@ -13,6 +14,8 @@ public record ShoppingCartState(String cartId, List<LineItem> items, boolean che
       return new LineItem(productId, quantity);
     }
   }
+
+  // end::domain[]
 
   public ShoppingCartState onItemAdded(ShoppingCartEvent.ItemAdded itemAdded) {
     var item = new LineItem(itemAdded.productId(), itemAdded.quantity());
@@ -49,5 +52,6 @@ public record ShoppingCartState(String cartId, List<LineItem> items, boolean che
   public ShoppingCartState onCheckedOut() {
     return new ShoppingCartState(cartId, items, true);
   }
-
+  // tag::domain[]
 }
+// end::domain[]

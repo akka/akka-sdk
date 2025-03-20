@@ -2,7 +2,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-This guide walks you through the design and implementation of a shopping cart service, illustrating the use of some of Akka's components.
+This guide walks you through the design and implementation of an enhancement to the shopping cart service example, illustrating the use of Views, user authentication, and user authorization.
 
 == Overview
 
@@ -30,27 +30,94 @@ It might seem like overkill at first, but it's one of the first steps toward sup
 
 We want to make sure that the data the entity is storing for its state contains _only_ the information the entity needs in order to validate incoming commands.
 
-The other change we want to make is adding a `userId` attribute to the shopping cart. While the first version using just `cartId`s is fine, on the road to production this isn't good enough. We need to be able to ensure that one user can't read, modify, or delete a cart owned by another user. Further, we want the option to retrieve a cart by user ID from the new view we're adding.
+The other change we want to make is adding a `userId` attribute to the shopping cart. While the first version using just `cartId` is fine, on the road to production this isn't good enough. We need to be able to ensure that one user can't read, modify, or delete a cart owned by another user. Further, we want the option to retrieve a cart by user ID from the new view we're adding.
 
 == Creating isolated data types
 
-TBD
+To work on the separation of concerns, we'll work our way in from the outermost edge, which in this case is the HTTP endpoint. This one new record represents the line items that can be added via `POST` to `/\{cartId\}/item`.
 
 [source,java,indent=0]
-.{sample-base-url}/shopping-cart-with-view-quickstart/src/main/java/shoppingcart/domain/ShoppingCart.java[ShoppingCart.java]
+.{sample-base-url}/shopping-cart-with-view-quickstart/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java[ShoppingCartEndpoint.java]
 ----
-include::example$shopping-cart-with-view-quickstart/src/main/java/shoppingcart/domain/ShoppingCart.java[tags=newpubapi]
+include::example$shopping-cart-with-view-quickstart/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java[tags=newpubapi]
 ----
 
-TBD
+From the client standpoint, they're supplying both the name and description of the product. This isn't optimal, and we can change that in a subsequent part of the shopping cart tour.
+
+Next, we need a _command_ type for the entity to handle. Remember that calling `invokeAsync` from the endpoint will only take a single parameter, so our command has to hold all of the necessary data.
+
+[source,java,indent=0]
+.{sample-base-url}/shopping-cart-with-view-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java[ShoppingCartEntity.java]
+----
+include::example$shopping-cart-with-view-quickstart/src/main/java/shoppingcart/application/ShoppingCartEntity.java[tags=newentityapi]
+----
+
+Next we modify the shape of the internal state used by the entity. To illustrate the different roles of entities and views, we've modified the state so that it doesn't store the `name` or `description` fields, since those aren't needed for decision making during command processing.
+
+[source,java,indent=0]
+.{sample-base-url}/shopping-cart-with-view-quickstart/src/main/java/shoppingcart/domain/ShoppingCartState.java[ShoppingCartState.java]
+----
+include::example$shopping-cart-with-view-quickstart/src/main/java/shoppingcart/domain/ShoppingCartState.java[tags=domain]
+----
 
 == Adding a shopping cart view
 
-TBD
+Now that we've improved the separation of concerns/layers with the various data types being used in the application, we can create the `View`. A view can contain multiple tables, and each one of those tables can be thought of like a row in a traditional RDBMS, except you don't have to worry about where or how that data is stored.
+
+For our new view, we want all of the information on the shopping cart contents, including the name and description (which have also been added to the appropriate `ShoppingCartEvent`).
+
+[source,java,indent=0]
+.{sample-base-url}/shopping-cart-with-view-quickstart/src/main/java/shoppingcart/application/ShoppingCartView.java[ShoppingCartView.java]
+----
+include::example$shopping-cart-with-view-quickstart/src/main/java/shoppingcart/application/ShoppingCartView.java[]
+----
+<1> Return a single shopping cart based on its unique ID.
+<2> Return a single shopping cart based on its user ID.
+<3> The data type for a single row of the table.
+<4> This view gets it data from events emitted by `ShoppingCartEntity`.
+<5> Either reusing the existing row state or creating a new `Cart`.
+
+With a newly refactored set of data types, clear boundaries between the various components, and a view in hand, there's one more thing to do--add the concept of a user.
 
 == Securing the HTTP endpoint
 
-TBD
+Adding the concept of a user context to an endpoint in traditional applications can be a nightmare. The refactoring can bleed into all sorts of unexpected places and building or buying--or both--authentication and authorization solutions can bog down entire teams.
 
+In the following code, we add support for **xref:java:auth-with-jwts.adoc[JWT]**-based bearer tokens to the HTTP endpoint with just a single line. While not shown here, you can define all kinds of properties based on the claims supplied in a token.
+
+[source,java,indent=0]
+.{sample-base-url}/shopping-cart-with-view-quickstart/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java[ShoppingCartEndpoint.java]
+----
+include::example$shopping-cart-with-view-quickstart/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java[tag=top]
+----
+
+Extracting the user ID from context is quite easy. Let's modify the `get` function so that it rejects attempts to query a shopping cart that doesn't belong to the caller.
+
+[source,java,indent=0]
+.{sample-base-url}/shopping-cart-with-view-quickstart/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java[ShoppingCartEndpoint.java]
+----
+include::example$shopping-cart-with-view-quickstart/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java[tag=get]
+----
+<1> Invoke the view's `getCart` function to retrieve by cart ID
+
+We return a `404/Not Found` here for when there's a cart ownership mismatch rather than returning the authorization-related codes of either `400` or `401`. This is to prevent malicious intruders from being able to discover the IDs of other people's carts.
+
+We can also add a new convenience route, `/my`, which will retrieve the cart for the currently authenticated user. This eases the burden on the UI a bit since it won't have to do a pre-fetch to convert a user ID into a cart ID.
+
+[source,java,indent=0]
+.{sample-base-url}/shopping-cart-with-view-quickstart/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java[ShoppingCartEndpoint.java]
+----
+include::example$shopping-cart-with-view-quickstart/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java[tag=getmy]
+----
+<1> Invoke the view's `getUserCart` function to retrieve the cart by user ID
+
+== Next steps
+
+Now that you've added a view _and_ user authentication to the shopping cart sample, take your Akka skills to the next level:
+
+. *Install and build*: Before moving on, download the code for this sample, compile it, and make sure you can run and utilize the new service.
+. *Expand on your own*: Explore xref:concepts:architecture-model.adoc#_akka_components[other Akka components] to enhance your application with additional features.
+. *Explore other Akka samples*: Discover more about Akka by exploring xref:samples.adoc[different use cases] for inspiration.
+. *Join the community*: Visit the xref:support:index.adoc[Support page] to find resources where you can connect with other Akka developers and expand your knowledge.
 
 

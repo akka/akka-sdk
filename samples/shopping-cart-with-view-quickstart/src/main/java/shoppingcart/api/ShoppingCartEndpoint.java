@@ -24,10 +24,12 @@ import akka.javasdk.http.HttpResponses;
 import shoppingcart.application.ShoppingCartEntity;
 import shoppingcart.application.ShoppingCartView;
 
+// tag::top[]
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
 @JWT(validate = JWT.JwtMethodMode.BEARER_TOKEN)
 @HttpEndpoint("/carts")
 public class ShoppingCartEndpoint extends AbstractHttpEndpoint {
+  // end::top[]
 
   private final ComponentClient componentClient;
 
@@ -42,6 +44,7 @@ public class ShoppingCartEndpoint extends AbstractHttpEndpoint {
     this.componentClient = componentClient;
   }
 
+  // tag::get[]
   @Get("/{cartId}")
   public CompletionStage<ShoppingCartView.Cart> get(String cartId) {
     logger.info("Get cart id={}", cartId);
@@ -50,7 +53,7 @@ public class ShoppingCartEndpoint extends AbstractHttpEndpoint {
 
     try {
       return componentClient.forView()
-          .method(ShoppingCartView::getCart)
+          .method(ShoppingCartView::getCart) // <1>
           .invokeAsync(cartId)
           .thenCompose(
               cart -> (cart.userId().trim().equals(userId))
@@ -60,7 +63,9 @@ public class ShoppingCartEndpoint extends AbstractHttpEndpoint {
       throw HttpException.notFound();
     }
   }
+  // end::get[]
 
+  // tag::getmy[]
   @Get("/my")
   public CompletionStage<ShoppingCartView.Cart> getByUser() {
     var userId = requestContext().getJwtClaims().subject().get();
@@ -69,13 +74,13 @@ public class ShoppingCartEndpoint extends AbstractHttpEndpoint {
 
     try {
       return componentClient.forView()
-          .method(ShoppingCartView::getUserCart)
+          .method(ShoppingCartView::getUserCart) // <1>
           .invokeAsync(userId);
     } catch (NoEntryFoundException nef) {
       throw HttpException.notFound();
     }
-
   }
+  // end::getmy[]
 
   @Put("/{cartId}/item")
   public CompletionStage<HttpResponse> addItem(String cartId, LineItemRequest item) {

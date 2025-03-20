@@ -13,19 +13,23 @@ import shoppingcart.domain.ShoppingCartEvent;
 @ComponentId("shopping_cart_view")
 public class ShoppingCartView extends View {
 
-  @Query("SELECT * FROM shopping_cart_view WHERE cartId = :cartId")
+  @Query("SELECT * FROM shopping_cart_view WHERE cartId = :cartId") // <1>
   public QueryEffect<Cart> getCart(String cartId) {
     return queryResult();
   }
 
-  @Query("SELECT * FROM shopping_cart_view WHERE userId = :userId")
+  @Query("SELECT * FROM shopping_cart_view WHERE userId = :userId") // <2>
   public QueryEffect<Cart> getUserCart(String userId) {
     return queryResult();
   }
 
-  public record Cart(String cartId, String userId, List<Item> items, boolean checkedout) {
+  public record Cart(String cartId,
+      String userId,
+      List<Item> items,
+      boolean checkedout) { // <3>
 
-    public Cart addItem(String itemId, String name, int quantity, String description) {
+    public Cart addItem(String itemId, String name,
+        int quantity, String description) {
       var newItems = items;
       newItems.add(new Item(itemId, name, quantity, description));
 
@@ -51,17 +55,25 @@ public class ShoppingCartView extends View {
       return new Cart(cartId, userId, items, true);
     }
 
-    public record Item(String itemId, String name, int quantity, String description) {
+    public record Item(String itemId, String name,
+        int quantity, String description) {
     }
 
   }
 
-  @Consume.FromEventSourcedEntity(ShoppingCartEntity.class)
+  @Consume.FromEventSourcedEntity(ShoppingCartEntity.class) // <4>
   public static class CartsTable extends TableUpdater<Cart> {
 
-    @Override
-    public Cart emptyRow() {
-      return new Cart(updateContext().eventSubject().get(), "", new ArrayList<Cart.Item>(), false);
+    public Cart rowStateOrNew(String userId) {
+      if (rowState() == null) {
+        return new Cart(
+            updateContext().eventSubject().get(),
+            userId,
+            new ArrayList<Cart.Item>(),
+            false);
+      } else {
+        return rowState();
+      }
     }
 
     public Effect<Cart> onEvent(ShoppingCartEvent event) {
@@ -74,8 +86,7 @@ public class ShoppingCartView extends View {
 
     private Effect<Cart> addItem(ShoppingCartEvent.ItemAdded added) {
       return effects().updateRow(
-          rowState()
-              .withUserId(added.userId())
+          rowStateOrNew(added.userId()) // <5>
               .addItem(added.productId(),
                   added.name(), added.quantity(), added.description()));
     }
