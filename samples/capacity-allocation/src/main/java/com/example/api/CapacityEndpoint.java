@@ -232,43 +232,49 @@ public class CapacityEndpoint {
   private CompletionStage<ReservationResponse> requestAllocation(
       CapacityShardClient client, String poolId, String userId, String requestId) {
     List<AllocationRule> rules = client.getAllocationRules();
-    String userActivityId = UserActivityEntity.formatEntityId(poolId, userId);
-    String timerId = String.format("reservation-timeout:%s:%s:%s", poolId, userId, requestId);
+    boolean allocationRulesDisabled = rules.isEmpty();
+    logger.debug("Request [{}] for user [{}] with rules [{}], allocation rules disabled [{}]", requestId, userId, rules, allocationRulesDisabled);
+    if(!allocationRulesDisabled) {
+      String userActivityId = UserActivityEntity.formatEntityId(poolId, userId);
+      String timerId = String.format("reservation-timeout:%s:%s:%s", poolId, userId, requestId);
 
-    CompletionStage<Done> timerRegistration;
+      CompletionStage<Done> timerRegistration;
 
-    if (reservationTimeout.isPresent()) {
-      logger.debug(
-          "Setting reservation timeout of [{}] for user [{}] request [{}]",
-          reservationTimeout.get(),
-          userId,
-          requestId);
+      if (reservationTimeout.isPresent()) {
+        logger.debug(
+                "Setting reservation timeout of [{}] for user [{}] request [{}]",
+                reservationTimeout.get(),
+                userId,
+                requestId);
 
-      var cancelCommand =
-          new UserActivity.CancelAllocation(requestId, "Reservation timeout exceeded");
+        var cancelCommand =
+                new UserActivity.CancelAllocation(requestId, "Reservation timeout exceeded");
 
-      timerRegistration =
-          timerScheduler.startSingleTimer(
-              timerId,
-              reservationTimeout.get(),
-              componentClient
-                  .forEventSourcedEntity(userActivityId)
-                  .method(UserActivityEntity::cancelAllocation)
-                  .deferred(cancelCommand));
+        timerRegistration =
+                timerScheduler.startSingleTimer(
+                        timerId,
+                        reservationTimeout.get(),
+                        componentClient
+                                .forEventSourcedEntity(userActivityId)
+                                .method(UserActivityEntity::cancelAllocation)
+                                .deferred(cancelCommand));
+      } else {
+        timerRegistration = CompletableFuture.completedStage(Done.getInstance());
+      }
+
+      var requestCommand = new UserActivity.RequestAllocation(requestId, rules);
+
+      return timerRegistration.thenCompose(
+              __ ->
+                      componentClient
+                              .forEventSourcedEntity(userActivityId)
+                              .method(UserActivityEntity::requestAllocation)
+                              .invokeAsync(requestCommand)
+                              .thenCompose(
+                                      result -> handleValidationResult(client, result, poolId, userId, requestId, false)));
     } else {
-      timerRegistration = CompletableFuture.completedStage(Done.getInstance());
+      return handleValidationResult(client, UserActivity.ValidationResult.accepted(requestId,"Allocation rules disabled"), poolId, userId, requestId, true);
     }
-
-    var requestCommand = new UserActivity.RequestAllocation(requestId, rules);
-
-    return timerRegistration.thenCompose(
-        __ ->
-            componentClient
-                .forEventSourcedEntity(userActivityId)
-                .method(UserActivityEntity::requestAllocation)
-                .invokeAsync(requestCommand)
-                .thenCompose(
-                    result -> handleValidationResult(client, result, poolId, userId, requestId)));
   }
 
   private CompletionStage<ReservationResponse> handleValidationResult(
@@ -276,7 +282,8 @@ public class CapacityEndpoint {
       UserActivity.ValidationResult validationResult,
       String poolId,
       String userId,
-      String requestId) {
+      String requestId,
+      boolean allocationRulesDisabled) {
 
     return switch (validationResult) {
       case UserActivity.ValidationResult.Accepted accepted -> {
@@ -285,7 +292,7 @@ public class CapacityEndpoint {
             requestId,
             userId);
 
-        yield reserveCapacity(client, poolId, userId, requestId);
+        yield reserveCapacity(client, poolId, userId, requestId, allocationRulesDisabled);
       }
 
       case UserActivity.ValidationResult.Confirmed confirmed -> {
@@ -305,7 +312,7 @@ public class CapacityEndpoint {
   }
 
   private CompletionStage<ReservationResponse> reserveCapacity(
-      CapacityShardClient client, String poolId, String userId, String requestId) {
+      CapacityShardClient client, String poolId, String userId, String requestId, boolean allocationRulesDisabled) {
 
     return client
         .reserveCapacity(userId, requestId)
@@ -313,34 +320,42 @@ public class CapacityEndpoint {
             result ->
                 switch (result) {
                   case CapacityShardClient.ReservationResult.Success success -> {
-                    String userActivityId = UserActivityEntity.formatEntityId(poolId, userId);
-                    var confirmCommand = new UserActivity.ConfirmAllocation(requestId);
+                    if(!allocationRulesDisabled) {
+                      String userActivityId = UserActivityEntity.formatEntityId(poolId, userId);
+                      var confirmCommand = new UserActivity.ConfirmAllocation(requestId);
 
-                    yield componentClient
-                        .forEventSourcedEntity(userActivityId)
-                        .method(UserActivityEntity::confirmAllocation)
-                        .invokeAsync(confirmCommand)
-                        .thenApply(
-                            __ ->
-                                ReservationResponse.confirmed(requestId, "Reservation confirmed"));
+                      yield componentClient
+                              .forEventSourcedEntity(userActivityId)
+                              .method(UserActivityEntity::confirmAllocation)
+                              .invokeAsync(confirmCommand)
+                              .thenApply(
+                                      __ ->
+                                              ReservationResponse.confirmed(requestId, "Reservation confirmed"));
+                    } else {
+                      yield CompletableFuture.completedStage(ReservationResponse.confirmed(requestId,"Allocation rules disabled"));
+                    }
                   }
 
                   case CapacityShardClient.ReservationResult.Failure failure -> {
-                    String userActivityId = UserActivityEntity.formatEntityId(poolId, userId);
+                    if(!allocationRulesDisabled) {
+                      String userActivityId = UserActivityEntity.formatEntityId(poolId, userId);
 
-                    var rejectCommand =
-                        new UserActivity.RejectAllocation(
-                            requestId, "Failed to reserve capacity: " + failure.errorMessage());
+                      var rejectCommand =
+                              new UserActivity.RejectAllocation(
+                                      requestId, "Failed to reserve capacity: " + failure.errorMessage());
 
-                    yield componentClient
-                        .forEventSourcedEntity(userActivityId)
-                        .method(UserActivityEntity::rejectAllocation)
-                        .invokeAsync(rejectCommand)
-                        .thenApply(
-                            __ ->
-                                ReservationResponse.rejected(
-                                    requestId,
-                                    "Failed to reserve capacity: " + failure.errorMessage()));
+                      yield componentClient
+                              .forEventSourcedEntity(userActivityId)
+                              .method(UserActivityEntity::rejectAllocation)
+                              .invokeAsync(rejectCommand)
+                              .thenApply(
+                                      __ ->
+                                              ReservationResponse.rejected(
+                                                      requestId,
+                                                      "Failed to reserve capacity: " + failure.errorMessage()));
+                    } else {
+                      yield CompletableFuture.completedStage(ReservationResponse.rejected(requestId,failure.errorMessage()));
+                    }
                   }
                 });
   }
