@@ -18,7 +18,7 @@ public class ShoppingCartView extends View {
     return queryResult();
   }
 
-  @Query("SELECT * FROM shopping_cart_view WHERE userId = :userId") // <2>
+  @Query("SELECT * FROM shopping_cart_view WHERE userId = :userId AND checkedout = false") // <2>
   public QueryEffect<Cart> getUserCart(String userId) {
     return queryResult();
   }
