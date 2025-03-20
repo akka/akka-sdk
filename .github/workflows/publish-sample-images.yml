@@ -6,6 +6,10 @@ on:
     workflows: [ Publish ]
     types:
       - completed
+  # To remove
+  push:
+    branches:
+      - publish-to-public-repo
 
 permissions:
   contents: read
