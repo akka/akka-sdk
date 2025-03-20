@@ -1,4 +1,4 @@
-= Adding a view to the shopping cart
+= Adding a view
 
 include::ROOT:partial$include.adoc[]
 
@@ -14,11 +14,11 @@ include::ROOT:partial$cloud-dev-prerequisites.adoc[]
 
 == Clone the sample
 
-. Clone the full source code of the Shopping Cart sample from link:https://github.com/akka-samples/shopping-cart-addview[Github].
+. Clone the full source code of the Shopping Cart sample from link:https://github.com/akka-samples/shopping-cart-with-view-quickstart[Github].
 
 == Re-evaluating the shopping cart structure
 
-The first version of the shopping cart has a bit of an issue blurring the lines between tiers or responsibilities. The data type used to represent the `LineItem` in the `POST` request to the HTTP endpoint is the same data type sent to the `ShoppingCartEntity` as a command. This is _also_ the exact same data type used by the entity for its own internal state storage.
+The first version of the shopping cart had a bit of an issue blurring the lines between tiers or responsibilities. The data type used to represent the `LineItem` in the `POST` request to the HTTP endpoint is the same data type sent to the `ShoppingCartEntity` as a command. This is _also_ the exact same data type used by the entity for its own internal state storage.
 
 For small applications or prototypes, this isn't that big of a problem. But we can see this kind of pattern will create headaches in the future. Any change to the way the entity internally stores its state will potentially break the API endpoint and maybe even cause migration issues with events.
 
@@ -28,14 +28,29 @@ It might seem like overkill at first, but it's one of the first steps toward sup
 * The data used as a _command_ to be sent to the entity to handle that request
 * The data used _internally_ by the entity to represent its own state.
 
-Aside from the obvious desire to untangle spaghetti, we also want to make sure that the data the entity is storing as its state contains _only_ the information the entity needs in order to validate incoming commands.
+We want to make sure that the data the entity is storing for its state contains _only_ the information the entity needs in order to validate incoming commands.
+
+The other change we want to make is adding a `userId` attribute to the shopping cart. While the first version using just `cartId`s is fine, on the road to production this isn't good enough. We need to be able to ensure that one user can't read, modify, or delete a cart owned by another user. Further, we want the option to retrieve a cart by user ID from the new view we're adding.
 
 == Creating isolated data types
+
+TBD
+
+[source,java,indent=0]
+.{sample-base-url}/shopping-cart-with-view-quickstart/src/main/java/shoppingcart/domain/ShoppingCart.java[ShoppingCart.java]
+----
+include::example$shopping-cart-with-view-quickstart/src/main/java/shoppingcart/domain/ShoppingCart.java[tags=newpubapi]
+----
 
 TBD
 
 == Adding a shopping cart view
 
 TBD
+
+== Securing the HTTP endpoint
+
+TBD
+
 
 

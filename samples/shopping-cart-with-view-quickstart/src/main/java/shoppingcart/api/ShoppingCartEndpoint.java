@@ -33,8 +33,10 @@ public class ShoppingCartEndpoint extends AbstractHttpEndpoint {
 
   private static final Logger logger = LoggerFactory.getLogger(ShoppingCartEndpoint.class);
 
+  // tag::newpubapi[]
   public record LineItemRequest(String productId, String name, int quantity, String description) {
   }
+  // end::newpubapi[]
 
   public ShoppingCartEndpoint(ComponentClient componentClient) {
     this.componentClient = componentClient;
