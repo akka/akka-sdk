@@ -72,6 +72,15 @@ public class CapacityEndpoint {
       if (description == null) description = "";
       if (allocationRules == null) allocationRules = List.of();
     }
+
+    public CreatePoolRequest(
+        String name,
+        String description,
+        int totalCapacity,
+        int numShards,
+        List<AllocationRule> allocationRules) {
+      this(Optional.empty(), name, description, totalCapacity, numShards, allocationRules);
+    }
   }
 
   public record ReservationRequest(String userId, String requestId) {}
