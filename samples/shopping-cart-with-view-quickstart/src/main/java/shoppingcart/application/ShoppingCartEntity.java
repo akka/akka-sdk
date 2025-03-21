@@ -35,7 +35,7 @@ public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCartState, Sh
   public Effect<Done> addItem(AddLineItemCommand item) {
     if (currentState().checkedOut()) {
       logger.info("Cart id={} is already checked out.", entityId);
-      return effects().error("Cart is already checked out.");
+      return effects().error("Cannot add line items to a checked-out cart.");
     }
     if (item.quantity() <= 0) {
       logger.info("Quantity for item {} must be greater than zero.", item.productId());
@@ -53,7 +53,7 @@ public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCartState, Sh
   public Effect<Done> removeItem(String productId) {
     if (currentState().checkedOut()) {
       logger.info("Cart id={} is already checked out.", entityId);
-      return effects().error("Cart is already checked out.");
+      return effects().error("Cannot remove line items from a checked-out cart.");
     }
     if (currentState().findItemByProductId(productId).isEmpty()) {
       logger.info("Cannot remove item {} because it is not in the cart.", productId);

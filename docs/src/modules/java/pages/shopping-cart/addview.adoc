@@ -6,7 +6,7 @@ This guide walks you through the design and implementation of an enhancement to 
 
 == Overview
 
-In this step in the shopping cart sample tour, we'll be taking a look at the event and domain models created in the previous step. We'll decide on what we'd like to change and then implement that change in the form of a few refactorings and adding a new `View`.
+In this step in the shopping cart sample tour, we'll be taking a look at the event and domain models created in the previous step. We'll decide on what we'd like to change and then implement that change in the form of a few refactors and adding a new `View`.
 
 == Prerequisites
 
@@ -14,13 +14,13 @@ include::ROOT:partial$cloud-dev-prerequisites.adoc[]
 
 == Clone the sample
 
-. Clone the full source code of the Shopping Cart sample from link:https://github.com/akka-samples/shopping-cart-with-view-quickstart[Github].
+. Clone the full source code of the Shopping Cart (with View) sample from link:https://github.com/akka-samples/shopping-cart-with-view-quickstart[Github].
 
 == Re-evaluating the shopping cart structure
 
 The first version of the shopping cart had a bit of an issue blurring the lines between tiers or responsibilities. The data type used to represent the `LineItem` in the `POST` request to the HTTP endpoint is the same data type sent to the `ShoppingCartEntity` as a command. This is _also_ the exact same data type used by the entity for its own internal state storage.
 
-For small applications or prototypes, this isn't that big of a problem. But we can see this kind of pattern will create headaches in the future. Any change to the way the entity internally stores its state will potentially break the API endpoint and maybe even cause migration issues with events.
+For small applications or prototypes, this isn't that big of a problem. But this kind of pattern might create headaches in the future. Any change to the way the entity internally stores its internal state will potentially break the API endpoint and maybe even cause migration issues with events.
 
 It might seem like overkill at first, but it's one of the first steps toward supporting evolutionary architecture and clean, easily-maintained code. If we adopt the rule that we can't reuse the same data type across roles, then we end up with 3 distinct data types:
 
@@ -31,6 +31,11 @@ It might seem like overkill at first, but it's one of the first steps toward sup
 We want to make sure that the data the entity is storing for its state contains _only_ the information the entity needs in order to validate incoming commands.
 
 The other change we want to make is adding a `userId` attribute to the shopping cart. While the first version using just `cartId` is fine, on the road to production this isn't good enough. We need to be able to ensure that one user can't read, modify, or delete a cart owned by another user. Further, we want the option to retrieve a cart by user ID from the new view we're adding.
+
+=== Managing cart and user IDs
+With the addition of a `userId` to the shopping cart, we've now got a bit of a gray area in the model. How do we create new cart IDs? The last version of the sample relied on the clients to generate and remember the cart IDs, which isn't an ideal experience. Further, how do we ensure that users only have 1 active cart while we can potentially retrieve old carts for historical data?
+
+The solution used in this sample is to create another entity, the `UserEntity`. This entity will manage just one piece of information: the user's currently active shopping cart ID. When a cart gets checked out, we'll "close" the old ID and generate a new one. This ensures the right ratio of users to carts while also alleviating the burden of ID maintenance from the clients.
 
 == Creating isolated data types
 
@@ -62,14 +67,14 @@ include::example$shopping-cart-with-view-quickstart/src/main/java/shoppingcart/d
 
 == Adding a shopping cart view
 
-Now that we've improved the separation of concerns/layers with the various data types being used in the application, we can create the `View`. A view can contain multiple tables, and each one of those tables can be thought of like a row in a traditional RDBMS, except you don't have to worry about where or how that data is stored.
+Now that we've improved the separation of concerns/layers with the various data types being used in the application, we can create the `View`. A view can contain multiple tables, and each one of those tables can be thought of as roughtly equivalent to a table in a traditional RDBMS, except you don't have to worry about where or how that data is stored.
 
 For our new view, we want all of the information on the shopping cart contents, including the name and description (which have also been added to the appropriate `ShoppingCartEvent`).
 
 [source,java,indent=0]
 .{sample-base-url}/shopping-cart-with-view-quickstart/src/main/java/shoppingcart/application/ShoppingCartView.java[ShoppingCartView.java]
 ----
-include::example$shopping-cart-with-view-quickstart/src/main/java/shoppingcart/application/ShoppingCartView.java[]
+include::example$shopping-cart-with-view-quickstart/src/main/java/shoppingcart/application/ShoppingCartView.java[tag=view]
 ----
 <1> Return a single shopping cart based on its unique ID.
 <2> Return a single shopping cart based on its user ID.
@@ -79,11 +84,35 @@ include::example$shopping-cart-with-view-quickstart/src/main/java/shoppingcart/a
 
 With a newly refactored set of data types, clear boundaries between the various components, and a view in hand, there's one more thing to do--add the concept of a user.
 
-== Securing the HTTP endpoint
+== Adding users to the app
+There's a couple of things that need to be done in order to add users to the application. We'll need a `UserEntity` that manages the current shopping cart IDs, and we'll need to add user authentication and context to the API endpoint.
+
+=== Creating a user entity
+The user entity in this sample is quite small (but easily enhanced later). It maintains a `currentCartId` on behalf of a user and whenever a cart is "closed" (as a result of a checkout), we generate a new UUID.
+
+[source,java,indent=0]
+.{sample-base-url}/shopping-cart-with-view-quickstart/src/main/java/shoppingcart/application/UserEntity.java[UserEntity.java]
+----
+include::example$shopping-cart-with-view-quickstart/src/main/java/shoppingcart/application/UserEntity.java[tag=entity]
+----
+
+=== Adding a cart consumer
+Given the preceding entity, we still need _something_ to call the `closeCart` function. Since we want to close carts and generate new UUIDs whenever a cart is checked out, we'll create a consumer that receives `ShoppingCartEvent` events and calls the appropriate user entity method.
+
+[source,java,indent=0]
+.{sample-base-url}/shopping-cart-with-view-quickstart/src/main/java/shoppingcart/application/CartCloser.java[CartCloser.java]
+----
+include::example$shopping-cart-with-view-quickstart/src/main/java/shoppingcart/application/CartCloser.java[tag=consumer]
+----
+
+An important point to notice here is that it's the consumer that is generating the random UUID. We don't want the entity to do that during command handling because then its command handlers would no longer be deterministic and testable.
+
+
+=== Securing the HTTP endpoint
 
 Adding the concept of a user context to an endpoint in traditional applications can be a nightmare. The refactoring can bleed into all sorts of unexpected places and building or buying--or both--authentication and authorization solutions can bog down entire teams.
 
-In the following code, we add support for **xref:java:auth-with-jwts.adoc[JWT]**-based bearer tokens to the HTTP endpoint with just a single line. While not shown here, you can define all kinds of properties based on the claims supplied in a token.
+In the following code, we add support for **xref:java:auth-with-jwts.adoc[JWT]**-based bearer tokens to the HTTP endpoint with just a single line. While not shown here, you can define all kinds of rules based on the claims supplied in a token.
 
 [source,java,indent=0]
 .{sample-base-url}/shopping-cart-with-view-quickstart/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java[ShoppingCartEndpoint.java]
@@ -110,6 +139,42 @@ We can also add a new convenience route, `/my`, which will retrieve the cart for
 include::example$shopping-cart-with-view-quickstart/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java[tag=getmy]
 ----
 <1> Invoke the view's `getUserCart` function to retrieve the cart by user ID
+
+Now we can modify all of the other data-mutating routes to use the special token `my` rather than accept an arbitrary cart ID. This has the net effect of preventing any client from making changes to anything other than the currently active cart for the current user.
+
+This table reflects the new status of the shopping cart service's routes:
+
+[%header,cols="20%,20%,60%",width="100%"]
+|===
+| Path
+| Method
+| Description
+
+| `/carts/\{cartId\}`
+| `GET`
+| Retrieves the cart corresponding to the supplied ID. Returns `404` if the calling user does not own the shopping cart in question
+| `/carts/my`
+| `GET`
+| Retrieves the currently active shopping cart for the current user, or `404` if the cart hasn't been created
+| `/carts/my/item`
+| `PUT`
+| Adds a line item to the user's current shopping cart
+| `/carts/my/item/\{productId\}`
+| `DELETE`
+| Removes a line item from the user's current shopping cart
+| `/carts/my/checkout`
+| `POST`
+| Checks out the user's current shopping cart
+|===
+
+=== Exercising the service
+With JWT authentication in place, it's now slightly more difficult to invoke the service via `curl`, but only because we have to generate a valid token. Since this sample doesn't validate for specific issuers, any valid token will be fine. You can create your own tokens on link:https://jwt.io[JWT.io], or you can use the one from the following `curl` example, which interrogates the user's current shopping cart.
+
+
+[source,command line]
+----
+curl http://localhost:9000/carts/my -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJib2IiLCJuYW1lIjoiQm9iIEJvYmJlcnNvbiIsImlzcyI6ImFsaWNlIiwiaWF0IjoxNTE2MjM5MDIyfQ.wIxafOw2k4TgdCm2pH4abupetKRKS4ItOKlsNTY-pzc'
+----
 
 == Next steps
 

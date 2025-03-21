@@ -12,6 +12,7 @@ import akka.javasdk.eventsourcedentity.EventSourcedEntityContext;
 import shoppingcart.domain.UserEvent;
 import shoppingcart.domain.UserState;
 
+// tag::entity[]
 @ComponentId("user")
 public class UserEntity extends EventSourcedEntity<UserState, UserEvent> {
   private final String entityId;
@@ -50,3 +51,4 @@ public class UserEntity extends EventSourcedEntity<UserState, UserEvent> {
     };
   }
 }
+// end::entity[]

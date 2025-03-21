@@ -11,6 +11,7 @@ import akka.javasdk.client.ComponentClient;
 import akka.javasdk.consumer.Consumer;
 import shoppingcart.domain.ShoppingCartEvent;
 
+// tag::consumer[]
 @ComponentId("cart-closer-consumer")
 @Consume.FromEventSourcedEntity(ShoppingCartEntity.class)
 public class CartCloser extends Consumer {
@@ -45,3 +46,4 @@ public class CartCloser extends Consumer {
     return effects().ignore();
   }
 }
+// end::consumer[]

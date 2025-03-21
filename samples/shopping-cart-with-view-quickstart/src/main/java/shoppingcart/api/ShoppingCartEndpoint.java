@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import akka.http.javadsl.model.HttpResponse;
+import akka.http.javadsl.model.StatusCodes;
 import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.JWT;
 import akka.javasdk.annotations.http.Delete;
@@ -15,7 +16,6 @@ import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.annotations.http.Put;
 import akka.javasdk.client.ComponentClient;
-import akka.javasdk.client.NoEntryFoundException;
 import akka.javasdk.http.AbstractHttpEndpoint;
 import akka.javasdk.http.HttpException;
 import akka.javasdk.http.HttpResponses;
@@ -50,17 +50,14 @@ public class ShoppingCartEndpoint extends AbstractHttpEndpoint {
 
     var userId = requestContext().getJwtClaims().subject().get();
 
-    try {
-      return componentClient.forView()
-          .method(ShoppingCartView::getCart) // <1>
-          .invokeAsync(cartId)
-          .thenCompose(
-              cart -> (cart.userId().trim().equals(userId))
-                  ? CompletableFuture.completedStage(cart)
-                  : CompletableFuture.failedStage(HttpException.notFound()));
-    } catch (NoEntryFoundException nef) {
-      throw HttpException.notFound();
-    }
+    return componentClient.forView()
+        .method(ShoppingCartView::getCart) // <1>
+        .invokeAsync(cartId)
+        .thenCompose(
+            cart -> (cart.userId().trim().equals(userId))
+                ? CompletableFuture.completedStage(cart)
+                : CompletableFuture.failedStage(
+                    HttpException.error(StatusCodes.NOT_FOUND, "no such cart")));
   }
   // end::get[]
 
@@ -72,8 +69,12 @@ public class ShoppingCartEndpoint extends AbstractHttpEndpoint {
     logger.info("Get cart userId={}", userId);
 
     return componentClient.forView()
-        .method(ShoppingCartView::getUserCart)
-        .invokeAsync(userId);
+        .method(ShoppingCartView::getUserCart) // <1>
+        .invokeAsync(userId)
+        .thenCompose(result -> (result.isPresent())
+            ? CompletableFuture.completedStage(result.get())
+            : CompletableFuture.failedStage(
+                HttpException.error(StatusCodes.NOT_FOUND, "no such cart")));
   }
   // end::getmy[]
 

@@ -2,6 +2,7 @@ package shoppingcart.application;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.annotations.Consume;
@@ -10,6 +11,7 @@ import akka.javasdk.view.TableUpdater;
 import akka.javasdk.view.View;
 import shoppingcart.domain.ShoppingCartEvent;
 
+// tag::view[]
 @ComponentId("shopping-cart-view")
 public class ShoppingCartView extends View {
 
@@ -19,7 +21,7 @@ public class ShoppingCartView extends View {
   }
 
   @Query("SELECT * FROM shopping_cart_view WHERE userId = :userId AND checkedout = false") // <2>
-  public QueryEffect<Cart> getUserCart(String userId) {
+  public QueryEffect<Optional<Cart>> getUserCart(String userId) {
     return queryResult();
   }
 
@@ -31,6 +33,7 @@ public class ShoppingCartView extends View {
       String userId,
       List<Item> items,
       boolean checkedout) { // <3>
+    // end::view[]
 
     public Cart addItem(String itemId, String name,
         int quantity, String description) {
@@ -62,7 +65,7 @@ public class ShoppingCartView extends View {
     public record Item(String itemId, String name,
         int quantity, String description) {
     }
-
+    // tag::view[]
   }
 
   @Consume.FromEventSourcedEntity(ShoppingCartEntity.class) // <4>
@@ -106,3 +109,4 @@ public class ShoppingCartView extends View {
 
   }
 }
+// end::view[]
