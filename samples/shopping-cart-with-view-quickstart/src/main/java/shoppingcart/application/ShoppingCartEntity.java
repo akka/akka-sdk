@@ -71,12 +71,12 @@ public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCartState, Sh
     return effects().reply(currentState());
   }
 
-  public Effect<Done> checkout() {
+  public Effect<Done> checkout(String userId) {
     if (currentState().checkedOut())
       return effects().reply(Done.getInstance());
 
     return effects()
-        .persist(new ShoppingCartEvent.CheckedOut(entityId))
+        .persist(new ShoppingCartEvent.CheckedOut(entityId, userId))
         .deleteEntity()
         .thenReply(newState -> Done.getInstance());
   }

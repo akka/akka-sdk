@@ -14,6 +14,6 @@ public sealed interface ShoppingCartEvent {
   }
 
   @TypeName("checked-out")
-  record CheckedOut(String cartId) implements ShoppingCartEvent {
+  record CheckedOut(String cartId, String userId) implements ShoppingCartEvent {
   }
 }
