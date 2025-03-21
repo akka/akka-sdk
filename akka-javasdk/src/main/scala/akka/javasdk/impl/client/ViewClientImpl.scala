@@ -64,7 +64,7 @@ private[javasdk] object ViewClientImpl {
     ViewCallValidator.validate(method)
     // extract view id
     val declaringClass = method.getDeclaringClass
-    val componentId = ComponentDescriptorFactory.readComponentIdIdValue(declaringClass)
+    val componentId = ComponentDescriptorFactory.readComponentIdValue(declaringClass)
     val methodName = method.getName
     val queryReturnType = getViewQueryReturnType(method)
     ViewMethodProperties(componentId, method, methodName, declaringClass, queryReturnType)

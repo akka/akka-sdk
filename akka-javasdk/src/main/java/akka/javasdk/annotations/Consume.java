@@ -6,6 +6,7 @@ package akka.javasdk.annotations;
 
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
+import akka.javasdk.workflow.Workflow;
 
 import java.lang.annotation.*;
 
@@ -64,6 +65,23 @@ public @interface Consume {
      * </ul>
      */
     boolean ignoreUnknown() default false;
+  }
+
+  /**
+   * Annotation for consuming state updates from a {@link akka.javasdk.workflow.Workflow}.
+   * <p>
+   * The underlying method must be declared to receive one parameter for
+   * the received workflow state changes.
+   */
+  @Target(ElementType.TYPE)
+  @Retention(RetentionPolicy.RUNTIME)
+  @Documented
+  @interface FromWorkflow {
+    /**
+     * Assign the class type of the workflow one intends to consume from, which must extend
+     *  {@link akka.javasdk.workflow.Workflow}.
+     */
+    Class<? extends Workflow<?>> value();
   }
 
   /**

@@ -54,7 +54,7 @@ public class TransferWorkflowWithFraudDetection extends Workflow<TransferState> 
   }
 
   public Effect<Message> startTransfer(Transfer transfer) {
-    if (transfer.amount <= 0) {
+    if (transfer.amount() <= 0) {
       return effects().error("Transfer amount should be greater than zero");
     } else {
       if (currentState() == null) {
@@ -71,10 +71,10 @@ public class TransferWorkflowWithFraudDetection extends Workflow<TransferState> 
   public Effect<Message> acceptTransfer() {
     if (currentState() == null) {
       return effects().reply(new Message("transfer not started"));
-    } else if (!currentState().accepted && !currentState().finished) {
-      var withdrawInput = new Withdraw(currentState().transfer.from, currentState().transfer.amount);
+    } else if (!currentState().accepted() && !currentState().finished()) {
+      var withdrawInput = new Withdraw(currentState().transfer().from(), currentState().transfer().amount());
       return effects()
-          .updateState(currentState().accepted())
+          .updateState(currentState().asAccepted())
           .transitionTo(withdrawStepName, withdrawInput)
           .thenReply(new Message("transfer accepted"));
     } else {
@@ -98,7 +98,7 @@ public class TransferWorkflowWithFraudDetection extends Workflow<TransferState> 
   private Effect.TransitionalEffect<Void> moveToDeposit(String response) {
     var state = currentState().withLastStep(withdrawStepName);
 
-    var depositInput = new Deposit(currentState().transfer.to, currentState().transfer.amount);
+    var depositInput = new Deposit(currentState().transfer().to(), currentState().transfer().amount());
 
     return effects()
         .updateState(state)
@@ -106,9 +106,9 @@ public class TransferWorkflowWithFraudDetection extends Workflow<TransferState> 
   }
 
   private CompletionStage<FraudDetectionResult> checkFrauds(Transfer transfer) {
-    if (transfer.amount >= 1000 && transfer.amount < 1000000) {
+    if (transfer.amount() >= 1000 && transfer.amount() < 1000000) {
       return completedFuture(new TransferRequiresManualAcceptation(transfer));
-    } else if (transfer.amount >= 1000000) {
+    } else if (transfer.amount() >= 1000000) {
       return completedFuture(new TransferRejected(transfer));
     } else {
       return completedFuture(new TransferVerified(transfer));
@@ -120,7 +120,7 @@ public class TransferWorkflowWithFraudDetection extends Workflow<TransferState> 
 
     if (result instanceof TransferVerified) {
       var transferVerified = (TransferVerified) result;
-      var withdrawInput = new Withdraw(transferVerified.transfer.from, transferVerified.transfer.amount);
+      var withdrawInput = new Withdraw(transferVerified.transfer.from(), transferVerified.transfer.amount());
 
       return effects()
           .updateState(state)
@@ -132,7 +132,7 @@ public class TransferWorkflowWithFraudDetection extends Workflow<TransferState> 
           .pause();
     } else if (result instanceof TransferRejected) {
       return effects()
-          .updateState(state.finished())
+          .updateState(state.asFinished())
           .end();
     } else {
       throw new IllegalStateException("not supported response" + result);

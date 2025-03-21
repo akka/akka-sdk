@@ -60,7 +60,7 @@ private[impl] object ViewDescriptorFactory {
       serializer: JsonSerializer,
       regionInfo: RegionInfo,
       userEc: ExecutionContext): ViewDescriptor = {
-    val componentId = ComponentDescriptorFactory.readComponentIdIdValue(viewClass)
+    val componentId = ComponentDescriptorFactory.readComponentIdValue(viewClass)
 
     val tableUpdaters =
       viewClass.getDeclaredClasses.toSeq.filter(Reflect.isViewTableUpdater)
@@ -99,6 +99,8 @@ private[impl] object ViewDescriptorFactory {
 
           if (ComponentDescriptorFactory.hasValueEntitySubscription(tableUpdaterClass)) {
             consumeFromKvEntity(componentId, tableUpdaterClass, tableType, tableName, serializer, regionInfo, userEc)
+          } else if (ComponentDescriptorFactory.hasWorkflowSubscription(tableUpdaterClass)) {
+            consumeFromWorkflow(componentId, tableUpdaterClass, tableType, tableName, serializer, regionInfo, userEc)
           } else if (ComponentDescriptorFactory.hasEventSourcedEntitySubscription(tableUpdaterClass)) {
             consumeFromEsEntity(componentId, tableUpdaterClass, tableType, tableName, serializer, regionInfo, userEc)
           } else if (ComponentDescriptorFactory.hasTopicSubscription(tableUpdaterClass)) {
@@ -275,8 +277,7 @@ private[impl] object ViewDescriptorFactory {
     new TableDescriptor(
       tableName,
       tableType,
-      new ConsumerSource.EventSourcedEntitySource(
-        ComponentDescriptorFactory.readComponentIdIdValue(annotation.value())),
+      new ConsumerSource.EventSourcedEntitySource(ComponentDescriptorFactory.readComponentIdValue(annotation.value())),
       Option.when(updateHandlerMethods.nonEmpty)(
         UpdateHandlerImpl(
           componentId,
@@ -318,7 +319,43 @@ private[impl] object ViewDescriptorFactory {
     new TableDescriptor(
       tableName,
       tableType,
-      new ConsumerSource.KeyValueEntitySource(ComponentDescriptorFactory.readComponentIdIdValue(annotation.value())),
+      new ConsumerSource.KeyValueEntitySource(ComponentDescriptorFactory.readComponentIdValue(annotation.value())),
+      Option.when(updateHandlerMethods.nonEmpty)(
+        UpdateHandlerImpl(componentId, tableUpdater, updateHandlerMethods, serializer, regionInfo)(userEc)),
+      deleteHandlerMethod.map(deleteMethod =>
+        UpdateHandlerImpl(
+          componentId,
+          tableUpdater,
+          methods = Seq(deleteMethod),
+          deleteHandler = true,
+          serializer = serializer,
+          regionInfo = regionInfo)(userEc)))
+  }
+
+  private def consumeFromWorkflow(
+      componentId: String,
+      tableUpdater: Class[_],
+      tableType: SpiClass,
+      tableName: String,
+      serializer: JsonSerializer,
+      regionInfo: RegionInfo,
+      userEc: ExecutionContext): TableDescriptor = {
+
+    val annotation = tableUpdater.getAnnotation(classOf[Consume.FromWorkflow])
+
+    val updaterMethods = tableUpdater.getMethods.toIndexedSeq
+
+    val deleteHandlerMethod: Option[Method] = updaterMethods // not supported but ready for the future
+      .find(ComponentDescriptorFactory.hasHandleDeletes)
+
+    val updateHandlerMethods: Seq[Method] = updaterMethods
+      .filterNot(ComponentDescriptorFactory.hasHandleDeletes)
+      .filter(ComponentDescriptorFactory.hasUpdateEffectOutput)
+
+    new TableDescriptor(
+      tableName,
+      tableType,
+      new ConsumerSource.WorkflowSource(ComponentDescriptorFactory.readComponentIdValue(annotation.value())),
       Option.when(updateHandlerMethods.nonEmpty)(
         UpdateHandlerImpl(componentId, tableUpdater, updateHandlerMethods, serializer, regionInfo)(userEc)),
       deleteHandlerMethod.map(deleteMethod =>

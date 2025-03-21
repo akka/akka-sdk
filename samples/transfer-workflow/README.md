@@ -101,6 +101,12 @@ Get the current state of the transfer:
 curl http://localhost:9000/transfer/1
 ```
 
+### 6. Check all completed transfers
+
+```shell
+curl http://localhost:9000/transfers/completed
+```
+
 ## Run integration tests
 
 To run the integration tests located in `src/test/java`:

@@ -35,6 +35,7 @@ You can see the Akka Runtime version on prod [on grafana](https://grafana.sre.ka
 - [ ] Merge auto-PR in https://github.com/akka-samples/shopping-cart-quickstart/pulls?q=is%3Apr+is%3Aopen+auto+pr+
 - [ ] Merge auto-PR in https://github.com/akka-samples/transfer-workflow/pulls?q=is%3Apr+is%3Aopen+auto+pr+
 - [ ] Merge auto-PR in https://github.com/akka-samples/transfer-workflow-compensation/pulls?q=is%3Apr+is%3Aopen+auto+pr+
+- [ ] Merge auto-PR in https://github.com/akka-samples/endpoint-jwt/pulls?q=is%3Apr+is%3Aopen+auto+pr+
 - [ ] Update other samples that are maintained in https://github.com/akka-samples/
  
 ### Announcements

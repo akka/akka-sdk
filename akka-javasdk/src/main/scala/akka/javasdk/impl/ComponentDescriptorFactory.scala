@@ -15,6 +15,7 @@ import akka.javasdk.annotations.Consume.FromEventSourcedEntity
 import akka.javasdk.annotations.Consume.FromKeyValueEntity
 import akka.javasdk.annotations.Consume.FromServiceStream
 import akka.javasdk.annotations.Consume.FromTopic
+import akka.javasdk.annotations.Consume.FromWorkflow
 import akka.javasdk.annotations.DeleteHandler
 import akka.javasdk.annotations.Produce.ServiceStream
 import akka.javasdk.annotations.Produce.ToTopic
@@ -43,6 +44,9 @@ private[impl] object ComponentDescriptorFactory {
   def hasValueEntitySubscription(clazz: Class[_]): Boolean =
     clazz.isPublic && clazz.hasAnnotation[FromKeyValueEntity]
 
+  def hasWorkflowSubscription(clazz: Class[_]): Boolean =
+    clazz.isPublic && clazz.hasAnnotation[FromWorkflow]
+
   def hasEventSourcedEntitySubscription(clazz: Class[_]): Boolean =
     clazz.isPublic && clazz.hasAnnotation[FromEventSourcedEntity]
 
@@ -51,6 +55,7 @@ private[impl] object ComponentDescriptorFactory {
 
   def hasSubscription(clazz: Class[_]): Boolean = {
     hasValueEntitySubscription(clazz) ||
+    hasWorkflowSubscription(clazz) ||
     hasEventSourcedEntitySubscription(clazz) ||
     hasTopicSubscription(clazz) ||
     hasStreamSubscription(clazz)
@@ -121,7 +126,7 @@ private[impl] object ComponentDescriptorFactory {
   def hasStreamPublication(clazz: Class[_]): Boolean =
     clazz.hasAnnotation[ServiceStream]
 
-  def readComponentIdIdValue(annotated: AnnotatedElement): String = {
+  def readComponentIdValue(annotated: AnnotatedElement): String = {
     val annotation = annotated.getAnnotation(classOf[ComponentId])
     if (annotation eq null)
       throw new IllegalArgumentException(
@@ -134,14 +139,19 @@ private[impl] object ComponentDescriptorFactory {
     ann.value()
   }
 
-  def findEventSourcedEntityType(clazz: Class[_]): String = {
+  def findSubscriptionEventSourcedComponentId(clazz: Class[_]): String = {
     val ann = clazz.getAnnotation(classOf[FromEventSourcedEntity])
-    readComponentIdIdValue(ann.value())
+    readComponentIdValue(ann.value())
   }
 
-  def findValueEntityType(component: Class[_]): String = {
+  def findSubscriptionWorkflowComponentId(clazz: Class[_]): String = {
+    val ann = clazz.getAnnotation(classOf[FromWorkflow])
+    readComponentIdValue(ann.value())
+  }
+
+  def findSubscriptionKeyValueEntityComponentId(component: Class[_]): String = {
     val ann = component.getAnnotation(classOf[FromKeyValueEntity])
-    readComponentIdIdValue(ann.value())
+    readComponentIdValue(ann.value())
   }
 
   def findHandleDeletes(component: Class[_]): Boolean = {
@@ -191,11 +201,14 @@ private[impl] object ComponentDescriptorFactory {
 
   def consumerSource(clazz: Class[_]): ConsumerSource = {
     if (hasValueEntitySubscription(clazz)) {
-      val kveType = findValueEntityType(clazz)
-      new ConsumerSource.KeyValueEntitySource(kveType)
+      val kveComponentId = findSubscriptionKeyValueEntityComponentId(clazz)
+      new ConsumerSource.KeyValueEntitySource(kveComponentId)
+    } else if (hasWorkflowSubscription(clazz)) {
+      val workflowComponentId = findSubscriptionWorkflowComponentId(clazz)
+      new ConsumerSource.WorkflowSource(workflowComponentId)
     } else if (hasEventSourcedEntitySubscription(clazz)) {
-      val esType = findEventSourcedEntityType(clazz)
-      new ConsumerSource.EventSourcedEntitySource(esType)
+      val esComponentId = findSubscriptionEventSourcedComponentId(clazz)
+      new ConsumerSource.EventSourcedEntitySource(esComponentId)
     } else if (hasTopicSubscription(clazz)) {
       val topicName = findSubscriptionTopicName(clazz)
       val consumerGroup = findSubscriptionConsumerGroup(clazz)

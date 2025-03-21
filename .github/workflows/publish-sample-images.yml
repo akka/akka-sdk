@@ -29,6 +29,13 @@ jobs:
         # v6.4.5
         uses: coursier/cache-action@1ff273bff02a8787bc9f1877d347948af647956d
 
+      - name: Cache M2 dependencies
+        uses: actions/cache@v4.2.0
+        with:
+          path: ~/.m2/repository
+          key: maven-repo-${{ hashFiles('**/pom.xml') }}
+          restore-keys: maven-repo-
+
       - name: Set up JDK 21
         # https://github.com/coursier/setup-action/releases
         # v1.3.5
@@ -48,5 +55,5 @@ jobs:
       - name: Quickstart docker image for console quick-deploy
         run: |-
           cd samples/shopping-cart-quickstart
-          echo "${{ secrets.PUBLISH_PASSWORD }}" | docker login --username "${{ secrets.PUBLISH_USER }}" --password-stdin docker.cloudsmith.io/lightbend
-          mvn --batch-mode deploy docker:push -DskipTests -Ddocker.image=docker.cloudsmith.io/lightbend/akka-public/shopping-cart-quickstart
+          echo "${{ secrets.PUBLISH_PASSWORD }}" | docker login --username "${{ secrets.PUBLISH_USER }}" --password-stdin registry.akka.io
+          mvn --batch-mode deploy docker:push -DskipTests -Ddocker.image=registry.akka.io/shopping-cart-quickstart

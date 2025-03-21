@@ -35,6 +35,8 @@ public interface EventingTestKit {
 
   IncomingMessages getEventSourcedEntityIncomingMessages(String typeId);
 
+  IncomingMessages getWorkflowIncomingMessages(String typeId);
+
   IncomingMessages getStreamIncomingMessages(String service, String streamId);
 
   /**
