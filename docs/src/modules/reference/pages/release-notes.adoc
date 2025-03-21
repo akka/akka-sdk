@@ -33,6 +33,9 @@ When subscribing to entities and service-to-service eventing from a view, update
 
 
 ****
+* https://github.com/akka/akka-sdk/releases/tag/v3.2.3[Akka SDK 3.2.3]
+- Workflow subscriptions
+
 * https://github.com/akka/akka-sdk/releases/tag/v3.2.2[Akka SDK 3.2.2]
  - make it possible to define custom Jackson object mapper for endpoints
  - query parameters support for HTTP Endpoints
