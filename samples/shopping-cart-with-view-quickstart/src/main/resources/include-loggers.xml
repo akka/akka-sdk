@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 
+     This is a logback include file. 
+
+     Add here the loggers you would like to have for your application in production. 
+     To define loggers for development mode use 'include-dev-loggers.xml'
+
+     The loggers you define inside the <included> tag will be added to the final log configuration 
+     when the application runs. 
+ -->
+<included>
+    <logger name="shoppingcart" level="INFO"/>
+</included>

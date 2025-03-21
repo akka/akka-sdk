@@ -53,7 +53,7 @@ There are multiple ways to get started with Akka.
 * Hands-on
 ** *Deploy, scale, and replicate a pre-built service.* Take the 5 minute walk-through by creating a free account at https://console.akka.io/register[akka.io].
 ** *Implement a "Hello World" service.* xref:java:author-your-first-service.adoc[].
-** *Review a pre-built service implementation.* See some Akka components in the xref:java:shopping-cart-quickstart.adoc[].
+** *Review a pre-built service implementation.* See some Akka components in the xref:java:shopping-cart/quickstart.adoc[].
 
 * Understand
 ** ... the Akka xref:concepts:architecture-model.adoc[] for architects and developers.

@@ -250,4 +250,4 @@ This is a simple Hello World service, so there isn't much to see here yet. Howev
 
 == Next steps
 
-Now that you have a basic service running, it's time to learn more about building real services in Akka. See the xref:java:shopping-cart-quickstart.adoc[] to build a more realistic application and learn how to deploy it to https://console.akka.io[akka.io].
+Now that you have a basic service running, it's time to learn more about building real services in Akka. See the xref:java:shopping-cart/quickstart.adoc[] to build a more realistic application and learn how to deploy it to https://console.akka.io[akka.io].
