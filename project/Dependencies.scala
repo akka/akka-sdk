@@ -6,7 +6,6 @@ object Dependencies {
   object Kalix {
     val ProtocolVersionMajor = 1
     val ProtocolVersionMinor = 1
-    val RuntimeImage = "gcr.io/kalix-public/kalix-runtime"
     // Remember to bump kalix-runtime.version in akka-javasdk-maven/akka-javasdk-parent if bumping this
     val RuntimeVersion = sys.props.getOrElse("kalix-runtime.version", "1.4.4")
   }

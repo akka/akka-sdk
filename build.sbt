@@ -23,7 +23,6 @@ lazy val akkaJavaSdk =
       buildInfoKeys := Seq[BuildInfoKey](
         name,
         version,
-        "runtimeImage" -> Kalix.RuntimeImage,
         "runtimeVersion" -> Kalix.RuntimeVersion,
         "protocolMajorVersion" -> Kalix.ProtocolVersionMajor,
         "protocolMinorVersion" -> Kalix.ProtocolVersionMinor,
@@ -46,7 +45,6 @@ lazy val akkaJavaSdkTestKit =
       buildInfoKeys := Seq[BuildInfoKey](
         name,
         version,
-        "runtimeImage" -> Kalix.RuntimeImage,
         "runtimeVersion" -> Kalix.RuntimeVersion,
         "scalaVersion" -> scalaVersion.value),
       buildInfoPackage := "akka.javasdk.testkit",
