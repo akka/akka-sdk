@@ -67,7 +67,7 @@ include::example$shopping-cart-with-view-quickstart/src/main/java/shoppingcart/d
 
 == Adding a shopping cart view
 
-Now that we've improved the separation of concerns/layers with the various data types being used in the application, we can create the `View`. A view can contain multiple tables, and each one of those tables can be thought of as roughtly equivalent to a table in a traditional RDBMS, except you don't have to worry about where or how that data is stored.
+Now that we've improved the separation of concerns/layers with the various data types being used in the application, we can create the `View`. A view can contain multiple tables, and each one of those tables can be thought of as roughly equivalent to a table in a traditional RDBMS, except you don't have to worry about where or how that data is stored.
 
 For our new view, we want all of the information on the shopping cart contents, including the name and description (which have also been added to the appropriate `ShoppingCartEvent`).
 
