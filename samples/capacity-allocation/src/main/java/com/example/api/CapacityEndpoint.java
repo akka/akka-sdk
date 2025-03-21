@@ -2,6 +2,7 @@ package com.example.api;
 
 import akka.Done;
 import akka.http.javadsl.model.HttpResponse;
+import akka.http.javadsl.model.StatusCodes;
 import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.HttpEndpoint;
@@ -200,8 +201,7 @@ public class CapacityEndpoint {
   }
 
   @Post("/pools/{poolId}/reservations")
-  public CompletionStage<ReservationResponse> reserve(String poolId, ReservationRequest request) {
-
+  public CompletionStage<HttpResponse> reserve(String poolId, ReservationRequest request) {
     // Use client-provided requestId or generate one if not provided
     final String requestId =
         request.requestId() != null && !request.requestId().isEmpty()
@@ -217,6 +217,14 @@ public class CapacityEndpoint {
     return shardClientProvider
         .getClientForPool(poolId)
         .thenCompose(client -> requestAllocation(client, poolId, request.userId(), requestId))
+        .thenApply(
+            response -> {
+              return switch (response.status()) {
+                case ACCEPTED, CONFIRMED -> HttpResponses.ok(response);
+                case REJECTED, CANCELLED ->
+                    HttpResponses.ok(response).withStatus(StatusCodes.FORBIDDEN);
+              };
+            })
         .exceptionally(
             error -> {
               logger.warn(
@@ -224,8 +232,7 @@ public class CapacityEndpoint {
                   requestId,
                   poolId,
                   error.getMessage());
-              return ReservationResponse.rejected(
-                  requestId, "Invalid request: " + error.getMessage());
+              throw HttpException.badRequest(error.getMessage());
             });
   }
 
