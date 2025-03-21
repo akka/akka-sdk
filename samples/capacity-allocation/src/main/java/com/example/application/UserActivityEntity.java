@@ -45,6 +45,7 @@ public class UserActivityEntity extends EventSourcedEntity<UserActivity, UserAct
 
   public Effect<UserActivity.ValidationResult> requestAllocation(
       UserActivity.RequestAllocation command) {
+
     logger.debug(
         "Validating allocation request [{}] for user [{}] in pool [{}]",
         command.requestId(),
