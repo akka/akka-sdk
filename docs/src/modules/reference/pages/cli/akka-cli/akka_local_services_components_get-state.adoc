@@ -1,13 +1,13 @@
 = akka local services components get-state
 
-List the state for the given service, stateful component name and ID
+List the state for the given service, stateful component and id.
 
 == Synopsis
 
 The `akka local service components get-state` command gets the state for the given ID of the stateful component.
 
 ----
-akka local services components get-state SERVICE_NAME COMPONENT_NAME ID [flags]
+akka local services components get-state SERVICE_NAME COMPONENT_ID ID [flags]
 ----
 
 == Options

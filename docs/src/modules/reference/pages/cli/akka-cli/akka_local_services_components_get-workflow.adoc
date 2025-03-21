@@ -1,13 +1,13 @@
 = akka local services components get-workflow
 
-Get workflow execution details for the specified service, workflow component name and id
+Get workflow execution details for the specified service, workflow component id and workflow id
 
 == Synopsis
 
-The `akka local service components get-workflow-execution` command gets workflow execution details for the specified service, workflow component name and id
+The `akka local service components get-workflow-execution` command gets workflow execution details for the specified service, workflow component and id
 
 ----
-akka local services components get-workflow SERVICE_NAME COMPONENT_NAME WORKFLOW_ID [flags]
+akka local services components get-workflow SERVICE_NAME COMPONENT_ID WORKFLOW_ID [flags]
 ----
 
 == Options
