@@ -1,7 +1,5 @@
 package shoppingcart.application;
 
-import java.util.UUID;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,7 +17,7 @@ public class UserEntity extends EventSourcedEntity<UserState, UserEvent> {
 
   private static final Logger logger = LoggerFactory.getLogger(UserEntity.class);
 
-  public record CloseCartCommand(String oldCartId, String newCartId) {
+  public record CloseCartCommand(String cartId) {
   }
 
   public UserEntity(EventSourcedEntityContext context) {
@@ -27,26 +25,18 @@ public class UserEntity extends EventSourcedEntity<UserState, UserEvent> {
   }
 
   public ReadOnlyEffect<String> currentCartId() {
-    return effects().reply(currentState().currentCartId());
+    return effects().reply(entityId + "-" + String.valueOf(currentState().currentCartId()));
   }
 
-  // We don't create a random cart ID in this method because we always
-  // want command handlers to be deterministic
   public Effect<Done> closeCart(CloseCartCommand command) {
-    // Reject close commands for anything other than the current cart ID -
-    // idempotent
-    if (!command.oldCartId().equals(currentState().currentCartId())) {
-      return effects().reply(Done.getInstance());
-    }
     return effects()
-        .persist(new UserEvent.UserCartClosed(entityId, command.newCartId()))
+        .persist(new UserEvent.UserCartClosed(entityId, command.cartId()))
         .thenReply(__ -> Done.getInstance());
   }
 
   @Override
   public UserState emptyState() {
-    UUID uuid = UUID.randomUUID();
-    String newCartId = uuid.toString();
+    int newCartId = 1;
     return new UserState(entityId, newCartId);
   }
 

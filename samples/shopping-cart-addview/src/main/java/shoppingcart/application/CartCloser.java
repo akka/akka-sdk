@@ -29,12 +29,9 @@ public class CartCloser extends Consumer {
   public Effect onCheckedOut(ShoppingCartEvent.CheckedOut event) {
     logger.debug("Closing cart for user {} due to checkout", event.userId());
 
-    UUID uuid = UUID.randomUUID();
-    String newCartId = uuid.toString();
-
     componentClient.forEventSourcedEntity(event.userId())
         .method(UserEntity::closeCart)
-        .invokeAsync(new CloseCartCommand(event.cartId(), newCartId));
+        .invokeAsync(new CloseCartCommand(event.cartId()));
 
     return effects().done();
   }
