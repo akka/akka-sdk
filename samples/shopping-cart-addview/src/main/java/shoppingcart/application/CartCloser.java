@@ -9,6 +9,7 @@ import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.consumer.Consumer;
+import shoppingcart.application.UserEntity.CloseCartCommand;
 import shoppingcart.domain.ShoppingCartEvent;
 
 // tag::consumer[]
@@ -33,7 +34,7 @@ public class CartCloser extends Consumer {
 
     componentClient.forEventSourcedEntity(event.userId())
         .method(UserEntity::closeCart)
-        .invokeAsync(newCartId);
+        .invokeAsync(new CloseCartCommand(event.cartId(), newCartId));
 
     return effects().done();
   }

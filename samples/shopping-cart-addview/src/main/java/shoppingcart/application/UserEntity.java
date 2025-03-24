@@ -19,6 +19,9 @@ public class UserEntity extends EventSourcedEntity<UserState, UserEvent> {
 
   private static final Logger logger = LoggerFactory.getLogger(UserEntity.class);
 
+  public record CloseCartCommand(String oldCartId, String newCartId) {
+  }
+
   public UserEntity(EventSourcedEntityContext context) {
     this.entityId = context.entityId();
   }
@@ -29,9 +32,14 @@ public class UserEntity extends EventSourcedEntity<UserState, UserEvent> {
 
   // We don't create a random cart ID in this method because we always
   // want command handlers to be deterministic
-  public Effect<Done> closeCart(String newCartId) {
+  public Effect<Done> closeCart(CloseCartCommand command) {
+    // Reject close commands for anything other than the current cart ID -
+    // idempotent
+    if (!command.oldCartId().equals(currentState().currentCartId())) {
+      return effects().reply(Done.getInstance());
+    }
     return effects()
-        .persist(new UserEvent.UserCartClosed(entityId, newCartId))
+        .persist(new UserEvent.UserCartClosed(entityId, command.newCartId()))
         .thenReply(__ -> Done.getInstance());
   }
 
