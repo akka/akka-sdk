@@ -70,7 +70,7 @@ public class ShoppingCartView extends View {
   }
 
   @Consume.FromEventSourcedEntity(ShoppingCartEntity.class) // <4>
-  public static class CartsTableUpdater extends TableUpdater<Cart> {
+  public static class ShoppingCartsUpdater extends TableUpdater<Cart> {
 
     public Effect<Cart> onEvent(ShoppingCartEvent event) {
       return switch (event) {
