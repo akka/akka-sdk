@@ -15,12 +15,12 @@ import shoppingcart.domain.ShoppingCartEvent;
 @ComponentId("shopping-cart-view")
 public class ShoppingCartView extends View {
 
-  @Query("SELECT * FROM shopping_cart_view WHERE cartId = :cartId") // <1>
+  @Query("SELECT * FROM shopping_carts WHERE cartId = :cartId") // <1>
   public QueryEffect<Cart> getCart(String cartId) {
     return queryResult();
   }
 
-  @Query("SELECT * FROM shopping_cart_view WHERE " +
+  @Query("SELECT * FROM shopping_carts WHERE " +
       "userId = :userId AND checkedout = false") // <2>
   public QueryEffect<Optional<Cart>> getUserCart(String userId) {
     return queryResult();
@@ -62,7 +62,7 @@ public class ShoppingCartView extends View {
   }
 
   @Consume.FromEventSourcedEntity(ShoppingCartEntity.class) // <4>
-  public static class CartsTableUpdater extends TableUpdater<Cart> {
+  public static class ShoppingCartsUpdater extends TableUpdater<Cart> {
 
     public Effect<Cart> onEvent(ShoppingCartEvent event) {
       return switch (event) {

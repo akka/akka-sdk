@@ -1,6 +1,6 @@
 # Shopping Cart Sample (with View)
 This example builds on the previous shopping cart sample by taking a look at the domain model and improving it. This sample
-adds user authentication, more cleanly separates the data types across roles and responsibilities, and adds a view that can be used by consumers to query the read model.
+adds user authentication, more cleanly separates the data types across roles and responsibilities, and adds a view that can be used by users to query the read model.
 
 
 ## Testing the Service
@@ -10,7 +10,7 @@ Running and testing this service works a bit differently than the first shopping
 
 For example, here is a JWT that you can use for your testing. 
 
-```
+```shell
 eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJib2IiLCJuYW1lIjoiQm9iIEJvYmJlcnNvbiIsImlzcyI6ImFsaWNlIiwiaWF0IjoxNTE2MjM5MDIyfQ.wIxafOw2k4TgdCm2pH4abupetKRKS4ItOKlsNTY-pzc
 ```
 
