@@ -1,6 +1,6 @@
 # Shopping Cart Sample (with View)
 This example builds on the previous shopping cart sample by taking a look at the domain model and improving it. This sample
-adds user authentication, more cleanly separates the data types across roles and responsibilities, and adds a view that can be used by consumers to query the read model.
+adds user authentication, more cleanly separates the data types across roles and responsibilities, and adds a view that can be used by users to query the read model.
 
 
 ## Testing the Service
