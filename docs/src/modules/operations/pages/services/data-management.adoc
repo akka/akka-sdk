@@ -284,4 +284,4 @@ If you wish to watch a task that is running, you can use `akka service data watc
 
 == See also
 
-- xref:reference:cli/akka-cli/akka_services_data.adoc#_see_also[`akka service data` commands]
+- xref:reference:cli/akka_services_data.adoc#_see_also[`akka service data` commands]

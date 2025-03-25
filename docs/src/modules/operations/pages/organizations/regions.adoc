@@ -62,5 +62,5 @@ To learn more about self-hosted Akka regions please To get a BYOC region setup y
 
 == See also
 
-- xref:reference:cli/akka-cli/akka_regions.adoc#_see_also[`akka regions` commands]
-- xref:reference:cli/akka-cli/akka_projects_regions.adoc#_see_also[`akka project regions` commands]
+- xref:reference:cli/akka_regions.adoc#_see_also[`akka regions` commands]
+- xref:reference:cli/akka_projects_regions.adoc#_see_also[`akka project regions` commands]

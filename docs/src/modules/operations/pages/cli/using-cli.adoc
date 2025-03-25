@@ -5,7 +5,7 @@ include::ROOT:partial$include.adoc[]
 
 The Akka command-line interface (CLI) complements the browser-based https://console.akka.io[Akka Console, window="new"] user interface (UI), allowing you to perform deployment and configuration operations directly from the command line. This page provides an overview of common commands.
 
-For a full reference of all available commands, see the xref:reference:cli/akka-cli/index.adoc[reference] page.
+For a full reference of all available commands, see the xref:reference:cli/index.adoc[reference] page.
 [TIP]
 ====
 Check regularly to ensure you have the latest version of the `akka` CLI. You can check the installed version by running:
@@ -55,7 +55,7 @@ For more authentication options:
 ----
 akka auth -h
 ----
-ifdef::todo[TODO:  You can also refer to the xref:reference:cli/akka-cli/akka_auth.adoc[auth] page.]
+ifdef::todo[TODO:  You can also refer to the xref:reference:cli/akka_auth.adoc[auth] page.]
 
 === Handling Proxies
 
@@ -77,7 +77,7 @@ akka config set api-server-use-grpc-web true
 
 The Akka CLI allows you to create, list, and configure projects.
 
-ifdef::todo[TODO:  For more commands, see the xref:reference:cli/akka-cli/akka_projects.adoc[projects] page.]
+ifdef::todo[TODO:  For more commands, see the xref:reference:cli/akka_projects.adoc[projects] page.]
 === Creating a New Project
 
 To create a new project within your organization:
@@ -120,7 +120,7 @@ Required flags:
 * `--docker-username` (your Docker username)
 * `--docker-password` (your Docker password)
 
-ifdef::todo[TODO:  For more details, see `akka docker -h` or visit xref:reference:cli/akka-cli/akka_docker.adoc[docker] page.]
+ifdef::todo[TODO:  For more details, see `akka docker -h` or visit xref:reference:cli/akka_docker.adoc[docker] page.]
 [NOTE]
 ====
 For more information about using the Akka Container Registry (ACR) or external container registries, see xref:projects/container-registries.adoc[].
@@ -204,10 +204,10 @@ This table shows the component names, their types, and any associated type IDs.
 ====
 If you want to view the events from an event sourced entity you can use the `akka service components list-events` command.
 
-ifdef::todo[TODO:  More information about this command in xref:reference:cli/akka-cli/akka_services_components_list-events.adoc[components] page.]
+ifdef::todo[TODO:  More information about this command in xref:reference:cli/akka_services_components_list-events.adoc[components] page.]
 ====
 
 == Related documentation
 
 - xref:cli/command-completion.adoc[]
-- xref:reference:cli/akka-cli/index.adoc[]
+- xref:reference:cli/index.adoc[]

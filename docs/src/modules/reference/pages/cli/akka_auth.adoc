@@ -1,0 +1,43 @@
+= akka auth
+
+Manage Akka authentication.
+
+== Synopsis
+
+The `akka auth` commands allow you to _authorize_ your command-line client against your account on Akka.
+When authorized, you can use the CLI to perform the same operations available in the web interface.
+
+== Options
+
+----
+  -h, --help   help for auth
+----
+
+== Options inherited from parent commands
+
+----
+      --cache-file string   location of cache file (default "~/.akka/cache.yaml")
+      --config string       location of config file (default "~/.akka/config.yaml")
+      --context string      configuration context to use
+      --disable-prompt      Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
+                            This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
+  -o, --output string       set output format to one of [text,json,go-template=] (default "text")
+  -q, --quiet               set quiet output (helpful when used as part of a script)
+      --timeout duration    client command timeout (default 10s)
+      --use-grpc-web        use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
+  -v, --verbose             set verbose output
+----
+
+== SEE ALSO
+
+* link:cli/akka[akka]	 - Akka control
+* link:cli/akka_auth_container-registry[akka auth container-registry]	 - Manage configuration for Akka Container Registry.
+* link:cli/akka_auth_current-login[akka auth current-login]	 - Get details for the current logged in user.
+* link:cli/akka_auth_login[akka auth login]	 - Log in to Akka.
+* link:cli/akka_auth_logout[akka auth logout]	 - Log out the current user.
+* link:cli/akka_auth_signup[akka auth signup]	 - Open the registration page.
+* link:cli/akka_auth_tokens[akka auth tokens]	 - Manage Akka authentication tokens for your user.
+* link:cli/akka_auth_use-token[akka auth use-token]	 - Login using a token.
+
+[discrete]
+

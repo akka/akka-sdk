@@ -90,4 +90,4 @@ akka help
 
 - xref:cli/using-cli.adoc[]
 - xref:cli/command-completion.adoc[]
-- xref:reference:cli/akka-cli/index.adoc[]
+- xref:reference:cli/index.adoc[]

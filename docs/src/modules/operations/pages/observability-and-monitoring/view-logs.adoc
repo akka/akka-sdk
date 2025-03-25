@@ -51,4 +51,4 @@ This way, the trace ID that's passed through your components will be added to yo
 
 == See also
 
-- xref:reference:cli/akka-cli/akka_logs.adoc#_see_also[`akka logs` commands]
+- xref:reference:cli/akka_logs.adoc#_see_also[`akka logs` commands]

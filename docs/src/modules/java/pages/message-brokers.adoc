@@ -22,5 +22,5 @@ We continuously evaluate additional integrations for potential built-in support 
 == See also
 
 - xref:operations:projects/message-brokers.adoc[]
-- xref:reference:cli/akka-cli/akka_projects_config.adoc#_see_also[`akka projects config` commands]
+- xref:reference:cli/akka_projects_config.adoc#_see_also[`akka projects config` commands]
 - https://doc.akka.io/libraries/alpakka/current[Akka integrations through Alpakka]

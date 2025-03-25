@@ -298,5 +298,5 @@ curl localhost:8081/carts/123
 
 == See also
 
-- xref:reference:cli/akka-cli/akka_routes.adoc#_see_also[`akka routes` commands]
-- xref:reference:cli/akka-cli/akka_services.adoc#_see_also[`akka services` commands]
+- xref:reference:cli/akka_routes.adoc#_see_also[`akka routes` commands]
+- xref:reference:cli/akka_services.adoc#_see_also[`akka services` commands]

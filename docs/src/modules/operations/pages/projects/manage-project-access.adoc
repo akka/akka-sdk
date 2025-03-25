@@ -138,4 +138,4 @@ To resend an invitation, first delete the expired invitation and then issue a ne
 == See also
 
 - xref:organizations/manage-users.adoc[]
-- xref:reference:cli/akka-cli/akka_roles.adoc#_see_also[`akka roles` commands]
+- xref:reference:cli/akka_roles.adoc#_see_also[`akka roles` commands]
