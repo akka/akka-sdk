@@ -5,8 +5,8 @@ import akka.http.javadsl.model.StatusCodes;
 import customer.application.CustomerEntity;
 import customer.domain.Address;
 import customer.domain.Customer;
-import customer.application.CustomerByEmailView;
-import customer.application.CustomerByNameView;
+import customer.application.CustomersByEmailView;
+import customer.application.CustomersByNameView;
 import akka.javasdk.testkit.TestKitSupport;
 import org.awaitility.Awaitility;
 import org.hamcrest.core.IsEqual;
@@ -94,7 +94,7 @@ public class CustomerIntegrationTest extends TestKitSupport {
       .until(() ->
         await(
           componentClient.forView()
-            .method(CustomerByNameView::getCustomers)
+            .method(CustomersByNameView::getCustomers)
             .invokeAsync("Foo")
         ).customers().stream().findFirst().get().name(),
         new IsEqual("Foo")
@@ -119,7 +119,7 @@ public class CustomerIntegrationTest extends TestKitSupport {
       .until(() ->
           await(
             componentClient.forView()
-              .method(CustomerByEmailView::getCustomers)
+              .method(CustomersByEmailView::getCustomers)
               .invokeAsync("bar@example.com")
           ).customers().stream().findFirst().get().name(),
         new IsEqual("Bar")

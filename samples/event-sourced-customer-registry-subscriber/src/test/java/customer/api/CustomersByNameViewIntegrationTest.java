@@ -1,6 +1,6 @@
 package customer.api;
 
-import customer.domain.Customer;
+import customer.domain.CustomerEntry;
 import customer.application.CustomerPublicEvent.Created;
 import customer.application.CustomersByEmailView;
 import customer.application.CustomersByNameView;
@@ -38,23 +38,23 @@ public class CustomersByNameViewIntegrationTest extends CustomerRegistryIntegrat
       .pollInterval(1, TimeUnit.SECONDS)
       .untilAsserted(() -> {
 
-        Customer customer =
+        CustomerEntry customer =
           await(
             componentClient.forView()
               .method(CustomersByNameView::findByName)
               .invokeAsync(created1.name())
           ).customers().stream().findFirst().get();
 
-        assertThat(customer).isEqualTo(new Customer("b", created1.email(), created1.name()));
+        assertThat(customer).isEqualTo(new CustomerEntry("b", created1.email(), created1.name()));
 
-        Customer customer2 =
+        CustomerEntry customer2 =
           await(
             componentClient.forView()
               .method(CustomersByEmailView::findByEmail)
               .invokeAsync(created2.email())
           ).customers().stream().findFirst().get();
 
-        assertThat(customer2).isEqualTo(new Customer("a", created2.email(), created2.name()));
+        assertThat(customer2).isEqualTo(new CustomerEntry("a", created2.email(), created2.name()));
 
         }
       );

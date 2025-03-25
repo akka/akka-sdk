@@ -14,35 +14,35 @@ import java.util.List;
 @ComponentId("counter-by-value-enrichment")
 public class CounterByValueViewEnrichment extends View {
 
-  public record CounterByValue(String name, int value) {
+  public record CounterByValueEntry(String name, int value) {
   }
 
 
-  public record CounterByValueList(List<CounterByValue> counters) {
+  public record CounterByValueEntries(List<CounterByValueEntry> counters) {
   }
 
   // tag::events-enrichment[]
   @Consume.FromEventSourcedEntity(CounterEntity.class)
-  public static class CounterByValueUpdater extends TableUpdater<CounterByValue> {
-    public Effect<CounterByValue> onEvent(CounterEvent counterEvent) {
+  public static class CounterByValueUpdater extends TableUpdater<CounterByValueEntry> {
+    public Effect<CounterByValueEntry> onEvent(CounterEvent counterEvent) {
       var name = updateContext().eventSubject().get();
       return switch (counterEvent) {
         case ValueIncreased increased -> effects().updateRow(
-          new CounterByValue(name, increased.updatedValue())); // <1>
+          new CounterByValueEntry(name, increased.updatedValue())); // <1>
         case ValueMultiplied multiplied -> effects().updateRow(
-          new CounterByValue(name, multiplied.updatedValue())); // <1>
+          new CounterByValueEntry(name, multiplied.updatedValue())); // <1>
       };
     }
   }
   // end::events-enrichment[]
 
   @Query("SELECT * AS counters FROM counter_by_value WHERE value > :value")
-  public QueryEffect<CounterByValueList> findByCountersByValueGreaterThan(int value) {
+  public QueryEffect<CounterByValueEntries> findByCountersByValueGreaterThan(int value) {
     return queryResult();
   }
 
   @Query("SELECT * AS counters FROM counter_by_value")
-  public QueryEffect<CounterByValueList> findAll() {
+  public QueryEffect<CounterByValueEntries> findAll() {
     return queryResult();
   }
   // tag::events-enrichment[]

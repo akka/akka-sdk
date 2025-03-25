@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 
-class TransferViewIntegrationTest extends TestKitSupport {
+class TransfersViewIntegrationTest extends TestKitSupport {
 
   private EventingTestKit.IncomingMessages transferStates;
 
@@ -46,8 +46,8 @@ class TransferViewIntegrationTest extends TestKitSupport {
       .atMost(10, TimeUnit.of(SECONDS))
       .untilAsserted(() -> {
 
-        TransferView.TransferEntries result = await(componentClient.forView().method(TransferView::getAllCompleted).invokeAsync());
-        assertThat(result.entries()).contains(new TransferView.TransferEntry("t2", "COMPLETED"));
+        TransfersView.TransferEntries result = await(componentClient.forView().method(TransfersView::getAllCompleted).invokeAsync());
+        assertThat(result.entries()).contains(new TransfersView.TransferEntry("t2", "COMPLETED"));
       });
   }
 
