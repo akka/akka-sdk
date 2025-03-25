@@ -72,7 +72,7 @@ When subscribing to entities and service-to-service eventing from a view, update
     - validate view parameter array typing for = ANY
 
 * Akka CLI 3.0.14
-    - Bugfix for docker repository
+    - Bug fix for docker repository
 
 * https://github.com/akka/akka-projection/releases/tag/v1.6.10[Akka Projections 1.6.10]
 
