@@ -145,9 +145,8 @@ public class UserEndpoint {
 
 
   @Get("/by-country/{country}")
-  public UsersByCountryView.UserList getUsersByCountry(String country) {
-    return
-      client.forView()
+  public UsersByCountryView.UserEntries getUsersByCountry(String country) {
+    return client.forView()
         .method(UsersByCountryView::getUserByCountry)
         .invoke(country);
   }

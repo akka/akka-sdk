@@ -9,12 +9,12 @@ import akka.javasdk.view.View;
 
 import java.util.List;
 
-@ComponentId("customers_by_city")
+@ComponentId("customers-by-city")
 // tag::view-test[]
 public class CustomersByCity extends View {
 
   @Consume.FromKeyValueEntity(CustomerEntity.class)
-  public static class Customers extends TableUpdater<Customer> {}
+  public static class CustomerUpdater extends TableUpdater<Customer> {}
 
   @Query("""
     SELECT * AS customers

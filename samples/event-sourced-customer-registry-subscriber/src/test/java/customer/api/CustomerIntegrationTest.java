@@ -2,12 +2,11 @@ package customer.api;
 
 
 import akka.http.javadsl.model.StatusCodes;
-import akka.javasdk.http.HttpClient;
 import akka.javasdk.http.StrictResponse;
 import akka.util.ByteString;
 import customer.api.CustomerRegistryEndpoint.CreateCustomerRequest;
 import customer.application.CustomersByNameView;
-import customer.domain.Customer;
+import customer.domain.CustomerEntry;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 
@@ -61,7 +60,7 @@ public class CustomerIntegrationTest extends CustomerRegistryIntegrationTest {
           componentClient.forView()
             .method(CustomersByNameView::findByName)
             .invoke(createRequest.name()
-        ).customers().stream().map(Customer::name);
+        ).customers().stream().map(CustomerEntry::name);
 
         assertThat(foundCustomers).containsExactly(createRequest.name());
       });

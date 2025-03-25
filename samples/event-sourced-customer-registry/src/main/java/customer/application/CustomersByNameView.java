@@ -8,19 +8,19 @@ import akka.javasdk.annotations.Query;
 import akka.javasdk.view.TableUpdater;
 import akka.javasdk.view.View;
 import customer.domain.CustomerEvent;
-import customer.domain.CustomerRow;
-import customer.domain.CustomersList;
+import customer.domain.CustomerEntry;
+import customer.domain.CustomerEntries;
 
-@ComponentId("view_customers_by_name") // <1>
-public class CustomerByNameView extends View {
+@ComponentId("customers-by-name") // <1>
+public class CustomersByNameView extends View {
 
   @Consume.FromEventSourcedEntity(CustomerEntity.class)
-  public static class CustomersByName extends TableUpdater<CustomerRow> { // <2>
+  public static class CustomersByNameUpdater extends TableUpdater<CustomerEntry> { // <2>
 
-    public Effect<CustomerRow> onEvent(CustomerEvent event) { // <3>
+    public Effect<CustomerEntry> onEvent(CustomerEvent event) { // <3>
       return switch (event) {
         case CustomerEvent.CustomerCreated created ->
-            effects().updateRow(new CustomerRow(created.email(), created.name(), created.address()));
+            effects().updateRow(new CustomerEntry(created.email(), created.name(), created.address()));
 
         case CustomerEvent.NameChanged nameChanged ->
             effects().updateRow(rowState().withName(nameChanged.newName()));
@@ -32,7 +32,7 @@ public class CustomerByNameView extends View {
   }
 
   @Query("SELECT * as customers FROM customers_by_name WHERE name = :name")
-  public QueryEffect<CustomersList> getCustomers(String name) {
+  public QueryEffect<CustomerEntries> getCustomers(String name) {
     return queryResult();
   }
 

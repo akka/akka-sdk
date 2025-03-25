@@ -3,6 +3,7 @@ package com.example.transfer.application;
 import akka.javasdk.testkit.EventingTestKit;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
+import com.example.transfer.application.TransfersView.TransferEntries;
 import com.example.transfer.domain.TransferState;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.BeforeAll;
@@ -13,7 +14,7 @@ import java.util.concurrent.TimeUnit;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 
-class TransferViewIntegrationTest extends TestKitSupport {
+class TransfersViewIntegrationTest extends TestKitSupport {
 
   private EventingTestKit.IncomingMessages transferStates;
 
@@ -46,7 +47,7 @@ class TransferViewIntegrationTest extends TestKitSupport {
       .atMost(10, TimeUnit.of(SECONDS))
       .untilAsserted(() -> {
 
-        TransferView.TransferEntries result = componentClient.forView().method(TransferView::getAllCompleted).invoke();
+        TransferEntries result = componentClient.forView().method(TransfersView::getAllCompleted).invoke();
         assertThat(result.entries()).contains(new TransferView.TransferEntry("t2", "COMPLETED"));
       });
   }
