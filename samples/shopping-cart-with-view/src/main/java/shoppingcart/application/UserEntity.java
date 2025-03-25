@@ -25,13 +25,13 @@ public class UserEntity extends EventSourcedEntity<UserState, UserEvent> {
   }
 
   public ReadOnlyEffect<String> currentCartId() {
-    return effects().reply(entityId + "-" + String.valueOf(currentState().currentCartId()));
+    return effects().reply(entityId + "-" + currentState().currentCartId());
   }
 
   public Effect<Done> closeCart(CloseCartCommand command) {
     return effects()
         .persist(new UserEvent.UserCartClosed(entityId, command.cartId()))
-        .thenReply(__ -> Done.getInstance());
+        .thenReply(__ -> Done.done());
   }
 
   @Override

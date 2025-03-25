@@ -47,7 +47,7 @@ public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCartState, Sh
 
     return effects()
         .persist(event)
-        .thenReply(newState -> Done.getInstance());
+        .thenReply(newState -> Done.done());
   }
 
   public Effect<Done> removeItem(String productId) {
@@ -64,7 +64,7 @@ public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCartState, Sh
 
     return effects()
         .persist(event)
-        .thenReply(newState -> Done.getInstance());
+        .thenReply(newState -> Done.done());
   }
 
   public ReadOnlyEffect<ShoppingCartState> getCart() {
@@ -73,12 +73,12 @@ public class ShoppingCartEntity extends EventSourcedEntity<ShoppingCartState, Sh
 
   public Effect<Done> checkout(String userId) {
     if (currentState().checkedOut())
-      return effects().reply(Done.getInstance());
+      return effects().reply(Done.done());
 
     return effects()
         .persist(new ShoppingCartEvent.CheckedOut(entityId, userId))
         .deleteEntity()
-        .thenReply(newState -> Done.getInstance());
+        .thenReply(newState -> Done.done());
   }
 
   @Override

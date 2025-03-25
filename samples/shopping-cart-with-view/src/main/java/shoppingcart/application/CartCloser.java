@@ -14,7 +14,7 @@ import shoppingcart.domain.ShoppingCartEvent;
 
 // tag::consumer[]
 @ComponentId("cart-closer-consumer")
-@Consume.FromEventSourcedEntity(ShoppingCartEntity.class)
+@Consume.FromEventSourcedEntity(value = ShoppingCartEntity.class, ignoreUnknown = true)
 public class CartCloser extends Consumer {
 
   private Logger logger = LoggerFactory.getLogger(CartCloser.class);
@@ -24,8 +24,6 @@ public class CartCloser extends Consumer {
     this.componentClient = componentClient;
   }
 
-  // After a user's cart has been checked out, tell the user entity to generate
-  // a new UUID for the current/open cart
   public Effect onCheckedOut(ShoppingCartEvent.CheckedOut event) {
     logger.debug("Closing cart for user {} due to checkout", event.userId());
 
@@ -34,14 +32,6 @@ public class CartCloser extends Consumer {
         .invokeAsync(new CloseCartCommand(event.cartId()));
 
     return effects().done();
-  }
-
-  public Effect onItemRemoved(ShoppingCartEvent.ItemRemoved removed) {
-    return effects().ignore();
-  }
-
-  public Effect onItemAdded(ShoppingCartEvent.ItemAdded added) {
-    return effects().ignore();
   }
 }
 // end::consumer[]

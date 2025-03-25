@@ -30,7 +30,7 @@ jobs:
           - { sample: "event-sourced-counter-brokers", sampleRepo: "akka-samples/event-sourced-counter-brokers" }
           - { sample: "event-sourced-customer-registry", sampleRepo: "akka-samples/event-sourced-customer-registry" }
           - { sample: "shopping-cart-quickstart", sampleRepo: "akka-samples/shopping-cart-quickstart" }
-          - { sample: "shopping-cart-addview", sampleRepo: "akka-samples/shopping-cart-addview" }
+          - { sample: "shopping-cart-with-view", sampleRepo: "akka-samples/shopping-cart-with-view" }
           - { sample: "transfer-workflow", sampleRepo: "akka-samples/transfer-workflow" }
           - { sample: "transfer-workflow-compensation", sampleRepo: "akka-samples/transfer-workflow-compensation" }
 

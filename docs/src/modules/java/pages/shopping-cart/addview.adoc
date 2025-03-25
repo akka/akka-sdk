@@ -2,7 +2,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-This guide walks you through the design and implementation of an enhancement to the shopping cart service example, illustrating the use of Views, user authentication, and user authorization.
+This guide walks you through the design and implementation of an enhancement to the shopping cart service example, illustrating model refactoring, the use of Views, and user authentication.
 
 == Overview
 
@@ -14,7 +14,7 @@ include::ROOT:partial$cloud-dev-prerequisites.adoc[]
 
 == Clone the sample
 
-. Clone the full source code of the Shopping Cart (with View) sample from link:https://github.com/akka-samples/shopping-cart-addview[Github].
+. Clone the full source code of the Shopping Cart (with View) sample from link:https://github.com/akka-samples/shopping-cart-with-view[Github].
 
 == Re-evaluating the shopping cart structure
 
@@ -22,7 +22,7 @@ The first version of the shopping cart had a bit of an issue blurring the lines 
 
 For small applications or prototypes, this isn't that big of a problem. But this kind of pattern might create headaches in the future. Any change to the way the entity internally stores its internal state will potentially break the API endpoint and maybe even cause migration issues with events.
 
-It might seem like overkill at first, but it's one of the first steps toward supporting evolutionary architecture and clean, easily-maintained code. If we adopt the rule that we can't reuse the same data type across roles, then we end up with 3 distinct data types:
+It might seem like overkill at first, but separating these data types is one of the first steps toward supporting evolutionary architecture and clean, easily-maintained code. If we adopt the rule that we can't reuse the same data type across roles, then we end up with 3 distinct types:
 
 * The data used to shape the body of the `POST` request to add an item to a cart
 * The data used as a _command_ to be sent to the entity to handle that request
@@ -37,32 +37,35 @@ With the addition of a `userId` to the shopping cart, we've now got a bit of a g
 
 The solution used in this sample is to create another entity, the `UserEntity`. This entity will manage just one piece of information: the user's currently active shopping cart ID. When a cart gets checked out, we'll "close" the old ID and generate a new one. This ensures the right ratio of users to carts while also alleviating the burden of ID maintenance from the clients.
 
+TIP: Avoid random numbers in emptyState.
+It might be tempting to try and generate a random number or UUID in the user entity's `emptyState()` function. The consequences of this are far-reaching and subtle. If the `emptyState()` function generates a new cart UUID every time it is called, then whenever a client asks for a user entity _that has not yet received any events_, we get a new UUID. This means that if we add three items to the cart for the same not-yet-persisted user, we'll actually create three different carts. To mitigate this, we instead used a simple monotonically increasing integer for each user. This way, not-yet-persisted users will always use cart ID `1`.
+
 == Creating isolated data types
 
-To work on the separation of concerns, we'll work our way in from the outermost edge, which in this case is the HTTP endpoint. This one new record represents the line items that can be added via `POST` to `/\{cartId\}/item`.
+To work on the separation of concerns, we'll work our way in from the outermost edge, which in this case is the HTTP endpoint. This one new record represents the line items that can be added via `POST` to `/my/item`.
 
 [source,java,indent=0]
-.{sample-base-url}/shopping-cart-addview/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java[ShoppingCartEndpoint.java]
+.{sample-base-url}/shopping-cart-with-view/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java[ShoppingCartEndpoint.java]
 ----
-include::example$shopping-cart-addview/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java[tags=newpubapi]
+include::example$shopping-cart-with-view/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java[tags=newpubapi]
 ----
 
-From the client standpoint, they're supplying both the name and description of the product. This isn't optimal, and we can change that in a subsequent part of the shopping cart tour.
+From the client standpoint, they're supplying both the name and description of the product in the request. In subsequent tutorials, we might illustrate a better place to put product metadata like that.
 
 Next, we need a _command_ type for the entity to handle. Remember that calling `invokeAsync` from the endpoint will only take a single parameter, so our command has to hold all of the necessary data.
 
 [source,java,indent=0]
-.{sample-base-url}/shopping-cart-addview/src/main/java/shoppingcart/application/ShoppingCartEntity.java[ShoppingCartEntity.java]
+.{sample-base-url}/shopping-cart-with-view/src/main/java/shoppingcart/application/ShoppingCartEntity.java[ShoppingCartEntity.java]
 ----
-include::example$shopping-cart-addview/src/main/java/shoppingcart/application/ShoppingCartEntity.java[tags=newentityapi]
+include::example$shopping-cart-with-view/src/main/java/shoppingcart/application/ShoppingCartEntity.java[tags=newentityapi]
 ----
 
 Next we modify the shape of the internal state used by the entity. To illustrate the different roles of entities and views, we've modified the state so that it doesn't store the `name` or `description` fields, since those aren't needed for decision making during command processing.
 
 [source,java,indent=0]
-.{sample-base-url}/shopping-cart-addview/src/main/java/shoppingcart/domain/ShoppingCartState.java[ShoppingCartState.java]
+.{sample-base-url}/shopping-cart-with-view/src/main/java/shoppingcart/domain/ShoppingCartState.java[ShoppingCartState.java]
 ----
-include::example$shopping-cart-addview/src/main/java/shoppingcart/domain/ShoppingCartState.java[tags=domain]
+include::example$shopping-cart-with-view/src/main/java/shoppingcart/domain/ShoppingCartState.java[tags=domain]
 ----
 
 == Adding a shopping cart view
@@ -72,9 +75,9 @@ Now that we've improved the separation of concerns/layers with the various data 
 For our new view, we want all of the information on the shopping cart contents, including the name and description (which have also been added to the appropriate `ShoppingCartEvent`).
 
 [source,java,indent=0]
-.{sample-base-url}/shopping-cart-addview/src/main/java/shoppingcart/application/ShoppingCartView.java[ShoppingCartView.java]
+.{sample-base-url}/shopping-cart-with-view/src/main/java/shoppingcart/application/ShoppingCartView.java[ShoppingCartView.java]
 ----
-include::example$shopping-cart-addview/src/main/java/shoppingcart/application/ShoppingCartView.java[tag=view]
+include::example$shopping-cart-with-view/src/main/java/shoppingcart/application/ShoppingCartView.java[tag=view]
 ----
 <1> Return a single shopping cart based on its unique ID.
 <2> Return a single shopping cart based on its user ID.
@@ -88,25 +91,30 @@ With a newly refactored set of data types, clear boundaries between the various 
 There's a couple of things that need to be done in order to add users to the application. We'll need a `UserEntity` that manages the current shopping cart IDs, and we'll need to add user authentication and context to the API endpoint.
 
 === Creating a user entity
-The user entity in this sample is quite small (but easily enhanced later). It maintains a `currentCartId` on behalf of a user and whenever a cart is "closed" (as a result of a checkout), we generate a new UUID.
+The user entity in this sample is quite small (but easily enhanced later). It maintains a `currentCartId` on behalf of a user and whenever a cart is "closed" (as a result of a checkout), we increment the cart ID.
 
 [source,java,indent=0]
-.{sample-base-url}/shopping-cart-addview/src/main/java/shoppingcart/application/UserEntity.java[UserEntity.java]
+.{sample-base-url}/shopping-cart-with-view/src/main/java/shoppingcart/application/UserEntity.java[UserEntity.java]
 ----
-include::example$shopping-cart-addview/src/main/java/shoppingcart/application/UserEntity.java[tag=entity]
+include::example$shopping-cart-with-view/src/main/java/shoppingcart/application/UserEntity.java[tag=entity]
 ----
+
+Incrementing the cart ID is done simply in the `onCartClosed` function of the `UserState`:
+
+```java
+public UserState onCartClosed(UserEvent.UserCartClosed closed) {
+  return new UserState(userId, currentCartId + 1);
+}
+```
 
 === Adding a cart consumer
-Given the preceding entity, we still need _something_ to call the `closeCart` function. Since we want to close carts and generate new UUIDs whenever a cart is checked out, we'll create a consumer that receives `ShoppingCartEvent` events and calls the appropriate user entity method.
+Given the preceding entity, we still need _something_ to call the `closeCart` function. Since we want to close carts and bump IDs whenever a cart is checked out, we'll create a consumer that receives `ShoppingCartEvent` events and calls the appropriate user entity method.
 
 [source,java,indent=0]
-.{sample-base-url}/shopping-cart-addview/src/main/java/shoppingcart/application/CartCloser.java[CartCloser.java]
+.{sample-base-url}/shopping-cart-with-view/src/main/java/shoppingcart/application/CartCloser.java[CartCloser.java]
 ----
-include::example$shopping-cart-addview/src/main/java/shoppingcart/application/CartCloser.java[tag=consumer]
+include::example$shopping-cart-with-view/src/main/java/shoppingcart/application/CartCloser.java[tag=consumer]
 ----
-
-An important point to notice here is that it's the consumer that is generating the random UUID. We don't want the entity to do that during command handling because then its command handlers would no longer be deterministic and testable.
-
 
 === Securing the HTTP endpoint
 
@@ -115,17 +123,17 @@ Adding the concept of a user context to an endpoint in traditional applications 
 In the following code, we add support for **xref:java:auth-with-jwts.adoc[JWT]**-based bearer tokens to the HTTP endpoint with just a single line. While not shown here, you can define all kinds of rules based on the claims supplied in a token.
 
 [source,java,indent=0]
-.{sample-base-url}/shopping-cart-addview/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java[ShoppingCartEndpoint.java]
+.{sample-base-url}/shopping-cart-with-view/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java[ShoppingCartEndpoint.java]
 ----
-include::example$shopping-cart-addview/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java[tag=top]
+include::example$shopping-cart-with-view/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java[tag=top]
 ----
 
 Extracting the user ID from context is quite easy. Let's modify the `get` function so that it rejects attempts to query a shopping cart that doesn't belong to the caller.
 
 [source,java,indent=0]
-.{sample-base-url}/shopping-cart-addview/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java[ShoppingCartEndpoint.java]
+.{sample-base-url}/shopping-cart-with-view/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java[ShoppingCartEndpoint.java]
 ----
-include::example$shopping-cart-addview/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java[tag=get]
+include::example$shopping-cart-with-view/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java[tag=get]
 ----
 <1> Invoke the view's `getCart` function to retrieve by cart ID
 
@@ -134,9 +142,9 @@ We return a `404/Not Found` here for when there's a cart ownership mismatch rath
 We can also add a new convenience route, `/my`, which will retrieve the cart for the currently authenticated user. This eases the burden on the UI a bit since it won't have to do a pre-fetch to convert a user ID into a cart ID.
 
 [source,java,indent=0]
-.{sample-base-url}/shopping-cart-addview/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java[ShoppingCartEndpoint.java]
+.{sample-base-url}/shopping-cart-with-view/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java[ShoppingCartEndpoint.java]
 ----
-include::example$shopping-cart-addview/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java[tag=getmy]
+include::example$shopping-cart-with-view/src/main/java/shoppingcart/api/ShoppingCartEndpoint.java[tag=getmy]
 ----
 <1> Invoke the view's `getUserCart` function to retrieve the cart by user ID
 
