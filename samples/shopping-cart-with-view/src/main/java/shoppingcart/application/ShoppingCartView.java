@@ -15,7 +15,7 @@ import shoppingcart.domain.ShoppingCartEvent;
 @ComponentId("shopping-cart-view")
 public class ShoppingCartView extends View {
 
-  @Query("SELECT * FROM shopping_cart_view WHERE cartId = :cartId") // <1>
+  @Query("SELECT * FROM shopping_carts WHERE cartId = :cartId") // <1>
   public QueryEffect<Cart> getCart(String cartId) {
     return queryResult();
   }
