@@ -62,7 +62,7 @@ The local console gives you insights of the services that you are running locall
 To run the console you need to install:
 
 * https://docs.docker.com/get-started/get-docker/[Docker Engine, window="new"] {minimum_docker_version} or later
-* xref:reference:cli/installation.adoc[Akka CLI]
+* xref:operations:cli/installation.adoc[Akka CLI]
 
 Start the console with the following command from a separate terminal window:
 

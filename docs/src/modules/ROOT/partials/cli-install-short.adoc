@@ -1,6 +1,6 @@
 Install the Akka CLI:
 
-NOTE: In case there is any trouble with installing the CLI when following these instructions, please check xref:reference:cli/installation.adoc[].
+NOTE: In case there is any trouble with installing the CLI when following these instructions, please check xref:operations:cli/installation.adoc[].
 
 [.tabset]
 Linux::

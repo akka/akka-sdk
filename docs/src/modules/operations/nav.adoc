@@ -37,3 +37,8 @@
 **** xref:operations:integrating-cicd/github-actions.adoc[]
 
 *** xref:operations:operator-best-practices.adoc[]
+
+*** xref:operations:cli/index.adoc[]
+**** xref:operations:cli/installation.adoc[]
+**** xref:operations:cli/using-cli.adoc[]
+**** xref:operations:cli/command-completion.adoc[]

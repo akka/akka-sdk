@@ -5,7 +5,7 @@ include::ROOT:partial$include.adoc[]
 
 The Akka command-line interface (CLI) complements the browser-based https://console.akka.io[Akka Console, window="new"] user interface (UI), allowing you to perform deployment and configuration operations directly from the command line. This page provides an overview of common commands.
 
-ifdef::todo[TODO:  For a full reference of all available commands, see the xref:reference:cli/akka-cli/index.adoc[reference] page.]
+For a full reference of all available commands, see the xref:reference:cli/akka-cli/index.adoc[reference] page.
 [TIP]
 ====
 Check regularly to ensure you have the latest version of the `akka` CLI. You can check the installed version by running:
@@ -15,7 +15,7 @@ Check regularly to ensure you have the latest version of the `akka` CLI. You can
 akka version
 ----
 
-For instructions on updating, see xref:reference:cli/installation.adoc[installing and updating].
+For instructions on updating, see xref:cli/installation.adoc[installing and updating].
 ====
 
 == Basic CLI Usage
@@ -123,7 +123,7 @@ Required flags:
 ifdef::todo[TODO:  For more details, see `akka docker -h` or visit xref:reference:cli/akka-cli/akka_docker.adoc[docker] page.]
 [NOTE]
 ====
-For more information about using the Akka Container Registry (ACR) or external container registries, see xref:operations:projects/container-registries.adoc[].
+For more information about using the Akka Container Registry (ACR) or external container registries, see xref:projects/container-registries.adoc[].
 ====
 
 == Managing Services
@@ -148,7 +148,7 @@ To deploy a service using a Docker image, run:
 akka services deploy my-service my-container-uri/container-name:tag-name
 ----
 
-Ensure you've set up your container registry credentials before deploying. For more details, see xref:operations:projects/container-registries.adoc[container registry] page.
+Ensure you've set up your container registry credentials before deploying. For more details, see xref:projects/container-registries.adoc[container registry] page.
 
 === Exposing a route for inbound traffic
 
@@ -209,5 +209,5 @@ ifdef::todo[TODO:  More information about this command in xref:reference:cli/akk
 
 == Related documentation
 
-- xref:reference:cli/command-completion.adoc[]
+- xref:cli/command-completion.adoc[]
 - xref:reference:cli/akka-cli/index.adoc[]
