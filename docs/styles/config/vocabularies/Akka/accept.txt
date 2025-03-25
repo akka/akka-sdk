@@ -46,6 +46,7 @@ dev
 Dmitry
 downscaling
 DTDs
+[Ee]mptyState
 facto
 effectful
 enum
