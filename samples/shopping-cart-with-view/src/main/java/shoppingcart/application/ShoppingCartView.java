@@ -26,10 +26,6 @@ public class ShoppingCartView extends View {
     return queryResult();
   }
 
-  public static Cart empty(String cartId, String userId) {
-    return new Cart(cartId, userId, new ArrayList<Cart.Item>(), false);
-  }
-
   public record Cart(String cartId,
       String userId,
       List<Item> items,
@@ -45,10 +41,6 @@ public class ShoppingCartView extends View {
     }
 
     public Cart withCartId(String cartId) {
-      return new Cart(cartId, userId, items, checkedout);
-    }
-
-    public Cart withUserId(String userId) {
       return new Cart(cartId, userId, items, checkedout);
     }
 

@@ -10,6 +10,11 @@ import akka.javasdk.eventsourcedentity.EventSourcedEntityContext;
 import shoppingcart.domain.UserEvent;
 import shoppingcart.domain.UserState;
 
+/**
+ * The user entity's main role in this sample is to maintain a monotonically
+ * increasing shopping cart ID on behalf of each user. In the future it should
+ * be easy to add more user-specific features and events.
+ */
 // tag::entity[]
 @ComponentId("user")
 public class UserEntity extends EventSourcedEntity<UserState, UserEvent> {
