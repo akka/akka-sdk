@@ -27,6 +27,8 @@ import java.util.Optional
 import scala.concurrent.ExecutionContext
 import scala.jdk.FutureConverters.FutureOps
 
+import akka.actor.Scheduler
+import akka.javasdk.impl.RetrySettings
 import akka.javasdk.impl.serialization.JsonSerializer
 import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.SpiMetadata
@@ -100,7 +102,7 @@ private[javasdk] object ViewClientImpl {
 private[javasdk] final case class ViewClientImpl(
     viewClient: RuntimeViewClient,
     serializer: JsonSerializer,
-    callMetadata: Option[Metadata])(implicit val executionContext: ExecutionContext)
+    callMetadata: Option[Metadata])(implicit val executionContext: ExecutionContext, scheduler: Scheduler)
     extends ViewClient {
   import ViewClientImpl._
 
@@ -137,9 +139,36 @@ private[javasdk] final case class ViewClientImpl(
     new ComponentMethodRefImpl[AnyRef, R](
       None,
       callMetadata,
-      { (maybeMetadata, maybeArg) =>
+      { (maybeMetadata, maybeRetrySettings, maybeArg) =>
         // Note: same path for 0 and 1 arg calls
         val serializedPayload = encodeArgument(viewMethodProperties.method, maybeArg)
+
+        def callView(metadata: Metadata) = {
+          viewClient
+            .query(
+              new ViewRequest(
+                viewMethodProperties.componentId,
+                viewMethodProperties.methodName,
+                serializedPayload,
+                toSpi(metadata)))
+            .map { result =>
+              val deserializedReWrapped =
+                if (result.payload.isEmpty) {
+                  if (returnTypeOptional) Optional.empty().asInstanceOf[R]
+                  else
+                    throw new NoEntryFoundException(
+                      s"No matching entry found when calling ${viewMethodProperties.declaringClass}.${viewMethodProperties.methodName}")
+                } else {
+                  val deserialized = serializer.fromBytes(viewMethodProperties.queryReturnType, result.payload)
+                  if (returnTypeOptional) Optional.of(deserialized)
+                  else deserialized
+                }
+
+              // Note: R could be the direct type or the wrapped optional type here Optional[UserType]
+              deserializedReWrapped.asInstanceOf[R]
+            }
+        }
+
         DeferredCallImpl(
           maybeArg.orNull,
           maybeMetadata.getOrElse(Metadata.EMPTY).asInstanceOf[MetadataImpl],
@@ -148,30 +177,18 @@ private[javasdk] final case class ViewClientImpl(
           viewMethodProperties.methodName,
           None,
           { metadata =>
-            viewClient
-              .query(
-                new ViewRequest(
-                  viewMethodProperties.componentId,
-                  viewMethodProperties.methodName,
-                  serializedPayload,
-                  toSpi(metadata)))
-              .map { result =>
-                val deserializedReWrapped =
-                  if (result.payload.isEmpty) {
-                    if (returnTypeOptional) Optional.empty().asInstanceOf[R]
-                    else
-                      throw new NoEntryFoundException(
-                        s"No matching entry found when calling ${viewMethodProperties.declaringClass}.${viewMethodProperties.methodName}")
-                  } else {
-                    val deserialized = serializer.fromBytes(viewMethodProperties.queryReturnType, result.payload)
-                    if (returnTypeOptional) Optional.of(deserialized)
-                    else deserialized
-                  }
-
-                // Note: R could be the direct type or the wrapped optional type here Optional[UserType]
-                deserializedReWrapped.asInstanceOf[R]
-              }
-              .asJava
+            maybeRetrySettings match {
+              case Some(retrySettings) =>
+                retrySettings match {
+                  case RetrySettings.FixedDelayRetrySettings(attempts, fixedDelay) =>
+                    akka.pattern.retry(() => callView(metadata), attempts, fixedDelay).asJava
+                  case RetrySettings.BackoffRetrySettings(attempts, minBackoff, maxBackoff, randomFactor) =>
+                    akka.pattern
+                      .retry(() => callView(metadata), attempts, minBackoff, maxBackoff, randomFactor)
+                      .asJava
+                }
+              case None => callView(metadata).asJava
+            }
           },
           serializer)
       },

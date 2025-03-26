@@ -855,7 +855,9 @@ private final class Sdk(
   }
 
   private def componentClient(openTelemetrySpan: Option[Span]): ComponentClient = {
-    ComponentClientImpl(runtimeComponentClients, serializer, openTelemetrySpan)(sdkExecutionContext)
+    ComponentClientImpl(runtimeComponentClients, serializer, openTelemetrySpan)(
+      sdkExecutionContext,
+      system.classicSystem.scheduler)
   }
 
   private def timerScheduler(openTelemetrySpan: Option[Span]): TimerScheduler = {

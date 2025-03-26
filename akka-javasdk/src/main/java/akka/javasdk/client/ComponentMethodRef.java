@@ -6,6 +6,7 @@ package akka.javasdk.client;
 
 import akka.annotation.DoNotInherit;
 import akka.javasdk.Metadata;
+import akka.javasdk.RetrySettings;
 
 import java.util.concurrent.CompletionStage;
 
@@ -14,12 +15,28 @@ import java.util.concurrent.CompletionStage;
  * using the deferred call (like a timer executing it later for example)
  *
  * @param <R> The type of value returned by executing the call
- *     <p>Not for user extension or instantiation, returned by the SDK component client
+ *            <p>Not for user extension or instantiation, returned by the SDK component client
  */
 @DoNotInherit
 public interface ComponentMethodRef<R> extends ComponentDeferredMethodRef<R> {
 
   ComponentMethodRef<R> withMetadata(Metadata metadata);
+
+  /**
+   * Set the retry settings for this call.
+   *
+   * @param retrySettings The retry settings
+   * @return A new call with the retry settings set
+   */
+  ComponentMethodRef<R> withRetry(RetrySettings retrySettings);
+
+  /**
+   * Set the retry settings for this call. A predifined backoff strategy will be calculated based on the number of attempts.
+   *
+   * @param attempts The number of attempts to make
+   * @return A new call with the retry settings set
+   */
+  ComponentMethodRef<R> withRetry(int attempts);
 
   CompletionStage<R> invokeAsync();
 }

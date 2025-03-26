@@ -560,7 +560,7 @@ public class TestKit {
         throw new IllegalStateException("Runtime was terminated.");
 
       // once runtime is started
-      componentClient = new ComponentClientImpl(componentClients, serializer, Option.empty(), runtimeActorSystem.executionContext());
+      componentClient = new ComponentClientImpl(componentClients, serializer, Option.empty(), runtimeActorSystem.executionContext(), runtimeActorSystem.classicSystem().scheduler());
       selfHttpClient = new HttpClientImpl(runtimeActorSystem, "http://" + runtimeHost + ":" + runtimePort);
       httpClientProvider = startupContext.httpClientProvider();
       grpcClientProvider = startupContext.grpcClientProvider();
