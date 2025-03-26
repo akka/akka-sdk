@@ -29,9 +29,9 @@ The `akka quickstart` commands list and download the quickstart project samples 
 
 == SEE ALSO
 
-* link:cli/akka[akka]	 - Akka control
-* link:cli/akka_quickstart_download[akka quickstart download]	 - Download the quickstart sample.
-* link:cli/akka_quickstart_list[akka quickstart list]	 - List all quickstart samples.
+* link:akka.html[akka]	 - Akka control
+* link:akka_quickstart_download.html[akka quickstart download]	 - Download the quickstart sample.
+* link:akka_quickstart_list.html[akka quickstart list]	 - List all quickstart samples.
 
 [discrete]
 

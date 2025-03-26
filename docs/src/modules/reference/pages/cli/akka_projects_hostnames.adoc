@@ -29,10 +29,10 @@ The `akka projects hostnames` commands manipulate the hostnames in your Akka pro
 
 == SEE ALSO
 
-* link:cli/akka_projects[akka projects]	 - Manage your Akka projects.
-* link:cli/akka_projects_hostnames_add[akka projects hostnames add]	 - Add a hostname to a project
-* link:cli/akka_projects_hostnames_list[akka projects hostnames list]	 - List all hostnames
-* link:cli/akka_projects_hostnames_remove[akka projects hostnames remove]	 - Remove a hostname
+* link:akka_projects.html[akka projects]	 - Manage your Akka projects.
+* link:akka_projects_hostnames_add.html[akka projects hostnames add]	 - Add a hostname to a project
+* link:akka_projects_hostnames_list.html[akka projects hostnames list]	 - List all hostnames
+* link:akka_projects_hostnames_remove.html[akka projects hostnames remove]	 - Remove a hostname
 
 [discrete]
 

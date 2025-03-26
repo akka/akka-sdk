@@ -8,9 +8,9 @@ Instead, you might want to modify file "cli-index-header.template.txt"
 ////
 = CLI command reference
 
-The `akka` command line tool enables you to interact with your Akka projects and services using the command line. See xref:operations:cli/installation.adoc[] for information on how to download `akka`. Use xref:cli/akka_version.adoc[`akka version`] to check the version.
+The `akka` command line tool enables you to interact with your Akka projects and services using the command line. See xref:operations:cli/installation.adoc[] for information on how to download `akka`. Use xref:reference:cli/akka_version.adoc[`akka version`] to check the version.
 
-The following sections list xref:cli/akka.adoc[akka] commands and their options.
+The following sections list xref:reference:cli/akka.adoc[akka] commands and their options.
 
 == Log in to Akka
 By default, `akka auth login` will launch your web browser and take you to the proper URL to enter your credentials. The command-line client will print "Waiting for UI login..." and pause while this happens, and then resume with a message once it receives the authorization token from the Akka server.
@@ -18,290 +18,290 @@ By default, `akka auth login` will launch your web browser and take you to the p
 You can, optionally, provide the `--no-launch-browser` flag with the `akka auth` command (e.g. `akka auth login --no-launch-browser auth`), in which case
 the command-line client will simply display the URL you can use for the authorization. This option is helpful if, for some reason, the command-line client is unable to launch your browser for you. The Akka CLI will wait until you complete the login before continuing.
 
-The xref:cli/akka_auth.adoc[] command offers these options:
+The xref:reference:cli/akka_auth.adoc[] command offers these options:
 
-* xref:cli/akka_auth_container-registry.adoc[akka auth container-registry]
-* xref:cli/akka_auth_container-registry_clear-cached-token.adoc[akka auth container-registry clear-cached-token]
-* xref:cli/akka_auth_container-registry_configure.adoc[akka auth container-registry configure]
-* xref:cli/akka_auth_container-registry_credentials.adoc[akka auth container-registry credentials]
-* xref:cli/akka_auth_container-registry_install-helper.adoc[akka auth container-registry install-helper]
-* xref:cli/akka_auth_current-login.adoc[akka auth current-login]
-* xref:cli/akka_auth_login.adoc[akka auth login]
-* xref:cli/akka_auth_logout.adoc[akka auth logout]
-* xref:cli/akka_auth_signup.adoc[akka auth signup]
-* xref:cli/akka_auth_tokens.adoc[akka auth tokens]
-* xref:cli/akka_auth_tokens_create.adoc[akka auth tokens create]
-* xref:cli/akka_auth_tokens_list.adoc[akka auth tokens list]
-* xref:cli/akka_auth_tokens_revoke.adoc[akka auth tokens revoke]
-* xref:cli/akka_auth_use-token.adoc[akka auth use-token]
+* xref:reference:cli/akka_auth_container-registry.adoc[akka auth container-registry]
+* xref:reference:cli/akka_auth_container-registry_clear-cached-token.adoc[akka auth container-registry clear-cached-token]
+* xref:reference:cli/akka_auth_container-registry_configure.adoc[akka auth container-registry configure]
+* xref:reference:cli/akka_auth_container-registry_credentials.adoc[akka auth container-registry credentials]
+* xref:reference:cli/akka_auth_container-registry_install-helper.adoc[akka auth container-registry install-helper]
+* xref:reference:cli/akka_auth_current-login.adoc[akka auth current-login]
+* xref:reference:cli/akka_auth_login.adoc[akka auth login]
+* xref:reference:cli/akka_auth_logout.adoc[akka auth logout]
+* xref:reference:cli/akka_auth_signup.adoc[akka auth signup]
+* xref:reference:cli/akka_auth_tokens.adoc[akka auth tokens]
+* xref:reference:cli/akka_auth_tokens_create.adoc[akka auth tokens create]
+* xref:reference:cli/akka_auth_tokens_list.adoc[akka auth tokens list]
+* xref:reference:cli/akka_auth_tokens_revoke.adoc[akka auth tokens revoke]
+* xref:reference:cli/akka_auth_use-token.adoc[akka auth use-token]
 
 == Enable auto-completion for your shell
-The xref:cli/akka_completion.adoc[akka completion] command generates auto-completion configuration for common shells. See xref:operations:cli/command-completion.adoc[Enable command completion] for more information.
+The xref:reference:cli/akka_completion.adoc[akka completion] command generates auto-completion configuration for common shells. See xref:operations:cli/command-completion.adoc[Enable command completion] for more information.
 
 == Manage local context
 The `akka config` command is used to display and set configuration contexts and values that apply to subsequent commands. Configuration settings are stored in a file on your local system, by default at `.kalix/config.yaml` in your home directory.
 
 A common use of `config set` command is to establish a specific project as the "current project" by using `akka config set project _my-project_`.
 
-The following options are available for xref:cli/akka_config.adoc[akka config]:
+The following options are available for xref:reference:cli/akka_config.adoc[akka config]:
 
-* xref:cli/akka_config_clear-cache.adoc[akka config clear-cache]
-* xref:cli/akka_config_clear.adoc[akka config clear]
-* xref:cli/akka_config_current-context.adoc[akka config current-context]
-* xref:cli/akka_config_delete-context.adoc[akka config delete-context]
-* xref:cli/akka_config_get-organization.adoc[akka config get-organization]
-* xref:cli/akka_config_get-project.adoc[akka config get-project]
-* xref:cli/akka_config_get.adoc[akka config get]
-* xref:cli/akka_config_list-contexts.adoc[akka config list-contexts]
-* xref:cli/akka_config_list.adoc[akka config list]
-* xref:cli/akka_config_rename-context.adoc[akka config rename-context]
-* xref:cli/akka_config_set.adoc[akka config set]
-* xref:cli/akka_config_use-context.adoc[akka config use-context]
+* xref:reference:cli/akka_config_clear-cache.adoc[akka config clear-cache]
+* xref:reference:cli/akka_config_clear.adoc[akka config clear]
+* xref:reference:cli/akka_config_current-context.adoc[akka config current-context]
+* xref:reference:cli/akka_config_delete-context.adoc[akka config delete-context]
+* xref:reference:cli/akka_config_get-organization.adoc[akka config get-organization]
+* xref:reference:cli/akka_config_get-project.adoc[akka config get-project]
+* xref:reference:cli/akka_config_get.adoc[akka config get]
+* xref:reference:cli/akka_config_list-contexts.adoc[akka config list-contexts]
+* xref:reference:cli/akka_config_list.adoc[akka config list]
+* xref:reference:cli/akka_config_rename-context.adoc[akka config rename-context]
+* xref:reference:cli/akka_config_set.adoc[akka config set]
+* xref:reference:cli/akka_config_use-context.adoc[akka config use-context]
 
 == Manage the Akka Container Registry
-The xref:cli/akka_container-registry.adoc[akka container-registry] commands allow you to manage the Container Registry for your Akka Project.
+The xref:reference:cli/akka_container-registry.adoc[akka container-registry] commands allow you to manage the Container Registry for your Akka Project.
 
-The xref:cli/akka_container-registry.adoc[akka container-registry] command includes the following options:
+The xref:reference:cli/akka_container-registry.adoc[akka container-registry] command includes the following options:
 
-* xref:cli/akka_container-registry_delete-image.adoc[akka container-registry delete-image]
-* xref:cli/akka_container-registry_list-images.adoc[akka container-registry list-images]
-* xref:cli/akka_container-registry_list-tags.adoc[akka container-registry list-tags]
-* xref:cli/akka_container-registry_list.adoc[akka container-registry list]
-* xref:cli/akka_container-registry_print.adoc[akka container-registry print]
-* xref:cli/akka_container-registry_push.adoc[akka container-registry push]
+* xref:reference:cli/akka_container-registry_delete-image.adoc[akka container-registry delete-image]
+* xref:reference:cli/akka_container-registry_list-images.adoc[akka container-registry list-images]
+* xref:reference:cli/akka_container-registry_list-tags.adoc[akka container-registry list-tags]
+* xref:reference:cli/akka_container-registry_list.adoc[akka container-registry list]
+* xref:reference:cli/akka_container-registry_print.adoc[akka container-registry print]
+* xref:reference:cli/akka_container-registry_push.adoc[akka container-registry push]
 
 == Manage Docker
 The `akka docker` commands allow you to manage Docker credentials so that services can pull images from registries that require authentication.
 
-The following options are available for xref:cli/akka_docker.adoc[akka docker]:
+The following options are available for xref:reference:cli/akka_docker.adoc[akka docker]:
 
-* xref:cli/akka_docker_add-credentials.adoc[akka docker add-credentials]
-* xref:cli/akka_docker_list-credentials.adoc[akka docker list-credentials]
-* xref:cli/akka_docker_remove-credentials.adoc[akka docker remove-credentials]
+* xref:reference:cli/akka_docker_add-credentials.adoc[akka docker add-credentials]
+* xref:reference:cli/akka_docker_list-credentials.adoc[akka docker list-credentials]
+* xref:reference:cli/akka_docker_remove-credentials.adoc[akka docker remove-credentials]
 
 == Online docs
 The `akka docs` command opens the Akka online documentation page.
 
 == Display logs
-The `akka logs` commands allow you to display the last few lines (default: 100) of logs for a specific service. The detail are available in xref:cli/akka_logs.adoc[akka logs].
+The `akka logs` commands allow you to display the last few lines (default: 100) of logs for a specific service. The detail are available in xref:reference:cli/akka_logs.adoc[akka logs].
 
 == Organizations
 The `akka organizations` commands allow you to manage the members within an organization. Projects can be created under an organization, and members of the organization can manage those projects.
 
-The xref:cli/akka_organizations.adoc[akka organization] command includes the following options:
+The xref:reference:cli/akka_organizations.adoc[akka organization] command includes the following options:
 
-* xref:cli/akka_organizations_auth.adoc[akka organizations auth]
-* xref:cli/akka_organizations_auth_add.adoc[akka organizations auth add]
-* xref:cli/akka_organizations_auth_add_openid.adoc[akka organizations auth add openid]
-* xref:cli/akka_organizations_auth_list.adoc[akka organizations auth list]
-* xref:cli/akka_organizations_auth_remove.adoc[akka organizations auth remove]
-* xref:cli/akka_organizations_auth_show.adoc[akka organizations auth show]
-* xref:cli/akka_organizations_auth_update.adoc[akka organizations auth update]
-* xref:cli/akka_organizations_auth_update_openid.adoc[akka organizations auth update openid]
-* xref:cli/akka_organizations_get.adoc[akka organizations get]
-* xref:cli/akka_organizations_invitations.adoc[akka organizations invitations]
-* xref:cli/akka_organizations_invitations_cancel.adoc[akka organizations invitations cancel]
-* xref:cli/akka_organizations_invitations_create.adoc[akka organizations invitations create]
-* xref:cli/akka_organizations_invitations_list.adoc[akka organizations invitations list]
-* xref:cli/akka_organizations_list.adoc[akka organizations list]
-* xref:cli/akka_organizations_users.adoc[akka organizations users]
-* xref:cli/akka_organizations_users_add-binding.adoc[akka organizations users add-binding]
-* xref:cli/akka_organizations_users_delete-binding.adoc[akka organizations users delete-binding]
-* xref:cli/akka_organizations_users_list-bindings.adoc[akka organizations users list-bindings]
+* xref:reference:cli/akka_organizations_auth.adoc[akka organizations auth]
+* xref:reference:cli/akka_organizations_auth_add.adoc[akka organizations auth add]
+* xref:reference:cli/akka_organizations_auth_add_openid.adoc[akka organizations auth add openid]
+* xref:reference:cli/akka_organizations_auth_list.adoc[akka organizations auth list]
+* xref:reference:cli/akka_organizations_auth_remove.adoc[akka organizations auth remove]
+* xref:reference:cli/akka_organizations_auth_show.adoc[akka organizations auth show]
+* xref:reference:cli/akka_organizations_auth_update.adoc[akka organizations auth update]
+* xref:reference:cli/akka_organizations_auth_update_openid.adoc[akka organizations auth update openid]
+* xref:reference:cli/akka_organizations_get.adoc[akka organizations get]
+* xref:reference:cli/akka_organizations_invitations.adoc[akka organizations invitations]
+* xref:reference:cli/akka_organizations_invitations_cancel.adoc[akka organizations invitations cancel]
+* xref:reference:cli/akka_organizations_invitations_create.adoc[akka organizations invitations create]
+* xref:reference:cli/akka_organizations_invitations_list.adoc[akka organizations invitations list]
+* xref:reference:cli/akka_organizations_list.adoc[akka organizations list]
+* xref:reference:cli/akka_organizations_users.adoc[akka organizations users]
+* xref:reference:cli/akka_organizations_users_add-binding.adoc[akka organizations users add-binding]
+* xref:reference:cli/akka_organizations_users_delete-binding.adoc[akka organizations users delete-binding]
+* xref:reference:cli/akka_organizations_users_list-bindings.adoc[akka organizations users list-bindings]
 
 == Projects
 The `akka projects` commands manipulate the projects in your Akka account. A project contains a set of services.
 
-See also the xref:cli/akka_roles.adoc#_see_also[akka roles] commands.
+See also the xref:reference:cli/akka_roles.adoc#_see_also[akka roles] commands.
 
-The xref:cli/akka_projects.adoc[akka projects] command includes the following options:
+The xref:reference:cli/akka_projects.adoc[akka projects] command includes the following options:
 
-* xref:cli/akka_projects_config.adoc[akka projects config]
-* xref:cli/akka_projects_config_get.adoc[akka projects config get]
-* xref:cli/akka_projects_config_get_broker.adoc[akka projects config get broker]
-* xref:cli/akka_projects_config_set.adoc[akka projects config set]
-* xref:cli/akka_projects_config_set_broker.adoc[akka projects config set broker]
-* xref:cli/akka_projects_config_unset.adoc[akka projects config unset]
-* xref:cli/akka_projects_config_unset_broker.adoc[akka projects config unset broker]
-* xref:cli/akka_projects_delete.adoc[akka projects delete]
-* xref:cli/akka_projects_get.adoc[akka projects get]
-* xref:cli/akka_projects_hostnames.adoc[akka projects hostnames]
-* xref:cli/akka_projects_hostnames_add.adoc[akka projects hostnames add]
-* xref:cli/akka_projects_hostnames_list.adoc[akka projects hostnames list]
-* xref:cli/akka_projects_hostnames_remove.adoc[akka projects hostnames remove]
-* xref:cli/akka_projects_list.adoc[akka projects list]
-* xref:cli/akka_projects_new.adoc[akka projects new]
-* xref:cli/akka_projects_observability.adoc[akka projects observability]
-* xref:cli/akka_projects_observability_apply.adoc[akka projects observability apply]
-* xref:cli/akka_projects_observability_config.adoc[akka projects observability config]
-* xref:cli/akka_projects_observability_config_traces.adoc[akka projects observability config traces]
-* xref:cli/akka_projects_observability_edit.adoc[akka projects observability edit]
-* xref:cli/akka_projects_observability_export.adoc[akka projects observability export]
-* xref:cli/akka_projects_observability_get.adoc[akka projects observability get]
-* xref:cli/akka_projects_observability_set.adoc[akka projects observability set]
-* xref:cli/akka_projects_observability_set_default.adoc[akka projects observability set default]
-* xref:cli/akka_projects_observability_set_default_akka-console.adoc[akka projects observability set default akka-console]
-* xref:cli/akka_projects_observability_set_default_google-cloud.adoc[akka projects observability set default google-cloud]
-* xref:cli/akka_projects_observability_set_default_otlp.adoc[akka projects observability set default otlp]
-* xref:cli/akka_projects_observability_set_default_splunk-hec.adoc[akka projects observability set default splunk-hec]
-* xref:cli/akka_projects_observability_set_logs.adoc[akka projects observability set logs]
-* xref:cli/akka_projects_observability_set_logs_google-cloud.adoc[akka projects observability set logs google-cloud]
-* xref:cli/akka_projects_observability_set_logs_otlp.adoc[akka projects observability set logs otlp]
-* xref:cli/akka_projects_observability_set_logs_splunk-hec.adoc[akka projects observability set logs splunk-hec]
-* xref:cli/akka_projects_observability_set_metrics.adoc[akka projects observability set metrics]
-* xref:cli/akka_projects_observability_set_metrics_google-cloud.adoc[akka projects observability set metrics google-cloud]
-* xref:cli/akka_projects_observability_set_metrics_otlp.adoc[akka projects observability set metrics otlp]
-* xref:cli/akka_projects_observability_set_metrics_prometheus.adoc[akka projects observability set metrics prometheus]
-* xref:cli/akka_projects_observability_set_metrics_splunk-hec.adoc[akka projects observability set metrics splunk-hec]
-* xref:cli/akka_projects_observability_set_traces.adoc[akka projects observability set traces]
-* xref:cli/akka_projects_observability_set_traces_google-cloud.adoc[akka projects observability set traces google-cloud]
-* xref:cli/akka_projects_observability_set_traces_otlp.adoc[akka projects observability set traces otlp]
-* xref:cli/akka_projects_observability_unset.adoc[akka projects observability unset]
-* xref:cli/akka_projects_observability_unset_default.adoc[akka projects observability unset default]
-* xref:cli/akka_projects_observability_unset_logs.adoc[akka projects observability unset logs]
-* xref:cli/akka_projects_observability_unset_metrics.adoc[akka projects observability unset metrics]
-* xref:cli/akka_projects_observability_unset_traces.adoc[akka projects observability unset traces]
-* xref:cli/akka_projects_open.adoc[akka projects open]
-* xref:cli/akka_projects_regions.adoc[akka projects regions]
-* xref:cli/akka_projects_regions_add.adoc[akka projects regions add]
-* xref:cli/akka_projects_regions_list.adoc[akka projects regions list]
-* xref:cli/akka_projects_regions_remove.adoc[akka projects regions remove]
-* xref:cli/akka_projects_regions_set-primary.adoc[akka projects regions set-primary]
-* xref:cli/akka_projects_tokens.adoc[akka projects tokens]
-* xref:cli/akka_projects_tokens_create.adoc[akka projects tokens create]
-* xref:cli/akka_projects_tokens_list.adoc[akka projects tokens list]
-* xref:cli/akka_projects_tokens_revoke.adoc[akka projects tokens revoke]
-* xref:cli/akka_projects_update.adoc[akka projects update]
+* xref:reference:cli/akka_projects_config.adoc[akka projects config]
+* xref:reference:cli/akka_projects_config_get.adoc[akka projects config get]
+* xref:reference:cli/akka_projects_config_get_broker.adoc[akka projects config get broker]
+* xref:reference:cli/akka_projects_config_set.adoc[akka projects config set]
+* xref:reference:cli/akka_projects_config_set_broker.adoc[akka projects config set broker]
+* xref:reference:cli/akka_projects_config_unset.adoc[akka projects config unset]
+* xref:reference:cli/akka_projects_config_unset_broker.adoc[akka projects config unset broker]
+* xref:reference:cli/akka_projects_delete.adoc[akka projects delete]
+* xref:reference:cli/akka_projects_get.adoc[akka projects get]
+* xref:reference:cli/akka_projects_hostnames.adoc[akka projects hostnames]
+* xref:reference:cli/akka_projects_hostnames_add.adoc[akka projects hostnames add]
+* xref:reference:cli/akka_projects_hostnames_list.adoc[akka projects hostnames list]
+* xref:reference:cli/akka_projects_hostnames_remove.adoc[akka projects hostnames remove]
+* xref:reference:cli/akka_projects_list.adoc[akka projects list]
+* xref:reference:cli/akka_projects_new.adoc[akka projects new]
+* xref:reference:cli/akka_projects_observability.adoc[akka projects observability]
+* xref:reference:cli/akka_projects_observability_apply.adoc[akka projects observability apply]
+* xref:reference:cli/akka_projects_observability_config.adoc[akka projects observability config]
+* xref:reference:cli/akka_projects_observability_config_traces.adoc[akka projects observability config traces]
+* xref:reference:cli/akka_projects_observability_edit.adoc[akka projects observability edit]
+* xref:reference:cli/akka_projects_observability_export.adoc[akka projects observability export]
+* xref:reference:cli/akka_projects_observability_get.adoc[akka projects observability get]
+* xref:reference:cli/akka_projects_observability_set.adoc[akka projects observability set]
+* xref:reference:cli/akka_projects_observability_set_default.adoc[akka projects observability set default]
+* xref:reference:cli/akka_projects_observability_set_default_akka-console.adoc[akka projects observability set default akka-console]
+* xref:reference:cli/akka_projects_observability_set_default_google-cloud.adoc[akka projects observability set default google-cloud]
+* xref:reference:cli/akka_projects_observability_set_default_otlp.adoc[akka projects observability set default otlp]
+* xref:reference:cli/akka_projects_observability_set_default_splunk-hec.adoc[akka projects observability set default splunk-hec]
+* xref:reference:cli/akka_projects_observability_set_logs.adoc[akka projects observability set logs]
+* xref:reference:cli/akka_projects_observability_set_logs_google-cloud.adoc[akka projects observability set logs google-cloud]
+* xref:reference:cli/akka_projects_observability_set_logs_otlp.adoc[akka projects observability set logs otlp]
+* xref:reference:cli/akka_projects_observability_set_logs_splunk-hec.adoc[akka projects observability set logs splunk-hec]
+* xref:reference:cli/akka_projects_observability_set_metrics.adoc[akka projects observability set metrics]
+* xref:reference:cli/akka_projects_observability_set_metrics_google-cloud.adoc[akka projects observability set metrics google-cloud]
+* xref:reference:cli/akka_projects_observability_set_metrics_otlp.adoc[akka projects observability set metrics otlp]
+* xref:reference:cli/akka_projects_observability_set_metrics_prometheus.adoc[akka projects observability set metrics prometheus]
+* xref:reference:cli/akka_projects_observability_set_metrics_splunk-hec.adoc[akka projects observability set metrics splunk-hec]
+* xref:reference:cli/akka_projects_observability_set_traces.adoc[akka projects observability set traces]
+* xref:reference:cli/akka_projects_observability_set_traces_google-cloud.adoc[akka projects observability set traces google-cloud]
+* xref:reference:cli/akka_projects_observability_set_traces_otlp.adoc[akka projects observability set traces otlp]
+* xref:reference:cli/akka_projects_observability_unset.adoc[akka projects observability unset]
+* xref:reference:cli/akka_projects_observability_unset_default.adoc[akka projects observability unset default]
+* xref:reference:cli/akka_projects_observability_unset_logs.adoc[akka projects observability unset logs]
+* xref:reference:cli/akka_projects_observability_unset_metrics.adoc[akka projects observability unset metrics]
+* xref:reference:cli/akka_projects_observability_unset_traces.adoc[akka projects observability unset traces]
+* xref:reference:cli/akka_projects_open.adoc[akka projects open]
+* xref:reference:cli/akka_projects_regions.adoc[akka projects regions]
+* xref:reference:cli/akka_projects_regions_add.adoc[akka projects regions add]
+* xref:reference:cli/akka_projects_regions_list.adoc[akka projects regions list]
+* xref:reference:cli/akka_projects_regions_remove.adoc[akka projects regions remove]
+* xref:reference:cli/akka_projects_regions_set-primary.adoc[akka projects regions set-primary]
+* xref:reference:cli/akka_projects_tokens.adoc[akka projects tokens]
+* xref:reference:cli/akka_projects_tokens_create.adoc[akka projects tokens create]
+* xref:reference:cli/akka_projects_tokens_list.adoc[akka projects tokens list]
+* xref:reference:cli/akka_projects_tokens_revoke.adoc[akka projects tokens revoke]
+* xref:reference:cli/akka_projects_update.adoc[akka projects update]
 
 == Access quickstart project samples
 The `akka quickstart` commands enable one to access Akka quickstart project samples.
 
-The xref:cli/akka_quickstart.adoc[akka quickstart] command includes the following options:
+The xref:reference:cli/akka_quickstart.adoc[akka quickstart] command includes the following options:
 
-* xref:cli/akka_quickstart_download.adoc[akka quickstart download]
-* xref:cli/akka_quickstart_list.adoc[akka quickstart list]
+* xref:reference:cli/akka_quickstart_download.adoc[akka quickstart download]
+* xref:reference:cli/akka_quickstart_list.adoc[akka quickstart list]
 
 == Regions
 The `akka regions` commands allow you to manage regions on Akka.
 
-See also the xref:cli/akka_projects_regions.adoc#_see_also[akka project regions] commands.
+See also the xref:reference:cli/akka_projects_regions.adoc#_see_also[akka project regions] commands.
 
-The xref:cli/akka_regions.adoc[akka regions] command includes the following options:
+The xref:reference:cli/akka_regions.adoc[akka regions] command includes the following options:
 
-* xref:cli/akka_regions_list.adoc[akka regions list]
+* xref:reference:cli/akka_regions_list.adoc[akka regions list]
 
 == Roles
 The `akka roles` commands allow you to associate user roles (authorizations) with the current project.
 
-The xref:cli/akka_roles.adoc[akka roles] command provides the following options:
+The xref:reference:cli/akka_roles.adoc[akka roles] command provides the following options:
 
-* xref:cli/akka_roles_add-binding.adoc[akka roles add-binding]
-* xref:cli/akka_roles_delete-binding.adoc[akka roles delete-binding]
-* xref:cli/akka_roles_invitations.adoc[akka roles invitations]
-* xref:cli/akka_roles_invitations_delete.adoc[akka roles invitations delete]
-* xref:cli/akka_roles_invitations_invite-user.adoc[akka roles invitations invite-user]
-* xref:cli/akka_roles_invitations_list.adoc[akka roles invitations list]
-* xref:cli/akka_roles_list-bindings.adoc[akka roles list-bindings]
-* xref:cli/akka_roles_list.adoc[akka roles list]
+* xref:reference:cli/akka_roles_add-binding.adoc[akka roles add-binding]
+* xref:reference:cli/akka_roles_delete-binding.adoc[akka roles delete-binding]
+* xref:reference:cli/akka_roles_invitations.adoc[akka roles invitations]
+* xref:reference:cli/akka_roles_invitations_delete.adoc[akka roles invitations delete]
+* xref:reference:cli/akka_roles_invitations_invite-user.adoc[akka roles invitations invite-user]
+* xref:reference:cli/akka_roles_invitations_list.adoc[akka roles invitations list]
+* xref:reference:cli/akka_roles_list-bindings.adoc[akka roles list-bindings]
+* xref:reference:cli/akka_roles_list.adoc[akka roles list]
 
 == Routes
 The `akka routes` commands manipulate the routes that can be used to expose services in your Akka Project to the internet.
 
-The xref:cli/akka_routes.adoc[akka routes] command includes the following options:
+The xref:reference:cli/akka_routes.adoc[akka routes] command includes the following options:
 
-* xref:cli/akka_routes_create.adoc[akka routes create]
-* xref:cli/akka_routes_delete.adoc[akka routes delete]
-* xref:cli/akka_routes_edit.adoc[akka routes edit]
-* xref:cli/akka_routes_export.adoc[akka routes export]
-* xref:cli/akka_routes_get.adoc[akka routes get]
-* xref:cli/akka_routes_list.adoc[akka routes list]
-* xref:cli/akka_routes_update.adoc[akka routes update]
+* xref:reference:cli/akka_routes_create.adoc[akka routes create]
+* xref:reference:cli/akka_routes_delete.adoc[akka routes delete]
+* xref:reference:cli/akka_routes_edit.adoc[akka routes edit]
+* xref:reference:cli/akka_routes_export.adoc[akka routes export]
+* xref:reference:cli/akka_routes_get.adoc[akka routes get]
+* xref:reference:cli/akka_routes_list.adoc[akka routes list]
+* xref:reference:cli/akka_routes_update.adoc[akka routes update]
 
 == Manage secrets
 The `akka secrets` commands manage secrets in your Akka project.
 
-The xref:cli/akka_secrets.adoc[akka secret] command includes the following options:
+The xref:reference:cli/akka_secrets.adoc[akka secret] command includes the following options:
 
-* xref:cli/akka_secrets_create.adoc[akka secrets create]
-* xref:cli/akka_secrets_create_asymmetric.adoc[akka secrets create asymmetric]
-* xref:cli/akka_secrets_create_generic.adoc[akka secrets create generic]
-* xref:cli/akka_secrets_create_symmetric.adoc[akka secrets create symmetric]
-* xref:cli/akka_secrets_create_tls-ca.adoc[akka secrets create tls-ca]
-* xref:cli/akka_secrets_create_tls.adoc[akka secrets create tls]
-* xref:cli/akka_secrets_delete.adoc[akka secrets delete]
-* xref:cli/akka_secrets_get.adoc[akka secrets get]
-* xref:cli/akka_secrets_list.adoc[akka secrets list]
+* xref:reference:cli/akka_secrets_create.adoc[akka secrets create]
+* xref:reference:cli/akka_secrets_create_asymmetric.adoc[akka secrets create asymmetric]
+* xref:reference:cli/akka_secrets_create_generic.adoc[akka secrets create generic]
+* xref:reference:cli/akka_secrets_create_symmetric.adoc[akka secrets create symmetric]
+* xref:reference:cli/akka_secrets_create_tls-ca.adoc[akka secrets create tls-ca]
+* xref:reference:cli/akka_secrets_create_tls.adoc[akka secrets create tls]
+* xref:reference:cli/akka_secrets_delete.adoc[akka secrets delete]
+* xref:reference:cli/akka_secrets_get.adoc[akka secrets get]
+* xref:reference:cli/akka_secrets_list.adoc[akka secrets list]
 
 == Manage services
 The `akka services` commands manipulate the services in your Akka Project.
 
-The xref:cli/akka_services.adoc[akka services] command includes the following options:
+The xref:reference:cli/akka_services.adoc[akka services] command includes the following options:
 
-* xref:cli/akka_services_apply.adoc[akka services apply]
-* xref:cli/akka_services_components.adoc[akka services components]
-* xref:cli/akka_services_components_get-state.adoc[akka services components get-state]
-* xref:cli/akka_services_components_get-workflow.adoc[akka services components get-workflow]
-* xref:cli/akka_services_components_list-events.adoc[akka services components list-events]
-* xref:cli/akka_services_components_list-ids.adoc[akka services components list-ids]
-* xref:cli/akka_services_components_list-timers.adoc[akka services components list-timers]
-* xref:cli/akka_services_components_list.adoc[akka services components list]
-* xref:cli/akka_services_connectivity.adoc[akka services connectivity]
-* xref:cli/akka_services_data.adoc[akka services data]
-* xref:cli/akka_services_data_cancel-task.adoc[akka services data cancel-task]
-* xref:cli/akka_services_data_export.adoc[akka services data export]
-* xref:cli/akka_services_data_get-task.adoc[akka services data get-task]
-* xref:cli/akka_services_data_import.adoc[akka services data import]
-* xref:cli/akka_services_data_list-tasks.adoc[akka services data list-tasks]
-* xref:cli/akka_services_data_watch-task.adoc[akka services data watch-task]
-* xref:cli/akka_services_delete.adoc[akka services delete]
-* xref:cli/akka_services_deploy.adoc[akka services deploy]
-* xref:cli/akka_services_edit.adoc[akka services edit]
-* xref:cli/akka_services_export.adoc[akka services export]
-* xref:cli/akka_services_expose.adoc[akka services expose]
-* xref:cli/akka_services_get.adoc[akka services get]
-* xref:cli/akka_services_jwts.adoc[akka services jwts]
-* xref:cli/akka_services_jwts_add.adoc[akka services jwts add]
-* xref:cli/akka_services_jwts_generate.adoc[akka services jwts generate]
-* xref:cli/akka_services_jwts_list-algorithms.adoc[akka services jwts list-algorithms]
-* xref:cli/akka_services_jwts_list.adoc[akka services jwts list]
-* xref:cli/akka_services_jwts_remove.adoc[akka services jwts remove]
-* xref:cli/akka_services_jwts_update.adoc[akka services jwts update]
-* xref:cli/akka_services_list.adoc[akka services list]
-* xref:cli/akka_services_logging.adoc[akka services logging]
-* xref:cli/akka_services_logging_list.adoc[akka services logging list]
-* xref:cli/akka_services_logging_set-level.adoc[akka services logging set-level]
-* xref:cli/akka_services_logging_unset-level.adoc[akka services logging unset-level]
-* xref:cli/akka_services_pause.adoc[akka services pause]
-* xref:cli/akka_services_proxy.adoc[akka services proxy]
-* xref:cli/akka_services_restart.adoc[akka services restart]
-* xref:cli/akka_services_restore.adoc[akka services restore]
-* xref:cli/akka_services_resume.adoc[akka services resume]
-* xref:cli/akka_services_unexpose.adoc[akka services unexpose]
-* xref:cli/akka_services_views.adoc[akka services views]
-* xref:cli/akka_services_views_describe.adoc[akka services views describe]
-* xref:cli/akka_services_views_drop.adoc[akka services views drop]
-* xref:cli/akka_services_views_list.adoc[akka services views list]
+* xref:reference:cli/akka_services_apply.adoc[akka services apply]
+* xref:reference:cli/akka_services_components.adoc[akka services components]
+* xref:reference:cli/akka_services_components_get-state.adoc[akka services components get-state]
+* xref:reference:cli/akka_services_components_get-workflow.adoc[akka services components get-workflow]
+* xref:reference:cli/akka_services_components_list-events.adoc[akka services components list-events]
+* xref:reference:cli/akka_services_components_list-ids.adoc[akka services components list-ids]
+* xref:reference:cli/akka_services_components_list-timers.adoc[akka services components list-timers]
+* xref:reference:cli/akka_services_components_list.adoc[akka services components list]
+* xref:reference:cli/akka_services_connectivity.adoc[akka services connectivity]
+* xref:reference:cli/akka_services_data.adoc[akka services data]
+* xref:reference:cli/akka_services_data_cancel-task.adoc[akka services data cancel-task]
+* xref:reference:cli/akka_services_data_export.adoc[akka services data export]
+* xref:reference:cli/akka_services_data_get-task.adoc[akka services data get-task]
+* xref:reference:cli/akka_services_data_import.adoc[akka services data import]
+* xref:reference:cli/akka_services_data_list-tasks.adoc[akka services data list-tasks]
+* xref:reference:cli/akka_services_data_watch-task.adoc[akka services data watch-task]
+* xref:reference:cli/akka_services_delete.adoc[akka services delete]
+* xref:reference:cli/akka_services_deploy.adoc[akka services deploy]
+* xref:reference:cli/akka_services_edit.adoc[akka services edit]
+* xref:reference:cli/akka_services_export.adoc[akka services export]
+* xref:reference:cli/akka_services_expose.adoc[akka services expose]
+* xref:reference:cli/akka_services_get.adoc[akka services get]
+* xref:reference:cli/akka_services_jwts.adoc[akka services jwts]
+* xref:reference:cli/akka_services_jwts_add.adoc[akka services jwts add]
+* xref:reference:cli/akka_services_jwts_generate.adoc[akka services jwts generate]
+* xref:reference:cli/akka_services_jwts_list-algorithms.adoc[akka services jwts list-algorithms]
+* xref:reference:cli/akka_services_jwts_list.adoc[akka services jwts list]
+* xref:reference:cli/akka_services_jwts_remove.adoc[akka services jwts remove]
+* xref:reference:cli/akka_services_jwts_update.adoc[akka services jwts update]
+* xref:reference:cli/akka_services_list.adoc[akka services list]
+* xref:reference:cli/akka_services_logging.adoc[akka services logging]
+* xref:reference:cli/akka_services_logging_list.adoc[akka services logging list]
+* xref:reference:cli/akka_services_logging_set-level.adoc[akka services logging set-level]
+* xref:reference:cli/akka_services_logging_unset-level.adoc[akka services logging unset-level]
+* xref:reference:cli/akka_services_pause.adoc[akka services pause]
+* xref:reference:cli/akka_services_proxy.adoc[akka services proxy]
+* xref:reference:cli/akka_services_restart.adoc[akka services restart]
+* xref:reference:cli/akka_services_restore.adoc[akka services restore]
+* xref:reference:cli/akka_services_resume.adoc[akka services resume]
+* xref:reference:cli/akka_services_unexpose.adoc[akka services unexpose]
+* xref:reference:cli/akka_services_views.adoc[akka services views]
+* xref:reference:cli/akka_services_views_describe.adoc[akka services views describe]
+* xref:reference:cli/akka_services_views_drop.adoc[akka services views drop]
+* xref:reference:cli/akka_services_views_list.adoc[akka services views list]
 
 == Run Akka services locally
 The `akka local` commands allow you to run and manage locally running Akka services.
 
-The xref:cli/akka_local.adoc[akka local] command includes the following options:
+The xref:reference:cli/akka_local.adoc[akka local] command includes the following options:
 
-* xref:cli/akka_local_console.adoc[akka local console]
-* xref:cli/akka_local_services.adoc[akka local services]
-* xref:cli/akka_local_services_components.adoc[akka local services components]
-* xref:cli/akka_local_services_components_get-state.adoc[akka local services components get-state]
-* xref:cli/akka_local_services_components_get-workflow.adoc[akka local services components get-workflow]
-* xref:cli/akka_local_services_components_list-events.adoc[akka local services components list-events]
-* xref:cli/akka_local_services_components_list-ids.adoc[akka local services components list-ids]
-* xref:cli/akka_local_services_components_list-timers.adoc[akka local services components list-timers]
-* xref:cli/akka_local_services_components_list.adoc[akka local services components list]
-* xref:cli/akka_local_services_connectivity.adoc[akka local services connectivity]
-* xref:cli/akka_local_services_list.adoc[akka local services list]
-* xref:cli/akka_local_services_views.adoc[akka local services views]
-* xref:cli/akka_local_services_views_describe.adoc[akka local services views describe]
-* xref:cli/akka_local_services_views_drop.adoc[akka local services views drop]
-* xref:cli/akka_local_services_views_list.adoc[akka local services views list]
+* xref:reference:cli/akka_local_console.adoc[akka local console]
+* xref:reference:cli/akka_local_services.adoc[akka local services]
+* xref:reference:cli/akka_local_services_components.adoc[akka local services components]
+* xref:reference:cli/akka_local_services_components_get-state.adoc[akka local services components get-state]
+* xref:reference:cli/akka_local_services_components_get-workflow.adoc[akka local services components get-workflow]
+* xref:reference:cli/akka_local_services_components_list-events.adoc[akka local services components list-events]
+* xref:reference:cli/akka_local_services_components_list-ids.adoc[akka local services components list-ids]
+* xref:reference:cli/akka_local_services_components_list-timers.adoc[akka local services components list-timers]
+* xref:reference:cli/akka_local_services_components_list.adoc[akka local services components list]
+* xref:reference:cli/akka_local_services_connectivity.adoc[akka local services connectivity]
+* xref:reference:cli/akka_local_services_list.adoc[akka local services list]
+* xref:reference:cli/akka_local_services_views.adoc[akka local services views]
+* xref:reference:cli/akka_local_services_views_describe.adoc[akka local services views describe]
+* xref:reference:cli/akka_local_services_views_drop.adoc[akka local services views drop]
+* xref:reference:cli/akka_local_services_views_list.adoc[akka local services views list]
 
 == Display version
-The `akka version` commands allow you to display the CLI version. The detail are available in xref:cli/akka_version.adoc[akka version].
+The `akka version` commands allow you to display the CLI version. The detail are available in xref:reference:cli/akka_version.adoc[akka version].

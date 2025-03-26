@@ -46,7 +46,7 @@ CustomerByEmail   true     66m
 
 == SEE ALSO
 
-* link:cli/akka_services_views[akka services views]	 - Manage views.
+* link:akka_services_views.html[akka services views]	 - Manage views.
 
 [discrete]
 

@@ -31,7 +31,7 @@ akka organizations users list-bindings [flags]
 
 == SEE ALSO
 
-* link:cli/akka_organizations_users[akka organizations users]	 - Manage organization users.
+* link:akka_organizations_users.html[akka organizations users]	 - Manage organization users.
 
 [discrete]
 

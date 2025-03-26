@@ -39,7 +39,7 @@ akka local services components list-ids SERVICE_NAME COMPONENT_ID [flags]
 
 == SEE ALSO
 
-* link:cli/akka_local_services_components[akka local services components]	 - Inspect components of a service.
+* link:akka_local_services_components.html[akka local services components]	 - Inspect components of a service.
 
 [discrete]
 

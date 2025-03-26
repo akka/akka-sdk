@@ -29,10 +29,10 @@ The command `akka auth tokens`  manage the authentication tokens for your user a
 
 == SEE ALSO
 
-* link:cli/akka_auth[akka auth]	 - Manage Akka authentication.
-* link:cli/akka_auth_tokens_create[akka auth tokens create]	 - Create an Akka token.
-* link:cli/akka_auth_tokens_list[akka auth tokens list]	 - List all server managed Akka tokens.
-* link:cli/akka_auth_tokens_revoke[akka auth tokens revoke]	 - Revoke an Akka token.
+* link:akka_auth.html[akka auth]	 - Manage Akka authentication.
+* link:akka_auth_tokens_create.html[akka auth tokens create]	 - Create an Akka token.
+* link:akka_auth_tokens_list.html[akka auth tokens list]	 - List all server managed Akka tokens.
+* link:akka_auth_tokens_revoke.html[akka auth tokens revoke]	 - Revoke an Akka token.
 
 [discrete]
 

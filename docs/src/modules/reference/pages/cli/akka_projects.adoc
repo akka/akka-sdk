@@ -31,18 +31,18 @@ For more details on projects, see https://doc.akka.io/operations/projects/index.
 
 == SEE ALSO
 
-* link:cli/akka[akka]	 - Akka control
-* link:cli/akka_projects_config[akka projects config]	 - Manage project configs.
-* link:cli/akka_projects_delete[akka projects delete]	 - Delete a project.
-* link:cli/akka_projects_get[akka projects get]	 - Get project information.
-* link:cli/akka_projects_hostnames[akka projects hostnames]	 - Manage hostnames for your Akka project.
-* link:cli/akka_projects_list[akka projects list]	 - List all projects.
-* link:cli/akka_projects_new[akka projects new]	 - Create a new Akka project.
-* link:cli/akka_projects_observability[akka projects observability]	 - Manage the observability settings for your Akka project.
-* link:cli/akka_projects_open[akka projects open]	 - Open the current project in the console.
-* link:cli/akka_projects_regions[akka projects regions]	 - Manage the regions assigned to your Akka project.
-* link:cli/akka_projects_tokens[akka projects tokens]	 - Manage your Akka project service tokens.
-* link:cli/akka_projects_update[akka projects update]	 - Update project attributes such as name and description.
+* link:akka.html[akka]	 - Akka control
+* link:akka_projects_config.html[akka projects config]	 - Manage project configs.
+* link:akka_projects_delete.html[akka projects delete]	 - Delete a project.
+* link:akka_projects_get.html[akka projects get]	 - Get project information.
+* link:akka_projects_hostnames.html[akka projects hostnames]	 - Manage hostnames for your Akka project.
+* link:akka_projects_list.html[akka projects list]	 - List all projects.
+* link:akka_projects_new.html[akka projects new]	 - Create a new Akka project.
+* link:akka_projects_observability.html[akka projects observability]	 - Manage the observability settings for your Akka project.
+* link:akka_projects_open.html[akka projects open]	 - Open the current project in the console.
+* link:akka_projects_regions.html[akka projects regions]	 - Manage the regions assigned to your Akka project.
+* link:akka_projects_tokens.html[akka projects tokens]	 - Manage your Akka project service tokens.
+* link:akka_projects_update.html[akka projects update]	 - Update project attributes such as name and description.
 
 [discrete]
 

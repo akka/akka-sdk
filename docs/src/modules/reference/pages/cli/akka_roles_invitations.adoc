@@ -31,10 +31,10 @@ The command `akka role invitations _subcommand_` manages invitations to user rol
 
 == SEE ALSO
 
-* link:cli/akka_roles[akka roles]	 - Manage the user roles for an Akka project.
-* link:cli/akka_roles_invitations_delete[akka roles invitations delete]	 - Delete an invitation from a project.
-* link:cli/akka_roles_invitations_invite-user[akka roles invitations invite-user]	 - Invite a user to a project.
-* link:cli/akka_roles_invitations_list[akka roles invitations list]	 - List invitations to a project.
+* link:akka_roles.html[akka roles]	 - Manage the user roles for an Akka project.
+* link:akka_roles_invitations_delete.html[akka roles invitations delete]	 - Delete an invitation from a project.
+* link:akka_roles_invitations_invite-user.html[akka roles invitations invite-user]	 - Invite a user to a project.
+* link:akka_roles_invitations_list.html[akka roles invitations list]	 - List invitations to a project.
 
 [discrete]
 

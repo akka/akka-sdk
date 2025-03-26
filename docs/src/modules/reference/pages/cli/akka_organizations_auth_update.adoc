@@ -29,8 +29,8 @@ The `akka organizations update` commands allow updating authentication for organ
 
 == SEE ALSO
 
-* link:cli/akka_organizations_auth[akka organizations auth]	 - Manage authentication for your organization on Akka
-* link:cli/akka_organizations_auth_update_openid[akka organizations auth update openid]	 - Update an OpenID authentication domain for the current (or specified) organization
+* link:akka_organizations_auth.html[akka organizations auth]	 - Manage authentication for your organization on Akka
+* link:akka_organizations_auth_update_openid.html[akka organizations auth update openid]	 - Update an OpenID authentication domain for the current (or specified) organization
 
 [discrete]
 

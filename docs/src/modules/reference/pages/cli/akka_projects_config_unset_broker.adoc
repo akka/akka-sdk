@@ -31,7 +31,7 @@ akka projects config unset broker [flags]
 
 == SEE ALSO
 
-* link:cli/akka_projects_config_unset[akka projects config unset]	 - Unset project resources.
+* link:akka_projects_config_unset.html[akka projects config unset]	 - Unset project resources.
 
 [discrete]
 

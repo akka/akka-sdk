@@ -35,7 +35,7 @@ akka projects regions set-primary [flags]
 
 == SEE ALSO
 
-* link:cli/akka_projects_regions[akka projects regions]	 - Manage the regions assigned to your Akka project.
+* link:akka_projects_regions.html[akka projects regions]	 - Manage the regions assigned to your Akka project.
 
 [discrete]
 

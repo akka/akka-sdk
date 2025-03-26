@@ -39,7 +39,7 @@ akka projects observability config traces [flags]
 
 == SEE ALSO
 
-* link:cli/akka_projects_observability_config[akka projects observability config]	 - Manage the observability configuration for your Akka project.
+* link:akka_projects_observability_config.html[akka projects observability config]	 - Manage the observability configuration for your Akka project.
 
 [discrete]
 

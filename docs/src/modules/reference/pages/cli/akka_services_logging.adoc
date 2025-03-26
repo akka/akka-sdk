@@ -25,10 +25,10 @@ Change the log level configration of a service.
 
 == SEE ALSO
 
-* link:cli/akka_services[akka services]	 - Manage and deploy services on Akka.
-* link:cli/akka_services_logging_list[akka services logging list]	 - List the log levels configuration.
-* link:cli/akka_services_logging_set-level[akka services logging set-level]	 - Set the logger level configuration.
-* link:cli/akka_services_logging_unset-level[akka services logging unset-level]	 - Unset the logger level configuration.
+* link:akka_services.html[akka services]	 - Manage and deploy services on Akka.
+* link:akka_services_logging_list.html[akka services logging list]	 - List the log levels configuration.
+* link:akka_services_logging_set-level.html[akka services logging set-level]	 - Set the logger level configuration.
+* link:akka_services_logging_unset-level.html[akka services logging unset-level]	 - Unset the logger level configuration.
 
 [discrete]
 

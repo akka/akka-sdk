@@ -41,7 +41,7 @@ akka services logging set-level [SERVICE_NAME] [LOGGER_NAME] [LEVEL] [flags]
 
 == SEE ALSO
 
-* link:cli/akka_services_logging[akka services logging]	 - Change the log level configration of a service.
+* link:akka_services_logging.html[akka services logging]	 - Change the log level configration of a service.
 
 [discrete]
 

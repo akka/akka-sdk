@@ -29,10 +29,10 @@ The `akka project observability set logs` command sets the logs exporter for you
 
 == SEE ALSO
 
-* link:cli/akka_projects_observability_set[akka projects observability set]	 - Set the observability settings for your Akka project.
-* link:cli/akka_projects_observability_set_logs_google-cloud[akka projects observability set logs google-cloud]	 - Set your project to export logs to Google Cloud.
-* link:cli/akka_projects_observability_set_logs_otlp[akka projects observability set logs otlp]	 - Set your project to export logs to an OTLP collector.
-* link:cli/akka_projects_observability_set_logs_splunk-hec[akka projects observability set logs splunk-hec]	 - Set your project to export logs to a Splunk HEC endpoint.
+* link:akka_projects_observability_set.html[akka projects observability set]	 - Set the observability settings for your Akka project.
+* link:akka_projects_observability_set_logs_google-cloud.html[akka projects observability set logs google-cloud]	 - Set your project to export logs to Google Cloud.
+* link:akka_projects_observability_set_logs_otlp.html[akka projects observability set logs otlp]	 - Set your project to export logs to an OTLP collector.
+* link:akka_projects_observability_set_logs_splunk-hec.html[akka projects observability set logs splunk-hec]	 - Set your project to export logs to a Splunk HEC endpoint.
 
 [discrete]
 

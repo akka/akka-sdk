@@ -31,7 +31,7 @@ akka roles invitations delete EMAIL [flags]
 
 == SEE ALSO
 
-* link:cli/akka_roles_invitations[akka roles invitations]	 - Manage invitations to user roles on a project.
+* link:akka_roles_invitations.html[akka roles invitations]	 - Manage invitations to user roles on a project.
 
 [discrete]
 

@@ -29,10 +29,10 @@ The `akka projects config` commands display and modify project configuration.
 
 == SEE ALSO
 
-* link:cli/akka_projects[akka projects]	 - Manage your Akka projects.
-* link:cli/akka_projects_config_get[akka projects config get]	 - Display project config information.
-* link:cli/akka_projects_config_set[akka projects config set]	 - Set project resources.
-* link:cli/akka_projects_config_unset[akka projects config unset]	 - Unset project resources.
+* link:akka_projects.html[akka projects]	 - Manage your Akka projects.
+* link:akka_projects_config_get.html[akka projects config get]	 - Display project config information.
+* link:akka_projects_config_set.html[akka projects config set]	 - Set project resources.
+* link:akka_projects_config_unset.html[akka projects config unset]	 - Unset project resources.
 
 [discrete]
 

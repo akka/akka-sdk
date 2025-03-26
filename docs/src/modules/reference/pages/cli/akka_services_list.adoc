@@ -48,7 +48,7 @@ shopping-cart      4h20m  3           Ready    0.0.2
 
 == SEE ALSO
 
-* link:cli/akka_services[akka services]	 - Manage and deploy services on Akka.
+* link:akka_services.html[akka services]	 - Manage and deploy services on Akka.
 
 [discrete]
 

@@ -33,7 +33,7 @@ akka quickstart list [flags]
 
 == SEE ALSO
 
-* link:cli/akka_quickstart[akka quickstart]	 - Akka quickstart project samples.
+* link:akka_quickstart.html[akka quickstart]	 - Akka quickstart project samples.
 
 [discrete]
 

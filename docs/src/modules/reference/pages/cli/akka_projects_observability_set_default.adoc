@@ -31,12 +31,12 @@ Setting a default exporter will unset all other exporters configured for your pr
 
 == SEE ALSO
 
-* link:cli/akka_projects_observability_set[akka projects observability set]	 - Set the observability settings for your Akka project.
-* link:cli/akka_projects_observability_set_default_akka-console[akka projects observability set default akka-console]	 - Set your project to export metrics to the Akka console.
+* link:akka_projects_observability_set.html[akka projects observability set]	 - Set the observability settings for your Akka project.
+* link:akka_projects_observability_set_default_akka-console.html[akka projects observability set default akka-console]	 - Set your project to export metrics to the Akka console.
 This will unset all other exporter configuration.
-* link:cli/akka_projects_observability_set_default_google-cloud[akka projects observability set default google-cloud]	 - Set your project to export default to Google Cloud.
-* link:cli/akka_projects_observability_set_default_otlp[akka projects observability set default otlp]	 - Set your project to export default to an OTLP collector.
-* link:cli/akka_projects_observability_set_default_splunk-hec[akka projects observability set default splunk-hec]	 - Set your project to export default to a Splunk HEC endpoint.
+* link:akka_projects_observability_set_default_google-cloud.html[akka projects observability set default google-cloud]	 - Set your project to export default to Google Cloud.
+* link:akka_projects_observability_set_default_otlp.html[akka projects observability set default otlp]	 - Set your project to export default to an OTLP collector.
+* link:akka_projects_observability_set_default_splunk-hec.html[akka projects observability set default splunk-hec]	 - Set your project to export default to a Splunk HEC endpoint.
 
 [discrete]
 

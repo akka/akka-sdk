@@ -38,7 +38,7 @@ akka projects observability edit [flags]
 
 == SEE ALSO
 
-* link:cli/akka_projects_observability[akka projects observability]	 - Manage the observability settings for your Akka project.
+* link:akka_projects_observability.html[akka projects observability]	 - Manage the observability settings for your Akka project.
 
 [discrete]
 

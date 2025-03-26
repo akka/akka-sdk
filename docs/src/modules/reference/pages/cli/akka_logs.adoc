@@ -56,7 +56,7 @@ akka logs [SERVICE] [INSTANCE] [flags]
 
 == SEE ALSO
 
-* link:cli/akka[akka]	 - Akka control
+* link:akka.html[akka]	 - Akka control
 
 [discrete]
 

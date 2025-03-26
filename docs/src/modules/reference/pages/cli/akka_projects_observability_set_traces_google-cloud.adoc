@@ -35,7 +35,7 @@ akka projects observability set traces google-cloud [flags]
 
 == SEE ALSO
 
-* link:cli/akka_projects_observability_set_traces[akka projects observability set traces]	 - Set the traces exporter for your Akka project.
+* link:akka_projects_observability_set_traces.html[akka projects observability set traces]	 - Set the traces exporter for your Akka project.
 
 [discrete]
 

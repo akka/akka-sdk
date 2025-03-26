@@ -36,7 +36,7 @@ akka projects delete PROJECT [flags]
 
 == SEE ALSO
 
-* link:cli/akka_projects[akka projects]	 - Manage your Akka projects.
+* link:akka_projects.html[akka projects]	 - Manage your Akka projects.
 
 [discrete]
 

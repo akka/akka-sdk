@@ -16,12 +16,12 @@ then
 else
   echo akka does not exist
   echo Please follow instruction page to install it.
-  echo [Instruction Page] https://doc.akka.io/akka-cli/installation.html
+  echo [Instruction Page] https://doc.akka.io/operating/cli/installation.html
   exit 1
 fi
 
 echo "delete existing docs..."
-cd docs/src/modules/reference/pages/cli/akka-cli/ || exit 1
+cd docs/src/modules/reference/pages/cli/ || exit 1
 rm -f akka*.adoc
 
 echo "generate docs..."
@@ -88,13 +88,13 @@ EOM
   perl -pi.bak -e "s|<AKKA_SERVICES_CMD>|${AKKA_SERVICES_CMD}|" cli-index.adoc
 
   echo "patch adoc reference path in cli-index.adoc ..."
-  # replace links from "* xref:" to "* xref:reference:akka/" and write it to index.adoc
-  awk '{gsub(/^\* xref:/,"* xref:reference:cli/akka-cli/"); print}' cli-index.adoc > index.adoc
+  # replace links from "* xref:" to "* xref:reference:cli/" and write it to index.adoc
+  awk '{gsub(/^\* xref:/,"* xref:reference:cli/"); print}' cli-index.adoc > index.adoc
   rm temp-cli-index.txt cli-index.adoc cli-index.adoc.bak
 
   # create nav entries to be replaced manually
   ls -1 akka*.adoc > ../../temp-nav.txt
-  sed -e 's/\(akka.*\)/**** xref:cli\/akka-cli\/\1[]/g' ../../temp-nav.txt > ../../../nav2.adoc
+  sed -e 's/\(akka.*\)/**** xref:cli\/\1[]/g' ../../temp-nav.txt > ../../../nav2.adoc
   rm ../../temp-nav.txt
 fi
 

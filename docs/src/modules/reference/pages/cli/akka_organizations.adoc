@@ -31,12 +31,12 @@ For more details on organizations, see https://doc.akka.io/operations/organizati
 
 == SEE ALSO
 
-* link:cli/akka[akka]	 - Akka control
-* link:cli/akka_organizations_auth[akka organizations auth]	 - Manage authentication for your organization on Akka
-* link:cli/akka_organizations_get[akka organizations get]	 - Get organization information.
-* link:cli/akka_organizations_invitations[akka organizations invitations]	 - Invite new users to the organization with a specific role.
-* link:cli/akka_organizations_list[akka organizations list]	 - List all organizations of which the user is a member of.
-* link:cli/akka_organizations_users[akka organizations users]	 - Manage organization users.
+* link:akka.html[akka]	 - Akka control
+* link:akka_organizations_auth.html[akka organizations auth]	 - Manage authentication for your organization on Akka
+* link:akka_organizations_get.html[akka organizations get]	 - Get organization information.
+* link:akka_organizations_invitations.html[akka organizations invitations]	 - Invite new users to the organization with a specific role.
+* link:akka_organizations_list.html[akka organizations list]	 - List all organizations of which the user is a member of.
+* link:akka_organizations_users.html[akka organizations users]	 - Manage organization users.
 
 [discrete]
 

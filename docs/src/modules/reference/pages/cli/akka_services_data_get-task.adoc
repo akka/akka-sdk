@@ -36,7 +36,7 @@ akka services data get-task SERVICE TASK_UUID [flags]
 
 == SEE ALSO
 
-* link:cli/akka_services_data[akka services data]	 - Manage the data of a service.
+* link:akka_services_data.html[akka services data]	 - Manage the data of a service.
 
 [discrete]
 

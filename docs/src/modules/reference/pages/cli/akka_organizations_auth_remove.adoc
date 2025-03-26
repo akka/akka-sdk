@@ -34,7 +34,7 @@ akka organizations auth remove DOMAIN-ID [flags]
 
 == SEE ALSO
 
-* link:cli/akka_organizations_auth[akka organizations auth]	 - Manage authentication for your organization on Akka
+* link:akka_organizations_auth.html[akka organizations auth]	 - Manage authentication for your organization on Akka
 
 [discrete]
 

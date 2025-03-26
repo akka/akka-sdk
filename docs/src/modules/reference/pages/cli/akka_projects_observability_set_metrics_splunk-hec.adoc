@@ -44,7 +44,7 @@ akka projects observability set metrics splunk-hec [flags]
 
 == SEE ALSO
 
-* link:cli/akka_projects_observability_set_metrics[akka projects observability set metrics]	 - Set the metrics exporter for your Akka project.
+* link:akka_projects_observability_set_metrics.html[akka projects observability set metrics]	 - Set the metrics exporter for your Akka project.
 
 [discrete]
 

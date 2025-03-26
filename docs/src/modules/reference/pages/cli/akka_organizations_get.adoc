@@ -35,7 +35,7 @@ akka organizations get ORGANIZATION [flags]
 
 == SEE ALSO
 
-* link:cli/akka_organizations[akka organizations]	 - Manage your organizations on Akka
+* link:akka_organizations.html[akka organizations]	 - Manage your organizations on Akka
 
 [discrete]
 

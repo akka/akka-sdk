@@ -33,12 +33,12 @@ For details on roles, see https://doc.akka.io/operations/projects/manage-project
 
 == SEE ALSO
 
-* link:cli/akka[akka]	 - Akka control
-* link:cli/akka_roles_add-binding[akka roles add-binding]	 - Add a role binding.
-* link:cli/akka_roles_delete-binding[akka roles delete-binding]	 - Delete a role binding.
-* link:cli/akka_roles_invitations[akka roles invitations]	 - Manage invitations to user roles on a project.
-* link:cli/akka_roles_list[akka roles list]	 - List project roles.
-* link:cli/akka_roles_list-bindings[akka roles list-bindings]	 - List project role bindings.
+* link:akka.html[akka]	 - Akka control
+* link:akka_roles_add-binding.html[akka roles add-binding]	 - Add a role binding.
+* link:akka_roles_delete-binding.html[akka roles delete-binding]	 - Delete a role binding.
+* link:akka_roles_invitations.html[akka roles invitations]	 - Manage invitations to user roles on a project.
+* link:akka_roles_list.html[akka roles list]	 - List project roles.
+* link:akka_roles_list-bindings.html[akka roles list-bindings]	 - List project role bindings.
 
 [discrete]
 

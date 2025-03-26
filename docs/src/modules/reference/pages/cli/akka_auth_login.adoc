@@ -40,7 +40,7 @@ akka auth login [flags]
 
 == SEE ALSO
 
-* link:cli/akka_auth[akka auth]	 - Manage Akka authentication.
+* link:akka_auth.html[akka auth]	 - Manage Akka authentication.
 
 [discrete]
 

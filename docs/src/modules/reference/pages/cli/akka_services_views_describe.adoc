@@ -43,7 +43,7 @@ akka services views describe SERVICE VIEW_ID [flags]
 
 == SEE ALSO
 
-* link:cli/akka_services_views[akka services views]	 - Manage views.
+* link:akka_services_views.html[akka services views]	 - Manage views.
 
 [discrete]
 

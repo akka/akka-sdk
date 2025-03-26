@@ -48,7 +48,7 @@ shopping-cart      4h20m  3           Ready    0.0.2
 
 == SEE ALSO
 
-* link:cli/akka_local_services[akka local services]	 - Manage Akka services locally.
+* link:akka_local_services.html[akka local services]	 - Manage Akka services locally.
 
 [discrete]
 

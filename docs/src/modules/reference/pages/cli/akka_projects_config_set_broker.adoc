@@ -41,7 +41,7 @@ akka projects config set broker [flags]
 
 == SEE ALSO
 
-* link:cli/akka_projects_config_set[akka projects config set]	 - Set project resources.
+* link:akka_projects_config_set.html[akka projects config set]	 - Set project resources.
 
 [discrete]
 

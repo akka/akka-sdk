@@ -25,8 +25,8 @@ Unset project resources.
 
 == SEE ALSO
 
-* link:cli/akka_projects_config[akka projects config]	 - Manage project configs.
-* link:cli/akka_projects_config_unset_broker[akka projects config unset broker]	 - Unset the broker.
+* link:akka_projects_config.html[akka projects config]	 - Manage project configs.
+* link:akka_projects_config_unset_broker.html[akka projects config unset broker]	 - Unset the broker.
 
 [discrete]
 

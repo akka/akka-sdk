@@ -56,7 +56,7 @@ akka routes update NAME [flags]
 
 == SEE ALSO
 
-* link:cli/akka_routes[akka routes]	 - Manage routes for your Akka project.
+* link:akka_routes.html[akka routes]	 - Manage routes for your Akka project.
 
 [discrete]
 

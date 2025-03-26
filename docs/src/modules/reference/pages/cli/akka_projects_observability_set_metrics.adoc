@@ -29,11 +29,11 @@ The `akka project observability set metrics` command sets the metrics exporter f
 
 == SEE ALSO
 
-* link:cli/akka_projects_observability_set[akka projects observability set]	 - Set the observability settings for your Akka project.
-* link:cli/akka_projects_observability_set_metrics_google-cloud[akka projects observability set metrics google-cloud]	 - Set your project to export metrics to Google Cloud.
-* link:cli/akka_projects_observability_set_metrics_otlp[akka projects observability set metrics otlp]	 - Set your project to export metrics to an OTLP collector.
-* link:cli/akka_projects_observability_set_metrics_prometheus[akka projects observability set metrics prometheus]	 - Set your project to export metrics to a Prometheus instance via the Prometheus remote write protocol.
-* link:cli/akka_projects_observability_set_metrics_splunk-hec[akka projects observability set metrics splunk-hec]	 - Set your project to export metrics to a Splunk HEC endpoint.
+* link:akka_projects_observability_set.html[akka projects observability set]	 - Set the observability settings for your Akka project.
+* link:akka_projects_observability_set_metrics_google-cloud.html[akka projects observability set metrics google-cloud]	 - Set your project to export metrics to Google Cloud.
+* link:akka_projects_observability_set_metrics_otlp.html[akka projects observability set metrics otlp]	 - Set your project to export metrics to an OTLP collector.
+* link:akka_projects_observability_set_metrics_prometheus.html[akka projects observability set metrics prometheus]	 - Set your project to export metrics to a Prometheus instance via the Prometheus remote write protocol.
+* link:akka_projects_observability_set_metrics_splunk-hec.html[akka projects observability set metrics splunk-hec]	 - Set your project to export metrics to a Splunk HEC endpoint.
 
 [discrete]
 

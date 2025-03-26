@@ -33,8 +33,8 @@ For more details on regions, see https://doc.akka.io/operations/regions/index.ht
 
 == SEE ALSO
 
-* link:cli/akka[akka]	 - Akka control
-* link:cli/akka_regions_list[akka regions list]	 - List Akka regions.
+* link:akka.html[akka]	 - Akka control
+* link:akka_regions_list.html[akka regions list]	 - List Akka regions.
 
 [discrete]
 

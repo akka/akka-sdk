@@ -42,8 +42,8 @@ Either this or --gcp-key is required if [google-pubsub] is the service.
 
 == SEE ALSO
 
-* link:cli/akka_projects_config[akka projects config]	 - Manage project configs.
-* link:cli/akka_projects_config_set_broker[akka projects config set broker]	 - Set the broker.
+* link:akka_projects_config.html[akka projects config]	 - Manage project configs.
+* link:akka_projects_config_set_broker.html[akka projects config set broker]	 - Set the broker.
 
 [discrete]
 

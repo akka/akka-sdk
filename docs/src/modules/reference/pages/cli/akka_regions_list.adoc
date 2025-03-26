@@ -30,7 +30,7 @@ akka regions list [flags]
 
 == SEE ALSO
 
-* link:cli/akka_regions[akka regions]	 - Manage available regions.
+* link:akka_regions.html[akka regions]	 - Manage available regions.
 
 [discrete]
 

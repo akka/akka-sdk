@@ -42,7 +42,7 @@ akka services components list-events SERVICE_NAME COMPONENT_ID ENTITY_ID [flags]
 
 == SEE ALSO
 
-* link:cli/akka_services_components[akka services components]	 - Inspect components of a service.
+* link:akka_services_components.html[akka services components]	 - Inspect components of a service.
 
 [discrete]
 

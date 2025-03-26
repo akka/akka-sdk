@@ -49,7 +49,7 @@ Image:          gcr.io/akka-public/value-entity-shopping-cart:0.0.4
 
 == SEE ALSO
 
-* link:cli/akka_services[akka services]	 - Manage and deploy services on Akka.
+* link:akka_services.html[akka services]	 - Manage and deploy services on Akka.
 
 [discrete]
 

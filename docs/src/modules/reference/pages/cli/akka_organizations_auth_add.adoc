@@ -29,8 +29,8 @@ The `akka organizations add` commands allow adding authentication for organizati
 
 == SEE ALSO
 
-* link:cli/akka_organizations_auth[akka organizations auth]	 - Manage authentication for your organization on Akka
-* link:cli/akka_organizations_auth_add_openid[akka organizations auth add openid]	 - Add an OpenID authentication domain to the current (or specified) organization
+* link:akka_organizations_auth.html[akka organizations auth]	 - Manage authentication for your organization on Akka
+* link:akka_organizations_auth_add_openid.html[akka organizations auth add openid]	 - Add an OpenID authentication domain to the current (or specified) organization
 
 [discrete]
 

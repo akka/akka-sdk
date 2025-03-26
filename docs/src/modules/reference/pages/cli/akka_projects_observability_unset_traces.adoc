@@ -34,7 +34,7 @@ akka projects observability unset traces [flags]
 
 == SEE ALSO
 
-* link:cli/akka_projects_observability_unset[akka projects observability unset]	 - Unset the observability settings for your Akka project.
+* link:akka_projects_observability_unset.html[akka projects observability unset]	 - Unset the observability settings for your Akka project.
 
 [discrete]
 

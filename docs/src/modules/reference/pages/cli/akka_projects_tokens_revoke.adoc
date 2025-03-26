@@ -35,7 +35,7 @@ akka projects tokens revoke ID [flags]
 
 == SEE ALSO
 
-* link:cli/akka_projects_tokens[akka projects tokens]	 - Manage your Akka project service tokens.
+* link:akka_projects_tokens.html[akka projects tokens]	 - Manage your Akka project service tokens.
 
 [discrete]
 

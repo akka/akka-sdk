@@ -25,13 +25,13 @@ Manage JWT keys of a service.
 
 == SEE ALSO
 
-* link:cli/akka_services[akka services]	 - Manage and deploy services on Akka.
-* link:cli/akka_services_jwts_add[akka services jwts add]	 - Add a JWT key to a service.
-* link:cli/akka_services_jwts_generate[akka services jwts generate]	 - Generate a JWT key for a service.
-* link:cli/akka_services_jwts_list[akka services jwts list]	 - List all JWT keys for a service.
-* link:cli/akka_services_jwts_list-algorithms[akka services jwts list-algorithms]	 - List all the supported JWT algorithms.
-* link:cli/akka_services_jwts_remove[akka services jwts remove]	 - Remove a JWT key from a service.
-* link:cli/akka_services_jwts_update[akka services jwts update]	 - Update a JWT key in a service.
+* link:akka_services.html[akka services]	 - Manage and deploy services on Akka.
+* link:akka_services_jwts_add.html[akka services jwts add]	 - Add a JWT key to a service.
+* link:akka_services_jwts_generate.html[akka services jwts generate]	 - Generate a JWT key for a service.
+* link:akka_services_jwts_list.html[akka services jwts list]	 - List all JWT keys for a service.
+* link:akka_services_jwts_list-algorithms.html[akka services jwts list-algorithms]	 - List all the supported JWT algorithms.
+* link:akka_services_jwts_remove.html[akka services jwts remove]	 - Remove a JWT key from a service.
+* link:akka_services_jwts_update.html[akka services jwts update]	 - Update a JWT key in a service.
 
 [discrete]
 

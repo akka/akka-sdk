@@ -33,7 +33,7 @@ akka services jwts list-algorithms [flags]
 
 == SEE ALSO
 
-* link:cli/akka_services_jwts[akka services jwts]	 - Manage JWT keys of a service.
+* link:akka_services_jwts.html[akka services jwts]	 - Manage JWT keys of a service.
 
 [discrete]
 

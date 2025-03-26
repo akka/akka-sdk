@@ -25,10 +25,10 @@ Invite new users to the organization with a specific role.
 
 == SEE ALSO
 
-* link:cli/akka_organizations[akka organizations]	 - Manage your organizations on Akka
-* link:cli/akka_organizations_invitations_cancel[akka organizations invitations cancel]	 - Cancel a pending invitation to the organization using the invitee's email address
-* link:cli/akka_organizations_invitations_create[akka organizations invitations create]	 - Create an invitation
-* link:cli/akka_organizations_invitations_list[akka organizations invitations list]	 - List all pending invitations for the organization
+* link:akka_organizations.html[akka organizations]	 - Manage your organizations on Akka
+* link:akka_organizations_invitations_cancel.html[akka organizations invitations cancel]	 - Cancel a pending invitation to the organization using the invitee's email address
+* link:akka_organizations_invitations_create.html[akka organizations invitations create]	 - Create an invitation
+* link:akka_organizations_invitations_list.html[akka organizations invitations list]	 - List all pending invitations for the organization
 
 [discrete]
 

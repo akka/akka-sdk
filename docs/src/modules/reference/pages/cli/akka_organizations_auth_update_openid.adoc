@@ -41,7 +41,7 @@ akka organizations auth update openid DOMAIN-ID [flags]
 
 == SEE ALSO
 
-* link:cli/akka_organizations_auth_update[akka organizations auth update]	 - Update an authentication domain for your organization on Akka
+* link:akka_organizations_auth_update.html[akka organizations auth update]	 - Update an authentication domain for your organization on Akka
 
 [discrete]
 

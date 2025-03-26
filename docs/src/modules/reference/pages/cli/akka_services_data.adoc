@@ -25,13 +25,13 @@ Manage the data of a service.
 
 == SEE ALSO
 
-* link:cli/akka_services[akka services]	 - Manage and deploy services on Akka.
-* link:cli/akka_services_data_cancel-task[akka services data cancel-task]	 - Cancel a data operation task for a service
-* link:cli/akka_services_data_export[akka services data export]	 - Export the data of a service.
-* link:cli/akka_services_data_get-task[akka services data get-task]	 - Get a data operation task for a service
-* link:cli/akka_services_data_import[akka services data import]	 - Import data to a service.
-* link:cli/akka_services_data_list-tasks[akka services data list-tasks]	 - List data operation tasks for a service
-* link:cli/akka_services_data_watch-task[akka services data watch-task]	 - Watch a data operation task for a service
+* link:akka_services.html[akka services]	 - Manage and deploy services on Akka.
+* link:akka_services_data_cancel-task.html[akka services data cancel-task]	 - Cancel a data operation task for a service
+* link:akka_services_data_export.html[akka services data export]	 - Export the data of a service.
+* link:akka_services_data_get-task.html[akka services data get-task]	 - Get a data operation task for a service
+* link:akka_services_data_import.html[akka services data import]	 - Import data to a service.
+* link:akka_services_data_list-tasks.html[akka services data list-tasks]	 - List data operation tasks for a service
+* link:akka_services_data_watch-task.html[akka services data watch-task]	 - Watch a data operation task for a service
 
 [discrete]
 

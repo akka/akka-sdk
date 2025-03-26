@@ -29,11 +29,11 @@ The `akka project observability unset` command unsets the observability settings
 
 == SEE ALSO
 
-* link:cli/akka_projects_observability[akka projects observability]	 - Manage the observability settings for your Akka project.
-* link:cli/akka_projects_observability_unset_default[akka projects observability unset default]	 - Unset the observability configuration at the default scope of your project.
-* link:cli/akka_projects_observability_unset_logs[akka projects observability unset logs]	 - Unset the observability configuration at the logs scope of your project.
-* link:cli/akka_projects_observability_unset_metrics[akka projects observability unset metrics]	 - Unset the observability configuration at the metrics scope of your project.
-* link:cli/akka_projects_observability_unset_traces[akka projects observability unset traces]	 - Unset the observability configuration at the traces scope of your project.
+* link:akka_projects_observability.html[akka projects observability]	 - Manage the observability settings for your Akka project.
+* link:akka_projects_observability_unset_default.html[akka projects observability unset default]	 - Unset the observability configuration at the default scope of your project.
+* link:akka_projects_observability_unset_logs.html[akka projects observability unset logs]	 - Unset the observability configuration at the logs scope of your project.
+* link:akka_projects_observability_unset_metrics.html[akka projects observability unset metrics]	 - Unset the observability configuration at the metrics scope of your project.
+* link:akka_projects_observability_unset_traces.html[akka projects observability unset traces]	 - Unset the observability configuration at the traces scope of your project.
 
 [discrete]
 

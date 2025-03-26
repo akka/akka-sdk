@@ -35,7 +35,7 @@ akka projects hostnames list [flags]
 
 == SEE ALSO
 
-* link:cli/akka_projects_hostnames[akka projects hostnames]	 - Manage hostnames for your Akka project.
+* link:akka_projects_hostnames.html[akka projects hostnames]	 - Manage hostnames for your Akka project.
 
 [discrete]
 

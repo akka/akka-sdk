@@ -29,9 +29,9 @@ The `akka local` commands help with local development by providing ways to inter
 
 == SEE ALSO
 
-* link:cli/akka[akka]	 - Akka control
-* link:cli/akka_local_console[akka local console]	 - Start the Akka local console.
-* link:cli/akka_local_services[akka local services]	 - Manage Akka services locally.
+* link:akka.html[akka]	 - Akka control
+* link:akka_local_console.html[akka local console]	 - Start the Akka local console.
+* link:akka_local_services.html[akka local services]	 - Manage Akka services locally.
 
 [discrete]
 

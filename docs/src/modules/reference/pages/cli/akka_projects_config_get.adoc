@@ -29,8 +29,8 @@ The `akka projects config get _resource_` command displays the configuration for
 
 == SEE ALSO
 
-* link:cli/akka_projects_config[akka projects config]	 - Manage project configs.
-* link:cli/akka_projects_config_get_broker[akka projects config get broker]	 - Display broker configuration.
+* link:akka_projects_config.html[akka projects config]	 - Manage project configs.
+* link:akka_projects_config_get_broker.html[akka projects config get broker]	 - Display broker configuration.
 
 [discrete]
 

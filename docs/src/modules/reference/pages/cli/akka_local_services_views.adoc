@@ -29,10 +29,10 @@ The `akka local service views` commands manage the views for an Akka project, in
 
 == SEE ALSO
 
-* link:cli/akka_local_services[akka local services]	 - Manage Akka services locally.
-* link:cli/akka_local_services_views_describe[akka local services views describe]	 - Describe a view.
-* link:cli/akka_local_services_views_drop[akka local services views drop]	 - Delete the data for an inactive view.
-* link:cli/akka_local_services_views_list[akka local services views list]	 - List all views.
+* link:akka_local_services.html[akka local services]	 - Manage Akka services locally.
+* link:akka_local_services_views_describe.html[akka local services views describe]	 - Describe a view.
+* link:akka_local_services_views_drop.html[akka local services views drop]	 - Delete the data for an inactive view.
+* link:akka_local_services_views_list.html[akka local services views list]	 - List all views.
 
 [discrete]
 

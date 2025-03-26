@@ -30,12 +30,12 @@ For example, you can configure your organization to use OpenID Connect (OIDC) fo
 
 == SEE ALSO
 
-* link:cli/akka_organizations[akka organizations]	 - Manage your organizations on Akka
-* link:cli/akka_organizations_auth_add[akka organizations auth add]	 - Add an authentication domain to your organization on Akka
-* link:cli/akka_organizations_auth_list[akka organizations auth list]	 - List the authentication domains for the current (or specified) organization
-* link:cli/akka_organizations_auth_remove[akka organizations auth remove]	 - Remove the given authentication domain from the current (or specified) organization
-* link:cli/akka_organizations_auth_show[akka organizations auth show]	 - Display information about the given authentication domain for the current (or specified) organization
-* link:cli/akka_organizations_auth_update[akka organizations auth update]	 - Update an authentication domain for your organization on Akka
+* link:akka_organizations.html[akka organizations]	 - Manage your organizations on Akka
+* link:akka_organizations_auth_add.html[akka organizations auth add]	 - Add an authentication domain to your organization on Akka
+* link:akka_organizations_auth_list.html[akka organizations auth list]	 - List the authentication domains for the current (or specified) organization
+* link:akka_organizations_auth_remove.html[akka organizations auth remove]	 - Remove the given authentication domain from the current (or specified) organization
+* link:akka_organizations_auth_show.html[akka organizations auth show]	 - Display information about the given authentication domain for the current (or specified) organization
+* link:akka_organizations_auth_update.html[akka organizations auth update]	 - Update an authentication domain for your organization on Akka
 
 [discrete]
 

@@ -36,7 +36,7 @@ akka organizations users add-binding --user-id USER_ID --role ROLE [flags]
 
 == SEE ALSO
 
-* link:cli/akka_organizations_users[akka organizations users]	 - Manage organization users.
+* link:akka_organizations_users.html[akka organizations users]	 - Manage organization users.
 
 [discrete]
 

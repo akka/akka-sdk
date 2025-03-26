@@ -41,7 +41,7 @@ akka organizations auth add openid [flags]
 
 == SEE ALSO
 
-* link:cli/akka_organizations_auth_add[akka organizations auth add]	 - Add an authentication domain to your organization on Akka
+* link:akka_organizations_auth_add.html[akka organizations auth add]	 - Add an authentication domain to your organization on Akka
 
 [discrete]
 

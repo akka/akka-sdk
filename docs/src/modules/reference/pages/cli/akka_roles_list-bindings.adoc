@@ -35,7 +35,7 @@ akka roles list-bindings [flags]
 
 == SEE ALSO
 
-* link:cli/akka_roles[akka roles]	 - Manage the user roles for an Akka project.
+* link:akka_roles.html[akka roles]	 - Manage the user roles for an Akka project.
 
 [discrete]
 

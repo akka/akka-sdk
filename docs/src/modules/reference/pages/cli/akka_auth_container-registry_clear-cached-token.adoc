@@ -31,7 +31,7 @@ akka auth container-registry clear-cached-token [flags]
 
 == SEE ALSO
 
-* link:cli/akka_auth_container-registry[akka auth container-registry]	 - Manage configuration for Akka Container Registry.
+* link:akka_auth_container-registry.html[akka auth container-registry]	 - Manage configuration for Akka Container Registry.
 
 [discrete]
 

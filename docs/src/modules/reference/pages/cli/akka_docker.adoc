@@ -29,10 +29,10 @@ The family of `akka docker` commands manage Docker credentials so that services 
 
 == SEE ALSO
 
-* link:cli/akka[akka]	 - Akka control
-* link:cli/akka_docker_add-credentials[akka docker add-credentials]	 - Add Docker credentials to an Akka project.
-* link:cli/akka_docker_list-credentials[akka docker list-credentials]	 - List all Docker credentials.
-* link:cli/akka_docker_remove-credentials[akka docker remove-credentials]	 - Remove Docker credentials
+* link:akka.html[akka]	 - Akka control
+* link:akka_docker_add-credentials.html[akka docker add-credentials]	 - Add Docker credentials to an Akka project.
+* link:akka_docker_list-credentials.html[akka docker list-credentials]	 - List all Docker credentials.
+* link:akka_docker_remove-credentials.html[akka docker remove-credentials]	 - Remove Docker credentials
 
 [discrete]
 

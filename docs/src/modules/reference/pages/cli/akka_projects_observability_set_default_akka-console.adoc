@@ -35,7 +35,7 @@ akka projects observability set default akka-console [flags]
 
 == SEE ALSO
 
-* link:cli/akka_projects_observability_set_default[akka projects observability set default]	 - Set the default exporter for your Akka project.
+* link:akka_projects_observability_set_default.html[akka projects observability set default]	 - Set the default exporter for your Akka project.
 
 [discrete]
 

@@ -32,10 +32,10 @@ See more details at https://doc.akka.io/operations/integrating-cicd/index.html .
 
 == SEE ALSO
 
-* link:cli/akka_projects[akka projects]	 - Manage your Akka projects.
-* link:cli/akka_projects_tokens_create[akka projects tokens create]	 - Create a service token
-* link:cli/akka_projects_tokens_list[akka projects tokens list]	 - List all service tokens
-* link:cli/akka_projects_tokens_revoke[akka projects tokens revoke]	 - revoke service token
+* link:akka_projects.html[akka projects]	 - Manage your Akka projects.
+* link:akka_projects_tokens_create.html[akka projects tokens create]	 - Create a service token
+* link:akka_projects_tokens_list.html[akka projects tokens list]	 - List all service tokens
+* link:akka_projects_tokens_revoke.html[akka projects tokens revoke]	 - revoke service token
 
 [discrete]
 

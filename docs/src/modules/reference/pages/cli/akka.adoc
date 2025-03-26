@@ -24,23 +24,23 @@ Welcome to the Akka CLI, for more information on its usage please visit the docu
 
 == SEE ALSO
 
-* link:cli/akka_auth[akka auth]	 - Manage Akka authentication.
-* link:cli/akka_completion[akka completion]	 - Generate shell completion scripts
-* link:cli/akka_config[akka config]	 - Manage configuration and context for the Akka CLI.
-* link:cli/akka_container-registry[akka container-registry]	 - Manage and push service images to the Akka Container Registry.
-* link:cli/akka_docker[akka docker]	 - Manage credentials for projects using private Docker registries.
-* link:cli/akka_docs[akka docs]	 - Open the Akka documentation page
-* link:cli/akka_local[akka local]	 - Interact with and manage Akka services running locally.
-* link:cli/akka_logs[akka logs]	 - Display the last few lines of logs for a specific service.
-* link:cli/akka_organizations[akka organizations]	 - Manage your organizations on Akka
-* link:cli/akka_projects[akka projects]	 - Manage your Akka projects.
-* link:cli/akka_quickstart[akka quickstart]	 - Akka quickstart project samples.
-* link:cli/akka_regions[akka regions]	 - Manage available regions.
-* link:cli/akka_roles[akka roles]	 - Manage the user roles for an Akka project.
-* link:cli/akka_routes[akka routes]	 - Manage routes for your Akka project.
-* link:cli/akka_secrets[akka secrets]	 - Manage secrets for an Akka project.
-* link:cli/akka_services[akka services]	 - Manage and deploy services on Akka.
-* link:cli/akka_version[akka version]	 - Print the akka CLI version
+* link:akka_auth.html[akka auth]	 - Manage Akka authentication.
+* link:akka_completion.html[akka completion]	 - Generate shell completion scripts
+* link:akka_config.html[akka config]	 - Manage configuration and context for the Akka CLI.
+* link:akka_container-registry.html[akka container-registry]	 - Manage and push service images to the Akka Container Registry.
+* link:akka_docker.html[akka docker]	 - Manage credentials for projects using private Docker registries.
+* link:akka_docs.html[akka docs]	 - Open the Akka documentation page
+* link:akka_local.html[akka local]	 - Interact with and manage Akka services running locally.
+* link:akka_logs.html[akka logs]	 - Display the last few lines of logs for a specific service.
+* link:akka_organizations.html[akka organizations]	 - Manage your organizations on Akka
+* link:akka_projects.html[akka projects]	 - Manage your Akka projects.
+* link:akka_quickstart.html[akka quickstart]	 - Akka quickstart project samples.
+* link:akka_regions.html[akka regions]	 - Manage available regions.
+* link:akka_roles.html[akka roles]	 - Manage the user roles for an Akka project.
+* link:akka_routes.html[akka routes]	 - Manage routes for your Akka project.
+* link:akka_secrets.html[akka secrets]	 - Manage secrets for an Akka project.
+* link:akka_services.html[akka services]	 - Manage and deploy services on Akka.
+* link:akka_version.html[akka version]	 - Print the akka CLI version
 
 [discrete]
 

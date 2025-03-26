@@ -34,7 +34,7 @@ akka local console [flags]
 
 == SEE ALSO
 
-* link:cli/akka_local[akka local]	 - Interact with and manage Akka services running locally.
+* link:akka_local.html[akka local]	 - Interact with and manage Akka services running locally.
 
 [discrete]
 
