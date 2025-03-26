@@ -137,6 +137,7 @@
 *** xref:cli/akka_projects_regions.adoc[]
 *** xref:cli/akka_projects_regions_add.adoc[]
 *** xref:cli/akka_projects_regions_list.adoc[]
+*** xref:cli/akka_projects_regions_remove.adoc[]
 *** xref:cli/akka_projects_regions_set-primary.adoc[]
 *** xref:cli/akka_projects_tokens.adoc[]
 *** xref:cli/akka_projects_tokens_create.adoc[]
