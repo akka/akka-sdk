@@ -165,6 +165,7 @@ The xref:reference:cli/akka-cli/akka_projects.adoc[akka projects] command includ
 * xref:reference:cli/akka-cli/akka_projects_regions.adoc[akka projects regions]
 * xref:reference:cli/akka-cli/akka_projects_regions_add.adoc[akka projects regions add]
 * xref:reference:cli/akka-cli/akka_projects_regions_list.adoc[akka projects regions list]
+* xref:reference:cli/akka-cli/akka_projects_regions_remove.adoc[akka projects regions remove]
 * xref:reference:cli/akka-cli/akka_projects_regions_set-primary.adoc[akka projects regions set-primary]
 * xref:reference:cli/akka-cli/akka_projects_tokens.adoc[akka projects tokens]
 * xref:reference:cli/akka-cli/akka_projects_tokens_create.adoc[akka projects tokens create]

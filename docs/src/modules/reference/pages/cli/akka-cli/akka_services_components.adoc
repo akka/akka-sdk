@@ -30,11 +30,11 @@ The `akka service components` commands provides a way to inspect the components 
 == SEE ALSO
 
 * link:akka_services.html[akka services]	 - Manage and deploy services on Akka.
-* link:akka_services_components_get-state.html[akka services components get-state]	 - List the state for the given service, stateful component name and ID
-* link:akka_services_components_get-workflow.html[akka services components get-workflow]	 - Get workflow execution details for the specified service, workflow component name and id
+* link:akka_services_components_get-state.html[akka services components get-state]	 - List the state for the given service, stateful component and id.
+* link:akka_services_components_get-workflow.html[akka services components get-workflow]	 - Get workflow execution details for the specified service, workflow component id and workflow id
 * link:akka_services_components_list.html[akka services components list]	 - List the components served by this service.
-* link:akka_services_components_list-events.html[akka services components list-events]	 - List events from the Event Sourced Entity for the given service, component and entity id
-* link:akka_services_components_list-ids.html[akka services components list-ids]	 - List the IDs for the given named stateful component served by this service.
+* link:akka_services_components_list-events.html[akka services components list-events]	 - List events from the Event Sourced Entity for the given service, component and entity id.
+* link:akka_services_components_list-ids.html[akka services components list-ids]	 - List the IDs for the given stateful component served by this service.
 * link:akka_services_components_list-timers.html[akka services components list-timers]	 - List the timers registered in this service.
 
 [discrete]

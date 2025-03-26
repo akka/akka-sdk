@@ -1,13 +1,13 @@
 = akka local services components list-events
 
-List events from the Event Sourced Entity for the given service, component and entity id
+List events from the Event Sourced Entity for the given service, component and entity id.
 
 == Synopsis
 
 The `akka local service components list-events` command lists events from the Event Sourced Entity for the given service, component and entity id
 
 ----
-akka local services components list-events SERVICE_NAME COMPONENT_NAME ENTITY_ID [flags]
+akka local services components list-events SERVICE_NAME COMPONENT_ID ENTITY_ID [flags]
 ----
 
 == Options
