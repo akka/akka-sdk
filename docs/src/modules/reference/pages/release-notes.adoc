@@ -33,6 +33,10 @@ When subscribing to entities and service-to-service eventing from a view, update
 
 
 ****
+
+* Akka CLI 3.0.15
+- improve Docker helper installation on Windows
+
 * https://github.com/akka/akka-sdk/releases/tag/v3.2.3[Akka SDK 3.2.3]
 - Workflow subscriptions
 
