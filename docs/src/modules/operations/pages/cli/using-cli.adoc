@@ -77,7 +77,8 @@ akka config set api-server-use-grpc-web true
 
 The Akka CLI allows you to create, list, and configure projects.
 
-ifdef::todo[TODO:  For more commands, see the xref:reference:cli/akka_projects.adoc[projects] page.]
+For more commands, see the xref:reference:cli/akka_projects.adoc[projects] page.
+
 === Creating a New Project
 
 To create a new project within your organization:
@@ -120,7 +121,7 @@ Required flags:
 * `--docker-username` (your Docker username)
 * `--docker-password` (your Docker password)
 
-ifdef::todo[TODO:  For more details, see `akka docker -h` or visit xref:reference:cli/akka_docker.adoc[docker] page.]
+TODO:  For more details, see `akka docker -h` or visit xref:reference:cli/akka_docker.adoc[docker] page.
 [NOTE]
 ====
 For more information about using the Akka Container Registry (ACR) or external container registries, see xref:projects/container-registries.adoc[].
@@ -204,7 +205,7 @@ This table shows the component names, their types, and any associated type IDs.
 ====
 If you want to view the events from an event sourced entity you can use the `akka service components list-events` command.
 
-ifdef::todo[TODO:  More information about this command in xref:reference:cli/akka_services_components_list-events.adoc[components] page.]
+More information about this command in xref:reference:cli/akka_services_components_list-events.adoc[components] page.
 ====
 
 == Related documentation
