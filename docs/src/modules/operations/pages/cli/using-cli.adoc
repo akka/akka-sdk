@@ -55,7 +55,7 @@ For more authentication options:
 ----
 akka auth -h
 ----
-ifdef::todo[TODO:  You can also refer to the xref:reference:cli/akka-cli/akka_auth.adoc[auth] page.]
+You can also refer to the xref:reference:cli/akka-cli/akka_auth.adoc[auth] page.
 
 === Handling Proxies
 
