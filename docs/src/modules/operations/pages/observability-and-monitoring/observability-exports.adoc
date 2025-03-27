@@ -422,4 +422,4 @@ This will show the observability agent logs for all instances of the service. An
 
 == See also
 
-- xref:reference:cli/akka_projects_observability.adoc#_see_also[`akka project observability` commands]
+- xref:reference:cli/akka-cli/akka_projects_observability.adoc#_see_also[`akka project observability` commands]

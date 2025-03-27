@@ -85,5 +85,5 @@ You may now continue and xref:services/deploy-service.adoc[deploy a Service] in 
 == See also
 
 - xref:services/deploy-service.adoc[]
-- xref:reference:cli/akka_projects_new.adoc#_see_also[`akka projects new` commands]
-- xref:reference:cli/akka_projects_get.adoc#_see_also[`akka projects get` commands]
+- xref:reference:cli/akka-cli/akka_projects_new.adoc#_see_also[`akka projects new` commands]
+- xref:reference:cli/akka-cli/akka_projects_get.adoc#_see_also[`akka projects get` commands]

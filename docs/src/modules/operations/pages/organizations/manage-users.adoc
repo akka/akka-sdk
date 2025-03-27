@@ -114,5 +114,5 @@ To resend an invitation, cancel the previous one and reissue the invite.
 == See also
 
 - xref:projects/manage-project-access.adoc[]
-- xref:reference:cli/akka_organizations_users.adoc#_see_also[`akka organizations users` commands]
-- xref:reference:cli/akka_organizations_invitations.adoc#_see_also[`akka organizations invitations` commands]
+- xref:reference:cli/akka-cli/akka_organizations_users.adoc#_see_also[`akka organizations users` commands]
+- xref:reference:cli/akka-cli/akka_organizations_invitations.adoc#_see_also[`akka organizations invitations` commands]

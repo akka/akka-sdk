@@ -254,5 +254,5 @@ You now know how to deploy, verify, update, and remove Akka services using the A
 
 == Related documentation
 
-- xref:reference:cli/akka_services.adoc[`akka service` CLI commands]
+- xref:reference:cli/akka-cli/akka_services.adoc[`akka service` CLI commands]
 - xref:reference:descriptors/service-descriptor.adoc[Akka Service Descriptor]
