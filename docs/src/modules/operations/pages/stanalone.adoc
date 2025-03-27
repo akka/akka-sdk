@@ -1,0 +1,183 @@
+= Running Akka without the full platform
+
+include::ROOT:partial$include.adoc[]
+
+ifdef::todo[TODO: intro]
+
+== License key
+
+You can retrieve a free license key from akka.io[https://account.akka.io/key]. Select the Akka SDK option.
+
+Define the key in your `application.conf`:
+
+```
+akka.license-key = "<your key>"
+```
+
+== Database
+
+Akka requires a Postgres database. The tables will be created automatically but you need to create the database and the credentials to connect to the database.
+
+You define connection configuration in your `application.conf` or use the predefined environment variables.
+
+```
+akka.persistence.r2dbc {
+  connection-factory {
+    host = "localhost"
+    host = ${?DB_HOST}
+    port = 5432
+    port = ${?DB_PORT}
+    database = "postgres"
+    database = ${?DB_DATABASE}
+    user = "postgres"
+    user = ${?DB_USER}
+    password = ${?DB_PASSWORD}
+  }
+}
+```
+
+Supported environment variables:
+
+- DB_HOST
+- DB_PORT
+- DB_DATABASE
+- DB_USER
+- DB_SSL_ENABLED - `true` to enable SSL
+- DB_SSL_MODE - allow, prefer, require, verify-ca, verify-full, tunnel
+- DB_SSL_ROOT_CERT - Server root certificate. Can point to either a resource within the classpath or a file.
+- DB_SSL_CERT - Client certificate. Can point to either a resource within the classpath or a file.
+- DB_SSL_KEY - Key for client certificate. Can point to either a resource within the classpath or a file.
+- DB_SSL_PASSWORD - Password for client key.
+
+You find more configuration options in https://doc.akka.io/libraries/akka-persistence-r2dbc/current/config.html[reference documentation].
+
+== Build a container image
+
+Build a container image of the service for standalone use by activating the `standalone` maven profile:
+
+[source, command line]
+----
+mvn clean install -DskipTests -Pstandalone
+----
+
+Push the image to your container registry.
+
+== Deploy to Kubernetes
+
+You need to create and operate the Kubernetes cluster yourself. For example using Amazon EKS.
+
+You need the following Kubernetes files:
+
+. namespace.yml
++
+[source,yml]
+----
+include::java:example$doc-snippets/kubernetes/namespace.yml[]
+----
+
+. rbac.yml
++
+For Akka Cluster bootstrap and rolling updates we need to define role based access control.
++
+[source,yaml]
+----
+include::java:example$doc-snippets/kubernetes/rbac.yml[]
+----
+
+. deployment.yml
++
+[source,yaml]
+----
+include::java:example$doc-snippets/kubernetes/deployment.yml[]
+----
++
+Update the `image:` in the `deployment.yml` with the specific image version and location you published.
+
+. service.yml
++
+[source,yaml]
+----
+include::java:example$doc-snippets/kubernetes/service.yml[]
+----
+
+Update all `shopping-cart` naming to your own names.
+
+=== Apply with kubectl
+
+Deploy to Kubernetes with:
+
+[source, shell script]
+----
+1) kubectl apply -f namespace.yml
+2) kubectl config set-context --current --namespace=shopping-cart-namespace
+3) kubectl apply -f rbac.yml
+4) kubectl apply -f deployment.yml
+
+// all should be in ready state
+5) kubectl get pods
+----
+
+As a first test you can create a fort forward with:
+
+[source, shell script]
+----
+kubectl port-forward svc/shopping-cart-service-svc 9000:9000
+----
+
+Then you can access the endpoints at `http:localhost:9000/`.
+
+== Deploy to any other container image platform
+
+The standalone image can be run in most container image platforms. When starting the JVM you must define the right runtime configuration with `-Dconfig.resource=runtime-standalone.conf`. Such system properties can also be defined with environment variable `JAVA_TOOL_OPTIONS`.
+
+When running more than one instance they must form an Akka Cluster. This is done automatically in an Kubernetes environment. If that is not an option in your environment you can run it as a single instance by defining the following configuration in your `application.conf`:
+
+```
+akka.runtime.standalone.single-node = true
+```
+
+Make sure that there is only one instance running at the same time, for example rolling updates would not be supported.
+
+== Kafka message broker configuration
+
+If you use Kafka as message broker the configuration can be defined in your `application.conf`:
+
+```
+kalix.proxy.eventing {
+    support = "kafka"
+    kafka {
+      consumer = ${akka.kafka.consumer}
+      producer = ${akka.kafka.producer}
+      committer = ${akka.kafka.committer}
+      connection-checker {
+        enable = on
+        max-retries = 5
+        check-interval = 1 second
+        backoff-factor = 2
+      }
+
+      # One or more bootstrap servers, comma separated.
+      bootstrap-servers = ""
+      bootstrap-servers = ${?BROKER_SERVERS}
+
+      # Supported are
+      # NONE (for easy local/dev mode with no auth at all)
+      # PLAIN (for easy local/dev mode - plaintext, for non dev-mode TLS)
+      # SCRAM-SHA-256 and SCRAM-SHA-512 (TLS)
+      auth-mechanism = "NONE"
+      auth-mechanism = ${?BROKER_AUTH_MECHANISM}
+      auth-username = ""
+      auth-username = ${?BROKER_USERNAME}
+      auth-password = ""
+      auth-password = ${?BROKER_PASS}
+      broker-ca-pem-file = ""
+      broker-ca-pem-file = ${?BROKER_CA_CERT}
+   }
+}
+```
+
+You find more configuration options in reference documentation:
+
+- https://doc.akka.io/libraries/alpakka-kafka/current/producer.html#settings[producer settings]
+- https://doc.akka.io/libraries/alpakka-kafka/current/consumer.html#settings[consumer settings]
+
