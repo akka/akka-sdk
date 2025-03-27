@@ -1,8 +1,8 @@
 = CLI command reference
 
-The `akka` command line tool enables you to interact with your Akka projects and services using the command line. See xref:operations:cli/installation.adoc[] for information on how to download `akka`. Use xref:reference:cli/akka_version.adoc[`akka version`] to check the version.
+The `akka` command line tool enables you to interact with your Akka projects and services using the command line. See xref:operations:cli/installation.adoc[] for information on how to download `akka`. Use xref:reference:cli/akka-cli/akka_version.adoc[`akka version`] to check the version.
 
-The following sections list xref:reference:cli/akka.adoc[akka] commands and their options.
+The following sections list xref:reference:cli/akka-cli/akka.adoc[akka] commands and their options.
 
 == Log in to Akka
 By default, `akka auth login` will launch your web browser and take you to the proper URL to enter your credentials. The command-line client will print "Waiting for UI login..." and pause while this happens, and then resume with a message once it receives the authorization token from the Akka server.
@@ -10,33 +10,33 @@ By default, `akka auth login` will launch your web browser and take you to the p
 You can, optionally, provide the `--no-launch-browser` flag with the `akka auth` command (e.g. `akka auth login --no-launch-browser auth`), in which case
 the command-line client will simply display the URL you can use for the authorization. This option is helpful if, for some reason, the command-line client is unable to launch your browser for you. The Akka CLI will wait until you complete the login before continuing.
 
-The xref:reference:cli/akka_auth.adoc[] command offers these options:
+The xref:reference:cli/akka-cli/akka_auth.adoc[] command offers these options:
 
 <AKKA_AUTH_CMD>
 
 == Enable auto-completion for your shell
-The xref:reference:cli/akka_completion.adoc[akka completion] command generates auto-completion configuration for common shells. See xref:operations:cli/command-completion.adoc[Enable command completion] for more information.
+The xref:reference:cli/akka-cli/akka_completion.adoc[akka completion] command generates auto-completion configuration for common shells. See xref:operations:cli/command-completion.adoc[Enable command completion] for more information.
 
 == Manage local context
 The `akka config` command is used to display and set configuration contexts and values that apply to subsequent commands. Configuration settings are stored in a file on your local system, by default at `.kalix/config.yaml` in your home directory.
 
 A common use of `config set` command is to establish a specific project as the "current project" by using `akka config set project _my-project_`.
 
-The following options are available for xref:reference:cli/akka_config.adoc[akka config]:
+The following options are available for xref:reference:cli/akka-cli/akka_config.adoc[akka config]:
 
 <AKKA_CONFIG_CMD>
 
 == Manage the Akka Container Registry
-The xref:reference:cli/akka_container-registry.adoc[akka container-registry] commands allow you to manage the Container Registry for your Akka Project.
+The xref:reference:cli/akka-cli/akka_container-registry.adoc[akka container-registry] commands allow you to manage the Container Registry for your Akka Project.
 
-The xref:reference:cli/akka_container-registry.adoc[akka container-registry] command includes the following options:
+The xref:reference:cli/akka-cli/akka_container-registry.adoc[akka container-registry] command includes the following options:
 
 <AKKA_CONTAINER_REGISTRY_CMD>
 
 == Manage Docker
 The `akka docker` commands allow you to manage Docker credentials so that services can pull images from registries that require authentication.
 
-The following options are available for xref:reference:cli/akka_docker.adoc[akka docker]:
+The following options are available for xref:reference:cli/akka-cli/akka_docker.adoc[akka docker]:
 
 <AKKA_DOCKER_CMD>
 
@@ -44,74 +44,74 @@ The following options are available for xref:reference:cli/akka_docker.adoc[akka
 The `akka docs` command opens the Akka online documentation page.
 
 == Display logs
-The `akka logs` commands allow you to display the last few lines (default: 100) of logs for a specific service. The detail are available in xref:reference:cli/akka_logs.adoc[akka logs].
+The `akka logs` commands allow you to display the last few lines (default: 100) of logs for a specific service. The detail are available in xref:reference:cli/akka-cli/akka_logs.adoc[akka logs].
 
 == Organizations
 The `akka organizations` commands allow you to manage the members within an organization. Projects can be created under an organization, and members of the organization can manage those projects.
 
-The xref:reference:cli/akka_organizations.adoc[akka organization] command includes the following options:
+The xref:reference:cli/akka-cli/akka_organizations.adoc[akka organization] command includes the following options:
 
 <AKKA_ORGANIZATIONS_CMD>
 
 == Projects
 The `akka projects` commands manipulate the projects in your Akka account. A project contains a set of services.
 
-See also the xref:reference:cli/akka_roles.adoc#_see_also[akka roles] commands.
+See also the xref:reference:cli/akka-cli/akka_roles.adoc#_see_also[akka roles] commands.
 
-The xref:reference:cli/akka_projects.adoc[akka projects] command includes the following options:
+The xref:reference:cli/akka-cli/akka_projects.adoc[akka projects] command includes the following options:
 
 <AKKA_PROJECTS_CMD>
 
 == Access quickstart project samples
 The `akka quickstart` commands enable one to access Akka quickstart project samples.
 
-The xref:reference:cli/akka_quickstart.adoc[akka quickstart] command includes the following options:
+The xref:reference:cli/akka-cli/akka_quickstart.adoc[akka quickstart] command includes the following options:
 
 <AKKA_QUICKSTART_CMD>
 
 == Regions
 The `akka regions` commands allow you to manage regions on Akka.
 
-See also the xref:reference:cli/akka_projects_regions.adoc#_see_also[akka project regions] commands.
+See also the xref:reference:cli/akka-cli/akka_projects_regions.adoc#_see_also[akka project regions] commands.
 
-The xref:reference:cli/akka_regions.adoc[akka regions] command includes the following options:
+The xref:reference:cli/akka-cli/akka_regions.adoc[akka regions] command includes the following options:
 
 <AKKA_REGIONS_CMD>
 
 == Roles
 The `akka roles` commands allow you to associate user roles (authorizations) with the current project.
 
-The xref:reference:cli/akka_roles.adoc[akka roles] command provides the following options:
+The xref:reference:cli/akka-cli/akka_roles.adoc[akka roles] command provides the following options:
 
 <AKKA_ROLES_CMD>
 
 == Routes
 The `akka routes` commands manipulate the routes that can be used to expose services in your Akka Project to the internet.
 
-The xref:reference:cli/akka_routes.adoc[akka routes] command includes the following options:
+The xref:reference:cli/akka-cli/akka_routes.adoc[akka routes] command includes the following options:
 
 <AKKA_ROUTES_CMD>
 
 == Manage secrets
 The `akka secrets` commands manage secrets in your Akka project.
 
-The xref:reference:cli/akka_secrets.adoc[akka secret] command includes the following options:
+The xref:reference:cli/akka-cli/akka_secrets.adoc[akka secret] command includes the following options:
 
 <AKKA_SECRETS_CMD>
 
 == Manage services
 The `akka services` commands manipulate the services in your Akka Project.
 
-The xref:reference:cli/akka_services.adoc[akka services] command includes the following options:
+The xref:reference:cli/akka-cli/akka_services.adoc[akka services] command includes the following options:
 
 <AKKA_SERVICES_CMD>
 
 == Run Akka services locally
 The `akka local` commands allow you to run and manage locally running Akka services.
 
-The xref:reference:cli/akka_local.adoc[akka local] command includes the following options:
+The xref:reference:cli/akka-cli/akka_local.adoc[akka local] command includes the following options:
 
 <AKKA_LOCAL_CMD>
 
 == Display version
-The `akka version` commands allow you to display the CLI version. The detail are available in xref:reference:cli/akka_version.adoc[akka version].
+The `akka version` commands allow you to display the CLI version. The detail are available in xref:reference:cli/akka-cli/akka_version.adoc[akka version].

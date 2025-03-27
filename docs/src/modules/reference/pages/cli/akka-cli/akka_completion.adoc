@@ -9,7 +9,7 @@ The `akka completion` command generates completion scripts for Bash, Zsh, fish a
 If you are running on Linux or macOS, the command automatically detects your default shell if the 'SHELL' environment variable is set.
 On Windows, or if you want to override the shell type, you provide the shell type as an explicit argument.
 
-For more help with configuring the completion script, see https://doc.akka.io/reference/cli/command-completion.html
+For more help with configuring the completion script, see https://doc.akka.io/operations/cli/command-completion.html
 
 To load completions:
 
