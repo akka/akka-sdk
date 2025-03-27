@@ -19,8 +19,6 @@ import akka.javasdk.impl.RetrySettings.FixedDelayRetrySettings
  */
 @InternalApi
 private[akka] sealed trait RetrySettings extends akka.javasdk.RetrySettings {
-
-  override def attempts(attempts: Int): akka.javasdk.RetrySettings.RetrySettingsBuilder = RetrySettingsBuilder(attempts)
 }
 
 /**

@@ -6,9 +6,9 @@ package akka.javasdk;
 
 import java.time.Duration;
 
-public interface RetrySettings {
+public class RetrySettings {
 
-  interface RetrySettingsBuilder {
+  public interface RetrySettingsBuilder {
 
     /**
      * Set fixed delay between attempts.
@@ -29,5 +29,7 @@ public interface RetrySettings {
   /**
    * Set the number of attempts to make.
    */
-  RetrySettingsBuilder attempts(int attempts);
+  public final static RetrySettingsBuilder attempts(int attempts) {
+    return new akka.javasdk.impl.RetrySettingsBuilder(attempts);
+  }
 }

@@ -37,8 +37,13 @@ import scala.concurrent.duration.DurationInt
 import scala.concurrent.duration.FiniteDuration
 import scala.jdk.CollectionConverters.SeqHasAsJava
 import scala.jdk.DurationConverters.JavaDurationOps
+import scala.jdk.DurationConverters.ScalaDurationOps
 
 import akka.http.javadsl.model.StatusCodes
+import akka.javasdk.RetrySettings
+import akka.javasdk.impl
+import akka.javasdk.impl.RetrySettingsBuilder
+import akka.pattern.Patterns
 
 /**
  * INTERNAL API
@@ -73,14 +78,15 @@ private[akka] final class HttpClientImpl(
 
   override def DELETE(uri: String): RequestBuilder[ByteString] = forMethod(uri, HttpMethods.DELETE)
 
-  private def forMethod(uri: String, method: HttpMethod) = {
+  private def forMethod(uri: String, method: HttpMethod): RequestBuilderImpl[ByteString] = {
     val req = HttpRequest.create(baseUrl + uri).withMethod(method)
     new RequestBuilderImpl[ByteString](
       http,
       materializer,
       timeout,
       req.withHeaders(defaultHeaders.asJava),
-      new StrictResponse[ByteString](_, _))
+      new StrictResponse[ByteString](_, _),
+      None)
   }
 }
 
@@ -93,7 +99,8 @@ private[akka] final case class RequestBuilderImpl[R](
     materializer: Materializer,
     timeout: FiniteDuration,
     request: HttpRequest,
-    bodyParser: (HttpResponse, ByteString) => StrictResponse[R])
+    bodyParser: (HttpResponse, ByteString) => StrictResponse[R],
+    retrySettings: Option[impl.RetrySettings])
     extends RequestBuilder[R] {
 
   override def withRequest(request: HttpRequest): RequestBuilder[R] = copy(request = request)
@@ -109,7 +116,7 @@ private[akka] final case class RequestBuilderImpl[R](
     request.addCredentials(credentials))
 
   override def withTimeout(timeout: Duration) =
-    new RequestBuilderImpl[R](http, materializer, timeout.toScala, request, bodyParser)
+    new RequestBuilderImpl[R](http, materializer, timeout.toScala, request, bodyParser, retrySettings)
 
   override def modifyRequest(adapter: Function[HttpRequest, HttpRequest]): RequestBuilder[R] = withRequest(
     adapter.apply(request))
@@ -142,12 +149,32 @@ private[akka] final case class RequestBuilderImpl[R](
     withRequest(requestWithBody)
   }
 
-  override def invokeAsync: CompletionStage[StrictResponse[R]] = http
-    .singleRequest(request)
-    .thenCompose((response: HttpResponse) =>
-      response.entity
-        .toStrict(timeout.toMillis, materializer)
-        .thenApply((entity: HttpEntity.Strict) => bodyParser.apply(response, entity.getData)))
+  override def invokeAsync: CompletionStage[StrictResponse[R]] = {
+
+    def callHttp(): CompletionStage[StrictResponse[R]] = http
+      .singleRequest(request)
+      .thenCompose((response: HttpResponse) =>
+        response.entity
+          .toStrict(timeout.toMillis, materializer)
+          .thenApply((entity: HttpEntity.Strict) => bodyParser.apply(response, entity.getData)))
+
+    retrySettings match {
+      case Some(settings) =>
+        settings match {
+          case impl.RetrySettings.FixedDelayRetrySettings(attempts, fixedDelay) =>
+            Patterns.retry(() => callHttp(), attempts, fixedDelay.toJava, materializer.system)
+          case impl.RetrySettings.BackoffRetrySettings(attempts, minBackoff, maxBackoff, randomFactor) =>
+            Patterns.retry(
+              () => callHttp(),
+              attempts,
+              minBackoff.toJava,
+              maxBackoff.toJava,
+              randomFactor,
+              materializer.system)
+        }
+      case None => callHttp()
+    }
+  }
 
   override def responseBodyAs[T](`type`: Class[T]) = new RequestBuilderImpl[T](
     http,
@@ -183,7 +210,8 @@ private[akka] final case class RequestBuilderImpl[R](
         case e: IOException =>
           throw new RuntimeException(e)
       }
-    })
+    },
+    retrySettings)
 
   override def parseResponseBody[T](parse: Function[Array[Byte], T]) =
     new RequestBuilderImpl[T](
@@ -191,11 +219,32 @@ private[akka] final case class RequestBuilderImpl[R](
       materializer,
       timeout,
       request,
-      (res: HttpResponse, bytes: ByteString) => new StrictResponse[T](res, parse.apply(bytes.toArray)))
+      (res: HttpResponse, bytes: ByteString) => new StrictResponse[T](res, parse.apply(bytes.toArray)),
+      retrySettings)
 
   override def addQueryParameter(key: String, value: String): RequestBuilder[R] = {
     val query = request.getUri.query().withParam(key, value)
     val uriWithQuery = request.getUri.query(query)
     withRequest(request.withUri(uriWithQuery))
+  }
+
+  override def withRetry(retrySettings: RetrySettings): RequestBuilder[R] = {
+    new RequestBuilderImpl[R](
+      http,
+      materializer,
+      timeout,
+      request,
+      bodyParser,
+      Some(retrySettings.asInstanceOf[impl.RetrySettings]))
+  }
+
+  override def withRetry(attempts: Int): RequestBuilder[R] = {
+    new RequestBuilderImpl[R](
+      http,
+      materializer,
+      timeout,
+      request,
+      bodyParser,
+      Some(RetrySettingsBuilder(attempts).withBackoff()))
   }
 }

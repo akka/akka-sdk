@@ -10,6 +10,7 @@ import java.lang.reflect.Method
 import java.util
 import java.util.Optional
 import java.util.concurrent.CompletionStage
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.Promise
@@ -27,6 +28,7 @@ import akka.grpc.internal.JavaMetadataImpl
 import akka.grpc.javadsl.Metadata
 import akka.http.javadsl.model.HttpHeader
 import akka.http.scaladsl.model.headers.RawHeader
+import akka.javasdk.AsyncUtils
 import akka.javasdk.BuildInfo
 import akka.javasdk.DependencyProvider
 import akka.javasdk.JwtClaims
@@ -313,7 +315,8 @@ private[javasdk] object Sdk {
     classOf[Config],
     classOf[WorkflowContext],
     classOf[EventSourcedEntityContext],
-    classOf[KeyValueEntityContext])
+    classOf[KeyValueEntityContext],
+    classOf[AsyncUtils])
 }
 
 /**
@@ -336,6 +339,7 @@ private final class Sdk(
 
   private val logger = LoggerFactory.getLogger(getClass)
   private val serializer = new JsonSerializer
+  private val asyncUtils = new AsyncUtilsImpl(system.classicSystem)
   private val ComponentLocator.LocatedClasses(componentClasses, maybeServiceClass) =
     ComponentLocator.locateUserComponents(system)
   @volatile private var dependencyProviderOpt: Option[DependencyProvider] = dependencyProviderOverride
@@ -622,6 +626,7 @@ private final class Sdk(
     case g if g == classOf[GrpcClientProvider] => grpcClientProvider(span)
     case t if t == classOf[TimerScheduler]     => timerScheduler(span)
     case m if m == classOf[Materializer]       => sdkMaterializer
+    case a if a == classOf[AsyncUtils]         => asyncUtils
   }
 
   val spiComponents: SpiComponents = {

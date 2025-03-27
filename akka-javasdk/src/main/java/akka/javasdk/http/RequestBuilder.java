@@ -9,6 +9,7 @@ import akka.http.javadsl.model.ContentType;
 import akka.http.javadsl.model.HttpHeader;
 import akka.http.javadsl.model.HttpRequest;
 import akka.http.javadsl.model.headers.HttpCredentials;
+import akka.javasdk.RetrySettings;
 
 import java.time.Duration;
 import java.util.concurrent.CompletionStage;
@@ -60,6 +61,20 @@ public interface RequestBuilder<R> {
    * content type
    */
   RequestBuilder<R> withRequestBody(ContentType type, byte[] bytes);
+
+  /**
+   * Set the retry settings for this call.
+   *
+   * @param retrySettings The retry settings
+   */
+  RequestBuilder<R> withRetry(RetrySettings retrySettings);
+
+  /**
+   * Set the retry settings for this call. A predifined backoff strategy will be calculated based on the number of attempts.
+   *
+   * @param attempts The number of attempts to make
+   */
+  RequestBuilder<R> withRetry(int attempts);
 
   CompletionStage<StrictResponse<R>> invokeAsync();
 
