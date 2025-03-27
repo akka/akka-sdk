@@ -7,8 +7,8 @@ import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.http.HttpResponses;
-import com.example.transfer.application.TransferView;
-import com.example.transfer.application.TransferView.TransferEntries;
+import com.example.transfer.application.TransfersView;
+import com.example.transfer.application.TransfersView.TransferEntries;
 import com.example.transfer.application.TransferWorkflow;
 import com.example.transfer.domain.TransferState.Transfer;
 import org.slf4j.Logger;
@@ -41,7 +41,7 @@ public class TransferEndpoint {
   @Get("/transfers/completed")
   public CompletionStage<TransferEntries> getCompleted() {
     return componentClient.forView()
-      .method(TransferView::getAllCompleted).invokeAsync();
+      .method(TransfersView::getAllCompleted).invokeAsync();
   }
 
   @Post("/transfer/{id}")

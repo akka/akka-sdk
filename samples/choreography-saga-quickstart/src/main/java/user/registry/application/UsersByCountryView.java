@@ -16,19 +16,19 @@ import java.util.List;
 /**
  * A View to query users by country.
  */
-@ComponentId("view-users-by-newCountry")
+@ComponentId("users-by-country")
 public class UsersByCountryView extends View {
 
   private static Logger logger = LoggerFactory.getLogger(UsersByCountryView.class);
 
   @Consume.FromEventSourcedEntity(value = UserEntity.class)
-  public static class UsersByCountry extends TableUpdater<UserView> {
-    public Effect<UserView> onEvent(UserEvent evt) {
+  public static class UsersByCountryUpdater extends TableUpdater<UserEntry> {
+    public Effect<UserEntry> onEvent(UserEvent evt) {
       return switch (evt) {
         case UserWasCreated created -> {
           logger.info("User was created: {}", created);
           var currentId = updateContext().eventSubject().orElseThrow();
-          yield effects().updateRow(new UserView(currentId, created.name(), created.country(), created.email()));
+          yield effects().updateRow(new UserEntry(currentId, created.name(), created.country(), created.email()));
         }
         case EmailAssigned emailAssigned -> {
           logger.info("User address changed: {}", emailAssigned);
@@ -41,16 +41,16 @@ public class UsersByCountryView extends View {
     }
   }
 
-  public record UserView(String id, String name, String country, String email) {
-    public UserView withEmail(String email) {
-      return new UserView(id, name, country, email);
+  public record UserEntry(String id, String name, String country, String email) {
+    public UserEntry withEmail(String email) {
+      return new UserEntry(id, name, country, email);
     }
   }
 
-  public record UserList(List<UserView> users) { }
+  public record UserEntries(List<UserEntry> users) { }
 
   @Query("SELECT * AS users FROM users_by_country WHERE country = :country")
-  public QueryEffect<UserList> getUserByCountry(String country) {
+  public QueryEffect<UserEntries> getUserByCountry(String country) {
     return queryResult();
   }
 
