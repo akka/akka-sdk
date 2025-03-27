@@ -45,15 +45,21 @@ When subscribing to entities and service-to-service eventing from a view, update
  - query parameters support for HTTP Endpoints
  - documenting deduplication strategies for common use cases
 
-* Akka Runtime 1.4.3
+* Akka Runtime 1.4.3, 1.4.4
     - automatic deduplication of views updates
     - improvements for use of reserved words in view queries
     - support for endpoint custom object mapper
     - support for query parameters in HTTP requests
+    - increased maximum size for service to service eventing
+    - validate event size to ensure replication can always be enabled
+    - updated runtime base docker image
+    - support for workflow subscriptions in eventing
 
-* Akka Runtime 1.2.11, 1.2.12
+* Akka Runtime 1.2.11, 1.2.12, 1.12.13
     - automatic deduplication of views updates
     - improvements for use of reserved words in view queries
+    - increased maximum size for service to service eventing
+    - updated runtime base docker image
 
 * https://github.com/akka/akka-sdk/releases/tag/v3.2.1[Akka SDK 3.2.1]
     - make it possible to filter message by region origin, see xref:java:consuming-producing.adoc#_multi_region_replication[Consumer documentation]
