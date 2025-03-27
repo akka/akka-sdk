@@ -1,25 +1,21 @@
-= akka services components list-ids
+= akka projects regions remove
 
-List the IDs for the given stateful component served by this service.
+Remove a region from a project
 
 == Synopsis
 
-The `akka service components list-ids` command lists ids for the given stateful component in this service.
+The `akka project regions remove` command will remove a region from your project.
 
 ----
-akka services components list-ids SERVICE_NAME COMPONENT_ID [flags]
+akka projects regions remove REGION [flags]
 ----
 
 == Options
 
 ----
-  -h, --help                help for list-ids
-  -i, --interactive         Whether the command should allow interactively paging through results.
-      --owner string        the owner of the project to use, needed if you have two projects with the same name from different owners
-      --page-size int       The size of pages to fetch. Defaults to 100.
-      --page-token string   Page token for paging.
-      --project string      project to use if not using the default configured project
-      --region string       region to use if project has more than one region
+  -h, --help             help for remove
+      --owner string     the owner of the project to use, needed if you have two projects with the same name from different owners
+      --project string   project to use if not using the default configured project
 ----
 
 == Options inherited from parent commands
@@ -39,7 +35,7 @@ akka services components list-ids SERVICE_NAME COMPONENT_ID [flags]
 
 == SEE ALSO
 
-* link:akka_services_components.html[akka services components]	 - Inspect components of a service.
+* link:akka_projects_regions.html[akka projects regions]	 - Manage the regions assigned to your Akka project.
 
 [discrete]
 

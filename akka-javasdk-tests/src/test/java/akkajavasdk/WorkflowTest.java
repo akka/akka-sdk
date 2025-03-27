@@ -6,6 +6,8 @@ package akkajavasdk;
 
 import akka.javasdk.testkit.TestKitSupport;
 import akkajavasdk.components.actions.echo.Message;
+import akkajavasdk.components.views.TransferView;
+import akkajavasdk.components.workflowentities.DummyTransferStore;
 import akkajavasdk.components.workflowentities.DummyWorkflow;
 import akkajavasdk.components.workflowentities.FailingCounterEntity;
 import akkajavasdk.components.workflowentities.Transfer;
@@ -33,6 +35,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import static akkajavasdk.components.workflowentities.TransferConsumer.TRANSFER_CONSUMER_STORE;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -50,18 +53,13 @@ public class WorkflowTest extends TestKitSupport {
     var transferId = randomTransferId();
     var transfer = new Transfer(walletId1, walletId2, -10);
 
-      Awaitility.await()
-        .ignoreExceptions()
-        .atMost(20, TimeUnit.of(SECONDS))
-        .untilAsserted(() -> {
-          Message message =
-            await(
-              componentClient.forWorkflow(transferId)
-                .method(TransferWorkflow::startTransfer)
-                .invokeAsync(transfer));
+    Message message =
+      await(
+        componentClient.forWorkflow(transferId)
+          .method(TransferWorkflow::startTransfer)
+          .invokeAsync(transfer));
 
-          assertThat(message.text()).isEqualTo("Transfer amount should be greater than zero");
-        });
+    assertThat(message.text()).isEqualTo("Transfer amount should be greater than zero");
   }
 
   @Test
@@ -74,17 +72,12 @@ public class WorkflowTest extends TestKitSupport {
     var transfer = new Transfer(walletId1, walletId2, 10);
 
 
-    Awaitility.await()
-      .ignoreExceptions()
-      .atMost(20, TimeUnit.of(SECONDS))
-      .untilAsserted(() -> {
-        Message response =
-          await(componentClient.forWorkflow(transferId)
-            .method(TransferWorkflow::startTransfer)
-            .invokeAsync(transfer));
+    Message response =
+      await(componentClient.forWorkflow(transferId)
+        .method(TransferWorkflow::startTransfer)
+        .invokeAsync(transfer));
 
-        assertThat(response.text()).contains("transfer started");
-      });
+    assertThat(response.text()).contains("transfer started");
 
 
     Awaitility.await()
@@ -100,6 +93,42 @@ public class WorkflowTest extends TestKitSupport {
   }
 
   @Test
+  public void shouldVerifyWorkflowSubscriptions() {
+    var walletId1 = "1";
+    var walletId2 = "2";
+    createWallet(walletId1, 100);
+    createWallet(walletId2, 100);
+    var transferId1 = randomTransferId();
+    var transferId2 = randomTransferId();
+    var transfer1 = new Transfer(walletId1, walletId2, 10);
+    var transfer2 = new Transfer(walletId1, walletId2, 20);
+
+    await(componentClient.forWorkflow(transferId1)
+      .method(TransferWorkflow::startTransfer)
+      .invokeAsync(transfer1));
+    await(componentClient.forWorkflow(transferId2)
+      .method(TransferWorkflow::startTransfer)
+      .invokeAsync(transfer2));
+
+    Awaitility.await()
+      .ignoreExceptions()
+      .atMost(20, TimeUnit.of(SECONDS))
+      .untilAsserted(() -> {
+        var transferState1 = DummyTransferStore.get(TRANSFER_CONSUMER_STORE, transferId1);
+        var transferState2 = DummyTransferStore.get(TRANSFER_CONSUMER_STORE, transferId2);
+
+        assertThat(transferState1.transfer()).isEqualTo(transfer1);
+        assertThat(transferState2.transfer()).isEqualTo(transfer2);
+
+        var result = await(componentClient.forView().method(TransferView::getAll).invokeAsync());
+        assertThat(result.entries()).contains(
+          new TransferView.TransferEntry(transferId1, true),
+          new TransferView.TransferEntry(transferId2, true));
+      });
+  }
+
+
+  @Test
   public void shouldTransferMoneyWithoutStepInputs() {
     var walletId1 = "1";
     var walletId2 = "2";
@@ -108,17 +137,12 @@ public class WorkflowTest extends TestKitSupport {
     var transferId = randomTransferId();
     var transfer = new Transfer(walletId1, walletId2, 10);
 
-    Awaitility.await()
-      .ignoreExceptions()
-      .atMost(20, TimeUnit.of(SECONDS))
-      .untilAsserted(() -> {
-        Message response = await(
-          componentClient.forWorkflow(transferId)
-            .method(TransferWorkflowWithoutInputs::startTransfer)
-            .invokeAsync(transfer));
+    Message response = await(
+      componentClient.forWorkflow(transferId)
+        .method(TransferWorkflowWithoutInputs::startTransfer)
+        .invokeAsync(transfer));
 
-        assertThat(response.text()).contains("transfer started");
-      });
+    assertThat(response.text()).contains("transfer started");
 
     Awaitility.await()
       .ignoreExceptions()
@@ -142,17 +166,12 @@ public class WorkflowTest extends TestKitSupport {
     var transfer = new Transfer(walletId1, walletId2, 10);
 
 
-    Awaitility.await()
-      .ignoreExceptions()
-      .atMost(20, TimeUnit.of(SECONDS))
-      .untilAsserted(() -> {
-        Message response = await(
-          componentClient.forWorkflow(transferId)
-            .method(TransferWorkflowWithoutInputs::startTransferAsync)
-            .invokeAsync(transfer));
+    Message response = await(
+      componentClient.forWorkflow(transferId)
+        .method(TransferWorkflowWithoutInputs::startTransferAsync)
+        .invokeAsync(transfer));
 
-        assertThat(response.text()).contains("transfer started");
-      });
+    assertThat(response.text()).contains("transfer started");
 
     Awaitility.await()
       .ignoreExceptions()
@@ -176,17 +195,12 @@ public class WorkflowTest extends TestKitSupport {
     var transfer = new Transfer(walletId1, walletId2, 10);
 
 
-    Awaitility.await()
-      .ignoreExceptions()
-      .atMost(20, TimeUnit.of(SECONDS))
-      .untilAsserted(() -> {
-        Message response = await(
-          componentClient.forWorkflow(transferId)
-            .method(TransferWorkflowWithFraudDetection::startTransfer)
-            .invokeAsync(transfer));
+    Message response = await(
+      componentClient.forWorkflow(transferId)
+        .method(TransferWorkflowWithFraudDetection::startTransfer)
+        .invokeAsync(transfer));
 
-        assertThat(response.text()).contains("transfer started");
-      });
+    assertThat(response.text()).contains("transfer started");
 
     Awaitility.await()
       .ignoreExceptions()
@@ -209,19 +223,12 @@ public class WorkflowTest extends TestKitSupport {
     var transferId = randomTransferId();
     var transfer = new Transfer(walletId1, walletId2, 1000);
 
+    Message response = await(
+      componentClient.forWorkflow(transferId)
+        .method(TransferWorkflowWithFraudDetection::startTransfer)
+        .invokeAsync(transfer));
 
-    Awaitility.await()
-      .ignoreExceptions()
-      .atMost(20, TimeUnit.of(SECONDS))
-      .untilAsserted(() -> {
-        Message response = await(
-          componentClient.forWorkflow(transferId)
-            .method(TransferWorkflowWithFraudDetection::startTransfer)
-            .invokeAsync(transfer));
-
-        assertThat(response.text()).contains("transfer started");
-      });
-
+    assertThat(response.text()).contains("transfer started");
 
     Awaitility.await()
       .atMost(20, TimeUnit.of(SECONDS))
@@ -232,9 +239,9 @@ public class WorkflowTest extends TestKitSupport {
             .method(TransferWorkflowWithFraudDetection::getTransferState)
             .invokeAsync());
 
-        assertThat(transferState.finished).isFalse();
-        assertThat(transferState.accepted).isFalse();
-        assertThat(transferState.lastStep).isEqualTo("fraud-detection");
+        assertThat(transferState.finished()).isFalse();
+        assertThat(transferState.accepted()).isFalse();
+        assertThat(transferState.lastStep()).isEqualTo("fraud-detection");
       });
 
 
@@ -274,17 +281,12 @@ public class WorkflowTest extends TestKitSupport {
     var transfer = new Transfer(walletId1, walletId2, 1000000);
 
 
-    Awaitility.await()
-      .ignoreExceptions()
-      .atMost(20, TimeUnit.of(SECONDS))
-      .untilAsserted(() -> {
-          Message response = await(
-            componentClient.forWorkflow(transferId)
-              .method(TransferWorkflowWithFraudDetection::startTransfer)
-              .invokeAsync(transfer));
+    Message response = await(
+      componentClient.forWorkflow(transferId)
+        .method(TransferWorkflowWithFraudDetection::startTransfer)
+        .invokeAsync(transfer));
 
-          assertThat(response.text()).contains("transfer started");
-        });
+    assertThat(response.text()).contains("transfer started");
 
     Awaitility.await()
       .ignoreExceptions()
@@ -301,9 +303,9 @@ public class WorkflowTest extends TestKitSupport {
             .method(TransferWorkflowWithFraudDetection::getTransferState)
             .invokeAsync());
 
-        assertThat(transferState.finished).isTrue();
-        assertThat(transferState.accepted).isFalse();
-        assertThat(transferState.lastStep).isEqualTo("fraud-detection");
+        assertThat(transferState.finished()).isTrue();
+        assertThat(transferState.accepted()).isFalse();
+        assertThat(transferState.lastStep()).isEqualTo("fraud-detection");
       });
   }
 
@@ -314,17 +316,12 @@ public class WorkflowTest extends TestKitSupport {
     var workflowId = randomId();
 
     //when
-    Awaitility.await()
-      .ignoreExceptions()
-      .atMost(20, TimeUnit.of(SECONDS))
-      .untilAsserted(() -> {
-        Message response = await(
-          componentClient.forWorkflow(workflowId)
-            .method(WorkflowWithDefaultRecoverStrategy::startFailingCounter)
-            .invokeAsync(counterId));
+    Message response = await(
+      componentClient.forWorkflow(workflowId)
+        .method(WorkflowWithDefaultRecoverStrategy::startFailingCounter)
+        .invokeAsync(counterId));
 
-        assertThat(response.text()).isEqualTo("workflow started");
-      });
+    assertThat(response.text()).isEqualTo("workflow started");
 
     //then
     Awaitility.await()
@@ -355,17 +352,12 @@ public class WorkflowTest extends TestKitSupport {
     var workflowId = randomId();
 
     //when
-    Awaitility.await()
-      .ignoreExceptions()
-      .atMost(20, TimeUnit.of(SECONDS))
-      .untilAsserted(() -> {
-        Message response = await(
-          componentClient.forWorkflow(workflowId)
-            .method(WorkflowWithRecoverStrategy::startFailingCounter)
-            .invokeAsync(counterId));
+    Message response = await(
+      componentClient.forWorkflow(workflowId)
+        .method(WorkflowWithRecoverStrategy::startFailingCounter)
+        .invokeAsync(counterId));
 
-        assertThat(response.text()).isEqualTo("workflow started");
-      });
+    assertThat(response.text()).isEqualTo("workflow started");
 
     //then
     Awaitility.await()
@@ -396,17 +388,12 @@ public class WorkflowTest extends TestKitSupport {
     var workflowId = randomId();
 
     //when
-    Awaitility.await()
-      .ignoreExceptions()
-      .atMost(20, TimeUnit.of(SECONDS))
-      .untilAsserted(() -> {
-        Message response = await(
-          componentClient.forWorkflow(workflowId)
-            .method(WorkflowWithRecoverStrategyAndAsyncCall::startFailingCounter)
-            .invokeAsync(counterId));
+    Message response = await(
+      componentClient.forWorkflow(workflowId)
+        .method(WorkflowWithRecoverStrategyAndAsyncCall::startFailingCounter)
+        .invokeAsync(counterId));
 
-        assertThat(response.text()).isEqualTo("workflow started");
-      });
+    assertThat(response.text()).isEqualTo("workflow started");
 
     //then
     Awaitility.await()
@@ -436,17 +423,12 @@ public class WorkflowTest extends TestKitSupport {
     var workflowId = randomId();
 
     //when
-    Awaitility.await()
-      .ignoreExceptions()
-      .atMost(20, TimeUnit.of(SECONDS))
-      .untilAsserted(() -> {
-          Message response = await(
-            componentClient.forWorkflow(workflowId)
-              .method(WorkflowWithTimeout::startFailingCounter)
-              .invokeAsync(counterId));
+    Message response = await(
+      componentClient.forWorkflow(workflowId)
+        .method(WorkflowWithTimeout::startFailingCounter)
+        .invokeAsync(counterId));
 
-          assertThat(response.text()).isEqualTo("workflow started");
-        });
+    assertThat(response.text()).isEqualTo("workflow started");
 
     //then
     Awaitility.await()
@@ -476,17 +458,12 @@ public class WorkflowTest extends TestKitSupport {
     var workflowId = randomId();
 
     //when
-    Awaitility.await()
-      .ignoreExceptions()
-      .atMost(20, TimeUnit.of(SECONDS))
-      .untilAsserted(() -> {
-          Message response = await(
-            componentClient.forWorkflow(workflowId)
-              .method(WorkflowWithStepTimeout::startFailingCounter)
-              .invokeAsync(counterId));
+    Message response = await(
+      componentClient.forWorkflow(workflowId)
+        .method(WorkflowWithStepTimeout::startFailingCounter)
+        .invokeAsync(counterId));
 
-          assertThat(response.text()).isEqualTo("workflow started");
-        });
+    assertThat(response.text()).isEqualTo("workflow started");
 
     //then
     Awaitility.await()
@@ -510,17 +487,12 @@ public class WorkflowTest extends TestKitSupport {
     var workflowId = randomId();
 
     //when
-    Awaitility.await()
-      .ignoreExceptions()
-      .atMost(20, TimeUnit.of(SECONDS))
-      .untilAsserted(() -> {
-          Message response = await(
-            componentClient.forWorkflow(workflowId)
-              .method(WorkflowWithTimer::startFailingCounter)
-              .invokeAsync(counterId));
+    Message response = await(
+      componentClient.forWorkflow(workflowId)
+        .method(WorkflowWithTimer::startFailingCounter)
+        .invokeAsync(counterId));
 
-          assertThat(response.text()).isEqualTo("workflow started");
-        });
+    assertThat(response.text()).isEqualTo("workflow started");
 
     //then
     Awaitility.await()
@@ -591,11 +563,11 @@ public class WorkflowTest extends TestKitSupport {
   public void shouldAllowHierarchyWorkflow() {
     var workflowId = randomId();
     await(componentClient.forWorkflow(workflowId)
-        .method(TextWorkflow::setText).invokeAsync("some text"));
+      .method(TextWorkflow::setText).invokeAsync("some text"));
 
 
     var result = await(componentClient.forWorkflow(workflowId)
-        .method(TextWorkflow::getText).invokeAsync());
+      .method(TextWorkflow::getText).invokeAsync());
 
     assertThat(result).isEqualTo(Optional.of("some text"));
   }
@@ -604,14 +576,14 @@ public class WorkflowTest extends TestKitSupport {
   public void shouldBeCallableWithGenericParameter() {
     var workflowId = randomId();
     String response1 = await(componentClient.forWorkflow(workflowId)
-        .method(TransferWorkflow::genericStringsCall)
-        .invokeAsync(List.of("somestring"))).text();
+      .method(TransferWorkflow::genericStringsCall)
+      .invokeAsync(List.of("somestring"))).text();
 
     assertThat(response1).isEqualTo("genericCall ok");
 
     String response2 = await(componentClient.forWorkflow(workflowId)
-        .method(TransferWorkflow::genericCall)
-        .invokeAsync(List.of(new TransferWorkflow.SomeClass("somestring")))).text();
+      .method(TransferWorkflow::genericCall)
+      .invokeAsync(List.of(new TransferWorkflow.SomeClass("somestring")))).text();
 
     assertThat(response2).isEqualTo("genericCall ok");
   }

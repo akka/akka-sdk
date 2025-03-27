@@ -30,9 +30,9 @@ public class TransferWorkflow extends Workflow<TransferState> {
         step(withdrawStepName)
             .asyncCall(Withdraw.class, cmd -> componentClient.forKeyValueEntity(cmd.from).method(WalletEntity::withdraw).invokeAsync(cmd.amount))
             .andThen(String.class, __ -> {
-              var state = currentState().withLastStep("withdrawn").accepted();
+              var state = currentState().withLastStep("withdrawn").asAccepted();
 
-              var depositInput = new Deposit(currentState().transfer.to, currentState().transfer.amount);
+              var depositInput = new Deposit(currentState().transfer().to(), currentState().transfer().amount());
 
               return effects()
                   .updateState(state)
@@ -43,7 +43,7 @@ public class TransferWorkflow extends Workflow<TransferState> {
         step(depositStepName)
             .asyncCall(Deposit.class, cmd -> componentClient.forKeyValueEntity(cmd.to).method(WalletEntity::deposit).invokeAsync(cmd.amount)
             ).andThen(String.class, __ -> {
-              var state = currentState().withLastStep("deposited").finished();
+              var state = currentState().withLastStep("deposited").asFinished();
               return effects().updateState(state).end();
             });
 
@@ -54,13 +54,13 @@ public class TransferWorkflow extends Workflow<TransferState> {
   }
 
   public Effect<Message> startTransfer(Transfer transfer) {
-    if (transfer.amount <= 0.0) {
+    if (transfer.amount() <= 0.0) {
       return effects().reply(new Message("Transfer amount should be greater than zero"));
     } else {
       if (currentState() == null) {
         return effects()
             .updateState(new TransferState(transfer, "started"))
-            .transitionTo(withdrawStepName, new Withdraw(transfer.from, transfer.amount))
+            .transitionTo(withdrawStepName, new Withdraw(transfer.from(), transfer.amount()))
             .thenReply(new Message("transfer started"));
       } else {
         return effects().reply(new Message("transfer started already"));

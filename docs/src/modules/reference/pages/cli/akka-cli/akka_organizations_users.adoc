@@ -32,7 +32,8 @@ The `akka organizations users` commands manage organization users.
 * link:akka_organizations.html[akka organizations]	 - Manage your organizations on Akka
 * link:akka_organizations_users_add-binding.html[akka organizations users add-binding]	 - Add a role binding
 * link:akka_organizations_users_delete-binding.html[akka organizations users delete-binding]	 - Delete a role binding
-* link:akka_organizations_users_list-bindings.html[akka organizations users list-bindings]	 - List all users in the organization
+* link:akka_organizations_users_list-bindings.html[akka organizations users list-bindings]	 - List all users in the organization.
+To view users with pending invitations run `akka org invitations list`
 
 [discrete]
 

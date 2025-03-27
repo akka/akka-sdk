@@ -111,25 +111,29 @@ private[impl] object Reflect {
   }
 
   def keyValueEntityStateType(component: Class[_]): Class[_] = {
-    @tailrec
-    def loop(current: Class[_]): Class[_] = {
-      if (current == classOf[AnyRef])
-        // recursed to root without finding type param
-        throw new IllegalArgumentException(s"Cannot find key value state class for ${component}")
-      else {
-        current.getGenericSuperclass match {
-          case parameterizedType: ParameterizedType =>
-            if (parameterizedType.getActualTypeArguments.size == 1)
-              parameterizedType.getActualTypeArguments.head.asInstanceOf[Class[_]]
-            else throw new IllegalArgumentException(s"Cannot find key value state class for ${component}")
-          case noTypeParamsParent: Class[_] =>
-            // recurse and look at parent
-            loop(noTypeParamsParent)
-        }
+    findStateType(component, s"Cannot find key value state class for $component")
+  }
+
+  def workflowStateType(component: Class[_]): Class[_] = {
+    findStateType(component, s"Cannot find workflow state class for $component")
+  }
+
+  @tailrec
+  private def findStateType(current: Class[_], errorMsg: String): Class[_] = {
+    if (current == classOf[AnyRef])
+      // recursed to root without finding type param
+      throw new IllegalArgumentException(errorMsg)
+    else {
+      current.getGenericSuperclass match {
+        case parameterizedType: ParameterizedType =>
+          if (parameterizedType.getActualTypeArguments.length == 1)
+            parameterizedType.getActualTypeArguments.head.asInstanceOf[Class[_]]
+          else throw new IllegalArgumentException(errorMsg)
+        case noTypeParamsParent: Class[_] =>
+          // recurse and look at parent
+          findStateType(noTypeParamsParent, errorMsg)
       }
     }
-
-    loop(component)
   }
 
   private def extendsView(component: Class[_]): Boolean =

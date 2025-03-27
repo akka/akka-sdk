@@ -1,13 +1,13 @@
 = akka local services components list-ids
 
-List the IDs for the given named stateful component served by this service.
+List the IDs for the given stateful component served by this service.
 
 == Synopsis
 
-The `akka local service components list-ids` command lists ids for the given named stateful component in this service.
+The `akka local service components list-ids` command lists ids for the given stateful component in this service.
 
 ----
-akka local services components list-ids SERVICE_NAME COMPONENT_NAME [flags]
+akka local services components list-ids SERVICE_NAME COMPONENT_ID [flags]
 ----
 
 == Options

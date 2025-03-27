@@ -172,6 +172,7 @@ final class EventingTestServiceImpl(system: ActorSystem[_], val host: String, va
 
   private val veSubscriptions = new ConcurrentHashMap[String, VeIncomingMessagesImpl]()
   private val esSubscriptions = new ConcurrentHashMap[String, IncomingMessagesImpl]()
+  private val workflowSubscriptions = new ConcurrentHashMap[String, IncomingMessagesImpl]()
   private val streamSubscriptions = new ConcurrentHashMap[String, IncomingMessagesImpl]()
   private val topicSubscriptions = new ConcurrentHashMap[String, IncomingMessagesImpl]()
 
@@ -187,21 +188,29 @@ final class EventingTestServiceImpl(system: ActorSystem[_], val host: String, va
   private def getTopicOutgoingMessagesImpl(topic: String): OutgoingMessagesImpl =
     topicDestinations.computeIfAbsent(topic, _ => new OutgoingMessagesImpl(TestProbe(), serializer))
 
-  override def getKeyValueEntityIncomingMessages(typeId: String): IncomingMessages = getValueEntityIncomingMessagesImpl(
-    typeId)
+  override def getKeyValueEntityIncomingMessages(componentId: String): IncomingMessages =
+    getValueEntityIncomingMessagesImpl(componentId)
 
-  private def getValueEntityIncomingMessagesImpl(typeId: String): VeIncomingMessagesImpl =
+  private def getValueEntityIncomingMessagesImpl(componentId: String): VeIncomingMessagesImpl =
     veSubscriptions.computeIfAbsent(
-      typeId,
-      _ => new VeIncomingMessagesImpl(sys.actorOf(Props[SourcesHolder](), "ve-holder-" + typeId), serializer))
+      componentId,
+      _ => new VeIncomingMessagesImpl(sys.actorOf(Props[SourcesHolder](), "ve-holder-" + componentId), serializer))
 
-  override def getEventSourcedEntityIncomingMessages(typeId: String): IncomingMessages =
-    getEventSourcedSubscriptionImpl(typeId)
+  override def getEventSourcedEntityIncomingMessages(componentId: String): IncomingMessages =
+    getEventSourcedSubscriptionImpl(componentId)
 
-  private def getEventSourcedSubscriptionImpl(typeId: String): IncomingMessagesImpl =
+  override def getWorkflowIncomingMessages(componentId: String): IncomingMessages =
+    getWorkflowSubscriptionImpl(componentId)
+
+  private def getEventSourcedSubscriptionImpl(componentId: String): IncomingMessagesImpl =
     esSubscriptions.computeIfAbsent(
-      typeId,
-      _ => new IncomingMessagesImpl(sys.actorOf(Props[SourcesHolder](), "es-holder-" + typeId), serializer))
+      componentId,
+      _ => new IncomingMessagesImpl(sys.actorOf(Props[SourcesHolder](), "es-holder-" + componentId), serializer))
+
+  private def getWorkflowSubscriptionImpl(componentId: String): IncomingMessagesImpl =
+    workflowSubscriptions.computeIfAbsent(
+      componentId,
+      _ => new IncomingMessagesImpl(sys.actorOf(Props[SourcesHolder](), "workflow-holder-" + componentId), serializer))
 
   override def getStreamIncomingMessages(service: String, streamId: String): IncomingMessages =
     getStreamIncomingMessagesImpl(service, streamId)
@@ -252,10 +261,12 @@ final class EventingTestServiceImpl(system: ActorSystem[_], val host: String, va
             case EventSource.Source.Empty => throw new IllegalStateException("not recognized empty eventing source")
             case EventSource.Source.Topic(topic) =>
               getTopicIncomingMessagesImpl(topic).addSourceProbe(runningSourceProbe)
-            case EventSource.Source.EventSourcedEntity(typeId) =>
-              getEventSourcedSubscriptionImpl(typeId).addSourceProbe(runningSourceProbe)
-            case EventSource.Source.ValueEntity(typeId) =>
-              getValueEntityIncomingMessagesImpl(typeId).addSourceProbe(runningSourceProbe)
+            case EventSource.Source.EventSourcedEntity(componentId) =>
+              getEventSourcedSubscriptionImpl(componentId).addSourceProbe(runningSourceProbe)
+            case EventSource.Source.Workflow(componentId) =>
+              getWorkflowSubscriptionImpl(componentId).addSourceProbe(runningSourceProbe)
+            case EventSource.Source.ValueEntity(componentId) =>
+              getValueEntityIncomingMessagesImpl(componentId).addSourceProbe(runningSourceProbe)
             case EventSource.Source.Direct(DirectSource(service, eventStreamId, _)) =>
               getStreamIncomingMessagesImpl(service, eventStreamId).addSourceProbe(runningSourceProbe)
           }

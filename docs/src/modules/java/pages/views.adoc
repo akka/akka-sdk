@@ -8,6 +8,7 @@ Views can be defined from any of the following:
 
 * xref:value-entity[Key Value Entity state changes]
 * xref:event-sourced-entity[Event Sourced Entity events]
+* xref:workflow[Workflow state changes]
 * xref:topic-view[Messages received from subscribing to topics on a broker]
 * xref:consuming-producing.adoc#s2s-eventing[Events consumed from a different Akka service]
 
@@ -157,6 +158,19 @@ You can ignore events by returning `Effect.ignore` for those you are not interes
 The View row corresponding to an Entity is not automatically deleted when the Entity is deleted.
 
 To delete from the View you can use the `deleteRow()` effect from an event transformation method, similarly to the example shown above for a Key Value Entity.
+
+[#workflow]
+== Creating a View from a Workflow
+
+The source of a View can be also a Workflow state changes. It works the same way as shown in <<event-sourced-entity>> or <<value-entity>>, but you define it with `@Consume.FromWorkflow` instead.
+
+[source,java]
+.{sample-base-url}/transfer-workflow/src/main/java/com/example/transfer/application/TransferView.java[TransferView.java]
+----
+include::example$transfer-workflow/src/main/java/com/example/transfer/application/TransferView.java[tag=view-from-workflow]
+----
+<1> Uses `@Consume.FromWorkflow` annotation to set the source Workflow.
+<2> Transforms the Workflow state `TransferState` into a View `TransferEntry`.
 
 [#topic-view]
 == Creating a View from a topic

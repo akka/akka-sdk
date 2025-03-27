@@ -7,10 +7,13 @@ package akka.javasdk.impl
 import java.lang.reflect.AnnotatedElement
 import java.lang.reflect.Method
 import java.lang.reflect.ParameterizedType
+
 import scala.reflect.ClassTag
+
 import akka.annotation.InternalApi
 import akka.javasdk.annotations.ComponentId
 import akka.javasdk.annotations.Consume.FromKeyValueEntity
+import akka.javasdk.annotations.Consume.FromWorkflow
 import akka.javasdk.annotations.Produce.ServiceStream
 import akka.javasdk.annotations.Query
 import akka.javasdk.annotations.Table
@@ -32,6 +35,7 @@ import akka.javasdk.impl.ComponentDescriptorFactory.hasTopicSubscription
 import akka.javasdk.impl.ComponentDescriptorFactory.hasUpdateEffectOutput
 import akka.javasdk.impl.ComponentDescriptorFactory.hasValueEntitySubscription
 import akka.javasdk.impl.ComponentDescriptorFactory.hasWorkflowEffectOutput
+import akka.javasdk.impl.ComponentDescriptorFactory.hasWorkflowSubscription
 import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.reflection.Reflect.Syntax._
 import akka.javasdk.keyvalueentity.KeyValueEntity
@@ -110,6 +114,7 @@ private[javasdk] object Validations {
     missingEventHandlerValidations(component, updateMethodPredicate) ++
     ambiguousHandlerValidations(component, updateMethodPredicate) ++
     valueEntitySubscriptionValidations(component, updateMethodPredicate) ++
+    workflowSubscriptionValidations(component, updateMethodPredicate) ++
     topicPublicationValidations(component) ++
     publishStreamIdMustBeFilled(component) ++
     noSubscriptionMethodWithAcl(component, updateMethodPredicate) ++
@@ -360,6 +365,7 @@ private[javasdk] object Validations {
   def typeLevelSubscriptionValidation(component: Class[_]): Validation = {
     val typeLevelSubs = List(
       hasValueEntitySubscription(component),
+      hasWorkflowSubscription(component),
       hasEventSourcedEntitySubscription(component),
       hasStreamSubscription(component),
       hasTopicSubscription(component))
@@ -522,25 +528,36 @@ private[javasdk] object Validations {
         tableUpdater.getAnnotation(classOf[FromKeyValueEntity]).value().asInstanceOf[Class[_]]
       val entityStateClass = Reflect.keyValueEntityStateType(valueEntityClass)
 
-      if (entityStateClass != tableType) {
-        val viewUpdateMatchesTableType = tableUpdater.getMethods
-          .filter(hasUpdateEffectOutput)
-          .exists(m => {
-            val updateHandlerType = m.getGenericReturnType.asInstanceOf[ParameterizedType].getActualTypeArguments.head
-            updateHandlerType == tableType
-          })
+      validateTableUpdater(tableUpdater, tableType, entityStateClass)
+    } else if (hasWorkflowSubscription(tableUpdater)) {
+      val tableType: Class[_] = Reflect.tableTypeForTableUpdater(tableUpdater)
+      val workflowClass: Class[_] =
+        tableUpdater.getAnnotation(classOf[FromWorkflow]).value().asInstanceOf[Class[_]]
+      val stateClass = Reflect.workflowStateType(workflowClass)
 
-        when(!viewUpdateMatchesTableType) {
-          val message =
-            s"You are using a type level annotation in this View and that requires the View type [${tableType.getName}] " +
-            s"to match the ValueEntity type [${entityStateClass.getName}]. " +
-            s"If your intention is to transform the type, you should add a method like " +
-            s"`Effect<${tableType.getName}> onChange(${entityStateClass.getName} state)`."
+      validateTableUpdater(tableUpdater, tableType, stateClass)
+    } else {
+      Valid
+    }
+  }
 
-          Validation(Seq(errorMessage(tableUpdater, message)))
-        }
-      } else {
-        Valid
+  private def validateTableUpdater(tableUpdater: Class[_], tableType: Class[_], stateClass: Class[_]) = {
+    if (stateClass != tableType) {
+      val viewUpdateMatchesTableType = tableUpdater.getMethods
+        .filter(hasUpdateEffectOutput)
+        .exists(m => {
+          val updateHandlerType = m.getGenericReturnType.asInstanceOf[ParameterizedType].getActualTypeArguments.head
+          updateHandlerType == tableType
+        })
+
+      when(!viewUpdateMatchesTableType) {
+        val message =
+          s"You are using a type level annotation in this TableUpdater and that requires the TableUpdater type [${tableType.getName}] " +
+          s"to match the type [${stateClass.getName}]. " +
+          s"If your intention is to transform the type, you should add a method like " +
+          s"`Effect<${tableType.getName}> onChange(${stateClass.getName} state)`."
+
+        Validation(Seq(errorMessage(tableUpdater, message)))
       }
     } else {
       Valid
@@ -586,49 +603,61 @@ private[javasdk] object Validations {
       updateMethodPredicate: Method => Boolean): Validation = {
 
     when(hasValueEntitySubscription(component)) {
-      val subscriptionMethods = component.getMethods.toIndexedSeq.filter(updateMethodPredicate).sorted
-      val updatedMethods = subscriptionMethods.filterNot(hasHandleDeletes)
-
-      val (handleDeleteMethods, handleDeleteMethodsWithParam) =
-        subscriptionMethods.filter(hasHandleDeletes).partition(_.getParameterTypes.isEmpty)
-
-      val handleDeletesMustHaveZeroArity = {
-        val messages =
-          handleDeleteMethodsWithParam.map { method =>
-            val numParams = method.getParameters.length
-            errorMessage(
-              method,
-              s"Method annotated with '@DeleteHandler' must not have parameters. Found $numParams method parameters.")
-          }
-
-        Validation(messages)
-      }
-
-      val onlyOneValueEntityUpdateIsAllowed = {
-        when(updatedMethods.size >= 2) {
-          val messages = errorMessage(
-            component,
-            s"Duplicated update methods [${updatedMethods.map(_.getName).mkString(", ")}]for KeyValueEntity subscription.")
-          Validation(messages)
-        }
-      }
-
-      val onlyOneHandlesDeleteIsAllowed = {
-        val offendingMethods = handleDeleteMethods.filter(_.getParameterTypes.isEmpty)
-
-        when(offendingMethods.size >= 2) {
-          val messages =
-            offendingMethods.map { method =>
-              errorMessage(method, "Multiple methods annotated with @DeleteHandler are not allowed.")
-            }
-          Validation(messages)
-        }
-      }
-
-      handleDeletesMustHaveZeroArity ++
-      onlyOneValueEntityUpdateIsAllowed ++
-      onlyOneHandlesDeleteIsAllowed
+      commonStateSubscriptionValidation(component, updateMethodPredicate)
     }
   }
 
+  private def workflowSubscriptionValidations(
+      component: Class[_],
+      updateMethodPredicate: Method => Boolean): Validation = {
+
+    when(hasWorkflowSubscription(component)) {
+      commonStateSubscriptionValidation(component, updateMethodPredicate)
+    }
+  }
+
+  private def commonStateSubscriptionValidation(component: Class[_], updateMethodPredicate: Method => Boolean) = {
+    val subscriptionMethods = component.getMethods.toIndexedSeq.filter(updateMethodPredicate).sorted
+    val updatedMethods = subscriptionMethods.filterNot(hasHandleDeletes)
+
+    val (handleDeleteMethods, handleDeleteMethodsWithParam) =
+      subscriptionMethods.filter(hasHandleDeletes).partition(_.getParameterTypes.isEmpty)
+
+    val handleDeletesMustHaveZeroArity = {
+      val messages =
+        handleDeleteMethodsWithParam.map { method =>
+          val numParams = method.getParameters.length
+          errorMessage(
+            method,
+            s"Method annotated with '@DeleteHandler' must not have parameters. Found $numParams method parameters.")
+        }
+
+      Validation(messages)
+    }
+
+    val onlyOneValueEntityUpdateIsAllowed = {
+      when(updatedMethods.size >= 2) {
+        val messages = errorMessage(
+          component,
+          s"Duplicated update methods [${updatedMethods.map(_.getName).mkString(", ")}] for state subscription are not allowed.")
+        Validation(messages)
+      }
+    }
+
+    val onlyOneHandlesDeleteIsAllowed = {
+      val offendingMethods = handleDeleteMethods.filter(_.getParameterTypes.isEmpty)
+
+      when(offendingMethods.size >= 2) {
+        val messages =
+          offendingMethods.map { method =>
+            errorMessage(method, "Multiple methods annotated with @DeleteHandler are not allowed.")
+          }
+        Validation(messages)
+      }
+    }
+
+    handleDeletesMustHaveZeroArity ++
+    onlyOneValueEntityUpdateIsAllowed ++
+    onlyOneHandlesDeleteIsAllowed
+  }
 }

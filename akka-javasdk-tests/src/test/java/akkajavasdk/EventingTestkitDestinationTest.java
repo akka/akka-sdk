@@ -4,11 +4,11 @@
 
 package akkajavasdk;
 
+import akka.javasdk.testkit.EventingTestKit;
+import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
 import akkajavasdk.components.keyvalueentities.customer.CustomerEntity;
 import akkajavasdk.components.keyvalueentities.customer.CustomerEntity.Customer;
-import akka.javasdk.testkit.EventingTestKit;
-import akka.javasdk.testkit.TestKit;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -32,7 +32,7 @@ public class EventingTestkitDestinationTest extends TestKitSupport {
 
   public TestKit.Settings testKitSettings() {
     return TestKit.Settings.DEFAULT
-        .withTopicOutgoingMessages(CUSTOMERS_TOPIC);
+      .withTopicOutgoingMessages(CUSTOMERS_TOPIC);
   }
 
   @BeforeAll

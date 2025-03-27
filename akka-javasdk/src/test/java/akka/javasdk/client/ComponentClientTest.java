@@ -127,7 +127,7 @@ class ComponentClientTest {
         .deferred(param);
 
     //then
-    assertThat(call.componentId()).isEqualTo(ComponentDescriptorFactory.readComponentIdIdValue(Counter.class));
+    assertThat(call.componentId()).isEqualTo(ComponentDescriptorFactory.readComponentIdValue(Counter.class));
     assertEquals(10, call.message());
   }
 

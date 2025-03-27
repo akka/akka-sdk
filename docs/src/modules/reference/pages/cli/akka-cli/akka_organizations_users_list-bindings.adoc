@@ -1,6 +1,7 @@
 = akka organizations users list-bindings
 
-List all users in the organization
+List all users in the organization.
+To view users with pending invitations run `akka org invitations list`
 
 ----
 akka organizations users list-bindings [flags]

@@ -10,7 +10,7 @@ Before deploying a service, ensure you have the following:
 
 * An https://console.akka.io/register[Akka account]
 * An xref:operations:projects/create-project.adoc[Akka project created]
-* The xref:reference:cli/installation.adoc[Akka CLI installed]
+* The xref:cli/installation.adoc[Akka CLI installed]
 
 
 == Build container image

@@ -8,7 +8,7 @@ Instead, you might want to modify file "cli-index-header.template.txt"
 ////
 = CLI command reference
 
-The `akka` command line tool enables you to interact with your Akka projects and services using the command line. See xref:reference:cli/installation.adoc[] for information on how to download `akka`. Use xref:reference:cli/akka-cli/akka_version.adoc[`akka version`] to check the version.
+The `akka` command line tool enables you to interact with your Akka projects and services using the command line. See xref:operations:cli/installation.adoc[] for information on how to download `akka`. Use xref:reference:cli/akka-cli/akka_version.adoc[`akka version`] to check the version.
 
 The following sections list xref:reference:cli/akka-cli/akka.adoc[akka] commands and their options.
 
@@ -36,7 +36,7 @@ The xref:reference:cli/akka-cli/akka_auth.adoc[] command offers these options:
 * xref:reference:cli/akka-cli/akka_auth_use-token.adoc[akka auth use-token]
 
 == Enable auto-completion for your shell
-The xref:reference:cli/akka-cli/akka_completion.adoc[akka completion] command generates auto-completion configuration for common shells. See xref:cli/command-completion.adoc[Enable command completion] for more information.
+The xref:reference:cli/akka-cli/akka_completion.adoc[akka completion] command generates auto-completion configuration for common shells. See xref:operations:cli/command-completion.adoc[Enable command completion] for more information.
 
 == Manage local context
 The `akka config` command is used to display and set configuration contexts and values that apply to subsequent commands. Configuration settings are stored in a file on your local system, by default at `.kalix/config.yaml` in your home directory.
@@ -165,6 +165,7 @@ The xref:reference:cli/akka-cli/akka_projects.adoc[akka projects] command includ
 * xref:reference:cli/akka-cli/akka_projects_regions.adoc[akka projects regions]
 * xref:reference:cli/akka-cli/akka_projects_regions_add.adoc[akka projects regions add]
 * xref:reference:cli/akka-cli/akka_projects_regions_list.adoc[akka projects regions list]
+* xref:reference:cli/akka-cli/akka_projects_regions_remove.adoc[akka projects regions remove]
 * xref:reference:cli/akka-cli/akka_projects_regions_set-primary.adoc[akka projects regions set-primary]
 * xref:reference:cli/akka-cli/akka_projects_tokens.adoc[akka projects tokens]
 * xref:reference:cli/akka-cli/akka_projects_tokens_create.adoc[akka projects tokens create]
