@@ -12,7 +12,7 @@ include::ROOT:partial$local-dev-prerequisites.adoc[]
 [[_starting_your_service]]
 == Starting your service
 
-As an example, we will use the xref:shopping-cart-quickstart.adoc[Shopping Cart] sample.
+As an example, we will use the xref:shopping-cart/quickstart.adoc[Shopping Cart] sample.
 
 To start your service locally, run the following command from the root of your project:
 
@@ -62,7 +62,7 @@ The local console gives you insights of the services that you are running locall
 To run the console you need to install:
 
 * https://docs.docker.com/get-started/get-docker/[Docker Engine, window="new"] {minimum_docker_version} or later
-* xref:reference:cli/installation.adoc[Akka CLI]
+* xref:operations:cli/installation.adoc[Akka CLI]
 
 Start the console with the following command from a separate terminal window:
 
