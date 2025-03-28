@@ -217,13 +217,7 @@ private[akka] final case class RequestBuilderImpl[R](
     new RequestBuilderImpl[R](http, materializer, timeout, request, bodyParser, Some(retrySettings))
   }
 
-  override def withRetry(attempts: Int): RequestBuilder[R] = {
-    new RequestBuilderImpl[R](
-      http,
-      materializer,
-      timeout,
-      request,
-      bodyParser,
-      Some(RetrySettings.attempts(attempts).withBackoff()))
+  override def withRetry(maxRetries: Int): RequestBuilder[R] = {
+    new RequestBuilderImpl[R](http, materializer, timeout, request, bodyParser, Some(RetrySettings(maxRetries)))
   }
 }

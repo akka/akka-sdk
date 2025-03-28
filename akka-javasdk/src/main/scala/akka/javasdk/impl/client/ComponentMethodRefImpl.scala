@@ -40,8 +40,8 @@ private[impl] final case class ComponentMethodRefImpl[A1, R](
     copy(retrySettings = Some(retrySettings))
   }
 
-  override def withRetry(attempts: Int): ComponentMethodRefImpl[A1, R] = {
-    copy(retrySettings = Some(RetrySettings.attempts(attempts).withBackoff()))
+  override def withRetry(maxRetries: Int): ComponentMethodRefImpl[A1, R] = {
+    copy(retrySettings = Some(RetrySettings(maxRetries)))
   }
 
   def deferred(): DeferredCall[NotUsed, R] = {

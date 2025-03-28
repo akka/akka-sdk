@@ -19,12 +19,12 @@ import akka.pattern.RetrySettings
 @InternalApi
 private[akka] class AsyncUtilsImpl(actorSystem: ActorSystem) extends AsyncUtils {
 
-  override def retry[T](call: Callable[CompletionStage[T]], attempts: Int): CompletionStage[T] = {
-    retry(call, RetrySettings.attempts(attempts).withBackoff())
+  override def retry[T](call: Callable[CompletionStage[T]], maxRetries: Int): CompletionStage[T] = {
+    retry(call, RetrySettings(maxRetries))
   }
 
-  override def retry[T](call: Callable[CompletionStage[T]], retrySettings: RetrySettings): CompletionStage[T] = {
-    Patterns.retry(call, retrySettings, actorSystem)
+  override def retry[T](call: Callable[CompletionStage[T]], maxRetries: RetrySettings): CompletionStage[T] = {
+    Patterns.retry(call, maxRetries, actorSystem)
   }
 
   override def sequence[T](completableFutures: util.List[CompletableFuture[T]]): CompletableFuture[util.List[T]] = {
