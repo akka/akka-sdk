@@ -10,30 +10,21 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 import java.util.stream
 
-import scala.jdk.DurationConverters.ScalaDurationOps
-
 import akka.actor.ActorSystem
 import akka.annotation.InternalApi
-import akka.javasdk
 import akka.javasdk.AsyncUtils
 import akka.pattern.Patterns
+import akka.pattern.RetrySettings
 
 @InternalApi
 private[akka] class AsyncUtilsImpl(actorSystem: ActorSystem) extends AsyncUtils {
 
   override def retry[T](call: Callable[CompletionStage[T]], attempts: Int): CompletionStage[T] = {
-    retry(call, RetrySettingsBuilder(attempts).withBackoff())
+    retry(call, RetrySettings.attempts(attempts).withBackoff())
   }
 
-  override def retry[T](
-      call: Callable[CompletionStage[T]],
-      retrySettings: javasdk.RetrySettings): CompletionStage[T] = {
-    retrySettings.asInstanceOf[RetrySettings] match {
-      case RetrySettings.FixedDelayRetrySettings(attempts, fixedDelay) =>
-        Patterns.retry(call, attempts, fixedDelay.toJava, actorSystem)
-      case RetrySettings.BackoffRetrySettings(attempts, minBackoff, maxBackoff, randomFactor) =>
-        Patterns.retry(call, attempts, minBackoff.toJava, maxBackoff.toJava, randomFactor, actorSystem)
-    }
+  override def retry[T](call: Callable[CompletionStage[T]], retrySettings: RetrySettings): CompletionStage[T] = {
+    Patterns.retry(call, retrySettings, actorSystem)
   }
 
   override def sequence[T](completableFutures: util.List[CompletableFuture[T]]): CompletableFuture[util.List[T]] = {

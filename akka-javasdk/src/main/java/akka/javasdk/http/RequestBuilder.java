@@ -9,7 +9,7 @@ import akka.http.javadsl.model.ContentType;
 import akka.http.javadsl.model.HttpHeader;
 import akka.http.javadsl.model.HttpRequest;
 import akka.http.javadsl.model.headers.HttpCredentials;
-import akka.javasdk.RetrySettings;
+import akka.pattern.RetrySettings;
 
 import java.time.Duration;
 import java.util.concurrent.CompletionStage;

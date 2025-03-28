@@ -4,6 +4,19 @@
 
 package akka.javasdk.impl.http
 
+import java.io.IOException
+import java.lang.{ Iterable => JIterable }
+import java.nio.charset.Charset
+import java.nio.charset.StandardCharsets
+import java.time.Duration
+import java.util.concurrent.CompletionStage
+import java.util.function.Function
+
+import scala.concurrent.duration.DurationInt
+import scala.concurrent.duration.FiniteDuration
+import scala.jdk.CollectionConverters.SeqHasAsJava
+import scala.jdk.DurationConverters.JavaDurationOps
+
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
 import akka.http.javadsl.Http
@@ -16,34 +29,18 @@ import akka.http.javadsl.model.HttpMethod
 import akka.http.javadsl.model.HttpMethods
 import akka.http.javadsl.model.HttpRequest
 import akka.http.javadsl.model.HttpResponse
+import akka.http.javadsl.model.StatusCodes
 import akka.http.javadsl.model.headers.HttpCredentials
 import akka.javasdk.JsonSupport
 import akka.javasdk.http.HttpClient
 import akka.javasdk.http.RequestBuilder
 import akka.javasdk.http.StrictResponse
+import akka.pattern.Patterns
+import akka.pattern.RetrySettings
 import akka.stream.Materializer
 import akka.stream.SystemMaterializer
 import akka.util.ByteString
 import com.fasterxml.jackson.core.JsonProcessingException
-import java.io.IOException
-import java.nio.charset.StandardCharsets
-import java.time.Duration
-import java.lang.{ Iterable => JIterable }
-import java.nio.charset.Charset
-import java.util.concurrent.CompletionStage
-import java.util.function.Function
-
-import scala.concurrent.duration.DurationInt
-import scala.concurrent.duration.FiniteDuration
-import scala.jdk.CollectionConverters.SeqHasAsJava
-import scala.jdk.DurationConverters.JavaDurationOps
-import scala.jdk.DurationConverters.ScalaDurationOps
-
-import akka.http.javadsl.model.StatusCodes
-import akka.javasdk.RetrySettings
-import akka.javasdk.impl
-import akka.javasdk.impl.RetrySettingsBuilder
-import akka.pattern.Patterns
 
 /**
  * INTERNAL API
@@ -100,7 +97,7 @@ private[akka] final case class RequestBuilderImpl[R](
     timeout: FiniteDuration,
     request: HttpRequest,
     bodyParser: (HttpResponse, ByteString) => StrictResponse[R],
-    retrySettings: Option[impl.RetrySettings])
+    retrySettings: Option[RetrySettings])
     extends RequestBuilder[R] {
 
   override def withRequest(request: HttpRequest): RequestBuilder[R] = copy(request = request)
@@ -159,20 +156,8 @@ private[akka] final case class RequestBuilderImpl[R](
           .thenApply((entity: HttpEntity.Strict) => bodyParser.apply(response, entity.getData)))
 
     retrySettings match {
-      case Some(settings) =>
-        settings match {
-          case impl.RetrySettings.FixedDelayRetrySettings(attempts, fixedDelay) =>
-            Patterns.retry(() => callHttp(), attempts, fixedDelay.toJava, materializer.system)
-          case impl.RetrySettings.BackoffRetrySettings(attempts, minBackoff, maxBackoff, randomFactor) =>
-            Patterns.retry(
-              () => callHttp(),
-              attempts,
-              minBackoff.toJava,
-              maxBackoff.toJava,
-              randomFactor,
-              materializer.system)
-        }
-      case None => callHttp()
+      case Some(settings) => Patterns.retry(() => callHttp(), settings, materializer.system)
+      case None           => callHttp()
     }
   }
 
@@ -229,13 +214,7 @@ private[akka] final case class RequestBuilderImpl[R](
   }
 
   override def withRetry(retrySettings: RetrySettings): RequestBuilder[R] = {
-    new RequestBuilderImpl[R](
-      http,
-      materializer,
-      timeout,
-      request,
-      bodyParser,
-      Some(retrySettings.asInstanceOf[impl.RetrySettings]))
+    new RequestBuilderImpl[R](http, materializer, timeout, request, bodyParser, Some(retrySettings))
   }
 
   override def withRetry(attempts: Int): RequestBuilder[R] = {
@@ -245,6 +224,6 @@ private[akka] final case class RequestBuilderImpl[R](
       timeout,
       request,
       bodyParser,
-      Some(RetrySettingsBuilder(attempts).withBackoff()))
+      Some(RetrySettings.attempts(attempts).withBackoff()))
   }
 }

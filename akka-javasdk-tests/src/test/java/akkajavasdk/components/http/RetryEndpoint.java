@@ -5,11 +5,11 @@
 package akkajavasdk.components.http;
 
 import akka.javasdk.AsyncUtils;
-import akka.javasdk.RetrySettings;
 import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
+import akka.pattern.RetrySettings;
 import akkajavasdk.components.eventsourcedentities.counter.CounterEntity;
 
 import java.time.Duration;

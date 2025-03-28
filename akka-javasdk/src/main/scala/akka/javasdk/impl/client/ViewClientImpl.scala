@@ -28,7 +28,6 @@ import scala.concurrent.ExecutionContext
 import scala.jdk.FutureConverters.FutureOps
 
 import akka.actor.Scheduler
-import akka.javasdk.impl.RetrySettings
 import akka.javasdk.impl.serialization.JsonSerializer
 import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.SpiMetadata
@@ -179,14 +178,7 @@ private[javasdk] final case class ViewClientImpl(
           { metadata =>
             maybeRetrySettings match {
               case Some(retrySettings) =>
-                retrySettings match {
-                  case RetrySettings.FixedDelayRetrySettings(attempts, fixedDelay) =>
-                    akka.pattern.retry(() => callView(metadata), attempts, fixedDelay).asJava
-                  case RetrySettings.BackoffRetrySettings(attempts, minBackoff, maxBackoff, randomFactor) =>
-                    akka.pattern
-                      .retry(() => callView(metadata), attempts, minBackoff, maxBackoff, randomFactor)
-                      .asJava
-                }
+                akka.pattern.retry(() => callView(metadata), retrySettings).asJava
               case None => callView(metadata).asJava
             }
           },

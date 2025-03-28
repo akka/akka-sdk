@@ -14,9 +14,7 @@ import akka.javasdk.client.ComponentMethodRef
 import akka.javasdk.client.ComponentMethodRef1
 import java.util.concurrent.CompletionStage
 
-import akka.javasdk.RetrySettings
-import akka.javasdk.impl
-import akka.javasdk.impl.RetrySettingsBuilder
+import akka.pattern.RetrySettings
 
 /**
  * INTERNAL API
@@ -25,9 +23,9 @@ import akka.javasdk.impl.RetrySettingsBuilder
 private[impl] final case class ComponentMethodRefImpl[A1, R](
     optionalId: Option[String],
     metadataOpt: Option[Metadata],
-    createDeferred: (Option[Metadata], Option[impl.RetrySettings], Option[A1]) => DeferredCall[A1, R],
+    createDeferred: (Option[Metadata], Option[RetrySettings], Option[A1]) => DeferredCall[A1, R],
     canBeDeferred: Boolean = true,
-    retrySettings: Option[impl.RetrySettings] = None)
+    retrySettings: Option[RetrySettings] = None)
     extends ComponentMethodRef[R]
     with ComponentMethodRef1[A1, R]
     with ComponentInvokeOnlyMethodRef[R]
@@ -39,11 +37,11 @@ private[impl] final case class ComponentMethodRefImpl[A1, R](
   }
 
   override def withRetry(retrySettings: RetrySettings): ComponentMethodRefImpl[A1, R] = {
-    copy(retrySettings = Some(retrySettings.asInstanceOf[impl.RetrySettings]))
+    copy(retrySettings = Some(retrySettings))
   }
 
   override def withRetry(attempts: Int): ComponentMethodRefImpl[A1, R] = {
-    copy(retrySettings = Some(RetrySettingsBuilder(attempts).withBackoff()))
+    copy(retrySettings = Some(RetrySettings.attempts(attempts).withBackoff()))
   }
 
   def deferred(): DeferredCall[NotUsed, R] = {

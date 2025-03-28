@@ -6,7 +6,7 @@ package akka.javasdk.client;
 
 import akka.annotation.DoNotInherit;
 import akka.javasdk.Metadata;
-import akka.javasdk.RetrySettings;
+import akka.pattern.RetrySettings;
 
 import java.util.concurrent.CompletionStage;
 
