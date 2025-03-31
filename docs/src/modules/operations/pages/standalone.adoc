@@ -161,7 +161,7 @@ You find more configuration options in https://doc.akka.io/libraries/akka-grpc/c
 If you use Kafka as message broker the configuration can be defined in your `application.conf`:
 
 ```
-kalix.proxy.eventing {
+ akka.runtime.message-broker {
     support = "kafka"
     kafka {
       consumer = ${akka.kafka.consumer}
