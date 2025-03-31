@@ -8,6 +8,8 @@ import akka.javasdk.Metadata;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import akka.javasdk.testkit.EventSourcedResult;
 import akka.javasdk.testkit.EventSourcedTestKit;
+import akka.javasdk.testkit.KeyValueEntityTestKit;
+import akka.javasdk.testkit.keyvalueentity.CounterValueEntity;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -106,6 +108,15 @@ public class CounterEventSourcedEntityTest {
     EventSourcedResult<String> result = testKit.method(CounterEventSourcedEntity::doubleIncreaseBy).invoke(10);
     assertTrue(result.isError());
     assertEquals("Can't double-increase by [10] due to overflow", result.getError());
+  }
+
+  @Test
+  public void testCollectionReturnType() {
+    EventSourcedTestKit<Integer, CounterEvent, CounterEventSourcedEntity> testKit =
+        EventSourcedTestKit.of(ctx -> new CounterEventSourcedEntity());
+    var result = testKit.method(CounterEventSourcedEntity::returnList).invoke();
+    assertThat(result.getReply()).asList().hasSize(1);
+    assertThat(result.getReply().getFirst()).isEqualTo(new CounterEventSourcedEntity.SomeRecord("ok"));
   }
 
   @Test

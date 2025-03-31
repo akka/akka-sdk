@@ -7,7 +7,11 @@ package akka.javasdk.testkit.keyvalueentity;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
 import akka.javasdk.testkit.eventsourced.Response;
 
+import java.util.List;
+
 public class CounterValueEntity extends KeyValueEntity<Integer> {
+
+  public record SomeRecord(String text) {}
 
   @Override
   public Integer emptyState() {
@@ -35,5 +39,9 @@ public class CounterValueEntity extends KeyValueEntity<Integer> {
 
   public Effect<String> polyHandler(Response response) {
     return effects().reply("");
+  }
+
+  public ReadOnlyEffect<List<SomeRecord>> returnList() {
+    return effects().reply(List.of(new SomeRecord("ok")));
   }
 }

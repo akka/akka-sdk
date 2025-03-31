@@ -7,6 +7,8 @@ package akka.javasdk.testkit;
 import akka.javasdk.impl.serialization.JsonSerializer;
 import akka.runtime.sdk.spi.BytesPayload;
 
+import java.lang.reflect.Type;
+
 final class EntitySerializationChecker {
 
   private static JsonSerializer jsonSerializer = new JsonSerializer();
@@ -27,6 +29,18 @@ final class EntitySerializationChecker {
     try {
       BytesPayload bytesPayload = jsonSerializer.toBytes(object);
       jsonSerializer.fromBytes(expectedClass, bytesPayload);
+    } catch (Exception e) {
+      fail(object, entity, e);
+    }
+  }
+
+  /**
+   * different deserialization for responses, state, and commands
+   */
+  static void verifySerDerWithExpectedType(Type expectedType, Object object, Object entity) {
+    try {
+      BytesPayload bytesPayload = jsonSerializer.toBytes(object);
+      jsonSerializer.fromBytes(expectedType, bytesPayload);
     } catch (Exception e) {
       fail(object, entity, e);
     }

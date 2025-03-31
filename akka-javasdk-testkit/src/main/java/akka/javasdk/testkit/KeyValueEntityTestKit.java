@@ -13,6 +13,7 @@ import akka.javasdk.testkit.impl.KeyValueEntityResultImpl;
 import akka.javasdk.testkit.impl.TestKitKeyValueEntityCommandContext;
 import akka.javasdk.testkit.impl.TestKitKeyValueEntityContext;
 
+import java.lang.reflect.Type;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -113,7 +114,7 @@ public class KeyValueEntityTestKit<S, E extends KeyValueEntity<S>> {
 
     public KeyValueEntityResult<R> invoke() {
       var method = MethodRefResolver.resolveMethodRef(func);
-      var returnType = Reflect.getReturnClass(entity.getClass(), method);
+      var returnType = Reflect.getReturnType(entity.getClass(), method);
       return KeyValueEntityTestKit.this.call(func, metadata, Optional.of(returnType));
     }
   }
@@ -133,7 +134,7 @@ public class KeyValueEntityTestKit<S, E extends KeyValueEntity<S>> {
 
     public KeyValueEntityResult<R> invoke(I input) {
       var method = MethodRefResolver.resolveMethodRef(func);
-      var returnType = Reflect.getReturnClass(entity.getClass(), method);
+      var returnType = Reflect.getReturnType(entity.getClass(), method);
       var inputType = method.getParameterTypes()[0];
 
       verifySerDerWithExpectedType(inputType, input, entity);
@@ -163,7 +164,7 @@ public class KeyValueEntityTestKit<S, E extends KeyValueEntity<S>> {
   }
 
   @SuppressWarnings("unchecked")
-  private <Reply> KeyValueEntityResult<Reply> interpretEffects(Supplier<KeyValueEntity.Effect<Reply>> effect, Optional<Class<?>> returnType) {
+  private <Reply> KeyValueEntityResult<Reply> interpretEffects(Supplier<KeyValueEntity.Effect<Reply>> effect, Optional<Type> returnType) {
     KeyValueEntityResultImpl<Reply> result = new KeyValueEntityResultImpl<>(effect.get());
     if (result.stateWasUpdated()) {
       this.state = (S) result.getUpdatedState();
@@ -209,7 +210,7 @@ public class KeyValueEntityTestKit<S, E extends KeyValueEntity<S>> {
     return call(func, metadata, Optional.empty());
   }
 
-  private <R> KeyValueEntityResult<R> call(akka.japi.function.Function<E, KeyValueEntity.Effect<R>> func, Metadata metadata, Optional<Class<?>> returnType) {
+  private <R> KeyValueEntityResult<R> call(akka.japi.function.Function<E, KeyValueEntity.Effect<R>> func, Metadata metadata, Optional<Type> returnType) {
     TestKitKeyValueEntityCommandContext commandContext =
       new TestKitKeyValueEntityCommandContext(entityId, metadata);
     entity._internalSetCommandContext(Optional.of(commandContext));

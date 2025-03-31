@@ -5,9 +5,15 @@
 package akka.javasdk.testkit.eventsourced;
 
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
+import akka.javasdk.keyvalueentity.KeyValueEntity;
+import akka.javasdk.testkit.keyvalueentity.CounterValueEntity;
 import com.google.common.collect.HashMultimap;
 
+import java.util.List;
+
 public class CounterEventSourcedEntity extends EventSourcedEntity<Integer, CounterEvent> {
+
+  public record SomeRecord(String text) {}
 
   public Effect<String> increaseBy(Integer value) {
     if (value <= 0) return effects().error("Can't increase with a negative value");
@@ -44,6 +50,10 @@ public class CounterEventSourcedEntity extends EventSourcedEntity<Integer, Count
 
   public Effect<String> delete() {
     return effects().persist(new CounterEvent.Increased(commandContext().entityId(), 0)).deleteEntity().thenReply(__ -> "Ok");
+  }
+
+  public ReadOnlyEffect<List<SomeRecord>> returnList() {
+    return effects().reply(List.of(new SomeRecord("ok")));
   }
 
   @Override

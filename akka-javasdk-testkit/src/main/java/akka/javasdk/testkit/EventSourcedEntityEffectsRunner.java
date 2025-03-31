@@ -11,6 +11,7 @@ import akka.javasdk.testkit.impl.EventSourcedResultImpl;
 import akka.javasdk.testkit.impl.TestKitEventSourcedEntityCommandContext;
 import akka.javasdk.testkit.impl.TestKitEventSourcedEntityEventContext;
 
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -78,7 +79,7 @@ abstract class EventSourcedEntityEffectsRunner<S, E> {
    * @return the result of the side effects
    */
   protected <R> EventSourcedResult<R> interpretEffects(
-      Supplier<EventSourcedEntity.Effect<R>> effect, String entityId, Metadata metadata, Optional<Class<?>> returnType) {
+      Supplier<EventSourcedEntity.Effect<R>> effect, String entityId, Metadata metadata, Optional<Type> returnType) {
     var commandContext = new TestKitEventSourcedEntityCommandContext(entityId, metadata);
     EventSourcedEntity.Effect<R> effectExecuted;
     try {

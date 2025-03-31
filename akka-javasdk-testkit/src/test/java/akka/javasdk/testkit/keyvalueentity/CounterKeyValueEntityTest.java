@@ -65,6 +65,15 @@ public class CounterKeyValueEntityTest {
   }
 
   @Test
+  public void testCollectionReturnType() {
+    KeyValueEntityTestKit<Integer, CounterValueEntity> testKit =
+        KeyValueEntityTestKit.of(ctx -> new CounterValueEntity());
+    var result = testKit.method(CounterValueEntity::returnList).invoke();
+    assertThat(result.getReply()).asList().hasSize(1);
+    assertThat(result.getReply().getFirst()).isEqualTo(new CounterValueEntity.SomeRecord("ok"));
+  }
+
+  @Test
   public void failResponseSerDes() {
     KeyValueEntityTestKit<Integer, CounterValueEntity> testKit =
       KeyValueEntityTestKit.of(ctx -> new CounterValueEntity());

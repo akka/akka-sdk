@@ -12,6 +12,7 @@ import akka.javasdk.impl.reflection.Reflect;
 import akka.javasdk.testkit.impl.TestKitEventSourcedEntityContext;
 
 import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -182,7 +183,7 @@ public class EventSourcedTestKit<S, E, ES extends EventSourcedEntity<S, E>>
 
     public EventSourcedResult<R> invoke() {
       var method = MethodRefResolver.resolveMethodRef(func);
-      var returnType = Reflect.getReturnClass(entity.getClass(), method);
+      var returnType = Reflect.getReturnType(entity.getClass(), method);
       return EventSourcedTestKit.this.call(func, metadata, Optional.of(returnType));
     }
   }
@@ -202,7 +203,7 @@ public class EventSourcedTestKit<S, E, ES extends EventSourcedEntity<S, E>>
 
     public EventSourcedResult<R> invoke(I input) {
       var method = MethodRefResolver.resolveMethodRef(func);
-      var returnType = Reflect.getReturnClass(entity.getClass(), method);
+      var returnType = Reflect.getReturnType(entity.getClass(), method);
       var inputType = method.getParameterTypes()[0];
 
       verifySerDerWithExpectedType(inputType, input, entity);
@@ -263,7 +264,7 @@ public class EventSourcedTestKit<S, E, ES extends EventSourcedEntity<S, E>>
     return call(func, metadata, Optional.empty());
   }
 
-  private <R> EventSourcedResult<R> call(akka.japi.function.Function<ES, EventSourcedEntity.Effect<R>> func, Metadata metadata, Optional<Class<?>> returnType) {
+  private <R> EventSourcedResult<R> call(akka.japi.function.Function<ES, EventSourcedEntity.Effect<R>> func, Metadata metadata, Optional<Type> returnType) {
     return interpretEffects(() -> {
       try {
         return func.apply((ES) entity());
