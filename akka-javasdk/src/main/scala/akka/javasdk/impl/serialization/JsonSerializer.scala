@@ -40,6 +40,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule
 
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
+import java.util.Optional
 
 /**
  * INTERNAL API
@@ -252,8 +253,13 @@ final class JsonSerializer(val objectMapper: ObjectMapper) {
         objectMapper
           .readerForListOf(p.getActualTypeArguments.head.asInstanceOf[Class[_]])
           .readValue(bytes.toArrayUnsafe())
+      case p: ParameterizedType if classOf[java.util.Optional[_]].isAssignableFrom(clazz) =>
+        Optional
+          .ofNullable(
+            objectMapper.readValue(bytes.toArrayUnsafe(), p.getActualTypeArguments.head.asInstanceOf[Class[_]]))
+          .asInstanceOf[T]
       case p: ParameterizedType =>
-        // for other parameterized types (like Option) we rely on jackson being able to handle it
+        // for other parameterized types we rely on jackson being able to handle it
         objectMapper.readValue(bytes.toArrayUnsafe(), clazz).asInstanceOf[T]
       case valueClass: Class[_] =>
         objectMapper.readValue(bytes.toArrayUnsafe(), valueClass).asInstanceOf[T]

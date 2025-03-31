@@ -10,6 +10,7 @@ import akka.javasdk.keyvalueentity.KeyValueEntity;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 @ComponentId("customer")
 public class CustomerEntity extends KeyValueEntity<CustomerEntity.Customer> {
@@ -33,5 +34,9 @@ public class CustomerEntity extends KeyValueEntity<CustomerEntity.Customer> {
         new SomeRecord("text1", 1),
         new SomeRecord("text2", 2)
     ));
+  }
+
+  public ReadOnlyEffect<Optional<SomeRecord>> returnOptionalRecord() {
+    return effects().reply(Optional.of(new SomeRecord("text1", 1)));
   }
 }

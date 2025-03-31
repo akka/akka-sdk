@@ -127,6 +127,16 @@ public class KeyValueEntityTest extends TestKitSupport {
     assertThat(new HashSet<>(found)).isEqualTo(Set.of(new CustomerEntity.SomeRecord("text1", 1), new CustomerEntity.SomeRecord("text2", 2)));
   }
 
+  @Test
+  public void verifyOptionalRecordReturn() {
+    var found = await(
+        componentClient
+            .forKeyValueEntity("listofrecords")
+            .method(CustomerEntity::returnOptionalRecord)
+            .invokeAsync());
+    assertThat(found).isEqualTo(Optional.of(new CustomerEntity.SomeRecord("text1", 1)));
+  }
+
   private void createUser(TestUser user) {
     await(
       componentClient
