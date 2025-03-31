@@ -37,6 +37,7 @@ import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
 
+import akka.actor.Scheduler
 import akka.javasdk.impl.serialization.JsonSerializer
 import akka.runtime.sdk.spi.BytesPayload
 
@@ -50,7 +51,7 @@ private[impl] sealed abstract class EntityClientImpl(
     entityClient: RuntimeEntityClient,
     serializer: JsonSerializer,
     callMetadata: Option[Metadata],
-    entityId: String)(implicit executionContext: ExecutionContext) {
+    entityId: String)(implicit executionContext: ExecutionContext, scheduler: Scheduler) {
 
   // commands for methods that take a state as a first parameter and then the command
   protected def createMethodRef2[A1, R](lambda: akka.japi.function.Function2[_, _, _]): ComponentMethodRef1[A1, R] =
@@ -74,7 +75,7 @@ private[impl] sealed abstract class EntityClientImpl(
     new ComponentMethodRefImpl[AnyRef, R](
       Some(entityId),
       callMetadata,
-      { (maybeMetadata, maybeArg) =>
+      { (maybeMetadata, maybeRetrySetting, maybeArg) =>
         // Note: same path for 0 and 1 arg calls
         val serializedPayload = maybeArg match {
           case Some(arg) =>
@@ -90,16 +91,22 @@ private[impl] sealed abstract class EntityClientImpl(
           componentType,
           componentId,
           methodName,
-          Some(entityId),
-          { metadata =>
-            entityClient
-              .send(new EntityRequest(componentId, entityId, methodName, serializedPayload, toSpi(metadata)))
-              .map { reply =>
-                // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
-                val returnType = Reflect.getReturnType[R](declaringClass, method)
-                serializer.fromBytes(returnType, reply.payload)
+          Some(entityId), {
+            def callEntity(metadata: Metadata) = {
+              entityClient
+                .send(new EntityRequest(componentId, entityId, methodName, serializedPayload, toSpi(metadata)))
+                .map { reply =>
+                  // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
+                  val returnType = Reflect.getReturnType[R](declaringClass, method)
+                  serializer.fromBytes(returnType, reply.payload)
+                }
+            }
+            metadata =>
+              maybeRetrySetting match {
+                case Some(retrySetting) =>
+                  akka.pattern.retry(() => callEntity(metadata), retrySetting).asJava
+                case None => callEntity(metadata).asJava
               }
-              .asJava
           },
           serializer)
       }).asInstanceOf[ComponentMethodRefImpl[A1, R]]
@@ -115,7 +122,7 @@ private[javasdk] final class KeyValueEntityClientImpl(
     entityClient: RuntimeEntityClient,
     serializer: JsonSerializer,
     callMetadata: Option[Metadata],
-    entityId: String)(implicit val executionContext: ExecutionContext)
+    entityId: String)(implicit val executionContext: ExecutionContext, scheduler: Scheduler)
     extends EntityClientImpl(
       classOf[KeyValueEntity[_]],
       KeyValueEntityType,
@@ -141,7 +148,7 @@ private[javasdk] final case class EventSourcedEntityClientImpl(
     entityClient: RuntimeEntityClient,
     serializer: JsonSerializer,
     callMetadata: Option[Metadata],
-    entityId: String)(implicit val executionContext: ExecutionContext)
+    entityId: String)(implicit val executionContext: ExecutionContext, scheduler: Scheduler)
     extends EntityClientImpl(
       classOf[EventSourcedEntity[_, _]],
       EventSourcedEntityType,
@@ -167,7 +174,7 @@ private[javasdk] final case class WorkflowClientImpl(
     entityClient: RuntimeEntityClient,
     serializer: JsonSerializer,
     callMetadata: Option[Metadata],
-    entityId: String)(implicit val executionContext: ExecutionContext)
+    entityId: String)(implicit val executionContext: ExecutionContext, scheduler: Scheduler)
     extends EntityClientImpl(classOf[Workflow[_]], WorkflowType, entityClient, serializer, callMetadata, entityId)
     with WorkflowClient {
 
@@ -208,7 +215,7 @@ private[javasdk] final case class TimedActionClientImpl(
     new ComponentMethodRefImpl[AnyRef, R](
       None,
       callMetadata,
-      { (maybeMetadata: Option[Metadata], maybeArg: Option[AnyRef]) =>
+      { (maybeMetadata: Option[Metadata], _, maybeArg: Option[AnyRef]) =>
         // Note: same path for 0 and 1 arg calls
         val serializedPayload = maybeArg match {
           case Some(arg) =>

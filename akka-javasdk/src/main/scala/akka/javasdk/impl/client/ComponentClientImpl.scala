@@ -16,6 +16,7 @@ import akka.javasdk.impl.MetadataImpl
 import akka.runtime.sdk.spi.{ ComponentClients => RuntimeComponentClients }
 import scala.concurrent.ExecutionContext
 
+import akka.actor.Scheduler
 import akka.javasdk.impl.serialization.JsonSerializer
 import io.opentelemetry.api.trace.Span
 
@@ -28,7 +29,7 @@ import io.opentelemetry.api.trace.Span
 private[javasdk] final case class ComponentClientImpl(
     runtimeComponentClients: RuntimeComponentClients,
     serializer: JsonSerializer,
-    openTelemetrySpan: Option[Span])(implicit ec: ExecutionContext)
+    openTelemetrySpan: Option[Span])(implicit ec: ExecutionContext, scheduler: Scheduler)
     extends ComponentClient {
 
   // Volatile since the component client could be accessed in nested/composed futures and is mutated by the reflective action router

@@ -32,6 +32,30 @@ public class HttpEndpointTest extends TestKitSupport {
   }
 
   @Test
+  public void shouldRetryComponentClientCall() {
+    var response = await(httpClient.POST("/retry/retry1").responseBodyAs(Integer.class).invokeAsync());
+    assertThat(response.status()).isEqualTo(StatusCodes.OK);
+    assertThat(response.body()).isEqualTo(111);
+  }
+
+  @Test
+  public void shouldRetryWithAsyncUtils() {
+    var response = await(httpClient.POST("/async-utils/retry2").responseBodyAs(Integer.class).invokeAsync());
+    assertThat(response.status()).isEqualTo(StatusCodes.OK);
+    assertThat(response.body()).isEqualTo(111);
+  }
+
+  @Test
+  public void shouldRetryHttpCall() {
+    var response = await(httpClient.POST("/failing/retry3")
+      .responseBodyAs(Integer.class)
+      .withRetry(3)
+      .invokeAsync());
+    assertThat(response.status()).isEqualTo(StatusCodes.OK);
+    assertThat(response.body()).isEqualTo(111);
+  }
+
+  @Test
   public void shouldServeASingleResource() {
     var response = await(httpClient.GET("/index.html").invokeAsync());
     assertThat(response.status()).isEqualTo(StatusCodes.OK);
