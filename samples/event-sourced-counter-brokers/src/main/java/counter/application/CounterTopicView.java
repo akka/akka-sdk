@@ -10,16 +10,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
+import java.util.List;
 
 // tag::class[]
 @ComponentId("counter-topic-view")
-@Consume.FromEventSourcedEntity(CounterEntity.class)
-
 public class CounterTopicView extends View {
 
   private static final Logger logger = LoggerFactory.getLogger(CounterTopicView.class);
 
   public record CounterRow(String counterId, int value, Instant lastChange) {}
+
+  public record CountersResult(List<CounterRow> foundCounters) {}
 
   @Consume.FromTopic("counter-events-with-meta")  // <1>
   public static class CounterUpdater extends TableUpdater<CounterRow> {
@@ -36,10 +37,9 @@ public class CounterTopicView extends View {
     }
   }
 
-
-  @Query("SELECT * FROM counters WHERE value >= :minimum")
-  public View.QueryStreamEffect<CounterRow> countersHigherThan(int minimum) {
-    return queryStreamResult();
+  @Query("SELECT * AS foundCounters FROM counters WHERE value >= :minimum")
+  public View.QueryEffect<CountersResult> countersHigherThan(int minimum) {
+    return queryResult();
   }
 }
 // end::class[]

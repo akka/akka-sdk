@@ -59,7 +59,7 @@ curl -XPOST localhost:9000/counter/hello/increase/10
 - retrieve the value of a counter named `hello`
 
 ```shell
-curl -XGET localhost:9000/counter/hello
+curl localhost:9000/counter/hello
 ```
 
 - multiply existing counter named `hello` by value `5`
