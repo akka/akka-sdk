@@ -128,9 +128,9 @@ Then you can access the endpoints at `http:localhost:9000/`.
 
 == Deploy to any other container image platform
 
-The standalone image can be run in most container image platforms. When starting the JVM you must define the right runtime configuration with `-Dconfig.resource=runtime-standalone.conf`. Such system properties can also be defined with environment variable `JAVA_TOOL_OPTIONS`.
+The standalone image can be run in most container image platforms.
 
-When running more than one instance they must form an Akka Cluster. This is done automatically in an Kubernetes environment. If that is not an option in your environment you can run it as a single instance by defining the following configuration in your `application.conf`:
+When running more than one instance they must form an Akka Cluster. This is done automatically in a Kubernetes environment. If that is not an option in your environment you can run it as a single instance by defining the following configuration in your `application.conf`:
 
 ```
 akka.runtime.standalone.single-node = true

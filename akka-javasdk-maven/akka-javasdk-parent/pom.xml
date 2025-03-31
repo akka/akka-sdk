@@ -40,7 +40,7 @@
 
         <!-- These are dependent on runtime environment and cannot be customized by users -->
         <maven.compiler.release>21</maven.compiler.release>
-        <kalix-runtime.version>1.4.4</kalix-runtime.version>
+        <kalix-runtime.version>1.4.4-5-f1a6a9e1-dev-SNAPSHOT</kalix-runtime.version>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <skip.docker>false</skip.docker>
@@ -522,6 +522,7 @@
                                                 <arg>java</arg>
                                                 <arg>-cp</arg>
                                                 <arg>/maven/*</arg>
+                                                <arg>-Dconfig.resource=runtime-standalone.conf</arg>
                                                 <arg>kalix.runtime.AkkaRuntimeMain</arg>
                                             </exec>
                                         </entryPoint>
