@@ -138,6 +138,24 @@ akka.runtime.standalone.single-node = true
 
 Make sure that there is only one instance running at the same time, for example rolling updates would not be supported.
 
+== Service to Service Eventing configuration
+
+By default, the service name defined in `@Consume.FromServiceStream` is used as the host name when connecting to the producing service. That can be logical dns name such as a Kubernetes service name.
+
+You can define gRPC client configuration for a service name in the `application.conf`, such as:
+
+```
+akka.grpc.client {
+  "shopping-cart-service" {
+    host = "shopping-cart-service-svc"
+    port = 9000
+    use-tls = false
+  }
+}
+```
+
+You find more configuration options in https://doc.akka.io/libraries/akka-grpc/current/client/configuration.html#by-configuration[reference documentation].
+
 == Kafka message broker configuration
 
 If you use Kafka as message broker the configuration can be defined in your `application.conf`:
