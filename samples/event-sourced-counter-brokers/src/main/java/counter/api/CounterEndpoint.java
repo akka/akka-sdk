@@ -76,8 +76,6 @@ public class CounterEndpoint {
       .invokeAsync(value);
   }
 
-  // FIXME these cannot be reached due to /{stringVar} above (validation should fail on that)
-  //       add examples to README of actually hitting these once sorted
   @Get("/greater-than/{value}")
   public CompletionStage<CounterByValueView.CounterByValueList> greaterThan(Integer value) {
     return componentClient.forView()
