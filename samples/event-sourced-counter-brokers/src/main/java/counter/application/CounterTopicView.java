@@ -20,7 +20,7 @@ public class CounterTopicView extends View {
 
   public record CounterRow(String counterId, int value, Instant lastChange) {}
 
-  @Consume.FromTopic("counters")  // <1>
+  @Consume.FromTopic("counter-events-with-meta")  // <1>
   public static class CounterUpdater extends TableUpdater<CounterRow> {
 
     public Effect<CounterRow> onEvent(CounterEvent event) {
