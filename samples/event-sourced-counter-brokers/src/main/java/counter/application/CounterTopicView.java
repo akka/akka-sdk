@@ -2,6 +2,7 @@ package counter.application;
 
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.annotations.Consume;
+import akka.javasdk.annotations.Query;
 import akka.javasdk.view.TableUpdater;
 import akka.javasdk.view.View;
 import counter.domain.CounterEvent;
@@ -33,6 +34,12 @@ public class CounterTopicView extends View {
 
       return effects().updateRow(new CounterRow(counterId, newValue, Instant.now())); // <3>
     }
+  }
+
+
+  @Query("SELECT * FROM counters WHERE value >= :minimum")
+  public View.QueryStreamEffect<CounterRow> countersHigherThan(int minimum) {
+    return queryStreamResult();
   }
 }
 // end::class[]
