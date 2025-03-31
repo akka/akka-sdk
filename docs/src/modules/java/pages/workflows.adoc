@@ -114,7 +114,7 @@ include::example$transfer-workflow/src/main/java/com/example/transfer/applicatio
 <3> We instruct Akka to run a given asynchronous call to withdraw funds from a wallet.
 <4> After successful withdrawal we return an `Effect` that will update the workflow state and move to the next step called "deposit." An input parameter for this step is a `Deposit` record.
 <5> Another workflow step action to deposit funds to a given wallet.
-<6> This time we return an effect that will stop workflow processing, by using special `end` method.
+<6> This time we return an effect that will stop workflow processing, by using the special `end` method.
 <7> We collect all steps to form a workflow definition.
 
 IMPORTANT: In the following example all `WalletEntity` interactions are not idempotent. It means that if the workflow step retries, it will make the deposit or withdraw again. In a real-world scenario, you should consider making all interactions idempotent with a proper deduplication mechanism. A very basic example of handling retries for workflows can be found in https://github.com/akka/akka-sdk/blob/main/samples/transfer-workflow-compensation/src/main/java/com/example/wallet/domain/Wallet.java[this] sample.
