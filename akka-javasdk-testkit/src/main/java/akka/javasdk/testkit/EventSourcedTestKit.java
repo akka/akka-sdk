@@ -11,6 +11,7 @@ import akka.javasdk.impl.client.MethodRefResolver;
 import akka.javasdk.impl.reflection.Reflect;
 import akka.javasdk.testkit.impl.TestKitEventSourcedEntityContext;
 
+import java.lang.reflect.ParameterizedType;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -181,7 +182,7 @@ public class EventSourcedTestKit<S, E, ES extends EventSourcedEntity<S, E>>
 
     public EventSourcedResult<R> invoke() {
       var method = MethodRefResolver.resolveMethodRef(func);
-      var returnType = Reflect.getReturnType(entity.getClass(), method);
+      var returnType = Reflect.getReturnClass(entity.getClass(), method);
       return EventSourcedTestKit.this.call(func, metadata, Optional.of(returnType));
     }
   }
@@ -201,7 +202,7 @@ public class EventSourcedTestKit<S, E, ES extends EventSourcedEntity<S, E>>
 
     public EventSourcedResult<R> invoke(I input) {
       var method = MethodRefResolver.resolveMethodRef(func);
-      var returnType = Reflect.getReturnType(entity.getClass(), method);
+      var returnType = Reflect.getReturnClass(entity.getClass(), method);
       var inputType = method.getParameterTypes()[0];
 
       verifySerDerWithExpectedType(inputType, input, entity);

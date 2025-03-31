@@ -38,6 +38,9 @@ import com.fasterxml.jackson.databind.jsontype.TypeDeserializer
 import com.fasterxml.jackson.databind.jsontype.TypeSerializer
 import com.fasterxml.jackson.databind.module.SimpleModule
 
+import java.lang.reflect.ParameterizedType
+import java.lang.reflect.Type
+
 /**
  * INTERNAL API
  */
@@ -148,11 +151,14 @@ final class JsonSerializer(val objectMapper: ObjectMapper) {
     new BytesPayload(bytes = ByteString.fromArrayUnsafe(byteArray), contentType = JsonContentTypePrefix + typeHint)
   }
 
-  def fromBytes[T](expectedType: Class[T], bytesPayload: BytesPayload): T = {
-    validateIsJson(bytesPayload)
-
+  def fromBytes[T](expectedType: Type, bytesPayload: BytesPayload): T = {
+    val clazz = expectedType match {
+      case parameterizedType: ParameterizedType =>
+        parameterizedType.getRawType.asInstanceOf[Class[T]]
+      case other => other.asInstanceOf[Class[T]]
+    }
     try {
-      val migrationAnnotation = expectedType.getAnnotation(classOf[Migration])
+      val migrationAnnotation = clazz.getAnnotation(classOf[Migration])
       if (migrationAnnotation != null) {
         val migration = migrationAnnotation
           .value()
@@ -162,11 +168,11 @@ final class JsonSerializer(val objectMapper: ObjectMapper) {
         val currentVersion = migration.currentVersion()
         val supportedForwardVersion = migration.supportedForwardVersion
         if (fromVersion < currentVersion) {
-          migrate(expectedType, bytesPayload.bytes, fromVersion, migration);
+          migrate(clazz, bytesPayload.bytes, fromVersion, migration);
         } else if (fromVersion == currentVersion) {
-          parseBytes(expectedType, bytesPayload.bytes)
+          parseBytes(clazz, bytesPayload.bytes)
         } else if (fromVersion <= supportedForwardVersion) {
-          migrate(expectedType, bytesPayload.bytes, fromVersion, migration)
+          migrate(clazz, bytesPayload.bytes, fromVersion, migration)
         } else {
           throw new IllegalStateException(
             s"Migration version [$supportedForwardVersion] is " +
@@ -177,11 +183,16 @@ final class JsonSerializer(val objectMapper: ObjectMapper) {
       }
     } catch {
       case e: JsonProcessingException =>
-        throw jsonProcessingException(expectedType, bytesPayload.contentType, e)
+        throw jsonProcessingException(clazz, bytesPayload.contentType, e)
       case e @ (_: IOException | _: NoSuchMethodException | _: InstantiationException | _: IllegalAccessException |
           _: InvocationTargetException) =>
-        throw genericDecodeException(expectedType, bytesPayload.contentType, e)
+        throw genericDecodeException(clazz, bytesPayload.contentType, e)
     }
+  }
+
+  def fromBytes[T](expectedType: Class[T], bytesPayload: BytesPayload): T = {
+    validateIsJson(bytesPayload)
+    fromBytes(expectedType.asInstanceOf[Type], bytesPayload).asInstanceOf[T]
   }
 
   /**
@@ -231,8 +242,22 @@ final class JsonSerializer(val objectMapper: ObjectMapper) {
     objectMapper.treeToValue(newJsonNode, valueClass)
   }
 
-  private def parseBytes[T](valueClass: Class[T], bytes: ByteString): T = {
-    objectMapper.readValue(bytes.toArrayUnsafe(), valueClass)
+  private def parseBytes[T](valueType: Type, bytes: ByteString): T = {
+    val clazz = valueType match {
+      case c: Class[_]          => c
+      case p: ParameterizedType => p.getRawType.asInstanceOf[Class[_]]
+    }
+    valueType match {
+      case p: ParameterizedType if classOf[java.util.Collection[_]].isAssignableFrom(clazz) =>
+        objectMapper
+          .readerForListOf(p.getActualTypeArguments.head.asInstanceOf[Class[_]])
+          .readValue(bytes.toArrayUnsafe())
+      case p: ParameterizedType =>
+        // for other parameterized types (like Option) we rely on jackson being able to handle it
+        objectMapper.readValue(bytes.toArrayUnsafe(), clazz).asInstanceOf[T]
+      case valueClass: Class[_] =>
+        objectMapper.readValue(bytes.toArrayUnsafe(), valueClass).asInstanceOf[T]
+    }
   }
 
   private def jsonProcessingException[T](valueClass: Class[T], contentType: String, e: JsonProcessingException) =

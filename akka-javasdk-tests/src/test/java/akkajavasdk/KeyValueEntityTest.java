@@ -5,6 +5,7 @@
 package akkajavasdk;
 
 import akka.javasdk.testkit.TestKitSupport;
+import akkajavasdk.components.keyvalueentities.customer.CustomerEntity;
 import akkajavasdk.components.keyvalueentities.hierarchy.AbstractTextConsumer;
 import akkajavasdk.components.keyvalueentities.hierarchy.TextKvEntity;
 import akkajavasdk.components.keyvalueentities.user.User;
@@ -14,12 +15,16 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.util.HashSet;
 import java.util.Optional;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 @ExtendWith(Junit5LogCapturing.class)
@@ -109,6 +114,17 @@ public class KeyValueEntityTest extends TestKitSupport {
           Assertions.assertTrue(found);
         });
 
+  }
+
+  @Test
+  public void verifyListOfRecordsReturn() {
+    var found = await(
+        componentClient
+            .forKeyValueEntity("listofrecords")
+            .method(CustomerEntity::returnAListOfRecords)
+            .invokeAsync());
+    assertThat(found.size()).isEqualTo(2);
+    assertThat(new HashSet<>(found)).isEqualTo(Set.of(new CustomerEntity.SomeRecord("text1", 1), new CustomerEntity.SomeRecord("text2", 2)));
   }
 
   private void createUser(TestUser user) {

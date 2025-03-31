@@ -113,7 +113,7 @@ public class KeyValueEntityTestKit<S, E extends KeyValueEntity<S>> {
 
     public KeyValueEntityResult<R> invoke() {
       var method = MethodRefResolver.resolveMethodRef(func);
-      var returnType = Reflect.getReturnType(entity.getClass(), method);
+      var returnType = Reflect.getReturnClass(entity.getClass(), method);
       return KeyValueEntityTestKit.this.call(func, metadata, Optional.of(returnType));
     }
   }
@@ -133,7 +133,7 @@ public class KeyValueEntityTestKit<S, E extends KeyValueEntity<S>> {
 
     public KeyValueEntityResult<R> invoke(I input) {
       var method = MethodRefResolver.resolveMethodRef(func);
-      var returnType = Reflect.getReturnType(entity.getClass(), method);
+      var returnType = Reflect.getReturnClass(entity.getClass(), method);
       var inputType = method.getParameterTypes()[0];
 
       verifySerDerWithExpectedType(inputType, input, entity);
