@@ -6,6 +6,8 @@ import akka.javasdk.annotations.Query;
 import akka.javasdk.view.TableUpdater;
 import akka.javasdk.view.View;
 import counter.domain.CounterEvent;
+import counter.domain.CounterEvent.ValueIncreased;
+import counter.domain.CounterEvent.ValueMultiplied;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,8 +30,8 @@ public class CounterTopicView extends View {
     public Effect<CounterRow> onEvent(CounterEvent event) {
       String counterId = updateContext().metadata().asCloudEvent().subject().get(); // <2>
       var newValue = switch (event) {
-        case CounterEvent.ValueIncreased increased -> increased.updatedValue();
-        case CounterEvent.ValueMultiplied multiplied -> multiplied.updatedValue();
+        case ValueIncreased increased -> increased.updatedValue();
+        case ValueMultiplied multiplied -> multiplied.updatedValue();
       };
       logger.info("Received new value for counter id {}: {}", counterId, event);
 
