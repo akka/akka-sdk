@@ -185,8 +185,8 @@ NOTE: For the messages to be correctly consumed in the view, there must be a `ce
 include::example$event-sourced-counter-brokers/src/main/java/counter/application/CounterTopicView.java[tag=class]
 ----
 <1> Uses `@Consume.FromTopic` annotation to set the target topic.
-<2> Composes the `ce-subject` attribute from the entity's event subject to include in the view row.
-<3> Returns a producing effect with the updated table row state.
+<2> Extracts the `ce-subject` attribute from the topic event metadata to include in the view row.
+<3> Returns an updating effect with new table row state.
 
 [#results-projection]
 == How to transform results
