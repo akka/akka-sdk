@@ -1,8 +1,8 @@
-= Running Akka without the full platform
+= Running Akka with self-managed nodes
 
 include::ROOT:partial$include.adoc[]
 
-ifdef::todo[TODO: intro]
+For organizations that want control over how Akka services are installed, updated, and maintained. Akka services are packaged into standalone binaries with Akka clustering for scaling. You are responsible for separately managing secure connectivity, routes, installation, deployment, and persistence.
 
 == License key
 
@@ -16,7 +16,7 @@ akka.license-key = "<your key>"
 
 == Database
 
-Akka requires a Postgres database. The tables will be created automatically but you need to create the database and the credentials to connect to the database.
+Akka requires a Postgres database. The tables will be created automatically, but you need to create the database and the credentials to connect to the database.
 
 You define connection configuration in your `application.conf` or use the predefined environment variables.
 
@@ -130,7 +130,7 @@ Then you can access the endpoints at `http:localhost:9000/`.
 
 The standalone image can be run in most container image platforms.
 
-When running more than one instance they must form an Akka Cluster. This is done automatically in a Kubernetes environment. If that is not an option in your environment you can run it as a single instance by defining the following configuration in your `application.conf`:
+When running more than one instance of the service they must form an Akka Cluster. This is done automatically in a Kubernetes environment. Many container platforms are not designed to support cluster-based systems that need discovery and network connectivity to enable scale and resilience. If clustering is not an option in your environment you can run it as a single instance by defining the following configuration in your `application.conf`:
 
 ```
 akka.runtime.standalone.single-node = true
@@ -153,6 +153,8 @@ akka.grpc.client {
   }
 }
 ```
+
+Note that you are responsible for setting up access control and TLS between services.
 
 You find more configuration options in https://doc.akka.io/libraries/akka-grpc/current/client/configuration.html#by-configuration[reference documentation].
 
