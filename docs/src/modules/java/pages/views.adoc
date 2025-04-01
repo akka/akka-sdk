@@ -177,7 +177,7 @@ include::example$transfer-workflow/src/main/java/com/example/transfer/applicatio
 
 The source of a View can be a topic. It works the same way as shown in <<event-sourced-entity>> or <<value-entity>>, but you define it with `@Consume.FromTopic` instead.
 
-NOTE: For the messages to be correctly consumed in the view, there must be a `ce-subject` metadata associated with each message. This is required because for each message consumed from the topic there will be a corresponding view row. That view row is selected based on such `ce-subject`.
+NOTE: For the messages to be correctly consumed in the view, there must be a `ce-subject` metadata associated with each message. This is required because for each message consumed from the topic there will be a corresponding view row. That view row is selected based on such `ce-subject`. For an example on how to pass such metadata when producing to a topic, see page xref:java:consuming-producing.adoc#_metadata[Metadata].
 
 [source,java]
 .{sample-base-url}/event-sourced-counter-brokers/src/main/java/counter/application/CounterTopicView.java[CounterTopicView.java]
