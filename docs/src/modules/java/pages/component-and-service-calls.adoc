@@ -37,9 +37,7 @@ of endpoints the service provides.
 === Over HTTP
 The service is identified by the name it has been deployed. Akka takes care of routing requests to the service and keeping the data safe by encrypting the connection and handling authentication for you.
 
-In this sample we will make an action that does a call to the xref:key-value-entities.adoc[Key Value Entity Counter] service, deployed with the service name `counter`.
-
-The SDK provides `akka.javasdk.http.HttpClientProvider` which provides HTTP client instances for calling other services.
+In the follow snippet, we have an endpoint component that calls another service named `"counter"`. It makes use of SDK-provided `akka.javasdk.http.HttpClientProvider` which return HTTP client instances for calling other Akka services.
 
 In our delegating service implementation:
 
@@ -50,7 +48,7 @@ include::java:example$doc-snippets/src/main/java/com/example/callanotherservice/
 ----
 <1> Accept a `HttpClientProvider` parameter for the constructor
 <2> Use it to look up a client for the `counter` service
-<3> Use the `HttpClient` to prepare a REST call to the *counter* service
+<3> Use the `HttpClient` to prepare a REST call to the *counter* service endpoint
 <4> Invoking the call will return a `CompletionStage<StrictResponse<T>>` with details about the result as well as the deserialized response body.
 <5> Handle the response, which may be successful, or an error
 
