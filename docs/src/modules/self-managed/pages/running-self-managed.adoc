@@ -1,26 +1,8 @@
-= Fully-automated regions
+= Running self-managed nodes
 
 include::ROOT:partial$include.adoc[]
 
 Akka provides capabilities to manage, monitor and gather insights from your application and its services once they are deployed. These resources will guide you through operating Akka applications and services. You should already be familiar with the xref:concepts:deployment-model.adoc[].
-
-Akka is based on a Kubernetes-based control plane and application plane for executing Akka services with fully-automated operations to enable elasticity, agility and resilience.
-
-== Access management
-[cols="1,2"]
-|===
-| Users & authorization | against organizations, projects, services
-| Management synchronization | synchronizing changes to users and authentication across every application plane
-|===
-
-== Cloud infrastructure automation
-[cols="1,2"]
-|===
-| Federated deployment | rolling out new application versions across many regions simultaneously
-| Multi-tenancy | multiple users and organizations sharing the same compute, storage, and persistence
-| Discovery and connectivity | connectivity and encrypting connections between microservices. Discovery of multiple Akka regions, mTLS setup of cross-region connections, and egress / ingress of replicated data between regions
-| Kubernetes operators | mapping Akka apps to namespaces, roles and role bindings, mapping Akka services, secrets and routes to Kubernetes resources, admin management access to Akka apps deployed within Kubernetes including Views, projections
-|===
 
 In these sections, you can find information on:
 
