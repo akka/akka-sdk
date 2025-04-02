@@ -460,6 +460,33 @@ public class ViewIntegrationTest extends TestKitSupport {
             });
   }
 
+
+  @Test
+  public void verifyFindAllUsersAsList() {
+    TestUser user1 = new TestUser(newId(), "bob1@doe.com", "BobDoe");
+    createUser(user1);
+
+    TestUser user2 = new TestUser(newId(), "bob2@doe.com", "BobDoe");
+    createUser(user2);
+
+    // the view is eventually updated
+    Awaitility.await()
+        .ignoreExceptions()
+        .atMost(20, TimeUnit.SECONDS)
+        .untilAsserted(
+            () -> {
+              System.out.println("??? allUsers");
+              var allUsers =
+                  await(
+                      componentClient.forView()
+                          .method(UsersView::allTheUsersAsList)
+                          .invokeAsync());
+
+              assertThat(allUsers.size()).asList().contains(user1, user2);
+            });
+  }
+
+
   @Test
   public void verifyMultiTableViewForUserCounters() {
 

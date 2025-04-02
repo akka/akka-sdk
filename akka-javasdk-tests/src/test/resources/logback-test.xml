@@ -15,7 +15,7 @@
     <logger name="akka.runtime" level="DEBUG"/>
     <logger name="kalix.runtime" level="DEBUG"/>
     <logger name="akka.javasdk" level="DEBUG"/>
-    <logger name="kalix.runtime.views" level="INFO"/>
+    <logger name="kalix.runtime.views" level="TRACE"/>
     <logger name="akka.http" level="WARN"/>
     <logger name="io.grpc" level="WARN"/>
     <logger name="io.r2dbc" level="WARN"/>

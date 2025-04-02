@@ -162,13 +162,6 @@ private[impl] object ViewDescriptorFactory {
         throw new IllegalArgumentException(s"Return type of ${method.getName} is not supported ${method.getReturnType}")
       }
 
-    val actualQueryOutputClass = actualQueryOutputType match {
-      case clazz: Class[_] => clazz
-      case other =>
-        throw new IllegalArgumentException(
-          s"Actual query output type for ${method.getName} is not a class (must not be parameterized): $other")
-    }
-
     val queryAnnotation = method.getAnnotation(classOf[Query])
     val queryStr = queryAnnotation.value()
     val streamUpdates = queryAnnotation.streamUpdates()
@@ -178,10 +171,9 @@ private[impl] object ViewDescriptorFactory {
           QueryStreamEffect[_]]}")
 
     val inputType: Option[SpiSchema.QueryInput] =
-      method.getGenericParameterTypes.headOption.map(ViewSchema.apply(_)).map {
+      method.getGenericParameterTypes.headOption.map(ViewSchema.apply).map {
         case validInput: SpiSchema.QueryInput => validInput
         case other                            =>
-          // FIXME let's see if this flies
           // For using primitive parameters directly, using their parameter name as placeholder in the query,
           // we have to make up a valid message with that as a field
           new SpiClass(
@@ -189,13 +181,14 @@ private[impl] object ViewDescriptorFactory {
             Seq(new SpiField(method.getParameters.head.getName, other)))
       }
 
-    val outputType = ViewSchema(actualQueryOutputClass) match {
+    val outputType: SpiSchema.QueryOutput = ViewSchema(actualQueryOutputType) match {
       case output: SpiClass =>
         if (streamingQuery) new SpiList(output)
         else output
+      case list: SpiList => list
       case _ =>
         throw new IllegalArgumentException(
-          s"Query return type [${actualQueryOutputClass}] for [${method.getDeclaringClass}.${method.getName}] is not a valid query return type")
+          s"Query return type [${actualQueryOutputType}] for [${method.getDeclaringClass}.${method.getName}] is not a valid query return type")
     }
 
     QueryMethod(
@@ -205,7 +198,7 @@ private[impl] object ViewDescriptorFactory {
         inputType,
         outputType,
         streamUpdates,
-        // FIXME reintroduce ACLs (does JWT make any sense here? I don't think so)
+        // FIXME deprecate/remove acl/jwt option on query descriptor
         new MethodOptions(None, None)),
       queryStr)
   }

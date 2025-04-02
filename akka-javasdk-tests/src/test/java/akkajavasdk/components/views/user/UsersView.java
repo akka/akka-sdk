@@ -40,4 +40,9 @@ public class UsersView extends View {
   public QueryEffect<User> getUserByName(QueryByNameParam param) {
     return queryResult();
   }
+
+  @Query("SELECT * FROM users")
+  public QueryEffect<List<User>> allTheUsersAsList() {
+    return queryResult();
+  }
 }

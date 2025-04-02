@@ -250,6 +250,7 @@ final class JsonSerializer(val objectMapper: ObjectMapper) {
     }
     valueType match {
       case p: ParameterizedType if classOf[java.util.Collection[_]].isAssignableFrom(clazz) =>
+        println("### " + bytes.utf8String + "!!!")
         objectMapper
           .readerForListOf(p.getActualTypeArguments.head.asInstanceOf[Class[_]])
           .readValue(bytes.toArrayUnsafe())
