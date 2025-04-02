@@ -198,8 +198,8 @@ public class SdkIntegrationTest extends TestKitSupport {
   public void verifyActionIsNotSubscribedToMultiplyAndRouterIgnores() {
     var entityId = "counterId2";
     EventSourcedEntityClient counterClient = componentClient.forEventSourcedEntity(entityId);
-    await(counterClient.method(CounterEntity::increase).invokeAsync(1));
-    await(counterClient.method(CounterEntity::times).invokeAsync(2));
+    counterClient.method(CounterEntity::increase).invoke(1);
+    counterClient.method(CounterEntity::times).invoke(2);
     Integer lastKnownValue = await(counterClient.method(CounterEntity::increase).invokeAsync(1234));
 
     assertThat(lastKnownValue).isEqualTo(1 * 2 + 1234);

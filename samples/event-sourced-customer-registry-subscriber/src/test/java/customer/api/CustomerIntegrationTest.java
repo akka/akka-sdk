@@ -80,7 +80,7 @@ public class CustomerIntegrationTest extends CustomerRegistryIntegrationTest {
         .pollInterval(1, TimeUnit.SECONDS)
         .atMost(5, TimeUnit.MINUTES)
         .untilAsserted(() -> {
-          var response = await(httpClient.GET("").invokeAsync()).httpResponse();
+          var response = httpClient.GET("").invoke().httpResponse();
               // NOT_FOUND is a sign that the service is started and responding
             assertThat(response.status()).isEqualTo(StatusCodes.NOT_FOUND);
         });

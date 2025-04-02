@@ -150,6 +150,9 @@ private[akka] final case class RequestBuilderImpl[R](
         .toStrict(timeout.toMillis, materializer)
         .thenApply((entity: HttpEntity.Strict) => bodyParser.apply(response, entity.getData)))
 
+  override def invoke(): StrictResponse[R] =
+    invokeAsync.toCompletableFuture.get() // FIXME timeout
+
   override def responseBodyAs[T](`type`: Class[T]): RequestBuilder[T] = new RequestBuilderImpl[T](
     http,
     materializer,

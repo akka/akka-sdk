@@ -58,7 +58,7 @@ public class HttpEndpointTest extends TestKitSupport {
         "/static/images/image.gif");
 
     otherResourcesWithKnownTypes.forEach(resourcePath -> {
-      var response = await(httpClient.GET(resourcePath).invokeAsync());
+      var response = httpClient.GET(resourcePath).invoke();
       assertThat(response.httpResponse().entity().getContentType()).isNotEqualTo(ContentTypes.APPLICATION_OCTET_STREAM);
     });
 

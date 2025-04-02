@@ -46,7 +46,7 @@ public class TransferWorkflowIntegrationTest extends TestKitSupport {
         assertThat(balance1).isEqualTo(90);
         assertThat(balance2).isEqualTo(110);
 
-        TransferEntries result = await(componentClient.forView().method(TransferView::getAllCompleted).invokeAsync());
+        TransferEntries result = componentClient.forView().method(TransferView::getAllCompleted).invoke();
         assertThat(result.entries()).contains(new TransferView.TransferEntry(transferId, "COMPLETED"));
       });
   }

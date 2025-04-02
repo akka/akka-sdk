@@ -64,6 +64,8 @@ public interface RequestBuilder<R> {
 
   CompletionStage<StrictResponse<R>> invokeAsync();
 
+  StrictResponse<R> invoke();
+
   /**
    * Converts the response body to the specified type.
    *

@@ -67,7 +67,7 @@ public class OrderEndpointIntegrationTest extends TestKitSupport {
       .ignoreExceptions()
       .atMost(20, TimeUnit.of(SECONDS))
       .until(
-        () -> await(methodRef.invokeAsync()),
+        () -> methodRef.invoke(),
         status -> !status.confirmed());
   }
 

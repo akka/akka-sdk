@@ -90,9 +90,9 @@ public class ViewIntegrationTest extends TestKitSupport {
 
     var entityId = newId();
     EventSourcedEntityClient counterClient = componentClient.forEventSourcedEntity(entityId);
-    await(counterClient.method(CounterEntity::increase).invokeAsync(1));
-    await(counterClient.method(CounterEntity::times).invokeAsync(2));
-    Integer counterGet = await(counterClient.method(CounterEntity::increase).invokeAsync(1));
+    counterClient.method(CounterEntity::increase).invoke(1);
+    counterClient.method(CounterEntity::times).invoke(2);
+    Integer counterGet = counterClient.method(CounterEntity::increase).invoke(1);
 
     assertThat(counterGet).isEqualTo(1 * 2 + 1);
 
