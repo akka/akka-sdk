@@ -4,6 +4,19 @@ include::ROOT:partial$include.adoc[]
 
 Akka applications are distributed by design. Although you can run an entire set of complex services on a single machine, they are meant to be distributed. This guide explains deployment and distribution in Akka. 
 
+== Deployment alternatives
+
+Akka provides three ways to deploy services:
+
+- Offline development with the SDK.
+- Self-managed nodes.
+- Fully-automated regions.
+
+Akka services can be run in all three modes without code modifications. Akka clustering is provided within all three modes. These deployment modes enable Akka to deploy onto any infrastructure, though some environments block the networking required for Akka clustering to operate.
+
+For organizations that want control over how Akka services are installed, updated, and maintained. Akka services are packaged into standalone binaries with Akka clustering for scaling and deploy to self-managed nodes. You are responsible for separately managing secure connectivity, routes, installation, deployment, and persistence.
+
+For sleeping peacefully with automated, multi-tenant, and secure operations. You can deploy your services into Akka’s Serverless environment or your VPC with BYOC (managed by Akka) or Self-Hosted (managed by you). Akka regions are powered by Akka Platform, a fully-automated tech stack that manages your Akka services and takes responsibility for SLAs tied to elasticity, agility, and resilience of your Akka services.
 
 == Logical deployment
 
@@ -17,7 +30,7 @@ xref:operations:services/index.adoc[] are the core unit of deployment in Akka. T
 
 == Physical deployment 
 
-Akka services run in a cluster. A cluster is an instance of the Akka runtime which is spread over multiple machines in a given geographical place. We call that place a xref:concepts:deployment-model.adoc#_region[region]. In our cloud service a region corresponds to a region from a cloud infrastructure provider such as AWS, Azure, or Google Cloud. "US East" is an AWS region that contains multiple Availability Zones: for Akka this is just a region. By default Akka spans availability zones in our cloud.
+Akka services run in a cluster. A cluster is an instance of the Akka runtime which is spread over multiple machines in a given geographical place, also known as an Akka cluster. We call that place a xref:concepts:deployment-model.adoc#_region[region]. In our cloud service a region corresponds to a region from a cloud infrastructure provider such as AWS, Azure, or Google Cloud. "US East" is an AWS region that contains multiple Availability Zones: for Akka this is just a region. By default Akka spans availability zones in our cloud.
 
 === Region
 xref:operations:organizations/regions.adoc[] are specific clusters running Akka in a specific place. Regions are designed to run independently for greater availability. They are also designed to replicate data asynchronously between each other. Every Akka xref:concepts:deployment-model.adoc#_project[project] specifies a list of one or more regions in which it runs.
@@ -54,6 +67,15 @@ ifdef::todo[TODO:  [NEED TO ADD LINK]]
 There are two ways to remove regions from a project: *graceful* and *emergency*. Their names imply their function. Graceful remove takes time, it marks the region as read-only, and starts to move the origin for all the entities out of the region. This is the preferred way to remove regions as their is no risk of data corruption, even for entities that haven't implemented conflict resolution strategies. 
 
 Emergency region removal is for emergency scenarios such as the rare times when an infrastructure provider's region becomes unavailable. Executing an emergency region removal fast ejects the region and reassigns the origin for all entities to the remaining regions. If there are writes in progress for non-CRDT types (i.e. entities that do not implement conflict resolutions) they _could_ be lost or overwritten.
+
+== About Akka clustering
+
+Akka clustering is the heart of how Akka systems take responsibility for their own outcomes. Akka services cluster from within, forming and managing a cluster from within the Akka runtime that is running alongside your Akka service within the JVM. When Akka services boot, they discover one another and automatically form an Akka cluster. An Akka service instance only needs to connect to one other node in order to join an existing cluster.
+
+Akka clustering provides numerous services to facilitate elastic scaling, failover, traffic steering, communications and security. The Akka runtime has its own discovery, consensus, split brain, zero trust,
+request routing, scheduling, conflict-free replication, fan out/in compute, and point-to-point brokerless messaging between services within a cluster.
+
+Akka leverages these capabilities to enable large scale resilience for stateful systems which includes failover, data sharding, data rebalancing, and routing end user traffic to the right data. This effectively allows Akka services to act as their own orchestrator and in-memory cache, that also happen to be durable and resilient.
 
 == Next steps
 

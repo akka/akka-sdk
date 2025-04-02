@@ -8,7 +8,7 @@ Services built with the Akka SDK are transferable between self-managed nodes and
 
 With self-managed nodes, you can deploy into any container environment including Docker Compose, Fly.io, Render, Heroku, Linode, Kubernetes, or a hyperscaler. You are responsible for configuring Akka clustering, networking, persistence, security and routes.
 
-NOTE: Note that many container platforms are not designed to support cluster-based systems that need discovery and network connectivity to enable scale and resilience. We have found that when Akka is deployed into environments like Fly.io, Render, or Heroku, Akka will revert to single-node behavior, i.e. a cluster of one.
+NOTE: Note that many container platforms are not designed to support cluster-based systems that need discovery and network connectivity to enable scale and resilience. We have found that when Akka is deployed into environments like Fly.io, Render, or Heroku, you have to configure Akka for single-node behavior, i.e. a cluster of one.
 
 
 - xref:running-self-managed.adoc[]
