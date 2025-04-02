@@ -6,7 +6,7 @@ For organizations that want control over how Akka services are installed, update
 
 == License key
 
-You can retrieve a free license key from akka.io[https://account.akka.io/key]. Select the Akka SDK option.
+You can retrieve a free license key from https://account.akka.io/key[akka.io, window="new"]. Select the Akka SDK option.
 
 Define the key in your `application.conf`:
 

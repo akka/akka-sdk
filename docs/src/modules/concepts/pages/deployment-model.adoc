@@ -6,7 +6,7 @@ Akka applications are distributed by design. Although you can run an entire set 
 
 == Deployment alternatives
 
-Akka provides three ways to deploy services:
+Akka provides three ways to run services:
 
 - Offline development with the SDK.
 - Self-managed nodes.
