@@ -60,7 +60,7 @@ private[impl] final case class ComponentMethodRefImpl[A1, R](
     createDeferred(metadataOpt, Some(arg)).asInstanceOf[DeferredCallImpl[NotUsed, R]].invokeAsync()
   }
 
-  // FIXME timeout for get?
+  // Note: invoke/ask timeout handled by runtime so no timeout needed here
   override def invoke(): R =
     invokeAsync().toCompletableFuture.get()
 
