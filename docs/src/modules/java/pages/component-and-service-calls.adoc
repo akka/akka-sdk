@@ -22,12 +22,25 @@ include::java:example$event-sourced-counter-brokers/src/main/java/counter/api/Co
 ----
 <1> Accept the `ComponentClient` as a constructor argument, keep it in a field.
 <2> Use a specific request builder for the component you want to call
-<3> Invoking the method returns a `CompletionStage<T>` where `T` is what the component eventually returns.
+<3> Invoking the method returns the `T` that the component eventually returns.
 <4> Adapt the response rather than returning it as is. In this case discarding the response value, and respond OK without a response body.
 
 The component client can call command handlers on Event Sourced Entities, Key Value Entities, Workflows, Timed Actions, and query methods on Views.
 
 The component client is available for injection only in Service Setup, Endpoints, Consumers, Timed Actions, and Workflows. For more information, see xref:java:setup-and-dependency-injection.adoc#_dependency_injection[dependency injection].
+
+It is also possible to do calls but not wait on their completion, using `ComponentClient.invokeAsync` instead returns
+`CompletionStage<T>` which makes it possible to trigger multiple calls at once, without waiting for the first one to complete,
+so that they will be processed in parallel.
+
+[source,java,indent=0]
+.{sample-base-url}/event-sourced-counter-brokers/src/main/java/counter/api/CounterEndpoint.java[CounterEndpoint.java]
+----
+include::java:example$event-sourced-counter-brokers/src/main/java/counter/api/CounterEndpoint.java[tag=concurrent-endpoint-component-interaction]
+----
+<1> Call `invokeAsync()` and collect each `CompletionStage<T>`
+<2> When all tasks has been started, wait for all tasks to complete
+<3> When all tasks responses has successfully completed we can respond
 
 == Akka services
 

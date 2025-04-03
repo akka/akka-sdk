@@ -12,6 +12,8 @@ import counter.application.CounterEntity.CounterResult.ExceedingMaxCounterValue;
 import counter.application.CounterEntity.CounterResult.Success;
 import counter.application.CounterTopicView;
 
+import java.util.List;
+
 import static akka.javasdk.http.HttpResponses.badRequest;
 import static akka.javasdk.http.HttpResponses.ok;
 
@@ -93,6 +95,24 @@ public class CounterEndpoint {
         .method(CounterTopicView::countersHigherThan)
         .invoke(value);
   }
+
+  // tag::concurrent-endpoint-component-interaction[]
+  public record IncreaseAllThese(List<String> counterIds, Integer value) {}
+  @Post("/increase-multiple")
+  public HttpResponse increaseMultiple(IncreaseAllThese increaseAllThese) throws Exception {
+    var triggeredTasks = increaseAllThese.counterIds().stream().map(counterId ->
+        componentClient.forEventSourcedEntity(counterId)
+            .method(CounterEntity::increase)
+            .invokeAsync(increaseAllThese.value) // <1>
+        ).toList();
+
+    for (var task : triggeredTasks) {
+      task.toCompletableFuture().get(); // <2>
+    }
+    return ok(); // <3>
+  }
+  // end::concurrent-endpoint-component-interaction[]
+
 // tag::endpoint-component-interaction[]
 }
 // end::endpoint-component-interaction[]
