@@ -82,18 +82,17 @@ public class OrderEndpoint {
     // end::confirm-order[]
     logger.info("Confirming order '{}'", orderId);
     // tag::confirm-order[]
-    return
-        componentClient.forKeyValueEntity(orderId)
-            .method(OrderEntity::confirm).invokeAsync() // <1>
-            .thenCompose(result ->
-                switch (result) {
-                  case OrderEntity.Result.Ok __ -> timerScheduler.cancel(timerName(orderId)) // <2>
-                      .thenApply(___ -> HttpResponses.ok());
-                  case OrderEntity.Result.NotFound notFound ->
-                      CompletableFuture.completedFuture(HttpResponses.notFound(notFound.message()));
-                  case OrderEntity.Result.Invalid invalid ->
-                      CompletableFuture.completedFuture(HttpResponses.badRequest(invalid.message()));
-                });
+    var result = componentClient.forKeyValueEntity(orderId)
+            .method(OrderEntity::confirm).invoke(); // <1>
+
+    return switch (result) {
+      case OrderEntity.Result.Ok __ -> timerScheduler.cancel(timerName(orderId)) // <2>
+          .thenApply(___ -> HttpResponses.ok());
+      case OrderEntity.Result.NotFound notFound ->
+          CompletableFuture.completedFuture(HttpResponses.notFound(notFound.message()));
+      case OrderEntity.Result.Invalid invalid ->
+          CompletableFuture.completedFuture(HttpResponses.badRequest(invalid.message()));
+    };
   }
   // end::confirm-order[]
 

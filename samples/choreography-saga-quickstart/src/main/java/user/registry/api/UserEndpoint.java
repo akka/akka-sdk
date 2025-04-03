@@ -67,19 +67,10 @@ public class UserEndpoint {
 
     var createUniqueEmail = new UniqueEmail.ReserveEmail(cmd.email(), userId);
 
-    logger.info("Reserving new address '{}'", cmd.email());
     // try reserving the email address
     // we want to execute this call in other to check its result
     // and decide if we can continue with the user creation
-    var emailReserved = client
-      .forKeyValueEntity(cmd.email())
-      .method(UniqueEmailEntity::reserve)
-      .invoke(createUniqueEmail);
-
-    if (emailReserved instanceof UniqueEmailEntity.Result.AlreadyReserved e) {
-      logger.info("Email is already reserved '{}'", cmd.email());
-      throw HttpException.badRequest("Email is already reserved '" + cmd.email() + "'");
-    }
+    reserveEmail(userId, cmd.email());
 
     // on successful email reservation, we create the user and return the result
     logger.info("Creating user '{}'", userId);
@@ -100,40 +91,38 @@ public class UserEndpoint {
 
 
   @Put("/{userId}/email")
-  public CompletionStage<HttpResponse> changeEmail(String userId, User.ChangeEmail cmd) {
+  public HttpResponse changeEmail(String userId, User.ChangeEmail cmd) {
 
     var createUniqueEmail = new UniqueEmail.ReserveEmail(cmd.newEmail(), userId);
 
-    logger.info("Reserving new address '{}'", cmd.newEmail());
-    // eagerly, reserving the email address
+    // try reserving the email address
     // we want to execute this call in other to check its result
-    // and decide if we can continue with the change the user's email address
-    var emailReserved =
-      client
-        .forKeyValueEntity(cmd.newEmail())
+    // and decide if we can continue with the user creation
+    reserveEmail(userId, cmd.newEmail());
+
+    // on successful email reservation, we change the user's email addreess
+    logger.info("Changing user's address '{}'", userId);
+    client
+      .forEventSourcedEntity(userId)
+      .method(UserEntity::changeEmail)
+      .invoke(cmd);
+
+    return HttpResponses.ok();
+  }
+
+  private void reserveEmail(String userId, String emailAddress) {
+    var createUniqueEmail = new UniqueEmail.ReserveEmail(emailAddress, userId);
+
+    logger.info("Reserving new address '{}'", emailAddress);
+    var emailReserved = client
+        .forKeyValueEntity(emailAddress)
         .method(UniqueEmailEntity::reserve)
-        .invokeAsync(createUniqueEmail); // eager, executing it now
+        .invoke(createUniqueEmail);
 
-    var userCreated =
-      emailReserved
-        .thenCompose(__ -> {
-          // on successful email reservation, we change the user's email addreess
-          logger.info("Changing user's address '{}'", userId);
-          return client
-            .forEventSourcedEntity(userId)
-            .method(UserEntity::changeEmail)
-            .invokeAsync(cmd)
-            .thenApply(done -> HttpResponses.ok());
-        })
-        .exceptionally(e -> {
-          // in case of exception `callToUser` is not executed,
-          // and we return an error to the caller of this method
-          logger.info("Email already reserved '{}'", e.getMessage());
-          throw HttpException.badRequest("Email already reserved");
-        });
-
-    return userCreated;
-
+    if (emailReserved instanceof UniqueEmailEntity.Result.AlreadyReserved e) {
+      logger.info("Email is already reserved '{}'", emailAddress);
+      throw HttpException.badRequest("Email is already reserved '" + emailAddress + "'");
+    }
   }
 
 

@@ -14,8 +14,6 @@ import com.example.transfer.domain.TransferState.Transfer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.CompletionStage;
-
 // Opened up for access from the public internet to make the sample service easy to try out.
 // For actual services meant for production this must be carefully considered, and often set more limited
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
@@ -31,24 +29,24 @@ public class TransferEndpoint {
   }
 
   @Get("/transfer/{id}")
-  public CompletionStage<String> get(String id) {
+  public String get(String id) {
     log.info("Get transfer with id [{}].", id);
-    return componentClient.forWorkflow(id)
-      .method(TransferWorkflow::getTransferState).invokeAsync()
-      .thenApply(transferState -> transferState.status().toString());
+    var transferState = componentClient.forWorkflow(id)
+      .method(TransferWorkflow::getTransferState).invoke();
+   return transferState.status().toString();
   }
 
   @Get("/transfers/completed")
-  public CompletionStage<TransferEntries> getCompleted() {
+  public TransferEntries getCompleted() {
     return componentClient.forView()
-      .method(TransferView::getAllCompleted).invokeAsync();
+      .method(TransferView::getAllCompleted).invoke();
   }
 
   @Post("/transfer/{id}")
-  public CompletionStage<HttpResponse> start(String id, Transfer transfer) {
+  public HttpResponse start(String id, Transfer transfer) {
     log.info("Starting transfer [{}].", transfer.toString());
-    return componentClient.forWorkflow(id)
-      .method(TransferWorkflow::startTransfer).invokeAsync(transfer)
-      .thenApply(msg -> HttpResponses.accepted());
+    componentClient.forWorkflow(id)
+      .method(TransferWorkflow::startTransfer).invoke(transfer);
+    return HttpResponses.accepted();
   }
 }

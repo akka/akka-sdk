@@ -24,17 +24,17 @@ public class CustomerEndpoint {
   }
 
   @Post("/{customerId}")
-  public CompletionStage<HttpResponse> create(String customerId, Customer customer) {
-    return componentClient.forEventSourcedEntity(customerId)
+  public HttpResponse create(String customerId, Customer customer) {
+    componentClient.forEventSourcedEntity(customerId)
       .method(CustomerEntity::create)
-      .invokeAsync(customer)
-      .thenApply(__ -> created());
+      .invokeAsync(customer);
+    return created();
   }
 
   @Get("/{customerId}")
-  public CompletionStage<Customer> get(String customerId) {
+  public Customer get(String customerId) {
     return componentClient.forEventSourcedEntity(customerId)
       .method(CustomerEntity::get)
-      .invokeAsync();
+      .invoke();
   }
 }

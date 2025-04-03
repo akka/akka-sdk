@@ -30,7 +30,6 @@ import customer.domain.Customer;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CompletionStage;
 
 // Opened up for access from the public internet to make the sample service easy to try out.
 // For actual services meant for production this must be carefully considered, and often set more limited
@@ -48,46 +47,48 @@ public class CustomerEndpoint {
   public record ApiCustomer(String id, String name, String email, String city, String street) { }
 
   @Post("/{customerId}")
-  public CompletionStage<HttpResponse> create(String customerId, ApiCustomer request) {
+  public HttpResponse create(String customerId, ApiCustomer request) {
     var customer = new Customer(request.email(), request.name(), new Address(request.street(), request.city()));
 
-    return componentClient.forKeyValueEntity(customerId)
+    componentClient.forKeyValueEntity(customerId)
         .method(CustomerEntity::create)
-        .invokeAsync(customer)
-        .thenApply(__ -> HttpResponses.created());
+        .invoke(customer);
+
+    return HttpResponses.created();
   }
 
   @Get("/{customerId}")
-  public  CompletionStage<ApiCustomer> get(String customerId) {
-    return componentClient.forKeyValueEntity(customerId)
+  public  ApiCustomer get(String customerId) {
+    var customer = componentClient.forKeyValueEntity(customerId)
         .method(CustomerEntity::getCustomer)
-        .invokeAsync()
-        .thenApply(customer -> toApiCustomer(customerId, customer));
+        .invoke();
+    return toApiCustomer(customerId, customer);
   }
 
   @Patch("/{id}/name/{newName}")
-  public CompletionStage<HttpResponse> changeName(String id, String newName) {
+  public HttpResponse changeName(String id, String newName) {
     if (newName.isEmpty()) {
       throw HttpException.badRequest("Customer name must not be empty");
     }
-    return componentClient.forKeyValueEntity(id)
+    componentClient.forKeyValueEntity(id)
         .method(CustomerEntity::changeName)
-        .invokeAsync(newName)
-        .thenApply(__ -> HttpResponses.ok());
+        .invoke(newName);
+
+    return HttpResponses.ok();
   }
 
   @Get("/by-email/{email}")
-  public CompletionStage<CustomersByEmail.Customers> getCustomerByEmail(String email) {
+  public CustomersByEmail.Customers getCustomerByEmail(String email) {
     return componentClient.forView()
         .method(CustomersByEmail::getCustomer)
-        .invokeAsync(email);
+        .invoke(email);
   }
 
   @Get("/first-by-name/{name}")
-  public CompletionStage<CustomersByName.CustomerSummary> getOneCustomerByName(String name) {
+  public CustomersByName.CustomerSummary getOneCustomerByName(String name) {
     return componentClient.forView()
         .method(CustomersByName::getFirstCustomerSummary)
-        .invokeAsync(name);
+        .invoke(name);
   }
 
   @Get("/by-name-csv/{name}")
@@ -167,50 +168,50 @@ public class CustomerEndpoint {
   // end::sse-customer-changes[]
 
   @Get("/{id}/address")
-  public CompletionStage<Address> getAddress(String id) {
+  public Address getAddress(String id) {
     return componentClient.forKeyValueEntity(id)
         .method(CustomerEntity::getCustomer)
-        .invokeAsync().thenApply(Customer::address);
+        .invoke().address();
   }
 
   @Patch("/{id}/address")
-  public CompletionStage<HttpResponse> changeAddress(String id, Address newAddress) {
-    return componentClient.forKeyValueEntity(id)
+  public HttpResponse changeAddress(String id, Address newAddress) {
+    componentClient.forKeyValueEntity(id)
         .method(CustomerEntity::changeAddress)
-        .invokeAsync(newAddress)
-        .thenApply(__ -> HttpResponses.ok());
+        .invoke(newAddress);
+    return HttpResponses.ok();
   }
 
   @Get("/by-name/{name}")
-  public CompletionStage<CustomerList> getByName(String name) {
+  public CustomerList getByName(String name) {
     return componentClient.forView()
         .method(CustomersResponseByName::getCustomers)
-        .invokeAsync(name);
+        .invoke(name);
   }
 
   public record ByNameSummary(String name) {}
   @Post("/by-name-summary")
-  public CompletionStage<CustomerSummaryByName.CustomerSummary> getSummaryByName(ByNameSummary req) {
+  public CustomerSummaryByName.CustomerSummary getSummaryByName(ByNameSummary req) {
     return componentClient.forView()
         .method(CustomerSummaryByName::getCustomer)
-        .invokeAsync(req.name());
+        .invoke(req.name());
   }
 
   public record ByCityRequest(List<String> cities) {}
 
   @Post("/by-city")
-  public CompletionStage<CustomerList> getByCity(ByCityRequest req) {
+  public CustomerList getByCity(ByCityRequest req) {
     return componentClient.forView()
         .method(CustomersByCity::getCustomers)
-        .invokeAsync(req.cities());
+        .invoke(req.cities());
   }
 
   @Delete("/{customerId}")
-  public CompletionStage<HttpResponse> delete(String customerId) {
-    return componentClient.forKeyValueEntity(customerId)
+  public HttpResponse delete(String customerId) {
+    componentClient.forKeyValueEntity(customerId)
         .method(CustomerEntity::delete)
-        .invokeAsync()
-        .thenApply(__ -> HttpResponses.noContent());
+        .invoke();
+    return HttpResponses.noContent();
   }
 
   private ApiCustomer toApiCustomer(String customerId, Customer customer) {
