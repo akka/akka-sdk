@@ -37,17 +37,17 @@ public class OrderEntity extends KeyValueEntity<Order> {
   
   public sealed interface Result {
 
-    public record Ok() implements Result {
+    record Ok() implements Result {
       public static Ok ok = new Ok();
     }
 
-    public record NotFound(String message) implements Result {
+    record NotFound(String message) implements Result {
       public static NotFound of(String message) {
         return new NotFound(message);
       }
     }
 
-    public record Invalid(String message) implements Result {
+    record Invalid(String message) implements Result {
       public static Invalid of(String message) {
         return new Invalid(message);
       }

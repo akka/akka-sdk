@@ -31,21 +31,17 @@ public class CounterCommandFromTopicConsumer extends Consumer {
 
   public Effect onValueIncreased(IncreaseCounter increase) {
     logger.info("Received increase event: {}", increase.toString());
-    var increaseReply =
-      componentClient.forEventSourcedEntity(increase.counterId)
-        .method(CounterEntity::increase)
-        .invokeAsync(increase.value)
-        .thenApply(__ -> Done.done());
-    return effects().asyncDone(increaseReply);
+    componentClient.forEventSourcedEntity(increase.counterId)
+      .method(CounterEntity::increase)
+      .invoke(increase.value);
+    return effects().done();
   }
 
   public Effect onValueMultiplied(MultiplyCounter multiply) {
     logger.info("Received multiply event: {}", multiply.toString());
-    var increaseReply =
-      componentClient.forEventSourcedEntity(multiply.counterId)
-        .method(CounterEntity::multiply)
-        .invokeAsync(multiply.value)
-        .thenApply(__ -> Done.done());
-    return effects().asyncDone(increaseReply);
+    componentClient.forEventSourcedEntity(multiply.counterId)
+      .method(CounterEntity::multiply)
+      .invoke(multiply.value);
+    return effects().done();
   }
 }

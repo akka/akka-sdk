@@ -28,12 +28,11 @@ public class TransferWorkflowIntegrationTest extends TestKitSupport {
     var transfer = new Transfer(walletId1, walletId2, 10);
 
     var response =
-      await(
+
         componentClient
           .forWorkflow(transferId)
           .method(TransferWorkflow::startTransfer)
-          .invokeAsync(transfer)
-      );
+          .invoke(transfer);
 
     assertThat(response).isEqualTo(done());
 
@@ -58,22 +57,20 @@ public class TransferWorkflowIntegrationTest extends TestKitSupport {
 
   private void createWallet(String walletId, int amount) {
     var res =
-      await(
+
         componentClient
           .forEventSourcedEntity(walletId)
           .method(WalletEntity::create)
-          .invokeAsync(amount)
-      );
+          .invoke(amount);
 
     assertEquals(done(), res);
   }
 
   private int getWalletBalance(String walletId) {
-    return await(
+    return
       componentClient
         .forEventSourcedEntity(walletId)
-        .method(WalletEntity::get).invokeAsync()
-    );
+        .method(WalletEntity::get).invoke();
   }
 
 }

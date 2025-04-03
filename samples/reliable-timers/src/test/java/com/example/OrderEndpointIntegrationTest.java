@@ -94,13 +94,13 @@ public class OrderEndpointIntegrationTest extends TestKitSupport {
 
 
   private HttpResponse confirmOrder(String orderId) {
-    return await(httpClient.POST("/orders/" + orderId + "/confirm")
-            .invokeAsync()).httpResponse();
+    return httpClient.POST("/orders/" + orderId + "/confirm")
+            .invoke().httpResponse();
   }
 
   private HttpResponse cancelOrder(String orderId) {
-    return await(httpClient.POST("/orders/" + orderId + "/cancel")
-            .invokeAsync()).httpResponse();
+    return httpClient.POST("/orders/" + orderId + "/cancel")
+            .invoke().httpResponse();
   }
 
   private String placeOrder(OrderRequest orderReq) {
@@ -112,11 +112,10 @@ public class OrderEndpointIntegrationTest extends TestKitSupport {
   }
 
   private OrderStatus getOrderStatus(String orderId) {
-    return await(
+    return
       componentClient
         .forKeyValueEntity(orderId)
-        .method(OrderEntity::status).invokeAsync()
-    );
+        .method(OrderEntity::status).invoke();
   }
 
 

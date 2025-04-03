@@ -131,6 +131,7 @@ public class CustomerEndpoint {
         Source.tick(Duration.ZERO, Duration.ofSeconds(5), "tick") // <1>
           // for each tick, request the entity state
           .mapAsync(1, __ ->
+            // Note: not safe to turn this into `.invoke()` in a stream `.map()`
             componentClient.forKeyValueEntity(customerId)
                 .method(CustomerEntity::getCustomer)
                 .invokeAsync().handle((Customer customer, Throwable error) -> {

@@ -15,9 +15,9 @@ class WalletEntityIntegrationTest extends TestKitSupport {
     // given
     var walletId = randomId();
     var withdraw = new WalletCommand.Withdraw(randomId(), 10);
-    await(componentClient.forEventSourcedEntity(walletId)
+    componentClient.forEventSourcedEntity(walletId)
       .method(WalletEntity::create)
-      .invokeAsync(100));
+      .invoke(100);
 
     // when
     withdraw(walletId, withdraw);
@@ -25,9 +25,9 @@ class WalletEntityIntegrationTest extends TestKitSupport {
     withdraw(walletId, withdraw);
 
     // then
-    Integer balance = await(componentClient.forEventSourcedEntity(walletId)
+    Integer balance = componentClient.forEventSourcedEntity(walletId)
       .method(WalletEntity::get)
-      .invokeAsync());
+      .invoke();
     assertThat(balance).isEqualTo(100 - 10);
   }
 
@@ -36,9 +36,9 @@ class WalletEntityIntegrationTest extends TestKitSupport {
     // given
     var walletId = randomId();
     var deposit = new WalletCommand.Deposit(randomId(), 10);
-    await(componentClient.forEventSourcedEntity(walletId)
+    componentClient.forEventSourcedEntity(walletId)
       .method(WalletEntity::create)
-      .invokeAsync(100));
+      .invoke(100);
 
     // when
     deposit(walletId, deposit);
@@ -46,21 +46,21 @@ class WalletEntityIntegrationTest extends TestKitSupport {
     deposit(walletId, deposit);
 
     // then
-    Integer balance = await(componentClient.forEventSourcedEntity(walletId)
+    Integer balance = componentClient.forEventSourcedEntity(walletId)
       .method(WalletEntity::get)
-      .invokeAsync());
+      .invoke();
     assertThat(balance).isEqualTo(100 + 10);
   }
 
   private WalletResult deposit(String walletId, WalletCommand.Deposit deposit) {
-    return await(componentClient.forEventSourcedEntity(walletId)
+    return componentClient.forEventSourcedEntity(walletId)
       .method(WalletEntity::deposit)
-      .invokeAsync(deposit));
+      .invoke(deposit);
   }
 
   private WalletResult withdraw(String walletId, WalletCommand.Withdraw withdraw) {
-    return await(componentClient.forEventSourcedEntity(walletId)
+    return componentClient.forEventSourcedEntity(walletId)
       .method(WalletEntity::withdraw)
-      .invokeAsync(withdraw));
+      .invoke(withdraw);
   }
 }

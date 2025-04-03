@@ -9,8 +9,6 @@ import akka.javasdk.client.ComponentClient;
 import store.customer.application.CustomerEntity;
 import store.customer.domain.Customer;
 
-import java.util.concurrent.CompletionStage;
-
 import static akka.javasdk.http.HttpResponses.created;
 
 @HttpEndpoint("/customers")
@@ -27,7 +25,7 @@ public class CustomerEndpoint {
   public HttpResponse create(String customerId, Customer customer) {
     componentClient.forEventSourcedEntity(customerId)
       .method(CustomerEntity::create)
-      .invokeAsync(customer);
+      .invoke(customer);
     return created();
   }
 
