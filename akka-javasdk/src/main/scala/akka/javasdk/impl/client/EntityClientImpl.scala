@@ -104,7 +104,11 @@ private[impl] sealed abstract class EntityClientImpl(
             metadata =>
               maybeRetrySetting match {
                 case Some(retrySetting) =>
-                  akka.pattern.retry(() => callEntity(metadata), retrySetting).asJava
+                  akka.pattern
+                    .retry(retrySetting) { () =>
+                      callEntity(metadata)
+                    }
+                    .asJava
                 case None => callEntity(metadata).asJava
               }
           },

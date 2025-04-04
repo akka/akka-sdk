@@ -178,7 +178,11 @@ private[javasdk] final case class ViewClientImpl(
           { metadata =>
             maybeRetrySettings match {
               case Some(retrySettings) =>
-                akka.pattern.retry(() => callView(metadata), retrySettings).asJava
+                akka.pattern
+                  .retry(retrySettings) { () =>
+                    callView(metadata)
+                  }
+                  .asJava
               case None => callView(metadata).asJava
             }
           },
