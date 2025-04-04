@@ -28,15 +28,15 @@ public interface ComponentMethodRef<R> extends ComponentDeferredMethodRef<R> {
    * @param retrySettings The retry settings
    * @return A new call with the retry settings set
    */
-  ComponentMethodRef<R> withRetry(RetrySettings retrySettings);
+  ComponentInvokeOnlyMethodRef<R> withRetry(RetrySettings retrySettings);
 
   /**
-   * Set the retry settings for this call. A predifined backoff strategy will be calculated based on the number of maxRetries.
+   * Set the retry settings for this call. A predefined backoff strategy will be calculated based on the number of maxRetries.
    *
    * @param maxRetries The number of retries to make
    * @return A new call with the retry settings set
    */
-  ComponentMethodRef<R> withRetry(int maxRetries);
+  ComponentInvokeOnlyMethodRef<R> withRetry(int maxRetries);
 
   CompletionStage<R> invokeAsync();
 }

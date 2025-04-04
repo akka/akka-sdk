@@ -70,7 +70,7 @@ public interface RequestBuilder<R> {
   RequestBuilder<R> withRetry(RetrySettings retrySettings);
 
   /**
-   * Set the retry settings for this call. A predifined backoff strategy will be calculated based on the number of maxRetries.
+   * Set the retry settings for this call. A predefined backoff strategy will be calculated based on the number of maxRetries.
    *
    * @param maxRetries The number of retries to make
    */
