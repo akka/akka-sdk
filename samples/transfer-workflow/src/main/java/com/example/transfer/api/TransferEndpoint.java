@@ -1,5 +1,6 @@
 package com.example.transfer.api;
 
+import akka.Done;
 import akka.http.javadsl.model.HttpResponse;
 import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.http.Get;
@@ -7,6 +8,7 @@ import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.http.HttpResponses;
+import com.example.transfer.application.ImporterWorkflow;
 import com.example.transfer.application.TransferView;
 import com.example.transfer.application.TransferView.TransferEntries;
 import com.example.transfer.application.TransferWorkflow;
@@ -50,5 +52,32 @@ public class TransferEndpoint {
     return componentClient.forWorkflow(id)
       .method(TransferWorkflow::startTransfer).invokeAsync(transfer)
       .thenApply(msg -> HttpResponses.accepted());
+  }
+
+  @Get("/import/{id}")
+  public CompletionStage<ImporterWorkflow.ImporterWorkflowState> getImport(String id) {
+    return componentClient.forWorkflow(id)
+      .method(ImporterWorkflow::get).invokeAsync();
+  }
+
+  @Get("/import-start/{id}")
+  public CompletionStage<Done> startImport(String id) {
+    log.info("Starting import with id [{}].", id);
+    return componentClient.forWorkflow(id)
+      .method(ImporterWorkflow::startImport).invokeAsync();
+  }
+
+  @Get("/import-stop/{id}")
+  public CompletionStage<Done> stopImport(String id) {
+    log.info("Stopping import with id [{}].", id);
+    return componentClient.forWorkflow(id)
+      .method(ImporterWorkflow::stopImport).invokeAsync();
+  }
+
+  @Get("/import-restart/{id}")
+  public CompletionStage<Done> restartImport(String id) {
+    log.info("Restarting import with id [{}].", id);
+    return componentClient.forWorkflow(id)
+      .method(ImporterWorkflow::restartImport).invokeAsync();
   }
 }

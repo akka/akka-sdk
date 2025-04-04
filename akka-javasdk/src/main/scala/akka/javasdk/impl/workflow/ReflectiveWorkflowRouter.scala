@@ -10,6 +10,7 @@ import java.util.function.{ Function => JFunc }
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.FutureConverters.CompletionStageOps
+import scala.jdk.OptionConverters.RichOption
 import scala.jdk.OptionConverters.RichOptional
 
 import akka.annotation.InternalApi
@@ -25,6 +26,7 @@ import akka.javasdk.timer.TimerScheduler
 import akka.javasdk.workflow.CommandContext
 import akka.javasdk.workflow.Workflow
 import akka.javasdk.workflow.Workflow.AsyncCallStep
+import akka.javasdk.workflow.Workflow.BackgroundProcess
 import akka.javasdk.workflow.Workflow.Effect.TransitionalEffect
 import akka.javasdk.workflow.WorkflowContext
 import akka.runtime.sdk.spi.BytesPayload
@@ -89,13 +91,14 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
       commandName: String,
       command: BytesPayload,
       context: CommandContext,
-      timerScheduler: TimerScheduler): CommandResult = {
+      timerScheduler: TimerScheduler,
+      backgroundProcess: Option[BackgroundProcess[S]]): CommandResult = {
 
     val workflow = instanceFactory(workflowContext)
 
     // if runtime doesn't have a state to provide, we fall back to user's own defined empty state
     val decodedState = decodeUserState(userState).getOrElse(workflow.emptyState())
-    workflow._internalSetup(decodedState, context, timerScheduler)
+    workflow._internalSetup(decodedState, context, timerScheduler, backgroundProcess.toJava)
 
     val methodInvoker = methodInvokerLookup(commandName)
 
@@ -122,6 +125,7 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
       stepName: String,
       timerScheduler: TimerScheduler,
       commandContext: CommandContext,
+      backgroundProcess: Option[BackgroundProcess[S]],
       executionContext: ExecutionContext): Future[BytesPayload] = {
 
     implicit val ec: ExecutionContext = executionContext
@@ -129,7 +133,7 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
     val workflow = instanceFactory(workflowContext)
     // if runtime doesn't have a state to provide, we fall back to user's own defined empty state
     val decodedState = decodeUserState(userState).getOrElse(workflow.emptyState())
-    workflow._internalSetup(decodedState, commandContext, timerScheduler)
+    workflow._internalSetup(decodedState, commandContext, timerScheduler, backgroundProcess.toJava)
 
     workflow.definition().findByName(stepName).toScala match {
       case Some(call: AsyncCallStep[_, _, _]) =>
