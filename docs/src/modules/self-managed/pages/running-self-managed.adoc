@@ -6,7 +6,7 @@ For organizations that want control over how Akka services are installed, update
 
 == License key
 
-You can retrieve a free license key from https://account.akka.io/key[akka.io, window="new"]. Select the Akka SDK option.
+You can retrieve a free license key from https://account.akka.io/key[akka.io/key, window="new"].
 
 Define the key in your `application.conf`:
 
@@ -18,7 +18,7 @@ akka.license-key = "<your key>"
 
 Akka requires a Postgres database. The tables will be created automatically, but you need to create the database and the credentials to connect to the database.
 
-You define connection configuration in your `application.conf` or use the predefined environment variables.
+You define a connection configuration in your `application.conf` or use the predefined environment variables.
 
 ```
 akka.persistence.r2dbc {
@@ -64,7 +64,7 @@ Push the image to your container registry.
 
 == Deploy to Kubernetes
 
-You need to create and operate the Kubernetes cluster yourself. For example using Amazon EKS.
+You need to create and operate the Kubernetes cluster yourself. Cloud and on-premises Kubernetes are supported.
 
 You need the following Kubernetes files:
 
@@ -130,7 +130,9 @@ Then you can access the endpoints at `http:localhost:9000/`.
 
 The standalone image can be run in most container image platforms.
 
-When running more than one instance of the service they must form an Akka Cluster. This is done automatically in a Kubernetes environment. Many container platforms are not designed to support cluster-based systems that need discovery and network connectivity to enable scale and resilience. If clustering is not an option in your environment you can run it as a single instance by defining the following configuration in your `application.conf`:
+When running more than one instance of the service they must form an Akka cluster. This is done automatically in a Kubernetes environment, but must be configured within container runtime platforms.. Many container platforms are not designed to support cluster-based systems that need discovery and network connectivity to enable scale and resilience. The nodes must support peer-to-peer TCP connectivity, by default on port 25520. See https://doc.akka.io/libraries/akka-core/current/typed/cluster.html#joining[reference documentation] for more details about cluster formation.
+
+If clustering is not an option in your environment you can run it as a single instance by defining the following configuration in your `application.conf`:
 
 ```
 akka.runtime.standalone.single-node = true

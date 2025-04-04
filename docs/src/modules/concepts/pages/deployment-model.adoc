@@ -2,7 +2,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-Akka applications are distributed by design. Although you can run an entire set of complex services on a single machine, they are meant to be distributed. This guide explains deployment and distribution in Akka. 
+Akka applications are distributed by design. Although you can run many complex services on a single machine, they are meant to be distributed. This guide explains deployment and distribution in Akka.
 
 == Deployment alternatives
 
