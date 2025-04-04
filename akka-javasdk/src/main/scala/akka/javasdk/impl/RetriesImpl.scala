@@ -7,6 +7,7 @@ package akka.javasdk.impl
 import java.util.concurrent.Callable
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
+import java.util.concurrent.ExecutionException
 
 import akka.actor.ActorSystem
 import akka.annotation.InternalApi
@@ -30,13 +31,17 @@ private[akka] class RetriesImpl(actorSystem: ActorSystem) extends Retries {
   }
 
   override def retry[T](callable: Callable[T], retrySettings: RetrySettings): T = {
-    retryAsync(
-      new Callable[CompletionStage[T]] {
-        override def call(): CompletionStage[T] = {
-          CompletableFuture.completedFuture(callable.call())
-        }
-      },
-      retrySettings).toCompletableFuture
-      .get()
+    try {
+      retryAsync(
+        new Callable[CompletionStage[T]] {
+          override def call(): CompletionStage[T] = {
+            CompletableFuture.completedFuture(callable.call())
+          }
+        },
+        retrySettings).toCompletableFuture
+        .get()
+    } catch {
+      case e: ExecutionException => throw ErrorHandling.unwrapExecutionException(e)
+    }
   }
 }
