@@ -53,10 +53,26 @@ import java.util.function.Supplier;
  */
 public abstract class Workflow<S> {
 
+  public interface BackgroundProcessCommand {}
+
+  public interface BackgroundProcess<S> {
+
+    void onStart(S state);
+    void onStop();
+
+    default void send(BackgroundProcessCommand command){
+    }
+
+//    void pause();
+//    void restart();
+  }
+
   private Optional<CommandContext> commandContext = Optional.empty();
   private Optional<TimerScheduler> timerScheduler = Optional.empty();
 
   private Optional<S> currentState = Optional.empty();
+
+  private Optional<BackgroundProcess<S>> currentBackgroundProcess = Optional.empty();
 
   private boolean stateHasBeenSet = false;
 
@@ -127,11 +143,12 @@ public abstract class Workflow<S> {
    * @hidden
    */
   @InternalApi
-  public void _internalSetup(S state, CommandContext context, TimerScheduler timerScheduler) {
+  public void _internalSetup(S state, CommandContext context, TimerScheduler timerScheduler, Optional<BackgroundProcess<S>> backgroundProcess) {
     this.stateHasBeenSet = true;
     this.currentState = Optional.ofNullable(state);
     this.commandContext = Optional.of(context);
     this.timerScheduler = Optional.of(timerScheduler);
+    this.currentBackgroundProcess = backgroundProcess;
   }
 
   /**
@@ -145,6 +162,14 @@ public abstract class Workflow<S> {
     this.currentState = Optional.ofNullable(state);
   }
 
+
+  public Optional<BackgroundProcess<S>> backgroundProcess(){
+    return Optional.empty();
+  }
+
+  protected final Optional<BackgroundProcess<S>> currentBackgroundProcess() {
+    return currentBackgroundProcess;
+  }
 
   /**
    * @return A workflow definition in a form of steps and transitions between them.
@@ -193,8 +218,16 @@ public abstract class Workflow<S> {
 
       /**
        * Pause the workflow execution and wait for an external input, e.g. via command handler.
+       * After a some time the workflow will passivate and clean up resources.
        */
       TransitionalEffect<Void> pause();
+
+      /**
+       * Pause the workflow execution and wait for an external input, e.g. via command handler.
+       * @param keepAlive If true, the workflow will not passivate and will keep its resources alive.
+       *                  Important when workflow has a long-running background process.
+       */
+      TransitionalEffect<Void> pause(boolean keepAlive);
 
       /**
        * Defines the next step to which the workflow should transition to.
@@ -286,8 +319,16 @@ public abstract class Workflow<S> {
 
       /**
        * Pause the workflow execution and wait for an external input, e.g. via command handler.
+       * After a some time the workflow will passivate and clean up resources.
        */
       TransitionalEffect<Void> pause();
+
+      /**
+       * Pause the workflow execution and wait for an external input, e.g. via command handler.
+       * @param keepAlive If true, the workflow will not passivate and will keep its resources alive.
+       *                  Important when workflow has a long-running background process.
+       */
+      TransitionalEffect<Void> pause(boolean keepAlive);
 
       /**
        * Defines the next step to which the workflow should transition to.

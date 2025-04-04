@@ -43,6 +43,7 @@ import akka.javasdk.impl.workflow.WorkflowEffectImpl.TransitionalEffectImpl
 import akka.javasdk.impl.workflow.WorkflowEffectImpl.UpdateState
 import akka.javasdk.workflow.CommandContext
 import akka.javasdk.workflow.Workflow
+import akka.javasdk.workflow.Workflow.BackgroundProcess
 import akka.javasdk.workflow.Workflow.{ RecoverStrategy => SdkRecoverStrategy }
 import akka.javasdk.workflow.WorkflowContext
 import akka.runtime.sdk.spi.BytesPayload
@@ -78,6 +79,27 @@ class WorkflowImpl[S, W <: Workflow[S]](
 
   private val router =
     new ReflectiveWorkflowRouter[S, W](context, instanceFactory, componentDescriptor.methodInvokers, serializer)
+
+  private var backgroundProcess: Option[BackgroundProcess[S]] = None
+
+  override def preStart(userState: Option[SpiWorkflow.State]): Unit = {
+    println("WorkflowImpl.preStart")
+    val workflow = instanceFactory(context)
+    backgroundProcess = workflow.backgroundProcess().toScala
+    val decodedState: S = decodeUserState(userState).getOrElse(workflow.emptyState())
+    backgroundProcess.foreach(_.onStart(decodedState))
+  }
+
+  private def decodeUserState(userState: Option[BytesPayload]): Option[S] =
+    userState
+      .collect {
+        case payload if payload.nonEmpty => serializer.fromBytes(payload).asInstanceOf[S]
+      }
+
+  override def onPassivate(): Unit = {
+    println("WorkflowImpl.onPassivate")
+    backgroundProcess.foreach(_.onStop())
+  }
 
   override def configuration: SpiWorkflow.WorkflowConfig = {
     val workflow = instanceFactory(context)
@@ -130,7 +152,7 @@ class WorkflowImpl[S, W <: Workflow[S]](
     transition match {
       case StepTransition(stepName, input) =>
         new SpiWorkflow.StepTransition(stepName, input.map(serializer.toBytes))
-      case Pause        => SpiWorkflow.Pause
+      case Pause        => new SpiWorkflow.Pause(false)
       case NoTransition => SpiWorkflow.NoTransition
       case End          => SpiWorkflow.End
     }
@@ -211,7 +233,8 @@ class WorkflowImpl[S, W <: Workflow[S]](
           commandName = command.name,
           command = cmd,
           context = context,
-          timerScheduler = timerScheduler)
+          timerScheduler = timerScheduler,
+          backgroundProcess = backgroundProcess)
       } catch {
         case e: HandlerNotFoundException =>
           throw WorkflowException(workflowId, command.name, e.getMessage, Some(e))
@@ -240,6 +263,7 @@ class WorkflowImpl[S, W <: Workflow[S]](
         stepName = stepName,
         timerScheduler = timerScheduler,
         commandContext = context,
+        backgroundProcess = backgroundProcess,
         executionContext = sdkExecutionContext)
       handleStep.onComplete {
         case Failure(exception) => log.error(s"Workflow [$workflowId], failed to execute step [$stepName]", exception)
