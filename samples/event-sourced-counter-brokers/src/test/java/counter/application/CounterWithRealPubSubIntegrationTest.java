@@ -5,15 +5,14 @@ import akka.http.javadsl.model.StatusCodes;
 import akka.javasdk.testkit.TestKitSupport;
 import akka.javasdk.testkit.TestKit;
 import org.awaitility.Awaitility;
-import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.util.Base64;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class CounterWithRealPubSubIntegrationTest extends TestKitSupport { // <1>
@@ -41,18 +40,17 @@ public class CounterWithRealPubSubIntegrationTest extends TestKitSupport { // <1
     var pubSubClient = testKit.getHttpClientProvider().httpClientFor("http://localhost:8085");
     var response = pubSubClient.POST("/v1/projects/test/topics/counter-commands:publish")
             .withRequestBody(ContentTypes.APPLICATION_JSON, messageBody.getBytes(StandardCharsets.UTF_8))
-            .invokeAsync();
+            .invoke();
 
-    assertEquals(StatusCodes.OK, await(response).httpResponse().status());
-
-    var getCounterState =
-      componentClient.forEventSourcedEntity(counterId).method(CounterEntity::get);
+    assertEquals(StatusCodes.OK, response.httpResponse().status());
 
 
     Awaitility.await()
       .ignoreExceptions()
       .atMost(30, TimeUnit.SECONDS)
-      .until(() -> await(getCounterState.invokeAsync(), Duration.ofSeconds(3)), new IsEqual<>(20));
+      .until(() -> {
+        assertThat(componentClient.forEventSourcedEntity(counterId).method(CounterEntity::get).invoke()).isEqualTo(20);
+      });
   }
 
   // builds a message in PubSub format, ready to be injected

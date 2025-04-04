@@ -21,4 +21,6 @@ public interface ComponentInvokeOnlyMethodRef<R> {
   ComponentMethodRef<R> withMetadata(Metadata metadata);
 
   CompletionStage<R> invokeAsync();
+
+  R invoke();
 }

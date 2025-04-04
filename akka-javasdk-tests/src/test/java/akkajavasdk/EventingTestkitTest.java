@@ -62,10 +62,10 @@ public class EventingTestkitTest extends TestKitSupport {
         var response = DummyCounterEventStore.get(subject);
         assertThat(response).containsOnly(event1, event2);
 
-        var viewResponse = await(componentClient
+        var viewResponse = componentClient
             .forView()
             .method(ViewFromCounterEventsTopic::getCountersLessThan)
-            .invokeAsync(new ViewFromCounterEventsTopic.QueryParameters(4)));
+            .invoke(new ViewFromCounterEventsTopic.QueryParameters(4));
 
         assertThat(viewResponse.counters()).contains(new CounterView(subject, 3));
       });

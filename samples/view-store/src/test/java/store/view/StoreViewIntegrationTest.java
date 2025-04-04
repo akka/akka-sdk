@@ -17,56 +17,53 @@ public abstract class StoreViewIntegrationTest extends TestKitSupport {
   protected void createProduct(String id, String name, String currency, long units, int cents) {
     Product product = new Product(name, new Money(currency, units, cents));
     var response =
-      await(
+
         componentClient
           .forEventSourcedEntity(id)
           .method(ProductEntity::create)
-          .invokeAsync(product));
+          .invoke(product);
     assertNotNull(response);
   }
 
   protected void changeProductName(String id, String newName) {
     var response =
-      await(
+      
         componentClient
           .forEventSourcedEntity(id)
           .method(ProductEntity::changeName)
-          .invokeAsync(newName));
+          .invoke(newName);
     assertNotNull(response);
   }
 
   protected void createCustomer(String id, String email, String name, String street, String city) {
     Customer customer = new Customer(email, name, new Address(street, city));
     var response =
-      await(
+
         componentClient
           .forEventSourcedEntity(id)
           .method(CustomerEntity::create)
-          .invokeAsync(customer)
-      );
+          .invoke(customer);
     assertNotNull(response);
   }
 
   protected void changeCustomerName(String id, String newName) {
     var response =
-      await(
+
         componentClient
           .forEventSourcedEntity(id)
           .method(CustomerEntity::changeName)
-          .invokeAsync(newName)
-      );
+          .invoke(newName);
     assertNotNull(response);
   }
 
   protected void createOrder(String id, String productId, String customerId, int quantity) {
     CreateOrder createOrder = new CreateOrder(productId, customerId, quantity);
     var response =
-      await(
+
         componentClient
           .forKeyValueEntity(id)
           .method(OrderEntity::create)
-          .invokeAsync(createOrder)
-      );
+          .invoke(createOrder);
     assertNotNull(response);
   }
 

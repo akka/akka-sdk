@@ -29,21 +29,17 @@ public class DelegatingServiceEndpoint {
   record Counter(int value) {}
 
   @Post("/delegate/counter/{counterId}/increase")
-  public CompletionStage<String> addAndReturn(String counterId, IncreaseRequest request) {
-    CompletionStage<String> result =
-        httpClient.POST("/counter/" + counterId + "/increase") // <3>
-            .withRequestBody(request)
-            .responseBodyAs(Counter.class)
-            .invokeAsync() // <4>
-            .thenApply(response -> { // <5>
-              if (response.status().isSuccess()) {
-                return "New counter vaue: " + response.body().value;
-              } else {
-                throw new RuntimeException("Counter returned unexpected status: " + response.status());
-              }
-            });
+  public String addAndReturn(String counterId, IncreaseRequest request) {
+    var response = httpClient.POST("/counter/" + counterId + "/increase") // <3>
+    .withRequestBody(request)
+    .responseBodyAs(Counter.class)
+    .invoke(); // <4>
 
-    return result;
+    if (response.status().isSuccess()) { // <5>
+      return "New counter vaue: " + response.body().value;
+    } else {
+      throw new RuntimeException("Counter returned unexpected status: " + response.status());
+    }
   }
 }
 // end::delegating-endpoint[]

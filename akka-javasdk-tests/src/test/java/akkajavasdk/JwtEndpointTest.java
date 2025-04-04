@@ -33,17 +33,11 @@ public class JwtEndpointTest extends TestKitSupport {
   public void shouldReturnIssuerAndSubject() {
     var token = bearerTokenWith(Map.of("iss", "my-issuer-123", "sub", "my-subject-123"));
     
-    CompletableFuture<StrictResponse<String>> call = httpClient.GET("/hello").addHeader("Authorization", token)
+    StrictResponse<String> call = httpClient.GET("/hello").addHeader("Authorization", token)
         .responseBodyAs(String.class)
-        .invokeAsync().toCompletableFuture();
+        .invoke();
 
-    Awaitility.await()
-        .ignoreExceptions()
-        .atMost(5, TimeUnit.SECONDS)
-        .untilAsserted(() -> {
-          assertThat(call.get().body()).isEqualTo("issuer: my-issuer-123, subject: my-subject-123");
-        });
-
+    assertThat(call.body()).isEqualTo("issuer: my-issuer-123, subject: my-subject-123");
   }
 
   @Test
@@ -51,14 +45,9 @@ public class JwtEndpointTest extends TestKitSupport {
     var token = bearerTokenWith(Map.of("iss", "my-issuer-123"));
 
     var call = httpClient.GET("/hello").addHeader("Authorization", token)
-        .invokeAsync().toCompletableFuture();
+        .invoke();
 
-    Awaitility.await()
-        .ignoreExceptions()
-        .atMost(5, TimeUnit.SECONDS)
-        .untilAsserted(() -> {
-          assertThat(call.get().status()).isEqualTo(StatusCodes.FORBIDDEN);
-        });
+    assertThat(call.status()).isEqualTo(StatusCodes.FORBIDDEN);
   }
 
   @Test

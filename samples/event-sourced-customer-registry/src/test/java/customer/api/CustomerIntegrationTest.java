@@ -26,9 +26,9 @@ public class CustomerIntegrationTest extends TestKitSupport {
     String id = UUID.randomUUID().toString();
     var createCustomerRequest = new CustomerEndpoint.CreateCustomerRequest("foo@example.com", "Johanna", new Address("Regent Street","London"));
 
-    var response = await(httpClient.POST("/customer/" + id)
+    var response = httpClient.POST("/customer/" + id)
         .withRequestBody(createCustomerRequest)
-        .invokeAsync());
+        .invoke();
     Assertions.assertEquals(StatusCodes.CREATED, response.status());
 
     Assertions.assertEquals("Johanna", getCustomerById(id).name());
@@ -39,9 +39,9 @@ public class CustomerIntegrationTest extends TestKitSupport {
     String id = UUID.randomUUID().toString();
     createCustomer(id, new Customer("foo@example.com", "Johanna", new Address("Regent Street","London")));
 
-    var response = await(httpClient.GET("/customer/" + id)
+    var response = httpClient.GET("/customer/" + id)
         .responseBodyAs(Customer.class)
-        .invokeAsync());
+        .invoke();
     Assertions.assertEquals(StatusCodes.OK, response.status());
     Assertions.assertEquals("Johanna", response.body().name());
   }
@@ -52,9 +52,9 @@ public class CustomerIntegrationTest extends TestKitSupport {
 
     // FIXME invoke async throws on error codes, runtime ex, no way to inspect http response #2879
     Assertions.assertThrows(RuntimeException.class, () ->
-        await(httpClient.GET("/customer/" + id)
+        httpClient.GET("/customer/" + id)
         .responseBodyAs(Customer.class)
-        .invokeAsync())
+        .invoke()
     );
   }
 
@@ -63,7 +63,7 @@ public class CustomerIntegrationTest extends TestKitSupport {
     String id = UUID.randomUUID().toString();
     createCustomer(id, new Customer("foo@example.com", "Johanna", new Address("Regent Street","London")));
 
-    await(httpClient.PATCH("/customer/" + id + "/name/Katarina").invokeAsync());
+    httpClient.PATCH("/customer/" + id + "/name/Katarina").invoke();
 
     Assertions.assertEquals("Katarina", getCustomerById(id).name());
   }
@@ -74,9 +74,9 @@ public class CustomerIntegrationTest extends TestKitSupport {
     createCustomer(id, new Customer("foo@example.com", "Johanna", new Address("Regent Street","London")));
 
     var newAddress = new Address("Elm st. 5", "New Orleans");
-    var response = await(httpClient.PATCH("/customer/" + id + "/address")
+    var response = httpClient.PATCH("/customer/" + id + "/address")
         .withRequestBody(newAddress)
-        .invokeAsync());
+        .invoke();
     Assertions.assertEquals(StatusCodes.OK, response.status());
     Assertions.assertEquals("Elm st. 5", getCustomerById(id).address().street());
   }
@@ -92,11 +92,10 @@ public class CustomerIntegrationTest extends TestKitSupport {
       .ignoreExceptions()
       .atMost(20, TimeUnit.SECONDS)
       .until(() ->
-        await(
           componentClient.forView()
             .method(CustomerByNameView::getCustomers)
-            .invokeAsync("Foo")
-        ).customers().stream().findFirst().get().name(),
+            .invoke("Foo")
+            .customers().stream().findFirst().get().name(),
         new IsEqual("Foo")
       );
   }
@@ -105,10 +104,10 @@ public class CustomerIntegrationTest extends TestKitSupport {
   public void findByEmail() {
     String id = UUID.randomUUID().toString();
     Customer customer = new Customer("bar@example.com", "Bar", new Address("Regent Street","London"));
-    Done response = await(
+    Done response = 
       componentClient.forEventSourcedEntity(id)
         .method(CustomerEntity::create)
-        .invokeAsync(customer));
+        .invoke(customer);
 
     Assertions.assertEquals(done(), response);
 
@@ -117,27 +116,25 @@ public class CustomerIntegrationTest extends TestKitSupport {
       .ignoreExceptions()
       .atMost(20, TimeUnit.SECONDS)
       .until(() ->
-          await(
-            componentClient.forView()
+        componentClient.forView()
               .method(CustomerByEmailView::getCustomers)
-              .invokeAsync("bar@example.com")
-          ).customers().stream().findFirst().get().name(),
+              .invoke("bar@example.com")
+          .customers().stream().findFirst().get().name(),
         new IsEqual("Bar")
       );
   }
 
   private void createCustomer(String id, Customer customer) {
-    await(
         componentClient.forEventSourcedEntity(id)
             .method(CustomerEntity::create)
-            .invokeAsync(customer));
+            .invoke(customer);
   }
 
   private Customer getCustomerById(String id) {
-    return await(
+    return
       componentClient.forEventSourcedEntity(id)
         .method(CustomerEntity::getCustomer)
-        .invokeAsync());
+        .invoke();
   }
 
 }

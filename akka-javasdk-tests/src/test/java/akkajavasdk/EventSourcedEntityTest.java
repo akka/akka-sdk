@@ -59,12 +59,12 @@ public class EventSourcedEntityTest extends TestKitSupport {
     var counterId = "deleted-hello";
     var client = componentClient.forEventSourcedEntity(counterId);
 
-    var isDeleted = await(client.method(CounterEntity::getDeleted).invokeAsync());
+    var isDeleted = client.method(CounterEntity::getDeleted).invoke();
     assertThat(isDeleted).isFalse();
 
-    await(client.method(CounterEntity::delete).invokeAsync());
+    client.method(CounterEntity::delete).invoke();
 
-    var isDeleted2 = await(client.method(CounterEntity::getDeleted).invokeAsync());
+    var isDeleted2 = client.method(CounterEntity::getDeleted).invoke();
     assertThat(isDeleted2).isTrue();
   }
 
@@ -174,14 +174,14 @@ public class EventSourcedEntityTest extends TestKitSupport {
       .method(CounterEntity::handle)
       .invokeAsync(new CounterCommand.Set(123)));
 
-    Integer result1 = await(client.method(CounterEntity::get).invokeAsync());
+    Integer result1 = client.method(CounterEntity::get).invoke();
     assertThat(result1).isEqualTo(123);
 
     await(client
       .method(CounterEntity::handle)
       .invokeAsync(new CounterCommand.Increase(123)));
 
-    Integer result2 = await(client.method(CounterEntity::get).invokeAsync());
+    Integer result2 = client.method(CounterEntity::get).invoke();
     assertThat(result2).isEqualTo(246);
   }
 
@@ -189,7 +189,7 @@ public class EventSourcedEntityTest extends TestKitSupport {
   public void verifyRequestWithDefaultProtoValuesWithEntity() {
     var client = componentClient.forEventSourcedEntity("some-counter");
     increaseCounter(client, 2);
-    Integer result = await(client.method(CounterEntity::set).invokeAsync(0));
+    Integer result = client.method(CounterEntity::set).invoke(0);
     assertThat(result).isEqualTo(0);
   }
 
@@ -199,7 +199,7 @@ public class EventSourcedEntityTest extends TestKitSupport {
 
     await(client.method(TextEsEntity::setText).invokeAsync("my text"));
 
-    var result = await(client.method(TextEsEntity::getText).invokeAsync());
+    var result = client.method(TextEsEntity::getText).invoke();
     assertThat(result).isEqualTo(Optional.of("my text"));
 
     // also verify that hierarchy consumer works
@@ -238,6 +238,6 @@ public class EventSourcedEntityTest extends TestKitSupport {
   }
 
   private Integer getCounter(EventSourcedEntityClient client) {
-    return await(client.method(CounterEntity::get).invokeAsync());
+    return client.method(CounterEntity::get).invoke();
   }
 }

@@ -120,7 +120,7 @@ public class WorkflowTest extends TestKitSupport {
         assertThat(transferState1.transfer()).isEqualTo(transfer1);
         assertThat(transferState2.transfer()).isEqualTo(transfer2);
 
-        var result = await(componentClient.forView().method(TransferView::getAll).invokeAsync());
+        var result = componentClient.forView().method(TransferView::getAll).invoke();
         assertThat(result.entries()).contains(
           new TransferView.TransferEntry(transferId1, true),
           new TransferView.TransferEntry(transferId2, true));
@@ -554,7 +554,7 @@ public class WorkflowTest extends TestKitSupport {
       .ignoreExceptions()
       .atMost(20, TimeUnit.of(SECONDS))
       .untilAsserted(() -> {
-        var state = await(componentClient.forWorkflow(workflowId).method(WorkflowWithoutInitialState::get).invokeAsync());
+        var state = componentClient.forWorkflow(workflowId).method(WorkflowWithoutInitialState::get).invoke();
         assertThat(state).contains("success");
       });
   }

@@ -27,19 +27,17 @@ public class CallExternalServiceEndpoint {
   }
 
   @Get("/iss-astronauts")
-  public CompletionStage<AstronautsResponse> issAstronauts() {
-    CompletionStage<StrictResponse<PeopleInSpace>> asyncResponse =
+  public AstronautsResponse issAstronauts() {
+    StrictResponse<PeopleInSpace> peopleInSpaceResponse =
       httpClient.GET("/astros.json")// <3>
         .responseBodyAs(PeopleInSpace.class) // <4>
-        .invokeAsync();
+        .invoke();
 
-    return asyncResponse.thenApply(peopleInSpaceResponse -> { // <5>
-      var astronautNames = peopleInSpaceResponse.body().people.stream()
-          .filter(astronaut -> astronaut.craft.equals("ISS"))
-          .map(astronaut -> astronaut.name)
-          .collect(Collectors.toList());
-      return new AstronautsResponse(astronautNames); // <6>
-    });
+    var astronautNames = peopleInSpaceResponse.body().people.stream()  // <5>
+        .filter(astronaut -> astronaut.craft.equals("ISS"))
+        .map(astronaut -> astronaut.name)
+        .collect(Collectors.toList());
+    return new AstronautsResponse(astronautNames); // <6>
   }
 
 }

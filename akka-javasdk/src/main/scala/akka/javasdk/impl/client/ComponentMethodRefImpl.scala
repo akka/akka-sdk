@@ -12,8 +12,10 @@ import akka.javasdk.client.ComponentInvokeOnlyMethodRef
 import akka.javasdk.client.ComponentInvokeOnlyMethodRef1
 import akka.javasdk.client.ComponentMethodRef
 import akka.javasdk.client.ComponentMethodRef1
+import akka.javasdk.impl.ErrorHandling
 
 import java.util.concurrent.CompletionStage
+import scala.concurrent.ExecutionException
 
 /**
  * INTERNAL API
@@ -60,4 +62,19 @@ private[impl] final case class ComponentMethodRefImpl[A1, R](
     createDeferred(metadataOpt, Some(arg)).asInstanceOf[DeferredCallImpl[NotUsed, R]].invokeAsync()
   }
 
+  // Note: invoke/ask timeout handled by runtime so no timeout needed here
+  override def invoke(): R =
+    try {
+      invokeAsync().toCompletableFuture.get()
+    } catch {
+      case ex: ExecutionException => throw ErrorHandling.unwrapExecutionException(ex)
+    }
+
+  override def invoke(arg: A1): R = {
+    try {
+      invokeAsync(arg).toCompletableFuture.get()
+    } catch {
+      case ex: ExecutionException => throw ErrorHandling.unwrapExecutionException(ex)
+    }
+  }
 }
