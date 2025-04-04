@@ -4,7 +4,7 @@
 
 package akkajavasdk.components.http;
 
-import akka.javasdk.AsyncUtils;
+import akka.javasdk.Retries;
 import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
@@ -19,11 +19,11 @@ import java.util.concurrent.CompletionStage;
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.ALL))
 public class RetryEndpoint {
 
-  private final AsyncUtils asyncUtils;
+  private final Retries retries;
   private final ComponentClient componentClient;
 
-  public RetryEndpoint(AsyncUtils asyncUtils, ComponentClient componentClient) {
-    this.asyncUtils = asyncUtils;
+  public RetryEndpoint(Retries retries, ComponentClient componentClient) {
+    this.retries = retries;
     this.componentClient = componentClient;
   }
 
@@ -31,15 +31,15 @@ public class RetryEndpoint {
   public CompletionStage<Integer> useRetry(String counterId) {
     return componentClient.forEventSourcedEntity(counterId)
       .method(CounterEntity::failedIncrease)
-      .withRetry(RetrySettings.attempts(3).withFixedDelay(Duration.ofMillis(100)))
+      .withRetry(RetrySettings.create(3).withFixedDelay(Duration.ofMillis(100)))
       .invokeAsync(111);
   }
 
   @Post("/async-utils/{counterId}")
   public CompletionStage<Integer> useAsyncUtilsRetry(String counterId) {
-    return asyncUtils.retry(() -> componentClient.forEventSourcedEntity(counterId)
+    return retries.retryAsync(() -> componentClient.forEventSourcedEntity(counterId)
       .method(CounterEntity::failedIncrease)
-      .invokeAsync(111), RetrySettings.attempts(3).withBackoff());
+      .invokeAsync(111), RetrySettings.create(3));
   }
 
   @Post("/failing/{counterId}")
