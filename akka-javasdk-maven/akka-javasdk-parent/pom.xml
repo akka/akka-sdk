@@ -114,6 +114,7 @@
                     <artifactId>docker-maven-plugin</artifactId>
                     <version>${docker-maven-plugin.version}</version>
                     <configuration>
+                        <skip>${skip.docker}</skip>
                         <images>
                             <image>
                                 <name>${docker.image}:%l</name>
@@ -380,9 +381,6 @@
             <plugin>
                 <groupId>io.fabric8</groupId>
                 <artifactId>docker-maven-plugin</artifactId>
-                <configuration>
-                    <skip>${skip.docker}</skip>
-                </configuration>
             </plugin>
 
         </plugins>
@@ -472,6 +470,81 @@
                         </executions>
                     </plugin>
                 </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>standalone</id>
+            <properties>
+                <docker.base.image>eclipse-temurin:21.0.1_12-jre-jammy</docker.base.image>
+            </properties>
+            <dependencyManagement>
+                <dependencies>
+                    <dependency>
+                        <groupId>io.kalix</groupId>
+                        <artifactId>akka-runtime-core_2.13</artifactId>
+                        <version>${kalix-runtime.version}</version>
+                    </dependency>
+                </dependencies>
+            </dependencyManagement>
+
+            <dependencies>
+                <dependency>
+                    <groupId>io.kalix</groupId>
+                    <artifactId>akka-runtime-core_2.13</artifactId>
+                </dependency>
+            </dependencies>
+
+            <build>
+                <pluginManagement>
+                <plugins>
+                    <plugin>
+                        <groupId>io.fabric8</groupId>
+                        <artifactId>docker-maven-plugin</artifactId>
+                        <version>${docker-maven-plugin.version}</version>
+                        <configuration combine.self="override">
+                            <skip>${skip.docker}</skip>
+                            <images>
+                                <image>
+                                    <name>${docker.image}:%l</name>
+                                    <build>
+                                        <!-- Base Docker image which contains jre-->
+                                        <from>${docker.base.image}</from>
+                                        <buildOptions>
+                                            <platform>${docker.platform}</platform>
+                                        </buildOptions>
+                                        <tags>
+                                            <!-- tag for generated image -->
+                                            <tag>${docker.tag}</tag>
+                                        </tags>
+                                        <entryPoint>
+                                            <exec>
+                                                <arg>java</arg>
+                                                <arg>-cp</arg>
+                                                <arg>/maven/*</arg>
+                                                <arg>-Dconfig.resource=runtime-standalone.conf</arg>
+                                                <arg>kalix.runtime.AkkaRuntimeMain</arg>
+                                            </exec>
+                                        </entryPoint>
+                                        <assembly>
+                                            <descriptorRef>artifact-with-dependencies</descriptorRef>
+                                        </assembly>
+                                    </build>
+                                </image>
+                            </images>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>build-docker-image</id>
+                                <phase>install</phase>
+                                <goals>
+                                    <goal>build</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+                </pluginManagement>
             </build>
         </profile>
     </profiles>
