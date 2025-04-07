@@ -10,6 +10,7 @@ import java.lang.reflect.Method
 import java.util
 import java.util.Optional
 import java.util.concurrent.CompletionStage
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.Promise
@@ -34,6 +35,7 @@ import akka.javasdk.Principals
 import akka.javasdk.ServiceSetup
 import akka.javasdk.Tracing
 import akka.javasdk.annotations.ComponentId
+import akka.javasdk.annotations.EnableReplicationFilter
 import akka.javasdk.annotations.GrpcEndpoint
 import akka.javasdk.annotations.Setup
 import akka.javasdk.annotations.http.HttpEndpoint
@@ -504,8 +506,7 @@ private final class Sdk(
             readOnlyCommandNames,
             instanceFactory,
             keyValue = false,
-            replicationFilterEnabled = true
-          ) // FIXME how shall we enable it? Can we solve it without enable flag?
+            replicationFilterEnabled = clz.hasAnnotation[EnableReplicationFilter])
 
       case clz if classOf[KeyValueEntity[_]].isAssignableFrom(clz) =>
         val componentId = clz.getAnnotation(classOf[ComponentId]).value
@@ -543,8 +544,7 @@ private final class Sdk(
             readOnlyCommandNames,
             instanceFactory,
             keyValue = true,
-            replicationFilterEnabled = false
-          ) // FIXME KVE replication filter
+            replicationFilterEnabled = clz.hasAnnotation[EnableReplicationFilter])
 
       case clz if Reflect.isWorkflow(clz) =>
         val componentId = clz.getAnnotation(classOf[ComponentId]).value

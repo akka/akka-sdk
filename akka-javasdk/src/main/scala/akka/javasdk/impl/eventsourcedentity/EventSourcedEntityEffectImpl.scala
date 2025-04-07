@@ -110,7 +110,7 @@ private[javasdk] class EventSourcedEntityEffectImpl[S, E]
     this.asInstanceOf[EventSourcedEntityEffectImpl[T, E]]
   }
 
-  override def replicationFilter(filter: ReplicationFilter): OnSuccessBuilder[S] = {
+  override def updateReplicationFilter(filter: ReplicationFilter): OnSuccessBuilder[S] = {
     _replicationFilter = filter.asInstanceOf[ReplicationFilterImpl]
     this
   }

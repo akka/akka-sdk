@@ -273,7 +273,7 @@ public abstract class EventSourcedEntity<S, E> {
       /**
        * Change the replication filter without persisting any events.
        */
-      OnSuccessBuilder<S> replicationFilter(ReplicationFilter filter);
+      OnSuccessBuilder<S> updateReplicationFilter(ReplicationFilter filter);
 
       /**
        * Create a message reply.
@@ -336,7 +336,7 @@ public abstract class EventSourcedEntity<S, E> {
       /**
        * Change the replication filter combined with for example {@code persist} event.
        */
-      OnSuccessBuilder<S> replicationFilter(ReplicationFilter filter);
+      OnSuccessBuilder<S> updateReplicationFilter(ReplicationFilter filter);
 
     }
 
