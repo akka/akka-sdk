@@ -8,19 +8,30 @@ Akka applications are distributed by design. Although you can run many complex s
 
 Akka provides three ways to run services:
 
-- Offline development with the SDK.
-- Self-managed nodes.
-- Fully-automated regions.
+- Fully-automated regions (at https://console.akka.io[akka.io], optionally running in your cloud infrastructure)
+- Self-managed nodes (in your infrastructure, or any cloud service)
+- Akka SDK development and testing (on the developer's machine)
 
-Akka services can be run in all three modes without code modifications. Akka clustering is provided within all three modes. These deployment modes enable Akka to deploy onto any infrastructure, though some environments block the networking required for Akka clustering to operate.
+Akka services run in all three modes **without** code modifications and leverage the fundamental underpinnings of Akka such as clustering. While standalone deployments enable running Akka on any infrastructure, some environments limit network access thus prohibit Akka clustering.
 
+=== Fully-automated regions
+Full automation across multiple cloud provider regions and multiple cloud providers is available through Akka's fully-managed platform. You choose to run your Akka services in
+
+- multi-tenant clusters (for simplicity),
+- private regions in your VPC (managed by Akka), or
+- self-hosted regions (managed by you).
+
+Akka platform manages the fully-automated regions running your Akka services and takes responsibility for SLAs tied to elasticity, agility, and resilience of your Akka services.
+
+=== Self-managed nodes
 For organizations that want control over how Akka services are installed, updated, and maintained. Akka services are packaged into standalone binaries with Akka clustering for scaling and deploy to self-managed nodes. You are responsible for separately managing secure connectivity, routes, installation, deployment, and persistence.
 
-For sleeping peacefully with automated, multi-tenant, and secure operations. You can deploy your services into Akka’s Serverless environment or your VPC with BYOC (managed by Akka) or Self-Hosted (managed by you). Akka regions are powered by Akka Platform, a fully-automated tech stack that manages your Akka services and takes responsibility for SLAs tied to elasticity, agility, and resilience of your Akka services.
+=== Akka SDK development and testing
+During development, Akka services run directly on the developers' machines, enabling fast iteration cycles without the hassle of shared infrastructure.
 
 == Logical deployment
 
-In Akka the logical unit of deployment is a Service. A service contains your components and it deploys into a project. The hierarchy is described below. 
+In Akka the logical unit of deployment is a Service. A service contains your components, and it deploys into a project. The hierarchy is described below.
 
 === Project
 A project is the root of one or more services that are meant to be deployed and run together. The project is a logical container for these services and provides some common management capabilities. Projects contain a list of xref:concepts:deployment-model.adoc#_region[regions] that they deploy to. One of the regions will always be the *primary region* which acts as the source of resources to replicate between regions. This will be the first region that deployments roll out to. By default the primary region is the first region specified when xref:operations:projects/create-project.adoc[creating a project]. More detail on regions is covered below in xref:concepts:deployment-model.adoc#_physical_deployment[physical deployment].
