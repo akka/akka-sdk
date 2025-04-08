@@ -73,9 +73,8 @@ Regions can be added to or removed from an Akka project while it is running. The
 ==== Adding regions
 You can add regions to an Akka project and Akka will deploy the services in that project to the new region and expose endpoints. It will also begin replication of all data. This replication time will depend on the size of the dataset (state) being replicated and the distance between the regions. Adding regions is a graceful behavior. The new region will be available to serve traffic after being added, but it may take some time until the initial replication is complete. You can monitor replication by monitoring Consumer Lag.
 
-ifdef::todo[TODO:  [NEED TO ADD LINK]]
 ==== Removing regions
-There are two ways to remove regions from a project: *graceful* and *emergency*. Their names imply their function. Graceful remove takes time, it marks the region as read-only, and starts to move the origin for all the entities out of the region. This is the preferred way to remove regions as their is no risk of data corruption, even for entities that haven't implemented conflict resolution strategies. 
+There are two ways to remove regions from a project: *graceful* and *emergency*. Their names imply their function. Graceful remove takes time, it marks the region as read-only, and starts to move the origin for all the entities out of the region. This is the preferred way to remove regions as there is no risk of data corruption, even for entities that haven't implemented conflict resolution strategies.
 
 Emergency region removal is for emergency scenarios such as the rare times when an infrastructure provider's region becomes unavailable. Executing an emergency region removal fast ejects the region and reassigns the origin for all entities to the remaining regions. If there are writes in progress for non-CRDT types (i.e. entities that do not implement conflict resolutions) they _could_ be lost or overwritten.
 
