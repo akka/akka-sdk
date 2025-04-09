@@ -25,6 +25,7 @@ import akka.stream.Materializer
 import akka.stream.SystemMaterializer
 import akka.util.ByteString
 import com.fasterxml.jackson.core.JsonProcessingException
+
 import java.io.IOException
 import java.nio.charset.StandardCharsets
 import java.time.Duration
@@ -32,13 +33,13 @@ import java.lang.{ Iterable => JIterable }
 import java.nio.charset.Charset
 import java.util.concurrent.CompletionStage
 import java.util.function.Function
-
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.duration.FiniteDuration
 import scala.jdk.CollectionConverters.SeqHasAsJava
 import scala.jdk.DurationConverters.JavaDurationOps
-
 import akka.http.javadsl.model.StatusCodes
+
+import java.util
 
 /**
  * INTERNAL API
@@ -149,23 +150,14 @@ private[akka] final case class RequestBuilderImpl[R](
         .toStrict(timeout.toMillis, materializer)
         .thenApply((entity: HttpEntity.Strict) => bodyParser.apply(response, entity.getData)))
 
-  override def responseBodyAs[T](`type`: Class[T]) = new RequestBuilderImpl[T](
+  override def responseBodyAs[T](`type`: Class[T]): RequestBuilder[T] = new RequestBuilderImpl[T](
     http,
     materializer,
     timeout,
     request,
     { (res: HttpResponse, bytes: ByteString) =>
       try if (res.status.isFailure) {
-        // FIXME should we have a better way to deal with failure?
-        // FIXME what about error responses with a body, now we can't expect/parse those
-        val errorString = "HTTP request for [" + request.getUri + "] failed with HTTP status " + res.status
-        if (res.entity.getContentType.binary) throw new RuntimeException(errorString)
-        else {
-          if (res.status.intValue() == StatusCodes.BAD_REQUEST.intValue())
-            throw new IllegalArgumentException(errorString + ": " + bytes.utf8String)
-          else
-            throw new RuntimeException(errorString + ": " + bytes.utf8String)
-        }
+        onResponseError(res, bytes)
       } else if (res.entity.getContentType == ContentTypes.APPLICATION_JSON)
         new StrictResponse[T](res, JsonSupport.decodeJson(`type`, bytes))
       else if (!res.entity.getContentType.binary && (`type` eq classOf[String]))
@@ -184,6 +176,44 @@ private[akka] final case class RequestBuilderImpl[R](
           throw new RuntimeException(e)
       }
     })
+
+  override def responseBodyAsListOf[T](elementType: Class[T]): RequestBuilder[util.List[T]] =
+    new RequestBuilderImpl[util.List[T]](
+      http,
+      materializer,
+      timeout,
+      request,
+      { (res: HttpResponse, bytes: ByteString) =>
+        try if (res.status.isFailure) {
+          onResponseError(res, bytes)
+        } else if (res.entity.getContentType == ContentTypes.APPLICATION_JSON)
+          new StrictResponse[util.List[T]](
+            res,
+            JsonSupport.getObjectMapper
+              .readerForListOf(elementType)
+              .readValue(bytes.toArrayUnsafe())
+              .asInstanceOf[util.List[T]])
+        else
+          throw new RuntimeException(
+            "Expected the response for " + request.getUri + " to be of type " + ContentTypes.APPLICATION_JSON + " but response content type is " + res.entity.getContentType)
+        catch {
+          case e: IOException =>
+            throw new RuntimeException(e)
+        }
+      })
+
+  private def onResponseError(response: HttpResponse, bytes: ByteString) = {
+    // FIXME should we have a better way to deal with failure?
+    // FIXME what about error responses with a body, now we can't expect/parse those
+    val errorString = "HTTP request for [" + request.getUri + "] failed with HTTP status " + response.status
+    if (response.entity.getContentType.binary) throw new RuntimeException(errorString)
+    else {
+      if (response.status.intValue() == StatusCodes.BAD_REQUEST.intValue())
+        throw new IllegalArgumentException(errorString + ": " + bytes.utf8String)
+      else
+        throw new RuntimeException(errorString + ": " + bytes.utf8String)
+    }
+  }
 
   override def parseResponseBody[T](parse: Function[Array[Byte], T]) =
     new RequestBuilderImpl[T](

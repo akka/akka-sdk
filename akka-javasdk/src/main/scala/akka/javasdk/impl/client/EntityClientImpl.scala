@@ -68,6 +68,7 @@ private[impl] sealed abstract class EntityClientImpl(
     }
     val componentId = ComponentDescriptorFactory.readComponentIdValue(declaringClass)
     val methodName = method.getName.capitalize
+    val returnType = Reflect.getReturnType(declaringClass, method)
 
     // FIXME push some of this logic into the NativeomponentMethodRef
     //       will be easier to follow to do that instead of creating a lambda here and injecting into that
@@ -96,8 +97,7 @@ private[impl] sealed abstract class EntityClientImpl(
               .send(new EntityRequest(componentId, entityId, methodName, serializedPayload, toSpi(metadata)))
               .map { reply =>
                 // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
-                val returnType = Reflect.getReturnType[R](declaringClass, method)
-                serializer.fromBytes(returnType, reply.payload)
+                serializer.fromBytes[R](returnType, reply.payload)
               }
               .asJava
           },
@@ -231,9 +231,9 @@ private[javasdk] final case class TimedActionClientImpl(
               .transform {
                 case Success(reply) =>
                   // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
-                  val returnType = Reflect.getReturnType[R](declaringClass, method)
+                  val returnType = Reflect.getReturnType(declaringClass, method)
                   if (reply.payload.isEmpty) Success(null.asInstanceOf[R])
-                  else Try(serializer.fromBytes(returnType, reply.payload))
+                  else Try(serializer.fromBytes[R](returnType, reply.payload))
                 case Failure(ex) => Failure(ex)
               }
               .asJava

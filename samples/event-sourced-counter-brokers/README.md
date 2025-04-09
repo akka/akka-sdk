@@ -59,7 +59,7 @@ curl -XPOST localhost:9000/counter/hello/increase/10
 - retrieve the value of a counter named `hello`
 
 ```shell
-curl -XGET localhost:9000/counter/hello
+curl localhost:9000/counter/hello
 ```
 
 - multiply existing counter named `hello` by value `5`
@@ -67,6 +67,26 @@ curl -XGET localhost:9000/counter/hello
 ```shell
 curl -XPOST localhost:9000/counter/hello/multiply/5
 ```
+
+- list all counters from a view
+
+```shell
+curl localhost:9000/counter/all
+```
+
+- list all counters larger than five from a view
+
+```shell
+curl localhost:9000/counter/greater-than/5
+```
+- list all counters larger than five from a view consuming a topic that the `CounterJournalToTopicWithMetaConsumer`
+  consumer writes events to
+
+```shell
+curl localhost:9000/counter/greater-than-via-topic/5
+```
+
+
 
 ## Deploying
 

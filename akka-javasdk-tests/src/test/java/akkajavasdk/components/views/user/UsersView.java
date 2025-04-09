@@ -12,6 +12,8 @@ import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.view.View;
 
+import java.util.List;
+
 @ComponentId("users")
 public class UsersView extends View {
 
