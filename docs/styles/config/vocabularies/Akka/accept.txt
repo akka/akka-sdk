@@ -88,6 +88,8 @@ keyId
 Kolesnikov
 Lagom
 [Ll]ightbend
+LLM
+LLMs
 lmdbjava
 matchers
 materializer

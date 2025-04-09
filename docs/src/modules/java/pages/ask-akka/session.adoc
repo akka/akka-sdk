@@ -48,7 +48,7 @@ There are two types of participants in an LLM conversation:
 
 This means we can model a session event with `UserMessageAdded` and `AiMessageAdded` variants. While they have nearly identical structures now, it's worth keeping them as separate variants to allow them to expand separately in the future.
 
-Add a `SessionEvent.java` file to your `src/main/java/akka/ask/agent/domain/` directory (we're using the `agent` subfolder here because we cheated and know that we'll be creating other folders like `common` and `indexer` in later guides):
+Add a `SessionEvent.java` file to your `src/main/java/akka/ask/agent/domain/` directory (we're using the `agent` folder here because we cheated and know that we'll be creating other folders like `common` and `indexer` in later guides):
 
 [source, java, indent=0]
 ----
