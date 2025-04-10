@@ -51,32 +51,9 @@ This means we can model a session event with `UserMessageAdded` and `AiMessageAd
 Add a `SessionEvent.java` file to your `src/main/java/akka/ask/agent/domain/` directory (we're using the `agent` folder here because we cheated and know that we'll be creating other folders like `common` and `indexer` in later guides):
 
 [source, java, indent=0]
+.{sample-base-url}/ask-akka-agent/src/main/java/akka/ask/agent/domain/SessionEvent.java[SessionEvent.java]
 ----
-package akka.ask.agent.domain;
-
-import java.time.Instant;
-import akka.javasdk.annotations.TypeName;
-
-public sealed interface SessionEvent {
-
-  @TypeName("user-message-added")
-  public record UserMessageAdded(
-     String userId, 
-     String sessionId, 
-     String query, 
-     int tokensUsed, 
-     Instant timeStamp) implements SessionEvent {
-  }
-
-  @TypeName("ai-message-added") 
-  public record AiMessageAdded(
-     String userId, 
-     String sessionId, 
-     String response, // <1>
-     int tokensUsed, 
-     Instant timeStamp) implements SessionEvent {
-  }
-}
+include::example$ask-akka-agent/src/main/java/akka/ask/agent/domain/SessionEvent.java[]
 ----
 <1> We could have called both fields `message` but using `query` and `response` felt more concise
 
@@ -89,95 +66,9 @@ As with all entities, the session entity handles incoming commands, validates th
 Add an entity to `src/main/java/akka/ask/agent/application/SessionEntity.java`
 
 [source, java, indent=0]
+.{sample-base-url}/ask-akka-agent/src/main/java/akka/ask/agent/application/SessionEntity.java[SessionEntity.java]
 ----
-@ComponentId("session-entity")
-public class SessionEntity extends 
-  EventSourcedEntity<SessionEntity.State, SessionEvent> {
-
-  private final Logger logger = LoggerFactory.getLogger(getClass());
-
-  public record Exchange(String userId,   // <1>
-                         String sessionId,
-                         String userQuestion,
-                         int queryTokensCount,
-                         String assistantResponse,
-                         int responseTokensCount){}
-
-  enum MessageType {
-    AI,
-    USER
-  }
-  public record Message(String content, MessageType type) { // <2>
-  }
-
-  public record State(List<Message> messages, int totalTokenUsage) {
-    public static State empty() {
-      return new State(new ArrayList<>(), 0);
-    }
-
-    public State add(Message content) {
-      messages.add(content);
-      return new State(messages, totalTokenUsage);
-    }
-
-    public State addTokenUsage(int usage) {
-      return new State(messages, totalTokenUsage + usage);
-    }
-  }
-
-  public record Messages(List<Message> messages) {}
-
-  public Effect<Done> addExchange(Exchange exchange) {
-    var now = Instant.now();
-
-    var userEvt =
-      new SessionEvent.UserMessageAdded(
-        exchange.userId,
-        exchange.sessionId,
-        exchange.userQuestion,
-        exchange.queryTokensCount,
-        now);
-
-    var assistantEvt =
-    new SessionEvent.AiMessageAdded(
-      exchange.userId,
-      exchange.sessionId,
-      exchange.assistantResponse,
-      exchange.responseTokensCount,   // <3>
-      now);
-
-    return effects()
-        .persist(userEvt, assistantEvt)  // <4>
-        .thenReply(__ -> Done.getInstance());
-  }
-
-  public Effect<Messages> getHistory() {
-    logger.debug("Getting history from {}", 
-      commandContext().entityId());
-    return
-      effects().reply(new Messages(currentState().messages));
-  }
-
-  @Override
-  public State emptyState() {
-    return State.empty();
-  }
-
-  @Override
-  public State applyEvent(SessionEvent event) {
-    return switch (event) {
-      case SessionEvent.UserMessageAdded msg ->
-        currentState()
-          .add(new Message(msg.query(), USER))
-          .addTokenUsage(msg.tokensUsed());
-
-      case SessionEvent.AiMessageAdded msg ->
-        currentState()
-          .add(new Message(msg.response(), AI))
-          .addTokenUsage(msg.tokensUsed());
-    };
-  }
-}
+include::example$ask-akka-agent/src/main/java/akka/ask/agent/application/SessionEntity.java[tag=top]
 ----
 <1> The type of incoming commands is `Exchange`
 <2> _Internal_ entity state stores messages in the `Message` record type
@@ -195,65 +86,9 @@ This is exactly how we're going to model our "Ask Akka" application. As such, we
 Add a new file `ConversationHistoryView.java` to `src/main/java/akka/ask/agent/application/`
 
 [source, java, indent=0]
+.{sample-base-url}/ask-akka-agent/src/main/java/akka/ask/agent/application/ConversationHistoryView.java[ConversationHistoryView.java]
 ----
-@ComponentId("view_chat_log")
-public class ConversationHistoryView extends View {
-
-  private final static Logger logger = 
-    LoggerFactory.getLogger(ConversationHistoryView.class);
-
-  public record ConversationHistory(List<Session> sessions) {}
-
-  public record Message(String message, String origin, long timestamp) {} // <1>
-
-  public record Session(String userId, String sessionId, 
-                        long creationDate, List<Message> messages) {
-    public Session add(Message message) {
-      messages.add(message);
-      return this;
-    }
-  }
-
-  @Query(
-    "SELECT collect(*) as sessions FROM view_chat_log " +
-    "WHERE userId = :userId ORDER by creationDate DESC")
-  public QueryEffect<ConversationHistory> getSessionsByUser(String userId) { // <2>
-    return queryResult();
-  }
-
-  @Consume.FromEventSourcedEntity(SessionEntity.class)
-  public static class ChatMessageUpdater extends TableUpdater<Session> {
-
-    public Effect<Session> onEvent(SessionEvent event) {
-      return switch (event) {
-        case SessionEvent.AiMessageAdded added -> aiMessage(added);
-        case SessionEvent.UserMessageAdded added -> userMessage(added);
-      };
-    }
-
-    private Effect<Session> aiMessage(SessionEvent.AiMessageAdded added) {
-      Message newMessage = new Message(added.response(), "ai", added.timeStamp().toEpochMilli());
-      var rowState = rowStateOrNew(added.userId(), added.sessionId());
-      return effects().updateRow(rowState.add(newMessage));
-    }
-
-    private Effect<Session> userMessage(SessionEvent.UserMessageAdded added) {
-      Message newMessage = new Message(added.query(), "user", added.timeStamp().toEpochMilli());
-      var rowState = rowStateOrNew(added.userId(), added.sessionId());
-      return effects().updateRow(rowState.add(newMessage));
-    }
-
-    private Session rowStateOrNew(String userId, String sessionId) { // <3>
-      if (rowState() != null) return rowState();
-      else
-        return new Session(
-          userId,
-          sessionId,
-          Instant.now().toEpochMilli(),
-          new ArrayList<>());
-    }
-  }
-}
+include::example$ask-akka-agent/src/main/java/akka/ask/agent/application/ConversationHistoryView.java[tag=top]
 ----
 <1> We're using a view-specific message type here to avoid bleeding logic across tiers
 <2> Retrieves a full history of all sessions for a given user
