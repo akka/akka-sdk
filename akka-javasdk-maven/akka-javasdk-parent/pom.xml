@@ -458,6 +458,7 @@
                             <generatorSettings>
                                 <!-- required to generate the instance-per-request handler -->
                                 <generateScalaHandlerFactory>true</generateScalaHandlerFactory>
+                                <blockingApis>true</blockingApis>
                             </generatorSettings>
                         </configuration>
                         <!-- Hook the generate goal into the lifecycle, automatically tied to generate-sources -->
