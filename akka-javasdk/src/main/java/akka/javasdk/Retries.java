@@ -12,7 +12,9 @@ import java.util.concurrent.CompletionStage;
 public interface Retries {
 
   /**
-   * Retry a given call with a maximum number of retries. A predefined backoff strategy will be calculated based on the number of maxRetries.
+   * Retry a given call with a maximum number of retries. A predefined backoff strategy will be
+   * calculated based on the number of maxRetries.
+   *
    * @param call The call to retry
    * @param maxRetries The number of retries to make
    */
@@ -27,7 +29,9 @@ public interface Retries {
   <T> CompletionStage<T> retryAsync(Callable<CompletionStage<T>> call, RetrySettings retrySettings);
 
   /**
-   * Retry a given call with a maximum number of retries. A predefined backoff strategy will be calculated based on the number of maxRetries.
+   * Retry a given call with a maximum number of retries. A predefined backoff strategy will be
+   * calculated based on the number of maxRetries.
+   *
    * @param call The call to retry
    * @param maxRetries The number of retries to make
    */

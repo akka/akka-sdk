@@ -15,7 +15,7 @@ import java.util.concurrent.CompletionStage;
  * using the deferred call (like a timer executing it later for example)
  *
  * @param <R> The type of value returned by executing the call
- *            <p>Not for user extension or instantiation, returned by the SDK component client
+ *     <p>Not for user extension or instantiation, returned by the SDK component client
  */
 @DoNotInherit
 public interface ComponentMethodRef<R> extends ComponentDeferredMethodRef<R> {
@@ -31,7 +31,8 @@ public interface ComponentMethodRef<R> extends ComponentDeferredMethodRef<R> {
   ComponentInvokeOnlyMethodRef<R> withRetry(RetrySettings retrySettings);
 
   /**
-   * Set the retry settings for this call. A predefined backoff strategy will be calculated based on the number of maxRetries.
+   * Set the retry settings for this call. A predefined backoff strategy will be calculated based on
+   * the number of maxRetries.
    *
    * @param maxRetries The number of retries to make
    * @return A new call with the retry settings set
