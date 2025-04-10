@@ -48,9 +48,9 @@ public class CounterWithRealPubSubIntegrationTest extends TestKitSupport { // <1
     Awaitility.await()
       .ignoreExceptions()
       .atMost(30, TimeUnit.SECONDS)
-      .until(() -> {
-        assertThat(componentClient.forEventSourcedEntity(counterId).method(CounterEntity::get).invoke()).isEqualTo(20);
-      });
+      .untilAsserted(() ->
+        assertThat(componentClient.forEventSourcedEntity(counterId).method(CounterEntity::get).invoke()).isEqualTo(20)
+      );
   }
 
   // builds a message in PubSub format, ready to be injected
