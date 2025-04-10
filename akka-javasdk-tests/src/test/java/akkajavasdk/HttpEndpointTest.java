@@ -5,19 +5,17 @@
 package akkajavasdk;
 
 import akka.http.javadsl.model.*;
-import akka.http.scaladsl.model.Uri$;
 import akka.javasdk.testkit.TestKitSupport;
 import akka.util.ByteString;
 import akkajavasdk.components.http.ResourcesEndpoint;
+import akkajavasdk.components.http.TestEndpoint;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.InputStream;
-import java.net.http.HttpClient;
-import java.nio.charset.StandardCharsets;
-import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.Set;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -108,6 +106,17 @@ public class HttpEndpointTest extends TestKitSupport {
         .withRequestBody(new ResourcesEndpoint.SomeRequest("../akkajavasdk/HttpEndpointTest.class")
     ).invokeAsync());
     assertThat(response.status()).isEqualTo(StatusCodes.FORBIDDEN);
+  }
+
+  @Test
+  public void shouldHandleCollectionsAsBody() {
+    var list = List.of(new TestEndpoint.SomeRecord("text", 1));
+    var response = await(httpClient.POST("/list-body")
+        .withRequestBody(list)
+        .responseBodyAsListOf(TestEndpoint.SomeRecord.class)
+        .invokeAsync());
+    assertThat(response.status()).isEqualTo(StatusCodes.OK);
+    assertThat(response.body()).isEqualTo(list);
   }
 
 

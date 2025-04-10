@@ -6,11 +6,14 @@ import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
+import akka.stream.javadsl.Sink;
 import counter.application.CounterByValueView;
 import counter.application.CounterEntity;
 import counter.application.CounterEntity.CounterResult.ExceedingMaxCounterValue;
 import counter.application.CounterEntity.CounterResult.Success;
+import counter.application.CounterTopicView;
 
+import java.util.List;
 import java.util.concurrent.CompletionStage;
 
 import static akka.javasdk.http.HttpResponses.badRequest;
@@ -87,7 +90,11 @@ public class CounterEndpoint {
       .invokeAsync();
   }
 
-  public record CounterRequest(String id, Integer value) {
+  @Get("/greater-than-via-topic/{value}")
+  public CompletionStage<CounterTopicView.CountersResult> greaterThanViaTopic(Integer value) {
+    return componentClient.forView()
+        .method(CounterTopicView::countersHigherThan)
+        .invokeAsync(value);
   }
 // tag::endpoint-component-interaction[]
 }

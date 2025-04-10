@@ -12,7 +12,7 @@ object Dependencies {
   // NOTE: embedded SDK should have the AkkaVersion aligned, when updating RuntimeVersion, make sure to check
   // if AkkaVersion and AkkaHttpVersion are aligned
   // for prod code, they are marked as Provided, but testkit still requires the alignment
-  val AkkaVersion = "2.10.2+17-41979104+20250328-1229-SNAPSHOT"
+  val AkkaVersion = "2.10.3"
   val AkkaHttpVersion = "10.7.0" // Note: should at least the Akka HTTP version required by Akka gRPC
 
   // Note: the Scala version must be aligned with the runtime

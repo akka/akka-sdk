@@ -22,6 +22,7 @@ import java.lang.reflect.AnnotatedElement
 import java.lang.reflect.Method
 import java.lang.reflect.Modifier
 import java.lang.reflect.ParameterizedType
+import java.lang.reflect.Type
 import java.util
 import java.util.Optional
 import scala.annotation.tailrec
@@ -86,20 +87,20 @@ private[impl] object Reflect {
     !method.getName.startsWith("lambda$")
   }
 
-  def getReturnType[R](declaringClass: Class[_], method: Method): Class[R] = {
+  def getReturnClass[T](declaringClass: Class[_], method: Method): Class[T] =
+    getReturnType(declaringClass, method) match {
+      case clazz: Class[?]      => clazz.asInstanceOf[Class[T]]
+      case p: ParameterizedType => p.getRawType.asInstanceOf[Class[T]]
+    }
+
+  def getReturnType(declaringClass: Class[_], method: Method): Type =
     if (isAction(declaringClass) || isEntity(declaringClass) || isWorkflow(declaringClass)) {
       // here we are expecting a wrapper in the form of an Effect
-      val returnType = method.getGenericReturnType.asInstanceOf[ParameterizedType].getActualTypeArguments.head
-      returnType match {
-        case parameterizedType: ParameterizedType =>
-          parameterizedType.getRawType.asInstanceOf[Class[R]]
-        case other => other.asInstanceOf[Class[R]]
-      }
+      method.getGenericReturnType.asInstanceOf[ParameterizedType].getActualTypeArguments.head
     } else {
       // in other cases we expect a View query method, but declaring class may not extend View[_] class for join views
-      method.getReturnType.asInstanceOf[Class[R]]
+      method.getReturnType
     }
-  }
 
   def isReturnTypeOptional(method: Method): Boolean = {
     method.getGenericReturnType

@@ -110,7 +110,6 @@ public class ViewIntegrationTest extends TestKitSupport {
             });
   }
 
-  @Disabled // pending primitive query parameters working
   @Test
   public void verifyHierarchyView() {
 

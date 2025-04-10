@@ -12,6 +12,7 @@ import akka.http.javadsl.model.headers.HttpCredentials;
 import akka.pattern.RetrySettings;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
 
@@ -89,6 +90,18 @@ public interface RequestBuilder<R> {
    *     body of type T
    */
   <T> RequestBuilder<T> responseBodyAs(Class<T> type);
+
+  /**
+   * Converts the response body as a list of the specified type.
+   *
+   * <p>The response body payload is expected to be a JSON array and each element will be
+   * deserialized to the specified type using the application's default Jackson deserializer.
+   *
+   * @param elementType the expected class type of the response body
+   * @return a RequestBuilder configured to produce a StrictResponse with a deserialized response
+   *     body of type T
+   */
+  <T> RequestBuilder<List<T>> responseBodyAsListOf(Class<T> elementType);
 
   /**
    * Converts the response body to the specified type using the provided parser function.

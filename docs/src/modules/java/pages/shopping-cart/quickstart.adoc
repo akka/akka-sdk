@@ -1,4 +1,4 @@
-= Shopping cart quickstart
+= Quickstart
 
 include::ROOT:partial$include.adoc[]
 
@@ -183,7 +183,7 @@ curl localhost:9000/carts/123
 
 == Explore the local console
 
-. To get a clear view of your locally running service, xref:reference:cli/installation.adoc[install the Akka CLI]. It provides a local web-based management console.
+. To get a clear view of your locally running service, xref:operations:cli/installation.adoc[install the Akka CLI]. It provides a local web-based management console.
 
 . Start the local console:
 +
@@ -212,7 +212,7 @@ If you don't see anything in your console, or the console doesn't start, check t
 
 Now that you've built and started the shopping cart service locally, it's time to run it on the Akka platform without having to change any code.
 
-. If you have not already done so, xref:reference:cli/installation.adoc[install the Akka CLI].
+. If you have not already done so, xref:operations:cli/installation.adoc[install the Akka CLI].
 
 . Authenticate the CLI with your Akka account:
 +
@@ -308,6 +308,7 @@ image:console-first-app-service.png[]
 
 Now that you've built and deployed a shopping cart service, take your Akka skills to the next level:
 
-. *Expand the service*: Explore xref:concepts:architecture-model.adoc#_akka_components[other Akka components] to enhance your application with additional features.
+. *Add a view*: Continue to the xref:java:shopping-cart/addview.adoc[next step] in the tour.
+. *Expand on your own*: Explore xref:concepts:architecture-model.adoc#_akka_components[other Akka components] to enhance your application with additional features.
 . *Explore other Akka samples*: Discover more about Akka by exploring xref:samples.adoc[different use cases] for inspiration.
 . *Join the community*: Visit the xref:support:index.adoc[Support page] to find resources where you can connect with other Akka developers and expand your knowledge.

@@ -11,6 +11,8 @@ import akka.javasdk.impl.client.MethodRefResolver;
 import akka.javasdk.impl.reflection.Reflect;
 import akka.javasdk.testkit.impl.TestKitEventSourcedEntityContext;
 
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -262,7 +264,7 @@ public class EventSourcedTestKit<S, E, ES extends EventSourcedEntity<S, E>>
     return call(func, metadata, Optional.empty());
   }
 
-  private <R> EventSourcedResult<R> call(akka.japi.function.Function<ES, EventSourcedEntity.Effect<R>> func, Metadata metadata, Optional<Class<?>> returnType) {
+  private <R> EventSourcedResult<R> call(akka.japi.function.Function<ES, EventSourcedEntity.Effect<R>> func, Metadata metadata, Optional<Type> returnType) {
     return interpretEffects(() -> {
       try {
         return func.apply((ES) entity());

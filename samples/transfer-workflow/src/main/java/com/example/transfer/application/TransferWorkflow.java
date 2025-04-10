@@ -50,11 +50,11 @@ public class TransferWorkflow extends Workflow<TransferState> { // <2>
         });
 
     Step deposit =
-      step("deposit") // <1>
+      step("deposit") // <5>
         .asyncCall(Deposit.class, cmd ->
           componentClient.forEventSourcedEntity(cmd.to)
             .method(WalletEntity::deposit)
-            .invokeAsync(cmd.amount)) // <5>
+            .invokeAsync(cmd.amount))
         .andThen(Done.class, __ -> {
           return effects()
             .updateState(currentState().withStatus(COMPLETED))

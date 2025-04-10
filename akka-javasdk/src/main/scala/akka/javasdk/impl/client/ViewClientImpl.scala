@@ -15,22 +15,25 @@ import akka.javasdk.client.NoEntryFoundException
 import akka.javasdk.client.ViewClient
 import akka.javasdk.impl.ComponentDescriptorFactory
 import akka.javasdk.impl.MetadataImpl
-import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.view.View
 import akka.runtime.sdk.spi.ViewRequest
 import akka.runtime.sdk.spi.ViewType
 import akka.runtime.sdk.spi.{ ViewClient => RuntimeViewClient }
 import java.lang.reflect.Method
 import java.lang.reflect.ParameterizedType
-import java.util.Optional
 
 import scala.concurrent.ExecutionContext
 import scala.jdk.FutureConverters.FutureOps
 
-import akka.actor.Scheduler
 import akka.javasdk.impl.serialization.JsonSerializer
 import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.SpiMetadata
+import java.lang.reflect.Type
+import java.util.Optional
+
+import scala.concurrent.Future
+
+import akka.actor.typed.ActorSystem
 
 /**
  * INTERNAL API
@@ -59,7 +62,9 @@ private[javasdk] object ViewClientImpl {
       method: Method,
       methodName: String,
       declaringClass: Class[_],
-      queryReturnType: Class[_])
+      queryReturnType: Type,
+      returnTypeOptional: Boolean)
+
   private def validateAndExtractViewMethodProperties[R](lambda: AnyRef): ViewMethodProperties = {
     val method = MethodRefResolver.resolveMethodRef(lambda)
     ViewCallValidator.validate(method)
@@ -68,27 +73,24 @@ private[javasdk] object ViewClientImpl {
     val componentId = ComponentDescriptorFactory.readComponentIdValue(declaringClass)
     val methodName = method.getName
     val queryReturnType = getViewQueryReturnType(method)
-    ViewMethodProperties(componentId, method, methodName, declaringClass, queryReturnType)
+    val queryReturnClass = queryReturnType match {
+      case c: Class[_]          => c
+      case p: ParameterizedType => p.getRawType.asInstanceOf[Class[_]]
+    }
+    val returnTypeOptional = queryReturnType match {
+      case _: ParameterizedType if classOf[java.util.Optional[_]].isAssignableFrom(queryReturnClass) => true
+      case _                                                                                         => false
+    }
+    ViewMethodProperties(componentId, method, methodName, declaringClass, queryReturnType, returnTypeOptional)
   }
 
-  private def getViewQueryReturnType(method: Method): Class[_] = {
-    val actualReturnType = if (method.getReturnType == classOf[View.QueryEffect[_]]) {
-      val typeParameter = method.getGenericReturnType.asInstanceOf[ParameterizedType].getActualTypeArguments.head
-      typeParameter match {
-        case parameterizedType: ParameterizedType if parameterizedType.getRawType == classOf[Optional[_]] =>
-          parameterizedType.getActualTypeArguments.head.asInstanceOf[Class[_]]
-        case other => other
-      }
-    } else if (method.getReturnType == classOf[View.QueryStreamEffect[_]]) {
-      // stream so type is the element in the stream
+  private def getViewQueryReturnType(method: Method): Type = {
+    if (method.getReturnType == classOf[View.QueryEffect[_]] || method.getReturnType == classOf[
+        View.QueryStreamEffect[_]]) {
+      // regular or stream query effect both has the concrete type as the one type parameter
       method.getGenericReturnType.asInstanceOf[ParameterizedType].getActualTypeArguments.head
     } else {
       throw new IllegalArgumentException(s"Method ${method.getDeclaringClass}.${method.getName} is not a view query")
-    }
-
-    actualReturnType match {
-      case clz: Class[_] => clz
-      case _ => throw new IllegalArgumentException(s"Type parameter of return type ${method.getName} is not a class")
     }
   }
 
@@ -101,7 +103,7 @@ private[javasdk] object ViewClientImpl {
 private[javasdk] final case class ViewClientImpl(
     viewClient: RuntimeViewClient,
     serializer: JsonSerializer,
-    callMetadata: Option[Metadata])(implicit val executionContext: ExecutionContext, scheduler: Scheduler)
+    callMetadata: Option[Metadata])(implicit val executionContext: ExecutionContext, system: ActorSystem[_])
     extends ViewClient {
   import ViewClientImpl._
 
@@ -133,7 +135,6 @@ private[javasdk] final case class ViewClientImpl(
   private def createMethodRefForEitherArity[A1, R](lambda: AnyRef): ComponentMethodRefImpl[A1, R] = {
     import MetadataImpl.toSpi
     val viewMethodProperties = validateAndExtractViewMethodProperties[R](lambda)
-    val returnTypeOptional = Reflect.isReturnTypeOptional(viewMethodProperties.method)
 
     new ComponentMethodRefImpl[AnyRef, R](
       None,
@@ -142,7 +143,7 @@ private[javasdk] final case class ViewClientImpl(
         // Note: same path for 0 and 1 arg calls
         val serializedPayload = encodeArgument(viewMethodProperties.method, maybeArg)
 
-        def callView(metadata: Metadata) = {
+        def callView(metadata: Metadata): Future[R] = {
           viewClient
             .query(
               new ViewRequest(
@@ -151,20 +152,14 @@ private[javasdk] final case class ViewClientImpl(
                 serializedPayload,
                 toSpi(metadata)))
             .map { result =>
-              val deserializedReWrapped =
-                if (result.payload.isEmpty) {
-                  if (returnTypeOptional) Optional.empty().asInstanceOf[R]
-                  else
-                    throw new NoEntryFoundException(
-                      s"No matching entry found when calling ${viewMethodProperties.declaringClass}.${viewMethodProperties.methodName}")
-                } else {
-                  val deserialized = serializer.fromBytes(viewMethodProperties.queryReturnType, result.payload)
-                  if (returnTypeOptional) Optional.of(deserialized)
-                  else deserialized
-                }
-
-              // Note: R could be the direct type or the wrapped optional type here Optional[UserType]
-              deserializedReWrapped.asInstanceOf[R]
+              if (result.payload.isEmpty) {
+                if (viewMethodProperties.returnTypeOptional) Optional.empty().asInstanceOf[R]
+                else
+                  throw new NoEntryFoundException(
+                    s"No matching entry found when calling ${viewMethodProperties.declaringClass}.${viewMethodProperties.methodName}")
+              } else {
+                serializer.fromBytes(viewMethodProperties.queryReturnType, result.payload)
+              }
             }
         }
 
