@@ -35,7 +35,7 @@ object SamplesCompilationProject {
               .settings(
                 Test / unmanagedSourceDirectories += baseDirectory.value / "src" / "it" / "java",
                 akkaGrpcGeneratedLanguages := Seq(AkkaGrpc.Java),
-                akkaGrpcCodeGeneratorSettings += "generate_scala_handler_factory")
+                akkaGrpcCodeGeneratorSettings ++= CommonSettings.serviceGrpcGeneratorSettings)
 
             additionalDeps.get(dir.getName).fold(proj)(deps => proj.settings(libraryDependencies ++= deps))
           }

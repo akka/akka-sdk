@@ -14,9 +14,6 @@ import io.grpc.Status;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
-
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.ALL))
 // tag::class[]
 // tag::endpoint-component-interaction[]
@@ -34,82 +31,84 @@ public class CustomerGrpcEndpointImpl implements CustomerGrpcEndpoint {
   // end::endpoint-component-interaction[]
 
   @Override
-  public CompletionStage<CreateCustomerResponse> createCustomer(CreateCustomerRequest in) {
+  public CreateCustomerResponse createCustomer(CreateCustomerRequest in) {
     log.info("gRPC request to create customer: {}", in);
     if (in.getCustomerId().isBlank())
       throw new IllegalArgumentException("Customer id must not be empty");
 
-    return componentClient.forEventSourcedEntity(in.getCustomerId())
-        .method(CustomerEntity::create)
-        .invokeAsync(apiToDomain(in.getCustomer()))
-        .thenApply(__ -> CreateCustomerResponse.getDefaultInstance());
+    componentClient.forEventSourcedEntity(in.getCustomerId())
+      .method(CustomerEntity::create)
+      .invoke(apiToDomain(in.getCustomer()));
+
+    return CreateCustomerResponse.getDefaultInstance();
   }
 
   // tag::get[]
 
   @Override
-  public CompletionStage<Customer> getCustomer(GetCustomerRequest in) {
+  public Customer getCustomer(GetCustomerRequest in) {
     // tag::exception[]
     if (in.getCustomerId().isBlank())
       throw new GrpcServiceException(
           Status.INVALID_ARGUMENT.augmentDescription("Customer id must not be empty"));
     // end::exception[]
 
-    return componentClient.forEventSourcedEntity(in.getCustomerId()) // <3>
-        .method(CustomerEntity::getCustomer)
-        .invokeAsync()
-        .thenApply(this::domainToApi) // <4>
-        .exceptionally(ex -> {
-          if (ex.getMessage().contains("No customer found for id")) throw new GrpcServiceException(Status.NOT_FOUND);
-          else throw new RuntimeException(ex);
-        });
+    try {
+      var customer = componentClient.forEventSourcedEntity(in.getCustomerId()) // <3>
+          .method(CustomerEntity::getCustomer)
+          .invoke();
+
+      return domainToApi(customer); // <4>
+    } catch (Exception ex) {
+      if (ex.getMessage().contains("No customer found for id")) throw new GrpcServiceException(Status.NOT_FOUND);
+      else throw new RuntimeException(ex);
+    }
   }
   // end::get[]
 
 
   @Override
-  public CompletionStage<ChangeNameResponse> changeName(ChangeNameRequest in) {
+  public ChangeNameResponse changeName(ChangeNameRequest in) {
     log.info("gRPC request to change customer [{}] name: {}", in.getCustomerId(), in.getNewName());
-    return componentClient.forEventSourcedEntity(in.getCustomerId())
-        .method(CustomerEntity::changeName)
-        .invokeAsync(in.getNewName())
-        .thenApply(__ -> ChangeNameResponse.getDefaultInstance());
+    componentClient.forEventSourcedEntity(in.getCustomerId())
+      .method(CustomerEntity::changeName)
+      .invoke(in.getNewName());
+
+    return ChangeNameResponse.getDefaultInstance();
   }
 
   @Acl(deny = @Acl.Matcher(principal = Acl.Principal.ALL))
   @Override
-  public CompletionStage<ChangeAddressResponse> changeAddress(ChangeAddressRequest in) {
+  public ChangeAddressResponse changeAddress(ChangeAddressRequest in) {
     log.info("gRPC request to change customer [{}] address: {}", in.getCustomerId(), in.getNewAddress());
-    return componentClient.forEventSourcedEntity(in.getCustomerId())
+    componentClient.forEventSourcedEntity(in.getCustomerId())
         .method(CustomerEntity::changeAddress)
-        .invokeAsync(apiToDomain(in.getNewAddress()))
-        .thenApply(__ -> ChangeAddressResponse.getDefaultInstance());
+        .invoke(apiToDomain(in.getNewAddress()));
+
+    return ChangeAddressResponse.getDefaultInstance();
   }
 
   // The two methods below are not necessarily realistic since we have the full result in one response,
   // but provides examples of streaming a response
   @Override
-  public CompletionStage<CustomerList> customerByName(CustomerByNameRequest in) {
-    return componentClient.forView()
+  public CustomerList customerByName(CustomerByNameRequest in) {
+    var viewCustomerList = componentClient.forView()
         .method(CustomerByNameView::getCustomers)
-        .invokeAsync(in.getName())
-        .thenApply(viewCustomerList -> {
-          var apiCustomers = viewCustomerList.customers().stream().map(this::domainToApi).toList();
+        .invoke(in.getName());
 
-          return CustomerList.newBuilder().addAllCustomers(apiCustomers).build();
-        });
+    var apiCustomers = viewCustomerList.customers().stream().map(this::domainToApi).toList();
+
+    return CustomerList.newBuilder().addAllCustomers(apiCustomers).build();
   }
 
   @Override
-  public CompletionStage<CustomerList> customerByEmail(CustomerByEmailRequest in) {
-    return componentClient.forView()
+  public CustomerList customerByEmail(CustomerByEmailRequest in) {
+    var viewCustomerList = componentClient.forView()
         .method(CustomerByEmailView::getCustomers)
-        .invokeAsync(in.getEmail())
-        .thenApply(viewCustomerList -> {
-          var apiCustomers = viewCustomerList.customers().stream().map(this::domainToApi).toList();
+        .invoke(in.getEmail());
 
-          return CustomerList.newBuilder().addAllCustomers(apiCustomers).build();
-        });
+    var apiCustomers = viewCustomerList.customers().stream().map(this::domainToApi).toList();
+    return CustomerList.newBuilder().addAllCustomers(apiCustomers).build();
   }
 
   // tag::customerByEmailStream[]

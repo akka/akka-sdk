@@ -26,31 +26,29 @@ public class TestJwtsGrpcServiceImpl implements TestJwtsGrpcService {
     this.grpcClientProvider = grpcClientProvider;
   }
 
-  private CompletionStage<TestGrpcServiceOuterClass.Out> simple(TestGrpcServiceOuterClass.In in) {
-    return CompletableFuture.completedFuture(
-        TestGrpcServiceOuterClass.Out.newBuilder().setData(in.getData()).build()
-    );
+  private TestGrpcServiceOuterClass.Out simple(TestGrpcServiceOuterClass.In in) {
+    return TestGrpcServiceOuterClass.Out.newBuilder().setData(in.getData()).build();
   }
 
   @JWT(validate = JWT.JwtMethodMode.BEARER_TOKEN, bearerTokenIssuers = "my-issuer-123")
   @Override
-  public CompletionStage<TestGrpcServiceOuterClass.Out> jwtIssuer(TestGrpcServiceOuterClass.In in) {
+  public TestGrpcServiceOuterClass.Out jwtIssuer(TestGrpcServiceOuterClass.In in) {
     return simple(in);
   }
 
   @JWT(validate = JWT.JwtMethodMode.BEARER_TOKEN, staticClaims = { @JWT.StaticClaim(claim = "sub", values = "my-subject-123")})
   @Override
-  public CompletionStage<TestGrpcServiceOuterClass.Out> jwtStaticClaimValue(TestGrpcServiceOuterClass.In in) {
+  public TestGrpcServiceOuterClass.Out jwtStaticClaimValue(TestGrpcServiceOuterClass.In in) {
     return simple(in);
   }
 
   @JWT(validate = JWT.JwtMethodMode.BEARER_TOKEN, staticClaims = { @JWT.StaticClaim(claim = "sub", pattern = "my-subject-\\d+")})
-  public CompletionStage<TestGrpcServiceOuterClass.Out> jwtStaticClaimPattern(TestGrpcServiceOuterClass.In in) {
+  public TestGrpcServiceOuterClass.Out jwtStaticClaimPattern(TestGrpcServiceOuterClass.In in) {
     return simple(in);
   }
 
   @Override
-  public CompletionStage<TestGrpcServiceOuterClass.Out> jwtInherited(TestGrpcServiceOuterClass.In in) {
+  public TestGrpcServiceOuterClass.Out jwtInherited(TestGrpcServiceOuterClass.In in) {
     return simple(in);
   }
 

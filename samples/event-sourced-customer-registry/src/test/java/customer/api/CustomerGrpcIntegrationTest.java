@@ -21,13 +21,12 @@ public class CustomerGrpcIntegrationTest extends TestKitSupport {
             .build())
         .build();
 
-    await(
-        client.createCustomer(customerRequest));
+    client.createCustomer(customerRequest);
 
-    var getCustomer = await(
+    var getCustomer =
         client.getCustomer(customer.api.proto.GetCustomerRequest.newBuilder()
             .setCustomerId("customer-abc")
-            .build()));
+            .build());
     Assertions.assertEquals("John Doe", getCustomer.getName());
   }
 }
