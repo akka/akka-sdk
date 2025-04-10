@@ -18,9 +18,9 @@ public class ExampleGrpcEndpointTest extends TestKitSupport {
   public void testSayHello() {
     var client = getGrpcEndpointClient(ExampleGrpcEndpointClient.class);
 
-    var response = await(client.sayHello().invoke(HelloRequest.newBuilder()
+    var response = client.sayHello().invoke(HelloRequest.newBuilder()
         .setName("World")
-        .build()));
+        .build());
 
     assertThat(response.getMessage()).isEqualTo("Hello World");
   }

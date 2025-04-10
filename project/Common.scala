@@ -104,6 +104,9 @@ object CommonSettings extends AutoPlugin {
         s"Align $parentPomFile with the SDK build version to correct.")
   }
 
+  // Note: keep aligned with parent pom
+  val serviceGrpcGeneratorSettings = Seq("generate_scala_handler_factory", "blocking_apis")
+
 }
 
 object CommonHeaderSettings extends AutoPlugin {
