@@ -36,7 +36,8 @@
 
         <akka-javasdk.version>3.2.3</akka-javasdk.version>
         <!-- must be carefully kept in sync with sdk and runtime version -->
-        <akka.grpc.version>2.5.3</akka.grpc.version>
+        <!-- FIXME released version and bumped in runtime -->
+        <akka.grpc.version>2.5.3-22-a7475268-SNAPSHOT</akka.grpc.version>
 
         <!-- These are dependent on runtime environment and cannot be customized by users -->
         <maven.compiler.release>21</maven.compiler.release>
@@ -458,6 +459,7 @@
                             <generatorSettings>
                                 <!-- required to generate the instance-per-request handler -->
                                 <generateScalaHandlerFactory>true</generateScalaHandlerFactory>
+                                <blockingApis>true</blockingApis>
                             </generatorSettings>
                         </configuration>
                         <!-- Hook the generate goal into the lifecycle, automatically tied to generate-sources -->
