@@ -4,7 +4,7 @@ include::ROOT:partial$include.adoc[]
 
 Communication with an LLM is _stateless_. Everything that you get back from a model like ChatGPT is directly related to the prompt you submit. If you want to maintain a conversation and its history, then you have to do that work on your own in your agent code. With a few exceptions, the hosted  LLMs won't maintain this history for you.
 
-So before we get into the details of how to talk to an LLM, how to do document indexing, how to generate prompts, and many other details, let's get started with something simple like building a session (e.g. conversation) entity.
+Before we get into the details of how to talk to an LLM, how to do document indexing, how to generate prompts, and many other details, let's get started with something simple like building a session (e.g. conversation) entity.
 
 == Overview
 
