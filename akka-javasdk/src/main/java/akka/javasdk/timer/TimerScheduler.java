@@ -4,11 +4,9 @@
 
 package akka.javasdk.timer;
 
-import akka.Done;
 import akka.javasdk.DeferredCall;
 
 import java.time.Duration;
-import java.util.concurrent.CompletionStage;
 
 public interface TimerScheduler {
 
@@ -30,7 +28,7 @@ public interface TimerScheduler {
    * @param delay delay, starting from now, in which the timer should be triggered
    * @param deferredCall a call to component that will be executed when the timer is triggered
    */
-  <I, O> CompletionStage<Done> startSingleTimer(
+  <I, O> void startSingleTimer(
       String name, Duration delay, DeferredCall<I, O> deferredCall);
 
   /**
@@ -52,12 +50,12 @@ public interface TimerScheduler {
    * @param maxRetries Retry up to this many times before giving up
    * @param deferredCall a call to component that will be executed when the timer is triggered
    */
-  <I, O> CompletionStage<Done> startSingleTimer(
+  <I, O> void startSingleTimer(
       String name, Duration delay, int maxRetries, DeferredCall<I, O> deferredCall);
 
   /**
    * Cancel an existing timer. This completes successfully if not timer is registered for the passed
    * name.
    */
-  CompletionStage<Done> cancel(String name);
+  void cancel(String name);
 }

@@ -48,10 +48,11 @@ public class TransferWorkflow extends Workflow<TransferState> {
           logger.info("Running withdraw: {}", cmd);
 
           // cancelling the timer in case it was scheduled
-          return timers().cancel("acceptationTimout-" + currentState().transferId()).thenCompose(__ ->
-            componentClient.forEventSourcedEntity(currentState().transfer().from())
+          timers().cancel("acceptationTimout-" + currentState().transferId());
+
+          return componentClient.forEventSourcedEntity(currentState().transfer().from())
               .method(WalletEntity::withdraw)
-              .invokeAsync(cmd));
+              .invokeAsync(cmd);
         })
         .andThen(WalletResult.class, result -> {
           switch (result) {
@@ -149,12 +150,13 @@ public class TransferWorkflow extends Workflow<TransferState> {
       step("wait-for-acceptation")
         .asyncCall(() -> {
           String transferId = currentState().transferId();
-          return timers().startSingleTimer(
+          timers().startSingleTimer(
             "acceptationTimeout-" + transferId,
             ofHours(8),
             componentClient.forWorkflow(transferId)
               .method(TransferWorkflow::acceptationTimeout)
               .deferred()); // <1>
+          return CompletableFuture.completedFuture(Done.done()); // FIXME remove once we have sync/blocking workflow calls
         })
         .andThen(Done.class, __ ->
           effects().pause()); // <2>
