@@ -1,2 +1,2 @@
 ** xref:self-managed:index.adoc[]
-*** xref:self-managed:running-self-managed.adoc[]
+*** xref:self-managed:configuring.adoc[]

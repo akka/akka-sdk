@@ -1,4 +1,4 @@
-= Running Akka with self-managed nodes
+= Configuring self-managed nodes
 
 include::ROOT:partial$include.adoc[]
 

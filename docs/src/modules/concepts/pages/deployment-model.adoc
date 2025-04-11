@@ -8,13 +8,13 @@ Akka applications are distributed by design. Although you can run many complex s
 
 Akka provides three ways to run services:
 
-- Fully-automated regions (at https://console.akka.io[akka.io], optionally running in your cloud infrastructure)
+- Fully-automated regions on Akka Platform (at https://console.akka.io[akka.io], optionally running in your cloud infrastructure)
 - Self-managed nodes (in your infrastructure, or any cloud service)
 - Akka SDK development and testing (on the developer's machine)
 
 Akka services run in all three modes **without** code modifications and leverage the fundamental underpinnings of Akka such as clustering. While standalone deployments enable running Akka on any infrastructure, some environments limit network access thus prohibit Akka clustering.
 
-=== Fully-automated regions
+=== Fully-automated regions on Akka Platform
 Full automation across multiple cloud provider regions and multiple cloud providers is available through Akka's fully-managed platform. You choose to run your Akka services in
 
 - multi-tenant clusters (for simplicity),
@@ -34,14 +34,14 @@ During development, Akka services run directly on the developers' machines, enab
 In Akka the logical unit of deployment is a Service. A service contains your components, and it deploys into a project. The hierarchy is described below.
 
 === Project
-A project is the root of one or more services that are meant to be deployed and run together. The project is a logical container for these services and provides some common management capabilities. Projects contain a list of xref:concepts:deployment-model.adoc#_region[regions] that they deploy to. One of the regions will always be the *primary region* which acts as the source of resources to replicate between regions. This will be the first region that deployments roll out to. By default the primary region is the first region specified when xref:operations:projects/create-project.adoc[creating a project]. More detail on regions is covered below in xref:concepts:deployment-model.adoc#_physical_deployment[physical deployment].
+A project is the root of one or more services that are meant to be deployed and run together. The project is a logical container for these services and provides some common management capabilities. Projects contain a list of xref:concepts:deployment-model.adoc#_region[regions] that they deploy to. One of the regions will always be the *primary region* which acts as the source of resources to replicate between regions. This will be the first region that deployments roll out to. By default, the primary region is the first region specified when xref:operations:projects/create-project.adoc[creating a project]. More detail on regions is covered below in xref:concepts:deployment-model.adoc#_physical_deployment[physical deployment].
 
 === Service(s)
 xref:operations:services/index.adoc[] are the core unit of deployment in Akka. They equate to the concept of a microservice and contain all your components and objects as described in the xref:concepts:architecture-model.adoc[Akka architecture model]. A project contains one or more services. Services can be started, stopped, and paused independently. They can also be scaled independently making them also the unit of scale.
 
 == Physical deployment 
 
-Akka services run in a cluster. A cluster is an instance of the Akka runtime which is spread over multiple machines in a given geographical place, also known as an Akka cluster. We call that place a xref:concepts:deployment-model.adoc#_region[region]. In our cloud service a region corresponds to a region from a cloud infrastructure provider such as AWS, Azure, or Google Cloud. "US East" is an AWS region that contains multiple Availability Zones: for Akka this is just a region. By default Akka spans availability zones in our cloud.
+Akka services run in a cluster. A cluster is an instance of the Akka runtime which is spread over multiple machines in a given geographical place, also known as an Akka cluster. We call that place a xref:concepts:deployment-model.adoc#_region[region]. In our cloud service a region corresponds to a region from a cloud infrastructure provider such as AWS, Azure, or Google Cloud. "US East" is an AWS region that contains multiple Availability Zones: for Akka this is just a region. By default, Akka spans availability zones in our cloud.
 
 === Region
 xref:operations:organizations/regions.adoc[] are specific clusters running Akka in a specific place. Regions are designed to run independently for greater availability. They are also designed to replicate data asynchronously between each other. Every Akka xref:concepts:deployment-model.adoc#_project[project] specifies a list of one or more regions in which it runs.

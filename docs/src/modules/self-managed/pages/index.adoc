@@ -1,14 +1,14 @@
-= Self-managed nodes
+= Operating - Self-managed nodes
 
 include::ROOT:partial$include.adoc[]
 
 For organizations that want control over how Akka services are installed, updated, and maintained. Akka services are packaged into standalone binaries with Akka clustering for scaling. You are responsible for separately managing secure connectivity (including TLS between services), routes, installation, deployment, and persistence.
 
-Services built with the Akka SDK are transferable between self-managed nodes and fully-automated regions without code modification. The transition happens through a simple re-build and configuration change.
+Services built with the Akka SDK are transferable between self-managed nodes and fully-automated regions on Akka Platform without code modification. The transition happens through a simple re-build and configuration change.
 
 With self-managed nodes, you can deploy into any container environment including Docker Compose, Fly.io, Render, Heroku, Linode, Kubernetes, or a hyperscaler. You are responsible for configuring Akka clustering, networking, persistence, security and routes.
 
 NOTE: Note that many container platforms are not designed to support cluster-based systems that need discovery and network connectivity to enable scale and resilience. We have found that when Akka is deployed into environments like Fly.io, Render, or Heroku, you have to configure Akka for single-node behavior, i.e. a cluster of one.
 
 
-- xref:running-self-managed.adoc[]
+- xref:configuring.adoc[]

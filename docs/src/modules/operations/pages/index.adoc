@@ -1,12 +1,14 @@
-= Fully-automated regions
+= Operating - Akka Platform
 
 include::ROOT:partial$include.adoc[]
 
-Akka provides capabilities to manage, monitor and gather insights from your application and its services once they are deployed. These resources will guide you through operating Akka applications and services. You should already be familiar with the xref:concepts:deployment-model.adoc[].
+Akka Platform provides capabilities to manage, monitor and gather insights from your application and its services once they are deployed. These resources will guide you through operating Akka applications and services on Akka Platform. You should already be familiar with the xref:concepts:deployment-model.adoc[].
 
-include::partial$platform-features.adoc[]
+== Full automation through Akka Platform features
 
-In these sections, you can find information on:
+Akka Platform is based on a Kubernetes-based control plane and application plane for executing Akka services with fully-automated operations to enable elasticity, agility and resilience.
+
+* xref:platform-features.adoc[]
 
 == Deploying and Managing Services
 
