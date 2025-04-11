@@ -10,14 +10,13 @@ Current versions
 * Akka CLI {akka-cli-version}
 * A glance of all Akka libraries and their current versions is presented at https://doc.akka.io/libraries/akka-dependencies/current[Akka library versions].
 
-== May 2025
+== April 2025
 
 * Akka SDK 3.2.4
   - Support for https://doc.akka.io/self-managed/index.html[self-managed nodes] in your infrastructure, or any cloud service. For organizations that want control over how Akka services are installed, updated, and maintained. Akka services are packaged into standalone binaries with Akka clustering for scaling and deploy to self-managed nodes. You are responsible for separately managing secure connectivity, routes, installation, deployment, and persistence.
 
 * https://github.com/akka/akka-projection/releases/tag/v1.6.10[Akka Projections 1.6.11]
 
-== April 2025
 
 * https://github.com/akka/akka/releases/tag/v2.10.3[Akka core 2.10.3]
 - Support for virtual threads on Java 21
