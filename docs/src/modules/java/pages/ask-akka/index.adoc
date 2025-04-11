@@ -1,5 +1,5 @@
 = AI RAG Agent
-include::ROOT::partial$include.adoc[]
+include::ROOT:partial$include.adoc[]
 
 In this example, you'll build and iteratively enhance a sample that illustrates how to create an AI agent that performs a RAG workflow. In our sample case, we're going to build the "Ask Akka" agent, a RAG agent that can respond to questions about the Akka documentation.
 
