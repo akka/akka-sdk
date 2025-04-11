@@ -89,7 +89,7 @@ include::example$reliable-timers/src/main/java/com/example/application/OrderTime
 ----
 <1> Uses the `@ComponentId` annotation to identify the component.
 <2> Extends the `TimedAction` class.
-<3> Initiates an asynchronous call to `OrderEntity` to cancel the order.
+<3> Call to `OrderEntity` to cancel the order.
 <4> Determines if the call should recover or fail. If `NotFound` or `Invalid` is returned, the timer is marked obsolete and is not rescheduled. Other errors cause `expireOrder` to fail, and the timer is rescheduled.
 
 IMPORTANT: Any method executed by a timer must handle errors carefully. Unhandled errors may lead to continuous re-scheduling. Ensure failures are propagated only when retrying the call is intended.

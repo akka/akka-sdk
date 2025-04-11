@@ -43,12 +43,11 @@ public class UserEventsConsumer extends Consumer {
    */
   private Effect markAsNotUsed(UserEvent evt, EmailUnassigned unassigned) {
     logger.info("Old email address unassigned: {}, deleting unique email address record", evt);
-    var unreserved =
-      client.forKeyValueEntity(unassigned.oldEmail())
-        .method(UniqueEmailEntity::markAsNotUsed)
-        .invokeAsync();
+    client.forKeyValueEntity(unassigned.oldEmail())
+      .method(UniqueEmailEntity::markAsNotUsed)
+      .invoke();
 
-    return effects().asyncDone(unreserved);
+    return effects().done();
   }
 
   /**
@@ -57,11 +56,10 @@ public class UserEventsConsumer extends Consumer {
    */
   private Effect confirmEmail(String emailAddress) {
     logger.info("User got a new email address assigned: {}, confirming new address address", emailAddress);
-    var confirmation =
-      client.forKeyValueEntity(emailAddress)
-        .method(UniqueEmailEntity::confirm)
-        .invokeAsync();
+    client.forKeyValueEntity(emailAddress)
+      .method(UniqueEmailEntity::confirm)
+      .invoke();
 
-    return effects().asyncDone(confirmation);
+    return effects().done();
   }
 }

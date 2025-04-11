@@ -1,6 +1,5 @@
 package com.example.application;
 
-import akka.Done;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.timedaction.TimedAction;
@@ -16,11 +15,14 @@ public class OrderTimedAction extends TimedAction { // <2>
   }
 
   public Effect expireOrder(String orderId) {
-    return effects().asyncDone(
-        componentClient.forKeyValueEntity(orderId)
-            .method(OrderEntity::cancel) // <3>
-            .invokeAsync()
-            .thenApply(__ -> Done.done())); // <4>
+    var result = componentClient.forKeyValueEntity(orderId)
+        .method(OrderEntity::cancel) // <3>
+        .invoke();
+    return switch (result) { // <4>
+      case OrderEntity.Result.Invalid ignored -> effects().done();
+      case OrderEntity.Result.NotFound ignored -> effects().done();
+      case OrderEntity.Result.Ok ignored -> effects().done();
+    };
   }
   // end::expire-order[]
 

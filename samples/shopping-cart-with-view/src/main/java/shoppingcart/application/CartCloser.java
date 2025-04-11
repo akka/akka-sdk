@@ -1,7 +1,5 @@
 package shoppingcart.application;
 
-import java.util.UUID;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,7 +27,7 @@ public class CartCloser extends Consumer {
 
     componentClient.forEventSourcedEntity(event.userId())
         .method(UserEntity::closeCart)
-        .invokeAsync(new CloseCartCommand(event.cartId()));
+        .invoke(new CloseCartCommand(event.cartId()));
 
     return effects().done();
   }

@@ -16,8 +16,6 @@ import customer.domain.CustomersList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.CompletionStage;
-
 // Opened up for access from the public internet to make the sample service easy to try out.
 // For actual services meant for production this must be carefully considered, and often set more limited
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
@@ -41,28 +39,26 @@ public class CustomerRegistryEndpoint {
   }
 
   @Post("/{id}")
-  public CompletionStage<HttpResponse> create(String id, CreateCustomerRequest createRequest) {
+  public HttpResponse create(String id, CreateCustomerRequest createRequest) {
     log.info("Delegating customer creation to upstream service: {}", createRequest);
     if (id == null || id.isBlank())
       throw HttpException.badRequest("No id specified");
 
     // make call to customer-registry service
-    return
-      httpClient.POST("/customer/" + id) // <3>
+    var response = httpClient.POST("/customer/" + id) // <3>
         .withRequestBody(createRequest)
-        .invokeAsync() // <4>
-        .thenApply(response -> { // <5>
-          if (response.httpResponse().status() == StatusCodes.CREATED) {
-            return HttpResponses.created();
-          } else {
-            throw new RuntimeException("Delegate call to create upstream customer failed, response status: " + response.httpResponse().status());
-          }
-        });
+        .invoke();
+
+    if (response.httpResponse().status() == StatusCodes.CREATED) {
+      return HttpResponses.created(); // <4>
+    } else {
+      throw new RuntimeException("Delegate call to create upstream customer failed, response status: " + response.httpResponse().status());
+    }
   }
   // end::cross-service-call[]
   
   @Get("/by_name/{name}")
-  public CompletionStage<CustomersList> findByName(String name) {
-    return componentClient.forView().method(CustomersByNameView::findByName).invokeAsync(name);
+  public CustomersList findByName(String name) {
+    return componentClient.forView().method(CustomersByNameView::findByName).invoke(name);
   }
 }

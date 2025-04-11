@@ -85,10 +85,10 @@ public class NestedCustomerOrdersViewIntegrationTest extends StoreViewIntegratio
   }
 
   private NestedCustomerOrders getCustomerOrders(String customerId) {
-    return await(
+    return 
       componentClient.forView()
         .method(NestedCustomerOrdersView::get)
-        .invokeAsync(customerId));
+        .invoke(customerId);
   }
 
   private NestedCustomerOrders awaitCustomerOrders(

@@ -82,11 +82,10 @@ public class StructuredCustomerOrdersViewIntegrationTest extends StoreViewIntegr
   }
 
   private StructuredCustomerOrders getCustomerOrders(String customerId) {
-    return await(
+    return
       componentClient.forView()
         .method(StructuredCustomerOrdersView::get)
-        .invokeAsync(customerId)
-    );
+        .invoke(customerId);
   }
 
   private StructuredCustomerOrders awaitCustomerOrders(
