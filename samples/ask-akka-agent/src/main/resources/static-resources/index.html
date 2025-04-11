@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ask Akka</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.21.2/babel.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.0.2/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-cookie/3.0.1/js.cookie.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/uuid/8.3.2/uuid.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #000000;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            overflow: hidden;
+            color: #F1F1F1;
+        }
+        .typing-animation::after {
+            content: '▋';
+            animation: blink 1s step-start infinite;
+        }
+        @keyframes blink {
+            50% { opacity: 0; }
+        }
+        .chat-message {
+            max-width: 80%;
+            border-radius: 1rem;
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .user-message {
+            margin-left: auto;
+            border-bottom-right-radius: 0.25rem;
+            background-color: #1F1F1F;
+            border: 1px solid #FFFFFF;
+            color: #FFFFFF;
+        }
+
+        .ai-message {
+            background-color: #1A1A1A;
+            margin-right: auto;
+            border-bottom-left-radius: 0.25rem;
+            border: 1px dashed #FFCE4A;
+            font-style: italic;
+            color: #FFFFFF;
+        }
+
+        .ai-message h1, .ai-message h2, .ai-message h3,
+        .ai-message h4, .ai-message h5, .ai-message h6 {
+            margin-top: 0.5rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #FFCE4A;
+        }
+        .ai-message h1 { font-size: 1.5rem; }
+        .ai-message h2 { font-size: 1.4rem; }
+        .ai-message h3 { font-size: 1.3rem; }
+        .ai-message h4 { font-size: 1.2rem; }
+        .ai-message h5 { font-size: 1.1rem; }
+        .ai-message h6 { font-size: 1rem; }
+
+        .ai-message ul, .ai-message ol {
+            margin-left: 1.5rem;
+            margin-top: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .ai-message ul { list-style-type: disc; }
+        .ai-message ol { list-style-type: decimal; }
+
+        .ai-message code {
+            background-color: #333333;
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+            font-family: monospace;
+            color: #F1F1F1;
+        }
+
+        .ai-message pre {
+            background-color: #333333;
+            padding: 1rem;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 0.5rem 0;
+        }
+
+        .ai-message pre code {
+            background-color: transparent;
+            padding: 0;
+        }
+
+        .ai-message p {
+            margin-bottom: 0.75rem;
+        }
+
+        .ai-message a {
+            color: #00DBDD;
+            text-decoration: underline;
+        }
+
+        .truncate-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            max-height: 100%;
+            overflow: hidden;
+        }
+
+        .message-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            padding-top: 1.5rem;
+            background-color: #1A1A1A !important;
+        }
+
+        .header-area {
+            flex-shrink: 0;
+            background-color: #000000;
+            border-color: #333333;
+        }
+
+        .input-area {
+            flex-shrink: 0;
+            position: sticky;
+            bottom: 0;
+            background-color: #1A1A1A !important;
+            border-color: #333333;
+            z-index: 10;
+        }
+
+        .chat-message-wrapper {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            padding-bottom: 1rem;
+        }
+
+        /* Updated styles for the app */
+        .h-screen, .h-full {
+            background-color: #000000;
+        }
+
+        /* Header */
+        .justify-between {
+            background-color: #1A1A1A;
+            color: #F1F1F1;
+            border-bottom: 1px solid #333333;
+        }
+
+        .justify-between h1 {
+            color: #00DBDD;
+        }
+
+        .text-gray-500, .text-gray-400, .text-gray-700 {
+            color: #F1F1F1 !important;
+        }
+
+        /* Buttons */
+        button {
+            background-color: #00DBDD !important;
+            color: #1A1A1A !important;
+            border: none;
+        }
+
+        button:hover {
+            background-color: #00c5c7 !important;
+        }
+
+        /* Special case for send button */
+        .send-button {
+            background-color: transparent !important;
+        }
+
+        .send-button svg {
+            stroke: #00DBDD;
+        }
+
+        .send-button:hover svg {
+            stroke: #00c5c7;
+        }
+
+        .send-button[disabled] svg {
+            stroke: #666666;
+        }
+
+        /* Sidebar */
+        .bg-gray-50 {
+            background-color: #1A1A1A !important;
+            color: #F1F1F1 !important;
+        }
+
+        .border, .border-r, .border-b, .border-t {
+            border-color: #333333 !important;
+        }
+
+        /* Session list items */
+        .divide-y > li {
+            border-color: #333333 !important;
+        }
+
+        .hover\:bg-gray-50:hover {
+            background-color: #2a2a2a !important;
+        }
+
+        .bg-blue-50 {
+            background-color: #002e2e !important;
+        }
+
+        .border-blue-500 {
+            border-color: #00DBDD !important;
+        }
+
+        /* Input field */
+        textarea, input[type="text"] {
+            background-color: #2a2a2a;
+            color: #F1F1F1;
+            border-color: #333333;
+        }
+
+        textarea:focus, input[type="text"]:focus {
+            border-color: #00DBDD;
+            box-shadow: 0 0 0 2px rgba(0, 219, 221, 0.2);
+        }
+
+        /* Text color classes */
+        .text-blue-600 {
+            color: #00DBDD !important;
+        }
+
+        .text-red-500 {
+            color: #ff6b6b !important;
+        }
+
+        /* Spinner animation */
+        .text-blue-600 svg {
+            color: #00DBDD !important;
+        }
+    </style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+  const { useState, useEffect, useRef } = React;
+  const { marked } = window;
+  const { Cookies } = window;
+  const { v4: uuidv4 } = window.uuid;
+
+  // User session cookie name
+  const USER_COOKIE = "ai_chat_user_id";
+
+  // Utility function to parse SSE response
+  const parseSSE = (data) => {
+    if (!data) return null;
+    if (data.startsWith('data:')) {
+      return data.substring(5).trim();
+    }
+    return data;
+  };
+
+
+  // Main App component
+  function App() {
+    const [userId, setUserId] = useState("");
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [error, setError] = useState("");
+
+    // Check for saved user cookie on component mount
+    useEffect(() => {
+      const savedUserId = Cookies.get(USER_COOKIE);
+      if (savedUserId) {
+        setUserId(savedUserId);
+        setIsLoggedIn(true);
+      }
+    }, []);
+
+    // Handle login
+    const handleLogin = () => {
+      if (userId.trim().length < 3) {
+        setError("User ID must be at least 3 characters");
+        return;
+      }
+
+      // Save user ID to cookie (expires in 7 days)
+      Cookies.set(USER_COOKIE, userId, { expires: 7 });
+
+      setError("");
+      setIsLoggedIn(true);
+    };
+
+    // Handle logout
+    const handleLogout = () => {
+      // Remove the user cookie
+      Cookies.remove(USER_COOKIE);
+      setUserId("");
+      setIsLoggedIn(false);
+    };
+
+    return (
+      <div className="h-screen">
+        <div className="h-full flex flex-col">
+          <div className="flex justify-between items-center py-4 px-4 flex-shrink-0 shadow-sm">
+            <div className="flex items-center">
+              <h1 className="text-3xl font-bold text-blue-600">Ask Akka Demo</h1>
+              <span className="text-sm text-gray-500 ml-4">User ID: {userId}</span>
+            </div>
+            {isLoggedIn && (
+              <div className="flex items-center space-x-4">
+                <button
+                  onClick={handleLogout}
+                  className="bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+                >
+                  Logout
+                </button>
+              </div>
+            )}
+          </div>
+
+          <div className="flex-grow overflow-hidden">
+            {!isLoggedIn ? (
+              <LoginScreen
+                userId={userId}
+                setUserId={setUserId}
+                handleLogin={handleLogin}
+                error={error}
+              />
+            ) : (
+              <ChatInterface userId={userId} />
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Login Screen component
+  function LoginScreen({ userId, setUserId, handleLogin, error }) {
+    return (
+      <div className="max-w-md mx-auto mt-16 p-8 rounded-lg shadow-md">
+        <h2 className="text-xl font-semibold mb-4">Welcome to AI Chat</h2>
+        <p className="text-gray-600 mb-6">Please enter a unique ID to continue</p>
+
+        <div className="mb-4">
+          <label htmlFor="userId" className="block text-sm font-medium text-gray-700 mb-1">
+            User ID
+          </label>
+          <input
+            type="text"
+            id="userId"
+            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            value={userId}
+            onChange={(e) => setUserId(e.target.value)}
+            placeholder="Enter your user ID"
+            onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
+          />
+        </div>
+
+        {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+
+        <button
+          onClick={handleLogin}
+          className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+        >
+          Continue
+        </button>
+      </div>
+    );
+  }
+
+  // Chat Interface component with sidebar
+  function ChatInterface({ userId }) {
+    const [sessions, setSessions] = useState([]);
+    const [currentSession, setCurrentSession] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    // Load sessions from the backend API
+    useEffect(() => {
+      fetchSessions();
+    }, [userId]);
+
+    const fetchSessions = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`/api/users/${userId}/sessions`);
+
+        if (!response.ok) {
+          throw new Error(`HTTP error ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        // Transform the API response to match the expected format
+        const transformedSessions = data.sessions.map(session => ({
+          id: session.sessionId,
+          title: `Conversation from ${formatDate(session.creationDate)}`,
+          timestamp: new Date(session.creationDate).toISOString(),
+          conversationHistory: session.messages.map(msg => ({
+            type: msg.origin,  // convert 'origin' to 'type'
+            message: msg.message
+          }))
+        }));
+
+        setSessions(transformedSessions || []);
+      } catch (err) {
+        console.error("Error fetching sessions:", err);
+        setError("Failed to load your previous conversations");
+        // Set empty array as fallback
+        setSessions([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    // Utility function to format timestamps
+    const formatDate = (timestamp) => {
+      const date = new Date(timestamp);
+      return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    };
+
+    // Create new session
+    const createNewSession = () => {
+      const newSession = {
+        id: uuidv4(),
+        title: "New Conversation",
+        timestamp: new Date().toISOString(),
+        conversationHistory: []
+      };
+
+      setSessions([newSession, ...sessions]);
+      setCurrentSession(newSession);
+    };
+
+    // Open existing session
+    const openSession = (session) => {
+      setCurrentSession(session);
+    };
+
+    // Save session (local update after backend interaction)
+    const saveSession = (updatedSession) => {
+      const updatedSessions = sessions.map(s =>
+        s.id === updatedSession.id ? updatedSession : s
+      );
+
+      setSessions(updatedSessions);
+      setCurrentSession(updatedSession);
+    };
+
+    return (
+      <div className="h-full flex">
+        {/* Sidebar - Sessions List */}
+        <div className="relative border-r overflow-y-auto w-80">
+          <div className="p-4 border-b">
+            <button
+              onClick={createNewSession}
+              className="w-full py-2 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            >
+              New Chat
+            </button>
+          </div>
+
+          <div className="overflow-y-auto">
+            {loading ? (
+              <div className="text-center p-8 text-gray-500">
+                <svg className="animate-spin h-8 w-8 mx-auto mb-4 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Loading...
+              </div>
+            ) : error ? (
+              <div className="text-center p-8 text-red-500">
+                {error}
+                <p className="mt-2 text-gray-500">Try creating a new chat.</p>
+              </div>
+            ) : sessions.length === 0 ? (
+              <div className="text-center p-8 text-gray-500">
+                No conversations yet. Start a new chat!
+              </div>
+            ) : (
+              <ul className="divide-y divide-gray-200">
+                {sessions.map((session) => (
+                  <li
+                    key={session.id}
+                    className={`p-4 hover:bg-gray-50 cursor-pointer ${
+                      currentSession && currentSession.id === session.id
+                        ? 'bg-blue-50 border-l-4 border-blue-500'
+                        : ''
+                    }`}
+                    onClick={() => openSession(session)}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1 overflow-hidden">
+                        <h3 className="font-medium truncate">{session.title}</h3>
+                        <p className="text-sm text-gray-500 truncate-2">
+                          {session.conversationHistory && session.conversationHistory.length > 0
+                            ? session.conversationHistory[session.conversationHistory.length - 1].message.substring(0, 100) + (session.conversationHistory[session.conversationHistory.length - 1].message.length > 100 ? '...' : '')
+                            : "Empty conversation"}
+                        </p>
+                      </div>
+                      <span className="text-xs text-gray-400 ml-2 whitespace-nowrap">
+                        {new Date(session.timestamp).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+        {/* Main Chat Area */}
+        <div className="flex-1">
+          {currentSession ? (
+            <ChatScreen
+              session={currentSession}
+              saveSession={saveSession}
+              userId={userId}
+            />
+          ) : (
+            <div className="h-full flex items-center justify-center bg-gray-50">
+              <div className="text-center p-8">
+                <h3 className="text-xl font-medium text-gray-700 mb-2">Welcome to the Ask Akka Chat</h3>
+                <p className="text-gray-500 mb-4">Select a conversation from the sidebar or start a new chat</p>
+                <button
+                  onClick={createNewSession}
+                  className="py-2 px-6 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                >
+                  New Chat
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Chat Screen component
+  function ChatScreen({ session, saveSession, userId }) {
+    const [messageInput, setMessageInput] = useState("");
+    const [messages, setMessages] = useState([]);
+    const [isTyping, setIsTyping] = useState(false);
+    const [title, setTitle] = useState(session.title);
+    const [isEditingTitle, setIsEditingTitle] = useState(false);
+    const [error, setError] = useState(null);
+
+    const messagesEndRef = useRef(null);
+    const messageAreaRef = useRef(null);
+
+    // Initialize messages from session
+    useEffect(() => {
+      setMessages(session.conversationHistory || []);
+      setTitle(session.title);
+    }, [session]);
+
+    // Scroll to bottom when messages change
+    useEffect(() => {
+      if (messagesEndRef.current) {
+        messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+      }
+    }, [messages]);
+
+    // Function to send message to backend API
+    const sendMessage = async (content) => {
+      if (!content.trim()) return;
+
+      // Add user message to UI immediately
+      const userMessage = { type: "user", message: content };
+      const updatedMessages = [...messages, userMessage];
+      setMessages(updatedMessages);
+      setError(null);
+
+      // Update session locally first
+      const updatedSession = {
+        ...session,
+        conversationHistory: updatedMessages,
+        timestamp: new Date().toISOString()
+      };
+
+      // If this is the first message, update the title
+      if (session.title === "New Conversation" && updatedMessages.length === 1) {
+        const newTitle = content.substring(0, 30) + (content.length > 30 ? "..." : "");
+        setTitle(newTitle);
+        updatedSession.title = newTitle;
+      }
+
+      saveSession(updatedSession);
+      setMessageInput("");
+      setIsTyping(true);
+
+      try {
+        // Prepare API request
+        const apiRequest = {
+          sessionId: session.id,
+          userId: userId,
+          question: content
+        };
+
+        // Call the backend API with SSE support
+        const response = await fetch('/api/ask', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(apiRequest)
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error ${response.status}`);
+        }
+
+        // Handle SSE streaming response
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let aiResponseText = "";
+
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+
+          // Decode the chunk and handle SSE format
+          const chunk = decoder.decode(value, { stream: true });
+          const lines = chunk.split('\n').filter(line => line.trim() !== '');
+
+          for (const line of lines) {
+            let parsedData = parseSSE(line);
+            if (parsedData) {
+              try {
+                // Try to JSON parse if it looks like a JSON string
+                if (parsedData.startsWith('"') && parsedData.endsWith('"')) {
+                  parsedData = JSON.parse(parsedData);
+                }
+              } catch (e) {
+                // If JSON parsing fails, just use the string as is
+                console.log("JSON parse failed, using raw string");
+              }
+
+              // Also try to handle the case where we get quoted strings with commas between them
+              if (typeof parsedData === 'string') {
+                // This regex finds patterns like "text","more text" and cleans them up
+                parsedData = parsedData.replace(/"([^"]*)"\s*,\s*"([^"]*)"/g, '$1$2');
+                // Remove any remaining quotes at beginning/end
+                parsedData = parsedData.replace(/^"|"$/g, '');
+              }
+
+              aiResponseText += parsedData;
+
+              // Update UI with current text
+              setMessages([
+                ...updatedMessages,
+                { type: "ai", message: aiResponseText }
+              ]);
+            }
+          }
+        }
+
+        // Final update once streaming is complete
+        setIsTyping(false);
+
+        // Save the completed conversation
+        const finalMessages = [
+          ...updatedMessages,
+          { type: "ai", message: aiResponseText }
+        ];
+
+        // Transform the data to match the backend format when saving
+        const apiSessionData = {
+          sessionId: session.id,
+          userId: userId,
+          messages: finalMessages.map(msg => ({
+            origin: msg.type,
+            message: msg.message,
+            timestamp: new Date().getTime()
+          })),
+          creationDate: new Date(session.timestamp).getTime()
+        };
+
+        // Here you would typically send this updated session to your backend
+        // For now, just update the local state
+        const finalSession = {
+          ...session,
+          conversationHistory: finalMessages,
+          timestamp: new Date().toISOString()
+        };
+
+        saveSession(finalSession);
+
+      } catch (err) {
+        console.error("Error sending message:", err);
+        setIsTyping(false);
+        setError("Failed to get a response. Please try again.");
+      }
+    };
+
+    // Handle title update
+    const updateTitle = () => {
+      if (title.trim() !== session.title) {
+        const updatedSession = {
+          ...session,
+          title: title.trim()
+        };
+        saveSession(updatedSession);
+      }
+      setIsEditingTitle(false);
+    };
+
+    return (
+      <div className="chat-container">
+        <div className="header-area p-4 border-b flex items-center">
+          {isEditingTitle ? (
+            <div className="flex-1 flex">
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="flex-1 px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                autoFocus
+                onBlur={updateTitle}
+                onKeyPress={(e) => e.key === 'Enter' && updateTitle()}
+              />
+            </div>
+          ) : (
+            <h2
+              className="text-xl font-semibold flex-1 cursor-pointer hover:text-blue-600"
+              onClick={() => setIsEditingTitle(true)}
+              title="Click to edit conversation title"
+            >
+              {title}
+            </h2>
+          )}
+        </div>
+
+        <div className="message-area bg-gray-50" ref={messageAreaRef}>
+          {messages.length === 0 ? (
+            <div className="text-center p-8 text-gray-500">
+              Start a new conversation!
+            </div>
+          ) : (
+            <div className="chat-message-wrapper">
+              {messages.map((msg, index) => (
+                <div
+                  key={index}
+                  className={`chat-message ${msg.type === 'user' ? 'user-message' : 'ai-message'}`}
+                >
+                  <div dangerouslySetInnerHTML={{ __html: marked.parse(msg.message) }}></div>
+                </div>
+              ))}
+              {isTyping && (
+                <div className="chat-message ai-message typing-animation">
+
+                </div>
+              )}
+              {error && (
+                <div className="text-center p-2 text-red-500 text-sm">
+                  {error}
+                </div>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+          )}
+        </div>
+
+        <div className="input-area p-4 border-t">
+          <div className="relative">
+              <textarea
+                className="w-full px-4 py-2 pr-12 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                placeholder="Type your message..."
+                rows="2"
+                value={messageInput}
+                onChange={(e) => setMessageInput(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage(messageInput);
+                  }
+                }}
+                disabled={isTyping}
+              ></textarea>
+            <button
+              className={`absolute right-3 bottom-3 send-button ${isTyping ? 'text-gray-400' : 'text-blue-600 hover:text-blue-800'} focus:outline-none`}
+              onClick={() => sendMessage(messageInput)}
+              disabled={isTyping}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Render the app
+  ReactDOM.render(<App />, document.getElementById('root'));
+</script>
+</body>
+</html>

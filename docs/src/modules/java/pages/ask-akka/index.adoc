@@ -1,0 +1,10 @@
+= AI RAG Agent
+include::ROOT:partial$include.adoc[]
+
+In this example, you'll build and iteratively enhance a sample that illustrates how to create an AI agent that performs a RAG workflow. In our sample case, we're going to build the "Ask Akka" agent, a RAG agent that can respond to questions about the Akka documentation.
+
+If terms like **agent** or **RAG** or **LLM** are unfamiliar to you, you might want to check out this video that demystifies some of these terms and how agents and RAG work:
+
+video::mWpCnptTTPQ[youtube]
+
+If you're familiar with these terms, even if you've never built anything on AI before, continue to the first step: building a session entity.

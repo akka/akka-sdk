@@ -117,10 +117,11 @@ You use Docker to package your service and any of its dependencies for deploymen
 See xref:operations:projects/container-registries.adoc[container registries] for more information.
 
 [#_deploy]
-== Deploy to akka.io
+== Deploy
 
-After testing locally, deploy your service to akka.io using the CLI or the Console. The following pages provide information about deployment:
+After testing locally, deploy your service to Akka Platform (akka.io) using the CLI or the Console.
 
+The following pages provide information about deployment:
 
 * xref:operations:projects/index.adoc[Akka projects]
 * xref:operations:services/deploy-service.adoc#_deploying_a_service[Deploying a packaged service]

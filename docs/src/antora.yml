@@ -5,6 +5,7 @@ nav:
 - modules/ROOT/nav.adoc
 - modules/concepts/nav.adoc
 - modules/java/nav.adoc
+- modules/self-managed/nav.adoc
 - modules/operations/nav.adoc
 - modules/security/nav.adoc
 - modules/support/nav.adoc

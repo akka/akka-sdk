@@ -1,0 +1,109 @@
+# JSON Web Tokens (JWT)
+
+This section describes the practical aspects of using JSON Web Tokens (JWTs). If you are not sure what JWTs are, how they work or how to generate them, see [JSON Web Tokens](security:jwts.adoc) first.
+
+Akka’s JWT support is configured by placing annotations in your endpoints at the class level or method level.
+
+## Authentication
+
+Akka can validate the signature of JWT tokens provided in an Authorization header to grant access to your endpoints. The generation of tokens is not provided by Akka. In [window="new"](https://jwt.io/) you can find a simple way to generate tokens to start testing your services.
+
+### Bearer token validation
+
+If you want to validate the bearer token of a request, you need to annotate your endpoint with a `@JWT` setting with `JWT.JwtMethodMode.BEARER_TOKEN` and you can add an issuer claim. Like this:
+
+**{sample-base-url}/endpoint-jwt/src/main/java/hellojwt/api/HelloJwtEndpoint.java[HelloJwtEndpoint.java]**
+
+
+```
+1. Validate the Bearer is present in the `Authorization` header and authorize only if the claim `iss` in the payload of this token is `my-issuer` .
+
+Requests are only allowed if they have a bearer token that can be validated by one of the configured keys for the service, all other requests will be rejected. The bearer token must be supplied with requests using the `Authorization` header:
+
+```
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsImtpZCI6ImtleTEifQ.eyJpc3MiOiJteS1pc3N1ZXIifQ.-MLcf1-kB_1OQIZdy9_wYiFZcMOHsHOE8aJryS1tWq4
+```
+
+You can check in [window="new"](https://jwt.io/) that this token contains the claim in the payload `iss: my-issuer`.
+
+**⚠️ WARNING**\
+It is recommended that `bearerTokenIssuers` contains the issuer that you use in your JWT key configuration. See [window="new"](https://doc.akka.io/security/jwts.html). Otherwise, any services with a trusted key can impersonate the issuer.
+
+### Configuring JWT at class level or method level
+
+The above examples show how to configure a JWT token on a class or method level. When the annotation is present on both endpoint class and a method, the configuration on the method overrides the class configuration for that method.
+
+### Using more claims
+
+Akka can be configured to automatically require and validate other claims than the issuer. Multiple `StaticClaim` can be declared and environment variables are supported on the `values` field. A `StaticClaim` can be defined both at class and method level. The provided claims will be used when validating against the bearer token.
+
+```java
+@JWT(validate = JWT.JwtMethodMode.BEARER_TOKEN,
+    bearerTokenIssuers = "my-issuer",
+    staticClaims = {
+        @JWT.StaticClaim(claim = "role", values = {"admin", "editor"}), // ①
+        @JWT.StaticClaim(claim = "aud", values = "${ENV}.akka.io")}) // ②
+```
+1. When declaring multiple values for the same claim, ***all*** of them will be required when validating the request.
+2. The required value of the `aud` claim includes the value of environment variable `ENV`
+
+See [`akka service deploy -h`](reference:cli/index.adoc) for details on how to set environment variables when deploying a service.
+
+**📌 NOTE**\
+For specifying an issuer claim (i.e. "iss"), you should still use the `bearerTokenIssuers` and not static claims.
+
+#### Configuring claims with a pattern
+
+Claims can also be defined using a pattern. This is useful when the value of the claim is not completely known in advance, but it can still be validated against a regular expression. See some examples below:
+
+```java
+@JWT(validate = JWT.JwtMethodMode.BEARER_TOKEN,
+    bearerTokenIssuers = "my-issuer",
+    staticClaims = {
+        @JWT.StaticClaim(claim = "role", pattern = "^(admin|editor)$"), // ①
+        @JWT.StaticClaim(claim = "sub", pattern = // ②
+            "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"),
+        @JWT.StaticClaim(claim = "name", pattern = "^\\S+$") // ③
+    })
+```
+1. Claim "role" must have one of 2 values: `admin` or `editor`.
+2. Claim "sub" must be a valid UUID.
+3. Claim "name" must be not empty.
+
+If the JWT token claim is an array of values, the token will be considered valid if at least one of the claim values matches the pattern. Otherwise, the request is rejected.
+
+**📌 NOTE**\
+A claim can be defined with a `values` or a `pattern`, but not both.
+
+#### Multiple issuers
+
+Multiple issuers may be allowed, by setting multiple `bearer_token_issuer` values:
+
+```java
+```
+
+The token extracted from the bearer token must have one of the two issuers defined in the annotation.
+Akka will place the claims from the validated token in the [RequestContext](_attachments/api/akka/javasdk/http/RequestContext.html), so you can access them from your service via `getJwtClaims()`. The `RequestContext` is accessed by letting the endpoint extend [AbstractHttpEndpoint](_attachments/api/akka/javasdk/http/AbstractHttpEndpoint.html) which provides the method `requestContext()`, so you can retrieve the JWT claims like this:
+
+**{sample-base-url}/endpoint-jwt/src/main/java/hellojwt/api/HelloJwtEndpoint.java[HelloJwtEndpoint.java]**
+
+
+```
+1. Access the claims from the request context.
+2. Note that while calling `Optional#get()` is generally a bad practice, here we know the claims must be present given the `@JWT` configuration.
+
+## Running locally with JWTs enabled
+
+When running locally, by default, a dev key with id `dev` is configured for use. This key uses the JWT `none` signing algorithm, which means the signature of the received JWT tokens is not validated. Therefore, when calling an endpoint with a bearer token, only the presence and values of the claims are validated.
+
+## JWTs when running integration tests
+When running integration tests, JWTs will still be enforced but its signature will not be validated, similarly to what is described above for when running locally. Thus, when making calls in the context of integration testing, make sure to inject a proper token with the required claims, as shown below:
+
+**{sample-base-url}/endpoint-jwt/src/test/java/hellojwt/api/HelloJwtIntegrationTest.java[HelloJwtIntegrationTest.java]**
+
+
+```
+1. Use a helper method to create a JWT token with 2 claims: issuer and subject.
+2. Inject the bearer token as header with the key `Authorization`.
+3. Use static `Base64` encoding of `{ "alg": "none" }`.
+4. Note that you do not need to provide a signature, thus the token has only 2 parts, header and payload.
