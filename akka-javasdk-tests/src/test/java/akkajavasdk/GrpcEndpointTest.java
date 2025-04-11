@@ -27,6 +27,7 @@ public class GrpcEndpointTest extends TestKitSupport {
     var response = await(testClient.simple(request));
 
     assertThat(response.getData()).isEqualTo(request.getData());
+    assertThat(response.getWasOnVirtualThread()).isTrue();
   }
 
   @Test

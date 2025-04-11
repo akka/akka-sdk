@@ -55,6 +55,14 @@ public class EventSourcedEntityTest extends TestKitSupport {
   }
 
   @Test
+  public void verifyEventSourcedEntityRunsOnVirtualThread() {
+    var result = componentClient.forEventSourcedEntity("hello")
+        .method(CounterEntity::commandHandlerIsOnVirtualThread)
+        .invoke();
+    assertThat(result).isTrue();
+  }
+
+  @Test
   public void verifyCounterEventSourcedDeletion() {
     var counterId = "deleted-hello";
     var client = componentClient.forEventSourcedEntity(counterId);
@@ -197,7 +205,7 @@ public class EventSourcedEntityTest extends TestKitSupport {
   public void testHierarchyEntity() {
     var client = componentClient.forEventSourcedEntity("some-id");
 
-    await(client.method(TextEsEntity::setText).invokeAsync("my text"));
+    client.method(TextEsEntity::setText).invoke("my text");
 
     var result = client.method(TextEsEntity::getText).invoke();
     assertThat(result).isEqualTo(Optional.of("my text"));
@@ -210,28 +218,28 @@ public class EventSourcedEntityTest extends TestKitSupport {
 
 
   private Integer increaseCounter(EventSourcedEntityClient client, int value) {
-    return await(client
+    return client
       .method(CounterEntity::increase)
-      .invokeAsync(value));
+      .invoke(value);
   }
 
   private Counter increaseCounterWithError(EventSourcedEntityClient client, int value) {
-    return await(client
+    return client
         .method(CounterEntity::increaseWithError)
-        .invokeAsync(value));
+        .invoke(value);
   }
 
 
   private Integer multiplyCounter(EventSourcedEntityClient client, int value) {
-    return await(client
+    return client
       .method(CounterEntity::times)
-      .invokeAsync(value));
+      .invoke(value);
   }
 
   private void restartCounterEntity(EventSourcedEntityClient client) {
     try {
-      await(client
-        .method(CounterEntity::restart).invokeAsync());
+      client
+        .method(CounterEntity::restart).invoke();
       fail("This should not be reached");
     } catch (Exception ignored) {
     }
