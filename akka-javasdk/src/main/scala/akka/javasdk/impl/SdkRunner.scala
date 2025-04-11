@@ -10,6 +10,7 @@ import java.lang.reflect.Method
 import java.util
 import java.util.Optional
 import java.util.concurrent.CompletionStage
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.Promise
@@ -31,6 +32,7 @@ import akka.javasdk.BuildInfo
 import akka.javasdk.DependencyProvider
 import akka.javasdk.JwtClaims
 import akka.javasdk.Principals
+import akka.javasdk.Retries
 import akka.javasdk.ServiceSetup
 import akka.javasdk.Tracing
 import akka.javasdk.annotations.ComponentId
@@ -313,7 +315,8 @@ private[javasdk] object Sdk {
     classOf[Config],
     classOf[WorkflowContext],
     classOf[EventSourcedEntityContext],
-    classOf[KeyValueEntityContext])
+    classOf[KeyValueEntityContext],
+    classOf[Retries])
 }
 
 /**
@@ -336,6 +339,7 @@ private final class Sdk(
 
   private val logger = LoggerFactory.getLogger(getClass)
   private val serializer = new JsonSerializer
+  private lazy val retries = new RetriesImpl(system.classicSystem)
   private val ComponentLocator.LocatedClasses(componentClasses, maybeServiceClass) =
     ComponentLocator.locateUserComponents(system)
   @volatile private var dependencyProviderOpt: Option[DependencyProvider] = dependencyProviderOverride
@@ -622,6 +626,7 @@ private final class Sdk(
     case g if g == classOf[GrpcClientProvider] => grpcClientProvider(span)
     case t if t == classOf[TimerScheduler]     => timerScheduler(span)
     case m if m == classOf[Materializer]       => sdkMaterializer
+    case a if a == classOf[Retries]            => retries
   }
 
   val spiComponents: SpiComponents = {
@@ -855,7 +860,7 @@ private final class Sdk(
   }
 
   private def componentClient(openTelemetrySpan: Option[Span]): ComponentClient = {
-    ComponentClientImpl(runtimeComponentClients, serializer, openTelemetrySpan)(sdkExecutionContext)
+    ComponentClientImpl(runtimeComponentClients, serializer, openTelemetrySpan)(sdkExecutionContext, system)
   }
 
   private def timerScheduler(openTelemetrySpan: Option[Span]): TimerScheduler = {

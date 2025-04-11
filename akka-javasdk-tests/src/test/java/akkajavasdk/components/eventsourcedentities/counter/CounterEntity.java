@@ -24,6 +24,7 @@ public class CounterEntity extends EventSourcedEntity<Counter, CounterEvent> {
     TOO_HIGH, TOO_LOW
   }
 
+  private Integer errorCounter = 0;
   private final Logger logger = LoggerFactory.getLogger(getClass());
 
   public record DoIncrease(int amount) {}
@@ -41,6 +42,16 @@ public class CounterEntity extends EventSourcedEntity<Counter, CounterEvent> {
       currentState(),
       value);
     return effects().persist(new CounterEvent.ValueIncreased(value)).thenReply(Counter::value);
+  }
+
+  public Effect<Integer> failedIncrease(Integer value) {
+    logger.info("Calling failedIncrease with value={}, errorCounter={}", value, errorCounter);
+    if (errorCounter <= 2) {
+      errorCounter++;
+      return effects().error("simulated failure");
+    } else {
+      return effects().persist(new CounterEvent.ValueIncreased(value)).thenReply(Counter::value);
+    }
   }
 
   public Effect<Result<Error, Counter>> increaseWithResult(Integer value) {

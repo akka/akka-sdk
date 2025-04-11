@@ -18,8 +18,8 @@ public class DelegatingServiceEndpoint {
 
   private final HttpClient httpClient;
 
-  public DelegatingServiceEndpoint(HttpClientProvider componentClient) { // <1>
-    this.httpClient = componentClient.httpClientFor("counter"); // <2>
+  public DelegatingServiceEndpoint(HttpClientProvider httpClient) { // <1>
+    this.httpClient = httpClient.httpClientFor("counter"); // <2>
   }
 
   // model for the JSON we accept
