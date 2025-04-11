@@ -22,7 +22,7 @@ public class DelegatingGrpcEndpointImpl implements DelegatingGrpcEndpoint {
   }
 
   @Override
-  public CompletionStage<HelloReply> callAkkaService(HelloRequest in) {
+  public HelloReply callAkkaService(HelloRequest in) {
     return akkaService.sayHello(in); // <3>
   }
 

@@ -39,20 +39,19 @@ public class CustomersByNameViewIntegrationTest extends CustomerRegistryIntegrat
       .untilAsserted(() -> {
 
         Customer customer =
-          await(
             componentClient.forView()
               .method(CustomersByNameView::findByName)
-              .invokeAsync(created1.name())
-          ).customers().stream().findFirst().get();
+              .invoke(created1.name())
+          .customers().stream().findFirst().get();
 
         assertThat(customer).isEqualTo(new Customer("b", created1.email(), created1.name()));
 
         Customer customer2 =
-          await(
+
             componentClient.forView()
               .method(CustomersByEmailView::findByEmail)
-              .invokeAsync(created2.email())
-          ).customers().stream().findFirst().get();
+              .invoke(created2.email())
+          .customers().stream().findFirst().get();
 
         assertThat(customer2).isEqualTo(new Customer("a", created2.email(), created2.name()));
 

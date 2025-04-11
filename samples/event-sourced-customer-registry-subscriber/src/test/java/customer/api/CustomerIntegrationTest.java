@@ -42,10 +42,9 @@ public class CustomerIntegrationTest extends CustomerRegistryIntegrationTest {
       .pollInterval(1, TimeUnit.SECONDS)
       .atMost(10, TimeUnit.SECONDS)
       .untilAsserted(() -> {
-        StrictResponse<ByteString> res = await(
+        StrictResponse<ByteString> res =
           httpClient.POST("/customer/"+id)
-            .withRequestBody(createRequest).invokeAsync()
-        );
+            .withRequestBody(createRequest).invoke();
 
         assertThat(res.httpResponse().status()).isEqualTo(StatusCodes.CREATED);
       });
@@ -58,10 +57,10 @@ public class CustomerIntegrationTest extends CustomerRegistryIntegrationTest {
       .pollInterval(1, TimeUnit.SECONDS)
       .atMost(60, TimeUnit.SECONDS)
       .untilAsserted(() -> {
-        var foundCustomers = await(
+        var foundCustomers =
           componentClient.forView()
             .method(CustomersByNameView::findByName)
-            .invokeAsync(createRequest.name())
+            .invoke(createRequest.name()
         ).customers().stream().map(Customer::name);
 
         assertThat(foundCustomers).containsExactly(createRequest.name());
@@ -80,7 +79,7 @@ public class CustomerIntegrationTest extends CustomerRegistryIntegrationTest {
         .pollInterval(1, TimeUnit.SECONDS)
         .atMost(5, TimeUnit.MINUTES)
         .untilAsserted(() -> {
-          var response = await(httpClient.GET("").invokeAsync()).httpResponse();
+          var response = httpClient.GET("").invoke().httpResponse();
               // NOT_FOUND is a sign that the service is started and responding
             assertThat(response.status()).isEqualTo(StatusCodes.NOT_FOUND);
         });

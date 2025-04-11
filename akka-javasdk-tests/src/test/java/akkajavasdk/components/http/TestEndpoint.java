@@ -30,4 +30,10 @@ public class TestEndpoint extends AbstractHttpEndpoint {
   public List<SomeRecord> postListBody(List<SomeRecord> records) {
     return records;
   }
+
+  @Get("/on-virtual")
+  public String getOnVirtual() {
+    if (Thread.currentThread().isVirtual()) return "ok";
+    else throw new RuntimeException("Endpoint not executing on virtual thread");
+  }
 }

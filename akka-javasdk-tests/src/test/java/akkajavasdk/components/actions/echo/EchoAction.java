@@ -26,7 +26,11 @@ public class EchoAction extends TimedAction {
   }
 
   public Effect stringMessage(String msg) {
-    StaticTestBuffer.addValue("echo-action", msg);
+    if (msg.equals("check-if-virtual-thread")) {
+      StaticTestBuffer.addValue("echo-action", "is-virtual-thread:" + Thread.currentThread().isVirtual());
+    } else {
+      StaticTestBuffer.addValue("echo-action", msg);
+    }
     return effects().done();
   }
 

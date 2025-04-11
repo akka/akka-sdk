@@ -44,11 +44,9 @@ class CustomersByCityIntegrationTest extends TestKitSupport {
       .untilAsserted(() -> {
 
           CustomerList customersResponse =
-            await(
-              componentClient.forView()
-                .method(CustomersByCity::getCustomers) // <4>
-                .invokeAsync(List.of("Porto", "London"))
-            );
+            componentClient.forView()
+              .method(CustomersByCity::getCustomers) // <4>
+              .invoke(List.of("Porto", "London"));
 
           assertThat(customersResponse.customers()).containsOnly(johanna, bob);
         }

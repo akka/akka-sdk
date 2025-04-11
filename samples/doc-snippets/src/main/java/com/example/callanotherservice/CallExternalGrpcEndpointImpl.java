@@ -21,7 +21,7 @@ public class CallExternalGrpcEndpointImpl implements CallExternalGrpcEndpoint {
   }
 
   @Override
-  public CompletionStage<HelloReply> callExternalService(HelloRequest in) {
+  public HelloReply callExternalService(HelloRequest in) {
     return external.sayHello(in); // <3>
   }
 }

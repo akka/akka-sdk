@@ -5,7 +5,7 @@
 package akkajavasdk;
 
 import akka.grpc.GrpcServiceException;
-import akka.grpc.javadsl.SingleResponseRequestBuilder;
+import akka.grpc.javadsl.SingleBlockingResponseRequestBuilder;
 import akka.http.javadsl.model.StatusCodes;
 import akka.javasdk.http.StrictResponse;
 import akka.javasdk.testkit.TestKitSupport;
@@ -19,7 +19,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.Base64;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -33,17 +32,11 @@ public class JwtEndpointTest extends TestKitSupport {
   public void shouldReturnIssuerAndSubject() {
     var token = bearerTokenWith(Map.of("iss", "my-issuer-123", "sub", "my-subject-123"));
     
-    CompletableFuture<StrictResponse<String>> call = httpClient.GET("/hello").addHeader("Authorization", token)
+    StrictResponse<String> call = httpClient.GET("/hello").addHeader("Authorization", token)
         .responseBodyAs(String.class)
-        .invokeAsync().toCompletableFuture();
+        .invoke();
 
-    Awaitility.await()
-        .ignoreExceptions()
-        .atMost(5, TimeUnit.SECONDS)
-        .untilAsserted(() -> {
-          assertThat(call.get().body()).isEqualTo("issuer: my-issuer-123, subject: my-subject-123");
-        });
-
+    assertThat(call.body()).isEqualTo("issuer: my-issuer-123, subject: my-subject-123");
   }
 
   @Test
@@ -51,14 +44,9 @@ public class JwtEndpointTest extends TestKitSupport {
     var token = bearerTokenWith(Map.of("iss", "my-issuer-123"));
 
     var call = httpClient.GET("/hello").addHeader("Authorization", token)
-        .invokeAsync().toCompletableFuture();
+        .invoke();
 
-    Awaitility.await()
-        .ignoreExceptions()
-        .atMost(5, TimeUnit.SECONDS)
-        .untilAsserted(() -> {
-          assertThat(call.get().status()).isEqualTo(StatusCodes.FORBIDDEN);
-        });
+    assertThat(call.status()).isEqualTo(StatusCodes.FORBIDDEN);
   }
 
   @Test
@@ -92,7 +80,7 @@ public class JwtEndpointTest extends TestKitSupport {
 
     var correctIss = getGrpcEndpointClient(TestJwtsGrpcServiceClient.class)
         .addRequestHeader("Authorization", bearerTokenWith(Map.of("iss", "my-issuer-123")));
-    var response = await(correctIss.jwtIssuer().invoke(request));
+    var response = correctIss.jwtIssuer().invoke(request);
     assertThat(response.getData()).isEqualTo(request.getData());
   }
 
@@ -106,7 +94,7 @@ public class JwtEndpointTest extends TestKitSupport {
 
     var correctSub = getGrpcEndpointClient(TestJwtsGrpcServiceClient.class)
         .addRequestHeader("Authorization", bearerTokenWith(Map.of("iss", "my-issuer-123", "sub", "my-subject-123")));
-    var response = await(correctSub.jwtStaticClaimValue().invoke(request));
+    var response = correctSub.jwtStaticClaimValue().invoke(request);
     assertThat(response.getData()).isEqualTo(request.getData());
   }
 
@@ -120,7 +108,7 @@ public class JwtEndpointTest extends TestKitSupport {
 
     var correctSub = getGrpcEndpointClient(TestJwtsGrpcServiceClient.class)
         .addRequestHeader("Authorization", bearerTokenWith(Map.of("iss", "my-issuer-456", "sub", "my-subject-456")));
-    var response = await(correctSub.jwtStaticClaimPattern().invoke(request));
+    var response = correctSub.jwtStaticClaimPattern().invoke(request);
     assertThat(response.getData()).isEqualTo(request.getData());
   }
 
@@ -129,7 +117,7 @@ public class JwtEndpointTest extends TestKitSupport {
     String classIssuer = bearerTokenWith(Map.of("iss", "class-level-issuer"));
     var client = getGrpcEndpointClient(TestJwtsGrpcServiceClient.class)
         .addRequestHeader("Authorization", classIssuer);
-    var response = await(client.jwtInherited().invoke(request));
+    var response = client.jwtInherited().invoke(request);
     assertThat(response.getData()).isEqualTo(request.getData());
 
     var correctSub = getGrpcEndpointClient(TestJwtsGrpcServiceClient.class)
@@ -150,9 +138,9 @@ public class JwtEndpointTest extends TestKitSupport {
     }
   }
 
-  private void expectFailWith(SingleResponseRequestBuilder<TestGrpcServiceOuterClass.In, TestGrpcServiceOuterClass.Out> method, String expected) {
+  private void expectFailWith(SingleBlockingResponseRequestBuilder<TestGrpcServiceOuterClass.In, TestGrpcServiceOuterClass.Out> method, String expected) {
     try {
-      await(method.invoke(request));
+      method.invoke(request);
       fail("Expected exception");
     } catch (GrpcServiceException e) {
       assertThat(e.getMessage()).contains(expected);

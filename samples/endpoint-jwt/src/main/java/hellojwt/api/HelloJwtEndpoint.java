@@ -39,11 +39,11 @@ public class HelloJwtEndpoint extends AbstractHttpEndpoint {
   @JWT(validate = JWT.JwtMethodMode.BEARER_TOKEN, bearerTokenIssuers = {"my-issuer", "my-issuer2"}, staticClaims = @JWT.StaticClaim(claim = "sub", values = "my-subject"))
   // end::multiple-bearer-token-issuers[]
   @Get("/claims")
-  public CompletionStage<String> helloClaims() {
+  public String helloClaims() {
     var claims = requestContext().getJwtClaims(); // <1>
     var issuer = claims.issuer().get(); // <2>
     var sub = claims.subject().get(); // <2>
-    return completedStage("issuer: " + issuer + ", subject: " + sub);
+    return "issuer: " + issuer + ", subject: " + sub;
   }
   // tag::bearer-token[]
 

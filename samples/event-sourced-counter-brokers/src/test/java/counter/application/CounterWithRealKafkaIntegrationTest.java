@@ -40,30 +40,31 @@ public class CounterWithRealKafkaIntegrationTest extends TestKitSupport { // <1>
     // with a kafka container since the container preserves state
     var counterId = UUID.randomUUID().toString();
 
-    await(componentClient.forEventSourcedEntity(counterId)
+    componentClient.forEventSourcedEntity(counterId)
         .method(CounterEntity::increase)
-        .invokeAsync(20));
+        .invoke(20);
 
-    KafkaConsumer<String, byte[]> consumer = buildStringKafkaConsumer();
-    consumer.subscribe(Collections.singletonList("counter-events-with-meta"));
+    try (KafkaConsumer<String, byte[]> consumer = buildStringKafkaConsumer()) {
+      consumer.subscribe(Collections.singletonList("counter-events-with-meta"));
 
-    Awaitility.await()
-        .ignoreExceptions()
-        .atMost(ofSeconds(30))
-        .untilAsserted(() -> {
-          ConsumerRecords<String, byte[]> records = consumer.poll(Duration.ofMillis(200));
-          var foundRecord = false;
-          for (ConsumerRecord<String, byte[]> r : records) {
-            var increased = JsonSupport.decodeJson(CounterEvent.ValueIncreased.class, r.value());
-            String subjectId = new String(r.headers().headers("ce-subject").iterator().next().value(), StandardCharsets.UTF_8);
-            if (subjectId.equals(counterId) && increased.value() == 20) {
-              foundRecord = true;
-              break;
+      Awaitility.await()
+          .ignoreExceptions()
+          .atMost(ofSeconds(30))
+          .untilAsserted(() -> {
+            ConsumerRecords<String, byte[]> records = consumer.poll(Duration.ofMillis(200));
+            var foundRecord = false;
+            for (ConsumerRecord<String, byte[]> r : records) {
+              var increased = JsonSupport.decodeJson(CounterEvent.ValueIncreased.class, r.value());
+              String subjectId = new String(r.headers().headers("ce-subject").iterator().next().value(), StandardCharsets.UTF_8);
+              if (subjectId.equals(counterId) && increased.value() == 20) {
+                foundRecord = true;
+                break;
+              }
             }
-          }
 
-          assertTrue(foundRecord);
-        });
+            assertTrue(foundRecord);
+          });
+    }
   }
 
   private static KafkaConsumer<String, byte[]> buildStringKafkaConsumer() {

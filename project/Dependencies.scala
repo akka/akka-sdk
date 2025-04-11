@@ -7,12 +7,12 @@ object Dependencies {
     val ProtocolVersionMajor = 1
     val ProtocolVersionMinor = 1
     // Remember to bump kalix-runtime.version in akka-javasdk-maven/akka-javasdk-parent if bumping this
-    val RuntimeVersion = sys.props.getOrElse("kalix-runtime.version", "1.4.5")
+    val RuntimeVersion = sys.props.getOrElse("kalix-runtime.version", "1.4.6-3-c8e87256-SNAPSHOT")
   }
   // NOTE: embedded SDK should have the AkkaVersion aligned, when updating RuntimeVersion, make sure to check
   // if AkkaVersion and AkkaHttpVersion are aligned
   // for prod code, they are marked as Provided, but testkit still requires the alignment
-  val AkkaVersion = "2.10.2"
+  val AkkaVersion = "2.10.3"
   val AkkaHttpVersion = "10.7.0" // Note: should at least the Akka HTTP version required by Akka gRPC
 
   // Note: the Scala version must be aligned with the runtime
@@ -95,7 +95,22 @@ object Dependencies {
     jacksonDatabind,
     jacksonJdk8,
     jacksonJsr310,
-    jacksonParameterNames)
+    jacksonParameterNames,
+    // FIXME just for testing akka-grpc changes without runtime bump, drop before merging
+    akkaDependency("akka-cluster"),
+    akkaDependency("akka-cluster-sharding"),
+    akkaDependency("akka-cluster-sharding-typed"),
+    akkaDependency("akka-cluster-tools"),
+    akkaDependency("akka-cluster-typed"),
+    akkaDependency("akka-coordination"),
+    akkaDependency("akka-distributed-data"),
+    akkaDependency("akka-persistence"),
+    akkaDependency("akka-persistence-query"),
+    akkaDependency("akka-persistence-testkit"),
+    akkaDependency("akka-persistence-typed"),
+    akkaDependency("akka-remote"),
+    akkaDependency("akka-serialization-jackson"),
+    akkaDependency("akka-stream-typed"))
 
   // Important: be careful when adding dependencies here, unless provided, runtime or test they will also be packaged in the user project
   //            binaries/artifacts unless explicitly excluded in the akka-javasdk-parent assembly descriptor
