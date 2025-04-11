@@ -14,9 +14,6 @@ import akka.javasdk.http.AbstractHttpEndpoint;
 
 // end::accessing-claims[]
 
-import java.util.concurrent.CompletionStage;
-import static java.util.concurrent.CompletableFuture.completedStage;
-
 // Opened up for access from the public internet to make the sample service easy to try out.
 // For actual services meant for production this must be carefully considered, and often set more limited
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
@@ -29,8 +26,8 @@ public class HelloJwtEndpoint extends AbstractHttpEndpoint {
   // end::accessing-claims[]
 
   @Get("/")
-  public CompletionStage<String> hello() {
-    return completedStage("Hello, World!");
+  public String hello() {
+    return "Hello, World!";
   }
 
   // tag::accessing-claims[]
