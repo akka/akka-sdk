@@ -354,6 +354,9 @@ public abstract class Workflow<S> {
      */
     public WorkflowDef<S> addStep(Step step) {
       addStepWithValidation(step);
+      if (step.timeout().isPresent()) {
+        stepConfigs.add(new StepConfig(step.name(), step.timeout(), Optional.empty()));
+      }
       return this;
     }
 
