@@ -18,41 +18,41 @@ public class ShoppingCartIntegrationTest extends TestKitSupport {
                 1,
                 "A large television");
 
-        var response1 = await(componentClient
+        var response1 = componentClient
                 .forEventSourcedEntity(userId)
                 .method(ShoppingCartEntity::addItem)
-                .invokeAsync(item1));
+                .invoke(item1);
         Assertions.assertNotNull(response1);
 
         var item2 = new ShoppingCartEntity.AddLineItemCommand("user", "tv-table",
                 "Table for TV",
                 1,
                 "A table perfectly sized to hold a TV");
-        var response2 = await(componentClient
+        var response2 = componentClient
                 .forEventSourcedEntity(userId)
                 .method(ShoppingCartEntity::addItem)
-                .invokeAsync(item2));
+                .invoke(item2);
         Assertions.assertNotNull(response2);
 
-        ShoppingCartState cartInfo = await(componentClient
+        ShoppingCartState cartInfo = componentClient
                 .forEventSourcedEntity(userId)
                 .method(ShoppingCartEntity::getCart)
-                .invokeAsync());
+                .invoke();
         Assertions.assertEquals(2, cartInfo.items().size());
 
         // removing one of the items
-        var response3 = await(componentClient
+        var response3 = componentClient
                 .forEventSourcedEntity(userId)
                 .method(ShoppingCartEntity::removeItem)
-                .invokeAsync(item1.productId()));
+                .invoke(item1.productId());
 
         Assertions.assertNotNull(response3);
 
         // confirming only one product remains
-        ShoppingCartState cartUpdated = await(componentClient
+        ShoppingCartState cartUpdated = componentClient
                 .forEventSourcedEntity(userId)
                 .method(ShoppingCartEntity::getCart)
-                .invokeAsync());
+                .invoke();
         Assertions.assertEquals(1, cartUpdated.items().size());
         var t2 = new ShoppingCartState.LineItem("tv-table", 1);
         Assertions.assertEquals(t2, cartUpdated.items().get(0));

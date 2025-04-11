@@ -29,11 +29,10 @@ public class CounterSetup implements ServiceSetup {
   @Override
   public void onStartup() { // <3>
     logger.info("Service starting up");
-    componentClient.forEventSourcedEntity("123")
+    var result = componentClient.forEventSourcedEntity("123")
         .method(Counter::get)
-        .invokeAsync().thenAccept(result ->
-          logger.info("Initial value for entity 123 is [{}]", result)
-        );
+        .invoke();
+    logger.info("Initial value for entity 123 is [{}]", result);
   }
   // end::lifecycle[]
 

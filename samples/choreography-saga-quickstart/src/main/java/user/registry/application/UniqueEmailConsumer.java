@@ -57,17 +57,17 @@ public class UniqueEmailConsumer extends Consumer {
           .forKeyValueEntity(email.address())
           .method(UniqueEmailEntity::cancelReservation).deferred();
 
-      var timer = timers().startSingleTimer(
+      timers().startSingleTimer(
         timerId,
         delay,
         callToUnReserve);
 
-      return effects().asyncDone(timer);
+      return effects().done();
 
     } else if (email.isConfirmed()) {
       logger.info("Email is already confirmed, deleting timer (if exists) '{}'", timerId);
-      var cancellation = timers().cancel(timerId);
-      return effects().asyncDone(cancellation);
+      timers().cancel(timerId);
+      return effects().done();
 
     } else {
       // Email is not reserved, so we don't need to do anything

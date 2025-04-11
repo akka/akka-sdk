@@ -68,6 +68,10 @@ public class TransferWorkflow extends Workflow<TransferState> {
     }
   }
 
+  public Effect<Boolean> commandHandlerIsOnVirtualThread() {
+    return effects().reply(Thread.currentThread().isVirtual());
+  }
+
   public Effect<Message> genericStringsCall(List<String> primitives) {
     return effects().reply(new Message("genericCall ok"));
   }

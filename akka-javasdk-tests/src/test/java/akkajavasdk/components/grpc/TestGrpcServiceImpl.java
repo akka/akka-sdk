@@ -31,7 +31,10 @@ public class TestGrpcServiceImpl implements TestGrpcService {
   @Override
   public CompletionStage<TestGrpcServiceOuterClass.Out> simple(TestGrpcServiceOuterClass.In in) {
     return CompletableFuture.completedFuture(
-        TestGrpcServiceOuterClass.Out.newBuilder().setData(in.getData()).build()
+        TestGrpcServiceOuterClass.Out.newBuilder()
+            .setData(in.getData())
+            .setWasOnVirtualThread(Thread.currentThread().isVirtual())
+            .build()
     );
   }
 

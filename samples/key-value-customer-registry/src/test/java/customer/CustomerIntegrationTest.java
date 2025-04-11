@@ -35,11 +35,10 @@ public class CustomerIntegrationTest extends TestKitSupport {
   }
 
   private Customer getCustomerById(String customerId) {
-    return await(
+    return
       componentClient
         .forKeyValueEntity(customerId)
-        .method(CustomerEntity::getCustomer).invokeAsync()
-    );
+        .method(CustomerEntity::getCustomer).invoke();
   }
 
   @Test
@@ -47,9 +46,9 @@ public class CustomerIntegrationTest extends TestKitSupport {
     var id = newUniqueId();
     var customer = new Customer("foo@example.com", "Johanna", new Address("Some Street", "Somewhere"));
 
-    var response = await(httpClient.POST("/customer/" + id)
+    var response = httpClient.POST("/customer/" + id)
         .withRequestBody(customer)
-        .invokeAsync());
+        .invoke();
 
     Assertions.assertEquals(StatusCodes.CREATED, response.status());
     Assertions.assertEquals("Johanna", getCustomerById(id).name());
@@ -60,7 +59,7 @@ public class CustomerIntegrationTest extends TestKitSupport {
     var id = newUniqueId();
     createCustomer(id, new Customer("foo@example.com", "Johanna", new Address("Some Street", "Somewhere")));
 
-    var response = await(httpClient.PATCH("/customer/" + id + "/name/Katarina").invokeAsync());
+    var response = httpClient.PATCH("/customer/" + id + "/name/Katarina").invoke();
     Assertions.assertEquals(StatusCodes.OK, response.status());
     Assertions.assertEquals("Katarina", getCustomerById(id).name());
   }
@@ -71,9 +70,9 @@ public class CustomerIntegrationTest extends TestKitSupport {
     createCustomer(id, new Customer("foo@example.com", "Johanna", new Address("Regent Street","London")));
 
     var newAddress = new Address("Elm st. 5", "New Orleans");
-    var response = await(httpClient.PATCH("/customer/" + id + "/address")
+    var response = httpClient.PATCH("/customer/" + id + "/address")
         .withRequestBody(newAddress)
-        .invokeAsync());
+        .invoke();
     Assertions.assertEquals(StatusCodes.OK, response.status());
     Assertions.assertEquals("Elm st. 5", getCustomerById(id).address().street());
   }
@@ -93,11 +92,11 @@ public class CustomerIntegrationTest extends TestKitSupport {
         .atMost(10, TimeUnit.of(SECONDS))
         .untilAsserted(() -> {
           CustomerList response =
-            await(
+
               componentClient
                 .forView()
                 .method(CustomersByCity::getCustomers)
-                .invokeAsync(List.of("Nazare", "Lisbon"))
+                .invoke(List.of("Nazare", "Lisbon")
             );
           assertThat(response.customers()).containsOnly(johanna, joe);
         });
@@ -113,11 +112,9 @@ public class CustomerIntegrationTest extends TestKitSupport {
         .ignoreExceptions()
         .atMost(20, TimeUnit.SECONDS)
         .until(() ->
-                await(
-                    componentClient.forView()
-                        .method(CustomersByName::getCustomers)
-                        .invokeAsync("Foo")
-                ).customers().stream().findFirst().get().name(),
+            componentClient.forView()
+                .method(CustomersByName::getCustomers)
+                .invoke("Foo").customers().stream().findFirst().get().name(),
             new IsEqual("Foo")
         );
   }
@@ -132,11 +129,10 @@ public class CustomerIntegrationTest extends TestKitSupport {
         .ignoreExceptions()
         .atMost(20, TimeUnit.SECONDS)
         .untilAsserted(() -> {
-          var foundCustomers = await(
+          var foundCustomers =
               componentClient.forView()
                   .method(CustomersByEmail::getCustomer)
-                  .invokeAsync("bar@example.com")
-          );
+                  .invoke("bar@example.com");
 
           Assertions.assertEquals(1, foundCustomers.customers().size());
           Assertions.assertEquals("Bar", foundCustomers.customers().getFirst().name());
@@ -145,12 +141,11 @@ public class CustomerIntegrationTest extends TestKitSupport {
 
   private void createCustomer(String id, Customer customer) {
     var res =
-      await(
+
         componentClient
           .forKeyValueEntity(id)
           .method(CustomerEntity::create)
-          .invokeAsync(customer)
-      );
+          .invoke(customer);
     Assertions.assertEquals(Done.done(), res);
   }
 

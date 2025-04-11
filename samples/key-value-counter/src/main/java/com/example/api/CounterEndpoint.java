@@ -29,45 +29,45 @@ public class CounterEndpoint {
   }
 
   @Post("/{counterId}/plus-one")
-  public CompletionStage<Integer> plusOne(String counterId) {
-    return componentClient.forKeyValueEntity(counterId)
+  public Integer plusOne(String counterId) {
+    var result = componentClient.forKeyValueEntity(counterId)
         .method(CounterEntity::plusOne)
-        .invokeAsync()
-        .thenApply(Counter::value);
+        .invoke();
+    return result.value();
   }
 
   @Put("/{counterId}/set")
-  public CompletionStage<Integer> set(String counterId, Counter increaseBy) {
-    return componentClient.forKeyValueEntity(counterId)
+  public Integer set(String counterId, Counter increaseBy) {
+    var result = componentClient.forKeyValueEntity(counterId)
         .method(CounterEntity::set)
-        .invokeAsync(increaseBy.value())
-        .thenApply(Counter::value);
+        .invoke(increaseBy.value());
+    return result.value();
   }
 
   // end::endpoint[]
 
   @Post("/{counterId}/increase")
-  public CompletionStage<Integer> increaseBy(String counterId, int increaseBy) {
-    return componentClient.forKeyValueEntity(counterId)
+  public Integer increaseBy(String counterId, int increaseBy) {
+    var result = componentClient.forKeyValueEntity(counterId)
         .method(CounterEntity::increaseBy)
-        .invokeAsync(increaseBy)
-        .thenApply(Counter::value);
+        .invoke(increaseBy);
+    return result.value();
   }
 
   @Get("/{counterId}")
-  public CompletionStage<Integer> get(String counterId) {
-    return componentClient.forKeyValueEntity(counterId)
+  public Integer get(String counterId) {
+    var result = componentClient.forKeyValueEntity(counterId)
       .method(CounterEntity::get)
-      .invokeAsync()
-      .thenApply(Counter::value);
+      .invoke();
+    return result.value();
   }
 
   @Delete("/{counterId}")
-  public CompletionStage<HttpResponse> delete(String counterId) {
-    return componentClient.forKeyValueEntity(counterId)
+  public HttpResponse delete(String counterId) {
+    componentClient.forKeyValueEntity(counterId)
       .method(CounterEntity::delete)
-      .invokeAsync()
-      .thenApply(__ -> HttpResponses.ok());
+      .invoke();
+    return HttpResponses.ok();
   }
 
   // tag::endpoint[]
