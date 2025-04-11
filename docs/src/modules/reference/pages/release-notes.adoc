@@ -9,6 +9,11 @@ Current versions
 * xref:java:index.adoc[Akka SDK {akka-javasdk-version}]
 * Akka CLI {akka-cli-version}
 * A glance of all Akka libraries and their current versions is presented at https://doc.akka.io/libraries/akka-dependencies/current[Akka library versions].
+== April 2025
+
+* https://github.com/akka/akka/releases/tag/v2.10.3[Akka core 2.10.3]
+- Support for virtual threads on Java 21
+- New API for retries
 
 == March 2025
 

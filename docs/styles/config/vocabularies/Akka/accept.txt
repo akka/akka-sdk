@@ -195,3 +195,9 @@ volumeMounts
 Yugabyte
 Zolotko
 [Zz]sh
+Linode
+classpath
+kubectl
+dns
+DNS
+

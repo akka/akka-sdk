@@ -1,0 +1,35 @@
+version: "3"
+services:
+  postgres-db:
+    image: postgres:latest
+    container_name: postgres_db
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    healthcheck:
+      test: [ 'CMD', 'pg_isready', "-q", "-d", "postgres", "-U", "postgres" ]
+      interval: 5s
+      retries: 5
+      start_period: 5s
+      timeout: 5s
+
+  shopping-cart-service:
+    image: shopping-cart-quickstart:1.0-SNAPSHOT-20250407061652
+    container_name: shopping-cart-service
+    depends_on:
+      - postgres-db
+    ports:
+      - "9000:9000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      # jvm -D properties can be added under this environment map (note: remove this comment when adding properties)
+      JAVA_TOOL_OPTIONS: >
+
+      # those variables are defined in the .env file
+      STANDALONE_SINGLE_NODE:
+        true
+      DB_HOST:
+        "postgres-db"

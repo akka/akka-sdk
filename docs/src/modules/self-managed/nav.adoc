@@ -1,0 +1,2 @@
+** xref:self-managed:index.adoc[]
+*** xref:self-managed:configuring.adoc[]

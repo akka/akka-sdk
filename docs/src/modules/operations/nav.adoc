@@ -1,6 +1,9 @@
 // Operating Services
 
 ** xref:operations:index.adoc[]
+
+*** xref:operations:platform-features.adoc[]
+
 *** xref:operations:organizations/index.adoc[]
 **** xref:operations:organizations/manage-users.adoc[Manage users]
 **** xref:operations:organizations/regions.adoc[]

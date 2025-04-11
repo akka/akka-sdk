@@ -1,6 +1,6 @@
 = Welcome to Akka
 
-Akka is a platform designed for building and running responsive applications. It adheres to the *Reactive Principles*, which promote creating services and systems that are elastic, agile, and resilient.
+Akka is designed for building and running responsive applications. It adheres to the *Reactive Principles*, which promote creating services and systems that are elastic, agile, and resilient.
 
 == Key Principles
 * *Elastic*: Akka applications automatically scale to varying workloads and position active-active replicas close to users.
@@ -8,7 +8,9 @@ Akka is a platform designed for building and running responsive applications. It
 * *Resilient*: Akka applications function as self-managed in-memory databases, ensuring recoverability and replicability to handle potential failures.
 
 == Development and Operations
-Akka simplifies the development and operation of responsive applications by providing libraries, components, sandboxes, buildpacks, and a cloud runtime. The platform self-manages infrastructure to ensure elasticity, agility, and resilience, allowing applications to achieve their Service Level Agreement (SLA) goals. This includes managing database persistence, networking, clustering, and orchestration.
+Akka Platform simplifies the development and operation of responsive applications by providing libraries, components, sandboxes, buildpacks, and a cloud runtime. Akka Platform manages infrastructure to ensure elasticity, agility, and resilience, allowing applications to achieve their Service Level Agreement (SLA) goals. This includes managing database persistence, networking, clustering, and orchestration.
+
+Alternatively, Akka applications written with the Akka SDK or the Akka Libraries can run self-hosted on any infrastructure.
 
 Akka applications are inherently event-driven, allowing developers to focus on building durable, stateful services without needing to navigate complex messaging or asynchronous programming issues. A new developer can design and implement stateful services within a day, achieving low latency and burstable performance of up to 1 million input/output operations per second (IOPS). This is made possible by integrating microservices best practices into the application and runtime transparently.
 
@@ -30,9 +32,9 @@ Developers need only Java 21 and Maven as dependencies. The Akka SDK build proce
 Developers can access a local console that replicates runtime observability, tracing, and debugging capabilities. Applications can be pushed directly to a cloud runtime or deployed via a Continuous Integration/Continuous Deployment (CI/CD) pipeline.
 
 == DevOps Operations
-Operators can configure application elasticity without deep architectural knowledge. Akka automates instance management to meet traffic needs while preserving performance SLAs. Services can be replicated xref:concepts:multi-region.adoc[across multiple regions], spanning different geographies and environments.
+Operators can configure application elasticity without deep architectural knowledge. Akka Platform automates instance management to meet traffic needs while preserving performance SLAs. Services can be replicated xref:concepts:multi-region.adoc[across multiple regions], spanning different geographies and environments.
 Stateful services can be read-replicated or write-replicated with conflict resolution options. Services can migrate between locations without downtime and can be restarted from specific points in time.
-Developers have access to a component library for creating various application types, including transactional, durable, Artificial Intelligence (AI) Retrieval-Augmented Generation (RAG), analytics, edge, event-sourced, and streaming applications.
+Developers have access to a component library for creating various application types, including transactional, durable, Artificial Intelligence (AI), Retrieval-Augmented Generation (RAG), analytics, edge, event-sourced, and streaming applications.
 
 == Key Components
 * *Entities*: Act as in-memory databases, either event-sourced or key-value.
