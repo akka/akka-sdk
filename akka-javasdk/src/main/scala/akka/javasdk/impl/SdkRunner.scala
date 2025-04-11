@@ -339,7 +339,7 @@ private final class Sdk(
 
   private val logger = LoggerFactory.getLogger(getClass)
   private val serializer = new JsonSerializer
-  private val asyncUtils = new RetriesImpl(system.classicSystem)
+  private lazy val retries = new RetriesImpl(system.classicSystem)
   private val ComponentLocator.LocatedClasses(componentClasses, maybeServiceClass) =
     ComponentLocator.locateUserComponents(system)
   @volatile private var dependencyProviderOpt: Option[DependencyProvider] = dependencyProviderOverride
@@ -626,7 +626,7 @@ private final class Sdk(
     case g if g == classOf[GrpcClientProvider] => grpcClientProvider(span)
     case t if t == classOf[TimerScheduler]     => timerScheduler(span)
     case m if m == classOf[Materializer]       => sdkMaterializer
-    case a if a == classOf[Retries]            => asyncUtils
+    case a if a == classOf[Retries]            => retries
   }
 
   val spiComponents: SpiComponents = {
