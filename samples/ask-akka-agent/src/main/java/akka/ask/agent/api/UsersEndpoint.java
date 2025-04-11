@@ -26,7 +26,7 @@ public class UsersEndpoint {
   public CompletionStage<ConversationHistoryView.ConversationHistory> getSession(String userId) {
 
     return componentClient.forView()
-        .method(ConversationHistoryView::getMessagesBySession)
+        .method(ConversationHistoryView::getSessionsByUser)
         .invokeAsync(userId);
   }
 
