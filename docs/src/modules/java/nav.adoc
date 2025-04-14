@@ -27,3 +27,4 @@
 **** xref:java:shopping-cart/addview.adoc[]
 *** xref:java:ask-akka/index.adoc[]
 **** xref:java:ask-akka/session.adoc[]
+**** xref:java:ask-akka/indexer.adoc[]

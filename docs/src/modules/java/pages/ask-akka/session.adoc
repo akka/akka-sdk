@@ -98,5 +98,4 @@ include::example$ask-akka-agent/src/main/java/akka/ask/agent/application/Convers
 
 Now would be an ideal time to create xref:java:views.adoc#_testing_the_view[unit tests] for the view and the entity. Once you've done that (or skipped it), it's time to explore our first aspect of the agentic RAG flow: the indexing *workflow* and the *vector database*.
 
-IMPORTANT: *Coming soon!* We are actively working on building and vetting this content. We will announce more content as it arrives.
 
