@@ -30,8 +30,7 @@ public interface TimerScheduler {
    * @param delay delay, starting from now, in which the timer should be triggered
    * @param deferredCall a call to component that will be executed when the timer is triggered
    */
-  <I, O> void startSingleTimer(
-      String name, Duration delay, DeferredCall<I, O> deferredCall);
+  <I, O> void startSingleTimer(String name, Duration delay, DeferredCall<I, O> deferredCall);
 
   /**
    * Schedule a single timer. Timers allow for scheduling calls in the future. For example, to
@@ -78,7 +77,8 @@ public interface TimerScheduler {
    * @param name unique name for the timer
    * @param delay delay, starting from now, in which the timer should be triggered
    * @param deferredCall a call to component that will be executed when the timer is triggered
-   * @return A completion stage that is completed successfully or failed, once the timer has been scheduled
+   * @return A completion stage that is completed successfully or failed, once the timer has been
+   *     scheduled
    */
   <I, O> CompletionStage<Done> startSingleTimerAsync(
       String name, Duration delay, DeferredCall<I, O> deferredCall);
@@ -101,7 +101,8 @@ public interface TimerScheduler {
    * @param delay delay, starting from now, in which the timer should be triggered
    * @param maxRetries Retry up to this many times before giving up
    * @param deferredCall a call to component that will be executed when the timer is triggered
-   * @return A completion stage that is completed successfully or failed, once the timer has been scheduled
+   * @return A completion stage that is completed successfully or failed, once the timer has been
+   *     scheduled
    */
   <I, O> CompletionStage<Done> startSingleTimerAsync(
       String name, Duration delay, int maxRetries, DeferredCall<I, O> deferredCall);
