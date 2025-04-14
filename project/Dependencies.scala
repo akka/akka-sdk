@@ -95,22 +95,7 @@ object Dependencies {
     jacksonDatabind,
     jacksonJdk8,
     jacksonJsr310,
-    jacksonParameterNames,
-    // FIXME just for testing akka-grpc changes without runtime bump, drop before merging
-    akkaDependency("akka-cluster"),
-    akkaDependency("akka-cluster-sharding"),
-    akkaDependency("akka-cluster-sharding-typed"),
-    akkaDependency("akka-cluster-tools"),
-    akkaDependency("akka-cluster-typed"),
-    akkaDependency("akka-coordination"),
-    akkaDependency("akka-distributed-data"),
-    akkaDependency("akka-persistence"),
-    akkaDependency("akka-persistence-query"),
-    akkaDependency("akka-persistence-testkit"),
-    akkaDependency("akka-persistence-typed"),
-    akkaDependency("akka-remote"),
-    akkaDependency("akka-serialization-jackson"),
-    akkaDependency("akka-stream-typed"))
+    jacksonParameterNames)
 
   // Important: be careful when adding dependencies here, unless provided, runtime or test they will also be packaged in the user project
   //            binaries/artifacts unless explicitly excluded in the akka-javasdk-parent assembly descriptor
