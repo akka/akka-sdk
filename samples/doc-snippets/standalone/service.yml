@@ -5,7 +5,7 @@ metadata:
 spec:
   selector:
     app: shopping-cart-service
-  type: NodePort
+  type: ClusterIP
   ports:
     - protocol: TCP
       port: 9000

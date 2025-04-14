@@ -137,7 +137,7 @@ Deploy to Kubernetes with:
 5) kubectl get pods
 ----
 
-As a first test you can create a fort forward with:
+As a first test you can create a port forward with:
 
 [source, shell script]
 ----
