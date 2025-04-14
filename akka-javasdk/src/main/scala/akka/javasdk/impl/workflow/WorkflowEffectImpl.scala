@@ -53,6 +53,9 @@ object WorkflowEffectImpl {
     override def pause(): TransitionalEffect[Void] =
       TransitionalEffectImpl(persistence, Pause)
 
+    override def pause(keepAlive: Boolean): TransitionalEffect[Void] =
+      TransitionalEffectImpl(persistence, Pause) //TODO handle that flag
+
     override def transitionTo[I](stepName: String, input: I): TransitionalEffect[Void] =
       TransitionalEffectImpl(persistence, StepTransition(stepName, Some(input)))
 
@@ -99,6 +102,9 @@ case class WorkflowEffectImpl[S, T](persistence: Persistence[S], transition: Tra
 
   override def pause(): TransitionalEffect[Void] =
     TransitionalEffectImpl(NoPersistence, Pause)
+
+  override def pause(keepAlive: Boolean): TransitionalEffect[Void] =
+    TransitionalEffectImpl(NoPersistence, Pause) //TODO handle that flag
 
   override def transitionTo[I](stepName: String, input: I): TransitionalEffect[Void] =
     TransitionalEffectImpl(NoPersistence, StepTransition(stepName, Some(input)))
