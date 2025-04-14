@@ -29,9 +29,7 @@ The component client can call command handlers on Event Sourced Entities, Key Va
 
 The component client is available for injection only in Service Setup, Endpoints, Consumers, Timed Actions, and Workflows. For more information, see xref:java:setup-and-dependency-injection.adoc#_dependency_injection[dependency injection].
 
-It is also possible to do calls but not wait on their completion, using `ComponentClient.invokeAsync` instead returns
-`CompletionStage<T>` which makes it possible to trigger multiple calls at once, without waiting for the first one to complete,
-so that they will be processed in parallel.
+It’s also possible to make calls without waiting for them to complete by using `ComponentClient.invokeAsync`, which returns a `CompletionStage<T>`. This allows you to trigger multiple calls concurrently, enabling parallel processing.
 
 [source,java,indent=0]
 .{sample-base-url}/event-sourced-counter-brokers/src/main/java/counter/api/CounterEndpoint.java[CounterEndpoint.java]

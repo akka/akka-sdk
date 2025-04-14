@@ -156,7 +156,7 @@ include::example$shopping-cart-quickstart/src/main/java/shoppingcart/api/Shoppin
 <2> Accept the `ComponentClient` and keep it in a field.
 <3> GET endpoint path is combined with a path parameter name, e.g. `/carts/123`.
 <4> The component client can be used to interact with other components.
-<5> Result of a request to a component is the reply type from the effect.
+<5> Result of a request to a component is the Effect's reply type.
 <6> Use path parameter `+{cartId}+` in combination with request body `ShoppingCart.LineItem`.
 <7> Result of request mapped to a more suitable response, in this case, `200 Ok` with an empty body.
 
