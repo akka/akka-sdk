@@ -173,7 +173,7 @@ public class UserEndpoint {
 
 
   @Get("/by-country/{country}")
-  public CompletionStage<UsersByCountryView.UserList> getUsersByCountry(String country) {
+  public CompletionStage<UsersByCountryView.UserEntries> getUsersByCountry(String country) {
     return
       client.forView()
         .method(UsersByCountryView::getUserByCountry)

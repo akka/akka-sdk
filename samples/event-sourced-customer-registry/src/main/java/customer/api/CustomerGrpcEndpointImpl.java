@@ -7,14 +7,14 @@ import akka.javasdk.annotations.GrpcEndpoint;
 import akka.javasdk.client.ComponentClient;
 import akka.stream.javadsl.Source;
 import customer.api.proto.*;
-import customer.application.CustomerByEmailView;
-import customer.application.CustomerByNameView;
+import customer.application.CustomersByEmailView;
+import customer.application.CustomersByNameView;
 import customer.application.CustomerEntity;
+import customer.domain.CustomerEntry;
 import io.grpc.Status;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.ALL))
@@ -91,7 +91,7 @@ public class CustomerGrpcEndpointImpl implements CustomerGrpcEndpoint {
   @Override
   public CompletionStage<CustomerList> customerByName(CustomerByNameRequest in) {
     return componentClient.forView()
-        .method(CustomerByNameView::getCustomers)
+        .method(CustomersByNameView::getCustomers)
         .invokeAsync(in.getName())
         .thenApply(viewCustomerList -> {
           var apiCustomers = viewCustomerList.customers().stream().map(this::domainToApi).toList();
@@ -103,7 +103,7 @@ public class CustomerGrpcEndpointImpl implements CustomerGrpcEndpoint {
   @Override
   public CompletionStage<CustomerList> customerByEmail(CustomerByEmailRequest in) {
     return componentClient.forView()
-        .method(CustomerByEmailView::getCustomers)
+        .method(CustomersByEmailView::getCustomers)
         .invokeAsync(in.getEmail())
         .thenApply(viewCustomerList -> {
           var apiCustomers = viewCustomerList.customers().stream().map(this::domainToApi).toList();
@@ -118,7 +118,7 @@ public class CustomerGrpcEndpointImpl implements CustomerGrpcEndpoint {
     // Shows of streaming consumption of a view, transforming
     // each element and passing along to a streamed response
     var customerSummarySource = componentClient.forView()
-        .stream(CustomerByEmailView::getCustomersStream)
+        .stream(CustomersByEmailView::getCustomersStream)
         .source(in.getEmail());
 
     return customerSummarySource.map(c ->
@@ -170,7 +170,7 @@ public class CustomerGrpcEndpointImpl implements CustomerGrpcEndpoint {
   }
   // end::endpoint-component-interaction[]
 
-  private Customer domainToApi(customer.domain.CustomerRow domainRow) {
+  private Customer domainToApi(CustomerEntry domainRow) {
     return Customer.newBuilder()
         .setName(domainRow.name())
         .setEmail(domainRow.email())
