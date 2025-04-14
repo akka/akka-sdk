@@ -62,6 +62,8 @@ The following types can be injected in Service Setup, HTTP Endpoints, gRPC Endpo
 |Used for running Akka streams
 | `com.typesafe.config.Config`
 | Access the user defined configuration picked up from `application.conf`
+| `akka.javasdk.Retries`
+| Utility for retrying calls
 |===
 
 Furthermore, the following component specific types can also be injected:
