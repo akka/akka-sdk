@@ -11,9 +11,19 @@ This model simplifies development by removing the need to handle persistence, di
 
 For details on the specific Effect types, refer to the documentation for each component.
 
-* xref:java:event-sourced-entities.adoc#_effect_api[Event Sourced Entities]
-* xref:java:key-value-entities.adoc#_effect_api[Key Value Entities]
-* xref:java:views.adoc#_effect_api[Views]
-* xref:java:workflows.adoc#_effect_api[Workflows]
-* xref:java:timed-actions.adoc#_effect_api[Timers]
-* xref:java:consuming-producing.adoc#_effect_api[Consumers]
+[cols="1,3", width=85%]
+|===
+| Component | Available Effects
+
+| xref:java:event-sourced-entities.adoc#_effect_api[Event Sourced Entities] | Persist Events, Reply, Delete Entity, Error
+| xref:java:key-value-entities.adoc#_effect_api[Key Value Entities] | Update State, Reply, Delete State, Error 
+| xref:java:views.adoc#_effect_api[Views] | Update State, Delete State, Ignore
+| xref:java:workflows.adoc#_effect_api[Workflows] |  Update State, Transition, Pause, End, Reject Command, Reply
+| xref:java:timed-actions.adoc#_effect_api[Timers] | Confirm Scheduled Call, Error
+| xref:java:consuming-producing.adoc#_effect_api[Consumers] | Publish to Topic, Confirm Message, Ignore
+
+|===
+
+
+
+
