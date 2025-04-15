@@ -10,14 +10,13 @@ import akka.javasdk.client.ComponentClient;
 import akkajavasdk.StaticTestBuffer;
 
 import java.util.List;
+import java.util.concurrent.Executor;
 
 @ComponentId("echo")
 public class EchoAction extends TimedAction {
 
-  private final ComponentClient componentClient;
-
-  public EchoAction(ComponentClient componentClient) {
-    this.componentClient = componentClient;
+  // executor and component client just to cover that they can be injected, not really used here
+  public EchoAction(ComponentClient componentClient, Executor virtualThreadExecutor) {
   }
 
   public Effect emptyMessage() {

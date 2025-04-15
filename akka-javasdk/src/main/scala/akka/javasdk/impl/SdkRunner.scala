@@ -19,7 +19,6 @@ import scala.jdk.OptionConverters.RichOption
 import scala.jdk.OptionConverters.RichOptional
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
-
 import akka.Done
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
@@ -108,6 +107,8 @@ import io.opentelemetry.context.{ Context => OtelContext }
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
+
+import java.util.concurrent.Executor
 
 /**
  * INTERNAL API
@@ -622,6 +623,9 @@ private final class Sdk(
     case g if g == classOf[GrpcClientProvider] => grpcClientProvider(span)
     case t if t == classOf[TimerScheduler]     => timerScheduler(span)
     case m if m == classOf[Materializer]       => sdkMaterializer
+    case e if e == classOf[Executor]           =>
+      // The type does not guarantee this is a Java concurrent Executor, but we know it is, since supplied from runtime
+      sdkExecutionContext.asInstanceOf[Executor]
   }
 
   val spiComponents: SpiComponents = {
