@@ -127,7 +127,7 @@ public class RagIndexingWorkflow extends Workflow<RagIndexingWorkflow.State> {
       return effects()
           .updateState(State.of(documents))
           .transitionTo(PROCESSING_FILE_STEP) // <1>
-          .thenReply(Done.getInstance());
+          .thenReply(Done.done());
     }
   }
   // end::start[]
