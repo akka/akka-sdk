@@ -18,7 +18,7 @@ public sealed interface FraudDetectionResult {
     }
   }
 
-  final class TransferRejected implements  FraudDetectionResult {
+  final class TransferRejected implements FraudDetectionResult {
     public final Transfer transfer;
 
     @JsonCreator
@@ -27,7 +27,7 @@ public sealed interface FraudDetectionResult {
     }
   }
 
-  final class TransferRequiresManualAcceptation implements  FraudDetectionResult {
+  final class TransferRequiresManualAcceptation implements FraudDetectionResult {
     public final Transfer transfer;
 
     @JsonCreator
