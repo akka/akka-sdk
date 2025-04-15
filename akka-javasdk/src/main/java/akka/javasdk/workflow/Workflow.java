@@ -516,7 +516,7 @@ public abstract class Workflow<S> {
     /**
      * Define a step timeout.
      */
-    private CallStep<CallInput, CallOutput, FailoverInput> timeout(Duration timeout) {
+    public CallStep<CallInput, CallOutput, FailoverInput> timeout(Duration timeout) {
       this._timeout = Optional.of(timeout);
       return this;
     }
@@ -531,6 +531,9 @@ public abstract class Workflow<S> {
     final public Class<CallOutput> transitionInputClass;
     private Optional<Duration> _timeout = Optional.empty();
 
+    /**
+     * Not for direct user construction, instances are created through the workflow DSL
+     */
     public AsyncCallStep(String name,
                          Class<CallInput> callInputClass,
                          Function<CallInput, CompletionStage<CallOutput>> callFunc,
