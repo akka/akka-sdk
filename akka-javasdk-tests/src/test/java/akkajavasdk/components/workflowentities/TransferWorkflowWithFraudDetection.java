@@ -12,10 +12,6 @@ import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.workflow.Workflow;
 
-import java.util.concurrent.CompletionStage;
-
-import static java.util.concurrent.CompletableFuture.completedFuture;
-
 @ComponentId("transfer-workflow-with-fraud-detection")
 public class TransferWorkflowWithFraudDetection extends Workflow<TransferState> {
 
@@ -33,18 +29,18 @@ public class TransferWorkflowWithFraudDetection extends Workflow<TransferState> 
   public WorkflowDef<TransferState> definition() {
     var fraudDetection =
         step(fraudDetectionStepName)
-            .asyncCall(Transfer.class, this::checkFrauds)
+            .call(Transfer.class, this::checkFrauds)
             .andThen(FraudDetectionResult.class, this::processFraudDetectionResult);
 
     var withdraw =
         step(withdrawStepName)
-            .asyncCall(Withdraw.class, cmd ->
-                componentClient.forKeyValueEntity(cmd.from).method(WalletEntity::withdraw).invokeAsync(cmd.amount))
+            .call(Withdraw.class, cmd ->
+                componentClient.forKeyValueEntity(cmd.from).method(WalletEntity::withdraw).invoke(cmd.amount))
             .andThen(String.class, this::moveToDeposit);
 
     var deposit =
         step(depositStepName)
-            .asyncCall(Deposit.class, cmd -> componentClient.forKeyValueEntity(cmd.to).method(WalletEntity::deposit).invokeAsync(cmd.amount))
+            .call(Deposit.class, cmd -> componentClient.forKeyValueEntity(cmd.to).method(WalletEntity::deposit).invoke(cmd.amount))
             .andThen(String.class, this::finishWithSuccess);
 
     return workflow()
@@ -105,37 +101,37 @@ public class TransferWorkflowWithFraudDetection extends Workflow<TransferState> 
         .transitionTo(depositStepName, depositInput);
   }
 
-  private CompletionStage<FraudDetectionResult> checkFrauds(Transfer transfer) {
+  private FraudDetectionResult checkFrauds(Transfer transfer) {
     if (transfer.amount() >= 1000 && transfer.amount() < 1000000) {
-      return completedFuture(new TransferRequiresManualAcceptation(transfer));
+      return new TransferRequiresManualAcceptation(transfer);
     } else if (transfer.amount() >= 1000000) {
-      return completedFuture(new TransferRejected(transfer));
+      return new TransferRejected(transfer);
     } else {
-      return completedFuture(new TransferVerified(transfer));
+      return new TransferVerified(transfer);
     }
   }
 
   private Effect.TransitionalEffect<Void> processFraudDetectionResult(FraudDetectionResult result) {
     var state = currentState().withLastStep(fraudDetectionStepName);
 
-    if (result instanceof TransferVerified) {
-      var transferVerified = (TransferVerified) result;
-      var withdrawInput = new Withdraw(transferVerified.transfer.from(), transferVerified.transfer.amount());
+    switch (result) {
+      case TransferVerified transferVerified -> {
+        var withdrawInput = new Withdraw(transferVerified.transfer.from(), transferVerified.transfer.amount());
 
-      return effects()
-          .updateState(state)
-          .transitionTo(withdrawStepName, withdrawInput);
-
-    } else if (result instanceof TransferRequiresManualAcceptation) {
-      return effects()
-          .updateState(state)
-          .pause();
-    } else if (result instanceof TransferRejected) {
-      return effects()
-          .updateState(state.asFinished())
-          .end();
-    } else {
-      throw new IllegalStateException("not supported response" + result);
+        return effects()
+            .updateState(state)
+            .transitionTo(withdrawStepName, withdrawInput);
+      }
+      case TransferRequiresManualAcceptation transferRequiresManualAcceptation -> {
+        return effects()
+            .updateState(state)
+            .pause();
+      }
+      case TransferRejected transferRejected -> {
+        return effects()
+            .updateState(state.asFinished())
+            .end();
+      }
     }
   }
 }

@@ -4,8 +4,7 @@
 
 package akka.javasdk.workflow;
 
-import akka.javasdk.DeferredCall;
-
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -20,6 +19,54 @@ public class StepBuilder {
 
   public StepBuilder step(String stepName) {
     return new StepBuilder(stepName);
+  }
+
+  /**
+   * Build a step action with a  call.
+   * <p>
+   * The {@link Function} passed to this method should return a {@link CompletionStage}.
+   * On successful completion, its result is made available to this workflow via the {@code andThen} method.
+   * In the {@code andThen} method, we can use the result to update the workflow state and transition to the next step.
+   * <p>
+   * On failure, the step will be retried according to the default retry strategy or the one defined in the step configuration.
+   *
+   * @param callInputClass Input class for call factory.
+   * @param callFactory    Factory method for creating async call.
+   * @param <Input>        Input for async call factory, provided by transition method.
+   * @param <Output>       Output of async call.
+   * @return Step builder.
+   */
+  public <Input, Output> AsyncCallStepBuilder<Input, Output> call(Class<Input> callInputClass, Function<Input, Output> callFactory) {
+    return new AsyncCallStepBuilder<>(name, callInputClass, (Input input) -> {
+      try {
+        return CompletableFuture.completedFuture(callFactory.apply(input));
+      } catch (Exception e) {
+        return CompletableFuture.failedFuture(e);
+      }
+    });
+  }
+
+  /**
+   * Build a step action with a call.
+   * <p>
+   * The {@link Supplier} function passed to this method should return a {@link CompletionStage}.
+   * On successful completion, its result is made available to this workflow via the {@code andThen} method.
+   * In the {@code andThen} method, we can use the result to update the workflow state and transition to the next step.
+   * <p>
+   * On failure, the step will be retried according to the default retry strategy or the one defined in the step configuration.
+   *
+   * @param callSupplier Factory method for creating async call.
+   * @param <Output>     Output of async call.
+   * @return Step builder.
+   */
+  public <Output> AsyncCallStepBuilder<Void, Output> call(Supplier<Output> callSupplier) {
+    return new AsyncCallStepBuilder<>(name, Void.class, (Void v) -> {
+      try {
+        return CompletableFuture.completedFuture(callSupplier.get());
+      } catch (Exception e) {
+        return CompletableFuture.failedFuture(e);
+      }
+    });
   }
 
   /**
@@ -67,6 +114,9 @@ public class StepBuilder {
     final private Class<CallInput> callInputClass;
     final private Function<CallInput, CompletionStage<CallOutput>> callFunc;
 
+    /**
+     * Not for direct user construction, created through {{akka.javasdk.workflow.StepBuilder#asyncCall(java.lang.Class, java.util.function.Function)}}
+     */
     public AsyncCallStepBuilder(String name, Class<CallInput> callInputClass, Function<CallInput, CompletionStage<CallOutput>> callFunc) {
       this.name = name;
       this.callInputClass = callInputClass;

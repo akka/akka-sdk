@@ -7,9 +7,9 @@ package akkajavasdk.components.workflowentities;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public interface FraudDetectionResult {
+public sealed interface FraudDetectionResult {
 
-  class TransferVerified implements FraudDetectionResult{
+  final class TransferVerified implements FraudDetectionResult{
     public final Transfer transfer;
 
     @JsonCreator
@@ -18,7 +18,7 @@ public interface FraudDetectionResult {
     }
   }
 
-  class TransferRejected implements  FraudDetectionResult {
+  final class TransferRejected implements  FraudDetectionResult {
     public final Transfer transfer;
 
     @JsonCreator
@@ -27,7 +27,7 @@ public interface FraudDetectionResult {
     }
   }
 
-  class TransferRequiresManualAcceptation implements  FraudDetectionResult {
+  final class TransferRequiresManualAcceptation implements  FraudDetectionResult {
     public final Transfer transfer;
 
     @JsonCreator

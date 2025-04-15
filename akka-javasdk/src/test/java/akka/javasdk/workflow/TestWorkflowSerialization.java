@@ -14,7 +14,7 @@ public class TestWorkflowSerialization extends Workflow<String> {
   @Override
   public WorkflowDef<String> definition() {
     var testStep = step("test")
-        .asyncCall(() -> CompletableFuture.<Result>completedFuture(new Result.Succeed()))
+        .<Result>call(Result.Succeed::new)
         .andThen(Result.class, result -> effects().updateState("success").end());
 
     return workflow().addStep(testStep);
