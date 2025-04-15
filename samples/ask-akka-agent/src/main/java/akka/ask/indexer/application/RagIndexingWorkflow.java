@@ -26,10 +26,9 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.Executor;
 import java.util.stream.Stream;
+
+import static akka.Done.done;
 
 /**
  * This workflow reads the files under src/main/resources/flat-doc/ and create
@@ -44,7 +43,7 @@ public class RagIndexingWorkflow extends Workflow<RagIndexingWorkflow.State> {
   private final OpenAiEmbeddingModel embeddingModel;
   private final MongoDbEmbeddingStore embeddingStore;
   private final DocumentSplitter splitter;
-  private final Executor virtualThreadExecutor;
+
   // metadata key used to store file name
   private final String srcKey = "src";
   private static final String PROCESSING_FILE_STEP = "processing-file";
@@ -93,8 +92,7 @@ public class RagIndexingWorkflow extends Workflow<RagIndexingWorkflow.State> {
   // end::shell[]
 
   // tag::cons[]
-  public RagIndexingWorkflow(MongoClient mongoClient, Executor virtualThreadExecutor) {
-    this.virtualThreadExecutor = virtualThreadExecutor;
+  public RagIndexingWorkflow(MongoClient mongoClient) {
     this.embeddingModel = OpenAiUtils.embeddingModel();
     this.embeddingStore = MongoDbEmbeddingStore.builder()
         .fromClient(mongoClient)
@@ -128,7 +126,7 @@ public class RagIndexingWorkflow extends Workflow<RagIndexingWorkflow.State> {
       return effects()
           .updateState(State.of(documents))
           .transitionTo(PROCESSING_FILE_STEP) // <1>
-          .thenReply(Done.done());
+          .thenReply(done());
     }
   }
   // end::start[]
@@ -139,7 +137,7 @@ public class RagIndexingWorkflow extends Workflow<RagIndexingWorkflow.State> {
     return effects()
         .updateState(emptyState())
         .pause()
-        .thenReply(Done.getInstance());
+        .thenReply(done());
   }
 
   // tag::def[]
@@ -149,9 +147,9 @@ public class RagIndexingWorkflow extends Workflow<RagIndexingWorkflow.State> {
     var processing = step(PROCESSING_FILE_STEP) // <1>
         .call(() -> {
           if (currentState().hasFilesToProcess()) {
-            indexFile(currentState().head());
+            indexFile(currentState().head().get());
           }
-          return Done.done();
+          return done();
         })
         .andThen(Done.class, __ -> {
           // we need to check if it hasFilesToProcess, before moving the head
@@ -171,35 +169,20 @@ public class RagIndexingWorkflow extends Workflow<RagIndexingWorkflow.State> {
   // end::def[]
 
   // tag::index[]
-  private void indexFile(Optional<Path> pathOpt) {
+  private void indexFile(Path path) {
+    try (InputStream input = Files.newInputStream(path)) {
+      // read file as input stream
+      Document doc = new TextDocumentParser().parse(input);
+      var docWithMetadata = new DefaultDocument(doc.text(), Metadata.metadata(srcKey, path.getFileName().toString()));
 
-    if (pathOpt.isPresent()) {
-      var path = pathOpt.get();
-      try (InputStream input = Files.newInputStream(path)) {
-        // read file as input stream
-        Document doc = new TextDocumentParser().parse(input);
-        var docWithMetadata = new DefaultDocument(doc.text(), Metadata.metadata(srcKey, path.getFileName().toString()));
+      var segments = splitter.split(docWithMetadata);
+      logger.debug("Created {} segments for document {}", segments.size(), path.getFileName());
 
-        var segments = splitter.split(docWithMetadata);
-        logger.debug("Created {} segments for document {}", segments.size(), path.getFileName());
-
-        // add segments in parallel
-        List<CompletableFuture<Done>> parallelAddSegments = segments
-            .stream()
-            .map(segment -> CompletableFuture.supplyAsync(() -> {
-              addSegment(segment);
-              return Done.done();
-            }, virtualThreadExecutor))
-            .toList();
-
-        // wait for adding all segments to complete
-        CompletableFuture.allOf((CompletableFuture<?>) parallelAddSegments).join();
-
-      } catch (BlankDocumentException e) {
-        // some documents are blank, we need to skip them
-      } catch (Exception e) {
-        logger.error("Error reading file: {} - {}", path, e.getMessage());
-      }
+      segments.forEach(this::addSegment);
+    } catch (BlankDocumentException e) {
+      // some documents are blank, we need to skip them
+    } catch (Exception e) {
+      logger.error("Error reading file: {} - {}", path, e.getMessage());
     }
   }
   // end::index[]
