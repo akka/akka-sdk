@@ -72,7 +72,9 @@ spec:
             - name: SELECTOR_LABEL_VALUE
               value: "shopping-cart-service"
             - name: JAVA_TOOL_OPTIONS
-              value: "-XX:InitialRAMPercentage=60 -XX:MaxRAMPercentage=60 -XX:MaxHeapFreeRatio=100 -XX:+AlwaysPreTouch"
+              value: "-Xms1024m -Xmx1024m"
+              # With proper memory resource limits the JVM heap can be a percentage
+              # value: "-XX:InitialRAMPercentage=60 -XX:MaxRAMPercentage=60 -XX:MaxHeapFreeRatio=100 -XX:+AlwaysPreTouch"
             - name: DB_HOST
               value: "host.minikube.internal"
             - name: DB_USER
