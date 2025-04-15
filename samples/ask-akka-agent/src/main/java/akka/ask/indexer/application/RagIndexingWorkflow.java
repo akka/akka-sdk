@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Executor;
 import java.util.stream.Stream;
 
 /**
@@ -43,11 +44,10 @@ public class RagIndexingWorkflow extends Workflow<RagIndexingWorkflow.State> {
   private final OpenAiEmbeddingModel embeddingModel;
   private final MongoDbEmbeddingStore embeddingStore;
   private final DocumentSplitter splitter;
+  private final Executor virtualThreadExecutor;
   // metadata key used to store file name
   private final String srcKey = "src";
   private static final String PROCESSING_FILE_STEP = "processing-file";
-
-  private final CompletionStage<Done> futDone = CompletableFuture.completedFuture(Done.getInstance());
 
   public record State(List<Path> toProcess, List<Path> processed) { // <1>
 
@@ -93,7 +93,8 @@ public class RagIndexingWorkflow extends Workflow<RagIndexingWorkflow.State> {
   // end::shell[]
 
   // tag::cons[]
-  public RagIndexingWorkflow(MongoClient mongoClient) {
+  public RagIndexingWorkflow(MongoClient mongoClient, Executor virtualThreadExecutor) {
+    this.virtualThreadExecutor = virtualThreadExecutor;
     this.embeddingModel = OpenAiUtils.embeddingModel();
     this.embeddingStore = MongoDbEmbeddingStore.builder()
         .fromClient(mongoClient)
@@ -146,11 +147,11 @@ public class RagIndexingWorkflow extends Workflow<RagIndexingWorkflow.State> {
   public WorkflowDef<State> definition() {
 
     var processing = step(PROCESSING_FILE_STEP) // <1>
-        .asyncCall(() -> {
+        .call(() -> {
           if (currentState().hasFilesToProcess()) {
-            return indexFile(currentState().head());
-          } else
-            return futDone;
+            indexFile(currentState().head());
+          }
+          return Done.done();
         })
         .andThen(Done.class, __ -> {
           // we need to check if it hasFilesToProcess, before moving the head
@@ -170,12 +171,9 @@ public class RagIndexingWorkflow extends Workflow<RagIndexingWorkflow.State> {
   // end::def[]
 
   // tag::index[]
-  private CompletionStage<Done> indexFile(Optional<Path> pathOpt) {
+  private void indexFile(Optional<Path> pathOpt) {
 
-    if (pathOpt.isEmpty())
-      return futDone;
-    else {
-
+    if (pathOpt.isPresent()) {
       var path = pathOpt.get();
       try (InputStream input = Files.newInputStream(path)) {
         // read file as input stream
@@ -185,37 +183,38 @@ public class RagIndexingWorkflow extends Workflow<RagIndexingWorkflow.State> {
         var segments = splitter.split(docWithMetadata);
         logger.debug("Created {} segments for document {}", segments.size(), path.getFileName());
 
-        return segments
+        // add segments in parallel
+        List<CompletableFuture<Done>> parallelAddSegments = segments
             .stream()
-            .reduce(
-                futDone,
-                (acc, seg) -> addSegment(seg),
-                (stage1, stage2) -> futDone);
+            .map(segment -> CompletableFuture.supplyAsync(() -> {
+              addSegment(segment);
+              return Done.done();
+            }, virtualThreadExecutor))
+            .toList();
+
+        // wait for adding all segments to complete
+        CompletableFuture.allOf((CompletableFuture<?>) parallelAddSegments).join();
 
       } catch (BlankDocumentException e) {
         // some documents are blank, we need to skip them
-        return futDone;
       } catch (Exception e) {
         logger.error("Error reading file: {} - {}", path, e.getMessage());
-        return futDone;
       }
     }
   }
   // end::index[]
 
   // tag::add[]
-  private CompletionStage<Done> addSegment(TextSegment seg) {
+  private void addSegment(TextSegment seg) {
     var fileName = seg.metadata().getString(srcKey);
-    return CompletableFuture.supplyAsync(() -> embeddingModel.embed(seg))
-        .thenCompose(res -> CompletableFuture.supplyAsync(() -> {
-          logger.debug("Segment embedded. Source file '{}'. Tokens usage: in {}, out {}",
-              fileName,
-              res.tokenUsage().inputTokenCount(),
-              res.tokenUsage().outputTokenCount());
+    var res = embeddingModel.embed(seg);
 
-          return embeddingStore.add(res.content(), seg); // <1>
-        }))
-        .thenApply(__ -> Done.getInstance());
+    logger.debug("Segment embedded. Source file '{}'. Tokens usage: in {}, out {}",
+        fileName,
+        res.tokenUsage().inputTokenCount(),
+        res.tokenUsage().outputTokenCount());
+
+    embeddingStore.add(res.content(), seg); // <1>
   }
   // end::add[]
   // tag::shell[]
