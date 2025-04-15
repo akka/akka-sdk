@@ -434,8 +434,11 @@ private final class Sdk(
           .definition()
           .getSteps
           .asScala
-          .flatMap { case asyncCallStep: Workflow.AsyncCallStep[_, _, _] =>
-            List(asyncCallStep.callInputClass, asyncCallStep.transitionInputClass)
+          .flatMap {
+            case asyncCallStep: Workflow.AsyncCallStep[_, _, _] =>
+              List(asyncCallStep.callInputClass, asyncCallStep.transitionInputClass)
+            case callStep: Workflow.CallStep[_, _, _] =>
+              List(callStep.callInputClass, callStep.transitionInputClass)
           }
           .foreach(serializer.registerTypeHints)
 

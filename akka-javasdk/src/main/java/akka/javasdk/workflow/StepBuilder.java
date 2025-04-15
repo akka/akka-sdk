@@ -4,7 +4,6 @@
 
 package akka.javasdk.workflow;
 
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -13,6 +12,9 @@ public class StepBuilder {
 
   final private String name;
 
+  /**
+   * Not for direct user construction, instances are created through the workflow DSL
+   */
   public StepBuilder(String name) {
     this.name = name;
   }
@@ -36,14 +38,8 @@ public class StepBuilder {
    * @param <Output>       Output of async call.
    * @return Step builder.
    */
-  public <Input, Output> AsyncCallStepBuilder<Input, Output> call(Class<Input> callInputClass, Function<Input, Output> callFactory) {
-    return new AsyncCallStepBuilder<>(name, callInputClass, (Input input) -> {
-      try {
-        return CompletableFuture.completedFuture(callFactory.apply(input));
-      } catch (Exception e) {
-        return CompletableFuture.failedFuture(e);
-      }
-    });
+  public <Input, Output> CallStepBuilder<Input, Output> call(Class<Input> callInputClass, Function<Input, Output> callFactory) {
+    return new CallStepBuilder<>(name, callInputClass, callFactory);
   }
 
   /**
@@ -59,14 +55,8 @@ public class StepBuilder {
    * @param <Output>     Output of async call.
    * @return Step builder.
    */
-  public <Output> AsyncCallStepBuilder<Void, Output> call(Supplier<Output> callSupplier) {
-    return new AsyncCallStepBuilder<>(name, Void.class, (Void v) -> {
-      try {
-        return CompletableFuture.completedFuture(callSupplier.get());
-      } catch (Exception e) {
-        return CompletableFuture.failedFuture(e);
-      }
-    });
+  public <Output> CallStepBuilder<Void, Output> call(Supplier<Output> callSupplier) {
+    return new CallStepBuilder<>(name, Void.class, (Void v) -> callSupplier.get());
   }
 
   /**
@@ -104,6 +94,38 @@ public class StepBuilder {
    */
   public <Output> AsyncCallStepBuilder<Void, Output> asyncCall(Supplier<CompletionStage<Output>> callSupplier) {
     return new AsyncCallStepBuilder<>(name, Void.class, (Void v) -> callSupplier.get());
+  }
+
+  public static class CallStepBuilder<CallInput, CallOutput> {
+    final private String name;
+
+    final private Class<CallInput> callInputClass;
+    final private Function<CallInput, CallOutput> callFunc;
+
+    CallStepBuilder(String name, Class<CallInput> callInputClass, Function<CallInput, CallOutput> callFunc) {
+      this.name = name;
+      this.callInputClass = callInputClass;
+      this.callFunc = callFunc;
+    }
+
+    /**
+     * Transition to the next step based on the result of the step call.
+     * <p>
+     * The {@link Function} passed to this method should receive the return type of the step call and return
+     * an {@link Workflow.Effect.TransitionalEffect} describing the next step to transition to.
+     * <p>
+     * When defining the Effect, you can update the workflow state and indicate the next step to transition to.
+     * This can be another step, or a pause or end of the workflow.
+     * <p>
+     * When transition to another step, you can also pass an input parameter to the next step.
+     *
+     * @param transitionInputClass Input class for transition.
+     * @param transitionFunc       Function that transform the action result to a {@link Workflow.Effect.TransitionalEffect}
+     * @return AsyncCallStep
+     */
+    public Workflow.CallStep<CallInput, CallOutput, ?> andThen(Class<CallOutput> transitionInputClass, Function<CallOutput, Workflow.Effect.TransitionalEffect<Void>> transitionFunc) {
+      return new Workflow.CallStep<>(name, callInputClass, callFunc, transitionInputClass, transitionFunc);
+    }
   }
 
 
