@@ -6,7 +6,7 @@ include::ROOT:partial$include.adoc[]
 
 This release introduces support for Java 21 virtual threads across all user component and endpoint logic. As a result, it is now safe to perform blocking I/O operations without occupying underlying OS threads.
 
-You no longer need to use `CompletionStage` or ´ CompletableFuture` composition when making calls using component clients, HTTP clients, or gRPC clients. Where services previously used `.invokeAsync()` and handled a future, you can now simply use `.invoke()` and work directly with the returned result.
+You no longer need to use `CompletionStage` or `CompletableFuture` composition when making calls using component clients, HTTP clients, or gRPC clients. Where services previously used `.invokeAsync()` and handled a future, you can now simply use `.invoke()` and work directly with the returned result.
 
 === Breaking Changes
 
