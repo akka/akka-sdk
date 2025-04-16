@@ -19,7 +19,7 @@ relies on any of the following features, you will need to update your implementa
 === Deprecations
 
 Timer scheduling and cancellation via `TimerScheduler.startSingleTimer(...)` and `TimerScheduler.cancel()` are now
-deprecated. Instead, use `TimerScheduler.createSingleTimer(...)` and `TimerScheduler.delete()`. Note that this two
+deprecated. Instead, use `TimerScheduler.createSingleTimer(...)` and `TimerScheduler.delete()`. Note that these two
 new methods are blocking operations that return `void`.
 
 If you still prefer non-blocking operations, new asynchronous alternatives have been introduced: `createSingleTimerAsync()` and `deleteAsync()`.
