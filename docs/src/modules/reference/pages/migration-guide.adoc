@@ -10,11 +10,19 @@ You no longer need to use `CompletionStage` or `CompletableFuture` composition w
 
 === Breaking Changes
 
-To simplify usage and improve developer experience, this release includes several breaking changes. If your service relies on any of the following features, you will need to update your implementation:
+To simplify usage and improve developer experience, this release includes a few breaking changes. If your service
+relies on any of the following features, you will need to update your implementation:
 
-* Timer scheduling and cancellation via `TimerScheduler.startSingleTimer(...)` and `TimerScheduler.cancel()` are now blocking operations that return `void`. If you still prefer non-blocking operations, new asynchronous alternatives have been introduced: `startSingleTimerAsync()` and `cancelAsync()`.
 * gRPC endpoints for unary and client streaming methods now return the response message directly, instead of wrapping it in a `CompletionStage`.
 * gRPC clients now return the response value directly for unary and client streaming calls. For asynchronous behavior, the request builder APIs (`grpcClient.someMethod().invokeAsync(parameter)`) are still available.
+
+=== Deprecations
+
+Timer scheduling and cancellation via `TimerScheduler.startSingleTimer(...)` and `TimerScheduler.cancel()` are now
+deprecated. Instead, use `TimerScheduler.createSingleTimer(...)` and `TimerScheduler.delete()`. Note that this two
+new methods are blocking operations that return `void`.
+
+If you still prefer non-blocking operations, new asynchronous alternatives have been introduced: `createSingleTimerAsync()` and `deleteAsync()`.
 
 === Blocking and Parallelism
 

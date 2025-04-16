@@ -57,7 +57,7 @@ public class UniqueEmailConsumer extends Consumer {
           .forKeyValueEntity(email.address())
           .method(UniqueEmailEntity::cancelReservation).deferred();
 
-      timers().startSingleTimer(
+      timers().createSingleTimer(
         timerId,
         delay,
         callToUnReserve);

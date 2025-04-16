@@ -44,7 +44,7 @@ public class OrderEndpoint {
 
     var orderId = UUID.randomUUID().toString(); // <2>
 
-    timerScheduler.startSingleTimer( // <3>
+    timerScheduler.createSingleTimer( // <3>
       timerName(orderId), // <4>
       Duration.ofSeconds(10), // <5>
       componentClient.forTimedAction()

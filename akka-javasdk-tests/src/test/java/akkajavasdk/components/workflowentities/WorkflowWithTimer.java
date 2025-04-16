@@ -38,7 +38,7 @@ public class WorkflowWithTimer extends Workflow<FailingCounterState> {
               .method(WorkflowWithTimer::pingWorkflow)
               .deferred(new CounterScheduledValue(12));
 
-          timers().startSingleTimer("ping", Duration.ofSeconds(2), pingWorkflow);
+          timers().createSingleTimer("ping", Duration.ofSeconds(2), pingWorkflow);
 
           return CompletableFuture.completedFuture(Done.done()); // FIXME remove once we have sync/blocking workflow calls
         })

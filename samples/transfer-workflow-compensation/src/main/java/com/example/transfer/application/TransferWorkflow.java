@@ -148,7 +148,7 @@ public class TransferWorkflow extends Workflow<TransferState> {
       step("wait-for-acceptation")
         .call(() -> {
           String transferId = currentState().transferId();
-          timers().startSingleTimer(
+          timers().createSingleTimer(
             "acceptationTimeout-" + transferId,
             ofHours(8),
             componentClient.forWorkflow(transferId)

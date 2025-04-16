@@ -39,7 +39,7 @@ public class TracingEndpoint {
 
     @Post("/")
     public void postDelayed(PostId id) {
-        timerScheduler.startSingleTimer(
+        timerScheduler.createSingleTimer(
             UUID.randomUUID().toString(), //not planning to cancel the timer
             Duration.ofSeconds(1L),
             componentClient.forTimedAction().method(TracingAction::callAnotherService).deferred(id.id));

@@ -30,7 +30,7 @@ public interface TimerScheduler {
    * @param delay delay, starting from now, in which the timer should be triggered
    * @param deferredCall a call to component that will be executed when the timer is triggered
    */
-  <I, O> void startSingleTimer(String name, Duration delay, DeferredCall<I, O> deferredCall);
+  <I, O> void createSingleTimer(String name, Duration delay, DeferredCall<I, O> deferredCall);
 
   /**
    * Schedule a single timer. Timers allow for scheduling calls in the future. For example, to
@@ -51,14 +51,15 @@ public interface TimerScheduler {
    * @param maxRetries Retry up to this many times before giving up
    * @param deferredCall a call to component that will be executed when the timer is triggered
    */
-  <I, O> void startSingleTimer(
+  <I, O> void createSingleTimer(
       String name, Duration delay, int maxRetries, DeferredCall<I, O> deferredCall);
 
   /**
-   * Cancel an existing timer. This completes successfully if not timer is registered for the passed
+   * Delete an existing timer. This completes successfully if no timer is registered for the passed
    * name.
    */
-  void cancel(String name);
+  void delete(String name);
+
 
   /**
    * Schedule a single timer. Timers allow for scheduling calls in the future. For example, to
@@ -80,7 +81,7 @@ public interface TimerScheduler {
    * @return A completion stage that is completed successfully or failed, once the timer has been
    *     scheduled
    */
-  <I, O> CompletionStage<Done> startSingleTimerAsync(
+  <I, O> CompletionStage<Done> createSingleTimerAsync(
       String name, Duration delay, DeferredCall<I, O> deferredCall);
 
   /**
@@ -104,12 +105,35 @@ public interface TimerScheduler {
    * @return A completion stage that is completed successfully or failed, once the timer has been
    *     scheduled
    */
-  <I, O> CompletionStage<Done> startSingleTimerAsync(
+  <I, O> CompletionStage<Done> createSingleTimerAsync(
       String name, Duration delay, int maxRetries, DeferredCall<I, O> deferredCall);
 
+
   /**
-   * Cancel an existing timer. This completes successfully if not timer is registered for the passed
+   * Delete an existing timer. This completes successfully if no timer is registered for the passed
    * name.
    */
-  CompletionStage<Done> cancelAsync(String name);
+  CompletionStage<Done> deleteAsync(String name);
+
+
+  /**
+   * @deprecated Use {@link TimerScheduler#createSingleTimerAsync(String, Duration, DeferredCall)} instead.
+   */
+  @Deprecated(since = "3.3.0", forRemoval = true)
+  <I, O> CompletionStage<Done> startSingleTimer(
+    String name, Duration delay, DeferredCall<I, O> deferredCall);
+
+
+  /**
+   * @deprecated Use {@link TimerScheduler#createSingleTimerAsync(String, Duration, int, DeferredCall)} instead.
+   */
+  @Deprecated(since = "3.3.0", forRemoval = true)
+  <I, O> CompletionStage<Done> startSingleTimer(
+    String name, Duration delay, int maxRetries, DeferredCall<I, O> deferredCall);
+
+  /**
+   * @deprecated User {@link TimerScheduler#deleteAsync(String)} instead.
+   */
+  @Deprecated(since = "3.3.0", forRemoval = true)
+  CompletionStage<Done> cancel(String name);
 }
