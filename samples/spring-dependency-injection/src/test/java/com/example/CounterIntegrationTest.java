@@ -27,7 +27,7 @@ public class CounterIntegrationTest extends TestKitSupport {
     // increase counter (from 0 to 10)
     counterClient
       .method(Counter::increase)
-      .invokeAsync(10);
+      .invoke(10);
 
     Awaitility.await()
       .ignoreExceptions()

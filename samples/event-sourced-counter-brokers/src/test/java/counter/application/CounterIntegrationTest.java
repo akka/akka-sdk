@@ -8,16 +8,14 @@ import counter.application.CounterCommandFromTopicConsumer.IncreaseCounter;
 import counter.application.CounterCommandFromTopicConsumer.MultiplyCounter;
 import counter.domain.CounterEvent.ValueIncreased;
 import counter.domain.CounterEvent.ValueMultiplied;
-import org.awaitility.Awaitility;
-import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.net.URI;
-import java.util.concurrent.TimeUnit;
 
 import static java.time.Duration.ofSeconds;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 // tag::class[]
@@ -76,27 +74,17 @@ public class CounterIntegrationTest extends TestKitSupport { // <1>
     // increase counter (from 0 to 10)
     counterClient
       .method(CounterEntity::increase)
-      .invokeAsync(10);
+      .invoke(10);
 
-    var getCounterState =
-      counterClient
-        .method(CounterEntity::get);
-    Awaitility.await()
-      .ignoreExceptions()
-      .atMost(20, TimeUnit.SECONDS)
-      // check state until returns 10
-      .until(() -> await(getCounterState.invokeAsync()), new IsEqual<>(10));
-
-    // multiply by 20 (from 10 to 200
+    // multiply by 20 (from 10 to 200)
     counterClient
       .method(CounterEntity::multiply)
-      .invokeAsync(20);
+      .invoke(20);
 
-    Awaitility.await()
-      .ignoreExceptions()
-      .atMost(20, TimeUnit.SECONDS)
-      // check state until returns 200
-      .until(() -> await(getCounterState.invokeAsync()), new IsEqual<>(200));
+    var result = counterClient
+        .method(CounterEntity::get).invoke();
+
+    assertThat(result).isEqualTo(200);
   }
 
   // tag::test-topic[]

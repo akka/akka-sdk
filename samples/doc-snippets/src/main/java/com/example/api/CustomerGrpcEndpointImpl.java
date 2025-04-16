@@ -12,12 +12,12 @@ import java.util.concurrent.CompletionStage;
 public class CustomerGrpcEndpointImpl implements CustomerGrpcEndpoint {
 
   @Override
-  public CompletionStage<Customer> getCustomer(GetCustomerRequest in) {
+  public Customer getCustomer(GetCustomerRequest in) {
     // dummy implementation with hardcoded values
     var customer = Customer.newBuilder() // <2>
         .setName("Alice")
         .setEmail("alice@email.com")
         .build();
-    return CompletableFuture.completedFuture(customer); // <3>
+    return customer; // <3>
   }
 }

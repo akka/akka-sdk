@@ -91,11 +91,10 @@ public class JoinedCustomerOrdersViewIntegrationTest extends StoreViewIntegratio
   }
 
   private List<CustomerOrder> getCustomerOrders(String customerId) {
-    return await(
+    return
       componentClient.forView()
         .method(JoinedCustomerOrdersView::get)
-        .invokeAsync(customerId)
-    ).orders();
+        .invoke(customerId).orders();
 
   }
 

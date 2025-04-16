@@ -70,7 +70,7 @@ lazy val akkaJavaSdkTests =
       // generating test service
       Test / akkaGrpcGeneratedLanguages := Seq(AkkaGrpc.Java),
       Test / akkaGrpcGeneratedSources := Seq(AkkaGrpc.Client, AkkaGrpc.Server),
-      Test / akkaGrpcCodeGeneratorSettings += "generate_scala_handler_factory",
+      Test / akkaGrpcCodeGeneratorSettings ++= CommonSettings.serviceGrpcGeneratorSettings,
       Test / PB.protoSources ++= (Compile / PB.protoSources).value)
     .settings(inConfig(Test)(JupiterPlugin.scopedSettings))
     .settings(Dependencies.tests)

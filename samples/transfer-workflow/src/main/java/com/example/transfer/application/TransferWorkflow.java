@@ -38,10 +38,10 @@ public class TransferWorkflow extends Workflow<TransferState> { // <2>
   public WorkflowDef<TransferState> definition() {
     Step withdraw =
       step("withdraw") // <1>
-        .asyncCall(Withdraw.class, cmd ->
+        .call(Withdraw.class, cmd ->
           componentClient.forEventSourcedEntity(cmd.from) // <2>
             .method(WalletEntity::withdraw)
-            .invokeAsync(cmd.amount)) // <3>
+            .invoke(cmd.amount)) // <3>
         .andThen(Done.class, __ -> {
           Deposit depositInput = new Deposit(currentState().transfer().to(), currentState().transfer().amount());
           return effects()
@@ -51,10 +51,10 @@ public class TransferWorkflow extends Workflow<TransferState> { // <2>
 
     Step deposit =
       step("deposit") // <5>
-        .asyncCall(Deposit.class, cmd ->
+        .call(Deposit.class, cmd ->
           componentClient.forEventSourcedEntity(cmd.to)
             .method(WalletEntity::deposit)
-            .invokeAsync(cmd.amount))
+            .invoke(cmd.amount))
         .andThen(Done.class, __ -> {
           return effects()
             .updateState(currentState().withStatus(COMPLETED))

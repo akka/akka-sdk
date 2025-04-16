@@ -23,17 +23,17 @@ public class ProductEndpoint {
   }
 
   @Post("/{productId}")
-  public CompletionStage<HttpResponse> create(String productId, Product product) {
-    return componentClient.forEventSourcedEntity(productId)
+  public HttpResponse create(String productId, Product product) {
+    componentClient.forEventSourcedEntity(productId)
       .method(ProductEntity::create)
-      .invokeAsync(product)
-      .thenApply(__ -> created());
+      .invoke(product);
+    return created();
   }
 
   @Get("/{productId}")
-  public CompletionStage<Product> get(String productId) {
+  public Product get(String productId) {
     return componentClient.forEventSourcedEntity(productId)
       .method(ProductEntity::get)
-      .invokeAsync();
+      .invoke();
   }
 }

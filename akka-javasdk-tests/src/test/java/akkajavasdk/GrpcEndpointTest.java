@@ -5,6 +5,7 @@
 package akkajavasdk;
 
 import akka.grpc.GrpcServiceException;
+import akka.grpc.javadsl.SingleBlockingResponseRequestBuilder;
 import akka.grpc.javadsl.SingleResponseRequestBuilder;
 import akka.javasdk.Principal;
 import akka.javasdk.testkit.TestKitSupport;
@@ -24,9 +25,10 @@ public class GrpcEndpointTest extends TestKitSupport {
     var testClient = getGrpcEndpointClient(TestGrpcServiceClient.class);
 
     var request = TestGrpcServiceOuterClass.In.newBuilder().setData("Hello world").build();
-    var response = await(testClient.simple(request));
+    var response = testClient.simple(request);
 
     assertThat(response.getData()).isEqualTo(request.getData());
+    assertThat(response.getWasOnVirtualThread()).isTrue();
   }
 
   @Test
@@ -34,7 +36,7 @@ public class GrpcEndpointTest extends TestKitSupport {
     var testClient = getGrpcEndpointClient(TestGrpcServiceClient.class).addRequestHeader("x-foo", "bar");
 
     var request = TestGrpcServiceOuterClass.In.newBuilder().setData("x-foo").build();
-    var response = await(testClient.readMetadata(request));
+    var response = testClient.readMetadata(request);
 
     assertThat(response.getData()).isEqualTo("bar");
   }
@@ -45,7 +47,7 @@ public class GrpcEndpointTest extends TestKitSupport {
     var testClient = getGrpcEndpointClient(TestGrpcServiceClient.class);
 
     var request = TestGrpcServiceOuterClass.In.newBuilder().setData("Hello world").build();
-    var response = await(testClient.delegateToExternal(request));
+    var response = testClient.delegateToExternal(request);
 
     assertThat(response.getData()).isEqualTo(request.getData());
   }
@@ -55,7 +57,7 @@ public class GrpcEndpointTest extends TestKitSupport {
     var testClient = getGrpcEndpointClient(TestGrpcServiceClient.class);
 
     var request = TestGrpcServiceOuterClass.In.newBuilder().setData("Hello world").build();
-    var response = await(testClient.delegateToAkkaService(request));
+    var response = testClient.delegateToAkkaService(request);
 
     assertThat(response.getData()).isEqualTo(request.getData());
   }
@@ -66,7 +68,7 @@ public class GrpcEndpointTest extends TestKitSupport {
     var request = TestGrpcServiceOuterClass.In.newBuilder().setData("error").build();
     // when the service throws a gRPC status exception
     try {
-      await(testClient.customStatus(request));
+      testClient.customStatus(request);
       fail("Expected exception");
     } catch (GrpcServiceException e) {
       assertThat(e.getMessage()).contains("INVALID_ARGUMENT");
@@ -75,7 +77,7 @@ public class GrpcEndpointTest extends TestKitSupport {
     // when the service throws an IllegalArgumentException
     try {
       request = TestGrpcServiceOuterClass.In.newBuilder().setData("illegal").build();
-      await(testClient.customStatus(request));
+      testClient.customStatus(request);
       fail("Expected exception");
     } catch (GrpcServiceException e) {
       assertThat(e.getMessage()).contains("INVALID_ARGUMENT");
@@ -84,7 +86,7 @@ public class GrpcEndpointTest extends TestKitSupport {
     // when the service throws a RuntimeException
     try {
       request = TestGrpcServiceOuterClass.In.newBuilder().setData("error-dev-details").build();
-      await(testClient.customStatus(request));
+      testClient.customStatus(request);
       fail("Expected exception");
     } catch (GrpcServiceException e) {
       // making sure that we are logging a correlation ID in the error message
@@ -98,7 +100,7 @@ public class GrpcEndpointTest extends TestKitSupport {
     var testClient = getGrpcEndpointClient(TestGrpcServiceClient.class);
 
     var request = TestGrpcServiceOuterClass.In.newBuilder().setData("Hello world").build();
-    var response = await(testClient.aclPublic(request));
+    var response = testClient.aclPublic(request);
 
     assertThat(response.getData()).isEqualTo(request.getData());
   }
@@ -108,7 +110,7 @@ public class GrpcEndpointTest extends TestKitSupport {
     var clientFromOtherService = getGrpcEndpointClient(TestGrpcServiceClient.class, Principal.localService("other-service"));
 
     var request = TestGrpcServiceOuterClass.In.newBuilder().setData("Hello world").build();
-    var response = await(clientFromOtherService.aclService(request));
+    var response = clientFromOtherService.aclService(request);
     assertThat(response.getData()).isEqualTo(request.getData());
 
     // should still fail when called from internet since it should override component level ACL
@@ -131,11 +133,10 @@ public class GrpcEndpointTest extends TestKitSupport {
     expectFailWith(testClient.aclDefaultDenyCode(), "PERMISSION_DENIED");
   }
 
-  private void expectFailWith(SingleResponseRequestBuilder<TestGrpcServiceOuterClass.In, TestGrpcServiceOuterClass.Out> method, String expected) {
+  private void expectFailWith(SingleBlockingResponseRequestBuilder<TestGrpcServiceOuterClass.In, TestGrpcServiceOuterClass.Out> method, String expected) {
     try {
       var request = TestGrpcServiceOuterClass.In.newBuilder().setData("Hello world").build();
-      await(method
-          .invoke(request));
+      method.invoke(request);
       fail("Expected exception");
     } catch (GrpcServiceException e) {
       assertThat(e.getMessage()).contains(expected);

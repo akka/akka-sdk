@@ -66,7 +66,6 @@ public class CounterEntity extends EventSourcedEntity<Counter, CounterEvent> {
     }
   }
 
-  @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET)) //required for testing
   public Effect<Counter> increaseWithError(Integer value) {
     if (value <= 0){
       return effects().error("Value must be greater than 0");
@@ -77,6 +76,10 @@ public class CounterEntity extends EventSourcedEntity<Counter, CounterEvent> {
         .persist(new CounterEvent.ValueIncreased(value))
         .thenReply(identity());
     }
+  }
+
+  public ReadOnlyEffect<Boolean> commandHandlerIsOnVirtualThread() {
+    return effects().reply(Thread.currentThread().isVirtual());
   }
 
 

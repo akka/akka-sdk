@@ -40,4 +40,6 @@ public interface ComponentMethodRef<R> extends ComponentDeferredMethodRef<R> {
   ComponentInvokeOnlyMethodRef<R> withRetry(int maxRetries);
 
   CompletionStage<R> invokeAsync();
+
+  R invoke();
 }

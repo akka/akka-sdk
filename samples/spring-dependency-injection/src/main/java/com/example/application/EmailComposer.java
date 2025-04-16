@@ -16,10 +16,11 @@ public class EmailComposer {
     this.componentClient = componentClient;
   }
 
-  public CompletionStage<String> composeEmail(String counterId) {
-    return componentClient.forEventSourcedEntity(counterId)
+  public String composeEmail(String counterId) {
+    var currentValue = componentClient.forEventSourcedEntity(counterId)
       .method(Counter::get)
-      .invokeAsync()
-      .thenApply(currentValue -> "Counter [" + counterId + "] value is: " + currentValue);
+      .invoke();
+
+    return "Counter [" + counterId + "] value is: " + currentValue;
   }
 }

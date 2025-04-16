@@ -16,8 +16,6 @@ import store.order.view.nested.NestedCustomerOrdersView;
 import store.order.view.structured.StructuredCustomerOrders;
 import store.order.view.structured.StructuredCustomerOrdersView;
 
-import java.util.concurrent.CompletionStage;
-
 import static akka.javasdk.http.HttpResponses.created;
 
 @HttpEndpoint("/orders")
@@ -31,38 +29,39 @@ public class OrderEndpoint {
   }
 
   @Post("/{orderId}")
-  public CompletionStage<HttpResponse> create(String orderId, CreateOrder createOrder) {
-    return componentClient.forKeyValueEntity(orderId)
+  public HttpResponse create(String orderId, CreateOrder createOrder) {
+    componentClient.forKeyValueEntity(orderId)
       .method(OrderEntity::create)
-      .invokeAsync(createOrder)
-      .thenApply(__ -> created());
+      .invoke(createOrder);
+
+    return created();
   }
 
   @Get("/{orderId}")
-  public CompletionStage<Order> get(String orderId) {
+  public Order get(String orderId) {
     return componentClient.forKeyValueEntity(orderId)
       .method(OrderEntity::get)
-      .invokeAsync();
+      .invoke();
   }
 
   @Get("/joined-by-customer/{customerId}")
-  public CompletionStage<JoinedCustomerOrders> joinedByCustomer(String customerId) {
+  public JoinedCustomerOrders joinedByCustomer(String customerId) {
     return componentClient.forView()
       .method(JoinedCustomerOrdersView::get)
-      .invokeAsync(customerId);
+      .invoke(customerId);
   }
 
   @Get("/nested-by-customer/{customerId}")
-  public CompletionStage<NestedCustomerOrders> nestedByCustomer(String customerId) {
+  public NestedCustomerOrders nestedByCustomer(String customerId) {
     return componentClient.forView()
       .method(NestedCustomerOrdersView::get)
-      .invokeAsync(customerId);
+      .invoke(customerId);
   }
 
   @Get("/structured-by-customer/{customerId}")
-  public CompletionStage<StructuredCustomerOrders> structuredByCustomer(String customerId) {
+  public StructuredCustomerOrders structuredByCustomer(String customerId) {
     return componentClient.forView()
       .method(StructuredCustomerOrdersView::get)
-      .invokeAsync(customerId);
+      .invoke(customerId);
   }
 }

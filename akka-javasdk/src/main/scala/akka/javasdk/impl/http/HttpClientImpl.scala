@@ -5,7 +5,7 @@
 package akka.javasdk.impl.http
 
 import java.io.IOException
-import java.lang.{ Iterable => JIterable }
+import java.lang.{Iterable => JIterable}
 import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets
 import java.time.Duration
@@ -13,6 +13,7 @@ import java.util
 import java.util.concurrent.CompletionStage
 import java.util.function.Function
 
+import scala.concurrent.ExecutionException
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.duration.FiniteDuration
 import scala.jdk.CollectionConverters.SeqHasAsJava
@@ -36,6 +37,7 @@ import akka.javasdk.JsonSupport
 import akka.javasdk.http.HttpClient
 import akka.javasdk.http.RequestBuilder
 import akka.javasdk.http.StrictResponse
+import akka.javasdk.impl.ErrorHandling
 import akka.pattern.Patterns
 import akka.pattern.RetrySettings
 import akka.stream.Materializer
@@ -161,6 +163,13 @@ private[akka] final case class RequestBuilderImpl[R](
       case None           => callHttp()
     }
   }
+
+  override def invoke(): StrictResponse[R] =
+    try {
+      invokeAsync.toCompletableFuture.get()
+    } catch {
+      case ex: ExecutionException => throw ErrorHandling.unwrapExecutionException(ex)
+    }
 
   override def responseBodyAs[T](`type`: Class[T]): RequestBuilder[T] = new RequestBuilderImpl[T](
     http,

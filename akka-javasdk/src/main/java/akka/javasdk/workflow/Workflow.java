@@ -479,6 +479,49 @@ public abstract class Workflow<S> {
 
   }
 
+  public static final class CallStep<CallInput, CallOutput, FailoverInput> implements Step {
+
+    final private String _name;
+    final public Function<CallInput, CallOutput> callFunc;
+    final public Function<CallOutput, Effect.TransitionalEffect<Void>> transitionFunc;
+    final public Class<CallInput> callInputClass;
+    final public Class<CallOutput> transitionInputClass;
+    private Optional<Duration> _timeout = Optional.empty();
+
+    /**
+     * Not for direct user construction, instances are created through the workflow DSL
+     */
+    public CallStep(String name,
+                         Class<CallInput> callInputClass,
+                         Function<CallInput, CallOutput> callFunc,
+                         Class<CallOutput> transitionInputClass,
+                         Function<CallOutput, Effect.TransitionalEffect<Void>> transitionFunc) {
+      _name = name;
+      this.callInputClass = callInputClass;
+      this.callFunc = callFunc;
+      this.transitionInputClass = transitionInputClass;
+      this.transitionFunc = transitionFunc;
+    }
+
+    @Override
+    public String name() {
+      return this._name;
+    }
+
+    @Override
+    public Optional<Duration> timeout() {
+      return this._timeout;
+    }
+
+    /**
+     * Define a step timeout.
+     */
+    public CallStep<CallInput, CallOutput, FailoverInput> timeout(Duration timeout) {
+      this._timeout = Optional.of(timeout);
+      return this;
+    }
+  }
+
   public static class AsyncCallStep<CallInput, CallOutput, FailoverInput> implements Step {
 
     final private String _name;
@@ -488,6 +531,9 @@ public abstract class Workflow<S> {
     final public Class<CallOutput> transitionInputClass;
     private Optional<Duration> _timeout = Optional.empty();
 
+    /**
+     * Not for direct user construction, instances are created through the workflow DSL
+     */
     public AsyncCallStep(String name,
                          Class<CallInput> callInputClass,
                          Function<CallInput, CompletionStage<CallOutput>> callFunc,

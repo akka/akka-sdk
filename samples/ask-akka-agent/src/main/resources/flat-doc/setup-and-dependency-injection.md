@@ -38,20 +38,23 @@ Injection is done as constructor parameters for the component implementation cla
 
 The following types can be injected in Service Setup, Endpoints, Consumers, Timed Actions, and Workflows:
 
-|     |
-| --- |
-| Injectable class |
-| Description |
-| `akka.javasdk.client.ComponentClient` |
-| for interaction between components, see [component-and-service-calls.adoc](component-and-service-calls.adoc) |
-| `akka.javasdk.http.HttpClientProvider` |
-| for creating clients to make calls between Akka services and also to other HTTP servers, see [component-and-service-calls.adoc](component-and-service-calls.adoc) |
-| `akka.javasdk.timer.TimerScheduler` |
-| for scheduling timed actions, see [timed-actions.adoc](timed-actions.adoc) |
-| `akka.stream.Materializer` |
-| Used for running Akka streams |
-| `com.typesafe.config.Config` |
-| Access the user defined configuration picked up from `application.conf` |
+|                                                                                                                                                                             |
+|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Injectable class                                                                                                                                                            |
+| Description                                                                                                                                                                 |
+| `akka.javasdk.client.ComponentClient`                                                                                                                                       |
+| for interaction between components, see [component-and-service-calls.adoc](component-and-service-calls.adoc)                                                                |
+| `akka.javasdk.http.HttpClientProvider`                                                                                                                                      |
+| for creating clients to make calls between Akka services and also to other HTTP servers, see [component-and-service-calls.adoc](component-and-service-calls.adoc)           |
+| `akka.javasdk.timer.TimerScheduler`                                                                                                                                         |
+| for scheduling timed actions, see [timed-actions.adoc](timed-actions.adoc)                                                                                                  |
+| `akka.stream.Materializer`                                                                                                                                                  |
+| Used for running Akka streams                                                                                                                                               |
+| `com.typesafe.config.Config`                                                                                                                                                |
+| Access the user defined configuration picked up from `application.conf`                                                                                                     |
+| `java.util.concurrent.Executor`                                                                                                                                             |
+| An executor which runs each task in a virtual thread, and is safe to use for blocking async work, for example with `CompletableFuture.supplyAsync(() -> blocking, executor) |
+
 
 Furthermore, the following component specific types can also be injected:
 
