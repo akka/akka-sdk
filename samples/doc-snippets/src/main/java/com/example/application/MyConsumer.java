@@ -1,14 +1,9 @@
 package com.example.application;
 
-import akka.Done;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.consumer.Consumer;
 
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
-
-import static akka.Done.done;
 
 @ComponentId("my-consumer")
 public class MyConsumer extends Consumer {
@@ -17,8 +12,7 @@ public class MyConsumer extends Consumer {
   }
 
   record SomeService() {
-    public CompletionStage<Done> doSomething(Event event, String token) {
-      return CompletableFuture.completedFuture(done());
+    public void doSomething(Event event, String token) {
     }
   }
 
@@ -29,8 +23,8 @@ public class MyConsumer extends Consumer {
     var entityId = messageContext().eventSubject().get();
     var sequenceNumber = messageContext().metadata().asCloudEvent().sequence().get();
     var token = UUID.nameUUIDFromBytes((entityId + sequenceNumber).getBytes()); // <1>
-    return effects().asyncDone(
-      someService.doSomething(event, token.toString()));
+    someService.doSomething(event, token.toString());
+    return effects().done();
   }
   // end::deterministic-hashing[]
 }

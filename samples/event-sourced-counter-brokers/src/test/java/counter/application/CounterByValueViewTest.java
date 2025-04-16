@@ -52,7 +52,7 @@ class CounterByValueViewTest extends TestKitSupport {
       .ignoreExceptions()
       .atMost(20, SECONDS)
       .untilAsserted(() -> {
-        CounterByValueList result = await(componentClient.forView().method(CounterByValueView::findAll).invokeAsync());
+        CounterByValueList result = componentClient.forView().method(CounterByValueView::findAll).invoke();
 
         assertThat(result.counters()).containsOnly(
           new CounterByValueView.CounterByValue("c123", 6)
@@ -67,7 +67,7 @@ class CounterByValueViewTest extends TestKitSupport {
       .ignoreExceptions()
       .during(3, SECONDS)
       .untilAsserted(() -> {
-        CounterByValueList result = await(componentClient.forView().method(CounterByValueView::findAll).invokeAsync());
+        CounterByValueList result = componentClient.forView().method(CounterByValueView::findAll).invoke();
 
         //view state should be the same as before
         assertThat(result.counters()).containsOnly(

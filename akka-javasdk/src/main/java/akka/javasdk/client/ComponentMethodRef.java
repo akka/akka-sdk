@@ -22,4 +22,6 @@ public interface ComponentMethodRef<R> extends ComponentDeferredMethodRef<R> {
   ComponentMethodRef<R> withMetadata(Metadata metadata);
 
   CompletionStage<R> invokeAsync();
+
+  R invoke();
 }

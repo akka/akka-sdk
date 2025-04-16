@@ -38,8 +38,10 @@ import scala.concurrent.duration.FiniteDuration
 import scala.jdk.CollectionConverters.SeqHasAsJava
 import scala.jdk.DurationConverters.JavaDurationOps
 import akka.http.javadsl.model.StatusCodes
+import akka.javasdk.impl.ErrorHandling
 
 import java.util
+import scala.concurrent.ExecutionException
 
 /**
  * INTERNAL API
@@ -149,6 +151,13 @@ private[akka] final case class RequestBuilderImpl[R](
       response.entity
         .toStrict(timeout.toMillis, materializer)
         .thenApply((entity: HttpEntity.Strict) => bodyParser.apply(response, entity.getData)))
+
+  override def invoke(): StrictResponse[R] =
+    try {
+      invokeAsync.toCompletableFuture.get()
+    } catch {
+      case ex: ExecutionException => throw ErrorHandling.unwrapExecutionException(ex)
+    }
 
   override def responseBodyAs[T](`type`: Class[T]): RequestBuilder[T] = new RequestBuilderImpl[T](
     http,

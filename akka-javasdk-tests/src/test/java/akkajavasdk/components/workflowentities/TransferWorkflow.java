@@ -28,7 +28,7 @@ public class TransferWorkflow extends Workflow<TransferState> {
   public WorkflowDef<TransferState> definition() {
     var withdraw =
         step(withdrawStepName)
-            .asyncCall(Withdraw.class, cmd -> componentClient.forKeyValueEntity(cmd.from).method(WalletEntity::withdraw).invokeAsync(cmd.amount))
+            .call(Withdraw.class, cmd -> componentClient.forKeyValueEntity(cmd.from).method(WalletEntity::withdraw).invoke(cmd.amount))
             .andThen(String.class, __ -> {
               var state = currentState().withLastStep("withdrawn").asAccepted();
 
@@ -41,7 +41,7 @@ public class TransferWorkflow extends Workflow<TransferState> {
 
     var deposit =
         step(depositStepName)
-            .asyncCall(Deposit.class, cmd -> componentClient.forKeyValueEntity(cmd.to).method(WalletEntity::deposit).invokeAsync(cmd.amount)
+            .call(Deposit.class, cmd -> componentClient.forKeyValueEntity(cmd.to).method(WalletEntity::deposit).invoke(cmd.amount)
             ).andThen(String.class, __ -> {
               var state = currentState().withLastStep("deposited").asFinished();
               return effects().updateState(state).end();
@@ -66,6 +66,10 @@ public class TransferWorkflow extends Workflow<TransferState> {
         return effects().reply(new Message("transfer started already"));
       }
     }
+  }
+
+  public Effect<Boolean> commandHandlerIsOnVirtualThread() {
+    return effects().reply(Thread.currentThread().isVirtual());
   }
 
   public Effect<Message> genericStringsCall(List<String> primitives) {

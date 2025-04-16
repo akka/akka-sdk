@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
 @Consume.FromEventSourcedEntity(value = Counter.class, ignoreUnknown = true)
 public class Notifier extends Consumer {
 
-  private Logger logger = LoggerFactory.getLogger(Notifier.class);
+  private final Logger logger = LoggerFactory.getLogger(Notifier.class);
   private final EmailSender emailSender;
   private final EmailComposer emailComposer;
 
@@ -24,8 +24,8 @@ public class Notifier extends Consumer {
   public Effect onIncrease(ValueIncreased event) {
     String counterId = messageContext().eventSubject().orElseThrow();
     logger.info("Received increased event: {} (msg ce id {})", event.toString(), counterId);
-    return effects().asyncProduce(
-      emailComposer.composeEmail(counterId).thenCompose(
-        emailSender::send));
+    var email = emailComposer.composeEmail(counterId);
+    emailSender.send(email);
+    return effects().done();
   }
 }

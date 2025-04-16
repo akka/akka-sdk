@@ -54,7 +54,6 @@ curl localhost:9000/carts/cart1
 
 * Remove a shopping cart via controller:
 
-FIXME API support for header extraction yet
 ```shell
 curl -XDELETE -H "UserRole: Admin" localhost:9000/carts/cart1
 ```

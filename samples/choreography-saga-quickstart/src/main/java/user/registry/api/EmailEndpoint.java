@@ -27,19 +27,16 @@ public class EmailEndpoint {
    * This is gives access to the email state.
    */
   @Get("/emails/{address}")
-  public CompletionStage<UserEndpoint.EmailInfo> getEmailInfo(String address) {
-    return
-      client.forKeyValueEntity(address)
-        .method(UniqueEmailEntity::getState).invokeAsync()
-        .thenApply(email -> {
-          var emailInfo =
-            new UserEndpoint.EmailInfo(
-              email.address(),
-              email.status().toString(),
-              email.ownerId());
+  public UserEndpoint.EmailInfo getEmailInfo(String address) {
+    var email = client.forKeyValueEntity(address)
+        .method(UniqueEmailEntity::getState).invoke();
+    var emailInfo =
+        new UserEndpoint.EmailInfo(
+            email.address(),
+            email.status().toString(),
+            email.ownerId());
 
-          logger.info("Getting email info: {}", emailInfo);
-          return emailInfo;
-        });
+    logger.info("Getting email info: {}", emailInfo);
+    return emailInfo;
   }
 }

@@ -12,8 +12,6 @@ import io.grpc.Status;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.CompletionStage;
-
 
 // Opened up for access from the public internet to make the sample service easy to try out.
 // For actual services meant for production this must be carefully considered, and often set more limited
@@ -31,20 +29,18 @@ public class DelegateCustomerGrpcEndpointImpl implements DelegateCustomerGrpcEnd
   }
 
   @Override
-  public CompletionStage<CreateCustomerResponse> createCustomer(CreateCustomerRequest in) {
+  public CreateCustomerResponse createCustomer(CreateCustomerRequest in) {
     log.info("Delegating customer creation to upstream gRPC service: {}", in);
     if (in.getCustomerId().isEmpty())
       throw new GrpcServiceException(Status.INVALID_ARGUMENT.augmentDescription("No id specified"));
 
-    return customerService
-        .createCustomer(in) // <3>
-        .handleAsync((response, ex) -> {
-      if (ex != null) {
-        throw new RuntimeException("Delegate call to create upstream customer failed", ex);
-      } else {
-        return response;
-      }
-    });
+    try {
+      return customerService
+          .createCustomer(in); // <3>
+
+    } catch (Exception ex) {
+      throw new RuntimeException("Delegate call to create upstream customer failed", ex);
+    }
   }
 }
 // end::delegate[]

@@ -100,7 +100,7 @@ NOTE: The `@ComponentId` value `transfer` is common for all instances of this wo
 
 == Workflow definition
 
-One missing piece of our transfer workflow implementation is a workflow `definition` method, which composes all steps connected with transitions. A workflow `Step` has a unique name, an action to perform (e.g. asynchronous call to an Akka component, or asynchronous call to any external service) and a transition to select the next step (or `end` transition to finish the workflow, in case of the last step).
+One missing piece of our transfer workflow implementation is a workflow `definition` method, which composes all steps connected with transitions. A workflow `Step` has a unique name, an action to perform (e.g. a call to an Akka component, or a call to an external service) and a transition to select the next step (or `end` transition to finish the workflow, in case of the last step).
 
 ifdef::todo[TODO: add some diagram or sth]
 
@@ -111,7 +111,7 @@ include::example$transfer-workflow/src/main/java/com/example/transfer/applicatio
 ----
 <1> Each step should have a unique name.
 <2> Using the xref:component-and-service-calls.adoc#_component_client[ComponentClient], which is injected in the constructor.
-<3> We instruct Akka to run a given asynchronous call to withdraw funds from a wallet.
+<3> We instruct Akka to run a given call to withdraw funds from a wallet.
 <4> After successful withdrawal we return an `Effect` that will update the workflow state and move to the next step called "deposit." An input parameter for this step is a `Deposit` record.
 <5> Another workflow step action to deposit funds to a given wallet.
 <6> This time we return an effect that will stop workflow processing, by using the special `end` method.

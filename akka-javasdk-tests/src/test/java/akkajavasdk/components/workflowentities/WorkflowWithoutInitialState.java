@@ -7,8 +7,6 @@ package akkajavasdk.components.workflowentities;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.workflow.Workflow;
 
-import java.util.concurrent.CompletableFuture;
-
 @ComponentId("workflow-without-initial-state")
 public class WorkflowWithoutInitialState extends Workflow<String> {
 
@@ -17,7 +15,7 @@ public class WorkflowWithoutInitialState extends Workflow<String> {
   public WorkflowDef<String> definition() {
     var test =
         step("test")
-            .asyncCall(() -> CompletableFuture.completedFuture("ok"))
+            .call(() -> "ok")
             .andThen(String.class, result -> effects().updateState("success").end());
 
     return workflow()

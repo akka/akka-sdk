@@ -88,6 +88,8 @@ keyId
 Kolesnikov
 Lagom
 [Ll]ightbend
+LLM
+LLMs
 lmdbjava
 matchers
 materializer
@@ -195,3 +197,9 @@ volumeMounts
 Yugabyte
 Zolotko
 [Zz]sh
+Linode
+classpath
+kubectl
+dns
+DNS
+

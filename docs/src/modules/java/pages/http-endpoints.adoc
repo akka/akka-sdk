@@ -156,7 +156,7 @@ include::example$shopping-cart-quickstart/src/main/java/shoppingcart/api/Shoppin
 <2> Accept the `ComponentClient` and keep it in a field.
 <3> GET endpoint path is combined with a path parameter name, e.g. `/carts/123`.
 <4> The component client can be used to interact with other components.
-<5> Result of a request to a component is a `CompletionStage<T>`, it can be returned directly to let Akka serialize it.
+<5> Result of a request to a component is the Effect's reply type.
 <6> Use path parameter `+{cartId}+` in combination with request body `ShoppingCart.LineItem`.
 <7> Result of request mapped to a more suitable response, in this case, `200 Ok` with an empty body.
 
@@ -179,8 +179,7 @@ include::example$event-sourced-customer-registry-subscriber/src/main/java/custom
 <1> Accept the `HttpClientProvider`
 <2> Use it to create a client for the service `customer-registry`
 <3> Issue an HTTP POST request to the service
-<4> The result of a request is either `CompletionStage<T>` with the result
-<5> Once the response arrives, turn it into our own response.
+<4> Turn the response it into our own response
 
 TIP: If you're looking to test this locally, you will likely need to run the 2 services with different ports. For more details, consult xref:running-locally.adoc#multiple_services[Running multiple services].
 

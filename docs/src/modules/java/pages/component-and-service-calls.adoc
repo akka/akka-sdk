@@ -22,12 +22,23 @@ include::java:example$event-sourced-counter-brokers/src/main/java/counter/api/Co
 ----
 <1> Accept the `ComponentClient` as a constructor argument, keep it in a field.
 <2> Use a specific request builder for the component you want to call
-<3> Invoking the method returns a `CompletionStage<T>` where `T` is what the component eventually returns.
+<3> Invoking the method returns the `T` that the component eventually returns.
 <4> Adapt the response rather than returning it as is. In this case discarding the response value, and respond OK without a response body.
 
 The component client can call command handlers on Event Sourced Entities, Key Value Entities, Workflows, Timed Actions, and query methods on Views.
 
 The component client is available for injection only in Service Setup, Endpoints, Consumers, Timed Actions, and Workflows. For more information, see xref:java:setup-and-dependency-injection.adoc#_dependency_injection[dependency injection].
+
+It’s also possible to make calls without waiting for them to complete by using `ComponentClient.invokeAsync`, which returns a `CompletionStage<T>`. This allows you to trigger multiple calls concurrently, enabling parallel processing.
+
+[source,java,indent=0]
+.{sample-base-url}/event-sourced-counter-brokers/src/main/java/counter/api/CounterEndpoint.java[CounterEndpoint.java]
+----
+include::java:example$event-sourced-counter-brokers/src/main/java/counter/api/CounterEndpoint.java[tag=concurrent-endpoint-component-interaction]
+----
+<1> Call `invokeAsync()` and collect each `CompletionStage<T>`
+<2> When all tasks has been started, wait for all tasks to complete
+<3> When all tasks responses has successfully completed we can respond
 
 == Akka services
 
@@ -49,7 +60,7 @@ include::java:example$doc-snippets/src/main/java/com/example/callanotherservice/
 <1> Accept a `HttpClientProvider` parameter for the constructor
 <2> Use it to look up a client for the `counter` service
 <3> Use the `HttpClient` to prepare a REST call to the *counter* service endpoint
-<4> Invoking the call will return a `CompletionStage<StrictResponse<T>>` with details about the result as well as the deserialized response body.
+<4> Invoking the call will return a `StrictResponse<T>` with details about the result as well as the deserialized response body.
 <5> Handle the response, which may be successful, or an error
 
 NOTE: The HTTP client provider is only available for injection in the following types of components: HTTP Endpoints, gRPC Endpoints, Workflows, Consumers and Timed Actions.

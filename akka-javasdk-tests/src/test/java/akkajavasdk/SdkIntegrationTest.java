@@ -172,6 +172,21 @@ public class SdkIntegrationTest extends TestKitSupport {
   }
 
   @Test
+  public void verifyTimedActionRunsOnVirtualThread() {
+    timerScheduler.startSingleTimer("echo-action", ofMillis(0), componentClient.forTimedAction()
+        .method(EchoAction::stringMessage)
+        .deferred("check-if-virtual-thread"));
+
+    Awaitility.await()
+        .atMost(20, TimeUnit.SECONDS)
+        .untilAsserted(() -> {
+          var value = StaticTestBuffer.getValue("echo-action");
+          assertThat(value).isEqualTo("is-virtual-thread:true");
+        });
+
+  }
+
+  @Test
   public void verifyCounterEventSourceSubscription() {
     // GIVEN IncreaseAction is subscribed to CounterEntity events
     // WHEN the CounterEntity is requested to increase 42\
@@ -198,9 +213,9 @@ public class SdkIntegrationTest extends TestKitSupport {
   public void verifyActionIsNotSubscribedToMultiplyAndRouterIgnores() {
     var entityId = "counterId2";
     EventSourcedEntityClient counterClient = componentClient.forEventSourcedEntity(entityId);
-    await(counterClient.method(CounterEntity::increase).invokeAsync(1));
-    await(counterClient.method(CounterEntity::times).invokeAsync(2));
-    Integer lastKnownValue = await(counterClient.method(CounterEntity::increase).invokeAsync(1234));
+    counterClient.method(CounterEntity::increase).invoke(1);
+    counterClient.method(CounterEntity::times).invoke(2);
+    Integer lastKnownValue = counterClient.method(CounterEntity::increase).invoke(1234);
 
     assertThat(lastKnownValue).isEqualTo(1 * 2 + 1234);
 

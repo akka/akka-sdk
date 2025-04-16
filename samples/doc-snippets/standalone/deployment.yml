@@ -1,0 +1,91 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: shopping-cart-service
+  name: shopping-cart-service
+  namespace: shopping-cart-namespace
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: shopping-cart-service
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: shopping-cart-service
+    spec:
+      containers:
+        - name: shopping-cart-service
+          # use specific image version from docker publish
+          image: shopping-cart-quickstart:1.0-SNAPSHOT-20250326155510
+          imagePullPolicy: IfNotPresent
+          # these will need to be tuned for production environments!
+          #resources:
+          #  limits:
+          #    memory: "2Gi"
+          #  requests:
+          #    memory: "2Gi"
+          #    cpu: "1000m"
+          readinessProbe:
+            failureThreshold: 5
+            httpGet:
+              path: /ready
+              port: 8558
+              scheme: HTTP
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          livenessProbe:
+            failureThreshold: 5
+            httpGet:
+              path: /alive
+              port: 8558
+              scheme: HTTP
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          ports:
+            - name: http
+              containerPort: 9000
+              protocol: TCP
+            # akka-management and bootstrap
+            - name: management
+              containerPort: 8558
+              protocol: TCP
+          env:
+            - name: KUBERNETES_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: KUBERNETES_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: REQUIRED_CONTACT_POINT_NR
+              value: "1"
+            - name: SELECTOR_LABEL_VALUE
+              value: "shopping-cart-service"
+            - name: JAVA_TOOL_OPTIONS
+              value: "-Xms1024m -Xmx1024m"
+              # With proper memory resource limits the JVM heap can be a percentage
+              # value: "-XX:InitialRAMPercentage=60 -XX:MaxRAMPercentage=60 -XX:MaxHeapFreeRatio=100 -XX:+AlwaysPreTouch"
+            - name: DB_HOST
+              value: "host.minikube.internal"
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: db-secret
+                  key: DB_USER
+                  optional: true
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-secret
+                  key: DB_PASSWORD
+                  optional: true
