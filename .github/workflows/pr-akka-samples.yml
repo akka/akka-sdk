@@ -17,7 +17,9 @@ jobs:
           echo "Conclusion from `Publish` workflow: ${{ github.event.workflow_run.conclusion }}
           echo "Tag created from `Publish` workflow: ${{ github.ref }}
 
-  update-samples:
+  # Samples that are maintained in akka-sdk repository are copied to akka-samples
+  # after version replacement and doc tag cleanup.
+  update-full-samples:
     runs-on: ubuntu-22.04
     # run only when `publish` workflow is successful or this workflow manually triggered
     if: (github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch')
@@ -92,3 +94,68 @@ jobs:
           git push --set-upstream origin-rw $BRANCH
           gh pr create -B main -t "Auto PR - Bump SDK version to $sdk_version" \
               -b "This PR should update SDK (pom.xml) and latest source code.  [$GITHUB_SHA]($COMMIT_URL$GITHUB_SHA)"
+
+  # Update sdk version of samples that are maintained in akka-samples repository.
+  update-version-samples:
+    runs-on: ubuntu-22.04
+    # run only when `publish` workflow is successful or this workflow manually triggered
+    if: (github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch')
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { sample: "akka-chess", sampleRepo: "akka-samples/akka-chess" }
+          - { sample: "changelog-agent", sampleRepo: "akka-samples/changelog-agent" }
+          - { sample: "medical-tagging-agent", sampleRepo: "akka-samples/medical-tagging-agent" }
+          - { sample: "travel-agent", sampleRepo: "akka-samples/travel-agent" }
+          - { sample: "trip-agency", sampleRepo: "akka-samples/trip-agency" }
+
+    steps:
+      - name: Checkout
+        # https://github.com/actions/checkout/releases
+        # v4.1.1
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
+        with:
+          # we don't know what commit the last tag was it's safer to get entire repo so previousStableVersion resolves
+          fetch-depth: 0
+
+      - name: Cache Coursier cache
+        # https://github.com/coursier/cache-action/releases
+        # v6.4.5
+        uses: coursier/cache-action@1ff273bff02a8787bc9f1877d347948af647956d
+
+      - name: Set up JDK 21
+        # https://github.com/coursier/setup-action/releases
+        # v1.3.5
+        uses: coursier/setup-action@7bde40eee928896f074dbb76d22dd772eed5c65f
+        with:
+          jvm: temurin:1.21
+
+      - name: Checkout
+        # https://github.com/actions/checkout/releases/tag/v4.2.2
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: ${{ matrix.sampleRepo }}
+          path: akka-samples-${{ matrix.sample }}
+          token: ${{ secrets.AKKA_SAMPLES_RW_ACCESS_TOKEN }}
+          ref: main
+
+      - name: Open PR with changes
+        env:
+          COMMIT_URL: "https://github.com/${{ github.repository }}/commit/"
+          GH_TOKEN: ${{ secrets.AKKA_SAMPLES_RW_ACCESS_TOKEN }}
+        run: |
+          sdk_version=`./docs/bin/version.sh`
+          export SDK_VERSION=${sdk_version}
+          cd akka-samples-${{ matrix.sample }}
+          git config user.name "lightbend-tools-secure"
+          git config user.email "lightbend-tools-secure@lightbend.com"
+          git remote add origin-rw https://${{ secrets.AKKA_SAMPLES_RW_ACCESS_TOKEN }}@github.com/${{ matrix.sampleRepo }}.git
+          BRANCH=update-sdk-$sdk_version
+          git checkout -b $BRANCH
+          ../updateSdkVersions.sh java .
+          git add .
+          git commit . -m "chore: bump SDK version to $sdk_version"
+          git push --set-upstream origin-rw $BRANCH
+          gh pr create -B main -t "Auto PR - Bump SDK version to $sdk_version" \
+              -b "This PR should update SDK (pom.xml).  [$GITHUB_SHA]($COMMIT_URL$GITHUB_SHA)"
