@@ -5,7 +5,7 @@
 package akka.javasdk.impl.http
 
 import java.io.IOException
-import java.lang.{Iterable => JIterable}
+import java.lang.{ Iterable => JIterable }
 import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets
 import java.time.Duration
