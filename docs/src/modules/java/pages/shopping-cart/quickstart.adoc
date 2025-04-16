@@ -128,9 +128,9 @@ include::example$shopping-cart-quickstart/src/main/java/shoppingcart/api/Shoppin
 <2> The `ComponentClient` utility enables components to interact with each other.
 <3> Combine the `cartId` parameter with the endpoint root, e.g. `/carts/123`.
 <4> `ComponentClient` calls a command handler on an event-sourced entity from inside an endpoint.
-<5> The result of a request is a `CompletionStage<T>`, in this case a `CompletionStage<ShoppingCart>`.
+<5> The result of a request to `ShoppingCart.getCart` is a `ShoppingCart`.
 <6> Use path parameter `+{cartId}+` in combination with request body `ShoppingCart.LineItem`.
-<7> Map request to a more suitable response, in this case an `HTTP 200 OK` response.
+<7> On success, respond with a suitable response, in this case an `HTTP 200 OK`.
 
 == Run locally
 

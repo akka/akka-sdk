@@ -23,10 +23,9 @@ public class CounterEventsConsumer extends Consumer { // <3>
     logger.info("Received increased event: {} (msg ce id {})", event.toString(), messageContext().metadata().asCloudEvent().id());
     // tag::ese-consumer[]
     return switch (event) {
-      case ValueIncreased valueIncreased -> {
+      case ValueIncreased valueIncreased ->
         //processing value increased event
-        yield effects().done(); // <5>
-      }
+        effects().done(); // <5>
       case ValueMultiplied valueMultiplied -> effects().ignore(); // <6>
     };
   }

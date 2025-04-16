@@ -81,8 +81,8 @@ The _Endpoint_ is implemented with:
 public class HelloWorldEndpoint {
 
   @Get("/")
-  public CompletionStage<String> helloWorld() {
-    return completedStage("Hello World!");
+  public String helloWorld() {
+    return "Hello World!";
   }
 }
 ```

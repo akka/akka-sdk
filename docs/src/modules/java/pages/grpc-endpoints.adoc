@@ -36,7 +36,7 @@ include::example$doc-snippets/src/main/java/com/example/api/CustomerGrpcEndpoint
 ----
 <1> Mark class as a gRPC endpoint and implementing the generated interface `CustomerGrpcEndpoint`.
 <2> Create a new `Customer` protobuf message and set the `name` and `email` fields.
-<3> Return a `CompletionStage` that is completed with the `Customer` protobuf message.
+<3> Respond with the `Customer` protobuf message to the client.
 
 NOTE: This implementation does not interact with any other components and has an hard-coded response for simplification purposes. Interacting with other components is covered in the next section.
 

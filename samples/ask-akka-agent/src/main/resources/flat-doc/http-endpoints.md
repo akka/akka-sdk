@@ -123,7 +123,7 @@ it will be injected by the SDK.
 4. The component client can be used to interact with other components.
 5. Result of a request to a component is a `CompletionStage<T>`, it can be returned directly to let Akka serialize it.
 6. Use path parameter `\{cartId}` in combination with request body `ShoppingCart.LineItem`.
-7. Result of request mapped to a more suitable response, in this case, `200 Ok` with an empty body.
+7. When the call has completed successfully, respond `200 Ok` with an empty body.
 
 For more details see [component-and-service-calls.adoc](component-and-service-calls.adoc)
 
@@ -142,7 +142,7 @@ of the service:
 2. Use it to create a client for the service `customer-registry`
 3. Issue an HTTP POST request to the service
 4. The result of a request is either `CompletionStage<T>` with the result
-5. Once the response arrives, turn it into our own response.
+5. If the call was successful, respond with our own response.
 
 **💡 TIP**\
 If you’re looking to test this locally, you will likely need to run the 2 services with different ports. For more details, consult [Running multiple services](running-locally.adoc#_running_multiple_services_locally).
