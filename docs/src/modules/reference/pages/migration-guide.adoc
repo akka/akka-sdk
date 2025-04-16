@@ -1,3 +1,25 @@
 = Migration Guide
 
 include::ROOT:partial$include.adoc[]
+
+== SDK 3.3.0
+
+This release runs all user component and endpoint logic on Java 21 virtual threads, this means it is
+safe to do IO calls without blocking the underlying OS thread.
+
+This means it is no longer any need to use `CompletionStage` and `CompletableFuture` composition when
+doing component client, HTTP client and gRPC client calls. Where a service would previously call `.invokeAsync()` and get a future back, you can now instead use `.invoke()` and directly operate on or return the return value.
+
+=== Breaking changes
+
+To make the SDK as easy to use as possible we have made the following breaking changes, you will have
+to update your service if using any of the following features:
+
+ * Scheduling and cancelling timers using `TimerScheduler.startSingleTimer(...)` and `TimerScheduler.cancel()` are now blocking and returns `void`. If you still prefer to use future composition, new methods called `startSingleTimerAsync` and `cancelAsync` has been added.
+ * gRPC endpoints with unary and client streaming calls will now return the response message directly, without wrapping it in a `CompletionStage`.
+ * gRPC clients now return the response value directly for unary and client streaming calls. Async/future responses can still be accessed via the request builder APIs (`grpcClient.someMethod().invokeAsync(parameter)`)
+
+=== Blocking and parallelism
+To safely run blocking logic inside of completion stages, for example to parallelize blocking tasks, the Service Setup, Endpoints, Consumers, Timed Actions, and Workflows can now can accept a `java.util.concurrent.Executor` to the constructor.
+
+The Akka SDK will inject a virtual thread enabled executor where it is safe to run blocking future operations. For such operations on the Java stanard library `CompletableFuture` and `CompletionStage` APIs the executor is commonly accepted as an additional parameter after the lambda operating on the future value.
