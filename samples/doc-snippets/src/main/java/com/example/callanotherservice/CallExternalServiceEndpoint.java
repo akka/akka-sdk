@@ -8,7 +8,6 @@ import akka.javasdk.http.HttpClientProvider;
 import akka.javasdk.http.StrictResponse;
 
 import java.util.List;
-import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
 
 @HttpEndpoint

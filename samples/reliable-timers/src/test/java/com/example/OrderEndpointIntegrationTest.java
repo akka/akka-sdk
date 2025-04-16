@@ -104,11 +104,10 @@ public class OrderEndpointIntegrationTest extends TestKitSupport {
   }
 
   private String placeOrder(OrderRequest orderReq) {
-    return await(httpClient.POST("/orders")
+    return httpClient.POST("/orders")
                     .withRequestBody(orderReq)
                     .responseBodyAs(Order.class)
-                    .invokeAsync(),
-            timeout).body().id();
+                    .invoke().body().id();
   }
 
   private OrderStatus getOrderStatus(String orderId) {

@@ -9,8 +9,6 @@ import akka.javasdk.client.ComponentClient;
 import store.product.application.ProductEntity;
 import store.product.domain.Product;
 
-import java.util.concurrent.CompletionStage;
-
 import static akka.javasdk.http.HttpResponses.created;
 
 @HttpEndpoint("/products")

@@ -19,7 +19,6 @@ import user.registry.domain.User;
 import user.registry.application.UsersByCountryView;
 
 import java.util.Optional;
-import java.util.concurrent.CompletionStage;
 
 /**
  * Controller for the user registry application.

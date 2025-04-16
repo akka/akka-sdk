@@ -5,9 +5,6 @@ import customer.api.proto.Customer;
 import customer.api.proto.CustomerGrpcEndpoint;
 import customer.api.proto.GetCustomerRequest;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
-
 @GrpcEndpoint // <1>
 public class CustomerGrpcEndpointImpl implements CustomerGrpcEndpoint {
 

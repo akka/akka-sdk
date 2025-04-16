@@ -6,8 +6,6 @@ import akka.javasdk.annotations.http.Post;
 import akka.javasdk.http.HttpClient;
 import akka.javasdk.http.HttpClientProvider;
 
-import java.util.concurrent.CompletionStage;
-
 // Allow all other Akka services deployed in the same project to access the components of this
 // Akka service, but disallow access from the internet.
 // Documentation at https://doc.akka.io/java/access-control.html

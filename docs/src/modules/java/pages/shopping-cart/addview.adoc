@@ -52,7 +52,7 @@ include::example$shopping-cart-with-view/src/main/java/shoppingcart/api/Shopping
 
 From the client standpoint, they're supplying both the name and description of the product in the request. In subsequent tutorials, we might illustrate a better place to put product metadata like that.
 
-Next, we need a _command_ type for the entity to handle. Remember that calling `invokeAsync` from the endpoint will only take a single parameter, so our command has to hold all of the necessary data.
+Next, we need a _command_ type for the entity to handle. Remember that calling `invoke` from the endpoint will only take a single parameter, so our command has to hold all of the necessary data.
 
 [source,java,indent=0]
 .{sample-base-url}/shopping-cart-with-view/src/main/java/shoppingcart/application/ShoppingCartEntity.java[ShoppingCartEntity.java]

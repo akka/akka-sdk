@@ -10,8 +10,6 @@ import akka.javasdk.http.HttpResponses;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.CompletionStage;
-
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
 @HttpEndpoint("/api/index")
 public class IndexerEndpoint {
@@ -25,18 +23,18 @@ public class IndexerEndpoint {
   }
 
   @Post("/start")
-  public CompletionStage<HttpResponse> startIndexation() {
-    return componentClient.forWorkflow("indexing")
+  public HttpResponse startIndexation() {
+    componentClient.forWorkflow("indexing")
       .method(RagIndexingWorkflow::start)
-      .invokeAsync()
-      .thenApply(__ -> HttpResponses.accepted());
+      .invoke();
+    return HttpResponses.accepted();
   }
 
   @Post("/abort")
-  public CompletionStage<HttpResponse> abortIndexation() {
-    return componentClient.forWorkflow("indexing")
+  public HttpResponse abortIndexation() {
+    componentClient.forWorkflow("indexing")
       .method(RagIndexingWorkflow::abort)
-      .invokeAsync()
-      .thenApply(__ -> HttpResponses.accepted());
+      .invoke();
+    return HttpResponses.accepted();
   }
 }

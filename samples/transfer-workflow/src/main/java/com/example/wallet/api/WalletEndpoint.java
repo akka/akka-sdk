@@ -54,7 +54,7 @@ public class WalletEndpoint {
   public HttpResponse withdraw(String id, int amount) {
     componentClient.forEventSourcedEntity(id)
       .method(WalletEntity::withdraw)
-      .invokeAsync(amount);
+      .invoke(amount);
     return HttpResponses.ok();
   }
 }

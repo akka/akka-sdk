@@ -8,8 +8,6 @@ import com.example.proto.ExampleGrpcEndpointClient;
 import com.example.proto.HelloReply;
 import com.example.proto.HelloRequest;
 
-import java.util.concurrent.CompletionStage;
-
 // tag::delegating-endpoint[]
 @GrpcEndpoint
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.ALL))

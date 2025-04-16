@@ -4,8 +4,6 @@ import akka.javasdk.client.ComponentClient;
 import com.example.domain.Counter;
 import org.springframework.stereotype.Service;
 
-import java.util.concurrent.CompletionStage;
-
 @Service
 public class EmailComposer {
 

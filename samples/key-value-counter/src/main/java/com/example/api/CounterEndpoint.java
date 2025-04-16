@@ -12,8 +12,6 @@ import akka.javasdk.http.HttpResponses;
 import com.example.application.CounterEntity;
 import com.example.domain.Counter;
 
-import java.util.concurrent.CompletionStage;
-
 // tag::endpoint[]
 
 // Opened up for access from the public internet to make the sample service easy to try out.

@@ -108,6 +108,7 @@ In addition to an object that can be turned to JSON, a request handler can retur
 
  * `null` or `void` to return an empty body.
  * `String` to return a UTF-8 encoded `text/plain` HTTP response.
+ * A record or other class that can be serialized to JSON.
  * `CompletionStage<T>` to respond based on an asynchronous result.
   ** When the completion stage is completed with a `T` it is
    turned into a response.
