@@ -40,7 +40,7 @@
 
         <!-- These are dependent on runtime environment and cannot be customized by users -->
         <maven.compiler.release>21</maven.compiler.release>
-        <kalix-runtime.version>1.4.7</kalix-runtime.version>
+        <akka-runtime.version>1.4.7</akka-runtime.version>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <skip.docker>false</skip.docker>
@@ -493,7 +493,7 @@
                     <dependency>
                         <groupId>io.kalix</groupId>
                         <artifactId>akka-runtime-core_2.13</artifactId>
-                        <version>${kalix-runtime.version}</version>
+                        <version>${akka-runtime.version}</version>
                     </dependency>
                 </dependencies>
             </dependencyManagement>
@@ -574,7 +574,7 @@
             <dependency>
                 <groupId>io.kalix</groupId>
                 <artifactId>kalix-dev-runtime_2.13</artifactId>
-                <version>${kalix-runtime.version}</version>
+                <version>${akka-runtime.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

@@ -20,9 +20,9 @@ if [[ -z "$RUNTIME_VERSION" ]]; then
 fi
 
 echo ">>> Updating Dependencies.scala"
-sed -i.bak "s/sys.props.getOrElse(\"kalix-runtime.version\", \"\(.*\)\")/sys.props.getOrElse(\"kalix-runtime.version\", \"$RUNTIME_VERSION\")/" ./project/Dependencies.scala
+sed -i.bak "s/sys.props.getOrElse(\"akka-runtime.version\", \"\(.*\)\")/sys.props.getOrElse(\"akka-runtime.version\", \"$RUNTIME_VERSION\")/" ./project/Dependencies.scala
 rm ./project/Dependencies.scala.bak
 
 echo ">>> Updating akka-javasdk-maven/akka-javasdk-parent/pom.xml"
-sed -i.bak "s/<kalix-runtime\.version>[^<]*/<kalix-runtime.version>$RUNTIME_VERSION/" ./akka-javasdk-maven/akka-javasdk-parent/pom.xml
+sed -i.bak "s/<akka-runtime\.version>[^<]*/<akka-runtime.version>$RUNTIME_VERSION/" ./akka-javasdk-maven/akka-javasdk-parent/pom.xml
 rm ./akka-javasdk-maven/akka-javasdk-parent/pom.xml.bak
