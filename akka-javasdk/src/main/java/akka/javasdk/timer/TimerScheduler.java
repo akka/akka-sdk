@@ -60,7 +60,6 @@ public interface TimerScheduler {
    */
   void delete(String name);
 
-
   /**
    * Schedule a single timer. Timers allow for scheduling calls in the future. For example, to
    * verify that some process have been completed or not.
@@ -108,32 +107,29 @@ public interface TimerScheduler {
   <I, O> CompletionStage<Done> createSingleTimerAsync(
       String name, Duration delay, int maxRetries, DeferredCall<I, O> deferredCall);
 
-
   /**
    * Delete an existing timer. This completes successfully if no timer is registered for the passed
    * name.
    */
   CompletionStage<Done> deleteAsync(String name);
 
-
   /**
-   * @deprecated Use {@link TimerScheduler#createSingleTimerAsync(String, Duration, DeferredCall)} instead.
+   * @deprecated Use {@link TimerScheduler#createSingleTimerAsync(String, Duration, DeferredCall)}
+   *     instead.
    */
   @Deprecated(since = "3.3.0", forRemoval = true)
   <I, O> CompletionStage<Done> startSingleTimer(
-    String name, Duration delay, DeferredCall<I, O> deferredCall);
-
+      String name, Duration delay, DeferredCall<I, O> deferredCall);
 
   /**
-   * @deprecated Use {@link TimerScheduler#createSingleTimerAsync(String, Duration, int, DeferredCall)} instead.
+   * @deprecated Use {@link TimerScheduler#createSingleTimerAsync(String, Duration, int,
+   *     DeferredCall)} instead.
    */
   @Deprecated(since = "3.3.0", forRemoval = true)
   <I, O> CompletionStage<Done> startSingleTimer(
-    String name, Duration delay, int maxRetries, DeferredCall<I, O> deferredCall);
+      String name, Duration delay, int maxRetries, DeferredCall<I, O> deferredCall);
 
-  /**
-   * @deprecated User {@link TimerScheduler#deleteAsync(String)} instead.
-   */
+  /** @deprecated User {@link TimerScheduler#deleteAsync(String)} instead. */
   @Deprecated(since = "3.3.0", forRemoval = true)
   CompletionStage<Done> cancel(String name);
 }
