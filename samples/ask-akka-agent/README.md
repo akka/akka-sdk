@@ -1,5 +1,6 @@
 # Ask Akka Agentic AI Example
-A proof of concept illustrating how to build an Agentic RAG workflow with Akka.
+
+This sample illustrates how to build an AI agent that performs a RAG workflow. 
 
 # OpenAi and MongoDb Atlas
 
