@@ -46,7 +46,7 @@ public class TransferWorkflow extends Workflow<TransferState> {
           logger.info("Running withdraw: {}", cmd);
 
           // cancelling the timer in case it was scheduled
-          timers().cancel("acceptationTimout-" + currentState().transferId());
+          timers().delete("acceptationTimout-" + currentState().transferId());
 
           return componentClient.forEventSourcedEntity(currentState().transfer().from())
               .method(WalletEntity::withdraw)

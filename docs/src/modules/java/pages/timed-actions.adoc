@@ -12,7 +12,7 @@ When a timer is triggered, it initiates the scheduled call. If the call succeeds
 
 * Guaranteed to run at least once.
 * Can be scheduled to run at any future time.
-* Can be canceled if no longer needed.
+* Can be deleted if no longer needed.
 * Automatically removed upon successful completion.
 * Rescheduled after failures, with a configurable limit on retry attempts.
 
@@ -112,9 +112,10 @@ Since this method is intended to be called by a timer, it must not fail. The `Or
 
 If a scheduled call fails, it retries with an exponential backoff, starting at 3 seconds and maxing out at 30 seconds after successive failures.
 
-Retries continue indefinitely by default. To limit retries, set the `maxRetries` parameter in the `startSingleTimer` method.
+Retries continue indefinitely by default. To limit retries, set the `maxRetries` parameter in the `createSingleTimer`
+method.
 
-== Canceling a timer
+== Deleting a timer
 
 Let’s review the implementation of the confirmation endpoint.
 
@@ -126,9 +127,11 @@ include::example$reliable-timers/src/main/java/com/example/api/OrderEndpoint.jav
 <1> Confirms the order via `OrderEntity`.
 <2> Removes the timer upon successful confirmation.
 
-Once `OrderEntity` completes the operation, the timer is canceled. This sequence is important. Even if canceling the timer fails, the `OrderEntity.cancel` method, as seen earlier, ensures proper handling for obsolete timers, signaling Akka that they can be removed.
+Once `OrderEntity` completes the operation, the timer is deleted. This sequence is important. Even if deleting the
+timer fails, the `OrderEntity.cancel` method, as seen earlier, ensures proper handling for obsolete timers, signaling Akka that they can be removed.
 
-TIP: You could entirely skip timer cancellation when handling confirmation. In this case, the registered timer would be triggered later, and `OrderEntity.cancel` would handle this case gracefully. However, it’s always good practice to perform housekeeping to save resources.
+TIP: You could entirely skip timer deletion when handling confirmation. In this case, the registered timer would be
+triggered later, and `OrderEntity.cancel` would handle this case gracefully. However, it’s always good practice to perform housekeeping to save resources.
 
 == Best practices
 

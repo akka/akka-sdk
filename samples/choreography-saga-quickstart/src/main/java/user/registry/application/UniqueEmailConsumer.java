@@ -66,7 +66,7 @@ public class UniqueEmailConsumer extends Consumer {
 
     } else if (email.isConfirmed()) {
       logger.info("Email is already confirmed, deleting timer (if exists) '{}'", timerId);
-      timers().cancel(timerId);
+      timers().delete(timerId);
       return effects().done();
 
     } else {

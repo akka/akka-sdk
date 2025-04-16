@@ -81,7 +81,7 @@ public class OrderEndpoint {
 
     return switch (confirmResult) {
       case OrderEntity.Result.Ok ignored -> {
-        timerScheduler.cancel(timerName(orderId)); // <2>
+        timerScheduler.delete(timerName(orderId)); // <2>
         yield HttpResponses.ok();
       }
       case OrderEntity.Result.NotFound notFound ->
@@ -99,7 +99,7 @@ public class OrderEndpoint {
     componentClient.forKeyValueEntity(orderId)
         .method(OrderEntity::cancel)
         .invoke();
-    timerScheduler.cancel(timerName(orderId));
+    timerScheduler.delete(timerName(orderId));
 
     return HttpResponses.ok();
   }
