@@ -29,6 +29,12 @@ The xref:java:shopping-cart/quickstart.adoc#_the_external_api[shopping cart endp
 
 ****
 
+
+* Akka CLI 3.0.16
+  - Manage multi-region aka global hostnames
+  - Introduce `akka projects hostnames update`
+  - Configure OpenTelemetry HTTP collectors (additional to gRPC)
+
 * Akka SDK 3.3.0
   - User logic now runs on virtual threads. This includes some breaking API changes, see xref:page$migration-guide.adoc[migration guide] for details.
   - New APIs for retries
