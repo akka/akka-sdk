@@ -15,13 +15,17 @@ Current versions
 [sidebar]
 ****
 
-** Self managed deployment **
+**Self managed deployment**
+
 For organizations that want control over how Akka services are installed, updated, and maintained. Akka services are packaged into standalone binaries with Akka clustering for scaling and deploy to self-managed nodes. You are responsible for separately managing secure connectivity, routes, installation, deployment, and persistence.
 
 This new deployment alternative is described in xref:self-managed:index.adoc[].
 
-** Virtual threads **
+**Virtual threads**
+
 SDK running on virtual threads means it is possible to benefit from the performance of the underlying async Akka runtime, without having to use complex completion stage composition. The service code can now look like regular, simple, Java code.
+
+The xref:java:shopping-cart/quickstart.adoc#_the_external_api[shopping cart endpoint] is one example of how that looks like
 
 ****
 

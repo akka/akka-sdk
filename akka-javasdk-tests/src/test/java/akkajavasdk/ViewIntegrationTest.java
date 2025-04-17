@@ -50,6 +50,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @ExtendWith(Junit5LogCapturing.class)
 public class ViewIntegrationTest extends TestKitSupport {
 
+
   /* Note: when changing test view queries/types so that they are invalid
    *       The failure is not shown by log capturing (happens in beforeAll)
    *       so will need changing logback-test.xml to show useful information.
