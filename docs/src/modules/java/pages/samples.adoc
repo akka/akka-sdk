@@ -14,7 +14,10 @@ Samples are available that demonstrate important patterns and abstractions. Thes
 |=======================
 | Description | Source download | Level
 | xref:java:shopping-cart/index.adoc[Build a shopping cart] | link:https://github.com/akka-samples/shopping-cart-quickstart[Github Repository] |Beginner
-| xref:java:ask-akka/index.adoc[AI agent that performs a RAG workflow] | link:https://github.com/akka-samples/ask-akka-agent[Github Repository] |Intermediate
+| xref:java:ask-akka/index.adoc[AI agent that performs a RAG workflow] using Langchain4J. Chat memory by using entity and view. | link:https://github.com/akka-samples/ask-akka-agent[Github Repository] |Intermediate
+| AI agent that creates personalized travel itineraries. Illustrates reliable interaction with a LLM using Langchain4J and a workflow. Entities are used for durable state of user preferences and generated trips. | link:https://github.com/akka-samples/ask-akka-agent[Github Repository] |Beginner
+| AI agent that leverages a LLM to process medical discharge summaries and assign tags, while also enabling human verification and comparative analysis. Interactions with OpenAI LLM using the OpenAI Java SDK and a workflow. | link:https://github.com/akka-samples/medical-tagging-agent[Github Repository] |Intermediate
+| AI agent that creates release notes summaries, every time there is a release from set up GitHub repositories. Interactions with Anthropic Claude is using the Anthropic Java SDK. Using tools to retrieve detailed information from GitHub. Entities are used for storing release summaries. Timed action looks for new releases periodically and creates the summary using the LLM. | link:https://github.com/akka-samples/changelog-agent[Github Repository] |Intermediate
 | A customer registry with query capabilities | link:../java/_attachments/customer-registry-quickstart.zip[customer-registry-quickstart.zip] |Intermediate
 | A funds transfer workflow between two wallets | link:https://github.com/akka-samples/transfer-workflow-compensation[Github Repository] |Intermediate
 | A user registration service implemented as a Choreography Saga | link:https://github.com/akka-samples/choreography-saga-quickstart[Github Repository] |Advanced
