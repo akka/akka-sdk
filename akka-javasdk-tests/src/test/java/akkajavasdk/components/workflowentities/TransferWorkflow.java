@@ -8,6 +8,8 @@ import akkajavasdk.components.actions.echo.Message;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.workflow.Workflow;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.List;
@@ -17,6 +19,8 @@ public class TransferWorkflow extends Workflow<TransferState> {
 
   private final String withdrawStepName = "withdraw";
   private final String depositStepName = "deposit";
+
+  private final Logger logger = LoggerFactory.getLogger(getClass());
 
   private ComponentClient componentClient;
 
@@ -47,10 +51,20 @@ public class TransferWorkflow extends Workflow<TransferState> {
               return effects().updateState(state).end();
             });
 
+    // this last step is mainly to ensure that Runnables are properly supported
+    var logAndStop =
+        step("logAndStop")
+            .call(() -> logger.info("Workflow finished"))
+            .andThen(() ->
+              effects()
+                .updateState(currentState().withLastStep("logAndStop"))
+                .end());
+
     return workflow()
         .timeout(Duration.ofSeconds(10))
         .addStep(withdraw)
-        .addStep(deposit);
+        .addStep(deposit)
+        .addStep(logAndStop);
   }
 
   public Effect<Message> startTransfer(Transfer transfer) {
