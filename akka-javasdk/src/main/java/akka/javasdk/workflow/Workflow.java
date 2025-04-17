@@ -525,6 +525,43 @@ public abstract class Workflow<S> {
     }
   }
 
+  public static final class RunnableStep implements Step {
+
+    final private String _name;
+    final public Runnable runnable;
+    final public Supplier<Effect.TransitionalEffect<Void>> transitionFunc;
+    private Optional<Duration> _timeout = Optional.empty();
+
+    /**
+     * Not for direct user construction, instances are created through the workflow DSL
+     */
+    public RunnableStep(String name,
+                        Runnable runnable,
+                        Supplier<Effect.TransitionalEffect<Void>> transitionFunc) {
+      _name = name;
+      this.runnable = runnable;
+      this.transitionFunc = transitionFunc;
+    }
+
+    @Override
+    public String name() {
+      return this._name;
+    }
+
+    @Override
+    public Optional<Duration> timeout() {
+      return this._timeout;
+    }
+
+    /**
+     * Define a step timeout.
+     */
+    public RunnableStep timeout(Duration timeout) {
+      this._timeout = Optional.of(timeout);
+      return this;
+    }
+  }
+
   public static class AsyncCallStep<CallInput, CallOutput, FailoverInput> implements Step {
 
     final private String _name;

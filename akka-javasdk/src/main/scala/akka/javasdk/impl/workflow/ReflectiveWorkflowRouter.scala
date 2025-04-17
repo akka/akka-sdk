@@ -22,8 +22,7 @@ import akka.javasdk.impl.workflow.ReflectiveWorkflowRouter.WorkflowStepNotSuppor
 import akka.javasdk.timer.TimerScheduler
 import akka.javasdk.workflow.CommandContext
 import akka.javasdk.workflow.Workflow
-import akka.javasdk.workflow.Workflow.AsyncCallStep
-import akka.javasdk.workflow.Workflow.CallStep
+import akka.javasdk.workflow.Workflow.{ AsyncCallStep, CallStep, RunnableStep }
 import akka.javasdk.workflow.Workflow.Effect.TransitionalEffect
 import akka.javasdk.workflow.WorkflowContext
 import akka.runtime.sdk.spi.BytesPayload
@@ -136,6 +135,11 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
     }
 
     workflow.definition().findByName(stepName).toScala match {
+
+      case Some(call: RunnableStep) =>
+        call.runnable.run()
+        Future.successful(BytesPayload.empty)
+
       case Some(call: CallStep[_, _, _]) =>
         val decodedInput = decodeInputForClass(call.callInputClass)
         val output = call.callFunc
@@ -173,6 +177,10 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
         .apply(decodeInput(result, transitionInputClass))
 
     workflow.definition().findByName(stepName).toScala match {
+      case Some(runnableStep: RunnableStep) =>
+        val effect = runnableStep.transitionFunc.get()
+        TransitionalResult(effect)
+
       case Some(call: CallStep[_, _, _]) =>
         val effect = applyTransitionFunc(call.transitionFunc, call.transitionInputClass)
         TransitionalResult(effect)

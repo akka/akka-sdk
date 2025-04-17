@@ -10,7 +10,6 @@ import java.lang.reflect.Method
 import java.util
 import java.util.Optional
 import java.util.concurrent.CompletionStage
-
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.Promise
@@ -78,6 +77,7 @@ import akka.javasdk.timedaction.TimedAction
 import akka.javasdk.timer.TimerScheduler
 import akka.javasdk.view.View
 import akka.javasdk.workflow.Workflow
+import akka.javasdk.workflow.Workflow.RunnableStep
 import akka.javasdk.workflow.WorkflowContext
 import akka.runtime.sdk.spi
 import akka.runtime.sdk.spi.ComponentClients
@@ -443,6 +443,7 @@ private final class Sdk(
               List(asyncCallStep.callInputClass, asyncCallStep.transitionInputClass)
             case callStep: Workflow.CallStep[_, _, _] =>
               List(callStep.callInputClass, callStep.transitionInputClass)
+            case runnable: RunnableStep => List.empty
           }
           .foreach(serializer.registerTypeHints)
 
