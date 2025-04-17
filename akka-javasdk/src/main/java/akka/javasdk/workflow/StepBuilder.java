@@ -82,8 +82,8 @@ public class StepBuilder {
    *
    * @param callInputClass Input class for call factory.
    * @param callFactory    Factory method for creating async call.
-   * @param <Input>        Input for async call factory, provided by transition method.
-   * @param <Output>       Output of async call.
+   * @param <Input>        Input for the async call factory, provided by transition method.
+   * @param <Output>       Output of the async call.
    * @return Step builder.
    */
   public <Input, Output> AsyncCallStepBuilder<Input, Output> asyncCall(Class<Input> callInputClass, Function<Input, CompletionStage<Output>> callFactory) {
@@ -101,7 +101,7 @@ public class StepBuilder {
    * On failure, the step will be retried according to the default retry strategy or the one defined in the step configuration.
    *
    * @param callSupplier Factory method for creating async call.
-   * @param <Output>     Output of async call.
+   * @param <Output>     Output of the async call.
    * @return Step builder.
    */
   public <Output> AsyncCallStepBuilder<Void, Output> asyncCall(Supplier<CompletionStage<Output>> callSupplier) {
@@ -133,12 +133,26 @@ public class StepBuilder {
      *
      * @param transitionInputClass Input class for transition.
      * @param transitionFunc       Function that transform the action result to a {@link Workflow.Effect.TransitionalEffect}
-     * @return AsyncCallStep
+     * @return CallStep
      */
     public Workflow.CallStep<CallInput, CallOutput, ?> andThen(Class<CallOutput> transitionInputClass, Function<CallOutput, Workflow.Effect.TransitionalEffect<Void>> transitionFunc) {
       return new Workflow.CallStep<>(name, callInputClass, callFunc, transitionInputClass, transitionFunc);
     }
 
+    /**
+     * Transition to the next step after the step call completes.
+     * <p>
+     * The {@link Supplier} passed to this method should return an {@link Workflow.Effect.TransitionalEffect}
+     * describing the next step to transition to. Note that the output of the call is not passed to this function.
+     * <p>
+     * When defining the Effect, you can update the workflow state and indicate the next step to transition to.
+     * This can be another step, or a pause or end of the workflow.
+     * <p>
+     * When transition to another step, you can also pass an input parameter to the next step.
+     *
+     * @param transitionFunc       Supplier of {@link Workflow.Effect.TransitionalEffect}
+     * @return CallStep
+     */
     public Workflow.CallStep<CallInput, CallOutput, ?> andThen(Supplier<Workflow.Effect.TransitionalEffect<Void>> transitionFunc) {
       return new Workflow.CallStep<>(name, callInputClass, callFunc, null, __ -> transitionFunc.get());
     }
@@ -165,8 +179,8 @@ public class StepBuilder {
      * <p>
      * When transition to another step, you can also pass an input parameter to the next step.
      *
-     * @param transitionFunc       Supplier of{@link Workflow.Effect.TransitionalEffect}
-     * @return AsyncCallStep
+     * @param transitionFunc       Supplier of {@link Workflow.Effect.TransitionalEffect}
+     * @return RunnableStep
      */
     public Workflow.RunnableStep andThen(Supplier<Workflow.Effect.TransitionalEffect<Void>> transitionFunc) {
       return new Workflow.RunnableStep(name, runnable, transitionFunc);
@@ -208,8 +222,21 @@ public class StepBuilder {
       return new Workflow.AsyncCallStep<>(name, callInputClass, callFunc, transitionInputClass, transitionFunc);
     }
 
-    public Workflow.AsyncCallStep<CallInput, CallOutput, ?> andThen(Supplier<
-      Workflow.Effect.TransitionalEffect<Void>> transitionFunc) {
+    /**
+     * Transition to the next step after the step call completes.
+     * <p>
+     * The {@link Supplier} passed to this method should return an {@link Workflow.Effect.TransitionalEffect}
+     * describing the next step to transition to. Note that the output of the call is not passed to this function.
+     * <p>
+     * When defining the Effect, you can update the workflow state and indicate the next step to transition to.
+     * This can be another step, or a pause or end of the workflow.
+     * <p>
+     * When transition to another step, you can also pass an input parameter to the next step.
+     *
+     * @param transitionFunc       Supplier of {@link Workflow.Effect.TransitionalEffect}
+     * @return AsyncCallStep
+     */
+    public Workflow.AsyncCallStep<CallInput, CallOutput, ?> andThen(Supplier<Workflow.Effect.TransitionalEffect<Void>> transitionFunc) {
       return new Workflow.AsyncCallStep<>(name, callInputClass, callFunc, null, __ -> transitionFunc.get());
     }
   }
