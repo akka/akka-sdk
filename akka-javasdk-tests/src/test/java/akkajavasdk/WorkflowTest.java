@@ -86,6 +86,18 @@ public class WorkflowTest extends TestKitSupport {
         assertThat(balance1).isEqualTo(90);
         assertThat(balance2).isEqualTo(110);
       });
+
+
+    Awaitility.await()
+      .ignoreExceptions()
+      .atMost(20, TimeUnit.of(SECONDS))
+      .untilAsserted(() -> {
+        // this is mostly to verify that the last step (Runnable + Supplier) worked as expect
+        String lastStep =
+          componentClient.forWorkflow(transferId)
+            .method(TransferWorkflow::getLastStep).invoke().text();
+        assertThat(lastStep).isEqualTo("logAndStop");
+      });
   }
 
   @Test

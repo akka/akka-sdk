@@ -11,7 +11,7 @@ public record TransferState(Transfer transfer, String lastStep, boolean finished
   }
 
   public TransferState withLastStep(String lastStep) {
-    return new TransferState(transfer, lastStep);
+    return new TransferState(transfer, lastStep, finished, accepted);
   }
 
   public TransferState asAccepted() {

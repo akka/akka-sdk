@@ -32,7 +32,9 @@ public class TransferWorkflow extends Workflow<TransferState> {
   public WorkflowDef<TransferState> definition() {
     var withdraw =
         step(withdrawStepName)
-          .call(Withdraw.class, cmd -> componentClient.forKeyValueEntity(cmd.from).method(WalletEntity::withdraw).invoke(cmd.amount))
+          .call(Withdraw.class, cmd ->
+            componentClient.forKeyValueEntity(cmd.from)
+              .method(WalletEntity::withdraw).invoke(cmd.amount))
           .andThen(() -> {
               var state = currentState().withLastStep("withdrawn").asAccepted();
 
@@ -45,20 +47,22 @@ public class TransferWorkflow extends Workflow<TransferState> {
 
     var deposit =
         step(depositStepName)
-          .call(Deposit.class, cmd -> componentClient.forKeyValueEntity(cmd.to).method(WalletEntity::deposit).invoke(cmd.amount))
+          .call(Deposit.class, cmd ->
+            componentClient.forKeyValueEntity(cmd.to)
+              .method(WalletEntity::deposit).invoke(cmd.amount))
           .andThen(() -> {
               var state = currentState().withLastStep("deposited").asFinished();
-              return effects().updateState(state).end();
+              return effects().updateState(state).transitionTo("logAndStop");
             });
 
     // this last step is mainly to ensure that Runnables are properly supported
     var logAndStop =
         step("logAndStop")
-            .call(() -> logger.info("Workflow finished"))
-            .andThen(() ->
-              effects()
-                .updateState(currentState().withLastStep("logAndStop"))
-                .end());
+          .call(() -> logger.info("Workflow finished"))
+          .andThen(() -> {
+            var state = currentState().withLastStep("logAndStop");
+            return effects().updateState(state).end();
+          });
 
     return workflow()
         .timeout(Duration.ofSeconds(10))
@@ -88,6 +92,14 @@ public class TransferWorkflow extends Workflow<TransferState> {
 
   public Effect<Message> genericStringsCall(List<String> primitives) {
     return effects().reply(new Message("genericCall ok"));
+  }
+
+  public Effect<Boolean> isFinished() {
+    return effects().reply(currentState().finished());
+  }
+
+  public Effect<Message> getLastStep() {
+    return effects().reply(new Message(currentState().lastStep()));
   }
 
   public record SomeClass(String someValue) {}
