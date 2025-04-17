@@ -440,9 +440,11 @@ private final class Sdk(
           .asScala
           .flatMap {
             case asyncCallStep: Workflow.AsyncCallStep[_, _, _] =>
-              List(asyncCallStep.callInputClass, asyncCallStep.transitionInputClass)
+              if (asyncCallStep.transitionInputClass == null) List(asyncCallStep.callInputClass)
+              else List(asyncCallStep.callInputClass, asyncCallStep.transitionInputClass)
             case callStep: Workflow.CallStep[_, _, _] =>
-              List(callStep.callInputClass, callStep.transitionInputClass)
+              if (callStep.transitionInputClass == null) List(callStep.callInputClass)
+              else List(callStep.callInputClass, callStep.transitionInputClass)
             case runnable: RunnableStep => List.empty
           }
           .foreach(serializer.registerTypeHints)

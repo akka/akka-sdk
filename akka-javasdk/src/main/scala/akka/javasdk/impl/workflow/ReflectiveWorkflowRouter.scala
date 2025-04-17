@@ -171,10 +171,21 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
     val decodedState = decodeUserState(userState).getOrElse(workflow.emptyState())
     workflow._internalSetup(decodedState)
 
-    def applyTransitionFunc(transitionFunc: JFunc[_, _], transitionInputClass: Class[_]) =
-      transitionFunc
-        .asInstanceOf[JFunc[Any, TransitionalEffect[Any]]]
-        .apply(decodeInput(result, transitionInputClass))
+    def applyTransitionFunc(transitionFunc: JFunc[_, _], transitionInputClass: Class[_]) = {
+      if (transitionInputClass == null) {
+        transitionFunc
+          .asInstanceOf[JFunc[Any, TransitionalEffect[Any]]]
+          // This is a special case. If transitionInputClass is null,
+          // the user provided a supplier in the andThen, therefore we need to call it with 'null' payload.
+          // Note, we are calling here a Function[I,O] that is wrapping a Supplier[O].
+          // The `I` is ignored and is never used.
+          .apply(null)
+      } else {
+        transitionFunc
+          .asInstanceOf[JFunc[Any, TransitionalEffect[Any]]]
+          .apply(decodeInput(result, transitionInputClass))
+      }
+    }
 
     workflow.definition().findByName(stepName).toScala match {
       case Some(runnableStep: RunnableStep) =>

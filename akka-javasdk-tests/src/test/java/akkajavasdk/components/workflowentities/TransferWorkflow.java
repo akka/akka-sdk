@@ -4,10 +4,10 @@
 
 package akkajavasdk.components.workflowentities;
 
-import akkajavasdk.components.actions.echo.Message;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.workflow.Workflow;
+import akkajavasdk.components.actions.echo.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,8 +32,8 @@ public class TransferWorkflow extends Workflow<TransferState> {
   public WorkflowDef<TransferState> definition() {
     var withdraw =
         step(withdrawStepName)
-            .call(Withdraw.class, cmd -> componentClient.forKeyValueEntity(cmd.from).method(WalletEntity::withdraw).invoke(cmd.amount))
-            .andThen(String.class, __ -> {
+          .call(Withdraw.class, cmd -> componentClient.forKeyValueEntity(cmd.from).method(WalletEntity::withdraw).invoke(cmd.amount))
+          .andThen(() -> {
               var state = currentState().withLastStep("withdrawn").asAccepted();
 
               var depositInput = new Deposit(currentState().transfer().to(), currentState().transfer().amount());
@@ -45,8 +45,8 @@ public class TransferWorkflow extends Workflow<TransferState> {
 
     var deposit =
         step(depositStepName)
-            .call(Deposit.class, cmd -> componentClient.forKeyValueEntity(cmd.to).method(WalletEntity::deposit).invoke(cmd.amount)
-            ).andThen(String.class, __ -> {
+          .call(Deposit.class, cmd -> componentClient.forKeyValueEntity(cmd.to).method(WalletEntity::deposit).invoke(cmd.amount))
+          .andThen(() -> {
               var state = currentState().withLastStep("deposited").asFinished();
               return effects().updateState(state).end();
             });

@@ -138,6 +138,10 @@ public class StepBuilder {
     public Workflow.CallStep<CallInput, CallOutput, ?> andThen(Class<CallOutput> transitionInputClass, Function<CallOutput, Workflow.Effect.TransitionalEffect<Void>> transitionFunc) {
       return new Workflow.CallStep<>(name, callInputClass, callFunc, transitionInputClass, transitionFunc);
     }
+
+    public Workflow.CallStep<CallInput, CallOutput, ?> andThen(Supplier<Workflow.Effect.TransitionalEffect<Void>> transitionFunc) {
+      return new Workflow.CallStep<>(name, callInputClass, callFunc, null, __ -> transitionFunc.get());
+    }
   }
 
   public static class RunnableStepBuilder {
@@ -168,7 +172,6 @@ public class StepBuilder {
       return new Workflow.RunnableStep(name, runnable, transitionFunc);
     }
   }
-
 
   public static class AsyncCallStepBuilder<CallInput, CallOutput> {
 
@@ -203,6 +206,11 @@ public class StepBuilder {
      */
     public Workflow.AsyncCallStep<CallInput, CallOutput, ?> andThen(Class<CallOutput> transitionInputClass, Function<CallOutput, Workflow.Effect.TransitionalEffect<Void>> transitionFunc) {
       return new Workflow.AsyncCallStep<>(name, callInputClass, callFunc, transitionInputClass, transitionFunc);
+    }
+
+    public Workflow.AsyncCallStep<CallInput, CallOutput, ?> andThen(Supplier<
+      Workflow.Effect.TransitionalEffect<Void>> transitionFunc) {
+      return new Workflow.AsyncCallStep<>(name, callInputClass, callFunc, null, __ -> transitionFunc.get());
     }
   }
 }
