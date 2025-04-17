@@ -104,15 +104,6 @@ For Akka Cluster bootstrap and rolling updates we need to define role based acce
 include::java:example$doc-snippets/standalone/rbac.yml[]
 ----
 
-. podcost-crd.yml
-+
-For rolling updates in optimal order we need to define the PodCost CRD.
-+
-[source,yaml]
-----
-include::java:example$doc-snippets/standalone/podcost-crd.yml[]
-----
-
 . deployment.yml
 +
 [source,yaml]
@@ -140,7 +131,6 @@ Deploy to Kubernetes with:
 kubectl apply -f namespace.yml
 kubectl config set-context --current --namespace=shopping-cart-namespace
 kubectl apply -f rbac.yml
-kubectl apply -f podcost-crd.yml
 kubectl apply -f deployment.yml
 kubectl apply -f service.yml
 
