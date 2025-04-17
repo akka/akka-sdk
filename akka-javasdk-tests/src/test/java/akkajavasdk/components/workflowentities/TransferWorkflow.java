@@ -94,9 +94,6 @@ public class TransferWorkflow extends Workflow<TransferState> {
     return effects().reply(new Message("genericCall ok"));
   }
 
-  public Effect<Boolean> isFinished() {
-    return effects().reply(currentState().finished());
-  }
 
   public Effect<Message> getLastStep() {
     return effects().reply(new Message(currentState().lastStep()));
