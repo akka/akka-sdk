@@ -8,8 +8,6 @@ import com.example.proto.ExampleGrpcEndpointClient;
 import com.example.proto.HelloReply;
 import com.example.proto.HelloRequest;
 
-import java.util.concurrent.CompletionStage;
-
 // tag::call-external-endpoint[]
 @GrpcEndpoint
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.ALL))
@@ -21,7 +19,7 @@ public class CallExternalGrpcEndpointImpl implements CallExternalGrpcEndpoint {
   }
 
   @Override
-  public CompletionStage<HelloReply> callExternalService(HelloRequest in) {
+  public HelloReply callExternalService(HelloRequest in) {
     return external.sayHello(in); // <3>
   }
 }

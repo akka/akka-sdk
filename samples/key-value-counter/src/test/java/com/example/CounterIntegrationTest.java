@@ -12,14 +12,11 @@ public class CounterIntegrationTest extends TestKitSupport { // <1>
   // end::sample-it[]
   @Test
   public void verifyCounterIncrease() {
-
     var counterIncrease =
-      await(
-        componentClient
-          .forKeyValueEntity("foo")
-          .method(CounterEntity::increaseBy)
-          .invokeAsync(10)
-      );
+      componentClient
+        .forKeyValueEntity("foo")
+        .method(CounterEntity::increaseBy)
+        .invoke(10);
 
     Assertions.assertEquals(10, counterIncrease.value());
   }
@@ -29,30 +26,24 @@ public class CounterIntegrationTest extends TestKitSupport { // <1>
   public void verifyCounterSetAndIncrease() {
 
     Counter counterGet =
-      await(
         componentClient // <2>
           .forKeyValueEntity("bar")
           .method(CounterEntity::get) // <3>
-          .invokeAsync()
-      );
+          .invoke();
     Assertions.assertEquals(0, counterGet.value());
 
     Counter counterPlusOne =
-      await(
         componentClient
           .forKeyValueEntity("bar")
           .method(CounterEntity::plusOne) // <4>
-          .invokeAsync()
-      );
+          .invoke();
     Assertions.assertEquals(1, counterPlusOne.value());
 
     Counter counterGetAfter = // <5>
-      await(
         componentClient
           .forKeyValueEntity("bar")
           .method(CounterEntity::get)
-          .invokeAsync()
-      );
+          .invoke();
     Assertions.assertEquals(1, counterGetAfter.value());
   }
 

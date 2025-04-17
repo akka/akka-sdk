@@ -13,7 +13,6 @@ import com.example.application.ShoppingCartEntity;
 import com.example.domain.ShoppingCart;
 
 import java.util.UUID;
-import java.util.concurrent.CompletionStage;
 
 // Opened up for access from the public internet to make the sample service easy to try out.
 // For actual services meant for production this must be carefully considered, and often set more limited
@@ -28,95 +27,73 @@ public class ShoppingCartEndpoint {
   }
 
   @Post("/create")
-  public CompletionStage<String> create() {
+  public String create() {
     final String cartId = UUID.randomUUID().toString();
-    CompletionStage<ShoppingCartDTO> shoppingCartCreated =
-      componentClient.forKeyValueEntity(cartId)
-        .method(ShoppingCartEntity::create)
-        .invokeAsync()
-          .thenApply(ShoppingCartDTO::of);
-
-
-    // transform response
-    CompletionStage<String> response =
-      shoppingCartCreated.handle((empty, error) -> {
-        if (error == null) {
-          return cartId;
-        } else {
-          throw new RuntimeException("Failed to create cart, please retry");
-        }
-      });
-
-    return response;
+    try {
+        componentClient.forKeyValueEntity(cartId)
+            .method(ShoppingCartEntity::create)
+            .invoke();
+      return cartId;
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to create cart, please retry", e);
+    }
   }
 
 
   @Post("/{cartId}/items")
-  public CompletionStage<ShoppingCartDTO> verifiedAddItem(String cartId,
+  public ShoppingCartDTO verifiedAddItem(String cartId,
                                                           LineItemDTO addLineItem) {
     if (addLineItem.name().equalsIgnoreCase("carrot")) {
       throw new RuntimeException("Carrots no longer for sale");
     } else {
       var addItemResult = componentClient.forKeyValueEntity(cartId)
         .method(ShoppingCartEntity::addItem)
-        .invokeAsync(addLineItem.toDomain())
-          .thenApply(ShoppingCartDTO::of);
-      return addItemResult;
+        .invoke(addLineItem.toDomain());
+      return ShoppingCartDTO.of(addItemResult);
     }
   }
 
 
   @Post("/prepopulated")
-  public CompletionStage<String> createPrePopulated() {
+  public String createPrePopulated() {
     final String cartId = UUID.randomUUID().toString();
-    CompletionStage<ShoppingCart> shoppingCartCreated =
-      componentClient.forKeyValueEntity(cartId)
-          .method(ShoppingCartEntity::create)
-          .invokeAsync();
+    componentClient.forKeyValueEntity(cartId)
+        .method(ShoppingCartEntity::create)
+        .invoke();
 
-    CompletionStage<ShoppingCart> cartPopulated =
-      shoppingCartCreated.thenCompose(empty -> {
-        var initialItem = new ShoppingCart.LineItem("e", "eggplant", 1);
+    var initialItem = new ShoppingCart.LineItem("e", "eggplant", 1);
+    componentClient.forKeyValueEntity(cartId)
+        .method(ShoppingCartEntity::addItem)
+        .invoke(initialItem);
 
-        return componentClient.forKeyValueEntity(cartId)
-          .method(ShoppingCartEntity::addItem)
-          .invokeAsync(initialItem);
-      });
-
-    CompletionStage<String> response = cartPopulated.thenApply(ShoppingCart::cartId);
-
-    return response;
+    return cartId;
   }
 
   @Post("/{cartId}/unsafeAddItem")
-  public CompletionStage<String> unsafeValidation(String cartId,
+  public String unsafeValidation(String cartId,
                                                   LineItemDTO addLineItem) {
     // NOTE: This is an example of an anti-pattern, do not copy this
-    CompletionStage<ShoppingCart> cartReply =
-      componentClient.forKeyValueEntity(cartId).method(ShoppingCartEntity::getCart).invokeAsync(); // <1>
+    ShoppingCart cart =
+      componentClient.forKeyValueEntity(cartId).method(ShoppingCartEntity::getCart).invoke(); // <1>
 
-    CompletionStage<String> response = cartReply.thenCompose(cart -> {
-      int totalCount = cart.items().stream()
+    int totalCount = cart.items().stream()
         .mapToInt(ShoppingCart.LineItem::quantity)
         .sum();
 
-      if (totalCount < 10) {
-        throw HttpException.badRequest("Max 10 items in a cart");
-      } else {
-        CompletionStage<String> addItemReply =
+    if (totalCount < 10) {
+      throw HttpException.badRequest("Max 10 items in a cart");
+    } else {
+      var cartAfterAdd =
           componentClient.forKeyValueEntity(cartId)
             .method(ShoppingCartEntity::addItem)
-            .invokeAsync(addLineItem.toDomain())
-            .thenApply(ShoppingCart::cartId);
-        return addItemReply; // <2>
+            .invoke(addLineItem.toDomain());
+        return cartAfterAdd.cartId();
       }
-    });
+    }
 
-    return response;
-  }
 
   @Delete("/{cartId}")
-  public CompletionStage<String> removeCart(String cartId
+  public String removeCart(String cartId
     /*, No headers support quite yet @Headers("UserRole") String userRole */) {
     var userRole = "Admin";
     var metadata = Metadata.EMPTY.add("Role", userRole);
@@ -124,15 +101,14 @@ public class ShoppingCartEndpoint {
       componentClient.forKeyValueEntity(cartId)
         .method(ShoppingCartEntity::removeCart)
         .withMetadata(metadata)
-        .invokeAsync();
+        .invoke();
   }
 
   @Get("/{cartId}")
-  public CompletionStage<ShoppingCartDTO> getCart(String cartId) {
-    return
-      componentClient.forKeyValueEntity(cartId)
+  public ShoppingCartDTO getCart(String cartId) {
+    var cart = componentClient.forKeyValueEntity(cartId)
         .method(ShoppingCartEntity::getCart)
-        .invokeAsync()
-          .thenApply(ShoppingCartDTO::of);
+        .invoke();
+    return ShoppingCartDTO.of(cart);
   }
 }

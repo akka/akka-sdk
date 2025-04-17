@@ -69,9 +69,9 @@ public class KeyValueEntityTest extends TestKitSupport {
   public void testHierarchyEntity() {
     var client = componentClient.forKeyValueEntity("some-id");
 
-    await(client.method(TextKvEntity::setText).invokeAsync("my text"));
+    client.method(TextKvEntity::setText).invoke("my text");
 
-    var result = await(client.method(TextKvEntity::getText).invokeAsync());
+    var result = client.method(TextKvEntity::getText).invoke();
     assertThat(result).isEqualTo(Optional.of("my text"));
 
     // also verify that hierarchy consumer works

@@ -7,12 +7,12 @@
     <parent>
         <groupId>io.akka</groupId>
         <artifactId>akka-javasdk-maven</artifactId>
-        <version>3.2.4</version>
+        <version>3.3.0</version>
     </parent>
 
     <groupId>io.akka</groupId>
     <artifactId>akka-javasdk-parent</artifactId>
-    <version>3.2.4</version>
+    <version>3.3.0</version>
     <packaging>pom</packaging>
 
 
@@ -34,13 +34,13 @@
 
         <maven.build.timestamp.format>yyyyMMddHHmmss</maven.build.timestamp.format>
 
-        <akka-javasdk.version>3.2.4</akka-javasdk.version>
+        <akka-javasdk.version>3.3.0</akka-javasdk.version>
         <!-- must be carefully kept in sync with sdk and runtime version -->
-        <akka.grpc.version>2.5.3</akka.grpc.version>
+        <akka.grpc.version>2.5.4</akka.grpc.version>
 
         <!-- These are dependent on runtime environment and cannot be customized by users -->
         <maven.compiler.release>21</maven.compiler.release>
-        <kalix-runtime.version>1.4.5</kalix-runtime.version>
+        <akka-runtime.version>1.4.8</akka-runtime.version>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <skip.docker>false</skip.docker>
@@ -156,11 +156,12 @@
                                                         <exclude>com.typesafe:config</exclude>
                                                         <exclude>com.typesafe.akka:akka-actor_2.13</exclude>
                                                         <exclude>com.typesafe.akka:akka-discovery_2.13</exclude>
-                                                        <exclude>com.typesafe.akka:akka-http-core_2.13</exclude>
                                                         <exclude>com.typesafe.akka:akka-parsing_2.13</exclude>
                                                         <exclude>com.typesafe.akka:akka-pki_2.13</exclude>
                                                         <exclude>com.typesafe.akka:akka-protobuf-v3_2.13</exclude>
                                                         <exclude>com.typesafe.akka:akka-stream_2.13</exclude>
+                                                        <exclude>com.typesafe.akka:akka-http-core_2.13</exclude>
+                                                        <exclude>com.typesafe.akka:akka-http_2.13</exclude>
                                                         <exclude>com.hierynomus:asn-one</exclude>
                                                         <exclude>org.reactivestreams:reactive-streams</exclude>
                                                         <!-- Scala stdlib -->
@@ -172,7 +173,13 @@
                                                         <exclude>com.thesamet.scalapb:scalapb-runtime_2.13</exclude>
                                                         <exclude>io.grpc:grpc-stub</exclude>
                                                         <exclude>io.grpc:grpc-api</exclude>
+                                                        <exclude>io.grpc:grpc-core</exclude>
+                                                        <exclude>io.grpc:grpc-netty-shaded</exclude>
+                                                        <exclude>io.grpc:grpc-protobuf</exclude>
                                                         <exclude>com.google.protobuf:protobuf-java</exclude>
+                                                        <exclude>com.google.api.grpc:proto-google-common-protos</exclude>
+                                                        <exclude>com.lightbend.akka.grpc:akka-grpc-runtime_2.13</exclude>
+                                                        <exclude>org.codehaus.mojo:animal-sniffer-annotations</exclude>
                                                         <!-- guava and related -->
                                                         <exclude>com.google.guava:guava</exclude>
                                                         <exclude>com.google.guava:failureaccess</exclude>
@@ -189,6 +196,8 @@
                                                         <exclude>io.opentelemetry:opentelemetry-sdk-logs</exclude>
                                                         <exclude>io.opentelemetry:opentelemetry-sdk-metrics</exclude>
                                                         <exclude>io.opentelemetry:opentelemetry-sdk-trace</exclude>
+                                                        <exclude>io.opentelemetry:opentelemetry-exporter-otlp</exclude>
+                                                        <exclude>io.opentelemetry.semconv:opentelemetry-semconv</exclude>
                                                         <!-- logging -->
                                                         <exclude>org.slf4j:slf4j-api</exclude>
                                                         <exclude>ch.qos.logback:logback-classic</exclude>
@@ -458,6 +467,7 @@
                             <generatorSettings>
                                 <!-- required to generate the instance-per-request handler -->
                                 <generateScalaHandlerFactory>true</generateScalaHandlerFactory>
+                                <blockingApis>true</blockingApis>
                             </generatorSettings>
                         </configuration>
                         <!-- Hook the generate goal into the lifecycle, automatically tied to generate-sources -->
@@ -483,7 +493,7 @@
                     <dependency>
                         <groupId>io.kalix</groupId>
                         <artifactId>akka-runtime-core_2.13</artifactId>
-                        <version>${kalix-runtime.version}</version>
+                        <version>${akka-runtime.version}</version>
                     </dependency>
                 </dependencies>
             </dependencyManagement>
@@ -564,7 +574,7 @@
             <dependency>
                 <groupId>io.kalix</groupId>
                 <artifactId>kalix-dev-runtime_2.13</artifactId>
-                <version>${kalix-runtime.version}</version>
+                <version>${akka-runtime.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

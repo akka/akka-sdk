@@ -6,8 +6,6 @@ import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.client.ComponentClient;
 
-import java.util.concurrent.CompletionStage;
-
 /**
  * Endpoint to fetch user's sessions using the ConversationHistoryView.
  */
@@ -23,11 +21,11 @@ public class UsersEndpoint {
   }
 
   @Get("/users/{userId}/sessions/")
-  public CompletionStage<ConversationHistoryView.ConversationHistory> getSession(String userId) {
+  public ConversationHistoryView.ConversationHistory getSession(String userId) {
 
     return componentClient.forView()
-        .method(ConversationHistoryView::getMessagesBySession)
-        .invokeAsync(userId);
+        .method(ConversationHistoryView::getSessionsByUser)
+        .invoke(userId);
   }
 
 }

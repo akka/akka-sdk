@@ -14,9 +14,7 @@ public class TextWorkflow extends AbstractTextKvWorkflow {
   @Override
   public WorkflowDef<State> definition() {
     return workflow().addStep(step("dummy-step")
-        .asyncCall(() ->
-            // never completes
-            CompletableFuture.completedFuture("step completed"))
+        .call(() -> "step completed")
         .andThen(String.class, result -> effects().end()));
 
   }

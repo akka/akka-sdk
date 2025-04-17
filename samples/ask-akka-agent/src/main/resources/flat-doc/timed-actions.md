@@ -107,7 +107,7 @@ If a scheduled call fails, it retries with an exponential backoff, starting at 3
 
 Retries continue indefinitely by default. To limit retries, set the `maxRetries` parameter in the `startSingleTimer` method.
 
-## Canceling a timer
+## Deleting a timer
 
 Let’s review the implementation of the confirmation endpoint.
 

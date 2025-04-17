@@ -19,17 +19,21 @@ import akka.javasdk.view.View
 import akka.runtime.sdk.spi.ViewRequest
 import akka.runtime.sdk.spi.ViewType
 import akka.runtime.sdk.spi.{ ViewClient => RuntimeViewClient }
-
 import java.lang.reflect.Method
 import java.lang.reflect.ParameterizedType
+
 import scala.concurrent.ExecutionContext
 import scala.jdk.FutureConverters.FutureOps
+
 import akka.javasdk.impl.serialization.JsonSerializer
 import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.SpiMetadata
-
 import java.lang.reflect.Type
 import java.util.Optional
+
+import scala.concurrent.Future
+
+import akka.actor.typed.ActorSystem
 
 /**
  * INTERNAL API
@@ -99,7 +103,7 @@ private[javasdk] object ViewClientImpl {
 private[javasdk] final case class ViewClientImpl(
     viewClient: RuntimeViewClient,
     serializer: JsonSerializer,
-    callMetadata: Option[Metadata])(implicit val executionContext: ExecutionContext)
+    callMetadata: Option[Metadata])(implicit val executionContext: ExecutionContext, system: ActorSystem[_])
     extends ViewClient {
   import ViewClientImpl._
 
@@ -135,9 +139,30 @@ private[javasdk] final case class ViewClientImpl(
     new ComponentMethodRefImpl[AnyRef, R](
       None,
       callMetadata,
-      { (maybeMetadata, maybeArg) =>
+      { (maybeMetadata, maybeRetrySettings, maybeArg) =>
         // Note: same path for 0 and 1 arg calls
         val serializedPayload = encodeArgument(viewMethodProperties.method, maybeArg)
+
+        def callView(metadata: Metadata): Future[R] = {
+          viewClient
+            .query(
+              new ViewRequest(
+                viewMethodProperties.componentId,
+                viewMethodProperties.methodName,
+                serializedPayload,
+                toSpi(metadata)))
+            .map { result =>
+              if (result.payload.isEmpty) {
+                if (viewMethodProperties.returnTypeOptional) Optional.empty().asInstanceOf[R]
+                else
+                  throw new NoEntryFoundException(
+                    s"No matching entry found when calling ${viewMethodProperties.declaringClass}.${viewMethodProperties.methodName}")
+              } else {
+                serializer.fromBytes(viewMethodProperties.queryReturnType, result.payload)
+              }
+            }
+        }
+
         DeferredCallImpl(
           maybeArg.orNull,
           maybeMetadata.getOrElse(Metadata.EMPTY).asInstanceOf[MetadataImpl],
@@ -146,24 +171,15 @@ private[javasdk] final case class ViewClientImpl(
           viewMethodProperties.methodName,
           None,
           { metadata =>
-            viewClient
-              .query(
-                new ViewRequest(
-                  viewMethodProperties.componentId,
-                  viewMethodProperties.methodName,
-                  serializedPayload,
-                  toSpi(metadata)))
-              .map { result =>
-                if (result.payload.isEmpty) {
-                  if (viewMethodProperties.returnTypeOptional) Optional.empty().asInstanceOf[R]
-                  else
-                    throw new NoEntryFoundException(
-                      s"No matching entry found when calling ${viewMethodProperties.declaringClass}.${viewMethodProperties.methodName}")
-                } else {
-                  serializer.fromBytes(viewMethodProperties.queryReturnType, result.payload)
-                }
-              }
-              .asJava
+            maybeRetrySettings match {
+              case Some(retrySettings) =>
+                akka.pattern
+                  .retry(retrySettings) { () =>
+                    callView(metadata)
+                  }
+                  .asJava
+              case None => callView(metadata).asJava
+            }
           },
           serializer)
       },

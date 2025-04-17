@@ -12,7 +12,7 @@ When a timer is triggered, it initiates the scheduled call. If the call succeeds
 
 * Guaranteed to run at least once.
 * Can be scheduled to run at any future time.
-* Can be canceled if no longer needed.
+* Can be deleted if no longer needed.
 * Automatically removed upon successful completion.
 * Rescheduled after failures, with a configurable limit on retry attempts.
 
@@ -60,11 +60,11 @@ include::example$reliable-timers/src/main/java/com/example/api/OrderEndpoint.jav
 ----
 <1> Declares `TimerScheduler` alongside `ComponentClient`, both provided by Akka.
 <2> Generates a unique identifier for the order and timer.
-<3> Calls the `TimerScheduler` API to register a new timer, which returns `CompletionStage<Done>`. A successful completion indicates that Akka registered the timer.
+<3> Calls the `TimerScheduler` API to register a new timer.
 <4> Uses the order id to generate a unique timer name.
 <5> Sets the timer delay.
 <6> Schedules a deferred call to the Timed Action component, covered next.
-<7> Composes the `timerRegistration` `CompletionStage` with a call to `OrderEntity` to place the order.
+<7> Call to `OrderEntity` to place the order.
 
 Akka registers the timer before the order is placed. This ensures that, if timer registration fails due to network issues, no untracked order remains. The inverse failure scenario — registering the timer but failing to place the order — is mitigated by handling potential failures in the `OrderEntity.cancel` method (xref:#_cancel_order_impl[see further]).
 
@@ -89,7 +89,7 @@ include::example$reliable-timers/src/main/java/com/example/application/OrderTime
 ----
 <1> Uses the `@ComponentId` annotation to identify the component.
 <2> Extends the `TimedAction` class.
-<3> Initiates an asynchronous call to `OrderEntity` to cancel the order.
+<3> Call to `OrderEntity` to cancel the order.
 <4> Determines if the call should recover or fail. If `NotFound` or `Invalid` is returned, the timer is marked obsolete and is not rescheduled. Other errors cause `expireOrder` to fail, and the timer is rescheduled.
 
 IMPORTANT: Any method executed by a timer must handle errors carefully. Unhandled errors may lead to continuous re-scheduling. Ensure failures are propagated only when retrying the call is intended.
@@ -112,9 +112,10 @@ Since this method is intended to be called by a timer, it must not fail. The `Or
 
 If a scheduled call fails, it retries with an exponential backoff, starting at 3 seconds and maxing out at 30 seconds after successive failures.
 
-Retries continue indefinitely by default. To limit retries, set the `maxRetries` parameter in the `startSingleTimer` method.
+Retries continue indefinitely by default. To limit retries, set the `maxRetries` parameter in the `createSingleTimer`
+method.
 
-== Canceling a timer
+== Deleting a timer
 
 Let’s review the implementation of the confirmation endpoint.
 
@@ -126,9 +127,11 @@ include::example$reliable-timers/src/main/java/com/example/api/OrderEndpoint.jav
 <1> Confirms the order via `OrderEntity`.
 <2> Removes the timer upon successful confirmation.
 
-Once `OrderEntity` completes the operation, the timer is canceled. This sequence is important. Even if canceling the timer fails, the `OrderEntity.cancel` method, as seen earlier, ensures proper handling for obsolete timers, signaling Akka that they can be removed.
+Once `OrderEntity` completes the operation, the timer is deleted. This sequence is important. Even if deleting the
+timer fails, the `OrderEntity.cancel` method, as seen earlier, ensures proper handling for obsolete timers, signaling Akka that they can be removed.
 
-TIP: You could entirely skip timer cancellation when handling confirmation. In this case, the registered timer would be triggered later, and `OrderEntity.cancel` would handle this case gracefully. However, it’s always good practice to perform housekeeping to save resources.
+TIP: You could entirely skip timer deletion when handling confirmation. In this case, the registered timer would be
+triggered later, and `OrderEntity.cancel` would handle this case gracefully. However, it’s always good practice to perform housekeeping to save resources.
 
 == Best practices
 

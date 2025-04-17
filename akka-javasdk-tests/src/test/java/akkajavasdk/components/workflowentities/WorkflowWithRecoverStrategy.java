@@ -9,8 +9,6 @@ import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.workflow.Workflow;
 
-import java.util.concurrent.CompletableFuture;
-
 import static java.time.Duration.ofSeconds;
 
 @ComponentId("workflow-with-recover-strategy")
@@ -30,12 +28,12 @@ public class WorkflowWithRecoverStrategy extends Workflow<FailingCounterState> {
   public WorkflowDef<FailingCounterState> definition() {
     var counterInc =
         step(counterStepName)
-            .asyncCall(() -> {
+            .call(() -> {
               var nextValue = currentState().value() + 1;
               return componentClient
                   .forEventSourcedEntity(currentState().counterId())
                   .method(FailingCounterEntity::increase)
-                  .invokeAsync(nextValue);
+                  .invoke(nextValue);
             })
             .andThen(Integer.class, __ -> effects()
                 .updateState(currentState().asFinished())
@@ -43,7 +41,7 @@ public class WorkflowWithRecoverStrategy extends Workflow<FailingCounterState> {
 
     var counterIncFailover =
         step(counterFailoverStepName)
-            .asyncCall(() -> CompletableFuture.completedStage("nothing"))
+            .call(() -> "nothing")
             .andThen(String.class, __ ->
                 effects()
                     .updateState(currentState().inc())

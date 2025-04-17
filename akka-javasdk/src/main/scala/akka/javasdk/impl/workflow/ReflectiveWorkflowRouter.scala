@@ -6,12 +6,10 @@ package akka.javasdk.impl.workflow
 
 import java.util.concurrent.CompletionStage
 import java.util.function.{ Function => JFunc }
-
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.FutureConverters.CompletionStageOps
 import scala.jdk.OptionConverters.RichOptional
-
 import akka.annotation.InternalApi
 import akka.javasdk.impl.MethodInvoker
 import akka.javasdk.impl.CommandSerialization
@@ -25,6 +23,7 @@ import akka.javasdk.timer.TimerScheduler
 import akka.javasdk.workflow.CommandContext
 import akka.javasdk.workflow.Workflow
 import akka.javasdk.workflow.Workflow.AsyncCallStep
+import akka.javasdk.workflow.Workflow.CallStep
 import akka.javasdk.workflow.Workflow.Effect.TransitionalEffect
 import akka.javasdk.workflow.WorkflowContext
 import akka.runtime.sdk.spi.BytesPayload
@@ -131,12 +130,22 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
     val decodedState = decodeUserState(userState).getOrElse(workflow.emptyState())
     workflow._internalSetup(decodedState, commandContext, timerScheduler)
 
+    def decodeInputForClass(inputClass: Class[_]): Any = input match {
+      case Some(inputValue) => decodeInput(inputValue, inputClass)
+      case None             => null // to meet a signature of supplier expressed as a function
+    }
+
     workflow.definition().findByName(stepName).toScala match {
+      case Some(call: CallStep[_, _, _]) =>
+        val decodedInput = decodeInputForClass(call.callInputClass)
+        val output = call.callFunc
+          .asInstanceOf[JFunc[Any, Any]]
+          .apply(decodedInput)
+
+        Future.successful(serializer.toBytes(output))
+
       case Some(call: AsyncCallStep[_, _, _]) =>
-        val decodedInput = input match {
-          case Some(inputValue) => decodeInput(inputValue, call.callInputClass)
-          case None             => null // to meet a signature of supplier expressed as a function
-        }
+        val decodedInput = decodeInputForClass(call.callInputClass)
 
         val future = call.callFunc
           .asInstanceOf[JFunc[Any, CompletionStage[Any]]]
@@ -157,13 +166,19 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
     // if runtime doesn't have a state to provide, we fall back to user's own defined empty state
     val decodedState = decodeUserState(userState).getOrElse(workflow.emptyState())
     workflow._internalSetup(decodedState)
-    workflow.definition().findByName(stepName).toScala match {
-      case Some(call: AsyncCallStep[_, _, _]) =>
-        val effect =
-          call.transitionFunc
-            .asInstanceOf[JFunc[Any, TransitionalEffect[Any]]]
-            .apply(decodeInput(result, call.transitionInputClass))
 
+    def applyTransitionFunc(transitionFunc: JFunc[_, _], transitionInputClass: Class[_]) =
+      transitionFunc
+        .asInstanceOf[JFunc[Any, TransitionalEffect[Any]]]
+        .apply(decodeInput(result, transitionInputClass))
+
+    workflow.definition().findByName(stepName).toScala match {
+      case Some(call: CallStep[_, _, _]) =>
+        val effect = applyTransitionFunc(call.transitionFunc, call.transitionInputClass)
+        TransitionalResult(effect)
+
+      case Some(call: AsyncCallStep[_, _, _]) =>
+        val effect = applyTransitionFunc(call.transitionFunc, call.transitionInputClass)
         TransitionalResult(effect)
 
       case Some(any) => throw WorkflowStepNotSupported(any.getClass.getSimpleName)

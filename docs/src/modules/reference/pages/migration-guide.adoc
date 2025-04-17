@@ -1,3 +1,31 @@
 = Migration Guide
 
 include::ROOT:partial$include.adoc[]
+
+== SDK 3.3.0
+
+This release introduces support for Java 21 virtual threads across all user component and endpoint logic. As a result, it is now safe to perform blocking I/O operations without occupying underlying OS threads.
+
+You no longer need to use `CompletionStage` or `CompletableFuture` composition when making calls using component clients, HTTP clients, or gRPC clients. Where services previously used `.invokeAsync()` and handled a future, you can now simply use `.invoke()` and work directly with the returned result.
+
+=== Breaking Changes
+
+To simplify usage and improve developer experience, this release includes a few breaking changes. If your service
+relies on any of the following features, you will need to update your implementation:
+
+* gRPC endpoints for unary and client streaming methods now return the response message directly, instead of wrapping it in a `CompletionStage`.
+* gRPC clients now return the response value directly for unary and client streaming calls. For asynchronous behavior, the request builder APIs (`grpcClient.someMethod().invokeAsync(parameter)`) are still available.
+
+=== Deprecations
+
+Timer scheduling and cancellation via `TimerScheduler.startSingleTimer(...)` and `TimerScheduler.cancel()` are now
+deprecated. Instead, use `TimerScheduler.createSingleTimer(...)` and `TimerScheduler.delete()`. Note that these two
+new methods are blocking operations that return `void`.
+
+If you still prefer non-blocking operations, new asynchronous alternatives have been introduced: `createSingleTimerAsync()` and `deleteAsync()`.
+
+=== Blocking and Parallelism
+
+To support parallel execution of blocking logic within completion stages, the Service Setup, Endpoints, Consumers, Timed Actions, and Workflows can now accept a `java.util.concurrent.Executor` via their constructors.
+
+The Akka SDK provides a virtual-thread-enabled executor that is safe for running blocking operations. When using the standard Java `CompletableFuture` or `CompletionStage` APIs, you can supply this executor as an additional parameter to methods accepting lambdas, enabling safe parallelism for blocking tasks.

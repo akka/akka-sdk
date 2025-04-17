@@ -10,8 +10,7 @@ import com.example.proto.ExampleGrpcEndpoint;
 import com.example.proto.HelloReply;
 import com.example.proto.HelloRequest;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
+import java.util.concurrent.TimeUnit;
 
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.ALL))
 @GrpcEndpoint
@@ -24,15 +23,19 @@ public class ExampleGrpcEndpointImpl implements ExampleGrpcEndpoint {
   }
 
   @Override
-  public CompletionStage<HelloReply> sayHello(HelloRequest in) {
-    return CompletableFuture.completedFuture(HelloReply.newBuilder().setMessage("Hello " + in.getName()).build());
+  public HelloReply sayHello(HelloRequest in) {
+    return HelloReply.newBuilder().setMessage("Hello " + in.getName()).build();
   }
 
   @Override
-  public CompletionStage<HelloReply> itKeepsTalking(Source<HelloRequest, NotUsed> in) {
-    return in.runWith(Sink.head(), materializer).thenApply(firstStreamedHello ->
-      HelloReply.newBuilder().setMessage("Hello " + firstStreamedHello.getName()).build()
-    );
+  public HelloReply itKeepsTalking(Source<HelloRequest, NotUsed> in) {
+    try {
+      return in.runWith(Sink.head(), materializer).thenApply(firstStreamedHello ->
+          HelloReply.newBuilder().setMessage("Hello " + firstStreamedHello.getName()).build()
+      ).toCompletableFuture().get(3, TimeUnit.SECONDS);
+    } catch (Exception ex) {
+      throw new RuntimeException(ex);
+    }
   }
 
   @Override

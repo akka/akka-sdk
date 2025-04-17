@@ -128,16 +128,17 @@ Deploy to Kubernetes with:
 
 [source, shell script]
 ----
-1) kubectl apply -f namespace.yml
-2) kubectl config set-context --current --namespace=shopping-cart-namespace
-3) kubectl apply -f rbac.yml
-4) kubectl apply -f deployment.yml
+kubectl apply -f namespace.yml
+kubectl config set-context --current --namespace=shopping-cart-namespace
+kubectl apply -f rbac.yml
+kubectl apply -f deployment.yml
+kubectl apply -f service.yml
 
-// all should be in ready state
-5) kubectl get pods
+# all should be in ready state
+kubectl get pods
 ----
 
-As a first test you can create a fort forward with:
+As a first test you can create a port forward with:
 
 [source, shell script]
 ----

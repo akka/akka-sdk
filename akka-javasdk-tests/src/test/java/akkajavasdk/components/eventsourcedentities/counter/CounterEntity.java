@@ -24,6 +24,7 @@ public class CounterEntity extends EventSourcedEntity<Counter, CounterEvent> {
     TOO_HIGH, TOO_LOW
   }
 
+  private Integer errorCounter = 0;
   private final Logger logger = LoggerFactory.getLogger(getClass());
 
   public record DoIncrease(int amount) {}
@@ -43,6 +44,16 @@ public class CounterEntity extends EventSourcedEntity<Counter, CounterEvent> {
     return effects().persist(new CounterEvent.ValueIncreased(value)).thenReply(Counter::value);
   }
 
+  public Effect<Integer> failedIncrease(Integer value) {
+    logger.info("Calling failedIncrease with value={}, errorCounter={}", value, errorCounter);
+    if (errorCounter <= 2) {
+      errorCounter++;
+      return effects().error("simulated failure");
+    } else {
+      return effects().persist(new CounterEvent.ValueIncreased(value)).thenReply(Counter::value);
+    }
+  }
+
   public Effect<Result<Error, Counter>> increaseWithResult(Integer value) {
     if (value <= 0){
       return effects().reply(new Result.Error<>(CounterEntity.Error.TOO_LOW));
@@ -55,7 +66,6 @@ public class CounterEntity extends EventSourcedEntity<Counter, CounterEvent> {
     }
   }
 
-  @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET)) //required for testing
   public Effect<Counter> increaseWithError(Integer value) {
     if (value <= 0){
       return effects().error("Value must be greater than 0");
@@ -66,6 +76,10 @@ public class CounterEntity extends EventSourcedEntity<Counter, CounterEvent> {
         .persist(new CounterEvent.ValueIncreased(value))
         .thenReply(identity());
     }
+  }
+
+  public ReadOnlyEffect<Boolean> commandHandlerIsOnVirtualThread() {
+    return effects().reply(Thread.currentThread().isVirtual());
   }
 
 

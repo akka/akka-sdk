@@ -1,6 +1,5 @@
 package com.example.tracing.api;
 
-import akka.Done;
 import akka.http.javadsl.model.HttpResponse;
 import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.http.HttpEndpoint;
@@ -39,12 +38,11 @@ public class TracingEndpoint {
 
 
     @Post("/")
-    public CompletionStage<Done> postDelayed(PostId id) {
-        return timerScheduler.startSingleTimer(
-                UUID.randomUUID().toString(), //not planning to cancel the timer
-                Duration.ofSeconds(1L),
-                componentClient.forTimedAction().method(TracingAction::callAnotherService).deferred(id.id)
-        );
+    public void postDelayed(PostId id) {
+        timerScheduler.createSingleTimer(
+            UUID.randomUUID().toString(), //not planning to cancel the timer
+            Duration.ofSeconds(1L),
+            componentClient.forTimedAction().method(TracingAction::callAnotherService).deferred(id.id));
     }
 
     @Post("/custom/{id}")

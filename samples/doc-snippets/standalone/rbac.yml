@@ -29,20 +29,20 @@ roleRef:
 kind: Role
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: podcost-access
+  name: pod-patcher
 rules:
-  - apiGroups: ["akka.io"]
-    resources: ["podcosts"]
-    verbs: ["get", "create", "update", "delete", "list"]
+  - apiGroups: [""] # "" indicates the core API group
+    resources: ["pods"]
+    verbs: ["patch"] # requires "patch" to annotate the pod
 ---
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: podcost-access
+  name: annotate-pods
 subjects:
   - kind: User
     name: system:serviceaccount:shopping-cart-namespace:default
 roleRef:
   kind: Role
-  name: podcost-access
+  name: pod-patcher
   apiGroup: rbac.authorization.k8s.io

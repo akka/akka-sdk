@@ -8,54 +8,46 @@ import com.example.application.ShoppingCartEntity;
 import com.example.domain.ShoppingCart;
 import org.junit.jupiter.api.Test;
 
-import java.time.Duration;
 import java.util.List;
 
-import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 
 public class ShoppingCartIntegrationTest extends TestKitSupport {
 
-  private Duration timeout = Duration.of(5, SECONDS);
-
   ShoppingCart getCart(String cartId) {
-    return await(
+    return
       componentClient
         .forKeyValueEntity(cartId)
-        .method(ShoppingCartEntity::getCart).invokeAsync()
-    );
+        .method(ShoppingCartEntity::getCart).invoke();
   }
 
   void addItem(String cartId, String productId, String name, int quantity) {
-    await(
+
       componentClient
         .forKeyValueEntity(cartId)
         .method(ShoppingCartEntity::addItem)
-        .invokeAsync(new ShoppingCart.LineItem(productId, name, quantity))
+        .invoke(new ShoppingCart.LineItem(productId, name, quantity)
     );
   }
 
   void removeItem(String cartId, String productId) {
 
-    await(
+
       componentClient
         .forKeyValueEntity(cartId)
         .method(ShoppingCartEntity::removeItem)
-        .invokeAsync(productId)
-    );
+        .invoke(productId);
   }
 
   void removeCart(String cartId, String userRole) {
     var metadata = Metadata.EMPTY.add("Role", userRole);
-    await(
+
       componentClient
         .forKeyValueEntity(cartId)
         .method(ShoppingCartEntity::removeCart).withMetadata(metadata)
-        .invokeAsync()
-
-    );
+        .invoke();
   }
 
   ShoppingCart.LineItem item(String productId, String name, int quantity) {
@@ -65,17 +57,17 @@ public class ShoppingCartIntegrationTest extends TestKitSupport {
 
   String createPrePopulated() {
     return
-      await(httpClient.POST("/carts/prepopulated")
+      httpClient.POST("/carts/prepopulated")
         .responseBodyAs(String.class)
-        .invokeAsync(), timeout)
+        .invoke()
         .body();
   }
 
   ShoppingCartDTO verifiedAddItem(String cartId, LineItemDTO in) {
-    return await(httpClient.POST("/carts/" + cartId + "/items")
+    return httpClient.POST("/carts/" + cartId + "/items")
       .withRequestBody(in)
       .responseBodyAs(ShoppingCartDTO.class)
-      .invokeAsync(), timeout)
+      .invoke()
       .body();
   }
 

@@ -12,6 +12,7 @@ import com.mongodb.client.MongoClients;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+// tag::all[]
 @Setup
 public class Bootstrap implements ServiceSetup {
 
@@ -20,14 +21,14 @@ public class Bootstrap implements ServiceSetup {
   private final ComponentClient componentClient;
 
   public Bootstrap(
-    ComponentClient componentClient,
-    Materializer materializer) {
+      ComponentClient componentClient,
+      Materializer materializer) {
 
     if (!KeyUtils.hasValidKeys()) {
       throw new IllegalStateException(
-        "No API keys found. When running locally, make sure you have a " + ".env.local file located under " +
-          "src/main/resources/ (see src/main/resources/.env.example). When running in production, " +
-          "make sure you have OPENAI_API_KEY and MONGODB_ATLAS_URI defined as environment variable.");
+          "No API keys found. When running locally, make sure you have a " + ".env.local file located under " +
+              "src/main/resources/ (see src/main/resources/.env.example). When running in production, " +
+              "make sure you have OPENAI_API_KEY and MONGODB_ATLAS_URI defined as environment variable.");
     }
 
     this.componentClient = componentClient;
@@ -39,10 +40,13 @@ public class Bootstrap implements ServiceSetup {
     return new DependencyProvider() {
       @Override
       public <T> T getDependency(Class<T> cls) {
+        // end::all[]
+        // tag::agent[]
         if (cls.equals(AskAkkaAgent.class)) {
           return (T) new AskAkkaAgent(componentClient, mongoClient);
         }
-
+        // end::agent[]
+        // tag::all[]
         if (cls.equals(MongoClient.class)) {
           return (T) mongoClient;
         }
@@ -51,3 +55,4 @@ public class Bootstrap implements ServiceSetup {
     };
   }
 }
+// end::all[]

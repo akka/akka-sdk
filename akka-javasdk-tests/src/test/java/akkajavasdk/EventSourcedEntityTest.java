@@ -55,16 +55,24 @@ public class EventSourcedEntityTest extends TestKitSupport {
   }
 
   @Test
+  public void verifyEventSourcedEntityRunsOnVirtualThread() {
+    var result = componentClient.forEventSourcedEntity("hello")
+        .method(CounterEntity::commandHandlerIsOnVirtualThread)
+        .invoke();
+    assertThat(result).isTrue();
+  }
+
+  @Test
   public void verifyCounterEventSourcedDeletion() {
     var counterId = "deleted-hello";
     var client = componentClient.forEventSourcedEntity(counterId);
 
-    var isDeleted = await(client.method(CounterEntity::getDeleted).invokeAsync());
+    var isDeleted = client.method(CounterEntity::getDeleted).invoke();
     assertThat(isDeleted).isFalse();
 
-    await(client.method(CounterEntity::delete).invokeAsync());
+    client.method(CounterEntity::delete).invoke();
 
-    var isDeleted2 = await(client.method(CounterEntity::getDeleted).invokeAsync());
+    var isDeleted2 = client.method(CounterEntity::getDeleted).invoke();
     assertThat(isDeleted2).isTrue();
   }
 
@@ -174,14 +182,14 @@ public class EventSourcedEntityTest extends TestKitSupport {
       .method(CounterEntity::handle)
       .invokeAsync(new CounterCommand.Set(123)));
 
-    Integer result1 = await(client.method(CounterEntity::get).invokeAsync());
+    Integer result1 = client.method(CounterEntity::get).invoke();
     assertThat(result1).isEqualTo(123);
 
     await(client
       .method(CounterEntity::handle)
       .invokeAsync(new CounterCommand.Increase(123)));
 
-    Integer result2 = await(client.method(CounterEntity::get).invokeAsync());
+    Integer result2 = client.method(CounterEntity::get).invoke();
     assertThat(result2).isEqualTo(246);
   }
 
@@ -189,7 +197,7 @@ public class EventSourcedEntityTest extends TestKitSupport {
   public void verifyRequestWithDefaultProtoValuesWithEntity() {
     var client = componentClient.forEventSourcedEntity("some-counter");
     increaseCounter(client, 2);
-    Integer result = await(client.method(CounterEntity::set).invokeAsync(0));
+    Integer result = client.method(CounterEntity::set).invoke(0);
     assertThat(result).isEqualTo(0);
   }
 
@@ -197,9 +205,9 @@ public class EventSourcedEntityTest extends TestKitSupport {
   public void testHierarchyEntity() {
     var client = componentClient.forEventSourcedEntity("some-id");
 
-    await(client.method(TextEsEntity::setText).invokeAsync("my text"));
+    client.method(TextEsEntity::setText).invoke("my text");
 
-    var result = await(client.method(TextEsEntity::getText).invokeAsync());
+    var result = client.method(TextEsEntity::getText).invoke();
     assertThat(result).isEqualTo(Optional.of("my text"));
 
     // also verify that hierarchy consumer works
@@ -210,34 +218,34 @@ public class EventSourcedEntityTest extends TestKitSupport {
 
 
   private Integer increaseCounter(EventSourcedEntityClient client, int value) {
-    return await(client
+    return client
       .method(CounterEntity::increase)
-      .invokeAsync(value));
+      .invoke(value);
   }
 
   private Counter increaseCounterWithError(EventSourcedEntityClient client, int value) {
-    return await(client
+    return client
         .method(CounterEntity::increaseWithError)
-        .invokeAsync(value));
+        .invoke(value);
   }
 
 
   private Integer multiplyCounter(EventSourcedEntityClient client, int value) {
-    return await(client
+    return client
       .method(CounterEntity::times)
-      .invokeAsync(value));
+      .invoke(value);
   }
 
   private void restartCounterEntity(EventSourcedEntityClient client) {
     try {
-      await(client
-        .method(CounterEntity::restart).invokeAsync());
+      client
+        .method(CounterEntity::restart).invoke();
       fail("This should not be reached");
     } catch (Exception ignored) {
     }
   }
 
   private Integer getCounter(EventSourcedEntityClient client) {
-    return await(client.method(CounterEntity::get).invokeAsync());
+    return client.method(CounterEntity::get).invoke();
   }
 }

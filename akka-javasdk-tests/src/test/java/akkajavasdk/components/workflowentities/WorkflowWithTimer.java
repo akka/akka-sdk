@@ -12,6 +12,7 @@ import akka.javasdk.workflow.Workflow;
 import akka.javasdk.workflow.WorkflowContext;
 
 import java.time.Duration;
+import java.util.concurrent.CompletableFuture;
 
 @ComponentId("workflow-with-timer")
 public class WorkflowWithTimer extends Workflow<FailingCounterState> {
@@ -37,7 +38,9 @@ public class WorkflowWithTimer extends Workflow<FailingCounterState> {
               .method(WorkflowWithTimer::pingWorkflow)
               .deferred(new CounterScheduledValue(12));
 
-          return timers().startSingleTimer("ping", Duration.ofSeconds(2), pingWorkflow);
+          timers().createSingleTimer("ping", Duration.ofSeconds(2), pingWorkflow);
+
+          return CompletableFuture.completedFuture(Done.done()); // FIXME remove once we have sync/blocking workflow calls
         })
         .andThen(Done.class, __ -> effects().pause())
         .timeout(Duration.ofMillis(50));

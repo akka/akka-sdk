@@ -104,7 +104,7 @@ public class SdkIntegrationTest extends TestKitSupport {
   @Test
   public void verifyEchoActionWiring() {
 
-    timerScheduler.startSingleTimer("echo-action", ofMillis(0), componentClient.forTimedAction()
+    timerScheduler.createSingleTimer("echo-action", ofMillis(0), componentClient.forTimedAction()
       .method(EchoAction::stringMessage)
       .deferred("hello"));
 
@@ -119,7 +119,7 @@ public class SdkIntegrationTest extends TestKitSupport {
   @Test
   public void verifyHierarchyTimedActionWiring() {
 
-    timerScheduler.startSingleTimer("wired", ofMillis(0), componentClient.forTimedAction()
+    timerScheduler.createSingleTimer("wired", ofMillis(0), componentClient.forTimedAction()
       .method(HierarchyTimed::stringMessage)
       .deferred("hello"));
 
@@ -134,7 +134,7 @@ public class SdkIntegrationTest extends TestKitSupport {
   @Test
   public void verifyTimedActionListCommand() {
 
-    timerScheduler.startSingleTimer("echo-action", ofMillis(0), componentClient.forTimedAction()
+    timerScheduler.createSingleTimer("echo-action", ofMillis(0), componentClient.forTimedAction()
       .method(EchoAction::stringMessages)
       .deferred(List.of("hello", "mr")));
 
@@ -145,7 +145,7 @@ public class SdkIntegrationTest extends TestKitSupport {
         assertThat(value).isEqualTo("hello mr");
       });
 
-    timerScheduler.startSingleTimer("echo-action", ofMillis(0), componentClient.forTimedAction()
+    timerScheduler.createSingleTimer("echo-action", ofMillis(0), componentClient.forTimedAction()
       .method(EchoAction::commandMessages)
       .deferred(List.of(new EchoAction.SomeCommand("tambourine"), new EchoAction.SomeCommand("man"))));
 
@@ -159,7 +159,7 @@ public class SdkIntegrationTest extends TestKitSupport {
 
   @Test
   public void verifyTimedActionEmpty() {
-    timerScheduler.startSingleTimer("echo-action", ofMillis(0), componentClient.forTimedAction()
+    timerScheduler.createSingleTimer("echo-action", ofMillis(0), componentClient.forTimedAction()
       .method(EchoAction::emptyMessage)
       .deferred());
 
@@ -169,6 +169,21 @@ public class SdkIntegrationTest extends TestKitSupport {
         var value = StaticTestBuffer.getValue("echo-action");
         assertThat(value).isEqualTo("empty");
       });
+  }
+
+  @Test
+  public void verifyTimedActionRunsOnVirtualThread() {
+    timerScheduler.createSingleTimer("echo-action", ofMillis(0), componentClient.forTimedAction()
+        .method(EchoAction::stringMessage)
+        .deferred("check-if-virtual-thread"));
+
+    Awaitility.await()
+        .atMost(20, TimeUnit.SECONDS)
+        .untilAsserted(() -> {
+          var value = StaticTestBuffer.getValue("echo-action");
+          assertThat(value).isEqualTo("is-virtual-thread:true");
+        });
+
   }
 
   @Test
@@ -198,9 +213,9 @@ public class SdkIntegrationTest extends TestKitSupport {
   public void verifyActionIsNotSubscribedToMultiplyAndRouterIgnores() {
     var entityId = "counterId2";
     EventSourcedEntityClient counterClient = componentClient.forEventSourcedEntity(entityId);
-    await(counterClient.method(CounterEntity::increase).invokeAsync(1));
-    await(counterClient.method(CounterEntity::times).invokeAsync(2));
-    Integer lastKnownValue = await(counterClient.method(CounterEntity::increase).invokeAsync(1234));
+    counterClient.method(CounterEntity::increase).invoke(1);
+    counterClient.method(CounterEntity::times).invoke(2);
+    Integer lastKnownValue = counterClient.method(CounterEntity::increase).invoke(1234);
 
     assertThat(lastKnownValue).isEqualTo(1 * 2 + 1234);
 
@@ -287,7 +302,7 @@ public class SdkIntegrationTest extends TestKitSupport {
     String veHeaderValue = "ve-value";
     String esHeaderValue = "es-value";
 
-    timerScheduler.startSingleTimer("metadata", ofMillis(0), componentClient.forTimedAction()
+    timerScheduler.createSingleTimer("metadata", ofMillis(0), componentClient.forTimedAction()
       .method(ActionWithMetadata::processWithMeta)
       .withMetadata(Metadata.EMPTY.add(ActionWithMetadata.SOME_HEADER, metadataValue))
       .deferred());

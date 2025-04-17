@@ -1,4 +1,5 @@
 import Dependencies.Kalix
+import Dependencies.AkkaRuntimeVersion
 
 lazy val `akka-javasdk-root` = project
   .in(file("."))
@@ -23,7 +24,7 @@ lazy val akkaJavaSdk =
       buildInfoKeys := Seq[BuildInfoKey](
         name,
         version,
-        "runtimeVersion" -> Kalix.RuntimeVersion,
+        "runtimeVersion" -> AkkaRuntimeVersion,
         "protocolMajorVersion" -> Kalix.ProtocolVersionMajor,
         "protocolMinorVersion" -> Kalix.ProtocolVersionMinor,
         "scalaVersion" -> scalaVersion.value,
@@ -45,7 +46,7 @@ lazy val akkaJavaSdkTestKit =
       buildInfoKeys := Seq[BuildInfoKey](
         name,
         version,
-        "runtimeVersion" -> Kalix.RuntimeVersion,
+        "runtimeVersion" -> AkkaRuntimeVersion,
         "scalaVersion" -> scalaVersion.value),
       buildInfoPackage := "akka.javasdk.testkit",
       // eventing testkit client
@@ -70,7 +71,7 @@ lazy val akkaJavaSdkTests =
       // generating test service
       Test / akkaGrpcGeneratedLanguages := Seq(AkkaGrpc.Java),
       Test / akkaGrpcGeneratedSources := Seq(AkkaGrpc.Client, AkkaGrpc.Server),
-      Test / akkaGrpcCodeGeneratorSettings += "generate_scala_handler_factory",
+      Test / akkaGrpcCodeGeneratorSettings ++= CommonSettings.serviceGrpcGeneratorSettings,
       Test / PB.protoSources ++= (Compile / PB.protoSources).value)
     .settings(inConfig(Test)(JupiterPlugin.scopedSettings))
     .settings(Dependencies.tests)

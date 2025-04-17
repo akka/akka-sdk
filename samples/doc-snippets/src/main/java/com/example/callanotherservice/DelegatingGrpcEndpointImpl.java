@@ -8,8 +8,6 @@ import com.example.proto.ExampleGrpcEndpointClient;
 import com.example.proto.HelloReply;
 import com.example.proto.HelloRequest;
 
-import java.util.concurrent.CompletionStage;
-
 // tag::delegating-endpoint[]
 @GrpcEndpoint
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.ALL))
@@ -22,7 +20,7 @@ public class DelegatingGrpcEndpointImpl implements DelegatingGrpcEndpoint {
   }
 
   @Override
-  public CompletionStage<HelloReply> callAkkaService(HelloRequest in) {
+  public HelloReply callAkkaService(HelloRequest in) {
     return akkaService.sayHello(in); // <3>
   }
 

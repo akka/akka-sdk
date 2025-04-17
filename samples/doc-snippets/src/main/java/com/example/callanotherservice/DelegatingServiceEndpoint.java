@@ -6,8 +6,6 @@ import akka.javasdk.annotations.http.Post;
 import akka.javasdk.http.HttpClient;
 import akka.javasdk.http.HttpClientProvider;
 
-import java.util.concurrent.CompletionStage;
-
 // Allow all other Akka services deployed in the same project to access the components of this
 // Akka service, but disallow access from the internet.
 // Documentation at https://doc.akka.io/java/access-control.html
@@ -18,8 +16,8 @@ public class DelegatingServiceEndpoint {
 
   private final HttpClient httpClient;
 
-  public DelegatingServiceEndpoint(HttpClientProvider componentClient) { // <1>
-    this.httpClient = componentClient.httpClientFor("counter"); // <2>
+  public DelegatingServiceEndpoint(HttpClientProvider httpClient) { // <1>
+    this.httpClient = httpClient.httpClientFor("counter"); // <2>
   }
 
   // model for the JSON we accept
@@ -29,21 +27,17 @@ public class DelegatingServiceEndpoint {
   record Counter(int value) {}
 
   @Post("/delegate/counter/{counterId}/increase")
-  public CompletionStage<String> addAndReturn(String counterId, IncreaseRequest request) {
-    CompletionStage<String> result =
-        httpClient.POST("/counter/" + counterId + "/increase") // <3>
-            .withRequestBody(request)
-            .responseBodyAs(Counter.class)
-            .invokeAsync() // <4>
-            .thenApply(response -> { // <5>
-              if (response.status().isSuccess()) {
-                return "New counter vaue: " + response.body().value;
-              } else {
-                throw new RuntimeException("Counter returned unexpected status: " + response.status());
-              }
-            });
+  public String addAndReturn(String counterId, IncreaseRequest request) {
+    var response = httpClient.POST("/counter/" + counterId + "/increase") // <3>
+    .withRequestBody(request)
+    .responseBodyAs(Counter.class)
+    .invoke(); // <4>
 
-    return result;
+    if (response.status().isSuccess()) { // <5>
+      return "New counter vaue: " + response.body().value;
+    } else {
+      throw new RuntimeException("Counter returned unexpected status: " + response.status());
+    }
   }
 }
 // end::delegating-endpoint[]

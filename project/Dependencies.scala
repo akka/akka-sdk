@@ -6,13 +6,13 @@ object Dependencies {
   object Kalix {
     val ProtocolVersionMajor = 1
     val ProtocolVersionMinor = 1
-    // Remember to bump kalix-runtime.version in akka-javasdk-maven/akka-javasdk-parent if bumping this
-    val RuntimeVersion = sys.props.getOrElse("kalix-runtime.version", "1.4.5")
   }
+  // Remember to bump akka-runtime.version in akka-javasdk-maven/akka-javasdk-parent if bumping this
+  val AkkaRuntimeVersion = sys.props.getOrElse("akka-runtime.version", "1.4.8")
   // NOTE: embedded SDK should have the AkkaVersion aligned, when updating RuntimeVersion, make sure to check
   // if AkkaVersion and AkkaHttpVersion are aligned
   // for prod code, they are marked as Provided, but testkit still requires the alignment
-  val AkkaVersion = "2.10.2"
+  val AkkaVersion = "2.10.4"
   val AkkaHttpVersion = "10.7.0" // Note: should at least the Akka HTTP version required by Akka gRPC
 
   // Note: the Scala version must be aligned with the runtime
@@ -23,7 +23,7 @@ object Dependencies {
   // https://github.com/akka/akka/blob/main/project/Dependencies.scala#L31
   val JacksonVersion = "2.17.2"
   val JacksonDatabindVersion = JacksonVersion
-  val LogbackVersion = "1.5.12"
+  val LogbackVersion = "1.5.18"
   val LogbackContribVersion = "0.1.5"
   val JUnitVersion = "4.13.2"
   val JUnitInterfaceVersion = "0.11"
@@ -34,11 +34,11 @@ object Dependencies {
   val CommonsIoVersion = "2.11.0"
   val MunitVersion = "0.7.29"
 
-  val kalixTestkitProtocol = "io.kalix" % "kalix-testkit-protocol" % Kalix.RuntimeVersion
-  val kalixSdkSpi = "io.akka" %% "akka-sdk-spi" % Kalix.RuntimeVersion
+  val kalixTestkitProtocol = "io.kalix" % "kalix-testkit-protocol" % AkkaRuntimeVersion
+  val kalixSdkSpi = "io.akka" %% "akka-sdk-spi" % AkkaRuntimeVersion
 
   // Note: this should never be on the compile classpath, only test and or runtime
-  val kalixDevRuntime = "io.kalix" %% "kalix-dev-runtime" % Kalix.RuntimeVersion
+  val kalixDevRuntime = "io.kalix" %% "kalix-dev-runtime" % AkkaRuntimeVersion
 
   val commonsIo = "commons-io" % "commons-io" % CommonsIoVersion
   val logback = "ch.qos.logback" % "logback-classic" % LogbackVersion

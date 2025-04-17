@@ -39,7 +39,7 @@ public class WorkflowWithStepTimeout extends Workflow<FailingCounterState> {
 
     var counterIncFailover =
       step(counterFailoverStepName)
-        .asyncCall(() -> CompletableFuture.completedStage("nothing"))
+        .call(() -> "nothing")
         .andThen(String.class, __ -> {
           var updatedState = currentState().inc();
           if (updatedState.value() == 2) {

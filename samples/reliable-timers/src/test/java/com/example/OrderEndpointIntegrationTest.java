@@ -67,7 +67,7 @@ public class OrderEndpointIntegrationTest extends TestKitSupport {
       .ignoreExceptions()
       .atMost(20, TimeUnit.of(SECONDS))
       .until(
-        () -> await(methodRef.invokeAsync()),
+        () -> methodRef.invoke(),
         status -> !status.confirmed());
   }
 
@@ -94,29 +94,27 @@ public class OrderEndpointIntegrationTest extends TestKitSupport {
 
 
   private HttpResponse confirmOrder(String orderId) {
-    return await(httpClient.POST("/orders/" + orderId + "/confirm")
-            .invokeAsync()).httpResponse();
+    return httpClient.POST("/orders/" + orderId + "/confirm")
+            .invoke().httpResponse();
   }
 
   private HttpResponse cancelOrder(String orderId) {
-    return await(httpClient.POST("/orders/" + orderId + "/cancel")
-            .invokeAsync()).httpResponse();
+    return httpClient.POST("/orders/" + orderId + "/cancel")
+            .invoke().httpResponse();
   }
 
   private String placeOrder(OrderRequest orderReq) {
-    return await(httpClient.POST("/orders")
+    return httpClient.POST("/orders")
                     .withRequestBody(orderReq)
                     .responseBodyAs(Order.class)
-                    .invokeAsync(),
-            timeout).body().id();
+                    .invoke().body().id();
   }
 
   private OrderStatus getOrderStatus(String orderId) {
-    return await(
+    return
       componentClient
         .forKeyValueEntity(orderId)
-        .method(OrderEntity::status).invokeAsync()
-    );
+        .method(OrderEntity::status).invoke();
   }
 
 

@@ -73,11 +73,11 @@ public class AskAkkaAgent {
   /**
    * Fetches the history of the conversation for a given sessionId.
    */
-  private CompletionStage<List<ChatMessage>> fetchHistory(String  entityId) {
-    return componentClient
+  private List<ChatMessage> fetchHistory(String  entityId) {
+    var messages = componentClient
         .forEventSourcedEntity( entityId)
-        .method(SessionEntity::getHistory).invokeAsync()
-        .thenApply(messages -> messages.messages().stream().map(this::toChatMessage).toList());
+        .method(SessionEntity::getHistory).invoke();
+    return messages.messages().stream().map(this::toChatMessage).toList();
   }
 
   private ChatMessage toChatMessage(SessionEntity.Message msg) {
@@ -133,17 +133,11 @@ public class AskAkkaAgent {
     var compositeEntityId = userId + ":" + sessionId;
 
     // we fetch the history (if any) and create the assistant
-    // note that both calls are async, once we have the history,
-    // we can build the assistant using the previous chat memory
-    var assistantFut =
-      fetchHistory(sessionId)
-        .thenApply(messages -> createAssistant(sessionId, messages));
+    var messages = fetchHistory(sessionId);
+    var assistant = createAssistant(sessionId, messages);
 
     // below we take the assistant future and build a Source to stream out the response
-    return Source
-        .completionStage(assistantFut)
-        // once we have the assistant, we run the query and get the response streamed back
-      .flatMapConcat(assistant -> AkkaStreamUtils.toAkkaSource(assistant.chat(userQuestion)))
+    return AkkaStreamUtils.toAkkaSource(assistant.chat(userQuestion))
         .mapAsync(1, res -> {
 
           if (res.finished()) {// is the last message?

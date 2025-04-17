@@ -11,8 +11,6 @@ import com.example.wallet.application.WalletEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.CompletionStage;
-
 // Opened up for access from the public internet to make the sample service easy to try out.
 // For actual services meant for production this must be carefully considered, and often set more limited
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
@@ -28,32 +26,35 @@ public class WalletEndpoint {
   }
 
   @Get("/{id}")
-  public CompletionStage<String> get(String id) {
+  public String get(String id) {
     log.info("Get wallet with id [{}].", id);
-    return componentClient.forEventSourcedEntity(id)
-      .method(WalletEntity::get).invokeAsync()
-      .thenApply(balance -> "The balance is [" + balance + "].");
+    var balance = componentClient.forEventSourcedEntity(id)
+      .method(WalletEntity::get).invoke();
+    return "The balance is [" + balance + "].";
   }
 
   @Post("/{id}/create/{initialAmount}")
-  public CompletionStage<HttpResponse> create(String id, int initialAmount) {
+  public HttpResponse create(String id, int initialAmount) {
     log.info("creating wallet [{}] with balance [{}].", id, initialAmount);
-    return componentClient.forEventSourcedEntity(id)
-      .method(WalletEntity::create).invokeAsync(initialAmount)
-      .thenApply(done -> HttpResponses.ok());
+    componentClient.forEventSourcedEntity(id)
+      .method(WalletEntity::create)
+      .invoke(initialAmount);
+    return HttpResponses.ok();
   }
 
   @Post("/{id}/deposit/{amount}")
-  public CompletionStage<HttpResponse> deposit(String id, int amount) {
-    return componentClient.forEventSourcedEntity(id)
-      .method(WalletEntity::deposit).invokeAsync(amount)
-      .thenApply(done -> HttpResponses.ok());
+  public HttpResponse deposit(String id, int amount) {
+    componentClient.forEventSourcedEntity(id)
+      .method(WalletEntity::deposit)
+      .invoke(amount);
+    return HttpResponses.ok();
   }
 
   @Post("/{id}/withdraw/{amount}")
-  public CompletionStage<HttpResponse> withdraw(String id, int amount) {
-    return componentClient.forEventSourcedEntity(id)
-      .method(WalletEntity::withdraw).invokeAsync(amount)
-      .thenApply(done -> HttpResponses.ok());
+  public HttpResponse withdraw(String id, int amount) {
+    componentClient.forEventSourcedEntity(id)
+      .method(WalletEntity::withdraw)
+      .invoke(amount);
+    return HttpResponses.ok();
   }
 }

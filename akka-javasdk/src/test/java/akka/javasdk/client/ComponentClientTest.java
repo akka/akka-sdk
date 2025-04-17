@@ -70,7 +70,7 @@ class ComponentClientTest {
         return null;
       }
     };
-    componentClient = new ComponentClientImpl(dummyComponentClients, serializer, Option.empty(), ExecutionContext.global());
+    componentClient = new ComponentClientImpl(dummyComponentClients, serializer, Option.empty(), ExecutionContext.global(), null);
   }
 
   @Test

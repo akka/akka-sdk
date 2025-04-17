@@ -46,7 +46,7 @@ class TransferViewIntegrationTest extends TestKitSupport {
       .atMost(10, TimeUnit.of(SECONDS))
       .untilAsserted(() -> {
 
-        TransferView.TransferEntries result = await(componentClient.forView().method(TransferView::getAllCompleted).invokeAsync());
+        TransferView.TransferEntries result = componentClient.forView().method(TransferView::getAllCompleted).invoke();
         assertThat(result.entries()).contains(new TransferView.TransferEntry("t2", "COMPLETED"));
       });
   }
