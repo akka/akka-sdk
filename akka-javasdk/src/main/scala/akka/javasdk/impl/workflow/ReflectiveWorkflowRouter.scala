@@ -6,10 +6,12 @@ package akka.javasdk.impl.workflow
 
 import java.util.concurrent.CompletionStage
 import java.util.function.{ Function => JFunc }
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.FutureConverters.CompletionStageOps
 import scala.jdk.OptionConverters.RichOptional
+
 import akka.annotation.InternalApi
 import akka.javasdk.impl.MethodInvoker
 import akka.javasdk.impl.CommandSerialization
@@ -137,16 +139,20 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
     workflow.definition().findByName(stepName).toScala match {
 
       case Some(call: RunnableStep) =>
-        call.runnable.run()
-        Future.successful(BytesPayload.empty)
+        Future { // sdkExecutionContext
+          call.runnable.run()
+          BytesPayload.empty
+        }
 
       case Some(call: CallStep[_, _, _]) =>
         val decodedInput = decodeInputForClass(call.callInputClass)
-        val output = call.callFunc
-          .asInstanceOf[JFunc[Any, Any]]
-          .apply(decodedInput)
+        Future { // sdkExecutionContext
+          val output = call.callFunc
+            .asInstanceOf[JFunc[Any, Any]]
+            .apply(decodedInput)
 
-        Future.successful(serializer.toBytes(output))
+          serializer.toBytes(output)
+        }
 
       case Some(call: AsyncCallStep[_, _, _]) =>
         val decodedInput = decodeInputForClass(call.callInputClass)
