@@ -105,4 +105,4 @@ You can set the `OPENAI_API_KEY` environment variable something random as you do
 == Next steps
 Next we'll write a service (in the dependency injection sense, not the Akka sense) that does all of the asynchronous LLM communication work. We'll then put an API in front of it and be able to run queries against the _Ask Akka_ AI assistant!
 
-IMPORTANT: *Coming soon!* We are actively working on building and vetting this content. We will announce more content as it arrives.
+
