@@ -68,7 +68,7 @@ include::example$ask-akka-agent/src/main/java/akka/ask/agent/application/AkkaStr
 <4> If the token stream is finished, then we `offer` and then `complete`
 
 == Next steps
-Next we'll create streaming endpoints that provide clients with realtime access to LLM output.
+Next we'll create streaming endpoints that provide clients with real-time access to LLM output.
 
 IMPORTANT: *Coming soon!* We are actively working on building and vetting this content. We will announce more content as it arrives.
 
