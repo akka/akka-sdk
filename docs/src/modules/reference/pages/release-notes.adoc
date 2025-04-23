@@ -29,6 +29,8 @@ The xref:java:shopping-cart/quickstart.adoc#_the_external_api[shopping cart endp
 
 ****
 
+* Akka CLI 3.0.17
+  - Improvements to the `akka service proxy` command when using `--use-grpc-web`
 
 * Akka CLI 3.0.16
   - Manage multi-region aka global hostnames
