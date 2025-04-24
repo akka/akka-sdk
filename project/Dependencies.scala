@@ -95,7 +95,8 @@ object Dependencies {
     jacksonDatabind,
     jacksonJdk8,
     jacksonJsr310,
-    jacksonParameterNames)
+    jacksonParameterNames,
+    jacksonScala)
 
   // Important: be careful when adding dependencies here, unless provided, runtime or test they will also be packaged in the user project
   //            binaries/artifacts unless explicitly excluded in the akka-javasdk-parent assembly descriptor
