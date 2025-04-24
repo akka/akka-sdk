@@ -134,6 +134,23 @@ IMPORTANT: We are returning the internal state directly back to the requester. I
 
 A full transfer workflow source code sample can be downloaded as a link:../java/_attachments/workflow-quickstart.zip[zip file]. Follow the `README` file to run and test it.
 
+== Deleting state
+
+If you want to delete the workflow state, you can use the `effect().delete` method. This will remove the workflow from the system.
+
+[source,java,indent=0]
+.{sample-base-url}/transfer-workflow/src/main/java/com/example/transfer/application/TransferWorkflow.java[TransferWorkflow.java]
+----
+include::example$transfer-workflow/src/main/java/com/example/transfer/application/TransferWorkflow.java[tag=delete-workflow]
+----
+<1> Instruction to delete the workflow.
+
+When you give the instruction to delete a running workflow it's equivalent to ending and deleting a workflow. For already finished workflows, it is possible to delete them in the command handler, but any state changes will be ignored. The actual removal of workflow state is delayed to give downstream consumers time to process all prior updates. Including the fact that the workflow has been deleted (via method annotated with `@DeleteHandler`). By default, the existence of the workflow is completely cleaned up after a week.
+
+You can still handle read requests to the workflow until it has been completely removed, but the current state will be empty (or null). To check whether the workflow has been deleted, you can use the `isDeleted` method inherited from the `Workflow` class.
+
+It is best to not reuse the same workflow id after deletion, but if that happens after the workflow has been completely removed it will be instantiated as a completely new workflow without any knowledge of previous state.
+
 == Pausing workflow
 
 A long-running workflow can be paused while waiting for some additional information to continue processing. A special `pause` transition can be used to inform Akka that the execution of the Workflow should be postponed. By launching a Workflow command handler, the user can then resume the processing. Additionally, a Timer can be scheduled to automatically inform the Workflow that the expected time for the additional data has passed.
