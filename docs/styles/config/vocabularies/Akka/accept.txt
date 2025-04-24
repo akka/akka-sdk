@@ -87,7 +87,6 @@ JUnit
 keyId
 Kolesnikov
 Lagom
-[Ll]angchain
 [Ll]angchain4j
 [Ll]ightbend
 LLM
