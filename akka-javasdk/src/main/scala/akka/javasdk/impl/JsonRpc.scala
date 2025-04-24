@@ -9,6 +9,7 @@ import akka.http.scaladsl.model.ContentTypes
 import akka.http.scaladsl.model.HttpEntity
 import akka.http.scaladsl.model.HttpMethods
 import akka.http.scaladsl.model.HttpResponse
+import akka.http.scaladsl.model.StatusCodes
 import akka.javasdk.impl.serialization.JsonSerializer
 import akka.runtime.sdk.spi.ComponentOptions
 import akka.runtime.sdk.spi.HttpEndpointConstructionContext
@@ -48,7 +49,7 @@ object JsonRpc {
    *   omitted for notifications. The id is passed back through responses to identify which request a response was for
    *   and to allow out of request order responses. FIXME maybe we dont support Null which is just weird
    */
-  final case class JsonRpcRequest(jsonRpc: String, method: String, params: Option[AnyRef], id: Option[Any]) {
+  final case class JsonRpcRequest(jsonRpc: String = "2.0", method: String, params: Option[AnyRef], id: Option[Any]) {
     def isNotification = id.isEmpty
   }
 
@@ -70,6 +71,10 @@ object JsonRpc {
   final case class JsonRpcError(code: Int, message: String, data: Option[Any])
 
   // FIXME authentication/authorization
+
+  private val mapper = JsonSerializer.newObjectMapperWithDefaults()
+  mapper.registerModule(DefaultScalaModule)
+
   final class JsonRpcEndpoint(path: String, methods: Map[String, JsonRpcRequest => Future[JsonRpcResponse]])(implicit
       ec: ExecutionContext) {
 
@@ -87,15 +92,14 @@ object JsonRpc {
       objectMapper = None // we deserialize ourselves
     )
 
-    private val mapper = JsonSerializer.internalObjectMapper.copy
-    mapper.registerModule(DefaultScalaModule)
-
     class HttpRequestHandler(constructionContext: HttpEndpointConstructionContext) {
 
       def handle(entity: HttpEntity.Strict): Future[HttpResponse] = {
         // FIXME validate content type
         val jsonPayload = entity.data.utf8String
         // FIXME decouple from HTTP?
+        // FIXME handle SSE as well (what does it really mean, batch responses are already streamed?)
+        // FIXME HTTP transport for Json RPC isn't really well documented, looking at MCP and seeing what they dictate
         // can either be a batch (in a JSON array) or a single request
         if (jsonPayload.startsWith("[")) {
           val requests =
@@ -110,6 +114,8 @@ object JsonRpc {
               Source(requests)
                 .mapAsyncUnordered(8)(handleRequest) // FIXME parallelism
                 .map(responseToJson))))
+        } else if (jsonPayload.isEmpty) {
+          Future.successful(HttpResponse(StatusCodes.Accepted))
         } else {
           val request = mapper.readValue(jsonPayload, classOf[JsonRpcRequest])
           handleRequest(request).map(jsonRpcResponse =>
