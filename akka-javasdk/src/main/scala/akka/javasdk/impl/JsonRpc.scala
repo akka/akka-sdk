@@ -54,6 +54,7 @@ object JsonRpc {
    *   and to allow out of request order responses. FIXME maybe we dont support Null which is just weird
    */
   final case class JsonRpcRequest(jsonRpc: String = "2.0", method: String, params: Option[AnyRef], id: Option[Any]) {
+    // if a request is a notification there is no response for it
     def isNotification = id.isEmpty
   }
 
@@ -116,8 +117,8 @@ object JsonRpc {
 
   }
 
-  final class JsonRpcEndpoint(path: String, methods: Map[String, JsonRpcRequest => Future[JsonRpcResponse]])(implicit
-      ec: ExecutionContext) {
+  final class JsonRpcEndpoint(path: String, methods: Map[String, JsonRpcRequest => Future[Option[JsonRpcResponse]]])(
+      implicit ec: ExecutionContext) {
 
     private final val log = LoggerFactory.getLogger(getClass)
 
@@ -148,9 +149,13 @@ object JsonRpc {
             Serialization.parseRequest(entity.data) match {
               case Seq(single) =>
                 log.debug("Handling JSON-RPC request for [{}]", single.method)
-                handleRequest(single).map(jsonRpcResponse =>
-                  HttpResponse(entity =
-                    HttpEntity(ContentTypes.`application/json`, Serialization.responseToJsonBytes(jsonRpcResponse))))
+                handleRequest(single).map(maybeResponse =>
+                  HttpResponse(entity = maybeResponse match {
+                    case Some(response) =>
+                      HttpEntity(ContentTypes.`application/json`, Serialization.responseToJsonBytes(response))
+                    case None =>
+                      HttpEntity.empty(ContentTypes.`application/json`) // FIXME still json even though empty?
+                  }))
               case Seq() =>
                 log.debug("Empty JSON-RPC request, returning HTTP 202 Accepted")
                 Future.successful(HttpResponse(StatusCodes.Accepted))
@@ -163,9 +168,12 @@ object JsonRpc {
                 Future.successful(
                   HttpResponse(entity = HttpEntity(
                     ContentTypes.`application/json`,
-                    Source(batch)
-                      .mapAsyncUnordered(8)(handleRequest) // FIXME parallelism
-                      .map(Serialization.responseToJsonBytes))))
+                    Source
+                      .single(ByteString("["))
+                      .concat(Source(batch)
+                        .mapAsyncUnordered(8)(handleRequest) // FIXME parallelism
+                        .mapConcat(_.map(response => Serialization.responseToJsonBytes(response))))
+                      .concat(Source.single(ByteString("]"))))))
             }
           } catch {
             case _: JsonMappingException =>
@@ -180,25 +188,34 @@ object JsonRpc {
         }
       }
 
-      def handleRequest(request: JsonRpcRequest): Future[JsonRpcResponse] = {
+      def handleRequest(request: JsonRpcRequest): Future[Option[JsonRpcResponse]] = {
         methods.get(request.method) match {
           case Some(handler) =>
             try {
+              // Note: we don't validate that there is no response for notification here
               handler(request)
             } catch {
               case NonFatal(ex) =>
                 log.warn(s"JSON-RPC call to endpoint $path method ${request.method} id ${request.id} failed", ex)
-                Future.successful(
-                  JsonRpcErrorResponse(
-                    id = request.id,
-                    error = JsonRpcError(JsonRpcError.Codes.InternalError, s"Call caused internal error", None)))
+                if (request.isNotification) Future.successful(None)
+                else
+                  Future.successful(
+                    Some(
+                      JsonRpcErrorResponse(
+                        id = request.id,
+                        error = JsonRpcError(JsonRpcError.Codes.InternalError, s"Call caused internal error", None))))
             }
           case None =>
-            Future.successful(
-              JsonRpcErrorResponse(
-                id = request.id,
-                error =
-                  new JsonRpcError(JsonRpcError.Codes.MethodNotFound, s"Method [${request.method}] not found", None)))
+            if (request.isNotification) Future.successful(None)
+            else
+              Future.successful(
+                Some(
+                  JsonRpcErrorResponse(
+                    id = request.id,
+                    error = new JsonRpcError(
+                      JsonRpcError.Codes.MethodNotFound,
+                      s"Method [${request.method}] not found",
+                      None))))
         }
 
       }
