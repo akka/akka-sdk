@@ -70,7 +70,7 @@ class JsonRpcSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike with Ma
       val endpoint = new JsonRpc.JsonRpcEndpoint(
         "example",
         Map("method1" -> { (request: JsonRpcRequest) =>
-          Future.successful(JsonRpcSuccessResponse(id = request.id, result = "result"))
+          Future.successful(Some(JsonRpcSuccessResponse(id = request.id, result = "result")))
         }))
 
       val response = handle(
@@ -78,6 +78,20 @@ class JsonRpcSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike with Ma
         JsonRpc.Serialization.requestToJsonString(
           JsonRpcRequest(method = "method1", params = None, id = Some(1)))).futureValue
       response shouldBe """{"jsonrpc":"2.0","id":1,"result":"result"}"""
+    }
+
+    "handle a single notification" in {
+      val endpoint = new JsonRpc.JsonRpcEndpoint(
+        "example",
+        Map("method1" -> { (_: JsonRpcRequest) =>
+          Future.successful(None)
+        }))
+
+      val response = handle(
+        endpoint,
+        JsonRpc.Serialization.requestToJsonString(
+          JsonRpcRequest(method = "method1", params = None, id = None))).futureValue
+      response shouldBe ""
     }
 
     "respond with error for unknown method" in {
@@ -109,7 +123,7 @@ class JsonRpcSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike with Ma
       val endpoint = new JsonRpc.JsonRpcEndpoint(
         "example",
         Map("method1" -> { (req: JsonRpcRequest) =>
-          Future.successful(JsonRpcSuccessResponse(id = req.id, result = "woho"))
+          Future.successful(Some(JsonRpcSuccessResponse(id = req.id, result = "woho")))
         }))
 
       val response = handle(endpoint, """{"jsonrpc":"2.0","method":"method1","params": "bar"}""").futureValue
@@ -119,16 +133,14 @@ class JsonRpcSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike with Ma
     "respond with error for unparseable json" in {
       val endpoint = new JsonRpc.JsonRpcEndpoint(
         "example",
-        Map("method1" -> { (req: JsonRpcRequest) =>
-          Future.successful(JsonRpcSuccessResponse(id = req.id, result = "woho"))
+        Map("sum" -> { (req: JsonRpcRequest) =>
+          Future.successful(Some(JsonRpcSuccessResponse(id = req.id, result = "woho")))
         }))
 
       val response = handle(
         endpoint,
-        """[
-                                        |  {"jsonrpc": "2.0", "method": "sum", "params": [1,2,4], "id": "1"},
-                                        |  {"jsonrpc": "2.0", "method"
-                                        |]""".stripMargin).futureValue
+        """[{"jsonrpc": "2.0", "method": "sum", "params": [1,2,4], "id": "1"},
+            {"jsonrpc": "2.0", "method"]""").futureValue
       response shouldBe """{"jsonrpc":"2.0","error":{"code":-32600,"message":"Parse error"}}"""
     }
 
@@ -140,19 +152,47 @@ class JsonRpcSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike with Ma
       response shouldBe ""
     }
 
-    // FIXME what about accepting notification and not responding?
-
     "handle a batch request" in {
       val endpoint = new JsonRpc.JsonRpcEndpoint(
         "example",
         Map("method1" -> { (request: JsonRpcRequest) =>
-          Future.successful(JsonRpcSuccessResponse(id = request.id, result = "result"))
+          Future.successful(Some(JsonRpcSuccessResponse(id = request.id, result = "result")))
         }))
 
       val response = handle(
         endpoint,
         """[{"jsonrpc":"2.0","method":"method1","params":{},"id":1},{"jsonrpc":"2.0","method":"method1","params":{},"id":2}]""").futureValue
-      response shouldBe """{"jsonrpc":"2.0","id":1,"result":"result"}{"jsonrpc":"2.0","id":2,"result":"result"}"""
+      response shouldBe """[{"jsonrpc":"2.0","id":1,"result":"result"}{"jsonrpc":"2.0","id":2,"result":"result"}]"""
+    }
+
+    "handle a batch request including notifications" in {
+      val endpoint = new JsonRpc.JsonRpcEndpoint(
+        "example",
+        Map(
+          "method1" -> { (request: JsonRpcRequest) =>
+            Future.successful(Some(JsonRpcSuccessResponse(id = request.id, result = "result")))
+          },
+          "notify1" -> { (_: JsonRpcRequest) =>
+            Future.successful(None)
+          }))
+
+      val response = handle(
+        endpoint,
+        """[{"jsonrpc":"2.0","method":"method1","params":{},"id":1},{"jsonrpc":"2.0","method":"notify1","params":{}}]""").futureValue
+      response shouldBe """[{"jsonrpc":"2.0","id":1,"result":"result"}]"""
+    }
+
+    "handle a batch request with errors" in {
+      val endpoint = new JsonRpc.JsonRpcEndpoint(
+        "example",
+        Map("method1" -> { (request: JsonRpcRequest) =>
+          Future.successful(Some(JsonRpcSuccessResponse(id = request.id, result = "result")))
+        }))
+
+      val response = handle(
+        endpoint,
+        """[{"jsonrpc":"2.0","method":"method2","params":{},"id":1},{"jsonrpc":"2.0","method":"method1","params":{},"id":2}]""").futureValue
+      response shouldBe """[{"jsonrpc":"2.0","id":1,"error":{"code":-32601,"message":"Method [method2] not found"}}{"jsonrpc":"2.0","id":2,"result":"result"}]"""
     }
 
     "send responses to batch out as they arrive" in {
@@ -168,7 +208,7 @@ class JsonRpcSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike with Ma
            } else if (request.id.contains(2)) {
              requestTwoCompletion.future
            } else throw new IllegalArgumentException())
-            .map(text => JsonRpcSuccessResponse(id = request.id, result = text))
+            .map(text => Some(JsonRpcSuccessResponse(id = request.id, result = text)))
         }))
 
       val futureHttpResponse = handle(
@@ -181,7 +221,7 @@ class JsonRpcSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike with Ma
       Thread.sleep(30)
       requestOneCompletion.success("result 1")
 
-      futureHttpResponse.futureValue shouldBe """{"jsonrpc":"2.0","id":2,"result":"result 2"}{"jsonrpc":"2.0","id":1,"result":"result 1"}"""
+      futureHttpResponse.futureValue shouldBe """[{"jsonrpc":"2.0","id":2,"result":"result 2"}{"jsonrpc":"2.0","id":1,"result":"result 1"}]"""
     }
   }
 
