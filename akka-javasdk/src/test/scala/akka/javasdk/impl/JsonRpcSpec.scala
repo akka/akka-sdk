@@ -38,14 +38,15 @@ class JsonRpcSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike with Ma
   "The JSON RPC implementation" should {
 
     "parse and render successful responses" in {
-      val response = JsonRpcSuccessResponse(Some(1), "result")
+      val response = JsonRpcSuccessResponse(id = Some(1), result = "result")
       val bytes = JsonRpc.Serialization.responseToJsonBytes(response)
       val parsed = JsonRpc.Serialization.parseResponse(bytes.utf8String)
       parsed shouldEqual response
     }
 
     "parse and render error responses" in {
-      val errorResponse = JsonRpcErrorResponse(Some(1), JsonRpcError(JsonRpcError.Codes.MethodNotFound, "result", None))
+      val errorResponse =
+        JsonRpcErrorResponse(id = Some(1), error = JsonRpcError(JsonRpcError.Codes.MethodNotFound, "result", None))
       val bytes = JsonRpc.Serialization.responseToJsonBytes(errorResponse)
       val parsed = JsonRpc.Serialization.parseResponse(bytes.utf8String)
       parsed shouldEqual errorResponse
@@ -69,14 +70,14 @@ class JsonRpcSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike with Ma
       val endpoint = new JsonRpc.JsonRpcEndpoint(
         "example",
         Map("method1" -> { (request: JsonRpcRequest) =>
-          Future.successful(JsonRpcSuccessResponse(request.id, "result"))
+          Future.successful(JsonRpcSuccessResponse(id = request.id, result = "result"))
         }))
 
       val response = handle(
         endpoint,
         JsonRpc.Serialization.requestToJsonString(
           JsonRpcRequest(method = "method1", params = None, id = Some(1)))).futureValue
-      response shouldBe """{"id":1,"result":"result"}"""
+      response shouldBe """{"jsonrpc":"2.0","id":1,"result":"result"}"""
     }
 
     "respond with error for unknown method" in {
@@ -86,7 +87,7 @@ class JsonRpcSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike with Ma
         endpoint,
         JsonRpc.Serialization.requestToJsonString(
           JsonRpcRequest(method = "method1", params = None, id = Some(1)))).futureValue
-      response shouldBe """{"id":1,"error":{"code":-32601,"message":"Method [method1] not found"}}"""
+      response shouldBe """{"jsonrpc":"2.0","id":1,"error":{"code":-32601,"message":"Method [method1] not found"}}"""
     }
 
     "respond with error if handler throws" in {
@@ -100,7 +101,35 @@ class JsonRpcSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike with Ma
         endpoint,
         JsonRpc.Serialization.requestToJsonString(
           JsonRpcRequest(method = "method1", params = None, id = Some(1)))).futureValue
-      response shouldBe """{"id":1,"error":{"code":-32603,"message":"Call caused internal error"}}"""
+      response shouldBe """{"jsonrpc":"2.0","id":1,"error":{"code":-32603,"message":"Call caused internal error"}}"""
+    }
+
+    // This one is weird because we want to allow parsing params JSON objects into types, but spec only thinks of it as dictionary/or seq
+    "respond with error for invalid request" in pendingUntilFixed {
+      val endpoint = new JsonRpc.JsonRpcEndpoint(
+        "example",
+        Map("method1" -> { (req: JsonRpcRequest) =>
+          Future.successful(JsonRpcSuccessResponse(id = req.id, result = "woho"))
+        }))
+
+      val response = handle(endpoint, """{"jsonrpc":"2.0","method":"method1","params": "bar"}""").futureValue
+      response shouldBe """{"jsonrpc":"2.0","error":{"code":-32601,"message":"Invalid Request"}}"""
+    }
+
+    "respond with error for unparseable json" in {
+      val endpoint = new JsonRpc.JsonRpcEndpoint(
+        "example",
+        Map("method1" -> { (req: JsonRpcRequest) =>
+          Future.successful(JsonRpcSuccessResponse(id = req.id, result = "woho"))
+        }))
+
+      val response = handle(
+        endpoint,
+        """[
+                                        |  {"jsonrpc": "2.0", "method": "sum", "params": [1,2,4], "id": "1"},
+                                        |  {"jsonrpc": "2.0", "method"
+                                        |]""".stripMargin).futureValue
+      response shouldBe """{"jsonrpc":"2.0","error":{"code":-32600,"message":"Parse error"}}"""
     }
 
     "respond with empty request is empty" in {
@@ -117,13 +146,13 @@ class JsonRpcSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike with Ma
       val endpoint = new JsonRpc.JsonRpcEndpoint(
         "example",
         Map("method1" -> { (request: JsonRpcRequest) =>
-          Future.successful(JsonRpcSuccessResponse(request.id, "result"))
+          Future.successful(JsonRpcSuccessResponse(id = request.id, result = "result"))
         }))
 
       val response = handle(
         endpoint,
         """[{"jsonrpc":"2.0","method":"method1","params":{},"id":1},{"jsonrpc":"2.0","method":"method1","params":{},"id":2}]""").futureValue
-      response shouldBe """{"id":1,"result":"result"}{"id":2,"result":"result"}"""
+      response shouldBe """{"jsonrpc":"2.0","id":1,"result":"result"}{"jsonrpc":"2.0","id":2,"result":"result"}"""
     }
 
     "send responses to batch out as they arrive" in {
@@ -139,7 +168,7 @@ class JsonRpcSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike with Ma
            } else if (request.id.contains(2)) {
              requestTwoCompletion.future
            } else throw new IllegalArgumentException())
-            .map(text => JsonRpcSuccessResponse(request.id, text))
+            .map(text => JsonRpcSuccessResponse(id = request.id, result = text))
         }))
 
       val futureHttpResponse = handle(
@@ -152,7 +181,7 @@ class JsonRpcSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike with Ma
       Thread.sleep(30)
       requestOneCompletion.success("result 1")
 
-      futureHttpResponse.futureValue shouldBe """{"id":2,"result":"result 2"}{"id":1,"result":"result 1"}"""
+      futureHttpResponse.futureValue shouldBe """{"jsonrpc":"2.0","id":2,"result":"result 2"}{"jsonrpc":"2.0","id":1,"result":"result 1"}"""
     }
   }
 

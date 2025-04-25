@@ -19,6 +19,7 @@ import akka.runtime.sdk.spi.MethodOptions
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.fasterxml.jackson.annotation.JsonInclude.Include
+import com.fasterxml.jackson.databind.JsonMappingException
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import org.slf4j.LoggerFactory
 
@@ -59,8 +60,9 @@ object JsonRpc {
   sealed trait JsonRpcResponse {
     def id: Option[Any]
   }
-  final case class JsonRpcSuccessResponse(id: Option[Any], result: Any) extends JsonRpcResponse
-  final case class JsonRpcErrorResponse(id: Option[Any], error: JsonRpcError) extends JsonRpcResponse
+  final case class JsonRpcSuccessResponse(jsonrpc: String = "2.0", id: Option[Any], result: Any) extends JsonRpcResponse
+  final case class JsonRpcErrorResponse(jsonrpc: String = "2.0", id: Option[Any], error: JsonRpcError)
+      extends JsonRpcResponse
   object JsonRpcError {
     object Codes {
       val ParseError = -32700
@@ -142,27 +144,38 @@ object JsonRpc {
         else {
           // FIXME handle SSE as well (what does it really mean, batch responses are already streamed?)
           // Note: HTTP transport for JSON-RPC isn't really well documented/spec:ed, looking at MCP and seeing what they dictate
-          Serialization.parseRequest(entity.data) match {
-            case Seq(single) =>
-              log.debug("Handling JSON-RPC request for [{}]", single.method)
-              handleRequest(single).map(jsonRpcResponse =>
-                HttpResponse(entity =
-                  HttpEntity(ContentTypes.`application/json`, Serialization.responseToJsonBytes(jsonRpcResponse))))
-            case Seq() =>
-              log.debug("Empty JSON-RPC request, returning HTTP 202 Accepted")
-              Future.successful(HttpResponse(StatusCodes.Accepted))
-            case batch =>
-              if (log.isDebugEnabled)
-                log.debug(
-                  "Handling batch of {} JSON-RPC requests for [{}]",
-                  batch.size,
-                  batch.map(_.method).mkString(","))
+          try {
+            Serialization.parseRequest(entity.data) match {
+              case Seq(single) =>
+                log.debug("Handling JSON-RPC request for [{}]", single.method)
+                handleRequest(single).map(jsonRpcResponse =>
+                  HttpResponse(entity =
+                    HttpEntity(ContentTypes.`application/json`, Serialization.responseToJsonBytes(jsonRpcResponse))))
+              case Seq() =>
+                log.debug("Empty JSON-RPC request, returning HTTP 202 Accepted")
+                Future.successful(HttpResponse(StatusCodes.Accepted))
+              case batch =>
+                if (log.isDebugEnabled)
+                  log.debug(
+                    "Handling batch of {} JSON-RPC requests for [{}]",
+                    batch.size,
+                    batch.map(_.method).mkString(","))
+                Future.successful(
+                  HttpResponse(entity = HttpEntity(
+                    ContentTypes.`application/json`,
+                    Source(batch)
+                      .mapAsyncUnordered(8)(handleRequest) // FIXME parallelism
+                      .map(Serialization.responseToJsonBytes))))
+            }
+          } catch {
+            case _: JsonMappingException =>
               Future.successful(
                 HttpResponse(entity = HttpEntity(
                   ContentTypes.`application/json`,
-                  Source(batch)
-                    .mapAsyncUnordered(8)(handleRequest) // FIXME parallelism
-                    .map(Serialization.responseToJsonBytes))))
+                  Serialization.responseToJsonBytes(
+                    JsonRpcErrorResponse(
+                      id = None,
+                      error = JsonRpcError(JsonRpcError.Codes.InvalidRequest, "Parse error", None))))))
           }
         }
       }
@@ -177,14 +190,15 @@ object JsonRpc {
                 log.warn(s"JSON-RPC call to endpoint $path method ${request.method} id ${request.id} failed", ex)
                 Future.successful(
                   JsonRpcErrorResponse(
-                    request.id,
-                    JsonRpcError(JsonRpcError.Codes.InternalError, s"Call caused internal error", None)))
+                    id = request.id,
+                    error = JsonRpcError(JsonRpcError.Codes.InternalError, s"Call caused internal error", None)))
             }
           case None =>
             Future.successful(
               JsonRpcErrorResponse(
-                request.id,
-                new JsonRpcError(JsonRpcError.Codes.MethodNotFound, s"Method [${request.method}] not found", None)))
+                id = request.id,
+                error =
+                  new JsonRpcError(JsonRpcError.Codes.MethodNotFound, s"Method [${request.method}] not found", None)))
         }
 
       }
