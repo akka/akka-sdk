@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2021-2024 Lightbend Inc. <https://www.lightbend.com>
+ */
+
 package akka.javasdk.impl
 
 import akka.annotation.InternalApi
@@ -12,7 +16,7 @@ private[akka] object Mcp {
   private def notification(method: String, params: Option[McpNotification]) =
     JsonRpc.JsonRpcRequest(method = method, params = params, id = None)
 
-  private def request(method: String, mcpRequest: Option[McpRequest] = None): JsonRpc.JsonRpcRequest =
+  private def request(method: String, mcpRequest: Option[McpRequest]): JsonRpc.JsonRpcRequest =
     JsonRpc.JsonRpcRequest(method = method, params = mcpRequest, id = Some(requestId.incrementAndGet()))
 
   sealed trait McpRequest {
