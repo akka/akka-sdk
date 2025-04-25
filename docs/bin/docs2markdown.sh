@@ -14,5 +14,7 @@ else
   find target/site -type f -name "*.html.md" -print0 | xargs -0 sed -i -E 's/\(([0-9]+)\)/\/\/ (\1)/g'
 fi
 
+cp docs/src/modules/ROOT/pages/llms.txt target/site/
+
 # update ask-akka-agent
 #find target/site -name "index.html.md" -prune -o -type f -name "*.html.md" -exec cp {} samples/ask-akka-agent/src/main/resources/md-docs/ \;
