@@ -158,7 +158,7 @@ Once pushed, you need to use the suggested image from the command’s output in 
 
 ```yaml
 name: my-service
-spec:
+service:
   image: acr.us-east-1.akka.io/my-organization/my-project/container-name:tag-name
   env:
   - name: SOME_VARIABLE
