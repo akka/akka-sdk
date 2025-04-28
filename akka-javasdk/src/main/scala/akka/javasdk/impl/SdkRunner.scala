@@ -711,6 +711,9 @@ private final class Sdk(
       sdkExecutionContext.asInstanceOf[Executor]
   }
 
+  private val serviceExplorationMcpEndpoint =
+    McpServiceExplorationEndpoint(httpEndpointDescriptors, grpcEndpointDescriptors)(system)
+
   val spiComponents: SpiComponents = {
 
     val serviceSetup: Option[ServiceSetup] = maybeServiceClass match {
@@ -736,7 +739,8 @@ private final class Sdk(
         consumerDescriptors ++
         viewDescriptors ++
         workflowDescriptors ++
-        agentDescriptors)
+        agentDescriptors :+
+        serviceExplorationMcpEndpoint)
         .filterNot(isDisabled(combinedDisabledComponents))
 
     val preStart = { (_: ActorSystem[_]) =>
