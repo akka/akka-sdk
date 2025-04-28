@@ -32,7 +32,7 @@ import scala.util.control.NonFatal
  * INTERNAL API
  */
 @InternalApi
-object JsonRpc {
+private[akka] object JsonRpc {
 
   /*
    * Implementation of JSON-RPC 2.0 according to https://www.jsonrpc.org/specification
@@ -77,10 +77,8 @@ object JsonRpc {
 
   final case class JsonRpcError(code: Int, message: String, data: Option[Any])
 
-  // FIXME authentication/authorization
-
   object Serialization {
-    private val mapper = JsonSerializer.newObjectMapperWithDefaults()
+    private[akka] val mapper = JsonSerializer.newObjectMapperWithDefaults()
     mapper.registerModule(DefaultScalaModule)
     mapper.setSerializationInclusion(Include.NON_EMPTY)
 
@@ -106,6 +104,9 @@ object JsonRpc {
     }
     def responseToJsonBytes(jsonRpcResponse: JsonRpcResponse) =
       ByteString.fromArrayUnsafe(mapper.writeValueAsBytes(jsonRpcResponse))
+
+    def responseToJsonString(jsonRpcResponse: JsonRpcResponse) =
+      mapper.writeValueAsString(jsonRpcResponse)
 
     def parseResponse(response: String): JsonRpcResponse = {
       if (response.contains("error")) {
