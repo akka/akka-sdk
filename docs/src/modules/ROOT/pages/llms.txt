@@ -15,6 +15,7 @@
 ## Docs
 
 - [Developer best practices](https://doc.akka.io/java/dev-best-practices.html.md): Guidelines and recommended patterns for effective Akka SDK development.
+- [Architecture model](https://doc.akka.io/concepts/architecture-model.html.md): Key architectural patterns and principles used in Akka.
 - [Developing](https://doc.akka.io/java/index.html.md): Overview of the development process with the Akka SDK.
 - [Components](https://doc.akka.io/java/components/index.html.md): Introduction to Akka's core building blocks and their usage.
 - [Implementing Event Sourced Entities](https://doc.akka.io/java/event-sourced-entities.html.md): How to create entities that store their state as a sequence of events.
@@ -56,6 +57,8 @@
 
 ## Code Style Guidelines
 
+- Use the Onion Architecture and follow `com.[domain-module].[api|application|domain]` package structure.
+
 ### Domain Model
 - Use Java records for the domain model, events, commands, requests and responses, because those are more concise and are serializable by default.
 - Prefer Java Optional for nullable values.
@@ -63,7 +66,7 @@
 ### Entities
 - Commands can be defined as records inside the entity and they don't have to have a common interface.
 - Command handlers should be implemented in the entity and not in the domain object. The domain object should have methods for business logic validations but it should not handle commands directly or be concerned with entity effects.
-- Command handlers that make updates without returning any information should return akka.Done for successful responses and effects().error() for valiation errors.
+- Command handlers that make updates without returning any information should return akka.Done for successful responses and effects().error() for validation errors. Use static import for akka.Done.done() method.
 - Events should be defined in the domain package and the events for an entity should have a common sealed interface, and define `@TypeName` for serialization.
 - `applyEvent` method should never return null, return the current state or throw an exception.
 - Key Value Entities, Event Sourced Entities, Workflows can accept only single method parameter, wrap multiple parameters in a record class.
@@ -132,6 +135,5 @@
 - [Entity state models](https://doc.akka.io/concepts/state-model.html.md): Understanding different entity state modeling approaches in Akka.
 - [Understanding](https://doc.akka.io/concepts/index.html.md): Core concepts and architecture principles of the Akka SDK.
 - [Development process](https://doc.akka.io/concepts/development-process.html.md): Recommended development workflow for Akka applications.
-- [Architecture model](https://doc.akka.io/concepts/architecture-model.html.md): Key architectural patterns and principles used in Akka.
 - [Deployment model](https://doc.akka.io/concepts/deployment-model.html.md): Understanding how Akka services are packaged and deployed.
 - [Saga patterns](https://doc.akka.io/concepts/saga-patterns.html.md): Implementing distributed transactions using the saga pattern in Akka.
