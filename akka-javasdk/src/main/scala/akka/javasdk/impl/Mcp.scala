@@ -24,11 +24,12 @@ import scala.reflect.ClassTag
  */
 @InternalApi
 private[akka] object Mcp {
+  private val log = LoggerFactory.getLogger(classOf[Mcp.type])
 
   val ProtocolVersion = "2024-11-05"
 
   private val requestId = new AtomicLong(0)
-  private val mapTypeRef: TypeReference[Map[String, AnyRef]] = new TypeReference[Map[Role, AnyRef]] {}
+  private val mapTypeRef: TypeReference[Map[String, AnyRef]] = new TypeReference[Map[String, AnyRef]] {}
 
   private def notification(method: String, params: Option[McpNotification]) =
     JsonRpc.JsonRpcRequest(method = method, params = params, id = None)
@@ -36,18 +37,21 @@ private[akka] object Mcp {
   def request(method: String, mcpRequest: Option[McpRequest]): JsonRpc.JsonRpcRequest =
     JsonRpc.JsonRpcRequest(method = method, params = mcpRequest, id = Some(requestId.incrementAndGet()))
 
-  def result[T: ClassTag](response: JsonRpcResponse): T =
+  def result[T](response: JsonRpcResponse)(implicit ev: ClassTag[T]): T =
     response match {
       case JsonRpcSuccessResponse(_, _, payload) =>
-        JsonRpc.Serialization.mapper.convertValue(payload, implicitly[ClassTag[T]].runtimeClass).asInstanceOf[T]
+        JsonRpc.Serialization.mapper.convertValue(payload, ev.runtimeClass).asInstanceOf[T]
       case error: JsonRpcErrorResponse =>
         throw new IllegalArgumentException(s"Cannot turn JSON-RPC error [$error] to MCP result")
     }
 
-  def jsonRpcHandler[T: ClassTag](
-      handler: T => Future[Option[McpResult]]): JsonRpcRequest => Future[Option[JsonRpcResponse]] = { jsonRpcRequest =>
+  def jsonRpcHandler[T](handler: T => Future[Option[McpResult]])(implicit
+      ev: ClassTag[T]): JsonRpcRequest => Future[Option[JsonRpcResponse]] = { jsonRpcRequest =>
     val mcpRequest: T =
-      JsonRpc.Serialization.mapper.convertValue(jsonRpcRequest, implicitly[ClassTag[T]].runtimeClass).asInstanceOf[T]
+      JsonRpc.Serialization.mapper
+        .convertValue(jsonRpcRequest.params.getOrElse(Map.empty), ev.runtimeClass)
+        .asInstanceOf[T]
+    log.debug(s"Mcp request for [{}]: {}", jsonRpcRequest.method, mcpRequest)
     handler(mcpRequest).map {
       case Some(mcpResult) =>
         val responseMap = JsonRpc.Serialization.mapper.convertValue(mcpResult, mapTypeRef)
