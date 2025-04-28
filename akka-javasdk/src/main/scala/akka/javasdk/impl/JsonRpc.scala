@@ -11,6 +11,8 @@ import akka.http.scaladsl.model.HttpMethods
 import akka.http.scaladsl.model.HttpResponse
 import akka.http.scaladsl.model.StatusCodes
 import akka.javasdk.impl.serialization.JsonSerializer
+import akka.runtime.sdk.spi.ACL
+import akka.runtime.sdk.spi.All
 import akka.runtime.sdk.spi.ComponentOptions
 import akka.runtime.sdk.spi.HttpEndpointConstructionContext
 import akka.runtime.sdk.spi.HttpEndpointDescriptor
@@ -23,9 +25,11 @@ import com.fasterxml.jackson.databind.JsonMappingException
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import org.slf4j.LoggerFactory
 
+import java.util.concurrent.CompletionStage
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
+import scala.jdk.FutureConverters.FutureOps
 import scala.util.control.NonFatal
 
 /**
@@ -132,61 +136,66 @@ private[akka] object JsonRpc {
           "",
           classOf[HttpRequestHandler].getMethod("handle", classOf[HttpEntity.Strict]),
           new MethodOptions(None, None))),
-      componentOptions = new ComponentOptions(None, None), // TODO ACL
+      componentOptions =
+        new ComponentOptions(Some(new ACL(Seq(All), Seq.empty, None, None)), None), // TODO more limiting ACL?
       implementationClassName = s"json-rpc-2-$path",
       objectMapper = None // we deserialize ourselves
     )
 
     class HttpRequestHandler(constructionContext: HttpEndpointConstructionContext) {
 
-      def handle(entity: HttpEntity.Strict): Future[HttpResponse] = {
+      def handle(entity: HttpEntity.Strict): CompletionStage[HttpResponse] = {
         // FIXME validate content type
-        if (entity.contentType != ContentTypes.`application/json`)
-          Future.successful(HttpResponse(StatusCodes.UnsupportedMediaType))
-        else {
-          // FIXME handle SSE as well (what does it really mean, batch responses are already streamed?)
-          // Note: HTTP transport for JSON-RPC isn't really well documented/spec:ed, looking at MCP and seeing what they dictate
-          try {
-            Serialization.parseRequest(entity.data) match {
-              case Seq(single) =>
-                log.debug("Handling JSON-RPC request for [{}]", single.method)
-                handleRequest(single).map(maybeResponse =>
-                  HttpResponse(entity = maybeResponse match {
-                    case Some(response) =>
-                      HttpEntity(ContentTypes.`application/json`, Serialization.responseToJsonBytes(response))
-                    case None =>
-                      HttpEntity.empty(ContentTypes.`application/json`) // FIXME still json even though empty?
-                  }))
-              case Seq() =>
-                log.debug("Empty JSON-RPC request, returning HTTP 202 Accepted")
-                Future.successful(HttpResponse(StatusCodes.Accepted))
-              case batch =>
-                if (log.isDebugEnabled)
-                  log.debug(
-                    "Handling batch of {} JSON-RPC requests for [{}]",
-                    batch.size,
-                    batch.map(_.method).mkString(","))
+        val future: Future[HttpResponse] = {
+          if (entity.contentType != ContentTypes.`application/json`)
+            Future.successful(HttpResponse(StatusCodes.UnsupportedMediaType))
+          else {
+            // FIXME handle SSE as well (what does it really mean, batch responses are already streamed?)
+            // Note: HTTP transport for JSON-RPC isn't really well documented/spec:ed, looking at MCP and seeing what they dictate
+            try {
+              Serialization.parseRequest(entity.data) match {
+                case Seq(single) =>
+                  log.debug("Handling JSON-RPC request for [{}]", single.method)
+                  handleRequest(single).map(maybeResponse =>
+                    HttpResponse(entity = maybeResponse match {
+                      case Some(response) =>
+                        HttpEntity(ContentTypes.`application/json`, Serialization.responseToJsonBytes(response))
+                      case None =>
+                        HttpEntity.empty(ContentTypes.`application/json`) // FIXME still json even though empty?
+                    }))
+                case Seq() =>
+                  log.debug("Empty JSON-RPC request, returning HTTP 202 Accepted")
+                  Future.successful(HttpResponse(StatusCodes.Accepted))
+                case batch =>
+                  if (log.isDebugEnabled)
+                    log.debug(
+                      "Handling batch of {} JSON-RPC requests for [{}]",
+                      batch.size,
+                      batch.map(_.method).mkString(","))
+                  Future.successful(
+                    HttpResponse(entity = HttpEntity(
+                      ContentTypes.`application/json`,
+                      Source
+                        .single(ByteString("["))
+                        .concat(Source(batch)
+                          .mapAsyncUnordered(8)(handleRequest) // FIXME parallelism
+                          .mapConcat(_.map(response => Serialization.responseToJsonBytes(response))))
+                        .concat(Source.single(ByteString("]"))))))
+              }
+            } catch {
+              case _: JsonMappingException =>
                 Future.successful(
                   HttpResponse(entity = HttpEntity(
                     ContentTypes.`application/json`,
-                    Source
-                      .single(ByteString("["))
-                      .concat(Source(batch)
-                        .mapAsyncUnordered(8)(handleRequest) // FIXME parallelism
-                        .mapConcat(_.map(response => Serialization.responseToJsonBytes(response))))
-                      .concat(Source.single(ByteString("]"))))))
+                    Serialization.responseToJsonBytes(
+                      JsonRpcErrorResponse(
+                        id = None,
+                        error = JsonRpcError(JsonRpcError.Codes.InvalidRequest, "Parse error", None))))))
             }
-          } catch {
-            case _: JsonMappingException =>
-              Future.successful(
-                HttpResponse(entity = HttpEntity(
-                  ContentTypes.`application/json`,
-                  Serialization.responseToJsonBytes(
-                    JsonRpcErrorResponse(
-                      id = None,
-                      error = JsonRpcError(JsonRpcError.Codes.InvalidRequest, "Parse error", None))))))
           }
         }
+
+        future.asJava // runtime HTTP endpoints only support Java completion stages
       }
 
       def handleRequest(request: JsonRpcRequest): Future[Option[JsonRpcResponse]] = {

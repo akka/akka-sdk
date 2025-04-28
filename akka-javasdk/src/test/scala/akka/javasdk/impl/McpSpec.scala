@@ -20,8 +20,9 @@ import io.opentelemetry.api.trace.Span
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
 
-import scala.concurrent.Future
+import java.util.concurrent.CompletableFuture
 import scala.concurrent.duration.DurationInt
+import scala.jdk.FutureConverters.CompletionStageOps
 
 class McpSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike with Matchers with LogCapturing {
 
@@ -56,7 +57,8 @@ class McpSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike with Matche
 
       val httpResponse = httpEndpointDescriptor.methods.head.userMethod
         .invoke(endpointInstance, strictEntity)
-        .asInstanceOf[Future[HttpResponse]]
+        .asInstanceOf[CompletableFuture[HttpResponse]]
+        .asScala
         .futureValue
 
       httpResponse.entity.contentType should be(ContentTypes.`application/json`)

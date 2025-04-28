@@ -30,6 +30,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.Promise
 import scala.concurrent.duration.DurationInt
+import scala.jdk.FutureConverters.CompletionStageOps
 
 class JsonRpcSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike with Matchers with LogCapturing {
 
@@ -259,7 +260,7 @@ class JsonRpcSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike with Ma
       })
       .asInstanceOf[endpoint.HttpRequestHandler]
 
-    val futureHttpResponse = instance.handle(request.entity.asInstanceOf[HttpEntity.Strict])
+    val futureHttpResponse = instance.handle(request.entity.asInstanceOf[HttpEntity.Strict]).asScala
 
     futureHttpResponse.flatMap(response =>
       if (response.status.isSuccess()) response.entity.toStrict(3.seconds).map(_.data.utf8String)
