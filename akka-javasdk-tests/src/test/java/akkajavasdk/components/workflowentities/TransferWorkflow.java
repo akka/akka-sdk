@@ -120,7 +120,7 @@ public class TransferWorkflow extends Workflow<TransferState> {
     return effects().delete().thenReply(done());
   }
 
-  public Effect<Boolean> getIsDeleted() {
+  public Effect<Boolean> hasBeenDeleted() {
     return effects().reply(isDeleted());
   }
 

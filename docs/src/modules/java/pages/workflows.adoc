@@ -136,7 +136,7 @@ A full transfer workflow source code sample can be downloaded as a link:../java/
 
 == Deleting state
 
-If you want to delete the workflow state, you can use the `effect().delete` method. This will remove the workflow from the system.
+If you want to delete the workflow state, you can use the `effects().delete` method. This will remove the workflow from the system.
 
 [source,java,indent=0]
 .{sample-base-url}/transfer-workflow/src/main/java/com/example/transfer/application/TransferWorkflow.java[TransferWorkflow.java]

@@ -101,7 +101,7 @@ public class WorkflowTest extends TestKitSupport {
       });
 
     var isDeleted = componentClient.forWorkflow(transferId)
-      .method(TransferWorkflow::getIsDeleted)
+      .method(TransferWorkflow::hasBeenDeleted)
       .invoke();
     assertThat(isDeleted).isFalse();
 
@@ -110,7 +110,7 @@ public class WorkflowTest extends TestKitSupport {
       .invoke();
 
     var isDeletedAfterDeletion = componentClient.forWorkflow(transferId)
-      .method(TransferWorkflow::getIsDeleted)
+      .method(TransferWorkflow::hasBeenDeleted)
       .invoke();
     assertThat(isDeletedAfterDeletion).isTrue();
   }
@@ -132,7 +132,7 @@ public class WorkflowTest extends TestKitSupport {
     assertThat(lastStep).isEqualTo("startedAndDeleted");
 
     var isDeleted = componentClient.forWorkflow(transferId)
-      .method(TransferWorkflow::getIsDeleted)
+      .method(TransferWorkflow::hasBeenDeleted)
       .invoke();
     assertThat(isDeleted).isTrue();
   }
