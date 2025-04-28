@@ -24,7 +24,7 @@ image:operations:dashboard-control-tower-metrics-screenshot.png[]
 
 **Version:** A single number, always increasing, shows the service incarnation number. E.g. for a service deployed three times, the value would be 3.
 
-**Data ops (read/writes):** Total number of reads from the DB by any Kalix component of the service(s) and endpoint(s)/method(s) selected. Total number of writes by any Kalix component of the selected service(s) and endpoint(s)/method(s) selected.
+**Data ops (read/writes):** Total number of reads from the DB by any Akka component of the service(s) and endpoint(s)/method(s) selected. Total number of writes by any Akka component of the selected service(s) and endpoint(s)/method(s) selected.
 
 === Event Sourced Entities
 
