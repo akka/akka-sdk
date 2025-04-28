@@ -4,20 +4,57 @@
 
 package akka.javasdk.impl
 
+import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
+import akka.javasdk.impl.JsonRpc.JsonRpcErrorResponse
+import akka.javasdk.impl.JsonRpc.JsonRpcRequest
+import akka.javasdk.impl.JsonRpc.JsonRpcResponse
+import akka.javasdk.impl.JsonRpc.JsonRpcSuccessResponse
+import akka.runtime.sdk.spi.HttpEndpointDescriptor
+import com.fasterxml.jackson.core.`type`.TypeReference
+import org.slf4j.LoggerFactory
 
 import java.util.concurrent.atomic.AtomicLong
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.reflect.ClassTag
 
+/**
+ * INTERNAL API
+ */
 @InternalApi
 private[akka] object Mcp {
 
+  val ProtocolVersion = "2024-11-05"
+
   private val requestId = new AtomicLong(0)
+  private val mapTypeRef: TypeReference[Map[String, AnyRef]] = new TypeReference[Map[Role, AnyRef]] {}
 
   private def notification(method: String, params: Option[McpNotification]) =
     JsonRpc.JsonRpcRequest(method = method, params = params, id = None)
 
-  private def request(method: String, mcpRequest: Option[McpRequest]): JsonRpc.JsonRpcRequest =
+  def request(method: String, mcpRequest: Option[McpRequest]): JsonRpc.JsonRpcRequest =
     JsonRpc.JsonRpcRequest(method = method, params = mcpRequest, id = Some(requestId.incrementAndGet()))
+
+  def result[T: ClassTag](response: JsonRpcResponse): T =
+    response match {
+      case JsonRpcSuccessResponse(_, _, payload) =>
+        JsonRpc.Serialization.mapper.convertValue(payload, implicitly[ClassTag[T]].runtimeClass).asInstanceOf[T]
+      case error: JsonRpcErrorResponse =>
+        throw new IllegalArgumentException(s"Cannot turn JSON-RPC error [$error] to MCP result")
+    }
+
+  def jsonRpcHandler[T: ClassTag](
+      handler: T => Future[Option[McpResult]]): JsonRpcRequest => Future[Option[JsonRpcResponse]] = { jsonRpcRequest =>
+    val mcpRequest: T =
+      JsonRpc.Serialization.mapper.convertValue(jsonRpcRequest, implicitly[ClassTag[T]].runtimeClass).asInstanceOf[T]
+    handler(mcpRequest).map {
+      case Some(mcpResult) =>
+        val responseMap = JsonRpc.Serialization.mapper.convertValue(mcpResult, mapTypeRef)
+        Some(JsonRpcSuccessResponse(id = jsonRpcRequest.id, result = responseMap))
+      case None => None
+    }(ExecutionContext.parasitic)
+  }
 
   sealed trait McpRequest {
     def meta: Option[Meta]
@@ -96,7 +133,13 @@ private[akka] object Mcp {
   /**
    * After receiving an initialized request from the client, the server sends this response
    */
-  final case class InitializeResult(capabilities: ServerCapabilities, serverInfo: Implementation)
+  final case class InitializeResult(
+      protocolVersion: String,
+      capabilities: ServerCapabilities,
+      serverInfo: Implementation,
+      meta: Option[Meta],
+      instructions: String)
+      extends McpResult
 
   /**
    * Capabilities that a server may support. Known capabilities are defined here, in this schema, but this is not a
@@ -193,8 +236,9 @@ private[akka] object Mcp {
    */
   object ListResourcesRequest {
     def method: String = "resources/list"
-    def apply(): JsonRpc.JsonRpcRequest = request(method, None)
+    def apply(listResources: ListResourcesRequest): JsonRpc.JsonRpcRequest = request(method, Some(listResources))
   }
+  final case class ListResourcesRequest(cursor: Option[String], meta: Option[Meta]) extends McpPaginatedRequest
 
   /**
    * The server's response to a resources/list request from the client.
@@ -363,5 +407,66 @@ private[akka] object Mcp {
 
   final case class Prompt(name: String, description: Option[String], arguments: Seq[PromptArgument])
   final case class PromptArgument(name: String, description: Option[String], required: Option[Boolean])
+
+  // server endpoint impl
+  /**
+   * Client connects to create a McpSession, responses are streamed from that, incoming requests for that session are
+   * directed to it.
+   */
+  final class StatelessMcpEndpoint(resources: Seq[(Resource, () => ResourceContents)])(implicit
+      system: ActorSystem[_]) {
+    private val log = LoggerFactory.getLogger(getClass)
+    import system.executionContext
+
+    private val resourcesByUri = resources.map { case (resource, factory) => resource.uri -> factory }.toMap
+
+    def httpEndpoint(): HttpEndpointDescriptor = {
+
+      val methods = Map[String, JsonRpcRequest => Future[Option[JsonRpcResponse]]](
+        InitializeRequest.method -> jsonRpcHandler[InitializeRequest](init),
+        InitializedNotification.method -> notificationHandler,
+        ListResourcesRequest.method -> jsonRpcHandler[ListResourcesRequest](listResources),
+        ReadResourceRequest.method -> jsonRpcHandler[ReadResourceRequest](readResource))
+
+      val jsonRpcEndpoint = new JsonRpc.JsonRpcEndpoint("/mcp", methods)
+      jsonRpcEndpoint.httpEndpointDescriptor
+    }
+
+    private def init(initializeRequest: InitializeRequest): Future[Option[InitializeResult]] = {
+      log.debug("MCP init request {}", initializeRequest)
+      Future.successful(
+        Some(
+          InitializeResult(
+            protocolVersion = ProtocolVersion,
+            ServerCapabilities(
+              experimental = Map.empty,
+              logging = None,
+              completions = None,
+              prompts = None,
+              resources = if (resources.isEmpty) None else Some(Resources(subscribe = false, listChanged = false)),
+              tools = None),
+            serverInfo = Implementation("Akka Service", "0.0.0"),
+            instructions = "",
+            meta = None)))
+    }
+
+    private def notificationHandler(jsonRpcRequest: JsonRpcRequest): Future[Option[JsonRpcResponse]] = {
+      require(jsonRpcRequest.isNotification, s"Handled [$jsonRpcRequest] as notification but it was a normal request")
+      log.debug("Got notitification {}", jsonRpcRequest)
+      Future.successful(None)
+    }
+
+    private def listResources(listResourcesRequest: ListResourcesRequest): Future[Option[ListResourcesResult]] = {
+      Future.successful(Some(ListResourcesResult(resources.map(_._1), None, None)))
+    }
+
+    private def readResource(readResourceRequest: ReadResourceRequest): Future[Option[ReadResourceResult]] = {
+      resourcesByUri.get(readResourceRequest.uri) match {
+        case Some(factory) => Future.successful(Some(ReadResourceResult(factory(), meta = None)))
+        case None          => throw new IllegalArgumentException(s"Unknown resource [${readResourceRequest.uri}]")
+      }
+
+    }
+  }
 
 }
