@@ -20,6 +20,7 @@ import akka.runtime.sdk.spi.HttpEndpointMethodDescriptor
 import akka.runtime.sdk.spi.MethodOptions
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
+import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonInclude.Include
 import com.fasterxml.jackson.databind.JsonMappingException
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
@@ -37,6 +38,8 @@ import scala.util.control.NonFatal
  */
 @InternalApi
 private[akka] object JsonRpc {
+
+  private val log = LoggerFactory.getLogger(classOf[JsonRpc.type])
 
   /*
    * Implementation of JSON-RPC 2.0 according to https://www.jsonrpc.org/specification
@@ -65,7 +68,12 @@ private[akka] object JsonRpc {
   sealed trait JsonRpcResponse {
     def id: Option[Any]
   }
-  final case class JsonRpcSuccessResponse(jsonrpc: String = "2.0", id: Option[Any], result: Any) extends JsonRpcResponse
+  final case class JsonRpcSuccessResponse(
+      jsonrpc: String = "2.0",
+      id: Option[Any],
+      @JsonInclude(JsonInclude.Include.ALWAYS)
+      result: Any)
+      extends JsonRpcResponse
   final case class JsonRpcErrorResponse(jsonrpc: String = "2.0", id: Option[Any], error: JsonRpcError)
       extends JsonRpcResponse
   object JsonRpcError {
@@ -75,7 +83,9 @@ private[akka] object JsonRpc {
       val MethodNotFound = -32601
       val InvalidParams = -32602
       val InternalError = -32603
+
       // Note: -32000 - 32099 are reserved for "implementation-defined server-errors".
+      val McpResourceNotFound = -32002
     }
   }
 
@@ -91,26 +101,34 @@ private[akka] object JsonRpc {
 
     def parseRequest(bytes: ByteString): Seq[JsonRpcRequest] = {
       val jsonText = bytes.utf8String
-      if (jsonText.startsWith("[")) {
-        // batch
-        mapper
-          .readerForListOf(classOf[JsonRpcRequest])
-          .readValue[java.util.List[JsonRpcRequest]](jsonText)
-          .asScala
-          .toVector
-      } else if (jsonText.isEmpty) {
-        // empty request (also ok for some reason)
-        Seq.empty
-      } else {
-        // single request
-        Seq(mapper.readValue(jsonText, classOf[JsonRpcRequest]))
+      try {
+        log.trace("Parsing JSON-RPC request: {}", jsonText)
+        if (jsonText.startsWith("[")) {
+          // batch
+          mapper
+            .readerForListOf(classOf[JsonRpcRequest])
+            .readValue[java.util.List[JsonRpcRequest]](jsonText)
+            .asScala
+            .toVector
+        } else if (jsonText.isEmpty) {
+          // empty request (also ok for some reason)
+          Seq.empty
+        } else {
+          // single request
+          Seq(mapper.readValue(jsonText, classOf[JsonRpcRequest]))
+        }
+      } catch {
+        case NonFatal(ex) =>
+          log.debug("Failed to parse JSON-RPC request: {}", jsonText, ex)
+          throw ex
       }
     }
-    def responseToJsonBytes(jsonRpcResponse: JsonRpcResponse) =
-      ByteString.fromArrayUnsafe(mapper.writeValueAsBytes(jsonRpcResponse))
 
-    def responseToJsonString(jsonRpcResponse: JsonRpcResponse) =
-      mapper.writeValueAsString(jsonRpcResponse)
+    def responseToJsonBytes(jsonRpcResponse: JsonRpcResponse): ByteString = {
+      val bytes = ByteString.fromArrayUnsafe(mapper.writeValueAsBytes(jsonRpcResponse))
+      if (log.isTraceEnabled) log.trace("Rendered JSON-RPC response: {}", bytes.utf8String)
+      bytes
+    }
 
     def parseResponse(response: String): JsonRpcResponse = {
       if (response.contains("error")) {
@@ -216,8 +234,10 @@ private[akka] object JsonRpc {
                         error = JsonRpcError(JsonRpcError.Codes.InternalError, s"Call caused internal error", None))))
             }
           case None =>
-            if (request.isNotification) Future.successful(None)
-            else
+            if (request.isNotification) {
+              log.debug("Ignoring unhandled JSON-RPC notification for method [{}]", request.method)
+              Future.successful(None)
+            } else
               Future.successful(
                 Some(
                   JsonRpcErrorResponse(
