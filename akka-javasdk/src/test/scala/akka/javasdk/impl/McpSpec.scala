@@ -21,6 +21,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
 
 import java.util.concurrent.CompletableFuture
+import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 import scala.jdk.FutureConverters.CompletionStageOps
 
@@ -125,7 +126,7 @@ class McpSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike with Matche
       val errorResponse = jsonRpcResponse.asInstanceOf[JsonRpc.JsonRpcErrorResponse]
 
       errorResponse.error.message should be("Resource not found")
-      errorResponse.error.code shouldBe JsonRpc.JsonRpcError.Codes.McpResourceNotFound
+      errorResponse.error.code shouldBe Mcp.ErrorCodes.ResourceNotFound
       errorResponse.error.data should be(Some(Map("uri" -> "file://unknown")))
     }
 
@@ -139,7 +140,73 @@ class McpSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike with Matche
       val resourceTemplates = resultMap("resourceTemplates").asInstanceOf[List[Map[String, AnyRef]]]
       resourceTemplates should have size 0
       JsonRpc.Serialization.responseToJsonBytes(jsonRpcResponse).utf8String should be(
-        """{"jsonrpc":"2.0","id":1,"result":{"resourceTemplates":[]}}""".stripMargin)
+        """{"jsonrpc":"2.0","id":1,"result":{"resourceTemplates":[]}}""")
+    }
+
+    "parse tools/list request" in {
+      val reqJson =
+        """{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}"""
+
+      val jsonRpcRequests = JsonRpc.Serialization.parseRequest(ByteString(reqJson))
+      jsonRpcRequests should have size 1
+      val jsonRpcRequest = jsonRpcRequests.head
+      jsonRpcRequest.method should be("tools/list")
+      Mcp.extractRequest[Mcp.ListToolsRequest](jsonRpcRequest)
+    }
+
+    "render empty tools/list result" in {
+      val result = Mcp.ListToolsResult(Seq())
+      val jsonRpcResponse = Mcp.toJsonRpc(1, result)
+      jsonRpcResponse.id should be(Some(1))
+      jsonRpcResponse shouldBe a[JsonRpc.JsonRpcSuccessResponse]
+      val resultMap =
+        jsonRpcResponse.asInstanceOf[JsonRpc.JsonRpcSuccessResponse].result.asInstanceOf[Map[String, AnyRef]]
+      val resourceTemplates = resultMap("tools").asInstanceOf[List[Map[String, AnyRef]]]
+      resourceTemplates should have size 0
+      JsonRpc.Serialization.responseToJsonBytes(jsonRpcResponse).utf8String should be(
+        """{"jsonrpc":"2.0","id":1,"result":{"tools":[]}}""")
+    }
+
+    "render tools/list result" in {
+      val result = Mcp.ListToolsResult(
+        Seq(Mcp.ToolDescription(
+          name = "tool-name",
+          description = "a tool that does this or that or both",
+          inputSchema = Mcp.InputSchema(
+            properties = Map("propertyA" -> Mcp.ToolProperty(`type` = "boolean", "a flag")),
+            required = Seq("propertyA")))))
+      val jsonRpcResponse = Mcp.toJsonRpc(1, result)
+      jsonRpcResponse.id should be(Some(1))
+      jsonRpcResponse shouldBe a[JsonRpc.JsonRpcSuccessResponse]
+      val resultMap =
+        jsonRpcResponse.asInstanceOf[JsonRpc.JsonRpcSuccessResponse].result.asInstanceOf[Map[String, AnyRef]]
+      val resourceTemplates = resultMap("tools").asInstanceOf[List[Map[String, AnyRef]]]
+      resourceTemplates should have size 1
+      JsonRpc.Serialization.responseToJsonBytes(jsonRpcResponse).utf8String should be(
+        """{"jsonrpc":"2.0","id":1,"result":{"tools":[{"name":"tool-name","description":"a tool that does this or that or both","inputSchema":{"type":"object","properties":{"propertyA":{"type":"boolean","description":"a flag"}},"required":["propertyA"]}}]}}""")
+    }
+
+    "call a tool" in new WithRequestThroughHandler {
+      override def mcpDescriptor = Mcp.McpDescriptor(tools =
+        Seq(Mcp.ToolDescription("my-tool", "a tool I made", Mcp.InputSchema(properties = Map.empty)) -> {
+          (input: Map[String, Any]) =>
+            Future.successful(Mcp.CallToolResult(Seq(Mcp.TextContent("Oboy oboy!"))))
+        }))
+      override def request = Mcp.CallToolRequest("my-tool", Map.empty)
+      override def requestMethod = Mcp.CallToolRequest.method
+
+      jsonRpcResponse shouldBe a[JsonRpc.JsonRpcSuccessResponse]
+      jsonRpcResponse.asInstanceOf[JsonRpc.JsonRpcSuccessResponse].result shouldBe a[Map[_, _]]
+      val resultMap =
+        jsonRpcResponse.asInstanceOf[JsonRpc.JsonRpcSuccessResponse].result.asInstanceOf[Map[String, AnyRef]]
+      resultMap.get("content") should be(Some(Seq(Map("text" -> "Oboy oboy!", "type" -> "text"))))
+
+      // Note: Parsing this would require special deserialization of tool result payload to determine concrete content subtype.
+      // Leaving it alone for now since we don't really need it unless we want to implement MCP clients
+      // val mcpResult = Mcp.result[Mcp.CallToolResult](jsonRpcResponse)
+      // mcpResult.content should have size 1
+      // mcpResult.content.head shouldBe a[Mcp.TextContent]
+      // mcpResult.content.head.asInstanceOf[Mcp.TextContent].text should be("Oboy oboy!")
     }
 
   }
@@ -147,8 +214,9 @@ class McpSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike with Matche
   trait WithRequestThroughHandler {
     def request: Mcp.McpRequest
     def requestMethod: String
+    def mcpDescriptor: Mcp.McpDescriptor = Mcp.McpDescriptor()
 
-    val httpEndpointDescriptor = new Mcp.StatelessMcpEndpoint(Mcp.McpDescriptor(Seq.empty, Seq.empty)).httpEndpoint()
+    val httpEndpointDescriptor = new Mcp.StatelessMcpEndpoint(mcpDescriptor).httpEndpoint()
     httpEndpointDescriptor.methods should have size 1
 
     val jsonRpcRequest = Mcp.request(requestMethod, Some(request))

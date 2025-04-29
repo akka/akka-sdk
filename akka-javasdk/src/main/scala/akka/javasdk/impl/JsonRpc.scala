@@ -85,11 +85,10 @@ private[akka] object JsonRpc {
       val InternalError = -32603
 
       // Note: -32000 - 32099 are reserved for "implementation-defined server-errors".
-      val McpResourceNotFound = -32002
     }
   }
 
-  final case class JsonRpcError(code: Int, message: String, data: Option[Any])
+  final case class JsonRpcError(code: Int, message: String, data: Option[Any] = None)
 
   object Serialization {
     private[akka] val mapper = JsonSerializer.newObjectMapperWithDefaults()
