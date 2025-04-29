@@ -25,13 +25,13 @@ private[akka] object McpServiceExplorationEndpoint {
     val httpEndpointsOverview = {
       if (httpEndpoints.isEmpty) None
       else {
-        Some(
-          "## The service contains the following HTTP endpoints\n" +
-          httpEndpoints
-            .map(endpoint =>
-              s" * ${endpoint.implementationName} with root path ${endpoint.mainPath.getOrElse(
-                "")} and expression ${endpoint.methods.map(_.pathExpression)}")
-            .mkString("\n", "\n", "\n"))
+        Some("## The service contains the following HTTP endpoints\n" +
+        httpEndpoints
+          .map { endpoint =>
+            val mainPath = endpoint.mainPath.getOrElse("/")
+            s" * ${endpoint.implementationName} with paths: ${endpoint.methods.map(method => mainPath + method.pathExpression).mkString(", ")}"
+          }
+          .mkString("\n", "\n", "\n"))
       }
     }
 
@@ -39,29 +39,35 @@ private[akka] object McpServiceExplorationEndpoint {
       if (grpcEndpoints.isEmpty) None
       else {
         Some("## The service contains the following gRPC endpoints\n" +
-        grpcEndpoints.map(endpoint =>
-          s" * ${endpoint.grpcServiceName} with methods ${endpoint.fileDescriptor.findServiceByName(endpoint.grpcServiceName).getMethods.asScala.map(_.getName)}"))
+        grpcEndpoints
+          .map { endpoint =>
+            val serviceName = endpoint.grpcServiceName.split("\\.").last // name without package for lookup
+            s" * ${endpoint.grpcServiceName} with methods: ${endpoint.fileDescriptor.findServiceByName(serviceName).getMethods.asScala.map(_.getName).mkString(", ")}"
+          }
+          .mkString("\n", "\n", "\n"))
       }
     }
 
     val apiOverview = Seq(httpEndpointsOverview, grpcEndpointOverview).flatten
 
     val resources =
-      if (apiOverview.nonEmpty)
-        Seq[(Mcp.Resource, () => ResourceContents)](
+      if (apiOverview.nonEmpty) {
+        val resourceUri = "file://service-overview.md"
+        val markdown = "text/markdown"
+        Seq[(Mcp.Resource, () => Seq[ResourceContents])](
           (
             Mcp.Resource(
-              "fixme",
-              "service API overview",
-              Some("A listing of what endpoints are in this service"),
-              mimeType = Some("text/markdown"),
+              resourceUri,
+              "Service overview",
+              Some("An overview of this service and what APIs it provides"),
+              mimeType = Some(markdown),
               annotations = None,
               size = None),
-            () => TextResourceContents(apiOverview.mkString("\n"))))
-      else Seq.empty
+            () => Seq(TextResourceContents(apiOverview.mkString("\n"), mimeType = markdown, uri = resourceUri))))
+      } else Seq.empty
 
     // reflect over components and describe
-    new Mcp.StatelessMcpEndpoint(resources).httpEndpoint()
+    new Mcp.StatelessMcpEndpoint(Mcp.McpDescriptor(resources, Seq.empty)).httpEndpoint()
   }
 
 }

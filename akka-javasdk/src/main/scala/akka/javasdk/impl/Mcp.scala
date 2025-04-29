@@ -11,6 +11,7 @@ import akka.javasdk.impl.JsonRpc.JsonRpcRequest
 import akka.javasdk.impl.JsonRpc.JsonRpcResponse
 import akka.javasdk.impl.JsonRpc.JsonRpcSuccessResponse
 import akka.runtime.sdk.spi.HttpEndpointDescriptor
+import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.core.`type`.TypeReference
 import org.slf4j.LoggerFactory
 
@@ -45,23 +46,41 @@ private[akka] object Mcp {
         throw new IllegalArgumentException(s"Cannot turn JSON-RPC error [$error] to MCP result")
     }
 
-  def jsonRpcHandler[T](handler: T => Future[Option[McpResult]])(implicit
-      ev: ClassTag[T]): JsonRpcRequest => Future[Option[JsonRpcResponse]] = { jsonRpcRequest =>
-    val mcpRequest: T =
-      JsonRpc.Serialization.mapper
-        .convertValue(jsonRpcRequest.params.getOrElse(Map.empty), ev.runtimeClass)
-        .asInstanceOf[T]
-    log.debug(s"Mcp request for [{}]: {}", jsonRpcRequest.method, mcpRequest)
-    handler(mcpRequest).map {
-      case Some(mcpResult) =>
-        val responseMap = JsonRpc.Serialization.mapper.convertValue(mcpResult, mapTypeRef)
-        Some(JsonRpcSuccessResponse(id = jsonRpcRequest.id, result = responseMap))
-      case None => None
-    }(ExecutionContext.parasitic)
+  def extractRequest[T](request: JsonRpc.JsonRpcRequest)(implicit ev: ClassTag[T]): T =
+    JsonRpc.Serialization.mapper.convertValue(request.params.getOrElse(Map.empty), ev.runtimeClass).asInstanceOf[T]
+
+  def toJsonRpc(requestId: Any, result: McpResult): JsonRpc.JsonRpcResponse = {
+    val responseMap = JsonRpc.Serialization.mapper.convertValue(result, mapTypeRef)
+    JsonRpcSuccessResponse(id = Some(requestId), result = responseMap)
   }
 
+  def jsonRpcHandler[T: ClassTag](
+      handler: T => Future[Option[McpResult]]): JsonRpcRequest => Future[Option[JsonRpcResponse]] = { jsonRpcRequest =>
+    val mcpRequest: T = extractRequest[T](jsonRpcRequest)
+    log.debug(s"Mcp request for [{}]: {}", jsonRpcRequest.method, mcpRequest)
+    try {
+      handler(mcpRequest)
+        .map {
+          case Some(mcpResult) =>
+            Some(toJsonRpc(
+              jsonRpcRequest.id.getOrElse(throw new IllegalArgumentException(
+                s"Got a MCP result back [$mcpResult] for a request [$mcpRequest] with no id (notification), not allowed")),
+              mcpResult))
+          case None => None
+        }(ExecutionContext.parasitic)
+        .recover { case McpErrorException(error) =>
+          Some(JsonRpc.JsonRpcErrorResponse(id = jsonRpcRequest.id, error = error))
+        }(ExecutionContext.parasitic)
+    } catch {
+      case McpErrorException(error) =>
+        Future.successful(Some(JsonRpc.JsonRpcErrorResponse(id = jsonRpcRequest.id, error = error)))
+    }
+  }
+
+  private final case class McpErrorException(error: JsonRpc.JsonRpcError) extends RuntimeException
+
   sealed trait McpRequest {
-    def meta: Option[Meta]
+    def _meta: Option[Meta]
   }
 
   sealed trait McpPaginatedRequest extends McpRequest {
@@ -78,10 +97,10 @@ private[akka] object Mcp {
   sealed trait McpResult {
 
     /**
-     * This result property is reserved by the protocol to allow clients and servers to attach additional metadata to
+     * This result property is reserved by the protocol to allow clients and servers to attach additional _metadata to
      * their responses.
      */
-    def meta: Option[AnyRef]
+    def _meta: Option[AnyRef]
   }
 
   sealed trait McpPaginatedResult extends McpResult {
@@ -94,7 +113,7 @@ private[akka] object Mcp {
     def nextCursor: Option[String]
   }
 
-  final case class Meta(progressToken: Option[String])
+  final case class Meta(progressToken: Option[Any])
 
   object InitializeRequest {
     def method: String = "initialize"
@@ -112,7 +131,7 @@ private[akka] object Mcp {
       protocolVersion: String,
       capabilities: ClientCapabilities,
       clientInfo: Implementation,
-      meta: Option[Meta])
+      _meta: Option[Meta])
       extends McpRequest
 
   /**
@@ -141,7 +160,7 @@ private[akka] object Mcp {
       protocolVersion: String,
       capabilities: ServerCapabilities,
       serverInfo: Implementation,
-      meta: Option[Meta],
+      _meta: Option[Meta],
       instructions: String)
       extends McpResult
 
@@ -242,12 +261,16 @@ private[akka] object Mcp {
     def method: String = "resources/list"
     def apply(listResources: ListResourcesRequest): JsonRpc.JsonRpcRequest = request(method, Some(listResources))
   }
-  final case class ListResourcesRequest(cursor: Option[String], meta: Option[Meta]) extends McpPaginatedRequest
+  final case class ListResourcesRequest(cursor: Option[String], _meta: Option[Meta]) extends McpPaginatedRequest
 
   /**
    * The server's response to a resources/list request from the client.
    */
-  final case class ListResourcesResult(resources: Seq[Resource], meta: Option[AnyRef], nextCursor: Option[String])
+  final case class ListResourcesResult(
+      @JsonInclude(JsonInclude.Include.ALWAYS)
+      resources: Seq[Resource],
+      _meta: Option[AnyRef],
+      nextCursor: Option[String])
       extends McpPaginatedResult
 
   /**
@@ -299,15 +322,16 @@ private[akka] object Mcp {
     def apply(listResourcesTemplateRequest: ListResourcesTemplateRequest) =
       request(method, Some(listResourcesTemplateRequest))
   }
-  final case class ListResourcesTemplateRequest(meta: Option[Meta], cursor: Option[String]) extends McpPaginatedRequest
+  final case class ListResourcesTemplateRequest(_meta: Option[Meta], cursor: Option[String]) extends McpPaginatedRequest
 
   /**
    * The server's response to a resources/templates/list request from the client.
    */
   final case class ListResourceTemplateResult(
+      @JsonInclude(JsonInclude.Include.ALWAYS)
       resourceTemplates: Seq[ResourceTemplate],
       nextCursor: Option[String],
-      meta: Option[Meta])
+      _meta: Option[Meta])
       extends McpPaginatedResult
 
   /**
@@ -341,25 +365,28 @@ private[akka] object Mcp {
     def method = "resources/read"
     def apply(readResourceRequest: ReadResourceRequest) = request(method, Some(readResourceRequest))
   }
-  final case class ReadResourceRequest(uri: String, meta: Option[Meta]) extends McpRequest
+  final case class ReadResourceRequest(uri: String, _meta: Option[Meta]) extends McpRequest
 
   /**
    * The server's response to a resources/read request from the client.
    */
-  final case class ReadResourceResult(content: ResourceContents, meta: Option[Meta]) extends McpResult
-  sealed trait ResourceContents
+  final case class ReadResourceResult(contents: Seq[ResourceContents], _meta: Option[Meta]) extends McpResult
+  sealed trait ResourceContents {
+    def uri: String
+    def mimeType: String
+  }
 
   /**
    * @param text
    *   The text of the item. This must only be set if the item can actually be represented as text (not binary data).
    */
-  final case class TextResourceContents(text: String) extends ResourceContents
+  final case class TextResourceContents(text: String, uri: String, mimeType: String) extends ResourceContents
 
   /**
    * @param blob
    *   A base64-encoded string representing the binary data of the item.
    */
-  final case class BlobResourceContents(blob: String) extends ResourceContents
+  final case class BlobResourceContents(blob: String, uri: String, mimeType: String) extends ResourceContents
 
   /**
    * @return
@@ -377,7 +404,7 @@ private[akka] object Mcp {
    * Sent from the client to request resources/updated notifications from the server whenever a particular resource
    * changes.
    */
-  final case class SubscribeRequest(meta: Option[Meta]) extends McpRequest
+  final case class SubscribeRequest(_meta: Option[Meta]) extends McpRequest
 
   object UnsubscribeRequest {
     def method = "resources/unsubscribe"
@@ -388,7 +415,7 @@ private[akka] object Mcp {
    * @param uri
    *   The URI of the resource to unsubscribe from
    */
-  final case class UnsubscribeRequest(uri: String, meta: Option[Meta]) extends McpRequest
+  final case class UnsubscribeRequest(uri: String, _meta: Option[Meta]) extends McpRequest
 
   def resourceUpdatedNotification(update: ResourceUpdatedNotification) =
     notification("notifications/resources/updated", Some(update))
@@ -401,28 +428,37 @@ private[akka] object Mcp {
     def method = "prompts/list"
     def apply(prompsRequest: ListPromptsRequest) = request(method, None)
   }
-  final case class ListPromptsRequest(meta: Option[Meta], cursor: Option[String]) extends McpPaginatedRequest
+  final case class ListPromptsRequest(_meta: Option[Meta], cursor: Option[String]) extends McpPaginatedRequest
 
   /**
    * The server's response to a prompts/list request from the client.
    */
-  final case class ListPromptsResult(prompts: Seq[Prompt], nextCursor: Option[String], meta: Option[Meta])
+  final case class ListPromptsResult(prompts: Seq[Prompt], nextCursor: Option[String], _meta: Option[Meta])
       extends McpPaginatedResult
 
   final case class Prompt(name: String, description: Option[String], arguments: Seq[PromptArgument])
   final case class PromptArgument(name: String, description: Option[String], required: Option[Boolean])
 
+  object CancelledNotification {
+    def method = "notifications/cancelled"
+    def apply(cancelled: CancelledNotification): JsonRpcRequest = notification(method, Some(cancelled))
+  }
+  final case class CancelledNotification(requestId: Any, reason: String) extends McpNotification
+
   // server endpoint impl
+  final case class McpDescriptor(
+      resources: Seq[(Resource, () => Seq[ResourceContents])],
+      resourceTemplates: Seq[ResourceTemplate])
+
   /**
    * Client connects to create a McpSession, responses are streamed from that, incoming requests for that session are
    * directed to it.
    */
-  final class StatelessMcpEndpoint(resources: Seq[(Resource, () => ResourceContents)])(implicit
-      system: ActorSystem[_]) {
+  final class StatelessMcpEndpoint(descriptor: McpDescriptor)(implicit system: ActorSystem[_]) {
     private val log = LoggerFactory.getLogger(getClass)
     import system.executionContext
 
-    private val resourcesByUri = resources.map { case (resource, factory) => resource.uri -> factory }.toMap
+    private val resourcesByUri = descriptor.resources.map { case (resource, factory) => resource.uri -> factory }.toMap
 
     def httpEndpoint(): HttpEndpointDescriptor = {
 
@@ -430,7 +466,9 @@ private[akka] object Mcp {
         InitializeRequest.method -> jsonRpcHandler[InitializeRequest](init),
         InitializedNotification.method -> notificationHandler,
         ListResourcesRequest.method -> jsonRpcHandler[ListResourcesRequest](listResources),
-        ReadResourceRequest.method -> jsonRpcHandler[ReadResourceRequest](readResource))
+        ReadResourceRequest.method -> jsonRpcHandler[ReadResourceRequest](readResource),
+        ListResourcesTemplateRequest.method -> jsonRpcHandler[ListResourcesTemplateRequest](listResourceTemplates),
+        CancelledNotification.method -> notificationHandler)
 
       val jsonRpcEndpoint = new JsonRpc.JsonRpcEndpoint("/mcp", methods)
       jsonRpcEndpoint.httpEndpointDescriptor
@@ -447,29 +485,40 @@ private[akka] object Mcp {
               logging = None,
               completions = None,
               prompts = None,
-              resources = if (resources.isEmpty) None else Some(Resources(subscribe = false, listChanged = false)),
+              resources =
+                if (descriptor.resources.isEmpty && descriptor.resourceTemplates.isEmpty) None
+                else Some(Resources(subscribe = false, listChanged = false)),
               tools = None),
             serverInfo = Implementation("Akka Service", "0.0.0"),
             instructions = "",
-            meta = None)))
+            _meta = None)))
     }
 
     private def notificationHandler(jsonRpcRequest: JsonRpcRequest): Future[Option[JsonRpcResponse]] = {
       require(jsonRpcRequest.isNotification, s"Handled [$jsonRpcRequest] as notification but it was a normal request")
-      log.debug("Got notitification {}", jsonRpcRequest)
+      log.debug("MPC notitification {}", jsonRpcRequest)
       Future.successful(None)
     }
 
     private def listResources(listResourcesRequest: ListResourcesRequest): Future[Option[ListResourcesResult]] = {
-      Future.successful(Some(ListResourcesResult(resources.map(_._1), None, None)))
+      Future.successful(Some(ListResourcesResult(descriptor.resources.map(_._1), None, None)))
     }
 
     private def readResource(readResourceRequest: ReadResourceRequest): Future[Option[ReadResourceResult]] = {
       resourcesByUri.get(readResourceRequest.uri) match {
-        case Some(factory) => Future.successful(Some(ReadResourceResult(factory(), meta = None)))
-        case None          => throw new IllegalArgumentException(s"Unknown resource [${readResourceRequest.uri}]")
+        case Some(factory) => Future.successful(Some(ReadResourceResult(factory(), None)))
+        case None =>
+          throw McpErrorException(
+            JsonRpc.JsonRpcError(
+              code = JsonRpc.JsonRpcError.Codes.McpResourceNotFound,
+              message = "Resource not found",
+              data = Some(Map("uri" -> readResourceRequest.uri))))
       }
+    }
 
+    private def listResourceTemplates(
+        listResourcesTemplateRequest: ListResourcesTemplateRequest): Future[Option[ListResourceTemplateResult]] = {
+      Future.successful(Some(ListResourceTemplateResult(descriptor.resourceTemplates, None, None)))
     }
   }
 
