@@ -10,7 +10,9 @@ import akka.javasdk.impl.Mcp.ResourceContents
 import akka.javasdk.impl.Mcp.TextResourceContents
 import akka.runtime.sdk.spi.GrpcEndpointDescriptor
 import akka.runtime.sdk.spi.HttpEndpointDescriptor
+import org.slf4j.LoggerFactory
 
+import scala.concurrent.Future
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 
 /**
@@ -19,6 +21,10 @@ import scala.jdk.CollectionConverters.CollectionHasAsScala
 @InternalApi
 private[akka] object McpServiceExplorationEndpoint {
 
+  private val log = LoggerFactory.getLogger(classOf[McpServiceExplorationEndpoint.type])
+
+  // Note: this is just to have something to serve with MCP, might not be useful at all to self-describe over
+  //       MCP in what we finally build.
   def apply(httpEndpoints: Seq[HttpEndpointDescriptor], grpcEndpoints: Seq[GrpcEndpointDescriptor[_]])(implicit
       actorSystem: ActorSystem[_]): HttpEndpointDescriptor = {
 
@@ -48,6 +54,17 @@ private[akka] object McpServiceExplorationEndpoint {
       }
     }
 
+    val tools = Seq[(Mcp.ToolDescription, Map[String, Any] => Future[Mcp.CallToolResult])](
+      Mcp.ToolDescription(
+        "Dummy tool",
+        "Just to show it works",
+        Mcp.InputSchema(
+          properties = Map("example" -> Mcp.ToolProperty(`type` = "string", "Some input text")),
+          required = Seq("example"))) -> { (input: Map[String, Any]) =>
+        log.info("MCP dummy tool called with input: {}", input)
+        Future.successful(Mcp.CallToolResult(content = Seq(Mcp.TextContent("Tool result, here you go"))))
+      })
+
     val apiOverview = Seq(httpEndpointsOverview, grpcEndpointOverview).flatten
 
     val resources =
@@ -67,7 +84,8 @@ private[akka] object McpServiceExplorationEndpoint {
       } else Seq.empty
 
     // reflect over components and describe
-    new Mcp.StatelessMcpEndpoint(Mcp.McpDescriptor(resources, Seq.empty)).httpEndpoint()
+    new Mcp.StatelessMcpEndpoint(Mcp.McpDescriptor(resources = resources, resourceTemplates = Seq.empty, tools = tools))
+      .httpEndpoint()
   }
 
 }
