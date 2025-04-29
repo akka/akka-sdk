@@ -121,6 +121,7 @@ public class AskAkkaAgent {
     var chatMemory = MessageWindowChatMemory.builder()
         .maxMessages(2000)
         .chatMemoryStore(chatMemoryStore)
+        .id(sessionId)
         .build();
 
     return AiServices.builder(Assistant.class)
