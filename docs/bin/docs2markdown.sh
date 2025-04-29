@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 # Run `make prod` first
 
+# abort script if a command fails
+set -e
+
 find target/site -type d -name support -prune -o -type d -name reference -prune -o -type d -name _attachments -prune -o -type d -name services -prune -o -type d -name libraries -prune -o -name "404.html" -prune -o -name "*.adoc\[\].html" -prune -o \
   -type f -name "*.html" -exec sh -c 'npx -y d2m@latest -e -i {} -o {}.md ' \;
 

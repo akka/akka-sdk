@@ -44,7 +44,7 @@ jobs:
 
       - name: LLM friendly markdown
         run: |
-          ./docs/bin/docs2markdown.sh
+          sudo ./docs/bin/docs2markdown.sh
 
       - name: rsync
         run: |
