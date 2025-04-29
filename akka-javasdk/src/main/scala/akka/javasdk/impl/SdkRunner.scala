@@ -628,13 +628,14 @@ private final class Sdk(
   // Note: config is also always available through the combination with user DI way down below
   private def sideEffectingComponentInjects(span: Option[Span]): PartialFunction[Class[_], Any] = {
     // remember to update component type API doc and docs if changing the set of injectables
-    case p if p == classOf[ComponentClient]    => componentClient(span)
-    case h if h == classOf[HttpClientProvider] => httpClientProvider(span)
-    case g if g == classOf[GrpcClientProvider] => grpcClientProvider(span)
-    case t if t == classOf[TimerScheduler]     => timerScheduler(span)
-    case m if m == classOf[Materializer]       => sdkMaterializer
-    case a if a == classOf[Retries]            => retries
-    case e if e == classOf[Executor]           =>
+    case p if p == classOf[ComponentClient]                                      => componentClient(span)
+    case h if h == classOf[HttpClientProvider]                                   => httpClientProvider(span)
+    case g if g == classOf[GrpcClientProvider]                                   => grpcClientProvider(span)
+    case t if t == classOf[TimerScheduler]                                       => timerScheduler(span)
+    case m if m == classOf[Materializer]                                         => sdkMaterializer
+    case a if a == classOf[Retries]                                              => retries
+    case d if d == classOf[DependencyProvider] && dependencyProviderOpt.nonEmpty => dependencyProviderOpt.get
+    case e if e == classOf[Executor]                                             =>
       // The type does not guarantee this is a Java concurrent Executor, but we know it is, since supplied from runtime
       sdkExecutionContext.asInstanceOf[Executor]
   }
@@ -835,7 +836,7 @@ private final class Sdk(
   private def wiredInstance[T](constructor: Constructor[T])(partial: PartialFunction[Class[_], Any]): T = {
 
     // Note that this function is total because it will always return a value (even if null)
-    // last case is a catch all that lookups in the applicationContext
+    // last case is a catch all that lookups in the dependencyProvider
     val totalWireFunction: PartialFunction[Class[_], Any] =
       partial.orElse {
         case p if p == classOf[Config] =>
@@ -843,7 +844,7 @@ private final class Sdk(
 
         // block wiring of clients into anything that is not an Action or Workflow
         // NOTE: if they are allowed, 'partial' should already have a matching case for them
-        // if partial func doesn't match, try to lookup in the applicationContext
+        // if partial func doesn't match, try to lookup in the dependencyProvider
         case anyOther =>
           dependencyProviderOpt match {
             case _ if platformManagedDependency(anyOther) =>
