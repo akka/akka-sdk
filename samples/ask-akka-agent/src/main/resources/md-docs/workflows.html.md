@@ -23,8 +23,6 @@ Users can see the workflow execution details in the console (both [locally](runn
 
 Entity and Workflow sharding [Stateful components](../reference/glossary.html#stateful_component) , such as Entities and Workflows, offer strong consistency guarantees. Each stateful component can have many instances, identified by [ID](../reference/glossary.html#id) . Akka distributes them across every service instance in the cluster. We guarantee that there is only one stateful component instance in the whole service cluster. If a command arrives to a service instance not hosting that stateful component instance, the command is forwarded by the Akka Runtime to the one that hosts that particular component instance. This forwarding is done transparently via [Component Client](../reference/glossary.html#component_client) logic. Because each stateful component instance lives on exactly one service instance, messages can be handled sequentially. Hence, there are no concurrency concerns, each Entity or Workflow instance handles one message at a time.
 
-TODO: add an illustration
-
 The state of the stateful component instance is kept in memory as long as it is active. This means it can serve read requests or command validation before updating without additional reads from the durable storage. There might not be room for all stateful component instances to be kept active in memory all the time and therefore least recently used instances can be passivated. When the stateful component is used again it recovers its state from durable storage and becomes an active with its system of record in memory, backed by consistent durable storage. This recovery process is also used in cases of rolling updates, rebalance, and abnormal crashes.
 
 ## [](about:blank#_effect_api) Workflow’s Effect API
@@ -213,8 +211,6 @@ public class TransferWorkflow extends Workflow<TransferState> { // (2)
 ## [](about:blank#_workflow_definition) Workflow definition
 
 One missing piece of our transfer workflow implementation is a workflow `definition` method, which composes all steps connected with transitions. A workflow `Step` has a unique name, an action to perform (e.g. a call to an Akka component, or a call to an external service) and a transition to select the next step (or `end` transition to finish the workflow, in case of the last step).
-
-TODO: add some diagram or sth
 
 [TransferWorkflow.java](https://github.com/akka/akka-sdk/blob/main/samples/transfer-workflow/src/main/java/com/example/transfer/application/TransferWorkflow.java)
 ```java

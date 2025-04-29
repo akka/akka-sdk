@@ -361,8 +361,6 @@ When an Akka service relies on a broker, it might be useful to use integration t
 
 Following up on the counter entity example used above, let’s consider an example (composed by 2 Consumer and 1 Event Sourced Entity) as pictured below:
 
-TODO: convert this diagram once we have a standard language for this
-
 ![eventing testkit sample](_images/eventing-testkit-sample.svg) In this example:
 
 - commands are consumed from an external topic `event-commands`   and forwarded to a `Counter`   entity;

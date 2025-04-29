@@ -269,8 +269,6 @@ It is also possible to interact with other services over HTTP. This is done thro
 When the other service is also an Akka service deployed in the same project, it can be looked up via the deployed name
 of the service:
 
-TODO: this sample is a bit too synthetic to be good, we accept a request and pass it on, and then we don’t look at the response body at all
-
 [CustomerRegistryEndpoint.java](https://github.com/akka/akka-sdk/blob/main/samples/event-sourced-customer-registry-subscriber/src/main/java/customer/api/CustomerRegistryEndpoint.java)
 ```java
 @HttpEndpoint("/customer")

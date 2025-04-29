@@ -36,11 +36,11 @@ You can pass options to the installer script with `-s --` e.g.:
 
 
 ```bash
-curl -sL https://doc.akka.io/install-cli.sh | bash -s -- --prefix=$HOME --version=3.0.11 --verbose
-curl -sL https://doc.akka.io/install-cli.sh | bash -s -- -P $HOME -v 3.0.11 -V
+curl -sL https://doc.akka.io/install-cli.sh | bash -s -- --prefix=$HOME --version=3.0.17 --verbose
+curl -sL https://doc.akka.io/install-cli.sh | bash -s -- -P $HOME -v 3.0.17 -V
 ```
 
-For manual installation, download [akka_linux_amd64_3.0.11.tar.gz](https://downloads.akka.io/3.0.11/akka_linux_amd64_3.0.11.tar.gz) , extract the `akka` executable and make it available on your PATH.
+For manual installation, download [akka_linux_amd64_3.0.17.tar.gz](https://downloads.akka.io/3.0.17/akka_linux_amd64_3.0.17.tar.gz) , extract the `akka` executable and make it available on your PATH.
 
 macOS **Recommended approach**
 
@@ -65,8 +65,8 @@ curl -sL https://doc.akka.io/install-cli.sh | bash You can pass options to the i
 
 
 ```bash
-curl -sL https://doc.akka.io/install-cli.sh | bash -s -- --prefix=$HOME --version=3.0.11 --verbose
-curl -sL https://doc.akka.io/install-cli.sh | bash -s -- -P $HOME -v 3.0.11 -V
+curl -sL https://doc.akka.io/install-cli.sh | bash -s -- --prefix=$HOME --version=3.0.17 --verbose
+curl -sL https://doc.akka.io/install-cli.sh | bash -s -- -P $HOME -v 3.0.17 -V
 ```
 
 Windows

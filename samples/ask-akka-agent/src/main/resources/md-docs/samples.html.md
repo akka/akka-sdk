@@ -39,7 +39,7 @@ Linux or macOS
 mvn archetype:generate \
   -DarchetypeGroupId=io.akka \
   -DarchetypeArtifactId=akka-javasdk-archetype \
-  -DarchetypeVersion=3.2.0
+  -DarchetypeVersion=3.3.0
 ```
 
 Windows 10+
@@ -47,7 +47,7 @@ Windows 10+
 mvn archetype:generate ^
   -DarchetypeGroupId=io.akka ^
   -DarchetypeArtifactId=akka-javasdk-archetype ^
-  -DarchetypeVersion=3.2.0
+  -DarchetypeVersion=3.3.0
 ```
 
 The [Author your first Akka service](author-your-first-service.html) starts from the Maven archetype and lets you implement a very simple service.

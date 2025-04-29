@@ -46,7 +46,7 @@ If you are using IntelliJ, you can skip the command line entirely. Simply open t
   - **    JDK**     : Select Java 21 or a later version.
 4. Under**  Catalog**   , ensure "Maven Central" is selected.
 5. In the**  Archetype**   section, click the dropdown and select `io.akka:akka-javasdk-archetype`  .
-6. Set the**  Version**   to `3.2.0`  .
+6. Set the**  Version**   to `3.3.0`  .
 7. Click**  Create**  .
 
 IntelliJ will handle the project generation and setup for you, allowing you to begin development immediately.
@@ -60,7 +60,7 @@ Follow these steps to generate and build your project:
 mvn archetype:generate \
   -DarchetypeGroupId=io.akka \
   -DarchetypeArtifactId=akka-javasdk-archetype \
-  -DarchetypeVersion=3.2.0
+  -DarchetypeVersion=3.3.0
 ```
 
   Windows 10+
@@ -68,7 +68,7 @@ mvn archetype:generate \
 mvn archetype:generate ^
   -DarchetypeGroupId=io.akka ^
   -DarchetypeArtifactId=akka-javasdk-archetype ^
-  -DarchetypeVersion=3.2.0
+  -DarchetypeVersion=3.3.0
 ```
 
   Fill in:

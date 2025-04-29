@@ -25,16 +25,11 @@ Billing data is accessible only to users with the **billing-admin** role. For mo
 
 ## [](about:blank#_billing_interface) Billing Interface
 
-TODO:  Is this still correct in the Console?
-
 For **billing-admin** users, a billing icon appears in the [Akka Console’s](https://console.akka.io/) side navigation. Clicking this icon opens the billing interface, where users can select the billing month and organization to view detailed billing data.
 
 If a user is a billing admin for multiple organizations, they can switch between organizations in the billing UI.
 
-TODO:  update image
-image::billing-ui.jpg[Akka Billing User Interface]
-
-In the billing UI:
+![Akka Billing User Interface](../_images/billing-ui.jpg) In the billing UI:
 
 - **  Month-to-date costs**   and a**  cost forecast**   for the current month are displayed in the upper-right corner.
 - Billing data for each project within the selected organization is broken down into the following categories:  
