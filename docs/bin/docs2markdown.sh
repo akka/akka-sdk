@@ -8,4 +8,4 @@ find target/site -type d -name support -prune -o -type d -name reference -prune 
 find target/site -type f -name "*.html.md" -print0 | xargs -0 sed -i '' -E 's/\(([0-9]+)\)/\/\/ (\1)/g'
 
 # update ask-akka-agent
-find target/site -name "index.html.md" -prune -o -type f -name "*.html.md" -exec cp {} samples/ask-akka-agent/src/main/resources/md-docs/ \;
+#find target/site -name "index.html.md" -prune -o -type f -name "*.html.md" -exec cp {} samples/ask-akka-agent/src/main/resources/md-docs/ \;
