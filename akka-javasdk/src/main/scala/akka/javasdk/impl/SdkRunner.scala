@@ -147,6 +147,9 @@ class SdkRunner private (dependencyProvider: Option[DependencyProvider], disable
     val cleanupDeletedEntityAfter =
       applicationConf.getDuration("akka.javasdk.entity.cleanup-deleted-after")
 
+    val cleanupInterval =
+      applicationConf.getDuration("akka.javasdk.delete-entity.cleanup-interval")
+
     val devModeSettings =
       if (applicationConf.getBoolean("akka.javasdk.dev-mode.enabled"))
         Some(
@@ -161,7 +164,7 @@ class SdkRunner private (dependencyProvider: Option[DependencyProvider], disable
       else
         None
 
-    new SpiSettings(eventSourcedEntitySnapshotEvery, cleanupDeletedEntityAfter, devModeSettings)
+    new SpiSettings(eventSourcedEntitySnapshotEvery, cleanupDeletedEntityAfter, cleanupInterval, devModeSettings)
   }
 
   private def extractBrokerConfig(eventingConf: Config): SpiEventingSupportSettings = {

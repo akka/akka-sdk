@@ -1,12 +1,12 @@
 package com.example.transfer.application;
 
 import akka.Done;
-import com.example.wallet.application.WalletEntity;
-import com.example.transfer.domain.TransferState;
-import com.example.transfer.domain.TransferState.Transfer;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.workflow.Workflow;
+import com.example.transfer.domain.TransferState;
+import com.example.transfer.domain.TransferState.Transfer;
+import com.example.wallet.application.WalletEntity;
 
 import static akka.Done.done;
 import static com.example.transfer.domain.TransferState.TransferStatus.COMPLETED;
@@ -96,4 +96,12 @@ public class TransferWorkflow extends Workflow<TransferState> { // <2>
     }
   }
   // end::get-transfer[]
+
+  // tag::delete-workflow[]
+  public Effect<Done> delete() {
+    return effects()
+      .delete() // <1>
+      .thenReply(done());
+  }
+  // end::delete-workflow[]
 }

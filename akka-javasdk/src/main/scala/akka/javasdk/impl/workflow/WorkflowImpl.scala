@@ -28,6 +28,7 @@ import akka.javasdk.impl.telemetry.SpanTracingImpl
 import akka.javasdk.impl.timer.TimerSchedulerImpl
 import akka.javasdk.impl.workflow.ReflectiveWorkflowRouter.CommandResult
 import akka.javasdk.impl.workflow.ReflectiveWorkflowRouter.TransitionalResult
+import akka.javasdk.impl.workflow.WorkflowEffectImpl.Delete
 import akka.javasdk.impl.workflow.WorkflowEffectImpl.DeleteState
 import akka.javasdk.impl.workflow.WorkflowEffectImpl.End
 import akka.javasdk.impl.workflow.WorkflowEffectImpl.ErrorEffectImpl
@@ -133,6 +134,7 @@ class WorkflowImpl[S, W <: Workflow[S]](
       case Pause        => SpiWorkflow.Pause
       case NoTransition => SpiWorkflow.NoTransition
       case End          => SpiWorkflow.End
+      case Delete       => SpiWorkflow.Delete
     }
 
   private def handleState(persistence: Persistence[Any]): SpiWorkflow.Persistence =
@@ -211,7 +213,8 @@ class WorkflowImpl[S, W <: Workflow[S]](
           commandName = command.name,
           command = cmd,
           context = context,
-          timerScheduler = timerScheduler)
+          timerScheduler = timerScheduler,
+          deleted = command.isDeleted)
       } catch {
         case e: HandlerNotFoundException =>
           throw WorkflowException(workflowId, command.name, e.getMessage, Some(e))
