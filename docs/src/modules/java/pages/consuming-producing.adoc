@@ -73,7 +73,8 @@ You can consume state changes from a Workflow. To receive messages with the stat
 include::example$transfer-workflow/src/main/java/com/example/transfer/application/TransferStateConsumer.java[tag=workflow-consumer]
 ----
 <1> Set the source to the `TransferWorkflow`.
-<2> Add handler for `TransferState` state update.
+<2> Add a handler for `TransferState` state update.
+<3> Add a handler when `TransferState` state is deleted. This handler is optional if the workflow is never deleted.
 
 If you need additional information about change origin, executed steps, etc., you can encode it in the state class.
 
