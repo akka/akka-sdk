@@ -66,10 +66,15 @@ private[impl] class ReflectiveConsumerRouter[A <: Consumer](
               .asInstanceOf[Consumer.Effect]
         }
       case None if ignoreUnknown => ConsumerEffectImpl.Builder.ignore()
-      case None                  =>
-        // FIXME IllegalStateException vs NoSuchElementException?
-        throw new NoSuchElementException(
-          s"Couldn't find any method with input type [$inputTypeUrl] in Consumer [${consumer.getClass.getName}].")
+      case None =>
+        inputTypeUrl match {
+          case BytesPayload.EmptyContentType | ProtobufEmptyTypeUrl =>
+            throw new NoSuchElementException(
+              s"Couldn't find a delete handler in the Consumer [${consumer.getClass.getName}]. Please provide a parameterless handler annotated with @DeleteHandler.")
+          case _ =>
+            throw new NoSuchElementException(
+              s"Couldn't find any method with an input type [$inputTypeUrl] in the Consumer [${consumer.getClass.getName}].")
+        }
     }
   }
 }
