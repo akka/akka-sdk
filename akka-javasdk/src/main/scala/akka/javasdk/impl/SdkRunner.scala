@@ -639,8 +639,9 @@ private final class Sdk(
       sdkExecutionContext.asInstanceOf[Executor]
   }
 
-  private val serviceExplorationMcpEndpoint =
-    McpServiceExplorationEndpoint(httpEndpointDescriptors, grpcEndpointDescriptors)(system)
+  private val additionalAiEndpoints =
+    McpServiceExplorationEndpoint(httpEndpointDescriptors, grpcEndpointDescriptors)(system) +: A2A.dummyA2aEndpoint()(
+      system.executionContext)
 
   val spiComponents: SpiComponents = {
 
@@ -666,8 +667,8 @@ private final class Sdk(
         timedActionDescriptors ++
         consumerDescriptors ++
         viewDescriptors ++
-        workflowDescriptors :+
-        serviceExplorationMcpEndpoint)
+        workflowDescriptors ++
+        additionalAiEndpoints)
         .filterNot(isDisabled(combinedDisabledComponents))
 
     val preStart = { (_: ActorSystem[_]) =>
