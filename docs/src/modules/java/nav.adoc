@@ -29,3 +29,4 @@
 **** xref:java:ask-akka/session.adoc[]
 **** xref:java:ask-akka/indexer.adoc[]
 **** xref:java:ask-akka/rag.adoc[]
+**** xref:java:ask-akka/endpoints.adoc[]
