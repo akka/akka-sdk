@@ -2,18 +2,19 @@
 
 > The Akka SDK provides you proven design patterns that enable your apps to remain responsive to change. It frees you from infrastructure concerns and lets you focus on the application logic.
 >
->  With its few, concise components, the Akka SDK is easy to learn, and you can develop services in quick, iterative steps by running your code locally with full insight through Akka's console.
+> With its few, concise components, the Akka SDK is easy to learn, and you can develop services in quick, iterative steps by running your code locally with full insight through Akka's console.
 >
 > Akka services let you build REST endpoints with flexible access control and multiple ways to expose these endpoints to their consuming systems or applications. Akka is secure by default, and you explicitly express the desired access through code and configuration.
 >
 > Akka encapsulates data together with the logic to access and modify it. The data itself is expressed in regular Java records. The same goes for the events that change the data, these are expressed in pure Java to reflect business events that lead to data updates. Akka enables you to build fully event-driven services by combining logic and data into one thing: entities.
 > 
->  Data and changes to it are managed by Akka's runtime without the need to manage database storage. Changes to your data can be automatically replicated to multiple places, not only within a single service, but also across applications and even cloud providers. An SQL-like language lets you design read access that ensures the data is properly indexed for your application needs.
+> Data and changes to it are managed by Akka's runtime without the need to manage database storage. Changes to your data can be automatically replicated to multiple places, not only within a single service, but also across applications and even cloud providers. An SQL-like language lets you design read access that ensures the data is properly indexed for your application needs.
 >
 > Integrations with message systems like Kafka are already built-in and the Akka SDK enables message consumers to listen to topics and queues.
 
 ## Docs
 
+- [AI coding assistant guidelines](https://doc.akka.io/java/ai-coding-assistant-guidelines.html.md): Guidelines for efficient use of AI coding assistant tools with Akka.
 - [Developer best practices](https://doc.akka.io/java/dev-best-practices.html.md): Guidelines and recommended patterns for effective Akka SDK development.
 - [Architecture model](https://doc.akka.io/concepts/architecture-model.html.md): Key architectural patterns and principles used in Akka.
 - [Developing](https://doc.akka.io/java/index.html.md): Overview of the development process with the Akka SDK.
@@ -35,56 +36,14 @@
 
 ## Tutorials
 
-- [Author your first Akka service](https://doc.akka.io/java/author-your-first-service.html): Step-by-step guide to creating your first complete Akka service from scratch.
-- [Shopping Cart](https://doc.akka.io/java/shopping-cart/index.html): Overview of the shopping cart tutorial series that demonstrates core Akka SDK concepts.
-- [Shopping Cart - Quickstart](https://doc.akka.io/java/shopping-cart/quickstart.html): Get a shopping cart application up and running with event sourced entities.
-- [Shopping Cart - Adding a view](https://doc.akka.io/java/shopping-cart/addview.html): Extending the shopping cart application with a read-optimized view.
-- [AI RAG Agent](https://doc.akka.io/java/ask-akka/index.html): Introduction to building a Retrieval Augmented Generation (RAG) agent with Akka.
-- [AI RAG Agent - Knowledge indexing with a workflow](https://doc.akka.io/java/ask-akka/indexer.html): Implementing the knowledge indexing process for a RAG agent using Akka workflows.
-- [AI RAG Agent - Modeling the agent session](https://doc.akka.io/java/ask-akka/session.html): Creating a stateful, conversational AI agent using event sourced entities.
-- [AI RAG Agent - Executing RAG queries](https://doc.akka.io/java/ask-akka/rag.html): Performing contextual information retrieval and generating responses with a large language model.
-
-## Examples
-
-- https://github.com/akka-samples/ask-akka-agent AI agent that creates personalized travel itineraries. Illustrates reliable interaction with a LLM using Langchain4J and a workflow. Entities are used for durable state of user preferences and generated trips.
-- https://github.com/akka-samples/medical-tagging-agent AI agent that leverages a LLM to process medical discharge summaries and assign tags, while also enabling human verification and comparative analysis. Interactions with OpenAI LLM using the OpenAI Java SDK and a workflow.
-- https://github.com/akka-samples/changelog-agent AI agent that creates release notes summaries, every time there is a release from set up GitHub repositories. Interactions with Anthropic Claude is using the Anthropic Java SDK. Using tools to retrieve detailed information from GitHub. Entities are used for storing release summaries. Timed action looks for new releases periodically and creates the summary using the LLM.
-- https://github.com/akka-samples/shopping-cart-quickstart Build a shopping cart
-- https://github.com/akka-samples/event-sourced-customer-registry A customer registry with query capabilities
-- https://github.com/akka-samples/transfer-workflow-compensation A funds transfer workflow between two wallets
-- https://github.com/akka-samples/choreography-saga-quickstart A user registration service implemented as a Choreography Saga
-- https://github.com/akka-samples/akka-chess Akka Chess is a sample application that illustrates building a complete, resilient, automatically scalable, event-sourced application using the Akka SDK.
-
-## Code Style Guidelines
-
-- Use the Onion Architecture and follow `com.[domain-module].[api|application|domain]` package structure.
-
-### Domain Model
-- Use Java records for the domain model, events, commands, requests and responses, because those are more concise and are serializable by default.
-- Prefer Java Optional for nullable values.
-
-### Entities
-- Commands can be defined as records inside the entity and they don't have to have a common interface.
-- Command handlers should be implemented in the entity and not in the domain object. The domain object should have methods for business logic validations but it should not handle commands directly or be concerned with entity effects.
-- Command handlers that make updates without returning any information should return akka.Done for successful responses and effects().error() for validation errors. Use static import for akka.Done.done() method.
-- Events should be defined in the domain package and the events for an entity should have a common sealed interface, and define `@TypeName` for serialization.
-- `applyEvent` method should never return null, return the current state or throw an exception.
-- Key Value Entities, Event Sourced Entities, Workflows can accept only single method parameter, wrap multiple parameters in a record class.
-
-### Workflows
-- State of a workflow can be defined as a record inside the workflow.
-
-### Endpoints
-- Implement HTTP endpoints with `@HttpEndpoint` and path annotations.
-- Request and response endpoints should be defined as records inside the endpoint. Domain objects should not be exposed to the outside by the endpoint but instead be converted to the request and response objects of the endpoint. Include a fromDomain conversion method in the response record if there are many fields or nested records that needs to be converted from domain to endpoint records.
-- Endpoints can return the response directly, without CompletionStage, since we prefer to use non-async code. For endpoint methods that create or update something it can return HttpResponse and return for example `HttpResponses.created()` or `HttpResponses.ok()`.
-- Use ComponentClient for inter-component communication. When using the componentClient you should use the `method` followed by `invoke`. Don't use `invokeAsync` since we prefer to use non-async code, without composition of CompletionStages.
-
-### Testing
-- Extend `TestKitSupport` for integration tests.
-- Use `EventSourcedTestKit` for unit tests of Event Sourced Entity. Create a new instance of the testkit for each test method.
-- Use JUnit 5 annotations (@Test, etc.)
-- Use `componentClient` for testing components.
+- [Author your first Akka service](https://doc.akka.io/java/author-your-first-service.html.md): Step-by-step guide to creating your first complete Akka service from scratch.
+- [Shopping Cart](https://doc.akka.io/java/shopping-cart/index.html.md): Overview of the shopping cart tutorial series that demonstrates core Akka SDK concepts.
+- [Shopping Cart - Quickstart](https://doc.akka.io/java/shopping-cart/quickstart.html.md): Get a shopping cart application up and running with event sourced entities.
+- [Shopping Cart - Adding a view](https://doc.akka.io/java/shopping-cart/addview.html.md): Extending the shopping cart application with a read-optimized view.
+- [AI RAG Agent](https://doc.akka.io/java/ask-akka/index.html.md): Introduction to building a Retrieval Augmented Generation (RAG) agent with Akka.
+- [AI RAG Agent - Knowledge indexing with a workflow](https://doc.akka.io/java/ask-akka/indexer.html.md): Implementing the knowledge indexing process for a RAG agent using Akka workflows.
+- [AI RAG Agent - Modeling the agent session](https://doc.akka.io/java/ask-akka/session.html.md): Creating a stateful, conversational AI agent using event sourced entities.
+- [AI RAG Agent - Executing RAG queries](https://doc.akka.io/java/ask-akka/rag.html.md): Performing contextual information retrieval and generating responses with a large language model.
 
 ## Optional
 
@@ -137,3 +96,14 @@
 - [Development process](https://doc.akka.io/concepts/development-process.html.md): Recommended development workflow for Akka applications.
 - [Deployment model](https://doc.akka.io/concepts/deployment-model.html.md): Understanding how Akka services are packaged and deployed.
 - [Saga patterns](https://doc.akka.io/concepts/saga-patterns.html.md): Implementing distributed transactions using the saga pattern in Akka.
+
+### Examples
+
+- [ask-akka-agent](https://raw.githubusercontent.com/akka-samples/ask-akka-agent/refs/heads/main/README.md) AI agent that creates personalized travel itineraries. Illustrates reliable interaction with a LLM using Langchain4J and a workflow. Entities are used for durable state of user preferences and generated trips.
+- [medical-tagging-agent](https://raw.githubusercontent.com/akka-samples/medical-tagging-agent/refs/heads/main/README.md) AI agent that leverages a LLM to process medical discharge summaries and assign tags, while also enabling human verification and comparative analysis. Interactions with OpenAI LLM using the OpenAI Java SDK and a workflow.
+- [changelog-agent](https://raw.githubusercontent.com/akka-samples/changelog-agent/refs/heads/main/README.md) AI agent that creates release notes summaries, every time there is a release from set up GitHub repositories. Interactions with Anthropic Claude is using the Anthropic Java SDK. Using tools to retrieve detailed information from GitHub. Entities are used for storing release summaries. Timed action looks for new releases periodically and creates the summary using the LLM.
+- [shopping-cart](https://raw.githubusercontent.com/akka-samples/shopping-cart-quickstart/refs/heads/main/README.md) Build a shopping cart
+- [customer-registry](https://raw.githubusercontent.com/akka-samples/event-sourced-customer-registry/refs/heads/main/README.md) A customer registry with query capabilities
+- [transfer-workflow](https://raw.githubusercontent.com/akka-samples/transfer-workflow-compensation/refs/heads/main/README.md) A funds transfer workflow between two wallets
+- [choreography-saga](https://raw.githubusercontent.com/akka-samples/choreography-saga-quickstart/refs/heads/main/README.md) A user registration service implemented as a Choreography Saga
+- [akka-chess](https://raw.githubusercontent.com/akka-samples/akka-chess/refs/heads/main/README.md) Akka Chess is a sample application that illustrates building a complete, resilient, automatically scalable, event-sourced application using the Akka SDK.
