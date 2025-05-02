@@ -49,12 +49,7 @@ include::example$ask-akka-agent/src/main/java/akka/ask/agent/api/UiEndpoint.java
 ----
 <1> The `staticResource` function serves up a file from `main/resources/static-resources`
 
-And lastly, we just need to fill out the `index.html` file to provide the static UI for Ask Akka.
-[source, html, indent=0]
-.{sample-base-url}/ask-akka-agent/src/main/resources/static-resources/index.html[index.html]
-----
-<!-- Click on the link for index.html -->
-----
+And lastly, we just need to fill out the https://github.com/akka/akka-sdk/blob/main/samples/ask-akka-agent/src/main/resources/static-resources/index.html[index.html] file to provide the static UI for Ask Akka.
 
 There is far too much code in the HTML file to list out here. If you want to run the UI with the Ask Akka service, here you might want to switch to the version that is in the repository so you can get all of the single-file React code.
 
