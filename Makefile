@@ -44,7 +44,7 @@ attributes: prepare
 		> "${managed_partials}/attributes.adoc"
 	docs/bin/version.sh | xargs -0  printf ":akka-javasdk-version: %s" \
 		> "${managed_partials}/attributes.adoc"
-	echo ":akka-cli-version: 3.0.15" >> "${managed_partials}/attributes.adoc"
+	echo ":akka-cli-version: 3.0.17" >> "${managed_partials}/attributes.adoc"
 	echo ":akka-cli-min-version: 3.0.4" >> "${managed_partials}/attributes.adoc"
 	# see https://adoptium.net/marketplace/
 	echo ":java-version: 21" \

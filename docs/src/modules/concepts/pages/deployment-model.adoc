@@ -15,6 +15,8 @@ Akka provides three ways to run services:
 Akka services run in all three modes **without** code modifications and leverage the fundamental underpinnings of Akka such as clustering. While standalone deployments enable running Akka on any infrastructure, some environments limit network access thus prohibit Akka clustering.
 
 === Fully-automated regions on Akka Platform
+image:concepts:deployment-model_akka-platform.png[Deployment model: Akka Platform]
+
 Full automation across multiple cloud provider regions and multiple cloud providers is available through Akka's fully-managed platform. You choose to run your Akka services in
 
 - multi-tenant clusters (for simplicity),
@@ -24,9 +26,13 @@ Full automation across multiple cloud provider regions and multiple cloud provid
 Akka platform manages the fully-automated regions running your Akka services and takes responsibility for SLAs tied to elasticity, agility, and resilience of your Akka services.
 
 === Self-managed nodes
+image:concepts:deployment-model_self-managed.png[Deployment model: self-managed nodes]
+
 For organizations that want control over how Akka services are installed, updated, and maintained. Akka services are packaged into standalone binaries with Akka clustering for scaling and deploy to self-managed nodes. You are responsible for separately managing secure connectivity, routes, installation, deployment, and persistence.
 
 === Akka SDK development and testing
+image:concepts:deployment-model_akka-sdk.png[Deployment model: development and testing]
+
 During development, Akka services run directly on the developers' machines, enabling fast iteration cycles without the hassle of shared infrastructure.
 
 == Logical deployment

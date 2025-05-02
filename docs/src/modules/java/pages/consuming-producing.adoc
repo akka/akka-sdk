@@ -60,8 +60,8 @@ You can consume state changes from a Key Value Entity. To receive messages with 
 include::example$key-value-shopping-cart/src/main/java/com/example/application/ShoppingCartConsumer.java[tag=kve-consumer]
 ----
 <1> Set the source to the Key Value Entity `ShoppingCartEntity`.
-<2> Add handler for `ShoppingCart` state update.
-<3> Optionally, add handler when the entity is deleted.
+<2> Add a handler for `ShoppingCart` state update.
+<3> Add a handler when the entity is deleted. This handler is optional if the entity is never deleted.
 
 == Consume from Workflow
 

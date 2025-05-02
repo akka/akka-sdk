@@ -72,7 +72,7 @@ mvn archetype:generate ^
 * groupId: `com.example`
 * artifactId: `helloworld`
 * version: `1.0-SNAPSHOT`
-* package: `helloword`
+* package: `helloworld`
 
 . Navigate to the new project directory.
 

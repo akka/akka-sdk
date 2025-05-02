@@ -26,16 +26,15 @@ public class StepBuilder {
   /**
    * Build a step action with a  call.
    * <p>
-   * The {@link Function} passed to this method should return a {@link CompletionStage}.
-   * On successful completion, its result is made available to this workflow via the {@code andThen} method.
+   * The value returned by the call {@link Function} is made available to this workflow via the {@code andThen} method.
    * In the {@code andThen} method, we can use the result to update the workflow state and transition to the next step.
    * <p>
    * On failure, the step will be retried according to the default retry strategy or the one defined in the step configuration.
    *
    * @param callInputClass Input class for call factory.
-   * @param callFactory    Factory method for creating async call.
-   * @param <Input>        Input for async call factory, provided by transition method.
-   * @param <Output>       Output of async call.
+   * @param callFactory    Factory method for creating a call.
+   * @param <Input>        Input for the call factory, provided by transition method.
+   * @param <Output>       Output of the call.
    * @return Step builder.
    */
   public <Input, Output> CallStepBuilder<Input, Output> call(Class<Input> callInputClass, Function<Input, Output> callFactory) {
@@ -45,18 +44,31 @@ public class StepBuilder {
   /**
    * Build a step action with a call.
    * <p>
-   * The {@link Supplier} function passed to this method should return a {@link CompletionStage}.
-   * On successful completion, its result is made available to this workflow via the {@code andThen} method.
+   * The value returned by the {@link Supplier} is made available to this workflow via the {@code andThen} method.
    * In the {@code andThen} method, we can use the result to update the workflow state and transition to the next step.
    * <p>
    * On failure, the step will be retried according to the default retry strategy or the one defined in the step configuration.
    *
-   * @param callSupplier Factory method for creating async call.
-   * @param <Output>     Output of async call.
+   * @param callSupplier Factory method for creating a call.
+   * @param <Output>     Output of the call.
    * @return Step builder.
    */
   public <Output> CallStepBuilder<Void, Output> call(Supplier<Output> callSupplier) {
     return new CallStepBuilder<>(name, Void.class, (Void v) -> callSupplier.get());
+  }
+
+  /**
+   * Build a step action with a call.
+   * <p>
+   * The {@link Runnable} passed to this method is executed and if successful, the {@code andThen} method is called.
+   * In the {@code andThen} method, we can update the workflow state and transition to the next step.
+   * <p>
+   * On failure, the step will be retried according to the default retry strategy or the one defined in the step configuration.
+   *
+   * @return Step builder.
+   */
+  public RunnableStepBuilder call(Runnable runnable) {
+    return new RunnableStepBuilder(name,runnable);
   }
 
   /**
@@ -70,8 +82,8 @@ public class StepBuilder {
    *
    * @param callInputClass Input class for call factory.
    * @param callFactory    Factory method for creating async call.
-   * @param <Input>        Input for async call factory, provided by transition method.
-   * @param <Output>       Output of async call.
+   * @param <Input>        Input for the async call factory, provided by transition method.
+   * @param <Output>       Output of the async call.
    * @return Step builder.
    */
   public <Input, Output> AsyncCallStepBuilder<Input, Output> asyncCall(Class<Input> callInputClass, Function<Input, CompletionStage<Output>> callFactory) {
@@ -89,7 +101,7 @@ public class StepBuilder {
    * On failure, the step will be retried according to the default retry strategy or the one defined in the step configuration.
    *
    * @param callSupplier Factory method for creating async call.
-   * @param <Output>     Output of async call.
+   * @param <Output>     Output of the async call.
    * @return Step builder.
    */
   public <Output> AsyncCallStepBuilder<Void, Output> asyncCall(Supplier<CompletionStage<Output>> callSupplier) {
@@ -121,13 +133,59 @@ public class StepBuilder {
      *
      * @param transitionInputClass Input class for transition.
      * @param transitionFunc       Function that transform the action result to a {@link Workflow.Effect.TransitionalEffect}
-     * @return AsyncCallStep
+     * @return CallStep
      */
     public Workflow.CallStep<CallInput, CallOutput, ?> andThen(Class<CallOutput> transitionInputClass, Function<CallOutput, Workflow.Effect.TransitionalEffect<Void>> transitionFunc) {
       return new Workflow.CallStep<>(name, callInputClass, callFunc, transitionInputClass, transitionFunc);
     }
+
+    /**
+     * Transition to the next step after the step call completes.
+     * <p>
+     * The {@link Supplier} passed to this method should return an {@link Workflow.Effect.TransitionalEffect}
+     * describing the next step to transition to. Note that the output of the call is not passed to this function.
+     * <p>
+     * When defining the Effect, you can update the workflow state and indicate the next step to transition to.
+     * This can be another step, or a pause or end of the workflow.
+     * <p>
+     * When transition to another step, you can also pass an input parameter to the next step.
+     *
+     * @param transitionFunc       Supplier of {@link Workflow.Effect.TransitionalEffect}
+     * @return CallStep
+     */
+    public Workflow.CallStep<CallInput, CallOutput, ?> andThen(Supplier<Workflow.Effect.TransitionalEffect<Void>> transitionFunc) {
+      return new Workflow.CallStep<>(name, callInputClass, callFunc, null, __ -> transitionFunc.get());
+    }
   }
 
+  public static class RunnableStepBuilder {
+    final private String name;
+
+    final private Runnable runnable;
+
+    RunnableStepBuilder(String name, Runnable runnable) {
+      this.name = name;
+      this.runnable = runnable;
+    }
+
+    /**
+     * Transition to the next step after the step call completes.
+     * <p>
+     * The {@link Supplier} passed to this method should return
+     * an {@link Workflow.Effect.TransitionalEffect} describing the next step to transition to.
+     * <p>
+     * When defining the Effect, you can update the workflow state and indicate the next step to transition to.
+     * This can be another step, or a pause or end of the workflow.
+     * <p>
+     * When transition to another step, you can also pass an input parameter to the next step.
+     *
+     * @param transitionFunc       Supplier of {@link Workflow.Effect.TransitionalEffect}
+     * @return RunnableStep
+     */
+    public Workflow.RunnableStep andThen(Supplier<Workflow.Effect.TransitionalEffect<Void>> transitionFunc) {
+      return new Workflow.RunnableStep(name, runnable, transitionFunc);
+    }
+  }
 
   public static class AsyncCallStepBuilder<CallInput, CallOutput> {
 
@@ -162,6 +220,24 @@ public class StepBuilder {
      */
     public Workflow.AsyncCallStep<CallInput, CallOutput, ?> andThen(Class<CallOutput> transitionInputClass, Function<CallOutput, Workflow.Effect.TransitionalEffect<Void>> transitionFunc) {
       return new Workflow.AsyncCallStep<>(name, callInputClass, callFunc, transitionInputClass, transitionFunc);
+    }
+
+    /**
+     * Transition to the next step after the step call completes.
+     * <p>
+     * The {@link Supplier} passed to this method should return an {@link Workflow.Effect.TransitionalEffect}
+     * describing the next step to transition to. Note that the output of the call is not passed to this function.
+     * <p>
+     * When defining the Effect, you can update the workflow state and indicate the next step to transition to.
+     * This can be another step, or a pause or end of the workflow.
+     * <p>
+     * When transition to another step, you can also pass an input parameter to the next step.
+     *
+     * @param transitionFunc       Supplier of {@link Workflow.Effect.TransitionalEffect}
+     * @return AsyncCallStep
+     */
+    public Workflow.AsyncCallStep<CallInput, CallOutput, ?> andThen(Supplier<Workflow.Effect.TransitionalEffect<Void>> transitionFunc) {
+      return new Workflow.AsyncCallStep<>(name, callInputClass, callFunc, null, __ -> transitionFunc.get());
     }
   }
 }

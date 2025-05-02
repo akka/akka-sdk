@@ -248,7 +248,9 @@ class WorkflowImpl[S, W <: Workflow[S]](
       handleStep
     } catch {
       case NonFatal(ex) =>
-        throw WorkflowException(s"unexpected exception [${ex.getMessage}] while executing step [$stepName]", Some(ex))
+        val message = s"unexpected exception [${ex.getMessage}] while executing step [$stepName]"
+        log.error(message, ex)
+        throw WorkflowException(message, Some(ex))
     }
   }
 

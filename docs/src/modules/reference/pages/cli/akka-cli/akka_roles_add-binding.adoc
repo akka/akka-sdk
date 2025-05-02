@@ -33,7 +33,7 @@ akka roles add-binding [flags]
       --context string      configuration context to use
       --disable-prompt      Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
                             This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
-  -o, --output string       set output format to one of [text,json,go-template=] (default "text")
+  -o, --output string       set output format to one of [text,json,json-compact,go-template=] (default "text")
       --owner string        the owner of the project to use, needed if you have two projects with the same name from different owners
       --project string      project to use if not using the default configured project
   -q, --quiet               set quiet output (helpful when used as part of a script)

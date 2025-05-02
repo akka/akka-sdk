@@ -40,6 +40,10 @@ jobs:
         run: |
           make managed prod
 
+      - name: LLM friendly markdown
+        run: |
+          sudo ./docs/bin/docs2markdown.sh
+
       - name: rsync
         run: |
           ./docs/bin/rsync-docs.sh "target/site/*" akkarepo@gustav.akka.io:www/

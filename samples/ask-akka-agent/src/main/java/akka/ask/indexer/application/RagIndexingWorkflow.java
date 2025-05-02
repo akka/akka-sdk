@@ -31,7 +31,7 @@ import java.util.stream.Stream;
 import static akka.Done.done;
 
 /**
- * This workflow reads the files under src/main/resources/flat-doc/ and create
+ * This workflow reads the files under src/main/resources/md-docs/ and create
  * the vector embeddings that are later
  * used to augment the LLM context.
  */
@@ -112,7 +112,7 @@ public class RagIndexingWorkflow extends Workflow<RagIndexingWorkflow.State> {
       return effects().error("Workflow is currently processing documents");
     } else {
       List<Path> documents;
-      var documentsDirectoryPath = getClass().getClassLoader().getResource("flat-doc").getPath();
+      var documentsDirectoryPath = getClass().getClassLoader().getResource("md-docs").getPath();
 
       try (Stream<Path> paths = Files.walk(Paths.get(documentsDirectoryPath))) {
         documents = paths

@@ -20,7 +20,7 @@ The `akka project observability set metrics` command sets the metrics exporter f
       --context string      configuration context to use
       --disable-prompt      Disable all interactive prompts when running akka commands. If input is required, defaults will be used, or an error will be raised.
                             This is equivalent to setting the environment variable AKKA_DISABLE_PROMPTS to true.
-  -o, --output string       set output format to one of [text,json,go-template=] (default "text")
+  -o, --output string       set output format to one of [text,json,json-compact,go-template=] (default "text")
   -q, --quiet               set quiet output (helpful when used as part of a script)
       --timeout duration    client command timeout (default 10s)
       --use-grpc-web        use grpc-web when talking to Akka APIs. This is useful when behind corporate firewalls that decrypt traffic but don't support HTTP/2.
@@ -31,7 +31,8 @@ The `akka project observability set metrics` command sets the metrics exporter f
 
 * link:akka_projects_observability_set.html[akka projects observability set]	 - Set the observability settings for your Akka project.
 * link:akka_projects_observability_set_metrics_google-cloud.html[akka projects observability set metrics google-cloud]	 - Set your project to export metrics to Google Cloud.
-* link:akka_projects_observability_set_metrics_otlp.html[akka projects observability set metrics otlp]	 - Set your project to export metrics to an OTLP collector.
+* link:akka_projects_observability_set_metrics_otlp.html[akka projects observability set metrics otlp]	 - Set your project to export metrics to an OTLP gRPC collector.
+* link:akka_projects_observability_set_metrics_otlp-http.html[akka projects observability set metrics otlp-http]	 - Set your project to export metrics to an OTLP HTTP collector.
 * link:akka_projects_observability_set_metrics_prometheus.html[akka projects observability set metrics prometheus]	 - Set your project to export metrics to a Prometheus instance via the Prometheus remote write protocol.
 * link:akka_projects_observability_set_metrics_splunk-hec.html[akka projects observability set metrics splunk-hec]	 - Set your project to export metrics to a Splunk HEC endpoint.
 

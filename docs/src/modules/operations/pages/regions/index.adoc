@@ -52,7 +52,7 @@ The pinned-region mode is used by default. To use request-region mode you need t
 [source, yaml]
 ----
 name: my-service
-spec:
+service:
   image: my-container-uri/container-name:tag-name
   replication:
     mode: replicated-read
@@ -69,7 +69,7 @@ To use this read-only mode for all regions you set `primarySelectionMode` to `no
 [source, yaml]
 ----
 name: my-service
-spec:
+service:
   image: my-container-uri/container-name:tag-name
   replication:
     mode: replicated-read
@@ -82,7 +82,7 @@ To use the pinned-region primary selection mode again you set `pinned-region` in
 [source, yaml]
 ----
 name: my-service
-spec:
+service:
   image: my-container-uri/container-name:tag-name
   replication:
     mode: replicated-read
@@ -95,8 +95,6 @@ spec:
 Changing the primary region of a project is how you control failover or migration in Akka.
 
 NOTE: The primary region of a project is also the region that will be used as primary for stateful components in the pinned-region selection mode. Changing primary should only be done with careful consideration of the consequences, and it is recommended to first change to the read-only mode in all regions. See <<selecting-primary>>.
-
-WARNING: Key Value Entities are currently not replicated across regions. The data of all Key Value Entities exists only in the primary region. All requests to Key Value Entities in other regions are forwarded to the primary region. This means that if Key Value Entities are used in a multi-region project the primary region should not be changed, since the data will not exist in the new region. Full replication of Key Value Entities is coming soon.
 
 IMPORTANT: Before changing the primary region, make sure that you understand and follow the steps described in the <<_how_to>>.
 
