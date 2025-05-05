@@ -49,3 +49,13 @@ jobs:
           ./docs/bin/rsync-docs.sh "target/site/*" akkarepo@gustav.akka.io:www/
         env:
           SCP_SECRET: ${{ secrets.AKKA_RSYNC_GUSTAV }}
+
+      - name: llm-ctx.txt
+        run: |
+          pip install llms-txt
+          sudo cp docs/src/modules/ROOT/pages/llms.txt target/site/
+          sudo llms_txt2ctx target/site/llms.txt > target/site/llms-ctx.txt
+          sudo llms_txt2ctx target/site/llms.txt --optional true > target/site/llms-ctx-full.txt
+          ./docs/bin/rsync-docs.sh "target/site/llms*.txt" akkarepo@gustav.akka.io:www/snapshots/akka-documentation/
+        env:
+          SCP_SECRET: ${{ secrets.AKKA_RSYNC_GUSTAV }}
