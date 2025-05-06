@@ -20,6 +20,9 @@ Current versions
 * Akka libraries 25.05 releases
   - overview in xref:release-notes/2025-05-06-akka-25.05-released.adoc[]
 
+* Akka CLI 3.0.18
+  - Improvements and upgrades
+
 == April 2025
 
 [sidebar]
