@@ -2,7 +2,7 @@
 
 Dear hakkers,
 
-Today we are excited to announce the availability of the Akka 25.05 release.
+We are excited to announce the availability of the Akka libraries 25.05 release, setting a new baseline of Akka library versions that go together.
 
 Akka 25.05 consists of the following module versions:
 
@@ -20,6 +20,8 @@ Akka 25.05 consists of the following module versions:
 * Akka Diagnostics 2.2.1
 * Akka Insights 2.21.2
 
+These versions also consistently upgrade to *Jackson 2.18.3*.
+
 As reference of versions that go together for Akka 25.05, please see https://doc.akka.io/libraries/akka-dependencies/25.05/[Akka module versions 25.05].
 
 == Virtual thread dispatchers on Java 21
@@ -31,7 +33,7 @@ operations as it allows a much higher number of concurrent blocking tasks than a
 For more details see https://doc.akka.io/libraries/akka-core/current/typed/dispatchers.html#solution-virtual-threads-dispatcher-for-blocking-operations[the blocking operations section of the docs]
 and https://github.com/akka/akka/blob/v2.10.5/akka-actor/src/main/resources/reference.conf#L547[reference.conf]
 
-Note that the virtual thread dispatcher is not generally suitable as an actor dispatcher because of overhead.
+Note that the virtual thread dispatcher is not generally suitable as an actor dispatcher because of its overhead.
 
 == Store arbitrary metadata with events for Event Sourced entities
 
@@ -45,7 +47,7 @@ The metadata can then be accessed by queries and projections through the event e
 
 Akka requires a license key for use in production.
 
-Read about the motivation in the blog post https://www.lightbend.com/blog/akka-license-keys-and-no-spam-promise[Akka License Keys && a No SPAM Promise].
+Read about the motivation in the blog post https://akka.io/blog/akka-license-keys-and-no-spam-promise[Akka License Keys && a No SPAM Promise].
 
 Obtain a free key at https://akka.io/key.
 
@@ -95,7 +97,7 @@ Rolling update of Akka Cluster is fully supported.
 * https://github.com/akka/akka-diagnostics/releases[Akka Diagnostics 2.2.x]
 * https://doc.akka.io/libraries/akka-insights/current/project/release-notes.html[Akka Insights 2.21.x]
 
-Akka licensing and support options are available from https://www.lightbend.com/akka[Lightbend].
+Licensing and support options are available from https://akka.io/[Akka].
 
 Happy hakking!
 
