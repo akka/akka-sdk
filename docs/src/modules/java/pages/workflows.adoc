@@ -147,7 +147,7 @@ include::example$transfer-workflow-compensation/src/main/java/com/example/transf
 <1> Schedules a timer as a Workflow step action. Make sure that the timer name is unique for every Workflow instance.
 <2> Pauses the Workflow execution.
 
-NOTE: Remember to cancel the timer once the Workflow is resumed. Also, adjust the Workflow xref:#_timeouts[timeout] to match the timer schedule.
+NOTE: Remember to cancel the timer once the Workflow is resumed. Also, adjust the workflow xref:#_timeouts[timeout], if it has been defined, to be longer than the longest expected pause. 8 hours in this example.
 
 Exposing additional mutational method from the Workflow implementation should be done with special caution. Accepting a call to such method should only be possible when the Workflow is in the expected state.
 
@@ -172,10 +172,10 @@ By default, a workflow run has no time limit. It can run forever, which in most 
 ----
 include::example$transfer-workflow-compensation/src/main/java/com/example/transfer/application/TransferWorkflow.java[tag=timeouts]
 ----
-<1> Sets a workflow global timeout.
+<1> Sets a timeout for the duration of the entire workflow. When the timeout expires, the workflow is finished and no transitions are allowed.
 <2> Sets a default timeout for all workflow steps.
 
-A default step timeout can be overridden in step builder.
+A default step timeout can be overridden for an individual step.
 
 [source,java,indent=0]
 .{sample-base-url}/transfer-workflow-compensation/src/main/java/com/example/transfer/application/TransferWorkflow.java[TransferWorkflow.java]
