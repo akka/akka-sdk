@@ -17,6 +17,9 @@ Current versions
   - Updates to xref:self-managed:configuring.adoc[] documentation
   - Publish LLM friendly markdown docs
 
+* Akka libraries 25.05 releases
+  - overview in xref:release-notes/2025-05-06-akka-25.05-released.adoc[]
+
 == April 2025
 
 [sidebar]
