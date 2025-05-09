@@ -24,6 +24,10 @@ include::ROOT:partial$include.adoc[]
 
 - State of a workflow can be defined as a record inside the workflow.
 
+== Views
+
+- Views queries that potentially select many rows should return a record that contains a single field with a list of results.
+
 == Endpoints
 
 - Implement HTTP endpoints with `@HttpEndpoint` and path annotations.
