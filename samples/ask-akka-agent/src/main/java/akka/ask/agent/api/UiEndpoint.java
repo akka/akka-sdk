@@ -7,7 +7,7 @@ import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.http.HttpResponses;
 
 /**
- * This Http endpoint return the static UI page located under
+ * This Http endpoint returns the static UI page located under
  * src/main/resources/static-resources/
  */
 // tag::endpoint[]
