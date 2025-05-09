@@ -44,21 +44,31 @@ jobs:
 
       - name: LLM friendly markdown
         run: |
+          echo "LC_ALL=$LC_ALL"
+          echo "LANG=$LANG"
+          
+          #export LC_ALL=en_US.UTF-8
+          #export LANG=en_US.UTF-8
+          
+          cat target/site/java/dev-best-practices.html | grep "assume that we want to populate"
+
           sudo ./docs/bin/docs2markdown.sh
+          
+          cat target/site/java/dev-best-practices.html.md | grep "assume that we want to populate"
 
-      - name: rsync
-        run: |
-          ./docs/bin/rsync-docs.sh "target/site/*" akkarepo@gustav.akka.io:www/snapshots/akka-documentation/
-        env:
-          SCP_SECRET: ${{ secrets.AKKA_RSYNC_GUSTAV }}
-
-      - name: llm-ctx.txt
-        run: |
-          sudo chmod a+w target/site
-          pip install llms-txt
-          sudo cp docs/src/modules/ROOT/pages/llms.txt target/site/
-          llms_txt2ctx target/site/llms.txt > target/site/llms-ctx.txt
-          llms_txt2ctx target/site/llms.txt --optional true > target/site/llms-ctx-full.txt
-          ./docs/bin/rsync-docs.sh "target/site/llms*.txt" akkarepo@gustav.akka.io:www/snapshots/akka-documentation/
-        env:
-          SCP_SECRET: ${{ secrets.AKKA_RSYNC_GUSTAV }}
+#      - name: rsync
+#        run: |
+#          ./docs/bin/rsync-docs.sh "target/site/*" akkarepo@gustav.akka.io:www/snapshots/akka-documentation/
+#        env:
+#          SCP_SECRET: ${{ secrets.AKKA_RSYNC_GUSTAV }}
+#
+#      - name: llm-ctx.txt
+#        run: |
+#          sudo chmod a+w target/site
+#          pip install llms-txt
+#          sudo cp docs/src/modules/ROOT/pages/llms.txt target/site/
+#          llms_txt2ctx target/site/llms.txt > target/site/llms-ctx.txt
+#          llms_txt2ctx target/site/llms.txt --optional true > target/site/llms-ctx-full.txt
+#          ./docs/bin/rsync-docs.sh "target/site/llms*.txt" akkarepo@gustav.akka.io:www/snapshots/akka-documentation/
+#        env:
+#          SCP_SECRET: ${{ secrets.AKKA_RSYNC_GUSTAV }}
