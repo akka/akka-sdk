@@ -1,12 +1,10 @@
 package akka.ask.common;
 
-import dev.langchain4j.model.Tokenizer;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModelName;
 import dev.langchain4j.model.openai.OpenAiEmbeddingModel;
 import dev.langchain4j.model.openai.OpenAiEmbeddingModelName;
 import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
-import dev.langchain4j.model.openai.OpenAiTokenizer;
 
 public class OpenAiUtils {
 
@@ -34,7 +32,4 @@ public class OpenAiUtils {
       .build();
   }
 
-  public static Tokenizer buildTokenizer() {
-    return new OpenAiTokenizer(embeddingModelName);
-  }
 }

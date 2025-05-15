@@ -125,7 +125,7 @@ public class AskAkkaAgent {
         .build();
 
     return AiServices.builder(Assistant.class)
-        .streamingChatLanguageModel(chatLanguageModel)
+        .streamingChatModel(chatLanguageModel)
         .chatMemory(chatMemory)
         .retrievalAugmentor(retrievalAugmentor)
         .systemMessageProvider(__ -> sysMessage)
