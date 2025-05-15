@@ -54,24 +54,25 @@ class JsonRpcSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike with Ma
     }
 
     "parse and render requests with simple named parameters" in {
-      val params = Map("a" -> 1, "b" -> true)
-      val request = JsonRpcRequest(method = "method1", params = Some(params), id = Some(1))
+      val params = JsonRpc.ByName(Map("a" -> 1, "b" -> true))
+      params shouldEqual params
+      val request = JsonRpcRequest(method = "method1", params = Some(params), id = Some(JsonRpc.NumberId(1)))
       val jsonString = JsonRpc.Serialization.requestToJsonString(request)
       val parsedSeq = JsonRpc.Serialization.parseRequest(ByteString(jsonString))
       parsedSeq shouldEqual Seq(request)
     }
 
     "parse and render requests with nested named parameters" in {
-      val params = Map("a" -> 1, "b" -> Map("c" -> true))
-      val request = JsonRpcRequest(method = "method1", params = Some(params), id = Some(1))
+      val params = JsonRpc.ByName(Map("a" -> 1, "b" -> Map("c" -> true)))
+      val request = JsonRpcRequest(method = "method1", params = Some(params), id = Some(JsonRpc.NumberId(1)))
       val jsonString = JsonRpc.Serialization.requestToJsonString(request)
       val parsedSeq = JsonRpc.Serialization.parseRequest(ByteString(jsonString))
       parsedSeq shouldEqual Seq(request)
     }
 
     "parse and render requests with sequence of parameters" in {
-      val params = Seq(1, 2)
-      val request = JsonRpcRequest(method = "method1", params = Some(params), id = Some(1))
+      val params = JsonRpc.ByPosition(Seq(1, 2))
+      val request = JsonRpcRequest(method = "method1", params = Some(params), id = Some(JsonRpc.NumberId(1)))
       val jsonString = JsonRpc.Serialization.requestToJsonString(request)
       val parsedSeq = JsonRpc.Serialization.parseRequest(ByteString(jsonString))
       parsedSeq shouldEqual Seq(request)
@@ -93,7 +94,7 @@ class JsonRpcSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike with Ma
       val response = handle(
         endpoint,
         JsonRpc.Serialization.requestToJsonString(
-          JsonRpcRequest(method = "method1", params = None, id = Some(1)))).futureValue
+          JsonRpcRequest(method = "method1", params = None, id = Some(JsonRpc.NumberId(1))))).futureValue
       response shouldBe """{"jsonrpc":"2.0","id":1,"result":"result"}"""
     }
 
@@ -117,7 +118,7 @@ class JsonRpcSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike with Ma
       val response = handle(
         endpoint,
         JsonRpc.Serialization.requestToJsonString(
-          JsonRpcRequest(method = "method1", params = None, id = Some(1)))).futureValue
+          JsonRpcRequest(method = "method1", params = None, id = Some(JsonRpc.NumberId(1))))).futureValue
       response shouldBe """{"jsonrpc":"2.0","id":1,"error":{"code":-32601,"message":"Method [method1] not found"}}"""
     }
 
@@ -131,7 +132,7 @@ class JsonRpcSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike with Ma
       val response = handle(
         endpoint,
         JsonRpc.Serialization.requestToJsonString(
-          JsonRpcRequest(method = "method1", params = None, id = Some(1)))).futureValue
+          JsonRpcRequest(method = "method1", params = None, id = Some(JsonRpc.NumberId(1))))).futureValue
       response shouldBe """{"jsonrpc":"2.0","id":1,"error":{"code":-32603,"message":"Call caused internal error"}}"""
     }
 

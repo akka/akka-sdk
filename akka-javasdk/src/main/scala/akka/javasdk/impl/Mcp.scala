@@ -34,14 +34,20 @@ private[akka] object Mcp {
   private val mapTypeRef: TypeReference[Map[String, AnyRef]] = new TypeReference[Map[String, AnyRef]] {}
 
   private def notification(method: String, params: Option[McpNotification]) =
-    JsonRpc.JsonRpcRequest(method = method, params = params, id = None)
+    JsonRpc.JsonRpcRequest(
+      method = method,
+      params = params.map(nf => JsonRpc.ByName(JsonRpc.Serialization.mapper.convertValue(nf, mapTypeRef))),
+      id = None)
 
   def request(method: String, mcpRequest: Option[McpRequest] = None): JsonRpc.JsonRpcRequest =
-    JsonRpc.JsonRpcRequest(method = method, params = mcpRequest, id = Some(requestId.incrementAndGet()))
+    JsonRpc.JsonRpcRequest(
+      method = method,
+      params = mcpRequest.map(req => JsonRpc.ByName(JsonRpc.Serialization.mapper.convertValue(req, mapTypeRef))),
+      id = Some(JsonRpc.NumberId(requestId.incrementAndGet())))
 
   def result[T](response: JsonRpcResponse)(implicit ev: ClassTag[T]): T =
     response match {
-      case JsonRpcSuccessResponse(_, _, payload) =>
+      case JsonRpcSuccessResponse(_, payload) =>
         JsonRpc.Serialization.mapper.convertValue(payload, ev.runtimeClass).asInstanceOf[T]
       case error: JsonRpcErrorResponse =>
         throw new IllegalArgumentException(s"Cannot turn JSON-RPC error [$error] to MCP result")
