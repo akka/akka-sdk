@@ -7,6 +7,7 @@ package akka.javasdk.impl.reflection
 import akka.annotation.InternalApi
 import akka.javasdk.annotations.GrpcEndpoint
 import akka.javasdk.annotations.http.HttpEndpoint
+import akka.javasdk.annotations.mcp.McpEndpoint
 import akka.javasdk.client.ComponentClient
 import akka.javasdk.consumer.Consumer
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
@@ -66,6 +67,9 @@ private[impl] object Reflect {
 
   def isGrpcEndpoint(cls: Class[_]): Boolean =
     cls.getAnnotation(classOf[GrpcEndpoint]) != null
+
+  def isMcpEndpoint(cls: Class[_]): Boolean =
+    cls.getAnnotation(classOf[McpEndpoint]) != null
 
   def isEntity(cls: Class[_]): Boolean =
     classOf[EventSourcedEntity[_, _]].isAssignableFrom(cls) ||
