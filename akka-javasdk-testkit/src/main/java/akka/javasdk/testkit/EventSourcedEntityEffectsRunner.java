@@ -92,7 +92,7 @@ abstract class EventSourcedEntityEffectsRunner<S, E> {
     }
 
     playEventsForEntity(EventSourcedResultImpl.eventsOf(effectExecuted));
-    deleted = EventSourcedResultImpl.checkIfDeleted(effectExecuted);
+    deleted = EventSourcedResultImpl.checkIfDeleted(effectExecuted, this.deleted);
 
     EventSourcedResult<R> result;
     try {

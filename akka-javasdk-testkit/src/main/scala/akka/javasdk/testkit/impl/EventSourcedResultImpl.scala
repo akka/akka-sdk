@@ -24,14 +24,19 @@ import scala.jdk.CollectionConverters._
  */
 private[akka] object EventSourcedResultImpl {
 
-  def checkIfDeleted[E](effect: EventSourcedEntity.Effect[_]): Boolean = {
-    effect match {
-      case ei: EventSourcedEntityEffectImpl[_, E @unchecked] =>
-        ei.primaryEffect match {
-          case ee: EmitEvents[E @unchecked] => ee.deleteEntity
-          case _                            => false
-        }
+  def checkIfDeleted[E](effect: EventSourcedEntity.Effect[_], deleted: Boolean): Boolean = {
+    if (deleted) { //deleted takes precedence
+      true
+    } else {
+      effect match {
+        case ei: EventSourcedEntityEffectImpl[_, E @unchecked] =>
+          ei.primaryEffect match {
+            case ee: EmitEvents[E @unchecked] => ee.deleteEntity
+            case _                            => false
+          }
+      }
     }
+
   }
 
   def eventsOf[E](effect: EventSourcedEntity.Effect[_]): JList[E] = {
