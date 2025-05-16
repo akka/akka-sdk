@@ -71,6 +71,14 @@ case object KeyValueEntityCategory extends ComponentCategory {
  * INTERNAL API
  */
 @InternalApi
+case object ChatAgentCategory extends ComponentCategory {
+  def name = "ChatAgent"
+}
+
+/**
+ * INTERNAL API
+ */
+@InternalApi
 private[akka] object Telemetry {
 
   val TRACE_PARENT_KEY: String = "traceparent"

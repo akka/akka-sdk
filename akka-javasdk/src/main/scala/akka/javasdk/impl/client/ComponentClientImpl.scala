@@ -4,6 +4,9 @@
 
 package akka.javasdk.impl.client
 
+import java.util.Optional
+import scala.jdk.OptionConverters._
+
 import akka.annotation.InternalApi
 import akka.javasdk.Metadata
 import akka.javasdk.client.ComponentClient
@@ -17,6 +20,7 @@ import akka.runtime.sdk.spi.{ ComponentClients => RuntimeComponentClients }
 import scala.concurrent.ExecutionContext
 
 import akka.actor.typed.ActorSystem
+import akka.javasdk.client.ChatAgentClient
 import akka.javasdk.impl.serialization.JsonSerializer
 import io.opentelemetry.api.trace.Span
 
@@ -68,4 +72,6 @@ private[javasdk] final case class ComponentClientImpl(
 
   override def forView(): ViewClient = ViewClientImpl(runtimeComponentClients.viewClient, serializer, callMetadata)
 
+  override def forChatAgent(sessionId: Optional[String]): ChatAgentClient =
+    AgentClientImpl(runtimeComponentClients.agentClient, serializer, callMetadata, sessionId.toScala)
 }
