@@ -65,7 +65,7 @@ public class ComponentAnnotationProcessor extends AbstractProcessor {
     private static final String WORKFLOW_KEY = "workflow";
     private static final String SERVICE_SETUP_KEY = "service-setup";
 
-    private static final List<String> ALL_COMPONENT_TYPES = List.of(HTTP_ENDPOINT_KEY, GRPC_ENDPOINT_KEY,
+    private static final List<String> ALL_COMPONENT_TYPES = List.of(HTTP_ENDPOINT_KEY, GRPC_ENDPOINT_KEY, MCP_ENDPOINT_KEY,
         EVENT_SOURCED_ENTITY_KEY, VALUE_ENTITY_KEY, TIMED_ACTION_KEY, CONSUMER_KEY, VIEW_KEY, WORKFLOW_KEY,
         SERVICE_SETUP_KEY);
 
