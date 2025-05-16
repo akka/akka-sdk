@@ -11,6 +11,9 @@ import akka.http.scaladsl.model.HttpEntity
 import akka.http.scaladsl.model.HttpHeader
 import akka.http.scaladsl.model.HttpRequest
 import akka.http.scaladsl.model.HttpResponse
+import akka.javasdk.impl.JsonRpc.JsonRpcErrorResponse
+import akka.javasdk.impl.JsonRpc.JsonRpcSuccessResponse
+import akka.javasdk.impl.JsonRpc.NumberId
 import akka.runtime.sdk.spi.HttpEndpointConstructionContext
 import akka.runtime.sdk.spi.HttpRequestHeaders
 import akka.runtime.sdk.spi.JwtClaims
@@ -38,7 +41,7 @@ class McpSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike with Matche
       override def requestMethod: String = Mcp.InitializeRequest.method
 
       httpResponse.entity.contentType should be(ContentTypes.`application/json`)
-      jsonRpcResponse.id should be(jsonRpcRequest.id)
+      jsonRpcResponse.asInstanceOf[JsonRpc.JsonRpcSuccessResponse].id should be(jsonRpcRequest.requestId.get)
       val mcpResult = Mcp.result[Mcp.InitializeResult](jsonRpcResponse)
       mcpResult.protocolVersion should be(Mcp.ProtocolVersion)
     }
@@ -62,11 +65,10 @@ class McpSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike with Matche
 
     "render empty resource/list result" in {
       val result = Mcp.ListResourcesResult(Seq(), _meta = None, nextCursor = None)
-      val jsonRpcResponse = Mcp.toJsonRpc(1, result)
-      jsonRpcResponse.id should be(Some(1))
-      jsonRpcResponse shouldBe a[JsonRpc.JsonRpcSuccessResponse]
+      val jsonRpcResponse = Mcp.toJsonRpc(NumberId(1), result).asInstanceOf[JsonRpc.JsonRpcSuccessResponse]
+      jsonRpcResponse.id shouldBe NumberId(1)
       val resultMap =
-        jsonRpcResponse.asInstanceOf[JsonRpc.JsonRpcSuccessResponse].result.asInstanceOf[Map[String, AnyRef]]
+        jsonRpcResponse.result.get.asInstanceOf[Map[String, AnyRef]]
       val resources = resultMap("resources").asInstanceOf[List[Map[String, AnyRef]]]
       resources should have size 0
     }
@@ -83,11 +85,10 @@ class McpSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike with Matche
             size = Some(5L))),
         _meta = None,
         nextCursor = None)
-      val jsonRpcResponse = Mcp.toJsonRpc(1, result)
-      jsonRpcResponse.id should be(Some(1))
-      jsonRpcResponse shouldBe a[JsonRpc.JsonRpcSuccessResponse]
+      val jsonRpcResponse = Mcp.toJsonRpc(NumberId(1), result).asInstanceOf[JsonRpc.JsonRpcSuccessResponse]
+      jsonRpcResponse.id shouldBe NumberId(1)
       val resultMap =
-        jsonRpcResponse.asInstanceOf[JsonRpc.JsonRpcSuccessResponse].result.asInstanceOf[Map[String, AnyRef]]
+        jsonRpcResponse.result.get.asInstanceOf[Map[String, AnyRef]]
       val resources = resultMap("resources").asInstanceOf[List[Map[String, AnyRef]]]
       resources should have size 1
       resources.head.get("uri") should be(Some("text"))
@@ -109,11 +110,11 @@ class McpSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike with Matche
     "render resource/read result with payload" in {
       val result =
         Mcp.ReadResourceResult(Seq(Mcp.TextResourceContents("text", uri = "example", mimeType = "plain/text")), None)
-      val jsonRpcResponse = Mcp.toJsonRpc(1, result)
-      jsonRpcResponse.id should be(Some(1))
+      val jsonRpcResponse = Mcp.toJsonRpc(NumberId(1), result).asInstanceOf[JsonRpcSuccessResponse]
+      jsonRpcResponse.id shouldBe NumberId(1)
       jsonRpcResponse shouldBe a[JsonRpc.JsonRpcSuccessResponse]
       val resultMap =
-        jsonRpcResponse.asInstanceOf[JsonRpc.JsonRpcSuccessResponse].result.asInstanceOf[Map[String, AnyRef]]
+        jsonRpcResponse.result.get.asInstanceOf[Map[String, AnyRef]]
       resultMap.get("contents") should be(
         Some(Seq(Map("text" -> "text", "uri" -> "example", "mimeType" -> "plain/text"))))
     }
@@ -121,7 +122,7 @@ class McpSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike with Matche
     "return expecter error response for unknown resource" in new WithRequestThroughHandler {
       override def request: Mcp.McpRequest = Mcp.ReadResourceRequest(uri = "file://unknown", _meta = None)
       override def requestMethod: String = Mcp.ReadResourceRequest.method
-      jsonRpcResponse.id should be(jsonRpcRequest.id)
+      jsonRpcResponse.asInstanceOf[JsonRpcErrorResponse].error.requestId should be(jsonRpcRequest.requestId)
       jsonRpcResponse shouldBe a[JsonRpc.JsonRpcErrorResponse]
       val errorResponse = jsonRpcResponse.asInstanceOf[JsonRpc.JsonRpcErrorResponse]
 
@@ -132,11 +133,10 @@ class McpSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike with Matche
 
     "render empty resource/template/list result" in {
       val result = Mcp.ListResourceTemplateResult(Seq(), _meta = None, nextCursor = None)
-      val jsonRpcResponse = Mcp.toJsonRpc(1, result)
-      jsonRpcResponse.id should be(Some(1))
-      jsonRpcResponse shouldBe a[JsonRpc.JsonRpcSuccessResponse]
+      val jsonRpcResponse = Mcp.toJsonRpc(NumberId(1), result).asInstanceOf[JsonRpcSuccessResponse]
+      jsonRpcResponse.id shouldBe NumberId(1)
       val resultMap =
-        jsonRpcResponse.asInstanceOf[JsonRpc.JsonRpcSuccessResponse].result.asInstanceOf[Map[String, AnyRef]]
+        jsonRpcResponse.result.get.asInstanceOf[Map[String, AnyRef]]
       val resourceTemplates = resultMap("resourceTemplates").asInstanceOf[List[Map[String, AnyRef]]]
       resourceTemplates should have size 0
       JsonRpc.Serialization.responseToJsonBytes(jsonRpcResponse).utf8String should be(
@@ -156,11 +156,10 @@ class McpSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike with Matche
 
     "render empty tools/list result" in {
       val result = Mcp.ListToolsResult(Seq())
-      val jsonRpcResponse = Mcp.toJsonRpc(1, result)
-      jsonRpcResponse.id should be(Some(1))
-      jsonRpcResponse shouldBe a[JsonRpc.JsonRpcSuccessResponse]
+      val jsonRpcResponse = Mcp.toJsonRpc(NumberId(1), result).asInstanceOf[JsonRpc.JsonRpcSuccessResponse]
+      jsonRpcResponse.id shouldBe NumberId(1)
       val resultMap =
-        jsonRpcResponse.asInstanceOf[JsonRpc.JsonRpcSuccessResponse].result.asInstanceOf[Map[String, AnyRef]]
+        jsonRpcResponse.result.get.asInstanceOf[Map[String, AnyRef]]
       val resourceTemplates = resultMap("tools").asInstanceOf[List[Map[String, AnyRef]]]
       resourceTemplates should have size 0
       JsonRpc.Serialization.responseToJsonBytes(jsonRpcResponse).utf8String should be(
@@ -175,11 +174,11 @@ class McpSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike with Matche
           inputSchema = Mcp.InputSchema(
             properties = Map("propertyA" -> Mcp.ToolProperty(`type` = "boolean", "a flag")),
             required = Seq("propertyA")))))
-      val jsonRpcResponse = Mcp.toJsonRpc(1, result)
-      jsonRpcResponse.id should be(Some(1))
+      val jsonRpcResponse = Mcp.toJsonRpc(NumberId(1), result)
+      jsonRpcResponse.asInstanceOf[JsonRpc.JsonRpcSuccessResponse].id shouldBe NumberId(1)
       jsonRpcResponse shouldBe a[JsonRpc.JsonRpcSuccessResponse]
       val resultMap =
-        jsonRpcResponse.asInstanceOf[JsonRpc.JsonRpcSuccessResponse].result.asInstanceOf[Map[String, AnyRef]]
+        jsonRpcResponse.asInstanceOf[JsonRpc.JsonRpcSuccessResponse].result.get.asInstanceOf[Map[String, AnyRef]]
       val resourceTemplates = resultMap("tools").asInstanceOf[List[Map[String, AnyRef]]]
       resourceTemplates should have size 1
       JsonRpc.Serialization.responseToJsonBytes(jsonRpcResponse).utf8String should be(
@@ -196,9 +195,9 @@ class McpSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike with Matche
       override def requestMethod = Mcp.CallToolRequest.method
 
       jsonRpcResponse shouldBe a[JsonRpc.JsonRpcSuccessResponse]
-      jsonRpcResponse.asInstanceOf[JsonRpc.JsonRpcSuccessResponse].result shouldBe a[Map[_, _]]
+      jsonRpcResponse.asInstanceOf[JsonRpc.JsonRpcSuccessResponse].result.get shouldBe a[Map[_, _]]
       val resultMap =
-        jsonRpcResponse.asInstanceOf[JsonRpc.JsonRpcSuccessResponse].result.asInstanceOf[Map[String, AnyRef]]
+        jsonRpcResponse.asInstanceOf[JsonRpc.JsonRpcSuccessResponse].result.get.asInstanceOf[Map[String, AnyRef]]
       resultMap.get("content") should be(Some(Seq(Map("text" -> "Oboy oboy!", "type" -> "text"))))
 
       // Note: Parsing this would require special deserialization of tool result payload to determine concrete content subtype.
