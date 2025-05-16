@@ -469,6 +469,15 @@ private final class Sdk(
       GrpcEndpointDescriptorFactory(anyRefClass, grpcEndpointFactory(anyRefClass))(system)
     }
 
+  private val mcpEndpoints = componentClasses
+    .filter(Reflect.isMcpEndpoint)
+    .map { mcpEndpointClass =>
+      val anyRefClass = mcpEndpointClass.asInstanceOf[Class[AnyRef]]
+      McpEndpointDescriptorFactory(anyRefClass, () => wiredInstance(anyRefClass)(sideEffectingComponentInjects(None)))(
+        system,
+        sdkExecutionContext)
+    }
+
   private var eventSourcedEntityDescriptors = Vector.empty[EventSourcedEntityDescriptor]
   private var keyValueEntityDescriptors = Vector.empty[EventSourcedEntityDescriptor]
   private var workflowDescriptors = Vector.empty[WorkflowDescriptor]
@@ -665,7 +674,8 @@ private final class Sdk(
         timedActionDescriptors ++
         consumerDescriptors ++
         viewDescriptors ++
-        workflowDescriptors)
+        workflowDescriptors ++
+        mcpEndpoints)
         .filterNot(isDisabled(combinedDisabledComponents))
 
     val preStart = { (_: ActorSystem[_]) =>
