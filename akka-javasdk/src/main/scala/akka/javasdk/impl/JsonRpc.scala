@@ -156,10 +156,10 @@ private[akka] object JsonRpc {
         case JsonNodeType.NUMBER  => node.numberValue()
         case JsonNodeType.OBJECT  => node.fields().asScala.map(e => e.getKey -> primitiveValue(e.getValue)).toMap
         case JsonNodeType.NULL    => null
-        case JsonNodeType.POJO    => ???
-        case JsonNodeType.ARRAY   => ???
-        case JsonNodeType.BINARY  => ???
-        case JsonNodeType.MISSING => ???
+        case JsonNodeType.POJO    => node.fields().asScala.map(e => e.getKey -> primitiveValue(e.getValue)).toMap
+        case JsonNodeType.ARRAY   => node.elements().asScala.map(e => primitiveValue(e)).toVector
+        case JsonNodeType.BINARY  => node.binaryValue()
+        case JsonNodeType.MISSING => null
 
       }
 

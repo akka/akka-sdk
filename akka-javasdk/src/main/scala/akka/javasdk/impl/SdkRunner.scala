@@ -712,8 +712,7 @@ private final class Sdk(
   }
 
   private val additionalAiEndpoints =
-    McpServiceExplorationEndpoint(httpEndpointDescriptors, grpcEndpointDescriptors)(system) +: A2A.dummyA2aEndpoint()(
-      system.executionContext)
+    Seq(McpServiceExplorationEndpoint(httpEndpointDescriptors, grpcEndpointDescriptors)(system))
 
   val spiComponents: SpiComponents = {
 
