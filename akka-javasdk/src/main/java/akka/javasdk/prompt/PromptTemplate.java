@@ -6,6 +6,7 @@ package akka.javasdk.prompt;
 
 import akka.Done;
 import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.TypeName;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 
 import java.util.Optional;
@@ -13,16 +14,18 @@ import java.util.Optional;
 import static akka.Done.done;
 
 @ComponentId("akka-prompt-template")
-public class PromptTemplate extends EventSourcedEntity<PromptTemplate.Prompt, PromptTemplate.PromptTemplateEvent> {
+public class PromptTemplate extends EventSourcedEntity<PromptTemplate.Prompt, PromptTemplate.Event> {
 
   public record Prompt(String value) { //a wrapper instead of a String to allow further evolution
   }
 
-  public sealed interface PromptTemplateEvent {
-    record Updated(String prompt) implements PromptTemplateEvent {
+  public sealed interface Event {
+    @TypeName("updated")
+    record Updated(String prompt) implements Event {
     }
 
-    record Deleted() implements PromptTemplateEvent {
+    @TypeName("deleted")
+    record Deleted() implements Event {
     }
   }
 
@@ -34,7 +37,7 @@ public class PromptTemplate extends EventSourcedEntity<PromptTemplate.Prompt, Pr
       return effects().reply(done());
     } else {
       return effects()
-        .persist(new PromptTemplateEvent.Updated(prompt))
+        .persist(new Event.Updated(prompt))
         .thenReply(__ -> done());
     }
   }
@@ -47,7 +50,7 @@ public class PromptTemplate extends EventSourcedEntity<PromptTemplate.Prompt, Pr
       return effects().reply(done());
     } else {
       return effects()
-        .persist(new PromptTemplateEvent.Updated(prompt))
+        .persist(new Event.Updated(prompt))
         .thenReply(__ -> done());
     }
   }
@@ -57,7 +60,7 @@ public class PromptTemplate extends EventSourcedEntity<PromptTemplate.Prompt, Pr
       return effects().error("Prompt is not set");
     } else {
       return effects()
-        .persist(new PromptTemplateEvent.Deleted())
+        .persist(new Event.Deleted())
         .deleteEntity()
         .thenReply(__ -> done());
     }
@@ -66,6 +69,8 @@ public class PromptTemplate extends EventSourcedEntity<PromptTemplate.Prompt, Pr
   public Effect<String> get() {
     if (currentState() == null) {
       return effects().error("Prompt is not set");
+    } else if (isDeleted()) {
+      return effects().error("Prompt is deleted");
     } else {
       return effects().reply(currentState().value());
     }
@@ -74,16 +79,18 @@ public class PromptTemplate extends EventSourcedEntity<PromptTemplate.Prompt, Pr
   public Effect<Optional<String>> getOptional() {
     if (currentState() == null) {
       return effects().reply(Optional.empty());
+    } else if (isDeleted()) {
+      return effects().reply(Optional.empty());
     } else {
       return effects().reply(Optional.of(currentState().value()));
     }
   }
 
   @Override
-  public Prompt applyEvent(PromptTemplateEvent event) {
+  public Prompt applyEvent(Event event) {
     return switch (event) {
-      case PromptTemplateEvent.Updated updated -> new Prompt(updated.prompt);
-      case PromptTemplateEvent.Deleted deleted -> null; //TODO? null or empty string?
+      case Event.Updated updated -> new Prompt(updated.prompt);
+      case Event.Deleted __ -> new Prompt("");
     };
   }
 }
