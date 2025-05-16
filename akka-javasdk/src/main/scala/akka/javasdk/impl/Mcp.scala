@@ -539,6 +539,8 @@ private[akka] object Mcp {
 
   // server endpoint impl
   final case class McpDescriptor(
+      implementation: Implementation,
+      instructions: String,
       resources: Seq[(Resource, () => Seq[ResourceContents])] = Seq.empty,
       resourceTemplates: Seq[ResourceTemplate] = Seq.empty,
       tools: Seq[(ToolDescription, Map[String, Any] => Future[CallToolResult])] = Seq.empty)
@@ -554,7 +556,7 @@ private[akka] object Mcp {
     private val resourcesByUri = descriptor.resources.map { case (resource, factory) => resource.uri -> factory }.toMap
     private val toolCallbacksByName = descriptor.tools.map { case (tool, factory) => tool.name -> factory }.toMap
 
-    def httpEndpoint(): HttpEndpointDescriptor = {
+    def httpEndpoint(path: String): HttpEndpointDescriptor = {
 
       val methods = Map[String, JsonRpcRequest => Future[Option[JsonRpcResponse]]](
         InitializeRequest.method -> jsonRpcHandler[InitializeRequest](init),
@@ -566,7 +568,7 @@ private[akka] object Mcp {
         CallToolRequest.method -> jsonRpcHandler[CallToolRequest](callTool),
         CancelledNotification.method -> notificationHandler)
 
-      val jsonRpcEndpoint = new JsonRpc.JsonRpcEndpoint("/mcp", methods)
+      val jsonRpcEndpoint = new JsonRpc.JsonRpcEndpoint(path, methods)
       jsonRpcEndpoint.httpEndpointDescriptor
     }
 
@@ -587,8 +589,8 @@ private[akka] object Mcp {
               tools =
                 if (descriptor.tools.isEmpty) None
                 else Some(Tools(listChanged = false))),
-            serverInfo = Implementation("Akka Service", "0.0.0"),
-            instructions = "",
+            serverInfo = descriptor.implementation,
+            instructions = descriptor.instructions,
             _meta = None)))
     }
 
