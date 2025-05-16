@@ -22,8 +22,6 @@ import akka.javasdk.impl.HandlerNotFoundException
 import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.agent.ChatAgentEffectImpl.NoPrimaryEffect
 import akka.javasdk.impl.agent.ChatAgentEffectImpl.RequestModel
-import akka.javasdk.impl.agent.spi.SpiAgent
-import akka.javasdk.impl.agent.spi.SpiChatAgent
 import akka.javasdk.impl.effect.ErrorReplyImpl
 import akka.javasdk.impl.effect.MessageReplyImpl
 import akka.javasdk.impl.effect.NoSecondaryEffectImpl
@@ -34,6 +32,8 @@ import akka.javasdk.impl.telemetry.Telemetry
 import akka.javasdk.impl.telemetry.TraceInstrumentation
 import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.RegionInfo
+import akka.runtime.sdk.spi.SpiAgent
+import akka.runtime.sdk.spi.SpiChatAgent
 import akka.runtime.sdk.spi.SpiMetadata
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.Tracer

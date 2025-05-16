@@ -7,6 +7,7 @@ package akka.javasdk.client;
 import akka.NotUsed;
 import akka.javasdk.impl.*;
 import akka.javasdk.impl.serialization.JsonSerializer;
+import akka.runtime.sdk.spi.AgentClient;
 import com.google.protobuf.InvalidProtocolBufferException;
 import akka.javasdk.Metadata;
 import akka.javasdk.impl.client.ComponentClientImpl;
@@ -59,6 +60,11 @@ class ComponentClientTest {
 
       @Override
       public TimerClient timerClient() { return null; }
+
+      @Override
+      public AgentClient agentClient() {
+        return null;
+      }
 
       @Override
       public ViewClient viewClient() {

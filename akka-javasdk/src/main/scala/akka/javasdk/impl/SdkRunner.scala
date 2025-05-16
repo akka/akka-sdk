@@ -116,8 +116,8 @@ import java.util.concurrent.Executor
 import akka.javasdk.agent.ChatAgent
 import akka.javasdk.agent.ChatAgentContext
 import akka.javasdk.impl.agent.ChatAgentImpl
-import akka.javasdk.impl.agent.spi.ChatAgentDescriptor
-import akka.javasdk.impl.agent.spi.SpiChatAgent
+import akka.runtime.sdk.spi.ChatAgentDescriptor
+import akka.runtime.sdk.spi.SpiChatAgent
 
 /**
  * INTERNAL API
@@ -632,7 +632,7 @@ private final class Sdk(
         val instanceFactory: SpiChatAgent.FactoryContext => SpiChatAgent = { factoryContext =>
           new ChatAgentImpl(
             componentId,
-            factoryContext.sessionId,
+            factoryContext.sessionId.toJava,
             context =>
               wiredInstance(agentClass) {
                 (sideEffectingComponentInjects(None)).orElse {

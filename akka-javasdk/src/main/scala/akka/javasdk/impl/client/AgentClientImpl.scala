@@ -4,8 +4,6 @@
 
 package akka.javasdk.impl.client
 
-import java.util.Optional
-
 import scala.concurrent.ExecutionContext
 import scala.jdk.FutureConverters.FutureOps
 
@@ -19,12 +17,12 @@ import akka.javasdk.client.ComponentMethodRef
 import akka.javasdk.client.ComponentMethodRef1
 import akka.javasdk.impl.ComponentDescriptorFactory
 import akka.javasdk.impl.MetadataImpl
-import akka.javasdk.impl.agent.spi.AgentRequest
-import akka.javasdk.impl.agent.spi.{ AgentClient => RuntimeAgentClient }
 import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.serialization.JsonSerializer
+import akka.runtime.sdk.spi.AgentRequest
 import akka.runtime.sdk.spi.BytesPayload
-import akka.runtime.sdk.spi.KeyValueEntityType
+import akka.runtime.sdk.spi.ChatAgentType
+import akka.runtime.sdk.spi.{ AgentClient => RuntimeAgentClient }
 
 /**
  * INTERNAL API
@@ -34,7 +32,7 @@ private[javasdk] final case class AgentClientImpl(
     entityClient: RuntimeAgentClient,
     serializer: JsonSerializer,
     callMetadata: Option[Metadata],
-    sessionId: Optional[String])(implicit val executionContext: ExecutionContext, system: ActorSystem[_])
+    sessionId: Option[String])(implicit val executionContext: ExecutionContext, system: ActorSystem[_])
     extends ChatAgentClient {
 
   override def method[T, R](methodRef: function.Function[T, ChatAgent.Effect[R]]): ComponentMethodRef[R] =
@@ -80,7 +78,7 @@ private[javasdk] final case class AgentClientImpl(
         DeferredCallImpl(
           maybeArg.orNull,
           maybeMetadata.getOrElse(Metadata.EMPTY).asInstanceOf[MetadataImpl],
-          KeyValueEntityType, // FIXME ChatAgentEntityType in runtime spi
+          ChatAgentType,
           componentId,
           methodName,
           entityId = None, {

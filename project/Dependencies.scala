@@ -8,7 +8,7 @@ object Dependencies {
     val ProtocolVersionMinor = 1
   }
   // Remember to bump akka-runtime.version in akka-javasdk-maven/akka-javasdk-parent if bumping this
-  val AkkaRuntimeVersion = sys.props.getOrElse("akka-runtime.version", "1.4.12")
+  val AkkaRuntimeVersion = sys.props.getOrElse("akka-runtime.version", "1.4.12-2-469b2b14-SNAPSHOT")
   // NOTE: embedded SDK should have the AkkaVersion aligned, when updating RuntimeVersion, make sure to check
   // if AkkaVersion and AkkaHttpVersion are aligned
   // for prod code, they are marked as Provided, but testkit still requires the alignment
@@ -21,7 +21,6 @@ object Dependencies {
 
   val ScalaTestVersion = "3.2.14"
   // https://github.com/akka/akka/blob/main/project/Dependencies.scala#L31
-  // FIXME bump to Jackson 2.19.0 in akka-runtime, required by Langchain4j
   val JacksonVersion = "2.19.0"
   val JacksonDatabindVersion = JacksonVersion
   val Langchain4jVersion = "1.0.0"
@@ -57,7 +56,6 @@ object Dependencies {
   val jacksonParameterNames = "com.fasterxml.jackson.module" % "jackson-module-parameter-names" % JacksonVersion
   val jacksonScala = "com.fasterxml.jackson.module" %% "jackson-module-scala" % JacksonVersion
 
-  // FIXME langchain4j should be provided by akka-runtime
   val langchain4j = "dev.langchain4j" % "langchain4j" % Langchain4jVersion
 
   val scalaTest = "org.scalatest" %% "scalatest" % ScalaTestVersion
@@ -101,7 +99,7 @@ object Dependencies {
     jacksonJdk8,
     jacksonJsr310,
     jacksonParameterNames,
-    jacksonScala, // FIXME remove again, required until we bump Jackson in runtime
+    jacksonScala,
     langchain4j)
 
   // Important: be careful when adding dependencies here, unless provided, runtime or test they will also be packaged in the user project
