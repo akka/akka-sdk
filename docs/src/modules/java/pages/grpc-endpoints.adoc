@@ -61,7 +61,7 @@ id and the response message only includes the correlation id to not leak service
 
 == Securing gRPC endpoints ==
 
-Akka's HTTP endpoints can be secured by multiple approaches:
+Akka's gRPC endpoints can be secured by multiple approaches:
 
 . xref:java:access-control.adoc[]
 . xref:security:jwts.adoc[]
