@@ -38,6 +38,7 @@ import java.util.stream.Collectors;
         {
                 "akka.javasdk.annotations.http.HttpEndpoint",
                 "akka.javasdk.annotations.GrpcEndpoint",
+                "akka.javasdk.annotations.mcp.McpEndpoint",
                 // all components will have this
                 "akka.javasdk.annotations.ComponentId",
                 // central config/lifecycle class
@@ -55,6 +56,7 @@ public class ComponentAnnotationProcessor extends AbstractProcessor {
     // key of each component type under that parent path, containing a string list of concrete component classes
     private static final String HTTP_ENDPOINT_KEY = "http-endpoint";
     private static final String GRPC_ENDPOINT_KEY = "grpc-endpoint";
+    private static final String MCP_ENDPOINT_KEY = "mcp-endpoint";
     private static final String EVENT_SOURCED_ENTITY_KEY = "event-sourced-entity";
     private static final String VALUE_ENTITY_KEY = "key-value-entity";
     private static final String TIMED_ACTION_KEY = "timed-action";
@@ -131,6 +133,7 @@ public class ComponentAnnotationProcessor extends AbstractProcessor {
             case "akka.javasdk.annotations.http.HttpEndpoint" -> HTTP_ENDPOINT_KEY;
             case "akka.javasdk.annotations.GrpcEndpoint" -> GRPC_ENDPOINT_KEY;
             case "akka.javasdk.annotations.Setup" -> SERVICE_SETUP_KEY;
+            case "akka.javasdk.annotations.McpEndpoint" -> MCP_ENDPOINT_KEY;
             case "akka.javasdk.annotations.ComponentId" -> componentType(annotatedClass);
             default -> throw new IllegalArgumentException("Unknown annotation type: " + annotation.getQualifiedName());
         };
