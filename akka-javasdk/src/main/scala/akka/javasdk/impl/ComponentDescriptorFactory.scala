@@ -22,6 +22,7 @@ import akka.javasdk.annotations.Produce.ServiceStream
 import akka.javasdk.annotations.Produce.ToTopic
 import akka.javasdk.consumer.Consumer
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
+import akka.javasdk.impl.agent.AgentDescriptorFactory
 import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.serialization.JsonSerializer
 import akka.javasdk.keyvalueentity.KeyValueEntity
@@ -247,6 +248,8 @@ private[impl] object ComponentDescriptorFactory {
       EntityDescriptorFactory
     else if (Reflect.isConsumer(component))
       ConsumerDescriptorFactory
+    else if (Reflect.isAgent(component))
+      AgentDescriptorFactory
     else
       TimedActionDescriptorFactory
   }

@@ -16,7 +16,6 @@ import akka.javasdk.timedaction.TimedAction
 import akka.javasdk.view.TableUpdater
 import akka.javasdk.view.View
 import akka.javasdk.workflow.Workflow
-
 import java.lang.annotation.Annotation
 import java.lang.reflect.AnnotatedElement
 import java.lang.reflect.Method
@@ -25,8 +24,11 @@ import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
 import java.util
 import java.util.Optional
+
 import scala.annotation.tailrec
 import scala.reflect.ClassTag
+
+import akka.javasdk.agent.ChatAgent
 
 /**
  * Class extension to facilitate some reflection common usages.
@@ -78,6 +80,9 @@ private[impl] object Reflect {
 
   def isAction(clazz: Class[_]): Boolean = classOf[TimedAction].isAssignableFrom(clazz)
 
+  def isAgent(cls: Class[_]): Boolean =
+    classOf[ChatAgent].isAssignableFrom(cls)
+
   // command handlers candidate must have 0 or 1 parameter and return the components effect type
   // we might later revisit this, instead of single param, we can require (State, Cmd) => Effect like in Akka
   def isCommandHandlerCandidate[E](method: Method)(implicit effectType: ClassTag[E]): Boolean = {
@@ -94,7 +99,7 @@ private[impl] object Reflect {
     }
 
   def getReturnType(declaringClass: Class[_], method: Method): Type =
-    if (isAction(declaringClass) || isEntity(declaringClass) || isWorkflow(declaringClass)) {
+    if (isAction(declaringClass) || isEntity(declaringClass) || isWorkflow(declaringClass) || isAgent(declaringClass)) {
       // here we are expecting a wrapper in the form of an Effect
       method.getGenericReturnType.asInstanceOf[ParameterizedType].getActualTypeArguments.head
     } else {
