@@ -5,6 +5,7 @@
 package akka.javasdk.impl.client
 
 import java.util.Optional
+import scala.jdk.OptionConverters._
 
 import akka.annotation.InternalApi
 import akka.javasdk.Metadata
@@ -72,6 +73,5 @@ private[javasdk] final case class ComponentClientImpl(
   override def forView(): ViewClient = ViewClientImpl(runtimeComponentClients.viewClient, serializer, callMetadata)
 
   override def forChatAgent(sessionId: Optional[String]): ChatAgentClient =
-    // FIXME AgentClientImpl(runtimeComponentClients.chatAgentClient, serializer, callMetadata, sessionId)
-    AgentClientImpl(???, serializer, callMetadata, sessionId)
+    AgentClientImpl(runtimeComponentClients.agentClient, serializer, callMetadata, sessionId.toScala)
 }
