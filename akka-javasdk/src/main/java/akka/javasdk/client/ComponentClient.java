@@ -68,4 +68,12 @@ public interface ComponentClient {
    *     conversational memory.
    */
   ChatAgentClient forChatAgent(Optional<String> sessionId);
+
+  /**
+   * Select {@link akka.javasdk.agent.ChatAgent} as a call target component.
+   *
+   * @param sessionId - The agent will participate in this session, which is used for the agent's
+   *     conversational memory.
+   */
+  ChatAgentClient forChatAgent(String sessionId);
 }

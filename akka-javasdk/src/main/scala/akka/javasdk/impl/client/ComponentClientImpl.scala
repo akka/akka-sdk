@@ -74,4 +74,11 @@ private[javasdk] final case class ComponentClientImpl(
 
   override def forChatAgent(sessionId: Optional[String]): ChatAgentClient =
     AgentClientImpl(runtimeComponentClients.agentClient, serializer, callMetadata, sessionId.toScala)
+
+  override def forChatAgent(sessionId: String): ChatAgentClient = {
+    if ((sessionId eq null) || sessionId.trim.isBlank)
+      forChatAgent(sessionId = Optional.empty[String])
+    else
+      forChatAgent(Optional.ofNullable(sessionId))
+  }
 }

@@ -108,19 +108,21 @@ private[impl] final class ChatAgentImpl[A <: ChatAgent](
         }
       }
 
-      commandEffect.primaryEffect match {
-        case req: RequestModel =>
-          val metadata = MetadataImpl.toSpi(req.replyMetadata)
-          Future.successful(new SpiChatAgent.RequestModelEffect(req.systemMessage, req.userMessage, metadata))
+      val spiEffect =
+        commandEffect.primaryEffect match {
+          case req: RequestModel =>
+            val metadata = MetadataImpl.toSpi(req.replyMetadata)
+            new SpiChatAgent.RequestModelEffect(req.systemMessage, req.userMessage, metadata)
 
-        case NoPrimaryEffect =>
-          errorOrReply match {
-            case Left(err) =>
-              Future.successful(new SpiChatAgent.ErrorEffect(err))
-            case Right((reply, metadata)) =>
-              Future.successful(new SpiChatAgent.ReplyEffect(reply, metadata))
-          }
-      }
+          case NoPrimaryEffect =>
+            errorOrReply match {
+              case Left(err) =>
+                new SpiChatAgent.ErrorEffect(err)
+              case Right((reply, metadata)) =>
+                new SpiChatAgent.ReplyEffect(reply, metadata)
+            }
+        }
+      Future.successful(spiEffect)
 
     } catch {
       case e: HandlerNotFoundException =>
