@@ -113,6 +113,12 @@ import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
 import java.util.concurrent.Executor
 
+import akka.javasdk.agent.ChatAgent
+import akka.javasdk.agent.ChatAgentContext
+import akka.javasdk.impl.agent.ChatAgentImpl
+import akka.javasdk.impl.agent.spi.ChatAgentDescriptor
+import akka.javasdk.impl.agent.spi.SpiChatAgent
+
 import akka.javasdk.agent.PromptTemplate
 
 /**
@@ -223,6 +229,7 @@ private object ComponentType {
   val Consumer = "consumer"
   val TimedAction = "timed-action"
   val View = "view"
+  val ChatAgent = "chat-agent"
 }
 
 /**
@@ -250,7 +257,8 @@ private object ComponentLocator {
         ComponentType.EventSourcedEntity -> classOf[EventSourcedEntity[_, _]],
         ComponentType.Workflow -> classOf[Workflow[_]],
         ComponentType.KeyValueEntity -> classOf[KeyValueEntity[_]],
-        ComponentType.View -> classOf[AnyRef])
+        ComponentType.View -> classOf[AnyRef],
+        ComponentType.ChatAgent -> classOf[ChatAgent])
 
     // Alternative to but inspired by the stdlib SPI style of registering in META-INF/services
     // since we don't always have top supertypes and want to inject things into component constructors
@@ -326,7 +334,8 @@ private[javasdk] object Sdk {
     classOf[WorkflowContext],
     classOf[EventSourcedEntityContext],
     classOf[KeyValueEntityContext],
-    classOf[Retries])
+    classOf[Retries],
+    classOf[ChatAgentContext])
 }
 
 /**
@@ -482,6 +491,7 @@ private final class Sdk(
   private var timedActionDescriptors = Vector.empty[TimedActionDescriptor]
   private var consumerDescriptors = Vector.empty[ConsumerDescriptor]
   private var viewDescriptors = Vector.empty[ViewDescriptor]
+  private var chatAgentDescriptors = Vector.empty[ChatAgentDescriptor]
 
   componentClasses
     .filter(hasComponentId)
@@ -621,6 +631,29 @@ private final class Sdk(
         consumerDescriptors :+=
           new ConsumerDescriptor(componentId, clz.getName, consumerSrc, consumerDestination(consumerClass), consumerSpi)
 
+      case clz if classOf[ChatAgent].isAssignableFrom(clz) =>
+        val componentId = clz.getAnnotation(classOf[ComponentId]).value
+        val agentClass = clz.asInstanceOf[Class[ChatAgent]]
+
+        val instanceFactory: SpiChatAgent.FactoryContext => SpiChatAgent = { factoryContext =>
+          new ChatAgentImpl(
+            componentId,
+            factoryContext.sessionId,
+            context =>
+              wiredInstance(agentClass) {
+                (sideEffectingComponentInjects(None)).orElse {
+                  // remember to update component type API doc and docs if changing the set of injectables
+                  case p if p == classOf[ChatAgentContext] => context
+                }
+              },
+            sdkTracerFactory,
+            serializer,
+            ComponentDescriptor.descriptorFor(agentClass, serializer),
+            regionInfo)
+        }
+        chatAgentDescriptors :+=
+          new ChatAgentDescriptor(componentId, clz.getName, instanceFactory)
+
       case clz if classOf[View].isAssignableFrom(clz) =>
         viewDescriptors :+= ViewDescriptorFactory(clz, serializer, regionInfo, sdkExecutionContext)
 
@@ -672,7 +705,8 @@ private final class Sdk(
         timedActionDescriptors ++
         consumerDescriptors ++
         viewDescriptors ++
-        workflowDescriptors)
+        workflowDescriptors ++
+        chatAgentDescriptors)
         .filterNot(isDisabled(combinedDisabledComponents))
 
     val preStart = { (_: ActorSystem[_]) =>
