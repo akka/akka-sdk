@@ -1,17 +1,43 @@
 /*
- * Copyright (C) 2025 Lightbend Inc. <https://www.lightbend.com>
+ * Copyright (C) 2021-2024 Lightbend Inc. <https://www.lightbend.com>
  */
+
 package akka.javasdk.agent;
 
+import akka.annotation.InternalApi;
 import akka.javasdk.Metadata;
-import scala.NotImplementedError;
+import akka.javasdk.impl.agent.ChatAgentEffectImpl;
 
-import java.util.function.Function;
+import java.util.Optional;
 
 public abstract class ChatAgent {
 
+  private volatile Optional<ChatAgentContext> context = Optional.empty();
+
+  /**
+   * Additional context and metadata for a command handler.
+   *
+   * <p>It will throw an exception if accessed from constructor.
+   */
+  protected final ChatAgentContext context() {
+    return context("ChatAgentContext is only available when handling a command.");
+  }
+
+  private ChatAgentContext context(String errorMessage) {
+    return context.orElseThrow(() -> new IllegalStateException(errorMessage));
+  }
+
+  /**
+   * INTERNAL API
+   * @hidden
+   */
+  @InternalApi
+  public void _internalSetContext(Optional<ChatAgentContext> context) {
+    this.context = context;
+  }
+
   public final Effect.Builder effects() {
-    throw new NotImplementedError(); // FIXME
+    return new ChatAgentEffectImpl<>();
   }
 
   /**
@@ -39,42 +65,67 @@ public abstract class ChatAgent {
 
       Builder systemMessage(String message);
 
-      OnSuccessBuilder<String> userMessage(String message);
-
-      <R> OnSuccessBuilder<R> userMessage(String message, Class<R> modelResponseType);
-
-    }
-
-    /**
-     * @param <R> The type of the message that is returned by the model.
-     */
-    interface OnSuccessBuilder<R> {
+      OnSuccessBuilder userMessage(String message);
 
       /**
-       * Reply with the same response from the model.
+       * Create a message reply without calling the model.
+       *
+       * @param message The payload of the reply.
        * @param <T> The type of the message that must be returned by this call.
        * @return A message reply.
        */
-      <T> ChatAgent.Effect<T> thenReply();
+      <T> ChatAgent.Effect<T> reply(T message);
 
       /**
-       * Reply after for example {@code updateState}.
+       * Create a message reply without calling the model.
        *
-       * @param replyMessage Function that transforms the response from the model to a reply message.
-       * @param <T> The type of the message that must be returned by this call.
-       * @return A message reply.
-       */
-      <T> ChatAgent.Effect<T> thenReply(Function<R, T> replyMessage);
-
-      /**
-       * Reply after for example {@code updateState}.
-       *
-       * @param replyMessage Function that transforms the response from the model to a reply message.
+       * @param message The payload of the reply.
        * @param metadata The metadata for the message.
        * @param <T> The type of the message that must be returned by this call.
        * @return A message reply.
        */
-      <T> ChatAgent.Effect<T> thenReply(Function<R, T> replyMessage, Metadata metadata);
+      <T> ChatAgent.Effect<T> reply(T message, Metadata metadata);
+
+      /**
+       * Create an error reply without calling the model
+       *
+       * @param description The description of the error.
+       * @param <T> The type of the message that must be returned by this call.
+       * @return An error reply.
+       */
+      <T> ChatAgent.Effect<T> error(String description);
+
+    }
+
+    interface OnSuccessBuilder {
+
+      /**
+       * Reply with the response from the model.
+       * @return A message reply.
+       */
+      ChatAgent.Effect<String> thenReply();
+
+      /**
+       * Reply with the response from the model.
+       * @param metadata The metadata for the message.
+       * @return A message reply.
+       */
+      ChatAgent.Effect<String> thenReply(Metadata metadata);
+
+      /**
+       * Reply with the structured response from the model encoded into the given responseType.
+       * @param responseType The type of the message that will be returned by the call.
+       * @return A message reply.
+       */
+      <T> ChatAgent.Effect<T> thenReplyAs(Class<T> responseType);
+
+      /**
+       * Reply with the structured response from the model encoded into the given responseType.
+       * @param responseType The type of the message that will be returned by the call.
+       * @param metadata The metadata for the message.
+       * @return A message reply.
+       */
+      <T> ChatAgent.Effect<T> thenReplyAs(Class<T> responseType, Metadata metadata);
 
     }
 

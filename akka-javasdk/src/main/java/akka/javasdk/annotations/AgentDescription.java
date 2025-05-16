@@ -11,15 +11,12 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Assign an identifier and description to a ChatAgent component.
- * <p>
- * The identifier should be unique among the different components.
+ * Define description for a ChatAgent component.
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-public @interface Agent {
-  String value();
+public @interface AgentDescription {
   String name();
   String description();
 }
