@@ -20,8 +20,6 @@ import akka.runtime.sdk.spi.HttpEndpointMethodDescriptor
 import akka.runtime.sdk.spi.MethodOptions
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
-import com.fasterxml.jackson.annotation.JsonInclude
-import com.fasterxml.jackson.annotation.JsonInclude.Include
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.databind.DeserializationContext
@@ -40,6 +38,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
 import scala.jdk.FutureConverters.FutureOps
+import scala.util.control.NoStackTrace
 import scala.util.control.NonFatal
 
 /**
@@ -67,27 +66,21 @@ private[akka] object JsonRpc {
 
   /**
    * @param method
-   *   the name of the method
+   *   The name of the method
    * @param params
-   *   Either a Map with properties by name, or a List of parameters.
-   * @param id
-   *   request identifier, must be present for requests with responses
+   *   Either a Map with properties by name or a List of parameters.
+   * @param requestId
+   *   Request identifier. Must be present for requests with responses
    */
-  final case class JsonRpcRequest(method: String, params: Option[Params], id: Option[Identifier]) {
-    // if a request is a notification there is no response for it
-    def isNotification = id.isEmpty
+  final case class JsonRpcRequest(method: String, params: Option[Params], requestId: Option[Identifier]) {
+    // if a request is a notification, there must be no response for it
+    def isNotification = requestId.isEmpty
   }
 
-  sealed trait JsonRpcResponse {
-    def id: Option[Any]
-  }
+  sealed trait JsonRpcResponse {}
+  final case class JsonRpcSuccessResponse(id: Identifier, result: Option[Any]) extends JsonRpcResponse
+  final case class JsonRpcErrorResponse(error: JsonRpcError) extends JsonRpcResponse
 
-  final case class JsonRpcSuccessResponse(
-      id: Option[Any],
-      @JsonInclude(JsonInclude.Include.ALWAYS)
-      result: Any)
-      extends JsonRpcResponse
-  final case class JsonRpcErrorResponse(id: Option[Any], error: JsonRpcError) extends JsonRpcResponse
   object JsonRpcError {
     object Codes {
       val ParseError = -32700
@@ -100,72 +93,64 @@ private[akka] object JsonRpc {
     }
   }
 
-  final case class JsonRpcError(code: Int, message: String, data: Option[Any] = None)
+  final case class JsonRpcError(
+      code: Int,
+      message: String,
+      data: Option[Any] = None,
+      requestId: Option[Identifier] = None)
+      extends RuntimeException
+      with NoStackTrace
 
   object Serialization {
     private[akka] val mapper: ObjectMapper = {
       val m = JsonSerializer.newObjectMapperWithDefaults()
       m.registerModule(DefaultScalaModule)
-      m.setSerializationInclusion(Include.NON_EMPTY)
-      val module = new SimpleModule()
-      module.addDeserializer(classOf[JsonRpcRequest], new RequestDeserializer)
-      module.addSerializer(classOf[JsonRpcRequest], new RequestSerializer)
-      m.registerModule(module)
+      val protocolModule = new SimpleModule()
+      protocolModule.addDeserializer(classOf[JsonRpcRequest], RequestDeserializer)
+      protocolModule.addSerializer(classOf[JsonRpcRequest], RequestSerializer)
+      protocolModule.addDeserializer(classOf[JsonRpcResponse], JsonRpcResponseDeserializer)
+      protocolModule.addDeserializer(classOf[JsonRpcSuccessResponse], SuccessResponseDeserializer)
+      protocolModule.addDeserializer(classOf[JsonRpcErrorResponse], ErrorResponseDeserializer)
+      protocolModule.addSerializer(classOf[JsonRpcSuccessResponse], SuccessResponseSerializer)
+      protocolModule.addSerializer(classOf[JsonRpcErrorResponse], ErrorResponseSerializer)
+      m.registerModule(protocolModule)
       m
     }
 
-    private final class RequestDeserializer extends JsonDeserializer[JsonRpcRequest] {
-
-      override def deserialize(p: JsonParser, ctxt: DeserializationContext): JsonRpcRequest = {
-        // FIXME some specific errors in the format should lead to specific error codes
-        val node = p.readValueAsTree[JsonNode]()
-        val method = node.get("method") match {
-          case null                         => throw new JsonMappingException(p, "JSON-RPC [method] missing")
-          case nonNull if nonNull.isTextual => nonNull.asText()
-          case _ => throw new JsonMappingException(p, "JSON-RPC [method] field has wrong type")
-        }
-        val id = node.get("id") match {
-          case null => None
-          case nonNull if nonNull.isTextual =>
-            Some(TextId(nonNull.asText()))
-          case nonNull if nonNull.isNumber =>
-            Some(NumberId(nonNull.asLong()))
-          case other =>
-            throw new JsonMappingException(
-              p,
-              s"Unexpected JSON-RPC [id] field content type [${other.getNodeType}] should be text or non-fraction number")
-        }
-        val params = node.get("params") match {
-          case null                   => None
-          case array if array.isArray =>
-            // FIXME actual parsed fields
-            Some(ByPosition(array.elements().asScala.map(e => primitiveValue(e)).toVector))
-          case obj if obj.isObject =>
-            Some(ByName(obj.fields().asScala.map(entry => entry.getKey -> primitiveValue(entry.getValue)).toMap))
-          case unknown =>
-            throw new JsonMappingException(
-              p,
-              s"Unexpected JSON-RPC [params] field content type [${unknown.getNodeType}] should be text or non-fraction number")
-        }
-        JsonRpcRequest(method, params, id)
-      }
-
-      private def primitiveValue(node: JsonNode): Any = node.getNodeType match {
-        case JsonNodeType.BOOLEAN => node.booleanValue()
-        case JsonNodeType.STRING  => node.textValue()
-        case JsonNodeType.NUMBER  => node.numberValue()
-        case JsonNodeType.OBJECT  => node.fields().asScala.map(e => e.getKey -> primitiveValue(e.getValue)).toMap
-        case JsonNodeType.NULL    => null
-        case JsonNodeType.POJO    => node.fields().asScala.map(e => e.getKey -> primitiveValue(e.getValue)).toMap
-        case JsonNodeType.ARRAY   => node.elements().asScala.map(e => primitiveValue(e)).toVector
-        case JsonNodeType.BINARY  => node.binaryValue()
-        case JsonNodeType.MISSING => null
-
-      }
-
+    private def writeIdField(id: Identifier, gen: JsonGenerator): Unit = id match {
+      case NumberId(id) =>
+        gen.writeNumberField("id", id)
+      case TextId(id) =>
+        gen.writeStringField("id", id)
     }
 
-    private final class RequestSerializer extends com.fasterxml.jackson.databind.JsonSerializer[JsonRpcRequest] {
+    private def nodeToMap(node: JsonNode): Map[String, Any] = {
+      node.fields().asScala.map(entry => entry.getKey -> valueOf(entry.getValue)).toMap
+    }
+
+    private def valueOf(node: JsonNode): Any = node.getNodeType match {
+      case JsonNodeType.BOOLEAN => node.booleanValue()
+      case JsonNodeType.STRING  => node.textValue()
+      case JsonNodeType.NUMBER  => node.numberValue()
+      case JsonNodeType.OBJECT  => nodeToMap(node)
+      case JsonNodeType.NULL    => null
+      case JsonNodeType.POJO    => node.fields().asScala.map(e => e.getKey -> valueOf(e.getValue)).toMap
+      case JsonNodeType.ARRAY   => node.elements().asScala.map(e => valueOf(e)).toVector
+      case JsonNodeType.BINARY  => node.binaryValue()
+      case JsonNodeType.MISSING => null
+    }
+
+    private def nodeToId(node: JsonNode): Identifier = node match {
+      case nonNull if nonNull.isTextual => TextId(nonNull.asText())
+      case nonNull if nonNull.isNumber  => NumberId(nonNull.asLong())
+      case other =>
+        throw new JsonRpcError(
+          JsonRpcError.Codes.InvalidRequest,
+          s"Unexpected JSON-RPC [id] field content type [${other.getNodeType.name()}] should be text or non-fraction number")
+    }
+
+    // Note: handwritten ser/deser for performance, security, adhering to protocol spec (and also greater freedom in API design)
+    private object RequestSerializer extends com.fasterxml.jackson.databind.JsonSerializer[JsonRpcRequest] {
 
       override def serialize(value: JsonRpcRequest, gen: JsonGenerator, serializers: SerializerProvider): Unit = {
         gen.writeStartObject()
@@ -184,14 +169,154 @@ private[akka] object JsonRpc {
             entries.foreach(value => gen.getCodec.writeValue(gen, value))
             gen.writeEndArray()
         }
-        value.id match {
+        value.requestId match {
+          case Some(id) => writeIdField(id, gen)
+          case None     => // notification
+        }
+
+        gen.writeEndObject()
+      }
+    }
+
+    private object RequestDeserializer extends JsonDeserializer[JsonRpcRequest] {
+
+      override def deserialize(p: JsonParser, ctxt: DeserializationContext): JsonRpcRequest = {
+        val node = p.readValueAsTree[JsonNode]()
+        val id = node.get("id") match {
+          case null    => None // notification
+          case nonNull => Some(nodeToId(nonNull)) // regular request
+        }
+        val method = node.get("method") match {
+          case null                         => throw new JsonMappingException(p, "JSON-RPC [method] missing")
+          case nonNull if nonNull.isTextual => nonNull.asText()
+          case strange =>
+            throw new JsonRpcError(
+              JsonRpcError.Codes.InvalidRequest,
+              s"JSON-RPC [method] field has wrong type [${strange.getNodeType.name()}] should be [${JsonNodeType.STRING.name()}]",
+              requestId = id)
+        }
+        val params = node.get("params") match {
+          case null => None
+          case array if array.isArray =>
+            Some(ByPosition(array.elements().asScala.map(e => valueOf(e)).toVector))
+          case obj if obj.isObject =>
+            Some(ByName(nodeToMap(obj)))
+          case unknown =>
+            throw new JsonRpcError(
+              JsonRpcError.Codes.InvalidRequest, // surprisingly not InvalidParams but from spec
+              s"Invalid Request, [params] field must be object or array",
+              requestId = id)
+        }
+        JsonRpcRequest(method, params, id)
+      }
+    }
+
+    private object SuccessResponseSerializer
+        extends com.fasterxml.jackson.databind.JsonSerializer[JsonRpcSuccessResponse] {
+
+      override def serialize(
+          value: JsonRpcSuccessResponse,
+          gen: JsonGenerator,
+          serializers: SerializerProvider): Unit = {
+        gen.writeStartObject()
+        gen.writeStringField("jsonrpc", "2.0")
+        writeIdField(value.id, gen)
+        value.result match {
+          case Some(value) =>
+            gen.writeFieldName("result")
+            gen.getCodec.writeValue(gen, value)
           case None =>
-          case Some(NumberId(id)) =>
-            gen.writeNumberField("id", id)
-          case Some(TextId(id)) =>
-            gen.writeStringField("id", id)
+            gen.writeNullField("result") // result must always be present in successful responses
         }
         gen.writeEndObject()
+      }
+    }
+
+    private object ErrorResponseSerializer extends com.fasterxml.jackson.databind.JsonSerializer[JsonRpcErrorResponse] {
+
+      override def serialize(value: JsonRpcErrorResponse, gen: JsonGenerator, serializers: SerializerProvider): Unit = {
+        gen.writeStartObject()
+        gen.writeStringField("jsonrpc", "2.0")
+        val JsonRpcErrorResponse(JsonRpcError(code, message, data, requestId)) = value
+        requestId match {
+          case Some(id) => writeIdField(id, gen)
+          case None     => // id not required for errors
+        }
+        // The rest is in a nested error object
+        gen.writeFieldName("error")
+        gen.writeStartObject()
+        gen.writeNumberField("code", code)
+        gen.writeStringField("message", message)
+        data match {
+          case Some(value) =>
+            gen.writeFieldName("data")
+            gen.getCodec.writeValue(gen, value)
+          case None => // omitted
+        }
+        gen.writeEndObject()
+        gen.writeEndObject()
+      }
+    }
+
+    private object JsonRpcResponseDeserializer extends JsonDeserializer[JsonRpcResponse] {
+
+      override def deserialize(p: JsonParser, ctxt: DeserializationContext): JsonRpcResponse = {
+
+        val node = p.readValueAsTree[JsonNode]()
+        if (node.has("result")) {
+          p.getCodec.treeToValue(node, classOf[JsonRpcSuccessResponse])
+        } else if (node.has("error")) {
+          p.getCodec.treeToValue(node, classOf[JsonRpcErrorResponse])
+        } else {
+          throw new JsonMappingException(
+            p,
+            s"Json payload is not a valid JSON-RPC response (missing both result and error fields) '${node.toPrettyString}'")
+        }
+      }
+
+    }
+
+    private object SuccessResponseDeserializer extends JsonDeserializer[JsonRpcSuccessResponse] {
+
+      override def deserialize(p: JsonParser, ctxt: DeserializationContext): JsonRpcSuccessResponse = {
+        val node = p.readValueAsTree[JsonNode]()
+        if (node.has("result")) {
+          val id = node.get("id") match {
+            case null =>
+              throw new JsonRpcError(JsonRpcError.Codes.InvalidRequest, "Invalid JSON-RPC response, missing [id] field")
+            case nonNull => nodeToId(nonNull)
+          }
+          val result = Option(valueOf(node.get("result")))
+          JsonRpcSuccessResponse(id, result)
+        } else {
+          throw new JsonMappingException(
+            p,
+            "Json payload is not a valid JSON-RPC success response (missing result field)")
+        }
+      }
+    }
+
+    private object ErrorResponseDeserializer extends JsonDeserializer[JsonRpcErrorResponse] {
+
+      override def deserialize(p: JsonParser, ctxt: DeserializationContext): JsonRpcErrorResponse = {
+        val node = p.readValueAsTree[JsonNode]()
+        if (node.has("error")) {
+          val id = node.get("id") match {
+            case null    => None
+            case nonNull => Option(nodeToId(nonNull))
+          }
+          // error
+          val errorNode = node.get("error")
+          val code = errorNode.get("code").asInt()
+          val message = errorNode.get("message").asText()
+          val data = errorNode.get("data") match {
+            case null    => None
+            case nonNull => Option(valueOf(nonNull))
+          }
+          JsonRpcErrorResponse(JsonRpcError(code, message, data, id))
+        } else {
+          throw new JsonMappingException(p, "Json payload is not a valid JSON-RPC error response (missing error field)")
+        }
       }
     }
 
@@ -230,11 +355,7 @@ private[akka] object JsonRpc {
     }
 
     def parseResponse(response: String): JsonRpcResponse = {
-      if (response.contains("error")) {
-        mapper.readValue(response, classOf[JsonRpcErrorResponse])
-      } else {
-        mapper.readValue(response, classOf[JsonRpcSuccessResponse])
-      }
+      mapper.readValue(response, classOf[JsonRpcResponse])
     }
 
   }
@@ -300,20 +421,20 @@ private[akka] object JsonRpc {
                         .concat(Source.single(ByteString("]"))))))
               }
             } catch {
-              case _: JsonMappingException =>
-                Future.successful(
-                  HttpResponse(entity = HttpEntity(
-                    ContentTypes.`application/json`,
-                    Serialization.responseToJsonBytes(
-                      JsonRpcErrorResponse(
-                        id = None,
-                        error = JsonRpcError(JsonRpcError.Codes.InvalidRequest, "Parse error", None))))))
+              case jsonRpcException: JsonRpcError =>
+                Future.successful(errorToHttpResponse(jsonRpcException))
+              case ex: JsonMappingException =>
+                Future.successful(errorToHttpResponse(JsonRpcError(JsonRpcError.Codes.ParseError, "Parse error", None)))
             }
           }
         }
 
         future.asJava // runtime HTTP endpoints only support Java completion stages
       }
+
+      private def errorToHttpResponse(error: JsonRpcError, requestId: Option[Identifier] = None) =
+        HttpResponse(entity =
+          HttpEntity(ContentTypes.`application/json`, Serialization.responseToJsonBytes(JsonRpcErrorResponse(error))))
 
       def handleRequest(request: JsonRpcRequest): Future[Option[JsonRpcResponse]] = {
         methods.get(request.method) match {
@@ -323,14 +444,16 @@ private[akka] object JsonRpc {
               handler(request)
             } catch {
               case NonFatal(ex) =>
-                log.warn(s"JSON-RPC call to endpoint $path method ${request.method} id ${request.id} failed", ex)
+                log.warn(s"JSON-RPC call to endpoint $path method ${request.method} id ${request.requestId} failed", ex)
                 if (request.isNotification) Future.successful(None)
                 else
                   Future.successful(
                     Some(
-                      JsonRpcErrorResponse(
-                        id = request.id,
-                        error = JsonRpcError(JsonRpcError.Codes.InternalError, s"Call caused internal error", None))))
+                      JsonRpcErrorResponse(error = JsonRpcError(
+                        JsonRpcError.Codes.InternalError,
+                        s"Call caused internal error",
+                        None,
+                        requestId = request.requestId))))
             }
           case None =>
             if (request.isNotification) {
@@ -339,12 +462,11 @@ private[akka] object JsonRpc {
             } else
               Future.successful(
                 Some(
-                  JsonRpcErrorResponse(
-                    id = request.id,
-                    error = new JsonRpcError(
-                      JsonRpcError.Codes.MethodNotFound,
-                      s"Method [${request.method}] not found",
-                      None))))
+                  JsonRpcErrorResponse(error = new JsonRpcError(
+                    JsonRpcError.Codes.MethodNotFound,
+                    s"Method [${request.method}] not found",
+                    None,
+                    requestId = request.requestId))))
         }
 
       }

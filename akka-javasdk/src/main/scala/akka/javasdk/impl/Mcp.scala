@@ -6,6 +6,8 @@ package akka.javasdk.impl
 
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
+import akka.javasdk.impl.JsonRpc.Identifier
+import akka.javasdk.impl.JsonRpc.JsonRpcError
 import akka.javasdk.impl.JsonRpc.JsonRpcErrorResponse
 import akka.javasdk.impl.JsonRpc.JsonRpcRequest
 import akka.javasdk.impl.JsonRpc.JsonRpcResponse
@@ -37,13 +39,13 @@ private[akka] object Mcp {
     JsonRpc.JsonRpcRequest(
       method = method,
       params = params.map(nf => JsonRpc.ByName(JsonRpc.Serialization.mapper.convertValue(nf, mapTypeRef))),
-      id = None)
+      requestId = None)
 
   def request(method: String, mcpRequest: Option[McpRequest] = None): JsonRpc.JsonRpcRequest =
     JsonRpc.JsonRpcRequest(
       method = method,
       params = mcpRequest.map(req => JsonRpc.ByName(JsonRpc.Serialization.mapper.convertValue(req, mapTypeRef))),
-      id = Some(JsonRpc.NumberId(requestId.incrementAndGet())))
+      requestId = Some(JsonRpc.NumberId(requestId.incrementAndGet())))
 
   def result[T](response: JsonRpcResponse)(implicit ev: ClassTag[T]): T =
     response match {
@@ -53,12 +55,27 @@ private[akka] object Mcp {
         throw new IllegalArgumentException(s"Cannot turn JSON-RPC error [$error] to MCP result")
     }
 
-  def extractRequest[T](request: JsonRpc.JsonRpcRequest)(implicit ev: ClassTag[T]): T =
-    JsonRpc.Serialization.mapper.convertValue(request.params.getOrElse(Map.empty), ev.runtimeClass).asInstanceOf[T]
+  def extractRequest[T](request: JsonRpc.JsonRpcRequest)(implicit ev: ClassTag[T]): T = {
+    request.params match {
+      case Some(JsonRpc.ByName(params)) =>
+        JsonRpc.Serialization.mapper.convertValue(params, ev.runtimeClass).asInstanceOf[T]
+      case Some(JsonRpc.ByPosition(_)) =>
+        throw new JsonRpcError(
+          JsonRpcError.Codes.InvalidParams,
+          "MCP requests must be sent with named parameters",
+          request.requestId)
+      case None =>
+        throw new JsonRpcError(
+          JsonRpcError.Codes.InvalidRequest,
+          "MCP requests must have named parameters",
+          request.requestId)
+    }
 
-  def toJsonRpc(requestId: Any, result: McpResult): JsonRpc.JsonRpcResponse = {
+  }
+
+  def toJsonRpc(requestId: Identifier, result: McpResult): JsonRpc.JsonRpcResponse = {
     val responseMap = JsonRpc.Serialization.mapper.convertValue(result, mapTypeRef)
-    JsonRpcSuccessResponse(id = Some(requestId), result = responseMap)
+    JsonRpcSuccessResponse(id = requestId, result = Some(responseMap))
   }
 
   def jsonRpcHandler[T: ClassTag](
@@ -70,17 +87,17 @@ private[akka] object Mcp {
         .map {
           case Some(mcpResult) =>
             Some(toJsonRpc(
-              jsonRpcRequest.id.getOrElse(throw new IllegalArgumentException(
+              jsonRpcRequest.requestId.getOrElse(throw new IllegalArgumentException(
                 s"Got a MCP result back [$mcpResult] for a request [$mcpRequest] with no id (notification), not allowed")),
               mcpResult))
           case None => None
         }(ExecutionContext.parasitic)
         .recover { case McpErrorException(error) =>
-          Some(JsonRpc.JsonRpcErrorResponse(id = jsonRpcRequest.id, error = error))
+          Some(JsonRpc.JsonRpcErrorResponse(error = error.copy(requestId = jsonRpcRequest.requestId)))
         }(ExecutionContext.parasitic)
     } catch {
       case McpErrorException(error) =>
-        Future.successful(Some(JsonRpc.JsonRpcErrorResponse(id = jsonRpcRequest.id, error = error)))
+        Future.successful(Some(JsonRpc.JsonRpcErrorResponse(error = error.copy(requestId = jsonRpcRequest.requestId))))
     }
   }
 
@@ -281,7 +298,9 @@ private[akka] object Mcp {
   final case class ListResourcesResult(
       @JsonInclude(JsonInclude.Include.ALWAYS)
       resources: Seq[Resource],
+      @JsonInclude(JsonInclude.Include.NON_EMPTY)
       _meta: Option[AnyRef] = None,
+      @JsonInclude(JsonInclude.Include.NON_EMPTY)
       nextCursor: Option[String] = None)
       extends McpPaginatedResult
 
@@ -343,7 +362,9 @@ private[akka] object Mcp {
   final case class ListResourceTemplateResult(
       @JsonInclude(JsonInclude.Include.ALWAYS)
       resourceTemplates: Seq[ResourceTemplate],
+      @JsonInclude(JsonInclude.Include.NON_EMPTY)
       nextCursor: Option[String],
+      @JsonInclude(JsonInclude.Include.NON_EMPTY)
       _meta: Option[Meta])
       extends McpPaginatedResult
 
@@ -447,7 +468,13 @@ private[akka] object Mcp {
   /**
    * The server's response to a prompts/list request from the client.
    */
-  final case class ListPromptsResult(prompts: Seq[Prompt], nextCursor: Option[String], _meta: Option[Meta])
+  final case class ListPromptsResult(
+      @JsonInclude(JsonInclude.Include.ALWAYS)
+      prompts: Seq[Prompt],
+      @JsonInclude(JsonInclude.Include.NON_EMPTY)
+      nextCursor: Option[String],
+      @JsonInclude(JsonInclude.Include.NON_EMPTY)
+      _meta: Option[Meta])
       extends McpPaginatedResult
 
   final case class Prompt(name: String, description: Option[String], arguments: Seq[PromptArgument])
@@ -471,13 +498,16 @@ private[akka] object Mcp {
   final case class ListToolsResult(
       @JsonInclude(JsonInclude.Include.ALWAYS)
       tools: Seq[ToolDescription],
+      @JsonInclude(JsonInclude.Include.NON_EMPTY)
       nextCursor: Option[String] = None,
+      @JsonInclude(JsonInclude.Include.NON_EMPTY)
       _meta: Option[Meta] = None)
       extends McpPaginatedResult
   final case class ToolDescription(
       name: String,
       description: String,
       inputSchema: InputSchema,
+      @JsonInclude(JsonInclude.Include.NON_EMPTY)
       annotations: Option[Annotations] = None)
   final case class InputSchema(
       `type`: String = "object",
@@ -498,6 +528,7 @@ private[akka] object Mcp {
   final case class CallToolResult(
       content: Seq[ToolResponseContent],
       isError: Boolean = false,
+      @JsonInclude(JsonInclude.Include.NON_EMPTY)
       _meta: Option[Meta] = None)
       extends McpResult
   sealed trait ToolResponseContent {}
