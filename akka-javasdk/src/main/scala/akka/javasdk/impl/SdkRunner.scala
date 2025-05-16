@@ -140,6 +140,8 @@ class SdkRunner private (dependencyProvider: Option[DependencyProvider], disable
   def applicationConfig: Config =
     ApplicationConfig.loadApplicationConf
 
+  // FIXME: remove nowarn with https://github.com/akka/akka-sdk/pull/401
+  @scala.annotation.nowarn("msg=deprecated")
   override def getSettings: SpiSettings = {
     val applicationConf = applicationConfig
 

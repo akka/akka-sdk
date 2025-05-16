@@ -42,8 +42,23 @@ jobs:
         run: |
           make managed local
 
+      - name: LLM friendly markdown
+        run: |
+          sudo ./docs/bin/docs2markdown.sh
+
       - name: rsync
         run: |
           ./docs/bin/rsync-docs.sh "target/site/*" akkarepo@gustav.akka.io:www/snapshots/akka-documentation/
+        env:
+          SCP_SECRET: ${{ secrets.AKKA_RSYNC_GUSTAV }}
+
+      - name: llm-ctx.txt
+        run: |
+          sudo chmod a+w target/site
+          pip install llms-txt
+          sudo cp docs/src/modules/ROOT/pages/llms.txt target/site/
+          llms_txt2ctx target/site/llms.txt > target/site/llms-ctx.txt
+          llms_txt2ctx target/site/llms.txt --optional true > target/site/llms-ctx-full.txt
+          ./docs/bin/rsync-docs.sh "target/site/llms*.txt" akkarepo@gustav.akka.io:www/snapshots/akka-documentation/
         env:
           SCP_SECRET: ${{ secrets.AKKA_RSYNC_GUSTAV }}

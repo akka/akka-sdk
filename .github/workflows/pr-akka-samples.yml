@@ -83,7 +83,6 @@ jobs:
           cd akka-samples-${{ matrix.sample }}
           git config user.name "lightbend-tools-secure"
           git config user.email "lightbend-tools-secure@lightbend.com"
-          git remote add origin-rw https://${{ secrets.AKKA_SAMPLES_RW_ACCESS_TOKEN }}@github.com/${{ matrix.sampleRepo }}.git
           BRANCH=update-sdk-$sdk_version
           git checkout -b $BRANCH
           rsync -a ../docs/build/bundle/${{ matrix.sample }}/ ./
@@ -91,7 +90,7 @@ jobs:
           git add -f .idea/runConfigurations/Run_locally.xml
           git add .
           git commit . -m "chore: bump SDK version to $sdk_version"
-          git push --set-upstream origin-rw $BRANCH
+          git push --set-upstream origin $BRANCH
           gh pr create -B main -t "Auto PR - Bump SDK version to $sdk_version" \
               -b "This PR should update SDK (pom.xml) and latest source code.  [$GITHUB_SHA]($COMMIT_URL$GITHUB_SHA)"
 
@@ -109,6 +108,7 @@ jobs:
           - { sample: "medical-tagging-agent", sampleRepo: "akka-samples/medical-tagging-agent" }
           - { sample: "travel-agent", sampleRepo: "akka-samples/travel-agent" }
           - { sample: "trip-agency", sampleRepo: "akka-samples/trip-agency" }
+          - { sample: "real-estate-cs-agent", sampleRepo: "akka-samples/real-estate-cs-agent" }
 
     steps:
       - name: Checkout
@@ -150,12 +150,11 @@ jobs:
           cd akka-samples-${{ matrix.sample }}
           git config user.name "lightbend-tools-secure"
           git config user.email "lightbend-tools-secure@lightbend.com"
-          git remote add origin-rw https://${{ secrets.AKKA_SAMPLES_RW_ACCESS_TOKEN }}@github.com/${{ matrix.sampleRepo }}.git
           BRANCH=update-sdk-$sdk_version
           git checkout -b $BRANCH
           ../updateSdkVersions.sh java .
           git add .
           git commit . -m "chore: bump SDK version to $sdk_version"
-          git push --set-upstream origin-rw $BRANCH
+          git push --set-upstream origin $BRANCH
           gh pr create -B main -t "Auto PR - Bump SDK version to $sdk_version" \
               -b "This PR should update SDK (pom.xml).  [$GITHUB_SHA]($COMMIT_URL$GITHUB_SHA)"

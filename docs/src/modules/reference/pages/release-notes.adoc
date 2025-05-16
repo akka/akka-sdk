@@ -10,6 +10,23 @@ Current versions
 * Akka CLI {akka-cli-version}
 * A glance of all Akka libraries and their current versions is presented at https://doc.akka.io/libraries/akka-dependencies/current[Akka library versions].
 
+== May 2025
+
+* Akka Runtime 1.4.11
+  - Improved metrics
+  - Basis for SDK additions
+
+* https://github.com/akka/akka-sdk/releases/tag/v3.3.1[Akka SDK 3.3.1]
+  - Support `Runnable` in Workflow calls
+  - Updates to xref:self-managed:configuring.adoc[] documentation
+  - Publish LLM friendly markdown docs
+
+* Akka libraries 25.05 releases
+  - overview in xref:release-notes/2025-05-06-akka-25.05-released.adoc[]
+
+* Akka CLI 3.0.18
+  - Improvements and upgrades
+
 == April 2025
 
 [sidebar]
@@ -29,6 +46,8 @@ The xref:java:shopping-cart/quickstart.adoc#_the_external_api[shopping cart endp
 
 ****
 
+* Akka CLI 3.0.17
+  - Improvements to the `akka service proxy` command when using `--use-grpc-web`
 
 * Akka CLI 3.0.16
   - Manage multi-region aka global hostnames

@@ -1,0 +1,104 @@
+= Akka 25.05 Released
+
+Dear hakkers,
+
+We are excited to announce the availability of the Akka libraries 25.05 release, setting a new baseline of Akka library versions that go together.
+
+Akka 25.05 consists of the following module versions:
+
+* Akka core 2.10.5
+* Akka HTTP 10.7.1
+* Akka gRPC 2.5.5
+* Akka Management 1.6.2
+* Alpakka Kafka 7.0.2
+* Alpakka 9.0.2
+* Akka Persistence R2DBC 1.3.7
+* Akka Persistence DynamoDB 2.0.6
+* Akka Persistence JDBC 5.5.2
+* Akka Persistence Cassandra 1.3.2
+* Akka Projections 1.6.13
+* Akka Diagnostics 2.2.1
+* Akka Insights 2.21.2
+
+These versions also consistently upgrade to *Jackson 2.18.3*.
+
+As reference of versions that go together for Akka 25.05, please see https://doc.akka.io/libraries/akka-dependencies/25.05/[Akka module versions 25.05].
+
+== Virtual thread dispatchers on Java 21
+
+Akka now supports configuring a dispatcher to run on virtual threads when executing on JVM 21 or later. This is useful for isolated dispatchers for blocking
+operations as it allows a much higher number of concurrent blocking tasks than a thread-pool-based dispatcher.
+
+
+For more details see https://doc.akka.io/libraries/akka-core/current/typed/dispatchers.html#solution-virtual-threads-dispatcher-for-blocking-operations[the blocking operations section of the docs]
+and https://github.com/akka/akka/blob/v2.10.5/akka-actor/src/main/resources/reference.conf#L547[reference.conf]
+
+Note that the virtual thread dispatcher is not generally suitable as an actor dispatcher because of its overhead.
+
+== Store arbitrary metadata with events for Event Sourced entities
+
+It is now possible to store additional metadata together with the events persisted by an Event Sourced entity
+implemented with the `EventSourcedBehavior` and replicated Event Sourcing APIs for journals that support metadata using
+the new `persistWithMetadata()` effects.
+
+The metadata can then be accessed by queries and projections through the event envelope `metadata[T]` for Scala and `getMetadata(Class<T>)` for Java.
+
+== License key
+
+Akka requires a license key for use in production.
+
+Read about the motivation in the blog post https://akka.io/blog/akka-license-keys-and-no-spam-promise[Akka License Keys && a No SPAM Promise].
+
+Obtain a free key at https://akka.io/key.
+
+== Security Updates
+
+We run automated security vulnerability and license policy scanning of dependencies.
+No vulnerabilities or upstream vulnerabilities have been found since Akka 24.10.
+
+== Bug fixes
+
+* Multiple fixes in the async DNS client https://github.com/akka/akka/pull/32636[akka #32636]
+
+== Other improvements
+
+* API for calculating exponential backoff
+* New retry settings API
+* Restart flow logging tuning options
+* Java API for invoke with feedback in stream graph stages
+* Default request headers for gRPC clients
+* gRPC client retries using the new retry settings API
+* Multiple improvements for R2DBC projection queries
+* Multiple improvements for DynamoDB projections
+
+== Dependency updates
+
+* Jackson 2.18.3
+
+== Compatibility
+
+All modules of Akka 25.05 are backwards compatible with Akka 24.10.
+No configuration changes are needed.
+Rolling update of Akka Cluster is fully supported.
+
+== Detailed release notes:
+
+* https://github.com/akka/akka/releases[Akka core 2.10.x]
+* https://github.com/akka/akka-http/releases[Akka HTTP 10.7.x]
+* https://github.com/akka/akka-grpc/releases[Akka gRPC 2.5.x]
+* https://github.com/akka/akka-management/releases[Akka Management 1.6.x]
+* https://github.com/akka/alpakka-kafka/releases[Alpakka Kafka 7.0.x]
+* https://github.com/akka/alpakka/releases[Alpakka 9.0.x]
+* https://github.com/akka/akka-persistence-r2dbc/releases[Akka Persistence R2DBC 1.3.x]
+* https://github.com/akka/akka-persistence-dynamodb/releases[Akka Persistence DynamoDB 2.0.x]
+* https://github.com/akka/akka-persistence-jdbc/releases[Akka Persistence JDBC 5.5.x]
+* https://github.com/akka/akka-persistence-cassandra/releases[Akka Persistence Cassandra 1.3.x]
+* https://github.com/akka/akka-projection/releases[Akka Projections 1.6.x]
+* https://github.com/akka/akka-diagnostics/releases[Akka Diagnostics 2.2.x]
+* https://doc.akka.io/libraries/akka-insights/current/project/release-notes.html[Akka Insights 2.21.x]
+
+Licensing and support options are available from https://akka.io/[Akka].
+
+Happy hakking!
+
+-- The Akka Team

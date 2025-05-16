@@ -9,10 +9,10 @@ import akka.javasdk.client.ComponentClient;
 /**
  * Endpoint to fetch user's sessions using the ConversationHistoryView.
  */
+// tag::endpoint[]
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
 @HttpEndpoint("/api")
 public class UsersEndpoint {
-
 
   private final ComponentClient componentClient;
 
@@ -27,5 +27,5 @@ public class UsersEndpoint {
         .method(ConversationHistoryView::getSessionsByUser)
         .invoke(userId);
   }
-
 }
+// end::endpoint[]

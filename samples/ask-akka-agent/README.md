@@ -41,7 +41,7 @@ To create the vectorized index, call:
 curl -XPOST localhost:9000/api/index/start 
 ```
 This call will take an extract of the Akka SDK documentation and create a vectorized index in MongoDB.
-The documentation files are located in `src/main/resources/flat-doc/`. That said, you can also add your own documentation files to this directory.
+The documentation files are located in `src/main/resources/md-docs/`. That said, you can also add your own documentation files to this directory.
 
 # Query the AI
 

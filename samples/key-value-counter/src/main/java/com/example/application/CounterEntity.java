@@ -3,7 +3,10 @@ package com.example.application;
 import akka.Done;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.keyvalueentity.KeyValueEntity;
+import akka.javasdk.keyvalueentity.KeyValueEntityContext;
 import com.example.domain.Counter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static akka.Done.done;
 
@@ -12,8 +15,14 @@ import static akka.Done.done;
 @ComponentId("counter") // <1>
 public class CounterEntity extends KeyValueEntity<Counter> { // <2>
 
+  private final String entityId;
+
+  public CounterEntity(KeyValueEntityContext context) {
+    this.entityId = context.entityId(); // <3>
+  }
+
   @Override
-  public Counter emptyState() { return new Counter(0); } // <3>
+  public Counter emptyState() { return new Counter(0); } // <4>
   // end::declarations[]
 
   // tag::increase[]
