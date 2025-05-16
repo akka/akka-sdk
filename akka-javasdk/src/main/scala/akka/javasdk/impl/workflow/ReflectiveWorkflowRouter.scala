@@ -89,13 +89,14 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
       commandName: String,
       command: BytesPayload,
       context: CommandContext,
-      timerScheduler: TimerScheduler): CommandResult = {
+      timerScheduler: TimerScheduler,
+      deleted: Boolean): CommandResult = {
 
     val workflow = instanceFactory(workflowContext)
 
     // if runtime doesn't have a state to provide, we fall back to user's own defined empty state
     val decodedState = decodeUserState(userState).getOrElse(workflow.emptyState())
-    workflow._internalSetup(decodedState, context, timerScheduler)
+    workflow._internalSetup(decodedState, context, timerScheduler, deleted)
 
     val methodInvoker = methodInvokerLookup(commandName)
 
@@ -129,7 +130,7 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
     val workflow = instanceFactory(workflowContext)
     // if runtime doesn't have a state to provide, we fall back to user's own defined empty state
     val decodedState = decodeUserState(userState).getOrElse(workflow.emptyState())
-    workflow._internalSetup(decodedState, commandContext, timerScheduler)
+    workflow._internalSetup(decodedState, commandContext, timerScheduler, false)
 
     def decodeInputForClass(inputClass: Class[_]): Any = input match {
       case Some(inputValue) => decodeInput(inputValue, inputClass)

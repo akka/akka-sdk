@@ -59,6 +59,7 @@ public abstract class Workflow<S> {
   private Optional<S> currentState = Optional.empty();
 
   private boolean stateHasBeenSet = false;
+  private boolean deleted = false;
 
   /**
    * Start a step definition with a given step name.
@@ -121,17 +122,24 @@ public abstract class Workflow<S> {
     else throw new IllegalStateException("Current state is only available when handling a command.");
   }
 
+  /**
+   * Returns true if the entity has been deleted.
+   */
+  protected boolean isDeleted() {
+    return deleted;
+  }
 
   /**
    * INTERNAL API
    * @hidden
    */
   @InternalApi
-  public void _internalSetup(S state, CommandContext context, TimerScheduler timerScheduler) {
+  public void _internalSetup(S state, CommandContext context, TimerScheduler timerScheduler, boolean deleted) {
     this.stateHasBeenSet = true;
     this.currentState = Optional.ofNullable(state);
     this.commandContext = Optional.of(context);
     this.timerScheduler = Optional.of(timerScheduler);
+    this.deleted = deleted;
   }
 
   /**
@@ -218,12 +226,18 @@ public abstract class Workflow<S> {
        */
       TransitionalEffect<Void> transitionTo(String stepName);
 
-
       /**
        * Finish the workflow execution.
        * After transition to {@code end}, no more transitions are allowed.
        */
       TransitionalEffect<Void> end();
+
+      /**
+       * Finish and delete the workflow execution.
+       * After transition to {@code delete}, no more transitions are allowed.
+       * The actual workflow state deletion is done with a configurable delay to allow downstream consumers to observe that fact.
+       */
+      TransitionalEffect<Void> delete();
 
       /**
        * Create a message reply.
@@ -316,6 +330,13 @@ public abstract class Workflow<S> {
        * After transition to {@code end}, no more transitions are allowed.
        */
       TransitionalEffect<Void> end();
+
+      /**
+       * Finish and delete the workflow execution.
+       * After transition to {@code delete}, no more transitions are allowed.
+       * The actual workflow state deletion is done with a configurable delay to allow downstream consumers to observe that fact.
+       */
+      TransitionalEffect<Void> delete();
     }
 
 
