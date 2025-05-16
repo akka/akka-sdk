@@ -153,7 +153,7 @@ class JsonRpcSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike with Ma
         }))
 
       val response = handle(endpoint, """{"jsonrpc":"2.0","method":"method1","params": "bar"}""").futureValue
-      response shouldBe """{"jsonrpc":"2.0","error":{"code":-32600,"message":"Invalid Request, [params] field must be object or array"}}"""
+      response shouldBe """{"jsonrpc":"2.0","id":null,"error":{"code":-32600,"message":"Invalid Request, [params] field must be object or array"}}"""
     }
 
     "respond with error for unparseable json" in {
@@ -167,7 +167,7 @@ class JsonRpcSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike with Ma
         endpoint,
         """[{"jsonrpc": "2.0", "method": "sum", "params": [1,2,4], "id": "1"},
             {"jsonrpc": "2.0", "method"]""").futureValue
-      response shouldBe """{"jsonrpc":"2.0","error":{"code":-32700,"message":"Parse error"}}"""
+      response shouldBe """{"jsonrpc":"2.0","id":null,"error":{"code":-32700,"message":"Parse error"}}"""
     }
 
     "respond with empty request is empty" in {

@@ -240,7 +240,9 @@ private[akka] object JsonRpc {
         val JsonRpcErrorResponse(JsonRpcError(code, message, data, requestId)) = value
         requestId match {
           case Some(id) => writeIdField(id, gen)
-          case None     => // id not required for errors
+          case None     =>
+            // Spec: If there was an error in detecting the id in the Request object (e.g. Parse error/Invalid Request), it MUST be Null.
+            gen.writeNullField("id")
         }
         // The rest is in a nested error object
         gen.writeFieldName("error")
