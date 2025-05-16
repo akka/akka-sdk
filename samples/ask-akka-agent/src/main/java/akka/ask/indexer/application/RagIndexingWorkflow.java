@@ -102,7 +102,7 @@ public class RagIndexingWorkflow extends Workflow<RagIndexingWorkflow.State> {
         .createIndex(true)
         .build();
 
-    this.splitter = new DocumentByCharacterSplitter(500, 50, OpenAiUtils.buildTokenizer()); // <1>
+    this.splitter = new DocumentByCharacterSplitter(500, 50); // <1>
   }
   // end::cons[]
 
