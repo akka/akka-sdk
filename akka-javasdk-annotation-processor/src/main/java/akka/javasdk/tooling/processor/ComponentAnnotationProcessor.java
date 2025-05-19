@@ -38,6 +38,7 @@ import java.util.stream.Collectors;
         {
                 "akka.javasdk.annotations.http.HttpEndpoint",
                 "akka.javasdk.annotations.GrpcEndpoint",
+                "akka.javasdk.annotations.mcp.McpEndpoint",
                 // all components will have this
                 "akka.javasdk.annotations.ComponentId",
                 // central config/lifecycle class
@@ -55,6 +56,7 @@ public class ComponentAnnotationProcessor extends AbstractProcessor {
     // key of each component type under that parent path, containing a string list of concrete component classes
     private static final String HTTP_ENDPOINT_KEY = "http-endpoint";
     private static final String GRPC_ENDPOINT_KEY = "grpc-endpoint";
+    private static final String MCP_ENDPOINT_KEY = "mcp-endpoint";
     private static final String EVENT_SOURCED_ENTITY_KEY = "event-sourced-entity";
     private static final String VALUE_ENTITY_KEY = "key-value-entity";
     private static final String TIMED_ACTION_KEY = "timed-action";
@@ -64,7 +66,7 @@ public class ComponentAnnotationProcessor extends AbstractProcessor {
     private static final String AGENT_KEY = "agent";
     private static final String SERVICE_SETUP_KEY = "service-setup";
 
-    private static final List<String> ALL_COMPONENT_TYPES = List.of(HTTP_ENDPOINT_KEY, GRPC_ENDPOINT_KEY,
+    private static final List<String> ALL_COMPONENT_TYPES = List.of(HTTP_ENDPOINT_KEY, GRPC_ENDPOINT_KEY, MCP_ENDPOINT_KEY,
         EVENT_SOURCED_ENTITY_KEY, VALUE_ENTITY_KEY, TIMED_ACTION_KEY, CONSUMER_KEY, VIEW_KEY, WORKFLOW_KEY,
         AGENT_KEY, SERVICE_SETUP_KEY);
 
@@ -131,6 +133,7 @@ public class ComponentAnnotationProcessor extends AbstractProcessor {
             case "akka.javasdk.annotations.http.HttpEndpoint" -> HTTP_ENDPOINT_KEY;
             case "akka.javasdk.annotations.GrpcEndpoint" -> GRPC_ENDPOINT_KEY;
             case "akka.javasdk.annotations.Setup" -> SERVICE_SETUP_KEY;
+            case "akka.javasdk.annotations.mcp.McpEndpoint" -> MCP_ENDPOINT_KEY;
             case "akka.javasdk.annotations.ComponentId" -> componentType(annotatedClass);
             default -> throw new IllegalArgumentException("Unknown annotation type: " + annotation.getQualifiedName());
         };
