@@ -146,7 +146,7 @@ private[impl] final class AgentImpl[A <: Agent](
 
   override def transformResponse(modelResponse: String, responseType: Class[_]): BytesPayload = {
     if (responseType == classOf[String]) {
-      new BytesPayload(ByteString.fromString(modelResponse), serializer.contentTypeFor(responseType))
+      serializer.toBytes(modelResponse)
     } else {
       // We might be able to bypass serialization roundtrip here, but might be good to catch invalid json
       // as early as possible.
