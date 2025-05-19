@@ -37,14 +37,43 @@ object McpEndpointDescriptorFactory {
     }
 
     val tools = toolMethods.map { case (annotation, method) =>
-      val toolDescription = Mcp.ToolDescription(
-        annotation.name(),
-        annotation.description(),
-        // FIXME inspect input parameter
-        Mcp.InputSchema(`type` = "object", Map.empty, Seq.empty),
-        None)
+      if (method.getParameterCount > 1)
+        throw new IllegalArgumentException(
+          s"MCP tool methods must accept 0 or 1 parameters, but ${method.getName} accepts ${method.getParameterCount}")
 
-      val callback = (params: Map[String, Any]) => Future[Mcp.CallToolResult] { ??? }
+      val inputSchema =
+        if (annotation.inputSchema().isBlank) {
+          // FIXME reflectively infer schema from type
+          //   what do we support, only object, or also individual parameters (and use their names)?
+          ???
+        } else {
+          JsonRpc.Serialization.mapper.readValue(annotation.inputSchema(), classOf[Mcp.InputSchema])
+        }
+
+      val toolDescription = Mcp.ToolDescription(annotation.name(), annotation.description(), inputSchema, None)
+
+      val callback = (params: Map[String, Any]) =>
+        Future[Mcp.CallToolResult] {
+          val endpointInstance = instanceFactory.apply()
+          val returnValue = if (method.getParameterCount == 0) {
+            // FIXME fail on input params when expecting none
+            method.invoke(endpointInstance)
+          } else {
+            // FIXME fail on no input (can we know with manually specified schema?)
+            // FIXME handle required fields and input validation correctly
+            val parsedInput = JsonRpc.Serialization.mapper.convertValue(params, method.getParameterTypes.head)
+            method.invoke(endpointInstance, parsedInput)
+          }
+          returnValue match {
+            case text: String => Mcp.CallToolResult(Seq(Mcp.TextContent(text)))
+            case unknown      =>
+              // FIXME cover with validation
+              // FIXME handle/allow audio and image
+              throw new RuntimeException(
+                s"Unsupported tool return value (${if (unknown == null) "null" else unknown.getClass.toString}")
+          }
+
+        }
 
       toolDescription -> callback
     }
@@ -57,6 +86,10 @@ object McpEndpointDescriptorFactory {
     }
 
     val resources = resourceMethods.map { case (annotation, method) =>
+      if (method.getParameterCount > 0)
+        throw new IllegalArgumentException(
+          s"MCP resources must be of 0 arity, but ${method.getName} has a non empty parameter list")
+
       val resourceDescription = Mcp.Resource(
         uri = annotation.uri(),
         name = annotation.name(),
@@ -65,7 +98,12 @@ object McpEndpointDescriptorFactory {
         annotations = None,
         size = None)
 
-      val callback = () => Seq.empty[ResourceContents]
+      val callback = { () =>
+        val endpointInstance = instanceFactory()
+        method.invoke(endpointInstance)
+
+        Seq.empty[ResourceContents]
+      }
 
       resourceDescription -> callback
     }

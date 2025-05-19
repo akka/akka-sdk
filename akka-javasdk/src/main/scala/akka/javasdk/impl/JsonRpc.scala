@@ -125,7 +125,7 @@ private[akka] object JsonRpc {
     }
 
     private def nodeToMap(node: JsonNode): Map[String, Any] = {
-      node.fields().asScala.map(entry => entry.getKey -> valueOf(entry.getValue)).toMap
+      node.properties().asScala.map(entry => entry.getKey -> valueOf(entry.getValue)).toMap
     }
 
     private def valueOf(node: JsonNode): Any = node.getNodeType match {
@@ -134,7 +134,7 @@ private[akka] object JsonRpc {
       case JsonNodeType.NUMBER  => node.numberValue()
       case JsonNodeType.OBJECT  => nodeToMap(node)
       case JsonNodeType.NULL    => null
-      case JsonNodeType.POJO    => node.fields().asScala.map(e => e.getKey -> valueOf(e.getValue)).toMap
+      case JsonNodeType.POJO    => node.properties().asScala.map(e => e.getKey -> valueOf(e.getValue)).toMap
       case JsonNodeType.ARRAY   => node.elements().asScala.map(e => valueOf(e)).toVector
       case JsonNodeType.BINARY  => node.binaryValue()
       case JsonNodeType.MISSING => null
@@ -201,7 +201,7 @@ private[akka] object JsonRpc {
             Some(ByPosition(array.elements().asScala.map(e => valueOf(e)).toVector))
           case obj if obj.isObject =>
             Some(ByName(nodeToMap(obj)))
-          case unknown =>
+          case _ =>
             throw new JsonRpcError(
               JsonRpcError.Codes.InvalidRequest, // surprisingly not InvalidParams but from spec
               s"Invalid Request, [params] field must be object or array",
