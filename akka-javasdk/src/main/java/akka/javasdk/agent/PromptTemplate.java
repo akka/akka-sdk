@@ -2,7 +2,7 @@
  * Copyright (C) 2021-2024 Lightbend Inc. <https://www.lightbend.com>
  */
 
-package akka.javasdk.prompt;
+package akka.javasdk.agent;
 
 import akka.Done;
 import akka.javasdk.annotations.ComponentId;

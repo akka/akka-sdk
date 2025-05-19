@@ -113,7 +113,7 @@ import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
 import java.util.concurrent.Executor
 
-import akka.javasdk.prompt.PromptTemplate
+import akka.javasdk.agent.PromptTemplate
 
 /**
  * INTERNAL API

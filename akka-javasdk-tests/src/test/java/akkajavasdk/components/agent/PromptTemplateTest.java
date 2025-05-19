@@ -2,10 +2,10 @@
  * Copyright (C) 2021-2024 Lightbend Inc. <https://www.lightbend.com>
  */
 
-package akkajavasdk.components.prompt;
+package akkajavasdk.components.agent;
 
 import akka.Done;
-import akka.javasdk.prompt.PromptTemplate;
+import akka.javasdk.agent.PromptTemplate;
 import akka.javasdk.testkit.EventSourcedResult;
 import akka.javasdk.testkit.EventSourcedTestKit;
 import org.junit.jupiter.api.Test;
@@ -70,6 +70,7 @@ public class PromptTemplateTest {
     {
       //when
       testKit.method(PromptTemplate::init).invoke(promptValue);
+      testKit.method(PromptTemplate::delete).invoke();
       EventSourcedResult<String> result = testKit.method(PromptTemplate::get).invoke();
       EventSourcedResult<Optional<String>> resultOpt = testKit.method(PromptTemplate::getOptional).invoke();
 
