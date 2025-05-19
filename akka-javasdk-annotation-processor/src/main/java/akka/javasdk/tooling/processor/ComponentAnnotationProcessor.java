@@ -133,7 +133,7 @@ public class ComponentAnnotationProcessor extends AbstractProcessor {
             case "akka.javasdk.annotations.http.HttpEndpoint" -> HTTP_ENDPOINT_KEY;
             case "akka.javasdk.annotations.GrpcEndpoint" -> GRPC_ENDPOINT_KEY;
             case "akka.javasdk.annotations.Setup" -> SERVICE_SETUP_KEY;
-            case "akka.javasdk.annotations.McpEndpoint" -> MCP_ENDPOINT_KEY;
+            case "akka.javasdk.annotations.mcp.McpEndpoint" -> MCP_ENDPOINT_KEY;
             case "akka.javasdk.annotations.ComponentId" -> componentType(annotatedClass);
             default -> throw new IllegalArgumentException("Unknown annotation type: " + annotation.getQualifiedName());
         };
