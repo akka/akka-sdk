@@ -76,7 +76,6 @@ public class WorkflowTest extends TestKitSupport {
 
     assertThat(response.text()).contains("transfer started");
 
-
     Awaitility.await()
       .ignoreExceptions()
       .atMost(20, TimeUnit.of(SECONDS))
