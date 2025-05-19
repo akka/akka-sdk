@@ -10,11 +10,13 @@ import akka.http.scaladsl.model.MediaTypes
 import akka.javasdk.annotations.mcp.McpEndpoint
 import akka.javasdk.annotations.mcp.McpResource
 import akka.javasdk.annotations.mcp.McpTool
+import akka.javasdk.annotations.mcp.McpToolParameterDescription
 import akka.javasdk.impl.Mcp.BlobResourceContents
 import akka.javasdk.impl.Mcp.Implementation
 import akka.javasdk.impl.Mcp.TextResourceContents
 import akka.parboiled2.util.Base64
 import akka.runtime.sdk.spi.HttpEndpointDescriptor
+import org.slf4j.LoggerFactory
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -24,6 +26,9 @@ import scala.concurrent.Future
  */
 @InternalApi
 object McpEndpointDescriptorFactory {
+
+  private final val log = LoggerFactory.getLogger(classOf[McpEndpointDescriptorFactory.type])
+
   def apply[T](mcpEndpointClass: Class[T], instanceFactory: () => T)(implicit
       system: ActorSystem[_],
       sdkExecutor: ExecutionContext): HttpEndpointDescriptor = {
@@ -48,7 +53,8 @@ object McpEndpointDescriptorFactory {
         if (annotation.inputSchema().isBlank) {
           // FIXME reflectively infer schema from type
           //   what do we support, only object, or also individual parameters (and use their names)?
-          ???
+          if (method.getParameterCount == 0) Mcp.InputSchema(properties = Map.empty, required = Seq.empty)
+          else inputSchemaFor(method.getParameterTypes.head)
         } else {
           JsonRpc.Serialization.mapper.readValue(annotation.inputSchema(), classOf[Mcp.InputSchema])
         }
@@ -106,7 +112,7 @@ object McpEndpointDescriptorFactory {
         val result = method.invoke(endpointInstance)
         result match {
           case bytes: Array[Byte] =>
-            val base64Encoded = Base64.rfc2045().encodeToString(bytes, false)
+            val base64Encoded = Base64.rfc2045().encodeToString(bytes, lineSep = false)
             Seq(
               BlobResourceContents(
                 base64Encoded,
@@ -133,5 +139,36 @@ object McpEndpointDescriptorFactory {
         tools = tools,
         instructions = endpointAnnotation.instructions()))
       .httpEndpoint(endpointAnnotation.value())
+  }
+
+  private def inputSchemaFor(value: Class[_]): Mcp.InputSchema = {
+    val properties = value.getDeclaredFields.toSeq.map { field =>
+      val description = field.getAnnotation(classOf[McpToolParameterDescription]) match {
+        case null =>
+          log.info(
+            "Field [{}] is missing a tool description, client LLMs may not understand the purpose of the field, add one using {}",
+            classOf[McpToolParameterDescription].getName,
+            field.getName)
+          ""
+        case annotation => annotation.value()
+      }
+      field.getName -> Mcp.ToolProperty(`type` = jsonSchemaTypeFor(field.getType), description = description)
+    }.toMap
+
+    Mcp.InputSchema(
+      properties = properties,
+      // FIXME all required for now, is that good enough?
+      required = properties.keys.toSeq)
+  }
+
+  private def jsonSchemaTypeFor(fieldType: Class[_]): String = fieldType.getName match {
+    case "java.lang.String" => "string"
+    case "boolean"          => "boolean"
+    case "int"              => "number"
+    case "long"             => "number"
+    case "byte"             => "number"
+    case "float"            => "number"
+    case "double"           => "number"
+    case unknown            => throw new IllegalArgumentException(s"Unsupported Mcp tool input field type [$unknown]")
   }
 }
