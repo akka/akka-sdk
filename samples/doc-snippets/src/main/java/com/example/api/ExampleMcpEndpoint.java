@@ -19,6 +19,7 @@ public class ExampleMcpEndpoint {
           "message": {"type":"string", "description":"A string to echo"}
          },
          "required": ["message"]
+      }
       """)
   public String echo(EchoToolRequest input) {
     return input.message;
@@ -26,8 +27,7 @@ public class ExampleMcpEndpoint {
 
   @McpResource(uri = "file://background.png", name = "Background image", description = "A background image for Akka sites", mimeType = "image/png")
   public byte[] backgroundImage() {
-    try (InputStream in = this.getClass().getClassLoader()
-             .getResourceAsStream("/static-resources/images/background.png")) {
+    try (InputStream in = this.getClass().getResourceAsStream("/static-resources/images/background.png")) {
       if (in == null) throw new RuntimeException("Could not find background image");
       return in.readAllBytes();
     } catch (IOException e) {
