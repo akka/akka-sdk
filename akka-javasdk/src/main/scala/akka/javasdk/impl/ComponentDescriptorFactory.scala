@@ -9,7 +9,7 @@ import java.lang.reflect.Method
 import java.lang.reflect.ParameterizedType
 
 import akka.annotation.InternalApi
-import akka.javasdk.agent.ChatAgent
+import akka.javasdk.agent.Agent
 import akka.javasdk.annotations.Acl
 import akka.javasdk.annotations.ComponentId
 import akka.javasdk.annotations.Consume.FromEventSourcedEntity
@@ -96,9 +96,9 @@ private[impl] object ComponentDescriptorFactory {
     || javaMethod.getReturnType == classOf[KeyValueEntity.ReadOnlyEffect[_]])
   }
 
-  def hasChatAgentEffectOutput(javaMethod: Method): Boolean = {
+  def hasAgentEffectOutput(javaMethod: Method): Boolean = {
     javaMethod.isPublic &&
-    (javaMethod.getReturnType == classOf[ChatAgent.Effect[_]])
+    (javaMethod.getReturnType == classOf[Agent.Effect[_]])
   }
 
   def hasTimedActionEffectOutput(javaMethod: Method): Boolean = {

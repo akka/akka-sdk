@@ -28,7 +28,7 @@ import java.util.Optional
 import scala.annotation.tailrec
 import scala.reflect.ClassTag
 
-import akka.javasdk.agent.ChatAgent
+import akka.javasdk.agent.Agent
 
 /**
  * Class extension to facilitate some reflection common usages.
@@ -81,7 +81,7 @@ private[impl] object Reflect {
   def isAction(clazz: Class[_]): Boolean = classOf[TimedAction].isAssignableFrom(clazz)
 
   def isAgent(cls: Class[_]): Boolean =
-    classOf[ChatAgent].isAssignableFrom(cls)
+    classOf[Agent].isAssignableFrom(cls)
 
   // command handlers candidate must have 0 or 1 parameter and return the components effect type
   // we might later revisit this, instead of single param, we can require (State, Cmd) => Effect like in Akka

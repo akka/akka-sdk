@@ -5,7 +5,7 @@
 package akka.javasdk.impl.agent
 
 import akka.annotation.InternalApi
-import akka.javasdk.agent.ChatAgent
+import akka.javasdk.agent.Agent
 import akka.javasdk.impl.ComponentDescriptor
 import akka.javasdk.impl.ComponentDescriptorFactory
 import akka.javasdk.impl.MethodInvoker
@@ -20,15 +20,15 @@ private[impl] object AgentDescriptorFactory extends ComponentDescriptorFactory {
 
   override def buildDescriptorFor(component: Class[_], serializer: JsonSerializer): ComponentDescriptor = {
     //TODO remove capitalization of method name, can't be done per component, because component client reuse the same logic for all
-    val commandHandlerMethods = if (classOf[ChatAgent].isAssignableFrom(component)) {
+    val commandHandlerMethods = if (classOf[Agent].isAssignableFrom(component)) {
       component.getDeclaredMethods.collect {
-        case method if isCommandHandlerCandidate[ChatAgent.Effect[_]](method) =>
+        case method if isCommandHandlerCandidate[Agent.Effect[_]](method) =>
           method.getName.capitalize -> MethodInvoker(method)
       }
     } else {
 
       // should never happen
-      throw new RuntimeException(s"Unsupported component type: ${component.getName}. Supported types are: ChatAgent")
+      throw new RuntimeException(s"Unsupported component type: ${component.getName}. Supported types are: Agent")
     }
 
     ComponentDescriptor(commandHandlerMethods.toMap)

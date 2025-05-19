@@ -11,7 +11,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Define description for a ChatAgent component.
+ * Define description for an Agent component.
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)

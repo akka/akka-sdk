@@ -50,7 +50,7 @@ public class AskHttpEndpoint {
   @Post("/new-ask") // FIXME
   public NewAskAkkaAgent.DummyResponse newAsk(QueryRequest request) {
     return componentClient
-        .forChatAgent(Optional.of(request.sessionId()))
+        .forAgent(Optional.of(request.sessionId()))
         .method(NewAskAkkaAgent::ask)
         .invoke(request.question);
   }

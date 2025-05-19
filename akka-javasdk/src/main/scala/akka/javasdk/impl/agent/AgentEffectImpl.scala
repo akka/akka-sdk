@@ -6,9 +6,9 @@ package akka.javasdk.impl.agent
 
 import akka.annotation.InternalApi
 import akka.javasdk.Metadata
-import akka.javasdk.agent.ChatAgent.Effect
-import akka.javasdk.agent.ChatAgent.Effect.Builder
-import akka.javasdk.agent.ChatAgent.Effect.OnSuccessBuilder
+import akka.javasdk.agent.Agent.Effect
+import akka.javasdk.agent.Agent.Effect.Builder
+import akka.javasdk.agent.Agent.Effect.OnSuccessBuilder
 import akka.javasdk.impl.effect.ErrorReplyImpl
 import akka.javasdk.impl.effect.MessageReplyImpl
 import akka.javasdk.impl.effect.NoSecondaryEffectImpl
@@ -18,7 +18,7 @@ import akka.javasdk.impl.effect.SecondaryEffectImpl
  * INTERNAL API
  */
 @InternalApi
-private[javasdk] object ChatAgentEffectImpl {
+private[javasdk] object AgentEffectImpl {
   sealed trait PrimaryEffectImpl
   object RequestModel {
     val empty: RequestModel =
@@ -37,8 +37,8 @@ private[javasdk] object ChatAgentEffectImpl {
  * INTERNAL API
  */
 @InternalApi
-private[javasdk] final class ChatAgentEffectImpl[Reply] extends Builder with OnSuccessBuilder with Effect[Reply] {
-  import ChatAgentEffectImpl._
+private[javasdk] final class AgentEffectImpl[Reply] extends Builder with OnSuccessBuilder with Effect[Reply] {
+  import AgentEffectImpl._
 
   private var _primaryEffect: PrimaryEffectImpl = NoPrimaryEffect
   private var _secondaryEffect: SecondaryEffectImpl = NoSecondaryEffectImpl
@@ -48,17 +48,17 @@ private[javasdk] final class ChatAgentEffectImpl[Reply] extends Builder with OnS
   def secondaryEffect: SecondaryEffectImpl =
     _secondaryEffect
 
-  override def reply[T](message: T): ChatAgentEffectImpl[T] =
+  override def reply[T](message: T): AgentEffectImpl[T] =
     reply(message, Metadata.EMPTY)
 
-  override def reply[T](message: T, metadata: Metadata): ChatAgentEffectImpl[T] = {
+  override def reply[T](message: T, metadata: Metadata): AgentEffectImpl[T] = {
     _secondaryEffect = MessageReplyImpl(message, metadata)
-    this.asInstanceOf[ChatAgentEffectImpl[T]]
+    this.asInstanceOf[AgentEffectImpl[T]]
   }
 
-  override def error[T](description: String): ChatAgentEffectImpl[T] = {
+  override def error[T](description: String): AgentEffectImpl[T] = {
     _secondaryEffect = ErrorReplyImpl(description)
-    this.asInstanceOf[ChatAgentEffectImpl[T]]
+    this.asInstanceOf[AgentEffectImpl[T]]
   }
 
   def hasError(): Boolean =
@@ -84,30 +84,30 @@ private[javasdk] final class ChatAgentEffectImpl[Reply] extends Builder with OnS
     this
   }
 
-  override def thenReply(): ChatAgentEffectImpl[String] =
-    this.asInstanceOf[ChatAgentEffectImpl[String]]
+  override def thenReply(): AgentEffectImpl[String] =
+    this.asInstanceOf[AgentEffectImpl[String]]
 
-  override def thenReply(metadata: Metadata): ChatAgentEffectImpl[String] = {
+  override def thenReply(metadata: Metadata): AgentEffectImpl[String] = {
     _primaryEffect match {
       case NoPrimaryEffect =>
         _primaryEffect = RequestModel.empty.copy(replyMetadata = metadata)
       case req: RequestModel =>
         _primaryEffect = req.copy(replyMetadata = metadata)
     }
-    this.asInstanceOf[ChatAgentEffectImpl[String]]
+    this.asInstanceOf[AgentEffectImpl[String]]
   }
 
-  override def thenReplyAs[T](responseType: Class[T]): ChatAgentEffectImpl[T] =
+  override def thenReplyAs[T](responseType: Class[T]): AgentEffectImpl[T] =
     thenReplyAs[T](responseType, Metadata.EMPTY)
 
-  override def thenReplyAs[T](responseType: Class[T], metadata: Metadata): ChatAgentEffectImpl[T] = {
+  override def thenReplyAs[T](responseType: Class[T], metadata: Metadata): AgentEffectImpl[T] = {
     _primaryEffect match {
       case NoPrimaryEffect =>
         _primaryEffect = RequestModel.empty.copy(responseType = responseType, replyMetadata = metadata)
       case req: RequestModel =>
         _primaryEffect = req.copy(responseType = responseType, replyMetadata = metadata)
     }
-    this.asInstanceOf[ChatAgentEffectImpl[T]]
+    this.asInstanceOf[AgentEffectImpl[T]]
   }
 
 }

@@ -11,7 +11,7 @@ import java.lang.reflect.ParameterizedType
 import scala.reflect.ClassTag
 
 import akka.annotation.InternalApi
-import akka.javasdk.agent.ChatAgent
+import akka.javasdk.agent.Agent
 import akka.javasdk.annotations.AgentDescription
 import akka.javasdk.annotations.ComponentId
 import akka.javasdk.annotations.Consume.FromKeyValueEntity
@@ -23,7 +23,7 @@ import akka.javasdk.consumer.Consumer
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.javasdk.impl.ComponentDescriptorFactory.eventSourcedEntitySubscription
 import akka.javasdk.impl.ComponentDescriptorFactory.hasAcl
-import akka.javasdk.impl.ComponentDescriptorFactory.hasChatAgentEffectOutput
+import akka.javasdk.impl.ComponentDescriptorFactory.hasAgentEffectOutput
 import akka.javasdk.impl.ComponentDescriptorFactory.hasConsumerOutput
 import akka.javasdk.impl.ComponentDescriptorFactory.hasESEffectOutput
 import akka.javasdk.impl.ComponentDescriptorFactory.hasEventSourcedEntitySubscription
@@ -132,7 +132,7 @@ private[javasdk] object Validations {
     validateEventSourcedEntity(component) ++
     validateValueEntity(component) ++
     validateWorkflow(component) ++
-    validateChatAgent(component)
+    validateAgent(component)
 
   private def validateEventSourcedEntity(component: Class[_]) =
     when[EventSourcedEntity[_, _]](component) {
@@ -147,22 +147,22 @@ private[javasdk] object Validations {
       commandHandlerArityShouldBeZeroOrOne(component, hasWorkflowEffectOutput)
     }
 
-  private def validateChatAgent(component: Class[_]) =
-    when[ChatAgent](component) {
+  private def validateAgent(component: Class[_]) =
+    when[Agent](component) {
       mustHaveValidComponentId(component) ++
       mustHaveAgentDescription(component) ++
-      chatAgentCommandHandlersMustBeOne(component) ++
-      commandHandlerArityShouldBeZeroOrOne(component, hasChatAgentEffectOutput)
+      agentCommandHandlersMustBeOne(component) ++
+      commandHandlerArityShouldBeZeroOrOne(component, hasAgentEffectOutput)
     }
 
-  private def chatAgentCommandHandlersMustBeOne(component: Class[_]): Validation = {
+  private def agentCommandHandlersMustBeOne(component: Class[_]): Validation = {
     val commandHandlers = component.getMethods
-      .filter(_.getReturnType == classOf[ChatAgent.Effect[_]])
+      .filter(_.getReturnType == classOf[Agent.Effect[_]])
     when(commandHandlers.length != 1) {
       Invalid(
         errorMessage(
           component,
-          s"${component.getSimpleName} has ${commandHandlers.length} command handlers. There must be one method returning ChatAgent.Effect."))
+          s"${component.getSimpleName} has ${commandHandlers.length} command handlers. There must be one method returning Agent.Effect."))
     }
   }
 

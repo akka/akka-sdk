@@ -9,7 +9,7 @@ import akka.javasdk.Tracing;
 
 import java.util.Optional;
 
-public interface ChatAgentContext extends MetadataContext {
+public interface AgentContext extends MetadataContext {
   /**
    * The agent may participate in a session, which is used for the agent's conversational memory.
    */

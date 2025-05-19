@@ -71,8 +71,8 @@ case object KeyValueEntityCategory extends ComponentCategory {
  * INTERNAL API
  */
 @InternalApi
-case object ChatAgentCategory extends ComponentCategory {
-  def name = "ChatAgent"
+case object AgentCategory extends ComponentCategory {
+  def name = "Agent"
 }
 
 /**

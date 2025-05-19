@@ -1,12 +1,12 @@
 package akka.ask.agent.application;
 
-import akka.javasdk.agent.ChatAgent;
+import akka.javasdk.agent.Agent;
 import akka.javasdk.annotations.AgentDescription;
 import akka.javasdk.annotations.ComponentId;
 
 @ComponentId("ask-akka-agent")
 @AgentDescription(name = "Ask Akka", description = "Expert in Akka")
-public class NewAskAkkaAgent extends ChatAgent {
+public class NewAskAkkaAgent extends Agent {
   // FIXME
   public record DummyResponse(String systemMessage, String userMessage) {}
 
@@ -17,7 +17,7 @@ public class NewAskAkkaAgent extends ChatAgent {
       Sorry, I don't know how to help with that.
       """; // <1>
 
-  public ChatAgent.Effect<DummyResponse> ask(String question) {
+  public Agent.Effect<DummyResponse> ask(String question) {
     return effects()
         .systemMessage(sysMessage)
         .userMessage(question)

@@ -9,7 +9,7 @@ import akka.javasdk.annotations.ComponentId;
 
 @ComponentId("dummy1")
 @AgentDescription(name = "Dummy Agent", description = "Not very smart agent")
-class DummyAgent1 extends ChatAgent {
+class DummyAgent1 extends Agent {
   Effect<String> doSomething(String question) {
     return effects()
         .systemMessage("You are a helpful...")
@@ -20,7 +20,7 @@ class DummyAgent1 extends ChatAgent {
 
 @ComponentId("dummy2")
 @AgentDescription(name = "Dummy Agent", description = "Not very smart agent")
-class DummyAgent2 extends ChatAgent {
+class DummyAgent2 extends Agent {
   record Response(String result) {}
 
   Effect<Response> doSomething(String question) {

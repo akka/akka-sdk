@@ -20,7 +20,7 @@ import akka.runtime.sdk.spi.{ ComponentClients => RuntimeComponentClients }
 import scala.concurrent.ExecutionContext
 
 import akka.actor.typed.ActorSystem
-import akka.javasdk.client.ChatAgentClient
+import akka.javasdk.client.AgentClient
 import akka.javasdk.impl.serialization.JsonSerializer
 import io.opentelemetry.api.trace.Span
 
@@ -72,13 +72,13 @@ private[javasdk] final case class ComponentClientImpl(
 
   override def forView(): ViewClient = ViewClientImpl(runtimeComponentClients.viewClient, serializer, callMetadata)
 
-  override def forChatAgent(sessionId: Optional[String]): ChatAgentClient =
+  override def forAgent(sessionId: Optional[String]): AgentClient =
     AgentClientImpl(runtimeComponentClients.agentClient, serializer, callMetadata, sessionId.toScala)
 
-  override def forChatAgent(sessionId: String): ChatAgentClient = {
+  override def forAgent(sessionId: String): AgentClient = {
     if ((sessionId eq null) || sessionId.trim.isBlank)
-      forChatAgent(sessionId = Optional.empty[String])
+      forAgent(sessionId = Optional.empty[String])
     else
-      forChatAgent(Optional.ofNullable(sessionId))
+      forAgent(Optional.ofNullable(sessionId))
   }
 }

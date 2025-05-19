@@ -113,11 +113,12 @@ import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
 import java.util.concurrent.Executor
 
-import akka.javasdk.agent.ChatAgent
-import akka.javasdk.agent.ChatAgentContext
-import akka.javasdk.impl.agent.ChatAgentImpl
-import akka.runtime.sdk.spi.ChatAgentDescriptor
-import akka.runtime.sdk.spi.SpiChatAgent
+import akka.javasdk.JsonSupport
+import akka.javasdk.agent.Agent
+import akka.javasdk.agent.AgentContext
+import akka.javasdk.impl.agent.AgentImpl
+import akka.runtime.sdk.spi.AgentDescriptor
+import akka.runtime.sdk.spi.SpiAgent
 
 import akka.javasdk.agent.PromptTemplate
 
@@ -229,7 +230,7 @@ private object ComponentType {
   val Consumer = "consumer"
   val TimedAction = "timed-action"
   val View = "view"
-  val ChatAgent = "chat-agent"
+  val Agent = "agent"
 }
 
 /**
@@ -258,7 +259,7 @@ private object ComponentLocator {
         ComponentType.Workflow -> classOf[Workflow[_]],
         ComponentType.KeyValueEntity -> classOf[KeyValueEntity[_]],
         ComponentType.View -> classOf[AnyRef],
-        ComponentType.ChatAgent -> classOf[ChatAgent])
+        ComponentType.Agent -> classOf[Agent])
 
     // Alternative to but inspired by the stdlib SPI style of registering in META-INF/services
     // since we don't always have top supertypes and want to inject things into component constructors
@@ -335,7 +336,7 @@ private[javasdk] object Sdk {
     classOf[EventSourcedEntityContext],
     classOf[KeyValueEntityContext],
     classOf[Retries],
-    classOf[ChatAgentContext])
+    classOf[AgentContext])
 }
 
 /**
@@ -491,7 +492,7 @@ private final class Sdk(
   private var timedActionDescriptors = Vector.empty[TimedActionDescriptor]
   private var consumerDescriptors = Vector.empty[ConsumerDescriptor]
   private var viewDescriptors = Vector.empty[ViewDescriptor]
-  private var chatAgentDescriptors = Vector.empty[ChatAgentDescriptor]
+  private var AgentDescriptors = Vector.empty[AgentDescriptor]
 
   componentClasses
     .filter(hasComponentId)
@@ -631,19 +632,19 @@ private final class Sdk(
         consumerDescriptors :+=
           new ConsumerDescriptor(componentId, clz.getName, consumerSrc, consumerDestination(consumerClass), consumerSpi)
 
-      case clz if classOf[ChatAgent].isAssignableFrom(clz) =>
+      case clz if classOf[Agent].isAssignableFrom(clz) =>
         val componentId = clz.getAnnotation(classOf[ComponentId]).value
-        val agentClass = clz.asInstanceOf[Class[ChatAgent]]
+        val agentClass = clz.asInstanceOf[Class[Agent]]
 
-        val instanceFactory: SpiChatAgent.FactoryContext => SpiChatAgent = { factoryContext =>
-          new ChatAgentImpl(
+        val instanceFactory: SpiAgent.FactoryContext => SpiAgent = { factoryContext =>
+          new AgentImpl(
             componentId,
             factoryContext.sessionId.toJava,
             context =>
               wiredInstance(agentClass) {
                 (sideEffectingComponentInjects(None)).orElse {
                   // remember to update component type API doc and docs if changing the set of injectables
-                  case p if p == classOf[ChatAgentContext] => context
+                  case p if p == classOf[AgentContext] => context
                 }
               },
             sdkTracerFactory,
@@ -651,8 +652,8 @@ private final class Sdk(
             ComponentDescriptor.descriptorFor(agentClass, serializer),
             regionInfo)
         }
-        chatAgentDescriptors :+=
-          new ChatAgentDescriptor(componentId, clz.getName, instanceFactory)
+        AgentDescriptors :+=
+          new AgentDescriptor(componentId, clz.getName, JsonSupport.getObjectMapper, instanceFactory)
 
       case clz if classOf[View].isAssignableFrom(clz) =>
         viewDescriptors :+= ViewDescriptorFactory(clz, serializer, regionInfo, sdkExecutionContext)
@@ -706,7 +707,7 @@ private final class Sdk(
         consumerDescriptors ++
         viewDescriptors ++
         workflowDescriptors ++
-        chatAgentDescriptors)
+        AgentDescriptors)
         .filterNot(isDisabled(combinedDisabledComponents))
 
     val preStart = { (_: ActorSystem[_]) =>

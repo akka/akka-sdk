@@ -5,6 +5,7 @@
 package akka.javasdk.client;
 
 import akka.annotation.DoNotInherit;
+import akka.javasdk.agent.Agent;
 
 import java.util.Optional;
 
@@ -62,18 +63,18 @@ public interface ComponentClient {
   ViewClient forView();
 
   /**
-   * Select {@link akka.javasdk.agent.ChatAgent} as a call target component.
+   * Select {@link Agent} as a call target component.
    *
    * @param sessionId - The agent may participate in a session, which is used for the agent's
    *     conversational memory.
    */
-  ChatAgentClient forChatAgent(Optional<String> sessionId);
+  AgentClient forAgent(Optional<String> sessionId);
 
   /**
-   * Select {@link akka.javasdk.agent.ChatAgent} as a call target component.
+   * Select {@link Agent} as a call target component.
    *
    * @param sessionId - The agent will participate in this session, which is used for the agent's
    *     conversational memory.
    */
-  ChatAgentClient forChatAgent(String sessionId);
+  AgentClient forAgent(String sessionId);
 }

@@ -11,8 +11,8 @@ import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
 import akka.japi.function
 import akka.javasdk.Metadata
-import akka.javasdk.agent.ChatAgent
-import akka.javasdk.client.ChatAgentClient
+import akka.javasdk.agent.Agent
+import akka.javasdk.client.AgentClient
 import akka.javasdk.client.ComponentMethodRef
 import akka.javasdk.client.ComponentMethodRef1
 import akka.javasdk.impl.ComponentDescriptorFactory
@@ -21,7 +21,7 @@ import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.serialization.JsonSerializer
 import akka.runtime.sdk.spi.AgentRequest
 import akka.runtime.sdk.spi.BytesPayload
-import akka.runtime.sdk.spi.ChatAgentType
+import akka.runtime.sdk.spi.AgentType
 import akka.runtime.sdk.spi.{ AgentClient => RuntimeAgentClient }
 
 /**
@@ -33,12 +33,12 @@ private[javasdk] final case class AgentClientImpl(
     serializer: JsonSerializer,
     callMetadata: Option[Metadata],
     sessionId: Option[String])(implicit val executionContext: ExecutionContext, system: ActorSystem[_])
-    extends ChatAgentClient {
+    extends AgentClient {
 
-  override def method[T, R](methodRef: function.Function[T, ChatAgent.Effect[R]]): ComponentMethodRef[R] =
+  override def method[T, R](methodRef: function.Function[T, Agent.Effect[R]]): ComponentMethodRef[R] =
     createMethodRef[R](methodRef)
 
-  override def method[T, A1, R](methodRef: function.Function2[T, A1, ChatAgent.Effect[R]]): ComponentMethodRef1[A1, R] =
+  override def method[T, A1, R](methodRef: function.Function2[T, A1, Agent.Effect[R]]): ComponentMethodRef1[A1, R] =
     createMethodRef2(methodRef)
 
   // commands for methods that take a state as a first parameter and then the command
@@ -52,7 +52,7 @@ private[javasdk] final case class AgentClientImpl(
     import MetadataImpl.toSpi
     val method = MethodRefResolver.resolveMethodRef(lambda)
     val declaringClass = method.getDeclaringClass
-    val expectedComponentSuperclass: Class[_] = classOf[ChatAgent]
+    val expectedComponentSuperclass: Class[_] = classOf[Agent]
     if (!expectedComponentSuperclass.isAssignableFrom(declaringClass)) {
       throw new IllegalArgumentException(s"$declaringClass is not a subclass of $expectedComponentSuperclass")
     }
@@ -78,7 +78,7 @@ private[javasdk] final case class AgentClientImpl(
         DeferredCallImpl(
           maybeArg.orNull,
           maybeMetadata.getOrElse(Metadata.EMPTY).asInstanceOf[MetadataImpl],
-          ChatAgentType,
+          AgentType,
           componentId,
           methodName,
           entityId = None, {

@@ -6,24 +6,24 @@ package akka.javasdk.agent;
 
 import akka.annotation.InternalApi;
 import akka.javasdk.Metadata;
-import akka.javasdk.impl.agent.ChatAgentEffectImpl;
+import akka.javasdk.impl.agent.AgentEffectImpl;
 
 import java.util.Optional;
 
-public abstract class ChatAgent {
+public abstract class Agent {
 
-  private volatile Optional<ChatAgentContext> context = Optional.empty();
+  private volatile Optional<AgentContext> context = Optional.empty();
 
   /**
    * Additional context and metadata for a command handler.
    *
    * <p>It will throw an exception if accessed from constructor.
    */
-  protected final ChatAgentContext context() {
-    return context("ChatAgentContext is only available when handling a command.");
+  protected final AgentContext context() {
+    return context("AgentContext is only available when handling a command.");
   }
 
-  private ChatAgentContext context(String errorMessage) {
+  private AgentContext context(String errorMessage) {
     return context.orElseThrow(() -> new IllegalStateException(errorMessage));
   }
 
@@ -32,12 +32,12 @@ public abstract class ChatAgent {
    * @hidden
    */
   @InternalApi
-  public void _internalSetContext(Optional<ChatAgentContext> context) {
+  public void _internalSetContext(Optional<AgentContext> context) {
     this.context = context;
   }
 
   public final Effect.Builder effects() {
-    return new ChatAgentEffectImpl<>();
+    return new AgentEffectImpl<>();
   }
 
   /**
@@ -48,7 +48,7 @@ public abstract class ChatAgent {
    * Each component defines its own effects, which are a set of predefined
    * operations that match the capabilities of that component.
    * <p>
-   * A ChatAgent Effect can:
+   * An Agent Effect can:
    * <p>
    * <ul>
    *   <li>Make a request to the model and return the transformed response.
@@ -74,7 +74,7 @@ public abstract class ChatAgent {
        * @param <T> The type of the message that must be returned by this call.
        * @return A message reply.
        */
-      <T> ChatAgent.Effect<T> reply(T message);
+      <T> Agent.Effect<T> reply(T message);
 
       /**
        * Create a message reply without calling the model.
@@ -84,7 +84,7 @@ public abstract class ChatAgent {
        * @param <T> The type of the message that must be returned by this call.
        * @return A message reply.
        */
-      <T> ChatAgent.Effect<T> reply(T message, Metadata metadata);
+      <T> Agent.Effect<T> reply(T message, Metadata metadata);
 
       /**
        * Create an error reply without calling the model
@@ -93,7 +93,7 @@ public abstract class ChatAgent {
        * @param <T> The type of the message that must be returned by this call.
        * @return An error reply.
        */
-      <T> ChatAgent.Effect<T> error(String description);
+      <T> Agent.Effect<T> error(String description);
 
     }
 
@@ -103,21 +103,21 @@ public abstract class ChatAgent {
        * Reply with the response from the model.
        * @return A message reply.
        */
-      ChatAgent.Effect<String> thenReply();
+      Agent.Effect<String> thenReply();
 
       /**
        * Reply with the response from the model.
        * @param metadata The metadata for the message.
        * @return A message reply.
        */
-      ChatAgent.Effect<String> thenReply(Metadata metadata);
+      Agent.Effect<String> thenReply(Metadata metadata);
 
       /**
        * Reply with the structured response from the model encoded into the given responseType.
        * @param responseType The type of the message that will be returned by the call.
        * @return A message reply.
        */
-      <T> ChatAgent.Effect<T> thenReplyAs(Class<T> responseType);
+      <T> Agent.Effect<T> thenReplyAs(Class<T> responseType);
 
       /**
        * Reply with the structured response from the model encoded into the given responseType.
@@ -125,7 +125,7 @@ public abstract class ChatAgent {
        * @param metadata The metadata for the message.
        * @return A message reply.
        */
-      <T> ChatAgent.Effect<T> thenReplyAs(Class<T> responseType, Metadata metadata);
+      <T> Agent.Effect<T> thenReplyAs(Class<T> responseType, Metadata metadata);
 
     }
 

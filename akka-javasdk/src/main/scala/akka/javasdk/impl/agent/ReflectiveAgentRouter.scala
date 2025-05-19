@@ -7,8 +7,8 @@ package akka.javasdk.impl.agent
 import java.util.Optional
 
 import akka.annotation.InternalApi
-import akka.javasdk.agent.ChatAgent
-import akka.javasdk.agent.ChatAgentContext
+import akka.javasdk.agent.Agent
+import akka.javasdk.agent.AgentContext
 import akka.javasdk.impl.CommandSerialization
 import akka.javasdk.impl.HandlerNotFoundException
 import akka.javasdk.impl.MethodInvoker
@@ -19,8 +19,8 @@ import akka.runtime.sdk.spi.BytesPayload
  * INTERNAL API
  */
 @InternalApi
-private[impl] class ReflectiveChatAgentRouter(
-    val agent: ChatAgent,
+private[impl] class ReflectiveAgentRouter(
+    val agent: Agent,
     methodInvokers: Map[String, MethodInvoker],
     serializer: JsonSerializer) {
 
@@ -31,7 +31,7 @@ private[impl] class ReflectiveChatAgentRouter(
         throw new HandlerNotFoundException("command", commandName, agent.getClass, methodInvokers.keySet)
     }
 
-  def handleCommand(commandName: String, command: BytesPayload, context: ChatAgentContext): ChatAgent.Effect[_] = {
+  def handleCommand(commandName: String, command: BytesPayload, context: AgentContext): Agent.Effect[_] = {
     // only set, never cleared, to allow access from other threads in async callbacks in the consumer
     // the same handler and consumer instance is expected to only ever be invoked for a single message
     agent._internalSetContext(Optional.of(context))
@@ -47,7 +47,7 @@ private[impl] class ReflectiveChatAgentRouter(
         case None          => methodInvoker.invoke(agent)
         case Some(command) => methodInvoker.invokeDirectly(agent, command)
       }
-      result.asInstanceOf[ChatAgent.Effect[_]]
+      result.asInstanceOf[Agent.Effect[_]]
     } else {
       throw new IllegalStateException(
         s"Could not find a matching command handler for method [$commandName], content type [${command.contentType}] " +

@@ -12,28 +12,27 @@ import scala.util.control.NonFatal
 import akka.annotation.InternalApi
 import akka.javasdk.Metadata
 import akka.javasdk.Tracing
-import akka.javasdk.agent.ChatAgent
-import akka.javasdk.agent.ChatAgentContext
+import akka.javasdk.agent.Agent
+import akka.javasdk.agent.AgentContext
 import akka.javasdk.impl.AbstractContext
 import akka.javasdk.impl.ComponentDescriptor
 import akka.javasdk.impl.ComponentType
 import akka.javasdk.impl.ErrorHandling.BadRequestException
 import akka.javasdk.impl.HandlerNotFoundException
 import akka.javasdk.impl.MetadataImpl
-import akka.javasdk.impl.agent.ChatAgentEffectImpl.NoPrimaryEffect
-import akka.javasdk.impl.agent.ChatAgentEffectImpl.RequestModel
+import akka.javasdk.impl.agent.AgentEffectImpl.NoPrimaryEffect
+import akka.javasdk.impl.agent.AgentEffectImpl.RequestModel
 import akka.javasdk.impl.effect.ErrorReplyImpl
 import akka.javasdk.impl.effect.MessageReplyImpl
 import akka.javasdk.impl.effect.NoSecondaryEffectImpl
 import akka.javasdk.impl.serialization.JsonSerializer
-import akka.javasdk.impl.telemetry.ChatAgentCategory
+import akka.javasdk.impl.telemetry.AgentCategory
 import akka.javasdk.impl.telemetry.SpanTracingImpl
 import akka.javasdk.impl.telemetry.Telemetry
 import akka.javasdk.impl.telemetry.TraceInstrumentation
 import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.RegionInfo
 import akka.runtime.sdk.spi.SpiAgent
-import akka.runtime.sdk.spi.SpiChatAgent
 import akka.runtime.sdk.spi.SpiMetadata
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.Tracer
@@ -43,16 +42,16 @@ import org.slf4j.MDC
  * INTERNAL API
  */
 @InternalApi
-private[impl] object ChatAgentImpl {
+private[impl] object AgentImpl {
 
-  private class ChatAgentContextImpl(
+  private class AgentContextImpl(
       override val sessionId: Optional[String],
       override val selfRegion: String,
       override val metadata: Metadata,
       span: Option[Span],
       tracerFactory: () => Tracer)
       extends AbstractContext
-      with ChatAgentContext {
+      with AgentContext {
     override def tracing(): Tracing = new SpanTracingImpl(span, tracerFactory)
   }
 
@@ -62,38 +61,38 @@ private[impl] object ChatAgentImpl {
  * INTERNAL API
  */
 @InternalApi
-private[impl] final class ChatAgentImpl[A <: ChatAgent](
+private[impl] final class AgentImpl[A <: Agent](
     componentId: String,
     sessionId: Optional[String],
-    val factory: ChatAgentContext => A,
+    val factory: AgentContext => A,
     tracerFactory: () => Tracer,
     serializer: JsonSerializer,
     componentDescriptor: ComponentDescriptor,
     regionInfo: RegionInfo)
-    extends SpiChatAgent {
-  import ChatAgentImpl._
+    extends SpiAgent {
+  import AgentImpl._
 
-  private val traceInstrumentation = new TraceInstrumentation(componentId, ChatAgentCategory, tracerFactory)
+  private val traceInstrumentation = new TraceInstrumentation(componentId, AgentCategory, tracerFactory)
 
-  private val router: ReflectiveChatAgentRouter = {
-    val agentContext = new ChatAgentContextImpl(sessionId, regionInfo.selfRegion, Metadata.EMPTY, None, tracerFactory)
-    new ReflectiveChatAgentRouter(factory(agentContext), componentDescriptor.methodInvokers, serializer)
+  private val router: ReflectiveAgentRouter = {
+    val agentContext = new AgentContextImpl(sessionId, regionInfo.selfRegion, Metadata.EMPTY, None, tracerFactory)
+    new ReflectiveAgentRouter(factory(agentContext), componentDescriptor.methodInvokers, serializer)
   }
 
-  override def handleCommand(command: SpiAgent.Command): Future[SpiChatAgent.Effect] = {
+  override def handleCommand(command: SpiAgent.Command): Future[SpiAgent.Effect] = {
 
     val span: Option[Span] =
-      traceInstrumentation.buildSpan(ComponentType.ChatAgent, componentId, None, command.metadata)
+      traceInstrumentation.buildSpan(ComponentType.Agent, componentId, None, command.metadata)
     span.foreach(s => MDC.put(Telemetry.TRACE_ID, s.getSpanContext.getTraceId))
     // smuggling 0 arity method called from component client through here
     val cmdPayload = command.payload.getOrElse(BytesPayload.empty)
     val metadata: Metadata = MetadataImpl.of(command.metadata)
-    val agentContext = new ChatAgentContextImpl(sessionId, regionInfo.selfRegion, metadata, span, tracerFactory)
+    val agentContext = new AgentContextImpl(sessionId, regionInfo.selfRegion, metadata, span, tracerFactory)
 
     try {
       val commandEffect = router
         .handleCommand(command.name, cmdPayload, agentContext)
-        .asInstanceOf[ChatAgentEffectImpl[AnyRef]] // FIXME improve?
+        .asInstanceOf[AgentEffectImpl[AnyRef]] // FIXME improve?
 
       def errorOrReply: Either[SpiAgent.Error, (BytesPayload, SpiMetadata)] = {
         commandEffect.secondaryEffect match {
@@ -112,14 +111,14 @@ private[impl] final class ChatAgentImpl[A <: ChatAgent](
         commandEffect.primaryEffect match {
           case req: RequestModel =>
             val metadata = MetadataImpl.toSpi(req.replyMetadata)
-            new SpiChatAgent.RequestModelEffect(req.systemMessage, req.userMessage, metadata)
+            new SpiAgent.RequestModelEffect(req.systemMessage, req.userMessage, metadata)
 
           case NoPrimaryEffect =>
             errorOrReply match {
               case Left(err) =>
-                new SpiChatAgent.ErrorEffect(err)
+                new SpiAgent.ErrorEffect(err)
               case Right((reply, metadata)) =>
-                new SpiChatAgent.ReplyEffect(reply, metadata)
+                new SpiAgent.ReplyEffect(reply, metadata)
             }
         }
       Future.successful(spiEffect)
@@ -128,7 +127,7 @@ private[impl] final class ChatAgentImpl[A <: ChatAgent](
       case e: HandlerNotFoundException =>
         throw AgentException(command.name, e.getMessage, Some(e))
       case BadRequestException(msg) =>
-        Future.successful(new SpiChatAgent.ErrorEffect(error = new SpiAgent.Error(msg)))
+        Future.successful(new SpiAgent.ErrorEffect(error = new SpiAgent.Error(msg)))
       case e: AgentException => throw e
       case NonFatal(error) =>
         throw AgentException(command.name, s"Unexpected failure: $error", Some(error))
