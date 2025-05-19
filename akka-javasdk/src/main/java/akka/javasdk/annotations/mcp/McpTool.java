@@ -22,4 +22,10 @@ public @interface McpTool {
    * @return A clear description of what the tools, used by the client LLM to determine what the tool can be used for
    */
   String description();
+
+  /**
+   * Normally, the schema is inferred from the input parameters of the tool method.
+   * @return A manually specified schema instead of the automatic
+   */
+  String inputSchema() default "";
 }
