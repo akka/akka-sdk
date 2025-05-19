@@ -1,0 +1,51 @@
+/*
+ * Copyright (C) 2021-2024 Lightbend Inc. <https://www.lightbend.com>
+ */
+
+/*
+ * Copyright (C) 2021-2024 Lightbend Inc. <https://www.lightbend.com>
+ */
+
+package akka.javasdk.agent;
+
+import java.util.List;
+
+/**
+ * Interface for managing conversation history between users and AI models, using
+ * CoreMemory provides functionality to store, retrieve, and manage messages
+ * exchanged during conversations in an agent system.
+ */
+public interface CoreMemory {
+
+  /**
+   * Record representing the complete conversation history.
+   *
+   * @param messages List of messages in the conversation
+   */
+  record ConversationHistory(List<Message> messages) {
+  }
+
+  /**
+   * Adds a user message to the conversation history for the specified session.
+   *
+   * @param sessionId The unique identifier for the conversation session
+   * @param message The content of the user message to add
+   */
+  void addUserMessage(String sessionId, String message);
+
+  /**
+   * Adds an AI message to the conversation history for the specified session.
+   *
+   * @param sessionId The unique identifier for the conversation session
+   * @param message The content of the AI message to add
+   */
+  void addAiMessage(String sessionId, String message);
+
+  /**
+   * Retrieves the complete conversation history for the specified session.
+   *
+   * @param sessionId The unique identifier for the conversation session
+   * @return The complete conversation history containing all messages
+   */
+  ConversationHistory getFullHistory(String sessionId);
+}
