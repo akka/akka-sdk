@@ -113,6 +113,13 @@ import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
 import java.util.concurrent.Executor
 
+import akka.javasdk.JsonSupport
+import akka.javasdk.agent.Agent
+import akka.javasdk.agent.AgentContext
+import akka.javasdk.impl.agent.AgentImpl
+import akka.runtime.sdk.spi.AgentDescriptor
+import akka.runtime.sdk.spi.SpiAgent
+
 import akka.javasdk.agent.PromptTemplate
 
 /**
@@ -223,6 +230,7 @@ private object ComponentType {
   val Consumer = "consumer"
   val TimedAction = "timed-action"
   val View = "view"
+  val Agent = "agent"
 }
 
 /**
@@ -250,7 +258,8 @@ private object ComponentLocator {
         ComponentType.EventSourcedEntity -> classOf[EventSourcedEntity[_, _]],
         ComponentType.Workflow -> classOf[Workflow[_]],
         ComponentType.KeyValueEntity -> classOf[KeyValueEntity[_]],
-        ComponentType.View -> classOf[AnyRef])
+        ComponentType.View -> classOf[AnyRef],
+        ComponentType.Agent -> classOf[Agent])
 
     // Alternative to but inspired by the stdlib SPI style of registering in META-INF/services
     // since we don't always have top supertypes and want to inject things into component constructors
@@ -326,7 +335,8 @@ private[javasdk] object Sdk {
     classOf[WorkflowContext],
     classOf[EventSourcedEntityContext],
     classOf[KeyValueEntityContext],
-    classOf[Retries])
+    classOf[Retries],
+    classOf[AgentContext])
 }
 
 /**
@@ -482,6 +492,7 @@ private final class Sdk(
   private var timedActionDescriptors = Vector.empty[TimedActionDescriptor]
   private var consumerDescriptors = Vector.empty[ConsumerDescriptor]
   private var viewDescriptors = Vector.empty[ViewDescriptor]
+  private var AgentDescriptors = Vector.empty[AgentDescriptor]
 
   componentClasses
     .filter(hasComponentId)
@@ -621,6 +632,29 @@ private final class Sdk(
         consumerDescriptors :+=
           new ConsumerDescriptor(componentId, clz.getName, consumerSrc, consumerDestination(consumerClass), consumerSpi)
 
+      case clz if classOf[Agent].isAssignableFrom(clz) =>
+        val componentId = clz.getAnnotation(classOf[ComponentId]).value
+        val agentClass = clz.asInstanceOf[Class[Agent]]
+
+        val instanceFactory: SpiAgent.FactoryContext => SpiAgent = { factoryContext =>
+          new AgentImpl(
+            componentId,
+            factoryContext.sessionId.toJava,
+            context =>
+              wiredInstance(agentClass) {
+                (sideEffectingComponentInjects(None)).orElse {
+                  // remember to update component type API doc and docs if changing the set of injectables
+                  case p if p == classOf[AgentContext] => context
+                }
+              },
+            sdkTracerFactory,
+            serializer,
+            ComponentDescriptor.descriptorFor(agentClass, serializer),
+            regionInfo)
+        }
+        AgentDescriptors :+=
+          new AgentDescriptor(componentId, clz.getName, JsonSupport.getObjectMapper, instanceFactory)
+
       case clz if classOf[View].isAssignableFrom(clz) =>
         viewDescriptors :+= ViewDescriptorFactory(clz, serializer, regionInfo, sdkExecutionContext)
 
@@ -672,7 +706,8 @@ private final class Sdk(
         timedActionDescriptors ++
         consumerDescriptors ++
         viewDescriptors ++
-        workflowDescriptors)
+        workflowDescriptors ++
+        AgentDescriptors)
         .filterNot(isDisabled(combinedDisabledComponents))
 
     val preStart = { (_: ActorSystem[_]) =>

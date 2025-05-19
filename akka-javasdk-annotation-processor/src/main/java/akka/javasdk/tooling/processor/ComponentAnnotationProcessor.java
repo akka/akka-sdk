@@ -61,11 +61,12 @@ public class ComponentAnnotationProcessor extends AbstractProcessor {
     private static final String CONSUMER_KEY = "consumer";
     private static final String VIEW_KEY = "view";
     private static final String WORKFLOW_KEY = "workflow";
+    private static final String AGENT_KEY = "agent";
     private static final String SERVICE_SETUP_KEY = "service-setup";
 
     private static final List<String> ALL_COMPONENT_TYPES = List.of(HTTP_ENDPOINT_KEY, GRPC_ENDPOINT_KEY,
         EVENT_SOURCED_ENTITY_KEY, VALUE_ENTITY_KEY, TIMED_ACTION_KEY, CONSUMER_KEY, VIEW_KEY, WORKFLOW_KEY,
-        SERVICE_SETUP_KEY);
+        AGENT_KEY, SERVICE_SETUP_KEY);
 
 
     private final boolean debugEnabled;
@@ -160,6 +161,7 @@ public class ComponentAnnotationProcessor extends AbstractProcessor {
             case "akka.javasdk.timedaction.TimedAction" -> TIMED_ACTION_KEY;
             case "akka.javasdk.consumer.Consumer" -> CONSUMER_KEY;
             case "akka.javasdk.view.View" -> VIEW_KEY;
+            case "akka.javasdk.agent.Agent" -> AGENT_KEY;
             case "java.lang.Object" -> throw new IllegalArgumentException("Unknown supertype for class [" + annotatedClass + "] annotated with @ComponentId: [" + superClassName + "]");
             default ->
                 // go through hierarchy

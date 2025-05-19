@@ -11,6 +11,8 @@ import java.lang.reflect.ParameterizedType
 import scala.reflect.ClassTag
 
 import akka.annotation.InternalApi
+import akka.javasdk.agent.Agent
+import akka.javasdk.annotations.AgentDescription
 import akka.javasdk.annotations.ComponentId
 import akka.javasdk.annotations.Consume.FromKeyValueEntity
 import akka.javasdk.annotations.Consume.FromWorkflow
@@ -21,6 +23,7 @@ import akka.javasdk.consumer.Consumer
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.javasdk.impl.ComponentDescriptorFactory.eventSourcedEntitySubscription
 import akka.javasdk.impl.ComponentDescriptorFactory.hasAcl
+import akka.javasdk.impl.ComponentDescriptorFactory.hasAgentEffectOutput
 import akka.javasdk.impl.ComponentDescriptorFactory.hasConsumerOutput
 import akka.javasdk.impl.ComponentDescriptorFactory.hasESEffectOutput
 import akka.javasdk.impl.ComponentDescriptorFactory.hasEventSourcedEntitySubscription
@@ -128,7 +131,8 @@ private[javasdk] object Validations {
     validateView(component) ++
     validateEventSourcedEntity(component) ++
     validateValueEntity(component) ++
-    validateWorkflow(component)
+    validateWorkflow(component) ++
+    validateAgent(component)
 
   private def validateEventSourcedEntity(component: Class[_]) =
     when[EventSourcedEntity[_, _]](component) {
@@ -142,6 +146,42 @@ private[javasdk] object Validations {
     when[Workflow[_]](component) {
       commandHandlerArityShouldBeZeroOrOne(component, hasWorkflowEffectOutput)
     }
+
+  private def validateAgent(component: Class[_]) =
+    when[Agent](component) {
+      mustHaveValidComponentId(component) ++
+      mustHaveAgentDescription(component) ++
+      agentCommandHandlersMustBeOne(component) ++
+      commandHandlerArityShouldBeZeroOrOne(component, hasAgentEffectOutput)
+    }
+
+  private def agentCommandHandlersMustBeOne(component: Class[_]): Validation = {
+    val commandHandlers = component.getMethods
+      .filter(_.getReturnType == classOf[Agent.Effect[_]])
+    when(commandHandlers.length != 1) {
+      Invalid(
+        errorMessage(
+          component,
+          s"${component.getSimpleName} has ${commandHandlers.length} command handlers. There must be one method returning Agent.Effect."))
+    }
+  }
+
+  private def mustHaveAgentDescription(component: Class[_]): Validation = {
+    val ann = component.getAnnotation(classOf[AgentDescription])
+    if (ann != null) {
+      val name: String = ann.name()
+      val description: String = ann.description()
+      var result: Validation = Valid
+      if ((name eq null) || name.trim.isEmpty)
+        result ++= Invalid(errorMessage(component, "@AgentDescription name is empty, must be a non-empty string."))
+      if ((description eq null) || description.trim.isEmpty)
+        result ++= Invalid(
+          errorMessage(component, "@AgentDescription description is empty, must be a non-empty string."))
+      result
+    } else {
+      Invalid(errorMessage(component, "@AgentDescription must be defined"))
+    }
+  }
 
   private def eventSourcedEntityEventMustBeSealed(component: Class[_]): Validation = {
     val eventClass = Reflect.eventSourcedEntityEventType(component)

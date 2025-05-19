@@ -10,4 +10,7 @@
  -->
 <included>
     <logger name="akka.ask" level="DEBUG"/>
+    <logger name="akka.runtime" level="DEBUG"/>
+    <logger name="kalix.runtime" level="DEBUG"/>
+    <logger name="akka.javasdk" level="DEBUG"/>
 </included>
