@@ -14,6 +14,7 @@ import akka.http.scaladsl.model.HttpResponse
 import akka.javasdk.impl.JsonRpc.JsonRpcErrorResponse
 import akka.javasdk.impl.JsonRpc.JsonRpcSuccessResponse
 import akka.javasdk.impl.JsonRpc.NumberId
+import akka.javasdk.impl.Mcp.Implementation
 import akka.runtime.sdk.spi.HttpEndpointConstructionContext
 import akka.runtime.sdk.spi.HttpRequestHeaders
 import akka.runtime.sdk.spi.JwtClaims
@@ -186,7 +187,7 @@ class McpSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike with Matche
     }
 
     "call a tool" in new WithRequestThroughHandler {
-      override def mcpDescriptor = Mcp.McpDescriptor(tools =
+      override def mcpDescriptor = super.mcpDescriptor.copy(tools =
         Seq(Mcp.ToolDescription("my-tool", "a tool I made", Mcp.InputSchema(properties = Map.empty)) -> {
           (input: Map[String, Any]) =>
             Future.successful(Mcp.CallToolResult(Seq(Mcp.TextContent("Oboy oboy!"))))
@@ -213,9 +214,14 @@ class McpSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike with Matche
   trait WithRequestThroughHandler {
     def request: Mcp.McpRequest
     def requestMethod: String
-    def mcpDescriptor: Mcp.McpDescriptor = Mcp.McpDescriptor()
+    def mcpDescriptor: Mcp.McpDescriptor = Mcp.McpDescriptor(
+      implementation = Implementation("test-server", "1.0"),
+      instructions = "",
+      resources = Seq.empty,
+      resourceTemplates = Seq.empty,
+      tools = Seq.empty)
 
-    val httpEndpointDescriptor = new Mcp.StatelessMcpEndpoint(mcpDescriptor).httpEndpoint()
+    val httpEndpointDescriptor = new Mcp.StatelessMcpEndpoint(mcpDescriptor).httpEndpoint("/mcp")
     httpEndpointDescriptor.methods should have size 1
 
     val jsonRpcRequest = Mcp.request(requestMethod, Some(request))
