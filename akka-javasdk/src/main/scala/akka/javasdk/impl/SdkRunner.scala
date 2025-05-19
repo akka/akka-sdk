@@ -10,6 +10,7 @@ import java.lang.reflect.Method
 import java.util
 import java.util.Optional
 import java.util.concurrent.CompletionStage
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.Promise
@@ -19,6 +20,7 @@ import scala.jdk.OptionConverters.RichOption
 import scala.jdk.OptionConverters.RichOptional
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
+
 import akka.Done
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
@@ -109,8 +111,9 @@ import io.opentelemetry.context.{ Context => OtelContext }
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
-
 import java.util.concurrent.Executor
+
+import akka.javasdk.agent.PromptTemplate
 
 /**
  * INTERNAL API
@@ -261,24 +264,28 @@ private object ComponentLocator {
         "It looks like your project needs to be recompiled. Run `mvn clean compile` and try again.")
     val componentConfig = descriptorConfig.getConfig(DescriptorComponentBasePath)
 
-    val components = kalixComponentTypeAndBaseClasses.flatMap { case (componentTypeKey, componentTypeClass) =>
-      if (componentConfig.hasPath(componentTypeKey)) {
-        componentConfig.getStringList(componentTypeKey).asScala.map { className =>
-          try {
-            val componentClass = system.dynamicAccess.getClassFor(className)(ClassTag(componentTypeClass)).get
-            logger.debug("Found and loaded component class: [{}]", componentClass)
-            componentClass
-          } catch {
-            case ex: ClassNotFoundException =>
-              throw new IllegalStateException(
-                s"Could not load component class [$className]. The exception might appear after rename or repackaging operation. " +
-                "It looks like your project needs to be recompiled. Run `mvn clean compile` and try again.",
-                ex)
+    val components: Seq[Class[_]] = kalixComponentTypeAndBaseClasses.flatMap {
+      case (componentTypeKey, componentTypeClass) =>
+        if (componentConfig.hasPath(componentTypeKey)) {
+          componentConfig.getStringList(componentTypeKey).asScala.map { className =>
+            try {
+              val componentClass = system.dynamicAccess.getClassFor(className)(ClassTag(componentTypeClass)).get
+              logger.debug("Found and loaded component class: [{}]", componentClass)
+              componentClass
+            } catch {
+              case ex: ClassNotFoundException =>
+                throw new IllegalStateException(
+                  s"Could not load component class [$className]. The exception might appear after rename or repackaging operation. " +
+                  "It looks like your project needs to be recompiled. Run `mvn clean compile` and try again.",
+                  ex)
+            }
           }
-        }
-      } else
-        Seq.empty
+        } else
+          Seq.empty
     }.toSeq
+
+    //TODO check if there is an agent component
+    val withBuildInComponents = classOf[PromptTemplate] +: components
 
     if (descriptorConfig.hasPath(DescriptorServiceSetupEntryPath)) {
       // central config/lifecycle class
@@ -289,9 +296,9 @@ private object ComponentLocator {
       } else {
         logger.warn("Ignoring service class [{}] as it does not have the the @Setup annotation", serviceSetup)
       }
-      LocatedClasses(components, Some(serviceSetup))
+      LocatedClasses(withBuildInComponents, Some(serviceSetup))
     } else {
-      LocatedClasses(components, None)
+      LocatedClasses(withBuildInComponents, None)
     }
   }
 }
