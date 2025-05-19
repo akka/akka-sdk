@@ -34,6 +34,7 @@ import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.RegionInfo
 import akka.runtime.sdk.spi.SpiAgent
 import akka.runtime.sdk.spi.SpiMetadata
+import akka.util.ByteString
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.Tracer
 import org.slf4j.MDC
@@ -110,8 +111,11 @@ private[impl] final class AgentImpl[A <: Agent](
       val spiEffect =
         commandEffect.primaryEffect match {
           case req: RequestModel =>
+            // FIXME we should have a default model provider, modelName and apiKey from config
+            if (req.model.provider == SpiAgent.ModelProvider.Undefined)
+              throw new IllegalArgumentException("modelProvider must be defined")
             val metadata = MetadataImpl.toSpi(req.replyMetadata)
-            new SpiAgent.RequestModelEffect(req.systemMessage, req.userMessage, metadata)
+            new SpiAgent.RequestModelEffect(req.model, req.systemMessage, req.userMessage, req.responseType, metadata)
 
           case NoPrimaryEffect =>
             errorOrReply match {
@@ -140,4 +144,17 @@ private[impl] final class AgentImpl[A <: Agent](
 
   }
 
+  override def transformResponse(modelResponse: String, responseType: Class[_]): BytesPayload = {
+    if (responseType == classOf[String]) {
+      new BytesPayload(ByteString.fromString(modelResponse), serializer.contentTypeFor(responseType))
+    } else {
+      // We might be able to bypass serialization roundtrip here, but might be good to catch invalid json
+      // as early as possible.
+      // The content type isn't used in this fromBytes.
+      val obj = serializer.fromBytes(
+        responseType,
+        new BytesPayload(ByteString.fromString(modelResponse), JsonSerializer.JsonContentTypePrefix + "object"))
+      serializer.toBytes(obj)
+    }
+  }
 }
