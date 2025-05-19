@@ -29,7 +29,7 @@ import akka.runtime.sdk.spi.{ AgentClient => RuntimeAgentClient }
  */
 @InternalApi
 private[javasdk] final case class AgentClientImpl(
-    entityClient: RuntimeAgentClient,
+    agentClient: RuntimeAgentClient,
     serializer: JsonSerializer,
     callMetadata: Option[Metadata],
     sessionId: Option[String])(implicit val executionContext: ExecutionContext, system: ActorSystem[_])
@@ -83,7 +83,7 @@ private[javasdk] final case class AgentClientImpl(
           methodName,
           entityId = None, {
             def callAgent(metadata: Metadata) = {
-              entityClient
+              agentClient
                 .send(new AgentRequest(componentId, sessionId, methodName, serializedPayload, toSpi(metadata)))
                 .map { reply =>
                   // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
