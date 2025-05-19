@@ -10,9 +10,18 @@ import java.io.InputStream;
 @McpEndpoint(serverName = "doc-snippets-mcp-sample", serverVersion = "0.0.1")
 public class ExampleMcpEndpoint {
 
-  @McpTool(name = "echo", description = "Echoes back whatever string is thrown at it")
-  public String echo(String input) {
-    return input;
+  public record EchoToolRequest(String message) {}
+
+  @McpTool(name = "echo", description = "Echoes back whatever string is thrown at it", inputSchema = """
+      {
+        "type":"object",
+        "properties": {
+          "message": {"type":"string", "description":"A string to echo"}
+         },
+         "required": ["message"]
+      """)
+  public String echo(EchoToolRequest input) {
+    return input.message;
   }
 
   @McpResource(uri = "file://background.png", name = "Background image", description = "A background image for Akka sites", mimeType = "image/png")
