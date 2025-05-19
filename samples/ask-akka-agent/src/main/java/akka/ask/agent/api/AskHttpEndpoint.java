@@ -3,6 +3,7 @@ package akka.ask.agent.api;
 import akka.ask.agent.application.AskAkkaAgent;
 import akka.ask.agent.application.NewAskAkkaAgent;
 import akka.ask.agent.application.StreamedResponse;
+import akka.ask.agent.application.StructuredAskAkkaAgent;
 import akka.http.javadsl.model.HttpResponse;
 import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.http.HttpEndpoint;
@@ -44,14 +45,19 @@ public class AskHttpEndpoint {
     return HttpResponses.serverSentEvents(response); // <3>
   }
 
-  /**
-   * This method runs the search and streams the response to the UI.
-   */
   @Post("/new-ask") // FIXME
   public String newAsk(QueryRequest request) {
     return componentClient
         .forAgent(Optional.of(request.sessionId()))
         .method(NewAskAkkaAgent::ask)
+        .invoke(request.question);
+  }
+
+  @Post("/new-ask-structured") // FIXME
+  public StructuredAskAkkaAgent.Response newAskStructured(QueryRequest request) {
+    return componentClient
+        .forAgent(Optional.of(request.sessionId()))
+        .method(StructuredAskAkkaAgent::ask)
         .invoke(request.question);
   }
 }
