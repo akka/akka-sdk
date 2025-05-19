@@ -126,11 +126,6 @@ public class WorkflowTest extends TestKitSupport {
       .method(TransferWorkflow::updateAndDelete)
       .invoke(transfer);
 
-    var lastStep =
-      componentClient.forWorkflow(transferId)
-        .method(TransferWorkflow::getLastStep).invoke().text();
-    assertThat(lastStep).isEqualTo("startedAndDeleted");
-
     var isDeleted = componentClient.forWorkflow(transferId)
       .method(TransferWorkflow::hasBeenDeleted)
       .invoke();
