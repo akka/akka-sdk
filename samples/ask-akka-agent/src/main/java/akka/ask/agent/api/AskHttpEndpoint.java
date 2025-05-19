@@ -48,7 +48,7 @@ public class AskHttpEndpoint {
    * This method runs the search and streams the response to the UI.
    */
   @Post("/new-ask") // FIXME
-  public NewAskAkkaAgent.DummyResponse newAsk(QueryRequest request) {
+  public String newAsk(QueryRequest request) {
     return componentClient
         .forAgent(Optional.of(request.sessionId()))
         .method(NewAskAkkaAgent::ask)
