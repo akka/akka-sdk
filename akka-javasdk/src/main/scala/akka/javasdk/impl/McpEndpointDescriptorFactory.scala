@@ -6,11 +6,14 @@ package akka.javasdk.impl
 
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
+import akka.http.scaladsl.model.MediaTypes
 import akka.javasdk.annotations.mcp.McpEndpoint
 import akka.javasdk.annotations.mcp.McpResource
 import akka.javasdk.annotations.mcp.McpTool
+import akka.javasdk.impl.Mcp.BlobResourceContents
 import akka.javasdk.impl.Mcp.Implementation
-import akka.javasdk.impl.Mcp.ResourceContents
+import akka.javasdk.impl.Mcp.TextResourceContents
+import akka.parboiled2.util.Base64
 import akka.runtime.sdk.spi.HttpEndpointDescriptor
 
 import scala.concurrent.ExecutionContext
@@ -100,9 +103,22 @@ object McpEndpointDescriptorFactory {
 
       val callback = { () =>
         val endpointInstance = instanceFactory()
-        method.invoke(endpointInstance)
-
-        Seq.empty[ResourceContents]
+        val result = method.invoke(endpointInstance)
+        result match {
+          case bytes: Array[Byte] =>
+            val base64Encoded = Base64.rfc2045().encodeToString(bytes, false)
+            Seq(
+              BlobResourceContents(
+                base64Encoded,
+                resourceDescription.uri,
+                resourceDescription.mimeType.getOrElse(MediaTypes.`application/octet-stream`.value)))
+          case text: String =>
+            Seq(
+              TextResourceContents(
+                text,
+                resourceDescription.uri,
+                mimeType = resourceDescription.mimeType.getOrElse(MediaTypes.`text/plain`.value)))
+        }
       }
 
       resourceDescription -> callback

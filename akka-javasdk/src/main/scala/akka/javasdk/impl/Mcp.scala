@@ -30,7 +30,7 @@ import scala.util.control.NonFatal
 private[akka] object Mcp {
   private val log = LoggerFactory.getLogger(classOf[Mcp.type])
 
-  val ProtocolVersion = "2024-11-05"
+  val ProtocolVersion = "2025-03-26"
 
   private val requestId = new AtomicLong(0)
   private val mapTypeRef: TypeReference[Map[String, AnyRef]] = new TypeReference[Map[String, AnyRef]] {}
@@ -62,13 +62,10 @@ private[akka] object Mcp {
       case Some(JsonRpc.ByPosition(_)) =>
         throw new JsonRpcError(
           JsonRpcError.Codes.InvalidParams,
-          "MCP requests must be sent with named parameters",
+          s"MCP requests for `${request.method}` must be sent with named parameters (got by-position)",
           request.requestId)
       case None =>
-        throw new JsonRpcError(
-          JsonRpcError.Codes.InvalidRequest,
-          "MCP requests must have named parameters",
-          request.requestId)
+        JsonRpc.Serialization.mapper.convertValue(Map.empty, ev.runtimeClass).asInstanceOf[T]
     }
 
   }
@@ -78,7 +75,7 @@ private[akka] object Mcp {
     JsonRpcSuccessResponse(id = requestId, result = Some(responseMap))
   }
 
-  def jsonRpcHandler[T: ClassTag](
+  private def jsonRpcHandler[T: ClassTag](
       handler: T => Future[Option[McpResult]]): JsonRpcRequest => Future[Option[JsonRpcResponse]] = { jsonRpcRequest =>
     val mcpRequest: T = extractRequest[T](jsonRpcRequest)
     log.debug(s"Mcp request for [{}]: {}", jsonRpcRequest.method, mcpRequest)
@@ -189,6 +186,7 @@ private[akka] object Mcp {
       capabilities: ServerCapabilities,
       serverInfo: Implementation,
       instructions: String,
+      @JsonInclude(JsonInclude.Include.NON_EMPTY)
       _meta: Option[Meta] = None)
       extends McpResult
 
@@ -211,10 +209,15 @@ private[akka] object Mcp {
    */
   final case class ServerCapabilities(
       experimental: Map[String, AnyRef],
+      @JsonInclude(JsonInclude.Include.NON_EMPTY)
       logging: Option[AnyRef],
+      @JsonInclude(JsonInclude.Include.NON_EMPTY)
       completions: Option[AnyRef],
+      @JsonInclude(JsonInclude.Include.NON_EMPTY)
       prompts: Option[Prompts],
+      @JsonInclude(JsonInclude.Include.NON_EMPTY)
       resources: Option[Resources],
+      @JsonInclude(JsonInclude.Include.NON_EMPTY)
       tools: Option[Tools])
 
   /**
@@ -289,7 +292,10 @@ private[akka] object Mcp {
     def method: String = "resources/list"
     def apply(listResources: ListResourcesRequest): JsonRpc.JsonRpcRequest = request(method, Some(listResources))
   }
-  final case class ListResourcesRequest(cursor: Option[String] = None, _meta: Option[Meta] = None)
+  final case class ListResourcesRequest(
+      @JsonInclude(JsonInclude.Include.NON_EMPTY)
+      cursor: Option[String] = None,
+      @JsonInclude(JsonInclude.Include.NON_EMPTY) _meta: Option[Meta] = None)
       extends McpPaginatedRequest
 
   /**
@@ -324,9 +330,13 @@ private[akka] object Mcp {
   final case class Resource(
       uri: String,
       name: String,
+      @JsonInclude(JsonInclude.Include.NON_EMPTY)
       description: Option[String],
+      @JsonInclude(JsonInclude.Include.NON_EMPTY)
       mimeType: Option[String],
+      @JsonInclude(JsonInclude.Include.NON_EMPTY)
       annotations: Option[Annotations],
+      @JsonInclude(JsonInclude.Include.NON_EMPTY)
       size: Option[Long])
 
   /**
@@ -388,8 +398,11 @@ private[akka] object Mcp {
   final case class ResourceTemplate(
       uriTemplate: String,
       name: String,
+      @JsonInclude(JsonInclude.Include.NON_EMPTY)
       description: Option[String] = None,
+      @JsonInclude(JsonInclude.Include.NON_EMPTY)
       mimeType: Option[String] = None,
+      @JsonInclude(JsonInclude.Include.NON_EMPTY)
       annotations: Option[Annotations] = None)
 
   /**
@@ -399,12 +412,16 @@ private[akka] object Mcp {
     def method = "resources/read"
     def apply(readResourceRequest: ReadResourceRequest) = request(method, Some(readResourceRequest))
   }
-  final case class ReadResourceRequest(uri: String, _meta: Option[Meta]) extends McpRequest
+  final case class ReadResourceRequest(uri: String, @JsonInclude(JsonInclude.Include.NON_EMPTY) _meta: Option[Meta])
+      extends McpRequest
 
   /**
    * The server's response to a resources/read request from the client.
    */
-  final case class ReadResourceResult(contents: Seq[ResourceContents], _meta: Option[Meta] = None) extends McpResult
+  final case class ReadResourceResult(
+      contents: Seq[ResourceContents],
+      @JsonInclude(JsonInclude.Include.NON_EMPTY) _meta: Option[Meta] = None)
+      extends McpResult
   sealed trait ResourceContents {
     def uri: String
     def mimeType: String
@@ -493,7 +510,12 @@ private[akka] object Mcp {
     def method = "tools/list"
     def apply(listToolsRequest: ListToolsRequest) = request(method, Some(listToolsRequest))
   }
-  final case class ListToolsRequest(cursor: Option[String], _meta: Option[Meta] = None) extends McpPaginatedRequest
+  final case class ListToolsRequest(
+      @JsonInclude(JsonInclude.Include.NON_EMPTY)
+      cursor: Option[String],
+      @JsonInclude(JsonInclude.Include.NON_EMPTY)
+      _meta: Option[Meta] = None)
+      extends McpPaginatedRequest
 
   final case class ListToolsResult(
       @JsonInclude(JsonInclude.Include.ALWAYS)
@@ -636,8 +658,6 @@ private[akka] object Mcp {
       toolCallbacksByName.get(callToolRequest.name) match {
         case Some(toolCallback) =>
           try {
-            // FIXME something more clever here, we could have an actual Java input type and deserialize the map into that
-            //       however, we'd also need to make a schema for it (haven't looked at how/if the MCP java project does that yet)
             toolCallback(callToolRequest.arguments)
               .map(Some(_))
               .recover { case NonFatal(ex) => handleError(ex) }
