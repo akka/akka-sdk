@@ -25,6 +25,9 @@ public class NewAskAkkaAgent extends Agent {
     var enrichedQuestion = knowledge.addKnowledge(question);
 
     return effects()
+        .modelProvider(ModelProvider.OPEN_AI)
+        .modelApiKey(System.getenv("OPENAI_API_KEY"))
+        .modelName("gpt-4o-mini")
         .systemMessage(sysMessage)
         .userMessage(enrichedQuestion)
         .thenReply();
