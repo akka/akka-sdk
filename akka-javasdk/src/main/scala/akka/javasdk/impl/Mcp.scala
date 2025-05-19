@@ -588,7 +588,8 @@ private[akka] object Mcp {
         ListResourcesTemplateRequest.method -> jsonRpcHandler[ListResourcesTemplateRequest](listResourceTemplates),
         ListToolsRequest.method -> jsonRpcHandler[ListToolsRequest](listTools),
         CallToolRequest.method -> jsonRpcHandler[CallToolRequest](callTool),
-        CancelledNotification.method -> notificationHandler)
+        CancelledNotification.method -> notificationHandler,
+        PingRequest.method -> pingHandler)
 
       val jsonRpcEndpoint = new JsonRpc.JsonRpcEndpoint(path, methods)
       jsonRpcEndpoint.httpEndpointDescriptor
@@ -621,6 +622,9 @@ private[akka] object Mcp {
       log.debug("MPC notitification {}", jsonRpcRequest)
       Future.successful(None)
     }
+
+    private def pingHandler(ping: JsonRpcRequest): Future[Option[JsonRpcResponse]] =
+      Future.successful(Some(JsonRpcSuccessResponse(id = ping.requestId.get, result = Some(Map.empty))))
 
     private def listResources(listResourcesRequest: ListResourcesRequest): Future[Option[ListResourcesResult]] = {
       Future.successful(Some(ListResourcesResult(descriptor.resources.map(_._1))))
