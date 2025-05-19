@@ -426,6 +426,8 @@ private[akka] object JsonRpc {
               case jsonRpcException: JsonRpcError =>
                 Future.successful(errorToHttpResponse(jsonRpcException))
               case ex: JsonMappingException =>
+                if (log.isDebugEnabled())
+                  log.debug("JSON-RPC server request payload JSON Mapping exception: {}", ex.getMessage)
                 Future.successful(errorToHttpResponse(JsonRpcError(JsonRpcError.Codes.ParseError, "Parse error", None)))
             }
           }
@@ -439,12 +441,24 @@ private[akka] object JsonRpc {
           HttpEntity(ContentTypes.`application/json`, Serialization.responseToJsonBytes(JsonRpcErrorResponse(error))))
 
       def handleRequest(request: JsonRpcRequest): Future[Option[JsonRpcResponse]] = {
+        if (log.isTraceEnabled)
+          log.trace("JSON-RPC request: {}", request)
         methods.get(request.method) match {
           case Some(handler) =>
             try {
               // Note: we don't validate that there is no response for notification here
-              handler(request)
+              val result = handler(request)
+              log.trace("JSON-RPC result: {}", result)
+              result
             } catch {
+              case error: JsonRpcError =>
+                if (!request.isNotification) Future.successful(Some(JsonRpcErrorResponse(error)))
+                else {
+                  log.warn(
+                    s"JSON-RPC notification to endpoint $path method ${request.method} id ${request.requestId} failed",
+                    error)
+                  Future.successful(None)
+                }
               case NonFatal(ex) =>
                 log.warn(s"JSON-RPC call to endpoint $path method ${request.method} id ${request.requestId} failed", ex)
                 if (request.isNotification) Future.successful(None)
@@ -461,14 +475,15 @@ private[akka] object JsonRpc {
             if (request.isNotification) {
               log.debug("Ignoring unhandled JSON-RPC notification for method [{}]", request.method)
               Future.successful(None)
-            } else
-              Future.successful(
-                Some(
-                  JsonRpcErrorResponse(error = new JsonRpcError(
-                    JsonRpcError.Codes.MethodNotFound,
-                    s"Method [${request.method}] not found",
-                    None,
-                    requestId = request.requestId))))
+            } else if (log.isTraceEnabled)
+              log.trace("JSON-RPC method not found: [{}]", request.method)
+            Future.successful(
+              Some(
+                JsonRpcErrorResponse(error = new JsonRpcError(
+                  JsonRpcError.Codes.MethodNotFound,
+                  s"Method [${request.method}] not found",
+                  None,
+                  requestId = request.requestId))))
         }
 
       }
