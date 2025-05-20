@@ -293,7 +293,7 @@ private object ComponentLocator {
           Seq.empty
     }.toSeq
 
-    val withBuildInComponents = if (components.exists(_.isAssignableFrom(classOf[Agent]))) {
+    val withBuildInComponents = if (components.exists(classOf[Agent].isAssignableFrom)) {
       logger.debug("Agent component detected, adding built-in components")
       classOf[PromptTemplate] +: components
     } else {
