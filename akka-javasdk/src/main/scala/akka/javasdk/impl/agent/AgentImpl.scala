@@ -14,6 +14,7 @@ import akka.javasdk.Metadata
 import akka.javasdk.Tracing
 import akka.javasdk.agent.Agent
 import akka.javasdk.agent.AgentContext
+import akka.javasdk.agent.ModelProvider
 import akka.javasdk.impl.AbstractContext
 import akka.javasdk.impl.ComponentDescriptor
 import akka.javasdk.impl.ComponentType
@@ -34,8 +35,12 @@ import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.RegionInfo
 import akka.runtime.sdk.spi.SpiAgent
 import akka.runtime.sdk.spi.SpiMetadata
+import akka.util.ByteString
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigException
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.Tracer
+import org.slf4j.LoggerFactory
 import org.slf4j.MDC
 
 /**
@@ -43,6 +48,7 @@ import org.slf4j.MDC
  */
 @InternalApi
 private[impl] object AgentImpl {
+  private val log = LoggerFactory.getLogger(classOf[AgentImpl[_]])
 
   private class AgentContextImpl(
       override val sessionId: Optional[String],
@@ -68,7 +74,8 @@ private[impl] final class AgentImpl[A <: Agent](
     tracerFactory: () => Tracer,
     serializer: JsonSerializer,
     componentDescriptor: ComponentDescriptor,
-    regionInfo: RegionInfo)
+    regionInfo: RegionInfo,
+    config: Config)
     extends SpiAgent {
   import AgentImpl._
 
@@ -110,8 +117,14 @@ private[impl] final class AgentImpl[A <: Agent](
       val spiEffect =
         commandEffect.primaryEffect match {
           case req: RequestModel =>
+            val spiModelProvider = toSpiModelProvider(req.modelProvider)
             val metadata = MetadataImpl.toSpi(req.replyMetadata)
-            new SpiAgent.RequestModelEffect(req.systemMessage, req.userMessage, metadata)
+            new SpiAgent.RequestModelEffect(
+              spiModelProvider,
+              req.systemMessage,
+              req.userMessage,
+              req.responseType,
+              metadata)
 
           case NoPrimaryEffect =>
             errorOrReply match {
@@ -140,4 +153,78 @@ private[impl] final class AgentImpl[A <: Agent](
 
   }
 
+  private def toSpiModelProvider(modelProvider: ModelProvider): SpiAgent.ModelProvider = {
+    modelProvider match {
+      case p: ModelProvider.FromConfig =>
+        toSpiModelProvider(modelProviderFromConfig(p.configPath()))
+      case p: ModelProvider.Anthropic =>
+        new SpiAgent.ModelProvider.Anthropic(
+          apiKey = p.apiKey,
+          modelName = p.modelName,
+          baseUrl = p.baseUrl,
+          temperature = p.temperature,
+          topP = p.topP,
+          topK = p.topK,
+          maxTokens = p.maxTokens)
+      case p: ModelProvider.OpenAi =>
+        new SpiAgent.ModelProvider.OpenAi(
+          apiKey = p.apiKey,
+          modelName = p.modelName,
+          baseUrl = p.baseUrl,
+          temperature = p.temperature,
+          topP = p.topP,
+          maxTokens = p.maxTokens)
+      case p: ModelProvider.Custom =>
+        new SpiAgent.ModelProvider.Custom(() => p.createChatModel())
+    }
+  }
+
+  private def modelProviderFromConfig(configPath: String): ModelProvider = {
+    val actualPath =
+      if (configPath == "")
+        config.getString("akka.javasdk.agent.model-provider")
+      else
+        configPath
+
+    if (actualPath == "")
+      throw new IllegalArgumentException(
+        s"You must define model provider configuration in [akka.javasdk.agent.model-provider]")
+
+    val resolvedConfigPath =
+      if (config.hasPath(actualPath))
+        actualPath
+      else if (!actualPath.contains('.') && config.hasPath("akka.javasdk.agent." + actualPath))
+        "akka.javasdk.agent." + actualPath
+      else
+        throw new IllegalArgumentException(s"Undefined model provider configuration [$actualPath]")
+
+    try {
+      log.debug("Model provider from config [{}]", resolvedConfigPath)
+      val providerConfig = config.getConfig(resolvedConfigPath)
+      providerConfig.getString("provider") match {
+        case "openai"    => ModelProvider.OpenAi.fromConfig(providerConfig)
+        case "anthropic" => ModelProvider.OpenAi.fromConfig(providerConfig)
+        case other =>
+          throw new IllegalArgumentException(s"Unknown model provider [$other] in config [$resolvedConfigPath]")
+      }
+    } catch {
+      case exc: ConfigException =>
+        log.error("Invalid model provider configuration at [{}] for agent [{}].", resolvedConfigPath, componentId, exc)
+        throw exc
+    }
+  }
+
+  override def transformResponse(modelResponse: String, responseType: Class[_]): BytesPayload = {
+    if (responseType == classOf[String]) {
+      serializer.toBytes(modelResponse)
+    } else {
+      // We might be able to bypass serialization roundtrip here, but might be good to catch invalid json
+      // as early as possible.
+      // The content type isn't used in this fromBytes.
+      val obj = serializer.fromBytes(
+        responseType,
+        new BytesPayload(ByteString.fromString(modelResponse), JsonSerializer.JsonContentTypePrefix + "object"))
+      serializer.toBytes(obj)
+    }
+  }
 }

@@ -13,4 +13,6 @@
     <logger name="akka.runtime" level="DEBUG"/>
     <logger name="kalix.runtime" level="DEBUG"/>
     <logger name="akka.javasdk" level="DEBUG"/>
+    <logger name="dev.langchain4j" level="DEBUG"/>
+
 </included>

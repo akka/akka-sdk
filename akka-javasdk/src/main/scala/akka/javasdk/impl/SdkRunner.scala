@@ -113,7 +113,6 @@ import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
 import java.util.concurrent.Executor
 
-import akka.javasdk.JsonSupport
 import akka.javasdk.agent.Agent
 import akka.javasdk.agent.AgentContext
 import akka.javasdk.impl.agent.AgentImpl
@@ -650,10 +649,11 @@ private final class Sdk(
             sdkTracerFactory,
             serializer,
             ComponentDescriptor.descriptorFor(agentClass, serializer),
-            regionInfo)
+            regionInfo,
+            applicationConfig)
         }
         AgentDescriptors :+=
-          new AgentDescriptor(componentId, clz.getName, JsonSupport.getObjectMapper, instanceFactory)
+          new AgentDescriptor(componentId, clz.getName, instanceFactory)
 
       case clz if classOf[View].isAssignableFrom(clz) =>
         viewDescriptors :+= ViewDescriptorFactory(clz, serializer, regionInfo, sdkExecutionContext)

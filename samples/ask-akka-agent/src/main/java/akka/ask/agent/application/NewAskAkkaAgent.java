@@ -7,8 +7,6 @@ import akka.javasdk.annotations.ComponentId;
 @ComponentId("ask-akka-agent")
 @AgentDescription(name = "Ask Akka", description = "Expert in Akka")
 public class NewAskAkkaAgent extends Agent {
-  // FIXME
-  public record DummyResponse(String systemMessage, String userMessage) {}
 
   private final String sysMessage = """
       You are a very enthusiastic Akka representative who loves to help people!
@@ -17,10 +15,10 @@ public class NewAskAkkaAgent extends Agent {
       Sorry, I don't know how to help with that.
       """; // <1>
 
-  public Agent.Effect<DummyResponse> ask(String question) {
+  public Agent.Effect<String> ask(String question) {
     return effects()
         .systemMessage(sysMessage)
         .userMessage(question)
-        .thenReplyAs(DummyResponse.class);
+        .thenReply();
   }
 }

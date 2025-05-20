@@ -9,6 +9,7 @@ import akka.javasdk.Metadata
 import akka.javasdk.agent.Agent.Effect
 import akka.javasdk.agent.Agent.Effect.Builder
 import akka.javasdk.agent.Agent.Effect.OnSuccessBuilder
+import akka.javasdk.agent.ModelProvider
 import akka.javasdk.impl.effect.ErrorReplyImpl
 import akka.javasdk.impl.effect.MessageReplyImpl
 import akka.javasdk.impl.effect.NoSecondaryEffectImpl
@@ -20,16 +21,29 @@ import akka.javasdk.impl.effect.SecondaryEffectImpl
 @InternalApi
 private[javasdk] object AgentEffectImpl {
   sealed trait PrimaryEffectImpl
+
   object RequestModel {
     val empty: RequestModel =
-      RequestModel(systemMessage = "", userMessage = "", responseType = classOf[String], replyMetadata = Metadata.EMPTY)
+      RequestModel(
+        modelProvider = ModelProvider.fromConfig(),
+        systemMessage = "",
+        userMessage = "",
+        responseType = classOf[String],
+        replyMetadata = Metadata.EMPTY)
   }
+
   final case class RequestModel(
+      modelProvider: ModelProvider,
       systemMessage: String,
       userMessage: String,
       responseType: Class[_],
       replyMetadata: Metadata)
-      extends PrimaryEffectImpl
+      extends PrimaryEffectImpl {
+
+    def withProvider(provider: ModelProvider): RequestModel =
+      copy(modelProvider = provider)
+  }
+
   case object NoPrimaryEffect extends PrimaryEffectImpl
 }
 
@@ -44,6 +58,15 @@ private[javasdk] final class AgentEffectImpl[Reply] extends Builder with OnSucce
   private var _secondaryEffect: SecondaryEffectImpl = NoSecondaryEffectImpl
 
   def primaryEffect: PrimaryEffectImpl = _primaryEffect
+
+  private def updateRequestModel(f: RequestModel => RequestModel): Unit = {
+    _primaryEffect match {
+      case NoPrimaryEffect =>
+        _primaryEffect = f(RequestModel.empty)
+      case req: RequestModel =>
+        _primaryEffect = f(req)
+    }
+  }
 
   def secondaryEffect: SecondaryEffectImpl =
     _secondaryEffect
@@ -64,23 +87,18 @@ private[javasdk] final class AgentEffectImpl[Reply] extends Builder with OnSucce
   def hasError(): Boolean =
     _secondaryEffect.isInstanceOf[ErrorReplyImpl]
 
+  override def modelProvider(provider: ModelProvider): Builder = {
+    updateRequestModel(_.withProvider(provider))
+    this
+  }
+
   override def systemMessage(message: String): Builder = {
-    _primaryEffect match {
-      case NoPrimaryEffect =>
-        _primaryEffect = RequestModel.empty.copy(systemMessage = message)
-      case req: RequestModel =>
-        _primaryEffect = req.copy(systemMessage = message)
-    }
+    updateRequestModel(_.copy(systemMessage = message))
     this
   }
 
   override def userMessage(message: String): OnSuccessBuilder = {
-    _primaryEffect match {
-      case NoPrimaryEffect =>
-        _primaryEffect = RequestModel.empty.copy(userMessage = message)
-      case req: RequestModel =>
-        _primaryEffect = req.copy(userMessage = message)
-    }
+    updateRequestModel(_.copy(userMessage = message))
     this
   }
 
@@ -88,12 +106,7 @@ private[javasdk] final class AgentEffectImpl[Reply] extends Builder with OnSucce
     this.asInstanceOf[AgentEffectImpl[String]]
 
   override def thenReply(metadata: Metadata): AgentEffectImpl[String] = {
-    _primaryEffect match {
-      case NoPrimaryEffect =>
-        _primaryEffect = RequestModel.empty.copy(replyMetadata = metadata)
-      case req: RequestModel =>
-        _primaryEffect = req.copy(replyMetadata = metadata)
-    }
+    updateRequestModel(_.copy(replyMetadata = metadata))
     this.asInstanceOf[AgentEffectImpl[String]]
   }
 
@@ -101,12 +114,7 @@ private[javasdk] final class AgentEffectImpl[Reply] extends Builder with OnSucce
     thenReplyAs[T](responseType, Metadata.EMPTY)
 
   override def thenReplyAs[T](responseType: Class[T], metadata: Metadata): AgentEffectImpl[T] = {
-    _primaryEffect match {
-      case NoPrimaryEffect =>
-        _primaryEffect = RequestModel.empty.copy(responseType = responseType, replyMetadata = metadata)
-      case req: RequestModel =>
-        _primaryEffect = req.copy(responseType = responseType, replyMetadata = metadata)
-    }
+    updateRequestModel(_.copy(responseType = responseType, replyMetadata = metadata))
     this.asInstanceOf[AgentEffectImpl[T]]
   }
 

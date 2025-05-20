@@ -63,6 +63,8 @@ public abstract class Agent {
      */
     interface Builder {
 
+      Builder modelProvider(ModelProvider provider);
+
       Builder systemMessage(String message);
 
       OnSuccessBuilder userMessage(String message);
@@ -130,4 +132,5 @@ public abstract class Agent {
     }
 
   }
+
 }
