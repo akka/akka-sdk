@@ -6,15 +6,14 @@ package akka.javasdk.impl.agent
 
 import akka.annotation.InternalApi
 import akka.javasdk.Metadata
-import akka.javasdk.agent.Agent
 import akka.javasdk.agent.Agent.Effect
 import akka.javasdk.agent.Agent.Effect.Builder
 import akka.javasdk.agent.Agent.Effect.OnSuccessBuilder
+import akka.javasdk.agent.ModelProvider
 import akka.javasdk.impl.effect.ErrorReplyImpl
 import akka.javasdk.impl.effect.MessageReplyImpl
 import akka.javasdk.impl.effect.NoSecondaryEffectImpl
 import akka.javasdk.impl.effect.SecondaryEffectImpl
-import akka.runtime.sdk.spi.SpiAgent
 
 /**
  * INTERNAL API
@@ -22,44 +21,29 @@ import akka.runtime.sdk.spi.SpiAgent
 @InternalApi
 private[javasdk] object AgentEffectImpl {
   sealed trait PrimaryEffectImpl
+
   object RequestModel {
     val empty: RequestModel =
       RequestModel(
-        model = SpiAgent.Model.empty,
+        modelProvider = ModelProvider.fromConfig(),
         systemMessage = "",
         userMessage = "",
         responseType = classOf[String],
         replyMetadata = Metadata.EMPTY)
   }
+
   final case class RequestModel(
-      model: SpiAgent.Model,
+      modelProvider: ModelProvider,
       systemMessage: String,
       userMessage: String,
       responseType: Class[_],
       replyMetadata: Metadata)
       extends PrimaryEffectImpl {
 
-    def withProvider(provider: Agent.ModelProvider): RequestModel = {
-      val spiProvider = provider match {
-        case Agent.ModelProvider.ANTHROPIC => SpiAgent.ModelProvider.Anthropic
-        case Agent.ModelProvider.OPEN_AI   => SpiAgent.ModelProvider.OpenAi
-      }
-      copy(model = model.withProvider(spiProvider))
-    }
-
-    def withApiKey(apiKey: String): RequestModel =
-      copy(model = model.withApiKey(apiKey))
-    def withModelName(modelName: String): RequestModel =
-      copy(model = model.withModelName(modelName))
-    def withBaseUrl(baseUrl: String): RequestModel =
-      copy(model = model.withBaseUrl(baseUrl))
-    def withTemperature(value: Double): RequestModel =
-      copy(model = model.withTemperature(value))
-    def withTopP(value: Double): RequestModel =
-      copy(model = model.withTopP(value))
-    def withMaxTokens(value: Int): RequestModel =
-      copy(model = model.withMaxTokens(value))
+    def withProvider(provider: ModelProvider): RequestModel =
+      copy(modelProvider = provider)
   }
+
   case object NoPrimaryEffect extends PrimaryEffectImpl
 }
 
@@ -103,38 +87,8 @@ private[javasdk] final class AgentEffectImpl[Reply] extends Builder with OnSucce
   def hasError(): Boolean =
     _secondaryEffect.isInstanceOf[ErrorReplyImpl]
 
-  override def modelProvider(provider: Agent.ModelProvider): Builder = {
+  override def modelProvider(provider: ModelProvider): Builder = {
     updateRequestModel(_.withProvider(provider))
-    this
-  }
-
-  override def modelApiKey(key: String): Builder = {
-    updateRequestModel(_.withApiKey(key))
-    this
-  }
-
-  override def modelName(name: String): Builder = {
-    updateRequestModel(_.withModelName(name))
-    this
-  }
-
-  override def modelBaseUrl(url: String): Builder = {
-    updateRequestModel(_.withBaseUrl(url))
-    this
-  }
-
-  override def modelTemperature(value: Double): Builder = {
-    updateRequestModel(_.withTemperature(value))
-    this
-  }
-
-  override def modelTopP(value: Double): Builder = {
-    updateRequestModel(_.withTopP(value))
-    this
-  }
-
-  override def modelMaxTokens(value: Int): Builder = {
-    updateRequestModel(_.withMaxTokens(value))
     this
   }
 

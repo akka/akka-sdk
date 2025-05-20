@@ -14,6 +14,7 @@ import akka.javasdk.Metadata
 import akka.javasdk.Tracing
 import akka.javasdk.agent.Agent
 import akka.javasdk.agent.AgentContext
+import akka.javasdk.agent.ModelProvider
 import akka.javasdk.impl.AbstractContext
 import akka.javasdk.impl.ComponentDescriptor
 import akka.javasdk.impl.ComponentType
@@ -111,11 +112,14 @@ private[impl] final class AgentImpl[A <: Agent](
       val spiEffect =
         commandEffect.primaryEffect match {
           case req: RequestModel =>
-            // FIXME we should have a default model provider, modelName and apiKey from config
-            if (req.model.provider == SpiAgent.ModelProvider.Undefined)
-              throw new IllegalArgumentException("modelProvider must be defined")
+            val spiModelProvider = toSpiModelProvider(req.modelProvider)
             val metadata = MetadataImpl.toSpi(req.replyMetadata)
-            new SpiAgent.RequestModelEffect(req.model, req.systemMessage, req.userMessage, req.responseType, metadata)
+            new SpiAgent.RequestModelEffect(
+              spiModelProvider,
+              req.systemMessage,
+              req.userMessage,
+              req.responseType,
+              metadata)
 
           case NoPrimaryEffect =>
             errorOrReply match {
@@ -142,6 +146,36 @@ private[impl] final class AgentImpl[A <: Agent](
       }
     }
 
+  }
+
+  private def toSpiModelProvider(modelProvider: ModelProvider): SpiAgent.ModelProvider = {
+    modelProvider match {
+      case p: ModelProvider.FromConfig =>
+        spiModelProviderFromConfig(p.configPath())
+      case p: ModelProvider.Anthropic =>
+        new SpiAgent.ModelProvider.Anthropic(
+          apiKey = p.apiKey,
+          modelName = p.modelName,
+          baseUrl = p.baseUrl,
+          temperature = p.temperature,
+          topP = p.topP,
+          maxTokens = p.maxTokens)
+      case p: ModelProvider.OpenAi =>
+        new SpiAgent.ModelProvider.OpenAi(
+          apiKey = p.apiKey,
+          modelName = p.modelName,
+          baseUrl = p.baseUrl,
+          temperature = p.temperature,
+          topP = p.topP,
+          maxTokens = p.maxTokens)
+      case p: ModelProvider.Custom =>
+        new SpiAgent.ModelProvider.Custom(() => p.createChatModel())
+    }
+  }
+
+  private def spiModelProviderFromConfig(configPath: String): SpiAgent.ModelProvider = {
+    // FIXME
+    ???
   }
 
   override def transformResponse(modelResponse: String, responseType: Class[_]): BytesPayload = {

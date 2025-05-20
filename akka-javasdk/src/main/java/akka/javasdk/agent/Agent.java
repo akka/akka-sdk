@@ -65,18 +65,6 @@ public abstract class Agent {
 
       Builder modelProvider(ModelProvider provider);
 
-      Builder modelApiKey(String key);
-
-      Builder modelName(String name);
-
-      Builder modelBaseUrl(String url);
-
-      Builder modelTemperature(double value);
-
-      Builder modelTopP(double value);
-
-      Builder modelMaxTokens(int value);
-
       Builder systemMessage(String message);
 
       OnSuccessBuilder userMessage(String message);
@@ -145,8 +133,4 @@ public abstract class Agent {
 
   }
 
-  public enum ModelProvider {
-    ANTHROPIC,
-    OPEN_AI
-  }
 }

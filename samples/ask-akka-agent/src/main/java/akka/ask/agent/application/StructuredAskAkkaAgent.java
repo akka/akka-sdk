@@ -1,6 +1,7 @@
 package akka.ask.agent.application;
 
 import akka.javasdk.agent.Agent;
+import akka.javasdk.agent.ModelProvider;
 import akka.javasdk.annotations.AgentDescription;
 import akka.javasdk.annotations.ComponentId;
 
@@ -14,7 +15,7 @@ public class StructuredAskAkkaAgent extends Agent {
       
       IMPORTANT: You must respond with a valid JSON object that follows this structure:
         {
-          "summary": "Brief overview of the trip",
+          "summary": "Brief overview of the design proposal",
           "akkaComponent": "The name of the Akka component to use"
         }
       
@@ -25,9 +26,9 @@ public class StructuredAskAkkaAgent extends Agent {
 
   public Effect<Response> ask(String question) {
     return effects()
-        .modelProvider(ModelProvider.OPEN_AI)
-        .modelApiKey(System.getenv("OPENAI_API_KEY"))
-        .modelName("gpt-4o-mini")
+        .modelProvider(ModelProvider.openAi()
+            .withApiKey(System.getenv("OPENAI_API_KEY"))
+            .withModelName("gpt-4o-mini"))
         .systemMessage(sysMessage)
         .userMessage(question)
         .thenReplyAs(Response.class);
