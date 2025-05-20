@@ -62,10 +62,7 @@ public interface ComponentClient {
 
   /**
    * Select {@link Agent} as a call target component.
-   *
-   * @param sessionId - The agent participates in a session, which is used for the agent's
-   *     conversational memory.
    */
-  AgentClient forAgent(String sessionId);
+  AgentClient forAgent();
 
 }

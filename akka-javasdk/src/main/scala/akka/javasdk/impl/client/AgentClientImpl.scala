@@ -13,6 +13,7 @@ import akka.japi.function
 import akka.javasdk.Metadata
 import akka.javasdk.agent.Agent
 import akka.javasdk.client.AgentClient
+import akka.javasdk.client.AgentClientInSession
 import akka.javasdk.client.ComponentMethodRef
 import akka.javasdk.client.ComponentMethodRef1
 import akka.javasdk.impl.ComponentDescriptorFactory
@@ -33,7 +34,14 @@ private[javasdk] final case class AgentClientImpl(
     serializer: JsonSerializer,
     callMetadata: Option[Metadata],
     sessionId: String)(implicit val executionContext: ExecutionContext, system: ActorSystem[_])
-    extends AgentClient {
+    extends AgentClient
+    with AgentClientInSession {
+
+  override def inSession(sessionId: String): AgentClientInSession = {
+    if ((sessionId eq null) || sessionId.trim.isBlank)
+      throw new IllegalArgumentException("sessionId must be defined")
+    AgentClientImpl(agentClient, serializer, callMetadata, sessionId)
+  }
 
   override def method[T, R](methodRef: function.Function[T, Agent.Effect[R]]): ComponentMethodRef[R] =
     createMethodRef[R](methodRef)
@@ -107,4 +115,5 @@ private[javasdk] final case class AgentClientImpl(
       .asInstanceOf[ComponentMethodRefImpl[A1, R]]
 
   }
+
 }

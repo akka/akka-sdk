@@ -69,10 +69,7 @@ private[javasdk] final case class ComponentClientImpl(
 
   override def forView(): ViewClient = ViewClientImpl(runtimeComponentClients.viewClient, serializer, callMetadata)
 
-  override def forAgent(sessionId: String): AgentClient = {
-    if ((sessionId eq null) || sessionId.trim.isBlank)
-      throw new IllegalArgumentException("sessionId must be defined")
-    AgentClientImpl(runtimeComponentClients.agentClient, serializer, callMetadata, sessionId)
-  }
+  override def forAgent(): AgentClient =
+    AgentClientImpl(runtimeComponentClients.agentClient, serializer, callMetadata, sessionId = "")
 
 }
