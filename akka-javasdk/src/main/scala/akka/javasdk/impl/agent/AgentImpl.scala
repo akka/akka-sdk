@@ -20,8 +20,10 @@ import akka.javasdk.impl.ComponentType
 import akka.javasdk.impl.ErrorHandling.BadRequestException
 import akka.javasdk.impl.HandlerNotFoundException
 import akka.javasdk.impl.MetadataImpl
+import akka.javasdk.impl.agent.AgentEffectImpl.ConstantSystemMessage
 import akka.javasdk.impl.agent.AgentEffectImpl.NoPrimaryEffect
 import akka.javasdk.impl.agent.AgentEffectImpl.RequestModel
+import akka.javasdk.impl.agent.AgentEffectImpl.TemplateSystemMessage
 import akka.javasdk.impl.effect.ErrorReplyImpl
 import akka.javasdk.impl.effect.MessageReplyImpl
 import akka.javasdk.impl.effect.NoSecondaryEffectImpl
@@ -68,7 +70,8 @@ private[impl] final class AgentImpl[A <: Agent](
     tracerFactory: () => Tracer,
     serializer: JsonSerializer,
     componentDescriptor: ComponentDescriptor,
-    regionInfo: RegionInfo)
+    regionInfo: RegionInfo,
+    promptTemplateClient: PromptTemplateClient)
     extends SpiAgent {
   import AgentImpl._
 
@@ -107,20 +110,25 @@ private[impl] final class AgentImpl[A <: Agent](
         }
       }
 
-      val spiEffect =
-        commandEffect.primaryEffect match {
-          case req: RequestModel =>
-            val metadata = MetadataImpl.toSpi(req.replyMetadata)
-            new SpiAgent.RequestModelEffect(req.systemMessage, req.userMessage, metadata)
+      val spiEffect = commandEffect.primaryEffect match {
+        case req: RequestModel =>
+          val metadata = MetadataImpl.toSpi(req.replyMetadata)
+          req.systemMessage match {
+            case ConstantSystemMessage(message) =>
+              new SpiAgent.RequestModelEffect(message, req.userMessage, metadata)
+            case TemplateSystemMessage(templateId) =>
+              val message = promptTemplateClient.getPromptTemplate(templateId)
+              new SpiAgent.RequestModelEffect(message, req.userMessage, metadata)
+          }
 
-          case NoPrimaryEffect =>
-            errorOrReply match {
-              case Left(err) =>
-                new SpiAgent.ErrorEffect(err)
-              case Right((reply, metadata)) =>
-                new SpiAgent.ReplyEffect(reply, metadata)
-            }
-        }
+        case NoPrimaryEffect =>
+          errorOrReply match {
+            case Left(err) =>
+              new SpiAgent.ErrorEffect(err)
+            case Right((reply, metadata)) =>
+              new SpiAgent.ReplyEffect(reply, metadata)
+          }
+      }
       Future.successful(spiEffect)
 
     } catch {

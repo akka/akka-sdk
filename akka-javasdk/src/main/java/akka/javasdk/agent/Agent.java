@@ -65,6 +65,8 @@ public abstract class Agent {
 
       Builder systemMessage(String message);
 
+      Builder systemMessageFromTemplate(String templateId);
+
       OnSuccessBuilder userMessage(String message);
 
       /**

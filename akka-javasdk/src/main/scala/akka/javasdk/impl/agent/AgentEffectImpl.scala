@@ -22,10 +22,18 @@ private[javasdk] object AgentEffectImpl {
   sealed trait PrimaryEffectImpl
   object RequestModel {
     val empty: RequestModel =
-      RequestModel(systemMessage = "", userMessage = "", responseType = classOf[String], replyMetadata = Metadata.EMPTY)
+      RequestModel(
+        systemMessage = ConstantSystemMessage(""),
+        userMessage = "",
+        responseType = classOf[String],
+        replyMetadata = Metadata.EMPTY)
   }
+  sealed trait SystemMessage
+  case class ConstantSystemMessage(message: String) extends SystemMessage
+  case class TemplateSystemMessage(templateId: String) extends SystemMessage
+
   final case class RequestModel(
-      systemMessage: String,
+      systemMessage: SystemMessage,
       userMessage: String,
       responseType: Class[_],
       replyMetadata: Metadata)
@@ -67,9 +75,19 @@ private[javasdk] final class AgentEffectImpl[Reply] extends Builder with OnSucce
   override def systemMessage(message: String): Builder = {
     _primaryEffect match {
       case NoPrimaryEffect =>
-        _primaryEffect = RequestModel.empty.copy(systemMessage = message)
+        _primaryEffect = RequestModel.empty.copy(systemMessage = ConstantSystemMessage(message))
       case req: RequestModel =>
-        _primaryEffect = req.copy(systemMessage = message)
+        _primaryEffect = req.copy(systemMessage = ConstantSystemMessage(message))
+    }
+    this
+  }
+
+  override def systemMessageFromTemplate(templateId: String): Builder = {
+    _primaryEffect match {
+      case NoPrimaryEffect =>
+        _primaryEffect = RequestModel.empty.copy(systemMessage = TemplateSystemMessage(templateId))
+      case req: RequestModel =>
+        _primaryEffect = req.copy(systemMessage = TemplateSystemMessage(templateId))
     }
     this
   }
