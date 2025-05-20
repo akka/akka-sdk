@@ -118,8 +118,8 @@ import akka.javasdk.agent.AgentContext
 import akka.javasdk.impl.agent.AgentImpl
 import akka.runtime.sdk.spi.AgentDescriptor
 import akka.runtime.sdk.spi.SpiAgent
-
 import akka.javasdk.agent.PromptTemplate
+import akka.javasdk.impl.agent.PromptTemplateClient
 
 /**
  * INTERNAL API
@@ -292,8 +292,12 @@ private object ComponentLocator {
           Seq.empty
     }.toSeq
 
-    //TODO check if there is an agent component
-    val withBuildInComponents = classOf[PromptTemplate] +: components
+    val withBuildInComponents = if (components.exists(classOf[Agent].isAssignableFrom)) {
+      logger.debug("Agent component detected, adding built-in components")
+      classOf[PromptTemplate] +: components
+    } else {
+      components
+    }
 
     if (descriptorConfig.hasPath(DescriptorServiceSetupEntryPath)) {
       // central config/lifecycle class
@@ -650,7 +654,9 @@ private final class Sdk(
             serializer,
             ComponentDescriptor.descriptorFor(agentClass, serializer),
             regionInfo,
+            new PromptTemplateClient(componentClient(None)),
             applicationConfig)
+
         }
         AgentDescriptors :+=
           new AgentDescriptor(componentId, clz.getName, instanceFactory)

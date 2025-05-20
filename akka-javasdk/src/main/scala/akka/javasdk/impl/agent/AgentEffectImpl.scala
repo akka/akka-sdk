@@ -26,15 +26,19 @@ private[javasdk] object AgentEffectImpl {
     val empty: RequestModel =
       RequestModel(
         modelProvider = ModelProvider.fromConfig(),
-        systemMessage = "",
+        systemMessage = ConstantSystemMessage(""),
         userMessage = "",
         responseType = classOf[String],
         replyMetadata = Metadata.EMPTY)
   }
 
+  sealed trait SystemMessage
+  final case class ConstantSystemMessage(message: String) extends SystemMessage
+  final case class TemplateSystemMessage(templateId: String) extends SystemMessage
+
   final case class RequestModel(
       modelProvider: ModelProvider,
-      systemMessage: String,
+      systemMessage: SystemMessage,
       userMessage: String,
       responseType: Class[_],
       replyMetadata: Metadata)
@@ -93,7 +97,12 @@ private[javasdk] final class AgentEffectImpl[Reply] extends Builder with OnSucce
   }
 
   override def systemMessage(message: String): Builder = {
-    updateRequestModel(_.copy(systemMessage = message))
+    updateRequestModel(_.copy(systemMessage = ConstantSystemMessage(message)))
+    this
+  }
+
+  override def systemMessageFromTemplate(templateId: String): Builder = {
+    updateRequestModel(_.copy(systemMessage = TemplateSystemMessage(templateId)))
     this
   }
 

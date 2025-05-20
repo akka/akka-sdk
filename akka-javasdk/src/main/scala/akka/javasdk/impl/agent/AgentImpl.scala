@@ -21,8 +21,10 @@ import akka.javasdk.impl.ComponentType
 import akka.javasdk.impl.ErrorHandling.BadRequestException
 import akka.javasdk.impl.HandlerNotFoundException
 import akka.javasdk.impl.MetadataImpl
+import akka.javasdk.impl.agent.AgentEffectImpl.ConstantSystemMessage
 import akka.javasdk.impl.agent.AgentEffectImpl.NoPrimaryEffect
 import akka.javasdk.impl.agent.AgentEffectImpl.RequestModel
+import akka.javasdk.impl.agent.AgentEffectImpl.TemplateSystemMessage
 import akka.javasdk.impl.effect.ErrorReplyImpl
 import akka.javasdk.impl.effect.MessageReplyImpl
 import akka.javasdk.impl.effect.NoSecondaryEffectImpl
@@ -75,6 +77,7 @@ private[impl] final class AgentImpl[A <: Agent](
     serializer: JsonSerializer,
     componentDescriptor: ComponentDescriptor,
     regionInfo: RegionInfo,
+    promptTemplateClient: PromptTemplateClient,
     config: Config)
     extends SpiAgent {
   import AgentImpl._
@@ -117,11 +120,15 @@ private[impl] final class AgentImpl[A <: Agent](
       val spiEffect =
         commandEffect.primaryEffect match {
           case req: RequestModel =>
+            val systemMessage = req.systemMessage match {
+              case ConstantSystemMessage(message)    => message
+              case TemplateSystemMessage(templateId) => promptTemplateClient.getPromptTemplate(templateId)
+            }
             val spiModelProvider = toSpiModelProvider(req.modelProvider)
             val metadata = MetadataImpl.toSpi(req.replyMetadata)
             new SpiAgent.RequestModelEffect(
               spiModelProvider,
-              req.systemMessage,
+              systemMessage,
               req.userMessage,
               req.responseType,
               metadata)
