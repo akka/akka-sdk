@@ -32,7 +32,7 @@ private[javasdk] final case class AgentClientImpl(
     agentClient: RuntimeAgentClient,
     serializer: JsonSerializer,
     callMetadata: Option[Metadata],
-    sessionId: Option[String])(implicit val executionContext: ExecutionContext, system: ActorSystem[_])
+    sessionId: String)(implicit val executionContext: ExecutionContext, system: ActorSystem[_])
     extends AgentClient {
 
   override def method[T, R](methodRef: function.Function[T, Agent.Effect[R]]): ComponentMethodRef[R] =

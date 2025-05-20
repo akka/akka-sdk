@@ -48,7 +48,7 @@ public class AskHttpEndpoint {
   @Post("/new-ask") // FIXME
   public String newAsk(QueryRequest request) {
     return componentClient
-        .forAgent(Optional.of(request.sessionId()))
+        .forAgent(request.sessionId())
         .method(NewAskAkkaAgent::ask)
         .invoke(request.question);
   }
@@ -56,7 +56,7 @@ public class AskHttpEndpoint {
   @Post("/new-ask-structured") // FIXME
   public StructuredAskAkkaAgent.Response newAskStructured(QueryRequest request) {
     return componentClient
-        .forAgent(Optional.of(request.sessionId()))
+        .forAgent(request.sessionId())
         .method(StructuredAskAkkaAgent::ask)
         .invoke(request.question);
   }

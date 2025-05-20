@@ -4,8 +4,6 @@
 
 package akka.javasdk.impl.agent
 
-import java.util.Optional
-
 import scala.concurrent.Future
 import scala.util.control.NonFatal
 
@@ -51,7 +49,7 @@ private[impl] object AgentImpl {
   private val log = LoggerFactory.getLogger(classOf[AgentImpl[_]])
 
   private class AgentContextImpl(
-      override val sessionId: Optional[String],
+      override val sessionId: String,
       override val selfRegion: String,
       override val metadata: Metadata,
       span: Option[Span],
@@ -69,7 +67,7 @@ private[impl] object AgentImpl {
 @InternalApi
 private[impl] final class AgentImpl[A <: Agent](
     componentId: String,
-    sessionId: Optional[String],
+    sessionId: String,
     val factory: AgentContext => A,
     tracerFactory: () => Tracer,
     serializer: JsonSerializer,

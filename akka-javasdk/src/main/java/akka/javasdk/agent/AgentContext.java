@@ -11,9 +11,9 @@ import java.util.Optional;
 
 public interface AgentContext extends MetadataContext {
   /**
-   * The agent may participate in a session, which is used for the agent's conversational memory.
+   * The agent participates in a session, which is used for the agent's conversational memory.
    */
-  Optional<String> sessionId();
+  String sessionId();
 
   /** Access to tracing for custom app specific tracing. */
   Tracing tracing();
