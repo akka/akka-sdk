@@ -63,6 +63,8 @@ public abstract class Agent {
      */
     interface Builder {
 
+      Builder modelProvider(ModelProvider provider);
+
       Builder systemMessage(String message);
 
       Builder systemMessageFromTemplate(String templateId);
@@ -132,4 +134,5 @@ public abstract class Agent {
     }
 
   }
+
 }
