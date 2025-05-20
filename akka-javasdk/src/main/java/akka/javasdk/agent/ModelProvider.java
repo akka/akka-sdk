@@ -24,6 +24,7 @@ public sealed interface ModelProvider {
         "",
         Double.NaN,
         Double.NaN,
+        -1,
         -1);
   }
 
@@ -32,6 +33,7 @@ public sealed interface ModelProvider {
                    String baseUrl,
                    double temperature,
                    double topP,
+                   int topK,
                    int maxTokens) implements ModelProvider {
 
     public static Anthropic fromConfig(Config config) {
@@ -41,31 +43,36 @@ public sealed interface ModelProvider {
           config.getString("base-url"),
           config.getDouble("temperature"),
           config.getDouble("top-p"),
+          config.getInt("top-k"),
           config.getInt("max-tokens"));
     }
     
     public Anthropic withApiKey(String apiKey) {
-      return new Anthropic(apiKey, modelName, baseUrl, temperature, topP, maxTokens);
+      return new Anthropic(apiKey, modelName, baseUrl, temperature, topP, topK, maxTokens);
     }
     
     public Anthropic withModelName(String modelName) {
-      return new Anthropic(apiKey, modelName, baseUrl, temperature, topP, maxTokens);
+      return new Anthropic(apiKey, modelName, baseUrl, temperature, topP, topK, maxTokens);
     }
     
     public Anthropic withBaseUrl(String baseUrl) {
-      return new Anthropic(apiKey, modelName, baseUrl, temperature, topP, maxTokens);
+      return new Anthropic(apiKey, modelName, baseUrl, temperature, topP, topK, maxTokens);
     }
     
     public Anthropic withTemperature(double temperature) {
-      return new Anthropic(apiKey, modelName, baseUrl, temperature, topP, maxTokens);
+      return new Anthropic(apiKey, modelName, baseUrl, temperature, topP, topK, maxTokens);
     }
     
     public Anthropic withTopP(double topP) {
-      return new Anthropic(apiKey, modelName, baseUrl, temperature, topP, maxTokens);
+      return new Anthropic(apiKey, modelName, baseUrl, temperature, topP, topK, maxTokens);
     }
-    
+
+    public Anthropic withTopK(int topK) {
+      return new Anthropic(apiKey, modelName, baseUrl, temperature, topP, topK, maxTokens);
+    }
+
     public Anthropic withMaxTokens(int maxTokens) {
-      return new Anthropic(apiKey, modelName, baseUrl, temperature, topP, maxTokens);
+      return new Anthropic(apiKey, modelName, baseUrl, temperature, topP, topK, maxTokens);
     }
   }
   
