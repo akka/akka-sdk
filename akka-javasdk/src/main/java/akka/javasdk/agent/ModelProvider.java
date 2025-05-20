@@ -4,9 +4,11 @@
 
 package akka.javasdk.agent;
 
+import com.typesafe.config.Config;
+
 public sealed interface ModelProvider {
   static ModelProvider fromConfig() {
-    return fromConfig("akka.javasdk.agent.model-provider");
+    return fromConfig("");
   }
 
   static ModelProvider fromConfig(String configPath) {
@@ -31,6 +33,16 @@ public sealed interface ModelProvider {
                    double temperature,
                    double topP,
                    int maxTokens) implements ModelProvider {
+
+    public static Anthropic fromConfig(Config config) {
+      return new Anthropic(
+          config.getString("api-key"),
+          config.getString("model-name"),
+          config.getString("base-url"),
+          config.getDouble("temperature"),
+          config.getDouble("top-p"),
+          config.getInt("max-tokens"));
+    }
     
     public Anthropic withApiKey(String apiKey) {
       return new Anthropic(apiKey, modelName, baseUrl, temperature, topP, maxTokens);
@@ -75,6 +87,16 @@ public sealed interface ModelProvider {
                 double temperature,
                 double topP,
                 int maxTokens) implements ModelProvider {
+
+    public static OpenAi fromConfig(Config config) {
+      return new OpenAi(
+          config.getString("api-key"),
+          config.getString("model-name"),
+          config.getString("base-url"),
+          config.getDouble("temperature"),
+          config.getDouble("top-p"),
+          config.getInt("max-tokens"));
+    }
     
     public OpenAi withApiKey(String apiKey) {
       return new OpenAi(apiKey, modelName, baseUrl, temperature, topP, maxTokens);

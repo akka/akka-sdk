@@ -649,7 +649,8 @@ private final class Sdk(
             sdkTracerFactory,
             serializer,
             ComponentDescriptor.descriptorFor(agentClass, serializer),
-            regionInfo)
+            regionInfo,
+            applicationConfig)
         }
         AgentDescriptors :+=
           new AgentDescriptor(componentId, clz.getName, instanceFactory)

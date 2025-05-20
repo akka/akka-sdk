@@ -36,8 +36,11 @@ import akka.runtime.sdk.spi.RegionInfo
 import akka.runtime.sdk.spi.SpiAgent
 import akka.runtime.sdk.spi.SpiMetadata
 import akka.util.ByteString
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigException
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.Tracer
+import org.slf4j.LoggerFactory
 import org.slf4j.MDC
 
 /**
@@ -45,6 +48,7 @@ import org.slf4j.MDC
  */
 @InternalApi
 private[impl] object AgentImpl {
+  private val log = LoggerFactory.getLogger(classOf[AgentImpl[_]])
 
   private class AgentContextImpl(
       override val sessionId: Optional[String],
@@ -70,7 +74,8 @@ private[impl] final class AgentImpl[A <: Agent](
     tracerFactory: () => Tracer,
     serializer: JsonSerializer,
     componentDescriptor: ComponentDescriptor,
-    regionInfo: RegionInfo)
+    regionInfo: RegionInfo,
+    config: Config)
     extends SpiAgent {
   import AgentImpl._
 
@@ -151,7 +156,7 @@ private[impl] final class AgentImpl[A <: Agent](
   private def toSpiModelProvider(modelProvider: ModelProvider): SpiAgent.ModelProvider = {
     modelProvider match {
       case p: ModelProvider.FromConfig =>
-        spiModelProviderFromConfig(p.configPath())
+        toSpiModelProvider(modelProviderFromConfig(p.configPath()))
       case p: ModelProvider.Anthropic =>
         new SpiAgent.ModelProvider.Anthropic(
           apiKey = p.apiKey,
@@ -173,9 +178,39 @@ private[impl] final class AgentImpl[A <: Agent](
     }
   }
 
-  private def spiModelProviderFromConfig(configPath: String): SpiAgent.ModelProvider = {
-    // FIXME
-    ???
+  private def modelProviderFromConfig(configPath: String): ModelProvider = {
+    val actualPath =
+      if (configPath == "")
+        config.getString("akka.javasdk.agent.model-provider")
+      else
+        configPath
+
+    if (actualPath == "")
+      throw new IllegalArgumentException(
+        s"You must define model provider configuration in [akka.javasdk.agent.model-provider]")
+
+    val resolvedConfigPath =
+      if (config.hasPath(actualPath))
+        actualPath
+      else if (!actualPath.contains('.') && config.hasPath("akka.javasdk.agent." + actualPath))
+        "akka.javasdk.agent." + actualPath
+      else
+        throw new IllegalArgumentException(s"Undefined model provider configuration [$actualPath]")
+
+    try {
+      log.debug("Model provider from config [{}]", resolvedConfigPath)
+      val providerConfig = config.getConfig(resolvedConfigPath)
+      providerConfig.getString("provider") match {
+        case "openai"    => ModelProvider.OpenAi.fromConfig(providerConfig)
+        case "anthropic" => ModelProvider.OpenAi.fromConfig(providerConfig)
+        case other =>
+          throw new IllegalArgumentException(s"Unknown model provider [$other] in config [$resolvedConfigPath]")
+      }
+    } catch {
+      case exc: ConfigException =>
+        log.error("Invalid model provider configuration at [{}] for agent [{}].", resolvedConfigPath, componentId, exc)
+        throw exc
+    }
   }
 
   override def transformResponse(modelResponse: String, responseType: Class[_]): BytesPayload = {
