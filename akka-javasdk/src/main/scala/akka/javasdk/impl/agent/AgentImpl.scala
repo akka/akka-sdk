@@ -164,6 +164,7 @@ private[impl] final class AgentImpl[A <: Agent](
           baseUrl = p.baseUrl,
           temperature = p.temperature,
           topP = p.topP,
+          topK = p.topK,
           maxTokens = p.maxTokens)
       case p: ModelProvider.OpenAi =>
         new SpiAgent.ModelProvider.OpenAi(
