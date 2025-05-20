@@ -14,7 +14,7 @@ import java.util.Optional;
 import static akka.Done.done;
 
 @ComponentId("akka-prompt-template")
-public class PromptTemplate extends EventSourcedEntity<PromptTemplate.Prompt, PromptTemplate.Event> {
+public final class PromptTemplate extends EventSourcedEntity<PromptTemplate.Prompt, PromptTemplate.Event> {
 
   public record Prompt(String value) { //a wrapper instead of a String to allow further evolution
   }

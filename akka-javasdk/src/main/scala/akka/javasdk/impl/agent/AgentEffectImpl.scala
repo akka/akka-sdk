@@ -29,8 +29,8 @@ private[javasdk] object AgentEffectImpl {
         replyMetadata = Metadata.EMPTY)
   }
   sealed trait SystemMessage
-  case class ConstantSystemMessage(message: String) extends SystemMessage
-  case class TemplateSystemMessage(templateId: String) extends SystemMessage
+  final case class ConstantSystemMessage(message: String) extends SystemMessage
+  final case class TemplateSystemMessage(templateId: String) extends SystemMessage
 
   final case class RequestModel(
       systemMessage: SystemMessage,

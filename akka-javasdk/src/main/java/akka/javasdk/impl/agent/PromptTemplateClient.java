@@ -4,10 +4,15 @@
 
 package akka.javasdk.impl.agent;
 
+import akka.annotation.InternalApi;
 import akka.javasdk.agent.PromptTemplate;
 import akka.javasdk.client.ComponentClient;
 
-public class PromptTemplateClient {
+/**
+ * INTERNAL API
+ */
+@InternalApi
+public final class PromptTemplateClient {
 
   private final ComponentClient componentClient;
 
