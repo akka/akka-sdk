@@ -1,6 +1,7 @@
 package akka.ask.agent.application;
 
 import akka.javasdk.agent.Agent;
+import akka.javasdk.agent.ModelProvider;
 import akka.javasdk.annotations.AgentDescription;
 import akka.javasdk.annotations.ComponentId;
 
@@ -25,9 +26,9 @@ public class NewAskAkkaAgent extends Agent {
     var enrichedQuestion = knowledge.addKnowledge(question);
 
     return effects()
-        .modelProvider(ModelProvider.OPEN_AI)
-        .modelApiKey(System.getenv("OPENAI_API_KEY"))
-        .modelName("gpt-4o-mini")
+        .modelProvider(ModelProvider.openAi()
+            .withApiKey(System.getenv("OPENAI_API_KEY"))
+            .withModelName("gpt-4o-mini"))
         .systemMessage(sysMessage)
         .userMessage(enrichedQuestion)
         .thenReply();
