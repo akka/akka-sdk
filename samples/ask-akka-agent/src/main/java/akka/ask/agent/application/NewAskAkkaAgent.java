@@ -22,11 +22,11 @@ public class NewAskAkkaAgent extends Agent {
   }
 
   public Agent.Effect<String> ask(String question) {
-    var questionWithKnowledge = knowledge.addKnowledge(question);
+    var enrichedQuestion = knowledge.addKnowledge(question);
 
     return effects()
         .systemMessage(sysMessage)
-        .userMessage(questionWithKnowledge)
+        .userMessage(enrichedQuestion)
         .thenReply();
   }
 
