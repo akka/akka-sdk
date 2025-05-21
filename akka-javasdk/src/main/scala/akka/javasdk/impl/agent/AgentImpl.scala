@@ -119,8 +119,9 @@ private[impl] final class AgentImpl[A <: Agent](
         commandEffect.primaryEffect match {
           case req: RequestModel =>
             val systemMessage = req.systemMessage match {
-              case ConstantSystemMessage(message)    => message
-              case TemplateSystemMessage(templateId) => promptTemplateClient.getPromptTemplate(templateId)
+              case ConstantSystemMessage(message) => message
+              case template: TemplateSystemMessage =>
+                promptTemplateClient.getPromptTemplate(template.templateId).formatted(template.args)
             }
             val spiModelProvider = toSpiModelProvider(req.modelProvider)
             val metadata = MetadataImpl.toSpi(req.replyMetadata)
