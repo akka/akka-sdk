@@ -642,7 +642,7 @@ private final class Sdk(
         val instanceFactory: SpiAgent.FactoryContext => SpiAgent = { factoryContext =>
           new AgentImpl(
             componentId,
-            factoryContext.sessionId.toJava,
+            factoryContext.sessionId,
             context =>
               wiredInstance(agentClass) {
                 (sideEffectingComponentInjects(None)).orElse {
