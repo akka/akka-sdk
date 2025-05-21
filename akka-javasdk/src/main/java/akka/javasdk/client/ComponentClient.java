@@ -7,8 +7,6 @@ package akka.javasdk.client;
 import akka.annotation.DoNotInherit;
 import akka.javasdk.agent.Agent;
 
-import java.util.Optional;
-
 /**
  * Utility to send requests to other components by composing a call that can be executed by the
  * runtime. To compose a call:
@@ -62,19 +60,6 @@ public interface ComponentClient {
   /** Select {@link akka.javasdk.view.View} as a call target component. */
   ViewClient forView();
 
-  /**
-   * Select {@link Agent} as a call target component.
-   *
-   * @param sessionId - The agent may participate in a session, which is used for the agent's
-   *     conversational memory.
-   */
-  AgentClient forAgent(Optional<String> sessionId);
-
-  /**
-   * Select {@link Agent} as a call target component.
-   *
-   * @param sessionId - The agent will participate in this session, which is used for the agent's
-   *     conversational memory.
-   */
-  AgentClient forAgent(String sessionId);
+  /** Select {@link Agent} as a call target component. */
+  AgentClient forAgent();
 }

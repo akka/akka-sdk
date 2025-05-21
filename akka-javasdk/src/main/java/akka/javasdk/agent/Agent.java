@@ -63,8 +63,19 @@ public abstract class Agent {
      */
     interface Builder {
 
-      Builder modelProvider(ModelProvider provider);
+      /**
+       * Define the model (LLM) to use.
+       * If undefined, the model is defined by the default configuration in
+       * {@code akka.javasdk.agent.model-provider}
+       */
+      Builder model(ModelProvider provider);
 
+      /**
+       * Provides system-level instructions to the AI model that define its behavior and context.
+       * The system message acts as a foundational prompt that establishes the AI's role, constraints,
+       * and operational parameters. It is processed before user messages and helps maintain consistent
+       * behavior throughout the interaction.
+       */
       Builder systemMessage(String message);
 
       /**
@@ -81,6 +92,10 @@ public abstract class Agent {
        */
       Builder systemMessageFromTemplate(String templateId, Object... args);
 
+      /**
+       * The user message to the AI model. This message represents the specific query, instruction,
+       * or input that will be processed by the model to generate a response.
+       */
       OnSuccessBuilder userMessage(String message);
 
       /**

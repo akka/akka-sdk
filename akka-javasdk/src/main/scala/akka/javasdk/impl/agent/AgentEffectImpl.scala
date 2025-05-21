@@ -91,7 +91,7 @@ private[javasdk] final class AgentEffectImpl[Reply] extends Builder with OnSucce
   def hasError(): Boolean =
     _secondaryEffect.isInstanceOf[ErrorReplyImpl]
 
-  override def modelProvider(provider: ModelProvider): Builder = {
+  override def model(provider: ModelProvider): Builder = {
     updateRequestModel(_.withProvider(provider))
     this
   }
