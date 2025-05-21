@@ -103,12 +103,22 @@ private[impl] final class AgentImpl[A <: Agent](
     val agentContext = new AgentContextImpl(sessionId, regionInfo.selfRegion, metadata, span, tracerFactory)
 
     try {
-      val commandEffect = router
-        .handleCommand(command.name, cmdPayload, agentContext)
-        .asInstanceOf[AgentEffectImpl] // FIXME improve?
+      val commandEffect = router.handleCommand(command.name, cmdPayload, agentContext)
+
+      def primaryEffect =
+        commandEffect match {
+          case e: AgentEffectImpl[_]    => e.primaryEffect
+          case e: AgentStreamEffectImpl => e.primaryEffect
+        }
+
+      def secondaryEffect =
+        commandEffect match {
+          case e: AgentEffectImpl[_]    => e.secondaryEffect
+          case e: AgentStreamEffectImpl => e.secondaryEffect
+        }
 
       def errorOrReply: Either[SpiAgent.Error, (BytesPayload, SpiMetadata)] = {
-        commandEffect.secondaryEffect match {
+        secondaryEffect match {
           case ErrorReplyImpl(description) =>
             Left(new SpiAgent.Error(description))
           case MessageReplyImpl(message, m) =>
@@ -122,7 +132,7 @@ private[impl] final class AgentImpl[A <: Agent](
 
       val additionalContext = toSpiContextMessages(coreMemoryClient.getFullHistory(sessionId))
       val spiEffect =
-        commandEffect.primaryEffect match {
+        primaryEffect match {
           case req: RequestModel =>
             val systemMessage = req.systemMessage match {
               case ConstantSystemMessage(message) => message

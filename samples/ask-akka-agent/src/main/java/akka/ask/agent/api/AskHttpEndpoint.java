@@ -46,12 +46,14 @@ public class AskHttpEndpoint {
   }
 
   @Post("/new-ask") // FIXME
-  public String newAsk(QueryRequest request) {
-    return componentClient
+  public HttpResponse newAsk(QueryRequest request) {
+    var responseStream = componentClient
         .forAgent()
         .inSession(request.sessionId())
-        .method(NewAskAkkaAgent::ask)
-        .invoke(request.question);
+        .tokenStream(NewAskAkkaAgent::ask)
+        .source(request.question);
+
+    return HttpResponses.serverSentEvents(responseStream);
   }
 
   @Post("/new-ask-structured") // FIXME

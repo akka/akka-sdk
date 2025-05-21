@@ -21,10 +21,10 @@ public class NewAskAkkaAgent extends Agent {
     this.knowledge = knowledge;
   }
 
-  public Agent.Effect<String> ask(String question) {
+  public Agent.StreamEffect ask(String question) {
     var enrichedQuestion = knowledge.addKnowledge(question);
 
-    return effects()
+    return streamEffects()
         .systemMessage(sysMessage)
         .userMessage(enrichedQuestion)
         .thenReply();
