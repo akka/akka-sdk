@@ -75,7 +75,7 @@ public abstract class Agent {
 
       /**
        * Create a system message from a template. Call @{@link PromptTemplate} before to initiate or update template value.
-       * Provide arguments that will be applied to the template using Java {@link String#format} method.
+       * Provide arguments that will be applied to the template using Java {@link String#formatted} method.
        * @param templateId the id of the template to use
        * @param args the arguments to apply to the template
        */
