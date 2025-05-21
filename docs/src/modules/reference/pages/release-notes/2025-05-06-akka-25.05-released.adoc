@@ -59,6 +59,7 @@ No vulnerabilities or upstream vulnerabilities have been found since Akka 24.10.
 == Bug fixes
 
 * Multiple fixes in the async DNS client https://github.com/akka/akka/pull/32636[akka #32636]
+* Avoid a range of more than Int.MaxValue elements in JournalSequenceActor https://github.com/akka/akka-persistence-jdbc/pull/904[akka-persistence-jdbc]
 
 == Other improvements
 
