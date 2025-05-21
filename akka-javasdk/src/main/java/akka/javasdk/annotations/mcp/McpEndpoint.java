@@ -30,11 +30,11 @@ public @interface McpEndpoint {
   /**
    * @return The path to publish the MCP endpoint at, defaults to "/mcp"
    */
-  String value() default "mcp";
+  String path() default "/mcp";
   /**
    * @return A server name to return to clients in the initialization response
    */
-  String serverName() default "";
+  String serverName();
   /**
    * @return A server version to return to clients in the initialization response
    */

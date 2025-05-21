@@ -13,10 +13,12 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 public @interface McpTool {
+
   /**
-   * @return The name of the tool. Must be unique in the same MCP endpoint.
+   * @return The name of the tool. Must be unique in the same MCP endpoint if specified, if not specified, the method
+   *         name is used.
    */
-  String name();
+  String name() default "";
 
   /**
    * @return A clear description of what the tools, used by the client LLM to determine what the tool can be used for
@@ -28,4 +30,9 @@ public @interface McpTool {
    * @return A manually specified schema instead of the automatic
    */
   String inputSchema() default "";
+
+  /**
+   * Optional annotations describing what the tool does to the client.
+   */
+  ToolAnnotation[] annotations() default {};
 }
