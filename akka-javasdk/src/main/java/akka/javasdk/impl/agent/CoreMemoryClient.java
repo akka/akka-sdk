@@ -2,7 +2,7 @@
  * Copyright (C) 2021-2024 Lightbend Inc. <https://www.lightbend.com>
  */
 
-package akka.javasdk.agent.impl;
+package akka.javasdk.impl.agent;
 
 import akka.javasdk.agent.ConversationMemory;
 import akka.javasdk.agent.CoreMemory;
@@ -14,18 +14,18 @@ import org.slf4j.LoggerFactory;
  * INTERNAL USE
  * Not for user extension or instantiation
  */
-public class PersistentCoreMemory implements CoreMemory {
+public class CoreMemoryClient implements CoreMemory {
 
-  private final Logger logger = LoggerFactory.getLogger(PersistentCoreMemory.class);
+  private final Logger logger = LoggerFactory.getLogger(CoreMemoryClient.class);
   private final ComponentClient componentClient;
 
-  public PersistentCoreMemory(ComponentClient componentClient) {
+  public CoreMemoryClient(ComponentClient componentClient) {
     this.componentClient = componentClient;
   }
 
   @Override
-  public void addUserMessage(String sessionId, String message) {
-    logger.debug("Adding user message to session: {}", sessionId);
+  public void addUserMessage(String componentId, String sessionId, String message) {
+    logger.debug("Adding user message to sessionId={} from componentId={}", sessionId, componentId);
     componentClient
         .forEventSourcedEntity(sessionId)
         .method(ConversationMemory::addUserMessage)
@@ -41,12 +41,20 @@ public class PersistentCoreMemory implements CoreMemory {
         .invoke(message);
   }
 
+  public void addInteraction(String sessionId, String userMessage, String aiMessage) {
+    logger.debug("Adding interaction to session: {}", sessionId);
+    componentClient.forEventSourcedEntity(sessionId)
+        .method(ConversationMemory::addInteraction)
+        .invoke(new ConversationMemory.AddInteractionCmd(userMessage, aiMessage));
+  }
+
   @Override
   public ConversationHistory getFullHistory(String sessionId) {
     var msgs = componentClient.forEventSourcedEntity(sessionId)
         .method(ConversationMemory::getHistory)
         .invoke()
         .messages();
+    logger.debug("Full history retrieved for sessionId={} size={}", sessionId, msgs.size());
     return new ConversationHistory(msgs);
   }
 }

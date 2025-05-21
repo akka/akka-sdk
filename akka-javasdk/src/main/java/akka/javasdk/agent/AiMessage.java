@@ -4,13 +4,11 @@
 
 package akka.javasdk.agent;
 
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
-@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS)
 public record AiMessage(MessageContent content) implements Message {
 
-  public static AiMessage of(String content) {
-    return new AiMessage(new MessageContent.TextContent(content));
+  public static AiMessage of(String text) {
+    return new AiMessage(new MessageContent.TextContent(text));
   }
 
   public String getText() {

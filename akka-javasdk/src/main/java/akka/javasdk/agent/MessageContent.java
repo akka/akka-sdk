@@ -4,6 +4,7 @@
 
 package akka.javasdk.agent;
 
+import akka.javasdk.annotations.TypeName;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
@@ -16,6 +17,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
     @JsonSubTypes.Type(value = MessageContent.TextContent.class, name = "text"),
 })
 public sealed interface MessageContent {
-  @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS)
+
+  //@TypeName("akka-text-content")
   record TextContent(String text) implements MessageContent  {}
 }

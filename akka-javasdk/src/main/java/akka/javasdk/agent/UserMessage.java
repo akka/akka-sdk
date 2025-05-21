@@ -6,7 +6,6 @@ package akka.javasdk.agent;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
-@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS)
 public record UserMessage(MessageContent content) implements Message {
 
   public static UserMessage of(String content) {

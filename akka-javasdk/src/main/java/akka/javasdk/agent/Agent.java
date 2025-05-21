@@ -96,12 +96,6 @@ public abstract class Agent {
        * The user message to the AI model. This message represents the specific query, instruction,
        * or input that will be processed by the model to generate a response.
        */
-      Builder systemMessageFromTemplate(String templateId);
-
-      /**
-       * The user message to the AI model. This message represents the specific query, instruction,
-       * or input that will be processed by the model to generate a response.
-       */
       OnSuccessBuilder userMessage(String message);
 
       /**

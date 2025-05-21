@@ -10,7 +10,6 @@ import java.lang.reflect.Method
 import java.util
 import java.util.Optional
 import java.util.concurrent.CompletionStage
-
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.Promise
@@ -20,7 +19,6 @@ import scala.jdk.OptionConverters.RichOption
 import scala.jdk.OptionConverters.RichOptional
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
-
 import akka.Done
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
@@ -111,14 +109,16 @@ import io.opentelemetry.context.{ Context => OtelContext }
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
-import java.util.concurrent.Executor
 
+import java.util.concurrent.Executor
 import akka.javasdk.agent.Agent
 import akka.javasdk.agent.AgentContext
+import akka.javasdk.agent.ConversationMemory
 import akka.javasdk.impl.agent.AgentImpl
 import akka.runtime.sdk.spi.AgentDescriptor
 import akka.runtime.sdk.spi.SpiAgent
 import akka.javasdk.agent.PromptTemplate
+import akka.javasdk.impl.agent.CoreMemoryClient
 import akka.javasdk.impl.agent.PromptTemplateClient
 
 /**
@@ -294,7 +294,7 @@ private object ComponentLocator {
 
     val withBuildInComponents = if (components.exists(classOf[Agent].isAssignableFrom)) {
       logger.debug("Agent component detected, adding built-in components")
-      classOf[PromptTemplate] +: components
+      classOf[ConversationMemory] +: classOf[PromptTemplate] +: components
     } else {
       components
     }
@@ -655,6 +655,7 @@ private final class Sdk(
             ComponentDescriptor.descriptorFor(agentClass, serializer),
             regionInfo,
             new PromptTemplateClient(componentClient(None)),
+            new CoreMemoryClient(componentClient(None)), // FIXME allow for custom implementations
             applicationConfig)
 
         }

@@ -20,13 +20,17 @@ import static akka.Done.done;
 
 /**
  * ConversationMemory is an EventSourcedEntity that maintains a limited history of conversation
- * messages in a FIFO (First In, First Out) manner.
+ * messages in a FIFO (First In, First Out) style.
  * <p>
  * The maximum number of entries in the history can be set dynamically with command setLimitedWindow.
+ * {@link akka.javasdk.client.ComponentClient} can be used to interact directly with this entity.
  */
 @ComponentId("akka-conversation-memory")
-public class ConversationMemory extends EventSourcedEntity<History, Event> {
+public final class ConversationMemory extends EventSourcedEntity<History, Event> {
 
+  private static final Logger log = LoggerFactory.getLogger(ConversationMemory.class);
+
+  @TypeName("akka-history")
   public record History(int maxSize, List<Message> messages) {
 
     private static final Logger logger = LoggerFactory.getLogger(History.class);
@@ -87,23 +91,24 @@ public class ConversationMemory extends EventSourcedEntity<History, Event> {
    */
   public sealed interface Event {
 
-    @TypeName("limited-window-set")
+    @TypeName("akka-memory-limited-window-set")
     record LimitedWindowSet(int maxSize) implements Event {
     }
 
-    @TypeName("user-message-added")
+    @TypeName("akka-memory-user-message-added")
     record UserMessageAdded(String message) implements Event {
     }
 
-    @TypeName("ai-message-added")
+    @TypeName("akka-memory-ai-message-added")
     record AiMessageAdded(String message) implements Event {
     }
     
-    @TypeName("deleted")
+    @TypeName("akka-memory-deleted")
     record Deleted() implements Event {
     }
   }
 
+  // Request commands
   public record LimitedWindow(int maxSize) {}
 
   public Effect<Done> setLimitedWindow(LimitedWindow limitedWindow) {
@@ -117,6 +122,7 @@ public class ConversationMemory extends EventSourcedEntity<History, Event> {
   }
 
   public Effect<Done> addUserMessage(String message) {
+    log.debug("Adding user message: {}", message);
     return effects()
         .persist(new Event.UserMessageAdded(message))
         .thenReply(__ -> Done.done());
@@ -128,15 +134,29 @@ public class ConversationMemory extends EventSourcedEntity<History, Event> {
         .thenReply(__ -> Done.done());
   }
 
+  public record AddInteractionCmd(String userMessage, String aiMessage) {
+
+  }
+  public Effect<Done> addInteraction(AddInteractionCmd cmd) {
+    log.debug("Adding interaction: user={}, ai={}", cmd.userMessage, cmd.aiMessage);
+    return effects()
+        .persistAll(List.of(new Event.UserMessageAdded(cmd.userMessage), new Event.AiMessageAdded(cmd.aiMessage)))
+        .thenReply(__ -> Done.done());
+  }
+
   public ReadOnlyEffect<History> getHistory() {
     return effects().reply(currentState());
   }
 
   public Effect<Done> delete() {
-    return effects()
-        .persist(new Event.Deleted())
-        .deleteEntity()
-        .thenReply(state -> Done.done());
+    if (isDeleted()) {
+      return effects().reply(done());
+    } else {
+      return effects()
+          .persist(new Event.Deleted())
+          .deleteEntity()
+          .thenReply(__ -> done());
+    }
   }
 
   @Override
