@@ -4,6 +4,8 @@
 
 package akka.javasdk.impl.client
 
+import java.lang.reflect.Method
+
 import scala.concurrent.ExecutionContext
 import scala.jdk.FutureConverters.FutureOps
 
@@ -16,14 +18,39 @@ import akka.javasdk.client.AgentClient
 import akka.javasdk.client.AgentClientInSession
 import akka.javasdk.client.ComponentMethodRef
 import akka.javasdk.client.ComponentMethodRef1
+import akka.javasdk.client.ComponentStreamMethodRef
+import akka.javasdk.client.ComponentStreamMethodRef1
 import akka.javasdk.impl.ComponentDescriptorFactory
 import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.serialization.JsonSerializer
 import akka.runtime.sdk.spi.AgentRequest
-import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.AgentType
+import akka.runtime.sdk.spi.BytesPayload
+import akka.runtime.sdk.spi.SpiMetadata
 import akka.runtime.sdk.spi.{ AgentClient => RuntimeAgentClient }
+
+object AgentClientImpl {
+
+  private case class AgentMethodProperties(
+      componentId: String,
+      method: Method,
+      methodName: String,
+      declaringClass: Class[_])
+
+  private def validateAndExtractAgentMethodProperties(lambda: AnyRef): AgentMethodProperties = {
+    val method = MethodRefResolver.resolveMethodRef(lambda)
+    val declaringClass = method.getDeclaringClass
+    val expectedComponentSuperclass: Class[_] = classOf[Agent]
+    if (!expectedComponentSuperclass.isAssignableFrom(declaringClass)) {
+      throw new IllegalArgumentException(s"$declaringClass is not a subclass of $expectedComponentSuperclass")
+    }
+    val componentId = ComponentDescriptorFactory.readComponentIdValue(declaringClass)
+    val methodName = method.getName.capitalize
+    AgentMethodProperties(componentId, method, methodName, declaringClass)
+  }
+
+}
 
 /**
  * INTERNAL API
@@ -36,6 +63,7 @@ private[javasdk] final case class AgentClientImpl(
     sessionId: String)(implicit val executionContext: ExecutionContext, system: ActorSystem[_])
     extends AgentClient
     with AgentClientInSession {
+  import AgentClientImpl.validateAndExtractAgentMethodProperties
 
   override def inSession(sessionId: String): AgentClientInSession = {
     if ((sessionId eq null) || sessionId.trim.isBlank)
@@ -58,15 +86,10 @@ private[javasdk] final case class AgentClientImpl(
 
   private def createMethodRefForEitherArity[A1, R](lambda: AnyRef): ComponentMethodRefImpl[A1, R] = {
     import MetadataImpl.toSpi
-    val method = MethodRefResolver.resolveMethodRef(lambda)
-    val declaringClass = method.getDeclaringClass
-    val expectedComponentSuperclass: Class[_] = classOf[Agent]
-    if (!expectedComponentSuperclass.isAssignableFrom(declaringClass)) {
-      throw new IllegalArgumentException(s"$declaringClass is not a subclass of $expectedComponentSuperclass")
-    }
-    val componentId = ComponentDescriptorFactory.readComponentIdValue(declaringClass)
-    val methodName = method.getName.capitalize
-    val returnType = Reflect.getReturnType(declaringClass, method)
+
+    val agentMethodProperties = validateAndExtractAgentMethodProperties(lambda)
+    import agentMethodProperties._
+    val returnType = Reflect.getReturnType(declaringClass, agentMethodProperties.method)
 
     // FIXME push some of this logic into the NativeomponentMethodRef
     //       will be easier to follow to do that instead of creating a lambda here and injecting into that
@@ -116,4 +139,35 @@ private[javasdk] final case class AgentClientImpl(
 
   }
 
+  override def tokenStream[T](methodRef: function.Function[T, Agent.StreamEffect]): ComponentStreamMethodRef[String] = {
+    val agentMethodProperties = validateAndExtractAgentMethodProperties(methodRef)
+    import agentMethodProperties._
+
+    () =>
+      agentClient
+        .sendStream(new AgentRequest(componentId, sessionId, methodName, BytesPayload.empty, SpiMetadata.empty))
+        .map { agentResult =>
+          // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
+          serializer.fromBytes(classOf[String], agentResult.payload)
+        }
+        .asJava
+  }
+
+  override def tokenStream[T, A1](
+      methodRef: function.Function2[T, A1, Agent.StreamEffect]): ComponentStreamMethodRef1[A1, String] = {
+    val agentMethodProperties = validateAndExtractAgentMethodProperties(methodRef)
+    import agentMethodProperties._
+
+    (arg: A1) =>
+      // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
+      val serializedPayload = serializer.toBytes(arg)
+      agentClient
+        .sendStream(new AgentRequest(componentId, sessionId, methodName, serializedPayload, SpiMetadata.empty))
+        .map { agentResult =>
+          // Note: not Kalix JSON encoded here, regular/normal utf8 bytes
+          serializer.fromBytes(classOf[String], agentResult.payload)
+        }
+        .asJava
+
+  }
 }
