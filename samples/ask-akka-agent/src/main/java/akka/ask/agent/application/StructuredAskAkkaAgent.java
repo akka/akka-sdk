@@ -35,7 +35,7 @@ public class StructuredAskAkkaAgent extends Agent {
     var enrichedQuestion = knowledge.addKnowledge(question);
 
     return effects()
-        .modelProvider(ModelProvider.openAi()
+        .model(ModelProvider.openAi()
             .withApiKey(System.getenv("OPENAI_API_KEY"))
             .withModelName("gpt-4o-mini"))
         .systemMessage(sysMessage)

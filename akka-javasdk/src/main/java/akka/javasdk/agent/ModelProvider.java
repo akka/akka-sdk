@@ -7,16 +7,25 @@ package akka.javasdk.agent;
 import com.typesafe.config.Config;
 
 public sealed interface ModelProvider {
+  /**
+   * Model provider from configuration defined in {@code akka.javasdk.agent.model-provider}.
+   */
   static ModelProvider fromConfig() {
     return fromConfig("");
   }
 
+  /**
+   * Model provider from configuration defined in the given {@code configPath}.
+   */
   static ModelProvider fromConfig(String configPath) {
     return new FromConfig(configPath);
   }
 
   record FromConfig(String configPath) implements ModelProvider {}
 
+  /**
+   * Settings for the Anthropic Large Language Model provider.
+   */
   static Anthropic anthropic() {
     return new Anthropic(
         "",
@@ -28,13 +37,38 @@ public sealed interface ModelProvider {
         -1);
   }
 
-  record Anthropic(String apiKey,
-                   String modelName,
-                   String baseUrl,
-                   double temperature,
-                   double topP,
-                   int topK,
-                   int maxTokens) implements ModelProvider {
+  
+  /**
+   * Settings for the Anthropic Large Language Model provider.
+   */
+  record Anthropic(
+      /** API key for authentication with Anthropic's API */
+      String apiKey,
+      /** Name of the Anthropic model to use (e.g. "claude-2") */
+      String modelName,
+      /** Base URL for Anthropic's API endpoints */
+      String baseUrl,
+      /** Controls randomness in the model's output (0.0-1.0, higher = more random) */
+      double temperature,
+      /**
+       * Nucleus sampling parameter (0.0 to 1.0). Controls text generation by
+       * only considering the most likely tokens whose cumulative probability
+       * exceeds the threshold value. It helps balance between diversity and
+       * quality of outputs—lower values (like 0.3) produce more focused,
+       * predictable text while higher values (like 0.9) allow more creativity
+       * and variation.
+       */
+      double topP,
+      /**
+       * Top-k sampling limits text generation to only the k most probable
+       * tokens at each step, discarding all other possibilities regardless
+       * of their probability. It provides a simpler way to control randomness,
+       * smaller k values (like 10) produce more focused outputs while larger
+       * values (like 50) allow for more diversity.
+       */
+      int topK,
+      /** Maximum number of tokens to generate in the response */
+      int maxTokens) implements ModelProvider {
 
     public static Anthropic fromConfig(Config config) {
       return new Anthropic(
@@ -75,9 +109,10 @@ public sealed interface ModelProvider {
       return new Anthropic(apiKey, modelName, baseUrl, temperature, topP, topK, maxTokens);
     }
   }
-  
-  
 
+  /**
+   * Settings for the Anthropic Large Language Model provider.
+   */
   static OpenAi openAi() {
     return new OpenAi(
         "",
@@ -88,12 +123,29 @@ public sealed interface ModelProvider {
         -1);
   }
 
-  record OpenAi(String apiKey,
-                String modelName,
-                String baseUrl,
-                double temperature,
-                double topP,
-                int maxTokens) implements ModelProvider {
+  /**
+   * Settings for the OpenAI Large Language Model provider.
+   */
+  record OpenAi(
+      /** API key for authentication with OpenAI's API */
+      String apiKey,
+      /** Name of the OpenAI model to use (e.g. "gpt-4") */
+      String modelName,
+      /** Base URL for OpenAI's API endpoints */
+      String baseUrl,
+      /** Controls randomness in the model's output (0.0-1.0, higher = more random) */
+      double temperature,
+      /**
+       * Nucleus sampling parameter (0.0 to 1.0). Controls text generation by
+       * only considering the most likely tokens whose cumulative probability
+       * exceeds the threshold value. It helps balance between diversity and
+       * quality of outputs—lower values (like 0.3) produce more focused,
+       * predictable text while higher values (like 0.9) allow more creativity
+       * and variation.
+       */
+      double topP,
+      /** Maximum number of tokens to generate in the response */
+      int maxTokens) implements ModelProvider {
 
     public static OpenAi fromConfig(Config config) {
       return new OpenAi(
@@ -135,6 +187,9 @@ public sealed interface ModelProvider {
   }
 
   non-sealed interface Custom extends ModelProvider {
+    /**
+     * @return an instance of {@code dev.langchain4j.model.chat.ChatModel}
+     */
     Object createChatModel();
   }
 }
