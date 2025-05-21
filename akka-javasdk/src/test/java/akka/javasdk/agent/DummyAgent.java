@@ -22,12 +22,18 @@ class DummyAgent1 extends Agent {
 @AgentDescription(name = "Dummy Agent", description = "Not very smart agent")
 class DummyAgent2 extends Agent {
   record Response(String result) {}
+  record Response2(String result) {}
 
-  Effect<Response> doSomething(String question) {
+  Effect<Response2> doSomething(String question) {
     return effects()
         .systemMessage("You are a helpful...")
         .userMessage(question)
-        .thenReplyAs(Response.class);
+        .responseAs(Response.class)
+//        .reply();
+        .map(response -> new Response2(response.result))
+//      .reply()
+        .onFailure(throwable -> {throw new IllegalStateException("das");});
+//        .onFailure(ex -> ...)
   }
 }
 

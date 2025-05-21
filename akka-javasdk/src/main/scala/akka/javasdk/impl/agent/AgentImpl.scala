@@ -129,6 +129,8 @@ private[impl] final class AgentImpl[A <: Agent](
               systemMessage,
               req.userMessage,
               req.responseType,
+              req.responseMapping,
+              req.failureMapping,
               metadata)
 
           case NoPrimaryEffect =>
@@ -219,17 +221,31 @@ private[impl] final class AgentImpl[A <: Agent](
     }
   }
 
-  override def transformResponse(modelResponse: String, responseType: Class[_]): BytesPayload = {
+  override def transformResponse(
+      modelResponse: String,
+      responseType: Class[_],
+      mappingFunction: Option[Any => Any],
+      failureMapping: Option[Throwable => Any]): BytesPayload = {
     if (responseType == classOf[String]) {
       serializer.toBytes(modelResponse)
     } else {
       // We might be able to bypass serialization roundtrip here, but might be good to catch invalid json
       // as early as possible.
       // The content type isn't used in this fromBytes.
-      val obj = serializer.fromBytes(
-        responseType,
-        new BytesPayload(ByteString.fromString(modelResponse), JsonSerializer.JsonContentTypePrefix + "object"))
-      serializer.toBytes(obj)
+      try {
+        val obj = serializer.fromBytes(
+          responseType,
+          new BytesPayload(ByteString.fromString(modelResponse), JsonSerializer.JsonContentTypePrefix + "object"))
+
+        val mappedObj = mappingFunction.map(_.apply(obj)).getOrElse(obj)
+
+        serializer.toBytes(mappedObj)
+      } catch {
+        case e: Throwable if failureMapping.isDefined =>
+          //trying to recover
+          val any = failureMapping.get.apply(e)
+          serializer.toBytes(any)
+      }
     }
   }
 }

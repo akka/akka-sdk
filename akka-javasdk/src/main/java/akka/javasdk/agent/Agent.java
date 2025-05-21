@@ -9,6 +9,7 @@ import akka.javasdk.Metadata;
 import akka.javasdk.impl.agent.AgentEffectImpl;
 
 import java.util.Optional;
+import java.util.function.Function;
 
 public abstract class Agent {
 
@@ -132,20 +133,28 @@ public abstract class Agent {
       Agent.Effect<String> thenReply(Metadata metadata);
 
       /**
-       * Reply with the structured response from the model encoded into the given responseType.
-       * @param responseType The type of the message that will be returned by the call.
-       * @return A message reply.
+       * Parse the response from the model into a structured response of a given responseType.
+       * @param responseType The structured response type.
        */
-      <T> Agent.Effect<T> thenReplyAs(Class<T> responseType);
+      <T> MappingResponseBuilder<T> responseAs(Class<T> responseType);
+    }
 
-      /**
-       * Reply with the structured response from the model encoded into the given responseType.
-       * @param responseType The type of the message that will be returned by the call.
-       * @param metadata The metadata for the message.
-       * @return A message reply.
-       */
-      <T> Agent.Effect<T> thenReplyAs(Class<T> responseType, Metadata metadata);
+    interface MappingResponseBuilder<Input> {
 
+      Agent.Effect<Input> thenReply();
+
+      Agent.Effect<Input> thenReply(Metadata metadata);
+
+      <T> MappingFailureBuilder<T> map(Function<Input, T> mapper);
+    }
+
+    interface MappingFailureBuilder<Input> {
+
+      Agent.Effect<Input> thenReply();
+
+      Agent.Effect<Input> thenReply(Metadata metadata);
+
+      Agent.Effect<Input> onFailure(Function<Throwable, Input> exceptionHandler);
     }
 
   }

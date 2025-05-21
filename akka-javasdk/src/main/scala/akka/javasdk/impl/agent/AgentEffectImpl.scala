@@ -4,10 +4,16 @@
 
 package akka.javasdk.impl.agent
 
+import java.util.function
+
+import scala.jdk.FunctionConverters.enrichAsScalaFromFunction
+
 import akka.annotation.InternalApi
 import akka.javasdk.Metadata
 import akka.javasdk.agent.Agent.Effect
 import akka.javasdk.agent.Agent.Effect.Builder
+import akka.javasdk.agent.Agent.Effect.MappingFailureBuilder
+import akka.javasdk.agent.Agent.Effect.MappingResponseBuilder
 import akka.javasdk.agent.Agent.Effect.OnSuccessBuilder
 import akka.javasdk.agent.ModelProvider
 import akka.javasdk.impl.effect.ErrorReplyImpl
@@ -29,6 +35,8 @@ private[javasdk] object AgentEffectImpl {
         systemMessage = ConstantSystemMessage(""),
         userMessage = "",
         responseType = classOf[String],
+        responseMapping = None,
+        failureMapping = None,
         replyMetadata = Metadata.EMPTY)
   }
 
@@ -41,6 +49,8 @@ private[javasdk] object AgentEffectImpl {
       systemMessage: SystemMessage,
       userMessage: String,
       responseType: Class[_],
+      responseMapping: Option[Function1[Any, Any]],
+      failureMapping: Option[Throwable => Any],
       replyMetadata: Metadata)
       extends PrimaryEffectImpl {
 
@@ -55,7 +65,12 @@ private[javasdk] object AgentEffectImpl {
  * INTERNAL API
  */
 @InternalApi
-private[javasdk] final class AgentEffectImpl[Reply] extends Builder with OnSuccessBuilder with Effect[Reply] {
+private[javasdk] final class AgentEffectImpl[Reply]
+    extends Builder
+    with OnSuccessBuilder
+    with MappingResponseBuilder[Reply]
+    with MappingFailureBuilder[Reply]
+    with Effect[Reply] {
   import AgentEffectImpl._
 
   private var _primaryEffect: PrimaryEffectImpl = NoPrimaryEffect
@@ -119,12 +134,18 @@ private[javasdk] final class AgentEffectImpl[Reply] extends Builder with OnSucce
     this.asInstanceOf[AgentEffectImpl[String]]
   }
 
-  override def thenReplyAs[T](responseType: Class[T]): AgentEffectImpl[T] =
-    thenReplyAs[T](responseType, Metadata.EMPTY)
-
-  override def thenReplyAs[T](responseType: Class[T], metadata: Metadata): AgentEffectImpl[T] = {
-    updateRequestModel(_.copy(responseType = responseType, replyMetadata = metadata))
+  override def responseAs[T](responseType: Class[T]): MappingResponseBuilder[T] = {
+    updateRequestModel(_.copy(responseType = responseType))
     this.asInstanceOf[AgentEffectImpl[T]]
   }
 
+  override def map[T](mapper: function.Function[Reply, T]): MappingFailureBuilder[T] = {
+    updateRequestModel(_.copy(responseMapping = Some(mapper.asScala.asInstanceOf[Function1[Any, Any]])))
+    this.asInstanceOf[AgentEffectImpl[T]]
+  }
+
+  override def onFailure(exceptionHandler: function.Function[Throwable, Reply]): Effect[Reply] = {
+    updateRequestModel(_.copy(failureMapping = Some(exceptionHandler.asScala.asInstanceOf[Function1[Throwable, Any]])))
+    this.asInstanceOf[AgentEffectImpl[Reply]]
+  }
 }
