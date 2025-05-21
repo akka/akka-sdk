@@ -530,12 +530,17 @@ private[akka] object Mcp {
       description: String,
       inputSchema: InputSchema,
       @JsonInclude(JsonInclude.Include.NON_EMPTY)
-      annotations: Option[Annotations] = None)
+      annotations: Option[ToolAnnotation] = None)
   final case class InputSchema(
       `type`: String = "object",
       properties: Map[String, ToolProperty],
       required: Seq[String] = Seq.empty)
   final case class ToolProperty(`type`: String, description: String)
+  final case class ToolAnnotation(
+      destructive: Option[Boolean],
+      idempotent: Option[Boolean],
+      openWorld: Option[Boolean],
+      readOnly: Option[Boolean])
 
   /**
    * Invoke a listed tool

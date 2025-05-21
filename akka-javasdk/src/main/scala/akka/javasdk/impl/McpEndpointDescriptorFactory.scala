@@ -11,6 +11,7 @@ import akka.javasdk.annotations.mcp.McpEndpoint
 import akka.javasdk.annotations.mcp.McpResource
 import akka.javasdk.annotations.mcp.McpTool
 import akka.javasdk.annotations.mcp.McpToolParameterDescription
+import akka.javasdk.annotations.mcp.ToolAnnotation
 import akka.javasdk.impl.Mcp.BlobResourceContents
 import akka.javasdk.impl.Mcp.Implementation
 import akka.javasdk.impl.Mcp.TextResourceContents
@@ -18,6 +19,9 @@ import akka.parboiled2.util.Base64
 import akka.runtime.sdk.spi.HttpEndpointDescriptor
 import org.slf4j.LoggerFactory
 
+import java.lang.reflect.ParameterizedType
+import java.lang.reflect.Type
+import java.util.Optional
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
@@ -59,7 +63,13 @@ object McpEndpointDescriptorFactory {
           JsonRpc.Serialization.mapper.readValue(annotation.inputSchema(), classOf[Mcp.InputSchema])
         }
 
-      val toolDescription = Mcp.ToolDescription(annotation.name(), annotation.description(), inputSchema, None)
+      val toolName =
+        if (annotation.name().isBlank) method.getName
+        else annotation.name()
+
+      val toolAnnotations = toolAnnotationsFor(mcpEndpointClass, method.getName, annotation.annotations().toVector)
+
+      val toolDescription = Mcp.ToolDescription(toolName, annotation.description(), inputSchema, toolAnnotations)
 
       val callback = (params: Map[String, Any]) =>
         Future[Mcp.CallToolResult] {
@@ -85,6 +95,13 @@ object McpEndpointDescriptorFactory {
         }
 
       toolDescription -> callback
+    }
+
+    val toolsByName = tools.groupBy { case (desc, _) => desc.name }
+    val duplicateTools = toolsByName.collect { case (name, tools) if tools.size > 1 => name }.toSeq
+    if (duplicateTools.nonEmpty) {
+      throw ValidationException(
+        s"MCP Tools with duplicated names exist in ${mcpEndpointClass.getName}: [${duplicateTools.mkString(", ")}], make sure that each tool has a unique name")
     }
 
     val resourceMethods = allMethods.flatMap { method =>
@@ -130,6 +147,13 @@ object McpEndpointDescriptorFactory {
       resourceDescription -> callback
     }
 
+    val resourcesByUri = resources.groupBy { case (res, _) => res.uri }
+    val duplicateUris = resourcesByUri.collect { case (name, resources) if resources.size > 1 => name }
+    if (duplicateUris.nonEmpty) {
+      throw ValidationException(
+        s"MCP resources with duplicated names exist in ${mcpEndpointClass.getName}: [${duplicateUris.mkString(", ")}], make sure that each resource has a separate, unique URI")
+    }
+
     new Mcp.StatelessMcpEndpoint(
       Mcp.McpDescriptor(
         implementation =
@@ -138,10 +162,10 @@ object McpEndpointDescriptorFactory {
         resourceTemplates = Seq.empty,
         tools = tools,
         instructions = endpointAnnotation.instructions()))
-      .httpEndpoint(endpointAnnotation.value())
+      .httpEndpoint(endpointAnnotation.path())
   }
 
-  private def inputSchemaFor(value: Class[_]): Mcp.InputSchema = {
+  private[impl] def inputSchemaFor(value: Class[_]): Mcp.InputSchema = {
     val properties = value.getDeclaredFields.toSeq.map { field =>
       val description = field.getAnnotation(classOf[McpToolParameterDescription]) match {
         case null =>
@@ -150,25 +174,82 @@ object McpEndpointDescriptorFactory {
             classOf[McpToolParameterDescription].getName,
             field.getName)
           ""
-        case annotation => annotation.value()
+        case annotation =>
+          annotation.value()
       }
-      field.getName -> Mcp.ToolProperty(`type` = jsonSchemaTypeFor(field.getType), description = description)
+
+      val (jsonFieldType, optional) = jsonSchemaTypeFor(field.getGenericType)
+      field.getName -> (Mcp.ToolProperty(`type` = jsonFieldType, description = description), optional)
     }.toMap
 
     Mcp.InputSchema(
-      properties = properties,
-      // FIXME all required for now, is that good enough?
-      required = properties.keys.toSeq)
+      properties = properties.map { case (key, (toolProperty, _)) => key -> toolProperty },
+      required = properties.collect { case (key, (_, optional)) if !optional => key }.toSeq)
   }
 
-  private def jsonSchemaTypeFor(fieldType: Class[_]): String = fieldType.getName match {
-    case "java.lang.String" => "string"
-    case "boolean"          => "boolean"
-    case "int"              => "number"
-    case "long"             => "number"
-    case "byte"             => "number"
-    case "float"            => "number"
-    case "double"           => "number"
-    case unknown            => throw new IllegalArgumentException(s"Unsupported Mcp tool input field type [$unknown]")
+  private final val typeNameMap = Map(
+    "short" -> "number",
+    "byte" -> "number",
+    "char" -> "number",
+    "int" -> "number",
+    "long" -> "number",
+    "double" -> "number",
+    "float" -> "number",
+    "boolean" -> "boolean",
+    "java.lang.Short" -> "number",
+    "java.lang.Byte" -> "number",
+    "java.lang.Char" -> "number",
+    "java.lang.Integer" -> "number",
+    "java.lang.Long" -> "number",
+    "java.lang.Double" -> "number",
+    "java.lang.Float" -> "number",
+    "java.lang.Boolean" -> "boolean")
+
+  private def jsonSchemaTypeFor(genericFieldType: Type): (String, Boolean) = {
+    typeNameMap.get(genericFieldType.getTypeName) match {
+      case Some(jsTypeName) => (jsTypeName, false)
+      case None =>
+        val clazz = genericFieldType match {
+          case c: Class[_]          => c
+          case p: ParameterizedType => p.getRawType.asInstanceOf[Class[_]]
+        }
+        if (clazz == classOf[String]) ("string", false)
+        else {
+          genericFieldType match {
+            case p: ParameterizedType if clazz == classOf[Optional[_]] =>
+              val (jsonFieldType, _) = jsonSchemaTypeFor(p.getActualTypeArguments.head)
+              (jsonFieldType, true)
+            case other =>
+              // FIXME support collections
+              // FIXME support nested classes
+              throw new IllegalArgumentException(s"Unsupported field type for MCP tool input: $other")
+          }
+        }
+    }
+  }
+
+  private def toolAnnotationsFor(
+      endpointClass: Class[?],
+      methodName: String,
+      annotations: Seq[ToolAnnotation]): Option[Mcp.ToolAnnotation] = {
+    if (annotations.isEmpty) None
+    else {
+      val set = annotations.toSet
+      def annotationPresent(trueAnnotation: ToolAnnotation, falseAnnotation: ToolAnnotation): Option[Boolean] = {
+        if (set.contains(trueAnnotation) && set.contains(falseAnnotation))
+          throw new IllegalArgumentException(
+            s"Tool method $methodName on ${endpointClass.getName} has both of opposite tool annotations [$trueAnnotation, $falseAnnotation], chose one.")
+        else if (set.contains(trueAnnotation)) Some(true)
+        else if (set.contains(falseAnnotation)) Some(false)
+        else None
+      }
+
+      Some(
+        Mcp.ToolAnnotation(
+          destructive = annotationPresent(ToolAnnotation.Destructive, ToolAnnotation.NonDestructive),
+          idempotent = annotationPresent(ToolAnnotation.Idempotent, ToolAnnotation.NonIdempotent),
+          openWorld = annotationPresent(ToolAnnotation.OpenWorld, ToolAnnotation.ClosedWorld),
+          readOnly = annotationPresent(ToolAnnotation.ReadOnly, ToolAnnotation.Mutating)))
+    }
   }
 }
