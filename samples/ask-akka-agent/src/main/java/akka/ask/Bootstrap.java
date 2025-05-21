@@ -1,6 +1,7 @@
 package akka.ask;
 
 import akka.ask.agent.application.AskAkkaAgent;
+import akka.ask.agent.application.Knowledge;
 import akka.ask.common.KeyUtils;
 import akka.javasdk.DependencyProvider;
 import akka.javasdk.ServiceSetup;
@@ -37,6 +38,8 @@ public class Bootstrap implements ServiceSetup {
 
   @Override
   public DependencyProvider createDependencyProvider() {
+    var knowledge = new Knowledge(mongoClient);
+
     return new DependencyProvider() {
       @Override
       public <T> T getDependency(Class<T> cls) {
@@ -50,6 +53,11 @@ public class Bootstrap implements ServiceSetup {
         if (cls.equals(MongoClient.class)) {
           return (T) mongoClient;
         }
+
+        if (cls.equals(Knowledge.class)) {
+          return (T) knowledge;
+        }
+
         return null;
       }
     };
