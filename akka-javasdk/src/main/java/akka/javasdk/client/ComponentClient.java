@@ -60,9 +60,6 @@ public interface ComponentClient {
   /** Select {@link akka.javasdk.view.View} as a call target component. */
   ViewClient forView();
 
-  /**
-   * Select {@link Agent} as a call target component.
-   */
+  /** Select {@link Agent} as a call target component. */
   AgentClient forAgent();
-
 }

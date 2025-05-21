@@ -6,15 +6,10 @@ package akka.javasdk.client;
 
 import akka.annotation.DoNotInherit;
 
-/**
- * Not for user extension
- */
+/** Not for user extension */
 @DoNotInherit
 public interface AgentClient {
 
-  /**
-   * The agent participates in a session, which is used for the agent's conversational memory.
-   */
+  /** The agent participates in a session, which is used for the agent's conversational memory. */
   AgentClientInSession inSession(String sessionId);
-
 }
