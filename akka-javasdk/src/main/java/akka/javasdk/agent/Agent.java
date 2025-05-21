@@ -67,7 +67,19 @@ public abstract class Agent {
 
       Builder systemMessage(String message);
 
+      /**
+       * Create a system message from a template. Call @{@link PromptTemplate} before to initiate or update template value.
+       * @param templateId the id of the template to use
+       */
       Builder systemMessageFromTemplate(String templateId);
+
+      /**
+       * Create a system message from a template. Call @{@link PromptTemplate} before to initiate or update template value.
+       * Provide arguments that will be applied to the template using Java {@link String#format} method.
+       * @param templateId the id of the template to use
+       * @param args the arguments to apply to the template
+       */
+      Builder systemMessageFromTemplate(String templateId, Object... args);
 
       OnSuccessBuilder userMessage(String message);
 

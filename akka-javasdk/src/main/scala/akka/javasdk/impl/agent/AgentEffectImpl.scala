@@ -34,7 +34,7 @@ private[javasdk] object AgentEffectImpl {
 
   sealed trait SystemMessage
   final case class ConstantSystemMessage(message: String) extends SystemMessage
-  final case class TemplateSystemMessage(templateId: String) extends SystemMessage
+  final case class TemplateSystemMessage(templateId: String, args: Object*) extends SystemMessage
 
   final case class RequestModel(
       modelProvider: ModelProvider,
@@ -103,6 +103,11 @@ private[javasdk] final class AgentEffectImpl[Reply] extends Builder with OnSucce
 
   override def systemMessageFromTemplate(templateId: String): Builder = {
     updateRequestModel(_.copy(systemMessage = TemplateSystemMessage(templateId)))
+    this
+  }
+
+  override def systemMessageFromTemplate(templateId: String, args: Object*): Builder = {
+    updateRequestModel(_.copy(systemMessage = TemplateSystemMessage(templateId, args)))
     this
   }
 

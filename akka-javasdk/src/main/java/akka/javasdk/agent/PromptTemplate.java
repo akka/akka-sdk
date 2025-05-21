@@ -13,6 +13,17 @@ import java.util.Optional;
 
 import static akka.Done.done;
 
+/**
+ * Prompt template is an ordinary event sourced entity that stores a prompt template with the history of updates.
+ * <p>
+ * Akka runtime will automatically register this entity when it detects an {@link Agent} component.
+ * <p>
+ * Use {@link akka.javasdk.client.ComponentClient} to:
+ * - initialize the prompt template
+ * - update the prompt template
+ * - delete the prompt template
+ * - get the prompt template
+ */
 @ComponentId("akka-prompt-template")
 public final class PromptTemplate extends EventSourcedEntity<PromptTemplate.Prompt, PromptTemplate.Event> {
 
@@ -29,6 +40,10 @@ public final class PromptTemplate extends EventSourcedEntity<PromptTemplate.Prom
     }
   }
 
+  /**
+   * Initialize the prompt template. Call this method for existing prompt template will be ignored, so it's safe to
+   * use it e.g. in {@link akka.javasdk.ServiceSetup} to initialize the prompt template with default value.
+   */
   public Effect<Done> init(String prompt) {
     if (prompt == null || prompt.isBlank()) {
       return effects().error("Prompt cannot be null or empty");
@@ -42,6 +57,9 @@ public final class PromptTemplate extends EventSourcedEntity<PromptTemplate.Prom
     }
   }
 
+  /**
+   * Update the prompt template. Updating the prompt template with the same value will be ignored.
+   */
   public Effect<Done> update(String prompt) {
     if (prompt == null || prompt.isBlank()) {
       return effects().error("Prompt cannot be null or empty");
@@ -55,9 +73,14 @@ public final class PromptTemplate extends EventSourcedEntity<PromptTemplate.Prom
     }
   }
 
+  /**
+   * Delete the prompt template.
+   */
   public Effect<Done> delete() {
     if (currentState() == null) {
       return effects().error("Prompt is not set");
+    } else if (isDeleted()) {
+      return effects().reply(done());
     } else {
       return effects()
         .persist(new Event.Deleted())
@@ -66,6 +89,9 @@ public final class PromptTemplate extends EventSourcedEntity<PromptTemplate.Prom
     }
   }
 
+  /**
+   * Get the prompt template. If the prompt template is not set or deleted, an error will be returned.
+   */
   public Effect<String> get() {
     if (currentState() == null) {
       return effects().error("Prompt is not set");
@@ -76,6 +102,9 @@ public final class PromptTemplate extends EventSourcedEntity<PromptTemplate.Prom
     }
   }
 
+  /**
+   * Get the prompt template. If the prompt template is not set or deleted, an empty optional will be returned.
+   */
   public Effect<Optional<String>> getOptional() {
     if (currentState() == null) {
       return effects().reply(Optional.empty());
