@@ -173,7 +173,20 @@ a|The type of instance to use. Supported values are:
 
 * `small` - A small instance.
 |*autoscaling*  |<<ServiceAutoscaling>> |The autoscaling configuration for a service. Autoscaling is only supported for non-trial projects.
+|*Runtime*    |<<Runtime>> |The runtime configuration for the service.
 |===
+
+=== Runtime
+
+The runtime configuration for the service.
+
+[cols="1,1,1"]
+|===
+|Field          |Type                        |Description
+|*mode*          |string |The runtime mode. Supported values are:  `sidecar` or `embedded`. If the field is not defined the default mode of the service is the `sidecar` mode.
+|===
+- `sidecar` -  runs the service with the `Kalix` runtime.
+- `embedded` - runs the service with the `Akka` runtime
 
 === ServiceAutoscaling
 
