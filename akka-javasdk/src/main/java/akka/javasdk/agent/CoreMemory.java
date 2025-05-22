@@ -11,9 +11,9 @@ package akka.javasdk.agent;
 import java.util.List;
 
 /**
- * Interface for managing conversation history between users and AI models, using
- * CoreMemory provides functionality to store, retrieve, and manage messages
- * exchanged during conversations in an agent system.
+ * Interface for managing conversation history between users and AI models, using CoreMemory
+ * provides functionality to store, retrieve, and manage messages exchanged during conversations in
+ * an agent system.
  */
 public interface CoreMemory {
 
@@ -35,7 +35,9 @@ public interface CoreMemory {
   void addAiMessage(String sessionId, String message);
 
   /**
-   * Adds an interaction between a user and an AI model to the conversation history for the specified session.
+   * Adds an interaction between a user and an AI model to the conversation history for the
+   * specified session.
+   *
    * @param sessionId The unique identifier for the conversation session
    * @param userMessage The content of the user message
    * @param aiMessage The content of the AI message
