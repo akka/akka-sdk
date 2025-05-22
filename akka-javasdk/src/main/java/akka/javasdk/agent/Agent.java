@@ -141,18 +141,18 @@ public abstract class Agent {
 
     interface MappingResponseBuilder<Input> {
 
-      Agent.Effect<Input> thenReply();
+      Agent.Effect<Input> reply();
 
-      Agent.Effect<Input> thenReply(Metadata metadata);
+      Agent.Effect<Input> reply(Metadata metadata);
 
       <T> MappingFailureBuilder<T> map(Function<Input, T> mapper);
     }
 
     interface MappingFailureBuilder<Input> {
 
-      Agent.Effect<Input> thenReply();
+      Agent.Effect<Input> reply();
 
-      Agent.Effect<Input> thenReply(Metadata metadata);
+      Agent.Effect<Input> reply(Metadata metadata);
 
       Agent.Effect<Input> onFailure(Function<Throwable, Input> exceptionHandler);
     }

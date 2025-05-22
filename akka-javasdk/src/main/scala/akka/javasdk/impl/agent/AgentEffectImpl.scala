@@ -134,6 +134,14 @@ private[javasdk] final class AgentEffectImpl[Reply]
     this.asInstanceOf[AgentEffectImpl[String]]
   }
 
+  override def reply(): AgentEffectImpl[Reply] =
+    this.asInstanceOf[AgentEffectImpl[Reply]]
+
+  override def reply(metadata: Metadata): AgentEffectImpl[Reply] = {
+    updateRequestModel(_.copy(replyMetadata = metadata))
+    this.asInstanceOf[AgentEffectImpl[Reply]]
+  }
+
   override def responseAs[T](responseType: Class[T]): MappingResponseBuilder[T] = {
     updateRequestModel(_.copy(responseType = responseType))
     this.asInstanceOf[AgentEffectImpl[T]]
