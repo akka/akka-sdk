@@ -42,6 +42,7 @@ import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.reflection.Reflect.Syntax._
 import akka.javasdk.keyvalueentity.KeyValueEntity
 import akka.javasdk.timedaction.TimedAction
+import akka.javasdk.view.TableUpdater
 import akka.javasdk.view.View
 import akka.javasdk.workflow.Workflow
 
@@ -452,7 +453,9 @@ private[javasdk] object Validations {
       val kveClass = findKVEClass(component)
       val stateType = Reflect.keyValueEntityStateType(kveClass)
       val handlers = findStateHandlers(stateType)
-      if (handlers.isEmpty) {
+      if (handlers.isEmpty &&
+        !classOf[TableUpdater[_]]
+          .isAssignableFrom(component)) { //Table updater is a special case, might not have any handlers
         missingStateHandlers(stateType)
       } else {
         Valid
