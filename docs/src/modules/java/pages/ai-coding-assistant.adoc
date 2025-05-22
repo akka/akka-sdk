@@ -14,11 +14,11 @@ Some key benefits of using an AI coding assistant:
 
 In summary, we will look at the following:
 
-1. Akka documentation in LLM-friendly format
-1. Configure your AI assistant (Cursor, Qodo, etc.) to use this documentation
-1. Include relevant sample code as additional context
-1. Use our coding guidelines template for better code generation
-1. Follow the prompt examples for common Akka development tasks
+. Akka documentation in LLM-friendly format
+. Configure your AI assistant (Cursor, Qodo, etc.) to use this documentation
+. Include relevant sample code as additional context
+. Use our coding guidelines template for better code generation
+. Follow the prompt examples for common Akka development tasks
 
 == Why doesn't AI know about latest Akka?
 
@@ -72,9 +72,9 @@ In the chat window it is important that you include the Akka documentation as co
 
 For Qodo you need to download the markdown documentation files and include them in the project directory. Qodo will index the content and include relevant information to the LLM.
 
-1. Download the link:../java/_attachments/akka-docs-md.zip[akka-docs-md.zip].
-1. Unzip the content and place in a folder `akka-context/` in your development project.
-1. Add `akka-context/` to your `.gitignore` file, if you use git.
+. Download the link:../java/_attachments/akka-docs-md.zip[akka-docs-md.zip].
+. Unzip the content and place in a folder `akka-context/` in your development project.
+. Add `akka-context/` to your `.gitignore` file, if you use git.
 
 NOTE: It would have been more convenient to only download `llms-full.txt`, but currently it seems like Qodo can't handle a large file like that.
 
@@ -103,10 +103,10 @@ it should answer with something like
 
 Even though the documentation includes comprehensive code snippets it can be good to include the full source code of one or a few samples. This makes it easier for the coding assistant to follow the same structure as the sample.
 
-1. Pick one or a few samples from xref:java:samples.adoc[], which are relevant to what you are developing. If you are just getting started learning Akka you can pick the Shopping Cart sample.
-1. Clone the sample Github repository. Pull latest if you have already cloned the repository before.
-1. Copy the source code to a folder `akka-context/` in your development project, e.g. `akka-context/travel-agent/src`.
-1. Add `akka-context/` to your `.gitignore` file, if you use git.
+. Pick one or a few samples from xref:java:samples.adoc[], which are relevant to what you are developing. If you are just getting started learning Akka you can pick the Shopping Cart sample.
+. Clone the sample Github repository. Pull latest if you have already cloned the repository before.
+. Copy the source code to a folder `akka-context/` in your development project, e.g. `akka-context/travel-agent/src`.
+. Add `akka-context/` to your `.gitignore` file, if you use git.
 
 Include the samples (`akka-context/`) as context in the chat window.
 
