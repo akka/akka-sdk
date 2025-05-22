@@ -34,7 +34,7 @@ Couchbase
 CRDTs
 Ctrl
 CVEs
-decodeRequest
+decodeRe6~quest
 defaultMode
 declaratively
 Deserializing
@@ -124,6 +124,7 @@ prepending
 [Pp]rometheus
 proto
 [Pp]rotobuf
+Qodo
 [Qq]uantiles
 Quatrini
 [Qq]uickstarts
