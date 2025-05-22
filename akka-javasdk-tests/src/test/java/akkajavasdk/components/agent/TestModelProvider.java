@@ -59,4 +59,8 @@ public class TestModelProvider implements ModelProvider.Custom {
   public void mockResponse(Predicate<String> predicate, String response) {
     responsePredicates.add(new Pair<>(predicate, response));
   }
+
+  public void clean() {
+    responsePredicates = new ArrayList<>();
+  }
 }
