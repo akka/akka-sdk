@@ -4,17 +4,6 @@
 
 package akka.javasdk.agent;
 
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
+public record UserMessage(String text) implements ConversationMessage {
 
-public record UserMessage(MessageContent content) implements Message {
-
-  public static UserMessage of(String content) {
-    return new UserMessage(new MessageContent.TextContent(content));
-  }
-
-  public String getText() {
-    return switch (content) {
-      case MessageContent.TextContent textContent -> textContent.text();
-    };
-  }
 }

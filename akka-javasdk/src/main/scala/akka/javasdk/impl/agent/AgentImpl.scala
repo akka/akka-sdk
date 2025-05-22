@@ -13,7 +13,7 @@ import akka.javasdk.agent.Agent
 import akka.javasdk.agent.AgentContext
 import akka.javasdk.agent.AiMessage
 import akka.javasdk.agent.CoreMemory
-import akka.javasdk.agent.CoreMemory.ConversationHistory
+import akka.javasdk.agent.ConversationHistory
 import akka.javasdk.agent.ModelProvider
 import akka.javasdk.agent.UserMessage
 import akka.javasdk.impl.AbstractContext
@@ -177,9 +177,9 @@ private[impl] final class AgentImpl[A <: Agent](
       .asScala
       .flatMap {
         case m if m.isInstanceOf[AiMessage] =>
-          Some(new SpiAgent.ContextMessage.AiMessage(m.asInstanceOf[AiMessage].getText))
+          Some(new SpiAgent.ContextMessage.AiMessage(m.asInstanceOf[AiMessage].text()))
         case m if m.isInstanceOf[UserMessage] =>
-          Some(new SpiAgent.ContextMessage.UserMessage(m.asInstanceOf[UserMessage].getText))
+          Some(new SpiAgent.ContextMessage.UserMessage(m.asInstanceOf[UserMessage].text()))
         case m =>
           log.warn("Unsupported message type [{}], ignoring", m.getClass.getName)
           None

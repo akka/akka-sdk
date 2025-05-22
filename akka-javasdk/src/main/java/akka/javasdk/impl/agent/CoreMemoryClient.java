@@ -4,6 +4,8 @@
 
 package akka.javasdk.impl.agent;
 
+import akka.annotation.InternalApi;
+import akka.javasdk.agent.ConversationHistory;
 import akka.javasdk.agent.ConversationMemory;
 import akka.javasdk.agent.CoreMemory;
 import akka.javasdk.client.ComponentClient;
@@ -14,6 +16,7 @@ import org.slf4j.LoggerFactory;
  * INTERNAL USE
  * Not for user extension or instantiation
  */
+@InternalApi
 public class CoreMemoryClient implements CoreMemory {
 
   private final Logger logger = LoggerFactory.getLogger(CoreMemoryClient.class);
@@ -50,11 +53,10 @@ public class CoreMemoryClient implements CoreMemory {
 
   @Override
   public ConversationHistory getFullHistory(String sessionId) {
-    var msgs = componentClient.forEventSourcedEntity(sessionId)
+    var history = componentClient.forEventSourcedEntity(sessionId)
         .method(ConversationMemory::getHistory)
-        .invoke()
-        .messages();
-    logger.debug("Full history retrieved for sessionId={} size={}", sessionId, msgs.size());
-    return new ConversationHistory(msgs);
+        .invoke();
+    logger.debug("Full history retrieved for sessionId={} size={}", sessionId, history.messages().size());
+    return history;
   }
 }

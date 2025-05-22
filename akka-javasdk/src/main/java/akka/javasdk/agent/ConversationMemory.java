@@ -5,11 +5,11 @@
 package akka.javasdk.agent;
 
 import akka.Done;
-import akka.javasdk.agent.ConversationMemory.History;
 import akka.javasdk.agent.ConversationMemory.Event;
 import akka.javasdk.annotations.TypeName;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.impl.agent.ConversationHistoryImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,64 +26,14 @@ import static akka.Done.done;
  * {@link akka.javasdk.client.ComponentClient} can be used to interact directly with this entity.
  */
 @ComponentId("akka-conversation-memory")
-public final class ConversationMemory extends EventSourcedEntity<History, Event> {
+public final class ConversationMemory extends EventSourcedEntity<ConversationHistory, Event> {
 
   private static final Logger log = LoggerFactory.getLogger(ConversationMemory.class);
 
-  @TypeName("akka-history")
-  public record History(int maxSize, List<Message> messages) {
-
-    private static final Logger logger = LoggerFactory.getLogger(History.class);
-
-    public History {
-      if (maxSize <= 0) throw new IllegalArgumentException("Maximum size must be greater than 0");
-      messages = messages != null ? new LinkedList<>(messages) : new LinkedList<>();
-      enforceMaxCapacity(messages, maxSize);
-    }
-
-    public int size() {
-      return messages.size();
-    }
-
-    public boolean isEmpty() {
-      return messages.isEmpty();
-    }
-
-    public History withMaxSize(int newMaxSize) {
-      List<Message> updatedMessages = new LinkedList<>(messages);
-      return new History(newMaxSize, updatedMessages);
-    }
-
-    public History addMessage(Message message) {
-      List<Message> updatedMessages = new LinkedList<>(messages);
-      updatedMessages.add(message);
-
-      return new History(maxSize, updatedMessages);
-    }
-
-    private static void enforceMaxCapacity(List<Message> messages, int maxSize) {
-
-      // If we exceed the maximum size, remove the oldest message
-      while (messages.size() > maxSize) {
-        logger.debug("Erasing oldest message from history, remaining={}, maxSize={}", messages.size() - 1, maxSize);
-        messages.removeFirst();
-      }
-    }
-    
-    /**
-     * Clears all messages from the history.
-     * 
-     * @return A new History with no messages
-     */
-    public History clear() {
-      return new History(maxSize, new LinkedList<>());
-    }
-  }
-
   @Override
-  public History emptyState() {
+  public ConversationHistory emptyState() {
     // FIXME: load default from config?
-    return new History(1000, new LinkedList<>());
+    return new ConversationHistoryImpl(1000, new LinkedList<>());
   }
 
   /**
@@ -144,7 +94,7 @@ public final class ConversationMemory extends EventSourcedEntity<History, Event>
         .thenReply(__ -> Done.done());
   }
 
-  public ReadOnlyEffect<History> getHistory() {
+  public ReadOnlyEffect<ConversationHistory> getHistory() {
     return effects().reply(currentState());
   }
 
@@ -160,16 +110,19 @@ public final class ConversationMemory extends EventSourcedEntity<History, Event>
   }
 
   @Override
-  public History applyEvent(Event event) {
+  public ConversationHistory applyEvent(Event event) {
+    // we are in control here, so this should be safe
+    var currentState = (ConversationHistoryImpl) currentState();
+
     return switch (event) {
       case Event.LimitedWindowSet limitedWindowSet ->
-          currentState().withMaxSize(limitedWindowSet.maxSize());
+          currentState.withMaxSize(limitedWindowSet.maxSize);
       case Event.UserMessageAdded userMsg ->
-          currentState().addMessage(UserMessage.of(userMsg.message()));
+          currentState.addMessage(new UserMessage(userMsg.message()));
       case Event.AiMessageAdded aiMsg ->
-          currentState().addMessage(AiMessage.of(aiMsg.message()));
+          currentState.addMessage(new AiMessage(aiMsg.message()));
       case Event.Deleted __ ->
-          currentState().clear();
+          currentState.clear();
     };
   }
 }

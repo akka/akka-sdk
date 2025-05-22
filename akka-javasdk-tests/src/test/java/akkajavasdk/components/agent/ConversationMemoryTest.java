@@ -6,6 +6,7 @@ package akkajavasdk.components.agent;
 
 import akka.Done;
 import akka.javasdk.agent.AiMessage;
+import akka.javasdk.agent.ConversationHistory;
 import akka.javasdk.agent.ConversationMemory;
 import akka.javasdk.agent.UserMessage;
 import akka.javasdk.testkit.EventSourcedResult;
@@ -31,30 +32,30 @@ public class ConversationMemoryTest {
     assertThat(result.getAllEvents()).containsExactly(new ConversationMemory.Event.UserMessageAdded(msg));
 
     // when retrieving history
-    EventSourcedResult<ConversationMemory.History> historyResult = testKit.method(ConversationMemory::getHistory).invoke();
+    EventSourcedResult<ConversationHistory> historyResult = testKit.method(ConversationMemory::getHistory).invoke();
 
     // then
-    assertThat(historyResult.getReply().messages()).containsExactly(UserMessage.of(msg));
+    assertThat(historyResult.getReply().messages()).containsExactly(new UserMessage(msg));
   }
 
   @Test
   public void shouldAddMultipleMessagesToHistory() {
     // given
     var testKit = EventSourcedTestKit.of(ConversationMemory::new);
-    var message1 = UserMessage.of("Hello");
-    var message2 = AiMessage.of("Hi there!");
-    var message3 = UserMessage.of("How are you?");
+    var message1 = new UserMessage("Hello");
+    var message2 = new AiMessage("Hi there!");
+    var message3 = new UserMessage("How are you?");
 
     // when
-    testKit.method(ConversationMemory::addUserMessage).invoke(message1.getText());
-    testKit.method(ConversationMemory::addAiMessage).invoke(message2.getText());
-    EventSourcedResult<Done> result = testKit.method(ConversationMemory::addUserMessage).invoke(message3.getText());
+    testKit.method(ConversationMemory::addUserMessage).invoke(message1.text());
+    testKit.method(ConversationMemory::addAiMessage).invoke(message2.text());
+    EventSourcedResult<Done> result = testKit.method(ConversationMemory::addUserMessage).invoke(message3.text());
 
     // then
     assertThat(result.getReply()).isEqualTo(done());
 
     // when retrieving history
-    EventSourcedResult<ConversationMemory.History> historyResult = testKit.method(ConversationMemory::getHistory).invoke();
+    EventSourcedResult<ConversationHistory> historyResult = testKit.method(ConversationMemory::getHistory).invoke();
 
     // then
     assertThat(historyResult.getReply().messages()).containsExactly(message1, message2, message3);
@@ -78,7 +79,7 @@ public class ConversationMemoryTest {
     assertThat(clearResult.getAllEvents()).containsExactly(new ConversationMemory.Event.Deleted());
 
     // when retrieving history after clearing
-    EventSourcedResult<ConversationMemory.History> historyResult = testKit.method(ConversationMemory::getHistory).invoke();
+    EventSourcedResult<ConversationHistory> historyResult = testKit.method(ConversationMemory::getHistory).invoke();
 
     // then
     assertThat(historyResult.getReply().messages()).isEmpty();
@@ -90,7 +91,7 @@ public class ConversationMemoryTest {
     var testKit = EventSourcedTestKit.of(ConversationMemory::new);
 
     // when
-    EventSourcedResult<ConversationMemory.History> historyResult = testKit.method(ConversationMemory::getHistory).invoke();
+    EventSourcedResult<ConversationHistory> historyResult = testKit.method(ConversationMemory::getHistory).invoke();
 
     // then
     assertThat(historyResult.getReply().messages()).isEmpty();
@@ -106,28 +107,28 @@ public class ConversationMemoryTest {
     testKit.method(ConversationMemory::setLimitedWindow).invoke(limitedBuffer);
 
     // Add 5 messages (exceeding the limit)
-    var message1 = UserMessage.of("First message");
-    var message2 = UserMessage.of("Second message");
-    var message3 = UserMessage.of("Third message");
-    var message4 = UserMessage.of("Fourth message");
-    var message5 = UserMessage.of("Fifth message");
+    var message1 = new UserMessage("First message");
+    var message2 = new UserMessage("Second message");
+    var message3 = new UserMessage("Third message");
+    var message4 = new UserMessage("Fourth message");
+    var message5 = new UserMessage("Fifth message");
 
     // when
-    testKit.method(ConversationMemory::addUserMessage).invoke(message1.getText());
-    testKit.method(ConversationMemory::addUserMessage).invoke(message2.getText());
-    testKit.method(ConversationMemory::addUserMessage).invoke(message3.getText());
-    testKit.method(ConversationMemory::addUserMessage).invoke(message4.getText());
-    EventSourcedResult<Done> result = testKit.method(ConversationMemory::addUserMessage).invoke(message5.getText());
+    testKit.method(ConversationMemory::addUserMessage).invoke(message1.text());
+    testKit.method(ConversationMemory::addUserMessage).invoke(message2.text());
+    testKit.method(ConversationMemory::addUserMessage).invoke(message3.text());
+    testKit.method(ConversationMemory::addUserMessage).invoke(message4.text());
+    EventSourcedResult<Done> result = testKit.method(ConversationMemory::addUserMessage).invoke(message5.text());
 
     // then
     assertThat(result.getReply()).isEqualTo(done());
 
     // when retrieving history
-    EventSourcedResult<ConversationMemory.History> historyResult = testKit.method(ConversationMemory::getHistory).invoke();
+    EventSourcedResult<ConversationHistory> historyResult = testKit.method(ConversationMemory::getHistory).invoke();
 
     // then - only the 3 most recent messages should be present
     assertThat(historyResult.getReply().messages()).containsExactly(message3, message4, message5);
-    assertThat(historyResult.getReply().size()).isEqualTo(3);
+    assertThat(historyResult.getReply().messages().size()).isEqualTo(3);
   }
 
   @Test
@@ -140,33 +141,33 @@ public class ConversationMemoryTest {
     testKit.method(ConversationMemory::setLimitedWindow).invoke(limitedBuffer);
 
     // Add messages and check size after each operation
-    var message1 = UserMessage.of("First message");
-    var message2 = AiMessage.of("Second message");
-    var message3 = UserMessage.of("Third message");
+    var message1 = new UserMessage("First message");
+    var message2 = new AiMessage("Second message");
+    var message3 = new UserMessage("Third message");
 
     // when adding first message
-    testKit.method(ConversationMemory::addUserMessage).invoke(message1.getText());
-    EventSourcedResult<ConversationMemory.History> result1 = testKit.method(ConversationMemory::getHistory).invoke();
+    testKit.method(ConversationMemory::addUserMessage).invoke(message1.text());
+    EventSourcedResult<ConversationHistory> result1 = testKit.method(ConversationMemory::getHistory).invoke();
 
     // then
     assertThat(result1.getReply().messages()).containsExactly(message1);
-    assertThat(result1.getReply().size()).isEqualTo(1);
+    assertThat(result1.getReply().messages().size()).isEqualTo(1);
 
     // when adding second message (reaching the limit)
-    testKit.method(ConversationMemory::addAiMessage).invoke(message2.getText());
-    EventSourcedResult<ConversationMemory.History> result2 = testKit.method(ConversationMemory::getHistory).invoke();
+    testKit.method(ConversationMemory::addAiMessage).invoke(message2.text());
+    EventSourcedResult<ConversationHistory> result2 = testKit.method(ConversationMemory::getHistory).invoke();
 
     // then
     assertThat(result2.getReply().messages()).containsExactly(message1, message2);
-    assertThat(result2.getReply().size()).isEqualTo(2);
+    assertThat(result2.getReply().messages().size()).isEqualTo(2);
 
     // when adding third message (exceeding the limit)
-    testKit.method(ConversationMemory::addUserMessage).invoke(message3.getText());
-    EventSourcedResult<ConversationMemory.History> result3 = testKit.method(ConversationMemory::getHistory).invoke();
+    testKit.method(ConversationMemory::addUserMessage).invoke(message3.text());
+    EventSourcedResult<ConversationHistory> result3 = testKit.method(ConversationMemory::getHistory).invoke();
 
     // then - first message should be removed
     assertThat(result3.getReply().messages()).containsExactly(message2, message3);
-    assertThat(result3.getReply().size()).isEqualTo(2);
+    assertThat(result3.getReply().messages().size()).isEqualTo(2);
   }
 
   @Test

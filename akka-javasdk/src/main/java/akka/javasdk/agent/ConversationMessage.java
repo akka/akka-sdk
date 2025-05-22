@@ -8,11 +8,11 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@type")
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "@type")
 @JsonSubTypes({
     @JsonSubTypes.Type(value = UserMessage.class, name = "UM"),
     @JsonSubTypes.Type(value = AiMessage.class, name = "AIM")})
-public sealed interface Message permits AiMessage, UserMessage {
+public sealed interface ConversationMessage permits AiMessage, UserMessage {
 
 }
 
