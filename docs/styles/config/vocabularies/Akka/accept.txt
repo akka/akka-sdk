@@ -34,7 +34,7 @@ Couchbase
 CRDTs
 Ctrl
 CVEs
-decodeRe6~quest
+decodeRequest
 defaultMode
 declaratively
 Deserializing
