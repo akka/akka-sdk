@@ -226,14 +226,15 @@ private[impl] final class AgentImpl[A <: Agent](
       responseType: Class[_],
       mappingFunction: Option[Any => Any],
       failureMapping: Option[Throwable => Any]): BytesPayload = {
-    if (responseType == classOf[String]) {
-      val mappedObj = mappingFunction.map(_.apply(modelResponse)).getOrElse(modelResponse)
-      serializer.toBytes(mappedObj)
-    } else {
-      // We might be able to bypass serialization roundtrip here, but might be good to catch invalid json
-      // as early as possible.
-      // The content type isn't used in this fromBytes.
-      try {
+    try {
+      if (responseType == classOf[String]) {
+        val mappedObj = mappingFunction.map(_.apply(modelResponse)).getOrElse(modelResponse)
+        serializer.toBytes(mappedObj)
+      } else {
+        // We might be able to bypass serialization roundtrip here, but might be good to catch invalid json
+        // as early as possible.
+        // The content type isn't used in this fromBytes.
+
         val obj = serializer.fromBytes(
           responseType,
           new BytesPayload(ByteString.fromString(modelResponse), JsonSerializer.JsonContentTypePrefix + "object"))
@@ -241,12 +242,12 @@ private[impl] final class AgentImpl[A <: Agent](
         val mappedObj = mappingFunction.map(_.apply(obj)).getOrElse(obj)
 
         serializer.toBytes(mappedObj)
-      } catch {
-        case e: Throwable if failureMapping.isDefined =>
-          //trying to recover
-          val any = failureMapping.get.apply(e)
-          serializer.toBytes(any)
       }
+    } catch {
+      case e: Throwable if failureMapping.isDefined =>
+        //trying to recover
+        val any = failureMapping.get.apply(e)
+        serializer.toBytes(any)
     }
   }
 }
