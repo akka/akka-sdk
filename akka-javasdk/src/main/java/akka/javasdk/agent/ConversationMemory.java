@@ -6,10 +6,12 @@ package akka.javasdk.agent;
 
 import akka.Done;
 import akka.javasdk.agent.ConversationMemory.Event;
+import akka.javasdk.agent.ConversationMemory.State;
+import akka.javasdk.agent.ConversationMessage.AiMessage;
+import akka.javasdk.agent.ConversationMessage.UserMessage;
 import akka.javasdk.annotations.TypeName;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import akka.javasdk.annotations.ComponentId;
-import akka.javasdk.impl.agent.ConversationHistoryImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,14 +28,55 @@ import static akka.Done.done;
  * {@link akka.javasdk.client.ComponentClient} can be used to interact directly with this entity.
  */
 @ComponentId("akka-conversation-memory")
-public final class ConversationMemory extends EventSourcedEntity<ConversationHistory, Event> {
+public final class ConversationMemory extends EventSourcedEntity<State, Event> {
 
   private static final Logger log = LoggerFactory.getLogger(ConversationMemory.class);
 
+  public record State(int maxSize, List<ConversationMessage> messages) {
+
+    private static final Logger logger = LoggerFactory.getLogger(State.class);
+
+    public State {
+      if (maxSize <= 0) throw new IllegalArgumentException("Maximum size must be greater than 0");
+      messages = messages != null ? new LinkedList<>(messages) : new LinkedList<>();
+      enforceMaxCapacity(messages, maxSize);
+    }
+
+    public boolean isEmpty() {
+      return messages.isEmpty();
+    }
+
+    public State withMaxSize(int newMaxSize) {
+      List<ConversationMessage> updatedMessages = new LinkedList<>(messages);
+      return new State(newMaxSize, updatedMessages);
+    }
+
+    public State addMessage(ConversationMessage message) {
+      List<ConversationMessage> updatedMessages = new LinkedList<>(messages);
+      updatedMessages.add(message);
+
+      return new State(maxSize, updatedMessages);
+    }
+
+    public State clear() {
+      return new State(maxSize, new LinkedList<>());
+    }
+
+    private static void enforceMaxCapacity(List<ConversationMessage> messages, int maxSize) {
+
+      // If we exceed the maximum size, remove the oldest message
+      while (messages.size() > maxSize) {
+        logger.debug("Erasing oldest message from history, remaining={}, maxSize={}", messages.size() - 1, maxSize);
+        messages.removeFirst();
+      }
+    }
+
+  }
+  
   @Override
-  public ConversationHistory emptyState() {
+  public State emptyState() {
     // FIXME: load default from config?
-    return new ConversationHistoryImpl(1000, new LinkedList<>());
+    return new State(1000, new LinkedList<>());
   }
 
   /**
@@ -95,7 +138,10 @@ public final class ConversationMemory extends EventSourcedEntity<ConversationHis
   }
 
   public ReadOnlyEffect<ConversationHistory> getHistory() {
-    return effects().reply(currentState());
+    return effects().reply(
+        new ConversationHistory(
+            currentState().maxSize,
+            new LinkedList<>(currentState().messages)));
   }
 
   public Effect<Done> delete() {
@@ -110,19 +156,16 @@ public final class ConversationMemory extends EventSourcedEntity<ConversationHis
   }
 
   @Override
-  public ConversationHistory applyEvent(Event event) {
-    // we are in control here, so this should be safe
-    var currentState = (ConversationHistoryImpl) currentState();
-
+  public State applyEvent(Event event) {
     return switch (event) {
       case Event.LimitedWindowSet limitedWindowSet ->
-          currentState.withMaxSize(limitedWindowSet.maxSize);
+          currentState().withMaxSize(limitedWindowSet.maxSize);
       case Event.UserMessageAdded userMsg ->
-          currentState.addMessage(new UserMessage(userMsg.message()));
+          currentState().addMessage(new UserMessage(userMsg.message()));
       case Event.AiMessageAdded aiMsg ->
-          currentState.addMessage(new AiMessage(aiMsg.message()));
+          currentState().addMessage(new AiMessage(aiMsg.message()));
       case Event.Deleted __ ->
-          currentState.clear();
+          currentState().clear();
     };
   }
 }

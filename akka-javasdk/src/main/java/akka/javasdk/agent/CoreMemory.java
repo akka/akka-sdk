@@ -8,6 +8,8 @@
 
 package akka.javasdk.agent;
 
+import java.util.List;
+
 /**
  * Interface for managing conversation history between users and AI models, using
  * CoreMemory provides functionality to store, retrieve, and manage messages

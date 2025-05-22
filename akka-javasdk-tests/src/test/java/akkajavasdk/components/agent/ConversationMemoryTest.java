@@ -5,10 +5,10 @@
 package akkajavasdk.components.agent;
 
 import akka.Done;
-import akka.javasdk.agent.AiMessage;
 import akka.javasdk.agent.ConversationHistory;
 import akka.javasdk.agent.ConversationMemory;
-import akka.javasdk.agent.UserMessage;
+import akka.javasdk.agent.ConversationMessage.AiMessage;
+import akka.javasdk.agent.ConversationMessage.UserMessage;
 import akka.javasdk.testkit.EventSourcedResult;
 import akka.javasdk.testkit.EventSourcedTestKit;
 import org.junit.jupiter.api.Test;

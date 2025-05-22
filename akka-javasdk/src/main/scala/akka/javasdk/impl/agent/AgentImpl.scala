@@ -11,11 +11,11 @@ import akka.javasdk.Metadata
 import akka.javasdk.Tracing
 import akka.javasdk.agent.Agent
 import akka.javasdk.agent.AgentContext
-import akka.javasdk.agent.AiMessage
 import akka.javasdk.agent.CoreMemory
 import akka.javasdk.agent.ConversationHistory
+import akka.javasdk.agent.ConversationMessage.AiMessage
+import akka.javasdk.agent.ConversationMessage.UserMessage
 import akka.javasdk.agent.ModelProvider
-import akka.javasdk.agent.UserMessage
 import akka.javasdk.impl.AbstractContext
 import akka.javasdk.impl.ComponentDescriptor
 import akka.javasdk.impl.ComponentType

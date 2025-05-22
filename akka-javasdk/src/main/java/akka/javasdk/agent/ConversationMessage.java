@@ -4,6 +4,8 @@
 
 package akka.javasdk.agent;
 
+import akka.javasdk.agent.ConversationMessage.AiMessage;
+import akka.javasdk.agent.ConversationMessage.UserMessage;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
@@ -12,7 +14,15 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 @JsonSubTypes({
     @JsonSubTypes.Type(value = UserMessage.class, name = "UM"),
     @JsonSubTypes.Type(value = AiMessage.class, name = "AIM")})
-public sealed interface ConversationMessage permits AiMessage, UserMessage {
+public sealed interface ConversationMessage {
+
+  record UserMessage(String text) implements ConversationMessage {
+
+  }
+
+  record AiMessage(String text) implements ConversationMessage {
+
+  }
 
 }
 
