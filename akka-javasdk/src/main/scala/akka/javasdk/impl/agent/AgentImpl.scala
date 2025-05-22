@@ -227,7 +227,8 @@ private[impl] final class AgentImpl[A <: Agent](
       mappingFunction: Option[Any => Any],
       failureMapping: Option[Throwable => Any]): BytesPayload = {
     if (responseType == classOf[String]) {
-      serializer.toBytes(modelResponse)
+      val mappedObj = mappingFunction.map(_.apply(modelResponse)).getOrElse(modelResponse)
+      serializer.toBytes(mappedObj)
     } else {
       // We might be able to bypass serialization roundtrip here, but might be good to catch invalid json
       // as early as possible.
