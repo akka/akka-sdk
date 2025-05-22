@@ -65,4 +65,18 @@ public class AgentIntegrationTest extends TestKitSupport {
     //then
     assertThat(result.response()).isEqualTo("123456");
   }
+
+  @Test
+  public void shouldMapFailedJsonParsingResponse() {
+    //given
+    testModelProvider.mockResponse(s -> s.equals("structured"), "{\"corrupted json: \"123456\"}");
+
+    //when
+    SomeStructureResponseAgent.SomeResponse result = componentClient.forAgent().inSession("1")
+      .method(SomeStructureResponseAgent::mapStructureResponse)
+      .invoke("structured");
+
+    //then
+    assertThat(result.response()).isEqualTo("default response");
+  }
 }

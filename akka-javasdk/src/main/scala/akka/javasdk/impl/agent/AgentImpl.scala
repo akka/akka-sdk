@@ -12,6 +12,7 @@ import akka.javasdk.Metadata
 import akka.javasdk.Tracing
 import akka.javasdk.agent.Agent
 import akka.javasdk.agent.AgentContext
+import akka.javasdk.agent.JsonParsingException
 import akka.javasdk.agent.ModelProvider
 import akka.javasdk.impl.AbstractContext
 import akka.javasdk.impl.ComponentDescriptor
@@ -244,9 +245,9 @@ private[impl] final class AgentImpl[A <: Agent](
         serializer.toBytes(mappedObj)
       }
     } catch {
-      case e: Throwable if failureMapping.isDefined =>
+      case e: IllegalArgumentException if failureMapping.isDefined =>
         //trying to recover
-        val any = failureMapping.get.apply(e)
+        val any = failureMapping.get.apply(new JsonParsingException(e.getMessage, e, modelResponse))
         serializer.toBytes(any)
     }
   }

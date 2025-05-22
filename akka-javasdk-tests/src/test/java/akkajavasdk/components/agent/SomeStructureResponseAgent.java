@@ -5,13 +5,17 @@
 package akkajavasdk.components.agent;
 
 import akka.javasdk.agent.Agent;
+import akka.javasdk.agent.JsonParsingException;
 import akka.javasdk.agent.ModelProvider;
 import akka.javasdk.annotations.AgentDescription;
 import akka.javasdk.annotations.ComponentId;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @ComponentId("structured-response-agent")
 @AgentDescription(name = "Dummy Agent", description = "Not very smart agent")
 public class SomeStructureResponseAgent extends Agent {
+  private static final Logger log = LoggerFactory.getLogger(SomeStructureResponseAgent.class);
   private final ModelProvider modelProvider;
 
   public record SomeResponse(String response) {}
@@ -29,6 +33,13 @@ public class SomeStructureResponseAgent extends Agent {
       .userMessage(question)
       .responseAs(StructuredResponse.class)
       .map(r -> new SomeResponse(r.response()))
-      .reply();
+      .onFailure(throwable -> {
+        if (throwable instanceof JsonParsingException jsonParsingException){
+          log.info("Raw json: {}", jsonParsingException.getRawJson());
+          return new SomeResponse("default response");
+        }else {
+          throw new RuntimeException(throwable);
+        }
+      });
   }
 }
