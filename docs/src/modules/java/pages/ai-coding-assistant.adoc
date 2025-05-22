@@ -73,7 +73,7 @@ In the chat window it is important that you include the Akka documentation as co
 For Qodo you need to download the markdown documentation files and include them in the project directory. Qodo will index the content and include relevant information to the LLM.
 
 1. Download the link:../java/_attachments/akka-docs-md.zip[akka-docs-md.zip].
-1. Unzip the content and place in a folder `akka-context/docs` in your development project.
+1. Unzip the content and place in a folder `akka-context/` in your development project.
 1. Add `akka-context/` to your `.gitignore` file, if you use git.
 
 NOTE: It would have been more convenient to only download `llms-full.txt`, but currently it seems like Qodo can't handle a large file like that.
