@@ -4,6 +4,7 @@ include::ROOT:partial$include.adoc[]
 
 == General
 
+- Use the Akka SDK version 3.3 or later. Don't use Akka libraries (actors), or Kalix SDK.
 - Use the Onion Architecture and follow `com.[domain-module].[api|application|domain]` package structure.
 
 == Domain Model
