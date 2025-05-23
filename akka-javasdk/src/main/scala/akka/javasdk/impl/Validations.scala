@@ -157,7 +157,7 @@ private[javasdk] object Validations {
 
   private def agentCommandHandlersMustBeOne(component: Class[_]): Validation = {
     val commandHandlers = component.getMethods
-      .filter(_.getReturnType == classOf[Agent.Effect[_]])
+      .filter(m => m.getReturnType == classOf[Agent.Effect[_]] || m.getReturnType == classOf[Agent.StreamEffect])
     when(commandHandlers.length != 1) {
       Invalid(
         errorMessage(

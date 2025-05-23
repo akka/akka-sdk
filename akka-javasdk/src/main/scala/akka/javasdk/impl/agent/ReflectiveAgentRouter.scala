@@ -31,7 +31,10 @@ private[impl] class ReflectiveAgentRouter(
         throw new HandlerNotFoundException("command", commandName, agent.getClass, methodInvokers.keySet)
     }
 
-  def handleCommand(commandName: String, command: BytesPayload, context: AgentContext): Agent.Effect[_] = {
+  /**
+   * Return type is `Agent.Effect` or `Agent.StreamEffect`
+   */
+  def handleCommand(commandName: String, command: BytesPayload, context: AgentContext): AnyRef = {
     // only set, never cleared, to allow access from other threads in async callbacks in the consumer
     // the same handler and consumer instance is expected to only ever be invoked for a single message
     agent._internalSetContext(Optional.of(context))
@@ -47,7 +50,7 @@ private[impl] class ReflectiveAgentRouter(
         case None          => methodInvoker.invoke(agent)
         case Some(command) => methodInvoker.invokeDirectly(agent, command)
       }
-      result.asInstanceOf[Agent.Effect[_]]
+      result
     } else {
       throw new IllegalStateException(
         s"Could not find a matching command handler for method [$commandName], content type [${command.contentType}] " +

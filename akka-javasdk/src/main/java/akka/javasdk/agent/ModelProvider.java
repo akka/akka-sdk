@@ -191,6 +191,11 @@ public sealed interface ModelProvider {
      * @return an instance of {@code dev.langchain4j.model.chat.ChatModel}
      */
     Object createChatModel();
+
+    /**
+     * @return an instance of {@code dev.langchain4j.model.chat.StreamingChatModel}
+     */
+    Object createStreamingChatModel();
   }
 }
 
