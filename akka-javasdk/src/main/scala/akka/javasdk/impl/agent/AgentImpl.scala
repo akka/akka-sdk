@@ -282,4 +282,7 @@ private[impl] final class AgentImpl[A <: Agent](
       case e: IllegalArgumentException => throw new JsonParsingException(e.getMessage, e, modelResponse)
     }
   }
+
+  override def encode(message: Any): BytesPayload =
+    serializer.toBytes(message)
 }
