@@ -15,6 +15,7 @@ import dev.langchain4j.model.output.FinishReason;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Predicate;
 
 public class TestModelProvider implements ModelProvider.Custom {
@@ -28,13 +29,14 @@ public class TestModelProvider implements ModelProvider.Custom {
       @Override
       public ChatResponse chat(ChatRequest chatRequest) {
 
-        var userMessageTexts = chatRequest.messages().stream()
+        var lastUserMessageText = Optional.ofNullable(chatRequest.messages().getLast())
           .filter(chatMessage -> chatMessage instanceof UserMessage)
           .map(userMessage -> (UserMessage) userMessage)
-          .map(UserMessage::singleText);
+          .map(UserMessage::singleText)
+          .orElseThrow(() -> new RuntimeException("No user message found"));
 
-        var textResponse = responsePredicates.stream().filter(pair ->
-            userMessageTexts.anyMatch(text -> pair.first().test(text)))
+        var textResponse = responsePredicates.stream()
+          .filter(pair -> pair.first().test(lastUserMessageText))
           .findFirst()
           .map(Pair::second)
           .orElseThrow();
@@ -56,7 +58,7 @@ public class TestModelProvider implements ModelProvider.Custom {
     responsePredicates.add(new Pair<>(predicate, response));
   }
 
-  public void clean() {
+  public void reset() {
     responsePredicates = new ArrayList<>();
   }
 }

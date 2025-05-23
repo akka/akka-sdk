@@ -9,6 +9,7 @@ import akka.javasdk.agent.ModelProvider;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
 import akkajavasdk.Junit5LogCapturing;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -36,6 +37,11 @@ public class AgentIntegrationTest extends TestKitSupport {
   protected TestKit.Settings testKitSettings() {
     return TestKit.Settings.DEFAULT
       .withDependencyProvider(mockDependencyProvider);
+  }
+
+  @AfterEach
+  public void afterEach() {
+    testModelProvider.reset();
   }
 
   @Test
