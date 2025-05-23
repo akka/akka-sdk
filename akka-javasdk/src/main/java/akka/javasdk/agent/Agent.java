@@ -6,9 +6,10 @@ package akka.javasdk.agent;
 
 import akka.annotation.InternalApi;
 import akka.javasdk.Metadata;
-import akka.javasdk.impl.agent.AgentEffectImpl;
+import akka.javasdk.impl.agent.BaseAgentEffectBuilder;
 
 import java.util.Optional;
+import java.util.function.Function;
 
 public abstract class Agent {
 
@@ -37,7 +38,7 @@ public abstract class Agent {
   }
 
   public final Effect.Builder effects() {
-    return new AgentEffectImpl<>();
+    return new BaseAgentEffectBuilder<>();
   }
 
   /**
@@ -144,20 +145,73 @@ public abstract class Agent {
       Agent.Effect<String> thenReply(Metadata metadata);
 
       /**
-       * Reply with the structured response from the model encoded into the given responseType.
-       * @param responseType The type of the message that will be returned by the call.
-       * @return A message reply.
+       * Parse the response from the model into a structured response of a given responseType.
+       * @param responseType The structured response type.
        */
-      <T> Agent.Effect<T> thenReplyAs(Class<T> responseType);
+      <T> MappingResponseBuilder<T> responseAs(Class<T> responseType);
 
       /**
-       * Reply with the structured response from the model encoded into the given responseType.
-       * @param responseType The type of the message that will be returned by the call.
+       * Map the String response from the model into a different response type.
+       */
+      <T> MappingResponseBuilder<T> map(Function<String, T> mapper);
+
+      FailureBuilder<String> onFailure(Function<Throwable, String> exceptionHandler);
+    }
+
+    interface MappingResponseBuilder<Result> {
+
+      /**
+       * Reply with the response from the model.
+       * @return A message reply.
+       */
+      Agent.Effect<Result> thenReply();
+
+      /**
+       * Reply with the response from the model.
        * @param metadata The metadata for the message.
        * @return A message reply.
        */
-      <T> Agent.Effect<T> thenReplyAs(Class<T> responseType, Metadata metadata);
+      Agent.Effect<Result> thenReply(Metadata metadata);
 
+      /**
+       * Map the response from the model into a different response type.
+       */
+      <T> MappingFailureBuilder<T> map(Function<Result, T> mapper);
+
+      FailureBuilder<Result> onFailure(Function<Throwable, Result> exceptionHandler);
+    }
+
+    interface MappingFailureBuilder<Result> {
+
+      /**
+       * Reply with the response from the model.
+       * @return A message reply.
+       */
+      Agent.Effect<Result> thenReply();
+
+      /**
+       * Reply with the response from the model.
+       * @param metadata The metadata for the message.
+       * @return A message reply.
+       */
+      Agent.Effect<Result> thenReply(Metadata metadata);
+
+      FailureBuilder<Result> onFailure(Function<Throwable, Result> exceptionHandler);
+    }
+
+    interface FailureBuilder<Result> {
+      /**
+       * Reply with the response from the model.
+       * @return A message reply.
+       */
+      Agent.Effect<Result> thenReply();
+
+      /**
+       * Reply with the response from the model.
+       * @param metadata The metadata for the message.
+       * @return A message reply.
+       */
+      Agent.Effect<Result> thenReply(Metadata metadata);
     }
 
   }
