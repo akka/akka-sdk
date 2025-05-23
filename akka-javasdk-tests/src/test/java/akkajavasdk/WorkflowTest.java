@@ -11,6 +11,7 @@ import akkajavasdk.components.workflowentities.DummyTransferStore;
 import akkajavasdk.components.workflowentities.DummyWorkflow;
 import akkajavasdk.components.workflowentities.FailingCounterEntity;
 import akkajavasdk.components.workflowentities.Transfer;
+import akkajavasdk.components.workflowentities.TransferState;
 import akkajavasdk.components.workflowentities.TransferWorkflow;
 import akkajavasdk.components.workflowentities.TransferWorkflowWithFraudDetection;
 import akkajavasdk.components.workflowentities.TransferWorkflowWithoutInputs;
@@ -60,7 +61,7 @@ public class WorkflowTest extends TestKitSupport {
   }
 
   @Test
-  public void shouldTransferMoney() {
+  public void shouldTransferMoneyAndDelete() {
     var walletId1 = "1";
     var walletId2 = "2";
     createWallet(walletId1, 100);
@@ -74,7 +75,6 @@ public class WorkflowTest extends TestKitSupport {
         .invoke(transfer);
 
     assertThat(response.text()).contains("transfer started");
-
 
     Awaitility.await()
       .ignoreExceptions()
@@ -98,6 +98,37 @@ public class WorkflowTest extends TestKitSupport {
             .method(TransferWorkflow::getLastStep).invoke().text();
         assertThat(lastStep).isEqualTo("logAndStop");
       });
+
+    var isDeleted = componentClient.forWorkflow(transferId)
+      .method(TransferWorkflow::hasBeenDeleted)
+      .invoke();
+    assertThat(isDeleted).isFalse();
+
+    componentClient.forWorkflow(transferId)
+      .method(TransferWorkflow::delete)
+      .invoke();
+
+    var isDeletedAfterDeletion = componentClient.forWorkflow(transferId)
+      .method(TransferWorkflow::hasBeenDeleted)
+      .invoke();
+    assertThat(isDeletedAfterDeletion).isTrue();
+  }
+
+  @Test
+  public void shouldUpdateAndDelete() {
+    var walletId1 = "1";
+    var walletId2 = "2";
+    var transferId = randomTransferId();
+    var transfer = new Transfer(walletId1, walletId2, 10);
+
+    componentClient.forWorkflow(transferId)
+      .method(TransferWorkflow::updateAndDelete)
+      .invoke(transfer);
+
+    var isDeleted = componentClient.forWorkflow(transferId)
+      .method(TransferWorkflow::hasBeenDeleted)
+      .invoke();
+    assertThat(isDeleted).isTrue();
   }
 
   @Test
@@ -131,6 +162,27 @@ public class WorkflowTest extends TestKitSupport {
         var result = componentClient.forView().method(TransferView::getAll).invoke();
         assertThat(result.entries()).contains(
           new TransferView.TransferEntry(transferId1, true),
+          new TransferView.TransferEntry(transferId2, true));
+      });
+
+    componentClient.forWorkflow(transferId1)
+      .method(TransferWorkflow::delete)
+      .invoke();
+
+    var state = componentClient.forWorkflow(transferId1)
+      .method(TransferWorkflow::get)
+      .invoke();
+    assertThat(state).isEqualTo(TransferState.EMPTY);
+
+    Awaitility.await()
+      .ignoreExceptions()
+      .atMost(20, TimeUnit.of(SECONDS))
+      .untilAsserted(() -> {
+        var transferState1 = DummyTransferStore.get(TRANSFER_CONSUMER_STORE, transferId1);
+        assertThat(transferState1).isNull();
+
+        var result = componentClient.forView().method(TransferView::getAll).invoke();
+        assertThat(result.entries()).containsOnly(
           new TransferView.TransferEntry(transferId2, true));
       });
   }

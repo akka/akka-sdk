@@ -149,25 +149,29 @@ private[impl] object Reflect {
     Modifier.isPublic(component.getModifiers)
 
   def workflowStateType[S, W <: Workflow[S]](workflow: W): Class[S] = {
-    @tailrec
-    def loop(current: Class[_]): Class[_] =
-      if (current == classOf[AnyRef])
-        // recursed to root without finding type param
-        throw new IllegalArgumentException(s"Cannot find workflow state class for ${workflow.getClass}")
-      else {
-        current.getGenericSuperclass match {
-          case parameterizedType: ParameterizedType =>
-            if (parameterizedType.getActualTypeArguments.size == 1)
-              parameterizedType.getActualTypeArguments.head.asInstanceOf[Class[_]]
-            else throw new IllegalArgumentException(s"Cannot find workflow state class for ${workflow.getClass}")
-          case noTypeParamsParent: Class[_] =>
-            // recurse and look at parent
-            loop(noTypeParamsParent)
-        }
-      }
-
-    loop(workflow.getClass).asInstanceOf[Class[S]]
+    loop(workflow.getClass, s"Cannot find workflow state class for ${workflow.getClass}").asInstanceOf[Class[S]]
   }
+
+  def kveStateType[S, E <: KeyValueEntity[S]](kve: E): Class[S] = {
+    loop(kve.getClass, s"Cannot find Key Value Entity state class for ${kve.getClass}").asInstanceOf[Class[S]]
+  }
+
+  @tailrec
+  private def loop(current: Class[_], errorMsg: String): Class[_] =
+    if (current == classOf[AnyRef])
+      // recursed to root without finding type param
+      throw new IllegalArgumentException(errorMsg)
+    else {
+      current.getGenericSuperclass match {
+        case parameterizedType: ParameterizedType =>
+          if (parameterizedType.getActualTypeArguments.length == 1)
+            parameterizedType.getActualTypeArguments.head.asInstanceOf[Class[_]]
+          else throw new IllegalArgumentException(errorMsg)
+        case noTypeParamsParent: Class[_] =>
+          // recurse and look at parent
+          loop(noTypeParamsParent, errorMsg)
+      }
+    }
 
   def tableUpdaterRowType(tableUpdater: Class[_]): Class[_] = {
     @tailrec

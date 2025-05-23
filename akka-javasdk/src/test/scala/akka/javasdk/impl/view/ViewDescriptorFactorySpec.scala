@@ -30,6 +30,7 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with Matchers {
   import akka.javasdk.testmodels.subscriptions.PubSubTestModels._
 
   def assertDescriptor[T](test: ViewDescriptor => Any)(implicit tag: ClassTag[T]): Unit = {
+    Validations.validate(tag.runtimeClass).failIfInvalid()
     test(ViewDescriptorFactory(tag.runtimeClass, new JsonSerializer, new RegionInfo(""), ExecutionContexts.global()))
   }
 
@@ -164,6 +165,12 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with Matchers {
 
   "View descriptor factory (for Key Value Entity)" should {
 
+    "not allow View without ComponentId annotation" in {
+      intercept[ValidationException] {
+        Validations.validate(classOf[ViewWithoutComponentIdAnnotation]).failIfInvalid()
+      }.getMessage should include("A View itself should not be annotated with @Table.")
+    }
+
     "not allow View with empty ComponentId" in {
       intercept[ValidationException] {
         Validations.validate(classOf[ViewWithEmptyComponentIdAnnotation]).failIfInvalid()
@@ -234,6 +241,15 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with Matchers {
       }
     }
 
+    "create a descriptor for a View without transformation" in {
+      assertDescriptor[UserViewWithoutTransformation] { desc =>
+        val table = desc.tables.find(_.tableName == "users").get
+
+        table.updateHandler shouldBe empty
+        table.deleteHandler shouldBe empty
+      }
+    }
+
     "fail if no query method found" in {
       intercept[ValidationException] {
         Validations.validate(classOf[ViewWithNoQuery]).failIfInvalid()
@@ -252,65 +268,6 @@ class ViewDescriptorFactorySpec extends AnyWordSpec with Matchers {
     }
 
   }
-  /*
-
-        "generate proto for a View with explicit update method and method level JWT annotation" in {
-          assertDescriptor[TransformedUserViewWithMethodLevelJWT] { desc =>
-
-            val methodOptions = this.findKalixMethodOptions(desc, "OnChange")
-            val entityType = methodOptions.getEventing.getIn.getValueEntity
-            entityType shouldBe "user"
-
-            methodOptions.getView.getUpdate.getTable shouldBe "users"
-            methodOptions.getView.getUpdate.getTransformUpdates shouldBe true
-            methodOptions.getView.getJsonSchema.getOutput shouldBe "TransformedUser"
-
-            val queryMethodOptions = this.findKalixMethodOptions(desc, "getUser")
-            queryMethodOptions.getView.getQuery.getQuery shouldBe "SELECT * FROM users WHERE email = :email"
-            queryMethodOptions.getView.getJsonSchema.getJsonBodyInputField shouldBe "json_body"
-            queryMethodOptions.getView.getJsonSchema.getInput shouldBe "ByEmail"
-            queryMethodOptions.getView.getJsonSchema.getOutput shouldBe "TransformedUser"
-
-            val tableMessageDescriptor = desc.fileDescriptor.findMessageTypeByName("TransformedUser")
-            tableMessageDescriptor should not be null
-
-            val rule = findHttpRule(desc, "getUser")
-            rule.getPost shouldBe "/akka/v1.0/view/users_view/getUser"
-
-            val method = desc.commandHandlers("getUser")
-            val jwtOption = findKalixMethodOptions(desc, method.grpcMethodName).getJwt
-            jwtOption.getBearerTokenIssuer(0) shouldBe "a"
-            jwtOption.getBearerTokenIssuer(1) shouldBe "b"
-            jwtOption.getValidate(0) shouldBe JwtMethodMode.BEARER_TOKEN
-            assertRequestFieldJavaType(method, "json_body", JavaType.MESSAGE)
-
-            val Seq(claim1, claim2) = jwtOption.getStaticClaimList.asScala.toSeq
-            claim1.getClaim shouldBe "role"
-            claim1.getValue(0) shouldBe "admin"
-            claim2.getClaim shouldBe "aud"
-            claim2.getValue(0) shouldBe "${ENV}.kalix.io"
-          }
-        }
-
-        "generate proto for a View with service level JWT annotation" in {
-          assertDescriptor[ViewWithServiceLevelJWT] { desc =>
-            val extension = desc.serviceDescriptor.getOptions.getExtension(kalix.Annotations.service)
-            val jwtOption = extension.getJwt
-            jwtOption.getBearerTokenIssuer(0) shouldBe "a"
-            jwtOption.getBearerTokenIssuer(1) shouldBe "b"
-            jwtOption.getValidate shouldBe JwtServiceMode.BEARER_TOKEN
-
-            val Seq(claim1, claim2) = jwtOption.getStaticClaimList.asScala.toSeq
-            claim1.getClaim shouldBe "role"
-            claim1.getValue(0) shouldBe "admin"
-            claim2.getClaim shouldBe "aud"
-            claim2.getValue(0) shouldBe "${ENV}.kalix.io"
-          }
-        }
-
-
-      }
-   */
 
   "View descriptor factory (for Event Sourced Entity)" should {
 

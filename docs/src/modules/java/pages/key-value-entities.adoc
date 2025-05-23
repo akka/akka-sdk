@@ -67,7 +67,8 @@ include::example$key-value-counter/src/main/java/com/example/application/Counter
 ----
 <1> Every Entity must be annotated with `@ComponentId` with a stable unique identifier for this entity type.
 <2> The `CounterEntity` class should extend `akka.javasdk.keyvalueentity.KeyValueEntity`.
-<3> The initial state of each counter is defined with value 0.
+<3> Stores the `entityId` on an internal attribute so we can use it later. Alternatively, if inside a command handler, `commandContext().entityId()` also provides such information.
+<4> The initial state of each counter is defined with value 0.
 
 NOTE: The `@ComponentId` value `counter` is common for all instances of this entity but must be stable - cannot be changed after a production deploy - and unique across the different entity types in the service.
 
@@ -130,7 +131,7 @@ include::partial$mutli-region-replication.adoc[]
 
 == Side Effects
 
-An entity doesn't perform any external side effects aside from persisting events and replying to the request. Side effects can be handled from the Workflow, Consumer, or Endpoint components that are calling the entity.
+An entity doesn't perform any external side effects aside from persisting state changes and replying to the request. Side effects can be handled from the Workflow, Consumer, or Endpoint components that are calling the entity.
 
 == Testing the Entity
 

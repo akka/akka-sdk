@@ -4,6 +4,7 @@ include::ROOT:partial$include.adoc[]
 
 == General
 
+- Use the Akka SDK version 3.3 or later. Don't use Akka libraries (actors), or Kalix SDK.
 - Use the Onion Architecture and follow `com.[domain-module].[api|application|domain]` package structure.
 
 == Domain Model
@@ -23,6 +24,10 @@ include::ROOT:partial$include.adoc[]
 == Workflows
 
 - State of a workflow can be defined as a record inside the workflow.
+
+== Views
+
+- Views queries that potentially select many rows should return a record that contains a single field with a list of results.
 
 == Endpoints
 

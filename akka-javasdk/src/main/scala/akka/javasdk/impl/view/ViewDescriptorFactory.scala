@@ -97,7 +97,7 @@ private[impl] object ViewDescriptorFactory {
                 s"Table type must be a class but was [$tableRowClass] for table updater [$tableUpdaterClass]")
           }
 
-          if (ComponentDescriptorFactory.hasValueEntitySubscription(tableUpdaterClass)) {
+          if (ComponentDescriptorFactory.hasKeyValueEntitySubscription(tableUpdaterClass)) {
             consumeFromKvEntity(componentId, tableUpdaterClass, tableType, tableName, serializer, regionInfo, userEc)
           } else if (ComponentDescriptorFactory.hasWorkflowSubscription(tableUpdaterClass)) {
             consumeFromWorkflow(componentId, tableUpdaterClass, tableType, tableName, serializer, regionInfo, userEc)

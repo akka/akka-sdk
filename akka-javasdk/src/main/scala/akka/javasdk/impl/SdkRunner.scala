@@ -140,12 +140,17 @@ class SdkRunner private (dependencyProvider: Option[DependencyProvider], disable
   def applicationConfig: Config =
     ApplicationConfig.loadApplicationConf
 
+  // FIXME: remove nowarn with https://github.com/akka/akka-sdk/pull/401
+  @scala.annotation.nowarn("msg=deprecated")
   override def getSettings: SpiSettings = {
     val applicationConf = applicationConfig
 
     val eventSourcedEntitySnapshotEvery = applicationConfig.getInt("akka.javasdk.event-sourced-entity.snapshot-every")
     val cleanupDeletedEntityAfter =
       applicationConf.getDuration("akka.javasdk.entity.cleanup-deleted-after")
+
+    val cleanupInterval =
+      applicationConf.getDuration("akka.javasdk.delete-entity.cleanup-interval")
 
     val devModeSettings =
       if (applicationConf.getBoolean("akka.javasdk.dev-mode.enabled"))
@@ -161,7 +166,7 @@ class SdkRunner private (dependencyProvider: Option[DependencyProvider], disable
       else
         None
 
-    new SpiSettings(eventSourcedEntitySnapshotEvery, cleanupDeletedEntityAfter, devModeSettings)
+    new SpiSettings(eventSourcedEntitySnapshotEvery, cleanupDeletedEntityAfter, cleanupInterval, devModeSettings)
   }
 
   private def extractBrokerConfig(eventingConf: Config): SpiEventingSupportSettings = {
