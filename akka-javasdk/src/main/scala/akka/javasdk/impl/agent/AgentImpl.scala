@@ -6,13 +6,16 @@ package akka.javasdk.impl.agent
 
 import scala.concurrent.Future
 import scala.util.control.NonFatal
-
 import akka.annotation.InternalApi
 import akka.javasdk.Metadata
 import akka.javasdk.Tracing
 import akka.javasdk.agent.Agent
 import akka.javasdk.agent.AgentContext
 import akka.javasdk.agent.JsonParsingException
+import akka.javasdk.agent.CoreMemory
+import akka.javasdk.agent.ConversationHistory
+import akka.javasdk.agent.ConversationMessage.AiMessage
+import akka.javasdk.agent.ConversationMessage.UserMessage
 import akka.javasdk.agent.ModelProvider
 import akka.javasdk.impl.AbstractContext
 import akka.javasdk.impl.ComponentDescriptor
@@ -77,6 +80,7 @@ private[impl] final class AgentImpl[A <: Agent](
     componentDescriptor: ComponentDescriptor,
     regionInfo: RegionInfo,
     promptTemplateClient: PromptTemplateClient,
+    coreMemoryClient: CoreMemory,
     config: Config)
     extends SpiAgent {
   import AgentImpl._
@@ -116,19 +120,26 @@ private[impl] final class AgentImpl[A <: Agent](
         }
       }
 
+      val additionalContext = toSpiContextMessages(coreMemoryClient.getFullHistory(sessionId))
       val spiEffect =
         commandEffect.primaryEffect match {
           case req: RequestModel =>
             val systemMessage = req.systemMessage match {
-              case ConstantSystemMessage(message)    => message
-              case TemplateSystemMessage(templateId) => promptTemplateClient.getPromptTemplate(templateId)
+              case ConstantSystemMessage(message) => message
+              case template: TemplateSystemMessage =>
+                promptTemplateClient.getPromptTemplate(template.templateId).formatted(template.args)
             }
             val spiModelProvider = toSpiModelProvider(req.modelProvider)
             val metadata = MetadataImpl.toSpi(req.replyMetadata)
+
+            // FIXME refactor to persist both user and ai message on transform method
+            // save user message to conversation history right before returning effect
+            coreMemoryClient.addUserMessage(componentId, sessionId, req.userMessage)
             new SpiAgent.RequestModelEffect(
               spiModelProvider,
               systemMessage,
               req.userMessage,
+              additionalContext,
               req.responseType,
               req.responseMapping,
               req.failureMapping,
@@ -159,6 +170,23 @@ private[impl] final class AgentImpl[A <: Agent](
       }
     }
 
+  }
+
+  private def toSpiContextMessages(conversationHistory: ConversationHistory): Vector[SpiAgent.ContextMessage] = {
+    import scala.jdk.CollectionConverters._
+
+    conversationHistory
+      .messages()
+      .asScala
+      .flatMap {
+        case m if m.isInstanceOf[AiMessage] =>
+          Some(new SpiAgent.ContextMessage.AiMessage(m.asInstanceOf[AiMessage].text()))
+        case m if m.isInstanceOf[UserMessage] =>
+          Some(new SpiAgent.ContextMessage.UserMessage(m.asInstanceOf[UserMessage].text()))
+        case m =>
+          throw new IllegalStateException("Unsupported message type " + m.getClass.getName)
+      }
+      .toVector
   }
 
   private def toSpiModelProvider(modelProvider: ModelProvider): SpiAgent.ModelProvider = {
@@ -227,6 +255,9 @@ private[impl] final class AgentImpl[A <: Agent](
       responseType: Class[_],
       mappingFunction: Option[Any => Any],
       failureMapping: Option[Throwable => Any]): BytesPayload = {
+
+    // FIXME we can persist both user and ai messages here if we refactor this to receive the complete builder back
+    coreMemoryClient.addAiMessage(sessionId, modelResponse)
     try {
       if (responseType == classOf[String]) {
         val mappedObj = mappingFunction.map(_.apply(modelResponse)).getOrElse(modelResponse)
