@@ -150,6 +150,9 @@ public abstract class Agent {
        */
       <T> MappingResponseBuilder<T> responseAs(Class<T> responseType);
 
+      /**
+       * Map the String response from the model into a different response type.
+       */
       <T> MappingResponseBuilder<T> map(Function<String, T> mapper);
 
       FailureBuilder<String> onFailure(Function<Throwable, String> exceptionHandler);
@@ -157,10 +160,22 @@ public abstract class Agent {
 
     interface MappingResponseBuilder<Result> {
 
+      /**
+       * Reply with the response from the model.
+       * @return A message reply.
+       */
       Agent.Effect<Result> thenReply();
 
+      /**
+       * Reply with the response from the model.
+       * @param metadata The metadata for the message.
+       * @return A message reply.
+       */
       Agent.Effect<Result> thenReply(Metadata metadata);
 
+      /**
+       * Map the response from the model into a different response type.
+       */
       <T> MappingFailureBuilder<T> map(Function<Result, T> mapper);
 
       FailureBuilder<Result> onFailure(Function<Throwable, Result> exceptionHandler);
@@ -168,16 +183,34 @@ public abstract class Agent {
 
     interface MappingFailureBuilder<Result> {
 
+      /**
+       * Reply with the response from the model.
+       * @return A message reply.
+       */
       Agent.Effect<Result> thenReply();
 
+      /**
+       * Reply with the response from the model.
+       * @param metadata The metadata for the message.
+       * @return A message reply.
+       */
       Agent.Effect<Result> thenReply(Metadata metadata);
 
       FailureBuilder<Result> onFailure(Function<Throwable, Result> exceptionHandler);
     }
 
     interface FailureBuilder<Result> {
+      /**
+       * Reply with the response from the model.
+       * @return A message reply.
+       */
       Agent.Effect<Result> thenReply();
 
+      /**
+       * Reply with the response from the model.
+       * @param metadata The metadata for the message.
+       * @return A message reply.
+       */
       Agent.Effect<Result> thenReply(Metadata metadata);
     }
 
