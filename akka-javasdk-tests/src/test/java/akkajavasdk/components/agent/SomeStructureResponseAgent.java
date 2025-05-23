@@ -40,6 +40,7 @@ public class SomeStructureResponseAgent extends Agent {
         }else {
           throw new RuntimeException(throwable);
         }
-      });
+      })
+      .thenReply();
   }
 }

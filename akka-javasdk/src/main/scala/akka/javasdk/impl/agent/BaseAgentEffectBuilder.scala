@@ -12,10 +12,13 @@ import akka.annotation.InternalApi
 import akka.javasdk.Metadata
 import akka.javasdk.agent.Agent.Effect
 import akka.javasdk.agent.Agent.Effect.Builder
+import akka.javasdk.agent.Agent.Effect.FailureBuilder
 import akka.javasdk.agent.Agent.Effect.MappingFailureBuilder
 import akka.javasdk.agent.Agent.Effect.MappingResponseBuilder
 import akka.javasdk.agent.Agent.Effect.OnSuccessBuilder
 import akka.javasdk.agent.ModelProvider
+import akka.javasdk.impl.agent.BaseAgentEffectBuilder.PrimaryEffectImpl
+import akka.javasdk.impl.agent.BaseAgentEffectBuilder.RequestModel
 import akka.javasdk.impl.effect.ErrorReplyImpl
 import akka.javasdk.impl.effect.MessageReplyImpl
 import akka.javasdk.impl.effect.NoSecondaryEffectImpl
@@ -25,7 +28,7 @@ import akka.javasdk.impl.effect.SecondaryEffectImpl
  * INTERNAL API
  */
 @InternalApi
-private[javasdk] object AgentEffectImpl {
+private[javasdk] object BaseAgentEffectBuilder {
   sealed trait PrimaryEffectImpl
 
   object RequestModel {
@@ -65,13 +68,21 @@ private[javasdk] object AgentEffectImpl {
  * INTERNAL API
  */
 @InternalApi
-private[javasdk] final class AgentEffectImpl[Reply]
+private[javasdk] trait AgentEffectImpl {
+  def primaryEffect: PrimaryEffectImpl
+  def secondaryEffect: SecondaryEffectImpl
+}
+
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[javasdk] final class BaseAgentEffectBuilder[Reply]
     extends Builder
     with OnSuccessBuilder
-    with MappingResponseBuilder[Reply]
-    with MappingFailureBuilder[Reply]
-    with Effect[Reply] {
-  import AgentEffectImpl._
+    with Effect[Reply]
+    with AgentEffectImpl {
+  import BaseAgentEffectBuilder._
 
   private var _primaryEffect: PrimaryEffectImpl = NoPrimaryEffect
   private var _secondaryEffect: SecondaryEffectImpl = NoSecondaryEffectImpl
@@ -90,17 +101,17 @@ private[javasdk] final class AgentEffectImpl[Reply]
   def secondaryEffect: SecondaryEffectImpl =
     _secondaryEffect
 
-  override def reply[T](message: T): AgentEffectImpl[T] =
+  override def reply[T](message: T): BaseAgentEffectBuilder[T] =
     reply(message, Metadata.EMPTY)
 
-  override def reply[T](message: T, metadata: Metadata): AgentEffectImpl[T] = {
+  override def reply[T](message: T, metadata: Metadata): BaseAgentEffectBuilder[T] = {
     _secondaryEffect = MessageReplyImpl(message, metadata)
-    this.asInstanceOf[AgentEffectImpl[T]]
+    this.asInstanceOf[BaseAgentEffectBuilder[T]]
   }
 
-  override def error[T](description: String): AgentEffectImpl[T] = {
+  override def error[T](description: String): BaseAgentEffectBuilder[T] = {
     _secondaryEffect = ErrorReplyImpl(description)
-    this.asInstanceOf[AgentEffectImpl[T]]
+    this.asInstanceOf[BaseAgentEffectBuilder[T]]
   }
 
   def hasError(): Boolean =
@@ -126,34 +137,64 @@ private[javasdk] final class AgentEffectImpl[Reply]
     this
   }
 
-  override def thenReply(): AgentEffectImpl[String] =
-    this.asInstanceOf[AgentEffectImpl[String]]
+  override def thenReply(): BaseAgentEffectBuilder[String] =
+    this.asInstanceOf[BaseAgentEffectBuilder[String]]
 
-  override def thenReply(metadata: Metadata): AgentEffectImpl[String] = {
+  override def thenReply(metadata: Metadata): BaseAgentEffectBuilder[String] = {
     updateRequestModel(_.copy(replyMetadata = metadata))
-    this.asInstanceOf[AgentEffectImpl[String]]
-  }
-
-  override def reply(): AgentEffectImpl[Reply] =
-    this.asInstanceOf[AgentEffectImpl[Reply]]
-
-  override def reply(metadata: Metadata): AgentEffectImpl[Reply] = {
-    updateRequestModel(_.copy(replyMetadata = metadata))
-    this.asInstanceOf[AgentEffectImpl[Reply]]
+    this.asInstanceOf[BaseAgentEffectBuilder[String]]
   }
 
   override def responseAs[T](responseType: Class[T]): MappingResponseBuilder[T] = {
     updateRequestModel(_.copy(responseType = responseType))
-    this.asInstanceOf[AgentEffectImpl[T]]
+    new MappingResponseEffectBuilder(_primaryEffect.asInstanceOf[RequestModel])
+  }
+
+  override def map[T](mapper: function.Function[String, T]): MappingResponseBuilder[T] = {
+    updateRequestModel(_.copy(responseType = classOf[String]))
+    new MappingResponseEffectBuilder(_primaryEffect.asInstanceOf[RequestModel])
+  }
+
+  override def onFailure(exceptionHandler: function.Function[Throwable, String]): FailureBuilder[String] = {
+    updateRequestModel(_.copy(failureMapping = Some(exceptionHandler.asScala.asInstanceOf[Function1[Throwable, Any]])))
+    new MappingResponseEffectBuilder(_primaryEffect.asInstanceOf[RequestModel])
+  }
+}
+
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[javasdk] final class MappingResponseEffectBuilder[Reply](private var _primaryEffect: RequestModel)
+    extends MappingResponseBuilder[Reply]
+    with MappingFailureBuilder[Reply]
+    with FailureBuilder[Reply]
+    with Effect[Reply]
+    with AgentEffectImpl {
+
+  private def updateRequestModel(f: RequestModel => RequestModel): Unit = {
+    _primaryEffect = f(_primaryEffect)
   }
 
   override def map[T](mapper: function.Function[Reply, T]): MappingFailureBuilder[T] = {
     updateRequestModel(_.copy(responseMapping = Some(mapper.asScala.asInstanceOf[Function1[Any, Any]])))
-    this.asInstanceOf[AgentEffectImpl[T]]
+    this.asInstanceOf[MappingResponseEffectBuilder[T]]
   }
 
-  override def onFailure(exceptionHandler: function.Function[Throwable, Reply]): Effect[Reply] = {
+  override def onFailure(exceptionHandler: function.Function[Throwable, Reply]): FailureBuilder[Reply] = {
     updateRequestModel(_.copy(failureMapping = Some(exceptionHandler.asScala.asInstanceOf[Function1[Throwable, Any]])))
-    this.asInstanceOf[AgentEffectImpl[Reply]]
+    this.asInstanceOf[MappingResponseEffectBuilder[Reply]]
   }
+
+  override def thenReply(): MappingResponseEffectBuilder[Reply] =
+    this.asInstanceOf[MappingResponseEffectBuilder[Reply]]
+
+  override def thenReply(metadata: Metadata): MappingResponseEffectBuilder[Reply] = {
+    updateRequestModel(_.copy(replyMetadata = metadata))
+    this.asInstanceOf[MappingResponseEffectBuilder[Reply]]
+  }
+
+  override def primaryEffect: PrimaryEffectImpl = _primaryEffect
+
+  override def secondaryEffect: SecondaryEffectImpl = NoSecondaryEffectImpl
 }

@@ -20,10 +20,10 @@ import akka.javasdk.impl.ComponentType
 import akka.javasdk.impl.ErrorHandling.BadRequestException
 import akka.javasdk.impl.HandlerNotFoundException
 import akka.javasdk.impl.MetadataImpl
-import akka.javasdk.impl.agent.AgentEffectImpl.ConstantSystemMessage
-import akka.javasdk.impl.agent.AgentEffectImpl.NoPrimaryEffect
-import akka.javasdk.impl.agent.AgentEffectImpl.RequestModel
-import akka.javasdk.impl.agent.AgentEffectImpl.TemplateSystemMessage
+import akka.javasdk.impl.agent.BaseAgentEffectBuilder.ConstantSystemMessage
+import akka.javasdk.impl.agent.BaseAgentEffectBuilder.NoPrimaryEffect
+import akka.javasdk.impl.agent.BaseAgentEffectBuilder.RequestModel
+import akka.javasdk.impl.agent.BaseAgentEffectBuilder.TemplateSystemMessage
 import akka.javasdk.impl.effect.ErrorReplyImpl
 import akka.javasdk.impl.effect.MessageReplyImpl
 import akka.javasdk.impl.effect.NoSecondaryEffectImpl
@@ -101,7 +101,7 @@ private[impl] final class AgentImpl[A <: Agent](
     try {
       val commandEffect = router
         .handleCommand(command.name, cmdPayload, agentContext)
-        .asInstanceOf[AgentEffectImpl[AnyRef]] // FIXME improve?
+        .asInstanceOf[AgentEffectImpl] // FIXME improve?
 
       def errorOrReply: Either[SpiAgent.Error, (BytesPayload, SpiMetadata)] = {
         commandEffect.secondaryEffect match {

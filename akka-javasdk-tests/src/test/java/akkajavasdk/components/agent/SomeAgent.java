@@ -30,6 +30,6 @@ public class SomeAgent extends Agent {
       .userMessage(question)
       .responseAs(String.class)
       .map(SomeResponse::new)
-      .reply();
+      .thenReply();
   }
 }

@@ -6,7 +6,7 @@ package akka.javasdk.agent;
 
 import akka.annotation.InternalApi;
 import akka.javasdk.Metadata;
-import akka.javasdk.impl.agent.AgentEffectImpl;
+import akka.javasdk.impl.agent.BaseAgentEffectBuilder;
 
 import java.util.Optional;
 import java.util.function.Function;
@@ -38,7 +38,7 @@ public abstract class Agent {
   }
 
   public final Effect.Builder effects() {
-    return new AgentEffectImpl<>();
+    return new BaseAgentEffectBuilder<>();
   }
 
   /**
@@ -137,24 +137,36 @@ public abstract class Agent {
        * @param responseType The structured response type.
        */
       <T> MappingResponseBuilder<T> responseAs(Class<T> responseType);
+
+      <T> MappingResponseBuilder<T> map(Function<String, T> mapper);
+
+      FailureBuilder<String> onFailure(Function<Throwable, String> exceptionHandler);
     }
 
-    interface MappingResponseBuilder<Input> {
+    interface MappingResponseBuilder<Result> {
 
-      Agent.Effect<Input> reply();
+      Agent.Effect<Result> thenReply();
 
-      Agent.Effect<Input> reply(Metadata metadata);
+      Agent.Effect<Result> thenReply(Metadata metadata);
 
-      <T> MappingFailureBuilder<T> map(Function<Input, T> mapper);
+      <T> MappingFailureBuilder<T> map(Function<Result, T> mapper);
+
+      FailureBuilder<Result> onFailure(Function<Throwable, Result> exceptionHandler);
     }
 
-    interface MappingFailureBuilder<Input> {
+    interface MappingFailureBuilder<Result> {
 
-      Agent.Effect<Input> reply();
+      Agent.Effect<Result> thenReply();
 
-      Agent.Effect<Input> reply(Metadata metadata);
+      Agent.Effect<Result> thenReply(Metadata metadata);
 
-      Agent.Effect<Input> onFailure(Function<Throwable, Input> exceptionHandler);
+      FailureBuilder<Result> onFailure(Function<Throwable, Result> exceptionHandler);
+    }
+
+    interface FailureBuilder<Result> {
+      Agent.Effect<Result> thenReply();
+
+      Agent.Effect<Result> thenReply(Metadata metadata);
     }
 
   }
