@@ -221,7 +221,7 @@ private[impl] final class AgentImpl[A <: Agent](
           topP = p.topP,
           maxTokens = p.maxTokens)
       case p: ModelProvider.Custom =>
-        new SpiAgent.ModelProvider.Custom(() => p.createChatModel())
+        new SpiAgent.ModelProvider.Custom(() => p.createChatModel(), () => p.createStreamingChatModel())
     }
   }
 
