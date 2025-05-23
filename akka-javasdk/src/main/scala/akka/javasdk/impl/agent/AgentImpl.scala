@@ -4,9 +4,8 @@
 
 package akka.javasdk.impl.agent
 
-import scala.concurrent.Future
-import scala.util.control.NonFatal
 import akka.annotation.InternalApi
+import akka.javasdk.JsonSupport
 import akka.javasdk.Metadata
 import akka.javasdk.Tracing
 import akka.javasdk.agent.Agent
@@ -49,6 +48,9 @@ import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.Tracer
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
+
+import scala.concurrent.Future
+import scala.util.control.NonFatal
 
 /**
  * INTERNAL API
@@ -94,6 +96,9 @@ private[impl] final class AgentImpl[A <: Agent](
     val agentContext = new AgentContextImpl(sessionId, regionInfo.selfRegion, Metadata.EMPTY, None, tracerFactory)
     new ReflectiveAgentRouter(factory(agentContext), componentDescriptor.methodInvokers, serializer)
   }
+
+  private val functionDescriptors = FunctionDescriptors(router.agent)
+  private val functionTools = FunctionTools(router.agent)
 
   override def handleCommand(command: SpiAgent.Command): Future[SpiAgent.Effect] = {
 
@@ -151,6 +156,7 @@ private[impl] final class AgentImpl[A <: Agent](
               systemMessage,
               req.userMessage,
               additionalContext,
+              functionDescriptors,
               req.responseType,
               req.responseMapping,
               req.failureMapping,
@@ -317,4 +323,30 @@ private[impl] final class AgentImpl[A <: Agent](
     }
   }
 
+  override def callTool(request: SpiAgent.ToolExecRequest): String = {
+
+    val toolInvoker =
+      functionTools.getOrElse(request.name, throw new IllegalArgumentException(s"Unknown tool ${request.name}"))
+
+    val mapper = JsonSupport.getObjectMapper
+    val jsonNode = mapper.readTree(request.payload)
+
+    val methodInput =
+      toolInvoker.paramNames.zipWithIndex.map { case (name, index) =>
+        // assume that the paramName in the method matches a node from the json 'payload'
+        val node = jsonNode.get(name)
+        val typ = toolInvoker.types(index)
+        val javaType = mapper.getTypeFactory.constructType(typ)
+        mapper.treeToValue(node, javaType).asInstanceOf[Any]
+      }
+
+    val toolResult = toolInvoker.invoke(methodInput)
+
+    if (toolInvoker.returnType == Void.TYPE)
+      "SUCCESS"
+    else if (toolInvoker.returnType == classOf[String])
+      toolResult.asInstanceOf[String]
+    else
+      mapper.writeValueAsString(toolResult)
+  }
 }
