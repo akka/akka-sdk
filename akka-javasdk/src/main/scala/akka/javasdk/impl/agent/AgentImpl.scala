@@ -181,8 +181,7 @@ private[impl] final class AgentImpl[A <: Agent](
         case m if m.isInstanceOf[UserMessage] =>
           Some(new SpiAgent.ContextMessage.UserMessage(m.asInstanceOf[UserMessage].text()))
         case m =>
-          log.warn("Unsupported message type [{}], ignoring", m.getClass.getName)
-          None
+          throw new IllegalStateException("Unsupported message type " + m.getClass.getName)
       }
       .toVector
   }

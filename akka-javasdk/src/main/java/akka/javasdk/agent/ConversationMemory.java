@@ -115,7 +115,6 @@ public final class ConversationMemory extends EventSourcedEntity<State, Event> {
   }
 
   public Effect<Done> addUserMessage(String message) {
-    log.debug("Adding user message: {}", message);
     return effects()
         .persist(new Event.UserMessageAdded(message))
         .thenReply(__ -> Done.done());
@@ -127,21 +126,16 @@ public final class ConversationMemory extends EventSourcedEntity<State, Event> {
         .thenReply(__ -> Done.done());
   }
 
-  public record AddInteractionCmd(String userMessage, String aiMessage) {
-
-  }
+  public record AddInteractionCmd(String userMessage, String aiMessage) { }
   public Effect<Done> addInteraction(AddInteractionCmd cmd) {
-    log.debug("Adding interaction: user={}, ai={}", cmd.userMessage, cmd.aiMessage);
     return effects()
-        .persistAll(List.of(new Event.UserMessageAdded(cmd.userMessage), new Event.AiMessageAdded(cmd.aiMessage)))
+        .persist(new Event.UserMessageAdded(cmd.userMessage), new Event.AiMessageAdded(cmd.aiMessage))
         .thenReply(__ -> Done.done());
   }
 
   public ReadOnlyEffect<ConversationHistory> getHistory() {
     return effects().reply(
-        new ConversationHistory(
-            currentState().maxSize,
-            new LinkedList<>(currentState().messages)));
+        new ConversationHistory(new LinkedList<>(currentState().messages)));
   }
 
   public Effect<Done> delete() {

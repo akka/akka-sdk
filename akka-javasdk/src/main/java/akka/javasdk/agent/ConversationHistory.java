@@ -6,4 +6,4 @@ package akka.javasdk.agent;
 
 import java.util.List;
 
-public record ConversationHistory(int maxSize, List<ConversationMessage> messages) { }
+public record ConversationHistory(List<ConversationMessage> messages) { }
