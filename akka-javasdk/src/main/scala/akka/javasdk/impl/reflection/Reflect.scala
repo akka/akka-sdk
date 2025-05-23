@@ -42,7 +42,7 @@ private[impl] object Reflect {
     implicit class ClassOps(clazz: Class[_]) {
       def isPublic: Boolean = Modifier.isPublic(clazz.getModifiers)
 
-      def getAnnotationOption[A <: Annotation](implicit ev: ClassTag[A]): Option[A] =
+      def annotationOption[A <: Annotation](implicit ev: ClassTag[A]): Option[A] =
         if (clazz.isPublic)
           Option(clazz.getAnnotation(ev.runtimeClass.asInstanceOf[Class[A]]))
         else
@@ -57,6 +57,9 @@ private[impl] object Reflect {
       def hasAnnotation[A <: Annotation](implicit ev: ClassTag[A]): Boolean =
         annotated.getAnnotation(ev.runtimeClass.asInstanceOf[Class[Annotation]]) != null
 
+      def annotationOption[A <: Annotation](implicit ev: ClassTag[A]): Option[A] = {
+        Option(annotated.getAnnotation(ev.runtimeClass.asInstanceOf[Class[A]]))
+      }
     }
 
   }
