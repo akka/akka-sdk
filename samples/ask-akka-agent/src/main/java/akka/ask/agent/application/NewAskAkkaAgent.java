@@ -1,7 +1,6 @@
 package akka.ask.agent.application;
 
 import akka.javasdk.agent.Agent;
-import akka.javasdk.agent.ModelProvider;
 import akka.javasdk.annotations.AgentDescription;
 import akka.javasdk.annotations.ComponentId;
 
