@@ -23,11 +23,6 @@ public class TestModelProvider implements ModelProvider.Custom {
 
   private List<Pair<Predicate<String>, String>> responsePredicates = new ArrayList<>();
 
-  class TestChatResponse extends ChatResponse {
-    public TestChatResponse(String response) {
-      super(new Builder().modelName("test-model").finishReason(FinishReason.STOP).aiMessage(new AiMessage(response)));
-    }
-  }
 
   @Override
   public Object createChatModel() {
@@ -51,7 +46,15 @@ public class TestModelProvider implements ModelProvider.Custom {
           .map(Pair::second)
           .orElseThrow();
 
-        return new TestChatResponse(textResponse);
+        return chatResponse(textResponse);
+      }
+
+      private ChatResponse chatResponse(String response){
+        return new ChatResponse.Builder()
+          .modelName("test-model")
+          .finishReason(FinishReason.STOP)
+          .aiMessage(new AiMessage(response))
+          .build();
       }
     };
   }

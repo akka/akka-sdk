@@ -12,28 +12,24 @@ import akka.javasdk.annotations.ComponentId;
 class DummyAgent1 extends Agent {
   Effect<String> doSomething(String question) {
     return effects()
-        .systemMessage("You are a helpful...")
-        .userMessage(question)
-        .thenReply();
+      .systemMessage("You are a helpful...")
+      .userMessage(question)
+      .thenReply();
   }
 }
 
 @ComponentId("dummy2")
 @AgentDescription(name = "Dummy Agent", description = "Not very smart agent")
 class DummyAgent2 extends Agent {
-  record Response(String result) {}
-  record Response2(String result) {}
+  record Response(String result) {
+  }
 
-  Effect<Response2> doSomething(String question) {
+  Effect<Response> doSomething(String question) {
     return effects()
-        .systemMessage("You are a helpful...")
-        .userMessage(question)
-        .responseAs(Response.class)
-//        .reply();
-        .map(response -> new Response2(response.result))
-//      .reply()
-        .onFailure(throwable -> {throw new IllegalStateException("das");});
-//        .onFailure(ex -> ...)
+      .systemMessage("You are a helpful...")
+      .userMessage(question)
+      .responseAs(Response.class)
+      .thenReply();
   }
 }
 
