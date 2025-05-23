@@ -272,4 +272,7 @@ private[impl] final class AgentImpl[A <: Agent](
       serializer.toBytes(obj)
     }
   }
+
+  override def encode(message: Any): BytesPayload =
+    serializer.toBytes(message)
 }
