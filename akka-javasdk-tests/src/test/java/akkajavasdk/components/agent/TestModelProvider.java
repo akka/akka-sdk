@@ -9,9 +9,12 @@ import akka.javasdk.agent.ModelProvider;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.chat.request.ChatRequest;
 import dev.langchain4j.model.chat.response.ChatResponse;
+import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
 import dev.langchain4j.model.output.FinishReason;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,31 +30,56 @@ public class TestModelProvider implements ModelProvider.Custom {
   public Object createChatModel() {
     return new ChatModel() {
       @Override
-      public ChatResponse chat(ChatRequest chatRequest) {
-
-        var lastUserMessageText = Optional.ofNullable(chatRequest.messages().getLast())
-          .filter(chatMessage -> chatMessage instanceof UserMessage)
-          .map(userMessage -> (UserMessage) userMessage)
-          .map(UserMessage::singleText)
-          .orElseThrow(() -> new RuntimeException("No user message found"));
-
-        var textResponse = responsePredicates.stream()
-          .filter(pair -> pair.first().test(lastUserMessageText))
-          .findFirst()
-          .map(Pair::second)
-          .orElseThrow();
-
+      public ChatResponse doChat(ChatRequest chatRequest) {
+        var userMessageText = getLastUserMessageText(chatRequest);
+        var textResponse = getTextResponse(userMessageText);
         return chatResponse(textResponse);
       }
 
-      private ChatResponse chatResponse(String response) {
-        return new ChatResponse.Builder()
-          .modelName("test-model")
-          .finishReason(FinishReason.STOP)
-          .aiMessage(new AiMessage(response))
-          .build();
+    };
+  }
+
+  @Override
+  public Object createStreamingChatModel() {
+    return new StreamingChatModel() {
+      @Override
+      public void doChat(ChatRequest chatRequest, StreamingChatResponseHandler handler) {
+        var userMessageText = getLastUserMessageText(chatRequest);
+        var textResponse = getTextResponse(userMessageText);
+
+        // fake tokenization by each character
+        var chars = textResponse.toCharArray();
+        for (char ch : chars) {
+          handler.onPartialResponse(String.valueOf(ch));
+        }
+
+        handler.onCompleteResponse(chatResponse(textResponse));
       }
     };
+  }
+
+  private String getLastUserMessageText(ChatRequest chatRequest) {
+    return Optional.ofNullable(chatRequest.messages().getLast())
+        .filter(chatMessage -> chatMessage instanceof UserMessage)
+        .map(userMessage -> (UserMessage) userMessage)
+        .map(UserMessage::singleText)
+        .orElseThrow(() -> new RuntimeException("No user message found"));
+  }
+
+  private String getTextResponse(String userMessageText) {
+    return responsePredicates.stream()
+        .filter(pair -> pair.first().test(userMessageText))
+        .findFirst()
+        .map(Pair::second)
+        .orElseThrow();
+  }
+
+  private ChatResponse chatResponse(String response) {
+    return new ChatResponse.Builder()
+        .modelName("test-model")
+        .finishReason(FinishReason.STOP)
+        .aiMessage(new AiMessage(response))
+        .build();
   }
 
   public void mockResponse(Predicate<String> predicate, String response) {
