@@ -250,36 +250,26 @@ private[impl] final class AgentImpl[A <: Agent](
     }
   }
 
-  override def transformResponse(
-      modelResponse: String,
-      responseType: Class[_],
-      mappingFunction: Option[Any => Any],
-      failureMapping: Option[Throwable => Any]): BytesPayload = {
+  override def serialize(message: Any): BytesPayload = {
+    serializer.toBytes(message)
+  }
 
-    // FIXME we can persist both user and ai messages here if we refactor this to receive the complete builder back
+  override def deserialize(modelResponse: String, responseType: Class[_]): Any = {
     coreMemoryClient.addAiMessage(sessionId, modelResponse)
     try {
       if (responseType == classOf[String]) {
-        val mappedObj = mappingFunction.map(_.apply(modelResponse)).getOrElse(modelResponse)
-        serializer.toBytes(mappedObj)
+        modelResponse
       } else {
         // We might be able to bypass serialization roundtrip here, but might be good to catch invalid json
         // as early as possible.
         // The content type isn't used in this fromBytes.
 
-        val obj = serializer.fromBytes(
+        serializer.fromBytes(
           responseType,
           new BytesPayload(ByteString.fromString(modelResponse), JsonSerializer.JsonContentTypePrefix + "object"))
-
-        val mappedObj = mappingFunction.map(_.apply(obj)).getOrElse(obj)
-
-        serializer.toBytes(mappedObj)
       }
     } catch {
-      case e: IllegalArgumentException if failureMapping.isDefined =>
-        //trying to recover
-        val any = failureMapping.get.apply(new JsonParsingException(e.getMessage, e, modelResponse))
-        serializer.toBytes(any)
+      case e: IllegalArgumentException => throw new JsonParsingException(e.getMessage, e, modelResponse)
     }
   }
 }
