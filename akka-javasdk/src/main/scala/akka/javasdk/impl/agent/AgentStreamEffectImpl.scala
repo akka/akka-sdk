@@ -22,7 +22,7 @@ private[javasdk] final class AgentStreamEffectImpl
     with StreamEffect.OnSuccessBuilder
     with StreamEffect {
   // note that it's using the same effects as AgentEffectImpl
-  import AgentEffectImpl._
+  import BaseAgentEffectBuilder._
 
   private var _primaryEffect: PrimaryEffectImpl = NoPrimaryEffect
   private var _secondaryEffect: SecondaryEffectImpl = NoSecondaryEffectImpl

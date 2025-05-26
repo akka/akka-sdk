@@ -107,13 +107,13 @@ private[impl] final class AgentImpl[A <: Agent](
 
       def primaryEffect =
         commandEffect match {
-          case e: AgentEffectImpl[_]    => e.primaryEffect
+          case e: AgentEffectImpl       => e.primaryEffect
           case e: AgentStreamEffectImpl => e.primaryEffect
         }
 
       def secondaryEffect =
         commandEffect match {
-          case e: AgentEffectImpl[_]    => e.secondaryEffect
+          case e: AgentEffectImpl       => e.secondaryEffect
           case e: AgentStreamEffectImpl => e.secondaryEffect
         }
 
@@ -142,9 +142,6 @@ private[impl] final class AgentImpl[A <: Agent](
             val spiModelProvider = toSpiModelProvider(req.modelProvider)
             val metadata = MetadataImpl.toSpi(req.replyMetadata)
 
-            // FIXME refactor to persist both user and ai message on transform method
-            // save user message to conversation history right before returning effect
-            coreMemoryClient.addUserMessage(componentId, sessionId, req.userMessage)
             new SpiAgent.RequestModelEffect(
               spiModelProvider,
               systemMessage,
@@ -153,7 +150,8 @@ private[impl] final class AgentImpl[A <: Agent](
               req.responseType,
               req.responseMapping,
               req.failureMapping,
-              metadata)
+              metadata,
+              result => onSuccess(req.userMessage, result))
 
           case NoPrimaryEffect =>
             errorOrReply match {
@@ -180,6 +178,11 @@ private[impl] final class AgentImpl[A <: Agent](
       }
     }
 
+  }
+
+  private def onSuccess(userMessage: String, modelResult: SpiAgent.ModelResult): Unit = {
+    // FIXME missing componentId parameter
+    coreMemoryClient.addInteraction(sessionId, userMessage, modelResult.modelResponse)
   }
 
   private def toSpiContextMessages(conversationHistory: ConversationHistory): Vector[SpiAgent.ContextMessage] = {
@@ -265,7 +268,6 @@ private[impl] final class AgentImpl[A <: Agent](
   }
 
   override def deserialize(modelResponse: String, responseType: Class[_]): Any = {
-    coreMemoryClient.addAiMessage(sessionId, modelResponse)
     try {
       if (responseType == classOf[String]) {
         modelResponse
@@ -283,6 +285,4 @@ private[impl] final class AgentImpl[A <: Agent](
     }
   }
 
-  override def encode(message: Any): BytesPayload =
-    serializer.toBytes(message)
 }
