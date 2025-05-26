@@ -25,4 +25,16 @@ public interface AgentClientInSession {
    */
   <T, A1, R> ComponentMethodRef1<A1, R> method(Function2<T, A1, Agent.Effect<R>> methodRef);
 
+  /**
+   * Pass in an Agent command handler method reference, e.g. {@code ExpertAgent::ask}
+   */
+  <T> ComponentStreamMethodRef<String> tokenStream(Function<T, Agent.StreamEffect> methodRef);
+
+  /**
+   * Pass in an Agent command handler method reference, e.g. {@code ExpertAgent::ask}
+   *
+   * @param <A1> the type of parameter expected by the call
+   */
+  <T, A1> ComponentStreamMethodRef1<A1, String> tokenStream(Function2<T, A1, Agent.StreamEffect> methodRef);
+
 }

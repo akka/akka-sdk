@@ -1,6 +1,5 @@
 package akka.ask;
 
-import akka.ask.agent.application.AskAkkaAgent;
 import akka.ask.agent.application.Knowledge;
 import akka.ask.common.KeyUtils;
 import akka.javasdk.DependencyProvider;
@@ -43,13 +42,6 @@ public class Bootstrap implements ServiceSetup {
     return new DependencyProvider() {
       @Override
       public <T> T getDependency(Class<T> cls) {
-        // end::all[]
-        // tag::agent[]
-        if (cls.equals(AskAkkaAgent.class)) {
-          return (T) new AskAkkaAgent(componentClient, mongoClient);
-        }
-        // end::agent[]
-        // tag::all[]
         if (cls.equals(MongoClient.class)) {
           return (T) mongoClient;
         }

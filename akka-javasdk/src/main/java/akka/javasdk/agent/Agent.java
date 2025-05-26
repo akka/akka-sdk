@@ -7,6 +7,7 @@ package akka.javasdk.agent;
 import akka.annotation.InternalApi;
 import akka.javasdk.Metadata;
 import akka.javasdk.impl.agent.BaseAgentEffectBuilder;
+import akka.javasdk.impl.agent.AgentStreamEffectImpl;
 
 import java.util.Optional;
 import java.util.function.Function;
@@ -39,6 +40,10 @@ public abstract class Agent {
 
   public final Effect.Builder effects() {
     return new BaseAgentEffectBuilder<>();
+  }
+
+  public final StreamEffect.Builder streamEffects() {
+    return new AgentStreamEffectImpl();
   }
 
   /**
@@ -81,6 +86,12 @@ public abstract class Agent {
 
       /**
        * Create a system message from a template. Call @{@link PromptTemplate} before to initiate or update template value.
+       * <p>
+       * Provides system-level instructions to the AI model that define its behavior and context.
+       * The system message acts as a foundational prompt that establishes the AI's role, constraints,
+       * and operational parameters. It is processed before user messages and helps maintain consistent
+       * behavior throughout the interaction.
+       *
        * @param templateId the id of the template to use
        */
       Builder systemMessageFromTemplate(String templateId);
@@ -88,6 +99,12 @@ public abstract class Agent {
       /**
        * Create a system message from a template. Call @{@link PromptTemplate} before to initiate or update template value.
        * Provide arguments that will be applied to the template using Java {@link String#formatted} method.
+       * <p>
+       * Provides system-level instructions to the AI model that define its behavior and context.
+       * The system message acts as a foundational prompt that establishes the AI's role, constraints,
+       * and operational parameters. It is processed before user messages and helps maintain consistent
+       * behavior throughout the interaction.
+       *
        * @param templateId the id of the template to use
        * @param args the arguments to apply to the template
        */
@@ -212,6 +229,102 @@ public abstract class Agent {
        * @return A message reply.
        */
       Agent.Effect<Result> thenReply(Metadata metadata);
+    }
+
+  }
+
+  public interface StreamEffect {
+
+    /**
+     * Construct the effect for token streaming that is returned by the message handler.
+     */
+    interface Builder {
+
+      /**
+       * Define the model (LLM) to use.
+       * If undefined, the model is defined by the default configuration in
+       * {@code akka.javasdk.agent.model-provider}
+       */
+      Builder model(ModelProvider provider);
+
+      /**
+       * Provides system-level instructions to the AI model that define its behavior and context.
+       * The system message acts as a foundational prompt that establishes the AI's role, constraints,
+       * and operational parameters. It is processed before user messages and helps maintain consistent
+       * behavior throughout the interaction.
+       */
+      Builder systemMessage(String message);
+
+      /**
+       * Create a system message from a template. Call @{@link PromptTemplate} before to initiate or update template value.
+       * <p>
+       * Provides system-level instructions to the AI model that define its behavior and context.
+       * The system message acts as a foundational prompt that establishes the AI's role, constraints,
+       * and operational parameters. It is processed before user messages and helps maintain consistent
+       * behavior throughout the interaction.
+       *
+       * @param templateId the id of the template to use
+       */
+      Builder systemMessageFromTemplate(String templateId);
+
+      /**
+       * Create a system message from a template. Call @{@link PromptTemplate} before to initiate or update template value.
+       * Provide arguments that will be applied to the template using Java {@link String#formatted} method.
+       * <p>
+       * Provides system-level instructions to the AI model that define its behavior and context.
+       * The system message acts as a foundational prompt that establishes the AI's role, constraints,
+       * and operational parameters. It is processed before user messages and helps maintain consistent
+       * behavior throughout the interaction.
+       *
+       * @param templateId the id of the template to use
+       * @param args the arguments to apply to the template
+       */
+      Builder systemMessageFromTemplate(String templateId, Object... args);
+
+      OnSuccessBuilder userMessage(String message);
+
+      /**
+       * Create a message reply without calling the model.
+       *
+       * @param message The payload of the reply.
+       * @return A message reply.
+       */
+      Agent.StreamEffect reply(String message);
+
+      /**
+       * Create a message reply without calling the model.
+       *
+       * @param message The payload of the reply.
+       * @param metadata The metadata for the message.
+       * @return A message reply.
+       */
+      Agent.StreamEffect reply(String message, Metadata metadata);
+
+      /**
+       * Create an error reply without calling the model
+       *
+       * @param description The description of the error.
+       * @return An error reply.
+       */
+      Agent.StreamEffect error(String description);
+
+    }
+
+    interface OnSuccessBuilder {
+
+      /**
+       * Reply with the response from the model.
+       * @return A message reply.
+       */
+      Agent.StreamEffect thenReply();
+
+      /**
+       * Reply with the response from the model.
+       * @param metadata The metadata for the message.
+       * @return A message reply.
+       */
+      Agent.StreamEffect thenReply(Metadata metadata);
+
     }
 
   }

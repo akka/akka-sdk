@@ -22,7 +22,9 @@ private[impl] object AgentDescriptorFactory extends ComponentDescriptorFactory {
     //TODO remove capitalization of method name, can't be done per component, because component client reuse the same logic for all
     val commandHandlerMethods = if (classOf[Agent].isAssignableFrom(component)) {
       component.getDeclaredMethods.collect {
-        case method if isCommandHandlerCandidate[Agent.Effect[_]](method) =>
+        case method
+            if isCommandHandlerCandidate[Agent.Effect[_]](method) || isCommandHandlerCandidate[Agent.StreamEffect](
+              method) =>
           method.getName.capitalize -> MethodInvoker(method)
       }
     } else {

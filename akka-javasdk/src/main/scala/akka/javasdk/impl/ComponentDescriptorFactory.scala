@@ -98,7 +98,8 @@ private[impl] object ComponentDescriptorFactory {
 
   def hasAgentEffectOutput(javaMethod: Method): Boolean = {
     javaMethod.isPublic &&
-    (javaMethod.getReturnType == classOf[Agent.Effect[_]])
+    (javaMethod.getReturnType == classOf[Agent.Effect[_]] ||
+    javaMethod.getReturnType == classOf[Agent.StreamEffect])
   }
 
   def hasTimedActionEffectOutput(javaMethod: Method): Boolean = {
