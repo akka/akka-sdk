@@ -11,6 +11,7 @@ import akka.javasdk.Metadata
 import akka.javasdk.Tracing
 import akka.javasdk.agent.Agent
 import akka.javasdk.agent.AgentContext
+import akka.javasdk.agent.JsonParsingException
 import akka.javasdk.agent.CoreMemory
 import akka.javasdk.agent.ConversationHistory
 import akka.javasdk.agent.ConversationMessage.AiMessage
@@ -22,10 +23,10 @@ import akka.javasdk.impl.ComponentType
 import akka.javasdk.impl.ErrorHandling.BadRequestException
 import akka.javasdk.impl.HandlerNotFoundException
 import akka.javasdk.impl.MetadataImpl
-import akka.javasdk.impl.agent.AgentEffectImpl.ConstantSystemMessage
-import akka.javasdk.impl.agent.AgentEffectImpl.NoPrimaryEffect
-import akka.javasdk.impl.agent.AgentEffectImpl.RequestModel
-import akka.javasdk.impl.agent.AgentEffectImpl.TemplateSystemMessage
+import akka.javasdk.impl.agent.BaseAgentEffectBuilder.ConstantSystemMessage
+import akka.javasdk.impl.agent.BaseAgentEffectBuilder.NoPrimaryEffect
+import akka.javasdk.impl.agent.BaseAgentEffectBuilder.RequestModel
+import akka.javasdk.impl.agent.BaseAgentEffectBuilder.TemplateSystemMessage
 import akka.javasdk.impl.effect.ErrorReplyImpl
 import akka.javasdk.impl.effect.MessageReplyImpl
 import akka.javasdk.impl.effect.NoSecondaryEffectImpl
@@ -104,7 +105,7 @@ private[impl] final class AgentImpl[A <: Agent](
     try {
       val commandEffect = router
         .handleCommand(command.name, cmdPayload, agentContext)
-        .asInstanceOf[AgentEffectImpl[AnyRef]] // FIXME improve?
+        .asInstanceOf[AgentEffectImpl] // FIXME improve?
 
       def errorOrReply: Either[SpiAgent.Error, (BytesPayload, SpiMetadata)] = {
         commandEffect.secondaryEffect match {
@@ -140,6 +141,8 @@ private[impl] final class AgentImpl[A <: Agent](
               req.userMessage,
               additionalContext,
               req.responseType,
+              req.responseMapping,
+              req.failureMapping,
               metadata)
 
           case NoPrimaryEffect =>
@@ -247,19 +250,26 @@ private[impl] final class AgentImpl[A <: Agent](
     }
   }
 
-  override def transformResponse(modelResponse: String, responseType: Class[_]): BytesPayload = {
-    // FIXME we can persist both user and ai messages here if we refactor this to receive the complete builder back
+  override def serialize(message: Any): BytesPayload = {
+    serializer.toBytes(message)
+  }
+
+  override def deserialize(modelResponse: String, responseType: Class[_]): Any = {
     coreMemoryClient.addAiMessage(sessionId, modelResponse)
-    if (responseType == classOf[String]) {
-      serializer.toBytes(modelResponse)
-    } else {
-      // We might be able to bypass serialization roundtrip here, but might be good to catch invalid json
-      // as early as possible.
-      // The content type isn't used in this fromBytes.
-      val obj = serializer.fromBytes(
-        responseType,
-        new BytesPayload(ByteString.fromString(modelResponse), JsonSerializer.JsonContentTypePrefix + "object"))
-      serializer.toBytes(obj)
+    try {
+      if (responseType == classOf[String]) {
+        modelResponse
+      } else {
+        // We might be able to bypass serialization roundtrip here, but might be good to catch invalid json
+        // as early as possible.
+        // The content type isn't used in this fromBytes.
+
+        serializer.fromBytes(
+          responseType,
+          new BytesPayload(ByteString.fromString(modelResponse), JsonSerializer.JsonContentTypePrefix + "object"))
+      }
+    } catch {
+      case e: IllegalArgumentException => throw new JsonParsingException(e.getMessage, e, modelResponse)
     }
   }
 }
