@@ -1,0 +1,68 @@
+= Getting Started
+
+Start with a guided tutorial or explore working samples. The resources below help you learn by building services and agents with Akka.
+
+== Tutorials
+
+These hands-on tutorials walk you step by step through building real Akka systems, from your first minimal service to fully featured applications like shopping carts and AI agents. Each tutorial includes guided instructions, runnable code, and explanations of key concepts.
+
+=== Build your first service
+
+[TIP]
+====
+*New to Akka? Start here.*
+====
+
+A good first step for learning how services are structured and how Akka processes requests.
+
+[options="header", cols="2,1"]
+|=======================
+| Tutorial | Level
+| xref:getting-started:author-your-first-service.adoc[Create and run your first Hell World service] | Beginner
+|=======================
+
+=== Build a shopping cart system
+
+Explore a complete e-commerce service and learn key Akka concepts by implementing a real-world system. These lessons walk you through defining agents, handling state, processing commands, and responding to user-specific queries.
+
+[options="header", cols="2,1"]
+|=======================
+| Tutorial | Level
+| xref:build-and-deploy-shopping-cart.adoc[Part 1: Build a basic shopping cart with persistent state and command handling] | Beginner
+| xref:addview.adoc[Part 2: Add user-specific lookup with JWT-based authentication] | Intermediate
+|=======================
+
+=== Build an AI RAG Agent
+
+Learn how to implement a Retrieval-Augmented Generation (RAG) pipeline with Akka. This series covers end-to-end design of a multi-agent system that performs LLM-assisted reasoning, indexing, and live querying.
+
+[options="header", cols="2,1"]
+|=======================
+| Tutorial | Level
+| xref:session.adoc[Part 1: Model the agent session for multi-turn interaction] | Intermediate
+| xref:indexer.adoc[Part 2: Build a workflow that indexes knowledge using semantic embeddings] | Intermediate
+| xref:rag.adoc[Part 3: Implement query handling using retrieval and LLM invocation] | Intermediate
+| xref:endpoints.adoc[Part 4: Add streaming endpoints for incremental LLM responses] | Advanced
+|=======================
+
+== Explore sample applications
+
+These runnable code samples showcase common patterns and advanced architectures built with Akka. They are designed for exploration and reference rather than step-by-step instruction.
+
+[options="header", cols="3,2,1"]
+|=======================
+| Description | Source download | Level
+| AI agent that creates personalized travel itineraries. Illustrates reliable interaction with a LLM using Langchain4J and a workflow. Entities are used for durable state of user preferences and generated trips. | link:https://github.com/akka-samples/travel-agent[Github Repository] | Beginner
+| AI agent that leverages a LLM to process medical discharge summaries and assign tags, while also enabling human verification and comparative analysis. Interactions with OpenAI LLM using the OpenAI Java SDK and a workflow. | link:https://github.com/akka-samples/medical-tagging-agent[Github Repository] | Intermediate
+| AI agent that creates release notes summaries, every time there is a release from set up GitHub repositories. Interactions with Anthropic Claude is using the Anthropic Java SDK. Using tools to retrieve detailed information from GitHub. Entities are used for storing release summaries. Timed action looks for new releases periodically and creates the summary using the LLM. | link:https://github.com/akka-samples/changelog-agent[Github Repository] | Intermediate
+| The real-estate customer service agent is demonstrating how to combine Akka features with an LLM model. It illustrates an agentic workflow for customer service. It processes incoming real-estate inquiries, analyzes the content to extract details, provides follow-up when needed and saves the collected information for future reference. | link:https://github.com/akka-samples/real-estate-cs-agent[Github Repository] | Intermediate
+| This app represents an agency that searches for flights and accommodations. It's composed by an LLM (Anthropic) using Spring AI and tools to find flights, accommodations and sending mails. | link:https://github.com/akka-samples/trip-agent[Github Repository] | Intermediate
+| Demonstrating how to build a multi-agent system using Akka and an LLM model. A workflow manages the user query process, handling the sequential steps of agent selection, plan creation, execution, and summarization. | link:https://github.com/akka-samples/multi-agent[Github Repository] | Advanced
+| A customer registry with query capabilities | link:../java/_attachments/customer-registry-quickstart.zip[customer-registry-quickstart.zip] | Intermediate
+| A funds transfer workflow between two wallets | link:https://github.com/akka-samples/transfer-workflow-compensation[Github Repository] | Intermediate
+| A user registration service implemented as a Choreography Saga | link:https://github.com/akka-samples/choreography-saga-quickstart[Github Repository] | Advanced
+| Akka Chess: a complete, resilient, automatically scalable, event-sourced chess game | https://github.com/akka-samples/akka-chess[Github Repository] | Advanced
+|=======================
+
+[sidebar]
+It is also possible to deploy a pre-built sample project in https://console.akka.io[the Akka console, window="new"], eliminating the need for local development.

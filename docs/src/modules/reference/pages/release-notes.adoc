@@ -28,7 +28,7 @@ Current versions
 
 * https://github.com/akka/akka-sdk/releases/tag/v3.3.1[Akka SDK 3.3.1]
   - Support `Runnable` in Workflow calls
-  - Updates to xref:self-managed:configuring.adoc[] documentation
+  - Updates to xref:operations:configuring.adoc[] documentation
   - Publish LLM friendly markdown docs
 
 * Akka libraries 25.05 releases
@@ -46,13 +46,13 @@ Current versions
 
 For organizations that want control over how Akka services are installed, updated, and maintained. Akka services are packaged into standalone binaries with Akka clustering for scaling and deploy to self-managed nodes. You are responsible for separately managing secure connectivity, routes, installation, deployment, and persistence.
 
-This new deployment alternative is described in xref:self-managed:index.adoc[].
+This new deployment alternative is described in xref:operations:configuring.adoc[].
 
 **Virtual threads**
 
 SDK running on virtual threads means it is possible to benefit from the performance of the underlying async Akka runtime, without having to use complex completion stage composition. The service code can now look like regular, simple, Java code.
 
-The xref:java:shopping-cart/quickstart.adoc#_the_external_api[shopping cart endpoint] is one example of how that looks like
+The xref:getting-started:build-and-deploy-shopping-cart.adoc#_the_external_api[shopping cart endpoint] is one example of how that looks like
 
 ****
 
@@ -69,7 +69,7 @@ The xref:java:shopping-cart/quickstart.adoc#_the_external_api[shopping cart endp
   - New APIs for retries
 
 * Akka SDK 3.2.4
-  - Support for xref:self-managed:index.adoc[self-managed nodes] in your infrastructure, or any cloud service.
+  - Support for xref:operations:configuring.adoc[self-managed nodes] in your infrastructure, or any cloud service.
 
 * Akka Runtime 1.4.5, 1.4.6, 1.4.7, 1.4.8
   - Views support for self-joins

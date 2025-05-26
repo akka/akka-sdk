@@ -1,4 +1,4 @@
-= Executing RAG queries
+= AI RAG agent part 3: Executing RAG queries
 
 include::ROOT:partial$include.adoc[]
 
@@ -20,7 +20,7 @@ The following is the basic shell of the class before we add RAG-specific code to
 [source, java, indent=0]
 .{sample-base-url}/ask-akka-agent/src/main/java/akka/ask/agent/application/AskAkkaAgent.java[AskAkkaAgent.java]
 ----
-include::example$ask-akka-agent/src/main/java/akka/ask/agent/application/AskAkkaAgent.java[tag=class]
+include::java:example$ask-akka-agent/src/main/java/akka/ask/agent/application/AskAkkaAgent.java[tag=class]
 ----
 <1> This is the _system prompt_. This will be sent along with context and history for each LLM call
 <2> The `Knowledge` instance will be injected by the bootstrap setup class

@@ -1,61 +1,112 @@
-= Operating - Akka Platform
+= Operating Akka
 
 include::ROOT:partial$include.adoc[]
 
-Akka Platform provides capabilities to manage, monitor and gather insights from your application and its services once they are deployed. These resources will guide you through operating Akka applications and services on Akka Platform. You should already be familiar with the xref:concepts:deployment-model.adoc[].
+Akka offers two distinct operational models:
 
-== Full automation through Akka Platform features
+* *Akka Platform* – A fully-managed experience with automation, observability, and scalability built-in.
+* *Self-managed nodes* – A flexible approach for teams that want full control over infrastructure and operations.
 
-Akka Platform is based on a Kubernetes-based control plane and application plane for executing Akka services with fully-automated operations to enable elasticity, agility and resilience.
+== Akka Platform: Fully-automated operations
 
-* xref:platform-features.adoc[]
+Akka Platform provides a Kubernetes-based control and execution plane for deploying and managing Akka services with high elasticity and resilience. It enables full automation, built-in observability, and project-wide operations across regions.
 
-== Deploying and Managing Services
+=== Key Capabilities
 
-Operating xref:operations:services/index.adoc[] provides an overview of what services are and how to manage them.
+* xref:platform-features.adoc[] – Overview of the Akka Platform’s operational automation features.
+* xref:concepts:deployment-model.adoc[] – Background on Akka's deployment models.
 
-* xref:operations:services/deploy-service.adoc[]
-* xref:operations:services/invoke-service.adoc[]
-* xref:operations:services/view-data.adoc[]
-* xref:operations:services/data-management.adoc[]
-* xref:operations:integrating-cicd/index.adoc[]
+=== Core Operations
 
-== Observability and Monitoring
+Manage deployed services, monitor behavior, and ensure performance through the following components:
 
-xref:operations:observability-and-monitoring/index.adoc[] provides the tools and guidance you need to understand your running Akka services.
+* xref:operations:services/index.adoc[] – Overview of Akka services and service management.
+** xref:operations:services/deploy-service.adoc[]
+** xref:operations:services/invoke-service.adoc[]
+** xref:operations:services/view-data.adoc[]
+** xref:operations:services/data-management.adoc[]
+** xref:operations:integrating-cicd/index.adoc[]
 
-* xref:operations:observability-and-monitoring/view-logs.adoc[]
-* xref:operations:observability-and-monitoring/metrics.adoc[]
-* xref:operations:observability-and-monitoring/traces.adoc[]
-* xref:operations:observability-and-monitoring/observability-exports.adoc[]
+* xref:operations:observability-and-monitoring/index.adoc[] – Logs, metrics, and tracing for live services.
+** xref:operations:observability-and-monitoring/view-logs.adoc[]
+** xref:operations:observability-and-monitoring/metrics.adoc[]
+** xref:operations:observability-and-monitoring/traces.adoc[]
+** xref:operations:observability-and-monitoring/observability-exports.adoc[]
 
-== Organizations
-xref:operations:organizations/index.adoc[] are the root of the Akka management tree. All services and artifacts live inside of them. They are primarily a logical construct.
+=== Organizational Management
 
-* xref:operations:organizations/manage-users.adoc[]
-* xref:operations:organizations/regions.adoc[]
-* xref:operations:organizations/billing.adoc[]
+* xref:operations:organizations/index.adoc[] – Logical root of all Akka projects and services.
+** xref:operations:organizations/manage-users.adoc[]
+** xref:operations:organizations/regions.adoc[]
+** xref:operations:organizations/billing.adoc[]
 
-== Projects
-xref:operations:projects/index.adoc[] in Akka are the place where services are deployed to. They can span xref:operations:organizations/regions.adoc[] and are the central management point for operating groups of xref:operations:services/index.adoc[] in Akka.
+* xref:operations:projects/index.adoc[] – Manage collections of services, artifacts, and regions.
+** xref:operations:projects/create-project.adoc[]
+** xref:operations:projects/manage-project-access.adoc[]
+** xref:operations:projects/container-registries.adoc[]
+*** xref:operations:projects/external-container-registries.adoc[]
+** xref:operations:projects/message-brokers.adoc[]
+*** xref:operations:projects/broker-google-pubsub.adoc[]
+*** xref:operations:projects/broker-confluent.adoc[]
+*** xref:operations:projects/broker-aws-msk.adoc[]
+*** xref:operations:projects/broker-aiven.adoc[]
+** xref:operations:projects/secrets.adoc[]
 
-* xref:operations:projects/create-project.adoc[]
-* xref:operations:projects/manage-project-access.adoc[]
-* xref:operations:projects/container-registries.adoc[]
-** xref:operations:projects/external-container-registries.adoc[]
-* xref:operations:projects/message-brokers.adoc[]
-** xref:operations:projects/broker-aiven.adoc[Aiven for Kafka]
-** xref:operations:projects/broker-aws-msk.adoc[AWS MSK Kafka]
-** xref:operations:projects/broker-confluent.adoc[Confluent Cloud]
-** xref:operations:projects/broker-google-pubsub.adoc[Google Pub/Sub]
+* xref:operations:regions/index.adoc[] – Multi-region architecture with automatic data replication.
 
-== Regions
-Projects in Akka can span across xref:operations:regions/index.adoc[] with data automatically replicated between all the regions.
+* xref:operations:cli/index.adoc[] – Full access to operations via the Akka CLI.
+** xref:operations:cli/installation.adoc[]
+** xref:operations:cli/using-cli.adoc[]
+** xref:operations:cli/command-completion.adoc[]
 
-== CLI
+== Self-managed: Operate Akka Anywhere
 
-Using the Akka CLI, you control all aspects of your Akka account from your command line. With it, you create and deploy new services, stream logs, and invite new developers to join your projects.
+For organizations that require full control over deployment and infrastructure, Akka supports self-managed nodes. This model gives you the flexibility to run services in any container environment or infrastructure provider while assuming responsibility for:
 
-- xref:operations:cli/installation.adoc[]
-- xref:operations:cli/using-cli.adoc[]
-- xref:operations:cli/command-completion.adoc[]
+* Installation and updates  
+* Clustering and networking  
+* Secure service-to-service communication  
+* Routing and service discovery  
+* Persistent storage configuration  
+
+Akka services are shipped as standalone binaries and support seamless migration between self-managed environments and Akka Platform.
+
+=== Self-managed Guidance
+
+* xref:configuring.adoc[] – Instructions for configuring your Akka services in custom environments.
+
+=== Deployment Environments
+
+Akka self-managed nodes can be deployed in:
+
+* Docker Compose
+* Kubernetes
+* Fly.io
+* Render
+* Heroku
+* Linode
+* Cloud virtual machines and bare metal
+
+[NOTE]
+====
+When using platforms with limited cluster support (e.g., Fly.io, Heroku), configure Akka for single-node operation due to restricted networking.
+====
+
+== Choosing the Right Operational Model
+
+[cols="1,2", options="header"]
+|===
+| Use Case | Recommended Approach
+
+| Need for full automation, resilience, and scalability
+| *Akka Platform*
+
+| Preference for custom infrastructure and deployment control
+| *Self-managed nodes*
+
+| Running across global regions with built-in replication
+| *Akka Platform*
+
+| Simple, single-node deployments or edge cases
+| *Self-managed nodes*
+|===

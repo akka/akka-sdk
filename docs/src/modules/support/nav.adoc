@@ -1,5 +1,0 @@
-// Support
-
-* xref:support:index.adoc[]
-** xref:support:platform-status.adoc[]
-** xref:support:request-a-demo.adoc[]

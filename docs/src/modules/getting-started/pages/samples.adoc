@@ -5,7 +5,7 @@ include::ROOT:partial$include.adoc[]
 ====
 *New to Akka? Start here:* 
 
-xref:java:author-your-first-service.adoc[] to get a minimal "Hello World!" Akka service and run it locally.
+xref:getting-started:author-your-first-service.adoc[] to get a minimal "Hello World!" Akka service and run it locally.
 ====
 
 Samples are available that demonstrate important patterns and abstractions. These can be cloned from their respective repositories. Please refer to the `README` file in each repository for setup and usage instructions.
@@ -13,8 +13,6 @@ Samples are available that demonstrate important patterns and abstractions. Thes
 [options="header", cols="3,2,1"]
 |=======================
 | Description | Source download | Level
-| xref:java:shopping-cart/index.adoc[Build a shopping cart] | link:https://github.com/akka-samples/shopping-cart-quickstart[Github Repository] |Beginner
-| xref:java:ask-akka/index.adoc[AI agent that performs a RAG workflow] using Langchain4J. Illustrates how to create embeddings for vector databases, how to consume LLMs and maintain conversation history, use RAG to add knowledge to fixed LLMs, and expose it all as a streaming service. It uses MongoDB Atlas and OpenAI. | link:https://github.com/akka-samples/ask-akka-agent[Github Repository] |Intermediate
 | AI agent that creates personalized travel itineraries. Illustrates reliable interaction with a LLM using Langchain4J and a workflow. Entities are used for durable state of user preferences and generated trips. | link:https://github.com/akka-samples/travel-agent[Github Repository] |Beginner
 | AI agent that leverages a LLM to process medical discharge summaries and assign tags, while also enabling human verification and comparative analysis. Interactions with OpenAI LLM using the OpenAI Java SDK and a workflow. | link:https://github.com/akka-samples/medical-tagging-agent[Github Repository] |Intermediate
 | AI agent that creates release notes summaries, every time there is a release from set up GitHub repositories. Interactions with Anthropic Claude is using the Anthropic Java SDK. Using tools to retrieve detailed information from GitHub. Entities are used for storing release summaries. Timed action looks for new releases periodically and creates the summary using the LLM. | link:https://github.com/akka-samples/changelog-agent[Github Repository] |Intermediate
@@ -58,4 +56,4 @@ mvn archetype:generate ^
 ----
 --
 
-The xref:java:author-your-first-service.adoc[] starts from the Maven archetype and lets you implement a very simple service.
+The xref:getting-started:author-your-first-service.adoc[] starts from the Maven archetype and lets you implement a very simple service.

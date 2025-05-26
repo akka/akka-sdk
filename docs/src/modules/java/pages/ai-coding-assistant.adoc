@@ -1,4 +1,4 @@
-= AI coding assistant
+= Using an AI coding assistant
 
 include::ROOT:partial$include.adoc[]
 
@@ -103,7 +103,7 @@ it should answer with something like
 
 Even though the documentation includes comprehensive code snippets it can be good to include the full source code of one or a few samples. This makes it easier for the coding assistant to follow the same structure as the sample.
 
-. Pick one or a few samples from xref:java:samples.adoc[], which are relevant to what you are developing. If you are just getting started learning Akka you can pick the Shopping Cart sample.
+. Pick one or a few samples from xref:getting-started:samples.adoc[], which are relevant to what you are developing. If you are just getting started learning Akka you can pick the Shopping Cart sample.
 . Clone the sample Github repository. Pull latest if you have already cloned the repository before.
 . Copy the source code to a folder `akka-context/` in your development project, e.g. `akka-context/travel-agent/src`.
 . Add `akka-context/` to your `.gitignore` file, if you use git.

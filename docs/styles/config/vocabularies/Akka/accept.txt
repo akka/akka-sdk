@@ -198,6 +198,7 @@ url
 userid
 valueFrom
 volumeMounts
+[Ww]alkthrough
 Yugabyte
 Zolotko
 [Zz]sh
