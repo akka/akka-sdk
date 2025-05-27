@@ -62,11 +62,9 @@ object McpEndpointDescriptorFactory {
 
       val inputSchema: JsonSchemaObject =
         if (annotation.inputSchema().isBlank) {
-          // FIXME reflectively infer schema from type
-          //   what do we support, only object, or also individual parameters (and use their names)?
           if (method.getParameterCount == 0)
             new JsonSchemaObject(properties = Map.empty, required = Seq.empty, description = None)
-          else JsonSchema.jsonSchemaFor(method.getParameterTypes.head)
+          else JsonSchema.jsonSchemaFor(method)
         } else {
           JsonSerializer.internalObjectMapper.readValue(annotation.inputSchema(), classOf[JsonSchemaObject])
         }

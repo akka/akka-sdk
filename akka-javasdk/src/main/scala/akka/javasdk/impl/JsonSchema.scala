@@ -5,7 +5,7 @@
 package akka.javasdk.impl
 
 import akka.annotation.InternalApi
-import akka.javasdk.annotations.mcp.McpToolParameterDescription
+import akka.javasdk.annotations.mcp.Description
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaArray
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaBoolean
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaDataType
@@ -15,6 +15,7 @@ import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaObject
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaString
 
 import java.lang.reflect.Field
+import java.lang.reflect.Method
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
 import java.util.Optional
@@ -25,22 +26,26 @@ import java.util.Optional
 @InternalApi
 private[impl] object JsonSchema {
 
-  def jsonSchemaFor(value: Class[_]): JsonSchemaObject = {
-    // Note: for now the top level can only be a class
-    val properties = value.getDeclaredFields.toVector.map { field: Field =>
-      val description = field.getAnnotation(classOf[McpToolParameterDescription]) match {
-        case null       => None
-        case annotation => Some(annotation.value())
+  def jsonSchemaFor(method: Method): JsonSchemaObject = {
+    val parameterAnnotations = method.getParameterAnnotations.toVector
+    val genericParameterTypes = method.getGenericParameterTypes.toVector
+    val parameters = method.getParameters.toVector
+      .zip(parameterAnnotations)
+      .zip(genericParameterTypes)
+      .map { case ((parameter, annotations), genericParameterType) =>
+        val description = annotations.collectFirst { case annotation: Description => annotation.value() }
+        parameter.getName -> jsonSchemaTypeFor(genericParameterType, description)
       }
-
-      field.getName -> jsonSchemaTypeFor(field.getGenericType, description)
-    }.toMap
+      .toMap
 
     new JsonSchemaObject(
       description = None,
-      properties = properties.map { case (key, (toolProperty, _)) => key -> toolProperty },
-      // All fields that are not wrapped in Optional are listed as required
-      required = properties.collect { case (key, (_, required)) if required => key }.toSeq)
+      properties = parameters.map { case (key, (schemaType, _)) => key -> schemaType },
+      required = parameters.collect { case (key, (_, required)) if required => key }.toSeq)
+  }
+
+  def jsonSchemaFor(value: Class[_]): JsonSchemaObject = {
+    jsonSchemaTypeFor(value, None)._1.asInstanceOf[JsonSchemaObject]
   }
 
   private def number(description: Option[String]) = new JsonSchemaNumber(description)
@@ -85,7 +90,23 @@ private[impl] object JsonSchema {
                 new JsonSchemaArray(items = jsonSchemaTypeFor(p.getActualTypeArguments.head, None)._1, description),
                 true)
             case _ =>
-              (jsonSchemaFor(clazz), true)
+              // Note: for now the top level can only be a class
+              val properties = clazz.getDeclaredFields.toVector.map { field: Field =>
+                val description = field.getAnnotation(classOf[Description]) match {
+                  case null       => None
+                  case annotation => Some(annotation.value())
+                }
+
+                field.getName -> jsonSchemaTypeFor(field.getGenericType, description)
+              }.toMap
+
+              val jsObjectSchema = new JsonSchemaObject(
+                description = description,
+                properties = properties.map { case (key, (schemaType, _)) => key -> schemaType },
+                // All fields that are not wrapped in Optional are listed as required
+                required = properties.collect { case (key, (_, required)) if required => key }.toSeq)
+
+              (jsObjectSchema, true)
           }
         }
     }
