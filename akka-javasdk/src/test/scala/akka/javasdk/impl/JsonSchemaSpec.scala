@@ -57,11 +57,6 @@ class JsonSchemaSpec extends AnyWordSpec with Matchers {
         "boxedDouble",
         "boxedFloat",
         "boxedByte")
-
-      /*
-       HashMap("floatPrimitive" -> Number(None), "optionalString" -> String(None), "booleanPrimitive" -> Boolean(None), "string" -> String(Some(some description)), "boxedFloat" -> Number(None), "boxedLong" -> Integer(None), "longPrimitive" -> Integer(None), "boxedByte" -> Integer(None), "boxedDouble" -> Number(None), "bytePrimitive" -> Integer(None), "doublePrimitive" -> Number(None), "intPrimitive" -> Integer(None), "boxedInteger" -> Integer(None), "boxedBoolean" -> Boolean(None)) did not equal
-       HashMap("floatPrimitive" -> Number(None), "optionalString" -> String(None), "booleanPrimitive" -> Boolean(None), "string" -> String(Some(some description)), "boxedFloat" -> Number(None), "boxedLong" -> Integer(None), "longPrimitive" -> Integer(None), "boxedByte" -> Integer(None), "boxedDouble" -> Number(None), "bytePrimitive" -> Integer(None), "doublePrimitive" -> Number(None), "intPrimitive" -> Integer(None), "boxedInteger" -> Integer(None), "boxedBoolean" -> Boolean(None))
-       */
     }
 
     "extract schema with collection" in {
