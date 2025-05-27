@@ -116,4 +116,16 @@ public class AgentIntegrationTest extends TestKitSupport {
     assertThat(resultTokens.getFirst()).isEqualTo("1");
     assertThat(resultTokens.getLast()).isEqualTo("6");
   }
+
+  @Test
+  public void shouldSupportDynamicCall() {
+    testModelProvider.mockResponse(s -> s.equals("hello"), "123456");
+
+    var obj = componentClient.forAgent().inSession(newSessionId())
+        .dynamicCall("some-agent")
+        .invoke("hello");
+    SomeAgent.SomeResponse result = (SomeAgent.SomeResponse) obj;
+
+    assertThat(result.response()).isEqualTo("123456");
+  }
 }

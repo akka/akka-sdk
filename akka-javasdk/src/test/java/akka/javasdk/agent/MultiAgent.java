@@ -109,7 +109,9 @@ abstract class MultiAgentSample {
 
       List<Object> results =
         plan.steps.stream().map(step -> {
-          return registry.getAgent(step.agentId)
+          return componentClient
+              .forAgent().inSession(sessionId)
+              .dynamicCall(step.agentId)
               .invoke(step.query);
         }).toList();
 

@@ -12,6 +12,7 @@ import akka.javasdk.DependencyProvider;
 import akka.javasdk.Metadata;
 import akka.javasdk.Principal;
 import akka.javasdk.ServiceSetup;
+import akka.javasdk.agent.AgentRegistry;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.grpc.GrpcClientProvider;
 import akka.javasdk.http.HttpClient;
@@ -19,6 +20,7 @@ import akka.javasdk.http.HttpClientProvider;
 import akka.javasdk.impl.ErrorHandling;
 import akka.javasdk.impl.Sdk;
 import akka.javasdk.impl.SdkRunner;
+import akka.javasdk.impl.agent.AgentRegistryImpl;
 import akka.javasdk.impl.client.ComponentClientImpl;
 import akka.javasdk.impl.grpc.GrpcClientProviderImpl;
 import akka.javasdk.impl.http.HttpClientImpl;
@@ -520,6 +522,7 @@ public class TestKit {
       // wait for SDK to get on start callback (or fail starting), we need it to set up the component client
       final Sdk.StartupContext startupContext = runner.started().toCompletableFuture().get(20, TimeUnit.SECONDS);
       final ComponentClients componentClients = startupContext.componentClients();
+      final AgentRegistryImpl agentRegistry = startupContext.agentRegistry();
       final JsonSerializer serializer = startupContext.serializer();
       dependencyProvider = Optional.ofNullable(startupContext.dependencyProvider().getOrElse(() -> null));
 
@@ -560,7 +563,8 @@ public class TestKit {
         throw new IllegalStateException("Runtime was terminated.");
 
       // once runtime is started
-      componentClient = new ComponentClientImpl(componentClients, serializer, Option.empty(), runtimeActorSystem.executionContext(), runtimeActorSystem);
+
+      componentClient = new ComponentClientImpl(componentClients, serializer, agentRegistry.agentClassById(), Option.empty(), runtimeActorSystem.executionContext(), runtimeActorSystem);
       selfHttpClient = new HttpClientImpl(runtimeActorSystem, "http://" + runtimeHost + ":" + runtimePort);
       httpClientProvider = startupContext.httpClientProvider();
       grpcClientProvider = startupContext.grpcClientProvider();

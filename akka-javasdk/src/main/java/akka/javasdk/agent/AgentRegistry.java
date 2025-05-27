@@ -6,10 +6,7 @@ package akka.javasdk.agent;
 
 import java.util.Set;
 
-interface AgentRegistry {
-  interface AgentRef<A, B> {
-    B invoke(A arg);
-  }
+public interface AgentRegistry {
 
   Set<String> allAgentIds();
 
@@ -17,5 +14,4 @@ interface AgentRegistry {
 
   String agentDescriptionAsJson(String agentId);
 
-  <A, B> AgentRef<A, B> getAgent(String agentId);
 }

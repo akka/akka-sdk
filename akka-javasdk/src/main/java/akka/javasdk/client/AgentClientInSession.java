@@ -37,4 +37,11 @@ public interface AgentClientInSession {
    */
   <T, A1> ComponentStreamMethodRef1<A1, String> tokenStream(Function2<T, A1, Agent.StreamEffect> methodRef);
 
+
+  /**
+   * @param agentId the componentId of the agent
+   * @param <A1> the type of parameter expected by the call
+   * @param <R> the return type of the call
+   */
+  <A1, R> ComponentMethodRef1<A1, R> dynamicCall(String agentId);
 }
