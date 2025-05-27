@@ -16,5 +16,4 @@ public interface AgentRegistry {
   AgentInfo agentInfo(String agentId);
 
   String agentInfoAsJson(String agentId);
-
 }

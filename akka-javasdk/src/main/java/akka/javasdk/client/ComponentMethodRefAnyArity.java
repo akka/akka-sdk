@@ -11,14 +11,13 @@ import akka.pattern.RetrySettings;
 import java.util.concurrent.CompletionStage;
 
 /**
- * Zero or one argument component call representation, not executed until invoked or by some mechanism using
- * the deferred call (like a timer executing it later for example)
+ * Zero or one argument component call representation, not executed until invoked or by some
+ * mechanism using the deferred call (like a timer executing it later for example)
  *
  * <p>Not for user extension or instantiation, returned by the SDK component client
  *
  * @param <A1> the argument type of the call
  * @param <R> The type of value returned by executing the call
- *
  */
 @DoNotInherit
 public interface ComponentMethodRefAnyArity<A1, R> {
