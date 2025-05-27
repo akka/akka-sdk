@@ -41,7 +41,8 @@ Documentation for building, deploying, and evaluating agentic systems.
 
 * SDK components: `Agent`, `Entity`, `Workflow`, `Timer`, `View`, `Consumer`, `Endpoint`
 * Memory models and evaluation hooks
-* A2A (Agent-to-Agent) protocol support
+* Model Context Protocol (MCP) support
+* Agent2Agent (A2A) protocol support
 * EvalOps: metrics, traces, reasoning paths
 * Runtime and deployment configurations
 * Akka libraries: Actors, Streams, Clustering, Persistence
