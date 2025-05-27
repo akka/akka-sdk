@@ -31,6 +31,7 @@ import akka.runtime.sdk.spi.McpEndpointDescriptor.ToolDescription
 import akka.runtime.sdk.spi.McpEndpointDescriptor.ToolMethodDescriptor
 import akka.runtime.sdk.spi.MethodOptions
 
+import java.util.Optional
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
@@ -77,17 +78,24 @@ object McpEndpointDescriptorFactory {
 
       val toolDescription = new ToolDescription(toolName, annotation.description(), inputSchema, toolAnnotations)
 
-      val callback = (constructionContext: McpEndpointConstructionContext, params: Map[String, Any]) =>
+      val callback = (_: McpEndpointConstructionContext, params: Map[String, Any]) =>
         Future[ResponseContent] {
           val endpointInstance = instanceFactory.apply()
           val returnValue = if (method.getParameterCount == 0) {
-            // FIXME fail on input params when expecting none
             method.invoke(endpointInstance)
           } else {
+            val parsedParams = method.getParameters.map { param =>
+              params.get(param.getName) match {
+                case Some(unparsedValue) =>
+                  // FIXME wrap with optional if needed
+                  JsonSerializer.internalObjectMapper.convertValue(unparsedValue, param.getType)
+                case None =>
+                  Optional.empty()
+              }
+            }
             // FIXME fail on no input (can we know with manually specified schema?)
             // FIXME handle required fields and input validation correctly
-            val parsedInput = JsonSerializer.internalObjectMapper.convertValue(params, method.getParameterTypes.head)
-            method.invoke(endpointInstance, parsedInput)
+            method.invoke(endpointInstance, parsedParams: _*)
           }
           returnValue match {
             case text: String => new TextContent(text)
