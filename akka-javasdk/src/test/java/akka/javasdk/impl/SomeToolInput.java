@@ -4,14 +4,13 @@
 
 package akka.javasdk.impl;
 
-import akka.javasdk.annotations.mcp.McpTool;
-import akka.javasdk.annotations.mcp.McpToolParameterDescription;
+import akka.javasdk.annotations.mcp.Description;
 
 import java.util.List;
 import java.util.Optional;
 
 interface SomeToolInput {
-  record SomeToolInput1(@McpToolParameterDescription("some description")
+  record SomeToolInput1(@Description("some description")
                               String string,
                               Optional<String> optionalString,
                               boolean booleanPrimitive,
@@ -29,13 +28,15 @@ interface SomeToolInput {
   ) { }
 
   record SomeToolInput2(
-      @McpToolParameterDescription("some strings")
+      @Description("some strings")
       List<String> listOfStrings) {}
 
   record SomeToolInput3(
-      @McpToolParameterDescription("a nested object")
+      @Description("a nested object")
       NestedObject nestedObject) {}
   record NestedObject(
-      @McpToolParameterDescription("a value in the nested object")
+      @Description("a value in the nested object")
       String someString) {}
+
+  String someMethod(@Description("some tool input") SomeToolInput1 input1, SomeToolInput2 input2, SomeToolInput3 input3);
 }

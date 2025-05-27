@@ -9,9 +9,10 @@ import java.lang.annotation.*;
 /**
  * Used to define human language description of an MCP tool parameter field for the MCP endpoint.
  */
-@Target(ElementType.FIELD)
+// FIXME share field/parameter description metadata with other parts of the SDK API for agents
+@Target({ElementType.FIELD, ElementType.PARAMETER})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-public @interface McpToolParameterDescription {
+public @interface Description {
   String value();
 }

@@ -46,9 +46,9 @@ public class ExampleMcpEndpoint {
   // tag::tool[]
   // example of reflectively deduced input schema, still needs descriptions
   public record EchoToolRequest2(
-      @McpToolParameterDescription("The first number") // <1>
+      @Description("The first number") // <1>
       int n1,
-      @McpToolParameterDescription("The second number")
+      @Description("The second number")
       int n2
       ) {}
 

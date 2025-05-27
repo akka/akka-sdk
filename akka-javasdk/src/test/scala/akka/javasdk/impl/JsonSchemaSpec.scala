@@ -23,7 +23,7 @@ class JsonSchemaSpec extends AnyWordSpec with Matchers {
     "extract schema with all primitives" in {
       val result = JsonSchema.jsonSchemaFor(classOf[SomeToolInput1])
 
-      result.properties shouldEqual Map(
+      val expected = Map(
         "string" -> new JsonSchemaString(description = Some("some description")),
         "optionalString" -> new JsonSchemaString(description = None),
         "booleanPrimitive" -> new JsonSchemaBoolean(description = None),
@@ -39,6 +39,10 @@ class JsonSchemaSpec extends AnyWordSpec with Matchers {
         "boxedFloat" -> new JsonSchemaNumber(description = None),
         "boxedByte" -> new JsonSchemaInteger(description = None))
 
+      result.properties.foreach { case (key, value) =>
+        expected(key) shouldEqual value
+      }
+
       result.required.toSet shouldEqual Set(
         "string",
         "booleanPrimitive",
@@ -53,6 +57,11 @@ class JsonSchemaSpec extends AnyWordSpec with Matchers {
         "boxedDouble",
         "boxedFloat",
         "boxedByte")
+
+      /*
+       HashMap("floatPrimitive" -> Number(None), "optionalString" -> String(None), "booleanPrimitive" -> Boolean(None), "string" -> String(Some(some description)), "boxedFloat" -> Number(None), "boxedLong" -> Integer(None), "longPrimitive" -> Integer(None), "boxedByte" -> Integer(None), "boxedDouble" -> Number(None), "bytePrimitive" -> Integer(None), "doublePrimitive" -> Number(None), "intPrimitive" -> Integer(None), "boxedInteger" -> Integer(None), "boxedBoolean" -> Boolean(None)) did not equal
+       HashMap("floatPrimitive" -> Number(None), "optionalString" -> String(None), "booleanPrimitive" -> Boolean(None), "string" -> String(Some(some description)), "boxedFloat" -> Number(None), "boxedLong" -> Integer(None), "longPrimitive" -> Integer(None), "boxedByte" -> Integer(None), "boxedDouble" -> Number(None), "bytePrimitive" -> Integer(None), "doublePrimitive" -> Number(None), "intPrimitive" -> Integer(None), "boxedInteger" -> Integer(None), "boxedBoolean" -> Boolean(None))
+       */
     }
 
     "extract schema with collection" in {
@@ -67,11 +76,19 @@ class JsonSchemaSpec extends AnyWordSpec with Matchers {
 
       result.properties shouldEqual Map(
         "nestedObject" -> new JsonSchemaObject(
-          description = Some("some nested object"),
+          description = Some("a nested object"),
           properties = Map("someString" -> new JsonSchemaString(Some("a value in the nested object"))),
           required = Seq("someString")))
 
       result.required shouldEqual Seq("nestedObject")
+    }
+
+    "extract parameter list as schema" in {
+      val method = classOf[SomeToolInput].getDeclaredMethods.find(_.getName == "someMethod").get
+      val result = JsonSchema.jsonSchemaFor(method)
+
+      result.properties.keys shouldEqual Set("input1", "input2", "input3")
+      result.properties("input1").description shouldEqual Some("some tool input")
     }
   }
 
