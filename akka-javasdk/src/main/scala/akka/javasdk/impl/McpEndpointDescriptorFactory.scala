@@ -30,6 +30,16 @@ import akka.runtime.sdk.spi.McpEndpointDescriptor.TextResourceContents
 import akka.runtime.sdk.spi.McpEndpointDescriptor.ToolDescription
 import akka.runtime.sdk.spi.McpEndpointDescriptor.ToolMethodDescriptor
 import akka.runtime.sdk.spi.MethodOptions
+import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaArray
+import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaBoolean
+import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaDataType
+import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaInteger
+import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaNumber
+import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaString
+import com.fasterxml.jackson.databind.JsonMappingException
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.module.SimpleModule
+import com.fasterxml.jackson.module.scala.DefaultScalaModule
 
 import java.util.Optional
 import scala.concurrent.ExecutionContext
@@ -40,6 +50,33 @@ import scala.concurrent.Future
  */
 @InternalApi
 object McpEndpointDescriptorFactory {
+
+  private lazy val schemaObjectMapper = {
+    val m = JsonSerializer.newObjectMapperWithDefaults()
+    m.registerModule(new DefaultScalaModule())
+
+    val module = new SimpleModule()
+    module.addDeserializer(
+      classOf[JsonSchemaDataType],
+      { (parser, _) =>
+        val node = parser.readValueAsTree[JsonNode]()
+        if (node.has("type")) {
+          val nodeType = node.get("type").asText() match {
+            case "string"  => classOf[JsonSchemaString]
+            case "boolean" => classOf[JsonSchemaBoolean]
+            case "integer" => classOf[JsonSchemaInteger]
+            case "number"  => classOf[JsonSchemaNumber]
+            case "array"   => classOf[JsonSchemaArray]
+            case "object"  => classOf[JsonSchemaObject]
+          }
+          parser.getCodec.treeToValue(node, nodeType)
+        } else {
+          throw new JsonMappingException(parser, s"Schema is missing a type [${node.toPrettyString}]")
+        }
+      })
+    m.registerModule(module)
+    m
+  }
 
   def apply[T](mcpEndpointClass: Class[T], instanceFactory: () => T)(implicit
       system: ActorSystem[_],
@@ -57,17 +94,13 @@ object McpEndpointDescriptorFactory {
     }
 
     val tools = toolMethods.map { case (annotation, method) =>
-      if (method.getParameterCount > 1)
-        throw new IllegalArgumentException(
-          s"MCP tool methods must accept 0 or 1 parameters, but ${method.getName} accepts ${method.getParameterCount}")
-
       val inputSchema: JsonSchemaObject =
         if (annotation.inputSchema().isBlank) {
           if (method.getParameterCount == 0)
             new JsonSchemaObject(properties = Map.empty, required = Seq.empty, description = None)
           else JsonSchema.jsonSchemaFor(method)
         } else {
-          JsonSerializer.internalObjectMapper.readValue(annotation.inputSchema(), classOf[JsonSchemaObject])
+          schemaObjectMapper.readValue(annotation.inputSchema(), classOf[JsonSchemaObject])
         }
 
       val toolName =
