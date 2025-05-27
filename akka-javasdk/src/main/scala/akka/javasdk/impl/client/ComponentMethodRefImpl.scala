@@ -13,10 +13,11 @@ import akka.javasdk.client.ComponentInvokeOnlyMethodRef1
 import akka.javasdk.client.ComponentMethodRef
 import akka.javasdk.client.ComponentMethodRef1
 import akka.javasdk.impl.ErrorHandling
-
 import java.util.concurrent.CompletionStage
+
 import scala.concurrent.ExecutionException
 
+import akka.javasdk.client.ComponentMethodRefAnyArity
 import akka.pattern.RetrySettings
 
 /**
@@ -32,7 +33,8 @@ private[impl] final case class ComponentMethodRefImpl[A1, R](
     extends ComponentMethodRef[R]
     with ComponentMethodRef1[A1, R]
     with ComponentInvokeOnlyMethodRef[R]
-    with ComponentInvokeOnlyMethodRef1[A1, R] {
+    with ComponentInvokeOnlyMethodRef1[A1, R]
+    with ComponentMethodRefAnyArity[A1, R] {
 
   override def withMetadata(metadata: Metadata): ComponentMethodRefImpl[A1, R] = {
     val merged = metadataOpt.map[Metadata](m => m.merge(metadata)).getOrElse(metadata)

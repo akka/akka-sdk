@@ -18,6 +18,7 @@ import akka.javasdk.client.AgentClient
 import akka.javasdk.client.AgentClientInSession
 import akka.javasdk.client.ComponentMethodRef
 import akka.javasdk.client.ComponentMethodRef1
+import akka.javasdk.client.ComponentMethodRefAnyArity
 import akka.javasdk.client.ComponentStreamMethodRef
 import akka.javasdk.client.ComponentStreamMethodRef1
 import akka.javasdk.impl.ComponentDescriptorFactory
@@ -173,7 +174,7 @@ private[javasdk] final case class AgentClientImpl(
 
   }
 
-  override def dynamicCall[A1, R](agentId: String): ComponentMethodRef1[A1, R] = {
+  override def dynamicCall[A1, R](agentId: String): ComponentMethodRefAnyArity[A1, R] = {
     import MetadataImpl.toSpi
 
     val agentClass = agentClassById.getOrElse(

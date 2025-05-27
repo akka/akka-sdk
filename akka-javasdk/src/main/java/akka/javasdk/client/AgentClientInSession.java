@@ -43,5 +43,5 @@ public interface AgentClientInSession {
    * @param <A1> the type of parameter expected by the call
    * @param <R> the return type of the call
    */
-  <A1, R> ComponentMethodRef1<A1, R> dynamicCall(String agentId);
+  <A1, R> ComponentMethodRefAnyArity<A1, R> dynamicCall(String agentId);
 }
