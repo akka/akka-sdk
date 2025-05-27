@@ -11,7 +11,6 @@ import akka.javasdk.annotations.JWT
 import akka.javasdk.annotations.mcp.McpEndpoint
 import akka.javasdk.annotations.mcp.McpResource
 import akka.javasdk.annotations.mcp.McpTool
-import akka.javasdk.annotations.mcp.McpToolParameterDescription
 import akka.javasdk.annotations.mcp.ToolAnnotation
 import akka.javasdk.impl.AclDescriptorFactory.deriveAclOptions
 import akka.javasdk.impl.JwtDescriptorFactory.deriveJWTOptions
@@ -22,12 +21,7 @@ import akka.runtime.sdk.spi.McpEndpointConstructionContext
 import akka.runtime.sdk.spi.McpEndpointDescriptor
 import akka.runtime.sdk.spi.McpEndpointDescriptor.BlobResourceContents
 import akka.runtime.sdk.spi.McpEndpointDescriptor.Implementation
-import akka.runtime.sdk.spi.McpEndpointDescriptor.JsonSchemaBoolean
-import akka.runtime.sdk.spi.McpEndpointDescriptor.JsonSchemaDataType
-import akka.runtime.sdk.spi.McpEndpointDescriptor.JsonSchemaInteger
-import akka.runtime.sdk.spi.McpEndpointDescriptor.JsonSchemaNumber
-import akka.runtime.sdk.spi.McpEndpointDescriptor.JsonSchemaObject
-import akka.runtime.sdk.spi.McpEndpointDescriptor.JsonSchemaString
+import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaObject
 import akka.runtime.sdk.spi.McpEndpointDescriptor.Resource
 import akka.runtime.sdk.spi.McpEndpointDescriptor.ResourceMethodDescriptor
 import akka.runtime.sdk.spi.McpEndpointDescriptor.ResponseContent
@@ -36,12 +30,7 @@ import akka.runtime.sdk.spi.McpEndpointDescriptor.TextResourceContents
 import akka.runtime.sdk.spi.McpEndpointDescriptor.ToolDescription
 import akka.runtime.sdk.spi.McpEndpointDescriptor.ToolMethodDescriptor
 import akka.runtime.sdk.spi.MethodOptions
-import org.slf4j.LoggerFactory
 
-import java.lang.reflect.Field
-import java.lang.reflect.ParameterizedType
-import java.lang.reflect.Type
-import java.util.Optional
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
@@ -50,8 +39,6 @@ import scala.concurrent.Future
  */
 @InternalApi
 object McpEndpointDescriptorFactory {
-
-  private final val log = LoggerFactory.getLogger(classOf[McpEndpointDescriptorFactory.type])
 
   def apply[T](mcpEndpointClass: Class[T], instanceFactory: () => T)(implicit
       system: ActorSystem[_],
@@ -79,7 +66,7 @@ object McpEndpointDescriptorFactory {
           //   what do we support, only object, or also individual parameters (and use their names)?
           if (method.getParameterCount == 0)
             new JsonSchemaObject(properties = Map.empty, required = Seq.empty, description = None)
-          else inputSchemaFor(method.getParameterTypes.head)
+          else JsonSchema.jsonSchemaFor(method.getParameterTypes.head)
         } else {
           JsonSerializer.internalObjectMapper.readValue(annotation.inputSchema(), classOf[JsonSchemaObject])
         }
@@ -182,73 +169,6 @@ object McpEndpointDescriptorFactory {
       componentOptions = new ComponentOptions(
         deriveAclOptions(Option(mcpEndpointClass.getAnnotation(classOf[Acl]))),
         deriveJWTOptions(Option(mcpEndpointClass.getAnnotation(classOf[JWT])), mcpEndpointClass.getCanonicalName)))
-  }
-
-  private[impl] def inputSchemaFor(value: Class[_]): JsonSchemaObject = {
-    val properties = value.getDeclaredFields.toVector.map { field: Field =>
-      val description = field.getAnnotation(classOf[McpToolParameterDescription]) match {
-        case null =>
-          log.info(
-            "Field [{}] is missing a tool description, client LLMs may not understand the purpose of the field, add one using {}",
-            classOf[McpToolParameterDescription].getName,
-            field.getName)
-          None
-        case annotation =>
-          Some(annotation.value())
-      }
-
-      field.getName -> jsonSchemaTypeFor(field.getGenericType, description)
-    }.toMap
-
-    new JsonSchemaObject(
-      description = None,
-      properties = properties.map { case (key, (toolProperty, _)) => key -> toolProperty },
-      required = properties.collect { case (key, (_, optional)) if !optional => key }.toSeq)
-  }
-
-  private def number(description: Option[String]) = new JsonSchemaNumber(description)
-  private def integer(description: Option[String]) = new JsonSchemaInteger(description)
-  private def boolean(description: Option[String]) = new JsonSchemaBoolean(description)
-
-  private final val typeNameMap: Map[String, Option[String] => JsonSchemaDataType] = Map(
-    "short" -> integer,
-    "byte" -> integer,
-    "char" -> integer,
-    "int" -> integer,
-    "long" -> integer,
-    "double" -> number,
-    "float" -> number,
-    "boolean" -> boolean,
-    "java.lang.Short" -> integer,
-    "java.lang.Byte" -> integer,
-    "java.lang.Char" -> integer,
-    "java.lang.Integer" -> integer,
-    "java.lang.Long" -> integer,
-    "java.lang.Double" -> number,
-    "java.lang.Float" -> number,
-    "java.lang.Boolean" -> boolean)
-
-  private def jsonSchemaTypeFor(genericFieldType: Type, description: Option[String]): (JsonSchemaDataType, Boolean) = {
-    typeNameMap.get(genericFieldType.getTypeName) match {
-      case Some(jsTypeFactory) => (jsTypeFactory(description), false)
-      case None =>
-        val clazz = genericFieldType match {
-          case c: Class[_]          => c
-          case p: ParameterizedType => p.getRawType.asInstanceOf[Class[_]]
-        }
-        if (clazz == classOf[String]) (new JsonSchemaString(description), false)
-        else {
-          genericFieldType match {
-            case p: ParameterizedType if clazz == classOf[Optional[_]] =>
-              val (jsonFieldType, _) = jsonSchemaTypeFor(p.getActualTypeArguments.head, description)
-              (jsonFieldType, true)
-            case other =>
-              // FIXME support collections
-              // FIXME support nested classes
-              throw new IllegalArgumentException(s"Unsupported field type for MCP tool input: $other")
-          }
-        }
-    }
   }
 
   private def toolAnnotationsFor(
