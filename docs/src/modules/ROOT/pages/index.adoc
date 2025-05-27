@@ -26,7 +26,7 @@ Quick, hands-on paths to build your first agentic service.
 Step-by-step guides for common development and operations workflows.
 
 * Generate agents from prompts using LLMs and the Akka AI Coding Kit.
-* Add memory to agents (session-based, persistent, or shared).
+* Add memory to agents (session-based, persistent and shared).
 * Deploy agents across regions and cloud environments.
 * Integrate LLMs, external tools, and orchestrate workflows.
 * Visualize and evaluate agent behavior using Akka EvalOps.
