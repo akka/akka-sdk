@@ -504,7 +504,7 @@ private final class Sdk(
   private var consumerDescriptors = Vector.empty[ConsumerDescriptor]
   private var viewDescriptors = Vector.empty[ViewDescriptor]
   private var agentDescriptors = Vector.empty[AgentDescriptor]
-  private var agentRegistryInfo = Vector.empty[AgentRegistryImpl.AgentInfo]
+  private var agentRegistryInfo = Vector.empty[AgentRegistryImpl.AgentDetails]
 
   componentClasses
     .filter(hasComponentId)
@@ -673,7 +673,7 @@ private final class Sdk(
           new AgentDescriptor(componentId, clz.getName, instanceFactory)
 
         agentRegistryInfo :+=
-          AgentRegistryImpl.AgentInfo(
+          AgentRegistryImpl.AgentDetails(
             componentId,
             agentDescription.name,
             agentDescription.description,

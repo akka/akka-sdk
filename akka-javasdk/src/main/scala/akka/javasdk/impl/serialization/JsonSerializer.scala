@@ -152,7 +152,7 @@ final class JsonSerializer(val objectMapper: ObjectMapper) {
     new BytesPayload(bytes = ByteString.fromArrayUnsafe(byteArray), contentType = JsonContentTypePrefix + typeHint)
   }
 
-  def toString(value: Any): String = {
+  def toJsonString(value: Any): String = {
     if (value == null) throw NullSerializationException
     objectMapper.writerFor(value.getClass).writeValueAsString(value)
   }
