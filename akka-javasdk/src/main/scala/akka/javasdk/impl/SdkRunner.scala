@@ -651,6 +651,7 @@ private final class Sdk(
         val agentDescription = clz.getAnnotation(classOf[AgentDescription]).value
         val agentClass = clz.asInstanceOf[Class[Agent]]
 
+        val coreMemoryClient = deriveMemoryClient(applicationConfig)
         val instanceFactory: SpiAgent.FactoryContext => SpiAgent = { factoryContext =>
           new AgentImpl(
             componentId,
@@ -692,6 +693,13 @@ private final class Sdk(
         // some other class with @ComponentId annotation
         logger.warn("Unknown component [{}]", clz.getName)
     }
+
+  private def deriveMemoryClient(appConfig: Config) = {
+    if (appConfig.getBoolean("akka.javasdk.agent.memory.enabled"))
+      new CoreMemoryClient(componentClient(None))
+    else
+      new NoOpMemoryClient()
+  }
 
   // these are available for injecting in all kinds of component that are primarily
   // for side effects
