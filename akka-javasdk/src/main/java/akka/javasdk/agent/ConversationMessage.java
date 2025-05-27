@@ -16,12 +16,22 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
     @JsonSubTypes.Type(value = AiMessage.class, name = "AIM")})
 public sealed interface ConversationMessage {
 
+  int size();
+
   record UserMessage(String text) implements ConversationMessage {
 
+    @Override
+    public int size() {
+      return text.length();
+    }
   }
 
   record AiMessage(String text) implements ConversationMessage {
 
+    @Override
+    public int size() {
+      return text.length();
+    }
   }
 
 }
