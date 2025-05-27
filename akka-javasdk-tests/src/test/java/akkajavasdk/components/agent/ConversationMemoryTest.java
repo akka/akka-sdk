@@ -12,6 +12,8 @@ import akka.javasdk.agent.ConversationMessage.AiMessage;
 import akka.javasdk.agent.ConversationMessage.UserMessage;
 import akka.javasdk.testkit.EventSourcedResult;
 import akka.javasdk.testkit.EventSourcedTestKit;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
 import org.junit.jupiter.api.Test;
 
 import static akka.Done.done;
@@ -20,11 +22,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class ConversationMemoryTest {
 
   private static final String COMPONENT_ID = "test-component";
+  private static final Config config = ConfigFactory.load();
 
   @Test
   public void shouldAddMessageToHistory() {
     // given
-    var testKit = EventSourcedTestKit.of(ConversationMemory::new);
+    var testKit = EventSourcedTestKit.of(() -> new ConversationMemory(config));
     String userMsg = "Hello, how are you?";
     String aiMsg = "I'm fine, thanks for asking!";
 
@@ -50,7 +53,7 @@ public class ConversationMemoryTest {
   @Test
   public void shouldAddMultipleMessagesToHistory() {
     // given
-    var testKit = EventSourcedTestKit.of(ConversationMemory::new);
+    var testKit = EventSourcedTestKit.of(() -> new ConversationMemory(config));
     String userMsg1 = "Hello";
     String aiMsg1 = "Hi there!";
     String userMsg2 = "How are you?";
@@ -79,7 +82,7 @@ public class ConversationMemoryTest {
   @Test
   public void shouldBeDeletable() {
     // given
-    var testKit = EventSourcedTestKit.of(ConversationMemory::new);
+    var testKit = EventSourcedTestKit.of(() -> new ConversationMemory(config));
     String userMsg = "Hello";
     String aiMsg = "Hi there!";
 
@@ -103,7 +106,7 @@ public class ConversationMemoryTest {
   @Test
   public void shouldGetEmptyHistoryWhenNoMessagesAdded() {
     // given
-    var testKit = EventSourcedTestKit.of(ConversationMemory::new);
+    var testKit = EventSourcedTestKit.of(() -> new ConversationMemory(config));
 
     // when
     EventSourcedResult<ConversationHistory> historyResult = testKit.method(ConversationMemory::getHistory).invoke();
@@ -115,7 +118,7 @@ public class ConversationMemoryTest {
   @Test
   public void shouldRemoveOldestMessagesWhenLimitIsReached() {
     // given
-    var testKit = EventSourcedTestKit.of(ConversationMemory::new);
+    var testKit = EventSourcedTestKit.of(() -> new ConversationMemory(config));
     
     // Calculate the total bytes needed for each message
     String userMsg1 = "First message";      // 13 bytes
@@ -162,7 +165,7 @@ public class ConversationMemoryTest {
   @Test
   public void shouldMaintainCorrectSizeAfterMultipleOperations() {
     // given
-    var testKit = EventSourcedTestKit.of(ConversationMemory::new);
+    var testKit = EventSourcedTestKit.of(() -> new ConversationMemory(config));
     
     // Calculate the total bytes needed for each message
     String userMsg1 = "First message";      // 13 bytes
@@ -218,7 +221,7 @@ public class ConversationMemoryTest {
   @Test
   public void shouldRejectInvalidBufferSize() {
     // given
-    var testKit = EventSourcedTestKit.of(ConversationMemory::new);
+    var testKit = EventSourcedTestKit.of(() -> new ConversationMemory(config));
     var invalidBuffer = new ConversationMemory.LimitedWindow(0);
 
     // when
