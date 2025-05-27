@@ -20,15 +20,16 @@ public interface CoreMemory {
    * specified session.
    *
    * @param sessionId The unique identifier for the conversation session
-   * @param componentId The unique identifier for the component (i.e., agent) involved in the interaction
+   * @param componentId The unique identifier for the component (i.e., agent) involved in the
+   *     interaction
    * @param userMessage The content of the user message
    * @param aiMessage The content of the AI message
    */
   void addInteraction(String sessionId, String componentId, String userMessage, String aiMessage);
 
   /**
-   * Retrieves the complete conversation history for the specified session.
-   * For very long sessions, this might return a compacted version of the history.
+   * Retrieves the complete conversation history for the specified session. For very long sessions,
+   * this might return a compacted version of the history.
    *
    * @param sessionId The unique identifier for the conversation session
    * @return The complete conversation history containing all messages
