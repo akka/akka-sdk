@@ -7,6 +7,7 @@ package akka.javasdk.agent;
 import akka.javasdk.annotations.AgentDescription;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.client.ComponentClient;
+import akka.javasdk.client.DynamicMethodRef;
 
 import java.util.List;
 import java.util.UUID;
@@ -94,29 +95,35 @@ abstract class MultiAgentSample {
     private final ComponentClient componentClient;
     private final AgentRegistry registry;
 
+    private String sessionId = UUID.randomUUID().toString();
+
     TeamA(ComponentClient componentClient, AgentRegistry registry) {
       this.componentClient = componentClient;
       this.registry = registry;
     }
 
     public void run() {
-      var sessionId = UUID.randomUUID().toString();
-
       var plan =
         componentClient.forAgent()
           .inSession(sessionId)
           .method(Planner::plan)
           .invoke("task...");
 
-      List<Object> results =
+      List<String> results =
         plan.steps.stream().map(step -> {
-          return componentClient
-              .forAgent().inSession(sessionId)
-              .dynamicCall(step.agentId)
+          return agentCall(step.agentId)
               .invoke(step.query);
         }).toList();
 
       System.out.println(results);
+    }
+
+    private DynamicMethodRef<String, String> agentCall(String agentId) {
+      // We know the id of the agent to call, but not the agent class.
+      // Could be Agent1 or Agent2.
+      // We can still invoke the agent based on its id, given that we know that it
+      // takes a String parameter and returns String.
+      return componentClient.forAgent().inSession(sessionId).dynamicCall(agentId);
     }
 
   }
