@@ -6,6 +6,8 @@ package akka.javasdk.impl.agent;
 
 import akka.annotation.InternalApi;
 import akka.javasdk.agent.ConversationHistory;
+import akka.javasdk.agent.ConversationMessage.AiMessage;
+import akka.javasdk.agent.ConversationMessage.UserMessage;
 import akka.javasdk.agent.CoreMemory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,7 +21,7 @@ public final class NoOpMemoryClient implements CoreMemory {
   private final Logger logger = LoggerFactory.getLogger(NoOpMemoryClient.class);
 
   @Override
-  public void addInteraction(String sessionId, String componentId, String userMessage, String aiMessage) {
+  public void addInteraction(String sessionId, String componentId, UserMessage userMessage, AiMessage aiMessage) {
     logger.debug("Not saving interaction for session: {}, component: {}", sessionId, componentId);
   }
 
