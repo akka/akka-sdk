@@ -307,33 +307,32 @@ public class ConversationMemoryTest {
     String aiMsg1 = "Hi!";
     String userMsg2 = "How are you?";
     String aiMsg2 = "I'm good, thanks!";
-    var userMessage1 = new UserMessage(userMsg1, 5);
-    var aiMessage1 = new AiMessage(aiMsg1, 3);
-    var userMessage2 = new UserMessage(userMsg2, 7);
-    var aiMessage2 = new AiMessage(aiMsg2, 6);
+    var um1 = new UserMessage(userMsg1, 5);
+    var aim1 = new AiMessage(aiMsg1, 3);
+    var um2 = new UserMessage(userMsg2, 7);
+    var aim2 = new AiMessage(aiMsg2, 6);
+    var totalTokens = um1.tokens() + aim1.tokens() + um2.tokens() + aim2.tokens();
 
     // when
     testKit.method(ConversationMemory::addInteraction)
-        .invoke(new AddInteractionCmd(COMPONENT_ID, userMessage1, aiMessage1));
+        .invoke(new AddInteractionCmd(COMPONENT_ID, um1, aim1));
     testKit.method(ConversationMemory::addInteraction)
-        .invoke(new AddInteractionCmd(COMPONENT_ID, userMessage2, aiMessage2));
+        .invoke(new AddInteractionCmd(COMPONENT_ID, um2, aim2));
 
     // then
     var state = testKit.getState();
-    assertThat(state.totalTokenUsage()).isEqualTo(5 + 3 + 7 + 6);
+    assertThat(state.totalTokenUsage()).isEqualTo(totalTokens);
 
     // And events should include token usage as well
     var events = testKit.getAllEvents();
     assertThat(events).hasSize(4);
     assertThat(events.get(2)).isInstanceOf(ConversationMemory.Event.UserMessageAdded.class);
     var userEvent = (ConversationMemory.Event.UserMessageAdded) events.get(2);
-    assertThat(userEvent.totalTokenUsage()).isEqualTo(5+3+7);
+    assertThat(userEvent.totalTokenUsage()).isEqualTo(totalTokens - aim2.tokens());
 
     assertThat(events.get(3)).isInstanceOf(ConversationMemory.Event.AiMessageAdded.class);
     var userEvent2 = (ConversationMemory.Event.AiMessageAdded) events.get(3);
-    assertThat(userEvent2.totalTokenUsage()).isEqualTo(5+3+7+6);
-
-
+    assertThat(userEvent2.totalTokenUsage()).isEqualTo(totalTokens);
   }
 
 }
