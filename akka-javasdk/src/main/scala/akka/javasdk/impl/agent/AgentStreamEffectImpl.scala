@@ -7,6 +7,7 @@ package akka.javasdk.impl.agent
 import akka.annotation.InternalApi
 import akka.javasdk.Metadata
 import akka.javasdk.agent.Agent.StreamEffect
+import akka.javasdk.agent.MemoryProvider
 import akka.javasdk.agent.ModelProvider
 import akka.javasdk.impl.effect.ErrorReplyImpl
 import akka.javasdk.impl.effect.MessageReplyImpl
@@ -79,6 +80,11 @@ private[javasdk] final class AgentStreamEffectImpl
 
   override def userMessage(message: String): StreamEffect.OnSuccessBuilder = {
     updateRequestModel(_.copy(userMessage = message))
+    this
+  }
+
+  override def memory(provider: MemoryProvider): StreamEffect.Builder = {
+    updateRequestModel(_.withMemory(provider))
     this
   }
 

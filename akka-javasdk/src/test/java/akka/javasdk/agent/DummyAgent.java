@@ -27,9 +27,33 @@ class DummyAgent2 extends Agent {
   Effect<Response> doSomething(String question) {
     return effects()
       .systemMessage("You are a helpful...")
+      .memory(MemoryProvider.limitedWindow().readOnly())
       .userMessage(question)
       .responseAs(Response.class)
       .thenReply();
+  }
+
+  Effect<Response> doSomethingElse(String question) {
+    // customer memory
+    var memory = new CoreMemory() {
+
+      @Override
+      public void addInteraction(String sessionId, String componentId, String userMessage, String aiMessage) {
+
+      }
+
+      @Override
+      public ConversationHistory getHistory(String sessionId) {
+        return null;
+      }
+    };
+
+    return effects()
+        .systemMessage("You are a helpful...")
+        .memory(MemoryProvider.custom(memory))
+        .userMessage(question)
+        .responseAs(Response.class)
+        .thenReply();
   }
 }
 
