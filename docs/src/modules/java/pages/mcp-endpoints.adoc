@@ -1,0 +1,85 @@
+= Designing MCP Endpoints
+
+include::ROOT:partial$include.adoc[]
+
+image:ROOT:endpoint.png[Endpoint,width=100,float=left] An Endpoint is a component that creates an externally accessible API. MCP Endpoints allow you to expose a services to MCP clients such as LLM chat agent desktop applications and agents running on other services.
+
+MCP endpoints in Akka can provide
+
+ * "tools" – functions/logic the MCP client can call on behalf of the LLM
+ * "resources" – static resources the MCP can fetch for the LLM
+
+Endpoints are made available using a stateless Streamable HTTP transport defined by link:https://modelcontextprotocol.io/specification/2025-03-26[MCP specification 2025-03-26].
+
+== MCP endpoint class ==
+
+To create an MCP endpoint, a class is annotated with `@McpEndpoint` and ACL configuring where it can be accessed from.
+
+[source,java]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/api/ExampleMcpEndpoint.java[ExampleMcpEndpoint.java]
+----
+include::example$doc-snippets/src/main/java/com/example/api/ExampleMcpEndpoint.java[tag=endpoint-class]
+----
+
+
+The service is available under the path `/mcp` by default, but it is possible to have multiple MCP endpoints in the same
+Akka by specifying.
+
+=== Tools
+
+A tool is a public one or zero parameter method made available to MCP clients.
+
+It is important to give a clear description of what the tool does using the description value, since this is how the
+calling LLM gains an understanding of what the tool does.
+
+By default, the input schema for the tool is reflectively created based on the input parameter type. The input class may require
+additional information per field to help the LLM understand what each parameter means.
+
+Only simple input parameter classes are supported. Fields must be of primitive type, the Java boxed primitive types or strings.
+
+All fields are marked as required in the schema by default, any non-required parameter should have the type `Optional<T>`
+
+[source,java]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/api/ExampleMcpEndpoint.java[ExampleMcpEndpoint.java]
+----
+include::example$doc-snippets/src/main/java/com/example/api/ExampleMcpEndpoint.java[tag=tool]
+----
+<1> Additional field description explaining the purpose of the field to the client
+<2> An optional tool name. If not defined, the method name is used. Must be unique in the MCP service if defined.
+<3> Optional annotations describing the tool
+
+For full flexibility and more complex input types, it is also possible to specify the JSON Schema of the input manually in the annotation. When doing
+this, it is up to you that the schema is describing a JSON structure that can be parsed into the input parameter type
+by Jackson:
+
+[source,java]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/api/ExampleMcpEndpoint.java[ExampleMcpEndpoint.java]
+----
+include::example$doc-snippets/src/main/java/com/example/api/ExampleMcpEndpoint.java[tag=tool-manual-input-schema]
+----
+<1> The entire JSON Schema string for the input
+
+
+=== Resources
+
+A resource is a public zero-parameter method returning text or bytes. The resource is identified by a unique URI.
+
+[source,java]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/api/ExampleMcpEndpoint.java[ExampleMcpEndpoint.java]
+----
+include::example$doc-snippets/src/main/java/com/example/api/ExampleMcpEndpoint.java[tag=resources]
+----
+
+== Interacting with other components
+
+The most common use case for endpoints is to interact with other components in a service. This is done through
+the `akka.javasdk.client.ComponentClient`. If the constructor of the endpoint class has a parameter of this type,
+it will be injected by the SDK.
+
+For more details see xref:component-and-service-calls.adoc[]
+
+== Interacting with HTTP services
+
+It is also possible to interact with other services over HTTP. This is done through the `akka.javasdk.http.HttpClientProvider`.
+
+For more details see xref:component-and-service-calls.adoc[]
