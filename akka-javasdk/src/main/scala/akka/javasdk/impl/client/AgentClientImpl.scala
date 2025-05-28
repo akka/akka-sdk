@@ -190,7 +190,7 @@ private[javasdk] final case class AgentClientImpl(
         }
         .getOrElse {
           // this should have been validated at startup
-          throw new IllegalStateException(s"Agent [${agentClass.getName}] doesn't have expected effect method")
+          throw new IllegalStateException(s"Agent [${agentClass.getName}] doesn't have expected public effect method")
         }
     val methodName = effectMethod.getName.capitalize
 
