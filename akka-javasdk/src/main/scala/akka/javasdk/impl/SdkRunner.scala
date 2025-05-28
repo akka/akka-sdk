@@ -127,6 +127,9 @@ import akka.javasdk.impl.agent.CoreMemoryClient
 import akka.javasdk.impl.agent.PromptTemplateClient
 import akka.util.Helpers.Requiring
 import akka.javasdk.annotations.mcp.McpEndpoint
+import akka.javasdk.mcp.AbstractMcpEndpoint
+import akka.javasdk.mcp.McpRequestContext
+import akka.runtime.sdk.spi.McpEndpointConstructionContext
 
 /**
  * INTERNAL API
@@ -507,9 +510,7 @@ private final class Sdk(
     .filter(Reflect.isMcpEndpoint)
     .map { mcpEndpointClass =>
       val anyRefClass = mcpEndpointClass.asInstanceOf[Class[AnyRef]]
-      McpEndpointDescriptorFactory(anyRefClass, () => wiredInstance(anyRefClass)(sideEffectingComponentInjects(None)))(
-        system,
-        sdkExecutionContext)
+      McpEndpointDescriptorFactory(anyRefClass, mcpEndpointFactory(anyRefClass))(system, sdkExecutionContext)
     }
 
   private var eventSourcedEntityDescriptors = Vector.empty[EventSourcedEntityDescriptor]
@@ -914,6 +915,35 @@ private final class Sdk(
       }
       instance
     }
+
+  private def mcpEndpointFactory[E](mcpEndpointClass: Class[E]): McpEndpointConstructionContext => E = {
+    (context: McpEndpointConstructionContext) =>
+      lazy val mcpRequestContext = new McpRequestContext {
+        override def getPrincipals: Principals =
+          PrincipalsImpl(context.principal.source, context.principal.service)
+
+        override def getJwtClaims: JwtClaims =
+          context.jwt match {
+            case Some(jwtClaims) => new JwtClaimsImpl(jwtClaims)
+            case None =>
+              throw new RuntimeException(
+                "There are no JWT claims defined but trying accessing the JWT claims. The class or the method needs to be annotated with @JWT.")
+          }
+
+        override def tracing(): Tracing = new SpanTracingImpl(context.openTelemetrySpan, sdkTracerFactory)
+      }
+
+      val instance = wiredInstance(mcpEndpointClass) {
+        sideEffectingComponentInjects(context.openTelemetrySpan).orElse {
+          case p if p == classOf[GrpcRequestContext] => mcpRequestContext
+        }
+      }
+      instance match {
+        case withBaseClass: AbstractMcpEndpoint => withBaseClass._internalSetRequestContext(mcpRequestContext)
+        case _                                  =>
+      }
+      instance
+  }
 
   private def wiredInstance[T](clz: Class[T])(partial: PartialFunction[Class[_], Any]): T = {
     // only one constructor allowed
