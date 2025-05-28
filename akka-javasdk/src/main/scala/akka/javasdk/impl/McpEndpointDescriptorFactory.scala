@@ -51,7 +51,7 @@ import scala.concurrent.Future
 @InternalApi
 object McpEndpointDescriptorFactory {
 
-  private lazy val schemaObjectMapper = {
+  private lazy val objectMapper = {
     val m = JsonSerializer.newObjectMapperWithDefaults()
     m.registerModule(new DefaultScalaModule())
 
@@ -100,7 +100,7 @@ object McpEndpointDescriptorFactory {
             new JsonSchemaObject(properties = Map.empty, required = Seq.empty, description = None)
           else JsonSchema.jsonSchemaFor(method)
         } else {
-          schemaObjectMapper.readValue(annotation.inputSchema(), classOf[JsonSchemaObject])
+          objectMapper.readValue(annotation.inputSchema(), classOf[JsonSchemaObject])
         }
 
       val toolName =
@@ -121,7 +121,7 @@ object McpEndpointDescriptorFactory {
               params.get(param.getName) match {
                 case Some(unparsedValue) =>
                   // FIXME wrap with optional if needed
-                  JsonSerializer.internalObjectMapper.convertValue(unparsedValue, param.getType)
+                  objectMapper.convertValue(unparsedValue, param.getType)
                 case None =>
                   Optional.empty()
               }
@@ -173,7 +173,7 @@ object McpEndpointDescriptorFactory {
         annotations = None,
         size = None)
 
-      val callback = { (constructionContext: McpEndpointConstructionContext) =>
+      val callback = { (_: McpEndpointConstructionContext) =>
         val endpointInstance = instanceFactory()
         val result = method.invoke(endpointInstance)
         result match {

@@ -32,9 +32,15 @@ public class ExampleMcpEndpoint {
       {
         "type":"object",
         "properties": {
-          "message": {"type":"string", "description":"A string to echo"}
+          "input": {
+            "type": "object",
+            "properties": {
+              "message": {"type":"string", "description":"A string to echo"}
+            },
+            "required": ["message"]
+          }
          },
-         "required": ["message"]
+         "required": ["input"]
       }
       """ // <1>
     )
