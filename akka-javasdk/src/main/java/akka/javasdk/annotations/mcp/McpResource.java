@@ -9,6 +9,8 @@ import java.lang.annotation.*;
 
 /**
  * Marks a method that returns an MCP resource that clients can fetch.
+ * <p>
+ * Annotated method must have no parameters and return either {@code String} or {@code byte[]}
  */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
