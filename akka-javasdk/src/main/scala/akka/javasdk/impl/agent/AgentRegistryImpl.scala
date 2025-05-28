@@ -8,12 +8,16 @@ import java.util
 
 import scala.jdk.CollectionConverters._
 
+import akka.annotation.InternalApi
 import akka.javasdk.agent.Agent
 import akka.javasdk.agent.AgentRegistry
 import akka.javasdk.agent.AgentRegistry.AgentInfo
 import akka.javasdk.impl.serialization.JsonSerializer
 
-object AgentRegistryImpl {
+/**
+ * INTERNAL API
+ */
+@InternalApi private[javasdk] object AgentRegistryImpl {
   final case class AgentDetails(id: String, name: String, description: String, role: String, agentClass: Class[Agent]) {
     def hasRole(r: String): Boolean =
       role == r
@@ -24,7 +28,12 @@ object AgentRegistryImpl {
 
 }
 
-final class AgentRegistryImpl(agents: Set[AgentRegistryImpl.AgentDetails], serializer: JsonSerializer)
+/**
+ * INTERNAL API
+ */
+@InternalApi private[javasdk] final class AgentRegistryImpl(
+    agents: Set[AgentRegistryImpl.AgentDetails],
+    serializer: JsonSerializer)
     extends AgentRegistry {
   private val agentsById = agents.map(a => a.id -> a).toMap
 
