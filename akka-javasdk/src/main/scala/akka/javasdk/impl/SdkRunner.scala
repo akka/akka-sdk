@@ -123,7 +123,6 @@ import akka.runtime.sdk.spi.SpiAgent
 import akka.javasdk.agent.PromptTemplate
 import akka.javasdk.annotations.AgentDescription
 import akka.javasdk.impl.agent.AgentRegistryImpl
-import akka.javasdk.impl.agent.CoreMemoryClient
 import akka.javasdk.impl.agent.PromptTemplateClient
 import akka.util.Helpers.Requiring
 
@@ -665,7 +664,7 @@ private final class Sdk(
             ComponentDescriptor.descriptorFor(agentClass, serializer),
             regionInfo,
             new PromptTemplateClient(componentClient(None)),
-            new CoreMemoryClient(componentClient(None)), // FIXME allow for custom implementations
+            componentClient(None),
             applicationConfig)
 
         }
