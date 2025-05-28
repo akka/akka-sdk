@@ -6,7 +6,9 @@ package akka.javasdk.client;
 
 import akka.annotation.DoNotInherit;
 
-/** Not for user extension */
+/**
+ * Not for user extension or instantiation, returned by the SDK component client
+ */
 @DoNotInherit
 public interface AgentClient {
 

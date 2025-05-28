@@ -11,8 +11,7 @@ import akka.pattern.RetrySettings;
 import java.util.concurrent.CompletionStage;
 
 /**
- * Zero or one argument component call representation, not executed until invoked or by some
- * mechanism using the deferred call (like a timer executing it later for example)
+ * Zero or one argument component call representation, not executed until invoked.
  *
  * <p>Not for user extension or instantiation, returned by the SDK component client
  *
@@ -20,9 +19,9 @@ import java.util.concurrent.CompletionStage;
  * @param <R> The type of value returned by executing the call
  */
 @DoNotInherit
-public interface ComponentMethodRefAnyArity<A1, R> {
+public interface DynamicMethodRef<A1, R> {
 
-  ComponentMethodRefAnyArity<A1, R> withMetadata(Metadata metadata);
+  DynamicMethodRef<A1, R> withMetadata(Metadata metadata);
 
   /**
    * Set the retry settings for this call.
@@ -30,7 +29,7 @@ public interface ComponentMethodRefAnyArity<A1, R> {
    * @param retrySettings The retry settings
    * @return A new call with the retry settings set
    */
-  ComponentMethodRefAnyArity<A1, R> withRetry(RetrySettings retrySettings);
+  DynamicMethodRef<A1, R> withRetry(RetrySettings retrySettings);
 
   /**
    * Set the retry settings for this call. A predefined backoff strategy will be calculated based on
@@ -39,7 +38,7 @@ public interface ComponentMethodRefAnyArity<A1, R> {
    * @param maxRetries The number of retries to make
    * @return A new call with the retry settings set
    */
-  ComponentMethodRefAnyArity<A1, R> withRetry(int maxRetries);
+  DynamicMethodRef<A1, R> withRetry(int maxRetries);
 
   CompletionStage<R> invokeAsync(A1 arg);
 

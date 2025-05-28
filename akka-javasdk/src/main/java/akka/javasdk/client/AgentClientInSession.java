@@ -10,7 +10,7 @@ import akka.japi.function.Function2;
 import akka.javasdk.agent.Agent;
 
 /**
- * Not for user extension
+ * Not for user extension or instantiation, returned by the SDK component client
  */
 @DoNotInherit
 public interface AgentClientInSession {
@@ -39,9 +39,21 @@ public interface AgentClientInSession {
 
 
   /**
+   * Agents can be called based on the id without knowing the exact agent class
+   * or lambda of the agent method by using the {{@code dynamicCall}} of the component
+   * client.
+   *
+   * <pre>{@code
+   * var response =
+   *   componentClient
+   *     .forAgent().inSession(sessionId)
+   *     .dynamicCall(agentId)
+   *     .invoke(request);
+   * }</pre>
+   *
    * @param agentId the componentId of the agent
    * @param <A1> the type of parameter expected by the call
    * @param <R> the return type of the call
    */
-  <A1, R> ComponentMethodRefAnyArity<A1, R> dynamicCall(String agentId);
+  <A1, R> DynamicMethodRef<A1, R> dynamicCall(String agentId);
 }

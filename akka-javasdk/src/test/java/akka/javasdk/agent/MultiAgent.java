@@ -62,13 +62,14 @@ abstract class MultiAgentSample {
     public Effect<Plan> plan(String arg) {
       var agentIds = registry.agentIdsWithRole("workers");
       var agentDescriptions = agentIds.stream()
-          .map(registry::agentDescriptionAsJson)
+          .map(registry::agentInfoAsJson)
           .collect(Collectors.joining(", ", "[", "]"));
 
       return effects()
           .systemMessage(systemMessageTemplate.formatted(agentDescriptions))
           .userMessage(arg)
-          .thenReplyAs(Plan.class);
+          .responseAs(Plan.class)
+          .thenReply();
     }
   }
 

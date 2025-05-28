@@ -4,6 +4,7 @@
 
 package akkajavasdk.components.agent;
 
+import akka.actor.testkit.typed.javadsl.LoggingTestKit;
 import akka.javasdk.DependencyProvider;
 import akka.javasdk.agent.ModelProvider;
 import akka.javasdk.testkit.TestKit;
@@ -14,6 +15,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletionStage;
@@ -22,6 +24,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 
 @ExtendWith(Junit5LogCapturing.class)
 public class AgentIntegrationTest extends TestKitSupport {
@@ -127,5 +130,40 @@ public class AgentIntegrationTest extends TestKitSupport {
     SomeAgent.SomeResponse result = (SomeAgent.SomeResponse) obj;
 
     assertThat(result.response()).isEqualTo("123456");
+  }
+
+  @Test
+  public void shouldDetectWrongArityOfDynamicCall() {
+    testModelProvider.mockResponse(s -> s.equals("hello"), "123456");
+
+    try {
+      LoggingTestKit.warn("requires a parameter, but was invoked without parameter")
+          .expect(
+              testKit.getActorSystem(),
+              () -> {
+                return componentClient.forAgent().inSession(newSessionId())
+                    .dynamicCall("some-agent")
+                    .invoke();
+              });
+
+      fail("Expected exception");
+    } catch (RuntimeException e) {
+      assertThat(e.getMessage()).startsWith("Component client error");
+    }
+  }
+
+  @Test
+  public void shouldDetectWrongParameterTypeOfDynamicCall() {
+    testModelProvider.mockResponse(s -> s.equals("hello"), "123456");
+
+    try {
+      componentClient.forAgent().inSession(newSessionId())
+          .dynamicCall("some-agent")
+          .invoke(17);
+
+      fail("Expected exception");
+    } catch (RuntimeException e) {
+      assertThat(e.getMessage()).startsWith("Unexpected error");
+    }
   }
 }
