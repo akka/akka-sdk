@@ -412,6 +412,7 @@ public class TestKit {
   private HttpClient selfHttpClient;
   private TimerScheduler timerScheduler;
   private Optional<DependencyProvider> dependencyProvider;
+  private AgentRegistry agentRegistry;
   private int eventingTestKitPort = -1;
   private Config applicationConfig;
 
@@ -522,7 +523,6 @@ public class TestKit {
       // wait for SDK to get on start callback (or fail starting), we need it to set up the component client
       final Sdk.StartupContext startupContext = runner.started().toCompletableFuture().get(20, TimeUnit.SECONDS);
       final ComponentClients componentClients = startupContext.componentClients();
-      final AgentRegistryImpl agentRegistry = startupContext.agentRegistry();
       final JsonSerializer serializer = startupContext.serializer();
       dependencyProvider = Optional.ofNullable(startupContext.dependencyProvider().getOrElse(() -> null));
 
@@ -564,7 +564,8 @@ public class TestKit {
 
       // once runtime is started
 
-      componentClient = new ComponentClientImpl(componentClients, serializer, agentRegistry.agentClassById(), Option.empty(), runtimeActorSystem.executionContext(), runtimeActorSystem);
+      componentClient = new ComponentClientImpl(componentClients, serializer, startupContext.agentRegistry().agentClassById(), Option.empty(), runtimeActorSystem.executionContext(), runtimeActorSystem);
+      agentRegistry = startupContext.agentRegistry();
       selfHttpClient = new HttpClientImpl(runtimeActorSystem, "http://" + runtimeHost + ":" + runtimePort);
       httpClientProvider = startupContext.httpClientProvider();
       grpcClientProvider = startupContext.grpcClientProvider();
@@ -763,6 +764,10 @@ public class TestKit {
   private void throwMissingConfigurationException(String hint) {
     throw new IllegalStateException("Currently configured mocked eventing is [" + settings.mockedEventing +
         "]. To use the MockedEventing API, to configure mocking of " + hint);
+  }
+
+  public AgentRegistry getAgentRegistry() {
+    return agentRegistry;
   }
 
   /**

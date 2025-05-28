@@ -15,13 +15,9 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import java.time.Instant;
-import java.util.List;
+import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
@@ -118,6 +114,19 @@ public class AgentIntegrationTest extends TestKitSupport {
     assertThat(resultTokens.size()).isEqualTo("123456".length());
     assertThat(resultTokens.getFirst()).isEqualTo("1");
     assertThat(resultTokens.getLast()).isEqualTo("6");
+  }
+
+  @Test
+  public void shouldIncludeAgentsInRegistry() {
+    assertThat(testKit.getAgentRegistry().allAgentIds())
+        .contains("some-agent", "some-streaming-agent", "structured-response-agent");
+    assertThat(testKit.getAgentRegistry().agentIdsWithRole("streaming"))
+        .isEqualTo(Set.of("some-streaming-agent"));
+
+    var someInfo = testKit.getAgentRegistry().agentInfo("some-agent");
+    assertThat(someInfo.id()).isEqualTo("some-agent");
+    assertThat(someInfo.name()).isEqualTo("Dummy Agent");
+    assertThat(someInfo.description()).isEqualTo("Not very smart agent");
   }
 
   @Test
