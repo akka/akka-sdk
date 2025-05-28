@@ -39,7 +39,7 @@ public final class ConversationMemory extends EventSourcedEntity<State, Event> {
     this.config = config;
   }
 
-  public record State(long maxLengthInBytes, long currentLengthInBytes, List<ConversationMessage> messages) {
+  public record State(long maxLengthInBytes, long currentLengthInBytes, List<ConversationMessage> messages, long totalTokenUsage) {
 
     private static final Logger logger = LoggerFactory.getLogger(State.class);
 
@@ -55,7 +55,7 @@ public final class ConversationMemory extends EventSourcedEntity<State, Event> {
 
     public State withMaxSize(int newMaxSize) {
       List<ConversationMessage> updatedMessages = new LinkedList<>(messages);
-      return new State(newMaxSize, currentLengthInBytes, updatedMessages);
+      return new State(newMaxSize, currentLengthInBytes, updatedMessages, totalTokenUsage);
     }
 
     public State addMessage(ConversationMessage message) {
@@ -63,11 +63,15 @@ public final class ConversationMemory extends EventSourcedEntity<State, Event> {
       updatedMessages.add(message);
 
       var updatedLengthSize = currentLengthInBytes + message.size();
-      return new State(maxLengthInBytes, updatedLengthSize, updatedMessages);
+      return new State(maxLengthInBytes, updatedLengthSize, updatedMessages, totalTokenUsage);
+    }
+
+    public State withTotalTokenUsage(long totalTokens) {
+      return new State(maxLengthInBytes, currentLengthInBytes, messages, totalTokens);
     }
 
     public State clear() {
-      return new State(maxLengthInBytes, 0, new LinkedList<>());
+      return new State(maxLengthInBytes, 0, new LinkedList<>(), 0);
     }
 
     private static long enforceMaxCapacity(List<ConversationMessage> messages, long currentLengthSize, long maxSize) {
@@ -85,7 +89,7 @@ public final class ConversationMemory extends EventSourcedEntity<State, Event> {
   @Override
   public State emptyState() {
     var maxSizeInBytes = config.getBytes("akka.javasdk.agent.memory.limited-window.max-size"); // 5Mb
-    return new State(maxSizeInBytes, 0, new LinkedList<>());
+    return new State(maxSizeInBytes, 0, new LinkedList<>(), 0L);
   }
 
   /**
@@ -98,11 +102,11 @@ public final class ConversationMemory extends EventSourcedEntity<State, Event> {
     }
 
     @TypeName("akka-memory-user-message-added")
-    record UserMessageAdded(String componentId, String message, int tokens, long ts) implements Event {
+    record UserMessageAdded(String componentId, String message, int tokens, long totalTokenUsage, long ts) implements Event {
     }
 
     @TypeName("akka-memory-ai-message-added")
-    record AiMessageAdded(String componentId, String message, int tokens, long ts) implements Event {
+    record AiMessageAdded(String componentId, String message, int tokens, long totalTokenUsage, long ts) implements Event {
     }
     
     @TypeName("akka-memory-deleted")
@@ -126,10 +130,12 @@ public final class ConversationMemory extends EventSourcedEntity<State, Event> {
   public record AddInteractionCmd(String componentId, UserMessage userMessage, AiMessage aiMessage) { }
   public Effect<Done> addInteraction(AddInteractionCmd cmd) {
     var ts = System.currentTimeMillis();
+    var totalTokensUser = currentState().totalTokenUsage + cmd.userMessage.tokens();
+    var totalTokensAi = totalTokensUser + cmd.aiMessage.tokens();
     return effects()
         .persist(
-            new Event.UserMessageAdded(cmd.componentId, cmd.userMessage.text(), cmd.userMessage.tokens(), ts),
-            new Event.AiMessageAdded(cmd.componentId, cmd.aiMessage.text(),cmd.aiMessage.tokens(), ts))
+            new Event.UserMessageAdded(cmd.componentId, cmd.userMessage.text(), cmd.userMessage.tokens(), totalTokensUser, ts),
+            new Event.AiMessageAdded(cmd.componentId, cmd.aiMessage.text(),cmd.aiMessage.tokens(), totalTokensAi, ts))
         .thenReply(__ -> Done.done());
   }
 
@@ -155,9 +161,13 @@ public final class ConversationMemory extends EventSourcedEntity<State, Event> {
       case Event.LimitedWindowSet limitedWindowSet ->
           currentState().withMaxSize(limitedWindowSet.maxSizeInBytes);
       case Event.UserMessageAdded userMsg ->
-          currentState().addMessage(new UserMessage(userMsg.message(), userMsg.tokens()));
+          currentState()
+              .addMessage(new UserMessage(userMsg.message(), userMsg.tokens()))
+              .withTotalTokenUsage(userMsg.totalTokenUsage());
       case Event.AiMessageAdded aiMsg ->
-          currentState().addMessage(new AiMessage(aiMsg.message(), aiMsg.tokens()));
+          currentState()
+              .addMessage(new AiMessage(aiMsg.message(), aiMsg.tokens()))
+              .withTotalTokenUsage(aiMsg.totalTokenUsage());
       case Event.Deleted __ ->
           currentState().clear();
     };

@@ -23,7 +23,7 @@ public class ConversationMemoryTest {
 
   private static final String COMPONENT_ID = "test-component";
   private static final Config config = ConfigFactory.load();
-  private static final int tokenCount = 10; // Default token count for testing
+  private static final int TOKENS = 10; // Default token count for testing
 
   @Test
   public void shouldAddMessageToHistory() {
@@ -31,8 +31,8 @@ public class ConversationMemoryTest {
     var testKit = EventSourcedTestKit.of(() -> new ConversationMemory(config));
     String userMsg = "Hello, how are you?";
     String aiMsg = "I'm fine, thanks for asking!";
-    UserMessage userMessage = new UserMessage(userMsg, tokenCount);
-    var aiMessage = new AiMessage(aiMsg, tokenCount);
+    UserMessage userMessage = new UserMessage(userMsg, TOKENS);
+    var aiMessage = new AiMessage(aiMsg, TOKENS);
 
     // when
     EventSourcedResult<Done> result = testKit.method(ConversationMemory::addInteraction)
@@ -48,21 +48,21 @@ public class ConversationMemoryTest {
     var userEvent = (ConversationMemory.Event.UserMessageAdded) events.get(0);
     assertThat(userEvent.componentId()).isEqualTo(COMPONENT_ID);
     assertThat(userEvent.message()).isEqualTo(userMsg);
-    assertThat(userEvent.tokens()).isEqualTo(tokenCount);
+    assertThat(userEvent.tokens()).isEqualTo(TOKENS);
 
     assertThat(events.get(1)).isInstanceOf(ConversationMemory.Event.AiMessageAdded.class);
     var aiEvent = (ConversationMemory.Event.AiMessageAdded) events.get(1);
     assertThat(aiEvent.componentId()).isEqualTo(COMPONENT_ID);
     assertThat(aiEvent.message()).isEqualTo(aiMsg);
-    assertThat(aiEvent.tokens()).isEqualTo(tokenCount);
+    assertThat(aiEvent.tokens()).isEqualTo(TOKENS);
 
     // when retrieving history
     EventSourcedResult<ConversationHistory> historyResult = testKit.method(ConversationMemory::getHistory).invoke();
 
     // then
     assertThat(historyResult.getReply().messages()).containsExactly(
-        new UserMessage(userMsg, tokenCount),
-        new AiMessage(aiMsg, tokenCount));
+        new UserMessage(userMsg, TOKENS),
+        new AiMessage(aiMsg, TOKENS));
   }
 
   @Test
@@ -74,10 +74,10 @@ public class ConversationMemoryTest {
     String userMsg2 = "How are you?";
     String aiMsg2 = "I'm doing great!";
 
-    var userMessage1 = new UserMessage(userMsg1, tokenCount);
-    var aiMessage1 = new AiMessage(aiMsg1, tokenCount);
-    var userMessage2 = new UserMessage(userMsg2, tokenCount);
-    var aiMessage2 = new AiMessage(aiMsg2, tokenCount);
+    var userMessage1 = new UserMessage(userMsg1, TOKENS);
+    var aiMessage1 = new AiMessage(aiMsg1, TOKENS);
+    var userMessage2 = new UserMessage(userMsg2, TOKENS);
+    var aiMessage2 = new AiMessage(aiMsg2, TOKENS);
 
     // when
     testKit.method(ConversationMemory::addInteraction)
@@ -93,10 +93,10 @@ public class ConversationMemoryTest {
 
     // then
     assertThat(historyResult.getReply().messages()).containsExactly(
-        new UserMessage(userMsg1, tokenCount),
-        new AiMessage(aiMsg1, tokenCount),
-        new UserMessage(userMsg2, tokenCount),
-        new AiMessage(aiMsg2, tokenCount));
+        new UserMessage(userMsg1, TOKENS),
+        new AiMessage(aiMsg1, TOKENS),
+        new UserMessage(userMsg2, TOKENS),
+        new AiMessage(aiMsg2, TOKENS));
   }
 
   @Test
@@ -106,8 +106,8 @@ public class ConversationMemoryTest {
     String userMsg = "Hello";
     String aiMsg = "Hi there!";
 
-    var userMessage = new UserMessage(userMsg, tokenCount);
-    var aiMessage = new AiMessage(aiMsg, tokenCount);
+    var userMessage = new UserMessage(userMsg, TOKENS);
+    var aiMessage = new AiMessage(aiMsg, TOKENS);
 
     testKit.method(ConversationMemory::addInteraction)
         .invoke(new AddInteractionCmd(COMPONENT_ID, userMessage, aiMessage));
@@ -157,14 +157,14 @@ public class ConversationMemoryTest {
     String userMsg4 = "Fourth message";     // 14 bytes
     String aiMsg4 = "Fourth response";      // 15 bytes
 
-    var userMessage1 = new UserMessage(userMsg1, tokenCount);
-    var aiMessage1 = new AiMessage(aiMsg1, tokenCount);
-    var userMessage2 = new UserMessage(userMsg2, tokenCount);
-    var aiMessage2 = new AiMessage(aiMsg2, tokenCount);
-    var userMessage3 = new UserMessage(userMsg3, tokenCount);
-    var aiMessage3 = new AiMessage(aiMsg3, tokenCount);
-    var userMessage4 = new UserMessage(userMsg4, tokenCount);
-    var aiMessage4 = new AiMessage(aiMsg4, tokenCount);
+    var userMessage1 = new UserMessage(userMsg1, TOKENS);
+    var aiMessage1 = new AiMessage(aiMsg1, TOKENS);
+    var userMessage2 = new UserMessage(userMsg2, TOKENS);
+    var aiMessage2 = new AiMessage(aiMsg2, TOKENS);
+    var userMessage3 = new UserMessage(userMsg3, TOKENS);
+    var aiMessage3 = new AiMessage(aiMsg3, TOKENS);
+    var userMessage4 = new UserMessage(userMsg4, TOKENS);
+    var aiMessage4 = new AiMessage(aiMsg4, TOKENS);
 
     // Set buffer size to just fit messages 2, 3, and 4 (total 85 bytes)
     // userMsg2(14) + aiMsg2(15) + userMsg3(13) + aiMsg3(14) + userMsg4(14) + aiMsg4(15) = 85 bytes
@@ -189,12 +189,12 @@ public class ConversationMemoryTest {
 
     // then - only the 3 most recent interactions should be present
     assertThat(historyResult.getReply().messages()).containsExactly(
-        new UserMessage(userMsg2, tokenCount),
-        new AiMessage(aiMsg2, tokenCount),
-        new UserMessage(userMsg3, tokenCount),
-        new AiMessage(aiMsg3, tokenCount),
-        new UserMessage(userMsg4, tokenCount),
-        new AiMessage(aiMsg4, tokenCount));
+        new UserMessage(userMsg2, TOKENS),
+        new AiMessage(aiMsg2, TOKENS),
+        new UserMessage(userMsg3, TOKENS),
+        new AiMessage(aiMsg3, TOKENS),
+        new UserMessage(userMsg4, TOKENS),
+        new AiMessage(aiMsg4, TOKENS));
     assertThat(historyResult.getReply().messages().size()).isEqualTo(6);
   }
 
@@ -211,12 +211,12 @@ public class ConversationMemoryTest {
     String userMsg3 = "Third message";      // 13 bytes
     String aiMsg3 = "Third response";       // 14 bytes
 
-    var userMessage1 = new UserMessage(userMsg1, tokenCount);
-    var aiMessage1 = new AiMessage(aiMsg1, tokenCount);
-    var userMessage2 = new UserMessage(userMsg2, tokenCount);
-    var aiMessage2 = new AiMessage(aiMsg2, tokenCount);
-    var userMessage3 = new UserMessage(userMsg3, tokenCount);
-    var aiMessage3 = new AiMessage(aiMsg3, tokenCount);
+    var userMessage1 = new UserMessage(userMsg1, TOKENS);
+    var aiMessage1 = new AiMessage(aiMsg1, TOKENS);
+    var userMessage2 = new UserMessage(userMsg2, TOKENS);
+    var aiMessage2 = new AiMessage(aiMsg2, TOKENS);
+    var userMessage3 = new UserMessage(userMsg3, TOKENS);
+    var aiMessage3 = new AiMessage(aiMsg3, TOKENS);
 
     // Set buffer size to just fit messages 1 and 2 (total 56 bytes)
     // userMsg1(13) + aiMsg1(14) + userMsg2(14) + aiMsg2(15) = 56 bytes
@@ -230,8 +230,8 @@ public class ConversationMemoryTest {
 
     // then
     assertThat(result1.getReply().messages()).containsExactly(
-        new UserMessage(userMsg1, tokenCount),
-        new AiMessage(aiMsg1, tokenCount));
+        new UserMessage(userMsg1, TOKENS),
+        new AiMessage(aiMsg1, TOKENS));
     assertThat(result1.getReply().messages().size()).isEqualTo(2);
 
     // when adding second interaction (reaching the limit)
@@ -241,10 +241,10 @@ public class ConversationMemoryTest {
 
     // then
     assertThat(result2.getReply().messages()).containsExactly(
-        new UserMessage(userMsg1, tokenCount),
-        new AiMessage(aiMsg1, tokenCount),
-        new UserMessage(userMsg2, tokenCount),
-        new AiMessage(aiMsg2, tokenCount));
+        new UserMessage(userMsg1, TOKENS),
+        new AiMessage(aiMsg1, TOKENS),
+        new UserMessage(userMsg2, TOKENS),
+        new AiMessage(aiMsg2, TOKENS));
     assertThat(result2.getReply().messages().size()).isEqualTo(4);
 
     // when adding third interaction (exceeding the limit)
@@ -254,10 +254,10 @@ public class ConversationMemoryTest {
 
     // then - first interaction should be removed
     assertThat(result3.getReply().messages()).containsExactly(
-        new UserMessage(userMsg2, tokenCount),
-        new AiMessage(aiMsg2, tokenCount),
-        new UserMessage(userMsg3, tokenCount),
-        new AiMessage(aiMsg3, tokenCount));
+        new UserMessage(userMsg2, TOKENS),
+        new AiMessage(aiMsg2, TOKENS),
+        new UserMessage(userMsg3, TOKENS),
+        new AiMessage(aiMsg3, TOKENS));
     assertThat(result3.getReply().messages().size()).isEqualTo(4);
   }
 
@@ -281,8 +281,8 @@ public class ConversationMemoryTest {
     // Create a message larger than the buffer
     String largeUserMsg = "A".repeat(100);
     String largeAiMsg = "B".repeat(100);
-    var userMessage = new UserMessage(largeUserMsg, tokenCount);
-    var aiMessage = new AiMessage(largeAiMsg, tokenCount);
+    var userMessage = new UserMessage(largeUserMsg, TOKENS);
+    var aiMessage = new AiMessage(largeAiMsg, TOKENS);
 
     // Set buffer size smaller than a single message
     var limitedBuffer = new ConversationMemory.LimitedWindow(50);
@@ -297,6 +297,43 @@ public class ConversationMemoryTest {
 
     // The history should be empty, as the first interaction cannot fit
     assertThat(historyResult.getReply().messages()).isEmpty();
+  }
+
+  @Test
+  public void shouldTrackTotalTokenUsage() {
+    // given
+    var testKit = EventSourcedTestKit.of(() -> new ConversationMemory(config));
+    String userMsg1 = "Hello";
+    String aiMsg1 = "Hi!";
+    String userMsg2 = "How are you?";
+    String aiMsg2 = "I'm good, thanks!";
+    var userMessage1 = new UserMessage(userMsg1, 5);
+    var aiMessage1 = new AiMessage(aiMsg1, 3);
+    var userMessage2 = new UserMessage(userMsg2, 7);
+    var aiMessage2 = new AiMessage(aiMsg2, 6);
+
+    // when
+    testKit.method(ConversationMemory::addInteraction)
+        .invoke(new AddInteractionCmd(COMPONENT_ID, userMessage1, aiMessage1));
+    testKit.method(ConversationMemory::addInteraction)
+        .invoke(new AddInteractionCmd(COMPONENT_ID, userMessage2, aiMessage2));
+
+    // then
+    var state = testKit.getState();
+    assertThat(state.totalTokenUsage()).isEqualTo(5 + 3 + 7 + 6);
+
+    // And events should include token usage as well
+    var events = testKit.getAllEvents();
+    assertThat(events).hasSize(4);
+    assertThat(events.get(2)).isInstanceOf(ConversationMemory.Event.UserMessageAdded.class);
+    var userEvent = (ConversationMemory.Event.UserMessageAdded) events.get(2);
+    assertThat(userEvent.totalTokenUsage()).isEqualTo(5+3+7);
+
+    assertThat(events.get(3)).isInstanceOf(ConversationMemory.Event.AiMessageAdded.class);
+    var userEvent2 = (ConversationMemory.Event.AiMessageAdded) events.get(3);
+    assertThat(userEvent2.totalTokenUsage()).isEqualTo(5+3+7+6);
+
+
   }
 
 }
