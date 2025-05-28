@@ -153,7 +153,7 @@ private[javasdk] object Validations {
   private def validateAgent(component: Class[_]) =
     when[Agent](component) {
       mustHaveValidComponentId(component) ++
-      mustHaveAgentDescription(component) ++
+      mustHaveValidAgentDescription(component) ++
       agentCommandHandlersMustBeOne(component) ++
       commandHandlerArityShouldBeZeroOrOne(component, hasAgentEffectOutput)
     }
@@ -169,9 +169,11 @@ private[javasdk] object Validations {
     }
   }
 
-  private def mustHaveAgentDescription(component: Class[_]): Validation = {
+  private def mustHaveValidAgentDescription(component: Class[_]): Validation = {
     val ann = component.getAnnotation(classOf[AgentDescription])
-    if (ann != null) {
+    if (ann == null) {
+      Valid // ok, optional
+    } else {
       val name: String = ann.name()
       val description: String = ann.description()
       var result: Validation = Valid
@@ -181,8 +183,6 @@ private[javasdk] object Validations {
         result ++= Invalid(
           errorMessage(component, "@AgentDescription description is empty, must be a non-empty string."))
       result
-    } else {
-      Invalid(errorMessage(component, "@AgentDescription must be defined"))
     }
   }
 

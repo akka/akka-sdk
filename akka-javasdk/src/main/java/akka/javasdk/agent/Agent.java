@@ -6,12 +6,28 @@ package akka.javasdk.agent;
 
 import akka.annotation.InternalApi;
 import akka.javasdk.Metadata;
+import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.impl.agent.BaseAgentEffectBuilder;
 import akka.javasdk.impl.agent.AgentStreamEffectImpl;
 
 import java.util.Optional;
 import java.util.function.Function;
 
+/**
+ * An AI agent component that is using a (large) language model.
+ * <p>
+ * An agent participates in a session and the session id can be accessed from the {@link Agent#context()}.
+ * It has a conversational memory for the session. User and AI messages are stored in the memory, and
+ * included as context in subsequent requests to the model.
+ * <p>
+ * A request to the model always includes a system message and a user message, and may include additional
+ * context messages.
+ * <p>
+ * The agent id must be defined with a {@link akka.javasdk.annotations.ComponentId} annotation on the agent class.
+ * <p>
+ * Additional information about the agent may be defined with the {@link akka.javasdk.annotations.AgentDescription}
+ * annotation on the agent class. This is important when using the {@link AgentRegistry}.
+ */
 public abstract class Agent {
 
   private volatile Optional<AgentContext> context = Optional.empty();
