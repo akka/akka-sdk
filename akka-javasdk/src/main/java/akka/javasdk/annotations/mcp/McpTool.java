@@ -7,7 +7,9 @@ package akka.javasdk.annotations.mcp;
 import java.lang.annotation.*;
 
 /**
- * Marks a public method on a {{@link McpEndpoint}} a tool that can be called by MCP clients
+ * Marks a public method on a {{@link McpEndpoint}} a tool that can be called by MCP clients.
+ * <p>
+ * The method may accept 0 or more parameters, but must return a {@code String}.
  */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
@@ -27,7 +29,8 @@ public @interface McpTool {
 
   /**
    * Normally, the schema is inferred from the input parameters of the tool method.
-   * @return A manually specified schema instead of the automatic
+   * @return A manually specified schema instead of the automatic, must match the input parameters and how they are
+   *         parsed by Jackson.
    */
   String inputSchema() default "";
 
