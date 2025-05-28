@@ -181,7 +181,11 @@ private[impl] final class AgentImpl[A <: Agent](
   }
 
   private def onSuccess(userMessage: String, modelResult: SpiAgent.ModelResult): Unit = {
-    coreMemoryClient.addInteraction(sessionId, componentId, userMessage, modelResult.modelResponse)
+    coreMemoryClient.addInteraction(
+      sessionId,
+      componentId,
+      new UserMessage(userMessage, modelResult.inputTokenCount),
+      new AiMessage(modelResult.modelResponse, modelResult.outputTokenCount))
   }
 
   private def toSpiContextMessages(conversationHistory: ConversationHistory): Vector[SpiAgent.ContextMessage] = {

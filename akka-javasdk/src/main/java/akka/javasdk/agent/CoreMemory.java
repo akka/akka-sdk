@@ -25,7 +25,7 @@ public interface CoreMemory {
    * @param userMessage The content of the user message
    * @param aiMessage The content of the AI message
    */
-  void addInteraction(String sessionId, String componentId, String userMessage, String aiMessage);
+  void addInteraction(String sessionId, String componentId, ConversationMessage.UserMessage userMessage, ConversationMessage.AiMessage aiMessage);
 
   /**
    * Retrieves the complete conversation history for the specified session. For very long sessions,

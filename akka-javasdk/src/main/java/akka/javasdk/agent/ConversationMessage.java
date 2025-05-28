@@ -18,7 +18,7 @@ public sealed interface ConversationMessage {
 
   int size();
 
-  record UserMessage(String text) implements ConversationMessage {
+  record UserMessage(String text, int tokens) implements ConversationMessage {
 
     @Override
     public int size() {
@@ -26,7 +26,7 @@ public sealed interface ConversationMessage {
     }
   }
 
-  record AiMessage(String text) implements ConversationMessage {
+  record AiMessage(String text, int tokens) implements ConversationMessage {
 
     @Override
     public int size() {

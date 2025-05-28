@@ -71,12 +71,13 @@ public final class ConversationMemory extends EventSourcedEntity<State, Event> {
     }
 
     private static long enforceMaxCapacity(List<ConversationMessage> messages, long currentLengthSize, long maxSize) {
-      while (currentLengthSize > maxSize) {
+      var freedSpace = 0;
+      while ((currentLengthSize - freedSpace) > maxSize) {
         // FIXME: delete also the reply from AI?
-        currentLengthSize -= messages.removeFirst().size();
+        freedSpace += messages.removeFirst().size();
         logger.debug("Removed oldest message. Remaining size={}, maxSizeInBytes={}", currentLengthSize, maxSize);
       }
-      return currentLengthSize;
+      return currentLengthSize - freedSpace;
     }
 
   }
@@ -93,19 +94,19 @@ public final class ConversationMemory extends EventSourcedEntity<State, Event> {
   public sealed interface Event {
 
     @TypeName("akka-memory-limited-window-set")
-    record LimitedWindowSet(int maxSizeInBytes) implements Event {
+    record LimitedWindowSet(int maxSizeInBytes, long ts) implements Event {
     }
 
     @TypeName("akka-memory-user-message-added")
-    record UserMessageAdded(String componentId, String message) implements Event {
+    record UserMessageAdded(String componentId, String message, int tokens, long ts) implements Event {
     }
 
     @TypeName("akka-memory-ai-message-added")
-    record AiMessageAdded(String componentId, String message) implements Event {
+    record AiMessageAdded(String componentId, String message, int tokens, long ts) implements Event {
     }
     
     @TypeName("akka-memory-deleted")
-    record Deleted() implements Event {
+    record Deleted(long ts) implements Event {
     }
   }
 
@@ -117,17 +118,18 @@ public final class ConversationMemory extends EventSourcedEntity<State, Event> {
       return effects().error("Maximum size must be greater than 0");
     } else {
       return effects()
-          .persist(new Event.LimitedWindowSet(limitedWindow.maxSizeInBytes))
+          .persist(new Event.LimitedWindowSet(limitedWindow.maxSizeInBytes, System.currentTimeMillis()))
           .thenReply(__ -> done());
     }
   }
 
-  public record AddInteractionCmd(String componentId, String userMessage, String aiMessage) { }
+  public record AddInteractionCmd(String componentId, UserMessage userMessage, AiMessage aiMessage) { }
   public Effect<Done> addInteraction(AddInteractionCmd cmd) {
+    var ts = System.currentTimeMillis();
     return effects()
         .persist(
-            new Event.UserMessageAdded(cmd.componentId, cmd.userMessage),
-            new Event.AiMessageAdded(cmd.componentId, cmd.aiMessage))
+            new Event.UserMessageAdded(cmd.componentId, cmd.userMessage.text(), cmd.userMessage.tokens(), ts),
+            new Event.AiMessageAdded(cmd.componentId, cmd.aiMessage.text(),cmd.aiMessage.tokens(), ts))
         .thenReply(__ -> Done.done());
   }
 
@@ -141,7 +143,7 @@ public final class ConversationMemory extends EventSourcedEntity<State, Event> {
       return effects().reply(done());
     } else {
       return effects()
-          .persist(new Event.Deleted())
+          .persist(new Event.Deleted(System.currentTimeMillis()))
           .deleteEntity()
           .thenReply(__ -> done());
     }
@@ -153,9 +155,9 @@ public final class ConversationMemory extends EventSourcedEntity<State, Event> {
       case Event.LimitedWindowSet limitedWindowSet ->
           currentState().withMaxSize(limitedWindowSet.maxSizeInBytes);
       case Event.UserMessageAdded userMsg ->
-          currentState().addMessage(new UserMessage(userMsg.message()));
+          currentState().addMessage(new UserMessage(userMsg.message(), userMsg.tokens()));
       case Event.AiMessageAdded aiMsg ->
-          currentState().addMessage(new AiMessage(aiMsg.message()));
+          currentState().addMessage(new AiMessage(aiMsg.message(), aiMsg.tokens()));
       case Event.Deleted __ ->
           currentState().clear();
     };

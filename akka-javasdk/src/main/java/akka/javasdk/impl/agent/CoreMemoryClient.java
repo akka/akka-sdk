@@ -7,6 +7,7 @@ package akka.javasdk.impl.agent;
 import akka.annotation.InternalApi;
 import akka.javasdk.agent.ConversationHistory;
 import akka.javasdk.agent.ConversationMemory;
+import akka.javasdk.agent.ConversationMessage;
 import akka.javasdk.agent.CoreMemory;
 import akka.javasdk.client.ComponentClient;
 import org.slf4j.Logger;
@@ -26,7 +27,10 @@ public final class CoreMemoryClient implements CoreMemory {
     this.componentClient = componentClient;
   }
 
-  public void addInteraction(String sessionId, String componentId, String userMessage, String aiMessage) {
+  public void addInteraction(String sessionId,
+                             String componentId,
+                             ConversationMessage.UserMessage userMessage,
+                             ConversationMessage.AiMessage aiMessage) {
     logger.debug("Adding interaction to session: {}", sessionId);
     componentClient.forEventSourcedEntity(sessionId)
         .method(ConversationMemory::addInteraction)
