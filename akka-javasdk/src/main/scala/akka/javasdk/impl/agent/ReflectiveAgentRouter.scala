@@ -41,11 +41,20 @@ private[impl] class ReflectiveAgentRouter(
 
     val methodInvoker = methodInvokerLookup(commandName)
 
-    if (serializer.isJson(command) || command.isEmpty) {
+    if (command.isEmpty && methodInvoker.method.getParameterCount > 0) {
+      throw new IllegalArgumentException(
+        s"Command handler method [$commandName] on [${agent.getClass.getName}] requires a parameter, " +
+        s"but was invoked without parameter. If you are using dynamicMethod, invoke it with a parameter.")
+    } else if (command.nonEmpty && methodInvoker.method.getParameterCount == 0) {
+      throw new IllegalArgumentException(
+        s"Command handler method [$commandName] on [${agent.getClass.getName}] doesn't take a parameter, " +
+        s"but was invoked with parameter. If you are using dynamicMethod, invoke it without a parameter.")
+    } else if (serializer.isJson(command) || command.isEmpty) {
       // - BytesPayload.empty - there is no real command, and we are calling a method with arity 0
       // - BytesPayload with json - we deserialize it and call the method
       val deserializedCommand =
         CommandSerialization.deserializeComponentClientCommand(methodInvoker.method, command, serializer)
+
       val result = deserializedCommand match {
         case None          => methodInvoker.invoke(agent)
         case Some(command) => methodInvoker.invokeDirectly(agent, command)

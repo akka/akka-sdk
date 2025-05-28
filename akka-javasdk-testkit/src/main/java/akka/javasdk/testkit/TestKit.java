@@ -12,6 +12,7 @@ import akka.javasdk.DependencyProvider;
 import akka.javasdk.Metadata;
 import akka.javasdk.Principal;
 import akka.javasdk.ServiceSetup;
+import akka.javasdk.agent.AgentRegistry;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.grpc.GrpcClientProvider;
 import akka.javasdk.http.HttpClient;
@@ -19,6 +20,7 @@ import akka.javasdk.http.HttpClientProvider;
 import akka.javasdk.impl.ErrorHandling;
 import akka.javasdk.impl.Sdk;
 import akka.javasdk.impl.SdkRunner;
+import akka.javasdk.impl.agent.AgentRegistryImpl;
 import akka.javasdk.impl.client.ComponentClientImpl;
 import akka.javasdk.impl.grpc.GrpcClientProviderImpl;
 import akka.javasdk.impl.http.HttpClientImpl;
@@ -410,6 +412,7 @@ public class TestKit {
   private HttpClient selfHttpClient;
   private TimerScheduler timerScheduler;
   private Optional<DependencyProvider> dependencyProvider;
+  private AgentRegistry agentRegistry;
   private int eventingTestKitPort = -1;
   private Config applicationConfig;
 
@@ -560,7 +563,9 @@ public class TestKit {
         throw new IllegalStateException("Runtime was terminated.");
 
       // once runtime is started
-      componentClient = new ComponentClientImpl(componentClients, serializer, Option.empty(), runtimeActorSystem.executionContext(), runtimeActorSystem);
+
+      componentClient = new ComponentClientImpl(componentClients, serializer, startupContext.agentRegistry().agentClassById(), Option.empty(), runtimeActorSystem.executionContext(), runtimeActorSystem);
+      agentRegistry = startupContext.agentRegistry();
       selfHttpClient = new HttpClientImpl(runtimeActorSystem, "http://" + runtimeHost + ":" + runtimePort);
       httpClientProvider = startupContext.httpClientProvider();
       grpcClientProvider = startupContext.grpcClientProvider();
@@ -759,6 +764,10 @@ public class TestKit {
   private void throwMissingConfigurationException(String hint) {
     throw new IllegalStateException("Currently configured mocked eventing is [" + settings.mockedEventing +
         "]. To use the MockedEventing API, to configure mocking of " + hint);
+  }
+
+  public AgentRegistry getAgentRegistry() {
+    return agentRegistry;
   }
 
   /**

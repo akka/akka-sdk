@@ -162,7 +162,7 @@ private[javasdk] object Validations {
       Invalid(
         errorMessage(
           component,
-          s"${component.getSimpleName} has ${commandHandlers.length} command handlers. There must be one method returning Agent.Effect."))
+          s"${component.getSimpleName} has ${commandHandlers.length} command handlers. There must be one public method returning Agent.Effect."))
     }
   }
 

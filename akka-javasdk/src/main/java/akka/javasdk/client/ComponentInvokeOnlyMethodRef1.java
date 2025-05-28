@@ -13,9 +13,10 @@ import akka.javasdk.Metadata;
  * One argument component call representation, not executed until invoked. Used for component
  * methods that cannot be deferred.
  *
+ * <p>Not for user extension or instantiation, returned by the SDK component client
+ *
  * @param <R> The type of value returned by executing the call
  * @param <A1> the argument type of the call
- *     <p>Not for user extension or instantiation, returned by the SDK component client
  */
 @DoNotInherit
 public interface ComponentInvokeOnlyMethodRef1<A1, R> {

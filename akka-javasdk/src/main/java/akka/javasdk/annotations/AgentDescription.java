@@ -19,4 +19,5 @@ import java.lang.annotation.Target;
 public @interface AgentDescription {
   String name();
   String description();
+  String role() default "";
 }
