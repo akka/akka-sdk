@@ -164,6 +164,7 @@ sourceType
 src
 SREs
 [Ss]tackdriver
+[Ss]treamable
 subcommand
 subjectMatches
 subpage
