@@ -1,4 +1,4 @@
 //  Getting Started
 * xref:getting-started:index.adoc[]
-** xref:getting-started:author-your-first-service.adoc[Author your first service]
-// *** xref:getting-started:file-name.adoc[]
+** xref:getting-started:author-your-first-service.adoc[]
+** xref:getting-started:build-and-deploy-shopping-cart.adoc[]
