@@ -4,6 +4,7 @@
 
 package akka.javasdk.agent;
 
+import akka.Done;
 import akka.javasdk.annotations.AgentDescription;
 import akka.javasdk.annotations.ComponentId;
 
