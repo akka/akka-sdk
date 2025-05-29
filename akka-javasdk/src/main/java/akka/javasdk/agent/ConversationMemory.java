@@ -16,6 +16,7 @@ import com.typesafe.config.Config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -45,7 +46,7 @@ public final class ConversationMemory extends EventSourcedEntity<State, Event> {
 
     public State {
       if (maxLengthInBytes <= 0) throw new IllegalArgumentException("Maximum size must be greater than 0");
-      messages = messages != null ? new LinkedList<>(messages) : new LinkedList<>();
+      messages = messages != null ? messages : Collections.emptyList();
       currentLengthInBytes = enforceMaxCapacity(messages, currentLengthInBytes, maxLengthInBytes);
     }
 
@@ -54,16 +55,15 @@ public final class ConversationMemory extends EventSourcedEntity<State, Event> {
     }
 
     public State withMaxSize(int newMaxSize) {
-      List<ConversationMessage> updatedMessages = new LinkedList<>(messages);
-      return new State(newMaxSize, currentLengthInBytes, updatedMessages, totalTokenUsage);
+      return new State(newMaxSize, currentLengthInBytes, messages, totalTokenUsage);
     }
 
     public State addMessage(ConversationMessage message) {
-      List<ConversationMessage> updatedMessages = new LinkedList<>(messages);
-      updatedMessages.add(message);
+      // avoid copies of the list for efficiency, need to be careful not to return the list ref to outside
+      messages.add(message);
 
       var updatedLengthSize = currentLengthInBytes + message.size();
-      return new State(maxLengthInBytes, updatedLengthSize, updatedMessages, totalTokenUsage);
+      return new State(maxLengthInBytes, updatedLengthSize, messages, totalTokenUsage);
     }
 
     public State withTotalTokenUsage(long totalTokens) {
@@ -140,6 +140,7 @@ public final class ConversationMemory extends EventSourcedEntity<State, Event> {
   }
 
   public ReadOnlyEffect<ConversationHistory> getHistory() {
+    // make sure this returns a copy of the list and not the list itself
     return effects().reply(
         new ConversationHistory(new LinkedList<>(currentState().messages)));
   }
