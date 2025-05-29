@@ -17,6 +17,7 @@ import akka.runtime.sdk.spi.{ ComponentClients => RuntimeComponentClients }
 import scala.concurrent.ExecutionContext
 
 import akka.actor.typed.ActorSystem
+import akka.javasdk.agent.Agent
 import akka.javasdk.client.AgentClient
 import akka.javasdk.impl.serialization.JsonSerializer
 import io.opentelemetry.api.trace.Span
@@ -30,6 +31,7 @@ import io.opentelemetry.api.trace.Span
 private[javasdk] final case class ComponentClientImpl(
     runtimeComponentClients: RuntimeComponentClients,
     serializer: JsonSerializer,
+    agentClassById: Map[String, Class[Agent]],
     openTelemetrySpan: Option[Span])(implicit ec: ExecutionContext, system: ActorSystem[_])
     extends ComponentClient {
 
@@ -70,6 +72,6 @@ private[javasdk] final case class ComponentClientImpl(
   override def forView(): ViewClient = ViewClientImpl(runtimeComponentClients.viewClient, serializer, callMetadata)
 
   override def forAgent(): AgentClient =
-    AgentClientImpl(runtimeComponentClients.agentClient, serializer, callMetadata, sessionId = "")
+    AgentClientImpl(runtimeComponentClients.agentClient, serializer, callMetadata, agentClassById, sessionId = "")
 
 }

@@ -5,6 +5,7 @@
 package akka.javasdk.client;
 
 import akka.NotUsed;
+import akka.javasdk.agent.Agent;
 import akka.javasdk.impl.*;
 import akka.javasdk.impl.serialization.JsonSerializer;
 import akka.runtime.sdk.spi.AgentClient;
@@ -76,7 +77,7 @@ class ComponentClientTest {
         return null;
       }
     };
-    componentClient = new ComponentClientImpl(dummyComponentClients, serializer, Option.empty(), ExecutionContext.global(), null);
+    componentClient = new ComponentClientImpl(dummyComponentClients, serializer, null, Option.empty(), ExecutionContext.global(), null);
   }
 
   @Test

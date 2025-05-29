@@ -10,6 +10,7 @@ import java.lang.reflect.Method
 import java.util
 import java.util.Optional
 import java.util.concurrent.CompletionStage
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.Promise
@@ -19,6 +20,7 @@ import scala.jdk.OptionConverters.RichOption
 import scala.jdk.OptionConverters.RichOptional
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
+
 import akka.Done
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
@@ -109,18 +111,22 @@ import io.opentelemetry.context.{ Context => OtelContext }
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
-
 import java.util.concurrent.Executor
+
 import akka.javasdk.agent.Agent
 import akka.javasdk.agent.AgentContext
+import akka.javasdk.agent.AgentRegistry
 import akka.javasdk.agent.ConversationMemory
 import akka.javasdk.impl.agent.AgentImpl
 import akka.runtime.sdk.spi.AgentDescriptor
 import akka.runtime.sdk.spi.SpiAgent
 import akka.javasdk.agent.PromptTemplate
+import akka.javasdk.annotations.AgentDescription
+import akka.javasdk.impl.agent.AgentRegistryImpl
 import akka.javasdk.impl.agent.CoreMemoryClient
 import akka.javasdk.impl.agent.NoOpMemoryClient
 import akka.javasdk.impl.agent.PromptTemplateClient
+import akka.util.Helpers.Requiring
 
 /**
  * INTERNAL API
@@ -326,6 +332,7 @@ private[javasdk] object Sdk {
       dependencyProvider: Option[DependencyProvider],
       httpClientProvider: HttpClientProvider,
       grpcClientProvider: GrpcClientProviderImpl,
+      agentRegistry: AgentRegistryImpl,
       serializer: JsonSerializer)
 
   private val platformManagedDependency = Set[Class[_]](
@@ -340,7 +347,8 @@ private[javasdk] object Sdk {
     classOf[EventSourcedEntityContext],
     classOf[KeyValueEntityContext],
     classOf[Retries],
-    classOf[AgentContext])
+    classOf[AgentContext],
+    classOf[AgentRegistry])
 }
 
 /**
@@ -496,7 +504,8 @@ private final class Sdk(
   private var timedActionDescriptors = Vector.empty[TimedActionDescriptor]
   private var consumerDescriptors = Vector.empty[ConsumerDescriptor]
   private var viewDescriptors = Vector.empty[ViewDescriptor]
-  private var AgentDescriptors = Vector.empty[AgentDescriptor]
+  private var agentDescriptors = Vector.empty[AgentDescriptor]
+  private var agentRegistryInfo = Vector.empty[AgentRegistryImpl.AgentDetails]
 
   componentClasses
     .filter(hasComponentId)
@@ -638,6 +647,7 @@ private final class Sdk(
 
       case clz if classOf[Agent].isAssignableFrom(clz) =>
         val componentId = clz.getAnnotation(classOf[ComponentId]).value
+        val agentDescription = clz.getAnnotation(classOf[AgentDescription]).value
         val agentClass = clz.asInstanceOf[Class[Agent]]
 
         val coreMemoryClient = deriveMemoryClient(applicationConfig)
@@ -661,8 +671,16 @@ private final class Sdk(
             applicationConfig)
 
         }
-        AgentDescriptors :+=
+        agentDescriptors :+=
           new AgentDescriptor(componentId, clz.getName, instanceFactory)
+
+        agentRegistryInfo :+=
+          AgentRegistryImpl.AgentDetails(
+            componentId,
+            agentDescription.name,
+            agentDescription.description,
+            agentDescription.role,
+            agentClass)
 
       case clz if classOf[View].isAssignableFrom(clz) =>
         viewDescriptors :+= ViewDescriptorFactory(clz, serializer, regionInfo, sdkExecutionContext)
@@ -693,6 +711,7 @@ private final class Sdk(
     case t if t == classOf[TimerScheduler]     => timerScheduler(span)
     case m if m == classOf[Materializer]       => sdkMaterializer
     case a if a == classOf[Retries]            => retries
+    case r if r == classOf[AgentRegistry]      => agentRegistry
     case e if e == classOf[Executor]           =>
       // The type does not guarantee this is a Java concurrent Executor, but we know it is, since supplied from runtime
       sdkExecutionContext.asInstanceOf[Executor]
@@ -723,14 +742,20 @@ private final class Sdk(
         consumerDescriptors ++
         viewDescriptors ++
         workflowDescriptors ++
-        AgentDescriptors)
+        agentDescriptors)
         .filterNot(isDisabled(combinedDisabledComponents))
 
     val preStart = { (_: ActorSystem[_]) =>
       serviceSetup match {
         case None =>
           startedPromise.trySuccess(
-            StartupContext(runtimeComponentClients, None, httpClientProvider, grpcClientProvider, serializer))
+            StartupContext(
+              runtimeComponentClients,
+              None,
+              httpClientProvider,
+              grpcClientProvider,
+              agentRegistry,
+              serializer))
           Future.successful(Done)
         case Some(setup) =>
           if (dependencyProviderOpt.nonEmpty) {
@@ -745,6 +770,7 @@ private final class Sdk(
               dependencyProviderOpt,
               httpClientProvider,
               grpcClientProvider,
+              agentRegistry,
               serializer))
           Future.successful(Done)
       }
@@ -793,6 +819,9 @@ private final class Sdk(
       reportError = reportError,
       healthCheck = () => SdkRunner.FutureDone)
   }
+
+  private lazy val agentRegistry =
+    new AgentRegistryImpl(agentRegistryInfo.toSet, serializer)
 
   private def isDisabled(disabledComponents: Set[String])(componentDescriptor: spi.ComponentDescriptor): Boolean = {
     val className = componentDescriptor.implementationName
@@ -930,7 +959,9 @@ private final class Sdk(
   }
 
   private def componentClient(openTelemetrySpan: Option[Span]): ComponentClient = {
-    ComponentClientImpl(runtimeComponentClients, serializer, openTelemetrySpan)(sdkExecutionContext, system)
+    ComponentClientImpl(runtimeComponentClients, serializer, agentRegistry.agentClassById, openTelemetrySpan)(
+      sdkExecutionContext,
+      system)
   }
 
   private def timerScheduler(openTelemetrySpan: Option[Span]): TimerScheduler = {
