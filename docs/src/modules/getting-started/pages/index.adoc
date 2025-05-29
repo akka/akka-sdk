@@ -1,0 +1,56 @@
+= Getting Started
+
+Akka is an agentic AI platform for building distributed, resilient, and intelligent applications using autonomous, stateful agents. This section will help you take your first steps, whether you're exploring Akka for the first time, evaluating its capabilities, or preparing to build a production system.
+
+== Choose your starting point
+
+=== 🛠 Hands-on walkthroughs
+
+Get up and running fast with our curated, interactive experiences:
+
+* xref:java:author-your-first-service.adoc[Author your first agentic service]:  
+  Build from scratch using the Akka SDK.
+
+* xref:java:shopping-cart/quickstart.adoc[Explore a complete example]:  
+  Study a real-world shopping cart system.
+
+* https://console.akka.io/register[Try Akka in the browser]:  
+  Deploy, test, and replicate services without installing anything.
+
+
+=== ⚙️ Set up your environment
+
+Prefer local development? Here's how to prepare:
+
+* xref:java:running-locally.adoc[Run services locally with Maven and Java 21]
+* xref:operations:deployment/local-console.adoc[Use the local console to inspect memory and debug]
+--
+
+=== 💡 Learn the Akka model
+
+Before diving deeper, familiarize yourself with Akka's architecture:
+
+* xref:concepts:architecture-model.adoc[Akka architecture and component model]
+* xref:concepts:development-process.adoc[Development process for agentic systems]
+* xref:concepts:deployment-model.adoc[Deployment across cloud and hybrid environments]
+--
+
+== What you'll build
+
+As you proceed, you'll learn how to:
+
+* Define stateful agent entities and workflows
+* Persist and replicate state across regions
+* Integrate with LLMs and external tools
+* Observe reasoning paths and decision traces
+* Evaluate system behavior using Akka EvalOps
+
+== Next steps
+
+Once you're familiar with the basics, you can:
+
+* Explore xref:java:components/index.adoc[core SDK components]
+* Follow xref:operations:index.adoc[operations and deployment guides]
+* Learn how to integrate xref:integrations:index.adoc[AI, messaging, and analytics]
+
+Need help? include::ROOT:partial$support.adoc[]

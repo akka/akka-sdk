@@ -1,5 +1,4 @@
 * xref:java:index.adoc[Building]
-** xref:java:author-your-first-service.adoc[Author your first service]
 ** xref:java:components/index.adoc[]
 *** xref:java:event-sourced-entities.adoc[Event Sourced Entities]
 *** xref:java:key-value-entities.adoc[Key Value Entities]
