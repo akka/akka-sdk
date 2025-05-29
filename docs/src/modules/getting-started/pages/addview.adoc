@@ -1,4 +1,4 @@
-= Adding a view
+= Add authenticated user-specific lookup to a shopping cart
 
 include::ROOT:partial$include.adoc[]
 

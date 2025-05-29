@@ -2,3 +2,4 @@
 * xref:getting-started:index.adoc[]
 ** xref:getting-started:author-your-first-service.adoc[]
 ** xref:getting-started:build-and-deploy-shopping-cart.adoc[]
+** xref:getting-started:addview.adoc[]
