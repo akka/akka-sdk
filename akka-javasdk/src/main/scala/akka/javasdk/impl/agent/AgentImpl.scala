@@ -190,6 +190,18 @@ private[impl] final class AgentImpl[A <: Agent](
         new CoreMemoryClient(componentClient, new MemorySettings(p.read(), p.write()))
       case p: MemoryProvider.CustomMemoryProvider =>
         p.coreMemory()
+      case p: MemoryProvider.FromConfig => {
+        val actualPath =
+          if (p.configPath() == "")
+            "akka.javasdk.agent.memory"
+          else
+            p.configPath()
+
+        if (config.getConfig(actualPath).getBoolean("enabled"))
+          new CoreMemoryClient(componentClient, new MemorySettings(true, true))
+        else
+          new CoreMemoryClient(componentClient, new MemorySettings(false, false))
+      }
     }
   }
 

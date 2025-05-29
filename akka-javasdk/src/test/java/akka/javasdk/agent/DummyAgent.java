@@ -4,6 +4,7 @@
 
 package akka.javasdk.agent;
 
+import akka.Done;
 import akka.javasdk.annotations.AgentDescription;
 import akka.javasdk.annotations.ComponentId;
 
@@ -26,19 +27,23 @@ class DummyAgent2 extends Agent {
 
   Effect<Response> doSomething(String question) {
     return effects()
-      .systemMessage("You are a helpful...")
-      .memory(MemoryProvider.limitedWindow().readOnly())
-      .userMessage(question)
-      .responseAs(Response.class)
-      .thenReply();
+        .systemMessage("You are a helpful...")
+        .memory(MemoryProvider.limitedWindow().readOnly())
+        .userMessage(question)
+        .responseAs(Response.class)
+        .thenReply();
   }
+}
 
-  Effect<Response> doSomethingElse(String question) {
+@ComponentId("dummy3")
+@AgentDescription(name = "Dummy Agent", description = "Not very smart agent")
+class DummyAgent3 extends Agent {
+  Effect<String> doSomethingElse(String question) {
     // customer memory
     var memory = new CoreMemory() {
 
       @Override
-      public void addInteraction(String sessionId, String componentId, String userMessage, String aiMessage) {
+      public void addInteraction(String sessionId, String componentId, ConversationMessage.UserMessage userMessage, ConversationMessage.AiMessage aiMessage) {
 
       }
 
@@ -52,7 +57,6 @@ class DummyAgent2 extends Agent {
         .systemMessage("You are a helpful...")
         .memory(MemoryProvider.custom(memory))
         .userMessage(question)
-        .responseAs(Response.class)
         .thenReply();
   }
 }

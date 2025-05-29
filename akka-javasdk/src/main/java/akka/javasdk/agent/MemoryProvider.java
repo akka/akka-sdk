@@ -6,6 +6,13 @@ package akka.javasdk.agent;
 
 public sealed interface MemoryProvider {
 
+
+  static ModelProvider fromConfig(String configPath) {
+    return new ModelProvider.FromConfig(configPath);
+  }
+
+  record FromConfig(String configPath) implements MemoryProvider {}
+
   static LimitedWindowMemoryProvider limitedWindow() {
     return new LimitedWindowMemoryProvider(1000, Integer.MAX_VALUE,true, true);
   }
