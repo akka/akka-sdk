@@ -124,7 +124,6 @@ import akka.javasdk.agent.PromptTemplate
 import akka.javasdk.annotations.AgentDescription
 import akka.javasdk.impl.agent.AgentRegistryImpl
 import akka.javasdk.impl.agent.CoreMemoryClient
-import akka.javasdk.impl.agent.NoOpMemoryClient
 import akka.javasdk.impl.agent.PromptTemplateClient
 import akka.util.Helpers.Requiring
 
@@ -650,7 +649,6 @@ private final class Sdk(
         val agentDescription = clz.getAnnotation(classOf[AgentDescription]).value
         val agentClass = clz.asInstanceOf[Class[Agent]]
 
-        val coreMemoryClient = deriveMemoryClient(applicationConfig)
         val instanceFactory: SpiAgent.FactoryContext => SpiAgent = { factoryContext =>
           new AgentImpl(
             componentId,
@@ -667,7 +665,7 @@ private final class Sdk(
             ComponentDescriptor.descriptorFor(agentClass, serializer),
             regionInfo,
             new PromptTemplateClient(componentClient(None)),
-            coreMemoryClient, // FIXME allow for custom implementations
+            new CoreMemoryClient(componentClient(None)), // FIXME allow for custom implementations
             applicationConfig)
 
         }
@@ -692,13 +690,6 @@ private final class Sdk(
         // some other class with @ComponentId annotation
         logger.warn("Unknown component [{}]", clz.getName)
     }
-
-  private def deriveMemoryClient(appConfig: Config) = {
-    if (appConfig.getBoolean("akka.javasdk.agent.memory.enabled"))
-      new CoreMemoryClient(componentClient(None))
-    else
-      new NoOpMemoryClient()
-  }
 
   // these are available for injecting in all kinds of component that are primarily
   // for side effects
