@@ -4,27 +4,44 @@
 
 package akka.javasdk.agent;
 
+import java.util.Optional;
+
 /**
  * Interface for configuring memory management in agent systems.
  * <p>
  * MemoryProvider defines how conversation history is stored and retrieved during agent interactions.
  * It offers several implementation strategies:
  * <ul>
- *   <li>Configuration-based memory management via {@link FromConfig}</li>
- *   <li>Limited window memory management via {@link LimitedWindowMemoryProvider}</li>
- *   <li>Custom memory implementation via {@link CustomMemoryProvider}</li>
+ *   <li>Configuration-based memory management via {@link FromConfig} - uses application configuration</li>
+ *   <li>Limited window memory management via {@link LimitedWindowMemoryProvider} - controls history size</li>
+ *   <li>Custom memory implementation via {@link CustomMemoryProvider} - provides full control</li>
+ * </ul>
+ * <p>
+ * Choose the appropriate implementation based on your requirements:
+ * <ul>
+ *   <li>Use {@link #fromConfig()} when you want to configure memory through application configuration</li>
+ *   <li>Use {@link #limitedWindow()} when you need simple control over history size with default settings</li>
+ *   <li>Use {@link #custom(CoreMemory)} when you need complete control over memory management</li>
  * </ul>
  */
 public sealed interface MemoryProvider {
 
   /**
+   * Creates a configuration-based memory provider based on configuration defaults.
+   * @return A configuration-based memory provider
+   */
+  static MemoryProvider fromConfig() {
+    return fromConfig("");
+  }
+
+  /**
    * Creates a memory provider based on configuration settings.
    *
    * @param configPath Path to the configuration. If empty, uses the default path "akka.javasdk.agent.memory"
-   * @return A configuration-based model provider
+   * @return A configuration-based memory provider
    */
-  static ModelProvider fromConfig(String configPath) {
-    return new ModelProvider.FromConfig(configPath);
+  static MemoryProvider fromConfig(String configPath) {
+    return new MemoryProvider.FromConfig(configPath);
   }
 
   /**
@@ -35,33 +52,31 @@ public sealed interface MemoryProvider {
   /**
    * Creates a limited window memory provider with default settings.
    * <p>
-   * The default settings include:
+   * The default settings are:
    * <ul>
-   *   <li>No limit on total length in bytes</li>
-   *   <li>No limit on history messages</li>
-   *   <li>Both read and write operations enabled</li>
+   *   <li>No limit on the number of messages to retain (Optional.empty() for historyLimit)</li>
+   *   <li>Reading from memory is enabled (read=true)</li>
+   *   <li>Writing to memory is enabled (write=true)</li>
    * </ul>
    *
    * @return A new limited window memory provider with default settings
    */
   static LimitedWindowMemoryProvider limitedWindow() {
-    return new LimitedWindowMemoryProvider(0, Integer.MAX_VALUE, true, true);
+    return new LimitedWindowMemoryProvider(Optional.empty(), true, true);
   }
 
   /**
-   * Memory provider that limits conversation history based on size or message count.
+   * Memory provider that limits conversation history based on message count.
    * <p>
    * This provider allows fine-grained control over memory usage by limiting:
    * <ul>
-   *   <li>Total size of stored conversation history in bytes</li>
-   *   <li>Maximum number of messages to retain</li>
-   *   <li>Whether reading from memory is enabled</li>
-   *   <li>Whether writing to memory is enabled</li>
+   *   <li>Maximum number of messages to retain (via historyLimit)</li>
+   *   <li>Whether reading from memory is enabled (via read flag)</li>
+   *   <li>Whether writing to memory is enabled (via write flag)</li>
    * </ul>
    */
   record LimitedWindowMemoryProvider(
-      long totalLengthInBytes,
-      int historyLimit,
+      Optional<Integer> historyLimit,
       boolean read,
       boolean write) implements MemoryProvider {
 
@@ -73,7 +88,7 @@ public sealed interface MemoryProvider {
      * @return A new memory provider with writing disabled
      */
     public MemoryProvider readOnly() {
-      return new LimitedWindowMemoryProvider(totalLengthInBytes, historyLimit, true, false);
+      return new LimitedWindowMemoryProvider(historyLimit, true, false);
     }
 
     /**
@@ -84,7 +99,7 @@ public sealed interface MemoryProvider {
      * @return A new memory provider with reading disabled
      */
     public MemoryProvider writeOnly() {
-      return new LimitedWindowMemoryProvider(totalLengthInBytes, historyLimit, false, true);
+      return new LimitedWindowMemoryProvider(historyLimit, false, true);
     }
 
     /**
@@ -96,7 +111,7 @@ public sealed interface MemoryProvider {
      * @return A new memory provider with the specified history limit
      */
     public MemoryProvider withHistoryLimit(int historyLimit) {
-      return new LimitedWindowMemoryProvider(totalLengthInBytes, historyLimit, read, write);
+      return new LimitedWindowMemoryProvider(Optional.of(historyLimit), read, write);
     }
   }
 
@@ -119,14 +134,6 @@ public sealed interface MemoryProvider {
    * by delegating to the provided CoreMemory implementation.
    */
   record CustomMemoryProvider(CoreMemory coreMemory) implements MemoryProvider {
-
-    /**
-     * Returns the underlying CoreMemory implementation.
-     *
-     * @return The CoreMemory implementation used by this provider
-     */
-    public CoreMemory coreMemory() {
-      return coreMemory;
-    }
+    // No need for explicit coreMemory() accessor method as it's automatically generated by the record
   }
 }

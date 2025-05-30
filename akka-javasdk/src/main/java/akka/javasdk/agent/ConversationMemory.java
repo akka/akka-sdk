@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 
 import static akka.Done.done;
 
@@ -139,10 +140,20 @@ public final class ConversationMemory extends EventSourcedEntity<State, Event> {
         .thenReply(__ -> Done.done());
   }
 
-  public ReadOnlyEffect<ConversationHistory> getHistory() {
-    // make sure this returns a copy of the list and not the list itself
-    return effects().reply(
-        new ConversationHistory(new LinkedList<>(currentState().messages)));
+  public record GetHistoryCmd(Optional<Integer> lastNMessages) {}
+
+  public ReadOnlyEffect<ConversationHistory> getHistory(GetHistoryCmd cmd) {
+    if (cmd.lastNMessages != null && cmd.lastNMessages.isPresent()) {
+      var lastN = currentState().messages()
+          .subList(currentState().messages.size() - cmd.lastNMessages.get(), currentState().messages.size());
+      // make sure this returns a copy of the list and not the list itself
+      return effects().reply(
+          new ConversationHistory(new LinkedList<>(lastN)));
+    } else {
+      // make sure this returns a copy of the list and not the list itself
+      return effects().reply(
+          new ConversationHistory(new LinkedList<>(currentState().messages)));
+    }
   }
 
   public Effect<Done> delete() {
