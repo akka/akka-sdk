@@ -931,6 +931,15 @@ private final class Sdk(
           }
 
         override def tracing(): Tracing = new SpanTracingImpl(context.openTelemetrySpan, sdkTracerFactory)
+
+        override def requestHeader(headerName: String): Optional[HttpHeader] =
+          // Note: force cast to Java header model
+          context.requestHeaders.header(headerName).asInstanceOf[Option[HttpHeader]].toJava
+
+        override def allRequestHeaders(): util.List[HttpHeader] =
+          // Note: force cast to Java header model
+          context.requestHeaders.allHeaders.asInstanceOf[Seq[HttpHeader]].asJava
+
       }
 
       val instance = wiredInstance(mcpEndpointClass) {
