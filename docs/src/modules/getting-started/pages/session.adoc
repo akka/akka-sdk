@@ -1,4 +1,4 @@
-= Modeling the agent session
+= AI RAG Agent Part 1: Modeling the agent session
 
 include::ROOT:partial$include.adoc[]
 

@@ -1,4 +1,4 @@
-= Executing RAG queries
+= AI RAG agent part 3: Executing RAG queries
 
 include::ROOT:partial$include.adoc[]
 

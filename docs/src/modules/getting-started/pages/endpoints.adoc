@@ -1,4 +1,4 @@
-= Adding streaming endpoints
+= AI RAG agent part 4: Adding streaming endpoints
 
 include::ROOT:partial$include.adoc[]
 

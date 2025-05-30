@@ -1,4 +1,4 @@
-= Knowledge indexing with a workflow
+= AI RAG agent part 2: Knowledge indexing with a workflow
 
 include::ROOT:partial$include.adoc[]
 
