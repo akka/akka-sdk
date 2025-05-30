@@ -16,6 +16,9 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+import java.util.Optional;
+
 import static akka.Done.done;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -25,6 +28,8 @@ public class ConversationMemoryTest {
   private static final Config config = ConfigFactory.load();
   private static final int TOKENS = 10; // Default token count for testing
 
+  private ConversationMemory.GetHistoryCmd emptyGetHistory = new ConversationMemory.GetHistoryCmd(Optional.empty());
+  
   @Test
   public void shouldAddMessageToHistory() {
     // given
@@ -57,7 +62,8 @@ public class ConversationMemoryTest {
     assertThat(aiEvent.tokens()).isEqualTo(TOKENS);
 
     // when retrieving history
-    EventSourcedResult<ConversationHistory> historyResult = testKit.method(ConversationMemory::getHistory).invoke();
+    EventSourcedResult<ConversationHistory> historyResult =
+        testKit.method(ConversationMemory::getHistory).invoke(emptyGetHistory);
 
     // then
     assertThat(historyResult.getReply().messages()).containsExactly(
@@ -89,7 +95,8 @@ public class ConversationMemoryTest {
     assertThat(result.getReply()).isEqualTo(done());
 
     // when retrieving history
-    EventSourcedResult<ConversationHistory> historyResult = testKit.method(ConversationMemory::getHistory).invoke();
+    EventSourcedResult<ConversationHistory> historyResult =
+        testKit.method(ConversationMemory::getHistory).invoke(emptyGetHistory);
 
     // then
     assertThat(historyResult.getReply().messages()).containsExactly(
@@ -124,7 +131,8 @@ public class ConversationMemoryTest {
     assertThat(events.get(0)).isInstanceOf(ConversationMemory.Event.Deleted.class);
 
     // when retrieving history after clearing
-    EventSourcedResult<ConversationHistory> historyResult = testKit.method(ConversationMemory::getHistory).invoke();
+    EventSourcedResult<ConversationHistory> historyResult =
+        testKit.method(ConversationMemory::getHistory).invoke(emptyGetHistory);
 
     // then
     assertThat(historyResult.getReply().messages()).isEmpty();
@@ -136,7 +144,8 @@ public class ConversationMemoryTest {
     var testKit = EventSourcedTestKit.of(() -> new ConversationMemory(config));
 
     // when
-    EventSourcedResult<ConversationHistory> historyResult = testKit.method(ConversationMemory::getHistory).invoke();
+    EventSourcedResult<ConversationHistory> historyResult =
+        testKit.method(ConversationMemory::getHistory).invoke(emptyGetHistory);
 
     // then
     assertThat(historyResult.getReply().messages()).isEmpty();
@@ -185,7 +194,8 @@ public class ConversationMemoryTest {
     assertThat(result.getReply()).isEqualTo(done());
 
     // when retrieving history
-    EventSourcedResult<ConversationHistory> historyResult = testKit.method(ConversationMemory::getHistory).invoke();
+    EventSourcedResult<ConversationHistory> historyResult =
+        testKit.method(ConversationMemory::getHistory).invoke(emptyGetHistory);
 
     // then - only the 3 most recent interactions should be present
     assertThat(historyResult.getReply().messages()).containsExactly(
@@ -226,7 +236,8 @@ public class ConversationMemoryTest {
     // when adding first interaction
     testKit.method(ConversationMemory::addInteraction)
         .invoke(new AddInteractionCmd(COMPONENT_ID, userMessage1, aiMessage1));
-    EventSourcedResult<ConversationHistory> result1 = testKit.method(ConversationMemory::getHistory).invoke();
+    EventSourcedResult<ConversationHistory> result1 =
+        testKit.method(ConversationMemory::getHistory).invoke(emptyGetHistory);
 
     // then
     assertThat(result1.getReply().messages()).containsExactly(
@@ -237,7 +248,8 @@ public class ConversationMemoryTest {
     // when adding second interaction (reaching the limit)
     testKit.method(ConversationMemory::addInteraction)
         .invoke(new AddInteractionCmd(COMPONENT_ID, userMessage2, aiMessage2));
-    EventSourcedResult<ConversationHistory> result2 = testKit.method(ConversationMemory::getHistory).invoke();
+    EventSourcedResult<ConversationHistory> result2 =
+        testKit.method(ConversationMemory::getHistory).invoke(emptyGetHistory);
 
     // then
     assertThat(result2.getReply().messages()).containsExactly(
@@ -250,7 +262,8 @@ public class ConversationMemoryTest {
     // when adding third interaction (exceeding the limit)
     testKit.method(ConversationMemory::addInteraction)
         .invoke(new AddInteractionCmd(COMPONENT_ID, userMessage3, aiMessage3));
-    EventSourcedResult<ConversationHistory> result3 = testKit.method(ConversationMemory::getHistory).invoke();
+    EventSourcedResult<ConversationHistory> result3 =
+        testKit.method(ConversationMemory::getHistory).invoke(emptyGetHistory);
 
     // then - first interaction should be removed
     assertThat(result3.getReply().messages()).containsExactly(
@@ -293,7 +306,8 @@ public class ConversationMemoryTest {
         .invoke(new AddInteractionCmd(COMPONENT_ID, userMessage, aiMessage));
 
     // Retrieve history
-    EventSourcedResult<ConversationHistory> historyResult = testKit.method(ConversationMemory::getHistory).invoke();
+    EventSourcedResult<ConversationHistory> historyResult =
+        testKit.method(ConversationMemory::getHistory).invoke(emptyGetHistory);
 
     // The history should be empty, as the first interaction cannot fit
     assertThat(historyResult.getReply().messages()).isEmpty();
@@ -333,6 +347,37 @@ public class ConversationMemoryTest {
     assertThat(events.get(3)).isInstanceOf(ConversationMemory.Event.AiMessageAdded.class);
     var userEvent2 = (ConversationMemory.Event.AiMessageAdded) events.get(3);
     assertThat(userEvent2.totalTokenUsage()).isEqualTo(totalTokens);
+  }
+
+  @Test
+  public void shouldReturnOnlyLastNMessages() {
+    // Create test kit with the configuration
+    EventSourcedTestKit<ConversationMemory.State, ConversationMemory.Event, ConversationMemory> testKit =
+        EventSourcedTestKit.of(() -> new ConversationMemory(config));
+
+    // Add several interactions
+    String[] userMsgs = {"U1", "U2", "U3", "U4"};
+    String[] aiMsgs = {"A1", "A2", "A3", "A4"};
+    for (int i = 0; i < userMsgs.length; i++) {
+      testKit.method(ConversationMemory::addInteraction)
+          .invoke(new AddInteractionCmd(COMPONENT_ID, new UserMessage(userMsgs[i], TOKENS), new AiMessage(aiMsgs[i], TOKENS)));
+    }
+
+    // Request only the last 4 messages (should be: U3, A3, U4, A4)
+    var lastN = 4;
+    EventSourcedResult<ConversationHistory> result = testKit
+        .method(ConversationMemory::getHistory)
+        .invoke(new ConversationMemory.GetHistoryCmd(Optional.of(lastN)));
+
+    // The expected last 4 messages
+    var expected = List.of(
+        new UserMessage("U3", TOKENS),
+        new AiMessage("A3", TOKENS),
+        new UserMessage("U4", TOKENS),
+        new AiMessage("A4", TOKENS)
+    );
+
+    assertThat(result.getReply().messages()).containsExactlyElementsOf(expected);
   }
 
 }

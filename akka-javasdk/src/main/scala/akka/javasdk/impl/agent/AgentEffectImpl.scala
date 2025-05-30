@@ -40,7 +40,7 @@ private[javasdk] object BaseAgentEffectBuilder {
         responseMapping = None,
         failureMapping = None,
         replyMetadata = Metadata.EMPTY,
-        memoryProvider = MemoryProvider.limitedWindow())
+        memoryProvider = MemoryProvider.fromConfig())
   }
 
   sealed trait SystemMessage

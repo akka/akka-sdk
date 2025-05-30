@@ -9,9 +9,13 @@ import akka.javasdk.agent.ConversationHistory;
 import akka.javasdk.agent.ConversationMemory;
 import akka.javasdk.agent.ConversationMessage;
 import akka.javasdk.agent.CoreMemory;
+import akka.javasdk.agent.MemoryProvider;
 import akka.javasdk.client.ComponentClient;
+import com.typesafe.config.Config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Optional;
 
 /**
  * INTERNAL USE
@@ -22,12 +26,26 @@ public final class CoreMemoryClient implements CoreMemory {
 
   public record MemorySettings(
       Boolean read,
-      Boolean write
-  ) {}
+      Boolean write,
+      Optional<Integer> historyLimit
+  ) {
+    static MemorySettings disabled() {
+      return new MemorySettings(false, false, Optional.empty());
+    }
+
+    static MemorySettings enabled() {
+      return new MemorySettings(true, true, Optional.empty());
+    }
+  }
 
   private final Logger logger = LoggerFactory.getLogger(CoreMemoryClient.class);
   private final ComponentClient componentClient;
   private final MemorySettings memorySettings;
+
+  public CoreMemoryClient(ComponentClient componentClient, Config memoryConfig) {
+    this.componentClient = componentClient;
+    this.memorySettings = memoryConfig.getBoolean("enabled") ? MemorySettings.enabled() : MemorySettings.disabled();
+  }
 
   public CoreMemoryClient(ComponentClient componentClient, MemorySettings memorySettings) {
     this.componentClient = componentClient;
@@ -53,7 +71,7 @@ public final class CoreMemoryClient implements CoreMemory {
     if (memorySettings.read()) {
       var history = componentClient.forEventSourcedEntity(sessionId)
           .method(ConversationMemory::getHistory)
-          .invoke();
+          .invoke(new ConversationMemory.GetHistoryCmd(memorySettings.historyLimit));
       logger.debug("History retrieved for sessionId={} size={}", sessionId, history.messages().size());
       return history;
     } else {
