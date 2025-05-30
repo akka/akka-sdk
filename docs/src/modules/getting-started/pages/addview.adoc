@@ -1,4 +1,4 @@
-= Add authenticated user-specific lookup to a shopping cart
+= Shopping cart part 2: Authenticated user-specific lookup
 
 include::ROOT:partial$include.adoc[]
 

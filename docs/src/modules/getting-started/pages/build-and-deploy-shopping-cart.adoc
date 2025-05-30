@@ -1,4 +1,4 @@
-= Build and deploy a shopping cart
+= Shopping cart part 1: Build a simple cart service
 
 include::ROOT:partial$include.adoc[]
 
