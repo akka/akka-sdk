@@ -88,7 +88,7 @@ public final class ConversationMemory extends EventSourcedEntity<State, Event> {
   
   @Override
   public State emptyState() {
-    var maxSizeInBytes = config.getBytes("akka.javasdk.agent.memory.limited-window.max-size"); // 5Mb
+    var maxSizeInBytes = config.getBytes("akka.javasdk.agent.memory.limited-window.max-size");
     return new State(maxSizeInBytes, 0, new LinkedList<>(), 0L);
   }
 
