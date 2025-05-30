@@ -106,14 +106,19 @@ For more details see xref:component-and-service-calls.adoc[]
 
 == Interacting with HTTP services
 
-It is also possible to interact with other services over HTTP. This is done through the `akka.javasdk.http.HttpClientProvider`.
+It is possible for an MCP endpoint to interact with other services over HTTP. This is done through the `akka.javasdk.http.HttpClientProvider`.
 
 For more details see xref:component-and-service-calls.adoc[]
 
 == Authentication and authorization
 
-ifdef::todo[TODO: describe ACLs and that we don't do OAUTH]
+The Akka MCP endpoints do not support the OAuth 2.1 flows in the MCP spec.
+
+Endpoint classes can be annotated using the `@ACL` annotations and `@JWT` to control access (individual method annotations are not supported).
+
+It is also possible to access endpoint request headers for custom authorization based on headers.
 
 == Testing MCP endpoints
 
-ifdef::todo[TODO: describe how to do it manually or add test utilities]
+There is are no specific test kit utilities for MCP, but it is possible to manually construct endpoints and directly call the methods
+as well as use the testkit HTTP client together with handcrafted JSON-RPC MCP payloads to exercise MCP tools, prompts and resources.
