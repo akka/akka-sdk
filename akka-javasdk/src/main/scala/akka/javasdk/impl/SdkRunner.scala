@@ -414,10 +414,12 @@ private final class Sdk(
   // we need a method instead of function in order to have type params
   // to late use in Reflect.workflowStateType
   private def workflowInstanceFactory[S, W <: Workflow[S]](
+      componentId: String,
       factoryContext: SpiWorkflow.FactoryContext,
       clz: Class[W]): SpiWorkflow = {
     logger.debug(s"Registering Workflow [${clz.getName}]")
     new WorkflowImpl[S, W](
+      componentId,
       factoryContext.workflowId,
       clz,
       serializer,
@@ -574,7 +576,7 @@ private final class Sdk(
             componentId,
             clz.getName,
             readOnlyCommandNames,
-            ctx => workflowInstanceFactory(ctx, clz.asInstanceOf[Class[Workflow[Nothing]]]))
+            ctx => workflowInstanceFactory(componentId, ctx, clz.asInstanceOf[Class[Workflow[Nothing]]]))
 
       case clz if classOf[TimedAction].isAssignableFrom(clz) =>
         val componentId = clz.getAnnotation(classOf[ComponentId]).value

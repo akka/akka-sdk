@@ -41,7 +41,6 @@ object WorkflowEffectImpl {
 
   sealed trait Persistence[+S]
   final case class UpdateState[S](newState: S) extends Persistence[S]
-  case object DeleteState extends Persistence[Nothing]
   case object NoPersistence extends Persistence[Nothing]
 
   sealed trait Reply[+R]
