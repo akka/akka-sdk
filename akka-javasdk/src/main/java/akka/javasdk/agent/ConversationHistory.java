@@ -6,4 +6,6 @@ package akka.javasdk.agent;
 
 import java.util.List;
 
-public record ConversationHistory(List<ConversationMessage> messages) { }
+public record ConversationHistory(List<ConversationMessage> messages) {
+  public static final ConversationHistory EMPTY = new ConversationHistory(List.of());
+}

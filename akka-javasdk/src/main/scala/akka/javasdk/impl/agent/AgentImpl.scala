@@ -130,7 +130,7 @@ private[impl] final class AgentImpl[A <: Agent](
         }
       }
 
-      val additionalContext = toSpiContextMessages(coreMemoryClient.getFullHistory(sessionId))
+      val additionalContext = toSpiContextMessages(coreMemoryClient.getHistory(sessionId))
       val spiEffect =
         primaryEffect match {
           case req: RequestModel =>
@@ -181,8 +181,11 @@ private[impl] final class AgentImpl[A <: Agent](
   }
 
   private def onSuccess(userMessage: String, modelResult: SpiAgent.ModelResult): Unit = {
-    // FIXME missing componentId parameter
-    coreMemoryClient.addInteraction(sessionId, userMessage, modelResult.modelResponse)
+    coreMemoryClient.addInteraction(
+      sessionId,
+      componentId,
+      new UserMessage(userMessage, modelResult.inputTokenCount),
+      new AiMessage(modelResult.modelResponse, modelResult.outputTokenCount))
   }
 
   private def toSpiContextMessages(conversationHistory: ConversationHistory): Vector[SpiAgent.ContextMessage] = {
