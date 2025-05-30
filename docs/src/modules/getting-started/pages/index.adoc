@@ -1,5 +1,7 @@
 = Getting Started
 
+Start with a guided tutorial or explore working samples. The resources below help you learn by building services and agents with Akka.
+
 == Tutorials
 
 These hands-on tutorials walk you step by step through building real Akka systems, from your first minimal service to fully featured applications like shopping carts and AI agents. Each tutorial includes guided instructions, runnable code, and explanations of key concepts.
