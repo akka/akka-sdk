@@ -1,4 +1,4 @@
-= Building
+= Developing
 
 include::ROOT:partial$include.adoc[]
 
