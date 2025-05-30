@@ -1,56 +1,54 @@
 = Getting Started
 
-Akka is an agentic AI platform for building distributed, resilient, and intelligent applications using autonomous, stateful agents. This section will help you take your first steps, whether you're exploring Akka for the first time, evaluating its capabilities, or preparing to build a production system.
+== Tutorials
 
-== Choose your starting point
+These hands-on tutorials walk you step by step through building real Akka systems, from your first minimal service to fully featured applications like shopping carts and AI agents. Each tutorial includes guided instructions, runnable code, and explanations of key concepts.
 
-=== 🛠 Hands-on walkthroughs
+=== Build your first service
 
-Get up and running fast with our curated, interactive experiences:
+xref:java:author-your-first-service.adoc[Author your first agentic service]  
+Create and run a minimal Akka-based service from scratch using the Maven archetype. Ideal for newcomers looking to get hands-on experience fast.
 
-* xref:java:author-your-first-service.adoc[Author your first agentic service]:  
-  Build from scratch using the Akka SDK.
+=== Build a shopping cart system
 
-* xref:java:shopping-cart/quickstart.adoc[Explore a complete example]:  
-  Study a real-world shopping cart system.
+Explore a complete e-commerce service and learn key Akka concepts by implementing a real-world system:
 
-* https://console.akka.io/register[Try Akka in the browser]:  
-  Deploy, test, and replicate services without installing anything.
+* xref:java:shopping-cart/index.adoc[Part 1: Build a simple cart service]
+* xref:java:shopping-cart/lookup.adoc[Part 2: Authenticated user-specific lookup]
 
+These lessons walk you through defining agents, handling state, processing commands, and responding to user-specific queries.
 
-=== ⚙️ Set up your environment
+=== Build an AI RAG Agent
 
-Prefer local development? Here's how to prepare:
+Learn how to implement a Retrieval-Augmented Generation (RAG) pipeline with Akka:
 
-* xref:java:running-locally.adoc[Run services locally with Maven and Java 21]
-* xref:operations:deployment/local-console.adoc[Use the local console to inspect memory and debug]
---
+* xref:java:ask-akka/part1-session.adoc[Part 1: Modeling the agent session]
+* xref:java:ask-akka/part2-indexing.adoc[Part 2: Knowledge indexing with a workflow]
+* xref:java:ask-akka/part3-queries.adoc[Part 3: Executing RAG queries]
+* xref:java:ask-akka/part4-streaming.adoc[Part 4: Adding streaming endpoints]
 
-=== 💡 Learn the Akka model
+This series covers end-to-end design of a multi-agent system that performs LLM-assisted reasoning, indexing, and live querying.
 
-Before diving deeper, familiarize yourself with Akka's architecture:
+== Explore sample applications
 
-* xref:concepts:architecture-model.adoc[Akka architecture and component model]
-* xref:concepts:development-process.adoc[Development process for agentic systems]
-* xref:concepts:deployment-model.adoc[Deployment across cloud and hybrid environments]
---
+These runnable code samples showcase common patterns and advanced architectures built with Akka. They are designed for exploration and reference rather than step-by-step instruction.
 
-== What you'll build
+[options="header", cols="3,2,1"]
+|=======================
+| Description | Source download | Level
+| xref:java:shopping-cart/index.adoc[Build a shopping cart] | link:https://github.com/akka-samples/shopping-cart-quickstart[Github Repository] |Beginner
+| xref:java:ask-akka/index.adoc[AI agent that performs a RAG workflow] using Langchain4J. Illustrates how to create embeddings for vector databases, how to consume LLMs and maintain conversation history, use RAG to add knowledge to fixed LLMs, and expose it all as a streaming service. It uses MongoDB Atlas and OpenAI. | link:https://github.com/akka-samples/ask-akka-agent[Github Repository] |Intermediate
+| AI agent that creates personalized travel itineraries. Illustrates reliable interaction with a LLM using Langchain4J and a workflow. Entities are used for durable state of user preferences and generated trips. | link:https://github.com/akka-samples/travel-agent[Github Repository] |Beginner
+| AI agent that leverages a LLM to process medical discharge summaries and assign tags, while also enabling human verification and comparative analysis. Interactions with OpenAI LLM using the OpenAI Java SDK and a workflow. | link:https://github.com/akka-samples/medical-tagging-agent[Github Repository] |Intermediate
+| AI agent that creates release notes summaries, every time there is a release from set up GitHub repositories. Interactions with Anthropic Claude is using the Anthropic Java SDK. Using tools to retrieve detailed information from GitHub. Entities are used for storing release summaries. Timed action looks for new releases periodically and creates the summary using the LLM. | link:https://github.com/akka-samples/changelog-agent[Github Repository] |Intermediate
+| The real-estate customer service agent is demonstrating how to combine Akka features with an LLM model. It illustrates an agentic workflow for customer service. It processes incoming real-estate inquiries, analyzes the content to extract details, provides follow-up when needed and saves the collected information for future reference. | link:https://github.com/akka-samples/real-estate-cs-agent[Github Repository] |Intermediate
+| This app represents an agency that searches for flights and accommodations. It's composed by an LLM (Anthropic) using Spring AI and tools to find flights, accommodations and sending mails. | link:https://github.com/akka-samples/trip-agent[Github Repository] |Intermediate
+| Demonstrating how to build a multi-agent system using Akka and an LLM model. A workflow manages the user query process, handling the sequential steps of agent selection, plan creation, execution, and summarization. | link:https://github.com/akka-samples/multi-agent[Github Repository] |Advanced
+| A customer registry with query capabilities | link:../java/_attachments/customer-registry-quickstart.zip[customer-registry-quickstart.zip] |Intermediate
+| A funds transfer workflow between two wallets | link:https://github.com/akka-samples/transfer-workflow-compensation[Github Repository] |Intermediate
+| A user registration service implemented as a Choreography Saga | link:https://github.com/akka-samples/choreography-saga-quickstart[Github Repository] |Advanced
+| Akka Chess: a complete, resilient, automatically scalable, event-sourced chess game | https://github.com/akka-samples/akka-chess[Github Repository] |Advanced
+|=======================
 
-As you proceed, you'll learn how to:
-
-* Define stateful agent entities and workflows
-* Persist and replicate state across regions
-* Integrate with LLMs and external tools
-* Observe reasoning paths and decision traces
-* Evaluate system behavior using Akka EvalOps
-
-== Next steps
-
-Once you're familiar with the basics, you can:
-
-* Explore xref:java:components/index.adoc[core SDK components]
-* Follow xref:operations:index.adoc[operations and deployment guides]
-* Learn how to integrate xref:integrations:index.adoc[AI, messaging, and analytics]
-
-Need help? include::ROOT:partial$support.adoc[]
+[sidebar]
+It is also possible to deploy a pre-built sample project in https://console.akka.io[the Akka console, window="new"], eliminating the need for local development.

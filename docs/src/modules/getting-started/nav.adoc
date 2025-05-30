@@ -7,3 +7,4 @@
 ** xref:getting-started:indexer.adoc[]
 ** xref:getting-started:rag.adoc[]
 ** xref:getting-started:endpoints.adoc[]
+** xref:getting-started:samples.adoc[]
