@@ -6,14 +6,14 @@ package akka.javasdk.impl
 
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
-import akka.http.javadsl.model.ContentTypes
+import akka.http.scaladsl.model.MediaTypes
+import akka.http.scaladsl.model.Uri
 import akka.javasdk.annotations.Acl
 import akka.javasdk.annotations.JWT
 import akka.javasdk.annotations.mcp.Description
 import akka.javasdk.annotations.mcp.McpEndpoint
 import akka.javasdk.annotations.mcp.McpPrompt
 import akka.javasdk.annotations.mcp.McpResource
-import akka.javasdk.annotations.mcp.McpResourceTemplate
 import akka.javasdk.annotations.mcp.McpTool
 import akka.javasdk.annotations.mcp.ToolAnnotation
 import akka.javasdk.impl.AclDescriptorFactory.deriveAclOptions
@@ -32,6 +32,7 @@ import akka.runtime.sdk.spi.McpEndpointDescriptor.PromptResult
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaObject
 import akka.runtime.sdk.spi.McpEndpointDescriptor.Resource
 import akka.runtime.sdk.spi.McpEndpointDescriptor.ResourceMethodDescriptor
+import akka.runtime.sdk.spi.McpEndpointDescriptor.ResourceTemplateMethodDescriptor
 import akka.runtime.sdk.spi.McpEndpointDescriptor.ResponseContent
 import akka.runtime.sdk.spi.McpEndpointDescriptor.TextContent
 import akka.runtime.sdk.spi.McpEndpointDescriptor.TextResourceContents
@@ -50,6 +51,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import org.slf4j.LoggerFactory
 
+import java.lang.reflect.Method
 import java.lang.reflect.ParameterizedType
 import java.util.Optional
 import scala.concurrent.ExecutionContext
@@ -171,19 +173,49 @@ object McpEndpointDescriptorFactory {
         s"MCP Tools with duplicated names exist in ${mcpEndpointClass.getName}: [${duplicateTools.mkString(", ")}], make sure that each tool has a unique name")
     }
 
+    val resourceTemplateMethods = allMethods.flatMap { method =>
+      val resourceAnnotation = method.getAnnotation(classOf[McpResource])
+      if (resourceAnnotation != null && resourceAnnotation.uri().isEmpty) {
+        if (resourceAnnotation.uriTemplate().isEmpty)
+          throw ValidationException(
+            s"MCP resource method [${mcpEndpointClass.getName}.${method.getName}] has both 'uri' and 'uriTemplate' empty, one of them must have a value.")
+        Some((resourceAnnotation, method))
+      } else None
+    }
+
     val resourceTemplates =
-      mcpEndpointClass.getAnnotationsByType(classOf[McpResourceTemplate]).toVector.map { resourceTemplate =>
-        new McpEndpointDescriptor.ResourceTemplate(
-          uriTemplate = resourceTemplate.uriTemplate(),
-          name = resourceTemplate.name(),
-          description = Option(resourceTemplate.description()).filterNot(_.isBlank),
-          mimeType = Option(resourceTemplate.mimeType()).filterNot(_.isBlank),
+      resourceTemplateMethods.map { case (annotation, method) =>
+        // FIXME validate parameter names match template
+        // FIXME validate parameter types all string
+
+        val resourceTemplate = new McpEndpointDescriptor.ResourceTemplate(
+          uriTemplate = annotation.uriTemplate(),
+          name = annotation.name(),
+          description = Option(annotation.description()).filterNot(_.isBlank),
+          mimeType = Option(resourceMimeType(annotation, method)).filterNot(_.isBlank),
           annotations = None)
+
+        val callback = (context: McpEndpointConstructionContext, uri: Uri, variables: Map[String, String]) => {
+          val params = method.getParameters.toVector.map(parameter =>
+            variables.getOrElse(
+              parameter.getName,
+              throw new IllegalArgumentException(
+                s"Resource template request was missing parameter [${parameter.getName}]")))
+
+          val instance = instanceFactory(context)
+          val result = method.invoke(instance, params: _*)
+          resourceResultToMcp(result, uri.toString(), resourceTemplate.mimeType)
+        }
+
+        new ResourceTemplateMethodDescriptor(
+          resourceTemplate = resourceTemplate,
+          methodOptions = new MethodOptions(None, None),
+          method = callback)
       }
 
     val resourceMethods = allMethods.flatMap { method =>
       val resourceAnnotation = method.getAnnotation(classOf[McpResource])
-      if (resourceAnnotation != null) {
+      if (resourceAnnotation != null && resourceAnnotation.uriTemplate().isEmpty) {
         Some((resourceAnnotation, method))
       } else None
     }
@@ -194,25 +226,11 @@ object McpEndpointDescriptorFactory {
         throw new IllegalArgumentException(
           s"MCP resources must be of 0 arity, but ${method.getName} has a non empty parameter list")
 
-      val mimeType: String =
-        if (annotation.mimeType().nonEmpty) annotation.mimeType()
-        else {
-          val returnType = method.getGenericReturnType
-          if (returnType == classOf[Array[Byte]]) {
-            ContentTypes.APPLICATION_OCTET_STREAM.toString
-          } else if (returnType.getTypeName == "java.lang.String") {
-            ContentTypes.TEXT_PLAIN_UTF8.toString
-          } else {
-            throw new IllegalArgumentException(
-              s"MCP resources must return either String or byte[] but [${mcpEndpointClass.getName}.${method.getName}] returns [$returnType]")
-          }
-        }
-
       val resourceDescription = new Resource(
         uri = annotation.uri(),
         name = annotation.name(),
         description = Some(annotation.description()).filter(!_.isBlank),
-        mimeType = Some(mimeType),
+        mimeType = Some(resourceMimeType(annotation, method)),
         annotations = None,
         size = None)
 
@@ -220,13 +238,7 @@ object McpEndpointDescriptorFactory {
         try {
           val endpointInstance = instanceFactory(context)
           val result = method.invoke(endpointInstance)
-          result match {
-            case bytes: Array[Byte] =>
-              val base64Encoded = Base64.rfc2045().encodeToString(bytes, lineSep = false)
-              Seq(new BlobResourceContents(base64Encoded, resourceDescription.uri, resourceDescription.mimeType))
-            case text: String =>
-              Seq(new TextResourceContents(text, resourceDescription.uri, mimeType = resourceDescription.mimeType))
-          }
+          resourceResultToMcp(result, resourceDescription.uri, resourceDescription.mimeType)
         } catch {
           case NonFatal(ex) =>
             logger.warn(s"MCP resource callback for [${mcpEndpointClass.getName}.${method.getName}] failed", ex)
@@ -350,4 +362,29 @@ object McpEndpointDescriptorFactory {
           readOnly = annotationPresent(ToolAnnotation.ReadOnly, ToolAnnotation.Mutating)))
     }
   }
+
+  private def resourceMimeType(resource: McpResource, method: Method) =
+    if (resource.mimeType().nonEmpty) resource.mimeType()
+    else {
+      val returnType = method.getGenericReturnType
+      if (returnType == classOf[Array[Byte]]) {
+        MediaTypes.`application/octet-stream`.value
+      } else if (returnType.getTypeName == "java.lang.String") {
+        MediaTypes.`text/plain`.value // implicitly UTF-8 according to spec (and since nested in JSON)
+      } else {
+        MediaTypes.`application/json`.value
+      }
+    }
+
+  private def resourceResultToMcp(result: AnyRef, uri: String, mimeType: Option[String]) =
+    result match {
+      case bytes: Array[Byte] =>
+        val base64Encoded = Base64.rfc2045().encodeToString(bytes, lineSep = false)
+        Seq(new BlobResourceContents(base64Encoded, uri, mimeType))
+      case text: String =>
+        Seq(new TextResourceContents(text, uri, mimeType = mimeType))
+      case other =>
+        val json = objectMapper.writeValueAsString(other)
+        Seq(new TextResourceContents(json, uri, mimeType = mimeType))
+    }
 }

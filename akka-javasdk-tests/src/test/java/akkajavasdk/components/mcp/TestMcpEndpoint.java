@@ -12,12 +12,6 @@ import java.io.IOException;
 
 @McpEndpoint(serverName = "test")
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.ALL))
-@McpResourceTemplate(
-    uriTemplate = "file:///{path}",
-    name = "Project Files",
-    description = "Access files in the project directory",
-    mimeType = "application/octet-stream"
-)
 public class TestMcpEndpoint extends AbstractMcpEndpoint {
 
   @McpTool(description = "A method that returns what is fed to it")
@@ -34,6 +28,15 @@ public class TestMcpEndpoint extends AbstractMcpEndpoint {
   public byte[] exampleBytes() throws IOException {
     return getClass().getResourceAsStream("/static-resources/sample-pdf-file.pdf").readAllBytes();
   }
+
+  @McpResource(
+      uriTemplate = "file:///dynamic/{path}",
+      name = "Dynamic resource"
+  )
+  public String exampleDynamicResource(String path) {
+    return "This is a dynamic resource for " + path;
+  }
+
 
   @McpPrompt(name = "code_review", description = "Code review prompt")
   public String pythonCodeReview(@Description("a prompt argument") String code) {
