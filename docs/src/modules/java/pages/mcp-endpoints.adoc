@@ -7,7 +7,8 @@ image:ROOT:endpoint.png[Endpoint,width=100,float=left] An Endpoint is a componen
 MCP endpoints in Akka can provide
 
  * "tools" – functions/logic the MCP client can call on behalf of the LLM
- * "resources" – static resources the MCP can fetch for the LLM
+ * "resources" – static resources or dynamic resource templates the MCP client can fetch for the LLM
+ * "prompts" - Template prompts created from input parameters
 
 Endpoints are made available using a stateless Streamable HTTP transport defined by link:https://modelcontextprotocol.io/specification/2025-03-26[MCP specification 2025-03-26].
 
@@ -44,13 +45,11 @@ All fields are marked as required in the schema by default, any non-required par
 ----
 include::example$doc-snippets/src/main/java/com/example/api/ExampleMcpEndpoint.java[tag=tool]
 ----
-<1> Additional field description explaining the purpose of the field to the client
-<2> An optional tool name. If not defined, the method name is used. Must be unique in the MCP service if defined.
-<3> Optional annotations describing the tool
+<1> An optional tool name. If not defined, the method name is used. Must be unique in the MCP service if defined
+<2> A description about what the tool does
+<3> The `Description` annotations describing each input for the tool.
 
-For full flexibility and more complex input types, it is also possible to specify the JSON Schema of the input manually in the annotation. When doing
-this, it is up to you that the schema is describing a JSON structure that can be parsed into the input parameter type
-by Jackson:
+For full flexibility and more complex input types, it is also possible to specify the JSON Schema of the input manually in the annotation:
 
 [source,java]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/api/ExampleMcpEndpoint.java[ExampleMcpEndpoint.java]
@@ -59,16 +58,43 @@ include::example$doc-snippets/src/main/java/com/example/api/ExampleMcpEndpoint.j
 ----
 <1> The entire JSON Schema string for the input
 
+When using a manual schema it is very important to make sure that the schema is describing a JSON structure that
+is actually what is accepted when Jackson parses it into the input parameter type.
 
 === Resources
 
-A resource is a public zero-parameter method returning text or bytes. The resource is identified by a unique URI.
+A static resource is a public zero-parameter method returning text or bytes. The resource is identified by a unique URI.
 
 [source,java]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/api/ExampleMcpEndpoint.java[ExampleMcpEndpoint.java]
 ----
-include::example$doc-snippets/src/main/java/com/example/api/ExampleMcpEndpoint.java[tag=resources]
+include::example$doc-snippets/src/main/java/com/example/api/ExampleMcpEndpoint.java[tag=static-resource]
 ----
+<1> A URI identifying the specific resource returned by this method
+<2> Empty parameter list, a return type that is `String` for raw text content, `byte[]` for byte contents. Other return types are turned into JSON.
+
+A dynamic resource instead defines a URI template with placeholders for sections, the method accepts `String` parameters with the same names.
+
+[source,java]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/api/ExampleMcpEndpoint.java[ExampleMcpEndpoint.java]
+----
+include::example$doc-snippets/src/main/java/com/example/api/ExampleMcpEndpoint.java[tag=resource-template]
+----
+<1> A URI template with placeholders
+<2> A parameter list matching the placeholders.
+
+=== Prompts
+
+Prompts are a way to provide example prompts to the MCP client given some input parameters.
+
+[source,java]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/api/ExampleMcpEndpoint.java[ExampleMcpEndpoint.java]
+----
+include::example$doc-snippets/src/main/java/com/example/api/ExampleMcpEndpoint.java[tag=prompt]
+----
+<1> Zero or more string parameters to use in the prompts, annotated with `@Description` to describe the purpose of each
+<2> Logic to use the input to construct a prompt
+
 
 == Interacting with other components
 
@@ -83,3 +109,11 @@ For more details see xref:component-and-service-calls.adoc[]
 It is also possible to interact with other services over HTTP. This is done through the `akka.javasdk.http.HttpClientProvider`.
 
 For more details see xref:component-and-service-calls.adoc[]
+
+== Authentication and authorization
+
+ifdef::todo[TODO: describe ACLs and that we don't do OAUTH]
+
+== Testing MCP endpoints
+
+ifdef::todo[TODO: describe how to do it manually or add test utilities]
