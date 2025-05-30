@@ -98,19 +98,19 @@ public final class ConversationMemory extends EventSourcedEntity<State, Event> {
   public sealed interface Event {
 
     @TypeName("akka-memory-limited-window-set")
-    record LimitedWindowSet(int maxSizeInBytes, long ts) implements Event {
+    record LimitedWindowSet(long timestamp, int maxSizeInBytes) implements Event {
     }
 
     @TypeName("akka-memory-user-message-added")
-    record UserMessageAdded(String componentId, String message, int tokens, long totalTokenUsage, long ts) implements Event {
+    record UserMessageAdded(long timestamp, String componentId, String message, int tokens, long totalTokenUsage) implements Event {
     }
 
     @TypeName("akka-memory-ai-message-added")
-    record AiMessageAdded(String componentId, String message, int tokens, long totalTokenUsage, long ts) implements Event {
+    record AiMessageAdded(long timestamp, String componentId, String message, int tokens, long totalTokenUsage) implements Event {
     }
     
     @TypeName("akka-memory-deleted")
-    record Deleted(long ts) implements Event {
+    record Deleted(long timestamp) implements Event {
     }
   }
 
@@ -122,7 +122,7 @@ public final class ConversationMemory extends EventSourcedEntity<State, Event> {
       return effects().error("Maximum size must be greater than 0");
     } else {
       return effects()
-          .persist(new Event.LimitedWindowSet(limitedWindow.maxSizeInBytes, System.currentTimeMillis()))
+          .persist(new Event.LimitedWindowSet(System.currentTimeMillis(), limitedWindow.maxSizeInBytes))
           .thenReply(__ -> done());
     }
   }
@@ -134,8 +134,8 @@ public final class ConversationMemory extends EventSourcedEntity<State, Event> {
     var totalTokensAi = totalTokensUser + cmd.aiMessage.tokens();
     return effects()
         .persist(
-            new Event.UserMessageAdded(cmd.componentId, cmd.userMessage.text(), cmd.userMessage.tokens(), totalTokensUser, ts),
-            new Event.AiMessageAdded(cmd.componentId, cmd.aiMessage.text(),cmd.aiMessage.tokens(), totalTokensAi, ts))
+            new Event.UserMessageAdded(ts, cmd.componentId, cmd.userMessage.text(), cmd.userMessage.tokens(), totalTokensUser),
+            new Event.AiMessageAdded(ts, cmd.componentId, cmd.aiMessage.text(),cmd.aiMessage.tokens(), totalTokensAi))
         .thenReply(__ -> Done.done());
   }
 
