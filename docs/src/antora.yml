@@ -3,8 +3,8 @@ title: Akka
 version: ~
 nav:
 - modules/ROOT/nav.adoc
-- modules/getting-started/nav.adoc
 - modules/concepts/nav.adoc
+- modules/getting-started/nav.adoc
 - modules/java/nav.adoc
 - modules/self-managed/nav.adoc
 - modules/operations/nav.adoc
