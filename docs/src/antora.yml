@@ -6,7 +6,6 @@ nav:
 - modules/concepts/nav.adoc
 - modules/getting-started/nav.adoc
 - modules/java/nav.adoc
-- modules/self-managed/nav.adoc
 - modules/operations/nav.adoc
 - modules/security/nav.adoc
 - modules/support/nav.adoc
