@@ -1,2 +1,2 @@
 ** xref:self-managed:index.adoc[]
-*** xref:self-managed:configuring.adoc[]
+*** xref:self-managed:configuring.adoc[In a self-managed environment]

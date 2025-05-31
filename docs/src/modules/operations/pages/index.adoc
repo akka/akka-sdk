@@ -1,4 +1,4 @@
-= Operating - Akka Platform
+= Operating
 
 include::ROOT:partial$include.adoc[]
 
