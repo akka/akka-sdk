@@ -23,21 +23,9 @@ The following is the basic shell of the class before we add RAG-specific code to
 include::example$ask-akka-agent/src/main/java/akka/ask/agent/application/AskAkkaAgent.java[tag=class]
 ----
 <1> This is the _system prompt_. This will be sent along with context and history for each LLM call
-<2> The `MongoClient` instance will be injected by the boot strap setup class
-<3> This function gets called after each LLM output stream finishes
+<2> The `Knowledge` instance will be injected by the bootstrap setup class
 
 Next we add the `createAssistant` method. This is almost entirely made up of `langchain4j` code and not specific to Akka. The purpose of this function is to use langchain4j's `AiServices` builder class to set up retrieval augmentation (MongoDB) and the chat model (Open AI).
-
-[source, java, indent=0]
-.{sample-base-url}/ask-akka-agent/src/main/java/akka/ask/agent/application/AskAkkaAgent.java[AskAkkaAgent.java]
-----
-include::example$ask-akka-agent/src/main/java/akka/ask/agent/application/AskAkkaAgent.java[tag=rag]
-----
-<1> Use the Open AI embedding model with MongoDB Atlas as the embedding store
-<2> Set the message history for this instance
-<3> Plug everything together using `AiServices` from langchain4j
-<4> We've received the full output stream from the LLM, so tell the session entity about it
-<5> This is just a part of the stream so keep streaming to the original caller
 
 Next we need a utility to form a bridge between langchain4j and Akka.
 

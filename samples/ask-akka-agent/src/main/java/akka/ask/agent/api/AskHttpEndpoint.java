@@ -18,7 +18,7 @@ public class AskHttpEndpoint {
 
   private final ComponentClient componentClient;
 
-  public AskHttpEndpoint(AskAkkaAgent askAkkaAgent, ComponentClient componentClient) {
+  public AskHttpEndpoint(ComponentClient componentClient) { // <1>
     this.componentClient = componentClient;
   }
 

@@ -16,9 +16,9 @@ public class AskAkkaAgent extends Agent {
       Given the following sections from the Akka SDK documentation, answer the question using only that information, outputted in markdown format.
       If you are unsure and the text is not explicitly written in the documentation, say:
       Sorry, I don't know how to help with that.
-      """;
+      """; // <1>
 
-  public AskAkkaAgent(Knowledge knowledge) {
+  public AskAkkaAgent(Knowledge knowledge) { // <2>
     this.knowledge = knowledge;
   }
 
