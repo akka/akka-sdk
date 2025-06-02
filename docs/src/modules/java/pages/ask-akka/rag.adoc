@@ -10,16 +10,6 @@ In this step of the guide to building the _Ask Akka_ application, you'll be crea
 
 include::ROOT:partial$cloud-dev-prerequisites.adoc[]
 
-== Updating the bootstrap
-
-In the previous section we created a bootstrap class that set up dependency injection for the MongoDB client. This client needs to be injected into the indexing workflow to use MongoDB as the vector store. We can just add a few lines to the `createDependencyProvider` method to also create an instance of the class we'll build next, `AskAkkaAgent`
-
-[source, java, indent=0]
-.{sample-base-url}/ask-akka-agent/src/main/java/akka/ask/Bootstrap.java[Bootstrap.java]
-----
-include::example$ask-akka-agent/src/main/java/akka/ask/Bootstrap.java[tag=agent]
-----
-
 == Creating the Akka Agent class
 
 We know we're going to be writing a utility that interacts with the LLM for us. Here the choice of how to accomplish this is far more subjective and based more on people's Java preferences than their knowledge of Akka. In this case, we've opted to put the logic behind the `AskAkkaAgent` class and supporting utilities.
@@ -56,16 +46,6 @@ Next we need a utility to form a bridge between langchain4j and Akka.
 In the preceding code, we call `AkkaStreamUtils.toAkkaSource` on the result of `assistant.chat(userQuestion)`. This is a utility method that converts the stream of tokens returned by langchain4j's `chat` method into an Akka stream _source_. We do that so that any endpoint component (shown in the next guide) can stream meaningful results. The tokens get converted into meaningful results via an asynchronous _map_.
 
 The code for this method delves into a bit of advanced Akka code in order to create a stream from a langchain4j object, but it's only a few lines of code without comments.
-
-[source, java, indent=0]
-.{sample-base-url}/ask-akka-agent/src/main/java/akka/ask/agent/application/AkkaStreamUtils.java[AkkaStreamUtils.java]
-----
-include::example$ask-akka-agent/src/main/java/akka/ask/agent/application/AkkaStreamUtils.java[tag=func]
-----
-<1> Input is a langchain4j token stream, output is an Akka stream source 
-<2> `Source.queue` builds a new source backed by a queue, this one has a max length of 10,000
-<3> If we get tokens before we finish, we add them to the stream (via `offer`)
-<4> If the token stream is finished, then we `offer` and then `complete`
 
 == Next steps
 Next we'll create streaming endpoints that provide clients with real-time access to LLM output.
