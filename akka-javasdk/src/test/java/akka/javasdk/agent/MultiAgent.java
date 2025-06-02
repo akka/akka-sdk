@@ -4,6 +4,7 @@
 
 package akka.javasdk.agent;
 
+import akka.javasdk.JsonSupport;
 import akka.javasdk.annotations.AgentDescription;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.client.ComponentClient;
@@ -63,10 +64,7 @@ abstract class MultiAgentSample {
     }
 
     public Effect<Plan> plan(String arg) {
-      var agentIds = registry.agentIdsWithRole("workers");
-      var agentDescriptions = agentIds.stream()
-          .map(registry::agentInfoAsJson)
-          .collect(Collectors.joining(", ", "[", "]"));
+      var agentDescriptions = JsonSupport.encodeToString(registry.agentsWithRole("workers"));
 
       return effects()
           .systemMessage(systemMessageTemplate.formatted(agentDescriptions))

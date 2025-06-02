@@ -20,7 +20,6 @@ import akka.javasdk.http.HttpClientProvider;
 import akka.javasdk.impl.ErrorHandling;
 import akka.javasdk.impl.Sdk;
 import akka.javasdk.impl.SdkRunner;
-import akka.javasdk.impl.agent.AgentRegistryImpl;
 import akka.javasdk.impl.client.ComponentClientImpl;
 import akka.javasdk.impl.grpc.GrpcClientProviderImpl;
 import akka.javasdk.impl.http.HttpClientImpl;

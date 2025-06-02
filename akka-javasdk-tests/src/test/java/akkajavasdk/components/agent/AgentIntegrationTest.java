@@ -6,6 +6,7 @@ package akkajavasdk.components.agent;
 
 import akka.actor.testkit.typed.javadsl.LoggingTestKit;
 import akka.javasdk.DependencyProvider;
+import akka.javasdk.agent.AgentRegistry;
 import akka.javasdk.agent.ModelProvider;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
@@ -15,6 +16,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -118,10 +120,10 @@ public class AgentIntegrationTest extends TestKitSupport {
 
   @Test
   public void shouldIncludeAgentsInRegistry() {
-    assertThat(testKit.getAgentRegistry().allAgentIds())
+    assertThat(testKit.getAgentRegistry().allAgents().agents().stream().map(AgentRegistry.AgentInfo::id).toList())
         .contains("some-agent", "some-streaming-agent", "structured-response-agent");
-    assertThat(testKit.getAgentRegistry().agentIdsWithRole("streaming"))
-        .isEqualTo(Set.of("some-streaming-agent"));
+    assertThat(testKit.getAgentRegistry().agentsWithRole("streaming").agents().stream().map(AgentRegistry.AgentInfo::id).toList())
+        .isEqualTo(List.of("some-streaming-agent"));
 
     var someStructuredInfo = testKit.getAgentRegistry().agentInfo("structured-response-agent");
     assertThat(someStructuredInfo.id()).isEqualTo("structured-response-agent");

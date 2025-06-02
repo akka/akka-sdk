@@ -132,6 +132,23 @@ public final class JsonSupport {
   }
 
   /**
+   * Encode the given value as JSON using Jackson.
+   *
+   * @param value    the object to encode as JSON, must be an instance of a class properly annotated
+   *                 with the needed Jackson annotations.
+   * @throws IllegalArgumentException if the given value cannot be turned into JSON
+   */
+  public static <T> String encodeToString(T value) {
+    try {
+      return objectMapper.writeValueAsString(value);
+    } catch (JsonProcessingException ex) {
+      throw new IllegalArgumentException(
+          "Could not encode [" + value.getClass().getName() + "] as JSON", ex);
+    }
+  }
+
+
+  /**
    * @deprecated was only intended for internal use
    */
   @Deprecated

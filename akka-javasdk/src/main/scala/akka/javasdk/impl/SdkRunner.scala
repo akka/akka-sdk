@@ -830,7 +830,7 @@ private final class Sdk(
   }
 
   private lazy val agentRegistry =
-    new AgentRegistryImpl(agentRegistryInfo.toSet, serializer)
+    new AgentRegistryImpl(agentRegistryInfo.toSet)
 
   private def isDisabled(disabledComponents: Set[String])(componentDescriptor: spi.ComponentDescriptor): Boolean = {
     val className = componentDescriptor.implementationName
