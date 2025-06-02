@@ -110,6 +110,8 @@ public abstract class Agent {
        */
       Builder systemMessageFromTemplate(String templateId, Object... args);
 
+      Builder memory(MemoryProvider provider);
+
       /**
        * The user message to the AI model. This message represents the specific query, instruction,
        * or input that will be processed by the model to generate a response.
@@ -308,6 +310,8 @@ public abstract class Agent {
        */
       Agent.StreamEffect error(String description);
 
+
+      Builder memory(MemoryProvider provider);
     }
 
     interface OnSuccessBuilder {

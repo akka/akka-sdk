@@ -16,7 +16,9 @@ import akka.javasdk.agent.CoreMemory
 import akka.javasdk.agent.ConversationHistory
 import akka.javasdk.agent.ConversationMessage.AiMessage
 import akka.javasdk.agent.ConversationMessage.UserMessage
+import akka.javasdk.agent.MemoryProvider
 import akka.javasdk.agent.ModelProvider
+import akka.javasdk.client.ComponentClient
 import akka.javasdk.impl.AbstractContext
 import akka.javasdk.impl.ComponentDescriptor
 import akka.javasdk.impl.ComponentType
@@ -27,6 +29,7 @@ import akka.javasdk.impl.agent.BaseAgentEffectBuilder.ConstantSystemMessage
 import akka.javasdk.impl.agent.BaseAgentEffectBuilder.NoPrimaryEffect
 import akka.javasdk.impl.agent.BaseAgentEffectBuilder.RequestModel
 import akka.javasdk.impl.agent.BaseAgentEffectBuilder.TemplateSystemMessage
+import akka.javasdk.impl.agent.CoreMemoryClient.MemorySettings
 import akka.javasdk.impl.effect.ErrorReplyImpl
 import akka.javasdk.impl.effect.MessageReplyImpl
 import akka.javasdk.impl.effect.NoSecondaryEffectImpl
@@ -80,7 +83,7 @@ private[impl] final class AgentImpl[A <: Agent](
     componentDescriptor: ComponentDescriptor,
     regionInfo: RegionInfo,
     promptTemplateClient: PromptTemplateClient,
-    coreMemoryClient: CoreMemory,
+    componentClient: ComponentClient,
     config: Config)
     extends SpiAgent {
   import AgentImpl._
@@ -130,7 +133,6 @@ private[impl] final class AgentImpl[A <: Agent](
         }
       }
 
-      val additionalContext = toSpiContextMessages(coreMemoryClient.getHistory(sessionId))
       val spiEffect =
         primaryEffect match {
           case req: RequestModel =>
@@ -141,6 +143,8 @@ private[impl] final class AgentImpl[A <: Agent](
             }
             val spiModelProvider = toSpiModelProvider(req.modelProvider)
             val metadata = MetadataImpl.toSpi(req.replyMetadata)
+            val coreMemoryClient = deriveMemoryClient(req.memoryProvider)
+            val additionalContext = toSpiContextMessages(coreMemoryClient.getHistory(sessionId))
 
             new SpiAgent.RequestModelEffect(
               spiModelProvider,
@@ -151,7 +155,7 @@ private[impl] final class AgentImpl[A <: Agent](
               req.responseMapping,
               req.failureMapping,
               metadata,
-              result => onSuccess(req.userMessage, result))
+              result => onSuccess(coreMemoryClient, req.userMessage, result))
 
           case NoPrimaryEffect =>
             errorOrReply match {
@@ -180,7 +184,29 @@ private[impl] final class AgentImpl[A <: Agent](
 
   }
 
-  private def onSuccess(userMessage: String, modelResult: SpiAgent.ModelResult): Unit = {
+  private def deriveMemoryClient(memoryProvider: MemoryProvider): CoreMemory = {
+    memoryProvider match {
+      case p: MemoryProvider.Disabled =>
+        new CoreMemoryClient(componentClient, MemorySettings.disabled())
+
+      case p: MemoryProvider.LimitedWindowMemoryProvider =>
+        new CoreMemoryClient(componentClient, new MemorySettings(p.read(), p.write(), p.readLastN()))
+
+      case p: MemoryProvider.CustomMemoryProvider =>
+        p.coreMemory()
+
+      case p: MemoryProvider.FromConfig => {
+        val actualPath =
+          if (p.configPath() == "")
+            "akka.javasdk.agent.memory"
+          else
+            p.configPath()
+        new CoreMemoryClient(componentClient, config.getConfig(actualPath))
+      }
+    }
+  }
+
+  private def onSuccess(coreMemoryClient: CoreMemory, userMessage: String, modelResult: SpiAgent.ModelResult): Unit = {
     coreMemoryClient.addInteraction(
       sessionId,
       componentId,

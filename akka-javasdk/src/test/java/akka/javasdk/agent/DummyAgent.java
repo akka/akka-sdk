@@ -26,10 +26,49 @@ class DummyAgent2 extends Agent {
 
   Effect<Response> doSomething(String question) {
     return effects()
-      .systemMessage("You are a helpful...")
-      .userMessage(question)
-      .responseAs(Response.class)
-      .thenReply();
+        .systemMessage("You are a helpful...")
+        .memory(MemoryProvider.limitedWindow().readOnly())
+        .userMessage(question)
+        .responseAs(Response.class)
+        .thenReply();
+  }
+}
+
+@ComponentId("dummy3")
+@AgentDescription(name = "Dummy Agent", description = "Not very smart agent")
+class DummyAgent3 extends Agent {
+  Effect<String> doSomethingElse(String question) {
+    // customer memory
+    var memory = new CoreMemory() {
+
+      @Override
+      public void addInteraction(String sessionId, String componentId, ConversationMessage.UserMessage userMessage, ConversationMessage.AiMessage aiMessage) {
+
+      }
+
+      @Override
+      public ConversationHistory getHistory(String sessionId) {
+        return null;
+      }
+    };
+
+    return effects()
+        .systemMessage("You are a helpful...")
+        .memory(MemoryProvider.custom(memory))
+        .userMessage(question)
+        .thenReply();
+  }
+}
+
+@ComponentId("dummy4")
+@AgentDescription(name = "Dummy Agent", description = "Not very smart nor memorable agent")
+class DummyAgent4 extends Agent {
+  Effect<String> doSomething(String question) {
+    return effects()
+        .systemMessage("You are a helpful...")
+        .memory(MemoryProvider.none())
+        .userMessage(question)
+        .thenReply();
   }
 }
 

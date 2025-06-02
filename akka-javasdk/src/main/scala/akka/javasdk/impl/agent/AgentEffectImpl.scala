@@ -5,9 +5,7 @@
 package akka.javasdk.impl.agent
 
 import java.util.function
-
 import scala.jdk.FunctionConverters.enrichAsScalaFromFunction
-
 import akka.annotation.InternalApi
 import akka.javasdk.Metadata
 import akka.javasdk.agent.Agent.Effect
@@ -16,6 +14,7 @@ import akka.javasdk.agent.Agent.Effect.FailureBuilder
 import akka.javasdk.agent.Agent.Effect.MappingFailureBuilder
 import akka.javasdk.agent.Agent.Effect.MappingResponseBuilder
 import akka.javasdk.agent.Agent.Effect.OnSuccessBuilder
+import akka.javasdk.agent.MemoryProvider
 import akka.javasdk.agent.ModelProvider
 import akka.javasdk.impl.agent.BaseAgentEffectBuilder.PrimaryEffectImpl
 import akka.javasdk.impl.agent.BaseAgentEffectBuilder.RequestModel
@@ -40,7 +39,8 @@ private[javasdk] object BaseAgentEffectBuilder {
         responseType = classOf[String],
         responseMapping = None,
         failureMapping = None,
-        replyMetadata = Metadata.EMPTY)
+        replyMetadata = Metadata.EMPTY,
+        memoryProvider = MemoryProvider.fromConfig())
   }
 
   sealed trait SystemMessage
@@ -54,11 +54,15 @@ private[javasdk] object BaseAgentEffectBuilder {
       responseType: Class[_],
       responseMapping: Option[Function1[Any, Any]],
       failureMapping: Option[Throwable => Any],
-      replyMetadata: Metadata)
+      replyMetadata: Metadata,
+      memoryProvider: MemoryProvider)
       extends PrimaryEffectImpl {
 
     def withProvider(provider: ModelProvider): RequestModel =
       copy(modelProvider = provider)
+
+    def withMemory(provider: MemoryProvider): RequestModel =
+      copy(memoryProvider = provider)
   }
 
   case object NoPrimaryEffect extends PrimaryEffectImpl
@@ -139,6 +143,11 @@ private[javasdk] final class BaseAgentEffectBuilder[Reply]
 
   override def userMessage(message: String): OnSuccessBuilder = {
     updateRequestModel(_.copy(userMessage = message))
+    this
+  }
+
+  override def memory(provider: MemoryProvider): Builder = {
+    updateRequestModel(_.withMemory(provider))
     this
   }
 
