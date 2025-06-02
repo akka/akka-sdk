@@ -9,11 +9,13 @@ import akka.javasdk.agent.SessionMessage.UserMessage;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
+import java.util.List;
+
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "@type")
 @JsonSubTypes({
     @JsonSubTypes.Type(value = UserMessage.class, name = "UM"),
-    @JsonSubTypes.Type(value = AiMessage.class, name = "AIM")})
+  @JsonSubTypes.Type(value = AiMessage.class, name = "AIM")})
 public sealed interface SessionMessage {
 
   int size();
@@ -26,7 +28,17 @@ public sealed interface SessionMessage {
     }
   }
 
-  record AiMessage(String text, int tokens) implements SessionMessage {
+  record ToolCallRequest(String id, String name, String arguments)  {
+  }
+  record ToolCallResponse(String id, String name, String content) {
+  }
+  record ToolCallInteraction(ToolCallRequest request, ToolCallResponse response) {
+  }
+  
+  record AiMessage(String text, int tokens, List<ToolCallInteraction> toolCallInteractions) implements SessionMessage {
+    public AiMessage(String text, int tokens) {
+      this(text, tokens, List.of());
+    }
 
     @Override
     public int size() {
@@ -34,5 +46,6 @@ public sealed interface SessionMessage {
     }
   }
 
+  
 }
 

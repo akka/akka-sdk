@@ -107,7 +107,13 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
     }
 
     @TypeName("akka-memory-ai-message-added")
-    record AiMessageAdded(long timestamp, String componentId, String message, int tokens, long totalTokenUsage) implements Event {
+    record AiMessageAdded(long timestamp,
+                          String componentId,
+                          String message,
+                          int tokens,
+                          long totalTokenUsage,
+                          List<SessionMessage.ToolCallInteraction> toolCallInteraction) implements Event {
+
     }
     
     @TypeName("akka-memory-deleted")
@@ -133,10 +139,13 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
     var ts = System.currentTimeMillis();
     var totalTokensUser = currentState().totalTokenUsage + cmd.userMessage.tokens();
     var totalTokensAi = totalTokensUser + cmd.aiMessage.tokens();
+
+    var toolInteractions = cmd.aiMessage.toolCallInteractions();
+
     return effects()
         .persist(
             new Event.UserMessageAdded(ts, cmd.componentId, cmd.userMessage.text(), cmd.userMessage.tokens(), totalTokensUser),
-            new Event.AiMessageAdded(ts, cmd.componentId, cmd.aiMessage.text(),cmd.aiMessage.tokens(), totalTokensAi))
+            new Event.AiMessageAdded(ts, cmd.componentId, cmd.aiMessage.text(),cmd.aiMessage.tokens(), totalTokensAi, toolInteractions))
         .thenReply(__ -> Done.done());
   }
 
@@ -178,7 +187,7 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
               .withTotalTokenUsage(userMsg.totalTokenUsage());
       case Event.AiMessageAdded aiMsg ->
           currentState()
-              .addMessage(new AiMessage(aiMsg.message(), aiMsg.tokens()))
+              .addMessage(new AiMessage(aiMsg.message(), aiMsg.tokens(), aiMsg.toolCallInteraction))
               .withTotalTokenUsage(aiMsg.totalTokenUsage());
       case Event.Deleted __ ->
           currentState().clear();

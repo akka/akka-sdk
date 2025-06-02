@@ -675,6 +675,7 @@ private final class Sdk(
                   case p if p == classOf[AgentContext] => context
                 }
               },
+            sdkExecutionContext,
             sdkTracerFactory,
             serializer,
             ComponentDescriptor.descriptorFor(agentClass, serializer),

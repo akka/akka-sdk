@@ -12,12 +12,12 @@ import akka.runtime.sdk.spi.SpiAgent
 import akka.runtime.sdk.spi.SpiJsonSchema
 
 // TODO: find a better place for this
-object FunctionDescriptors {
+object ToolDescriptors {
 
-  def apply(any: Any): Seq[SpiAgent.FunctionDescriptor] =
+  def apply(any: Any): Seq[SpiAgent.ToolDescriptor] =
     apply(any.getClass)
 
-  def apply(cls: Class[_]): Seq[SpiAgent.FunctionDescriptor] = {
+  def apply(cls: Class[_]): Seq[SpiAgent.ToolDescriptor] = {
 
     cls.getDeclaredMethods
       .filter(m => m.hasAnnotation[FunctionTool] && m.isPublic)
@@ -53,7 +53,7 @@ object FunctionDescriptors {
           properties = properties,
           required = properties.keySet.toSeq)
 
-        new SpiAgent.FunctionDescriptor(name, toolAnno.description(), schema = objSchema)
+        new SpiAgent.ToolDescriptor(name, toolAnno.description(), schema = objSchema)
 
       }
       .toSeq
