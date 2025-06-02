@@ -1,11 +1,13 @@
 package com.example.application;
 
 import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Consume;
 import akka.javasdk.consumer.Consumer;
 
 import java.util.UUID;
 
 @ComponentId("my-consumer")
+@Consume.FromKeyValueEntity(MyComponent.class)
 public class MyConsumer extends Consumer {
 
   record Event() {
