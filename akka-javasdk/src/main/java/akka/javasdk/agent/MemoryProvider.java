@@ -9,7 +9,7 @@ import java.util.Optional;
 /**
  * Interface for configuring memory management in agent systems.
  * <p>
- * MemoryProvider defines how conversation history is stored and retrieved during agent interactions.
+ * MemoryProvider defines how session history is stored and retrieved during agent interactions.
  * It offers several implementation strategies:
  * <ul>
  *   <li>Limited window memory management via {@link LimitedWindowMemoryProvider}</li>
@@ -60,7 +60,7 @@ public sealed interface MemoryProvider {
    * <p>
    * The default settings are:
    * <ul>
-   *   <li>Include all conversation history in each interaction with the model</li>
+   *   <li>Include all session history in each interaction with the model</li>
    *   <li>Record all interactions into memory</li>
    * </ul>
    *
@@ -71,7 +71,7 @@ public sealed interface MemoryProvider {
   }
 
   /**
-   * Memory provider that limits conversation history based on size or message count.
+   * Memory provider that limits session history based on size or message count.
    * <p>
    * This provider allows fine-grained control over memory usage by limiting:
    * <ul>
@@ -121,32 +121,32 @@ public sealed interface MemoryProvider {
   }
 
   /**
-   * Creates a custom memory provider using the specified CoreMemory implementation.
+   * Creates a custom memory provider using the specified SessionMemory implementation.
    * <p>
    * This allows for complete customization of memory management behavior.
    *
-   * @param coreMemory The custom CoreMemory implementation
+   * @param sessionMemory The custom SessionMemory implementation
    * @return A new custom memory provider
    */
-  static CustomMemoryProvider custom(CoreMemory coreMemory) {
-    return new CustomMemoryProvider(coreMemory);
+  static CustomMemoryProvider custom(SessionMemory sessionMemory) {
+    return new CustomMemoryProvider(sessionMemory);
   }
 
   /**
-   * Memory provider that uses a custom CoreMemory implementation.
+   * Memory provider that uses a custom SessionMemory implementation.
    * <p>
    * This provider allows for complete customization of memory management behavior
-   * by delegating to the provided CoreMemory implementation.
+   * by delegating to the provided SessionMemory implementation.
    */
-  record CustomMemoryProvider(CoreMemory coreMemory) implements MemoryProvider {
+  record CustomMemoryProvider(SessionMemory sessionMemory) implements MemoryProvider {
 
     /**
-     * Returns the underlying CoreMemory implementation.
+     * Returns the underlying SessionMemory implementation.
      *
-     * @return The CoreMemory implementation used by this provider
+     * @return The SessionMemory implementation used by this provider
      */
-    public CoreMemory coreMemory() {
-      return coreMemory;
+    public SessionMemory sessionMemory() {
+      return sessionMemory;
     }
   }
 

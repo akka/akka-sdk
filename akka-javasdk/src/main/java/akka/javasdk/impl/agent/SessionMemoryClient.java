@@ -5,11 +5,10 @@
 package akka.javasdk.impl.agent;
 
 import akka.annotation.InternalApi;
-import akka.javasdk.agent.ConversationHistory;
-import akka.javasdk.agent.ConversationMemory;
-import akka.javasdk.agent.ConversationMessage;
-import akka.javasdk.agent.CoreMemory;
-import akka.javasdk.agent.MemoryProvider;
+import akka.javasdk.agent.SessionHistory;
+import akka.javasdk.agent.SessionMemoryEntity;
+import akka.javasdk.agent.SessionMessage;
+import akka.javasdk.agent.SessionMemory;
 import akka.javasdk.client.ComponentClient;
 import com.typesafe.config.Config;
 import org.slf4j.Logger;
@@ -22,7 +21,7 @@ import java.util.Optional;
  * Not for user extension or instantiation
  */
 @InternalApi
-public final class CoreMemoryClient implements CoreMemory {
+public final class SessionMemoryClient implements SessionMemory {
 
   public record MemorySettings(
       boolean read,
@@ -38,45 +37,45 @@ public final class CoreMemoryClient implements CoreMemory {
     }
   }
 
-  private final Logger logger = LoggerFactory.getLogger(CoreMemoryClient.class);
+  private final Logger logger = LoggerFactory.getLogger(SessionMemoryClient.class);
   private final ComponentClient componentClient;
   private final MemorySettings memorySettings;
 
-  public CoreMemoryClient(ComponentClient componentClient, Config memoryConfig) {
+  public SessionMemoryClient(ComponentClient componentClient, Config memoryConfig) {
     this.componentClient = componentClient;
     this.memorySettings = memoryConfig.getBoolean("enabled") ? MemorySettings.enabled() : MemorySettings.disabled();
   }
 
-  public CoreMemoryClient(ComponentClient componentClient, MemorySettings memorySettings) {
+  public SessionMemoryClient(ComponentClient componentClient, MemorySettings memorySettings) {
     this.componentClient = componentClient;
     this.memorySettings = memorySettings;
   }
 
   public void addInteraction(String sessionId,
                              String componentId,
-                             ConversationMessage.UserMessage userMessage,
-                             ConversationMessage.AiMessage aiMessage) {
+                             SessionMessage.UserMessage userMessage,
+                             SessionMessage.AiMessage aiMessage) {
     if (memorySettings.write()) {
       logger.debug("Adding interaction to sessionId [{}]", sessionId);
       componentClient.forEventSourcedEntity(sessionId)
-          .method(ConversationMemory::addInteraction)
-          .invoke(new ConversationMemory.AddInteractionCmd(componentId, userMessage, aiMessage));
+          .method(SessionMemoryEntity::addInteraction)
+          .invoke(new SessionMemoryEntity.AddInteractionCmd(componentId, userMessage, aiMessage));
     } else {
       logger.debug("Memory writing is disabled, interaction not added to sessionId [{}]", sessionId);
     }
   }
 
   @Override
-  public ConversationHistory getHistory(String sessionId) {
+  public SessionHistory getHistory(String sessionId) {
     if (memorySettings.read()) {
       var history = componentClient.forEventSourcedEntity(sessionId)
-          .method(ConversationMemory::getHistory)
-          .invoke(new ConversationMemory.GetHistoryCmd(memorySettings.historyLimit));
+          .method(SessionMemoryEntity::getHistory)
+          .invoke(new SessionMemoryEntity.GetHistoryCmd(memorySettings.historyLimit));
       logger.debug("History retrieved for sessionId [{}], size [{}]", sessionId, history.messages().size());
       return history;
     } else {
       logger.debug("Memory reading is disabled, history not retrieved for sessionId [{}]", sessionId);
-      return ConversationHistory.EMPTY;
+      return SessionHistory.EMPTY;
     }
   }
 }

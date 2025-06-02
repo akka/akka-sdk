@@ -116,11 +116,11 @@ import java.util.concurrent.Executor
 import akka.javasdk.agent.Agent
 import akka.javasdk.agent.AgentContext
 import akka.javasdk.agent.AgentRegistry
-import akka.javasdk.agent.ConversationMemory
 import akka.javasdk.impl.agent.AgentImpl
 import akka.runtime.sdk.spi.AgentDescriptor
 import akka.runtime.sdk.spi.SpiAgent
 import akka.javasdk.agent.PromptTemplate
+import akka.javasdk.agent.SessionMemoryEntity
 import akka.javasdk.annotations.AgentDescription
 import akka.javasdk.impl.agent.AgentRegistryImpl
 import akka.javasdk.impl.agent.PromptTemplateClient
@@ -302,7 +302,7 @@ private object ComponentLocator {
 
     val withBuildInComponents = if (components.exists(classOf[Agent].isAssignableFrom)) {
       logger.debug("Agent component detected, adding built-in components")
-      classOf[ConversationMemory] +: classOf[PromptTemplate] +: components
+      classOf[SessionMemoryEntity] +: classOf[PromptTemplate] +: components
     } else {
       components
     }
