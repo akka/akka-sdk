@@ -8,7 +8,7 @@ object Dependencies {
     val ProtocolVersionMinor = 1
   }
   // Remember to bump akka-runtime.version in akka-javasdk-maven/akka-javasdk-parent if bumping this
-  val AkkaRuntimeVersion = sys.props.getOrElse("akka-runtime.version", "1.4.12-f24656c-5-d2f92f26-SNAPSHOT")
+  val AkkaRuntimeVersion = sys.props.getOrElse("akka-runtime.version", "1.4.12-f24656c-6-1e9b2a95-SNAPSHOT")
   // NOTE: embedded SDK should have the AkkaVersion aligned, when updating RuntimeVersion, make sure to check
   // if AkkaVersion and AkkaHttpVersion are aligned
   // for prod code, they are marked as Provided, but testkit still requires the alignment

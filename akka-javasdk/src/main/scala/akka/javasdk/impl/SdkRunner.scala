@@ -510,7 +510,7 @@ private final class Sdk(
     .filter(Reflect.isMcpEndpoint)
     .map { mcpEndpointClass =>
       val anyRefClass = mcpEndpointClass.asInstanceOf[Class[AnyRef]]
-      McpEndpointDescriptorFactory(anyRefClass, mcpEndpointFactory(anyRefClass))(system, sdkExecutionContext)
+      McpEndpointDescriptorFactory(anyRefClass, mcpEndpointFactory(anyRefClass))(sdkExecutionContext)
     }
 
   private var eventSourcedEntityDescriptors = Vector.empty[EventSourcedEntityDescriptor]

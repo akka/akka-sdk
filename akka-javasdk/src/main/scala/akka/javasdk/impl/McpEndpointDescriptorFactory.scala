@@ -4,7 +4,6 @@
 
 package akka.javasdk.impl
 
-import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
 import akka.http.scaladsl.model.MediaTypes
 import akka.http.scaladsl.model.Uri
@@ -51,12 +50,14 @@ import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import org.slf4j.LoggerFactory
 
+import java.lang.annotation.Annotation
 import java.lang.reflect.Method
 import java.lang.reflect.ParameterizedType
 import java.util.Optional
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.OptionConverters.RichOption
+import scala.reflect.ClassTag
 import scala.util.control.NonFatal
 
 /**
@@ -94,21 +95,14 @@ object McpEndpointDescriptorFactory {
     m
   }
 
+  private val UriTemplateVariable = """\{([^}]+)}""".r
+
   def apply[T](mcpEndpointClass: Class[T], instanceFactory: McpEndpointConstructionContext => T)(implicit
-      system: ActorSystem[_],
       sdkExecutor: ExecutionContext): McpEndpointDescriptor = {
 
     val endpointAnnotation = mcpEndpointClass.getAnnotation(classOf[McpEndpoint])
 
-    val allMethods = mcpEndpointClass.getMethods.toVector
-
-    val toolMethods = allMethods.flatMap { method =>
-      val toolAnnotation = method.getAnnotation(classOf[McpTool])
-      if (toolAnnotation != null) {
-        Some((toolAnnotation, method))
-      } else None
-    }
-
+    val toolMethods = methodsWithAnnotation[McpTool](mcpEndpointClass)
     val tools = toolMethods.map { case (annotation, method) =>
       if (method.getReturnType != classOf[String])
         throw new IllegalArgumentException(
@@ -128,9 +122,9 @@ object McpEndpointDescriptorFactory {
         else annotation.name()
 
       val toolAnnotations = toolAnnotationsFor(mcpEndpointClass, method.getName, annotation.annotations().toVector)
-
       val toolDescription = new ToolDescription(toolName, annotation.description(), inputSchema, toolAnnotations)
 
+      val requiredParameterNames = inputSchema.required.toSet
       val callback = (context: McpEndpointConstructionContext, params: Map[String, Any]) =>
         Future[ResponseContent] {
           val endpointInstance = instanceFactory.apply(context)
@@ -138,25 +132,28 @@ object McpEndpointDescriptorFactory {
             method.invoke(endpointInstance)
           } else {
             val parsedParams = method.getParameters.map { param =>
+              val required = requiredParameterNames(param.getName)
               params.get(param.getName) match {
                 case Some(unparsedValue) =>
-                  // FIXME wrap with optional if needed
-                  objectMapper.convertValue(unparsedValue, param.getType)
+                  val paramValue = objectMapper.convertValue(unparsedValue, param.getType)
+                  if (required) paramValue
+                  else Optional.ofNullable(paramValue)
                 case None =>
-                  Optional.empty()
+                  if (required)
+                    throw new IllegalArgumentException(
+                      s"Missing required tool parameter [${param.getName}] for tool [$toolName]")
+                  else Optional.empty()
               }
             }
-            // FIXME fail on no input (can we know with manually specified schema?)
-            // FIXME handle required fields and input validation correctly
             method.invoke(endpointInstance, parsedParams: _*)
           }
           returnValue match {
             case text: String => new TextContent(text)
             case unknown      =>
-              // FIXME cover with validation
-              // FIXME handle/allow audio and image, but how?
+              // FIXME handle/allow audio and image content types, supported by protocol, but how do we fit it in SDK API?
               throw new RuntimeException(
-                s"Unsupported tool return value (${if (unknown == null) "null" else unknown.getClass.toString}")
+                s"Unsupported tool return value for tool [$toolName] defined in [${mcpEndpointClass.getName}.${method.getName}] (${if (unknown == null) "null"
+                else unknown.getClass.toString}")
           }
         }
 
@@ -173,20 +170,35 @@ object McpEndpointDescriptorFactory {
         s"MCP Tools with duplicated names exist in ${mcpEndpointClass.getName}: [${duplicateTools.mkString(", ")}], make sure that each tool has a unique name")
     }
 
-    val resourceTemplateMethods = allMethods.flatMap { method =>
-      val resourceAnnotation = method.getAnnotation(classOf[McpResource])
-      if (resourceAnnotation != null && resourceAnnotation.uri().isEmpty) {
-        if (resourceAnnotation.uriTemplate().isEmpty)
-          throw ValidationException(
-            s"MCP resource method [${mcpEndpointClass.getName}.${method.getName}] has both 'uri' and 'uriTemplate' empty, one of them must have a value.")
-        Some((resourceAnnotation, method))
-      } else None
+    // dynamic resources
+    val resourceTemplateMethods = methodsWithAnnotation[McpResource](mcpEndpointClass).filter { case (annotation, _) =>
+      annotation.uri().isEmpty
     }
-
     val resourceTemplates =
       resourceTemplateMethods.map { case (annotation, method) =>
+        if (annotation.uriTemplate().isEmpty)
+          throw ValidationException(
+            s"MCP resource method [${mcpEndpointClass.getName}.${method.getName}] has both 'uri' and 'uriTemplate' empty, one of them must have a value.")
+
         // FIXME validate parameter names match template
-        // FIXME validate parameter types all string
+        method.getParameterTypes.foreach(paramType =>
+          if (paramType != classOf[String])
+            throw ValidationException(
+              s"Resource template method parameters must be of type String, but [${mcpEndpointClass.getName}.${method.getName}] has parameter of type [${paramType.getName}]"))
+
+        val parametersWithoutVariables = UriTemplateVariable
+          .findAllMatchIn(annotation.uriTemplate())
+          .foldLeft(method.getParameters.toVector.map(_.getName).toSet) { (namesLeft, matchResult) =>
+            val name = matchResult.group(1)
+            if (!namesLeft(name))
+              throw ValidationException(
+                s"Resource template method [${mcpEndpointClass.getName}.${method.getName}] has a variable name [$name] in the uriTemplate that is not present in the parameter list.")
+            else namesLeft - name
+          }
+        if (parametersWithoutVariables.nonEmpty)
+          throw ValidationException(
+            s"Resource template method [${mcpEndpointClass.getName}.${method.getName}] has a parameter name(s) [${parametersWithoutVariables
+              .mkString(", ")}] that are not present in the uriTemplate list.")
 
         val resourceTemplate = new McpEndpointDescriptor.ResourceTemplate(
           uriTemplate = annotation.uriTemplate(),
@@ -213,15 +225,11 @@ object McpEndpointDescriptorFactory {
           method = callback)
       }
 
-    val resourceMethods = allMethods.flatMap { method =>
-      val resourceAnnotation = method.getAnnotation(classOf[McpResource])
-      if (resourceAnnotation != null && resourceAnnotation.uriTemplate().isEmpty) {
-        Some((resourceAnnotation, method))
-      } else None
+    // static resources
+    val resourceMethods = methodsWithAnnotation[McpResource](mcpEndpointClass).filter { case (annotation, _) =>
+      annotation.uriTemplate().isEmpty
     }
-
     val resources = resourceMethods.map { case (annotation, method) =>
-      // FIXME we probably want to support parameters for resources as well for this to actually be useful?
       if (method.getParameterCount > 0)
         throw new IllegalArgumentException(
           s"MCP resources must be of 0 arity, but ${method.getName} has a non empty parameter list")
@@ -249,13 +257,7 @@ object McpEndpointDescriptorFactory {
       new ResourceMethodDescriptor(resourceDescription, new MethodOptions(None, None), callback)
     }
 
-    val promptMethods = allMethods.flatMap { method =>
-      val promptAnnotation = method.getAnnotation(classOf[McpPrompt])
-      if (promptAnnotation != null) {
-        Some((promptAnnotation, method))
-      } else None
-    }
-
+    val promptMethods = methodsWithAnnotation[McpPrompt](mcpEndpointClass)
     val prompts = promptMethods.map { case (annotation, method) =>
       if (method.getReturnType != classOf[String]) {
         throw new IllegalArgumentException(
@@ -285,8 +287,7 @@ object McpEndpointDescriptorFactory {
         throw new IllegalArgumentException(
           s"MCP prompt method [${method.getDeclaringClass.getName}.${method.getName}] annotation role value must be either 'user' or 'assistant', but is [$role]")
 
-      // FIXME arguments should be Map[String, String] in SPI
-      val callback = { (context: McpEndpointConstructionContext, arguments: Map[String, Any]) =>
+      val callback = { (context: McpEndpointConstructionContext, arguments: Map[String, String]) =>
         try {
           val endpointInstance = instanceFactory(context)
           val paramsInOrder = method.getParameters.map { parameter =>
@@ -338,6 +339,16 @@ object McpEndpointDescriptorFactory {
         deriveJWTOptions(Option(mcpEndpointClass.getAnnotation(classOf[JWT])), mcpEndpointClass.getCanonicalName)))
   }
 
+  private def methodsWithAnnotation[T <: Annotation](clazz: Class[_])(implicit
+      classTag: ClassTag[T]): Seq[(T, Method)] =
+    clazz.getDeclaredMethods.toVector.flatMap { method =>
+      val annotation = method.getAnnotation(classTag.runtimeClass.asInstanceOf[Class[T]])
+      if (annotation != null) {
+        failOnMethodAclOrJwt(method)
+        Some((annotation, method))
+      } else None
+    }
+
   private def toolAnnotationsFor(
       endpointClass: Class[?],
       methodName: String,
@@ -361,6 +372,15 @@ object McpEndpointDescriptorFactory {
           openWorld = annotationPresent(ToolAnnotation.OpenWorld, ToolAnnotation.ClosedWorld),
           readOnly = annotationPresent(ToolAnnotation.ReadOnly, ToolAnnotation.Mutating)))
     }
+  }
+
+  private def failOnMethodAclOrJwt(method: Method): Unit = {
+    if (method.getAnnotation(classOf[Acl]) != null)
+      throw ValidationException(
+        s"MCP endpoints does not support ACL annotation on methods, found on [${method.getDeclaringClass.getName}.${method.getName}]. Only class level ACL annotation supported.")
+    else if (method.getAnnotation(classOf[JWT]) != null)
+      throw ValidationException(
+        s"MCP endpoints does not support JWT annotation on methods, found on [${method.getDeclaringClass.getName}.${method.getName}]. Only class level JWT annotation supported.")
   }
 
   private def resourceMimeType(resource: McpResource, method: Method) =
