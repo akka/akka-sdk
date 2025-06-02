@@ -14,6 +14,10 @@ public class DummyTransferStore {
     customers.put(storeName + "-" + workflowId, state);
   }
 
+  public static void delete(String storeName, String workflowId) {
+    customers.remove(storeName + "-" + workflowId);
+  }
+
   public static TransferState get(String storeName, String workflowId) {
     return customers.get(storeName + "-" + workflowId);
   }

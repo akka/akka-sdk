@@ -59,6 +59,14 @@ In addition to the special `GrpcServiceException` and `StatusRuntimeException`, 
 id and the response message only includes the correlation id to not leak service internals to an untrusted client.
 ** In local development and integration tests the full exception is returned as response body.
 
+== Securing gRPC endpoints ==
+
+Akka's gRPC endpoints can be secured by multiple approaches:
+
+. xref:java:access-control.adoc[]
+. xref:security:jwts.adoc[]
+. xref:security:tls-certificates.adoc[]
+
 == Interacting with other components ==
 
 Endpoints are commonly used to interact with other components in a service. This is done through
@@ -177,3 +185,8 @@ Dropping fields will not be _source compatible_, since the generated Java class 
 along with the protobuf message change, once a protocol file with name changes is introduced in a service it will need
 updates to the code wherever it is accessing the old field.
 
+== See also
+
+- xref:java:access-control.adoc[]
+- xref:security:jwts.adoc[]
+- xref:security:tls-certificates.adoc[]

@@ -20,6 +20,8 @@ import akka.javasdk.testmodels.subscriptions.PubSubTestModels.EventStreamPublish
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.EventStreamSubscriptionConsumer
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.MissingConsumeAnnotationConsumer
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.MissingHandlersWhenSubscribeToEventSourcedEntityConsumer
+import akka.javasdk.testmodels.subscriptions.PubSubTestModels.MissingHandlersWhenSubscribeToKVEConsumer
+import akka.javasdk.testmodels.subscriptions.PubSubTestModels.MissingHandlersWhenSubscribeToWorkflowConsumer
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.MissingSourceForTopicPublishing
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.MultipleTypeLevelSubscriptions
 import akka.javasdk.testmodels.subscriptions.PubSubTestModels.MultipleUpdateMethodsForVETypeLevelSubscription
@@ -167,6 +169,20 @@ class ConsumerDescriptorFactorySpec extends AnyWordSpec with Matchers {
         Validations.validate(classOf[MissingHandlersWhenSubscribeToEventSourcedEntityConsumer]).failIfInvalid()
       }.getMessage shouldBe
       "On 'akka.javasdk.testmodels.subscriptions.PubSubTestModels$MissingHandlersWhenSubscribeToEventSourcedEntityConsumer': missing an event handler for 'akka.javasdk.testmodels.eventsourcedentity.EmployeeEvent$EmployeeEmailUpdated'."
+    }
+
+    "validates if there are missing handlers for KVE Subscription" in {
+      intercept[ValidationException] {
+        Validations.validate(classOf[MissingHandlersWhenSubscribeToKVEConsumer]).failIfInvalid()
+      }.getMessage shouldBe
+      "On 'akka.javasdk.testmodels.subscriptions.PubSubTestModels$MissingHandlersWhenSubscribeToKVEConsumer': missing handlers. The class must have one handler with 'akka.javasdk.testmodels.keyvalueentity.CounterState' parameter and/or one parameterless method annotated with '@DeleteHandler'."
+    }
+
+    "validates if there are missing handlers for Workflow Subscription" in {
+      intercept[ValidationException] {
+        Validations.validate(classOf[MissingHandlersWhenSubscribeToWorkflowConsumer]).failIfInvalid()
+      }.getMessage shouldBe
+      "On 'akka.javasdk.testmodels.subscriptions.PubSubTestModels$MissingHandlersWhenSubscribeToWorkflowConsumer': missing handlers. The class must have one handler with 'akka.javasdk.testmodels.workflow.WorkflowState' parameter and/or one parameterless method annotated with '@DeleteHandler'."
     }
 
     "generate mapping for a Consumer with a VE subscription and publication to a topic" ignore {

@@ -71,7 +71,7 @@ private[impl] sealed abstract class EntityClientImpl(
     val methodName = method.getName.capitalize
     val returnType = Reflect.getReturnType(declaringClass, method)
 
-    // FIXME push some of this logic into the NativeomponentMethodRef
+    // FIXME push some of this logic into the NativeComponentMethodRef
     //       will be easier to follow to do that instead of creating a lambda here and injecting into that
     new ComponentMethodRefImpl[AnyRef, R](
       Some(entityId),

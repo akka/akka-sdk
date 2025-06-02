@@ -6,6 +6,7 @@ package akkajavasdk.components.views;
 
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.annotations.Consume;
+import akka.javasdk.annotations.DeleteHandler;
 import akka.javasdk.annotations.Query;
 import akka.javasdk.view.TableUpdater;
 import akka.javasdk.view.View;
@@ -32,6 +33,11 @@ public class TransferView extends View {
     public Effect<TransferEntry> onUpdate(TransferState transferState) {
       var id = updateContext().eventSubject().orElse("");
       return effects().updateRow(new TransferEntry(id, transferState.finished()));
+    }
+
+    @DeleteHandler
+    public Effect<TransferEntry> onDelete() {
+      return effects().deleteRow();
     }
   }
 }
