@@ -39,15 +39,15 @@ class DummyAgent2 extends Agent {
 class DummyAgent3 extends Agent {
   Effect<String> doSomethingElse(String question) {
     // customer memory
-    var memory = new CoreMemory() {
+    var memory = new SessionMemory() {
 
       @Override
-      public void addInteraction(String sessionId, String componentId, ConversationMessage.UserMessage userMessage, ConversationMessage.AiMessage aiMessage) {
+      public void addInteraction(String sessionId, String componentId, SessionMessage.UserMessage userMessage, SessionMessage.AiMessage aiMessage) {
 
       }
 
       @Override
-      public ConversationHistory getHistory(String sessionId) {
+      public SessionHistory getHistory(String sessionId) {
         return null;
       }
     };

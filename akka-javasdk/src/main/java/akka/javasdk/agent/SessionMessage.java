@@ -4,8 +4,8 @@
 
 package akka.javasdk.agent;
 
-import akka.javasdk.agent.ConversationMessage.AiMessage;
-import akka.javasdk.agent.ConversationMessage.UserMessage;
+import akka.javasdk.agent.SessionMessage.AiMessage;
+import akka.javasdk.agent.SessionMessage.UserMessage;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
@@ -14,11 +14,11 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 @JsonSubTypes({
     @JsonSubTypes.Type(value = UserMessage.class, name = "UM"),
     @JsonSubTypes.Type(value = AiMessage.class, name = "AIM")})
-public sealed interface ConversationMessage {
+public sealed interface SessionMessage {
 
   int size();
 
-  record UserMessage(String text, int tokens) implements ConversationMessage {
+  record UserMessage(String text, int tokens) implements SessionMessage {
 
     @Override
     public int size() {
@@ -26,7 +26,7 @@ public sealed interface ConversationMessage {
     }
   }
 
-  record AiMessage(String text, int tokens) implements ConversationMessage {
+  record AiMessage(String text, int tokens) implements SessionMessage {
 
     @Override
     public int size() {

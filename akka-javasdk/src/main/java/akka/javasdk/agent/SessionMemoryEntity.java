@@ -5,10 +5,10 @@
 package akka.javasdk.agent;
 
 import akka.Done;
-import akka.javasdk.agent.ConversationMemory.Event;
-import akka.javasdk.agent.ConversationMemory.State;
-import akka.javasdk.agent.ConversationMessage.AiMessage;
-import akka.javasdk.agent.ConversationMessage.UserMessage;
+import akka.javasdk.agent.SessionMemoryEntity.Event;
+import akka.javasdk.agent.SessionMemoryEntity.State;
+import akka.javasdk.agent.SessionMessage.AiMessage;
+import akka.javasdk.agent.SessionMessage.UserMessage;
 import akka.javasdk.annotations.TypeName;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import akka.javasdk.annotations.ComponentId;
@@ -24,24 +24,24 @@ import java.util.Optional;
 import static akka.Done.done;
 
 /**
- * ConversationMemory is an EventSourcedEntity that maintains a limited history of conversation
+ * SessionMemory is an EventSourcedEntity that maintains a limited history of conversation
  * messages in a FIFO (First In, First Out) style.
  * <p>
  * The maximum number of entries in the history can be set dynamically with command setLimitedWindow.
  * {@link akka.javasdk.client.ComponentClient} can be used to interact directly with this entity.
  */
 @ComponentId("akka-conversation-memory")
-public final class ConversationMemory extends EventSourcedEntity<State, Event> {
+public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> {
 
-  private static final Logger log = LoggerFactory.getLogger(ConversationMemory.class);
+  private static final Logger log = LoggerFactory.getLogger(SessionMemoryEntity.class);
 
   private final Config config;
 
-  public ConversationMemory(Config config) {
+  public SessionMemoryEntity(Config config) {
     this.config = config;
   }
 
-  public record State(long maxLengthInBytes, long currentLengthInBytes, List<ConversationMessage> messages, long totalTokenUsage) {
+  public record State(long maxLengthInBytes, long currentLengthInBytes, List<SessionMessage> messages, long totalTokenUsage) {
 
     private static final Logger logger = LoggerFactory.getLogger(State.class);
 
@@ -59,7 +59,7 @@ public final class ConversationMemory extends EventSourcedEntity<State, Event> {
       return new State(newMaxSize, currentLengthInBytes, messages, totalTokenUsage);
     }
 
-    public State addMessage(ConversationMessage message) {
+    public State addMessage(SessionMessage message) {
       // avoid copies of the list for efficiency, need to be careful not to return the list ref to outside
       messages.add(message);
 
@@ -75,7 +75,7 @@ public final class ConversationMemory extends EventSourcedEntity<State, Event> {
       return new State(maxLengthInBytes, 0, new LinkedList<>(), 0);
     }
 
-    private static long enforceMaxCapacity(List<ConversationMessage> messages, long currentLengthSize, long maxSize) {
+    private static long enforceMaxCapacity(List<SessionMessage> messages, long currentLengthSize, long maxSize) {
       var freedSpace = 0;
       while ((currentLengthSize - freedSpace) > maxSize) {
         // FIXME: delete also the reply from AI?
@@ -94,7 +94,7 @@ public final class ConversationMemory extends EventSourcedEntity<State, Event> {
   }
 
   /**
-   * Sealed interface representing events that can occur in the ConversationMemory entity.
+   * Sealed interface representing events that can occur in the SessionMemory entity.
    */
   public sealed interface Event {
 
@@ -142,17 +142,17 @@ public final class ConversationMemory extends EventSourcedEntity<State, Event> {
 
   public record GetHistoryCmd(Optional<Integer> lastNMessages) {}
 
-  public ReadOnlyEffect<ConversationHistory> getHistory(GetHistoryCmd cmd) {
+  public ReadOnlyEffect<SessionHistory> getHistory(GetHistoryCmd cmd) {
     if (cmd.lastNMessages != null && cmd.lastNMessages.isPresent()) {
       var lastN = currentState().messages()
           .subList(currentState().messages.size() - cmd.lastNMessages.get(), currentState().messages.size());
       // make sure this returns a copy of the list and not the list itself
       return effects().reply(
-          new ConversationHistory(new LinkedList<>(lastN)));
+          new SessionHistory(new LinkedList<>(lastN)));
     } else {
       // make sure this returns a copy of the list and not the list itself
       return effects().reply(
-          new ConversationHistory(new LinkedList<>(currentState().messages)));
+          new SessionHistory(new LinkedList<>(currentState().messages)));
     }
   }
 

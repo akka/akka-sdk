@@ -5,7 +5,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
-import akka.javasdk.agent.ConversationMemory;
+import akka.javasdk.agent.SessionMemoryEntity;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.Query;
@@ -37,25 +37,25 @@ public class ConversationHistoryView extends View {
     return queryResult();
   }
 
-  @Consume.FromEventSourcedEntity(ConversationMemory.class)
+  @Consume.FromEventSourcedEntity(SessionMemoryEntity.class)
   public static class ChatMessageUpdater extends TableUpdater<Session> {
 
-    public Effect<Session> onEvent(ConversationMemory.Event event) {
+    public Effect<Session> onEvent(SessionMemoryEntity.Event event) {
       return switch (event) {
-        case ConversationMemory.Event.AiMessageAdded added -> aiMessage(added);
-        case ConversationMemory.Event.UserMessageAdded added -> userMessage(added);
+        case SessionMemoryEntity.Event.AiMessageAdded added -> aiMessage(added);
+        case SessionMemoryEntity.Event.UserMessageAdded added -> userMessage(added);
         default -> effects().ignore();
       };
     }
 
-    private Effect<Session> aiMessage(ConversationMemory.Event.AiMessageAdded added) {
+    private Effect<Session> aiMessage(SessionMemoryEntity.Event.AiMessageAdded added) {
       var timestamp = System.currentTimeMillis(); // FIXME add timestamp to ConversationMemory.Event
       Message newMessage = new Message(added.message(), "ai", timestamp);
       var rowState = rowStateOrNew(userId(), sessionId());
       return effects().updateRow(rowState.add(newMessage));
     }
 
-    private Effect<Session> userMessage(ConversationMemory.Event.UserMessageAdded added) {
+    private Effect<Session> userMessage(SessionMemoryEntity.Event.UserMessageAdded added) {
       var timestamp = System.currentTimeMillis(); // FIXME add timestamp to ConversationMemory.Event
       Message newMessage = new Message(added.message(), "user", timestamp);
       var rowState = rowStateOrNew(userId(), sessionId());

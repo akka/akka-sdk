@@ -12,12 +12,11 @@ import akka.javasdk.Tracing
 import akka.javasdk.agent.Agent
 import akka.javasdk.agent.AgentContext
 import akka.javasdk.agent.JsonParsingException
-import akka.javasdk.agent.CoreMemory
-import akka.javasdk.agent.ConversationHistory
-import akka.javasdk.agent.ConversationMessage.AiMessage
-import akka.javasdk.agent.ConversationMessage.UserMessage
+import akka.javasdk.agent.SessionMessage.AiMessage
+import akka.javasdk.agent.SessionMessage.UserMessage
 import akka.javasdk.agent.MemoryProvider
 import akka.javasdk.agent.ModelProvider
+import akka.javasdk.agent.SessionMemory
 import akka.javasdk.client.ComponentClient
 import akka.javasdk.impl.AbstractContext
 import akka.javasdk.impl.ComponentDescriptor
@@ -29,7 +28,8 @@ import akka.javasdk.impl.agent.BaseAgentEffectBuilder.ConstantSystemMessage
 import akka.javasdk.impl.agent.BaseAgentEffectBuilder.NoPrimaryEffect
 import akka.javasdk.impl.agent.BaseAgentEffectBuilder.RequestModel
 import akka.javasdk.impl.agent.BaseAgentEffectBuilder.TemplateSystemMessage
-import akka.javasdk.impl.agent.CoreMemoryClient.MemorySettings
+import SessionMemoryClient.MemorySettings
+import akka.javasdk.agent.SessionHistory
 import akka.javasdk.impl.effect.ErrorReplyImpl
 import akka.javasdk.impl.effect.MessageReplyImpl
 import akka.javasdk.impl.effect.NoSecondaryEffectImpl
@@ -143,8 +143,8 @@ private[impl] final class AgentImpl[A <: Agent](
             }
             val spiModelProvider = toSpiModelProvider(req.modelProvider)
             val metadata = MetadataImpl.toSpi(req.replyMetadata)
-            val coreMemoryClient = deriveMemoryClient(req.memoryProvider)
-            val additionalContext = toSpiContextMessages(coreMemoryClient.getHistory(sessionId))
+            val sessionMemoryClient = deriveMemoryClient(req.memoryProvider)
+            val additionalContext = toSpiContextMessages(sessionMemoryClient.getHistory(sessionId))
 
             new SpiAgent.RequestModelEffect(
               spiModelProvider,
@@ -155,7 +155,7 @@ private[impl] final class AgentImpl[A <: Agent](
               req.responseMapping,
               req.failureMapping,
               metadata,
-              result => onSuccess(coreMemoryClient, req.userMessage, result))
+              result => onSuccess(sessionMemoryClient, req.userMessage, result))
 
           case NoPrimaryEffect =>
             errorOrReply match {
@@ -184,16 +184,16 @@ private[impl] final class AgentImpl[A <: Agent](
 
   }
 
-  private def deriveMemoryClient(memoryProvider: MemoryProvider): CoreMemory = {
+  private def deriveMemoryClient(memoryProvider: MemoryProvider): SessionMemory = {
     memoryProvider match {
       case p: MemoryProvider.Disabled =>
-        new CoreMemoryClient(componentClient, MemorySettings.disabled())
+        new SessionMemoryClient(componentClient, MemorySettings.disabled())
 
       case p: MemoryProvider.LimitedWindowMemoryProvider =>
-        new CoreMemoryClient(componentClient, new MemorySettings(p.read(), p.write(), p.readLastN()))
+        new SessionMemoryClient(componentClient, new MemorySettings(p.read(), p.write(), p.readLastN()))
 
       case p: MemoryProvider.CustomMemoryProvider =>
-        p.coreMemory()
+        p.sessionMemory()
 
       case p: MemoryProvider.FromConfig => {
         val actualPath =
@@ -201,23 +201,26 @@ private[impl] final class AgentImpl[A <: Agent](
             "akka.javasdk.agent.memory"
           else
             p.configPath()
-        new CoreMemoryClient(componentClient, config.getConfig(actualPath))
+        new SessionMemoryClient(componentClient, config.getConfig(actualPath))
       }
     }
   }
 
-  private def onSuccess(coreMemoryClient: CoreMemory, userMessage: String, modelResult: SpiAgent.ModelResult): Unit = {
-    coreMemoryClient.addInteraction(
+  private def onSuccess(
+      sessionMemoryClient: SessionMemory,
+      userMessage: String,
+      modelResult: SpiAgent.ModelResult): Unit = {
+    sessionMemoryClient.addInteraction(
       sessionId,
       componentId,
       new UserMessage(userMessage, modelResult.inputTokenCount),
       new AiMessage(modelResult.modelResponse, modelResult.outputTokenCount))
   }
 
-  private def toSpiContextMessages(conversationHistory: ConversationHistory): Vector[SpiAgent.ContextMessage] = {
+  private def toSpiContextMessages(sessionHistory: SessionHistory): Vector[SpiAgent.ContextMessage] = {
     import scala.jdk.CollectionConverters._
 
-    conversationHistory
+    sessionHistory
       .messages()
       .asScala
       .flatMap {
