@@ -41,6 +41,20 @@ public sealed interface MemoryProvider {
    */
   record FromConfig(String configPath) implements MemoryProvider {}
 
+
+  /**
+   * Disabled memory provider, which does not store or retrieve conversation history.
+   */
+  record Disabled() implements MemoryProvider {}
+
+  /**
+   * Disabled memory provider, which does not store or retrieve conversation history.
+   * @return A memory provider without memory.
+   */
+  static Disabled none() {
+    return new Disabled();
+  }
+
   /**
    * Creates a limited window memory provider with default settings.
    * <p>
