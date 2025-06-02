@@ -31,11 +31,11 @@ public final class PromptTemplate extends EventSourcedEntity<PromptTemplate.Prom
   }
 
   public sealed interface Event {
-    @TypeName("updated")
+    @TypeName("akka-prompt-updated")
     record Updated(String prompt) implements Event {
     }
 
-    @TypeName("deleted")
+    @TypeName("akka-prompt-deleted")
     record Deleted() implements Event {
     }
   }

@@ -30,7 +30,7 @@ import static akka.Done.done;
  * The maximum number of entries in the history can be set dynamically with command setLimitedWindow.
  * {@link akka.javasdk.client.ComponentClient} can be used to interact directly with this entity.
  */
-@ComponentId("akka-conversation-memory")
+@ComponentId("akka-session-memory")
 public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> {
 
   private static final Logger log = LoggerFactory.getLogger(SessionMemoryEntity.class);
