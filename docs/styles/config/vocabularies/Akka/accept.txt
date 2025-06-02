@@ -105,6 +105,7 @@ newname
 npx
 npm
 nullable
+OAuth
 Okta
 onboarding
 (?i)OpenID
