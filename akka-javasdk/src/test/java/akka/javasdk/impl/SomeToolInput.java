@@ -4,7 +4,7 @@
 
 package akka.javasdk.impl;
 
-import akka.javasdk.annotations.mcp.Description;
+import akka.javasdk.annotations.Description;
 
 import java.util.List;
 import java.util.Optional;

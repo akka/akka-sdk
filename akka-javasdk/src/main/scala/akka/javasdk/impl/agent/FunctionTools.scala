@@ -4,14 +4,23 @@
 
 package akka.javasdk.impl.agent
 
+import akka.annotation.InternalApi
 import akka.javasdk.annotations.FunctionTool
 import akka.javasdk.impl.reflection.Reflect.Syntax.AnnotatedElementOps
 import akka.javasdk.impl.reflection.Reflect.Syntax.MethodOps
 
 import java.lang.reflect.Type
 
+/**
+ * INTERNAL API
+ */
+@InternalApi
 object FunctionTools {
 
+  /**
+   * INTERNAL API
+   */
+  @InternalApi
   trait FunctionToolInvoker {
     def paramNames: Array[String]
 
@@ -30,7 +39,7 @@ object FunctionTools {
 
         val toolAnno = method.getAnnotation(classOf[FunctionTool])
         val name =
-          if (toolAnno.name() == null || toolAnno.name().trim.isEmpty) method.getName
+          if (toolAnno.name() == null || toolAnno.name().isBlank) method.getName
           else toolAnno.name()
 
         name ->

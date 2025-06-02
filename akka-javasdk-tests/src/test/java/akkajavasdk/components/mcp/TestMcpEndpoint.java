@@ -5,6 +5,7 @@
 package akkajavasdk.components.mcp;
 
 import akka.javasdk.annotations.Acl;
+import akka.javasdk.annotations.Description;
 import akka.javasdk.annotations.mcp.*;
 import akka.javasdk.mcp.AbstractMcpEndpoint;
 

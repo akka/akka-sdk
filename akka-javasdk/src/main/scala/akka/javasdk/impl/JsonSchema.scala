@@ -5,7 +5,7 @@
 package akka.javasdk.impl
 
 import akka.annotation.InternalApi
-import akka.javasdk.annotations.mcp.Description
+import akka.javasdk.annotations.Description
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaArray
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaBoolean
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaDataType
