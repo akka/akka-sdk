@@ -40,7 +40,7 @@
 
         <!-- These are dependent on runtime environment and cannot be customized by users -->
         <maven.compiler.release>21</maven.compiler.release>
-        <akka-runtime.version>1.4.12-f24656c-6-1e9b2a95-SNAPSHOT</akka-runtime.version>
+        <akka-runtime.version>1.4.12-8607f42</akka-runtime.version>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <skip.docker>false</skip.docker>
