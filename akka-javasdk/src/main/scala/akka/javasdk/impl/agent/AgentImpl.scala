@@ -187,7 +187,7 @@ private[impl] final class AgentImpl[A <: Agent](
   private def deriveMemoryClient(memoryProvider: MemoryProvider): CoreMemory = {
     memoryProvider match {
       case p: MemoryProvider.LimitedWindowMemoryProvider =>
-        new CoreMemoryClient(componentClient, new MemorySettings(p.read(), p.write(), p.historyLimit()))
+        new CoreMemoryClient(componentClient, new MemorySettings(p.read(), p.write(), p.readLastN()))
 
       case p: MemoryProvider.CustomMemoryProvider =>
         p.coreMemory()
