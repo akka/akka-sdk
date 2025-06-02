@@ -50,30 +50,11 @@ This means we can model a session event with `UserMessageAdded` and `AiMessageAd
 
 Add a `SessionEvent.java` file to your `src/main/java/akka/ask/agent/domain/` directory (we're using the `agent` folder here because we cheated and know that we'll be creating other folders like `common` and `indexer` in later guides):
 
-[source, java, indent=0]
-.{sample-base-url}/ask-akka-agent/src/main/java/akka/ask/agent/domain/SessionEvent.java[SessionEvent.java]
-----
-include::example$ask-akka-agent/src/main/java/akka/ask/agent/domain/SessionEvent.java[]
-----
-<1> We could have called both fields `message` but using `query` and `response` felt more concise
-
 Now that we've got a session event, let's build the session entity and state.
 
 == Build the session entity
 
 As with all entities, the session entity handles incoming commands, validates them, and emits corresponding events. We've decided to have the entity record _exchanges_, which are commands that contain the user-supplied prompt and the response that came back from the LLM, as well as the tokens consumed for each.
-
-Add an entity to `src/main/java/akka/ask/agent/application/SessionEntity.java`
-
-[source, java, indent=0]
-.{sample-base-url}/ask-akka-agent/src/main/java/akka/ask/agent/application/SessionEntity.java[SessionEntity.java]
-----
-include::example$ask-akka-agent/src/main/java/akka/ask/agent/application/SessionEntity.java[tag=top]
-----
-<1> The type of incoming commands is `Exchange`
-<2> _Internal_ entity state stores messages in the `Message` record type
-<3> Note that we track input and output token usage separately
-<4> A single exchange is split into a user message event and an AI message event
 
 Make sure that you understand the mechanics of what's happening in this entity and it compiles before continuing. It's worth appreciating that even though we're going to use this entity to store conversation histories with an LLM, there's no LLM code in here because entities don't perform work.
 

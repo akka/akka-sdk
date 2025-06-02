@@ -21,8 +21,8 @@ Akka HTTP endpoints have the ability to return streams of data via server-sent e
 ----
 include::example$ask-akka-agent/src/main/java/akka/ask/agent/api/AskHttpEndpoint.java[tag=endpoint]
 ----
-<1> Inject the `AskAkkaAgent` class created in the previous step
-<2> Extract the `content` field from each `StreamedResponse` 
+<1> Inject the `ComponentClient`
+<2> Call the `AskAkkaAgent created in the previous step
 <3> Use the `serverSentEvents` function to easily send a stream via SSE
 
 The `userId` and `sessionId` parameters are required in `QueryRequest` along with the `question` field.
