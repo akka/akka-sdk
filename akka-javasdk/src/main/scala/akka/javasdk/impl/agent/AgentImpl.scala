@@ -187,7 +187,7 @@ private[impl] final class AgentImpl[A <: Agent](
   private def deriveMemoryClient(memoryProvider: MemoryProvider): SessionMemory = {
     memoryProvider match {
       case p: MemoryProvider.Disabled =>
-        new CoreMemoryClient(componentClient, MemorySettings.disabled())
+        new SessionMemoryClient(componentClient, MemorySettings.disabled())
 
       case p: MemoryProvider.LimitedWindowMemoryProvider =>
         new SessionMemoryClient(componentClient, new MemorySettings(p.read(), p.write(), p.readLastN()))
