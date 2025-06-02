@@ -28,17 +28,18 @@ Akka by specifying.
 
 === Tools
 
-A tool is a public one or zero parameter method made available to MCP clients.
+A tool is a public method made available to MCP clients.
 
-It is important to give a clear description of what the tool does using the description value, since this is how the
+It is important to give a clear description of what the tool does using the description value as well as using the
+`@Description` annotation on parameters and fields, since this is how the
 calling LLM gains an understanding of what the tool does.
 
 By default, the input schema for the tool is reflectively created based on the input parameter type. The input class may require
 additional information per field to help the LLM understand what each parameter means.
 
-Only simple input parameter classes are supported. Fields must be of primitive type, the Java boxed primitive types or strings.
+Only simple input parameter classes are supported. Fields must be of primitive type, the boxed Java primitive types or strings.
 
-All fields are marked as required in the schema by default, any non-required parameter should have the type `Optional<T>`
+All fields are marked as required in the schema by default, any non-required parameter should be of type `Optional<T>`
 
 [source,java]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/api/ExampleMcpEndpoint.java[ExampleMcpEndpoint.java]
@@ -58,7 +59,7 @@ include::example$doc-snippets/src/main/java/com/example/api/ExampleMcpEndpoint.j
 ----
 <1> The entire JSON Schema string for the input
 
-When using a manual schema it is very important to make sure that the schema is describing a JSON structure that
+When using a manual schema, it is crucial to make sure that the schema is describing a JSON structure that
 is actually what is accepted when Jackson parses it into the input parameter type.
 
 === Resources
@@ -120,5 +121,6 @@ It is also possible to access endpoint request headers for custom authorization 
 
 == Testing MCP endpoints
 
-There is are no specific test kit utilities for MCP, but it is possible to manually construct endpoints and directly call the methods
-as well as use the testkit HTTP client together with handcrafted JSON-RPC MCP payloads to exercise MCP tools, prompts and resources.
+There are no specific test kit utilities for MCP. However, it is possible to manually construct endpoints and directly
+call the methods as well as use the testkit HTTP client together with handcrafted JSON-RPC MCP payloads to exercise
+MCP tools, prompts and resources.
