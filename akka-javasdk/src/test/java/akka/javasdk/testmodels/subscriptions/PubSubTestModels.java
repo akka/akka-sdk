@@ -11,6 +11,7 @@ import akka.javasdk.annotations.Query;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.consumer.Consumer;
+import akka.javasdk.testmodels.workflow.WorkflowTestModels.TransferWorkflow;
 import akka.javasdk.view.View;
 import akka.javasdk.view.TableUpdater;
 import akka.javasdk.testmodels.Done;
@@ -244,6 +245,20 @@ public class PubSubTestModels {//TODO shall we remove this class and move things
 
     public Effect onEvent(EmployeeCreated message) {
       return effects().produce(message.toString());
+    }
+  }
+
+  @Consume.FromKeyValueEntity(value = Counter.class)
+  public static class MissingHandlersWhenSubscribeToKVEConsumer extends Consumer {
+    public Effect wrongHandler(Integer message) {
+      return effects().produce(message);
+    }
+  }
+
+  @Consume.FromWorkflow(value = TransferWorkflow.class)
+  public static class MissingHandlersWhenSubscribeToWorkflowConsumer extends Consumer {
+    public Effect wrongHandler(Integer message) {
+      return effects().produce(message);
     }
   }
 

@@ -43,7 +43,7 @@ private[impl] object ComponentDescriptorFactory {
   def hasAcl(javaMethod: Method): Boolean =
     javaMethod.isPublic && javaMethod.hasAnnotation[Acl]
 
-  def hasValueEntitySubscription(clazz: Class[_]): Boolean =
+  def hasKeyValueEntitySubscription(clazz: Class[_]): Boolean =
     clazz.isPublic && clazz.hasAnnotation[FromKeyValueEntity]
 
   def hasWorkflowSubscription(clazz: Class[_]): Boolean =
@@ -56,7 +56,7 @@ private[impl] object ComponentDescriptorFactory {
     clazz.getAnnotationOption[FromServiceStream]
 
   def hasSubscription(clazz: Class[_]): Boolean = {
-    hasValueEntitySubscription(clazz) ||
+    hasKeyValueEntitySubscription(clazz) ||
     hasWorkflowSubscription(clazz) ||
     hasEventSourcedEntitySubscription(clazz) ||
     hasTopicSubscription(clazz) ||
@@ -147,6 +147,16 @@ private[impl] object ComponentDescriptorFactory {
     ann.value()
   }
 
+  def findKVEClass(clazz: Class[_]): Class[_ <: KeyValueEntity[_]] = {
+    val ann = clazz.getAnnotation(classOf[FromKeyValueEntity])
+    ann.value()
+  }
+
+  def findWorkflowClass(clazz: Class[_]): Class[_ <: Workflow[_]] = {
+    val ann = clazz.getAnnotation(classOf[FromWorkflow])
+    ann.value()
+  }
+
   def findSubscriptionEventSourcedComponentId(clazz: Class[_]): String = {
     val ann = clazz.getAnnotation(classOf[FromEventSourcedEntity])
     readComponentIdValue(ann.value())
@@ -208,7 +218,7 @@ private[impl] object ComponentDescriptorFactory {
   }
 
   def consumerSource(clazz: Class[_]): ConsumerSource = {
-    if (hasValueEntitySubscription(clazz)) {
+    if (hasKeyValueEntitySubscription(clazz)) {
       val kveComponentId = findSubscriptionKeyValueEntityComponentId(clazz)
       new ConsumerSource.KeyValueEntitySource(kveComponentId)
     } else if (hasWorkflowSubscription(clazz)) {

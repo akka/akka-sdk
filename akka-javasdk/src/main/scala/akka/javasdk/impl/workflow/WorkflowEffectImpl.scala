@@ -18,6 +18,7 @@ import WorkflowEffectImpl.TransitionalEffectImpl
 import WorkflowEffectImpl.UpdateState
 import akka.annotation.InternalApi
 import akka.javasdk.Metadata
+import akka.javasdk.impl.workflow.WorkflowEffectImpl.Delete
 import akka.javasdk.impl.workflow.WorkflowEffectImpl.ReadOnlyEffectImpl
 import akka.javasdk.workflow.Workflow.Effect
 import akka.javasdk.workflow.Workflow.Effect.Builder
@@ -36,6 +37,7 @@ object WorkflowEffectImpl {
   object Pause extends Transition
   object NoTransition extends Transition
   object End extends Transition
+  object Delete extends Transition
 
   sealed trait Persistence[+S]
   final case class UpdateState[S](newState: S) extends Persistence[S]
@@ -61,6 +63,9 @@ object WorkflowEffectImpl {
 
     override def end(): TransitionalEffect[Void] =
       TransitionalEffectImpl(persistence, End)
+
+    override def delete(): TransitionalEffect[Void] =
+      TransitionalEffectImpl(persistence, Delete)
   }
 
   final case class TransitionalEffectImpl[S, T](persistence: Persistence[S], transition: Transition)
@@ -108,6 +113,9 @@ case class WorkflowEffectImpl[S, T](persistence: Persistence[S], transition: Tra
 
   override def end(): TransitionalEffect[Void] =
     TransitionalEffectImpl(NoPersistence, End)
+
+  override def delete(): TransitionalEffect[Void] =
+    TransitionalEffectImpl(NoPersistence, Delete)
 
   override def reply[R](reply: R): ReadOnlyEffect[R] =
     ReadOnlyEffectImpl().reply(reply)

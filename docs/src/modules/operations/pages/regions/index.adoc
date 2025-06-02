@@ -35,6 +35,8 @@ akka project regions add gcp-us-east1
 
 When you deploy a service it will run in all regions of the project. When you add a region to a project the existing services will automatically start in the new region.
 
+NOTE: Project region assignment is restricted to users that have `project-admin` or `superuser` role in the encompassing organization to which the project belongs, as documented in xref:operations:organizations/manage-users.adoc[Manage users].
+
 [[selecting-primary]]
 === Selecting primary for stateful components
 

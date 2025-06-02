@@ -22,6 +22,8 @@ import akka.javasdk.annotations.Table
 import akka.javasdk.consumer.Consumer
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.javasdk.impl.ComponentDescriptorFactory.eventSourcedEntitySubscription
+import akka.javasdk.impl.ComponentDescriptorFactory.findKVEClass
+import akka.javasdk.impl.ComponentDescriptorFactory.findWorkflowClass
 import akka.javasdk.impl.ComponentDescriptorFactory.hasAcl
 import akka.javasdk.impl.ComponentDescriptorFactory.hasAgentEffectOutput
 import akka.javasdk.impl.ComponentDescriptorFactory.hasConsumerOutput
@@ -29,6 +31,7 @@ import akka.javasdk.impl.ComponentDescriptorFactory.hasESEffectOutput
 import akka.javasdk.impl.ComponentDescriptorFactory.hasEventSourcedEntitySubscription
 import akka.javasdk.impl.ComponentDescriptorFactory.hasHandleDeletes
 import akka.javasdk.impl.ComponentDescriptorFactory.hasKVEEffectOutput
+import akka.javasdk.impl.ComponentDescriptorFactory.hasKeyValueEntitySubscription
 import akka.javasdk.impl.ComponentDescriptorFactory.hasQueryEffectOutput
 import akka.javasdk.impl.ComponentDescriptorFactory.hasStreamSubscription
 import akka.javasdk.impl.ComponentDescriptorFactory.hasSubscription
@@ -36,13 +39,13 @@ import akka.javasdk.impl.ComponentDescriptorFactory.hasTimedActionEffectOutput
 import akka.javasdk.impl.ComponentDescriptorFactory.hasTopicPublication
 import akka.javasdk.impl.ComponentDescriptorFactory.hasTopicSubscription
 import akka.javasdk.impl.ComponentDescriptorFactory.hasUpdateEffectOutput
-import akka.javasdk.impl.ComponentDescriptorFactory.hasValueEntitySubscription
 import akka.javasdk.impl.ComponentDescriptorFactory.hasWorkflowEffectOutput
 import akka.javasdk.impl.ComponentDescriptorFactory.hasWorkflowSubscription
 import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.reflection.Reflect.Syntax._
 import akka.javasdk.keyvalueentity.KeyValueEntity
 import akka.javasdk.timedaction.TimedAction
+import akka.javasdk.view.TableUpdater
 import akka.javasdk.view.View
 import akka.javasdk.workflow.Workflow
 
@@ -114,7 +117,7 @@ private[javasdk] object Validations {
       component: Class[_],
       updateMethodPredicate: Method => Boolean): Validation = {
     typeLevelSubscriptionValidation(component) ++
-    missingEventHandlerValidations(component, updateMethodPredicate) ++
+    missingHandlerValidations(component, updateMethodPredicate) ++
     ambiguousHandlerValidations(component, updateMethodPredicate) ++
     valueEntitySubscriptionValidations(component, updateMethodPredicate) ++
     workflowSubscriptionValidations(component, updateMethodPredicate) ++
@@ -404,7 +407,7 @@ private[javasdk] object Validations {
 
   def typeLevelSubscriptionValidation(component: Class[_]): Validation = {
     val typeLevelSubs = List(
-      hasValueEntitySubscription(component),
+      hasKeyValueEntitySubscription(component),
       hasWorkflowSubscription(component),
       hasEventSourcedEntitySubscription(component),
       hasStreamSubscription(component),
@@ -457,24 +460,57 @@ private[javasdk] object Validations {
     ambiguousHandlers.fold(sealedHandlerMixedUsage)(_ ++ _)
   }
 
-  private def missingEventHandlerValidations(
-      component: Class[_],
-      updateMethodPredicate: Method => Boolean): Validation = {
+  private def missingHandlerValidations(component: Class[_], updateMethodPredicate: Method => Boolean): Validation = {
     val methods = component.getMethods.toIndexedSeq
 
-    eventSourcedEntitySubscription(component) match {
-      case Some(classLevel) =>
-        val eventType = Reflect.eventSourcedEntityEventType(classLevel.value())
-        if (!classLevel.ignoreUnknown() && eventType.isSealed) {
-          val effectMethodsInputParams: Seq[Class[_]] = methods
-            .filter(updateMethodPredicate)
-            .map(_.getParameterTypes.last) //last because it could be a view update methods with 2 params
-          missingEventHandler(effectMethodsInputParams, eventType, component)
-        } else {
-          Valid
-        }
-      case None =>
+    def missingStateHandlers(stateType: Class[_]) = {
+      Validation(
+        errorMessage(
+          component,
+          s"missing handlers. The class must have one handler with '${stateType.getName}' parameter and/or one parameterless method annotated with '@DeleteHandler'."))
+    }
+
+    def findStateHandlers(stateType: Class[_]) = {
+      methods
+        .filter(updateMethodPredicate)
+        .filter(method =>
+          hasHandleDeletes(method) ||
+          method.getParameterTypes.lastOption.contains(stateType))
+    }
+
+    if (hasEventSourcedEntitySubscription(component)) {
+      val classLevel = eventSourcedEntitySubscription(component).get
+      val eventType = Reflect.eventSourcedEntityEventType(classLevel.value())
+      if (!classLevel.ignoreUnknown() && eventType.isSealed) {
+        val effectMethodsInputParams: Seq[Class[_]] = methods
+          .filter(updateMethodPredicate)
+          .map(_.getParameterTypes.last) //last because it could be a view update methods with 2 params
+        missingEventHandler(effectMethodsInputParams, eventType, component)
+      } else {
         Valid
+      }
+    } else if (hasKeyValueEntitySubscription(component)) {
+      val kveClass = findKVEClass(component)
+      val stateType = Reflect.keyValueEntityStateType(kveClass)
+      val handlers = findStateHandlers(stateType)
+      if (handlers.isEmpty &&
+        !classOf[TableUpdater[_]]
+          .isAssignableFrom(component)) { //Table updater is a special case, might not have any handlers
+        missingStateHandlers(stateType)
+      } else {
+        Valid
+      }
+    } else if (hasWorkflowSubscription(component)) {
+      val workflowClass = findWorkflowClass(component)
+      val stateType = Reflect.workflowStateType(workflowClass)
+      val handlers = findStateHandlers(stateType)
+      if (handlers.isEmpty) {
+        missingStateHandlers(stateType)
+      } else {
+        Valid
+      }
+    } else {
+      Valid
     }
   }
 
@@ -562,7 +598,7 @@ private[javasdk] object Validations {
   }
 
   private def viewMustHaveCorrectUpdateHandlerWhenTransformingViewUpdates(tableUpdater: Class[_]): Validation = {
-    if (hasValueEntitySubscription(tableUpdater)) {
+    if (hasKeyValueEntitySubscription(tableUpdater)) {
       val tableType: Class[_] = Reflect.tableTypeForTableUpdater(tableUpdater)
       val valueEntityClass: Class[_] =
         tableUpdater.getAnnotation(classOf[FromKeyValueEntity]).value().asInstanceOf[Class[_]]
@@ -642,7 +678,7 @@ private[javasdk] object Validations {
       component: Class[_],
       updateMethodPredicate: Method => Boolean): Validation = {
 
-    when(hasValueEntitySubscription(component)) {
+    when(hasKeyValueEntitySubscription(component)) {
       commonStateSubscriptionValidation(component, updateMethodPredicate)
     }
   }

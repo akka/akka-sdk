@@ -124,6 +124,7 @@ prepending
 [Pp]rometheus
 proto
 [Pp]rotobuf
+Qodo
 [Qq]uantiles
 Quatrini
 [Qq]uickstarts

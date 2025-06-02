@@ -12,6 +12,20 @@ Current versions
 
 == May 2025
 
+* https://github.com/akka/akka-sdk/releases/tag/v3.3.2[Akka SDK 3.3.2]
+  - xref:java:ai-coding-assistant.adoc[AI coding assistant instructions]
+  - Support deletion of workflows
+  - Validation for missing handler when consuming from Key Value Entity or Workflow
+
+
+* Akka Runtime 1.4.12
+  - Akka 25.05.0 dependencies
+  - Jackson 2.18.3
+
+* Akka Runtime 1.4.11
+  - Improved metrics
+  - Basis for SDK additions
+
 * https://github.com/akka/akka-sdk/releases/tag/v3.3.1[Akka SDK 3.3.1]
   - Support `Runnable` in Workflow calls
   - Updates to xref:self-managed:configuring.adoc[] documentation

@@ -141,6 +141,14 @@ In addition to the special `HttpException`s, exceptions are handled like this:
 id and the response message only includes the correlation id to not leak service internals to an untrusted client.
 ** In local development and integration tests the full exception is returned as response body.
 
+== Securing HTTP endpoints ==
+
+Akka's HTTP endpoints can be secured by multiple approaches:
+
+. xref:java:access-control.adoc[]
+. xref:security:jwts.adoc[]
+. xref:security:tls-certificates.adoc[]
+. xref:operations:services/invoke-service.adoc#_http_basic_authentication[HTTP Basic authentication]
 
 == Interacting with other components ==
 
@@ -354,4 +362,6 @@ This uses more advanced Akka stream operators, you can find more details of thos
 == See also
 
 - xref:java:access-control.adoc[]
+- xref:security:jwts.adoc[]
 - xref:security:tls-certificates.adoc[]
+- xref:operations:services/invoke-service.adoc#_http_basic_authentication[HTTP Basic authentication]

@@ -293,45 +293,14 @@ public class ViewTestModels {
   }
 
   @ComponentId("users_view")
-  public static class TransformedUserViewWithMethodLevelJWT extends View {
+  public static class UserViewWithoutTransformation extends View {
 
     @Consume.FromKeyValueEntity(UserEntity.class)
-    public static class TransformedUserUpdater extends TableUpdater<TransformedUser> {
-
-      public Effect<TransformedUser> onChange(User user) {
-        return effects()
-            .updateRow(new TransformedUser(user.lastName + ", " + user.firstName, user.email));
-      }
+    public static class TransformedUserUpdater extends TableUpdater<User> {
     }
 
     @Query("SELECT * FROM users WHERE email = :email")
-    @JWT(
-        validate = JWT.JwtMethodMode.BEARER_TOKEN,
-        bearerTokenIssuers = {"a", "b"},
-        staticClaims = {
-            @JWT.StaticClaim(claim = "role", values = "admin"),
-            @JWT.StaticClaim(claim = "aud", values = "${ENV}.kalix.io")
-        })
-    public QueryEffect<TransformedUser> getUser(ByEmail byEmail) {
-      return queryResult();
-    }
-  }
-
-  @ComponentId("users_view")
-  @JWT(
-    validate = JWT.JwtMethodMode.BEARER_TOKEN,
-    bearerTokenIssuers = {"a", "b"},
-    staticClaims = {
-        @JWT.StaticClaim(claim = "role", values = "admin"),
-        @JWT.StaticClaim(claim = "aud", values = "${ENV}.kalix.io")
-    })
-  public static class ViewWithServiceLevelJWT extends View {
-
-    @Consume.FromKeyValueEntity(UserEntity.class)
-    public static class UserUpdater extends TableUpdater<User> {}
-
-    @Query("SELECT * FROM users WHERE email = :email")
-    public QueryEffect<User> getUser(ByEmail byEmail) {
+    public QueryEffect<TransformedUser>  getUser(ByEmail byEmail) {
       return queryResult();
     }
   }
