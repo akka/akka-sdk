@@ -14,9 +14,7 @@ import akka.javasdk.Tracing;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Not for user extension, can be injected as constructor parameter into MCP endpoint components
- */
+/** Not for user extension, can be injected as constructor parameter into MCP endpoint components */
 @DoNotInherit
 public interface McpRequestContext {
   /**
@@ -40,5 +38,4 @@ public interface McpRequestContext {
 
   /** @return A list with all the headers of the current request */
   List<HttpHeader> allRequestHeaders();
-
 }
