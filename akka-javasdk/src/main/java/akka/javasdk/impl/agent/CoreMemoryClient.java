@@ -25,8 +25,8 @@ import java.util.Optional;
 public final class CoreMemoryClient implements CoreMemory {
 
   public record MemorySettings(
-      Boolean read,
-      Boolean write,
+      boolean read,
+      boolean write,
       Optional<Integer> historyLimit
   ) {
     static MemorySettings disabled() {
@@ -57,12 +57,12 @@ public final class CoreMemoryClient implements CoreMemory {
                              ConversationMessage.UserMessage userMessage,
                              ConversationMessage.AiMessage aiMessage) {
     if (memorySettings.write()) {
-      logger.debug("Adding interaction to session: {}", sessionId);
+      logger.debug("Adding interaction to sessionId [{}]", sessionId);
       componentClient.forEventSourcedEntity(sessionId)
           .method(ConversationMemory::addInteraction)
           .invoke(new ConversationMemory.AddInteractionCmd(componentId, userMessage, aiMessage));
     } else {
-      logger.debug("Memory writing is disabled, interaction not added to session: {}", sessionId);
+      logger.debug("Memory writing is disabled, interaction not added to sessionId [{}]", sessionId);
     }
   }
 
@@ -72,10 +72,10 @@ public final class CoreMemoryClient implements CoreMemory {
       var history = componentClient.forEventSourcedEntity(sessionId)
           .method(ConversationMemory::getHistory)
           .invoke(new ConversationMemory.GetHistoryCmd(memorySettings.historyLimit));
-      logger.debug("History retrieved for sessionId={} size={}", sessionId, history.messages().size());
+      logger.debug("History retrieved for sessionId [{}], size [{}]", sessionId, history.messages().size());
       return history;
     } else {
-      logger.debug("Memory reading is disabled, history not retrieved for sessionId: {}", sessionId);
+      logger.debug("Memory reading is disabled, history not retrieved for sessionId [{}]", sessionId);
       return ConversationHistory.EMPTY;
     }
   }
