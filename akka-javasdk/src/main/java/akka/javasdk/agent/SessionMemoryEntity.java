@@ -136,7 +136,6 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
 
   public record AddInteractionCmd(String componentId, UserMessage userMessage, AiMessage aiMessage) { }
   public Effect<Done> addInteraction(AddInteractionCmd cmd) {
-    var ts = System.currentTimeMillis();
     var totalTokensUser = currentState().totalTokenUsage + cmd.userMessage.tokens();
     var totalTokensAi = totalTokensUser + cmd.aiMessage.tokens();
 
@@ -144,8 +143,8 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
 
     return effects()
         .persist(
-            new Event.UserMessageAdded(ts, cmd.componentId, cmd.userMessage.text(), cmd.userMessage.tokens(), totalTokensUser),
-            new Event.AiMessageAdded(ts, cmd.componentId, cmd.aiMessage.text(),cmd.aiMessage.tokens(), totalTokensAi, toolInteractions))
+            new Event.UserMessageAdded(cmd.userMessage.timestamp(), cmd.componentId, cmd.userMessage.text(), cmd.userMessage.tokens(), totalTokensUser),
+            new Event.AiMessageAdded(cmd.aiMessage.timestamp(), cmd.componentId, cmd.aiMessage.text(),cmd.aiMessage.tokens(), totalTokensAi, toolInteractions))
         .thenReply(__ -> Done.done());
   }
 
@@ -183,11 +182,11 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
           currentState().withMaxSize(limitedWindowSet.maxSizeInBytes);
       case Event.UserMessageAdded userMsg ->
           currentState()
-              .addMessage(new UserMessage(userMsg.message(), userMsg.tokens()))
+              .addMessage(new UserMessage(userMsg.timestamp(), userMsg.message(), userMsg.tokens()))
               .withTotalTokenUsage(userMsg.totalTokenUsage());
       case Event.AiMessageAdded aiMsg ->
           currentState()
-              .addMessage(new AiMessage(aiMsg.message(), aiMsg.tokens(), aiMsg.toolCallInteraction))
+              .addMessage(new AiMessage(aiMsg.timestamp(), aiMsg.message(), aiMsg.tokens(), aiMsg.toolCallInteraction))
               .withTotalTokenUsage(aiMsg.totalTokenUsage());
       case Event.Deleted __ ->
           currentState().clear();

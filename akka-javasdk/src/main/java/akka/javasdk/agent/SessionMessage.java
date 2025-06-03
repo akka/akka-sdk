@@ -20,7 +20,7 @@ public sealed interface SessionMessage {
 
   int size();
 
-  record UserMessage(String text, int tokens) implements SessionMessage {
+  record UserMessage(long timestamp, String text, int tokens) implements SessionMessage {
 
     @Override
     public int size() {
@@ -35,9 +35,9 @@ public sealed interface SessionMessage {
   record ToolCallInteraction(ToolCallRequest request, ToolCallResponse response) {
   }
   
-  record AiMessage(String text, int tokens, List<ToolCallInteraction> toolCallInteractions) implements SessionMessage {
-    public AiMessage(String text, int tokens) {
-      this(text, tokens, List.of());
+  record AiMessage(long timestamp, String text, int tokens, List<ToolCallInteraction> toolCallInteractions) implements SessionMessage {
+    public AiMessage(long timestamp, String text, int tokens) {
+      this(timestamp, text, tokens, List.of());
     }
 
     @Override
