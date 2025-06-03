@@ -4,6 +4,7 @@
 
 package akka.javasdk.agent;
 
+import akka.runtime.sdk.spi.SpiAgent;
 import com.typesafe.config.Config;
 
 public sealed interface ModelProvider {
@@ -108,6 +109,121 @@ public sealed interface ModelProvider {
     public Anthropic withMaxTokens(int maxTokens) {
       return new Anthropic(apiKey, modelName, baseUrl, temperature, topP, topK, maxTokens);
     }
+  }
+
+  /**
+   * Settings for the Google AI Gemini Large Language Model provider.
+   */
+  static GoogleAIGemini googleAiGemini() {
+    return new GoogleAIGemini("", "", Double.NaN, Double.NaN, -1);
+  }
+
+  record GoogleAIGemini(String apiKey, String modelName, Double temperature, Double topP, int maxOutputTokens) implements ModelProvider {
+
+    public static GoogleAIGemini fromConfig(Config config) {
+      return new GoogleAIGemini(
+          config.getString("api-key"),
+          config.getString("model-name"),
+          config.getDouble("temperature"),
+          config.getDouble("top-p"),
+          config.getInt("max-output-tokens")
+      );
+    }
+
+    public GoogleAIGemini withApiKey(String apiKey) {
+      return new GoogleAIGemini(apiKey, modelName, temperature, topP, maxOutputTokens);
+    }
+
+    public GoogleAIGemini withModelName(String modelName) {
+      return new GoogleAIGemini(apiKey, modelName, temperature, topP, maxOutputTokens);
+    }
+
+     public GoogleAIGemini withTemperature(double temperature) {
+      return new GoogleAIGemini(apiKey, modelName, temperature, topP, maxOutputTokens);
+     }
+
+     public GoogleAIGemini withTopP(double topP) {
+      return new GoogleAIGemini(apiKey, modelName, temperature, topP, maxOutputTokens);
+     }
+
+     public GoogleAIGemini withMaxOutputTokens(int maxOutputTokens) {
+      return new GoogleAIGemini(apiKey, modelName, temperature, topP, maxOutputTokens);
+     }
+  }
+
+  /**
+   * Settings for the Local AI Large Langue Model provider.
+   */
+  static LocalAI localAI() {
+    return new LocalAI("", "", Double.NaN, Double.NaN, -1);
+  }
+
+  record LocalAI(String baseUrl, String modelName, Double temperature, Double topP, int maxTokens) implements ModelProvider {
+    public static LocalAI fromConfig(Config config) {
+      return new LocalAI(
+          config.getString("base-url"),
+          config.getString("model-name"),
+          config.getDouble("temperature"),
+          config.getDouble("top-p"),
+          config.getInt("max-tokens")
+      );
+    }
+
+      public LocalAI withModelName(String modelName) {
+        return new LocalAI(baseUrl, modelName, temperature, topP, maxTokens);
+      }
+
+      public LocalAI withTemperature(double temperature) {
+        return new LocalAI(baseUrl, modelName, temperature, topP, maxTokens);
+      }
+
+      public LocalAI withTopP(double topP) {
+        return new LocalAI(baseUrl, modelName, temperature, topP, maxTokens);
+      }
+
+      public LocalAI withMaxTokens(int maxTokens) {
+        return new LocalAI(baseUrl, modelName, temperature, topP, maxTokens);
+      }
+
+  }
+
+
+  /**
+   * Settings for the Ollama Large Language Model provider.
+   */
+  static Ollama ollama() {
+    return new Ollama("", "", Double.NaN, Double.NaN);
+  }
+
+  /**
+   * Settings for the Ollama Large Language Model provider.
+   */
+  record Ollama(String baseUrl, String modelName, Double temperature, Double topP) implements ModelProvider {
+
+    public static Ollama fromConfig(Config config) {
+      return new Ollama(
+          config.getString("base-url"),
+          config.getString("model-name"),
+          config.getDouble("temperature"),
+          config.getDouble("top-p"));
+    }
+
+    public Ollama withBaseUrl(String baseUrl) {
+      return new Ollama(baseUrl, modelName, temperature, topP);
+    }
+
+    public Ollama withModelName(String modelName) {
+      return new Ollama(baseUrl, modelName, temperature, topP);
+    }
+
+    public Ollama withTemperature(double temperature) {
+      return new Ollama(baseUrl, modelName, temperature, topP);
+    }
+
+    public Ollama withTopP(double topP) {
+      return new Ollama(baseUrl, modelName, temperature, topP);
+    }
+
   }
 
   /**
