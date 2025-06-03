@@ -231,23 +231,27 @@ class WorkflowImpl[S, W <: Workflow[S]](
   }
 
   override def executeStep(
-      stepName: String,
-      input: Option[BytesPayload],
       userState: Option[BytesPayload],
-      metadata: SpiMetadata): Future[BytesPayload] = {
+      stepCommand: SpiWorkflow.StepCommand): Future[BytesPayload] = {
 
+    val stepName = stepCommand.stepName
     val span: Option[Span] =
-      traceInstrumentation.buildEntityCommandSpan(ComponentType.Workflow, componentId, workflowId, stepName, metadata)
+      traceInstrumentation.buildEntityCommandSpan(
+        ComponentType.Workflow,
+        componentId,
+        workflowId,
+        stepName,
+        stepCommand.metadata)
     span.foreach(s => MDC.put(Telemetry.TRACE_ID, s.getSpanContext.getTraceId))
 
-    val context = commandContext(stepName, span, MetadataImpl.of(metadata))
+    val context = commandContext(stepName, span, MetadataImpl.of(stepCommand.metadata))
     val timerScheduler =
       new TimerSchedulerImpl(timerClient, context.componentCallMetadata)
 
     try {
       val handleStep = router.handleStep(
         userState,
-        input = input,
+        input = stepCommand.input,
         stepName = stepName,
         timerScheduler = timerScheduler,
         commandContext = context,
@@ -272,7 +276,7 @@ class WorkflowImpl[S, W <: Workflow[S]](
     } finally {
       span.foreach { __ =>
         MDC.remove(Telemetry.TRACE_ID)
-        //ending the span is done in the onComplete above, can't be here because the Future may not complete
+      //ending the span is done in the onComplete above, can't be here because the Future may not complete
       }
     }
   }
@@ -294,6 +298,12 @@ class WorkflowImpl[S, W <: Workflow[S]](
     Future.successful(toSpiTransitionalEffect(effect))
   }
 
+  override def executeStep(
+      stepName: String,
+      input: Option[BytesPayload],
+      userState: Option[BytesPayload]): Future[BytesPayload] = {
+    executeStep(userState, new SpiWorkflow.StepCommand(stepName, input, SpiMetadata.empty))
+  }
 }
 
 /**
