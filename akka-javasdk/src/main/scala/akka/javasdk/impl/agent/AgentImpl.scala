@@ -224,7 +224,7 @@ private[impl] final class AgentImpl[A <: Agent](
 
     val toolCallInteractions = modelResult.toolInteractions.map { ti =>
       val req = new ToolCallRequest(ti.request.id, ti.request.name, ti.request.arguments)
-      val res = new ToolCallResponse(ti.response.id, ti.response.name, ti.response.content)
+      val res = new ToolCallResponse(ti.response.id, ti.response.name, ti.response.payload)
       new ToolCallInteraction(req, res)
     }.asJava
 
