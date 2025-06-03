@@ -84,7 +84,7 @@ It is possible to plug in a custom model by implementing the link:_attachments/a
 
 The prompt consists of essential instructions to the model.
 
-* The system message provides system-level instructions to the AI model that defines its behavior and context The system message acts as a foundational prompt that establishes the AI's role, constraints, and operational parameters. It is processed before user messages and helps maintain consistent behavior throughout the interaction.
+* The system message provides system-level instructions to the AI model that defines its behavior and context. The system message acts as a foundational prompt that establishes the AI's role, constraints, and operational parameters. It is processed before user messages and helps maintain consistent behavior throughout the interactions.
 * The user message represents the specific query, instruction, or input that will be processed by the model to generate a response.
 
 An agent that suggests activities may have a prompt like:
@@ -100,7 +100,7 @@ include::example$doc-snippets/src/main/java/com/example/application/ActivityAgen
 
 === Prompt template
 
-As an alternative to hard-coded prompts, there is a built-in prompt template entity. The advantage of using the prompt template entity is that you can change the prompts in runtime without restarting or redeploying the service.
+As an alternative to hard-coded prompts, there is a built-in prompt template entity. The advantage of using the prompt template entity is that you can change the prompts at runtime without restarting or redeploying the service.
 
 FIXME...
 
@@ -116,7 +116,7 @@ include::example$doc-snippets/src/main/java/com/example/application/ActivityAgen
 <2> Define the identifier of the session that the agent participates in.
 
 The session id is used by the xref:#_session_memory[session memory], but it is also important for observability
-tracking. You can use a new random UUID for each call if the agent doesn't collaborate with other agents or have a multi-step interaction with the AI model.
+tracking. You can use a new random UUID for each call if the agent doesn't collaborate with other agents nor have a multi-step interaction with the AI model.
 
 For more details about the `ComponentClient`, see xref:component-and-service-calls.adoc[].
 
