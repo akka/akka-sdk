@@ -272,6 +272,8 @@ private[impl] final class AgentImpl[A <: Agent](
           p.temperature(),
           p.topP(),
           p.maxOutputTokens())
+      case p: ModelProvider.LocalAI =>
+        new SpiAgent.ModelProvider.LocalAI(p.baseUrl(), p.modelName(), p.temperature(), p.topP(), p.maxTokens())
       case p: ModelProvider.Ollama =>
         new SpiAgent.ModelProvider.Ollama(p.baseUrl(), p.modelName(), p.temperature(), p.topP())
       case p: ModelProvider.OpenAi =>

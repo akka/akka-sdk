@@ -151,6 +151,42 @@ public sealed interface ModelProvider {
      }
   }
 
+  /**
+   * Settings for the Local AI Large Langue Model provider.
+   */
+  static LocalAI localAI() {
+    return new LocalAI("", "", Double.NaN, Double.NaN, -1);
+  }
+
+  record LocalAI(String baseUrl, String modelName, Double temperature, Double topP, int maxTokens) implements ModelProvider {
+    public static LocalAI fromConfig(Config config) {
+      return new LocalAI(
+          config.getString("base-url"),
+          config.getString("model-name"),
+          config.getDouble("temperature"),
+          config.getDouble("top-p"),
+          config.getInt("max-tokens")
+      );
+    }
+
+      public LocalAI withModelName(String modelName) {
+        return new LocalAI(baseUrl, modelName, temperature, topP, maxTokens);
+      }
+
+      public LocalAI withTemperature(double temperature) {
+        return new LocalAI(baseUrl, modelName, temperature, topP, maxTokens);
+      }
+
+      public LocalAI withTopP(double topP) {
+        return new LocalAI(baseUrl, modelName, temperature, topP, maxTokens);
+      }
+
+      public LocalAI withMaxTokens(int maxTokens) {
+        return new LocalAI(baseUrl, modelName, temperature, topP, maxTokens);
+      }
+
+  }
+
 
   /**
    * Settings for the Ollama Large Language Model provider.

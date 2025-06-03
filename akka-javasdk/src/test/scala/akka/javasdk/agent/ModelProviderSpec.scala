@@ -19,6 +19,9 @@ class ModelProviderSpec extends AnyWordSpec with Matchers {
     "load defaults from config for googleai-gemini" in {
       ModelProvider.GoogleAIGemini.fromConfig(defaultConfig.getConfig("akka.javasdk.agent.googleai-gemini"))
     }
+    "load defaults from config for local-ai" in {
+      ModelProvider.LocalAI.fromConfig(defaultConfig.getConfig("akka.javasdk.agent.local-ai"))
+    }
     "load defaults from config for ollama" in {
       ModelProvider.Ollama.fromConfig(defaultConfig.getConfig("akka.javasdk.agent.ollama"))
     }
