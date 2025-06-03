@@ -13,7 +13,6 @@ import akka.javasdk.annotations.ComponentId;
  * Dummy agent for testing component auto registration, e.g. PromptTemplate.
  */
 @ComponentId("some-agent")
-@AgentDescription(name = "Dummy Agent", description = "Not very smart agent")
 public class SomeAgent extends Agent {
   private final ModelProvider modelProvider;
 

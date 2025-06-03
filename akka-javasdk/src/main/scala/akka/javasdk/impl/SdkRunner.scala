@@ -124,7 +124,6 @@ import akka.javasdk.agent.SessionMemoryEntity
 import akka.javasdk.annotations.AgentDescription
 import akka.javasdk.impl.agent.AgentRegistryImpl
 import akka.javasdk.impl.agent.PromptTemplateClient
-import akka.util.Helpers.Requiring
 import akka.javasdk.annotations.mcp.McpEndpoint
 import akka.javasdk.mcp.AbstractMcpEndpoint
 import akka.javasdk.mcp.McpRequestContext
@@ -661,7 +660,8 @@ private final class Sdk(
 
       case clz if classOf[Agent].isAssignableFrom(clz) =>
         val componentId = clz.getAnnotation(classOf[ComponentId]).value
-        val agentDescription = clz.getAnnotation(classOf[AgentDescription]).value
+        val agentDescription = Option(clz.getAnnotation(classOf[AgentDescription]))
+
         val agentClass = clz.asInstanceOf[Class[Agent]]
 
         val instanceFactory: SpiAgent.FactoryContext => SpiAgent = { factoryContext =>
@@ -689,12 +689,13 @@ private final class Sdk(
           new AgentDescriptor(componentId, clz.getName, instanceFactory)
 
         agentRegistryInfo :+=
-          AgentRegistryImpl.AgentDetails(
-            componentId,
-            agentDescription.name,
-            agentDescription.description,
-            agentDescription.role,
-            agentClass)
+          (agentDescription match {
+            case Some(desc) =>
+              AgentRegistryImpl.AgentDetails(componentId, desc.name, desc.description, desc.role, agentClass)
+            case None =>
+              // defaults if AgentDescription is not defined
+              AgentRegistryImpl.AgentDetails(componentId, name = componentId, description = "", role = "", agentClass)
+          })
 
       case clz if classOf[View].isAssignableFrom(clz) =>
         viewDescriptors :+= ViewDescriptorFactory(clz, serializer, regionInfo, sdkExecutionContext)

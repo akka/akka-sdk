@@ -8,6 +8,8 @@ import akka.javasdk.annotations.AgentDescription;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.client.DynamicMethodRef;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.UUID;
@@ -92,6 +94,7 @@ abstract class MultiAgentSample {
 
   @ComponentId("agent-team-a")
   static class TeamA { // this would be a workflow
+    private static final Logger logger = LoggerFactory.getLogger(TeamA.class);
     private final ComponentClient componentClient;
     private final AgentRegistry registry;
 
@@ -115,7 +118,7 @@ abstract class MultiAgentSample {
               .invoke(step.query);
         }).toList();
 
-      System.out.println(results);
+      logger.info("Result: {}", results);
     }
 
     private DynamicMethodRef<String, String> agentCall(String agentId) {

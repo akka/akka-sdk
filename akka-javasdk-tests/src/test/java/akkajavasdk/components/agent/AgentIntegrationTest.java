@@ -123,10 +123,16 @@ public class AgentIntegrationTest extends TestKitSupport {
     assertThat(testKit.getAgentRegistry().agentIdsWithRole("streaming"))
         .isEqualTo(Set.of("some-streaming-agent"));
 
+    var someStructuredInfo = testKit.getAgentRegistry().agentInfo("structured-response-agent");
+    assertThat(someStructuredInfo.id()).isEqualTo("structured-response-agent");
+    assertThat(someStructuredInfo.name()).isEqualTo("Dummy Agent");
+    assertThat(someStructuredInfo.description()).isEqualTo("Not very smart agent");
+
+    // SomeAgent doesn't define AgentDescription but has default info
     var someInfo = testKit.getAgentRegistry().agentInfo("some-agent");
     assertThat(someInfo.id()).isEqualTo("some-agent");
-    assertThat(someInfo.name()).isEqualTo("Dummy Agent");
-    assertThat(someInfo.description()).isEqualTo("Not very smart agent");
+    assertThat(someInfo.name()).isEqualTo("some-agent");
+    assertThat(someInfo.description()).isEqualTo("");
   }
 
   @Test

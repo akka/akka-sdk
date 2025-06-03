@@ -32,7 +32,11 @@ import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.SpiMetadata
 import akka.runtime.sdk.spi.{ AgentClient => RuntimeAgentClient }
 
-object AgentClientImpl {
+/**
+ * INTERNAL API
+ */
+@InternalApi
+private[javasdk] object AgentClientImpl {
 
   private case class AgentMethodProperties(
       componentId: String,
