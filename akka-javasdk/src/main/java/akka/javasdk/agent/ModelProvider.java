@@ -4,6 +4,7 @@
 
 package akka.javasdk.agent;
 
+import akka.runtime.sdk.spi.SpiAgent;
 import com.typesafe.config.Config;
 
 public sealed interface ModelProvider {
@@ -111,10 +112,51 @@ public sealed interface ModelProvider {
   }
 
   /**
+   * Settings for the Google AI Gemini Large Language Model provider.
+   */
+  static GoogleAIGemini googleAiGemini() {
+    return new GoogleAIGemini("", "", Double.NaN, Double.NaN, -1);
+  }
+
+  record GoogleAIGemini(String apiKey, String modelName, Double temperature, Double topP, int maxOutputTokens) implements ModelProvider {
+
+    public static GoogleAIGemini fromConfig(Config config) {
+      return new GoogleAIGemini(
+          config.getString("api-key"),
+          config.getString("model-name"),
+          config.getDouble("temperature"),
+          config.getDouble("top-p"),
+          config.getInt("max-output-tokens")
+      );
+    }
+
+    public GoogleAIGemini withApiKey(String apiKey) {
+      return new GoogleAIGemini(apiKey, modelName, temperature, topP, maxOutputTokens);
+    }
+
+    public GoogleAIGemini withModelName(String modelName) {
+      return new GoogleAIGemini(apiKey, modelName, temperature, topP, maxOutputTokens);
+    }
+
+     public GoogleAIGemini withTemperature(double temperature) {
+      return new GoogleAIGemini(apiKey, modelName, temperature, topP, maxOutputTokens);
+     }
+
+     public GoogleAIGemini withTopP(double topP) {
+      return new GoogleAIGemini(apiKey, modelName, temperature, topP, maxOutputTokens);
+     }
+
+     public GoogleAIGemini withMaxOutputTokens(int maxOutputTokens) {
+      return new GoogleAIGemini(apiKey, modelName, temperature, topP, maxOutputTokens);
+     }
+  }
+
+
+  /**
    * Settings for the Ollama Large Language Model provider.
    */
   static Ollama ollama() {
-    return new Ollama("http://localhost:11434", "", Double.NaN, Double.NaN);
+    return new Ollama("", "", Double.NaN, Double.NaN);
   }
 
   /**

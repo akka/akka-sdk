@@ -265,6 +265,13 @@ private[impl] final class AgentImpl[A <: Agent](
           topP = p.topP,
           topK = p.topK,
           maxTokens = p.maxTokens)
+      case p: ModelProvider.GoogleAIGemini =>
+        new SpiAgent.ModelProvider.GoogleAIGemini(
+          p.apiKey(),
+          p.modelName(),
+          p.temperature(),
+          p.topP(),
+          p.maxOutputTokens())
       case p: ModelProvider.Ollama =>
         new SpiAgent.ModelProvider.Ollama(p.baseUrl(), p.modelName(), p.temperature(), p.topP())
       case p: ModelProvider.OpenAi =>
@@ -303,9 +310,10 @@ private[impl] final class AgentImpl[A <: Agent](
       log.debug("Model provider from config [{}]", resolvedConfigPath)
       val providerConfig = config.getConfig(resolvedConfigPath)
       providerConfig.getString("provider") match {
-        case "anthropic" => ModelProvider.OpenAi.fromConfig(providerConfig)
-        case "ollama"    => ModelProvider.Ollama.fromConfig(providerConfig)
-        case "openai"    => ModelProvider.OpenAi.fromConfig(providerConfig)
+        case "anthropic"       => ModelProvider.OpenAi.fromConfig(providerConfig)
+        case "googleai-gemini" => ModelProvider.GoogleAIGemini.fromConfig(providerConfig)
+        case "ollama"          => ModelProvider.Ollama.fromConfig(providerConfig)
+        case "openai"          => ModelProvider.OpenAi.fromConfig(providerConfig)
         case other =>
           throw new IllegalArgumentException(s"Unknown model provider [$other] in config [$resolvedConfigPath]")
       }
