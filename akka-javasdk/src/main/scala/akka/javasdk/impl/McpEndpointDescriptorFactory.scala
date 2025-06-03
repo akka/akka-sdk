@@ -8,8 +8,8 @@ import akka.annotation.InternalApi
 import akka.http.scaladsl.model.MediaTypes
 import akka.http.scaladsl.model.Uri
 import akka.javasdk.annotations.Acl
+import akka.javasdk.annotations.Description
 import akka.javasdk.annotations.JWT
-import akka.javasdk.annotations.mcp.Description
 import akka.javasdk.annotations.mcp.McpEndpoint
 import akka.javasdk.annotations.mcp.McpPrompt
 import akka.javasdk.annotations.mcp.McpResource

@@ -4,19 +4,21 @@
 
 package akka.javasdk.impl.agent
 
-import scala.concurrent.Future
-import scala.util.control.NonFatal
 import akka.annotation.InternalApi
 import akka.javasdk.Metadata
 import akka.javasdk.Tracing
 import akka.javasdk.agent.Agent
 import akka.javasdk.agent.AgentContext
 import akka.javasdk.agent.JsonParsingException
-import akka.javasdk.agent.SessionMessage.AiMessage
-import akka.javasdk.agent.SessionMessage.UserMessage
 import akka.javasdk.agent.MemoryProvider
 import akka.javasdk.agent.ModelProvider
+import akka.javasdk.agent.SessionHistory
 import akka.javasdk.agent.SessionMemory
+import akka.javasdk.agent.SessionMessage.AiMessage
+import akka.javasdk.agent.SessionMessage.ToolCallInteraction
+import akka.javasdk.agent.SessionMessage.ToolCallRequest
+import akka.javasdk.agent.SessionMessage.ToolCallResponse
+import akka.javasdk.agent.SessionMessage.UserMessage
 import akka.javasdk.client.ComponentClient
 import akka.javasdk.impl.AbstractContext
 import akka.javasdk.impl.ComponentDescriptor
@@ -28,8 +30,7 @@ import akka.javasdk.impl.agent.BaseAgentEffectBuilder.ConstantSystemMessage
 import akka.javasdk.impl.agent.BaseAgentEffectBuilder.NoPrimaryEffect
 import akka.javasdk.impl.agent.BaseAgentEffectBuilder.RequestModel
 import akka.javasdk.impl.agent.BaseAgentEffectBuilder.TemplateSystemMessage
-import SessionMemoryClient.MemorySettings
-import akka.javasdk.agent.SessionHistory
+import akka.javasdk.impl.agent.SessionMemoryClient.MemorySettings
 import akka.javasdk.impl.effect.ErrorReplyImpl
 import akka.javasdk.impl.effect.MessageReplyImpl
 import akka.javasdk.impl.effect.NoSecondaryEffectImpl
@@ -49,6 +50,11 @@ import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.Tracer
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.jdk.CollectionConverters.SeqHasAsJava
+import scala.util.control.NonFatal
 
 /**
  * INTERNAL API
@@ -78,6 +84,7 @@ private[impl] final class AgentImpl[A <: Agent](
     componentId: String,
     sessionId: String,
     val factory: AgentContext => A,
+    sdkExecutionContext: ExecutionContext,
     tracerFactory: () => Tracer,
     serializer: JsonSerializer,
     componentDescriptor: ComponentDescriptor,
@@ -94,6 +101,9 @@ private[impl] final class AgentImpl[A <: Agent](
     val agentContext = new AgentContextImpl(sessionId, regionInfo.selfRegion, Metadata.EMPTY, None, tracerFactory)
     new ReflectiveAgentRouter(factory(agentContext), componentDescriptor.methodInvokers, serializer)
   }
+
+  private val functionDescriptors = ToolDescriptors(router.agent)
+  private val functionTools = FunctionTools(router.agent)
 
   override def handleCommand(command: SpiAgent.Command): Future[SpiAgent.Effect] = {
 
@@ -151,6 +161,7 @@ private[impl] final class AgentImpl[A <: Agent](
               systemMessage,
               req.userMessage,
               additionalContext,
+              functionDescriptors,
               req.responseType,
               req.responseMapping,
               req.failureMapping,
@@ -210,11 +221,18 @@ private[impl] final class AgentImpl[A <: Agent](
       sessionMemoryClient: SessionMemory,
       userMessage: String,
       modelResult: SpiAgent.ModelResult): Unit = {
+
+    val toolCallInteractions = modelResult.toolInteractions.map { ti =>
+      val req = new ToolCallRequest(ti.request.id, ti.request.name, ti.request.arguments)
+      val res = new ToolCallResponse(ti.response.id, ti.response.name, ti.response.payload)
+      new ToolCallInteraction(req, res)
+    }.asJava
+
     sessionMemoryClient.addInteraction(
       sessionId,
       componentId,
       new UserMessage(userMessage, modelResult.inputTokenCount),
-      new AiMessage(modelResult.modelResponse, modelResult.outputTokenCount))
+      new AiMessage(modelResult.modelResponse, modelResult.outputTokenCount, toolCallInteractions))
   }
 
   private def toSpiContextMessages(sessionHistory: SessionHistory): Vector[SpiAgent.ContextMessage] = {
@@ -315,6 +333,35 @@ private[impl] final class AgentImpl[A <: Agent](
     } catch {
       case e: IllegalArgumentException => throw new JsonParsingException(e.getMessage, e, modelResponse)
     }
+  }
+
+  override def callTool(request: SpiAgent.ToolCallRequest): Future[String] = {
+
+    val toolInvoker =
+      functionTools.getOrElse(request.name, throw new IllegalArgumentException(s"Unknown tool ${request.name}"))
+
+    val mapper = serializer.objectMapper
+    val jsonNode = mapper.readTree(request.arguments)
+
+    val methodInput =
+      toolInvoker.paramNames.zipWithIndex.map { case (name, index) =>
+        // assume that the paramName in the method matches a node from the json 'content'
+        val node = jsonNode.get(name)
+        val typ = toolInvoker.types(index)
+        val javaType = mapper.getTypeFactory.constructType(typ)
+        mapper.treeToValue(node, javaType).asInstanceOf[Any]
+      }
+
+    Future {
+      val toolResult = toolInvoker.invoke(methodInput)
+
+      if (toolInvoker.returnType == Void.TYPE)
+        "SUCCESS"
+      else if (toolInvoker.returnType == classOf[String])
+        toolResult.asInstanceOf[String]
+      else
+        mapper.writeValueAsString(toolResult)
+    }(sdkExecutionContext)
   }
 
 }

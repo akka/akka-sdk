@@ -175,9 +175,9 @@ private[javasdk] object Validations {
       val name: String = ann.name()
       val description: String = ann.description()
       var result: Validation = Valid
-      if ((name eq null) || name.trim.isEmpty)
+      if ((name eq null) || name.isBlank)
         result ++= Invalid(errorMessage(component, "@AgentDescription name is empty, must be a non-empty string."))
-      if ((description eq null) || description.trim.isEmpty)
+      if ((description eq null) || description.isBlank)
         result ++= Invalid(
           errorMessage(component, "@AgentDescription description is empty, must be a non-empty string."))
       result
@@ -342,7 +342,7 @@ private[javasdk] object Validations {
 
   private def viewTableAnnotationMustNotBeEmptyString(tableUpdater: Class[_]): Validation = {
     val annotation = tableUpdater.getAnnotation(classOf[Table])
-    when(annotation != null && annotation.value().trim.isEmpty) {
+    when(annotation != null && annotation.value().isBlank) {
       Validation(errorMessage(tableUpdater, "@Table name is empty, must be a non-empty string."))
     }
   }
@@ -553,7 +553,7 @@ private[javasdk] object Validations {
   private def publishStreamIdMustBeFilled(component: Class[_]): Validation = {
     Option(component.getAnnotation(classOf[ServiceStream]))
       .map { ann =>
-        when(ann.id().trim.isEmpty) {
+        when(ann.id().isBlank) {
           Validation(Seq("@Produce.ServiceStream id can not be an empty string"))
         }
       }
@@ -579,7 +579,7 @@ private[javasdk] object Validations {
     val ann = component.getAnnotation(classOf[ComponentId])
     if (ann != null) {
       val componentId: String = ann.value()
-      if ((componentId eq null) || componentId.trim.isEmpty)
+      if ((componentId eq null) || componentId.isBlank)
         Invalid(errorMessage(component, "@ComponentId name is empty, must be a non-empty string."))
       else if (componentId.contains("|"))
         Invalid(errorMessage(component, "@ComponentId must not contain the pipe character '|'."))

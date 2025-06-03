@@ -2,7 +2,7 @@
  * Copyright (C) 2021-2024 Lightbend Inc. <https://www.lightbend.com>
  */
 
-package akka.javasdk.annotations.mcp;
+package akka.javasdk.annotations;
 
 import java.lang.annotation.*;
 

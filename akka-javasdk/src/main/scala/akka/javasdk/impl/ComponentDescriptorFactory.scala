@@ -53,7 +53,7 @@ private[impl] object ComponentDescriptorFactory {
     clazz.isPublic && clazz.hasAnnotation[FromEventSourcedEntity]
 
   def streamSubscription(clazz: Class[_]): Option[FromServiceStream] =
-    clazz.getAnnotationOption[FromServiceStream]
+    clazz.annotationOption[FromServiceStream]
 
   def hasSubscription(clazz: Class[_]): Boolean = {
     hasKeyValueEntitySubscription(clazz) ||
@@ -64,7 +64,7 @@ private[impl] object ComponentDescriptorFactory {
   }
 
   def eventSourcedEntitySubscription(clazz: Class[_]): Option[FromEventSourcedEntity] =
-    clazz.getAnnotationOption[FromEventSourcedEntity]
+    clazz.annotationOption[FromEventSourcedEntity]
 
   def hasConsumerOutput(javaMethod: Method): Boolean = {
     if (javaMethod.isPublic) {

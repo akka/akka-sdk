@@ -1,6 +1,7 @@
 package com.example.api;
 
 import akka.javasdk.annotations.Acl;
+import akka.javasdk.annotations.Description;
 import akka.javasdk.annotations.mcp.*;
 import akka.javasdk.client.ComponentClient;
 
