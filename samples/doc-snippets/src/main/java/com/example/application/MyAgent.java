@@ -8,7 +8,7 @@ import akka.javasdk.annotations.ComponentId;
 @ComponentId("my-agent") // <2>
 public class MyAgent extends Agent { // <1>
 
-  Effect<String> query(String question) { // <3>
+  public Effect<String> query(String question) { // <3>
     return effects()
         .systemMessage("You are a helpful...")
         .userMessage(question)
@@ -23,7 +23,7 @@ interface MyAgentMore {
   @ComponentId("my-agent")
   public class MyAgentWithModel extends Agent {
     // tag::model[]
-    Effect<String> query(String question) {
+    public Effect<String> query(String question) {
       return effects()
           .model(ModelProvider // <1>
               .openAi()

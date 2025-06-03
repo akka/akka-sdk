@@ -34,7 +34,7 @@ include::example$doc-snippets/src/main/java/com/example/application/MyAgent.java
 <2> Make sure to annotate such class with `@ComponentId` and pass a unique identifier for this agent type.
 <3> Define the command handler method.
 
-NOTE: The `@ComponentId` value `foo-agent` is common for all instances of this agent and unique across the different components in the service.
+NOTE: The `@ComponentId` value `my-agent` is common for all instances of this agent and must be unique across the different components in the service.
 
 An agent must have one command handler method that is public and returns `Effect<T>`, where `T` it the type of the reply. Alternatively it can return `StreamEffect` for xref:#_streaming_response[streaming responses].
 
@@ -155,11 +155,20 @@ FIXME
 
 FIXME
 
-== Dependency injection
+== Use ComponentClient in an Agent
 
-FIXME
+xref:java:setup-and-dependency-injection.adoc#_dependency_injection[Dependency injection] can be used in an
+Agent. For example, injecting the `ComponentClient` to be able to enrich the request to the AI model with
+information from entities or views may look like this:
 
-- DI of ModelProvider, useful for testing
+[source,java]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/application/ActivityAgent.java[ActivityAgent.java]
+----
+include::example$doc-snippets/src/main/java/com/example/application/ActivityAgent.java[tag=di]
+----
+<1> Inject the `ComponentClient` as a constructor parameter.
+<2> Retrieve preferences from an entity.
+<3> Enrich the user message with the preferences.
 
 == Streaming response
 

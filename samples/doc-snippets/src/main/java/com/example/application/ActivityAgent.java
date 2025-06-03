@@ -2,8 +2,11 @@ package com.example.application;
 
 import akka.javasdk.agent.Agent;
 import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.TypeName;
 import akka.javasdk.client.ComponentClient;
+import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 
+import java.util.List;
 import java.util.UUID;
 
 // tag::prompt[]
@@ -16,7 +19,7 @@ public class ActivityAgent extends Agent {
       indoor or outdoor game, board games, a city trip, etc.
       """.stripIndent();
 
-  Effect<String> query(String message) {
+  public Effect<String> query(String message) {
     return effects()
         .systemMessage(SYSTEM_MESSAGE) // <2>
         .userMessage(message)// <3>
@@ -44,6 +47,64 @@ interface ActivityAgentMore {
             .method(ActivityAgent::query)
             .invoke("Business colleagues meeting in London");
       // end::call[]
+    }
+  }
+
+  // tag::di[]
+  @ComponentId("activity-agent")
+  public class ActivityAgent extends Agent {
+    public record Request(String userId, String message) {}
+
+    private static final String SYSTEM_MESSAGE =
+        """
+        You are an activity agent. Your job is to suggest activities in the
+        real world. Like for example, a team building activity, sports, an
+        indoor or outdoor game, board games, a city trip, etc.
+        """.stripIndent();
+
+    private final ComponentClient componentClient;
+
+    public ActivityAgent(ComponentClient componentClient) { // <1>
+      this.componentClient = componentClient;
+    }
+
+    public Effect<String> query(Request request) {
+      var profile = componentClient // <2>
+          .forEventSourcedEntity(request.userId)
+          .method(UserProfileEntity::getProfile)
+          .invoke();
+
+      var userMessage = request.message + "\nPreferences: " + profile.preferences; // <3>
+
+      return effects()
+          .systemMessage(SYSTEM_MESSAGE)
+          .userMessage(userMessage)
+          .thenReply();
+    }
+  }
+  // end::di[]
+
+  public record UserProfile(
+      String userId,
+      String preferences) {}
+
+  public sealed interface UserProfileEvent {
+    @TypeName("user-profile-updated")
+    record UserProfileUpdated(String preferences
+    ) implements UserProfileEvent {}
+  }
+
+  @ComponentId("user-profile")
+  public class UserProfileEntity extends EventSourcedEntity<UserProfile, UserProfileEvent> {
+    public record GetProfile() {}
+
+    public Effect<UserProfile> getProfile() {
+      return effects().reply(currentState());
+    }
+
+    @Override
+    public UserProfile applyEvent(UserProfileEvent event) {
+      return null;
     }
   }
 
