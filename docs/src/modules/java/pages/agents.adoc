@@ -73,8 +73,8 @@ NOTE: With `ModelProvider.fromConfig` you can define several models in configura
 
 Each model provider may have different settings. Available model providers are:
 
-* `openai` - link:_attachments/api/akka/javasdk/agent/ModelProvider.OpenAi.html[ModelProvider.OpenAi]
-* `anthropic` - link:_attachments/api/akka/javasdk/agent/ModelProvider.Anthropic.html[ModelProvider.Anthropic]
+* `openai` - link:_attachments/api/akka/javasdk/agent/ModelProvider.OpenAi.html[`ModelProvider.OpenAi`]
+* `anthropic` - link:_attachments/api/akka/javasdk/agent/ModelProvider.Anthropic.html[`ModelProvider.Anthropic`]
 
 FIXME more providers ^
 
