@@ -73,8 +73,8 @@ NOTE: With `ModelProvider.fromConfig` you can define several models in configura
 
 Each model provider may have different settings. Available model providers are:
 
-* openai - link:_attachments/api/akka/javasdk/agent/ModelProvider.OpenAi.html[ModelProvider.OpenAi]
-* anthropic - link:_attachments/api/akka/javasdk/agent/ModelProvider.Anthropic.html[ModelProvider.Anthropic]
+* `openai` - link:_attachments/api/akka/javasdk/agent/ModelProvider.OpenAi.html[ModelProvider.OpenAi]
+* `anthropic` - link:_attachments/api/akka/javasdk/agent/ModelProvider.Anthropic.html[ModelProvider.Anthropic]
 
 FIXME more providers ^
 
@@ -90,9 +90,9 @@ The prompt consists of essential instructions to the model.
 An agent that suggests activities may have a prompt like:
 
 [source,java]
-.{sample-base-url}/doc-snippets/src/main/java/com/example/application/MyAgent.java[ActivityAgent.java]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/application/ActivityAgent.java[ActivityAgent.java]
 ----
-include::example$doc-snippets/src/main/java/com/example/application/MyAgent.java[tag=prompt]
+include::example$doc-snippets/src/main/java/com/example/application/ActivityAgent.java[tag=prompt]
 ----
 <1> Define the system message as a constant, but it could also be a method that adapts the system message based on the request.
 <2> Use the system message in the effect builder.
@@ -110,7 +110,7 @@ Use the `ComponentClient` to call the agent from a Workflow, Endpoint or Consume
 
 [source,java]
 ----
-include::example$doc-snippets/src/main/java/com/example/application/MyAgent.java[tag=call]
+include::example$doc-snippets/src/main/java/com/example/application/ActivityAgent.java[tag=call]
 ----
 <1> Use `forAgent`.
 <2> Define the identifier of the session that the agent participates in.
