@@ -30,24 +30,37 @@ import java.util.Set;
  * <p>Not for user extension, implementation provided by the SDK.
  */
 public interface AgentRegistry {
-  record AgentInfo(String id, String name, String description, String role) {}
+  record AgentInfo(String id, String name, String description, String role) {
+    public boolean hasRole(String r) {
+      return role != null && role.equals(r);
+    }
+  }
+
+  record AgentInfoCollection(Set<AgentInfo> agents) {}
 
   /**
-   * All agent identifiers. The agent id is defined with the {@link
+   * Information about All agents. The agent id is defined with the {@link
    * akka.javasdk.annotations.ComponentId} annotation on the agent class.
+   * Additional information is defined with the {@link akka.javasdk.annotations.AgentDescription}
+   * annotation on the agent class.
    */
-  Set<String> allAgentIds();
+  AgentInfoCollection allAgents();
 
   /**
    * Agent identifiers of agents with a certain role. The role is defined with {@link
    * akka.javasdk.annotations.AgentDescription} annotation on the agent class. The agent id is
    * defined with the {@link akka.javasdk.annotations.ComponentId} annotation on the agent class.
+   * Additional information is defined with the {@link akka.javasdk.annotations.AgentDescription}
+   * annotation on the agent class.
    */
-  Set<String> agentIdsWithRole(String role);
+  AgentInfoCollection agentsWithRole(String role);
 
-  /** Information about a given agent. */
+  /**
+   * Information about a given agent. The agent id is defined with the {@link
+   * akka.javasdk.annotations.ComponentId} annotation on the agent class.
+   * Additional information is defined with the {@link akka.javasdk.annotations.AgentDescription}
+   * annotation on the agent class.
+   */
   AgentInfo agentInfo(String agentId);
 
-  /** Information about a given agent in JSON format. */
-  String agentInfoAsJson(String agentId);
 }
