@@ -28,27 +28,27 @@ public class ActivityAgent extends Agent {
 }
 // end::prompt[]
 
-interface ActivityAgentMore {
+class Caller {
+  private final ComponentClient componentClient;
 
-  public class Caller {
-    private final ComponentClient componentClient;
+  Caller(ComponentClient componentClient) {
+    this.componentClient = componentClient;
+  }
 
-    public Caller(ComponentClient componentClient) {
-      this.componentClient = componentClient;
-    }
-
-    public void callIt() {
-      // tag::call[]
-      var sessionId = UUID.randomUUID().toString();
-      String suggestion =
+  void callIt() {
+    // tag::call[]
+    var sessionId = UUID.randomUUID().toString();
+    String suggestion =
         componentClient
             .forAgent()// <1>
             .inSession(sessionId)// <2>
             .method(ActivityAgent::query)
             .invoke("Business colleagues meeting in London");
-      // end::call[]
-    }
+    // end::call[]
   }
+}
+
+interface ActivityAgentMore {
 
   // tag::di[]
   @ComponentId("activity-agent")
