@@ -265,6 +265,8 @@ private[impl] final class AgentImpl[A <: Agent](
           topP = p.topP,
           topK = p.topK,
           maxTokens = p.maxTokens)
+      case p: ModelProvider.Ollama =>
+        new SpiAgent.ModelProvider.Ollama(p.baseUrl(), p.modelName(), p.temperature(), p.topP())
       case p: ModelProvider.OpenAi =>
         new SpiAgent.ModelProvider.OpenAi(
           apiKey = p.apiKey,
@@ -301,8 +303,9 @@ private[impl] final class AgentImpl[A <: Agent](
       log.debug("Model provider from config [{}]", resolvedConfigPath)
       val providerConfig = config.getConfig(resolvedConfigPath)
       providerConfig.getString("provider") match {
-        case "openai"    => ModelProvider.OpenAi.fromConfig(providerConfig)
         case "anthropic" => ModelProvider.OpenAi.fromConfig(providerConfig)
+        case "ollama"    => ModelProvider.Ollama.fromConfig(providerConfig)
+        case "openai"    => ModelProvider.OpenAi.fromConfig(providerConfig)
         case other =>
           throw new IllegalArgumentException(s"Unknown model provider [$other] in config [$resolvedConfigPath]")
       }

@@ -111,6 +111,44 @@ public sealed interface ModelProvider {
   }
 
   /**
+   * Settings for the Ollama Large Language Model provider.
+   */
+  static Ollama ollama() {
+    return new Ollama("http://localhost:11434", "", Double.NaN, Double.NaN);
+  }
+
+  /**
+   * Settings for the Ollama Large Language Model provider.
+   */
+  record Ollama(String baseUrl, String modelName, Double temperature, Double topP) implements ModelProvider {
+
+    public static Ollama fromConfig(Config config) {
+      return new Ollama(
+          config.getString("base-url"),
+          config.getString("model-name"),
+          config.getDouble("temperature"),
+          config.getDouble("top-p"));
+    }
+
+    public Ollama withBaseUrl(String baseUrl) {
+      return new Ollama(baseUrl, modelName, temperature, topP);
+    }
+
+    public Ollama withModelName(String modelName) {
+      return new Ollama(baseUrl, modelName, temperature, topP);
+    }
+
+    public Ollama withTemperature(double temperature) {
+      return new Ollama(baseUrl, modelName, temperature, topP);
+    }
+
+    public Ollama withTopP(double topP) {
+      return new Ollama(baseUrl, modelName, temperature, topP);
+    }
+
+  }
+
+  /**
    * Settings for the Anthropic Large Language Model provider.
    */
   static OpenAi openAi() {
