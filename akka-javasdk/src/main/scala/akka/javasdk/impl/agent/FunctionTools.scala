@@ -7,7 +7,6 @@ package akka.javasdk.impl.agent
 import akka.annotation.InternalApi
 import akka.javasdk.annotations.FunctionTool
 import akka.javasdk.impl.reflection.Reflect.Syntax.AnnotatedElementOps
-import akka.javasdk.impl.reflection.Reflect.Syntax.MethodOps
 
 import java.lang.reflect.Type
 
@@ -34,7 +33,7 @@ object FunctionTools {
   def apply(any: Any): Map[String, FunctionToolInvoker] = {
 
     any.getClass.getDeclaredMethods
-      .filter(m => m.hasAnnotation[FunctionTool] && m.isPublic)
+      .filter(m => m.hasAnnotation[FunctionTool])
       .map { method =>
 
         val toolAnno = method.getAnnotation(classOf[FunctionTool])
@@ -50,8 +49,11 @@ object FunctionTools {
           override def types: Array[Type] =
             method.getGenericParameterTypes
 
-          override def invoke(args: Array[Any]): Any =
+          override def invoke(args: Array[Any]): Any = {
+            // TODO: only methods in Agent itself should be allowed to be private
+            method.setAccessible(true)
             method.invoke(any, args: _*)
+          }
 
           override def returnType: Class[_] =
             method.getReturnType
