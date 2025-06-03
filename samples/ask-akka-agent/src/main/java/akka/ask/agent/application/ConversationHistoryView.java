@@ -49,15 +49,13 @@ public class ConversationHistoryView extends View {
     }
 
     private Effect<Session> aiMessage(SessionMemoryEntity.Event.AiMessageAdded added) {
-      var timestamp = System.currentTimeMillis(); // FIXME add timestamp to ConversationMemory.Event
-      Message newMessage = new Message(added.message(), "ai", timestamp);
+      Message newMessage = new Message(added.message(), "ai", added.timestamp());
       var rowState = rowStateOrNew(userId(), sessionId());
       return effects().updateRow(rowState.add(newMessage));
     }
 
     private Effect<Session> userMessage(SessionMemoryEntity.Event.UserMessageAdded added) {
-      var timestamp = System.currentTimeMillis(); // FIXME add timestamp to ConversationMemory.Event
-      Message newMessage = new Message(added.message(), "user", timestamp);
+      Message newMessage = new Message(added.message(), "user", added.timestamp());
       var rowState = rowStateOrNew(userId(), sessionId());
       return effects().updateRow(rowState.add(newMessage));
     }
