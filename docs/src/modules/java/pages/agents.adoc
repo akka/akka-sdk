@@ -78,7 +78,7 @@ Each model provider may have different settings. Available model providers are:
 
 FIXME more providers ^
 
-It is possible to plug in a custom model by implementing the link:_attachments/api/akka/javasdk/agent/ModelProvider.Custom.html[ModelProvider.Custom] interface and use it with `ModelProvider.custom`.
+It is possible to plug in a custom model by implementing the link:_attachments/api/akka/javasdk/agent/ModelProvider.Custom.html[`ModelProvider.Custom`] interface and use it with `ModelProvider.custom`.
 
 == Prompt
 
