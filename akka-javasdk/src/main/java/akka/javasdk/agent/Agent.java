@@ -77,7 +77,7 @@ public abstract class Agent {
       Builder model(ModelProvider provider);
 
       /**
-       * Provides system-level instructions to the AI model that define its behavior and context.
+       * Provides system-level instructions to the AI model that defines its behavior and context.
        * The system message acts as a foundational prompt that establishes the AI's role, constraints,
        * and operational parameters. It is processed before user messages and helps maintain consistent
        * behavior throughout the interaction.
@@ -87,7 +87,7 @@ public abstract class Agent {
       /**
        * Create a system message from a template. Call @{@link PromptTemplate} before to initiate or update template value.
        * <p>
-       * Provides system-level instructions to the AI model that define its behavior and context.
+       * Provides system-level instructions to the AI model that defines its behavior and context.
        * The system message acts as a foundational prompt that establishes the AI's role, constraints,
        * and operational parameters. It is processed before user messages and helps maintain consistent
        * behavior throughout the interaction.
@@ -100,7 +100,7 @@ public abstract class Agent {
        * Create a system message from a template. Call @{@link PromptTemplate} before to initiate or update template value.
        * Provide arguments that will be applied to the template using Java {@link String#formatted} method.
        * <p>
-       * Provides system-level instructions to the AI model that define its behavior and context.
+       * Provides system-level instructions to the AI model that defines its behavior and context.
        * The system message acts as a foundational prompt that establishes the AI's role, constraints,
        * and operational parameters. It is processed before user messages and helps maintain consistent
        * behavior throughout the interaction.
@@ -250,7 +250,7 @@ public abstract class Agent {
       Builder model(ModelProvider provider);
 
       /**
-       * Provides system-level instructions to the AI model that define its behavior and context.
+       * Provides system-level instructions to the AI model that defines its behavior and context.
        * The system message acts as a foundational prompt that establishes the AI's role, constraints,
        * and operational parameters. It is processed before user messages and helps maintain consistent
        * behavior throughout the interaction.
@@ -260,7 +260,7 @@ public abstract class Agent {
       /**
        * Create a system message from a template. Call @{@link PromptTemplate} before to initiate or update template value.
        * <p>
-       * Provides system-level instructions to the AI model that define its behavior and context.
+       * Provides system-level instructions to the AI model that defines its behavior and context.
        * The system message acts as a foundational prompt that establishes the AI's role, constraints,
        * and operational parameters. It is processed before user messages and helps maintain consistent
        * behavior throughout the interaction.
@@ -273,7 +273,7 @@ public abstract class Agent {
        * Create a system message from a template. Call @{@link PromptTemplate} before to initiate or update template value.
        * Provide arguments that will be applied to the template using Java {@link String#formatted} method.
        * <p>
-       * Provides system-level instructions to the AI model that define its behavior and context.
+       * Provides system-level instructions to the AI model that defines its behavior and context.
        * The system message acts as a foundational prompt that establishes the AI's role, constraints,
        * and operational parameters. It is processed before user messages and helps maintain consistent
        * behavior throughout the interaction.
