@@ -4,21 +4,6 @@
 
 package akka.javasdk.impl.http
 
-import java.io.IOException
-import java.lang.{ Iterable => JIterable }
-import java.nio.charset.Charset
-import java.nio.charset.StandardCharsets
-import java.time.Duration
-import java.util
-import java.util.concurrent.CompletionStage
-import java.util.function.Function
-
-import scala.concurrent.ExecutionException
-import scala.concurrent.duration.DurationInt
-import scala.concurrent.duration.FiniteDuration
-import scala.jdk.CollectionConverters.SeqHasAsJava
-import scala.jdk.DurationConverters.JavaDurationOps
-
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
 import akka.http.javadsl.Http
@@ -44,6 +29,20 @@ import akka.stream.Materializer
 import akka.stream.SystemMaterializer
 import akka.util.ByteString
 import com.fasterxml.jackson.core.JsonProcessingException
+
+import java.io.IOException
+import java.lang.{ Iterable => JIterable }
+import java.nio.charset.Charset
+import java.nio.charset.StandardCharsets
+import java.time.Duration
+import java.util
+import java.util.concurrent.CompletionStage
+import java.util.function.Function
+import scala.concurrent.ExecutionException
+import scala.concurrent.duration.DurationInt
+import scala.concurrent.duration.FiniteDuration
+import scala.jdk.CollectionConverters.SeqHasAsJava
+import scala.jdk.DurationConverters.JavaDurationOps
 
 /**
  * INTERNAL API
@@ -177,22 +176,23 @@ private[akka] final case class RequestBuilderImpl[R](
     timeout,
     request,
     { (res: HttpResponse, bytes: ByteString) =>
-      try if (res.status.isFailure) {
-        onResponseError(res, bytes)
-      } else if (res.entity.getContentType == ContentTypes.APPLICATION_JSON)
-        new StrictResponse[T](res, JsonSupport.decodeJson(`type`, bytes))
-      else if (!res.entity.getContentType.binary && (`type` eq classOf[String]))
-        new StrictResponse[T](
-          res,
-          new String(
-            bytes.toArrayUnsafe(),
-            res.entity.getContentType.getCharsetOption
-              .map[Charset]((c: HttpCharset) => c.nioCharset)
-              .orElse(StandardCharsets.UTF_8)).asInstanceOf[T])
-      else
-        throw new RuntimeException(
-          "Expected to parse the response for " + request.getUri + " to " + `type` + " but response content type is " + res.entity.getContentType)
-      catch {
+      try {
+        if (res.status.isFailure) {
+          onResponseError(res, bytes)
+        } else if (!res.entity.getContentType.binary && (`type` eq classOf[String])) {
+          new StrictResponse[T](
+            res,
+            new String(
+              bytes.toArrayUnsafe(),
+              res.entity.getContentType.getCharsetOption
+                .map[Charset]((c: HttpCharset) => c.nioCharset)
+                .orElse(StandardCharsets.UTF_8)).asInstanceOf[T])
+        } else if (res.entity.getContentType == ContentTypes.APPLICATION_JSON) {
+          new StrictResponse[T](res, JsonSupport.decodeJson(`type`, bytes))
+        } else
+          throw new RuntimeException(
+            "Expected to parse the response for " + request.getUri + " to " + `type` + " but response content type is " + res.entity.getContentType)
+      } catch {
         case e: IOException =>
           throw new RuntimeException(e)
       }
