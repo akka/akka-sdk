@@ -124,7 +124,6 @@ import akka.javasdk.agent.SessionMemoryEntity
 import akka.javasdk.annotations.AgentDescription
 import akka.javasdk.impl.agent.AgentRegistryImpl
 import akka.javasdk.impl.agent.PromptTemplateClient
-import akka.util.Helpers.Requiring
 import akka.javasdk.annotations.mcp.McpEndpoint
 import akka.javasdk.mcp.AbstractMcpEndpoint
 import akka.javasdk.mcp.McpRequestContext
@@ -694,8 +693,7 @@ private final class Sdk(
               AgentRegistryImpl.AgentDetails(componentId, desc.name, desc.description, desc.role, agentClass)
             case None =>
               // defaults if AgentDescription is not defined
-              val name = componentId.replace('-', ' ').replace('_', ' ')
-              AgentRegistryImpl.AgentDetails(componentId, name, name, "", agentClass)
+              AgentRegistryImpl.AgentDetails(componentId, name = componentId, description = "", role = "", agentClass)
           })
 
       case clz if classOf[View].isAssignableFrom(clz) =>
