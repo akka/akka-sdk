@@ -15,6 +15,7 @@ For details on the specific Effect types, refer to the documentation for each co
 |===
 | Component | Available Effects
 
+| xref:java:agents.adoc#_effect_api[Agents] | Model, Memory, Tools, System and User Message,  Reply, Error
 | xref:java:event-sourced-entities.adoc#_effect_api[Event Sourced Entities] | Persist Events, Reply, Delete Entity, Error
 | xref:java:key-value-entities.adoc#_effect_api[Key Value Entities] | Update State, Reply, Delete State, Error 
 | xref:java:views.adoc#_effect_api[Views] | Update State, Delete State, Ignore
