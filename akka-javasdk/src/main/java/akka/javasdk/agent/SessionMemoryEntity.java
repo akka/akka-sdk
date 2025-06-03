@@ -9,9 +9,9 @@ import akka.javasdk.agent.SessionMemoryEntity.Event;
 import akka.javasdk.agent.SessionMemoryEntity.State;
 import akka.javasdk.agent.SessionMessage.AiMessage;
 import akka.javasdk.agent.SessionMessage.UserMessage;
+import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.annotations.TypeName;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
-import akka.javasdk.annotations.ComponentId;
 import com.typesafe.config.Config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,7 +41,8 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
     this.config = config;
   }
 
-  public record State(long maxLengthInBytes, long currentLengthInBytes, List<SessionMessage> messages, long totalTokenUsage) {
+  public record State(long maxLengthInBytes, long currentLengthInBytes, List<SessionMessage> messages,
+                      long totalTokenUsage) {
 
     private static final Logger logger = LoggerFactory.getLogger(State.class);
 
@@ -86,7 +87,7 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
     }
 
   }
-  
+
   @Override
   public State emptyState() {
     var maxSizeInBytes = config.getBytes("akka.javasdk.agent.memory.limited-window.max-size");
@@ -103,7 +104,8 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
     }
 
     @TypeName("akka-memory-user-message-added")
-    record UserMessageAdded(long timestamp, String componentId, String message, int tokens, long totalTokenUsage) implements Event {
+    record UserMessageAdded(long timestamp, String componentId, String message, int tokens,
+                            long totalTokenUsage) implements Event {
     }
 
     @TypeName("akka-memory-ai-message-added")
@@ -115,26 +117,29 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
                           List<SessionMessage.ToolCallInteraction> toolCallInteraction) implements Event {
 
     }
-    
+
     @TypeName("akka-memory-deleted")
     record Deleted(long timestamp) implements Event {
     }
   }
 
   // Request commands
-  public record LimitedWindow(int maxSizeInBytes) {}
+  public record LimitedWindow(int maxSizeInBytes) {
+  }
 
   public Effect<Done> setLimitedWindow(LimitedWindow limitedWindow) {
     if (limitedWindow.maxSizeInBytes <= 0) {
       return effects().error("Maximum size must be greater than 0");
     } else {
       return effects()
-          .persist(new Event.LimitedWindowSet(System.currentTimeMillis(), limitedWindow.maxSizeInBytes))
-          .thenReply(__ -> done());
+        .persist(new Event.LimitedWindowSet(System.currentTimeMillis(), limitedWindow.maxSizeInBytes))
+        .thenReply(__ -> done());
     }
   }
 
-  public record AddInteractionCmd(String componentId, UserMessage userMessage, AiMessage aiMessage) { }
+  public record AddInteractionCmd(String componentId, UserMessage userMessage, AiMessage aiMessage) {
+  }
+
   public Effect<Done> addInteraction(AddInteractionCmd cmd) {
     var ts = System.currentTimeMillis();
     var totalTokensUser = currentState().totalTokenUsage + cmd.userMessage.tokens();
@@ -143,25 +148,29 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
     var toolInteractions = cmd.aiMessage.toolCallInteractions();
 
     return effects()
-        .persist(
-            new Event.UserMessageAdded(ts, cmd.componentId, cmd.userMessage.text(), cmd.userMessage.tokens(), totalTokensUser),
-            new Event.AiMessageAdded(ts, cmd.componentId, cmd.aiMessage.text(),cmd.aiMessage.tokens(), totalTokensAi, toolInteractions))
-        .thenReply(__ -> Done.done());
+      .persist(
+        new Event.UserMessageAdded(ts, cmd.componentId, cmd.userMessage.text(), cmd.userMessage.tokens(), totalTokensUser),
+        new Event.AiMessageAdded(ts, cmd.componentId, cmd.aiMessage.text(), cmd.aiMessage.tokens(), totalTokensAi, toolInteractions))
+      .thenReply(__ -> Done.done());
   }
 
-  public record GetHistoryCmd(Optional<Integer> lastNMessages) {}
+  public record GetHistoryCmd(Optional<Integer> lastNMessages) {
+  }
 
   public ReadOnlyEffect<SessionHistory> getHistory(GetHistoryCmd cmd) {
-    if (cmd.lastNMessages != null && cmd.lastNMessages.isPresent()) {
-      var lastN = currentState().messages()
-          .subList(currentState().messages.size() - cmd.lastNMessages.get(), currentState().messages.size());
+    List<SessionMessage> messages = currentState().messages();
+    if (cmd.lastNMessages != null
+      && cmd.lastNMessages.isPresent()
+      && messages.size() > cmd.lastNMessages.get()) {
+      var lastN = messages
+        .subList(messages.size() - cmd.lastNMessages.get(), messages.size());
       // make sure this returns a copy of the list and not the list itself
       return effects().reply(
-          new SessionHistory(new LinkedList<>(lastN)));
+        new SessionHistory(new LinkedList<>(lastN)));
     } else {
       // make sure this returns a copy of the list and not the list itself
       return effects().reply(
-          new SessionHistory(new LinkedList<>(currentState().messages)));
+        new SessionHistory(new LinkedList<>(messages)));
     }
   }
 
@@ -170,27 +179,23 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
       return effects().reply(done());
     } else {
       return effects()
-          .persist(new Event.Deleted(System.currentTimeMillis()))
-          .deleteEntity()
-          .thenReply(__ -> done());
+        .persist(new Event.Deleted(System.currentTimeMillis()))
+        .deleteEntity()
+        .thenReply(__ -> done());
     }
   }
 
   @Override
   public State applyEvent(Event event) {
     return switch (event) {
-      case Event.LimitedWindowSet limitedWindowSet ->
-          currentState().withMaxSize(limitedWindowSet.maxSizeInBytes);
-      case Event.UserMessageAdded userMsg ->
-          currentState()
-              .addMessage(new UserMessage(userMsg.message(), userMsg.tokens()))
-              .withTotalTokenUsage(userMsg.totalTokenUsage());
-      case Event.AiMessageAdded aiMsg ->
-          currentState()
-              .addMessage(new AiMessage(aiMsg.message(), aiMsg.tokens(), aiMsg.toolCallInteraction))
-              .withTotalTokenUsage(aiMsg.totalTokenUsage());
-      case Event.Deleted __ ->
-          currentState().clear();
+      case Event.LimitedWindowSet limitedWindowSet -> currentState().withMaxSize(limitedWindowSet.maxSizeInBytes);
+      case Event.UserMessageAdded userMsg -> currentState()
+        .addMessage(new UserMessage(userMsg.message(), userMsg.tokens()))
+        .withTotalTokenUsage(userMsg.totalTokenUsage());
+      case Event.AiMessageAdded aiMsg -> currentState()
+        .addMessage(new AiMessage(aiMsg.message(), aiMsg.tokens(), aiMsg.toolCallInteraction))
+        .withTotalTokenUsage(aiMsg.totalTokenUsage());
+      case Event.Deleted __ -> currentState().clear();
     };
   }
 }

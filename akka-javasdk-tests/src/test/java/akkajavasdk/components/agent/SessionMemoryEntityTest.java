@@ -380,4 +380,17 @@ public class SessionMemoryEntityTest {
     assertThat(result.getReply().messages()).containsExactlyElementsOf(expected);
   }
 
+  @Test
+  public void shouldReturnEmptyHistoryWithLastN() {
+    EventSourcedTestKit<SessionMemoryEntity.State, SessionMemoryEntity.Event, SessionMemoryEntity> testKit =
+      EventSourcedTestKit.of(() -> new SessionMemoryEntity(config));
+
+    var lastN = 4;
+    EventSourcedResult<SessionHistory> result = testKit
+      .method(SessionMemoryEntity::getHistory)
+      .invoke(new SessionMemoryEntity.GetHistoryCmd(Optional.of(lastN)));
+
+    assertThat(result.getReply().messages()).isEmpty();
+  }
+
 }
