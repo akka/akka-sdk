@@ -223,16 +223,16 @@ The workflow will automatically execute the steps in a reliable and durable way.
 
 === Dynamic plan
 
-To create a more flexible and autonomous agentic system you want to analyze the problem and dynamically come up with a plan. The agentic system should identify the tasks to achieve the goal by itself. Decide what agents to use and in what order to execute them. Coordinate input and output between agents and adjust the plan along the way.
+To create a more flexible and autonomous agentic system you want to analyze the problem and dynamically come up with a plan. The agentic system should identify the tasks to achieve the goal by itself. Decide which agents to use and in which order to execute them. Coordinate input and output between agents and adjust the plan along the way.
 
-There are several approaches for the planning, such as using deterministic algorithms or using AI also for the planning. We will look at how we can use AI for analyzing a request, selecting agents and in what order to use them.
+There are several approaches for the planning, such as using deterministic algorithms or using AI also for the planning. We will look at how we can use AI for analyzing a request, selecting agents and in which order to use them.
 
 We split the planning into two steps and use two separate agents for these tasks. It's not always necessary to use several steps for the planning. You have to experiment with what works best for your problem domain.
 
 . Select agents that are useful for a certain problem.
-. Decide in what order to use the agents and give each agent precise instructions for its task.
+. Decide in which order to use the agents and give each agent precise instructions for its task.
 
-The `Selector` agent decides what agents to use:
+The `Selector` agent decides which agents to use:
 
 [source,java]
 .{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/agents/Selector.java[Selector.java]
@@ -268,7 +268,7 @@ The result from the `Selector` is a list of agent ids:
 include::example$multi-agent/src/main/java/demo/multiagent/domain/AgentSelection.java[tag=all]
 ----
 
-After selecting agents, we use a `Planner` agent to decide in what order to use the agents and what precise request that each agent should receive to perform its single task.
+After selecting agents, we use a `Planner` agent to decide in which order to use the agents and what precise request that each agent should receive to perform its single task.
 
 [source,java]
 .{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/agents/Planner.java[Planner.java]
