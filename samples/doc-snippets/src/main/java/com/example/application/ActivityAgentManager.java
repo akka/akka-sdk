@@ -51,13 +51,12 @@ public class ActivityAgentManager extends Workflow<ActivityAgentManager.State> {
 
   private Step suggestActivities() { // <7>
     return step("activities")
-        .call(() -> {
-          return componentClient
+        .call(() ->
+            componentClient
               .forAgent()
               .inSession(sessionId())
               .method(ActivityAgent::query)// <8>
-              .invoke(currentState().userQuery);
-        })
+              .invoke(currentState().userQuery))
         .andThen(String.class, suggestion -> {
           logger.info("Activities: {}", suggestion);
 
@@ -70,7 +69,7 @@ public class ActivityAgentManager extends Workflow<ActivityAgentManager.State> {
 
   private Step error() {
     return step("error")
-        .call(() -> null)
+        .call(Done::getInstance)
         .andThen(() -> effects().end());
   }
 
