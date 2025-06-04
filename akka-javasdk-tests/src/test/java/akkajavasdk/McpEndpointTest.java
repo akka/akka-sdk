@@ -105,7 +105,7 @@ public class McpEndpointTest extends TestKitSupport {
     assertThat(listingResult.status()).isEqualTo(StatusCodes.OK);
     assertThat(listingResult.body().utf8String()).isEqualTo(
         """
-        {"jsonrpc":"2.0","id":1,"result":{"resources":[{"uri":"file:///example.txt","name":"example text","description":"a sample text file","mimeType":"text/plain"},{"uri":"file:///example.pdf","name":"example binary resource","description":"a pdf as sample of a binary resource","mimeType":"application/pdf"}]}}
+        {"jsonrpc":"2.0","id":1,"result":{"resources":[{"uri":"file:///example.pdf","name":"example binary resource","description":"a pdf as sample of a binary resource","mimeType":"application/pdf"},{"uri":"file:///example.txt","name":"example text","description":"a sample text file","mimeType":"text/plain"}]}}
         """.trim()
     );
   }

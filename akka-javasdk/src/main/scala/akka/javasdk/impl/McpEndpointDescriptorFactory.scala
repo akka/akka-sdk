@@ -103,65 +103,67 @@ object McpEndpointDescriptorFactory {
     val endpointAnnotation = mcpEndpointClass.getAnnotation(classOf[McpEndpoint])
 
     val toolMethods = methodsWithAnnotation[McpTool](mcpEndpointClass)
-    val tools = toolMethods.map { case (annotation, method) =>
-      if (method.getReturnType != classOf[String])
-        throw new IllegalArgumentException(
-          s"MCP tool method must return String, but [${mcpEndpointClass.getName}.${method.getName}] returns [${method.getReturnType}]")
+    val tools = toolMethods
+      .map { case (annotation, method) =>
+        if (method.getReturnType != classOf[String])
+          throw new IllegalArgumentException(
+            s"MCP tool method must return String, but [${mcpEndpointClass.getName}.${method.getName}] returns [${method.getReturnType}]")
 
-      val inputSchema: JsonSchemaObject =
-        if (annotation.inputSchema().isBlank) {
-          if (method.getParameterCount == 0)
-            new JsonSchemaObject(properties = Map.empty, required = Seq.empty, description = None)
-          else JsonSchema.jsonSchemaFor(method)
-        } else {
-          objectMapper.readValue(annotation.inputSchema(), classOf[JsonSchemaObject])
-        }
-
-      val toolName =
-        if (annotation.name().isBlank) method.getName
-        else annotation.name()
-
-      val toolAnnotations = toolAnnotationsFor(mcpEndpointClass, method.getName, annotation.annotations().toVector)
-      val toolDescription = new ToolDescription(toolName, annotation.description(), inputSchema, toolAnnotations)
-
-      val requiredParameterNames = inputSchema.required.toSet
-      val callback = (context: McpEndpointConstructionContext, params: Map[String, Any]) =>
-        Future[ResponseContent] {
-          val endpointInstance = instanceFactory.apply(context)
-          val returnValue = if (method.getParameterCount == 0) {
-            method.invoke(endpointInstance)
+        val inputSchema: JsonSchemaObject =
+          if (annotation.inputSchema().isBlank) {
+            if (method.getParameterCount == 0)
+              new JsonSchemaObject(properties = Map.empty, required = Seq.empty, description = None)
+            else JsonSchema.jsonSchemaFor(method)
           } else {
-            val parsedParams = method.getParameters.map { param =>
-              val required = requiredParameterNames(param.getName)
-              params.get(param.getName) match {
-                case Some(unparsedValue) =>
-                  val paramValue = objectMapper.convertValue(unparsedValue, param.getType)
-                  if (required) paramValue
-                  else Optional.ofNullable(paramValue)
-                case None =>
-                  if (required)
-                    throw new IllegalArgumentException(
-                      s"Missing required tool parameter [${param.getName}] for tool [$toolName]")
-                  else Optional.empty()
-              }
-            }
-            method.invoke(endpointInstance, parsedParams: _*)
+            objectMapper.readValue(annotation.inputSchema(), classOf[JsonSchemaObject])
           }
-          returnValue match {
-            case text: String => new TextContent(text)
-            case unknown      =>
-              // FIXME handle/allow audio and image content types, supported by protocol, but how do we fit it in SDK API?
-              throw new RuntimeException(
-                s"Unsupported tool return value for tool [$toolName] defined in [${mcpEndpointClass.getName}.${method.getName}] (${if (unknown == null) "null"
-                else unknown.getClass.toString}")
-          }
-        }
 
-      new ToolMethodDescriptor(
-        toolDescription = toolDescription,
-        method = callback,
-        methodOptions = new MethodOptions(None, None))
-    }
+        val toolName =
+          if (annotation.name().isBlank) method.getName
+          else annotation.name()
+
+        val toolAnnotations = toolAnnotationsFor(mcpEndpointClass, method.getName, annotation.annotations().toVector)
+        val toolDescription = new ToolDescription(toolName, annotation.description(), inputSchema, toolAnnotations)
+
+        val requiredParameterNames = inputSchema.required.toSet
+        val callback = (context: McpEndpointConstructionContext, params: Map[String, Any]) =>
+          Future[ResponseContent] {
+            val endpointInstance = instanceFactory.apply(context)
+            val returnValue = if (method.getParameterCount == 0) {
+              method.invoke(endpointInstance)
+            } else {
+              val parsedParams = method.getParameters.map { param =>
+                val required = requiredParameterNames(param.getName)
+                params.get(param.getName) match {
+                  case Some(unparsedValue) =>
+                    val paramValue = objectMapper.convertValue(unparsedValue, param.getType)
+                    if (required) paramValue
+                    else Optional.ofNullable(paramValue)
+                  case None =>
+                    if (required)
+                      throw new IllegalArgumentException(
+                        s"Missing required tool parameter [${param.getName}] for tool [$toolName]")
+                    else Optional.empty()
+                }
+              }
+              method.invoke(endpointInstance, parsedParams: _*)
+            }
+            returnValue match {
+              case text: String => new TextContent(text)
+              case unknown      =>
+                // FIXME handle/allow audio and image content types, supported by protocol, but how do we fit it in SDK API?
+                throw new RuntimeException(
+                  s"Unsupported tool return value for tool [$toolName] defined in [${mcpEndpointClass.getName}.${method.getName}] (${if (unknown == null) "null"
+                  else unknown.getClass.toString}")
+            }
+          }
+
+        new ToolMethodDescriptor(
+          toolDescription = toolDescription,
+          method = callback,
+          methodOptions = new MethodOptions(None, None))
+      }
+      .sortBy(_.toolDescription.name)
 
     val toolsByName = tools.groupBy { _.toolDescription.name }
     val duplicateTools = toolsByName.collect { case (name, tools) if tools.size > 1 => name }.toSeq
@@ -229,33 +231,35 @@ object McpEndpointDescriptorFactory {
     val resourceMethods = methodsWithAnnotation[McpResource](mcpEndpointClass).filter { case (annotation, _) =>
       annotation.uriTemplate().isEmpty
     }
-    val resources = resourceMethods.map { case (annotation, method) =>
-      if (method.getParameterCount > 0)
-        throw new IllegalArgumentException(
-          s"MCP resources must be of 0 arity, but ${method.getName} has a non empty parameter list")
+    val resources = resourceMethods
+      .map { case (annotation, method) =>
+        if (method.getParameterCount > 0)
+          throw new IllegalArgumentException(
+            s"MCP resources must be of 0 arity, but ${method.getName} has a non empty parameter list")
 
-      val resourceDescription = new Resource(
-        uri = annotation.uri(),
-        name = annotation.name(),
-        description = Some(annotation.description()).filter(!_.isBlank),
-        mimeType = Some(resourceMimeType(annotation, method)),
-        annotations = None,
-        size = None)
+        val resourceDescription = new Resource(
+          uri = annotation.uri(),
+          name = annotation.name(),
+          description = Some(annotation.description()).filter(!_.isBlank),
+          mimeType = Some(resourceMimeType(annotation, method)),
+          annotations = None,
+          size = None)
 
-      val callback = { (context: McpEndpointConstructionContext) =>
-        try {
-          val endpointInstance = instanceFactory(context)
-          val result = method.invoke(endpointInstance)
-          resourceResultToMcp(result, resourceDescription.uri, resourceDescription.mimeType)
-        } catch {
-          case NonFatal(ex) =>
-            logger.warn(s"MCP resource callback for [${mcpEndpointClass.getName}.${method.getName}] failed", ex)
-            throw ex
+        val callback = { (context: McpEndpointConstructionContext) =>
+          try {
+            val endpointInstance = instanceFactory(context)
+            val result = method.invoke(endpointInstance)
+            resourceResultToMcp(result, resourceDescription.uri, resourceDescription.mimeType)
+          } catch {
+            case NonFatal(ex) =>
+              logger.warn(s"MCP resource callback for [${mcpEndpointClass.getName}.${method.getName}] failed", ex)
+              throw ex
+          }
         }
-      }
 
-      new ResourceMethodDescriptor(resourceDescription, new MethodOptions(None, None), callback)
-    }
+        new ResourceMethodDescriptor(resourceDescription, new MethodOptions(None, None), callback)
+      }
+      .sortBy(_.resource.name)
 
     val promptMethods = methodsWithAnnotation[McpPrompt](mcpEndpointClass)
     val prompts = promptMethods.map { case (annotation, method) =>
@@ -333,7 +337,7 @@ object McpEndpointDescriptorFactory {
       resources = resources,
       resourceTemplates = resourceTemplates,
       prompts = prompts,
-      tools = tools,
+      tools = tools.sortBy(_.toolDescription.name),
       componentOptions = new ComponentOptions(
         deriveAclOptions(Option(mcpEndpointClass.getAnnotation(classOf[Acl]))),
         deriveJWTOptions(Option(mcpEndpointClass.getAnnotation(classOf[JWT])), mcpEndpointClass.getCanonicalName)))
