@@ -36,6 +36,7 @@ jobs:
           - { sample: "transfer-workflow", sampleRepo: "akka-samples/transfer-workflow" }
           - { sample: "transfer-workflow-compensation", sampleRepo: "akka-samples/transfer-workflow-compensation" }
           - { sample: "ask-akka-agent", sampleRepo: "akka-samples/ask-akka-agent" }
+          - { sample: "multi-agent", sampleRepo: "akka-samples/multi-agent" }
 
     steps:
       - name: Checkout
@@ -111,7 +112,6 @@ jobs:
           - { sample: "travel-agent", sampleRepo: "akka-samples/travel-agent" }
           - { sample: "trip-agency", sampleRepo: "akka-samples/trip-agency" }
           - { sample: "real-estate-cs-agent", sampleRepo: "akka-samples/real-estate-cs-agent" }
-          - { sample: "multi-agent", sampleRepo: "akka-samples/multi-agent" }
 
     steps:
       - name: Checkout
