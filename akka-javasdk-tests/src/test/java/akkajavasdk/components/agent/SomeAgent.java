@@ -27,7 +27,6 @@ public class SomeAgent extends Agent {
       .model(modelProvider)
       .systemMessage("You are a helpful...")
       .userMessage(question)
-      .responseAs(String.class)
       .map(SomeResponse::new)
       .thenReply();
   }
