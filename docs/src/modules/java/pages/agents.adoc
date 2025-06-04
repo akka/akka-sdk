@@ -240,7 +240,7 @@ The `Selector` agent decides which agents to use:
 include::example$multi-agent/src/main/java/demo/multiagent/application/agents/Selector.java[tag=all]
 ----
 <1> The `AgentRegistry` contains information about all agents.
-<2> Select the agents with the role "worker".
+<2> Select the agents with the role `"worker"`.
 <3> Detailed instructions and include descriptions (as json) of the agents.
 
 The information about the agents in the `AgentRegistry` comes from the `@ComponentId` and `@AgentDescription` annotations. When using it for planning like this it is important that the agents define those descriptions that the LLM can use to come up with a good plan.
