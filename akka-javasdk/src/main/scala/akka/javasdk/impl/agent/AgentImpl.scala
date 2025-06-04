@@ -228,11 +228,12 @@ private[impl] final class AgentImpl[A <: Agent](
       new ToolCallInteraction(req, res)
     }.asJava
 
+    val timestamp = System.currentTimeMillis()
     sessionMemoryClient.addInteraction(
       sessionId,
       componentId,
-      new UserMessage(userMessage, modelResult.inputTokenCount),
-      new AiMessage(modelResult.modelResponse, modelResult.outputTokenCount, toolCallInteractions))
+      new UserMessage(timestamp, userMessage, modelResult.inputTokenCount),
+      new AiMessage(timestamp, modelResult.modelResponse, modelResult.outputTokenCount, toolCallInteractions))
   }
 
   private def toSpiContextMessages(sessionHistory: SessionHistory): Vector[SpiAgent.ContextMessage] = {
