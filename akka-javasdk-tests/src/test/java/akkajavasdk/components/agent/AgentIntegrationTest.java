@@ -120,9 +120,9 @@ public class AgentIntegrationTest extends TestKitSupport {
 
   @Test
   public void shouldIncludeAgentsInRegistry() {
-    assertThat(testKit.getAgentRegistry().allAgents().agents().stream().map(AgentRegistry.AgentInfo::id).toList())
+    assertThat(testKit.getAgentRegistry().allAgents().stream().map(AgentRegistry.AgentInfo::id).toList())
         .contains("some-agent", "some-streaming-agent", "structured-response-agent");
-    assertThat(testKit.getAgentRegistry().agentsWithRole("streaming").agents().stream().map(AgentRegistry.AgentInfo::id).toList())
+    assertThat(testKit.getAgentRegistry().agentsWithRole("streaming").stream().map(AgentRegistry.AgentInfo::id).toList())
         .isEqualTo(List.of("some-streaming-agent"));
 
     var someStructuredInfo = testKit.getAgentRegistry().agentInfo("structured-response-agent");

@@ -4,13 +4,14 @@
 
 package akka.javasdk.impl.agent
 
+import java.util.{ Set => JSet }
+
 import scala.jdk.CollectionConverters._
 
 import akka.annotation.InternalApi
 import akka.javasdk.agent.Agent
 import akka.javasdk.agent.AgentRegistry
 import akka.javasdk.agent.AgentRegistry.AgentInfo
-import akka.javasdk.agent.AgentRegistry.AgentInfoCollection
 
 /**
  * INTERNAL API
@@ -32,11 +33,11 @@ import akka.javasdk.agent.AgentRegistry.AgentInfoCollection
 
   val agentClassById: Map[String, Class[Agent]] = agents.iterator.map(a => a.id -> a.agentClass).toMap
 
-  override def allAgents(): AgentInfoCollection =
-    new AgentInfoCollection(agentInfoById.values.toSet.asJava)
+  override def allAgents(): JSet[AgentInfo] =
+    agentInfoById.values.toSet.asJava
 
-  override def agentsWithRole(role: String): AgentInfoCollection =
-    new AgentInfoCollection(agentInfoById.values.iterator.filter(_.hasRole(role)).toSet.asJava)
+  override def agentsWithRole(role: String): JSet[AgentInfo] =
+    agentInfoById.values.iterator.filter(_.hasRole(role)).toSet.asJava
 
   override def agentInfo(agentId: String): AgentInfo = {
     agentInfoById.getOrElse(
