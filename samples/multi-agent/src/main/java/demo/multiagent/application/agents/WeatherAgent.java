@@ -9,6 +9,7 @@ import akka.javasdk.http.HttpClientProvider;
 import demo.multiagent.domain.AgentResponse;
 import dev.langchain4j.agent.tool.Tool;
 
+// tag::description[]
 @ComponentId("weather-agent")
 @AgentDescription(
     name = "Weather Agent",
@@ -19,6 +20,7 @@ import dev.langchain4j.agent.tool.Tool;
     role = "worker"
 )
 public class WeatherAgent extends Agent {
+// end::description[]
 
   private static final String SYSTEM_MESSAGE = """
       You are a weather agent.
