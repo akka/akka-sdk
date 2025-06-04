@@ -12,7 +12,9 @@ import java.time.Duration;
 // tag::all[]
 @ComponentId("activity-agent-manager")
 public class ActivityAgentManager extends Workflow<ActivityAgentManager.State> { // <1>
+  // end::all[]
   private static final Logger logger = LoggerFactory.getLogger(ActivityAgentManager.class);
+  // tag::all[]
 
   public record State(String userQuery, String answer) { // <2>
     State withAnswer(String a) {

@@ -123,7 +123,7 @@ For more details about the `ComponentClient`, see xref:component-and-service-cal
 
 == Drive the Agent from a workflow
 
-Agents make external calls to the AI model and possibly other services, and therefore it is important to have solid error handling and durable execution steps when calling agents. Agents should therefore be called from a xref:workflows.adoc[Workflow].
+Agents make external calls to the AI model and possibly other services, and therefore it is important to have solid error handling and durable execution steps when calling agents. In many cases it is a good recommendation to call agents from a xref:workflows.adoc[Workflow]. The workflow will automatically execute the steps in a reliable and durable way. This means that if a call in a step fails, it will be retried until it succeeds or the retry limit of the recovery strategy is reached and separate error handling can be performed. The state machine of the workflow is durable, which means that if the workflow is restarted for some reason it will continue from where it left off, i.e. execute the current non-completed step again.
 
 A workflow will typically orchestrate several agents, which collaborate in achieving a common goal. We will look more at xref:#_multi_agent[multi-agent systems], but let's start with a workflow for the single activities agent.
 
