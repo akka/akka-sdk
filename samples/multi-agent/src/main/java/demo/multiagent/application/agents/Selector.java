@@ -1,15 +1,27 @@
 package demo.multiagent.application.agents;
 
+import akka.javasdk.JsonSupport;
+import akka.javasdk.agent.Agent;
+import akka.javasdk.agent.AgentRegistry;
+import akka.javasdk.annotations.AgentDescription;
+import akka.javasdk.annotations.ComponentId;
 import demo.multiagent.domain.AgentSelection;
-import dev.langchain4j.model.chat.ChatLanguageModel;
-import dev.langchain4j.service.AiServices;
 
-public class Selector {
+@ComponentId("selector-agent")
+@AgentDescription(
+    name = "Selector Agent",
+    description = """
+      An agent that analyses the user request and selects useful agents for
+      answering the request.
+    """
+)
+public class Selector extends Agent {
 
   private final String systemMessage;
-  private final ChatLanguageModel chatLanguageModel;
 
-  public Selector(AgentsRegistry agentsRegistry, ChatLanguageModel chatLanguageModel) {
+  public Selector(AgentRegistry agentsRegistry) {
+
+    var agents = agentsRegistry.agentsWithRole("worker");
 
     this.systemMessage = """
         Your job is to analyse the user request and select the agents that should be used to answer the user.
@@ -36,20 +48,17 @@ public class Selector {
         You can find the list of existing agents below (in JSON format):
         Also important, use the agent id to identify the agents.
         %s
-      """.formatted(agentsRegistry.allAgentsInJson());
-    this.chatLanguageModel = chatLanguageModel;
+      """
+        .stripIndent()
+        .formatted(JsonSupport.encodeToString(agents));
   }
 
-  interface Assistant {
-    AgentSelection chat(String message);
-  }
 
-  public AgentSelection selectAgents(String message) {
-    var assistant = AiServices.builder(Selector.Assistant.class)
-      .chatLanguageModel(chatLanguageModel)
-      .systemMessageProvider(__ -> systemMessage)
-      .build();
-
-    return assistant.chat(message);
+  public Effect<AgentSelection> selectAgents(String message) {
+    return effects()
+        .systemMessage(systemMessage)
+        .userMessage(message)
+        .responseAs(AgentSelection.class)
+        .thenReply();
   }
 }

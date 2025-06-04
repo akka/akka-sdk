@@ -7,7 +7,7 @@ import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.http.HttpResponses;
-import demo.multiagent.application.AgenticWorkflow;
+import demo.multiagent.application.AgentTeam;
 
 import java.util.UUID;
 
@@ -31,7 +31,7 @@ public class MultiAgentEndpoint {
     var res =
       componentClient
       .forWorkflow(chatId)
-        .method(AgenticWorkflow::start)
+        .method(AgentTeam::start)
         .invoke(request.message);
 
     return HttpResponses.created(res, "/chat/" + chatId);
@@ -42,7 +42,7 @@ public class MultiAgentEndpoint {
       var res =
         componentClient
           .forWorkflow(chatId)
-          .method(AgenticWorkflow::getAnswer)
+          .method(AgentTeam::getAnswer)
           .invoke();
 
       if (res.isEmpty())

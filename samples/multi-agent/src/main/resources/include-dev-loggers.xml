@@ -10,4 +10,7 @@
  -->
 <included>
     <logger name="demo.multiagent" level="DEBUG"/>
+    <logger name="dev.langchain4j" level="DEBUG"/>
+    <logger name="dev.langchain4j.model.openai" level="DEBUG"/>
+    <logger name="akka.javasdk.http" level="DEBUG"/>
 </included>

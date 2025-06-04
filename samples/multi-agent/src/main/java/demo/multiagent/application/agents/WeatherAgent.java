@@ -1,48 +1,53 @@
 package demo.multiagent.application.agents;
 
+import akka.javasdk.agent.Agent;
+import akka.javasdk.annotations.AgentDescription;
+import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Description;
+import akka.javasdk.annotations.FunctionTool;
 import akka.javasdk.http.HttpClientProvider;
-import demo.multiagent.application.SessionMemory;
-import dev.langchain4j.model.chat.ChatLanguageModel;
+import demo.multiagent.domain.AgentResponse;
+import dev.langchain4j.agent.tool.Tool;
 
-import java.util.Collection;
-import java.util.List;
-
-@AgentCard(
-    id = "weather-agent",
+@ComponentId("weather-agent")
+@AgentDescription(
     name = "Weather Agent",
     description = """
       An agent that provides weather information. It can provide current weather, forecasts, and other
       related information.
-    """
+    """,
+    role = "worker"
 )
 public class WeatherAgent extends Agent {
 
-
-
-  private final String sysMessage = """
+  private static final String SYSTEM_MESSAGE = """
       You are a weather agent.
       Your job is to provide weather information.
       You provide current weather, forecasts, and other related information.
-    
+
       The responses from the weather services are in json format. You need to digest it into human language. Be aware that
       Celsius temperature is in temp_c field. Fahrenheit temperature is in temp_f field.
-    """;
+    """.stripIndent() + AgentResponse.FORMAT_INSTRUCTIONS;
 
   private final HttpClientProvider httpClientProvider;
+    private final WeatherService weatherService;
 
-  public WeatherAgent(SessionMemory sessionMemory, ChatLanguageModel chatLanguageModel, HttpClientProvider httpClientProvider) {
-    super(sessionMemory, chatLanguageModel);
+  public WeatherAgent(HttpClientProvider httpClientProvider, WeatherService weatherService) {
     this.httpClientProvider = httpClientProvider;
+    this.weatherService = weatherService;
+  }
+
+  public Agent.Effect<AgentResponse> query(String message) {
+    return effects()
+        .systemMessage(SYSTEM_MESSAGE)
+        .userMessage(message)
+        .responseAs(AgentResponse.class)
+        .thenReply();
   }
 
 
-  @Override
-  public String agentSpecificSystemMessage() {
-    return sysMessage;
-  }
-
-  @Override
-  public Collection<Object> availableTools() {
-    return List.of(new WeatherService(httpClientProvider));
+  @FunctionTool(description = "Returns the weather forecast for a given city.")
+  private String getWeather(@Description("A location or city name.") String location) {
+    return weatherService.getWeather(location);
   }
 }

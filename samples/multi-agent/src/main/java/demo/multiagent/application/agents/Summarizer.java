@@ -1,24 +1,19 @@
 package demo.multiagent.application.agents;
 
+import akka.javasdk.agent.Agent;
+import akka.javasdk.annotations.AgentDescription;
+import akka.javasdk.annotations.ComponentId;
 import demo.multiagent.domain.AgentResponse;
-import dev.langchain4j.model.chat.ChatLanguageModel;
-import dev.langchain4j.service.AiServices;
 
 import java.util.Collection;
 import java.util.stream.Collectors;
 
-
-public class Summarizer {
-
-  private final ChatLanguageModel chatLanguageModel;
-
-  public Summarizer(ChatLanguageModel chatLanguageModel) {
-    this.chatLanguageModel = chatLanguageModel;
-  }
-
-  interface Assistant {
-    String chat(String message);
-  }
+@ComponentId("summarizer-agent")
+@AgentDescription(
+    name = "Summarizer",
+    description = "An agent that creates a summary from responses provided by other agents")
+public class Summarizer extends Agent {
+  public record Request(String originalQuery, Collection<AgentResponse> agentsResponses) {}
 
   private String buildSystemMessage(String userQuery) {
     return  """
@@ -35,20 +30,16 @@ public class Summarizer {
       """.formatted(userQuery);
   }
 
+  public Agent.Effect<String> summarize(Request request) {
+    var allResponses = request.agentsResponses.stream()
+        .map(AgentResponse::response)
+        .filter(response -> response != null && !response.isEmpty())
+        .collect(Collectors.joining(" "));
 
-  public String summarize(String originalQuery, Collection<AgentResponse> agentsResponses) {
-
-    var allResponses = agentsResponses.stream()
-      .map(AgentResponse::response)
-      .filter(response -> response != null && !response.isEmpty())
-      .collect(Collectors.joining(" "));
-
-    var assistant = AiServices.builder(Assistant.class)
-      .chatLanguageModel(chatLanguageModel)
-      .systemMessageProvider(__ -> buildSystemMessage(originalQuery))
-      .build();
-
-    return assistant.chat("Summarize the following message: '" + allResponses + "'");
+    return effects()
+        .systemMessage(buildSystemMessage(request.originalQuery))
+        .userMessage("Summarize the following message: '" + allResponses + "'")
+        .thenReply();
   }
 
 }

@@ -1,23 +1,38 @@
 package demo.multiagent.domain;
 
-import akka.javasdk.JsonSupport;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public record AgentResponse(String response, String error) {
 
+  public static final String FORMAT_INSTRUCTIONS =
+      """
+      IMPORTANT:
+      Output should be in json format with the following fields:
+        {
+          "response": "string",
+          "error": "string",
+        }
+      
+      When you can generate a response, the error field should be empty.
+        For example:
+        {
+          "response": "The weather is sunny.",
+          "error": ""
+        }
+      
+      When you can't generate a response, then it should be empty and the error
+      field should contain a message explaining why you couldn't generate a response.
+        For example:
+        {
+            "response": "",
+            "error": "I cannot provide a response for this question."
+        }
+  
+      You return an error if the asked question is outside your domain of expertise,
+       if it's invalid or if you cannot provide a response for any other reason.
 
-  private static final Logger logger = LoggerFactory.getLogger(AgentResponse.class);
-  public static AgentResponse fromJson(String json) {
-    try {
-      logger.debug("Parsing JSON: {}", json);
-      return JsonSupport.getObjectMapper().readValue(json, AgentResponse.class);
-    } catch (JsonProcessingException e) {
-      return new AgentResponse("", "Error parsing JSON: " + e.getMessage());
-    }
-  }
+      Do not include any explanations or text outside of the JSON structure.
+      """.stripIndent();
 
   @JsonIgnore
   public boolean isError() {
