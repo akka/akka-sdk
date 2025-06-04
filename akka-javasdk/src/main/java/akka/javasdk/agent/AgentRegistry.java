@@ -36,15 +36,13 @@ public interface AgentRegistry {
     }
   }
 
-  record AgentInfoCollection(Set<AgentInfo> agents) {}
-
   /**
    * Information about All agents. The agent id is defined with the {@link
    * akka.javasdk.annotations.ComponentId} annotation on the agent class.
    * Additional information is defined with the {@link akka.javasdk.annotations.AgentDescription}
    * annotation on the agent class.
    */
-  AgentInfoCollection allAgents();
+  Set<AgentInfo> allAgents();
 
   /**
    * Agent identifiers of agents with a certain role. The role is defined with {@link
@@ -53,7 +51,7 @@ public interface AgentRegistry {
    * Additional information is defined with the {@link akka.javasdk.annotations.AgentDescription}
    * annotation on the agent class.
    */
-  AgentInfoCollection agentsWithRole(String role);
+  Set<AgentInfo> agentsWithRole(String role);
 
   /**
    * Information about a given agent. The agent id is defined with the {@link
