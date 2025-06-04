@@ -376,6 +376,7 @@ jobs:
           - { sample: transfer-workflow-compensation, it: true }
 
           - { sample: ask-akka-agent, it: false }
+          - { sample: multi-agent, it: false }
 
     steps:
       - name: Checkout
