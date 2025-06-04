@@ -1,32 +1,34 @@
 package demo.multiagent.application.agents;
 
-import demo.multiagent.application.SessionMemory;
-import dev.langchain4j.model.chat.ChatLanguageModel;
+import akka.javasdk.agent.Agent;
+import akka.javasdk.annotations.AgentDescription;
+import akka.javasdk.annotations.ComponentId;
+import demo.multiagent.domain.AgentResponse;
 
-@AgentCard(
-  id = "activity-agent",
+@ComponentId("activity-agent")
+@AgentDescription(
   name = "Activity Agent",
   description = """
       An agent that suggests activities in the real world. Like for example, a team building activity, sports,
       an indoor or outdoor game, board games, a city trip, etc.
-    """
+    """,
+    role = "worker"
 )
 public class ActivityAgent extends Agent {
 
-  private final String sysMessage = """
+  private static final String SYSTEM_MESSAGE = ("""
       You are an activity agent. Your job is to suggest activities in the real world. Like for example, a team
       building activity, sports, an indoor or outdoor game, board games, a city trip, etc.
-    """;
+    """.stripIndent() + AgentResponse.FORMAT_INSTRUCTIONS);
 
-  public ActivityAgent(SessionMemory sessionMemory, ChatLanguageModel chatLanguageModel) {
-    super(sessionMemory, chatLanguageModel);
-  }
+public Effect<AgentResponse> query(String message) {
+  return effects()
+      .systemMessage(SYSTEM_MESSAGE)
+      .userMessage(message)
+      .responseAs(AgentResponse.class)
+      .thenReply();
+}
 
-
-  @Override
-  public String agentSpecificSystemMessage() {
-    return sysMessage;
-  }
 
 
 }

@@ -2,11 +2,9 @@ package demo.multiagent.application.agents;
 
 import akka.javasdk.http.HttpClient;
 import akka.javasdk.http.HttpClientProvider;
-import dev.langchain4j.agent.tool.Tool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 
 public class WeatherService {
@@ -22,8 +20,7 @@ public class WeatherService {
     }
   }
 
-  @Tool("Returns the weather forecast for a given city.")
-  public String getWeather(String location) throws UnsupportedEncodingException {
+  public String getWeather(String location) {
 
     logger.info("Getting weather forecast for city {}", location);
 
@@ -37,7 +34,7 @@ public class WeatherService {
       var apiKey = System.getenv(WEATHER_API_KEY);
       String url = String.format("/v1/current.json?&q=%s&aqi=no&key=%s", encodedLocation, apiKey);
 
-      return httpClient.GET(url).invoke().body().toString();
+      return httpClient.GET(url).invoke().body().utf8String();
     }
   }
 }

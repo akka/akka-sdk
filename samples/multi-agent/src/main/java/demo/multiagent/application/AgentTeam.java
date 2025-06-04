@@ -2,11 +2,12 @@ package demo.multiagent.application;
 
 import akka.Done;
 import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.client.ComponentClient;
+import akka.javasdk.client.DynamicMethodRef;
 import akka.javasdk.workflow.Workflow;
 import demo.multiagent.application.agents.Planner;
 import demo.multiagent.application.agents.Selector;
 import demo.multiagent.application.agents.Summarizer;
-import demo.multiagent.application.agents.AgentsRegistry;
 import demo.multiagent.domain.AgentResponse;
 import demo.multiagent.domain.AgentSelection;
 import demo.multiagent.domain.Plan;
@@ -17,17 +18,13 @@ import org.slf4j.LoggerFactory;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
 
-import static demo.multiagent.application.AgenticWorkflow.Status.COMPLETED;
-import static demo.multiagent.application.AgenticWorkflow.Status.FAILED;
-import static demo.multiagent.application.AgenticWorkflow.Status.STARTED;
+import static demo.multiagent.application.AgentTeam.Status.*;
 import static java.time.temporal.ChronoUnit.SECONDS;
 
 
-@ComponentId("agentic-workflow")
-public class AgenticWorkflow extends Workflow<AgenticWorkflow.State> {
-
+@ComponentId("agent-team")
+public class AgentTeam extends Workflow<AgentTeam.State> {
 
   enum Status {
     STARTED,
@@ -80,20 +77,12 @@ public class AgenticWorkflow extends Workflow<AgenticWorkflow.State> {
 
   }
 
-  private final Logger logger = LoggerFactory.getLogger(AgenticWorkflow.class);
+  private static final Logger logger = LoggerFactory.getLogger(AgentTeam.class);
 
-  private final AgentsRegistry agentsRegistry;
-  private final Selector selector;
-  private final Planner planner;
-  private final Summarizer summarizer;
+  private final ComponentClient componentClient;
 
-
-  public AgenticWorkflow(AgentsRegistry agentsRegistry, Selector agentSelector, Planner planner, Summarizer summarizer) {
-    this.agentsRegistry = agentsRegistry;
-
-    this.selector = agentSelector;
-    this.planner = planner;
-    this.summarizer = summarizer;
+  public AgentTeam(ComponentClient componentClient) {
+    this.componentClient = componentClient;
   }
 
   @Override
@@ -131,7 +120,9 @@ public class AgenticWorkflow extends Workflow<AgenticWorkflow.State> {
 
   private Step selectAgent() {
     return step(SELECT_AGENTS)
-      .call(() -> selector.selectAgents(currentState().userQuery))
+      .call(() ->
+          componentClient.forAgent().inSession(sessionId()).method(Selector::selectAgents)
+              .invoke(currentState().userQuery))
       .andThen(AgentSelection.class, selection -> {
         logger.debug("Selected agents: {}", selection.agents());
           return effects().transitionTo(CREATE_PLAN_EXECUTION, selection);
@@ -149,7 +140,8 @@ public class AgenticWorkflow extends Workflow<AgenticWorkflow.State> {
             currentState().userQuery,
             agentSelection.agents());
 
-          return planner.createPlan(currentState().userQuery, agentSelection);
+          return componentClient.forAgent().inSession(sessionId()).method(Planner::createPlan)
+              .invoke(new Planner.Request(currentState().userQuery, agentSelection));
         }
       )
       .andThen(Plan.class, plan -> {
@@ -175,12 +167,10 @@ public class AgenticWorkflow extends Workflow<AgenticWorkflow.State> {
   private Step runPlan() {
     return step(EXECUTE_PLAN)
       .call(() -> {
-
         var stepPlan = currentState().nextStepPlan();
         logger.debug("Executing plan step (agent:{}), asking {}", stepPlan.agentId(), stepPlan.query());
-        var agent = agentsRegistry.getAgent(stepPlan.agentId());
-
-        var agentResponse = agent.query(commandContext().workflowId(), stepPlan.query());
+        var agentCall = agentCall(stepPlan.agentId());
+        var agentResponse = agentCall.invoke(stepPlan.query());
         if (agentResponse.isValid()) {
           logger.debug("Response from [agent:{}]: '{}'", stepPlan.agentId(), agentResponse);
           return agentResponse;
@@ -190,8 +180,7 @@ public class AgenticWorkflow extends Workflow<AgenticWorkflow.State> {
 
       })
       .andThen(AgentResponse.class, answer -> {
-
-        var newState = currentState().addAgentResponse(answer);
+          var newState = currentState().addAgentResponse(answer);
 
           if (newState.hasMoreSteps()) {
             logger.debug("Still {} steps to execute.", newState.plan().steps().size());
@@ -205,13 +194,22 @@ public class AgenticWorkflow extends Workflow<AgenticWorkflow.State> {
       );
   }
 
+  private DynamicMethodRef<String, AgentResponse> agentCall(String agentId) {
+    // We know the id of the agent to call, but not the agent class.
+    // Could be WeatherAgent or ActivityAgent.
+    // We can still invoke the agent based on its id, given that we know that it
+    // takes a String parameter and returns AgentResponse.
+    return componentClient.forAgent().inSession(sessionId()).dynamicCall(agentId);
+  }
+
   private static final String SUMMARIZE = "summarize";
 
   private Step summarize() {
     return step(SUMMARIZE)
       .call(() -> {
         var agentsAnswers = currentState().agentResponses.values();
-        return summarizer.summarize(currentState().userQuery, agentsAnswers);
+        return componentClient.forAgent().inSession(sessionId()).method(Summarizer::summarize)
+                .invoke(new Summarizer.Request(currentState().userQuery, agentsAnswers));
       })
       .andThen(String.class, finalAnswer ->
         effects().updateState(currentState().withFinalAnswer(finalAnswer).complete()).end());
@@ -225,6 +223,10 @@ public class AgenticWorkflow extends Workflow<AgenticWorkflow.State> {
         logger.debug("Interrupting workflow");
         return Done.getInstance();
       })
-      .andThen(Done.class, __ -> effects().updateState(currentState().failed()).end());
+      .andThen(() -> effects().updateState(currentState().failed()).end());
+  }
+
+  private String sessionId() {
+    return commandContext().workflowId();
   }
 }
