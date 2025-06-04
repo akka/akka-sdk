@@ -27,6 +27,7 @@ Follow xref:java:author-your-first-service.adoc[] to implement your first servic
 
 On the other hand, if you would rather spend some time exploring our documentation, here are some main features you will find in this section:
 
+* xref:agents.adoc[Agents]
 * xref:event-sourced-entities.adoc[Event Sourced Entities]
 * xref:key-value-entities.adoc[Key Value Entities]
 * xref:http-endpoints.adoc[HTTP Endpoints]

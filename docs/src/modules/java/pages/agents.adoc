@@ -1,0 +1,182 @@
+= Implementing Agents
+
+include::ROOT:partial$include.adoc[]
+
+image:ROOT:agent.png[Agent,width=100,float=left]An Agent interacts with an AI model to perform a specific task. It is typically backed by a large language model (LLM). It maintains contextual history in a session memory, which may be shared between multiple agents that are collaborating on the same goal. It may provide function tools and call them as requested by the model.
+
+[#_effect_api]
+== Agent's Effect API
+
+The Agent's Effect defines the operations that Akka should perform when an incoming command is handled by an Agent.
+
+An Agent Effect can either:
+
+* define model
+* specify system, user messages and additional context
+* configure session memory
+* define available tools
+* fail the step or reject a command by returning an error
+* return an error message
+* transform model response and reply to incoming commands
+
+For additional details, refer to xref:concepts:declarative-effects.adoc[Declarative Effects].
+
+== Skeleton
+
+An agent implementation has the following code structure.
+
+[source,java]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/application/MyAgent.java[MyAgent.java]
+----
+include::example$doc-snippets/src/main/java/com/example/application/MyAgent.java[tag=class]
+----
+<1> Create a class that extends `Agent`.
+<2> Make sure to annotate such class with `@ComponentId` and pass a unique identifier for this agent type.
+<3> Define the command handler method.
+
+NOTE: The `@ComponentId` value `my-agent` is common for all instances of this agent and must be unique across the different components in the service.
+
+An agent must have one command handler method that is public and returns `Effect<T>`, where `T` it the type of the reply. Alternatively it can return `StreamEffect` for xref:#_streaming_response[streaming responses].
+
+The command handler may take one or no parameters as input. You can wrap multiple parameters in a record class.
+
+There can only be one command handler because the agent is supposed to perform one single well-defined task.
+
+== Model
+
+Akka provides integration with several backend AI models, and you have to select which model to use. You can define a default model in `application.conf`:
+
+[source,conf]
+.src/main/resources/application.conf
+----
+akka.javasdk {
+  agent {
+    model-provider = openai
+
+    openai {
+      model-name = "gpt-4o-mini"
+    }
+  }
+}
+----
+
+The default model will be used if the agent doesn't specify another model. Different agents can use different models by defining the `ModelProvider` in the Agent effect:
+
+[source,java]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/application/MyAgent.java[MyAgent.java]
+----
+include::example$doc-snippets/src/main/java/com/example/application/MyAgent.java[tag=model]
+----
+<1> Define the model provider in code.
+
+NOTE: With `ModelProvider.fromConfig` you can define several models in configuration and use different models in different agents.
+
+Each model provider may have different settings. Available model providers are:
+
+* `openai` - link:_attachments/api/akka/javasdk/agent/ModelProvider.OpenAi.html[`ModelProvider.OpenAi`]
+* `anthropic` - link:_attachments/api/akka/javasdk/agent/ModelProvider.Anthropic.html[`ModelProvider.Anthropic`]
+
+FIXME more providers ^
+
+It is possible to plug in a custom model by implementing the link:_attachments/api/akka/javasdk/agent/ModelProvider.Custom.html[`ModelProvider.Custom`] interface and use it with `ModelProvider.custom`.
+
+== Prompt
+
+The prompt consists of essential instructions to the model.
+
+* The system message provides system-level instructions to the AI model that defines its behavior and context. The system message acts as a foundational prompt that establishes the AI's role, constraints, and operational parameters. It is processed before user messages and helps maintain consistent behavior throughout the interactions.
+* The user message represents the specific query, instruction, or input that will be processed by the model to generate a response.
+
+An agent that suggests activities may have a prompt like:
+
+[source,java]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/application/ActivityAgent.java[ActivityAgent.java]
+----
+include::example$doc-snippets/src/main/java/com/example/application/ActivityAgent.java[tag=prompt]
+----
+<1> Define the system message as a constant, but it could also be a method that adapts the system message based on the request.
+<2> Use the system message in the effect builder.
+<3> Define the user message for the specific request, and use in the effect builder.
+
+=== Prompt template
+
+As an alternative to hard-coded prompts, there is a built-in prompt template entity. The advantage of using the prompt template entity is that you can change the prompts at runtime without restarting or redeploying the service.
+
+FIXME...
+
+== Calling the Agent
+
+Use the `ComponentClient` to call the agent from a Workflow, Endpoint or Consumer.
+
+[source,java]
+----
+include::example$doc-snippets/src/main/java/com/example/application/ActivityAgent.java[tag=call]
+----
+<1> Use `forAgent`.
+<2> Define the identifier of the session that the agent participates in.
+
+The session id is used by the xref:#_session_memory[session memory], but it is also important for observability
+tracking. You can use a new random UUID for each call if the agent doesn't collaborate with other agents nor have a multi-step interaction with the AI model.
+
+For more details about the `ComponentClient`, see xref:component-and-service-calls.adoc[].
+
+=== Drive the agents from a workflow
+
+Agents make external calls to the AI model and possibly other services, and therefore it is important to have solid error handling and durable execution steps when calling agents. Agents should therefore be called from a xref:workflows.adoc[Workflow].
+
+Keep in mind that AI requests are typically slow (many seconds), and you need to define the workflow timeouts accordingly. This is done in the workflow step definition with:
+
+[source,java]
+----
+.timeout(Duration.ofSeconds(120))
+----
+
+Additionally, you should define a workflow recovery strategy so that it doesn't retry failing requests infinitely. This is done in the workflow definition with:
+
+[source,java]
+----
+.defaultStepRecoverStrategy(maxRetries(2).failoverTo("error"))
+----
+
+More details in xref:workflows.adoc#_error_handling[Workflow timeouts and recovery strategy].
+
+== Session memory
+
+FIXME
+
+== Structured responses
+
+FIXME
+
+- prompt instructions for json responses
+- mapping of model response to another reply type
+
+== Function tools
+
+FIXME
+
+== Use ComponentClient in an Agent
+
+xref:java:setup-and-dependency-injection.adoc#_dependency_injection[Dependency injection] can be used in an
+Agent. For example, injecting the `ComponentClient` to be able to enrich the request to the AI model with
+information from entities or views may look like this:
+
+[source,java]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/application/ActivityAgent.java[ActivityAgent.java]
+----
+include::example$doc-snippets/src/main/java/com/example/application/ActivityAgent.java[tag=di]
+----
+<1> Inject the `ComponentClient` as a constructor parameter.
+<2> Retrieve preferences from an entity.
+<3> Enrich the user message with the preferences.
+
+== Streaming response
+
+FIXME
+
+- from endpoint serving UI
+- SSE
+
+== Testing the Agent
+
+FIXME
