@@ -22,9 +22,10 @@ import java.util.Map;
 import static demo.multiagent.application.AgentTeam.Status.*;
 import static java.time.temporal.ChronoUnit.SECONDS;
 
-
+// tag::plan[]
 @ComponentId("agent-team")
-public class AgentTeam extends Workflow<AgentTeam.State> {
+public class AgentTeam extends Workflow<AgentTeam.State> { // <1>
+  // end::plan[]
 
   enum Status {
     STARTED,
@@ -85,28 +86,30 @@ public class AgentTeam extends Workflow<AgentTeam.State> {
     this.componentClient = componentClient;
   }
 
+  // tag::plan[]
   @Override
   public WorkflowDef<State> definition() {
     return workflow()
       .defaultStepRecoverStrategy(maxRetries(1).failoverTo(INTERRUPT))
       .defaultStepTimeout(Duration.of(30, SECONDS))
-      .addStep(selectAgent())
-      .addStep(planExecution())
-      .addStep(runPlan()).addStep(summarize())
+      .addStep(selectAgent()) // <2>
+      .addStep(plan())
+      .addStep(executePlan())
+      .addStep(summarize())
       .addStep(interrupt());
   }
-
 
   public Effect<Done> start(String query) {
     if (currentState() == null) {
       return effects()
         .updateState(State.init(query))
-        .transitionTo(SELECT_AGENTS)
+        .transitionTo(SELECT_AGENTS) // <3>
         .thenReply(Done.getInstance());
     } else {
       return effects().error("Workflow '" + commandContext().workflowId() + "' already started");
     }
   }
+  // end::plan[]
 
   public Effect<String> getAnswer() {
     if (currentState() == null) {
@@ -116,24 +119,25 @@ public class AgentTeam extends Workflow<AgentTeam.State> {
     }
   }
 
+  // tag::plan[]
   private static final String SELECT_AGENTS = "select-agents";
 
   private Step selectAgent() {
     return step(SELECT_AGENTS)
       .call(() ->
           componentClient.forAgent().inSession(sessionId()).method(Selector::selectAgents)
-              .invoke(currentState().userQuery))
+              .invoke(currentState().userQuery)) // <4>
       .andThen(AgentSelection.class, selection -> {
         logger.debug("Selected agents: {}", selection.agents());
-          return effects().transitionTo(CREATE_PLAN_EXECUTION, selection);
+          return effects().transitionTo(CREATE_PLAN, selection); // <5>
         }
       );
   }
 
-  private static final String CREATE_PLAN_EXECUTION = "create-plan-execution";
+  private static final String CREATE_PLAN = "create-plan";
 
-  private Step planExecution() {
-    return step(CREATE_PLAN_EXECUTION)
+  private Step plan() {
+    return step(CREATE_PLAN)
       .call(AgentSelection.class, agentSelection -> {
         logger.debug(
             "Calling planner with: '{}' / {}",
@@ -141,7 +145,7 @@ public class AgentTeam extends Workflow<AgentTeam.State> {
             agentSelection.agents());
 
           return componentClient.forAgent().inSession(sessionId()).method(Planner::createPlan)
-              .invoke(new Planner.Request(currentState().userQuery, agentSelection));
+              .invoke(new Planner.Request(currentState().userQuery, agentSelection)); // <6>
         }
       )
       .andThen(Plan.class, plan -> {
@@ -156,21 +160,20 @@ public class AgentTeam extends Workflow<AgentTeam.State> {
         } else {
           return effects()
             .updateState(currentState().withPlan(plan))
-            .transitionTo(EXECUTE_PLAN);
+            .transitionTo(EXECUTE_PLAN); // <7>
           }
         }
       );
   }
 
-  private static final String EXECUTE_PLAN = "run-plan";
+  private static final String EXECUTE_PLAN = "execute-plan";
 
-  private Step runPlan() {
+  private Step executePlan() {
     return step(EXECUTE_PLAN)
       .call(() -> {
-        var stepPlan = currentState().nextStepPlan();
+        var stepPlan = currentState().nextStepPlan(); // <8>
         logger.debug("Executing plan step (agent:{}), asking {}", stepPlan.agentId(), stepPlan.query());
-        var agentCall = agentCall(stepPlan.agentId());
-        var agentResponse = agentCall.invoke(stepPlan.query());
+        var agentResponse = callAgent(stepPlan.agentId(), stepPlan.query()); // <9>
         if (agentResponse.isValid()) {
           logger.debug("Response from [agent:{}]: '{}'", stepPlan.agentId(), agentResponse);
           return agentResponse;
@@ -184,7 +187,7 @@ public class AgentTeam extends Workflow<AgentTeam.State> {
 
           if (newState.hasMoreSteps()) {
             logger.debug("Still {} steps to execute.", newState.plan().steps().size());
-            return effects().updateState(newState).transitionTo(EXECUTE_PLAN);
+            return effects().updateState(newState).transitionTo(EXECUTE_PLAN); // <10>
           } else {
             logger.debug("No further steps to execute.");
             return effects().updateState(newState).transitionTo(SUMMARIZE);
@@ -194,13 +197,21 @@ public class AgentTeam extends Workflow<AgentTeam.State> {
       );
   }
 
-  private DynamicMethodRef<String, AgentResponse> agentCall(String agentId) {
+  // tag::dynamicCall[]
+  private AgentResponse callAgent(String agentId, String query) {
     // We know the id of the agent to call, but not the agent class.
     // Could be WeatherAgent or ActivityAgent.
     // We can still invoke the agent based on its id, given that we know that it
     // takes a String parameter and returns AgentResponse.
-    return componentClient.forAgent().inSession(sessionId()).dynamicCall(agentId);
+    DynamicMethodRef<String, AgentResponse> call =
+        componentClient
+            .forAgent()
+            .inSession(sessionId())
+            .dynamicCall(agentId); // <9>
+    return call.invoke(query);
   }
+  // end::dynamicCall[]
+  // end::plan[]
 
   private static final String SUMMARIZE = "summarize";
 
@@ -229,4 +240,6 @@ public class AgentTeam extends Workflow<AgentTeam.State> {
   private String sessionId() {
     return commandContext().workflowId();
   }
+  // tag::plan[]
 }
+// end::plan[]

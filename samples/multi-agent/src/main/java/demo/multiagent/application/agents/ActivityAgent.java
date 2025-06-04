@@ -5,6 +5,7 @@ import akka.javasdk.annotations.AgentDescription;
 import akka.javasdk.annotations.ComponentId;
 import demo.multiagent.domain.AgentResponse;
 
+// tag::description[]
 @ComponentId("activity-agent")
 @AgentDescription(
   name = "Activity Agent",
@@ -15,6 +16,7 @@ import demo.multiagent.domain.AgentResponse;
     role = "worker"
 )
 public class ActivityAgent extends Agent {
+// end::description[]
 
   private static final String SYSTEM_MESSAGE = ("""
       You are an activity agent. Your job is to suggest activities in the real world. Like for example, a team
