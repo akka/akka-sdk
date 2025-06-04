@@ -165,8 +165,7 @@ private[javasdk] final class BaseAgentEffectBuilder[Reply]
   }
 
   override def map[T](mapper: function.Function[String, T]): MappingResponseBuilder[T] = {
-    updateRequestModel(
-      _.copy(responseMapping = Some(mapper.asScala.asInstanceOf[Function1[Any, Any]])))
+    updateRequestModel(_.copy(responseMapping = Some(mapper.asScala.asInstanceOf[Function1[Any, Any]])))
     new MappingResponseEffectBuilder(_primaryEffect.asInstanceOf[RequestModel])
   }
 
