@@ -162,9 +162,9 @@ More details in xref:workflows.adoc#_error_handling[Workflow timeouts and recove
 
 == Session memory
 
-Session Memory provides a conversation history mechanism that enables agents to maintain context across multiple interactions. This feature is essential for building agents that can remember previous exchanges with users, understand context, and provide coherent responses over time.
+Session Memory provides a history mechanism that enables agents to maintain context across multiple interactions. This feature is essential for building agents that can remember previous exchanges with users, understand context, and provide coherent responses over time.
 
-When an agent interacts with an AI model, both the user message and the AI response are automatically stored in the session memory. These messages are then included as additional context in subsequent requests to the model, allowing it to reference previous parts of the conversation.
+When an agent interacts with an AI model, both the user message and the AI response are automatically stored in the session memory. These messages are then included as additional context in subsequent requests to the model, allowing it to reference previous parts of the interaction.
 
 The session memory is:
 
@@ -190,12 +190,14 @@ akka.javasdk.agent.memory {
 Or you can configure memory behavior for specific agent interactions using the `MemoryProvider` API:
 
 * Example with `limitedWindow` memory provider:
++
 [source,java]
 ----
 include::example$doc-snippets/src/main/java/com/example/application/MyAgent.java[tag=read-last]
 ----
 
 * Example disabling session memory for the agent:
++
 [source,java]
 ----
 include::example$doc-snippets/src/main/java/com/example/application/MyAgent.java[tag=no-memory]
@@ -203,7 +205,7 @@ include::example$doc-snippets/src/main/java/com/example/application/MyAgent.java
 
 === Different memory providers
 
-The `MemoryProvider` interface allows you to control how session memory behaves:
+The link:_attachments/api/akka/javasdk/agent/MemoryProvider.html[`MemoryProvider`] interface allows you to control how session memory behaves:
 
 * `MemoryProvider.none()` - Disables both reading from and writing to session memory
 * `MemoryProvider.limitedWindow()` - Configures memory with options to, e.g.:
@@ -215,7 +217,7 @@ The `MemoryProvider` interface allows you to control how session memory behaves:
 
 === Accessing Session Memory
 
-The default implementation of Session Memory is backed by a regular Event-sourced entity called `SessionMemoryEntity`, which allows you to interact directly with it as you would do with any other entities in your application. This includes the possibility to directly modify or access it through the `ComponentClient` but also the ability to subscribe to changes in the session memory, as shown below:
+The default implementation of Session Memory is backed by a regular xref:java:event-sourced-entities.adoc[Event Sourced Entity] called `SessionMemoryEntity`, which allows you to interact directly with it as you would do with any other entities in your application. This includes the possibility to directly modify or access it through the `ComponentClient` but also the ability to subscribe to changes in the session memory, as shown below:
 
 [source,java]
 ----

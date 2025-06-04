@@ -57,7 +57,7 @@ interface MyAgentMore {
     // tag::read-last[]
     public Effect<String> ask(String question) {
       return effects()
-          .memory(MemoryProvider.limitedWindow().readLastN(5))
+          .memory(MemoryProvider.limitedWindow().readLast(5))
           .systemMessage("You are a helpful...")
           .userMessage(question)
           .thenReply();

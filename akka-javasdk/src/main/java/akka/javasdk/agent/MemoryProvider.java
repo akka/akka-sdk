@@ -115,7 +115,7 @@ public sealed interface MemoryProvider {
      * @param onlyLastN parameter controls the maximum number of most recent messages to read from memory.
      * @return A new memory provider with the specified history limit
      */
-    public MemoryProvider readLastN(int onlyLastN) {
+    public MemoryProvider readLast(int onlyLastN) {
       return new LimitedWindowMemoryProvider(Optional.of(onlyLastN), read, write);
     }
   }
