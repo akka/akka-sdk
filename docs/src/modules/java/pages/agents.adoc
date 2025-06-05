@@ -292,12 +292,40 @@ include::example$doc-snippets/src/main/java/com/example/application/ActivityAgen
 
 This also illustrates the important point that the context of the request to the AI model can be built from additional information in the service and doesn't only have to come from the session memory.
 
-== Streaming response
+== Response streaming
 
-FIXME
+In AI chat applications, you've seen how responses are displayed word by word as they are generated. This gives faster visual feedback, given that generating a full AI response can sometimes take a significant amount of time. To support this real-time user experience, the agent can stream the response tokens to an endpoint. These tokens can then be pushed to the client using server-sent events (SSE).
 
-- from endpoint serving UI
-- SSE
+[source,java]
+----
+include::example$doc-snippets/src/main/java/com/example/application/ActivityAgent.java[tag=stream-tokens]
+----
+<1> The method returns `StreamEffect` instead of `Effect<T>`.
+<2> Use the `streamEffects()` builder.
+
+Consuming the stream from an HTTP endpoint:
+
+[source,java]
+----
+include::example$doc-snippets/src/main/java/com/example/application/ActivityAgent.java[tag=stream-endpoint]
+----
+<1> Use `tokenStream` of the component client, instead of `method`,
+<2> and invoke it with `source` to receive a stream of tokens.
+<3> Return the stream of tokens as SSE.
+
+The returned stream is a `Source<String, NotUsed>`, i.e. the tokens are always text strings.
+
+The granularity of a token varies by AI model, often representing a word or a short sequence of characters. To reduce the overhead of sending each token as a separate SSE, you can group multiple tokens together using the Akka streams `groupWithin` operator.
+
+[source,java]
+----
+include::example$doc-snippets/src/main/java/com/example/application/ActivityAgent.java[tag=stream-group]
+----
+<1> Group at most 20 tokens or within 100 milliseconds, whatever happens first.
+<2> Concatenate the list of string into a single string.
+<3> Return the stream of grouped tokens as SSE.
+
+NOTE: Token streams are designed for direct agent calls from an endpoint. You can't use a token stream when you have an intermediate workflow between the endpoint and the agent.
 
 == Multi-agent
 
