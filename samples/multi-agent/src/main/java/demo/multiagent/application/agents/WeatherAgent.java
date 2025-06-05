@@ -9,6 +9,9 @@ import akka.javasdk.http.HttpClientProvider;
 import demo.multiagent.domain.AgentResponse;
 import dev.langchain4j.agent.tool.Tool;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
 // tag::description[]
 @ComponentId("weather-agent")
 @AgentDescription(
@@ -49,7 +52,20 @@ public class WeatherAgent extends Agent {
 
 
   @FunctionTool(description = "Returns the weather forecast for a given city.")
-  private String getWeather(@Description("A location or city name.") String location) {
-    return weatherService.getWeather(location);
+  private String getWeather(
+      @Description("A location or city name.") String location,
+      @Description("Forecast for a given date, in yyyy-MM-dd format. Leave empty to use current date.") String date) {
+    var forecastDate = date;
+    if (date == null || date.isBlank()) {
+      forecastDate = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE);
+    }
+
+    return weatherService.getWeather(location, forecastDate);
   }
+
+  @FunctionTool(description = "Return current date in yyyy-MM-dd format")
+  private String getCurrentDate() {
+    return LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE);
+  }
+
 }

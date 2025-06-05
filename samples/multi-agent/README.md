@@ -98,7 +98,7 @@ With the application running, you can test the system using the following endpoi
 ```shell
 curl -i -XPOST --location "http://localhost:9000/chat" \
   --header "Content-Type: application/json" \
-  --data '{"message": "I do not work today.. I am in Madrid. What should I do? Beware of the weather"}'
+  --data '{"message": "I do not work tomorrow. I am in Madrid. What should I do? Beware of the weather"}'
 ```
 
 The system will process the query, select the appropriate agents, and return a response.
@@ -113,7 +113,7 @@ Replace `{chatId}` with the ID returned when the session was created. Example:
 ```shell
 $ curl "http://localhost:9000/chat/c1219e5a-abae-44c0-959b-ff76aa22cb2e"
 
-The weather in Madrid is rainy today, so you might want to explore indoor attractions like the Prado Museum or Reina Sofia Museum. Alternatively, you can visit local cafes and food markets, such as Mercado de San Miguel, to enjoy some culinary delights without getting wet. If you're up for something more active, you could also consider visiting an escape room or an indoor sports facility.% 
+The weather in Madrid is rainy tomorrow, so you might want to explore indoor attractions like the Prado Museum or Reina Sofia Museum. Alternatively, you can visit local cafes and food markets, such as Mercado de San Miguel, to enjoy some culinary delights without getting wet. If you're up for something more active, you could also consider visiting an escape room or an indoor sports facility.% 
 ```
 
 ## Deployment
