@@ -111,7 +111,7 @@ public class AgentTeam extends Workflow<AgentTeam.State> { // <1>
   }
   // end::plan[]
 
-  public Effect<String> getAnswer() {
+  public ReadOnlyEffect<String> getAnswer() {
     if (currentState() == null) {
       return effects().error("Workflow '" + commandContext().workflowId() + "' not started");
     } else {
