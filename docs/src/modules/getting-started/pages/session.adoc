@@ -1,4 +1,4 @@
-= Modeling the agent session
+= AI RAG Agent Part 1: Modeling the agent session
 
 include::ROOT:partial$include.adoc[]
 
@@ -23,7 +23,7 @@ include::ROOT:partial$cloud-dev-prerequisites.adoc[]
 
 == Create the empty project
 
-You already learned how to create an empty Akka project when you went through the guide to xref:java:author-your-first-service.adoc#_generate_and_build_the_project[author your first service]. Follow those steps again to ensure that you've got a new project that compiles.
+You already learned how to create an empty Akka project when you went through the guide to xref:getting-started:author-your-first-service.adoc#_generate_and_build_the_project[author your first service]. Follow those steps again to ensure that you've got a new project that compiles.
 
 While you can use any settings you like, the code samples use:
 
@@ -69,7 +69,7 @@ Add a new file `ConversationHistoryView.java` to `src/main/java/akka/ask/agent/a
 [source, java, indent=0]
 .{sample-base-url}/ask-akka-agent/src/main/java/akka/ask/agent/application/ConversationHistoryView.java[ConversationHistoryView.java]
 ----
-include::example$ask-akka-agent/src/main/java/akka/ask/agent/application/ConversationHistoryView.java[tag=top]
+include::java:example$ask-akka-agent/src/main/java/akka/ask/agent/application/ConversationHistoryView.java[tag=top]
 ----
 <1> We're using a view-specific message type here to avoid bleeding logic across tiers
 <2> Retrieves a full history of all sessions for a given user

@@ -1,4 +1,4 @@
-= Knowledge indexing with a workflow
+= AI RAG agent part 2: Knowledge indexing with a workflow
 
 include::ROOT:partial$include.adoc[]
 
@@ -23,7 +23,7 @@ We're going to use `langchain4j` for this sample, so add those dependencies to y
 [source, xml, indent=0]
 .{sample-base-url}/ask-akka-agent/pom.xml[pom.xml]
 ----
-include::example$ask-akka-agent/pom.xml[]
+include::java:example$ask-akka-agent/pom.xml[]
 ----
 
 == Adding a workflow
@@ -35,7 +35,7 @@ Let's start with the outer shell of the workflow class (this won't compile yet a
 [source, java, indent=0]
 .{sample-base-url}/ask-akka-agent/src/main/java/akka/ask/indexer/application/RagIndexingWorkflow.java[RagIndexingWorkflow.java]
 ----
-include::example$ask-akka-agent/src/main/java/akka/ask/indexer/application/RagIndexingWorkflow.java[tag=shell]
+include::java:example$ask-akka-agent/src/main/java/akka/ask/indexer/application/RagIndexingWorkflow.java[tag=shell]
 ----
 <1> The workflow will maintain a list of files to process and a list of files already processed
 <2> We treat the list of files as a queue
@@ -44,7 +44,7 @@ The workflow definition for the document indexer is surprisingly simple:
 [source, java, indent=0]
 .{sample-base-url}/ask-akka-agent/src/main/java/akka/ask/indexer/application/RagIndexingWorkflow.java[RagIndexingWorkflow.java]
 ----
-include::example$ask-akka-agent/src/main/java/akka/ask/indexer/application/RagIndexingWorkflow.java[tag=def]
+include::java:example$ask-akka-agent/src/main/java/akka/ask/indexer/application/RagIndexingWorkflow.java[tag=def]
 ----
 <1> Define the only step in the workflow, `processing`
 <2> Check if we have more work to do
@@ -58,7 +58,7 @@ The actual work of doing the indexing is in the `indexFile` function:
 [source, java, indent=0]
 .{sample-base-url}/ask-akka-agent/src/main/java/akka/ask/indexer/application/RagIndexingWorkflow.java[RagIndexingWorkflow.java]
 ----
-include::example$ask-akka-agent/src/main/java/akka/ask/indexer/application/RagIndexingWorkflow.java[tag=index]
+include::java:example$ask-akka-agent/src/main/java/akka/ask/indexer/application/RagIndexingWorkflow.java[tag=index]
 ----
 
 and the `addSegment` function which calls `add` on the embedding store, committing the segment (aka _chunk_) to MongoDB Atlas:
@@ -66,7 +66,7 @@ and the `addSegment` function which calls `add` on the embedding store, committi
 [source, java, indent=0]
 .{sample-base-url}/ask-akka-agent/src/main/java/akka/ask/indexer/application/RagIndexingWorkflow.java[RagIndexingWorkflow.java]
 ----
-include::example$ask-akka-agent/src/main/java/akka/ask/indexer/application/RagIndexingWorkflow.java[tag=add]
+include::java:example$ask-akka-agent/src/main/java/akka/ask/indexer/application/RagIndexingWorkflow.java[tag=add]
 ----
 <1> Send the embedding segment to the vector database
 
@@ -75,7 +75,7 @@ Everything that we've done so far has been completely asynchronous. When the wor
 [source, java, indent=0]
 .{sample-base-url}/ask-akka-agent/src/main/java/akka/ask/indexer/application/RagIndexingWorkflow.java[RagIndexingWorkflow.java]
 ----
-include::example$ask-akka-agent/src/main/java/akka/ask/indexer/application/RagIndexingWorkflow.java[tag=start]
+include::java:example$ask-akka-agent/src/main/java/akka/ask/indexer/application/RagIndexingWorkflow.java[tag=start]
 ----
 <1> A workflow must always transition to a state on startup
 
@@ -85,7 +85,7 @@ If you've been following along, then you might be wondering how we inject an `em
 [source, java, indent=0]
 .{sample-base-url}/ask-akka-agent/src/main/java/akka/ask/indexer/application/RagIndexingWorkflow.java[RagIndexingWorkflow.java]
 ----
-include::example$ask-akka-agent/src/main/java/akka/ask/indexer/application/RagIndexingWorkflow.java[tag=cons]
+include::java:example$ask-akka-agent/src/main/java/akka/ask/indexer/application/RagIndexingWorkflow.java[tag=cons]
 ----
 <1> Tweaking the parameters to the document splitter can affect the quality of semantic search results
 
@@ -93,7 +93,7 @@ The API endpoint to start the indexer creates an instance of the workflow throug
 [source, java, indent=0]
 .{sample-base-url}/ask-akka-agent/src/main/java/akka/ask/Bootstrap.java[Bootstrap.java]
 ----
-include::example$ask-akka-agent/src/main/java/akka/ask/Bootstrap.java[tag=all]
+include::java:example$ask-akka-agent/src/main/java/akka/ask/Bootstrap.java[tag=all]
 ----
 
 As you'll see in the next step in this guide, we'll add to this bootstrap to inject a service that does the actual LLM communication for us.

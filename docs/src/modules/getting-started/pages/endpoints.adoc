@@ -1,4 +1,4 @@
-= Adding streaming endpoints
+= AI RAG agent part 4: Adding streaming endpoints
 
 include::ROOT:partial$include.adoc[]
 
@@ -19,7 +19,7 @@ Akka HTTP endpoints have the ability to return streams of data via server-sent e
 [source, java, indent=0]
 .{sample-base-url}/ask-akka-agent/src/main/java/akka/ask/agent/api/AskHttpEndpoint.java[AskHttpEndpoint.java]
 ----
-include::example$ask-akka-agent/src/main/java/akka/ask/agent/api/AskHttpEndpoint.java[tag=endpoint]
+include::java:example$ask-akka-agent/src/main/java/akka/ask/agent/api/AskHttpEndpoint.java[tag=endpoint]
 ----
 <1> Inject the `ComponentClient`
 <2> Call the `AskAkkaAgent created in the previous step
@@ -33,7 +33,7 @@ There is a convenience endpoint that you can use to query the list of sessions f
 [source, java, indent=0]
 .{sample-base-url}/ask-akka-agent/src/main/java/akka/ask/agent/api/UsersEndpoint.java[UsersEndpoint.java]
 ----
-include::example$ask-akka-agent/src/main/java/akka/ask/agent/api/UsersEndpoint.java[tag=endpoint]
+include::java:example$ask-akka-agent/src/main/java/akka/ask/agent/api/UsersEndpoint.java[tag=endpoint]
 ----
 
 One subtle thing worth pointing out here is that both the streaming RAG endpoint and the user view query endpoint have the exact same route as defined in `@HttpEndpoint("/api")`.
@@ -45,7 +45,7 @@ You can now add an endpoint that serves up the static UI. This is surprisingly s
 [source, java, indent=0]
 .{sample-base-url}/ask-akka-agent/src/main/java/akka/ask/agent/api/UiEndpoint.java[UiEndpoint.java]
 ----
-include::example$ask-akka-agent/src/main/java/akka/ask/agent/api/UiEndpoint.java[tag=endpoint]
+include::java:example$ask-akka-agent/src/main/java/akka/ask/agent/api/UiEndpoint.java[tag=endpoint]
 ----
 <1> The `staticResource` function serves up a file from `main/resources/static-resources`
 

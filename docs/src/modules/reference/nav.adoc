@@ -8,6 +8,7 @@
 ** xref:migration-guide.adoc[Migration guide]
 ** xref:api-docs.adoc[]
 ** xref:java:views.adoc#query[View query language]
+** xref:jwts.adoc[JSON Web Tokens (JWTs)]
 ** xref:cli/akka-cli/index.adoc[]
 *** xref:cli/akka-cli/akka.adoc[]
 *** xref:cli/akka-cli/akka_auth.adoc[]

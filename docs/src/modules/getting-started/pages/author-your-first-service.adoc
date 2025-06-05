@@ -1,4 +1,4 @@
-= Author your first Akka service
+= Author your first service
 :page-aliases: java:build-your-first-application.adoc[]
 
 include::ROOT:partial$include.adoc[]
@@ -147,7 +147,7 @@ Add path parameters to the Endpoint using the code shown below:
 [source,java]
 .HelloWorldEndpoint.java
 ----
-include::example$doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java[tag=basic-path-parameters]
+include::java:example$doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java[tag=basic-path-parameters]
 ----
 <1> Path parameter `name` in expression.
 <2> Method parameter named as the one in the expression
@@ -173,7 +173,7 @@ Modify the Endpoint to accept an HTTP JSON body using the code shown below:
 [source,java]
 .HelloWorldEndpoint.java
 ----
-include::example$doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java[tag=request-body]
+include::java:example$doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java[tag=request-body]
 ----
 <1> The record will serialized and deserialized as JSON
 <2> A parameter of the request body type
@@ -195,7 +195,7 @@ Modify the Endpoint to return a response body using the code shown below:
 [source,java]
 .HelloWorldEndpoint.java
 ----
-include::example$doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java[tag=response-body]
+include::java:example$doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java[tag=response-body]
 ----
 <1> Returning a record that gets serialized as JSON
 
@@ -250,4 +250,4 @@ This is a simple Hello World service, so there isn't much to see here yet. Howev
 
 == Next steps
 
-Now that you have a basic service running, it's time to learn more about building real services in Akka. See the xref:java:shopping-cart/quickstart.adoc[] to build a more realistic application and learn how to deploy it to https://console.akka.io[akka.io].
+Now that you have a basic service running, it's time to learn more about building real services in Akka. See xref:getting-started:build-and-deploy-shopping-cart.adoc[] to build a more realistic application and learn how to deploy it to https://console.akka.io[akka.io].

@@ -22,7 +22,7 @@ In Akka, a principal is an abstract entity that represents the origin or source 
 
 * *Service Principals*: Represent Akka services, allowing you to configure ACLs to permit access only to requests originating from specific services within the project.
 * *Internet Principal*: Represents external requests coming from the internet. Akka identifies these requests as originating from the Akka ingress (according to a configured route). Note that:
-** Requests labeled with the *internet principal* are validated by mTLS, but this does not imply that mTLS was used to connect to the ingress from the internet client itself. To enforce mTLS on connections from internet clients, refer to xref:tls-certificates.adoc[].
+** Requests labeled with the *internet principal* are validated by mTLS, but this does not imply that mTLS was used to connect to the ingress from the internet client itself. To enforce mTLS on connections from internet clients, refer to xref:operations:tls-certificates.adoc[].
 
 == Configuring ACLs
 To configure ACLs and secure your Akka services effectively, follow these steps:
@@ -51,5 +51,5 @@ With ACLs, you can secure your Akka environment and ensure only authorized entit
 
 == See also
 
-* xref:tls-certificates.adoc[]
+* xref:operations:tls-certificates.adoc[]
 * xref:java:access-control.adoc[] in the *Developing* section

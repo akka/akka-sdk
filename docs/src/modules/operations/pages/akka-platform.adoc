@@ -1,0 +1,61 @@
+= Operating on Akka Platform
+
+include::ROOT:partial$include.adoc[]
+
+Akka Platform provides capabilities to manage, monitor and gather insights from your application and its services once they are deployed. These resources will guide you through operating Akka applications and services on Akka Platform. You should already be familiar with the xref:concepts:deployment-model.adoc[].
+
+== Full automation through Akka Platform features
+
+Akka Platform is based on a Kubernetes-based control plane and application plane for executing Akka services with fully-automated operations to enable elasticity, agility and resilience.
+
+* xref:platform-features.adoc[]
+
+== Deploying and Managing Services
+
+Operating xref:operations:services/index.adoc[] provides an overview of what services are and how to manage them.
+
+* xref:operations:services/deploy-service.adoc[]
+* xref:operations:services/invoke-service.adoc[]
+* xref:operations:services/view-data.adoc[]
+* xref:operations:services/data-management.adoc[]
+* xref:operations:integrating-cicd/index.adoc[]
+
+== Observability and Monitoring
+
+xref:operations:observability-and-monitoring/index.adoc[] provides the tools and guidance you need to understand your running Akka services.
+
+* xref:operations:observability-and-monitoring/view-logs.adoc[]
+* xref:operations:observability-and-monitoring/metrics.adoc[]
+* xref:operations:observability-and-monitoring/traces.adoc[]
+* xref:operations:observability-and-monitoring/observability-exports.adoc[]
+
+== Organizations
+xref:operations:organizations/index.adoc[] are the root of the Akka management tree. All services and artifacts live inside of them. They are primarily a logical construct.
+
+* xref:operations:organizations/manage-users.adoc[]
+* xref:operations:organizations/regions.adoc[]
+* xref:operations:organizations/billing.adoc[]
+
+== Projects
+xref:operations:projects/index.adoc[] in Akka are the place where services are deployed to. They can span xref:operations:organizations/regions.adoc[] and are the central management point for operating groups of xref:operations:services/index.adoc[] in Akka.
+
+* xref:operations:projects/create-project.adoc[]
+* xref:operations:projects/manage-project-access.adoc[]
+* xref:operations:projects/container-registries.adoc[]
+** xref:operations:projects/external-container-registries.adoc[]
+* xref:operations:projects/message-brokers.adoc[]
+** xref:operations:projects/broker-aiven.adoc[Aiven for Kafka]
+** xref:operations:projects/broker-aws-msk.adoc[AWS MSK Kafka]
+** xref:operations:projects/broker-confluent.adoc[Confluent Cloud]
+** xref:operations:projects/broker-google-pubsub.adoc[Google Pub/Sub]
+
+== Regions
+Projects in Akka can span across xref:operations:regions/index.adoc[] with data automatically replicated between all the regions.
+
+== CLI
+
+Using the Akka CLI, you control all aspects of your Akka account from your command line. With it, you create and deploy new services, stream logs, and invite new developers to join your projects.
+
+- xref:operations:cli/installation.adoc[]
+- xref:operations:cli/using-cli.adoc[]
+- xref:operations:cli/command-completion.adoc[]
