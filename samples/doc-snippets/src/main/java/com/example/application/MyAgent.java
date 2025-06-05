@@ -2,6 +2,7 @@ package com.example.application;
 
 // tag::class[]
 import akka.javasdk.agent.Agent;
+import akka.javasdk.agent.MemoryProvider;
 import akka.javasdk.agent.ModelProvider;
 import akka.javasdk.annotations.ComponentId;
 
@@ -36,6 +37,32 @@ interface MyAgentMore {
           .thenReply();
     }
     // end::model[]
+  }
+
+  @ComponentId("my-agent-memory")
+  public class MyAgentNoMemory extends Agent {
+    // tag::no-memory[]
+    public Effect<String> ask(String question) {
+      return effects()
+          .memory(MemoryProvider.none())
+          .systemMessage("You are a helpful...")
+          .userMessage(question)
+          .thenReply();
+    }
+    // end::no-memory[]
+  }
+
+  @ComponentId("my-agent-readlast")
+  public class MyAgentReadLastMemory extends Agent {
+    // tag::read-last[]
+    public Effect<String> ask(String question) {
+      return effects()
+          .memory(MemoryProvider.limitedWindow().readLast(5))
+          .systemMessage("You are a helpful...")
+          .userMessage(question)
+          .thenReply();
+    }
+    // end::read-last[]
   }
 
 }
