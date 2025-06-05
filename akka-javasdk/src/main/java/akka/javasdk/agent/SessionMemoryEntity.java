@@ -118,6 +118,10 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
 
     }
 
+    @TypeName("akka-memory-cleared")
+    record HistoryCleared() implements Event {
+    }
+
     @TypeName("akka-memory-deleted")
     record Deleted(long timestamp) implements Event {
     }
@@ -173,6 +177,23 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
     }
   }
 
+  public record CompactionCmd(UserMessage userMessage, AiMessage aiMessage) {
+  }
+
+  public Effect<Done> compactHistory(CompactionCmd cmd) {
+    var componentId = "";
+
+    var totalTokensUser = cmd.userMessage.tokens();
+    var totalTokensAi = totalTokensUser + cmd.aiMessage.tokens();
+
+    return effects()
+        .persist(
+            new Event.HistoryCleared(),
+            new Event.UserMessageAdded(cmd.userMessage.timestamp(), componentId, cmd.userMessage.text(), cmd.userMessage.tokens(), totalTokensUser),
+            new Event.AiMessageAdded(cmd.aiMessage.timestamp(), componentId, cmd.aiMessage.text(), cmd.aiMessage.tokens(), totalTokensAi, Collections.emptyList()))
+        .thenReply(__ -> Done.done());
+  }
+
   public Effect<Done> delete() {
     if (isDeleted()) {
       return effects().reply(done());
@@ -197,6 +218,8 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
           currentState()
               .addMessage(new AiMessage(aiMsg.timestamp(), aiMsg.message(), aiMsg.tokens(), aiMsg.toolCallInteraction))
               .withTotalTokenUsage(aiMsg.totalTokenUsage());
+      case Event.HistoryCleared __ ->
+          currentState().clear();
       case Event.Deleted __ ->
           currentState().clear();
     };
