@@ -170,33 +170,39 @@ private[akka] final case class RequestBuilderImpl[R](
       case ex: ExecutionException => throw ErrorHandling.unwrapExecutionException(ex)
     }
 
-  override def responseBodyAs[T](`type`: Class[T]): RequestBuilder[T] = new RequestBuilderImpl[T](
+  private[akka] def bodyParserInternal[T](
+      classType: Class[T],
+      res: HttpResponse,
+      bytes: ByteString): StrictResponse[T] =
+    try {
+      if (res.status.isFailure) {
+        onResponseError(res, bytes)
+      } else if (!res.entity.getContentType.binary && (classType eq classOf[String])) {
+        new StrictResponse[T](
+          res,
+          new String(
+            bytes.toArrayUnsafe(),
+            res.entity.getContentType.getCharsetOption
+              .map[Charset]((c: HttpCharset) => c.nioCharset)
+              .orElse(StandardCharsets.UTF_8)).asInstanceOf[T])
+      } else if (res.entity.getContentType == ContentTypes.APPLICATION_JSON) {
+        new StrictResponse[T](res, JsonSupport.decodeJson(classType, bytes))
+      } else {
+        throw new RuntimeException(
+          "Expected to parse the response for " + request.getUri + " to " + classType + " but response content type is " +
+          res.entity.getContentType)
+      }
+    } catch {
+      case e: IOException =>
+        throw new RuntimeException(e)
+    }
+
+  override def responseBodyAs[T](classType: Class[T]): RequestBuilder[T] = new RequestBuilderImpl[T](
     http,
     materializer,
     timeout,
     request,
-    { (res: HttpResponse, bytes: ByteString) =>
-      try {
-        if (res.status.isFailure) {
-          onResponseError(res, bytes)
-        } else if (!res.entity.getContentType.binary && (`type` eq classOf[String])) {
-          new StrictResponse[T](
-            res,
-            new String(
-              bytes.toArrayUnsafe(),
-              res.entity.getContentType.getCharsetOption
-                .map[Charset]((c: HttpCharset) => c.nioCharset)
-                .orElse(StandardCharsets.UTF_8)).asInstanceOf[T])
-        } else if (res.entity.getContentType == ContentTypes.APPLICATION_JSON) {
-          new StrictResponse[T](res, JsonSupport.decodeJson(`type`, bytes))
-        } else
-          throw new RuntimeException(
-            "Expected to parse the response for " + request.getUri + " to " + `type` + " but response content type is " + res.entity.getContentType)
-      } catch {
-        case e: IOException =>
-          throw new RuntimeException(e)
-      }
-    },
+    (res: HttpResponse, bytes: ByteString) => bodyParserInternal(classType, res, bytes),
     retrySettings)
 
   override def responseBodyAsListOf[T](elementType: Class[T]): RequestBuilder[util.List[T]] =
