@@ -102,7 +102,34 @@ include::example$doc-snippets/src/main/java/com/example/application/ActivityAgen
 
 As an alternative to hard-coded prompts, there is a built-in prompt template entity. The advantage of using the prompt template entity is that you can change the prompts at runtime without restarting or redeploying the service.
 
-FIXME...
+[source,java]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/application/ActivityAgent.java[ActivityAgent.java]
+----
+include::example$doc-snippets/src/main/java/com/example/application/ActivityAgent.java[tag=prompt-template]
+----
+<1> Define the system message prompt template key.
+
+Prompts are stored in the `PromptTemplate` xref:event-sourced-entities.adoc[Event Sourced Entity]. This is a build-in entity, registered at runtime. To initialize the prompt or get the current value you can use component client the same way as for any other entity.
+
+[source,java]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/api/ActivityPromptEndpoint.java[ActivityPromptEndpoint.java]
+----
+include::example$doc-snippets/src/main/java/com/example/api/ActivityPromptEndpoint.java[tag=prompt-template-endpoint]
+----
+<1> Prompt key is used as entity id.
+<2> `PromptTemplate::update` update the prompt value.
+<3> `PromptTemplate::get` retrieves the current prompt value.
+
+Keeping the prompt in the Event Sourced Entity allows to see the history of all changes. It's also possible to subscribe to changes in the prompt template entity, so that you can build a xref:views.adoc[View] or react to changes in the prompt.
+
+All `PromptTemplate` method:
+
+ - init - Initializes the prompt template with a given value. If the prompt template already exists, it will not change it. Useful for setting the initial value, e.g. in the `onStartup` method of the xref:setup-and-dependency-injection.adoc#_service_lifecycle[ServiceSetup].
+ - update - Updates the prompt template with a new value. If the prompt template does not exist, it will create it. If the value is the same as the current value, it will not change it.
+ - get - Retrieves the current value of the prompt template. If the prompt template does not exist, it will throw an exception.
+ - getOptional - Retrieves the current value of the prompt template as an `Optional`. If the prompt template does not exist, it will return an empty `Optional`.
+ - delete - Deletes the prompt template. If the prompt template does not exist, it will throw an exception.
+
 
 == Calling the Agent
 

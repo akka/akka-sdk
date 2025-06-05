@@ -50,6 +50,18 @@ class Caller {
 
 interface ActivityAgentMore {
 
+  // tag::prompt-template[]
+  @ComponentId("activity-agent")
+  public class ActivityAgentWithTemplate extends Agent {
+    public Effect<String> query(String message) {
+      return effects()
+        .systemMessageFromTemplate("activity-agent-prompt") // <1>
+        .userMessage(message)//
+        .thenReply();
+    }
+  }
+  // end::prompt-template[]
+
   // tag::di[]
   @ComponentId("activity-agent")
   public class ActivityAgent extends Agent {
