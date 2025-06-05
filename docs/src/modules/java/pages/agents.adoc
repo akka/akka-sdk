@@ -15,7 +15,7 @@ An Agent Effect can:
 * specify system, user messages and additional context
 * configure session memory
 * define available tools
-* fail the step or reject a command by returning an error
+* fail a command by returning an error
 * return an error message
 * transform model response and reply to incoming commands
 
