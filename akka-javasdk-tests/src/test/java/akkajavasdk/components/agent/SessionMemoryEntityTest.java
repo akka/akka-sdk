@@ -111,6 +111,47 @@ public class SessionMemoryEntityTest {
   }
 
   @Test
+  public void shouldBeCompactable() {
+    // given
+    var testKit = EventSourcedTestKit.of(() -> new SessionMemoryEntity(config));
+    var timestamp = System.currentTimeMillis();
+
+    var userMessage1 = new UserMessage(timestamp, "Hello", TOKENS);
+    var aiMessage1 = new AiMessage(timestamp, "Hi there!", TOKENS);
+
+    testKit.method(SessionMemoryEntity::addInteraction)
+        .invoke(new AddInteractionCmd(COMPONENT_ID, userMessage1, aiMessage1));
+
+    // when
+    var userMessage2 = new UserMessage(timestamp, "Hey", TOKENS / 2);
+    var aiMessage2 = new AiMessage(timestamp, "Hi!", TOKENS / 2);
+    var cmd = new SessionMemoryEntity.CompactionCmd(userMessage2, aiMessage2);
+    EventSourcedResult<Done> compactResult = testKit.method(SessionMemoryEntity::compactHistory)
+        .invoke(cmd);
+
+    // then
+    assertThat(compactResult.getReply()).isEqualTo(done());
+
+    // Check event - ignoring timestamp comparison
+    var events = compactResult.getAllEvents();
+    assertThat(events).hasSize(3);
+    assertThat(events.get(0)).isInstanceOf(SessionMemoryEntity.Event.HistoryCleared.class);
+    assertThat(events.get(1)).isInstanceOf(SessionMemoryEntity.Event.UserMessageAdded.class);
+    assertThat(events.get(2)).isInstanceOf(SessionMemoryEntity.Event.AiMessageAdded.class);
+    assertThat(((SessionMemoryEntity.Event.UserMessageAdded) events.get(1)).totalTokenUsage()).isEqualTo(TOKENS / 2);
+    assertThat(((SessionMemoryEntity.Event.AiMessageAdded) events.get(2)).totalTokenUsage()).isEqualTo(TOKENS);
+
+    // when retrieving history after compacting
+    EventSourcedResult<SessionHistory> historyResult =
+        testKit.method(SessionMemoryEntity::getHistory).invoke(emptyGetHistory);
+
+    // then
+    assertThat(historyResult.getReply().messages()).containsExactly(
+        userMessage2,
+        aiMessage2);
+  }
+
+  @Test
   public void shouldBeDeletable() {
     // given
     var testKit = EventSourcedTestKit.of(() -> new SessionMemoryEntity(config));
