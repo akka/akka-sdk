@@ -22,7 +22,7 @@ public class AskAkkaAgent extends Agent {
     this.knowledge = knowledge;
   }
 
-  public Agent.StreamEffect ask(String question) {
+  public StreamEffect ask(String question) {
     var enrichedQuestion = knowledge.addKnowledge(question);
 
     return streamEffects()
