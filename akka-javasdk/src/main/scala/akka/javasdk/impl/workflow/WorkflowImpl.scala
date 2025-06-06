@@ -4,6 +4,8 @@
 
 package akka.javasdk.impl.workflow
 
+import java.util.Optional
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters.ListHasAsScala
@@ -46,7 +48,7 @@ import akka.javasdk.impl.workflow.WorkflowEffectImpl.TransitionalEffectImpl
 import akka.javasdk.impl.workflow.WorkflowEffectImpl.UpdateState
 import akka.javasdk.workflow.CommandContext
 import akka.javasdk.workflow.Workflow
-import akka.javasdk.workflow.Workflow.{ RecoverStrategy => SdkRecoverStrategy }
+import akka.javasdk.workflow.Workflow.{RecoverStrategy => SdkRecoverStrategy}
 import akka.javasdk.workflow.WorkflowContext
 import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.RegionInfo
@@ -80,12 +82,18 @@ class WorkflowImpl[S, W <: Workflow[S]](
 
   private val log: Logger = LoggerFactory.getLogger(workflowClass)
 
-  private val context = new WorkflowContextImpl(workflowId, regionInfo.selfRegion)
+  private val context = new WorkflowContextImpl(workflowId, regionInfo.selfRegion, Optional.empty())
 
   private val traceInstrumentation = new TraceInstrumentation(componentId, WorkflowCategory, tracerFactory)
 
   private val router =
-    new ReflectiveWorkflowRouter[S, W](context, instanceFactory, componentDescriptor.methodInvokers, serializer)
+    new ReflectiveWorkflowRouter[S, W](
+      context,
+      instanceFactory,
+      componentDescriptor.methodInvokers,
+      serializer,
+      componentId,
+      traceInstrumentation)
 
   override def configuration: SpiWorkflow.WorkflowConfig = {
     val workflow = instanceFactory(context)
@@ -211,7 +219,8 @@ class WorkflowImpl[S, W <: Workflow[S]](
         command = cmd,
         context = context,
         timerScheduler = timerScheduler,
-        deleted = command.isDeleted)
+        deleted = command.isDeleted,
+        span)
       Future.successful(toSpiCommandEffect(effect))
     } catch {
       case e: HandlerNotFoundException =>
@@ -255,7 +264,8 @@ class WorkflowImpl[S, W <: Workflow[S]](
         stepName = stepName,
         timerScheduler = timerScheduler,
         commandContext = context,
-        executionContext = sdkExecutionContext)
+        executionContext = sdkExecutionContext,
+        span = span)
       handleStep.onComplete {
         case Failure(exception) =>
           span.foreach { s =>
@@ -330,6 +340,14 @@ private[akka] final class CommandContextImpl(
  * INTERNAL API
  */
 @InternalApi
-private[akka] final class WorkflowContextImpl(override val workflowId: String, override val selfRegion: String)
+private[akka] final class WorkflowContextImpl(
+    override val workflowId: String,
+    override val selfRegion: String,
+    val openTelemetrySpan: Option[Span])
     extends AbstractContext
-    with WorkflowContext
+    with WorkflowContext {
+
+  def withOpenTelemetrySpan(span: Option[Span]): WorkflowContextImpl = {
+    new WorkflowContextImpl(workflowId, selfRegion, span)
+  }
+}

@@ -10,6 +10,7 @@ import java.lang.reflect.Method
 import java.util
 import java.util.Optional
 import java.util.concurrent.CompletionStage
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.Promise
@@ -19,6 +20,7 @@ import scala.jdk.OptionConverters.RichOption
 import scala.jdk.OptionConverters.RichOptional
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
+
 import akka.Done
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
@@ -105,12 +107,13 @@ import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.Tracer
-import io.opentelemetry.context.{ Context => OtelContext }
+import io.opentelemetry.context.{Context => OtelContext}
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
-
 import java.util.concurrent.Executor
+
+import akka.javasdk.impl.workflow.WorkflowContextImpl
 
 /**
  * INTERNAL API
@@ -431,13 +434,14 @@ private final class Sdk(
       { context =>
 
         val workflow = wiredInstance(clz) {
-          sideEffectingComponentInjects(None).orElse {
+          sideEffectingComponentInjects(context.asInstanceOf[WorkflowContextImpl].openTelemetrySpan).orElse {
             // remember to update component type API doc and docs if changing the set of injectables
             case p if p == classOf[WorkflowContext] => context
           }
         }
 
         // FIXME pull this inline setup stuff out of SdkRunner and into some workflow class
+        // would be good to run this code only once per workflow class, not every workflow interaction
         val workflowStateType: Class[_] = Reflect.workflowStateType[S, W](workflow)
         serializer.registerTypeHints(workflowStateType)
 
