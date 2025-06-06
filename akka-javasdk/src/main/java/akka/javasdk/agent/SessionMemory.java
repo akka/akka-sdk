@@ -8,6 +8,8 @@
 
 package akka.javasdk.agent;
 
+import java.util.List;
+
 /**
  * Interface for managing session history between users and AI models, using SessionMemory
  * provides functionality to store, retrieve, and manage messages exchanged during conversations in
@@ -21,10 +23,11 @@ public interface SessionMemory {
    *
    * @param sessionId The unique identifier for the conversation session
    * @param userMessage The content of the user message
-   * @param aiMessage The content of the AI message
+   * @param messages All other messages generated during this interaction, typically AiMessage but also Tool Call
+   *                 responses.
    */
-  void addInteraction(String sessionId, SessionMessage.UserMessage userMessage, SessionMessage.AiMessage aiMessage);
-
+  void addInteraction(String sessionId, SessionMessage.UserMessage userMessage,
+                       List<SessionMessage> messages);
   /**
    * Retrieves the complete session history for the specified session. For very long sessions,
    * this might return a compacted version of the history.

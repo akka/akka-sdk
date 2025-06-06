@@ -14,6 +14,7 @@ import com.typesafe.config.Config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -52,14 +53,12 @@ public final class SessionMemoryClient implements SessionMemory {
   }
 
   @Override
-  public void addInteraction(String sessionId,
-                             SessionMessage.UserMessage userMessage,
-                             SessionMessage.AiMessage aiMessage) {
+  public void addInteraction(String sessionId, SessionMessage.UserMessage userMessage, List<SessionMessage> messages) {
     if (memorySettings.write()) {
       logger.debug("Adding interaction to sessionId [{}]", sessionId);
       componentClient.forEventSourcedEntity(sessionId)
-          .method(SessionMemoryEntity::addInteraction)
-          .invoke(new SessionMemoryEntity.AddInteractionCmd(userMessage, aiMessage));
+        .method(SessionMemoryEntity::addInteraction)
+        .invoke(new SessionMemoryEntity.AddInteractionCmd(userMessage, messages));
     } else {
       logger.debug("Memory writing is disabled, interaction not added to sessionId [{}]", sessionId);
     }
