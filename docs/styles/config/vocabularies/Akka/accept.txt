@@ -54,6 +54,7 @@ env
 exfiltration
 failover
 fanout
+getOptional
 [Gg]itHub
 googleCloud
 groupId
