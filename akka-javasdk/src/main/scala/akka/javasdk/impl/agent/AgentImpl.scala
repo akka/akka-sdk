@@ -224,6 +224,7 @@ private[impl] final class AgentImpl[A <: Agent](
 
     val timestamp = System.currentTimeMillis()
 
+    // AiMessages and ToolCallResponses
     val responseMessages: Seq[SessionMessage] =
       responses.map {
         case res: SpiAgent.ModelResponse =>

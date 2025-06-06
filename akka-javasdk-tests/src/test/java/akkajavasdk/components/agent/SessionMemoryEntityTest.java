@@ -332,9 +332,14 @@ public class SessionMemoryEntityTest {
     String aiMsg2 = "I'm good, thanks!";
     var um1 = new UserMessage(timestamp, userMsg1);
     var aim1 = new AiMessage(timestamp, aiMsg1, 5, 3);
+    var firstTotal = aim1.inputTokens() + aim1.outputTokens();
+
     var um2 = new UserMessage(timestamp +1, userMsg2);
-    var aim2 = new AiMessage(timestamp + 1, aiMsg2, 7, 6);
-    var totalTokens = aim1.inputTokens() + aim1.outputTokens() + aim2.inputTokens() + aim2.outputTokens();
+    // input from second AiMessage sums up with the firstTotal
+    var aim2 = new AiMessage(timestamp + 1, aiMsg2, firstTotal + 7, 6);
+
+    // the last message has the total (total from aim1 is already added to it)
+    var totalTokens = aim2.inputTokens() + aim2.outputTokens();
 
     // when
     testKit.method(SessionMemoryEntity::addInteraction)

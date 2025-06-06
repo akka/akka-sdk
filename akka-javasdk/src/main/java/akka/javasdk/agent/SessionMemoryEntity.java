@@ -71,8 +71,8 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
       return new State(maxLengthInBytes, updatedLengthSize, messages, totalTokenUsage);
     }
 
-    public State addTokenUsage(long tokenUsage) {
-      return new State(maxLengthInBytes, currentLengthInBytes, messages, this.totalTokenUsage + tokenUsage);
+    public State withTotalTokenUsage(long tokenUsage) {
+      return new State(maxLengthInBytes, currentLengthInBytes, messages, tokenUsage);
     }
 
     public State clear() {
@@ -242,7 +242,7 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
                 aiMsg.inputTokens(),
                 aiMsg.outputTokens,
                 aiMsg.toolCallRequests))
-            .addTokenUsage(aiMsg.inputTokens + aiMsg.outputTokens);
+            .withTotalTokenUsage(aiMsg.inputTokens + aiMsg.outputTokens);
 
       case Event.ToolResponseMessageAdded toolMsg ->
           currentState()
