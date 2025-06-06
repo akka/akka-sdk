@@ -13,7 +13,6 @@ import akka.annotation.InternalApi
 import akka.javasdk.Metadata
 import akka.javasdk.Tracing
 import akka.javasdk.impl.AbstractContext
-import akka.javasdk.impl.ActivatableContext
 import akka.javasdk.impl.ComponentDescriptor
 import akka.javasdk.impl.ComponentType
 import akka.javasdk.impl.EntityExceptions.EntityException
@@ -54,8 +53,7 @@ private[impl] object KeyValueEntityImpl {
       span: Option[Span],
       tracerFactory: () => Tracer)
       extends AbstractContext
-      with CommandContext
-      with ActivatableContext {
+      with CommandContext {
     override def tracing(): Tracing = new SpanTracingImpl(span, tracerFactory)
 
     override def commandId(): Long = 0
@@ -187,7 +185,6 @@ private[impl] final class KeyValueEntityImpl[S, KV <: KeyValueEntity[S]](
     } finally {
       entity._internalSetCommandContext(Optional.empty())
       entity._internalClearCurrentState()
-      cmdContext.deactivate() // Very important!
 
       span.foreach { s =>
         MDC.remove(Telemetry.TRACE_ID)

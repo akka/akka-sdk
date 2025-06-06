@@ -17,6 +17,7 @@ import akka.javasdk.impl.MethodInvoker
 import akka.javasdk.impl.CommandSerialization
 import akka.javasdk.impl.HandlerNotFoundException
 import akka.javasdk.impl.serialization.JsonSerializer
+import akka.javasdk.impl.telemetry.TraceInstrumentation
 import akka.javasdk.impl.workflow.ReflectiveWorkflowRouter.CommandResult
 import akka.javasdk.impl.workflow.ReflectiveWorkflowRouter.TransitionalResult
 import akka.javasdk.impl.workflow.ReflectiveWorkflowRouter.WorkflowStepNotFound
@@ -29,6 +30,7 @@ import akka.javasdk.workflow.Workflow.Effect.TransitionalEffect
 import akka.javasdk.workflow.WorkflowContext
 import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.SpiWorkflow
+import io.opentelemetry.api.trace.Span
 
 /**
  * INTERNAL API
@@ -75,14 +77,10 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
     }
   }
 
-  private def methodInvokerLookup(commandName: String) =
+  private def methodInvokerLookup(commandName: String, workflowClass: Class[_]) =
     methodInvokers.getOrElse(
       commandName,
-      throw new HandlerNotFoundException(
-        "command",
-        commandName,
-        instanceFactory(workflowContext).getClass,
-        methodInvokers.keySet))
+      throw new HandlerNotFoundException("command", commandName, workflowClass, methodInvokers.keySet))
 
   final def handleCommand(
       userState: Option[SpiWorkflow.State],
@@ -90,15 +88,18 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
       command: BytesPayload,
       context: CommandContext,
       timerScheduler: TimerScheduler,
-      deleted: Boolean): CommandResult = {
+      deleted: Boolean,
+      span: Option[Span]): CommandResult = {
 
-    val workflow = instanceFactory(workflowContext)
+    val updatedContext = workflowContext.asInstanceOf[WorkflowContextImpl].withOpenTelemetrySpan(span)
+
+    val workflow = instanceFactory(updatedContext)
 
     // if runtime doesn't have a state to provide, we fall back to user's own defined empty state
     val decodedState = decodeUserState(userState).getOrElse(workflow.emptyState())
     workflow._internalSetup(decodedState, context, timerScheduler, deleted)
 
-    val methodInvoker = methodInvokerLookup(commandName)
+    val methodInvoker = methodInvokerLookup(commandName, workflow.getClass)
 
     if (serializer.isJson(command) || command.isEmpty) {
       // - BytesPayload.empty - there is no real command, and we are calling a method with arity 0
@@ -123,11 +124,14 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
       stepName: String,
       timerScheduler: TimerScheduler,
       commandContext: CommandContext,
-      executionContext: ExecutionContext): Future[BytesPayload] = {
+      executionContext: ExecutionContext,
+      span: Option[Span]): Future[BytesPayload] = {
 
     implicit val ec: ExecutionContext = executionContext
 
-    val workflow = instanceFactory(workflowContext)
+    val updatedContext = workflowContext.asInstanceOf[WorkflowContextImpl].withOpenTelemetrySpan(span)
+
+    val workflow = instanceFactory(updatedContext)
     // if runtime doesn't have a state to provide, we fall back to user's own defined empty state
     val decodedState = decodeUserState(userState).getOrElse(workflow.emptyState())
     workflow._internalSetup(decodedState, commandContext, timerScheduler, false)

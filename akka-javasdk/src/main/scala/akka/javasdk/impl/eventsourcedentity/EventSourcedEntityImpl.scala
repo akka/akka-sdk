@@ -17,7 +17,6 @@ import akka.javasdk.eventsourcedentity.EventContext
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
 import akka.javasdk.eventsourcedentity.EventSourcedEntityContext
 import akka.javasdk.impl.AbstractContext
-import akka.javasdk.impl.ActivatableContext
 import akka.javasdk.impl.ComponentDescriptor
 import akka.javasdk.impl.ComponentType
 import akka.javasdk.impl.EntityExceptions.EntityException
@@ -58,8 +57,7 @@ private[impl] object EventSourcedEntityImpl {
       span: Option[Span],
       tracerFactory: () => Tracer)
       extends AbstractContext
-      with CommandContext
-      with ActivatableContext {
+      with CommandContext {
     override def tracing(): Tracing = new SpanTracingImpl(span, tracerFactory)
 
     override def commandId(): Long = 0
@@ -200,7 +198,6 @@ private[impl] final class EventSourcedEntityImpl[S, E, ES <: EventSourcedEntity[
     } finally {
       entity._internalSetCommandContext(Optional.empty())
       entity._internalClearCurrentState()
-      cmdContext.deactivate() // Very important!
 
       span.foreach { s =>
         MDC.remove(Telemetry.TRACE_ID)

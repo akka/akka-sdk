@@ -4,6 +4,8 @@
 
 package akka.javasdk.impl.workflow
 
+import java.util.Optional
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters.ListHasAsScala
@@ -17,19 +19,21 @@ import akka.annotation.InternalApi
 import akka.javasdk.Metadata
 import akka.javasdk.Tracing
 import akka.javasdk.impl.AbstractContext
-import akka.javasdk.impl.ActivatableContext
 import akka.javasdk.impl.ComponentDescriptor
+import akka.javasdk.impl.ComponentType
 import akka.javasdk.impl.ErrorHandling.BadRequestException
 import akka.javasdk.impl.HandlerNotFoundException
 import akka.javasdk.impl.MetadataImpl
 import akka.javasdk.impl.WorkflowExceptions.WorkflowException
 import akka.javasdk.impl.serialization.JsonSerializer
 import akka.javasdk.impl.telemetry.SpanTracingImpl
+import akka.javasdk.impl.telemetry.Telemetry
+import akka.javasdk.impl.telemetry.TraceInstrumentation
+import akka.javasdk.impl.telemetry.WorkflowCategory
 import akka.javasdk.impl.timer.TimerSchedulerImpl
 import akka.javasdk.impl.workflow.ReflectiveWorkflowRouter.CommandResult
 import akka.javasdk.impl.workflow.ReflectiveWorkflowRouter.TransitionalResult
 import akka.javasdk.impl.workflow.WorkflowEffectImpl.Delete
-import akka.javasdk.impl.workflow.WorkflowEffectImpl.DeleteState
 import akka.javasdk.impl.workflow.WorkflowEffectImpl.End
 import akka.javasdk.impl.workflow.WorkflowEffectImpl.ErrorEffectImpl
 import akka.javasdk.impl.workflow.WorkflowEffectImpl.NoPersistence
@@ -44,7 +48,7 @@ import akka.javasdk.impl.workflow.WorkflowEffectImpl.TransitionalEffectImpl
 import akka.javasdk.impl.workflow.WorkflowEffectImpl.UpdateState
 import akka.javasdk.workflow.CommandContext
 import akka.javasdk.workflow.Workflow
-import akka.javasdk.workflow.Workflow.{ RecoverStrategy => SdkRecoverStrategy }
+import akka.javasdk.workflow.Workflow.{RecoverStrategy => SdkRecoverStrategy}
 import akka.javasdk.workflow.WorkflowContext
 import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.RegionInfo
@@ -53,15 +57,18 @@ import akka.runtime.sdk.spi.SpiMetadata
 import akka.runtime.sdk.spi.SpiWorkflow
 import akka.runtime.sdk.spi.TimerClient
 import io.opentelemetry.api.trace.Span
+import io.opentelemetry.api.trace.StatusCode
 import io.opentelemetry.api.trace.Tracer
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.slf4j.MDC
 
 /**
  * INTERNAL API
  */
 @InternalApi
 class WorkflowImpl[S, W <: Workflow[S]](
+    componentId: String,
     workflowId: String,
     workflowClass: Class[W],
     serializer: JsonSerializer,
@@ -75,10 +82,18 @@ class WorkflowImpl[S, W <: Workflow[S]](
 
   private val log: Logger = LoggerFactory.getLogger(workflowClass)
 
-  private val context = new WorkflowContextImpl(workflowId, regionInfo.selfRegion)
+  private val context = new WorkflowContextImpl(workflowId, regionInfo.selfRegion, Optional.empty())
+
+  private val traceInstrumentation = new TraceInstrumentation(componentId, WorkflowCategory, tracerFactory)
 
   private val router =
-    new ReflectiveWorkflowRouter[S, W](context, instanceFactory, componentDescriptor.methodInvokers, serializer)
+    new ReflectiveWorkflowRouter[S, W](
+      context,
+      instanceFactory,
+      componentDescriptor.methodInvokers,
+      serializer,
+      componentId,
+      traceInstrumentation)
 
   override def configuration: SpiWorkflow.WorkflowConfig = {
     val workflow = instanceFactory(context)
@@ -117,15 +132,8 @@ class WorkflowImpl[S, W <: Workflow[S]](
       stepConfigs = stepConfigs)
   }
 
-  private def commandContext(commandName: String, metadata: Metadata = MetadataImpl.Empty) =
-    new CommandContextImpl(
-      workflowId,
-      commandName,
-      regionInfo.selfRegion,
-      metadata,
-      // FIXME we'd need to start a parent span for the command here to have one to base custom user spans of off?
-      None,
-      tracerFactory)
+  private def commandContext(commandName: String, span: Option[Span], metadata: Metadata) =
+    new CommandContextImpl(workflowId, commandName, regionInfo.selfRegion, metadata, span, tracerFactory)
 
   private def toSpiTransition(transition: Transition): SpiWorkflow.Transition =
     transition match {
@@ -140,7 +148,6 @@ class WorkflowImpl[S, W <: Workflow[S]](
   private def handleState(persistence: Persistence[Any]): SpiWorkflow.Persistence =
     persistence match {
       case UpdateState(newState) => new SpiWorkflow.UpdateState(serializer.toBytes(newState))
-      case DeleteState           => SpiWorkflow.DeleteState
       case NoPersistence         => SpiWorkflow.NoPersistence
     }
 
@@ -174,11 +181,6 @@ class WorkflowImpl[S, W <: Workflow[S]](
                 spiTransition,
                 replyBytes,
                 spiMetadata)
-
-          case SpiWorkflow.DeleteState =>
-            // TODO: delete not yet supported, therefore always ReplyEffect
-            throw new IllegalArgumentException("State deletion not supported yet")
-
         }
 
       case TransitionalEffectImpl(persistence, transition) =>
@@ -197,8 +199,12 @@ class WorkflowImpl[S, W <: Workflow[S]](
       userState: Option[SpiWorkflow.State],
       command: SpiEntity.Command): Future[SpiWorkflow.CommandEffect] = {
 
+    val span: Option[Span] =
+      traceInstrumentation.buildEntityCommandSpan(ComponentType.Workflow, componentId, workflowId, command)
+    span.foreach(s => MDC.put(Telemetry.TRACE_ID, s.getSpanContext.getTraceId))
+
     val metadata = MetadataImpl.of(command.metadata)
-    val context = commandContext(command.name, metadata)
+    val context = commandContext(command.name, span, metadata)
 
     val timerScheduler =
       new TimerSchedulerImpl(timerClient, context.componentCallMetadata)
@@ -206,54 +212,82 @@ class WorkflowImpl[S, W <: Workflow[S]](
     // smuggling 0 arity method called from component client through here
     val cmd = command.payload.getOrElse(BytesPayload.empty)
 
-    val CommandResult(effect) =
-      try {
-        router.handleCommand(
-          userState = userState,
-          commandName = command.name,
-          command = cmd,
-          context = context,
-          timerScheduler = timerScheduler,
-          deleted = command.isDeleted)
-      } catch {
-        case e: HandlerNotFoundException =>
-          throw WorkflowException(workflowId, command.name, e.getMessage, Some(e))
-        case BadRequestException(msg) => CommandResult(WorkflowEffectImpl[Any]().error(msg))
-        case e: WorkflowException     => throw e
-        case NonFatal(error) =>
-          throw WorkflowException(workflowId, command.name, s"Unexpected failure: $error", Some(error))
+    try {
+      val CommandResult(effect) = router.handleCommand(
+        userState = userState,
+        commandName = command.name,
+        command = cmd,
+        context = context,
+        timerScheduler = timerScheduler,
+        deleted = command.isDeleted,
+        span)
+      Future.successful(toSpiCommandEffect(effect))
+    } catch {
+      case e: HandlerNotFoundException =>
+        throw WorkflowException(workflowId, command.name, e.getMessage, Some(e))
+      case BadRequestException(msg) =>
+        Future.successful(toSpiCommandEffect(WorkflowEffectImpl[Any]().error(msg)))
+      case e: WorkflowException => throw e
+      case NonFatal(error) =>
+        throw WorkflowException(workflowId, command.name, s"Unexpected failure: $error", Some(error))
+    } finally {
+      span.foreach { s =>
+        MDC.remove(Telemetry.TRACE_ID)
+        s.end()
       }
+    }
 
-    Future.successful(toSpiCommandEffect(effect))
   }
 
   override def executeStep(
-      stepName: String,
-      input: Option[BytesPayload],
-      userState: Option[BytesPayload]): Future[BytesPayload] = {
+      userState: Option[BytesPayload],
+      stepCommand: SpiWorkflow.StepCommand): Future[BytesPayload] = {
 
-    val context = commandContext(stepName)
+    val stepName = stepCommand.stepName
+    val span: Option[Span] =
+      traceInstrumentation.buildEntityCommandSpan(
+        ComponentType.Workflow,
+        componentId,
+        workflowId,
+        stepName,
+        stepCommand.metadata)
+    span.foreach(s => MDC.put(Telemetry.TRACE_ID, s.getSpanContext.getTraceId))
+
+    val context = commandContext(stepName, span, MetadataImpl.of(stepCommand.metadata))
     val timerScheduler =
       new TimerSchedulerImpl(timerClient, context.componentCallMetadata)
 
     try {
       val handleStep = router.handleStep(
         userState,
-        input = input,
+        input = stepCommand.input,
         stepName = stepName,
         timerScheduler = timerScheduler,
         commandContext = context,
-        executionContext = sdkExecutionContext)
+        executionContext = sdkExecutionContext,
+        span = span)
       handleStep.onComplete {
-        case Failure(exception) => log.error(s"Workflow [$workflowId], failed to execute step [$stepName]", exception)
-        case Success(_)         =>
+        case Failure(exception) =>
+          span.foreach { s =>
+            s.setStatus(StatusCode.ERROR) //TODO doesn't work, not sure why the span is presented the same way
+            s.end()
+          }
+          log.error(s"Workflow [$workflowId], failed to execute step [$stepName]", exception)
+        case Success(_) =>
+          span.foreach(_.end())
       }(sdkExecutionContext)
       handleStep
     } catch {
       case NonFatal(ex) =>
         val message = s"unexpected exception [${ex.getMessage}] while executing step [$stepName]"
         log.error(message, ex)
+        span.foreach(_.end())
         throw WorkflowException(message, Some(ex))
+    } finally {
+      span.foreach { __ =>
+        MDC.remove(Telemetry.TRACE_ID)
+      //ending the span is done in the onComplete above, can't be here because the Future may not complete
+      }
     }
   }
 
@@ -274,6 +308,12 @@ class WorkflowImpl[S, W <: Workflow[S]](
     Future.successful(toSpiTransitionalEffect(effect))
   }
 
+  override def executeStep(
+      stepName: String,
+      input: Option[BytesPayload],
+      userState: Option[BytesPayload]): Future[BytesPayload] = {
+    executeStep(userState, new SpiWorkflow.StepCommand(stepName, input, SpiMetadata.empty))
+  }
 }
 
 /**
@@ -288,8 +328,7 @@ private[akka] final class CommandContextImpl(
     span: Option[Span],
     tracerFactory: () => Tracer)
     extends AbstractContext
-    with CommandContext
-    with ActivatableContext {
+    with CommandContext {
 
   override def tracing(): Tracing =
     new SpanTracingImpl(span, tracerFactory)
@@ -301,6 +340,14 @@ private[akka] final class CommandContextImpl(
  * INTERNAL API
  */
 @InternalApi
-private[akka] final class WorkflowContextImpl(override val workflowId: String, override val selfRegion: String)
+private[akka] final class WorkflowContextImpl(
+    override val workflowId: String,
+    override val selfRegion: String,
+    val openTelemetrySpan: Option[Span])
     extends AbstractContext
-    with WorkflowContext
+    with WorkflowContext {
+
+  def withOpenTelemetrySpan(span: Option[Span]): WorkflowContextImpl = {
+    new WorkflowContextImpl(workflowId, selfRegion, span)
+  }
+}

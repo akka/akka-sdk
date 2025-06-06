@@ -11,16 +11,6 @@ import akka.javasdk.Context
  * INTERNAL API
  */
 @InternalApi
-private[impl] trait ActivatableContext extends Context {
-  private final var active = true
-  final def deactivate(): Unit = active = false
-  final def checkActive(): Unit = if (!active) throw new IllegalStateException("Context no longer active!")
-}
-
-/**
- * INTERNAL API
- */
-@InternalApi
 private[akka] trait InternalContext {
 
   /**
