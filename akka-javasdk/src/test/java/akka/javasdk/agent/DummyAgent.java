@@ -7,6 +7,8 @@ package akka.javasdk.agent;
 import akka.javasdk.annotations.AgentDescription;
 import akka.javasdk.annotations.ComponentId;
 
+import java.util.List;
+
 @ComponentId("dummy1")
 @AgentDescription(name = "Dummy Agent", description = "Not very smart agent")
 class DummyAgent1 extends Agent {
@@ -43,6 +45,11 @@ class DummyAgent3 extends Agent {
 
       @Override
       public void addInteraction(String sessionId, String componentId, SessionMessage.UserMessage userMessage, SessionMessage.AiMessage aiMessage) {
+
+      }
+
+      @Override
+      public void addInteraction(String sessionId, String componentId, SessionMessage.UserMessage userMessage, List<SessionMessage> messages) {
 
       }
 

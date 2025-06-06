@@ -37,8 +37,8 @@ public class SessionMemoryEntityTest {
     var timestamp = System.currentTimeMillis();
     String userMsg = "Hello, how are you?";
     String aiMsg = "I'm fine, thanks for asking!";
-    UserMessage userMessage = new UserMessage(timestamp, userMsg, TOKENS);
-    var aiMessage = new AiMessage(timestamp, aiMsg, TOKENS);
+    UserMessage userMessage = new UserMessage(timestamp, userMsg);
+    var aiMessage = new AiMessage(timestamp, aiMsg, TOKENS, TOKENS);
 
     // when
     EventSourcedResult<Done> result = testKit.method(SessionMemoryEntity::addInteraction)
@@ -50,18 +50,18 @@ public class SessionMemoryEntityTest {
     // Check events - ignoring timestamp comparison
     var events = result.getAllEvents();
     assertThat(events).hasSize(2);
-    assertThat(events.get(0)).isInstanceOf(SessionMemoryEntity.Event.UserMessageAdded.class);
-    var userEvent = (SessionMemoryEntity.Event.UserMessageAdded) events.get(0);
+    assertThat(events.getFirst()).isInstanceOf(SessionMemoryEntity.Event.UserMessageAdded.class);
+    var userEvent = (SessionMemoryEntity.Event.UserMessageAdded) events.getFirst();
     assertThat(userEvent.componentId()).isEqualTo(COMPONENT_ID);
     assertThat(userEvent.message()).isEqualTo(userMsg);
-    assertThat(userEvent.tokens()).isEqualTo(TOKENS);
     assertThat(userEvent.timestamp()).isEqualTo(timestamp);
 
     assertThat(events.get(1)).isInstanceOf(SessionMemoryEntity.Event.AiMessageAdded.class);
     var aiEvent = (SessionMemoryEntity.Event.AiMessageAdded) events.get(1);
     assertThat(aiEvent.componentId()).isEqualTo(COMPONENT_ID);
     assertThat(aiEvent.message()).isEqualTo(aiMsg);
-    assertThat(aiEvent.tokens()).isEqualTo(TOKENS);
+    assertThat(aiEvent.inputTokens()).isEqualTo(TOKENS);
+    assertThat(aiEvent.outputTokens()).isEqualTo(TOKENS);
     assertThat(aiEvent.timestamp()).isEqualTo(timestamp);
 
     // when retrieving history
@@ -84,10 +84,10 @@ public class SessionMemoryEntityTest {
     String userMsg2 = "How are you?";
     String aiMsg2 = "I'm doing great!";
 
-    var userMessage1 = new UserMessage(timestamp, userMsg1, TOKENS);
-    var aiMessage1 = new AiMessage(timestamp, aiMsg1, TOKENS);
-    var userMessage2 = new UserMessage(timestamp+1, userMsg2, TOKENS);
-    var aiMessage2 = new AiMessage(timestamp +1, aiMsg2, TOKENS);
+    var userMessage1 = new UserMessage(timestamp, userMsg1);
+    var aiMessage1 = new AiMessage(timestamp, aiMsg1, TOKENS, TOKENS);
+    var userMessage2 = new UserMessage(timestamp + 1, userMsg2);
+    var aiMessage2 = new AiMessage(timestamp + 1, aiMsg2, TOKENS, TOKENS);
 
     // when
     testKit.method(SessionMemoryEntity::addInteraction)
@@ -118,8 +118,8 @@ public class SessionMemoryEntityTest {
     String userMsg = "Hello";
     String aiMsg = "Hi there!";
 
-    var userMessage = new UserMessage(timestamp, userMsg, TOKENS);
-    var aiMessage = new AiMessage(timestamp, aiMsg, TOKENS);
+    var userMessage = new UserMessage(timestamp, userMsg);
+    var aiMessage = new AiMessage(timestamp, aiMsg, TOKENS, TOKENS);
 
     testKit.method(SessionMemoryEntity::addInteraction)
       .invoke(new AddInteractionCmd(COMPONENT_ID, userMessage, aiMessage));
@@ -172,14 +172,14 @@ public class SessionMemoryEntityTest {
     String userMsg4 = "Fourth message";     // 14 bytes
     String aiMsg4 = "Fourth response";      // 15 bytes
 
-    var userMessage1 = new UserMessage(timestamp, userMsg1, TOKENS);
-    var aiMessage1 = new AiMessage(timestamp, aiMsg1, TOKENS);
-    var userMessage2 = new UserMessage(timestamp+1, userMsg2, TOKENS);
-    var aiMessage2 = new AiMessage(timestamp+1, aiMsg2, TOKENS);
-    var userMessage3 = new UserMessage(timestamp+2, userMsg3, TOKENS);
-    var aiMessage3 = new AiMessage(timestamp+2, aiMsg3, TOKENS);
-    var userMessage4 = new UserMessage(timestamp+3, userMsg4, TOKENS);
-    var aiMessage4 = new AiMessage(timestamp+3, aiMsg4, TOKENS);
+    var userMessage1 = new UserMessage(timestamp, userMsg1);
+    var aiMessage1 = new AiMessage(timestamp, aiMsg1, TOKENS, TOKENS);
+    var userMessage2 = new UserMessage(timestamp + 1, userMsg2);
+    var aiMessage2 = new AiMessage(timestamp + 1, aiMsg2, TOKENS, TOKENS);
+    var userMessage3 = new UserMessage(timestamp + 2, userMsg3);
+    var aiMessage3 = new AiMessage(timestamp + 2, aiMsg3, TOKENS, TOKENS);
+    var userMessage4 = new UserMessage(timestamp + 3, userMsg4);
+    var aiMessage4 = new AiMessage(timestamp + 3, aiMsg4, TOKENS, TOKENS);
 
     // Set buffer size to just fit messages 2, 3, and 4 (total 85 bytes)
     // userMsg2(14) + aiMsg2(15) + userMsg3(13) + aiMsg3(14) + userMsg4(14) + aiMsg4(15) = 85 bytes
@@ -228,12 +228,12 @@ public class SessionMemoryEntityTest {
     String userMsg3 = "Third message";      // 13 bytes
     String aiMsg3 = "Third response";       // 14 bytes
 
-    var userMessage1 = new UserMessage(timestamp, userMsg1, TOKENS);
-    var aiMessage1 = new AiMessage(timestamp, aiMsg1, TOKENS);
-    var userMessage2 = new UserMessage(timestamp + 1, userMsg2, TOKENS);
-    var aiMessage2 = new AiMessage(timestamp + 1, aiMsg2, TOKENS);
-    var userMessage3 = new UserMessage(timestamp + 2, userMsg3, TOKENS);
-    var aiMessage3 = new AiMessage(timestamp + 2, aiMsg3, TOKENS);
+    var userMessage1 = new UserMessage(timestamp, userMsg1);
+    var aiMessage1 = new AiMessage(timestamp, aiMsg1, TOKENS, TOKENS);
+    var userMessage2 = new UserMessage(timestamp + 1, userMsg2);
+    var aiMessage2 = new AiMessage(timestamp + 1, aiMsg2, TOKENS, TOKENS);
+    var userMessage3 = new UserMessage(timestamp + 2, userMsg3);
+    var aiMessage3 = new AiMessage(timestamp + 2, aiMsg3, TOKENS, TOKENS);
 
     // Set buffer size to just fit messages 1 and 2 (total 56 bytes)
     // userMsg1(13) + aiMsg1(14) + userMsg2(14) + aiMsg2(15) = 56 bytes
@@ -248,8 +248,8 @@ public class SessionMemoryEntityTest {
 
     // then
     assertThat(result1.getReply().messages()).containsExactly(
-      new UserMessage(timestamp, userMsg1, TOKENS),
-      new AiMessage(timestamp, aiMsg1, TOKENS));
+      new UserMessage(timestamp, userMsg1),
+      new AiMessage(timestamp, aiMsg1, TOKENS, TOKENS));
     assertThat(result1.getReply().messages().size()).isEqualTo(2);
 
     // when adding second interaction (reaching the limit)
@@ -260,10 +260,10 @@ public class SessionMemoryEntityTest {
 
     // then
     assertThat(result2.getReply().messages()).containsExactly(
-      new UserMessage(timestamp, userMsg1, TOKENS),
-      new AiMessage(timestamp, aiMsg1, TOKENS),
-      new UserMessage(timestamp + 1, userMsg2, TOKENS),
-      new AiMessage(timestamp + 1, aiMsg2, TOKENS));
+      new UserMessage(timestamp, userMsg1),
+      new AiMessage(timestamp, aiMsg1, TOKENS, TOKENS),
+      new UserMessage(timestamp + 1, userMsg2),
+      new AiMessage(timestamp + 1, aiMsg2, TOKENS, TOKENS));
     assertThat(result2.getReply().messages().size()).isEqualTo(4);
 
     // when adding third interaction (exceeding the limit)
@@ -274,10 +274,10 @@ public class SessionMemoryEntityTest {
 
     // then - first interaction should be removed
     assertThat(result3.getReply().messages()).containsExactly(
-      new UserMessage(timestamp +1, userMsg2, TOKENS),
-      new AiMessage(timestamp+1, aiMsg2, TOKENS),
-      new UserMessage(timestamp +2, userMsg3, TOKENS),
-      new AiMessage(timestamp +2, aiMsg3, TOKENS));
+      new UserMessage(timestamp + 1, userMsg2),
+      new AiMessage(timestamp + 1, aiMsg2, TOKENS, TOKENS),
+      new UserMessage(timestamp + 2, userMsg3),
+      new AiMessage(timestamp + 2, aiMsg3, TOKENS, TOKENS));
     assertThat(result3.getReply().messages().size()).isEqualTo(4);
   }
 
@@ -302,8 +302,8 @@ public class SessionMemoryEntityTest {
     // Create a message larger than the buffer
     String largeUserMsg = "A".repeat(100);
     String largeAiMsg = "B".repeat(100);
-    var userMessage = new UserMessage(timestamp, largeUserMsg, TOKENS);
-    var aiMessage = new AiMessage(timestamp, largeAiMsg, TOKENS);
+    var userMessage = new UserMessage(timestamp, largeUserMsg);
+    var aiMessage = new AiMessage(timestamp, largeAiMsg, TOKENS, TOKENS);
 
     // Set buffer size smaller than a single message
     var limitedBuffer = new SessionMemoryEntity.LimitedWindow(50);
@@ -330,15 +330,21 @@ public class SessionMemoryEntityTest {
     String aiMsg1 = "Hi!";
     String userMsg2 = "How are you?";
     String aiMsg2 = "I'm good, thanks!";
-    var um1 = new UserMessage(timestamp, userMsg1, 5);
-    var aim1 = new AiMessage(timestamp, aiMsg1, 3);
-    var um2 = new UserMessage(timestamp +1, userMsg2, 7);
-    var aim2 = new AiMessage(timestamp + 1, aiMsg2, 6);
-    var totalTokens = um1.tokens() + aim1.tokens() + um2.tokens() + aim2.tokens();
+    var um1 = new UserMessage(timestamp, userMsg1);
+    var aim1 = new AiMessage(timestamp, aiMsg1, 5, 3);
+    var firstTotal = aim1.inputTokens() + aim1.outputTokens();
+
+    var um2 = new UserMessage(timestamp +1, userMsg2);
+    // input from second AiMessage sums up with the firstTotal
+    var aim2 = new AiMessage(timestamp + 1, aiMsg2, firstTotal + 7, 6);
+
+    // the last message has the total (total from aim1 is already added to it)
+    var totalTokens = aim2.inputTokens() + aim2.outputTokens();
 
     // when
     testKit.method(SessionMemoryEntity::addInteraction)
       .invoke(new AddInteractionCmd(COMPONENT_ID, um1, aim1));
+
     testKit.method(SessionMemoryEntity::addInteraction)
       .invoke(new AddInteractionCmd(COMPONENT_ID, um2, aim2));
 
@@ -346,16 +352,6 @@ public class SessionMemoryEntityTest {
     var state = testKit.getState();
     assertThat(state.totalTokenUsage()).isEqualTo(totalTokens);
 
-    // And events should include token usage as well
-    var events = testKit.getAllEvents();
-    assertThat(events).hasSize(4);
-    assertThat(events.get(2)).isInstanceOf(SessionMemoryEntity.Event.UserMessageAdded.class);
-    var userEvent = (SessionMemoryEntity.Event.UserMessageAdded) events.get(2);
-    assertThat(userEvent.totalTokenUsage()).isEqualTo(totalTokens - aim2.tokens());
-
-    assertThat(events.get(3)).isInstanceOf(SessionMemoryEntity.Event.AiMessageAdded.class);
-    var userEvent2 = (SessionMemoryEntity.Event.AiMessageAdded) events.get(3);
-    assertThat(userEvent2.totalTokenUsage()).isEqualTo(totalTokens);
   }
 
   @Test
@@ -370,7 +366,8 @@ public class SessionMemoryEntityTest {
     String[] aiMsgs = {"A1", "A2", "A3", "A4"};
     for (int i = 0; i < userMsgs.length; i++) {
       testKit.method(SessionMemoryEntity::addInteraction)
-        .invoke(new AddInteractionCmd(COMPONENT_ID, new UserMessage(timestamp, userMsgs[i], TOKENS), new AiMessage(timestamp, aiMsgs[i], TOKENS)));
+        .invoke(new AddInteractionCmd(COMPONENT_ID, new UserMessage(timestamp, userMsgs[i]), new AiMessage(timestamp,
+          aiMsgs[i], TOKENS, TOKENS)));
     }
 
     // Request only the last 4 messages (should be: U3, A3, U4, A4)
@@ -381,10 +378,10 @@ public class SessionMemoryEntityTest {
 
     // The expected last 4 messages
     var expected = List.of(
-      new UserMessage(timestamp, "U3", TOKENS),
-      new AiMessage(timestamp, "A3", TOKENS),
-      new UserMessage(timestamp, "U4", TOKENS),
-      new AiMessage(timestamp, "A4", TOKENS)
+      new UserMessage(timestamp, "U3"),
+      new AiMessage(timestamp, "A3", TOKENS,TOKENS),
+      new UserMessage(timestamp, "U4"),
+      new AiMessage(timestamp, "A4", TOKENS, TOKENS)
     );
 
     assertThat(result.getReply().messages()).containsExactlyElementsOf(expected);

@@ -5,6 +5,7 @@
 package akka.javasdk.agent;
 
 import akka.javasdk.agent.SessionMessage.AiMessage;
+import akka.javasdk.agent.SessionMessage.ToolCallResponse;
 import akka.javasdk.agent.SessionMessage.UserMessage;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -15,12 +16,13 @@ import java.util.List;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "@type")
 @JsonSubTypes({
     @JsonSubTypes.Type(value = UserMessage.class, name = "UM"),
-  @JsonSubTypes.Type(value = AiMessage.class, name = "AIM")})
+  @JsonSubTypes.Type(value = AiMessage.class, name = "AIM"),
+  @JsonSubTypes.Type(value = ToolCallResponse.class, name = "TCR")})
 public sealed interface SessionMessage {
 
   int size();
 
-  record UserMessage(long timestamp, String text, int tokens) implements SessionMessage {
+  record UserMessage(long timestamp, String text) implements SessionMessage {
 
     @Override
     public int size() {
@@ -30,14 +32,14 @@ public sealed interface SessionMessage {
 
   record ToolCallRequest(String id, String name, String arguments)  {
   }
-  record ToolCallResponse(String id, String name, String content) {
-  }
-  record ToolCallInteraction(ToolCallRequest request, ToolCallResponse response) {
-  }
-  
-  record AiMessage(long timestamp, String text, int tokens, List<ToolCallInteraction> toolCallInteractions) implements SessionMessage {
-    public AiMessage(long timestamp, String text, int tokens) {
-      this(timestamp, text, tokens, List.of());
+
+  record AiMessage(long timestamp,
+                   String text,
+                   int inputTokens,
+                   int outputTokens,
+                   List<ToolCallRequest> toolCallRequests) implements SessionMessage {
+    public AiMessage(long timestamp, String text, int inputTokens, int   outputTokens) {
+      this(timestamp, text, inputTokens, outputTokens, List.of());
     }
 
     @Override
@@ -46,6 +48,12 @@ public sealed interface SessionMessage {
     }
   }
 
+  record ToolCallResponse(long timestamp, String id, String name, String content) implements SessionMessage {
+    @Override
+    public int size() {
+      return content.length();
+    }
+  }
   
 }
 
