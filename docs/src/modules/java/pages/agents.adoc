@@ -256,10 +256,17 @@ This can be useful for more granular control over token usage but also to allow 
 
 == Structured responses
 
-FIXME
+Many LLMs support generating outputs in a structured format, typically JSON. You can easily map such output to Java object using the effect API.
 
-- prompt instructions for json responses
-- mapping of model response to another reply type
+[source,java]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/application/ActivityAgent.java[ActivityAgent.java]
+----
+include::example$doc-snippets/src/main/java/com/example/application/ActivityAgent.java[tag=structured-response]
+----
+<1> Instruct the model to return a structured response in JSON format.
+<2> `Activity` record is used to map the JSON response to a Java object.
+<3> Use the `responseAs` method to specify the expected response type.
+<4> Sometimes the model may not return a valid JSON, so you can use `onFailure` to provide a fallback value in case of parsing exception.
 
 == Function tools
 

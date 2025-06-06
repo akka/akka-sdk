@@ -1,12 +1,14 @@
 package com.example.application;
 
 import akka.javasdk.agent.Agent;
+import akka.javasdk.agent.JsonParsingException;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.annotations.TypeName;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.List;
 import java.util.UUID;
 
 // tag::prompt[]
@@ -61,6 +63,46 @@ interface ActivityAgentMore {
     }
   }
   // end::prompt-template[]
+
+  // tag::structured-response[]
+  @ComponentId("activity-agent")
+  public class ActivityAgentStructuredResponse extends Agent {
+
+    private static final String SYSTEM_MESSAGE = // <1>
+      """
+      You are an activity agent. Your job is to suggest activities in the
+      real world. Like for example, a team building activity, sports, an
+      indoor or outdoor game, board games, a city trip, etc.
+      
+      Your response should be a JSON object with the following structure:
+      {
+        "name": "Name of the activity",
+        "description": "Description of the activity"
+      }
+      
+      Do not include any explanations or text outside of the JSON structure.
+      """.stripIndent();
+
+    private static final Activity DEFAULT_ACTIVITY = new Activity("running", "Running is a great way to stay fit and healthy. You can do it anywhere, anytime, and it requires no special equipment.");
+
+    record Activity(String name, String description) {} // <2>
+
+    public Effect<Activity> query(String message) {
+      return effects()
+        .systemMessage(SYSTEM_MESSAGE)
+        .userMessage(message)
+        .responseAs(Activity.class) // <3>
+        .onFailure(throwable -> { // <4>
+          if (throwable instanceof JsonParsingException jsonParsingException) {
+            return DEFAULT_ACTIVITY;
+          } else {
+            throw new RuntimeException(throwable);
+          }
+        })
+        .thenReply();
+    }
+  }
+  // end::structured-response[]
 
   // tag::di[]
   @ComponentId("activity-agent")
