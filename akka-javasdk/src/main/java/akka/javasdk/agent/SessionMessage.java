@@ -20,6 +20,8 @@ public sealed interface SessionMessage {
 
   int size();
 
+  String text();
+
   record UserMessage(long timestamp, String text, int tokens) implements SessionMessage {
 
     @Override

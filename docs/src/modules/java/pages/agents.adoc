@@ -229,7 +229,7 @@ You can update the session memory to reduce the size of the history. One techniq
 include::example$doc-snippets/src/main/java/com/example/application/CompactionAgent.java[tag=compaction]
 ----
 <1> Instructions to create the summary of user and AI messages and result as JSON.
-<2> Retrieve the full history from the `SessionMemoryEntity`.
+<2> The full history from the `SessionMemoryEntity`.
 <3> Format and concatenate the messages.
 <4> The `CompactionAgent` itself doesn't need any session memory.
 
@@ -241,8 +241,10 @@ One way to trigger compaction is to use a consumer of the session memory events 
 include::example$doc-snippets/src/main/java/com/example/application/SessionMemoryConsumer.java[tag=compaction]
 ----
 <1> The events contain the total number of used tokens in the history.
-<2> Call the agent to make the summary.
-<3> Store the summary as the new compacted history in the `SessionMemoryEntity`.
+<2> Retrieve the full history from the `SessionMemoryEntity`.
+<3> Call the agent to make the summary.
+<4> Store the summary as the new compacted history in the `SessionMemoryEntity`.
+<5> To support concurrent updates, the `sequenceNumber` of the retrieved history is included in the `CompactionCmd`.
 
 == Structured responses
 

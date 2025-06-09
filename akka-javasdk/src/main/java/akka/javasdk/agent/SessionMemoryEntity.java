@@ -16,10 +16,12 @@ import com.typesafe.config.Config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static akka.Done.done;
 
@@ -169,15 +171,15 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
         .subList(messages.size() - cmd.lastNMessages.get(), messages.size());
       // make sure this returns a copy of the list and not the list itself
       return effects().reply(
-        new SessionHistory(new LinkedList<>(lastN)));
+        new SessionHistory(new LinkedList<>(lastN), commandContext().sequenceNumber()));
     } else {
       // make sure this returns a copy of the list and not the list itself
       return effects().reply(
-        new SessionHistory(new LinkedList<>(messages)));
+        new SessionHistory(new LinkedList<>(messages), commandContext().sequenceNumber()));
     }
   }
 
-  public record CompactionCmd(UserMessage userMessage, AiMessage aiMessage) {
+  public record CompactionCmd(UserMessage userMessage, AiMessage aiMessage, long sequenceNumber) {
   }
 
   public Effect<Done> compactHistory(CompactionCmd cmd) {
@@ -186,11 +188,32 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
     var totalTokensUser = cmd.userMessage.tokens();
     var totalTokensAi = totalTokensUser + cmd.aiMessage.tokens();
 
+    var events = new ArrayList<Event>();
+    events.add(new Event.HistoryCleared());
+    events.add(new Event.UserMessageAdded(cmd.userMessage.timestamp(), componentId, cmd.userMessage.text(), cmd.userMessage.tokens(), totalTokensUser));
+    events.add(new Event.AiMessageAdded(cmd.aiMessage.timestamp(), componentId, cmd.aiMessage.text(), cmd.aiMessage.tokens(), totalTokensAi, Collections.emptyList()));
+
+    if (commandContext().sequenceNumber() > cmd.sequenceNumber && !currentState().messages.isEmpty()) {
+      int diff = (int) (commandContext().sequenceNumber() - cmd.sequenceNumber);
+      var totalTokens = new AtomicInteger(totalTokensAi); // AtomicInteger because update from lambda
+      currentState().messages.subList(currentState().messages.size() - diff, currentState().messages.size())
+          .forEach(msg -> {
+        switch (msg) {
+          case UserMessage userMessage -> {
+            totalTokens.set(userMessage.tokens());
+            // FIXME totalTokensUser, componentId
+            events.add(new Event.UserMessageAdded(userMessage.timestamp(), componentId, userMessage.text(), userMessage.tokens(), totalTokens.get()));
+          }
+          case AiMessage aiMessage -> {
+            totalTokens.set(aiMessage.tokens());
+            events.add(new Event.AiMessageAdded(aiMessage.timestamp(), componentId, aiMessage.text(), aiMessage.tokens(), totalTokens.get(), aiMessage.toolCallInteractions()));
+          }
+        }
+      });
+    }
+
     return effects()
-        .persist(
-            new Event.HistoryCleared(),
-            new Event.UserMessageAdded(cmd.userMessage.timestamp(), componentId, cmd.userMessage.text(), cmd.userMessage.tokens(), totalTokensUser),
-            new Event.AiMessageAdded(cmd.aiMessage.timestamp(), componentId, cmd.aiMessage.text(), cmd.aiMessage.tokens(), totalTokensAi, Collections.emptyList()))
+        .persistAll(events)
         .thenReply(__ -> Done.done());
   }
 

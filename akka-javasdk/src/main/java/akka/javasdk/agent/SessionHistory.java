@@ -6,6 +6,6 @@ package akka.javasdk.agent;
 
 import java.util.List;
 
-public record SessionHistory(List<SessionMessage> messages) {
-  public static final SessionHistory EMPTY = new SessionHistory(List.of());
+public record SessionHistory(List<SessionMessage> messages, long sequenceNumber) {
+  public static final SessionHistory EMPTY = new SessionHistory(List.of(), 0);
 }

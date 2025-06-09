@@ -3,6 +3,7 @@ package com.example.application;
 import akka.javasdk.agent.Agent;
 import akka.javasdk.agent.MemoryProvider;
 import akka.javasdk.agent.ModelProvider;
+import akka.javasdk.agent.SessionHistory;
 import akka.javasdk.agent.SessionMemoryEntity;
 import akka.javasdk.agent.SessionMessage;
 import akka.javasdk.annotations.ComponentId;
@@ -46,12 +47,7 @@ public class CompactionAgent extends Agent {
     this.componentClient = componentClient;
   }
 
-  public Effect<Result> summarizeSessionHistory() {
-    var history = componentClient
-        .forEventSourcedEntity(context().sessionId())
-        .method(SessionMemoryEntity::getHistory) // <2>
-        .invoke(new SessionMemoryEntity.GetHistoryCmd(Optional.empty()));
-
+  public Effect<Result> summarizeSessionHistory(SessionHistory history) { // <2>
     String concatenatedMessages =
         history.messages().stream().map(msg -> {
               return switch (msg) {

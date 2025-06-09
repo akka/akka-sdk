@@ -8,6 +8,7 @@ import akka.Done;
 import akka.javasdk.agent.SessionHistory;
 import akka.javasdk.agent.SessionMemoryEntity;
 import akka.javasdk.agent.SessionMemoryEntity.AddInteractionCmd;
+import akka.javasdk.agent.SessionMessage;
 import akka.javasdk.agent.SessionMessage.AiMessage;
 import akka.javasdk.agent.SessionMessage.UserMessage;
 import akka.javasdk.testkit.EventSourcedResult;
@@ -123,9 +124,13 @@ public class SessionMemoryEntityTest {
         .invoke(new AddInteractionCmd(COMPONENT_ID, userMessage1, aiMessage1));
 
     // when
+    EventSourcedResult<SessionHistory> historyResult =
+        testKit.method(SessionMemoryEntity::getHistory).invoke(emptyGetHistory);
+    var sequenceNumber = historyResult.getReply().sequenceNumber();
+    assertThat(sequenceNumber).isEqualTo(2L);
     var userMessage2 = new UserMessage(timestamp, "Hey", TOKENS / 2);
     var aiMessage2 = new AiMessage(timestamp, "Hi!", TOKENS / 2);
-    var cmd = new SessionMemoryEntity.CompactionCmd(userMessage2, aiMessage2);
+    var cmd = new SessionMemoryEntity.CompactionCmd(userMessage2, aiMessage2, sequenceNumber);
     EventSourcedResult<Done> compactResult = testKit.method(SessionMemoryEntity::compactHistory)
         .invoke(cmd);
 
@@ -142,13 +147,62 @@ public class SessionMemoryEntityTest {
     assertThat(((SessionMemoryEntity.Event.AiMessageAdded) events.get(2)).totalTokenUsage()).isEqualTo(TOKENS);
 
     // when retrieving history after compacting
-    EventSourcedResult<SessionHistory> historyResult =
+    EventSourcedResult<SessionHistory> historyResult2 =
         testKit.method(SessionMemoryEntity::getHistory).invoke(emptyGetHistory);
 
     // then
-    assertThat(historyResult.getReply().messages()).containsExactly(
+    assertThat(historyResult2.getReply().messages()).containsExactly(
         userMessage2,
         aiMessage2);
+  }
+
+  @Test
+  public void shouldHandleConcurrentUpdatesWhenCompacting() {
+    // given
+    var testKit = EventSourcedTestKit.of(() -> new SessionMemoryEntity(config));
+    var timestamp = System.currentTimeMillis();
+
+    var userMessage1 = new UserMessage(timestamp, "Hello", TOKENS);
+    var aiMessage1 = new AiMessage(timestamp, "Hi there!", TOKENS);
+
+    testKit.method(SessionMemoryEntity::addInteraction)
+        .invoke(new AddInteractionCmd(COMPONENT_ID, userMessage1, aiMessage1));
+
+    // when
+    EventSourcedResult<SessionHistory> historyResult =
+        testKit.method(SessionMemoryEntity::getHistory).invoke(emptyGetHistory);
+    var sequenceNumber = historyResult.getReply().sequenceNumber();
+    assertThat(sequenceNumber).isEqualTo(2L);
+    var userMessage2 = new UserMessage(timestamp, "Hey", TOKENS / 2);
+    var aiMessage2 = new AiMessage(timestamp, "Hi!", TOKENS / 2);
+    var cmd = new SessionMemoryEntity.CompactionCmd(userMessage2, aiMessage2, sequenceNumber);
+
+    // but before making the compaction update there is some other update
+    var userMessage3 = new UserMessage(timestamp, "I'm Alice", TOKENS);
+    var aiMessage3 = new AiMessage(timestamp, "Hi Alice, I'm bot", TOKENS);
+    testKit.method(SessionMemoryEntity::addInteraction)
+        .invoke(new AddInteractionCmd(COMPONENT_ID, userMessage3, aiMessage3));
+
+    EventSourcedResult<Done> compactResult = testKit.method(SessionMemoryEntity::compactHistory)
+        .invoke(cmd);
+
+    // then
+    assertThat(compactResult.getReply()).isEqualTo(done());
+
+    // Check event
+    var events = compactResult.getAllEvents();
+    assertThat(events).hasSize(5); // HistoryCleared, User and AI summary, + the concurrent messages
+
+    // when retrieving history after compacting
+    EventSourcedResult<SessionHistory> historyResult2 =
+        testKit.method(SessionMemoryEntity::getHistory).invoke(emptyGetHistory);
+
+    // then
+    assertThat(historyResult2.getReply().messages().stream().map(SessionMessage::text).toList()).containsExactly(
+        userMessage2.text(),
+        aiMessage2.text(),
+        userMessage3.text(),
+        aiMessage3.text());
   }
 
   @Test
