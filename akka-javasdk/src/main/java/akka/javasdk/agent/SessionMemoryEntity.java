@@ -143,10 +143,14 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
     }
   }
 
-  public record AddInteractionCmd(String componentId, UserMessage userMessage, AiMessage aiMessage) {
+  public record AddInteractionCmd(UserMessage userMessage, AiMessage aiMessage) {
   }
 
   public Effect<Done> addInteraction(AddInteractionCmd cmd) {
+    if (!cmd.userMessage.componentId().equals(cmd.aiMessage.componentId()))
+      return effects().error("componentId in userMessage must be the same as in the aiMessage");
+    var componentId = cmd.userMessage.componentId();
+
     var totalTokensUser = currentState().totalTokenUsage + cmd.userMessage.tokens();
     var totalTokensAi = totalTokensUser + cmd.aiMessage.tokens();
 
@@ -154,8 +158,8 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
 
     return effects()
         .persist(
-            new Event.UserMessageAdded(cmd.userMessage.timestamp(), cmd.componentId, cmd.userMessage.text(), cmd.userMessage.tokens(), totalTokensUser),
-            new Event.AiMessageAdded(cmd.aiMessage.timestamp(), cmd.componentId, cmd.aiMessage.text(),cmd.aiMessage.tokens(), totalTokensAi, toolInteractions))
+            new Event.UserMessageAdded(cmd.userMessage.timestamp(), componentId, cmd.userMessage.text(), cmd.userMessage.tokens(), totalTokensUser),
+            new Event.AiMessageAdded(cmd.aiMessage.timestamp(), componentId, cmd.aiMessage.text(),cmd.aiMessage.tokens(), totalTokensAi, toolInteractions))
         .thenReply(__ -> Done.done());
   }
 
@@ -183,7 +187,9 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
   }
 
   public Effect<Done> compactHistory(CompactionCmd cmd) {
-    var componentId = "";
+    if (!cmd.userMessage.componentId().equals(cmd.aiMessage.componentId()))
+      return effects().error("componentId in userMessage must be the same as in the aiMessage");
+    var componentId = cmd.userMessage.componentId();
 
     var totalTokensUser = cmd.userMessage.tokens();
     var totalTokensAi = totalTokensUser + cmd.aiMessage.tokens();
@@ -202,11 +208,11 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
           case UserMessage userMessage -> {
             totalTokens.set(userMessage.tokens());
             // FIXME totalTokensUser, componentId
-            events.add(new Event.UserMessageAdded(userMessage.timestamp(), componentId, userMessage.text(), userMessage.tokens(), totalTokens.get()));
+            events.add(new Event.UserMessageAdded(userMessage.timestamp(), userMessage.componentId(), userMessage.text(), userMessage.tokens(), totalTokens.get()));
           }
           case AiMessage aiMessage -> {
             totalTokens.set(aiMessage.tokens());
-            events.add(new Event.AiMessageAdded(aiMessage.timestamp(), componentId, aiMessage.text(), aiMessage.tokens(), totalTokens.get(), aiMessage.toolCallInteractions()));
+            events.add(new Event.AiMessageAdded(aiMessage.timestamp(), aiMessage.componentId(), aiMessage.text(), aiMessage.tokens(), totalTokens.get(), aiMessage.toolCallInteractions()));
           }
         }
       });
@@ -235,11 +241,11 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
           currentState().withMaxSize(limitedWindowSet.maxSizeInBytes);
       case Event.UserMessageAdded userMsg ->
           currentState()
-              .addMessage(new UserMessage(userMsg.timestamp(), userMsg.message(), userMsg.tokens()))
+              .addMessage(new UserMessage(userMsg.timestamp(), userMsg.message(), userMsg.componentId(), userMsg.tokens()))
               .withTotalTokenUsage(userMsg.totalTokenUsage());
       case Event.AiMessageAdded aiMsg ->
           currentState()
-              .addMessage(new AiMessage(aiMsg.timestamp(), aiMsg.message(), aiMsg.tokens(), aiMsg.toolCallInteraction))
+              .addMessage(new AiMessage(aiMsg.timestamp(), aiMsg.message(), aiMsg.componentId(), aiMsg.tokens(), aiMsg.toolCallInteraction))
               .withTotalTokenUsage(aiMsg.totalTokenUsage());
       case Event.HistoryCleared __ ->
           currentState().clear();

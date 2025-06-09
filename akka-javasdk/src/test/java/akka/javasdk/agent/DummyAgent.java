@@ -42,7 +42,7 @@ class DummyAgent3 extends Agent {
     var memory = new SessionMemory() {
 
       @Override
-      public void addInteraction(String sessionId, String componentId, SessionMessage.UserMessage userMessage, SessionMessage.AiMessage aiMessage) {
+      public void addInteraction(String sessionId, SessionMessage.UserMessage userMessage, SessionMessage.AiMessage aiMessage) {
 
       }
 
