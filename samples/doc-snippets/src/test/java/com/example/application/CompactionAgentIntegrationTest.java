@@ -6,6 +6,7 @@ import akka.javasdk.testkit.TestKitSupport;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -126,16 +127,21 @@ public class CompactionAgentIntegrationTest extends TestKitSupport {
           .forEventSourcedEntity(sessionId)
           .method(SessionMemoryEntity::addInteraction)
           .invoke(new SessionMemoryEntity.AddInteractionCmd(
-              "my-agent",
-              new SessionMessage.UserMessage(System.currentTimeMillis(), userMessages.get(i), userMessages.get(i).length()),
-              new SessionMessage.AiMessage(System.currentTimeMillis(), aiMessages.get(i), aiMessages.get(i).length())
+              new SessionMessage.UserMessage(System.currentTimeMillis(), userMessages.get(i), "my-agent", userMessages.get(i).length()),
+              new SessionMessage.AiMessage(System.currentTimeMillis(), aiMessages.get(i), "my-agent", aiMessages.get(i).length())
           ));
     }
+
+    var history =
+        componentClient
+          .forEventSourcedEntity(sessionId)
+          .method(SessionMemoryEntity::getHistory)
+          .invoke(new SessionMemoryEntity.GetHistoryCmd(Optional.empty()));
 
     var summary =
         componentClient.forAgent().inSession(sessionId)
             .method(CompactionAgent::summarizeSessionHistory)
-            .invoke();
+            .invoke(history);
 
     // Result may look like this:
     // userMessage=
