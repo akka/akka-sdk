@@ -434,7 +434,7 @@ private final class Sdk(
       { context =>
 
         val workflow = wiredInstance(clz) {
-          sideEffectingComponentInjects(context.asInstanceOf[WorkflowContextImpl].openTelemetrySpan).orElse {
+          sideEffectingComponentInjects(context.asInstanceOf[WorkflowContextImpl].span).orElse {
             // remember to update component type API doc and docs if changing the set of injectables
             case p if p == classOf[WorkflowContext] => context
           }

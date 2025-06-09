@@ -86,7 +86,7 @@ class WorkflowImpl[S, W <: Workflow[S]](
     new ReflectiveWorkflowRouter[S, W](instanceFactory, componentDescriptor.methodInvokers, serializer)
 
   override def configuration: SpiWorkflow.WorkflowConfig = {
-    val workflowContext = new WorkflowContextImpl(workflowId, regionInfo.selfRegion, None)
+    val workflowContext = new WorkflowContextImpl(workflowId, regionInfo.selfRegion, None, tracerFactory)
     val workflow = instanceFactory(workflowContext)
     val definition = workflow.definition()
 
@@ -193,7 +193,7 @@ class WorkflowImpl[S, W <: Workflow[S]](
     val span: Option[Span] =
       traceInstrumentation.buildEntityCommandSpan(ComponentType.Workflow, componentId, workflowId, command)
     span.foreach(s => MDC.put(Telemetry.TRACE_ID, s.getSpanContext.getTraceId))
-    val workflowContext = new WorkflowContextImpl(workflowId, regionInfo.selfRegion, span)
+    val workflowContext = new WorkflowContextImpl(workflowId, regionInfo.selfRegion, span, tracerFactory)
 
     val metadata = MetadataImpl.of(command.metadata)
     val context = commandContext(command.name, span, metadata)
@@ -244,7 +244,7 @@ class WorkflowImpl[S, W <: Workflow[S]](
         stepName,
         stepCommand.metadata)
     span.foreach(s => MDC.put(Telemetry.TRACE_ID, s.getSpanContext.getTraceId))
-    val workflowContext = new WorkflowContextImpl(workflowId, regionInfo.selfRegion, span)
+    val workflowContext = new WorkflowContextImpl(workflowId, regionInfo.selfRegion, span, tracerFactory)
 
     val context = commandContext(stepName, span, MetadataImpl.of(stepCommand.metadata))
     val timerScheduler =
@@ -290,7 +290,7 @@ class WorkflowImpl[S, W <: Workflow[S]](
       userState: Option[BytesPayload]): Future[SpiWorkflow.TransitionalOnlyEffect] = {
     val TransitionalResult(effect) =
       try {
-        val workflowContext = new WorkflowContextImpl(workflowId, regionInfo.selfRegion, None)
+        val workflowContext = new WorkflowContextImpl(workflowId, regionInfo.selfRegion, None, tracerFactory)
         router.getNextStep(stepName, result.get, userState, workflowContext)
       } catch {
         case NonFatal(ex) =>
@@ -337,6 +337,10 @@ private[akka] final class CommandContextImpl(
 private[akka] final class WorkflowContextImpl(
     override val workflowId: String,
     override val selfRegion: String,
-    val openTelemetrySpan: Option[Span])
+    val span: Option[Span],
+    tracerFactory: () => Tracer)
     extends AbstractContext
-    with WorkflowContext {}
+    with WorkflowContext {
+
+  override def tracing(): Tracing = new SpanTracingImpl(span, tracerFactory)
+}
