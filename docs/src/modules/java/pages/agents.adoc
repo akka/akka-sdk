@@ -190,6 +190,12 @@ Additionally, you should define a workflow recovery strategy so that it doesn't 
 
 More details in xref:workflows.adoc#_error_handling[Workflow timeouts and recovery strategy].
 
+=== Human in the loop
+
+You often need a human-in-the-loop to integrate human oversight into the AI's decision-making process. A workflow can be paused, waiting for user input. When the approval command is received, the workflow can continue from where it left off and transition to the next step in the agentic process.
+
+See xref:workflows.adoc#_pausing_workflow[how to pause a workflow].
+
 == Session memory
 
 Session Memory provides a history mechanism that enables agents to maintain context across multiple interactions. This feature is essential for building agents that can remember previous exchanges with users, understand context, and provide coherent responses over time.
