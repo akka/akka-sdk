@@ -109,7 +109,9 @@ include::example$doc-snippets/src/main/java/com/example/application/ActivityAgen
 ----
 <1> Define the system message prompt template key.
 
-Prompts are stored in the `PromptTemplate` xref:event-sourced-entities.adoc[Event Sourced Entity]. This is a built-in entity, registered at runtime. To initialize the prompt or get the current value you can use component client the same way as for any other entity.
+In addition to the prompt template key you can optionally add parameters to `systemMessageFromTemplate`. Those will be used to format the template with `java.util.Formatter`.
+
+Prompts are stored in the `PromptTemplate` xref:event-sourced-entities.adoc[Event Sourced Entity]. This is a built-in entity, automatically registered at runtime if there are any Agent components in the service. To initialize the prompt or get the current value you can use component client the same way as for any other entity.
 
 [source,java]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/api/ActivityPromptEndpoint.java[ActivityPromptEndpoint.java]
