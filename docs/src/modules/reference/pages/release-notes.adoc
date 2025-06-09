@@ -56,6 +56,9 @@ The xref:java:shopping-cart/quickstart.adoc#_the_external_api[shopping cart endp
 
 ****
 
+* https://github.com/akka/akka-management/releases/tag/v1.6.1[Akka Management 1.6.1]
+  - xref:security-announcements/akka-management-cve-2025-46548.adoc[CVE-2025-46548]
+
 * Akka CLI 3.0.17
   - Improvements to the `akka service proxy` command when using `--use-grpc-web`
 
