@@ -74,11 +74,11 @@ public final class PromptTemplate extends EventSourcedEntity<PromptTemplate.Prom
   }
 
   /**
-   * Delete the prompt template.
+   * Delete the prompt template. If the prompt template was already deleted or never set, the call will succeed.
    */
   public Effect<Done> delete() {
     if (currentState() == null) {
-      return effects().error("Prompt is not set");
+      return effects().reply(done());
     } else if (isDeleted()) {
       return effects().reply(done());
     } else {
