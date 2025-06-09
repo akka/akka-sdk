@@ -128,8 +128,9 @@ All `PromptTemplate` methods:
  - update - Updates the prompt template with a new value. If the prompt template does not exist, it will create it. If the value is the same as the current value, it will not change it.
  - get - Retrieves the current value of the prompt template. If the prompt template does not exist, it will throw an exception.
  - getOptional - Retrieves the current value of the prompt template as an `Optional`. If the prompt template does not exist, it will return an empty `Optional`.
- - delete - Deletes the prompt template. If the prompt template does not exist, it will throw an exception.
+ - delete - Deletes the prompt template.
 
+Although the system message has dedicated method to use the prompt template, you can also use it for the user message. In that case you have to use the component client to retrieve the current value of the prompt template and pass it as the user message.
 
 == Calling the Agent
 
