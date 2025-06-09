@@ -190,6 +190,10 @@ public abstract class Agent {
        */
       <T> MappingResponseBuilder<T> map(Function<String, T> mapper);
 
+      /**
+       * Handle the failure of parsing the response from the model.
+       * This method allows to recover from parsing errors and provide a fallback response.
+       */
       FailureBuilder<String> onFailure(Function<Throwable, String> exceptionHandler);
     }
 
@@ -213,6 +217,10 @@ public abstract class Agent {
        */
       <T> MappingFailureBuilder<T> map(Function<Result, T> mapper);
 
+      /**
+       * Handle the failure of parsing the response from the model.
+       * This method allows to recover from parsing errors and provide a fallback response.
+       */
       FailureBuilder<Result> onFailure(Function<Throwable, Result> exceptionHandler);
     }
 
@@ -231,6 +239,10 @@ public abstract class Agent {
        */
       Agent.Effect<Result> thenReply(Metadata metadata);
 
+      /**
+       * Handle the failure of parsing the response from the model.
+       * This method allows to recover from parsing errors and provide a fallback response.
+       */
       FailureBuilder<Result> onFailure(Function<Throwable, Result> exceptionHandler);
     }
 
