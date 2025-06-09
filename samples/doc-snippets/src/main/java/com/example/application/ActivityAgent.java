@@ -1,14 +1,18 @@
 package com.example.application;
 
+import akka.http.javadsl.model.HttpResponse;
 import akka.javasdk.agent.Agent;
+import akka.javasdk.annotations.Acl;
 import akka.javasdk.agent.JsonParsingException;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.annotations.TypeName;
+import akka.javasdk.annotations.http.HttpEndpoint;
+import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import akka.javasdk.http.HttpResponses;
 
+import java.time.Duration;
 import java.util.UUID;
 
 // tag::prompt[]
@@ -161,5 +165,73 @@ interface ActivityAgentMore {
       return null;
     }
   }
+
+  // tag::stream-tokens[]
+  @ComponentId("streaming-activity-agent")
+  public class StreamingActivityAgent extends Agent {
+    private static final String SYSTEM_MESSAGE =
+        """
+        You are an activity agent. Your job is to suggest activities in the
+        real world. Like for example, a team building activity, sports, an
+        indoor or outdoor game, board games, a city trip, etc.
+        """.stripIndent();
+
+    public StreamEffect query(String message) { // <1>
+      return streamEffects() // <2>
+          .systemMessage(SYSTEM_MESSAGE)
+          .userMessage(message)
+          .thenReply();
+    }
+  }
+  // end::stream-tokens[]
+
+  // tag::stream-endpoint[]
+  @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
+  @HttpEndpoint("/api")
+  public class ActivityHttpEndpoint {
+
+    public record Request(String sessionId, String question) {
+    }
+
+    private final ComponentClient componentClient;
+
+    public ActivityHttpEndpoint(ComponentClient componentClient) {
+      this.componentClient = componentClient;
+    }
+
+    @Post("/ask")
+    public HttpResponse ask(Request request) {
+      var responseStream = componentClient
+          .forAgent()
+          .inSession(request.sessionId)
+          .tokenStream(StreamingActivityAgent::query) // <1>
+          .source(request.question); // <2>
+
+      return HttpResponses.serverSentEvents(responseStream); // <3>
+    }
+
+    // end::stream-endpoint[]
+    // tag::stream-group[]
+    @Post("/ask-grouped")
+    public HttpResponse askGrouped(Request request) {
+      var tokenStream = componentClient
+          .forAgent()
+          .inSession(request.sessionId)
+          .tokenStream(StreamingActivityAgent::query)
+          .source(request.question);
+
+      var groupedTokenStream =
+          tokenStream
+              .groupedWithin(20, Duration.ofMillis(100)) // <1>
+              .map(group -> String.join("", group)); // <2>
+
+      return HttpResponses.serverSentEvents(groupedTokenStream); // <3>
+    }
+    // end::stream-group[]
+    // tag::stream-endpoint[]
+
+  }
+  // end::stream-endpoint[]
+
 
 }
