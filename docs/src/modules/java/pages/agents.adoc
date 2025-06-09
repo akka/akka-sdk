@@ -109,7 +109,7 @@ include::example$doc-snippets/src/main/java/com/example/application/ActivityAgen
 ----
 <1> Define the system message prompt template key.
 
-Prompts are stored in the `PromptTemplate` xref:event-sourced-entities.adoc[Event Sourced Entity]. This is a build-in entity, registered at runtime. To initialize the prompt or get the current value you can use component client the same way as for any other entity.
+Prompts are stored in the `PromptTemplate` xref:event-sourced-entities.adoc[Event Sourced Entity]. This is a built-in entity, registered at runtime. To initialize the prompt or get the current value you can use component client the same way as for any other entity.
 
 [source,java]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/api/ActivityPromptEndpoint.java[ActivityPromptEndpoint.java]
@@ -122,7 +122,7 @@ include::example$doc-snippets/src/main/java/com/example/api/ActivityPromptEndpoi
 
 Keeping the prompt in the Event Sourced Entity allows to see the history of all changes. It's also possible to subscribe to changes in the prompt template entity, so that you can build a xref:views.adoc[View] or react to changes in the prompt.
 
-All `PromptTemplate` method:
+All `PromptTemplate` methods:
 
  - init - Initializes the prompt template with a given value. If the prompt template already exists, it will not change it. Useful for setting the initial value, e.g. in the `onStartup` method of the xref:setup-and-dependency-injection.adoc#_service_lifecycle[ServiceSetup].
  - update - Updates the prompt template with a new value. If the prompt template does not exist, it will create it. If the value is the same as the current value, it will not change it.
