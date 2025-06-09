@@ -17,7 +17,6 @@ import akka.javasdk.impl.MethodInvoker
 import akka.javasdk.impl.CommandSerialization
 import akka.javasdk.impl.HandlerNotFoundException
 import akka.javasdk.impl.serialization.JsonSerializer
-import akka.javasdk.impl.telemetry.TraceInstrumentation
 import akka.javasdk.impl.workflow.ReflectiveWorkflowRouter.CommandResult
 import akka.javasdk.impl.workflow.ReflectiveWorkflowRouter.TransitionalResult
 import akka.javasdk.impl.workflow.ReflectiveWorkflowRouter.WorkflowStepNotFound
@@ -30,7 +29,6 @@ import akka.javasdk.workflow.Workflow.Effect.TransitionalEffect
 import akka.javasdk.workflow.WorkflowContext
 import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.SpiWorkflow
-import io.opentelemetry.api.trace.Span
 
 /**
  * INTERNAL API
@@ -54,7 +52,6 @@ object ReflectiveWorkflowRouter {
  */
 @InternalApi
 class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
-    workflowContext: WorkflowContext,
     instanceFactory: Function[WorkflowContext, W],
     methodInvokers: Map[String, MethodInvoker],
     serializer: JsonSerializer) {
@@ -89,11 +86,9 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
       context: CommandContext,
       timerScheduler: TimerScheduler,
       deleted: Boolean,
-      span: Option[Span]): CommandResult = {
+      workflowContext: WorkflowContext): CommandResult = {
 
-    val updatedContext = workflowContext.asInstanceOf[WorkflowContextImpl].withOpenTelemetrySpan(span)
-
-    val workflow = instanceFactory(updatedContext)
+    val workflow = instanceFactory(workflowContext)
 
     // if runtime doesn't have a state to provide, we fall back to user's own defined empty state
     val decodedState = decodeUserState(userState).getOrElse(workflow.emptyState())
@@ -125,13 +120,11 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
       timerScheduler: TimerScheduler,
       commandContext: CommandContext,
       executionContext: ExecutionContext,
-      span: Option[Span]): Future[BytesPayload] = {
+      workflowContext: WorkflowContext): Future[BytesPayload] = {
 
     implicit val ec: ExecutionContext = executionContext
 
-    val updatedContext = workflowContext.asInstanceOf[WorkflowContextImpl].withOpenTelemetrySpan(span)
-
-    val workflow = instanceFactory(updatedContext)
+    val workflow = instanceFactory(workflowContext)
     // if runtime doesn't have a state to provide, we fall back to user's own defined empty state
     val decodedState = decodeUserState(userState).getOrElse(workflow.emptyState())
     workflow._internalSetup(decodedState, commandContext, timerScheduler, false)
@@ -174,7 +167,11 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
     }
   }
 
-  final def getNextStep(stepName: String, result: BytesPayload, userState: Option[BytesPayload]): TransitionalResult = {
+  final def getNextStep(
+      stepName: String,
+      result: BytesPayload,
+      userState: Option[BytesPayload],
+      workflowContext: WorkflowContext): TransitionalResult = {
 
     val workflow = instanceFactory(workflowContext)
 

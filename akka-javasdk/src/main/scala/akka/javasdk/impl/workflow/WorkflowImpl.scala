@@ -4,8 +4,6 @@
 
 package akka.javasdk.impl.workflow
 
-import java.util.Optional
-
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters.ListHasAsScala
@@ -48,7 +46,7 @@ import akka.javasdk.impl.workflow.WorkflowEffectImpl.TransitionalEffectImpl
 import akka.javasdk.impl.workflow.WorkflowEffectImpl.UpdateState
 import akka.javasdk.workflow.CommandContext
 import akka.javasdk.workflow.Workflow
-import akka.javasdk.workflow.Workflow.{RecoverStrategy => SdkRecoverStrategy}
+import akka.javasdk.workflow.Workflow.{ RecoverStrategy => SdkRecoverStrategy }
 import akka.javasdk.workflow.WorkflowContext
 import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.RegionInfo
@@ -82,21 +80,14 @@ class WorkflowImpl[S, W <: Workflow[S]](
 
   private val log: Logger = LoggerFactory.getLogger(workflowClass)
 
-  private val context = new WorkflowContextImpl(workflowId, regionInfo.selfRegion, Optional.empty())
-
   private val traceInstrumentation = new TraceInstrumentation(componentId, WorkflowCategory, tracerFactory)
 
   private val router =
-    new ReflectiveWorkflowRouter[S, W](
-      context,
-      instanceFactory,
-      componentDescriptor.methodInvokers,
-      serializer,
-      componentId,
-      traceInstrumentation)
+    new ReflectiveWorkflowRouter[S, W](instanceFactory, componentDescriptor.methodInvokers, serializer)
 
   override def configuration: SpiWorkflow.WorkflowConfig = {
-    val workflow = instanceFactory(context)
+    val workflowContext = new WorkflowContextImpl(workflowId, regionInfo.selfRegion, None)
+    val workflow = instanceFactory(workflowContext)
     val definition = workflow.definition()
 
     def toRecovery(sdkRecoverStrategy: SdkRecoverStrategy[_]): SpiWorkflow.RecoverStrategy = {
@@ -202,6 +193,7 @@ class WorkflowImpl[S, W <: Workflow[S]](
     val span: Option[Span] =
       traceInstrumentation.buildEntityCommandSpan(ComponentType.Workflow, componentId, workflowId, command)
     span.foreach(s => MDC.put(Telemetry.TRACE_ID, s.getSpanContext.getTraceId))
+    val workflowContext = new WorkflowContextImpl(workflowId, regionInfo.selfRegion, span)
 
     val metadata = MetadataImpl.of(command.metadata)
     val context = commandContext(command.name, span, metadata)
@@ -220,7 +212,7 @@ class WorkflowImpl[S, W <: Workflow[S]](
         context = context,
         timerScheduler = timerScheduler,
         deleted = command.isDeleted,
-        span)
+        workflowContext)
       Future.successful(toSpiCommandEffect(effect))
     } catch {
       case e: HandlerNotFoundException =>
@@ -252,6 +244,7 @@ class WorkflowImpl[S, W <: Workflow[S]](
         stepName,
         stepCommand.metadata)
     span.foreach(s => MDC.put(Telemetry.TRACE_ID, s.getSpanContext.getTraceId))
+    val workflowContext = new WorkflowContextImpl(workflowId, regionInfo.selfRegion, span)
 
     val context = commandContext(stepName, span, MetadataImpl.of(stepCommand.metadata))
     val timerScheduler =
@@ -265,7 +258,7 @@ class WorkflowImpl[S, W <: Workflow[S]](
         timerScheduler = timerScheduler,
         commandContext = context,
         executionContext = sdkExecutionContext,
-        span = span)
+        workflowContext)
       handleStep.onComplete {
         case Failure(exception) =>
           span.foreach { s =>
@@ -297,7 +290,8 @@ class WorkflowImpl[S, W <: Workflow[S]](
       userState: Option[BytesPayload]): Future[SpiWorkflow.TransitionalOnlyEffect] = {
     val TransitionalResult(effect) =
       try {
-        router.getNextStep(stepName, result.get, userState)
+        val workflowContext = new WorkflowContextImpl(workflowId, regionInfo.selfRegion, None)
+        router.getNextStep(stepName, result.get, userState, workflowContext)
       } catch {
         case NonFatal(ex) =>
           log.error(s"Workflow [$workflowId], failed to transition from step [$stepName]", ex)
@@ -345,9 +339,4 @@ private[akka] final class WorkflowContextImpl(
     override val selfRegion: String,
     val openTelemetrySpan: Option[Span])
     extends AbstractContext
-    with WorkflowContext {
-
-  def withOpenTelemetrySpan(span: Option[Span]): WorkflowContextImpl = {
-    new WorkflowContextImpl(workflowId, selfRegion, span)
-  }
-}
+    with WorkflowContext {}
