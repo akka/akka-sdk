@@ -20,12 +20,10 @@ public interface SessionMemory {
    * specified session.
    *
    * @param sessionId The unique identifier for the conversation session
-   * @param componentId The unique identifier for the component (i.e., agent) involved in the
-   *     interaction
    * @param userMessage The content of the user message
    * @param aiMessage The content of the AI message
    */
-  void addInteraction(String sessionId, String componentId, SessionMessage.UserMessage userMessage, SessionMessage.AiMessage aiMessage);
+  void addInteraction(String sessionId, SessionMessage.UserMessage userMessage, SessionMessage.AiMessage aiMessage);
 
   /**
    * Retrieves the complete session history for the specified session. For very long sessions,
