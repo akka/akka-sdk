@@ -8,7 +8,7 @@ image:ROOT:agent.png[Agent,width=100,float=left]An Agent interacts with an AI mo
 Interacting with Agents in Akka requires some identifying information. Like other components, we need to provide a **component ID** and we also need a **session ID**
 
 * **Component ID** is a unique identifier for all agents of a given type. To define the component ID, we use the `@ComponentId` annotation and supply a string. 
-* **Session ID** is, as the name implies, unique _per session_. You can choose to have your agent have its own unique session or you can have multiple agents collaborate on a single session. As you'll see, the session stores conversation history. You aren't restricted to just UUIDs when creating session IDs.
+* **Session ID** is, as the name implies, unique _per session_. You can choose to have your agent have its own unique session or you can have multiple agents collaborate on a single session. As you'll see, the session stores communication history. You aren't restricted to just UUIDs when creating session IDs.
 
 [#_effect_api]
 == Agent's Effect API
