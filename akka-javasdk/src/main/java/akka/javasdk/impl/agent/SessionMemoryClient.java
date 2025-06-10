@@ -51,15 +51,15 @@ public final class SessionMemoryClient implements SessionMemory {
     this.memorySettings = memorySettings;
   }
 
+  @Override
   public void addInteraction(String sessionId,
-                             String componentId,
                              SessionMessage.UserMessage userMessage,
                              SessionMessage.AiMessage aiMessage) {
     if (memorySettings.write()) {
       logger.debug("Adding interaction to sessionId [{}]", sessionId);
       componentClient.forEventSourcedEntity(sessionId)
           .method(SessionMemoryEntity::addInteraction)
-          .invoke(new SessionMemoryEntity.AddInteractionCmd(componentId, userMessage, aiMessage));
+          .invoke(new SessionMemoryEntity.AddInteractionCmd(userMessage, aiMessage));
     } else {
       logger.debug("Memory writing is disabled, interaction not added to sessionId [{}]", sessionId);
     }

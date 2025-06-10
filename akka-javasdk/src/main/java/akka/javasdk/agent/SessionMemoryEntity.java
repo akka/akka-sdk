@@ -16,10 +16,12 @@ import com.typesafe.config.Config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static akka.Done.done;
 
@@ -118,6 +120,10 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
 
     }
 
+    @TypeName("akka-memory-cleared")
+    record HistoryCleared() implements Event {
+    }
+
     @TypeName("akka-memory-deleted")
     record Deleted(long timestamp) implements Event {
     }
@@ -137,10 +143,14 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
     }
   }
 
-  public record AddInteractionCmd(String componentId, UserMessage userMessage, AiMessage aiMessage) {
+  public record AddInteractionCmd(UserMessage userMessage, AiMessage aiMessage) {
   }
 
   public Effect<Done> addInteraction(AddInteractionCmd cmd) {
+    if (!cmd.userMessage.componentId().equals(cmd.aiMessage.componentId()))
+      return effects().error("componentId in userMessage must be the same as in the aiMessage");
+    var componentId = cmd.userMessage.componentId();
+
     var totalTokensUser = currentState().totalTokenUsage + cmd.userMessage.tokens();
     var totalTokensAi = totalTokensUser + cmd.aiMessage.tokens();
 
@@ -148,8 +158,8 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
 
     return effects()
         .persist(
-            new Event.UserMessageAdded(cmd.userMessage.timestamp(), cmd.componentId, cmd.userMessage.text(), cmd.userMessage.tokens(), totalTokensUser),
-            new Event.AiMessageAdded(cmd.aiMessage.timestamp(), cmd.componentId, cmd.aiMessage.text(),cmd.aiMessage.tokens(), totalTokensAi, toolInteractions))
+            new Event.UserMessageAdded(cmd.userMessage.timestamp(), componentId, cmd.userMessage.text(), cmd.userMessage.tokens(), totalTokensUser),
+            new Event.AiMessageAdded(cmd.aiMessage.timestamp(), componentId, cmd.aiMessage.text(),cmd.aiMessage.tokens(), totalTokensAi, toolInteractions))
         .thenReply(__ -> Done.done());
   }
 
@@ -165,12 +175,52 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
         .subList(messages.size() - cmd.lastNMessages.get(), messages.size());
       // make sure this returns a copy of the list and not the list itself
       return effects().reply(
-        new SessionHistory(new LinkedList<>(lastN)));
+        new SessionHistory(new LinkedList<>(lastN), commandContext().sequenceNumber()));
     } else {
       // make sure this returns a copy of the list and not the list itself
       return effects().reply(
-        new SessionHistory(new LinkedList<>(messages)));
+        new SessionHistory(new LinkedList<>(messages), commandContext().sequenceNumber()));
     }
+  }
+
+  public record CompactionCmd(UserMessage userMessage, AiMessage aiMessage, long sequenceNumber) {
+  }
+
+  public Effect<Done> compactHistory(CompactionCmd cmd) {
+    if (!cmd.userMessage.componentId().equals(cmd.aiMessage.componentId()))
+      return effects().error("componentId in userMessage must be the same as in the aiMessage");
+    var componentId = cmd.userMessage.componentId();
+
+    var totalTokensUser = cmd.userMessage.tokens();
+    var totalTokensAi = totalTokensUser + cmd.aiMessage.tokens();
+
+    var events = new ArrayList<Event>();
+    events.add(new Event.HistoryCleared());
+    events.add(new Event.UserMessageAdded(cmd.userMessage.timestamp(), componentId, cmd.userMessage.text(), cmd.userMessage.tokens(), totalTokensUser));
+    events.add(new Event.AiMessageAdded(cmd.aiMessage.timestamp(), componentId, cmd.aiMessage.text(), cmd.aiMessage.tokens(), totalTokensAi, Collections.emptyList()));
+
+    if (commandContext().sequenceNumber() > cmd.sequenceNumber && !currentState().messages.isEmpty()) {
+      int diff = (int) (commandContext().sequenceNumber() - cmd.sequenceNumber);
+      var totalTokens = new AtomicInteger(totalTokensAi); // AtomicInteger because update from lambda
+      currentState().messages.subList(currentState().messages.size() - diff, currentState().messages.size())
+          .forEach(msg -> {
+        switch (msg) {
+          case UserMessage userMessage -> {
+            totalTokens.set(userMessage.tokens());
+            // FIXME totalTokensUser, componentId
+            events.add(new Event.UserMessageAdded(userMessage.timestamp(), userMessage.componentId(), userMessage.text(), userMessage.tokens(), totalTokens.get()));
+          }
+          case AiMessage aiMessage -> {
+            totalTokens.set(aiMessage.tokens());
+            events.add(new Event.AiMessageAdded(aiMessage.timestamp(), aiMessage.componentId(), aiMessage.text(), aiMessage.tokens(), totalTokens.get(), aiMessage.toolCallInteractions()));
+          }
+        }
+      });
+    }
+
+    return effects()
+        .persistAll(events)
+        .thenReply(__ -> Done.done());
   }
 
   public Effect<Done> delete() {
@@ -191,12 +241,14 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
           currentState().withMaxSize(limitedWindowSet.maxSizeInBytes);
       case Event.UserMessageAdded userMsg ->
           currentState()
-              .addMessage(new UserMessage(userMsg.timestamp(), userMsg.message(), userMsg.tokens()))
+              .addMessage(new UserMessage(userMsg.timestamp(), userMsg.message(), userMsg.componentId(), userMsg.tokens()))
               .withTotalTokenUsage(userMsg.totalTokenUsage());
       case Event.AiMessageAdded aiMsg ->
           currentState()
-              .addMessage(new AiMessage(aiMsg.timestamp(), aiMsg.message(), aiMsg.tokens(), aiMsg.toolCallInteraction))
+              .addMessage(new AiMessage(aiMsg.timestamp(), aiMsg.message(), aiMsg.componentId(), aiMsg.tokens(), aiMsg.toolCallInteraction))
               .withTotalTokenUsage(aiMsg.totalTokenUsage());
+      case Event.HistoryCleared __ ->
+          currentState().clear();
       case Event.Deleted __ ->
           currentState().clear();
     };
