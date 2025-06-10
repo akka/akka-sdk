@@ -473,7 +473,7 @@ You find the full source code for this multi-agent sample in the link:https://gi
 
 Testing agents is a subject that goes way beyond the scope of Akka. Testing with generative AI is difficult no matter what you're using to implement it. Interactions with an LLM are not _deterministic_. In other words, you will never get the same answer twice for the same prompt. 
 
-How can you write assertions for something like that? There are a ton of solutions, but most of them revolve around the idea that to verify an LLM's answer, you need another LLM. This pattern is often alled "LLM-as-judge". You can get an answer from one agent, and then use another agent or model to review the session history and prompts to infer, with some level of confidence, if the agent behaved the way you want it to.
+How can you write assertions for something like that? There are a ton of solutions, but most of them revolve around the idea that to verify an LLM's answer, you need another LLM. This pattern is often called "LLM-as-judge". You can get an answer from one agent, and then use another agent or model to review the session history and prompts to infer, with some level of confidence, if the agent behaved the way you want it to.
 
 There is a practice called **Agent evaluation** where developers will run single ad hoc tests or an automated battery of tests. You run your agent and then _evaluate_ the results based on a number of criteria like token usage, elapsed time, and the results of using other models to infer quality metrics like accuracy or confidence.
 
