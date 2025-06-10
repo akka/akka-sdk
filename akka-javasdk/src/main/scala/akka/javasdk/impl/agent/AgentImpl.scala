@@ -233,7 +233,8 @@ private[impl] final class AgentImpl[A <: Agent](
           }.asJava
           new AiMessage(timestamp, res.content, componentId, res.inputTokenCount, res.outputTokenCount, requests)
 
-        case res: SpiAgent.ToolCallResponse => new ToolCallResponse(timestamp, res.id, res.name, res.content)
+        case res: SpiAgent.ToolCallResponse =>
+          new ToolCallResponse(timestamp, componentId, res.id, res.name, res.content)
       }
 
     sessionMemoryClient.addInteraction(

@@ -276,7 +276,7 @@ One way to trigger compaction is to use a consumer of the session memory events 
 ----
 include::example$doc-snippets/src/main/java/com/example/application/SessionMemoryConsumer.java[tag=compaction]
 ----
-<1> The events contain the total number of used tokens in the history.
+<1> The AiMessageAdded has the total number of input and output tokens in the history.
 <2> Retrieve the full history from the `SessionMemoryEntity`.
 <3> Call the agent to make the summary.
 <4> Store the summary as the new compacted history in the `SessionMemoryEntity`.

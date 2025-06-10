@@ -52,7 +52,7 @@ public sealed interface SessionMessage {
     }
   }
 
-  record ToolCallResponse(long timestamp, String id, String name, String text) implements SessionMessage {
+  record ToolCallResponse(long timestamp, String componentId, String id, String name, String text) implements SessionMessage {
     @Override
     public int size() {
       return text.length();
