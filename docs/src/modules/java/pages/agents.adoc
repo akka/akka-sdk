@@ -52,18 +52,10 @@ There can only be one command handler because the agent is supposed to perform o
 
 Akka provides integration with several backend AI models, and you have to select which model to use. You can define a default model in `application.conf`:
 
-[source,conf]
+[source,json,indent=0]
 .src/main/resources/application.conf
 ----
-akka.javasdk {
-  agent {
-    model-provider = openai
-
-    openai {
-      model-name = "gpt-4o-mini"
-    }
-  }
-}
+include::java:example$doc-snippets/src/main/resources/application.conf[tags=agent-model-config]
 ----
 
 The default model will be used if the agent doesn't specify another model. Different agents can use different models by defining the `ModelProvider` in the Agent effect:
@@ -207,7 +199,13 @@ Additionally, you should define a workflow recovery strategy so that it doesn't 
 
 More details in xref:workflows.adoc#_error_handling[Workflow timeouts and recovery strategy].
 
-== Managing Session Memory
+=== Human in the loop
+
+You often need a human-in-the-loop to integrate human oversight into the AI's decision-making process. A workflow can be paused, waiting for user input. When the approval command is received, the workflow can continue from where it left off and transition to the next step in the agentic process.
+
+See xref:workflows.adoc#_pausing_workflow[how to pause a workflow].
+
+== Managing Session memory
 
 Session Memory provides a history mechanism that enables agents to maintain context across multiple interactions. This feature is essential for building agents that can remember previous exchanges with users, understand context, and provide coherent responses over time.
 
@@ -266,12 +264,39 @@ The link:_attachments/api/akka/javasdk/agent/MemoryProvider.html[`MemoryProvider
 The default implementation of Session Memory is backed by a regular xref:java:event-sourced-entities.adoc[Event Sourced Entity] called `SessionMemoryEntity`, which allows you to interact directly with it as you would do with any other entities in your application. This includes the possibility to directly modify or access it through the `ComponentClient` but also the ability to subscribe to changes in the session memory, as shown below:
 
 [source,java]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/application/SessionMemoryConsumer.java[SessionMemoryConsumer.java]
 ----
 include::example$doc-snippets/src/main/java/com/example/application/SessionMemoryConsumer.java[tag=consumer]
 ----
 
 This can be useful for more granular control over token usage but also to allow external integrations and analytics over these details.
 
+=== Compaction
+
+You can update the session memory to reduce the size of the history. One technique is to let an LLM summarize the interaction history and use the new summary instead of the full history. Such agent can look like this:
+
+[source,java]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/application/CompactionAgent.java[CompactionAgent.java]
+----
+include::example$doc-snippets/src/main/java/com/example/application/CompactionAgent.java[tag=compaction]
+----
+<1> Instructions to create the summary of user and AI messages and result as JSON.
+<2> The full history from the `SessionMemoryEntity`.
+<3> Format and concatenate the messages.
+<4> The `CompactionAgent` itself doesn't need any session memory.
+
+One way to trigger compaction is to use a consumer of the session memory events and call the `CompactionAgent` from that consumer when a threshold is exceeded.
+
+[source,java]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/application/SessionMemoryConsumer.java[SessionMemoryConsumer.java]
+----
+include::example$doc-snippets/src/main/java/com/example/application/SessionMemoryConsumer.java[tag=compaction]
+----
+<1> The events contain the total number of used tokens in the history.
+<2> Retrieve the full history from the `SessionMemoryEntity`.
+<3> Call the agent to make the summary.
+<4> Store the summary as the new compacted history in the `SessionMemoryEntity`.
+<5> To support concurrent updates, the `sequenceNumber` of the retrieved history is included in the `CompactionCmd`.
 
 == Structured responses
 
