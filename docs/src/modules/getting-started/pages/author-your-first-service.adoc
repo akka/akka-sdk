@@ -1,4 +1,4 @@
-= Author your first service
+= Author your first agentic service
 :page-aliases: java:build-your-first-application.adoc[]
 
 include::ROOT:partial$include.adoc[]
@@ -9,14 +9,20 @@ In this guide, you will:
 
 * Set up your development environment.
 * Generate a simple project from a template that follows the recommended xref:concepts:architecture-model.adoc#_architecture[onion architecture].
-* Explore a basic HTTP Endpoint that responds with "Hello World!"
-* Add path parameters, a request body and a response body to the Endpoint.
+* Explore a basic AI Agent that acts as a creative greeter.
+* Explore a basic HTTP Endpoint to interact with the agent.
+* Add a request body to the Endpoint.
 * Run your service locally.
 * Explore the local console to observe your running service.
 
 == Prerequisites
 
 include::ROOT:partial$local-dev-prerequisites.adoc[]
+* https://platform.openai.com/api-keys[OpenAI API key, window="new"]
+
+Akka has support for many AI providers, and this sample is using OpenAI.
+
+You can run this sample without an OpenAI API key, but it will be more fun if you have one. Sign up for free at https://platform.openai.com/api-keys[platform.openai.com/api-keys, window="new"]. If you don't provide an API key, it will use a predefined response instead of using AI.
 
 == Generate and build the project
 
@@ -78,9 +84,27 @@ mvn archetype:generate ^
 
 . Open it in your preferred IDE / Editor.
 
+== Explore the Agent
+
+An _Agent_ interacts with an AI model and maintains contextual history in a session memory.
+
+. Open the `src/main/java/com/example/application/HelloWorldAgent.java` file.
+
+The _Agent_ is implemented with:
+
+[source,java]
+.HelloWorldAgent.java
+----
+include::java:example$doc-snippets/src/main/java/com/example/application/HelloWorldAgent.java[tag=class]
+----
+
+The system message provides system-level instructions to the AI model that defines its behavior and context. The system message acts as a foundational prompt that establishes the AI's role, constraints, and operational parameters. It is processed before user messages and helps maintain consistent behavior throughout the interactions.
+
+The user message represents the specific query, instruction, or input that will be processed by the model to generate a response.
+
 == Explore the HTTP Endpoint
 
-An _Endpoint_ is a component that creates an externally accessible API. Endpoints are how you expose your services to the outside world. Endpoints can have different protocols and, initially, support HTTP.
+An _Endpoint_ is a component that creates an externally accessible API. Endpoints are how you expose your services to the outside world. Endpoints can have different protocols, such as HTTP and gRPC.
 
 HTTP Endpoint components make it possible to conveniently define such APIs accepting and responding in JSON, or dropping down to lower level APIs for ultimate flexibility in what types of data is accepted and returned.
 
@@ -91,22 +115,23 @@ The _Endpoint_ is implemented with:
 [source,java]
 .HelloWorldEndpoint.java
 ----
-@Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
-@HttpEndpoint("/hello")
-public class HelloWorldEndpoint {
-
-  @Get("/")
-  public String helloWorld() {
-    return "Hello World!";
-  }
-}
+include::java:example$doc-snippets/src/main/java/com/example/api/HelloWorldEndpoint.java[tag=helloWorld]
 ----
+
+The `ComponentClient` is the way to call the agent or other components. The agent may participate in a session, which is used for the agent's memory and can also be shared between multiple agents that are collaborating on the same goal.
 
 This Endpoint is on the path `/hello` and exposes an HTTP GET operation on `/`.
 
 You can also see that there is an _Access Control List_ (ACL) on this Endpoint that allows all traffic from the Internet. Without this ACL the service would be unreachable, but you can be very expressive with these ACLs.
 
 == Run locally
+
+Set your https://platform.openai.com/api-keys[OpenAI API key, window="new"] as an environment variable:
+
+[source,command line]
+----
+export OPENAI_API_KEY=your-openai-api-key
+----
 
 Start your service locally:
 
@@ -126,85 +151,36 @@ In another shell, you can now use `curl` to send requests to this Endpoint.
 curl localhost:9000/hello
 ----
 
-Which will reply
+Which will reply with an AI-generated greeting, such as
 [source]
 ----
-Hello World!
+🌍 Hello, magnificent traveler of the digital realm! 🌈 Are you ready to embark
+on a fantastic adventure today? Just think of me as your cheerful compass,
+guiding you through the wonders of knowledge and fun! Speaking of adventure,
+did you know that the world's largest desert isn't the Sahara, but Antarctica?
+It's all about perspective! Let's make this day a treasure trove of delightful
+discoveries! What’s on your mind?
 ----
 
-== Getting more advanced
+== Add your own greeting
 
-In this section, you will modify the HTTP Endpoint to accept path parameters, a request body, and return a response body.
-
-=== Add path parameters
-
-The path can also contain one or more parameters, which are extracted and passed to the method.
-
-Path parameters can be of type `String`, `int`, `long`, `boolean`,  `float`, `double`, `short` or `char`, as well as their `java.lang` class counterparts.
-
-Add path parameters to the Endpoint using the code shown below:
+In this section, you will modify the HTTP Endpoint to accept a request body using the code shown below:
 
 [source,java]
 .HelloWorldEndpoint.java
 ----
-include::java:example$doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java[tag=basic-path-parameters]
+include::java:example$doc-snippets/src/main/java/com/example/api/HelloWorldEndpoint.java[tag=helloRequest]
 ----
-<1> Path parameter `name` in expression.
-<2> Method parameter named as the one in the expression
-<3> When there are multiple parameters
-<4> The method must accept all the same names in the same order as in the path expression.
-
-Restart the service and curl these commands:
-
-[source, command line]
-----
-curl localhost:9000/hello/hello/Bob
-----
-
-[source, command line]
-----
-curl localhost:9000/hello/hello/Bob/30
-----
-
-=== Add a request body
-
-Modify the Endpoint to accept an HTTP JSON body using the code shown below:
-
-[source,java]
-.HelloWorldEndpoint.java
-----
-include::java:example$doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java[tag=request-body]
-----
-<1> The record will serialized and deserialized as JSON
-<2> A parameter of the request body type
-<3> When combining request body with path variables
-<4> The body must come last in the parameter list
 
 Restart the service and curl this command:
 
 [source, command line]
 ----
-curl -i -XPOST -H "Content-Type: application/json" localhost:9000/hello/hello -d '
-{"age":"30", "name":"Bob"}'
+curl -i -XPOST -H "Content-Type: application/json" localhost:9000/hello -d '
+{"greeting":"Ahoy there, matey!", "sessionId":"12345"}'
 ----
 
-=== Add a response body
-
-Modify the Endpoint to return a response body using the code shown below:
-
-[source,java]
-.HelloWorldEndpoint.java
-----
-include::java:example$doc-snippets/src/main/java/com/example/api/ExampleEndpoint.java[tag=response-body]
-----
-<1> Returning a record that gets serialized as JSON
-
-Restart the service and curl this command:
-
-[source, command line]
-----
-curl localhost:9000/hello/hello-response/Bob/30
-----
+Does it recognize the pirate greeting?
 
 == Explore the local console
 

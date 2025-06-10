@@ -20,6 +20,15 @@ mvn compile
 
 When running an Akka service locally.
 
+This sample is using OpenAI. Other AI models can be configured, see [Agent model provider](https://doc.akka.io/java/agents.html#_model).
+
+Set your [OpenAI API key](https://platform.openai.com/api-keys) as an environment variable:
+
+[source,command line]
+----
+export OPENAI_API_KEY=your-openai-api-key
+----
+
 To start your service locally, run:
 
 ```shell
@@ -47,7 +56,8 @@ Install the `akka` CLI as documented in [Install Akka CLI](https://doc.akka.io/r
 Deploy the service using the image tag from above `mvn install`:
 
 ```shell
-akka service deploy ${artifactId} ${artifactId}:tag-name --push
+akka service deploy ${artifactId} ${artifactId}:tag-name --push \
+  --env OPENAI_API_KEY=your-openai-api-key
 ```
 
 Refer to [Deploy and manage services](https://doc.akka.io/operations/services/deploy-service.html)

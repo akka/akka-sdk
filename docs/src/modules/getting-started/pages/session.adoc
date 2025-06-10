@@ -23,7 +23,7 @@ include::ROOT:partial$cloud-dev-prerequisites.adoc[]
 
 == Create the empty project
 
-You already learned how to create an empty Akka project when you went through the guide to xref:getting-started:author-your-first-service.adoc#_generate_and_build_the_project[author your first service]. Follow those steps again to ensure that you've got a new project that compiles.
+You already learned how to create an empty Akka project when you went through the guide to xref:getting-started:author-your-first-service.adoc#_generate_and_build_the_project[author your agentic first service]. Follow those steps again to ensure that you've got a new project that compiles.
 
 While you can use any settings you like, the code samples use:
 
