@@ -11,6 +11,7 @@ Populating the vector database by creating embeddings is the _indexing_ step. In
 == Prerequisites
 
 include::ROOT:partial$cloud-dev-prerequisites.adoc[]
+* https://platform.openai.com/api-keys[OpenAI API key, window="new"]
 
 You will also need a link:https://www.mongodb.com/atlas[Mongo DB Atlas] account. We'll be using the vector indexing capability of this database for the retrieval portion of the RAG flow. You can do all of the indexing necessary for this sample with a free account. Once you've created the account, make note of the secure connection string as you'll need it later.
 
@@ -70,7 +71,7 @@ include::java:example$ask-akka-agent/src/main/java/akka/ask/indexer/application/
 ----
 <1> Send the embedding segment to the vector database
 
-Everything that we've done so far has been completely asynchronous. When the workflow starts (shown below), it builds the list of pending documents by walking the documents directory and adding each markdown (`*.md`) file it finds. You can find all of these documents in the sample folder `src/main/resources/flat-doc`.
+Everything that we've done so far has been completely asynchronous. When the workflow starts (shown below), it builds the list of pending documents by walking the documents directory and adding each markdown (`*.md`) file it finds. You can find all of these documents in the sample folder `src/main/resources/md-docs`.
 
 [source, java, indent=0]
 .{sample-base-url}/ask-akka-agent/src/main/java/akka/ask/indexer/application/RagIndexingWorkflow.java[RagIndexingWorkflow.java]
@@ -89,20 +90,48 @@ include::java:example$ask-akka-agent/src/main/java/akka/ask/indexer/application/
 ----
 <1> Tweaking the parameters to the document splitter can affect the quality of semantic search results
 
-The API endpoint to start the indexer creates an instance of the workflow through the standard `ComponentClient` function `forWorkflow`. To make the `MongoClient` instance available, we can use a bootstrap class that uses Akka's `@Setup` attribute:
+The API endpoint to start the indexer creates an instance of the workflow through the standard `ComponentClient` function `forWorkflow`. To make the `MongoClient` instance available, we can use a bootstrap class that uses Akka's `@Setup` annotation:
 [source, java, indent=0]
 .{sample-base-url}/ask-akka-agent/src/main/java/akka/ask/Bootstrap.java[Bootstrap.java]
 ----
-include::java:example$ask-akka-agent/src/main/java/akka/ask/Bootstrap.java[tag=all]
+include::java:example$ask-akka-agent/src/main/java/akka/ask/Bootstrap.java[tag=mongodb]
 ----
 
-As you'll see in the next step in this guide, we'll add to this bootstrap to inject a service that does the actual LLM communication for us.
+== Add an Endpoint
+
+Add an HTTP endpoint to be able to start the indexing workflow.
+
+[source, java, indent=0]
+.{sample-base-url}/ask-akka-agent/src/main/java/akka/ask/indexer/api/IndexerEndpoint.java[IndexerEndpoint.java]
+----
+include::java:example$ask-akka-agent/src/main/java/akka/ask/indexer/api/IndexerEndpoint.java[tag=class]
+----
+
+== Running the service
+
+As you'll see in the next step in this guide, we'll add the indexed knowledge to the agent.
 
 For now, we suggest that you play around with indexing and the kind of results you see in MongoDB. Parameters like the size of chunks can sometimes impact the reliability or quality of the semantic search results. There are also several other types of document splitters. Explore those and see how it impacts the index.
 
-You can set the `OPENAI_API_KEY` environment variable something random as you don't need it yet. Use the connection URL provided to you by MongoDB Atlas and set the `MONGODB_ATLAS_URI` environment variable to that connection string.
+Use the connection URL provided to you by MongoDB Atlas and set the `MONGODB_ATLAS_URI` environment variable to that connection string.
+
+Start your service locally:
+
+[source,command line]
+----
+mvn compile exec:java
+----
+
+In another shell, you can now use `curl` to start the indexing.
+[source, command line]
+----
+curl -XPOST localhost:9000/api/index/start
+----
+
+This call will take an extract of the Akka SDK documentation and create a vectorized index in MongoDB.
+The documentation files are located in `src/main/resources/md-docs/`. That said, you can also add your own documentation files to this directory.
 
 == Next steps
-Next we'll write a service (in the dependency injection sense, not the Akka sense) that does all of the asynchronous LLM communication work. We'll then put an API in front of it and be able to run queries against the _Ask Akka_ AI assistant!
+Next we'll xref:rag.adoc[add the indexed knowledge to the agent] to be able to run meaningful queries against the _Ask Akka_ AI assistant!
 
 
