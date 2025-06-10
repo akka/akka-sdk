@@ -61,7 +61,7 @@ public class CompactionAgent extends Agent {
                       aiText,
                       // if there are tool requests, also append them to the aiText
                       (acc, req) -> acc +
-                        "\n\tTOOL_CALL_REQUEST: id=" + req.id() + " name=" + req.name() + " args=" + req.arguments() + " \n",
+                        "\n\tTOOL_CALL_REQUEST: id=" + req.id() + ", name=" + req.name() + ", args=" + req.arguments() + " \n",
                       String::concat);
                 }
 
