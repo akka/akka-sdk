@@ -24,10 +24,9 @@ This sample is using OpenAI. Other AI models can be configured, see [Agent model
 
 Set your [OpenAI API key](https://platform.openai.com/api-keys) as an environment variable:
 
-[source,command line]
-----
+```shell
 export OPENAI_API_KEY=your-openai-api-key
-----
+```
 
 To start your service locally, run:
 
