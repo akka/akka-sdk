@@ -102,7 +102,7 @@ curl localhost:9000/api/ask --header "Content-Type: application/json" -XPOST \
 --data '{ "userId": "001", "sessionId": "foo", "question":"What are the core components of Akka?"}'
 ----
 
-it will answer something like
+The AI response will look something like this...
 
 [source]
 ----

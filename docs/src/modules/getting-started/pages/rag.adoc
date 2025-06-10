@@ -64,7 +64,7 @@ curl localhost:9000/api/ask --header "Content-Type: application/json" -XPOST \
 --data '{ "userId": "001", "sessionId": "foo", "question":"What are the core components of Akka?"}'
 ----
 
-In the first part of this guide, it couldn't answer that question meaningfully, but now it will answer something like:
+In the first part of this guide, the AI model couldn't answer that question meaningfully, but now it will answer something like:
 
 [source]
 ----

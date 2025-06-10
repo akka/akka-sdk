@@ -29,7 +29,7 @@ The LLMs have been trained on web content that didn't include the latest documen
 What are the core components of Akka?
 ----
 
-it will answer something like
+The AI response will look something like this...
 
 [source]
 ----
