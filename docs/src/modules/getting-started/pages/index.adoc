@@ -4,7 +4,7 @@ Start with a guided tutorial or explore working samples. The resources below hel
 
 == Tutorials
 
-These hands-on tutorials walk you step by step through building real Akka systems, from your first minimal service to fully featured applications like shopping carts and AI agents. Each tutorial includes guided instructions, runnable code, and explanations of key concepts.
+These hands-on tutorials walk you step by step through building real Akka systems, from your first minimal agentic service to fully featured applications like shopping carts and AI agents. Each tutorial includes guided instructions, runnable code, and explanations of key concepts.
 
 === Build your first service
 
@@ -18,7 +18,7 @@ A good first step for learning how services are structured and how Akka processe
 [options="header", cols="2,1"]
 |=======================
 | Tutorial | Level
-| xref:getting-started:author-your-first-service.adoc[Create and run your first Hello World service] | Beginner
+| xref:getting-started:author-your-first-service.adoc[Create and run your first agentic Hello World service] | Beginner
 |=======================
 
 === Build a shopping cart system
