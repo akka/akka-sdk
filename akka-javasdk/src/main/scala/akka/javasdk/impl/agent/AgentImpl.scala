@@ -14,8 +14,8 @@ import akka.javasdk.agent.MemoryProvider
 import akka.javasdk.agent.ModelProvider
 import akka.javasdk.agent.SessionHistory
 import akka.javasdk.agent.SessionMemory
+import akka.javasdk.agent.SessionMessage
 import akka.javasdk.agent.SessionMessage.AiMessage
-import akka.javasdk.agent.SessionMessage.ToolCallInteraction
 import akka.javasdk.agent.SessionMessage.ToolCallRequest
 import akka.javasdk.agent.SessionMessage.ToolCallResponse
 import akka.javasdk.agent.SessionMessage.UserMessage
@@ -166,7 +166,7 @@ private[impl] final class AgentImpl[A <: Agent](
               req.responseMapping,
               req.failureMapping,
               metadata,
-              result => onSuccess(sessionMemoryClient, req.userMessage, result))
+              results => onSuccess(sessionMemoryClient, req.userMessage, results))
 
           case NoPrimaryEffect =>
             errorOrReply match {
@@ -220,24 +220,27 @@ private[impl] final class AgentImpl[A <: Agent](
   private def onSuccess(
       sessionMemoryClient: SessionMemory,
       userMessage: String,
-      modelResult: SpiAgent.ModelResult): Unit = {
-
-    val toolCallInteractions = modelResult.toolInteractions.map { ti =>
-      val req = new ToolCallRequest(ti.request.id, ti.request.name, ti.request.arguments)
-      val res = new ToolCallResponse(ti.response.id, ti.response.name, ti.response.payload)
-      new ToolCallInteraction(req, res)
-    }.asJava
+      responses: Seq[SpiAgent.Response]): Unit = {
 
     val timestamp = System.currentTimeMillis()
+
+    // AiMessages and ToolCallResponses
+    val responseMessages: Seq[SessionMessage] =
+      responses.map {
+        case res: SpiAgent.ModelResponse =>
+          val requests = res.toolRequests.map { req =>
+            new ToolCallRequest(req.id, req.name, req.arguments)
+          }.asJava
+          new AiMessage(timestamp, res.content, componentId, res.inputTokenCount, res.outputTokenCount, requests)
+
+        case res: SpiAgent.ToolCallResponse =>
+          new ToolCallResponse(timestamp, componentId, res.id, res.name, res.content)
+      }
+
     sessionMemoryClient.addInteraction(
       sessionId,
-      new UserMessage(timestamp, userMessage, componentId, modelResult.inputTokenCount),
-      new AiMessage(
-        timestamp,
-        modelResult.modelResponse,
-        componentId,
-        modelResult.outputTokenCount,
-        toolCallInteractions))
+      new UserMessage(timestamp, userMessage, componentId),
+      responseMessages.asJava)
   }
 
   private def toSpiContextMessages(sessionHistory: SessionHistory): Vector[SpiAgent.ContextMessage] = {

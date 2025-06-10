@@ -127,8 +127,14 @@ public class CompactionAgentIntegrationTest extends TestKitSupport {
           .forEventSourcedEntity(sessionId)
           .method(SessionMemoryEntity::addInteraction)
           .invoke(new SessionMemoryEntity.AddInteractionCmd(
-              new SessionMessage.UserMessage(System.currentTimeMillis(), userMessages.get(i), "my-agent", userMessages.get(i).length()),
-              new SessionMessage.AiMessage(System.currentTimeMillis(), aiMessages.get(i), "my-agent", aiMessages.get(i).length())
+              new SessionMessage.UserMessage(System.currentTimeMillis(), userMessages.get(i), "my-agent"),
+              new SessionMessage.AiMessage(
+                System.currentTimeMillis(),
+                aiMessages.get(i),
+                "my-agent",
+                userMessages.get(i).length(), // simulated input tokens
+                aiMessages.get(i).length() // simulated output tokens
+              )
           ));
     }
 
@@ -148,7 +154,6 @@ public class CompactionAgentIntegrationTest extends TestKitSupport {
     // What are the core components of Akka and explain event sourced entities
     // in detail, including differences from key-value entities and when to use
     // each?,
-    // userMessageTokens=32,
     // aiMessage=
     // Akka comprises core components like Entities, Endpoints, Timed Actions,
     // Views, and Workflows for building applications. Event Sourced Entities
@@ -161,7 +166,7 @@ public class CompactionAgentIntegrationTest extends TestKitSupport {
 
     assertThat(summary.userMessage()).isNotEmpty();
     assertThat(summary.aiMessage()).isNotEmpty();
-    assertThat(summary.userMessageTokens()).isBetween(10, 1000);
-    assertThat(summary.aiMessageTokens()).isBetween(10, 1000);
+    assertThat(summary.inputTokens()).isBetween(10, 1000);
+    assertThat(summary.outputTokens()).isBetween(10, 1000);
   }
 }

@@ -8,9 +8,11 @@ import akka.Done;
 import akka.javasdk.agent.SessionMemoryEntity.Event;
 import akka.javasdk.agent.SessionMemoryEntity.State;
 import akka.javasdk.agent.SessionMessage.AiMessage;
+import akka.javasdk.agent.SessionMessage.ToolCallResponse;
 import akka.javasdk.agent.SessionMessage.UserMessage;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.annotations.TypeName;
+import akka.javasdk.client.ComponentClient;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import com.typesafe.config.Config;
 import org.slf4j.Logger;
@@ -21,7 +23,6 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static akka.Done.done;
 
@@ -30,7 +31,7 @@ import static akka.Done.done;
  * messages in a FIFO (First In, First Out) style.
  * <p>
  * The maximum number of entries in the history can be set dynamically with command setLimitedWindow.
- * {@link akka.javasdk.client.ComponentClient} can be used to interact directly with this entity.
+ * {@link ComponentClient} can be used to interact directly with this entity.
  */
 @ComponentId("akka-session-memory")
 public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> {
@@ -70,8 +71,8 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
       return new State(maxLengthInBytes, updatedLengthSize, messages, totalTokenUsage);
     }
 
-    public State withTotalTokenUsage(long totalTokens) {
-      return new State(maxLengthInBytes, currentLengthInBytes, messages, totalTokens);
+    public State withTotalTokenUsage(long tokenUsage) {
+      return new State(maxLengthInBytes, currentLengthInBytes, messages, tokenUsage);
     }
 
     public State clear() {
@@ -106,17 +107,25 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
     }
 
     @TypeName("akka-memory-user-message-added")
-    record UserMessageAdded(long timestamp, String componentId, String message, int tokens,
-                            long totalTokenUsage) implements Event {
+    record UserMessageAdded(long timestamp, String componentId, String message) implements Event {
     }
 
     @TypeName("akka-memory-ai-message-added")
     record AiMessageAdded(long timestamp,
                           String componentId,
                           String message,
-                          int tokens,
-                          long totalTokenUsage,
-                          List<SessionMessage.ToolCallInteraction> toolCallInteraction) implements Event {
+                          int inputTokens,
+                          int outputTokens,
+                          List<SessionMessage.ToolCallRequest> toolCallRequests) implements Event {
+
+    }
+
+    @TypeName("akka-memory-tool-response-message-added")
+    record ToolResponseMessageAdded(long timestamp,
+                                    String componentId,
+                                    String id,
+                                    String name,
+                                    String content) implements Event {
 
     }
 
@@ -143,24 +152,58 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
     }
   }
 
-  public record AddInteractionCmd(UserMessage userMessage, AiMessage aiMessage) {
+  public record AddInteractionCmd(UserMessage userMessage, List<SessionMessage> messages) {
+    public AddInteractionCmd(UserMessage userMessage, AiMessage aiMessage) {
+      this(userMessage, List.of(aiMessage));
+    }
   }
 
   public Effect<Done> addInteraction(AddInteractionCmd cmd) {
-    if (!cmd.userMessage.componentId().equals(cmd.aiMessage.componentId()))
-      return effects().error("componentId in userMessage must be the same as in the aiMessage");
-    var componentId = cmd.userMessage.componentId();
 
-    var totalTokensUser = currentState().totalTokenUsage + cmd.userMessage.tokens();
-    var totalTokensAi = totalTokensUser + cmd.aiMessage.tokens();
+    if (cmd.messages.stream()
+      .filter(msg -> msg instanceof AiMessage)
+      .map(msg -> ((AiMessage) msg).componentId())
+      .anyMatch(aiComponentId -> !cmd.userMessage.componentId().equals(aiComponentId))) {
+      return effects().error("componentId in userMessage must be the same as in all aiMessages");
+    }
 
-    var toolInteractions = cmd.aiMessage.toolCallInteractions();
+    var modelAndToolEvents =
+      cmd.messages.stream()
+        .map(msg -> {
+
+            return (Event) switch (msg) {
+              case AiMessage(
+                long timestamp, String text, String componentId, int inputTokens, int outputTokens,
+                List<SessionMessage.ToolCallRequest> toolCallRequests
+              ) -> new Event.AiMessageAdded(timestamp, componentId, text,
+                inputTokens,
+                outputTokens,
+                toolCallRequests);
+
+              case SessionMessage.ToolCallResponse(
+                long timestamp, String componentId, String id, String name, String content
+              ) -> new Event.ToolResponseMessageAdded(
+                timestamp,
+                componentId,
+                id, name, content);
+
+              default -> throw new IllegalArgumentException("Unsupported message: " + msg);
+            };
+          }
+        ).toList();
+
+    var userMessageEvent = new Event.UserMessageAdded(
+      cmd.userMessage.timestamp(),
+      cmd.userMessage.componentId(),
+      cmd.userMessage.text());
+
+    List<Event> allEvents = new ArrayList<>();
+    allEvents.add(userMessageEvent);
+    allEvents.addAll(modelAndToolEvents);
 
     return effects()
-        .persist(
-            new Event.UserMessageAdded(cmd.userMessage.timestamp(), componentId, cmd.userMessage.text(), cmd.userMessage.tokens(), totalTokensUser),
-            new Event.AiMessageAdded(cmd.aiMessage.timestamp(), componentId, cmd.aiMessage.text(),cmd.aiMessage.tokens(), totalTokensAi, toolInteractions))
-        .thenReply(__ -> Done.done());
+        .persistAll(allEvents)
+        .thenReply(__ -> done());
   }
 
   public record GetHistoryCmd(Optional<Integer> lastNMessages) {
@@ -187,32 +230,48 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
   }
 
   public Effect<Done> compactHistory(CompactionCmd cmd) {
+
     if (!cmd.userMessage.componentId().equals(cmd.aiMessage.componentId()))
       return effects().error("componentId in userMessage must be the same as in the aiMessage");
     var componentId = cmd.userMessage.componentId();
 
-    var totalTokensUser = cmd.userMessage.tokens();
-    var totalTokensAi = totalTokensUser + cmd.aiMessage.tokens();
-
     var events = new ArrayList<Event>();
     events.add(new Event.HistoryCleared());
-    events.add(new Event.UserMessageAdded(cmd.userMessage.timestamp(), componentId, cmd.userMessage.text(), cmd.userMessage.tokens(), totalTokensUser));
-    events.add(new Event.AiMessageAdded(cmd.aiMessage.timestamp(), componentId, cmd.aiMessage.text(), cmd.aiMessage.tokens(), totalTokensAi, Collections.emptyList()));
+    events.add(new Event.UserMessageAdded(cmd.userMessage.timestamp(), componentId, cmd.userMessage.text()));
+    events.add(new Event.AiMessageAdded(
+      cmd.aiMessage.timestamp(),
+      componentId,
+      cmd.aiMessage.text(),
+      cmd.aiMessage.inputTokens(),
+      cmd.aiMessage.outputTokens(),
+      Collections.emptyList()));
 
     if (commandContext().sequenceNumber() > cmd.sequenceNumber && !currentState().messages.isEmpty()) {
       int diff = (int) (commandContext().sequenceNumber() - cmd.sequenceNumber);
-      var totalTokens = new AtomicInteger(totalTokensAi); // AtomicInteger because update from lambda
       currentState().messages.subList(currentState().messages.size() - diff, currentState().messages.size())
           .forEach(msg -> {
         switch (msg) {
           case UserMessage userMessage -> {
-            totalTokens.set(userMessage.tokens());
-            // FIXME totalTokensUser, componentId
-            events.add(new Event.UserMessageAdded(userMessage.timestamp(), userMessage.componentId(), userMessage.text(), userMessage.tokens(), totalTokens.get()));
+            events.add(new Event.UserMessageAdded(userMessage.timestamp(), userMessage.componentId(), userMessage.text()));
           }
+
+          case ToolCallResponse toolCallResponse -> {
+            events.add(new Event.ToolResponseMessageAdded(
+              toolCallResponse.timestamp(),
+              toolCallResponse.componentId(),
+              toolCallResponse.id(),
+              toolCallResponse.name(),
+              toolCallResponse.text()));
+          }
+
           case AiMessage aiMessage -> {
-            totalTokens.set(aiMessage.tokens());
-            events.add(new Event.AiMessageAdded(aiMessage.timestamp(), aiMessage.componentId(), aiMessage.text(), aiMessage.tokens(), totalTokens.get(), aiMessage.toolCallInteractions()));
+            events.add(new Event.AiMessageAdded(
+              aiMessage.timestamp(),
+              aiMessage.componentId(),
+              aiMessage.text(),
+              aiMessage.inputTokens(),
+              aiMessage.outputTokens(),
+              aiMessage.toolCallRequests()));
           }
         }
       });
@@ -239,16 +298,36 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
     return switch (event) {
       case Event.LimitedWindowSet limitedWindowSet ->
           currentState().withMaxSize(limitedWindowSet.maxSizeInBytes);
+
       case Event.UserMessageAdded userMsg ->
           currentState()
-              .addMessage(new UserMessage(userMsg.timestamp(), userMsg.message(), userMsg.componentId(), userMsg.tokens()))
-              .withTotalTokenUsage(userMsg.totalTokenUsage());
+            .addMessage(new UserMessage(userMsg.timestamp(), userMsg.message(), userMsg.componentId));
+
       case Event.AiMessageAdded aiMsg ->
           currentState()
-              .addMessage(new AiMessage(aiMsg.timestamp(), aiMsg.message(), aiMsg.componentId(), aiMsg.tokens(), aiMsg.toolCallInteraction))
-              .withTotalTokenUsage(aiMsg.totalTokenUsage());
+            .addMessage(
+              new AiMessage(
+                aiMsg.timestamp(),
+                aiMsg.message(),
+                aiMsg.componentId,
+                aiMsg.inputTokens(),
+                aiMsg.outputTokens,
+                aiMsg.toolCallRequests))
+            .withTotalTokenUsage(aiMsg.inputTokens + aiMsg.outputTokens);
+
+      case Event.ToolResponseMessageAdded toolMsg ->
+          currentState()
+            .addMessage(
+              new ToolCallResponse(
+                toolMsg.timestamp(),
+                toolMsg.componentId,
+                toolMsg.id(),
+                toolMsg.name,
+                toolMsg.content()));
+
       case Event.HistoryCleared __ ->
-          currentState().clear();
+        currentState().clear();
+
       case Event.Deleted __ ->
           currentState().clear();
     };
