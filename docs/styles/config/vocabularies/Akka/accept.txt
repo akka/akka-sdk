@@ -67,6 +67,7 @@ hasPrefix
 hasSuffix
 hyperscaler
 hyperscalers
+hoc
 hostname
 hostnames
 Hotari
@@ -108,6 +109,7 @@ npm
 nullable
 OAuth
 Okta
+[Oo]llama
 onboarding
 (?i)OpenID
 (?i)OSGi
