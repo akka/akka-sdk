@@ -49,7 +49,7 @@ class Caller {
             .forAgent()// <1>
             .inSession(sessionId)// <2>
             .method(ActivityAgent::query)
-            .invoke("Business colleagues meeting in London the first week of July");
+            .invoke("Business colleagues meeting in London");
     // end::call[]
   }
 }
