@@ -22,8 +22,10 @@ import java.time.format.DateTimeFormatter;
     """,
     role = "worker"
 )
+// tag::function-tool[]
 public class WeatherAgent extends Agent {
 // end::description[]
+// end::function-tool[]
 
   private static final String SYSTEM_MESSAGE = """
       You are a weather agent.
@@ -51,7 +53,7 @@ public class WeatherAgent extends Agent {
   }
 
 
-  // tag::weather-tool[]
+  // tag::function-tool[]
   @FunctionTool(description = "Returns the weather forecast for a given city.") // <1>
   private String getWeather(
       @Description("A location or city name.") String location, // <2>
@@ -63,11 +65,12 @@ public class WeatherAgent extends Agent {
 
     return weatherService.getWeather(location, forecastDate); // <3>
   }
-  // end::weather-tool[]
+  // end::function-tool[]
 
   @FunctionTool(description = "Return current date in yyyy-MM-dd format")
   private String getCurrentDate() {
     return LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE);
   }
-
+// tag::function-tool[]
 }
+// end::function-tool[]
