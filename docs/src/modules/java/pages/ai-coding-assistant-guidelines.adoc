@@ -2,6 +2,8 @@
 
 include::ROOT:partial$include.adoc[]
 
+Don't generate any code yet, but remember the following guidelines and use them when writing code in this project.
+
 == General
 
 - Use the Akka SDK version 3.3 or later. Don't use Akka libraries (actors), or Kalix SDK.
