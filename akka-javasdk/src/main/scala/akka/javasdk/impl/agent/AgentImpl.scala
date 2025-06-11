@@ -320,7 +320,7 @@ private[impl] final class AgentImpl[A <: Agent](
       log.debug("Model provider from config [{}]", resolvedConfigPath)
       val providerConfig = config.getConfig(resolvedConfigPath)
       providerConfig.getString("provider") match {
-        case "anthropic"       => ModelProvider.OpenAi.fromConfig(providerConfig)
+        case "anthropic"       => ModelProvider.Anthropic.fromConfig(providerConfig)
         case "googleai-gemini" => ModelProvider.GoogleAIGemini.fromConfig(providerConfig)
         case "ollama"          => ModelProvider.Ollama.fromConfig(providerConfig)
         case "openai"          => ModelProvider.OpenAi.fromConfig(providerConfig)
