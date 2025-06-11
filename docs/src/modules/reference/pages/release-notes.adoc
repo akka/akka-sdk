@@ -9,6 +9,13 @@ Current versions
 * xref:java:index.adoc[Akka SDK {akka-javasdk-version}]
 * Akka CLI {akka-cli-version}
 * A glance of all Akka libraries and their current versions is presented at https://doc.akka.io/libraries/akka-dependencies/current[Akka library versions].
+== June 2025
+
+* Akka Runtime 1.4.14
+  - Internal improvements
+
+* Akka Runtime 1.2.19
+  - Internal improvements
 
 == May 2025
 
