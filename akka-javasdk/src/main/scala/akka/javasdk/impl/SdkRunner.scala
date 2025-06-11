@@ -128,6 +128,7 @@ import akka.javasdk.annotations.mcp.McpEndpoint
 import akka.javasdk.mcp.AbstractMcpEndpoint
 import akka.javasdk.mcp.McpRequestContext
 import akka.runtime.sdk.spi.McpEndpointConstructionContext
+import akka.javasdk.impl.workflow.WorkflowContextImpl
 
 /**
  * INTERNAL API
@@ -446,10 +447,12 @@ private final class Sdk(
   // we need a method instead of function in order to have type params
   // to late use in Reflect.workflowStateType
   private def workflowInstanceFactory[S, W <: Workflow[S]](
+      componentId: String,
       factoryContext: SpiWorkflow.FactoryContext,
       clz: Class[W]): SpiWorkflow = {
     logger.debug(s"Registering Workflow [${clz.getName}]")
     new WorkflowImpl[S, W](
+      componentId,
       factoryContext.workflowId,
       clz,
       serializer,
@@ -461,13 +464,14 @@ private final class Sdk(
       { context =>
 
         val workflow = wiredInstance(clz) {
-          sideEffectingComponentInjects(None).orElse {
+          sideEffectingComponentInjects(context.asInstanceOf[WorkflowContextImpl].span).orElse {
             // remember to update component type API doc and docs if changing the set of injectables
             case p if p == classOf[WorkflowContext] => context
           }
         }
 
         // FIXME pull this inline setup stuff out of SdkRunner and into some workflow class
+        // would be good to run this code only once per workflow class, not every workflow interaction
         val workflowStateType: Class[_] = Reflect.workflowStateType[S, W](workflow)
         serializer.registerTypeHints(workflowStateType)
 
@@ -615,7 +619,7 @@ private final class Sdk(
             componentId,
             clz.getName,
             readOnlyCommandNames,
-            ctx => workflowInstanceFactory(ctx, clz.asInstanceOf[Class[Workflow[Nothing]]]))
+            ctx => workflowInstanceFactory(componentId, ctx, clz.asInstanceOf[Class[Workflow[Nothing]]]))
 
       case clz if classOf[TimedAction].isAssignableFrom(clz) =>
         val componentId = clz.getAnnotation(classOf[ComponentId]).value
