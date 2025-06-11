@@ -1,4 +1,5 @@
 = AI RAG agent part 4: Adding UI endpoints
+:page-aliases: java:ask-akka/endpoints.adoc
 
 include::ROOT:partial$include.adoc[]
 

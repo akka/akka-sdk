@@ -1,6 +1,9 @@
 = AI RAG Agent Part 1: The agent
+:page-aliases: java:ask-akka/session.adoc
 
 include::ROOT:partial$include.adoc[]
+
+include::ROOT:partial$new-to-akka-start-here.adoc[]
 
 == Overview
 
