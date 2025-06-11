@@ -12,7 +12,10 @@ import akka.javasdk.DependencyProvider;
 import akka.javasdk.Metadata;
 import akka.javasdk.Principal;
 import akka.javasdk.ServiceSetup;
+import akka.javasdk.agent.Agent;
 import akka.javasdk.agent.AgentRegistry;
+import akka.javasdk.agent.ModelProvider;
+import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.grpc.GrpcClientProvider;
 import akka.javasdk.http.HttpClient;
@@ -65,8 +68,6 @@ import static akka.javasdk.testkit.TestKit.Settings.EventingSupport.TEST_BROKER;
 
 /**
  * Testkit for running services locally.
- *
- * <p>Requires Docker for starting a local instance of the runtime.
  *
  * <p>Create a TestKit and then {@link #start} the
  * testkit before testing the service with HTTP clients. Call {@link #stop} after tests are
@@ -216,7 +217,7 @@ public class TestKit {
     /**
      * Default settings for testkit.
      */
-    public static Settings DEFAULT = new Settings("self", true, TEST_BROKER, MockedEventing.EMPTY, Optional.empty(), ConfigFactory.empty(), Set.of());
+    public static Settings DEFAULT = new Settings("self", true, TEST_BROKER, MockedEventing.EMPTY, Optional.empty(), ConfigFactory.empty(), Set.of(), new HashMap<>());
 
     /**
      * The name of this service when deployed.
@@ -237,6 +238,8 @@ public class TestKit {
     public final Optional<DependencyProvider> dependencyProvider;
 
     public final Set<Class<?>> disabledComponents;
+
+    public final Map<String, ModelProvider> modelProvidersByAgentId;
 
     public enum EventingSupport {
       /**
@@ -267,7 +270,8 @@ public class TestKit {
       MockedEventing mockedEventing,
       Optional<DependencyProvider> dependencyProvider,
       Config additionalConfig,
-      Set<Class<?>> disabledComponents
+      Set<Class<?>> disabledComponents,
+      Map<String, ModelProvider> modelProvidersByAgentId
     ) {
       this.serviceName = serviceName;
       this.aclEnabled = aclEnabled;
@@ -276,6 +280,7 @@ public class TestKit {
       this.dependencyProvider = dependencyProvider;
       this.additionalConfig = additionalConfig;
       this.disabledComponents = disabledComponents;
+      this.modelProvidersByAgentId = modelProvidersByAgentId;
     }
 
     /**
@@ -287,7 +292,7 @@ public class TestKit {
      * @return The updated settings.
      */
     public Settings withServiceName(final String serviceName) {
-      return new Settings(serviceName, aclEnabled, eventingSupport, mockedEventing, dependencyProvider, additionalConfig, disabledComponents);
+      return new Settings(serviceName, aclEnabled, eventingSupport, mockedEventing, dependencyProvider, additionalConfig, disabledComponents, modelProvidersByAgentId);
     }
 
     /**
@@ -296,7 +301,7 @@ public class TestKit {
      * @return The updated settings.
      */
     public Settings withAclDisabled() {
-      return new Settings(serviceName, false, eventingSupport, mockedEventing, dependencyProvider, additionalConfig, disabledComponents);
+      return new Settings(serviceName, false, eventingSupport, mockedEventing, dependencyProvider, additionalConfig, disabledComponents, modelProvidersByAgentId);
     }
 
     /**
@@ -305,7 +310,7 @@ public class TestKit {
      * @return The updated settings.
      */
     public Settings withAclEnabled() {
-      return new Settings(serviceName, true, eventingSupport, mockedEventing, dependencyProvider, additionalConfig, disabledComponents);
+      return new Settings(serviceName, true, eventingSupport, mockedEventing, dependencyProvider, additionalConfig, disabledComponents, modelProvidersByAgentId);
     }
 
     /**
@@ -313,7 +318,7 @@ public class TestKit {
      */
     public Settings withKeyValueEntityIncomingMessages(String componentId) {
       return new Settings(serviceName, aclEnabled, eventingSupport,
-          mockedEventing.withKeyValueEntityIncomingMessages(componentId), dependencyProvider, additionalConfig, disabledComponents);
+          mockedEventing.withKeyValueEntityIncomingMessages(componentId), dependencyProvider, additionalConfig, disabledComponents, modelProvidersByAgentId);
     }
 
     /**
@@ -321,7 +326,7 @@ public class TestKit {
      */
     public Settings withEventSourcedEntityIncomingMessages(String componentId) {
       return new Settings(serviceName, aclEnabled, eventingSupport,
-          mockedEventing.withEventSourcedIncomingMessages(componentId), dependencyProvider, additionalConfig, disabledComponents);
+          mockedEventing.withEventSourcedIncomingMessages(componentId), dependencyProvider, additionalConfig, disabledComponents, modelProvidersByAgentId);
     }
 
     /**
@@ -329,7 +334,7 @@ public class TestKit {
      */
     public Settings withWorkflowIncomingMessages(String componentId) {
       return new Settings(serviceName, aclEnabled, eventingSupport,
-        mockedEventing.withWorkflowIncomingMessages(componentId), dependencyProvider, additionalConfig, disabledComponents);
+        mockedEventing.withWorkflowIncomingMessages(componentId), dependencyProvider, additionalConfig, disabledComponents, modelProvidersByAgentId);
     }
 
     /**
@@ -337,7 +342,7 @@ public class TestKit {
      */
     public Settings withStreamIncomingMessages(String service, String streamId) {
       return new Settings(serviceName, aclEnabled, eventingSupport,
-          mockedEventing.withStreamIncomingMessages(service, streamId), dependencyProvider, additionalConfig, disabledComponents);
+          mockedEventing.withStreamIncomingMessages(service, streamId), dependencyProvider, additionalConfig, disabledComponents, modelProvidersByAgentId);
     }
 
     /**
@@ -345,7 +350,7 @@ public class TestKit {
      */
     public Settings withTopicIncomingMessages(String topic) {
       return new Settings(serviceName, aclEnabled, eventingSupport,
-          mockedEventing.withTopicIncomingMessages(topic), dependencyProvider, additionalConfig, disabledComponents);
+          mockedEventing.withTopicIncomingMessages(topic), dependencyProvider, additionalConfig, disabledComponents, modelProvidersByAgentId);
     }
 
     /**
@@ -353,11 +358,11 @@ public class TestKit {
      */
     public Settings withTopicOutgoingMessages(String topic) {
       return new Settings(serviceName, aclEnabled, eventingSupport,
-          mockedEventing.withTopicOutgoingMessages(topic), dependencyProvider, additionalConfig, disabledComponents);
+          mockedEventing.withTopicOutgoingMessages(topic), dependencyProvider, additionalConfig, disabledComponents, modelProvidersByAgentId);
     }
 
     public Settings withEventingSupport(EventingSupport eventingSupport) {
-      return new Settings(serviceName, aclEnabled, eventingSupport, mockedEventing, dependencyProvider, additionalConfig, disabledComponents);
+      return new Settings(serviceName, aclEnabled, eventingSupport, mockedEventing, dependencyProvider, additionalConfig, disabledComponents, modelProvidersByAgentId);
     }
 
     /**
@@ -365,7 +370,7 @@ public class TestKit {
      * in a particular test.
      */
     public Settings withAdditionalConfig(Config additionalConfig) {
-      return new Settings(serviceName, aclEnabled, eventingSupport, mockedEventing, dependencyProvider, additionalConfig, disabledComponents);
+      return new Settings(serviceName, aclEnabled, eventingSupport, mockedEventing, dependencyProvider, additionalConfig, disabledComponents, modelProvidersByAgentId);
     }
 
     /**
@@ -373,14 +378,21 @@ public class TestKit {
      * production dependencies in tests rather than calling the real thing.
      */
     public Settings withDependencyProvider(DependencyProvider dependencyProvider) {
-      return new Settings(serviceName, aclEnabled, eventingSupport, mockedEventing, Optional.of(dependencyProvider), additionalConfig, disabledComponents);
+      return new Settings(serviceName, aclEnabled, eventingSupport, mockedEventing, Optional.of(dependencyProvider), additionalConfig, disabledComponents, modelProvidersByAgentId);
     }
 
     /**
      * Disable components from running, useful for testing components in isolation. This set of disabled components will be added to {@link ServiceSetup#disabledComponents()} if configured.
      */
     public Settings withDisabledComponents(Set<Class<?>> disabledComponents) {
-      return new Settings(serviceName, aclEnabled, eventingSupport, mockedEventing, dependencyProvider, additionalConfig, disabledComponents);
+      return new Settings(serviceName, aclEnabled, eventingSupport, mockedEventing, dependencyProvider, additionalConfig, disabledComponents, modelProvidersByAgentId);
+    }
+
+    public Settings withModelProvider(Class<? extends Agent> agentClass, ModelProvider modelProvider) {
+      var componentId = agentClass.getAnnotation(ComponentId.class).value();
+      var newModelProvidersByAgentId = new HashMap<>(modelProvidersByAgentId);
+      newModelProvidersByAgentId.put(componentId, modelProvider);
+      return new Settings(serviceName, aclEnabled, eventingSupport, mockedEventing, dependencyProvider, additionalConfig, disabledComponents, newModelProvidersByAgentId);
     }
 
     @Override
@@ -524,6 +536,9 @@ public class TestKit {
       final ComponentClients componentClients = startupContext.componentClients();
       final JsonSerializer serializer = startupContext.serializer();
       dependencyProvider = Optional.ofNullable(startupContext.dependencyProvider().getOrElse(() -> null));
+
+      settings.modelProvidersByAgentId.forEach((agentId, modelProvider) ->
+          startupContext.overrideModelProvider().setModelProviderForAgent(agentId, modelProvider));
 
       startEventingTestkit();
 
@@ -674,7 +689,7 @@ public class TestKit {
       // no principal / as from internet
       return client;
     } else {
-      throw new IllegalArgumentException("Speciied principal " + requestPrincipal + " not supported by testkit");
+      throw new IllegalArgumentException("Specified principal [" + requestPrincipal + "] not supported by testkit");
     }
   }
   // FIXME do we need a "get client with this principal" kind of method? Not sure that is useful (unlike in Kalix SDKs)

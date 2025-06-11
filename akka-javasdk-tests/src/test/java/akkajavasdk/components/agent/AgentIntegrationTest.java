@@ -5,11 +5,10 @@
 package akkajavasdk.components.agent;
 
 import akka.actor.testkit.typed.javadsl.LoggingTestKit;
-import akka.javasdk.DependencyProvider;
 import akka.javasdk.agent.AgentRegistry;
-import akka.javasdk.agent.ModelProvider;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
+import akka.javasdk.testkit.TestModelProvider;
 import akka.stream.javadsl.Sink;
 import akkajavasdk.Junit5LogCapturing;
 import org.junit.jupiter.api.AfterEach;
@@ -17,7 +16,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -28,24 +26,13 @@ import static org.assertj.core.api.Assertions.fail;
 public class AgentIntegrationTest extends TestKitSupport {
 
   private final TestModelProvider testModelProvider = new TestModelProvider();
-  private final ModelProvider.Custom modelProvider = ModelProvider.custom(testModelProvider);
-
-  private DependencyProvider mockDependencyProvider = new DependencyProvider() { // <1>
-    @SuppressWarnings("unchecked")
-    @Override
-    public <T> T getDependency(Class<T> clazz) {
-      if (clazz.equals(ModelProvider.class)) {
-        return (T) modelProvider;
-      } else {
-        throw new IllegalArgumentException("Unknown dependency type: " + clazz);
-      }
-    }
-  };
 
   @Override
   protected TestKit.Settings testKitSettings() {
     return TestKit.Settings.DEFAULT
-      .withDependencyProvider(mockDependencyProvider);
+        .withModelProvider(SomeAgent.class, testModelProvider)
+        .withModelProvider(SomeStructureResponseAgent.class, testModelProvider)
+        .withModelProvider(SomeStreamingAgent.class, testModelProvider);
   }
 
   @AfterEach
@@ -102,7 +89,7 @@ public class AgentIntegrationTest extends TestKitSupport {
   @Test
   public void shouldStreamResponse() throws Exception {
     //given
-    testModelProvider.mockResponse(s -> s.equals("hello"), "123456");
+    testModelProvider.mockResponse(s -> s.equals("hello"), "Hi mate, how are you today?");
 
     //when
     var source = componentClient.forAgent().inSession(newSessionId())

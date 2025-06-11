@@ -13,4 +13,6 @@
     <logger name="dev.langchain4j" level="DEBUG"/>
     <logger name="dev.langchain4j.model.openai" level="DEBUG"/>
     <logger name="akka.javasdk.http" level="DEBUG"/>
+    <logger name="akka.runtime" level="DEBUG"/>
+    <logger name="kalix.runtime" level="DEBUG"/>
 </included>

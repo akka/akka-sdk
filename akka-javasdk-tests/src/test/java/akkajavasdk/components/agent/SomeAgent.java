@@ -5,8 +5,6 @@
 package akkajavasdk.components.agent;
 
 import akka.javasdk.agent.Agent;
-import akka.javasdk.agent.ModelProvider;
-import akka.javasdk.annotations.AgentDescription;
 import akka.javasdk.annotations.ComponentId;
 
 /**
@@ -14,17 +12,10 @@ import akka.javasdk.annotations.ComponentId;
  */
 @ComponentId("some-agent")
 public class SomeAgent extends Agent {
-  private final ModelProvider modelProvider;
-
   public record SomeResponse(String response) {}
-
-  public SomeAgent(ModelProvider modelProvider) {
-    this.modelProvider = modelProvider;
-  }
 
   public Effect<SomeResponse> mapLlmResponse(String question) {
     return effects()
-      .model(modelProvider)
       .systemMessage("You are a helpful...")
       .userMessage(question)
       .map(SomeResponse::new)

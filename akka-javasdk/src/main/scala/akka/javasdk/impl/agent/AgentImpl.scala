@@ -93,6 +93,7 @@ private[impl] final class AgentImpl[A <: Agent](
     regionInfo: RegionInfo,
     promptTemplateClient: PromptTemplateClient,
     componentClient: ComponentClient,
+    overrideModelProvider: OverrideModelProvider,
     config: Config)
     extends SpiAgent {
   import AgentImpl._
@@ -153,7 +154,8 @@ private[impl] final class AgentImpl[A <: Agent](
               case template: TemplateSystemMessage =>
                 promptTemplateClient.getPromptTemplate(template.templateId).formatted(template.args)
             }
-            val spiModelProvider = toSpiModelProvider(req.modelProvider)
+            val modelProvider = overrideModelProvider.getModelProviderForAgent(componentId).getOrElse(req.modelProvider)
+            val spiModelProvider = toSpiModelProvider(modelProvider)
             val metadata = MetadataImpl.toSpi(req.replyMetadata)
             val sessionMemoryClient = deriveMemoryClient(req.memoryProvider)
             val additionalContext = toSpiContextMessages(sessionMemoryClient.getHistory(sessionId))

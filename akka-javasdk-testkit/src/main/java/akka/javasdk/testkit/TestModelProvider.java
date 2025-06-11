@@ -2,7 +2,7 @@
  * Copyright (C) 2021-2024 Lightbend Inc. <https://www.lightbend.com>
  */
 
-package akkajavasdk.components.agent;
+package akka.javasdk.testkit;
 
 import akka.japi.Pair;
 import akka.javasdk.agent.ModelProvider;
@@ -14,13 +14,16 @@ import dev.langchain4j.model.chat.request.ChatRequest;
 import dev.langchain4j.model.chat.response.ChatResponse;
 import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
 import dev.langchain4j.model.output.FinishReason;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
+/**
+ * A {@code ModelProvider} for tests that don't use a real AI model.
+ */
 public class TestModelProvider implements ModelProvider.Custom {
 
   private List<Pair<Predicate<String>, String>> responsePredicates = new ArrayList<>();
@@ -47,15 +50,18 @@ public class TestModelProvider implements ModelProvider.Custom {
         var userMessageText = getLastUserMessageText(chatRequest);
         var textResponse = getTextResponse(userMessageText);
 
-        // fake tokenization by each character
-        var chars = textResponse.toCharArray();
-        for (char ch : chars) {
-          handler.onPartialResponse(String.valueOf(ch));
-        }
+        var tokens = tokenize(textResponse);
+        tokens.forEach(handler::onPartialResponse);
 
         handler.onCompleteResponse(chatResponse(textResponse));
       }
     };
+  }
+
+  // fake tokenization by word
+  List<String> tokenize(String text) {
+    return Stream.of(text.splitWithDelimiters("[ \\.,?!;:]", -1))
+        .filter(t -> !t.isEmpty()).toList();
   }
 
   private String getLastUserMessageText(ChatRequest chatRequest) {
@@ -67,11 +73,11 @@ public class TestModelProvider implements ModelProvider.Custom {
   }
 
   private String getTextResponse(String userMessageText) {
-    return responsePredicates.stream()
+      return responsePredicates.stream()
         .filter(pair -> pair.first().test(userMessageText))
         .findFirst()
         .map(Pair::second)
-        .orElseThrow();
+        .orElseThrow(() -> new IllegalArgumentException("No response defined in TestModelProvider for [" + userMessageText + "]"));
   }
 
   private ChatResponse chatResponse(String response) {
@@ -82,10 +88,23 @@ public class TestModelProvider implements ModelProvider.Custom {
         .build();
   }
 
+  /**
+   * Always return this response.
+   */
+  public void fixedResponse(String response) {
+    mockResponse(__ -> true, response);
+  }
+
+  /**
+   * Return this response for a given request that matches the predicate.
+   */
   public void mockResponse(Predicate<String> predicate, String response) {
     responsePredicates.add(new Pair<>(predicate, response));
   }
 
+  /**
+   * Remove previously added responses.
+   */
   public void reset() {
     responsePredicates = new ArrayList<>();
   }

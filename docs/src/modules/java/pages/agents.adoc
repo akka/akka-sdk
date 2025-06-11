@@ -511,12 +511,34 @@ You find the full source code for this multi-agent sample in the link:https://gi
 
 == Testing the Agent
 
-Testing agents is a subject that goes way beyond the scope of Akka. Testing with generative AI is difficult no matter what you're using to implement it. Interactions with an LLM are not _deterministic_. In other words, you will never get the same answer twice for the same prompt. 
+Testing agents built with Generative AI involves two complementary approaches: evaluating the quality of the non-deterministic model behavior and writing deterministic unit tests for the agent's  and surrounding components' logic.
+
+=== Evaluating AI model quality
+
+Testing Ai quality is a subject that goes way beyond the scope of Akka. Testing with generative AI is difficult no matter what you're using to implement it. Interactions with an LLM are not _deterministic_. In other words, you will never get the same answer twice for the same prompt.
 
 How can you write assertions for something like that? There are a ton of solutions, but most of them revolve around the idea that to verify an LLM's answer, you need another LLM. This pattern is often called "LLM-as-judge". You can get an answer from one agent, and then use another agent or model to review the session history and prompts to infer, with some level of confidence, if the agent behaved the way you want it to.
+
+For instance, after a test run, you could send the session history to a powerful model like GPT-4 with a prompt like: "Based on the user's question about activities, did the agent correctly use the provided `getWeather` tool? Respond with only YES or NO."
 
 There is a practice called **Agent evaluation** where developers will run single ad hoc tests or an automated battery of tests. You run your agent and then _evaluate_ the results based on a number of criteria like token usage, elapsed time, and the results of using other models to infer quality metrics like accuracy or confidence.
 
 Akka will soon have an Agent evaluation workbench that will help you run these kinds of evaluation tests.
 
-As for unit tests for the rest of your components, that is much easier and you should check the appropriate section in the documentation for testing strategies.
+=== Mocking responses from the model
+
+For predictable and repeatable tests of your agent's business logic and component integrations, it's essential to use deterministic responses. This allows you to verify that your agent behaves correctly when it receives a known model output.
+
+Use the `TestKitSupport` and the `CoponentClient` to call the components from the test. The `ModelProvider` of the agents can be replaced with link:_attachments/testkit/akka/javasdk/testkit/TestModelProvider.html[TestModelProvider], which provides ways to mock the responses without using the real AI model.
+
+[source,java]
+.{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/agents/AgentTeamTest.java[AgentTeamTest.java]
+----
+include::example$multi-agent/src/test/java/demo/multiagent/application/AgentTeamTest.java[tag=class]
+----
+<1> Extend `TestKitSupport` to gain access to testing utilities for Akka components.
+<2> Create one or more `TestModelProvider`. Using one per agent allows for distinct mock behaviors, while sharing one is useful for testing general responses.
+<3> Use the settings of the `TestKit` to replace the agent's real `ModelProvider` with your test instance.
+<4> For simple tests, define a single, fixed response that the mock model will always return.
+<5> For more complex scenarios, define a response that is only returned if the user message matches a specific condition. This is useful for testing different logic paths within your agent.
+<6> Call the components with the `componentClient`.

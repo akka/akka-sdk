@@ -125,6 +125,7 @@ import akka.javasdk.annotations.AgentDescription
 import akka.javasdk.impl.agent.AgentRegistryImpl
 import akka.javasdk.impl.agent.PromptTemplateClient
 import akka.javasdk.annotations.mcp.McpEndpoint
+import akka.javasdk.impl.agent.OverrideModelProvider
 import akka.javasdk.mcp.AbstractMcpEndpoint
 import akka.javasdk.mcp.McpRequestContext
 import akka.runtime.sdk.spi.McpEndpointConstructionContext
@@ -340,6 +341,7 @@ private[javasdk] object Sdk {
       httpClientProvider: HttpClientProvider,
       grpcClientProvider: GrpcClientProviderImpl,
       agentRegistry: AgentRegistryImpl,
+      overrideModelProvider: OverrideModelProvider,
       serializer: JsonSerializer)
 
   private val platformManagedDependency = Set[Class[_]](
@@ -408,6 +410,8 @@ private final class Sdk(
     sdkSettings,
     userServiceConfig,
     remoteIdentification.map(ri => GrpcClientProviderImpl.AuthHeaders(ri.headerName, ri.headerValue)))
+
+  private lazy val overrideModelProvider = new OverrideModelProvider
 
   // validate service classes before instantiating
   private val validation = componentClasses.foldLeft(Valid: Validation) { case (validations, cls) =>
@@ -686,6 +690,7 @@ private final class Sdk(
             regionInfo,
             new PromptTemplateClient(componentClient(None)),
             componentClient(None),
+            overrideModelProvider,
             applicationConfig)
 
         }
@@ -768,6 +773,7 @@ private final class Sdk(
               httpClientProvider,
               grpcClientProvider,
               agentRegistry,
+              overrideModelProvider,
               serializer))
           Future.successful(Done)
         case Some(setup) =>
@@ -784,6 +790,7 @@ private final class Sdk(
               httpClientProvider,
               grpcClientProvider,
               agentRegistry,
+              overrideModelProvider,
               serializer))
           Future.successful(Done)
       }
