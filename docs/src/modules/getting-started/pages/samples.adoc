@@ -1,4 +1,5 @@
 = Samples
+:page-aliases: java:samples.adoc
 include::ROOT:partial$include.adoc[]
 
 [TIP]

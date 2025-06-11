@@ -1,5 +1,5 @@
 = Author your first agentic service
-:page-aliases: java:build-your-first-application.adoc[]
+:page-aliases: java:build-your-first-application.adoc, java:author-your-first-service.adoc
 
 include::ROOT:partial$include.adoc[]
 
