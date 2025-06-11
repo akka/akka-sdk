@@ -2,6 +2,8 @@
 
 include::ROOT:partial$include.adoc[]
 
+include::ROOT:partial$new-to-akka-start-here.adoc[]
+
 == Overview
 
 In this step of the guide to building the _Ask Akka_ application, you'll be creating a class that wraps the OpenAI API and the MongoDB client API. It's this class that will provide the abstraction for the rest of the application to use when making RAG queries. You'll use Akka's `@Setup` to configure the dependency injection for this class.

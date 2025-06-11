@@ -2,6 +2,8 @@
 
 include::ROOT:partial$include.adoc[]
 
+include::ROOT:partial$new-to-akka-start-here.adoc[]
+
 == Overview
 
 The first step in building a RAG agent is _indexing_. Each time a user submits a query or prompt to the agent, the agent _retrieves_ relevant documents by performing a semantic search on a vector database. Before we can perform that search, we need to populate the vector database with all of the knowledge that we want to make available to the agent.
