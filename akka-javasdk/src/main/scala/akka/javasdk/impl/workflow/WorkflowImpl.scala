@@ -12,7 +12,6 @@ import scala.jdk.OptionConverters.RichOptional
 import scala.util.Failure
 import scala.util.Success
 import scala.util.control.NonFatal
-
 import akka.annotation.InternalApi
 import akka.javasdk.Metadata
 import akka.javasdk.Tracing
@@ -29,7 +28,6 @@ import akka.javasdk.impl.timer.TimerSchedulerImpl
 import akka.javasdk.impl.workflow.ReflectiveWorkflowRouter.CommandResult
 import akka.javasdk.impl.workflow.ReflectiveWorkflowRouter.TransitionalResult
 import akka.javasdk.impl.workflow.WorkflowEffectImpl.Delete
-import akka.javasdk.impl.workflow.WorkflowEffectImpl.DeleteState
 import akka.javasdk.impl.workflow.WorkflowEffectImpl.End
 import akka.javasdk.impl.workflow.WorkflowEffectImpl.ErrorEffectImpl
 import akka.javasdk.impl.workflow.WorkflowEffectImpl.NoPersistence
@@ -56,6 +54,8 @@ import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.Tracer
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+
+import scala.annotation.nowarn
 
 /**
  * INTERNAL API
@@ -140,10 +140,10 @@ class WorkflowImpl[S, W <: Workflow[S]](
   private def handleState(persistence: Persistence[Any]): SpiWorkflow.Persistence =
     persistence match {
       case UpdateState(newState) => new SpiWorkflow.UpdateState(serializer.toBytes(newState))
-      case DeleteState           => SpiWorkflow.DeleteState
       case NoPersistence         => SpiWorkflow.NoPersistence
     }
 
+  @nowarn("msg=deprecated") // DeleteState deprecated but must be in here
   private def toSpiCommandEffect(effect: Workflow.Effect[_]): SpiWorkflow.CommandEffect = {
 
     effect match {
@@ -176,8 +176,8 @@ class WorkflowImpl[S, W <: Workflow[S]](
                 spiMetadata)
 
           case SpiWorkflow.DeleteState =>
-            // TODO: delete not yet supported, therefore always ReplyEffect
-            throw new IllegalArgumentException("State deletion not supported yet")
+            // deprecated
+            throw new IllegalArgumentException("State deletion deprecated")
 
         }
 
