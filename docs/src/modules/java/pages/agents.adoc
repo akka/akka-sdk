@@ -334,7 +334,7 @@ defined in the agent itself, Akka will automatically register it as a tool funct
 [source,java]
 .{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/agents/WeatherAgent.java[WeatherAgent.java]
 ----
-include::example$multi-agent/src/main/java/demo/multiagent/application/agents/WeatherAgent.java[tag=weather-tool]
+include::example$multi-agent/src/main/java/demo/multiagent/application/agents/WeatherAgent.java[tag=function-tool]
 ----
 <1> Annotate the method with `@FunctionTool` and give a clear description of what it provides.
 <2> Parameters can be clarified with the `@Description` annotation.
