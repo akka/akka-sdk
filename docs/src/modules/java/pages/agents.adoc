@@ -234,16 +234,14 @@ akka.javasdk.agent.memory {
 
 Or you can configure memory behavior for specific agent interactions using the `MemoryProvider` API.
 
-* Example with `limitedWindow` memory provider:
-+
+Example with `limitedWindow` memory provider:
 [source,java]
 ----
 include::example$doc-snippets/src/main/java/com/example/application/MyAgent.java[tag=read-last]
 ----
 
 
-* Example disabling session memory for the agent:
-+
+Example disabling session memory for the agent:
 [source,java]
 ----
 include::example$doc-snippets/src/main/java/com/example/application/MyAgent.java[tag=no-memory]
