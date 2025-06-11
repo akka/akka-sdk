@@ -1,5 +1,6 @@
 package akka.ask.agent.application;
 
+// tag::class[]
 import akka.ask.common.MongoDbUtils;
 import akka.ask.common.OpenAiUtils;
 import com.mongodb.client.MongoClient;
@@ -17,26 +18,28 @@ public class Knowledge {
   private final ContentInjector contentInjector = new DefaultContentInjector();
 
   public Knowledge(MongoClient mongoClient) {
-    var contentRetriever = EmbeddingStoreContentRetriever.builder()
+    var contentRetriever = EmbeddingStoreContentRetriever.builder() // <1>
         .embeddingStore(MongoDbUtils.embeddingStore(mongoClient))
         .embeddingModel(OpenAiUtils.embeddingModel())
         .maxResults(10)
         .minScore(0.1)
         .build();
 
-    this.retrievalAugmentor = DefaultRetrievalAugmentor.builder()
+    this.retrievalAugmentor = DefaultRetrievalAugmentor.builder() // <2>
         .contentRetriever(contentRetriever)
         .build();
   }
 
   public String addKnowledge(String question) {
-    var chatMessage = new UserMessage(question);
+    var chatMessage = new UserMessage(question); // <3>
     var metadata = Metadata.from(chatMessage, null, null);
     var augmentationRequest = new AugmentationRequest(chatMessage, metadata);
 
-    var result = retrievalAugmentor.augment(augmentationRequest);
-    UserMessage augmented = (UserMessage) contentInjector.inject(result.contents(), chatMessage);
+    var result = retrievalAugmentor.augment(augmentationRequest); // <4>
+    UserMessage augmented = (UserMessage) contentInjector
+        .inject(result.contents(), chatMessage); // <5>
     return augmented.singleText();
   }
 
 }
+// end::class[]

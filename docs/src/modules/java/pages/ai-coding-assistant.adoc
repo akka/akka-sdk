@@ -24,18 +24,20 @@ In summary, we will look at the following:
 
 The LLMs have been trained on web content that didn't include the latest documentation of the Akka SDK. If you ask it questions about Akka it will answer based on the knowledge it was trained on, which most certainly was about the Akka libraries. Some assistants will try to use web search to retrieve the latest information, but that is typically not enough and not an efficient way for a coding assistant. For example, if you ask:
 
-```
+[source]
+----
 What are the core components of Akka?
-```
+----
 
-it will answer something like
+The AI response will look something like this...
 
-```
+[source]
+----
 Akka is a toolkit for building highly concurrent, distributed, and resilient message-driven applications...
 1. Actor System ...
 2. Actors ...
 ...
-```
+----
 
 This is correct for the Akka libraries but not helpful when developing with the Akka SDK.
 
@@ -86,18 +88,20 @@ Make sure that you download the latest documentation regularly to make use of do
 
 To verify that the assistant now knows about Akka, we can ask the question again:
 
-```
+[source]
+----
 What are the core components of Akka?
-```
+----
 
 it should answer with something like
 
-```
+[source]
+----
 1. Event Sourced Entities ...
 2. Key Value Entities ...
 3. HTTP Endpoints ...
 ...
-```
+----
 
 == Include sample source code
 
@@ -118,11 +122,12 @@ The coding assistant will generate more accurate code if we give it some detaile
 
 At the beginning of your chat session include a prompt like this:
 
-```
+[source]
+----
 Don't generate any code yet, but remember the following guidelines and use them when writing code in this project.
 
 <paste guidelines>
-```
+----
 
 You can copy-paste the guidelines from https://doc.akka.io/java/ai-coding-assistant-guidelines.html.md[ai-coding-assistant-guidelines.html.md, , window="new"]
 
@@ -142,57 +147,67 @@ Here are some examples of prompts that you can use as templates when giving inst
 
 === Entities
 
-```
+[source]
+----
 Create a credit card entity, use the shopping cart sample as template.
-```
+----
 
 That will probably generate an event sourced entity, but you can be more specific by saying "event sourced entity" or "key value entity."
 
 To matches your business domain you should be more precise when it comes to what to include in the domain objects. Start small, and iterate.
 
-```
+[source]
+----
 Let's add a unit test for the entity
-```
+----
 
 Ensure it uses the `EventSourcedTestKit`, which is described in the coding guidelines.
 
 === Endpoints
 
-```
+[source]
+----
 Add an http endpoint for the entity
-```
+----
 
-```
+[source]
+----
 Add example curl commands for the endpoint to the readme
-```
+----
 
-```
+[source]
+----
 Add an integration test for the endpoint
-```
+----
 
 Ensure it uses the integration test is using the `httpClient` of the `TestKitSupport`, which is described in the coding guidelines.
 
 === Views
 
-```
+[source]
+----
 Add a View that lists brief credit card information given a cardholder name
-```
+----
 
-```
+[source]
+----
 Add an integration test for the view
-```
+----
 
-```
+[source]
+----
 Include the endpoint for the view in the existing CreditCardEndpoint
-```
+----
 
-```
+[source]
+----
 add example curl commands for that in the readme
-```
+----
 
 === Workflow
 
-```
+[source]
+----
 Create a Workflow that transfers money from an external bank service to the credit card. It should have the following steps:
 - withdraw
 - deposit
@@ -202,7 +217,7 @@ The transitions for a transfer:
 - starts with the bank withdrawal
 - if withdrawal was successful it continues with the credit card deposit
 - if the deposit fails for some reason it should return the money to the bank account in the compensate-withdraw step
-```
+----
 
 === Runtime errors
 
