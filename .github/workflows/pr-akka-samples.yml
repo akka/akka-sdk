@@ -112,6 +112,7 @@ jobs:
           - { sample: "travel-agent", sampleRepo: "akka-samples/travel-agent" }
           - { sample: "trip-agency", sampleRepo: "akka-samples/trip-agency" }
           - { sample: "real-estate-cs-agent", sampleRepo: "akka-samples/real-estate-cs-agent" }
+          - { sample: "healthcare-agent", sampleRepo: "akka-samples/healthcare-agent" }
 
     steps:
       - name: Checkout
