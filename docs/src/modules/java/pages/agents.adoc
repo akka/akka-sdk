@@ -143,7 +143,7 @@ Although the system message has a dedicated method to use the prompt template, y
 
 === Adding more context
 
-xref:rag.adoc[] is a technique to provide additional, relevant, content in the user message.
+xref:rag.adoc[] is a technique to provide additional, relevant content in the user message.
 
 == Calling the Agent
 
