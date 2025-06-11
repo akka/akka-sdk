@@ -5,14 +5,14 @@
 package akka.javasdk.impl.reflection
 
 import akka.javasdk.annotations.FunctionTool
+import akka.javasdk.annotations.OptionalDescription
 import akka.javasdk.client.ComponentClient
 import akka.javasdk.impl.client.ComponentClientImpl
-import akka.javasdk.impl.reflection.Reflect
+import akka.javasdk.impl.serialization.JsonSerializer
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
 import scala.concurrent.ExecutionContext
-import akka.javasdk.impl.serialization.JsonSerializer
 
 class SomeClass {
   def a(): Unit = {}
@@ -58,6 +58,7 @@ class ReflectSpec extends AnyWordSpec with Matchers {
   }
 
   "Reflect.valueOrAlias" should {
+
     class AnnotatedFunctions {
       @FunctionTool(value = "foo-value")
       def onlyValue(): Unit = {}
@@ -70,22 +71,33 @@ class ReflectSpec extends AnyWordSpec with Matchers {
 
       @FunctionTool(value = "foo-value", description = "foo-description")
       def bothSet(): Unit = {}
+
+      @OptionalDescription
+      def noneSetOpt(): Unit = {}
     }
 
     val methods = classOf[AnnotatedFunctions].getDeclaredMethods
     def ann(name: String) = methods.find(_.getName == name).get.getAnnotation(classOf[FunctionTool])
+    def annOpt(name: String) = methods.find(_.getName == name).get.getAnnotation(classOf[OptionalDescription])
 
     "return value when only value is set" in {
       Reflect.valueOrAlias[String](ann("onlyValue")) shouldBe "foo-value"
     }
+
     "return alias when only alias is set" in {
       Reflect.valueOrAlias[String](ann("onlyAlias")) shouldBe "foo-description"
     }
-    "return null when neither is set" in {
-      Reflect.valueOrAlias[String](ann("noneSet")) shouldBe null
+
+    "throw when none are set and is required" in {
+      an[IllegalArgumentException] should be thrownBy Reflect.valueOrAlias[String](ann("noneSet"))
     }
+
     "throw when both value and alias are set" in {
       an[IllegalArgumentException] should be thrownBy Reflect.valueOrAlias[String](ann("bothSet"))
+    }
+
+    "return null when neither is set and is optional" in {
+      Reflect.valueOrAlias[String](annOpt("noneSetOpt")) shouldBe null
     }
   }
 }

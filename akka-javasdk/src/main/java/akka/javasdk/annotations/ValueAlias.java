@@ -32,4 +32,6 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-public @interface ValueAlias {}
+public @interface ValueAlias {
+  boolean required() default true;
+}

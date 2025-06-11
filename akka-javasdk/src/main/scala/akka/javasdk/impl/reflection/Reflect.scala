@@ -98,6 +98,16 @@ private[impl] object Reflect {
 
     if (valueSet && aliasSet)
       throw new IllegalArgumentException("Both value() and alias are set. Only one must be set.")
+
+    // Check a required flag on ValueAlias
+    val aliasRequired = aliasMethodOpt.exists { m =>
+      val va = m.getAnnotation(classOf[ValueAlias])
+      va != null && va.required()
+    }
+
+    if (!valueSet && !aliasSet && aliasRequired)
+      throw new IllegalArgumentException("At least one of value() or alias must be set (required = true).")
+
     if (valueSet) value.asInstanceOf[T]
     else if (aliasSet) aliasValue.asInstanceOf[T]
     else null.asInstanceOf[T]
