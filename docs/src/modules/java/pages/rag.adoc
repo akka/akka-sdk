@@ -1,0 +1,44 @@
+= Retrieval-Augmented Generation (RAG)
+
+include::ROOT:partial$include.adoc[]
+
+An AI model only knows about information that it was trained with. Domain-specific knowledge or the latest documentation must be given as input to the AI model as additional context.
+
+It would be inefficient, costly, or not even possible to provide all content in the request to the AI. A technique to provide relevant content is called Retrieval-Augmented Generation (RAG). This is typically implemented by performing a semantic search on a vector database to find relevant content, which is then added to the user message in the request to the AI model.
+
+Implementing RAG involves two main stages:
+
+* Data Ingestion: The source documents (e.g., product documentation, articles) are loaded, split into manageable chunks, converted into numerical representations (embeddings) using an embedding model, and then stored in a vector database.
+* Retrieval and Generation: When a user asks a question, the system first retrieves the most relevant chunks from the vector database and then passes them to the language model along with the original question to generate an answer.
+
+== Using Langchain4J
+
+There are many libraries that can be used for integrating with vector databases. Here is one concrete example using https://docs.langchain4j.dev/tutorials/rag[Langchain4J, window="new"].
+
+[source, java, indent=0]
+.{sample-base-url}/ask-akka-agent/src/main/java/akka/ask/agent/application/Knowledge.java[Knowledge.java]
+----
+include::java:example$ask-akka-agent/src/main/java/akka/ask/agent/application/Knowledge.java[tag=class]
+----
+<1> We use the RAG support from Langchain4j, which consist of a `ContentRetriever`
+<2> and a `RetrievalAugmentor`.
+<3> Create a request from the user question.
+<4> Augment the request with relevant content.
+<5> Construct the new user message that includes the retrieved content.
+
+This `Knowledge` class would then be used in an agent to enrich the user message.
+
+The guide xref:getting-started:ask-akka-agent.adoc[AI agent that performs a RAG workflow] illustrates how to create embeddings for vector databases, and how to add knowledge to fixed LLMs.
+
+== Enrich the context from other components
+
+Sometimes a similar retrieval-and-augment approach can be used without a vector database, especially when the required context is structured and can be fetched directly. This follows the same RAG pattern but targets specific data sources like entities or views. It may look like this:
+
+[source,java]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/application/ActivityAgent.java[ActivityAgent.java]
+----
+include::example$doc-snippets/src/main/java/com/example/application/ActivityAgent.java[tag=di]
+----
+<1> Inject the `ComponentClient` as a constructor parameter.
+<2> Retrieve preferences from an entity.
+<3> Enrich the user message with the preferences.
