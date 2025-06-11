@@ -42,6 +42,7 @@ import akka.javasdk.impl.telemetry.TraceInstrumentation
 import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.RegionInfo
 import akka.runtime.sdk.spi.SpiAgent
+import akka.runtime.sdk.spi.SpiAgent.ContextMessage
 import akka.runtime.sdk.spi.SpiMetadata
 import akka.util.ByteString
 import com.typesafe.config.Config
@@ -51,6 +52,7 @@ import io.opentelemetry.api.trace.Tracer
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
 
+import scala.annotation.tailrec
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters.SeqHasAsJava
@@ -102,7 +104,7 @@ private[impl] final class AgentImpl[A <: Agent](
     new ReflectiveAgentRouter(factory(agentContext), componentDescriptor.methodInvokers, serializer)
   }
 
-  private val functionDescriptors = ToolDescriptors(router.agent)
+  private val toolDescriptors = ToolDescriptors(router.agent)
   private val functionTools = FunctionTools(router.agent)
 
   override def handleCommand(command: SpiAgent.Command): Future[SpiAgent.Effect] = {
@@ -250,21 +252,27 @@ private[impl] final class AgentImpl[A <: Agent](
     sessionHistory
       .messages()
       .asScala
-      .flatMap {
-        case m if m.isInstanceOf[AiMessage] =>
-          Some(
-            new SpiAgent.ContextMessage.AiMessage(
-              m.asInstanceOf[AiMessage].text(),
-              Seq.empty // FIXME tool requests
-            ))
-        case m if m.isInstanceOf[UserMessage] =>
-          Some(new SpiAgent.ContextMessage.UserMessage(m.asInstanceOf[UserMessage].text()))
+      .map {
+        case m: AiMessage =>
+          val toolRequests = m
+            .toolCallRequests()
+            .asScala
+            .map { req =>
+              new SpiAgent.ToolCallRequest(req.id(), req.name(), req.arguments())
+            }
+            .toSeq
+          new SpiAgent.ContextMessage.AiMessage(m.text(), toolRequests)
+        case m: UserMessage =>
+          new SpiAgent.ContextMessage.UserMessage(m.text())
+        case m: ToolCallResponse =>
+          new ContextMessage.ToolCallResponseMessage(m.id(), m.name(), m.text())
         case m =>
           throw new IllegalStateException("Unsupported message type " + m.getClass.getName)
       }
       .toVector
   }
 
+  @tailrec
   private def toSpiModelProvider(modelProvider: ModelProvider): SpiAgent.ModelProvider = {
     modelProvider match {
       case p: ModelProvider.FromConfig =>
