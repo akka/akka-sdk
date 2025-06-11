@@ -3,6 +3,8 @@
 
 include::ROOT:partial$include.adoc[]
 
+include::ROOT:partial$new-to-akka-start-here.adoc[]
+
 This guide walks you through the design and implementation of an enhancement to the shopping cart service example, illustrating model refactoring, the use of Views, and user authentication.
 
 == Overview

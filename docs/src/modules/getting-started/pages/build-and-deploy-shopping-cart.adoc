@@ -3,6 +3,8 @@
 
 include::ROOT:partial$include.adoc[]
 
+include::ROOT:partial$new-to-akka-start-here.adoc[]
+
 This guide walks you through the design and implementation of a shopping cart service, illustrating the use of some of Akka's components.
 
 == Overview

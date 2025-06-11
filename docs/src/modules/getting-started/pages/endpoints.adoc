@@ -1,6 +1,9 @@
 = AI RAG agent part 4: Adding UI endpoints
+:page-aliases: java:ask-akka/endpoints.adoc
 
 include::ROOT:partial$include.adoc[]
+
+include::ROOT:partial$new-to-akka-start-here.adoc[]
 
 == Overview
 In this step of the guide, you'll add some endpoints to provide a client-friendly API in front of all of the RAG components you've been building. You'll create an API for submitting your "Ask Akka" questions (prompts), and one that serves up a self-hosted, static asset web UI.
