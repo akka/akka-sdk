@@ -14,6 +14,7 @@
 *** xref:java:component-and-service-calls.adoc[]
 *** xref:java:message-brokers.adoc[]
 *** xref:java:streaming.adoc[]
+*** xref:java:rag.adoc[]
 ** xref:java:setup-and-configuration/index.adoc[]
 *** xref:java:setup-and-dependency-injection.adoc[]
 *** xref:java:serialization.adoc[]

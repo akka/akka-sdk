@@ -141,6 +141,10 @@ The following table describes all of the methods available for the `PromptTempla
 
 Although the system message has a dedicated method to use the prompt template, you can also use it for the user message. In that case you have to use the component client to retrieve the current value of the prompt template and pass it as the user message.
 
+=== Adding more context
+
+xref:rag.adoc[] is a technique to provide additional, relevant, content in the user message.
+
 == Calling the Agent
 
 Use the `ComponentClient` to call the agent from a Workflow, Endpoint or Consumer.
