@@ -30,6 +30,7 @@ import scala.annotation.tailrec
 import scala.reflect.ClassTag
 
 import akka.javasdk.agent.Agent
+import akka.javasdk.annotations.ValueAlias
 
 /**
  * Class extension to facilitate some reflection common usages.
@@ -63,6 +64,43 @@ private[impl] object Reflect {
       }
     }
 
+  }
+
+  /**
+   * Returns the value of the `value()` method or the field annotated with `@ValueAlias` from the given annotation. Only
+   * one of them must be set; if both are set, throws `IllegalArgumentException`.
+   *
+   * @param annotation
+   *   the annotation instance
+   * @tparam T
+   *   the expected return type
+   * @return
+   *   the value of `value()` or the alias field, or `null` if neither is set
+   * @throws IllegalArgumentException
+   *   if both `value()` and the alias are set
+   */
+  def valueOrAlias[T](annotation: Annotation): T = {
+    val annotationType = annotation.annotationType()
+    val valueMethod = annotationType.getDeclaredMethods
+      .find(_.getName == "value")
+      .getOrElse(throw new IllegalArgumentException("Annotation does not have a value() method."))
+
+    val value = valueMethod.invoke(annotation)
+
+    val aliasMethodOpt = annotationType.getDeclaredMethods.find(_.isAnnotationPresent(classOf[ValueAlias]))
+    val aliasValue = aliasMethodOpt.map(_.invoke(annotation)).orNull
+
+    def isDefault(method: Method, v: Any): Boolean =
+      v == null || v == method.getDefaultValue
+
+    val valueSet = !isDefault(valueMethod, value)
+    val aliasSet = aliasMethodOpt.exists(m => !isDefault(m, aliasValue))
+
+    if (valueSet && aliasSet)
+      throw new IllegalArgumentException("Both value() and alias are set. Only one must be set.")
+    if (valueSet) value.asInstanceOf[T]
+    else if (aliasSet) aliasValue.asInstanceOf[T]
+    else null.asInstanceOf[T]
   }
 
   def isRestEndpoint(cls: Class[_]): Boolean =

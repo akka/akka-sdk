@@ -52,7 +52,7 @@ public class WeatherAgent extends Agent {
 
 
   // tag::weather-tool[]
-  @FunctionTool(description = "Returns the weather forecast for a given city.") // <1>
+  @FunctionTool("Returns the weather forecast for a given city.") // <1>
   private String getWeather(
       @Description("A location or city name.") String location, // <2>
       @Description("Forecast for a given date, in yyyy-MM-dd format. Leave empty to use current date.") String date) {
@@ -65,7 +65,7 @@ public class WeatherAgent extends Agent {
   }
   // end::weather-tool[]
 
-  @FunctionTool(description = "Return current date in yyyy-MM-dd format")
+  @FunctionTool("Return current date in yyyy-MM-dd format")
   private String getCurrentDate() {
     return LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE);
   }
