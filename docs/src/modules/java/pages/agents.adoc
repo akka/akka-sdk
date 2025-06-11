@@ -73,9 +73,9 @@ Each model provider may have different settings. Available model providers are:
 
 * `openai` - link:_attachments/api/akka/javasdk/agent/ModelProvider.OpenAi.html[`ModelProvider.OpenAi`]
 * `anthropic` - link:_attachments/api/akka/javasdk/agent/ModelProvider.Anthropic.html[`ModelProvider.Anthropic`]
-* `googleai-gemini` - Google's Gemini
-* `local-ai` - Local LLMs
-* `ollama` - Servers hosting **ollama** models
+* `googleai-gemini` -  link:_attachments/api/akka/javasdk/agent/ModelProvider.GoogleAIGemini.html[`ModelProvider.GoogleAIGemini`]
+* `local-ai` - link:_attachments/api/akka/javasdk/agent/ModelProvider.LocalAI.html[`ModelProvider.LocalAI`]
+* `ollama` - link:_attachments/api/akka/javasdk/agent/ModelProvider.Ollama.html[`ModelProvider.Ollama`]
 
 It is also possible to plug in a custom model by implementing the link:_attachments/api/akka/javasdk/agent/ModelProvider.Custom.html[`ModelProvider.Custom`] interface and use it with `ModelProvider.custom`.
 
@@ -324,13 +324,15 @@ Anything "current" is beyond the capabilities of an LLM, so the model response w
 
 Here's a sample `getWeather` tool function.
 
+
 [source,java]
+.{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/agents/WeatherAgent.java[WeatherAgent.java]
 ----
-@FunctionTool(description = "Returns the weather forecast for a given city.")
-private String getWeather(@Description("A location or city name.") String location) {
-    return weatherService.getWeather(location);
-}
+include::example$multi-agent/src/main/java/demo/multiagent/application/agents/WeatherAgent.java[tag=weather-tool]
 ----
+<1> Annotate the method with `@FunctionTool` and give a clear description of what it provides.
+<2> Parameters can be clarified with the `@Description` annotation.
+<3> Implementation calls an external weather service.
 
 == Use ComponentClient in an Agent
 

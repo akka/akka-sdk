@@ -51,17 +51,19 @@ public class WeatherAgent extends Agent {
   }
 
 
-  @FunctionTool(description = "Returns the weather forecast for a given city.")
+  // tag::weather-tool[]
+  @FunctionTool(description = "Returns the weather forecast for a given city.") // <1>
   private String getWeather(
-      @Description("A location or city name.") String location,
+      @Description("A location or city name.") String location, // <2>
       @Description("Forecast for a given date, in yyyy-MM-dd format. Leave empty to use current date.") String date) {
     var forecastDate = date;
     if (date == null || date.isBlank()) {
       forecastDate = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE);
     }
 
-    return weatherService.getWeather(location, forecastDate);
+    return weatherService.getWeather(location, forecastDate); // <3>
   }
+  // end::weather-tool[]
 
   @FunctionTool(description = "Return current date in yyyy-MM-dd format")
   private String getCurrentDate() {
