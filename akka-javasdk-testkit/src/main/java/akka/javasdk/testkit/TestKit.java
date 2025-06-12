@@ -374,6 +374,14 @@ public class TestKit {
     }
 
     /**
+     * Specify additional config that will override the application-test.conf or application.conf configuration
+     * in a particular test.
+     */
+    public Settings withAdditionalConfig(String additionalConfig) {
+      return withAdditionalConfig(ConfigFactory.parseString(additionalConfig));
+    }
+
+    /**
      * Set a dependency provider that will be used for looking up arbitrary dependencies, useful to provide mocks for
      * production dependencies in tests rather than calling the real thing.
      */
