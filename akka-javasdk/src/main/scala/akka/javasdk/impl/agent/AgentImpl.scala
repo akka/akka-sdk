@@ -228,7 +228,7 @@ private[impl] final class AgentImpl[A <: Agent](
     val responseMessages: Seq[SessionMessage] =
       responses.map {
         case res: SpiAgent.ModelResponse =>
-          val requests = res.toolCalls.map { req =>
+          val requests = res.toolRequests.map { req =>
             new ToolCallRequest(req.id, req.name, req.arguments)
           }.asJava
           new AiMessage(timestamp, res.content, componentId, res.inputTokenCount, res.outputTokenCount, requests)
