@@ -163,7 +163,7 @@ private[impl] final class AgentImpl[A <: Agent](
               systemMessage,
               req.userMessage,
               additionalContext,
-              functionDescriptors,
+              toolDescriptors,
               Seq.empty, // FIXME mcp tool endpoints
               req.responseType,
               req.responseMapping,
