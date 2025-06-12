@@ -515,7 +515,7 @@ Testing agents built with Generative AI involves two complementary approaches: e
 
 === Evaluating AI model quality
 
-Testing Ai quality is a subject that goes way beyond the scope of Akka. Testing with generative AI is difficult no matter what you're using to implement it. Interactions with an LLM are not _deterministic_. In other words, you will never get the same answer twice for the same prompt.
+Testing AI quality is a subject that goes way beyond the scope of Akka. Testing with generative AI is difficult no matter what you're using to implement it. Interactions with an LLM are not _deterministic_. In other words, you shouldn't expect to get the same answer twice for the same prompt.
 
 How can you write assertions for something like that? There are a ton of solutions, but most of them revolve around the idea that to verify an LLM's answer, you need another LLM. This pattern is often called "LLM-as-judge". You can get an answer from one agent, and then use another agent or model to review the session history and prompts to infer, with some level of confidence, if the agent behaved the way you want it to.
 
