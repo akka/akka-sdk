@@ -10,6 +10,19 @@ Current versions
 * Akka CLI {akka-cli-version}
 * A glance of all Akka libraries and their current versions is presented at https://doc.akka.io/libraries/akka-dependencies/current[Akka library versions].
 
+== June 2025
+
+[sidebar]
+****
+
+**New Akka SDK learning path in Akkademy**
+
+A new course is now available in Akkademy: https://akkademy.akka.io/learn/courses/51/introduction-to-the-akka-sdk[Introduction to the Akka SDK].
+
+This short, self-paced course introduces the foundational concepts of the Akka SDK. It is organized into brief lessons with coding exercises that run directly in the browser, requiring no installation. The course is ideal for developers who are new to the Akka SDK and want a structured, guided approach to building services.
+
+****
+
 == May 2025
 
 * https://github.com/akka/akka-sdk/releases/tag/v3.3.2[Akka SDK 3.3.2]
