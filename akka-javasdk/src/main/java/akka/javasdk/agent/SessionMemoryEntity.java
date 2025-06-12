@@ -18,6 +18,7 @@ import com.typesafe.config.Config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -51,7 +52,7 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
 
     public State {
       if (maxLengthInBytes <= 0) throw new IllegalArgumentException("Maximum size must be greater than 0");
-      messages = messages != null ? messages : Collections.emptyList();
+      messages = messages != null ? messages : new LinkedList<>();
       currentLengthInBytes = enforceMaxCapacity(messages, currentLengthInBytes, maxLengthInBytes);
     }
 
@@ -82,10 +83,16 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
     private static long enforceMaxCapacity(List<SessionMessage> messages, long currentLengthSize, long maxSize) {
       var freedSpace = 0;
       while ((currentLengthSize - freedSpace) > maxSize) {
-        // FIXME: delete also the reply from AI?
         freedSpace += messages.removeFirst().size();
         logger.debug("Removed oldest message. Remaining size={}, maxSizeInBytes={}", currentLengthSize, maxSize);
       }
+
+      // remove all messages that are not UserMessage since those were driven by the deleted UserMessage
+      while (!messages.isEmpty() && !(messages.getFirst() instanceof UserMessage)) {
+        freedSpace += messages.removeFirst().size();
+        logger.debug("Removed orphan message. Remaining size={}, maxSizeInBytes={}", currentLengthSize, maxSize);
+      }
+
       return currentLengthSize - freedSpace;
     }
 
@@ -103,15 +110,15 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
   public sealed interface Event {
 
     @TypeName("akka-memory-limited-window-set")
-    record LimitedWindowSet(long timestamp, int maxSizeInBytes) implements Event {
+    record LimitedWindowSet(Instant timestamp, int maxSizeInBytes) implements Event {
     }
 
     @TypeName("akka-memory-user-message-added")
-    record UserMessageAdded(long timestamp, String componentId, String message) implements Event {
+    record UserMessageAdded(Instant timestamp, String componentId, String message) implements Event {
     }
 
     @TypeName("akka-memory-ai-message-added")
-    record AiMessageAdded(long timestamp,
+    record AiMessageAdded(Instant timestamp,
                           String componentId,
                           String message,
                           int inputTokens,
@@ -121,7 +128,7 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
     }
 
     @TypeName("akka-memory-tool-response-message-added")
-    record ToolResponseMessageAdded(long timestamp,
+    record ToolResponseMessageAdded(Instant timestamp,
                                     String componentId,
                                     String id,
                                     String name,
@@ -134,7 +141,7 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
     }
 
     @TypeName("akka-memory-deleted")
-    record Deleted(long timestamp) implements Event {
+    record Deleted(Instant timestamp) implements Event {
     }
   }
 
@@ -147,7 +154,7 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
       return effects().error("Maximum size must be greater than 0");
     } else {
       return effects()
-        .persist(new Event.LimitedWindowSet(System.currentTimeMillis(), limitedWindow.maxSizeInBytes))
+        .persist(new Event.LimitedWindowSet(Instant.now(), limitedWindow.maxSizeInBytes))
         .thenReply(__ -> done());
     }
   }
@@ -173,7 +180,7 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
 
             return (Event) switch (msg) {
               case AiMessage(
-                long timestamp, String text, String componentId, int inputTokens, int outputTokens,
+                Instant timestamp, String text, String componentId, int inputTokens, int outputTokens,
                 List<SessionMessage.ToolCallRequest> toolCallRequests
               ) -> new Event.AiMessageAdded(timestamp, componentId, text,
                 inputTokens,
@@ -181,7 +188,7 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
                 toolCallRequests);
 
               case SessionMessage.ToolCallResponse(
-                long timestamp, String componentId, String id, String name, String content
+                  Instant timestamp, String componentId, String id, String name, String content
               ) -> new Event.ToolResponseMessageAdded(
                 timestamp,
                 componentId,
@@ -287,7 +294,7 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
       return effects().reply(done());
     } else {
       return effects()
-        .persist(new Event.Deleted(System.currentTimeMillis()))
+        .persist(new Event.Deleted(Instant.now()))
         .deleteEntity()
         .thenReply(__ -> done());
     }
