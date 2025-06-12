@@ -116,15 +116,7 @@ Make sure that you pull the latest samples regularly to make use of improvements
 
 The coding assistant will generate more accurate code if we give it some detailed instructions. We have prepared such xref:java:ai-coding-assistant-guidelines.adoc[guidelines] that you can use as a template.
 
-At the beginning of your chat session include a prompt like this:
-
-```
-Don't generate any code yet, but remember the following guidelines and use them when writing code in this project.
-
-<paste guidelines>
-```
-
-You can copy-paste the guidelines from https://doc.akka.io/java/ai-coding-assistant-guidelines.html.md[ai-coding-assistant-guidelines.html.md, , window="new"]
+At the beginning of your chat session copy-paste the guidelines from https://doc.akka.io/java/ai-coding-assistant-guidelines.html.md[ai-coding-assistant-guidelines.html.md, window="new"]
 
 == Prompt examples
 
