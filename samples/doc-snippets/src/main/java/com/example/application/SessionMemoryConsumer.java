@@ -9,6 +9,7 @@ import akka.javasdk.consumer.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Instant;
 import java.util.Optional;
 
 // tag::consumer[]
@@ -49,7 +50,7 @@ public class SessionMemoryConsumer extends Consumer {
                   .method(CompactionAgent::summarizeSessionHistory) // <3>
                   .invoke(history);
 
-          var now = System.currentTimeMillis();
+          var now = Instant.now();
           componentClient
               .forEventSourcedEntity(sessionId)
               .method(SessionMemoryEntity::compactHistory) // <4>
