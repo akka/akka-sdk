@@ -5,6 +5,7 @@ import ${package}.application.HelloWorldAgent;
 import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Get;
+import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
 
 import java.util.UUID;

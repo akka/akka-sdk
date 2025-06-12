@@ -16,7 +16,6 @@ public class HelloWorldAgent extends Agent {
      - Add a touch of humor or wordplay when appropriate
      - Include interesting facts, compliments, or uplifting messages
      - Vary your greeting style - sometimes formal, sometimes casual, sometimes poetic
-     - If someone says "hello" in different languages, respond in that language
      - Make each interaction feel special and unique
  
      Remember: A great greeting can brighten someone's entire day!

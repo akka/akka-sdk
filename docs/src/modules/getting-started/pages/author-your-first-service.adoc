@@ -15,6 +15,7 @@ In this guide, you will:
 * Explore a basic HTTP Endpoint to interact with the agent.
 * Add a request body to the Endpoint.
 * Run your service locally.
+* Play a multilingual game with the agent.
 * Explore the local console to observe your running service.
 
 == Prerequisites
@@ -141,24 +142,11 @@ mvn compile exec:java
 
 Once successfully started, any defined Endpoints become available at `localhost:9000` and you will see an INFO message that the Akka Runtime has started.
 
-Your "Hello World" service is now running.
-
 In another shell, you can now use `curl` to send requests to this Endpoint.
 
 [source, command line]
 ----
 curl localhost:9000/hello
-----
-
-Which will reply with an AI-generated greeting, such as
-[source]
-----
-🌍 Hello, magnificent traveler of the digital realm! 🌈 Are you ready to embark
-on a fantastic adventure today? Just think of me as your cheerful compass,
-guiding you through the wonders of knowledge and fun! Speaking of adventure,
-did you know that the world's largest desert isn't the Sahara, but Antarctica?
-It's all about perspective! Let's make this day a treasure trove of delightful
-discoveries! What’s on your mind?
 ----
 
 == Add your own greeting
@@ -181,6 +169,71 @@ curl -i -XPOST -H "Content-Type: application/json" localhost:9000/hello -d '
 
 Does it recognize the pirate greeting?
 
+== Play a language game
+
+In this section, you'll play a simple language game with the agent using `curl`.
+
+Each player must reply in a new language. The agent remembers previous languages and will end the game if a language is repeated.
+
+To keep the game predictable, the agent is instructed to always begin in English. This prevents accidental repetition and allows you to observe memory in action.
+
+[NOTE]
+====
+Be sure to include the language you're using in parentheses at the end of your message. This helps the agent track the game state correctly.
+====
+
+. Start the game:
+
+[source, command line]
+----
+curl -i -XPOST -H "Content-Type: application/json" localhost:9000/hello -d \
+'{"greeting":"Let'\''s play a language game. Each of us must reply in a new language every time. The first to repeat a language loses. Try to not lose the game. Always name the language you'\''re using in parentheses. You start. Use English first. If I repeat a language, announce that the game is over and that you won.","sessionId":"12345"}'
+----
+
+.Expected response:
+[source,text]
+----
+Great! Let's begin. Hello there! Ready to put your languages to the test? (English)
+----
+
+. Reply in Portuguese:
+
+[source, command line]
+----
+curl -i -XPOST -H "Content-Type: application/json" localhost:9000/hello -d \
+'{"greeting":"Acho que vou ganhar este jogo! (Portuguese)", "sessionId":"12345"}'
+----
+
+.Expected response:
+[source,text]
+----
+Well played! Here's my reply in a different language. (This response is in another language)
+----
+
+. Repeat a language to simulate a loss (Portuguese again):
+
+[source, command line]
+----
+curl -i -XPOST -H "Content-Type: application/json" localhost:9000/hello -d \
+'{"greeting":"Vamos ver se consigo ganhar de novo! (Portuguese)", "sessionId":"12345"}'
+----
+
+.Expected response:
+[source,text]
+----
+Oops! Portuguese has already been used. That means I win this round. Thanks for playing! (English)
+----
+
+[IMPORTANT]
+====
+What just happened?
+
+Akka Agents track context using *session memory*. In this case, the Agent remembered that Portuguese had already been used earlier in the same `sessionId`.
+
+Session memory provides a history mechanism that enables agents to maintain context across multiple interactions. This feature is essential for building agents that can remember previous exchanges with users, understand context, and provide coherent responses over time.
+
+====
+
 == Explore the local console
 
 The Akka local console is a web-based tool that provides a convenient way to view and interact with your running service.
@@ -190,7 +243,6 @@ The Akka local console is a web-based tool that provides a convenient way to vie
 Starting the local console requires using the Akka CLI and Docker.
 
 include::ROOT:partial$cli-install-short.adoc[]
-
 
 === Start the local console
 
@@ -204,7 +256,6 @@ Pulling local console image, please wait...
 ----
 
 . Once the console is running, you will see a message like this:
-
 +
 [source,bash]
 ----
