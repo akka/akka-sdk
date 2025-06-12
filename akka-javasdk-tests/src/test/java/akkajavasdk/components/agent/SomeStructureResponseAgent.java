@@ -6,7 +6,6 @@ package akkajavasdk.components.agent;
 
 import akka.javasdk.agent.Agent;
 import akka.javasdk.agent.JsonParsingException;
-import akka.javasdk.agent.ModelProvider;
 import akka.javasdk.annotations.AgentDescription;
 import akka.javasdk.annotations.ComponentId;
 import org.slf4j.Logger;
@@ -16,19 +15,12 @@ import org.slf4j.LoggerFactory;
 @AgentDescription(name = "Dummy Agent", description = "Not very smart agent")
 public class SomeStructureResponseAgent extends Agent {
   private static final Logger log = LoggerFactory.getLogger(SomeStructureResponseAgent.class);
-  private final ModelProvider modelProvider;
 
   public record SomeResponse(String response) {}
   public record StructuredResponse(String response) {}
 
-  public SomeStructureResponseAgent(ModelProvider modelProvider) {
-    this.modelProvider = modelProvider;
-  }
-
-
   public Effect<SomeResponse> mapStructureResponse(String question) {
     return effects()
-      .model(modelProvider)
       .systemMessage("You are a helpful...")
       .userMessage(question)
       .responseAs(StructuredResponse.class)
