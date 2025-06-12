@@ -143,7 +143,7 @@ class WorkflowImpl[S, W <: Workflow[S]](
       case NoPersistence         => SpiWorkflow.NoPersistence
     }
 
-  @nowarn("msg=deprecated")
+  @nowarn("msg=deprecated") // DeleteState deprecated but must be in here
   private def toSpiCommandEffect(effect: Workflow.Effect[_]): SpiWorkflow.CommandEffect = {
 
     effect match {
@@ -175,7 +175,9 @@ class WorkflowImpl[S, W <: Workflow[S]](
                 replyBytes,
                 spiMetadata)
 
-          case SpiWorkflow.DeleteState => throw new IllegalArgumentException("Here only for backwards compatibility")
+          case SpiWorkflow.DeleteState =>
+            // deprecated
+            throw new IllegalArgumentException("State deletion deprecated")
 
         }
 
