@@ -4,6 +4,7 @@
 
 package akka.javasdk.impl.agent
 
+import scala.annotation.tailrec
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters.SeqHasAsJava
@@ -53,12 +54,6 @@ import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.Tracer
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
-
-import scala.annotation.tailrec
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import scala.jdk.CollectionConverters.SeqHasAsJava
-import scala.util.control.NonFatal
 
 /**
  * INTERNAL API
@@ -371,7 +366,7 @@ private[impl] final class AgentImpl[A <: Agent](
     }
   }
 
-  override def callTool(request: SpiAgent.ToolCallRequest): Future[String] = {
+  override def callTool(request: SpiAgent.ToolCallCommand): Future[String] = {
 
     val metadata = MetadataImpl.of(request.metadata)
     val agentContext = new AgentContextImpl(sessionId, regionInfo.selfRegion, metadata, request.span, tracerFactory)

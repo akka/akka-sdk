@@ -71,7 +71,7 @@ private[impl] class ReflectiveAgentRouter[A <: Agent](
     }
   }
 
-  def invokeTool(request: SpiAgent.ToolCallRequest, context: AgentContext)(implicit
+  def invokeTool(request: SpiAgent.ToolCallCommand, context: AgentContext)(implicit
       executionContext: ExecutionContext): Future[String] = {
 
     val agent = factory(context)
