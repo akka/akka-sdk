@@ -5,6 +5,7 @@ import akka.javasdk.agent.SessionMessage;
 import akka.javasdk.testkit.TestKitSupport;
 import org.junit.jupiter.api.Test;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Optional;
 import java.util.UUID;
@@ -127,9 +128,9 @@ public class CompactionAgentIntegrationTest extends TestKitSupport {
           .forEventSourcedEntity(sessionId)
           .method(SessionMemoryEntity::addInteraction)
           .invoke(new SessionMemoryEntity.AddInteractionCmd(
-              new SessionMessage.UserMessage(System.currentTimeMillis(), userMessages.get(i), "my-agent"),
+              new SessionMessage.UserMessage(Instant.now(), userMessages.get(i), "my-agent"),
               new SessionMessage.AiMessage(
-                System.currentTimeMillis(),
+                  Instant.now(),
                 aiMessages.get(i),
                 "my-agent",
                 userMessages.get(i).length(), // simulated input tokens
