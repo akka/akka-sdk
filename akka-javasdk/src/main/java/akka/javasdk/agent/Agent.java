@@ -160,6 +160,11 @@ public abstract class Agent {
       Builder memory(MemoryProvider provider);
 
       /**
+       * Add tools from one or more remote MCP servers.
+       */
+      Builder remoteMcpTools(RemoteMcpTools tools, RemoteMcpTools... moreTools);
+
+      /**
        * The user message to the AI model. This message represents the specific query, instruction,
        * or input that will be processed by the model to generate a response.
        */
