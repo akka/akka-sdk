@@ -1,0 +1,87 @@
+= AI RAG agent part 3: Executing RAG queries
+:page-aliases: java:ask-akka/rag.adoc
+
+include::ROOT:partial$include.adoc[]
+
+include::ROOT:partial$new-to-akka-start-here.adoc[]
+
+== Overview
+
+In this step of the guide to building the _Ask Akka_ application, you'll be creating a class that wraps the OpenAI API and the MongoDB client API. It's this class that will provide the abstraction for the rest of the application to use when making RAG queries. You'll use Akka's `@Setup` to configure the dependency injection for this class.
+
+== Prerequisites
+
+include::ROOT:partial$cloud-dev-prerequisites.adoc[]
+
+== Creating the Knowledge class
+
+We're going to add a utility that will retrieve content from MongoDB that is related to the user's query.
+
+The following is the basic RAG-specific code that you can add to a new file `Knowledge.java` in `src/main/java/akka/ask/agent/application/`.
+
+
+[source, java, indent=0]
+.{sample-base-url}/ask-akka-agent/src/main/java/akka/ask/agent/application/Knowledge.java[Knowledge.java]
+----
+include::java:example$ask-akka-agent/src/main/java/akka/ask/agent/application/Knowledge.java[tag=class]
+----
+<1> We use the RAG support from Langchain4j, which consist of a `ContentRetriever`
+<2> and a `RetrievalAugmentor`.
+<3> Create a request from the user question.
+<4> Augment the request with relevant content.
+<5> Construct the new user message that includes the retrieved content.
+
+== Use the knowledge in the agent
+
+[source, java, indent=0]
+.{sample-base-url}/ask-akka-agent/src/main/java/akka/ask/agent/application/AskAkkaAgent.java[AskAkkaAgent.java]
+----
+include::java:example$ask-akka-agent/src/main/java/akka/ask/agent/application/AskAkkaAgent.java[tag=class]
+----
+<1> System message including instructions about the included Akka documentation.
+<2> Inject the `Knowledge`.
+<3> Retrieve relevant content and augment the question.
+<4> Use the question and retrieved content in the request to the LLM.
+
+To be able to inject the `Knowledge` we need to add it to the `Bootstrap`:
+
+[source, java, indent=0]
+.{sample-base-url}/ask-akka-agent/src/main/java/akka/ask/Bootstrap.java[Bootstrap.java]
+----
+include::java:example$ask-akka-agent/src/main/java/akka/ask/Bootstrap.java[tag=knowledge]
+----
+
+== Running the service
+
+Start your service locally:
+
+[source,command line]
+----
+mvn compile exec:java
+----
+
+In another shell, you can now use `curl` to send requests to this Endpoint.
+[source, command line]
+----
+curl localhost:9000/api/ask --header "Content-Type: application/json" -XPOST \
+--data '{ "userId": "001", "sessionId": "foo", "question":"What are the core components of Akka?"}'
+----
+
+In the first part of this guide, the AI model couldn't answer that question meaningfully, but now it will answer something like:
+
+[source]
+----
+1. Event Sourced Entities ...
+2. Key Value Entities ...
+3. HTTP Endpoints ...
+...
+----
+
+
+== Next steps
+
+Next we'll create xref:endpoints.adoc[UI endpoints].
+
+
+
+

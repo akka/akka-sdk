@@ -5,6 +5,8 @@ Akka components form the backbone of the xref:concepts:architecture-model.adoc#_
 
 The following components are available:
 
+xref:java:agents.adoc[image:ROOT:agent.png[width=40] Agents]
+
 xref:java:event-sourced-entities.adoc[image:ROOT:event-sourced-entity.png[width=40] Event Sourced Entities]
 
 xref:java:key-value-entities.adoc[image:ROOT:key-value-entity.png[width=40] Key Value Entities]
@@ -12,6 +14,8 @@ xref:java:key-value-entities.adoc[image:ROOT:key-value-entity.png[width=40] Key 
 xref:java:http-endpoints.adoc[image:ROOT:endpoint.png[width=40] HTTP Endpoints]
 
 xref:java:grpc-endpoints.adoc[image:ROOT:endpoint.png[width=40] gRPC Endpoints]
+
+xref:java:mcp-endpoints.adoc[image:ROOT:endpoint.png[width=40] MCP Endpoints]
 
 xref:java:views.adoc[image:ROOT:view.png[width=40] Views]
 

@@ -1,4 +1,4 @@
-= Understanding
+= Concepts
 
 include::ROOT:partial$include.adoc[]
 

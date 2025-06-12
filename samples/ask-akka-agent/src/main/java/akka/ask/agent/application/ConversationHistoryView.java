@@ -5,7 +5,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
-import akka.ask.agent.domain.SessionEvent;
+import akka.javasdk.agent.SessionMemoryEntity;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.Query;
@@ -37,26 +37,39 @@ public class ConversationHistoryView extends View {
     return queryResult();
   }
 
-  @Consume.FromEventSourcedEntity(SessionEntity.class)
+  @Consume.FromEventSourcedEntity(SessionMemoryEntity.class)
   public static class ChatMessageUpdater extends TableUpdater<Session> {
 
-    public Effect<Session> onEvent(SessionEvent event) {
+    public Effect<Session> onEvent(SessionMemoryEntity.Event event) {
       return switch (event) {
-        case SessionEvent.AiMessageAdded added -> aiMessage(added);
-        case SessionEvent.UserMessageAdded added -> userMessage(added);
+        case SessionMemoryEntity.Event.AiMessageAdded added -> aiMessage(added);
+        case SessionMemoryEntity.Event.UserMessageAdded added -> userMessage(added);
+        default -> effects().ignore();
       };
     }
 
-    private Effect<Session> aiMessage(SessionEvent.AiMessageAdded added) {
-      Message newMessage = new Message(added.response(), "ai", added.timeStamp().toEpochMilli());
-      var rowState = rowStateOrNew(added.userId(), added.sessionId());
+    private Effect<Session> aiMessage(SessionMemoryEntity.Event.AiMessageAdded added) {
+      Message newMessage = new Message(added.message(), "ai", added.timestamp());
+      var rowState = rowStateOrNew(userId(), sessionId());
       return effects().updateRow(rowState.add(newMessage));
     }
 
-    private Effect<Session> userMessage(SessionEvent.UserMessageAdded added) {
-      Message newMessage = new Message(added.query(), "user", added.timeStamp().toEpochMilli());
-      var rowState = rowStateOrNew(added.userId(), added.sessionId());
+    private Effect<Session> userMessage(SessionMemoryEntity.Event.UserMessageAdded added) {
+      Message newMessage = new Message(added.message(), "user", added.timestamp());
+      var rowState = rowStateOrNew(userId(), sessionId());
       return effects().updateRow(rowState.add(newMessage));
+    }
+
+    private String userId() {
+      var agentSessionId = updateContext().eventSubject().get();
+      int i = agentSessionId.indexOf("-");
+      return agentSessionId.substring(0, i);
+    }
+
+    private String sessionId() {
+      var agentSessionId = updateContext().eventSubject().get();
+      int i = agentSessionId.indexOf("-");
+      return agentSessionId.substring(i+1);
     }
 
     private Session rowStateOrNew(String userId, String sessionId) { // <3>

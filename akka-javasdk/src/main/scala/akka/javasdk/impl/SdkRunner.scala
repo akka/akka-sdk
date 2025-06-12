@@ -10,6 +10,7 @@ import java.lang.reflect.Method
 import java.util
 import java.util.Optional
 import java.util.concurrent.CompletionStage
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.Promise
@@ -19,6 +20,7 @@ import scala.jdk.OptionConverters.RichOption
 import scala.jdk.OptionConverters.RichOptional
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
+
 import akka.Done
 import akka.actor.typed.ActorSystem
 import akka.annotation.InternalApi
@@ -109,8 +111,24 @@ import io.opentelemetry.context.{ Context => OtelContext }
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
-
 import java.util.concurrent.Executor
+
+import akka.javasdk.agent.Agent
+import akka.javasdk.agent.AgentContext
+import akka.javasdk.agent.AgentRegistry
+import akka.javasdk.impl.agent.AgentImpl
+import akka.runtime.sdk.spi.AgentDescriptor
+import akka.runtime.sdk.spi.SpiAgent
+import akka.javasdk.agent.PromptTemplate
+import akka.javasdk.agent.SessionMemoryEntity
+import akka.javasdk.annotations.AgentDescription
+import akka.javasdk.impl.agent.AgentRegistryImpl
+import akka.javasdk.impl.agent.PromptTemplateClient
+import akka.javasdk.annotations.mcp.McpEndpoint
+import akka.javasdk.mcp.AbstractMcpEndpoint
+import akka.javasdk.mcp.McpRequestContext
+import akka.runtime.sdk.spi.McpEndpointConstructionContext
+import akka.javasdk.impl.workflow.WorkflowContextImpl
 
 /**
  * INTERNAL API
@@ -220,9 +238,11 @@ private object ComponentType {
   val Workflow = "workflow"
   val HttpEndpoint = "http-endpoint"
   val GrpcEndpoint = "grpc-endpoint"
+  val McpEndpoint = "mcp-endpoint"
   val Consumer = "consumer"
   val TimedAction = "timed-action"
   val View = "view"
+  val Agent = "agent"
 }
 
 /**
@@ -245,12 +265,14 @@ private object ComponentLocator {
       Map(
         ComponentType.HttpEndpoint -> classOf[AnyRef],
         ComponentType.GrpcEndpoint -> classOf[AnyRef],
+        ComponentType.McpEndpoint -> classOf[AnyRef],
         ComponentType.TimedAction -> classOf[TimedAction],
         ComponentType.Consumer -> classOf[Consumer],
         ComponentType.EventSourcedEntity -> classOf[EventSourcedEntity[_, _]],
         ComponentType.Workflow -> classOf[Workflow[_]],
         ComponentType.KeyValueEntity -> classOf[KeyValueEntity[_]],
-        ComponentType.View -> classOf[AnyRef])
+        ComponentType.View -> classOf[AnyRef],
+        ComponentType.Agent -> classOf[Agent])
 
     // Alternative to but inspired by the stdlib SPI style of registering in META-INF/services
     // since we don't always have top supertypes and want to inject things into component constructors
@@ -264,24 +286,32 @@ private object ComponentLocator {
         "It looks like your project needs to be recompiled. Run `mvn clean compile` and try again.")
     val componentConfig = descriptorConfig.getConfig(DescriptorComponentBasePath)
 
-    val components = kalixComponentTypeAndBaseClasses.flatMap { case (componentTypeKey, componentTypeClass) =>
-      if (componentConfig.hasPath(componentTypeKey)) {
-        componentConfig.getStringList(componentTypeKey).asScala.map { className =>
-          try {
-            val componentClass = system.dynamicAccess.getClassFor(className)(ClassTag(componentTypeClass)).get
-            logger.debug("Found and loaded component class: [{}]", componentClass)
-            componentClass
-          } catch {
-            case ex: ClassNotFoundException =>
-              throw new IllegalStateException(
-                s"Could not load component class [$className]. The exception might appear after rename or repackaging operation. " +
-                "It looks like your project needs to be recompiled. Run `mvn clean compile` and try again.",
-                ex)
+    val components: Seq[Class[_]] = kalixComponentTypeAndBaseClasses.flatMap {
+      case (componentTypeKey, componentTypeClass) =>
+        if (componentConfig.hasPath(componentTypeKey)) {
+          componentConfig.getStringList(componentTypeKey).asScala.map { className =>
+            try {
+              val componentClass = system.dynamicAccess.getClassFor(className)(ClassTag(componentTypeClass)).get
+              logger.debug("Found and loaded component class: [{}]", componentClass)
+              componentClass
+            } catch {
+              case ex: ClassNotFoundException =>
+                throw new IllegalStateException(
+                  s"Could not load component class [$className]. The exception might appear after rename or repackaging operation. " +
+                  "It looks like your project needs to be recompiled. Run `mvn clean compile` and try again.",
+                  ex)
+            }
           }
-        }
-      } else
-        Seq.empty
+        } else
+          Seq.empty
     }.toSeq
+
+    val withBuildInComponents = if (components.exists(classOf[Agent].isAssignableFrom)) {
+      logger.debug("Agent component detected, adding built-in components")
+      classOf[SessionMemoryEntity] +: classOf[PromptTemplate] +: components
+    } else {
+      components
+    }
 
     if (descriptorConfig.hasPath(DescriptorServiceSetupEntryPath)) {
       // central config/lifecycle class
@@ -292,9 +322,9 @@ private object ComponentLocator {
       } else {
         logger.warn("Ignoring service class [{}] as it does not have the the @Setup annotation", serviceSetup)
       }
-      LocatedClasses(components, Some(serviceSetup))
+      LocatedClasses(withBuildInComponents, Some(serviceSetup))
     } else {
-      LocatedClasses(components, None)
+      LocatedClasses(withBuildInComponents, None)
     }
   }
 }
@@ -309,6 +339,7 @@ private[javasdk] object Sdk {
       dependencyProvider: Option[DependencyProvider],
       httpClientProvider: HttpClientProvider,
       grpcClientProvider: GrpcClientProviderImpl,
+      agentRegistry: AgentRegistryImpl,
       serializer: JsonSerializer)
 
   private val platformManagedDependency = Set[Class[_]](
@@ -322,7 +353,9 @@ private[javasdk] object Sdk {
     classOf[WorkflowContext],
     classOf[EventSourcedEntityContext],
     classOf[KeyValueEntityContext],
-    classOf[Retries])
+    classOf[Retries],
+    classOf[AgentContext],
+    classOf[AgentRegistry])
 }
 
 /**
@@ -392,7 +425,7 @@ private final class Sdk(
       true
     } else {
       //additional check to skip logging for endpoints
-      if (!clz.hasAnnotation[HttpEndpoint] && !clz.hasAnnotation[GrpcEndpoint]) {
+      if (!clz.hasAnnotation[HttpEndpoint] && !clz.hasAnnotation[GrpcEndpoint] && !clz.hasAnnotation[McpEndpoint]) {
         //this could happen when we remove the @ComponentId annotation from the class,
         //the file descriptor generated by annotation processor might still have this class entry,
         //for instance when working with IDE and incremental compilation (without clean)
@@ -414,10 +447,12 @@ private final class Sdk(
   // we need a method instead of function in order to have type params
   // to late use in Reflect.workflowStateType
   private def workflowInstanceFactory[S, W <: Workflow[S]](
+      componentId: String,
       factoryContext: SpiWorkflow.FactoryContext,
       clz: Class[W]): SpiWorkflow = {
     logger.debug(s"Registering Workflow [${clz.getName}]")
     new WorkflowImpl[S, W](
+      componentId,
       factoryContext.workflowId,
       clz,
       serializer,
@@ -429,13 +464,14 @@ private final class Sdk(
       { context =>
 
         val workflow = wiredInstance(clz) {
-          sideEffectingComponentInjects(None).orElse {
+          sideEffectingComponentInjects(context.asInstanceOf[WorkflowContextImpl].span).orElse {
             // remember to update component type API doc and docs if changing the set of injectables
             case p if p == classOf[WorkflowContext] => context
           }
         }
 
         // FIXME pull this inline setup stuff out of SdkRunner and into some workflow class
+        // would be good to run this code only once per workflow class, not every workflow interaction
         val workflowStateType: Class[_] = Reflect.workflowStateType[S, W](workflow)
         serializer.registerTypeHints(workflowStateType)
 
@@ -472,12 +508,21 @@ private final class Sdk(
       GrpcEndpointDescriptorFactory(anyRefClass, grpcEndpointFactory(anyRefClass))(system)
     }
 
+  private val mcpEndpoints = componentClasses
+    .filter(Reflect.isMcpEndpoint)
+    .map { mcpEndpointClass =>
+      val anyRefClass = mcpEndpointClass.asInstanceOf[Class[AnyRef]]
+      McpEndpointDescriptorFactory(anyRefClass, mcpEndpointFactory(anyRefClass))(sdkExecutionContext)
+    }
+
   private var eventSourcedEntityDescriptors = Vector.empty[EventSourcedEntityDescriptor]
   private var keyValueEntityDescriptors = Vector.empty[EventSourcedEntityDescriptor]
   private var workflowDescriptors = Vector.empty[WorkflowDescriptor]
   private var timedActionDescriptors = Vector.empty[TimedActionDescriptor]
   private var consumerDescriptors = Vector.empty[ConsumerDescriptor]
   private var viewDescriptors = Vector.empty[ViewDescriptor]
+  private var agentDescriptors = Vector.empty[AgentDescriptor]
+  private var agentRegistryInfo = Vector.empty[AgentRegistryImpl.AgentDetails]
 
   componentClasses
     .filter(hasComponentId)
@@ -574,7 +619,7 @@ private final class Sdk(
             componentId,
             clz.getName,
             readOnlyCommandNames,
-            ctx => workflowInstanceFactory(ctx, clz.asInstanceOf[Class[Workflow[Nothing]]]))
+            ctx => workflowInstanceFactory(componentId, ctx, clz.asInstanceOf[Class[Workflow[Nothing]]]))
 
       case clz if classOf[TimedAction].isAssignableFrom(clz) =>
         val componentId = clz.getAnnotation(classOf[ComponentId]).value
@@ -617,6 +662,45 @@ private final class Sdk(
         consumerDescriptors :+=
           new ConsumerDescriptor(componentId, clz.getName, consumerSrc, consumerDestination(consumerClass), consumerSpi)
 
+      case clz if classOf[Agent].isAssignableFrom(clz) =>
+        val componentId = clz.getAnnotation(classOf[ComponentId]).value
+        val agentDescription = Option(clz.getAnnotation(classOf[AgentDescription]))
+
+        val agentClass = clz.asInstanceOf[Class[Agent]]
+
+        val instanceFactory: SpiAgent.FactoryContext => SpiAgent = { factoryContext =>
+          new AgentImpl(
+            componentId,
+            factoryContext.sessionId,
+            context =>
+              wiredInstance(agentClass) {
+                (sideEffectingComponentInjects(None)).orElse {
+                  // remember to update component type API doc and docs if changing the set of injectables
+                  case p if p == classOf[AgentContext] => context
+                }
+              },
+            sdkExecutionContext,
+            sdkTracerFactory,
+            serializer,
+            ComponentDescriptor.descriptorFor(agentClass, serializer),
+            regionInfo,
+            new PromptTemplateClient(componentClient(None)),
+            componentClient(None),
+            applicationConfig)
+
+        }
+        agentDescriptors :+=
+          new AgentDescriptor(componentId, clz.getName, instanceFactory)
+
+        agentRegistryInfo :+=
+          (agentDescription match {
+            case Some(desc) =>
+              AgentRegistryImpl.AgentDetails(componentId, desc.name, desc.description, desc.role, agentClass)
+            case None =>
+              // defaults if AgentDescription is not defined
+              AgentRegistryImpl.AgentDetails(componentId, name = componentId, description = "", role = "", agentClass)
+          })
+
       case clz if classOf[View].isAssignableFrom(clz) =>
         viewDescriptors :+= ViewDescriptorFactory(clz, serializer, regionInfo, sdkExecutionContext)
 
@@ -639,6 +723,7 @@ private final class Sdk(
     case t if t == classOf[TimerScheduler]     => timerScheduler(span)
     case m if m == classOf[Materializer]       => sdkMaterializer
     case a if a == classOf[Retries]            => retries
+    case r if r == classOf[AgentRegistry]      => agentRegistry
     case e if e == classOf[Executor]           =>
       // The type does not guarantee this is a Java concurrent Executor, but we know it is, since supplied from runtime
       sdkExecutionContext.asInstanceOf[Executor]
@@ -668,14 +753,22 @@ private final class Sdk(
         timedActionDescriptors ++
         consumerDescriptors ++
         viewDescriptors ++
-        workflowDescriptors)
+        workflowDescriptors ++
+        agentDescriptors ++
+        mcpEndpoints)
         .filterNot(isDisabled(combinedDisabledComponents))
 
     val preStart = { (_: ActorSystem[_]) =>
       serviceSetup match {
         case None =>
           startedPromise.trySuccess(
-            StartupContext(runtimeComponentClients, None, httpClientProvider, grpcClientProvider, serializer))
+            StartupContext(
+              runtimeComponentClients,
+              None,
+              httpClientProvider,
+              grpcClientProvider,
+              agentRegistry,
+              serializer))
           Future.successful(Done)
         case Some(setup) =>
           if (dependencyProviderOpt.nonEmpty) {
@@ -690,6 +783,7 @@ private final class Sdk(
               dependencyProviderOpt,
               httpClientProvider,
               grpcClientProvider,
+              agentRegistry,
               serializer))
           Future.successful(Done)
       }
@@ -738,6 +832,9 @@ private final class Sdk(
       reportError = reportError,
       healthCheck = () => SdkRunner.FutureDone)
   }
+
+  private lazy val agentRegistry =
+    new AgentRegistryImpl(agentRegistryInfo.toSet)
 
   private def isDisabled(disabledComponents: Set[String])(componentDescriptor: spi.ComponentDescriptor): Boolean = {
     val className = componentDescriptor.implementationName
@@ -824,6 +921,44 @@ private final class Sdk(
       instance
     }
 
+  private def mcpEndpointFactory[E](mcpEndpointClass: Class[E]): McpEndpointConstructionContext => E = {
+    (context: McpEndpointConstructionContext) =>
+      lazy val mcpRequestContext = new McpRequestContext {
+        override def getPrincipals: Principals =
+          PrincipalsImpl(context.principal.source, context.principal.service)
+
+        override def getJwtClaims: JwtClaims =
+          context.jwt match {
+            case Some(jwtClaims) => new JwtClaimsImpl(jwtClaims)
+            case None =>
+              throw new RuntimeException(
+                "There are no JWT claims defined but trying accessing the JWT claims. The class or the method needs to be annotated with @JWT.")
+          }
+
+        override def tracing(): Tracing = new SpanTracingImpl(context.openTelemetrySpan, sdkTracerFactory)
+
+        override def requestHeader(headerName: String): Optional[HttpHeader] =
+          // Note: force cast to Java header model
+          context.requestHeaders.header(headerName).asInstanceOf[Option[HttpHeader]].toJava
+
+        override def allRequestHeaders(): util.List[HttpHeader] =
+          // Note: force cast to Java header model
+          context.requestHeaders.allHeaders.asInstanceOf[Seq[HttpHeader]].asJava
+
+      }
+
+      val instance = wiredInstance(mcpEndpointClass) {
+        sideEffectingComponentInjects(context.openTelemetrySpan).orElse {
+          case p if p == classOf[GrpcRequestContext] => mcpRequestContext
+        }
+      }
+      instance match {
+        case withBaseClass: AbstractMcpEndpoint => withBaseClass._internalSetRequestContext(mcpRequestContext)
+        case _                                  =>
+      }
+      instance
+  }
+
   private def wiredInstance[T](clz: Class[T])(partial: PartialFunction[Class[_], Any]): T = {
     // only one constructor allowed
     require(clz.getDeclaredConstructors.length == 1, s"Class [${clz.getSimpleName}] must have only one constructor.")
@@ -875,7 +1010,9 @@ private final class Sdk(
   }
 
   private def componentClient(openTelemetrySpan: Option[Span]): ComponentClient = {
-    ComponentClientImpl(runtimeComponentClients, serializer, openTelemetrySpan)(sdkExecutionContext, system)
+    ComponentClientImpl(runtimeComponentClients, serializer, agentRegistry.agentClassById, openTelemetrySpan)(
+      sdkExecutionContext,
+      system)
   }
 
   private def timerScheduler(openTelemetrySpan: Option[Span]): TimerScheduler = {

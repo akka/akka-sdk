@@ -1,8 +1,13 @@
 package ${package}.api;
 
+import ${package}.application.HelloWorldAgent;
+
 import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Get;
+import akka.javasdk.client.ComponentClient;
+
+import java.util.UUID;
 
 /**
  * This is a simple Akka Endpoint that returns "Hello World!".
@@ -11,11 +16,20 @@ import akka.javasdk.annotations.http.Get;
 // Opened up for access from the public internet to make the service easy to try out.
 // For actual services meant for production this must be carefully considered, and often set more limited
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
-@HttpEndpoint("/hello")
+@HttpEndpoint("/")
 public class HelloWorldEndpoint {
+  private final ComponentClient componentClient;
 
-  @Get("/")
+  public HelloWorldEndpoint(ComponentClient componentClient) {
+    this.componentClient = componentClient;
+  }
+
+  @Get("/hello")
   public String helloWorld() {
-    return "Hello World!";
+    return componentClient
+        .forAgent()
+        .inSession(UUID.randomUUID().toString())
+        .method(HelloWorldAgent::greet)
+        .invoke("Hello World!");
   }
 }

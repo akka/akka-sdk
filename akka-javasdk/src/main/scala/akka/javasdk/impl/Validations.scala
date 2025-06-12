@@ -11,6 +11,8 @@ import java.lang.reflect.ParameterizedType
 import scala.reflect.ClassTag
 
 import akka.annotation.InternalApi
+import akka.javasdk.agent.Agent
+import akka.javasdk.annotations.AgentDescription
 import akka.javasdk.annotations.ComponentId
 import akka.javasdk.annotations.Consume.FromKeyValueEntity
 import akka.javasdk.annotations.Consume.FromWorkflow
@@ -23,6 +25,7 @@ import akka.javasdk.impl.ComponentDescriptorFactory.eventSourcedEntitySubscripti
 import akka.javasdk.impl.ComponentDescriptorFactory.findKVEClass
 import akka.javasdk.impl.ComponentDescriptorFactory.findWorkflowClass
 import akka.javasdk.impl.ComponentDescriptorFactory.hasAcl
+import akka.javasdk.impl.ComponentDescriptorFactory.hasAgentEffectOutput
 import akka.javasdk.impl.ComponentDescriptorFactory.hasConsumerOutput
 import akka.javasdk.impl.ComponentDescriptorFactory.hasESEffectOutput
 import akka.javasdk.impl.ComponentDescriptorFactory.hasEventSourcedEntitySubscription
@@ -131,7 +134,8 @@ private[javasdk] object Validations {
     validateView(component) ++
     validateEventSourcedEntity(component) ++
     validateValueEntity(component) ++
-    validateWorkflow(component)
+    validateWorkflow(component) ++
+    validateAgent(component)
 
   private def validateEventSourcedEntity(component: Class[_]) =
     when[EventSourcedEntity[_, _]](component) {
@@ -145,6 +149,42 @@ private[javasdk] object Validations {
     when[Workflow[_]](component) {
       commandHandlerArityShouldBeZeroOrOne(component, hasWorkflowEffectOutput)
     }
+
+  private def validateAgent(component: Class[_]) =
+    when[Agent](component) {
+      mustHaveValidComponentId(component) ++
+      mustHaveValidAgentDescription(component) ++
+      agentCommandHandlersMustBeOne(component) ++
+      commandHandlerArityShouldBeZeroOrOne(component, hasAgentEffectOutput)
+    }
+
+  private def agentCommandHandlersMustBeOne(component: Class[_]): Validation = {
+    val commandHandlers = component.getMethods
+      .filter(m => m.getReturnType == classOf[Agent.Effect[_]] || m.getReturnType == classOf[Agent.StreamEffect])
+    when(commandHandlers.length != 1) {
+      Invalid(
+        errorMessage(
+          component,
+          s"${component.getSimpleName} has ${commandHandlers.length} command handlers. There must be one public method returning Agent.Effect."))
+    }
+  }
+
+  private def mustHaveValidAgentDescription(component: Class[_]): Validation = {
+    val ann = component.getAnnotation(classOf[AgentDescription])
+    if (ann == null) {
+      Valid // ok, optional
+    } else {
+      val name: String = ann.name()
+      val description: String = ann.description()
+      var result: Validation = Valid
+      if ((name eq null) || name.isBlank)
+        result ++= Invalid(errorMessage(component, "@AgentDescription name is empty, must be a non-empty string."))
+      if ((description eq null) || description.isBlank)
+        result ++= Invalid(
+          errorMessage(component, "@AgentDescription description is empty, must be a non-empty string."))
+      result
+    }
+  }
 
   private def eventSourcedEntityEventMustBeSealed(component: Class[_]): Validation = {
     val eventClass = Reflect.eventSourcedEntityEventType(component)
@@ -302,7 +342,7 @@ private[javasdk] object Validations {
 
   private def viewTableAnnotationMustNotBeEmptyString(tableUpdater: Class[_]): Validation = {
     val annotation = tableUpdater.getAnnotation(classOf[Table])
-    when(annotation != null && annotation.value().trim.isEmpty) {
+    when(annotation != null && annotation.value().isBlank) {
       Validation(errorMessage(tableUpdater, "@Table name is empty, must be a non-empty string."))
     }
   }
@@ -513,7 +553,7 @@ private[javasdk] object Validations {
   private def publishStreamIdMustBeFilled(component: Class[_]): Validation = {
     Option(component.getAnnotation(classOf[ServiceStream]))
       .map { ann =>
-        when(ann.id().trim.isEmpty) {
+        when(ann.id().isBlank) {
           Validation(Seq("@Produce.ServiceStream id can not be an empty string"))
         }
       }
@@ -539,7 +579,7 @@ private[javasdk] object Validations {
     val ann = component.getAnnotation(classOf[ComponentId])
     if (ann != null) {
       val componentId: String = ann.value()
-      if ((componentId eq null) || componentId.trim.isEmpty)
+      if ((componentId eq null) || componentId.isBlank)
         Invalid(errorMessage(component, "@ComponentId name is empty, must be a non-empty string."))
       else if (componentId.contains("|"))
         Invalid(errorMessage(component, "@ComponentId must not contain the pipe character '|'."))

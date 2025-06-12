@@ -1,0 +1,50 @@
+= Getting Started
+
+Start with a guided tutorial or explore working samples. The resources below help you learn by building services and agents with Akka.
+
+== Tutorials
+
+These hands-on tutorials walk you step by step through building real Akka systems, from your first minimal agentic service to fully featured applications like shopping carts and AI agents. Each tutorial includes guided instructions, runnable code, and explanations of key concepts.
+
+=== Build your first service
+
+[TIP]
+====
+*New to Akka? Start here.*
+====
+
+A good first step for learning how services are structured and how Akka processes requests.
+
+[options="header", cols="2,1"]
+|=======================
+| Tutorial | Level
+| xref:getting-started:author-your-first-service.adoc[Create and run your first agentic Hello World service] | Beginner
+|=======================
+
+=== Build a shopping cart system
+
+Explore a complete e-commerce service and learn key Akka concepts by implementing a real-world system. These lessons walk you through defining agents, handling state, processing commands, and responding to user-specific queries.
+
+[options="header", cols="2,1"]
+|=======================
+| Tutorial | Level
+| xref:build-and-deploy-shopping-cart.adoc[Part 1: Build a basic shopping cart with persistent state and command handling] | Beginner
+| xref:addview.adoc[Part 2: Add user-specific lookup with JWT-based authentication] | Intermediate
+|=======================
+
+=== Build an AI RAG Agent
+
+Learn how to implement a Retrieval-Augmented Generation (RAG) pipeline with Akka. This series covers end-to-end design of a multi-agent system that performs LLM-assisted reasoning, indexing, and live querying.
+
+[options="header", cols="2,1"]
+|=======================
+| Tutorial | Level
+| xref:ask-akka-agent.adoc[Part 1: The agent] | Beginner
+| xref:indexer.adoc[Part 2: Build a workflow that indexes knowledge using semantic embeddings] | Intermediate
+| xref:rag.adoc[Part 3: Executing RAG queries] | Intermediate
+| xref:endpoints.adoc[Part 4: Adding UI endpoints] | Advanced
+|=======================
+
+== Explore sample applications
+
+These runnable xref:getting-started:samples.adoc[code samples] showcase common patterns and advanced architectures built with Akka. They are designed for exploration and reference rather than step-by-step instruction.

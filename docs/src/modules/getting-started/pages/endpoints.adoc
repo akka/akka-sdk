@@ -1,0 +1,84 @@
+= AI RAG agent part 4: Adding UI endpoints
+:page-aliases: java:ask-akka/endpoints.adoc
+
+include::ROOT:partial$include.adoc[]
+
+include::ROOT:partial$new-to-akka-start-here.adoc[]
+
+== Overview
+In this step of the guide, you'll add some endpoints to provide a client-friendly API in front of all of the RAG components you've been building. You'll create an API for submitting your "Ask Akka" questions (prompts), and one that serves up a self-hosted, static asset web UI.
+
+== Prerequisites
+
+include::ROOT:partial$cloud-dev-prerequisites.adoc[]
+* https://platform.openai.com/api-keys[OpenAI API key, window="new"]
+
+You will need to have your MongoDB Atlas database URL and your Open AI API key available, as they are required to run the Ask Akka service.
+
+If you are following along with each step rather than using the completed solution, then you'll need the code you wrote in the previous step.
+
+== Add a session history view
+
+You probably noticed that in the endpoint and in the agent, we're tracking both session IDs and user IDs. If you've ever used the ChatGPT web interface, then you're familiar with the layout where a user's conversation history is shown on the left and you can click on each to view and continue that conversation.
+
+Communication with an LLM is _stateless_. Everything that you get back from a model like ChatGPT is directly related to the prompt you submit. The Agent component in Akka has a built-in session memory, which enables agents to maintain context across multiple interactions. When an agent interacts with an AI model, both the user message and the AI response are automatically stored in the session memory. These messages are then included as additional context in subsequent requests to the model, allowing it to reference previous parts of the interaction.
+
+For the user interface we need a way to pull a conversation history for a given user. We can do this with a view that is built from the events of the built-in `SessionMemoryEntity`.
+
+Add a new file `ConversationHistoryView.java` to `src/main/java/akka/ask/agent/application/`
+
+[source, java, indent=0]
+.{sample-base-url}/ask-akka-agent/src/main/java/akka/ask/agent/application/ConversationHistoryView.java[ConversationHistoryView.java]
+----
+include::java:example$ask-akka-agent/src/main/java/akka/ask/agent/application/ConversationHistoryView.java[tag=top]
+----
+<1> We're using a view-specific message type here to avoid bleeding logic across tiers
+<2> Retrieves a full history of all sessions for a given user
+<3> Convenience method to either get the current row state or make a new one
+
+== Adding the users API
+
+There is a convenience endpoint that you can use to query the list of sessions for a given user:
+
+[source, java, indent=0]
+.{sample-base-url}/ask-akka-agent/src/main/java/akka/ask/agent/api/UsersEndpoint.java[UsersEndpoint.java]
+----
+include::java:example$ask-akka-agent/src/main/java/akka/ask/agent/api/UsersEndpoint.java[tag=endpoint]
+----
+
+One subtle thing worth pointing out here is that both the streaming RAG endpoint and the user view query endpoint have the exact same route as defined in `@HttpEndpoint("/api")`.
+
+
+== Adding the static UI endpoint
+You can now add an endpoint that serves up the static UI. This is surprisingly simple in Akka, as the HTTP endpoint class has built-in support for serving these kinds of assets.
+
+[source, java, indent=0]
+.{sample-base-url}/ask-akka-agent/src/main/java/akka/ask/agent/api/UiEndpoint.java[UiEndpoint.java]
+----
+include::java:example$ask-akka-agent/src/main/java/akka/ask/agent/api/UiEndpoint.java[tag=endpoint]
+----
+<1> The `staticResource` function serves up a file from `main/resources/static-resources`
+
+And lastly, we just need to fill out the https://github.com/akka/akka-sdk/blob/main/samples/ask-akka-agent/src/main/resources/static-resources/index.html[index.html] file to provide the static UI for Ask Akka.
+
+There is far too much code in the HTML file to list out here. If you want to run the UI with the Ask Akka service, here you might want to switch to the version that is in the repository so you can get all of the single-file React code.
+
+== Running the service
+
+Running the service should now just be a matter of running `mvn compile exec:java`. Make sure that you have set both the `OPENAI_API_KEY` and `MONGODB_ATLAS_URI` environment variables before running `exec:java`.
+
+If you haven't run the indexer yet, do so with:
+
+[source,command window, subs="attributes"]
+----
+curl -XPOST localhost:9000/api/index/start 
+----
+
+Once you've made sure that your MongoDB Atlas database has a functioning and properly named vector index, you can open the Ask Akka UI in the browser: http://localhost:9000[localhost:9000, window="new"].
+
+
+== Next steps
+Now that you've gone through the process of building the Ask Akka sample, you should start playing with it and even breaking it. Change the indexing parameters like chunk size and see if that affects how the LLM performs. The key is to roll up your sleeves and get dirty, as that's the best way to extend your learning beyond what's covered in this guide.
+
+Make sure you check out our thorough discussion of https://akka.io/what-is-agentic-ai[agentic AI] and where Akka fits in the ecosystem.
+
