@@ -162,6 +162,7 @@ private[impl] final class AgentImpl[A <: Agent](
               req.userMessage,
               additionalContext,
               functionDescriptors,
+              Seq.empty, // FIXME mcp tool endpoints
               req.responseType,
               req.responseMapping,
               req.failureMapping,
@@ -251,7 +252,11 @@ private[impl] final class AgentImpl[A <: Agent](
       .asScala
       .flatMap {
         case m if m.isInstanceOf[AiMessage] =>
-          Some(new SpiAgent.ContextMessage.AiMessage(m.asInstanceOf[AiMessage].text()))
+          Some(
+            new SpiAgent.ContextMessage.AiMessage(
+              m.asInstanceOf[AiMessage].text(),
+              Seq.empty // FIXME tool requests
+            ))
         case m if m.isInstanceOf[UserMessage] =>
           Some(new SpiAgent.ContextMessage.UserMessage(m.asInstanceOf[UserMessage].text()))
         case m =>

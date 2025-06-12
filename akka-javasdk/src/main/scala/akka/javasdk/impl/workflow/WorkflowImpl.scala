@@ -12,7 +12,6 @@ import scala.jdk.OptionConverters.RichOptional
 import scala.util.Failure
 import scala.util.Success
 import scala.util.control.NonFatal
-
 import akka.annotation.InternalApi
 import akka.javasdk.Metadata
 import akka.javasdk.Tracing
@@ -60,6 +59,8 @@ import io.opentelemetry.api.trace.Tracer
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
+
+import scala.annotation.nowarn
 
 /**
  * INTERNAL API
@@ -142,6 +143,7 @@ class WorkflowImpl[S, W <: Workflow[S]](
       case NoPersistence         => SpiWorkflow.NoPersistence
     }
 
+  @nowarn("msg=deprecated")
   private def toSpiCommandEffect(effect: Workflow.Effect[_]): SpiWorkflow.CommandEffect = {
 
     effect match {
@@ -172,6 +174,9 @@ class WorkflowImpl[S, W <: Workflow[S]](
                 spiTransition,
                 replyBytes,
                 spiMetadata)
+
+          case SpiWorkflow.DeleteState => throw new IllegalArgumentException("Here only for backwards compatibility")
+
         }
 
       case TransitionalEffectImpl(persistence, transition) =>
