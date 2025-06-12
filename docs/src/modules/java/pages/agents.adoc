@@ -239,18 +239,18 @@ akka.javasdk.agent.memory {
 Or you can configure memory behavior for specific agent interactions using the `MemoryProvider` API.
 
 Example with `limitedWindow` memory provider:
-+
 [source,java]
 ----
 include::example$doc-snippets/src/main/java/com/example/application/MyAgent.java[tag=read-last]
 ----
 
+
 Example disabling session memory for the agent:
-+
 [source,java]
 ----
 include::example$doc-snippets/src/main/java/com/example/application/MyAgent.java[tag=no-memory]
 ----
+
 
 === Different memory providers
 
@@ -322,21 +322,30 @@ You may frequently hear people say things like "the LLM can make a call" or "the
 
 The Agent will then in turn execute the tool requested by the LLM, incorporate the tool results into the session context, and then send a new prompt. This will continue in a loop until the LLM no longer indicates it needs to invoke a tool to perform its task.
 
-Tool functions are incredibly easy in Akka. All you need to do is decorate a function with the `@FunctionTool` annotation, and Akka will automatically attempt to resolve tools on your behalf. As an example, you might have an agent that recommends outdoor activities, but to do so it needs to know the current weather. 
+Tool functions are incredibly easy in Akka. All you need to do is decorate an Agent method with the `@FunctionTool`
+annotation, and Akka will automatically resolve it on your behalf. As an example, you might have an agent that
+recommends outdoor activities, but to do so it needs to know the current weather.
 
 Anything "current" is beyond the capabilities of an LLM, so the model response will include information on what tool needs to be invoked.
 
-Here's a sample `getWeather` tool function.
-
+Here's a sample `getWeather` tool function. The method is defined in the `WeatherAgent` class. Since the method is
+defined in the agent itself, Akka will automatically register it as a tool function available to this agent.
 
 [source,java]
 .{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/agents/WeatherAgent.java[WeatherAgent.java]
 ----
-include::example$multi-agent/src/main/java/demo/multiagent/application/agents/WeatherAgent.java[tag=weather-tool]
+include::example$multi-agent/src/main/java/demo/multiagent/application/agents/WeatherAgent.java[tag=function-tool]
 ----
 <1> Annotate the method with `@FunctionTool` and give a clear description of what it provides.
 <2> Parameters can be clarified with the `@Description` annotation.
 <3> Implementation calls an external weather service.
+
+[NOTE]
+====
+LLMs are all about context. The more context you can provide, the better the results.
+Both `@FunctionTool` and `@Description` annotations are used to provide context to the LLM about the tool function and its parameters.
+The better the context, the better the LLM can understand what the tool function does and how to use it.
+====
 
 == Use ComponentClient in an Agent
 

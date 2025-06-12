@@ -48,7 +48,14 @@ public sealed interface SessionMessage {
 
     @Override
     public int size() {
-      return text.length();
+      var textLength = text == null ? 0 : text.length();
+      // calculating the length of tool call requests arguments
+      // NOTE: not accounting for the real payload, only the arguments
+      int argsLength = toolCallRequests == null ? 0 : toolCallRequests.stream()
+          .mapToInt(req -> req.arguments() == null ? 0 : req.arguments().length())
+          .sum();
+
+      return textLength + argsLength;
     }
   }
 
