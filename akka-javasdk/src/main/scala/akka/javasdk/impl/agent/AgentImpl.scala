@@ -5,7 +5,7 @@
 package akka.javasdk.impl.agent
 
 import akka.annotation.InternalApi
-import akka.http.impl.util.JavaMapping.Implicits.AddAsScala
+import akka.http.scaladsl.model.HttpHeader
 import akka.javasdk.Metadata
 import akka.javasdk.Tracing
 import akka.javasdk.agent.Agent
@@ -45,7 +45,6 @@ import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.RegionInfo
 import akka.runtime.sdk.spi.SpiAgent
 import akka.runtime.sdk.spi.SpiAgent.ContextMessage
-import akka.runtime.sdk.spi.SpiAgent.McpToolInterceptor
 import akka.runtime.sdk.spi.SpiMetadata
 import akka.util.ByteString
 import com.typesafe.config.Config
@@ -209,7 +208,9 @@ private[impl] final class AgentImpl[A <: Agent](
       case remoteMcp: RemoteMcpToolsImpl =>
         new SpiAgent.McpToolEndpointDescriptor(
           mcpEndpoint = remoteMcp.serverUri,
-          additionalClientHeaders = remoteMcp.additionalClientHeaders.map(_.asScala),
+          additionalClientHeaders = remoteMcp.additionalClientHeaders.map(
+            _.asInstanceOf[HttpHeader] // javadsl headers are always scala headers?
+          ),
           toolNameFilter = remoteMcp.toolNameFilter match {
             case Some(predicate) => predicate.test
             case None            => (_: String) => true
