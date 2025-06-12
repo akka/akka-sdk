@@ -128,10 +128,7 @@ You can also see that there is an _Access Control List_ (ACL) on this Endpoint t
 
 Set your https://platform.openai.com/api-keys[OpenAI API key, window="new"] as an environment variable:
 
-[source,command line]
-----
-export OPENAI_API_KEY=your-openai-api-key
-----
+include::ROOT:partial$openai-api-key-env-vars.adoc[]
 
 Start your service locally:
 

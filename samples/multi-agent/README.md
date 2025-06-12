@@ -79,10 +79,20 @@ To run the application, you need to provide the following environment variables:
 - `WEATHER_API_KEY`: (Optional) API key for the weather service
 
 Set the environment variables:
-```shell
-export OPENAI_API_KEY=your-openai-api-key
-export WEATHER_API_KEY=your-weather-api-key
-```
+
+- On Linux or macOS:
+
+  ```shell
+  export OPENAI_API_KEY=your-openai-api-key
+  export WEATHER_API_KEY=your-weather-api-key
+  ```
+
+- On Windows (command prompt):
+
+  ```shell
+  set OPENAI_API_KEY=your-openai-api-key
+  set WEATHER_API_KEY=your-weather-api-key
+  ```
 
 Build and run the application:
 ```shell
