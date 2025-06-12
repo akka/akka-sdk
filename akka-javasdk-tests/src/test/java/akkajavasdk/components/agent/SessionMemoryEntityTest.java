@@ -11,6 +11,7 @@ import akka.javasdk.agent.SessionMemoryEntity.AddInteractionCmd;
 import akka.javasdk.agent.SessionMessage;
 import akka.javasdk.agent.SessionMessage.AiMessage;
 import akka.javasdk.agent.SessionMessage.UserMessage;
+import akka.javasdk.eventsourcedentity.EventSourcedEntityContext;
 import akka.javasdk.testkit.EventSourcedResult;
 import akka.javasdk.testkit.EventSourcedTestKit;
 import com.typesafe.config.Config;
@@ -35,7 +36,7 @@ public class SessionMemoryEntityTest {
   @Test
   public void shouldAddMessageToHistory() {
     // given
-    var testKit = EventSourcedTestKit.of(() -> new SessionMemoryEntity(config));
+    var testKit = EventSourcedTestKit.of((context) -> new SessionMemoryEntity(config, context));
     var timestamp = Instant.now();
     String userMsg = "Hello, how are you?";
     String aiMsg = "I'm fine, thanks for asking!";
@@ -79,7 +80,7 @@ public class SessionMemoryEntityTest {
   @Test
   public void shouldAddMultipleMessagesToHistory() {
     // given
-    var testKit = EventSourcedTestKit.of(() -> new SessionMemoryEntity(config));
+    var testKit = EventSourcedTestKit.of((context) -> new SessionMemoryEntity(config, context));
     var timestamp = Instant.now();
     String userMsg1 = "Hello";
     String aiMsg1 = "Hi there!";
@@ -115,7 +116,7 @@ public class SessionMemoryEntityTest {
   @Test
   public void shouldBeCompactable() {
     // given
-    var testKit = EventSourcedTestKit.of(() -> new SessionMemoryEntity(config));
+    var testKit = EventSourcedTestKit.of((context) -> new SessionMemoryEntity(config, context));
     var timestamp = Instant.now();
 
     var userMessage1 = new UserMessage(timestamp, "Hello", COMPONENT_ID);
@@ -162,7 +163,7 @@ public class SessionMemoryEntityTest {
   @Test
   public void shouldHandleConcurrentUpdatesWhenCompacting() {
     // given
-    var testKit = EventSourcedTestKit.of(() -> new SessionMemoryEntity(config));
+    var testKit = EventSourcedTestKit.of((context) -> new SessionMemoryEntity(config, context));
     var timestamp = Instant.now();
 
     var userMessage1 = new UserMessage(timestamp, "Hello", COMPONENT_ID);
@@ -211,7 +212,7 @@ public class SessionMemoryEntityTest {
   @Test
   public void shouldBeDeletable() {
     // given
-    var testKit = EventSourcedTestKit.of(() -> new SessionMemoryEntity(config));
+    var testKit = EventSourcedTestKit.of((context) -> new SessionMemoryEntity(config, context));
     var timestamp = Instant.now();
     String userMsg = "Hello";
     String aiMsg = "Hi there!";
@@ -244,7 +245,7 @@ public class SessionMemoryEntityTest {
   @Test
   public void shouldGetEmptyHistoryWhenNoMessagesAdded() {
     // given
-    var testKit = EventSourcedTestKit.of(() -> new SessionMemoryEntity(config));
+    var testKit = EventSourcedTestKit.of((context) -> new SessionMemoryEntity(config, context));
 
     // when
     EventSourcedResult<SessionHistory> historyResult =
@@ -257,7 +258,7 @@ public class SessionMemoryEntityTest {
   @Test
   public void shouldRemoveOldestMessagesWhenLimitIsReached() {
     // given
-    var testKit = EventSourcedTestKit.of(() -> new SessionMemoryEntity(config));
+    var testKit = EventSourcedTestKit.of((context) -> new SessionMemoryEntity(config, context));
     var timestamp = Instant.now();
 
     // Calculate the total bytes needed for each message
@@ -300,7 +301,7 @@ public class SessionMemoryEntityTest {
   @Test
   public void shouldMaintainCorrectSizeAfterMultipleOperations() {
     // given
-    var testKit = EventSourcedTestKit.of(() -> new SessionMemoryEntity(config));
+    var testKit = EventSourcedTestKit.of((context) -> new SessionMemoryEntity(config, context));
     var timestamp = Instant.now();
 
     // Calculate the total bytes needed for each message
@@ -367,7 +368,7 @@ public class SessionMemoryEntityTest {
   @Test
   public void shouldRejectInvalidBufferSize() {
     // given
-    var testKit = EventSourcedTestKit.of(() -> new SessionMemoryEntity(config));
+    var testKit = EventSourcedTestKit.of((context) -> new SessionMemoryEntity(config, context));
     var invalidBuffer = new SessionMemoryEntity.LimitedWindow(0);
 
     // when
@@ -380,7 +381,7 @@ public class SessionMemoryEntityTest {
 
   @Test
   public void shouldSkipWhenFirstMessageGreaterBySize() {
-    var testKit = EventSourcedTestKit.of(() -> new SessionMemoryEntity(config));
+    var testKit = EventSourcedTestKit.of((context) -> new SessionMemoryEntity(config, context));
     var timestamp = Instant.now();
     // Create a message larger than the buffer
     String largeUserMsg = "A".repeat(100);
@@ -407,7 +408,7 @@ public class SessionMemoryEntityTest {
   @Test
   public void shouldTrackTotalTokenUsage() {
     // given
-    var testKit = EventSourcedTestKit.of(() -> new SessionMemoryEntity(config));
+    var testKit = EventSourcedTestKit.of((context) -> new SessionMemoryEntity(config, context));
     var timestamp = Instant.now();
     String userMsg1 = "Hello";
     String aiMsg1 = "Hi!";
@@ -441,7 +442,7 @@ public class SessionMemoryEntityTest {
   public void shouldReturnOnlyLastNMessages() {
     // Create test kit with the configuration
     EventSourcedTestKit<SessionMemoryEntity.State, SessionMemoryEntity.Event, SessionMemoryEntity> testKit =
-      EventSourcedTestKit.of(() -> new SessionMemoryEntity(config));
+      EventSourcedTestKit.of((context) -> new SessionMemoryEntity(config, context));
     var timestamp = Instant.now();
 
     // Add several interactions
@@ -474,7 +475,7 @@ public class SessionMemoryEntityTest {
   @Test
   public void shouldReturnEmptyHistoryWithLastN() {
     EventSourcedTestKit<SessionMemoryEntity.State, SessionMemoryEntity.Event, SessionMemoryEntity> testKit =
-      EventSourcedTestKit.of(() -> new SessionMemoryEntity(config));
+      EventSourcedTestKit.of((context) -> new SessionMemoryEntity(config, context));
 
     var lastN = 4;
     EventSourcedResult<SessionHistory> result = testKit
