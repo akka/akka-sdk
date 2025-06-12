@@ -126,6 +126,7 @@ import akka.javasdk.impl.agent.AgentRegistryImpl
 import akka.javasdk.impl.agent.PromptTemplateClient
 import akka.javasdk.annotations.mcp.McpEndpoint
 import akka.javasdk.impl.agent.OverrideModelProvider
+import akka.javasdk.impl.agent.AgentImpl.AgentContextImpl
 import akka.javasdk.mcp.AbstractMcpEndpoint
 import akka.javasdk.mcp.McpRequestContext
 import akka.runtime.sdk.spi.McpEndpointConstructionContext
@@ -678,7 +679,7 @@ private final class Sdk(
             factoryContext.sessionId,
             context =>
               wiredInstance(agentClass) {
-                (sideEffectingComponentInjects(None)).orElse {
+                (sideEffectingComponentInjects(context.asInstanceOf[AgentContextImpl].span)).orElse {
                   // remember to update component type API doc and docs if changing the set of injectables
                   case p if p == classOf[AgentContext] => context
                 }
@@ -686,7 +687,7 @@ private final class Sdk(
             sdkExecutionContext,
             sdkTracerFactory,
             serializer,
-            ComponentDescriptor.descriptorFor(agentClass, serializer),
+            AgentComponentDescriptor.descriptorFor(agentClass, serializer),
             regionInfo,
             new PromptTemplateClient(componentClient(None)),
             componentClient(None),

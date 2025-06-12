@@ -4,6 +4,12 @@
 
 package akka.javasdk.impl.agent
 
+import scala.annotation.tailrec
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.jdk.CollectionConverters.SeqHasAsJava
+import scala.util.control.NonFatal
+
 import akka.annotation.InternalApi
 import akka.javasdk.Metadata
 import akka.javasdk.Tracing
@@ -21,8 +27,7 @@ import akka.javasdk.agent.SessionMessage.ToolCallResponse
 import akka.javasdk.agent.SessionMessage.UserMessage
 import akka.javasdk.client.ComponentClient
 import akka.javasdk.impl.AbstractContext
-import akka.javasdk.impl.ComponentDescriptor
-import akka.javasdk.impl.ComponentType
+import akka.javasdk.impl.AgentComponentDescriptor
 import akka.javasdk.impl.ErrorHandling.BadRequestException
 import akka.javasdk.impl.HandlerNotFoundException
 import akka.javasdk.impl.MetadataImpl
@@ -35,10 +40,8 @@ import akka.javasdk.impl.effect.ErrorReplyImpl
 import akka.javasdk.impl.effect.MessageReplyImpl
 import akka.javasdk.impl.effect.NoSecondaryEffectImpl
 import akka.javasdk.impl.serialization.JsonSerializer
-import akka.javasdk.impl.telemetry.AgentCategory
 import akka.javasdk.impl.telemetry.SpanTracingImpl
 import akka.javasdk.impl.telemetry.Telemetry
-import akka.javasdk.impl.telemetry.TraceInstrumentation
 import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.RegionInfo
 import akka.runtime.sdk.spi.SpiAgent
@@ -52,12 +55,6 @@ import io.opentelemetry.api.trace.Tracer
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
 
-import scala.annotation.tailrec
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import scala.jdk.CollectionConverters.SeqHasAsJava
-import scala.util.control.NonFatal
-
 /**
  * INTERNAL API
  */
@@ -65,11 +62,11 @@ import scala.util.control.NonFatal
 private[impl] object AgentImpl {
   private val log = LoggerFactory.getLogger(classOf[AgentImpl[_]])
 
-  private class AgentContextImpl(
+  private[impl] class AgentContextImpl(
       override val sessionId: String,
       override val selfRegion: String,
       override val metadata: Metadata,
-      span: Option[Span],
+      val span: Option[Span],
       tracerFactory: () => Tracer)
       extends AbstractContext
       with AgentContext {
@@ -89,7 +86,7 @@ private[impl] final class AgentImpl[A <: Agent](
     sdkExecutionContext: ExecutionContext,
     tracerFactory: () => Tracer,
     serializer: JsonSerializer,
-    componentDescriptor: ComponentDescriptor,
+    agentComponentDescriptor: AgentComponentDescriptor,
     regionInfo: RegionInfo,
     promptTemplateClient: PromptTemplateClient,
     componentClient: ComponentClient,
@@ -98,20 +95,19 @@ private[impl] final class AgentImpl[A <: Agent](
     extends SpiAgent {
   import AgentImpl._
 
-  private val traceInstrumentation = new TraceInstrumentation(componentId, AgentCategory, tracerFactory)
-
-  private val router: ReflectiveAgentRouter = {
-    val agentContext = new AgentContextImpl(sessionId, regionInfo.selfRegion, Metadata.EMPTY, None, tracerFactory)
-    new ReflectiveAgentRouter(factory(agentContext), componentDescriptor.methodInvokers, serializer)
+  private val router: ReflectiveAgentRouter[A] = {
+    new ReflectiveAgentRouter[A](
+      factory,
+      agentComponentDescriptor.componentDescriptor.methodInvokers,
+      agentComponentDescriptor.functionTools,
+      serializer)
   }
 
-  private val toolDescriptors = ToolDescriptors(router.agent)
-  private val functionTools = FunctionTools(router.agent)
+  private val toolDescriptors = agentComponentDescriptor.functionDescriptors
 
   override def handleCommand(command: SpiAgent.Command): Future[SpiAgent.Effect] = {
 
-    val span: Option[Span] =
-      traceInstrumentation.buildSpan(ComponentType.Agent, componentId, None, command.metadata)
+    val span: Option[Span] = command.span
     span.foreach(s => MDC.put(Telemetry.TRACE_ID, s.getSpanContext.getTraceId))
     // smuggling 0 arity method called from component client through here
     val cmdPayload = command.payload.getOrElse(BytesPayload.empty)
@@ -194,7 +190,6 @@ private[impl] final class AgentImpl[A <: Agent](
     } finally {
       span.foreach { s =>
         MDC.remove(Telemetry.TRACE_ID)
-        s.end()
       }
     }
 
@@ -371,33 +366,11 @@ private[impl] final class AgentImpl[A <: Agent](
     }
   }
 
-  override def callTool(request: SpiAgent.ToolCallRequest): Future[String] = {
+  override def callTool(request: SpiAgent.ToolCallCommand): Future[String] = {
 
-    val toolInvoker =
-      functionTools.getOrElse(request.name, throw new IllegalArgumentException(s"Unknown tool ${request.name}"))
-
-    val mapper = serializer.objectMapper
-    val jsonNode = mapper.readTree(request.arguments)
-
-    val methodInput =
-      toolInvoker.paramNames.zipWithIndex.map { case (name, index) =>
-        // assume that the paramName in the method matches a node from the json 'content'
-        val node = jsonNode.get(name)
-        val typ = toolInvoker.types(index)
-        val javaType = mapper.getTypeFactory.constructType(typ)
-        mapper.treeToValue(node, javaType).asInstanceOf[Any]
-      }
-
-    Future {
-      val toolResult = toolInvoker.invoke(methodInput)
-
-      if (toolInvoker.returnType == Void.TYPE)
-        "SUCCESS"
-      else if (toolInvoker.returnType == classOf[String])
-        toolResult.asInstanceOf[String]
-      else
-        mapper.writeValueAsString(toolResult)
-    }(sdkExecutionContext)
+    val metadata = MetadataImpl.of(request.metadata)
+    val agentContext = new AgentContextImpl(sessionId, regionInfo.selfRegion, metadata, request.span, tracerFactory)
+    router.invokeTool(request, agentContext)(sdkExecutionContext)
   }
 
 }
