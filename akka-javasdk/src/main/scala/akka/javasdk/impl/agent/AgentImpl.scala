@@ -5,6 +5,7 @@
 package akka.javasdk.impl.agent
 
 import akka.annotation.InternalApi
+import akka.http.impl.util.JavaMapping.Implicits.AddAsScala
 import akka.javasdk.Metadata
 import akka.javasdk.Tracing
 import akka.javasdk.agent.Agent
@@ -12,6 +13,7 @@ import akka.javasdk.agent.AgentContext
 import akka.javasdk.agent.JsonParsingException
 import akka.javasdk.agent.MemoryProvider
 import akka.javasdk.agent.ModelProvider
+import akka.javasdk.agent.RemoteMcpTools
 import akka.javasdk.agent.SessionHistory
 import akka.javasdk.agent.SessionMemory
 import akka.javasdk.agent.SessionMessage
@@ -43,6 +45,7 @@ import akka.runtime.sdk.spi.BytesPayload
 import akka.runtime.sdk.spi.RegionInfo
 import akka.runtime.sdk.spi.SpiAgent
 import akka.runtime.sdk.spi.SpiAgent.ContextMessage
+import akka.runtime.sdk.spi.SpiAgent.McpToolInterceptor
 import akka.runtime.sdk.spi.SpiMetadata
 import akka.util.ByteString
 import com.typesafe.config.Config
@@ -159,6 +162,7 @@ private[impl] final class AgentImpl[A <: Agent](
             val metadata = MetadataImpl.toSpi(req.replyMetadata)
             val sessionMemoryClient = deriveMemoryClient(req.memoryProvider)
             val additionalContext = toSpiContextMessages(sessionMemoryClient.getHistory(sessionId))
+            val mcpToolEndpoints = toSpiMcpEndpoints(req.remoteMcpTools)
 
             new SpiAgent.RequestModelEffect(
               spiModelProvider,
@@ -166,7 +170,7 @@ private[impl] final class AgentImpl[A <: Agent](
               req.userMessage,
               additionalContext,
               toolDescriptors,
-              Seq.empty, // FIXME mcp tool endpoints
+              mcpToolEndpoints,
               req.responseType,
               req.responseMapping,
               req.failureMapping,
@@ -199,6 +203,33 @@ private[impl] final class AgentImpl[A <: Agent](
     }
 
   }
+
+  private def toSpiMcpEndpoints(remoteMcpTools: Seq[RemoteMcpTools]): Seq[SpiAgent.McpToolEndpointDescriptor] =
+    remoteMcpTools.map {
+      case remoteMcp: RemoteMcpToolsImpl =>
+        new SpiAgent.McpToolEndpointDescriptor(
+          mcpEndpoint = remoteMcp.serverUri,
+          additionalClientHeaders = remoteMcp.additionalClientHeaders.map(_.asScala),
+          toolNameFilter = remoteMcp.toolNameFilter match {
+            case Some(predicate) => predicate.test
+            case None            => (_: String) => true
+          },
+          toolInterceptor = remoteMcp.interceptor.map {
+            javaInterceptor =>
+              (toolCallRequest: SpiAgent.ToolCallRequest, toolCall: SpiAgent.ToolCallRequest => Future[String]) =>
+                {
+                  val newRequestPayload =
+                    javaInterceptor.interceptRequest(toolCallRequest.name, toolCallRequest.arguments)
+                  val newRequest =
+                    if (newRequestPayload eq toolCallRequest.arguments) toolCallRequest
+                    else new SpiAgent.ToolCallRequest(toolCallRequest.id, toolCallRequest.name, newRequestPayload)
+                  toolCall(newRequest).map(result => javaInterceptor.interceptResponse(toolCallRequest.name, result))(
+                    sdkExecutionContext)
+                }
+
+          })
+      case other => throw new IllegalArgumentException(s"Unsupported remote mcp tools impl $other")
+    }
 
   private def deriveMemoryClient(memoryProvider: MemoryProvider): SessionMemory = {
     memoryProvider match {

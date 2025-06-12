@@ -16,6 +16,7 @@ import akka.javasdk.agent.Agent.Effect.MappingResponseBuilder
 import akka.javasdk.agent.Agent.Effect.OnSuccessBuilder
 import akka.javasdk.agent.MemoryProvider
 import akka.javasdk.agent.ModelProvider
+import akka.javasdk.agent.RemoteMcpTools
 import akka.javasdk.impl.agent.BaseAgentEffectBuilder.PrimaryEffectImpl
 import akka.javasdk.impl.agent.BaseAgentEffectBuilder.RequestModel
 import akka.javasdk.impl.effect.ErrorReplyImpl
@@ -40,7 +41,8 @@ private[javasdk] object BaseAgentEffectBuilder {
         responseMapping = None,
         failureMapping = None,
         replyMetadata = Metadata.EMPTY,
-        memoryProvider = MemoryProvider.fromConfig())
+        memoryProvider = MemoryProvider.fromConfig(),
+        remoteMcpTools = Seq.empty)
   }
 
   sealed trait SystemMessage
@@ -55,7 +57,8 @@ private[javasdk] object BaseAgentEffectBuilder {
       responseMapping: Option[Function1[Any, Any]],
       failureMapping: Option[Throwable => Any],
       replyMetadata: Metadata,
-      memoryProvider: MemoryProvider)
+      memoryProvider: MemoryProvider,
+      remoteMcpTools: Seq[RemoteMcpTools])
       extends PrimaryEffectImpl {
 
     def withProvider(provider: ModelProvider): RequestModel =
@@ -63,6 +66,9 @@ private[javasdk] object BaseAgentEffectBuilder {
 
     def withMemory(provider: MemoryProvider): RequestModel =
       copy(memoryProvider = provider)
+
+    def withRemoteMcpTools(tools: Seq[RemoteMcpTools]): RequestModel =
+      copy(remoteMcpTools = tools)
   }
 
   case object NoPrimaryEffect extends PrimaryEffectImpl
@@ -148,6 +154,11 @@ private[javasdk] final class BaseAgentEffectBuilder[Reply]
 
   override def memory(provider: MemoryProvider): Builder = {
     updateRequestModel(_.withMemory(provider))
+    this
+  }
+
+  override def remoteMcpTools(tools: RemoteMcpTools, moreTools: RemoteMcpTools*): Builder = {
+    updateRequestModel(_.withRemoteMcpTools(tools +: moreTools))
     this
   }
 

@@ -1,0 +1,30 @@
+package akka.javasdk.impl.agent
+
+import akka.annotation.InternalApi
+import akka.http.javadsl.model.HttpHeader
+import akka.javasdk.agent.RemoteMcpTools
+
+import java.util.function.Predicate
+
+/**
+ * INTERNAL API
+ */
+@InternalApi
+final case class RemoteMcpToolsImpl(
+    serverUri: String,
+    toolNameFilter: Option[Predicate[String]],
+    interceptor: Option[RemoteMcpTools.ToolInterceptor],
+    additionalClientHeaders: Seq[HttpHeader])
+    extends RemoteMcpTools {
+
+  def this(serverUri: String) = this(serverUri, None, None, Seq.empty)
+
+  override def allowToolNames(toolNameFilter: Predicate[String]): RemoteMcpTools =
+    copy(toolNameFilter = Some(toolNameFilter))
+
+  override def withToolInterceptor(interceptor: RemoteMcpTools.ToolInterceptor): RemoteMcpTools =
+    copy(interceptor = Some(interceptor))
+
+  override def addClientHeader(header: HttpHeader): RemoteMcpTools =
+    copy(additionalClientHeaders = additionalClientHeaders :+ header)
+}
