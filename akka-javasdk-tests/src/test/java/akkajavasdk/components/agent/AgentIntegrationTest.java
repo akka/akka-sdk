@@ -100,9 +100,9 @@ public class AgentIntegrationTest extends TestKitSupport {
         .toCompletableFuture().get(5, TimeUnit.SECONDS);
 
     //then
-    assertThat(resultTokens.size()).isEqualTo("123456".length());
-    assertThat(resultTokens.getFirst()).isEqualTo("1");
-    assertThat(resultTokens.getLast()).isEqualTo("6");
+    assertThat(resultTokens.size()).isEqualTo(13); // by word + separators
+    assertThat(resultTokens.getFirst()).isEqualTo("Hi");
+    assertThat(resultTokens.getLast()).isEqualTo("?");
   }
 
   @Test
