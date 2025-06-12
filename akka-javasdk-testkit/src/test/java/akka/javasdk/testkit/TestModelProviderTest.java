@@ -200,7 +200,7 @@ class TestModelProviderTest {
 
     assertThatThrownBy(() -> chatModel.doChat(request))
         .isInstanceOf(RuntimeException.class)
-        .hasMessage("No user message found");
+        .hasMessage("No input message found");
   }
 
   @Test

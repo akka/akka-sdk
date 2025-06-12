@@ -31,6 +31,7 @@ public class AgentIntegrationTest extends TestKitSupport {
   protected TestKit.Settings testKitSettings() {
     return TestKit.Settings.DEFAULT
         .withModelProvider(SomeAgent.class, testModelProvider)
+        .withModelProvider(SomeAgentWithTool.class, testModelProvider)
         .withModelProvider(SomeStructureResponseAgent.class, testModelProvider)
         .withModelProvider(SomeStreamingAgent.class, testModelProvider);
   }
@@ -85,6 +86,50 @@ public class AgentIntegrationTest extends TestKitSupport {
     //then
     assertThat(result.response()).isEqualTo("default response");
   }
+
+
+  @Test
+  public void shouldCallASingleTool() {
+
+    var userQuestion = "How is the weather today in Leuven?";
+
+    //when asking for the weather, it first look up for today's date
+    testModelProvider.mockResponse(
+      s -> s.equals(userQuestion),
+      new TestModelProvider.AiResponse(
+        new TestModelProvider.ToolInvocationRequest("getDateOfToday", "")));
+
+    // when receiving the date back, model asks for calling getWeather
+    testModelProvider.mockResponseToToolResult(
+      result -> result.content().equals("2025-01-01"),
+      result -> {
+        var args = """
+          {
+           "location" : "Leuven",
+           "date" : "2025-01-01"
+          }
+          """;
+        return new TestModelProvider.AiResponse(
+          new TestModelProvider.ToolInvocationRequest("getWeather", args));
+      }
+      );
+
+    // receives weather info
+    testModelProvider.mockResponseToToolResult(
+      result -> result.content().startsWith("The weather is"),
+      result -> new TestModelProvider.AiResponse(result.content())
+    );
+
+    //when
+    var response = componentClient.forAgent().inSession(newSessionId())
+      .method(SomeAgentWithTool::query)
+      .invoke(userQuestion);
+
+
+    //then
+    assertThat(response.response()).isEqualTo("The weather is sunny in Leuven. (date=2025-01-01)");
+  }
+
 
   @Test
   public void shouldStreamResponse() throws Exception {
