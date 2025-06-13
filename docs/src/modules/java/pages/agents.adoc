@@ -69,13 +69,30 @@ include::example$doc-snippets/src/main/java/com/example/application/MyAgent.java
 
 NOTE: With `ModelProvider.fromConfig` you can define several models in configuration and use different models in different agents.
 
-Available model providers are:
 
-* Anthropic
-* GoogleAIGemini
-* LocalAI
-* Ollama
-* OpenAi
+Available model providers for hosted models are:
+
+[options="header" cols="1,1"]
+|===
+| Provider
+| Site
+
+| Anthropic | link:https://www.anthropic.com/[anthropic.com]
+| GoogleAIGemini | link:https://gemini.google.com/[gemini.google.com]
+| OpenAi | link:https://openai.com/[openai.com]
+
+|===
+
+Additionally, these model providers for locally running models are supported:
+
+[options="header" cols="1,1"]
+|===
+| Provider
+| Site
+
+| LocalAI | link:https://localai.io/[localai.io]
+| Ollama | link:https://ollama.com/[ollama.com]
+|===
 
 Each model provider may have different settings and those are described in xref:model-provider-details.adoc[]
 
