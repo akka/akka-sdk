@@ -12,7 +12,7 @@ If your agent is consuming an LLM as a service, then you could be paying some am
 
 == Different types of AI
 
-Given the near ubiquity of LLMs these days, it would be easy to assume that all agents interact with LLMs whether they are self-hosted or provided as an external service. This idea does a disservice to the rest of machine learning and AI in particular. 
+LLMs are everywhere these days and it is impossible to escape all of their related news. It would be easy to assume that all agents interact with LLMs whether they are self-hosted or provided as an external service. This idea does a disservice to the rest of machine learning and AI in particular. 
 
 As you develop your teams of collaborative agents, keep in mind that not everything needs to be an LLM and look for opportunities to use smaller, more efficient, task-specific models. This can not only save you money, but can improve the overall performance of your application.
 
@@ -56,7 +56,7 @@ Whether you have 1 agent or 50, you still need to be able to do things like reco
 
 The answers your agents get from models are _non-deterministic_. They can seem random at times. Since you can't predict the model output you can't use traditional testing practices. Instead, we need to do what's called **evaluation**. Evaluation involves iteratively refining a prompt.
 
-You submit the prompt to the model and get an answer back. Then, we can use _another model_ to derive metrics from that response like confidence ratings. This is often called the "LLM-as-judge" pattern and is becoming pretty popular. 
+You submit the prompt to the model and get an answer back. Then, we can use _another model_ to derive metrics from that response like confidence ratings. This is often called the "LLM-as-judge" pattern.
 
 Rather than a unit test, we often have entire suites of evaluation runs where we submit a large number of prompts, derive analytics and metrics from the replies, and then score the model-generated data as a whole. This is tricky because you can very easily have an evaluation run that has a high confidence score but still somehow manages to contain link:https://www.ibm.com/think/topics/ai-hallucinations[hallucinations].
 
