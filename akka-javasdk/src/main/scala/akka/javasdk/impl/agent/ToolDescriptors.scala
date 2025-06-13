@@ -30,7 +30,7 @@ object ToolDescriptors {
 
     cls.getDeclaredMethods
       .filter(m => m.hasAnnotation[FunctionTool])
-      .filter(m => m.isPublic || (allowNonPublic && m.isNonPublic))
+      .filter(m => m.isPublic || allowNonPublic)
       .map { method =>
 
         val toolAnno = method.getAnnotation(classOf[FunctionTool])

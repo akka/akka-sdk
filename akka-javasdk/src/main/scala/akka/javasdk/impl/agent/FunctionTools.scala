@@ -42,7 +42,7 @@ object FunctionTools {
     val cls = any.getClass
     cls.getDeclaredMethods
       .filter(m => m.hasAnnotation[FunctionTool])
-      .filter(m => m.isPublic || (allowNonPublic && m.isNonPublic))
+      .filter(m => m.isPublic || allowNonPublic)
       .map { method =>
 
         val toolAnno = method.getAnnotation(classOf[FunctionTool])
@@ -61,7 +61,7 @@ object FunctionTools {
           override def invoke(args: Array[Any]): Any = {
             // the filter above should filter out non-public methods in non-agent classes
             // but no need to touch the accessibility of the method if not needed
-            if (allowNonPublic && method.isNonPublic) method.setAccessible(true)
+            if (allowNonPublic) method.setAccessible(true)
 
             method.invoke(any, args: _*)
           }

@@ -52,7 +52,6 @@ private[impl] object Reflect {
 
     implicit class MethodOps(javaMethod: Method) {
       def isPublic: Boolean = Modifier.isPublic(javaMethod.getModifiers)
-      def isNonPublic: Boolean = !isPublic
     }
 
     implicit class AnnotatedElementOps(annotated: AnnotatedElement) {
