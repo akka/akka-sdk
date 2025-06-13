@@ -6,7 +6,7 @@ AI agents are components that integrate with AI to perceive their environment, m
 
 == Tokens and streaming
 
-As you learned in the fundamental concepts video, agents interact with AI, most commonly in the form of Large Language Models (LLMs). LLMs are what is known as _predictive text_. This means that every word streamed to the agent is actually just the next word predicted to be in the output. Regardless of platform or language, agents need the ability to stream tokens bi-directionally.
+Agents interact with AI, most commonly in the form of Large Language Models (LLMs). LLMs are what is known as _predictive text_. This means that every word streamed to the agent is actually just the next word predicted to be in the output. Regardless of platform or language, agents need the ability to stream tokens bi-directionally.
 
 If your agent is consuming an LLM as a service, then you could be paying some amount of money per bundle of tokens. In cases like this, it is crucial to ensure that you have control over how frequently and how many tokens the agent "spends."
 
