@@ -2,6 +2,7 @@ Ack
 ACLs
 ACRs
 Adoptium
+[Aa]gentic
 Agrona
 Aiven
 [Aa]kka
