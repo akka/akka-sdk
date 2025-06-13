@@ -47,7 +47,7 @@ This app represents an agency that searches for flights and accommodations. It's
 +
 link:https://github.com/akka-samples/trip-agent[Github Repository], Level: Intermediate
 
-Multi-agent example using a workflow::
+Multi-agent, weather-aware travel agent and activity planner::
 Demonstrating how to build a multi-agent system using Akka and an LLM model. A workflow manages the user query process, handling the sequential steps of agent selection, plan creation, execution, and summarization.
 +
 link:https://github.com/akka-samples/multi-agent[Github Repository], Level: Advanced
