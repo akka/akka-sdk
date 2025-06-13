@@ -1,5 +1,7 @@
-// Concepts 
+// Understanding/Concepts
 ** xref:concepts:index.adoc[]
+*** xref:concepts:concepts.adoc[]
+*** xref:concepts:distributed-systems.adoc[]
 *** xref:concepts:architecture-model.adoc[]
 *** xref:concepts:deployment-model.adoc[]
 *** xref:concepts:development-process.adoc[]
