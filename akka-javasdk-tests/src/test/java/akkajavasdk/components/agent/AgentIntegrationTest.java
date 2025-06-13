@@ -89,7 +89,7 @@ public class AgentIntegrationTest extends TestKitSupport {
 
 
   @Test
-  public void shouldCallToolFunctions() {
+  public void shouldCallToolFunctionsFromInstances() {
 
     var userQuestion = "How is the weather today in Leuven?";
 
@@ -130,6 +130,58 @@ public class AgentIntegrationTest extends TestKitSupport {
     assertThat(response.response()).isEqualTo("The weather is sunny in Leuven. (date=2025-01-01)");
   }
 
+  @Test
+  public void shouldCallToolFunctionsFromClasses() {
+
+    var userQuestion = "How is the traffic today in Leuven?";
+
+    var args = """
+          {
+           "location" : "Leuven"
+          }
+          """;
+    // when asking for the traffic, call the traffic service
+
+    testModelProvider.mockToolInvocationRequest(
+      msg -> msg.content().equals(userQuestion),
+        new TestModelProvider.ToolInvocationRequest("getTrafficNow", args));
+
+    // receives the traffic info as final answer
+    testModelProvider.mockResponseToToolResult(
+      result -> result.content().startsWith("There is traffic jam"),
+      result -> new TestModelProvider.AiResponse(result.content())
+    );
+
+    //when
+    var response = componentClient.forAgent().inSession(newSessionId())
+      .method(SomeAgentWithTool::query)
+      .invoke(userQuestion);
+
+
+    //then
+    assertThat(response.response()).isEqualTo("There is traffic jam in Leuven.");
+  }
+
+  @Test
+  public void shouldFailWithClearMessageIfToolClassCannotBeInit() {
+
+    var userQuestion = "How is the traffic today in Leuven?";
+
+    testModelProvider.mockToolInvocationRequest(
+      msg -> msg.content().equals(userQuestion),
+      new TestModelProvider.ToolInvocationRequest("getNonStaticTrafficNow", ""));
+
+    try {
+      componentClient.forAgent().inSession(newSessionId())
+        .method(SomeAgentWithTool::query)
+        .invoke(userQuestion);
+
+      fail("Should have thrown an exception");
+    } catch (Exception e) {
+      // FIXME: errors message in dev-mode/test should be propagate
+      assertThat(e.getMessage()).contains("Unexpected error");
+    }
+  }
 
   @Test
   public void shouldStreamResponse() throws Exception {

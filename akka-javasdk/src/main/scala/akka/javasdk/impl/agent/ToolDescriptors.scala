@@ -17,13 +17,10 @@ import akka.runtime.sdk.spi.SpiAgent
 @InternalApi
 object ToolDescriptors {
 
-  def apply(any: Any): Seq[SpiAgent.ToolDescriptor] =
-    apply(any.getClass)
-
   def agentToolDescriptor(cls: Class[_]): Seq[SpiAgent.ToolDescriptor] =
     toToolDescriptors(cls, allowNonPublic = true)
 
-  def apply(cls: Class[_]): Seq[SpiAgent.ToolDescriptor] =
+  def forClass(cls: Class[_]): Seq[SpiAgent.ToolDescriptor] =
     toToolDescriptors(cls, allowNonPublic = false)
 
   private def toToolDescriptors(cls: Class[_], allowNonPublic: Boolean): Seq[SpiAgent.ToolDescriptor] = {
