@@ -26,6 +26,7 @@ Akka is a platform for building, running and evaluating both transactional and a
 * xref:concepts:distributed-systems.adoc[]
 * xref:concepts:deployment-model.adoc[Deployment model]
 * xref:concepts:development-process.adoc[Development process]
+* xref:concepts:ai-agents.adoc[AI agents]
 * xref:concepts:state-model.adoc[]
 * xref:concepts:saga-patterns.adoc[Saga patterns]
 * xref:concepts:multi-region.adoc[Multi-region operations]
