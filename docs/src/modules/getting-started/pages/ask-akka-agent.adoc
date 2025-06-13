@@ -20,6 +20,8 @@ In this part of the guide you will:
 include::ROOT:partial$cloud-dev-prerequisites.adoc[]
 * https://platform.openai.com/api-keys[OpenAI API key, window="new"]
 
+include::ROOT:partial$recommend-ai-video.adoc[]
+
 == Create the empty project
 
 You already learned how to create an empty Akka project when you went through the guide to xref:getting-started:author-your-first-service.adoc#_generate_and_build_the_project[author your first service]. Follow those steps again to ensure that you've got a new project that compiles.

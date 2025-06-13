@@ -13,6 +13,8 @@ In this step of the guide to building the _Ask Akka_ application, you'll be crea
 
 include::ROOT:partial$cloud-dev-prerequisites.adoc[]
 
+include::ROOT:partial$recommend-ai-video.adoc[]
+
 == Creating the Knowledge class
 
 We're going to add a utility that will retrieve content from MongoDB that is related to the user's query.
