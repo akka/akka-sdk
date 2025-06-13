@@ -5,6 +5,7 @@
 package akka.javasdk.impl.agent
 
 import akka.annotation.InternalApi
+import akka.javasdk.DependencyProvider
 import akka.javasdk.Metadata
 import akka.javasdk.Tracing
 import akka.javasdk.agent.Agent
@@ -93,6 +94,7 @@ private[impl] final class AgentImpl[A <: Agent](
     promptTemplateClient: PromptTemplateClient,
     componentClient: ComponentClient,
     overrideModelProvider: OverrideModelProvider,
+    dependencyProvider: Option[DependencyProvider],
     config: Config)
     extends SpiAgent {
   import AgentImpl._
@@ -158,10 +160,12 @@ private[impl] final class AgentImpl[A <: Agent](
             // FIXME: we need FQCN to avoid clashes
             val toolDescriptors =
               ToolDescriptors.agentToolDescriptor(agent.getClass) ++
-              req.toolsInstances.flatMap { t => ToolDescriptors(t.getClass) }
+              req.toolInstances.flatMap { any => ToolDescriptors.forClass(any.getClass) } ++
+              req.toolClasses.flatMap { cls => ToolDescriptors.forClass(cls) }
 
             val functionTools = FunctionTools.agentFunctionToolInvokers(agent) ++
-              req.toolsInstances.flatMap { any => FunctionTools(any) }.toMap
+              req.toolInstances.flatMap { any => FunctionTools.forInstance(any) }.toMap ++
+              req.toolClasses.flatMap { cls => FunctionTools.forClass(cls, dependencyProvider) }.toMap
 
             new SpiAgent.RequestModelEffect(
               modelProvider = spiModelProvider,

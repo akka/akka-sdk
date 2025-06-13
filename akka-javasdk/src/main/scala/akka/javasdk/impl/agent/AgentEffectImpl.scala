@@ -44,6 +44,7 @@ private[javasdk] object BaseAgentEffectBuilder {
         failureMapping = None,
         replyMetadata = Metadata.EMPTY,
         memoryProvider = MemoryProvider.fromConfig(),
+        Seq.empty,
         Seq.empty)
   }
 
@@ -60,7 +61,8 @@ private[javasdk] object BaseAgentEffectBuilder {
       failureMapping: Option[Throwable => Any],
       replyMetadata: Metadata,
       memoryProvider: MemoryProvider,
-      toolsInstances: Seq[Any])
+      toolInstances: Seq[Any],
+      toolClasses: Seq[Class[_]])
       extends PrimaryEffectImpl {
 
     def withProvider(provider: ModelProvider): RequestModel =
@@ -70,7 +72,11 @@ private[javasdk] object BaseAgentEffectBuilder {
       copy(memoryProvider = provider)
 
     def addToolInstances(toolInstances: Seq[Any]): RequestModel = {
-      copy(toolsInstances = this.toolsInstances ++ toolInstances)
+      copy(toolInstances = this.toolInstances ++ toolInstances)
+    }
+
+    def addToolClasses(toolClasses: Seq[Class[_]]): RequestModel = {
+      copy(toolClasses = this.toolClasses ++ toolClasses)
     }
   }
 
@@ -191,7 +197,16 @@ private[javasdk] final class BaseAgentEffectBuilder[Reply]
   override def tools(toolInstances: util.List[AnyRef]): Builder = {
     updateRequestModel(_.addToolInstances(toolInstances.asScala.toSeq))
     this
+  }
 
+  override def toolClasses(toolClasses: Class[_]*): Builder = {
+    updateRequestModel(_.addToolClasses(toolClasses))
+    this
+  }
+
+  override def toolClasses(toolClasses: util.List[Class[_]]): Builder = {
+    updateRequestModel(_.addToolClasses(toolClasses.asScala.toSeq))
+    this
   }
 }
 

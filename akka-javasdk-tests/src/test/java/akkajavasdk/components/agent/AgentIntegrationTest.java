@@ -11,6 +11,7 @@ import akka.javasdk.testkit.TestKitSupport;
 import akka.javasdk.testkit.TestModelProvider;
 import akka.stream.javadsl.Sink;
 import akkajavasdk.Junit5LogCapturing;
+import akkajavasdk.protocol.TestGrpcServiceOuterClass;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -89,7 +90,7 @@ public class AgentIntegrationTest extends TestKitSupport {
 
 
   @Test
-  public void shouldCallToolFunctions() {
+  public void shouldCallToolFunctionsFromInstances() {
 
     var userQuestion = "How is the weather today in Leuven?";
 
@@ -128,6 +129,38 @@ public class AgentIntegrationTest extends TestKitSupport {
 
     //then
     assertThat(response.response()).isEqualTo("The weather is sunny in Leuven. (date=2025-01-01)");
+  }
+
+  @Test
+  public void shouldCallToolFunctionsFromClasses() {
+
+    var userQuestion = "How is the traffic today in Leuven?";
+
+    var args = """
+          {
+           "location" : "Leuven"
+          }
+          """;
+    // when asking for the traffic, call the traffic service
+
+    testModelProvider.mockToolInvocationRequest(
+      msg -> msg.content().equals(userQuestion),
+        new TestModelProvider.ToolInvocationRequest("getTrafficNow", args));
+
+    // receives the traffic info as final answer
+    testModelProvider.mockResponseToToolResult(
+      result -> result.content().startsWith("There is traffic jam"),
+      result -> new TestModelProvider.AiResponse(result.content())
+    );
+
+    //when
+    var response = componentClient.forAgent().inSession(newSessionId())
+      .method(SomeAgentWithTool::query)
+      .invoke(userQuestion);
+
+
+    //then
+    assertThat(response.response()).isEqualTo("There is traffic jam in Leuven.");
   }
 
 
