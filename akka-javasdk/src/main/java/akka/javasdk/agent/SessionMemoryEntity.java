@@ -48,8 +48,7 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
     this.sessionId = context.entityId();
   }
 
-  public record State(String sessionId, long maxLengthInBytes, long currentLengthInBytes, List<SessionMessage> messages,
-                      long totalTokenUsage) {
+  public record State(String sessionId, long maxLengthInBytes, long currentLengthInBytes, List<SessionMessage> messages) {
 
     private static final Logger logger = LoggerFactory.getLogger(State.class);
 
@@ -64,7 +63,7 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
     }
 
     public State withMaxSize(int newMaxSize) {
-      return new State(sessionId, newMaxSize, currentLengthInBytes, messages, totalTokenUsage);
+      return new State(sessionId, newMaxSize, currentLengthInBytes, messages);
     }
 
     public State addMessage(SessionMessage message) {
@@ -72,15 +71,11 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
       messages.add(message);
 
       var updatedLengthSize = currentLengthInBytes + message.size();
-      return new State(sessionId, maxLengthInBytes, updatedLengthSize, messages, totalTokenUsage);
-    }
-
-    public State withTotalTokenUsage(long tokenUsage) {
-      return new State(sessionId, maxLengthInBytes, currentLengthInBytes, messages, tokenUsage);
+      return new State(sessionId, maxLengthInBytes, updatedLengthSize, messages);
     }
 
     public State clear() {
-      return new State(sessionId, maxLengthInBytes, 0, new LinkedList<>(), 0);
+      return new State(sessionId, maxLengthInBytes, 0, new LinkedList<>());
     }
 
     private static long enforceMaxCapacity(String sessionId, List<SessionMessage> messages, long currentLengthSize, long maxSize) {
@@ -106,7 +101,7 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
   @Override
   public State emptyState() {
     var maxSizeInBytes = config.getBytes("akka.javasdk.agent.memory.limited-window.max-size");
-    return new State(sessionId, maxSizeInBytes, 0, new LinkedList<>(), 0L);
+    return new State(sessionId, maxSizeInBytes, 0, new LinkedList<>());
   }
 
   /**
@@ -319,13 +314,12 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
           currentState()
             .addMessage(
               new AiMessage(
-                aiMsg.timestamp(),
-                aiMsg.message(),
+                aiMsg.timestamp,
+                aiMsg.message,
                 aiMsg.componentId,
-                aiMsg.inputTokens(),
+                aiMsg.inputTokens,
                 aiMsg.outputTokens,
-                aiMsg.toolCallRequests))
-            .withTotalTokenUsage(aiMsg.inputTokens + aiMsg.outputTokens);
+                aiMsg.toolCallRequests));
 
       case Event.ToolResponseMessageAdded toolMsg ->
           currentState()
