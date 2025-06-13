@@ -37,7 +37,6 @@ While you can use any settings you like, the code samples use:
 This guide is written assuming you will follow it as a tutorial to walk through all of the components, building them on your own. If at any time you want to compare your solution with the official sample, check out the link:https://github.com/akka-samples/ask-akka-agent[Github repository].
 ====
 
-
 == Add the Agent
 
 Add a new file `AskAkkaAgent.java` to `src/main/java/akka/ask/agent/application/`
@@ -86,10 +85,7 @@ include::java:example$ask-akka-agent/src/main/resources/application.conf[]
 
 Set your https://platform.openai.com/api-keys[OpenAI API key, window="new"] as an environment variable:
 
-[source,command line]
-----
-export OPENAI_API_KEY=your-openai-api-key
-----
+include::ROOT:partial$openai-api-key-env-vars.adoc[]
 
 Start your service locally:
 

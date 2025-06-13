@@ -24,9 +24,15 @@ This sample is using OpenAI. Other AI models can be configured, see [Agent model
 
 Set your [OpenAI API key](https://platform.openai.com/api-keys) as an environment variable:
 
-```shell
-export OPENAI_API_KEY=your-openai-api-key
-```
+- On Linux or macOS:
+  ```shell
+  export OPENAI_API_KEY=your-openai-api-key
+  ```
+
+- On Windows (command prompt):
+  ```shell
+  set OPENAI_API_KEY=your-openai-api-key
+  ```
 
 To start your service locally, run:
 
@@ -34,7 +40,7 @@ To start your service locally, run:
 mvn compile exec:java
 ```
 
-This command will start your Akka service. With your Akka service running, the endpoint it's available at:
+This command will start your Akka service. With your Akka service running, the endpoint is available at:
 
 ```shell
 curl http://localhost:9000/hello
