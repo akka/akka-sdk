@@ -51,7 +51,7 @@ public class TestModelProvider implements ModelProvider.Custom {
   public record ToolInvocationRequest(String name, String arguments) {
   }
 
-  sealed interface InputMessage {
+  public sealed interface InputMessage {
     String content();
   }
   public record UserQuestion(String content) implements InputMessage {}
@@ -166,6 +166,14 @@ public class TestModelProvider implements ModelProvider.Custom {
   public void mockResponse(Predicate<String> predicate, AiResponse response) {
     Predicate<InputMessage> messagePredicate = (value) -> predicate.test(value.content());
     responsePredicates.add(new Pair<>(messagePredicate, msg -> response));
+  }
+
+  public void mockToolInvocationRequest(Predicate<InputMessage> predicate, ToolInvocationRequest request) {
+
+    Function<InputMessage, AiResponse>  handler =
+      (input) -> new AiResponse(request);
+
+    responsePredicates.add(new Pair<>(predicate, handler));
   }
 
   public void mockResponseToToolResult(Predicate<ToolResult> predicate, Function<ToolResult, AiResponse> handler) {

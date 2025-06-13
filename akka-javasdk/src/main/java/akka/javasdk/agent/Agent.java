@@ -123,6 +123,28 @@ public abstract class Agent {
       Builder tools(List<Object> toolInstances);
 
       /**
+       * Adds one or more tool classes that the AI model can use.
+       * <p>
+       * Each class must have at least one public method annotated with {@code @FunctionTool}.
+       * These methods will be available as tools for the AI model to invoke.
+       *
+       * @param toolClasses additional tool classes exposing tool methods
+       * @return this builder for method chaining
+       */
+      Builder toolClasses(Class<?>... toolClasses);
+
+      /**
+       * Adds one or more tool classes that the AI model can use.
+       * <p>
+       * Each class must have at least one public method annotated with {@code @FunctionTool}.
+       * These methods will be available as tools for the AI model to invoke.
+       *
+       * @param toolClasses one or more classes exposing tool methods
+       * @return this builder for method chaining
+       */
+      Builder toolClasses(List<Class<?>> toolClasses);
+
+      /**
        * Create a system message from a template. Call @{@link PromptTemplate} before to initiate or update template value.
        * <p>
        * Provides system-level instructions to the AI model that defines its behavior and context.

@@ -5,6 +5,7 @@
 package akka.javasdk.impl.agent
 
 import akka.annotation.InternalApi
+import akka.javasdk.DependencyProvider
 import akka.javasdk.annotations.FunctionTool
 import akka.javasdk.impl.reflection.Reflect.Syntax.AnnotatedElementOps
 import akka.javasdk.impl.reflection.Reflect.Syntax.MethodOps
@@ -32,14 +33,31 @@ object FunctionTools {
   }
 
   def agentFunctionToolInvokers(any: Any): Map[String, FunctionToolInvoker] =
-    collectFunctionToolInvokers(any, allowNonPublic = true)
+    collectFunctionToolInvokers(any.getClass, allowNonPublic = true) { () => any }
 
-  def apply(any: Any): Map[String, FunctionToolInvoker] =
-    collectFunctionToolInvokers(any, allowNonPublic = false)
+  def forInstance(any: Any): Map[String, FunctionToolInvoker] =
+    collectFunctionToolInvokers(any.getClass, allowNonPublic = false) { () => any }
 
-  private def collectFunctionToolInvokers(any: Any, allowNonPublic: Boolean): Map[String, FunctionToolInvoker] = {
+  def forClass(cls: Class[_], dependencyProvider: Option[DependencyProvider]): Map[String, FunctionToolInvoker] = {
+    collectFunctionToolInvokers(cls, allowNonPublic = true) { () =>
+      dependencyProvider
+        .map { depProv => depProv.getDependency(cls) }
+        .getOrElse {
+          cls.getConstructors.find(_.getParameterCount == 0) match {
+            case Some(defaultCtor) => defaultCtor.newInstance()
+            case None =>
+              throw new IllegalArgumentException(
+                s"No default (no-arg) constructor found for class ${cls.getName}. " +
+                "Please provide a DependencyProvider to supply dependencies. " +
+                "See https://doc.akka.io/java/setup-and-dependency-injection.html#_custom_dependency_injection")
+          }
+        }
+    }
+  }
 
-    val cls = any.getClass
+  private def collectFunctionToolInvokers(cls: Class[_], allowNonPublic: Boolean)(
+      instanceFactory: () => Any): Map[String, FunctionToolInvoker] = {
+
     cls.getDeclaredMethods
       .filter(m => m.hasAnnotation[FunctionTool])
       .filter(m => m.isPublic || allowNonPublic)
@@ -59,11 +77,9 @@ object FunctionTools {
             method.getGenericParameterTypes
 
           override def invoke(args: Array[Any]): Any = {
-            // the filter above should filter out non-public methods in non-agent classes
-            // but no need to touch the accessibility of the method if not needed
             if (allowNonPublic) method.setAccessible(true)
-
-            method.invoke(any, args: _*)
+            val instance = instanceFactory()
+            method.invoke(instance, args: _*)
           }
 
           override def returnType: Class[_] =

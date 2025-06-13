@@ -692,6 +692,7 @@ private final class Sdk(
             new PromptTemplateClient(componentClient(None)),
             componentClient(None),
             overrideModelProvider,
+            dependencyProviderOpt,
             applicationConfig)
 
         }
@@ -983,7 +984,7 @@ private final class Sdk(
   private def wiredInstance[T](constructor: Constructor[T])(partial: PartialFunction[Class[_], Any]): T = {
 
     // Note that this function is total because it will always return a value (even if null)
-    // last case is a catch all that lookups in the applicationContext
+    // last case is a catch all that lookups in the dependencyProvider
     val totalWireFunction: PartialFunction[Class[_], Any] =
       partial.orElse {
         case p if p == classOf[Config] =>
@@ -991,7 +992,7 @@ private final class Sdk(
 
         // block wiring of clients into anything that is not an Action or Workflow
         // NOTE: if they are allowed, 'partial' should already have a matching case for them
-        // if partial func doesn't match, try to lookup in the applicationContext
+        // if partial func doesn't match, try to lookup in the dependencyProvider
         case anyOther =>
           dependencyProviderOpt match {
             case _ if platformManagedDependency(anyOther) =>
