@@ -137,6 +137,6 @@ This call will take an extract of the Akka SDK documentation and create a vector
 The documentation files are located in `src/main/resources/md-docs/`. That said, you can also add your own documentation files to this directory.
 
 == Next steps
-Next we'll xref:rag.adoc[add the indexed knowledge to the agent] to be able to run meaningful queries against the _Ask Akka_ AI assistant!
+Next we'll xref:ask-akka-agent/rag.adoc[add the indexed knowledge to the agent] to be able to run meaningful queries against the _Ask Akka_ AI assistant!
 
 

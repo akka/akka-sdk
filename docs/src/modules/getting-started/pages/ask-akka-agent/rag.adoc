@@ -82,7 +82,7 @@ In the first part of this guide, the AI model couldn't answer that question mean
 
 == Next steps
 
-Next we'll create xref:endpoints.adoc[UI endpoints].
+Next we'll create xref:ask-akka-agent/endpoints.adoc[UI endpoints].
 
 
 
