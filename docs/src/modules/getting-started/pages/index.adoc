@@ -39,10 +39,10 @@ Learn how to implement a Retrieval-Augmented Generation (RAG) pipeline with Akka
 [options="header", cols="2,1"]
 |=======================
 | Tutorial | Level
-| xref:ask-akka-agent.adoc[Part 1: The agent] | Beginner
-| xref:indexer.adoc[Part 2: Build a workflow that indexes knowledge using semantic embeddings] | Intermediate
-| xref:rag.adoc[Part 3: Executing RAG queries] | Intermediate
-| xref:endpoints.adoc[Part 4: Adding UI endpoints] | Advanced
+| xref:ask-akka-agent/index.adoc[Part 1: The agent] | Beginner
+| xref:ask-akka-agent/indexer.adoc[Part 2: Build a workflow that indexes knowledge using semantic embeddings] | Intermediate
+| xref:ask-akka-agent/rag.adoc[Part 3: Executing RAG queries] | Intermediate
+| xref:ask-akka-agent/endpoints.adoc[Part 4: Adding UI endpoints] | Advanced
 |=======================
 
 == Explore sample applications

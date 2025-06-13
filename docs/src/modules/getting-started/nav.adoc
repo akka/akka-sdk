@@ -1,10 +1,4 @@
 //  Getting Started
 * xref:getting-started:index.adoc[]
 ** xref:getting-started:author-your-first-service.adoc[]
-** xref:getting-started:build-and-deploy-shopping-cart.adoc[]
-** xref:getting-started:addview.adoc[]
-** xref:getting-started:ask-akka-agent.adoc[]
-** xref:getting-started:indexer.adoc[]
-** xref:getting-started:rag.adoc[]
-** xref:getting-started:endpoints.adoc[]
 ** xref:getting-started:samples.adoc[]

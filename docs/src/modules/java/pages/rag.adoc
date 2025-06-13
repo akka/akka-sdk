@@ -28,7 +28,7 @@ include::java:example$ask-akka-agent/src/main/java/akka/ask/agent/application/Kn
 
 This `Knowledge` class would then be used in an agent to enrich the user message.
 
-The guide xref:getting-started:ask-akka-agent.adoc[AI agent that performs a RAG workflow] illustrates how to create embeddings for vector databases, and how to add knowledge to fixed LLMs.
+The guide xref:getting-started:ask-akka-agent/index.adoc[AI agent that performs a RAG workflow] illustrates how to create embeddings for vector databases, and how to add knowledge to fixed LLMs.
 
 == Enrich the context from other components
 

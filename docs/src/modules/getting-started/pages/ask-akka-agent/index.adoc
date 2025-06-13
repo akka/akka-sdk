@@ -117,4 +117,4 @@ This is correct for the Akka libraries, but we want to know about the components
 
 == Next steps
 
-It's time to explore our first aspect of the agentic RAG flow: xref:indexer.adoc[Knowledge indexing].
+It's time to explore our first aspect of the agentic RAG flow: xref:ask-akka-agent/indexer.adoc[Knowledge indexing].
