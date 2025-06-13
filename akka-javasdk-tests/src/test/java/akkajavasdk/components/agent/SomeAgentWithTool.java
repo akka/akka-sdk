@@ -10,12 +10,21 @@ import akka.javasdk.annotations.FunctionTool;
 
 @ComponentId("some-agent-with-tool")
 public class SomeAgentWithTool extends Agent {
+
+  public class WeatherService {
+    @FunctionTool(description = "Returns today's date")
+    public String getWeather(String location, String date) {
+      return "The weather is sunny in "+location+". (date="+date+")";
+    }
+  }
+
   public record SomeResponse(String response) {
   }
 
   public Effect<SomeResponse> query(String question) {
     return effects()
       .systemMessage("You are a helpful...")
+      .tools(new WeatherService())
       .userMessage(question)
       .map(SomeResponse::new)
       .thenReply();
@@ -26,8 +35,4 @@ public class SomeAgentWithTool extends Agent {
     return "2025-01-01";
   }
 
-  @FunctionTool(description = "Returns today's date")
-  private String getWeather(String location, String date) {
-    return "The weather is sunny in "+location+". (date="+date+")";
-  }
 }

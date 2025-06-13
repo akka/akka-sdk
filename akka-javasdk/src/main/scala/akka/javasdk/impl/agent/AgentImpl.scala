@@ -154,8 +154,13 @@ private[impl] final class AgentImpl[A <: Agent](
             val sessionMemoryClient = deriveMemoryClient(req.memoryProvider)
             val additionalContext = toSpiContextMessages(sessionMemoryClient.getHistory(sessionId))
 
-            val toolDescriptors = ToolDescriptors(agent.getClass)
-            val functionTools = FunctionTools(agent)
+            // FIXME: we need FQCN to avoid clashes
+            val toolDescriptors =
+              ToolDescriptors.agentToolDescriptor(agent.getClass) ++
+              req.toolsInstances.flatMap { t => ToolDescriptors(t.getClass) }
+
+            val functionTools = FunctionTools.agentFunctionToolInvokers(agent) ++
+              req.toolsInstances.flatMap { any => FunctionTools(any) }.toMap
 
             new SpiAgent.RequestModelEffect(
               modelProvider = spiModelProvider,

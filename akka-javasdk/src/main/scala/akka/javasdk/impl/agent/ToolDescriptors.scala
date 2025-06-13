@@ -8,6 +8,7 @@ import akka.annotation.InternalApi
 import akka.javasdk.annotations.FunctionTool
 import akka.javasdk.impl.JsonSchema
 import akka.javasdk.impl.reflection.Reflect.Syntax.AnnotatedElementOps
+import akka.javasdk.impl.reflection.Reflect.Syntax.MethodOps
 import akka.runtime.sdk.spi.SpiAgent
 
 /**
@@ -19,11 +20,17 @@ object ToolDescriptors {
   def apply(any: Any): Seq[SpiAgent.ToolDescriptor] =
     apply(any.getClass)
 
-  def apply(cls: Class[_]): Seq[SpiAgent.ToolDescriptor] = {
+  def agentToolDescriptor(cls: Class[_]): Seq[SpiAgent.ToolDescriptor] =
+    toToolDescriptors(cls, allowNonPublic = true)
 
-    // TODO: only methods in Agent itself should be allowed to be private
+  def apply(cls: Class[_]): Seq[SpiAgent.ToolDescriptor] =
+    toToolDescriptors(cls, allowNonPublic = false)
+
+  private def toToolDescriptors(cls: Class[_], allowNonPublic: Boolean): Seq[SpiAgent.ToolDescriptor] = {
+
     cls.getDeclaredMethods
       .filter(m => m.hasAnnotation[FunctionTool])
+      .filter(m => m.isPublic || (allowNonPublic && m.isNonPublic))
       .map { method =>
 
         val toolAnno = method.getAnnotation(classOf[FunctionTool])

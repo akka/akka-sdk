@@ -23,6 +23,9 @@ import akka.javasdk.impl.effect.MessageReplyImpl
 import akka.javasdk.impl.effect.NoSecondaryEffectImpl
 import akka.javasdk.impl.effect.SecondaryEffectImpl
 
+import java.util
+import scala.jdk.CollectionConverters.ListHasAsScala
+
 /**
  * INTERNAL API
  */
@@ -40,7 +43,8 @@ private[javasdk] object BaseAgentEffectBuilder {
         responseMapping = None,
         failureMapping = None,
         replyMetadata = Metadata.EMPTY,
-        memoryProvider = MemoryProvider.fromConfig())
+        memoryProvider = MemoryProvider.fromConfig(),
+        Seq.empty)
   }
 
   sealed trait SystemMessage
@@ -55,7 +59,8 @@ private[javasdk] object BaseAgentEffectBuilder {
       responseMapping: Option[Function1[Any, Any]],
       failureMapping: Option[Throwable => Any],
       replyMetadata: Metadata,
-      memoryProvider: MemoryProvider)
+      memoryProvider: MemoryProvider,
+      toolsInstances: Seq[Any])
       extends PrimaryEffectImpl {
 
     def withProvider(provider: ModelProvider): RequestModel =
@@ -63,6 +68,13 @@ private[javasdk] object BaseAgentEffectBuilder {
 
     def withMemory(provider: MemoryProvider): RequestModel =
       copy(memoryProvider = provider)
+
+    def addToolInstance(toolInstance: Any): RequestModel = {
+      copy(toolsInstances = toolsInstances :+ toolInstance)
+    }
+    def addToolInstances(toolInstances: Seq[Any]): RequestModel = {
+      copy(toolsInstances = this.toolsInstances ++ toolInstances)
+    }
   }
 
   case object NoPrimaryEffect extends PrimaryEffectImpl
@@ -172,6 +184,25 @@ private[javasdk] final class BaseAgentEffectBuilder[Reply]
   override def onFailure(exceptionHandler: function.Function[Throwable, String]): FailureBuilder[String] = {
     updateRequestModel(_.copy(failureMapping = Some(exceptionHandler.asScala.asInstanceOf[Function1[Throwable, Any]])))
     new MappingResponseEffectBuilder(_primaryEffect.asInstanceOf[RequestModel])
+  }
+
+  override def tools(toolInstance1: Any, otherToolInstances: Any*): Builder = {
+    updateRequestModel { model =>
+      model
+        .addToolInstance(toolInstance1)
+        .addToolInstances(otherToolInstances)
+    }
+    this
+  }
+
+  override def tools(toolInstances: util.List[AnyRef]): Builder = {
+    updateRequestModel { model =>
+      toolInstances.asScala.foldLeft(model) { (acc, tool) =>
+        acc.addToolInstance(tool)
+      }
+    }
+    this
+
   }
 }
 
