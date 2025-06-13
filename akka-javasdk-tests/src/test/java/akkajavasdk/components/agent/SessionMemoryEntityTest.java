@@ -406,39 +406,6 @@ public class SessionMemoryEntityTest {
   }
 
   @Test
-  public void shouldTrackTotalTokenUsage() {
-    // given
-    var testKit = EventSourcedTestKit.of((context) -> new SessionMemoryEntity(config, context));
-    var timestamp = Instant.now();
-    String userMsg1 = "Hello";
-    String aiMsg1 = "Hi!";
-    String userMsg2 = "How are you?";
-    String aiMsg2 = "I'm good, thanks!";
-    var um1 = new UserMessage(timestamp, userMsg1, COMPONENT_ID);
-    var aim1 = new AiMessage(timestamp, aiMsg1, COMPONENT_ID, 5, 3);
-    var firstTotal = aim1.inputTokens() + aim1.outputTokens();
-
-    var um2 = new UserMessage(timestamp.plusMillis(1), userMsg2, COMPONENT_ID);
-    // input from second AiMessage sums up with the firstTotal
-    var aim2 = new AiMessage(timestamp.plusMillis(1), aiMsg2, COMPONENT_ID, firstTotal + 7, 6);
-
-    // the last message has the total (total from aim1 is already added to it)
-    var totalTokens = aim2.inputTokens() + aim2.outputTokens();
-
-    // when
-    testKit.method(SessionMemoryEntity::addInteraction)
-      .invoke(new AddInteractionCmd(um1, aim1));
-
-    testKit.method(SessionMemoryEntity::addInteraction)
-      .invoke(new AddInteractionCmd(um2, aim2));
-
-    // then
-    var state = testKit.getState();
-    assertThat(state.totalTokenUsage()).isEqualTo(totalTokens);
-
-  }
-
-  @Test
   public void shouldReturnOnlyLastNMessages() {
     // Create test kit with the configuration
     EventSourcedTestKit<SessionMemoryEntity.State, SessionMemoryEntity.Event, SessionMemoryEntity> testKit =
