@@ -50,6 +50,7 @@ import io.opentelemetry.api.trace.Tracer
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
 
+import java.time.Instant
 import scala.annotation.tailrec
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -254,7 +255,7 @@ private[impl] final class AgentImpl[A <: Agent](
       userMessage: String,
       responses: Seq[SpiAgent.Response]): Unit = {
 
-    val timestamp = System.currentTimeMillis()
+    val timestamp = Instant.now()
 
     // AiMessages and ToolCallResponses
     val responseMessages: Seq[SessionMessage] =

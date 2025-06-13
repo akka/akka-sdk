@@ -14,10 +14,12 @@ import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.annotations.TypeName;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
+import akka.javasdk.eventsourcedentity.EventSourcedEntityContext;
 import com.typesafe.config.Config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -39,20 +41,22 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
   private static final Logger log = LoggerFactory.getLogger(SessionMemoryEntity.class);
 
   private final Config config;
+  private final String sessionId;
 
-  public SessionMemoryEntity(Config config) {
+  public SessionMemoryEntity(Config config, EventSourcedEntityContext context) {
     this.config = config;
+    this.sessionId = context.entityId();
   }
 
-  public record State(long maxLengthInBytes, long currentLengthInBytes, List<SessionMessage> messages,
+  public record State(String sessionId, long maxLengthInBytes, long currentLengthInBytes, List<SessionMessage> messages,
                       long totalTokenUsage) {
 
     private static final Logger logger = LoggerFactory.getLogger(State.class);
 
     public State {
       if (maxLengthInBytes <= 0) throw new IllegalArgumentException("Maximum size must be greater than 0");
-      messages = messages != null ? messages : Collections.emptyList();
-      currentLengthInBytes = enforceMaxCapacity(messages, currentLengthInBytes, maxLengthInBytes);
+      messages = messages != null ? messages : new LinkedList<>();
+      currentLengthInBytes = enforceMaxCapacity(sessionId, messages, currentLengthInBytes, maxLengthInBytes);
     }
 
     public boolean isEmpty() {
@@ -60,7 +64,7 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
     }
 
     public State withMaxSize(int newMaxSize) {
-      return new State(newMaxSize, currentLengthInBytes, messages, totalTokenUsage);
+      return new State(sessionId, newMaxSize, currentLengthInBytes, messages, totalTokenUsage);
     }
 
     public State addMessage(SessionMessage message) {
@@ -68,24 +72,32 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
       messages.add(message);
 
       var updatedLengthSize = currentLengthInBytes + message.size();
-      return new State(maxLengthInBytes, updatedLengthSize, messages, totalTokenUsage);
+      return new State(sessionId, maxLengthInBytes, updatedLengthSize, messages, totalTokenUsage);
     }
 
     public State withTotalTokenUsage(long tokenUsage) {
-      return new State(maxLengthInBytes, currentLengthInBytes, messages, tokenUsage);
+      return new State(sessionId, maxLengthInBytes, currentLengthInBytes, messages, tokenUsage);
     }
 
     public State clear() {
-      return new State(maxLengthInBytes, 0, new LinkedList<>(), 0);
+      return new State(sessionId, maxLengthInBytes, 0, new LinkedList<>(), 0);
     }
 
-    private static long enforceMaxCapacity(List<SessionMessage> messages, long currentLengthSize, long maxSize) {
+    private static long enforceMaxCapacity(String sessionId, List<SessionMessage> messages, long currentLengthSize, long maxSize) {
       var freedSpace = 0;
       while ((currentLengthSize - freedSpace) > maxSize) {
-        // FIXME: delete also the reply from AI?
         freedSpace += messages.removeFirst().size();
-        logger.debug("Removed oldest message. Remaining size={}, maxSizeInBytes={}", currentLengthSize, maxSize);
+        logger.debug("Removed oldest message for sessionId [{}]. Remaining size [{}], maxSizeInBytes [{}]",
+            sessionId, currentLengthSize, maxSize);
       }
+
+      // remove all messages that are not UserMessage since those were driven by the deleted UserMessage
+      while (!messages.isEmpty() && !(messages.getFirst() instanceof UserMessage)) {
+        freedSpace += messages.removeFirst().size();
+        logger.debug("Removed orphan message for sessionId [{}]. Remaining size [{}], maxSizeInBytes [{}]",
+            sessionId, currentLengthSize, maxSize);
+      }
+
       return currentLengthSize - freedSpace;
     }
 
@@ -94,7 +106,7 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
   @Override
   public State emptyState() {
     var maxSizeInBytes = config.getBytes("akka.javasdk.agent.memory.limited-window.max-size");
-    return new State(maxSizeInBytes, 0, new LinkedList<>(), 0L);
+    return new State(sessionId, maxSizeInBytes, 0, new LinkedList<>(), 0L);
   }
 
   /**
@@ -103,15 +115,15 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
   public sealed interface Event {
 
     @TypeName("akka-memory-limited-window-set")
-    record LimitedWindowSet(long timestamp, int maxSizeInBytes) implements Event {
+    record LimitedWindowSet(Instant timestamp, int maxSizeInBytes) implements Event {
     }
 
     @TypeName("akka-memory-user-message-added")
-    record UserMessageAdded(long timestamp, String componentId, String message) implements Event {
+    record UserMessageAdded(Instant timestamp, String componentId, String message) implements Event {
     }
 
     @TypeName("akka-memory-ai-message-added")
-    record AiMessageAdded(long timestamp,
+    record AiMessageAdded(Instant timestamp,
                           String componentId,
                           String message,
                           int inputTokens,
@@ -121,7 +133,7 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
     }
 
     @TypeName("akka-memory-tool-response-message-added")
-    record ToolResponseMessageAdded(long timestamp,
+    record ToolResponseMessageAdded(Instant timestamp,
                                     String componentId,
                                     String id,
                                     String name,
@@ -134,7 +146,7 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
     }
 
     @TypeName("akka-memory-deleted")
-    record Deleted(long timestamp) implements Event {
+    record Deleted(Instant timestamp) implements Event {
     }
   }
 
@@ -147,7 +159,7 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
       return effects().error("Maximum size must be greater than 0");
     } else {
       return effects()
-        .persist(new Event.LimitedWindowSet(System.currentTimeMillis(), limitedWindow.maxSizeInBytes))
+        .persist(new Event.LimitedWindowSet(Instant.now(), limitedWindow.maxSizeInBytes))
         .thenReply(__ -> done());
     }
   }
@@ -173,7 +185,7 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
 
             return (Event) switch (msg) {
               case AiMessage(
-                long timestamp, String text, String componentId, int inputTokens, int outputTokens,
+                Instant timestamp, String text, String componentId, int inputTokens, int outputTokens,
                 List<SessionMessage.ToolCallRequest> toolCallRequests
               ) -> new Event.AiMessageAdded(timestamp, componentId, text,
                 inputTokens,
@@ -181,7 +193,7 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
                 toolCallRequests);
 
               case SessionMessage.ToolCallResponse(
-                long timestamp, String componentId, String id, String name, String content
+                  Instant timestamp, String componentId, String id, String name, String content
               ) -> new Event.ToolResponseMessageAdded(
                 timestamp,
                 componentId,
@@ -287,7 +299,7 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
       return effects().reply(done());
     } else {
       return effects()
-        .persist(new Event.Deleted(System.currentTimeMillis()))
+        .persist(new Event.Deleted(Instant.now()))
         .deleteEntity()
         .thenReply(__ -> done());
     }
