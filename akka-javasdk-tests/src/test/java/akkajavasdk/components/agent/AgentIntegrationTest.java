@@ -11,7 +11,6 @@ import akka.javasdk.testkit.TestKitSupport;
 import akka.javasdk.testkit.TestModelProvider;
 import akka.stream.javadsl.Sink;
 import akkajavasdk.Junit5LogCapturing;
-import akkajavasdk.protocol.TestGrpcServiceOuterClass;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -163,6 +162,26 @@ public class AgentIntegrationTest extends TestKitSupport {
     assertThat(response.response()).isEqualTo("There is traffic jam in Leuven.");
   }
 
+  @Test
+  public void shouldFailWithClearMessageIfToolClassCannotBeInit() {
+
+    var userQuestion = "How is the traffic today in Leuven?";
+
+    testModelProvider.mockToolInvocationRequest(
+      msg -> msg.content().equals(userQuestion),
+      new TestModelProvider.ToolInvocationRequest("getNonStaticTrafficNow", ""));
+
+    try {
+      componentClient.forAgent().inSession(newSessionId())
+        .method(SomeAgentWithTool::query)
+        .invoke(userQuestion);
+
+      fail("Should have thrown an exception");
+    } catch (Exception e) {
+      // FIXME: errors message in dev-mode/test should be propagate
+      assertThat(e.getMessage()).contains("Unexpected error");
+    }
+  }
 
   @Test
   public void shouldStreamResponse() throws Exception {

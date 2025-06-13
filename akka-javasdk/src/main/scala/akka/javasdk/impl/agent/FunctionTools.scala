@@ -49,7 +49,7 @@ object FunctionTools {
               throw new IllegalArgumentException(
                 s"No default (no-arg) constructor found for class ${cls.getName}. " +
                 "If this class has a default (no-agr) constructor and it's an inner class, make sure it is a static class. " +
-                "Otherwise, please provide a DependencyProvider to supply  dependencies. " +
+                "Otherwise, please provide a DependencyProvider to supply dependencies. " +
                 "See https://doc.akka.io/java/setup-and-dependency-injection.html#_custom_dependency_injection")
           }
         }
