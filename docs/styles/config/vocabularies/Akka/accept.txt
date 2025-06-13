@@ -13,6 +13,7 @@ allowOrigins
 [Aa]rchitecting
 artifactId
 async
+[Aa]uditability
 [Aa]utoscaling
 Avro
 [Bb]ackoffice
@@ -28,6 +29,8 @@ Cembaluk
 classname
 clientCertificate
 codegen
+[Cc]omposable
+[Cc]omposability
 config
 configs
 corsPolicy
