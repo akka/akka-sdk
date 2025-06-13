@@ -17,6 +17,8 @@ You will need to have your MongoDB Atlas database URL and your Open AI API key a
 
 If you are following along with each step rather than using the completed solution, then you'll need the code you wrote in the previous step.
 
+include::ROOT:partial$recommend-ai-video.adoc[]
+
 == Add a session history view
 
 You probably noticed that in the endpoint and in the agent, we're tracking both session IDs and user IDs. If you've ever used the ChatGPT web interface, then you're familiar with the layout where a user's conversation history is shown on the left and you can click on each to view and continue that conversation.

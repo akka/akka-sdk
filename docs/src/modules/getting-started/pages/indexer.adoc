@@ -20,6 +20,8 @@ You will also need a link:https://www.mongodb.com/atlas[Mongo DB Atlas] account.
 
 If you are following along with each step rather than using the completed solution, then you'll need the code you wrote in the previous step.
 
+include::ROOT:partial$recommend-ai-video.adoc[]
+
 == Updating the pom
 
 We're going to use `langchain4j` for this sample, so add those dependencies to your Maven pom file. The full file should look like this when done:
