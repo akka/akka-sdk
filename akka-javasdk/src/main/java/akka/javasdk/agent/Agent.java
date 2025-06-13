@@ -6,10 +6,10 @@ package akka.javasdk.agent;
 
 import akka.annotation.InternalApi;
 import akka.javasdk.Metadata;
-import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.impl.agent.BaseAgentEffectBuilder;
 import akka.javasdk.impl.agent.AgentStreamEffectImpl;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -99,6 +99,28 @@ public abstract class Agent {
        * behavior throughout the interaction.
        */
       Builder systemMessage(String message);
+
+      /**
+       * Adds one or more tool instances that the AI model can use.
+       * <p>
+       * Each instance must have at least one public method annotated with {@code @FunctionTool}.
+       * These methods will be available as tools for the AI model to invoke.
+       *
+       * @param toolInstances additional tool instances exposing tool methods
+       * @return this builder for method chaining
+       */
+      Builder tools(Object... toolInstances);
+
+      /**
+       * Adds one or more tool instances that the AI model can use.
+       * <p>
+       * Each instance must have at least one public method annotated with {@code @FunctionTool}.
+       * These methods will be available as tools for the AI model to invoke.
+       *
+       * @param toolInstances one or more objects exposing tool methods
+       * @return this builder for method chaining
+       */
+      Builder tools(List<Object> toolInstances);
 
       /**
        * Create a system message from a template. Call @{@link PromptTemplate} before to initiate or update template value.

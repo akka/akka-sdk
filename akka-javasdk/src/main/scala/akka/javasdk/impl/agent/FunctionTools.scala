@@ -7,6 +7,7 @@ package akka.javasdk.impl.agent
 import akka.annotation.InternalApi
 import akka.javasdk.annotations.FunctionTool
 import akka.javasdk.impl.reflection.Reflect.Syntax.AnnotatedElementOps
+import akka.javasdk.impl.reflection.Reflect.Syntax.MethodOps
 
 import java.lang.reflect.Type
 
@@ -30,11 +31,18 @@ object FunctionTools {
     def returnType: Class[_]
   }
 
-  def apply(obj: Any): Map[String, FunctionToolInvoker] = {
+  def agentFunctionToolInvokers(any: Any): Map[String, FunctionToolInvoker] =
+    collectFunctionToolInvokers(any, allowNonPublic = true)
 
-    val cls = obj.getClass
+  def apply(any: Any): Map[String, FunctionToolInvoker] =
+    collectFunctionToolInvokers(any, allowNonPublic = false)
+
+  private def collectFunctionToolInvokers(any: Any, allowNonPublic: Boolean): Map[String, FunctionToolInvoker] = {
+
+    val cls = any.getClass
     cls.getDeclaredMethods
       .filter(m => m.hasAnnotation[FunctionTool])
+      .filter(m => m.isPublic || allowNonPublic)
       .map { method =>
 
         val toolAnno = method.getAnnotation(classOf[FunctionTool])
@@ -51,9 +59,11 @@ object FunctionTools {
             method.getGenericParameterTypes
 
           override def invoke(args: Array[Any]): Any = {
-            // TODO: only methods in Agent itself should be allowed to be private
-            method.setAccessible(true)
-            method.invoke(obj, args: _*)
+            // the filter above should filter out non-public methods in non-agent classes
+            // but no need to touch the accessibility of the method if not needed
+            if (allowNonPublic) method.setAccessible(true)
+
+            method.invoke(any, args: _*)
           }
 
           override def returnType: Class[_] =

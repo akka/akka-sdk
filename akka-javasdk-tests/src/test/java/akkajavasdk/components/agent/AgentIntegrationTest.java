@@ -89,7 +89,7 @@ public class AgentIntegrationTest extends TestKitSupport {
 
 
   @Test
-  public void shouldCallASingleTool() {
+  public void shouldCallToolFunctions() {
 
     var userQuestion = "How is the weather today in Leuven?";
 
