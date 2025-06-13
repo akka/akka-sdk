@@ -69,9 +69,6 @@ private[javasdk] object BaseAgentEffectBuilder {
     def withMemory(provider: MemoryProvider): RequestModel =
       copy(memoryProvider = provider)
 
-    def addToolInstance(toolInstance: Any): RequestModel = {
-      copy(toolsInstances = toolsInstances :+ toolInstance)
-    }
     def addToolInstances(toolInstances: Seq[Any]): RequestModel = {
       copy(toolsInstances = this.toolsInstances ++ toolInstances)
     }
@@ -186,21 +183,13 @@ private[javasdk] final class BaseAgentEffectBuilder[Reply]
     new MappingResponseEffectBuilder(_primaryEffect.asInstanceOf[RequestModel])
   }
 
-  override def tools(toolInstance1: Any, otherToolInstances: Any*): Builder = {
-    updateRequestModel { model =>
-      model
-        .addToolInstance(toolInstance1)
-        .addToolInstances(otherToolInstances)
-    }
+  override def tools(toolInstances: Any*): Builder = {
+    updateRequestModel(_.addToolInstances(toolInstances))
     this
   }
 
   override def tools(toolInstances: util.List[AnyRef]): Builder = {
-    updateRequestModel { model =>
-      toolInstances.asScala.foldLeft(model) { (acc, tool) =>
-        acc.addToolInstance(tool)
-      }
-    }
+    updateRequestModel(_.addToolInstances(toolInstances.asScala.toSeq))
     this
 
   }

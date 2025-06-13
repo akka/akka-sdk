@@ -106,11 +106,10 @@ public abstract class Agent {
        * Each instance must have at least one public method annotated with {@code @FunctionTool}.
        * These methods will be available as tools for the AI model to invoke.
        *
-       * @param toolInstance1 the first tool instance exposing tool methods
-       * @param otherToolInstances additional tool instances exposing tool methods
+       * @param toolInstances additional tool instances exposing tool methods
        * @return this builder for method chaining
        */
-      Builder tools(Object toolInstance1,  Object... otherToolInstances);
+      Builder tools(Object... toolInstances);
 
       /**
        * Adds one or more tool instances that the AI model can use.
