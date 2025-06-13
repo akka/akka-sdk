@@ -25,13 +25,14 @@ object FunctionTools {
 
     def types: Array[Type]
 
-    def invoke(obj: Any, args: Array[Any]): Any
+    def invoke(args: Array[Any]): Any
 
     def returnType: Class[_]
   }
 
-  def apply(cls: Class[_]): Map[String, FunctionToolInvoker] = {
+  def apply(obj: Any): Map[String, FunctionToolInvoker] = {
 
+    val cls = obj.getClass
     cls.getDeclaredMethods
       .filter(m => m.hasAnnotation[FunctionTool])
       .map { method =>
@@ -49,7 +50,7 @@ object FunctionTools {
           override def types: Array[Type] =
             method.getGenericParameterTypes
 
-          override def invoke(obj: Any, args: Array[Any]): Any = {
+          override def invoke(args: Array[Any]): Any = {
             // TODO: only methods in Agent itself should be allowed to be private
             method.setAccessible(true)
             method.invoke(obj, args: _*)

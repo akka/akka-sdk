@@ -687,7 +687,7 @@ private final class Sdk(
             sdkExecutionContext,
             sdkTracerFactory,
             serializer,
-            AgentComponentDescriptor.descriptorFor(agentClass, serializer),
+            ComponentDescriptor.descriptorFor(agentClass, serializer),
             regionInfo,
             new PromptTemplateClient(componentClient(None)),
             componentClient(None),

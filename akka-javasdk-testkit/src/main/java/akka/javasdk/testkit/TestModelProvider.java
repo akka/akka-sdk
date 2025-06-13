@@ -6,8 +6,9 @@ package akka.javasdk.testkit;
 
 import akka.japi.Pair;
 import akka.javasdk.agent.ModelProvider;
+import dev.langchain4j.agent.tool.ToolExecutionRequest;
 import dev.langchain4j.data.message.AiMessage;
-import dev.langchain4j.data.message.UserMessage;
+import dev.langchain4j.data.message.ToolExecutionResultMessage;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.chat.request.ChatRequest;
@@ -18,6 +19,8 @@ import dev.langchain4j.model.output.FinishReason;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
@@ -26,7 +29,35 @@ import java.util.stream.Stream;
  */
 public class TestModelProvider implements ModelProvider.Custom {
 
-  private List<Pair<Predicate<String>, String>> responsePredicates = new ArrayList<>();
+
+  public record AiResponse(String message, List<ToolInvocationRequest> toolRequests) {
+
+    public AiResponse(String message) {
+      this(message, List.of());
+    }
+
+    public AiResponse(String message, ToolInvocationRequest toolRequest) {
+      this(message, List.of(toolRequest));
+    }
+
+    public AiResponse(ToolInvocationRequest toolRequest) {
+      this("", List.of(toolRequest));
+    }
+
+    public AiResponse(List<ToolInvocationRequest> toolRequests) {
+      this("", toolRequests);
+    }
+  }
+  public record ToolInvocationRequest(String name, String arguments) {
+  }
+
+  sealed interface InputMessage {
+    String content();
+  }
+  public record UserQuestion(String content) implements InputMessage {}
+  public record ToolResult(String name, String content) implements InputMessage {}
+
+  private List<Pair<Predicate<InputMessage>, Function<InputMessage, AiResponse>>> responsePredicates = new ArrayList<>();
 
 
   @Override
@@ -34,8 +65,8 @@ public class TestModelProvider implements ModelProvider.Custom {
     return new ChatModel() {
       @Override
       public ChatResponse doChat(ChatRequest chatRequest) {
-        var userMessageText = getLastUserMessageText(chatRequest);
-        var textResponse = getTextResponse(userMessageText);
+        var inputMessageText = getLastInputMessage(chatRequest);
+        var textResponse = getResponse(inputMessageText);
         return chatResponse(textResponse);
       }
 
@@ -47,13 +78,15 @@ public class TestModelProvider implements ModelProvider.Custom {
     return new StreamingChatModel() {
       @Override
       public void doChat(ChatRequest chatRequest, StreamingChatResponseHandler handler) {
-        var userMessageText = getLastUserMessageText(chatRequest);
-        var textResponse = getTextResponse(userMessageText);
+        var inputMessage = getLastInputMessage(chatRequest);
+        var response = getResponse(inputMessage);
 
-        var tokens = tokenize(textResponse);
-        tokens.forEach(handler::onPartialResponse);
+        if (response.message != null) {
+          var tokens = tokenize(response.message);
+          tokens.forEach(handler::onPartialResponse);
+        }
 
-        handler.onCompleteResponse(chatResponse(textResponse));
+        handler.onCompleteResponse(chatResponse(response));
       }
     };
   }
@@ -64,28 +97,55 @@ public class TestModelProvider implements ModelProvider.Custom {
         .filter(t -> !t.isEmpty()).toList();
   }
 
-  private String getLastUserMessageText(ChatRequest chatRequest) {
+  private InputMessage getLastInputMessage(ChatRequest chatRequest) {
     return Optional.ofNullable(chatRequest.messages().getLast())
-        .filter(chatMessage -> chatMessage instanceof UserMessage)
-        .map(userMessage -> (UserMessage) userMessage)
-        .map(UserMessage::singleText)
-        .orElseThrow(() -> new RuntimeException("No user message found"));
+        .filter(chatMessage -> chatMessage instanceof dev.langchain4j.data.message.UserMessage || chatMessage instanceof ToolExecutionResultMessage)
+        .map(chatMessage ->  {
+          if (chatMessage instanceof dev.langchain4j.data.message.UserMessage userMessage) {
+            return new UserQuestion(userMessage.singleText());
+          } else {
+            ToolExecutionResultMessage result = (ToolExecutionResultMessage) chatMessage;
+            return new ToolResult(result.toolName(), result.text());
+          }
+        })
+        .orElseThrow(() -> new RuntimeException("No input message found"));
   }
 
-  private String getTextResponse(String userMessageText) {
+  private AiResponse getResponse(InputMessage inputMessage) {
       return responsePredicates.stream()
-        .filter(pair -> pair.first().test(userMessageText))
+        .filter(pair -> pair.first().test(inputMessage))
         .findFirst()
-        .map(Pair::second)
-        .orElseThrow(() -> new IllegalArgumentException("No response defined in TestModelProvider for [" + userMessageText + "]"));
+        .map(pair -> pair.second().apply(inputMessage))
+        .orElseThrow(() -> new IllegalArgumentException("No response defined in TestModelProvider for [" + inputMessage + "]"));
   }
 
-  private ChatResponse chatResponse(String response) {
-    return new ChatResponse.Builder()
-        .modelName("test-model")
-        .finishReason(FinishReason.STOP)
-        .aiMessage(new AiMessage(response))
+  private ChatResponse chatResponse(AiResponse response) {
+
+    var builder = new ChatResponse.Builder().modelName("test-model");
+
+    if (!response.toolRequests.isEmpty()) {
+      var requests =
+        response.toolRequests.stream().map(req ->
+          ToolExecutionRequest.builder()
+            .id(UUID.randomUUID().toString())
+            .name(req.name)
+            .arguments(req.arguments)
+            .build()
+        ).toList();
+
+      var aiMessage = AiMessage.from(response.message, requests);
+
+      return builder
+        .aiMessage(aiMessage)
+        .finishReason(FinishReason.TOOL_EXECUTION)
         .build();
+
+    } else {
+      return builder
+        .finishReason(FinishReason.STOP).aiMessage(new AiMessage(response.message))
+        .build();
+    }
+
   }
 
   /**
@@ -99,8 +159,29 @@ public class TestModelProvider implements ModelProvider.Custom {
    * Return this response for a given request that matches the predicate.
    */
   public void mockResponse(Predicate<String> predicate, String response) {
-    responsePredicates.add(new Pair<>(predicate, response));
+    Predicate<InputMessage> messagePredicate = (value) -> predicate.test(value.content());
+    responsePredicates.add(new Pair<>(messagePredicate, msg -> new AiResponse(response)));
   }
+
+  public void mockResponse(Predicate<String> predicate, AiResponse response) {
+    Predicate<InputMessage> messagePredicate = (value) -> predicate.test(value.content());
+    responsePredicates.add(new Pair<>(messagePredicate, msg -> response));
+  }
+
+  public void mockResponseToToolResult(Predicate<ToolResult> predicate, Function<ToolResult, AiResponse> handler) {
+    Predicate<InputMessage> messagePredicate = (value) -> {
+      if (value instanceof ToolResult response)
+        return predicate.test(response);
+      else return false;
+    };
+
+    // safe to cast because messagePredicate is protecting it
+    Function<InputMessage, AiResponse>  castedHandler =
+      (input) -> handler.apply((ToolResult) input);
+
+    responsePredicates.add(new Pair<>(messagePredicate, castedHandler));
+  }
+
 
   /**
    * Remove previously added responses.

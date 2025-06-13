@@ -4,12 +4,6 @@
 
 package akka.javasdk.impl.agent
 
-import scala.annotation.tailrec
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import scala.jdk.CollectionConverters.SeqHasAsJava
-import scala.util.control.NonFatal
-
 import akka.annotation.InternalApi
 import akka.javasdk.Metadata
 import akka.javasdk.Tracing
@@ -27,7 +21,7 @@ import akka.javasdk.agent.SessionMessage.ToolCallResponse
 import akka.javasdk.agent.SessionMessage.UserMessage
 import akka.javasdk.client.ComponentClient
 import akka.javasdk.impl.AbstractContext
-import akka.javasdk.impl.AgentComponentDescriptor
+import akka.javasdk.impl.ComponentDescriptor
 import akka.javasdk.impl.ErrorHandling.BadRequestException
 import akka.javasdk.impl.HandlerNotFoundException
 import akka.javasdk.impl.MetadataImpl
@@ -35,6 +29,7 @@ import akka.javasdk.impl.agent.BaseAgentEffectBuilder.ConstantSystemMessage
 import akka.javasdk.impl.agent.BaseAgentEffectBuilder.NoPrimaryEffect
 import akka.javasdk.impl.agent.BaseAgentEffectBuilder.RequestModel
 import akka.javasdk.impl.agent.BaseAgentEffectBuilder.TemplateSystemMessage
+import akka.javasdk.impl.agent.FunctionTools.FunctionToolInvoker
 import akka.javasdk.impl.agent.SessionMemoryClient.MemorySettings
 import akka.javasdk.impl.effect.ErrorReplyImpl
 import akka.javasdk.impl.effect.MessageReplyImpl
@@ -54,6 +49,12 @@ import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.Tracer
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
+
+import scala.annotation.tailrec
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.jdk.CollectionConverters.SeqHasAsJava
+import scala.util.control.NonFatal
 
 /**
  * INTERNAL API
@@ -86,7 +87,7 @@ private[impl] final class AgentImpl[A <: Agent](
     sdkExecutionContext: ExecutionContext,
     tracerFactory: () => Tracer,
     serializer: JsonSerializer,
-    agentComponentDescriptor: AgentComponentDescriptor,
+    componentDescriptor: ComponentDescriptor,
     regionInfo: RegionInfo,
     promptTemplateClient: PromptTemplateClient,
     componentClient: ComponentClient,
@@ -96,26 +97,23 @@ private[impl] final class AgentImpl[A <: Agent](
   import AgentImpl._
 
   private val router: ReflectiveAgentRouter[A] = {
-    new ReflectiveAgentRouter[A](
-      factory,
-      agentComponentDescriptor.componentDescriptor.methodInvokers,
-      agentComponentDescriptor.functionTools,
-      serializer)
+    new ReflectiveAgentRouter[A](factory, componentDescriptor.methodInvokers, serializer)
   }
-
-  private val toolDescriptors = agentComponentDescriptor.functionDescriptors
 
   override def handleCommand(command: SpiAgent.Command): Future[SpiAgent.Effect] = {
 
     val span: Option[Span] = command.span
     span.foreach(s => MDC.put(Telemetry.TRACE_ID, s.getSpanContext.getTraceId))
-    // smuggling 0 arity method called from component client through here
+    // smuggling 0 arity methods called from the component client through here
     val cmdPayload = command.payload.getOrElse(BytesPayload.empty)
     val metadata: Metadata = MetadataImpl.of(command.metadata)
     val agentContext = new AgentContextImpl(sessionId, regionInfo.selfRegion, metadata, span, tracerFactory)
 
     try {
-      val commandEffect = router.handleCommand(command.name, cmdPayload, agentContext)
+      // we need the agent at this scope.
+      // therefore, we initialize it exceptionally outside the router
+      val agent = factory(agentContext)
+      val commandEffect = router.handleCommand(agent, command.name, cmdPayload, agentContext)
 
       def primaryEffect =
         commandEffect match {
@@ -156,18 +154,22 @@ private[impl] final class AgentImpl[A <: Agent](
             val sessionMemoryClient = deriveMemoryClient(req.memoryProvider)
             val additionalContext = toSpiContextMessages(sessionMemoryClient.getHistory(sessionId))
 
+            val toolDescriptors = ToolDescriptors(agent.getClass)
+            val functionTools = FunctionTools(agent)
+
             new SpiAgent.RequestModelEffect(
-              spiModelProvider,
-              systemMessage,
-              req.userMessage,
-              additionalContext,
-              toolDescriptors,
-              Seq.empty, // FIXME mcp tool endpoints
-              req.responseType,
-              req.responseMapping,
-              req.failureMapping,
-              metadata,
-              results => onSuccess(sessionMemoryClient, req.userMessage, results))
+              modelProvider = spiModelProvider,
+              systemMessage = systemMessage,
+              userMessage = req.userMessage,
+              additionalContext = additionalContext,
+              toolDescriptors = toolDescriptors,
+              callToolFunction = request => callTool(functionTools, request)(sdkExecutionContext),
+              mcpClientDescriptors = Seq.empty, // FIXME mcp tool endpoints
+              responseType = req.responseType,
+              responseMapping = req.responseMapping,
+              failureMapping = req.failureMapping,
+              replyMetadata = metadata,
+              onSuccess = results => onSuccess(sessionMemoryClient, req.userMessage, results))
 
           case NoPrimaryEffect =>
             errorOrReply match {
@@ -188,16 +190,46 @@ private[impl] final class AgentImpl[A <: Agent](
       case NonFatal(error) =>
         throw AgentException(command.name, s"Unexpected failure: $error", Some(error))
     } finally {
-      span.foreach { s =>
+      span.foreach { _ =>
         MDC.remove(Telemetry.TRACE_ID)
       }
     }
 
   }
 
+  private def callTool(functionTools: Map[String, FunctionToolInvoker], request: SpiAgent.ToolCallCommand)(implicit
+      ex: ExecutionContext) = {
+
+    val toolInvoker =
+      functionTools.getOrElse(request.name, throw new IllegalArgumentException(s"Unknown tool ${request.name}"))
+
+    val mapper = serializer.objectMapper
+    val jsonNode = mapper.readTree(request.arguments)
+
+    val methodInput =
+      toolInvoker.paramNames.zipWithIndex.map { case (name, index) =>
+        // assume that the paramName in the method matches a node from the json 'content'
+        val node = jsonNode.get(name)
+        val typ = toolInvoker.types(index)
+        val javaType = mapper.getTypeFactory.constructType(typ)
+        mapper.treeToValue(node, javaType).asInstanceOf[Any]
+      }
+
+    Future {
+      val toolResult = toolInvoker.invoke(methodInput)
+
+      if (toolInvoker.returnType == Void.TYPE)
+        "SUCCESS"
+      else if (toolInvoker.returnType == classOf[String])
+        toolResult.asInstanceOf[String]
+      else
+        mapper.writeValueAsString(toolResult)
+    }
+  }
+
   private def deriveMemoryClient(memoryProvider: MemoryProvider): SessionMemory = {
     memoryProvider match {
-      case p: MemoryProvider.Disabled =>
+      case _: MemoryProvider.Disabled =>
         new SessionMemoryClient(componentClient, MemorySettings.disabled())
 
       case p: MemoryProvider.LimitedWindowMemoryProvider =>
@@ -364,13 +396,6 @@ private[impl] final class AgentImpl[A <: Agent](
     } catch {
       case e: IllegalArgumentException => throw new JsonParsingException(e.getMessage, e, modelResponse)
     }
-  }
-
-  override def callTool(request: SpiAgent.ToolCallCommand): Future[String] = {
-
-    val metadata = MetadataImpl.of(request.metadata)
-    val agentContext = new AgentContextImpl(sessionId, regionInfo.selfRegion, metadata, request.span, tracerFactory)
-    router.invokeTool(request, agentContext)(sdkExecutionContext)
   }
 
 }

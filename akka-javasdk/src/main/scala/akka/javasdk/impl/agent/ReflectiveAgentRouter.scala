@@ -4,11 +4,6 @@
 
 package akka.javasdk.impl.agent
 
-import java.util.Optional
-
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-
 import akka.annotation.InternalApi
 import akka.javasdk.agent.Agent
 import akka.javasdk.agent.AgentContext
@@ -17,7 +12,8 @@ import akka.javasdk.impl.HandlerNotFoundException
 import akka.javasdk.impl.MethodInvoker
 import akka.javasdk.impl.serialization.JsonSerializer
 import akka.runtime.sdk.spi.BytesPayload
-import akka.runtime.sdk.spi.SpiAgent
+
+import java.util.Optional
 
 /**
  * INTERNAL API
@@ -26,7 +22,6 @@ import akka.runtime.sdk.spi.SpiAgent
 private[impl] class ReflectiveAgentRouter[A <: Agent](
     val factory: AgentContext => A,
     methodInvokers: Map[String, MethodInvoker],
-    functionTools: Map[String, FunctionTools.FunctionToolInvoker],
     serializer: JsonSerializer) {
 
   private def methodInvokerLookup(commandName: String, agent: A): MethodInvoker =
@@ -37,10 +32,10 @@ private[impl] class ReflectiveAgentRouter[A <: Agent](
     }
 
   /**
-   * Return type is `Agent.Effect` or `Agent.StreamEffect`
+   * Return type is `Agent.Effect` or `Agent.StreamEffect`S
    */
-  def handleCommand(commandName: String, command: BytesPayload, context: AgentContext): AnyRef = {
-    val agent = factory(context)
+  def handleCommand(agent: A, commandName: String, command: BytesPayload, context: AgentContext): AnyRef = {
+
     agent._internalSetContext(Optional.of(context))
 
     val methodInvoker = methodInvokerLookup(commandName, agent)
@@ -68,39 +63,6 @@ private[impl] class ReflectiveAgentRouter[A <: Agent](
       throw new IllegalStateException(
         s"Could not find a matching command handler for method [$commandName], content type [${command.contentType}] " +
         s"on [${agent.getClass.getName}]")
-    }
-  }
-
-  def invokeTool(request: SpiAgent.ToolCallCommand, context: AgentContext)(implicit
-      executionContext: ExecutionContext): Future[String] = {
-
-    val agent = factory(context)
-    agent._internalSetContext(Optional.of(context))
-
-    val toolInvoker =
-      functionTools.getOrElse(request.name, throw new IllegalArgumentException(s"Unknown tool ${request.name}"))
-
-    val mapper = serializer.objectMapper
-    val jsonNode = mapper.readTree(request.arguments)
-
-    val methodInput =
-      toolInvoker.paramNames.zipWithIndex.map { case (name, index) =>
-        // assume that the paramName in the method matches a node from the json 'content'
-        val node = jsonNode.get(name)
-        val typ = toolInvoker.types(index)
-        val javaType = mapper.getTypeFactory.constructType(typ)
-        mapper.treeToValue(node, javaType).asInstanceOf[Any]
-      }
-
-    Future {
-      val toolResult = toolInvoker.invoke(agent, methodInput)
-
-      if (toolInvoker.returnType == Void.TYPE)
-        "SUCCESS"
-      else if (toolInvoker.returnType == classOf[String])
-        toolResult.asInstanceOf[String]
-      else
-        mapper.writeValueAsString(toolResult)
     }
   }
 
