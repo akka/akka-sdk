@@ -4,21 +4,19 @@
 
 package akka.javasdk.annotations;
 
-import java.lang.annotation.Documented;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-@Target(ElementType.METHOD)
+// test annotation (written in java) to test Reflect.valueOrAlias
 @Retention(RetentionPolicy.RUNTIME)
-@Documented
-public @interface FunctionTool {
-
-  String name() default "";
+@Target(ElementType.METHOD)
+public @interface OptionalDescription {
 
   String value() default "";
 
-  @ValueAlias
-  String description() default "";;
+  @ValueAlias(required = false)
+  String description() default "";
 }

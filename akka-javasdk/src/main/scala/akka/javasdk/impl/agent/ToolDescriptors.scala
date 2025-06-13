@@ -7,6 +7,7 @@ package akka.javasdk.impl.agent
 import akka.annotation.InternalApi
 import akka.javasdk.annotations.FunctionTool
 import akka.javasdk.impl.JsonSchema
+import akka.javasdk.impl.reflection.Reflect
 import akka.javasdk.impl.reflection.Reflect.Syntax.AnnotatedElementOps
 import akka.javasdk.impl.reflection.Reflect.Syntax.MethodOps
 import akka.runtime.sdk.spi.SpiAgent
@@ -39,7 +40,8 @@ object ToolDescriptors {
           else toolAnno.name()
         val objSchema = JsonSchema.jsonSchemaFor(method)
 
-        new SpiAgent.ToolDescriptor(name, toolAnno.description(), schema = objSchema)
+        val description = Reflect.valueOrAlias(toolAnno)
+        new SpiAgent.ToolDescriptor(name, description, schema = objSchema)
 
       }
       .toSeq
