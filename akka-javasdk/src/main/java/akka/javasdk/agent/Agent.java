@@ -5,6 +5,7 @@
 package akka.javasdk.agent;
 
 import akka.annotation.InternalApi;
+import akka.javasdk.DependencyProvider;
 import akka.javasdk.Metadata;
 import akka.javasdk.impl.agent.BaseAgentEffectBuilder;
 import akka.javasdk.impl.agent.AgentStreamEffectImpl;
@@ -121,6 +122,34 @@ public abstract class Agent {
        * @return this builder for method chaining
        */
       Builder tools(List<Object> toolInstances);
+
+      /**
+       * Adds one or more tool classes that the AI model can use.
+       * <p>
+       * Each class must have at least one public method annotated with {@code @FunctionTool}.
+       * These methods will be available as tools for the AI model to invoke.
+       * <p>
+       * The object will be instantiated using the {@link DependencyProvider}.
+       * If no provider is defined, the class must have a no-argument default constructor.
+       *
+       * @param toolClasses additional tool classes exposing tool methods
+       * @return this builder for method chaining
+       */
+      Builder toolClasses(Class<?>... toolClasses);
+
+      /**
+       * Adds one or more tool classes that the AI model can use.
+       * <p>
+       * Each class must have at least one public method annotated with {@code @FunctionTool}.
+       * These methods will be available as tools for the AI model to invoke.
+       * <p>
+       * The object will be instantiated using the {@link DependencyProvider}.
+       * If no provider is defined, the class must have a no-argument default constructor.
+       *
+       * @param toolClasses one or more classes exposing tool methods
+       * @return this builder for method chaining
+       */
+      Builder toolClasses(List<Class<?>> toolClasses);
 
       /**
        * Create a system message from a template. Call @{@link PromptTemplate} before to initiate or update template value.
