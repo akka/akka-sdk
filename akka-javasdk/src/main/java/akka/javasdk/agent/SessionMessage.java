@@ -45,12 +45,10 @@ public sealed interface SessionMessage {
   record AiMessage(Instant timestamp,
                    String text,
                    String componentId,
-                   int inputTokens,
-                   int outputTokens,
                    List<ToolCallRequest> toolCallRequests) implements SessionMessage {
 
-    public AiMessage(Instant timestamp, String text, String componentId, int inputTokens, int outputTokens) {
-      this(timestamp, text, componentId, inputTokens, outputTokens, List.of());
+    public AiMessage(Instant timestamp, String text, String componentId) {
+      this(timestamp, text, componentId, List.of());
     }
 
     @Override

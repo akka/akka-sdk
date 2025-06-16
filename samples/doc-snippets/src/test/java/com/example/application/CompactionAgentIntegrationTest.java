@@ -132,10 +132,7 @@ public class CompactionAgentIntegrationTest extends TestKitSupport {
               new SessionMessage.AiMessage(
                   Instant.now(),
                 aiMessages.get(i),
-                "my-agent",
-                userMessages.get(i).length(), // simulated input tokens
-                aiMessages.get(i).length() // simulated output tokens
-              )
+                "my-agent")
           ));
     }
 

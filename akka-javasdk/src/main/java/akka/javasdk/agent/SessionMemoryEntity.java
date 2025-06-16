@@ -121,14 +121,12 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
     record AiMessageAdded(Instant timestamp,
                           String componentId,
                           String message,
-                          int inputTokens,
-                          int outputTokens,
                           int sizeInBytes,
                           long historySizeInBytes,
                           List<SessionMessage.ToolCallRequest> toolCallRequests) implements Event {
 
       AiMessageAdded withHistorySizeInBytes(long newSize) {
-        return new AiMessageAdded(timestamp, componentId, message, inputTokens, outputTokens, sizeInBytes, newSize, toolCallRequests);
+        return new AiMessageAdded(timestamp, componentId, message, sizeInBytes, newSize, toolCallRequests);
       }
 
     }
@@ -191,8 +189,6 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
                       aiMessage.timestamp(),
                       aiMessage.componentId(),
                       aiMessage.text(),
-                      aiMessage.inputTokens(),
-                      aiMessage.outputTokens(),
                       aiMessage.size(),
                 0L, // filled in later
                       aiMessage.toolCallRequests());
@@ -264,8 +260,6 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
       cmd.aiMessage.timestamp(),
       componentId,
       cmd.aiMessage.text(),
-      cmd.aiMessage.inputTokens(),
-      cmd.aiMessage.outputTokens(),
         cmd.aiMessage.size(),
         0L, // filled in later
       Collections.emptyList()));
@@ -294,8 +288,6 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
               aiMessage.timestamp(),
               aiMessage.componentId(),
               aiMessage.text(),
-              aiMessage.inputTokens(),
-              aiMessage.outputTokens(),
                 aiMessage.size(),
                 0L, // filled in later
               aiMessage.toolCallRequests()));
@@ -368,8 +360,6 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
                 aiMsg.timestamp,
                 aiMsg.message,
                 aiMsg.componentId,
-                aiMsg.inputTokens,
-                aiMsg.outputTokens,
                 aiMsg.toolCallRequests));
 
       case Event.ToolResponseMessageAdded toolMsg ->
