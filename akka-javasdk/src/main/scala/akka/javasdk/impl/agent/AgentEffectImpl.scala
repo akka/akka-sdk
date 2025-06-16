@@ -46,7 +46,7 @@ private[javasdk] object BaseAgentEffectBuilder {
         replyMetadata = Metadata.EMPTY,
         memoryProvider = MemoryProvider.fromConfig(),
         toolInstancesOrClasses = Seq.empty,
-        remoteMcpTools = Seq.empty)
+        mcpTools = Seq.empty)
   }
 
   sealed trait SystemMessage
@@ -63,7 +63,7 @@ private[javasdk] object BaseAgentEffectBuilder {
       replyMetadata: Metadata,
       memoryProvider: MemoryProvider,
       toolInstancesOrClasses: Seq[AnyRef],
-      remoteMcpTools: Seq[RemoteMcpTools])
+      mcpTools: Seq[RemoteMcpTools])
       extends PrimaryEffectImpl {
 
     def withProvider(provider: ModelProvider): RequestModel =
@@ -79,8 +79,8 @@ private[javasdk] object BaseAgentEffectBuilder {
       copy(toolInstancesOrClasses = this.toolInstancesOrClasses ++ tools)
     }
 
-    def withRemoteMcpTools(tools: Seq[RemoteMcpTools]): RequestModel =
-      copy(remoteMcpTools = tools)
+    def addMcpTools(tools: Seq[RemoteMcpTools]): RequestModel =
+      copy(mcpTools = mcpTools ++ tools)
   }
 
   case object NoPrimaryEffect extends PrimaryEffectImpl
@@ -169,8 +169,13 @@ private[javasdk] final class BaseAgentEffectBuilder[Reply]
     this
   }
 
-  override def remoteMcpTools(tools: RemoteMcpTools, moreTools: RemoteMcpTools*): Builder = {
-    updateRequestModel(_.withRemoteMcpTools(tools +: moreTools))
+  override def mcpTools(tools: RemoteMcpTools, moreTools: RemoteMcpTools*): Builder = {
+    updateRequestModel(_.addMcpTools(tools +: moreTools))
+    this
+  }
+
+  override def mcpTools(tools: util.List[RemoteMcpTools]): Builder = {
+    updateRequestModel(_.addMcpTools(tools.asScala.toSeq))
     this
   }
 

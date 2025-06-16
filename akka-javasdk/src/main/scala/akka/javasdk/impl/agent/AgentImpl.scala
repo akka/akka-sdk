@@ -158,7 +158,7 @@ private[impl] final class AgentImpl[A <: Agent](
             val metadata = MetadataImpl.toSpi(req.replyMetadata)
             val sessionMemoryClient = deriveMemoryClient(req.memoryProvider)
             val additionalContext = toSpiContextMessages(sessionMemoryClient.getHistory(sessionId))
-            val mcpToolEndpoints = toSpiMcpEndpoints(req.remoteMcpTools)
+            val mcpToolEndpoints = toSpiMcpEndpoints(req.mcpTools)
 
             // FIXME: we need FQCN to avoid clashes
             val toolDescriptors =
@@ -260,12 +260,17 @@ private[impl] final class AgentImpl[A <: Agent](
             javaInterceptor =>
               (toolCallRequest: SpiAgent.ToolCallRequest, toolCall: SpiAgent.ToolCallRequest => Future[String]) =>
                 {
+                  val interceptorContext = new RemoteMcpTools.ToolInterceptorContext {
+                    override def mcpServerUri(): String = remoteMcp.serverUri
+                    override def toolName(): String = toolCallRequest.name
+                  }
                   val newRequestPayload =
-                    javaInterceptor.interceptRequest(toolCallRequest.name, toolCallRequest.arguments)
+                    javaInterceptor.interceptRequest(interceptorContext, toolCallRequest.arguments)
                   val newRequest =
                     if (newRequestPayload eq toolCallRequest.arguments) toolCallRequest
                     else new SpiAgent.ToolCallRequest(toolCallRequest.id, toolCallRequest.name, newRequestPayload)
-                  toolCall(newRequest).map(result => javaInterceptor.interceptResponse(toolCallRequest.name, result))(
+                  toolCall(newRequest).map(result =>
+                    javaInterceptor.interceptResponse(interceptorContext, newRequestPayload, result))(
                     sdkExecutionContext)
                 }
 

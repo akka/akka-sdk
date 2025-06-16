@@ -32,27 +32,53 @@ public interface RemoteMcpTools {
    */
   RemoteMcpTools allowToolNames(Predicate<String> toolNameFilter);
 
+  /**
+   * Specify an interceptor that has the capability to allow or deny calls (by throwing an exception)
+   * and also to modify and filter input to the MCP server tool.
+   */
   RemoteMcpTools withToolInterceptor(ToolInterceptor interceptor);
 
+  /**
+   * @param header A header that should be passed with each call to the MCP server, for example
+   *               some authentication token in an {@link akka.http.javadsl.model.headers.OAuth2BearerToken}
+   */
   RemoteMcpTools addClientHeader(HttpHeader header);
 
-  interface ToolInterceptor {
-    // FIXME appropriate Java types here - do we parse request payload into json, user types with
-    // jackson or what?
+  /**
+   * Context details about the intercepted MCP tool call.
+   *
+   * Not for user extension.
+   */
+  @DoNotInherit
+  interface ToolInterceptorContext {
+    String mcpServerUri();
+    String toolName();
+  }
 
+  interface ToolInterceptor {
     /**
      * Intercept calls to tools before they are executed, disallowing the call based on the payload
      * can be done by throwing an exception, modifying the payload is also possible. When modifying
      * the payload, you need to make sure the payload still fulfills the schema of the tool with
      * required fields and correct field types.
+     *
+     * @param context Details about the intercepted tool call
+     * @param requestPayloadJson The tool request payload in a Json string.
      */
-    String interceptRequest(String toolName, String payload);
+    default String interceptRequest(ToolInterceptorContext context, String requestPayloadJson)  {
+      return requestPayloadJson;
+    }
 
     /**
      * Intercept responses from MCP tools, disallowing the call based on the result can be done by
      * throwing an exception, modifying the result is also possible. When modifying the result, you
      * need to make sure the payload still is something the model will understand.
+     *
+     * @param context Details about the intercepted tool call
+     * @param requestPayloadJson The request payload as passed to the MCP tool (possibly modified by {@link #interceptRequest(ToolInterceptorContext, String)})
      */
-    String interceptResponse(String toolName, String payload);
+    default String interceptResponse(ToolInterceptorContext context, String requestPayloadJson, String responsePayload) {
+      return responsePayload;
+    };
   }
 }
