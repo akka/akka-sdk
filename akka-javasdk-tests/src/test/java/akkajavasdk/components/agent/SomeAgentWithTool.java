@@ -31,8 +31,7 @@ public class SomeAgentWithTool extends Agent {
   public Effect<SomeResponse> query(String question) {
     return effects()
       .systemMessage("You are a helpful...")
-      .tools(new WeatherService())
-      .toolClasses(TrafficService.class)
+      .tools(new WeatherService(), TrafficService.class)
       .userMessage(question)
       .map(SomeResponse::new)
       .thenReply();

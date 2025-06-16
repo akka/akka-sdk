@@ -160,12 +160,19 @@ private[impl] final class AgentImpl[A <: Agent](
             // FIXME: we need FQCN to avoid clashes
             val toolDescriptors =
               ToolDescriptors.agentToolDescriptor(agent.getClass) ++
-              req.toolInstances.flatMap { any => ToolDescriptors.forClass(any.getClass) } ++
-              req.toolClasses.flatMap { cls => ToolDescriptors.forClass(cls) }
+              req.toolInstancesOrClasses.flatMap {
+                case any if any.isInstanceOf[Class[_]] =>
+                  ToolDescriptors.forClass(any.asInstanceOf[Class[_]])
+                case any =>
+                  ToolDescriptors.forClass(any.getClass)
+              }
 
             val functionTools = FunctionTools.agentFunctionToolInvokers(agent) ++
-              req.toolInstances.flatMap { any => FunctionTools.forInstance(any) }.toMap ++
-              req.toolClasses.flatMap { cls => FunctionTools.forClass(cls, dependencyProvider) }.toMap
+              req.toolInstancesOrClasses.flatMap {
+                case any if any.isInstanceOf[Class[_]] =>
+                  FunctionTools.forClass(any.asInstanceOf[Class[_]], dependencyProvider)
+                case any => FunctionTools.forInstance(any)
+              }.toMap
 
             new SpiAgent.RequestModelEffect(
               modelProvider = spiModelProvider,

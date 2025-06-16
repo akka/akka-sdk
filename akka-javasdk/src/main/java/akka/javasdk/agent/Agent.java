@@ -7,8 +7,8 @@ package akka.javasdk.agent;
 import akka.annotation.InternalApi;
 import akka.javasdk.DependencyProvider;
 import akka.javasdk.Metadata;
-import akka.javasdk.impl.agent.BaseAgentEffectBuilder;
 import akka.javasdk.impl.agent.AgentStreamEffectImpl;
+import akka.javasdk.impl.agent.BaseAgentEffectBuilder;
 
 import java.util.List;
 import java.util.Optional;
@@ -102,52 +102,30 @@ public abstract class Agent {
       Builder systemMessage(String message);
 
       /**
-       * Adds one or more tool instances that the AI model can use.
+       * Adds one or more tool instances or classes that the AI model can use.
        * <p>
-       * Each instance must have at least one public method annotated with {@code @FunctionTool}.
+       * Each argument can be either an object instance or a {@link Class} object. If a {@link Class} is provided,
+       * it will be instantiated at runtime using the configured {@link DependencyProvider}.
+       * Each instance or class must have at least one public method annotated with {@code @FunctionTool}.
        * These methods will be available as tools for the AI model to invoke.
        *
-       * @param toolInstances additional tool instances exposing tool methods
+       * @param toolInstancesOrClasses additional tool instances or classes exposing tool methods
        * @return this builder for method chaining
        */
-      Builder tools(Object... toolInstances);
+      Builder tools(Object... toolInstancesOrClasses);
 
       /**
-       * Adds one or more tool instances that the AI model can use.
+       * Adds one or more tool instances or classes that the AI model can use.
        * <p>
-       * Each instance must have at least one public method annotated with {@code @FunctionTool}.
+       * Each element in the list can be either an object instance or a {@link Class} object. If a {@link Class} is provided,
+       * it will be instantiated at runtime using the configured {@link DependencyProvider}.
+       * Each instance or class must have at least one public method annotated with {@code @FunctionTool}.
        * These methods will be available as tools for the AI model to invoke.
        *
-       * @param toolInstances one or more objects exposing tool methods
+       * @param toolInstancesOrClasses one or more objects or classes exposing tool methods
        * @return this builder for method chaining
        */
-      Builder tools(List<Object> toolInstances);
-
-      /**
-       * Adds one or more tool classes that the AI model can use.
-       * <p>
-       * Each class must have at least one public method annotated with {@code @FunctionTool}.
-       * These methods will be available as tools for the AI model to invoke.
-       * <p>
-       * The object will be instantiated using a configured {@link DependencyProvider}.
-       *
-       * @param toolClasses additional tool classes exposing tool methods
-       * @return this builder for method chaining
-       */
-      Builder toolClasses(Class<?>... toolClasses);
-
-      /**
-       * Adds one or more tool classes that the AI model can use.
-       * <p>
-       * Each class must have at least one public method annotated with {@code @FunctionTool}.
-       * These methods will be available as tools for the AI model to invoke.
-       * <p>
-       * The object will be instantiated using a configured {@link DependencyProvider}.
-       *
-       * @param toolClasses one or more classes exposing tool methods
-       * @return this builder for method chaining
-       */
-      Builder toolClasses(List<Class<?>> toolClasses);
+      Builder tools(List<Object> toolInstancesOrClasses);
 
       /**
        * Create a system message from a template. Call @{@link PromptTemplate} before to initiate or update template value.

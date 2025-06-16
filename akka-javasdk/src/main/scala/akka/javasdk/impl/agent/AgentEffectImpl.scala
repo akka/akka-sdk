@@ -44,7 +44,6 @@ private[javasdk] object BaseAgentEffectBuilder {
         failureMapping = None,
         replyMetadata = Metadata.EMPTY,
         memoryProvider = MemoryProvider.fromConfig(),
-        Seq.empty,
         Seq.empty)
   }
 
@@ -61,8 +60,7 @@ private[javasdk] object BaseAgentEffectBuilder {
       failureMapping: Option[Throwable => Any],
       replyMetadata: Metadata,
       memoryProvider: MemoryProvider,
-      toolInstances: Seq[Any],
-      toolClasses: Seq[Class[_]])
+      toolInstancesOrClasses: Seq[Any])
       extends PrimaryEffectImpl {
 
     def withProvider(provider: ModelProvider): RequestModel =
@@ -71,12 +69,8 @@ private[javasdk] object BaseAgentEffectBuilder {
     def withMemory(provider: MemoryProvider): RequestModel =
       copy(memoryProvider = provider)
 
-    def addToolInstances(toolInstances: Seq[Any]): RequestModel = {
-      copy(toolInstances = this.toolInstances ++ toolInstances)
-    }
-
-    def addToolClasses(toolClasses: Seq[Class[_]]): RequestModel = {
-      copy(toolClasses = this.toolClasses ++ toolClasses)
+    def addTools(toolInstancesOrClasses: Seq[Any]): RequestModel = {
+      copy(toolInstancesOrClasses = this.toolInstancesOrClasses ++ toolInstancesOrClasses)
     }
   }
 
@@ -189,25 +183,16 @@ private[javasdk] final class BaseAgentEffectBuilder[Reply]
     new MappingResponseEffectBuilder(_primaryEffect.asInstanceOf[RequestModel])
   }
 
-  override def tools(toolInstances: Any*): Builder = {
-    updateRequestModel(_.addToolInstances(toolInstances))
+  override def tools(toolInstancesOrClasses: Any*): Builder = {
+    updateRequestModel(_.addTools(toolInstancesOrClasses))
     this
   }
 
-  override def tools(toolInstances: util.List[AnyRef]): Builder = {
-    updateRequestModel(_.addToolInstances(toolInstances.asScala.toSeq))
+  override def tools(toolInstancesOrClasses: util.List[AnyRef]): Builder = {
+    updateRequestModel(_.addTools(toolInstancesOrClasses.asScala.toSeq))
     this
   }
 
-  override def toolClasses(toolClasses: Class[_]*): Builder = {
-    updateRequestModel(_.addToolClasses(toolClasses))
-    this
-  }
-
-  override def toolClasses(toolClasses: util.List[Class[_]]): Builder = {
-    updateRequestModel(_.addToolClasses(toolClasses.asScala.toSeq))
-    this
-  }
 }
 
 /**
