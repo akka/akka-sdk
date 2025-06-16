@@ -25,20 +25,23 @@ public class Selector extends Agent {
     var agents = agentsRegistry.agentsWithRole("worker"); // <2>
 
     this.systemMessage = """
-        Your job is to analyse the user request and select the agents that should be used to answer the user.
-        In order to do that, you will receive a list of available agents. Each agent has an id, a name and a description of
-        its capabilities.
+        Your job is to analyse the user request and select the agents that should be used to answer
+        the user. In order to do that, you will receive a list of available agents. Each agent has
+        an id, a name and a description of its capabilities.
       
-        For example, a user may be asking to book a trip. If you see that there is a weather agent, a city trip agent and a hotel booking agent,
-        you should select those agents to complete the task.
-        Note that this is just an example. The list of available agents may vary, so you need to use reasoning to dissect the original user request
-        and using the list of available agents, decide which agents must be selected.
+        For example, a user may be asking to book a trip. If you see that there is a weather agent,
+        a city trip agent and a hotel booking agent, you should select those agents to complete the
+        task. Note that this is just an example. The list of available agents may vary, so you need
+        to use reasoning to dissect the original user request and using the list of available agents,
+        decide which agents must be selected.
       
-        You don't need to come up with an execution order. Your task is to analyze user's request and select the agents.
+        You don't need to come up with an execution order. Your task is to analyze user's request and
+        select the agents.
       
         Your response should follow a strict json schema as defined bellow.
-        It should contain a single field 'agents'. The field agents must be array of strings containing the agent's IDs.
-        If none of the existing agents are suitable for executing the task, you return an empty array.
+        It should contain a single field 'agents'. The field agents must be array of strings
+        containing the agent's IDs. If none of the existing agents are suitable for executing
+        the task, you return an empty array.
       
          {
            "agents": []
