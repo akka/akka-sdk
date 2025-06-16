@@ -22,6 +22,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 /**
@@ -190,6 +191,13 @@ public class TestModelProvider implements ModelProvider.Custom {
     responsePredicates.add(new Pair<>(messagePredicate, castedHandler));
   }
 
+  /**
+   * Return a given runtime exception for a request that matches the predicate.
+   */
+  public void mockError(Predicate<String> predicate, RuntimeException error) {
+    Predicate<InputMessage> messagePredicate = (value) -> predicate.test(value.content());
+    responsePredicates.add(new Pair<>(messagePredicate, msg -> { throw error; }));
+  }
 
   /**
    * Remove previously added responses.
