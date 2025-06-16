@@ -20,5 +20,9 @@ import java.lang.annotation.Target;
 public @interface FunctionTool {
 
   String name() default "";
-  String description();
+
+  String value() default "";
+
+  @ValueAlias
+  String description() default "";;
 }
