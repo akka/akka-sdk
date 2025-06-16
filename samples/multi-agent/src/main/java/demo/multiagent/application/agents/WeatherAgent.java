@@ -53,7 +53,7 @@ public class WeatherAgent extends Agent {
         .thenReply();
   }
 
-  @FunctionTool(description = "Return current date in yyyy-MM-dd format") // <2>
+  @FunctionTool(description = "Return current date in yyyy-MM-dd format") // <3>
   private String getCurrentDate() {
     return LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE);
   }
