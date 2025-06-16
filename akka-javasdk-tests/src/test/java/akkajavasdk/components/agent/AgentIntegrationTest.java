@@ -13,7 +13,6 @@ import akka.javasdk.testkit.TestModelProvider;
 import akka.stream.javadsl.Sink;
 import akkajavasdk.Junit5LogCapturing;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -46,6 +45,7 @@ public class AgentIntegrationTest extends TestKitSupport {
         .withModelProvider(SomeAgentWithTool.class, testModelProvider)
         .withModelProvider(SomeStructureResponseAgent.class, testModelProvider)
         .withModelProvider(SomeStreamingAgent.class, testModelProvider)
+        .withModelProvider(SomeAgentWithBadlyConfiguredTool.class, testModelProvider)
         .withDependencyProvider(depsProvider);
   }
 
@@ -162,7 +162,7 @@ public class AgentIntegrationTest extends TestKitSupport {
       msg -> msg.content().equals(userQuestion),
         new TestModelProvider.ToolInvocationRequest("getTrafficNow", args));
 
-    // receives the traffic info as final answer
+    // receives the traffic info as the final answer
     testModelProvider.mockResponseToToolResult(
       result -> result.content().startsWith("There is traffic jam"),
       result -> new TestModelProvider.AiResponse(result.content())
@@ -176,6 +176,23 @@ public class AgentIntegrationTest extends TestKitSupport {
 
     //then
     assertThat(response.response()).isEqualTo("There is traffic jam in Leuven.");
+  }
+
+  @Test
+  public void shouldFailForBadlyConfiguredTool() {
+
+    var userQuestion = "How is the traffic today in Leuven?";
+    testModelProvider.fixedResponse("Hello");
+
+    try {
+      componentClient.forAgent().inSession(newSessionId())
+        .method(SomeAgentWithBadlyConfiguredTool::query)
+        .invoke(userQuestion);
+      fail("Should have thrown an exception");
+    } catch (Exception e) {
+      assertThat(e.getMessage()).startsWith("Component client error");
+    }
+
   }
 
   @Test

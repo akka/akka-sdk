@@ -37,6 +37,7 @@ public class SomeAgentWithTool extends Agent {
       .thenReply();
   }
 
+
   @FunctionTool(description = "Returns today's date")
   private String getDateOfToday() {
     return "2025-01-01";
