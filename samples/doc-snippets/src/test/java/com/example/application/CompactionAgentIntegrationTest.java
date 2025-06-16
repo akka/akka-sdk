@@ -163,11 +163,10 @@ public class CompactionAgentIntegrationTest extends TestKitSupport {
     // making them simpler for direct state needs. Use Event Sourced Entities to
     // track change history and Key Value Entities for performance when only current
     // state matters.,
-    // aiMessageTokens=62
 
     assertThat(summary.userMessage()).isNotEmpty();
     assertThat(summary.aiMessage()).isNotEmpty();
-    assertThat(summary.inputTokens()).isBetween(10, 1000);
-    assertThat(summary.outputTokens()).isBetween(10, 1000);
+    assertThat(summary.userMessage().length()).isBetween(100, 1000);
+    assertThat(summary.aiMessage().length()).isBetween(100, 1000);
   }
 }

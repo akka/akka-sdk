@@ -57,6 +57,7 @@ public class SessionMemoryEntityTest {
     var userEvent = (SessionMemoryEntity.Event.UserMessageAdded) events.getFirst();
     assertThat(userEvent.componentId()).isEqualTo(COMPONENT_ID);
     assertThat(userEvent.message()).isEqualTo(userMsg);
+    assertThat(userEvent.sizeInBytes()).isEqualTo(userMessage.size());
     assertThat(userEvent.timestamp()).isEqualTo(timestamp);
 
     assertThat(events.get(1)).isInstanceOf(SessionMemoryEntity.Event.AiMessageAdded.class);
@@ -65,6 +66,8 @@ public class SessionMemoryEntityTest {
     assertThat(aiEvent.message()).isEqualTo(aiMsg);
     assertThat(aiEvent.inputTokens()).isEqualTo(TOKENS);
     assertThat(aiEvent.outputTokens()).isEqualTo(TOKENS);
+    assertThat(aiEvent.sizeInBytes()).isEqualTo(aiMessage.size());
+    assertThat(aiEvent.historySizeInBytes()).isEqualTo(userMessage.size() + aiMessage.size());
     assertThat(aiEvent.timestamp()).isEqualTo(timestamp);
 
     // when retrieving history
@@ -100,6 +103,11 @@ public class SessionMemoryEntityTest {
 
     // then
     assertThat(result.getReply()).isEqualTo(done());
+    var events = result.getAllEvents();
+    assertThat(events.size()).isEqualTo(2);
+    assertThat(events.get(1)).isInstanceOf(SessionMemoryEntity.Event.AiMessageAdded.class);
+    var aiEvent = (SessionMemoryEntity.Event.AiMessageAdded) events.get(1);
+    assertThat(aiEvent.historySizeInBytes()).isEqualTo(userMessage1.size() + aiMessage1.size() + userMessage2.size() + aiMessage2.size());
 
     // when retrieving history
     EventSourcedResult<SessionHistory> historyResult =
@@ -149,6 +157,7 @@ public class SessionMemoryEntityTest {
     var aiMsgAdded = (SessionMemoryEntity.Event.AiMessageAdded) events.get(2);
     assertThat(aiMsgAdded.inputTokens()).isEqualTo(TOKENS / 2);
     assertThat(aiMsgAdded.outputTokens()).isEqualTo(TOKENS / 2);
+    assertThat(aiMsgAdded.historySizeInBytes()).isEqualTo(userMessage2.size() + aiMessage2.size());
 
     // when retrieving history after compacting
     EventSourcedResult<SessionHistory> historyResult2 =
@@ -196,6 +205,10 @@ public class SessionMemoryEntityTest {
     // Check event
     var events = compactResult.getAllEvents();
     assertThat(events).hasSize(5); // HistoryCleared, User and AI summary, + the concurrent messages
+    assertThat(((SessionMemoryEntity.Event.AiMessageAdded) events.get(2)).historySizeInBytes())
+        .isEqualTo(userMessage2.size() + aiMessage2.size());
+    assertThat(((SessionMemoryEntity.Event.AiMessageAdded) events.get(4)).historySizeInBytes())
+        .isEqualTo(userMessage2.size() + aiMessage2.size() + userMessage3.size() + aiMessage3.size());
 
     // when retrieving history after compacting
     EventSourcedResult<SessionHistory> historyResult2 =

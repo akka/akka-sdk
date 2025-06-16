@@ -38,8 +38,7 @@ public class SessionMemoryConsumer extends Consumer {
       // ...
       // end::consumer[]
       case SessionMemoryEntity.Event.AiMessageAdded aiMsg -> {
-        var totalTokenUsage = aiMsg.inputTokens() + aiMsg.outputTokens(); // <1>
-        if (totalTokenUsage > 20000) {
+        if (aiMsg.historySizeInBytes() > 100000) { // <1>
           var history = componentClient
               .forEventSourcedEntity(sessionId)
               .method(SessionMemoryEntity::getHistory) // <2>
@@ -56,7 +55,7 @@ public class SessionMemoryConsumer extends Consumer {
               .method(SessionMemoryEntity::compactHistory) // <4>
               .invoke(new SessionMemoryEntity.CompactionCmd(
                   new SessionMessage.UserMessage(now, summary.userMessage(), ""),
-                  new SessionMessage.AiMessage(now, summary.aiMessage(), "", summary.inputTokens(), summary.outputTokens()),
+                  new SessionMessage.AiMessage(now, summary.aiMessage(), "", 0, 0),
                   history.sequenceNumber() // <5>
               ));
         }

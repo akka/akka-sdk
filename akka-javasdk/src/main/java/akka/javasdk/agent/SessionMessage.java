@@ -23,6 +23,9 @@ import java.util.List;
   @JsonSubTypes.Type(value = AiMessage.class, name = "AIM"),
   @JsonSubTypes.Type(value = ToolCallResponse.class, name = "TCR")})
 public sealed interface SessionMessage {
+  static int sizeInBytes(String text) {
+    return text.length(); // simple implementation, but not correct for all encodings
+  }
 
   int size();
 
@@ -32,7 +35,7 @@ public sealed interface SessionMessage {
 
     @Override
     public int size() {
-      return text.length();
+      return sizeInBytes(text);
     }
   }
 
@@ -52,11 +55,11 @@ public sealed interface SessionMessage {
 
     @Override
     public int size() {
-      var textLength = text == null ? 0 : text.length();
+      var textLength = text == null ? 0 : SessionMessage.sizeInBytes(text);
       // calculating the length of tool call requests arguments
       // NOTE: not accounting for the real payload, only the arguments
       int argsLength = toolCallRequests == null ? 0 : toolCallRequests.stream()
-          .mapToInt(req -> req.arguments() == null ? 0 : req.arguments().length())
+          .mapToInt(req -> req.arguments() == null ? 0 : SessionMessage.sizeInBytes(req.arguments()))
           .sum();
 
       return textLength + argsLength;
@@ -66,7 +69,7 @@ public sealed interface SessionMessage {
   record ToolCallResponse(Instant timestamp, String componentId, String id, String name, String text) implements SessionMessage {
     @Override
     public int size() {
-      return text.length();
+      return SessionMessage.sizeInBytes(text);
     }
   }
 
