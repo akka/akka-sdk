@@ -161,17 +161,14 @@ private[impl] final class AgentImpl[A <: Agent](
             val toolDescriptors =
               ToolDescriptors.agentToolDescriptor(agent.getClass) ++
               req.toolInstancesOrClasses.flatMap {
-                case any: Class[_] =>
-                  ToolDescriptors.forClass(any.asInstanceOf[Class[_]])
-                case any =>
-                  ToolDescriptors.forClass(any.getClass)
+                case cls: Class[_] => ToolDescriptors.forClass(cls)
+                case any           => ToolDescriptors.forClass(any.getClass)
               }
 
             val functionTools = FunctionTools.agentFunctionToolInvokers(agent) ++
               req.toolInstancesOrClasses.flatMap {
-                case any: Class[_] =>
-                  FunctionTools.forClass(any.asInstanceOf[Class[_]], dependencyProvider)
-                case any => FunctionTools.forInstance(any)
+                case cls: Class[_] => FunctionTools.forClass(cls, dependencyProvider)
+                case any           => FunctionTools.forInstance(any)
               }.toMap
 
             new SpiAgent.RequestModelEffect(
