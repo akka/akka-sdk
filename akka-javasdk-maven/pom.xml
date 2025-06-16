@@ -5,7 +5,7 @@
 
   <groupId>io.akka</groupId>
   <artifactId>akka-javasdk-maven</artifactId>
-  <version>3.3.2</version>
+  <version>3.3.2-21-be6474b0-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>Akka SDK for Java Maven</name>
