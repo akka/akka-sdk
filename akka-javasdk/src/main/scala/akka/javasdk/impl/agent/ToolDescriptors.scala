@@ -17,14 +17,17 @@ import akka.runtime.sdk.spi.SpiAgent
 @InternalApi
 object ToolDescriptors {
 
-  def apply(any: Any): Seq[SpiAgent.ToolDescriptor] =
-    apply(any.getClass)
-
   def agentToolDescriptor(cls: Class[_]): Seq[SpiAgent.ToolDescriptor] =
     toToolDescriptors(cls, allowNonPublic = true)
 
-  def apply(cls: Class[_]): Seq[SpiAgent.ToolDescriptor] =
+  def forClass(cls: Class[_]): Seq[SpiAgent.ToolDescriptor] = {
+    // we only validate against other classes,
+    // the Agent class is added by default and may not have a method annotated with FunctionTool
+    val hasValidMethods = cls.getDeclaredMethods.exists { m => m.hasAnnotation[FunctionTool] && m.isPublic }
+    if (!hasValidMethods) throw new IllegalArgumentException(s"No tools found in class [${cls.getName}]")
+
     toToolDescriptors(cls, allowNonPublic = false)
+  }
 
   private def toToolDescriptors(cls: Class[_], allowNonPublic: Boolean): Seq[SpiAgent.ToolDescriptor] = {
 

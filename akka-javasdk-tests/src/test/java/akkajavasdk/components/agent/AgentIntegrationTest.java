@@ -5,6 +5,7 @@
 package akkajavasdk.components.agent;
 
 import akka.actor.testkit.typed.javadsl.LoggingTestKit;
+import akka.javasdk.DependencyProvider;
 import akka.javasdk.agent.AgentRegistry;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
@@ -29,12 +30,27 @@ public class AgentIntegrationTest extends TestKitSupport {
 
   @Override
   protected TestKit.Settings testKitSettings() {
+    var depsProvider = new DependencyProvider() {
+      @Override
+      public <T> T getDependency(Class<T> clazz) {
+        if (clazz.isAssignableFrom(SomeAgentWithTool.TrafficService.class)) {
+          return (T ) new SomeAgentWithTool.TrafficService();
+        }
+        return null;
+      }
+    };
+
     return TestKit.Settings.DEFAULT
         .withModelProvider(SomeAgent.class, testModelProvider)
         .withModelProvider(SomeAgentWithTool.class, testModelProvider)
         .withModelProvider(SomeStructureResponseAgent.class, testModelProvider)
-        .withModelProvider(SomeStreamingAgent.class, testModelProvider);
+        .withModelProvider(SomeStreamingAgent.class, testModelProvider)
+        .withModelProvider(SomeAgentWithBadlyConfiguredTool.class, testModelProvider)
+        .withDependencyProvider(depsProvider);
   }
+
+
+
 
   @AfterEach
   public void afterEach() {
@@ -89,7 +105,7 @@ public class AgentIntegrationTest extends TestKitSupport {
 
 
   @Test
-  public void shouldCallToolFunctions() {
+  public void shouldCallToolFunctionsFromInstances() {
 
     var userQuestion = "How is the weather today in Leuven?";
 
@@ -130,6 +146,75 @@ public class AgentIntegrationTest extends TestKitSupport {
     assertThat(response.response()).isEqualTo("The weather is sunny in Leuven. (date=2025-01-01)");
   }
 
+  @Test
+  public void shouldCallToolFunctionsFromClasses() {
+
+    var userQuestion = "How is the traffic today in Leuven?";
+
+    var args = """
+          {
+           "location" : "Leuven"
+          }
+          """;
+    // when asking for the traffic, call the traffic service
+
+    testModelProvider.mockToolInvocationRequest(
+      msg -> msg.content().equals(userQuestion),
+        new TestModelProvider.ToolInvocationRequest("getTrafficNow", args));
+
+    // receives the traffic info as the final answer
+    testModelProvider.mockResponseToToolResult(
+      result -> result.content().startsWith("There is traffic jam"),
+      result -> new TestModelProvider.AiResponse(result.content())
+    );
+
+    //when
+    var response = componentClient.forAgent().inSession(newSessionId())
+      .method(SomeAgentWithTool::query)
+      .invoke(userQuestion);
+
+
+    //then
+    assertThat(response.response()).isEqualTo("There is traffic jam in Leuven.");
+  }
+
+  @Test
+  public void shouldFailForBadlyConfiguredTool() {
+
+    var userQuestion = "How is the traffic today in Leuven?";
+    testModelProvider.fixedResponse("Hello");
+
+    try {
+      componentClient.forAgent().inSession(newSessionId())
+        .method(SomeAgentWithBadlyConfiguredTool::query)
+        .invoke(userQuestion);
+      fail("Should have thrown an exception");
+    } catch (Exception e) {
+      assertThat(e.getMessage()).startsWith("Component client error");
+    }
+
+  }
+
+  @Test
+  public void shouldFailWithClearMessageIfToolClassCannotBeInit() {
+
+    var userQuestion = "How is the traffic today in Leuven?";
+
+    testModelProvider.mockToolInvocationRequest(
+      msg -> msg.content().equals(userQuestion),
+      new TestModelProvider.ToolInvocationRequest("getNonStaticTrafficNow", ""));
+
+    try {
+      componentClient.forAgent().inSession(newSessionId())
+        .method(SomeAgentWithTool::query)
+        .invoke(userQuestion);
+
+      fail("Should have thrown an exception");
+    } catch (Exception e) {
+      // FIXME: errors message in dev-mode/test should be propagate
+      assertThat(e.getMessage()).contains("Unexpected error");
+    }
+  }
 
   @Test
   public void shouldStreamResponse() throws Exception {
