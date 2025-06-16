@@ -87,7 +87,9 @@ interface ActivityAgentMore {
       Do not include any explanations or text outside of the JSON structure.
       """.stripIndent();
 
-    private static final Activity DEFAULT_ACTIVITY = new Activity("running", "Running is a great way to stay fit and healthy. You can do it anywhere, anytime, and it requires no special equipment.");
+    private static final Activity DEFAULT_ACTIVITY =
+        new Activity("running", "Running is a great way to stay fit " +
+            "and healthy. You can do it anywhere, anytime, and it requires no special equipment.");
 
     record Activity(String name, String description) {} // <2>
 

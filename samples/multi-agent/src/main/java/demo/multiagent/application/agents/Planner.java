@@ -29,8 +29,8 @@ public class Planner extends Agent {
   private String buildSystemMessage(AgentSelection agentSelection) {
     var agents = agentSelection.agents().stream().map(agentsRegistry::agentInfo).toList(); // <1>
     return """
-        Your job is to analyse the user request and the list of agents and devise the best order in which
-        the agents should be called in order to produce a suitable answer to the user.
+        Your job is to analyse the user request and the list of agents and devise the best order in
+        which the agents should be called in order to produce a suitable answer to the user.
       
         You can find the list of exiting agents below (in JSON format):
         %s
@@ -38,9 +38,10 @@ public class Planner extends Agent {
         Note that each agent has a description of its capabilities. Given the user request,
         you must define the right ordering.
       
-        Moreover, you must generate a concise request to be sent to each agent. This agent request is of course
-        based on the user original request, but is tailored to the specific agent. Each individual agent should not receive
-        requests or any text that is not related with its domain of expertise.
+        Moreover, you must generate a concise request to be sent to each agent. This agent request is
+        of course based on the user original request, but is tailored to the specific agent. Each
+        individual agent should not receive requests or any text that is not related with its domain
+        of expertise.
       
         Your response should follow a strict json schema as defined bellow.
          {
