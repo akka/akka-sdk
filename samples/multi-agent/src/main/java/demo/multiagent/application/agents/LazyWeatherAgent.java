@@ -3,17 +3,12 @@ package demo.multiagent.application.agents;
 import akka.javasdk.agent.Agent;
 import akka.javasdk.annotations.AgentDescription;
 import akka.javasdk.annotations.ComponentId;
-import akka.javasdk.annotations.Description;
 import akka.javasdk.annotations.FunctionTool;
-import akka.javasdk.http.HttpClientProvider;
 import demo.multiagent.domain.AgentResponse;
-import dev.langchain4j.agent.tool.Tool;
-
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
-// tag::description[]
-@ComponentId("weather-agent")
+@ComponentId("lazy-weather-agent")
 @AgentDescription(
     name = "Weather Agent",
     description = """
@@ -22,10 +17,7 @@ import java.time.format.DateTimeFormatter;
     """,
     role = "worker"
 )
-// tag::function-tool[]
-public class WeatherAgent extends Agent {
-// end::description[]
-// end::function-tool[]
+public class LazyWeatherAgent extends Agent {
 
   private static final String SYSTEM_MESSAGE = """
       You are a weather agent.
@@ -36,26 +28,19 @@ public class WeatherAgent extends Agent {
       Celsius temperature is in temp_c field. Fahrenheit temperature is in temp_f field.
     """.stripIndent() + AgentResponse.FORMAT_INSTRUCTIONS;
 
-
   // tag::function-tool[]
-  private final WeatherService weatherService;
-
-  public WeatherAgent(WeatherService weatherService) {
-    this.weatherService = weatherService; // <1>
-  }
-
-  public Agent.Effect<AgentResponse> query(String message) {
+  public Effect<AgentResponse> query(String message) {
     return effects()
         .systemMessage(SYSTEM_MESSAGE)
-        .tools(weatherService) // <2>
+        .tools(WeatherService.class) // <1>
         .userMessage(message)
         .responseAs(AgentResponse.class)
         .thenReply();
   }
+  // end::function-tool[]
 
-  @FunctionTool(description = "Return current date in yyyy-MM-dd format") // <2>
+  @FunctionTool(description = "Return current date in yyyy-MM-dd format")
   private String getCurrentDate() {
     return LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE);
   }
 }
-// end::function-tool[]

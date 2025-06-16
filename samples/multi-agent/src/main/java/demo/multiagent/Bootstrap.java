@@ -5,9 +5,12 @@ import akka.javasdk.ServiceSetup;
 import akka.javasdk.annotations.Setup;
 import akka.javasdk.http.HttpClientProvider;
 import com.typesafe.config.Config;
+import demo.multiagent.application.agents.LazyWeatherAgent;
 import demo.multiagent.application.agents.WeatherService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Set;
 
 @Setup
 public class Bootstrap implements ServiceSetup {
@@ -39,6 +42,14 @@ public class Bootstrap implements ServiceSetup {
         return null;
       }
     };
+  }
+
+  @Override
+  public Set<Class<?>> disabledComponents() {
+    // LazyWeatherAgent is by default disabled.
+    // To see how lazy too initialization works, replace the following by
+    // Set.of(WeatherAgent.class), this will disable WeatherAgent and enable LazyWeatherAgent
+    return Set.of(LazyWeatherAgent.class);
   }
 }
 
