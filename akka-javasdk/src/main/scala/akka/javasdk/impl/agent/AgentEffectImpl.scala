@@ -69,8 +69,11 @@ private[javasdk] object BaseAgentEffectBuilder {
     def withMemory(provider: MemoryProvider): RequestModel =
       copy(memoryProvider = provider)
 
-    def addTools(toolInstancesOrClasses: Seq[Any]): RequestModel = {
-      copy(toolInstancesOrClasses = this.toolInstancesOrClasses ++ toolInstancesOrClasses)
+    def addTool(tool: Any): RequestModel = {
+      copy(toolInstancesOrClasses = this.toolInstancesOrClasses :+ tool)
+    }
+    def addTools(tools: Seq[Any]): RequestModel = {
+      copy(toolInstancesOrClasses = this.toolInstancesOrClasses ++ tools)
     }
   }
 
@@ -183,8 +186,8 @@ private[javasdk] final class BaseAgentEffectBuilder[Reply]
     new MappingResponseEffectBuilder(_primaryEffect.asInstanceOf[RequestModel])
   }
 
-  override def tools(toolInstancesOrClasses: Any*): Builder = {
-    updateRequestModel(_.addTools(toolInstancesOrClasses))
+  override def tools(tool: Any, tools: Any*): Builder = {
+    updateRequestModel(_.addTool(tool).addTools(tools))
     this
   }
 

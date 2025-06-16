@@ -112,10 +112,9 @@ public abstract class Agent {
        * If no such method is found, an {@link IllegalArgumentException} will be thrown.
        * These methods will be available as tools for the AI model to invoke.
        *
-       * @param toolInstancesOrClasses additional tool instances or classes exposing tool methods
        * @return this builder for method chaining
        */
-      Builder tools(Object... toolInstancesOrClasses);
+      Builder tools(Object tool, Object... otherTools);
 
       /**
        * Adds one or more tool instances or classes that the AI model can use.
