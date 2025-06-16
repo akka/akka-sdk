@@ -129,8 +129,7 @@ public abstract class Agent {
        * Each class must have at least one public method annotated with {@code @FunctionTool}.
        * These methods will be available as tools for the AI model to invoke.
        * <p>
-       * The object will be instantiated using the {@link DependencyProvider}.
-       * If no provider is defined, the class must have a no-argument default constructor.
+       * The object will be instantiated using a configured {@link DependencyProvider}.
        *
        * @param toolClasses additional tool classes exposing tool methods
        * @return this builder for method chaining
@@ -143,8 +142,7 @@ public abstract class Agent {
        * Each class must have at least one public method annotated with {@code @FunctionTool}.
        * These methods will be available as tools for the AI model to invoke.
        * <p>
-       * The object will be instantiated using the {@link DependencyProvider}.
-       * If no provider is defined, the class must have a no-argument default constructor.
+       * The object will be instantiated using a configured {@link DependencyProvider}.
        *
        * @param toolClasses one or more classes exposing tool methods
        * @return this builder for method chaining

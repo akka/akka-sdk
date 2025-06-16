@@ -5,10 +5,13 @@
 package akka.javasdk;
 
 /**
- * A factory method to provide additional dependencies to the component implementations.
- * <p>
- * Implementations of this interface must be thread safe.
- */
+  * A factory method to provide additional dependencies to the component implementations.
+  * <p>
+  * Implementations of this interface must be thread-safe.
+  * <p>
+  * The {@code DependencyProvider} must be configured using the {@link ServiceSetup#createDependencyProvider} method.
+  * This ensures that the correct dependencies are available to the component implementations at runtime.
+  */
 public interface DependencyProvider {
 
   /**

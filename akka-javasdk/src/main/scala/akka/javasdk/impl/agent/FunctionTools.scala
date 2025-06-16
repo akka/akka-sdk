@@ -43,15 +43,10 @@ object FunctionTools {
       dependencyProvider
         .map { depProv => depProv.getDependency(cls) }
         .getOrElse {
-          cls.getConstructors.find(_.getParameterCount == 0) match {
-            case Some(defaultCtor) => defaultCtor.newInstance()
-            case None =>
-              throw new IllegalArgumentException(
-                s"No default (no-arg) constructor found for class ${cls.getName}. " +
-                "If this class has a default (no-agr) constructor and it's an inner class, make sure it is a static class. " +
-                "Otherwise, please provide a DependencyProvider to supply dependencies. " +
-                "See https://doc.akka.io/java/setup-and-dependency-injection.html#_custom_dependency_injection")
-          }
+          throw new IllegalArgumentException(
+            s"Could not instantiate [${cls.getName}] as no DependencyProvider was configured. " +
+            "Please provide a DependencyProvider to supply dependencies. " +
+            "See https://doc.akka.io/java/setup-and-dependency-injection.html#_custom_dependency_injection")
         }
     }
   }

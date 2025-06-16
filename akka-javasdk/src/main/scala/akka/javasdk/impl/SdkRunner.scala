@@ -992,18 +992,20 @@ private final class Sdk(
 
         // block wiring of clients into anything that is not an Action or Workflow
         // NOTE: if they are allowed, 'partial' should already have a matching case for them
-        // if partial func doesn't match, try to lookup in the dependencyProvider
+        // if partial func doesn't match, try to look up in the dependencyProvider
         case anyOther =>
           dependencyProviderOpt match {
             case _ if platformManagedDependency(anyOther) =>
-              //if we allow for a given dependency we should cover it in the partial function for the component
-              throw new RuntimeException(
+              // if we allow for a given dependency, we should cover it in the partial function for the component
+              throw new IllegalArgumentException(
                 s"[${constructor.getDeclaringClass.getName}] are not allowed to have a dependency on ${anyOther.getName}");
             case Some(dependencyProvider) =>
               dependencyProvider.getDependency(anyOther)
             case None =>
-              throw new RuntimeException(
-                s"Could not inject dependency [${anyOther.getName}] required by [${constructor.getDeclaringClass.getName}] as no DependencyProvider was configured.");
+              throw new IllegalStateException(
+                s"Could not inject dependency [${anyOther.getName}] required by [${constructor.getDeclaringClass.getName}] as no DependencyProvider was configured." +
+                "Please provide a DependencyProvider to supply dependencies. " +
+                "See https://doc.akka.io/java/setup-and-dependency-injection.html#_custom_dependency_injection");
           }
 
       }

@@ -25,14 +25,6 @@ public class SomeAgentWithTool extends Agent {
     }
   }
 
-
-  public class NonStaticTrafficService {
-    @FunctionTool(description = "Returns the traffic conditions at passed location")
-    public String getNonStaticTrafficNow(String location) {
-      return "There is traffic jam in "+location + ".";
-    }
-  }
-
   public record SomeResponse(String response) {
   }
 
@@ -40,7 +32,7 @@ public class SomeAgentWithTool extends Agent {
     return effects()
       .systemMessage("You are a helpful...")
       .tools(new WeatherService())
-      .toolClasses(TrafficService.class, NonStaticTrafficService.class)
+      .toolClasses(TrafficService.class)
       .userMessage(question)
       .map(SomeResponse::new)
       .thenReply();

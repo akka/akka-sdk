@@ -5,6 +5,7 @@
 package akkajavasdk.components.agent;
 
 import akka.actor.testkit.typed.javadsl.LoggingTestKit;
+import akka.javasdk.DependencyProvider;
 import akka.javasdk.agent.AgentRegistry;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
@@ -12,6 +13,7 @@ import akka.javasdk.testkit.TestModelProvider;
 import akka.stream.javadsl.Sink;
 import akkajavasdk.Junit5LogCapturing;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -29,12 +31,26 @@ public class AgentIntegrationTest extends TestKitSupport {
 
   @Override
   protected TestKit.Settings testKitSettings() {
+    var depsProvider = new DependencyProvider() {
+      @Override
+      public <T> T getDependency(Class<T> clazz) {
+        if (clazz.isAssignableFrom(SomeAgentWithTool.TrafficService.class)) {
+          return (T ) new SomeAgentWithTool.TrafficService();
+        }
+        return null;
+      }
+    };
+
     return TestKit.Settings.DEFAULT
         .withModelProvider(SomeAgent.class, testModelProvider)
         .withModelProvider(SomeAgentWithTool.class, testModelProvider)
         .withModelProvider(SomeStructureResponseAgent.class, testModelProvider)
-        .withModelProvider(SomeStreamingAgent.class, testModelProvider);
+        .withModelProvider(SomeStreamingAgent.class, testModelProvider)
+        .withDependencyProvider(depsProvider);
   }
+
+
+
 
   @AfterEach
   public void afterEach() {
