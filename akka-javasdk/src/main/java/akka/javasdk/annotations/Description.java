@@ -5,9 +5,9 @@
 package akka.javasdk.annotations;
 
 import java.lang.annotation.*;
-
 /**
- * Used to define human language description of an MCP tool parameter field for the MCP endpoint.
+ * Used to define a human language description for fields and method parameters,
+ * such as MCP tool parameters or tool methods.
  */
 // FIXME share field/parameter description metadata with other parts of the SDK API for agents
 @Target({ElementType.FIELD, ElementType.PARAMETER})

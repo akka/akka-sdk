@@ -7,6 +7,7 @@ package akka.javasdk.agent;
 import akka.annotation.InternalApi;
 import akka.javasdk.DependencyProvider;
 import akka.javasdk.Metadata;
+import akka.javasdk.annotations.FunctionTool;
 import akka.javasdk.impl.agent.AgentStreamEffectImpl;
 import akka.javasdk.impl.agent.BaseAgentEffectBuilder;
 
@@ -106,7 +107,9 @@ public abstract class Agent {
        * <p>
        * Each argument can be either an object instance or a {@link Class} object. If a {@link Class} is provided,
        * it will be instantiated at runtime using the configured {@link DependencyProvider}.
-       * Each instance or class must have at least one public method annotated with {@code @FunctionTool}.
+       * <p>
+       * Each instance or class must have at least one public method annotated with {@link FunctionTool}.
+       * If no such method is found, an {@link IllegalArgumentException} will be thrown.
        * These methods will be available as tools for the AI model to invoke.
        *
        * @param toolInstancesOrClasses additional tool instances or classes exposing tool methods
@@ -119,7 +122,9 @@ public abstract class Agent {
        * <p>
        * Each element in the list can be either an object instance or a {@link Class} object. If a {@link Class} is provided,
        * it will be instantiated at runtime using the configured {@link DependencyProvider}.
-       * Each instance or class must have at least one public method annotated with {@code @FunctionTool}.
+       * <p>
+       * Each instance or class must have at least one public method annotated with {@link FunctionTool}.
+       * If no such method is found, an {@link IllegalArgumentException} will be thrown.
        * These methods will be available as tools for the AI model to invoke.
        *
        * @param toolInstancesOrClasses one or more objects or classes exposing tool methods
