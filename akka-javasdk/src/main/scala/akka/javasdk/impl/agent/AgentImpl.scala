@@ -161,7 +161,7 @@ private[impl] final class AgentImpl[A <: Agent](
             val toolDescriptors =
               ToolDescriptors.agentToolDescriptor(agent.getClass) ++
               req.toolInstancesOrClasses.flatMap {
-                case any if any.isInstanceOf[Class[_]] =>
+                case any: Class[_] =>
                   ToolDescriptors.forClass(any.asInstanceOf[Class[_]])
                 case any =>
                   ToolDescriptors.forClass(any.getClass)
@@ -169,7 +169,7 @@ private[impl] final class AgentImpl[A <: Agent](
 
             val functionTools = FunctionTools.agentFunctionToolInvokers(agent) ++
               req.toolInstancesOrClasses.flatMap {
-                case any if any.isInstanceOf[Class[_]] =>
+                case any: Class[_] =>
                   FunctionTools.forClass(any.asInstanceOf[Class[_]], dependencyProvider)
                 case any => FunctionTools.forInstance(any)
               }.toMap

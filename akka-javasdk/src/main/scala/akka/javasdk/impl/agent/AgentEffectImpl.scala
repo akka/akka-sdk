@@ -60,7 +60,7 @@ private[javasdk] object BaseAgentEffectBuilder {
       failureMapping: Option[Throwable => Any],
       replyMetadata: Metadata,
       memoryProvider: MemoryProvider,
-      toolInstancesOrClasses: Seq[Any])
+      toolInstancesOrClasses: Seq[AnyRef])
       extends PrimaryEffectImpl {
 
     def withProvider(provider: ModelProvider): RequestModel =
@@ -69,10 +69,10 @@ private[javasdk] object BaseAgentEffectBuilder {
     def withMemory(provider: MemoryProvider): RequestModel =
       copy(memoryProvider = provider)
 
-    def addTool(tool: Any): RequestModel = {
+    def addTool(tool: AnyRef): RequestModel = {
       copy(toolInstancesOrClasses = this.toolInstancesOrClasses :+ tool)
     }
-    def addTools(tools: Seq[Any]): RequestModel = {
+    def addTools(tools: Seq[AnyRef]): RequestModel = {
       copy(toolInstancesOrClasses = this.toolInstancesOrClasses ++ tools)
     }
   }
@@ -186,7 +186,7 @@ private[javasdk] final class BaseAgentEffectBuilder[Reply]
     new MappingResponseEffectBuilder(_primaryEffect.asInstanceOf[RequestModel])
   }
 
-  override def tools(tool: Any, tools: Any*): Builder = {
+  override def tools(tool: AnyRef, tools: AnyRef*): Builder = {
     updateRequestModel(_.addTool(tool).addTools(tools))
     this
   }
