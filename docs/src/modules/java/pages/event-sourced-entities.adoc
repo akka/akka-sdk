@@ -32,7 +32,7 @@ The steps necessary to implement an Event Sourced Entity include:
 
 The following sections walk through these steps using a shopping cart service as an example (working sample can be downloaded from link:https://github.com/akka-samples/shopping-cart-quickstart[Github]).
 
-== Modeling the Entity
+== Modeling the entity
 
 Through our "Shopping Cart" Event Sourced Entity we expect to manage our cart, adding and removing items as we please. Being event-sourced means it will represent changes to state as a series of domain events. Let's have a look at what kind of model we expect to store and the events our entity might generate.
 
@@ -62,7 +62,7 @@ IMPORTANT: The use of logical names for subtypes is essential for maintainabilit
 include::partial$entity-ids.adoc[]
 
 [#_effect_api]
-== Event Sourced Entity's Effect API
+== Event sourced entity's effect API
 
 The Event Sourced Entity's Effect defines the operations that Akka should perform when an incoming command is handled by an Event Sourced Entity.
 
@@ -141,7 +141,7 @@ include::example$shopping-cart-quickstart/src/main/java/shoppingcart/application
 
 IMPORTANT: We are returning the internal state directly back to the requester. In the endpoint, it's usually best to convert this internal domain model into a public model so the internal representation is free to evolve without breaking clients code.
 
-=== Deleting an Entity
+=== Deleting an entity
 
 Normally, Event Sourced Entities are not deleted because the history of the events typically provide business value.
 For certain use cases or for regulatory reasons the entity can be deleted.
@@ -179,11 +179,11 @@ When the Event Sourced Entity is loaded again, the snapshot will be loaded befor
 [#_replication]
 include::partial$mutli-region-replication.adoc[]
 
-== Side Effects
+== Side effects
 
 An entity doesn't perform any external side effects aside from persisting events and replying to the request. Side effects can be handled from the Workflow, Consumer, or Endpoint components that are calling the entity.
 
-== Testing the Entity
+== Testing the entity
 
 include::partial$testing-entity.adoc[]
 

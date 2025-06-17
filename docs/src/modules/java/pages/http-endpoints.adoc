@@ -1,4 +1,4 @@
-= Designing HTTP Endpoints
+= Designing HTTP endpoints
 
 include::ROOT:partial$include.adoc[]
 
@@ -365,3 +365,4 @@ This uses more advanced Akka stream operators, you can find more details of thos
 - xref:reference:jwts.adoc[]
 - xref:operations:tls-certificates.adoc[]
 - xref:operations:services/invoke-service.adoc#_http_basic_authentication[HTTP Basic authentication]
+
