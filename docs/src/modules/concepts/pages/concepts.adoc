@@ -47,6 +47,10 @@ You create a continuous incoming stream of events with the `HttpEndpoint` or the
 You create a stream processor to analyze and act against a stream of data with the `Consumer` component.
 |===
 
+The services you build with Akka components are composable, which can be combined to design agentic, transactional, analytics, edge, and digital twin systems. You can create services with one component or many. Let Akka unlock your distributed systems artistry!
+
+image:concepts:component-composition.png[Akka Agentic Platform]
+
 == Design goals of Akka
 
 [horizontal]
