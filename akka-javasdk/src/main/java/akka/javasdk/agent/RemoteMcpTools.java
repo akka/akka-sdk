@@ -31,18 +31,18 @@ public interface RemoteMcpTools {
    * Define a filter to select what discovered tool names are passed on to the chat model. Names
    * that are filtered will not be described to the model and will not allow calls. Will override a
    * previous call to {@link #withAllowedToolNames(Set)}.
-   * <p>
-   * By default, all tools are allowed.
+   *
+   * <p>By default, all tools are allowed.
    */
   RemoteMcpTools withToolNameFilter(Predicate<String> toolNameFilter);
 
   /**
-   * Define a set of allowed tool names. Will override a previously defined {@link #withToolNameFilter(Predicate)}
-   * <p>
-   * By default, all tools are allowed.
+   * Define a set of allowed tool names. Will override a previously defined {@link
+   * #withToolNameFilter(Predicate)}
+   *
+   * <p>By default, all tools are allowed.
    */
   RemoteMcpTools withAllowedToolNames(Set<String> allowedToolNames);
-
 
   /**
    * Specify an interceptor that has the capability to allow or deny calls (by throwing an
@@ -63,9 +63,7 @@ public interface RemoteMcpTools {
    */
   @DoNotInherit
   interface ToolInterceptorContext {
-    /**
-     * @return The tool name that the call is for
-     */
+    /** @return The tool name that the call is for */
     String toolName();
   }
 
