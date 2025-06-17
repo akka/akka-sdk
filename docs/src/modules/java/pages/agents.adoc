@@ -350,7 +350,7 @@ annotation. These are automatically registered as available tools for the curren
 passing them to the `effects().tools()` method in your agent's command handler. Objects or classes passed to `effects
 ().tools()` must have at least one public method annotated with `@FunctionTool`.
 
-3. **Tools defined by remote MCP servers** - Register remote MCP servers to let the agent use tools they provide.
+3. **Tools defined by remote MCP servers** – Register remote MCP servers to let the agent use tools they provide.
 
 NOTE: A class (either the agent itself or an external tool class) can have multiple methods annotated with `@FunctionTool`. Each annotated method will be registered as a separate tool that the LLM can choose to invoke based on the task requirements.
 
