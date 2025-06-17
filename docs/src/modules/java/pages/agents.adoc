@@ -375,6 +375,12 @@ include::example$multi-agent/src/main/java/demo/multiagent/application/agents/We
 <1> Annotate method with `@FunctionTool` and provide a clear description of what it does.
 <2> Parameters can be documented with the `@Description` annotation to help the LLM understand how to use them.
 
+[NOTE]
+====
+LLMs are all about context. The more context you can provide, the better the results.
+Both `@FunctionTool` and `@Description` annotations are used to provide context to the LLM about the tool function and its parameters.
+The better the context, the better the LLM can understand what the tool function does and how to use it.
+====
 
 In this example, the agent has access to both:
 
