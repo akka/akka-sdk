@@ -94,13 +94,13 @@ object FunctionTools {
     }
   }
 
-  private def toolName(method: Method, name: String): String = {
+  private def toolName(method: Method, resolvedName: String): String = {
     val toolAnno = method.getAnnotation(classOf[FunctionTool])
 
     if (toolAnno.name() == null || toolAnno.name().isBlank) {
       // if the annotation does not specify a name,
       // we use the name passed to this method plus the sanitized class name
-      method.getDeclaringClass.getSimpleName + "_" + name
+      method.getDeclaringClass.getSimpleName + "_" + resolvedName
     } else toolAnno.name()
   }
 
@@ -143,8 +143,8 @@ object FunctionTools {
           // otherwise we need to create a unique name for each method based on its parameters
           methods.map { method =>
             val paramTypes = method.getParameterTypes.map(_.getSimpleName).mkString("_")
-            val uniqueName = s"${name}_$paramTypes"
-            (toolName(method, uniqueName), method)
+            val resolvedName = s"${name}_$paramTypes"
+            (toolName(method, resolvedName), method)
           }.toMap
       }
   }
