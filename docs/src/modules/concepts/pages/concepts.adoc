@@ -53,14 +53,21 @@ image:concepts:component-composition.png[Akka Agentic Platform]
 
 == Design goals of Akka
 
-[horizontal]
-Simple:: Development is approachable by anyone with coding skills.
-Elastic:: Scales processing and memory management gracefully.
-Resilient:: Recovers from any form of failure, including network and hallucination.
-Interoperable:: Operates with any external system, protocol, or API.
-Composable:: Enables system designs to evolve from simple to complex.
-Batteries-included:: Includes orchestration, runtimes, and distributed state management.
-Production-ready:: No code changes required to move from development to production.
+Akka’s design principles are influenced by decades of distributed systems research.
+
+[cols="1,3", options="header"]
+|===
+|Research |Publications
+
+|Patterns
+|link:https://www.infoq.com/articles/Principles-Patterns-Distributed-Architecture[Principles and Patterns for Distributed Application Architecture, Jonas Bonér], 
+
+|Principles
+|The Reactive Principles
+
+|Approach
+|link:https://www.reactivemanifesto.org/[The Reactive Manifesto]
+|===
 
 == Anatomy of an autonomous agentic AI system
 
