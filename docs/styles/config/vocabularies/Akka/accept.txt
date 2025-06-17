@@ -148,6 +148,7 @@ regionalization
 repartitions
 replicatedRead
 reshard
+[Rr]eusability
 RNGs
 runtimes
 runtime's

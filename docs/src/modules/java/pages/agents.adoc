@@ -335,29 +335,45 @@ include::example$doc-snippets/src/main/java/com/example/application/ActivityAgen
 <3> Use the `responseAs` method to specify the expected response type.
 <4> Sometimes the model may not return a valid JSON, so you can use `onFailure` to provide a fallback value in case of parsing exception.
 
-== Extending Agents with Function Tools
+== Extending agents with function tools
 
 You may frequently hear people say things like "the LLM can make a call" or "the LLM can use a tool". While these statements get the point across, they're not entirely accurate. In truth, the agent will tell the LLM which _tools_ are available for use. The LLM then determines from the prompt which tools it needs to call and with which parameters.
 
 The Agent will then in turn execute the tool requested by the LLM, incorporate the tool results into the session context, and then send a new prompt. This will continue in a loop until the LLM no longer indicates it needs to invoke a tool to perform its task.
 
-Tool functions are incredibly easy in Akka. All you need to do is decorate an Agent method with the `@FunctionTool`
-annotation, and Akka will automatically resolve it on your behalf. As an example, you might have an agent that
-recommends outdoor activities, but to do so it needs to know the current weather.
+There are two ways to add function tools to your agent:
 
-Anything "current" is beyond the capabilities of an LLM, so the model response will include information on what tool needs to be invoked.
+1. **Agent-defined function tools** — Define function tools directly within your agent class using the`@FunctionTool`
+annotation. These are automatically registered as available tools for the current Agent.
 
-Here's a sample `getWeather` tool function. The method is defined in the `WeatherAgent` class. Since the method is
-defined in the agent itself, Akka will automatically register it as a tool function available to this agent.
+2. **Externally defined function tools** — Explicitly register external objects or classes containing function tools by
+passing them to the `effects().tools()` method in your agent's command handler. Objects or classes passed to `effects
+().tools()` must have at least one public method annotated with `@FunctionTool`.
+
+NOTE: A class (either the agent itself or an external tool class) can have multiple methods annotated with `@FunctionTool`. Each annotated method will be registered as a separate tool that the LLM can choose to invoke based on the task requirements.
+
+You can use either approach independently or combine them based on your needs. Let's look at a complete example showing both approaches:
 
 [source,java]
 .{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/agents/WeatherAgent.java[WeatherAgent.java]
 ----
 include::example$multi-agent/src/main/java/demo/multiagent/application/agents/WeatherAgent.java[tag=function-tool]
 ----
-<1> Annotate the method with `@FunctionTool` and give a clear description of what it provides.
-<2> Parameters can be clarified with the `@Description` annotation.
-<3> Implementation calls an external weather service.
+<1> The `WeatherService` providing a function tool is injected into the agent.
+<2> We explicitly register the `weatherService` using the `tools()` method to make its method available as a tool for
+ the current Agent.
+<3> We define a simple tool directly in the agent class using the `@FunctionTool` annotation, which is implicitly registered. Note that since this method is defined in the agent itself, it can even be a private method.
+
+The `WeatherService` has a method annotated with `@FunctionTool` and can be eventually used by multiple agents:
+
+[source,java]
+.{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/agents/WeatherService.java[WeatherService.java]
+----
+include::example$multi-agent/src/main/java/demo/multiagent/application/agents/WeatherService.java[tag=function-tool]
+----
+
+<1> Annotate method with `@FunctionTool` and provide a clear description of what it does.
+<2> Parameters can be documented with the `@Description` annotation to help the LLM understand how to use them.
 
 [NOTE]
 ====
@@ -365,6 +381,38 @@ LLMs are all about context. The more context you can provide, the better the res
 Both `@FunctionTool` and `@Description` annotations are used to provide context to the LLM about the tool function and its parameters.
 The better the context, the better the LLM can understand what the tool function does and how to use it.
 ====
+
+In this example, the agent has access to both:
+
+* The `getCurrentDate()` method defined within the agent class (implicitly registered via annotation)
+* The `getWeather()` method defined in the `WeatherService` class (explicitly registered via the `.tools()` method)
+
+=== Sharing function tools across agents
+
+Function tools defined in external classes can be shared and reused across multiple agents. This approach promotes code reusability and helps maintain a consistent behavior for common functionalities.
+
+When a tool class like `WeatherService` is shared across multiple agents:
+
+* Each agent can register the same tool but use it in different contexts
+* The tool behavior remains consistent, but how and when agents invoke it may differ based on their specific tasks
+* Agents provide different system prompts that influence how the LLM decides to use the shared tool
+
+
+=== Lazy initialization of tool classes
+
+In the example above, we pass an instance of `WeatherService` to the `tools()` method. Alternatively, you can pass the `Class` object instead:
+
+[source,java]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/application/LazyWeatherAgent.java[LazyWeatherAgent
+.java]
+----
+include::example$doc-snippets/src/main/java/com/example/application/LazyWeatherAgent.java[tag=function-tool]
+----
+<1> The WeatherService is passed as a `Class` instead of an instance. It will be instantiated when the agent needs to use it.
+
+When you pass a `Class` instead of an instance, the class is only instantiated when the agent actually needs to use the tool.
+
+For this approach to work, you must register the class with a xref:setup-and-dependency-injection.adoc#_custom_dependency_injection[DependencyProvider] in your service setup. The DependencyProvider is responsible for creating and managing instances of these classes when they're needed. This gives you complete control over how tool dependencies are instantiated and managed throughout your application.
 
 == Use ComponentClient in an Agent
 
