@@ -157,7 +157,6 @@ private[impl] final class AgentImpl[A <: Agent](
             val sessionMemoryClient = deriveMemoryClient(req.memoryProvider)
             val additionalContext = toSpiContextMessages(sessionMemoryClient.getHistory(sessionId))
 
-            // FIXME: we need FQCN to avoid clashes
             val toolDescriptors =
               FunctionTools.descriptorsForAgent(agent.getClass) ++
               req.toolInstancesOrClasses.flatMap {

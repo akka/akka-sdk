@@ -73,49 +73,46 @@ object FunctionTools {
   private def collectFunctionToolInvokers(cls: Class[_], allowNonPublic: Boolean)(
       instanceFactory: () => Any): Map[String, FunctionToolInvoker] = {
 
-    annotatedMethods(cls, allowNonPublic).map { method =>
-
-      val name = toolName(method)
-
+    resolvedMethodNames(annotatedMethods(cls, allowNonPublic)).map { case (name, method) =>
       name ->
-      new FunctionToolInvoker {
-        override def paramNames: Array[String] =
-          method.getParameters.map(_.getName)
+        new FunctionToolInvoker {
+          override def paramNames: Array[String] =
+            method.getParameters.map(_.getName)
 
-        override def types: Array[Type] =
-          method.getGenericParameterTypes
+          override def types: Array[Type] =
+            method.getGenericParameterTypes
 
-        override def invoke(args: Array[Any]): Any = {
-          if (allowNonPublic) method.setAccessible(true)
-          val instance = instanceFactory()
-          method.invoke(instance, args: _*)
+          override def invoke(args: Array[Any]): Any = {
+            if (allowNonPublic) method.setAccessible(true)
+            val instance = instanceFactory()
+            method.invoke(instance, args: _*)
+          }
+
+          override def returnType: Class[_] =
+            method.getReturnType
         }
-
-        override def returnType: Class[_] =
-          method.getReturnType
-      }
-    }.toMap
+    }
   }
 
-  private def toolName(method: Method): String = {
+  private def toolName(method: Method, name: String): String = {
     val toolAnno = method.getAnnotation(classOf[FunctionTool])
 
-    if (toolAnno.name() == null || toolAnno.name().isBlank) method.getName
-    else toolAnno.name()
-
+    if (toolAnno.name() == null || toolAnno.name().isBlank) {
+      // if the annotation does not specify a name,
+      // we use the name passed to this method plus the sanitized class name
+      method.getDeclaringClass.getSimpleName + "_" + name
+    } else toolAnno.name()
   }
 
   private def toToolDescriptors(cls: Class[_], allowNonPublic: Boolean): Seq[SpiAgent.ToolDescriptor] = {
 
-    annotatedMethods(cls, allowNonPublic).map { method =>
-
+    resolvedMethodNames(annotatedMethods(cls, allowNonPublic)).map { case (name, method) =>
       val toolAnno = method.getAnnotation(classOf[FunctionTool])
       val objSchema = JsonSchema.jsonSchemaFor(method)
 
-      val name = toolName(method)
       new SpiAgent.ToolDescriptor(name, toolAnno.description(), schema = objSchema)
 
-    }
+    }.toSeq
   }
 
   /**
@@ -132,5 +129,23 @@ object FunctionTools {
       .filter(m => m.hasAnnotation[FunctionTool])
       .filter(m => m.isPublic || allowNonPublic)
       .distinct
+  }
+
+  private def resolvedMethodNames(availableMethods: Seq[Method]): Map[String, Method] = {
+    availableMethods
+      .groupBy(_.getName)
+      .flatMap {
+        case (originalName, Seq(method)) =>
+          // if there is only one method with this name, we can use it directly
+          Map(toolName(method, originalName) -> method)
+
+        case (name, methods) =>
+          // otherwise we need to create a unique name for each method based on its parameters
+          methods.map { method =>
+            val paramTypes = method.getParameterTypes.map(_.getSimpleName).mkString("_")
+            val uniqueName = s"${name}_$paramTypes"
+            (toolName(method, uniqueName), method)
+          }.toMap
+      }
   }
 }
