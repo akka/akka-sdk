@@ -150,4 +150,26 @@ object FunctionTools {
           }.toMap
       }
   }
+
+  def validateNames(allTools: Seq[Class[_]]): Unit = {
+    val nameToClasses = scala.collection.mutable.Map.empty[String, Set[String]]
+
+    allTools.foreach { toolCls =>
+      resolvedMethodNames(toolCls).keys.foreach { name =>
+        val classes = nameToClasses.getOrElse(name, Set.empty)
+        nameToClasses.update(name, classes + toolCls.getName)
+      }
+    }
+
+    val duplicates = nameToClasses.filter(_._2.size > 1)
+    if (duplicates.nonEmpty) {
+      val msg = duplicates
+        .map { case (name, classes) =>
+          s"Tool name '$name' is defined in: ${classes.mkString(", ")}"
+        }
+        .mkString("; ")
+      throw new IllegalArgumentException(s"Duplicate tool names found: $msg")
+    }
+  }
+
 }

@@ -26,6 +26,13 @@ class FunctionToolsSpec extends AnyWordSpec with Matchers {
     override def echo(num: Int): String = num.toString
   }
 
+  object SimpleToolWrapper {
+    class SimpleToolImpl extends SimpleTool {
+      override def echo(message: String): String = message
+      override def echo(num: Int): String = num.toString
+    }
+  }
+
   class MultipleMethodsTool {
     @FunctionTool(description = "Adds two numbers")
     def add(a: Int, b: Int): Int = a + b
@@ -205,6 +212,15 @@ class FunctionToolsSpec extends AnyWordSpec with Matchers {
         invoker("SimpleToolImpl_echo_String").invoke(Array("Hello"))
       }
       exception.getMessage should include("no DependencyProvider was configured")
+    }
+
+    "adding two tools with the same name should fail" in {
+
+      val exception = intercept[IllegalArgumentException] {
+        FunctionTools.validateNames(Seq(classOf[SimpleToolImpl], classOf[SimpleToolWrapper.SimpleToolImpl]))
+      }
+
+      exception.getMessage should include("Duplicate tool names found:")
     }
   }
 }
