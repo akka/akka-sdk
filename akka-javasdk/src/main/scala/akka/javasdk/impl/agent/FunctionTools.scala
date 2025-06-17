@@ -36,21 +36,18 @@ object FunctionTools {
     def returnType: Class[_]
   }
 
-  def descriptorsForAgent[A <: Agent](cls: Class[A]): Seq[SpiAgent.ToolDescriptor] =
-    toToolDescriptors(cls)
+  private def isAgent(cls: Class[_]): Boolean =
+    classOf[Agent].isAssignableFrom(cls)
 
   def descriptorsFor(cls: Class[_]): Seq[SpiAgent.ToolDescriptor] = {
 
     // we only validate against non-agent classes,
     // the Agent class is added by default and is not required to have a method annotated with FunctionTool
-    if (annotatedMethods(cls).isEmpty)
+    if (!isAgent(cls) && annotatedMethods(cls).isEmpty)
       throw new IllegalArgumentException(s"No tools found in class [${cls.getName}]")
 
     toToolDescriptors(cls)
   }
-
-  def toolInvokersForAgent[A <: Agent](anyAgent: A): Map[String, FunctionToolInvoker] =
-    collectFunctionToolInvokers(anyAgent.getClass) { () => anyAgent }
 
   def toolInvokersFor(any: Any): Map[String, FunctionToolInvoker] =
     collectFunctionToolInvokers(any.getClass) { () => any }
@@ -83,7 +80,7 @@ object FunctionTools {
             method.getGenericParameterTypes
 
           override def invoke(args: Array[Any]): Any = {
-            if (classOf[Agent].isAssignableFrom(cls)) method.setAccessible(true)
+            if (isAgent(cls)) method.setAccessible(true)
             val instance = instanceFactory()
             method.invoke(instance, args: _*)
           }
@@ -118,8 +115,6 @@ object FunctionTools {
    */
   private def annotatedMethods(cls: Class[_]): Seq[Method] = {
 
-    val allowNonPublic = classOf[Agent].isAssignableFrom(cls)
-
     def allMethods(c: Class[_]): Seq[Method] = {
       if (c == null || c == classOf[Object]) Seq.empty
       else c.getDeclaredMethods.toSeq ++ allMethods(c.getSuperclass) ++ c.getInterfaces.flatMap(allMethods)
@@ -127,7 +122,8 @@ object FunctionTools {
 
     allMethods(cls)
       .filter(m => m.hasAnnotation[FunctionTool])
-      .filter(m => m.isPublic || allowNonPublic)
+      // tool methods in agent don't need to be public
+      .filter(m => m.isPublic || isAgent(cls))
       .distinct
   }
 

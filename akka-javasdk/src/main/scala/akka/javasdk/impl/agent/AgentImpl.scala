@@ -158,14 +158,14 @@ private[impl] final class AgentImpl[A <: Agent](
             val additionalContext = toSpiContextMessages(sessionMemoryClient.getHistory(sessionId))
 
             val toolDescriptors =
-              FunctionTools.descriptorsForAgent(agent.getClass) ++
+              FunctionTools.descriptorsFor(agent.getClass) ++
               req.toolInstancesOrClasses.flatMap {
                 case cls: Class[_] => FunctionTools.descriptorsFor(cls)
                 case any           => FunctionTools.descriptorsFor(any.getClass)
               }
 
             val functionTools =
-              FunctionTools.toolInvokersForAgent(agent) ++
+              FunctionTools.toolInvokersFor(agent) ++
               req.toolInstancesOrClasses.flatMap {
                 case cls: Class[_] => FunctionTools.toolInvokersFor(cls, dependencyProvider)
                 case any           => FunctionTools.toolInvokersFor(any)

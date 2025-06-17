@@ -166,7 +166,7 @@ class FunctionToolsSpec extends AnyWordSpec with Matchers {
     }
 
     "generate tool descriptors for private methods when using agent tool discovery" in {
-      val tools = FunctionTools.descriptorsForAgent(classOf[SecretAgent])
+      val tools = FunctionTools.descriptorsFor(classOf[SecretAgent])
       tools.length shouldBe 1
       tools.head.name shouldBe "SecretAgent_secretOperation"
       tools.head.description shouldBe "Secret agent operation"
@@ -174,7 +174,7 @@ class FunctionToolsSpec extends AnyWordSpec with Matchers {
 
     "access private methods when using agent tool discovery" in {
       val instance = new SecretAgent()
-      val invokers = FunctionTools.toolInvokersForAgent(instance)
+      val invokers = FunctionTools.toolInvokersFor(instance)
 
       invokers.size shouldBe 1
       invokers.contains("SecretAgent_secretOperation") shouldBe true
