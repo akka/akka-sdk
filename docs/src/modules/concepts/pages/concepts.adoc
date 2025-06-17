@@ -2,7 +2,9 @@
 
 include::ROOT:partial$include.adoc[]
 
-Akka is a development framework and runtime for building autonomous, agentic AI systems. Its principles are influenced by distributed systems research, the actor model and the Reactive Manifesto.
+Akka is a framework, runtime and memory store for autonomous, adaptive agentic systems. Akka is delivered as a platform that can execute on any infrastructure, anywhere.
+
+Developers create services built with Akka components that - when deployed - become agentic systems. Services can be tested locally or within a Continuous Integration/Continuous Delivery (CI/CD) practice using a Testkit that is available with each Akka component. Your services are compiled into a binary that includes the Akka Runtime which enables your services to self-cluster for scale and resilience. Akka clusters are able to execute on any infrastructure whether bare metal, Kubernetes, Docker or edge. You can optionally deploy your services into an Akka-managed cloud environment which automates most Day 2 concerns. We support Serverless, Bring Your Own Cloud (BYOC), and Self-Hosted cloud-hosted environments.
 
 == Design goals of Akka
 
