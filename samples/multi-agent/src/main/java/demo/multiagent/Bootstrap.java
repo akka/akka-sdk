@@ -43,13 +43,5 @@ public class Bootstrap implements ServiceSetup {
       }
     };
   }
-
-  @Override
-  public Set<Class<?>> disabledComponents() {
-    // LazyWeatherAgent is by default disabled.
-    // To see how lazy too initialization works, replace the following by
-    // Set.of(WeatherAgent.class), this will disable WeatherAgent and enable LazyWeatherAgent
-    return Set.of(LazyWeatherAgent.class);
-  }
 }
 

@@ -390,9 +390,10 @@ The better the context, the better the LLM can understand what the tool function
 In the example above, we pass an instance of `WeatherService` to the `tools()` method. Alternatively, you can pass the `Class` object instead:
 
 [source,java]
-.{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/agents/LazyWeatherAgent.java[LazyWeatherAgent.java]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/application/LazyWeatherAgent.java[LazyWeatherAgent
+.java]
 ----
-include::example$multi-agent/src/main/java/demo/multiagent/application/agents/LazyWeatherAgent.java[tag=function-tool]
+include::example$doc-snippets/src/main/java/com/example/application/LazyWeatherAgent.java[tag=function-tool]
 ----
 <1> The WeatherService is passed as a `Class` instead of an instance. It will be instantiated when the agent needs to use it.
 
