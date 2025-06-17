@@ -72,8 +72,8 @@ class FunctionToolsSpec extends AnyWordSpec with Matchers {
       val tools = FunctionTools.descriptorsFor(classOf[SimpleToolImpl])
       tools.length shouldBe 2
       tools.map(_.name) should contain allOf (
-        "SimpleTool_echo_String",
-        "SimpleTool_echo_int"
+        "SimpleToolImpl_echo_String",
+        "SimpleToolImpl_echo_int"
       )
     }
 
@@ -82,11 +82,11 @@ class FunctionToolsSpec extends AnyWordSpec with Matchers {
       val invokers = FunctionTools.toolInvokersFor(new SimpleToolImpl())
       invokers.size shouldBe 2
 
-      invokers.contains("SimpleTool_echo_String") shouldBe true
-      invokers.contains("SimpleTool_echo_int") shouldBe true
+      invokers.contains("SimpleToolImpl_echo_String") shouldBe true
+      invokers.contains("SimpleToolImpl_echo_int") shouldBe true
 
       { // string invoker
-        val echoInvoker = invokers("SimpleTool_echo_String")
+        val echoInvoker = invokers("SimpleToolImpl_echo_String")
         echoInvoker.paramNames shouldBe Array("message")
         echoInvoker.returnType shouldBe classOf[String]
 
@@ -95,7 +95,7 @@ class FunctionToolsSpec extends AnyWordSpec with Matchers {
       }
 
       { // number invoker
-        val echoInvoker = invokers("SimpleTool_echo_int")
+        val echoInvoker = invokers("SimpleToolImpl_echo_int")
         echoInvoker.paramNames shouldBe Array("num")
         echoInvoker.returnType shouldBe classOf[String]
 
@@ -191,9 +191,9 @@ class FunctionToolsSpec extends AnyWordSpec with Matchers {
       val invokers = FunctionTools.toolInvokersFor(classOf[SimpleToolImpl], Some(dependencyProvider))
 
       invokers.size shouldBe 2
-      invokers.contains("SimpleTool_echo_String") shouldBe true
+      invokers.contains("SimpleToolImpl_echo_String") shouldBe true
 
-      val prefixInvoker = invokers("SimpleTool_echo_String")
+      val prefixInvoker = invokers("SimpleToolImpl_echo_String")
       val result = prefixInvoker.invoke(Array("Hello"))
 
       result shouldBe "Hello"
@@ -202,7 +202,7 @@ class FunctionToolsSpec extends AnyWordSpec with Matchers {
     "fail when no dependency provider is available" in {
       val exception = intercept[IllegalArgumentException] {
         val invoker = FunctionTools.toolInvokersFor(classOf[SimpleToolImpl], None)
-        invoker("SimpleTool_echo_String").invoke(Array("Hello"))
+        invoker("SimpleToolImpl_echo_String").invoke(Array("Hello"))
       }
       exception.getMessage should include("no DependencyProvider was configured")
     }

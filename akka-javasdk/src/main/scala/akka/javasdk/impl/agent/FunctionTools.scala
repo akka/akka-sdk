@@ -37,28 +37,28 @@ object FunctionTools {
   }
 
   def descriptorsForAgent[A <: Agent](cls: Class[A]): Seq[SpiAgent.ToolDescriptor] =
-    toToolDescriptors(cls, allowNonPublic = true)
+    toToolDescriptors(cls)
 
   def descriptorsFor(cls: Class[_]): Seq[SpiAgent.ToolDescriptor] = {
 
     // we only validate against non-agent classes,
     // the Agent class is added by default and is not required to have a method annotated with FunctionTool
-    if (annotatedMethods(cls, allowNonPublic = false).isEmpty)
+    if (annotatedMethods(cls).isEmpty)
       throw new IllegalArgumentException(s"No tools found in class [${cls.getName}]")
 
-    toToolDescriptors(cls, allowNonPublic = false)
+    toToolDescriptors(cls)
   }
 
   def toolInvokersForAgent[A <: Agent](anyAgent: A): Map[String, FunctionToolInvoker] =
-    collectFunctionToolInvokers(anyAgent.getClass, allowNonPublic = true) { () => anyAgent }
+    collectFunctionToolInvokers(anyAgent.getClass) { () => anyAgent }
 
   def toolInvokersFor(any: Any): Map[String, FunctionToolInvoker] =
-    collectFunctionToolInvokers(any.getClass, allowNonPublic = false) { () => any }
+    collectFunctionToolInvokers(any.getClass) { () => any }
 
   def toolInvokersFor(
       cls: Class[_],
       dependencyProvider: Option[DependencyProvider]): Map[String, FunctionToolInvoker] = {
-    collectFunctionToolInvokers(cls, allowNonPublic = false) { () =>
+    collectFunctionToolInvokers(cls) { () =>
       dependencyProvider
         .map { depProv => depProv.getDependency(cls) }
         .getOrElse {
@@ -70,10 +70,10 @@ object FunctionTools {
     }
   }
 
-  private def collectFunctionToolInvokers(cls: Class[_], allowNonPublic: Boolean)(
+  private def collectFunctionToolInvokers(cls: Class[_])(
       instanceFactory: () => Any): Map[String, FunctionToolInvoker] = {
 
-    resolvedMethodNames(annotatedMethods(cls, allowNonPublic)).map { case (name, method) =>
+    resolvedMethodNames(cls).map { case (name, method) =>
       name ->
         new FunctionToolInvoker {
           override def paramNames: Array[String] =
@@ -83,7 +83,7 @@ object FunctionTools {
             method.getGenericParameterTypes
 
           override def invoke(args: Array[Any]): Any = {
-            if (allowNonPublic) method.setAccessible(true)
+            if (classOf[Agent].isAssignableFrom(cls)) method.setAccessible(true)
             val instance = instanceFactory()
             method.invoke(instance, args: _*)
           }
@@ -97,16 +97,14 @@ object FunctionTools {
   private def toolName(method: Method, resolvedName: String): String = {
     val toolAnno = method.getAnnotation(classOf[FunctionTool])
 
-    if (toolAnno.name() == null || toolAnno.name().isBlank) {
-      // if the annotation does not specify a name,
-      // we use simple class name plus the passed resolved name
-      method.getDeclaringClass.getSimpleName + "_" + resolvedName
-    } else toolAnno.name()
+    // use the resolved name if no custom name is provided
+    if (toolAnno.name() == null || toolAnno.name().isBlank) resolvedName
+    else toolAnno.name()
   }
 
-  private def toToolDescriptors(cls: Class[_], allowNonPublic: Boolean): Seq[SpiAgent.ToolDescriptor] = {
+  private def toToolDescriptors(cls: Class[_]): Seq[SpiAgent.ToolDescriptor] = {
 
-    resolvedMethodNames(annotatedMethods(cls, allowNonPublic)).map { case (name, method) =>
+    resolvedMethodNames(cls).map { case (name, method) =>
       val toolAnno = method.getAnnotation(classOf[FunctionTool])
       val objSchema = JsonSchema.jsonSchemaFor(method)
 
@@ -118,7 +116,9 @@ object FunctionTools {
   /**
    * Collects all methods annotated with `@FunctionTool` from the given class, including inherited methods.
    */
-  private def annotatedMethods(cls: Class[_], allowNonPublic: Boolean): Seq[Method] = {
+  private def annotatedMethods(cls: Class[_]): Seq[Method] = {
+
+    val allowNonPublic = classOf[Agent].isAssignableFrom(cls)
 
     def allMethods(c: Class[_]): Seq[Method] = {
       if (c == null || c == classOf[Object]) Seq.empty
@@ -131,9 +131,15 @@ object FunctionTools {
       .distinct
   }
 
-  private def resolvedMethodNames(availableMethods: Seq[Method]): Map[String, Method] = {
-    availableMethods
-      .groupBy(_.getName)
+  private def resolvedMethodNames(cls: Class[_]): Map[String, Method] = {
+
+    // methods are prefixed with the class simple name
+    // note this is the real impl class, not the interface or parent class.
+    def withClassName(name: String): String =
+      cls.getSimpleName + "_" + name
+
+    annotatedMethods(cls)
+      .groupBy(method => withClassName(method.getName))
       .flatMap {
         case (originalName, Seq(method)) =>
           // if there is only one method with this name, we can use it directly
