@@ -202,12 +202,7 @@ public class RagIndexingWorkflow extends Workflow<RagIndexingWorkflow.State> {
         res.tokenUsage().inputTokenCount(),
         res.tokenUsage().outputTokenCount());
 
-    var id = embeddingStore.add(res.content(), seg); // <1>
-    logger.debug("Added segment to embedding store. Source file '{}'. Tokens usage: in {}, out {}, id {}",
-        fileName,
-        res.tokenUsage().inputTokenCount(),
-        res.tokenUsage().outputTokenCount(),
-        id);
+    embeddingStore.add(res.content(), seg); // <1>
   }
   // end::add[]
   // tag::shell[]
