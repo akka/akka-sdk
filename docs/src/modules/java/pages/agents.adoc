@@ -341,7 +341,7 @@ You may frequently hear people say things like "the LLM can make a call" or "the
 
 The Agent will then in turn execute the tool requested by the LLM, incorporate the tool results into the session context, and then send a new prompt. This will continue in a loop until the LLM no longer indicates it needs to invoke a tool to perform its task.
 
-There are two ways to add function tools to your agent:
+There are three ways to add function tools to your agent:
 
 1. **Agent-defined function tools** — Define function tools directly within your agent class using the`@FunctionTool`
 annotation. These are automatically registered as available tools for the current Agent.
@@ -349,6 +349,8 @@ annotation. These are automatically registered as available tools for the curren
 2. **Externally defined function tools** — Explicitly register external objects or classes containing function tools by
 passing them to the `effects().tools()` method in your agent's command handler. Objects or classes passed to `effects
 ().tools()` must have at least one public method annotated with `@FunctionTool`.
+
+3. **Tools defined by remot MCP servers** - Register remote MCP servers to let the agent use tools they provide.
 
 NOTE: A class (either the agent itself or an external tool class) can have multiple methods annotated with `@FunctionTool`. Each annotated method will be registered as a separate tool that the LLM can choose to invoke based on the task requirements.
 
@@ -413,6 +415,30 @@ include::example$doc-snippets/src/main/java/com/example/application/LazyWeatherA
 When you pass a `Class` instead of an instance, the class is only instantiated when the agent actually needs to use the tool.
 
 For this approach to work, you must register the class with a xref:setup-and-dependency-injection.adoc#_custom_dependency_injection[DependencyProvider] in your service setup. The DependencyProvider is responsible for creating and managing instances of these classes when they're needed. This gives you complete control over how tool dependencies are instantiated and managed throughout your application.
+
+
+=== Using tools from remote MCP servers ===
+
+xref:mcp-endpoints.adoc[Akka MCP endpoints] declared in other services, or third party MCP services can be added to
+the agent. By default, all tools provided by each added remote MCP server are added, but it is possible to filter
+available tools from each server based on their name.
+
+It is also possible to intercept, modify, or deny MCP tool requests, or their responses by defining a `RemoteMcpTools.ToolInterceptor`.
+
+[source,java]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/application/RemoteMcpWeatherAgent.java[RemoteMcpAgent
+.java]
+----
+include::example$doc-snippets/src/main/java/com/example/application/RemoteMcpWeatherAgent.java[tag=mcp-function-tool]
+----
+<1> For MCP endpoints in other Akka services, use HTTP and the deployed service name
+<2> For third party MCP servers use the fully qualified host name and make sure to use HTTPS as the requests will
+    go over the public internet.
+<3> Custom headers to pass along can be defined
+<4> As well as filters of what tools to allow.
+
+
+When using MCP endpoints in other Akka services, the service ACLs apply just like for xref:http-endpoints.adoc[HTTP endpoints] and xref:grpc-endpoints.adoc[gRPC endpoints].
 
 == Use ComponentClient in an Agent
 
