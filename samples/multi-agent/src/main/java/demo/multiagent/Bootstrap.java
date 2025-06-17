@@ -5,7 +5,9 @@ import akka.javasdk.ServiceSetup;
 import akka.javasdk.annotations.Setup;
 import akka.javasdk.http.HttpClientProvider;
 import com.typesafe.config.Config;
+import demo.multiagent.application.agents.FakeWeatherService;
 import demo.multiagent.application.agents.WeatherService;
+import demo.multiagent.application.agents.WeatherServiceImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,10 +15,9 @@ import org.slf4j.LoggerFactory;
 public class Bootstrap implements ServiceSetup {
 
   private final Logger logger = LoggerFactory.getLogger(getClass());
-
-  private final String OPENAI_API_KEY = "OPENAI_API_KEY";
-
+  private final String WEATHER_API_KEY = "WEATHER_API_KEY";
   private final HttpClientProvider httpClientProvider;
+
   public Bootstrap(Config config, HttpClientProvider httpClientProvider) {
     this.httpClientProvider = httpClientProvider;
 
@@ -33,8 +34,14 @@ public class Bootstrap implements ServiceSetup {
       @SuppressWarnings("unchecked")
       @Override
       public <T> T getDependency(Class<T> clazz) {
+
         if (clazz == WeatherService.class) {
-          return (T) new WeatherService(httpClientProvider);
+          if (System.getenv(WEATHER_API_KEY) != null && !System.getenv(WEATHER_API_KEY).isEmpty()) {
+            return (T) new WeatherServiceImpl(httpClientProvider);
+          } else {
+            // If the API key is not set, return a fake implementation
+            return (T) new FakeWeatherService();
+          }
         }
         return null;
       }

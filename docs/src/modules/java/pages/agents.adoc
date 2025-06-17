@@ -359,12 +359,15 @@ You can use either approach independently or combine them based on your needs. L
 ----
 include::example$multi-agent/src/main/java/demo/multiagent/application/agents/WeatherAgent.java[tag=function-tool]
 ----
-<1> The `WeatherService` providing a function tool is injected into the agent.
+<1> The `WeatherService` providing a function tool is injected into the agent (see
+xref:setup-and-dependency-injection.adoc#_custom_dependency_injection[DependencyProvider]).
 <2> We explicitly register the `weatherService` using the `tools()` method to make its method available as a tool for
  the current Agent.
 <3> We define a simple tool directly in the agent class using the `@FunctionTool` annotation, which is implicitly registered. Note that since this method is defined in the agent itself, it can even be a private method.
 
-The `WeatherService` has a method annotated with `@FunctionTool` and can be eventually used by multiple agents:
+The `WeatherService` is an interface with a method annotated with `@FunctionTool`. A concrete implementation of this
+interface is provided by `{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/agents/WeatherServiceImpl.java[WeatherServiceImpl]` class
+This class is made available for injection in the service setup using a xref:setup-and-dependency-injection.adoc#_custom_dependency_injection[DependencyProvider].
 
 [source,java]
 .{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/agents/WeatherService.java[WeatherService.java]
@@ -374,6 +377,7 @@ include::example$multi-agent/src/main/java/demo/multiagent/application/agents/We
 
 <1> Annotate method with `@FunctionTool` and provide a clear description of what it does.
 <2> Parameters can be documented with the `@Description` annotation to help the LLM understand how to use them.
+
 
 [NOTE]
 ====
@@ -385,13 +389,13 @@ The better the context, the better the LLM can understand what the tool function
 In this example, the agent has access to both:
 
 * The `getCurrentDate()` method defined within the agent class (implicitly registered via annotation)
-* The `getWeather()` method defined in the `WeatherService` class (explicitly registered via the `.tools()` method)
+* The `getWeather()` method defined in the `WeatherService` interface (explicitly registered via the `.tools()` method)
 
 === Sharing function tools across agents
 
 Function tools defined in external classes can be shared and reused across multiple agents. This approach promotes code reusability and helps maintain a consistent behavior for common functionalities.
 
-When a tool class like `WeatherService` is shared across multiple agents:
+When a tool like `WeatherService` is shared across multiple agents:
 
 * Each agent can register the same tool but use it in different contexts
 * The tool behavior remains consistent, but how and when agents invoke it may differ based on their specific tasks
