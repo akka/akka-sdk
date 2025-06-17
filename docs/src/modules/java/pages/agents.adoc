@@ -344,7 +344,7 @@ The Agent will then in turn execute the tool requested by the LLM, incorporate t
 There are two ways to add function tools to your agent:
 
 1. **Agent-defined function tools** — Define function tools directly within your agent class using the`@FunctionTool`
-annotation. These are automatically registered as available tools.
+annotation. These are automatically registered as available tools for the current Agent.
 
 2. **Externally defined function tools** — Explicitly register external objects or classes containing function tools by
 passing them to the `effects().tools()` method in your agent's command handler. Objects or classes passed to `effects
@@ -358,7 +358,8 @@ You can use either approach independently or combine them based on your needs. L
 include::example$multi-agent/src/main/java/demo/multiagent/application/agents/WeatherAgent.java[tag=function-tool]
 ----
 <1> The `WeatherService` providing a function tool is injected into the agent.
-<2> We explicitly register the `weatherService` using the `tools()` method to make its method available as a tool.
+<2> We explicitly register the `weatherService` using the `tools()` method to make its method available as a tool for
+ the current Agent.
 <3> We define a simple tool directly in the agent class using the `@FunctionTool` annotation, which is implicitly registered. Note that since this method is defined in the agent itself, it can even be a private method.
 
 The `WeatherService` has one method annotated with `@FunctionTool` and can be eventually used by multiple agents:
