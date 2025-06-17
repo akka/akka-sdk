@@ -261,7 +261,6 @@ private[impl] final class AgentImpl[A <: Agent](
               (toolCallRequest: SpiAgent.ToolCallRequest, toolCall: SpiAgent.ToolCallRequest => Future[String]) =>
                 {
                   val interceptorContext = new RemoteMcpTools.ToolInterceptorContext {
-                    override def mcpServerUri(): String = remoteMcp.serverUri
                     override def toolName(): String = toolCallRequest.name
                   }
                   val newRequestPayload =

@@ -8,6 +8,7 @@ import akka.annotation.InternalApi
 import akka.http.javadsl.model.HttpHeader
 import akka.javasdk.agent.RemoteMcpTools
 
+import java.util
 import java.util.function.Predicate
 
 /**
@@ -23,8 +24,11 @@ final case class RemoteMcpToolsImpl(
 
   def this(serverUri: String) = this(serverUri, None, None, Seq.empty)
 
-  override def allowToolNames(toolNameFilter: Predicate[String]): RemoteMcpTools =
+  override def withToolNameFilter(toolNameFilter: Predicate[String]): RemoteMcpTools =
     copy(toolNameFilter = Some(toolNameFilter))
+
+  override def withAllowedToolNames(allowedToolNames: util.Set[String]): RemoteMcpTools =
+    copy(toolNameFilter = Some(allowedToolNames.contains))
 
   override def withToolInterceptor(interceptor: RemoteMcpTools.ToolInterceptor): RemoteMcpTools =
     copy(interceptor = Some(interceptor))
