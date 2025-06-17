@@ -17,6 +17,8 @@ Current versions
 * Akka Runtime 1.2.19
   - Internal improvements
 
+== June 2025
+
 [sidebar]
 ****
 
