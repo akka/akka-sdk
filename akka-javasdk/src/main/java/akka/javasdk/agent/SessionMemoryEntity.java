@@ -48,14 +48,14 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
     this.sessionId = context.entityId();
   }
 
-  public record State(String sessionId, long maxLengthInBytes, long currentLengthInBytes, List<SessionMessage> messages) {
+  public record State(String sessionId, long maxSizeInBytes, long currentSizeInBytes, List<SessionMessage> messages) {
 
     private static final Logger logger = LoggerFactory.getLogger(State.class);
 
     public State {
-      if (maxLengthInBytes <= 0) throw new IllegalArgumentException("Maximum size must be greater than 0");
+      if (maxSizeInBytes <= 0) throw new IllegalArgumentException("Maximum size must be greater than 0");
       messages = messages != null ? messages : new LinkedList<>();
-      currentLengthInBytes = enforceMaxCapacity(sessionId, messages, currentLengthInBytes, maxLengthInBytes);
+      currentSizeInBytes = enforceMaxCapacity(sessionId, messages, currentSizeInBytes, maxSizeInBytes);
     }
 
     public boolean isEmpty() {
@@ -63,37 +63,37 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
     }
 
     public State withMaxSize(int newMaxSize) {
-      return new State(sessionId, newMaxSize, currentLengthInBytes, messages);
+      return new State(sessionId, newMaxSize, currentSizeInBytes, messages);
     }
 
     public State addMessage(SessionMessage message) {
       // avoid copies of the list for efficiency, need to be careful not to return the list ref to outside
       messages.add(message);
 
-      var updatedLengthSize = currentLengthInBytes + message.size();
-      return new State(sessionId, maxLengthInBytes, updatedLengthSize, messages);
+      var updatedSize = currentSizeInBytes + message.size();
+      return new State(sessionId, maxSizeInBytes, updatedSize, messages);
     }
 
     public State clear() {
-      return new State(sessionId, maxLengthInBytes, 0, new LinkedList<>());
+      return new State(sessionId, maxSizeInBytes, 0, new LinkedList<>());
     }
 
-    private static long enforceMaxCapacity(String sessionId, List<SessionMessage> messages, long currentLengthSize, long maxSize) {
+    private static long enforceMaxCapacity(String sessionId, List<SessionMessage> messages, long currentSize, long maxSize) {
       var freedSpace = 0;
-      while ((currentLengthSize - freedSpace) > maxSize) {
+      while ((currentSize - freedSpace) > maxSize) {
         freedSpace += messages.removeFirst().size();
         logger.debug("Removed oldest message for sessionId [{}]. Remaining size [{}], maxSizeInBytes [{}]",
-            sessionId, currentLengthSize, maxSize);
+            sessionId, currentSize, maxSize);
       }
 
       // remove all messages that are not UserMessage since those were driven by the deleted UserMessage
       while (!messages.isEmpty() && !(messages.getFirst() instanceof UserMessage)) {
         freedSpace += messages.removeFirst().size();
         logger.debug("Removed orphan message for sessionId [{}]. Remaining size [{}], maxSizeInBytes [{}]",
-            sessionId, currentLengthSize, maxSize);
+            sessionId, currentSize, maxSize);
       }
 
-      return currentLengthSize - freedSpace;
+      return currentSize - freedSpace;
     }
 
   }
@@ -114,16 +114,20 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
     }
 
     @TypeName("akka-memory-user-message-added")
-    record UserMessageAdded(Instant timestamp, String componentId, String message) implements Event {
+    record UserMessageAdded(Instant timestamp, String componentId, String message, int sizeInBytes) implements Event {
     }
 
     @TypeName("akka-memory-ai-message-added")
     record AiMessageAdded(Instant timestamp,
                           String componentId,
                           String message,
-                          int inputTokens,
-                          int outputTokens,
+                          int sizeInBytes,
+                          long historySizeInBytes,
                           List<SessionMessage.ToolCallRequest> toolCallRequests) implements Event {
+
+      AiMessageAdded withHistorySizeInBytes(long newSize) {
+        return new AiMessageAdded(timestamp, componentId, message, sizeInBytes, newSize, toolCallRequests);
+      }
 
     }
 
@@ -132,7 +136,8 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
                                     String componentId,
                                     String id,
                                     String name,
-                                    String content) implements Event {
+                                    String content,
+                                    int sizeInBytes) implements Event {
 
     }
 
@@ -179,20 +184,23 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
         .map(msg -> {
 
             return (Event) switch (msg) {
-              case AiMessage(
-                Instant timestamp, String text, String componentId, int inputTokens, int outputTokens,
-                List<SessionMessage.ToolCallRequest> toolCallRequests
-              ) -> new Event.AiMessageAdded(timestamp, componentId, text,
-                inputTokens,
-                outputTokens,
-                toolCallRequests);
+              case AiMessage aiMessage ->
+                  new Event.AiMessageAdded(
+                      aiMessage.timestamp(),
+                      aiMessage.componentId(),
+                      aiMessage.text(),
+                      aiMessage.size(),
+                0L, // filled in later
+                      aiMessage.toolCallRequests());
 
-              case SessionMessage.ToolCallResponse(
-                  Instant timestamp, String componentId, String id, String name, String content
-              ) -> new Event.ToolResponseMessageAdded(
-                timestamp,
-                componentId,
-                id, name, content);
+              case SessionMessage.ToolCallResponse toolCallResponse ->
+                  new Event.ToolResponseMessageAdded(
+                      toolCallResponse.timestamp(),
+                      toolCallResponse.componentId(),
+                      toolCallResponse.id(),
+                      toolCallResponse.name(),
+                      toolCallResponse.text(),
+                      toolCallResponse.size());
 
               default -> throw new IllegalArgumentException("Unsupported message: " + msg);
             };
@@ -202,14 +210,17 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
     var userMessageEvent = new Event.UserMessageAdded(
       cmd.userMessage.timestamp(),
       cmd.userMessage.componentId(),
-      cmd.userMessage.text());
+      cmd.userMessage.text(),
+        cmd.userMessage.size());
 
     List<Event> allEvents = new ArrayList<>();
     allEvents.add(userMessageEvent);
     allEvents.addAll(modelAndToolEvents);
 
+    var allEventsWithSize = updateHistorySize(allEvents);
+
     return effects()
-        .persistAll(allEvents)
+        .persistAll(allEventsWithSize)
         .thenReply(__ -> done());
   }
 
@@ -244,13 +255,13 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
 
     var events = new ArrayList<Event>();
     events.add(new Event.HistoryCleared());
-    events.add(new Event.UserMessageAdded(cmd.userMessage.timestamp(), componentId, cmd.userMessage.text()));
+    events.add(new Event.UserMessageAdded(cmd.userMessage.timestamp(), componentId, cmd.userMessage.text(), cmd.userMessage.size()));
     events.add(new Event.AiMessageAdded(
       cmd.aiMessage.timestamp(),
       componentId,
       cmd.aiMessage.text(),
-      cmd.aiMessage.inputTokens(),
-      cmd.aiMessage.outputTokens(),
+        cmd.aiMessage.size(),
+        0L, // filled in later
       Collections.emptyList()));
 
     if (commandContext().sequenceNumber() > cmd.sequenceNumber && !currentState().messages.isEmpty()) {
@@ -259,7 +270,7 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
           .forEach(msg -> {
         switch (msg) {
           case UserMessage userMessage -> {
-            events.add(new Event.UserMessageAdded(userMessage.timestamp(), userMessage.componentId(), userMessage.text()));
+            events.add(new Event.UserMessageAdded(userMessage.timestamp(), userMessage.componentId(), userMessage.text(), userMessage.size()));
           }
 
           case ToolCallResponse toolCallResponse -> {
@@ -268,7 +279,8 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
               toolCallResponse.componentId(),
               toolCallResponse.id(),
               toolCallResponse.name(),
-              toolCallResponse.text()));
+              toolCallResponse.text(),
+                toolCallResponse.size()));
           }
 
           case AiMessage aiMessage -> {
@@ -276,17 +288,48 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
               aiMessage.timestamp(),
               aiMessage.componentId(),
               aiMessage.text(),
-              aiMessage.inputTokens(),
-              aiMessage.outputTokens(),
+                aiMessage.size(),
+                0L, // filled in later
               aiMessage.toolCallRequests()));
           }
         }
       });
     }
 
+    var eventsWithSize = updateHistorySize(events);
+
     return effects()
-        .persistAll(events)
+        .persistAll(eventsWithSize)
         .thenReply(__ -> Done.done());
+  }
+
+  private List<Event> updateHistorySize(List<Event> events) {
+    var result = new ArrayList<Event>();
+    var size = currentState().currentSizeInBytes;
+    for (Event event: events) {
+      switch (event) {
+        case Event.HistoryCleared evt -> {
+          size = 0L;
+          result.add(evt);
+        }
+        case Event.UserMessageAdded evt -> {
+          size += evt.sizeInBytes();
+          result.add(evt);
+        }
+        case Event.ToolResponseMessageAdded evt -> {
+          size += evt.sizeInBytes();
+          result.add(evt);
+        }
+        case Event.AiMessageAdded evt -> {
+          size += evt.sizeInBytes();
+          // fill in the accumulated size in each AiMessageAdded
+          result.add(evt.withHistorySizeInBytes(size));
+        }
+        case Event evt -> result.add(evt);
+      }
+    }
+
+    return result;
   }
 
   public Effect<Done> delete() {
@@ -317,8 +360,6 @@ public final class SessionMemoryEntity extends EventSourcedEntity<State, Event> 
                 aiMsg.timestamp,
                 aiMsg.message,
                 aiMsg.componentId,
-                aiMsg.inputTokens,
-                aiMsg.outputTokens,
                 aiMsg.toolCallRequests));
 
       case Event.ToolResponseMessageAdded toolMsg ->

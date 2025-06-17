@@ -277,7 +277,7 @@ private[impl] final class AgentImpl[A <: Agent](
           val requests = res.toolRequests.map { req =>
             new ToolCallRequest(req.id, req.name, req.arguments)
           }.asJava
-          new AiMessage(timestamp, res.content, componentId, res.inputTokenCount, res.outputTokenCount, requests)
+          new AiMessage(timestamp, res.content, componentId, requests)
 
         case res: SpiAgent.ToolCallResponse =>
           new ToolCallResponse(timestamp, componentId, res.id, res.name, res.content)

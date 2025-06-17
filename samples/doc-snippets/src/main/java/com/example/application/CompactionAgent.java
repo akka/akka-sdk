@@ -31,14 +31,12 @@ public class CompactionAgent extends Agent {
       {
         "userMessage": "<the user message summary>",
         "aiMessage: "<the AI message summary>",
-        "inputTokens": "<number of tokens for the summarized userMessage>",
-        "outputTokens": "<number of tokens for the summarized aiMessage>",
       }
       
       Do not include any explanations or text outside of the JSON structure.
       """.stripIndent(); // <1>
 
-  public record Result(String userMessage, String aiMessage, int inputTokens, int outputTokens) {
+  public record Result(String userMessage, String aiMessage) {
   }
 
   private final ComponentClient componentClient;
