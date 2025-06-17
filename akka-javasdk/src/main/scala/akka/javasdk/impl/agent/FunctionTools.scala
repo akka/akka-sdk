@@ -99,7 +99,7 @@ object FunctionTools {
 
     if (toolAnno.name() == null || toolAnno.name().isBlank) {
       // if the annotation does not specify a name,
-      // we use the name passed to this method plus the sanitized class name
+      // we use simple class name plus the passed resolved name
       method.getDeclaringClass.getSimpleName + "_" + resolvedName
     } else toolAnno.name()
   }
@@ -139,11 +139,11 @@ object FunctionTools {
           // if there is only one method with this name, we can use it directly
           Map(toolName(method, originalName) -> method)
 
-        case (name, methods) =>
+        case (originalName, methods) =>
           // otherwise we need to create a unique name for each method based on its parameters
           methods.map { method =>
             val paramTypes = method.getParameterTypes.map(_.getSimpleName).mkString("_")
-            val resolvedName = s"${name}_$paramTypes"
+            val resolvedName = s"${originalName}_$paramTypes"
             (toolName(method, resolvedName), method)
           }.toMap
       }
