@@ -22,16 +22,6 @@ To get the OpenAI API key, sign up/log in to find the key at https://platform.op
 The key and uri needs to be passed in env variables:
 `OPENAI_API_KEY` and `MONGODB_ATLAS_URI` respectively.
 
-Alternatively, you can add the key and uri in a file located at `src/main/resources/.env.local`. 
-
-```
-# src/main/resources/.env.local
-# note: langchain4j has a 'demo' openAi key for testing.
-OPENAI_API_KEY=demo
-MONGODB_ATLAS_URI=YOUR-CONNECTION-STRING-HERE
-```
-This file is excluded from git by default and is intended to facilitate local development only.
-Make sure to never push this to git.
 
 # Start the app
 

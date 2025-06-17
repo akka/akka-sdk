@@ -23,12 +23,14 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
 import static akka.Done.done;
+import static java.time.temporal.ChronoUnit.MINUTES;
 
 /**
  * This workflow reads the files under src/main/resources/md-docs/ and create
@@ -164,7 +166,10 @@ public class RagIndexingWorkflow extends Workflow<RagIndexingWorkflow.State> {
           }
         });
 
-    return workflow().addStep(processing);
+    return workflow()
+        .addStep(processing)
+        // the processing step is long-running, so we need to set a big timeout
+        .defaultStepTimeout(Duration.of(20, MINUTES));
   }
   // end::def[]
 
@@ -197,7 +202,12 @@ public class RagIndexingWorkflow extends Workflow<RagIndexingWorkflow.State> {
         res.tokenUsage().inputTokenCount(),
         res.tokenUsage().outputTokenCount());
 
-    embeddingStore.add(res.content(), seg); // <1>
+    var id = embeddingStore.add(res.content(), seg); // <1>
+    logger.debug("Added segment to embedding store. Source file '{}'. Tokens usage: in {}, out {}, id {}",
+        fileName,
+        res.tokenUsage().inputTokenCount(),
+        res.tokenUsage().outputTokenCount(),
+        id);
   }
   // end::add[]
   // tag::shell[]
