@@ -335,7 +335,7 @@ include::example$doc-snippets/src/main/java/com/example/application/ActivityAgen
 <3> Use the `responseAs` method to specify the expected response type.
 <4> Sometimes the model may not return a valid JSON, so you can use `onFailure` to provide a fallback value in case of parsing exception.
 
-== Extending Agents with Function Tools
+== Extending agents with function tools
 
 You may frequently hear people say things like "the LLM can make a call" or "the LLM can use a tool". While these statements get the point across, they're not entirely accurate. In truth, the agent will tell the LLM which _tools_ are available for use. The LLM then determines from the prompt which tools it needs to call and with which parameters.
 
@@ -362,7 +362,7 @@ include::example$multi-agent/src/main/java/demo/multiagent/application/agents/We
  the current Agent.
 <3> We define a simple tool directly in the agent class using the `@FunctionTool` annotation, which is implicitly registered. Note that since this method is defined in the agent itself, it can even be a private method.
 
-The `WeatherService` has one method annotated with `@FunctionTool` and can be eventually used by multiple agents:
+The `WeatherService` has a method annotated with `@FunctionTool` and can be eventually used by multiple agents:
 
 [source,java]
 .{sample-base-url}/multi-agent/src/main/java/demo/multiagent/application/agents/WeatherService.java[WeatherService.java]
@@ -379,12 +379,16 @@ In this example, the agent has access to both:
 * The `getCurrentDate()` method defined within the agent class (implicitly registered via annotation)
 * The `getWeather()` method defined in the `WeatherService` class (explicitly registered via the `.tools()` method)
 
-[NOTE]
-====
-LLMs are all about context. The more context you can provide, the better the results.
-Both `@FunctionTool` and `@Description` annotations are used to provide context to the LLM about the tool function and its parameters.
-The better the context, the better the LLM can understand what the tool function does and how to use it.
-====
+=== Sharing function tools across agents
+
+Function tools defined in external classes can be shared and reused across multiple agents. This approach promotes code reusability and helps maintain a consistent behavior for common functionalities.
+
+When a tool class like `WeatherService` is shared across multiple agents:
+
+* Each agent can register the same tool but use it in different contexts
+* The tool behavior remains consistent, but how and when agents invoke it may differ based on their specific tasks
+* Agents provide different system prompts that influence how the LLM decides to use the shared tool
+
 
 === Lazy initialization of tool classes
 
