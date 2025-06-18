@@ -4,16 +4,51 @@ include::ROOT:partial$include.adoc[]
 
 include::ROOT:partial$concepts-intro.adoc[]
 
-== Design goals of Akka
+== Akka’s design goals
 
-[horizontal]
-Simple:: Development is approachable by anyone with coding skills.
-Elastic:: Scales processing and memory management gracefully.
-Resilient:: Recovers from any form of failure, including network and hallucination.
-Interoperable:: Operates with any external system, protocol, or API.
-Composable:: Enables system designs to evolve from simple to complex.
-Batteries-included:: Includes orchestration, runtimes, and distributed state management.
-Production-ready:: No code changes required to move from development to production.
+Akka’s design principles are influenced by decades of distributed systems research.
+
+[cols="1,3", options="header"]
+|===
+|Research |Publications
+
+|Patterns
+|link:https://www.oreilly.com/library/view/principles-and-patterns/9781098181260/[Principles and Patterns for Distributed Application Architecture, window="new"]
+
+|Principles
+|link:https://www.reactiveprinciples.org/[The Reactive Principles, window="new"]
+
+|Approach
+|link:https://www.reactivemanifesto.org/[The Reactive Manifesto, window="new"]
+|===
+
+The Akka Agentic Platform contains an SDK for development, the Akka runtime for scalable and resilient execution, and multiple operating modes. The platform, from development to production, has its own design goals.
+
+[cols="1,3", options="header"]
+|===
+|Property |Our Design Philosophy
+
+|Simple
+|Development approachable by anyone with (and eventually without) coding skills.
+
+|Adaptable
+|Runtime that adapts to environment or system changes by embracing failure and uncertainty.
+
+|Elastic
+|Scale processing and data (i.e. memory) to any level by distributing compute and state across Akka nodes.
+
+|Resilient
+|Recover from any failure, whether hardware, network, or hallucination.
+
+|Interoperable
+|Across all Akka components, any 3rd party system, protocol, broker, or API.
+
+|Composable
+|Akka services and components can be combined to create systems of any complexity.
+
+|Production-ready
+|Akka services should never require code changes when moving into production.
+|===
 
 == Anatomy of an autonomous agentic AI system
 
