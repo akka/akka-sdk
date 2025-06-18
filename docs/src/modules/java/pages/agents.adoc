@@ -420,7 +420,7 @@ For this approach to work, you must register the class with a xref:setup-and-dep
 === Using tools from remote MCP servers ===
 
 xref:mcp-endpoints.adoc[Akka MCP endpoints] declared in other services, or third party MCP services can be added to
-the agent. By default, all tools provided by each added remote MCP server are added, but it is possible to filter
+the agent. By default, all tools provided by each added remote MCP server are included, but it is possible to filter
 available tools from each server based on their name.
 
 It is also possible to intercept, modify, or deny MCP tool requests, or their responses by defining a `RemoteMcpTools.ToolInterceptor`.
