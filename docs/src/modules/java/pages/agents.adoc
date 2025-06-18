@@ -61,9 +61,9 @@ include::java:example$doc-snippets/src/main/resources/application.conf[tags=agen
 The default model will be used if the agent doesn't specify another model. Different agents can use different models by defining the `ModelProvider` in the Agent effect:
 
 [source,java]
-.{sample-base-url}/doc-snippets/src/main/java/com/example/application/MyAgent.java[MyAgent.java]
+.MyAgent.java
 ----
-include::example$doc-snippets/src/main/java/com/example/application/MyAgent.java[tag=model]
+include::example$doc-snippets/src/main/java/com/example/application/MyAgentMore.java[tag=model]
 ----
 <1> Define the model provider in code.
 
@@ -123,9 +123,9 @@ Keep in mind that some models have preferences in how you wrap or label user inp
 As an alternative to hard-coded prompts, there is a built-in prompt template entity. The advantage of using the prompt template entity is that you can change the prompts at runtime without restarting or redeploying the service. Because the prompt template is managed as an entity, you retain full change history.
 
 [source,java]
-.{sample-base-url}/doc-snippets/src/main/java/com/example/application/ActivityAgent.java[ActivityAgent.java]
+.ActivityAgent.java
 ----
-include::example$doc-snippets/src/main/java/com/example/application/ActivityAgent.java[tag=prompt-template]
+include::example$doc-snippets/src/main/java/com/example/application/ActivityAgentMore.java[tag=prompt-template]
 ----
 <1> Define the system message prompt template key.
 
@@ -190,6 +190,7 @@ A workflow will typically orchestrate several agents, which collaborate in achie
 We will look more at xref:#_multi_agent[multi-agent systems], but let's start with a workflow for the single activities agent.
 
 [source,java]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/application/ActivityAgentManager.java[ActivityAgentManager.java]
 ----
 include::example$doc-snippets/src/main/java/com/example/application/ActivityAgentManager.java[tag=all]
 ----
@@ -260,14 +261,14 @@ Or you can configure memory behavior for specific agent interactions using the `
 Example with `limitedWindow` memory provider:
 [source,java]
 ----
-include::example$doc-snippets/src/main/java/com/example/application/MyAgent.java[tag=read-last]
+include::example$doc-snippets/src/main/java/com/example/application/MyAgentMore.java[tag=read-last]
 ----
 
 
 Example disabling session memory for the agent:
 [source,java]
 ----
-include::example$doc-snippets/src/main/java/com/example/application/MyAgent.java[tag=no-memory]
+include::example$doc-snippets/src/main/java/com/example/application/MyAgentMore.java[tag=no-memory]
 ----
 
 
@@ -326,9 +327,8 @@ include::example$doc-snippets/src/main/java/com/example/application/SessionMemor
 Many LLMs support generating outputs in a structured format, typically JSON. You can easily map such output to Java objects using the effect API.
 
 [source,java]
-.{sample-base-url}/doc-snippets/src/main/java/com/example/application/ActivityAgent.java[ActivityAgent.java]
 ----
-include::example$doc-snippets/src/main/java/com/example/application/ActivityAgent.java[tag=structured-response]
+include::example$doc-snippets/src/main/java/com/example/application/ActivityAgentMore.java[tag=structured-response]
 ----
 <1> Instruct the model to return a structured response in JSON format.
 <2> `Activity` record is used to map the JSON response to a Java object.
@@ -425,9 +425,9 @@ Agent. For example, injecting the `ComponentClient` to be able to enrich the req
 information from entities or views may look like this:
 
 [source,java]
-.{sample-base-url}/doc-snippets/src/main/java/com/example/application/ActivityAgent.java[ActivityAgent.java]
+.ActivityAgent.java
 ----
-include::example$doc-snippets/src/main/java/com/example/application/ActivityAgent.java[tag=di]
+include::example$doc-snippets/src/main/java/com/example/application/ActivityAgentMore.java[tag=di]
 ----
 <1> Inject the `ComponentClient` as a constructor parameter.
 <2> Retrieve preferences from an entity.
@@ -445,7 +445,7 @@ The other reason why responses are streamed is that it can take a very long time
 
 [source,java]
 ----
-include::example$doc-snippets/src/main/java/com/example/application/ActivityAgent.java[tag=stream-tokens]
+include::example$doc-snippets/src/main/java/com/example/application/ActivityAgentMore.java[tag=stream-tokens]
 ----
 <1> The method returns `StreamEffect` instead of `Effect<T>`.
 <2> Use the `streamEffects()` builder.
@@ -454,7 +454,7 @@ Consuming the stream from an HTTP endpoint:
 
 [source,java]
 ----
-include::example$doc-snippets/src/main/java/com/example/application/ActivityAgent.java[tag=stream-endpoint]
+include::example$doc-snippets/src/main/java/com/example/application/ActivityAgentMore.java[tag=stream-endpoint]
 ----
 <1> Use `tokenStream` of the component client, instead of `method`,
 <2> and invoke it with `source` to receive a stream of tokens.
@@ -466,7 +466,7 @@ The granularity of a token varies by AI model, often representing a word or a sh
 
 [source,java]
 ----
-include::example$doc-snippets/src/main/java/com/example/application/ActivityAgent.java[tag=stream-group]
+include::example$doc-snippets/src/main/java/com/example/application/ActivityAgentMore.java[tag=stream-group]
 ----
 <1> Group at most 20 tokens or within 100 milliseconds, whatever happens first.
 <2> Concatenate the list of string into a single string.
