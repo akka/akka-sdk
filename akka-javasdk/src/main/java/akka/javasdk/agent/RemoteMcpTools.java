@@ -28,6 +28,14 @@ public interface RemoteMcpTools {
   }
 
   /**
+   * @param serviceName A service name of another Akka service with an MCP endpoint in the default
+   *     path {@code /mcp}
+   */
+  static RemoteMcpTools fromService(String serviceName) {
+    return new RemoteMcpToolsImpl("http://" + serviceName + "/mcp");
+  }
+
+  /**
    * Define a filter to select what discovered tool names are passed on to the chat model. Names
    * that are filtered will not be described to the model and will not allow calls. Will override a
    * previous call to {@link #withAllowedToolNames(Set)}.
@@ -43,6 +51,14 @@ public interface RemoteMcpTools {
    * <p>By default, all tools are allowed.
    */
   RemoteMcpTools withAllowedToolNames(Set<String> allowedToolNames);
+
+  /**
+   * Define a set of allowed tool names. Will override a previously defined {@link
+   * #withToolNameFilter(Predicate)}
+   *
+   * <p>By default, all tools are allowed.
+   */
+  RemoteMcpTools withAllowedToolNames(String allowedToolName, String... moreAllowedToolNames);
 
   /**
    * Specify an interceptor that has the capability to allow or deny calls (by throwing an

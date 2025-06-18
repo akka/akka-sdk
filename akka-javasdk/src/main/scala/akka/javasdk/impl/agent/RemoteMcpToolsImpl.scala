@@ -30,6 +30,11 @@ final case class RemoteMcpToolsImpl(
   override def withAllowedToolNames(allowedToolNames: util.Set[String]): RemoteMcpTools =
     copy(toolNameFilter = Some(allowedToolNames.contains))
 
+  override def withAllowedToolNames(allowedToolName: String, moreAllowedToolNames: String*): RemoteMcpTools = {
+    val names = (allowedToolName +: moreAllowedToolNames).toSet
+    copy(toolNameFilter = Some(names.contains _))
+  }
+
   override def withToolInterceptor(interceptor: RemoteMcpTools.ToolInterceptor): RemoteMcpTools =
     copy(interceptor = Some(interceptor))
 
