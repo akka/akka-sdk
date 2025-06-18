@@ -88,6 +88,7 @@ jobs:
           git config user.email "lightbend-tools-secure@lightbend.com"
           BRANCH=update-sdk-$sdk_version
           git checkout -b $BRANCH
+          rm -rf ./src/*
           rsync -a ../docs/build/bundle/${{ matrix.sample }}/ ./
           rm -f .bundleignore
           git add -f .idea/runConfigurations/Run_locally.xml
