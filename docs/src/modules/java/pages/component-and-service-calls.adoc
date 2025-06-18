@@ -134,7 +134,7 @@ The service is expected to accept HTTPS connections and run on the standard HTTP
 port, or served unencrypted (not recommended) it is possible to define configuration overrides in `application.conf` (or `application-test.conf`
 specifically for tests):
 
-[source,json,indent=0]
+[source,bash,indent=0]
 .{sample-base-url}/doc-snippets/src/main/resources/application.conf[application.conf]
 ----
 include::java:example$doc-snippets/src/main/resources/application.conf[tags=customize-grpc-client]

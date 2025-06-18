@@ -119,7 +119,7 @@ This port is configured in `akka.javasdk.dev-mode.http-port` property in the
 `src/main/resources/application.conf` file.
 
 
-[source,xml,indent=0]
+[source,bash,indent=0]
 ----
 include::java:example$event-sourced-customer-registry-subscriber/src/main/resources/application.conf[tag=custom-port]
 ----
