@@ -4,6 +4,8 @@
 
 package akka.javasdk.impl.agent
 
+import java.lang.reflect.InvocationTargetException
+
 import akka.annotation.InternalApi
 import akka.javasdk.DependencyProvider
 import akka.javasdk.agent.Agent
@@ -15,6 +17,8 @@ import akka.runtime.sdk.spi.SpiAgent
 
 import java.lang.reflect.Method
 import java.lang.reflect.Type
+
+import scala.util.control.Exception.Catcher
 
 /**
  * INTERNAL API
@@ -80,9 +84,11 @@ object FunctionTools {
             method.getGenericParameterTypes
 
           override def invoke(args: Array[Any]): Any = {
-            if (isAgent(cls)) method.setAccessible(true)
-            val instance = instanceFactory()
-            method.invoke(instance, args: _*)
+            try {
+              if (isAgent(cls)) method.setAccessible(true)
+              val instance = instanceFactory()
+              method.invoke(instance, args: _*)
+            } catch unwrapInvocationTargetException()
           }
 
           override def returnType: Class[_] =
@@ -172,4 +178,8 @@ object FunctionTools {
     }
   }
 
+  private def unwrapInvocationTargetException(): Catcher[AnyRef] = {
+    case exc: InvocationTargetException if exc.getCause != null =>
+      throw exc.getCause
+  }
 }
