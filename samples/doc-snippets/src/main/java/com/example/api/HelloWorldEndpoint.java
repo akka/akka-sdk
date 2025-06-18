@@ -10,13 +10,10 @@ import com.example.application.HelloWorldAgent;
 import java.util.UUID;
 
 // tag::helloWorld[]
-// tag::helloRequest[]
+// tag::helloUser[]
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
 @HttpEndpoint("/")
 public class HelloWorldEndpoint {
-  // end::helloWorld[]
-  public record Request(String greeting, String sessionId) {}
-  // tag::helloWorld[]
 
   private final ComponentClient componentClient;
 
@@ -24,7 +21,7 @@ public class HelloWorldEndpoint {
     this.componentClient = componentClient;
   }
 
-  // end::helloRequest[]
+  // end::helloUser[]
   @Get("/hello")
   public String helloWorld() {
     return componentClient
@@ -33,18 +30,19 @@ public class HelloWorldEndpoint {
         .method(HelloWorldAgent::greet)
         .invoke("Hello World!");
   }
-  // tag::helloRequest[]
-
+  // tag::helloUser[]
   // end::helloWorld[]
+  public record Request(String user, String text) {}
+
   @Post("/hello")
-  public String hello(Request request) {
+  public String helloUser(Request req) {
     return componentClient
         .forAgent()
-        .inSession(request.sessionId)
+        .inSession(req.user)
         .method(HelloWorldAgent::greet)
-        .invoke(request.greeting);
+        .invoke(req.text);
   }
   // tag::helloWorld[]
 }
-// end::helloRequest[]
+// end::helloUser[]
 // end::helloWorld[]

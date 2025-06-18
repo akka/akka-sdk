@@ -149,89 +149,47 @@ In another shell, you can now use `curl` to send requests to this Endpoint.
 curl localhost:9000/hello
 ----
 
+Run the request a few times to see the agent's responses. They will likely be very similar.
+
 == Add your own greeting
 
-In this section, you will modify the HTTP Endpoint to accept a request body using the code shown below:
+Modify the HTTP Endpoint to accept a request body using the code shown below:
 
 [source,java]
 .HelloWorldEndpoint.java
 ----
-include::java:example$doc-snippets/src/main/java/com/example/api/HelloWorldEndpoint.java[tag=helloRequest]
+include::java:example$doc-snippets/src/main/java/com/example/api/HelloWorldEndpoint.java[tag=helloUser]
 ----
 
 Restart the service and curl this command:
 
 [source, command line]
 ----
-curl -i -XPOST -H "Content-Type: application/json" localhost:9000/hello -d '
-{"greeting":"Ahoy there, matey!", "sessionId":"12345"}'
+curl -i -XPOST -H "Content-Type: application/json" localhost:9000/hello -d \
+  '{"text":"Ola Mundo!", "user":"john"}'
 ----
 
-Does it recognize the pirate greeting?
-
-== Play a language game
-
-In this section, you'll play a simple language game with the agent using `curl`.
-
-Each player must reply in a new language. The agent remembers previous languages and will end the game if a language is repeated.
-
-To keep the game predictable, the agent is instructed to always begin in English. This prevents accidental repetition and allows you to observe memory in action.
-
-[NOTE]
-====
-Be sure to include the language you're using in parentheses at the end of your message. This helps the agent track the game state correctly.
-====
-
-. Start the game:
+Now, try again with a different language:
 
 [source, command line]
 ----
 curl -i -XPOST -H "Content-Type: application/json" localhost:9000/hello -d \
-'{"greeting":"Let'\''s play a language game. Each of us must reply in a new language every time. The first to repeat a language loses. Try to not lose the game. Always name the language you'\''re using in parentheses. You start. Use English first. If I repeat a language, announce that the game is over and that you won.","sessionId":"12345"}'
+  '{"text":"Ciao mondo", "user":"john"}'
 ----
 
-.Expected response:
-[source,text]
-----
-Great! Let's begin. Hello there! Ready to put your languages to the test? (English)
-----
+Run the request a few more times. Do you see the difference in the responses
+as the Agent avoids repeating languages already used?
 
-. Reply in Portuguese:
-
-[source, command line]
-----
-curl -i -XPOST -H "Content-Type: application/json" localhost:9000/hello -d \
-'{"greeting":"Acho que vou ganhar este jogo! (Portuguese)", "sessionId":"12345"}'
-----
-
-.Expected response:
-[source,text]
-----
-Well played! Here's my reply in a different language. (This response is in another language)
-----
-
-. Repeat a language to simulate a loss (Portuguese again):
-
-[source, command line]
-----
-curl -i -XPOST -H "Content-Type: application/json" localhost:9000/hello -d \
-'{"greeting":"Vamos ver se consigo ganhar de novo! (Portuguese)", "sessionId":"12345"}'
-----
-
-.Expected response:
-[source,text]
-----
-Oops! Portuguese has already been used. That means I win this round. Thanks for playing! (English)
-----
 
 [IMPORTANT]
 ====
 What just happened?
 
-Akka Agents track context using *session memory*. In this case, the Agent remembered that Portuguese had already been used earlier in the same `sessionId`.
+Akka Agents automatically track context using *session memory*. In this case, the Agent is able to remember all the past
+messages and languages that were used in this session.
+The session is identified by a unique identifier, which in this case is the user being passed in each request.
 
 Session memory provides a history mechanism that enables agents to maintain context across multiple interactions. This feature is essential for building agents that can remember previous exchanges with users, understand context, and provide coherent responses over time.
-
 ====
 
 == Explore the local console
