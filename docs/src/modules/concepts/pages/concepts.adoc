@@ -2,54 +2,7 @@
 
 include::ROOT:partial$include.adoc[]
 
-Akka is a framework, runtime and memory store for autonomous, adaptive agentic systems. Akka is delivered as a platform that can execute on any infrastructure, anywhere.
-
-image:concepts:akka-agentic-platform.png[Akka Agentic Platform]
-
-Developers create services built with Akka components that - when deployed - become agentic systems. Services can be tested locally or within a Continuous Integration/Continuous Delivery (CI/CD) practice using a Testkit that is available with each Akka component. Your services are compiled into a binary that includes the Akka Runtime which enables your services to self-cluster for scale and resilience. Akka clusters are able to execute on any infrastructure whether bare metal, Kubernetes, Docker or edge. You can optionally deploy your services into an Akka-managed cloud environment which automates most Day 2 concerns. We support Serverless, Bring Your Own Cloud (BYOC), and Self-Hosted cloud-hosted environments.
-
-[cols="1,3", options="header"]
-|===
-|Product |Where To Start
-
-|Akka Orchestration
-|Akka provides a durable execution engine which automatically captures state at every step, and in the event of failure, can pick up exactly where they left off. No lost progress, no orphaned processes, and no manual recovery required.
-
-You implement orchestration by creating an Akka service with the `Workflow` component.
-
-|Akka Agents
-|Akka provides a development framework and runtime for agents. Agents can be stateful (durable memory included) or stateless. Agents can be invoked by other Akka components or run autonomously. Agents can transact with embedded tools, MCP servers, or any 3rd party data source with 100s of Akka connectors.
-
-You implement an agent by creating an Akka service with the `Agent` component.
-
-You implement an embedded tool within the `Agent` component.
-
-You implement an MCP server with the `MCPEndpoint` component.
-
-You implement APIs that can front an agent with the `HttpEndpoint` and `gRPCEndpoint` components.
-
-|Akka Memory
-|Akka provides an in-memory, durable store for stateful data. Stateful data can be scoped to a single agent, or made available system-wide. Stateful data is persisted in an embedded event store that tracks incremental state changes, which enables recovery of system state to its last known modification. State is automatically sharded and rebalanced across Akka nodes running in a cluster to support elastic scaling to terabytes of memory. State can also be replicated across regions for fail over and disaster recovery.
-
-You inherit agentic and episodic (short-term memory) state automatically within the `Agent` component.
-
-You implement long-term and external memory with the `Event Sourced Entities` and `Key Value Entities` components.
-
-You implement propagations of cross-system state with the `View` component. Views implement the Command Query Responsibility Segregation (CQRS) pattern.
-
-|Akka Streaming
-|Akka provides a continuous stream processing engine which can synthesize, aggregate, and analyze windows of data without receiving a terminating event. Data streams can be sourced from other Akka services or a 3rd party messaging broker or coming in through an Akka Endpoint. Your services can either store intermediate processing results into _Akka Memory_ or trigger commands to other Akka components that take action on the data.
-
-You produce events to a message broker with the `Producer` annotation.
-
-You create a continuous incoming stream of events with the `HttpEndpoint` or the `gRPCEndpoint` components.
-
-You create a stream processor to analyze and act against a stream of data with the `Consumer` component.
-|===
-
-The services you build with Akka components are composable, which can be combined to design agentic, transactional, analytics, edge, and digital twin systems. You can create services with one component or many. Let Akka unlock your distributed systems artistry!
-
-image:concepts:component-composition.png[Akka Agentic Platform]
+include::ROOT:partial$concepts-intro.adoc[]
 
 == Design goals of Akka
 

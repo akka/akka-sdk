@@ -5,6 +5,8 @@ include::ROOT:partial$include.adoc[]
 
 == Introduction 
 
+include::ROOT:partial$concepts-intro.adoc[]
+
 In this guide, you will:
 
 * Set up your development environment.
