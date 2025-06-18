@@ -130,6 +130,7 @@ preconfigured
 prepended
 prepending
 [Pp]rometheus
+[Pp]ropagations
 proto
 [Pp]rotobuf
 Qodo
