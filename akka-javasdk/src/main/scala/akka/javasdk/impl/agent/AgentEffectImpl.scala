@@ -16,6 +16,7 @@ import akka.javasdk.agent.Agent.Effect.MappingResponseBuilder
 import akka.javasdk.agent.Agent.Effect.OnSuccessBuilder
 import akka.javasdk.agent.MemoryProvider
 import akka.javasdk.agent.ModelProvider
+import akka.javasdk.agent.RemoteMcpTools
 import akka.javasdk.impl.agent.BaseAgentEffectBuilder.PrimaryEffectImpl
 import akka.javasdk.impl.agent.BaseAgentEffectBuilder.RequestModel
 import akka.javasdk.impl.effect.ErrorReplyImpl
@@ -44,7 +45,8 @@ private[javasdk] object BaseAgentEffectBuilder {
         failureMapping = None,
         replyMetadata = Metadata.EMPTY,
         memoryProvider = MemoryProvider.fromConfig(),
-        Seq.empty)
+        toolInstancesOrClasses = Seq.empty,
+        mcpTools = Seq.empty)
   }
 
   sealed trait SystemMessage
@@ -60,7 +62,8 @@ private[javasdk] object BaseAgentEffectBuilder {
       failureMapping: Option[Throwable => Any],
       replyMetadata: Metadata,
       memoryProvider: MemoryProvider,
-      toolInstancesOrClasses: Seq[AnyRef])
+      toolInstancesOrClasses: Seq[AnyRef],
+      mcpTools: Seq[RemoteMcpTools])
       extends PrimaryEffectImpl {
 
     def withProvider(provider: ModelProvider): RequestModel =
@@ -75,6 +78,9 @@ private[javasdk] object BaseAgentEffectBuilder {
     def addTools(tools: Seq[AnyRef]): RequestModel = {
       copy(toolInstancesOrClasses = this.toolInstancesOrClasses ++ tools)
     }
+
+    def addMcpTools(tools: Seq[RemoteMcpTools]): RequestModel =
+      copy(mcpTools = mcpTools ++ tools)
   }
 
   case object NoPrimaryEffect extends PrimaryEffectImpl
@@ -160,6 +166,16 @@ private[javasdk] final class BaseAgentEffectBuilder[Reply]
 
   override def memory(provider: MemoryProvider): Builder = {
     updateRequestModel(_.withMemory(provider))
+    this
+  }
+
+  override def mcpTools(tools: RemoteMcpTools, moreTools: RemoteMcpTools*): Builder = {
+    updateRequestModel(_.addMcpTools(tools +: moreTools))
+    this
+  }
+
+  override def mcpTools(tools: util.List[RemoteMcpTools]): Builder = {
+    updateRequestModel(_.addMcpTools(tools.asScala.toSeq))
     this
   }
 
