@@ -5,7 +5,7 @@ include::ROOT:partial$include.adoc[]
 image:ROOT:agent.png[Agent,width=100,float=left]An Agent interacts with an AI model to perform a specific task. It is typically backed by a large language model (LLM). It maintains contextual history in a session memory, which may be shared between multiple agents that are collaborating on the same goal. It may provide function tools and call them as requested by the model.
 
 == Identify the agent
-Every component in Akka needs to be identifiable by the rest of the system. This usually involves two different forms of identification: a **component ID** an an **instance ID**. We use component IDs as a way to identify the component _class_ and distinguish it from others. Instance identifiers are, as the name implies, unique identifiers for an instance of a component.
+Every component in Akka needs to be identifiable by the rest of the system. This usually involves two different forms of identification: a **component ID** an **instance ID**. We use component IDs as a way to identify the component _class_ and distinguish it from others. Instance identifiers are, as the name implies, unique identifiers for an instance of a component.
 
 As with all other components, we supply an identifier for the component class using the `@ComponentId` annotation.
 
