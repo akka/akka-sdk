@@ -58,7 +58,7 @@ public class Planner extends Agent {
       
         The '<the id of the agent>' should be filled with the agent id.
         The '<agent tailored query>' should contain the agent tailored message.
-        The order og the items inside the "steps" array should be the order of execution.
+        The order of the items inside the "steps" array should be the order of execution.
       
         Do not include any explanations or text outside of the JSON structure.
       

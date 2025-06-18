@@ -129,7 +129,15 @@ public class AgentTeam extends Workflow<AgentTeam.State> { // <1>
               .invoke(currentState().userQuery)) // <4>
       .andThen(AgentSelection.class, selection -> {
         logger.debug("Selected agents: {}", selection.agents());
-          return effects().transitionTo(CREATE_PLAN, selection); // <5>
+          if (selection.agents().isEmpty()) {
+            var newState = currentState()
+              .withFinalAnswer("Couldn't find any agent(s) able to respond to the original query.")
+              .failed();
+            return effects().updateState(newState).end(); // terminate workflow
+          } else {
+            return effects().transitionTo(CREATE_PLAN, selection); // <5>
+
+          }
         }
       );
   }
@@ -150,18 +158,9 @@ public class AgentTeam extends Workflow<AgentTeam.State> { // <1>
       )
       .andThen(Plan.class, plan -> {
         logger.debug("Execution plan: {}", plan);
-        if (plan.steps().isEmpty()) {
-
-          var newState = currentState()
-            .withFinalAnswer("Couldn't find any agent(s) able to respond to the original query.")
-            .failed();
-          return effects().updateState(newState).end(); // terminate workflow
-
-        } else {
           return effects()
             .updateState(currentState().withPlan(plan))
             .transitionTo(EXECUTE_PLAN); // <7>
-          }
         }
       );
   }
