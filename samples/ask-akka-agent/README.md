@@ -33,6 +33,14 @@ MONGODB_ATLAS_URI=YOUR-CONNECTION-STRING-HERE
 This file is excluded from git by default and is intended to facilitate local development only.
 Make sure to never push this to git.
 
+# Start the app
+
+Start the application locally:
+
+```shell
+mvn compile exec:java
+```
+
 # Indexing documentation
 
 To create the vectorized index, call: 

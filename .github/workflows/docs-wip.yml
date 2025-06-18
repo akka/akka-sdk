@@ -3,7 +3,8 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - 'main'
+      # FIXME - 'main'
+      - 'agent-dev'
     paths:
       - 'docs/**'
 
@@ -21,7 +22,6 @@ jobs:
         # v4.1.1
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
         with:
-          ref: main
           fetch-tags: true # required for version.sh
           # we don't know what commit the last tag was, it's safer to get entire repo
           fetch-depth: 0

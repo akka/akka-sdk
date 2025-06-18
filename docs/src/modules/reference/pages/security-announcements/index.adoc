@@ -20,6 +20,7 @@ Reports to this email address will be handled by our security team, who will wor
 
 == Fixed Security Vulnerabilities
 
+* xref:security-announcements/akka-management-cve-2025-46548.adoc[2025-06-03, Improper authentication in Akka management]
 * xref:security-announcements/akka-cve-2023-45865.adoc[2023-10-31, Akka logs environment variables]
 * xref:security-announcements/akka-http-cve-2023-44487.adoc[2023-10-16, HTTP/2 rapid reset denial of service]
 * xref:security-announcements/akka-http-cve-2023-05-15.adoc[2023-05-15, Akka HTTP uploaded file permissions]

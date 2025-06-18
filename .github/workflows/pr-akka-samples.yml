@@ -43,6 +43,8 @@ jobs:
         # v4.1.1
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
         with:
+          # Use the same branch/commit as the original workflow when triggered by workflow_run
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_branch || github.ref }}
           # we don't know what commit the last tag was it's safer to get entire repo so previousStableVersion resolves
           fetch-depth: 0
 
@@ -109,6 +111,7 @@ jobs:
           - { sample: "travel-agent", sampleRepo: "akka-samples/travel-agent" }
           - { sample: "trip-agency", sampleRepo: "akka-samples/trip-agency" }
           - { sample: "real-estate-cs-agent", sampleRepo: "akka-samples/real-estate-cs-agent" }
+          - { sample: "multi-agent", sampleRepo: "akka-samples/multi-agent" }
 
     steps:
       - name: Checkout
@@ -116,6 +119,8 @@ jobs:
         # v4.1.1
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
         with:
+          # Use the same branch/commit as the original workflow when triggered by workflow_run
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_branch || github.ref }}
           # we don't know what commit the last tag was it's safer to get entire repo so previousStableVersion resolves
           fetch-depth: 0
 
