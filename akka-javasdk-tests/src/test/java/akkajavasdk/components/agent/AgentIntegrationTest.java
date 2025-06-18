@@ -12,6 +12,7 @@ import akka.javasdk.testkit.TestKitSupport;
 import akka.javasdk.testkit.TestModelProvider;
 import akka.stream.javadsl.Sink;
 import akkajavasdk.Junit5LogCapturing;
+import com.typesafe.config.ConfigFactory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -113,7 +114,7 @@ public class AgentIntegrationTest extends TestKitSupport {
     testModelProvider.mockResponse(
       s -> s.equals(userQuestion),
       new TestModelProvider.AiResponse(
-        new TestModelProvider.ToolInvocationRequest("getDateOfToday", "")));
+        new TestModelProvider.ToolInvocationRequest("SomeAgentWithTool_getDateOfToday", "")));
 
     // when receiving the date back, model asks for calling getWeather
     testModelProvider.mockResponseToToolResult(
@@ -126,7 +127,7 @@ public class AgentIntegrationTest extends TestKitSupport {
           }
           """;
         return new TestModelProvider.AiResponse(
-          new TestModelProvider.ToolInvocationRequest("getWeather", args));
+          new TestModelProvider.ToolInvocationRequest("WeatherService_getWeather", args));
       }
       );
 
@@ -160,7 +161,7 @@ public class AgentIntegrationTest extends TestKitSupport {
 
     testModelProvider.mockToolInvocationRequest(
       msg -> msg.content().equals(userQuestion),
-        new TestModelProvider.ToolInvocationRequest("getTrafficNow", args));
+        new TestModelProvider.ToolInvocationRequest("TrafficService_getTrafficNow", args));
 
     // receives the traffic info as the final answer
     testModelProvider.mockResponseToToolResult(

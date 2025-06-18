@@ -15,10 +15,22 @@ class FunctionToolsSpec extends AnyWordSpec with Matchers {
   trait SimpleTool {
     @FunctionTool(description = "Simple echo function")
     def echo(message: String): String
+
+    @FunctionTool(description = "Simple echo function with number")
+    def echo(num: Int): String
   }
 
   class SimpleToolImpl extends SimpleTool {
-    def echo(message: String): String = message
+    override def echo(message: String): String = message
+
+    override def echo(num: Int): String = num.toString
+  }
+
+  object SimpleToolWrapper {
+    class SimpleToolImpl extends SimpleTool {
+      override def echo(message: String): String = message
+      override def echo(num: Int): String = num.toString
+    }
   }
 
   class MultipleMethodsTool {
@@ -65,23 +77,38 @@ class FunctionToolsSpec extends AnyWordSpec with Matchers {
 
     "find tools in a simple class" in {
       val tools = FunctionTools.descriptorsFor(classOf[SimpleToolImpl])
-      tools.length shouldBe 1
-      tools.head.name shouldBe "echo"
-      tools.head.description shouldBe "Simple echo function"
+      tools.length shouldBe 2
+      tools.map(_.name) should contain allOf (
+        "SimpleToolImpl_echo_String",
+        "SimpleToolImpl_echo_int"
+      )
     }
 
     "create invokers for simple tool" in {
 
       val invokers = FunctionTools.toolInvokersFor(new SimpleToolImpl())
-      invokers.size shouldBe 1
-      invokers.contains("echo") shouldBe true
+      invokers.size shouldBe 2
 
-      val echoInvoker = invokers("echo")
-      echoInvoker.paramNames shouldBe Array("message")
-      echoInvoker.returnType shouldBe classOf[String]
+      invokers.contains("SimpleToolImpl_echo_String") shouldBe true
+      invokers.contains("SimpleToolImpl_echo_int") shouldBe true
 
-      val result = echoInvoker.invoke(Array("Hello world"))
-      result shouldBe "Hello world"
+      { // string invoker
+        val echoInvoker = invokers("SimpleToolImpl_echo_String")
+        echoInvoker.paramNames shouldBe Array("message")
+        echoInvoker.returnType shouldBe classOf[String]
+
+        val result = echoInvoker.invoke(Array("Hello world"))
+        result shouldBe "Hello world"
+      }
+
+      { // number invoker
+        val echoInvoker = invokers("SimpleToolImpl_echo_int")
+        echoInvoker.paramNames shouldBe Array("num")
+        echoInvoker.returnType shouldBe classOf[String]
+
+        val result = echoInvoker.invoke(Array(10))
+        result shouldBe "10"
+      }
     }
 
     "find all tools in a class with multiple methods" in {
@@ -89,12 +116,12 @@ class FunctionToolsSpec extends AnyWordSpec with Matchers {
       tools.length shouldBe 2
 
       val toolNames = tools.map(_.name).toSet
-      (toolNames should contain).allOf("add", "multiply")
+      (toolNames should contain).allOf("MultipleMethodsTool_add", "MultipleMethodsTool_multiply")
 
-      val addTool = tools.find(_.name == "add").get
+      val addTool = tools.find(_.name == "MultipleMethodsTool_add").get
       addTool.description shouldBe "Adds two numbers"
 
-      val multiplyTool = tools.find(_.name == "multiply").get
+      val multiplyTool = tools.find(_.name == "MultipleMethodsTool_multiply").get
       multiplyTool.description shouldBe "Multiplies two numbers"
     }
 
@@ -102,14 +129,14 @@ class FunctionToolsSpec extends AnyWordSpec with Matchers {
 
       val invokers = FunctionTools.toolInvokersFor(new MultipleMethodsTool())
       invokers.size shouldBe 2
-      invokers.contains("add") shouldBe true
-      invokers.contains("multiply") shouldBe true
+      invokers.contains("MultipleMethodsTool_add") shouldBe true
+      invokers.contains("MultipleMethodsTool_multiply") shouldBe true
 
-      val addInvoker = invokers("add")
+      val addInvoker = invokers("MultipleMethodsTool_add")
       val addResult = addInvoker.invoke(Array(5, 3))
       addResult shouldBe 8
 
-      val multiplyInvoker = invokers("multiply")
+      val multiplyInvoker = invokers("MultipleMethodsTool_multiply")
       val multiplyResult = multiplyInvoker.invoke(Array(5, 3))
       multiplyResult shouldBe 15
     }
@@ -146,20 +173,20 @@ class FunctionToolsSpec extends AnyWordSpec with Matchers {
     }
 
     "generate tool descriptors for private methods when using agent tool discovery" in {
-      val tools = FunctionTools.descriptorsForAgent(classOf[SecretAgent])
+      val tools = FunctionTools.descriptorsFor(classOf[SecretAgent])
       tools.length shouldBe 1
-      tools.head.name shouldBe "secretOperation"
+      tools.head.name shouldBe "SecretAgent_secretOperation"
       tools.head.description shouldBe "Secret agent operation"
     }
 
     "access private methods when using agent tool discovery" in {
       val instance = new SecretAgent()
-      val invokers = FunctionTools.toolInvokersForAgent(instance)
+      val invokers = FunctionTools.toolInvokersFor(instance)
 
       invokers.size shouldBe 1
-      invokers.contains("secretOperation") shouldBe true
+      invokers.contains("SecretAgent_secretOperation") shouldBe true
 
-      val secretInvoker = invokers("secretOperation")
+      val secretInvoker = invokers("SecretAgent_secretOperation")
       val result = secretInvoker.invoke(Array("classified"))
 
       result shouldBe "Secret: classified"
@@ -170,10 +197,10 @@ class FunctionToolsSpec extends AnyWordSpec with Matchers {
       val dependencyProvider = new TestDependencyProvider()
       val invokers = FunctionTools.toolInvokersFor(classOf[SimpleToolImpl], Some(dependencyProvider))
 
-      invokers.size shouldBe 1
-      invokers.contains("echo") shouldBe true
+      invokers.size shouldBe 2
+      invokers.contains("SimpleToolImpl_echo_String") shouldBe true
 
-      val prefixInvoker = invokers("echo")
+      val prefixInvoker = invokers("SimpleToolImpl_echo_String")
       val result = prefixInvoker.invoke(Array("Hello"))
 
       result shouldBe "Hello"
@@ -182,9 +209,18 @@ class FunctionToolsSpec extends AnyWordSpec with Matchers {
     "fail when no dependency provider is available" in {
       val exception = intercept[IllegalArgumentException] {
         val invoker = FunctionTools.toolInvokersFor(classOf[SimpleToolImpl], None)
-        invoker("echo").invoke(Array("Hello"))
+        invoker("SimpleToolImpl_echo_String").invoke(Array("Hello"))
       }
       exception.getMessage should include("no DependencyProvider was configured")
+    }
+
+    "adding two tools with the same name should fail" in {
+
+      val exception = intercept[IllegalArgumentException] {
+        FunctionTools.validateNames(Seq(classOf[SimpleToolImpl], classOf[SimpleToolWrapper.SimpleToolImpl]))
+      }
+
+      exception.getMessage should include("Duplicate tool names found:")
     }
   }
 }

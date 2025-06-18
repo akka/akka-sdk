@@ -157,16 +157,21 @@ private[impl] final class AgentImpl[A <: Agent](
             val sessionMemoryClient = deriveMemoryClient(req.memoryProvider)
             val additionalContext = toSpiContextMessages(sessionMemoryClient.getHistory(sessionId))
 
-            // FIXME: we need FQCN to avoid clashes
-            val toolDescriptors =
-              FunctionTools.descriptorsForAgent(agent.getClass) ++
-              req.toolInstancesOrClasses.flatMap {
-                case cls: Class[_] => FunctionTools.descriptorsFor(cls)
-                case any           => FunctionTools.descriptorsFor(any.getClass)
+            val allToolClasses =
+              agent.getClass +: req.toolInstancesOrClasses.map {
+                case cls: Class[_] => cls
+                case any           => any.getClass
               }
 
+            // first, we need to validate them all against tool name clashes
+            // unlikely, but better to crash it them have them shadowing each other
+            FunctionTools.validateNames(allToolClasses)
+
+            val toolDescriptors =
+              allToolClasses.flatMap(FunctionTools.descriptorsFor)
+
             val functionTools =
-              FunctionTools.toolInvokersForAgent(agent) ++
+              FunctionTools.toolInvokersFor(agent) ++
               req.toolInstancesOrClasses.flatMap {
                 case cls: Class[_] => FunctionTools.toolInvokersFor(cls, dependencyProvider)
                 case any           => FunctionTools.toolInvokersFor(any)
