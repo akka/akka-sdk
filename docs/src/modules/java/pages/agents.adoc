@@ -52,7 +52,7 @@ There can only be one command handler because the agent is supposed to perform o
 
 Akka provides integration with several backend AI models, and you have to select which model to use. You can define a default model in `application.conf`:
 
-[source,json,indent=0]
+[source,bash,indent=0]
 .src/main/resources/application.conf
 ----
 include::java:example$doc-snippets/src/main/resources/application.conf[tags=agent-model-config]
