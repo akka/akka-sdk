@@ -297,7 +297,59 @@ public sealed interface ModelProvider {
       return new OpenAi(apiKey, modelName, baseUrl, temperature, topP, maxTokens);
     }
   }
-  
+
+  /**
+   * Settings for the HuggingFace Large Language Model provider.
+   */
+  static HuggingFace huggingFace() {
+    // Implementation omitted for shortness
+    return new HuggingFace("","", "", Double.NaN, Double.NaN, -1);
+  }
+
+  record HuggingFace(
+      String accessToken,
+      String modelId,
+      String baseUrl,
+      double temperature,
+      double topP,
+      int maxNewTokens) implements ModelProvider {
+
+    public static HuggingFace fromConfig(Config config) {
+      return new HuggingFace(
+          config.getString("access-token"),
+          config.getString("model-id"),
+          config.getString("base-url"),
+          config.getDouble("temperature"),
+          config.getDouble("top-p"),
+          config.getInt("max-new-tokens"));
+    }
+
+    public HuggingFace withAccessToken(String accessToken) {
+      return new HuggingFace(accessToken, this.modelId, this.baseUrl, this.temperature, this.topP, this.maxNewTokens);
+    }
+
+    public HuggingFace withModelId(String modelId) {
+      return new HuggingFace(this.accessToken, modelId, this.baseUrl, this.temperature, this.topP, this.maxNewTokens);
+    }
+
+    public HuggingFace withBaseUrl(String baseUrl) {
+      return new HuggingFace(this.accessToken, this.modelId, baseUrl, this.temperature, this.topP, this.maxNewTokens);
+    }
+
+    public HuggingFace withTemperature(Double temperature) {
+      return new HuggingFace(this.accessToken, this.modelId, this.baseUrl, temperature, this.topP, this.maxNewTokens);
+    }
+
+    public HuggingFace withTopP(Double topP) {
+      return new HuggingFace(this.accessToken, this.modelId, this.baseUrl, this.temperature, topP, this.maxNewTokens);
+    }
+
+    public HuggingFace withMaxNewTokens(Integer maxNewTokens) {
+      return new HuggingFace(this.accessToken, this.modelId, this.baseUrl, this.temperature, this.topP, maxNewTokens);
+    }
+  }
+
+
   static Custom custom(Custom provider) {
     return provider;
   }
