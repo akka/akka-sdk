@@ -31,7 +31,8 @@ private[javasdk] object DocLinks {
     "AK-007" -> "java/using-jwts.html",
     "AK-008" -> "java/timed-actions.html",
     "AK-009" -> "java/access-control.html",
-    "AK-010" -> "java/workflows.html")
+    "AK-010" -> "java/workflows.html",
+    "AK-020" -> "java/agents.html")
 
   def forErrorCode(code: String): Option[String] = {
     val page = errorCodes.get(code).orElse(errorCodeCategories.get(code.take("AK-000".length)))
