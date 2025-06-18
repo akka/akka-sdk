@@ -446,6 +446,20 @@ include::example$doc-snippets/src/main/java/com/example/application/RemoteMcpWea
 
 When using MCP endpoints in other Akka services, the service ACLs apply just like for xref:http-endpoints.adoc[HTTP endpoints] and xref:grpc-endpoints.adoc[gRPC endpoints].
 
+[#configuring_tool_call_limits]
+=== Configuring tool call limits
+
+Inside a single request/response cycle, an LLM can successively request the agent to call functions tools. After analyzing the result of a tool call, the LLM might decide to request another call to gather more context. The `akka.javasdk.agent.max-tool-call-steps` setting limits how many such steps may occur between a user request and the final AI response.
+
+By default, this value is set to 100. You can adjust this in your configuration:
+
+[source,hocon]
+----
+akka.javasdk.agent.max-tool-call-steps = 150  # Increase the limit to allow more tool calls
+----
+
+Note that this value cannot be set to 0 or less than 0, as tool calls would be impossible with such settings.
+
 == Use ComponentClient in an Agent
 
 xref:java:setup-and-dependency-injection.adoc#_dependency_injection[Dependency injection] can be used in an
