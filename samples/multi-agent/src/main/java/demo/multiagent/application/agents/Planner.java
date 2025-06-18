@@ -7,6 +7,9 @@ import akka.javasdk.annotations.AgentDescription;
 import akka.javasdk.annotations.ComponentId;
 import demo.multiagent.domain.AgentSelection;
 import demo.multiagent.domain.Plan;
+import demo.multiagent.domain.PlanStep;
+
+import java.util.List;
 
 // tag::all[]
 @ComponentId("planner-agent")
@@ -65,11 +68,17 @@ public class Planner extends Agent {
   }
 
   public Effect<Plan> createPlan(Request request) {
-    return effects()
-      .systemMessage(buildSystemMessage(request.agentSelection))
-      .userMessage(request.message())
-      .responseAs(Plan.class)
-      .thenReply();
+    if (request.agentSelection.agents().size() == 1) {
+      // no need to call an LLM to make a plan where selection has a single agent
+      var step = new PlanStep(request.agentSelection.agents().getFirst(), request.message());
+      return effects().reply(new Plan(List.of(step)));
+    } else {
+      return effects()
+        .systemMessage(buildSystemMessage(request.agentSelection))
+        .userMessage(request.message())
+        .responseAs(Plan.class)
+        .thenReply();
+      }
   }
 }
 // end::all[]
