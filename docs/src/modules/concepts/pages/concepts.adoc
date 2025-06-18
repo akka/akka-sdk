@@ -50,18 +50,62 @@ The Akka Agentic Platform contains an SDK for development, the Akka runtime for 
 |Akka services should never require code changes when moving into production.
 |===
 
-== Anatomy of an autonomous agentic AI system
+== Anatomy of an Agentic system
 
-An autonomous agentic AI system consists of the following behaviors:
+An agentic system is a distributed system that requires a variety of behaviors and infrastructure.
 
-[horizontal]
-Agents:: Active components that pursue goals by observing input, making decisions, and taking action. May be stateful or stateless. Often orchestrate workflows, interact with memory, or invoke tools.
-Tools:: External systems, APIs, or functions that agents can call to perform tasks beyond their own capabilities, such as querying a database or triggering an external service.
-Goals:: Define the desired outcome or intent of an agent. Goals guide reasoning and determine what success looks like for a given task or interaction.
-Guardians:: Enforce constraints or boundaries on behavior. Guardians ensure the agent stays within acceptable, ethical, or operational limits, even as it explores solutions autonomously.
-Adaptation:: Enables the agent to adjust its strategy in response to changing inputs, failure states, or unexpected outcomes. A hallmark of resilient systems.
-Coordination:: Allows agents to interact with other agents, users, tools, or services in a coherent way. Coordination is essential for sequencing actions, sharing context, or achieving group-level outcomes.
-Shared State (memory):: Provides continuity across invocations, sessions, or agents. Shared state allows the system to retain knowledge, track decisions, and synchronize behavior in distributed environments.
+image:concepts:agentic-ai-system-anatomy.png[Akka Agentic Platform]
+
+[cols="1,3", options="header"]
+|===
+|Aspect |AI Role and Responsibility
+
+|Agents
+|Components that integrate with AI to perceive their environment, make decisions and take actions toward a specific goal
+
+You implement agents in Akka with the xref:java:agents.adoc[Agent] component.
+
+|Tools
+|Any public method made available to Model Context Protocol (MCP) clients.
+
+You invoke tools in Akka through _embedded agent function calls_ or by _invoking a remote MCP tool_. You can implement MCP servers with the xref:java:mcp-endpoints.adoc[MCP Endpoints] component.
+
+|Endpoints
+|Externally accessible entry points through which agents are launched and controlled.
+
+You implement Endpoints in Akka using either xref:java:http-endpoints.adoc[HTTP], xref:java:grpc-endpoints.adoc[gRPC] or xref:java:mcp-endpoints.adoc[MCP] protocols.
+
+|Goals
+|Clear objectives or outcomes that agents continuously work toward by making decisions and taking actions on their own.
+
+You implement goals in Akka by implementing a multi-agent system _with a planner agent_ using a xref:java:workflows.adoc[Workflow] component to orchestrate the cross-agent interactions.
+
+|Guardians
+|Components that monitor, protect and evaluate the system against its goals and constraints. 
+
+You implement guardians in Akka by...
+ifdef::todo[TODO: get some thoughts from Patrik on this]
+|Adaptation
+|Continuous, real-time streams from users or the environment which can alter the context, memory or semantic knowledge used by an agentic system.
+
+You implement adaptation in Akka by processing a stream of data from external sensors, either with the xref:java:consuming-producing.adoc[Consumer] component or through streaming HTTP or gRPC interfaces. xref:java:consuming-producing.adoc[Consumers] can modify an agent’s goals, memory, or guardians to affect the behavior of the system.
+
+|Orchestration
+|The ability to execute, persist and recover long-running tasks made possible through _durable execution_.
+
+You implement orchestration in Akka with the xref:java:workflows.adoc[Workflow] component.
+
+|Memory
+|Data that enables agents to reason over time, track context, make correct decisions and learn from experience.
+
+You inherit agentic and episodic (short-term) durable memory automatically when you implement a stateful xref:java:agents.adoc[Agent] component. You can get long-term, multi-agent memory by implementing xref:java:event-sourced-entities.adoc[Event Sourced Entity] or xref:java:key-value-entities.adoc[Key Value Entity] components.
+
+|Registry
+|A built-in directory that stores information about all agents so they can be discovered and called upon in multi-agent systems.
+
+You implement a registry in Akka by... 
+ifdef::todo[TODO: We need to talk to Patrik about this...]
+|===
 
 == Properties of a distributed system
 

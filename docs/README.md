@@ -60,3 +60,7 @@ The WIP documentation will be published and available for viewing at [https://do
 The [`antora-ui-default`](https://github.com/lightbend/antora-ui-default) repository contains the source files used to build the `akka-theme-ui-002-bundle.zip` bundle. This repository is based on the [Antora Default UI](https://gitlab.com/antora/antora-ui-default) and has been customized for Akka documentation needs.  
 
 To modify or extend the theme, clone the [`antora-ui-default`](https://github.com/lightbend/antora-ui-default) repository, make the necessary changes, and build a new bundle.
+
+## Graphical assets
+
+The [akka-graphical-design-and-images](https://github.com/akka/akka-graphical-design-and-images) repository stores diagrams, icons, and other visual assets used in the documentation. It enables collaboration on editable source files (e.g. SVG, Illustrator) and to make future updates easier.
