@@ -72,6 +72,7 @@ public class CompactionAgent extends Agent {
         .memory(MemoryProvider.none()) // <4>
         .model(ModelProvider
             .openAi()
+            .withModelName("gpt-4o-mini")
             .withApiKey(System.getenv("OPENAI_API_KEY"))
             .withMaxTokens(1000))
         .systemMessage(SYSTEM_MESSAGE)

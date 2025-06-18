@@ -35,9 +35,9 @@ The guide xref:getting-started:ask-akka-agent/index.adoc[AI agent that performs 
 Sometimes a similar retrieval-and-augment approach can be used without a vector database, especially when the required context is structured and can be fetched directly. This follows the same RAG pattern but targets specific data sources like entities or views. It may look like this:
 
 [source,java]
-.{sample-base-url}/doc-snippets/src/main/java/com/example/application/ActivityAgent.java[ActivityAgent.java]
+.ActivityAgent.java
 ----
-include::example$doc-snippets/src/main/java/com/example/application/ActivityAgent.java[tag=di]
+include::example$doc-snippets/src/main/java/com/example/application/ActivityAgentMore.java[tag=di]
 ----
 <1> Inject the `ComponentClient` as a constructor parameter.
 <2> Retrieve preferences from an entity.

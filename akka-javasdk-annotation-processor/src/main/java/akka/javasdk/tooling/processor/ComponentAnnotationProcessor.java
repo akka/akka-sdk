@@ -93,7 +93,8 @@ public class ComponentAnnotationProcessor extends AbstractProcessor {
                   .stream()
                   .collect(Collectors.groupingBy(element -> componentTypeFor(element, annotation)));
                 elementsPerComponentType.forEach((componentType, elements) -> {
-                    var classNames = new ArrayList<>(elements.stream().map(element -> element.getQualifiedName().toString()).toList());
+                    var classNames = new ArrayList<>(elements.stream().map(element ->
+                        processingEnv.getElementUtils().getBinaryName((TypeElement) element).toString()).toList());
                     if (componentTypeToConcreteComponents.containsKey(componentType)) {
                         // the same component might have multiple annotations, deduplication happens when creating config later
                         classNames.addAll(componentTypeToConcreteComponents.get(componentType));
