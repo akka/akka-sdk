@@ -73,7 +73,7 @@ You invoke tools in Akka through _embedded agent function calls_ or by _invoking
 |Endpoints
 |Externally accessible entry points through which agents are launched and controlled.
 
-You implement Endpoints in Akka using either xref:java:http-endpoints.adoc[HTTP], xref:java:grpc-endpoints.adoc[gRPC] or xref:java:mcp-endpoints.adoc[MCP] endpoint components.
+You implement Endpoints in Akka using either xref:java:http-endpoints.adoc[HTTP], xref:java:grpc-endpoints.adoc[gRPC] or xref:java:mcp-endpoints.adoc[MCP] Endpoint components.
 
 |Goals
 |Clear objectives or outcomes that agents continuously work toward by making decisions and taking actions on their own.
