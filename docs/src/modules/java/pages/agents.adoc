@@ -453,11 +453,11 @@ Inside a single request/response cycle, an LLM can successively request the agen
 By default, this value is set to 100. You can adjust this in your configuration:
 
 [source,hocon]
+.application.conf
 ----
-akka.javasdk.agent.max-tool-call-steps = 150  # Increase the limit to allow more tool calls
+# Increase the limit to allow more tool calls
+akka.javasdk.agent.max-tool-call-steps = 150
 ----
-
-Note that this value cannot be set to 0 or less than 0, as tool calls would be impossible with such settings.
 
 == Use ComponentClient in an Agent
 
