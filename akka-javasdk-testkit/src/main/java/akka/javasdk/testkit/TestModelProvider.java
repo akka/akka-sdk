@@ -22,7 +22,6 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 /**
@@ -55,11 +54,58 @@ public class TestModelProvider implements ModelProvider.Custom {
   public sealed interface InputMessage {
     String content();
   }
-  public record UserQuestion(String content) implements InputMessage {}
+  public record UserMessage(String content) implements InputMessage {}
   public record ToolResult(String name, String content) implements InputMessage {}
 
   private List<Pair<Predicate<InputMessage>, Function<InputMessage, AiResponse>>> responsePredicates = new ArrayList<>();
 
+
+  public static class BaseReplyBuilder {
+
+    final protected TestModelProvider provider;
+    final protected Predicate<InputMessage> predicate;
+
+    public BaseReplyBuilder(TestModelProvider provider, Predicate<InputMessage> predicate) {
+      this.provider = provider;
+      this.predicate = predicate;
+    }
+
+
+    public void reply(String message) {
+      reply(new AiResponse(message));
+    }
+
+    public void reply(ToolInvocationRequest request) {
+      reply(new AiResponse(request));
+    }
+
+    public void reply(AiResponse response) {
+      provider.responsePredicates.add(new Pair<>(predicate, msg -> response));
+    }
+
+
+    /**
+     * Return a given runtime exception for a request matching the predicate.
+     */
+    public void failWith(RuntimeException error) {
+      provider.responsePredicates.add(new Pair<>(predicate, msg -> { throw error; }));
+    }
+
+  }
+
+  public static class ToolResultReplyBuilder extends BaseReplyBuilder {
+
+    public ToolResultReplyBuilder(TestModelProvider provider, Predicate<InputMessage> predicate) {
+      super(provider, predicate);
+    }
+
+    public void thenReply(Function<ToolResult, AiResponse> handler) {
+      // safe to cast because messagePredicate is protecting it
+      Function<InputMessage, AiResponse>  castedHandler =
+        (input) -> handler.apply((ToolResult) input);
+      provider.responsePredicates.add(new Pair<>(predicate, castedHandler));
+    }
+  }
 
   @Override
   public Object createChatModel() {
@@ -103,7 +149,7 @@ public class TestModelProvider implements ModelProvider.Custom {
         .filter(chatMessage -> chatMessage instanceof dev.langchain4j.data.message.UserMessage || chatMessage instanceof ToolExecutionResultMessage)
         .map(chatMessage ->  {
           if (chatMessage instanceof dev.langchain4j.data.message.UserMessage userMessage) {
-            return new UserQuestion(userMessage.singleText());
+            return new UserMessage(userMessage.singleText());
           } else {
             ToolExecutionResultMessage result = (ToolExecutionResultMessage) chatMessage;
             return new ToolResult(result.toolName(), result.text());
@@ -153,7 +199,7 @@ public class TestModelProvider implements ModelProvider.Custom {
    * Always return this response.
    */
   public void fixedResponse(String response) {
-    mockResponse(__ -> true, response);
+    whenMessage(msg -> true).reply(response);
   }
 
   /**
@@ -164,40 +210,25 @@ public class TestModelProvider implements ModelProvider.Custom {
     responsePredicates.add(new Pair<>(messagePredicate, msg -> new AiResponse(response)));
   }
 
-  public void mockResponse(Predicate<String> predicate, AiResponse response) {
+
+  public BaseReplyBuilder whenMessage(Predicate<String> predicate) {
     Predicate<InputMessage> messagePredicate = (value) -> predicate.test(value.content());
-    responsePredicates.add(new Pair<>(messagePredicate, msg -> response));
+    return new BaseReplyBuilder(this, messagePredicate);
   }
 
-  public void mockToolInvocationRequest(Predicate<InputMessage> predicate, ToolInvocationRequest request) {
-
-    Function<InputMessage, AiResponse>  handler =
-      (input) -> new AiResponse(request);
-
-    responsePredicates.add(new Pair<>(predicate, handler));
+  public BaseReplyBuilder whenUserMessage(Predicate<UserMessage> predicate) {
+    Predicate<InputMessage> messagePredicate = (value) ->
+      value instanceof UserMessage userQuestion && predicate.test(userQuestion);
+    return new BaseReplyBuilder(this, messagePredicate);
   }
 
-  public void mockResponseToToolResult(Predicate<ToolResult> predicate, Function<ToolResult, AiResponse> handler) {
-    Predicate<InputMessage> messagePredicate = (value) -> {
-      if (value instanceof ToolResult response)
-        return predicate.test(response);
-      else return false;
-    };
-
-    // safe to cast because messagePredicate is protecting it
-    Function<InputMessage, AiResponse>  castedHandler =
-      (input) -> handler.apply((ToolResult) input);
-
-    responsePredicates.add(new Pair<>(messagePredicate, castedHandler));
+  public ToolResultReplyBuilder whenToolResult(Predicate<ToolResult> predicate) {
+    Predicate<InputMessage> messagePredicate = (value) ->
+      value instanceof ToolResult toolResult && predicate.test(toolResult);
+    return new ToolResultReplyBuilder(this, messagePredicate);
   }
 
-  /**
-   * Return a given runtime exception for a request that matches the predicate.
-   */
-  public void mockError(Predicate<String> predicate, RuntimeException error) {
-    Predicate<InputMessage> messagePredicate = (value) -> predicate.test(value.content());
-    responsePredicates.add(new Pair<>(messagePredicate, msg -> { throw error; }));
-  }
+
 
   /**
    * Remove previously added responses.

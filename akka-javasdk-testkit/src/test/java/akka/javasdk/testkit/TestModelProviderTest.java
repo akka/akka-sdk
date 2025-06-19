@@ -110,8 +110,14 @@ class TestModelProviderTest {
 
   @Test
   void testMockResponseWithPredicate() {
-    testModelProvider.mockResponse(text -> text.contains("hello"), "Hello response");
-    testModelProvider.mockResponse(text -> text.contains("goodbye"), "Goodbye response");
+
+    testModelProvider
+      .whenMessage(text -> text.contains("hello"))
+      .reply("Hello response");
+
+    testModelProvider
+      .whenMessage(text -> text.contains("goodbye"))
+      .reply("Goodbye response");
 
     ChatModel chatModel = (ChatModel) testModelProvider.createChatModel();
 
@@ -132,7 +138,9 @@ class TestModelProviderTest {
 
   @Test
   void testMockResponseNoMatch() {
-    testModelProvider.mockResponse(text -> text.contains("specific"), "Specific response");
+    testModelProvider
+      .whenMessage(text -> text.contains("specific"))
+      .reply("Specific response");
 
     ChatModel chatModel = (ChatModel) testModelProvider.createChatModel();
     ChatRequest request = ChatRequest.builder()
@@ -205,8 +213,13 @@ class TestModelProviderTest {
 
   @Test
   void testMultipleResponsePredicatesFirstMatch() {
-    testModelProvider.mockResponse(text -> text.contains("first"), "First response");
-    testModelProvider.mockResponse(text -> text.contains("first"), "Second response");
+    testModelProvider
+      .whenMessage(text -> text.contains("first"))
+      .reply("First response");
+
+    testModelProvider
+      .whenMessage(text -> text.contains("first"))
+      .reply("Second response");
 
     ChatModel chatModel = (ChatModel) testModelProvider.createChatModel();
     ChatRequest request = ChatRequest.builder()
