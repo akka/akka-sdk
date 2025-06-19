@@ -97,10 +97,7 @@ include::example$doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[ta
 If no ACLs are defined at all, Akka will deny requests from both other services and the internet to all components of
 an Akka service.
 
-IMPORTANT: The Maven archetype includes an example endpoint with a very permissive ACL that opens access to public
-internet
-requests. This allows for easy try out and testing. For production usage, make sure to add appropriate ACL
-restrictions.
+IMPORTANT: The endpoint in the xref:getting-started:author-your-first-service.adoc[getting started sample] has a very permissive ACL that opens access to public internet requests. This allows for easy try out and testing. For production usage, make sure to add appropriate ACL restrictions.
 
 === Customizing the deny code
 
