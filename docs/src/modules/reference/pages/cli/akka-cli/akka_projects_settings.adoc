@@ -1,27 +1,15 @@
-= akka services logging set-level
+= akka projects settings
 
-Set the logger level configuration.
+Configures the settings on a project.
 
 == Synopsis
 
-Set the logger level configuration for a specific logger in the given service.
-This configuration will be applied to all instances of the service.
-
-----
-akka services logging set-level [SERVICE_NAME] [LOGGER_NAME] [LEVEL] [flags]
-----
-
-== Examples
-
-----
-
-> akka service logging set-level my-service com.example.MyClass DEBUG
-----
+The `akka project settings` commands provides a way to configure the settings of a project
 
 == Options
 
 ----
-  -h, --help   help for set-level
+  -h, --help   help for settings
 ----
 
 == Options inherited from parent commands
@@ -41,7 +29,9 @@ akka services logging set-level [SERVICE_NAME] [LOGGER_NAME] [LEVEL] [flags]
 
 == SEE ALSO
 
-* link:akka_services_logging.html[akka services logging]	 - Change the log level configuration of a service.
+* link:akka_projects.html[akka projects]	 - Manage your Akka projects.
+* link:akka_projects_settings_down-region.html[akka projects settings down-region]	 - Downs a region without need for redeployment.
+Optionally select a new region as a primary.
 
 [discrete]
 

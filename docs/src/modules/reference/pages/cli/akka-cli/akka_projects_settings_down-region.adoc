@@ -1,27 +1,23 @@
-= akka services logging set-level
+= akka projects settings down-region
 
-Set the logger level configuration.
+Downs a region without need for redeployment.
+Optionally select a new region as a primary.
 
 == Synopsis
 
-Set the logger level configuration for a specific logger in the given service.
-This configuration will be applied to all instances of the service.
+The `akka project settings down-region` command downs a region of this project.
 
 ----
-akka services logging set-level [SERVICE_NAME] [LOGGER_NAME] [LEVEL] [flags]
-----
-
-== Examples
-
-----
-
-> akka service logging set-level my-service com.example.MyClass DEBUG
+akka projects settings down-region REGION [NEW_PRIMARY_REGION] [flags]
 ----
 
 == Options
 
 ----
-  -h, --help   help for set-level
+  -h, --help             help for down-region
+      --owner string     the owner of the project to use, needed if you have two projects with the same name from different owners
+      --project string   project to use if not using the default configured project
+      --region string    region to use if project has more than one region
 ----
 
 == Options inherited from parent commands
@@ -41,7 +37,7 @@ akka services logging set-level [SERVICE_NAME] [LOGGER_NAME] [LEVEL] [flags]
 
 == SEE ALSO
 
-* link:akka_services_logging.html[akka services logging]	 - Change the log level configuration of a service.
+* link:akka_projects_settings.html[akka projects settings]	 - Configures the settings on a project.
 
 [discrete]
 

@@ -42,7 +42,7 @@ akka services logging unset-level [SERVICE_NAME] [LOGGER_NAME] [flags]
 
 == SEE ALSO
 
-* link:akka_services_logging.html[akka services logging]	 - Change the log level configration of a service.
+* link:akka_services_logging.html[akka services logging]	 - Change the log level configuration of a service.
 
 [discrete]
 

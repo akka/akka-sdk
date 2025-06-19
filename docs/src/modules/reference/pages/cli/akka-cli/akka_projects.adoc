@@ -41,6 +41,7 @@ For more details on projects, see https://doc.akka.io/operations/projects/index.
 * link:akka_projects_observability.html[akka projects observability]	 - Manage the observability settings for your Akka project.
 * link:akka_projects_open.html[akka projects open]	 - Open the current project in the console.
 * link:akka_projects_regions.html[akka projects regions]	 - Manage the regions assigned to your Akka project.
+* link:akka_projects_settings.html[akka projects settings]	 - Configures the settings on a project.
 * link:akka_projects_tokens.html[akka projects tokens]	 - Manage your Akka project service tokens.
 * link:akka_projects_update.html[akka projects update]	 - Update project attributes such as name and description.
 
