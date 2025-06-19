@@ -432,7 +432,7 @@ available tools from each server based on their name.
 It is also possible to intercept, modify, or deny MCP tool requests, or their responses by defining a `RemoteMcpTools.ToolInterceptor`.
 
 [source,java]
-.{sample-base-url}/doc-snippets/src/main/java/com/example/application/RemoteMcpWeatherAgent.java[RemoteMcpAgent.java]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/application/RemoteMcpWeatherAgent.java[RemoteMcpWeatherAgent.java]
 ----
 include::example$doc-snippets/src/main/java/com/example/application/RemoteMcpWeatherAgent.java[tag=mcp-function-tool]
 ----
