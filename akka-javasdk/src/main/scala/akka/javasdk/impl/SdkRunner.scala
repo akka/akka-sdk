@@ -172,6 +172,12 @@ class SdkRunner private (dependencyProvider: Option[DependencyProvider], disable
     val cleanupInterval =
       applicationConf.getDuration("akka.javasdk.delete-entity.cleanup-interval")
 
+    val maxToolCallSteps =
+      applicationConf.getInt("akka.javasdk.agent.max-tool-call-steps")
+    if (maxToolCallSteps <= 0)
+      throw new IllegalArgumentException(
+        "The value of `akka.javasdk.agent.max-tool-call-steps` must be greater than 0.")
+
     val devModeSettings =
       if (applicationConf.getBoolean("akka.javasdk.dev-mode.enabled"))
         Some(
@@ -186,7 +192,12 @@ class SdkRunner private (dependencyProvider: Option[DependencyProvider], disable
       else
         None
 
-    new SpiSettings(eventSourcedEntitySnapshotEvery, cleanupDeletedEntityAfter, cleanupInterval, devModeSettings)
+    new SpiSettings(
+      eventSourcedEntitySnapshotEvery,
+      cleanupDeletedEntityAfter,
+      cleanupInterval,
+      maxToolCallSteps,
+      devModeSettings)
   }
 
   private def extractBrokerConfig(eventingConf: Config): SpiEventingSupportSettings = {

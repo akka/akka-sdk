@@ -432,8 +432,7 @@ available tools from each server based on their name.
 It is also possible to intercept, modify, or deny MCP tool requests, or their responses by defining a `RemoteMcpTools.ToolInterceptor`.
 
 [source,java]
-.{sample-base-url}/doc-snippets/src/main/java/com/example/application/RemoteMcpWeatherAgent.java[RemoteMcpAgent
-.java]
+.{sample-base-url}/doc-snippets/src/main/java/com/example/application/RemoteMcpWeatherAgent.java[RemoteMcpWeatherAgent.java]
 ----
 include::example$doc-snippets/src/main/java/com/example/application/RemoteMcpWeatherAgent.java[tag=mcp-function-tool]
 ----
@@ -445,6 +444,20 @@ include::example$doc-snippets/src/main/java/com/example/application/RemoteMcpWea
 
 
 When using MCP endpoints in other Akka services, the service ACLs apply just like for xref:http-endpoints.adoc[HTTP endpoints] and xref:grpc-endpoints.adoc[gRPC endpoints].
+
+[#configuring_tool_call_limits]
+=== Configuring tool call limits
+
+Inside a single request/response cycle, an LLM can successively request the agent to call functions tools or MCP tools. After analyzing the result of a call, the LLM might decide to request another call to gather more context. The `akka.javasdk.agent.max-tool-call-steps` setting limits how many such steps may occur between a user request and the final AI response.
+
+By default, this value is set to 100. You can adjust this in your configuration:
+
+[source,hocon]
+.application.conf
+----
+# Increase the limit to allow more tool calls
+akka.javasdk.agent.max-tool-call-steps = 150
+----
 
 == Use ComponentClient in an Agent
 
