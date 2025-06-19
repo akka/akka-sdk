@@ -64,8 +64,8 @@ id and the response message only includes the correlation id to not leak service
 Akka's gRPC endpoints can be secured by multiple approaches:
 
 . xref:java:access-control.adoc[]
-. xref:security:jwts.adoc[]
-. xref:security:tls-certificates.adoc[]
+. xref:reference:jwts.adoc[]
+. xref:operations:tls-certificates.adoc[]
 
 == Interacting with other components ==
 
@@ -188,5 +188,5 @@ updates to the code wherever it is accessing the old field.
 == See also
 
 - xref:java:access-control.adoc[]
-- xref:security:jwts.adoc[]
-- xref:security:tls-certificates.adoc[]
+- xref:reference:jwts.adoc[]
+- xref:operations:tls-certificates.adoc[]

@@ -23,12 +23,14 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
 import static akka.Done.done;
+import static java.time.temporal.ChronoUnit.MINUTES;
 
 /**
  * This workflow reads the files under src/main/resources/md-docs/ and create
@@ -102,7 +104,7 @@ public class RagIndexingWorkflow extends Workflow<RagIndexingWorkflow.State> {
         .createIndex(true)
         .build();
 
-    this.splitter = new DocumentByCharacterSplitter(500, 50, OpenAiUtils.buildTokenizer()); // <1>
+    this.splitter = new DocumentByCharacterSplitter(500, 50); // <1>
   }
   // end::cons[]
 
@@ -164,7 +166,10 @@ public class RagIndexingWorkflow extends Workflow<RagIndexingWorkflow.State> {
           }
         });
 
-    return workflow().addStep(processing);
+    return workflow()
+        .addStep(processing)
+        // the processing step is long-running, so we need to set a big timeout
+        .defaultStepTimeout(Duration.of(20, MINUTES));
   }
   // end::def[]
 

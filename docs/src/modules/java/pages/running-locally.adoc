@@ -12,7 +12,7 @@ include::ROOT:partial$local-dev-prerequisites.adoc[]
 [[_starting_your_service]]
 == Starting your service
 
-As an example, we will use the xref:shopping-cart/quickstart.adoc[Shopping Cart] sample.
+As an example, we will use the xref:getting-started:build-and-deploy-shopping-cart.adoc[Shopping Cart] sample.
 
 To start your service locally, run the following command from the root of your project:
 
@@ -49,7 +49,7 @@ Use `Ctrl+c` to shut down the service.
 
 == Run from IntelliJ
 
-The samples and archetype include a run configuration for IntelliJ. In the toolbar you should see:
+The xref:getting-started:author-your-first-service.adoc[getting started sample] and other samples include a run configuration for IntelliJ. In the toolbar you should see:
 
 image:run-intellij.png[]
 

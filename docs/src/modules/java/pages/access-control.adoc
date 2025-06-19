@@ -7,7 +7,7 @@ specify lists of what can access your services, at multiple granularity. For exa
 initiates a payment on a payment service to only accept requests from the shopping cart service. You can also control
 whether services or methods can be invoked from the Internet.
 
-For a conceptual introduction, see xref:security:acls.adoc[] in the **Security** section.
+For a conceptual introduction, see xref:concepts:acls.adoc[] in the **Concepts** section.
 
 ==  Principals
 
@@ -18,7 +18,7 @@ by the service name chosen when deployed. Akka uses mutual TLS (mTLS) to associa
 Note that requests that have the internet principal are requests that Akka has identified as coming through the Akka
 ingress route. This is identified by mTLS, however it does not imply that mTLS has been
 used to connect to the ingress from the client in the internet. These are separate hops. To configure mTLS from
-internet clients, see xref:security:tls-certificates.adoc[TLS certificates].
+internet clients, see xref:operations:tls-certificates.adoc[TLS certificates].
 
 == Configuring ACLs
 
@@ -97,10 +97,7 @@ include::example$doc-snippets/src/main/java/com/example/acl/UserEndpoint.java[ta
 If no ACLs are defined at all, Akka will deny requests from both other services and the internet to all components of
 an Akka service.
 
-IMPORTANT: The Maven archetype includes an example endpoint with a very permissive ACL that opens access to public
-internet
-requests. This allows for easy try out and testing. For production usage, make sure to add appropriate ACL
-restrictions.
+IMPORTANT: The endpoint in the xref:getting-started:author-your-first-service.adoc[getting started sample] has a very permissive ACL that opens access to public internet requests. This allows for easy try out and testing. For production usage, make sure to add appropriate ACL restrictions.
 
 === Customizing the deny code
 

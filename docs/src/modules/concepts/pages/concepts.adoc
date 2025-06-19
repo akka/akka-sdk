@@ -1,0 +1,108 @@
+= Foundations of Akka agentic AI systems
+
+include::ROOT:partial$include.adoc[]
+
+include::ROOT:partial$concepts-intro.adoc[]
+
+== Design goals of Akka
+
+[horizontal]
+Simple:: Development is approachable by anyone with coding skills.
+Elastic:: Scales processing and memory management gracefully.
+Resilient:: Recovers from any form of failure, including network and hallucination.
+Interoperable:: Operates with any external system, protocol, or API.
+Composable:: Enables system designs to evolve from simple to complex.
+Batteries-included:: Includes orchestration, runtimes, and distributed state management.
+Production-ready:: No code changes required to move from development to production.
+
+== Anatomy of an autonomous agentic AI system
+
+An autonomous agentic AI system consists of the following behaviors:
+
+[horizontal]
+Agents:: Active components that pursue goals by observing input, making decisions, and taking action. May be stateful or stateless. Often orchestrate workflows, interact with memory, or invoke tools.
+Tools:: External systems, APIs, or functions that agents can call to perform tasks beyond their own capabilities, such as querying a database or triggering an external service.
+Goals:: Define the desired outcome or intent of an agent. Goals guide reasoning and determine what success looks like for a given task or interaction.
+Guardians:: Enforce constraints or boundaries on behavior. Guardians ensure the agent stays within acceptable, ethical, or operational limits, even as it explores solutions autonomously.
+Adaptation:: Enables the agent to adjust its strategy in response to changing inputs, failure states, or unexpected outcomes. A hallmark of resilient systems.
+Coordination:: Allows agents to interact with other agents, users, tools, or services in a coherent way. Coordination is essential for sequencing actions, sharing context, or achieving group-level outcomes.
+Shared State (memory):: Provides continuity across invocations, sessions, or agents. Shared state allows the system to retain knowledge, track decisions, and synchronize behavior in distributed environments.
+
+== Autonomous AI runtimes
+
+Akka supports three fundamental runtime types:
+
+1. Durable execution
+* Long-lived
+* Persists the call stack after every invocation
+* Enables recovery and retry mechanisms
+
+2. Transactional
+* Short-lived
+* High-throughput, concurrent processing
+
+3. Streaming
+* Never-ending
+* Continuous execution of data streams
+
+Akka combines all three runtime types into a single engine. This allows for high resource utilization (up to 95%) without impacting performance.
+
+== Akka components
+
+Akka provides composable building blocks suitable for constructing agentic AI or distributed systems:
+
+[horizontal]
+Agents:: Stateful or stateless processing units
+Workflows:: Durable execution with control flow support
+Endpoints:: Interfaces for API communication
+Entities:: Durable memory stores
+Views:: Read-optimized projections
+Consumers:: Streaming data processors
+Timers:: Time-based triggers
+
+== Component interoperability
+
+Akka components can communicate seamlessly, regardless of physical location. Location transparency ensures efficient message routing and runtime efficiency, even across network boundaries.
+
+There are two main modes of inter-component communication in Akka:
+
+1. **ComponentClient**: Asynchronous, non-blocking invocations. Components return immediately after dispatching a message, regardless of destination.
+
+2. **Events**: Components emit events that others may subscribe to. This pattern enables decoupled, brokerless messaging similar to pub/sub systems. Akka components may also subscribe to events from external sources (e.g., APIs, brokers).
+
+== Component composability
+
+Components can be connected in flexible arrangements, offering creative freedom in system design.
+
+Examples of component connections include:
+[horizontal]
+Endpoint → Agent:: An API endpoint that invokes an agent for processing.
+Endpoint → Workflow:: An API endpoint that triggers a workflow for complex tasks.
+Workflow → Agent:: A workflow that orchestrates an agent to perform specific actions.
+Agent → Agent:: An agent that delegates tasks to another agent.
+Agent → Entity:: An agent that interacts with an entity to store or retrieve data.
+Agent → View:: An agent that updates a view with processed data.
+Stream → Consumer:: A data stream that is processed by a consumer component.
+
+The possibilities are only limited by the developer's imagination. Akka's composable design encourages experimentation and evolution in system architecture.
+
+== Shared and distributed state (memory)
+
+Akka fulfills all shared data (memory) requirements for agentic AI systems.
+
+[cols="1,1,3", width=85%]
+|===
+| Type | Provided by | Description
+| Agentic | Akka Agent component (automatic for every agent) | Tracks the intermediate steps within a single agent loop. For instance, if an agent invokes three tools before producing a result, agentic memory captures each interaction in that chain. Useful for auditability, tool orchestration and introspection. This is managed automatically by Akka and requires no manual instrumentation.
+| Episodic | Akka Agent component (automatic for every agent) | Often called short-term or session memory. Captures conversational history between a single user and an agent during a session. Automatically tracked if an agent is marked as stateful.
+| Long-term | Akka Entity component | Represents memory accumulated over many sessions with the same user and agent. Often stored in summarized or aggregated form.
+| External | Akka Entity component | Shared memory across agents, users, or systems. This state is durable. Useful for collaborative systems or shared business context.
+|===
+
+Akka handles all state as event sourced. Events are recorded sequentially and durably, forming a transparent log of changes. This enables persistence, import/export, replication, and replay without requiring extra work from the developer.
+
+The runtime scales memory across millions of nodes and regions. Failover is supported with replication and low recovery times, typically under 200ms.
+
+== Service clustering
+
+Akka supports horizontal scaling across clustered services. Multiple instances can be launched as needed. Operational tasks are automated by Akka Platform, or may be performed manually in a self-managed environment if desired.

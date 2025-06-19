@@ -5,6 +5,7 @@
 package akkajavasdk;
 
 import akka.javasdk.Metadata;
+import akka.javasdk.agent.PromptTemplate;
 import akka.javasdk.client.EventSourcedEntityClient;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
@@ -50,6 +51,20 @@ public class SdkIntegrationTest extends TestKitSupport {
       .withTopicOutgoingMessages(CUSTOMERS_TOPIC)
       //one defined here and one is the Setup class
       .withDisabledComponents(Set.of(StageCounterEntity.class));
+  }
+
+  @Test
+  public void shouldCreatePromptTemplate() {
+    //given
+    var testPromptClient = componentClient.forEventSourcedEntity("test-prompt");
+
+    //when
+    testPromptClient.method(PromptTemplate::init).invoke("test prompt");
+    testPromptClient.method(PromptTemplate::update).invoke("test prompt2");
+    var result = testPromptClient.method(PromptTemplate::get).invoke();
+
+    //then
+    assertThat(result).isEqualTo("test prompt2");
   }
 
   @Test

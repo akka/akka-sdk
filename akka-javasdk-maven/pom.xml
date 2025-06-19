@@ -134,6 +134,5 @@
 
   <modules>
     <module>akka-javasdk-parent</module>
-    <module>akka-javasdk-archetype</module>
   </modules>
 </project>

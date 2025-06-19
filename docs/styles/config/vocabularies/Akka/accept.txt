@@ -2,6 +2,7 @@ Ack
 ACLs
 ACRs
 Adoptium
+[Aa]gentic
 Agrona
 Aiven
 [Aa]kka
@@ -12,6 +13,7 @@ allowOrigins
 [Aa]rchitecting
 artifactId
 async
+[Aa]uditability
 [Aa]utoscaling
 Avro
 [Bb]ackoffice
@@ -27,6 +29,8 @@ Cembaluk
 classname
 clientCertificate
 codegen
+[Cc]omposable
+[Cc]omposability
 config
 configs
 corsPolicy
@@ -54,6 +58,7 @@ env
 exfiltration
 failover
 fanout
+getOptional
 [Gg]itHub
 googleCloud
 groupId
@@ -66,6 +71,7 @@ hasPrefix
 hasSuffix
 hyperscaler
 hyperscalers
+hoc
 hostname
 hostnames
 Hotari
@@ -105,7 +111,9 @@ newname
 npx
 npm
 nullable
+OAuth
 Okta
+[Oo]llama
 onboarding
 (?i)OpenID
 (?i)OSGi
@@ -122,6 +130,7 @@ preconfigured
 prepended
 prepending
 [Pp]rometheus
+[Pp]ropagations
 proto
 [Pp]rotobuf
 Qodo
@@ -140,6 +149,7 @@ regionalization
 repartitions
 replicatedRead
 reshard
+[Rr]eusability
 RNGs
 runtimes
 runtime's
@@ -165,6 +175,7 @@ sourceType
 src
 SREs
 [Ss]tackdriver
+[Ss]treamable
 subcommand
 subjectMatches
 subpage
@@ -196,6 +207,7 @@ url
 userid
 valueFrom
 volumeMounts
+[Ww]alkthrough
 Yugabyte
 Zolotko
 [Zz]sh
@@ -204,4 +216,4 @@ classpath
 kubectl
 dns
 DNS
-
+Fitbit

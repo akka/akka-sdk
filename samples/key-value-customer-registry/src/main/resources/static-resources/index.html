@@ -1,0 +1,201 @@
+<html>
+    <head>
+        <title>Customer Registry - SSE Demo</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                margin: 20px;
+            }
+            h1 {
+                color: #333;
+            }
+            .container {
+                max-width: 800px;
+                margin: 0 auto;
+            }
+            .form-group {
+                margin-bottom: 15px;
+            }
+            label {
+                display: block;
+                margin-bottom: 5px;
+                font-weight: bold;
+            }
+            input[type="text"] {
+                padding: 8px;
+                width: 300px;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+            }
+            button {
+                padding: 8px 15px;
+                background-color: #4CAF50;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+            }
+            button:hover {
+                background-color: #45a049;
+            }
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 20px;
+            }
+            th, td {
+                border: 1px solid #ddd;
+                padding: 8px;
+                text-align: left;
+            }
+            th {
+                background-color: #f2f2f2;
+            }
+            tr:nth-child(even) {
+                background-color: #f9f9f9;
+            }
+            #status {
+                margin-top: 10px;
+                padding: 10px;
+                border-radius: 4px;
+            }
+            .connected {
+                background-color: #dff0d8;
+                color: #3c763d;
+            }
+            .disconnected {
+                background-color: #f2dede;
+                color: #a94442;
+            }
+        </style>
+        <script>
+            let eventSource = null;
+
+            function connectToSSE() {
+                // Close existing connection if any
+                if (eventSource) {
+                    eventSource.close();
+                }
+
+                const cityName = document.getElementById('cityName').value.trim();
+                if (!cityName) {
+                    alert('Please enter a city name');
+                    return;
+                }
+
+                // Clear existing table data
+                const tableBody = document.getElementById('customerTableBody');
+                tableBody.innerHTML = '';
+
+                // Update status
+                const statusDiv = document.getElementById('status');
+                statusDiv.textContent = 'Connecting...';
+                statusDiv.className = '';
+
+                // Connect to SSE endpoint
+                const url = `http://127.0.0.1:9000/customer/by-city-sse/${encodeURIComponent(cityName)}`;
+                eventSource = new EventSource(url);
+
+                // Handle connection open
+                eventSource.onopen = function() {
+                    statusDiv.textContent = 'Connected! Waiting for customer data...';
+                    statusDiv.className = 'connected';
+                };
+
+                // Handle incoming messages
+                eventSource.onmessage = function(event) {
+                    // Parse the JSON data
+                    const customer = JSON.parse(event.data);
+
+                    // Add customer to the table
+                    addCustomerToTable(customer);
+
+                    // Update status
+                    statusDiv.textContent = `Connected! Last update: ${new Date().toLocaleTimeString()}`;
+                };
+
+                // Handle errors
+                eventSource.onerror = function(error) {
+                    statusDiv.textContent = 'Error connecting to the server. Check if the server is running.';
+                    statusDiv.className = 'disconnected';
+                    eventSource.close();
+                };
+            }
+
+            function disconnectFromSSE() {
+                if (eventSource) {
+                    eventSource.close();
+                    eventSource = null;
+
+                    // Update status
+                    const statusDiv = document.getElementById('status');
+                    statusDiv.textContent = 'Disconnected';
+                    statusDiv.className = 'disconnected';
+                }
+            }
+
+            function addCustomerToTable(customer) {
+                const tableBody = document.getElementById('customerTableBody');
+
+                // Check if customer already exists in the table
+                const existingRow = document.getElementById(`customer-${customer.email}`);
+
+                if (existingRow) {
+                    // Update existing row
+                    existingRow.innerHTML = `
+                        <td>${customer.name}</td>
+                        <td>${customer.email}</td>
+                        <td>${customer.address.street}</td>
+                        <td>${customer.address.city}</td>
+                    `;
+                } else {
+                    // Create new row
+                    const newRow = document.createElement('tr');
+                    newRow.id = `customer-${customer.email}`;
+                    newRow.innerHTML = `
+                        <td>${customer.name}</td>
+                        <td>${customer.email}</td>
+                        <td>${customer.address.street}</td>
+                        <td>${customer.address.city}</td>
+                    `;
+                    tableBody.appendChild(newRow);
+                }
+            }
+
+            // Clean up when page is unloaded
+            window.addEventListener('beforeunload', function() {
+                if (eventSource) {
+                    eventSource.close();
+                }
+            });
+        </script>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Customer Registry - SSE Demo</h1>
+
+            <div class="form-group">
+                <label for="cityName">City Name:</label>
+                <input type="text" id="cityName" placeholder="Enter city name">
+                <button onclick="connectToSSE()">Connect</button>
+                <button onclick="disconnectFromSSE()">Disconnect</button>
+            </div>
+
+            <div id="status">Not connected</div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Street</th>
+                        <th>City</th>
+                    </tr>
+                </thead>
+                <tbody id="customerTableBody">
+                    <!-- Customer data will be added here dynamically -->
+                </tbody>
+            </table>
+        </div>
+    </body>
+</html>

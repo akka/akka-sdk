@@ -5,6 +5,7 @@
 package akka.javasdk.client;
 
 import akka.annotation.DoNotInherit;
+import akka.javasdk.agent.Agent;
 
 /**
  * Utility to send requests to other components by composing a call that can be executed by the
@@ -58,4 +59,7 @@ public interface ComponentClient {
 
   /** Select {@link akka.javasdk.view.View} as a call target component. */
   ViewClient forView();
+
+  /** Select {@link Agent} as a call target component. */
+  AgentClient forAgent();
 }

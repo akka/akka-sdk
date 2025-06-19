@@ -15,7 +15,7 @@ The main steps in developing a service with Akka are:
 
 [#_create_a_project]
 == Create a project
-All services and applications start as a Java project. Akka has a Maven archetype that makes this easier. You will code your service in this project. See xref:java:author-your-first-service.adoc[] for more details.
+All services and applications start as a Java project. Akka has a getting started sample that makes this easier. You will code your service in this project. See xref:getting-started:author-your-first-service.adoc[] for more details.
 
 [#_specify_service_interface_and_domain_model]
 == Specify service interface and domain model
@@ -32,7 +32,7 @@ The main components of an Akka service are:
 
 We recommend that you separate the service API and Entity domain data model. Separating the service interface and data model in different classes allows you to evolve them independently.
 
-TIP: Kickstart a project using the xref:java:author-your-first-service.adoc[getting started guide].
+TIP: Kickstart a project using the xref:getting-started:author-your-first-service.adoc[getting started guide].
 
 [#_implement_components]
 == Implementing components

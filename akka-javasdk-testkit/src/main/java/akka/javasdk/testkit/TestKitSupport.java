@@ -17,7 +17,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * This class provided the necessary infrastructure to run integration test for projects built
- * with the Java SDK. Users should let their test classes extends this class.
+ * with the Java SDK. Users should let their test classes extend this class.
  *
  * <p>This class wires-up a local service using the user's defined components.
  *

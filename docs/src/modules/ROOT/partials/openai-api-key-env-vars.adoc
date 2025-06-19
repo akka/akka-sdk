@@ -1,0 +1,17 @@
+[.tabset]
+Linux or macOS::
++
+--
+[source,command window]
+----
+export OPENAI_API_KEY=your-openai-api-key
+----
+--
+Windows 10+::
++
+--
+[source,command window]
+----
+set OPENAI_API_KEY=your-openai-api-key
+----
+--

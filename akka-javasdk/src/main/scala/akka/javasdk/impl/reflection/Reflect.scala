@@ -7,6 +7,7 @@ package akka.javasdk.impl.reflection
 import akka.annotation.InternalApi
 import akka.javasdk.annotations.GrpcEndpoint
 import akka.javasdk.annotations.http.HttpEndpoint
+import akka.javasdk.annotations.mcp.McpEndpoint
 import akka.javasdk.client.ComponentClient
 import akka.javasdk.consumer.Consumer
 import akka.javasdk.eventsourcedentity.EventSourcedEntity
@@ -16,7 +17,6 @@ import akka.javasdk.timedaction.TimedAction
 import akka.javasdk.view.TableUpdater
 import akka.javasdk.view.View
 import akka.javasdk.workflow.Workflow
-
 import java.lang.annotation.Annotation
 import java.lang.reflect.AnnotatedElement
 import java.lang.reflect.Method
@@ -25,8 +25,11 @@ import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
 import java.util
 import java.util.Optional
+
 import scala.annotation.tailrec
 import scala.reflect.ClassTag
+
+import akka.javasdk.agent.Agent
 
 /**
  * Class extension to facilitate some reflection common usages.
@@ -40,7 +43,7 @@ private[impl] object Reflect {
     implicit class ClassOps(clazz: Class[_]) {
       def isPublic: Boolean = Modifier.isPublic(clazz.getModifiers)
 
-      def getAnnotationOption[A <: Annotation](implicit ev: ClassTag[A]): Option[A] =
+      def annotationOption[A <: Annotation](implicit ev: ClassTag[A]): Option[A] =
         if (clazz.isPublic)
           Option(clazz.getAnnotation(ev.runtimeClass.asInstanceOf[Class[A]]))
         else
@@ -55,6 +58,9 @@ private[impl] object Reflect {
       def hasAnnotation[A <: Annotation](implicit ev: ClassTag[A]): Boolean =
         annotated.getAnnotation(ev.runtimeClass.asInstanceOf[Class[Annotation]]) != null
 
+      def annotationOption[A <: Annotation](implicit ev: ClassTag[A]): Option[A] = {
+        Option(annotated.getAnnotation(ev.runtimeClass.asInstanceOf[Class[A]]))
+      }
     }
 
   }
@@ -64,6 +70,9 @@ private[impl] object Reflect {
 
   def isGrpcEndpoint(cls: Class[_]): Boolean =
     cls.getAnnotation(classOf[GrpcEndpoint]) != null
+
+  def isMcpEndpoint(cls: Class[_]): Boolean =
+    cls.getAnnotation(classOf[McpEndpoint]) != null
 
   def isEntity(cls: Class[_]): Boolean =
     classOf[EventSourcedEntity[_, _]].isAssignableFrom(cls) ||
@@ -77,6 +86,9 @@ private[impl] object Reflect {
   def isConsumer(cls: Class[_]): Boolean = extendsConsumer(cls)
 
   def isAction(clazz: Class[_]): Boolean = classOf[TimedAction].isAssignableFrom(clazz)
+
+  def isAgent(cls: Class[_]): Boolean =
+    classOf[Agent].isAssignableFrom(cls)
 
   // command handlers candidate must have 0 or 1 parameter and return the components effect type
   // we might later revisit this, instead of single param, we can require (State, Cmd) => Effect like in Akka
@@ -94,7 +106,7 @@ private[impl] object Reflect {
     }
 
   def getReturnType(declaringClass: Class[_], method: Method): Type =
-    if (isAction(declaringClass) || isEntity(declaringClass) || isWorkflow(declaringClass)) {
+    if (isAction(declaringClass) || isEntity(declaringClass) || isWorkflow(declaringClass) || isAgent(declaringClass)) {
       // here we are expecting a wrapper in the form of an Effect
       method.getGenericReturnType.asInstanceOf[ParameterizedType].getActualTypeArguments.head
     } else {

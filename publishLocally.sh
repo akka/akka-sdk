@@ -1,5 +1,5 @@
 # This script will publish the current snapshot of all artifacts. 
-# Including the maven plugin and archetypes.
+# Including the maven parent pom.
 
 set -e
 export SDK_VERSION=$(sbt "print akka-javasdk/version" | tail -1)

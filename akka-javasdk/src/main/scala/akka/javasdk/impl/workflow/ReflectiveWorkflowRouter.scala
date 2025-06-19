@@ -52,7 +52,6 @@ object ReflectiveWorkflowRouter {
  */
 @InternalApi
 class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
-    workflowContext: WorkflowContext,
     instanceFactory: Function[WorkflowContext, W],
     methodInvokers: Map[String, MethodInvoker],
     serializer: JsonSerializer) {
@@ -75,14 +74,10 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
     }
   }
 
-  private def methodInvokerLookup(commandName: String) =
+  private def methodInvokerLookup(commandName: String, workflowClass: Class[_]) =
     methodInvokers.getOrElse(
       commandName,
-      throw new HandlerNotFoundException(
-        "command",
-        commandName,
-        instanceFactory(workflowContext).getClass,
-        methodInvokers.keySet))
+      throw new HandlerNotFoundException("command", commandName, workflowClass, methodInvokers.keySet))
 
   final def handleCommand(
       userState: Option[SpiWorkflow.State],
@@ -90,7 +85,8 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
       command: BytesPayload,
       context: CommandContext,
       timerScheduler: TimerScheduler,
-      deleted: Boolean): CommandResult = {
+      deleted: Boolean,
+      workflowContext: WorkflowContext): CommandResult = {
 
     val workflow = instanceFactory(workflowContext)
 
@@ -98,7 +94,7 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
     val decodedState = decodeUserState(userState).getOrElse(workflow.emptyState())
     workflow._internalSetup(decodedState, context, timerScheduler, deleted)
 
-    val methodInvoker = methodInvokerLookup(commandName)
+    val methodInvoker = methodInvokerLookup(commandName, workflow.getClass)
 
     if (serializer.isJson(command) || command.isEmpty) {
       // - BytesPayload.empty - there is no real command, and we are calling a method with arity 0
@@ -123,7 +119,8 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
       stepName: String,
       timerScheduler: TimerScheduler,
       commandContext: CommandContext,
-      executionContext: ExecutionContext): Future[BytesPayload] = {
+      executionContext: ExecutionContext,
+      workflowContext: WorkflowContext): Future[BytesPayload] = {
 
     implicit val ec: ExecutionContext = executionContext
 
@@ -170,7 +167,11 @@ class ReflectiveWorkflowRouter[S, W <: Workflow[S]](
     }
   }
 
-  final def getNextStep(stepName: String, result: BytesPayload, userState: Option[BytesPayload]): TransitionalResult = {
+  final def getNextStep(
+      stepName: String,
+      result: BytesPayload,
+      userState: Option[BytesPayload],
+      workflowContext: WorkflowContext): TransitionalResult = {
 
     val workflow = instanceFactory(workflowContext)
 

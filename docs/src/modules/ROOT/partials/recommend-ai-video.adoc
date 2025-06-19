@@ -1,0 +1,3 @@
+== Unfamiliar with concepts like vectors, embeddings or RAG?
+
+We recommend reviewing our xref:concepts:ai-concepts-video.adoc[foundational explainer on AI concepts]. It offers helpful background that will deepen your understanding of the technologies and patterns used throughout this tutorial.

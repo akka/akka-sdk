@@ -1,0 +1,61 @@
+= AI Model Provider Details
+
+include::ROOT:partial$include.adoc[]
+
+Akka provides integration with several backend AI models, and you have to select which model to use. xref:agents.adoc#_configuring_the_model[Configuring the model] gives an overview of how to specify the model to use. This page describes the configuration for each model provider in more detail. Each model provider may have different settings.
+
+== Anthropic
+
+Configuration properties:
+
+[source,java]
+----
+include::example$resources/reference.conf[tag=anthropic]
+----
+
+See link:_attachments/api/akka/javasdk/agent/ModelProvider.Anthropic.html[`ModelProvider.Anthropic`] for programmatic settings.
+
+== GoogleAIGemini
+
+Configuration properties:
+
+[source,java]
+----
+include::example$resources/reference.conf[tag=googleai-gemini]
+----
+
+See link:_attachments/api/akka/javasdk/agent/ModelProvider.GoogleAIGemini.html[`ModelProvider.GoogleAIGemini`] for programmatic settings.
+
+== LocalAI
+
+Configuration properties:
+
+[source,java]
+----
+include::example$resources/reference.conf[tag=local-ai]
+----
+
+See link:_attachments/api/akka/javasdk/agent/ModelProvider.LocalAI.html[`ModelProvider.LocalAI`] for programmatic settings.
+
+== Ollama
+
+Configuration properties:
+
+[source,java]
+----
+include::example$resources/reference.conf[tag=ollama]
+----
+
+See link:_attachments/api/akka/javasdk/agent/ModelProvider.Ollama.html[`ModelProvider.Ollama`] for programmatic settings.
+
+== OpenAi
+
+Configuration properties:
+
+[source,java]
+----
+include::example$resources/reference.conf[tag=openai]
+----
+
+See link:_attachments/api/akka/javasdk/agent/ModelProvider.OpenAi.html[`ModelProvider.OpenAi`] for programmatic settings.
+

@@ -1,0 +1,7 @@
+[TIP]
+====
+*New to Akka? Start here:*
+
+Use the xref:getting-started:author-your-first-service.adoc[] guide to get a simple agentic service running locally and interact with it.
+
+====
