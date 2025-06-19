@@ -10,11 +10,15 @@ import akka.javasdk.grpc.GrpcClientProvider;
 import akka.javasdk.grpc.GrpcRequestContext;
 import akkajavasdk.protocol.*;
 import io.grpc.Status;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET), denyCode = 5)
 @GrpcEndpoint
 public class TestGrpcServiceImpl implements TestGrpcService {
+
+  private final Logger logger = LoggerFactory.getLogger(TestGrpcServiceImpl.class);
 
   private final GrpcClientProvider grpcClientProvider;
   private final GrpcRequestContext requestContext;
@@ -24,8 +28,17 @@ public class TestGrpcServiceImpl implements TestGrpcService {
     this.requestContext = requestContext;
   }
 
+  private void logDetailsIfNotVt() {
+    if (!Thread.currentThread().isVirtual()) {
+      // try to gather more info
+      logger.error("Not on virtual thread, thread name [" + Thread.currentThread().getName() + "], thread state " + Thread.currentThread().getState() + " thread group [" + Thread.currentThread().getThreadGroup().getName() + "]",
+          new RuntimeException("Error to get stacktrace"));
+    }
+  }
+
   @Override
   public TestGrpcServiceOuterClass.Out simple(TestGrpcServiceOuterClass.In in) {
+    logDetailsIfNotVt();
     return TestGrpcServiceOuterClass.Out.newBuilder()
         .setData(in.getData())
         .setWasOnVirtualThread(Thread.currentThread().isVirtual())
@@ -34,6 +47,7 @@ public class TestGrpcServiceImpl implements TestGrpcService {
 
   @Override
   public TestGrpcServiceOuterClass.Out readMetadata(TestGrpcServiceOuterClass.In in) {
+    logDetailsIfNotVt();
     return TestGrpcServiceOuterClass.Out.newBuilder().setData(
             requestContext.metadata().getText(in.getData()).orElse("")).build();
   }
@@ -41,6 +55,7 @@ public class TestGrpcServiceImpl implements TestGrpcService {
 
   @Override
   public TestGrpcServiceOuterClass.Out delegateToAkkaService(TestGrpcServiceOuterClass.In in) {
+    logDetailsIfNotVt();
     // alias for external defined in application.conf - but note that it is only allowed for dev/test
     var grpcServiceClient = grpcClientProvider.grpcClientFor(TestGrpcServiceClient.class, "other-service");
     return grpcServiceClient.simple(in);
@@ -48,6 +63,7 @@ public class TestGrpcServiceImpl implements TestGrpcService {
 
   @Override
   public TestGrpcServiceOuterClass.Out delegateToExternal(TestGrpcServiceOuterClass.In in) {
+    logDetailsIfNotVt();
     // alias for external defined in application.conf
     var grpcServiceClient = grpcClientProvider.grpcClientFor(TestGrpcServiceClient.class, "some.example.com");
     return grpcServiceClient.simple(in);
