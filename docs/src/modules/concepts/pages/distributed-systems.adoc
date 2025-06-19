@@ -2,9 +2,9 @@
 
 include::ROOT:partial$include.adoc[]
 
-Modern distributed systems—whether agentic AI, microservices applications, or edge computing—demand more than just scalable infrastructure. They require systems that are resilient under stress, responsive under load, elastic with demand, and maintainable at scale. The Akka Agentic AI platform is built from the ground up on proven battle-tested principles of distributed computing, reflecting more than a decade-long commitment to applying architectural discipline to the nondeterminism and chaos of concurrency, distribution, and failure.
+Modern distributed systems—whether agentic AI, microservices applications, or edge computing—demand more than just scalable infrastructure. They require systems that are resilient under stress, responsive under load, elastic with demand, and maintainable at scale. The Akka Agentic AI Platform is built from the ground up on proven battle-tested principles of distributed computing, reflecting more than a decade-long commitment to applying architectural discipline to the nondeterminism and chaos of concurrency, distribution, and failure.
 
-Akka’s approach is to make the inherent complexity of the problem space—the non-determinism of distributed systems and stochastic nature of LLMs—first-class in the programming model, allowing it to be managed and kept under control as the system grows over time. This is to avoid leaky abstractions that force you to pay the price later (when moving from simplistic PoC to production system) through unbounded and undefined compounded accidental complexity, which can, if not kept under control, add unplanned exponential increased cost in terms of maintainability, understandability, extensibility, and overall infrastructure costs.
+Akka’s approach is to make the _inherent complexity_ of the problem space—the _nondeterminism_ of distributed systems and _stochastic_ nature of LLMs—first-class in the programming model, allowing it to be managed and kept under control as the system grows over time. This is to avoid leaky abstractions that force you to pay the price later (when moving from simplistic PoC to production system) through unbounded and undefined compounded _accidental complexity_, which can, if not kept under control, add unplanned exponential increased cost in terms of maintainability, understandability, extensibility, and overall infrastructure costs.
 
 == Rooted in the Reactive Manifesto and the Reactive Principles
 
@@ -28,11 +28,11 @@ The **Reactive Principles** distils these four traits into a set of foundational
 7. **Decouple Space** – Create flexibility by embracing the network.
 8. **Handle Dynamics** – Continuously adapt to varying demand and resources.
 
-Akka embodies these principles not as aspirational goals, but as concrete implementation guidelines. Every feature, e.g., durable in-memory based on event-sourced persistence, streaming view projections, multi-region/multi-cloud replication, CRDT-based data coordination, cluster membership, and sharding, is designed to reinforce predictable, manageable, and observable behavior at scale.
+Akka embodies these principles not as aspirational goals, but as concrete implementation guidelines. Every feature, e.g., durable in-memory based on event-sourced persistence, streaming view projections, multi-region/multi-cloud replication, CRDT-based data coordination, cluster membership, and sharding, reinforces predictable, manageable, and observable behavior at scale.
 
 == Grounded in Distributed Systems Patterns and Principles
 
-The foundation of the Akka Agentic AI platform is detailed in the https://content.akka.io/guide/principles-and-patterns-for-distributed-application-architecture[O'Reilly Technical Guide: Principles and Patterns for Distributed Application Architecture] (authored by Akka CTO and founder Jonas Bonér). This guide outlines architectural patterns that are essential for building robust systems, including how to leverage:
+The foundation of the Akka Agentic AI Platform is detailed in the https://content.akka.io/guide/principles-and-patterns-for-distributed-application-architecture[O'Reilly Technical Guide: Principles and Patterns for Distributed Application Architecture] (authored by Akka CTO and founder Jonas Bonér). This guide outlines architectural patterns that are essential for building robust systems, including how to leverage:
 
 - Event sourcing and CQRS for reliable state management and auditability.
 - Event-driven communication, coordination, and integration. 
@@ -43,11 +43,11 @@ The foundation of the Akka Agentic AI platform is detailed in the https://conten
 - Failure signaling and supervision, allowing systems to self-heal and degrade gracefully.
 - Automatic and transparent self-replication of agents and services for failover, redundancy, and scale. 
 
-These are not merely theoretical constructs. They are operationalized in Akka's runtime through Agents, Entities, Views, Endpoints, Workflows, and Consumers backed by Actors, Event-sourced Persistence, Multi-region Replication, durable streaming real-time View Projections, and Sharded Clusters—all battle-tested in production systems across industries for over a decade, providing an ideal platform for enterprise-grade agentic and microservices applications. 
+These are not merely theoretical constructs. They are operationalized in Akka's runtime through Agents, Entities, Views, Endpoints, Workflows, and Consumers backed by Actors, Event-sourced Persistence, Multi-region Replication, Durable Streaming Real-time Projections, and Sharded Clusters—all battle-tested in production systems across industries for over a decade, providing an ideal platform for enterprise-grade agentic and microservices applications. 
 
 == Designed for Multi-Agent AI 
 
-Multi-agent AI systems combine the inherent nondeterminism of distributed systems with the stochastic behavior of AI models, particularly those based on large language models (LLMs). This dual complexity means that traditional software design, development, and operations approaches are no longer sufficient. 
+Multi-agent AI systems combine the inherent _nondeterminism_ of distributed systems with the _stochastic_ behavior of AI models, particularly those based on large language models (LLMs). This dual complexity means traditional software design, development, and operations approaches are insufficient. 
 The demands of multi-agent AI systems—which involve large numbers of autonomous, stateful, and often long-lived agents—require managing complexity around orchestration, streaming, memory, and temporal behaviors while being able to reason about the system as a whole and embrace its stochastic and non-deterministic nature.
 Akka’s approach to multi-agent architectures includes:
 
@@ -63,4 +63,4 @@ Akka’s approach to multi-agent architectures includes:
 
 Building agentic AI systems—or modern cloud-native microservices—on unstable foundations leads to brittle architectures that fail under real-world conditions. Akka mitigates this risk by enforcing principles and patterns anticipating failure, load, inconsistency, and change.
 
-Whether deploying thousands of autonomous AI agents or orchestrating business-critical microservices, the Akka Agentic AI platform gives you the architectural clarity and operational reliability to build systems that thrive in the real world, not just in theory.
+Whether deploying thousands of autonomous AI agents or orchestrating business-critical microservices, the Akka Agentic AI Platform gives you the architectural clarity and operational reliability to build systems that thrive in the real world, not just in theory.
