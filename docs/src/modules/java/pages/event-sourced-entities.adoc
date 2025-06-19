@@ -226,7 +226,7 @@ For the above example, this class provides access to all the command handlers of
 
 === Integration tests
 
-The skeleton of an Integration Test is generated for you if you use the archetype to start your Akka service. Let's see what it could look like to test our `ShoppingCartEntity`:
+The skeleton of an Integration Test is included in the xref:getting-started:author-your-first-service.adoc[getting started sample]. Let's see what it could look like to test our `ShoppingCartEntity`:
 
 [source,java]
 .{sample-base-url}/shopping-cart-quickstart/src/test/java/shoppingcart/ShoppingCartIntegrationTest.java[ShoppingCartIntegrationTest.java]

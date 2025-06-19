@@ -49,7 +49,7 @@ Use `Ctrl+c` to shut down the service.
 
 == Run from IntelliJ
 
-The samples and archetype include a run configuration for IntelliJ. In the toolbar you should see:
+The xref:getting-started:author-your-first-service.adoc[getting started sample] and other samples include a run configuration for IntelliJ. In the toolbar you should see:
 
 image:run-intellij.png[]
 
