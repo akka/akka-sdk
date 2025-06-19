@@ -14,6 +14,7 @@ allowOrigins
 artifactId
 async
 [Aa]uditability
+auditable
 [Aa]utoscaling
 Avro
 [Bb]ackoffice
@@ -51,6 +52,7 @@ Dmitry
 downscaling
 DTDs
 [Ee]mptyState
+evolvability
 facto
 effectful
 enum
@@ -98,6 +100,7 @@ Lagom
 LLM
 LLMs
 lmdbjava
+lookups
 matchers
 materializer
 maxInstances
@@ -111,10 +114,12 @@ newname
 npx
 npm
 nullable
+O'Reilly
 OAuth
 Okta
 [Oo]llama
 onboarding
+operationalized
 (?i)OpenID
 (?i)OSGi
 (?i)OTLP
@@ -147,6 +152,7 @@ remoting
 Remoting
 regionalization
 repartitions
+replayability
 replicatedRead
 reshard
 [Rr]eusability

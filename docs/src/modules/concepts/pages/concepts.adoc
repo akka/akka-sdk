@@ -41,7 +41,7 @@ The Akka Agentic Platform contains an SDK for development, the Akka runtime for 
 |Recover from any failure, whether hardware, network, or hallucination.
 
 |Interoperable
-|Across all Akka components, any 3rd party system, protocol, broker, or API.
+|Across all Akka components, any 3rd party system, protocol, broker, or Application Programming Interface (API).
 
 |Composable
 |Akka services and components can be combined to create systems of any complexity.
@@ -101,16 +101,39 @@ Akka combines all three runtime types into a single engine. This allows for high
 
 == Akka components
 
-Akka provides composable building blocks suitable for constructing agentic AI or distributed systems:
+Akka provides a basket of interoperable components that can be used to design and implement any potential autonomous agentic AI (or distributed) system.
 
-[horizontal]
-Agents:: Stateful or stateless processing units
-Workflows:: Durable execution with control flow support
-Endpoints:: Interfaces for API communication
-Entities:: Durable memory stores
-Views:: Read-optimized projections
-Consumers:: Streaming data processors
-Timers:: Time-based triggers
+[cols="1,3", options="header"]
+|===
+|Component |Description
+
+|Agents
+|Performs one focused AI task using a selected model and prompt. Can hold context with session memory (stateful) or run stateless with no retained history.
+
+|Workflows
+|Durable execution with support for sequential, parallel, looping, retry, and failure logic.
+
+|HTTP Endpoints
+|Exposes APIs over Hypertext Transfer Protocol (HTTP). Processes input, triggers components, shapes responses, and returns results.
+
+|gRPC Endpoints
+|Exposes APIs over gRPC Remote Procedure Calls (gRPC). Uses Protobuf contracts to ensure compatibility. Handles input, triggers logic, and returns results. 
+
+|MCP Endpoints
+|Exposes tools, resources, and prompts over Model Context Protocol (MCP) protocol. Enables agents to invoke logic, retrieve data, and establish context.
+
+|Entities (memory)
+|Long term durable memory accessible by multiple agents, users, APIs, or 3rd party systems.
+
+|Views
+|Indexes and queries entity data across IDs or attributes. Built from entity state or events. Enables efficient lookups, filtering, and real-time updates.
+
+|Consumers (streaming)
+|Subscribes to and processes event streams or messages from entities, workflows, or external systems.
+
+|Timers
+|Schedules future calls with at-least-once delivery. Useful for deferred actions, retries, and timeouts. 
+|===
 
 == Component interoperability
 
