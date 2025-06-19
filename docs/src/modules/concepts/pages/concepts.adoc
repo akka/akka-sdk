@@ -63,6 +63,23 @@ Adaptation:: Enables the agent to adjust its strategy in response to changing in
 Coordination:: Allows agents to interact with other agents, users, tools, or services in a coherent way. Coordination is essential for sequencing actions, sharing context, or achieving group-level outcomes.
 Shared State (memory):: Provides continuity across invocations, sessions, or agents. Shared state allows the system to retain knowledge, track decisions, and synchronize behavior in distributed environments.
 
+== Properties of a distributed system
+
+A distributed system is any system that distributes logic or state. Distributed systems embody certain principles that when combined together create a system that achieves responsiveness. Distributed systems are capable of operating in any location: locally on your development machine, in the cloud, at the edge, embedded within a device, or a blend of all.
+
+[cols="1,3", options="header"]
+|===
+| Property     | Definition
+| Elasticity
+| The system can automatically adjust its resources, scaling up or down to efficiently handle changes in workload.
+| Resilience
+| The system continues to function and recover quickly, even when parts of it fail, ensuring ongoing availability.
+| Agility
+| The system can easily adapt to new requirements or changes in its environment with minimal effort.
+| Responsiveness
+| Most importantly, the system consistently responds to users and events in a timely manner, maintaining a reliable experience.
+|===
+
 == Autonomous AI runtimes
 
 Akka supports three fundamental runtime types:
