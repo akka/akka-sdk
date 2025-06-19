@@ -22,7 +22,7 @@ Akka is a platform for building, running and evaluating both transactional and a
 
 **Foundational topics** that explain how Akka services are designed and behave.
 
-* xref:concepts:concepts.adoc[]
+* xref:concepts:concepts.adoc[Agentic AI concepts]
 * xref:concepts:distributed-systems.adoc[]
 * xref:concepts:deployment-model.adoc[Deployment model]
 * xref:concepts:development-process.adoc[Development process]

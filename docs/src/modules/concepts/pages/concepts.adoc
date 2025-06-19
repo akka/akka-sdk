@@ -1,4 +1,4 @@
-= Foundations of Akka agentic AI systems
+= Concepts
 
 include::ROOT:partial$include.adoc[]
 
