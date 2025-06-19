@@ -102,8 +102,7 @@ You inherit agentic and episodic (short-term) durable memory automatically when 
 |Registry
 |A built-in directory that stores information about all agents so they can be discovered and called upon in multi-agent systems.
 
-You implement a registry in Akka by... 
-ifdef::todo[TODO: We need to talk to Patrik about this...]
+You use the registry provided by Akka by xref:java:agents.adoc#_creating_dynamic_plans[annotating each agent], which allows Akka to automatically register and use them as needed.
 |===
 
 == Properties of a distributed system
