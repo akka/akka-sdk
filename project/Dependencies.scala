@@ -21,7 +21,7 @@ object Dependencies {
 
   val ScalaTestVersion = "3.2.14"
   // https://github.com/akka/akka/blob/main/project/Dependencies.scala#L31
-  val JacksonVersion = "2.18.3"
+  val JacksonVersion = "2.19.0"
   val JacksonDatabindVersion = JacksonVersion
   val LogbackVersion = "1.5.18"
   val LogbackContribVersion = "0.1.5"
