@@ -164,7 +164,7 @@ What just happened?
 
 The greetings will be in different languages each time. The AI model itself is stateless, so it wouldn't know what languages it had used previously unless we included that information in each request to the model. Akka Agents automatically track context using *session memory*. In this case, the Agent is able to remember all the past messages and languages that were used in this session.
 
-Here we use the user "alice" as the session identifier. Give it a try to change the user field in the HTTP request, and you will see that it starts over without previous knowledge about Alice or the used languages.
+Here we use the user `alice` as the session identifier. Give it a try to change the user field in the HTTP request, and you will see that it starts over without previous knowledge about Alice or the used languages.
 ====
 
 == Change the agent prompt
