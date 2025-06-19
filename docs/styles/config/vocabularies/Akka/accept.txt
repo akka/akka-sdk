@@ -51,6 +51,7 @@ Dmitry
 downscaling
 DTDs
 [Ee]mptyState
+evolvability
 facto
 effectful
 enum
@@ -111,10 +112,12 @@ newname
 npx
 npm
 nullable
+O'Reilly
 OAuth
 Okta
 [Oo]llama
 onboarding
+operationalized
 (?i)OpenID
 (?i)OSGi
 (?i)OTLP
@@ -147,6 +150,7 @@ remoting
 Remoting
 regionalization
 repartitions
+replayability
 replicatedRead
 reshard
 [Rr]eusability
