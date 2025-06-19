@@ -25,13 +25,13 @@ You implement an MCP server with the `MCPEndpoint` component.
 You implement APIs that can front an agent with the `HttpEndpoint` and `gRPCEndpoint` components.
 
 |Akka Memory
-|Akka provides an in-memory, durable store for stateful data. Stateful data can be scoped to a single agent, or made available system-wide. Stateful data is persisted in an embedded event store that tracks incremental state changes, which enables recovery of system state to its last known modification. State is automatically sharded and rebalanced across Akka nodes running in a cluster to support elastic scaling to terabytes of memory. State can also be replicated across regions for fail over and disaster recovery.
+|Akka provides an in-memory, durable store for stateful data. Stateful data can be scoped to a single agent, or made available system-wide. Stateful data is persisted in an embedded event store that tracks incremental state changes, which enables recovery of system state (resilience) to its last known modification. State is automatically sharded and rebalanced across Akka nodes running in a cluster to support elastic scaling to terabytes of memory. State can also be replicated across regions for failover and disaster recovery.
 
-You inherit agentic and episodic (short-term memory) state automatically within the `Agent` component.
+Short-term (traced and episodic) memory is included transparently within the xref:java:agents.adoc[Agent] component.
 
-You implement long-term and external memory with the `Event Sourced Entities` and `Key Value Entities` components.
+You implement long-term memory with the xref:java:event-sourced-entities.adoc[Event Sourced Entity] and xref:java:key-value-entities.adoc[Key Value Entity] components.
 
-You implement propagations of cross-system state with the `View` component. Views implement the Command Query Responsibility Segregation (CQRS) pattern.
+You implement propagations of cross-system state with the xref:java:views.adoc[View] component. Views implement the Command Query Responsibility Segregation (CQRS) pattern.
 
 |Akka Streaming
 |Akka provides a continuous stream processing engine which can synthesize, aggregate, and analyze windows of data without receiving a terminating event. Data streams can be sourced from other Akka services or a 3rd party messaging broker or coming in through an Akka Endpoint. Your services can either store intermediate processing results into _Akka Memory_ or trigger commands to other Akka components that take action on the data.
