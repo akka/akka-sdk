@@ -152,7 +152,7 @@ public class TestModelProvider implements ModelProvider.Custom {
      * Configures a reply with a custom handler for tool result messages.
      */
     public void thenReply(Function<ToolResult, AiResponse> handler) {
-      // safe to cast because messagePredicate ensures the type
+      // safe to cast because predicate ensures the type
       Function<InputMessage, AiResponse> castedHandler =
         (input) -> handler.apply((ToolResult) input);
       provider.responsePredicates.add(new Pair<>(predicate, castedHandler));
