@@ -8,18 +8,15 @@ import akka.NotUsed;
 import akka.javasdk.agent.Agent;
 import akka.javasdk.impl.*;
 import akka.javasdk.impl.serialization.JsonSerializer;
+import akka.runtime.sdk.spi.*;
+import akka.runtime.sdk.spi.TimedActionClient;
+import akka.runtime.sdk.spi.ViewClient;
 import akka.runtime.sdk.spi.AgentClient;
 import com.google.protobuf.InvalidProtocolBufferException;
 import akka.javasdk.Metadata;
 import akka.javasdk.impl.client.ComponentClientImpl;
 import akka.javasdk.impl.client.DeferredCallImpl;
 import akka.javasdk.impl.telemetry.Telemetry;
-import akka.runtime.sdk.spi.TimedActionClient;
-import akka.runtime.sdk.spi.TimedActionType$;
-import akka.runtime.sdk.spi.ComponentClients;
-import akka.runtime.sdk.spi.EntityClient;
-import akka.runtime.sdk.spi.TimerClient;
-import akka.runtime.sdk.spi.ViewClient;
 import akka.javasdk.testmodels.Number;
 import akka.javasdk.testmodels.action.ActionsTestModels.ActionWithOneParam;
 import akka.javasdk.testmodels.action.ActionsTestModels.ActionWithoutParam;
@@ -76,6 +73,9 @@ class ComponentClientTest {
       public TimedActionClient timedActionClient() {
         return null;
       }
+
+      @Override
+      public AgentClient agentClient() {return null;}
     };
     componentClient = new ComponentClientImpl(dummyComponentClients, serializer, null, Option.empty(), ExecutionContext.global(), null);
   }

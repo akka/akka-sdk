@@ -13,8 +13,9 @@ akka local console [flags]
 == Options
 
 ----
-  -h, --help                         help for console
-      --local-console-image string   Override the local console image. (default "registry.akka.io/akka-local-console:460a2dd0")
+      --force-asset-check   This forces a check for a new version of the local console assets.
+  -h, --help                help for console
+  -p, --port uint16         The port on which the local console will run. (default 9889)
 ----
 
 == Options inherited from parent commands

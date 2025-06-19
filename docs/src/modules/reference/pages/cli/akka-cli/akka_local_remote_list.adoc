@@ -1,27 +1,19 @@
-= akka services logging set-level
+= akka local remote list
 
-Set the logger level configuration.
+List remote Akka services.
 
 == Synopsis
 
-Set the logger level configuration for a specific logger in the given service.
-This configuration will be applied to all instances of the service.
+The `akka local remote list` command lists all remote Akka services registered.
 
 ----
-akka services logging set-level [SERVICE_NAME] [LOGGER_NAME] [LEVEL] [flags]
-----
-
-== Examples
-
-----
-
-> akka service logging set-level my-service com.example.MyClass DEBUG
+akka local remote list [flags]
 ----
 
 == Options
 
 ----
-  -h, --help   help for set-level
+  -h, --help   help for list
 ----
 
 == Options inherited from parent commands
@@ -41,7 +33,7 @@ akka services logging set-level [SERVICE_NAME] [LOGGER_NAME] [LEVEL] [flags]
 
 == SEE ALSO
 
-* link:akka_services_logging.html[akka services logging]	 - Change the log level configuration of a service.
+* link:akka_local_remote.html[akka local remote]	 - Manage remote Akka services.
 
 [discrete]
 

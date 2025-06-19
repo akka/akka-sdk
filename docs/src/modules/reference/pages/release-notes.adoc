@@ -11,16 +11,12 @@ Current versions
 * A glance of all Akka libraries and their current versions is presented at https://doc.akka.io/libraries/akka-dependencies/current[Akka library versions].
 == June 2025
 
-* Akka Runtime 1.4.14
-  - Internal improvements
-
-* Akka Runtime 1.2.19
-  - Internal improvements
-
-== June 2025
-
 [sidebar]
 ****
+
+**Akka's local console more lightweight**
+
+The latest Akka CLI versions run the local console for development without using Docker. It spins up quickly and requires almost no resources.
 
 **New Akka SDK learning path in Akkademy**
 
@@ -29,6 +25,16 @@ A new course is now available in Akkademy: https://akkademy.akka.io/learn/course
 This short, self-paced course introduces the foundational concepts of the Akka SDK. It is organized into brief lessons with coding exercises that run directly in the browser, requiring no installation. The course is ideal for developers who are new to the Akka SDK and want a structured, guided approach to building services.
 
 ****
+
+* Akka CLI 3.0.22
+  - Akka's local console is now built-in -- runs quickly and doesn't require Docker anymore!
+  - New `akka projects settings` command that supports removing an unavailable region from multi-region projects
+
+* Akka Runtime 1.4.14
+  - Internal improvements
+
+* Akka Runtime 1.2.19
+  - Internal improvements
 
 == May 2025
 

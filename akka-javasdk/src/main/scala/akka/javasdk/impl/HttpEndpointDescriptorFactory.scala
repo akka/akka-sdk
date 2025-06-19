@@ -28,6 +28,7 @@ import akka.runtime.sdk.spi.HttpEndpointMethodDescriptor
 import akka.runtime.sdk.spi.MethodOptions
 import org.slf4j.LoggerFactory
 
+import scala.annotation.nowarn
 import scala.annotation.tailrec
 import scala.util.Success
 import scala.util.Failure
@@ -41,6 +42,7 @@ private[javasdk] object HttpEndpointDescriptorFactory {
 
   val logger = LoggerFactory.getLogger(classOf[HttpEndpointDescriptorFactory.type])
 
+  @nowarn("msg=deprecated") // new http descriptors parameter
   def apply(
       endpointClass: Class[_],
       instanceFactory: HttpEndpointConstructionContext => Any): HttpEndpointDescriptor = {

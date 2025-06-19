@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+{{> head defaultPageTitle='Untitled'}}
+  </head>
+  <body class="bg-white text-akka-black dark:bg-black dark:text-white article{{#with (or page.attributes.role page.role)}} {{{this}}}{{/with}}">
+  <chatlio-widget widgetid="b611b988-9e2b-4e36-566e-01a6d042121c"></chatlio-widget>
+{{> header-scripts}}
+{{> header-content showNotification=true}}
+{{> body}}
+{{> footer}}
+  </body>
+</html>
