@@ -9,6 +9,7 @@ import akka.javasdk.impl.SomeToolInput.SomeToolInput2
 import akka.javasdk.impl.SomeToolInput.SomeToolInput3
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaArray
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaBoolean
+import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaDataType
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaInteger
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaNumber
 import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaObject
@@ -16,7 +17,33 @@ import akka.runtime.sdk.spi.SpiJsonSchema.JsonSchemaString
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
+object JsonSchemaSpec {
+  object Schema {
+    def string(description: String = null): JsonSchemaString =
+      new JsonSchemaString(Option(description))
+
+    def integer(description: String = null): JsonSchemaInteger =
+      new JsonSchemaInteger(Option(description))
+
+    def number(description: String = null): JsonSchemaNumber =
+      new JsonSchemaNumber(Option(description))
+
+    def boolean(description: String = null): JsonSchemaBoolean =
+      new JsonSchemaBoolean(Option(description))
+
+    def array(items: JsonSchemaDataType, description: String = null): JsonSchemaArray =
+      new JsonSchemaArray(items, Option(description))
+
+    def jsonObject(
+        description: String = null,
+        properties: Map[String, JsonSchemaDataType] = Map.empty,
+        required: Seq[String] = Seq.empty): JsonSchemaObject =
+      new JsonSchemaObject(Option(description), properties, required)
+  }
+}
+
 class JsonSchemaSpec extends AnyWordSpec with Matchers {
+  import JsonSchemaSpec._
 
   "The JsonSchema" should {
 
@@ -24,20 +51,20 @@ class JsonSchemaSpec extends AnyWordSpec with Matchers {
       val result = JsonSchema.jsonSchemaFor(classOf[SomeToolInput1])
 
       val expected = Map(
-        "string" -> new JsonSchemaString(description = Some("some description")),
-        "optionalString" -> new JsonSchemaString(description = None),
-        "booleanPrimitive" -> new JsonSchemaBoolean(description = None),
-        "intPrimitive" -> new JsonSchemaInteger(description = None),
-        "longPrimitive" -> new JsonSchemaInteger(description = None),
-        "doublePrimitive" -> new JsonSchemaNumber(description = None),
-        "floatPrimitive" -> new JsonSchemaNumber(description = None),
-        "bytePrimitive" -> new JsonSchemaInteger(description = None),
-        "boxedBoolean" -> new JsonSchemaBoolean(description = None),
-        "boxedInteger" -> new JsonSchemaInteger(description = None),
-        "boxedLong" -> new JsonSchemaInteger(description = None),
-        "boxedDouble" -> new JsonSchemaNumber(description = None),
-        "boxedFloat" -> new JsonSchemaNumber(description = None),
-        "boxedByte" -> new JsonSchemaInteger(description = None))
+        "string" -> Schema.string(description = "some description"),
+        "optionalString" -> Schema.string(),
+        "booleanPrimitive" -> Schema.boolean(),
+        "intPrimitive" -> Schema.integer(),
+        "longPrimitive" -> Schema.integer(),
+        "doublePrimitive" -> Schema.number(),
+        "floatPrimitive" -> Schema.number(),
+        "bytePrimitive" -> Schema.integer(),
+        "boxedBoolean" -> Schema.boolean(),
+        "boxedInteger" -> Schema.integer(),
+        "boxedLong" -> Schema.integer(),
+        "boxedDouble" -> Schema.number(),
+        "boxedFloat" -> Schema.number(),
+        "boxedByte" -> Schema.integer())
 
       result.properties.foreach { case (key, value) =>
         expected(key) shouldEqual value
@@ -63,16 +90,16 @@ class JsonSchemaSpec extends AnyWordSpec with Matchers {
       val result = JsonSchema.jsonSchemaFor(classOf[SomeToolInput2])
 
       result.properties shouldEqual Map(
-        "listOfStrings" -> new JsonSchemaArray(items = new JsonSchemaString(None), description = Some("some strings")))
+        "listOfStrings" -> Schema.array(items = Schema.string(), description = "some strings"))
     }
 
     "extract schema with nested object" in {
       val result = JsonSchema.jsonSchemaFor(classOf[SomeToolInput3])
 
       result.properties shouldEqual Map(
-        "nestedObject" -> new JsonSchemaObject(
-          description = Some("a nested object"),
-          properties = Map("someString" -> new JsonSchemaString(Some("a value in the nested object"))),
+        "nestedObject" -> Schema.jsonObject(
+          description = "a nested object",
+          properties = Map("someString" -> Schema.string(description = "a value in the nested object")),
           required = Seq("someString")))
 
       result.required shouldEqual Seq("nestedObject")

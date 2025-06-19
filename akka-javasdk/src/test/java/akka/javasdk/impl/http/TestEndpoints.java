@@ -4,8 +4,11 @@
 
 package akka.javasdk.impl.http;
 
+import akka.http.javadsl.model.HttpEntity;
+import akka.http.javadsl.model.HttpRequest;
 import akka.http.javadsl.model.HttpResponse;
 import akka.javasdk.annotations.Acl;
+import akka.javasdk.annotations.Description;
 import akka.javasdk.annotations.JWT;
 import akka.javasdk.annotations.http.Delete;
 import akka.javasdk.annotations.http.HttpEndpoint;
@@ -15,6 +18,8 @@ import akka.javasdk.annotations.http.Post;
 import akka.javasdk.annotations.http.Put;
 import akka.javasdk.http.HttpResponses;
 
+import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
@@ -57,6 +62,80 @@ public class TestEndpoints {
         public HttpResponse patch(String it, AThing theBody) {
             return HttpResponses.ok();
         }
+    }
+
+    public record SomeObject(
+      @Description("some string") String someString,
+      Optional<String> optionalString,
+      boolean someBoolean,
+      int someInt,
+      @Description("optional double") Optional<Double> optionalDouble
+    ) {}
+
+    @HttpEndpoint("test-specs")
+    public static class TestEndpointSpecs {
+
+      @Get("/parameters-only/{someString}/and/{someInt}")
+      public String parametersOnly(
+        @Description("some string") String someString,
+        @Description("some int") int someInt
+      ) {
+        return "ok";
+      }
+
+      @Post("/parameters-and-body/{someString}/and/{someDouble}")
+      public String parametersAndBody(
+        String someString,
+        double someDouble,
+        SomeObject someBody
+      ) {
+        return "ok";
+      }
+
+      @Post("/body-only")
+      public String bodyOnly(@Description("some body") SomeObject someBody) {
+        return "ok";
+      }
+
+      @Post("/parameters-and-text-body/{someInt}")
+      public String parametersAndTextBody(
+        int someInt,
+        @Description("some body") String someBody
+      ) {
+        return "ok";
+      }
+
+      @Post("/text-body-only")
+      public String textBodyOnly(@Description("some body") String someBody) {
+        return "ok";
+      }
+
+      @Post("/parameters-and-array-body/{someString}/and/{someInt}")
+      public String parametersAndArrayBody(
+        String someString,
+        int someInt,
+        List<String> someBody
+      ) {
+        return "ok";
+      }
+
+      @Post("/array-body-only")
+      public String arrayBodyOnly(@Description("some body") List<Double> someBody) {
+        return "ok";
+      }
+
+      @Post("/parameters-and-low-level-body/{someBoolean}")
+      public String parametersAndLowLevelBody(
+        @Description("some boolean") boolean someBoolean,
+        @Description("some body") HttpEntity.Strict someBody
+      ) {
+        return "ok";
+      }
+
+      @Post("/low-level-body-only")
+      public String lowLevelBodyOnly(HttpRequest request) {
+        return "ok";
+      }
     }
 
     @Acl(deny = @Acl.Matcher(principal = Acl.Principal.ALL), denyCode = 404)
