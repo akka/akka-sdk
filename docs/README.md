@@ -47,6 +47,12 @@ Example path:
 open ../target/site/index.html
 ```
 
+## Maintaining `llms.txt` for AI coding assistants
+
+To help AI coding assistants like Cursor and Qodo make use of the documentation, we publish the docs in a markdown format that is easier to process. The index file is published to https://doc.akka.io/llms.txt.
+
+When documentation pages are added, renamed or removed, it’s good practice to update the `llms.txt` [source file](https://github.com/akka/akka-sdk/blob/main/docs/src/modules/ROOT/pages/llms.txt) accordingly.
+
 ## Deploying the docs
 
 ### Deploying Work In Progress (WIP) to doc.akka.io/snapshots
