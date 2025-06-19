@@ -46,7 +46,6 @@ private[javasdk] object HttpEndpointDescriptorFactory {
 
   val logger = LoggerFactory.getLogger(classOf[HttpEndpointDescriptorFactory.type])
 
-  @nowarn("msg=deprecated") // new http descriptors parameter
   def apply(
       endpointClass: Class[_],
       instanceFactory: HttpEndpointConstructionContext => Any): HttpEndpointDescriptor = {

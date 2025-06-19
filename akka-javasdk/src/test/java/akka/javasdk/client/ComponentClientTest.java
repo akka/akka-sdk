@@ -73,9 +73,6 @@ class ComponentClientTest {
       public TimedActionClient timedActionClient() {
         return null;
       }
-
-      @Override
-      public AgentClient agentClient() {return null;}
     };
     componentClient = new ComponentClientImpl(dummyComponentClients, serializer, null, Option.empty(), ExecutionContext.global(), null);
   }
