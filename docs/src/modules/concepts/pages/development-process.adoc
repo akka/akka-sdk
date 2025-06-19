@@ -15,7 +15,7 @@ The main steps in developing a service with Akka are:
 
 [#_create_a_project]
 == Create a project
-All services and applications start as a Java project. Akka has a Maven archetype that makes this easier. You will code your service in this project. See xref:getting-started:author-your-first-service.adoc[] for more details.
+All services and applications start as a Java project. Akka has a getting started sample that makes this easier. You will code your service in this project. See xref:getting-started:author-your-first-service.adoc[] for more details.
 
 [#_specify_service_interface_and_domain_model]
 == Specify service interface and domain model

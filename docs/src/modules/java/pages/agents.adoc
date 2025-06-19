@@ -48,6 +48,7 @@ Command handlers in Akka may take one or no parameters as input. If you need mul
 
 There can only be one command handler because the agent is supposed to perform one single well-defined task.
 
+[#model]
 == Configuring the Model
 
 Akka provides integration with several backend AI models, and you have to select which model to use. You can define a default model in `application.conf`:
@@ -175,7 +176,7 @@ include::example$doc-snippets/src/main/java/com/example/application/ActivityAgen
 <1> Use `forAgent`.
 <2> Define the identifier of the session that the agent participates in.
 
-The session id is used by the xref:#_session_memory[session memory], but it is also important for observability tracking and AI evaluation.
+The session id is used by the xref:#session_memory[session memory], but it is also important for observability tracking and AI evaluation.
 
 You can use a new random UUID for each call if the agent doesn't collaborate with other agents nor have a multi-step interaction with the AI model. Deciding how you manage sessions will be an important part of designing the agentic parts of your application.
 
@@ -187,7 +188,7 @@ Agents make external calls to the AI model and possibly other services, and ther
 
 A workflow will typically orchestrate several agents, which collaborate in achieving a common goal. Even if you only have a single agent, having a workflow manage retries, failures, and timeouts can be invaluable.
 
-We will look more at xref:#_multi_agent[multi-agent systems], but let's start with a workflow for the single activities agent.
+We will look more at xref:#multi_agent[multi-agent systems], but let's start with a workflow for the single activities agent.
 
 [source,java]
 .{sample-base-url}/doc-snippets/src/main/java/com/example/application/ActivityAgentManager.java[ActivityAgentManager.java]
@@ -229,6 +230,7 @@ You often need a human-in-the-loop to integrate human oversight into the AI's de
 
 See xref:workflows.adoc#_pausing_workflow[how to pause a workflow].
 
+[#session_memory]
 == Managing Session memory
 
 Session Memory provides a history mechanism that enables agents to maintain context across multiple interactions. This feature is essential for building agents that can remember previous exchanges with users, understand context, and provide coherent responses over time.
@@ -500,6 +502,7 @@ include::example$doc-snippets/src/main/java/com/example/application/ActivityAgen
 
 NOTE: Token streams are designed for direct agent calls from an endpoint. You can't use a token stream when you have an intermediate workflow between the endpoint and the agent.
 
+[#multi_agent]
 == Orchestrating Multiple Agents
 
 A single agent performs one well-defined task. Several agents can collaborate to achieve a common goal. The agents should be orchestrated from a predefined workflow or a dynamically created plan.
