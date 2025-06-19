@@ -93,12 +93,12 @@ public class TestModelProvider implements ModelProvider.Custom {
   /**
    * Base class for building reply configurations for specific input predicates.
    */
-  public static class BaseReplyBuilder {
+  public static class WhenClause {
 
     protected final TestModelProvider provider;
     protected final Predicate<InputMessage> predicate;
 
-    public BaseReplyBuilder(TestModelProvider provider, Predicate<InputMessage> predicate) {
+    public WhenClause(TestModelProvider provider, Predicate<InputMessage> predicate) {
       this.provider = provider;
       this.predicate = predicate;
     }
@@ -139,12 +139,13 @@ public class TestModelProvider implements ModelProvider.Custom {
     }
   }
 
+
   /**
    * Specialized reply builder for handling tool result messages.
    */
-  public static class ToolResultReplyBuilder extends BaseReplyBuilder {
+  public static class WhenToolReplyClause extends WhenClause  {
 
-    public ToolResultReplyBuilder(TestModelProvider provider, Predicate<InputMessage> predicate) {
+    public WhenToolReplyClause(TestModelProvider provider, Predicate<InputMessage> predicate) {
       super(provider, predicate);
     }
 
@@ -157,6 +158,7 @@ public class TestModelProvider implements ModelProvider.Custom {
         (input) -> handler.apply((ToolResult) input);
       provider.responsePredicates.add(new Pair<>(predicate, castedHandler));
     }
+
   }
 
   @Override
@@ -267,35 +269,36 @@ public class TestModelProvider implements ModelProvider.Custom {
    * Configures the {@code TestModelProvider} to respond when the given string predicate matches an input message.
    * Note that to finish the configuration, you must call one of the reply methods.
    */
-  public BaseReplyBuilder whenMessage(Predicate<String> predicate) {
+  public WhenClause whenMessage(Predicate<String> predicate) {
 
     Predicate<InputMessage> messagePredicate = (value) -> predicate.test(value.content());
 
-    return new BaseReplyBuilder(this, messagePredicate);
+    return new WhenClause(this, messagePredicate);
   }
 
   /**
    * Configures the {@code TestModelProvider} to respond when the given UserMessage predicate matches an input message.
    * Note that to finish the configuration, you must call one of the reply methods.
    */
-  public BaseReplyBuilder whenUserMessage(Predicate<UserMessage> predicate) {
+  public WhenClause whenUserMessage(Predicate<UserMessage> predicate) {
 
     Predicate<InputMessage> messagePredicate =
         (value) -> value instanceof UserMessage userQuestion && predicate.test(userQuestion);
 
-    return new BaseReplyBuilder(this, messagePredicate);
+    return new WhenClause(this, messagePredicate);
   }
+
 
   /**
    * Configures the {@code TestModelProvider} to respond when the given ToolResult predicate matches a tool result.
    * Note that to finish the configuration, you must call one of the reply methods.
    */
-  public ToolResultReplyBuilder whenToolResult(Predicate<ToolResult> predicate) {
+  public WhenToolReplyClause whenToolResult(Predicate<ToolResult> predicate){
 
     Predicate<InputMessage> messagePredicate =
         (value) -> value instanceof ToolResult toolResult && predicate.test(toolResult);
 
-    return new ToolResultReplyBuilder(this, messagePredicate);
+    return new WhenToolReplyClause(this, messagePredicate);
   }
 
   /**
