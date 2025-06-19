@@ -83,8 +83,7 @@ You implement goals in Akka by implementing a multi-agent system _with a planner
 |Guardians
 |Components that monitor, protect and evaluate the system against its goals and constraints. 
 
-You implement guardians in Akka by...
-ifdef::todo[TODO: get some thoughts from Patrik on this]
+You will soon be able to implements guardians in Akka with an xref:java:agents.adoc#_evaluating_ai_model_quality[Agent evaluation workbench].
 |Adaptation
 |Continuous, real-time streams from users or the environment which can alter the context, memory or semantic knowledge used by an agentic system.
 
