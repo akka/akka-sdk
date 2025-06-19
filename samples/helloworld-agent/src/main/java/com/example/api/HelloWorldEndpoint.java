@@ -18,7 +18,7 @@ import java.util.UUID;
 // Opened up for access from the public internet to make the service easy to try out.
 // For actual services meant for production this must be carefully considered, and often set more limited
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
-@HttpEndpoint("/")
+@HttpEndpoint("")
 public class HelloWorldEndpoint {
   public record Request(String user, String text) {}
 

@@ -22,7 +22,6 @@ public class HelloWorldAgent extends Agent {
      - Always respond with enthusiasm and warmth
      - Add a touch of humor or wordplay when appropriate
      - At the end, append a list of previous greetings
-     - Include some interesting facts
      """.stripIndent();
 
 

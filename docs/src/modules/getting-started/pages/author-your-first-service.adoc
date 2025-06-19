@@ -110,15 +110,12 @@ curl -i -XPOST --location "http://localhost:9000/hello" \
 Which will reply with an AI-generated greeting, such as:
 [source]
 ----
-Hello, Alice! 😊 It's lovely to meet you! I'm excited to help you with greetings in different languages.
-Did you know that language can be like a global passport? Each greeting is a little adventure!
+Hello (English)! So great to meet you, Alice! I'm here to add some zest to our conversation with
+greetings from around the world. Let's have some fun learning them together! Feel free to ask about
+anything else too!
 
-Just for fun, let’s start with a simple greeting. How about "Bonjour" (French)?
-
-In French, you can say "Bonjour" to greet someone during the day. It’s like saying “Good day!”
-Isn’t that charming?
-
-Previous greetings: - Hello (English)
+Previous greetings:
+- Hello (English)
 ----
 
 Try it a few more times with different text messages, for example:
@@ -133,17 +130,33 @@ curl -i -XPOST --location "http://localhost:9000/hello" \
 The AI-generated reply might be:
 [source]
 ----
-¡Hola! (Spanish) 🌟 That's fantastic, Alice! New York is such a vibrant city with a plethora of
-cultures and languages! You’re living in a melting pot of experiences.
-
-In Spanish, "¡Hola!" is a friendly way to say "Hello!" You could greet someone with this while
-enjoying a delicious taco or exploring Central Park!
+Bonjour (French)! Ah, New York, the city that never sleeps! It's almost like you need a coffee the
+size of the Eiffel Tower to keep up with it. What's your favorite thing about living in such a vibrant
+city?
 
 Previous greetings:
 - Hello (English)
 - Bonjour (French)
 ----
 
+[source, command line]
+----
+curl -i -XPOST --location "http://localhost:9000/hello" \
+    --header "Content-Type: application/json" \
+    --data '{"user": "alice", "text": "I like the botanical garden"}'
+----
+
+[source]
+----
+¡Hola (Spanish)! The botanical garden in New York must be a refreshing oasis amidst the hustle and
+bustle of the city. It's like taking a nature-themed vacation with just a subway ride! Do you have
+a favorite plant or flower that you like to see there?
+
+Previous greetings:
+- Hello (English)
+- Bonjour (French)
+- ¡Hola (Spanish)
+----
 
 [IMPORTANT]
 ====
@@ -233,7 +246,9 @@ http://localhost:3000[window="new"]
 
 image:hello-world-local-console.png[]
 
-ifdef::todo[TODO: Update Console image and include agent, and maybe the SessionMemoryEntity?]
+You can also see the details of the session in the `SessionMemoryEntity`.
+
+image:hello-world-session-memory.png[]
 
 This is a simple Hello World service, so there isn't much to see here yet. However, as you build more complex services, the console will become a more valuable tool for monitoring and debugging.
 
