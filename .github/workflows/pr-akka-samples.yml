@@ -27,6 +27,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - { sample: "helloworld-agent", sampleRepo: "akka-samples/helloworld-agent" }
           - { sample: "choreography-saga-quickstart", sampleRepo: "akka-samples/choreography-saga-quickstart" }
           - { sample: "endpoint-jwt", sampleRepo: "akka-samples/endpoint-jwt" }
           - { sample: "event-sourced-counter-brokers", sampleRepo: "akka-samples/event-sourced-counter-brokers" }

@@ -24,17 +24,11 @@ include::ROOT:partial$recommend-ai-video.adoc[]
 
 == Create the empty project
 
-You already learned how to create an empty Akka project when you went through the guide to xref:getting-started:author-your-first-service.adoc#_generate_and_build_the_project[author your first service]. Follow those steps again to ensure that you've got a new project that compiles.
-
-While you can use any settings you like, the code samples use:
-
-* Group ID: **akka.ask**
-* Artifact ID: **ask-akka**
-* Version: **1.0-SNAPSHOT**
+You already learned how to create an empty Akka project when you went through the guide to xref:getting-started:author-your-first-service.adoc#clone_sample[author your first service].
 
 [NOTE]
 ====
-This guide is written assuming you will follow it as a tutorial to walk through all of the components, building them on your own. If at any time you want to compare your solution with the official sample, check out the link:https://github.com/akka-samples/ask-akka-agent[Github repository].
+This guide is written assuming you will follow it as a tutorial to walk through all of the components, building them on your own. If at any time you want to compare your solution with the official sample, check out the link:https://github.com/akka-samples/ask-akka-agent[Github Repository, window="new"].
 ====
 
 == Add the Agent
