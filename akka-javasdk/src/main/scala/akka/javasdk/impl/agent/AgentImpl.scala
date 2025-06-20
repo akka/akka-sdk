@@ -32,7 +32,6 @@ import akka.javasdk.impl.agent.BaseAgentEffectBuilder.ConstantSystemMessage
 import akka.javasdk.impl.agent.BaseAgentEffectBuilder.NoPrimaryEffect
 import akka.javasdk.impl.agent.BaseAgentEffectBuilder.RequestModel
 import akka.javasdk.impl.agent.BaseAgentEffectBuilder.TemplateSystemMessage
-import akka.javasdk.impl.agent.FunctionTools.FunctionToolInvoker
 import akka.javasdk.impl.agent.SessionMemoryClient.MemorySettings
 import akka.javasdk.impl.effect.ErrorReplyImpl
 import akka.javasdk.impl.effect.MessageReplyImpl
@@ -180,13 +179,15 @@ private[impl] final class AgentImpl[A <: Agent](
                 case any           => FunctionTools.toolInvokersFor(any)
               }.toMap
 
+            val toolExecutor = new ToolExecutor(functionTools, serializer)
+
             new SpiAgent.RequestModelEffect(
               modelProvider = spiModelProvider,
               systemMessage = systemMessage,
               userMessage = req.userMessage,
               additionalContext = additionalContext,
               toolDescriptors = toolDescriptors,
-              callToolFunction = request => callTool(functionTools, request)(sdkExecutionContext),
+              callToolFunction = request => toolExecutor.executeAsync(request)(sdkExecutionContext),
               mcpClientDescriptors = mcpToolEndpoints,
               responseType = req.responseType,
               responseMapping = req.responseMapping,
@@ -218,36 +219,6 @@ private[impl] final class AgentImpl[A <: Agent](
       }
     }
 
-  }
-
-  private def callTool(functionTools: Map[String, FunctionToolInvoker], request: SpiAgent.ToolCallCommand)(implicit
-      ex: ExecutionContext) = {
-
-    val toolInvoker =
-      functionTools.getOrElse(request.name, throw new IllegalArgumentException(s"Unknown tool ${request.name}"))
-
-    val mapper = serializer.objectMapper
-    val jsonNode = mapper.readTree(request.arguments)
-
-    val methodInput =
-      toolInvoker.paramNames.zipWithIndex.map { case (name, index) =>
-        // assume that the paramName in the method matches a node from the json 'content'
-        val node = jsonNode.get(name)
-        val typ = toolInvoker.types(index)
-        val javaType = mapper.getTypeFactory.constructType(typ)
-        mapper.treeToValue(node, javaType).asInstanceOf[Any]
-      }
-
-    Future {
-      val toolResult = toolInvoker.invoke(methodInput)
-
-      if (toolInvoker.returnType == Void.TYPE)
-        "SUCCESS"
-      else if (toolInvoker.returnType == classOf[String])
-        toolResult.asInstanceOf[String]
-      else
-        mapper.writeValueAsString(toolResult)
-    }
   }
 
   private def toSpiMcpEndpoints(remoteMcpTools: Seq[RemoteMcpTools]): Seq[SpiAgent.McpToolEndpointDescriptor] =
