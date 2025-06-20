@@ -28,7 +28,6 @@ object ToolExecutorSpec {
   case class Foobar(foo: Foo, bar: Bar)
 }
 
-
 class ToolExecutorSpec extends AnyWordSpecLike with TestSuite with Matchers {
 
   private val serializer = new JsonSerializer(JsonSupport.getObjectMapper)
