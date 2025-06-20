@@ -345,7 +345,7 @@ The Agent will then in turn execute the tool requested by the LLM, incorporate t
 
 There are three ways to add function tools to your agent:
 
-1. **Agent-defined function tools** — Define function tools directly within your agent class using the`@FunctionTool`
+1. **Agent-defined function tools** — Define function tools directly within your agent class using the `@FunctionTool`
 annotation. These are automatically registered as available tools for the current Agent.
 
 2. **Externally defined function tools** — Explicitly register external objects or classes containing function tools by
