@@ -6,7 +6,7 @@ This sample illustrates how to build an AI agent that performs a RAG workflow.
 
 This sample requires OpenAI API Key and a MongoDb Atlas URI. 
 
-#### Mongo Atlas
+### Mongo Atlas
 The Mongo DB atlas URI you get from signing up/logging in to https://cloud.mongodb.com
 Create an empty database and add a database user with a password. Make sure to allow access from your local IP address
 to be able to run the sample locally.
@@ -14,7 +14,7 @@ to be able to run the sample locally.
 The Mongo DB console should now help out by giving you a URI/connection
 string to copy. Note that you need to insert the database user password into the generated URI.
 
-#### OpenAI API
+### OpenAI API
 To get the OpenAI API key, sign up/log in to find the key at https://platform.openai.com/api-keys
 
 ### Start the app
