@@ -90,6 +90,30 @@ public class TestModelProvider implements ModelProvider.Custom {
 
   private List<Pair<Predicate<InputMessage>, Function<InputMessage, AiResponse>>> responsePredicates = new ArrayList<>();
 
+
+  public static class MissingModelResponseException extends RuntimeException {
+  }
+
+  final private Function<InputMessage, AiResponse> catchMissingResponse = msg -> {
+    throw new MissingModelResponseException();
+  };
+
+  private void addPredicateOnly(Predicate<InputMessage> predicate) {
+    responsePredicates.add(new Pair<>(predicate, catchMissingResponse));
+  }
+    
+  private void addResponse(Predicate<InputMessage> predicate, Function<InputMessage, AiResponse> response) {
+
+    var catchMissingResponse = new Pair<>(predicate, this.catchMissingResponse);
+
+    // Remove any existing entry with the same predicate that maps to catchMissingResponse
+    responsePredicates.removeIf(pair -> pair.equals(catchMissingResponse));
+
+    // Add the new predicate-response mapping
+    responsePredicates.add(new Pair<>(predicate, response));
+  }
+
+
   /**
    * Base class for building reply configurations for specific input predicates.
    */
@@ -101,6 +125,7 @@ public class TestModelProvider implements ModelProvider.Custom {
     public WhenClause(TestModelProvider provider, Predicate<InputMessage> predicate) {
       this.provider = provider;
       this.predicate = predicate;
+      provider.addPredicateOnly(predicate);
     }
 
     /**
@@ -128,14 +153,14 @@ public class TestModelProvider implements ModelProvider.Custom {
      * Reply with a custom AI response for matching requests.
      */
     public void reply(AiResponse response) {
-      provider.responsePredicates.add(new Pair<>(predicate, msg -> response));
+      provider.addResponse(predicate, msg -> response);
     }
 
     /**
      * Reply with a runtime exception for matching requests.
      */
     public void failWith(RuntimeException error) {
-      provider.responsePredicates.add(new Pair<>(predicate, msg -> { throw error; }));
+      provider.addResponse(predicate, msg -> { throw error; });
     }
   }
 
@@ -156,7 +181,7 @@ public class TestModelProvider implements ModelProvider.Custom {
       // safe to cast because predicate ensures the type
       Function<InputMessage, AiResponse> castedHandler =
         (input) -> handler.apply((ToolResult) input);
-      provider.responsePredicates.add(new Pair<>(predicate, castedHandler));
+      provider.addResponse(predicate, castedHandler);
     }
 
   }
@@ -223,7 +248,16 @@ public class TestModelProvider implements ModelProvider.Custom {
       return responsePredicates.stream()
         .filter(pair -> pair.first().test(inputMessage))
         .findFirst()
-        .map(pair -> pair.second().apply(inputMessage))
+        .map(pair -> {
+            try {
+               return pair.second().apply(inputMessage);
+            } catch (MissingModelResponseException e) {
+              throw new IllegalArgumentException("A matching predicate was defined for [" + inputMessage + "]," +
+                " but no reply was defined for it. Please use reply(...), thenReply(...) or failWith(...) methods to " +
+                "provide a reply for this input message.", e);
+            }
+          }
+        )
         .orElseThrow(() -> new IllegalArgumentException("No response defined in TestModelProvider for [" + inputMessage + "]"));
   }
 

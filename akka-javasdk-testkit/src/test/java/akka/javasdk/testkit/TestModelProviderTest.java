@@ -20,6 +20,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.fail;
 
 class TestModelProviderTest {
 
@@ -134,6 +135,33 @@ class TestModelProviderTest {
         .build();
     ChatResponse goodbyeResponse = chatModel.doChat(goodbyeRequest);
     assertThat(goodbyeResponse.aiMessage().text()).isEqualTo("Goodbye response");
+  }
+
+  @Test
+  void testFailWhenActionIsMissing() {
+
+    var whenClause =
+    testModelProvider
+      .whenMessage(text -> text.contains("hello"));
+
+    ChatModel chatModel = (ChatModel) testModelProvider.createChatModel();
+
+
+    ChatRequest helloRequest = ChatRequest.builder()
+      .messages(List.of(new UserMessage("Say hello to me")))
+      .build();
+    try {
+      ChatResponse helloResponse = chatModel.doChat(helloRequest);
+      fail("Should have failed");
+    } catch (RuntimeException e) {
+      assertThat(e.getMessage()).startsWith("A matching predicate was defined for");
+      return;
+    }
+
+    // adding a reply replaces the catcher for MissingModelResponseException
+    whenClause.reply("Hello response");
+    ChatResponse helloResponse = chatModel.doChat(helloRequest);
+    assertThat(helloResponse.aiMessage().text()).isEqualTo("Hello response");
   }
 
   @Test
