@@ -126,7 +126,7 @@ There are two ways to achieve interoperability between Akka components and the o
 |xref:java:component-and-service-calls.adoc[ComponentClient]
 |One component can directly invoke another component. Akka treats these direct invocations as non-blocking, asynchronous messages, meaning that the invoking component immediately returns after making the invocation and can invoke any component regardless of its location.
 
-For example, a Workflow component handling a long-running business transaction can invoke an Agent component to perform a task, and the Workflow will continue processing without waiting for the Agent to complete its work.
+For example, a Workflow component handling a long-running business transaction can invoke an Agent component to perform a task, and the Workflow can continue processing without waiting for the Agent to complete its work.
 
 |Events
 |Components can emit events that can be subscribed to by other components. For example, an entity can emit an event when its state is updated. Other components can subscribe to this event, similar to how clients subscribe to Kafka topics. Events are propagated transparently between components through reliable, brokerless messaging.
