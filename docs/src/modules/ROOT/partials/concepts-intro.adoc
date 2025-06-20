@@ -1,4 +1,4 @@
-Akka is a framework, runtime and memory store for autonomous, adaptive agentic systems. Akka is delivered as a platform that can execute on any infrastructure, anywhere.
+Akka is a framework, runtime, and memory store for autonomous, adaptive agentic systems. Akka is delivered as an SDK and platform that can execute on any infrastructure, anywhere.
 
 image:concepts:akka-agentic-platform.png[Akka Agentic Platform]
 
