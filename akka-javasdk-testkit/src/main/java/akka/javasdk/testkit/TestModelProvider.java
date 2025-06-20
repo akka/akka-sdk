@@ -300,7 +300,7 @@ public class TestModelProvider implements ModelProvider.Custom {
   }
 
   /**
-   * Configures the {@code TestModelProvider} to respond when the given string predicate matches an input message.
+   * Configures to respond when the given string predicate matches an input message.
    * Note that to finish the configuration, you must call one of the reply methods.
    */
   public WhenClause whenMessage(Predicate<String> predicate) {
@@ -311,20 +311,41 @@ public class TestModelProvider implements ModelProvider.Custom {
   }
 
   /**
-   * Configures the {@code TestModelProvider} to respond when the given UserMessage predicate matches an input message.
+   * Configures to respond when the input message is an exact match of {@code message}.
+   * Note that to finish the configuration, you must call one of the reply methods.
+   */
+  public WhenClause whenMessage(String message) {
+    Predicate<InputMessage> messagePredicate = (value) -> message.equals(value.content());
+
+    return new WhenClause(this, messagePredicate);
+  }
+
+  /**
+   * Configures to respond when the given UserMessage predicate matches an input message.
    * Note that to finish the configuration, you must call one of the reply methods.
    */
   public WhenClause whenUserMessage(Predicate<UserMessage> predicate) {
 
     Predicate<InputMessage> messagePredicate =
-        (value) -> value instanceof UserMessage userQuestion && predicate.test(userQuestion);
+        (value) -> value instanceof UserMessage uMsg && predicate.test(uMsg);
 
     return new WhenClause(this, messagePredicate);
   }
 
+  /**
+   * Configures to respond when the input message is an exact match of {@code userMessage}.
+   * Note that to finish the configuration, you must call one of the reply methods.
+   */
+  public WhenClause whenUserMessage(UserMessage userMessage) {
+
+    Predicate<InputMessage> messagePredicate =
+      (value) -> value instanceof UserMessage uMsg && userMessage.equals(uMsg);
+
+    return new WhenClause(this, messagePredicate);
+  }
 
   /**
-   * Configures the {@code TestModelProvider} to respond when the given ToolResult predicate matches a tool result.
+   * Configures to respond when the given ToolResult predicate matches a tool result.
    * Note that to finish the configuration, you must call one of the reply methods.
    */
   public WhenToolReplyClause whenToolResult(Predicate<ToolResult> predicate){
@@ -334,6 +355,19 @@ public class TestModelProvider implements ModelProvider.Custom {
 
     return new WhenToolReplyClause(this, messagePredicate);
   }
+
+  /**
+   * Configures to respond when the input message is an exact match of {@code toolResult}.
+   * Note that to finish the configuration, you must call one of the reply methods.
+   */
+  public WhenToolReplyClause whenToolResult(ToolResult toolResult){
+
+    Predicate<InputMessage> messagePredicate =
+      (value) -> value instanceof ToolResult tResult && toolResult.equals(tResult);
+
+    return new WhenToolReplyClause(this, messagePredicate);
+  }
+
 
   /**
    * Resets all previously added response configurations.
