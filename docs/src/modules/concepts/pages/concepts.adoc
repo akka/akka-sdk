@@ -134,7 +134,7 @@ For example, a Workflow component handling a long-running business transaction c
 Components can also subscribe to events that are incoming from external sources, which can be 3rd party brokers, APIs, or real-time streams of data.
 |===
 
-Due to this structure, even though the code you create which connects different components together, all communications between these components are decoupled from one another with non-blocking, asynchronous communication. This enables instances of your components to run anywhere with the most efficient use of compute, memory, and I/O while the Akka runtime takes responsibility for routing requests to the location that needs to consume them. This basic behavior is one reason why Akka services, whether stateful or stateless, can scale to 10M TPS.
+Akka is designed so that components remain loosely coupled and can communicate with each other regardless of where they run. Inter-component communication runs on virtual threads managed by the Akka runtime. These threads are lightweight and isolated in a way that ensures system resources remain available for other tasks. This allows components to interact without interfering with each other or affecting overall responsiveness. This basic behavior is one reason why Akka services, whether stateful or stateless, can scale to 10M transaction per second (TPS).
 
 [cols="2,3", options="header"]
 |===
