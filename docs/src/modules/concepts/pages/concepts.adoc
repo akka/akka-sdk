@@ -138,6 +138,7 @@ Components can also subscribe to events that are incoming from external sources,
 Akka is designed so that components remain loosely coupled and can communicate with each other regardless of where they run. Inter-component communication runs on virtual threads managed by the Akka runtime. These threads are lightweight and isolated in a way that ensures system resources remain available for other tasks. This allows components to interact without interfering with each other or affecting overall responsiveness. This basic behavior is one reason why Akka services, whether stateful or stateless, can scale to 10M transaction per second (TPS).
 
 [cols="2,3", options="header"]
+[.compact]
 |===
 | Example Interoperability | Description
 
