@@ -54,11 +54,17 @@ mvn clean install -DskipTests
 
 Install the `akka` CLI as documented in [Install Akka CLI](https://doc.akka.io/reference/cli/index.html).
 
-Deploy the service using the image tag from above `mvn install`:
+Set up secret containing OpenAI API key:
+
+```shell
+akka secret create generic openai-api --literal key=$OPENAI_API_KEY
+```
+
+Deploy the service using the image tag from above `mvn install` and the secret:
 
 ```shell
 akka service deploy helloworld-agent helloworld-agent:tag-name --push \
-  --env OPENAI_API_KEY=your-openai-api-key
+  --secret-env OPENAI_API_KEY=openai-api/key
 ```
 
 Refer to [Deploy and manage services](https://doc.akka.io/operations/services/deploy-service.html) for more information.
