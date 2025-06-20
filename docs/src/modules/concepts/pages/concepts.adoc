@@ -57,6 +57,7 @@ An agentic system is a distributed system that requires a variety of behaviors a
 image:concepts:agentic-ai-system-anatomy.png[Akka Agentic Platform]
 
 [cols="1,3", options="header"]
+[.compact]
 |===
 |Aspect |AI Role and Responsibility
 
