@@ -80,24 +80,29 @@ A distributed system is any system that distributes logic or state. Distributed 
 | Most importantly, the system consistently responds to users and events in a timely manner, maintaining a reliable experience.
 |===
 
-== Autonomous AI runtimes
+== Agentic runtimes
 
-Akka supports three fundamental runtime types:
+Autonomous AI systems require three types of runtimes:
 
-1. Durable execution
-* Long-lived
-* Persists the call stack after every invocation
-* Enables recovery and retry mechanisms
+[cols="1,3", options="header"]
+|===
+|Runtime |Description
+|Durable Execution
+|Long-lived, where the call-stack is persisted after every invocation to enable recovery and retries.
 
-2. Transactional
-* Short-lived
-* High-throughput, concurrent processing
+This is utilized when you implement the xref:java:workflows.adoc[Workflow] component.
 
-3. Streaming
-* Never-ending
-* Continuous execution of data streams
+|Transactional
+|Short-lived, high volume, concurrent execution.
 
-Akka combines all three runtime types into a single engine. This allows for high resource utilization (up to 95%) without impacting performance.
+This is utilized when you implement xref:concepts:grpc-vs-http-endpoints.adoc[Endpoint], xref:java:views.adoc[View], xref:concepts:state-model.adoc[Entity] and xref:java:timed-actions.adoc[Timer] components.
+|Streaming
+|Continuous, never-ending processes that handle streams of data.
+
+This is utilized when you implement the xref:java:consuming-producing.adoc[Consumer] component or xref:concepts:grpc-vs-http-endpoints.adoc[SSE / gRPC streaming extension of an endpoint].
+|===
+
+Akka provides support for all three runtimes within the same SDK. The runtime behavior is automatic within your service based upon the components that you use during development. All of these runtimes leverage an actor-based core, which is a concurrency model with strong isolation and asynchronous message passing between actors. When running a service that executes multiple runtimes, Akka maximizes efficiency of the underlying compute by executing actors for different runtimes concurrently, enabling node resource utilization up to 95%.
 
 == Akka components
 
@@ -174,30 +179,6 @@ This packaging supports a range of operational models:
 |===
 
 This flexibility allows teams to start simply, with everything in one place, and evolve naturally as needs change. Services remain modular in code, even when packaged together, resulting in a system prepared for scale.
-
-== Agentic runtimes
-
-Autonomous AI systems require three types of runtimes:
-
-[cols="1,3", options="header"]
-|===
-|Runtime |Description
-|Durable Execution
-|Long-lived, where the call-stack is persisted after every invocation to enable recovery and retries.
-
-This is utilized when you implement the xref:java:workflows.adoc[Workflow] component.
-
-|Transactional
-|Short-lived, high volume, concurrent execution.
-
-This is utilized when you implement xref:concepts:grpc-vs-http-endpoints.adoc[Endpoint], xref:java:views.adoc[View], xref:concepts:state-model.adoc[Entity] and xref:java:timed-actions.adoc[Timer] components.
-|Streaming
-|Continuous, never-ending processes that handle streams of data.
-
-This is utilized when you implement the xref:java:consuming-producing.adoc[Consumer] component or xref:concepts:grpc-vs-http-endpoints.adoc[SSE / gRPC streaming extension of an endpoint].
-|===
-
-Akka provides support for all three runtimes within the same SDK. The runtime behavior is automatic within your service based upon the components that you use during development. All of these runtimes leverage an actor-based core, which is a concurrency model with strong isolation and asynchronous message passing between actors. When running a service that executes multiple runtimes, Akka maximizes efficiency of the underlying compute by executing actors for different runtimes concurrently, enabling node resource utilization up to 95%.
 
 == Shared and distributed state (memory)
 
