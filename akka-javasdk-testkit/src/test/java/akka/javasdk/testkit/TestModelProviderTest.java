@@ -142,16 +142,15 @@ class TestModelProviderTest {
 
     var whenClause =
     testModelProvider
-      .whenMessage(text -> text.contains("hello"));
+      .whenMessage("hello");
 
     ChatModel chatModel = (ChatModel) testModelProvider.createChatModel();
-
-
     ChatRequest helloRequest = ChatRequest.builder()
-      .messages(List.of(new UserMessage("Say hello to me")))
+      .messages(List.of(new UserMessage("hello")))
       .build();
+
     try {
-      ChatResponse helloResponse = chatModel.doChat(helloRequest);
+      chatModel.doChat(helloRequest);
       fail("Should have failed");
     } catch (RuntimeException e) {
       assertThat(e.getMessage()).startsWith("A matching predicate was defined for");
@@ -162,6 +161,25 @@ class TestModelProviderTest {
     whenClause.reply("Hello response");
     ChatResponse helloResponse = chatModel.doChat(helloRequest);
     assertThat(helloResponse.aiMessage().text()).isEqualTo("Hello response");
+  }
+
+  @Test
+  void testFailure() {
+
+    testModelProvider.whenMessage("hello").failWith(new RuntimeException("I can't handle this"));
+
+    ChatModel chatModel = (ChatModel) testModelProvider.createChatModel();
+    ChatRequest helloRequest = ChatRequest.builder()
+      .messages(List.of(new UserMessage("hello")))
+      .build();
+    try {
+      chatModel.doChat(helloRequest);
+      fail("Should have failed");
+    } catch (RuntimeException e) {
+      assertThat(e.getMessage()).isEqualTo("I can't handle this");
+      return;
+    }
+
   }
 
   @Test

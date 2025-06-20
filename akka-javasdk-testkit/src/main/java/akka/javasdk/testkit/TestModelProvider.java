@@ -191,8 +191,8 @@ public class TestModelProvider implements ModelProvider.Custom {
     return new ChatModel() {
       @Override
       public ChatResponse doChat(ChatRequest chatRequest) {
-        var inputMessageText = getLastInputMessage(chatRequest);
-        var textResponse = getResponse(inputMessageText);
+        var inputMessage = getLastInputMessage(chatRequest);
+        var textResponse = getResponse(inputMessage);
         return chatResponse(textResponse);
       }
     };
